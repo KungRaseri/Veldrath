@@ -36,9 +36,12 @@ public class AccountService(
             .Select(c => c.Value)
             .ToList();
 
-        var logins = await userManager.GetLoginsAsync(user);
+        var logins = await db.UserLogins
+            .AsNoTracking()
+            .Where(l => l.UserId == user.Id)
+            .ToListAsync(ct);
         var linkedProviders = logins
-            .Select(l => new LinkedProviderDto(l.LoginProvider, l.ProviderKey, DateTimeOffset.MinValue))
+            .Select(l => new LinkedProviderDto(l.LoginProvider, l.ProviderKey, l.LinkedAt))
             .ToList();
 
         // ExpiresAt > DateTimeOffset.UtcNow cannot be translated by the SQLite EF Core provider.
@@ -200,9 +203,12 @@ public class AccountService(
         var user = await ResolveUserAsync(principal, ct);
         if (user is null) return [];
 
-        var logins = await userManager.GetLoginsAsync(user);
+        var logins = await db.UserLogins
+            .AsNoTracking()
+            .Where(l => l.UserId == user.Id)
+            .ToListAsync(ct);
         return logins
-            .Select(l => new LinkedProviderDto(l.LoginProvider, l.ProviderKey, DateTimeOffset.MinValue))
+            .Select(l => new LinkedProviderDto(l.LoginProvider, l.ProviderKey, l.LinkedAt))
             .ToList();
     }
 

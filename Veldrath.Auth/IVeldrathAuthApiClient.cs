@@ -78,4 +78,22 @@ public interface IVeldrathAuthApiClient
     /// Fails if the provider is the account's only login method and no password is set.
     /// </summary>
     Task<(bool Ok, string? Error)> UnlinkProviderAsync(string provider, string providerKey, CancellationToken ct = default);
+
+    // ── Session management ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns all active refresh-token sessions for the authenticated account.
+    /// Pass <paramref name="currentSessionId"/> to have the server flag the caller's own session
+    /// with <c>IsCurrent = true</c>.
+    /// </summary>
+    Task<IReadOnlyList<AccountSessionDto>> GetSessionsAsync(Guid? currentSessionId = null, CancellationToken ct = default);
+
+    /// <summary>Revokes the specified refresh-token session. Returns <c>false</c> on failure.</summary>
+    Task<bool> RevokeSessionAsync(Guid sessionId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Revokes all active sessions for the authenticated account except the one identified by
+    /// <paramref name="currentSessionId"/>.
+    /// </summary>
+    Task<bool> RevokeOtherSessionsAsync(Guid currentSessionId, CancellationToken ct = default);
 }

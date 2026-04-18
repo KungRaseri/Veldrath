@@ -5,7 +5,9 @@ using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
 using Veldrath.Contracts.Auth;
+using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Infrastructure.Email;
@@ -29,7 +31,8 @@ public class AuthService(
     AccountLinkService accountLinkService,
     IEmailSender emailSender,
     IConfiguration config,
-    ILogger<AuthService> logger)
+    ILogger<AuthService> logger,
+    ApplicationDbContext db)
 {
     public async Task<(AuthResponse? Response, string? Error)> RegisterAsync(
         RegisterRequest request, string clientIp, CancellationToken ct = default)
@@ -250,6 +253,13 @@ public class AuthService(
                     null,
                     string.Join("; ", link.Errors.Select(e => e.Description)),
                     ExternalLoginStatus.Error);
+
+            await db.UserLogins
+                .Where(l => l.UserId == user.Id
+                         && l.LoginProvider == provider
+                         && l.ProviderKey   == providerKey)
+                .ExecuteUpdateAsync(
+                    s => s.SetProperty(l => l.LinkedAt, DateTimeOffset.UtcNow), ct);
         }
 
         return new ExternalLoginResult(

@@ -14,7 +14,8 @@ namespace Veldrath.Server.Data;
 /// Always backed by PostgreSQL; use <see cref="ContentDbContext"/> for standalone
 /// content-browsing tools (e.g. RealmForge) that don't need Identity.
 /// </summary>
-public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRole<Guid>, Guid>
+public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRole<Guid>, Guid,
+    IdentityUserClaim<Guid>, IdentityUserRole<Guid>, PlayerUserLogin, IdentityRoleClaim<Guid>, IdentityUserToken<Guid>>
 {
     /// <summary>Initializes a new instance of <see cref="ApplicationDbContext"/>.</summary>
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
@@ -111,6 +112,9 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
              .HasForeignKey(t => t.AccountId)
              .OnDelete(DeleteBehavior.Cascade);
         });
+
+        // Extend the Identity user-login table with a timestamp for when the provider was linked.
+        builder.Entity<PlayerUserLogin>(e => e.Property(l => l.LinkedAt));
 
         // World Configuration
         builder.Entity<World>(e =>

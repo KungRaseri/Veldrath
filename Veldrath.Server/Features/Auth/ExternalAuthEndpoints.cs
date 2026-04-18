@@ -2,7 +2,9 @@
 using System.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
 
 namespace Veldrath.Server.Features.Auth;
@@ -90,6 +92,15 @@ public static class ExternalAuthEndpoints
             // AddLoginAsync is idempotent — safe to call if already linked.
             await userMgr.AddLoginAsync(linkTarget,
                 new UserLoginInfo(ctx.Scheme.Name, providerKey ?? "", ctx.Scheme.Name));
+
+            // Stamp the linked-at timestamp only when the row was just created.
+            var db = ctx.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+            await db.UserLogins
+                .Where(l => l.UserId        == linkTarget.Id
+                         && l.LoginProvider == ctx.Scheme.Name
+                         && l.ProviderKey   == (providerKey ?? "")
+                         && l.LinkedAt      == null)
+                .ExecuteUpdateAsync(s => s.SetProperty(l => l.LinkedAt, DateTimeOffset.UtcNow));
 
             // Issue a fresh session so the Blazor circuit on the callback page has live tokens.
             // Route through the shared session endpoint so the rt cookie is set with the

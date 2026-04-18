@@ -174,7 +174,7 @@ else
                 <span class="provider-name">@row.Label</span>
                 @if (linked is not null)
                 {
-                    <span class="badge badge-green">Linked @linked.LinkedAt.ToLocalTime().ToString("d")</span>
+                    <span class="badge badge-green">Linked @(linked.LinkedAt?.ToLocalTime().ToString("d") ?? "–")</span>
                     <button class="btn btn-sm btn-danger"
                             @onclick="() => UnlinkAsync(row.Name, linked.ProviderKey)"
                             disabled="@_saving">
@@ -190,6 +190,49 @@ else
         @if (_providerError is not null)
         {
             <p class="field-error">@_providerError</p>
+        }
+    </section>
+
+    <!-- ── Active Sessions ─────────────────────────────────────────────── -->
+    <section class="account-section">
+        <h2>Active Sessions</h2>
+        <p class="field-hint muted">Each entry represents an active sign-in from a device or browser.</p>
+
+        @foreach (var s in _sessions)
+        {
+            <div class="session-row">
+                <div class="session-info">
+                    <span class="session-ip">@s.CreatedByIp</span>
+                    <span class="session-dates muted">
+                        Started @s.CreatedAt.ToLocalTime().ToString("g") ·
+                        Expires @s.ExpiresAt.ToLocalTime().ToString("d")
+                    </span>
+                </div>
+                @if (s.IsCurrent)
+                {
+                    <span class="badge badge-green">Current</span>
+                }
+                else
+                {
+                    <button class="btn btn-sm btn-danger"
+                            @onclick="() => RevokeSessionAsync(s.Id)"
+                            disabled="@_saving">
+                        Revoke
+                    </button>
+                }
+            </div>
+        }
+        @if (_sessions.Count > 1)
+        {
+            <button class="btn btn-ghost" style="margin-top:.75rem"
+                    @onclick="RevokeOtherSessionsAsync"
+                    disabled="@(_saving || AuthState.SessionId is null)">
+                Sign out everywhere else
+            </button>
+        }
+        @if (_sessionError is not null)
+        {
+            <p class="field-error">@_sessionError</p>
         }
     </section>
 }
@@ -222,6 +265,11 @@ else
     .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
     .btn-ghost { background: transparent; border-color: var(--vds-border); color: inherit; }
     .btn-danger { background: transparent; border-color: var(--vds-danger, #c53030); color: var(--vds-danger, #c53030); }
+    .session-row { display: flex; align-items: center; gap: .75rem; padding: .5rem 0; border-bottom: 1px solid var(--vds-border); flex-wrap: wrap; }
+    .session-row:last-child { border-bottom: none; }
+    .session-info { display: flex; flex-direction: column; flex: 1; }
+    .session-ip { font-size: .92rem; }
+    .session-dates { font-size: .8rem; margin-top: .1rem; }
     .loading { text-align: center; padding: 3rem; color: var(--vds-text-muted); }
     .muted { color: var(--vds-text-muted); }
 </style>
@@ -263,6 +311,10 @@ else
     // Provider management
     private string? _providerError;
 
+    // Session management
+    private List<AccountSessionDto> _sessions    = [];
+    private string?                 _sessionError;
+
     // Banners
     private string? _successMessage;
     private string? _errorMessage;
@@ -284,11 +336,17 @@ else
             _errorMessage = "Failed to link provider. Please try again.";
 
         await LoadProfileAsync();
+        await LoadSessionsAsync();
     }
 
     private async Task LoadProfileAsync()
     {
         _profile = await Api.GetMyProfileAsync();
+    }
+
+    private async Task LoadSessionsAsync()
+    {
+        _sessions = (await Api.GetSessionsAsync(AuthState.SessionId)).ToList();
     }
 
     // ── Profile edit ──────────────────────────────────────────────────────────
@@ -438,6 +496,39 @@ else
             {
                 _providerError = error ?? $"Failed to unlink {provider}.";
             }
+        }
+        finally { _saving = false; }
+    }
+
+    // ── Session management ────────────────────────────────────────────────────
+
+    private async Task RevokeSessionAsync(Guid sessionId)
+    {
+        _saving = true;
+        _sessionError = null;
+        try
+        {
+            var ok = await Api.RevokeSessionAsync(sessionId);
+            if (ok)
+                await LoadSessionsAsync();
+            else
+                _sessionError = "Failed to revoke session.";
+        }
+        finally { _saving = false; }
+    }
+
+    private async Task RevokeOtherSessionsAsync()
+    {
+        if (AuthState.SessionId is not { } current) return;
+        _saving = true;
+        _sessionError = null;
+        try
+        {
+            var ok = await Api.RevokeOtherSessionsAsync(current);
+            if (ok)
+                await LoadSessionsAsync();
+            else
+                _sessionError = "Failed to sign out other sessions.";
         }
         finally { _saving = false; }
     }

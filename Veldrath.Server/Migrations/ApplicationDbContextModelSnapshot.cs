@@ -97,27 +97,6 @@ namespace Veldrath.Server.Migrations
                     b.ToTable("AspNetUserClaims", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
-                {
-                    b.Property<string>("LoginProvider")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ProviderKey")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ProviderDisplayName")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("LoginProvider", "ProviderKey");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("AspNetUserLogins", (string)null);
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.Guid>", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -763,6 +742,30 @@ namespace Veldrath.Server.Migrations
                     b.ToTable("PlayerSessions");
                 });
 
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.PlayerUserLogin", b =>
+                {
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProviderKey")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("LinkedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProviderDisplayName")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("LoginProvider", "ProviderKey");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserLogins", (string)null);
+                });
+
             modelBuilder.Entity("Veldrath.Server.Data.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -959,15 +962,6 @@ namespace Veldrath.Server.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
-                {
-                    b.HasOne("Veldrath.Server.Data.Entities.PlayerAccount", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.Guid>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
@@ -1105,6 +1099,15 @@ namespace Veldrath.Server.Migrations
                     b.Navigation("Region");
 
                     b.Navigation("Zone");
+                });
+
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.PlayerUserLogin", b =>
+                {
+                    b.HasOne("Veldrath.Server.Data.Entities.PlayerAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Veldrath.Server.Data.Entities.RefreshToken", b =>

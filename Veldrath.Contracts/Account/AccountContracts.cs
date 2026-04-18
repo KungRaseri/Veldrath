@@ -5,8 +5,8 @@
 /// <summary>A linked OAuth provider entry on a player account.</summary>
 /// <param name="ProviderName">Provider display name (e.g. <c>"Discord"</c>, <c>"Google"</c>).</param>
 /// <param name="ProviderKey">Opaque provider-assigned user identifier.</param>
-/// <param name="LinkedAt">UTC timestamp when this provider was linked to the account.</param>
-public record LinkedProviderDto(string ProviderName, string ProviderKey, DateTimeOffset LinkedAt);
+/// <param name="LinkedAt">UTC timestamp when this provider was linked to the account. <c>null</c> for accounts linked before timestamp tracking was introduced.</param>
+public record LinkedProviderDto(string ProviderName, string ProviderKey, DateTimeOffset? LinkedAt);
 
 /// <summary>Full self-service view of the authenticated user's own account.</summary>
 /// <param name="AccountId">Unique account identifier.</param>

@@ -1,6 +1,8 @@
 ﻿using System.Security.Cryptography;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Infrastructure.Email;
@@ -19,7 +21,8 @@ public class AccountLinkService(
     IPendingLinkRepository pendingLinkRepo,
     IEmailSender emailSender,
     UserManager<PlayerAccount> userManager,
-    IConfiguration config)
+    IConfiguration config,
+    ApplicationDbContext db)
 {
     /// <summary>
     /// Generates a pending link token for <paramref name="account"/>, persists it, and sends
@@ -109,6 +112,15 @@ public class AccountLinkService(
 
         if (!linkResult.Succeeded)
             return (null, null, string.Join("; ", linkResult.Errors.Select(e => e.Description)));
+
+        // Stamp the linked-at timestamp only when the row was just created.
+        await db.UserLogins
+            .Where(l => l.UserId        == token.Account.Id
+                     && l.LoginProvider == token.LoginProvider
+                     && l.ProviderKey   == token.ProviderKey
+                     && l.LinkedAt      == null)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(l => l.LinkedAt, DateTimeOffset.UtcNow), ct);
 
         await pendingLinkRepo.ConfirmAsync(token.Id, ct);
 

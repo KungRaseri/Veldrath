@@ -44,7 +44,7 @@ public class AccountLinkServiceTests : IDisposable
 
         var userMgr   = BuildUserManager(db);
         var config    = BuildConfig();
-        var svc       = new AccountLinkService(repo, emailMock.Object, userMgr, config);
+        var svc       = new AccountLinkService(repo, emailMock.Object, userMgr, config, db);
 
         var account       = await CreateAccountAsync(userMgr, "linktest@example.com", "LinkTestUser");
         const string serverBase = "http://localhost:5000";
@@ -76,7 +76,7 @@ public class AccountLinkServiceTests : IDisposable
         var email    = Mock.Of<IEmailSender>();
         var userMgr  = BuildUserManager(db);
         var config   = BuildConfig(pendingLinkExpiryMinutes: 15);
-        var svc      = new AccountLinkService(repo, email, userMgr, config);
+        var svc      = new AccountLinkService(repo, email, userMgr, config, db);
 
         var account = await CreateAccountAsync(userMgr, "expiry@example.com", "ExpiryUser");
 
@@ -99,7 +99,7 @@ public class AccountLinkServiceTests : IDisposable
         var email    = Mock.Of<IEmailSender>();
         var userMgr  = BuildUserManager(db);
         var config   = BuildConfig();
-        var svc      = new AccountLinkService(repo, email, userMgr, config);
+        var svc      = new AccountLinkService(repo, email, userMgr, config, db);
 
         var account     = await CreateAccountAsync(userMgr, "confirm@example.com", "ConfirmUser");
         var rawToken    = GenerateRawToken();
@@ -141,7 +141,7 @@ public class AccountLinkServiceTests : IDisposable
         // Arrange
         using var db = _dbFactory.CreateContext();
         var repo   = new EfCorePendingLinkRepository(db);
-        var svc    = new AccountLinkService(repo, Mock.Of<IEmailSender>(), BuildUserManager(db), BuildConfig());
+        var svc    = new AccountLinkService(repo, Mock.Of<IEmailSender>(), BuildUserManager(db), BuildConfig(), db);
 
         var account   = await CreateAccountAsync(BuildUserManager(db), "expired@example.com", "ExpiredUser");
         var rawToken  = GenerateRawToken();
@@ -171,7 +171,7 @@ public class AccountLinkServiceTests : IDisposable
         // Arrange
         using var db = _dbFactory.CreateContext();
         var repo = new EfCorePendingLinkRepository(db);
-        var svc  = new AccountLinkService(repo, Mock.Of<IEmailSender>(), BuildUserManager(db), BuildConfig());
+        var svc  = new AccountLinkService(repo, Mock.Of<IEmailSender>(), BuildUserManager(db), BuildConfig(), db);
 
         var account  = await CreateAccountAsync(BuildUserManager(db), "alreadydone@example.com", "AlreadyDoneUser");
         var rawToken = GenerateRawToken();
@@ -202,7 +202,7 @@ public class AccountLinkServiceTests : IDisposable
         // Arrange
         using var db = _dbFactory.CreateContext();
         var repo = new EfCorePendingLinkRepository(db);
-        var svc  = new AccountLinkService(repo, Mock.Of<IEmailSender>(), BuildUserManager(db), BuildConfig());
+        var svc  = new AccountLinkService(repo, Mock.Of<IEmailSender>(), BuildUserManager(db), BuildConfig(), db);
 
         var rawToken = GenerateRawToken(); // never persisted
 
