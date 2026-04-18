@@ -1,0 +1,444 @@
+@page "/account/profile"
+@using Veldrath.Contracts.Account
+@inject NavigationManager Nav
+@inject IConfiguration Config
+@inject VeldrathApiClient Api
+@inject AuthStateService AuthState
+
+<PageTitle>My Account — Veldrath</PageTitle>
+
+@if (!AuthState.IsAuthReady)
+{
+    <p class="loading">Loading…</p>
+}
+else if (!AuthState.IsLoggedIn)
+{
+    <!-- Redirect handled in OnInitializedAsync; render nothing while navigating. -->
+}
+else if (_profile is null)
+{
+    <p class="loading">Loading profile…</p>
+}
+else
+{
+    @if (_successMessage is not null)
+    {
+        <div class="alert alert-success">@_successMessage</div>
+    }
+    @if (_errorMessage is not null)
+    {
+        <div class="alert alert-error">@_errorMessage</div>
+    }
+
+    <!-- ── Profile ─────────────────────────────────────────────────────── -->
+    <section class="account-section">
+        <h2>Profile</h2>
+
+        <div class="field-row">
+            <span class="field-label">Username</span>
+            @if (_editingUsername)
+            {
+                <div class="inline-form">
+                    <input type="text" class="field-input" @bind="_newUsername" />
+                    <button class="btn btn-sm btn-primary" @onclick="SaveUsernameAsync" disabled="@_saving">Save</button>
+                    <button class="btn btn-sm btn-ghost" @onclick="() => _editingUsername = false">Cancel</button>
+                </div>
+                @if (_usernameError is not null)
+                {
+                    <p class="field-error">@_usernameError</p>
+                }
+            }
+            else
+            {
+                <span class="field-value">@_profile.Username</span>
+                <button class="btn btn-sm btn-ghost" @onclick="StartEditUsername">Change</button>
+            }
+        </div>
+
+        <div class="field-row">
+            <span class="field-label">Display Name</span>
+            @if (_editingProfile)
+            {
+                <input type="text" class="field-input" @bind="_newDisplayName" placeholder="Optional public name" />
+            }
+            else
+            {
+                <span class="field-value muted">@(_profile.DisplayName ?? "—")</span>
+            }
+        </div>
+
+        <div class="field-row">
+            <span class="field-label">Bio</span>
+            @if (_editingProfile)
+            {
+                <textarea class="field-input" @bind="_newBio" rows="3" placeholder="Tell the community about yourself"></textarea>
+            }
+            else
+            {
+                <span class="field-value muted">@(_profile.Bio ?? "—")</span>
+            }
+        </div>
+
+        @if (_editingProfile)
+        {
+            <div class="action-row">
+                <button class="btn btn-primary" @onclick="SaveProfileAsync" disabled="@_saving">Save</button>
+                <button class="btn btn-ghost" @onclick="CancelEditProfile">Cancel</button>
+            </div>
+            @if (_profileError is not null)
+            {
+                <p class="field-error">@_profileError</p>
+            }
+        }
+        else
+        {
+            <button class="btn btn-ghost" @onclick="StartEditProfile">Edit profile</button>
+        }
+    </section>
+
+    <!-- ── Email ───────────────────────────────────────────────────────── -->
+    <section class="account-section">
+        <h2>Email</h2>
+
+        <div class="field-row">
+            <span class="field-label">Address</span>
+            <span class="field-value">@(_profile.Email ?? "—")</span>
+            @if (_profile.EmailConfirmed)
+            {
+                <span class="badge badge-green">Confirmed</span>
+            }
+            else
+            {
+                <span class="badge badge-yellow">Unconfirmed</span>
+                <button class="btn btn-sm btn-ghost" @onclick="ResendConfirmationAsync" disabled="@_saving">Resend confirmation</button>
+            }
+        </div>
+        @if (_emailMessage is not null)
+        {
+            <p class="field-hint">@_emailMessage</p>
+        }
+    </section>
+
+    <!-- ── Security ────────────────────────────────────────────────────── -->
+    <section class="account-section">
+        <h2>Security</h2>
+
+        @if (!_profile.HasPassword)
+        {
+            <p class="field-hint muted">
+                Your account uses OAuth login only. Use <a href="/forgot-password">Forgot Password</a>
+                to set a password so you can also sign in with email.
+            </p>
+        }
+        else
+        {
+            @if (_changingPassword)
+            {
+                <div class="form-stack">
+                    <label class="field-label">Current Password</label>
+                    <input type="password" class="field-input" @bind="_currentPassword" />
+
+                    <label class="field-label" style="margin-top:.5rem">New Password</label>
+                    <input type="password" class="field-input" @bind="_newPassword" />
+
+                    <label class="field-label" style="margin-top:.5rem">Confirm New Password</label>
+                    <input type="password" class="field-input" @bind="_confirmPassword" />
+                </div>
+                <div class="action-row" style="margin-top:.75rem">
+                    <button class="btn btn-primary" @onclick="SavePasswordAsync" disabled="@_saving">Update password</button>
+                    <button class="btn btn-ghost" @onclick="CancelChangePassword">Cancel</button>
+                </div>
+                @if (_passwordError is not null)
+                {
+                    <p class="field-error">@_passwordError</p>
+                }
+            }
+            else
+            {
+                <button class="btn btn-ghost" @onclick="() => _changingPassword = true">Change password</button>
+            }
+        }
+    </section>
+
+    <!-- ── Connected Providers ─────────────────────────────────────────── -->
+    <section class="account-section">
+        <h2>Connected Accounts</h2>
+        <p class="field-hint muted">Link a provider to sign in without a password.</p>
+
+        @foreach (var row in _providerRows)
+        {
+            var linked = _profile.LinkedProviders.FirstOrDefault(
+                p => p.ProviderName.Equals(row.Name, StringComparison.OrdinalIgnoreCase));
+
+            <div class="provider-row">
+                <span class="provider-name">@row.Label</span>
+                @if (linked is not null)
+                {
+                    <span class="badge badge-green">Linked @linked.LinkedAt.ToLocalTime().ToString("d")</span>
+                    <button class="btn btn-sm btn-danger"
+                            @onclick="() => UnlinkAsync(row.Name, linked.ProviderKey)"
+                            disabled="@_saving">
+                        Unlink
+                    </button>
+                }
+                else
+                {
+                    <a class="btn btn-sm btn-ghost" href="@BuildLinkUrl(row.Name)">Link</a>
+                }
+            </div>
+        }
+        @if (_providerError is not null)
+        {
+            <p class="field-error">@_providerError</p>
+        }
+    </section>
+}
+
+<style>
+    .account-section { max-width: 560px; margin: 2rem auto; padding: 1.5rem; border: 1px solid var(--vds-border); border-radius: 8px; }
+    .account-section h2 { margin: 0 0 1rem; font-size: 1.1rem; }
+    .field-row { display: flex; align-items: center; gap: .75rem; padding: .35rem 0; flex-wrap: wrap; }
+    .field-label { min-width: 120px; font-size: .85rem; color: var(--vds-text-muted); }
+    .field-value { flex: 1; font-size: .95rem; }
+    .field-input { flex: 1; padding: .35rem .6rem; border-radius: 4px; border: 1px solid var(--vds-border); background: var(--vds-bg-3); color: inherit; font-size: .9rem; min-width: 0; }
+    textarea.field-input { width: 100%; box-sizing: border-box; }
+    .field-hint { font-size: .85rem; color: var(--vds-text-muted); margin: .35rem 0 0; }
+    .field-error { font-size: .85rem; color: var(--vds-danger, #c53030); margin: .25rem 0 0; }
+    .inline-form { display: flex; align-items: center; gap: .5rem; flex: 1; flex-wrap: wrap; }
+    .form-stack .field-label { display: block; margin-bottom: .25rem; }
+    .action-row { display: flex; gap: .5rem; align-items: center; margin-top: .75rem; }
+    .provider-row { display: flex; align-items: center; gap: .75rem; padding: .5rem 0; border-bottom: 1px solid var(--vds-border); }
+    .provider-row:last-child { border-bottom: none; }
+    .provider-name { min-width: 100px; font-size: .95rem; }
+    .alert { padding: .6rem .9rem; border-radius: 4px; margin-bottom: 1rem; font-size: .9rem; max-width: 560px; margin-left: auto; margin-right: auto; }
+    .alert-success { background: var(--vds-success-bg, #e6f9ec); color: var(--vds-success, #1a7a3a); }
+    .alert-error   { background: var(--vds-danger-bg,  #fde8e8); color: var(--vds-danger,  #c53030); }
+    .badge { display: inline-block; padding: .15rem .5rem; border-radius: 12px; font-size: .78rem; font-weight: 600; }
+    .badge-green  { background: var(--vds-success-bg, #e6f9ec); color: var(--vds-success, #1a7a3a); }
+    .badge-yellow { background: #fff8e1; color: #7a5a00; }
+    .btn { border-radius: 4px; cursor: pointer; font-size: .9rem; padding: .4rem .9rem; border: 1px solid transparent; }
+    .btn-sm { padding: .2rem .6rem; font-size: .82rem; }
+    .btn-primary { background: var(--vds-accent); color: #fff; border-color: var(--vds-accent); }
+    .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+    .btn-ghost { background: transparent; border-color: var(--vds-border); color: inherit; }
+    .btn-danger { background: transparent; border-color: var(--vds-danger, #c53030); color: var(--vds-danger, #c53030); }
+    .loading { text-align: center; padding: 3rem; color: var(--vds-text-muted); }
+    .muted { color: var(--vds-text-muted); }
+</style>
+
+@code {
+    private record ProviderRow(string Name, string Label);
+
+    private static readonly ProviderRow[] _providerRows =
+    [
+        new("Discord",   "Discord"),
+        new("Google",    "Google"),
+        new("Microsoft", "Microsoft"),
+    ];
+
+    [SupplyParameterFromQuery(Name = "linked")] private string? LinkedParam { get; set; }
+    [SupplyParameterFromQuery(Name = "error")]  private string? ErrorParam  { get; set; }
+
+    private AccountProfileDto? _profile;
+    private bool  _saving;
+
+    // Profile edit
+    private bool    _editingProfile;
+    private string? _newDisplayName;
+    private string? _newBio;
+    private string? _profileError;
+
+    // Username edit
+    private bool    _editingUsername;
+    private string  _newUsername = string.Empty;
+    private string? _usernameError;
+
+    // Password change
+    private bool    _changingPassword;
+    private string  _currentPassword = string.Empty;
+    private string  _newPassword     = string.Empty;
+    private string  _confirmPassword = string.Empty;
+    private string? _passwordError;
+
+    // Provider management
+    private string? _providerError;
+
+    // Banners
+    private string? _successMessage;
+    private string? _errorMessage;
+    private string? _emailMessage;
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthState.IsLoggedIn)
+        {
+            Nav.NavigateTo("/login", forceLoad: false);
+            return;
+        }
+
+        // Handle query-param feedback from the OAuth link redirect.
+        if (LinkedParam == "1")
+            _successMessage = "Provider linked successfully.";
+        else if (ErrorParam == "link_failed")
+            _errorMessage = "Failed to link provider. Please try again.";
+
+        await LoadProfileAsync();
+    }
+
+    private async Task LoadProfileAsync()
+    {
+        _profile = await Api.GetMyProfileAsync();
+    }
+
+    // ── Profile edit ──────────────────────────────────────────────────────────
+
+    private void StartEditProfile()
+    {
+        _newDisplayName = _profile?.DisplayName;
+        _newBio         = _profile?.Bio;
+        _profileError   = null;
+        _editingProfile = true;
+    }
+
+    private void CancelEditProfile()
+    {
+        _editingProfile = false;
+        _profileError   = null;
+    }
+
+    private async Task SaveProfileAsync()
+    {
+        _saving = true;
+        _profileError = null;
+        try
+        {
+            var (ok, error) = await Api.UpdateProfileAsync(_newDisplayName, _newBio);
+            if (ok)
+            {
+                _editingProfile  = false;
+                _successMessage  = "Profile updated.";
+                await LoadProfileAsync();
+            }
+            else
+            {
+                _profileError = error ?? "Failed to update profile.";
+            }
+        }
+        finally { _saving = false; }
+    }
+
+    // ── Username edit ─────────────────────────────────────────────────────────
+
+    private void StartEditUsername()
+    {
+        _newUsername     = _profile?.Username ?? string.Empty;
+        _usernameError   = null;
+        _editingUsername = true;
+    }
+
+    private async Task SaveUsernameAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newUsername)) return;
+        _saving = true;
+        _usernameError = null;
+        try
+        {
+            var (ok, error) = await Api.ChangeUsernameAsync(_newUsername);
+            if (ok)
+            {
+                _editingUsername = false;
+                _successMessage  = "Username updated.";
+                await LoadProfileAsync();
+            }
+            else
+            {
+                _usernameError = error ?? "Failed to change username.";
+            }
+        }
+        finally { _saving = false; }
+    }
+
+    // ── Password change ───────────────────────────────────────────────────────
+
+    private void CancelChangePassword()
+    {
+        _changingPassword = false;
+        _currentPassword  = string.Empty;
+        _newPassword      = string.Empty;
+        _confirmPassword  = string.Empty;
+        _passwordError    = null;
+    }
+
+    private async Task SavePasswordAsync()
+    {
+        if (_newPassword != _confirmPassword)
+        {
+            _passwordError = "New passwords do not match.";
+            return;
+        }
+        _saving = true;
+        _passwordError = null;
+        try
+        {
+            var (ok, error) = await Api.ChangePasswordAsync(_currentPassword, _newPassword);
+            if (ok)
+            {
+                CancelChangePassword();
+                _successMessage = "Password updated.";
+            }
+            else
+            {
+                _passwordError = error ?? "Failed to update password.";
+            }
+        }
+        finally { _saving = false; }
+    }
+
+    // ── Email ─────────────────────────────────────────────────────────────────
+
+    private async Task ResendConfirmationAsync()
+    {
+        _saving = true;
+        _emailMessage = null;
+        try
+        {
+            var (ok, error) = await Api.ResendEmailConfirmationAsync();
+            _emailMessage = ok
+                ? "Confirmation email sent. Check your inbox."
+                : error ?? "Failed to resend confirmation.";
+        }
+        finally { _saving = false; }
+    }
+
+    // ── Provider management ───────────────────────────────────────────────────
+
+    private string BuildLinkUrl(string provider)
+    {
+        var serverUrl  = (Config["Veldrath:PublicServerUrl"] ?? Config["Veldrath:ServerUrl"])?.TrimEnd('/') ?? "";
+        var returnUrl  = Nav.ToAbsoluteUri("account/profile").ToString();
+        var accountId  = AuthState.AccountId;
+        return $"{serverUrl}/api/auth/external/{provider.ToLowerInvariant()}"
+             + $"?mode=link&accountId={accountId}&returnUrl={Uri.EscapeDataString(returnUrl)}";
+    }
+
+    private async Task UnlinkAsync(string provider, string providerKey)
+    {
+        _saving = true;
+        _providerError = null;
+        try
+        {
+            var (ok, error) = await Api.UnlinkProviderAsync(provider, providerKey);
+            if (ok)
+            {
+                _successMessage = $"{provider} unlinked.";
+                await LoadProfileAsync();
+            }
+            else
+            {
+                _providerError = error ?? $"Failed to unlink {provider}.";
+            }
+        }
+        finally { _saving = false; }
+    }
+}

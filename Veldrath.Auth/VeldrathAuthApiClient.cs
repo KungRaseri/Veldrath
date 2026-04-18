@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Veldrath.Contracts.Account;
 using Veldrath.Contracts.Auth;
 
 namespace Veldrath.Auth;
@@ -139,6 +140,72 @@ public class VeldrathAuthApiClient(HttpClient http) : IVeldrathAuthApiClient
         CancellationToken ct = default)
     {
         var resp = await http.PostAsync("/api/auth/resend-confirmation", null, ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await ReadErrorAsync(resp.Content, ct));
+    }
+
+    // ── Self-service account management ──────────────────────────────────────
+
+    /// <summary>Returns the authenticated account's own full profile including linked providers.</summary>
+    public virtual async Task<AccountProfileDto?> GetMyProfileAsync(CancellationToken ct = default)
+    {
+        var resp = await http.GetAsync("/api/account/profile", ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<AccountProfileDto>(ct) : null;
+    }
+
+    /// <summary>Updates the authenticated account's optional public display name and biography.</summary>
+    public virtual async Task<(bool Ok, string? Error)> UpdateProfileAsync(
+        string? displayName, string? bio, CancellationToken ct = default)
+    {
+        var resp = await http.PutAsJsonAsync("/api/account/profile",
+            new UpdateProfileRequest(displayName, bio), ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await ReadErrorAsync(resp.Content, ct));
+    }
+
+    /// <summary>Changes the authenticated account's username.</summary>
+    public virtual async Task<(bool Ok, string? Error)> ChangeUsernameAsync(
+        string newUsername, CancellationToken ct = default)
+    {
+        var resp = await http.PutAsJsonAsync("/api/account/username",
+            new ChangeUsernameRequest(newUsername), ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await ReadErrorAsync(resp.Content, ct));
+    }
+
+    /// <summary>Changes the authenticated account's password.</summary>
+    public virtual async Task<(bool Ok, string? Error)> ChangePasswordAsync(
+        string currentPassword, string newPassword, CancellationToken ct = default)
+    {
+        var resp = await http.PostAsJsonAsync("/api/account/password",
+            new ChangePasswordRequest(currentPassword, newPassword), ct);
+        if (resp.IsSuccessStatusCode) return (true, null);
+        return (false, await ReadErrorAsync(resp.Content, ct));
+    }
+
+    /// <summary>Returns all OAuth providers currently linked to the authenticated account.</summary>
+    public virtual async Task<IReadOnlyList<LinkedProviderDto>> GetLinkedProvidersAsync(
+        CancellationToken ct = default)
+    {
+        var resp = await http.GetAsync("/api/account/providers", ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<List<LinkedProviderDto>>(ct) ?? []
+            : [];
+    }
+
+    /// <summary>
+    /// Removes the specified OAuth provider login from the authenticated account.
+    /// Fails if the provider is the account's only login method and no password is set.
+    /// </summary>
+    public virtual async Task<(bool Ok, string? Error)> UnlinkProviderAsync(
+        string provider, string providerKey, CancellationToken ct = default)
+    {
+        var resp = await http.SendAsync(new HttpRequestMessage(HttpMethod.Delete,
+            $"/api/account/providers/{provider}")
+        {
+            Content = JsonContent.Create(new UnlinkProviderRequest(providerKey))
+        }, ct);
         if (resp.IsSuccessStatusCode) return (true, null);
         return (false, await ReadErrorAsync(resp.Content, ct));
     }

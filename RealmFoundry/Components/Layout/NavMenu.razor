@@ -2,6 +2,7 @@
 @inject AuthStateService AuthState
 @inject RealmFoundryApiClient Api
 @inject NavigationManager Nav
+@inject IConfiguration Config
 
 <nav class="nav-links">
     <NavLink class="nav-item" href="" Match="NavLinkMatch.All">
@@ -42,6 +43,7 @@
             </NavLink>
         }
         <button class="nav-item nav-logout" @onclick="LogOutAsync">Sign out</button>
+        <a class="nav-item nav-account" href="@_accountProfileUrl">My Account</a>
     }
     else
     {
@@ -50,10 +52,15 @@
 </nav>
 
 @code {
-    private int _unreadCount;
+    private int     _unreadCount;
+    private string  _accountProfileUrl = "#";
 
     protected override void OnInitialized()
-        => AuthState.OnChange += Refresh;
+    {
+        AuthState.OnChange += Refresh;
+        var webBase = Config["Web:BaseUrl"]?.TrimEnd('/') ?? "";
+        _accountProfileUrl = $"{webBase}/account/profile";
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

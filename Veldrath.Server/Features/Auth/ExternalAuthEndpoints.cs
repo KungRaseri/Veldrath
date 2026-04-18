@@ -63,11 +63,27 @@ public static class ExternalAuthEndpoints
         ctx.Properties?.Items.TryGetValue("accountId", out accountIdStr);
         if (mode == "link" && Guid.TryParse(accountIdStr, out var linkAccountId))
         {
+            var webBase = config["Web:BaseUrl"];
+
+            string? linkReturnUrl = null;
+            ctx.Properties?.Items.TryGetValue("returnUrl", out linkReturnUrl);
+
             var linkTarget = await userMgr.FindByIdAsync(linkAccountId.ToString());
             if (linkTarget is null)
             {
                 ctx.HandleResponse();
-                ctx.Response.Redirect("/profile?error=link_failed");
+                // Redirect to the originating app's profile page with an error flag.
+                string errDest;
+                if (linkReturnUrl is not null && IsAllowedReturnUrl(linkReturnUrl, foundryBase, webBase))
+                {
+                    var uri = new Uri(linkReturnUrl);
+                    errDest = $"{uri.Scheme}://{uri.Authority}{uri.AbsolutePath}?error=link_failed";
+                }
+                else
+                {
+                    errDest = (foundryBase ?? webBase)?.TrimEnd('/') + "/profile?error=link_failed" ?? "/profile?error=link_failed";
+                }
+                ctx.Response.Redirect(errDest);
                 return;
             }
 
@@ -75,26 +91,25 @@ public static class ExternalAuthEndpoints
             await userMgr.AddLoginAsync(linkTarget,
                 new UserLoginInfo(ctx.Scheme.Name, providerKey ?? "", ctx.Scheme.Name));
 
-            string? linkReturnUrl = null;
-            ctx.Properties?.Items.TryGetValue("returnUrl", out linkReturnUrl);
-
             // Issue a fresh session so the Blazor circuit on the callback page has live tokens.
             // Route through the shared session endpoint so the rt cookie is set with the
             // cross-subdomain domain before redirecting back to the originating application.
             var session = await authSvc.CreateSessionAsync(linkTarget, clientIp);
             var code    = exchangeSvc.CreateCode(session, session.AccountId);
 
-            if (linkReturnUrl is not null && IsAllowedReturnUrl(linkReturnUrl, foundryBase))
+            if (linkReturnUrl is not null && IsAllowedReturnUrl(linkReturnUrl, foundryBase, webBase))
             {
                 var returnUri  = new Uri(linkReturnUrl);
                 var appBase    = $"{returnUri.Scheme}://{returnUri.Authority}";
-                var redirectTo = Uri.EscapeDataString($"{appBase}/profile?linked=1");
+                // Use the originating page's path so both /profile (Foundry) and
+                // /account/profile (Web) land on the right page after linking.
+                var redirectTo = Uri.EscapeDataString($"{appBase}{returnUri.AbsolutePath}?linked=1");
                 ctx.HandleResponse();
                 ctx.Response.Redirect($"{serverBaseUrl}/api/auth/session?code={code}&aid={session.AccountId}&redirectTo={redirectTo}");
             }
             else
             {
-                var fallback   = foundryBase?.TrimEnd('/') ?? "";
+                var fallback   = (foundryBase ?? webBase)?.TrimEnd('/') ?? "";
                 var redirectTo = Uri.EscapeDataString($"{fallback}/profile?linked=1");
                 ctx.HandleResponse();
                 ctx.Response.Redirect($"{serverBaseUrl}/api/auth/session?code={code}&aid={session.AccountId}&redirectTo={redirectTo}");
@@ -158,12 +173,16 @@ public static class ExternalAuthEndpoints
         if (!ProviderSchemes.TryGetValue(provider, out var scheme))
             return Results.BadRequest("Unknown OAuth provider.");
 
-        var foundryBase = context.RequestServices.GetRequiredService<IConfiguration>()["Foundry:BaseUrl"];
+        var config      = context.RequestServices.GetRequiredService<IConfiguration>();
+        var foundryBase = config["Foundry:BaseUrl"];
+        var webBase     = config["Web:BaseUrl"];
         var serverBase  = $"{context.Request.Scheme}://{context.Request.Host}";
 
-        // Guard against open redirect: only localhost, the Foundry origin, and this server's
-        // own origin (for the /api/auth/session callback) are accepted as a returnUrl.
-        if (returnUrl is not null && !IsAllowedReturnUrl(returnUrl, foundryBase, serverBase))
+        // Guard against open redirect: accept localhost, the Foundry origin, Web origin, and
+        // this server's own origin (for the /api/auth/session callback).
+        if (returnUrl is not null
+            && !IsAllowedReturnUrl(returnUrl, foundryBase, serverBase)
+            && !IsAllowedReturnUrl(returnUrl, webBase, serverBase))
             return Results.BadRequest("Invalid return URL.");
 
         // After the provider redirects back, ASP.NET's OAuth handler completes the

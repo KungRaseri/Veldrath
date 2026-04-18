@@ -1,3 +1,4 @@
+using Veldrath.Contracts.Account;
 using Veldrath.Contracts.Auth;
 
 namespace Veldrath.Auth;
@@ -54,4 +55,27 @@ public interface IVeldrathAuthApiClient
 
     /// <summary>Requests the server to resend the email-confirmation message for the authenticated account.</summary>
     Task<(bool Ok, string? Error)> ResendEmailConfirmationAsync(CancellationToken ct = default);
+
+    // ── Self-service account management ──────────────────────────────────────
+
+    /// <summary>Returns the authenticated account's own full profile including linked providers.</summary>
+    Task<AccountProfileDto?> GetMyProfileAsync(CancellationToken ct = default);
+
+    /// <summary>Updates the authenticated account's optional public display name and biography.</summary>
+    Task<(bool Ok, string? Error)> UpdateProfileAsync(string? displayName, string? bio, CancellationToken ct = default);
+
+    /// <summary>Changes the authenticated account's username.</summary>
+    Task<(bool Ok, string? Error)> ChangeUsernameAsync(string newUsername, CancellationToken ct = default);
+
+    /// <summary>Changes the authenticated account's password.</summary>
+    Task<(bool Ok, string? Error)> ChangePasswordAsync(string currentPassword, string newPassword, CancellationToken ct = default);
+
+    /// <summary>Returns all OAuth providers currently linked to the authenticated account.</summary>
+    Task<IReadOnlyList<LinkedProviderDto>> GetLinkedProvidersAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Removes the specified OAuth provider login from the authenticated account.
+    /// Fails if the provider is the account's only login method and no password is set.
+    /// </summary>
+    Task<(bool Ok, string? Error)> UnlinkProviderAsync(string provider, string providerKey, CancellationToken ct = default);
 }

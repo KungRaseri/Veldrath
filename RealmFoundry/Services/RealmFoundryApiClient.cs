@@ -347,35 +347,21 @@ public class RealmFoundryApiClient(HttpClient http) : VeldrathAuthApiClient(http
 
     // -- Self-Service Account Management --------------------------------------
 
-    /// <summary>Returns the authenticated user's own account profile.</summary>
-    public async Task<AccountProfileDto?> GetAccountProfileAsync(CancellationToken ct = default)
-    {
-        var resp = await Http.GetAsync("/api/account/profile", ct);
-        return resp.IsSuccessStatusCode
-            ? await resp.Content.ReadFromJsonAsync<AccountProfileDto>(ct)
-            : null;
-    }
+    /// <summary>Returns the authenticated user's own account profile. Alias for <see cref="GetMyProfileAsync"/>.</summary>
+    public Task<AccountProfileDto?> GetAccountProfileAsync(CancellationToken ct = default) =>
+        GetMyProfileAsync(ct);
 
     /// <summary>Updates the authenticated user's optional display name and bio.</summary>
-    public async Task<(bool Ok, string? Error)> UpdateProfileAsync(UpdateProfileRequest request, CancellationToken ct = default)
-    {
-        var resp = await Http.PutAsJsonAsync("/api/account/profile", request, ct);
-        return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
-    }
+    public Task<(bool Ok, string? Error)> UpdateProfileAsync(UpdateProfileRequest request, CancellationToken ct = default) =>
+        UpdateProfileAsync(request.DisplayName, request.Bio, ct);
 
     /// <summary>Changes the authenticated user's password.</summary>
-    public async Task<(bool Ok, string? Error)> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken ct = default)
-    {
-        var resp = await Http.PostAsJsonAsync("/api/account/password", request, ct);
-        return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
-    }
+    public Task<(bool Ok, string? Error)> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken ct = default) =>
+        ChangePasswordAsync(request.CurrentPassword, request.NewPassword, ct);
 
     /// <summary>Changes the authenticated user's username.</summary>
-    public async Task<(bool Ok, string? Error)> ChangeUsernameAsync(ChangeUsernameRequest request, CancellationToken ct = default)
-    {
-        var resp = await Http.PutAsJsonAsync("/api/account/username", request, ct);
-        return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
-    }
+    public Task<(bool Ok, string? Error)> ChangeUsernameAsync(ChangeUsernameRequest request, CancellationToken ct = default) =>
+        ChangeUsernameAsync(request.NewUsername, ct);
 
     /// <summary>Returns all active refresh-token sessions for the authenticated user.</summary>
     public async Task<IReadOnlyList<AccountSessionDto>?> GetAccountSessionsAsync(Guid? currentSessionId = null, CancellationToken ct = default)
@@ -402,25 +388,6 @@ public class RealmFoundryApiClient(HttpClient http) : VeldrathAuthApiClient(http
         var resp = await Http.SendAsync(new HttpRequestMessage(HttpMethod.Delete, "/api/account/sessions")
         {
             Content = JsonContent.Create(new RevokeOtherSessionsRequest(currentSessionId))
-        }, ct);
-        return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
-    }
-
-    /// <summary>Returns all OAuth providers linked to the authenticated user's account.</summary>
-    public async Task<IReadOnlyList<LinkedProviderDto>?> GetLinkedProvidersAsync(CancellationToken ct = default)
-    {
-        var resp = await Http.GetAsync("/api/account/providers", ct);
-        return resp.IsSuccessStatusCode
-            ? await resp.Content.ReadFromJsonAsync<List<LinkedProviderDto>>(ct)
-            : null;
-    }
-
-    /// <summary>Removes the specified OAuth provider from the authenticated user's account.</summary>
-    public async Task<(bool Ok, string? Error)> UnlinkProviderAsync(string provider, string providerKey, CancellationToken ct = default)
-    {
-        var resp = await Http.SendAsync(new HttpRequestMessage(HttpMethod.Delete, $"/api/account/providers/{provider}")
-        {
-            Content = JsonContent.Create(new UnlinkProviderRequest(providerKey))
         }, ct);
         return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
     }
