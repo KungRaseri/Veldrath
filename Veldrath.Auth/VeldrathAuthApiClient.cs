@@ -210,6 +210,46 @@ public class VeldrathAuthApiClient(HttpClient http) : IVeldrathAuthApiClient
         return (false, await ReadErrorAsync(resp.Content, ct));
     }
 
+    // ── Session management ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns all active refresh-token sessions for the authenticated account.
+    /// Pass <paramref name="currentSessionId"/> to flag the caller's own session as current.
+    /// </summary>
+    public virtual async Task<IReadOnlyList<AccountSessionDto>> GetSessionsAsync(
+        Guid? currentSessionId = null, CancellationToken ct = default)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Get, "/api/account/sessions");
+        if (currentSessionId.HasValue)
+            req.Headers.Add("X-Current-Session-Id", currentSessionId.Value.ToString());
+        var resp = await http.SendAsync(req, ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<List<AccountSessionDto>>(ct) ?? []
+            : [];
+    }
+
+    /// <summary>Revokes the specified refresh-token session. Returns <c>false</c> on failure.</summary>
+    public virtual async Task<bool> RevokeSessionAsync(Guid sessionId, CancellationToken ct = default)
+    {
+        var resp = await http.DeleteAsync($"/api/account/sessions/{sessionId}", ct);
+        return resp.IsSuccessStatusCode;
+    }
+
+    /// <summary>
+    /// Revokes all active sessions for the authenticated account except the one identified by
+    /// <paramref name="currentSessionId"/>.
+    /// </summary>
+    public virtual async Task<bool> RevokeOtherSessionsAsync(
+        Guid currentSessionId, CancellationToken ct = default)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Delete, "/api/account/sessions")
+        {
+            Content = JsonContent.Create(new RevokeOtherSessionsRequest(currentSessionId))
+        };
+        var resp = await http.SendAsync(req, ct);
+        return resp.IsSuccessStatusCode;
+    }
+
     /// <summary>
     /// Reads the response body and extracts the value of the <c>error</c> field when the body is
     /// a JSON object, e.g. <c>{"error":"Token invalid."}</c>.

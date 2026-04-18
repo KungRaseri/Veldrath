@@ -46,7 +46,8 @@ public static class PendingLinkEndpoints
         string destination;
 
         if (returnUrl is not null
-            && ExternalAuthEndpoints.IsAllowedReturnUrl(returnUrl, foundryBase, serverBase))
+            && (ExternalAuthEndpoints.IsAllowedReturnUrl(returnUrl, foundryBase, serverBase)
+                || ExternalAuthEndpoints.IsAllowedReturnUrl(returnUrl, webBase, serverBase)))
         {
             var uriBuilder   = new UriBuilder(returnUrl);
             var query        = HttpUtility.ParseQueryString(uriBuilder.Query);
