@@ -9,12 +9,16 @@ COPY versions/                                               versions/
 COPY Veldrath.Web/Veldrath.Web.csproj                        Veldrath.Web/
 COPY Veldrath.Web/Directory.Build.props                      Veldrath.Web/
 COPY Veldrath.Contracts/Veldrath.Contracts.csproj    Veldrath.Contracts/
+COPY Veldrath.Auth/Veldrath.Auth.csproj              Veldrath.Auth/
+COPY Veldrath.Auth.Blazor/Veldrath.Auth.Blazor.csproj Veldrath.Auth.Blazor/
 
 RUN dotnet restore Veldrath.Web/Veldrath.Web.csproj
 
 # Copy all source
 COPY Veldrath.Web/           Veldrath.Web/
 COPY Veldrath.Contracts/ Veldrath.Contracts/
+COPY Veldrath.Auth/          Veldrath.Auth/
+COPY Veldrath.Auth.Blazor/   Veldrath.Auth.Blazor/
 
 WORKDIR /src/Veldrath.Web
 RUN dotnet publish Veldrath.Web.csproj -c Release -o /app/publish

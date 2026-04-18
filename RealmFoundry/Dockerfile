@@ -9,12 +9,16 @@ COPY versions/                                                 versions/
 COPY RealmFoundry/RealmFoundry.csproj                          RealmFoundry/
 COPY RealmFoundry/Directory.Build.props                        RealmFoundry/
 COPY Veldrath.Contracts/Veldrath.Contracts.csproj      Veldrath.Contracts/
+COPY Veldrath.Auth/Veldrath.Auth.csproj                Veldrath.Auth/
+COPY Veldrath.Auth.Blazor/Veldrath.Auth.Blazor.csproj  Veldrath.Auth.Blazor/
 
 RUN dotnet restore RealmFoundry/RealmFoundry.csproj
 
 # Copy all source
 COPY RealmFoundry/           RealmFoundry/
 COPY Veldrath.Contracts/ Veldrath.Contracts/
+COPY Veldrath.Auth/          Veldrath.Auth/
+COPY Veldrath.Auth.Blazor/   Veldrath.Auth.Blazor/
 
 WORKDIR /src/RealmFoundry
 RUN dotnet publish RealmFoundry.csproj -c Release -o /app/publish

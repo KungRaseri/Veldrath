@@ -112,6 +112,8 @@
         _loginError = null;
         try
         {
+            var serverUrl = (Config["Veldrath:PublicServerUrl"] ?? Config["Veldrath:ServerUrl"])?.TrimEnd('/') ?? "";
+
             var response = await Api.LoginAsync(_email, _password);
             if (response is null)
             {
@@ -119,8 +121,19 @@
                 return;
             }
 
-            await AuthState.SetTokensAsync(response);
-            Nav.NavigateTo("/");
+            // Use the exchange-code redirect so the server sets the rt cookie — this keeps the
+            // session alive across page reloads (same mechanism used by OAuth providers).
+            Api.SetBearerToken(response.AccessToken);
+            var code = await Api.CreateExchangeCodeAsync();
+            if (code is null)
+            {
+                _loginError = "Sign-in failed. Please try again.";
+                return;
+            }
+
+            var redirectTo = Uri.EscapeDataString(Nav.BaseUri.TrimEnd('/') + "/");
+            var sessionUrl = $"{serverUrl}/api/auth/session?code={Uri.EscapeDataString(code.Code)}&aid={response.AccountId}&redirectTo={redirectTo}";
+            Nav.NavigateTo(sessionUrl, forceLoad: true);
         }
         finally
         {
