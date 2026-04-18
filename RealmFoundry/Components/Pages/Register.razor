@@ -123,6 +123,8 @@
         _submitting = true;
         try
         {
+            var serverUrl = (Config["Veldrath:PublicServerUrl"] ?? Config["Veldrath:ServerUrl"])?.TrimEnd('/') ?? "";
+
             var response = await Api.RegisterAsync(_email, _username, _password);
             if (response is null)
             {
@@ -130,8 +132,19 @@
                 return;
             }
 
-            await AuthState.SetTokensAsync(response);
-            _registered = true;
+            // Redirect through session endpoint to set the rt cookie for full session persistence.
+            Api.SetBearerToken(response.AccessToken);
+            var code = await Api.CreateExchangeCodeAsync();
+            if (code is null)
+            {
+                // Account was created but we couldn't set the rt cookie — show success and let user sign in.
+                _registered = true;
+                return;
+            }
+
+            var redirectTo = Uri.EscapeDataString(Nav.BaseUri.TrimEnd('/') + "/");
+            var sessionUrl = $"{serverUrl}/api/auth/session?code={Uri.EscapeDataString(code.Code)}&aid={response.AccountId}&redirectTo={redirectTo}";
+            Nav.NavigateTo(sessionUrl, forceLoad: true);
         }
         finally
         {
