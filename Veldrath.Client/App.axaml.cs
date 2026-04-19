@@ -39,7 +39,7 @@ public partial class App : Application
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
             .Build();
 
-        var serverBaseUrl = configuration["ServerBaseUrl"] ?? "http://localhost:8080/";
+        var serverBaseUrl = configuration["ServerBaseUrl"] ?? "http://localhost:9000/";
         var foundryBaseUrl = configuration["FoundryBaseUrl"] ?? "http://localhost:8081/";
 
         var services = new ServiceCollection();
