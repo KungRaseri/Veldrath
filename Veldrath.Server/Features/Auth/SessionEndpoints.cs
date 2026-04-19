@@ -14,7 +14,7 @@ public static class SessionEndpoints
     /// <summary>Maps <c>GET /api/auth/session</c>.</summary>
     public static IEndpointRouteBuilder MapSessionEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/auth/session", StartSession).RequireRateLimiting("auth-attempts");
+        app.MapGet("/api/auth/session", StartSession);
         return app;
     }
 

@@ -1,4 +1,5 @@
 ﻿@page "/login"
+@implements IDisposable
 @inject NavigationManager Nav
 @inject IConfiguration Config
 @inject RealmFoundryApiClient Api
@@ -93,6 +94,8 @@
 
     protected override void OnInitialized()
     {
+        AuthState.OnChange += OnAuthStateChanged;
+
         // PublicServerUrl is the browser-reachable address; ServerUrl may be an internal Docker hostname.
         var serverUrl = (Config["Veldrath:PublicServerUrl"] ?? Config["Veldrath:ServerUrl"])?.TrimEnd('/') ?? "";
         // The server's /api/auth/session endpoint exchanges the code, sets the cross-subdomain
@@ -103,6 +106,14 @@
         _googleUrl    = $"{serverUrl}/api/auth/external/google?returnUrl={Uri.EscapeDataString(callbackBase)}";
         _msUrl        = $"{serverUrl}/api/auth/external/microsoft?returnUrl={Uri.EscapeDataString(callbackBase)}";
     }
+
+    private void OnAuthStateChanged()
+    {
+        if (AuthState.IsAuthReady && AuthState.IsLoggedIn)
+            Nav.NavigateTo("/", replace: true);
+    }
+
+    public void Dispose() => AuthState.OnChange -= OnAuthStateChanged;
 
     private async Task DoLoginAsync()
     {

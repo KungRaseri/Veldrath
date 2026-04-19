@@ -376,7 +376,7 @@ public class RealmFoundryApiClient(HttpClient http) : VeldrathAuthApiClient(http
     }
 
     /// <summary>Revokes the specified active session.</summary>
-    public async Task<(bool Ok, string? Error)> RevokeSessionAsync(Guid sessionId, CancellationToken ct = default)
+    public new async Task<(bool Ok, string? Error)> RevokeSessionAsync(Guid sessionId, CancellationToken ct = default)
     {
         var resp = await Http.DeleteAsync($"/api/account/sessions/{sessionId}", ct);
         return resp.IsSuccessStatusCode ? (true, null) : (false, await resp.Content.ReadAsStringAsync(ct));
