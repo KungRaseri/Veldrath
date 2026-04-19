@@ -1,7 +1,9 @@
 @page "/login"
+@implements IDisposable
 @inject NavigationManager Nav
 @inject IConfiguration Config
 @inject VeldrathApiClient Api
+@inject AuthStateService AuthState
 
 <PageTitle>Sign In — Veldrath</PageTitle>
 
@@ -88,6 +90,8 @@
 
     protected override void OnInitialized()
     {
+        AuthState.OnChange += OnAuthStateChanged;
+
         var serverUrl = (Config["Veldrath:PublicServerUrl"] ?? Config["Veldrath:ServerUrl"])?.TrimEnd('/') ?? "";
         // The server's /api/auth/session endpoint exchanges the code, sets the cross-subdomain
         // rt cookie, and redirects back to this app via the redirectTo param.
@@ -97,6 +101,14 @@
         _googleUrl  = $"{serverUrl}/api/auth/external/google?returnUrl={Uri.EscapeDataString(callbackBase)}";
         _msUrl      = $"{serverUrl}/api/auth/external/microsoft?returnUrl={Uri.EscapeDataString(callbackBase)}";
     }
+
+    private void OnAuthStateChanged()
+    {
+        if (AuthState.IsAuthReady && AuthState.IsLoggedIn)
+            Nav.NavigateTo("/account/profile", replace: true);
+    }
+
+    public void Dispose() => AuthState.OnChange -= OnAuthStateChanged;
 
     private async Task DoLoginAsync()
     {

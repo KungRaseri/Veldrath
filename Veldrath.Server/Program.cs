@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 using AspNet.Security.OAuth.Discord;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -177,10 +178,11 @@ try
     // AuthExchangeCodeService uses an internal ConcurrentDictionary — no IMemoryCache dependency.
     builder.Services.AddSingleton<AuthExchangeCodeService>();
 
-    var foundryWriteLimit  = builder.Configuration.GetValue<int>("RateLimit:FoundryWritesPerMinute", 5);
-    var adminActionsLimit  = builder.Configuration.GetValue<int>("RateLimit:AdminActionsPerMinute",  20);
-    var authAttemptsLimit  = builder.Configuration.GetValue<int>("RateLimit:AuthAttemptsPerMinute",  10);
-    var hubCommandsLimit   = builder.Configuration.GetValue<int>("RateLimit:HubCommandsPerMinute",   120);
+    var foundryWriteLimit  = builder.Configuration.GetValue<int>("RateLimit:FoundryWritesPerMinute",  5);
+    var adminActionsLimit  = builder.Configuration.GetValue<int>("RateLimit:AdminActionsPerMinute",   20);
+    var authAttemptsLimit  = builder.Configuration.GetValue<int>("RateLimit:AuthAttemptsPerMinute",   10);
+    var jwtRenewalsLimit   = builder.Configuration.GetValue<int>("RateLimit:JwtRenewalsPerMinute",    60);
+    var hubCommandsLimit   = builder.Configuration.GetValue<int>("RateLimit:HubCommandsPerMinute",    120);
     builder.Services.AddRateLimiter(opts =>
     {
         opts.AddFixedWindowLimiter("foundry-writes", o =>
@@ -193,12 +195,27 @@ try
             o.Window = TimeSpan.FromMinutes(1);
             o.PermitLimit = adminActionsLimit;
         });
-        // Protects login, register, and refresh from brute-force and credential stuffing.
-        opts.AddFixedWindowLimiter("auth-attempts", o =>
-        {
-            o.Window = TimeSpan.FromMinutes(1);
-            o.PermitLimit = authAttemptsLimit;
-        });
+        // Protects login, register, refresh, and logout from brute-force and credential stuffing.
+        // Partitioned per remote IP so one client cannot exhaust the limit for all users.
+        opts.AddPolicy("auth-attempts", ctx =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                factory: _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+                {
+                    Window      = TimeSpan.FromMinutes(1),
+                    PermitLimit = authAttemptsLimit,
+                }));
+        // renew-jwt is called automatically by Blazor SSR on every page load — it is not a
+        // brute-force surface (requires a valid refresh token) but benefits from a generous
+        // per-IP cap to prevent runaway clients.
+        opts.AddPolicy("jwt-renewal", ctx =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                factory: _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+                {
+                    Window      = TimeSpan.FromMinutes(1),
+                    PermitLimit = jwtRenewalsLimit,
+                }));
         // Throttles authenticated SignalR hub commands to prevent spam from modded clients.
         opts.AddFixedWindowLimiter("hub-commands", o =>
         {
