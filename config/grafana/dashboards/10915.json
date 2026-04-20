@@ -1,4 +1,4 @@
-﻿{
+{
   "__inputs": [
     {
       "name": "DS_PROMETHEUS-MEDIUM",
@@ -564,6 +564,6 @@
   },
   "timezone": "",
   "title": "ASP.NET Core - controller summary (Prometheus)",
-  "uid": "h1FE3PpWk",
+  "uid": "cdAdW4p10915k",
   "version": 22
 }
