@@ -148,7 +148,7 @@ services:
         condition: service_healthy
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.6.1
     ports:
       - "9002:3000"   # Dashboard — http://localhost:9002
     environment:
