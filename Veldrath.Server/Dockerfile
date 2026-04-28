@@ -42,7 +42,6 @@ RUN apt-get update \
 COPY --from=build /app/publish .
 
 EXPOSE 8080
-EXPOSE 8081
 ENV ASPNETCORE_URLS=http://+:8080
 
 ENTRYPOINT ["dotnet", "Veldrath.Server.dll"]
