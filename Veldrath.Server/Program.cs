@@ -33,6 +33,7 @@ using Veldrath.Server.Features.Foundry;
 using Veldrath.Server.Features.Reports;
 using Veldrath.Server.Features.Players;
 using Veldrath.Server.Features.Zones;
+using Veldrath.Server.Features.Dev;
 using Veldrath.Server.Infrastructure.Email;
 using Veldrath.Server.Services;
 using Veldrath.Server.Health;
@@ -525,6 +526,7 @@ try
     app.MapAdminEndpoints();
     app.MapPlayerEndpoints();
     app.MapEditorialEndpoints();
+    app.MapDevEndpoints();
 
     // Hubs
     app.MapHub<GameHub>("/hubs/game").RequireRateLimiting("hub-commands");

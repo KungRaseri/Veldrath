@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
@@ -27,32 +28,36 @@ public sealed class CharacterCreationFixture : IAsyncLifetime
         using var scope = Factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ContentDbContext>();
 
-        db.ActorClasses.Add(new ActorClass
-        {
-            Slug        = "warrior",
-            TypeKey     = "melee",
-            DisplayName = "Warrior",
-            IsActive    = true,
-            PrimaryStat = "strength",
-            Stats       = new ActorClassStats { BaseHealth = 120, BaseMana = 20 },
-        });
+        // Guard against re-seeding when the global WebAppFactory seeder already inserted these rows.
+        if (!await db.ActorClasses.AnyAsync(c => c.Slug == "warrior"))
+            db.ActorClasses.Add(new ActorClass
+            {
+                Slug        = "warrior",
+                TypeKey     = "melee",
+                DisplayName = "Warrior",
+                IsActive    = true,
+                PrimaryStat = "strength",
+                Stats       = new ActorClassStats { BaseHealth = 120, BaseMana = 20 },
+            });
 
-        db.Species.Add(new Species
-        {
-            Slug               = "human",
-            TypeKey            = "humanoid",
-            DisplayName        = "Human",
-            IsActive           = true,
-            IsPlayerSelectable = true,
-        });
+        if (!await db.Species.AnyAsync(s => s.Slug == "human"))
+            db.Species.Add(new Species
+            {
+                Slug               = "human",
+                TypeKey            = "humanoid",
+                DisplayName        = "Human",
+                IsActive           = true,
+                IsPlayerSelectable = true,
+            });
 
-        db.Backgrounds.Add(new Background
-        {
-            Slug        = "soldier",
-            TypeKey     = "combat",
-            DisplayName = "Soldier",
-            IsActive    = true,
-        });
+        if (!await db.Backgrounds.AnyAsync(b => b.Slug == "soldier"))
+            db.Backgrounds.Add(new Background
+            {
+                Slug        = "soldier",
+                TypeKey     = "combat",
+                DisplayName = "Soldier",
+                IsActive    = true,
+            });
 
         await db.SaveChangesAsync();
     }

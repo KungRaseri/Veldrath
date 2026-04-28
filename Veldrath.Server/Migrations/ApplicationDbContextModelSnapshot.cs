@@ -905,6 +905,9 @@ namespace Veldrath.Server.Migrations
                     b.Property<bool>("HasMerchant")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsDevOnly")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsDiscoverable")
                         .HasColumnType("boolean");
 

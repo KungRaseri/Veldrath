@@ -35,6 +35,12 @@ public class Zone
     /// <summary>False for zones that are unlocked through progression or quests rather than open exploration.</summary>
     public bool IsDiscoverable { get; set; } = true;
 
+    /// <summary>
+    /// True for dev-only sandbox zones that should never appear in public-facing API responses.
+    /// Gated behind the <c>GET /api/dev/zones</c> endpoint which requires <c>IsDevelopment()</c>.
+    /// </summary>
+    public bool IsDevOnly { get; set; }
+
     /// <summary>Accumulated gold contributed to the rescue fund from player deaths in this zone.</summary>
     public long RescueFundTotal { get; set; }
 

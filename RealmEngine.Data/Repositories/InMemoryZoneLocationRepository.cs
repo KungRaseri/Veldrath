@@ -32,4 +32,8 @@ public class InMemoryZoneLocationRepository : IZoneLocationRepository
     /// <inheritdoc />
     public Task<List<ZoneLocationEntry>> GetHiddenByZoneIdAsync(string zoneId) =>
         Task.FromResult(new List<ZoneLocationEntry>());
+
+    /// <inheritdoc />
+    public Task<List<ZoneLocationEntry>> GetAllByZoneIdAsync(string zoneId) =>
+        Task.FromResult(new List<ZoneLocationEntry>());
 }

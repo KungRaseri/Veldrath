@@ -5,14 +5,17 @@ namespace Veldrath.Server.Data.Repositories;
 /// <summary>Read-only repository for <see cref="Zone"/> catalog entries.</summary>
 public interface IZoneRepository
 {
-    /// <summary>Returns all zones in the catalog.</summary>
+    /// <summary>Returns all non-dev zones in the catalog.</summary>
     Task<List<Zone>> GetAllAsync();
 
     /// <summary>Returns the zone with the given <paramref name="zoneId"/>, or <see langword="null"/> if not found.</summary>
     Task<Zone?> GetByIdAsync(string zoneId);
 
-    /// <summary>Returns all zones belonging to the given <paramref name="regionId"/>.</summary>
+    /// <summary>Returns all non-dev zones belonging to the given <paramref name="regionId"/>.</summary>
     Task<List<Zone>> GetByRegionIdAsync(string regionId);
+
+    /// <summary>Returns all zones including dev-only sandbox zones. For internal/dev tooling use only.</summary>
+    Task<List<Zone>> GetAllIncludingDevAsync();
 }
 
 /// <summary>Tracks active player sessions across the world (region maps and zones).</summary>
