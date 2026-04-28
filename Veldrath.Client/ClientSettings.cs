@@ -25,11 +25,11 @@ public class ClientSettings : ReactiveObject
         _foundryBaseUrl = foundryBaseUrl;
     }
 
-    /// <summary>Gets or sets the base URL of the game server (e.g. <c>http://localhost:8080</c>).</summary>
+    /// <summary>Gets or sets the base URL of the game server (e.g. <c>http://localhost:9000</c>).</summary>
     public string ServerBaseUrl
     {
         get => _serverBaseUrl;
-        set => this.RaiseAndSetIfChanged(ref _serverBaseUrl, value);
+        set => this.RaiseAndSetIfChanged(ref _serverBaseUrl, value?.TrimEnd('/') ?? string.Empty);
     }
 
     /// <summary>Gets or sets the base URL of the Foundry community portal (e.g. <c>http://localhost:8081</c>).</summary>

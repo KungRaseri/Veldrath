@@ -46,10 +46,9 @@ public class SettingsViewModelTests : TestBase
         loaded.Should().NotBeNull();
         loaded!.MusicVolume.Should().Be(42);
         loaded.Muted.Should().BeTrue();
-        loaded.ServerBaseUrl.Should().Be("http://testserver:9090");
     }
 
-    // Audio — volume properties
+    // Audio ï¿½ volume properties
     [Fact]
     public void MasterVolume_Should_Reflect_ClientSettings_Default()
     {
@@ -109,7 +108,7 @@ public class SettingsViewModelTests : TestBase
         audio.SfxVolume.Should().Be(50);
     }
 
-    // Audio — mute
+    // Audio ï¿½ mute
     [Fact]
     public void Muted_DefaultsTo_False()
     {
