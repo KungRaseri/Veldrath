@@ -229,7 +229,7 @@ public class ServerConnectionServiceTests : TestBase
         await act.Should().NotThrowAsync();
     }
 
-    // AccessTokenProvider — silent refresh
+    // AccessTokenProvider ï¿½ silent refresh
     [Fact]
     public async Task AccessTokenProvider_Should_Call_RefreshAsync_When_Token_Is_Expiring()
     {
@@ -256,7 +256,7 @@ public class ServerConnectionServiceTests : TestBase
         var auth   = new FakeAuthService();
         var (svc, factory) = MakeSut(tokens: tokens, auth: auth);
 
-        // Token is valid for 10 more minutes — not expiring soon
+        // Token is valid for 10 more minutes ï¿½ not expiring soon
         tokens.Set("valid-token", "my-refresh", "user", Guid.NewGuid(),
                    DateTimeOffset.UtcNow.AddMinutes(10));
 
@@ -273,7 +273,7 @@ public class ServerConnectionServiceTests : TestBase
         var auth   = new FakeAuthService();
         var (svc, factory) = MakeSut(tokens: tokens, auth: auth);
 
-        // Expiring but no refresh token — can't silently re-auth
+        // Expiring but no refresh token ï¿½ can't silently re-auth
         tokens.Set("old-token", string.Empty, "user", Guid.NewGuid(),
                    DateTimeOffset.UtcNow.AddSeconds(30));
         // Overwrite RefreshToken with null to simulate missing token
@@ -334,7 +334,7 @@ public class ServerConnectionServiceTests : TestBase
         var fired = false;
         svc.VersionMismatch += (_, _) => fired = true;
 
-        // MinCompatibleClientVersion = "0.0" — client assembly is at 0.1 (= 0.0), so compatible
+        // MinCompatibleClientVersion = "0.0" ï¿½ client assembly is at 0.1 (= 0.0), so compatible
         factory.Connection.SimulateReceive("ServerInfo",
             new Veldrath.Contracts.Connection.ServerInfoPayload("conn-1", "0.1", "0.0"));
 
@@ -351,7 +351,7 @@ public class ServerConnectionServiceTests : TestBase
         string? capturedServer = null;
         svc.VersionMismatch += (c, s) => { capturedClient = c; capturedServer = s; };
 
-        // Server requires minimum 9.99 — current client is well below that
+        // Server requires minimum 9.99 ï¿½ current client is well below that
         factory.Connection.SimulateReceive("ServerInfo",
             new Veldrath.Contracts.Connection.ServerInfoPayload("conn-1", "9.99", "9.99"));
 
@@ -368,7 +368,7 @@ public class ServerConnectionServiceTests : TestBase
         string? capturedServer = null;
         svc.VersionMismatch += (_, s) => capturedServer = s;
 
-        // Server version is 0.0 — client requires MinCompatibleServerVersion = "0.1"
+        // Server version is 0.0 ï¿½ client requires MinCompatibleServerVersion = "0.1"
         // so this fires VersionMismatch only if the assembly attribute is present.
         // In the test assembly the attribute is absent; fall-back minServer is "0.1",
         // so a server at 0.0 is rejected.
@@ -392,5 +392,85 @@ public class ServerConnectionServiceTests : TestBase
             new Veldrath.Contracts.Connection.ServerInfoPayload("conn-1", "0.5", "0.0"));
 
         fired.Should().BeFalse();
+    }
+
+    // ConnectAsync guard â€” Connecting / Reconnecting states
+    [Fact]
+    public async Task ConnectAsync_Should_Be_NoOp_When_State_Is_Reconnecting()
+    {
+        var (svc, factory) = MakeSut();
+        await svc.ConnectAsync("http://localhost");
+        await factory.Connection.SimulateReconnectingAsync(); // State = Reconnecting
+
+        await svc.ConnectAsync("http://localhost"); // should be a no-op
+
+        factory.Connection.StartCallCount.Should().Be(1);
+    }
+
+    // ConnectAsync retry â€” disposal of failed connection
+    [Fact]
+    public async Task ConnectAsync_Should_Dispose_OldConnection_On_Retry_After_Failure()
+    {
+        var (svc, factory) = MakeSut();
+        factory.Connection.StartShouldThrow = true;
+
+        var act = async () => await svc.ConnectAsync("http://localhost");
+        await act.Should().ThrowAsync<InvalidOperationException>();
+
+        factory.Connection.StartShouldThrow = false;
+        await svc.ConnectAsync("http://localhost"); // retry succeeds
+
+        factory.Connection.DisposeCallCount.Should().Be(1);
+    }
+
+    // ConnectAsync retry â€” stale Closed event from previous failed connection is ignored
+    [Fact]
+    public async Task ConnectAsync_Should_Ignore_Closed_Event_From_Previous_Failed_Connection()
+    {
+        var (svc, factory) = MakeSut();
+        factory.Connection.StartShouldThrow = true;
+
+        var act = async () => await svc.ConnectAsync("http://localhost");
+        await act.Should().ThrowAsync<InvalidOperationException>();
+
+        factory.Connection.StartShouldThrow = false;
+        await svc.ConnectAsync("http://localhost"); // retry with new generation
+
+        var connectionLostFired = false;
+        svc.ConnectionLost += () => connectionLostFired = true;
+
+        // Stale Closed from the old (failed) connection â€” must be suppressed
+        await factory.AllCreated[0].SimulateClosedAsync();
+
+        connectionLostFired.Should().BeFalse();
+    }
+
+    // DisconnectAsync â€” full disposal
+    [Fact]
+    public async Task DisconnectAsync_Should_Dispose_Connection()
+    {
+        var (svc, factory) = MakeSut();
+        await svc.ConnectAsync("http://localhost");
+
+        await svc.DisconnectAsync();
+
+        factory.Connection.DisposeCallCount.Should().Be(1);
+    }
+
+    // DisconnectAsync â€” Closed event after intentional stop must not fire ConnectionLost
+    [Fact]
+    public async Task DisconnectAsync_Should_Not_Fire_ConnectionLost()
+    {
+        var (svc, factory) = MakeSut();
+        await svc.ConnectAsync("http://localhost");
+
+        var connectionLostFired = false;
+        svc.ConnectionLost += () => connectionLostFired = true;
+
+        await svc.DisconnectAsync();
+        // Simulate SignalR firing Closed after intentional stop â€” must be suppressed
+        await factory.Connection.SimulateClosedAsync();
+
+        connectionLostFired.Should().BeFalse();
     }
 }
