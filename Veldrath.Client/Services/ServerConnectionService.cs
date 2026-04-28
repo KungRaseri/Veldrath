@@ -104,7 +104,7 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
         }
 
         _connection = _connectionFactory.CreateConnection(
-            $"{serverUrl}/hubs/game",
+            $"{serverUrl.TrimEnd('/')}/hubs/game",
             async () =>
             {
                 // Silently refresh the access token on every (re)connection attempt so that

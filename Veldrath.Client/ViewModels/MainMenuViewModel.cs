@@ -141,7 +141,7 @@ public class MainMenuViewModel : ViewModelBase
                 IsChecking = true;
                 try
                 {
-                    await serverStatus.CheckAsync(settings?.ServerBaseUrl ?? "http://localhost:8080/");
+                    await serverStatus.CheckAsync(settings?.ServerBaseUrl ?? "http://localhost:9000/");
                 }
                 finally
                 {
