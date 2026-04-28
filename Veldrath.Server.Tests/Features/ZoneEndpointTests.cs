@@ -75,4 +75,20 @@ public class ZoneEndpointTests(WebAppFactory factory)
         var response = await anonClient.GetAsync("/api/zones");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
+
+    [Fact]
+    public async Task GetZoneById_Should_Return_404_For_DevOnly_Zone()
+    {
+        // Dev-only zones must never be reachable through the public API
+        var response = await _client.GetAsync("/api/zones/playground");
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetZoneLocations_Should_Return_404_For_DevOnly_Zone()
+    {
+        // Location list for a dev zone must also be blocked from the public API
+        var response = await _client.GetAsync("/api/zones/playground/locations");
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
 }

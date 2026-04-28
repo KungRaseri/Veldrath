@@ -124,6 +124,7 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifeti
         using var scope = Services.CreateScope();
         var sp = scope.ServiceProvider;
         await DatabaseSeeder.SeedApplicationDataAsync(sp);
+        await DatabaseSeeder.SeedAsync(sp);
         await DatabaseSeeder.SeedRolesAsync(sp);
         await Services.InitializeCatalogsAsync();
     }

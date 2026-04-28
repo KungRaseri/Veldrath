@@ -22,4 +22,7 @@ public interface IZoneLocationRepository
 
     /// <summary>Returns only hidden active zone locations in the given zone (used for discovery checks).</summary>
     Task<List<ZoneLocationEntry>> GetHiddenByZoneIdAsync(string zoneId);
+
+    /// <summary>Returns all active zone locations in the given zone, including hidden ones. For dev tooling use only.</summary>
+    Task<List<ZoneLocationEntry>> GetAllByZoneIdAsync(string zoneId);
 }

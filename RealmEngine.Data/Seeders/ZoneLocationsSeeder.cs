@@ -504,7 +504,128 @@ public static class ZoneLocationsSeeder
                 RarityWeight = 20, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 4, DangerLevel = 10, Population = 10, MinLevel = 28, MaxLevel = 30 },
                 Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest" },
-            }
+            },
+
+            // ── Dev playground (IsDevOnly zone) ────────────────────────────────
+            // One representative location per mechanic. Never returned by public APIs.
+
+            // Town — hub / orientation
+            new ZoneLocation
+            {
+                Slug = "playground-square",    DisplayName = "Dev Square",
+                ZoneId = "playground",         TypeKey = "locations",
+                RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats  = new() { Size = 3, DangerLevel = 0, Population = 10, MinLevel = 0 },
+                Traits = new() { IsTown = true },
+            },
+            // Town — inn (rest / health+mana restore)
+            new ZoneLocation
+            {
+                Slug = "playground-tavern",    DisplayName = "Dev Tavern",
+                ZoneId = "playground",         TypeKey = "locations",
+                RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats  = new() { Size = 2, DangerLevel = 0, Population = 8, MinLevel = 0 },
+                Traits = new() { IsTown = true, IsIndoor = true },
+            },
+            // Town — merchant (buy / sell)
+            new ZoneLocation
+            {
+                Slug = "playground-shop",      DisplayName = "Dev Shop",
+                ZoneId = "playground",         TypeKey = "locations",
+                RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats  = new() { Size = 2, DangerLevel = 0, Population = 5, MinLevel = 0 },
+                Traits = new() { IsTown = true, HasMerchant = true },
+            },
+            // Crafting — forge (craft / upgrade items)
+            new ZoneLocation
+            {
+                Slug = "playground-forge",     DisplayName = "Dev Forge",
+                ZoneId = "playground",         TypeKey = "locations",
+                RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats  = new() { Size = 2, DangerLevel = 0, Population = 4, MinLevel = 0 },
+                Traits = new() { IsTown = true, IsIndoor = true },
+            },
+            // Wilderness — combat encounters
+            new ZoneLocation
+            {
+                Slug = "playground-clearing",  DisplayName = "Dev Clearing",
+                ZoneId = "playground",         TypeKey = "environments",
+                RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats  = new() { Size = 6, DangerLevel = 5, Population = 20, MinLevel = 0, MaxLevel = 30 },
+                Traits = new() { IsIndoor = false },
+            },
+            // Wilderness — harvest nodes / resource gathering
+            new ZoneLocation
+            {
+                Slug = "playground-grove",     DisplayName = "Dev Grove",
+                ZoneId = "playground",         TypeKey = "environments",
+                RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats  = new() { Size = 4, DangerLevel = 3, Population = 10, MinLevel = 0, MaxLevel = 30 },
+                Traits = new() { IsIndoor = false },
+            },
+            // Dungeon — dungeon enter / boss encounter
+            new ZoneLocation
+            {
+                Slug = "playground-dungeon-gate", DisplayName = "Dev Dungeon Gate",
+                ZoneId = "playground",            TypeKey = "dungeons",
+                RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats  = new() { Size = 5, DangerLevel = 7, Population = 15, MinLevel = 0, MaxLevel = 30 },
+                Traits = new() { IsDungeon = true },
+            },
+            // NPC dialogue
+            new ZoneLocation
+            {
+                Slug = "playground-npc-hall",  DisplayName = "Dev NPC Hall",
+                ZoneId = "playground",         TypeKey = "locations",
+                RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats  = new() { Size = 3, DangerLevel = 0, Population = 15, MinLevel = 0 },
+                Traits = new() { IsTown = true, IsIndoor = true },
+            },
+            // Hidden — passive skill check (DC 5)
+            new ZoneLocation
+            {
+                Slug = "playground-hidden-skill", DisplayName = "Hidden: Passive Skill Check",
+                ZoneId = "playground",            TypeKey = "locations",
+                RarityWeight = 40, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats  = new() { Size = 2, DangerLevel = 2, Population = 0, MinLevel = 0 },
+                Traits = new() { IsHidden = true, UnlockType = "skill_check_passive", DiscoverThreshold = 5 },
+            },
+            // Hidden — active skill check (DC 8)
+            new ZoneLocation
+            {
+                Slug = "playground-hidden-active", DisplayName = "Hidden: Active Skill Check",
+                ZoneId = "playground",             TypeKey = "locations",
+                RarityWeight = 30, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats  = new() { Size = 2, DangerLevel = 2, Population = 0, MinLevel = 0 },
+                Traits = new() { IsHidden = true, UnlockType = "skill_check_active", UnlockKey = "perception", DiscoverThreshold = 8 },
+            },
+            // Hidden — quest-gated (placeholder quest slug "dev-quest")
+            new ZoneLocation
+            {
+                Slug = "playground-hidden-quest", DisplayName = "Hidden: Quest Gate",
+                ZoneId = "playground",            TypeKey = "locations",
+                RarityWeight = 20, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats  = new() { Size = 2, DangerLevel = 1, Population = 0, MinLevel = 0 },
+                Traits = new() { IsHidden = true, UnlockType = "quest", UnlockKey = "dev-quest" },
+            },
+            // Hidden — item-gated (placeholder item slug "skeleton-key")
+            new ZoneLocation
+            {
+                Slug = "playground-hidden-item",  DisplayName = "Hidden: Item Check",
+                ZoneId = "playground",            TypeKey = "locations",
+                RarityWeight = 20, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats  = new() { Size = 2, DangerLevel = 1, Population = 0, MinLevel = 0 },
+                Traits = new() { IsHidden = true, UnlockType = "item", UnlockKey = "skeleton-key" },
+            },
+            // Hidden — achievement-gated (placeholder achievement slug "dev-achieve")
+            new ZoneLocation
+            {
+                Slug = "playground-hidden-achievement", DisplayName = "Hidden: Achievement",
+                ZoneId = "playground",                  TypeKey = "locations",
+                RarityWeight = 20, IsActive = true, Version = 1, UpdatedAt = now,
+                Stats  = new() { Size = 2, DangerLevel = 1, Population = 0, MinLevel = 0 },
+                Traits = new() { IsHidden = true, UnlockType = "achievement", UnlockKey = "dev-achieve" },
+            },
     ];
 
 }

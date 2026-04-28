@@ -59,9 +59,13 @@ public static class ZoneEndpoints
         group.MapGet("/{id}/locations", async (
             string id,
             Guid? characterId,
+            IZoneRepository zones,
             IZoneLocationRepository locations,
             ICharacterUnlockedLocationRepository? unlockedRepo) =>
         {
+            var zone = await zones.GetByIdAsync(id);
+            if (zone is null) return Results.NotFound();
+
             if (characterId.HasValue && unlockedRepo is not null)
             {
                 var unlocked = await unlockedRepo.GetUnlockedSlugsAsync(characterId.Value);

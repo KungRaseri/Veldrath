@@ -7,15 +7,19 @@ public class ZoneRepository(ApplicationDbContext db) : IZoneRepository
 {
     /// <inheritdoc/>
     public Task<List<Zone>> GetAllAsync() =>
-        db.Zones.OrderBy(z => z.IsStarter ? 0 : 1).ThenBy(z => z.Name).ToListAsync();
+        db.Zones.Where(z => !z.IsDevOnly).OrderBy(z => z.IsStarter ? 0 : 1).ThenBy(z => z.Name).ToListAsync();
 
     /// <inheritdoc/>
     public Task<Zone?> GetByIdAsync(string zoneId) =>
-        db.Zones.FirstOrDefaultAsync(z => z.Id == zoneId);
+        db.Zones.FirstOrDefaultAsync(z => z.Id == zoneId && !z.IsDevOnly);
 
     /// <inheritdoc/>
     public Task<List<Zone>> GetByRegionIdAsync(string regionId) =>
-        db.Zones.Where(z => z.RegionId == regionId).OrderBy(z => z.MinLevel).ThenBy(z => z.Name).ToListAsync();
+        db.Zones.Where(z => z.RegionId == regionId && !z.IsDevOnly).OrderBy(z => z.MinLevel).ThenBy(z => z.Name).ToListAsync();
+
+    /// <inheritdoc/>
+    public Task<List<Zone>> GetAllIncludingDevAsync() =>
+        db.Zones.OrderBy(z => z.IsDevOnly ? 1 : 0).ThenBy(z => z.IsStarter ? 0 : 1).ThenBy(z => z.Name).ToListAsync();
 }
 
 public class PlayerSessionRepository(ApplicationDbContext db) : IPlayerSessionRepository
