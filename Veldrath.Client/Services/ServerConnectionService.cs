@@ -55,6 +55,7 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
     private IHubConnection? _connection;
     private ConnectionState _state = ConnectionState.Disconnected;
     private System.Timers.Timer? _pingTimer;
+    private int _connectionGeneration;
 
     public ConnectionState State
     {
@@ -89,10 +90,18 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
 
     public async Task ConnectAsync(string serverUrl, CancellationToken cancellationToken = default)
     {
-        if (State == ConnectionState.Connected) return;
+        if (State is ConnectionState.Connected or ConnectionState.Connecting or ConnectionState.Reconnecting)
+            return;
 
+        var generation = Interlocked.Increment(ref _connectionGeneration);
         State = ConnectionState.Connecting;
         _logger.LogInformation("Connecting to server: {Url}", serverUrl);
+
+        if (_connection is not null)
+        {
+            await _connection.DisposeAsync();
+            _connection = null;
+        }
 
         _connection = _connectionFactory.CreateConnection(
             $"{serverUrl}/hubs/game",
@@ -119,6 +128,7 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
 
         _connection.Closed += async (error) =>
         {
+            if (generation != _connectionGeneration) return;
             StopPingTimer();
             State = ConnectionState.Disconnected;
             _logger.LogWarning(error, "Connection closed");
@@ -128,6 +138,7 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
 
         _connection.Reconnecting += (error) =>
         {
+            if (generation != _connectionGeneration) return Task.CompletedTask;
             StopPingTimer();
             State = ConnectionState.Reconnecting;
             _logger.LogWarning(error, "Connection reconnecting");
@@ -136,6 +147,7 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
 
         _connection.Reconnected += (connectionId) =>
         {
+            if (generation != _connectionGeneration) return Task.CompletedTask;
             State = ConnectionState.Connected;
             StartPingTimer();
             _logger.LogInformation("Reconnected: {ConnectionId}", connectionId);
@@ -159,12 +171,14 @@ public class ServerConnectionService : IServerConnectionService, IAsyncDisposabl
 
     public async Task DisconnectAsync()
     {
-        if (_connection is not null)
-        {
-            StopPingTimer();
-            await _connection.StopAsync();
-            State = ConnectionState.Disconnected;
-        }
+        if (_connection is null) return;
+        StopPingTimer();
+        Interlocked.Increment(ref _connectionGeneration);
+        var conn = _connection;
+        _connection = null;
+        await conn.StopAsync();
+        await conn.DisposeAsync();
+        State = ConnectionState.Disconnected;
     }
 
     public async Task SendCommandAsync(string method)

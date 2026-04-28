@@ -103,20 +103,40 @@ public class FakeHubConnection : IHubConnection
 }
 
 /// <summary>
-/// Factory that always returns the same pre-wired <see cref="FakeHubConnection"/>.
+/// Factory that returns the pre-wired <see cref="FakeHubConnection"/> on the first call
+/// and fresh instances for subsequent calls, enabling retry tests.
 /// </summary>
 public class FakeHubConnectionFactory : IHubConnectionFactory
 {
-    public FakeHubConnection Connection { get; } = new();
+    private readonly FakeHubConnection _firstConnection = new();
+    private readonly List<FakeHubConnection> _allCreated = [];
+    private bool _firstCallMade;
+
+    /// <summary>Returns the first connection created (or the pre-seeded instance if none yet).</summary>
+    public FakeHubConnection Connection => _allCreated.Count > 0 ? _allCreated[0] : _firstConnection;
+
+    /// <summary>All connections created by this factory, in creation order.</summary>
+    public IReadOnlyList<FakeHubConnection> AllCreated => _allCreated;
+
+    /// <summary>The hub URL passed to the last <see cref="CreateConnection"/> call.</summary>
     public string? LastCreatedUrl { get; private set; }
 
     /// <summary>The access-token provider delegate passed to the last <see cref="CreateConnection"/> call.</summary>
     public Func<Task<string?>>? LastAccessTokenProvider { get; private set; }
 
+    /// <inheritdoc/>
     public IHubConnection CreateConnection(string hubUrl, Func<Task<string?>> accessTokenProvider)
     {
         LastCreatedUrl = hubUrl;
         LastAccessTokenProvider = accessTokenProvider;
-        return Connection;
+        if (!_firstCallMade)
+        {
+            _firstCallMade = true;
+            _allCreated.Add(_firstConnection);
+            return _firstConnection;
+        }
+        var conn = new FakeHubConnection();
+        _allCreated.Add(conn);
+        return conn;
     }
 }
