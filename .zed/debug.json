@@ -1,0 +1,71 @@
+[
+  {
+    "label": "Veldrath Server (Debug)",
+    "adapter": "netcoredbg",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/Veldrath.Server/bin/Debug/net10.0/Veldrath.Server.dll",
+    "cwd": "$ZED_WORKTREE_ROOT/Veldrath.Server",
+    "env": {
+      "ASPNETCORE_ENVIRONMENT": "Development"
+    },
+    "build": "build-veldrath-server"
+  },
+  {
+    "label": "Veldrath Client (Debug)",
+    "adapter": "netcoredbg",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/Veldrath.Client/bin/Debug/net10.0/Veldrath.Client.dll",
+    "cwd": "$ZED_WORKTREE_ROOT/Veldrath.Client",
+    "env": {
+      "DOTNET_ENVIRONMENT": "Development",
+      "AVALONIA_DIAGNOSTICS": "1"
+    },
+    "build": "build-veldrath-client"
+  },
+  {
+    "label": "Veldrath Discord (Debug) — start Server first",
+    "adapter": "netcoredbg",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/Veldrath.Discord/bin/Debug/net10.0/Veldrath.Discord.dll",
+    "cwd": "$ZED_WORKTREE_ROOT/Veldrath.Discord",
+    "env": {
+      "DOTNET_ENVIRONMENT": "Development"
+    },
+    "build": "build-veldrath-discord"
+  },
+  {
+    "label": "Veldrath Web (Debug) — start Server first",
+    "adapter": "netcoredbg",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/Veldrath.Web/bin/Debug/net10.0/Veldrath.Web.dll",
+    "cwd": "$ZED_WORKTREE_ROOT/Veldrath.Web",
+    "env": {
+      "ASPNETCORE_ENVIRONMENT": "Development"
+    },
+    "build": "build-veldrath-web"
+  },
+  {
+    "label": "RealmFoundry (Debug)",
+    "adapter": "netcoredbg",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/RealmFoundry/bin/Debug/net10.0/RealmFoundry.dll",
+    "cwd": "$ZED_WORKTREE_ROOT/RealmFoundry",
+    "env": {
+      "ASPNETCORE_ENVIRONMENT": "Development"
+    },
+    "build": "build-realmfoundry"
+  },
+  {
+    "label": "RealmForge (Debug)",
+    "adapter": "netcoredbg",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/RealmForge/bin/Debug/net10.0/RealmForge.dll",
+    "cwd": "$ZED_WORKTREE_ROOT/RealmForge",
+    "build": "build-realmforge"
+  },
+  {
+    "label": ".NET Core Attach",
+    "adapter": "netcoredbg",
+    "request": "attach"
+  }
+]

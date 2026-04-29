@@ -1,0 +1,253 @@
+[
+  // ── Build ─────────────────────────────────────────────────────────────────
+  {
+    "label": "build",
+    "command": "dotnet build $ZED_WORKTREE_ROOT/Realm.Full.slnx",
+    "reveal": "no_focus"
+  },
+  {
+    "label": "build-realmforge",
+    "command": "dotnet build $ZED_WORKTREE_ROOT/RealmForge/RealmForge.csproj",
+    "reveal": "no_focus"
+  },
+  {
+    "label": "build-realmfoundry",
+    "command": "dotnet build $ZED_WORKTREE_ROOT/RealmFoundry/RealmFoundry.csproj",
+    "reveal": "no_focus"
+  },
+  {
+    "label": "build-veldrath-server",
+    "command": "dotnet build $ZED_WORKTREE_ROOT/Veldrath.Server/Veldrath.Server.csproj",
+    "reveal": "no_focus"
+  },
+  {
+    "label": "build-veldrath-client",
+    "command": "dotnet build $ZED_WORKTREE_ROOT/Veldrath.Client/Veldrath.Client.csproj",
+    "reveal": "no_focus"
+  },
+  {
+    "label": "build-veldrath-discord",
+    "command": "dotnet build $ZED_WORKTREE_ROOT/Veldrath.Discord/Veldrath.Discord.csproj",
+    "reveal": "no_focus"
+  },
+  {
+    "label": "build-veldrath-web",
+    "command": "dotnet build $ZED_WORKTREE_ROOT/Veldrath.Web/Veldrath.Web.csproj",
+    "reveal": "no_focus"
+  },
+  {
+    "label": "build-veldrath-assets",
+    "command": "dotnet build $ZED_WORKTREE_ROOT/Veldrath.Assets/Veldrath.Assets.csproj",
+    "reveal": "no_focus"
+  },
+  // ── Clean / Rebuild ───────────────────────────────────────────────────────
+  {
+    "label": "clean",
+    "command": "dotnet clean $ZED_WORKTREE_ROOT/Realm.Full.slnx",
+    "reveal": "no_focus"
+  },
+  {
+    "label": "rebuild",
+    "command": "dotnet clean $ZED_WORKTREE_ROOT/Realm.Full.slnx && dotnet build $ZED_WORKTREE_ROOT/Realm.Full.slnx",
+    "reveal": "always"
+  },
+  // ── Run ───────────────────────────────────────────────────────────────────
+  {
+    "label": "run-veldrath-server",
+    "command": "dotnet run --project $ZED_WORKTREE_ROOT/Veldrath.Server/Veldrath.Server.csproj",
+    "reveal": "always",
+    "use_new_terminal": true,
+    "env": {
+      "ASPNETCORE_ENVIRONMENT": "Development"
+    }
+  },
+  {
+    "label": "run-veldrath-client",
+    "command": "dotnet run --project $ZED_WORKTREE_ROOT/Veldrath.Client/Veldrath.Client.csproj",
+    "reveal": "always",
+    "use_new_terminal": true
+  },
+  {
+    "label": "run-veldrath-client-debug",
+    "command": "dotnet run --project $ZED_WORKTREE_ROOT/Veldrath.Client/Veldrath.Client.csproj --configuration Debug",
+    "reveal": "always",
+    "use_new_terminal": true,
+    "env": {
+      "DOTNET_ENVIRONMENT": "Development",
+      "AVALONIA_DIAGNOSTICS": "1"
+    }
+  },
+  {
+    "label": "run-two-veldrath-clients",
+    "command": "Start-Process dotnet -ArgumentList 'run --project $ZED_WORKTREE_ROOT/Veldrath.Client/Veldrath.Client.csproj'; Start-Process dotnet -ArgumentList 'run --project $ZED_WORKTREE_ROOT/Veldrath.Client/Veldrath.Client.csproj'",
+    "reveal": "always",
+    "use_new_terminal": true
+  },
+  {
+    "label": "run-veldrath-discord",
+    "command": "dotnet run --project $ZED_WORKTREE_ROOT/Veldrath.Discord/Veldrath.Discord.csproj",
+    "reveal": "always",
+    "use_new_terminal": true,
+    "env": {
+      "DOTNET_ENVIRONMENT": "Development"
+    }
+  },
+  {
+    "label": "run-veldrath-web",
+    "command": "dotnet run --project $ZED_WORKTREE_ROOT/Veldrath.Web/Veldrath.Web.csproj",
+    "reveal": "always",
+    "use_new_terminal": true,
+    "env": {
+      "ASPNETCORE_ENVIRONMENT": "Development"
+    }
+  },
+  {
+    "label": "run-realmforge",
+    "command": "dotnet run --project $ZED_WORKTREE_ROOT/RealmForge/RealmForge.csproj",
+    "reveal": "always",
+    "use_new_terminal": true
+  },
+  {
+    "label": "run-realmfoundry",
+    "command": "dotnet run --project $ZED_WORKTREE_ROOT/RealmFoundry/RealmFoundry.csproj",
+    "reveal": "always",
+    "use_new_terminal": true,
+    "env": {
+      "ASPNETCORE_ENVIRONMENT": "Development"
+    }
+  },
+  // ── Watch ─────────────────────────────────────────────────────────────────
+  {
+    "label": "watch-realmforge",
+    "command": "dotnet watch run --project $ZED_WORKTREE_ROOT/RealmForge/RealmForge.csproj --non-interactive",
+    "reveal": "always",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": true,
+    "env": {
+      "DOTNET_WATCH_RESTART_ON_RUDE_EDIT": "true"
+    }
+  },
+  {
+    "label": "watch-realmfoundry",
+    "command": "dotnet watch run --project $ZED_WORKTREE_ROOT/RealmFoundry/RealmFoundry.csproj --non-interactive",
+    "reveal": "always",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": true,
+    "env": {
+      "DOTNET_WATCH_RESTART_ON_RUDE_EDIT": "true"
+    }
+  },
+  // ── Test ──────────────────────────────────────────────────────────────────
+  {
+    "label": "test",
+    "command": "dotnet test $ZED_WORKTREE_ROOT/Realm.Full.slnx --filter Category!=UI --verbosity normal --collect 'XPlat Code Coverage' --settings $ZED_WORKTREE_ROOT/coverage.runsettings --results-directory $ZED_WORKTREE_ROOT/coverage-results",
+    "reveal": "always"
+  },
+  {
+    "label": "test-shared",
+    "command": "dotnet test $ZED_WORKTREE_ROOT/RealmEngine.Shared.Tests/RealmEngine.Shared.Tests.csproj --collect 'XPlat Code Coverage' --settings $ZED_WORKTREE_ROOT/coverage.runsettings --results-directory $ZED_WORKTREE_ROOT/coverage-results",
+    "reveal": "always"
+  },
+  {
+    "label": "test-core",
+    "command": "dotnet test $ZED_WORKTREE_ROOT/RealmEngine.Core.Tests/RealmEngine.Core.Tests.csproj --collect 'XPlat Code Coverage' --settings $ZED_WORKTREE_ROOT/coverage.runsettings --results-directory $ZED_WORKTREE_ROOT/coverage-results",
+    "reveal": "always"
+  },
+  {
+    "label": "test-data",
+    "command": "dotnet test $ZED_WORKTREE_ROOT/RealmEngine.Data.Tests/RealmEngine.Data.Tests.csproj --collect 'XPlat Code Coverage' --settings $ZED_WORKTREE_ROOT/coverage.runsettings --results-directory $ZED_WORKTREE_ROOT/coverage-results",
+    "reveal": "always"
+  },
+  {
+    "label": "test-realmforge-unit",
+    "command": "dotnet test $ZED_WORKTREE_ROOT/RealmForge.Tests/RealmForge.Tests.csproj --filter Category=ViewModel --collect 'XPlat Code Coverage' --settings $ZED_WORKTREE_ROOT/coverage.runsettings --results-directory $ZED_WORKTREE_ROOT/coverage-results",
+    "reveal": "always"
+  },
+  {
+    "label": "test-realmforge-ui",
+    "command": "dotnet test $ZED_WORKTREE_ROOT/RealmForge.Tests/RealmForge.Tests.csproj --filter Category=UI --collect 'XPlat Code Coverage' --settings $ZED_WORKTREE_ROOT/coverage.runsettings --results-directory $ZED_WORKTREE_ROOT/coverage-results",
+    "reveal": "always"
+  },
+  {
+    "label": "test-realmforge-integration",
+    "command": "dotnet test $ZED_WORKTREE_ROOT/RealmForge.Tests/RealmForge.Tests.csproj --filter Category=Integration --collect 'XPlat Code Coverage' --settings $ZED_WORKTREE_ROOT/coverage.runsettings --results-directory $ZED_WORKTREE_ROOT/coverage-results",
+    "reveal": "always"
+  },
+  {
+    "label": "test-realmforge-all",
+    "command": "dotnet test $ZED_WORKTREE_ROOT/RealmForge.Tests/RealmForge.Tests.csproj --collect 'XPlat Code Coverage' --settings $ZED_WORKTREE_ROOT/coverage.runsettings --results-directory $ZED_WORKTREE_ROOT/coverage-results",
+    "reveal": "always"
+  },
+  {
+    "label": "test-realmfoundry",
+    "command": "dotnet test $ZED_WORKTREE_ROOT/RealmFoundry.Tests/RealmFoundry.Tests.csproj --verbosity normal --collect 'XPlat Code Coverage' --settings $ZED_WORKTREE_ROOT/coverage.runsettings --results-directory $ZED_WORKTREE_ROOT/coverage-results",
+    "reveal": "always"
+  },
+  {
+    "label": "test-veldrath-server",
+    "command": "dotnet test $ZED_WORKTREE_ROOT/Veldrath.Server.Tests/Veldrath.Server.Tests.csproj --verbosity normal --collect 'XPlat Code Coverage' --settings $ZED_WORKTREE_ROOT/coverage.runsettings --results-directory $ZED_WORKTREE_ROOT/coverage-results",
+    "reveal": "always"
+  },
+  {
+    "label": "test-veldrath-client",
+    "command": "dotnet test $ZED_WORKTREE_ROOT/Veldrath.Client.Tests/Veldrath.Client.Tests.csproj --filter Category!=UI --verbosity normal --collect 'XPlat Code Coverage' --settings $ZED_WORKTREE_ROOT/coverage.runsettings --results-directory $ZED_WORKTREE_ROOT/coverage-results",
+    "reveal": "always"
+  },
+  {
+    "label": "test-veldrath-discord",
+    "command": "dotnet test $ZED_WORKTREE_ROOT/Veldrath.Discord.Tests/Veldrath.Discord.Tests.csproj --verbosity normal --collect 'XPlat Code Coverage' --settings $ZED_WORKTREE_ROOT/coverage.runsettings --results-directory $ZED_WORKTREE_ROOT/coverage-results",
+    "reveal": "always"
+  },
+  {
+    "label": "test-veldrath-all",
+    "command": "dotnet test $ZED_WORKTREE_ROOT/Veldrath.slnx --filter Category!=UI --verbosity normal --collect 'XPlat Code Coverage' --settings $ZED_WORKTREE_ROOT/coverage.runsettings --results-directory $ZED_WORKTREE_ROOT/coverage-results",
+    "reveal": "always"
+  },
+  // ── Coverage ──────────────────────────────────────────────────────────────
+  {
+    "label": "test-with-coverage",
+    "command": "dotnet test $ZED_WORKTREE_ROOT/Realm.Full.slnx --filter Category!=UI --collect 'XPlat Code Coverage' --settings $ZED_WORKTREE_ROOT/coverage.runsettings --results-directory $ZED_WORKTREE_ROOT/coverage-results",
+    "reveal": "always"
+  },
+  {
+    "label": "generate-coverage-report",
+    "command": "powershell -File $ZED_WORKTREE_ROOT/scripts/generate-coverage-report.ps1",
+    "reveal": "always"
+  },
+  {
+    "label": "test-coverage",
+    "command": "dotnet test $ZED_WORKTREE_ROOT/Realm.Full.slnx --filter Category!=UI --collect 'XPlat Code Coverage' --settings $ZED_WORKTREE_ROOT/coverage.runsettings --results-directory $ZED_WORKTREE_ROOT/coverage-results && powershell -File $ZED_WORKTREE_ROOT/scripts/generate-coverage-report.ps1",
+    "reveal": "always"
+  },
+  // ── Utilities ─────────────────────────────────────────────────────────────
+  {
+    "label": "generate-version",
+    "command": "powershell -File $ZED_WORKTREE_ROOT/scripts/generate-version.ps1 -OutputFormat string",
+    "reveal": "always"
+  },
+  {
+    "label": "download-assets",
+    "command": "powershell -File $ZED_WORKTREE_ROOT/scripts/download-assets.ps1",
+    "reveal": "always"
+  },
+  // ── Docker ────────────────────────────────────────────────────────────────
+  {
+    "label": "docker-compose-up",
+    "command": "docker compose up --build -d",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "use_new_terminal": true
+  },
+  {
+    "label": "docker-compose-up-db",
+    "command": "docker compose up postgres -d",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "no_focus"
+  },
+  {
+    "label": "docker-compose-down",
+    "command": "docker compose down",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "no_focus"
+  }
+]
