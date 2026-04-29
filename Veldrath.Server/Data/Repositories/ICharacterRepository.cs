@@ -11,6 +11,9 @@ public interface ICharacterRepository
     /// <summary>Returns the character with the given ID, or <see langword="null"/> if not found.</summary>
     Task<Character?> GetByIdAsync(Guid id, CancellationToken ct = default);
 
+    /// <summary>Returns the non-deleted character with the given display name, or <see langword="null"/> if not found.</summary>
+    Task<Character?> GetByNameAsync(string name, CancellationToken ct = default);
+
     /// <summary>Returns the most recently played non-deleted character for an account.</summary>
     Task<Character?> GetLastPlayedAsync(Guid accountId, CancellationToken ct = default);
 

@@ -1,4 +1,5 @@
-﻿using System.Reactive.Threading.Tasks;
+using System.Reactive.Threading.Tasks;
+using Veldrath.Client;
 using Veldrath.Client.Services;
 using Veldrath.Client.Tests.Infrastructure;
 using Veldrath.Client.ViewModels;
@@ -10,9 +11,9 @@ namespace Veldrath.Client.Tests.ViewModels;
 public class GameViewModelChatTests : TestBase
 {
     private static GameViewModel MakeVm() =>
-        new(new FakeServerConnectionService(), new FakeZoneService(), new TokenStore(), new FakeNavigationService());
+        new(new FakeServerConnectionService(), new FakeZoneService(), new TokenStore(), new FakeNavigationService(), new ClientSettings("http://localhost"));
 
-    // ── Initial state ────────────────────────────────────────────────────────
+    // -- Initial state --------------------------------------------------------
 
     [Fact]
     public void ChatTabs_Should_Start_With_Global_And_Zone()
@@ -31,7 +32,7 @@ public class GameViewModelChatTests : TestBase
         vm.ActiveChatTab.Should().BeOfType<GlobalChatTabViewModel>();
     }
 
-    // ── OnChatMessageReceived routing ────────────────────────────────────────
+    // -- OnChatMessageReceived routing ----------------------------------------
 
     [Fact]
     public void OnChatMessageReceived_Global_Routes_Only_To_GlobalTab()
@@ -39,7 +40,7 @@ public class GameViewModelChatTests : TestBase
         var vm = MakeVm();
         var zoneTab = (ZoneChatTabViewModel)vm.ChatTabs[1];
 
-        vm.OnChatMessageReceived("Global", "Alice", "Hello", DateTimeOffset.UtcNow);
+        vm.OnChatMessageReceived(Guid.Empty, "Global", "Alice", "Hello", DateTimeOffset.UtcNow);
 
         var globalTab = (GlobalChatTabViewModel)vm.ChatTabs[0];
         globalTab.Messages.Should().ContainSingle();
@@ -52,7 +53,7 @@ public class GameViewModelChatTests : TestBase
         var vm = MakeVm();
         var globalTab = (GlobalChatTabViewModel)vm.ChatTabs[0];
 
-        vm.OnChatMessageReceived("Zone", "Bob", "Hey", DateTimeOffset.UtcNow);
+        vm.OnChatMessageReceived(Guid.Empty, "Zone", "Bob", "Hey", DateTimeOffset.UtcNow);
 
         var zoneTab = (ZoneChatTabViewModel)vm.ChatTabs[1];
         zoneTab.Messages.Should().ContainSingle();
@@ -64,9 +65,9 @@ public class GameViewModelChatTests : TestBase
     {
         var vm = MakeVm();
         // Open a whisper tab so we have 3 tabs to test broadcast
-        vm.OnChatMessageReceived("Whisper", "Alice", "hi", DateTimeOffset.UtcNow);
+        vm.OnChatMessageReceived(Guid.Empty, "Whisper", "Alice", "hi", DateTimeOffset.UtcNow);
 
-        vm.OnChatMessageReceived("System", "Server", "Maintenance soon.", DateTimeOffset.UtcNow);
+        vm.OnChatMessageReceived(Guid.Empty, "System", "Server", "Maintenance soon.", DateTimeOffset.UtcNow);
 
         foreach (var tab in vm.ChatTabs)
             tab.Messages.Should().Contain(m => m.Channel == "System");
@@ -77,7 +78,7 @@ public class GameViewModelChatTests : TestBase
     {
         var vm = MakeVm();
 
-        vm.OnChatMessageReceived("Whisper", "Carol", "psst", DateTimeOffset.UtcNow);
+        vm.OnChatMessageReceived(Guid.Empty, "Whisper", "Carol", "psst", DateTimeOffset.UtcNow);
 
         var whisperTab = vm.ChatTabs.OfType<WhisperChatTabViewModel>().Single();
         whisperTab.TargetName.Should().Be("Carol");
@@ -90,13 +91,13 @@ public class GameViewModelChatTests : TestBase
         // When the server echoes an outgoing whisper it prefixes sender with "To Alice"
         var vm = MakeVm();
 
-        vm.OnChatMessageReceived("Whisper", "To Alice", "message body", DateTimeOffset.UtcNow);
+        vm.OnChatMessageReceived(Guid.Empty, "Whisper", "To Alice", "message body", DateTimeOffset.UtcNow);
 
         var whisperTab = vm.ChatTabs.OfType<WhisperChatTabViewModel>().Single();
         whisperTab.TargetName.Should().Be("Alice");
     }
 
-    // ── GetOrCreateWhisperTab ────────────────────────────────────────────────
+    // -- GetOrCreateWhisperTab ------------------------------------------------
 
     [Fact]
     public void StartWhisperFromPlayer_Creates_Tab_And_Activates_It()
@@ -105,7 +106,7 @@ public class GameViewModelChatTests : TestBase
 
         vm.OnPlayerEntered("Dave");
         // Simulate clicking the Whisper button by raising the message directly
-        vm.OnChatMessageReceived("Whisper", "Dave", "yo", DateTimeOffset.UtcNow);
+        vm.OnChatMessageReceived(Guid.Empty, "Whisper", "Dave", "yo", DateTimeOffset.UtcNow);
 
         var whisperTab = vm.ChatTabs.OfType<WhisperChatTabViewModel>()
                            .FirstOrDefault(t => t.TargetName == "Dave");
@@ -117,8 +118,8 @@ public class GameViewModelChatTests : TestBase
     {
         var vm = MakeVm();
 
-        vm.OnChatMessageReceived("Whisper", "Eve", "first", DateTimeOffset.UtcNow);
-        vm.OnChatMessageReceived("Whisper", "Eve", "second", DateTimeOffset.UtcNow);
+        vm.OnChatMessageReceived(Guid.Empty, "Whisper", "Eve", "first", DateTimeOffset.UtcNow);
+        vm.OnChatMessageReceived(Guid.Empty, "Whisper", "Eve", "second", DateTimeOffset.UtcNow);
 
         vm.ChatTabs.OfType<WhisperChatTabViewModel>().Should().ContainSingle(t => t.TargetName == "Eve");
     }
@@ -129,25 +130,25 @@ public class GameViewModelChatTests : TestBase
         var vm = MakeVm();
         var names = new[] { "A", "B", "C", "D", "E" };
         foreach (var name in names)
-            vm.OnChatMessageReceived("Whisper", name, "msg", DateTimeOffset.UtcNow);
+            vm.OnChatMessageReceived(Guid.Empty, "Whisper", name, "msg", DateTimeOffset.UtcNow);
 
         vm.ChatTabs.Should().HaveCount(7); // 2 fixed + 5 whisper
 
-        // Add a 6th whisper — should displace "A"
-        vm.OnChatMessageReceived("Whisper", "F", "msg", DateTimeOffset.UtcNow);
+        // Add a 6th whisper ï¿½ should displace "A"
+        vm.OnChatMessageReceived(Guid.Empty, "Whisper", "F", "msg", DateTimeOffset.UtcNow);
 
         vm.ChatTabs.Should().HaveCount(7);
         vm.ChatTabs.OfType<WhisperChatTabViewModel>().Select(t => t.TargetName)
             .Should().NotContain("A").And.Contain("F");
     }
 
-    // ── Tab close ────────────────────────────────────────────────────────────
+    // -- Tab close ------------------------------------------------------------
 
     [Fact]
     public void Closing_ActiveWhisperTab_Falls_Back_To_ZoneTab()
     {
         var vm = MakeVm();
-        vm.OnChatMessageReceived("Whisper", "Ghost", "boo", DateTimeOffset.UtcNow);
+        vm.OnChatMessageReceived(Guid.Empty, "Whisper", "Ghost", "boo", DateTimeOffset.UtcNow);
         var whisperTab = vm.ChatTabs.OfType<WhisperChatTabViewModel>().Single();
         vm.ActiveChatTab = whisperTab;
 
@@ -161,7 +162,7 @@ public class GameViewModelChatTests : TestBase
     public void Closing_InactiveWhisperTab_Does_Not_Change_ActiveTab()
     {
         var vm = MakeVm();
-        vm.OnChatMessageReceived("Whisper", "Hank", "hey", DateTimeOffset.UtcNow);
+        vm.OnChatMessageReceived(Guid.Empty, "Whisper", "Hank", "hey", DateTimeOffset.UtcNow);
         var whisperTab = vm.ChatTabs.OfType<WhisperChatTabViewModel>().Single();
         // Leave global as the active tab
         vm.ActiveChatTab.Should().BeOfType<GlobalChatTabViewModel>();
@@ -171,7 +172,7 @@ public class GameViewModelChatTests : TestBase
         vm.ActiveChatTab.Should().BeOfType<GlobalChatTabViewModel>();
     }
 
-    // ── SendChatCommand canExecute ────────────────────────────────────────────
+    // -- SendChatCommand canExecute --------------------------------------------
 
     [Fact]
     public void SendChatCommand_Cannot_Execute_When_Input_Empty()
@@ -197,7 +198,7 @@ public class GameViewModelChatTests : TestBase
         canExecute.Should().BeTrue();
     }
 
-    // ── /w prefix interception ───────────────────────────────────────────────
+    // -- /w prefix interception -----------------------------------------------
 
     [Fact]
     public void ChatInput_W_Prefix_Opens_WhisperTab_And_Strips_Prefix()
@@ -213,13 +214,13 @@ public class GameViewModelChatTests : TestBase
         vm.ChatInput.Should().Be("hello there");
     }
 
-    // ── Slash command routing ────────────────────────────────────────────────
+    // -- Slash command routing ------------------------------------------------
 
     [Fact]
     public async Task SendChat_SlashCommand_On_ZoneTab_Routes_To_SendChatMessage()
     {
         var fake = new FakeServerConnectionService();
-        var vm = new GameViewModel(fake, new FakeZoneService(), new TokenStore(), new FakeNavigationService());
+        var vm = new GameViewModel(fake, new FakeZoneService(), new TokenStore(), new FakeNavigationService(), new ClientSettings("http://localhost"));
         vm.ChatInput = "/roll 20";
 
         await vm.SendChatCommand.Execute().ToTask();
@@ -232,7 +233,7 @@ public class GameViewModelChatTests : TestBase
     public async Task SendChat_SlashCommand_On_GlobalTab_Routes_To_SendChatMessage()
     {
         var fake = new FakeServerConnectionService();
-        var vm = new GameViewModel(fake, new FakeZoneService(), new TokenStore(), new FakeNavigationService());
+        var vm = new GameViewModel(fake, new FakeZoneService(), new TokenStore(), new FakeNavigationService(), new ClientSettings("http://localhost"));
         vm.ActiveChatTab = vm.ChatTabs.OfType<GlobalChatTabViewModel>().First();
         vm.ChatInput = "/help";
 
@@ -246,7 +247,7 @@ public class GameViewModelChatTests : TestBase
     public async Task SendChat_NormalText_On_ZoneTab_Routes_To_SendZoneMessage()
     {
         var fake = new FakeServerConnectionService();
-        var vm = new GameViewModel(fake, new FakeZoneService(), new TokenStore(), new FakeNavigationService());
+        var vm = new GameViewModel(fake, new FakeZoneService(), new TokenStore(), new FakeNavigationService(), new ClientSettings("http://localhost"));
         vm.ActiveChatTab = vm.ChatTabs.OfType<ZoneChatTabViewModel>().First();
         vm.ChatInput = "Hello everyone!";
 
@@ -260,7 +261,7 @@ public class GameViewModelChatTests : TestBase
     public async Task SendChat_NormalText_On_GlobalTab_Routes_To_SendGlobalMessage()
     {
         var fake = new FakeServerConnectionService();
-        var vm = new GameViewModel(fake, new FakeZoneService(), new TokenStore(), new FakeNavigationService());
+        var vm = new GameViewModel(fake, new FakeZoneService(), new TokenStore(), new FakeNavigationService(), new ClientSettings("http://localhost"));
         vm.ActiveChatTab = vm.ChatTabs.OfType<GlobalChatTabViewModel>().First();
         vm.ChatInput = "Hello global!";
 
@@ -274,8 +275,8 @@ public class GameViewModelChatTests : TestBase
     public async Task SendChat_NormalText_On_WhisperTab_Routes_To_SendWhisper()
     {
         var fake = new FakeServerConnectionService();
-        var vm = new GameViewModel(fake, new FakeZoneService(), new TokenStore(), new FakeNavigationService());
-        vm.OnChatMessageReceived("Whisper", "Alice", "hi", DateTimeOffset.UtcNow);
+        var vm = new GameViewModel(fake, new FakeZoneService(), new TokenStore(), new FakeNavigationService(), new ClientSettings("http://localhost"));
+        vm.OnChatMessageReceived(Guid.Empty, "Whisper", "Alice", "hi", DateTimeOffset.UtcNow);
         var whisperTab = vm.ChatTabs.OfType<WhisperChatTabViewModel>().First();
         vm.ActiveChatTab = whisperTab;
         vm.ChatInput = "Hey Alice!";
@@ -290,7 +291,7 @@ public class GameViewModelChatTests : TestBase
     public async Task SendChat_SlashCommand_Clears_ChatInput_After_Send()
     {
         var fake = new FakeServerConnectionService();
-        var vm = new GameViewModel(fake, new FakeZoneService(), new TokenStore(), new FakeNavigationService());
+        var vm = new GameViewModel(fake, new FakeZoneService(), new TokenStore(), new FakeNavigationService(), new ClientSettings("http://localhost"));
         vm.ChatInput = "/afk brb";
 
         await vm.SendChatCommand.Execute().ToTask();
@@ -298,7 +299,7 @@ public class GameViewModelChatTests : TestBase
         vm.ChatInput.Should().BeEmpty();
     }
 
-    // ── Command suggestion popup ─────────────────────────────────────────────
+    // -- Command suggestion popup ---------------------------------------------
 
     [Fact]
     public void OnChatCommandsReceived_Populates_AvailableCommands()

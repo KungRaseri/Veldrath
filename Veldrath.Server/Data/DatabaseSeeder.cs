@@ -50,6 +50,8 @@ public static class DatabaseSeeder
     /// Seeds all RBAC roles and their default permission claims idempotently.
     /// Called by the test host after <c>EnsureCreated()</c> and by the production host
     /// after Postgres migrations are applied.
+    /// Stale claims (no longer in the expected set) are removed so that permission
+    /// renames are applied automatically on next startup without manual intervention.
     /// </summary>
     public static async Task SeedRolesAsync(IServiceProvider services)
     {
@@ -67,12 +69,20 @@ public static class DatabaseSeeder
                 .Select(c => c.Value)
                 .ToHashSet(StringComparer.Ordinal);
 
-            foreach (var perm in Roles.DefaultPermissionsFor(roleName))
+            var expectedPermissions = Roles.DefaultPermissionsFor(roleName).ToHashSet(StringComparer.Ordinal);
+
+            foreach (var perm in expectedPermissions)
             {
                 if (!existingPermissions.Contains(perm))
                     await roleManager.AddClaimAsync(role, new System.Security.Claims.Claim("permission", perm));
             }
+
+            foreach (var stale in existingPermissions.Where(p => !expectedPermissions.Contains(p)))
+            {
+                await roleManager.RemoveClaimAsync(role, new System.Security.Claims.Claim("permission", stale));
+            }
         }
     }
+
 
 }

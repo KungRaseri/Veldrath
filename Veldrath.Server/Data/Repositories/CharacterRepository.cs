@@ -22,6 +22,9 @@ public class CharacterRepository : ICharacterRepository
     public Task<Character?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         _db.Characters.FirstOrDefaultAsync(c => c.Id == id && c.DeletedAt == null, ct);
 
+    public Task<Character?> GetByNameAsync(string name, CancellationToken ct = default) =>
+        _db.Characters.FirstOrDefaultAsync(c => c.Name == name && c.DeletedAt == null, ct);
+
     public async Task<Character?> GetLastPlayedAsync(Guid accountId, CancellationToken ct = default)
     {
         var list = await _db.Characters

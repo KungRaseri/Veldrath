@@ -36,7 +36,7 @@ public static class Roles
         Admin => Permissions.All,
         Moderator =>
         [
-            Permissions.BanPlayers, Permissions.KickPlayers, Permissions.WarnPlayers,
+            Permissions.KickPlayers, Permissions.WarnPlayers, Permissions.MutePlayers,
             Permissions.ViewPlayers, Permissions.SendAnnouncements,
         ],
         Curator =>
@@ -46,7 +46,8 @@ public static class Roles
         GameMaster =>
         [
             Permissions.TeleportPlayers, Permissions.GiveItems, Permissions.RunEvents,
-            Permissions.ViewPlayers, Permissions.KickPlayers, Permissions.SendAnnouncements,
+            Permissions.ViewPlayers, Permissions.KickPlayers, Permissions.WarnPlayers,
+            Permissions.MutePlayers, Permissions.SuspendPlayers, Permissions.SendAnnouncements,
         ],
         Developer =>
         [

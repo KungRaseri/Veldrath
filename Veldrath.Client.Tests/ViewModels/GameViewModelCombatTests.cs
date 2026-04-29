@@ -1,4 +1,5 @@
-﻿using Veldrath.Client.Services;
+using Veldrath.Client;
+using Veldrath.Client.Services;
 using Veldrath.Client.Tests.Infrastructure;
 using Veldrath.Client.ViewModels;
 
@@ -8,9 +9,9 @@ namespace Veldrath.Client.Tests.ViewModels;
 public class GameViewModelCombatTests : TestBase
 {
     private static GameViewModel MakeVm() =>
-        new(new FakeServerConnectionService(), new FakeZoneService(), new TokenStore(), new FakeNavigationService());
+        new(new FakeServerConnectionService(), new FakeZoneService(), new TokenStore(), new FakeNavigationService(), new ClientSettings("http://localhost"));
 
-    // ── OnCombatStarted ──────────────────────────────────────────────────────
+    // -- OnCombatStarted ------------------------------------------------------
 
     [Fact]
     public void OnCombatStarted_Sets_Combat_State()
@@ -40,7 +41,7 @@ public class GameViewModelCombatTests : TestBase
         vm.EnemyAbilityNames.Should().ContainSingle().Which.Should().Be("Smash");
     }
 
-    // ── OnCombatTurn ────────────────────────────────────────────────────────
+    // -- OnCombatTurn --------------------------------------------------------
 
     [Fact]
     public void OnCombatTurn_Updates_Enemy_And_Player_Health()
@@ -96,7 +97,7 @@ public class GameViewModelCombatTests : TestBase
         vm.IsInCombat.Should().BeFalse();
     }
 
-    // ── OnCombatEnded ────────────────────────────────────────────────────────
+    // -- OnCombatEnded --------------------------------------------------------
 
     [Fact]
     public void OnCombatEnded_Clears_IsInCombat()
@@ -110,7 +111,7 @@ public class GameViewModelCombatTests : TestBase
         vm.IsInCombat.Should().BeFalse();
     }
 
-    // ── OnEnemySpawned ───────────────────────────────────────────────────────
+    // -- OnEnemySpawned -------------------------------------------------------
 
     [Fact]
     public void OnEnemySpawned_Adds_Enemy_To_SpawnedEnemies()
@@ -142,7 +143,7 @@ public class GameViewModelCombatTests : TestBase
         vm.SpawnedEnemies.Select(e => e.Id).Should().Contain([id1, id2]);
     }
 
-    // ── Enemy defeat in SpawnedEnemies roster ────────────────────────────────
+    // -- Enemy defeat in SpawnedEnemies roster --------------------------------
 
     [Fact]
     public void OnCombatTurn_EnemyDefeated_Zeroes_Health_In_SpawnedEnemies_Roster()

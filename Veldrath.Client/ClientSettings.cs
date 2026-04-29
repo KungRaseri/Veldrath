@@ -1,4 +1,5 @@
-﻿using ReactiveUI;
+﻿using System.Text.Json;
+using ReactiveUI;
 
 namespace Veldrath.Client;
 
@@ -15,6 +16,12 @@ public class ClientSettings : ReactiveObject
     private int _sfxVolume    = 100;
     private bool _muted;
     private bool _fullScreen;
+    private readonly HashSet<Guid> _ignoredCharacterIds;
+
+    /// <summary>Path to the persisted ignore list file. Overridable in tests.</summary>
+    internal static string IgnoredFilePath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "Veldrath", "ignored.json");
 
     /// <summary>Initializes a new instance of <see cref="ClientSettings"/> with the given server and Foundry URLs.</summary>
     /// <param name="serverBaseUrl">Initial base URL of the game server, read from <c>appsettings.json</c>.</param>
@@ -23,6 +30,7 @@ public class ClientSettings : ReactiveObject
     {
         _serverBaseUrl  = serverBaseUrl;
         _foundryBaseUrl = foundryBaseUrl;
+        _ignoredCharacterIds = LoadIgnored();
     }
 
     /// <summary>Gets or sets the base URL of the game server (e.g. <c>http://localhost:9000</c>).</summary>
@@ -74,5 +82,49 @@ public class ClientSettings : ReactiveObject
     {
         get => _fullScreen;
         set => this.RaiseAndSetIfChanged(ref _fullScreen, value);
+    }
+
+    // Ignore list
+    /// <summary>Gets the set of character IDs whose chat messages are filtered out on this client.</summary>
+    public IReadOnlySet<Guid> IgnoredCharacterIds => _ignoredCharacterIds;
+
+    /// <summary>Adds a character to the local ignore list and persists the change.</summary>
+    /// <param name="id">Character identifier to ignore.</param>
+    public void AddIgnored(Guid id)
+    {
+        _ignoredCharacterIds.Add(id);
+        PersistIgnored();
+    }
+
+    /// <summary>Removes a character from the local ignore list and persists the change.</summary>
+    /// <param name="id">Character identifier to unignore.</param>
+    public void RemoveIgnored(Guid id)
+    {
+        _ignoredCharacterIds.Remove(id);
+        PersistIgnored();
+    }
+
+    private static HashSet<Guid> LoadIgnored()
+    {
+        try
+        {
+            if (File.Exists(IgnoredFilePath))
+            {
+                var json = File.ReadAllText(IgnoredFilePath);
+                return JsonSerializer.Deserialize<HashSet<Guid>>(json) ?? [];
+            }
+        }
+        catch { /* ignore corrupted file — start with empty set */ }
+        return [];
+    }
+
+    private void PersistIgnored()
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(IgnoredFilePath)!);
+            File.WriteAllText(IgnoredFilePath, JsonSerializer.Serialize(_ignoredCharacterIds));
+        }
+        catch { /* best-effort persist */ }
     }
 }
