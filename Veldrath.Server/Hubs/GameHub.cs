@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using RealmEngine.Shared.Models.Tiled;
+using Veldrath.Contracts.Chat;
 using Veldrath.Contracts.Connection;
 using Veldrath.Contracts.Tilemap;
 using Veldrath.Server.Data;
@@ -2298,8 +2299,14 @@ public class GameHub : Hub
         {
             // ── Universal ──────────────────────────────────────────────────
             case "help":
-                await Clients.Caller.SendAsync("SystemMessage", BuildHelpText());
+            {
+                var callerPermissions = Context.User?.Claims
+                    .Where(c => c.Type == "permission")
+                    .Select(c => c.Value)
+                    ?? [];
+                await Clients.Caller.SendAsync("SystemMessage", BuildHelpText(callerPermissions));
                 return;
+            }
 
             // ── Player utilities ───────────────────────────────────────────
             case "who":
@@ -2743,6 +2750,69 @@ public class GameHub : Hub
     private bool CallerHasPermission(string permission)
         => Context.User?.HasClaim("permission", permission) == true;
 
+    /// <summary>
+    /// Returns the list of chat slash-commands available to the caller based on their current permissions.
+    /// Does not require the caller to be in a zone.
+    /// </summary>
+    /// <returns>A filtered list of <see cref="ChatCommandInfoDto"/> the caller may execute.</returns>
+    public Task<List<ChatCommandInfoDto>> GetChatCommands()
+    {
+        if (!TryGetCharacterId(out _))
+            return Task.FromResult<List<ChatCommandInfoDto>>([]);
+
+        var callerPermissions = Context.User?.Claims
+            .Where(c => c.Type == "permission")
+            .Select(c => c.Value)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase)
+            ?? [];
+
+        return Task.FromResult(
+            AllChatCommands
+                .Where(cmd => cmd.RequiredPermission is null
+                           || callerPermissions.Contains(cmd.RequiredPermission))
+                .ToList());
+    }
+
+    /// <summary>Master list of every chat slash-command with its metadata. Used by <see cref="GetChatCommands"/> and <see cref="BuildHelpText"/>.</summary>
+    private static readonly IReadOnlyList<ChatCommandInfoDto> AllChatCommands =
+    [
+        new("help",    "/help",                           "Show available commands",                         null),
+        new("who",     "/who",                            "List players in your zone",                       null),
+        new("w",       "/w <name> <message>",             "Send a private whisper",                          null),
+        new("whisper", "/whisper <name> <message>",       "Send a private whisper (long form)",              null),
+        new("emote",   "/emote <action>",                 "Perform an emote visible to your zone",           null),
+        new("roll",    "/roll [max]",                     "Roll a random number (default 1-100)",            null),
+        new("afk",     "/afk [reason]",                   "Mark yourself as AFK",                            null),
+        new("ignore",  "/ignore <name>",                  "Ignore a player's messages (client-side)",        null),
+        new("report",  "/report <name> <reason>",         "Report a player to moderators",                   null),
+        new("announce","/announce <message>",             "Broadcast a server announcement",                 Permissions.SendAnnouncements),
+        new("kick",    "/kick <characterId>",             "Disconnect a player",                             Permissions.KickPlayers),
+        new("warn",    "/warn <characterId> [reason]",    "Issue a warning to a player",                     Permissions.KickPlayers),
+        new("mute",    "/mute <characterId> [min] [reason]", "Mute a player",                               Permissions.KickPlayers),
+        new("tp",      "/tp <characterId> <zoneId>",      "Teleport a player to a zone",                     Permissions.TeleportPlayers),
+        new("summon",  "/summon <characterId>",           "Summon a player to your zone",                    Permissions.TeleportPlayers),
+        new("give",    "/give <characterId> <slug> [qty]","Give an item to a player",                        Permissions.GiveItems),
+        new("setgold", "/setgold <characterId> <amount>", "Set a player's gold",                             Permissions.GiveItems),
+        new("sethealth","/sethealth <characterId> <amount>","Set a player's health",                         Permissions.KickPlayers),
+        new("event",   "/event <name> [args]",            "Trigger a game event (stub)",                     Permissions.SendAnnouncements),
+    ];
+
+    private static string BuildHelpText(IEnumerable<string> effectivePermissions)
+    {
+        var perms = effectivePermissions as ISet<string>
+            ?? effectivePermissions.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var lines = AllChatCommands
+            .Where(cmd => cmd.RequiredPermission is null || perms.Contains(cmd.RequiredPermission))
+            .Select(cmd =>
+            {
+                var suffix = cmd.RequiredPermission is not null ? $"  [{cmd.RequiredPermission}]" : string.Empty;
+                return $"  {cmd.Usage,-38}{cmd.Description}{suffix}";
+            });
+
+        return "Available commands:\n" + string.Join('\n', lines);
+    }
+
     private static List<InventoryItemDto> ParseInventory(string blob)
     {
         if (string.IsNullOrWhiteSpace(blob) || blob == "[]") return [];
@@ -2755,31 +2825,6 @@ public class GameHub : Hub
         if (string.IsNullOrWhiteSpace(blob) || blob == "{}") return [];
         try { return JsonSerializer.Deserialize<Dictionary<string, int>>(blob, _jsonOptions) ?? []; }
         catch { return []; }
-    }
-
-    private static string BuildHelpText()
-    {
-        return """
-            Available commands:
-              /help                         — Show this list
-              /who                          — List players in your zone
-              /whisper <name> <msg>         — Send a private message
-              /emote <action>               — Perform an emote visible to your zone
-              /roll [max]                   — Roll a random number (default 1-100)
-              /afk [reason]                 — Mark yourself as AFK
-              /ignore <name>                — Ignore a player's messages (client-side)
-              /report <name> <reason>       — Report a player to moderators
-              /announce <msg>               — Broadcast a server announcement  [send_announcements]
-              /kick <charId>                — Disconnect a player              [kick_players]
-              /warn <charId> [reason]       — Issue a warning to a player      [kick_players]
-              /mute <charId> [min] [reason] — Mute a player                    [kick_players]
-              /tp <charId> <zoneId>         — Teleport a player to a zone      [teleport_players]
-              /summon <charId>              — Summon a player to your zone     [teleport_players]
-              /give <charId> <slug> [qty]   — Give an item to a player         [give_items]
-              /setgold <charId> <amount>    — Set a player's gold              [give_items]
-              /sethealth <charId> <amount>  — Set a player's health            [kick_players]
-              /event <name> [args]          — Trigger a game event (stub)      [send_announcements]
-            """;
     }
 
     private Guid GetAccountId()
