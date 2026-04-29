@@ -2079,6 +2079,7 @@ public class GameHub : Hub
             return;
 
         var dto = new ChatMessageHubDto(
+            CharacterId: characterId,
             Channel: "Zone",
             Sender: characterName,
             Message: request.Message.Trim(),
@@ -2096,7 +2097,7 @@ public class GameHub : Hub
     /// <param name="request">The message payload.</param>
     public async Task SendGlobalMessage(SendGlobalChatMessageHubRequest request)
     {
-        if (!TryGetCharacterId(out _) || !TryGetCharacterName(out var characterName))
+        if (!TryGetCharacterId(out var characterId) || !TryGetCharacterName(out var characterName))
         {
             await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before SendGlobalMessage");
             return;
@@ -2106,6 +2107,7 @@ public class GameHub : Hub
             return;
 
         var dto = new ChatMessageHubDto(
+            CharacterId: characterId,
             Channel: "Global",
             Sender: characterName,
             Message: request.Message.Trim(),
@@ -2121,7 +2123,7 @@ public class GameHub : Hub
     /// <param name="request">Target character name and message text.</param>
     public async Task SendWhisper(SendWhisperHubRequest request)
     {
-        if (!TryGetCharacterId(out _) || !TryGetCharacterName(out var senderName))
+        if (!TryGetCharacterId(out var characterId) || !TryGetCharacterName(out var senderName))
         {
             await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before SendWhisper");
             return;
@@ -2138,6 +2140,7 @@ public class GameHub : Hub
         }
 
         var dto = new ChatMessageHubDto(
+            CharacterId: characterId,
             Channel: "Whisper",
             Sender: senderName,
             Message: request.Message.Trim(),
@@ -2146,7 +2149,7 @@ public class GameHub : Hub
         await Clients.Client(targetSession.ConnectionId).SendAsync("ReceiveChatMessage", dto);
 
         // Echo to sender so they see their own whisper in the chat log
-        var echoDto = dto with { Sender = $"To {request.TargetCharacterName}" };
+        var echoDto = dto with { CharacterId = Guid.Empty, Sender = $"To {request.TargetCharacterName}" };
         await Clients.Caller.SendAsync("ReceiveChatMessage", echoDto);
     }
 
@@ -2277,15 +2280,14 @@ public class GameHub : Hub
         if (_afkCharacters.TryRemove(characterId, out _))
         {
             TryGetCharacterName(out var selfName);
-            await Clients.Group(zoneGroup).SendAsync("SystemMessage",
-                $"{selfName} is no longer AFK.");
+            await Clients.Group(zoneGroup).SendAsync("ReceiveChatMessage",
+                new ChatMessageHubDto(characterId, "Zone", selfName, "* is no longer AFK *", DateTimeOffset.UtcNow));
         }
 
-        var character = await _characterRepo.GetByIdAsync(characterId);
-        var senderName = character?.Name ?? "Unknown";
+        TryGetCharacterName(out var senderName);
 
-        await Clients.Group(zoneGroup).SendAsync("ChatMessage",
-            new ChatMessagePayload(characterId, senderName, text, DateTimeOffset.UtcNow));
+        await Clients.Group(zoneGroup).SendAsync("ReceiveChatMessage",
+            new ChatMessageHubDto(characterId, "Zone", senderName, text, DateTimeOffset.UtcNow));
     }
 
     private async Task HandleChatCommandAsync(string raw, Guid characterId, string zoneGroup)
@@ -2373,8 +2375,8 @@ public class GameHub : Hub
                     max = parsed;
                 TryGetCharacterName(out var rollerName);
                 var result = Random.Shared.Next(1, max + 1);
-                await Clients.Group(zoneGroup).SendAsync("ChatMessage",
-                    new ChatMessagePayload(characterId, rollerName,
+                await Clients.Group(zoneGroup).SendAsync("ReceiveChatMessage",
+                    new ChatMessageHubDto(characterId, "Zone", rollerName,
                         $"* rolled {result} (1-{max}) *", DateTimeOffset.UtcNow));
                 return;
             }
@@ -2382,12 +2384,20 @@ public class GameHub : Hub
             case "afk":
             {
                 TryGetCharacterName(out var afkName);
+                // Toggle: calling /afk while already AFK clears the status.
+                if (_afkCharacters.TryRemove(characterId, out _))
+                {
+                    await Clients.Caller.SendAsync("SystemMessage", "You are no longer AFK.");
+                    await Clients.Group(zoneGroup).SendAsync("ReceiveChatMessage",
+                        new ChatMessageHubDto(characterId, "Zone", afkName, "* is no longer AFK *", DateTimeOffset.UtcNow));
+                    return;
+                }
                 var reason = parts.Length >= 2 ? string.Join(' ', parts[1..]) : null;
                 _afkCharacters[characterId] = reason;
                 var display = reason is not null ? $"AFK: {reason}" : "AFK";
                 await Clients.Caller.SendAsync("SystemMessage", $"You are now {display}.");
-                await Clients.Group(zoneGroup).SendAsync("ChatMessage",
-                    new ChatMessagePayload(characterId, afkName,
+                await Clients.Group(zoneGroup).SendAsync("ReceiveChatMessage",
+                    new ChatMessageHubDto(characterId, "Zone", afkName,
                         $"* is now {display} *", DateTimeOffset.UtcNow));
                 return;
             }
@@ -2399,15 +2409,29 @@ public class GameHub : Hub
                     await Clients.Caller.SendAsync("SystemMessage", "Usage: /ignore <characterName>");
                     return;
                 }
-                var ignoreTarget = await _playerSessionRepo.GetByCharacterNameAsync(parts[1]);
-                if (ignoreTarget is null)
+                // Look up by online session first, then fall back to DB for offline characters.
+                var ignoreSession = await _playerSessionRepo.GetByCharacterNameAsync(parts[1]);
+                Guid ignoreCharId;
+                string ignoreCharName;
+                if (ignoreSession is not null)
                 {
-                    await Clients.Caller.SendAsync("SystemMessage", $"'{parts[1]}' is not online.");
-                    return;
+                    ignoreCharId   = ignoreSession.CharacterId;
+                    ignoreCharName = ignoreSession.CharacterName;
                 }
-                // Return the target's characterId so the client can filter their messages locally.
-                await Clients.Caller.SendAsync("SystemMessage",
-                    $"IGNORE_ID:{ignoreTarget.CharacterId}");
+                else
+                {
+                    var ignoreChar = await _characterRepo.GetByNameAsync(parts[1]);
+                    if (ignoreChar is null)
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", $"Character '{parts[1]}' not found.");
+                        return;
+                    }
+                    ignoreCharId   = ignoreChar.Id;
+                    ignoreCharName = ignoreChar.Name;
+                }
+                // Send the payload so the client can toggle ignore locally.
+                await Clients.Caller.SendAsync("CharacterIgnored",
+                    new CharacterIgnoredPayload(ignoreCharId, ignoreCharName));
                 return;
             }
 
@@ -2486,7 +2510,7 @@ public class GameHub : Hub
 
             case "warn":
             {
-                if (!CallerHasPermission(Permissions.KickPlayers))
+                if (!CallerHasPermission(Permissions.WarnPlayers))
                 {
                     await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to warn players.");
                     return;
@@ -2539,7 +2563,7 @@ public class GameHub : Hub
 
             case "mute":
             {
-                if (!CallerHasPermission(Permissions.KickPlayers))
+                if (!CallerHasPermission(Permissions.MutePlayers))
                 {
                     await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to mute players.");
                     return;
@@ -2707,7 +2731,7 @@ public class GameHub : Hub
 
             case "sethealth":
             {
-                if (!CallerHasPermission(Permissions.KickPlayers))
+                if (!CallerHasPermission(Permissions.GiveItems))
                 {
                     await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to set health.");
                     return;
@@ -2736,7 +2760,108 @@ public class GameHub : Hub
                 return;
             }
 
+            case "ban":
+            {
+                if (!CallerHasPermission(Permissions.BanPlayers))
+                {
+                    await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to ban players.");
+                    return;
+                }
+                if (parts.Length < 2 || !Guid.TryParse(parts[1], out var banCharId))
+                {
+                    await Clients.Caller.SendAsync("SystemMessage", "Usage: /ban <characterId> [reason]");
+                    return;
+                }
+                var banReason = parts.Length >= 3 ? string.Join(' ', parts[2..]) : "Banned by an administrator.";
+                var banChar = await _characterRepo.GetByIdAsync(banCharId);
+                if (banChar is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found."); return; }
+                var banAccount = await _userManager.FindByIdAsync(banChar.AccountId.ToString());
+                if (banAccount is null) { await Clients.Caller.SendAsync("SystemMessage", "Account not found."); return; }
+                banAccount.IsBanned    = true;
+                banAccount.BannedUntil = null;
+                banAccount.BanReason   = banReason;
+                await _userManager.UpdateAsync(banAccount);
+                var banSession = await _playerSessionRepo.GetByCharacterIdAsync(banCharId);
+                if (banSession is not null)
+                    await Clients.Client(banSession.ConnectionId).SendAsync("OnKicked", new KickedPayload(banReason));
+                await Clients.Caller.SendAsync("SystemMessage", $"{banChar.Name} has been permanently banned.");
+                return;
+            }
+
+            case "suspend":
+            {
+                if (!CallerHasPermission(Permissions.SuspendPlayers))
+                {
+                    await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to suspend players.");
+                    return;
+                }
+                if (parts.Length < 3 || !Guid.TryParse(parts[1], out var suspCharId) || !int.TryParse(parts[2], out var suspHours) || suspHours < 1)
+                {
+                    await Clients.Caller.SendAsync("SystemMessage", "Usage: /suspend <characterId> <hours> [reason]");
+                    return;
+                }
+                var suspReason = parts.Length >= 4 ? string.Join(' ', parts[3..]) : "Suspended by an administrator.";
+                var suspChar = await _characterRepo.GetByIdAsync(suspCharId);
+                if (suspChar is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found."); return; }
+                var suspAccount = await _userManager.FindByIdAsync(suspChar.AccountId.ToString());
+                if (suspAccount is null) { await Clients.Caller.SendAsync("SystemMessage", "Account not found."); return; }
+                suspAccount.IsBanned    = true;
+                suspAccount.BannedUntil = DateTimeOffset.UtcNow.AddHours(suspHours);
+                suspAccount.BanReason   = suspReason;
+                await _userManager.UpdateAsync(suspAccount);
+                var suspSession = await _playerSessionRepo.GetByCharacterIdAsync(suspCharId);
+                if (suspSession is not null)
+                    await Clients.Client(suspSession.ConnectionId).SendAsync("OnKicked", new KickedPayload(suspReason));
+                await Clients.Caller.SendAsync("SystemMessage",
+                    $"{suspChar.Name} suspended for {suspHours}h. Expires: {suspAccount.BannedUntil:u}");
+                return;
+            }
+
+            case "lookup":
+            {
+                if (!CallerHasPermission(Permissions.ViewPlayers))
+                {
+                    await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to look up players.");
+                    return;
+                }
+                if (parts.Length < 2)
+                {
+                    await Clients.Caller.SendAsync("SystemMessage", "Usage: /lookup <characterName>");
+                    return;
+                }
+                var lookupChar = await _characterRepo.GetByNameAsync(parts[1]);
+                if (lookupChar is null)
+                {
+                    await Clients.Caller.SendAsync("SystemMessage", $"Character '{parts[1]}' not found.");
+                    return;
+                }
+                var lookupAccount = await _userManager.FindByIdAsync(lookupChar.AccountId.ToString());
+                if (lookupAccount is null) { await Clients.Caller.SendAsync("SystemMessage", "Account not found."); return; }
+                var lookupSession = await _playerSessionRepo.GetByCharacterIdAsync(lookupChar.Id);
+                var onlineStatus = lookupSession is not null ? $"Online (zone: {lookupSession.ZoneId ?? "region map"})" : "Offline";
+                var banStatus = lookupAccount.IsBanned
+                    ? (lookupAccount.BannedUntil.HasValue ? $"Suspended until {lookupAccount.BannedUntil:u}" : "Permanently banned")
+                    : "Not banned";
+                var muteStatus = lookupAccount.IsMuted
+                    ? (lookupAccount.MutedUntil.HasValue ? $"Muted until {lookupAccount.MutedUntil:u}" : "Permanently muted")
+                    : "Not muted";
+                var info =
+                    $"Character: {lookupChar.Name} (ID: {lookupChar.Id})\n" +
+                    $"Account:   {lookupAccount.UserName} (ID: {lookupAccount.Id})\n" +
+                    $"Status:    {onlineStatus}\n" +
+                    $"Warnings:  {lookupAccount.WarnCount}\n" +
+                    $"Ban:       {banStatus}\n" +
+                    $"Mute:      {muteStatus}";
+                await Clients.Caller.SendAsync("SystemMessage", info);
+                return;
+            }
+
             case "event":
+                if (!CallerHasPermission(Permissions.RunEvents))
+                {
+                    await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to run events.");
+                    return;
+                }
                 await Clients.Caller.SendAsync("SystemMessage",
                     "Game events are not yet implemented. This command is a stub.");
                 return;
@@ -2776,25 +2901,28 @@ public class GameHub : Hub
     /// <summary>Master list of every chat slash-command with its metadata. Used by <see cref="GetChatCommands"/> and <see cref="BuildHelpText"/>.</summary>
     private static readonly IReadOnlyList<ChatCommandInfoDto> AllChatCommands =
     [
-        new("help",    "/help",                           "Show available commands",                         null),
-        new("who",     "/who",                            "List players in your zone",                       null),
-        new("w",       "/w <name> <message>",             "Send a private whisper",                          null),
-        new("whisper", "/whisper <name> <message>",       "Send a private whisper (long form)",              null),
-        new("emote",   "/emote <action>",                 "Perform an emote visible to your zone",           null),
-        new("roll",    "/roll [max]",                     "Roll a random number (default 1-100)",            null),
-        new("afk",     "/afk [reason]",                   "Mark yourself as AFK",                            null),
-        new("ignore",  "/ignore <name>",                  "Ignore a player's messages (client-side)",        null),
-        new("report",  "/report <name> <reason>",         "Report a player to moderators",                   null),
-        new("announce","/announce <message>",             "Broadcast a server announcement",                 Permissions.SendAnnouncements),
-        new("kick",    "/kick <characterId>",             "Disconnect a player",                             Permissions.KickPlayers),
-        new("warn",    "/warn <characterId> [reason]",    "Issue a warning to a player",                     Permissions.KickPlayers),
-        new("mute",    "/mute <characterId> [min] [reason]", "Mute a player",                               Permissions.KickPlayers),
-        new("tp",      "/tp <characterId> <zoneId>",      "Teleport a player to a zone",                     Permissions.TeleportPlayers),
-        new("summon",  "/summon <characterId>",           "Summon a player to your zone",                    Permissions.TeleportPlayers),
-        new("give",    "/give <characterId> <slug> [qty]","Give an item to a player",                        Permissions.GiveItems),
-        new("setgold", "/setgold <characterId> <amount>", "Set a player's gold",                             Permissions.GiveItems),
-        new("sethealth","/sethealth <characterId> <amount>","Set a player's health",                         Permissions.KickPlayers),
-        new("event",   "/event <name> [args]",            "Trigger a game event (stub)",                     Permissions.SendAnnouncements),
+        new("help",    "/help",                                    "Show available commands",                         null),
+        new("who",     "/who",                                     "List players in your zone",                       null),
+        new("w",       "/w <name> <message>",                      "Send a private whisper",                          null),
+        new("whisper", "/whisper <name> <message>",                "Send a private whisper (long form)",              null),
+        new("emote",   "/emote <action>",                          "Perform an emote visible to your zone",           null),
+        new("roll",    "/roll [max]",                              "Roll a random number (default 1-100)",            null),
+        new("afk",     "/afk [reason]",                           "Toggle AFK status (repeat to clear)",             null),
+        new("ignore",  "/ignore <name>",                          "Toggle ignore for a player (client-side filter)", null),
+        new("report",  "/report <name> <reason>",                 "Report a player to moderators",                   null),
+        new("announce","/announce <message>",                     "Broadcast a server announcement",                 Permissions.SendAnnouncements),
+        new("kick",    "/kick <characterId>",                     "Disconnect a player",                             Permissions.KickPlayers),
+        new("warn",    "/warn <characterId> [reason]",            "Issue a warning to a player",                     Permissions.WarnPlayers),
+        new("mute",    "/mute <characterId> [min] [reason]",      "Mute a player",                                   Permissions.MutePlayers),
+        new("ban",     "/ban <characterId> [reason]",             "Permanently ban a player account",                Permissions.BanPlayers),
+        new("suspend", "/suspend <characterId> <hours> [reason]", "Temporarily suspend a player account",            Permissions.SuspendPlayers),
+        new("lookup",  "/lookup <characterName>",                 "Look up player account details",                  Permissions.ViewPlayers),
+        new("tp",      "/tp <characterId> <zoneId>",             "Teleport a player to a zone",                     Permissions.TeleportPlayers),
+        new("summon",  "/summon <characterId>",                   "Summon a player to your zone",                    Permissions.TeleportPlayers),
+        new("give",    "/give <characterId> <slug> [qty]",       "Give an item to a player",                        Permissions.GiveItems),
+        new("setgold", "/setgold <characterId> <amount>",        "Set a player's gold",                             Permissions.GiveItems),
+        new("sethealth","/sethealth <characterId> <amount>",     "Set a player's health",                           Permissions.GiveItems),
+        new("event",   "/event <name> [args]",                   "Trigger a game event (stub)",                     Permissions.RunEvents),
     ];
 
     private static string BuildHelpText(IEnumerable<string> effectivePermissions)
@@ -2915,11 +3043,12 @@ public record SendGlobalChatMessageHubRequest(string Message);
 public record SendWhisperHubRequest(string TargetCharacterName, string Message);
 
 /// <summary>Server-to-client chat message payload for the <c>ReceiveChatMessage</c> event.</summary>
+/// <param name="CharacterId">The character who sent the message, or <see cref="Guid.Empty"/> for system messages.</param>
 /// <param name="Channel">Chat channel: <c>Zone</c>, <c>Global</c>, <c>Whisper</c>, or <c>System</c>.</param>
 /// <param name="Sender">Display name of the character who sent the message.</param>
 /// <param name="Message">The message text.</param>
 /// <param name="Timestamp">UTC time the message was sent.</param>
-public record ChatMessageHubDto(string Channel, string Sender, string Message, DateTimeOffset Timestamp);
+public record ChatMessageHubDto(Guid CharacterId, string Channel, string Sender, string Message, DateTimeOffset Timestamp);
 
 /// <summary>Request DTO sent by the client when calling <see cref="GameHub.EngageEnemy"/>.</summary>
 /// <param name="LocationSlug">Slug of the current zone location (used as fallback if not stored in context).</param>

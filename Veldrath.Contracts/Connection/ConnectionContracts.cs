@@ -112,3 +112,14 @@ public record WarnedPayload(string Reason, int NewWarnCount);
 /// <param name="Reason">Optional reason for the mute.</param>
 /// <param name="Until">UTC expiry of the mute, or <c>null</c> if permanent.</param>
 public record MutedPayload(string? Reason, DateTimeOffset? Until);
+
+// ── Ignore ───────────────────────────────────────────────────────────────────
+
+/// <summary>
+/// Server-to-client push: sent in response to <c>/ignore &lt;characterName&gt;</c>.
+/// The client should toggle the character in its local ignore list and filter future
+/// chat messages from that character accordingly.
+/// </summary>
+/// <param name="CharacterId">Character identifier to toggle in the ignore list.</param>
+/// <param name="CharacterName">Display name of the character being toggled.</param>
+public record CharacterIgnoredPayload(Guid CharacterId, string CharacterName);

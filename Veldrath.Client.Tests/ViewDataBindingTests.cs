@@ -1,5 +1,6 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Veldrath.Client;
 using Veldrath.Client.Services;
 using Veldrath.Client.Tests.Infrastructure;
 using Veldrath.Client.ViewModels;
@@ -19,7 +20,8 @@ public class ViewDataBindingTests
         new(new FakeServerConnectionService(),
             new FakeZoneService(),
             new TokenStore(),
-            new FakeNavigationService());
+            new FakeNavigationService(),
+            new ClientSettings("http://localhost"));
 
     private static CharacterSelectViewModel MakeCharacterSelectVm(FakeCharacterService? charSvc = null) =>
         new(charSvc ?? new FakeCharacterService(),

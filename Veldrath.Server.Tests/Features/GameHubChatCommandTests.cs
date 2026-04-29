@@ -128,7 +128,7 @@ public class GameHubChatCommandTests : IDisposable
     // ── GetChatCommands — moderator (kick_players) ───────────────────────────
 
     [Fact]
-    public async Task GetChatCommands_Includes_Kick_Warn_Mute_For_KickPlayers_Permission()
+    public async Task GetChatCommands_Includes_Kick_For_KickPlayers_Permission()
     {
         var accountId = Guid.NewGuid();
         var (hub, ctx) = CreateHub(accountId, Permissions.KickPlayers);
@@ -137,10 +137,43 @@ public class GameHubChatCommandTests : IDisposable
         var result = await hub.GetChatCommands();
 
         var commands = result.Select(c => c.Command).ToList();
-        commands.Should().Contain("kick")
-                         .And.Contain("warn")
-                         .And.Contain("mute")
-                         .And.Contain("sethealth");
+        commands.Should().Contain("kick");
+    }
+
+    [Fact]
+    public async Task GetChatCommands_Includes_Warn_For_WarnPlayers_Permission()
+    {
+        var accountId = Guid.NewGuid();
+        var (hub, ctx) = CreateHub(accountId, Permissions.WarnPlayers);
+        ctx.Items["CharacterId"] = Guid.NewGuid();
+
+        var result = await hub.GetChatCommands();
+
+        result.Select(c => c.Command).Should().Contain("warn");
+    }
+
+    [Fact]
+    public async Task GetChatCommands_Includes_Mute_For_MutePlayers_Permission()
+    {
+        var accountId = Guid.NewGuid();
+        var (hub, ctx) = CreateHub(accountId, Permissions.MutePlayers);
+        ctx.Items["CharacterId"] = Guid.NewGuid();
+
+        var result = await hub.GetChatCommands();
+
+        result.Select(c => c.Command).Should().Contain("mute");
+    }
+
+    [Fact]
+    public async Task GetChatCommands_Includes_SetHealth_For_GiveItems_Permission()
+    {
+        var accountId = Guid.NewGuid();
+        var (hub, ctx) = CreateHub(accountId, Permissions.GiveItems);
+        ctx.Items["CharacterId"] = Guid.NewGuid();
+
+        var result = await hub.GetChatCommands();
+
+        result.Select(c => c.Command).Should().Contain("sethealth");
     }
 
     [Fact]

@@ -48,6 +48,7 @@ public class GameViewModel : ViewModelBase
     private readonly IZoneService _zoneService;
     private readonly TokenStore _tokens;
     private readonly INavigationService _navigation;
+    private readonly ClientSettings _settings;
     private readonly ISessionAlertService? _sessionAlert;
     private readonly IAssetStore? _assetStore;
     private readonly IAudioPlayer? _audioPlayer;
@@ -901,6 +902,7 @@ public class GameViewModel : ViewModelBase
         IZoneService zoneService,
         TokenStore tokens,
         INavigationService navigation,
+        ClientSettings settings,
         ISessionAlertService? sessionAlert = null,
         IAssetStore? assetStore = null,
         IAudioPlayer? audioPlayer = null)
@@ -909,6 +911,7 @@ public class GameViewModel : ViewModelBase
         _zoneService = zoneService;
         _tokens = tokens;
         _navigation = navigation;
+        _settings = settings;
         _sessionAlert = sessionAlert;
         _assetStore = assetStore;
         _audioPlayer = audioPlayer;
@@ -1295,12 +1298,17 @@ public class GameViewModel : ViewModelBase
     }
 
     /// <summary>Called from hub when a chat message is received.</summary>
+    /// <param name="characterId">The sender's character ID, or <see cref="Guid.Empty"/> for system messages.</param>
     /// <param name="channel">The chat channel the message was sent on.</param>
     /// <param name="sender">The name of the player who sent the message.</param>
     /// <param name="message">The message text.</param>
     /// <param name="timestamp">The UTC timestamp of the message.</param>
-    public void OnChatMessageReceived(string channel, string sender, string message, DateTimeOffset timestamp)
+    public void OnChatMessageReceived(Guid characterId, string channel, string sender, string message, DateTimeOffset timestamp)
     {
+        // Filter messages from ignored characters (except system messages with no sender).
+        if (characterId != Guid.Empty && _settings.IgnoredCharacterIds.Contains(characterId))
+            return;
+
         var isOwn = sender == CharacterName || sender.StartsWith("To ", StringComparison.Ordinal);
         var vm = new ChatMessageViewModel(channel, sender, message, timestamp, isOwn);
         switch (channel)
@@ -1319,6 +1327,129 @@ public class GameViewModel : ViewModelBase
                 foreach (var tab in ChatTabs)
                     tab.AddMessage(vm);
                 break;
+        }
+    }
+
+    /// <summary>Called from hub when a system message is sent to the caller only (e.g. command feedback).</summary>
+    /// <param name="message">The system message text.</param>
+    public void OnSystemMessage(string message)
+        => OnChatMessageReceived(Guid.Empty, "System", "System", message, DateTimeOffset.UtcNow);
+
+    /// <summary>Called from hub when a whisper is received.</summary>
+    /// <param name="fromCharacterId">Sender's character ID.</param>
+    /// <param name="fromCharacterName">Sender's display name.</param>
+    /// <param name="text">Whisper message text.</param>
+    public void OnWhisperReceived(Guid fromCharacterId, string fromCharacterName, string text)
+    {
+        // Whispers from ignored characters are suppressed.
+        if (_settings.IgnoredCharacterIds.Contains(fromCharacterId))
+            return;
+        var tab = GetOrCreateWhisperTab(fromCharacterName);
+        tab.AddMessage(new ChatMessageViewModel("Whisper", fromCharacterName, text, DateTimeOffset.UtcNow, false));
+    }
+
+    /// <summary>Called from hub when a zone emote is received.</summary>
+    /// <param name="characterId">Character performing the emote.</param>
+    /// <param name="characterName">Display name of the character.</param>
+    /// <param name="action">Emote action text.</param>
+    public void OnEmoteReceived(Guid characterId, string characterName, string action)
+    {
+        if (_settings.IgnoredCharacterIds.Contains(characterId))
+            return;
+        _zoneTab.AddMessage(new ChatMessageViewModel("Zone", characterName, $"* {action} *", DateTimeOffset.UtcNow, false));
+    }
+
+    /// <summary>Called from hub when a server-wide announcement is broadcast.</summary>
+    /// <param name="message">Announcement text.</param>
+    /// <param name="severity">Severity hint (e.g. <c>"info"</c>, <c>"warning"</c>, <c>"critical"</c>).</param>
+    public void OnAnnouncementReceived(string message, string severity)
+    {
+        var label = severity switch
+        {
+            "critical" => "[CRITICAL]",
+            "warning"  => "[WARNING]",
+            _          => "[Announcement]",
+        };
+        foreach (var tab in ChatTabs)
+            tab.AddMessage(new ChatMessageViewModel("System", label, message, DateTimeOffset.UtcNow, false));
+    }
+
+    /// <summary>Called from hub when the local character has been forcibly disconnected.</summary>
+    /// <param name="reason">Human-readable kick reason.</param>
+    public void OnKicked(string reason)
+    {
+        if (_sessionAlert is not null)
+            _sessionAlert.PendingAlert = $"You have been disconnected: {reason}";
+        _audioPlayer?.StopMusic();
+        _navigation.NavigateTo<MainMenuViewModel>();
+    }
+
+    /// <summary>Called from hub when the local character's account has received a formal warning.</summary>
+    /// <param name="reason">Reason for the warning.</param>
+    /// <param name="warnCount">Updated total warning count.</param>
+    public void OnWarned(string reason, int warnCount)
+    {
+        StatusMessage = $"WARNING ({warnCount}): {reason}";
+        IsStatusMessageDismissable = true;
+        foreach (var tab in ChatTabs)
+            tab.AddMessage(new ChatMessageViewModel("System", "Warning", $"({warnCount}) {reason}", DateTimeOffset.UtcNow, false));
+    }
+
+    /// <summary>Called from hub when the local character's account has been muted.</summary>
+    /// <param name="reason">Optional reason for the mute.</param>
+    /// <param name="until">UTC expiry of the mute, or <c>null</c> if permanent.</param>
+    public void OnMuted(string? reason, DateTimeOffset? until)
+    {
+        var display = until.HasValue ? $"until {until:u}" : "permanently";
+        var msg = $"You have been muted {display}. Reason: {reason ?? "No reason given."}";
+        foreach (var tab in ChatTabs)
+            tab.AddMessage(new ChatMessageViewModel("System", "System", msg, DateTimeOffset.UtcNow, false));
+    }
+
+    /// <summary>Called from hub when the local character has been teleported to a new zone.</summary>
+    /// <param name="zoneId">Target zone identifier.</param>
+    /// <param name="zoneName">Human-readable zone name shown in the notification.</param>
+    public void OnTeleported(string zoneId, string zoneName)
+    {
+        StatusMessage = $"Teleported to {zoneName}";
+        IsStatusMessageDismissable = true;
+        _ = InitializeAsync(CharacterName, zoneId);
+    }
+
+    /// <summary>Called from hub when a staff member is summoning the local character.</summary>
+    /// <param name="byCharacterName">Name of the staff character performing the summon.</param>
+    /// <param name="zoneId">Destination zone identifier.</param>
+    public void OnSummoned(string byCharacterName, string zoneId)
+    {
+        StatusMessage = $"Summoned by {byCharacterName}";
+        IsStatusMessageDismissable = true;
+        _ = InitializeAsync(CharacterName, zoneId);
+    }
+
+    /// <summary>Called from hub when an item has been granted directly to the local character's inventory.</summary>
+    /// <param name="itemSlug">The item reference slug.</param>
+    /// <param name="quantity">How many were added.</param>
+    /// <param name="givenByUsername">Account username of the staff member who granted the item.</param>
+    public void OnItemReceived(string itemSlug, int quantity, string givenByUsername)
+    {
+        StatusMessage = $"Received {quantity}× {itemSlug} from {givenByUsername}";
+        IsStatusMessageDismissable = true;
+    }
+
+    /// <summary>Called from hub when the ignore toggle response is received for a character.</summary>
+    /// <param name="characterId">Character identifier being toggled.</param>
+    /// <param name="characterName">Display name of the character.</param>
+    public void OnCharacterIgnored(Guid characterId, string characterName)
+    {
+        if (_settings.IgnoredCharacterIds.Contains(characterId))
+        {
+            _settings.RemoveIgnored(characterId);
+            OnSystemMessage($"You are no longer ignoring {characterName}.");
+        }
+        else
+        {
+            _settings.AddIgnored(characterId);
+            OnSystemMessage($"You are now ignoring {characterName}.");
         }
     }
 

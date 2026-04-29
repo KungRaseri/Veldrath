@@ -18,7 +18,8 @@ public class CharacterSelectViewModelTests : TestBase
             conn  ?? new FakeServerConnectionService(),
             zones ?? new FakeZoneService(),
             new TokenStore(),
-            nav   ?? new FakeNavigationService());
+            nav   ?? new FakeNavigationService(),
+            new ClientSettings("http://localhost"));
     }
 
     private static CharacterSelectViewModel MakeVm(
@@ -379,7 +380,7 @@ public class CharacterSelectViewModelTests : TestBase
         nav.NavigationLog.Should().NotContain(typeof(GameViewModel));
     }
 
-    // Hub callbacks — GoldChanged
+    // Hub callbacks ï¿½ GoldChanged
     [Fact]
     public async Task SelectCommand_Should_Update_Gold_When_GoldChanged_Fires()
     {
@@ -414,7 +415,7 @@ public class CharacterSelectViewModelTests : TestBase
         gameVm.ActionLog.Should().NotBeEmpty();
     }
 
-    // Hub callbacks — DamageTaken
+    // Hub callbacks ï¿½ DamageTaken
     [Fact]
     public async Task SelectCommand_Should_Update_Health_When_DamageTaken_Fires()
     {
@@ -449,7 +450,7 @@ public class CharacterSelectViewModelTests : TestBase
         gameVm.ActionLog.Should().NotBeEmpty();
     }
 
-    // Hub callbacks — ExperienceGained
+    // Hub callbacks ï¿½ ExperienceGained
     [Fact]
     public async Task SelectCommand_Should_Update_Level_When_ExperienceGained_Fires()
     {
@@ -501,7 +502,7 @@ public class CharacterSelectViewModelTests : TestBase
         gameVm.ActionLog.Should().NotBeEmpty();
     }
 
-    // Hub callbacks — CharacterSelected (initial stat seeding)
+    // Hub callbacks ï¿½ CharacterSelected (initial stat seeding)
     [Fact]
     public async Task SelectCommand_Should_Seed_All_Stats_When_CharacterSelected_Fires()
     {
@@ -566,7 +567,7 @@ public class CharacterSelectViewModelTests : TestBase
         gameVm.Experience.Should().Be(300L);
     }
 
-    // Hub callbacks — ItemCrafted
+    // Hub callbacks ï¿½ ItemCrafted
     [Fact]
     public async Task SelectCommand_Should_Update_Gold_When_ItemCrafted_Fires()
     {
@@ -601,7 +602,7 @@ public class CharacterSelectViewModelTests : TestBase
         gameVm.ActionLog.Should().ContainSingle(msg => msg.Contains("magic-staff"));
     }
 
-    // Hub callbacks — DungeonEntered
+    // Hub callbacks ï¿½ DungeonEntered
     [Fact]
     public async Task SelectCommand_Should_Append_Log_When_DungeonEntered_Fires()
     {
@@ -649,7 +650,7 @@ public class CharacterSelectViewModelTests : TestBase
         vm.Characters.Should().ContainSingle(e => e.Character.Id == charId && e.IsOnline);
     }
 
-    // Hub callbacks – ShopVisited
+    // Hub callbacks ï¿½ ShopVisited
     [Fact]
     public async Task SelectCommand_Should_Append_Log_When_ShopVisited_Fires()
     {

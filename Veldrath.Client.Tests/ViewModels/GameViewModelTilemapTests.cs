@@ -1,4 +1,5 @@
-﻿using Veldrath.Client.Services;
+using Veldrath.Client;
+using Veldrath.Client.Services;
 using Veldrath.Client.Tests.Infrastructure;
 using Veldrath.Client.ViewModels;
 
@@ -8,9 +9,9 @@ namespace Veldrath.Client.Tests.ViewModels;
 public class GameViewModelTilemapTests : TestBase
 {
     private static GameViewModel MakeVm() =>
-        new(new FakeServerConnectionService(), new FakeZoneService(), new TokenStore(), new FakeNavigationService());
+        new(new FakeServerConnectionService(), new FakeZoneService(), new TokenStore(), new FakeNavigationService(), new ClientSettings("http://localhost"));
 
-    // ── OnEnemyMoved ─────────────────────────────────────────────────────────
+    // -- OnEnemyMoved ---------------------------------------------------------
 
     [Fact]
     public void OnEnemyMoved_UsesProvidedSpriteKey()

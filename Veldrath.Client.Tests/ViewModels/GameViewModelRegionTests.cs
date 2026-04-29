@@ -1,4 +1,5 @@
-﻿using System.Reactive.Threading.Tasks;
+using System.Reactive.Threading.Tasks;
+using Veldrath.Client;
 using Veldrath.Client.Services;
 using Veldrath.Client.Tests.Infrastructure;
 using Veldrath.Client.ViewModels;
@@ -17,7 +18,8 @@ public class GameViewModelRegionTests : TestBase
             new FakeServerConnectionService(),
             new FakeZoneService(),
             new TokenStore(),
-            new FakeNavigationService());
+            new FakeNavigationService(),
+            new ClientSettings("http://localhost"));
 
         if (characterId.HasValue)
         {
@@ -45,7 +47,7 @@ public class GameViewModelRegionTests : TestBase
             Labels:        [],
             Paths:         []);
 
-    // ── Construction ───────────────────────────────────────────────────────────
+    // -- Construction -----------------------------------------------------------
 
     [Fact]
     public void RegionTilemap_Is_Not_Null_After_Construction()
@@ -68,7 +70,7 @@ public class GameViewModelRegionTests : TestBase
         vm.PendingRegionExit.Should().BeNull();
     }
 
-    // ── SeedInitialStats sets RegionTilemap.SelfEntityId ─────────────────────
+    // -- SeedInitialStats sets RegionTilemap.SelfEntityId ---------------------
 
     [Fact]
     public void SeedInitialStats_Sets_RegionTilemap_SelfEntityId()
@@ -77,7 +79,7 @@ public class GameViewModelRegionTests : TestBase
         vm.RegionTilemap!.SelfEntityId.Should().Be(CharId);
     }
 
-    // ── OnRegionMapReceived ────────────────────────────────────────────────────
+    // -- OnRegionMapReceived ----------------------------------------------------
 
     [Fact]
     public void OnRegionMapReceived_Sets_RegionTilemap_MapData()
@@ -97,7 +99,7 @@ public class GameViewModelRegionTests : TestBase
         vm.RegionTilemap.RevealedTiles.Should().BeEmpty();
     }
 
-    // ── OnRegionPlayerMoved ────────────────────────────────────────────────────
+    // -- OnRegionPlayerMoved ----------------------------------------------------
 
     [Fact]
     public void OnRegionPlayerMoved_Upserts_Entity_On_Region_Map()
@@ -115,7 +117,7 @@ public class GameViewModelRegionTests : TestBase
         var vm = MakeVm(characterId: CharId);
         vm.OnRegionMapReceived(MakeRegionMap()); // need map loaded so camera clamp works
         vm.OnRegionPlayerMoved(CharId, 20, 15, "right");
-        // After centering on (20, 15) with default viewport 26×17, camera should shift from (0,0)
+        // After centering on (20, 15) with default viewport 26ï¿½17, camera should shift from (0,0)
         vm.RegionTilemap!.CameraX.Should().BeGreaterThan(0);
     }
 
@@ -135,7 +137,7 @@ public class GameViewModelRegionTests : TestBase
         vm.RegionTilemap!.RevealedTiles.Should().BeEmpty();
     }
 
-    // ── OnZoneEntryTriggered ───────────────────────────────────────────────────
+    // -- OnZoneEntryTriggered ---------------------------------------------------
 
     [Fact]
     public void OnZoneEntryTriggered_Sets_PendingZoneEntry()
@@ -156,7 +158,7 @@ public class GameViewModelRegionTests : TestBase
         vm.PendingRegionExit.Should().BeNull();
     }
 
-    // ── OnRegionExitTriggered ──────────────────────────────────────────────────
+    // -- OnRegionExitTriggered --------------------------------------------------
 
     [Fact]
     public void OnRegionExitTriggered_Sets_PendingRegionExit()
@@ -177,7 +179,7 @@ public class GameViewModelRegionTests : TestBase
         vm.PendingZoneEntry.Should().BeNull();
     }
 
-    // ── OnZoneExited ───────────────────────────────────────────────────────────
+    // -- OnZoneExited -----------------------------------------------------------
 
     [Fact]
     public void OnZoneExited_Clears_PendingZoneEntry_And_PendingRegionExit()
@@ -186,7 +188,7 @@ public class GameViewModelRegionTests : TestBase
         // Seed both pending values via their handler methods
         vm.OnZoneEntryTriggered(new ZoneObjectDto(5, 8, "fenwick-crossing", "Fenwick Crossing", 1, 5));
         vm.OnRegionExitTriggered(new RegionExitDto(29, 10, "varenmark"));
-        // OnRegionExitTriggered clears PendingZoneEntry — re-seed it
+        // OnRegionExitTriggered clears PendingZoneEntry ï¿½ re-seed it
         vm.OnZoneEntryTriggered(new ZoneObjectDto(5, 8, "fenwick-crossing", "Fenwick Crossing", 1, 5));
 
         vm.OnZoneExited("thornveil", 5, 8);
@@ -226,7 +228,7 @@ public class GameViewModelRegionTests : TestBase
         // Re-entering the zone you just exited was silently blocked because
         // _currentZoneId was never cleared on zone exit.
         var conn = new FakeServerConnectionService();
-        var vm   = new GameViewModel(conn, new FakeZoneService(), new TokenStore(), new FakeNavigationService());
+        var vm   = new GameViewModel(conn, new FakeZoneService(), new TokenStore(), new FakeNavigationService(), new ClientSettings("http://localhost"));
 
         // Simulate the character having been inside "crestfall" (sets _currentZoneId)
         await vm.InitializeAsync("TestHero", "crestfall");
@@ -242,7 +244,7 @@ public class GameViewModelRegionTests : TestBase
         conn.SentCommands.Should().Contain(c => c.Method == "EnterZone");
     }
 
-    // ── OnRegionChanged ────────────────────────────────────────────────────────
+    // -- OnRegionChanged --------------------------------------------------------
 
     [Fact]
     public void OnRegionChanged_Clears_PendingRegionExit()

@@ -8,6 +8,7 @@ using Veldrath.Assets.Manifest;
 using Veldrath.Client.Services;
 using Veldrath.Contracts.Characters;
 using Veldrath.Contracts.Chat;
+using Veldrath.Contracts.Connection;
 using Veldrath.Contracts.Tilemap;
 
 namespace Veldrath.Client.ViewModels;
@@ -73,6 +74,17 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _zoneExitedSub;
     private IDisposable? _regionChangedSub;
     private IDisposable? _chatCommandsSub;
+    private IDisposable? _systemMessageSub;
+    private IDisposable? _onWhisperSub;
+    private IDisposable? _onEmoteSub;
+    private IDisposable? _onAnnouncementSub;
+    private IDisposable? _onKickedSub;
+    private IDisposable? _onWarnedSub;
+    private IDisposable? _onMutedSub;
+    private IDisposable? _onTeleportedSub;
+    private IDisposable? _onSummonedSub;
+    private IDisposable? _onItemReceivedSub;
+    private IDisposable? _characterIgnoredSub;
     private IDisposable? _tokenRefreshTimer;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
@@ -241,6 +253,18 @@ public class CharacterSelectViewModel : ViewModelBase
             _regionExitTriggeredSub?.Dispose();
             _zoneExitedSub?.Dispose();
             _regionChangedSub?.Dispose();
+            _chatCommandsSub?.Dispose();
+            _systemMessageSub?.Dispose();
+            _onWhisperSub?.Dispose();
+            _onEmoteSub?.Dispose();
+            _onAnnouncementSub?.Dispose();
+            _onKickedSub?.Dispose();
+            _onWarnedSub?.Dispose();
+            _onMutedSub?.Dispose();
+            _onTeleportedSub?.Dispose();
+            _onSummonedSub?.Dispose();
+            _onItemReceivedSub?.Dispose();
+            _characterIgnoredSub?.Dispose();
             _tokenRefreshTimer?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
@@ -362,7 +386,7 @@ public class CharacterSelectViewModel : ViewModelBase
             _itemDroppedSub = _connection.On<ItemDroppedPayload>("ItemDropped", payload =>
                 _gameVm.OnItemDropped(payload.ItemRef, payload.NewInventory));
             _chatMessageSub = _connection.On<ChatMessagePayload>("ReceiveChatMessage", payload =>
-                _gameVm.OnChatMessageReceived(payload.Channel, payload.Sender, payload.Message, payload.Timestamp));
+                _gameVm.OnChatMessageReceived(payload.CharacterId, payload.Channel, payload.Sender, payload.Message, payload.Timestamp));
             _characterMovedSub = _connection.On<CharacterMovedPayload>("CharacterMoved", payload =>
                 _gameVm.OnCharacterMoved(payload.CharacterId, payload.TileX, payload.TileY, payload.Direction));
             _zoneTileMapSub = _connection.On<TileMapDto>("ZoneTileMap", dto =>
@@ -391,6 +415,29 @@ public class CharacterSelectViewModel : ViewModelBase
                 _gameVm.OnRegionChanged(payload.NewRegionId, payload.TileX, payload.TileY));
             _chatCommandsSub = _connection.On<List<ChatCommandInfoDto>>("ChatCommandsReceived", commands =>
                 _gameVm.OnChatCommandsReceived(commands));
+
+            _systemMessageSub = _connection.On<string>("SystemMessage", msg =>
+                _gameVm.OnSystemMessage(msg));
+            _onWhisperSub = _connection.On<WhisperPayload>("OnWhisper", payload =>
+                _gameVm.OnWhisperReceived(payload.FromCharacterId, payload.FromCharacterName, payload.Message));
+            _onEmoteSub = _connection.On<EmotePayload>("OnEmote", payload =>
+                _gameVm.OnEmoteReceived(payload.CharacterId, payload.CharacterName, payload.Action));
+            _onAnnouncementSub = _connection.On<AnnouncementPayload>("OnAnnouncement", payload =>
+                _gameVm.OnAnnouncementReceived(payload.Message, payload.Severity));
+            _onKickedSub = _connection.On<KickedPayload>("OnKicked", payload =>
+                _gameVm.OnKicked(payload.Reason));
+            _onWarnedSub = _connection.On<WarnedPayload>("OnWarned", payload =>
+                _gameVm.OnWarned(payload.Reason, payload.NewWarnCount));
+            _onMutedSub = _connection.On<MutedPayload>("OnMuted", payload =>
+                _gameVm.OnMuted(payload.Reason, payload.Until));
+            _onTeleportedSub = _connection.On<TeleportedPayload>("OnTeleported", payload =>
+                _gameVm.OnTeleported(payload.ZoneId, payload.ZoneName));
+            _onSummonedSub = _connection.On<SummonedPayload>("OnSummoned", payload =>
+                _gameVm.OnSummoned(payload.ByCharacterName, payload.ZoneId));
+            _onItemReceivedSub = _connection.On<ItemReceivedPayload>("OnItemReceived", payload =>
+                _gameVm.OnItemReceived(payload.ItemSlug, payload.Quantity, payload.GivenByUsername));
+            _characterIgnoredSub = _connection.On<CharacterIgnoredPayload>("CharacterIgnored", payload =>
+                _gameVm.OnCharacterIgnored(payload.CharacterId, payload.CharacterName));
 
             // Proactively refresh the access token every 5 minutes during gameplay so it
             // never silently expires mid-session and cause hub reconnects to fail with 401.
@@ -463,7 +510,7 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record ShopCatalogPayload(Guid CharacterId, IReadOnlyList<ShopCatalogItemEntry> Items);
     internal record ItemTransactionPayload(Guid CharacterId, string ItemRef, string ItemDisplayName, int GoldDelta, int NewGoldTotal, IReadOnlyList<InventoryItemEntry> NewInventory);
     internal record ItemDroppedPayload(Guid CharacterId, string ItemRef, IReadOnlyList<InventoryItemEntry> NewInventory);
-    internal record ChatMessagePayload(string Channel, string Sender, string Message, DateTimeOffset Timestamp);
+    internal record ChatMessagePayload(Guid CharacterId, string Channel, string Sender, string Message, DateTimeOffset Timestamp);
     internal record ZoneExitedPayload(string RegionId, int TileX, int TileY);
     internal record RegionChangedPayload(string NewRegionId, int TileX, int TileY);
 

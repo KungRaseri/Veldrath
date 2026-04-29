@@ -1,4 +1,5 @@
-﻿using System.Reactive.Linq;
+using System.Reactive.Linq;
+using Veldrath.Client;
 using Veldrath.Client.Services;
 using Veldrath.Client.Tests.Infrastructure;
 using Veldrath.Client.ViewModels;
@@ -19,6 +20,7 @@ public class GameViewModelTests : TestBase
             zones        ?? new FakeZoneService(),
             tokens       ?? new TokenStore(),
             nav          ?? new FakeNavigationService(),
+            new ClientSettings("http://localhost"),
             sessionAlert: sessionAlert);
     }
 

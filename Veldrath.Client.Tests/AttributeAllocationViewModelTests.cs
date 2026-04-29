@@ -1,4 +1,5 @@
-﻿using System.Reactive.Linq;
+using System.Reactive.Linq;
+using Veldrath.Client;
 using Veldrath.Client.Services;
 using Veldrath.Client.Tests.Infrastructure;
 using Veldrath.Client.ViewModels;
@@ -15,7 +16,8 @@ public class AttributeAllocationViewModelTests : TestBase
             new FakeServerConnectionService(),
             new FakeZoneService(),
             new TokenStore(),
-            new FakeNavigationService());
+            new FakeNavigationService(),
+            new ClientSettings("http://localhost"));
 
         vm.SeedInitialStats(new SeedInitialStatsArgs(
             Level: 1, Experience: 0,
@@ -28,7 +30,7 @@ public class AttributeAllocationViewModelTests : TestBase
         return vm;
     }
 
-    // ── Budget accounting ────────────────────────────────────────────────────
+    // -- Budget accounting ----------------------------------------------------
 
     [Fact]
     public void PointsToAllocate_Should_Equal_UnspentAttributePoints_On_Open()
@@ -74,7 +76,7 @@ public class AttributeAllocationViewModelTests : TestBase
             .BeEquivalentTo(["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]);
     }
 
-    // ── Base values ──────────────────────────────────────────────────────────
+    // -- Base values ----------------------------------------------------------
 
     [Fact]
     public void DisplayValue_Should_Equal_BaseValue_Before_Any_Increments()
@@ -100,7 +102,7 @@ public class AttributeAllocationViewModelTests : TestBase
         str.Draft.Should().Be(2);
     }
 
-    // ── Guard conditions ─────────────────────────────────────────────────────
+    // -- Guard conditions -----------------------------------------------------
 
     [Fact]
     public void IncrementCommand_Should_Be_Disabled_When_Budget_Is_Zero()
@@ -131,7 +133,7 @@ public class AttributeAllocationViewModelTests : TestBase
         canDecrement.Should().BeFalse();
     }
 
-    // ── Confirm delta map ────────────────────────────────────────────────────
+    // -- Confirm delta map ----------------------------------------------------
 
     [Fact]
     public void ConfirmCommand_Should_Be_Disabled_When_No_Points_Allocated()
@@ -160,7 +162,7 @@ public class AttributeAllocationViewModelTests : TestBase
         canConfirm.Should().BeTrue();
     }
 
-    // ── Open/close overlay ───────────────────────────────────────────────────
+    // -- Open/close overlay ---------------------------------------------------
 
     [Fact]
     public void OpenAttributeAllocationCommand_Should_Set_IsAttributeAllocationOpen()
