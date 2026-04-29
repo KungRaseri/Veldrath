@@ -1112,7 +1112,8 @@ public class GameViewModel : ViewModelBase
     /// <param name="tileY">Spawn tile row.</param>
     public void OnZoneExited(string regionId, int tileX, int tileY)
     {
-        ZoneViewMode      = "Region";
+        ZoneViewMode   = "Region";
+        _currentZoneId = string.Empty;
         PendingZoneEntry  = null;
         PendingRegionExit = null;
 
