@@ -7,6 +7,7 @@ using Veldrath.Assets;
 using Veldrath.Assets.Manifest;
 using Veldrath.Client.Services;
 using Veldrath.Contracts.Characters;
+using Veldrath.Contracts.Chat;
 using Veldrath.Contracts.Tilemap;
 
 namespace Veldrath.Client.ViewModels;
@@ -71,6 +72,7 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _regionExitTriggeredSub;
     private IDisposable? _zoneExitedSub;
     private IDisposable? _regionChangedSub;
+    private IDisposable? _chatCommandsSub;
     private IDisposable? _tokenRefreshTimer;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
@@ -387,6 +389,8 @@ public class CharacterSelectViewModel : ViewModelBase
                 _gameVm.OnZoneExited(payload.RegionId, payload.TileX, payload.TileY));
             _regionChangedSub = _connection.On<RegionChangedPayload>("RegionChanged", payload =>
                 _gameVm.OnRegionChanged(payload.NewRegionId, payload.TileX, payload.TileY));
+            _chatCommandsSub = _connection.On<List<ChatCommandInfoDto>>("ChatCommandsReceived", commands =>
+                _gameVm.OnChatCommandsReceived(commands));
 
             // Proactively refresh the access token every 5 minutes during gameplay so it
             // never silently expires mid-session and cause hub reconnects to fail with 401.
@@ -395,6 +399,7 @@ public class CharacterSelectViewModel : ViewModelBase
                 .Subscribe(tick => { _ = DoProactiveTokenRefreshAsync(); });
 
             await _connection.SendCommandAsync<object>("SelectCharacter", character.Id);
+            await _connection.SendCommandAsync("GetChatCommands");
             await _connection.SendCommandAsync("GetRegionMap");
             await _gameVm.InitializeAsync(character.Name, zoneId);
             await _connection.SendCommandAsync<object>("EnterZone", zoneId);

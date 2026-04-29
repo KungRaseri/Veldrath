@@ -1,6 +1,8 @@
-﻿using Veldrath.Client.Services;
+﻿using System.Reactive.Threading.Tasks;
+using Veldrath.Client.Services;
 using Veldrath.Client.Tests.Infrastructure;
 using Veldrath.Client.ViewModels;
+using Veldrath.Contracts.Chat;
 
 namespace Veldrath.Client.Tests.ViewModels;
 
@@ -209,5 +211,203 @@ public class GameViewModelChatTests : TestBase
         whisperTab.Should().NotBeNull();
         vm.ActiveChatTab.Should().BeSameAs(whisperTab);
         vm.ChatInput.Should().Be("hello there");
+    }
+
+    // ── Slash command routing ────────────────────────────────────────────────
+
+    [Fact]
+    public async Task SendChat_SlashCommand_On_ZoneTab_Routes_To_SendChatMessage()
+    {
+        var fake = new FakeServerConnectionService();
+        var vm = new GameViewModel(fake, new FakeZoneService(), new TokenStore(), new FakeNavigationService());
+        vm.ChatInput = "/roll 20";
+
+        await vm.SendChatCommand.Execute().ToTask();
+
+        fake.SentCommands.Should().ContainSingle(c => c.Method == "SendChatMessage");
+        fake.SentCommands.Should().NotContain(c => c.Method == "SendZoneMessage");
+    }
+
+    [Fact]
+    public async Task SendChat_SlashCommand_On_GlobalTab_Routes_To_SendChatMessage()
+    {
+        var fake = new FakeServerConnectionService();
+        var vm = new GameViewModel(fake, new FakeZoneService(), new TokenStore(), new FakeNavigationService());
+        vm.ActiveChatTab = vm.ChatTabs.OfType<GlobalChatTabViewModel>().First();
+        vm.ChatInput = "/help";
+
+        await vm.SendChatCommand.Execute().ToTask();
+
+        fake.SentCommands.Should().ContainSingle(c => c.Method == "SendChatMessage");
+        fake.SentCommands.Should().NotContain(c => c.Method == "SendGlobalMessage");
+    }
+
+    [Fact]
+    public async Task SendChat_NormalText_On_ZoneTab_Routes_To_SendZoneMessage()
+    {
+        var fake = new FakeServerConnectionService();
+        var vm = new GameViewModel(fake, new FakeZoneService(), new TokenStore(), new FakeNavigationService());
+        vm.ActiveChatTab = vm.ChatTabs.OfType<ZoneChatTabViewModel>().First();
+        vm.ChatInput = "Hello everyone!";
+
+        await vm.SendChatCommand.Execute().ToTask();
+
+        fake.SentCommands.Should().ContainSingle(c => c.Method == "SendZoneMessage");
+        fake.SentCommands.Should().NotContain(c => c.Method == "SendChatMessage");
+    }
+
+    [Fact]
+    public async Task SendChat_NormalText_On_GlobalTab_Routes_To_SendGlobalMessage()
+    {
+        var fake = new FakeServerConnectionService();
+        var vm = new GameViewModel(fake, new FakeZoneService(), new TokenStore(), new FakeNavigationService());
+        vm.ActiveChatTab = vm.ChatTabs.OfType<GlobalChatTabViewModel>().First();
+        vm.ChatInput = "Hello global!";
+
+        await vm.SendChatCommand.Execute().ToTask();
+
+        fake.SentCommands.Should().ContainSingle(c => c.Method == "SendGlobalMessage");
+        fake.SentCommands.Should().NotContain(c => c.Method == "SendChatMessage");
+    }
+
+    [Fact]
+    public async Task SendChat_NormalText_On_WhisperTab_Routes_To_SendWhisper()
+    {
+        var fake = new FakeServerConnectionService();
+        var vm = new GameViewModel(fake, new FakeZoneService(), new TokenStore(), new FakeNavigationService());
+        vm.OnChatMessageReceived("Whisper", "Alice", "hi", DateTimeOffset.UtcNow);
+        var whisperTab = vm.ChatTabs.OfType<WhisperChatTabViewModel>().First();
+        vm.ActiveChatTab = whisperTab;
+        vm.ChatInput = "Hey Alice!";
+
+        await vm.SendChatCommand.Execute().ToTask();
+
+        fake.SentCommands.Should().ContainSingle(c => c.Method == "SendWhisper");
+        fake.SentCommands.Should().NotContain(c => c.Method == "SendChatMessage");
+    }
+
+    [Fact]
+    public async Task SendChat_SlashCommand_Clears_ChatInput_After_Send()
+    {
+        var fake = new FakeServerConnectionService();
+        var vm = new GameViewModel(fake, new FakeZoneService(), new TokenStore(), new FakeNavigationService());
+        vm.ChatInput = "/afk brb";
+
+        await vm.SendChatCommand.Execute().ToTask();
+
+        vm.ChatInput.Should().BeEmpty();
+    }
+
+    // ── Command suggestion popup ─────────────────────────────────────────────
+
+    [Fact]
+    public void OnChatCommandsReceived_Populates_AvailableCommands()
+    {
+        var vm = MakeVm();
+        var commands = new List<ChatCommandInfoDto>
+        {
+            new("roll", "/roll [max]", "Roll dice", null),
+            new("help", "/help", "Show help", null),
+        };
+
+        vm.OnChatCommandsReceived(commands);
+
+        vm.AvailableCommands.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void ChatInput_Slash_Alone_Opens_Popup_With_All_Commands()
+    {
+        var vm = MakeVm();
+        vm.OnChatCommandsReceived([new("roll", "/roll [max]", "Roll dice", null)]);
+
+        vm.ChatInput = "/";
+
+        vm.IsCommandPopupOpen.Should().BeTrue();
+        vm.CommandSuggestions.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void ChatInput_Slash_With_Prefix_Filters_Suggestions()
+    {
+        var vm = MakeVm();
+        vm.OnChatCommandsReceived(
+        [
+            new("roll", "/roll [max]", "Roll dice", null),
+            new("respawn", "/respawn", "Respawn", null),
+            new("help", "/help", "Show help", null),
+        ]);
+
+        vm.ChatInput = "/ro";
+
+        vm.CommandSuggestions.Should().ContainSingle(c => c.Command == "roll");
+        vm.CommandSuggestions.Should().NotContain(c => c.Command == "help");
+    }
+
+    [Fact]
+    public void ChatInput_Without_Slash_Closes_Popup()
+    {
+        var vm = MakeVm();
+        vm.OnChatCommandsReceived([new("roll", "/roll [max]", "Roll dice", null)]);
+        vm.ChatInput = "/";
+
+        vm.ChatInput = "Hello";
+
+        vm.IsCommandPopupOpen.Should().BeFalse();
+        vm.CommandSuggestions.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ChatInput_After_Space_Closes_Popup()
+    {
+        var vm = MakeVm();
+        vm.OnChatCommandsReceived([new("roll", "/roll [max]", "Roll dice", null)]);
+        vm.ChatInput = "/";
+
+        vm.ChatInput = "/roll 20";
+
+        vm.IsCommandPopupOpen.Should().BeFalse();
+    }
+
+    [Fact]
+    public void SelectCommand_On_Suggestion_Sets_ChatInput_To_Usage()
+    {
+        var vm = MakeVm();
+        vm.OnChatCommandsReceived([new("roll", "/roll [max]", "Roll dice", null)]);
+        vm.ChatInput = "/ro";
+        var suggestion = vm.CommandSuggestions.First();
+
+        suggestion.SelectCommand.Execute().Subscribe();
+
+        vm.ChatInput.Should().Be("/roll [max]");
+        vm.IsCommandPopupOpen.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ToggleCommandHelp_Opens_Full_List_When_Closed()
+    {
+        var vm = MakeVm();
+        vm.OnChatCommandsReceived(
+        [
+            new("roll", "/roll [max]", "Roll dice", null),
+            new("help", "/help", "Show help", null),
+        ]);
+
+        vm.ToggleCommandHelpCommand.Execute().Subscribe();
+
+        vm.IsCommandPopupOpen.Should().BeTrue();
+        vm.CommandSuggestions.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void ToggleCommandHelp_Closes_Full_List_When_Open()
+    {
+        var vm = MakeVm();
+        vm.OnChatCommandsReceived([new("roll", "/roll [max]", "Roll dice", null)]);
+        vm.ToggleCommandHelpCommand.Execute().Subscribe();
+
+        vm.ToggleCommandHelpCommand.Execute().Subscribe();
+
+        vm.IsCommandPopupOpen.Should().BeFalse();
     }
 }

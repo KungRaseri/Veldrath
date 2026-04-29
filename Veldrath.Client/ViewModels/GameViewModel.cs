@@ -6,6 +6,7 @@ using System.Reactive.Linq;
 using Veldrath.Assets;
 using Veldrath.Assets.Manifest;
 using Veldrath.Client.Services;
+using Veldrath.Contracts.Chat;
 
 namespace Veldrath.Client.ViewModels;
 
@@ -350,6 +351,9 @@ public class GameViewModel : ViewModelBase
     private readonly ZoneChatTabViewModel _zoneTab;
     private string _chatInput = string.Empty;
     private ChatTabViewModel _activeChatTab = null!; // assigned in ctor after tab instances are created
+    private List<ChatCommandInfoViewModel> _availableCommands = [];
+    private List<ChatCommandInfoViewModel> _commandSuggestions = [];
+    private bool _isCommandPopupOpen;
 
     /// <summary>Whether the collapsible left character-sheet panel is expanded.</summary>
     public bool IsLeftPanelOpen
@@ -468,7 +472,21 @@ public class GameViewModel : ViewModelBase
                     this.RaisePropertyChanged(nameof(ChatInput));
                 }
             }
+            UpdateCommandSuggestions(value);
         }
+    }
+
+    /// <summary>All chat commands the current player is permitted to run, populated after character select.</summary>
+    public IReadOnlyList<ChatCommandInfoViewModel> AvailableCommands => _availableCommands;
+
+    /// <summary>Filtered subset of <see cref="AvailableCommands"/> matching the slash-command prefix typed in <see cref="ChatInput"/>.</summary>
+    public IReadOnlyList<ChatCommandInfoViewModel> CommandSuggestions => _commandSuggestions;
+
+    /// <summary>Whether the command suggestion popup should be visible.</summary>
+    public bool IsCommandPopupOpen
+    {
+        get => _isCommandPopupOpen;
+        private set => this.RaiseAndSetIfChanged(ref _isCommandPopupOpen, value);
     }
 
     // Overlay panel state
@@ -742,6 +760,12 @@ public class GameViewModel : ViewModelBase
 
     /// <summary>Send the current <see cref="ChatInput"/> on the active chat tab's channel.</summary>
     public ReactiveCommand<Unit, Unit> SendChatCommand { get; }
+
+    /// <summary>Fills the chat input with the selected command's usage template and closes the suggestion popup.</summary>
+    public ReactiveCommand<ChatCommandInfoViewModel, Unit> SelectCommandSuggestionCommand { get; }
+
+    /// <summary>Toggles the command list popup open or closed regardless of what is currently typed.</summary>
+    public ReactiveCommand<Unit, Unit> ToggleCommandHelpCommand { get; }
 
     /// <summary>Dev helper: gains 100 XP. Used during development for testing progression.</summary>
     public ReactiveCommand<Unit, Unit> DevGainXpCommand { get; }
@@ -1026,6 +1050,27 @@ public class GameViewModel : ViewModelBase
             (input, tab) => !string.IsNullOrWhiteSpace(input) && tab is not null);
         SendChatCommand = ReactiveCommand.CreateFromTask(DoSendChatAsync, canSend);
 
+        SelectCommandSuggestionCommand = ReactiveCommand.Create<ChatCommandInfoViewModel>(cmd =>
+        {
+            _chatInput = cmd.Usage;
+            this.RaisePropertyChanged(nameof(ChatInput));
+            IsCommandPopupOpen = false;
+        });
+
+        ToggleCommandHelpCommand = ReactiveCommand.Create(() =>
+        {
+            if (IsCommandPopupOpen && _commandSuggestions == _availableCommands)
+            {
+                IsCommandPopupOpen = false;
+            }
+            else
+            {
+                _commandSuggestions = _availableCommands;
+                this.RaisePropertyChanged(nameof(CommandSuggestions));
+                IsCommandPopupOpen = _availableCommands.Count > 0;
+            }
+        });
+
         // Subscribe to connection state changes
         _connection.StateChanged += state => { ConnectionStateValue = state; };
         ConnectionStateValue = _connection.State;
@@ -1297,6 +1342,38 @@ public class GameViewModel : ViewModelBase
         ChatTabs.Remove(tab);
         if (ActiveChatTab == tab)
             ActiveChatTab = _zoneTab;
+    }
+
+    private void UpdateCommandSuggestions(string input)
+    {
+        // Show suggestions only while typing the command name (before any argument space)
+        if (!input.StartsWith('/') || input.Contains(' '))
+        {
+            _commandSuggestions = [];
+        }
+        else
+        {
+            var prefix = input[1..];
+            _commandSuggestions = _availableCommands
+                .Where(c => c.Command.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+        this.RaisePropertyChanged(nameof(CommandSuggestions));
+        IsCommandPopupOpen = _commandSuggestions.Count > 0;
+    }
+
+    /// <summary>Called from hub when <c>ChatCommandsReceived</c> arrives with the player's role-filtered command list.</summary>
+    /// <param name="commands">The commands the current player is permitted to run.</param>
+    public void OnChatCommandsReceived(List<ChatCommandInfoDto> commands)
+    {
+        _availableCommands = commands.Select(c => new ChatCommandInfoViewModel(c, usage =>
+        {
+            _chatInput = usage;
+            this.RaisePropertyChanged(nameof(ChatInput));
+            IsCommandPopupOpen = false;
+        })).ToList();
+        this.RaisePropertyChanged(nameof(AvailableCommands));
+        UpdateCommandSuggestions(_chatInput);
     }
 
     /// <summary>Called from hub when the active character's attribute points have been allocated.</summary>
@@ -2074,17 +2151,25 @@ public class GameViewModel : ViewModelBase
         if (string.IsNullOrEmpty(message)) return;
         try
         {
-            switch (ActiveChatTab)
+            // Slash commands are always handled server-side via SendChatMessage regardless of active tab.
+            if (message.StartsWith('/'))
             {
-                case ZoneChatTabViewModel:
-                    await _connection.SendCommandAsync<object>("SendZoneMessage", new { Message = message });
-                    break;
-                case GlobalChatTabViewModel:
-                    await _connection.SendCommandAsync<object>("SendGlobalMessage", new { Message = message });
-                    break;
-                case WhisperChatTabViewModel whisperTab:
-                    await _connection.SendCommandAsync<object>("SendWhisper", new { TargetCharacterName = whisperTab.TargetName, Message = message });
-                    break;
+                await _connection.SendCommandAsync<object>("SendChatMessage", new { Message = message });
+            }
+            else
+            {
+                switch (ActiveChatTab)
+                {
+                    case ZoneChatTabViewModel:
+                        await _connection.SendCommandAsync<object>("SendZoneMessage", new { Message = message });
+                        break;
+                    case GlobalChatTabViewModel:
+                        await _connection.SendCommandAsync<object>("SendGlobalMessage", new { Message = message });
+                        break;
+                    case WhisperChatTabViewModel whisperTab:
+                        await _connection.SendCommandAsync<object>("SendWhisper", new { TargetCharacterName = whisperTab.TargetName, Message = message });
+                        break;
+                }
             }
             ChatInput = string.Empty;
         }
