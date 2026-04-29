@@ -1,4 +1,5 @@
-﻿using Veldrath.Client.Services;
+﻿using System.Reactive.Threading.Tasks;
+using Veldrath.Client.Services;
 using Veldrath.Client.Tests.Infrastructure;
 using Veldrath.Client.ViewModels;
 using Veldrath.Contracts.Tilemap;
@@ -217,6 +218,28 @@ public class GameViewModelRegionTests : TestBase
         var vm  = MakeVm(); // no characterId
         var act = () => vm.OnZoneExited("thornveil", 1, 1);
         act.Should().NotThrow();
+    }
+
+    [Fact]
+    public async Task ConfirmZoneEntry_After_OnZoneExited_Sends_EnterZone_For_Same_Zone()
+    {
+        // Re-entering the zone you just exited was silently blocked because
+        // _currentZoneId was never cleared on zone exit.
+        var conn = new FakeServerConnectionService();
+        var vm   = new GameViewModel(conn, new FakeZoneService(), new TokenStore(), new FakeNavigationService());
+
+        // Simulate the character having been inside "crestfall" (sets _currentZoneId)
+        await vm.InitializeAsync("TestHero", "crestfall");
+
+        // Player exits Crestfall back to the region map
+        vm.OnZoneExited("varenmark", 5, 8);
+
+        // Player steps back onto the Crestfall zone-entry tile and confirms
+        conn.SentCommands.Clear();
+        vm.OnZoneEntryTriggered(new ZoneObjectDto(5, 8, "crestfall", "Crestfall", 1, 10));
+        await vm.ConfirmZoneEntryCommand.Execute().ToTask();
+
+        conn.SentCommands.Should().Contain(c => c.Method == "EnterZone");
     }
 
     // ── OnRegionChanged ────────────────────────────────────────────────────────
