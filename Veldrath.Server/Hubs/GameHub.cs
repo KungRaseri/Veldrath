@@ -2103,6 +2103,17 @@ public class GameHub : Hub
             return;
         }
 
+        // Mute check — blocked callers cannot broadcast globally.
+        var globalMuteAccount = await _userManager.FindByIdAsync(GetAccountId().ToString());
+        if (globalMuteAccount is not null && globalMuteAccount.IsMuted &&
+            (globalMuteAccount.MutedUntil is null || globalMuteAccount.MutedUntil > DateTimeOffset.UtcNow))
+        {
+            var until = globalMuteAccount.MutedUntil.HasValue ? $" until {globalMuteAccount.MutedUntil:u}" : string.Empty;
+            await Clients.Caller.SendAsync("SystemMessage",
+                $"You are muted{until}. Reason: {globalMuteAccount.MuteReason ?? "No reason given."}");
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(request.Message))
             return;
 
@@ -2126,6 +2137,17 @@ public class GameHub : Hub
         if (!TryGetCharacterId(out var characterId) || !TryGetCharacterName(out var senderName))
         {
             await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before SendWhisper");
+            return;
+        }
+
+        // Mute check — blocked callers cannot send whispers.
+        var whisperMuteAccount = await _userManager.FindByIdAsync(GetAccountId().ToString());
+        if (whisperMuteAccount is not null && whisperMuteAccount.IsMuted &&
+            (whisperMuteAccount.MutedUntil is null || whisperMuteAccount.MutedUntil > DateTimeOffset.UtcNow))
+        {
+            var until = whisperMuteAccount.MutedUntil.HasValue ? $" until {whisperMuteAccount.MutedUntil:u}" : string.Empty;
+            await Clients.Caller.SendAsync("SystemMessage",
+                $"You are muted{until}. Reason: {whisperMuteAccount.MuteReason ?? "No reason given."}");
             return;
         }
 

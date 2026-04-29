@@ -411,4 +411,42 @@ public class GameViewModelChatTests : TestBase
 
         vm.IsCommandPopupOpen.Should().BeFalse();
     }
+
+    // ── Ignore filter ────────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnChatMessageReceived_Silently_Drops_Message_From_Ignored_Character()
+    {
+        var settings  = new ClientSettings("http://localhost");
+        var ignoredId = Guid.NewGuid();
+        settings.AddIgnored(ignoredId);
+        var vm      = new GameViewModel(
+            new FakeServerConnectionService(),
+            new FakeZoneService(),
+            new TokenStore(),
+            new FakeNavigationService(),
+            settings);
+        var zoneTab = vm.ChatTabs.OfType<ZoneChatTabViewModel>().First();
+
+        vm.OnChatMessageReceived(ignoredId, "Zone", "Ignored Person", "hello", DateTimeOffset.UtcNow);
+
+        zoneTab.Messages.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void OnChatMessageReceived_Does_Not_Drop_System_Messages_With_Empty_Guid()
+    {
+        var settings = new ClientSettings("http://localhost");
+        var vm       = new GameViewModel(
+            new FakeServerConnectionService(),
+            new FakeZoneService(),
+            new TokenStore(),
+            new FakeNavigationService(),
+            settings);
+        var zoneTab = vm.ChatTabs.OfType<ZoneChatTabViewModel>().First();
+
+        vm.OnChatMessageReceived(Guid.Empty, "Zone", "System", "Server message", DateTimeOffset.UtcNow);
+
+        zoneTab.Messages.Should().ContainSingle(m => m.Message == "Server message");
+    }
 }

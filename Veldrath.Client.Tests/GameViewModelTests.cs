@@ -1419,4 +1419,243 @@ public class GameViewModelTests : TestBase
         alert.PendingAlert.Should().Be("Version mismatch — client v0.1 / server v9.0");
         nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
     }
+
+    // ── OnSystemMessage ──────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnSystemMessage_Adds_Message_To_Zone_Tab()
+    {
+        var vm = MakeVm();
+        var zoneTab = vm.ChatTabs.OfType<ZoneChatTabViewModel>().First();
+
+        vm.OnSystemMessage("Server going down in 5 minutes.");
+
+        zoneTab.Messages.Should().ContainSingle(m => m.Message == "Server going down in 5 minutes." && m.Sender == "System");
+    }
+
+    // ── OnWhisperReceived ────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnWhisperReceived_Opens_WhisperTab_And_Adds_Message()
+    {
+        var vm = MakeVm();
+
+        vm.OnWhisperReceived(Guid.NewGuid(), "Alice", "psst hey");
+
+        var whisperTab = vm.ChatTabs.OfType<WhisperChatTabViewModel>().FirstOrDefault(t => t.TargetName == "Alice");
+        whisperTab.Should().NotBeNull();
+        whisperTab!.Messages.Should().ContainSingle(m => m.Message == "psst hey");
+    }
+
+    [Fact]
+    public void OnWhisperReceived_Suppresses_Message_From_Ignored_Character()
+    {
+        var settings = new ClientSettings("http://localhost");
+        var ignoredId = Guid.NewGuid();
+        settings.AddIgnored(ignoredId);
+        var vm = new GameViewModel(
+            new FakeServerConnectionService(),
+            new FakeZoneService(),
+            new TokenStore(),
+            new FakeNavigationService(),
+            settings);
+
+        vm.OnWhisperReceived(ignoredId, "BadGuy", "spam");
+
+        vm.ChatTabs.OfType<WhisperChatTabViewModel>().Should().BeEmpty();
+    }
+
+    // ── OnEmoteReceived ──────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnEmoteReceived_Adds_Formatted_Message_To_Zone_Tab()
+    {
+        var vm = MakeVm();
+        var zoneTab = vm.ChatTabs.OfType<ZoneChatTabViewModel>().First();
+
+        vm.OnEmoteReceived(Guid.NewGuid(), "Bob", "waves hello");
+
+        zoneTab.Messages.Should().ContainSingle(m => m.Message == "* waves hello *" && m.Sender == "Bob");
+    }
+
+    [Fact]
+    public void OnEmoteReceived_Suppresses_Message_From_Ignored_Character()
+    {
+        var settings = new ClientSettings("http://localhost");
+        var ignoredId = Guid.NewGuid();
+        settings.AddIgnored(ignoredId);
+        var vm = new GameViewModel(
+            new FakeServerConnectionService(),
+            new FakeZoneService(),
+            new TokenStore(),
+            new FakeNavigationService(),
+            settings);
+        var zoneTab = vm.ChatTabs.OfType<ZoneChatTabViewModel>().First();
+
+        vm.OnEmoteReceived(ignoredId, "BadGuy", "spam action");
+
+        zoneTab.Messages.Should().BeEmpty();
+    }
+
+    // ── OnAnnouncementReceived ────────────────────────────────────────────────
+
+    [Fact]
+    public void OnAnnouncementReceived_Critical_Adds_CRITICAL_Label_To_All_Tabs()
+    {
+        var vm = MakeVm();
+
+        vm.OnAnnouncementReceived("Server maintenance soon.", "critical");
+
+        foreach (var tab in vm.ChatTabs)
+            tab.Messages.Should().Contain(m => m.Sender == "[CRITICAL]" && m.Message == "Server maintenance soon.");
+    }
+
+    [Fact]
+    public void OnAnnouncementReceived_Warning_Adds_WARNING_Label_To_All_Tabs()
+    {
+        var vm = MakeVm();
+
+        vm.OnAnnouncementReceived("Unusual activity detected.", "warning");
+
+        foreach (var tab in vm.ChatTabs)
+            tab.Messages.Should().Contain(m => m.Sender == "[WARNING]" && m.Message == "Unusual activity detected.");
+    }
+
+    [Fact]
+    public void OnAnnouncementReceived_Unknown_Severity_Uses_Announcement_Label()
+    {
+        var vm = MakeVm();
+
+        vm.OnAnnouncementReceived("Event starting!", "info");
+
+        foreach (var tab in vm.ChatTabs)
+            tab.Messages.Should().Contain(m => m.Sender == "[Announcement]" && m.Message == "Event starting!");
+    }
+
+    // ── OnKicked ─────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnKicked_Sets_PendingAlert_And_Navigates_To_MainMenu()
+    {
+        var nav   = new FakeNavigationService();
+        var alert = new SessionAlertService();
+        var vm    = MakeVm(nav: nav, sessionAlert: alert);
+
+        vm.OnKicked("Harassment violation");
+
+        alert.PendingAlert.Should().Contain("Harassment violation");
+        nav.NavigationLog.Should().Contain(typeof(MainMenuViewModel));
+    }
+
+    // ── OnWarned ─────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnWarned_Sets_StatusMessage_And_Adds_Message_To_All_Tabs()
+    {
+        var vm = MakeVm();
+
+        vm.OnWarned("Inappropriate language", 2);
+
+        vm.StatusMessage.Should().Contain("WARNING").And.Contain("2").And.Contain("Inappropriate language");
+        foreach (var tab in vm.ChatTabs)
+            tab.Messages.Should().Contain(m => m.Sender == "Warning");
+    }
+
+    // ── OnMuted ──────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnMuted_Permanent_Adds_Message_Containing_Permanently_To_All_Tabs()
+    {
+        var vm = MakeVm();
+
+        vm.OnMuted("Spamming", null);
+
+        foreach (var tab in vm.ChatTabs)
+            tab.Messages.Should().Contain(m => m.Message.Contains("permanently") && m.Message.Contains("Spamming"));
+    }
+
+    [Fact]
+    public void OnMuted_Timed_Adds_Message_With_Expiry_To_All_Tabs()
+    {
+        var vm    = MakeVm();
+        var until = new DateTimeOffset(2026, 5, 1, 12, 0, 0, TimeSpan.Zero);
+
+        vm.OnMuted("Flooding chat", until);
+
+        foreach (var tab in vm.ChatTabs)
+            tab.Messages.Should().Contain(m => m.Message.Contains("2026") && m.Message.Contains("Flooding chat"));
+    }
+
+    // ── OnTeleported ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnTeleported_Sets_StatusMessage_With_Zone_Name()
+    {
+        var vm = MakeVm();
+
+        vm.OnTeleported("zone-crestfall", "Crestfall");
+
+        vm.StatusMessage.Should().Be("Teleported to Crestfall");
+    }
+
+    // ── OnSummoned ───────────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnSummoned_Sets_StatusMessage_With_Summoner_Name()
+    {
+        var vm = MakeVm();
+
+        vm.OnSummoned("AdminGM", "zone-crestfall");
+
+        vm.StatusMessage.Should().Be("Summoned by AdminGM");
+    }
+
+    // ── OnItemReceived ────────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnItemReceived_Sets_StatusMessage_With_Item_And_Quantity()
+    {
+        var vm = MakeVm();
+
+        vm.OnItemReceived("iron-sword", 3, "AdminUser");
+
+        vm.StatusMessage.Should().Contain("iron-sword").And.Contain("3").And.Contain("AdminUser");
+    }
+
+    // ── OnCharacterIgnored ────────────────────────────────────────────────────
+
+    [Fact]
+    public void OnCharacterIgnored_First_Call_Adds_Character_To_Ignore_List()
+    {
+        var settings = new ClientSettings("http://localhost");
+        var vm       = new GameViewModel(
+            new FakeServerConnectionService(),
+            new FakeZoneService(),
+            new TokenStore(),
+            new FakeNavigationService(),
+            settings);
+        var id = Guid.NewGuid();
+
+        vm.OnCharacterIgnored(id, "GrumpyGus");
+
+        settings.IgnoredCharacterIds.Should().Contain(id);
+    }
+
+    [Fact]
+    public void OnCharacterIgnored_Second_Call_Removes_Character_From_Ignore_List()
+    {
+        var settings = new ClientSettings("http://localhost");
+        var id       = Guid.NewGuid();
+        settings.AddIgnored(id);
+        var vm = new GameViewModel(
+            new FakeServerConnectionService(),
+            new FakeZoneService(),
+            new TokenStore(),
+            new FakeNavigationService(),
+            settings);
+
+        vm.OnCharacterIgnored(id, "GrumpyGus");
+
+        settings.IgnoredCharacterIds.Should().NotContain(id);
+    }
 }
