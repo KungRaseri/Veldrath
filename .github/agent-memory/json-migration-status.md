@@ -1,4 +1,6 @@
-﻿# RealmEngine JSON → DB Migration Status
+# RealmEngine JSON → DB Migration Status
+
+> **Status**: Reviewed and current as of Session-39 (2026-06-27).
 
 ## What Was Done
 - Deleted all `RealmEngine.Shared/Data/` JSON data model files (AbilityDataModels, ClassCatalogDataModels, EnemyNpcTraitDataModels, GameDataModels, ItemTraitDataModels, JsonHelpers, NpcCatalogDataModels, QuestCatalogDataModels, QuestDataModels, QuestObjectivesDataModels, QuestRewardsDataModels)

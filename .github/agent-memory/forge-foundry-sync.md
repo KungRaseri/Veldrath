@@ -1,4 +1,6 @@
-﻿# RealmEngine — Forge ↔ Foundry Sync Notes
+# RealmEngine — Forge ↔ Foundry Sync Notes
+
+> **Status**: Reviewed and current as of Session-39 (2026-06-27).
 
 > For Veldrath Server + Client iteration history, see [unbound-memory.md](unbound-memory.md).
 

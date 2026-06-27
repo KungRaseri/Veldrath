@@ -1,6 +1,8 @@
-﻿# Auth Flow & Character Creation Gap Fix Plan
+# Auth Flow & Character Creation Gap Fix Plan
 
-**Started:** 2026-04-02  
+> **Status**: Updated for post-Session-39 (2026-06-27). Auth hardening Pass 1 completed in Session-31. Auth hardening Pass 2 (forgot password, account profile, session persistence, LinkedAt, shared auth libraries) completed in Sessions 35-37.
+
+**Started:** 2026-04-02
 **Status:** In Progress — paused mid-test-verification
 
 ---
@@ -74,7 +76,53 @@ File: `RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs`
 | 11 test | `Finalize_AlreadyFinalizedSession_Returns400` | ✅ committed | `CharacterCreationSessionEndpointTests.cs` |
 | 9 | `DoNextStepAsync` StepError paths steps 0–5 | ✅ committed | `CreateCharacterViewModelTests.cs` |
 
+### Auth Hardening Pass 2 — Sessions 35-37 (2026-04-16 to 2026-04-18)
+
+**Completed Work:**
+
+1. **Forgot Password Flow** — Full implementation across client (Avalonia), web (Blazor SSR), and server (API endpoints):
+   - `ForgotPasswordViewModel.cs` (+66 lines), `ForgotPasswordView.axaml` (+81 lines)
+   - `ForgotPassword.razor` (+71 lines), `ResetPassword.razor` (+87 lines)
+   - `AuthService.cs` — +54 lines for password reset/confirmation flows
+   - `ForgotPasswordViewModelTests.cs` (+83 lines)
+
+2. **Account Profile Management**:
+   - `Profile.razor` (+444 lines) — comprehensive account management UI
+   - Linked accounts display, active session management
+   - `IVeldrathAuthApiClient`/`VeldrathAuthApiClient` extended for profile operations
+
+3. **Session Persistence**:
+   - Login and registration flows now persist sessions
+   - `TokenStore.cs` enhanced with roles, permissions, session ID tracking
+   - `TokenPersistenceService.cs` for token storage
+
+4. **LinkedAt Timestamp**:
+   - `PlayerUserLogin.cs` entity extending `IdentityUserLogin` with `LinkedAt`
+   - EF Migration `20260418013500_AddLinkedAtToUserLogins`
+   - `AccountLinkService`, `ExternalAuthEndpoints`, `AuthService`, `AccountService` all updated to track linked date
+
+5. **Shared Auth Libraries**:
+   - `Veldrath.Auth` project with `IVeldrathAuthApiClient`/`VeldrathAuthApiClient`
+   - `Veldrath.Auth.Blazor` project with `AuthStateServiceBase`
+   - `Veldrath.Auth.Tests` project (436+ lines of tests)
+   - `RealmFoundry` and `Veldrath.Web` now inherit from shared base classes
+
+6. **Enhanced Auth Infrastructure**:
+   - OAuth token refresh silent renewal before redirect
+   - Logout with server session revocation
+   - JWT renewal endpoint
+   - Refresh token rotation middleware
+   - Enhanced error handling in auth API client
+   - Improved OAuth local listener with port binding retry
+
+**Items Excluded from Pass 2 (still pending for future passes):**
+- `AccountLinkService.RequestLinkAsync` idempotency — duplicate token on second request
+- `PendingLinkEndpoints` rate limiting
+- `ExternalAuthEndpoints` link-mode OAuth integration tests
+- `LoginViewModel` external OAuth flow tests
+
 ---
+
 
 ## ⚠️ Failing Tests — PAUSE STATE
 
@@ -153,3 +201,5 @@ await client.PatchAsJsonAsync(
 // then call GetAsync /preview
 ```
 Or simplify: merge `GetPreview_AfterBegin_Returns200` with `GetPreview_AfterClassSelected_ReturnsPreviewWithClassName` and remove the bare-begin test since it always fails.
+
+**Note (Session-39, 2026-06-27):** These 4 tests were in a paused state at the end of Session-31. Their current status is unknown — they may have been fixed, partially addressed, or may still be failing. A fresh `dotnet test` run is needed to verify.

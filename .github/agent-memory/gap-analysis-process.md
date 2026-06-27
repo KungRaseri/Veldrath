@@ -1,5 +1,7 @@
 # RealmEngine — Gap Analysis Process
 
+> **Status**: Reviewed and current as of Session-39 (2026-06-27).
+
 ## When to Invoke
 At the start of every iteration session, before writing any code. Use the Explore subagent
 with thoroughness **thorough**.

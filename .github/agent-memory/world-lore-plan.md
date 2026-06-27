@@ -1,6 +1,6 @@
 # World Lore Plan — Veldrath
 
-> **Status:** Phases 1–4 complete. Calethic language pass (Q3) **COMPLETE (2026-04-15)**. Open item #1 (Varenmark name) resolved — keep Varenmark, etymology established. 6 open items remain. Work through them in order before moving to Greymoor.
+> **Status**: Reviewed and current as of Session-39 (2026-06-27).
 
 ---
 
@@ -201,3 +201,7 @@ Update sub-location descriptions within zone pages. **✅ COMPLETE (2026-04-14)*
 | 2026-04-14 | Phase 4 complete: 5 new sub-locations added across 5 zone pages (crestfall-garrison, foresters-camp, old-waystation, mire-marker, halrow-grounds). Drowning Pits complete as-is. |
 | 2026-04-15 | Full Varenmark review done — all writing confirmed good. 7 open design items identified (see resume point). Decision made to do Q3 Calethic language pass first, before locking names or moving to Greymoor. Language pass started: tonal character question posed, awaiting answer. |
 | 2026-04-15 | Q3 COMPLETE: Full Calethic language designed — phonology (hard+formal tonal character, sibilants ceremonial-only), morphology (7 suffixes, 11 prefixes, title construction rules, place-name compounding), basic syntax (3 registers: administrative/formal/vaeld), root dictionary (~75 roots), full named-entity pass for all Varenmark entities + TBD terms. New files: `docs/lore/calethic-language.md` (design ref) + `wiki/Calethic-Language.md` (player-facing). All `[TBD — language pass Q3]` placeholders filled in `World-Veldrath.md`. Calethic names added to all 6 zone spoiler sections. Open item #1 resolved (Varenmark keeps its name; etymology established). 6 open items remain. |
+
+### Session-39 Note (2026-06-27)
+
+This plan was reviewed during the Priority 0 memory file update session. No new world-building work has been done since the last session. The 6 open design items (Vraen, Aethori presence, Pits contents, Grevenmire subjects, player discovery mechanism, Crestfall's history) remain unresolved. Next step remains Greymoor (Phase 5+ regional design) once items 3-7 are resolved.

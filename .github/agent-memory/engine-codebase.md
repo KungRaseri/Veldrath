@@ -1,15 +1,23 @@
-﻿# RealmEngine Codebase Notes
+# RealmEngine Codebase Notes
 
-## Test Counts (as of session-30, 2026-04-10)
-- RealmEngine.Core.Tests: **1,912 passing**
-- RealmEngine.Shared.Tests: **803 passing**
-- RealmEngine.Data.Tests: **237 passing**
-- Veldrath.Client.Tests: **525 passing**
-- Veldrath.Server.Tests: **571 passing** (+11 from OAuth link-confirmation flow; 8 pre-existing failures unrelated)
-- RealmForge.Tests: **8 passing**
-- RealmFoundry.Tests: **48 passing**
-- Veldrath.Assets.Tests: **10 passing**
-- **Total (approx): 4,114+ passing**
+> **Status**: Updated for post-Session-39 (2026-06-27).
+
+## Test Counts
+
+| Project | Tests |
+|---------|-------|
+| `RealmEngine.Core.Tests` | ~1,912 (183 test files) |
+| `RealmEngine.Shared.Tests` | ~803 (34 test files) |
+| `RealmEngine.Data.Tests` | ~237 (21 test files) |
+| `Veldrath.Server.Tests` | ~728 (63 test files) |
+| `Veldrath.Client.Tests` | ~713 (40 test files) |
+| `RealmForge.Tests` | ~8 (6 test files) |
+| `RealmFoundry.Tests` | ~51 (8 test files) |
+| `Veldrath.Auth.Tests` | ~new~ (6 test files) |
+| `Veldrath.Web.Tests` | ~31 (6 test files) |
+| `Veldrath.Discord.Tests` | ~ (4 test files) |
+| `Veldrath.Assets.Tests` | ~10 (5 test files) |
+| **Approximate Total** | **~4,500+ (376 test files)** |
 
 ## Key Model Facts
 - `Location` has 4 required properties: `Id`, `Name`, `Description`, `Type`
@@ -268,3 +276,69 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 ### ActorClassDto XML Docs (session-14)
 - Added full `<param>` docs for all 6 positional parameters of `ActorClassDto`
 - TypeKey doc: "DB category key for this class family (e.g. \"warriors\", \"casters\"). Not a content-reference prefix."
+
+
+---
+
+### New Patterns Introduced (Post-Session-31)
+
+#### Moderation Options Pattern
+- `Veldrath.Server/Settings/ModerationOptions.cs` binds `IOptions<ModerationOptions>` from `appsettings.json` `"Moderation"` section
+- Properties: `AutoBanWarnThreshold` (default 3), `MaxChatMessageLength` (default 500)
+
+#### Version Compatibility Enforcement
+- `Veldrath.Server/Settings/VersionCompatibilitySettings.cs` with `MinCompatibleClientVersion`
+- Value stamped at Release publish time via MSBuild target
+
+#### Rate Limiting by Policy
+- 5 named policies in `Program.cs`: `foundry-writes`, `admin-actions`, `auth-attempts` (per-IP), `jwt-renewal` (per-IP), `hub-commands`
+- Uses ASP.NET Core rate limiting with fixed-window and partitioned (per-IP) policies
+
+#### Migration Repair Strategy
+- `RepairStaleMigrationsAsync` in `Program.cs` handles squashed migrations gracefully: drops dev DB, throws in production
+- Used after consolidating 10+ old migrations into single `InitialCreate` per DbContext
+
+#### ConnectionGuard Pattern
+- `_connectionGeneration` counter in `ServerConnectionService` prevents stale event handlers from corrupting state
+- `ConnectAsync` guarded against `Connecting` and `Reconnecting` states (previously only `Connected` was guarded)
+- `DisconnectAsync` increments generation before stopping, preventing spurious `ConnectionLost` events
+
+#### Shared Auth Library Pattern
+- `Veldrath.Auth` contains shared `IVeldrathAuthApiClient` and `VeldrathAuthApiClient`
+- `Veldrath.Auth.Blazor` contains `AuthStateServiceBase` for Blazor auth state management
+- Both `RealmFoundry` and `Veldrath.Web` inherit from these shared classes instead of duplicating
+
+#### OAuth Provider Conditional Registration
+- Discord, Google, Microsoft account providers registered only when credentials present in config
+- Safe for CI/dev environments without OAuth app credentials
+
+#### Metrics & Monitoring Stack
+- Prometheus + Grafana via `prometheus-net`, `prometheus-net.DotNetRuntime`, `prometheus-net.AspNetCore`
+- 4 Grafana dashboards provisioned in `config/grafana/dashboards/`
+- `UseHttpMetrics()`, `DotNetRuntimeStatsBuilder` in `Program.cs`
+
+#### Security Headers Middleware
+- Inline middleware in `Program.cs` sets: `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, `Permissions-Policy` (camera=(), microphone=(), geolocation=()), `Content-Security-Policy` (restrictive with Google Fonts allowance)
+
+#### Caddy Reverse Proxy Pattern
+- Production deployment uses Caddy for TLS termination
+- Forwarded headers middleware (`UseForwardedHeaders`) configured in `Program.cs`
+- `Auth:CookieDomain` production guard prevents cookie misconfiguration
+
+### Known Gotchas (Post-Session-31)
+
+- **ChatCommandInfoDto lives in `Veldrath.Contracts/Chat/`** — not in the engine. Chat contracts are server-client only
+- **Moderation commands use SignalR chat infrastructure** — they do NOT go through the Hub→MediatR bridge. They're handled directly in `GameHub.cs`
+- **Dev endpoints use minimal API endpoints** — NOT through SignalR. They're in `DevEndpoints.cs` with `IsDevEnvironment()` guard
+- **Auth library has its own test project** — `Veldrath.Auth.Tests` with 2 test files (436+ lines). Must not be overlooked when running full test suite
+- **Editorial endpoints use separate DbContext** — `EditorialDbContext` in `Veldrath.Server/Data/` with its own migration history. Not to be confused with `ContentDbContext` or `GameDbContext`
+- **Roo skills are project-specific** — defined in `.roo/skills/` and `.roo/skills-orchestrator/`. They are NOT auto-loaded; must be explicitly invoked
+- **Three DbContext separation expanded** — now 4: `ApplicationDbContext` (server auth/ops), `GameDbContext` (game state), `ContentDbContext` (catalog), `EditorialDbContext` (editorial content)
+
+### Open Items (Post-Session-31)
+
+- **4 CharacterCreation tests still potentially failing** — see `auth-and-character-creation-plan.md` for diagnosis and fix instructions
+- **`PurgeExpiredAsync` not scheduled** — exists on `EfCorePendingLinkRepository` but no `IHostedService` calls it
+- **Actual test count unknown** — needs `dotnet test` run to establish baseline after 2.5 months of changes
+- **Wiki implementation status tracker** (`wiki/Engine-Implementation-Status.md`) last updated March 19 — stale
+- **Memory files now updated through Session-39** — but gap analysis process should be run fresh
