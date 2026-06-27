@@ -31,6 +31,10 @@ public class FakeAuthService : IAuthService
     public int RefreshCallCount  { get; private set; }
     public int LogoutCallCount   { get; private set; }
 
+    public int ExternalLoginCallCount { get; private set; }
+    public string? LastExternalProvider { get; private set; }
+    public bool ExternalLoginShouldFail { get; set; }
+
     public Task<(AuthResponse? Response, AppError? Error)> RegisterAsync(string email, string username, string password)
     {
         RegisterCallCount++;
@@ -45,7 +49,13 @@ public class FakeAuthService : IAuthService
 
     public Task<(AuthResponse? Response, AppError? Error)> LoginExternalAsync(
         string provider, CancellationToken ct = default)
-        => Task.FromResult(LoginResult);
+    {
+        ExternalLoginCallCount++;
+        LastExternalProvider = provider;
+        if (ExternalLoginShouldFail)
+            return Task.FromResult<(AuthResponse?, AppError?)>((null, new AppError("Login failed.", "External auth returned an error.")));
+        return Task.FromResult(LoginResult);
+    }
 
     public Task<bool> RefreshAsync()
     {

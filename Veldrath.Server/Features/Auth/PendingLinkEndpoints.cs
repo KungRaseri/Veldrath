@@ -15,7 +15,8 @@ public static class PendingLinkEndpoints
     /// <summary>Maps <c>GET /api/auth/link/confirm</c>.</summary>
     public static IEndpointRouteBuilder MapPendingLinkEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/auth/link/confirm", ConfirmLink);
+        app.MapGet("/api/auth/link/confirm", ConfirmLink)
+           .RequireRateLimiting("auth-attempts");
         return app;
     }
 
