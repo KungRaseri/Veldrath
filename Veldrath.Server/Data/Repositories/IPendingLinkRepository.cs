@@ -15,6 +15,12 @@ public interface IPendingLinkRepository
     /// </summary>
     Task<PendingLinkToken?> GetByTokenHashAsync(string tokenHash, CancellationToken ct = default);
 
+    /// <summary>
+    /// Gets an existing non-expired, non-confirmed pending link token for the given account and
+    /// provider combination, or <see langword="null"/> if none exists.
+    /// </summary>
+    Task<PendingLinkToken?> GetPendingByAccountAndProviderAsync(Guid accountId, string loginProvider, string providerKey, CancellationToken ct = default);
+
     /// <summary>Marks the specified token as confirmed so it cannot be reused.</summary>
     Task ConfirmAsync(Guid id, CancellationToken ct = default);
 

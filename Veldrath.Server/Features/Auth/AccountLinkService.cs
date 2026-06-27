@@ -49,10 +49,27 @@ public class AccountLinkService(
     {
         var expiryMinutes = int.TryParse(config["Auth:PendingLinkExpiryMinutes"], out var m) ? m : 60;
 
+        // Check for existing pending token (idempotency)
+        var existing = await pendingLinkRepo.GetPendingByAccountAndProviderAsync(
+            account.Id, provider, providerKey, ct);
+
+        if (existing is not null)
+        {
+            // Reuse existing row: issue a fresh raw token and extend the expiry
+            var rawBytes = RandomNumberGenerator.GetBytes(32);
+            var rawToken = Convert.ToHexString(rawBytes).ToLowerInvariant();
+            existing.TokenHash = AuthService.HashToken(rawToken);
+            existing.ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(expiryMinutes);
+            await db.SaveChangesAsync(ct);
+
+            await SendConfirmationEmailAsync(account, provider, rawToken, expiryMinutes, serverBaseUrl, ct);
+            return;
+        }
+
         // Generate a cryptographically random 32-byte token; only the hash is persisted.
-        var rawBytes = RandomNumberGenerator.GetBytes(32);
-        var rawToken = Convert.ToHexString(rawBytes).ToLowerInvariant();
-        var tokenHash = AuthService.HashToken(rawToken);
+        var rawBytes2 = RandomNumberGenerator.GetBytes(32);
+        var rawToken2 = Convert.ToHexString(rawBytes2).ToLowerInvariant();
+        var tokenHash = AuthService.HashToken(rawToken2);
 
         var pending = new PendingLinkToken
         {
@@ -68,14 +85,7 @@ public class AccountLinkService(
 
         await pendingLinkRepo.CreateAsync(pending, ct);
 
-        var confirmUrl = $"{serverBaseUrl.TrimEnd('/')}/api/auth/link/confirm?token={rawToken}";
-        var body       = BuildConfirmationEmail(account.UserName ?? account.Email ?? "Player", provider, confirmUrl, expiryMinutes);
-
-        await emailSender.SendAsync(
-            account.Email!,
-            $"Link your {provider} account to Veldrath",
-            body,
-            ct);
+        await SendConfirmationEmailAsync(account, provider, rawToken2, expiryMinutes, serverBaseUrl, ct);
     }
 
     /// <summary>
@@ -154,5 +164,27 @@ public class AccountLinkService(
               </p>
             </body></html>
             """;
+    }
+
+    /// <summary>Sends the provider-link confirmation email for the given raw token.</summary>
+    /// <param name="account">The account to send the confirmation to.</param>
+    /// <param name="provider">OAuth provider name.</param>
+    /// <param name="rawToken">The raw (unhashed) confirmation token.</param>
+    /// <param name="expiryMinutes">Token expiry in minutes, shown in the email.</param>
+    /// <param name="serverBaseUrl">Server base URL for constructing the confirmation link.</param>
+    /// <param name="ct">Cancellation token.</param>
+    private async Task SendConfirmationEmailAsync(
+        PlayerAccount account, string provider, string rawToken,
+        int expiryMinutes, string serverBaseUrl, CancellationToken ct)
+    {
+        var confirmUrl = $"{serverBaseUrl.TrimEnd('/')}/api/auth/link/confirm?token={rawToken}";
+        var body = BuildConfirmationEmail(
+            account.UserName ?? account.Email ?? "Player", provider, confirmUrl, expiryMinutes);
+
+        await emailSender.SendAsync(
+            account.Email!,
+            $"Link your {provider} account to Veldrath",
+            body,
+            ct);
     }
 }

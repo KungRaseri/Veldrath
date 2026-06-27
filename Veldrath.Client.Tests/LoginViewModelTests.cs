@@ -183,6 +183,55 @@ public class LoginViewModelTests : TestBase
         vm.IsBusy.Should().BeFalse();
     }
 
+    [Fact]
+    public void LoginExternalCommand_Should_Call_LoginExternalAsync_With_Correct_Provider()
+    {
+        // Arrange
+        var auth = new FakeAuthService();
+        var vm   = MakeVm(auth: auth);
+        const string provider = "discord";
+
+        // Act
+        vm.LoginExternalCommand.Execute(provider).Subscribe();
+
+        // Assert
+        auth.ExternalLoginCallCount.Should().Be(1);
+        auth.LastExternalProvider.Should().Be(provider);
+    }
+
+    [Fact]
+    public void LoginExternalCommand_Should_Be_Disabled_While_Busy()
+    {
+        // Arrange
+        var auth = new FakeAuthService();
+        var vm   = MakeVm(auth: auth);
+        var canExecute = false;
+        vm.LoginExternalCommand.CanExecute.Subscribe(v => canExecute = v);
+
+        // Assert initial state
+        canExecute.Should().BeTrue();
+
+        // Act - set busy
+        vm.IsBusy = true;
+
+        // Assert disabled
+        canExecute.Should().BeFalse();
+    }
+
+    [Fact]
+    public void LoginExternalCommand_Should_Set_ErrorMessage_On_Failure()
+    {
+        // Arrange
+        var auth = new FakeAuthService { ExternalLoginShouldFail = true };
+        var vm   = MakeVm(auth: auth);
+
+        // Act
+        vm.LoginExternalCommand.Execute("discord").Subscribe();
+
+        // Assert
+        vm.ErrorMessage.Should().Be("Login failed.");
+    }
+
     // Property change notifications
     [Fact]
     public void Email_Should_Raise_PropertyChanged()

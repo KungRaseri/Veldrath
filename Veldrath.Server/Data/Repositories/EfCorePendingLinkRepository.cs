@@ -21,6 +21,19 @@ public class EfCorePendingLinkRepository(ApplicationDbContext db) : IPendingLink
           .FirstOrDefaultAsync(t => t.TokenHash == tokenHash, ct);
 
     /// <inheritdoc />
+    public async Task<PendingLinkToken?> GetPendingByAccountAndProviderAsync(Guid accountId, string loginProvider, string providerKey, CancellationToken ct = default)
+    {
+        var now = DateTimeOffset.UtcNow;
+        return await db.PendingLinkTokens
+            .Where(t => t.AccountId == accountId
+                     && t.LoginProvider == loginProvider
+                     && t.ProviderKey == providerKey
+                     && !t.IsConfirmed
+                     && t.ExpiresAt > now)
+            .FirstOrDefaultAsync(ct);
+    }
+
+    /// <inheritdoc />
     public async Task ConfirmAsync(Guid id, CancellationToken ct = default)
     {
         var token = await db.PendingLinkTokens.FindAsync([id], ct);
