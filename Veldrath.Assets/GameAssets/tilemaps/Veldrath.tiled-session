@@ -1,8 +1,8 @@
 {
-    "activeFile": "maps/crestfall.tmx",
+    "activeFile": "maps/ashlen-wood.tmx",
     "expandedProjectPaths": [
-        "world",
         ".",
+        "world",
         "maps",
         "sheets"
     ],
@@ -52,8 +52,8 @@
             "scale": 1.655078125,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 256.4833608685391,
-                "y": 256.4833608685391
+                "x": 255.87915978286526,
+                "y": 255.87915978286526
             }
         },
         "maps/barrow-deeps.tmx": {
@@ -64,20 +64,28 @@
                 "y": 240.2730375426621
             }
         },
+        "maps/cinderplain.tmx": {
+            "scale": 2.7436197916666667,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 384.3462578899909,
+                "y": 320.1974277442931
+            }
+        },
         "maps/crestfall.tmx": {
             "scale": 1.8872,
             "selectedLayer": 7,
             "viewCenter": {
-                "x": 232.35481136074608,
-                "y": 212.74904620601947
+                "x": 490.938957185248,
+                "y": 325.6146672318779
             }
         },
         "maps/drowning-pits.tmx": {
             "scale": 1.655078125,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 256.4833608685391,
-                "y": 256.4833608685391
+                "x": 384.57399103139016,
+                "y": 320.5286759499646
             }
         },
         "maps/greenveil-paths.tmx": {
@@ -92,8 +100,16 @@
             "scale": 1.655078125,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 256.4833608685391,
-                "y": 256.4833608685391
+                "x": 255.87915978286526,
+                "y": 255.87915978286526
+            }
+        },
+        "maps/greymoor.tmx": {
+            "scale": 2.7436197916666667,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 384.3462578899909,
+                "y": 320.1974277442931
             }
         },
         "maps/kaldrek-maw.tmx": {
@@ -118,6 +134,14 @@
             "viewCenter": {
                 "x": 319.59762888449785,
                 "y": 240.2730375426621
+            }
+        },
+        "maps/saltcliff.tmx": {
+            "scale": 2.7436197916666667,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 384.3462578899909,
+                "y": 320.1974277442931
             }
         },
         "maps/skarhold.tmx": {
@@ -156,16 +180,16 @@
             "scale": 1.655078125,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 256.4833608685391,
-                "y": 256.4833608685391
+                "x": 255.87915978286526,
+                "y": 255.87915978286526
             }
         },
         "maps/the-halrow.tmx": {
             "scale": 1.655078125,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 256.4833608685391,
-                "y": 256.4833608685391
+                "x": 255.87915978286526,
+                "y": 255.87915978286526
             }
         },
         "maps/thornveil-hollow.tmx": {
@@ -196,8 +220,8 @@
             "scale": 2.1414583333333335,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 240.2568343224049,
-                "y": 176.28173946881992
+                "x": 239.78986282712333,
+                "y": 175.81476797353827
             }
         },
         "maps/verdant-barrow.tmx": {
@@ -213,6 +237,7 @@
             "scaleInEditor": 2
         },
         "sheets/roguelike_base.tsx": {
+            "dynamicWrapping": false,
             "scaleInDock": 2,
             "scaleInEditor": 1
         }
@@ -235,22 +260,25 @@
         "maps/ashlen-wood.tmx",
         "maps/varenmark.tmx",
         "maps/the-halrow.tmx",
-        "maps/the-droveway.tmx"
+        "maps/the-droveway.tmx",
+        "maps/cinderplain.tmx",
+        "maps/greymoor.tmx",
+        "maps/saltcliff.tmx"
     ],
     "project": "Veldrath.tiled-project",
     "recentFiles": [
+        "maps/crestfall.tmx",
+        "maps/drowning-pits.tmx",
+        "maps/grevenmire.tmx",
+        "maps/saltcliff.tmx",
+        "maps/greymoor.tmx",
+        "maps/cinderplain.tmx",
         "maps/the-droveway.tmx",
         "maps/the-halrow.tmx",
         "maps/varenmark.tmx",
         "maps/ashlen-wood.tmx",
-        "maps/grevenmire.tmx",
-        "maps/drowning-pits.tmx",
-        "maps/crestfall.tmx",
         "maps/Varenmark.tmx",
-        "maps/Crestfall.tmx",
-        "maps/verdant-barrow.tmx",
-        "maps/tolvaren.tmx",
-        "maps/tidewrack-flats.tmx"
+        "maps/Crestfall.tmx"
     ],
     "tileset.lastUsedFormat": "tsx",
     "tileset.margin": 1,
