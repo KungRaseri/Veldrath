@@ -1,4 +1,6 @@
-﻿# Veldrath Server + Client — Memory Notes
+# Veldrath Server + Client — Memory Notes
+
+> **Status**: Updated for post-Session-39. Last session: Session-39 (2026-06-27).
 
 ## OAuth Provider-Link Confirmation Flow (session-30, 2026-04-10)
 
@@ -84,6 +86,8 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 | `Respawn` | `RespawnHubCommand` | 2026-03-30 session-27 |
 
 > **Note**: All 15 bridges above are server-side complete and fully wired end-to-end.
+>
+> **Note**: Sessions 32-39 added no new Hub→MediatR bridges. Moderation commands (`/ignore`, `/warn`, `/mute`, `/ban`) are processed via the existing SignalR chat infrastructure. Dev endpoints (`DevEndpoints.cs`) use minimal API endpoints, not the hub bridge pattern.
 
 ## Character Attributes JSON Blob Schema
 
@@ -164,6 +168,7 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 | Session-29 (2026-04-08: region map arch + PlayerSession migration) | **525** | **560** | **1085** |
 | Session-30 (2026-04-10: OAuth provider-link confirmation flow) | **525** | **571** | **1096** |
 | Session-31 (2026-04-11: Auth hardening pass 1) | **713** | **728** | **1441** |
+| Session-32-39 | ~4,500 | Post-Session-31 work (chat, moderation, auth overhaul, editorial, web) |
 
 ## Phase 0b — Server Schema Migrations (2026-03-30)
 
@@ -800,5 +805,95 @@ Replaces `ZoneSessionRepository`. Implements all 12 interface methods.
 - `PendingLinkEndpoints` rate limiting
 - `ExternalAuthEndpoints` link-mode OAuth integration tests
 - `LoginViewModel` external OAuth flow tests
+
+---
+
+### Session-32 (2026-04-12) — Monitoring Infrastructure
+- Added Prometheus metrics integration: `prometheus-net`, `prometheus-net.DotNetRuntime`, `prometheus-net.AspNetCore`
+- Added `UseHttpMetrics()`, `DotNetRuntimeStatsBuilder` to Program.cs (`Veldrath.Server/Program.cs:530`)
+- Provisioned 4 Grafana dashboards: `10915.json` (.NET Runtime), `19194.json`, `23178.json`, `23179.json`
+- Added Prometheus scrape config and Grafana provisioning configs
+- Updated `docker-compose.yml` with Prometheus and Grafana services
+- Pinned Grafana image to 11.6.1
+
+### Session-33 (2026-04-13) — Deployment Infrastructure & Tilemap Updates
+- Created reusable deploy workflow (`.github/workflows/deploy.yml`)
+- Wrote comprehensive deployment guide (`docs/deployment.md`, +289 lines)
+- Created production Docker Compose config (`docker-compose.prod.yml`)
+- Set up Caddy reverse proxy configuration (`Caddyfile`)
+- Temporarily disabled Discord, Foundry, and Server deploy workflows
+- Updated Crestfall, Grevenmire, The Droveway, The Halrow tilemaps with new dimensions and object placements
+
+### Session-34 (2026-04-14) — World Lore & Calethic Language
+- Created `world-lore-plan.md` with initial lore plan
+- Completed Phase 1-4 of Varenmark world-building:
+  - Phase 1: Varenmark name finalized, zone lore framework
+  - Phase 3: All Varenmark zone pages rewritten with connected-system framework
+  - Phase 4: 5 new sub-locations across zone pages
+- Completed Calethic language design (Q3): phonology, morphology, syntax, ~75 root dictionary
+- Renamed Varenmark Calethic form to "Vaelren"
+- Moved language reference to `docs/lore/calethic-language.md`
+- Named-entity pass for all Varenmark entities
+
+### Session-35 (2026-04-15) — Veldrath.Web, Editorial System, Cryptography
+- Scaffolded `Veldrath.Web` — Blazor Server SSR application with login, community pages
+- Created `Veldrath.Web.Tests` test project
+- Added `versions/web.props` version file
+- Created Editorial system: `EditorialEndpoints.cs`, `EditorialDbContext.cs`, migration `InitialCreate`
+- Editorial integration tests added
+- Updated `System.Security.Cryptography.Xml` to patched version
+- Removed Strapi CMS client and all Strapi references
+- Consolidated ports to 9000 across all services
+- Updated solution files (`Realm.Full.slnx`, `Veldrath.slnx`)
+
+### Session-36 (2026-04-16) — Design System, DB Consolidation, Language Catalog
+- Created comprehensive design system document (`docs/design-system.md`, 726 lines)
+- Created `RealmUI.Fonts` project with Cinzel, JetBrains Mono, Lora fonts
+- Enhanced ForgeTheme, GameTheme with VDS design tokens
+- Updated 18 Avalonia views and 14 Blazor pages for consistent theming
+- Updated CSP for Google Fonts
+- Consolidated database migrations: removed 10+ old migrations, replaced with single `InitialCreate` per DbContext
+- Added language catalog system: `ILanguageRepository`, `EfCoreLanguageRepository`, `GetLanguageCatalogQuery`
+- Language endpoints + tests added
+- Updated `toc.yml` for DocFX documentation
+
+### Session-37 (2026-04-16 to 2026-04-18) — Auth Overhaul & Account Management
+- Created `Veldrath.Auth` shared authentication library (extracted from RealmFoundry/Veldrath.Web)
+- Created `Veldrath.Auth.Blazor` with `AuthStateServiceBase`
+- Created `Veldrath.Auth.Tests` test project (436+ lines of tests)
+- Implemented forgot password flow (client + web + API)
+- Implemented account profile management (RealmFoundry `Profile.razor`, +444 lines)
+- Added session persistence in login/registration flows
+- Added `LinkedAt` timestamp to user logins + EF migration
+- Enhanced `AuthStateService`/`AuthStateServiceBase` with permissions and session management
+- Added OAuth token refresh silent renewal before redirect
+- Added logout with server session revocation
+- Implemented JWT renewal endpoint
+- Added refresh token rotation middleware
+- Enhanced error handling in auth API client
+- Standardized server base URL to `localhost:9000`
+- Updated solution files to include new auth projects
+
+### Session-38 (2026-04-27 to 2026-04-29) — Stability, Chat, Moderation, Dev Tools
+- **Connection stability fixes**: Stale `ServerBaseUrl` restore stopped; hub URL slash trimming; `_connectionGeneration` counter for stale event suppression; `ConnectAsync` guard against `Connecting`/`Reconnecting` states
+- **Zone re-entry fix**: `_currentZoneId` now cleared on zone exit (was blocking re-entry)
+- **Chat command suggestions**: `ChatCommandInfoDto` contract, `ChatCommandInfoViewModel`, `/`-triggered suggestion UI in game panel
+- **Moderation system**: `/ignore`, `/warn`, `/mute`, `/ban` commands with permission checks
+- **Moderation configuration**: `ModerationOptions.cs` (`AutoBanWarnThreshold: 3`, `MaxChatMessageLength: 500`)
+- **Moderation permission denial tests**: +197 lines for unauthorized access scenarios
+- **Dev endpoints**: `DevEndpoints.cs` with zone listing, teleport; `IsDevOnly` zone property + EF migration
+- **Version compatibility**: `VersionCompatibilitySettings` with `MinCompatibleClientVersion`
+- **Docker cleanup**: Removed erroneous `EXPOSE 8081` from Server Dockerfile
+- **Rate limiting**: 5 named policies configured (foundry-writes, admin-actions, auth-attempts, jwt-renewal, hub-commands)
+- **Security headers middleware**: CSP, XFO, nosniff, Referrer-Policy, Permissions-Policy on all responses
+
+### Session-39 (2026-06-26 to 2026-06-27) — Agent Infrastructure Reset
+- Created `AGENTS.md` (+342 lines) replacing old `copilot-instructions.md`
+- Moved memory files from `.github/copilot-memory/` → `.github/agent-memory/`
+- Created `.roo/` configuration with mode definitions and skill files
+- 8 skills implemented: build-full, create-new-feature, run-all-tests, run-client, run-realmforge, run-realmfoundry, run-server, run-tests-by-component, start-dev-stack
+- Memory files marked stale pending this update session
+
+---
 
 

@@ -1,4 +1,6 @@
-﻿# Plan: Combat Loop + Multiplayer Architecture (2026-03-30)
+# Plan: Combat Loop + Multiplayer Architecture (2026-03-30)
+
+> **Status**: Reviewed and current as of Session-39 (2026-06-27).
 
 ## ⚠️ IMPORTANT — ACTUAL IMPLEMENTATION NOTE
 
