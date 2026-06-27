@@ -7,6 +7,8 @@
   <ItemGroup>
     <!-- SQLite in-memory for DbContext testing -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <!-- Transitive pin: SQLitePCLRaw.lib.e_sqlite3 2.1.11 (from bundle_e_sqlite3) has known heap-buffer-overflow (GHSA-2m69-gcr7-jv3q) -->
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" />
     <!-- Integration testing host -->
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <!-- Mocking for unit-level health check tests -->
