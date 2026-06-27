@@ -325,6 +325,7 @@ try
     builder.Services.AddHostedService<CatalogInitializationService>();
     builder.Services.AddHostedService<SessionCleanupService>();
     builder.Services.AddHostedService<EnemyAiService>();
+    builder.Services.AddHostedService<PendingLinkCleanupService>();
 
     // Content catalog repos — backed by ContentDbContext sharing the same Postgres schema.
     builder.Services.AddDbContextFactory<ContentDbContext>(options => options.UseNpgsql(connectionString));
