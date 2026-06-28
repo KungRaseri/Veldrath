@@ -119,7 +119,7 @@ public class GenerateModuleTests
 
         // Assert
         embed.Description.Should().NotBeNull();
-        embed.Description!.Length.Should().Be(203); // 200 chars + "…"
+        embed.Description!.Length.Should().Be(201); // 200 chars + "…" (single U+2026 char)
         embed.Description.Should().EndWith("…");
     }
 
@@ -184,7 +184,7 @@ public class GenerateModuleTests
 
         // Assert
         embed.Description.Should().NotBeNull();
-        embed.Description!.Length.Should().Be(203);
+        embed.Description!.Length.Should().Be(201); // 200 chars + "…" (single U+2026 char)
         embed.Description.Should().EndWith("…");
     }
 
@@ -270,7 +270,7 @@ public class GenerateModuleTests
 
         // Assert
         embed.Description.Should().NotBeNull();
-        embed.Description!.Length.Should().Be(153); // 150 chars + "…" wrapped in *"…"*
+        embed.Description!.Length.Should().Be(155); // *" (2) + 150 chars + "…" (1) + "* (2) = 155
         embed.Description.Should().Contain("…");
     }
 
