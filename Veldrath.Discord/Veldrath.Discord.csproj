@@ -24,4 +24,8 @@
     <ProjectReference Include="..\RealmEngine.Shared\RealmEngine.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Veldrath.Discord.Tests" />
+  </ItemGroup>
+
 </Project>

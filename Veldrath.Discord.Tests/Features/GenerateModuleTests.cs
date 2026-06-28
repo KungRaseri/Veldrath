@@ -1,91 +1,22 @@
-using System.Reflection;
 using Discord;
-using Discord.Interactions;
-using Discord.WebSocket;
 using FluentAssertions;
-using MediatR;
-using NSubstitute;
-using RealmEngine.Core.Features.ItemGeneration.Commands;
 using RealmEngine.Shared.Models;
 using Veldrath.Discord.Features;
 using Xunit;
 
 namespace Veldrath.Discord.Tests.Features;
 
-/// <summary>Tests for <see cref="GenerateModule"/> slash commands.</summary>
+/// <summary>Tests for <see cref="GenerateModule"/> embed builders.</summary>
 public class GenerateModuleTests
 {
-    /// <summary>
-    /// Creates a substitute <see cref="SocketInteraction"/> with abstract members stubbed
-    /// and <see cref="IDiscordInteraction.DeferAsync"/> / <see cref="IDiscordInteraction.FollowupAsync"/>
-    /// set up as no-ops.
-    /// </summary>
-    private static SocketInteraction CreateMockInteraction()
-    {
-        var interaction = Substitute.For<SocketInteraction>();
-        interaction.DeferAsync(Arg.Any<bool>(), Arg.Any<RequestOptions?>())
-            .Returns(Task.CompletedTask);
-        interaction.FollowupAsync(
-                Arg.Any<string?>(),
-                Arg.Any<Embed[]>(),
-                Arg.Any<bool>(),
-                Arg.Any<bool>(),
-                Arg.Any<AllowedMentions?>(),
-                Arg.Any<MessageComponent?>(),
-                Arg.Any<Embed?>(),
-                Arg.Any<RequestOptions?>(),
-                Arg.Any<PollProperties?>())
-            .Returns(Task.CompletedTask);
-
-        // Stub abstract members so the proxy doesn't throw
-        interaction.User.Returns(Substitute.For<SocketUser>());
-        interaction.Channel.Returns(Substitute.For<ISocketMessageChannel>());
-        interaction.Data.Returns(Substitute.For<IDiscordInteractionData>());
-
-        return interaction;
-    }
-
-    /// <summary>
-    /// Uses reflection to set the <see cref="InteractionModuleBase{T}.Context"/>
-    /// property, which has an <c>internal</c> setter.
-    /// </summary>
-    private static void SetModuleContext<TModule>(TModule module, SocketInteractionContext context)
-        where TModule : InteractionModuleBase<SocketInteractionContext>
-    {
-        var prop = typeof(InteractionModuleBase<SocketInteractionContext>)
-            .GetProperty("Context", BindingFlags.Public | BindingFlags.Instance)!;
-        var setter = prop.GetSetMethod(true); // non-public
-        setter!.Invoke(module, [context]);
-    }
-
-    /// <summary>
-    /// Sets up the module with a mocked <see cref="IMediator"/> and a mocked interaction.
-    /// Returns the tuple (module, mediator, interaction) so tests can arrange mediator results
-    /// and assert on interaction calls.
-    /// </summary>
-    private static (GenerateModule Module, IMediator Mediator, SocketInteraction Interaction) ArrangeModule()
-    {
-        var mediator = Substitute.For<IMediator>();
-        var interaction = CreateMockInteraction();
-
-        var client = Substitute.For<DiscordSocketClient>();
-        var context = new SocketInteractionContext(client, interaction);
-        var module = new GenerateModule(mediator);
-        SetModuleContext(module, context);
-
-        return (module, mediator, interaction);
-    }
-
     // ──────────────────────────────────────────────
-    //  /generate item
+    //  BuildItemEmbed
     // ──────────────────────────────────────────────
 
     [Fact]
-    public async Task ItemAsync_WhenSuccessful_SendsItemEmbed()
+    public void BuildItemEmbed_Successful_HasCorrectFields()
     {
         // Arrange
-        var (module, mediator, interaction) = ArrangeModule();
-
         var item = new Item
         {
             Name = "Iron Longsword",
@@ -96,108 +27,110 @@ public class GenerateModuleTests
             WeaponType = "swords",
         };
 
-        mediator.Send(Arg.Any<GenerateItemCommand>(), Arg.Any<CancellationToken>())
-            .Returns(new GenerateItemResult { Success = true, Item = item });
-
-        Embed? captured = null;
-        interaction.When(x => x.FollowupAsync(
-                Arg.Any<string?>(),
-                Arg.Any<Embed[]>(),
-                Arg.Any<bool>(),
-                Arg.Any<bool>(),
-                Arg.Any<AllowedMentions?>(),
-                Arg.Any<MessageComponent?>(),
-                Arg.Do<Embed?>(e => captured = e),
-                Arg.Any<RequestOptions?>(),
-                Arg.Any<PollProperties?>()))
-            .DoNotCallBase();
-
         // Act
-        await module.ItemAsync("weapons/swords");
+        var embed = GenerateModule.BuildItemEmbed(item, new Color(0x7B2FBE));
 
         // Assert
-        captured.Should().NotBeNull();
-        captured!.Title.Should().Contain("Iron Longsword");
-        captured.Fields.Should().Contain(f => f.Name == "Rarity" && f.Value == "Uncommon");
-        captured.Fields.Should().Contain(f => f.Name == "Price" && f.Value == "150g");
-        captured.Fields.Should().Contain(f => f.Name == "Weapon Type" && f.Value == "swords");
+        embed.Title.Should().Be("⚒️ Iron Longsword");
+        embed.Fields.Should().Contain(f => f.Name == "Rarity" && f.Value == "Uncommon");
+        embed.Fields.Should().Contain(f => f.Name == "Price" && f.Value == "150g");
+        embed.Fields.Should().Contain(f => f.Name == "Weapon Type" && f.Value == "swords");
+        embed.Fields.Should().Contain(f => f.Name == "Type" && f.Value == "Weapon");
     }
 
     [Fact]
-    public async Task ItemAsync_WhenFailed_SendsErrorMessage()
+    public void BuildItemEmbed_WithLore_IncludesFooter()
     {
         // Arrange
-        var (module, mediator, interaction) = ArrangeModule();
-
-        mediator.Send(Arg.Any<GenerateItemCommand>(), Arg.Any<CancellationToken>())
-            .Returns(new GenerateItemResult
-            {
-                Success = false,
-                ErrorMessage = "Category not found",
-            });
-
-        string? capturedText = null;
-        interaction.When(x => x.FollowupAsync(
-                Arg.Do<string?>(t => capturedText = t),
-                Arg.Any<Embed[]>(),
-                Arg.Any<bool>(),
-                Arg.Any<bool>(),
-                Arg.Any<AllowedMentions?>(),
-                Arg.Any<MessageComponent?>(),
-                Arg.Any<Embed?>(),
-                Arg.Any<RequestOptions?>(),
-                Arg.Any<PollProperties?>()))
-            .DoNotCallBase();
+        var item = new Item
+        {
+            Name = "Flaming Sword",
+            Lore = "Forged in the heart of a dying star.",
+            Type = ItemType.Weapon,
+            Rarity = ItemRarity.Rare,
+            Price = 500,
+        };
 
         // Act
-        await module.ItemAsync("weapons/swords");
+        var embed = GenerateModule.BuildItemEmbed(item, new Color(0x0070DD));
 
         // Assert
-        capturedText.Should().NotBeNull();
-        capturedText!.Should().Contain("forge ran cold");
-        capturedText.Should().Contain("weapons/swords");
+        embed.Footer.Should().NotBeNull();
+        embed.Footer.Value.Text.Should().Contain("dying star");
     }
 
     [Fact]
-    public async Task ItemAsync_WhenItemIsNull_SendsErrorMessage()
+    public void BuildItemEmbed_WithEffect_IncludesEffectField()
     {
         // Arrange
-        var (module, mediator, interaction) = ArrangeModule();
-
-        mediator.Send(Arg.Any<GenerateItemCommand>(), Arg.Any<CancellationToken>())
-            .Returns(new GenerateItemResult { Success = true, Item = null });
-
-        string? capturedText = null;
-        interaction.When(x => x.FollowupAsync(
-                Arg.Do<string?>(t => capturedText = t),
-                Arg.Any<Embed[]>(),
-                Arg.Any<bool>(),
-                Arg.Any<bool>(),
-                Arg.Any<AllowedMentions?>(),
-                Arg.Any<MessageComponent?>(),
-                Arg.Any<Embed?>(),
-                Arg.Any<RequestOptions?>(),
-                Arg.Any<PollProperties?>()))
-            .DoNotCallBase();
+        var item = new Item
+        {
+            Name = "Healing Potion",
+            Effect = "heal",
+            Power = 50,
+            Type = ItemType.Consumable,
+            Rarity = ItemRarity.Common,
+            Price = 25,
+        };
 
         // Act
-        await module.ItemAsync("weapons/swords");
+        var embed = GenerateModule.BuildItemEmbed(item, new Color(0xAAAAAA));
 
         // Assert
-        capturedText.Should().NotBeNull();
-        capturedText!.Should().Contain("forge ran cold");
+        embed.Fields.Should().Contain(f => f.Name == "Effect" && f.Value == "heal");
+        embed.Fields.Should().Contain(f => f.Name == "Power" && f.Value == "50");
+    }
+
+    [Fact]
+    public void BuildItemEmbed_WithArmorClass_IncludesArmorClassField()
+    {
+        // Arrange
+        var item = new Item
+        {
+            Name = "Leather Vest",
+            ArmorClass = "light",
+            Type = ItemType.Chest,
+            Rarity = ItemRarity.Common,
+            Price = 50,
+        };
+
+        // Act
+        var embed = GenerateModule.BuildItemEmbed(item, new Color(0xAAAAAA));
+
+        // Assert
+        embed.Fields.Should().Contain(f => f.Name == "Armor Class" && f.Value == "light");
+    }
+
+    [Fact]
+    public void BuildItemEmbed_TruncatesDescription()
+    {
+        // Arrange
+        var item = new Item
+        {
+            Name = "Longsword",
+            Description = new string('A', 250),
+            Type = ItemType.Weapon,
+            Rarity = ItemRarity.Common,
+            Price = 10,
+        };
+
+        // Act
+        var embed = GenerateModule.BuildItemEmbed(item, new Color(0xAAAAAA));
+
+        // Assert
+        embed.Description.Should().NotBeNull();
+        embed.Description!.Length.Should().Be(203); // 200 chars + "…"
+        embed.Description.Should().EndWith("…");
     }
 
     // ──────────────────────────────────────────────
-    //  /generate enemy
+    //  BuildEnemyEmbed
     // ──────────────────────────────────────────────
 
     [Fact]
-    public async Task EnemyAsync_WhenSuccessful_SendsEnemyEmbed()
+    public void BuildEnemyEmbed_Successful_HasCorrectFields()
     {
         // Arrange
-        var (module, mediator, interaction) = ArrangeModule();
-
         var enemy = new Enemy
         {
             Name = "Fire Drake",
@@ -217,109 +150,52 @@ public class GenerateModuleTests
             Charisma = 6,
         };
 
-        mediator.Send(Arg.Any<GenerateEnemyCommand>(), Arg.Any<CancellationToken>())
-            .Returns(new GenerateEnemyResult { Success = true, Enemy = enemy });
-
-        Embed? captured = null;
-        interaction.When(x => x.FollowupAsync(
-                Arg.Any<string?>(),
-                Arg.Any<Embed[]>(),
-                Arg.Any<bool>(),
-                Arg.Any<bool>(),
-                Arg.Any<AllowedMentions?>(),
-                Arg.Any<MessageComponent?>(),
-                Arg.Do<Embed?>(e => captured = e),
-                Arg.Any<RequestOptions?>(),
-                Arg.Any<PollProperties?>()))
-            .DoNotCallBase();
-
         // Act
-        await module.EnemyAsync("dragons");
+        var embed = GenerateModule.BuildEnemyEmbed(enemy);
 
         // Assert
-        captured.Should().NotBeNull();
-        captured!.Title.Should().Contain("Fire Drake");
-        captured.Fields.Should().Contain(f => f.Name == "Level" && f.Value == "15");
-        captured.Fields.Should().Contain(f => f.Name == "HP" && f.Value == "200");
-        captured.Fields.Should().Contain(f => f.Name == "XP" && f.Value == "450");
-        captured.Fields.Should().Contain(f => f.Name == "Gold" && f.Value == "120");
+        embed.Title.Should().Be("🐉 Fire Drake");
+        embed.Fields.Should().Contain(f => f.Name == "Level" && f.Value == "15");
+        embed.Fields.Should().Contain(f => f.Name == "HP" && f.Value == "200");
+        embed.Fields.Should().Contain(f => f.Name == "Type" && f.Value == "Dragon");
+        embed.Fields.Should().Contain(f => f.Name == "Difficulty" && f.Value == "Hard");
+        embed.Fields.Should().Contain(f => f.Name == "XP" && f.Value == "450");
+        embed.Fields.Should().Contain(f => f.Name == "Gold" && f.Value == "120");
+        embed.Fields.Should().Contain(f => f.Name == "Phys. DMG" && f.Value == "25");
+        embed.Fields.Should().Contain(f => f.Name == "Magic DMG" && f.Value == "15");
+        embed.Fields.Should().Contain(f =>
+            f.Name == "STR / DEX / CON" && f.Value == "18 / 12 / 16");
+        embed.Fields.Should().Contain(f =>
+            f.Name == "INT / WIS / CHA" && f.Value == "10 / 8 / 6");
     }
 
     [Fact]
-    public async Task EnemyAsync_WhenFailed_SendsErrorMessage()
+    public void BuildEnemyEmbed_TruncatesDescription()
     {
         // Arrange
-        var (module, mediator, interaction) = ArrangeModule();
-
-        mediator.Send(Arg.Any<GenerateEnemyCommand>(), Arg.Any<CancellationToken>())
-            .Returns(new GenerateEnemyResult
-            {
-                Success = false,
-                ErrorMessage = "No creatures found",
-            });
-
-        string? capturedText = null;
-        interaction.When(x => x.FollowupAsync(
-                Arg.Do<string?>(t => capturedText = t),
-                Arg.Any<Embed[]>(),
-                Arg.Any<bool>(),
-                Arg.Any<bool>(),
-                Arg.Any<AllowedMentions?>(),
-                Arg.Any<MessageComponent?>(),
-                Arg.Any<Embed?>(),
-                Arg.Any<RequestOptions?>(),
-                Arg.Any<PollProperties?>()))
-            .DoNotCallBase();
+        var enemy = new Enemy
+        {
+            Name = "Beast",
+            Description = new string('B', 250),
+        };
 
         // Act
-        await module.EnemyAsync("dragons");
+        var embed = GenerateModule.BuildEnemyEmbed(enemy);
 
         // Assert
-        capturedText.Should().NotBeNull();
-        capturedText!.Should().Contain("void returned nothing");
-        capturedText.Should().Contain("dragons");
-    }
-
-    [Fact]
-    public async Task EnemyAsync_WhenEnemyIsNull_SendsErrorMessage()
-    {
-        // Arrange
-        var (module, mediator, interaction) = ArrangeModule();
-
-        mediator.Send(Arg.Any<GenerateEnemyCommand>(), Arg.Any<CancellationToken>())
-            .Returns(new GenerateEnemyResult { Success = true, Enemy = null });
-
-        string? capturedText = null;
-        interaction.When(x => x.FollowupAsync(
-                Arg.Do<string?>(t => capturedText = t),
-                Arg.Any<Embed[]>(),
-                Arg.Any<bool>(),
-                Arg.Any<bool>(),
-                Arg.Any<AllowedMentions?>(),
-                Arg.Any<MessageComponent?>(),
-                Arg.Any<Embed?>(),
-                Arg.Any<RequestOptions?>(),
-                Arg.Any<PollProperties?>()))
-            .DoNotCallBase();
-
-        // Act
-        await module.EnemyAsync("dragons");
-
-        // Assert
-        capturedText.Should().NotBeNull();
-        capturedText!.Should().Contain("void returned nothing");
+        embed.Description.Should().NotBeNull();
+        embed.Description!.Length.Should().Be(203);
+        embed.Description.Should().EndWith("…");
     }
 
     // ──────────────────────────────────────────────
-    //  /generate npc
+    //  BuildNpcEmbed
     // ──────────────────────────────────────────────
 
     [Fact]
-    public async Task NpcAsync_WhenSuccessful_SendsNpcEmbed()
+    public void BuildNpcEmbed_Successful_HasCorrectFields()
     {
         // Arrange
-        var (module, mediator, interaction) = ArrangeModule();
-
         var npc = new NPC
         {
             Name = "Elara",
@@ -331,109 +207,81 @@ public class GenerateModuleTests
             BaseGold = "3d10",
         };
 
-        mediator.Send(Arg.Any<GenerateNPCCommand>(), Arg.Any<CancellationToken>())
-            .Returns(new GenerateNPCResult { Success = true, NPC = npc });
-
-        Embed? captured = null;
-        interaction.When(x => x.FollowupAsync(
-                Arg.Any<string?>(),
-                Arg.Any<Embed[]>(),
-                Arg.Any<bool>(),
-                Arg.Any<bool>(),
-                Arg.Any<AllowedMentions?>(),
-                Arg.Any<MessageComponent?>(),
-                Arg.Do<Embed?>(e => captured = e),
-                Arg.Any<RequestOptions?>(),
-                Arg.Any<PollProperties?>()))
-            .DoNotCallBase();
-
         // Act
-        await module.NpcAsync("merchants");
+        var embed = GenerateModule.BuildNpcEmbed(npc);
 
         // Assert
-        captured.Should().NotBeNull();
-        captured!.Title.Should().Contain("Elara Moonshade");
-        captured.Fields.Should().Contain(f => f.Name == "Occupation" && f.Value == "Apothecary");
-        captured.Fields.Should().Contain(f => f.Name == "Social Class" && f.Value == "merchant");
-        captured.Fields.Should().Contain(f => f.Name == "Age");
-        captured.Fields.Should().Contain(f => f.Name == "Gold" && f.Value == "3d10");
+        embed.Title.Should().Be("🧑 Elara Moonshade");
+        embed.Fields.Should().Contain(f => f.Name == "Occupation" && f.Value == "Apothecary");
+        embed.Fields.Should().Contain(f => f.Name == "Social Class" && f.Value == "merchant");
+        embed.Fields.Should().Contain(f => f.Name == "Age");
+        embed.Fields.Should().Contain(f => f.Name == "Gold" && f.Value == "3d10");
     }
 
     [Fact]
-    public async Task NpcAsync_WhenFailed_SendsErrorMessage()
+    public void BuildNpcEmbed_UsesDisplayNameWhenAvailable()
     {
         // Arrange
-        var (module, mediator, interaction) = ArrangeModule();
-
-        mediator.Send(Arg.Any<GenerateNPCCommand>(), Arg.Any<CancellationToken>())
-            .Returns(new GenerateNPCResult
-            {
-                Success = false,
-                ErrorMessage = "No NPCs available",
-            });
-
-        string? capturedText = null;
-        interaction.When(x => x.FollowupAsync(
-                Arg.Do<string?>(t => capturedText = t),
-                Arg.Any<Embed[]>(),
-                Arg.Any<bool>(),
-                Arg.Any<bool>(),
-                Arg.Any<AllowedMentions?>(),
-                Arg.Any<MessageComponent?>(),
-                Arg.Any<Embed?>(),
-                Arg.Any<RequestOptions?>(),
-                Arg.Any<PollProperties?>()))
-            .DoNotCallBase();
+        var npc = new NPC
+        {
+            Name = "elara",
+            DisplayName = "Elara Moonshade",
+            Age = 34,
+        };
 
         // Act
-        await module.NpcAsync("merchants");
+        var embed = GenerateModule.BuildNpcEmbed(npc);
 
         // Assert
-        capturedText.Should().NotBeNull();
-        capturedText!.Should().Contain("No one answered");
-        capturedText.Should().Contain("merchants");
+        embed.Title.Should().Be("🧑 Elara Moonshade");
     }
 
     [Fact]
-    public async Task NpcAsync_WhenNpcIsNull_SendsErrorMessage()
+    public void BuildNpcEmbed_FallsBackToNameWhenNoDisplayName()
     {
         // Arrange
-        var (module, mediator, interaction) = ArrangeModule();
-
-        mediator.Send(Arg.Any<GenerateNPCCommand>(), Arg.Any<CancellationToken>())
-            .Returns(new GenerateNPCResult { Success = true, NPC = null });
-
-        string? capturedText = null;
-        interaction.When(x => x.FollowupAsync(
-                Arg.Do<string?>(t => capturedText = t),
-                Arg.Any<Embed[]>(),
-                Arg.Any<bool>(),
-                Arg.Any<bool>(),
-                Arg.Any<AllowedMentions?>(),
-                Arg.Any<MessageComponent?>(),
-                Arg.Any<Embed?>(),
-                Arg.Any<RequestOptions?>(),
-                Arg.Any<PollProperties?>()))
-            .DoNotCallBase();
+        var npc = new NPC
+        {
+            Name = "Garrick",
+            DisplayName = "",
+            Age = 45,
+        };
 
         // Act
-        await module.NpcAsync("merchants");
+        var embed = GenerateModule.BuildNpcEmbed(npc);
 
         // Assert
-        capturedText.Should().NotBeNull();
-        capturedText!.Should().Contain("No one answered");
+        embed.Title.Should().Be("🧑 Garrick");
+    }
+
+    [Fact]
+    public void BuildNpcEmbed_TruncatesDialogue()
+    {
+        // Arrange
+        var npc = new NPC
+        {
+            Name = "Chatter",
+            Dialogue = new string('C', 200),
+            Age = 30,
+        };
+
+        // Act
+        var embed = GenerateModule.BuildNpcEmbed(npc);
+
+        // Assert
+        embed.Description.Should().NotBeNull();
+        embed.Description!.Length.Should().Be(153); // 150 chars + "…" wrapped in *"…"*
+        embed.Description.Should().Contain("…");
     }
 
     // ──────────────────────────────────────────────
-    //  /generate ability
+    //  BuildAbilityEmbed
     // ──────────────────────────────────────────────
 
     [Fact]
-    public async Task AbilityAsync_WhenSuccessful_SendsAbilityEmbed()
+    public void BuildAbilityEmbed_Successful_HasCorrectFields()
     {
         // Arrange
-        var (module, mediator, interaction) = ArrangeModule();
-
         var ability = new Power
         {
             Slug = "fireball",
@@ -449,167 +297,99 @@ public class GenerateModuleTests
             BaseDamage = "8d6",
         };
 
-        mediator.Send(Arg.Any<GeneratePowerCommand>(), Arg.Any<CancellationToken>())
-            .Returns(new GeneratePowerResult { Success = true, Powers = [ability] });
-
-        Embed? captured = null;
-        interaction.When(x => x.FollowupAsync(
-                Arg.Any<string?>(),
-                Arg.Any<Embed[]>(),
-                Arg.Any<bool>(),
-                Arg.Any<bool>(),
-                Arg.Any<AllowedMentions?>(),
-                Arg.Any<MessageComponent?>(),
-                Arg.Do<Embed?>(e => captured = e),
-                Arg.Any<RequestOptions?>(),
-                Arg.Any<PollProperties?>()))
-            .DoNotCallBase();
-
         // Act
-        await module.AbilityAsync("active/offensive");
+        var embed = GenerateModule.BuildAbilityEmbed(ability);
 
         // Assert
-        captured.Should().NotBeNull();
-        captured!.Title.Should().Contain("Fireball");
-        captured.Fields.Should().Contain(f => f.Name == "Type" && f.Value == "Spell");
-        captured.Fields.Should().Contain(f => f.Name == "Tier" && f.Value == "3");
-        captured.Fields.Should().Contain(f => f.Name == "Passive" && f.Value == "No");
-        captured.Fields.Should().Contain(f => f.Name == "Mana Cost" && f.Value == "50");
-        captured.Fields.Should().Contain(f => f.Name == "Cooldown" && f.Value == "3t");
-        captured.Fields.Should().Contain(f => f.Name == "Req. Level" && f.Value == "10");
-        captured.Fields.Should().Contain(f => f.Name == "Damage" && f.Value == "8d6");
+        embed.Title.Should().Be("✨ Fireball");
+        embed.Fields.Should().Contain(f => f.Name == "Type" && f.Value == "Spell");
+        embed.Fields.Should().Contain(f => f.Name == "Tier" && f.Value == "3");
+        embed.Fields.Should().Contain(f => f.Name == "Passive" && f.Value == "No");
+        embed.Fields.Should().Contain(f => f.Name == "Mana Cost" && f.Value == "50");
+        embed.Fields.Should().Contain(f => f.Name == "Cooldown" && f.Value == "3t");
+        embed.Fields.Should().Contain(f => f.Name == "Req. Level" && f.Value == "10");
+        embed.Fields.Should().Contain(f => f.Name == "Damage" && f.Value == "8d6");
+        embed.Footer.Should().NotBeNull();
+        embed.Footer.Value.Text.Should().Be("fireball");
     }
 
     [Fact]
-    public async Task AbilityAsync_WhenFailed_SendsErrorMessage()
+    public void BuildAbilityEmbed_WithNoCooldown_ShowsNone()
     {
         // Arrange
-        var (module, mediator, interaction) = ArrangeModule();
-
-        mediator.Send(Arg.Any<GeneratePowerCommand>(), Arg.Any<CancellationToken>())
-            .Returns(new GeneratePowerResult
-            {
-                Success = false,
-                ErrorMessage = "Arcane repository depleted",
-            });
-
-        string? capturedText = null;
-        interaction.When(x => x.FollowupAsync(
-                Arg.Do<string?>(t => capturedText = t),
-                Arg.Any<Embed[]>(),
-                Arg.Any<bool>(),
-                Arg.Any<bool>(),
-                Arg.Any<AllowedMentions?>(),
-                Arg.Any<MessageComponent?>(),
-                Arg.Any<Embed?>(),
-                Arg.Any<RequestOptions?>(),
-                Arg.Any<PollProperties?>()))
-            .DoNotCallBase();
+        var ability = new Power
+        {
+            Name = "Quick Strike",
+            Cooldown = 0,
+            Type = PowerType.Talent,
+            Tier = 1,
+            RequiredLevel = 1,
+        };
 
         // Act
-        await module.AbilityAsync("active/offensive");
+        var embed = GenerateModule.BuildAbilityEmbed(ability);
 
         // Assert
-        capturedText.Should().NotBeNull();
-        capturedText!.Should().Contain("arcane scroll was blank");
-        capturedText.Should().Contain("active/offensive");
+        embed.Fields.Should().Contain(f => f.Name == "Cooldown" && f.Value == "None");
     }
 
     [Fact]
-    public async Task AbilityAsync_WhenPowersIsNull_SendsErrorMessage()
+    public void BuildAbilityEmbed_WhenPassive_ShowsYes()
     {
         // Arrange
-        var (module, mediator, interaction) = ArrangeModule();
-
-        mediator.Send(Arg.Any<GeneratePowerCommand>(), Arg.Any<CancellationToken>())
-            .Returns(new GeneratePowerResult { Success = true, Powers = null! });
-
-        string? capturedText = null;
-        interaction.When(x => x.FollowupAsync(
-                Arg.Do<string?>(t => capturedText = t),
-                Arg.Any<Embed[]>(),
-                Arg.Any<bool>(),
-                Arg.Any<bool>(),
-                Arg.Any<AllowedMentions?>(),
-                Arg.Any<MessageComponent?>(),
-                Arg.Any<Embed?>(),
-                Arg.Any<RequestOptions?>(),
-                Arg.Any<PollProperties?>()))
-            .DoNotCallBase();
+        var ability = new Power
+        {
+            Name = "Iron Will",
+            IsPassive = true,
+            Type = PowerType.Passive,
+            Tier = 2,
+            RequiredLevel = 5,
+        };
 
         // Act
-        await module.AbilityAsync("active/offensive");
+        var embed = GenerateModule.BuildAbilityEmbed(ability);
 
         // Assert
-        capturedText.Should().NotBeNull();
-        capturedText!.Should().Contain("arcane scroll was blank");
+        embed.Fields.Should().Contain(f => f.Name == "Passive" && f.Value == "Yes");
     }
 
     [Fact]
-    public async Task AbilityAsync_WhenPowersEmpty_SendsErrorMessage()
+    public void BuildAbilityEmbed_UsesDisplayNameWhenAvailable()
     {
         // Arrange
-        var (module, mediator, interaction) = ArrangeModule();
-
-        mediator.Send(Arg.Any<GeneratePowerCommand>(), Arg.Any<CancellationToken>())
-            .Returns(new GeneratePowerResult { Success = true, Powers = [] });
-
-        string? capturedText = null;
-        interaction.When(x => x.FollowupAsync(
-                Arg.Do<string?>(t => capturedText = t),
-                Arg.Any<Embed[]>(),
-                Arg.Any<bool>(),
-                Arg.Any<bool>(),
-                Arg.Any<AllowedMentions?>(),
-                Arg.Any<MessageComponent?>(),
-                Arg.Any<Embed?>(),
-                Arg.Any<RequestOptions?>(),
-                Arg.Any<PollProperties?>()))
-            .DoNotCallBase();
+        var ability = new Power
+        {
+            Name = "fireball",
+            DisplayName = "Fireball",
+            Type = PowerType.Spell,
+            Tier = 1,
+            RequiredLevel = 1,
+        };
 
         // Act
-        await module.AbilityAsync("active/offensive");
+        var embed = GenerateModule.BuildAbilityEmbed(ability);
 
         // Assert
-        capturedText.Should().NotBeNull();
-        capturedText!.Should().Contain("arcane scroll was blank");
+        embed.Title.Should().Be("✨ Fireball");
     }
 
     [Fact]
-    public async Task AbilityAsync_SendsCorrectCommand()
+    public void BuildAbilityEmbed_FallsBackToNameWhenNoDisplayName()
     {
         // Arrange
-        var (module, mediator, _) = ArrangeModule();
-
-        mediator.Send(Arg.Any<GeneratePowerCommand>(), Arg.Any<CancellationToken>())
-            .Returns(new GeneratePowerResult { Success = true, Powers = [new Power()] });
-
-        // Act
-        await module.AbilityAsync("active/offensive");
-
-        // Assert
-        await mediator.Received(1).Send(
-            Arg.Is<GeneratePowerCommand>(c =>
-                c.Category == "active" && c.Subcategory == "offensive"),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task AbilityAsync_WithoutSubcategory_SendsCorrectCommand()
-    {
-        // Arrange
-        var (module, mediator, _) = ArrangeModule();
-
-        mediator.Send(Arg.Any<GeneratePowerCommand>(), Arg.Any<CancellationToken>())
-            .Returns(new GeneratePowerResult { Success = true, Powers = [new Power()] });
+        var ability = new Power
+        {
+            Name = "arcane-missile",
+            DisplayName = "",
+            Type = PowerType.Spell,
+            Tier = 1,
+            RequiredLevel = 1,
+        };
 
         // Act
-        await module.AbilityAsync("passive");
+        var embed = GenerateModule.BuildAbilityEmbed(ability);
 
         // Assert
-        await mediator.Received(1).Send(
-            Arg.Is<GeneratePowerCommand>(c =>
-                c.Category == "passive" && c.Subcategory == string.Empty),
-            Arg.Any<CancellationToken>());
+        embed.Title.Should().Be("✨ arcane-missile");
     }
 }

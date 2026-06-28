@@ -1,7 +1,8 @@
-﻿using Discord;
+using Discord;
 using Discord.Interactions;
 using MediatR;
 using RealmEngine.Core.Features.ItemGeneration.Commands;
+using RealmEngine.Shared.Models;
 
 namespace Veldrath.Discord.Features;
 
@@ -12,10 +13,10 @@ namespace Veldrath.Discord.Features;
 [Group("generate", "Conjure content from the realm's engine — forged fresh from the data catalog")]
 public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<SocketInteractionContext>
 {
-    private static readonly Color ItemColor    = new(0x7B2FBE);
-    private static readonly Color EnemyColor   = new(0xAD1414);
-    private static readonly Color NpcColor     = new(0xC47A00);
-    private static readonly Color AbilityColor = new(0x1E5FA3);
+    internal static readonly Color ItemColor    = new(0x7B2FBE);
+    internal static readonly Color EnemyColor   = new(0xAD1414);
+    internal static readonly Color NpcColor     = new(0xC47A00);
+    internal static readonly Color AbilityColor = new(0x1E5FA3);
 
     // /generate item
     [SlashCommand("item", "Forge a random item from the catalog")]
@@ -46,44 +47,8 @@ public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<S
             return;
         }
 
-        var item  = result.Item;
-        var title = item.Name;
-        var desc  = string.IsNullOrWhiteSpace(item.Description) ? null
-                  : item.Description.Length > 200 ? item.Description[..200] + "…"
-                  : item.Description;
-
-        var embed = new EmbedBuilder()
-            .WithTitle($"⚒️ {title}")
-            .WithColor(RarityColor(item.Rarity.ToString()))
-            .WithCurrentTimestamp();
-
-        if (desc is not null)
-            embed.WithDescription(desc);
-
-        embed
-            .AddField("Type",   item.Type.ToString(),    inline: true)
-            .AddField("Rarity", item.Rarity.ToString(),  inline: true)
-            .AddField("Price",  $"{item.Price}g",         inline: true);
-
-        if (!string.IsNullOrWhiteSpace(item.WeaponType))
-            embed.AddField("Weapon Type", item.WeaponType, inline: true);
-
-        if (!string.IsNullOrWhiteSpace(item.ArmorClass))
-            embed.AddField("Armor Class", item.ArmorClass, inline: true);
-
-        if (item.Power > 0)
-            embed.AddField("Power", item.Power.ToString(), inline: true);
-
-        if (!string.IsNullOrWhiteSpace(item.Effect))
-            embed.AddField("Effect", item.Effect.Length > 100 ? item.Effect[..100] + "…" : item.Effect, inline: false);
-
-        if (!string.IsNullOrWhiteSpace(item.Lore))
-        {
-            var loreText = item.Lore.Length > 120 ? item.Lore[..120] + "..." : item.Lore;
-            embed.WithFooter($"\u201c{loreText}\u201d");
-        }
-
-        await FollowupAsync(embed: embed.Build());
+        var embed = BuildItemEmbed(result.Item, RarityColor(result.Item.Rarity.ToString()));
+        await FollowupAsync(embed: embed);
     }
 
     // /generate enemy
@@ -116,35 +81,8 @@ public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<S
             return;
         }
 
-        var e    = result.Enemy;
-        var desc = string.IsNullOrWhiteSpace(e.Description) ? null
-                 : e.Description.Length > 200 ? e.Description[..200] + "…"
-                 : e.Description;
-
-        var embed = new EmbedBuilder()
-            .WithTitle($"🐉 {e.Name}")
-            .WithColor(EnemyColor)
-            .WithCurrentTimestamp();
-
-        if (desc is not null)
-            embed.WithDescription(desc);
-
-        embed
-            .AddField("Level",      e.Level.ToString(),      inline: true)
-            .AddField("HP",         e.MaxHealth.ToString(),  inline: true)
-            .AddField("Type",       e.Type.ToString(),       inline: true)
-            .AddField("Difficulty", e.Difficulty.ToString(), inline: true)
-            .AddField("XP",         e.XP.ToString(),         inline: true)
-            .AddField("Gold",       e.GoldReward.ToString(), inline: true)
-            .AddField("Phys. DMG",  e.BasePhysicalDamage.ToString(), inline: true)
-            .AddField("Magic DMG",  e.BaseMagicDamage.ToString(),    inline: true)
-            .AddField("\u200b",     "\u200b",                        inline: true) // padding
-            .AddField("STR / DEX / CON",
-                $"{e.Strength} / {e.Dexterity} / {e.Constitution}", inline: true)
-            .AddField("INT / WIS / CHA",
-                $"{e.Intelligence} / {e.Wisdom} / {e.Charisma}",    inline: true);
-
-        await FollowupAsync(embed: embed.Build());
+        var embed = BuildEnemyEmbed(result.Enemy);
+        await FollowupAsync(embed: embed);
     }
 
     // /generate npc
@@ -173,32 +111,8 @@ public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<S
             return;
         }
 
-        var npc   = result.NPC;
-        var title = string.IsNullOrWhiteSpace(npc.DisplayName) ? npc.Name : npc.DisplayName;
-
-        var embed = new EmbedBuilder()
-            .WithTitle($"🧑 {title}")
-            .WithColor(NpcColor)
-            .WithCurrentTimestamp();
-
-        if (!string.IsNullOrWhiteSpace(npc.Dialogue))
-        {
-            var line = npc.Dialogue.Length > 150 ? npc.Dialogue[..150] + "…" : npc.Dialogue;
-            embed.WithDescription($"*\"{line}\"*");
-        }
-
-        if (!string.IsNullOrWhiteSpace(npc.Occupation))
-            embed.AddField("Occupation",    npc.Occupation,   inline: true);
-
-        if (!string.IsNullOrWhiteSpace(npc.SocialClass))
-            embed.AddField("Social Class",  npc.SocialClass,  inline: true);
-
-        embed.AddField("Age", npc.Age.ToString(), inline: true);
-
-        if (!string.IsNullOrWhiteSpace(npc.BaseGold))
-            embed.AddField("Gold", npc.BaseGold, inline: true);
-
-        await FollowupAsync(embed: embed.Build());
+        var embed = BuildNpcEmbed(result.NPC);
+        await FollowupAsync(embed: embed);
     }
 
     // /generate ability
@@ -232,7 +146,122 @@ public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<S
             return;
         }
 
-        var ability = result.Powers[0];
+        var embed = BuildAbilityEmbed(result.Powers[0]);
+        await FollowupAsync(embed: embed);
+    }
+
+    // ──────────────────────────────────────────────
+    //  Embed builders (internal for testability)
+    // ──────────────────────────────────────────────
+
+    /// <summary>Builds the embed for a generated item.</summary>
+    internal static Embed BuildItemEmbed(Item item, Color accent)
+    {
+        var title = item.Name;
+        var desc  = string.IsNullOrWhiteSpace(item.Description) ? null
+                  : item.Description.Length > 200 ? item.Description[..200] + "…"
+                  : item.Description;
+
+        var embed = new EmbedBuilder()
+            .WithTitle($"⚒️ {title}")
+            .WithColor(accent)
+            .WithCurrentTimestamp();
+
+        if (desc is not null)
+            embed.WithDescription(desc);
+
+        embed
+            .AddField("Type",   item.Type.ToString(),    inline: true)
+            .AddField("Rarity", item.Rarity.ToString(),  inline: true)
+            .AddField("Price",  $"{item.Price}g",         inline: true);
+
+        if (!string.IsNullOrWhiteSpace(item.WeaponType))
+            embed.AddField("Weapon Type", item.WeaponType, inline: true);
+
+        if (!string.IsNullOrWhiteSpace(item.ArmorClass))
+            embed.AddField("Armor Class", item.ArmorClass, inline: true);
+
+        if (item.Power > 0)
+            embed.AddField("Power", item.Power.ToString(), inline: true);
+
+        if (!string.IsNullOrWhiteSpace(item.Effect))
+            embed.AddField("Effect", item.Effect.Length > 100 ? item.Effect[..100] + "…" : item.Effect, inline: false);
+
+        if (!string.IsNullOrWhiteSpace(item.Lore))
+        {
+            var loreText = item.Lore.Length > 120 ? item.Lore[..120] + "..." : item.Lore;
+            embed.WithFooter($"\u201c{loreText}\u201d");
+        }
+
+        return embed.Build();
+    }
+
+    /// <summary>Builds the embed for a generated enemy.</summary>
+    internal static Embed BuildEnemyEmbed(Enemy enemy)
+    {
+        var desc = string.IsNullOrWhiteSpace(enemy.Description) ? null
+                 : enemy.Description.Length > 200 ? enemy.Description[..200] + "…"
+                 : enemy.Description;
+
+        var embed = new EmbedBuilder()
+            .WithTitle($"🐉 {enemy.Name}")
+            .WithColor(EnemyColor)
+            .WithCurrentTimestamp();
+
+        if (desc is not null)
+            embed.WithDescription(desc);
+
+        embed
+            .AddField("Level",      enemy.Level.ToString(),      inline: true)
+            .AddField("HP",         enemy.MaxHealth.ToString(),  inline: true)
+            .AddField("Type",       enemy.Type.ToString(),       inline: true)
+            .AddField("Difficulty", enemy.Difficulty.ToString(), inline: true)
+            .AddField("XP",         enemy.XP.ToString(),         inline: true)
+            .AddField("Gold",       enemy.GoldReward.ToString(), inline: true)
+            .AddField("Phys. DMG",  enemy.BasePhysicalDamage.ToString(), inline: true)
+            .AddField("Magic DMG",  enemy.BaseMagicDamage.ToString(),    inline: true)
+            .AddField("\u200b",     "\u200b",                        inline: true) // padding
+            .AddField("STR / DEX / CON",
+                $"{enemy.Strength} / {enemy.Dexterity} / {enemy.Constitution}", inline: true)
+            .AddField("INT / WIS / CHA",
+                $"{enemy.Intelligence} / {enemy.Wisdom} / {enemy.Charisma}",    inline: true);
+
+        return embed.Build();
+    }
+
+    /// <summary>Builds the embed for a generated NPC.</summary>
+    internal static Embed BuildNpcEmbed(NPC npc)
+    {
+        var title = string.IsNullOrWhiteSpace(npc.DisplayName) ? npc.Name : npc.DisplayName;
+
+        var embed = new EmbedBuilder()
+            .WithTitle($"🧑 {title}")
+            .WithColor(NpcColor)
+            .WithCurrentTimestamp();
+
+        if (!string.IsNullOrWhiteSpace(npc.Dialogue))
+        {
+            var line = npc.Dialogue.Length > 150 ? npc.Dialogue[..150] + "…" : npc.Dialogue;
+            embed.WithDescription($"*\"{line}\"*");
+        }
+
+        if (!string.IsNullOrWhiteSpace(npc.Occupation))
+            embed.AddField("Occupation",    npc.Occupation,   inline: true);
+
+        if (!string.IsNullOrWhiteSpace(npc.SocialClass))
+            embed.AddField("Social Class",  npc.SocialClass,  inline: true);
+
+        embed.AddField("Age", npc.Age.ToString(), inline: true);
+
+        if (!string.IsNullOrWhiteSpace(npc.BaseGold))
+            embed.AddField("Gold", npc.BaseGold, inline: true);
+
+        return embed.Build();
+    }
+
+    /// <summary>Builds the embed for a generated ability.</summary>
+    internal static Embed BuildAbilityEmbed(Power ability)
+    {
         var name    = string.IsNullOrWhiteSpace(ability.DisplayName) ? ability.Name : ability.DisplayName;
         var desc    = string.IsNullOrWhiteSpace(ability.Description) ? null
                     : ability.Description.Length > 200 ? ability.Description[..200] + "…"
@@ -259,10 +288,10 @@ public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<S
 
         embed.WithFooter(ability.Slug);
 
-        await FollowupAsync(embed: embed.Build());
+        return embed.Build();
     }
 
-    // Helpers
+    // Helper
     private static Color RarityColor(string rarity) => rarity switch
     {
         "Common"    => new Color(0xAAAAAA),

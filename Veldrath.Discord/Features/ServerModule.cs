@@ -1,5 +1,6 @@
-﻿using Discord;
+using Discord;
 using Discord.Interactions;
+using Veldrath.Contracts.Zones;
 using Veldrath.Discord.Services;
 
 namespace Veldrath.Discord.Features;
@@ -15,29 +16,7 @@ public sealed class ServerModule(ServerStatusService server) : InteractionModule
         await DeferAsync(ephemeral: true);
 
         var zones = await server.GetZonesAsync();
-
-        if (zones is null)
-        {
-            var offline = new EmbedBuilder()
-                .WithTitle("⚔️ Realm Unbound")
-                .WithDescription("🔴 **The realm is unreachable.** The server may be offline.")
-                .WithColor(Color.Red)
-                .WithCurrentTimestamp()
-                .Build();
-            await FollowupAsync(embed: offline);
-            return;
-        }
-
-        var totalPlayers = zones.Sum(z => z.OnlinePlayers);
-        var embed = new EmbedBuilder()
-            .WithTitle("⚔️ Realm Unbound — Status")
-            .WithDescription("The realm stands. Adventurers are abroad.")
-            .WithColor(Gold)
-            .AddField("Status", "🟢 Online", inline: true)
-            .AddField("Wanderers", totalPlayers == 0 ? "None" : totalPlayers.ToString(), inline: true)
-            .AddField("Active Zones", zones.Count.ToString(), inline: true)
-            .WithCurrentTimestamp()
-            .Build();
+        var embed = BuildStatusEmbed(zones, Gold);
 
         await FollowupAsync(embed: embed);
     }
@@ -61,6 +40,39 @@ public sealed class ServerModule(ServerStatusService server) : InteractionModule
             return;
         }
 
+        var embed = BuildZonesEmbed(zones);
+        await FollowupAsync(embed: embed);
+    }
+
+    /// <summary>Builds the embed for the <c>/status</c> command.</summary>
+    internal static Embed BuildStatusEmbed(List<ZoneDto>? zones, Color accent)
+    {
+        if (zones is null)
+        {
+            return new EmbedBuilder()
+                .WithTitle("⚔️ Realm Unbound")
+                .WithDescription("🔴 **The realm is unreachable.** The server may be offline.")
+                .WithColor(Color.Red)
+                .WithCurrentTimestamp()
+                .Build();
+        }
+
+        var totalPlayers = zones.Sum(z => z.OnlinePlayers);
+
+        return new EmbedBuilder()
+            .WithTitle("⚔️ Realm Unbound — Status")
+            .WithDescription("The realm stands. Adventurers are abroad.")
+            .WithColor(accent)
+            .AddField("Status", "🟢 Online", inline: true)
+            .AddField("Wanderers", totalPlayers == 0 ? "None" : totalPlayers.ToString(), inline: true)
+            .AddField("Active Zones", zones.Count.ToString(), inline: true)
+            .WithCurrentTimestamp()
+            .Build();
+    }
+
+    /// <summary>Builds the embed for the <c>/zones</c> command.</summary>
+    internal static Embed BuildZonesEmbed(List<ZoneDto> zones)
+    {
         var embed = new EmbedBuilder()
             .WithTitle("🗺️ Realm Zones")
             .WithColor(Gold)
@@ -81,6 +93,6 @@ public sealed class ServerModule(ServerStatusService server) : InteractionModule
                 inline: false);
         }
 
-        await FollowupAsync(embed: embed.Build());
+        return embed.Build();
     }
 }
