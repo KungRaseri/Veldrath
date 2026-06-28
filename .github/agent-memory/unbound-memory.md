@@ -1,6 +1,6 @@
 # Veldrath Server + Client — Memory Notes
 
-> **Status**: Updated for post-Session-39. Last session: Session-39 (2026-06-27).
+> **Status**: Updated through Session-40 (2026-06-28).
 
 ## OAuth Provider-Link Confirmation Flow (session-30, 2026-04-10)
 
@@ -88,6 +88,8 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 > **Note**: All 15 bridges above are server-side complete and fully wired end-to-end.
 >
 > **Note**: Sessions 32-39 added no new Hub→MediatR bridges. Moderation commands (`/ignore`, `/warn`, `/mute`, `/ban`) are processed via the existing SignalR chat infrastructure. Dev endpoints (`DevEndpoints.cs`) use minimal API endpoints, not the hub bridge pattern.
+>
+> **Note**: Session-40 achievement triggers (`CheckAchievementProgressCommand`) were wired into 5 Core handlers (AttackEnemy, CompleteQuest, GainExperience, LevelUp, HandlePlayerDeath) — not as Hub→MediatR bridges. Achievement progress is evaluated server-side within the handler pipeline, not via SignalR hub methods.
 
 ## Character Attributes JSON Blob Schema
 
@@ -169,6 +171,7 @@ Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamag
 | Session-30 (2026-04-10: OAuth provider-link confirmation flow) | **525** | **571** | **1096** |
 | Session-31 (2026-04-11: Auth hardening pass 1) | **713** | **728** | **1441** |
 | Session-32-39 | ~4,500 | Post-Session-31 work (chat, moderation, auth overhaul, editorial, web) |
+| Session-40 | ~4,732 | Expansion & polish: Discord tests, achievement wiring, zone TMX maps, settings cleanup |
 
 ## Phase 0b — Server Schema Migrations (2026-03-30)
 
@@ -893,6 +896,24 @@ Replaces `ZoneSessionRepository`. Implements all 12 interface methods.
 - Created `.roo/` configuration with mode definitions and skill files
 - 8 skills implemented: build-full, create-new-feature, run-all-tests, run-client, run-realmforge, run-realmfoundry, run-server, run-tests-by-component, start-dev-stack
 - Memory files marked stale pending this update session
+
+### Session-40 (2026-06-27 to 2026-06-28) — Expansion, Polish & Cleanup
+- **Memory file overhaul**: Updated all 8 `.github/agent-memory/` files + `wiki/Engine-Implementation-Status.md` through Session-39
+- **Baseline verification**: `dotnet build Realm.Full.slnx` — 0 errors, 0 warnings. `dotnet test Realm.Full.slnx` — 4,688 passing, 0 failing
+- **PendingLinkCleanupService**: Created hosted service for periodic expired token purge (30-min interval)
+- **NU1903 fix**: Pinned `SQLitePCLRaw.lib.e_sqlite3` to 2.1.12 to resolve heap-buffer-overflow vulnerability
+- **Auth hardening**: Added rate limiting to pending-link confirm endpoint; made `RequestLinkAsync` idempotent
+- **Auth tests**: Link-mode OAuth integration tests (4) + LoginViewModel OAuth flow tests (3)
+- **Region TMX maps**: Created `greymoor.tmx`, `saltcliff.tmx`, `cinderplain.tmx` — all 4 regions now have map files
+- **ChangeRegionHandler tests**: 8 tests covering SpawnInward edge logic for all 4 border directions
+- **Discord LoreModule**: Uncommented 3 `[SlashCommand]` attributes enabling `/enemy`, `/power`, `/class` commands
+- **Achievement wiring**: Connected `CheckAchievementProgressCommand` into combat (AttackEnemyHandler), quest (CompleteQuestHandler), level-up (GainExperienceHandler + LevelUpHandler), and death (HandlePlayerDeathHandler) — 5 integration points total
+- **Settings cleanup**: Deleted 6 orphaned `RealmEngine.Core/Settings/` files (zero references confirmed)
+- **Zone TMX maps**: Created 12 minimal zone tilemaps for Greymoor (aldenmere, pale-moor, soddenfen, barrow-deeps), Saltcliff (tolvaren, tidewrack-flats, saltcliff-heights, sunken-name), and Cinderplain (skarhold, ashfields, smoldering-reach, kaldrek-maw) regions
+- **Discord bot tests**: 24 new tests for ServerModule (8) + GenerateModule (15) + integration (1) — testing embed builders directly via `internal static` methods
+- **Final test count**: ~4,732 tests passing (up from 4,688)
+- **Files deleted**: `RealmEngine.Core/Settings/GameSettings.cs`, `AudioSettings.cs`, `UISettings.cs`, `GameplaySettings.cs`, `LoggingSettings.cs`, `SettingsValidator.cs`
+- **Open items for next session**: Hub integration success-path tests for region methods; world lore resolution (6 open design items); audio/sound expansion
 
 ---
 
