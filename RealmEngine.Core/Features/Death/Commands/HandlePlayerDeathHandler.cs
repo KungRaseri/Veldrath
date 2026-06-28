@@ -3,6 +3,7 @@ using RealmEngine.Shared.Models;
 using RealmEngine.Shared.Abstractions;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Core.Features.Achievements.Commands;
 
 namespace RealmEngine.Core.Features.Death.Commands;
 
@@ -15,6 +16,7 @@ public class HandlePlayerDeathHandler : IRequestHandler<HandlePlayerDeathCommand
     private readonly ISaveGameService _saveGameService;
     private readonly IHallOfFameRepository _hallOfFameService;
     private readonly ILogger<HandlePlayerDeathHandler> _logger;
+    private readonly IMediator _mediator;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="HandlePlayerDeathHandler"/> class.
@@ -23,16 +25,19 @@ public class HandlePlayerDeathHandler : IRequestHandler<HandlePlayerDeathCommand
     /// <param name="saveGameService">The save game service.</param>
     /// <param name="hallOfFameRepository">The hall of fame repository.</param>
     /// <param name="logger">The logger.</param>
+    /// <param name="mediator">The mediator for dispatching commands.</param>
     public HandlePlayerDeathHandler(
         DeathService deathService,
         ISaveGameService saveGameService,
         IHallOfFameRepository hallOfFameRepository,
-        ILogger<HandlePlayerDeathHandler> logger)
+        ILogger<HandlePlayerDeathHandler> logger,
+        IMediator mediator)
     {
         _deathService = deathService;
         _saveGameService = saveGameService;
         _hallOfFameService = hallOfFameRepository;
         _logger = logger;
+        _mediator = mediator;
     }
 
     /// <summary>
@@ -67,6 +72,9 @@ public class HandlePlayerDeathHandler : IRequestHandler<HandlePlayerDeathCommand
         saveGame.DeathCount++;
         saveGame.LastDeathLocation = location;
         saveGame.LastDeathDate = DateTime.Now;
+
+        // Check for newly unlocked achievements after death
+        var newAchievements = await _mediator.Send(new CheckAchievementProgressCommand(), cancellationToken);
 
         // Handle based on difficulty
         if (difficulty.IsPermadeath)

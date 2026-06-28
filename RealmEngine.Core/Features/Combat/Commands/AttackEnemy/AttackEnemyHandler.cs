@@ -3,6 +3,7 @@ using RealmEngine.Shared.Abstractions;
 using RealmEngine.Core.Features.SaveLoad;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Core.Features.Achievements.Commands;
 using RealmEngine.Core.Features.Quests.Commands;
 
 namespace RealmEngine.Core.Features.Combat.Commands.AttackEnemy;
@@ -86,6 +87,9 @@ public class AttackEnemyHandler : IRequestHandler<AttackEnemyCommand, AttackEnem
 
             // Check for auto-completable quests after enemy defeat
             await CheckAndCompleteReadyQuests(cancellationToken);
+
+            // Check for newly unlocked achievements after enemy defeat
+            var newAchievements = await _mediator.Send(new CheckAchievementProgressCommand(), cancellationToken);
         }
 
         _logger.LogInformation("Player {PlayerName} attacked {EnemyName} for {Damage} damage (critical: {IsCritical})",

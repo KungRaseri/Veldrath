@@ -1,4 +1,5 @@
 using MediatR;
+using RealmEngine.Core.Features.Achievements.Commands;
 using RealmEngine.Core.Features.SaveLoad;
 
 namespace RealmEngine.Core.Features.Quests.Commands;
@@ -26,6 +27,7 @@ public class CompleteQuestHandler : IRequestHandler<CompleteQuestCommand, Comple
     private readonly Services.QuestService _questService;
     private readonly Services.QuestRewardService _rewardService;
     private readonly ISaveGameService _saveGameService;
+    private readonly IMediator _mediator;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CompleteQuestHandler"/> class.
@@ -33,14 +35,17 @@ public class CompleteQuestHandler : IRequestHandler<CompleteQuestCommand, Comple
     /// <param name="questService">The quest service.</param>
     /// <param name="rewardService">The quest reward service.</param>
     /// <param name="saveGameService">The save game service.</param>
+    /// <param name="mediator">The mediator for dispatching commands.</param>
     public CompleteQuestHandler(
-        Services.QuestService questService, 
+        Services.QuestService questService,
         Services.QuestRewardService rewardService,
-        ISaveGameService saveGameService)
+        ISaveGameService saveGameService,
+        IMediator mediator)
     {
         _questService = questService;
         _rewardService = rewardService;
         _saveGameService = saveGameService;
+        _mediator = mediator;
     }
 
     /// <summary>
@@ -61,6 +66,9 @@ public class CompleteQuestHandler : IRequestHandler<CompleteQuestCommand, Comple
                 // Distribute rewards to the player
                 await _rewardService.DistributeRewardsAsync(result.Quest!, saveGame.Character, saveGame);
             }
+
+            // Check for newly unlocked achievements after quest completion
+            var newAchievements = await _mediator.Send(new CheckAchievementProgressCommand(), cancellationToken);
 
             var rewards = new QuestRewards(
                 result.Quest!.XpReward,

@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Services;
+using RealmEngine.Core.Features.Achievements.Commands;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Shared.Abstractions;
 
@@ -40,50 +41,50 @@ public class LevelUpHandler : IRequestHandler<LevelUpCommand, LevelUpResult>
     /// <param name="request">The command request.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The result containing level up details.</returns>
-    public Task<LevelUpResult> Handle(LevelUpCommand request, CancellationToken cancellationToken)
+    public async Task<LevelUpResult> Handle(LevelUpCommand request, CancellationToken cancellationToken)
     {
         try
         {
             // Validate input
             if (string.IsNullOrWhiteSpace(request.CharacterName))
             {
-                return Task.FromResult(new LevelUpResult
+                return new LevelUpResult
                 {
                     Success = false,
                     ErrorMessage = "Character name is required"
-                });
+                };
             }
 
             // Get current save
             var saveGame = _saveGameService.GetCurrentSave();
             if (saveGame?.Character == null)
             {
-                return Task.FromResult(new LevelUpResult
+                return new LevelUpResult
                 {
                     Success = false,
                     ErrorMessage = "No active game session"
-                });
+                };
             }
 
             var character = saveGame.Character;
             if (character.Name != request.CharacterName)
             {
-                return Task.FromResult(new LevelUpResult
+                return new LevelUpResult
                 {
                     Success = false,
                     ErrorMessage = $"Character '{request.CharacterName}' not found"
-                });
+                };
             }
 
             // Check if character can level up
             var requiredXP = character.Level * 100;
             if (character.Experience < requiredXP)
             {
-                return Task.FromResult(new LevelUpResult
+                return new LevelUpResult
                 {
                     Success = false,
                     ErrorMessage = $"Insufficient experience. Need {requiredXP - character.Experience} more XP to level up."
-                });
+                };
             }
 
             // Store old stats
@@ -95,6 +96,10 @@ public class LevelUpHandler : IRequestHandler<LevelUpCommand, LevelUpResult>
             character.Experience -= requiredXP;
             // Force one level up (private method, so replicate logic)
             character.Level++;
+
+            // Check for newly unlocked achievements after level-up
+            var newAchievements = await _mediator.Send(new CheckAchievementProgressCommand(), cancellationToken);
+
             character.MaxHealth = character.GetMaxHealth();
             character.Health = character.MaxHealth;
             character.MaxMana = character.GetMaxMana();
@@ -133,7 +138,7 @@ public class LevelUpHandler : IRequestHandler<LevelUpCommand, LevelUpResult>
                 string.Join(", ", unlockedAbilities)
             );
 
-            return Task.FromResult(new LevelUpResult
+            return new LevelUpResult
             {
                 Success = true,
                 OldLevel = oldLevel,
@@ -142,16 +147,16 @@ public class LevelUpHandler : IRequestHandler<LevelUpCommand, LevelUpResult>
                 SkillPointsGained = skillPointsGained,
                 StatIncreases = statIncreases,
                 UnlockedAbilities = unlockedAbilities
-            });
+            };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to level up character {CharacterName}", request.CharacterName);
-            return Task.FromResult(new LevelUpResult
+            return new LevelUpResult
             {
                 Success = false,
                 ErrorMessage = $"Failed to level up: {ex.Message}"
-            });
+            };
         }
     }
 
