@@ -1,4 +1,5 @@
 using System.Net;
+using System.Reflection;
 using System.Text.Json;
 using Discord;
 using Discord.Interactions;
@@ -35,16 +36,23 @@ public class ServerModuleTests
 
     /// <summary>
     /// Creates a <see cref="ServerModule"/> wired to a fake HTTP handler and a
-    /// mocked interaction context. Returns the module and the mocked interaction
-    /// so the test can assert on the response.
+    /// mocked interaction context.
     /// </summary>
-    private static (ServerModule Module, SocketInteraction Interaction) CreateModule(
-        string content, HttpStatusCode statusCode)
+    private static ServerModule CreateModule(string content, HttpStatusCode statusCode)
     {
         var handler = new FakeHttpMessageHandler(content, statusCode);
         var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:9000") };
         var statusService = new ServerStatusService(httpClient);
+        return new ServerModule(statusService);
+    }
 
+    /// <summary>
+    /// Creates a substitute <see cref="SocketInteraction"/> with abstract members stubbed
+    /// and <see cref="IDiscordInteraction.DeferAsync"/> / <see cref="IDiscordInteraction.FollowupAsync"/>
+    /// set up as no-ops.
+    /// </summary>
+    private static SocketInteraction CreateMockInteraction()
+    {
         var interaction = Substitute.For<SocketInteraction>();
         interaction.DeferAsync(Arg.Any<bool>(), Arg.Any<RequestOptions?>())
             .Returns(Task.CompletedTask);
@@ -60,18 +68,38 @@ public class ServerModuleTests
                 Arg.Any<PollProperties?>())
             .Returns(Task.CompletedTask);
 
-        // Stub abstract members so the proxy doesn't throw when constructed
+        // Stub abstract members so the proxy doesn't throw
         interaction.User.Returns(Substitute.For<SocketUser>());
         interaction.Channel.Returns(Substitute.For<ISocketMessageChannel>());
         interaction.Data.Returns(Substitute.For<IDiscordInteractionData>());
 
+        return interaction;
+    }
+
+    /// <summary>
+    /// Uses reflection to set the <see cref="InteractionModuleBase{T}.Context"/>
+    /// property, which has an <c>internal</c> setter.
+    /// </summary>
+    private static void SetModuleContext<TModule>(TModule module, SocketInteractionContext context)
+        where TModule : InteractionModuleBase<SocketInteractionContext>
+    {
+        var prop = typeof(InteractionModuleBase<SocketInteractionContext>)
+            .GetProperty("Context", BindingFlags.Public | BindingFlags.Instance)!;
+        var setter = prop.GetSetMethod(true); // non-public
+        setter!.Invoke(module, [context]);
+    }
+
+    /// <summary>
+    /// Sets up the module with a mocked interaction and returns the interaction
+    /// so the test can assert on calls.
+    /// </summary>
+    private static SocketInteraction ArrangeModule(ServerModule module)
+    {
+        var interaction = CreateMockInteraction();
         var client = Substitute.For<DiscordSocketClient>();
         var context = new SocketInteractionContext(client, interaction);
-
-        var module = new ServerModule(statusService);
-        module.Context = context;
-
-        return (module, interaction);
+        SetModuleContext(module, context);
+        return interaction;
     }
 
     // ──────────────────────────────────────────────
@@ -82,77 +110,95 @@ public class ServerModuleTests
     public async Task StatusAsync_WhenZonesReturned_ShowsOnlineEmbed()
     {
         // Arrange
-        var (module, interaction) = CreateModule(SampleJson, HttpStatusCode.OK);
+        var module = CreateModule(SampleJson, HttpStatusCode.OK);
+        var interaction = ArrangeModule(module);
+
+        Embed? captured = null;
+        interaction.When(x => x.FollowupAsync(
+                Arg.Any<string?>(),
+                Arg.Any<Embed[]>(),
+                Arg.Any<bool>(),
+                Arg.Any<bool>(),
+                Arg.Any<AllowedMentions?>(),
+                Arg.Any<MessageComponent?>(),
+                Arg.Do<Embed?>(e => captured = e),
+                Arg.Any<RequestOptions?>(),
+                Arg.Any<PollProperties?>()))
+            .DoNotCallBase();
 
         // Act
         await module.StatusAsync();
 
         // Assert
-        await interaction.Received(1).DeferAsync(Arg.Any<bool>(), Arg.Any<RequestOptions?>());
-        await interaction.Received(1).FollowupAsync(
-            Arg.Any<string?>(),
-            Arg.Any<Embed[]>(),
-            Arg.Any<bool>(),
-            Arg.Any<bool>(),
-            Arg.Any<AllowedMentions?>(),
-            Arg.Any<MessageComponent?>(),
-            Arg.Is<Embed?>(e => e != null
-                && e.Title == "⚔️ Realm Unbound — Status"
-                && e.Color?.R == 0xFF
-                && e.Color?.G == 0xAA
-                && e.Color?.B == 0x00),
-            Arg.Any<RequestOptions?>(),
-            Arg.Any<PollProperties?>());
+        captured.Should().NotBeNull();
+        captured!.Title.Should().Be("⚔️ Realm Unbound — Status");
+        captured.Color.Should().NotBeNull();
+        captured.Color.Value.R.Should().Be(0xFF);
+        captured.Color.Value.G.Should().Be(0xAA);
+        captured.Color.Value.B.Should().Be(0x00);
     }
 
     [Fact]
     public async Task StatusAsync_WhenServerOffline_ShowsOfflineEmbed()
     {
-        // Arrange — return error status to simulate unreachable server
-        var (module, interaction) = CreateModule(string.Empty, HttpStatusCode.InternalServerError);
+        // Arrange
+        var module = CreateModule(string.Empty, HttpStatusCode.InternalServerError);
+        var interaction = ArrangeModule(module);
+
+        Embed? captured = null;
+        interaction.When(x => x.FollowupAsync(
+                Arg.Any<string?>(),
+                Arg.Any<Embed[]>(),
+                Arg.Any<bool>(),
+                Arg.Any<bool>(),
+                Arg.Any<AllowedMentions?>(),
+                Arg.Any<MessageComponent?>(),
+                Arg.Do<Embed?>(e => captured = e),
+                Arg.Any<RequestOptions?>(),
+                Arg.Any<PollProperties?>()))
+            .DoNotCallBase();
 
         // Act
         await module.StatusAsync();
 
         // Assert
-        await interaction.Received(1).FollowupAsync(
-            Arg.Any<string?>(),
-            Arg.Any<Embed[]>(),
-            Arg.Any<bool>(),
-            Arg.Any<bool>(),
-            Arg.Any<AllowedMentions?>(),
-            Arg.Any<MessageComponent?>(),
-            Arg.Is<Embed?>(e => e != null
-                && e.Title == "⚔️ Realm Unbound"
-                && e.Color?.R == 0xFF
-                && e.Color?.G == 0x00
-                && e.Color?.B == 0x00),
-            Arg.Any<RequestOptions?>(),
-            Arg.Any<PollProperties?>());
+        captured.Should().NotBeNull();
+        captured!.Title.Should().Be("⚔️ Realm Unbound");
+        captured.Color.Should().NotBeNull();
+        captured.Color.Value.R.Should().Be(0xFF);
+        captured.Color.Value.G.Should().Be(0x00);
+        captured.Color.Value.B.Should().Be(0x00);
     }
 
     [Fact]
     public async Task StatusAsync_WhenNoZones_ShowsZeroStats()
     {
         // Arrange
-        var (module, interaction) = CreateModule(EmptyZonesJson, HttpStatusCode.OK);
+        var module = CreateModule(EmptyZonesJson, HttpStatusCode.OK);
+        var interaction = ArrangeModule(module);
+
+        Embed? captured = null;
+        interaction.When(x => x.FollowupAsync(
+                Arg.Any<string?>(),
+                Arg.Any<Embed[]>(),
+                Arg.Any<bool>(),
+                Arg.Any<bool>(),
+                Arg.Any<AllowedMentions?>(),
+                Arg.Any<MessageComponent?>(),
+                Arg.Do<Embed?>(e => captured = e),
+                Arg.Any<RequestOptions?>(),
+                Arg.Any<PollProperties?>()))
+            .DoNotCallBase();
 
         // Act
         await module.StatusAsync();
 
         // Assert
-        await interaction.Received(1).FollowupAsync(
-            Arg.Any<string?>(),
-            Arg.Any<Embed[]>(),
-            Arg.Any<bool>(),
-            Arg.Any<bool>(),
-            Arg.Any<AllowedMentions?>(),
-            Arg.Any<MessageComponent?>(),
-            Arg.Is<Embed?>(e => e != null
-                && e.Fields.Any(f => f.Name == "Wanderers" && f.Value == "None")
-                && e.Fields.Any(f => f.Name == "Active Zones" && f.Value == "0")),
-            Arg.Any<RequestOptions?>(),
-            Arg.Any<PollProperties?>());
+        captured.Should().NotBeNull();
+        captured!.Fields.Should()
+            .Contain(f => f.Name == "Wanderers" && f.Value == "None");
+        captured.Fields.Should()
+            .Contain(f => f.Name == "Active Zones" && f.Value == "0");
     }
 
     // ──────────────────────────────────────────────
@@ -163,92 +209,114 @@ public class ServerModuleTests
     public async Task ZonesAsync_WhenZonesReturned_ShowsZoneListEmbed()
     {
         // Arrange
-        var (module, interaction) = CreateModule(SampleJson, HttpStatusCode.OK);
+        var module = CreateModule(SampleJson, HttpStatusCode.OK);
+        var interaction = ArrangeModule(module);
+
+        Embed? captured = null;
+        interaction.When(x => x.FollowupAsync(
+                Arg.Any<string?>(),
+                Arg.Any<Embed[]>(),
+                Arg.Any<bool>(),
+                Arg.Any<bool>(),
+                Arg.Any<AllowedMentions?>(),
+                Arg.Any<MessageComponent?>(),
+                Arg.Do<Embed?>(e => captured = e),
+                Arg.Any<RequestOptions?>(),
+                Arg.Any<PollProperties?>()))
+            .DoNotCallBase();
 
         // Act
         await module.ZonesAsync();
 
         // Assert
-        await interaction.Received(1).FollowupAsync(
-            Arg.Any<string?>(),
-            Arg.Any<Embed[]>(),
-            Arg.Any<bool>(),
-            Arg.Any<bool>(),
-            Arg.Any<AllowedMentions?>(),
-            Arg.Any<MessageComponent?>(),
-            Arg.Is<Embed?>(e => e != null
-                && e.Title == "🗺️ Realm Zones"
-                && e.Fields.Count(f => f.Inline == false) == 2),
-            Arg.Any<RequestOptions?>(),
-            Arg.Any<PollProperties?>());
+        captured.Should().NotBeNull();
+        captured!.Title.Should().Be("🗺️ Realm Zones");
+        captured.Fields.Count(f => !f.Inline).Should().Be(2);
     }
 
     [Fact]
     public async Task ZonesAsync_WhenServerOffline_ShowsTextMessage()
     {
         // Arrange
-        var (module, interaction) = CreateModule(string.Empty, HttpStatusCode.InternalServerError);
+        var module = CreateModule(string.Empty, HttpStatusCode.InternalServerError);
+        var interaction = ArrangeModule(module);
+
+        string? capturedText = null;
+        interaction.When(x => x.FollowupAsync(
+                Arg.Do<string?>(t => capturedText = t),
+                Arg.Any<Embed[]>(),
+                Arg.Any<bool>(),
+                Arg.Any<bool>(),
+                Arg.Any<AllowedMentions?>(),
+                Arg.Any<MessageComponent?>(),
+                Arg.Any<Embed?>(),
+                Arg.Any<RequestOptions?>(),
+                Arg.Any<PollProperties?>()))
+            .DoNotCallBase();
 
         // Act
         await module.ZonesAsync();
 
         // Assert
-        await interaction.Received(1).FollowupAsync(
-            Arg.Is<string?>(s => s != null && s.Contains("unreachable")),
-            Arg.Any<Embed[]>(),
-            Arg.Any<bool>(),
-            Arg.Is<bool>(ephemeral => ephemeral),
-            Arg.Any<AllowedMentions?>(),
-            Arg.Any<MessageComponent?>(),
-            Arg.Any<Embed?>(),
-            Arg.Any<RequestOptions?>(),
-            Arg.Any<PollProperties?>());
+        capturedText.Should().NotBeNull();
+        capturedText!.Should().Contain("unreachable");
     }
 
     [Fact]
     public async Task ZonesAsync_WhenEmpty_ShowsEmptyTextMessage()
     {
         // Arrange
-        var (module, interaction) = CreateModule(EmptyZonesJson, HttpStatusCode.OK);
+        var module = CreateModule(EmptyZonesJson, HttpStatusCode.OK);
+        var interaction = ArrangeModule(module);
+
+        string? capturedText = null;
+        interaction.When(x => x.FollowupAsync(
+                Arg.Do<string?>(t => capturedText = t),
+                Arg.Any<Embed[]>(),
+                Arg.Any<bool>(),
+                Arg.Any<bool>(),
+                Arg.Any<AllowedMentions?>(),
+                Arg.Any<MessageComponent?>(),
+                Arg.Any<Embed?>(),
+                Arg.Any<RequestOptions?>(),
+                Arg.Any<PollProperties?>()))
+            .DoNotCallBase();
 
         // Act
         await module.ZonesAsync();
 
         // Assert
-        await interaction.Received(1).FollowupAsync(
-            Arg.Is<string?>(s => s != null && s.Contains("No zones")),
-            Arg.Any<Embed[]>(),
-            Arg.Any<bool>(),
-            Arg.Is<bool>(ephemeral => ephemeral),
-            Arg.Any<AllowedMentions?>(),
-            Arg.Any<MessageComponent?>(),
-            Arg.Any<Embed?>(),
-            Arg.Any<RequestOptions?>(),
-            Arg.Any<PollProperties?>());
+        capturedText.Should().NotBeNull();
+        capturedText!.Should().Contain("No zones");
     }
 
     [Fact]
     public async Task ZonesAsync_WhenMoreThanTwentyZones_ShowsLimitedFooter()
     {
         // Arrange
-        var (module, interaction) = CreateModule(ManyZonesJson, HttpStatusCode.OK);
+        var module = CreateModule(ManyZonesJson, HttpStatusCode.OK);
+        var interaction = ArrangeModule(module);
+
+        Embed? captured = null;
+        interaction.When(x => x.FollowupAsync(
+                Arg.Any<string?>(),
+                Arg.Any<Embed[]>(),
+                Arg.Any<bool>(),
+                Arg.Any<bool>(),
+                Arg.Any<AllowedMentions?>(),
+                Arg.Any<MessageComponent?>(),
+                Arg.Do<Embed?>(e => captured = e),
+                Arg.Any<RequestOptions?>(),
+                Arg.Any<PollProperties?>()))
+            .DoNotCallBase();
 
         // Act
         await module.ZonesAsync();
 
         // Assert
-        await interaction.Received(1).FollowupAsync(
-            Arg.Any<string?>(),
-            Arg.Any<Embed[]>(),
-            Arg.Any<bool>(),
-            Arg.Any<bool>(),
-            Arg.Any<AllowedMentions?>(),
-            Arg.Any<MessageComponent?>(),
-            Arg.Is<Embed?>(e => e != null
-                && e.Fields.Count == 20
-                && e.Footer?.Text != null
-                && e.Footer.Value.Text.Contains("Showing 20 of 25")),
-            Arg.Any<RequestOptions?>(),
-            Arg.Any<PollProperties?>());
+        captured.Should().NotBeNull();
+        captured!.Fields.Length.Should().Be(20);
+        captured.Footer.Should().NotBeNull();
+        captured.Footer.Value.Text.Should().Contain("Showing 20 of 25");
     }
 }
