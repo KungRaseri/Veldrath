@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Services;
+using RealmEngine.Core.Features.Achievements.Commands;
 using RealmEngine.Core.Features.SaveLoad;
 
 namespace RealmEngine.Core.Features.LevelUp.Commands;
@@ -40,48 +41,48 @@ public class GainExperienceHandler : IRequestHandler<GainExperienceCommand, Gain
     /// <param name="request">The command request.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The result containing experience and level information.</returns>
-    public Task<GainExperienceResult> Handle(GainExperienceCommand request, CancellationToken cancellationToken)
+    public async Task<GainExperienceResult> Handle(GainExperienceCommand request, CancellationToken cancellationToken)
     {
         try
         {
             // Validate input
             if (string.IsNullOrWhiteSpace(request.CharacterName))
             {
-                return Task.FromResult(new GainExperienceResult
+                return new GainExperienceResult
                 {
                     Success = false,
                     ErrorMessage = "Character name is required"
-                });
+                };
             }
 
             if (request.ExperienceAmount <= 0)
             {
-                return Task.FromResult(new GainExperienceResult
+                return new GainExperienceResult
                 {
                     Success = false,
                     ErrorMessage = "Experience amount must be positive"
-                });
+                };
             }
 
             // Get current save
             var saveGame = _saveGameService.GetCurrentSave();
             if (saveGame?.Character == null)
             {
-                return Task.FromResult(new GainExperienceResult
+                return new GainExperienceResult
                 {
                     Success = false,
                     ErrorMessage = "No active game session"
-                });
+                };
             }
 
             var character = saveGame.Character;
             if (character.Name != request.CharacterName)
             {
-                return Task.FromResult(new GainExperienceResult
+                return new GainExperienceResult
                 {
                     Success = false,
                     ErrorMessage = $"Character '{request.CharacterName}' not found"
-                });
+                };
             }
 
             // Store old level
@@ -89,6 +90,9 @@ public class GainExperienceHandler : IRequestHandler<GainExperienceCommand, Gain
 
             // Award experience using character's built-in method
             character.GainExperience(request.ExperienceAmount);
+
+            // Check for newly unlocked achievements after gaining experience
+            var newAchievements = await _mediator.Send(new CheckAchievementProgressCommand(), cancellationToken);
 
             // Check if leveled up
             var leveledUp = character.Level > oldLevel;
@@ -121,7 +125,7 @@ public class GainExperienceHandler : IRequestHandler<GainExperienceCommand, Gain
                 // await _mediator.Publish(new CharacterLeveledUpEvent(request.CharacterName, oldLevel, newLevel), cancellationToken);
             }
 
-            return Task.FromResult(new GainExperienceResult
+            return new GainExperienceResult
             {
                 Success = true,
                 NewExperience = character.Experience,
@@ -129,16 +133,16 @@ public class GainExperienceHandler : IRequestHandler<GainExperienceCommand, Gain
                 LeveledUp = leveledUp,
                 NewLevel = leveledUp ? newLevel : null,
                 ExperienceToNextLevel = xpToNext
-            });
+            };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to award experience to character {CharacterName}", request.CharacterName);
-            return Task.FromResult(new GainExperienceResult
+            return new GainExperienceResult
             {
                 Success = false,
                 ErrorMessage = $"Failed to award experience: {ex.Message}"
-            });
+            };
         }
     }
 }
