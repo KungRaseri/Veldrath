@@ -1,6 +1,6 @@
 # Auth Flow & Character Creation Gap Fix Plan
 
-> **Status**: Updated for post-Session-39 (2026-06-27). Auth hardening Pass 1 completed in Session-31. Auth hardening Pass 2 (forgot password, account profile, session persistence, LinkedAt, shared auth libraries) completed in Sessions 35-37.
+> **Status**: Updated through Session-40 (2026-06-28). Auth hardening Pass 1+2 complete. Settings system orphaned files deleted.
 
 **Started:** 2026-04-02
 **Status:** In Progress — paused mid-test-verification

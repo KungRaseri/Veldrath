@@ -1,6 +1,6 @@
 # RealmEngine Codebase Notes
 
-> **Status**: Updated for post-Session-39 (2026-06-27).
+> **Status**: Updated through Session-40 (2026-06-28).
 
 ## Test Counts
 
@@ -17,7 +17,7 @@
 | `Veldrath.Web.Tests` | ~31 (6 test files) |
 | `Veldrath.Discord.Tests` | ~ (4 test files) |
 | `Veldrath.Assets.Tests` | ~10 (5 test files) |
-| **Approximate Total** | **~4,500+ (376 test files)** |
+| **Approximate Total** | **~4,732 (376 test files)** |
 
 ## Key Model Facts
 - `Location` has 4 required properties: `Id`, `Name`, `Description`, `Type`
@@ -342,3 +342,7 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - **Actual test count unknown** — needs `dotnet test` run to establish baseline after 2.5 months of changes
 - **Wiki implementation status tracker** (`wiki/Engine-Implementation-Status.md`) last updated March 19 — stale
 - **Memory files now updated through Session-39** — but gap analysis process should be run fresh
+- **Discord bot embed builder tests** (Session-40): 24 tests added for ServerModule and GenerateModule
+- **Achievement triggers wired** (Session-40): 5 handlers now call CheckAchievementProgressCommand
+- **Settings deleted** (Session-40): 6 orphaned RealmEngine.Core/Settings/ files removed
+- **Hub integration success-path tests** still missing for GetRegionMap, MoveOnRegion, ExitZone, ChangeRegion

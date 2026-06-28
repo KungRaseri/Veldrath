@@ -1,6 +1,6 @@
 # World Lore Plan — Veldrath
 
-> **Status**: Reviewed and current as of Session-39 (2026-06-27).
+> **Status**: Reviewed as of Session-40 (2026-06-28). Work deferred — next action is Greymoor regional design.
 
 ---
 
@@ -205,3 +205,7 @@ Update sub-location descriptions within zone pages. **✅ COMPLETE (2026-04-14)*
 ### Session-39 Note (2026-06-27)
 
 This plan was reviewed during the Priority 0 memory file update session. No new world-building work has been done since the last session. The 6 open design items (Vraen, Aethori presence, Pits contents, Grevenmire subjects, player discovery mechanism, Crestfall's history) remain unresolved. Next step remains Greymoor (Phase 5+ regional design) once items 3-7 are resolved.
+
+### Session-40 Note (2026-06-28)
+
+No world-building work was done this session. The session focused on codebase expansion and polish: achievement wiring, Discord bot tests, zone TMX maps, settings cleanup, and auth hardening. World lore design remains deferred.
