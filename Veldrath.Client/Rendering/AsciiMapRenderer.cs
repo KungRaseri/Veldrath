@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Text;
 using Avalonia;
 using Avalonia.Media;
 using Veldrath.Contracts.Tilemap;
@@ -9,8 +8,9 @@ namespace Veldrath.Client.Rendering;
 
 /// <summary>
 /// ASCII / roguelike text-based tilemap renderer. Renders each tile as a single
-/// monospace character using <see cref="DrawingContext.DrawText"/>. Entity positions
-/// are rendered as coloured characters (<c>@</c> for players, <c>E</c> for enemies).
+/// monospace character using <see cref="DrawingContext.DrawText"/>. Each tile is
+/// coloured individually via <see cref="TileRegistry"/> and <see cref="AsciiPalette"/>.
+/// Entity positions use <see cref="EntityAppearanceRegistry"/> for per-type visuals.
 /// </summary>
 [ExcludeFromCodeCoverage]
 public sealed class AsciiMapRenderer : IMapRenderer
@@ -22,25 +22,8 @@ public sealed class AsciiMapRenderer : IMapRenderer
     private readonly double _charWidth;
     private readonly double _charHeight;
 
-    // ── Entity colours ──────────────────────────────────────────────────────
-
-    private static readonly IBrush SelfPlayerBrush = new SolidColorBrush(Color.FromRgb(6, 182, 212));  // cyan
-    private static readonly IBrush OtherPlayerBrush = new SolidColorBrush(Color.FromRgb(74, 222, 128)); // green
-    private static readonly IBrush EnemyBrush       = new SolidColorBrush(Color.FromRgb(239, 68, 68));  // red
-
-    // ── Fog ──────────────────────────────────────────────────────────────────
-
-    private static readonly IBrush FogBrush = new SolidColorBrush(Color.FromRgb(30, 41, 59)); // dark slate
-
-    // ── Highlight colours ────────────────────────────────────────────────────
-
-    private static readonly IBrush ExitHighlightBrush       = new SolidColorBrush(Color.FromRgb(250, 204, 21)); // yellow
-    private static readonly IBrush ZoneEntryHighlightBrush  = new SolidColorBrush(Color.FromRgb(34, 197, 94));  // green
-    private static readonly IBrush RegionExitHighlightBrush = new SolidColorBrush(Color.FromRgb(249, 115, 22)); // orange
-
-    // ── Label brush ──────────────────────────────────────────────────────────
-
-    private static readonly IBrush LabelBrush = new SolidColorBrush(Color.FromRgb(203, 213, 225)); // slate 300
+    /// <summary>Cache of per-colour foreground brushes to avoid per-tile allocation.</summary>
+    private readonly Dictionary<Color, IBrush> _brushCache = [];
 
     /// <summary>Initializes a new instance of <see cref="AsciiMapRenderer"/>.</summary>
     public AsciiMapRenderer()
@@ -69,7 +52,7 @@ public sealed class AsciiMapRenderer : IMapRenderer
         // Dark background
         context.FillRectangle(Brushes.Black, new Rect(state.Bounds));
 
-        // Build and draw tile rows
+        // Build and draw tile rows (per-tile coloured)
         DrawTileRows(context, state, vpW, vpH);
 
         // Draw entities on top
@@ -94,36 +77,45 @@ public sealed class AsciiMapRenderer : IMapRenderer
             DrawMinimap(context, state);
     }
 
-    // ── Tile rows ──────────────────────────────────────────────────────────
+    // ── Tile rows (per-tile colouring) ───────────────────────────────────────
 
+    /// <summary>
+    /// Draws every visible tile individually so each can carry its own foreground colour
+    /// and optional background fill from <see cref="TileRegistry"/>.
+    /// </summary>
     private void DrawTileRows(DrawingContext context, RenderState s, int vpW, int vpH)
     {
-        var sb = new StringBuilder(vpW);
-        var darkBrush = new SolidColorBrush(Color.FromRgb(148, 163, 184)); // default tile colour
-
         for (var ty = s.CameraY; ty < Math.Min(s.CameraY + vpH, s.MapHeight); ty++)
         {
-            sb.Clear();
             for (var tx = s.CameraX; tx < Math.Min(s.CameraX + vpW, s.MapWidth); tx++)
             {
-                var idx = s.MapWidth * ty + tx;
+                var idx      = s.MapWidth * ty + tx;
                 var tileIndex = CompositeTileIndex(s.Layers, idx);
-                sb.Append(TileAsciiMap.GetChar(tileIndex));
+                if (tileIndex == -1) continue; // fully transparent cell
+
+                var desc     = TileRegistry.Get(tileIndex);
+                var screenX  = (tx - s.CameraX) * _charWidth;
+                var screenY  = (ty - s.CameraY) * _charHeight;
+
+                // Optional background fill behind the character
+                if (desc.Background.HasValue)
+                {
+                    context.FillRectangle(
+                        GetBrush(desc.Background.Value),
+                        new Rect(screenX, screenY, _charWidth, _charHeight));
+                }
+
+                // Per-tile coloured character
+                var tileText = new FormattedText(
+                    desc.AsciiChar.ToString(),
+                    CultureInfo.CurrentCulture,
+                    FlowDirection.LeftToRight,
+                    AsciiTypeface,
+                    FontSize,
+                    GetBrush(desc.Foreground));
+
+                context.DrawText(tileText, new Point(screenX, screenY));
             }
-
-            if (sb.Length == 0) continue;
-
-            var rowText = new FormattedText(
-                sb.ToString(),
-                CultureInfo.CurrentCulture,
-                FlowDirection.LeftToRight,
-                AsciiTypeface,
-                FontSize,
-                darkBrush);
-
-            var x = 0.0;
-            var y = (ty - s.CameraY) * _charHeight;
-            context.DrawText(rowText, new Point(x, y));
         }
     }
 
@@ -140,7 +132,21 @@ public sealed class AsciiMapRenderer : IMapRenderer
         return result;
     }
 
-    // ── Entity drawing ─────────────────────────────────────────────────────
+    /// <summary>
+    /// Returns a cached <see cref="IBrush"/> for the given colour.
+    /// Avoids allocating one new brush per tile per frame.
+    /// </summary>
+    private IBrush GetBrush(Color color)
+    {
+        if (!_brushCache.TryGetValue(color, out var brush))
+        {
+            brush = new SolidColorBrush(color);
+            _brushCache[color] = brush;
+        }
+        return brush;
+    }
+
+    // ── Entity drawing ────────────────────────────────────────────────────────
 
     private void DrawEntities(DrawingContext context, RenderState s, int vpW, int vpH)
     {
@@ -151,15 +157,21 @@ public sealed class AsciiMapRenderer : IMapRenderer
             if (scrX < 0 || scrX >= vpW) continue;
             if (scrY < 0 || scrY >= vpH) continue;
 
-            var isSelf = s.SelfEntityId.HasValue && entity.EntityId == s.SelfEntityId.Value;
-            var (ch, brush) = entity.EntityType switch
-            {
-                "player" => ('@', isSelf ? SelfPlayerBrush : OtherPlayerBrush),
-                _        => ('E', EnemyBrush),
-            };
+            var appearance = EntityAppearanceRegistry.Get(entity.SpriteKey, entity.EntityType);
+            var isSelf     = s.SelfEntityId.HasValue && entity.EntityId == s.SelfEntityId.Value;
+
+            // Override colour for self-player so it stands out, even if a specific
+            // sprite-key appearance was registered.
+            IBrush brush;
+            if (isSelf && entity.EntityType == "player")
+                brush = AsciiPalette.PlayerSelfBrush;
+            else if (entity.EntityType == "player")
+                brush = AsciiPalette.PlayerOtherBrush;
+            else
+                brush = GetBrush(appearance.Color);
 
             var entityText = new FormattedText(
-                ch.ToString(),
+                appearance.Character.ToString(),
                 CultureInfo.CurrentCulture,
                 FlowDirection.LeftToRight,
                 AsciiTypeface,
@@ -172,7 +184,7 @@ public sealed class AsciiMapRenderer : IMapRenderer
         }
     }
 
-    // ── Highlights ─────────────────────────────────────────────────────────
+    // ── Highlights ────────────────────────────────────────────────────────────
 
     private void DrawExitHighlights(DrawingContext context, RenderState s, int vpW, int vpH)
     {
@@ -188,7 +200,7 @@ public sealed class AsciiMapRenderer : IMapRenderer
                 FlowDirection.LeftToRight,
                 AsciiTypeface,
                 FontSize,
-                ExitHighlightBrush);
+                AsciiPalette.ExitHighlightBrush);
             context.DrawText(text, new Point(sx * _charWidth, sy * _charHeight));
         }
     }
@@ -207,7 +219,7 @@ public sealed class AsciiMapRenderer : IMapRenderer
                 FlowDirection.LeftToRight,
                 AsciiTypeface,
                 FontSize,
-                ZoneEntryHighlightBrush);
+                AsciiPalette.ZoneEntryHighlightBrush);
             context.DrawText(text, new Point(sx * _charWidth, sy * _charHeight));
         }
     }
@@ -226,7 +238,7 @@ public sealed class AsciiMapRenderer : IMapRenderer
                 FlowDirection.LeftToRight,
                 AsciiTypeface,
                 FontSize,
-                RegionExitHighlightBrush);
+                AsciiPalette.RegionExitHighlightBrush);
             context.DrawText(text, new Point(sx * _charWidth, sy * _charHeight));
         }
     }
@@ -246,25 +258,17 @@ public sealed class AsciiMapRenderer : IMapRenderer
                 FlowDirection.LeftToRight,
                 AsciiTypeface,
                 FontSize - 2,
-                LabelBrush);
+                AsciiPalette.LabelBrush);
             var px = (sx - text.Width / _charWidth / 2) * _charWidth;
             var py = (sy - 1) * _charHeight;
             context.DrawText(text, new Point(px, py));
         }
     }
 
-    // ── Fog of war ─────────────────────────────────────────────────────────
+    // ── Fog of war ────────────────────────────────────────────────────────────
 
     private void DrawFog(DrawingContext context, RenderState s, int vpW, int vpH)
     {
-        var fogChar = new FormattedText(
-            " ",
-            CultureInfo.CurrentCulture,
-            FlowDirection.LeftToRight,
-            AsciiTypeface,
-            FontSize,
-            Brushes.Black);
-
         for (var ty = s.CameraY; ty < Math.Min(s.CameraY + vpH, s.MapHeight); ty++)
         for (var tx = s.CameraX; tx < Math.Min(s.CameraX + vpW, s.MapWidth); tx++)
         {
@@ -274,11 +278,11 @@ public sealed class AsciiMapRenderer : IMapRenderer
 
             var px = (tx - s.CameraX) * _charWidth;
             var py = (ty - s.CameraY) * _charHeight;
-            context.FillRectangle(FogBrush, new Rect(px, py, _charWidth, _charHeight));
+            context.FillRectangle(AsciiPalette.FogBrush, new Rect(px, py, _charWidth, _charHeight));
         }
     }
 
-    // ── Minimap ────────────────────────────────────────────────────────────
+    // ── Minimap ───────────────────────────────────────────────────────────────
 
     private void DrawMinimap(DrawingContext context, RenderState s)
     {
@@ -292,12 +296,11 @@ public sealed class AsciiMapRenderer : IMapRenderer
         var offsetY   = miniPadding;
 
         // Background
-        var miniBg = new SolidColorBrush(Color.FromArgb(210, 8, 10, 20));
-        context.FillRectangle(miniBg,
+        context.FillRectangle(
+            GetBrush(AsciiPalette.MiniBg),
             new Rect(offsetX - 2, offsetY - 2, miniW + 4, miniH + 4));
 
         var miniFontSize = Math.Max(6, miniScale * 0.8);
-        var miniTypeface = AsciiTypeface;
 
         for (var ty = 0; ty < s.MapHeight; ty++)
         for (var tx = 0; tx < s.MapWidth; tx++)
@@ -310,17 +313,15 @@ public sealed class AsciiMapRenderer : IMapRenderer
 
             var blocked = idx < s.CollisionMask.Length && s.CollisionMask[idx];
             var ch = blocked ? '#' : '.';
-            var color = blocked
-                ? new SolidColorBrush(Color.FromRgb(30, 30, 40))
-                : new SolidColorBrush(Color.FromRgb(80, 80, 100));
+            var color = blocked ? AsciiPalette.MiniWall : AsciiPalette.MiniFloor;
 
             var text = new FormattedText(
                 ch.ToString(),
                 CultureInfo.CurrentCulture,
                 FlowDirection.LeftToRight,
-                miniTypeface,
+                AsciiTypeface,
                 miniFontSize,
-                color);
+                GetBrush(color));
             context.DrawText(text,
                 new Point(offsetX + tx * miniScale, offsetY + ty * miniScale));
         }
@@ -340,18 +341,16 @@ public sealed class AsciiMapRenderer : IMapRenderer
             if (entity.TileX < 0 || entity.TileX >= s.MapWidth ||
                 entity.TileY < 0 || entity.TileY >= s.MapHeight) continue;
 
-            var isSelf = s.SelfEntityId.HasValue && entity.EntityId == s.SelfEntityId.Value;
-            var dotColor = isSelf
-                ? new SolidColorBrush(Color.FromRgb(6, 182, 212))
-                : new SolidColorBrush(Color.FromRgb(30, 144, 255));
+            var isSelf   = s.SelfEntityId.HasValue && entity.EntityId == s.SelfEntityId.Value;
+            var dotColor = isSelf ? AsciiPalette.MiniSelfDot : AsciiPalette.MiniOtherDot;
 
             var dot = new FormattedText(
                 "*",
                 CultureInfo.CurrentCulture,
                 FlowDirection.LeftToRight,
-                miniTypeface,
+                AsciiTypeface,
                 miniFontSize,
-                dotColor);
+                GetBrush(dotColor));
             context.DrawText(dot,
                 new Point(offsetX + entity.TileX * miniScale, offsetY + entity.TileY * miniScale));
         }
