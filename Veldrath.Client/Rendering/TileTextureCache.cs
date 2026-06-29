@@ -1,10 +1,10 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using Avalonia;
 using Avalonia.Media.Imaging;
 using Veldrath.Assets.Manifest;
 using Serilog;
 
-namespace Veldrath.Client.Services;
+namespace Veldrath.Client.Rendering;
 
 /// <summary>
 /// Loads and caches tileset spritesheet <see cref="Bitmap"/> objects keyed by tileset key.

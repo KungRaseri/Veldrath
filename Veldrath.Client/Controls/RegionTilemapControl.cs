@@ -1,54 +1,24 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Reactive;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
-using Avalonia.Media.Imaging;
 using Avalonia.Threading;
-using Veldrath.Client.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Veldrath.Client.Rendering;
 using Veldrath.Client.ViewModels;
 using Veldrath.Contracts.Tilemap;
 
 namespace Veldrath.Client.Controls;
 
 /// <summary>
-/// Region-map canvas. Renders the region's tile layers, player entities, zone-entry highlights,
-/// region-exit highlights, and a minimap overlay using Avalonia's <see cref="DrawingContext"/>.
-/// Tile scale is fixed at 3× the native 16 px tile size = 48 px display tiles.
+/// Region-map canvas. Delegates rendering to an <see cref="IMapRenderer"/>.
 /// Input: WASD / arrow keys trigger movement; E key confirms a pending zone-entry or region-crossing.
 /// </summary>
 [ExcludeFromCodeCoverage]
 public class RegionTilemapControl : Control
 {
-    private const int DisplayTileSize = 48; // 16 px × 3
-
-    private static readonly IBrush SelfPlayerBrush = new SolidColorBrush(Color.FromRgb(30, 144, 255));
-    private static readonly IBrush PlayerBrush     = Brushes.LimeGreen;
-
-    // Zone-entry tile highlight (green)
-    private static readonly IBrush ZoneEntryFillBrush = new SolidColorBrush(Color.FromArgb(80, 50, 205, 50));
-    private static readonly IPen   ZoneEntryBorderPen = new Pen(new SolidColorBrush(Color.FromRgb(50, 205, 50)), 2f);
-
-    // Region-exit tile highlight (orange)
-    private static readonly IBrush RegionExitFillBrush = new SolidColorBrush(Color.FromArgb(80, 255, 140, 0));
-    private static readonly IPen   RegionExitBorderPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 140, 0)), 2f);
-
-    // Pending tile placeholder
-    private static readonly IBrush PendingBrush = new SolidColorBrush(Color.FromRgb(255, 0, 255));
-
-    // Minimap palette
-    private static readonly IBrush MiniWallBrush      = new SolidColorBrush(Color.FromRgb(30,  30,  40));
-    private static readonly IBrush MiniFloorBrush     = new SolidColorBrush(Color.FromRgb(80,  80, 100));
-    private static readonly IBrush MiniZoneEntryBrush = new SolidColorBrush(Color.FromRgb(50, 205,  50));
-    private static readonly IBrush MiniRegionExitBrush = new SolidColorBrush(Color.FromRgb(255, 140,   0));
-    private static readonly IBrush MiniPlayerBrush    = new SolidColorBrush(Color.FromRgb(30, 144, 255));
-    private static readonly IBrush MiniBgBrush        = new SolidColorBrush(Color.FromArgb(210, 8, 10, 20));
-    private static readonly IPen   MiniVpPen          = new Pen(Brushes.White, 1);
-
-    // Label text typeface
-    private static readonly Typeface LabelTypeface = new(FontFamily.Default, FontStyle.Normal, FontWeight.SemiBold);
-
     /// <summary>Styled property for the tilemap view model.</summary>
     public static readonly StyledProperty<RegionTilemapViewModel?> ViewModelProperty =
         AvaloniaProperty.Register<RegionTilemapControl, RegionTilemapViewModel?>(nameof(ViewModel));
@@ -60,7 +30,7 @@ public class RegionTilemapControl : Control
         set => SetValue(ViewModelProperty, value);
     }
 
-    private readonly TileTextureCache _cache = new();
+    private readonly MapRendererResolver? _rendererResolver;
     private DispatcherTimer? _timer;
 
     static RegionTilemapControl()
@@ -73,6 +43,7 @@ public class RegionTilemapControl : Control
     {
         Focusable    = true;
         ClipToBounds = true;
+        _rendererResolver = App.Services?.GetService<MapRendererResolver>();
     }
 
     /// <inheritdoc/>
@@ -93,8 +64,9 @@ public class RegionTilemapControl : Control
         var vm = ViewModel;
         if (vm is null) return;
 
-        vm.ViewportWidthTiles  = Math.Max(1, (int)(Bounds.Width  / DisplayTileSize));
-        vm.ViewportHeightTiles = Math.Max(1, (int)(Bounds.Height / DisplayTileSize));
+        var displayTileSize = _rendererResolver?.Current.DisplayTileSize ?? 48;
+        vm.ViewportWidthTiles  = Math.Max(1, (int)(Bounds.Width  / displayTileSize));
+        vm.ViewportHeightTiles = Math.Max(1, (int)(Bounds.Height / displayTileSize));
 
         if (vm.SelfEntityId.HasValue)
         {
@@ -179,193 +151,33 @@ public class RegionTilemapControl : Control
             return;
         }
 
-        var map   = vm.RegionMapData;
-        var sheet = _cache.GetSheet(map.TilesetKey);
-        var camX  = vm.CameraX;
-        var camY  = vm.CameraY;
-        var vpW   = (int)Math.Ceiling(Bounds.Width  / DisplayTileSize) + 1;
-        var vpH   = (int)Math.Ceiling(Bounds.Height / DisplayTileSize) + 1;
-
-        // ── Tile layers ──────────────────────────────────────────────────────
-        DrawTileLayers(context, map.Layers, sheet, map, camX, camY, vpW, vpH);
-
-        // ── Zone-entry highlights (green) ────────────────────────────────────
-        foreach (var entry in map.ZoneEntries)
-        {
-            if (!InViewport(entry.TileX, entry.TileY, camX, camY, vpW, vpH)) continue;
-            var (ex, ey) = ToScreen(entry.TileX, entry.TileY, camX, camY);
-            context.DrawRectangle(ZoneEntryFillBrush, ZoneEntryBorderPen,
-                new Rect(ex + 1, ey + 1, DisplayTileSize - 2, DisplayTileSize - 2));
-        }
-
-        // ── Region-exit highlights (orange) ──────────────────────────────────
-        foreach (var exit in map.RegionExits)
-        {
-            if (!InViewport(exit.TileX, exit.TileY, camX, camY, vpW, vpH)) continue;
-            var (ex, ey) = ToScreen(exit.TileX, exit.TileY, camX, camY);
-            context.DrawRectangle(RegionExitFillBrush, RegionExitBorderPen,
-                new Rect(ex + 1, ey + 1, DisplayTileSize - 2, DisplayTileSize - 2));
-        }
-
-        // ── Player entities ──────────────────────────────────────────────────
-        foreach (var entity in vm.Entities)
-        {
-            var (sx, sy) = ToScreen(entity.TileX, entity.TileY, camX, camY);
-            if (sx < -DisplayTileSize || sx > Bounds.Width  + DisplayTileSize) continue;
-            if (sy < -DisplayTileSize || sy > Bounds.Height + DisplayTileSize) continue;
-
-            IBrush fill = vm.SelfEntityId.HasValue && entity.EntityId == vm.SelfEntityId.Value
-                ? SelfPlayerBrush
-                : PlayerBrush;
-            context.FillRectangle(fill,
-                new Rect(sx + 6, sy + 6, DisplayTileSize - 12, DisplayTileSize - 12), 4f);
-        }
-
-        // ── Zone labels ───────────────────────────────────────────────────────
-        foreach (var label in map.Labels)
-        {
-            if (label.IsHidden) continue;
-            if (!InViewport(label.TileX, label.TileY, camX, camY, vpW + 4, vpH + 2)) continue;
-            var (lx, ly) = ToScreen(label.TileX, label.TileY, camX, camY);
-            var ft = new FormattedText(
-                label.Text,
-                System.Globalization.CultureInfo.CurrentCulture,
-                FlowDirection.LeftToRight,
-                LabelTypeface,
-                11,
-                Brushes.White);
-            // Draw a dark shadow for readability, then the white label on top
-            context.DrawText(ft, new Point(lx - ft.Width / 2 + 1, ly - 14 + 1));
-            var ftLight = new FormattedText(
-                label.Text,
-                System.Globalization.CultureInfo.CurrentCulture,
-                FlowDirection.LeftToRight,
-                LabelTypeface,
-                11,
-                Brushes.White);
-            context.DrawText(ftLight, new Point(lx - ftLight.Width / 2, ly - 14));
-        }
-
-        // ── Mini-map overlay ─────────────────────────────────────────────────
-        if (vm.IsMiniMapOpen)
-            DrawMinimap(context, vm, map);
+        if (_rendererResolver is null) return;
+        var state = BuildRenderState(vm);
+        _rendererResolver.Current.Render(context, state);
     }
 
-    private static bool InViewport(int tileX, int tileY, int camX, int camY, int vpW, int vpH) =>
-        tileX >= camX && tileX < camX + vpW && tileY >= camY && tileY < camY + vpH;
-
-    private static (int screenX, int screenY) ToScreen(int tileX, int tileY, int camX, int camY) =>
-        ((tileX - camX) * DisplayTileSize, (tileY - camY) * DisplayTileSize);
-
-    private static void DrawTileLayers(
-        DrawingContext context,
-        IReadOnlyList<TileLayerDto> layers,
-        Bitmap? sheet,
-        RegionMapDto map,
-        int camX, int camY,
-        int vpW, int vpH)
+    private RenderState BuildRenderState(RegionTilemapViewModel vm)
     {
-        foreach (var layer in layers.OrderBy(l => l.ZIndex))
-        {
-            for (var ty = camY; ty < Math.Min(camY + vpH, map.Height); ty++)
-            for (var tx = camX; tx < Math.Min(camX + vpW, map.Width);  tx++)
-            {
-                var idx = map.Width * ty + tx;
-                if (idx < 0 || idx >= layer.Data.Length) continue;
-
-                var tileIndex = layer.Data[idx];
-                if (tileIndex < -2) continue;
-
-                var dest = new Rect(
-                    (tx - camX) * DisplayTileSize,
-                    (ty - camY) * DisplayTileSize,
-                    DisplayTileSize, DisplayTileSize);
-
-                if (tileIndex == -1) continue;
-
-                if (tileIndex == -2)
-                {
-                    context.FillRectangle(PendingBrush, dest);
-                    continue;
-                }
-
-                if (sheet is not null)
-                {
-                    var srcRect = TileTextureCache.GetSourceRect(map.TilesetKey, tileIndex);
-                    if (srcRect.HasValue)
-                        context.DrawImage(sheet, srcRect.Value, dest);
-                    else
-                        context.FillRectangle(Brushes.DimGray, dest);
-                }
-                else
-                {
-                    context.FillRectangle(Brushes.DimGray, dest);
-                }
-            }
-        }
-    }
-
-    private void DrawMinimap(DrawingContext context, RegionTilemapViewModel vm, RegionMapDto map)
-    {
-        const int maxMiniSize = 200;
-        const int miniPadding = 8;
-
-        var miniScale = Math.Max(1, maxMiniSize / Math.Max(map.Width, map.Height));
-        var miniW     = map.Width  * miniScale;
-        var miniH     = map.Height * miniScale;
-        var offsetX   = (int)Bounds.Width  - miniW - miniPadding;
-        var offsetY   = miniPadding;
-
-        context.FillRectangle(MiniBgBrush,
-            new Rect(offsetX - 2, offsetY - 2, miniW + 4, miniH + 4));
-
-        // Terrain tiles
-        for (var ty = 0; ty < map.Height; ty++)
-        for (var tx = 0; tx < map.Width;  tx++)
-        {
-            var idx     = ty * map.Width + tx;
-            var blocked = idx < map.CollisionMask.Length && map.CollisionMask[idx];
-            context.FillRectangle(
-                blocked ? MiniWallBrush : MiniFloorBrush,
-                new Rect(offsetX + tx * miniScale, offsetY + ty * miniScale, miniScale, miniScale));
-        }
-
-        // Zone-entry dots (green)
-        foreach (var entry in map.ZoneEntries)
-            context.FillRectangle(MiniZoneEntryBrush,
-                new Rect(offsetX + entry.TileX * miniScale, offsetY + entry.TileY * miniScale,
-                         Math.Max(2, miniScale), Math.Max(2, miniScale)));
-
-        // Region-exit dots (orange)
-        foreach (var exit in map.RegionExits)
-            context.FillRectangle(MiniRegionExitBrush,
-                new Rect(offsetX + exit.TileX * miniScale, offsetY + exit.TileY * miniScale,
-                         Math.Max(2, miniScale), Math.Max(2, miniScale)));
-
-        // Viewport outline
-        context.DrawRectangle(null, MiniVpPen,
-            new Rect(
-                offsetX + vm.CameraX * miniScale,
-                offsetY + vm.CameraY * miniScale,
-                Math.Min(vm.ViewportWidthTiles  * miniScale, miniW),
-                Math.Min(vm.ViewportHeightTiles * miniScale, miniH)));
-
-        // Player dots (blue)
-        foreach (var entity in vm.Entities)
-        {
-            if (entity.TileX < 0 || entity.TileX >= map.Width  ||
-                entity.TileY < 0 || entity.TileY >= map.Height) continue;
-            var dotSize = Math.Max(2, miniScale);
-            context.FillRectangle(MiniPlayerBrush,
-                new Rect(offsetX + entity.TileX * miniScale, offsetY + entity.TileY * miniScale,
-                         dotSize, dotSize));
-        }
-    }
-
-    /// <inheritdoc/>
-    protected override void OnDetachedFromLogicalTree(Avalonia.LogicalTree.LogicalTreeAttachmentEventArgs e)
-    {
-        _cache.Dispose();
-        base.OnDetachedFromLogicalTree(e);
+        var map = vm.RegionMapData!;
+        return new RenderState(
+            Bounds: Bounds.Size,
+            CameraX: vm.CameraX, CameraY: vm.CameraY,
+            ViewportWidthTiles: vm.ViewportWidthTiles,
+            ViewportHeightTiles: vm.ViewportHeightTiles,
+            MapWidth: map.Width, MapHeight: map.Height,
+            Layers: map.Layers,
+            CollisionMask: map.CollisionMask,
+            FogMask: [],
+            RevealedTiles: vm.RevealedTiles,
+            ExitHighlights: [],
+            ZoneEntryHighlights: map.ZoneEntries.Select(z => (z.TileX, z.TileY)).ToList(),
+            RegionExitHighlights: map.RegionExits.Select(r => (r.TileX, r.TileY)).ToList(),
+            Entities: vm.Entities.Select(e => new RenderEntity(
+                e.EntityId, e.EntityType, e.SpriteKey, e.TileX, e.TileY, e.Direction)).ToList(),
+            SelfEntityId: vm.SelfEntityId,
+            Labels: map.Labels.Select(l => new RenderLabel(l.TileX, l.TileY, l.Text, l.IsHidden)).ToList(),
+            IsMiniMapOpen: vm.IsMiniMapOpen,
+            TilesetKey: map.TilesetKey,
+            MapType: "region");
     }
 }

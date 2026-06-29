@@ -1,51 +1,24 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Reactive;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
-using Avalonia.Media.Imaging;
 using Avalonia.Threading;
-using Veldrath.Client.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Veldrath.Client.Rendering;
 using Veldrath.Client.ViewModels;
-using Veldrath.Contracts.Tilemap;
 
 namespace Veldrath.Client.Controls;
 
 /// <summary>
-/// Real-time tile map canvas. Renders the zone's tile layers, entities, and fog of war
-/// using Avalonia's <see cref="DrawingContext"/>.
-/// Tile scale is fixed at 3× the native 16 px tile size = 48 px display tiles.
+/// Real-time tile map canvas. Delegates rendering to an <see cref="IMapRenderer"/>.
 /// Input: WASD, arrow keys, and numpad trigger a movement request via <see cref="TilemapViewModel"/>.
 /// </summary>
 [ExcludeFromCodeCoverage]
 public class TilemapControl : Control
 {
-    private const int DisplayTileSize = 48; // 16 px × 3
-
-    private static readonly IBrush FogBrush       = new SolidColorBrush(Color.FromArgb(200, 0, 0, 0));
-    private static readonly IBrush SelfPlayerBrush = new SolidColorBrush(Color.FromRgb(30, 144, 255)); // DodgerBlue — own character
-    private static readonly IBrush PlayerBrush     = Brushes.LimeGreen;  // other players
-    private static readonly IBrush EnemyBrush      = Brushes.OrangeRed;
-    private static readonly IBrush EntityPen       = Brushes.White;
-
-    // Exit tile highlight (semi-transparent yellow fill + solid border)
-    private static readonly IBrush ExitFillBrush  = new SolidColorBrush(Color.FromArgb(80, 255, 220, 0));
-    private static readonly IPen   ExitBorderPen  = new Pen(Brushes.Yellow, 2f);
-
-    // Minimap palette — pre-allocated so no brush is created per-frame
-    private static readonly IBrush MiniWallBrush  = new SolidColorBrush(Color.FromRgb(30,  30,  40));
-    private static readonly IBrush MiniFloorBrush = new SolidColorBrush(Color.FromRgb(80,  80, 100));
-    private static readonly IBrush MiniExitBrush  = new SolidColorBrush(Color.FromRgb(255, 220,   0));
-    private static readonly IBrush MiniBgBrush    = new SolidColorBrush(Color.FromArgb(210,   8,  10,  20));
-
-    // Pending tile placeholder — bright magenta so unresolved map cells are immediately visible
-    private static readonly IBrush PendingBrush   = new SolidColorBrush(Color.FromRgb(255,   0, 255));
-    private static readonly IBrush MiniFogBrush   = new SolidColorBrush(Color.FromRgb(20,  20,  28));
-    private static readonly IPen   MiniVpPen      = new Pen(Brushes.White, 1);
-
-    // Avalonia styled property for the ViewModel
-    /// <summary>ViewModel property for the tilemap control.</summary>
+    /// <summary>Styled property for the tilemap view model.</summary>
     public static readonly StyledProperty<TilemapViewModel?> ViewModelProperty =
         AvaloniaProperty.Register<TilemapControl, TilemapViewModel?>(nameof(ViewModel));
 
@@ -56,8 +29,7 @@ public class TilemapControl : Control
         set => SetValue(ViewModelProperty, value);
     }
 
-    private readonly TileTextureCache   _cache        = new();
-    private readonly EntityTextureCache _entityCache  = new();
+    private readonly MapRendererResolver? _rendererResolver;
     private DispatcherTimer? _timer;
 
     static TilemapControl()
@@ -70,6 +42,7 @@ public class TilemapControl : Control
     {
         Focusable = true;
         ClipToBounds = true;
+        _rendererResolver = App.Services?.GetService<MapRendererResolver>();
     }
 
     /// <inheritdoc/>
@@ -91,13 +64,10 @@ public class TilemapControl : Control
         var vm = ViewModel;
         if (vm is null) return;
 
-        // Compute how many tiles fit in the new bounds and push into the VM so that
-        // CenterCameraOn() always has correct, window-size-aware viewport dimensions.
-        vm.ViewportWidthTiles  = Math.Max(1, (int)(Bounds.Width  / DisplayTileSize));
-        vm.ViewportHeightTiles = Math.Max(1, (int)(Bounds.Height / DisplayTileSize));
+        var displayTileSize = _rendererResolver?.Current.DisplayTileSize ?? 48;
+        vm.ViewportWidthTiles  = Math.Max(1, (int)(Bounds.Width  / displayTileSize));
+        vm.ViewportHeightTiles = Math.Max(1, (int)(Bounds.Height / displayTileSize));
 
-        // Re-centre immediately so the camera adjusts on window resize without waiting
-        // for the next character move.
         if (vm.SelfEntityId.HasValue)
         {
             var self = vm.Entities.FirstOrDefault(en => en.EntityId == vm.SelfEntityId.Value);
@@ -149,9 +119,6 @@ public class TilemapControl : Control
         var toX = player.TileX + dx;
         var toY = player.TileY + dy;
 
-        // ── Client-side collision pre-check ───────────────────────────────────
-        // Skips the server round-trip when the tile is statically blocked.
-        // The server still validates as the authoritative fallback.
         if (vm.IsBlocked(toX, toY)) return;
 
         vm.RequestMoveCommand.Execute((toX, toY, dir)).Subscribe();
@@ -171,229 +138,33 @@ public class TilemapControl : Control
             return;
         }
 
-        var map       = vm.TileMapData;
-        var sheet     = _cache.GetSheet(map.TilesetKey);
-        var camX      = vm.CameraX;
-        var camY      = vm.CameraY;
-        var vpWidthTiles  = (int)Math.Ceiling(Bounds.Width  / DisplayTileSize) + 1;
-        var vpHeightTiles = (int)Math.Ceiling(Bounds.Height / DisplayTileSize) + 1;
-
-        // ── Tile layers below entities (ZIndex < EntityZIndex) ───────────────
-        // Draws base terrain and ground-clutter objects under players/enemies.
-        DrawTileLayers(context, map.Layers.Where(l => l.ZIndex < EntityZIndex),
-                       sheet, map, camX, camY, vpWidthTiles, vpHeightTiles);
-
-        // ── Exit tile highlights ─────────────────────────────────────────────
-        // Tinted fill + yellow border on every exit tile within the viewport
-        // so the player can see where zone transitions are.
-        foreach (var exit in map.ExitTiles)
-        {
-            if (exit.TileX < camX || exit.TileX >= camX + vpWidthTiles)  continue;
-            if (exit.TileY < camY || exit.TileY >= camY + vpHeightTiles) continue;
-            var ex = (exit.TileX - camX) * DisplayTileSize;
-            var ey = (exit.TileY - camY) * DisplayTileSize;
-            context.DrawRectangle(ExitFillBrush, ExitBorderPen,
-                new Rect(ex + 1, ey + 1, DisplayTileSize - 2, DisplayTileSize - 2));
-        }
-
-        // ── Entities ─────────────────────────────────────────────────────────
-        foreach (var entity in vm.Entities)
-        {
-            var scrX = (entity.TileX - camX) * DisplayTileSize;
-            var scrY = (entity.TileY - camY) * DisplayTileSize;
-            if (scrX < -DisplayTileSize || scrX > Bounds.Width  + DisplayTileSize) continue;
-            if (scrY < -DisplayTileSize || scrY > Bounds.Height + DisplayTileSize) continue;
-
-            // Try sprite sheet first; fall back to coloured box when no sheet is registered.
-            var spriteSheet = _entityCache.GetSheet(entity.SpriteKey);
-            var srcRect     = EntityTextureCache.GetSourceRect(entity.SpriteKey, entity.Direction);
-
-            if (spriteSheet is not null && srcRect.HasValue)
-            {
-                // Draw sprite scaled into the tile.  Bottom-align: sprites taller than the
-                // tile (e.g. 48×64 monsters) extend above the tile top for a natural look.
-                var si    = Veldrath.Assets.Manifest.EntitySpriteAssets.All[entity.SpriteKey];
-                var scale = (double)DisplayTileSize / si.FrameWidth;  // scale to fill tile width
-                var dw    = DisplayTileSize;
-                var dh    = (int)(si.FrameHeight * scale);
-                var dy    = scrY + DisplayTileSize - dh;               // bottom-align in tile
-                context.DrawImage(spriteSheet, srcRect.Value, new Rect(scrX, dy, dw, dh));
-            }
-            else
-            {
-                // Coloured box fallback — visible whenever a sprite key has no registered sheet.
-                var rect = new Rect(scrX + 4, scrY + 4, DisplayTileSize - 8, DisplayTileSize - 8);
-                IBrush fill;
-                if (entity.EntityType == "player")
-                    fill = vm.SelfEntityId.HasValue && entity.EntityId == vm.SelfEntityId.Value
-                        ? SelfPlayerBrush
-                        : PlayerBrush;
-                else
-                    fill = EnemyBrush;
-                context.FillRectangle(fill, rect, 4f);
-            }
-        }
-
-        // ── Tile layers above entities (ZIndex >= EntityZIndex) ──────────────
-        // Draws roofs, canopies, and other elements that should cover players/enemies.
-        DrawTileLayers(context, map.Layers.Where(l => l.ZIndex >= EntityZIndex),
-                       sheet, map, camX, camY, vpWidthTiles, vpHeightTiles);
-
-        // ── Fog of war ────────────────────────────────────────────────────────
-        if (map.FogMask.Any(f => f)) // Only applies if fog is enabled on this map
-        {
-            for (var ty = camY; ty < Math.Min(camY + vpHeightTiles, map.Height); ty++)
-            for (var tx = camX; tx < Math.Min(camX + vpWidthTiles,  map.Width);  tx++)
-            {
-                var idx = map.Width * ty + tx;
-                if (idx < 0 || idx >= map.FogMask.Length) continue;
-                if (!map.FogMask[idx] || vm.RevealedTiles.Contains($"{tx}:{ty}")) continue;
-
-                var destX = (tx - camX) * DisplayTileSize;
-                var destY = (ty - camY) * DisplayTileSize;
-                context.FillRectangle(FogBrush, new Rect(destX, destY, DisplayTileSize, DisplayTileSize));
-            }
-        }
-
-        // ── Mini-map overlay ─────────────────────────────────────────────────
-        // Rendered on top of everything; toggled with M or the footer button.
-        if (vm.IsMiniMapOpen)
-            DrawMinimap(context, vm, map);
+        if (_rendererResolver is null) return;
+        var state = BuildRenderState(vm);
+        _rendererResolver.Current.Render(context, state);
     }
 
-    // ── Rendering constants ────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Layers with <see cref="TileLayerDto.ZIndex"/> below this value draw under entities;
-    /// layers at or above this value draw over entities (roofs, canopies).
-    /// </summary>
-    private const int EntityZIndex = 2;
-
-    private void DrawTileLayers(
-        DrawingContext context,
-        IEnumerable<TileLayerDto> layers,
-        Bitmap? sheet,
-        TileMapDto map,
-        int camX, int camY,
-        int vpWidthTiles, int vpHeightTiles)
+    private RenderState BuildRenderState(TilemapViewModel vm)
     {
-        foreach (var layer in layers)
-        {
-            for (var ty = camY; ty < Math.Min(camY + vpHeightTiles, map.Height); ty++)
-            for (var tx = camX; tx < Math.Min(camX + vpWidthTiles,  map.Width);  tx++)
-            {
-                var idx = map.Width * ty + tx;
-                if (idx < 0 || idx >= layer.Data.Length) continue;
-
-                var tileIndex = layer.Data[idx];
-                if (tileIndex < -2) continue; // skip invalid sentinel values
-
-                var dest = new Rect(
-                    (tx - camX) * DisplayTileSize,
-                    (ty - camY) * DisplayTileSize,
-                    DisplayTileSize, DisplayTileSize);
-
-                if (tileIndex == -1) continue; // transparent / empty cell
-
-                if (tileIndex == -2) // pending placeholder — draw magenta square
-                {
-                    context.FillRectangle(PendingBrush, dest);
-                    continue;
-                }
-
-                if (sheet is not null)
-                {
-                    var srcRect = TileTextureCache.GetSourceRect(map.TilesetKey, tileIndex);
-                    if (srcRect.HasValue)
-                        context.DrawImage(sheet, srcRect.Value, dest);
-                    else
-                        context.FillRectangle(Brushes.DimGray, dest);
-                }
-                else
-                {
-                    context.FillRectangle(Brushes.DimGray, dest);
-                }
-            }
-        }
-    }
-
-    private void DrawMinimap(DrawingContext context, TilemapViewModel vm, TileMapDto map)
-    {
-        const int maxMiniSize = 200;
-        const int miniPadding = 8;
-
-        var miniScale = Math.Max(1, maxMiniSize / Math.Max(map.Width, map.Height));
-        var miniW     = map.Width  * miniScale;
-        var miniH     = map.Height * miniScale;
-        var offsetX   = (int)Bounds.Width  - miniW - miniPadding;
-        var offsetY   = miniPadding;
-
-        // Tinted background panel
-        context.FillRectangle(MiniBgBrush,
-            new Rect(offsetX - 2, offsetY - 2, miniW + 4, miniH + 4));
-
-        // Terrain: blocked = dark wall colour, open = lighter floor colour; fogged tiles are hidden
-        for (var ty = 0; ty < map.Height; ty++)
-        for (var tx = 0; tx < map.Width;  tx++)
-        {
-            var idx     = ty * map.Width + tx;
-            var fogged  = idx < map.FogMask.Length && map.FogMask[idx] && !vm.RevealedTiles.Contains($"{tx}:{ty}");
-            IBrush tile;
-            if (fogged)
-                tile = MiniFogBrush;
-            else
-            {
-                var blocked = idx < map.CollisionMask.Length && map.CollisionMask[idx];
-                tile = blocked ? MiniWallBrush : MiniFloorBrush;
-            }
-            context.FillRectangle(tile,
-                new Rect(offsetX + tx * miniScale, offsetY + ty * miniScale, miniScale, miniScale));
-        }
-
-        // Exit tiles (yellow) — only shown for revealed tiles
-        foreach (var exit in map.ExitTiles)
-        {
-            var exitIdx = exit.TileY * map.Width + exit.TileX;
-            var exitFogged = exitIdx < map.FogMask.Length && map.FogMask[exitIdx] && !vm.RevealedTiles.Contains($"{exit.TileX}:{exit.TileY}");
-            if (!exitFogged)
-                context.FillRectangle(MiniExitBrush,
-                    new Rect(offsetX + exit.TileX * miniScale, offsetY + exit.TileY * miniScale,
-                             miniScale, miniScale));
-        }
-
-        // Viewport rectangle (white outline shows what's on screen)
-        context.DrawRectangle(null, MiniVpPen,
-            new Rect(
-                offsetX + vm.CameraX * miniScale,
-                offsetY + vm.CameraY * miniScale,
-                Math.Min(vm.ViewportWidthTiles  * miniScale, miniW),
-                Math.Min(vm.ViewportHeightTiles * miniScale, miniH)));
-
-        // Entity dots
-        foreach (var entity in vm.Entities)
-        {
-            if (entity.TileX < 0 || entity.TileX >= map.Width  ||
-                entity.TileY < 0 || entity.TileY >= map.Height) continue;
-
-            IBrush dot;
-            if (entity.EntityType == "player")
-                dot = vm.SelfEntityId.HasValue && entity.EntityId == vm.SelfEntityId.Value
-                    ? SelfPlayerBrush : PlayerBrush;
-            else
-                dot = EnemyBrush;
-
-            var dotSize = Math.Max(2, miniScale);
-            context.FillRectangle(dot,
-                new Rect(offsetX + entity.TileX * miniScale, offsetY + entity.TileY * miniScale,
-                         dotSize, dotSize));
-        }
-    }
-
-    /// <inheritdoc/>
-    protected override void OnDetachedFromLogicalTree(Avalonia.LogicalTree.LogicalTreeAttachmentEventArgs e)
-    {
-        _cache.Dispose();
-        _entityCache.Dispose();
-        base.OnDetachedFromLogicalTree(e);
+        var map = vm.TileMapData!;
+        return new RenderState(
+            Bounds: Bounds.Size,
+            CameraX: vm.CameraX, CameraY: vm.CameraY,
+            ViewportWidthTiles: vm.ViewportWidthTiles,
+            ViewportHeightTiles: vm.ViewportHeightTiles,
+            MapWidth: map.Width, MapHeight: map.Height,
+            Layers: map.Layers,
+            CollisionMask: map.CollisionMask,
+            FogMask: map.FogMask,
+            RevealedTiles: vm.RevealedTiles,
+            ExitHighlights: map.ExitTiles.Select(e => (e.TileX, e.TileY)).ToList(),
+            ZoneEntryHighlights: [],
+            RegionExitHighlights: [],
+            Entities: vm.Entities.Select(e => new RenderEntity(
+                e.EntityId, e.EntityType, e.SpriteKey, e.TileX, e.TileY, e.Direction)).ToList(),
+            SelfEntityId: vm.SelfEntityId,
+            Labels: [],
+            IsMiniMapOpen: vm.IsMiniMapOpen,
+            TilesetKey: map.TilesetKey,
+            MapType: "zone");
     }
 }
