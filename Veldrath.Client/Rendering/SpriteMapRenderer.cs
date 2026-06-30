@@ -14,11 +14,18 @@ namespace Veldrath.Client.Rendering;
 [ExcludeFromCodeCoverage]
 public sealed class SpriteMapRenderer : IMapRenderer
 {
-    /// <summary>Internal display tile size constant used by static helper methods.</summary>
-    private const int DTS = 48; // 16 px × 3
+    /// <summary>Current tile size in pixels. Updated by <see cref="TileSize"/> setter.</summary>
+    private int _tileSize = 48;
 
     /// <inheritdoc/>
-    public int DisplayTileSize => DTS;
+    public int DisplayTileSize => _tileSize;
+
+    /// <inheritdoc/>
+    public double TileSize
+    {
+        get => _tileSize;
+        set => _tileSize = (int)Math.Clamp(value, 16.0, 128.0);
+    }
 
     // ── Zone map brushes / pens ──────────────────────────────────────────────
 
@@ -106,6 +113,10 @@ public sealed class SpriteMapRenderer : IMapRenderer
         // Tile layers above entities (ZIndex >= EntityZIndex)
         DrawTileLayers(context, s.Layers.Where(l => l.ZIndex >= EntityZIndex), sheet, s, vpW, vpH);
 
+        // Grid overlay (tile-boundary lines)
+        if (s.ShowGrid)
+            DrawGrid(context, s);
+
         // Fog of war
         if (s.FogMask.Any(f => f))
         {
@@ -154,6 +165,10 @@ public sealed class SpriteMapRenderer : IMapRenderer
 
         // Player entities
         DrawEntities(context, s, withSprites: false);
+
+        // Grid overlay (tile-boundary lines)
+        if (s.ShowGrid)
+            DrawGrid(context, s);
 
         // Zone labels
         foreach (var label in s.Labels)
@@ -414,11 +429,31 @@ public sealed class SpriteMapRenderer : IMapRenderer
         }
     }
 
+    // ── Grid overlay ─────────────────────────────────────────────────────────
+
+    /// <summary>Draws semi-transparent tile-boundary grid lines across the entire viewport.</summary>
+    private void DrawGrid(DrawingContext context, RenderState state)
+    {
+        var tileSize = DisplayTileSize;
+        var viewWidth = state.Bounds.Width;
+        var viewHeight = state.Bounds.Height;
+
+        var gridPen = new Pen(new SolidColorBrush(Color.FromArgb(60, 255, 255, 255)), 1);
+
+        // Vertical lines
+        for (var x = 0.0; x <= viewWidth; x += tileSize)
+            context.DrawLine(gridPen, new Point(x, 0), new Point(x, viewHeight));
+
+        // Horizontal lines
+        for (var y = 0.0; y <= viewHeight; y += tileSize)
+            context.DrawLine(gridPen, new Point(0, y), new Point(viewWidth, y));
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────────────
 
     private static bool InViewport(int tileX, int tileY, int camX, int camY, int vpW, int vpH) =>
         tileX >= camX && tileX < camX + vpW && tileY >= camY && tileY < camY + vpH;
 
-    private static (int screenX, int screenY) ToScreen(int tileX, int tileY, int camX, int camY) =>
-        ((tileX - camX) * DTS, (tileY - camY) * DTS);
+    private (int screenX, int screenY) ToScreen(int tileX, int tileY, int camX, int camY) =>
+        ((tileX - camX) * _tileSize, (tileY - camY) * _tileSize);
 }
