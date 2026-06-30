@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Veldrath.Web.Services;
 using Veldrath.Contracts.Characters;
+using Veldrath.Contracts.Connection;
 
 namespace Veldrath.Web.Components.Pages.Game;
 
@@ -61,6 +62,13 @@ public sealed partial class CharacterSelect : IAsyncDisposable
                     "Veldrath:ServerUrl is not configured. Set it in appsettings.json, " +
                     "appsettings.{Environment}.json, or the Veldrath__ServerUrl environment variable.");
 
+            // Register handler for ServerInfo — sets IsConnected = true on the GameState.
+            _hubSubscriptions.Add(Hub.On<ServerInfoPayload>("ServerInfo", async payload =>
+            {
+                GameState.ApplyServerInfo(payload.ConnectionId);
+                await InvokeAsync(StateHasChanged);
+            }));
+
             // Register handler for CharacterSelected event BEFORE connecting.
             _hubSubscriptions.Add(Hub.On<CharacterSelectedPayload>("CharacterSelected", async payload =>
             {
@@ -76,7 +84,8 @@ public sealed partial class CharacterSelect : IAsyncDisposable
                     payload.MaxMana,
                     payload.Gold);
 
-                GameState.ApplyCharacterSelected(characterInfo);
+                // Store the zone ID so Game.razor knows which zone to enter.
+                GameState.ApplyCharacterSelected(characterInfo, payload.CurrentZoneId);
                 await InvokeAsync(() => Navigation.NavigateTo("/Game/Play"));
             }));
 
@@ -136,7 +145,9 @@ public sealed partial class CharacterSelect : IAsyncDisposable
         }
         _hubSubscriptions.Clear();
 
-        await Hub.DisconnectAsync();
+        // Don't disconnect the hub here — Game.razor reuses the same scoped
+        // GameHubConnectionService instance. Disconnecting would cause the
+        // server to release the character claim and lose the connection context.
     }
 
     // ── Hub Event Payload DTOs ──────────────────────────────────────────────
