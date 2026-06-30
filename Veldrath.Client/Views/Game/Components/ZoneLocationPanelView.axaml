@@ -74,22 +74,43 @@
                             Foreground="{DynamicResource GameSubtleBrush}" />
                         <ItemsControl ItemsSource="{Binding Entities}">
                             <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Button
-                                        HorizontalAlignment="Stretch"
-                                        Padding="8,4"
-                                        Command="{Binding $parent[ScrollViewer].DataContext.InteractWithEntityCommand}"
-                                        CommandParameter="{Binding .}">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <TextBlock
-                                                Text="{Binding Name}"
-                                                FontWeight="Bold"
-                                                Foreground="{DynamicResource GameForegroundBrush}" />
-                                            <TextBlock
-                                                Text="{Binding EntityType, StringFormat='({0})'}"
-                                                Foreground="{DynamicResource GameSubtleBrush}" />
+                                <DataTemplate x:DataType="vm:LocationEntityItem">
+                                    <Border
+                                        Padding="8,6"
+                                        CornerRadius="4"
+                                        Background="{DynamicResource GameBackground1Brush}">
+                                        <StackPanel Spacing="6">
+                                            <!-- Entity name and type -->
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock
+                                                    Text="{Binding Name}"
+                                                    FontWeight="Bold"
+                                                    Foreground="{DynamicResource GameForegroundBrush}" />
+                                                <TextBlock
+                                                    Text="{Binding EntityType, StringFormat='({0})'}"
+                                                    Foreground="{DynamicResource GameSubtleBrush}" />
+                                            </StackPanel>
+                                            <!-- Contextual action buttons -->
+                                            <ItemsControl ItemsSource="{Binding Actions}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Horizontal" Spacing="4" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="vm:EntityAction">
+                                                        <Button
+                                                            Content="{Binding DisplayLabel}"
+                                                            Command="{Binding Command}"
+                                                            CommandParameter="{Binding $parent[Border].DataContext}"
+                                                            Padding="6,2"
+                                                            FontSize="12"
+                                                            MinWidth="56" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
                                         </StackPanel>
-                                    </Button>
+                                    </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>

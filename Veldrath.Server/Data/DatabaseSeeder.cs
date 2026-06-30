@@ -38,6 +38,7 @@ public static class DatabaseSeeder
         await LootTablesSeeder.SeedAsync(db);
         await QuestsSeeder.SeedAsync(db);
         await ZoneLocationsSeeder.SeedAsync(db);
+        await ZoneLocationsConnectionSeeder.SeedAsync(db);
         await ActorInstancesSeeder.SeedAsync(db);
         await OrganizationsSeeder.SeedAsync(db);
         await DialogueSeeder.SeedAsync(db);

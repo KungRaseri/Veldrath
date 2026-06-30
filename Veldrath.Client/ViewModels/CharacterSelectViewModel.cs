@@ -85,6 +85,8 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _onSummonedSub;
     private IDisposable? _onItemReceivedSub;
     private IDisposable? _characterIgnoredSub;
+    private IDisposable? _npcDialogueSub;
+    private IDisposable? _entityInspectedSub;
     private IDisposable? _tokenRefreshTimer;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
@@ -265,6 +267,8 @@ public class CharacterSelectViewModel : ViewModelBase
             _onSummonedSub?.Dispose();
             _onItemReceivedSub?.Dispose();
             _characterIgnoredSub?.Dispose();
+            _npcDialogueSub?.Dispose();
+            _entityInspectedSub?.Dispose();
             _tokenRefreshTimer?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
@@ -439,6 +443,10 @@ public class CharacterSelectViewModel : ViewModelBase
                 _gameVm.OnItemReceived(payload.ItemSlug, payload.Quantity, payload.GivenByUsername));
             _characterIgnoredSub = _connection.On<CharacterIgnoredPayload>("CharacterIgnored", payload =>
                 _gameVm.OnCharacterIgnored(payload.CharacterId, payload.CharacterName));
+            _npcDialogueSub = _connection.On<NpcDialoguePayload>("NpcDialogue", payload =>
+                _gameVm.OnNpcDialogueReceived(payload.NpcName, payload.DialogueText));
+            _entityInspectedSub = _connection.On<EntityInspectedPayload>("EntityInspected", payload =>
+                _gameVm.OnEntityInspected(payload.EntityName, payload.EntityType, payload.Description));
 
             // Proactively refresh the access token every 5 minutes during gameplay so it
             // never silently expires mid-session and cause hub reconnects to fail with 401.
@@ -514,6 +522,8 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record ChatMessagePayload(Guid CharacterId, string Channel, string Sender, string Message, DateTimeOffset Timestamp);
     internal record ZoneExitedPayload(string RegionId, int TileX, int TileY);
     internal record RegionChangedPayload(string NewRegionId, int TileX, int TileY);
+    internal record NpcDialoguePayload(string NpcName, string DialogueText);
+    internal record EntityInspectedPayload(string EntityName, string EntityType, string Description);
 
     private void PopulateCharacters(IEnumerable<CharacterDto> characters)
     {

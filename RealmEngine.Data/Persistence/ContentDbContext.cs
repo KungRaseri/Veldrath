@@ -53,6 +53,8 @@ public class ContentDbContext : DbContext
     public DbSet<MaterialProperty> MaterialProperties => Set<MaterialProperty>();
     /// <summary>World locations and regions.</summary>
     public DbSet<ZoneLocation> ZoneLocations => Set<ZoneLocation>();
+    /// <summary>Directed connections between zone locations (intra-zone and cross-zone).</summary>
+    public DbSet<ZoneLocationConnection> ZoneLocationConnections => Set<ZoneLocationConnection>();
     /// <summary>NPC dialogue trees.</summary>
     public DbSet<Dialogue> Dialogues => Set<Dialogue>();
     /// <summary>Constructed and natural language definitions — phonology, morphology, and lexicon.</summary>

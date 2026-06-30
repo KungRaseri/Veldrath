@@ -273,6 +273,18 @@ public static class ContentModelConfiguration
             e.OwnsMany(x => x.ActorPool, o => o.ToJson("ActorPool"));
         });
 
+        // Zone location connections
+        builder.Entity<ZoneLocationConnection>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.FromLocationSlug, x.ToLocationSlug }).IsUnique();
+            e.Property(x => x.FromLocationSlug).HasMaxLength(128).IsRequired();
+            e.Property(x => x.ToLocationSlug).HasMaxLength(128).IsRequired();
+            e.Property(x => x.ToZoneId).HasMaxLength(128);
+            e.Property(x => x.ToRegionId).HasMaxLength(128);
+            e.Property(x => x.ConnectionType).HasMaxLength(32).IsRequired();
+        });
+
         // Dialogue
         builder.Entity<Dialogue>(e =>
         {

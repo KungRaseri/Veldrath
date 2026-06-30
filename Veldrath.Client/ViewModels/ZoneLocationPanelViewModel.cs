@@ -7,6 +7,31 @@ using Veldrath.Contracts.Tilemap;
 
 namespace Veldrath.Client.ViewModels;
 
+/// <summary>Types of contextual actions available for an entity.</summary>
+public enum EntityActionType
+{
+    /// <summary>Talk to an NPC.</summary>
+    Talk,
+
+    /// <summary>Inspect an entity to learn more about it.</summary>
+    Inspect,
+
+    /// <summary>Engage an enemy in combat.</summary>
+    Fight,
+
+    /// <summary>Send a private whisper to another player.</summary>
+    Whisper,
+}
+
+/// <summary>Represents a single contextual action that can be performed on an entity.</summary>
+/// <param name="ActionType">The type of action.</param>
+/// <param name="DisplayLabel">Human-readable label for the action button.</param>
+/// <param name="Command">The reactive command that executes the action, passing the parent entity as parameter.</param>
+public record EntityAction(
+    EntityActionType ActionType,
+    string DisplayLabel,
+    ReactiveCommand<LocationEntityItem, Unit> Command);
+
 /// <summary>
 /// Represents a single clickable exit direction from the player's current tile.
 /// </summary>
@@ -25,17 +50,20 @@ public record LocationExitItem(
     string? DestinationZone);
 
 /// <summary>
-/// Represents a visible entity at or near the player's current tile.
+/// Represents a visible entity at or near the player's current tile,
+/// with contextual actions derived from its type.
 /// </summary>
 /// <param name="EntityId">Unique entity identifier.</param>
 /// <param name="Name">Display name or type label.</param>
 /// <param name="EntityType">"player", "enemy", or "npc".</param>
 /// <param name="IsSelf">Whether this is the local player's character.</param>
+/// <param name="Actions">Available contextual actions for this entity.</param>
 public record LocationEntityItem(
     Guid EntityId,
     string Name,
     string EntityType,
-    bool IsSelf);
+    bool IsSelf,
+    IReadOnlyList<EntityAction> Actions);
 
 /// <summary>
 /// View model for the zone location panel — the replacement for the 2D tilemap control.
@@ -45,6 +73,9 @@ public record LocationEntityItem(
 public class ZoneLocationPanelViewModel : ViewModelBase
 {
     private readonly TilemapViewModel _tilemap;
+    private readonly Func<Guid, Task> _onTalkToEntity;
+    private readonly Func<Guid, Task> _onInspectEntity;
+    private readonly Func<Guid, Task> _onFightEntity;
     private string _zoneName = string.Empty;
     private string _locationDescription = "Unknown location";
     private int _playerTileX;
@@ -53,9 +84,19 @@ public class ZoneLocationPanelViewModel : ViewModelBase
 
     /// <summary>Initializes a new instance of <see cref="ZoneLocationPanelViewModel"/>.</summary>
     /// <param name="tilemap">The underlying tilemap ViewModel to wrap.</param>
-    public ZoneLocationPanelViewModel(TilemapViewModel tilemap)
+    /// <param name="onTalkToEntity">Callback invoked when the player talks to an NPC entity.</param>
+    /// <param name="onInspectEntity">Callback invoked when the player inspects any entity.</param>
+    /// <param name="onFightEntity">Callback invoked when the player fights an enemy entity.</param>
+    public ZoneLocationPanelViewModel(
+        TilemapViewModel tilemap,
+        Func<Guid, Task>? onTalkToEntity = null,
+        Func<Guid, Task>? onInspectEntity = null,
+        Func<Guid, Task>? onFightEntity = null)
     {
         _tilemap = tilemap;
+        _onTalkToEntity = onTalkToEntity ?? (_ => Task.CompletedTask);
+        _onInspectEntity = onInspectEntity ?? (_ => Task.CompletedTask);
+        _onFightEntity = onFightEntity ?? (_ => Task.CompletedTask);
 
         // Reflect tilemap changes onto our derived properties.
         tilemap.WhenAnyValue(x => x.TileMapData)
@@ -67,7 +108,9 @@ public class ZoneLocationPanelViewModel : ViewModelBase
         tilemap.Entities.CollectionChanged += (_, _) => RefreshFromTilemap();
 
         MoveToExitCommand = ReactiveCommand.CreateFromTask<LocationExitItem>(DoMoveToExitAsync);
-        InteractWithEntityCommand = ReactiveCommand.CreateFromTask<LocationEntityItem>(DoInteractWithEntityAsync);
+        TalkToEntityCommand = ReactiveCommand.CreateFromTask<LocationEntityItem>(DoTalkToEntityAsync);
+        InspectEntityCommand = ReactiveCommand.CreateFromTask<LocationEntityItem>(DoInspectEntityAsync);
+        FightEntityCommand = ReactiveCommand.CreateFromTask<LocationEntityItem>(DoFightEntityAsync);
         NavigateToLocationCommand = ReactiveCommand.CreateFromTask<ZoneLocationItemViewModel>(DoNavigateToLocationAsync);
     }
 
@@ -154,8 +197,14 @@ public class ZoneLocationPanelViewModel : ViewModelBase
     /// <summary>Command fired when the player clicks an exit to move.</summary>
     public ReactiveCommand<LocationExitItem, Unit> MoveToExitCommand { get; }
 
-    /// <summary>Command fired when the player clicks an entity to interact.</summary>
-    public ReactiveCommand<LocationEntityItem, Unit> InteractWithEntityCommand { get; }
+    /// <summary>Command fired when the player clicks the "Talk" action on an NPC entity.</summary>
+    public ReactiveCommand<LocationEntityItem, Unit> TalkToEntityCommand { get; }
+
+    /// <summary>Command fired when the player clicks the "Inspect" action on any entity.</summary>
+    public ReactiveCommand<LocationEntityItem, Unit> InspectEntityCommand { get; }
+
+    /// <summary>Command fired when the player clicks the "Fight" action on an enemy entity.</summary>
+    public ReactiveCommand<LocationEntityItem, Unit> FightEntityCommand { get; }
 
     /// <summary>Command fired when the player clicks a POI to navigate there.</summary>
     public ReactiveCommand<ZoneLocationItemViewModel, Unit> NavigateToLocationCommand { get; }
@@ -218,9 +267,9 @@ public class ZoneLocationPanelViewModel : ViewModelBase
             var zoneExit = map.ExitTiles.FirstOrDefault(e => e.TileX == tx && e.TileY == ty);
             var isZoneExit = zoneExit is not null;
 
-            // Build display label: "N" for normal moves, "N → Zone Name" for zone transitions
+            // Build display label: "Leave to ZoneName" for zone transitions, direction for normal moves
             var label = isZoneExit
-                ? $"{dir} \u2192 {zoneExit!.ToZoneId}"
+                ? $"Leave to {zoneExit!.ToZoneId}"
                 : dir;
 
             Exits.Add(new LocationExitItem(
@@ -257,14 +306,52 @@ public class ZoneLocationPanelViewModel : ViewModelBase
                 _ => entity.SpriteKey
             };
 
-            Entities.Add(new LocationEntityItem(
+            var locationItem = new LocationEntityItem(
                 entity.EntityId,
                 name,
                 entity.EntityType,
-                isSelf));
+                isSelf,
+                []);
+
+            // Resolve and attach contextual actions based on entity type
+            var actions = ResolveActionsForEntity(locationItem);
+            Entities.Add(locationItem with { Actions = actions });
         }
 
         this.RaisePropertyChanged(nameof(HasEntities));
+    }
+
+    /// <summary>
+    /// Determines the set of contextual actions available for an entity based on its type.
+    /// </summary>
+    /// <param name="entity">The entity to resolve actions for.</param>
+    /// <returns>A read-only list of available actions.</returns>
+    private IReadOnlyList<EntityAction> ResolveActionsForEntity(LocationEntityItem entity)
+    {
+        if (entity.IsSelf)
+            return [];
+
+        var actions = new List<EntityAction>();
+
+        switch (entity.EntityType)
+        {
+            case "npc":
+                actions.Add(new EntityAction(EntityActionType.Talk, "Talk", TalkToEntityCommand));
+                actions.Add(new EntityAction(EntityActionType.Inspect, "Inspect", InspectEntityCommand));
+                break;
+
+            case "enemy":
+                actions.Add(new EntityAction(EntityActionType.Fight, "Fight", FightEntityCommand));
+                actions.Add(new EntityAction(EntityActionType.Inspect, "Inspect", InspectEntityCommand));
+                break;
+
+            case "player":
+                actions.Add(new EntityAction(EntityActionType.Inspect, "Inspect", InspectEntityCommand));
+                // Whisper is optional — could be added later via a separate command
+                break;
+        }
+
+        return actions;
     }
 
     private void UpdateDescription()
@@ -336,14 +423,27 @@ public class ZoneLocationPanelViewModel : ViewModelBase
         return Task.CompletedTask;
     }
 
-    private Task DoInteractWithEntityAsync(LocationEntityItem entity)
+    /// <summary>Handles the Talk action: initiates dialogue with an NPC entity.</summary>
+    /// <param name="entity">The NPC entity to talk to.</param>
+    private async Task DoTalkToEntityAsync(LocationEntityItem entity)
     {
-        // TODO: Phase 5 — route to engage enemy, talk to NPC, etc.
-        if (entity.EntityType == "enemy")
-        {
-            // Signal combat engagement via the game VM bridge
-        }
-        return Task.CompletedTask;
+        if (entity.EntityType != "npc") return;
+        await _onTalkToEntity(entity.EntityId);
+    }
+
+    /// <summary>Handles the Inspect action: examines an entity for descriptive information.</summary>
+    /// <param name="entity">The entity to inspect.</param>
+    private async Task DoInspectEntityAsync(LocationEntityItem entity)
+    {
+        await _onInspectEntity(entity.EntityId);
+    }
+
+    /// <summary>Handles the Fight action: engages an enemy entity in combat.</summary>
+    /// <param name="entity">The enemy entity to fight.</param>
+    private async Task DoFightEntityAsync(LocationEntityItem entity)
+    {
+        if (entity.EntityType != "enemy") return;
+        await _onFightEntity(entity.EntityId);
     }
 
     private Task DoNavigateToLocationAsync(ZoneLocationItemViewModel location)
