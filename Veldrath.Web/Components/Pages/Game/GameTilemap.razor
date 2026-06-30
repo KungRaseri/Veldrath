@@ -3,7 +3,7 @@
 @if (GameState.ZoneTileMap is not null)
 {
     <div class="game-tilemap"
-         style="grid-template-columns: repeat(@_gridColumns, @TileSize); grid-template-rows: repeat(@_gridRows, @TileSize);">
+         style="grid-template-columns: repeat(@_gridColumns, @(TileSize)px); grid-template-rows: repeat(@_gridRows, @(TileSize)px);">
         @for (var y = 0; y < _gridRows; y++)
         {
             for (var x = 0; x < _gridColumns; x++)
@@ -50,7 +50,11 @@ else
     /// <inheritdoc />
     protected override void OnInitialized()
     {
-        _stateSubscription = GameState.OnStateChanged(() => InvokeAsync(StateHasChanged));
+        _stateSubscription = GameState.OnStateChanged(() => InvokeAsync(() =>
+        {
+            UpdateGridSize();
+            StateHasChanged();
+        }));
         UpdateGridSize();
     }
 
