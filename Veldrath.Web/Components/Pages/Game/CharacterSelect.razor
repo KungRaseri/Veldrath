@@ -37,10 +37,8 @@ else
                         <div class="cs-card-info">
                             <h3>@character.Name</h3>
                             <p>@character.ClassName · Level @character.Level</p>
-                            <p>⚔ @character.CurrentHealth / @character.MaxHealth HP</p>
-                            <p>✦ @character.CurrentMana / @character.MaxMana MP</p>
                             <p>⛁ @character.Experience XP</p>
-                            <p>◎ @character.Gold Gold</p>
+                            <p class="cs-card-last-played">Last played: @character.LastPlayedAt.ToLocalTime().ToString("g")</p>
                         </div>
                         <div class="cs-card-actions">
                             <button class="btn btn-primary"

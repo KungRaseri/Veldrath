@@ -10,9 +10,9 @@
         </div>
 
         <div class="game-header-bars">
-            <StatusBar Label="HP" Current="character.CurrentHealth" Max="character.MaxHealth" Color="#e53935" />
-            <StatusBar Label="MP" Current="character.CurrentMana" Max="character.MaxMana" Color="#1e88e5" />
-            <StatusBar Label="XP" Current="character.Experience" Max="character.EffectiveExperienceToNextLevel" Color="#43a047" />
+            <StatusBar Label="HP" Current="@character.CurrentHealth" Max="@character.MaxHealth" Color="#e53935" />
+            <StatusBar Label="MP" Current="@character.CurrentMana" Max="@character.MaxMana" Color="#1e88e5" />
+            <StatusBar Label="XP" Current="@((int)character.Experience)" Max="@((int)character.EffectiveExperienceToNextLevel)" Color="#43a047" />
         </div>
 
         <div class="game-header-gold">
