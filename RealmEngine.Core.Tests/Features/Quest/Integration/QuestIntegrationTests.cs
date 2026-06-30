@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using RealmEngine.Core.Features.Achievements.Services;
 using RealmEngine.Core.Features.Combat;
 using RealmEngine.Core.Features.Combat.Commands.AttackEnemy;
 using RealmEngine.Core.Features.Quests.Commands;
@@ -89,6 +90,7 @@ public class QuestIntegrationTests
             sp.GetRequiredService<PowerDataService>(),
             sp.GetRequiredService<ILogger<CombatService>>(),
             sp.GetRequiredService<ILoggerFactory>()));
+        services.AddSingleton<AchievementService>();
 
         _serviceProvider = services.BuildServiceProvider();
         _mediator = _serviceProvider.GetRequiredService<IMediator>();
