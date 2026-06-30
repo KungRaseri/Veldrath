@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -10,7 +10,6 @@ using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using Veldrath.Assets;
 using Veldrath.Assets.Manifest;
-using Veldrath.Client.Rendering;
 using Veldrath.Client.Services;
 using Veldrath.Client.ViewModels;
 using Veldrath.Client.Views;
@@ -47,11 +46,7 @@ public partial class App : Application
         ConfigureServices(services, configuration, serverBaseUrl, foundryBaseUrl);
         Services = services.BuildServiceProvider();
 
-        // Load RendererMode from appsettings.json (not a runtime toggle).
         var clientSettings = Services.GetRequiredService<ClientSettings>();
-        var rendererModeStr = configuration["RendererMode"] ?? "Sprite";
-        if (Enum.TryParse<RendererMode>(rendererModeStr, ignoreCase: true, out var rendererMode))
-            clientSettings.RendererMode = rendererMode;
 
         // Restore persisted settings so player preferences survive restarts.
         // Saving is handled explicitly by SettingsViewModel when the user leaves the settings screen.
@@ -184,13 +179,6 @@ public partial class App : Application
         services.AddSingleton<ISessionAlertService, SessionAlertService>();
         services.AddSingleton<ContentCache>();
         services.AddSingleton(new ClientSettings(serverBaseUrl.TrimEnd('/'), foundryBaseUrl.TrimEnd('/')));
-
-        // Rendering — singleton caches survive control teardown
-        services.AddSingleton<TileTextureCache>();
-        services.AddSingleton<EntityTextureCache>();
-        services.AddSingleton<SpriteMapRenderer>();
-        services.AddSingleton<AsciiMapRenderer>();
-        services.AddSingleton<MapRendererResolver>();
 
         // Game asset store — warms the IMemoryCache during the splash screen
         services.AddVeldrathAssets();

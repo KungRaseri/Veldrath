@@ -3,16 +3,6 @@ using ReactiveUI;
 
 namespace Veldrath.Client;
 
-/// <summary>Available map rendering modes.</summary>
-public enum RendererMode
-{
-    /// <summary>Sprite-based 2D art rendering (default).</summary>
-    Sprite = 0,
-
-    /// <summary>Text-based ASCII / roguelike rendering.</summary>
-    Ascii = 1,
-}
-
 /// <summary>
 /// Mutable client-side configuration shared across ViewModels at runtime.
 /// Registered as a singleton so changes are visible to all consumers without restart.
@@ -26,7 +16,6 @@ public class ClientSettings : ReactiveObject
     private int _sfxVolume    = 100;
     private bool _muted;
     private bool _fullScreen;
-    private RendererMode _rendererMode;
     private readonly HashSet<Guid> _ignoredCharacterIds;
 
     /// <summary>Path to the persisted ignore list file. Overridable in tests.</summary>
@@ -41,7 +30,6 @@ public class ClientSettings : ReactiveObject
     {
         _serverBaseUrl  = serverBaseUrl;
         _foundryBaseUrl = foundryBaseUrl;
-        _rendererMode   = RendererMode.Sprite;
         _ignoredCharacterIds = LoadIgnored();
     }
 
@@ -86,13 +74,6 @@ public class ClientSettings : ReactiveObject
     {
         get => _muted;
         set => this.RaiseAndSetIfChanged(ref _muted, value);
-    }
-
-    /// <summary>Gets or sets the active map rendering mode.</summary>
-    public RendererMode RendererMode
-    {
-        get => _rendererMode;
-        set => this.RaiseAndSetIfChanged(ref _rendererMode, value);
     }
 
     // Display
