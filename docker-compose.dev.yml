@@ -1,0 +1,239 @@
+# docker-compose.dev.yml — Standalone development compose with hot-reload
+#
+# Usage:
+#   docker compose -f docker-compose.dev.yml up -d --build
+#
+# This is a self-contained development compose file. All .NET services use
+# the SDK image with dotnet watch, mounting source code as volumes so that
+# file changes on the host trigger an automatic rebuild and restart.
+#
+# dotnet watch uses polling (DOTNET_USE_POLLING_FILE_WATCHER=true) which works
+# reliably across Docker Desktop on Windows/macOS. The initial build happens
+# inside the container on first run; subsequent file saves trigger incremental
+# rebuild and application restart — typically 3-8 seconds for the server,
+# faster for smaller projects.
+#
+# When editing non-code files (appsettings.json, .cshtml, .razor, .css) the
+# restart is near-instant since no compilation is needed.
+
+services:
+  # ── Infrastructure ───────────────────────────────────────────────────────
+
+  stalwart:
+    image: stalwartlabs/stalwart:v0.15.5
+    ports:
+      - "9004:8082"   # Web admin UI — http://localhost:9004 (login: admin / STALWART_ADMIN_SECRET)
+      - "5025:25"     # SMTP accessible from the Docker host for ad-hoc testing
+    environment:
+      - STALWART_PATH=/opt/stalwart
+      - ADMIN_SECRET=${STALWART_ADMIN_SECRET}
+    volumes:
+      - stalwart_data:/opt/stalwart
+      - ./config/stalwart:/opt/stalwart/etc:ro
+    healthcheck:
+      test: ["CMD-SHELL", "grep -q ':1F92 ' /proc/net/tcp6 || grep -q ':1F92 ' /proc/net/tcp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: veldrath
+      POSTGRES_USER: veldrath
+      POSTGRES_PASSWORD: veldrath_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U veldrath"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Application services (hot-reload via dotnet watch) ───────────────────
+
+  server:
+    build:
+      context: .
+      dockerfile: Veldrath.Server/Dockerfile.dev
+    ports:
+      - "9000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=veldrath;Username=veldrath;Password=veldrath_dev
+      - Database__Provider=postgres
+      - Jwt__Key=${JWT_KEY}
+      - OAuth__Discord__ClientId=${OAUTH_DISCORD_CLIENT_ID}
+      - OAuth__Discord__ClientSecret=${OAUTH_DISCORD_CLIENT_SECRET}
+      - OAuth__Google__ClientId=${OAUTH_GOOGLE_CLIENT_ID}
+      - OAuth__Google__ClientSecret=${OAUTH_GOOGLE_CLIENT_SECRET}
+      - OAuth__Microsoft__ClientId=${OAUTH_MICROSOFT_CLIENT_ID}
+      - OAuth__Microsoft__ClientSecret=${OAUTH_MICROSOFT_CLIENT_SECRET}
+      - Email__SmtpHost=stalwart
+      - Email__SmtpPort=25
+      - Email__EnableTls=false
+      - Email__SenderAddress=noreply@veldrath.local
+      - Email__SenderName=Veldrath Dev
+      - Foundry__BaseUrl=${FOUNDRY_PUBLIC_URL:-http://localhost:8081}
+      - Web__BaseUrl=${WEB_PUBLIC_URL:-http://localhost:8082}
+      - AllowedReturnUrlHosts=${ALLOWED_RETURN_URL_HOSTS:-}
+      - Seq__ServerUrl=http://seq
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 180s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      stalwart:
+        condition: service_healthy
+    volumes:
+      # Source code — mounted for dotnet watch to detect changes
+      - ./Veldrath.Server:/src/Veldrath.Server
+      - ./Veldrath.Contracts:/src/Veldrath.Contracts
+      - ./Veldrath.Assets:/src/Veldrath.Assets
+      - ./RealmEngine.Core:/src/RealmEngine.Core
+      - ./RealmEngine.Data:/src/RealmEngine.Data
+      - ./RealmEngine.Shared:/src/RealmEngine.Shared
+      # Root MSBuild files
+      - ./Directory.Build.props:/src/Directory.Build.props
+      - ./Directory.Build.targets:/src/Directory.Build.targets
+      - ./Directory.Packages.props:/src/Directory.Packages.props
+      - ./versions:/src/versions
+      # Persisted state
+      - dataprotection_keys:/root/.aspnet/DataProtection-Keys
+      - nuget_cache:/root/.nuget/packages
+
+  discord:
+    build:
+      context: .
+      dockerfile: Veldrath.Discord/Dockerfile.dev
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+      - Discord__Token=${DISCORD_TOKEN}
+      - Discord__DevGuildId=${DISCORD_DEV_GUILD_ID:-0}
+      - Discord__ServerBaseUrl=http://server:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=veldrath;Username=veldrath;Password=veldrath_dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      server:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./Veldrath.Discord:/src/Veldrath.Discord
+      - ./Veldrath.Contracts:/src/Veldrath.Contracts
+      - ./RealmEngine.Core:/src/RealmEngine.Core
+      - ./RealmEngine.Data:/src/RealmEngine.Data
+      - ./RealmEngine.Shared:/src/RealmEngine.Shared
+      - ./Directory.Build.props:/src/Directory.Build.props
+      - ./Directory.Build.targets:/src/Directory.Build.targets
+      - ./Directory.Packages.props:/src/Directory.Packages.props
+      - ./versions:/src/versions
+      - nuget_cache:/root/.nuget/packages
+
+  foundry:
+    build:
+      context: .
+      dockerfile: RealmFoundry/Dockerfile.dev
+    ports:
+      - "8081:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8081
+      - Veldrath__ServerUrl=http://server:8080
+      - Veldrath__PublicServerUrl=${SERVER_PUBLIC_URL:-http://localhost:9000}
+    volumes:
+      - ./RealmFoundry:/src/RealmFoundry
+      - ./Veldrath.Contracts:/src/Veldrath.Contracts
+      - ./Veldrath.Auth:/src/Veldrath.Auth
+      - ./Veldrath.Auth.Blazor:/src/Veldrath.Auth.Blazor
+      - ./Directory.Build.props:/src/Directory.Build.props
+      - ./Directory.Build.targets:/src/Directory.Build.targets
+      - ./Directory.Packages.props:/src/Directory.Packages.props
+      - ./versions:/src/versions
+      - foundry_dataprotection_keys:/root/.aspnet/DataProtection-Keys
+      - nuget_cache:/root/.nuget/packages
+    depends_on:
+      server:
+        condition: service_healthy
+
+  seq:
+    image: datalust/seq:latest
+    ports:
+      - "9001:80"
+    environment:
+      - ACCEPT_EULA=Y
+      - SEQ_FIRSTRUN_ADMINPASSWORD=${SEQ_ADMIN_PASSWORD}
+    volumes:
+      - seq_data:/data
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9003:9090"
+    volumes:
+      - prometheus_data:/prometheus
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      server:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:11.6.1
+    ports:
+      - "9002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+
+  web:
+    build:
+      context: .
+      dockerfile: Veldrath.Web/Dockerfile.dev
+    ports:
+      - "8080:8082"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8082
+      - Veldrath__ServerUrl=http://server:8080
+      - Veldrath__PublicServerUrl=${SERVER_PUBLIC_URL:-http://localhost:9000}
+    volumes:
+      - ./Veldrath.Web:/src/Veldrath.Web
+      - ./Veldrath.Contracts:/src/Veldrath.Contracts
+      - ./Veldrath.Auth:/src/Veldrath.Auth
+      - ./Veldrath.Auth.Blazor:/src/Veldrath.Auth.Blazor
+      - ./RealmEngine.Core:/src/RealmEngine.Core
+      - ./RealmEngine.Data:/src/RealmEngine.Data
+      - ./RealmEngine.Shared:/src/RealmEngine.Shared
+      - ./Directory.Build.props:/src/Directory.Build.props
+      - ./Directory.Build.targets:/src/Directory.Build.targets
+      - ./Directory.Packages.props:/src/Directory.Packages.props
+      - ./versions:/src/versions
+      - web_dataprotection_keys:/root/.aspnet/DataProtection-Keys
+      - nuget_cache:/root/.nuget/packages
+    depends_on:
+      server:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  dataprotection_keys:
+  foundry_dataprotection_keys:
+  web_dataprotection_keys:
+  stalwart_data:
+  seq_data:
+  prometheus_data:
+  grafana_data:
+  nuget_cache:
