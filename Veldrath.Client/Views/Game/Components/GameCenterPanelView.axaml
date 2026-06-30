@@ -15,7 +15,7 @@
         <Grid>
             <!-- Zone location panel (replaces tilemap control) -->
             <views:ZoneLocationPanelView
-                ViewModel="{Binding ZoneLocationPanel}"
+                DataContext="{Binding ZoneLocationPanel}"
                 IsVisible="{Binding IsZoneViewActive}" />
 
             <!-- Region view — side panel handles the content -->

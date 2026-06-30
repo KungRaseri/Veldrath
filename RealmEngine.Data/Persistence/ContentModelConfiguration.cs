@@ -277,9 +277,13 @@ public static class ContentModelConfiguration
         builder.Entity<ZoneLocationConnection>(e =>
         {
             e.HasKey(x => x.Id);
+            // Unique on (FromLocationSlug, ToLocationSlug) — SQLite treats NULL as distinct,
+            // so multiple exit/region_exit connections from the same origin don't collide.
             e.HasIndex(x => new { x.FromLocationSlug, x.ToLocationSlug }).IsUnique();
+            e.HasIndex(x => new { x.FromLocationSlug, x.ToZoneId }).IsUnique();
+            e.HasIndex(x => new { x.FromLocationSlug, x.ToRegionId }).IsUnique();
             e.Property(x => x.FromLocationSlug).HasMaxLength(128).IsRequired();
-            e.Property(x => x.ToLocationSlug).HasMaxLength(128).IsRequired();
+            e.Property(x => x.ToLocationSlug).HasMaxLength(128);
             e.Property(x => x.ToZoneId).HasMaxLength(128);
             e.Property(x => x.ToRegionId).HasMaxLength(128);
             e.Property(x => x.ConnectionType).HasMaxLength(32).IsRequired();

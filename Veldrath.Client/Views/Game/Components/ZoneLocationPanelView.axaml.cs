@@ -1,6 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
 using Avalonia.Controls;
-using Avalonia.ReactiveUI;
-using Veldrath.Client.ViewModels;
 
 namespace Veldrath.Client.Views;
 
@@ -8,7 +7,8 @@ namespace Veldrath.Client.Views;
 /// Panel that replaces the old tilemap control, showing location info,
 /// exits, and entities as reactive lists rather than a 2D grid.
 /// </summary>
-public partial class ZoneLocationPanelView : ReactiveUserControl<ZoneLocationPanelViewModel>
+[ExcludeFromCodeCoverage]
+public partial class ZoneLocationPanelView : UserControl
 {
     /// <summary>Initializes a new instance of <see cref="ZoneLocationPanelView"/>.</summary>
     public ZoneLocationPanelView()
