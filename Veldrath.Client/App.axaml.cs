@@ -54,9 +54,7 @@ public partial class App : Application
         var savedSettings = settingsPersistence.Load();
         if (savedSettings is not null)
         {
-            // ServerBaseUrl is intentionally excluded — it is always sourced from appsettings.json
-            // so that a stale or corrupt settings file cannot silently redirect hub connections to
-            // the wrong endpoint (e.g. an internal Docker port that is unreachable from the host).
+            clientSettings.ServerBaseUrl = savedSettings.ServerBaseUrl;
             clientSettings.MasterVolume = savedSettings.MasterVolume;
             clientSettings.MusicVolume  = savedSettings.MusicVolume;
             clientSettings.SfxVolume    = savedSettings.SfxVolume;

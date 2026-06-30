@@ -37,6 +37,14 @@ public class SettingsViewModel : ViewModelBase
     /// <summary>Navigates back to the main menu and persists the current settings to disk.</summary>
     public ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> BackCommand { get; }
 
+    // Server
+    /// <summary>Gets or sets the game server base URL (e.g. <c>http://localhost:9000</c>).</summary>
+    public string ServerUrl
+    {
+        get => _settings.ServerBaseUrl;
+        set => _settings.ServerBaseUrl = value;
+    }
+
     // Audio
     /// <summary>Gets or sets the master volume (0–100).</summary>
     public int MasterVolume

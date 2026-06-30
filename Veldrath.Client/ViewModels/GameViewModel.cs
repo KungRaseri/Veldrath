@@ -1670,6 +1670,8 @@ public class GameViewModel : ViewModelBase
                 isCurrent: loc.Slug == CurrentZoneLocationSlug,
                 onNavigate: () => DoNavigateToLocationAsync(slug)));
         }
+        // Forward zone locations to the reactive location panel
+        ZoneLocationPanel?.SetZoneLocations(ZoneLocations);
         this.RaisePropertyChanged(nameof(CurrentZoneLocationDisplayName));
     }
 

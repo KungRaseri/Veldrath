@@ -76,6 +76,18 @@
                            HorizontalAlignment="Right" />
             </Grid>
 
+            <!-- ── Server ──────────────────────────────────────────────── -->
+            <TextBlock Text="SERVER"
+                       Classes="muted"
+                       FontSize="11"
+                       LetterSpacing="2"
+                       Margin="0,16,0,4" />
+
+            <TextBlock Text="Server URL" Classes="muted" Margin="0,4,0,0" />
+            <TextBox Text="{Binding ServerUrl}"
+                     Watermark="http://localhost:9000"
+                     FontSize="13" />
+
             <!-- ── Display ─────────────────────────────────────────────── -->
             <TextBlock Text="DISPLAY"
                        Classes="muted"
