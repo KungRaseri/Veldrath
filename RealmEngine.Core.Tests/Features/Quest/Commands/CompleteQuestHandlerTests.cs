@@ -1,4 +1,5 @@
 using FluentAssertions;
+using MediatR;
 using Moq;
 using RealmEngine.Core.Features.Quests.Commands;
 using RealmEngine.Core.Features.Quests.Services;
@@ -26,7 +27,7 @@ public class CompleteQuestHandlerTests
         _mockQuestService = new Mock<QuestService>(MockBehavior.Strict, null!, null!, null!, NullLogger<QuestService>.Instance);
         _mockRewardService = new Mock<QuestRewardService>(MockBehavior.Strict, (ISaveGameService)null!, (ItemGenerator?)null!, NullLogger<QuestRewardService>.Instance);
         _mockSaveGameService = new Mock<ISaveGameService>();
-        _handler = new CompleteQuestHandler(_mockQuestService.Object, _mockRewardService.Object, _mockSaveGameService.Object);
+        _handler = new CompleteQuestHandler(_mockQuestService.Object, _mockRewardService.Object, _mockSaveGameService.Object, Mock.Of<IMediator>());
     }
 
     [Fact]
