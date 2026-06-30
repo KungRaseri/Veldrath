@@ -1,23 +1,23 @@
 # RealmEngine Codebase Notes
 
-> **Status**: Updated through Session-40 (2026-06-28).
+> **Status**: Updated through Session-41 (2026-06-30).
 
 ## Test Counts
 
 | Project | Tests |
 |---------|-------|
-| `RealmEngine.Core.Tests` | ~1,912 (183 test files) |
-| `RealmEngine.Shared.Tests` | ~803 (34 test files) |
-| `RealmEngine.Data.Tests` | ~237 (21 test files) |
-| `Veldrath.Server.Tests` | ~728 (63 test files) |
-| `Veldrath.Client.Tests` | ~713 (40 test files) |
-| `RealmForge.Tests` | ~8 (6 test files) |
-| `RealmFoundry.Tests` | ~51 (8 test files) |
+| `RealmEngine.Core.Tests` | 1,912 (183 test files) |
+| `RealmEngine.Shared.Tests` | 803 (34 test files) |
+| `RealmEngine.Data.Tests` | 237 (21 test files) |
+| `Veldrath.Server.Tests` | 731 (63 test files) |
+| `Veldrath.Client.Tests` | 713 (40 test files) |
+| `RealmForge.Tests` | 8 (6 test files) |
+| `RealmFoundry.Tests` | 51 (8 test files) |
 | `Veldrath.Auth.Tests` | ~new~ (6 test files) |
-| `Veldrath.Web.Tests` | ~31 (6 test files) |
+| `Veldrath.Web.Tests` | 31 (6 test files) |
 | `Veldrath.Discord.Tests` | ~ (4 test files) |
-| `Veldrath.Assets.Tests` | ~10 (5 test files) |
-| **Approximate Total** | **~4,732 (376 test files)** |
+| `Veldrath.Assets.Tests` | 10 (5 test files) |
+| **Total (last verified baseline)** | **4,739 (376 test files)** |
 
 ## Key Model Facts
 - `Location` has 4 required properties: `Id`, `Name`, `Description`, `Type`
@@ -335,15 +335,15 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - **Roo skills are project-specific** — defined in `.roo/skills/` and `.roo/skills-orchestrator/`. They are NOT auto-loaded; must be explicitly invoked
 - **Three DbContext separation expanded** — now 4: `ApplicationDbContext` (server auth/ops), `GameDbContext` (game state), `ContentDbContext` (catalog), `EditorialDbContext` (editorial content)
 
-### Open Items (Post-Session-31)
+### Open Items (Post-Session-41)
 
-- **4 CharacterCreation tests still potentially failing** — see `auth-and-character-creation-plan.md` for diagnosis and fix instructions
+- **All 4 CharacterCreationSessionEndpointTests now passing** — verified in Session-41 full test run. No remaining failures. Full suite is fully green at 4,739 tests.
 - **`PurgeExpiredAsync` not scheduled** — exists on `EfCorePendingLinkRepository` but no `IHostedService` calls it
-- **Actual test count unknown** — needs `dotnet test` run to establish baseline after 2.5 months of changes
 - **Wiki implementation status tracker** (`wiki/Engine-Implementation-Status.md`) last updated March 19 — stale
-- **Memory files now updated through Session-39** — but gap analysis process should be run fresh
 - **Discord bot embed builder tests** (Session-40): 24 tests added for ServerModule and GenerateModule
 - **Achievement triggers wired** (Session-40): 5 handlers now call CheckAchievementProgressCommand
 - **Settings deleted** (Session-40): 6 orphaned RealmEngine.Core/Settings/ files removed
 - **Hub integration success-path tests** still missing for GetRegionMap, MoveOnRegion, ExitZone, ChangeRegion
 - **Pure Reactive UI pivot** (Session-41): Removed all sprite/ASCII rendering (Veldrath.Client.Rendering/ + TilemapControl/RegionTilemapControl). Replaced Zone tilemap with ZoneLocationPanelView+VM (reactive list-based panel showing room description, exits, entities). Region view now handled entirely by side panel (GameRegionPanelView). Keyboard movement removed — pure point-and-click. Client-side tile description service added. See `plans/reactive-ui-pivot-plan.md`.
+- **ExternalAuthEndpointTests fixed (Session-41)**: Added `SecurityStamp` to test user creation to fix `InvalidOperationException: User security stamp cannot be null`.
+- **EnemyAiService fixed (Session-41)**: Added disposal-state guard in `StopAsync`/`Dispose` to fix `ObjectDisposedException: The CancellationTokenSource has been disposed`.
