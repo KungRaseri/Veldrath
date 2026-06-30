@@ -15,12 +15,13 @@ namespace Veldrath.Client.Rendering;
 [ExcludeFromCodeCoverage]
 public sealed class AsciiMapRenderer : IMapRenderer
 {
-    private const double FontSize = 14.0;
     private static readonly Typeface AsciiTypeface =
         new("JetBrains Mono, Cascadia Code, Consolas, Courier New", FontStyle.Normal, FontWeight.Normal);
 
-    private readonly double _charWidth;
-    private readonly double _charHeight;
+    private double _fontSize = 14.0;
+    private double _charWidth;
+    private double _charHeight;
+    private double _tileSize;
 
     /// <summary>Cache of per-colour foreground brushes to avoid per-tile allocation.</summary>
     private readonly Dictionary<Color, IBrush> _brushCache = [];
@@ -28,20 +29,48 @@ public sealed class AsciiMapRenderer : IMapRenderer
     /// <summary>Initializes a new instance of <see cref="AsciiMapRenderer"/>.</summary>
     public AsciiMapRenderer()
     {
-        // Measure a single character to determine the display tile size.
+        // Measure a single character to determine the initial display tile size.
         var measureText = new FormattedText(
             "W",
             CultureInfo.CurrentCulture,
             FlowDirection.LeftToRight,
             AsciiTypeface,
-            FontSize,
+            _fontSize,
             Brushes.White);
         _charWidth  = measureText.Width;
         _charHeight = measureText.Height;
+        _tileSize = Math.Max(_charWidth, _charHeight);
     }
 
     /// <inheritdoc/>
-    public int DisplayTileSize => (int)Math.Max(_charWidth, _charHeight);
+    public int DisplayTileSize => (int)Math.Ceiling(_tileSize);
+
+    /// <inheritdoc/>
+    public double TileSize
+    {
+        get => _tileSize;
+        set
+        {
+            var clamped = Math.Clamp(value, 8.0, 128.0);
+            if (Math.Abs(_tileSize - clamped) < 0.5) return;
+            _tileSize = clamped;
+
+            // Derive font size proportionally from the desired tile size.
+            // The original 14pt font produced a ~16px tile, so ratio ≈ pixels / 16 * 14.
+            _fontSize = Math.Max(6.0, clamped * 0.875);
+
+            // Recompute character metrics with the new font size.
+            var measureText = new FormattedText(
+                "W",
+                CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                AsciiTypeface,
+                _fontSize,
+                Brushes.White);
+            _charWidth  = measureText.Width;
+            _charHeight = measureText.Height;
+        }
+    }
 
     /// <inheritdoc/>
     public void Render(DrawingContext context, RenderState state)
@@ -57,6 +86,10 @@ public sealed class AsciiMapRenderer : IMapRenderer
 
         // Draw entities on top
         DrawEntities(context, state, vpW, vpH);
+
+        // Grid overlay (tile-boundary lines)
+        if (state.ShowGrid)
+            DrawGrid(context, state, vpW, vpH);
 
         // Highlights
         if (state.MapType == "zone")
@@ -111,7 +144,7 @@ public sealed class AsciiMapRenderer : IMapRenderer
                     CultureInfo.CurrentCulture,
                     FlowDirection.LeftToRight,
                     AsciiTypeface,
-                    FontSize,
+                    _fontSize,
                     GetBrush(desc.Foreground));
 
                 context.DrawText(tileText, new Point(screenX, screenY));
@@ -175,7 +208,7 @@ public sealed class AsciiMapRenderer : IMapRenderer
                 CultureInfo.CurrentCulture,
                 FlowDirection.LeftToRight,
                 AsciiTypeface,
-                FontSize,
+                _fontSize,
                 brush);
 
             var px = scrX * _charWidth;
@@ -199,7 +232,7 @@ public sealed class AsciiMapRenderer : IMapRenderer
                 CultureInfo.CurrentCulture,
                 FlowDirection.LeftToRight,
                 AsciiTypeface,
-                FontSize,
+                _fontSize,
                 AsciiPalette.ExitHighlightBrush);
             context.DrawText(text, new Point(sx * _charWidth, sy * _charHeight));
         }
@@ -218,7 +251,7 @@ public sealed class AsciiMapRenderer : IMapRenderer
                 CultureInfo.CurrentCulture,
                 FlowDirection.LeftToRight,
                 AsciiTypeface,
-                FontSize,
+                _fontSize,
                 AsciiPalette.ZoneEntryHighlightBrush);
             context.DrawText(text, new Point(sx * _charWidth, sy * _charHeight));
         }
@@ -237,7 +270,7 @@ public sealed class AsciiMapRenderer : IMapRenderer
                 CultureInfo.CurrentCulture,
                 FlowDirection.LeftToRight,
                 AsciiTypeface,
-                FontSize,
+                _fontSize,
                 AsciiPalette.RegionExitHighlightBrush);
             context.DrawText(text, new Point(sx * _charWidth, sy * _charHeight));
         }
@@ -257,11 +290,33 @@ public sealed class AsciiMapRenderer : IMapRenderer
                 CultureInfo.CurrentCulture,
                 FlowDirection.LeftToRight,
                 AsciiTypeface,
-                FontSize - 2,
+                Math.Max(6.0, _fontSize * 0.857),
                 AsciiPalette.LabelBrush);
             var px = (sx - text.Width / _charWidth / 2) * _charWidth;
             var py = (sy - 1) * _charHeight;
             context.DrawText(text, new Point(px, py));
+        }
+    }
+
+    // ── Grid overlay ───────────────────────────────────────────────────────────
+
+    /// <summary>Draws semi-transparent tile-boundary grid lines across the viewport using character cell dimensions.</summary>
+    private void DrawGrid(DrawingContext context, RenderState state, int vpW, int vpH)
+    {
+        var gridPen = new Pen(new SolidColorBrush(Color.FromArgb(60, 255, 255, 255)), 1);
+
+        // Vertical lines
+        for (var col = 0; col <= vpW; col++)
+        {
+            var x = col * _charWidth;
+            context.DrawLine(gridPen, new Point(x, 0), new Point(x, state.Bounds.Height));
+        }
+
+        // Horizontal lines
+        for (var row = 0; row <= vpH; row++)
+        {
+            var y = row * _charHeight;
+            context.DrawLine(gridPen, new Point(0, y), new Point(state.Bounds.Width, y));
         }
     }
 

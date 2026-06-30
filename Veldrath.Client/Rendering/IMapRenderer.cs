@@ -9,8 +9,12 @@ namespace Veldrath.Client.Rendering;
 /// </summary>
 public interface IMapRenderer
 {
-    /// <summary>Fixed display size of a single tile in device pixels.</summary>
+    /// <summary>Gets the fixed display size of a single tile in device pixels. Updated when <see cref="TileSize"/> is set.</summary>
     int DisplayTileSize { get; }
+
+    /// <summary>Gets or sets the tile size in pixels used for rendering. Setting this value
+    /// updates <see cref="DisplayTileSize"/> and may trigger metric recomputation in the renderer.</summary>
+    double TileSize { get; set; }
 
     /// <summary>
     /// Renders one complete frame of the tilemap into <paramref name="context"/>.

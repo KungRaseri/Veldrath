@@ -23,6 +23,7 @@ namespace Veldrath.Client.Rendering;
 /// <param name="Labels">Zone labels (region maps only).</param>
 /// <param name="IsMiniMapOpen">Whether the minimap overlay is active.</param>
 /// <param name="TilesetKey">Spritesheet key (e.g. "onebit_packed"). Used by sprite renderer.</param>
+/// <param name="ShowGrid">Whether tile-boundary grid lines should be drawn.</param>
 /// <param name="MapType">Discriminator: "zone" or "region".</param>
 public readonly record struct RenderState(
     Size Bounds,
@@ -41,7 +42,8 @@ public readonly record struct RenderState(
     IReadOnlyList<RenderLabel> Labels,
     bool IsMiniMapOpen,
     string TilesetKey,
-    string MapType);
+    string MapType,
+    bool ShowGrid = false);
 
 /// <summary>Lightweight entity snapshot for the renderer (avoids VM coupling).</summary>
 /// <param name="EntityId">Unique identifier for this entity instance.</param>

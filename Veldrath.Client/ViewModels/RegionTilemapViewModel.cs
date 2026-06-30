@@ -17,6 +17,7 @@ public class RegionTilemapViewModel : ViewModelBase
     private int _cameraX;
     private int _cameraY;
     private bool _isMiniMapOpen;
+    private bool _showGrid;
     private Guid? _selfEntityId;
 
     // ── Map data ─────────────────────────────────────────────────────────────
@@ -80,6 +81,13 @@ public class RegionTilemapViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _isMiniMapOpen, value);
     }
 
+    /// <summary>Whether tile-boundary grid lines are currently drawn over the region map view.</summary>
+    public bool ShowGrid
+    {
+        get => _showGrid;
+        set => this.RaiseAndSetIfChanged(ref _showGrid, value);
+    }
+
     // ── Entity tracking ───────────────────────────────────────────────────────
 
     /// <summary>
@@ -106,6 +114,9 @@ public class RegionTilemapViewModel : ViewModelBase
     /// <summary>Command that toggles the mini-map overlay.</summary>
     public ReactiveCommand<Unit, Unit> ToggleMiniMapCommand { get; }
 
+    /// <summary>Command that toggles the grid overlay on the region map view.</summary>
+    public ReactiveCommand<Unit, Unit> ToggleGridCommand { get; }
+
     /// <summary>Command that confirms a pending zone-entry or region-exit transition (E key).</summary>
     public ReactiveCommand<Unit, Unit> ConfirmContextActionCommand { get; }
 
@@ -128,6 +139,8 @@ public class RegionTilemapViewModel : ViewModelBase
             Log.Warning(ex, "Region move command failed — server connection may be unavailable"));
 
         ToggleMiniMapCommand = ReactiveCommand.Create(() => { IsMiniMapOpen = !IsMiniMapOpen; });
+
+        ToggleGridCommand = ReactiveCommand.Create(() => { ShowGrid = !ShowGrid; });
 
         ConfirmContextActionCommand = onConfirm is not null
             ? ReactiveCommand.CreateFromTask(onConfirm)

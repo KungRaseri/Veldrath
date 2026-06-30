@@ -32,6 +32,7 @@ public class RegionTilemapControl : Control
 
     private readonly MapRendererResolver? _rendererResolver;
     private DispatcherTimer? _timer;
+    private bool _isUpdatingTileSize;
 
     static RegionTilemapControl()
     {
@@ -44,6 +45,16 @@ public class RegionTilemapControl : Control
         Focusable    = true;
         ClipToBounds = true;
         _rendererResolver = App.Services?.GetService<MapRendererResolver>();
+    }
+
+    /// <inheritdoc/>
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == IsVisibleProperty && change.GetNewValue<bool>())
+        {
+            Focus();
+        }
     }
 
     /// <inheritdoc/>
@@ -61,6 +72,35 @@ public class RegionTilemapControl : Control
     protected override void OnSizeChanged(SizeChangedEventArgs e)
     {
         base.OnSizeChanged(e);
+
+        // ── Dynamic tile size scaling ──────────────────────────────────────────
+        const double targetHorizontalTiles = 24;
+        const double targetVerticalTiles = 18;
+        var renderer = _rendererResolver?.Current;
+        if (renderer is not null && !_isUpdatingTileSize)
+        {
+            _isUpdatingTileSize = true;
+            try
+            {
+                var desiredTileSize = Math.Min(
+                    e.NewSize.Width / targetHorizontalTiles,
+                    e.NewSize.Height / targetVerticalTiles
+                );
+                desiredTileSize = Math.Clamp(desiredTileSize, 8.0, 128.0);
+
+                // Only update if significantly changed to avoid layout jitter.
+                if (Math.Abs(renderer.TileSize - desiredTileSize) > 0.5)
+                {
+                    renderer.TileSize = desiredTileSize;
+                }
+            }
+            finally
+            {
+                _isUpdatingTileSize = false;
+            }
+        }
+        // ── End dynamic tile size scaling ──────────────────────────────────────
+
         var vm = ViewModel;
         if (vm is null) return;
 
@@ -95,6 +135,14 @@ public class RegionTilemapControl : Control
         if (e.Key == Key.M)
         {
             vm.ToggleMiniMapCommand.Execute(Unit.Default).Subscribe();
+            e.Handled = true;
+            return;
+        }
+
+        // ── Grid overlay toggle (G) ───────────────────────────────────────────
+        if (e.Key == Key.G)
+        {
+            vm.ToggleGridCommand.Execute(Unit.Default).Subscribe();
             e.Handled = true;
             return;
         }
@@ -178,6 +226,7 @@ public class RegionTilemapControl : Control
             Labels: map.Labels.Select(l => new RenderLabel(l.TileX, l.TileY, l.Text, l.IsHidden)).ToList(),
             IsMiniMapOpen: vm.IsMiniMapOpen,
             TilesetKey: map.TilesetKey,
+            ShowGrid: vm.ShowGrid,
             MapType: "region");
     }
 }
