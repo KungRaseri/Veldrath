@@ -13,8 +13,11 @@ public class ZoneLocationConnection
     /// <summary>Slug of the origin <see cref="ZoneLocation"/>.</summary>
     public string FromLocationSlug { get; set; } = string.Empty;
 
-    /// <summary>Slug of the destination <see cref="ZoneLocation"/>.</summary>
-    public string ToLocationSlug { get; set; } = string.Empty;
+    /// <summary>
+    /// Slug of the destination <see cref="ZoneLocation"/> for walk connections.
+    /// <see langword="null"/> for cross-zone exits and region map exits.
+    /// </summary>
+    public string? ToLocationSlug { get; set; }
 
     /// <summary>
     /// Zone ID of the destination location when the connection crosses zone boundaries;
