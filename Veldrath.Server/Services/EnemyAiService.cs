@@ -52,7 +52,10 @@ public class EnemyAiService : IHostedService, IDisposable
     /// <inheritdoc />
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        _cts?.Cancel();
+        if (_cts is { IsCancellationRequested: false })
+        {
+            _cts.Cancel();
+        }
         if (_loopTask is not null)
             await _loopTask.ConfigureAwait(false);
     }
@@ -60,8 +63,9 @@ public class EnemyAiService : IHostedService, IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        _timer?.Dispose();
+        _cts?.Cancel();
         _cts?.Dispose();
+        _timer?.Dispose();
         GC.SuppressFinalize(this);
     }
 

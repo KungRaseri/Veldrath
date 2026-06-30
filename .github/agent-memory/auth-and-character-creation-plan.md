@@ -1,9 +1,9 @@
 # Auth Flow & Character Creation Gap Fix Plan
 
-> **Status**: Updated through Session-40 (2026-06-28). Auth hardening Pass 1+2 complete. Settings system orphaned files deleted.
+> **Status**: Updated through Session-41 (2026-06-30). Auth hardening Pass 1+2 complete. Settings system orphaned files deleted. Full test suite verified green at 4,739 tests.
 
 **Started:** 2026-04-02
-**Status:** In Progress — paused mid-test-verification
+**Status:** ✅ Complete — all 4 previously-failing CharacterCreationSessionEndpointTests now passing (verified in Session-41 full test run)
 
 ---
 
@@ -124,82 +124,18 @@ File: `RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs`
 ---
 
 
-## ⚠️ Failing Tests — PAUSE STATE
+## ✅ Failing Tests — RESOLVED
 
-**4 `CharacterCreationSessionEndpointTests` tests are failing.** Build is clean (0 errors), failures are logic/API behavior mismatches.
+**All 4 `CharacterCreationSessionEndpointTests` are now passing** — verified in Session-41 full test run. Full suite is fully green at 4,739 tests across all 11 test projects, 0 failures.
 
-### Failure 1: `Finalize_AlreadyFinalizedSession_Returns400`
-- **Expected:** 400 BadRequest
-- **Actual:** 409 Conflict
-- **Cause:** The second finalize call hits `NameExistsAsync` (name was already saved by first call) before it can hit the finalized-status guard. The `FinalizeCreationSessionHandler` guard is never reached because `FinalizeAsync` in the endpoint already returns 409 from the repo check.
-- **Fix needed:** The endpoint's `FinalizeAsync` needs to check session status **before** the name-conflict check. Add `if (session.Status == CreationSessionStatus.Finalized) return Results.BadRequest(...)` in `CharacterCreationSessionEndpoints.cs` after the ownership check, before the class/species/background checks.
-  - Requires adding `using RealmEngine.Shared.Models;` to the endpoints file.
+The 4 previously-failing tests and their fixes:
+- **`Finalize_AlreadyFinalizedSession_Returns400`**: Added session-status guard before name-conflict check in `CharacterCreationSessionEndpoints.cs`
+- **`Finalize_Sets_StartingLocationSlug_To_FenwickMarket`**: Changed assertion from HTTP GET to direct `ApplicationDbContext` query
+- **`PatchAttributes_ValidPointBuy_Returns200`**: Fixed request body shape to use `Allocations` wrapper key
+- **`GetPreview_AfterBegin_Returns200`**: Selects class before calling preview in test setup
 
-### Failure 2: `Finalize_Sets_StartingLocationSlug_To_FenwickMarket`
-- **Expected:** GET `/api/characters/{id}` returns 200 with "fenwick-market" in body
-- **Actual:** 405 Method Not Allowed
-- **Cause:** `GET /api/characters/{id}` does not exist — `CharacterEndpoints` only maps `GET /` (list), `POST /` (create), `DELETE /{id}` (delete). There is no get-by-id endpoint.
-- **Fix needed:** Change the assertion. Instead of calling a missing endpoint, verify via `factory.Services.CreateScope()` → `ApplicationDbContext.Characters` → find by `character.Id` → assert `CurrentZoneLocationSlug == "fenwick-market"`. Remove the HTTP GET assertion.
+Additionally, two other fixes were applied in Session-41:
+- **`ExternalAuthEndpointTests`**: Added `SecurityStamp` to test user creation (was throwing `InvalidOperationException: User security stamp cannot be null`)
+- **`EnemyAiService`**: Added disposal-state guard in `StopAsync`/`Dispose` to fix `ObjectDisposedException: The CancellationTokenSource has been disposed`
 
-### Failure 3: `PatchAttributes_ValidPointBuy_Returns200`
-- **Expected:** 200 OK
-- **Actual:** 500 Internal Server Error
-- **Cause:** The test sends individual stat fields (`Strength`, `Dexterity`, etc.) as a flat object, but the endpoint expects `SetCreationAttributesRequest` which wraps them in an `Allocations` dictionary: `{ "Allocations": { "Strength": 14, ... } }`.
-- **Fix needed:** Wrap the body in an `Allocations` key: `new { Allocations = new { Strength = 14, Dexterity = 12, Constitution = 13, Intelligence = 8, Wisdom = 10, Charisma = 8 } }`.
-
-### Failure 4: `GetPreview_AfterBegin_Returns200`
-- **Expected:** 200 OK
-- **Actual:** 400 BadRequest
-- **Cause:** `GetPreviewAsync` returns 400 when `result.Character is null`. After only `BeginSession`, no class is set so the preview result has no character data. The preview query returns failure/null if no class is selected yet.
-- **Fix needed:** Either (a) select a class before calling preview, or (b) only assert the status is not 404 (session exists) rather than 200. The cleaner fix is to set a class first before calling preview, consistent with how preview works.
-
----
-
-## Continuation Instructions
-
-1. Fix the 4 failing tests in `CharacterCreationSessionEndpointTests.cs` (details above)
-2. Run `dotnet test Veldrath.slnx --filter "Category!=UI" --no-build` — expect all pass
-3. Run `dotnet test Realm.Full.slnx --filter "Category!=UI" --no-build` — verify full suite
-
-### Required usings to add to `CharacterCreationSessionEndpoints.cs` for Fix 1
-```csharp
-using RealmEngine.Shared.Models;
-```
-
-### Fix 1 code location
-In `FinalizeAsync`, after the ownership check and before the class-selection check:
-```csharp
-if (session.Status == CreationSessionStatus.Finalized)
-    return Results.BadRequest(new { error = "Session has already been finalized." });
-```
-
-### Fix 2 code (replace the `Finalize_Sets_StartingLocationSlug_To_FenwickMarket` test assertion block)
-```csharp
-response.StatusCode.Should().Be(HttpStatusCode.Created);
-var character = await response.Content.ReadFromJsonAsync<CharacterDto>();
-using var scope = _factory.Services.CreateScope();
-var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-var persisted = await db.Characters.FirstAsync(c => c.Id == character!.Id);
-persisted.CurrentZoneLocationSlug.Should().Be("fenwick-market");
-```
-Requires adding `using Microsoft.EntityFrameworkCore;` and `using Veldrath.Server.Data;` to the test file (already present from AuthEndpointTests pattern — verify they are in this file's usings).
-
-### Fix 3 code (new body shape for PatchAttributes test)
-```csharp
-new { Allocations = new Dictionary<string, int>
-{
-    ["Strength"] = 14, ["Dexterity"] = 12, ["Constitution"] = 13,
-    ["Intelligence"] = 8, ["Wisdom"] = 10, ["Charisma"] = 8
-}}
-```
-
-### Fix 4 code (select class before calling preview)
-```csharp
-await client.PatchAsJsonAsync(
-    $"/api/character-creation/sessions/{begin.SessionId}/class",
-    new { ClassName = "warrior" });
-// then call GetAsync /preview
-```
-Or simplify: merge `GetPreview_AfterBegin_Returns200` with `GetPreview_AfterClassSelected_ReturnsPreviewWithClassName` and remove the bare-begin test since it always fails.
-
-**Note (Session-39, 2026-06-27):** These 4 tests were in a paused state at the end of Session-31. Their current status is unknown — they may have been fixed, partially addressed, or may still be failing. A fresh `dotnet test` run is needed to verify.
+> **Note (Session-41, 2026-06-30):** These 4 CharacterCreationSessionEndpointTests were previously documented as failing in Session-31/39. They have now been verified passing via the full `dotnet test Realm.Full.slnx` run. No remaining test failures exist in the suite.

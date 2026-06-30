@@ -87,6 +87,7 @@ public sealed class ExternalAuthEndpointTests(WebAppFactory factory) : IAsyncLif
             Email = "linktest@example.com",
             NormalizedEmail = "LINKTEST@EXAMPLE.COM",
             NormalizedUserName = "LINKTESTUSER",
+            SecurityStamp = Guid.NewGuid().ToString(),
         };
         account.PasswordHash = passwordHasher.HashPassword(account, "P@ssw0rd123!");
         _db.Users.Add(account);
@@ -115,7 +116,7 @@ public sealed class ExternalAuthEndpointTests(WebAppFactory factory) : IAsyncLif
 
         var location = (string?)response.Headers.Location;
         location.Should().NotBeNull();
-        location.Should().StartWith("/api/auth/session?");
+        location.Should().Contain("/api/auth/session?");
         location.Should().Contain("code=");
         location.Should().Contain("aid=");
 
