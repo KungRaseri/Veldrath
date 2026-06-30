@@ -14,12 +14,14 @@ namespace Veldrath.Client.ViewModels;
 /// <param name="ToX">Target tile column.</param>
 /// <param name="ToY">Target tile row.</param>
 /// <param name="IsZoneExit">If true, stepping here triggers a zone transition.</param>
+/// <param name="DisplayLabel">Human-readable label for the exit button.</param>
 /// <param name="DestinationZone">Zone slug to transition to, when <paramref name="IsZoneExit"/> is true.</param>
 public record LocationExitItem(
     string Direction,
     int ToX,
     int ToY,
     bool IsZoneExit,
+    string DisplayLabel,
     string? DestinationZone);
 
 /// <summary>
@@ -38,7 +40,7 @@ public record LocationEntityItem(
 /// <summary>
 /// View model for the zone location panel — the replacement for the 2D tilemap control.
 /// Wraps a <see cref="TilemapViewModel"/> and derives reactive display data:
-/// room description, available exits, visible entities, and contextual actions.
+/// room description, available exits, visible entities, POI locations, and contextual actions.
 /// </summary>
 public class ZoneLocationPanelViewModel : ViewModelBase
 {
@@ -65,6 +67,7 @@ public class ZoneLocationPanelViewModel : ViewModelBase
 
         MoveToExitCommand = ReactiveCommand.CreateFromTask<LocationExitItem>(DoMoveToExitAsync);
         InteractWithEntityCommand = ReactiveCommand.CreateFromTask<LocationEntityItem>(DoInteractWithEntityAsync);
+        NavigateToLocationCommand = ReactiveCommand.CreateFromTask<ZoneLocationItemViewModel>(DoNavigateToLocationAsync);
     }
 
     // ── Observable state ──────────────────────────────────────────────────────
@@ -103,11 +106,32 @@ public class ZoneLocationPanelViewModel : ViewModelBase
     /// <summary>Entities visible at the player's current tile.</summary>
     public ObservableCollection<LocationEntityItem> Entities { get; } = [];
 
+    /// <summary>Zone locations / POIs within the current zone.</summary>
+    public ObservableCollection<ZoneLocationItemViewModel> ZoneLocations { get; } = [];
+
     /// <summary>Whether there are any entities at this location.</summary>
     public bool HasEntities => Entities.Count > 0;
 
     /// <summary>Whether there are any exits from this location.</summary>
     public bool HasExits => Exits.Count > 0;
+
+    /// <summary>Whether there are any POI locations in this zone.</summary>
+    public bool HasZoneLocations => ZoneLocations.Count > 0;
+
+    /// <summary>True when there's no map data and no player position yet (diagnostic for initial state).</summary>
+    public bool HasNoData => !HasExits && !HasEntities && !HasZoneLocations;
+
+    /// <summary>Descriptive text shown when <see cref="HasNoData"/> is true.</summary>
+    public string LoadingStatus
+    {
+        get
+        {
+            if (_tilemap.TileMapData is null) return "Loading map data...";
+            if (_tilemap.SelfEntityId is null) return "Waiting for character identity...";
+            if (_tilemap.Entities.Count == 0) return "Waiting for entity positions...";
+            return "Data loaded.";
+        }
+    }
 
     /// <summary>The underlying tilemap ViewModel (exposed for parent wiring).</summary>
     public TilemapViewModel Tilemap => _tilemap;
@@ -120,6 +144,9 @@ public class ZoneLocationPanelViewModel : ViewModelBase
     /// <summary>Command fired when the player clicks an entity to interact.</summary>
     public ReactiveCommand<LocationEntityItem, Unit> InteractWithEntityCommand { get; }
 
+    /// <summary>Command fired when the player clicks a POI to navigate there.</summary>
+    public ReactiveCommand<ZoneLocationItemViewModel, Unit> NavigateToLocationCommand { get; }
+
     // ── Refresh logic ─────────────────────────────────────────────────────────
 
     /// <summary>Recalculates all derived state from the underlying tilemap.</summary>
@@ -129,6 +156,8 @@ public class ZoneLocationPanelViewModel : ViewModelBase
         UpdateExits();
         UpdateEntities();
         UpdateDescription();
+        this.RaisePropertyChanged(nameof(HasNoData));
+        this.RaisePropertyChanged(nameof(LoadingStatus));
     }
 
     private void UpdatePlayerPosition()
@@ -173,11 +202,17 @@ public class ZoneLocationPanelViewModel : ViewModelBase
             var zoneExit = map.ExitTiles.FirstOrDefault(e => e.TileX == tx && e.TileY == ty);
             var isZoneExit = zoneExit is not null;
 
+            // Build display label: "N" for normal moves, "N → Zone Name" for zone transitions
+            var label = isZoneExit
+                ? $"{dir} \u2192 {zoneExit!.ToZoneId}"
+                : dir;
+
             Exits.Add(new LocationExitItem(
                 dir,
                 tx,
                 ty,
                 isZoneExit,
+                label,
                 zoneExit?.ToZoneId));
         }
 
@@ -251,6 +286,18 @@ public class ZoneLocationPanelViewModel : ViewModelBase
         ZoneName = zoneName;
     }
 
+    /// <summary>
+    /// Replaces all POI/zone-location entries with the given collection.
+    /// Called externally when <c>GameViewModel</c> loads zone locations.
+    /// </summary>
+    public void SetZoneLocations(IEnumerable<ZoneLocationItemViewModel> locations)
+    {
+        ZoneLocations.Clear();
+        foreach (var loc in locations)
+            ZoneLocations.Add(loc);
+        this.RaisePropertyChanged(nameof(HasZoneLocations));
+    }
+
     // ── Command handlers ──────────────────────────────────────────────────────
 
     private Task DoMoveToExitAsync(LocationExitItem exit)
@@ -276,6 +323,13 @@ public class ZoneLocationPanelViewModel : ViewModelBase
         {
             // Signal combat engagement via the game VM bridge
         }
+        return Task.CompletedTask;
+    }
+
+    private Task DoNavigateToLocationAsync(ZoneLocationItemViewModel location)
+    {
+        // Forward to the location's own navigate command if available
+        location.NavigateCommand?.Execute(Unit.Default).Subscribe();
         return Task.CompletedTask;
     }
 }

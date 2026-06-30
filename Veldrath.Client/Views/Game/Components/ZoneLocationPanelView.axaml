@@ -11,7 +11,7 @@
     mc:Ignorable="d">
 
     <Border Background="{DynamicResource GameBackground0Brush}" Padding="16">
-        <ScrollViewer>
+        <ScrollViewer x:Name="RootScroll">
             <StackPanel Spacing="12">
                 <!-- Location header -->
                 <TextBlock
@@ -49,8 +49,8 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Button
-                                        Content="{Binding Direction, StringFormat='Go {0}'}"
-                                        Command="{Binding $parent[(vm:ZoneLocationPanelViewModel)].MoveToExitCommand}"
+                                        Content="{Binding DisplayLabel}"
+                                        Command="{Binding $parent[ScrollViewer].DataContext.MoveToExitCommand}"
                                         CommandParameter="{Binding .}"
                                         HorizontalAlignment="Stretch"
                                         Padding="8,4" />
@@ -78,7 +78,7 @@
                                     <Button
                                         HorizontalAlignment="Stretch"
                                         Padding="8,4"
-                                        Command="{Binding $parent[(vm:ZoneLocationPanelViewModel)].InteractWithEntityCommand}"
+                                        Command="{Binding $parent[ScrollViewer].DataContext.InteractWithEntityCommand}"
                                         CommandParameter="{Binding .}">
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBlock
@@ -94,6 +94,59 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </StackPanel>
+                </Border>
+
+                <!-- Points of Interest / Zone Locations section -->
+                <Border
+                    Padding="12"
+                    CornerRadius="6"
+                    Background="{DynamicResource GamePanelBackdropBrush}"
+                    IsVisible="{Binding HasZoneLocations}">
+                    <StackPanel Spacing="8">
+                        <TextBlock
+                            Text="Points of Interest"
+                            FontSize="14"
+                            FontWeight="SemiBold"
+                            Foreground="{DynamicResource GameSubtleBrush}" />
+                        <ItemsControl ItemsSource="{Binding ZoneLocations}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ZoneLocationItemViewModel">
+                                    <Button
+                                        HorizontalAlignment="Stretch"
+                                        Padding="8,4"
+                                        IsEnabled="{Binding CanNavigate}"
+                                        Command="{Binding $parent[ScrollViewer].DataContext.NavigateToLocationCommand}"
+                                        CommandParameter="{Binding .}">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock
+                                                Text="{Binding DisplayName}"
+                                                FontWeight="SemiBold"
+                                                Foreground="{DynamicResource GameForegroundBrush}" />
+                                            <TextBlock
+                                                Text="{Binding TypeKey, StringFormat='({0})'}"
+                                                Foreground="{DynamicResource GameSubtleBrush}" />
+                                            <TextBlock
+                                                Text="{Binding MinLevel, StringFormat='Lv {0}'}"
+                                                Foreground="{DynamicResource GameAccentBrush}" />
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Loading indicator: shown while data is being loaded -->
+                <Border
+                    Padding="12"
+                    CornerRadius="6"
+                    Background="{DynamicResource GamePanelBackdropBrush}"
+                    IsVisible="{Binding HasNoData}">
+                    <TextBlock
+                        Text="{Binding LoadingStatus}"
+                        FontSize="13"
+                        Foreground="{DynamicResource GameSubtleBrush}"
+                        TextWrapping="Wrap" />
                 </Border>
             </StackPanel>
         </ScrollViewer>
