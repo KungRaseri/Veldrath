@@ -240,6 +240,7 @@ def ia_xml(icfg, iid):
 
 def patch_file(content, zone_id, cfg, w, h):
     """Apply all patches to the file content string."""
+    # Parse existing paths
     paths_raw = re.findall(
         r'<objectgroup[^>]*name="paths"[^>]*>(.*?)</objectgroup>',
         content, re.DOTALL
@@ -249,6 +250,7 @@ def patch_file(content, zone_id, cfg, w, h):
         for m in re.finditer(r'<object[^>]*?x="([^"]*)"[^>]*?y="([^"]*)"[^>]*?>.*?<polyline points="([^"]*)"', og, re.DOTALL):
             paths.append({"ox": int(float(m.group(1))), "oy": int(float(m.group(2))), "pts": m.group(3)})
 
+    # Parse existing labels
     labels_raw = re.findall(
         r'<objectgroup[^>]*name="labels"[^>]*>(.*?)</objectgroup>',
         content, re.DOTALL
@@ -268,23 +270,27 @@ def patch_file(content, zone_id, cfg, w, h):
 
     for lname, rows in layer_map.items():
         csv = "\n".join(rows)
-        # Match layer open tag + data open tag, then ANY content, then data close + layer close
-        pat = rf'(<layer[^>]*name="{lname}"[^>]*>\s*<data encoding="csv">)\s*\n.*?\n(\s*</data>\s*</layer>)'
-        repl = rf"\1\n{csv}\n  \2"
+        # Match layer open + data open, then all data lines, then data close + layer close
+        pat = rf'(<layer[^>]*name="{lname}"[^>]*>\s*<data encoding="csv">)\s*\n(.*?)\n(\s*</data>\s*</layer>)'
+        repl = rf"\1\n{csv}\n  \3"
         content = re.sub(pat, repl, content, count=1, flags=re.DOTALL)
+
+    # Find existing max object ID before adding new objects
+    all_existing_ids = re.findall(r'<object[^>]*\sid="(\d+)"', content)
+    next_id = max(int(i) for i in all_existing_ids) + 1 if all_existing_ids else 1
 
     # Patch exits
     exits_cfg = cfg.get("exits", [])
-    exits_block = "\n".join(exit_xml(ec, i+1) for i, ec in enumerate(exits_cfg))
-    # Handle both self-closing and normal objectgroup
+    exits_block = "\n".join(exit_xml(ec, next_id + i) for i, ec in enumerate(exits_cfg))
+    next_id += len(exits_cfg)
     exits_pat = r'(<objectgroup[^>]*name="exits"[^>]*)>.*?(</objectgroup>)'
     exits_repl = rf'\1>\n{exits_block}\n  \2'
     content = re.sub(exits_pat, exits_repl, content, count=1, flags=re.DOTALL)
 
     # Patch interactables
     ia_cfg = cfg.get("interactables", [])
-    ia_block = "\n".join(ia_xml(ic, i+1) for i, ic in enumerate(ia_cfg))
-    # Handle self-closing: <objectgroup id="3" name="interactables"/>
+    ia_block = "\n".join(ia_xml(ic, next_id + i) for i, ic in enumerate(ia_cfg))
+    next_id += len(ia_cfg)
     ia_selfclose = r'<objectgroup([^>]*name="interactables"[^>]*)/>'
     if re.search(ia_selfclose, content):
         content = re.sub(ia_selfclose, rf'<objectgroup\1>\n{ia_block}\n  </objectgroup>', content, count=1)
@@ -294,9 +300,7 @@ def patch_file(content, zone_id, cfg, w, h):
         content = re.sub(ia_pat, ia_repl, content, count=1, flags=re.DOTALL)
 
     # Update nextobjectid
-    all_ids = re.findall(r'<object[^>]*\sid="(\d+)"', content)
-    max_id = max(int(i) for i in all_ids) if all_ids else 0
-    content = re.sub(r'nextobjectid="\d+"', f'nextobjectid="{max_id + 1}"', content, count=1)
+    content = re.sub(r'nextobjectid="\d+"', f'nextobjectid="{next_id}"', content, count=1)
 
     return content
 
@@ -409,7 +413,7 @@ ZONES = {
 
 def main():
     print("=" * 60)
-    print("  Varenmark Zone Map Enhancement Script v3")
+    print("  Varenmark Zone Map Enhancement Script v4")
     print("=" * 60)
 
     for zone_id in ["the-droveway", "ashlen-wood", "grevenmire", "the-halrow", "drowning-pits"]:

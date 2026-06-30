@@ -1,36 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="96" height="40" tilewidth="16" tileheight="16" infinite="0" nextlayerid="10" nextobjectid="10">
+<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="96" height="40" tilewidth="16" tileheight="16" infinite="0" nextlayerid="10" nextobjectid="18">
  <properties>
     <property name="zoneId" value="the-droveway"/>
 <property name="tilesetKey" value="roguelike_base"/>
  </properties>
  <tileset firstgid="1" source="../sheets/roguelike_base.tsx"/>
  <objectgroup id="3" name="interactables">
-   <object id="1" name="Droveway Farmer" type="npc" x="640" y="336" width="16" height="16">
+   <object id="13" name="Droveway Farmer" type="npc" x="640" y="336" width="16" height="16">
     <properties>
      <property name="npcArchetype" value="farmer"/>
      <property name="displayName" value="Droveway Farmer"/>
     </properties>
    </object>
-   <object id="2" name="Traveling Merchant" type="npc" x="1104" y="192" width="16" height="16">
+   <object id="14" name="Traveling Merchant" type="npc" x="1104" y="192" width="16" height="16">
     <properties>
      <property name="npcArchetype" value="merchant"/>
      <property name="displayName" value="Traveling Merchant"/>
     </properties>
    </object>
-   <object id="3" name="Weathered Waypost" type="interactable" x="1104" y="208" width="16" height="16">
+   <object id="15" name="Weathered Waypost" type="interactable" x="1104" y="208" width="16" height="16">
     <properties>
      <property name="interactType" value="waypost"/>
      <property name="displayName" value="Weathered Waypost"/>
     </properties>
    </object>
-   <object id="4" name="Abandoned Cart" type="interactable" x="400" y="400" width="16" height="16">
+   <object id="16" name="Abandoned Cart" type="interactable" x="400" y="400" width="16" height="16">
     <properties>
      <property name="interactType" value="salvage"/>
      <property name="displayName" value="Abandoned Cart"/>
     </properties>
    </object>
-   <object id="5" name="Scarecrow" type="interactable" x="912" y="288" width="16" height="16">
+   <object id="17" name="Scarecrow" type="interactable" x="912" y="288" width="16" height="16">
     <properties>
      <property name="interactType" value="lore-marker"/>
      <property name="displayName" value="Scarecrow"/>
@@ -38,19 +38,19 @@
    </object>
   </objectgroup>
  <objectgroup id="6" name="exits">
-   <object id="1" type="exit" name="to-varenmark" x="752" y="0" width="16" height="16">
+   <object id="10" type="exit" name="to-varenmark" x="752" y="0" width="16" height="16">
     <properties>
      <property name="displayName" value="Return to Varenmark"/>
      <property name="toRegionId" value="varenmark"/>
     </properties>
    </object>
-   <object id="2" type="exit" name="to-crestfall" x="752" y="624" width="16" height="16">
+   <object id="11" type="exit" name="to-crestfall" x="752" y="624" width="16" height="16">
     <properties>
      <property name="displayName" value="Road to Crestfall"/>
      <property name="toZoneId" value="crestfall"/>
     </properties>
    </object>
-   <object id="3" type="exit" name="to-ashlenwood" x="0" y="320" width="16" height="16">
+   <object id="12" type="exit" name="to-ashlenwood" x="0" y="320" width="16" height="16">
     <properties>
      <property name="displayName" value="Path to Ashlen Wood"/>
      <property name="toZoneId" value="ashlen-wood"/>
