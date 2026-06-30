@@ -1,0 +1,104 @@
+@* Sidebar panel showing player info, stats, zone occupants/enemies, and navigation buttons. *@
+
+<div class="game-sidebar">
+    @if (GameState.CurrentCharacter is { } character)
+    {
+        <div class="sidebar-section sidebar-character">
+            <h3>@character.Name</h3>
+            <p>@character.ClassName · Level @character.Level</p>
+            <p>◎ @character.Gold gold</p>
+        </div>
+
+        <div class="sidebar-section sidebar-attrs">
+            <h4>Attributes</h4>
+            @* CharacterBasicInfo doesn't expose individual attributes from the hub payload directly.
+               These would be expanded in Phase 2 when the server sends attribute data. *@
+            <p>HP: @character.CurrentHealth / @character.MaxHealth</p>
+            <p>MP: @character.CurrentMana / @character.MaxMana</p>
+            <p>XP: @character.Experience / @character.EffectiveExperienceToNextLevel</p>
+        </div>
+    }
+
+    <div class="sidebar-section sidebar-occupants">
+        <h4>Nearby Players (@GameState.ZoneOccupants.Count)</h4>
+        @if (GameState.ZoneOccupants.Count == 0)
+        {
+            <p class="sidebar-empty">No other players nearby.</p>
+        }
+        else
+        {
+            <ul class="sidebar-list">
+                @foreach (var occupant in GameState.ZoneOccupants)
+                {
+                    <li class="sidebar-list-item" title="@($"Entered {occupant.EnteredAt.ToLocalTime():g}")">
+                        @occupant.CharacterName
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+
+    <div class="sidebar-section sidebar-enemies">
+        <h4>Nearby Enemies (@GameState.ZoneEnemies.Count)</h4>
+        @if (GameState.ZoneEnemies.Count == 0)
+        {
+            <p class="sidebar-empty">No enemies nearby.</p>
+        }
+        else
+        {
+            <ul class="sidebar-list">
+                @foreach (var enemy in GameState.ZoneEnemies)
+                {
+                    <li class="sidebar-list-item">
+                        @enemy.EnemyName (Lv. @enemy.Level) — HP: @enemy.CurrentHealth/@enemy.MaxHealth
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+
+    <div class="sidebar-section sidebar-actions">
+        <button class="btn btn-secondary sidebar-btn"
+                @onclick='() => NavigateTo("/Game/Inventory")'
+                disabled="true">
+            Inventory
+        </button>
+        <button class="btn btn-secondary sidebar-btn"
+                @onclick='() => NavigateTo("/Game/Map")'
+                disabled="true">
+            Map
+        </button>
+        <button class="btn btn-danger sidebar-btn"
+                @onclick="Logout">
+            Logout
+        </button>
+    </div>
+</div>
+
+@code {
+    /// <summary>The game state service, injected by Blazor.</summary>
+    [Inject] private GameStateService GameState { get; set; } = null!;
+
+    /// <summary>The navigation manager, injected by Blazor.</summary>
+    [Inject] private NavigationManager Navigation { get; set; } = null!;
+
+    /// <summary>The game hub connection service, injected by Blazor.</summary>
+    [Inject] private GameHubConnectionService Hub { get; set; } = null!;
+
+    private void NavigateTo(string url) => Navigation.NavigateTo(url);
+
+    private async Task Logout()
+    {
+        try
+        {
+            await Hub.DisconnectAsync();
+        }
+        catch
+        {
+            // Best-effort disconnect.
+        }
+
+        GameState.Reset();
+        Navigation.NavigateTo("/");
+    }
+}

@@ -1,0 +1,30 @@
+@* Full-screen overlay for modals and notifications. Hidden by default. *@
+
+<GamePanel Title="@Title"
+           Visible="@Visible"
+           ShowClose="ShowClose"
+           OnClose="HandleClose">
+    @ChildContent
+</GamePanel>
+
+@code {
+    /// <summary>The panel title displayed in the header.</summary>
+    [Parameter] public string Title { get; set; } = string.Empty;
+
+    /// <summary>Whether the overlay is visible.</summary>
+    [Parameter] public bool Visible { get; set; }
+
+    /// <summary>Whether to show the close button.</summary>
+    [Parameter] public bool ShowClose { get; set; } = true;
+
+    /// <summary>Callback invoked when the overlay is closed.</summary>
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    /// <summary>The body content of the overlay.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private async Task HandleClose()
+    {
+        await OnClose.InvokeAsync();
+    }
+}

@@ -223,20 +223,32 @@ public sealed partial class Game : IAsyncDisposable
             await InvokeAsync(StateHasChanged);
         }));
 
-        // ZoneEntitiesSnapshot — update occupants and enemies.
+        // ZoneEntitiesSnapshot — update occupants and enemies with positions.
         _hubSubscriptions.Add(Hub.On<ZoneEntitiesSnapshotPayload>("ZoneEntitiesSnapshot", async payload =>
         {
-            var occupants = payload.Entities
-                .Where(e => e.EntityType == "player" && e.EntityId != (GameState.CurrentCharacter?.Id ?? Guid.Empty))
-                .Select(e => new OccupantInfo(e.EntityId, e.SpriteKey, DateTimeOffset.UtcNow))
-                .ToList();
+            var currentCharId = GameState.CurrentCharacter?.Id ?? Guid.Empty;
 
+            // Update occupant positions from the snapshot.
+            foreach (var entity in payload.Entities.Where(e => e.EntityType == "player"))
+            {
+                if (entity.EntityId != currentCharId)
+                {
+                    GameState.ApplyPlayerPositioned(entity.EntityId, entity.SpriteKey, entity.TileX, entity.TileY);
+                }
+            }
+
+            // Build enemy list from the snapshot (keep existing enemies if not in snapshot).
             var enemies = payload.Entities
                 .Where(e => e.EntityType == "enemy")
                 .Select(e => new EnemyInfo(e.EntityId, e.SpriteKey, 1, 10, 10, e.TileX, e.TileY))
                 .ToList();
 
-            GameState.ApplyZoneEntitiesSnapshot(occupants, enemies);
+            // Only replace enemies if the snapshot contains them.
+            if (enemies.Count > 0 || payload.Entities.Count == 0)
+            {
+                GameState.ApplyZoneEntitiesSnapshot(GameState.ZoneOccupants, enemies);
+            }
+
             await InvokeAsync(StateHasChanged);
         }));
     }

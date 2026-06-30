@@ -16,6 +16,7 @@ namespace Veldrath.Web.Services;
 /// <param name="CurrentMana">Current mana points.</param>
 /// <param name="MaxMana">Maximum mana points.</param>
 /// <param name="Gold">Gold coins in the character's possession.</param>
+/// <param name="ExperienceToNextLevel">Experience points needed to reach the next level. Defaults to a calculation when not provided.</param>
 public record CharacterBasicInfo(
     Guid Id,
     string Name,
@@ -26,7 +27,12 @@ public record CharacterBasicInfo(
     int MaxHealth,
     int CurrentMana,
     int MaxMana,
-    int Gold);
+    int Gold,
+    long ExperienceToNextLevel = 0)
+{
+    /// <summary>Gets the experience points needed to reach the next level, or a calculated default when not provided.</summary>
+    public long EffectiveExperienceToNextLevel => ExperienceToNextLevel > 0 ? ExperienceToNextLevel : Level * 1000L;
+}
 
 /// <summary>A single tile on the zone tilemap.  The <see cref="Type"/> value maps to a CSS class for rendering.</summary>
 /// <param name="X">Tile column.</param>
