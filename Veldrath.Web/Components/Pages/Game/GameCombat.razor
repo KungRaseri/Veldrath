@@ -1,0 +1,98 @@
+@* Combat UI shown when GameState.IsInCombat is true. Displays enemy info, action buttons, and combat log. *@
+
+@if (GameState.CombatEnemy is { } enemy)
+{
+    <div class="game-combat">
+        <div class="game-combat-enemy">
+            <h2>@enemy.EnemyName</h2>
+            <p>Level @enemy.Level</p>
+            <StatusBar Label="HP" Current="enemy.CurrentHealth" Max="enemy.MaxHealth" Color="#e53935" />
+        </div>
+
+        <div class="game-combat-log">
+            @if (!string.IsNullOrEmpty(GameState.LastCombatActionResult))
+            {
+                <p class="game-combat-result">@GameState.LastCombatActionResult</p>
+            }
+        </div>
+
+        <div class="game-combat-actions">
+            <ActionBar ShowAttack="true"
+                       ShowDefend="true"
+                       ShowFlee="true"
+                       ShowRespawn="@PlayerIsDead"
+                       Disabled="@_actionInProgress"
+                       OnAttack="PerformAttack"
+                       OnDefend="PerformDefend"
+                       OnFlee="PerformFlee"
+                       OnRespawn="PerformRespawn" />
+        </div>
+
+        @if (_showVictory)
+        {
+            <div class="game-combat-victory">
+                <h2>Victory!</h2>
+                <button class="btn btn-primary" @onclick="DismissVictory">Continue</button>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="game-combat-empty">
+        <p>No enemy engaged.</p>
+    </div>
+}
+
+@code {
+    /// <summary>The game hub connection service, injected by Blazor.</summary>
+    [Inject] private GameHubConnectionService Hub { get; set; } = null!;
+
+    /// <summary>The game state service, injected by Blazor.</summary>
+    [Inject] private GameStateService GameState { get; set; } = null!;
+
+    private bool _actionInProgress;
+    private bool _showVictory;
+    private IDisposable? _stateSubscription;
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        _stateSubscription = GameState.OnStateChanged(() => InvokeAsync(StateHasChanged));
+    }
+
+    private bool PlayerIsDead => GameState.CurrentCharacter?.CurrentHealth <= 0;
+
+    private async Task PerformAttack()
+    {
+        _actionInProgress = true;
+        try { await Hub.SendAsync("AttackEnemy"); }
+        finally { _actionInProgress = false; }
+    }
+
+    private async Task PerformDefend()
+    {
+        _actionInProgress = true;
+        try { await Hub.SendAsync("DefendAction"); }
+        finally { _actionInProgress = false; }
+    }
+
+    private async Task PerformFlee()
+    {
+        _actionInProgress = true;
+        try { await Hub.SendAsync("FleeFromCombat"); }
+        finally { _actionInProgress = false; }
+    }
+
+    private async Task PerformRespawn()
+    {
+        _actionInProgress = true;
+        try { await Hub.SendAsync("Respawn"); }
+        finally { _actionInProgress = false; }
+    }
+
+    private void DismissVictory()
+    {
+        _showVictory = false;
+    }
+}

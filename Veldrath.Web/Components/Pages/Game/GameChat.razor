@@ -1,7 +1,7 @@
 @* Chat panel showing message history with an input field and send button. *@
 
 <div class="game-chat">
-    <div class="game-chat-messages" @ref="_messagesContainer">
+    <div class="game-chat-messages">
         @foreach (var msg in GameState.ChatMessages)
         {
             <div class="game-chat-message @GetMessageClass(msg.Channel)">
@@ -37,28 +37,12 @@
     [Inject] private GameStateService GameState { get; set; } = null!;
 
     private string _inputText = string.Empty;
-    private ElementReference _messagesContainer;
-    private IDisposable? _chatSubscription;
     private IDisposable? _stateSubscription;
 
     /// <inheritdoc />
     protected override void OnInitialized()
     {
-        // Subscribe to new chat messages for auto-scroll.
-        _chatSubscription = GameState.OnStateChanged(() => InvokeAsync(StateHasChanged));
-        _stateSubscription = GameState.OnStateChanged(async () =>
-        {
-            await ScrollToBottom();
-        });
-    }
-
-    /// <inheritdoc />
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await ScrollToBottom();
-        }
+        _stateSubscription = GameState.OnStateChanged(() => InvokeAsync(StateHasChanged));
     }
 
     private async Task SendMessage()
@@ -69,16 +53,7 @@
 
         try
         {
-            if (text.StartsWith('/'))
-            {
-                // Slash commands are sent to SendZoneMessage which parses them server-side.
-                await Hub.SendAsync("SendZoneMessage", new { Message = text });
-            }
-            else
-            {
-                await Hub.SendAsync("SendZoneMessage", new { Message = text });
-            }
-
+            await Hub.SendAsync("SendZoneMessage", new { Message = text });
             _inputText = string.Empty;
         }
         catch (Exception)
@@ -92,18 +67,6 @@
         if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_inputText))
         {
             await SendMessage();
-        }
-    }
-
-    private async Task ScrollToBottom()
-    {
-        try
-        {
-            await _messagesContainer.FocusAsync();
-        }
-        catch
-        {
-            // Element reference may not be available during prerender.
         }
     }
 

@@ -1,3 +1,4 @@
+@using Veldrath.Web.Services
 @* Single tile renderer for the zone tilemap. Renders a <div> with the appropriate CSS class and overlays. *@
 
 <div class="game-tile @GetTileClass()"
@@ -19,7 +20,7 @@
 
 @code {
     /// <summary>The tile data to render.</summary>
-    [Parameter] public Tile Tile { get; set; } = null!;
+    [Parameter] public Services.Tile TileData { get; set; } = null!;
 
     /// <summary>The column position of this tile in the grid.</summary>
     [Parameter] public int X { get; set; }
@@ -39,7 +40,7 @@
     /// <summary>An enemy on this tile, if any.</summary>
     [Parameter] public EnemyInfo? Enemy { get; set; }
 
-    private string GetTileClass() => Tile.Type switch
+    private string GetTileClass() => TileData.Type switch
     {
         0 => "tile-grass",
         1 => "tile-wall",
