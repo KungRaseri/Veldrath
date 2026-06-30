@@ -1,0 +1,117 @@
+@* Chat panel showing message history with an input field and send button. *@
+
+<div class="game-chat">
+    <div class="game-chat-messages" @ref="_messagesContainer">
+        @foreach (var msg in GameState.ChatMessages)
+        {
+            <div class="game-chat-message @GetMessageClass(msg.Channel)">
+                <span class="game-chat-timestamp">@msg.Timestamp.ToLocalTime().ToString("HH:mm")</span>
+                <span class="game-chat-channel">[@msg.Channel]</span>
+                <span class="game-chat-sender">@msg.Sender:</span>
+                <span class="game-chat-text">@msg.Message</span>
+            </div>
+        }
+    </div>
+
+    <div class="game-chat-input">
+        <input type="text"
+               class="game-chat-input-field"
+               @bind="_inputText"
+               @bind:event="oninput"
+               @onkeydown="HandleKeyDown"
+               placeholder="Type a message or /command..."
+               disabled="@(!GameState.IsConnected)" />
+        <button class="game-chat-send-btn"
+                @onclick="SendMessage"
+                disabled="@(string.IsNullOrWhiteSpace(_inputText) || !GameState.IsConnected)">
+            Send
+        </button>
+    </div>
+</div>
+
+@code {
+    /// <summary>The game hub connection service, injected by Blazor.</summary>
+    [Inject] private GameHubConnectionService Hub { get; set; } = null!;
+
+    /// <summary>The game state service, injected by Blazor.</summary>
+    [Inject] private GameStateService GameState { get; set; } = null!;
+
+    private string _inputText = string.Empty;
+    private ElementReference _messagesContainer;
+    private IDisposable? _chatSubscription;
+    private IDisposable? _stateSubscription;
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        // Subscribe to new chat messages for auto-scroll.
+        _chatSubscription = GameState.OnStateChanged(() => InvokeAsync(StateHasChanged));
+        _stateSubscription = GameState.OnStateChanged(async () =>
+        {
+            await ScrollToBottom();
+        });
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ScrollToBottom();
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        var text = _inputText?.Trim();
+        if (string.IsNullOrEmpty(text))
+            return;
+
+        try
+        {
+            if (text.StartsWith('/'))
+            {
+                // Slash commands are sent to SendZoneMessage which parses them server-side.
+                await Hub.SendAsync("SendZoneMessage", new { Message = text });
+            }
+            else
+            {
+                await Hub.SendAsync("SendZoneMessage", new { Message = text });
+            }
+
+            _inputText = string.Empty;
+        }
+        catch (Exception)
+        {
+            // Message send failed silently — the server will send an error via SystemMessage.
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_inputText))
+        {
+            await SendMessage();
+        }
+    }
+
+    private async Task ScrollToBottom()
+    {
+        try
+        {
+            await _messagesContainer.FocusAsync();
+        }
+        catch
+        {
+            // Element reference may not be available during prerender.
+        }
+    }
+
+    private static string GetMessageClass(string channel) => channel.ToLowerInvariant() switch
+    {
+        "system" => "game-chat-message-system",
+        "whisper" => "game-chat-message-whisper",
+        "global" => "game-chat-message-global",
+        _ => "game-chat-message-zone"
+    };
+}

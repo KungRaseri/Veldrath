@@ -1,0 +1,110 @@
+@page "/Game/CreateCharacter"
+@attribute [Authorize]
+
+<div class="cc-container">
+    <h1>Create Character</h1>
+
+    @if (_isLoading)
+    {
+        <div class="cc-loading">
+            <p>Loading...</p>
+            <div class="spinner"></div>
+        </div>
+    }
+    else if (_errorMessage is not null)
+    {
+        <div class="cc-error">
+            <p>@_errorMessage</p>
+            <button class="btn btn-primary" @onclick="ResetWizard">Try Again</button>
+            <a href="/Game/CharacterSelect" class="btn btn-secondary">Back to Character Select</a>
+        </div>
+    }
+    else
+    {
+        <div class="cc-wizard">
+            <!-- Step indicator -->
+            <div class="cc-steps">
+                <span class="cc-step @(_currentStep >= 1 ? "cc-step-active" : "")">1. Class</span>
+                <span class="cc-step @(_currentStep >= 2 ? "cc-step-active" : "")">2. Name</span>
+                <span class="cc-step @(_currentStep >= 3 ? "cc-step-active" : "")">3. Confirm</span>
+            </div>
+
+            <!-- Step 1: Class Selection -->
+            @if (_currentStep == 1)
+            {
+                <div class="cc-step-content">
+                    <h2>Choose a Class</h2>
+                    <div class="cc-class-list">
+                        @foreach (var cls in _availableClasses)
+                        {
+                            <div class="cc-class-card @(_selectedClass?.Slug == cls.Slug ? "cc-class-card-selected" : "")"
+                                 @onclick="() => SelectClass(cls)">
+                                <h3>@cls.DisplayName</h3>
+                                <p>Hit Die: d@(cls.HitDie)</p>
+                                <p>Primary: @cls.PrimaryStat</p>
+                            </div>
+                        }
+                    </div>
+                    <div class="cc-nav">
+                        <a href="/Game/CharacterSelect" class="btn btn-secondary">Back</a>
+                        <button class="btn btn-primary" @onclick="GoToStep2" disabled="@(_selectedClass is null)">Next</button>
+                    </div>
+                </div>
+            }
+
+            <!-- Step 2: Name Input -->
+            @if (_currentStep == 2)
+            {
+                <div class="cc-step-content">
+                    <h2>Name Your Character</h2>
+                    <div class="cc-name-input">
+                        <label for="characterName">Character Name:</label>
+                        <input id="characterName"
+                               type="text"
+                               class="form-control"
+                               @bind="_characterName"
+                               @bind:after="OnNameChanged"
+                               maxlength="30"
+                               placeholder="Enter a name (2-30 characters)" />
+                        @if (_nameError is not null)
+                        {
+                            <p class="cc-name-error">@_nameError</p>
+                        }
+                        else if (_nameChecking)
+                        {
+                            <p class="cc-name-checking">Checking availability...</p>
+                        }
+                        else if (_nameAvailable == true)
+                        {
+                            <p class="cc-name-available">Name is available!</p>
+                        }
+                    </div>
+                    <div class="cc-nav">
+                        <button class="btn btn-secondary" @onclick="GoToStep1">Back</button>
+                        <button class="btn btn-primary" @onclick="GoToStep3"
+                                disabled="@(string.IsNullOrWhiteSpace(_characterName) || _nameAvailable != true)">Next</button>
+                    </div>
+                </div>
+            }
+
+            <!-- Step 3: Confirm -->
+            @if (_currentStep == 3)
+            {
+                <div class="cc-step-content">
+                    <h2>Confirm Character</h2>
+                    <div class="cc-confirm-details">
+                        <p><strong>Class:</strong> @(_selectedClass?.DisplayName ?? "—")</p>
+                        <p><strong>Name:</strong> @_characterName</p>
+                        <p><strong>Difficulty:</strong> Normal</p>
+                    </div>
+                    <div class="cc-nav">
+                        <button class="btn btn-secondary" @onclick="GoToStep2">Back</button>
+                        <button class="btn btn-primary" @onclick="ConfirmCreate" disabled="@_isCreating">
+                            @(_isCreating ? "Creating..." : "Create Character")
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

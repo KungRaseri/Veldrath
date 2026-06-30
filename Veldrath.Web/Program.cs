@@ -41,6 +41,8 @@ try
             sp.GetRequiredService<IHttpClientFactory>().CreateClient("veldrath-web")));
 
     builder.Services.AddScoped<AuthStateService>();
+    builder.Services.AddScoped<GameHubConnectionService>();
+    builder.Services.AddScoped<GameStateService>();
     builder.Services.AddHttpContextAccessor();
 
     // DataProtection key persistence — prevents antiforgery token failures on container restart.

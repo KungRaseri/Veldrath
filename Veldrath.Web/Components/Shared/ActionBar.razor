@@ -1,0 +1,49 @@
+@* Reusable action button bar that shows context-sensitive buttons based on game state. *@
+
+<div class="action-bar">
+    @if (ShowAttack)
+    {
+        <button class="action-btn action-btn-attack" @onclick="OnAttack" disabled="@Disabled">Attack</button>
+    }
+    @if (ShowDefend)
+    {
+        <button class="action-btn action-btn-defend" @onclick="OnDefend" disabled="@Disabled">Defend</button>
+    }
+    @if (ShowFlee)
+    {
+        <button class="action-btn action-btn-flee" @onclick="OnFlee" disabled="@Disabled">Flee</button>
+    }
+    @if (ShowRespawn)
+    {
+        <button class="action-btn action-btn-respawn" @onclick="OnRespawn" disabled="@Disabled">Respawn</button>
+    }
+</div>
+
+@code {
+    /// <summary>Whether to show the Attack button.</summary>
+    [Parameter] public bool ShowAttack { get; set; }
+
+    /// <summary>Whether to show the Defend button.</summary>
+    [Parameter] public bool ShowDefend { get; set; }
+
+    /// <summary>Whether to show the Flee button.</summary>
+    [Parameter] public bool ShowFlee { get; set; }
+
+    /// <summary>Whether to show the Respawn button.</summary>
+    [Parameter] public bool ShowRespawn { get; set; }
+
+    /// <summary>Whether action buttons are disabled (e.g. during combat turn processing).</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Callback when the Attack button is clicked.</summary>
+    [Parameter] public EventCallback OnAttack { get; set; }
+
+    /// <summary>Callback when the Defend button is clicked.</summary>
+    [Parameter] public EventCallback OnDefend { get; set; }
+
+    /// <summary>Callback when the Flee button is clicked.</summary>
+    [Parameter] public EventCallback OnFlee { get; set; }
+
+    /// <summary>Callback when the Respawn button is clicked.</summary>
+    [Parameter] public EventCallback OnRespawn { get; set; }
+}

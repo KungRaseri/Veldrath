@@ -1,0 +1,40 @@
+@* Top bar showing character info, status bars, gold, and zone name. *@
+
+@if (GameState.CurrentCharacter is { } character)
+{
+    <div class="game-header">
+        <div class="game-header-character">
+            <span class="game-header-name">@character.Name</span>
+            <span class="game-header-class">@character.ClassName</span>
+            <span class="game-header-level">Lv. @character.Level</span>
+        </div>
+
+        <div class="game-header-bars">
+            <StatusBar Label="HP" Current="character.CurrentHealth" Max="character.MaxHealth" Color="#e53935" />
+            <StatusBar Label="MP" Current="character.CurrentMana" Max="character.MaxMana" Color="#1e88e5" />
+            <StatusBar Label="XP" Current="character.Experience" Max="character.ExperienceToNextLevel" Color="#43a047" />
+        </div>
+
+        <div class="game-header-gold">
+            <span title="Gold">◎ @character.Gold</span>
+        </div>
+
+        <div class="game-header-zone">
+            @if (!string.IsNullOrEmpty(GameState.CurrentZoneName))
+            {
+                <span class="game-header-zone-badge">@GameState.CurrentZoneName</span>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <div class="game-header">
+        <span class="game-header-placeholder">No character selected</span>
+    </div>
+}
+
+@code {
+    /// <summary>The game state service, injected by Blazor.</summary>
+    [Inject] private GameStateService GameState { get; set; } = null!;
+}

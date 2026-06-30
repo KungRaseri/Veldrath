@@ -1,0 +1,6 @@
+@inherits LayoutComponentBase
+@inject GameStateService GameState
+
+<div class="game-layout @(GameState.IsConnected ? "in-game" : "")">
+    @Body
+</div>
