@@ -1,7 +1,7 @@
 #!/usr/bin/env py
 """Generate enhanced Varenmark zone TMX maps with varied terrain, proper exits, and interactables.
 
-Uses regex-based string manipulation on TMX files.
+Uses template-based generation to preserve exact XML formatting.
 Usage: py scripts/_gen_varenmark_zones.py
 """
 
@@ -22,7 +22,6 @@ T_GRASS_VAR = 579
 T_ROAD = 916
 T_STONE = 193
 T_WATER = 114
-T_WATER2 = 115
 T_MUD = 63
 T_TREE = 200
 T_DEAD_TREE = 202
@@ -31,7 +30,6 @@ T_ROOF = 400
 T_BONE = 301
 T_RUBBLE = 302
 T_CHAIN = 303
-T_PIT = 304
 
 # ── Seeded RNG ────────────────────────────────────────────────────────────────
 
@@ -187,7 +185,6 @@ def gen_overhead(w, h, cfg, paths, labels, deco_rows):
             if skip:
                 vals.append("0")
                 continue
-
             dv = int(deco_rows[y].split(",")[x])
             if dv == T_TREE and rseed(x*151+y*163) < 0.7:
                 vals.append(str(T_CANOPY))
@@ -206,8 +203,9 @@ def gen_overhead(w, h, cfg, paths, labels, deco_rows):
 
 def exit_xml(ecfg, eid):
     name = f' name="{ecfg["name"]}"' if "name" in ecfg else ""
+    eid_str = str(eid) if eid > 0 else "EXITID"
     lines = [
-        f'   <object id="{eid}" type="exit"{name} x="{ecfg["x_px"]}" y="{ecfg["y_px"]}" width="16" height="16">',
+        f'   <object id="{eid_str}" type="exit"{name} x="{ecfg["x_px"]}" y="{ecfg["y_px"]}" width="16" height="16">',
         '    <properties>',
     ]
     if "displayName" in ecfg:
@@ -223,8 +221,9 @@ def exit_xml(ecfg, eid):
 def ia_xml(icfg, iid):
     otype = icfg.get("type", "interactable")
     name = icfg["displayName"]
+    iid_str = str(iid) if iid > 0 else "IAID"
     lines = [
-        f'   <object id="{iid}" name="{name}" type="{otype}" x="{icfg["x_px"]}" y="{icfg["y_px"]}" width="16" height="16">',
+        f'   <object id="{iid_str}" name="{name}" type="{otype}" x="{icfg["x_px"]}" y="{icfg["y_px"]}" width="16" height="16">',
         '    <properties>',
     ]
     if otype == "npc":
@@ -236,73 +235,130 @@ def ia_xml(icfg, iid):
     lines.append('   </object>')
     return "\n".join(lines)
 
-# ── File patching ─────────────────────────────────────────────────────────────
+# ── Template-based file generation ────────────────────────────────────────────
 
-def patch_file(content, zone_id, cfg, w, h):
-    """Apply all patches to the file content string."""
-    # Parse existing paths
-    paths_raw = re.findall(
-        r'<objectgroup[^>]*name="paths"[^>]*>(.*?)</objectgroup>',
-        content, re.DOTALL
-    )
-    paths = []
-    for og in paths_raw:
-        for m in re.finditer(r'<object[^>]*?x="([^"]*)"[^>]*?y="([^"]*)"[^>]*?>.*?<polyline points="([^"]*)"', og, re.DOTALL):
-            paths.append({"ox": int(float(m.group(1))), "oy": int(float(m.group(2))), "pts": m.group(3)})
+def build_tmx(zone_id, cfg, w, h, ground_csv, detail_csv, deco_csv, overhead_csv,
+              preserved_props, preserved_tileset, preserved_spawns, preserved_labels, preserved_paths):
+    """Build complete TMX file content from template."""
 
-    # Parse existing labels
-    labels_raw = re.findall(
-        r'<objectgroup[^>]*name="labels"[^>]*>(.*?)</objectgroup>',
-        content, re.DOTALL
-    )
-    labels = []
-    for og in labels_raw:
-        for m in re.finditer(r'<object[^>]*?name="([^"]*)"[^>]*?x="([^"]*)"[^>]*?y="([^"]*)"', og):
-            labels.append({"name": m.group(1), "x_px": int(float(m.group(2))), "y_px": int(float(m.group(3)))})
+    # Compute unique object IDs
+    # Scan preserved sections for max existing ID
+    all_preserved = preserved_spawns + preserved_labels + preserved_paths
+    existing_ids = [int(m.group(1)) for m in re.finditer(r'id="(\d+)"', all_preserved)]
+    max_existing = max(existing_ids) if existing_ids else 0
 
-    # Generate layers
-    g = gen_ground(w, h, cfg, paths)
-    d = gen_detail(w, h, cfg, paths)
-    c = gen_deco(w, h, cfg, paths, labels)
-    o = gen_overhead(w, h, cfg, paths, labels, c)
-
-    layer_map = {"ground": g, "detail": d, "decoration": c, "overhead": o}
-
-    for lname, rows in layer_map.items():
-        csv = "\n".join(rows)
-        # Match layer open + data open, then all data lines, then data close + layer close
-        pat = rf'(<layer[^>]*name="{lname}"[^>]*>\s*<data encoding="csv">)\s*\n(.*?)\n(\s*</data>\s*</layer>)'
-        repl = rf"\1\n{csv}\n  \3"
-        content = re.sub(pat, repl, content, count=1, flags=re.DOTALL)
-
-    # Find existing max object ID before adding new objects
-    all_existing_ids = re.findall(r'<object[^>]*\sid="(\d+)"', content)
-    next_id = max(int(i) for i in all_existing_ids) + 1 if all_existing_ids else 1
-
-    # Patch exits
+    next_id = max_existing + 1
     exits_cfg = cfg.get("exits", [])
     exits_block = "\n".join(exit_xml(ec, next_id + i) for i, ec in enumerate(exits_cfg))
     next_id += len(exits_cfg)
-    exits_pat = r'(<objectgroup[^>]*name="exits"[^>]*)>.*?(</objectgroup>)'
-    exits_repl = rf'\1>\n{exits_block}\n  \2'
-    content = re.sub(exits_pat, exits_repl, content, count=1, flags=re.DOTALL)
 
-    # Patch interactables
     ia_cfg = cfg.get("interactables", [])
     ia_block = "\n".join(ia_xml(ic, next_id + i) for i, ic in enumerate(ia_cfg))
     next_id += len(ia_cfg)
-    ia_selfclose = r'<objectgroup([^>]*name="interactables"[^>]*)/>'
-    if re.search(ia_selfclose, content):
-        content = re.sub(ia_selfclose, rf'<objectgroup\1>\n{ia_block}\n  </objectgroup>', content, count=1)
-    else:
-        ia_pat = r'(<objectgroup[^>]*name="interactables"[^>]*)>.*?(</objectgroup>)'
-        ia_repl = rf'\1>\n{ia_block}\n  \2'
-        content = re.sub(ia_pat, ia_repl, content, count=1, flags=re.DOTALL)
 
-    # Update nextobjectid
-    content = re.sub(r'nextobjectid="\d+"', f'nextobjectid="{next_id}"', content, count=1)
+    nextobjectid = next_id
 
-    return content
+    # Find existing max layer ID
+    layer_ids = re.findall(r'<layer[^>]*id="(\d+)"', preserved_props + preserved_tileset +
+                           preserved_spawns + preserved_labels + preserved_paths)
+    # Actually layer IDs are from the original file structure. Let me extract them from original
+    # For now, use the known layer IDs: ground=4, detail=2, decoration=5, overhead=1
+    # and objectgroup IDs: interactables=3, exits=6, spawns=7, labels=8, paths=9
+
+    tmx = f"""<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="{w}" height="{h}" tilewidth="16" tileheight="16" infinite="0" nextlayerid="10" nextobjectid="{nextobjectid}">
+{clean_xml_block(preserved_props)}
+{clean_xml_block(preserved_tileset)}
+ <objectgroup id="3" name="interactables">
+{ia_block}
+ </objectgroup>
+ <objectgroup id="6" name="exits">
+{exits_block}
+ </objectgroup>
+ <objectgroup id="7" name="spawns">
+{clean_xml_block(preserved_spawns)}
+ </objectgroup>
+ <objectgroup id="8" name="labels">
+{clean_xml_block(preserved_labels)}
+ </objectgroup>
+ <objectgroup id="9" name="paths">
+{clean_xml_block(preserved_paths)}
+ </objectgroup>
+ <layer id="4" name="ground" width="{w}" height="{h}">
+  <data encoding="csv">
+{ground_csv}
+  </data>
+ </layer>
+ <layer id="2" name="detail" width="{w}" height="{h}">
+  <data encoding="csv">
+{detail_csv}
+  </data>
+ </layer>
+ <layer id="5" name="decoration" width="{w}" height="{h}">
+  <data encoding="csv">
+{deco_csv}
+  </data>
+ </layer>
+ <layer id="1" name="overhead" width="{w}" height="{h}">
+  <data encoding="csv">
+{overhead_csv}
+  </data>
+ </layer>
+</map>"""
+    return tmx
+
+def clean_xml_block(raw):
+    """Clean a raw XML block extracted from original file for use in template."""
+    # Strip leading/trailing whitespace but preserve internal structure
+    return raw.strip()
+
+def extract_section(content, tag, closing_tag=None):
+    """Extract an XML section from content."""
+    if closing_tag is None:
+        closing_tag = f"</{tag}>"
+
+    # Find the tag with optional attributes
+    pattern = rf"<{tag}[\s>]"
+    m = re.search(pattern, content)
+    if not m:
+        return ""
+
+    start = m.start()
+    # Find the matching closing tag
+    close_m = re.search(re.escape(closing_tag), content[start:])
+    if not close_m:
+        return content[start:]
+
+    return content[start:start + close_m.end()]
+
+def extract_properties(content):
+    """Extract map properties section."""
+    m = re.search(r'<properties>.*?</properties>', content, re.DOTALL)
+    return m.group(0) if m else ""
+
+def extract_tileset(content):
+    """Extract tileset reference."""
+    m = re.search(r'<tileset[^>]*/>', content)
+    return m.group(0) if m else ""
+
+def extract_objectgroup(content, name):
+    """Extract a complete objectgroup by name, preserving all objects."""
+    # Find the objectgroup tag
+    pattern = rf'<objectgroup[^>]*name="{name}"[^>]*>.*?</objectgroup>'
+    m = re.search(pattern, content, re.DOTALL)
+    if m:
+        return m.group(0)
+    return ""
+
+def extract_objectgroup_inner(content, name):
+    """Extract the inner contents of an objectgroup (objects only, not the group tag)."""
+    full = extract_objectgroup(content, name)
+    if not full:
+        return ""
+    # Remove the outer <objectgroup...> and </objectgroup>
+    inner = re.sub(r'^<objectgroup[^>]*>', '', full)
+    inner = re.sub(r'</objectgroup>$', '', inner)
+    return inner.strip()
 
 # ── Zone configs ──────────────────────────────────────────────────────────────
 
@@ -413,7 +469,7 @@ ZONES = {
 
 def main():
     print("=" * 60)
-    print("  Varenmark Zone Map Enhancement Script v4")
+    print("  Varenmark Zone Map Enhancement Script v5 (template)")
     print("=" * 60)
 
     for zone_id in ["the-droveway", "ashlen-wood", "grevenmire", "the-halrow", "drowning-pits"]:
@@ -437,10 +493,45 @@ def main():
         w = int(wm.group(1))
         h = int(hm.group(1))
 
-        content = patch_file(content, zone_id, cfg, w, h)
+        # Parse existing structures
+        preserved_props = extract_properties(content)
+        preserved_tileset = extract_tileset(content)
+
+        # Extract inner contents (objects only, not the group tags)
+        preserved_spawns_inner = extract_objectgroup_inner(content, "spawns")
+        preserved_labels_inner = extract_objectgroup_inner(content, "labels")
+        preserved_paths_inner = extract_objectgroup_inner(content, "paths")
+
+        # Parse paths from preserved content
+        paths = []
+        for m in re.finditer(r'<object[^>]*?x="([^"]*)"[^>]*?y="([^"]*)"[^>]*?>.*?<polyline points="([^"]*)"',
+                             preserved_paths_inner, re.DOTALL):
+            paths.append({"ox": int(float(m.group(1))), "oy": int(float(m.group(2))), "pts": m.group(3)})
+
+        # Parse labels
+        labels = []
+        for m in re.finditer(r'<object[^>]*?name="([^"]*)"[^>]*?x="([^"]*)"[^>]*?y="([^"]*)"',
+                             preserved_labels_inner):
+            labels.append({"name": m.group(1), "x_px": int(float(m.group(2))), "y_px": int(float(m.group(3)))})
+
+        # Generate layers
+        g = gen_ground(w, h, cfg, paths)
+        d = gen_detail(w, h, cfg, paths)
+        c = gen_deco(w, h, cfg, paths, labels)
+        o = gen_overhead(w, h, cfg, paths, labels, c)
+
+        ground_csv = "\n".join(g)
+        detail_csv = "\n".join(d)
+        deco_csv = "\n".join(c)
+        overhead_csv = "\n".join(o)
+
+        # Build complete TMX
+        tmx = build_tmx(zone_id, cfg, w, h, ground_csv, detail_csv, deco_csv, overhead_csv,
+                        preserved_props, preserved_tileset,
+                        preserved_spawns_inner, preserved_labels_inner, preserved_paths_inner)
 
         with open(fpath, "w", encoding="utf-8") as f:
-            f.write(content)
+            f.write(tmx)
 
         ec = len(cfg.get("exits", []))
         ic = len(cfg.get("interactables", []))
