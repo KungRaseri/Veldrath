@@ -1,0 +1,35 @@
+# ── Dev / hot-reload stage ──────────────────────────────────────────────────
+# Uses the SDK image so dotnet watch can recompile on source changes.
+# Source code is mounted at runtime via docker-compose.dev.yml volumes;
+# this stage only restores NuGet packages for layer caching.
+FROM mcr.microsoft.com/dotnet/sdk:10.0
+WORKDIR /src
+
+# Copy root MSBuild files and version props for layer-cached restore
+COPY Directory.Build.props                                  ./
+COPY Directory.Build.targets                                ./
+COPY Directory.Packages.props                               ./
+COPY versions/                                              versions/
+
+# Copy project files (csproj + per-project Directory.Build.props)
+COPY RealmFoundry/RealmFoundry.csproj                       RealmFoundry/
+COPY RealmFoundry/Directory.Build.props                     RealmFoundry/
+COPY Veldrath.Contracts/Veldrath.Contracts.csproj           Veldrath.Contracts/
+COPY Veldrath.Auth/Veldrath.Auth.csproj                     Veldrath.Auth/
+COPY Veldrath.Auth.Blazor/Veldrath.Auth.Blazor.csproj       Veldrath.Auth.Blazor/
+
+RUN dotnet restore RealmFoundry/RealmFoundry.csproj
+
+# Hot-reload settings
+# DOTNET_WATCH_SUPPRESS_LAUNCH_BROWSER prevents dotnet watch from trying to
+# open a browser inside the container (which would fail).
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
+ENV DOTNET_WATCH_RESTART_ON_CHANGES=true
+ENV DOTNET_WATCH_SUPPRESS_LAUNCH_BROWSER=true
+ENV ASPNETCORE_ENVIRONMENT=Development
+ENV ASPNETCORE_URLS=http://+:8081
+
+EXPOSE 8081
+
+WORKDIR /src/RealmFoundry
+ENTRYPOINT ["dotnet", "watch", "run", "-c", "Debug"]

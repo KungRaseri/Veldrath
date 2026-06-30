@@ -1,0 +1,33 @@
+# ── Dev / hot-reload stage ──────────────────────────────────────────────────
+# Uses the SDK image so dotnet watch can recompile on source changes.
+# Source code is mounted at runtime via docker-compose.dev.yml volumes;
+# this stage only restores NuGet packages for layer caching.
+FROM mcr.microsoft.com/dotnet/sdk:10.0
+WORKDIR /src
+
+# Copy root MSBuild files and version props for layer-cached restore
+COPY Directory.Build.props                                  ./
+COPY Directory.Build.targets                                ./
+COPY Directory.Packages.props                               ./
+COPY versions/                                              versions/
+
+# Copy project files (csproj + per-project Directory.Build.props)
+COPY Veldrath.Discord/Veldrath.Discord.csproj               Veldrath.Discord/
+COPY Veldrath.Discord/Directory.Build.props                 Veldrath.Discord/
+COPY Veldrath.Contracts/Veldrath.Contracts.csproj           Veldrath.Contracts/
+COPY RealmEngine.Core/RealmEngine.Core.csproj               RealmEngine.Core/
+COPY RealmEngine.Core/Directory.Build.props                 RealmEngine.Core/
+COPY RealmEngine.Data/RealmEngine.Data.csproj               RealmEngine.Data/
+COPY RealmEngine.Data/Directory.Build.props                 RealmEngine.Data/
+COPY RealmEngine.Shared/RealmEngine.Shared.csproj           RealmEngine.Shared/
+COPY RealmEngine.Shared/Directory.Build.props               RealmEngine.Shared/
+
+RUN dotnet restore Veldrath.Discord/Veldrath.Discord.csproj
+
+# Hot-reload settings
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
+ENV DOTNET_WATCH_RESTART_ON_CHANGES=true
+ENV DOTNET_ENVIRONMENT=Development
+
+WORKDIR /src/Veldrath.Discord
+ENTRYPOINT ["dotnet", "watch", "run", "-c", "Debug"]
