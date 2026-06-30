@@ -1,6 +1,8 @@
-# Map Rendering Extraction + ASCII/Graphical Toggle — Architectural Plan
+# Map Rendering Extraction + ASCII/Graphical Toggle — Architectural Plan (SUPERSEDED)
 
-> **Status**: Draft — for review and approval  
+> **Status**: Superseded by the Pure Reactive UI pivot ([`reactive-ui-pivot-plan.md`](reactive-ui-pivot-plan.md)).
+> The rendering abstraction layer has been replaced with a panel-driven approach.
+> This document is retained for historical reference only.
 > **Date**: 2026-06-29 (revised 2026-06-29)  
 > **Context**: Extract zone/region tilemap rendering from the inline drawing logic in [`Veldrath.Client`](Veldrath.Client/) into a dedicated `Veldrath.Client.Rendering` namespace, define a renderer abstraction, and implement a user-toggleable ASCII rendering mode.
 

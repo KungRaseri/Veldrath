@@ -1,10 +1,10 @@
-﻿<UserControl
+<UserControl
     x:Class="Veldrath.Client.Views.GameCenterPanelView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:controls="using:Veldrath.Client.Controls"
+    xmlns:views="using:Veldrath.Client.Views"
     xmlns:vm="using:Veldrath.Client.ViewModels"
     d:DesignHeight="720"
     d:DesignWidth="800"
@@ -13,59 +13,33 @@
 
     <Border Background="{DynamicResource GameBackground0Brush}">
         <Grid>
-            <!-- Zone tilemap (default view) -->
-            <controls:TilemapControl
-                ViewModel="{Binding Tilemap}"
+            <!-- Zone location panel (replaces tilemap control) -->
+            <views:ZoneLocationPanelView
+                ViewModel="{Binding ZoneLocationPanel}"
                 IsVisible="{Binding IsZoneViewActive}" />
 
-            <!-- Region map view -->
-            <Grid IsVisible="{Binding IsRegionViewActive}">
-                <controls:RegionTilemapControl ViewModel="{Binding RegionTilemap}" />
+            <!-- Region view — side panel handles the content -->
+            <Border
+                IsVisible="{Binding IsRegionViewActive}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+                <TextBlock
+                    Text="Select a zone from the side panel to enter"
+                    FontSize="16"
+                    Foreground="{DynamicResource GameSubtleBrush}" />
+            </Border>
 
-                <!-- Zone-entry confirmation prompt -->
-                <Border
-                    IsVisible="{Binding PendingZoneEntry, Converter={x:Static ObjectConverters.IsNotNull}}"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Bottom"
-                    Margin="0,0,0,16"
-                    Padding="12,8"
-                    CornerRadius="6"
-                    Background="{DynamicResource GamePromptBackdropBrush}">
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                        <TextBlock
-                            VerticalAlignment="Center"
-                            Foreground="White"
-                            Text="{Binding PendingZoneEntry.DisplayName, StringFormat='Enter {0}?'}" />
-                        <Button
-                            Content="Enter [E]"
-                            Command="{Binding ConfirmZoneEntryCommand}"
-                            Padding="10,4" />
-                    </StackPanel>
-                </Border>
-
-                <!-- Region-exit confirmation prompt -->
-                <Border
-                    IsVisible="{Binding PendingRegionExit, Converter={x:Static ObjectConverters.IsNotNull}}"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Bottom"
-                    Margin="0,0,0,16"
-                    Padding="12,8"
-                    CornerRadius="6"
-                    Background="{DynamicResource GamePromptBackdropBrush}">
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                        <TextBlock
-                            VerticalAlignment="Center"
-                            Foreground="White"
-                            Text="{Binding PendingRegionExit.TargetRegionId, StringFormat='Cross into {0}?'}" />
-                        <Button
-                            Content="Cross [E]"
-                            Command="{Binding ConfirmRegionCrossCommand}"
-                            Padding="10,4" />
-                    </StackPanel>
-                </Border>
-            </Grid>
+            <!-- World view — side panel handles the content -->
+            <Border
+                IsVisible="{Binding IsWorldViewActive}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+                <TextBlock
+                    Text="Select a region from the side panel to explore"
+                    FontSize="16"
+                    Foreground="{DynamicResource GameSubtleBrush}" />
+            </Border>
         </Grid>
     </Border>
 
 </UserControl>
-

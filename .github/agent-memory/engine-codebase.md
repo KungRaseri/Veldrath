@@ -346,3 +346,4 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - **Achievement triggers wired** (Session-40): 5 handlers now call CheckAchievementProgressCommand
 - **Settings deleted** (Session-40): 6 orphaned RealmEngine.Core/Settings/ files removed
 - **Hub integration success-path tests** still missing for GetRegionMap, MoveOnRegion, ExitZone, ChangeRegion
+- **Pure Reactive UI pivot** (Session-41): Removed all sprite/ASCII rendering (Veldrath.Client.Rendering/ + TilemapControl/RegionTilemapControl). Replaced Zone tilemap with ZoneLocationPanelView+VM (reactive list-based panel showing room description, exits, entities). Region view now handled entirely by side panel (GameRegionPanelView). Keyboard movement removed — pure point-and-click. Client-side tile description service added. See `plans/reactive-ui-pivot-plan.md`.

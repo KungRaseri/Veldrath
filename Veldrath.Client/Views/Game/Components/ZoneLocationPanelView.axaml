@@ -1,0 +1,102 @@
+<UserControl
+    x:Class="Veldrath.Client.Views.ZoneLocationPanelView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:Veldrath.Client.ViewModels"
+    d:DesignHeight="720"
+    d:DesignWidth="600"
+    x:DataType="vm:ZoneLocationPanelViewModel"
+    mc:Ignorable="d">
+
+    <Border Background="{DynamicResource GameBackground0Brush}" Padding="16">
+        <ScrollViewer>
+            <StackPanel Spacing="12">
+                <!-- Location header -->
+                <TextBlock
+                    Text="{Binding ZoneName}"
+                    FontSize="22"
+                    FontWeight="Bold"
+                    Foreground="{DynamicResource GameAccentBrush}"
+                    TextWrapping="Wrap" />
+
+                <!-- Description -->
+                <Border
+                    Padding="12"
+                    CornerRadius="6"
+                    Background="{DynamicResource GamePanelBackdropBrush}">
+                    <TextBlock
+                        Text="{Binding LocationDescription}"
+                        FontSize="15"
+                        Foreground="{DynamicResource GameForegroundBrush}"
+                        TextWrapping="Wrap" />
+                </Border>
+
+                <!-- Exits section -->
+                <Border
+                    Padding="12"
+                    CornerRadius="6"
+                    Background="{DynamicResource GamePanelBackdropBrush}"
+                    IsVisible="{Binding HasExits}">
+                    <StackPanel Spacing="8">
+                        <TextBlock
+                            Text="Exits"
+                            FontSize="14"
+                            FontWeight="SemiBold"
+                            Foreground="{DynamicResource GameSubtleBrush}" />
+                        <ItemsControl ItemsSource="{Binding Exits}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button
+                                        Content="{Binding Direction, StringFormat='Go {0}'}"
+                                        Command="{Binding $parent[(vm:ZoneLocationPanelViewModel)].MoveToExitCommand}"
+                                        CommandParameter="{Binding .}"
+                                        HorizontalAlignment="Stretch"
+                                        Padding="8,4" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Entities section -->
+                <Border
+                    Padding="12"
+                    CornerRadius="6"
+                    Background="{DynamicResource GamePanelBackdropBrush}"
+                    IsVisible="{Binding HasEntities}">
+                    <StackPanel Spacing="8">
+                        <TextBlock
+                            Text="Entities"
+                            FontSize="14"
+                            FontWeight="SemiBold"
+                            Foreground="{DynamicResource GameSubtleBrush}" />
+                        <ItemsControl ItemsSource="{Binding Entities}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button
+                                        HorizontalAlignment="Stretch"
+                                        Padding="8,4"
+                                        Command="{Binding $parent[(vm:ZoneLocationPanelViewModel)].InteractWithEntityCommand}"
+                                        CommandParameter="{Binding .}">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock
+                                                Text="{Binding Name}"
+                                                FontWeight="Bold"
+                                                Foreground="{DynamicResource GameForegroundBrush}" />
+                                            <TextBlock
+                                                Text="{Binding EntityType, StringFormat='({0})'}"
+                                                Foreground="{DynamicResource GameSubtleBrush}" />
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+
+</UserControl>

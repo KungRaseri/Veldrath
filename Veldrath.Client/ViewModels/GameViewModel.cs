@@ -56,6 +56,7 @@ public class GameViewModel : ViewModelBase
     // Tilemap
     private TilemapViewModel? _tilemapViewModel;
     private RegionTilemapViewModel? _regionTilemapViewModel;
+    private ZoneLocationPanelViewModel? _zoneLocationPanel;
 
     // Region pending tile transitions
     private Veldrath.Contracts.Tilemap.ZoneObjectDto? _pendingZoneEntry;
@@ -564,6 +565,16 @@ public class GameViewModel : ViewModelBase
         private set => this.RaiseAndSetIfChanged(ref _regionTilemapViewModel, value);
     }
 
+    /// <summary>
+    /// View model for the zone location panel (replaces the old tilemap control).
+    /// Derives room description, exit list, entity list, and contextual actions from the tilemap data.
+    /// </summary>
+    public ZoneLocationPanelViewModel? ZoneLocationPanel
+    {
+        get => _zoneLocationPanel;
+        private set => this.RaiseAndSetIfChanged(ref _zoneLocationPanel, value);
+    }
+
     /// <summary>Zone-entry tile the character last stepped on, or <see langword="null"/> if none is pending.</summary>
     public Veldrath.Contracts.Tilemap.ZoneObjectDto? PendingZoneEntry
     {
@@ -1003,6 +1014,15 @@ public class GameViewModel : ViewModelBase
                 "MoveCharacter",
                 new { ToX = toX, ToY = toY, Direction = dir });
         });
+
+        // Zone location panel VM — wraps the tilemap to derive reactive panel data
+        ZoneLocationPanel = new ZoneLocationPanelViewModel(Tilemap);
+
+        // Forward zone name changes to the location panel.
+        // SelfEntityId is forwarded automatically because ZoneLocationPanelViewModel
+        // already subscribes to tilemap.WhenAnyValue(x => x.SelfEntityId).
+        this.WhenAnyValue(x => x.ZoneName)
+            .Subscribe(name => ZoneLocationPanel?.SetZoneName(name ?? "Unknown"));
 
         // Region tilemap VM — forward region move requests to the hub, confirm zone/region transitions on E
         RegionTilemap = new RegionTilemapViewModel(
