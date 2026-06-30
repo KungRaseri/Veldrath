@@ -1308,6 +1308,21 @@ public class GameViewModel : ViewModelBase
 
     // ────────────────────────────────────────────────────────────────────────
 
+    /// <summary>Called from hub when this character enters a zone, carrying zone metadata and the occupant list.</summary>
+    /// <param name="zoneId">The zone identifier.</param>
+    /// <param name="zoneName">Human-readable zone name.</param>
+    /// <param name="zoneDescription">Flavor text describing the zone.</param>
+    /// <param name="zoneType">The zone type (e.g. Town, Dungeon, Wilderness).</param>
+    /// <param name="occupantNames">Names of other characters currently in the zone.</param>
+    public void OnZoneEntered(string zoneId, string zoneName, string zoneDescription, string zoneType, IEnumerable<string> occupantNames)
+    {
+        _currentZoneId = zoneId;
+        ZoneName = zoneName;
+        ZoneDescription = zoneDescription;
+        ZoneType = zoneType;
+        SetOccupants(occupantNames);
+    }
+
     /// <summary>Called from hub when zone state is received with initial occupant list.</summary>
     public void SetOccupants(IEnumerable<string> playerNames)
     {
@@ -1644,18 +1659,51 @@ public class GameViewModel : ViewModelBase
     {
         _currentZoneId = zoneId;
         CurrentZoneLocationSlug = null;
-        var zone = await _zoneService.GetZoneAsync(zoneId);
-        if (zone is not null)
+        try
         {
-            ZoneName = zone.Name;
-            ZoneDescription = zone.Description;
-            ZoneType = zone.Type;
-            HasInn = zone.HasInn;
-            HasMerchant = zone.HasMerchant;
-            ZoneMinLevel = zone.MinLevel;
-            await LoadWorldContextAsync(zone.RegionId, zoneId);
+            var zone = await _zoneService.GetZoneAsync(zoneId);
+            if (zone is not null)
+            {
+                // Only overwrite zone name/description/type from REST if the ZoneEntered
+                // callback hasn't already populated them (the server callback is authoritative).
+                if (string.IsNullOrEmpty(ZoneName))
+                    ZoneName = zone.Name;
+                if (string.IsNullOrEmpty(ZoneDescription))
+                    ZoneDescription = zone.Description;
+                if (string.IsNullOrEmpty(ZoneType))
+                    ZoneType = zone.Type;
+                HasInn = zone.HasInn;
+                HasMerchant = zone.HasMerchant;
+                ZoneMinLevel = zone.MinLevel;
+                await LoadWorldContextAsync(zone.RegionId, zoneId);
+            }
+            else
+            {
+                var msg = $"Zone '{zoneId}' metadata not available from the server.";
+                AppendLog($"Warning: {msg}");
+                if (ZoneLocationPanel is not null)
+                    ZoneLocationPanel.ErrorMessage = msg;
+            }
         }
-        await LoadZoneLocationsAsync(zoneId);
+        catch (Exception ex)
+        {
+            var msg = $"Failed to load zone metadata: {ex.Message}";
+            AppendLog($"Warning: {msg}");
+            if (ZoneLocationPanel is not null)
+                ZoneLocationPanel.ErrorMessage = msg;
+        }
+
+        try
+        {
+            await LoadZoneLocationsAsync(zoneId);
+        }
+        catch (Exception ex)
+        {
+            var msg = $"Failed to load zone locations: {ex.Message}";
+            AppendLog($"Warning: {msg}");
+            if (ZoneLocationPanel is not null)
+                ZoneLocationPanel.ErrorMessage = msg;
+        }
     }
 
     private async Task LoadZoneLocationsAsync(string zoneId)

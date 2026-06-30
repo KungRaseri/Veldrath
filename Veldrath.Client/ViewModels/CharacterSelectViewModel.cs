@@ -270,7 +270,8 @@ public class CharacterSelectViewModel : ViewModelBase
             // Subscribe to zone hub events before sending commands so no events are missed
             _zoneEnteredSub = _connection.On<ZoneEnteredPayload>("ZoneEntered", payload =>
             {
-                _gameVm.SetOccupants(payload.Occupants.Select(o => o.CharacterName));
+                _gameVm.OnZoneEntered(payload.Id, payload.Name, payload.Description, payload.ZoneType,
+                    payload.Occupants.Select(o => o.CharacterName));
                 _navigation.NavigateTo<GameViewModel>();
             });
             _playerEnteredSub = _connection.On<PlayerEventPayload>("PlayerEntered", payload =>
@@ -448,8 +449,8 @@ public class CharacterSelectViewModel : ViewModelBase
             await _connection.SendCommandAsync<object>("SelectCharacter", character.Id);
             await _connection.SendCommandAsync("GetChatCommands");
             await _connection.SendCommandAsync("GetRegionMap");
-            await _gameVm.InitializeAsync(character.Name, zoneId);
             await _connection.SendCommandAsync<object>("EnterZone", zoneId);
+            await _gameVm.InitializeAsync(character.Name, zoneId);
         }
         catch (Exception ex)
         {

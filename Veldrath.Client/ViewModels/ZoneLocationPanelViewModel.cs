@@ -49,6 +49,7 @@ public class ZoneLocationPanelViewModel : ViewModelBase
     private string _locationDescription = "Unknown location";
     private int _playerTileX;
     private int _playerTileY;
+    private bool _isLoading;
 
     /// <summary>Initializes a new instance of <see cref="ZoneLocationPanelViewModel"/>.</summary>
     /// <param name="tilemap">The underlying tilemap ViewModel to wrap.</param>
@@ -118,15 +119,27 @@ public class ZoneLocationPanelViewModel : ViewModelBase
     /// <summary>Whether there are any POI locations in this zone.</summary>
     public bool HasZoneLocations => ZoneLocations.Count > 0;
 
+    /// <summary>Whether the panel has a known zone to display (zone name is non-empty).</summary>
+    public bool HasZone => !string.IsNullOrEmpty(_zoneName);
+
     /// <summary>True when there's no map data and no player position yet (diagnostic for initial state).</summary>
     public bool HasNoData => !HasExits && !HasEntities && !HasZoneLocations;
 
-    /// <summary>Descriptive text shown when <see cref="HasNoData"/> is true.</summary>
+    /// <summary>Whether the zone is currently in the process of loading its initial data.</summary>
+    public bool IsLoading
+    {
+        get => _isLoading;
+        private set => this.RaiseAndSetIfChanged(ref _isLoading, value);
+    }
+
+    /// <summary>Descriptive text shown when zone or map data is unavailable.</summary>
     public string LoadingStatus
     {
         get
         {
-            if (_tilemap.TileMapData is null) return "Loading map data...";
+            if (!string.IsNullOrEmpty(ErrorMessage)) return $"Error: {ErrorMessage}";
+            if (string.IsNullOrEmpty(_zoneName)) return "No Zone — Enter a zone to begin";
+            if (_tilemap.TileMapData is null) return "Entering zone, loading map data...";
             if (_tilemap.SelfEntityId is null) return "Waiting for character identity...";
             if (_tilemap.Entities.Count == 0) return "Waiting for entity positions...";
             return "Data loaded.";
@@ -156,8 +169,11 @@ public class ZoneLocationPanelViewModel : ViewModelBase
         UpdateExits();
         UpdateEntities();
         UpdateDescription();
+        IsLoading = _tilemap.TileMapData is null || _tilemap.SelfEntityId is null;
+        this.RaisePropertyChanged(nameof(HasZone));
         this.RaisePropertyChanged(nameof(HasNoData));
         this.RaisePropertyChanged(nameof(LoadingStatus));
+        this.RaisePropertyChanged(nameof(ErrorMessage));
     }
 
     private void UpdatePlayerPosition()
@@ -284,6 +300,10 @@ public class ZoneLocationPanelViewModel : ViewModelBase
     public void SetZoneName(string zoneName)
     {
         ZoneName = zoneName;
+        ErrorMessage = string.Empty;
+        IsLoading = false;
+        this.RaisePropertyChanged(nameof(HasZone));
+        this.RaisePropertyChanged(nameof(LoadingStatus));
     }
 
     /// <summary>
