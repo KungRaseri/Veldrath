@@ -36,19 +36,20 @@ public static class PendingLinkEndpoints
         if (error is not null)
             return Results.Redirect($"/login?error={Uri.EscapeDataString(error)}");
 
-        var clientIp  = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        var response  = await authService.CreateSessionAsync(account!, clientIp, context.RequestAborted);
-        var code      = exchangeService.CreateCode(response, response.AccountId);
+        var clientIp     = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var response     = await authService.CreateSessionAsync(account!, clientIp, context.RequestAborted);
+        var code         = exchangeService.CreateCode(response, response.AccountId);
 
-        var returnUrl   = pendingToken!.ReturnUrl;
-        var foundryBase = config["Foundry:BaseUrl"];
-        var webBase     = config["Web:BaseUrl"];
-        var serverBase  = $"{context.Request.Scheme}://{context.Request.Host}";
+        var returnUrl    = pendingToken!.ReturnUrl;
+        var foundryBase  = config["Foundry:BaseUrl"];
+        var webBase      = config["Web:BaseUrl"];
+        var serverBase   = $"{context.Request.Scheme}://{context.Request.Host}";
+        var allowedHosts = config["AllowedReturnUrlHosts"];
         string destination;
 
         if (returnUrl is not null
-            && (ExternalAuthEndpoints.IsAllowedReturnUrl(returnUrl, foundryBase, serverBase)
-                || ExternalAuthEndpoints.IsAllowedReturnUrl(returnUrl, webBase, serverBase)))
+            && (ExternalAuthEndpoints.IsAllowedReturnUrl(returnUrl, foundryBase, serverBase, allowedHosts)
+                || ExternalAuthEndpoints.IsAllowedReturnUrl(returnUrl, webBase, serverBase, allowedHosts)))
         {
             var uriBuilder   = new UriBuilder(returnUrl);
             var query        = HttpUtility.ParseQueryString(uriBuilder.Query);

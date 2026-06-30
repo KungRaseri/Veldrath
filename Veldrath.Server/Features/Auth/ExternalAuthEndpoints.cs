@@ -49,6 +49,7 @@ public static class ExternalAuthEndpoints
         var userMgr     = ctx.HttpContext.RequestServices.GetRequiredService<UserManager<PlayerAccount>>();
         var config      = ctx.HttpContext.RequestServices.GetRequiredService<IConfiguration>();
         var foundryBase = config["Foundry:BaseUrl"];
+        var allowedHosts = config["AllowedReturnUrlHosts"];
         var principal   = ctx.Principal!;
         var email       = principal.FindFirstValue(ClaimTypes.Email);
         var displayName = principal.FindFirstValue(ClaimTypes.Name);
@@ -76,7 +77,7 @@ public static class ExternalAuthEndpoints
                 ctx.HandleResponse();
                 // Redirect to the originating app's profile page with an error flag.
                 string errDest;
-                if (linkReturnUrl is not null && IsAllowedReturnUrl(linkReturnUrl, foundryBase, webBase))
+                if (linkReturnUrl is not null && IsAllowedReturnUrl(linkReturnUrl, foundryBase, webBase, allowedHosts))
                 {
                     var uri = new Uri(linkReturnUrl);
                     errDest = $"{uri.Scheme}://{uri.Authority}{uri.AbsolutePath}?error=link_failed";
@@ -108,7 +109,7 @@ public static class ExternalAuthEndpoints
             var session = await authSvc.CreateSessionAsync(linkTarget, clientIp);
             var code    = exchangeSvc.CreateCode(session, session.AccountId);
 
-            if (linkReturnUrl is not null && IsAllowedReturnUrl(linkReturnUrl, foundryBase, webBase))
+            if (linkReturnUrl is not null && IsAllowedReturnUrl(linkReturnUrl, foundryBase, webBase, allowedHosts))
             {
                 var returnUri  = new Uri(linkReturnUrl);
                 var appBase    = $"{returnUri.Scheme}://{returnUri.Authority}";
@@ -133,7 +134,7 @@ public static class ExternalAuthEndpoints
 
         var result = await authSvc.ExternalLoginOrRegisterAsync(
             ctx.Scheme.Name, providerKey ?? "", email, displayName, clientIp,
-            returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase, serverBaseUrl) ? returnUrl : null,
+            returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase, serverBaseUrl, allowedHosts) ? returnUrl : null,
             serverBaseUrl);
 
         if (result.Status == ExternalLoginStatus.PendingLinkConfirmation)
@@ -157,7 +158,7 @@ public static class ExternalAuthEndpoints
         // Success — mint a single-use exchange code and redirect.
         // The returnUrl now points to /api/auth/session on this server, which sets the
         // cross-subdomain rt cookie before forwarding the browser to the originating app.
-        if (returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase, serverBaseUrl))
+        if (returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase, serverBaseUrl, allowedHosts))
         {
             var code         = exchangeSvc.CreateCode(result.Response!, result.Response!.AccountId);
             var uriBuilder   = new UriBuilder(returnUrl);
@@ -184,16 +185,17 @@ public static class ExternalAuthEndpoints
         if (!ProviderSchemes.TryGetValue(provider, out var scheme))
             return Results.BadRequest("Unknown OAuth provider.");
 
-        var config      = context.RequestServices.GetRequiredService<IConfiguration>();
-        var foundryBase = config["Foundry:BaseUrl"];
-        var webBase     = config["Web:BaseUrl"];
-        var serverBase  = $"{context.Request.Scheme}://{context.Request.Host}";
+        var config        = context.RequestServices.GetRequiredService<IConfiguration>();
+        var foundryBase   = config["Foundry:BaseUrl"];
+        var webBase       = config["Web:BaseUrl"];
+        var serverBase    = $"{context.Request.Scheme}://{context.Request.Host}";
+        var allowedHosts  = config["AllowedReturnUrlHosts"];
 
         // Guard against open redirect: accept localhost, the Foundry origin, Web origin, and
         // this server's own origin (for the /api/auth/session callback).
         if (returnUrl is not null
-            && !IsAllowedReturnUrl(returnUrl, foundryBase, serverBase)
-            && !IsAllowedReturnUrl(returnUrl, webBase, serverBase))
+            && !IsAllowedReturnUrl(returnUrl, foundryBase, serverBase, allowedHosts)
+            && !IsAllowedReturnUrl(returnUrl, webBase, serverBase, allowedHosts))
             return Results.BadRequest("Invalid return URL.");
 
         // After the provider redirects back, ASP.NET's OAuth handler completes the
@@ -227,10 +229,11 @@ public static class ExternalAuthEndpoints
         if (info is null)
             return Results.Unauthorized();
 
-        var email       = info.Principal.FindFirstValue(ClaimTypes.Email);
-        var displayName = info.Principal.FindFirstValue(ClaimTypes.Name);
-        var clientIp    = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        var foundryBase = config["Foundry:BaseUrl"];
+        var email         = info.Principal.FindFirstValue(ClaimTypes.Email);
+        var displayName   = info.Principal.FindFirstValue(ClaimTypes.Name);
+        var clientIp      = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var foundryBase   = config["Foundry:BaseUrl"];
+        var allowedHosts  = config["AllowedReturnUrlHosts"];
 
         string? returnUrl = null;
         info.AuthenticationProperties?.Items.TryGetValue("returnUrl", out returnUrl);
@@ -238,7 +241,7 @@ public static class ExternalAuthEndpoints
 
         var result = await authService.ExternalLoginOrRegisterAsync(
             info.LoginProvider, info.ProviderKey, email, displayName, clientIp,
-            returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase, serverBaseUrl) ? returnUrl : null,
+            returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase, serverBaseUrl, allowedHosts) ? returnUrl : null,
             serverBaseUrl);
 
         if (result.Status == ExternalLoginStatus.PendingLinkConfirmation)
@@ -250,7 +253,7 @@ public static class ExternalAuthEndpoints
         // If the caller provided a returnUrl (Avalonia desktop auth flow), redirect there
         // with an exchange code so the local HTTP listener can pick it up safely.
         var serverBase = $"{context.Request.Scheme}://{context.Request.Host}";
-        if (returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase, serverBase))
+        if (returnUrl is not null && IsAllowedReturnUrl(returnUrl, foundryBase, serverBase, allowedHosts))
         {
             var code    = exchangeService.CreateCode(result.Response!, result.Response!.AccountId);
             var builder = new UriBuilder(returnUrl);
@@ -284,7 +287,7 @@ public static class ExternalAuthEndpoints
         return (foundryBase?.TrimEnd('/') ?? string.Empty) + "/login?pending_link=1";
     }
 
-    // Only localhost/127.0.0.1, the configured Foundry origin, and an optional additional
+    // Only localhost/127.0.0.1, the configured Foundry/Web origins, and the optional additional
     // origin (e.g. the server's own base URL or Veldrath.Web) are accepted as a returnUrl to
     // prevent open-redirect attacks.
     internal static bool IsAllowedReturnUrl(string url, string? foundryBaseUrl = null, string? additionalBaseUrl = null)
@@ -300,7 +303,7 @@ public static class ExternalAuthEndpoints
             || uri.Host == "127.0.0.1")
             return true;
 
-        // Production: allow the configured Foundry origin (host + port + scheme must all match)
+        // Allow the configured Foundry origin (host + port + scheme must all match)
         if (foundryBaseUrl is not null
             && Uri.TryCreate(foundryBaseUrl, UriKind.Absolute, out var foundry)
             && uri.Scheme.Equals(foundry.Scheme, StringComparison.OrdinalIgnoreCase)
@@ -317,5 +320,24 @@ public static class ExternalAuthEndpoints
             return true;
 
         return false;
+    }
+
+    // Overload that also checks against the comma-separated AllowedReturnUrlHosts config.
+    // Callers pass the raw config string from IConfiguration["AllowedReturnUrlHosts"].
+    internal static bool IsAllowedReturnUrl(string url, string? foundryBaseUrl, string? additionalBaseUrl, string? allowedHostsConfig)
+    {
+        // First check the standard origins.
+        if (IsAllowedReturnUrl(url, foundryBaseUrl, additionalBaseUrl))
+            return true;
+
+        // Then check any user-configured hostnames/IPs.
+        if (string.IsNullOrWhiteSpace(allowedHostsConfig))
+            return false;
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            return false;
+
+        var hosts = allowedHostsConfig.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        return hosts.Any(h => uri.Host.Equals(h, StringComparison.OrdinalIgnoreCase));
     }
 }

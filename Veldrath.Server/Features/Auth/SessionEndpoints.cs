@@ -30,8 +30,9 @@ public static class SessionEndpoints
         IWebHostEnvironment env,
         HttpContext ctx)
     {
-        var foundryBase = config["Foundry:BaseUrl"];
-        var webBase     = config["Web:BaseUrl"];
+        var foundryBase  = config["Foundry:BaseUrl"];
+        var webBase      = config["Web:BaseUrl"];
+        var allowedHosts = config["AllowedReturnUrlHosts"];
 
         if (string.IsNullOrWhiteSpace(code) || !aid.HasValue
             || !exchangeService.TryConsume(code, aid.Value, out var authResponse))
@@ -57,7 +58,7 @@ public static class SessionEndpoints
 
         // Redirect to the originating app if it is on a known-safe origin; otherwise fall back.
         var destination = !string.IsNullOrWhiteSpace(redirectTo)
-            && ExternalAuthEndpoints.IsAllowedReturnUrl(redirectTo, foundryBase, webBase)
+            && ExternalAuthEndpoints.IsAllowedReturnUrl(redirectTo, foundryBase, webBase, allowedHosts)
                 ? redirectTo
                 : (foundryBase?.TrimEnd('/') + "/") ?? "/";
 
