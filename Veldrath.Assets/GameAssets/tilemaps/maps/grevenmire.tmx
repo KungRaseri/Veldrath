@@ -1,14 +1,62 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="80" height="56" tilewidth="16" tileheight="16" infinite="0" nextlayerid="10" nextobjectid="8">
+<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="80" height="56" tilewidth="16" tileheight="16" infinite="0" nextlayerid="10" nextobjectid="10">
  <properties>
     <property name="zoneId" value="grevenmire"/>
 <property name="tilesetKey" value="roguelike_base"/>
  </properties>
  <tileset firstgid="1" source="../sheets/roguelike_base.tsx"/>
- <objectgroup id="3" name="interactables"/>
+ <objectgroup id="3" name="interactables">
+   <object id="1" name="Bog Hermit" type="npc" x="960" y="272" width="16" height="16">
+    <properties>
+     <property name="npcArchetype" value="hermit"/>
+     <property name="displayName" value="Bog Hermit"/>
+    </properties>
+   </object>
+   <object id="2" name="Marsh Guide" type="npc" x="288" y="432" width="16" height="16">
+    <properties>
+     <property name="npcArchetype" value="guide"/>
+     <property name="displayName" value="Marsh Guide"/>
+    </properties>
+   </object>
+   <object id="3" name="Sunken Estate Ruins" type="interactable" x="960" y="256" width="16" height="16">
+    <properties>
+     <property name="interactType" value="lore-marker"/>
+     <property name="displayName" value="Sunken Estate Ruins"/>
+    </properties>
+   </object>
+   <object id="4" name="Bubbling Mud Pool" type="interactable" x="480" y="560" width="16" height="16">
+    <properties>
+     <property name="interactType" value="hazard"/>
+     <property name="displayName" value="Bubbling Mud Pool"/>
+    </properties>
+   </object>
+   <object id="5" name="Old Ferry Post" type="interactable" x="160" y="432" width="16" height="16">
+    <properties>
+     <property name="interactType" value="waypost"/>
+     <property name="displayName" value="Old Ferry Post"/>
+    </properties>
+   </object>
+  </objectgroup>
  <objectgroup id="6" name="exits">
-  <object id="7" type="exit" x="0" y="0" width="16" height="16"/>
- </objectgroup>
+   <object id="1" type="exit" name="to-varenmark" x="0" y="432" width="16" height="16">
+    <properties>
+     <property name="displayName" value="Return to Varenmark"/>
+     <property name="toRegionId" value="varenmark"/>
+    </properties>
+   </object>
+   <object id="2" type="exit" name="to-crestfall" x="32" y="432" width="16" height="16">
+    <properties>
+     <property name="displayName" value="Path to Crestfall"/>
+     <property name="toZoneId" value="crestfall"/>
+    </properties>
+   </object>
+   <object id="3" type="exit" name="to-ashlenwood" x="624" y="880" width="16" height="16">
+    <properties>
+     <property name="displayName" value="Track to Ashlen Wood"/>
+     <property name="toZoneId" value="ashlen-wood"/>
+    </properties>
+   </object>
+  </objectgroup>
  <objectgroup id="7" name="spawns">
   <object id="1" name="default-spawn" type="spawn" x="32" y="432" width="16" height="16"/>
  </objectgroup>

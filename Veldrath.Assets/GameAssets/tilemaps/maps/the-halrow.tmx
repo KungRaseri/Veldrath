@@ -1,14 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="64" height="48" tilewidth="16" tileheight="16" infinite="0" nextlayerid="10" nextobjectid="8">
+<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="64" height="48" tilewidth="16" tileheight="16" infinite="0" nextlayerid="10" nextobjectid="10">
  <properties>
     <property name="zoneId" value="the-halrow"/>
 <property name="tilesetKey" value="roguelike_base"/>
  </properties>
  <tileset firstgid="1" source="../sheets/roguelike_base.tsx"/>
- <objectgroup id="3" name="interactables"/>
+ <objectgroup id="3" name="interactables">
+   <object id="1" name="Trapped Miner" type="npc" x="496" y="512" width="16" height="16">
+    <properties>
+     <property name="npcArchetype" value="miner"/>
+     <property name="displayName" value="Trapped Miner"/>
+    </properties>
+   </object>
+   <object id="2" name="Cultist Acolyte" type="npc" x="672" y="320" width="16" height="16">
+    <properties>
+     <property name="npcArchetype" value="cultist"/>
+     <property name="displayName" value="Cultist Acolyte"/>
+    </properties>
+   </object>
+   <object id="3" name="Ancient Sarcophagus" type="interactable" x="336" y="336" width="16" height="16">
+    <properties>
+     <property name="interactType" value="lore-marker"/>
+     <property name="displayName" value="Ancient Sarcophagus"/>
+    </properties>
+   </object>
+   <object id="4" name="Collapsed Passage" type="interactable" x="672" y="304" width="16" height="16">
+    <properties>
+     <property name="interactType" value="blocked"/>
+     <property name="displayName" value="Collapsed Passage"/>
+    </properties>
+   </object>
+   <object id="5" name="Dusty Grimoire" type="interactable" x="496" y="336" width="16" height="16">
+    <properties>
+     <property name="interactType" value="salvage"/>
+     <property name="displayName" value="Dusty Grimoire"/>
+    </properties>
+   </object>
+  </objectgroup>
  <objectgroup id="6" name="exits">
-  <object id="7" type="exit" x="0" y="0" width="16" height="16"/>
- </objectgroup>
+   <object id="1" type="exit" name="to-varenmark" x="496" y="752" width="16" height="16">
+    <properties>
+     <property name="displayName" value="Return to Varenmark"/>
+     <property name="toRegionId" value="varenmark"/>
+    </properties>
+   </object>
+  </objectgroup>
  <objectgroup id="7" name="spawns">
   <object id="1" name="default-spawn" type="spawn" x="496" y="720" width="16" height="16"/>
  </objectgroup>
