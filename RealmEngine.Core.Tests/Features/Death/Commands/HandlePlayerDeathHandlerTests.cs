@@ -50,7 +50,8 @@ public class HandlePlayerDeathHandlerTests
             mockDeathService.Object,
             mockSaveGameService.Object,
             mockHallOfFame.Object,
-            NullLogger<HandlePlayerDeathHandler>.Instance);
+            NullLogger<HandlePlayerDeathHandler>.Instance,
+            Mock.Of<IMediator>());
 
         var command = new HandlePlayerDeathCommand
         {
@@ -114,7 +115,8 @@ public class HandlePlayerDeathHandlerTests
             mockDeathService.Object,
             mockSaveGameService.Object,
             mockHallOfFame.Object,
-            NullLogger<HandlePlayerDeathHandler>.Instance);
+            NullLogger<HandlePlayerDeathHandler>.Instance,
+            Mock.Of<IMediator>());
 
         var command = new HandlePlayerDeathCommand
         {
@@ -173,7 +175,8 @@ public class HandlePlayerDeathHandlerTests
             mockDeathService.Object,
             mockSaveGameService.Object,
             mockHallOfFame.Object,
-            NullLogger<HandlePlayerDeathHandler>.Instance);
+            NullLogger<HandlePlayerDeathHandler>.Instance,
+            Mock.Of<IMediator>());
 
         var command = new HandlePlayerDeathCommand
         {
@@ -231,7 +234,8 @@ public class HandlePlayerDeathHandlerTests
             mockDeathService.Object,
             mockSaveGameService.Object,
             mockHallOfFame.Object,
-            NullLogger<HandlePlayerDeathHandler>.Instance);
+            NullLogger<HandlePlayerDeathHandler>.Instance,
+            Mock.Of<IMediator>());
 
         var command = new HandlePlayerDeathCommand
         {
@@ -261,7 +265,8 @@ public class HandlePlayerDeathHandlerTests
             mockDeathService.Object,
             mockSaveGameService.Object,
             mockHallOfFame.Object,
-            NullLogger<HandlePlayerDeathHandler>.Instance);
+            NullLogger<HandlePlayerDeathHandler>.Instance,
+            Mock.Of<IMediator>());
 
         var player = new Character { Name = "Hero" };
         var command = new HandlePlayerDeathCommand
@@ -318,7 +323,8 @@ public class HandlePlayerDeathHandlerTests
             mockDeathService.Object,
             mockSaveGameService.Object,
             mockHallOfFame.Object,
-            NullLogger<HandlePlayerDeathHandler>.Instance);
+            NullLogger<HandlePlayerDeathHandler>.Instance,
+            Mock.Of<IMediator>());
 
         var command = new HandlePlayerDeathCommand
         {
@@ -377,7 +383,8 @@ public class HandlePlayerDeathHandlerTests
             mockDeathService.Object,
             mockSaveGameService.Object,
             mockHallOfFame.Object,
-            NullLogger<HandlePlayerDeathHandler>.Instance);
+            NullLogger<HandlePlayerDeathHandler>.Instance,
+            Mock.Of<IMediator>());
 
         var command = new HandlePlayerDeathCommand
         {
