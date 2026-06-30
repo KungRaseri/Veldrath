@@ -1015,8 +1015,13 @@ public class GameViewModel : ViewModelBase
                 new { ToX = toX, ToY = toY, Direction = dir });
         });
 
-        // Zone location panel VM — wraps the tilemap to derive reactive panel data
-        ZoneLocationPanel = new ZoneLocationPanelViewModel(Tilemap);
+        // Zone location panel VM — wraps the tilemap to derive reactive panel data,
+        // with callbacks for entity interactions that forward to the server hub.
+        ZoneLocationPanel = new ZoneLocationPanelViewModel(
+            Tilemap,
+            onTalkToEntity: async entityId => await DoTalkToNpcAsync(entityId),
+            onInspectEntity: async entityId => await DoInspectEntityAsync(entityId),
+            onFightEntity: async entityId => await DoEngageEnemyAsync(entityId));
 
         // Forward zone name changes to the location panel.
         // SelfEntityId is forwarded automatically because ZoneLocationPanelViewModel
@@ -1439,6 +1444,30 @@ public class GameViewModel : ViewModelBase
         var msg = $"You have been muted {display}. Reason: {reason ?? "No reason given."}";
         foreach (var tab in ChatTabs)
             tab.AddMessage(new ChatMessageViewModel("System", "System", msg, DateTimeOffset.UtcNow, false));
+    }
+
+    /// <summary>Called from hub when an NPC dialogue response is received.</summary>
+    /// <param name="npcName">The display name of the NPC that responded.</param>
+    /// <param name="dialogueText">The NPC's dialogue text.</param>
+    public void OnNpcDialogueReceived(string npcName, string dialogueText)
+    {
+        AppendLog($"{npcName} says: {dialogueText}");
+    }
+
+    /// <summary>Called from hub when entity inspection results are received.</summary>
+    /// <param name="entityName">The display name of the inspected entity.</param>
+    /// <param name="entityType">The type of entity: <c>"player"</c>, <c>"enemy"</c>, or <c>"npc"</c>.</param>
+    /// <param name="description">A human-readable description of the entity.</param>
+    public void OnEntityInspected(string entityName, string entityType, string description)
+    {
+        var typeIcon = entityType switch
+        {
+            "npc" => "\ud83d\udc64",
+            "enemy" => "\ud83d\udc79",
+            "player" => "\ud83e\uddd9",
+            _ => "\u2753",
+        };
+        AppendLog($"[Inspect] {typeIcon} {entityName} ({entityType}): {description}");
     }
 
     /// <summary>Called from hub when the local character has been teleported to a new zone.</summary>
@@ -2292,6 +2321,32 @@ public class GameViewModel : ViewModelBase
         catch (Exception ex)
         {
             AppendLog($"Engage failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoTalkToNpcAsync(Guid entityId)
+    {
+        try
+        {
+            await _connection.SendCommandAsync<object>("TalkToNpc",
+                new { TargetEntityId = entityId });
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Talk failed: {ex.Message}");
+        }
+    }
+
+    private async Task DoInspectEntityAsync(Guid entityId)
+    {
+        try
+        {
+            await _connection.SendCommandAsync<object>("InspectEntity",
+                new { TargetEntityId = entityId });
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Inspect failed: {ex.Message}");
         }
     }
 

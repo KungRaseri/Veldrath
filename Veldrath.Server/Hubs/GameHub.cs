@@ -2008,6 +2008,95 @@ public class GameHub : Hub
         }
     }
 
+    /// <summary>
+    /// Initiates dialogue with an NPC at the character's current location.
+    /// Broadcasts <c>NpcDialogue</c> to the caller with the NPC's response.
+    /// </summary>
+    /// <param name="request">Request containing the target entity ID.</param>
+    public async Task TalkToNpc(TalkToNpcHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before TalkToNpc");
+            return;
+        }
+
+        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string s ? s : string.Empty;
+        if (string.IsNullOrEmpty(zoneId))
+        {
+            await Clients.Caller.SendAsync("Error", "EnterZone must be called before TalkToNpc");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(
+                new TalkToNpcHubCommand(characterId, request.TargetEntityId, zoneId));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to talk to NPC");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("NpcDialogue", new
+            {
+                result.NpcName,
+                result.DialogueText,
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in TalkToNpc for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to talk to NPC");
+        }
+    }
+
+    /// <summary>
+    /// Inspects a visible entity (player, enemy, or NPC) at the character's current location.
+    /// Sends <c>EntityInspected</c> to the caller with descriptive information about the entity.
+    /// </summary>
+    /// <param name="request">Request containing the target entity ID.</param>
+    public async Task InspectEntity(InspectEntityHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before InspectEntity");
+            return;
+        }
+
+        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string s ? s : string.Empty;
+        if (string.IsNullOrEmpty(zoneId))
+        {
+            await Clients.Caller.SendAsync("Error", "EnterZone must be called before InspectEntity");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(
+                new InspectEntityHubCommand(characterId, request.TargetEntityId, zoneId));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to inspect entity");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("EntityInspected", new
+            {
+                result.EntityName,
+                result.EntityType,
+                result.Description,
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in InspectEntity for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to inspect entity");
+        }
+    }
+
     // Helpers
     private async Task LeaveCurrentZoneAsync(string connectionId, bool notifyPeers)
     {
@@ -3083,4 +3172,12 @@ public record UseAbilityInCombatHubRequest(string AbilityId);
 
 /// <summary>Request payload for <see cref="GameHub.ChangeRegion"/>.</summary>
 public record ChangeRegionHubRequest(string TargetRegionId);
+
+/// <summary>Request DTO sent by the client when calling <see cref="GameHub.TalkToNpc"/>.</summary>
+/// <param name="TargetEntityId">Unique instance ID of the NPC entity to talk to.</param>
+public record TalkToNpcHubRequest(Guid TargetEntityId);
+
+/// <summary>Request DTO sent by the client when calling <see cref="GameHub.InspectEntity"/>.</summary>
+/// <param name="TargetEntityId">Unique instance ID of the entity to inspect.</param>
+public record InspectEntityHubRequest(Guid TargetEntityId);
 
