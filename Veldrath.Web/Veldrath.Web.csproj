@@ -7,12 +7,15 @@
 
   <ItemGroup>
     <PackageReference Include="Markdig" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Serilog.Sinks.Console" />
     <PackageReference Include="Serilog.Sinks.File" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\RealmEngine.Core\RealmEngine.Core.csproj" />
+    <ProjectReference Include="..\RealmEngine.Shared\RealmEngine.Shared.csproj" />
     <ProjectReference Include="..\Veldrath.Auth\Veldrath.Auth.csproj" />
     <ProjectReference Include="..\Veldrath.Auth.Blazor\Veldrath.Auth.Blazor.csproj" />
     <ProjectReference Include="..\Veldrath.Contracts\Veldrath.Contracts.csproj" />

@@ -8,6 +8,9 @@
     <a href="/community">Community</a>
     @if (AuthState.IsLoggedIn)
     {
+        <a href="/game/characterselect">
+            <span class="oi oi-game-controller" aria-hidden="true"></span> Play
+        </a>
         <a href="/account/profile">@AuthState.Username</a>
         <a href="/auth/sign-out" data-enhance-nav="false">Sign Out</a>
     }

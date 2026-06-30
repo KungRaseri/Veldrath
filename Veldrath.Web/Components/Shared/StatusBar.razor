@@ -1,0 +1,31 @@
+@* Reusable health/mana/XP bar component. *@
+
+<div class="status-bar">
+    <span class="status-bar-label">@Label</span>
+    <div class="status-bar-track">
+        <div class="status-bar-fill"
+             style="width: @(Percentage)%; background-color: @Color;"
+             role="progressbar"
+             aria-valuenow="@Current"
+             aria-valuemin="0"
+             aria-valuemax="@Max">
+        </div>
+    </div>
+    <span class="status-bar-text">@Current / @Max</span>
+</div>
+
+@code {
+    /// <summary>The label displayed to the left of the bar (e.g. "HP", "MP", "XP").</summary>
+    [Parameter] public string Label { get; set; } = string.Empty;
+
+    /// <summary>The current value of the stat.</summary>
+    [Parameter] public int Current { get; set; }
+
+    /// <summary>The maximum value of the stat.</summary>
+    [Parameter] public int Max { get; set; }
+
+    /// <summary>The CSS color value for the bar fill (e.g. "red", "#ff4444").</summary>
+    [Parameter] public string Color { get; set; } = "gray";
+
+    private double Percentage => Max > 0 ? Math.Clamp((double)Current / Max * 100.0, 0, 100) : 0;
+}

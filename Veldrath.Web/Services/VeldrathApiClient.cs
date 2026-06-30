@@ -1,4 +1,7 @@
+using System.Net.Http.Json;
 using Veldrath.Auth;
+using Veldrath.Contracts.Characters;
+using Veldrath.Contracts.Content;
 using Veldrath.Contracts.Editorial;
 using Veldrath.Contracts.Foundry;
 
@@ -12,6 +15,51 @@ namespace Veldrath.Web.Services;
 /// </summary>
 public class VeldrathApiClient(HttpClient http) : VeldrathAuthApiClient(http)
 {
+    // ── Characters ───────────────────────────────────────────────────────────
+
+    /// <summary>Returns all characters belonging to the authenticated account.</summary>
+    public async Task<List<CharacterDto>> GetCharactersAsync(CancellationToken ct = default)
+    {
+        var resp = await Http.GetAsync("/api/characters", ct);
+        resp.EnsureSuccessStatusCode();
+        return await resp.Content.ReadFromJsonAsync<List<CharacterDto>>(ct) ?? [];
+    }
+
+    /// <summary>Creates a new character for the authenticated account.</summary>
+    /// <param name="name">The character's display name.</param>
+    /// <param name="className">The class display name (e.g. "Warrior", "Mage").</param>
+    /// <param name="difficultyMode">The difficulty mode: "normal" or "hardcore".</param>
+    /// <returns>The created character DTO, or <c>null</c> if the request was rejected.</returns>
+    public async Task<CharacterDto?> CreateCharacterAsync(string name, string className, string difficultyMode = "normal", CancellationToken ct = default)
+    {
+        var request = new CreateCharacterRequest(name, className, difficultyMode);
+        var resp = await Http.PostAsJsonAsync("/api/characters", request, ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<CharacterDto>(ct)
+            : null;
+    }
+
+    /// <summary>Checks whether a character name is available.</summary>
+    /// <param name="name">The desired character name.</param>
+    /// <returns>A response indicating availability, or <c>null</c> on failure.</returns>
+    public async Task<CheckNameAvailabilityResponse?> CheckCharacterNameAsync(string name, CancellationToken ct = default)
+    {
+        var resp = await Http.GetAsync($"/api/characters/check-name?name={Uri.EscapeDataString(name)}", ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<CheckNameAvailabilityResponse>(ct)
+            : null;
+    }
+
+    // ── Content (classes, species, etc.) ─────────────────────────────────────
+
+    /// <summary>Returns all active actor classes available for character creation.</summary>
+    public async Task<List<ActorClassDto>> GetClassesAsync(CancellationToken ct = default)
+    {
+        var resp = await Http.GetAsync("/api/content/classes", ct);
+        resp.EnsureSuccessStatusCode();
+        return await resp.Content.ReadFromJsonAsync<List<ActorClassDto>>(ct) ?? [];
+    }
+
     // ── Editorial (public, no auth required) ─────────────────────────────────
 
     /// <summary>Returns a paged list of published patch notes.</summary>

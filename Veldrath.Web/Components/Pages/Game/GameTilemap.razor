@@ -1,0 +1,82 @@
+@* Renders the zone tilemap as a CSS Grid with player, occupant, and enemy overlays. *@
+
+@if (GameState.ZoneTileMap is not null)
+{
+    <div class="game-tilemap"
+         style="grid-template-columns: repeat(@_gridColumns, @TileSize); grid-template-rows: repeat(@_gridRows, @TileSize);">
+        @for (var y = 0; y < _gridRows; y++)
+        {
+            for (var x = 0; x < _gridColumns; x++)
+            {
+                var tileX = x;
+                var tileY = y;
+                var tile = GameState.ZoneTileMap[tileY, tileX];
+                var isPlayer = IsPlayerAt(tileX, tileY);
+                var occupant = GetOccupantAt(tileX, tileY);
+                var enemy = GetEnemyAt(tileX, tileY);
+
+                <Tile Tile="tile"
+                      X="tileX"
+                      Y="tileY"
+                      OnClick="OnTileClick"
+                      IsPlayerHere="isPlayer"
+                      Occupant="occupant"
+                      Enemy="enemy" />
+            }
+        }
+    </div>
+}
+else
+{
+    <div class="game-tilemap-empty">
+        <p>No tilemap data available.</p>
+    </div>
+}
+
+@code {
+    /// <summary>The game hub connection service, injected by Blazor.</summary>
+    [Inject] private GameHubConnectionService Hub { get; set; } = null!;
+
+    /// <summary>The game state service, injected by Blazor.</summary>
+    [Inject] private GameStateService GameState { get; set; } = null!;
+
+    /// <summary>Size of each tile in pixels.</summary>
+    private const int TileSize = 36;
+
+    private int _gridColumns = 20;
+    private int _gridRows = 20;
+    private IDisposable? _stateSubscription;
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        _stateSubscription = GameState.OnStateChanged(() => InvokeAsync(StateHasChanged));
+        UpdateGridSize();
+    }
+
+    private void UpdateGridSize()
+    {
+        if (GameState.ZoneTileMap is not null)
+        {
+            _gridColumns = GameState.ZoneTileMap.GetLength(1);
+            _gridRows = GameState.ZoneTileMap.GetLength(0);
+        }
+    }
+
+    private async Task OnTileClick((int X, int Y) pos)
+    {
+        if (!GameState.IsInCombat)
+        {
+            await Hub.SendAsync("MoveCharacter", new { TileX = pos.X, TileY = pos.Y });
+        }
+    }
+
+    private bool IsPlayerAt(int x, int y) =>
+        GameState.PlayerTileX == x && GameState.PlayerTileY == y;
+
+    private OccupantInfo? GetOccupantAt(int x, int y) =>
+        GameState.ZoneOccupants.FirstOrDefault(o => o.TileX == x && o.TileY == y);
+
+    private EnemyInfo? GetEnemyAt(int x, int y) =>
+        GameState.ZoneEnemies.FirstOrDefault(e => e.TileX == x && e.TileY == y);
+}
