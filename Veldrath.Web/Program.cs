@@ -29,8 +29,11 @@ try
         .AddInteractiveServerComponents();
 
     // HttpClient for calling Veldrath.Server APIs.
-    var serverUrl = builder.Configuration["Veldrath:ServerUrl"]
-        ?? throw new InvalidOperationException("Veldrath:ServerUrl is not configured.");
+    var serverUrl = builder.Configuration["Veldrath:ServerUrl"];
+    if (string.IsNullOrWhiteSpace(serverUrl))
+        throw new InvalidOperationException(
+            "Veldrath:ServerUrl is not configured. Set it in appsettings.json, " +
+            "appsettings.{Environment}.json, or the Veldrath__ServerUrl environment variable.");
 
     // Scoped named client so all Blazor circuit components share the one instance
     // that AuthStateService.SetTokensAsync already called SetBearerToken on.
