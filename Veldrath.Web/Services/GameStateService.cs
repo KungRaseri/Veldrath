@@ -170,12 +170,16 @@ public sealed class GameStateService : INotifyPropertyChanged
 
     /// <summary>Updates state after a character has been selected.</summary>
     /// <param name="character">The selected character's basic information.</param>
-    public void ApplyCharacterSelected(CharacterBasicInfo character)
+    /// <param name="currentZoneId">Optional zone ID the character is currently in (from server).</param>
+    public void ApplyCharacterSelected(CharacterBasicInfo character, string? currentZoneId = null)
     {
         CurrentCharacter = character;
+        if (currentZoneId is not null)
+            CurrentZoneId = currentZoneId;
         PlayerTileX = 0;
         PlayerTileY = 0;
         RaisePropertyChanged(nameof(CurrentCharacter));
+        RaisePropertyChanged(nameof(CurrentZoneId));
         RaisePropertyChanged(nameof(PlayerTileX));
         RaisePropertyChanged(nameof(PlayerTileY));
     }

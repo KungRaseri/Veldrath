@@ -53,24 +53,86 @@ public sealed partial class Game : IAsyncDisposable
             var serverUrl = Configuration["Veldrath:ServerUrl"]
                 ?? throw new InvalidOperationException("Veldrath:ServerUrl is not configured.");
 
-            // If already connected from CharacterSelect, skip reconnecting.
+            // Always register hub event handlers, regardless of whether the hub is
+            // already connected from CharacterSelect.  If we skip registration when
+            // already connected, events like ZoneEntered / ZoneTileMap will never be
+            // handled because the CharacterSelect page only registered its own handlers.
+            RegisterHubHandlers();
+
+            // Subscribe to GameState property changes to trigger UI re-renders.
+            // Create this even when already connected so the Game page always reacts.
+            _stateSubscription ??= GameState.OnStateChanged(() => InvokeAsync(StateHasChanged));
+
             if (!Hub.IsConnected)
             {
-                // Register all hub event handlers BEFORE connecting.
-                RegisterHubHandlers();
-
                 await Hub.ConnectAsync(serverUrl, Auth.AccessToken);
-
-                // Subscribe to GameState property changes to trigger UI re-renders.
-                _stateSubscription = GameState.OnStateChanged(() => InvokeAsync(StateHasChanged));
             }
 
-            _hubConnected = true;
+            _hubConnected = Hub.IsConnected;
+
+            // If the hub is now connected and we have a character, enter the zone.
+            if (_hubConnected && GameState.CurrentCharacter is not null)
+            {
+                await EnterZoneAfterConnectAsync();
+            }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to connect to game hub.");
             GameState.ApplySystemMessage("Failed to connect to game server.");
+        }
+    }
+
+    /// <summary>
+    /// Enters the character's last-known zone and requests the tile map.
+    /// Called after the hub connection is established (or found already connected).
+    /// </summary>
+    private async Task EnterZoneAfterConnectAsync()
+    {
+        // If we already have a zone tilemap, nothing to do.
+        if (GameState.ZoneTileMap is not null)
+            return;
+
+        var zoneId = GameState.CurrentZoneId;
+
+        // If we don't have a zone ID yet, request re-selection from the server.
+        // The CharacterSelected handler will fire and we can proceed from there.
+        if (string.IsNullOrEmpty(zoneId))
+        {
+            Logger.LogInformation(
+                "No zone ID known yet — re-selecting character {CharacterId} to obtain zone info.",
+                GameState.CurrentCharacter!.Id);
+
+            try
+            {
+                await Hub.SendAsync("SelectCharacter", GameState.CurrentCharacter.Id);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to re-select character after connecting.");
+                GameState.ApplySystemMessage("Failed to restore game session.");
+            }
+            return;
+        }
+
+        await EnterZoneAsync(zoneId);
+    }
+
+    /// <summary>Enters the specified zone and requests the tile map.</summary>
+    /// <param name="zoneId">The zone to enter.</param>
+    private async Task EnterZoneAsync(string zoneId)
+    {
+        Logger.LogInformation("Entering zone {ZoneId}...", zoneId);
+
+        try
+        {
+            await Hub.SendAsync("EnterZone", zoneId);
+            await Hub.SendAsync("GetZoneTileMap");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to enter zone {ZoneId}.", zoneId);
+            GameState.ApplySystemMessage($"Failed to enter zone.");
         }
     }
 
@@ -90,7 +152,16 @@ public sealed partial class Game : IAsyncDisposable
                 payload.Id, payload.Name, payload.ClassName, payload.Level,
                 payload.Experience, payload.CurrentHealth, payload.MaxHealth,
                 payload.CurrentMana, payload.MaxMana, payload.Gold);
-            GameState.ApplyCharacterSelected(charInfo);
+
+            // Store the zone ID so EnterZoneAfterConnectAsync knows which zone to enter.
+            GameState.ApplyCharacterSelected(charInfo, payload.CurrentZoneId);
+
+            // If we now have a zone ID and the tilemap hasn't loaded yet, enter the zone.
+            if (!string.IsNullOrEmpty(payload.CurrentZoneId) && GameState.ZoneTileMap is null)
+            {
+                await EnterZoneAsync(payload.CurrentZoneId);
+            }
+
             await InvokeAsync(StateHasChanged);
         }));
 
