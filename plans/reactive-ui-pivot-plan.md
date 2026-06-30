@@ -1,4 +1,4 @@
-# Pure Reactive UI Pivot Plan
+ # Pure Reactive UI Pivot Plan
 
 > Replace 2D tilemap rendering (sprite/ASCII) with a full panel-driven reactive UI.
 > Keep the tilemap data model — render as structured text, tables, and clickable lists.
