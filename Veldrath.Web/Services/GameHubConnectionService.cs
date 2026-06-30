@@ -16,6 +16,12 @@ public sealed class GameHubConnectionService : IAsyncDisposable
     private bool _disposed;
 
     /// <summary>
+    /// Holds handler registrations that were made before <see cref="ConnectAsync"/> was called.
+    /// Applied to _connection after it is built, before it is started.
+    /// </summary>
+    private readonly List<Func<HubConnection, IDisposable>> _pendingOnRegistrations = [];
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="GameHubConnectionService"/> class.
     /// </summary>
     /// <param name="serviceProvider">The service provider for resolving scoped dependencies.</param>
@@ -70,6 +76,13 @@ public sealed class GameHubConnectionService : IAsyncDisposable
                 })
                 .WithAutomaticReconnect(new RetryPolicy())
                 .Build();
+
+            // Apply any handler registrations that were made before ConnectAsync was called.
+            foreach (var registration in _pendingOnRegistrations)
+            {
+                registration(_connection);
+            }
+            _pendingOnRegistrations.Clear();
 
             _connection.Closed += reason =>
             {
@@ -155,15 +168,26 @@ public sealed class GameHubConnectionService : IAsyncDisposable
     /// <returns>An <see cref="IDisposable"/> that unsubscribes the handler when disposed.</returns>
     public IDisposable On<T1>(string methodName, Func<T1, Task> handler)
     {
-        if (_connection is null)
+        if (_connection is not null)
         {
-            // Build a minimal connection just to register handlers if needed,
-            // but typically this is called after ConnectAsync sets up _connection.
-            throw new InvalidOperationException(
-                "Handlers must be registered after calling ConnectAsync so the HubConnection exists.");
+            return _connection.On(methodName, handler);
         }
 
-        return _connection.On(methodName, handler);
+        // Connection not yet built — defer the handler registration so it is applied
+        // in ConnectAsync after the HubConnection is created but before it is started.
+        var deferred = new DeferredDisposable();
+        _pendingOnRegistrations.Add(conn =>
+        {
+            var real = conn.On(methodName, handler);
+            deferred.SetInner(real);
+            return real;
+        });
+
+        _logger.LogDebug(
+            "On<{T1}>(\"{Method}\") deferred — _connection was null; will register during ConnectAsync.",
+            typeof(T1).Name, methodName);
+
+        return deferred;
     }
 
     /// <summary>
@@ -176,13 +200,26 @@ public sealed class GameHubConnectionService : IAsyncDisposable
     /// <returns>An <see cref="IDisposable"/> that unsubscribes the handler when disposed.</returns>
     public IDisposable On(string methodName, Func<Task> handler)
     {
-        if (_connection is null)
+        if (_connection is not null)
         {
-            throw new InvalidOperationException(
-                "Handlers must be registered after calling ConnectAsync so the HubConnection exists.");
+            return _connection.On(methodName, handler);
         }
 
-        return _connection.On(methodName, handler);
+        // Connection not yet built — defer the handler registration so it is applied
+        // in ConnectAsync after the HubConnection is created but before it is started.
+        var deferred = new DeferredDisposable();
+        _pendingOnRegistrations.Add(conn =>
+        {
+            var real = conn.On(methodName, handler);
+            deferred.SetInner(real);
+            return real;
+        });
+
+        _logger.LogDebug(
+            "On(\"{Method}\") deferred — _connection was null; will register during ConnectAsync.",
+            methodName);
+
+        return deferred;
     }
 
     /// <inheritdoc />
@@ -239,6 +276,38 @@ public sealed class GameHubConnectionService : IAsyncDisposable
             }
 
             return null; // Give up after exhausting all retry attempts.
+        }
+    }
+
+    /// <summary>
+    /// An <see cref="IDisposable"/> that wraps a real disposable that may not exist yet at
+    /// construction time.  Used to return an <see cref="IDisposable"/> from <see cref="On{T1}"/>
+    /// and <see cref="On(string, Func{Task})"/> when handlers are registered before
+    /// <see cref="ConnectAsync"/> has built the underlying <see cref="HubConnection"/>.
+    /// Once the real disposable is set, forwards <see cref="Dispose"/> to it.
+    /// </summary>
+    private sealed class DeferredDisposable : IDisposable
+    {
+        private IDisposable? _inner;
+        private bool _disposed;
+
+        /// <summary>Sets the real <see cref="IDisposable"/> that this wrapper delegates to.</summary>
+        /// <param name="inner">The actual subscription disposable from <c>HubConnection.On</c>.</param>
+        public void SetInner(IDisposable inner)
+        {
+            _inner = inner;
+            if (_disposed)
+            {
+                inner.Dispose();
+            }
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            _inner?.Dispose();
         }
     }
 }

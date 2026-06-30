@@ -55,8 +55,11 @@ public sealed partial class CharacterSelect : IAsyncDisposable
                 return;
             }
 
-            var serverUrl = Configuration["Veldrath:ServerUrl"]
-                ?? throw new InvalidOperationException("Veldrath:ServerUrl is not configured.");
+            var serverUrl = Configuration["Veldrath:ServerUrl"];
+            if (string.IsNullOrWhiteSpace(serverUrl))
+                throw new InvalidOperationException(
+                    "Veldrath:ServerUrl is not configured. Set it in appsettings.json, " +
+                    "appsettings.{Environment}.json, or the Veldrath__ServerUrl environment variable.");
 
             // Register handler for CharacterSelected event BEFORE connecting.
             _hubSubscriptions.Add(Hub.On<CharacterSelectedPayload>("CharacterSelected", async payload =>
@@ -95,7 +98,8 @@ public sealed partial class CharacterSelect : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to connect or load characters.");
+            Logger.LogError(ex, "Failed to connect or load characters: {ExceptionType}: {ExceptionMessage}",
+                ex.GetType().Name, ex.Message);
             _errorMessage = "Failed to connect to the game server. Please try again.";
         }
         finally
