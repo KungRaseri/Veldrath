@@ -1,8 +1,17 @@
-@using Veldrath.GameClient.Core.Services
-@* Bottom action bar showing zone info, connection status, and embedded ActionBar component. *@
-@inject GameStateService GameState
+@* Bottom action bar showing zone info, connection status with ping, degraded detection,
+    and embedded ActionBar component. The reconnecting banner is shown above the footer
+    when the hub connection enters the Reconnecting state. *@
 
 <div class="game-footer">
+    @* Reconnecting banner (absolute positioned above footer) *@
+    @if (ShowReconnectingBanner)
+    {
+        <div class="game-footer-reconnecting-banner">
+            <div class="spinner-small"></div>
+            <span>Reconnecting to game server...</span>
+        </div>
+    }
+
     <div class="game-footer-left">
         @if (!string.IsNullOrEmpty(GameState.CurrentZoneName))
         {
@@ -11,6 +20,10 @@
         else
         {
             <span class="game-footer-zone">No zone</span>
+        }
+        @if (PlayerCount > 0)
+        {
+            <span class="game-footer-connid" title="Players online">👥 @PlayerCount</span>
         }
     </div>
 
@@ -23,9 +36,13 @@
 
     <div class="game-footer-right">
         <span class="game-footer-status">
-            <span class="game-footer-dot @(GameState.IsConnected ? "dot-connected" : "dot-disconnected")"></span>
-            @(GameState.IsConnected ? "Connected" : "Disconnected")
+            <span class="game-footer-dot @DotClass"></span>
+            @StatusText
         </span>
+        @if (PingMs > 0 && Status != StatusIndicator.Reconnecting)
+        {
+            <span class="game-footer-ping" title="Round-trip time">@PingMs ms</span>
+        }
         @if (!string.IsNullOrEmpty(GameState.ServerConnectionId))
         {
             <span class="game-footer-connid" title="Connection ID">#@GameState.ServerConnectionId[..Math.Min(8, GameState.ServerConnectionId.Length)]</span>

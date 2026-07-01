@@ -1,14 +1,30 @@
+@using Veldrath.GameClient.Core.Abstractions
 @using Veldrath.GameClient.Core.Services
 @inherits LayoutComponentBase
 @inject IGameStateService GameState
+@inject IGameHubConnectionService Hub
 @inject Microsoft.AspNetCore.Components.NavigationManager Navigation
 
 <div class="game-layout @(GameState.IsConnected ? "in-game" : "")">
     @Body
 </div>
 
+@* Reconnect overlay shown when connection is lost *@
+<ReconnectOverlay OnReturnToMenu="HandleReturnToMenu" />
+
 @* Desktop bridge: loaded when running inside Avalonia WebView2 *@
 @if (Navigation.BaseUri.StartsWith("http://localhost", StringComparison.OrdinalIgnoreCase))
 {
     <script src="_content/Veldrath.GameClient.Components/bridge.js"></script>
+}
+
+@code {
+    private async Task HandleReturnToMenu()
+    {
+        if (GameState is GameStateService gs)
+        {
+            gs.ApplySystemMessage("Returning to main menu...");
+        }
+        Navigation.NavigateTo("/");
+    }
 }

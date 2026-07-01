@@ -10,7 +10,7 @@ namespace Veldrath.GameClient.Components.Tests;
 
 /// <summary>
 /// Tests for the <see cref="GameChat"/> component, verifying chat message
-/// rendering, system message styling, and empty state display.
+/// rendering, channel pills, system message styling, and empty state display.
 /// </summary>
 public class GameChatComponentTests : TestContext
 {
@@ -57,6 +57,10 @@ public class GameChatComponentTests : TestContext
 
         var cut = Render<GameChat>();
 
+        // Switch to System channel to see system messages
+        cut.Instance.ActiveChannel = "System";
+        cut.Render();
+
         var systemMsg = cut.Find(".game-chat-message-system");
         Assert.NotNull(systemMsg);
         Assert.Contains("Welcome to the game!", systemMsg.TextContent);
@@ -71,6 +75,10 @@ public class GameChatComponentTests : TestContext
         _gameState.ApplyChatMessage(new ChatMessage(Guid.Empty, "whisper", "Friend", "Secret message", DateTimeOffset.UtcNow));
 
         var cut = Render<GameChat>();
+
+        // Switch to Whisper channel to see whisper messages
+        cut.Instance.ActiveChannel = "Whisper";
+        cut.Render();
 
         var whisperMsg = cut.Find(".game-chat-message-whisper");
         Assert.NotNull(whisperMsg);
@@ -116,11 +124,46 @@ public class GameChatComponentTests : TestContext
     {
         var cut = Render<GameChat>();
 
-        // The send button should be disabled when no input text exists.
-        var sendButton = cut.Find("button");
+        // Find the send button specifically (not channel pills which are also buttons).
+        var sendButton = cut.Find(".game-chat-send-btn");
         Assert.NotNull(sendButton);
 
         var isDisabled = sendButton.GetAttribute("disabled");
         Assert.NotNull(isDisabled);
+    }
+
+    /// <summary>
+    /// Verifies channel pills render with the correct channel names.
+    /// </summary>
+    [Fact]
+    public void ChannelPills_Render_All_Channels()
+    {
+        var cut = Render<GameChat>();
+
+        var pills = cut.FindAll(".game-chat-pill");
+        Assert.Equal(4, pills.Count);
+
+        Assert.Contains("Zone", pills[0].TextContent);
+        Assert.Contains("Global", pills[1].TextContent);
+        Assert.Contains("Whisper", pills[2].TextContent);
+        Assert.Contains("System", pills[3].TextContent);
+    }
+
+    /// <summary>
+    /// Verifies clicking a channel pill activates it.
+    /// </summary>
+    [Fact]
+    public void ChannelPill_Click_Activates_Channel()
+    {
+        var cut = Render<GameChat>();
+
+        // Default is Zone
+        Assert.Equal("Zone", cut.Instance.ActiveChannel);
+
+        // Click the Global pill (second pill)
+        var pills = cut.FindAll(".game-chat-pill");
+        pills[1].Click();
+
+        Assert.Equal("Global", cut.Instance.ActiveChannel);
     }
 }
