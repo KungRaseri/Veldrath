@@ -49,6 +49,7 @@
 @code {
     private readonly List<IDisposable> _hubSubscriptions = [];
     private IDisposable? _stateSubscription;
+    private IDisposable? _hubStateSubscription;
     private bool _hubConnected;
     private bool _showOverlay;
     private GameOverlay.OverlayKind _activeOverlay;
@@ -62,7 +63,37 @@
             return;
         }
 
+        // Subscribe to hub state changes so we can detect when a reconnection
+        // succeeds and restore the game session (re-send SelectCharacter, EnterZone, etc.).
+        _hubStateSubscription = SubscribeToHubState();
+
         await ConnectAndRegisterHandlers();
+    }
+
+    /// <summary>
+    /// Subscribes to <see cref="IGameHubConnectionService.StateChanged"/> so the game page
+    /// can reinitialize its session when the hub reconnects after a transient failure.
+    /// </summary>
+    private IDisposable SubscribeToHubState()
+    {
+        void Handler(object? s, ConnectionState state)
+        {
+            _ = InvokeAsync(async () =>
+            {
+                // Only act on reconnection (when _hubConnected was already true before the drop).
+                if (_hubConnected && state == ConnectionState.Connected
+                    && GameState.CurrentCharacterId is not null)
+                {
+                    Logger.LogInformation(
+                        "Hub reconnected — restoring game session for character {CharId}.",
+                        GameState.CurrentCharacterId);
+                    await EnterZoneAfterConnectAsync();
+                }
+            });
+        }
+
+        Hub.StateChanged += Handler;
+        return new HubStateSubscription(() => Hub.StateChanged -= Handler);
     }
 
     private async Task ConnectAndRegisterHandlers()
@@ -541,10 +572,21 @@
         return tiles;
     }
 
+    /// <summary>
+    /// Simple disposable that runs an action on dispose, used to unsubscribe from
+    /// <see cref="IGameHubConnectionService.StateChanged"/>.
+    /// </summary>
+    private sealed class HubStateSubscription(Action onDispose) : IDisposable
+    {
+        /// <inheritdoc />
+        public void Dispose() => onDispose();
+    }
+
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
         _stateSubscription?.Dispose();
+        _hubStateSubscription?.Dispose();
 
         foreach (var sub in _hubSubscriptions)
         {

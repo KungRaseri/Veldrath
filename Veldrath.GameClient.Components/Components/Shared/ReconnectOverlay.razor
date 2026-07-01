@@ -1,5 +1,7 @@
+@using Microsoft.Extensions.Configuration
 @using Veldrath.GameClient.Core.Abstractions
 @using Veldrath.GameClient.Core.Models
+@using Veldrath.Auth.Blazor
 @* Full-screen overlay shown when the SignalR hub connection is lost or reconnecting.
     Displays a countdown timer with auto-retry and manual reconnect/return-to-menu options. *@
 
@@ -75,6 +77,12 @@
 
     [Inject]
     private IGameHubConnectionService Hub { get; set; } = null!;
+
+    [Inject]
+    private IConfiguration Configuration { get; set; } = null!;
+
+    [Inject]
+    private AuthStateServiceBase Auth { get; set; } = null!;
 
     /// <inheritdoc />
     protected override void OnInitialized()
@@ -214,17 +222,23 @@
     {
         try
         {
-            // Use the existing hub's reconnect mechanism.
-            // If State is Failed or Disconnected, try to connect explicitly.
+            // For Failed or Disconnected states, SignalR's automatic reconnect has
+            // given up.  Re-establish the connection from scratch using the stored
+            // server URL and access token.
             if (Hub.State is ConnectionState.Failed or ConnectionState.Disconnected)
             {
-                // The connection will need a server URL and token.
-                // These are typically available from the game state or auth service.
-                // Since we don't have direct access here, we notify the user.
-                _statusMessage = "Cannot reconnect automatically. Please return to the menu.";
-                _isBusy = false;
-                _showCountdown = false;
-                StateHasChanged();
+                var serverUrl = Configuration["Veldrath:ServerUrl"];
+                if (string.IsNullOrWhiteSpace(serverUrl) || !Auth.IsLoggedIn || Auth.AccessToken is null)
+                {
+                    _statusMessage = "Cannot reconnect automatically. Please return to the menu.";
+                    _isBusy = false;
+                    _showCountdown = false;
+                    StateHasChanged();
+                    return;
+                }
+
+                await Hub.ConnectAsync(serverUrl, Auth.AccessToken);
+                // State will transition to Connected via the handler — no further action needed.
                 return;
             }
 

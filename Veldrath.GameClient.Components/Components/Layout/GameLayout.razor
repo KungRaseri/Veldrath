@@ -8,8 +8,11 @@
     @Body
 </div>
 
-@* Reconnect overlay shown when connection is lost *@
-<ReconnectOverlay OnReturnToMenu="HandleReturnToMenu" />
+@* Reconnect overlay shown when connection is lost.
+    OnReconnected triggers a layout re-render so child components (e.g. Game.razor)
+    can detect the Connected state transition and reinitialize their session. *@
+<ReconnectOverlay OnReturnToMenu="HandleReturnToMenu"
+                  OnReconnected="HandleReconnected" />
 
 @* Desktop bridge: loaded when running inside Avalonia WebView2 *@
 @if (Navigation.BaseUri.StartsWith("http://localhost", StringComparison.OrdinalIgnoreCase))
@@ -22,5 +25,15 @@
     {
         GameState.ApplySystemMessage("Returning to main menu...");
         Navigation.NavigateTo("/");
+    }
+
+    /// <summary>
+    /// Called by <see cref="ReconnectOverlay"/> after a successful reconnection.
+    /// Forces a layout re-render so child components can detect the transition
+    /// and restore their game session state.
+    /// </summary>
+    private void HandleReconnected()
+    {
+        StateHasChanged();
     }
 }

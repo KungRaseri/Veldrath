@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
 using Serilog.Events;
+using Veldrath.Auth.Blazor;
 using RealmFoundry;
 using RealmFoundry.Services;
 
@@ -44,6 +46,19 @@ try
             sp.GetRequiredService<IHttpClientFactory>().CreateClient("foundry")));
 
     builder.Services.AddScoped<AuthStateService>();
+
+    // Register the base class so components can inject AuthStateServiceBase.
+    builder.Services.AddScoped<AuthStateServiceBase>(sp =>
+        sp.GetRequiredService<AuthStateService>());
+
+    // Register AuthStateService as the Blazor AuthenticationStateProvider so
+    // [Authorize] attributes are backed by real auth state.
+    builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
+        sp.GetRequiredService<AuthStateService>());
+
+    // Enable cascading authentication state for framework-level auth discovery.
+    builder.Services.AddCascadingAuthenticationState();
+
     builder.Services.AddHttpContextAccessor();
 
     // DataProtection key persistence

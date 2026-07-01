@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
@@ -55,6 +56,15 @@ try
     // Register the base class so RCL components can inject AuthStateServiceBase.
     builder.Services.AddScoped<AuthStateServiceBase>(sp =>
         sp.GetRequiredService<AuthStateService>());
+
+    // Register AuthStateService as the Blazor AuthenticationStateProvider so
+    // [Authorize] attributes on pages and components are backed by real auth state.
+    builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
+        sp.GetRequiredService<AuthStateService>());
+
+    // Enable cascading authentication state so the Blazor framework can discover
+    // the AuthenticationStateProvider via the component hierarchy.
+    builder.Services.AddCascadingAuthenticationState();
 
     // Game client services — registered as interfaces for abstraction.
     builder.Services.AddScoped<IGameHubConnectionService, GameHubConnectionService>();
