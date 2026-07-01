@@ -113,23 +113,21 @@ try
     builder.Services.AddDbContext<EditorialDbContext>(options =>
         options.UseNpgsql(connectionString));
 
-    // ASP.NET Core Identity
-    builder.Services.AddIdentity<PlayerAccount, IdentityRole<Guid>>(options =>
-        {
-            options.Password.RequireDigit = true;
-            options.Password.RequiredLength = 12;
-            options.Password.RequireNonAlphanumeric = true;
-            options.Password.RequireUppercase = false;
-            options.User.RequireUniqueEmail = true;
-            options.Lockout.MaxFailedAccessAttempts = 5;
-            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
-        })
-        .AddEntityFrameworkStores<ApplicationDbContext>()
-        .AddDefaultTokenProviders();
+    // JWT authentication — validate all required configuration values early so the
+    // app fails fast at startup rather than producing opaque runtime errors.
+    // Must be registered before AddIdentity in .NET 10+ because AddIdentity no longer
+    // calls AddAuthentication internally; the IAuthenticationService registration lives here.
+    var jwtKey = builder.Configuration["Jwt:Key"];
+    if (string.IsNullOrWhiteSpace(jwtKey))
+        throw new InvalidOperationException("Jwt:Key is not configured or is empty.");
 
-    // JWT authentication
-    var jwtKey = builder.Configuration["Jwt:Key"]
-        ?? throw new InvalidOperationException("Jwt:Key is not configured.");
+    var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+    if (string.IsNullOrWhiteSpace(jwtIssuer))
+        throw new InvalidOperationException("Jwt:Issuer is not configured or is empty.");
+
+    var jwtAudience = builder.Configuration["Jwt:Audience"];
+    if (string.IsNullOrWhiteSpace(jwtAudience))
+        throw new InvalidOperationException("Jwt:Audience is not configured or is empty.");
 
     builder.Services.AddAuthentication(options =>
         {
@@ -143,9 +141,9 @@ try
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
                 ValidateIssuer = true,
-                ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                ValidIssuer = jwtIssuer,
                 ValidateAudience = true,
-                ValidAudience = builder.Configuration["Jwt:Audience"],
+                ValidAudience = jwtAudience,
                 ClockSkew = TimeSpan.FromSeconds(30),
             };
 
@@ -162,6 +160,20 @@ try
                 }
             };
         });
+
+    // ASP.NET Core Identity
+    builder.Services.AddIdentity<PlayerAccount, IdentityRole<Guid>>(options =>
+        {
+            options.Password.RequireDigit = true;
+            options.Password.RequiredLength = 12;
+            options.Password.RequireNonAlphanumeric = true;
+            options.Password.RequireUppercase = false;
+            options.User.RequireUniqueEmail = true;
+            options.Lockout.MaxFailedAccessAttempts = 5;
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+        })
+        .AddEntityFrameworkStores<ApplicationDbContext>()
+        .AddDefaultTokenProviders();
 
     builder.Services.AddAuthorization(options =>
     {
