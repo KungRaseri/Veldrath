@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using RealmEngine.Shared.Models;
 using Veldrath.GameClient.Core.Abstractions;
 using Veldrath.GameClient.Core.Payloads;
 
@@ -130,7 +131,32 @@ public sealed class GameStateService : IGameStateService
     int IGameStateService.CurrentCharacterLevel => CurrentCharacter?.Level ?? 0;
 
     /// <inheritdoc />
+    int IGameStateService.CurrentCharacterGold => CurrentCharacter?.Gold ?? 0;
+
+    /// <inheritdoc />
     object? IGameStateService.ZoneTileMap => ZoneTileMap;
+
+    // ── Inventory & equipment ───────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    IReadOnlyList<Item> IGameStateService.InventoryItems => InventoryItems;
+
+    /// <inheritdoc />
+    IReadOnlyDictionary<string, Item> IGameStateService.EquippedItems => EquippedItems;
+
+    /// <summary>The items currently in the character's inventory bag.</summary>
+    public List<Item> InventoryItems { get; private set; } = [];
+
+    /// <summary>The items currently equipped by the character, keyed by slot name.</summary>
+    public Dictionary<string, Item> EquippedItems { get; private set; } = [];
+
+    // ── Shop state ──────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    IReadOnlyList<ShopItemEntry> IGameStateService.ShopCatalog => ShopCatalog;
+
+    /// <summary>The current merchant's shop catalog.</summary>
+    public List<ShopItemEntry> ShopCatalog { get; private set; } = [];
 
     // ── Zone state ──────────────────────────────────────────────────────────────
 
@@ -252,6 +278,36 @@ public sealed class GameStateService : IGameStateService
     public void ApplyEnemyDefeated(EnemyDefeatedPayload payload)
     {
         ApplySystemMessage("An enemy has been defeated!");
+    }
+
+    // ── Inventory & equipment Apply methods ─────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyInventoryUpdated(IReadOnlyList<Item> items, IReadOnlyDictionary<string, Item> equipped)
+    {
+        InventoryItems = [.. items];
+        EquippedItems = new Dictionary<string, Item>(equipped);
+        RaisePropertyChanged(nameof(InventoryItems));
+        RaisePropertyChanged(nameof(EquippedItems));
+    }
+
+    /// <inheritdoc />
+    public void ApplyEquipmentChanged(string slot, Item? item)
+    {
+        if (item is null)
+            EquippedItems.Remove(slot);
+        else
+            EquippedItems[slot] = item;
+        RaisePropertyChanged(nameof(EquippedItems));
+    }
+
+    // ── Shop Apply methods ──────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyShopCatalogUpdated(IReadOnlyList<ShopItemEntry> catalog)
+    {
+        ShopCatalog = [.. catalog];
+        RaisePropertyChanged(nameof(ShopCatalog));
     }
 
     // ── Existing Apply methods (preserved for backward compatibility) ─────────
@@ -451,6 +507,9 @@ public sealed class GameStateService : IGameStateService
         CombatEnemy = null;
         LastCombatActionResult = null;
         ChatMessages = [];
+        InventoryItems = [];
+        EquippedItems = [];
+        ShopCatalog = [];
 
         RaisePropertyChanged(nameof(ServerConnectionId));
         RaisePropertyChanged(nameof(IsConnected));
@@ -466,6 +525,9 @@ public sealed class GameStateService : IGameStateService
         RaisePropertyChanged(nameof(CombatEnemy));
         RaisePropertyChanged(nameof(LastCombatActionResult));
         RaisePropertyChanged(nameof(ChatMessages));
+        RaisePropertyChanged(nameof(InventoryItems));
+        RaisePropertyChanged(nameof(EquippedItems));
+        RaisePropertyChanged(nameof(ShopCatalog));
     }
 
     /// <summary>Subscribe to any property change. Returns an <see cref="IDisposable"/> that unsubscribes.</summary>

@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -9,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration.Memory;
 using Veldrath.Auth;
 using Veldrath.Auth.Blazor;
+using Veldrath.Client.Services;
 using Veldrath.GameClient.Core.Abstractions;
 using Veldrath.GameClient.Core.Services;
 using Veldrath.GameClient.Components.Components.Layout;
@@ -27,6 +29,7 @@ public sealed class HostedGameServer : IHostedGameServer, IAsyncDisposable
     private readonly ILogger<HostedGameServer> _logger;
     private readonly string _remoteServerUrl;
     private readonly ILoggerFactory _loggerFactory;
+    private readonly TokenStore _tokenStore;
     private bool _disposed;
 
     /// <summary>
@@ -34,10 +37,12 @@ public sealed class HostedGameServer : IHostedGameServer, IAsyncDisposable
     /// </summary>
     /// <param name="remoteServerUrl">Base URL of the remote Veldrath.Server (e.g. <c>http://localhost:9000</c>).</param>
     /// <param name="loggerFactory">Logger factory for the embedded server pipeline.</param>
-    public HostedGameServer(string remoteServerUrl, ILoggerFactory loggerFactory)
+    /// <param name="tokenStore">The desktop client's token store for forwarding the real JWT to the embedded services.</param>
+    public HostedGameServer(string remoteServerUrl, ILoggerFactory loggerFactory, TokenStore tokenStore)
     {
         _remoteServerUrl = remoteServerUrl.TrimEnd('/');
         _loggerFactory = loggerFactory;
+        _tokenStore = tokenStore;
         _logger = loggerFactory.CreateLogger<HostedGameServer>();
     }
 
@@ -87,23 +92,33 @@ public sealed class HostedGameServer : IHostedGameServer, IAsyncDisposable
         builder.Services.AddScoped<IGameHubConnectionService, GameHubConnectionService>();
         builder.Services.AddScoped<IGameStateService, GameStateService>();
 
-        // Register a stub auth API client for the embedded server.
-        builder.Services.AddSingleton<IVeldrathAuthApiClient>(_ => new EmbeddedAuthApiClient());
+        // Register the desktop client's token store so the embedded services can
+        // forward the real JWT to the remote Veldrath.Server.
+        builder.Services.AddSingleton(_tokenStore);
 
-        // Register a placeholder AuthStateService for the embedded server.
-        // The desktop client handles auth via its own TokenStore and ServerConnectionService.
+        // Register an auth API client that forwards the desktop JWT.
+        builder.Services.AddSingleton<IVeldrathAuthApiClient>(sp =>
+        {
+            var tokens = sp.GetRequiredService<TokenStore>();
+            return new EmbeddedAuthApiClient(tokens);
+        });
+
+        // Register an auth state service that reflects the desktop's real auth state.
         builder.Services.AddScoped<AuthStateServiceBase, EmbeddedAuthStateService>();
 
         // Register a typed HttpClient for the remote game server API, used by IGameApiClient.
+        // The Bearer token is added per-request by EmbeddedGameApiClient from the TokenStore.
         builder.Services.AddHttpClient("embedded-game", client =>
             client.BaseAddress = new Uri(_remoteServerUrl));
 
-        // Map the typed client to the RCL's IGameApiClient interface.
+        // Map the typed client to the RCL's IGameApiClient interface,
+        // forwarding the desktop JWT on every API call.
         builder.Services.AddScoped<IGameApiClient>(sp =>
         {
             var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
             var client = httpClientFactory.CreateClient("embedded-game");
-            return new EmbeddedGameApiClient(client);
+            var tokens = sp.GetRequiredService<TokenStore>();
+            return new EmbeddedGameApiClient(client, tokens);
         });
 
         // Register configuration for the embedded server.
@@ -200,16 +215,35 @@ public sealed class HostedGameServer : IHostedGameServer, IAsyncDisposable
 }
 
 /// <summary>
-/// Stub <see cref="IVeldrathAuthApiClient"/> that satisfies the DI contract for the
-/// embedded server context. The desktop client manages authentication natively.
+/// Embedded <see cref="IVeldrathAuthApiClient"/> that satisfies the DI contract for the
+/// embedded server context. Uses the desktop client's <see cref="TokenStore"/> for the
+/// real JWT so <c>AuthStateServiceBase</c> can report accurate auth state.
+/// Auth mutations (login/register/logout) are no-ops — the desktop client handles those.
 /// </summary>
 [ExcludeFromCodeCoverage]
 internal sealed class EmbeddedAuthApiClient : IVeldrathAuthApiClient
 {
+    private readonly TokenStore _tokens;
+    private string? _bearerToken;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EmbeddedAuthApiClient"/> class.
+    /// </summary>
+    /// <param name="tokens">The desktop client's token store.</param>
+    public EmbeddedAuthApiClient(TokenStore tokens)
+    {
+        _tokens = tokens;
+    }
+
     /// <inheritdoc />
-    public void SetBearerToken(string token) { }
+    public void SetBearerToken(string token) => _bearerToken = token;
+
     /// <inheritdoc />
-    public void ClearBearerToken() { }
+    public void ClearBearerToken() => _bearerToken = null;
+
+    /// <summary>Gets the current bearer token: the explicitly-set one, or the desktop token store's JWT.</summary>
+    private string? EffectiveToken => _bearerToken ?? _tokens.AccessToken;
+
     /// <inheritdoc />
     public Task<bool> IsServerReachableAsync(CancellationToken ct = default) => Task.FromResult(true);
     /// <inheritdoc />
@@ -272,52 +306,65 @@ internal sealed class EmbeddedAuthApiClient : IVeldrathAuthApiClient
 
 /// <summary>
 /// Minimal <see cref="AuthStateServiceBase"/> for the embedded server context.
-/// The desktop client manages authentication natively; this stub satisfies the RCL's DI
-/// requirement for <c>AuthStateServiceBase</c> without performing real auth operations.
-/// Sets the internal access token to a sentinel value so <see cref="AuthStateServiceBase.IsLoggedIn"/>
-/// returns <c>true</c> and the RCL's <c>[Authorize]</c> guard passes automatically.
+/// Uses the desktop client's <see cref="TokenStore"/> for real auth state so the
+/// RCL's <c>[Authorize]</c> guard and <c>IsLoggedIn</c> binding reflect the
+/// actual authenticated user.
 /// </summary>
 [ExcludeFromCodeCoverage]
 internal sealed class EmbeddedAuthStateService : AuthStateServiceBase
 {
+    private readonly TokenStore _tokens;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="EmbeddedAuthStateService"/> class.
-    /// Sets the internal access token to a sentinel value so the base class reports
-    /// the user as logged in.
+    /// Reads the current access token from the desktop's token store so the base class
+    /// reports <c>IsLoggedIn</c> accurately.
     /// </summary>
-    /// <param name="api">Stub auth API client.</param>
-    public EmbeddedAuthStateService(IVeldrathAuthApiClient api) : base(api)
+    /// <param name="api">Embedded auth API client.</param>
+    /// <param name="tokens">The desktop client's token store.</param>
+    public EmbeddedAuthStateService(IVeldrathAuthApiClient api, TokenStore tokens) : base(api)
     {
-        // Set a sentinel token to satisfy the base class IsLoggedIn check.
-        // The desktop client handles real authentication natively.
-        _accessToken = "__embedded_mode__";
+        _tokens = tokens;
+        _accessToken = _tokens.AccessToken ?? "__embedded_mode__";
         IsAuthReady = true;
     }
 }
 
 /// <summary>
 /// Minimal <see cref="IGameApiClient"/> implementation for the embedded server.
-/// Delegates HTTP calls to the remote Veldrath.Server API, forwarding the auth token
-/// from the desktop client's <see cref="TokenStore"/> via a header set by the caller.
+/// Delegates HTTP calls to the remote Veldrath.Server API, forwarding the auth JWT
+/// from the desktop client's <see cref="TokenStore"/> via the <c>Authorization</c> header.
 /// </summary>
 [ExcludeFromCodeCoverage]
 internal sealed class EmbeddedGameApiClient : IGameApiClient
 {
     private readonly HttpClient _httpClient;
+    private readonly TokenStore _tokens;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EmbeddedGameApiClient"/> class.
     /// </summary>
     /// <param name="httpClient">The pre-configured HTTP client targeting the remote server.</param>
-    public EmbeddedGameApiClient(HttpClient httpClient)
+    /// <param name="tokens">The desktop client's token store for forwarding the JWT.</param>
+    public EmbeddedGameApiClient(HttpClient httpClient, TokenStore tokens)
     {
         _httpClient = httpClient;
+        _tokens = tokens;
+    }
+
+    /// <summary>Adds the desktop JWT as a Bearer token to an HTTP request if available.</summary>
+    private void ApplyAuth(HttpRequestMessage request)
+    {
+        if (_tokens.AccessToken is { } token)
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
     /// <inheritdoc />
     public async Task<List<Veldrath.Contracts.Characters.CharacterDto>> GetCharactersAsync(CancellationToken ct = default)
     {
-        var response = await _httpClient.GetAsync("/api/characters", ct);
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/characters");
+        ApplyAuth(request);
+        var response = await _httpClient.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<List<Veldrath.Contracts.Characters.CharacterDto>>(cancellationToken: ct)
                ?? [];
@@ -328,7 +375,12 @@ internal sealed class EmbeddedGameApiClient : IGameApiClient
         string name, string className, string difficultyMode = "normal", CancellationToken ct = default)
     {
         var payload = new { name, className, difficultyMode };
-        var response = await _httpClient.PostAsJsonAsync("/api/characters", payload, ct);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/characters")
+        {
+            Content = JsonContent.Create(payload),
+        };
+        ApplyAuth(request);
+        var response = await _httpClient.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<Veldrath.Contracts.Characters.CharacterDto>(cancellationToken: ct);
     }
@@ -338,7 +390,9 @@ internal sealed class EmbeddedGameApiClient : IGameApiClient
         string name, CancellationToken ct = default)
     {
         var encoded = Uri.EscapeDataString(name);
-        var response = await _httpClient.GetAsync($"/api/characters/check-name?name={encoded}", ct);
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"/api/characters/check-name?name={encoded}");
+        ApplyAuth(request);
+        var response = await _httpClient.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<Veldrath.Contracts.Characters.CheckNameAvailabilityResponse>(cancellationToken: ct);
     }
@@ -346,7 +400,9 @@ internal sealed class EmbeddedGameApiClient : IGameApiClient
     /// <inheritdoc />
     public async Task<List<Veldrath.Contracts.Content.ActorClassDto>> GetClassesAsync(CancellationToken ct = default)
     {
-        var response = await _httpClient.GetAsync("/api/classes", ct);
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/classes");
+        ApplyAuth(request);
+        var response = await _httpClient.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<List<Veldrath.Contracts.Content.ActorClassDto>>(cancellationToken: ct)
                ?? [];

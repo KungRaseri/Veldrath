@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using RealmEngine.Shared.Models;
 using Veldrath.Contracts.Tilemap;
 using Veldrath.GameClient.Core.Payloads;
 
@@ -30,6 +31,22 @@ public interface IGameStateService : INotifyPropertyChanged
 
     /// <summary>The currently selected character's level, or <c>0</c> if none selected.</summary>
     int CurrentCharacterLevel { get; }
+
+    /// <summary>The amount of gold the current character possesses, or <c>0</c> if none selected.</summary>
+    int CurrentCharacterGold { get; }
+
+    // ── Inventory & equipment ───────────────────────────────────────────────
+
+    /// <summary>The items currently in the character's inventory bag.</summary>
+    IReadOnlyList<Item> InventoryItems { get; }
+
+    /// <summary>The items currently equipped by the character, keyed by slot name (Head, Chest, MainHand, etc.).</summary>
+    IReadOnlyDictionary<string, Item> EquippedItems { get; }
+
+    // ── Shop state ──────────────────────────────────────────────────────────
+
+    /// <summary>The current merchant's shop catalog, or an empty list if no merchant is open.</summary>
+    IReadOnlyList<ShopItemEntry> ShopCatalog { get; }
 
     // ── Zone state ──────────────────────────────────────────────────────────
 
@@ -92,4 +109,31 @@ public interface IGameStateService : INotifyPropertyChanged
     /// <summary>Handles notification that an enemy has been defeated.</summary>
     /// <param name="payload">The enemy defeated payload from the hub event.</param>
     void ApplyEnemyDefeated(EnemyDefeatedPayload payload);
+
+    // ── Inventory & equipment Apply methods ─────────────────────────────────
+
+    /// <summary>Replaces the entire inventory and equipped items with a fresh snapshot from the server.</summary>
+    /// <param name="items">The items in the character's inventory bag.</param>
+    /// <param name="equipped">The items currently equipped, keyed by slot name.</param>
+    void ApplyInventoryUpdated(IReadOnlyList<Item> items, IReadOnlyDictionary<string, Item> equipped);
+
+    /// <summary>Updates a single equipment slot after an equip or unequip action.</summary>
+    /// <param name="slot">The equipment slot name (Head, Chest, MainHand, etc.).</param>
+    /// <param name="item">The item now in the slot, or <c>null</c> if the slot was unequipped.</param>
+    void ApplyEquipmentChanged(string slot, Item? item);
+
+    // ── Shop Apply methods ──────────────────────────────────────────────────
+
+    /// <summary>Replaces the current shop catalog with a fresh list from the server.</summary>
+    /// <param name="catalog">The items for sale in the current merchant's shop.</param>
+    void ApplyShopCatalogUpdated(IReadOnlyList<ShopItemEntry> catalog);
 }
+
+/// <summary>
+/// Represents a single item for sale in a merchant's shop catalog.
+/// </summary>
+/// <param name="Slug">The URL-safe item identifier.</param>
+/// <param name="Name">The display name of the item.</param>
+/// <param name="Rarity">The <see cref="ItemRarity"/> tier of the item.</param>
+/// <param name="Price">The purchase price in gold.</param>
+public readonly record struct ShopItemEntry(string Slug, string Name, ItemRarity Rarity, int Price);

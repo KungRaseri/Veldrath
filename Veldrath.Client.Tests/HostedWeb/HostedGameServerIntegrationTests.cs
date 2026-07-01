@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
 using Veldrath.Client.HostedWeb;
+using Veldrath.Client.Services;
 using Xunit;
 
 namespace Veldrath.Client.Tests.HostedWeb;
@@ -37,7 +38,8 @@ public sealed class HostedGameServerIntegrationTests : IAsyncLifetime
         var loggerFactory = LoggerFactory.Create(builder => { });
         _logger = loggerFactory.CreateLogger<HostedGameServerIntegrationTests>();
 
-        _server = new HostedGameServer("http://localhost:9000", loggerFactory);
+        var tokenStore = new TokenStore();
+        _server = new HostedGameServer("http://localhost:9000", loggerFactory, tokenStore);
         _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
     }
 

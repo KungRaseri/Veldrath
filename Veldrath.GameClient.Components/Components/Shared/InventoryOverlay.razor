@@ -1,9 +1,11 @@
 @* Inventory overlay showing the character's inventory grid and equipped items. *@
 @using Microsoft.Extensions.Logging
 @using RealmEngine.Shared.Models
-@inject GameStateService GameState
+@using Veldrath.GameClient.Core.Payloads
+@inject IGameStateService GameState
 @inject IGameHubConnectionService Hub
 @inject ILogger<InventoryOverlay> Logger
+@implements IAsyncDisposable
 
 <div class="inventory-overlay">
     <div class="inventory-equipment">
@@ -11,7 +13,7 @@
         <div class="equipment-grid">
             <div class="equipment-slot" title="Head">
                 <span class="equipment-slot-label">Head</span>
-                @if (_equippedItems.TryGetValue("Head", out var headItem))
+                @if (GameState.EquippedItems.TryGetValue("Head", out var headItem))
                 {
                     <span class="equipment-slot-item" title="@headItem.GetDisplayName()">@headItem.GetShortName()</span>
                 }
@@ -22,7 +24,7 @@
             </div>
             <div class="equipment-slot" title="Chest">
                 <span class="equipment-slot-label">Chest</span>
-                @if (_equippedItems.TryGetValue("Chest", out var chestItem))
+                @if (GameState.EquippedItems.TryGetValue("Chest", out var chestItem))
                 {
                     <span class="equipment-slot-item" title="@chestItem.GetDisplayName()">@chestItem.GetShortName()</span>
                 }
@@ -33,7 +35,7 @@
             </div>
             <div class="equipment-slot" title="Main Hand">
                 <span class="equipment-slot-label">Main Hand</span>
-                @if (_equippedItems.TryGetValue("MainHand", out var mhItem))
+                @if (GameState.EquippedItems.TryGetValue("MainHand", out var mhItem))
                 {
                     <span class="equipment-slot-item" title="@mhItem.GetDisplayName()">@mhItem.GetShortName()</span>
                 }
@@ -44,7 +46,7 @@
             </div>
             <div class="equipment-slot" title="Off Hand">
                 <span class="equipment-slot-label">Off Hand</span>
-                @if (_equippedItems.TryGetValue("OffHand", out var ohItem))
+                @if (GameState.EquippedItems.TryGetValue("OffHand", out var ohItem))
                 {
                     <span class="equipment-slot-item" title="@ohItem.GetDisplayName()">@ohItem.GetShortName()</span>
                 }
@@ -55,7 +57,7 @@
             </div>
             <div class="equipment-slot" title="Legs">
                 <span class="equipment-slot-label">Legs</span>
-                @if (_equippedItems.TryGetValue("Legs", out var legsItem))
+                @if (GameState.EquippedItems.TryGetValue("Legs", out var legsItem))
                 {
                     <span class="equipment-slot-item" title="@legsItem.GetDisplayName()">@legsItem.GetShortName()</span>
                 }
@@ -66,7 +68,7 @@
             </div>
             <div class="equipment-slot" title="Feet">
                 <span class="equipment-slot-label">Feet</span>
-                @if (_equippedItems.TryGetValue("Feet", out var feetItem))
+                @if (GameState.EquippedItems.TryGetValue("Feet", out var feetItem))
                 {
                     <span class="equipment-slot-item" title="@feetItem.GetDisplayName()">@feetItem.GetShortName()</span>
                 }
@@ -77,7 +79,7 @@
             </div>
             <div class="equipment-slot" title="Ring">
                 <span class="equipment-slot-label">Ring</span>
-                @if (_equippedItems.TryGetValue("Ring", out var ringItem))
+                @if (GameState.EquippedItems.TryGetValue("Ring", out var ringItem))
                 {
                     <span class="equipment-slot-item" title="@ringItem.GetDisplayName()">@ringItem.GetShortName()</span>
                 }
@@ -88,7 +90,7 @@
             </div>
             <div class="equipment-slot" title="Amulet">
                 <span class="equipment-slot-label">Amulet</span>
-                @if (_equippedItems.TryGetValue("Amulet", out var amuItem))
+                @if (GameState.EquippedItems.TryGetValue("Amulet", out var amuItem))
                 {
                     <span class="equipment-slot-item" title="@amuItem.GetDisplayName()">@amuItem.GetShortName()</span>
                 }
@@ -101,15 +103,15 @@
     </div>
 
     <div class="inventory-bag">
-        <h4>Inventory (@_inventoryItems.Count items)</h4>
-        @if (_inventoryItems.Count == 0)
+        <h4>Inventory (@GameState.InventoryItems.Count items)</h4>
+        @if (GameState.InventoryItems.Count == 0)
         {
             <p class="inventory-empty">Your inventory is empty.</p>
         }
         else
         {
             <div class="inventory-grid">
-                @foreach (var item in _inventoryItems)
+                @foreach (var item in GameState.InventoryItems)
                 {
                     <div class="inventory-slot @GetRarityClass(item.Rarity)"
                          @onclick="() => SelectItem(item)"
@@ -178,96 +180,34 @@
 </div>
 
 @code {
-    private readonly List<Item> _inventoryItems = [];
-    private readonly Dictionary<string, Item> _equippedItems = [];
+    private readonly List<IDisposable> _hubSubscriptions = [];
     private Item? _selectedItem;
 
     /// <inheritdoc />
     protected override void OnInitialized()
     {
-        LoadInventory();
+        // Subscribe to hub events that keep inventory state in sync with the server.
+        _hubSubscriptions.Add(Hub.On<InventoryUpdatedPayload>("InventoryUpdated", payload =>
+        {
+            GameState.ApplyInventoryUpdated(payload.InventoryItems, payload.EquippedItems);
+            return Task.CompletedTask;
+        }));
+
+        _hubSubscriptions.Add(Hub.On<EquipmentChangedPayload>("EquipmentChanged", payload =>
+        {
+            GameState.ApplyEquipmentChanged(payload.Slot, payload.Item);
+            return Task.CompletedTask;
+        }));
     }
 
-    private void LoadInventory()
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
     {
-        _inventoryItems.Clear();
-        _equippedItems.Clear();
+        foreach (var sub in _hubSubscriptions)
+            sub.Dispose();
+        _hubSubscriptions.Clear();
 
-        // The RCL GameStateService does not carry item data directly; the desktop
-        // ViewModel loads it via hub events.  For the RCL overlays we provide
-        // placeholder demo data so the UI is always functional until real hub
-        // integration is wired.
-        AddDemoData();
-    }
-
-    private void AddDemoData()
-    {
-        _equippedItems["MainHand"] = new Item
-        {
-            Name = "Iron Longsword",
-            BaseName = "Longsword",
-            Slug = "iron-longsword",
-            Type = ItemType.Weapon,
-            Rarity = ItemRarity.Common,
-            Price = 50,
-            Weight = 3.5,
-            Description = "A sturdy iron longsword.",
-            Damage = new ItemDamage { Min = 3, Max = 8 },
-        };
-
-        _equippedItems["Chest"] = new Item
-        {
-            Name = "Leather Tunic",
-            BaseName = "Leather Tunic",
-            Slug = "leather-tunic",
-            Type = ItemType.Chest,
-            ArmorClass = "light",
-            Rarity = ItemRarity.Common,
-            Price = 25,
-            Weight = 4.0,
-            Description = "A simple leather tunic.",
-        };
-
-        _inventoryItems.Add(new Item
-        {
-            Name = "Health Potion",
-            Slug = "health-potion",
-            Type = ItemType.Consumable,
-            Rarity = ItemRarity.Common,
-            Price = 15,
-            Weight = 0.5,
-            Quantity = 3,
-            IsStackable = true,
-            StackSize = 10,
-            Description = "Restores 50 health.",
-        });
-
-        _inventoryItems.Add(new Item
-        {
-            Name = "Mana Potion",
-            Slug = "mana-potion",
-            Type = ItemType.Consumable,
-            Rarity = ItemRarity.Common,
-            Price = 20,
-            Weight = 0.5,
-            Quantity = 2,
-            IsStackable = true,
-            StackSize = 10,
-            Description = "Restores 30 mana.",
-        });
-
-        _inventoryItems.Add(new Item
-        {
-            Name = "Steel Dagger",
-            BaseName = "Dagger",
-            Slug = "steel-dagger",
-            Type = ItemType.Weapon,
-            Rarity = ItemRarity.Uncommon,
-            Price = 120,
-            Weight = 1.0,
-            Description = "A sharp steel dagger.",
-            Damage = new ItemDamage { Min = 2, Max = 6 },
-        });
+        await Task.CompletedTask;
     }
 
     private void SelectItem(Item item)
@@ -306,7 +246,6 @@
         try
         {
             await Hub.SendAsync("DropItem", item.Slug);
-            _inventoryItems.Remove(item);
             if (_selectedItem == item) _selectedItem = null;
             Logger.LogInformation("Dropped {ItemName}", item.Name);
         }

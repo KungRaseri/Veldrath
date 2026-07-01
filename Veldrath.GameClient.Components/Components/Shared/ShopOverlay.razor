@@ -1,21 +1,24 @@
 @* Shop overlay showing merchant catalog and buy/sell interface. *@
 @using Microsoft.Extensions.Logging
 @using RealmEngine.Shared.Models
-@inject GameStateService GameState
+@using Veldrath.GameClient.Core.Abstractions
+@using Veldrath.GameClient.Core.Payloads
+@inject IGameStateService GameState
 @inject IGameHubConnectionService Hub
 @inject ILogger<ShopOverlay> Logger
+@implements IAsyncDisposable
 
 <div class="shop-overlay">
     <div class="shop-catalog">
         <h4>Merchant Wares</h4>
-        @if (_shopItems.Count == 0)
+        @if (GameState.ShopCatalog.Count == 0)
         {
             <p class="shop-empty">This merchant has nothing for sale.</p>
         }
         else
         {
             <div class="shop-items">
-                @foreach (var entry in _shopItems)
+                @foreach (var entry in GameState.ShopCatalog)
                 {
                     <div class="shop-item">
                         <div class="shop-item-info">
@@ -25,7 +28,7 @@
                         <span class="shop-item-price">@entry.Price g</span>
                         <button class="btn btn-sm btn-primary"
                                 @onclick="() => BuyItem(entry)"
-                                disabled="@(!Hub.IsConnected || GameState.CurrentCharacter?.Gold < entry.Price)">
+                                disabled="@(!Hub.IsConnected || GameState.CurrentCharacterGold < entry.Price)">
                             Buy
                         </button>
                     </div>
@@ -35,15 +38,15 @@
     </div>
 
     <div class="shop-player-inventory">
-        <h4>Your Items (@_playerItems.Count)</h4>
-        @if (_playerItems.Count == 0)
+        <h4>Your Items (@GameState.InventoryItems.Count)</h4>
+        @if (GameState.InventoryItems.Count == 0)
         {
             <p class="shop-empty">You have no items to sell.</p>
         }
         else
         {
             <div class="shop-items">
-                @foreach (var item in _playerItems)
+                @foreach (var item in GameState.InventoryItems)
                 {
                     var sellPrice = item.Price / 2;
                     <div class="shop-item">
@@ -75,61 +78,32 @@
 </div>
 
 @code {
-    private readonly List<ShopEntry> _shopItems = [];
-    private readonly List<Item> _playerItems = [];
+    private readonly List<IDisposable> _hubSubscriptions = [];
     private string? _lastMessage;
     private bool _lastMessageIsError;
-
-    private sealed record ShopEntry(string Slug, string Name, ItemRarity Rarity, int Price);
 
     /// <inheritdoc />
     protected override void OnInitialized()
     {
-        LoadShop();
+        // Subscribe to shop catalog updates from the hub.
+        _hubSubscriptions.Add(Hub.On<ShopCatalogPayload>("ShopCatalogUpdated", payload =>
+        {
+            GameState.ApplyShopCatalogUpdated(payload.Catalog);
+            return Task.CompletedTask;
+        }));
     }
 
-    private void LoadShop()
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
     {
-        _shopItems.Clear();
-        _playerItems.Clear();
+        foreach (var sub in _hubSubscriptions)
+            sub.Dispose();
+        _hubSubscriptions.Clear();
 
-        // Demo data — in a full implementation this would request the merchant's
-        // catalog via hub and the player's inventory from game state.
-        _shopItems.Add(new ShopEntry("health-potion", "Health Potion", ItemRarity.Common, 25));
-        _shopItems.Add(new ShopEntry("mana-potion", "Mana Potion", ItemRarity.Common, 35));
-        _shopItems.Add(new ShopEntry("iron-sword", "Iron Sword", ItemRarity.Common, 80));
-        _shopItems.Add(new ShopEntry("leather-boots", "Leather Boots", ItemRarity.Common, 30));
-        _shopItems.Add(new ShopEntry("steel-dagger", "Steel Dagger", ItemRarity.Uncommon, 180));
-        _shopItems.Add(new ShopEntry("torch", "Torch", ItemRarity.Common, 5));
-
-        _playerItems.Add(new Item
-        {
-            Name = "Rusty Dagger",
-            BaseName = "Rusty Dagger",
-            Slug = "rusty-dagger",
-            Type = ItemType.Weapon,
-            Rarity = ItemRarity.Common,
-            Price = 12,
-            Weight = 1.0,
-            Description = "A worn, rusty dagger.",
-        });
-        _playerItems.Add(new Item
-        {
-            Name = "Wolf Pelt",
-            BaseName = "Wolf Pelt",
-            Slug = "wolf-pelt",
-            Type = ItemType.Material,
-            Rarity = ItemRarity.Common,
-            Price = 8,
-            Weight = 0.5,
-            Quantity = 3,
-            IsStackable = true,
-            StackSize = 20,
-            Description = "The pelt of a grey wolf.",
-        });
+        await Task.CompletedTask;
     }
 
-    private async Task BuyItem(ShopEntry entry)
+    private async Task BuyItem(ShopItemEntry entry)
     {
         try
         {
