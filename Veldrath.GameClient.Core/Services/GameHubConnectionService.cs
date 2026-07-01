@@ -1,23 +1,28 @@
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.Logging;
+using Veldrath.GameClient.Core.Abstractions;
+using Veldrath.GameClient.Core.Models;
 
-namespace Veldrath.Web.Services;
+namespace Veldrath.GameClient.Core.Services;
 
 /// <summary>
 /// Manages the server-to-server SignalR <see cref="HubConnection"/> to Veldrath.Server's
 /// GameHub at <c>/hubs/game</c>.  Registered as a scoped service so each Blazor circuit
 /// gets its own isolated game connection.
+/// Implements <see cref="IGameHubConnectionService"/> for abstraction across consumers.
 /// </summary>
-public sealed class GameHubConnectionService : IAsyncDisposable
+public sealed class GameHubConnectionService : IGameHubConnectionService, IAsyncDisposable
 {
     private HubConnection? _connection;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<GameHubConnectionService> _logger;
     private readonly SemaphoreSlim _connectionLock = new(1, 1);
     private bool _disposed;
+    private ConnectionState _state = ConnectionState.Disconnected;
 
     /// <summary>
     /// Holds handler registrations that were made before <see cref="ConnectAsync"/> was called.
-    /// Applied to _connection after it is built, before it is started.
+    /// Applied to <c>_connection</c> after it is built, before it is started.
     /// </summary>
     private readonly List<Func<HubConnection, IDisposable>> _pendingOnRegistrations = [];
 
@@ -34,19 +39,25 @@ public sealed class GameHubConnectionService : IAsyncDisposable
         _logger = logger;
     }
 
-    /// <summary>
-    /// Returns <c>true</c> when the underlying <see cref="HubConnection"/> is in the
-    /// <see cref="HubConnectionState.Connected"/> state.
-    /// </summary>
+    /// <inheritdoc />
     public bool IsConnected => _connection?.State == HubConnectionState.Connected;
 
-    /// <summary>
-    /// Establishes the <see cref="HubConnection"/> to the game server's GameHub.
-    /// </summary>
-    /// <param name="serverUrl">The base URL of the game server (e.g. <c>http://localhost:5000</c>).</param>
-    /// <param name="accessToken">The JWT access token used to authenticate the SignalR connection.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <exception cref="InvalidOperationException">Thrown when the service has been disposed.</exception>
+    /// <inheritdoc />
+    public ConnectionState State
+    {
+        get => _state;
+        private set
+        {
+            if (_state == value) return;
+            _state = value;
+            StateChanged?.Invoke(this, value);
+        }
+    }
+
+    /// <inheritdoc />
+    public event EventHandler<ConnectionState>? StateChanged;
+
+    /// <inheritdoc />
     public async Task ConnectAsync(string serverUrl, string accessToken, CancellationToken ct = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -59,6 +70,8 @@ public sealed class GameHubConnectionService : IAsyncDisposable
                 _logger.LogWarning("GameHub connection is already connected.");
                 return;
             }
+
+            State = ConnectionState.Connecting;
 
             // Tear down any previous connection before building a new one.
             if (_connection is not null)
@@ -86,12 +99,33 @@ public sealed class GameHubConnectionService : IAsyncDisposable
 
             _connection.Closed += reason =>
             {
+                State = ConnectionState.Disconnected;
                 _logger.LogWarning(reason, "GameHub connection closed.");
                 return Task.CompletedTask;
             };
 
+            _connection.Reconnecting += _ =>
+            {
+                State = ConnectionState.Reconnecting;
+                _logger.LogInformation("GameHub connection reconnecting...");
+                return Task.CompletedTask;
+            };
+
+            _connection.Reconnected += _ =>
+            {
+                State = ConnectionState.Connected;
+                _logger.LogInformation("GameHub connection re-established.");
+                return Task.CompletedTask;
+            };
+
             await _connection.StartAsync(ct);
+            State = ConnectionState.Connected;
             _logger.LogInformation("GameHub connection established to {HubUrl}.", hubUrl);
+        }
+        catch
+        {
+            State = ConnectionState.Failed;
+            throw;
         }
         finally
         {
@@ -99,10 +133,7 @@ public sealed class GameHubConnectionService : IAsyncDisposable
         }
     }
 
-    /// <summary>
-    /// Disconnects the <see cref="HubConnection"/> gracefully.
-    /// </summary>
-    /// <param name="ct">Cancellation token.</param>
+    /// <inheritdoc />
     public async Task DisconnectAsync(CancellationToken ct = default)
     {
         await _connectionLock.WaitAsync(ct);
@@ -116,17 +147,12 @@ public sealed class GameHubConnectionService : IAsyncDisposable
         }
         finally
         {
+            State = ConnectionState.Disconnected;
             _connectionLock.Release();
         }
     }
 
-    /// <summary>
-    /// Sends a hub method invocation (calls a GameHub method on the server) with one argument.
-    /// </summary>
-    /// <param name="methodName">The name of the hub method to invoke.</param>
-    /// <param name="arg1">The argument to pass to the hub method.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <exception cref="InvalidOperationException">Thrown when the connection is not established.</exception>
+    /// <inheritdoc />
     public async Task SendAsync(string methodName, object? arg1, CancellationToken ct = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -139,12 +165,24 @@ public sealed class GameHubConnectionService : IAsyncDisposable
         await _connection.InvokeAsync(methodName, arg1, ct);
     }
 
+    /// <inheritdoc />
+    public async Task SendAsync(string methodName, object? arg1, object? arg2, CancellationToken ct = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        if (_connection is null || _connection.State != HubConnectionState.Connected)
+        {
+            throw new InvalidOperationException("GameHub connection is not established.");
+        }
+
+        await _connection.InvokeAsync(methodName, arg1, arg2, ct);
+    }
+
     /// <summary>
     /// Sends a hub method invocation with no arguments.
     /// </summary>
     /// <param name="methodName">The name of the hub method to invoke.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <exception cref="InvalidOperationException">Thrown when the connection is not established.</exception>
     public async Task SendAsync(string methodName, CancellationToken ct = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -157,16 +195,8 @@ public sealed class GameHubConnectionService : IAsyncDisposable
         await _connection.InvokeAsync(methodName, ct);
     }
 
-    /// <summary>
-    /// Registers a handler for a hub event that receives one argument.
-    /// Must be called before <see cref="ConnectAsync"/> to ensure the handler is attached
-    /// before the connection starts receiving messages.
-    /// </summary>
-    /// <typeparam name="T1">The type of the first argument.</typeparam>
-    /// <param name="methodName">The name of the hub event to subscribe to.</param>
-    /// <param name="handler">The handler delegate to invoke when the event fires.</param>
-    /// <returns>An <see cref="IDisposable"/> that unsubscribes the handler when disposed.</returns>
-    public IDisposable On<T1>(string methodName, Func<T1, Task> handler)
+    /// <inheritdoc />
+    public IDisposable On<T>(string methodName, Func<T, Task> handler)
     {
         if (_connection is not null)
         {
@@ -185,7 +215,32 @@ public sealed class GameHubConnectionService : IAsyncDisposable
 
         _logger.LogDebug(
             "On<{T1}>(\"{Method}\") deferred — _connection was null; will register during ConnectAsync.",
-            typeof(T1).Name, methodName);
+            typeof(T).Name, methodName);
+
+        return deferred;
+    }
+
+    /// <inheritdoc />
+    public IDisposable On<T1, T2>(string methodName, Func<T1, T2, Task> handler)
+    {
+        if (_connection is not null)
+        {
+            return _connection.On(methodName, handler);
+        }
+
+        // Connection not yet built — defer the handler registration so it is applied
+        // in ConnectAsync after the HubConnection is created but before it is started.
+        var deferred = new DeferredDisposable();
+        _pendingOnRegistrations.Add(conn =>
+        {
+            var real = conn.On(methodName, handler);
+            deferred.SetInner(real);
+            return real;
+        });
+
+        _logger.LogDebug(
+            "On<{T1},{T2}>(\"{Method}\") deferred — _connection was null; will register during ConnectAsync.",
+            typeof(T1).Name, typeof(T2).Name, methodName);
 
         return deferred;
     }
@@ -247,6 +302,7 @@ public sealed class GameHubConnectionService : IAsyncDisposable
         }
 
         _connectionLock.Dispose();
+        State = ConnectionState.Disconnected;
 
         GC.SuppressFinalize(this);
     }
@@ -281,7 +337,7 @@ public sealed class GameHubConnectionService : IAsyncDisposable
 
     /// <summary>
     /// An <see cref="IDisposable"/> that wraps a real disposable that may not exist yet at
-    /// construction time.  Used to return an <see cref="IDisposable"/> from <see cref="On{T1}"/>
+    /// construction time.  Used to return an <see cref="IDisposable"/> from <see cref="On{T}"/>
     /// and <see cref="On(string, Func{Task})"/> when handlers are registered before
     /// <see cref="ConnectAsync"/> has built the underlying <see cref="HubConnection"/>.
     /// Once the real disposable is set, forwards <see cref="Dispose"/> to it.

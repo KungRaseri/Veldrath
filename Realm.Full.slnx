@@ -1,4 +1,4 @@
-﻿<Solution>
+<Solution>
   <Project Path="RealmUI.Fonts/RealmUI.Fonts.csproj" />
   <Project Path="Veldrath.Assets/Veldrath.Assets.csproj" />
   <Project Path="Veldrath.Assets.Tests/Veldrath.Assets.Tests.csproj" />
@@ -24,4 +24,6 @@
   <Project Path="RealmFoundry.Tests/RealmFoundry.Tests.csproj" />
   <Project Path="Veldrath.Web/Veldrath.Web.csproj" />
   <Project Path="Veldrath.Web.Tests/Veldrath.Web.Tests.csproj" />
+  <Project Path="Veldrath.GameClient.Core/Veldrath.GameClient.Core.csproj" />
+  <Project Path="Veldrath.GameClient.Core.Tests/Veldrath.GameClient.Core.Tests.csproj" />
 </Solution>

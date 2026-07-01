@@ -1,7 +1,9 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Veldrath.GameClient.Core.Abstractions;
+using Veldrath.GameClient.Core.Payloads;
 
-namespace Veldrath.Web.Services;
+namespace Veldrath.GameClient.Core.Services;
 
 // ── DTO records used by GameStateService ─────────────────────────────────────
 
@@ -83,11 +85,12 @@ public record EnemyInfo(
 
 /// <summary>
 /// Per-circuit game state manager.  Holds the authoritative state for the current player's
-/// game session and implements <see cref="INotifyPropertyChanged"/> so Blazor components
+/// game session and implements <see cref="INotifyPropertyChanged"/> so consumers
 /// can react to state changes.  Call <c>Apply*</c> methods from hub event handlers to
 /// update state.
+/// Implements <see cref="IGameStateService"/> for abstraction across consumers.
 /// </summary>
-public sealed class GameStateService : INotifyPropertyChanged
+public sealed class GameStateService : IGameStateService
 {
     /// <inheritdoc />
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -116,6 +119,18 @@ public sealed class GameStateService : INotifyPropertyChanged
 
     /// <summary>The currently selected character's basic information, or <c>null</c> if none selected.</summary>
     public CharacterBasicInfo? CurrentCharacter { get; private set; }
+
+    /// <inheritdoc />
+    string? IGameStateService.CurrentCharacterId => CurrentCharacter?.Id.ToString();
+
+    /// <inheritdoc />
+    string? IGameStateService.CurrentCharacterName => CurrentCharacter?.Name;
+
+    /// <inheritdoc />
+    int IGameStateService.CurrentCharacterLevel => CurrentCharacter?.Level ?? 0;
+
+    /// <inheritdoc />
+    object? IGameStateService.ZoneTileMap => ZoneTileMap;
 
     // ── Zone state ──────────────────────────────────────────────────────────────
 
@@ -156,7 +171,90 @@ public sealed class GameStateService : INotifyPropertyChanged
     /// <summary>The ordered list of chat messages received during the current session.</summary>
     public List<ChatMessage> ChatMessages { get; private set; } = [];
 
-    // ── Apply methods (called from hub event handlers) ──────────────────────────
+    // ── IGameStateService Apply methods (called from hub event handlers) ────────
+
+    /// <inheritdoc />
+    public void ApplyCharacterSelected(CharacterSelectedPayload payload)
+    {
+        var character = new CharacterBasicInfo(
+            payload.Id, payload.Name, payload.ClassName, payload.Level,
+            payload.Experience, payload.CurrentHealth, payload.MaxHealth,
+            payload.CurrentMana, payload.MaxMana, payload.Gold);
+
+        ApplyCharacterSelected(character, payload.CurrentZoneId);
+    }
+
+    /// <inheritdoc />
+    public void ApplyZoneEntered(ZoneEnteredPayload payload)
+    {
+        ApplyZoneEntered(payload.Id, payload.Name, 0, 0, null);
+    }
+
+    /// <inheritdoc />
+    public void ApplyCombatStarted(CombatStartedPayload payload)
+    {
+        var enemy = new EnemyInfo(
+            payload.EnemyId, payload.EnemyName, payload.EnemyLevel,
+            payload.EnemyCurrentHealth, payload.EnemyMaxHealth, 0, 0);
+        ApplyCombatStarted(enemy);
+    }
+
+    /// <inheritdoc />
+    public void ApplyCombatTurn(CombatTurnPayload payload)
+    {
+        var resultText = BuildCombatResultText(payload);
+        ApplyCombatTurn(resultText);
+        ApplyCharacterHealth(payload.PlayerRemainingHealth);
+    }
+
+    /// <inheritdoc />
+    public void ApplyCombatEnded(CombatEndedPayload payload)
+    {
+        ApplyCombatEnded();
+        ApplySystemMessage($"Combat ended: {payload.Reason}");
+    }
+
+    /// <inheritdoc />
+    public void ApplyChatMessage(ChatMessagePayload payload)
+    {
+        var msg = new ChatMessage(
+            payload.CharacterId, payload.Channel, payload.Sender,
+            payload.Message, payload.Timestamp);
+        ApplyChatMessage(msg);
+    }
+
+    /// <inheritdoc />
+    public void ApplyPlayerEntered(PlayerEnteredPayload payload)
+    {
+        var occupant = new OccupantInfo(payload.CharacterId, payload.CharacterName, DateTimeOffset.UtcNow);
+        ApplyPlayerEntered(occupant);
+    }
+
+    /// <inheritdoc />
+    public void ApplyPlayerLeft(PlayerLeftPayload payload)
+    {
+        ApplyPlayerLeft(payload.CharacterId);
+    }
+
+    /// <inheritdoc />
+    public void ApplyCharacterMoved(CharacterMovedPayload payload)
+    {
+        ApplyCharacterMoved(payload.TileX, payload.TileY);
+    }
+
+    /// <inheritdoc />
+    public void ApplyZoneEntitiesSnapshot(ZoneEntitiesSnapshotPayload payload)
+    {
+        ApplySystemMessage("Zone entities snapshot received.");
+    }
+
+    /// <inheritdoc />
+    public void ApplyEnemyDefeated(EnemyDefeatedPayload payload)
+    {
+        ApplySystemMessage("An enemy has been defeated!");
+    }
+
+    // ── Existing Apply methods (preserved for backward compatibility) ─────────
 
     /// <summary>Updates the connection ID after a successful hub connection.</summary>
     /// <param name="connectionId">The server-assigned connection ID.</param>
@@ -386,6 +484,54 @@ public sealed class GameStateService : INotifyPropertyChanged
     {
         /// <inheritdoc />
         public void Dispose() => onDispose();
+    }
+
+    private void ApplyCharacterHealth(int playerRemainingHealth)
+    {
+        if (CurrentCharacter is not null)
+        {
+            CurrentCharacter = CurrentCharacter with { CurrentHealth = playerRemainingHealth };
+            RaisePropertyChanged(nameof(CurrentCharacter));
+        }
+    }
+
+    /// <summary>Builds a human-readable combat result string from the turn payload.</summary>
+    private static string BuildCombatResultText(CombatTurnPayload p)
+    {
+        var parts = new List<string>();
+
+        if (p.Action == "attack" && p.PlayerDamage > 0)
+            parts.Add($"You hit for {p.PlayerDamage} damage.");
+        else if (p.Action == "attack")
+            parts.Add("Your attack missed.");
+
+        if (p.Action == "defend")
+            parts.Add("You brace for impact.");
+
+        if (p.Action == "ability" && p.AbilityDamage > 0)
+            parts.Add($"Your ability dealt {p.AbilityDamage} damage.");
+        if (p.Action == "ability" && p.HealthRestored > 0)
+            parts.Add($"You restored {p.HealthRestored} health.");
+
+        if (p.EnemyDamage > 0)
+            parts.Add(string.IsNullOrEmpty(p.EnemyAbilityUsed)
+                ? $"Enemy hits you for {p.EnemyDamage} damage."
+                : $"Enemy uses {p.EnemyAbilityUsed} for {p.EnemyDamage} damage.");
+        else if (p.Action == "defend")
+            parts.Add("You blocked the enemy attack.");
+
+        if (p.EnemyDefeated)
+            parts.Add("Enemy defeated!");
+
+        if (p.PlayerDefeated)
+            parts.Add("You have been defeated!");
+
+        if (p.XpEarned > 0)
+            parts.Add($"Gained {p.XpEarned} XP.");
+        if (p.GoldEarned > 0)
+            parts.Add($"Gained {p.GoldEarned} gold.");
+
+        return parts.Count > 0 ? string.Join(" ", parts) : "Combat turn processed.";
     }
 
     private void RaisePropertyChanged([CallerMemberName] string? propertyName = null)
