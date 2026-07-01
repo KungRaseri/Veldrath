@@ -1,18 +1,21 @@
 @* Journal / Quest Log overlay showing active and completed quests. *@
 @using Microsoft.Extensions.Logging
+@using Veldrath.GameClient.Core.Abstractions
 @inject IGameHubConnectionService Hub
+@inject IGameStateService GameState
 @inject ILogger<JournalOverlay> Logger
+@implements IAsyncDisposable
 
 <div class="journal-overlay">
     <div class="journal-quest-list">
-        <h4>Active Quests (@_activeQuests.Count)</h4>
-        @if (_activeQuests.Count == 0)
+        <h4>Active Quests (@GameState.QuestLog.Count)</h4>
+        @if (GameState.QuestLog.Count == 0)
         {
             <p class="journal-empty">No active quests. Find an NPC in town to get started!</p>
         }
         else
         {
-            @foreach (var quest in _activeQuests)
+            @foreach (var quest in GameState.QuestLog)
             {
                 <div class="journal-quest @(_selectedQuest == quest ? "journal-quest-selected" : "")"
                      @onclick="() => SelectQuest(quest)">
@@ -63,12 +66,12 @@
         </div>
     }
 
-    @if (_completedQuests.Count > 0)
+    @if (GameState.CompletedQuests.Count > 0)
     {
         <div class="journal-completed">
-            <h4>Completed Quests (@_completedQuests.Count)</h4>
+            <h4>Completed Quests (@GameState.CompletedQuests.Count)</h4>
             <div class="journal-completed-list">
-                @foreach (var quest in _completedQuests)
+                @foreach (var quest in GameState.CompletedQuests)
                 {
                     <div class="journal-completed-item">@quest.Title</div>
                 }
@@ -78,74 +81,55 @@
 </div>
 
 @code {
-    private readonly List<JournalQuest> _activeQuests = [];
-    private readonly List<JournalQuest> _completedQuests = [];
-    private JournalQuest? _selectedQuest;
+    private QuestLogEntry? _selectedQuest;
+    private IDisposable? _questLogSubscription;
 
-    private sealed class JournalQuest
-    {
-        public string Id { get; init; } = string.Empty;
-        public string Title { get; init; } = string.Empty;
-        public string Description { get; init; } = string.Empty;
-        public int Progress { get; set; }
-        public int Total { get; init; }
-        public int XpReward { get; init; }
-        public int GoldReward { get; init; }
-        public bool IsComplete => Progress >= Total;
-        public Dictionary<string, int> Objectives { get; init; } = [];
-        public Dictionary<string, int> ProgressData { get; set; } = [];
-    }
+    /// <summary>
+    /// Hub event payload received when the quest log is sent from the server.
+    /// </summary>
+    /// <param name="Active">The currently active quests.</param>
+    /// <param name="Completed">The completed quests.</param>
+    public sealed record QuestLogPayload(
+        IReadOnlyList<QuestLogEntry> Active,
+        IReadOnlyList<QuestLogEntry> Completed);
 
     /// <inheritdoc />
     protected override void OnInitialized()
     {
-        LoadJournal();
+        // Subscribe to hub event for quest log updates
+        _questLogSubscription = Hub.On<QuestLogPayload>("QuestLogReceived", payload =>
+        {
+            GameState.ApplyQuestLogUpdated(payload.Active, payload.Completed);
+            _ = InvokeAsync(StateHasChanged);
+            return Task.CompletedTask;
+        });
+
+        // Request current quest log from the server
+        _ = RequestQuestLogAsync();
     }
 
-    private void LoadJournal()
+    private async Task RequestQuestLogAsync()
     {
-        // Demo data — in a full implementation this would request the quest log
-        // from the hub (GetQuestLog / ReceiveQuestLog).
-        _activeQuests.Add(new JournalQuest
+        try
         {
-            Id = "wolf-hunt",
-            Title = "Wolf Hunt",
-            Description = "The farmer at Fenwick Crossing needs you to thin the wolf population in the surrounding woods.",
-            Progress = 2,
-            Total = 5,
-            XpReward = 150,
-            GoldReward = 25,
-            Objectives = new Dictionary<string, int> { ["Wolves Slain"] = 5 },
-            ProgressData = new Dictionary<string, int> { ["Wolves Slain"] = 2 },
-        });
-
-        _activeQuests.Add(new JournalQuest
+            if (Hub.IsConnected)
+                await Hub.SendAsync("GetQuestLog");
+        }
+        catch (Exception ex)
         {
-            Id = "lost-delivery",
-            Title = "Lost Delivery",
-            Description = "A merchant's package was lost on the road to Aldenmere. Find it and return it.",
-            Progress = 0,
-            Total = 1,
-            XpReward = 300,
-            GoldReward = 50,
-            Objectives = new Dictionary<string, int> { ["Find the Package"] = 1 },
-            ProgressData = new Dictionary<string, int> { ["Find the Package"] = 0 },
-        });
-
-        _completedQuests.Add(new JournalQuest
-        {
-            Id = "first-steps",
-            Title = "First Steps",
-            Description = "Welcome to Veldrath! Speak with the village elder.",
-            Progress = 1,
-            Total = 1,
-            XpReward = 50,
-            GoldReward = 10,
-        });
+            Logger.LogWarning(ex, "Failed to request quest log from server.");
+        }
     }
 
-    private void SelectQuest(JournalQuest quest)
+    private void SelectQuest(QuestLogEntry quest)
     {
         _selectedQuest = quest;
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        _questLogSubscription?.Dispose();
+        await Task.CompletedTask;
     }
 }

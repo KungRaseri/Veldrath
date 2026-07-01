@@ -1,9 +1,9 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Components;
 using Veldrath.GameClient.Core.Abstractions;
 using Veldrath.GameClient.Core.Models;
-using Veldrath.GameClient.Core.Services;
 
 namespace Veldrath.GameClient.Components.Components.Pages;
 
@@ -31,15 +31,16 @@ public enum StatusIndicator
 /// Monitors the hub connection state via <see cref="IGameHubConnectionService"/> and
 /// provides enhanced status display with ping, degraded detection, and reconnection banner.
 /// </summary>
-public partial class GameFooter : INotifyPropertyChanged, IDisposable
+public partial class GameFooter : INotifyPropertyChanged, IDisposable, IAsyncDisposable
 {
     private StatusIndicator _status = StatusIndicator.Disconnected;
     private string _statusText = "Disconnected";
     private int _pingMs;
     private bool _showReconnectingBanner;
     private int _playerCount;
-    private IDisposable? _stateSubscription;
     private readonly Random _pingSimulator = new();
+    private CancellationTokenSource? _pingCts;
+    private Task? _pingLoop;
 
     /// <summary>
     /// Gets the current connection status indicator.
@@ -141,20 +142,27 @@ public partial class GameFooter : INotifyPropertyChanged, IDisposable
     private IGameHubConnectionService Hub { get; set; } = null!;
 
     [Inject]
-    private GameStateService GameState { get; set; } = null!;
+    private IGameStateService GameState { get; set; } = null!;
 
     /// <inheritdoc />
     protected override void OnInitialized()
     {
-        // Subscribe to GameState changes for zone info
-        _stateSubscription = GameState.OnStateChanged(() => InvokeAsync(StateHasChanged));
+        // Subscribe to GameState property changes for zone info
+        GameState.PropertyChanged += OnGameStatePropertyChanged;
 
         // Subscribe to hub state changes
         Hub.StateChanged += OnHubStateChanged;
 
         // Initialize status from current hub state
         UpdateStatusFromHubState();
+
+        // Start the ping measurement loop
+        _pingCts = new CancellationTokenSource();
+        _pingLoop = PingLoopAsync(_pingCts.Token);
     }
+
+    private void OnGameStatePropertyChanged(object? sender, PropertyChangedEventArgs e)
+        => _ = InvokeAsync(StateHasChanged);
 
     private void OnHubStateChanged(object? sender, ConnectionState state)
     {
@@ -174,9 +182,10 @@ public partial class GameFooter : INotifyPropertyChanged, IDisposable
                 StatusText = "Connected";
                 ShowReconnectingBanner = false;
 
-                // Simulate ping measurement for RCL display (in a real app this would
-                // come from the hub's ping method).
-                PingMs = SimulatePing();
+                // If we don't have a ping yet, use simulated fallback until the
+                // periodic timer takes its first measurement.
+                if (PingMs == 0)
+                    PingMs = SimulatePing();
                 break;
 
             case ConnectionState.Degraded:
@@ -212,9 +221,47 @@ public partial class GameFooter : INotifyPropertyChanged, IDisposable
     }
 
     /// <summary>
-    /// Simulates a ping measurement with jitter for the RCL display.
-    /// In production, this would use <c>Hub.SendAsync("Ping")</c> with a stopwatch.
-    /// Returns a value between 15 and 120 ms for connected state.
+    /// Background loop that measures ping every 10 seconds using a real hub round-trip.
+    /// </summary>
+    /// <param name="ct">Cancellation token to stop the loop.</param>
+    private async Task PingLoopAsync(CancellationToken ct)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(10));
+        while (await timer.WaitForNextTickAsync(ct))
+        {
+            if (Hub.IsConnected)
+            {
+                await MeasurePingAsync();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Measures the round-trip time to the game server by sending a <c>Ping</c>
+    /// hub invocation and timing the response with a <see cref="Stopwatch"/>.
+    /// Falls back to <see cref="SimulatePing"/> if the hub call fails.
+    /// </summary>
+    private async Task MeasurePingAsync()
+    {
+        try
+        {
+            var sw = Stopwatch.StartNew();
+            await Hub.SendAsync("Ping");
+            sw.Stop();
+            PingMs = (int)sw.ElapsedMilliseconds;
+        }
+        catch
+        {
+            // Hub ping failed; use simulated fallback so the UI still shows a value.
+            PingMs = SimulatePing();
+        }
+    }
+
+    /// <summary>
+    /// Simulates a ping measurement as a fallback when the hub is not connected
+    /// or when a real ping measurement fails.
+    /// Returns a value between 15 and 120 ms.
     /// </summary>
     private int SimulatePing()
     {
@@ -231,7 +278,20 @@ public partial class GameFooter : INotifyPropertyChanged, IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        _stateSubscription?.Dispose();
+        _pingCts?.Cancel();
+        GameState.PropertyChanged -= OnGameStatePropertyChanged;
+        Hub.StateChanged -= OnHubStateChanged;
+        _pingCts?.Dispose();
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        _pingCts?.Cancel();
+        if (_pingLoop is not null)
+            await _pingLoop;
+        _pingCts?.Dispose();
+        GameState.PropertyChanged -= OnGameStatePropertyChanged;
         Hub.StateChanged -= OnHubStateChanged;
     }
 

@@ -1,7 +1,9 @@
 @page "/Game/Settings"
 @attribute [Authorize]
 @using Microsoft.Extensions.Logging
+@using Veldrath.GameClient.Core.Abstractions
 @inject IGameHubConnectionService Hub
+@inject IGameStateService GameState
 @inject NavigationManager Navigation
 @inject ILogger<GameSettings> Logger
 
@@ -61,7 +63,7 @@
                     <select class="settings-select" @bind="_uiScale">
                         <option value="75">75%</option>
                         <option value="90">90%</option>
-                        <option value="100" selected>100%</option>
+                        <option value="100">100%</option>
                         <option value="110">110%</option>
                         <option value="125">125%</option>
                         <option value="150">150%</option>
@@ -88,7 +90,7 @@
                 <div class="settings-control">
                     <select class="settings-select" @bind="_fontSize">
                         <option value="small">Small</option>
-                        <option value="medium" selected>Medium</option>
+                        <option value="medium">Medium</option>
                         <option value="large">Large</option>
                         <option value="x-large">Extra Large</option>
                     </select>
@@ -125,10 +127,10 @@
 </div>
 
 @code {
-    private int _musicVolume = 80;
-    private int _sfxVolume = 80;
+    private int _musicVolume;
+    private int _sfxVolume;
     private bool _isMuted;
-    private int _uiScale = 100;
+    private int _uiScale;
     private string _theme = "dark";
     private string _fontSize = "medium";
     private bool _reducedMotion;
@@ -143,33 +145,34 @@
 
     private void LoadSettings()
     {
-        // In a full implementation these would be loaded from a settings service
-        // or from the hub.  For now we use sensible defaults.
-        _musicVolume = 80;
-        _sfxVolume = 80;
-        _isMuted = false;
-        _uiScale = 100;
-        _theme = "dark";
-        _fontSize = "medium";
-        _reducedMotion = false;
+        // Read current settings from GameState (persisted across page re-entry for the session).
+        var s = GameState.Settings;
+        _musicVolume = s.MusicVolume;
+        _sfxVolume = s.SfxVolume;
+        _isMuted = s.IsMuted;
+        _uiScale = s.UiScale;
+        _theme = s.Theme;
+        _fontSize = s.FontSize;
+        _reducedMotion = s.ReducedMotion;
     }
 
     private async Task SaveSettings()
     {
         try
         {
-            // Build settings payload and send via hub or persist locally.
-            var settings = new
-            {
-                MusicVolume = _musicVolume,
-                SfxVolume = _sfxVolume,
-                IsMuted = _isMuted,
-                UiScale = _uiScale,
-                Theme = _theme,
-                FontSize = _fontSize,
-                ReducedMotion = _reducedMotion
-            };
+            var settings = new GameSettingsState(
+                _musicVolume,
+                _sfxVolume,
+                _isMuted,
+                _uiScale,
+                _theme,
+                _fontSize,
+                _reducedMotion);
 
+            // Persist in GameState for session-level persistence
+            GameState.ApplySettings(settings);
+
+            // Also send to server for cross-session persistence (if supported)
             if (Hub.IsConnected)
             {
                 await Hub.SendAsync("SaveSettings", settings);
@@ -189,13 +192,14 @@
 
     private void ResetDefaults()
     {
-        _musicVolume = 80;
-        _sfxVolume = 80;
-        _isMuted = false;
-        _uiScale = 100;
-        _theme = "dark";
-        _fontSize = "medium";
-        _reducedMotion = false;
+        var defaults = new GameSettingsState();
+        _musicVolume = defaults.MusicVolume;
+        _sfxVolume = defaults.SfxVolume;
+        _isMuted = defaults.IsMuted;
+        _uiScale = defaults.UiScale;
+        _theme = defaults.Theme;
+        _fontSize = defaults.FontSize;
+        _reducedMotion = defaults.ReducedMotion;
         _statusMessage = "Settings reset to defaults (not saved).";
         _statusIsError = false;
     }
