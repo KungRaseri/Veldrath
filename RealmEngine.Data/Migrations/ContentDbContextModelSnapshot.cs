@@ -1301,6 +1301,51 @@ namespace RealmEngine.Data.Migrations
                     b.ToTable("ZoneLocations");
                 });
 
+            modelBuilder.Entity("RealmEngine.Data.Entities.ZoneLocationConnection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConnectionType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("FromLocationSlug")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<bool>("IsTraversable")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ToLocationSlug")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ToRegionId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ToZoneId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromLocationSlug", "ToLocationSlug")
+                        .IsUnique();
+
+                    b.HasIndex("FromLocationSlug", "ToRegionId")
+                        .IsUnique();
+
+                    b.HasIndex("FromLocationSlug", "ToZoneId")
+                        .IsUnique();
+
+                    b.ToTable("ZoneLocationConnections");
+                });
+
             modelBuilder.Entity("RealmEngine.Data.Entities.ActorArchetype", b =>
                 {
                     b.HasOne("RealmEngine.Data.Entities.Background", "Background")
