@@ -1,0 +1,73 @@
+@page "/Game/Map"
+@attribute [Authorize]
+@using Veldrath.GameClient.Core.Services
+@using Veldrath.GameClient.Core.Abstractions
+@using Veldrath.GameClient.Components.Models
+@using Veldrath.Contracts.Tilemap
+
+@* Region map page showing zones as interactive cards. *@
+
+<div class="game-map-page">
+    <div class="game-map-header">
+        <h2 class="game-map-title">Region Map</h2>
+        <span class="game-map-region-name">@RegionName</span>
+        <button class="btn btn-sm btn-secondary game-map-close"
+                @onclick="GoBack">
+            Back
+        </button>
+    </div>
+
+    @if (_isLoading)
+    {
+        <div class="game-map-loading">
+            <div class="spinner"></div>
+            <p>Loading region map...</p>
+        </div>
+    }
+    else if (_errorMessage is not null)
+    {
+        <div class="game-map-error">
+            <p>@_errorMessage</p>
+            <button class="btn btn-primary" @onclick="LoadRegionMap">Retry</button>
+        </div>
+    }
+    else if (_zones.Count == 0)
+    {
+        <div class="game-map-empty">
+            <p>No zones available for this region.</p>
+            <button class="btn btn-primary" @onclick="LoadRegionMap">Refresh</button>
+        </div>
+    }
+    else
+    {
+        <div class="game-map-zones">
+            @foreach (var zone in _zones)
+            {
+                <button class="game-map-zone-card @GetZoneCardClass(zone)"
+                        @onclick="() => NavigateToZone(zone.Id)"
+                        disabled="@(!zone.IsClickable)"
+                        title="@(zone.IsDiscovered ? $"{zone.Name} (Lv.{zone.MinLevel}+)" : "Undiscovered")">
+                    <span class="game-map-zone-name">@zone.DisplayLabel</span>
+                    @if (zone.IsDiscovered)
+                    {
+                        <span class="game-map-zone-type @zone.TypeClass">@zone.Type</span>
+                        <span class="game-map-zone-level">Lv. @zone.MinLevel+</span>
+                    }
+                    @if (zone.IsCurrent)
+                    {
+                        <span class="game-map-zone-current-badge">You are here</span>
+                    }
+                </button>
+            }
+        </div>
+
+        @if (_showLegend)
+        {
+            <div class="game-map-legend">
+                <span class="legend-item"><span class="legend-dot dot-current"></span> Current Zone</span>
+                <span class="legend-item"><span class="legend-dot dot-available"></span> Available</span>
+                <span class="legend-item"><span class="legend-dot dot-locked"></span> Undiscovered</span>
+            </div>
+        }
+    }
+</div>

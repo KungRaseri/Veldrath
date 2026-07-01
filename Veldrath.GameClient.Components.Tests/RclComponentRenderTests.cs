@@ -150,4 +150,14 @@ public class RclComponentRenderTests : TestContext
         var cut = Render<GameTilemap>();
         Assert.NotNull(cut);
     }
+
+    /// <summary>
+    /// Verifies <see cref="GameMap"/> renders without exceptions.
+    /// </summary>
+    [Fact]
+    public void GameMap_Renders_Successfully()
+    {
+        var cut = Render<GameMap>();
+        Assert.NotNull(cut);
+    }
 }

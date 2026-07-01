@@ -1,0 +1,175 @@
+@* Shop overlay showing merchant catalog and buy/sell interface. *@
+@using Microsoft.Extensions.Logging
+@using RealmEngine.Shared.Models
+@inject GameStateService GameState
+@inject IGameHubConnectionService Hub
+@inject ILogger<ShopOverlay> Logger
+
+<div class="shop-overlay">
+    <div class="shop-catalog">
+        <h4>Merchant Wares</h4>
+        @if (_shopItems.Count == 0)
+        {
+            <p class="shop-empty">This merchant has nothing for sale.</p>
+        }
+        else
+        {
+            <div class="shop-items">
+                @foreach (var entry in _shopItems)
+                {
+                    <div class="shop-item">
+                        <div class="shop-item-info">
+                            <span class="shop-item-name">@entry.Name</span>
+                            <span class="shop-item-rarity @GetRarityClass(entry.Rarity)">@entry.Rarity</span>
+                        </div>
+                        <span class="shop-item-price">@entry.Price g</span>
+                        <button class="btn btn-sm btn-primary"
+                                @onclick="() => BuyItem(entry)"
+                                disabled="@(!Hub.IsConnected || GameState.CurrentCharacter?.Gold < entry.Price)">
+                            Buy
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="shop-player-inventory">
+        <h4>Your Items (@_playerItems.Count)</h4>
+        @if (_playerItems.Count == 0)
+        {
+            <p class="shop-empty">You have no items to sell.</p>
+        }
+        else
+        {
+            <div class="shop-items">
+                @foreach (var item in _playerItems)
+                {
+                    var sellPrice = item.Price / 2;
+                    <div class="shop-item">
+                        <div class="shop-item-info">
+                            <span class="shop-item-name">@item.GetShortName()</span>
+                            @if (item.Quantity > 1)
+                            {
+                                <span class="shop-item-qty">x@item.Quantity</span>
+                            }
+                        </div>
+                        <span class="shop-item-price">@sellPrice g</span>
+                        <button class="btn btn-sm btn-secondary"
+                                @onclick="() => SellItem(item.Slug, Math.Min(1, item.Quantity))"
+                                disabled="@(!Hub.IsConnected)">
+                            Sell
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    @if (_lastMessage is not null)
+    {
+        <div class="shop-message @(_lastMessageIsError ? "shop-message-error" : "shop-message-success")">
+            @_lastMessage
+        </div>
+    }
+</div>
+
+@code {
+    private readonly List<ShopEntry> _shopItems = [];
+    private readonly List<Item> _playerItems = [];
+    private string? _lastMessage;
+    private bool _lastMessageIsError;
+
+    private sealed record ShopEntry(string Slug, string Name, ItemRarity Rarity, int Price);
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        LoadShop();
+    }
+
+    private void LoadShop()
+    {
+        _shopItems.Clear();
+        _playerItems.Clear();
+
+        // Demo data — in a full implementation this would request the merchant's
+        // catalog via hub and the player's inventory from game state.
+        _shopItems.Add(new ShopEntry("health-potion", "Health Potion", ItemRarity.Common, 25));
+        _shopItems.Add(new ShopEntry("mana-potion", "Mana Potion", ItemRarity.Common, 35));
+        _shopItems.Add(new ShopEntry("iron-sword", "Iron Sword", ItemRarity.Common, 80));
+        _shopItems.Add(new ShopEntry("leather-boots", "Leather Boots", ItemRarity.Common, 30));
+        _shopItems.Add(new ShopEntry("steel-dagger", "Steel Dagger", ItemRarity.Uncommon, 180));
+        _shopItems.Add(new ShopEntry("torch", "Torch", ItemRarity.Common, 5));
+
+        _playerItems.Add(new Item
+        {
+            Name = "Rusty Dagger",
+            BaseName = "Rusty Dagger",
+            Slug = "rusty-dagger",
+            Type = ItemType.Weapon,
+            Rarity = ItemRarity.Common,
+            Price = 12,
+            Weight = 1.0,
+            Description = "A worn, rusty dagger.",
+        });
+        _playerItems.Add(new Item
+        {
+            Name = "Wolf Pelt",
+            BaseName = "Wolf Pelt",
+            Slug = "wolf-pelt",
+            Type = ItemType.Material,
+            Rarity = ItemRarity.Common,
+            Price = 8,
+            Weight = 0.5,
+            Quantity = 3,
+            IsStackable = true,
+            StackSize = 20,
+            Description = "The pelt of a grey wolf.",
+        });
+    }
+
+    private async Task BuyItem(ShopEntry entry)
+    {
+        try
+        {
+            await Hub.SendAsync("BuyItem", new { ItemSlug = entry.Slug, Quantity = 1 });
+            _lastMessage = $"Purchased {entry.Name}.";
+            _lastMessageIsError = false;
+            Logger.LogInformation("Bought {ItemName}", entry.Name);
+        }
+        catch (Exception ex)
+        {
+            _lastMessage = $"Failed to purchase {entry.Name}.";
+            _lastMessageIsError = true;
+            Logger.LogWarning(ex, "Failed to buy {ItemName}.", entry.Name);
+        }
+    }
+
+    private async Task SellItem(string itemSlug, int quantity)
+    {
+        try
+        {
+            await Hub.SendAsync("SellItem", new { ItemSlug = itemSlug, Quantity = quantity });
+            _lastMessage = $"Sold {itemSlug}.";
+            _lastMessageIsError = false;
+            Logger.LogInformation("Sold {ItemSlug}", itemSlug);
+        }
+        catch (Exception ex)
+        {
+            _lastMessage = $"Failed to sell {itemSlug}.";
+            _lastMessageIsError = true;
+            Logger.LogWarning(ex, "Failed to sell {ItemSlug}.", itemSlug);
+        }
+    }
+
+    private static string GetRarityClass(ItemRarity rarity) => rarity switch
+    {
+        ItemRarity.Common => "rarity-common",
+        ItemRarity.Uncommon => "rarity-uncommon",
+        ItemRarity.Rare => "rarity-rare",
+        ItemRarity.Epic => "rarity-epic",
+        ItemRarity.Legendary => "rarity-legendary",
+        _ => "rarity-common"
+    };
+}

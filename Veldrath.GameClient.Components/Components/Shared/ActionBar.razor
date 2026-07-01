@@ -1,25 +1,65 @@
-@* Reusable action button bar that shows context-sensitive buttons based on game state. *@
+@* Reusable action button bar that shows context-sensitive buttons based on game state
+    and a hotbar row with ability quick-slot buttons. *@
 
-<div class="action-bar">
-    @if (ShowAttack)
+<div class="action-bar-wrapper">
+    @* Hotbar ability quick-slot buttons row *@
+    @if (ShowHotbar)
     {
-        <button class="action-btn action-btn-attack" @onclick="OnAttack" disabled="@Disabled">Attack</button>
+        <div class="hotbar">
+            @foreach (var slot in HotbarSlots)
+            {
+                <button class="hotbar-slot @slot.CssClass"
+                        @onclick="() => OnUseAbility.InvokeAsync(slot.AbilityId)"
+                        disabled="@(slot.IsEmpty || !slot.IsAvailable)"
+                        title="@(slot.Name ?? $"Slot {slot.SlotNumber}")">
+                    <span class="hotbar-slot-key">@slot.KeyBind</span>
+                    <span class="hotbar-slot-icon">
+                        @if (slot.IsEmpty)
+                        {
+                            <span class="hotbar-slot-empty-icon">—</span>
+                        }
+                        else if (!slot.IsAvailable && slot.CooldownRemaining > 0)
+                        {
+                            <span class="hotbar-slot-cooldown">@slot.CooldownRemaining</span>
+                        }
+                        else
+                        {
+                            <span class="hotbar-slot-ability-name">@slot.Name?[..Math.Min(3, slot.Name?.Length ?? 0)]</span>
+                        }
+                    </span>
+                </button>
+            }
+        </div>
     }
-    @if (ShowDefend)
-    {
-        <button class="action-btn action-btn-defend" @onclick="OnDefend" disabled="@Disabled">Defend</button>
-    }
-    @if (ShowFlee)
-    {
-        <button class="action-btn action-btn-flee" @onclick="OnFlee" disabled="@Disabled">Flee</button>
-    }
-    @if (ShowRespawn)
-    {
-        <button class="action-btn action-btn-respawn" @onclick="OnRespawn" disabled="@Disabled">Respawn</button>
-    }
+
+    @* Context-sensitive action buttons *@
+    <div class="action-bar">
+        @if (ShowAttack)
+        {
+            <button class="action-btn action-btn-attack" @onclick="OnAttack" disabled="@Disabled">Attack</button>
+        }
+        @if (ShowDefend)
+        {
+            <button class="action-btn action-btn-defend" @onclick="OnDefend" disabled="@Disabled">Defend</button>
+        }
+        @if (ShowFlee)
+        {
+            <button class="action-btn action-btn-flee" @onclick="OnFlee" disabled="@Disabled">Flee</button>
+        }
+        @if (ShowRespawn)
+        {
+            <button class="action-btn action-btn-respawn" @onclick="OnRespawn" disabled="@Disabled">Respawn</button>
+        }
+    </div>
 </div>
 
 @code {
+    /// <summary>Whether to show the hotbar ability quick-slot row.</summary>
+    [Parameter] public bool ShowHotbar { get; set; } = true;
+
+    /// <summary>The list of hotbar ability slots to display.</summary>
+    [Parameter] public List<Veldrath.GameClient.Components.Models.HotbarAbility> HotbarSlots { get; set; } = [];
+
     /// <summary>Whether to show the Attack button.</summary>
     [Parameter] public bool ShowAttack { get; set; }
 
@@ -46,4 +86,10 @@
 
     /// <summary>Callback when the Respawn button is clicked.</summary>
     [Parameter] public EventCallback OnRespawn { get; set; }
+
+    /// <summary>
+    /// Callback invoked when a hotbar ability quick-slot is clicked.
+    /// The parameter is the <see cref="Veldrath.GameClient.Components.Models.HotbarAbility.AbilityId"/>.
+    /// </summary>
+    [Parameter] public EventCallback<string?> OnUseAbility { get; set; }
 }

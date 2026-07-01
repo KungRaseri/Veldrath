@@ -1,27 +1,62 @@
-@* Full-screen overlay for modals and notifications. Hidden by default. *@
+@* Full-screen overlay for inventory, shop, and journal panels. *@
+@using Veldrath.GameClient.Components.Components.Shared
 
-<GamePanel Title="@Title"
-           Visible="@Visible"
+<GamePanel Title="@PanelTitle"
+           Visible="Visible"
            ShowClose="ShowClose"
            OnClose="HandleClose">
-    @ChildContent
+    @if (OverlayType == OverlayKind.Inventory)
+    {
+        <InventoryOverlay />
+    }
+    else if (OverlayType == OverlayKind.Shop)
+    {
+        <ShopOverlay />
+    }
+    else if (OverlayType == OverlayKind.Journal)
+    {
+        <JournalOverlay />
+    }
+    else
+    {
+        <p class="overlay-placeholder">@OverlayType overlay is not yet implemented.</p>
+    }
 </GamePanel>
 
 @code {
-    /// <summary>The panel title displayed in the header.</summary>
-    [Parameter] public string Title { get; set; } = string.Empty;
+    /// <summary>Kinds of overlay panel that can be displayed.</summary>
+    public enum OverlayKind
+    {
+        /// <summary>Inventory panel showing character items and equipment.</summary>
+        Inventory,
+
+        /// <summary>Shop panel showing merchant catalog and buy/sell interface.</summary>
+        Shop,
+
+        /// <summary>Journal / Quest Log panel showing active and completed quests.</summary>
+        Journal
+    }
+
+    /// <summary>Gets the panel title based on the active overlay type.</summary>
+    private string PanelTitle => OverlayType switch
+    {
+        OverlayKind.Inventory => "Inventory",
+        OverlayKind.Shop => "Shop",
+        OverlayKind.Journal => "Journal",
+        _ => "Overlay"
+    };
 
     /// <summary>Whether the overlay is visible.</summary>
     [Parameter] public bool Visible { get; set; }
+
+    /// <summary>The kind of overlay to display.</summary>
+    [Parameter] public OverlayKind OverlayType { get; set; } = OverlayKind.Inventory;
 
     /// <summary>Whether to show the close button.</summary>
     [Parameter] public bool ShowClose { get; set; } = true;
 
     /// <summary>Callback invoked when the overlay is closed.</summary>
     [Parameter] public EventCallback OnClose { get; set; }
-
-    /// <summary>The body content of the overlay.</summary>
-    [Parameter] public RenderFragment? ChildContent { get; set; }
 
     private async Task HandleClose()
     {

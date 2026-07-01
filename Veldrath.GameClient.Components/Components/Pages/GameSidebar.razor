@@ -61,14 +61,24 @@
 
     <div class="sidebar-section sidebar-actions">
         <button class="btn btn-secondary sidebar-btn"
-                @onclick='() => NavigateTo("/Game/Inventory")'
-                disabled="true">
+                @onclick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Inventory)">
             Inventory
         </button>
         <button class="btn btn-secondary sidebar-btn"
-                @onclick='() => NavigateTo("/Game/Map")'
-                disabled="true">
+                @onclick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Shop)">
+            Shop
+        </button>
+        <button class="btn btn-secondary sidebar-btn"
+                @onclick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Journal)">
+            Journal
+        </button>
+        <button class="btn btn-secondary sidebar-btn"
+                @onclick='() => Navigation.NavigateTo("/Game/Map")'>
             Map
+        </button>
+        <button class="btn btn-secondary sidebar-btn"
+                @onclick='() => Navigation.NavigateTo("/Game/Settings")'>
+            Settings
         </button>
         <button class="btn btn-danger sidebar-btn"
                 @onclick="Logout">
@@ -78,7 +88,8 @@
 </div>
 
 @code {
-    private void NavigateTo(string url) => Navigation.NavigateTo(url);
+    /// <summary>Callback invoked when the player wants to open an overlay panel.</summary>
+    [Parameter] public EventCallback<GameOverlay.OverlayKind> OnOpenOverlay { get; set; }
 
     private async Task Logout()
     {
