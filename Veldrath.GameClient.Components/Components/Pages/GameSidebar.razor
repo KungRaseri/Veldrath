@@ -1,11 +1,13 @@
-@using Veldrath.GameClient.Core.Services
+@using Veldrath.GameClient.Core.Abstractions
+@using Microsoft.Extensions.Logging
 @* Sidebar panel showing player info, stats, zone occupants/enemies, and navigation buttons. *@
-@inject GameStateService GameState
+@inject IGameStateService GameState
 @inject NavigationManager Navigation
 @inject IGameHubConnectionService Hub
+@inject ILogger<GameSidebar> Logger
 
 <div class="game-sidebar">
-    @if (GameState.CurrentCharacter is { } character)
+    @if (GameState.CurrentCharacterInfo is { } character)
     {
         <div class="sidebar-section sidebar-character">
             <h3>@character.Name</h3>
@@ -59,6 +61,27 @@
         }
     </div>
 
+    @* G81: NavigateToLocation — show available location connections in the zone *@
+    @if (GameState.CurrentLocationConnections.Count > 0)
+    {
+        <div class="sidebar-section sidebar-navigation">
+            <h4>Locations (@GameState.CurrentLocationConnections.Count)</h4>
+            <ul class="sidebar-list">
+                @foreach (var conn in GameState.CurrentLocationConnections)
+                {
+                    <li class="sidebar-list-item">
+                        <button class="btn btn-sm btn-link sidebar-nav-btn"
+                                @onclick="() => NavigateToLocationAsync(conn.Slug)"
+                                disabled="@(!Hub.IsConnected)"
+                                title="@($"Navigate to {conn.TargetZoneId}")">
+                            @conn.Slug @(conn.IsCrossZone ? "(Zone Transition)" : "")
+                        </button>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+
     <div class="sidebar-section sidebar-actions">
         <button class="btn btn-secondary sidebar-btn"
                 @onclick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Inventory)">
@@ -80,6 +103,52 @@
                 @onclick='() => Navigation.NavigateTo("/Game/Settings")'>
             Settings
         </button>
+
+        @* G68: Visit Shop — conditional on zone having a merchant *@
+        @if (GameState.CurrentZone.HasMerchant)
+        {
+            <button class="btn btn-primary sidebar-btn"
+                    @onclick="VisitShopAsync"
+                    disabled="@(!Hub.IsConnected)">
+                Visit Shop
+            </button>
+        }
+
+        @* G75: Rest at Inn — conditional on zone having an inn *@
+        @if (GameState.CurrentZone.HasInn)
+        {
+            <button class="btn btn-primary sidebar-btn"
+                    @onclick="RestAtLocationAsync"
+                    disabled="@(!Hub.IsConnected)">
+                Rest
+            </button>
+        }
+
+        @* G76: Allocate Attribute Points — conditional on having unspent points *@
+        @if (GameState.CurrentCharacter.UnspentAttributePoints > 0)
+        {
+            <button class="btn btn-accent sidebar-btn"
+                    @onclick="AllocateStrengthAsync"
+                    disabled="@(!Hub.IsConnected)"
+                    title="@($"Unspent: {GameState.CurrentCharacter.UnspentAttributePoints}")">
+                Attributes (+STR)
+            </button>
+        }
+
+        @* G70: Search Area *@
+        <button class="btn btn-secondary sidebar-btn"
+                @onclick="SearchAreaAsync"
+                disabled="@(!Hub.IsConnected)">
+            Search Area
+        </button>
+
+        @* G74: Exit Zone *@
+        <button class="btn btn-secondary sidebar-btn"
+                @onclick="ExitZoneAsync"
+                disabled="@(!Hub.IsConnected)">
+            Exit Zone
+        </button>
+
         <button class="btn btn-danger sidebar-btn"
                 @onclick="Logout">
             Logout
@@ -90,6 +159,104 @@
 @code {
     /// <summary>Callback invoked when the player wants to open an overlay panel.</summary>
     [Parameter] public EventCallback<GameOverlay.OverlayKind> OnOpenOverlay { get; set; }
+
+    /// <summary>G68: Sends the VisitShop hub command to open the merchant interface.</summary>
+    private async Task VisitShopAsync()
+    {
+        try
+        {
+            if (Hub.IsConnected)
+                await Hub.SendAsync("VisitShop");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to visit shop.");
+        }
+    }
+
+    /// <summary>G70: Sends the SearchArea hub command to search the current tile.</summary>
+    private async Task SearchAreaAsync()
+    {
+        try
+        {
+            if (Hub.IsConnected)
+                await Hub.SendAsync("SearchArea");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to search area.");
+        }
+    }
+
+    /// <summary>G74: Sends the ExitZone hub command to leave the current zone.</summary>
+    private async Task ExitZoneAsync()
+    {
+        try
+        {
+            if (Hub.IsConnected)
+                await Hub.SendAsync("ExitZone");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to exit zone.");
+        }
+    }
+
+    /// <summary>G75: Sends the RestAtLocation hub command to rest at an inn.</summary>
+    private async Task RestAtLocationAsync()
+    {
+        try
+        {
+            if (Hub.IsConnected)
+                await Hub.SendAsync("RestAtLocation");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to rest.");
+        }
+    }
+
+    /// <summary>G76: Sends the AllocateAttributePoints hub command with a default Strength allocation.</summary>
+    private async Task AllocateStrengthAsync()
+    {
+        try
+        {
+            if (Hub.IsConnected)
+            {
+                var allocation = new Dictionary<string, int>
+                {
+                    { "Strength", 1 },
+                };
+                await Hub.SendAsync("AllocateAttributePoints", allocation);
+                Logger.LogInformation("Allocated 1 point to Strength.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to allocate attribute points.");
+        }
+    }
+
+    /// <summary>G81: Sends the NavigateToLocation hub command to move to a zone location.</summary>
+    /// <param name="slug">The target location slug.</param>
+    private async Task NavigateToLocationAsync(string slug)
+    {
+        if (string.IsNullOrEmpty(slug))
+            return;
+
+        try
+        {
+            if (Hub.IsConnected)
+            {
+                await Hub.SendAsync("NavigateToLocation", slug);
+                Logger.LogInformation("Navigating to location: {LocationSlug}", slug);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to navigate to location {LocationSlug}.", slug);
+        }
+    }
 
     private async Task Logout()
     {

@@ -1,7 +1,7 @@
-@using Veldrath.GameClient.Core.Services
+@using Veldrath.GameClient.Core.Abstractions
 @* Combat UI shown when GameState.IsInCombat is true. Displays enemy info, action buttons, and combat log. *@
 @inject IGameHubConnectionService Hub
-@inject GameStateService GameState
+@inject IGameStateService GameState
 
 @if (GameState.CombatEnemy is { } enemy)
 {
@@ -58,7 +58,7 @@ else
         _stateSubscription = GameState.OnStateChanged(() => InvokeAsync(StateHasChanged));
     }
 
-    private bool PlayerIsDead => GameState.CurrentCharacter?.CurrentHealth <= 0;
+    private bool PlayerIsDead => GameState.CurrentCharacterInfo?.CurrentHealth <= 0;
 
     private async Task PerformAttack()
     {

@@ -1,6 +1,5 @@
 @page "/Game/Play"
 @attribute [Authorize]
-@using Veldrath.GameClient.Core.Services
 @using Veldrath.GameClient.Core.Payloads
 @using Veldrath.GameClient.Core.Abstractions
 @using Veldrath.Auth.Blazor
@@ -82,10 +81,7 @@
 
             RegisterHubHandlers();
 
-            if (GameState is GameStateService gs)
-            {
-                _stateSubscription ??= gs.OnStateChanged(() => InvokeAsync(StateHasChanged));
-            }
+            _stateSubscription ??= GameState.OnStateChanged(() => InvokeAsync(StateHasChanged));
 
             if (!Hub.IsConnected)
             {
@@ -102,10 +98,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to connect to game hub.");
-            if (GameState is GameStateService gs)
-            {
-                gs.ApplySystemMessage("Failed to connect to game server.");
-            }
+            GameState.ApplySystemMessage("Failed to connect to game server.");
         }
     }
 
@@ -132,10 +125,7 @@
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Failed to re-select character after connecting.");
-                if (GameState is GameStateService gs)
-                {
-                    gs.ApplySystemMessage("Failed to restore game session.");
-                }
+                GameState.ApplySystemMessage("Failed to restore game session.");
             }
             return;
         }
@@ -155,10 +145,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to enter zone {ZoneId}.", zoneId);
-            if (GameState is GameStateService gs)
-            {
-                gs.ApplySystemMessage("Failed to enter zone.");
-            }
+            GameState.ApplySystemMessage("Failed to enter zone.");
         }
     }
 
@@ -179,10 +166,7 @@
     {
         _hubSubscriptions.Add(Hub.On<ServerInfoPayload>("ServerInfo", async payload =>
         {
-            if (GameState is GameStateService gs)
-            {
-                gs.ApplyServerInfo(payload.ConnectionId);
-            }
+            GameState.ApplyServerInfo(payload.ConnectionId);
             await InvokeAsync(StateHasChanged);
         }));
 
@@ -207,10 +191,7 @@
         _hubSubscriptions.Add(Hub.On<TileMapDto>("ZoneTileMap", async dto =>
         {
             var tiles = ConvertTileMap(dto);
-            if (GameState is GameStateService gs)
-            {
-                gs.ApplyZoneTileMap(tiles);
-            }
+            GameState.ApplyZoneTileMap(tiles);
             await InvokeAsync(StateHasChanged);
         }));
 
@@ -258,10 +239,7 @@
 
         _hubSubscriptions.Add(Hub.On<CharacterRespawnedPayload>("CharacterRespawned", async payload =>
         {
-            if (GameState is GameStateService gs)
-            {
-                gs.ApplySystemMessage("You have respawned.");
-            }
+            GameState.ApplyCharacterRespawned();
             await InvokeAsync(StateHasChanged);
         }));
 
@@ -273,20 +251,14 @@
 
         _hubSubscriptions.Add(Hub.On<string>("SystemMessage", async message =>
         {
-            if (GameState is GameStateService gs)
-            {
-                gs.ApplySystemMessage(message);
-            }
+            GameState.ApplySystemMessage(message);
             await InvokeAsync(StateHasChanged);
         }));
 
         _hubSubscriptions.Add(Hub.On<string>("Error", async error =>
         {
             Logger.LogWarning("Hub error: {Error}", error);
-            if (GameState is GameStateService gs)
-            {
-                gs.ApplySystemMessage($"Error: {error}");
-            }
+            GameState.ApplySystemMessage($"Error: {error}");
             await InvokeAsync(StateHasChanged);
         }));
 
@@ -332,10 +304,7 @@
             {
                 GameState.ApplyEquipmentChanged(slot, item);
             }
-            if (GameState is GameStateService gs)
-            {
-                gs.ApplySystemMessage($"Equipped {payload.ItemRef}.");
-            }
+            GameState.ApplySystemMessage($"Equipped {payload.ItemRef}.");
             await InvokeAsync(StateHasChanged);
         }));
 
@@ -359,10 +328,7 @@
         _hubSubscriptions.Add(Hub.On<ItemPurchasedPayload>("ItemPurchased", async payload =>
         {
             GameState.ApplyItemTransacted(payload.Name, payload.GoldSpent, payload.Inventory);
-            if (GameState is GameStateService gs)
-            {
-                gs.ApplySystemMessage($"Purchased {payload.Name}.");
-            }
+            GameState.ApplySystemMessage($"Purchased {payload.Name}.");
             await InvokeAsync(StateHasChanged);
         }));
 
@@ -370,10 +336,7 @@
         _hubSubscriptions.Add(Hub.On<ItemSoldPayload>("ItemSold", async payload =>
         {
             GameState.ApplyItemTransacted(payload.Name, payload.GoldReceived, payload.Inventory);
-            if (GameState is GameStateService gs)
-            {
-                gs.ApplySystemMessage($"Sold {payload.Name}.");
-            }
+            GameState.ApplySystemMessage($"Sold {payload.Name}.");
             await InvokeAsync(StateHasChanged);
         }));
 
@@ -381,10 +344,7 @@
         _hubSubscriptions.Add(Hub.On<ItemDroppedPayload>("ItemDropped", async payload =>
         {
             GameState.ApplyItemTransacted(payload.ItemRef, GameState.CurrentCharacterGold, payload.Inventory);
-            if (GameState is GameStateService gs)
-            {
-                gs.ApplySystemMessage($"Dropped {payload.ItemRef}.");
-            }
+            GameState.ApplySystemMessage($"Dropped {payload.ItemRef}.");
             await InvokeAsync(StateHasChanged);
         }));
 
@@ -445,13 +405,111 @@
             GameState.ApplyDungeonEntered(payload.DungeonId);
             await InvokeAsync(StateHasChanged);
         }));
+
+        // ── G36: ZoneLeft ──────────────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<string>("ZoneLeft", async _ =>
+        {
+            GameState.ApplySystemMessage("You left the zone.");
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G37: ZoneExited ─────────────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<ZoneExitedPayload>("ZoneExited", async payload =>
+        {
+            GameState.ApplyZoneExited(payload.RegionId, payload.TileX, payload.TileY);
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G38: RegionMapData ──────────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<RegionMapDto>("RegionMapData", async dto =>
+        {
+            var region = new RegionState
+            {
+                RegionId = dto.RegionId,
+                TileWidth = dto.Width,
+                TileHeight = dto.Height,
+            };
+            GameState.ApplyRegionMapReceived(region);
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G39: RegionChanged ──────────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<RegionChangedPayload>("RegionChanged", async payload =>
+        {
+            GameState.ApplyRegionChanged(payload.RegionId, payload.TileX, payload.TileY);
+            GameState.ApplySystemMessage($"Entering {payload.RegionId}...");
+            try { await Hub.SendAsync("GetRegionMap"); } catch { }
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G40: RegionPlayerMoved ──────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<RegionPlayerMovedPayload>("RegionPlayerMoved", async payload =>
+        {
+            GameState.ApplyRegionPlayerMoved(
+                payload.CharacterId.ToString(), payload.TileX, payload.TileY, payload.Direction);
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G41: ZoneEntryTriggered ─────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<ZoneEntryTriggeredPayload>("ZoneEntryTriggered", async payload =>
+        {
+            GameState.ApplySystemMessage($"Enter {payload.Name}?");
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G42: RegionExitTriggered ────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<RegionExitTriggeredPayload>("RegionExitTriggered", async payload =>
+        {
+            GameState.ApplySystemMessage($"Cross border into {payload.TargetRegion}?");
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G43: TileExitTriggered ──────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<TileExitTriggeredPayload>("TileExitTriggered", async payload =>
+        {
+            GameState.ApplySystemMessage($"Transitioning to zone {payload.ToZoneId}...");
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G44: LocationEntered ────────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<LocationEnteredPayload>("LocationEntered", async payload =>
+        {
+            GameState.ApplyLocationEntered(payload);
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G45: ZoneLocationUnlocked ───────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<ZoneLocationUnlockedPayload>("ZoneLocationUnlocked", async payload =>
+        {
+            GameState.ApplyZoneLocationUnlocked(payload.Slug, payload.Name, payload.Type);
+            GameState.ApplySystemMessage($"Discovered {payload.Name} ({payload.Type})!");
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G46: AreaSearched ───────────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<AreaSearchedPayload>("AreaSearched", async payload =>
+        {
+            var msg = payload.AnyFound
+                ? "You found something!"
+                : "You found nothing.";
+            GameState.ApplySystemMessage(msg);
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G47: ConnectionTraversed ────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<ConnectionTraversedPayload>("ConnectionTraversed", async payload =>
+        {
+            GameState.ApplyConnectionTraversed(
+                payload.Slug, payload.ZoneId, payload.IsCrossZone, payload.Connections);
+            await InvokeAsync(StateHasChanged);
+        }));
     }
 
-    private static Veldrath.GameClient.Core.Services.Tile[,] ConvertTileMap(TileMapDto dto)
+    private static Veldrath.GameClient.Core.Abstractions.Tile[,] ConvertTileMap(TileMapDto dto)
     {
         var width = dto.Width;
         var height = dto.Height;
-        var tiles = new Veldrath.GameClient.Core.Services.Tile[height, width];
+        var tiles = new Veldrath.GameClient.Core.Abstractions.Tile[height, width];
 
         var groundLayer = dto.Layers.FirstOrDefault();
 
@@ -476,7 +534,7 @@
                     _ => 0
                 };
 
-                tiles[y, x] = new Veldrath.GameClient.Core.Services.Tile(x, y, simplifiedType, isBlocked);
+                tiles[y, x] = new Veldrath.GameClient.Core.Abstractions.Tile(x, y, simplifiedType, isBlocked);
             }
         }
 

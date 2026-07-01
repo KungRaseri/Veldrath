@@ -1,11 +1,11 @@
-@using Veldrath.GameClient.Core.Services
+@using Veldrath.GameClient.Core.Abstractions
 @* Renders the zone tilemap as a CSS Grid with player, occupant, and enemy overlays. *@
 @inject IGameHubConnectionService Hub
-@inject GameStateService GameState
+@inject IGameStateService GameState
 
 @if (GameState.ZoneTileMap is not null)
 {
-    var tiles = (Veldrath.GameClient.Core.Services.Tile[,])GameState.ZoneTileMap;
+    var tiles = (Veldrath.GameClient.Core.Abstractions.Tile[,])GameState.ZoneTileMap;
 
     <div class="game-tilemap"
          style="grid-template-columns: repeat(@_gridColumns, @(TileSize)px); grid-template-rows: repeat(@_gridRows, @(TileSize)px);">
@@ -61,18 +61,54 @@ else
     {
         if (GameState.ZoneTileMap is not null)
         {
-            var tiles = (Veldrath.GameClient.Core.Services.Tile[,])GameState.ZoneTileMap;
+            var tiles = (Veldrath.GameClient.Core.Abstractions.Tile[,])GameState.ZoneTileMap;
             _gridColumns = tiles.GetLength(1);
             _gridRows = tiles.GetLength(0);
         }
     }
 
+    /// <summary>
+    /// Handles a tile click. If the tile has an NPC, sends TalkToNpc.
+    /// If it has an inspectable enemy/entity, sends InspectEntity.
+    /// Otherwise sends MoveCharacter.
+    /// </summary>
     private async Task OnTileClick((int X, int Y) pos)
     {
-        if (!GameState.IsInCombat)
+        if (GameState.IsInCombat) return;
+
+        // G80: Talk to NPC if one is on this tile.
+        var occupant = GetOccupantAt(pos.X, pos.Y);
+        if (occupant is not null)
         {
-            await Hub.SendAsync("MoveCharacter", new { TileX = pos.X, TileY = pos.Y });
+            try
+            {
+                if (Hub.IsConnected)
+                    await Hub.SendAsync("TalkToNpc", occupant.CharacterId);
+            }
+            catch { }
+            return;
         }
+
+        // G79: Inspect entity if an enemy is on this tile.
+        var enemy = GetEnemyAt(pos.X, pos.Y);
+        if (enemy is not null)
+        {
+            try
+            {
+                if (Hub.IsConnected)
+                    await Hub.SendAsync("InspectEntity", enemy.EnemyId);
+            }
+            catch { }
+            return;
+        }
+
+        // Default: move character to the clicked tile.
+        try
+        {
+            if (Hub.IsConnected)
+                await Hub.SendAsync("MoveCharacter", new { TileX = pos.X, TileY = pos.Y });
+        }
+        catch { }
     }
 
     private bool IsPlayerAt(int x, int y) =>

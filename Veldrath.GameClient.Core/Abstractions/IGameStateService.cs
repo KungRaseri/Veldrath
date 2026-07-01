@@ -5,6 +5,150 @@ using Veldrath.GameClient.Core.Payloads;
 
 namespace Veldrath.GameClient.Core.Abstractions;
 
+// ── DTO records ─────────────────────────────────────────────────────────────
+
+/// <summary>Basic character information displayed on the character select screen and used in-game.</summary>
+/// <param name="Id">The unique character identifier.</param>
+/// <param name="Name">The character's display name.</param>
+/// <param name="ClassName">The character's class (e.g. "Warrior", "Mage").</param>
+/// <param name="Level">The character's current level.</param>
+/// <param name="Experience">Total experience points earned.</param>
+/// <param name="CurrentHealth">Current health points.</param>
+/// <param name="MaxHealth">Maximum health points.</param>
+/// <param name="CurrentMana">Current mana points.</param>
+/// <param name="MaxMana">Maximum mana points.</param>
+/// <param name="Gold">Gold coins in the character's possession.</param>
+/// <param name="ExperienceToNextLevel">Experience points needed to reach the next level. Defaults to a calculation when not provided.</param>
+public record CharacterBasicInfo(
+    Guid Id,
+    string Name,
+    string ClassName,
+    int Level,
+    long Experience,
+    int CurrentHealth,
+    int MaxHealth,
+    int CurrentMana,
+    int MaxMana,
+    int Gold,
+    long ExperienceToNextLevel = 0)
+{
+    /// <summary>Gets the experience points needed to reach the next level, or a calculated default when not provided.</summary>
+    public long EffectiveExperienceToNextLevel => ExperienceToNextLevel > 0 ? ExperienceToNextLevel : Level * 1000L;
+}
+
+/// <summary>A single tile on the zone tilemap.  The <see cref="Type"/> value maps to a CSS class for rendering.</summary>
+/// <param name="X">Tile column.</param>
+/// <param name="Y">Tile row.</param>
+/// <param name="Type">Tile type identifier (0=grass, 1=wall, 2=water, 3=door, 4=path, 5=dirt, -1=void).</param>
+/// <param name="IsBlocked">Whether the tile blocks movement.</param>
+public record Tile(int X, int Y, int Type, bool IsBlocked);
+
+/// <summary>A chat message received from the game server.</summary>
+/// <param name="CharacterId">The sending character's unique identifier.</param>
+/// <param name="Channel">The chat channel (e.g. "zone", "global", "whisper").</param>
+/// <param name="Sender">The display name of the sender.</param>
+/// <param name="Message">The message text.</param>
+/// <param name="Timestamp">When the message was sent.</param>
+public record ChatMessage(
+    Guid CharacterId,
+    string Channel,
+    string Sender,
+    string Message,
+    DateTimeOffset Timestamp);
+
+/// <summary>Information about another player character occupying the same zone.</summary>
+/// <param name="CharacterId">The occupying character's unique identifier.</param>
+/// <param name="CharacterName">The occupying character's display name.</param>
+/// <param name="EnteredAt">When this character entered the zone.</param>
+/// <param name="TileX">The occupant's tile column, or <c>-1</c> if unknown.</param>
+/// <param name="TileY">The occupant's tile row, or <c>-1</c> if unknown.</param>
+public record OccupantInfo(Guid CharacterId, string CharacterName, DateTimeOffset EnteredAt, int TileX = -1, int TileY = -1);
+
+/// <summary>Information about an enemy in the current zone.</summary>
+/// <param name="EnemyId">The unique enemy identifier.</param>
+/// <param name="EnemyName">The display name of the enemy.</param>
+/// <param name="Level">The enemy's level.</param>
+/// <param name="CurrentHealth">The enemy's current health points.</param>
+/// <param name="MaxHealth">The enemy's maximum health points.</param>
+/// <param name="TileX">The column of the tile the enemy is standing on.</param>
+/// <param name="TileY">The row of the tile the enemy is standing on.</param>
+public record EnemyInfo(
+    Guid EnemyId,
+    string EnemyName,
+    int Level,
+    int CurrentHealth,
+    int MaxHealth,
+    int TileX,
+    int TileY);
+
+// ── Region / Zone state records ────────────────────────────────────────────
+
+/// <summary>
+/// Holds the current region state including tilemap data, exits, and player positions.
+/// </summary>
+public sealed record RegionState
+{
+    /// <summary>The region's unique identifier.</summary>
+    public string RegionId { get; init; } = "";
+
+    /// <summary>The region's display name.</summary>
+    public string Name { get; init; } = "";
+
+    /// <summary>A description of the region.</summary>
+    public string Description { get; init; } = "";
+
+    /// <summary>The region type (e.g. "forest", "mountain", "swamp").</summary>
+    public string Type { get; init; } = "";
+
+    /// <summary>The minimum character level recommended for this region.</summary>
+    public int MinLevel { get; init; }
+
+    /// <summary>The maximum character level for which this region provides challenge.</summary>
+    public int MaxLevel { get; init; }
+
+    /// <summary>The width of the region tilemap in tiles.</summary>
+    public int TileWidth { get; init; }
+
+    /// <summary>The height of the region tilemap in tiles.</summary>
+    public int TileHeight { get; init; }
+
+    /// <summary>The region tilemap data, or <c>null</c> if not yet loaded.</summary>
+    public int[,]? Tiles { get; init; }
+
+    /// <summary>Zone entry points on the region map, keyed by tile position.</summary>
+    public Dictionary<(int X, int Y), string> Exits { get; init; } = new();
+
+    /// <summary>Other players on the region map, keyed by character ID.</summary>
+    public Dictionary<string, (int X, int Y, string Direction)> Players { get; init; } = new();
+}
+
+/// <summary>
+/// Holds the current zone metadata.
+/// </summary>
+public sealed record ZoneState
+{
+    /// <summary>The zone's unique identifier.</summary>
+    public string ZoneId { get; init; } = "";
+
+    /// <summary>The zone's display name.</summary>
+    public string Name { get; init; } = "";
+
+    /// <summary>A description of the zone.</summary>
+    public string Description { get; init; } = "";
+
+    /// <summary>The zone type (e.g. "town", "wilderness", "dungeon").</summary>
+    public string Type { get; init; } = "";
+
+    /// <summary>The minimum character level recommended for this zone.</summary>
+    public int MinLevel { get; init; }
+
+    /// <summary>Whether this zone has an inn where characters can rest.</summary>
+    public bool HasInn { get; init; }
+
+    /// <summary>Whether this zone has a merchant.</summary>
+    public bool HasMerchant { get; init; }
+}
+
 /// <summary>
 /// Per-session game state manager.  Holds the authoritative state for the current player's
 /// game session and implements <see cref="INotifyPropertyChanged"/> so consumers
@@ -59,10 +203,65 @@ public interface IGameStateService : INotifyPropertyChanged
     /// <summary>The tile map for the current zone, or <c>null</c> if not yet loaded.</summary>
     object? ZoneTileMap { get; }
 
+    // ── Region state (G48-G52) ──────────────────────────────────────────────
+
+    /// <summary>The current region state including tilemap data, exits, and player positions.</summary>
+    RegionState CurrentRegion { get; }
+
+    /// <summary>The current zone metadata (description, type, facilities).</summary>
+    ZoneState CurrentZone { get; }
+
+    /// <summary>The slug of the current zone location (POI), or <c>null</c> if not at a named location.</summary>
+    string? CurrentZoneLocationSlug { get; }
+
+    /// <summary>The zone locations available in the current zone for navigation.</summary>
+    IReadOnlyList<ZoneLocationEntry> ZoneLocations { get; }
+
+    /// <summary>The traversal connections available from the current location.</summary>
+    IReadOnlyList<ZoneConnectionLink> CurrentLocationConnections { get; }
+
+    // ── Character info (basic) ──────────────────────────────────────────────
+
+    /// <summary>The currently selected character's basic information, or <c>null</c> if none selected.</summary>
+    CharacterBasicInfo? CurrentCharacterInfo { get; }
+
+    // ── Chat state ───────────────────────────────────────────────────────────
+
+    /// <summary>The ordered list of chat messages received during the current session.</summary>
+    IReadOnlyList<ChatMessage> ChatMessages { get; }
+
+    /// <summary>Raised when a new chat message is received.</summary>
+    event Action<string>? ChatMessageReceived;
+
+    /// <summary>Subscribe to any state change. Returns an <see cref="IDisposable"/> that unsubscribes.</summary>
+    /// <param name="handler">The handler to invoke when any property changes.</param>
+    /// <returns>An <see cref="IDisposable"/> that unsubscribes the handler when disposed.</returns>
+    IDisposable OnStateChanged(Action handler);
+
+    // ── Zone entity state ───────────────────────────────────────────────────
+
+    /// <summary>Other players occupying the current zone.</summary>
+    IReadOnlyList<OccupantInfo> ZoneOccupants { get; }
+
+    /// <summary>Visible enemies in the current zone.</summary>
+    IReadOnlyList<EnemyInfo> ZoneEnemies { get; }
+
+    /// <summary>The player's current tile column within the zone.</summary>
+    int PlayerTileX { get; }
+
+    /// <summary>The player's current tile row within the zone.</summary>
+    int PlayerTileY { get; }
+
     // ── Combat state ────────────────────────────────────────────────────────
 
     /// <summary>Whether the player is currently engaged in combat.</summary>
     bool IsInCombat { get; }
+
+    /// <summary>The enemy the player is currently fighting, or <c>null</c> if not in combat.</summary>
+    EnemyInfo? CombatEnemy { get; }
+
+    /// <summary>The result description of the last combat action (e.g. "You hit for 12 damage").</summary>
+    string? LastCombatActionResult { get; }
 
     // ── Apply methods (called from hub event handlers) ───────────────────────
 
@@ -258,6 +457,72 @@ public interface IGameStateService : INotifyPropertyChanged
     /// <summary>Updates state after entering a dungeon.</summary>
     /// <param name="dungeonId">The dungeon's unique identifier.</param>
     void ApplyDungeonEntered(string dungeonId);
+
+    // ── Zone / Region / Location Apply methods (G36-G47) ────────────────────
+
+    /// <summary>Updates state after exiting a zone into the region map.</summary>
+    /// <param name="regionId">The region the player is exiting into.</param>
+    /// <param name="tileX">The tile column of the exit position on the region map.</param>
+    /// <param name="tileY">The tile row of the exit position on the region map.</param>
+    void ApplyZoneExited(string regionId, int tileX, int tileY);
+
+    /// <summary>Stores the region map data received from the server.</summary>
+    /// <param name="region">The region state containing tilemap and exit data.</param>
+    void ApplyRegionMapReceived(RegionState region);
+
+    /// <summary>Updates state when the player's current region changes.</summary>
+    /// <param name="regionId">The new region identifier.</param>
+    /// <param name="tileX">The tile column of the entry position.</param>
+    /// <param name="tileY">The tile row of the entry position.</param>
+    void ApplyRegionChanged(string regionId, int tileX, int tileY);
+
+    /// <summary>Updates another player's position on the region map.</summary>
+    /// <param name="charId">The character identifier.</param>
+    /// <param name="x">The tile column of the player's new position.</param>
+    /// <param name="y">The tile row of the player's new position.</param>
+    /// <param name="direction">The facing direction of the player.</param>
+    void ApplyRegionPlayerMoved(string charId, int x, int y, string direction);
+
+    /// <summary>Updates state after entering a named location within a zone.</summary>
+    /// <param name="location">The location entered payload containing enemies and connections.</param>
+    void ApplyLocationEntered(LocationEnteredPayload location);
+
+    /// <summary>Updates state when a new zone location is discovered or unlocked.</summary>
+    /// <param name="slug">The location identifier slug.</param>
+    /// <param name="name">The location display name.</param>
+    /// <param name="type">The location type.</param>
+    void ApplyZoneLocationUnlocked(string slug, string name, string type);
+
+    /// <summary>Updates state after traversing a connection between locations or zones.</summary>
+    /// <param name="slug">The connection identifier slug.</param>
+    /// <param name="zoneId">The zone identifier after traversal.</param>
+    /// <param name="isCrossZone">Whether this traversal crossed zone boundaries.</param>
+    /// <param name="connections">The connections available at the new location.</param>
+    void ApplyConnectionTraversed(string slug, string zoneId, bool isCrossZone, IReadOnlyList<ZoneConnectionLink> connections);
+
+    // ── System / infrastructure Apply methods ───────────────────────────────
+
+    /// <summary>Appends a system message to the chat log.</summary>
+    /// <param name="message">The system message text.</param>
+    void ApplySystemMessage(string message);
+
+    /// <summary>Updates the connection ID after a successful hub connection.</summary>
+    /// <param name="connectionId">The server-assigned connection ID.</param>
+    void ApplyServerInfo(string connectionId);
+
+    /// <summary>Updates the zone tile map (e.g. after requesting a fresh map).</summary>
+    /// <param name="tileMap">The tile map data.</param>
+    void ApplyZoneTileMap(Tile[,] tileMap);
+
+    // ── Respawn ─────────────────────────────────────────────────────────────
+
+    /// <summary>Restores the character after respawn: clears death flag, restores HP/MP to max.</summary>
+    void ApplyCharacterRespawned();
+
+    // ── Lifecycle ───────────────────────────────────────────────────────────
+
+    /// <summary>Resets all state to defaults for logout or session end.</summary>
+    void Reset();
 }
 
 /// <summary>

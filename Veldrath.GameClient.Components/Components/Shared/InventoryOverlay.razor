@@ -198,6 +198,22 @@
             GameState.ApplyEquipmentChanged(payload.Slot, payload.Item);
             return Task.CompletedTask;
         }));
+
+        // G66: Request the character's inventory from the server on component init.
+        _ = FetchInventoryAsync();
+    }
+
+    private async Task FetchInventoryAsync()
+    {
+        try
+        {
+            if (Hub.IsConnected)
+                await Hub.SendAsync("GetInventory");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to request inventory.");
+        }
     }
 
     /// <inheritdoc />

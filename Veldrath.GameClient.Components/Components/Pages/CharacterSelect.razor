@@ -1,6 +1,5 @@
 @page "/Game/CharacterSelect"
 @attribute [Authorize]
-@using Veldrath.GameClient.Core.Services
 @using Veldrath.GameClient.Core.Payloads
 @using Veldrath.GameClient.Core.Abstractions
 @using Veldrath.Contracts.Characters
@@ -116,10 +115,7 @@ else
             // Register handler for ServerInfo — sets IsConnected = true on the GameState.
             _hubSubscriptions.Add(Hub.On<ServerInfoPayload>("ServerInfo", async payload =>
             {
-                if (GameState is GameStateService gs)
-                {
-                    gs.ApplyServerInfo(payload.ConnectionId);
-                }
+                GameState.ApplyServerInfo(payload.ConnectionId);
                 await InvokeAsync(StateHasChanged);
             }));
 
@@ -128,6 +124,18 @@ else
             {
                 GameState.ApplyCharacterSelected(payload);
                 await InvokeAsync(() => Navigation.NavigateTo("/Game/Play"));
+            }));
+
+            // Register handler for CharacterAlreadyActive before connecting.
+            _hubSubscriptions.Add(Hub.On<string>("CharacterAlreadyActive", async error =>
+            {
+                Logger.LogWarning("CharacterAlreadyActive: {Error}", error);
+                await InvokeAsync(() =>
+                {
+                    _errorMessage = "This character is already logged in elsewhere. Please wait or log out from that session.";
+                    _selectedCharacterId = null;
+                    StateHasChanged();
+                });
             }));
 
             // Register handler for errors.

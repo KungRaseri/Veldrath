@@ -1,8 +1,8 @@
-@using Veldrath.GameClient.Core.Services
+@using Veldrath.GameClient.Core.Abstractions
 @* Top bar showing character info, status bars, gold, and zone name. *@
-@inject GameStateService GameState
+@inject IGameStateService GameState
 
-@if (GameState.CurrentCharacter is { } character)
+@if (GameState.CurrentCharacterInfo is { } character)
 {
     <div class="game-header">
         <div class="game-header-character">

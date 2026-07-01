@@ -55,6 +55,48 @@ public sealed class FakeGameStateService : IGameStateService
     /// <summary>Gets or sets the simulated server connection identifier.</summary>
     public string? ServerConnectionId { get; set; }
 
+    // ── Character info (basic) ─────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public CharacterBasicInfo? CurrentCharacterInfo { get; set; }
+
+    // ── Chat state ─────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public IReadOnlyList<ChatMessage> ChatMessages { get; set; } = [];
+
+    /// <inheritdoc />
+    public event Action<string>? ChatMessageReceived;
+
+    /// <inheritdoc />
+    public IDisposable OnStateChanged(Action handler)
+    {
+        PropertyChanged += (_, _) => handler();
+        return new Subscription(() => PropertyChanged -= (_, _) => handler());
+    }
+
+    // ── Zone entity state ─────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public IReadOnlyList<OccupantInfo> ZoneOccupants { get; set; } = [];
+
+    /// <inheritdoc />
+    public IReadOnlyList<EnemyInfo> ZoneEnemies { get; set; } = [];
+
+    /// <inheritdoc />
+    public int PlayerTileX { get; set; }
+
+    /// <inheritdoc />
+    public int PlayerTileY { get; set; }
+
+    // ── Combat state extras ────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public EnemyInfo? CombatEnemy { get; set; }
+
+    /// <inheritdoc />
+    public string? LastCombatActionResult { get; set; }
+
     // ── Live character state ──────────────────────────────────────────────────
 
     /// <inheritdoc />
@@ -80,6 +122,23 @@ public sealed class FakeGameStateService : IGameStateService
 
     /// <inheritdoc />
     public string? CurrentDungeonId { get; set; }
+
+    // ── Region / Zone / Location state (G48-G52) ──────────────────────────────
+
+    /// <inheritdoc />
+    public RegionState CurrentRegion { get; set; } = new();
+
+    /// <inheritdoc />
+    public ZoneState CurrentZone { get; set; } = new();
+
+    /// <inheritdoc />
+    public string? CurrentZoneLocationSlug { get; set; }
+
+    /// <inheritdoc />
+    public IReadOnlyList<ZoneLocationEntry> ZoneLocations { get; set; } = [];
+
+    /// <inheritdoc />
+    public IReadOnlyList<ZoneConnectionLink> CurrentLocationConnections { get; set; } = [];
 
     // ── Call tracking ─────────────────────────────────────────────────────────
 
@@ -372,5 +431,165 @@ public sealed class FakeGameStateService : IGameStateService
         CurrentDungeonId = dungeonId;
         AppliedCalls.Add((nameof(ApplyDungeonEntered), dungeonId));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentDungeonId)));
+    }
+
+    // ── Zone / Region / Location Apply methods (G36-G47) ────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyZoneExited(string regionId, int tileX, int tileY)
+    {
+        CurrentZoneId = null;
+        CurrentZoneName = null;
+        CurrentRegion = CurrentRegion with { RegionId = regionId };
+        AppliedCalls.Add((nameof(ApplyZoneExited), (regionId, tileX, tileY)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentZoneId)));
+    }
+
+    /// <inheritdoc />
+    public void ApplyRegionMapReceived(RegionState region)
+    {
+        CurrentRegion = region;
+        AppliedCalls.Add((nameof(ApplyRegionMapReceived), region));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentRegion)));
+    }
+
+    /// <inheritdoc />
+    public void ApplyRegionChanged(string regionId, int tileX, int tileY)
+    {
+        CurrentRegion = CurrentRegion with { RegionId = regionId };
+        AppliedCalls.Add((nameof(ApplyRegionChanged), (regionId, tileX, tileY)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentRegion)));
+    }
+
+    /// <inheritdoc />
+    public void ApplyRegionPlayerMoved(string charId, int x, int y, string direction)
+    {
+        var players = new Dictionary<string, (int X, int Y, string Direction)>(CurrentRegion.Players)
+        {
+            [charId] = (x, y, direction),
+        };
+        CurrentRegion = CurrentRegion with { Players = players };
+        AppliedCalls.Add((nameof(ApplyRegionPlayerMoved), (charId, x, y, direction)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentRegion)));
+    }
+
+    /// <inheritdoc />
+    public void ApplyLocationEntered(LocationEnteredPayload location)
+    {
+        CurrentZoneLocationSlug = location.Slug;
+        CurrentLocationConnections = location.Connections;
+        CurrentZone = CurrentZone with { Name = location.Name, Type = location.Type };
+        AppliedCalls.Add((nameof(ApplyLocationEntered), location));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentZoneLocationSlug)));
+    }
+
+    /// <inheritdoc />
+    public void ApplyZoneLocationUnlocked(string slug, string name, string type)
+    {
+        AppliedCalls.Add((nameof(ApplyZoneLocationUnlocked), (slug, name, type)));
+    }
+
+    /// <inheritdoc />
+    public void ApplyConnectionTraversed(string slug, string zoneId, bool isCrossZone, IReadOnlyList<ZoneConnectionLink> connections)
+    {
+        CurrentLocationConnections = connections;
+        if (isCrossZone)
+        {
+            CurrentZoneId = zoneId;
+            CurrentZoneLocationSlug = slug;
+        }
+        AppliedCalls.Add((nameof(ApplyConnectionTraversed), (slug, zoneId, isCrossZone, connections)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentLocationConnections)));
+    }
+
+    // ── System / infrastructure Apply methods ───────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplySystemMessage(string message)
+    {
+        AppliedCalls.Add((nameof(ApplySystemMessage), message));
+    }
+
+    /// <inheritdoc />
+    public void ApplyServerInfo(string connectionId)
+    {
+        ServerConnectionId = connectionId;
+        IsConnected = true;
+        AppliedCalls.Add((nameof(ApplyServerInfo), connectionId));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ServerConnectionId)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsConnected)));
+    }
+
+    /// <inheritdoc />
+    public void ApplyZoneTileMap(Tile[,] tileMap)
+    {
+        ZoneTileMap = tileMap;
+        AppliedCalls.Add((nameof(ApplyZoneTileMap), tileMap));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ZoneTileMap)));
+    }
+
+    // ── Respawn ─────────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyCharacterRespawned()
+    {
+        CurrentCharacter = CurrentCharacter with
+        {
+            IsDead = false,
+            CurrentHealth = CurrentCharacter.MaxHealth,
+            CurrentMana = CurrentCharacter.MaxMana,
+        };
+        AppliedCalls.Add((nameof(ApplyCharacterRespawned), null));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentCharacter)));
+    }
+
+    // ── Lifecycle ───────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void Reset()
+    {
+        ServerConnectionId = null;
+        IsConnected = false;
+        CurrentCharacterId = null;
+        CurrentCharacterName = null;
+        CurrentCharacterLevel = 0;
+        CurrentCharacterGold = 0;
+        CurrentCharacterInfo = null;
+        ChatMessages = [];
+        ZoneOccupants = [];
+        ZoneEnemies = [];
+        PlayerTileX = 0;
+        PlayerTileY = 0;
+        CombatEnemy = null;
+        LastCombatActionResult = null;
+        CurrentCharacter = new();
+        CurrentZoneId = null;
+        CurrentZoneName = null;
+        ZoneTileMap = null;
+        IsInCombat = false;
+        IsKicked = false;
+        KickReason = null;
+        InShop = false;
+        ShopName = null;
+        CurrentDungeonId = null;
+        CurrentRegion = new();
+        CurrentZone = new();
+        CurrentZoneLocationSlug = null;
+        ZoneLocations = [];
+        CurrentLocationConnections = [];
+        InventoryItems = [];
+        EquippedItems = new Dictionary<string, Item>();
+        ShopCatalog = [];
+        QuestLog = [];
+        CompletedQuests = [];
+        Settings = new();
+        AppliedCalls.Clear();
+    }
+
+    /// <summary>Simple disposable that runs an action on dispose.</summary>
+    private sealed class Subscription(Action onDispose) : IDisposable
+    {
+        /// <inheritdoc />
+        public void Dispose() => onDispose();
     }
 }

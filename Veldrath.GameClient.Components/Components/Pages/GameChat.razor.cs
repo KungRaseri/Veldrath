@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Veldrath.GameClient.Core.Abstractions;
 using Veldrath.GameClient.Core.Models;
-using Veldrath.GameClient.Core.Services;
 
 namespace Veldrath.GameClient.Components.Components.Pages;
 
@@ -128,26 +127,24 @@ public partial class GameChat : INotifyPropertyChanged
     private IGameHubConnectionService Hub { get; set; } = null!;
 
     [Inject]
-    private GameStateService GameState { get; set; } = null!;
+    private IGameStateService GameState { get; set; } = null!;
 
     /// <inheritdoc />
     protected override void OnInitialized()
     {
         _stateSubscription = GameState.OnStateChanged(() => InvokeAsync(StateHasChanged));
-        _chatMessageSubscription = SubscribeToChatMessages();
-    }
 
-    private IDisposable SubscribeToChatMessages()
-    {
         // Re-render when a chat message is received.
         Action<string> handler = _ => InvokeAsync(StateHasChanged);
         GameState.ChatMessageReceived += handler;
-        return new Subscription(() => GameState.ChatMessageReceived -= handler);
+        _chatMessageSubscription = new Subscription(() => GameState.ChatMessageReceived -= handler);
     }
 
     /// <summary>
     /// Attempts to parse a whisper command from the input and sends the message
     /// to the appropriate hub method.
+    /// G82: Messages starting with <c>/</c> that are not whisper commands are sent
+    /// as slash commands via <c>SendChatMessage</c>.
     /// </summary>
     private async Task SendMessage()
     {
@@ -161,6 +158,11 @@ public partial class GameChat : INotifyPropertyChanged
             if (TryParseWhisper(text, out var target, out var whisperMessage))
             {
                 await Hub.SendAsync("SendWhisper", new { TargetCharacterName = target, Message = whisperMessage });
+            }
+            // G82: Slash commands — send via SendChatMessage for server-side parsing.
+            else if (text.StartsWith('/'))
+            {
+                await Hub.SendAsync("SendChatMessage", text);
             }
             else
             {

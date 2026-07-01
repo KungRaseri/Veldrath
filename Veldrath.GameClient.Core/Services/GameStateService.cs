@@ -6,82 +6,6 @@ using Veldrath.GameClient.Core.Payloads;
 
 namespace Veldrath.GameClient.Core.Services;
 
-// ── DTO records used by GameStateService ─────────────────────────────────────
-
-/// <summary>Basic character information displayed on the character select screen and used in-game.</summary>
-/// <param name="Id">The unique character identifier.</param>
-/// <param name="Name">The character's display name.</param>
-/// <param name="ClassName">The character's class (e.g. "Warrior", "Mage").</param>
-/// <param name="Level">The character's current level.</param>
-/// <param name="Experience">Total experience points earned.</param>
-/// <param name="CurrentHealth">Current health points.</param>
-/// <param name="MaxHealth">Maximum health points.</param>
-/// <param name="CurrentMana">Current mana points.</param>
-/// <param name="MaxMana">Maximum mana points.</param>
-/// <param name="Gold">Gold coins in the character's possession.</param>
-/// <param name="ExperienceToNextLevel">Experience points needed to reach the next level. Defaults to a calculation when not provided.</param>
-public record CharacterBasicInfo(
-    Guid Id,
-    string Name,
-    string ClassName,
-    int Level,
-    long Experience,
-    int CurrentHealth,
-    int MaxHealth,
-    int CurrentMana,
-    int MaxMana,
-    int Gold,
-    long ExperienceToNextLevel = 0)
-{
-    /// <summary>Gets the experience points needed to reach the next level, or a calculated default when not provided.</summary>
-    public long EffectiveExperienceToNextLevel => ExperienceToNextLevel > 0 ? ExperienceToNextLevel : Level * 1000L;
-}
-
-/// <summary>A single tile on the zone tilemap.  The <see cref="Type"/> value maps to a CSS class for rendering.</summary>
-/// <param name="X">Tile column.</param>
-/// <param name="Y">Tile row.</param>
-/// <param name="Type">Tile type identifier (0=grass, 1=wall, 2=water, 3=door, 4=path, 5=dirt, -1=void).</param>
-/// <param name="IsBlocked">Whether the tile blocks movement.</param>
-public record Tile(int X, int Y, int Type, bool IsBlocked);
-
-/// <summary>A chat message received from the game server.</summary>
-/// <param name="CharacterId">The sending character's unique identifier.</param>
-/// <param name="Channel">The chat channel (e.g. "zone", "global", "whisper").</param>
-/// <param name="Sender">The display name of the sender.</param>
-/// <param name="Message">The message text.</param>
-/// <param name="Timestamp">When the message was sent.</param>
-public record ChatMessage(
-    Guid CharacterId,
-    string Channel,
-    string Sender,
-    string Message,
-    DateTimeOffset Timestamp);
-
-/// <summary>Information about another player character occupying the same zone.</summary>
-/// <param name="CharacterId">The occupying character's unique identifier.</param>
-/// <param name="CharacterName">The occupying character's display name.</param>
-/// <param name="EnteredAt">When this character entered the zone.</param>
-/// <param name="TileX">The occupant's tile column, or <c>-1</c> if unknown.</param>
-/// <param name="TileY">The occupant's tile row, or <c>-1</c> if unknown.</param>
-public record OccupantInfo(Guid CharacterId, string CharacterName, DateTimeOffset EnteredAt, int TileX = -1, int TileY = -1);
-
-/// <summary>Information about an enemy in the current zone.</summary>
-/// <param name="EnemyId">The unique enemy identifier.</param>
-/// <param name="EnemyName">The display name of the enemy.</param>
-/// <param name="Level">The enemy's level.</param>
-/// <param name="CurrentHealth">The enemy's current health points.</param>
-/// <param name="MaxHealth">The enemy's maximum health points.</param>
-/// <param name="TileX">The column of the tile the enemy is standing on.</param>
-/// <param name="TileY">The row of the tile the enemy is standing on.</param>
-public record EnemyInfo(
-    Guid EnemyId,
-    string EnemyName,
-    int Level,
-    int CurrentHealth,
-    int MaxHealth,
-    int TileX,
-    int TileY);
-
 // ── GameStateService ─────────────────────────────────────────────────────────
 
 /// <summary>
@@ -136,6 +60,21 @@ public sealed class GameStateService : IGameStateService
     /// <inheritdoc />
     object? IGameStateService.ZoneTileMap => ZoneTileMap;
 
+    /// <inheritdoc />
+    RegionState IGameStateService.CurrentRegion => CurrentRegion;
+
+    /// <inheritdoc />
+    ZoneState IGameStateService.CurrentZone => CurrentZone;
+
+    /// <inheritdoc />
+    string? IGameStateService.CurrentZoneLocationSlug => CurrentZoneLocationSlug;
+
+    /// <inheritdoc />
+    IReadOnlyList<ZoneLocationEntry> IGameStateService.ZoneLocations => ZoneLocations;
+
+    /// <inheritdoc />
+    IReadOnlyList<ZoneConnectionLink> IGameStateService.CurrentLocationConnections => CurrentLocationConnections;
+
     // ── Live character state (progression / combat) ─────────────────────────────
 
     /// <summary>The current character's live state snapshot. Updates create new instances via <c>with</c>.</summary>
@@ -143,6 +82,18 @@ public sealed class GameStateService : IGameStateService
 
     /// <inheritdoc />
     CharacterState IGameStateService.CurrentCharacter => CurrentCharacterState;
+
+    /// <inheritdoc />
+    CharacterBasicInfo? IGameStateService.CurrentCharacterInfo => CurrentCharacter;
+
+    /// <inheritdoc />
+    IReadOnlyList<ChatMessage> IGameStateService.ChatMessages => ChatMessages;
+
+    /// <inheritdoc />
+    IReadOnlyList<OccupantInfo> IGameStateService.ZoneOccupants => ZoneOccupants;
+
+    /// <inheritdoc />
+    IReadOnlyList<EnemyInfo> IGameStateService.ZoneEnemies => ZoneEnemies;
 
     // ── Inventory & equipment ───────────────────────────────────────────────────
 
@@ -194,6 +145,21 @@ public sealed class GameStateService : IGameStateService
 
     /// <summary>Visible enemies in the current zone.</summary>
     public List<EnemyInfo> ZoneEnemies { get; private set; } = [];
+
+    /// <summary>The current region state including tilemap, exits, and player positions.</summary>
+    public RegionState CurrentRegion { get; private set; } = new();
+
+    /// <summary>The current zone metadata.</summary>
+    public ZoneState CurrentZone { get; private set; } = new();
+
+    /// <summary>The slug of the current zone location (POI), or <c>null</c> if not at a named location.</summary>
+    public string? CurrentZoneLocationSlug { get; private set; }
+
+    /// <summary>The zone locations available in the current zone.</summary>
+    public List<ZoneLocationEntry> ZoneLocations { get; private set; } = [];
+
+    /// <summary>The traversal connections available from the current location.</summary>
+    public List<ZoneConnectionLink> CurrentLocationConnections { get; private set; } = [];
 
     // ── Combat state ────────────────────────────────────────────────────────────
 
@@ -321,13 +287,74 @@ public sealed class GameStateService : IGameStateService
     /// <inheritdoc />
     public void ApplyZoneEntitiesSnapshot(Veldrath.Contracts.Tilemap.ZoneEntitiesSnapshotPayload payload)
     {
-        ApplySystemMessage("Zone entities snapshot received.");
+        var occupants = new List<OccupantInfo>();
+        var enemies = new List<EnemyInfo>();
+
+        foreach (var entity in payload.Entities)
+        {
+            switch (entity.EntityType)
+            {
+                case "player":
+                    occupants.Add(new OccupantInfo(
+                        entity.EntityId,
+                        entity.SpriteKey,
+                        DateTimeOffset.UtcNow,
+                        entity.TileX,
+                        entity.TileY));
+                    break;
+                case "enemy":
+                    enemies.Add(new EnemyInfo(
+                        entity.EntityId,
+                        entity.SpriteKey,
+                        1,
+                        100,
+                        100,
+                        entity.TileX,
+                        entity.TileY));
+                    break;
+            }
+        }
+
+        ApplyZoneEntitiesSnapshot(occupants, enemies);
     }
 
     /// <inheritdoc />
     public void ApplyEnemyDefeated(EnemyDefeatedPayload payload)
     {
-        ApplySystemMessage("An enemy has been defeated!");
+        var enemyName = CombatEnemy?.EnemyName ?? "an enemy";
+        var isCurrentPlayer = CurrentCharacter is not null && CurrentCharacter.Id == payload.CharacterId;
+
+        if (isCurrentPlayer)
+            ApplySystemMessage($"You defeated {enemyName}!");
+        else
+            ApplySystemMessage($"{payload.CharacterId} defeated an enemy!");
+    }
+
+    /// <inheritdoc />
+    public void ApplyCharacterRespawned()
+    {
+        var maxHp = CurrentCharacterState.MaxHealth;
+        var maxMp = CurrentCharacterState.MaxMana;
+
+        CurrentCharacterState = CurrentCharacterState with
+        {
+            IsDead = false,
+            CurrentHealth = maxHp,
+            CurrentMana = maxMp,
+        };
+
+        if (CurrentCharacter is not null)
+        {
+            CurrentCharacter = CurrentCharacter with
+            {
+                CurrentHealth = maxHp,
+                CurrentMana = maxMp,
+            };
+            RaisePropertyChanged(nameof(CurrentCharacter));
+        }
+
+        RaisePropertyChanged(nameof(CurrentCharacterState));
+        ApplySystemMessage("You have been revived!");
     }
 
     // ── Inventory & equipment Apply methods ─────────────────────────────────────
@@ -634,6 +661,96 @@ public sealed class GameStateService : IGameStateService
         ApplySystemMessage("Entering dungeon...");
     }
 
+    // ── Zone / Region / Location Apply methods (G36-G47) ────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyZoneExited(string regionId, int tileX, int tileY)
+    {
+        // Clear zone tile state
+        CurrentZoneId = null;
+        CurrentZoneName = null;
+        ZoneTileMap = null;
+        RaisePropertyChanged(nameof(CurrentZoneId));
+        RaisePropertyChanged(nameof(CurrentZoneName));
+        RaisePropertyChanged(nameof(ZoneTileMap));
+
+        // Set exit position on region
+        CurrentRegion = CurrentRegion with { RegionId = regionId };
+        RaisePropertyChanged(nameof(CurrentRegion));
+
+        ApplySystemMessage("You left the zone.");
+    }
+
+    /// <inheritdoc />
+    public void ApplyRegionMapReceived(RegionState region)
+    {
+        CurrentRegion = region;
+        RaisePropertyChanged(nameof(CurrentRegion));
+    }
+
+    /// <inheritdoc />
+    public void ApplyRegionChanged(string regionId, int tileX, int tileY)
+    {
+        CurrentRegion = CurrentRegion with { RegionId = regionId };
+        RaisePropertyChanged(nameof(CurrentRegion));
+        ApplySystemMessage($"Entering {regionId}...");
+    }
+
+    /// <inheritdoc />
+    public void ApplyRegionPlayerMoved(string charId, int x, int y, string direction)
+    {
+        var players = new Dictionary<string, (int X, int Y, string Direction)>(CurrentRegion.Players)
+        {
+            [charId] = (x, y, direction),
+        };
+        CurrentRegion = CurrentRegion with { Players = players };
+        RaisePropertyChanged(nameof(CurrentRegion));
+    }
+
+    /// <inheritdoc />
+    public void ApplyLocationEntered(LocationEnteredPayload location)
+    {
+        CurrentZoneLocationSlug = location.Slug;
+        CurrentLocationConnections = [.. location.Connections];
+        ZoneEnemies = location.Enemies.Select(e => new EnemyInfo(
+            Guid.Empty, e.Name, e.Level, 100, 100, 0, 0)).ToList();
+        CurrentZone = CurrentZone with
+        {
+            Name = location.Name,
+            Type = location.Type,
+        };
+        RaisePropertyChanged(nameof(CurrentZoneLocationSlug));
+        RaisePropertyChanged(nameof(CurrentLocationConnections));
+        RaisePropertyChanged(nameof(ZoneEnemies));
+        RaisePropertyChanged(nameof(CurrentZone));
+        ApplySystemMessage($"Entered {location.Name}.");
+    }
+
+    /// <inheritdoc />
+    public void ApplyZoneLocationUnlocked(string slug, string name, string type)
+    {
+        if (ZoneLocations.All(z => z.Slug != slug))
+        {
+            ZoneLocations.Add(new ZoneLocationEntry(slug, name, type, CurrentZoneId ?? "", 0, null, null));
+        }
+        RaisePropertyChanged(nameof(ZoneLocations));
+        ApplySystemMessage($"Discovered {name} ({type})!");
+    }
+
+    /// <inheritdoc />
+    public void ApplyConnectionTraversed(string slug, string zoneId, bool isCrossZone, IReadOnlyList<ZoneConnectionLink> connections)
+    {
+        CurrentLocationConnections = [.. connections];
+        if (isCrossZone)
+        {
+            CurrentZoneId = zoneId;
+            CurrentZoneLocationSlug = slug;
+            RaisePropertyChanged(nameof(CurrentZoneId));
+            RaisePropertyChanged(nameof(CurrentZoneLocationSlug));
+        }
+        RaisePropertyChanged(nameof(CurrentLocationConnections));
+    }
+
     // ── Existing Apply methods (preserved for backward compatibility) ─────────
 
     /// <summary>Updates the connection ID after a successful hub connection.</summary>
@@ -845,6 +962,11 @@ public sealed class GameStateService : IGameStateService
         SkillXp = [];
         SkillRanks = [];
         CurrentDungeonId = null;
+        CurrentRegion = new();
+        CurrentZone = new();
+        CurrentZoneLocationSlug = null;
+        ZoneLocations = [];
+        CurrentLocationConnections = [];
 
         RaisePropertyChanged(nameof(ServerConnectionId));
         RaisePropertyChanged(nameof(IsConnected));
@@ -874,6 +996,11 @@ public sealed class GameStateService : IGameStateService
         RaisePropertyChanged(nameof(SkillXp));
         RaisePropertyChanged(nameof(SkillRanks));
         RaisePropertyChanged(nameof(CurrentDungeonId));
+        RaisePropertyChanged(nameof(CurrentRegion));
+        RaisePropertyChanged(nameof(CurrentZone));
+        RaisePropertyChanged(nameof(CurrentZoneLocationSlug));
+        RaisePropertyChanged(nameof(ZoneLocations));
+        RaisePropertyChanged(nameof(CurrentLocationConnections));
     }
 
     /// <summary>Subscribe to any property change. Returns an <see cref="IDisposable"/> that unsubscribes.</summary>
