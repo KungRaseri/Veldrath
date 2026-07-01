@@ -2,7 +2,9 @@
 
 > **Date:** 2026-07-01
 > **Purpose:** Document features not yet migrated to the RCL, known issues/limitations, performance considerations, and next steps for future improvement.
-> **Status:** Post-Phase 5 audit.
+> **Status:** ✅ **All gaps resolved — full parity achieved.**
+>
+> **Completion Note (2026-07-01):** All previously identified gaps between web and desktop clients have been closed. Every feature listed below is now resolved. This document is retained for historical reference.
 
 ---
 
@@ -10,17 +12,17 @@
 
 ### 1.1 Desktop-Only Features
 
-| Feature | Desktop Location | RCL Component Needed | Priority |
-|---------|-----------------|---------------------|----------|
-| Chat channel pills (Zone/Global/Whisper/System) | [`GameViewModel.cs`](Veldrath.Client/ViewModels/GameViewModel.cs) | Enhance `GameChat.razor` | High |
-| Whisper `/w name` prefix parsing | [`GameViewModel.cs`](Veldrath.Client/ViewModels/GameViewModel.cs) | Enhance `GameChat.razor` | High |
-| Hotbar ability buttons | [`GameViewModel.cs`](Veldrath.Client/ViewModels/GameViewModel.cs) (`UseHotbarAbilityCommand`) | New `GameHotbar.razor` component | Medium |
-| Audio mute controls (music/SFX) | [`GameView.axaml`](Veldrath.Client/Views/GameView.axaml), [`GameViewModel.cs`](Veldrath.Client/ViewModels/GameViewModel.cs) | New `GameSettings.razor` component | Medium |
-| Connection status with degraded/warning states | [`GameViewModel.cs`](Veldrath.Client/ViewModels/GameViewModel.cs) | Enhance RCL status indicators | Medium |
-| Map (region view with graph layout) | [`MapViewModel.cs`](Veldrath.Client/ViewModels/MapViewModel.cs), [`MapView.axaml`](Veldrath.Client/Views/MapView.axaml) | New `GameMap.razor` component | Medium |
-| Inventory panel | [`InventoryView.axaml`](Veldrath.Client/Views/InventoryView.axaml), [`InventoryViewModel.cs`](Veldrath.Client/ViewModels/InventoryViewModel.cs) | New `GameInventory.razor` component | Low |
-| Shop interaction | [`GameViewModel.cs`](Veldrath.Client/ViewModels/GameViewModel.cs) (`DoVisitShopAsync`) | New `GameShop.razor` component | Low |
-| Settings flyout | [`GameView.axaml`](Veldrath.Client/Views/GameView.axaml) (settings flyout) | New `GameSettings.razor` component | Low |
+| Feature | Desktop Location | RCL Component Added | Status |
+|---------|-----------------|---------------------|--------|
+| Chat channel pills (Zone/Global/Whisper/System) | [`GameViewModel.cs`](Veldrath.Client/ViewModels/GameViewModel.cs) | [`GameChat.razor`](Veldrath.GameClient.Components/Components/Pages/GameChat.razor) | ✅ Resolved |
+| Whisper `/w name` prefix parsing | [`GameViewModel.cs`](Veldrath.Client/ViewModels/GameViewModel.cs) | [`GameChat.razor`](Veldrath.GameClient.Components/Components/Pages/GameChat.razor) | ✅ Resolved |
+| Hotbar ability buttons (10 quick-slots) | [`GameViewModel.cs`](Veldrath.Client/ViewModels/GameViewModel.cs) (`UseHotbarAbilityCommand`) | [`ActionBar.razor`](Veldrath.GameClient.Components/Components/Shared/ActionBar.razor) | ✅ Resolved |
+| Audio mute controls (music/SFX) | [`GameView.axaml`](Veldrath.Client/Views/GameView.axaml), [`GameViewModel.cs`](Veldrath.Client/ViewModels/GameViewModel.cs) | [`GameSettings.razor`](Veldrath.GameClient.Components/Components/Pages/GameSettings.razor) | ✅ Resolved |
+| Connection status with degraded/warning states | [`GameViewModel.cs`](Veldrath.Client/ViewModels/GameViewModel.cs) | [`GameFooter.razor`](Veldrath.GameClient.Components/Components/Pages/GameFooter.razor) | ✅ Resolved |
+| Map (region view with CSS grid zone cards) | [`MapViewModel.cs`](Veldrath.Client/ViewModels/MapViewModel.cs), [`MapView.axaml`](Veldrath.Client/Views/MapView.axaml) | [`GameMap.razor`](Veldrath.GameClient.Components/Components/Pages/GameMap.razor) | ✅ Resolved |
+| Inventory panel | [`InventoryView.axaml`](Veldrath.Client/Views/InventoryView.axaml), [`InventoryViewModel.cs`](Veldrath.Client/ViewModels/InventoryViewModel.cs) | [`InventoryOverlay.razor`](Veldrath.GameClient.Components/Components/Pages/InventoryOverlay.razor) | ✅ Resolved |
+| Shop interaction | [`GameViewModel.cs`](Veldrath.Client/ViewModels/GameViewModel.cs) (`DoVisitShopAsync`) | [`ShopOverlay.razor`](Veldrath.GameClient.Components/Components/Pages/ShopOverlay.razor) | ✅ Resolved |
+| Settings (volume, theme, accessibility) | [`GameView.axaml`](Veldrath.Client/Views/GameView.axaml) (settings flyout) | [`GameSettings.razor`](Veldrath.GameClient.Components/Components/Pages/GameSettings.razor) | ✅ Resolved |
 
 ### 1.2 Web-Only Features
 
@@ -138,45 +140,50 @@ If performance issues arise:
 
 ## 5. Next Steps for Future Improvement
 
-### 5.1 Immediate (Next Session)
+### 5.1 ✅ All Gap-Closure Tasks Complete
 
-1. **Enhance `GameChat.razor`** — Add channel pill UI (Zone/Global/Whisper/System) and whisper target input to match desktop feature set
-2. **Run full test suite** — `dotnet test Realm.Full.slnx` and fix any failures
-3. **Verify bUnit tests pass** — Run `dotnet test Veldrath.GameClient.Components.Tests`
+All previously planned gap-closure tasks have been completed:
 
-### 5.2 Short-Term (Next 2-3 Sessions)
+1. ✅ **Enhanced `GameChat.razor`** — Channel pill UI (Zone/Global/Whisper/System), whisper parsing, and color coding added
+2. ✅ **Created `GameMap.razor`** — CSS Grid region map with zone cards and click-to-navigate
+3. ✅ **Added hotbar ability quick-slots** — 10 quick-slot buttons added to `ActionBar.razor`
+4. ✅ **Enhanced connection status** — Degraded/warning states, ping, and player count added to `GameFooter.razor`
+5. ✅ **Created inventory overlay** — `InventoryOverlay.razor` with item grid, equipment slots, and hub command wiring
+6. ✅ **Created shop component** — `ShopOverlay.razor` with buy/sell interface via `VisitShop` hub command
+7. ✅ **Created journal component** — `JournalOverlay.razor` with quest log and active quest tracking
+8. ✅ **Created settings component** — `GameSettings.razor` page with volume sliders, theme selector, and accessibility options
+9. ✅ **Created reconnect overlay** — `ReconnectOverlay.razor` with countdown auto-retry and manual reconnect
 
-4. **Create `GameMap.razor`** — Port the desktop's region map (graph with zone nodes and connections) to the RCL
-5. **Create `GameHotbar.razor`** — Add ability hotbar to the RCL so both clients have quick-slot abilities
-6. **Enhance connection status** — Add degraded/warning states to RCL's `GameFooter` to match desktop
+### 5.2 Remaining Future Work (Non-Gap Items)
 
-### 5.3 Medium-Term (Next 4-6 Sessions)
-
-7. **Create inventory overlay** — Port `InventoryViewModel` to a new RCL component
-8. **Create shop component** — Port shop interaction to RCL
-9. **Create settings component** — Port audio/display settings flyout to RCL
-10. **Implement Playwright E2E tests** — Add a Playwright test project for full browser-based E2E testing
-
-### 5.4 Long-Term (Future Milestone)
-
-11. **Cross-platform WebView support** — Add `Avalonia.WebView` or `CefGlue` for Linux/macOS desktop
-12. **CSS Grid tilemap → Canvas rendering** — For large tilemaps (>50×50), consider canvas-based rendering
-13. **RCL component namespace cleanup** — Rename `Components/Components/` to eliminate the double "Components" namespace
-14. **Publish RCL as NuGet package** — Allow third-party consumers to use the game UI components
-15. **Add accessibility attributes** — ARIA labels, keyboard navigation, screen reader support for all RCL components
+10. ⬜ **Implement Playwright E2E tests** — Add a Playwright test project for full browser-based E2E testing
+11. ⬜ **Cross-platform WebView support** — Add `Avalonia.WebView` or `CefGlue` for Linux/macOS desktop
+12. ⬜ **CSS Grid tilemap → Canvas rendering** — For large tilemaps (>50×50), consider canvas-based rendering
+13. ⬜ **RCL component namespace cleanup** — Rename `Components/Components/` to eliminate the double "Components" namespace
+14. ⬜ **Publish RCL as NuGet package** — Allow third-party consumers to use the game UI components
+15. ⬜ **Add accessibility attributes** — ARIA labels, keyboard navigation, screen reader support for all RCL components
 
 ---
 
-## 6. Phase 5 Completion Summary
+## 6. All Gaps Closed — Completion Summary
 
 | Task | Status | Files Created/Modified |
 |------|--------|----------------------|
 | Task 1: bUnit Test Project | ✅ Complete | 10 files in `Veldrath.GameClient.Components.Tests/` |
 | Task 2: Embedded Server Integration Tests | ✅ Complete | 1 file in `Veldrath.Client.Tests/HostedWeb/` |
 | Task 3: Feature Parity Audit | ✅ Complete | `plans/game-client-parity-checklist.md` |
-| Task 4: Build/Test Verification | ⏳ Pending | — |
-| Task 5: Solution File Updates | ⏳ Pending | `Realm.Full.slnx`, `Veldrath.slnx` |
+| Task 4: Build/Test Verification | ✅ Complete | — |
+| Task 5: Solution File Updates | ✅ Complete | `Realm.Full.slnx`, `Veldrath.slnx` |
 | Task 6: Document Remaining Gaps | ✅ Complete | This file |
+| **Chat parity (channel pills, whisper, color coding)** | ✅ Complete | [`GameChat.razor`](Veldrath.GameClient.Components/Components/Pages/GameChat.razor) |
+| **Server status banner parity (states, ping, player count)** | ✅ Complete | [`GameFooter.razor`](Veldrath.GameClient.Components/Components/Pages/GameFooter.razor) |
+| **Disconnect/reconnect overlay** | ✅ Complete | [`ReconnectOverlay.razor`](Veldrath.GameClient.Components/Components/Shared/ReconnectOverlay.razor) |
+| **Action bar hotbar (10 quick-slots)** | ✅ Complete | [`ActionBar.razor`](Veldrath.GameClient.Components/Components/Shared/ActionBar.razor) |
+| **Map (region view)** | ✅ Complete | [`GameMap.razor`](Veldrath.GameClient.Components/Components/Pages/GameMap.razor) |
+| **Inventory overlay** | ✅ Complete | [`InventoryOverlay.razor`](Veldrath.GameClient.Components/Components/Pages/InventoryOverlay.razor) |
+| **Shop overlay** | ✅ Complete | [`ShopOverlay.razor`](Veldrath.GameClient.Components/Components/Pages/ShopOverlay.razor) |
+| **Journal overlay** | ✅ Complete | [`JournalOverlay.razor`](Veldrath.GameClient.Components/Components/Pages/JournalOverlay.razor) |
+| **Settings page (volume, theme, accessibility)** | ✅ Complete | [`GameSettings.razor`](Veldrath.GameClient.Components/Components/Pages/GameSettings.razor) |
 
 ### Files Created in Phase 5
 
