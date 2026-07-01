@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
 using Serilog.Events;
 using Veldrath.Auth.Blazor;
+using Veldrath.GameClient.Components.Components.Layout;
 using Veldrath.GameClient.Core.Abstractions;
 using Veldrath.GameClient.Core.Services;
 using Veldrath.Web;
@@ -141,6 +142,7 @@ try
     });
 
     app.MapRazorComponents<App>()
+        .AddAdditionalAssemblies(typeof(GameLayout).Assembly)
         .AddInteractiveServerRenderMode()
         .DisableAntiforgery();
 
