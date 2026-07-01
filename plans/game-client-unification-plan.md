@@ -1,7 +1,7 @@
 # Game Client Unification Plan — Veldrath
 
-> **Date:** 2026-06-30  
-> **Status:** Draft / For Review  
+> **Date:** 2026-07-01
+> **Status:** Final — Approved
 > **Scope:** Restructure Veldrath projects to achieve identical game client experiences across browser and desktop, with the game UI in a single place for updates.
 
 ---
@@ -404,7 +404,7 @@ The desktop client (`Veldrath.Client`) currently renders game UI using native Av
 **How it works:**
 - Desktop app starts a minimal ASP.NET Core server on `localhost` (random port) at startup in a background thread
 - The embedded server hosts the RCL components in Blazor Server Interactive SSR mode
-- A WebView2 control in the Avalonia window points to `http://localhost:{port}/Game/Play`
+- A WebView2 control in the Avalonia window points to `http://localhost:{port}/Game/Login` (launcher mode), then proceeds to `/Game/CharacterSelect` → `/Game/Play` as the user progresses through the game flow
 - Native features (audio, system tray, notifications) communicate via a JS interop bridge (`window.external.notify` / `window.chrome.webview`)
 
 **Sequence diagram:**
@@ -421,7 +421,7 @@ sequenceDiagram
     EmbeddedServer-->>AvaloniaApp: Ready at localhost:52345
     
     User->>AvaloniaApp: Navigate to game
-    AvaloniaApp->>WebView2: Navigate to localhost:52345/Game/Play
+    AvaloniaApp->>WebView2: Navigate to localhost:52345/Game/Login (launcher mode)
     WebView2->>EmbeddedServer: Request Blazor Server page
     EmbeddedServer-->>WebView2: Blazor Server HTML + SignalR connection
     
@@ -528,7 +528,8 @@ flowchart LR
         NativeApp["Avalonia App
         DI Container"]
         WebView2["WebView2 Control
-        localhost:random/Game/Play"]
+        localhost:random/Game/Login
+        (launcher mode)"]
         Bridge["NativeBridgeService
         JS interop receiver"]
     end
@@ -666,6 +667,7 @@ flowchart LR
 ### Phase 4: Restructure Veldrath.Client (Desktop Shell + WebView)
 
 **Goal**: Add embedded Blazor hosting to the desktop client so it renders the shared game UI.
+**Launcher flow**: The embedded server serves only the RCL game components (no website/marketing pages). The WebView2 navigates to `/Game/Login` (launcher mode) on startup, then proceeds to `/Game/CharacterSelect` → `/Game/Play` as the user progresses. The desktop user never sees the marketing website — the embedded server is a thin UI relay with zero game authority.
 
 **Todo items:**
 
@@ -868,62 +870,105 @@ flowchart TD
 
 ---
 
-## 8. Open Questions for User Input
+## 8. Decision Records
 
-The following decisions need your input before implementation begins:
+The following decisions have been finalized and are reflected throughout this document.
 
-### 8.1 Tilemap vs Panel-Driven UI
+### 8.1 Tilemap vs Panel-Driven UI → **Option A: Tilemap (web style)**
 
-The web client has a CSS Grid tilemap ([`GameTilemap.razor`](Veldrath.Web/Components/Pages/Game/GameTilemap.razor)). The desktop client has a panel-driven location UI ([`ZoneLocationPanelView`](Veldrath.Client/Views/Game/Components/ZoneLocationPanelView.axaml)).
+**Decision:** The CSS Grid tilemap in [`GameTilemap.razor`](Veldrath.Web/Components/Pages/Game/GameTilemap.razor) will be the unified game UI. [`ZoneLocationPanelView`](Veldrath.Client/Views/Game/Components/ZoneLocationPanelView.axaml) (Avalonia native) becomes the fallback when WebView2 is unavailable on desktop.
 
-**Which paradigm should the unified game UI use?**
+**Rationale:**
+- The web's tilemap already follows the RCL path and provides a richer visual game experience
+- The desktop client can render the identical tilemap via WebView2, achieving pixel-perfect parity
+- Keeping `ZoneLocationPanelView` as a fallback ensures users without WebView2 still have a functional game client
+- Avoids rewriting either the tilemap or the panel-driven UI — both are preserved in their appropriate contexts
 
-- **Option A: Tilemap (web style)** — CSS Grid tilemap in the RCL, rendered via WebView on desktop. Removes `ZoneLocationPanelView`.
-- **Option B: Panel-driven (desktop style)** — Text/list-based location panel in the RCL. Rewrite `GameTilemap.razor` to match. The web loses the visual map.
-- **Option C: Both** — Tilemap as default, panel as fallback on desktop when WebView unavailable.
+**Impact on implementation:**
+- Phase 5 item 2 (reconciliation) is already aligned — recommendation was to adopt web's tilemap. No change needed to the todo items.
+- Phase 4's WebView fallback strategy (Section 7.2) already provisions `ZoneLocationPanelView` as the degraded-mode fallback, which matches this decision.
 
-### 8.2 Game URL Strategy
+### 8.2 Game URL Strategy → **Option B: Same website**
 
-After restructuring, the website (`Veldrath.Web`) no longer hosts game pages.
+**Decision:** Game routes like `/Game/Play` remain on the main site but are served from the RCL (`Veldrath.GameClient.Components`). No subdomain or separate deployment.
 
-**How should users access the game from the website?**
+**Rationale:**
+- Simplest deployment model — no additional infrastructure, DNS, or TLS certificates needed
+- The game routes already exist under `/Game/*` on the main site; switching to RCL-served components is a transparent implementation change
+- A future split (subdomain or separate service) remains possible without architectural changes since the RCL is already a separate project
+- Avoids cross-origin auth/session complications that a subdomain would introduce
 
-- **Option A: Subdomain** — Game hosted at `game.veldrath.com` (separate deployment of the RCL). Website links to it.
-- **Option B: Same website** — Keep game routes under `/Game/*` on the main site, but now they come from the RCL (same deployment, different code organization). The website references the RCL.
-- **Option C: Desktop-only** — Game is only available via the desktop client. Website has no game link.
+**Impact on implementation:**
+- Phase 3 item 12 (NavMenu update) — should add a "Play Game" link pointing to `/Game/Play` on the same site, served from the RCL
+- Website deployment (Section 8.4 / 8.4 below) remains co-deployed — no separate pipeline needed
+- No changes to Phase 1-4 todo items
 
-### 8.3 Desktop WebView Strategy
+### 8.3 Desktop WebView Strategy → **Option A: Self-host Blazor Server (launcher mode)**
 
-**Which WebView approach should the desktop client use?**
+**Decision:** The desktop client starts a minimal ASP.NET Core server on `localhost` at a random port. The embedded server hosts **only** the RCL game components (no website/marketing pages). The WebView2 navigates to a game-launcher route like `/Game/Login`, then proceeds to `/Game/CharacterSelect` → `/Game/Play`.
 
-- **Option A: Self-host Blazor Server** (recommended in this plan) — Start minimal ASP.NET Core on localhost, open WebView2 pointing to it. Matches web architecture.
-- **Option B: Blazor WebAssembly** — Compile RCL to WASM, load in WebView2 directly. Single SignalR hop, but more complex build.
-- **Option C: Native Avalonia only** — Keep current architecture (Avalonia views). Do NOT share UI with web. This defeats the purpose of the plan.
+**Key clarification:** The embedded server is a **thin UI relay** with ZERO game authority — all game logic, database, and authoritative state remains on the remote `Veldrath.Server`. The embedded server only hosts Blazor components that render UI and forward user actions via server-to-server SignalR to the `GameHub`.
 
-### 8.4 Veldrath.Web Deployment Future
+**Rationale:**
+- Matches the current web architecture (Blazor Server + server-to-server SignalR) exactly — the only difference is where the browser lives
+- Lowest risk option — all infrastructure already exists (Blazor Server, RCL, SignalR)
+- No WASM compilation complexity or dual-target build pipeline
+- The "launcher mode" flow means the desktop user never sees the marketing website, which is the correct UX for a desktop game client
+- Zero game authority on the embedded server ensures security boundaries are clear
 
-After removing game pages from `Veldrath.Web`, should the website be deployed independently?
+**Impact on implementation:**
+- The sequence diagram in Section 5.2 and the architecture diagram in Section 5.4 have been updated to reflect `/Game/Login` as the entry point
+- Phase 4's description has been updated to document the launcher flow explicitly
+- Phase 4.1 (embedded server bootstrap) todo items already describe the minimal API approach — no changes needed to individual todo items
+- Phase 4.2 item 6 (GameWebView.cs) should bind `Source` to `http://localhost:{port}/Game/Login`
 
-- **Option A: Separate service** — `Veldrath.Web` becomes a standalone marketing website, deployed separately from the game server.
-- **Option B: Same deployment** — `Veldrath.Web` remains part of the same deployment as `Veldrath.Server` (they're currently co-deployed). Game pages come from RCL but map to same server.
+### 8.4 Veldrath.Web Deployment Future → **Option B: Same deployment**
 
-### 8.5 Test Strategy for RCL
+**Decision:** `Veldrath.Web` remains co-deployed with `Veldrath.Server`. Game pages from the RCL map to the same server. Can be split into a separate service later if needed.
 
-**How should the shared game UI be tested?**
+**Rationale:**
+- Co-deployment is the current state and works well — no reason to introduce deployment complexity now
+- The RCL architecture already decouples the game UI from the website at the project level, even if they share a deployment
+- A future split is low-risk since the RCL is an independent project — it just needs a new host application
+- Keeps infrastructure costs and operational complexity minimal during Phases 1-4
 
-- **Option A: bUnit** — Standard Blazor component testing. Fast, reliable, no browser needed. Best for RCL component tests.
-- **Option B: Playwright** — Full browser-based E2E testing. Slower but covers real rendering. Best for integration tests.
-- **Option C: Both** — bUnit for unit tests, Playwright for integration/E2E.
+**Impact on implementation:**
+- No changes to any Phase todo items — the deployment topology is unchanged
+- The solution file references in Appendix A remain valid (RCL projects added to all relevant solution files)
 
-### 8.6 Cross-Platform Desktop Support
+### 8.5 Test Strategy for RCL → **Option C: Both bUnit + Playwright**
 
-The current desktop client is Windows-only (WinExe). The WebView2 approach is also Windows-only by default.
+**Decision:**
+- **bUnit** for fast unit tests on individual Razor components (rendering, state, event handling)
+- **Playwright** for E2E integration tests verifying real browser rendering and SignalR circuit behavior
 
-**Should we support Linux/macOS desktop clients?**
+**Rationale:**
+- bUnit is the standard for Blazor component unit testing — fast, reliable, no browser dependency. Ideal for testing individual components in isolation
+- Playwright catches real rendering issues (CSS, layout, browser API compatibility) that bUnit cannot
+- The combination mirrors industry best practices for Blazor testing
+- Risk 9 (Section 7.1) is partially mitigated by having both test approaches
 
-- **Option A: Windows only** — Keep current scope. WebView2 handles the game UI.
-- **Option B: Cross-platform via Avalonia.WebView** — Use `Avalonia.WebView` package which wraps platform WebViews (WebView2 on Windows, WKWebView on macOS, WebKitGTK on Linux).
-- **Option C: Cross-platform via CEF** — Use CefGlue/Chromium Embedded Framework. Heavy (~200 MB) but consistent across platforms.
+**Impact on implementation:**
+- Phase 2 item 18 (`Veldrath.GameClient.Components.Tests` test project) should include both bUnit and Playwright test classes
+- Phase 5 item 6 (end-to-end testing) references both bUnit and Playwright — no change needed
+- The test project `.csproj` will need both `bunit` and `Microsoft.Playwright` NuGet packages
+
+### 8.6 Cross-Platform Desktop Support → **Option A: Windows-only (initial), with abstraction for future Option B**
+
+**Decision:** Start with `Microsoft.Web.WebView2` (Windows-only, most mature). Architect `GameWebView` control behind an interface so `Avalonia.WebView` (cross-platform via WKWebView/WebKitGTK) can be swapped in later. Do not block Phases 1-3 on cross-platform concerns.
+
+**Rationale:**
+- WebView2 is the most mature, best-documented, and most performant WebView option for .NET desktop apps
+- The Windows gaming market is the primary target — shipping on Windows first is the pragmatic choice
+- Abstracting `GameWebView` behind an interface costs very little up front (one interface + two implementations) and prevents a costly rewrite later
+- Cross-platform support can be added as a post-Phase-5 enhancement without architectural changes
+- Risk 2 (Section 7.1) is already documented and has the same mitigation strategy
+
+**Impact on implementation:**
+- Phase 4.2 item 5: Add `Microsoft.Web.WebView2` NuGet package (Windows). Do NOT add `Avalonia.WebView` yet.
+- Phase 4.2 item 6: Define `IGameWebView` interface and implement `WebView2GameWebView` (Windows). The interface should support `Source`, `NavigationCompleted`, and the JS bridge message handler.
+- Phase 4.2 item 7: The AXAML control should reference the interface, not the concrete WebView2 type.
+- A future item (outside current Phases 1-5) will add `AvaloniaWebViewGameWebView` using `Avalonia.WebView` for cross-platform support.
 
 ---
 
