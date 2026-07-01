@@ -18,7 +18,7 @@
 
     <div class="game-main">
         <div class="game-sidebar">
-            <GameSidebar />
+            <GameSidebar OnOpenOverlay="HandleOpenOverlay" />
             <GameChat />
         </div>
 
@@ -42,13 +42,17 @@
     </div>
 
     <GameFooter />
-    <GameOverlay />
+    <GameOverlay Visible="_showOverlay"
+                 OverlayType="_activeOverlay"
+                 OnClose="HandleCloseOverlay" />
 </div>
 
 @code {
     private readonly List<IDisposable> _hubSubscriptions = [];
     private IDisposable? _stateSubscription;
     private bool _hubConnected;
+    private bool _showOverlay;
+    private GameOverlay.OverlayKind _activeOverlay;
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
@@ -66,7 +70,6 @@
     {
         try
         {
-            // Ensure the JWT is still fresh.
             var tokenValid = await Auth.TryRefreshAsync();
             if (!tokenValid || Auth.AccessToken is null)
             {
@@ -77,14 +80,8 @@
             var serverUrl = Configuration["Veldrath:ServerUrl"]
                 ?? throw new InvalidOperationException("Veldrath:ServerUrl is not configured.");
 
-            // Always register hub event handlers, regardless of whether the hub is
-            // already connected from CharacterSelect.  If we skip registration when
-            // already connected, events like ZoneEntered / ZoneTileMap will never be
-            // handled because the CharacterSelect page only registered its own handlers.
             RegisterHubHandlers();
 
-            // Use OnStateChanged via the concrete GameStateService since it has the method.
-            // IGameStateService only provides INotifyPropertyChanged.
             if (GameState is GameStateService gs)
             {
                 _stateSubscription ??= gs.OnStateChanged(() => InvokeAsync(StateHasChanged));
@@ -97,7 +94,6 @@
 
             _hubConnected = Hub.IsConnected;
 
-            // If the hub is now connected and we have a character, enter the zone.
             if (_hubConnected && GameState.CurrentCharacterId is not null)
             {
                 await EnterZoneAfterConnectAsync();
@@ -113,20 +109,13 @@
         }
     }
 
-    /// <summary>
-    /// Enters the character's last-known zone and requests the tile map.
-    /// Called after the hub connection is established (or found already connected).
-    /// </summary>
     private async Task EnterZoneAfterConnectAsync()
     {
-        // If we already have a zone tilemap, nothing to do.
         if (GameState.ZoneTileMap is not null)
             return;
 
         var zoneId = GameState.CurrentZoneId;
 
-        // If we don't have a zone ID yet, request re-selection from the server.
-        // The CharacterSelected handler will fire and we can proceed from there.
         if (string.IsNullOrEmpty(zoneId))
         {
             Logger.LogInformation(
@@ -154,8 +143,6 @@
         await EnterZoneAsync(zoneId);
     }
 
-    /// <summary>Enters the specified zone and requests the tile map.</summary>
-    /// <param name="zoneId">The zone to enter.</param>
     private async Task EnterZoneAsync(string zoneId)
     {
         Logger.LogInformation("Entering zone {ZoneId}...", zoneId);
@@ -175,9 +162,21 @@
         }
     }
 
+    private void HandleOpenOverlay(GameOverlay.OverlayKind kind)
+    {
+        _activeOverlay = kind;
+        _showOverlay = true;
+        StateHasChanged();
+    }
+
+    private void HandleCloseOverlay()
+    {
+        _showOverlay = false;
+        StateHasChanged();
+    }
+
     private void RegisterHubHandlers()
     {
-        // ServerInfo — store connection ID.
         _hubSubscriptions.Add(Hub.On<ServerInfoPayload>("ServerInfo", async payload =>
         {
             if (GameState is GameStateService gs)
@@ -187,12 +186,10 @@
             await InvokeAsync(StateHasChanged);
         }));
 
-        // CharacterSelected — update character state.
         _hubSubscriptions.Add(Hub.On<CharacterSelectedPayload>("CharacterSelected", async payload =>
         {
             GameState.ApplyCharacterSelected(payload);
 
-            // If we now have a zone ID and the tilemap hasn't loaded yet, enter the zone.
             if (!string.IsNullOrEmpty(payload.CurrentZoneId) && GameState.ZoneTileMap is null)
             {
                 await EnterZoneAsync(payload.CurrentZoneId);
@@ -201,14 +198,12 @@
             await InvokeAsync(StateHasChanged);
         }));
 
-        // ZoneEntered — update zone state.
         _hubSubscriptions.Add(Hub.On<ZoneEnteredPayload>("ZoneEntered", async payload =>
         {
             GameState.ApplyZoneEntered(payload);
             await InvokeAsync(StateHasChanged);
         }));
 
-        // ZoneTileMap — store tile map data.
         _hubSubscriptions.Add(Hub.On<TileMapDto>("ZoneTileMap", async dto =>
         {
             var tiles = ConvertTileMap(dto);
@@ -219,56 +214,48 @@
             await InvokeAsync(StateHasChanged);
         }));
 
-        // CharacterMoved — update player or other character position.
         _hubSubscriptions.Add(Hub.On<Veldrath.Contracts.Tilemap.CharacterMovedPayload>("CharacterMoved", async payload =>
         {
             GameState.ApplyCharacterMoved(payload);
             await InvokeAsync(StateHasChanged);
         }));
 
-        // PlayerEntered — occupant joined the zone.
         _hubSubscriptions.Add(Hub.On<PlayerEnteredPayload>("PlayerEntered", async payload =>
         {
             GameState.ApplyPlayerEntered(payload);
             await InvokeAsync(StateHasChanged);
         }));
 
-        // PlayerLeft — occupant left the zone.
         _hubSubscriptions.Add(Hub.On<PlayerLeftPayload>("PlayerLeft", async payload =>
         {
             GameState.ApplyPlayerLeft(payload);
             await InvokeAsync(StateHasChanged);
         }));
 
-        // CombatStarted — engage enemy.
         _hubSubscriptions.Add(Hub.On<CombatStartedPayload>("CombatStarted", async payload =>
         {
             GameState.ApplyCombatStarted(payload);
             await InvokeAsync(StateHasChanged);
         }));
 
-        // CombatTurn — combat action result.
         _hubSubscriptions.Add(Hub.On<CombatTurnPayload>("CombatTurn", async payload =>
         {
             GameState.ApplyCombatTurn(payload);
             await InvokeAsync(StateHasChanged);
         }));
 
-        // CombatEnded — combat finished (fled, won, or death).
         _hubSubscriptions.Add(Hub.On<CombatEndedPayload>("CombatEnded", async payload =>
         {
             GameState.ApplyCombatEnded(payload);
             await InvokeAsync(StateHasChanged);
         }));
 
-        // EnemyDefeated — an enemy was killed.
         _hubSubscriptions.Add(Hub.On<EnemyDefeatedPayload>("EnemyDefeated", async payload =>
         {
             GameState.ApplyEnemyDefeated(payload);
             await InvokeAsync(StateHasChanged);
         }));
 
-        // CharacterRespawned — character respawned after death.
         _hubSubscriptions.Add(Hub.On<CharacterRespawnedPayload>("CharacterRespawned", async payload =>
         {
             if (GameState is GameStateService gs)
@@ -278,14 +265,12 @@
             await InvokeAsync(StateHasChanged);
         }));
 
-        // ReceiveChatMessage — incoming chat message.
         _hubSubscriptions.Add(Hub.On<ChatMessageHubDto>("ReceiveChatMessage", async payload =>
         {
             GameState.ApplyChatMessage(payload);
             await InvokeAsync(StateHasChanged);
         }));
 
-        // SystemMessage — server system message.
         _hubSubscriptions.Add(Hub.On<string>("SystemMessage", async message =>
         {
             if (GameState is GameStateService gs)
@@ -295,7 +280,6 @@
             await InvokeAsync(StateHasChanged);
         }));
 
-        // Error — display server errors as system messages.
         _hubSubscriptions.Add(Hub.On<string>("Error", async error =>
         {
             Logger.LogWarning("Hub error: {Error}", error);
@@ -306,7 +290,6 @@
             await InvokeAsync(StateHasChanged);
         }));
 
-        // ZoneEntitiesSnapshot — update occupants and enemies with positions.
         _hubSubscriptions.Add(Hub.On<Veldrath.Contracts.Tilemap.ZoneEntitiesSnapshotPayload>("ZoneEntitiesSnapshot", async payload =>
         {
             GameState.ApplyZoneEntitiesSnapshot(payload);
@@ -314,17 +297,12 @@
         }));
     }
 
-    /// <summary>
-    /// Converts a <see cref="TileMapDto"/> from the server into the local <see cref="Veldrath.GameClient.Core.Services.Tile"/> array
-    /// used by the <see cref="GameStateService"/>.
-    /// </summary>
     private static Veldrath.GameClient.Core.Services.Tile[,] ConvertTileMap(TileMapDto dto)
     {
         var width = dto.Width;
         var height = dto.Height;
         var tiles = new Veldrath.GameClient.Core.Services.Tile[height, width];
 
-        // Use the first ground layer for tile types, or default to grass (type 0).
         var groundLayer = dto.Layers.FirstOrDefault();
 
         for (var y = 0; y < height; y++)
@@ -337,17 +315,15 @@
                     : 0;
                 var isBlocked = dto.CollisionMask is not null && idx < dto.CollisionMask.Length && dto.CollisionMask[idx];
 
-                // Map from tile index to our simplified type system:
-                // -1 = void, 0 = grass (walkable), positive = various terrain.
                 var simplifiedType = tileType switch
                 {
-                    -1 => -1,     // void
-                    0 => 0,       // grass / walkable
-                    1 => 1,       // wall
-                    2 => 2,       // water
-                    3 => 3,       // door
-                    _ when isBlocked => 1, // any blocked tile → wall
-                    _ => 0        // default walkable
+                    -1 => -1,
+                    0 => 0,
+                    1 => 1,
+                    2 => 2,
+                    3 => 3,
+                    _ when isBlocked => 1,
+                    _ => 0
                 };
 
                 tiles[y, x] = new Veldrath.GameClient.Core.Services.Tile(x, y, simplifiedType, isBlocked);

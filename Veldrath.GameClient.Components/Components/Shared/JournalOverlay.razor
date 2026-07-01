@@ -1,0 +1,151 @@
+@* Journal / Quest Log overlay showing active and completed quests. *@
+@using Microsoft.Extensions.Logging
+@inject IGameHubConnectionService Hub
+@inject ILogger<JournalOverlay> Logger
+
+<div class="journal-overlay">
+    <div class="journal-quest-list">
+        <h4>Active Quests (@_activeQuests.Count)</h4>
+        @if (_activeQuests.Count == 0)
+        {
+            <p class="journal-empty">No active quests. Find an NPC in town to get started!</p>
+        }
+        else
+        {
+            @foreach (var quest in _activeQuests)
+            {
+                <div class="journal-quest @(_selectedQuest == quest ? "journal-quest-selected" : "")"
+                     @onclick="() => SelectQuest(quest)">
+                    <span class="journal-quest-title">@quest.Title</span>
+                    <span class="journal-quest-progress">@quest.Progress / @quest.Total</span>
+                    @if (quest.IsComplete)
+                    {
+                        <span class="journal-quest-complete-badge">✓</span>
+                    }
+                </div>
+            }
+        }
+    </div>
+
+    @if (_selectedQuest is not null)
+    {
+        <div class="journal-quest-detail">
+            <h4>@_selectedQuest.Title</h4>
+            @if (!string.IsNullOrEmpty(_selectedQuest.Description))
+            {
+                <p class="journal-quest-desc">@_selectedQuest.Description</p>
+            }
+            <div class="journal-quest-objectives">
+                <h5>Objectives</h5>
+                @if (_selectedQuest.Objectives.Count == 0)
+                {
+                    <p class="journal-empty">No specific objectives listed.</p>
+                }
+                else
+                {
+                    <ul>
+                        @foreach (var (objName, required) in _selectedQuest.Objectives)
+                        {
+                            var progress = _selectedQuest.ProgressData.GetValueOrDefault(objName, 0);
+                            var done = progress >= required;
+                            <li class="@(done ? "objective-done" : "objective-pending")">
+                                @if (done) { <span class="objective-check">✓</span> }
+                                @objName: @progress / @required
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+            <div class="journal-quest-rewards">
+                <h5>Rewards</h5>
+                <p>@_selectedQuest.XpReward XP · @_selectedQuest.GoldReward gold</p>
+            </div>
+        </div>
+    }
+
+    @if (_completedQuests.Count > 0)
+    {
+        <div class="journal-completed">
+            <h4>Completed Quests (@_completedQuests.Count)</h4>
+            <div class="journal-completed-list">
+                @foreach (var quest in _completedQuests)
+                {
+                    <div class="journal-completed-item">@quest.Title</div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private readonly List<JournalQuest> _activeQuests = [];
+    private readonly List<JournalQuest> _completedQuests = [];
+    private JournalQuest? _selectedQuest;
+
+    private sealed class JournalQuest
+    {
+        public string Id { get; init; } = string.Empty;
+        public string Title { get; init; } = string.Empty;
+        public string Description { get; init; } = string.Empty;
+        public int Progress { get; set; }
+        public int Total { get; init; }
+        public int XpReward { get; init; }
+        public int GoldReward { get; init; }
+        public bool IsComplete => Progress >= Total;
+        public Dictionary<string, int> Objectives { get; init; } = [];
+        public Dictionary<string, int> ProgressData { get; set; } = [];
+    }
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        LoadJournal();
+    }
+
+    private void LoadJournal()
+    {
+        // Demo data — in a full implementation this would request the quest log
+        // from the hub (GetQuestLog / ReceiveQuestLog).
+        _activeQuests.Add(new JournalQuest
+        {
+            Id = "wolf-hunt",
+            Title = "Wolf Hunt",
+            Description = "The farmer at Fenwick Crossing needs you to thin the wolf population in the surrounding woods.",
+            Progress = 2,
+            Total = 5,
+            XpReward = 150,
+            GoldReward = 25,
+            Objectives = new Dictionary<string, int> { ["Wolves Slain"] = 5 },
+            ProgressData = new Dictionary<string, int> { ["Wolves Slain"] = 2 },
+        });
+
+        _activeQuests.Add(new JournalQuest
+        {
+            Id = "lost-delivery",
+            Title = "Lost Delivery",
+            Description = "A merchant's package was lost on the road to Aldenmere. Find it and return it.",
+            Progress = 0,
+            Total = 1,
+            XpReward = 300,
+            GoldReward = 50,
+            Objectives = new Dictionary<string, int> { ["Find the Package"] = 1 },
+            ProgressData = new Dictionary<string, int> { ["Find the Package"] = 0 },
+        });
+
+        _completedQuests.Add(new JournalQuest
+        {
+            Id = "first-steps",
+            Title = "First Steps",
+            Description = "Welcome to Veldrath! Speak with the village elder.",
+            Progress = 1,
+            Total = 1,
+            XpReward = 50,
+            GoldReward = 10,
+        });
+    }
+
+    private void SelectQuest(JournalQuest quest)
+    {
+        _selectedQuest = quest;
+    }
+}

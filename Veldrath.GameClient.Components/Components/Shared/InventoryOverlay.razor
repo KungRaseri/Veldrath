@@ -1,0 +1,376 @@
+@* Inventory overlay showing the character's inventory grid and equipped items. *@
+@using Microsoft.Extensions.Logging
+@using RealmEngine.Shared.Models
+@inject GameStateService GameState
+@inject IGameHubConnectionService Hub
+@inject ILogger<InventoryOverlay> Logger
+
+<div class="inventory-overlay">
+    <div class="inventory-equipment">
+        <h4>Equipment</h4>
+        <div class="equipment-grid">
+            <div class="equipment-slot" title="Head">
+                <span class="equipment-slot-label">Head</span>
+                @if (_equippedItems.TryGetValue("Head", out var headItem))
+                {
+                    <span class="equipment-slot-item" title="@headItem.GetDisplayName()">@headItem.GetShortName()</span>
+                }
+                else
+                {
+                    <span class="equipment-slot-empty">—</span>
+                }
+            </div>
+            <div class="equipment-slot" title="Chest">
+                <span class="equipment-slot-label">Chest</span>
+                @if (_equippedItems.TryGetValue("Chest", out var chestItem))
+                {
+                    <span class="equipment-slot-item" title="@chestItem.GetDisplayName()">@chestItem.GetShortName()</span>
+                }
+                else
+                {
+                    <span class="equipment-slot-empty">—</span>
+                }
+            </div>
+            <div class="equipment-slot" title="Main Hand">
+                <span class="equipment-slot-label">Main Hand</span>
+                @if (_equippedItems.TryGetValue("MainHand", out var mhItem))
+                {
+                    <span class="equipment-slot-item" title="@mhItem.GetDisplayName()">@mhItem.GetShortName()</span>
+                }
+                else
+                {
+                    <span class="equipment-slot-empty">—</span>
+                }
+            </div>
+            <div class="equipment-slot" title="Off Hand">
+                <span class="equipment-slot-label">Off Hand</span>
+                @if (_equippedItems.TryGetValue("OffHand", out var ohItem))
+                {
+                    <span class="equipment-slot-item" title="@ohItem.GetDisplayName()">@ohItem.GetShortName()</span>
+                }
+                else
+                {
+                    <span class="equipment-slot-empty">—</span>
+                }
+            </div>
+            <div class="equipment-slot" title="Legs">
+                <span class="equipment-slot-label">Legs</span>
+                @if (_equippedItems.TryGetValue("Legs", out var legsItem))
+                {
+                    <span class="equipment-slot-item" title="@legsItem.GetDisplayName()">@legsItem.GetShortName()</span>
+                }
+                else
+                {
+                    <span class="equipment-slot-empty">—</span>
+                }
+            </div>
+            <div class="equipment-slot" title="Feet">
+                <span class="equipment-slot-label">Feet</span>
+                @if (_equippedItems.TryGetValue("Feet", out var feetItem))
+                {
+                    <span class="equipment-slot-item" title="@feetItem.GetDisplayName()">@feetItem.GetShortName()</span>
+                }
+                else
+                {
+                    <span class="equipment-slot-empty">—</span>
+                }
+            </div>
+            <div class="equipment-slot" title="Ring">
+                <span class="equipment-slot-label">Ring</span>
+                @if (_equippedItems.TryGetValue("Ring", out var ringItem))
+                {
+                    <span class="equipment-slot-item" title="@ringItem.GetDisplayName()">@ringItem.GetShortName()</span>
+                }
+                else
+                {
+                    <span class="equipment-slot-empty">—</span>
+                }
+            </div>
+            <div class="equipment-slot" title="Amulet">
+                <span class="equipment-slot-label">Amulet</span>
+                @if (_equippedItems.TryGetValue("Amulet", out var amuItem))
+                {
+                    <span class="equipment-slot-item" title="@amuItem.GetDisplayName()">@amuItem.GetShortName()</span>
+                }
+                else
+                {
+                    <span class="equipment-slot-empty">—</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="inventory-bag">
+        <h4>Inventory (@_inventoryItems.Count items)</h4>
+        @if (_inventoryItems.Count == 0)
+        {
+            <p class="inventory-empty">Your inventory is empty.</p>
+        }
+        else
+        {
+            <div class="inventory-grid">
+                @foreach (var item in _inventoryItems)
+                {
+                    <div class="inventory-slot @GetRarityClass(item.Rarity)"
+                         @onclick="() => SelectItem(item)"
+                         title="@BuildTooltip(item)">
+                        <span class="inventory-slot-name">@item.GetShortName()</span>
+                        @if (item.Quantity > 1)
+                        {
+                            <span class="inventory-slot-qty">x@item.Quantity</span>
+                        }
+                        <span class="inventory-slot-rarity">@item.Rarity</span>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    @if (_selectedItem is not null)
+    {
+        <div class="inventory-tooltip">
+            <div class="inventory-tooltip-header">
+                <strong>@_selectedItem.GetDisplayName()</strong>
+                <span class="rarity-badge @GetRarityClass(_selectedItem.Rarity)">@_selectedItem.Rarity</span>
+            </div>
+            <p class="inventory-tooltip-desc">@_selectedItem.Description</p>
+            @if (!string.IsNullOrEmpty(_selectedItem.Lore))
+            {
+                <p class="inventory-tooltip-lore">"@_selectedItem.Lore"</p>
+            }
+            <div class="inventory-tooltip-stats">
+                @if (_selectedItem.Type == ItemType.Weapon && _selectedItem.Damage is not null)
+                {
+                    <span>Damage: @_selectedItem.Damage.Min–@_selectedItem.Damage.Max</span>
+                }
+                @if (IsArmorType(_selectedItem.Type) && !string.IsNullOrEmpty(_selectedItem.ArmorClass))
+                {
+                    <span>Armor: @_selectedItem.ArmorClass</span>
+                }
+                <span>Weight: @_selectedItem.Weight.ToString("F1")</span>
+                <span>Value: @_selectedItem.Price gold</span>
+            </div>
+            <div class="inventory-tooltip-actions">
+                @if (IsEquippable(_selectedItem.Type))
+                {
+                    <button class="btn btn-sm btn-primary"
+                            @onclick="() => EquipItem(_selectedItem)"
+                            disabled="@(!Hub.IsConnected)">
+                        Equip
+                    </button>
+                }
+                @if (_selectedItem.Type == ItemType.Consumable)
+                {
+                    <button class="btn btn-sm btn-secondary"
+                            @onclick="() => UseItem(_selectedItem)"
+                            disabled="@(!Hub.IsConnected)">
+                        Use
+                    </button>
+                }
+                <button class="btn btn-sm btn-danger"
+                        @onclick="() => DropItem(_selectedItem)"
+                        disabled="@(!Hub.IsConnected)">
+                    Drop
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private readonly List<Item> _inventoryItems = [];
+    private readonly Dictionary<string, Item> _equippedItems = [];
+    private Item? _selectedItem;
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        LoadInventory();
+    }
+
+    private void LoadInventory()
+    {
+        _inventoryItems.Clear();
+        _equippedItems.Clear();
+
+        // The RCL GameStateService does not carry item data directly; the desktop
+        // ViewModel loads it via hub events.  For the RCL overlays we provide
+        // placeholder demo data so the UI is always functional until real hub
+        // integration is wired.
+        AddDemoData();
+    }
+
+    private void AddDemoData()
+    {
+        _equippedItems["MainHand"] = new Item
+        {
+            Name = "Iron Longsword",
+            BaseName = "Longsword",
+            Slug = "iron-longsword",
+            Type = ItemType.Weapon,
+            Rarity = ItemRarity.Common,
+            Price = 50,
+            Weight = 3.5,
+            Description = "A sturdy iron longsword.",
+            Damage = new ItemDamage { Min = 3, Max = 8 },
+        };
+
+        _equippedItems["Chest"] = new Item
+        {
+            Name = "Leather Tunic",
+            BaseName = "Leather Tunic",
+            Slug = "leather-tunic",
+            Type = ItemType.Chest,
+            ArmorClass = "light",
+            Rarity = ItemRarity.Common,
+            Price = 25,
+            Weight = 4.0,
+            Description = "A simple leather tunic.",
+        };
+
+        _inventoryItems.Add(new Item
+        {
+            Name = "Health Potion",
+            Slug = "health-potion",
+            Type = ItemType.Consumable,
+            Rarity = ItemRarity.Common,
+            Price = 15,
+            Weight = 0.5,
+            Quantity = 3,
+            IsStackable = true,
+            StackSize = 10,
+            Description = "Restores 50 health.",
+        });
+
+        _inventoryItems.Add(new Item
+        {
+            Name = "Mana Potion",
+            Slug = "mana-potion",
+            Type = ItemType.Consumable,
+            Rarity = ItemRarity.Common,
+            Price = 20,
+            Weight = 0.5,
+            Quantity = 2,
+            IsStackable = true,
+            StackSize = 10,
+            Description = "Restores 30 mana.",
+        });
+
+        _inventoryItems.Add(new Item
+        {
+            Name = "Steel Dagger",
+            BaseName = "Dagger",
+            Slug = "steel-dagger",
+            Type = ItemType.Weapon,
+            Rarity = ItemRarity.Uncommon,
+            Price = 120,
+            Weight = 1.0,
+            Description = "A sharp steel dagger.",
+            Damage = new ItemDamage { Min = 2, Max = 6 },
+        });
+    }
+
+    private void SelectItem(Item item)
+    {
+        _selectedItem = item;
+    }
+
+    private async Task EquipItem(Item item)
+    {
+        try
+        {
+            await Hub.SendAsync("EquipItem", new { Slot = GuessSlot(item.Type, item.WeaponType), ItemRef = item.Slug });
+            Logger.LogInformation("Equipped {ItemName}", item.Name);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to equip {ItemName}.", item.Name);
+        }
+    }
+
+    private async Task UseItem(Item item)
+    {
+        try
+        {
+            await Hub.SendAsync("UseItem", item.Slug);
+            Logger.LogInformation("Used {ItemName}", item.Name);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to use {ItemName}.", item.Name);
+        }
+    }
+
+    private async Task DropItem(Item item)
+    {
+        try
+        {
+            await Hub.SendAsync("DropItem", item.Slug);
+            _inventoryItems.Remove(item);
+            if (_selectedItem == item) _selectedItem = null;
+            Logger.LogInformation("Dropped {ItemName}", item.Name);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to drop {ItemName}.", item.Name);
+        }
+    }
+
+    private static bool IsEquippable(ItemType type) => type is ItemType.Weapon or ItemType.Shield or ItemType.OffHand
+        or ItemType.Helmet or ItemType.Chest or ItemType.Legs or ItemType.Boots
+        or ItemType.Shoulders or ItemType.Bracers or ItemType.Gloves or ItemType.Belt
+        or ItemType.Necklace or ItemType.Ring;
+
+    private static bool IsArmorType(ItemType type) => type is ItemType.Helmet or ItemType.Chest or ItemType.Legs
+        or ItemType.Boots or ItemType.Shoulders or ItemType.Bracers or ItemType.Gloves or ItemType.Belt
+        or ItemType.Necklace or ItemType.Ring;
+
+    private static string GuessSlot(ItemType type, string? weaponType)
+    {
+        if (IsArmorType(type))
+        {
+            return type switch
+            {
+                ItemType.Helmet => "Head",
+                ItemType.Chest => "Chest",
+                ItemType.Legs => "Legs",
+                ItemType.Boots => "Feet",
+                ItemType.Shoulders => "Chest",
+                ItemType.Bracers => "Chest",
+                ItemType.Gloves => "Chest",
+                ItemType.Belt => "Chest",
+                ItemType.Necklace => "Amulet",
+                ItemType.Ring => "Ring",
+                _ => "Chest"
+            };
+        }
+        if (weaponType?.Contains("shield", StringComparison.OrdinalIgnoreCase) == true) return "OffHand";
+        return "MainHand";
+    }
+
+    private static string GetRarityClass(ItemRarity rarity) => rarity switch
+    {
+        ItemRarity.Common => "rarity-common",
+        ItemRarity.Uncommon => "rarity-uncommon",
+        ItemRarity.Rare => "rarity-rare",
+        ItemRarity.Epic => "rarity-epic",
+        ItemRarity.Legendary => "rarity-legendary",
+        _ => "rarity-common"
+    };
+
+    private static string BuildTooltip(Item item)
+    {
+        var lines = new List<string>
+        {
+            item.GetDisplayName(),
+            $"Rarity: {item.Rarity}",
+            $"Weight: {item.Weight:F1}",
+            $"Value: {item.Price} gold"
+        };
+        if (item.Type == ItemType.Weapon && item.Damage is not null)
+            lines.Add($"Damage: {item.Damage.Min}–{item.Damage.Max}");
+        if (!string.IsNullOrEmpty(item.Description))
+            lines.Add(item.Description);
+        return string.Join("\n", lines);
+    }
+}
