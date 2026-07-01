@@ -1,4 +1,5 @@
-﻿using Avalonia.Media.Imaging;
+using Avalonia.Media.Imaging;
+using Veldrath.Client.HostedWeb;
 using ReactiveUI;
 using System.Collections.ObjectModel;
 using System.Reactive;
@@ -52,6 +53,8 @@ public class GameViewModel : ViewModelBase
     private readonly ISessionAlertService? _sessionAlert;
     private readonly IAssetStore? _assetStore;
     private readonly IAudioPlayer? _audioPlayer;
+    private readonly IHostedGameServer? _hostedServer;
+    private readonly NativeBridgeService? _bridge;
 
     // Tilemap
     private TilemapViewModel? _tilemapViewModel;
@@ -740,6 +743,20 @@ public class GameViewModel : ViewModelBase
     public string? CurrentZoneLocationDisplayName =>
         ZoneLocations.FirstOrDefault(l => l.Slug == CurrentZoneLocationSlug)?.DisplayName;
 
+    // ── Embedded WebView state ───────────────────────────────────────────
+
+    /// <summary>Whether the WebView2 Blazor game UI is active (embedded server running + WebView2 available).</summary>
+    public bool IsWebViewActive { get; private set; }
+
+    /// <summary>Whether the native Avalonia game UI fallback is active (WebView2 unavailable).</summary>
+    public bool IsFallbackActive => !IsWebViewActive;
+
+    /// <summary>
+    /// The URL of the embedded Blazor game server's character select page, or <c>null</c>
+    /// if the embedded server has not yet started.
+    /// </summary>
+    public string? WebViewUrl => _hostedServer?.BaseUrl is { } url ? $"{url}/Game/CharacterSelect" : null;
+
     /// <summary>Toggles the collapsible left character-sheet panel open or closed.</summary>
     public ReactiveCommand<Unit, Unit> ToggleLeftPanelCommand { get; }
 
@@ -916,7 +933,9 @@ public class GameViewModel : ViewModelBase
         ClientSettings settings,
         ISessionAlertService? sessionAlert = null,
         IAssetStore? assetStore = null,
-        IAudioPlayer? audioPlayer = null)
+        IAudioPlayer? audioPlayer = null,
+        IHostedGameServer? hostedServer = null,
+        NativeBridgeService? bridge = null)
     {
         _connection = connection;
         _zoneService = zoneService;
@@ -926,6 +945,8 @@ public class GameViewModel : ViewModelBase
         _sessionAlert = sessionAlert;
         _assetStore = assetStore;
         _audioPlayer = audioPlayer;
+        _hostedServer = hostedServer;
+        _bridge = bridge;
 
         CharacterName = tokens.Username ?? "Adventurer";
 

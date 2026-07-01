@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using Veldrath.Assets;
 using Veldrath.Assets.Manifest;
+using Veldrath.Client.HostedWeb;
 using Veldrath.Client.Services;
 using Veldrath.Client.ViewModels;
 using Veldrath.Client.Views;
@@ -17,11 +18,16 @@ using Serilog;
 
 namespace Veldrath.Client;
 
+/// <summary>Application entry point and dependency-root composition.</summary>
 [ExcludeFromCodeCoverage]
 public partial class App : Application
 {
+    private IHostedGameServer? _hostedServer;
+
+    /// <summary>Gets the application's root service provider.</summary>
     public static IServiceProvider Services { get; private set; } = null!;
 
+    /// <inheritdoc />
     public override void Initialize()
     {
         Log.Logger = new LoggerConfiguration()
@@ -33,6 +39,7 @@ public partial class App : Application
         AvaloniaXamlLoader.Load(this);
     }
 
+    /// <inheritdoc />
     public override void OnFrameworkInitializationCompleted()
     {
         var configuration = new ConfigurationBuilder()
@@ -97,11 +104,24 @@ public partial class App : Application
 #pragma warning restore CA1416
         }
 
+        // Start the embedded Blazor game server (runs on a random localhost port).
+        // This must happen before the main window is created so the URL is available
+        // for the WebView2 control when the game view is first navigated to.
+        _hostedServer = Services.GetRequiredService<IHostedGameServer>();
+        _ = StartEmbeddedServerAsync();
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = new MainWindow
             {
                 DataContext = Services.GetRequiredService<MainWindowViewModel>()
+            };
+
+            // Stop the embedded server when the main window closes.
+            desktop.MainWindow.Closed += async (_, _) =>
+            {
+                if (_hostedServer is not null)
+                    await _hostedServer.StopAsync();
             };
         }
 
@@ -119,6 +139,22 @@ public partial class App : Application
         base.OnFrameworkInitializationCompleted();
     }
 
+    /// <summary>
+    /// Starts the embedded ASP.NET Core server that hosts the Blazor game UI.
+    /// The server is used by the WebView2 control in the game view.
+    /// </summary>
+    private async Task StartEmbeddedServerAsync()
+    {
+        try
+        {
+            await _hostedServer!.StartAsync();
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to start embedded game server. WebView game UI will be unavailable.");
+        }
+    }
+
     private async Task LoadUiChromeAsync()
     {
         var assetStore = Services.GetRequiredService<IAssetStore>();
@@ -134,7 +170,7 @@ public partial class App : Application
             var bytes = await assetStore.LoadImageAsync(path);
             if (bytes is null) continue;
             var bmp = new Bitmap(new MemoryStream(bytes));
-            await Dispatcher.UIThread.InvokeAsync(() => Resources[key] = bmp);
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => Resources[key] = bmp);
         }
     }
 
@@ -187,6 +223,16 @@ public partial class App : Application
             try { return new LibVlcAudioPlayer(); }
             catch { return new NullAudioPlayer(); }
         });
+
+        // ── Hosted game server (embedded ASP.NET Core + Blazor) ─────────────
+        services.AddSingleton<IHostedGameServer>(sp =>
+        {
+            var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+            return new HostedGameServer(serverBaseUrl, loggerFactory);
+        });
+
+        // Native bridge service (WebView2 ↔ native interop)
+        services.AddSingleton<NativeBridgeService>();
 
         // ViewModels
         services.AddTransient<MainWindowViewModel>();

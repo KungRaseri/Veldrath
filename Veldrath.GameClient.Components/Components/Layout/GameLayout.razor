@@ -1,7 +1,14 @@
 @using Veldrath.GameClient.Core.Services
 @inherits LayoutComponentBase
 @inject IGameStateService GameState
+@inject Microsoft.AspNetCore.Components.NavigationManager Navigation
 
 <div class="game-layout @(GameState.IsConnected ? "in-game" : "")">
     @Body
 </div>
+
+@* Desktop bridge: loaded when running inside Avalonia WebView2 *@
+@if (Navigation.BaseUri.StartsWith("http://localhost", StringComparison.OrdinalIgnoreCase))
+{
+    <script src="_content/Veldrath.GameClient.Components/bridge.js"></script>
+}
