@@ -21,6 +21,8 @@ COPY RealmEngine.Core/RealmEngine.Core.csproj               RealmEngine.Core/
 COPY RealmEngine.Core/Directory.Build.props                 RealmEngine.Core/
 COPY RealmEngine.Shared/RealmEngine.Shared.csproj           RealmEngine.Shared/
 COPY RealmEngine.Shared/Directory.Build.props               RealmEngine.Shared/
+COPY Veldrath.GameClient.Core/Veldrath.GameClient.Core.csproj Veldrath.GameClient.Core/
+COPY Veldrath.GameClient.Components/Veldrath.GameClient.Components.csproj Veldrath.GameClient.Components/
 COPY RealmEngine.Data/RealmEngine.Data.csproj               RealmEngine.Data/
 COPY RealmEngine.Data/Directory.Build.props                 RealmEngine.Data/
 

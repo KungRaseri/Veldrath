@@ -13,6 +13,8 @@ COPY Veldrath.Auth.Blazor/Veldrath.Auth.Blazor.csproj Veldrath.Auth.Blazor/
 COPY RealmEngine.Core/RealmEngine.Core.csproj              RealmEngine.Core/
 COPY RealmEngine.Core/Directory.Build.props                RealmEngine.Core/
 COPY RealmEngine.Shared/RealmEngine.Shared.csproj          RealmEngine.Shared/
+COPY Veldrath.GameClient.Core/Veldrath.GameClient.Core.csproj Veldrath.GameClient.Core/
+COPY Veldrath.GameClient.Components/Veldrath.GameClient.Components.csproj Veldrath.GameClient.Components/
 COPY RealmEngine.Data/RealmEngine.Data.csproj               RealmEngine.Data/
 COPY RealmEngine.Data/Directory.Build.props                RealmEngine.Data/
 
@@ -26,6 +28,8 @@ COPY Veldrath.Auth.Blazor/   Veldrath.Auth.Blazor/
 COPY RealmEngine.Core/           RealmEngine.Core/
 COPY RealmEngine.Shared/         RealmEngine.Shared/
 COPY RealmEngine.Data/          RealmEngine.Data/
+COPY Veldrath.GameClient.Core/          Veldrath.GameClient.Core/
+COPY Veldrath.GameClient.Components/    Veldrath.GameClient.Components/
 
 WORKDIR /src/Veldrath.Web
 RUN dotnet publish Veldrath.Web.csproj -c Release -o /app/publish
