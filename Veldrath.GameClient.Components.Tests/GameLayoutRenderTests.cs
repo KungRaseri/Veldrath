@@ -16,6 +16,7 @@ namespace Veldrath.GameClient.Components.Tests;
 /// </summary>
 public class GameLayoutRenderTests : TestContext
 {
+    private readonly FakeGameHubConnectionService _fakeHub;
     private readonly GameStateService _gameState;
 
     /// <summary>
@@ -23,7 +24,10 @@ public class GameLayoutRenderTests : TestContext
     /// </summary>
     public GameLayoutRenderTests()
     {
+        _fakeHub = new FakeGameHubConnectionService();
         _gameState = new GameStateService();
+
+        Services.AddSingleton<IGameHubConnectionService>(_fakeHub);
         Services.AddSingleton<IGameStateService>(_gameState);
         Services.AddSingleton(_gameState);
 
