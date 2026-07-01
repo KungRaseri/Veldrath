@@ -19,6 +19,7 @@
     <ProjectReference Include="..\Veldrath.Auth\Veldrath.Auth.csproj" />
     <ProjectReference Include="..\Veldrath.Auth.Blazor\Veldrath.Auth.Blazor.csproj" />
     <ProjectReference Include="..\Veldrath.Contracts\Veldrath.Contracts.csproj" />
+    <ProjectReference Include="..\Veldrath.GameClient.Core\Veldrath.GameClient.Core.csproj" />
   </ItemGroup>
 
 </Project>

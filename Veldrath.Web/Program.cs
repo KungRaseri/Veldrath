@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
 using Serilog.Events;
+using Veldrath.GameClient.Core.Abstractions;
+using Veldrath.GameClient.Core.Services;
 using Veldrath.Web;
 using Veldrath.Web.Services;
 
@@ -44,8 +46,10 @@ try
             sp.GetRequiredService<IHttpClientFactory>().CreateClient("veldrath-web")));
 
     builder.Services.AddScoped<AuthStateService>();
-    builder.Services.AddScoped<GameHubConnectionService>();
-    builder.Services.AddScoped<GameStateService>();
+
+    // Game client services — registered as interfaces for abstraction.
+    builder.Services.AddScoped<IGameHubConnectionService, GameHubConnectionService>();
+    builder.Services.AddScoped<IGameStateService, GameStateService>();
     builder.Services.AddHttpContextAccessor();
 
     // DataProtection key persistence — prevents antiforgery token failures on container restart.

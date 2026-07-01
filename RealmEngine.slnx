@@ -5,4 +5,6 @@
   <Project Path="RealmEngine.Shared.Tests/RealmEngine.Shared.Tests.csproj" />
   <Project Path="RealmEngine.Core.Tests/RealmEngine.Core.Tests.csproj" />
   <Project Path="RealmEngine.Data.Tests/RealmEngine.Data.Tests.csproj" />
+  <Project Path="Veldrath.GameClient.Core/Veldrath.GameClient.Core.csproj" />
+  <Project Path="Veldrath.GameClient.Core.Tests/Veldrath.GameClient.Core.Tests.csproj" />
 </Solution>
