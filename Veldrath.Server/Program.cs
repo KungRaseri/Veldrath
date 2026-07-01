@@ -113,10 +113,26 @@ try
     builder.Services.AddDbContext<EditorialDbContext>(options =>
         options.UseNpgsql(connectionString));
 
+    // ASP.NET Core Identity
+    // AddIdentity must be registered before AddAuthentication so that the explicit
+    // AddAuthentication call below can override Identity's default cookie schemes
+    // with JWT Bearer (this is an API server, not a cookie-based web app).
+    builder.Services.AddIdentity<PlayerAccount, IdentityRole<Guid>>(options =>
+        {
+            options.Password.RequireDigit = true;
+            options.Password.RequiredLength = 12;
+            options.Password.RequireNonAlphanumeric = true;
+            options.Password.RequireUppercase = false;
+            options.User.RequireUniqueEmail = true;
+            options.Lockout.MaxFailedAccessAttempts = 5;
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+        })
+        .AddEntityFrameworkStores<ApplicationDbContext>()
+        .AddDefaultTokenProviders();
+
     // JWT authentication — validate all required configuration values early so the
     // app fails fast at startup rather than producing opaque runtime errors.
-    // Must be registered before AddIdentity in .NET 10+ because AddIdentity no longer
-    // calls AddAuthentication internally; the IAuthenticationService registration lives here.
+    // Registered after AddIdentity so the JwtBearer defaults override Identity's cookie defaults.
     var jwtKey = builder.Configuration["Jwt:Key"];
     if (string.IsNullOrWhiteSpace(jwtKey))
         throw new InvalidOperationException("Jwt:Key is not configured or is empty.");
@@ -160,20 +176,6 @@ try
                 }
             };
         });
-
-    // ASP.NET Core Identity
-    builder.Services.AddIdentity<PlayerAccount, IdentityRole<Guid>>(options =>
-        {
-            options.Password.RequireDigit = true;
-            options.Password.RequiredLength = 12;
-            options.Password.RequireNonAlphanumeric = true;
-            options.Password.RequireUppercase = false;
-            options.User.RequireUniqueEmail = true;
-            options.Lockout.MaxFailedAccessAttempts = 5;
-            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
-        })
-        .AddEntityFrameworkStores<ApplicationDbContext>()
-        .AddDefaultTokenProviders();
 
     builder.Services.AddAuthorization(options =>
     {
