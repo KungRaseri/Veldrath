@@ -1,6 +1,6 @@
 @using Veldrath.GameClient.Core.Abstractions
 @* Renders a fixed 15×15 viewport of the zone tilemap, centered on the player with camera edge-clamping.
-   Tiles outside the viewport are not rendered. *@
+   Tiles outside the viewport are rendered as void type. *@
 @inject IGameHubConnectionService Hub
 @inject IGameStateService GameState
 
@@ -15,40 +15,40 @@
     <div class="game-tilemap-viewport">
         @for (var vy = 0; vy < ViewportSize; vy++)
         {
-            var mapY = camY + vy;
+            var capturedY = camY + vy;
             for (var vx = 0; vx < ViewportSize; vx++)
             {
-                var mapX = camX + vx;
-                var inBounds = mapX >= 0 && mapX < mapW && mapY >= 0 && mapY < mapH;
+                var capturedX = camX + vx;
+                var inBounds = capturedX >= 0 && capturedX < mapW && capturedY >= 0 && capturedY < mapH;
                 var tile = inBounds
-                    ? tiles[mapY, mapX]
-                    : new Veldrath.GameClient.Core.Abstractions.Tile(mapX, mapY, -1, false);
-                var isPlayer = GameState.PlayerTileX == mapX &&
-                               GameState.PlayerTileY == mapY;
-                var occupant = GetOccupantAt(mapX, mapY);
-                var enemy = GetEnemyAt(mapX, mapY);
+                    ? tiles[capturedY, capturedX]
+                    : new Veldrath.GameClient.Core.Abstractions.Tile(capturedX, capturedY, -1, false);
+                var isPlayer = GameState.PlayerTileX == capturedX &&
+                               GameState.PlayerTileY == capturedY;
+                var occupant = GetOccupantAt(capturedX, capturedY);
+                var enemy = GetEnemyAt(capturedX, capturedY);
 
-                <Tile TileData="tile"
-                      X="mapX"
-                      Y="mapY"
+                <Tile TileData="@tile"
+                      X="@capturedX"
+                      Y="@capturedY"
                       OnClick="OnTileClick"
                       OnHover="OnTileHover"
-                      IsPlayerHere="isPlayer"
-                      Occupant="occupant"
-                      Enemy="enemy" />
+                      IsPlayerHere="@isPlayer"
+                      Occupant="@occupant"
+                      Enemy="@enemy" />
             }
         }
 
         @if (_hoveredTile is not null)
         {
-            <TileInfoCard X="_hoveredTile.Value.X"
-                          Y="_hoveredTile.Value.Y"
-                          TileTypeName="@GetTileName(tiles, _hoveredTile.Value.X, _hoveredTile.Value.Y, mapW, mapH)"
-                          EntityName="@GetEntityNameAt(_hoveredTile.Value.X, _hoveredTile.Value.Y)" />
+            <TileInfoCard X="@_hoveredTile.Value.X"
+                          Y="@_hoveredTile.Value.Y"
+                          TileTypeName="@HoveredTileName"
+                          EntityName="@HoveredEntityName" />
         }
     </div>
 
-    <TileStatusBar Description="@GetTileName(tiles, GameState.PlayerTileX, GameState.PlayerTileY, mapW, mapH)" />
+    <TileStatusBar Description="@CurrentTileDescription" />
 }
 else
 {
@@ -70,6 +70,50 @@ else
     protected override void OnInitialized()
     {
         GameState.OnStateChanged(() => InvokeAsync(StateHasChanged));
+    }
+
+    /// <summary>
+    /// The human-readable description of the tile the player is currently standing on.
+    /// </summary>
+    private string CurrentTileDescription
+    {
+        get
+        {
+            if (GameState.ZoneTileMap is not Veldrath.GameClient.Core.Abstractions.Tile[,] tiles)
+                return "Unknown";
+
+            var mapW = tiles.GetLength(1);
+            var mapH = tiles.GetLength(0);
+            return GetTileName(tiles, GameState.PlayerTileX, GameState.PlayerTileY, mapW, mapH);
+        }
+    }
+
+    /// <summary>
+    /// The tile type name for the currently hovered tile, or empty string if no tile is hovered.
+    /// </summary>
+    private string HoveredTileName
+    {
+        get
+        {
+            if (_hoveredTile is null || GameState.ZoneTileMap is not Veldrath.GameClient.Core.Abstractions.Tile[,] tiles)
+                return string.Empty;
+
+            var mapW = tiles.GetLength(1);
+            var mapH = tiles.GetLength(0);
+            return GetTileName(tiles, _hoveredTile.Value.X, _hoveredTile.Value.Y, mapW, mapH);
+        }
+    }
+
+    /// <summary>
+    /// The entity name at the currently hovered tile, or null if no entity or no tile hovered.
+    /// </summary>
+    private string? HoveredEntityName
+    {
+        get
+        {
+            if (_hoveredTile is null) return null;
+            return GetEntityNameAt(_hoveredTile.Value.X, _hoveredTile.Value.Y);
+        }
     }
 
     /// <summary>Computes the camera X origin (leftmost tile column of the viewport), edge-clamped.</summary>
@@ -123,13 +167,9 @@ else
     /// <summary>Shows or hides the hover info card for a tile.</summary>
     private void OnTileHover((int X, int Y) pos)
     {
-        // (-1, -1) signals mouse leave — clear the hover card
         _hoveredTile = pos.X < 0 || pos.Y < 0 ? null : pos;
         StateHasChanged();
     }
-
-    private bool IsPlayerAt(int x, int y) =>
-        GameState.PlayerTileX == x && GameState.PlayerTileY == y;
 
     private OccupantInfo? GetOccupantAt(int x, int y) =>
         GameState.ZoneOccupants.FirstOrDefault(o => o.TileX == x && o.TileY == y);
