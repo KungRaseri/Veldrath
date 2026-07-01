@@ -79,6 +79,12 @@
   --vds-content-max: 1200px;
   --vds-sidebar-w:   220px;
   --vds-topbar-h:    48px;
+
+  /* ── Breakpoints ─────────────────────────────────── */
+  --vds-bp-sm:  640px;
+  --vds-bp-md:  768px;
+  --vds-bp-lg: 1024px;
+  --vds-bp-xl: 1280px;
 }
 
 body {
@@ -176,3 +182,234 @@ a:hover { text-decoration: underline; }
     border-top: 1px solid var(--vds-danger); color: var(--vds-danger);
 }
 #blazor-error-ui .dismiss { cursor: pointer; position: absolute; right: .75rem; top: .5rem; }
+
+/* ===== Mobile-First Base Overrides ===== */
+/* NOTE: Blazor layout should add a hamburger toggle for .main-nav below 768px.
+   CSS-only approach hides nav links and shows them via .main-nav--open class. */
+
+.site-header {
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    position: relative;
+}
+
+.brand {
+    font-size: 1.1rem;
+}
+
+.site-title {
+    font-size: 1.1rem;
+}
+
+.nav-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 1px solid var(--vds-border);
+    border-radius: var(--vds-radius-sm);
+    color: var(--vds-text);
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.main-nav {
+    display: none;
+}
+
+.main-nav--open {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--vds-bg-1);
+    padding: 16px;
+    z-index: 50;
+    border-bottom: 1px solid var(--vds-border);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
+
+.main-nav a {
+    padding: 8px 12px;
+}
+
+.site-content {
+    max-width: 100%;
+    padding: 16px;
+}
+
+.hero {
+    padding: 32px 16px;
+}
+
+.hero h1 {
+    font-size: 1.75rem;
+}
+
+.lead {
+    font-size: 1rem;
+}
+
+.auth-card {
+    max-width: 100%;
+    margin: 16px;
+}
+
+.features {
+    gap: 0.75rem;
+}
+
+.community-links {
+    gap: 0.75rem;
+}
+
+.site-footer {
+    padding: 16px;
+    font-size: 0.85rem;
+}
+
+/* ===== Responsive Breakpoints (mobile-first) ===== */
+
+/* ≥ 480px — Small device landscape / large phone */
+@media (min-width: 480px) {
+    .auth-card {
+        max-width: 480px;
+        margin: 24px auto;
+    }
+
+    .hero {
+        padding: 40px 24px;
+    }
+
+    .hero h1 {
+        font-size: 2rem;
+    }
+}
+
+/* ≥ 640px (sm) — Tablet portrait */
+@media (min-width: 640px) {
+    .site-content {
+        padding: 24px;
+    }
+
+    .hero {
+        padding: 48px 32px;
+    }
+
+    .hero h1 {
+        font-size: 2.25rem;
+    }
+
+    .lead {
+        font-size: 1.1rem;
+    }
+
+    .features {
+        gap: 1rem;
+    }
+
+    .community-links {
+        gap: 1rem;
+    }
+}
+
+/* ≥ 768px (md) — Tablet landscape / small desktop */
+@media (min-width: 768px) {
+    .site-content {
+        max-width: 1200px;
+        padding: 32px 40px;
+    }
+
+    .site-header {
+        padding: 16px 32px;
+    }
+
+    .brand {
+        font-size: var(--vds-text-lg);
+    }
+
+    .site-title {
+        font-size: 1.25rem;
+    }
+
+    .nav-toggle {
+        display: none;
+    }
+
+    .main-nav {
+        display: flex;
+        flex-direction: row;
+        gap: 16px;
+        margin-left: auto;
+        position: static;
+        width: auto;
+        padding: 0;
+        box-shadow: none;
+        background: transparent;
+        border-bottom: none;
+        font-size: 1rem;
+    }
+
+    .main-nav a {
+        padding: 0;
+    }
+
+    .hero {
+        padding: 64px 40px;
+    }
+
+    .hero h1 {
+        font-size: 2.5rem;
+    }
+
+    .lead {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+    }
+
+    .features {
+        gap: 1.25rem;
+    }
+
+    .community-links {
+        gap: 1.25rem;
+    }
+
+    .site-footer {
+        padding: 24px 32px;
+        font-size: 0.9rem;
+    }
+}
+
+/* ≥ 1024px (lg) — Desktop */
+@media (min-width: 1024px) {
+    .site-content {
+        padding: 40px 48px;
+    }
+
+    .hero {
+        padding: 80px 48px;
+    }
+
+    .hero h1 {
+        font-size: 3rem;
+    }
+
+    .lead {
+        font-size: 1.2rem;
+    }
+}
+
+/* ≥ 1280px (xl) — Wide desktop */
+@media (min-width: 1280px) {
+    .hero {
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}

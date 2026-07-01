@@ -94,6 +94,12 @@
   --vds-sidebar-w:   220px;
   --vds-topbar-h:    48px;
 
+  /* ── Breakpoints ─────────────────────────────────── */
+  --vds-bp-sm:  640px;
+  --vds-bp-md:  768px;
+  --vds-bp-lg: 1024px;
+  --vds-bp-xl: 1280px;
+
   /* ── Legacy aliases (maps old --color-* names to VDS tokens) ─────────── */
   --color-bg:      var(--vds-bg-0);
   --color-surface: var(--vds-bg-1);
@@ -894,4 +900,177 @@ p.lead { font-size: 1.05rem; color: var(--color-muted); margin-bottom: 2rem; }
 .text-danger      { color: var(--vds-danger); }
 .text-warning     { color: var(--vds-warning); }
 .text-info        { color: var(--vds-info); }
+
+/* ===== Mobile-First Base Overrides ===== */
+
+/* Layout: stack vertically on mobile (sidebar above content) */
+.layout { flex-direction: column; }
+
+/* Sidebar: hidden on mobile; use .sidebar--open for overlay toggle */
+/* NOTE: Razor layout will need a hamburger button that toggles .sidebar--open (out of scope for this CSS-only task) */
+.sidebar { display: none; }
+
+.sidebar--open {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    z-index: 100;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 220px;
+}
+
+/* Content: full width on mobile */
+.content { width: 100%; }
+
+/* Content-detail-shell: stack list above detail on mobile */
+.content-detail-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Detail pane: hidden on mobile until a row is selected */
+.content-detail-pane { display: none; }
+.content-detail-pane--active { display: block; }
+
+/* Page body: full width with tighter padding on mobile */
+.page-body {
+    padding: 16px;
+    max-width: 100%;
+}
+
+/* Auth card: full width on mobile */
+.auth-card {
+    max-width: 100%;
+    margin: 16px;
+}
+
+/* Submission form: full width on mobile */
+.submission-form-shell { max-width: 100%; }
+
+/* Table responsive wrapper */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive table { min-width: 100%; }
+
+/* Ensure list scroll pane handles horizontal overflow on mobile */
+.list-scroll { overflow-x: auto; }
+
+/* Data table: smaller font on mobile */
+.data-table { font-size: 0.8rem; }
+
+/* Page header: tighter gap and reduced heading size on mobile */
+.page-header { gap: 0.5rem; }
+.page-header h1 { font-size: 1.5rem; }
+
+/* Nav links: smaller font and reduced padding on mobile */
+.nav-links { font-size: 0.85rem; }
+.nav-item { padding: 5px 10px; }
+
+/* Feature cards: reduced gap on mobile */
+.feature-cards { gap: 0.75rem; }
+
+/* Content type grid: reduced gap on mobile */
+.content-type-grid { gap: 0.625rem; }
+
+/* Top bar: tighter padding and smaller font on mobile */
+.top-bar {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+}
+
+/* Field list: stack to single column on mobile */
+.field-list { grid-template-columns: 1fr; }
+
+/* ===== Responsive Breakpoints (mobile-first) ===== */
+
+/* ≥ 480px — Small device landscape / large phone */
+@media (min-width: 480px) {
+    .auth-card { max-width: 400px; margin: 24px auto; }
+    .field-list { grid-template-columns: 130px 1fr; }
+}
+
+/* ≥ 640px (sm) — Tablet portrait */
+@media (min-width: 640px) {
+    .page-body { padding: 24px; }
+    .page-header { gap: 0.75rem; }
+    .page-header h1 { font-size: 1.75rem; }
+    .feature-cards { gap: 0.875rem; }
+    .content-type-grid { gap: 0.75rem; }
+}
+
+/* ≥ 768px (md) — Tablet landscape / small desktop */
+@media (min-width: 768px) {
+    .layout { flex-direction: row; }
+
+    .sidebar {
+        display: flex;
+        position: static;
+        height: auto;
+        width: var(--vds-sidebar-w);
+    }
+
+    .sidebar--open {
+        position: static;
+        z-index: auto;
+        height: auto;
+    }
+
+    .content {
+        flex: 1;
+        width: auto;
+    }
+
+    .content-detail-shell {
+        display: grid;
+        grid-template-columns: 1fr 420px;
+        gap: 24px;
+    }
+
+    .content-detail-pane { display: block; }
+
+    .page-body {
+        max-width: 960px;
+        padding: 32px 40px;
+    }
+
+    .submission-form-shell { max-width: 720px; }
+
+    .table-responsive { overflow-x: visible; }
+
+    .list-scroll { overflow-x: hidden; }
+
+    .data-table { font-size: 0.875rem; }
+
+    .page-header { gap: 1rem; }
+    .page-header h1 { font-size: 2rem; }
+
+    .nav-links { font-size: 1rem; }
+    .nav-item { padding: 7px 12px; }
+
+    .feature-cards { gap: 1rem; }
+
+    .content-type-grid { gap: 0.875rem; }
+
+    .top-bar {
+        padding: 0.75rem 1.5rem;
+        font-size: 0.85rem;
+    }
+}
+
+/* ≥ 1024px (lg) — Desktop */
+@media (min-width: 1024px) {
+    .page-body { padding: 40px 48px; }
+}
+
+/* ≥ 1280px (xl) — Wide desktop */
+@media (min-width: 1280px) {
+    /* Reserve for future wider content column adjustments */
+}
 
