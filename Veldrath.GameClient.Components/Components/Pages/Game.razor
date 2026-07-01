@@ -295,6 +295,156 @@
             GameState.ApplyZoneEntitiesSnapshot(payload);
             await InvokeAsync(StateHasChanged);
         }));
+
+        // ── G18: OnKicked ──────────────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<Veldrath.Contracts.Connection.KickedPayload>("OnKicked", async payload =>
+        {
+            GameState.ApplyKicked(payload.Reason);
+            await InvokeAsync(StateHasChanged);
+            Navigation.NavigateTo("/");
+        }));
+
+        // ── G19: ExperienceGained ──────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<ExperienceGainedPayload>("ExperienceGained", async payload =>
+        {
+            GameState.ApplyExperienceGained(payload.NewLevel, payload.NewXP, payload.LeveledUpTo);
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G20: GoldChanged ───────────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<GoldChangedPayload>("GoldChanged", async payload =>
+        {
+            GameState.ApplyGoldChanged(payload.GoldAdded, payload.NewGoldTotal);
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G21: DamageTaken ───────────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<DamageTakenPayload>("DamageTaken", async payload =>
+        {
+            GameState.ApplyDamageTaken(payload.Damage, payload.CurrentHP, payload.MaxHP, payload.IsDead);
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G22: ItemEquipped ──────────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<ItemEquippedPayload>("ItemEquipped", async payload =>
+        {
+            foreach (var (slot, item) in payload.Equipped)
+            {
+                GameState.ApplyEquipmentChanged(slot, item);
+            }
+            if (GameState is GameStateService gs)
+            {
+                gs.ApplySystemMessage($"Equipped {payload.ItemRef}.");
+            }
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G23: ShopVisited ───────────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<ShopVisitedPayload>("ShopVisited", async payload =>
+        {
+            GameState.ApplyShopVisited(payload.ZoneId, payload.ZoneName);
+            _activeOverlay = GameOverlay.OverlayKind.Shop;
+            _showOverlay = true;
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G24: ShopCatalog ───────────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<ShopCatalogPayload>("ShopCatalog", async payload =>
+        {
+            GameState.ApplyShopCatalogUpdated(payload.Catalog);
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G25: ItemPurchased ─────────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<ItemPurchasedPayload>("ItemPurchased", async payload =>
+        {
+            GameState.ApplyItemTransacted(payload.Name, payload.GoldSpent, payload.Inventory);
+            if (GameState is GameStateService gs)
+            {
+                gs.ApplySystemMessage($"Purchased {payload.Name}.");
+            }
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G26: ItemSold ──────────────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<ItemSoldPayload>("ItemSold", async payload =>
+        {
+            GameState.ApplyItemTransacted(payload.Name, payload.GoldReceived, payload.Inventory);
+            if (GameState is GameStateService gs)
+            {
+                gs.ApplySystemMessage($"Sold {payload.Name}.");
+            }
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G27: ItemDropped ───────────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<ItemDroppedPayload>("ItemDropped", async payload =>
+        {
+            GameState.ApplyItemTransacted(payload.ItemRef, GameState.CurrentCharacterGold, payload.Inventory);
+            if (GameState is GameStateService gs)
+            {
+                gs.ApplySystemMessage($"Dropped {payload.ItemRef}.");
+            }
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G28: InventoryLoaded ───────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<InventoryLoadedPayload>("InventoryLoaded", async payload =>
+        {
+            GameState.ApplyInventoryUpdated(payload.Items, GameState.EquippedItems);
+            _activeOverlay = GameOverlay.OverlayKind.Inventory;
+            _showOverlay = true;
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G29: QuestLogReceived ──────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<QuestLogReceivedPayload>("QuestLogReceived", async payload =>
+        {
+            GameState.ApplyQuestLogUpdated(payload.Active, payload.Completed);
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G30: AttributePointsAllocated ──────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<AttributePointsAllocatedPayload>("AttributePointsAllocated", async payload =>
+        {
+            GameState.ApplyAttributePointsAllocated(payload.RemainingPoints, payload.Attrs);
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G31: CharacterRested ───────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<CharacterRestedPayload>("CharacterRested", async payload =>
+        {
+            GameState.ApplyCharacterRested(payload.HP, payload.MaxHP, payload.MP, payload.MaxMP, payload.Gold);
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G32: AbilityUsed ───────────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<AbilityUsedPayload>("AbilityUsed", async payload =>
+        {
+            GameState.ApplyAbilityUsed(payload.AbilityId, payload.RemainingMana, payload.HPRestored);
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G33: SkillXpGained ─────────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<SkillXpGainedPayload>("SkillXpGained", async payload =>
+        {
+            GameState.ApplySkillXpGained(payload.SkillId, payload.XpGained, payload.NewRank, payload.RankedUp);
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G34: ItemCrafted ───────────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<ItemCraftedPayload>("ItemCrafted", async payload =>
+        {
+            GameState.ApplyItemCrafted(payload.RecipeName, payload.GoldSpent, payload.RemainingGold);
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── G35: DungeonEntered ────────────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<DungeonEnteredPayload>("DungeonEntered", async payload =>
+        {
+            GameState.ApplyDungeonEntered(payload.DungeonId);
+            await InvokeAsync(StateHasChanged);
+        }));
     }
 
     private static Veldrath.GameClient.Core.Services.Tile[,] ConvertTileMap(TileMapDto dto)

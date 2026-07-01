@@ -136,6 +136,14 @@ public sealed class GameStateService : IGameStateService
     /// <inheritdoc />
     object? IGameStateService.ZoneTileMap => ZoneTileMap;
 
+    // ── Live character state (progression / combat) ─────────────────────────────
+
+    /// <summary>The current character's live state snapshot. Updates create new instances via <c>with</c>.</summary>
+    public CharacterState CurrentCharacterState { get; private set; } = new();
+
+    /// <inheritdoc />
+    CharacterState IGameStateService.CurrentCharacter => CurrentCharacterState;
+
     // ── Inventory & equipment ───────────────────────────────────────────────────
 
     /// <inheritdoc />
@@ -157,6 +165,12 @@ public sealed class GameStateService : IGameStateService
 
     /// <summary>The current merchant's shop catalog.</summary>
     public List<ShopItemEntry> ShopCatalog { get; private set; } = [];
+
+    /// <summary>Whether the character is currently in a shop or merchant interface.</summary>
+    public bool InShop { get; private set; }
+
+    /// <summary>The display name of the current shop, or <c>null</c> if not in a shop.</summary>
+    public string? ShopName { get; private set; }
 
     // ── Zone state ──────────────────────────────────────────────────────────────
 
@@ -192,6 +206,22 @@ public sealed class GameStateService : IGameStateService
     /// <summary>The result description of the last combat action (e.g. "You hit for 12 damage").</summary>
     public string? LastCombatActionResult { get; private set; }
 
+    // ── Kick state ──────────────────────────────────────────────────────────────
+
+    /// <summary>Whether the player has been forcibly kicked from the server.</summary>
+    public bool IsKicked { get; private set; }
+
+    /// <summary>The reason for the kick, or <c>null</c> if not kicked.</summary>
+    public string? KickReason { get; private set; }
+
+    // ── Skill XP ────────────────────────────────────────────────────────────────
+
+    /// <summary>Skill experience points keyed by skill identifier slug.</summary>
+    public Dictionary<string, int> SkillXp { get; private set; } = [];
+
+    /// <summary>Skill ranks keyed by skill identifier slug.</summary>
+    public Dictionary<string, int> SkillRanks { get; private set; } = [];
+
     // ── Chat state ──────────────────────────────────────────────────────────────
 
     /// <summary>The ordered list of chat messages received during the current session.</summary>
@@ -208,6 +238,26 @@ public sealed class GameStateService : IGameStateService
             payload.CurrentMana, payload.MaxMana, payload.Gold);
 
         ApplyCharacterSelected(character, payload.CurrentZoneId);
+
+        CurrentCharacterState = new CharacterState
+        {
+            Level = payload.Level,
+            XP = (int)payload.Experience,
+            Gold = payload.Gold,
+            CurrentHealth = payload.CurrentHealth,
+            MaxHealth = payload.MaxHealth,
+            CurrentMana = payload.CurrentMana,
+            MaxMana = payload.MaxMana,
+            IsDead = false,
+            Strength = payload.Strength,
+            Dexterity = payload.Dexterity,
+            Constitution = payload.Constitution,
+            Intelligence = payload.Intelligence,
+            Wisdom = payload.Wisdom,
+            Charisma = payload.Charisma,
+            UnspentAttributePoints = payload.UnspentAttributePoints,
+        };
+        RaisePropertyChanged(nameof(CurrentCharacterState));
     }
 
     /// <inheritdoc />
@@ -346,6 +396,242 @@ public sealed class GameStateService : IGameStateService
     {
         Settings = settings;
         RaisePropertyChanged(nameof(Settings));
+    }
+
+    // ── Kick Apply methods ──────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyKicked(string reason)
+    {
+        IsKicked = true;
+        KickReason = reason;
+        IsConnected = false;
+        ApplySystemMessage($"You have been kicked: {reason}");
+        RaisePropertyChanged(nameof(IsKicked));
+        RaisePropertyChanged(nameof(KickReason));
+        RaisePropertyChanged(nameof(IsConnected));
+    }
+
+    // ── Progression Apply methods ───────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyExperienceGained(int newLevel, int newXP, int newLeveledUpTo)
+    {
+        var leveledUp = newLeveledUpTo > 0;
+        CurrentCharacterState = CurrentCharacterState with
+        {
+            Level = newLevel,
+            XP = newXP,
+        };
+
+        if (CurrentCharacter is not null)
+        {
+            CurrentCharacter = CurrentCharacter with { Level = newLevel, Experience = newXP };
+            RaisePropertyChanged(nameof(CurrentCharacter));
+        }
+
+        RaisePropertyChanged(nameof(CurrentCharacterState));
+
+        if (leveledUp)
+            ApplySystemMessage($"You reached level {newLeveledUpTo}!");
+        else
+            ApplySystemMessage("You gained XP!");
+    }
+
+    /// <inheritdoc />
+    public void ApplyGoldChanged(int goldAdded, int newGoldTotal)
+    {
+        CurrentCharacterState = CurrentCharacterState with { Gold = newGoldTotal };
+
+        if (CurrentCharacter is not null)
+        {
+            CurrentCharacter = CurrentCharacter with { Gold = newGoldTotal };
+            RaisePropertyChanged(nameof(CurrentCharacter));
+        }
+
+        RaisePropertyChanged(nameof(CurrentCharacterState));
+
+        if (goldAdded >= 0)
+            ApplySystemMessage($"Received {goldAdded} gold.");
+        else
+            ApplySystemMessage($"Spent {-goldAdded} gold.");
+    }
+
+    /// <inheritdoc />
+    public void ApplyDamageTaken(int damage, int currentHP, int maxHP, bool isDead)
+    {
+        CurrentCharacterState = CurrentCharacterState with
+        {
+            CurrentHealth = currentHP,
+            MaxHealth = maxHP,
+            IsDead = isDead,
+        };
+
+        if (CurrentCharacter is not null)
+        {
+            CurrentCharacter = CurrentCharacter with { CurrentHealth = currentHP, MaxHealth = maxHP };
+            RaisePropertyChanged(nameof(CurrentCharacter));
+        }
+
+        RaisePropertyChanged(nameof(CurrentCharacterState));
+
+        if (isDead)
+            ApplySystemMessage("You have been slain!");
+    }
+
+    // ── Shop state Apply methods ────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyShopVisited(string zoneId, string zoneName)
+    {
+        InShop = true;
+        ShopName = zoneName;
+        RaisePropertyChanged(nameof(InShop));
+        RaisePropertyChanged(nameof(ShopName));
+    }
+
+    // ── Inventory transaction Apply methods ─────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyItemTransacted(string itemName, int newGold, List<Item> inventory)
+    {
+        InventoryItems = inventory;
+        CurrentCharacterState = CurrentCharacterState with { Gold = newGold };
+
+        if (CurrentCharacter is not null)
+        {
+            CurrentCharacter = CurrentCharacter with { Gold = newGold };
+            RaisePropertyChanged(nameof(CurrentCharacter));
+        }
+
+        RaisePropertyChanged(nameof(InventoryItems));
+        RaisePropertyChanged(nameof(CurrentCharacterState));
+    }
+
+    // ── Attribute allocation ────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyAttributePointsAllocated(int remaining, Dictionary<string, int> stats)
+    {
+        CurrentCharacterState = CurrentCharacterState with
+        {
+            UnspentAttributePoints = remaining,
+            Strength = stats.GetValueOrDefault("Strength", CurrentCharacterState.Strength),
+            Dexterity = stats.GetValueOrDefault("Dexterity", CurrentCharacterState.Dexterity),
+            Constitution = stats.GetValueOrDefault("Constitution", CurrentCharacterState.Constitution),
+            Intelligence = stats.GetValueOrDefault("Intelligence", CurrentCharacterState.Intelligence),
+            Wisdom = stats.GetValueOrDefault("Wisdom", CurrentCharacterState.Wisdom),
+            Charisma = stats.GetValueOrDefault("Charisma", CurrentCharacterState.Charisma),
+        };
+
+        RaisePropertyChanged(nameof(CurrentCharacterState));
+        ApplySystemMessage("Attribute points allocated.");
+    }
+
+    // ── Rest ────────────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyCharacterRested(int hp, int maxHp, int mp, int maxMp, int gold)
+    {
+        CurrentCharacterState = CurrentCharacterState with
+        {
+            CurrentHealth = hp,
+            MaxHealth = maxHp,
+            CurrentMana = mp,
+            MaxMana = maxMp,
+            Gold = gold,
+        };
+
+        if (CurrentCharacter is not null)
+        {
+            CurrentCharacter = CurrentCharacter with
+            {
+                CurrentHealth = hp,
+                MaxHealth = maxHp,
+                CurrentMana = mp,
+                MaxMana = maxMp,
+                Gold = gold,
+            };
+            RaisePropertyChanged(nameof(CurrentCharacter));
+        }
+
+        RaisePropertyChanged(nameof(CurrentCharacterState));
+        ApplySystemMessage("You feel well rested.");
+    }
+
+    // ── Ability ─────────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyAbilityUsed(string abilityId, int remainingMana, int hpRestored)
+    {
+        CurrentCharacterState = CurrentCharacterState with { CurrentMana = remainingMana };
+
+        if (hpRestored > 0)
+        {
+            var newHp = Math.Min(CurrentCharacterState.CurrentHealth + hpRestored, CurrentCharacterState.MaxHealth);
+            CurrentCharacterState = CurrentCharacterState with { CurrentHealth = newHp };
+        }
+
+        if (CurrentCharacter is not null)
+        {
+            CurrentCharacter = CurrentCharacter with { CurrentMana = remainingMana };
+            if (hpRestored > 0)
+            {
+                var newHp = Math.Min(CurrentCharacter.CurrentHealth + hpRestored, CurrentCharacter.MaxHealth);
+                CurrentCharacter = CurrentCharacter with { CurrentHealth = newHp };
+            }
+            RaisePropertyChanged(nameof(CurrentCharacter));
+        }
+
+        RaisePropertyChanged(nameof(CurrentCharacterState));
+        ApplySystemMessage($"Ability used: {abilityId}.");
+    }
+
+    // ── Skills ──────────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplySkillXpGained(string skillId, int xpGained, int newRank, bool rankedUp)
+    {
+        SkillXp[skillId] = SkillXp.GetValueOrDefault(skillId) + xpGained;
+        SkillRanks[skillId] = newRank;
+
+        RaisePropertyChanged(nameof(SkillXp));
+        RaisePropertyChanged(nameof(SkillRanks));
+
+        var msg = rankedUp
+            ? $"Skill XP gained: {skillId} — reached rank {newRank}!"
+            : $"Skill XP gained: {skillId} (+{xpGained} XP)";
+        ApplySystemMessage(msg);
+    }
+
+    // ── Crafting ────────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyItemCrafted(string recipeName, int goldSpent, int remainingGold)
+    {
+        CurrentCharacterState = CurrentCharacterState with { Gold = remainingGold };
+
+        if (CurrentCharacter is not null)
+        {
+            CurrentCharacter = CurrentCharacter with { Gold = remainingGold };
+            RaisePropertyChanged(nameof(CurrentCharacter));
+        }
+
+        RaisePropertyChanged(nameof(CurrentCharacterState));
+        ApplySystemMessage($"Crafted {recipeName}.");
+    }
+
+    // ── Dungeon ─────────────────────────────────────────────────────────────────
+
+    /// <summary>The current dungeon identifier, or <c>null</c> if not in a dungeon.</summary>
+    public string? CurrentDungeonId { get; private set; }
+
+    /// <inheritdoc />
+    public void ApplyDungeonEntered(string dungeonId)
+    {
+        CurrentDungeonId = dungeonId;
+        RaisePropertyChanged(nameof(CurrentDungeonId));
+        ApplySystemMessage("Entering dungeon...");
     }
 
     // ── Existing Apply methods (preserved for backward compatibility) ─────────
@@ -534,6 +820,7 @@ public sealed class GameStateService : IGameStateService
         ServerConnectionId = null;
         IsConnected = false;
         CurrentCharacter = null;
+        CurrentCharacterState = new();
         CurrentZoneId = null;
         CurrentZoneName = null;
         ZoneTileMap = null;
@@ -548,13 +835,21 @@ public sealed class GameStateService : IGameStateService
         InventoryItems = [];
         EquippedItems = [];
         ShopCatalog = [];
+        InShop = false;
+        ShopName = null;
         QuestLog = [];
         CompletedQuests = [];
         Settings = new();
+        IsKicked = false;
+        KickReason = null;
+        SkillXp = [];
+        SkillRanks = [];
+        CurrentDungeonId = null;
 
         RaisePropertyChanged(nameof(ServerConnectionId));
         RaisePropertyChanged(nameof(IsConnected));
         RaisePropertyChanged(nameof(CurrentCharacter));
+        RaisePropertyChanged(nameof(CurrentCharacterState));
         RaisePropertyChanged(nameof(CurrentZoneId));
         RaisePropertyChanged(nameof(CurrentZoneName));
         RaisePropertyChanged(nameof(ZoneTileMap));
@@ -569,9 +864,16 @@ public sealed class GameStateService : IGameStateService
         RaisePropertyChanged(nameof(InventoryItems));
         RaisePropertyChanged(nameof(EquippedItems));
         RaisePropertyChanged(nameof(ShopCatalog));
+        RaisePropertyChanged(nameof(InShop));
+        RaisePropertyChanged(nameof(ShopName));
         RaisePropertyChanged(nameof(QuestLog));
         RaisePropertyChanged(nameof(CompletedQuests));
         RaisePropertyChanged(nameof(Settings));
+        RaisePropertyChanged(nameof(IsKicked));
+        RaisePropertyChanged(nameof(KickReason));
+        RaisePropertyChanged(nameof(SkillXp));
+        RaisePropertyChanged(nameof(SkillRanks));
+        RaisePropertyChanged(nameof(CurrentDungeonId));
     }
 
     /// <summary>Subscribe to any property change. Returns an <see cref="IDisposable"/> that unsubscribes.</summary>
@@ -599,6 +901,9 @@ public sealed class GameStateService : IGameStateService
             CurrentCharacter = CurrentCharacter with { CurrentHealth = playerRemainingHealth };
             RaisePropertyChanged(nameof(CurrentCharacter));
         }
+
+        CurrentCharacterState = CurrentCharacterState with { CurrentHealth = playerRemainingHealth };
+        RaisePropertyChanged(nameof(CurrentCharacterState));
     }
 
     /// <summary>Builds a human-readable combat result string from the turn payload.</summary>
