@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using RealmEngine.Shared.Models;
 using Veldrath.GameClient.Core.Abstractions;
 using Veldrath.GameClient.Core.Payloads;
 
@@ -38,6 +39,18 @@ public sealed class FakeGameStateService : IGameStateService
 
     /// <summary>Gets or sets the simulated current character level.</summary>
     public int CurrentCharacterLevel { get; set; }
+
+    /// <inheritdoc />
+    public int CurrentCharacterGold { get; set; }
+
+    /// <inheritdoc />
+    public IReadOnlyList<Item> InventoryItems { get; set; } = [];
+
+    /// <inheritdoc />
+    public IReadOnlyDictionary<string, Item> EquippedItems { get; set; } = new Dictionary<string, Item>();
+
+    /// <inheritdoc />
+    public IReadOnlyList<ShopItemEntry> ShopCatalog { get; set; } = [];
 
     /// <summary>Gets or sets the simulated server connection identifier.</summary>
     public string? ServerConnectionId { get; set; }
@@ -129,5 +142,32 @@ public sealed class FakeGameStateService : IGameStateService
     public void ApplyEnemyDefeated(EnemyDefeatedPayload payload)
     {
         AppliedCalls.Add((nameof(ApplyEnemyDefeated), payload));
+    }
+
+    /// <inheritdoc />
+    public void ApplyInventoryUpdated(IReadOnlyList<Item> items, IReadOnlyDictionary<string, Item> equipped)
+    {
+        InventoryItems = items;
+        EquippedItems = equipped;
+        AppliedCalls.Add((nameof(ApplyInventoryUpdated), (items, equipped)));
+    }
+
+    /// <inheritdoc />
+    public void ApplyEquipmentChanged(string slot, Item? item)
+    {
+        var dict = new Dictionary<string, Item>(EquippedItems);
+        if (item is null)
+            dict.Remove(slot);
+        else
+            dict[slot] = item;
+        EquippedItems = dict;
+        AppliedCalls.Add((nameof(ApplyEquipmentChanged), (slot, item)));
+    }
+
+    /// <inheritdoc />
+    public void ApplyShopCatalogUpdated(IReadOnlyList<ShopItemEntry> catalog)
+    {
+        ShopCatalog = catalog;
+        AppliedCalls.Add((nameof(ApplyShopCatalogUpdated), catalog));
     }
 }
