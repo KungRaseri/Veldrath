@@ -1,31 +1,51 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Veldrath.Contracts.Connection;
-using Veldrath.Contracts.Tilemap;
-using Veldrath.GameClient.Core.Abstractions;
-using Veldrath.GameClient.Core.Payloads;
-using Veldrath.GameClient.Core.Services;
-using Veldrath.Web.Services;
-// Aliases to resolve type name conflicts with Veldrath.Contracts types.
-using GameChatMessagePayload = Veldrath.GameClient.Core.Payloads.ChatMessageHubDto;
+@page "/Game/Play"
+@attribute [Authorize]
+@using Veldrath.GameClient.Core.Services
+@using Veldrath.GameClient.Core.Payloads
+@using Veldrath.GameClient.Core.Abstractions
+@using Veldrath.Auth.Blazor
+@using Veldrath.Contracts.Connection
+@using Veldrath.Contracts.Tilemap
+@inject IGameHubConnectionService Hub
+@inject IGameStateService GameState
+@inject NavigationManager Navigation
+@inject AuthStateServiceBase Auth
+@inject IConfiguration Configuration
+@inject ILogger<Game> Logger
 
-namespace Veldrath.Web.Components.Pages.Game;
+<div class="game-container">
+    <GameHeader />
 
-/// <summary>
-/// Main game hub page — orchestrates all game sub-components, manages the SignalR
-/// hub connection, and dispatches server events to <see cref="IGameStateService"/>.
-/// </summary>
-public sealed partial class Game : IAsyncDisposable
-{
-    [Inject] private IGameHubConnectionService Hub { get; set; } = null!;
-    [Inject] private IGameStateService GameState { get; set; } = null!;
-    [Inject] private AuthStateService Auth { get; set; } = null!;
-    [Inject] private NavigationManager Navigation { get; set; } = null!;
-    [Inject] private IConfiguration Configuration { get; set; } = null!;
-    [Inject] private ILogger<Game> Logger { get; set; } = null!;
+    <div class="game-main">
+        <div class="game-sidebar">
+            <GameSidebar />
+            <GameChat />
+        </div>
 
+        <div class="game-center">
+            @if (GameState.IsInCombat)
+            {
+                <GameCombat />
+            }
+            else if (GameState.ZoneTileMap is not null)
+            {
+                <GameTilemap />
+            }
+            else
+            {
+                <div class="game-loading-zone">
+                    <p>Loading zone...</p>
+                    <div class="spinner"></div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <GameFooter />
+    <GameOverlay />
+</div>
+
+@code {
     private readonly List<IDisposable> _hubSubscriptions = [];
     private IDisposable? _stateSubscription;
     private bool _hubConnected;
@@ -200,7 +220,6 @@ public sealed partial class Game : IAsyncDisposable
         }));
 
         // CharacterMoved — update player or other character position.
-        // Use Veldrath.Contracts.Tilemap.CharacterMovedPayload (shared with server).
         _hubSubscriptions.Add(Hub.On<Veldrath.Contracts.Tilemap.CharacterMovedPayload>("CharacterMoved", async payload =>
         {
             GameState.ApplyCharacterMoved(payload);
@@ -260,7 +279,7 @@ public sealed partial class Game : IAsyncDisposable
         }));
 
         // ReceiveChatMessage — incoming chat message.
-        _hubSubscriptions.Add(Hub.On<GameChatMessagePayload>("ReceiveChatMessage", async payload =>
+        _hubSubscriptions.Add(Hub.On<ChatMessageHubDto>("ReceiveChatMessage", async payload =>
         {
             GameState.ApplyChatMessage(payload);
             await InvokeAsync(StateHasChanged);
@@ -288,7 +307,6 @@ public sealed partial class Game : IAsyncDisposable
         }));
 
         // ZoneEntitiesSnapshot — update occupants and enemies with positions.
-        // Use Veldrath.Contracts.Tilemap.ZoneEntitiesSnapshotPayload (shared with server).
         _hubSubscriptions.Add(Hub.On<Veldrath.Contracts.Tilemap.ZoneEntitiesSnapshotPayload>("ZoneEntitiesSnapshot", async payload =>
         {
             GameState.ApplyZoneEntitiesSnapshot(payload);
@@ -297,14 +315,14 @@ public sealed partial class Game : IAsyncDisposable
     }
 
     /// <summary>
-    /// Converts a <see cref="TileMapDto"/> from the server into the local <see cref="Tile"/> array
+    /// Converts a <see cref="TileMapDto"/> from the server into the local <see cref="Veldrath.GameClient.Core.Services.Tile"/> array
     /// used by the <see cref="GameStateService"/>.
     /// </summary>
-    private static Tile[,] ConvertTileMap(TileMapDto dto)
+    private static Veldrath.GameClient.Core.Services.Tile[,] ConvertTileMap(TileMapDto dto)
     {
         var width = dto.Width;
         var height = dto.Height;
-        var tiles = new Tile[height, width];
+        var tiles = new Veldrath.GameClient.Core.Services.Tile[height, width];
 
         // Use the first ground layer for tile types, or default to grass (type 0).
         var groundLayer = dto.Layers.FirstOrDefault();
@@ -332,7 +350,7 @@ public sealed partial class Game : IAsyncDisposable
                     _ => 0        // default walkable
                 };
 
-                tiles[y, x] = new Tile(x, y, simplifiedType, isBlocked);
+                tiles[y, x] = new Veldrath.GameClient.Core.Services.Tile(x, y, simplifiedType, isBlocked);
             }
         }
 
@@ -357,14 +375,3 @@ public sealed partial class Game : IAsyncDisposable
         }
     }
 }
-
-// ── CharacterRespawned Payload (not yet in shared payloads) ───────────────────
-
-/// <summary>
-/// Hub event payload received when a character respawns after death.
-/// Contains the character's updated health and mana.
-/// </summary>
-/// <param name="CharacterId">The respawned character's identifier.</param>
-/// <param name="CurrentHealth">The character's health after respawn.</param>
-/// <param name="CurrentMana">The character's mana after respawn.</param>
-public sealed record CharacterRespawnedPayload(Guid CharacterId, int CurrentHealth, int CurrentMana);

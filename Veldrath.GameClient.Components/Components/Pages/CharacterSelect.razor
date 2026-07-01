@@ -1,30 +1,78 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Veldrath.Contracts.Characters;
-using Veldrath.Contracts.Connection;
-using Veldrath.GameClient.Core.Abstractions;
-using Veldrath.GameClient.Core.Payloads;
-using Veldrath.GameClient.Core.Services;
-using Veldrath.Web.Services;
+@page "/Game/CharacterSelect"
+@attribute [Authorize]
+@using Veldrath.GameClient.Core.Services
+@using Veldrath.GameClient.Core.Payloads
+@using Veldrath.GameClient.Core.Abstractions
+@using Veldrath.Contracts.Characters
+@using Veldrath.Contracts.Connection
+@using Veldrath.Auth.Blazor
+@inject IGameHubConnectionService Hub
+@inject IGameStateService GameState
+@inject NavigationManager Navigation
+@inject IGameApiClient Api
+@inject AuthStateServiceBase Auth
+@inject IConfiguration Configuration
+@inject ILogger<CharacterSelect> Logger
 
-namespace Veldrath.Web.Components.Pages.Game;
-
-/// <summary>
-/// Character selection screen — shows the player's characters and allows selecting one
-/// to enter the game world.  Redirects to <c>/Login</c> if not authenticated.
-/// </summary>
-public sealed partial class CharacterSelect : IAsyncDisposable
+@if (_isLoading)
 {
-    [Inject] private IGameHubConnectionService Hub { get; set; } = null!;
-    [Inject] private IGameStateService GameState { get; set; } = null!;
-    [Inject] private AuthStateService Auth { get; set; } = null!;
-    [Inject] private NavigationManager Navigation { get; set; } = null!;
-    [Inject] private IConfiguration Configuration { get; set; } = null!;
-    [Inject] private ILogger<CharacterSelect> Logger { get; set; } = null!;
-    [Inject] private VeldrathApiClient Api { get; set; } = null!;
+    <div class="cs-loading">
+        <p>Connecting to game server...</p>
+        <div class="spinner"></div>
+    </div>
+}
+else if (_errorMessage is not null)
+{
+    <div class="cs-error">
+        <p>@_errorMessage</p>
+        <button class="btn btn-primary" @onclick="ConnectAndLoadCharacters">Retry</button>
+        <a href="/" class="btn btn-secondary">Back to Home</a>
+    </div>
+}
+else
+{
+    <div class="cs-container">
+        <h1>Select Your Character</h1>
 
+        @if (_characters.Count == 0)
+        {
+            <div class="cs-empty">
+                <p>You have no characters yet.</p>
+                <a href="/Game/CreateCharacter" class="btn btn-primary">Create New Character</a>
+            </div>
+        }
+        else
+        {
+            <div class="cs-list">
+                @foreach (var character in _characters)
+                {
+                    <div class="cs-card @(_selectedCharacterId == character.Id.ToString() ? "cs-card-selected" : "")">
+                        <div class="cs-card-info">
+                            <h3>@character.Name</h3>
+                            <p>@character.ClassName · Level @character.Level</p>
+                            <p>⛁ @character.Experience XP</p>
+                            <p class="cs-card-last-played">Last played: @character.LastPlayedAt.ToLocalTime().ToString("g")</p>
+                        </div>
+                        <div class="cs-card-actions">
+                            <button class="btn btn-primary"
+                                    @onclick="() => SelectCharacter(character.Id)"
+                                    disabled="@(_selectedCharacterId == character.Id.ToString())">
+                                @(_selectedCharacterId == character.Id.ToString() ? "Selecting..." : "Select")
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="cs-footer">
+                <a href="/Game/CreateCharacter" class="btn btn-secondary">Create New Character</a>
+                <a href="/" class="btn btn-secondary">Back to Home</a>
+            </div>
+        }
+    </div>
+}
+
+@code {
     private List<CharacterDto> _characters = [];
     private bool _isLoading = true;
     private string? _errorMessage;
@@ -137,9 +185,5 @@ public sealed partial class CharacterSelect : IAsyncDisposable
             sub.Dispose();
         }
         _hubSubscriptions.Clear();
-
-        // Don't disconnect the hub here — Game.razor reuses the same scoped
-        // GameHubConnectionService instance. Disconnecting would cause the
-        // server to release the character claim and lose the connection context.
     }
 }

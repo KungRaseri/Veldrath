@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
 using Serilog.Events;
+using Veldrath.Auth.Blazor;
 using Veldrath.GameClient.Core.Abstractions;
 using Veldrath.GameClient.Core.Services;
 using Veldrath.Web;
@@ -45,7 +46,15 @@ try
         new VeldrathApiClient(
             sp.GetRequiredService<IHttpClientFactory>().CreateClient("veldrath-web")));
 
+    // Register the API client under its interface so RCL components can inject IGameApiClient.
+    builder.Services.AddScoped<IGameApiClient>(sp =>
+        sp.GetRequiredService<VeldrathApiClient>());
+
     builder.Services.AddScoped<AuthStateService>();
+
+    // Register the base class so RCL components can inject AuthStateServiceBase.
+    builder.Services.AddScoped<AuthStateServiceBase>(sp =>
+        sp.GetRequiredService<AuthStateService>());
 
     // Game client services — registered as interfaces for abstraction.
     builder.Services.AddScoped<IGameHubConnectionService, GameHubConnectionService>();

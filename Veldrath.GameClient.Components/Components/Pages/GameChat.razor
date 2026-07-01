@@ -1,5 +1,7 @@
 @using Veldrath.GameClient.Core.Services
 @* Chat panel showing message history with an input field and send button. *@
+@inject IGameHubConnectionService Hub
+@inject GameStateService GameState
 
 <div class="game-chat">
     <div class="game-chat-messages">
@@ -31,12 +33,6 @@
 </div>
 
 @code {
-    /// <summary>The game hub connection service, injected by Blazor.</summary>
-    [Inject] private GameHubConnectionService Hub { get; set; } = null!;
-
-    /// <summary>The game state service, injected by Blazor.</summary>
-    [Inject] private GameStateService GameState { get; set; } = null!;
-
     private string _inputText = string.Empty;
     private IDisposable? _stateSubscription;
 

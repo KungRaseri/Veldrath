@@ -5,4 +5,5 @@
   <Project Path="RealmEngine.Data/RealmEngine.Data.csproj" />
   <Project Path="RealmForge/RealmForge.csproj" />
   <Project Path="RealmForge.Tests/RealmForge.Tests.csproj" />
+  <Project Path="Veldrath.GameClient.Components/Veldrath.GameClient.Components.csproj" />
 </Solution>

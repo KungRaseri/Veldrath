@@ -1,5 +1,8 @@
 @using Veldrath.GameClient.Core.Services
 @* Sidebar panel showing player info, stats, zone occupants/enemies, and navigation buttons. *@
+@inject GameStateService GameState
+@inject NavigationManager Navigation
+@inject IGameHubConnectionService Hub
 
 <div class="game-sidebar">
     @if (GameState.CurrentCharacter is { } character)
@@ -12,8 +15,6 @@
 
         <div class="sidebar-section sidebar-attrs">
             <h4>Attributes</h4>
-            @* CharacterBasicInfo doesn't expose individual attributes from the hub payload directly.
-               These would be expanded in Phase 2 when the server sends attribute data. *@
             <p>HP: @character.CurrentHealth / @character.MaxHealth</p>
             <p>MP: @character.CurrentMana / @character.MaxMana</p>
             <p>XP: @character.Experience / @character.EffectiveExperienceToNextLevel</p>
@@ -21,7 +22,7 @@
     }
 
     <div class="sidebar-section sidebar-occupants">
-        <h4>Nearby Players (@GameState.ZoneOccupants.Count)</h4>
+        <h4>Nearby Players (@(!string.IsNullOrEmpty(GameState.CurrentZoneId) ? GameState.ZoneOccupants.Count.ToString() : "0"))</h4>
         @if (GameState.ZoneOccupants.Count == 0)
         {
             <p class="sidebar-empty">No other players nearby.</p>
@@ -77,15 +78,6 @@
 </div>
 
 @code {
-    /// <summary>The game state service, injected by Blazor.</summary>
-    [Inject] private GameStateService GameState { get; set; } = null!;
-
-    /// <summary>The navigation manager, injected by Blazor.</summary>
-    [Inject] private NavigationManager Navigation { get; set; } = null!;
-
-    /// <summary>The game hub connection service, injected by Blazor.</summary>
-    [Inject] private GameHubConnectionService Hub { get; set; } = null!;
-
     private void NavigateTo(string url) => Navigation.NavigateTo(url);
 
     private async Task Logout()

@@ -1,5 +1,5 @@
+@using Veldrath.GameClient.Core.Services
 @* Single tile renderer for the zone tilemap. Renders a <div> with the appropriate CSS class and overlays. *@
-@* Note: The Tile type used in @code is Veldrath.GameClient.Core.Services.Tile, not this component. *@
 
 <div class="game-tile @GetTileClass()"
      @onclick="() => OnClick.InvokeAsync((X, Y))"
@@ -35,10 +35,10 @@
     [Parameter] public bool IsPlayerHere { get; set; }
 
     /// <summary>An occupant (other player) on this tile, if any.</summary>
-    [Parameter] public Veldrath.GameClient.Core.Services.OccupantInfo? Occupant { get; set; }
+    [Parameter] public OccupantInfo? Occupant { get; set; }
 
     /// <summary>An enemy on this tile, if any.</summary>
-    [Parameter] public Veldrath.GameClient.Core.Services.EnemyInfo? Enemy { get; set; }
+    [Parameter] public EnemyInfo? Enemy { get; set; }
 
     private string GetTileClass() => TileData.Type switch
     {

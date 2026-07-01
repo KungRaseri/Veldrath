@@ -4,6 +4,7 @@ using Veldrath.Contracts.Characters;
 using Veldrath.Contracts.Content;
 using Veldrath.Contracts.Editorial;
 using Veldrath.Contracts.Foundry;
+using Veldrath.GameClient.Core.Abstractions;
 
 namespace Veldrath.Web.Services;
 
@@ -13,7 +14,7 @@ namespace Veldrath.Web.Services;
 /// Configure the base address via <c>Veldrath:ServerUrl</c> at startup.
 /// Call <see cref="VeldrathAuthApiClient.SetBearerToken"/> after login to authorise authenticated requests.
 /// </summary>
-public class VeldrathApiClient(HttpClient http) : VeldrathAuthApiClient(http)
+public class VeldrathApiClient(HttpClient http) : VeldrathAuthApiClient(http), Veldrath.GameClient.Core.Abstractions.IGameApiClient
 {
     // ── Characters ───────────────────────────────────────────────────────────
 
