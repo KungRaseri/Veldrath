@@ -211,6 +211,24 @@ public class GameHub : Hub
         var savedX = character.TileX != 0 || character.TileY != 0 ? character.TileX : 1;
         var savedY = character.TileX != 0 || character.TileY != 0 ? character.TileY : 1;
 
+        // Auto-unstick safety net: if the saved position is (0,0) or blocked on the region map,
+        // force-teleport the character to the nearest walkable tile.
+        // If the region tilemap isn't available yet, the check is deferred to EnterZone
+        // (which always has a zone map and already calls FindWalkableSpawn).
+        var regionMap = await _tilemapRepo.GetByRegionIdAsync(regionId);
+        if (regionMap is not null)
+        {
+            if ((savedX == 0 && savedY == 0) || regionMap.IsBlocked(savedX, savedY))
+            {
+                var originalX = savedX;
+                var originalY = savedY;
+                (savedX, savedY) = FindWalkableSpawn(regionMap, 1, 1);
+                _logger.LogWarning(
+                    "Character {CharacterName} was stuck at ({OriginalX},{OriginalY}) on region map — relocated to ({NewX},{NewY})",
+                    character.Name, originalX, originalY, savedX, savedY);
+            }
+        }
+
         // Create a region-map session (ZoneId = null means on the region map, not inside a zone)
         await _playerSessionRepo.AddAsync(new PlayerSession
         {
