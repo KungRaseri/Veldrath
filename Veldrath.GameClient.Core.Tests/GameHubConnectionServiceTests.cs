@@ -1,3 +1,4 @@
+using Veldrath.GameClient.Core.Models;
 using Veldrath.GameClient.Core.Tests.Infrastructure;
 
 namespace Veldrath.GameClient.Core.Tests;
@@ -21,7 +22,7 @@ public sealed class GameHubConnectionServiceTests
 
         service.ConnectCalled.Should().BeTrue();
         service.IsConnected.Should().BeTrue();
-        service.State.Should().Be(Models.ConnectionState.Connected);
+        service.State.Should().Be(ConnectionState.Connected);
     }
 
     /// <summary>Verifies DisconnectAsync changes state to Disconnected.</summary>
@@ -36,7 +37,7 @@ public sealed class GameHubConnectionServiceTests
 
         service.DisconnectCalled.Should().BeTrue();
         service.IsConnected.Should().BeFalse();
-        service.State.Should().Be(Models.ConnectionState.Disconnected);
+        service.State.Should().Be(ConnectionState.Disconnected);
     }
 
     /// <summary>Verifies StateChanged event fires on connect.</summary>
@@ -49,7 +50,7 @@ public sealed class GameHubConnectionServiceTests
 
         await service.ConnectAsync("http://localhost:5000", "test-token");
 
-        capturedState.Should().Be(Models.ConnectionState.Connected);
+        capturedState.Should().Be(ConnectionState.Connected);
     }
 
     /// <summary>Verifies StateChanged event fires on disconnect.</summary>
@@ -64,7 +65,7 @@ public sealed class GameHubConnectionServiceTests
 
         await service.DisconnectAsync();
 
-        capturedState.Should().Be(Models.ConnectionState.Disconnected);
+        capturedState.Should().Be(ConnectionState.Disconnected);
     }
 
     // ── Send ───────────────────────────────────────────────────────────────────

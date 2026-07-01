@@ -8,6 +8,8 @@ using Veldrath.GameClient.Core.Abstractions;
 using Veldrath.GameClient.Core.Payloads;
 using Veldrath.GameClient.Core.Services;
 using Veldrath.Web.Services;
+// Aliases to resolve type name conflicts with Veldrath.Contracts types.
+using GameChatMessagePayload = Veldrath.GameClient.Core.Payloads.ChatMessageHubDto;
 
 namespace Veldrath.Web.Components.Pages.Game;
 
@@ -198,7 +200,8 @@ public sealed partial class Game : IAsyncDisposable
         }));
 
         // CharacterMoved — update player or other character position.
-        _hubSubscriptions.Add(Hub.On<CharacterMovedPayload>("CharacterMoved", async payload =>
+        // Use Veldrath.Contracts.Tilemap.CharacterMovedPayload (shared with server).
+        _hubSubscriptions.Add(Hub.On<Veldrath.Contracts.Tilemap.CharacterMovedPayload>("CharacterMoved", async payload =>
         {
             GameState.ApplyCharacterMoved(payload);
             await InvokeAsync(StateHasChanged);
@@ -257,7 +260,7 @@ public sealed partial class Game : IAsyncDisposable
         }));
 
         // ReceiveChatMessage — incoming chat message.
-        _hubSubscriptions.Add(Hub.On<ChatMessagePayload>("ReceiveChatMessage", async payload =>
+        _hubSubscriptions.Add(Hub.On<GameChatMessagePayload>("ReceiveChatMessage", async payload =>
         {
             GameState.ApplyChatMessage(payload);
             await InvokeAsync(StateHasChanged);
@@ -285,7 +288,8 @@ public sealed partial class Game : IAsyncDisposable
         }));
 
         // ZoneEntitiesSnapshot — update occupants and enemies with positions.
-        _hubSubscriptions.Add(Hub.On<ZoneEntitiesSnapshotPayload>("ZoneEntitiesSnapshot", async payload =>
+        // Use Veldrath.Contracts.Tilemap.ZoneEntitiesSnapshotPayload (shared with server).
+        _hubSubscriptions.Add(Hub.On<Veldrath.Contracts.Tilemap.ZoneEntitiesSnapshotPayload>("ZoneEntitiesSnapshot", async payload =>
         {
             GameState.ApplyZoneEntitiesSnapshot(payload);
             await InvokeAsync(StateHasChanged);

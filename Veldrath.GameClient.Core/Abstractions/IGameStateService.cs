@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Veldrath.Contracts.Tilemap;
 using Veldrath.GameClient.Core.Payloads;
 
 namespace Veldrath.GameClient.Core.Abstractions;
@@ -70,7 +71,7 @@ public interface IGameStateService : INotifyPropertyChanged
 
     /// <summary>Appends a chat message to the chat log.</summary>
     /// <param name="payload">The chat message payload from the hub event.</param>
-    void ApplyChatMessage(ChatMessagePayload payload);
+    void ApplyChatMessage(ChatMessageHubDto payload);
 
     /// <summary>Updates state when another player enters the zone.</summary>
     /// <param name="payload">The player entered payload from the hub event.</param>
@@ -82,11 +83,11 @@ public interface IGameStateService : INotifyPropertyChanged
 
     /// <summary>Updates the player's position after a movement action.</summary>
     /// <param name="payload">The character moved payload from the hub event.</param>
-    void ApplyCharacterMoved(CharacterMovedPayload payload);
+    void ApplyCharacterMoved(Veldrath.Contracts.Tilemap.CharacterMovedPayload payload);
 
     /// <summary>Replaces the current zone entities snapshot (occupants and enemies).</summary>
     /// <param name="payload">The zone entities snapshot payload from the hub event.</param>
-    void ApplyZoneEntitiesSnapshot(ZoneEntitiesSnapshotPayload payload);
+    void ApplyZoneEntitiesSnapshot(Veldrath.Contracts.Tilemap.ZoneEntitiesSnapshotPayload payload);
 
     /// <summary>Handles notification that an enemy has been defeated.</summary>
     /// <param name="payload">The enemy defeated payload from the hub event.</param>

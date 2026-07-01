@@ -98,7 +98,7 @@ public sealed class GameStateServiceTests
     public void ApplyChatMessage_Records_Call()
     {
         var state = new FakeGameStateService();
-        var payload = new ChatMessagePayload(
+        var payload = new ChatMessageHubDto(
             Guid.NewGuid(), "zone", "TestHero", "Hello!", DateTimeOffset.UtcNow);
 
         state.ApplyChatMessage(payload);
@@ -139,7 +139,7 @@ public sealed class GameStateServiceTests
     public void ApplyCharacterMoved_Records_Call()
     {
         var state = new FakeGameStateService();
-        var payload = new CharacterMovedPayload(Guid.NewGuid(), 5, 10, "N");
+        var payload = new Veldrath.Contracts.Tilemap.CharacterMovedPayload(Guid.NewGuid(), 5, 10, "N");
 
         state.ApplyCharacterMoved(payload);
 
@@ -208,8 +208,8 @@ public sealed class GameStateServiceTests
     public void ApplyZoneEntitiesSnapshot_Records_Call()
     {
         var state = new FakeGameStateService();
-        var payload = new ZoneEntitiesSnapshotPayload([
-            new TileEntityDtoEntry(Guid.NewGuid(), "player", "hero", 3, 7, "S")
+        var payload = new Veldrath.Contracts.Tilemap.ZoneEntitiesSnapshotPayload([
+            new Veldrath.Contracts.Tilemap.TileEntityDto(Guid.NewGuid(), "player", "hero", 3, 7, "S")
         ]);
 
         state.ApplyZoneEntitiesSnapshot(payload);
