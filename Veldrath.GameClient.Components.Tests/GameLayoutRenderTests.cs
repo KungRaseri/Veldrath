@@ -1,5 +1,6 @@
 using Bunit;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Veldrath.Auth.Blazor;
 using Veldrath.GameClient.Components.Components.Layout;
@@ -30,6 +31,14 @@ public class GameLayoutRenderTests : TestContext
         Services.AddSingleton<IGameHubConnectionService>(_fakeHub);
         Services.AddSingleton<IGameStateService>(_gameState);
         Services.AddSingleton(_gameState);
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Veldrath:ServerUrl"] = "http://localhost:5000",
+            })
+            .Build();
+        Services.AddSingleton<IConfiguration>(config);
 
         var fakeAuthApi = new FakeVeldrathAuthApiClient();
         Services.AddSingleton(fakeAuthApi);

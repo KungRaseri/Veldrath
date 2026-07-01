@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Components.Authorization;
+using System.Security.Claims;
 using Veldrath.Auth;
 using Veldrath.Contracts.Auth;
 
@@ -5,6 +7,8 @@ namespace Veldrath.Auth.Blazor;
 
 /// <summary>
 /// Base class for Blazor Server circuit-scoped authentication state services.
+/// Extends <see cref="AuthenticationStateProvider"/> so the Blazor framework can
+/// discover the auth state for <c>[Authorize]</c> route protection.
 /// Holds the JWT and refresh token in server-side circuit memory only — tokens are
 /// never exposed to browser storage or JavaScript, preventing XSS-based token theft.
 /// </summary>
@@ -16,7 +20,7 @@ namespace Veldrath.Auth.Blazor;
 /// Call <c>base.SetTokensAsync</c> / <c>base.ClearState</c> from overrides to ensure
 /// base fields are correctly updated before <see cref="OnChange"/> fires.
 /// </remarks>
-public abstract class AuthStateServiceBase(IVeldrathAuthApiClient api)
+public abstract class AuthStateServiceBase(IVeldrathAuthApiClient api) : AuthenticationStateProvider
 {
     /// <summary>Raw access token held in circuit memory.</summary>
     protected string? _accessToken;
@@ -177,6 +181,39 @@ public abstract class AuthStateServiceBase(IVeldrathAuthApiClient api)
         AccessTokenExpiry = null;
     }
 
-    /// <summary>Fires <see cref="OnChange"/> to notify subscribers of a state change.</summary>
-    protected void NotifyStateChanged() => OnChange?.Invoke();
+    /// <inheritdoc />
+    /// <remarks>
+    /// Returns an anonymous <see cref="ClaimsPrincipal"/> when not logged in,
+    /// or a principal built from the in-memory JWT claims when authenticated.
+    /// </remarks>
+    public override Task<AuthenticationState> GetAuthenticationStateAsync()
+    {
+        if (!IsLoggedIn)
+        {
+            return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())));
+        }
+
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.Name, Username ?? string.Empty),
+            new(ClaimTypes.NameIdentifier, AccountId?.ToString() ?? string.Empty),
+        };
+
+        foreach (var role in Roles)
+            claims.Add(new Claim(ClaimTypes.Role, role));
+
+        foreach (var perm in Permissions)
+            claims.Add(new Claim("permission", perm));
+
+        var identity = new ClaimsIdentity(claims, "jwt");
+        return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(identity)));
+    }
+
+    /// <summary>Fires <see cref="OnChange"/> and <see cref="AuthenticationStateProvider.NotifyAuthenticationStateChanged"/>
+    /// to notify both custom subscribers and the Blazor framework of a state change.</summary>
+    protected void NotifyStateChanged()
+    {
+        OnChange?.Invoke();
+        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+    }
 }

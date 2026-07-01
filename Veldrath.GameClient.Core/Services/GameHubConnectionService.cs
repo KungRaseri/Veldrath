@@ -21,10 +21,11 @@ public sealed class GameHubConnectionService : IGameHubConnectionService, IAsync
     private ConnectionState _state = ConnectionState.Disconnected;
 
     /// <summary>
-    /// Holds handler registrations that were made before <see cref="ConnectAsync"/> was called.
-    /// Applied to <c>_connection</c> after it is built, before it is started.
+    /// Persistent handler registrations that survive connection rebuilds.
+    /// Applied to <c>_connection</c> every time a new <see cref="HubConnection"/> is created
+    /// in <see cref="ConnectAsync"/>, so handlers are never lost across reconnects.
     /// </summary>
-    private readonly List<Func<HubConnection, IDisposable>> _pendingOnRegistrations = [];
+    private readonly List<Func<HubConnection, IDisposable>> _persistentOnRegistrations = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GameHubConnectionService"/> class.
@@ -90,12 +91,12 @@ public sealed class GameHubConnectionService : IGameHubConnectionService, IAsync
                 .WithAutomaticReconnect(new RetryPolicy())
                 .Build();
 
-            // Apply any handler registrations that were made before ConnectAsync was called.
-            foreach (var registration in _pendingOnRegistrations)
+            // Apply persistent handler registrations to the new connection.
+            // These survive reconnects — see On<T> for registration tracking.
+            foreach (var registration in _persistentOnRegistrations)
             {
                 registration(_connection);
             }
-            _pendingOnRegistrations.Clear();
 
             _connection.Closed += reason =>
             {
@@ -198,23 +199,24 @@ public sealed class GameHubConnectionService : IGameHubConnectionService, IAsync
     /// <inheritdoc />
     public IDisposable On<T>(string methodName, Func<T, Task> handler)
     {
-        if (_connection is not null)
-        {
-            return _connection.On(methodName, handler);
-        }
-
-        // Connection not yet built — defer the handler registration so it is applied
-        // in ConnectAsync after the HubConnection is created but before it is started.
         var deferred = new DeferredDisposable();
-        _pendingOnRegistrations.Add(conn =>
+
+        Func<HubConnection, IDisposable> factory = conn =>
         {
             var real = conn.On(methodName, handler);
             deferred.SetInner(real);
             return real;
-        });
+        };
+
+        _persistentOnRegistrations.Add(factory);
+
+        if (_connection is not null)
+        {
+            factory(_connection);
+        }
 
         _logger.LogDebug(
-            "On<{T1}>(\"{Method}\") deferred — _connection was null; will register during ConnectAsync.",
+            "On<{T1}>(\"{Method}\") registered (persistent across reconnects).",
             typeof(T).Name, methodName);
 
         return deferred;
@@ -223,23 +225,24 @@ public sealed class GameHubConnectionService : IGameHubConnectionService, IAsync
     /// <inheritdoc />
     public IDisposable On<T1, T2>(string methodName, Func<T1, T2, Task> handler)
     {
-        if (_connection is not null)
-        {
-            return _connection.On(methodName, handler);
-        }
-
-        // Connection not yet built — defer the handler registration so it is applied
-        // in ConnectAsync after the HubConnection is created but before it is started.
         var deferred = new DeferredDisposable();
-        _pendingOnRegistrations.Add(conn =>
+
+        Func<HubConnection, IDisposable> factory = conn =>
         {
             var real = conn.On(methodName, handler);
             deferred.SetInner(real);
             return real;
-        });
+        };
+
+        _persistentOnRegistrations.Add(factory);
+
+        if (_connection is not null)
+        {
+            factory(_connection);
+        }
 
         _logger.LogDebug(
-            "On<{T1},{T2}>(\"{Method}\") deferred — _connection was null; will register during ConnectAsync.",
+            "On<{T1},{T2}>(\"{Method}\") registered (persistent across reconnects).",
             typeof(T1).Name, typeof(T2).Name, methodName);
 
         return deferred;
@@ -255,23 +258,24 @@ public sealed class GameHubConnectionService : IGameHubConnectionService, IAsync
     /// <returns>An <see cref="IDisposable"/> that unsubscribes the handler when disposed.</returns>
     public IDisposable On(string methodName, Func<Task> handler)
     {
-        if (_connection is not null)
-        {
-            return _connection.On(methodName, handler);
-        }
-
-        // Connection not yet built — defer the handler registration so it is applied
-        // in ConnectAsync after the HubConnection is created but before it is started.
         var deferred = new DeferredDisposable();
-        _pendingOnRegistrations.Add(conn =>
+
+        Func<HubConnection, IDisposable> factory = conn =>
         {
             var real = conn.On(methodName, handler);
             deferred.SetInner(real);
             return real;
-        });
+        };
+
+        _persistentOnRegistrations.Add(factory);
+
+        if (_connection is not null)
+        {
+            factory(_connection);
+        }
 
         _logger.LogDebug(
-            "On(\"{Method}\") deferred — _connection was null; will register during ConnectAsync.",
+            "On(\"{Method}\") registered (persistent across reconnects).",
             methodName);
 
         return deferred;
@@ -308,30 +312,41 @@ public sealed class GameHubConnectionService : IGameHubConnectionService, IAsync
     }
 
     /// <summary>
-    /// Simple retry policy for automatic SignalR reconnection.
-    /// Retries at 0s, 2s, 10s, 30s then gives up.
+    /// Exponential-backoff retry policy for automatic SignalR reconnection.
+    /// Retries up to 10 times with delays of 0s, 1s, 2s, 4s, 8s, 16s, 32s, 64s, 90s, 90s
+    /// (capped at 90 seconds; ~5 minutes total before giving up).
+    /// Uses <see cref="RetryContext.PreviousRetryCount"/> for stateless tracking so
+    /// the counter naturally resets on each new disconnect cycle.
     /// </summary>
     private sealed class RetryPolicy : IRetryPolicy
     {
-        private readonly TimeSpan[] _retryDelays =
-        [
-            TimeSpan.Zero,
-            TimeSpan.FromSeconds(2),
-            TimeSpan.FromSeconds(10),
-            TimeSpan.FromSeconds(30)
-        ];
-
-        private int _attempt;
+        private const int MaxAttempts = 10;
 
         /// <inheritdoc />
         public TimeSpan? NextRetryDelay(RetryContext retryContext)
         {
-            if (_attempt < _retryDelays.Length)
+            var attempt = retryContext.PreviousRetryCount;
+
+            if (attempt >= MaxAttempts)
             {
-                return _retryDelays[_attempt++];
+                return null; // Give up after exhausting all retry attempts.
             }
 
-            return null; // Give up after exhausting all retry attempts.
+            // Exponential backoff: 0, 1, 2, 4, 8, 16, 32, 64, 90, 90 seconds (cap at 90s)
+            var seconds = attempt switch
+            {
+                0 => 0,
+                1 => 1,
+                2 => 2,
+                3 => 4,
+                4 => 8,
+                5 => 16,
+                6 => 32,
+                7 => 64,
+                _ => 90
+            };
+
+            return TimeSpan.FromSeconds(seconds);
         }
     }
 
@@ -345,13 +360,19 @@ public sealed class GameHubConnectionService : IGameHubConnectionService, IAsync
     private sealed class DeferredDisposable : IDisposable
     {
         private IDisposable? _inner;
-        private bool _disposed;
+        private volatile bool _disposed;
 
-        /// <summary>Sets the real <see cref="IDisposable"/> that this wrapper delegates to.</summary>
+        /// <summary>
+        /// Sets the real <see cref="IDisposable"/> that this wrapper delegates to.
+        /// If a previous subscription exists, it is disposed before the new one is set,
+        /// supporting re-registration across reconnects.
+        /// </summary>
         /// <param name="inner">The actual subscription disposable from <c>HubConnection.On</c>.</param>
         public void SetInner(IDisposable inner)
         {
-            _inner = inner;
+            var old = Interlocked.Exchange(ref _inner, inner);
+            old?.Dispose();
+
             if (_disposed)
             {
                 inner.Dispose();
@@ -363,7 +384,7 @@ public sealed class GameHubConnectionService : IGameHubConnectionService, IAsync
         {
             if (_disposed) return;
             _disposed = true;
-            _inner?.Dispose();
+            Interlocked.Exchange(ref _inner, null)?.Dispose();
         }
     }
 }
