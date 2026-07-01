@@ -1,5 +1,4 @@
 @using Veldrath.GameClient.Core.Abstractions
-@using Veldrath.GameClient.Core.Services
 @inherits LayoutComponentBase
 @inject IGameStateService GameState
 @inject IGameHubConnectionService Hub
@@ -21,10 +20,7 @@
 @code {
     private async Task HandleReturnToMenu()
     {
-        if (GameState is GameStateService gs)
-        {
-            gs.ApplySystemMessage("Returning to main menu...");
-        }
+        GameState.ApplySystemMessage("Returning to main menu...");
         Navigation.NavigateTo("/");
     }
 }

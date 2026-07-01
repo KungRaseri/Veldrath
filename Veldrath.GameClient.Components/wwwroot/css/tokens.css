@@ -41,6 +41,8 @@
   --vds-pressed:  #252639;
   --vds-selected: #252639;
 
+  --vds-pink: #f472b6;
+
   --vds-oauth-discord:   #5865F2;
   --vds-oauth-google:    #4285F4;
   --vds-oauth-microsoft: #0078D4;
@@ -89,6 +91,30 @@ body {
 }
 
 h1, h2, h3 { font-family: var(--vds-font-heading); }
+
+a { color: var(--vds-seal-light); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+
+.btn {
+    display: inline-block;
+    padding: .5rem 1.25rem;
+    border-radius: var(--vds-radius-md);
+    background: var(--vds-bg-2);
+    color: var(--vds-text);
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--vds-border);
+    font-family: var(--vds-font-body);
+}
+
+.btn:hover { background: var(--vds-hover); text-decoration: none; }
+.btn-primary   { background: var(--vds-seal);             color: #fff; border-color: var(--vds-seal-dark); }
+.btn-primary:hover { background: var(--vds-seal-light);   text-decoration: none; }
+.btn-discord   { background: var(--vds-oauth-discord);   color: #fff; border: none; }
+.btn-google    { background: var(--vds-oauth-google);    color: #fff; border: none; }
+.btn-microsoft { background: var(--vds-oauth-microsoft); color: #fff; border: none; }
 
 /* Blazor error UI */
 #blazor-error-ui {

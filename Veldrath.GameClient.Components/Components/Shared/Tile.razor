@@ -1,4 +1,4 @@
-@using Veldrath.GameClient.Core.Services
+@using Veldrath.GameClient.Core.Abstractions
 @* Single tile renderer for the zone tilemap. Renders a <div> with the appropriate CSS class and overlays. *@
 
 <div class="game-tile @GetTileClass()"
@@ -20,7 +20,7 @@
 
 @code {
     /// <summary>The tile data to render.</summary>
-    [Parameter] public Veldrath.GameClient.Core.Services.Tile TileData { get; set; } = null!;
+    [Parameter] public Veldrath.GameClient.Core.Abstractions.Tile TileData { get; set; } = null!;
 
     /// <summary>The column position of this tile in the grid.</summary>
     [Parameter] public int X { get; set; }

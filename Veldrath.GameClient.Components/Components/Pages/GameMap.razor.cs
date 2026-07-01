@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Components;
 using Veldrath.Contracts.Tilemap;
 using Veldrath.GameClient.Components.Models;
 using Veldrath.GameClient.Core.Abstractions;
-using Veldrath.GameClient.Core.Services;
 
 namespace Veldrath.GameClient.Components.Components.Pages;
 
@@ -18,6 +17,7 @@ public partial class GameMap : IDisposable
     private bool _isLoading = true;
     private string? _errorMessage;
     private bool _showLegend = true;
+    private string _targetRegionId = string.Empty;
     private IDisposable? _regionMapSubscription;
     private IDisposable? _stateSubscription;
 
@@ -34,7 +34,7 @@ public partial class GameMap : IDisposable
     private IGameHubConnectionService Hub { get; set; } = null!;
 
     [Inject]
-    private GameStateService GameState { get; set; } = null!;
+    private IGameStateService GameState { get; set; } = null!;
 
     [Inject]
     private NavigationManager Navigation { get; set; } = null!;
@@ -158,6 +158,30 @@ public partial class GameMap : IDisposable
     private async Task LoadRegionMap()
     {
         await LoadRegionMapAsync();
+    }
+
+    /// <summary>
+    /// G73: Sends the <c>ChangeRegion</c> hub command to travel to a different region.
+    /// </summary>
+    private async Task ChangeRegionAsync()
+    {
+        var target = _targetRegionId?.Trim();
+        if (string.IsNullOrEmpty(target))
+            return;
+
+        try
+        {
+            if (Hub.IsConnected)
+            {
+                await Hub.SendAsync("ChangeRegion", target);
+                _targetRegionId = string.Empty;
+            }
+        }
+        catch (Exception)
+        {
+            // Region change failure is handled silently — the server will
+            // send an error via the SystemMessage channel if applicable.
+        }
     }
 
     /// <summary>
