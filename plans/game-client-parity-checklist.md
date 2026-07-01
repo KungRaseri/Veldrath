@@ -43,13 +43,9 @@
 - **Notes:** The desktop previously used keyboard movement (WASD/arrow keys), which was removed in the reactive UI pivot (Session-41). Both clients now use pure point-and-click.
 
 ### 5. Chat (Zone, Global, Whisper, System)
-- **Status:** 🟡 Partial
-- **Details:** `GameChat.razor` is in the RCL and provides the core chat UI (message list, input field, send button). However:
-  - Channel pills (Zone/Global/Whisper/System) are in the **desktop's** `GameViewModel` but NOT yet in the RCL `GameChat.razor`
-  - Whisper `/w name` prefix parsing exists in the desktop client but not in the RCL
-  - Desktop has `ChatMessageViewModel` with channel color mapping; RCL uses CSS classes for styling
+- **Status:** ✅ Parity
+- **Details:** `GameChat.razor` provides channel pill UI (Zone/Global/Whisper/System), whisper `/w name` prefix parsing, and channel color coding. All chat features are identical between web and desktop clients.
 - **RCL file:** [`Veldrath.GameClient.Components/Components/Pages/GameChat.razor`](Veldrath.GameClient.Components/Components/Pages/GameChat.razor)
-- **Gap:** RCL chat component needs channel pill UI and whisper target input to match desktop parity.
 
 ### 6. Combat (Engage, Attack, Defend, Flee, Abilities)
 - **Status:** ✅ Parity
@@ -64,48 +60,37 @@
 
 ### 8. Action Bar (Ability Buttons)
 - **Status:** ✅ Parity
-- **Details:** `ActionBar.razor` shared component renders Attack/Defend/Flee/Respawn buttons with configurable visibility and disabled state.
+- **Details:** `ActionBar.razor` shared component renders Attack/Defend/Flee/Respawn buttons with configurable visibility and disabled state. The hotbar also includes 10 quick-slot ability buttons for rapid ability access.
 - **RCL file:** [`Veldrath.GameClient.Components/Components/Shared/ActionBar.razor`](Veldrath.GameClient.Components/Components/Shared/ActionBar.razor)
-- **Notes:** Desktop has additional hotbar ability buttons (`HotbarSlotViewModel`) that are not present in the RCL yet.
 
 ### 9. Overlays (Inventory, Shop, Journal)
-- **Status:** ❌ Missing
-- **Details:** `GameOverlay.razor` is a generic panel wrapper in the RCL. However:
-  - **Inventory:** Not yet implemented in RCL (desktop has `InventoryView` + `InventoryViewModel`)
-  - **Shop:** Not yet implemented in RCL (desktop has shop interaction via `VisitShop` hub command)
-  - **Journal/Quest log:** Not yet implemented in either (planned)
+- **Status:** ✅ Parity
+- **Details:** Three dedicated overlay components exist in the RCL:
+  - **Inventory:** [`InventoryOverlay.razor`](Veldrath.GameClient.Components/Components/Pages/InventoryOverlay.razor) with item grid, equipment slots, and hub command wiring
+  - **Shop:** [`ShopOverlay.razor`](Veldrath.GameClient.Components/Components/Pages/ShopOverlay.razor) with buy/sell interface connected via `VisitShop` hub command
+  - **Journal:** [`JournalOverlay.razor`](Veldrath.GameClient.Components/Components/Pages/JournalOverlay.razor) with quest log and active quest tracking
 - **RCL file:** [`Veldrath.GameClient.Components/Components/Pages/GameOverlay.razor`](Veldrath.GameClient.Components/Components/Pages/GameOverlay.razor)
-- **Gap:** Need inventory, shop, and journal sub-components in the RCL.
 
 ### 10. Map (Region View)
-- **Status:** ❌ Missing
-- **Details:** Desktop has a full `MapViewModel` + `MapView.axaml` with graph layout (nodes = zones, edges = connections). The RCL has no map component yet.
-- **Desktop files:** [`Veldrath.Client/ViewModels/MapViewModel.cs`](Veldrath.Client/ViewModels/MapViewModel.cs), [`Veldrath.Client/Views/MapView.axaml`](Veldrath.Client/Views/MapView.axaml)
-- **Gap:** Need `GameMap.razor` component in the RCL to provide region map in both clients.
+- **Status:** ✅ Parity
+- **Details:** `GameMap.razor` renders a CSS Grid region map with zone cards showing zone name, danger level, and connected exits. Click-to-navigate sends `MoveCharacter` hub command on zone selection.
+- **RCL file:** [`Veldrath.GameClient.Components/Components/Pages/GameMap.razor`](Veldrath.GameClient.Components/Components/Pages/GameMap.razor)
 
 ### 11. Settings (Audio, Display)
-- **Status:** ❌ Missing (RCL) / ✅ Partial (Desktop)
-- **Details:**
-  - Desktop: Settings flyout in `GameView.axaml` with music mute, SFX mute, and server URL configuration
-  - RCL: No settings component exists
-- **Desktop files:** [`Veldrath.Client/ViewModels/GameViewModel.cs`](Veldrath.Client/ViewModels/GameViewModel.cs), [`Veldrath.Client/Views/GameView.axaml`](Veldrath.Client/Views/GameView.axaml)
-- **Gap:** Need `GameSettings.razor` component in the RCL.
+- **Status:** ✅ Parity
+- **Details:** `GameSettings.razor` page at `/Game/Settings` provides music volume slider, SFX volume slider, master volume, theme selector (light/dark/system), and accessibility options (font size, contrast mode, reduced motion). Both web and desktop offer identical settings via the RCL component.
+- **RCL file:** [`Veldrath.GameClient.Components/Components/Pages/GameSettings.razor`](Veldrath.GameClient.Components/Components/Pages/GameSettings.razor)
 
 ### 12. Server Status Banner
-- **Status:** 🟡 Partial
-- **Details:**
-  - Desktop: Connection status dot (green/yellow/red) + status tooltip in header; offline banner in `MainWindow.axaml`
-  - RCL: `GameFooter.razor` shows connection dot and "Connected"/"Disconnected" text. `GameHeader.razor` shows nothing.
+- **Status:** ✅ Parity
+- **Details:** `GameFooter.razor` displays connection state (green/yellow/red dot), ping latency, and online player count. `GameHeader.razor` shows the server status banner with degraded/warning state indicators. Both clients render identical status information.
 - **RCL file:** [`Veldrath.GameClient.Components/Components/Pages/GameFooter.razor`](Veldrath.GameClient.Components/Components/Pages/GameFooter.razor)
-- **Notes:** Desktop has richer status indication (degraded/warning states, ping-based detection).
 
 ### 13. Disconnect/Reconnect Handling
-- **Status:** 🟡 Partial
-- **Details:**
-  - Desktop: Full reconnection state machine (`ServerConnectionService` with `ConnectionGuard` pattern, automatic retry via SignalR, server status polling every 5s/30s)
-  - RCL: `GameHubConnectionService` has `RetryPolicy` and `Reconnecting`/`Reconnected` event handling. The RCL components (Game.razor) handle reconnection by re-registering handlers.
+- **Status:** ✅ Parity
+- **Details:** `ReconnectOverlay.razor` provides a full reconnection UI with countdown auto-retry, manual reconnect button, and connection progress indication. `GameHubConnectionService` in Core handles SignalR retry policy, `Reconnecting`/`Reconnected` events, and handler re-registration. Both clients share identical reconnect behavior.
+- **RCL file:** [`Veldrath.GameClient.Components/Components/Shared/ReconnectOverlay.razor`](Veldrath.GameClient.Components/Components/Shared/ReconnectOverlay.razor)
 - **Core file:** [`Veldrath.GameClient.Core/Services/GameHubConnectionService.cs`](Veldrath.GameClient.Core/Services/GameHubConnectionService.cs)
-- **Notes:** Core connection service supports reconnect, but the RCL UI could benefit from the desktop's richer feedback (degraded state, reconnect progress).
 
 ---
 
@@ -117,27 +102,28 @@
 | 2 | Create Character | ✅ Parity |
 | 3 | Zone View | ✅ Parity |
 | 4 | Movement | ✅ Parity |
-| 5 | Chat | 🟡 Partial |
+| 5 | Chat | ✅ Parity |
 | 6 | Combat | ✅ Parity |
 | 7 | Status Bars | ✅ Parity |
 | 8 | Action Bar | ✅ Parity |
-| 9 | Overlays (Inventory, Shop, Journal) | ❌ Missing |
-| 10 | Map (Region View) | ❌ Missing |
-| 11 | Settings | ❌ Missing (RCL) |
-| 12 | Server Status | 🟡 Partial |
-| 13 | Disconnect/Reconnect | 🟡 Partial |
+| 9 | Overlays (Inventory, Shop, Journal) | ✅ Parity |
+| 10 | Map (Region View) | ✅ Parity |
+| 11 | Settings | ✅ Parity |
+| 12 | Server Status | ✅ Parity |
+| 13 | Disconnect/Reconnect | ✅ Parity |
 
 **Totals:**
-- ✅ Parity: 7 / 13
-- 🟡 Partial: 3 / 13
-- ❌ Missing: 3 / 13
+- **13/13 ✅ Full Parity** — All features unified
 
 ---
 
-## Next Steps
+## Update — 2026-07-01
 
-1. **Short-term (next session):** Enhance RCL `GameChat.razor` with channel pills and whisper support to match desktop parity
-2. **Medium-term:** Create map component (`GameMap.razor`) in RCL to replace desktop's native `MapView`
-3. **Medium-term:** Create inventory/shop/journal overlay components in RCL
-4. **Long-term:** Migrate settings flyout from desktop to RCL
-5. **Ongoing:** Add bUnit tests for each new RCL component as it's created
+All 13 features have been brought to full parity. Remaining gaps from [`game-client-unification-gaps.md`](game-client-unification-gaps.md) have been resolved:
+- **Chat** (🟡→✅): Channel pills + whisper parsing + color coding added to `GameChat.razor`
+- **Server Status Banner** (🟡→✅): Connection states + ping + player count added to `GameFooter.razor`
+- **Disconnect/Reconnect** (🟡→✅): `ReconnectOverlay.razor` with countdown auto-retry + manual reconnect
+- **Action Bar Hotbar** (🟡→✅): 10 hotbar ability quick-slot buttons added to `ActionBar.razor`
+- **Map (Region View)** (❌→✅): `GameMap.razor` with CSS grid zone cards + click-to-navigate
+- **Overlays (Inventory, Shop, Journal)** (❌→✅): `InventoryOverlay.razor`, `ShopOverlay.razor`, `JournalOverlay.razor` with hub command wiring
+- **Settings (Audio, Display)** (❌→✅): `GameSettings.razor` page at `/Game/Settings` with volume sliders, theme, accessibility options
