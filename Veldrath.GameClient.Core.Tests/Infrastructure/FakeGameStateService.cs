@@ -96,7 +96,7 @@ public sealed class FakeGameStateService : IGameStateService
     }
 
     /// <inheritdoc />
-    public void ApplyChatMessage(ChatMessagePayload payload)
+    public void ApplyChatMessage(ChatMessageHubDto payload)
     {
         AppliedCalls.Add((nameof(ApplyChatMessage), payload));
     }
@@ -114,13 +114,13 @@ public sealed class FakeGameStateService : IGameStateService
     }
 
     /// <inheritdoc />
-    public void ApplyCharacterMoved(CharacterMovedPayload payload)
+    public void ApplyCharacterMoved(Veldrath.Contracts.Tilemap.CharacterMovedPayload payload)
     {
         AppliedCalls.Add((nameof(ApplyCharacterMoved), payload));
     }
 
     /// <inheritdoc />
-    public void ApplyZoneEntitiesSnapshot(ZoneEntitiesSnapshotPayload payload)
+    public void ApplyZoneEntitiesSnapshot(Veldrath.Contracts.Tilemap.ZoneEntitiesSnapshotPayload payload)
     {
         AppliedCalls.Add((nameof(ApplyZoneEntitiesSnapshot), payload));
     }

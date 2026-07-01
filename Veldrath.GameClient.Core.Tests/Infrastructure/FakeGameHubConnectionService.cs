@@ -58,6 +58,13 @@ public sealed class FakeGameHubConnectionService : IGameHubConnectionService
     }
 
     /// <inheritdoc />
+    public Task SendAsync(string methodName, CancellationToken ct = default)
+    {
+        SentCommands.Add((methodName, null));
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
     public Task SendAsync(string methodName, object? arg1, CancellationToken ct = default)
     {
         SentCommands.Add((methodName, arg1));

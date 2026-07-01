@@ -33,6 +33,13 @@ public interface IGameHubConnectionService
     Task DisconnectAsync(CancellationToken ct = default);
 
     /// <summary>
+    /// Sends a hub method invocation with no arguments.
+    /// </summary>
+    /// <param name="methodName">The name of the hub method to invoke.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task SendAsync(string methodName, CancellationToken ct = default);
+
+    /// <summary>
     /// Sends a hub method invocation with one argument.
     /// </summary>
     /// <param name="methodName">The name of the hub method to invoke.</param>

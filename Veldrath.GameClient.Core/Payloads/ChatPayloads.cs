@@ -9,7 +9,7 @@ namespace Veldrath.GameClient.Core.Payloads;
 /// <param name="Sender">The display name of the sender.</param>
 /// <param name="Message">The message text.</param>
 /// <param name="Timestamp">When the message was sent (UTC).</param>
-public sealed record ChatMessagePayload(
+public sealed record ChatMessageHubDto(
     Guid CharacterId,
     string Channel,
     string Sender,

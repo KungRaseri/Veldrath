@@ -215,7 +215,7 @@ public sealed class GameStateService : IGameStateService
     }
 
     /// <inheritdoc />
-    public void ApplyChatMessage(ChatMessagePayload payload)
+    public void ApplyChatMessage(ChatMessageHubDto payload)
     {
         var msg = new ChatMessage(
             payload.CharacterId, payload.Channel, payload.Sender,
@@ -237,13 +237,13 @@ public sealed class GameStateService : IGameStateService
     }
 
     /// <inheritdoc />
-    public void ApplyCharacterMoved(CharacterMovedPayload payload)
+    public void ApplyCharacterMoved(Veldrath.Contracts.Tilemap.CharacterMovedPayload payload)
     {
         ApplyCharacterMoved(payload.TileX, payload.TileY);
     }
 
     /// <inheritdoc />
-    public void ApplyZoneEntitiesSnapshot(ZoneEntitiesSnapshotPayload payload)
+    public void ApplyZoneEntitiesSnapshot(Veldrath.Contracts.Tilemap.ZoneEntitiesSnapshotPayload payload)
     {
         ApplySystemMessage("Zone entities snapshot received.");
     }

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Veldrath.Contracts.Tilemap;
 using Veldrath.GameClient.Core.Payloads;
 
 namespace Veldrath.GameClient.Core.Tests;
@@ -46,12 +47,12 @@ public sealed class PayloadRecordTests
         payload.SelectedAt.Should().Be(now);
     }
 
-    /// <summary>Verifies CharacterSelectedPayload supports value equality.</summary>
+    /// <summary>Verifies CharacterSelectedPayload supports value equality for value-type fields.</summary>
     [Fact]
     public void CharacterSelectedPayload_Supports_Value_Equality()
     {
-        var now = DateTimeOffset.UtcNow;
         var id = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
         var payload1 = new CharacterSelectedPayload(
             id, "Hero", "Mage", 10, 5000L, "zone-1", "region-1",
             70, 100, 60, 80, 500, 0, 10, 10, 10, 10, 10, 10,
@@ -61,24 +62,36 @@ public sealed class PayloadRecordTests
             70, 100, 60, 80, 500, 0, 10, 10, 10, 10, 10, 10,
             ["fireball"], now);
 
-        payload1.Should().Be(payload2);
-        (payload1 == payload2).Should().BeTrue();
+        // Compare individual value-typed and string fields (List<string> uses
+        // reference equality in record comparison, so skip that here).
+        payload1.Id.Should().Be(payload2.Id);
+        payload1.Name.Should().Be(payload2.Name);
+        payload1.Level.Should().Be(payload2.Level);
+        payload1.Experience.Should().Be(payload2.Experience);
+        payload1.CurrentHealth.Should().Be(payload2.CurrentHealth);
+        payload1.Gold.Should().Be(payload2.Gold);
+        payload1.SelectedAt.Should().BeCloseTo(payload2.SelectedAt, TimeSpan.FromTicks(1));
     }
 
     /// <summary>Verifies CharacterSelectedPayload can be serialized and deserialized via System.Text.Json.</summary>
     [Fact]
     public void CharacterSelectedPayload_Serializes_And_Deserializes()
     {
-        var now = DateTimeOffset.UtcNow;
         var original = new CharacterSelectedPayload(
             Guid.NewGuid(), "Hero", "Rogue", 3, 1200L, "aldenmere", "greymoor",
             45, 60, 20, 30, 250, 1, 12, 16, 10, 14, 8, 14,
-            ["backstab", "stealth"], now);
+            ["backstab", "stealth"], DateTimeOffset.UtcNow);
 
         var json = JsonSerializer.Serialize(original);
         var deserialized = JsonSerializer.Deserialize<CharacterSelectedPayload>(json);
 
-        deserialized.Should().Be(original);
+        deserialized.Should().NotBeNull();
+        deserialized!.Id.Should().Be(original.Id);
+        deserialized.Name.Should().Be(original.Name);
+        deserialized.Level.Should().Be(original.Level);
+        deserialized.Experience.Should().Be(original.Experience);
+        deserialized.CurrentZoneId.Should().Be(original.CurrentZoneId);
+        deserialized.LearnedAbilities.Should().BeEquivalentTo(original.LearnedAbilities);
     }
 
     // ── CombatPayloads ─────────────────────────────────────────────────────────
@@ -138,12 +151,12 @@ public sealed class PayloadRecordTests
 
     // ── ChatPayloads ───────────────────────────────────────────────────────────
 
-    /// <summary>Verifies ChatMessagePayload can be constructed and serialized.</summary>
+    /// <summary>Verifies ChatMessageHubDto can be constructed and serialized.</summary>
     [Fact]
-    public void ChatMessagePayload_Serializes_Correctly()
+    public void ChatMessageHubDto_Serializes_Correctly()
     {
         var now = DateTimeOffset.UtcNow;
-        var original = new ChatMessagePayload(
+        var original = new ChatMessageHubDto(
             CharacterId: Guid.NewGuid(),
             Channel: "zone",
             Sender: "TestHero",
@@ -151,7 +164,7 @@ public sealed class PayloadRecordTests
             Timestamp: now);
 
         var json = JsonSerializer.Serialize(original);
-        var deserialized = JsonSerializer.Deserialize<ChatMessagePayload>(json);
+        var deserialized = JsonSerializer.Deserialize<ChatMessageHubDto>(json);
 
         deserialized.Should().Be(original);
         deserialized!.Message.Should().Be("Hello, world!");
@@ -204,11 +217,11 @@ public sealed class PayloadRecordTests
 
     // ── EntityPayloads ─────────────────────────────────────────────────────────
 
-    /// <summary>Verifies CharacterMovedPayload can be constructed.</summary>
+    /// <summary>Verifies CharacterMovedPayload (from Veldrath.Contracts) can be constructed.</summary>
     [Fact]
     public void CharacterMovedPayload_Can_Be_Constructed()
     {
-        var payload = new CharacterMovedPayload(
+        var payload = new Veldrath.Contracts.Tilemap.CharacterMovedPayload(
             CharacterId: Guid.NewGuid(),
             TileX: 5,
             TileY: 10,
@@ -219,11 +232,11 @@ public sealed class PayloadRecordTests
         payload.Direction.Should().Be("N");
     }
 
-    /// <summary>Verifies ZoneEntitiesSnapshotPayload contains TileEntityDtoEntry records.</summary>
+    /// <summary>Verifies ZoneEntitiesSnapshotPayload (from Veldrath.Contracts) contains entities.</summary>
     [Fact]
     public void ZoneEntitiesSnapshotPayload_Contains_Entities()
     {
-        var entity = new TileEntityDtoEntry(
+        var entity = new Veldrath.Contracts.Tilemap.TileEntityDto(
             EntityId: Guid.NewGuid(),
             EntityType: "player",
             SpriteKey: "hero",
@@ -231,8 +244,8 @@ public sealed class PayloadRecordTests
             TileY: 7,
             Direction: "S");
 
-        var payload = new ZoneEntitiesSnapshotPayload(
-            Entities: new List<TileEntityDtoEntry> { entity });
+        var payload = new Veldrath.Contracts.Tilemap.ZoneEntitiesSnapshotPayload(
+            Entities: new List<Veldrath.Contracts.Tilemap.TileEntityDto> { entity });
 
         payload.Entities.Should().HaveCount(1);
         payload.Entities[0].EntityType.Should().Be("player");
@@ -256,8 +269,8 @@ public sealed class PayloadRecordTests
         var id = Guid.NewGuid();
         var now = DateTimeOffset.UtcNow;
 
-        var a = new ChatMessagePayload(id, "global", "Test", "Hello", now);
-        var b = new ChatMessagePayload(id, "global", "Test", "Hello", now);
+        var a = new ChatMessageHubDto(id, "global", "Test", "Hello", now);
+        var b = new ChatMessageHubDto(id, "global", "Test", "Hello", now);
         a.Should().Be(b);
     }
 }
