@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <IsTestProject>true</IsTestProject>
@@ -8,6 +8,11 @@
     <PackageReference Include="Avalonia.Headless.XUnit" />
     <PackageReference Include="Microsoft.Reactive.Testing" />
     <PackageReference Include="ReactiveUI" />
+  </ItemGroup>
+
+  <!-- Framework reference for embedded ASP.NET Core integration tests (HostedWeb/) -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <ItemGroup>

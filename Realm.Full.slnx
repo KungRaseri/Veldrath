@@ -27,4 +27,5 @@
   <Project Path="Veldrath.GameClient.Core/Veldrath.GameClient.Core.csproj" />
   <Project Path="Veldrath.GameClient.Core.Tests/Veldrath.GameClient.Core.Tests.csproj" />
   <Project Path="Veldrath.GameClient.Components/Veldrath.GameClient.Components.csproj" />
+  <Project Path="Veldrath.GameClient.Components.Tests/Veldrath.GameClient.Components.Tests.csproj" />
 </Solution>
