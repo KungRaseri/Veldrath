@@ -207,6 +207,10 @@ public class GameHub : Hub
         if (staleRegionSession is not null)
             await _playerSessionRepo.RemoveAsync(staleRegionSession);
 
+        // Restore the character's saved tile position, falling back to (1, 1) when never placed.
+        var savedX = character.TileX != 0 || character.TileY != 0 ? character.TileX : 1;
+        var savedY = character.TileX != 0 || character.TileY != 0 ? character.TileY : 1;
+
         // Create a region-map session (ZoneId = null means on the region map, not inside a zone)
         await _playerSessionRepo.AddAsync(new PlayerSession
         {
@@ -215,8 +219,8 @@ public class GameHub : Hub
             ConnectionId  = Context.ConnectionId,
             RegionId      = regionId,
             ZoneId        = null,
-            TileX         = 1,
-            TileY         = 1,
+            TileX         = savedX,
+            TileY         = savedY,
         });
 
         // Join the per-region broadcast group for RegionPlayerMoved broadcasts
@@ -356,11 +360,13 @@ public class GameHub : Hub
             Occupants = occupants,
         });
 
-        // Determine spawn position (first spawn point or tile 1,1 fallback)
+        // Determine spawn position (first spawn point or tile (1,1) fallback), then validate walkability.
         var map = await _tilemapRepo.GetByZoneIdAsync(zoneId);
         var spawns = map?.GetSpawnPoints();
-        var spawnX = spawns is { Count: > 0 } ? spawns[0].TileX : 1;
-        var spawnY = spawns is { Count: > 0 } ? spawns[0].TileY : 1;
+        var preferredX = spawns is { Count: > 0 } ? spawns[0].TileX : 1;
+        var preferredY = spawns is { Count: > 0 } ? spawns[0].TileY : 1;
+
+        var (spawnX, spawnY) = FindWalkableSpawn(map, preferredX, preferredY);
         _entityTracker.TrackPlayer(zoneId, characterId, spawnX, spawnY);
 
         // Persist the spawn tile so MoveCharacter can validate 1-tile steps from the correct origin.
@@ -3094,6 +3100,51 @@ public class GameHub : Hub
         }
         name = string.Empty;
         return false;
+    }
+
+    /// <summary>
+    /// Finds a walkable spawn tile near the preferred position. If the preferred tile is walkable,
+    /// it is returned directly. Otherwise, a spiral search finds the nearest walkable tile within
+    /// the map bounds. Falls back to (1, 1) if no walkable tile is found.
+    /// </summary>
+    /// <param name="map">The zone tilemap, or null if no map is defined.</param>
+    /// <param name="preferredX">Preferred tile column.</param>
+    /// <param name="preferredY">Preferred tile row.</param>
+    /// <returns>A tuple of (x, y) guaranteed to be within map bounds and walkable.</returns>
+    private static (int X, int Y) FindWalkableSpawn(TiledMap? map, int preferredX, int preferredY)
+    {
+        if (map is null)
+            return (preferredX, preferredY);
+
+        // Preferred tile is walkable — use it.
+        if (!map.IsBlocked(preferredX, preferredY))
+            return (preferredX, preferredY);
+
+        // Spiral search for the nearest walkable tile.
+        var maxRadius = Math.Max(map.Width, map.Height);
+        for (var radius = 1; radius <= maxRadius; radius++)
+        {
+            for (var dx = -radius; dx <= radius; dx++)
+            {
+                for (var dy = -radius; dy <= radius; dy++)
+                {
+                    if (Math.Abs(dx) != radius && Math.Abs(dy) != radius)
+                        continue; // Only check the perimeter of each radius layer.
+
+                    var x = preferredX + dx;
+                    var y = preferredY + dy;
+
+                    if (x < 0 || x >= map.Width || y < 0 || y >= map.Height)
+                        continue;
+
+                    if (!map.IsBlocked(x, y))
+                        return (x, y);
+                }
+            }
+        }
+
+        // Fallback — should never be reached if the map has at least one walkable tile.
+        return (1, 1);
     }
 }
 
