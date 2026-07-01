@@ -1,4 +1,5 @@
 using Avalonia.Media.Imaging;
+using Veldrath.Client.Controls;
 using Veldrath.Client.HostedWeb;
 using ReactiveUI;
 using System.Collections.ObjectModel;
@@ -757,6 +758,21 @@ public class GameViewModel : ViewModelBase
     /// </summary>
     public string? WebViewUrl => _hostedServer?.BaseUrl is { } url ? $"{url}/Game/CharacterSelect" : null;
 
+    /// <summary>
+    /// Activates the WebView2 Blazor game UI. Called when the embedded server is running
+    /// and the game view becomes active. When not called (WebView2 runtime unavailable or
+    /// server failed to start), <see cref="IsFallbackActive"/> remains <c>true</c>.
+    /// </summary>
+    public void ActivateWebView()
+    {
+        if (!IsWebViewActive && _hostedServer?.IsRunning == true && GameWebView.IsAvailable)
+        {
+            IsWebViewActive = true;
+            this.RaisePropertyChanged(nameof(IsWebViewActive));
+            this.RaisePropertyChanged(nameof(IsFallbackActive));
+        }
+    }
+
     /// <summary>Toggles the collapsible left character-sheet panel open or closed.</summary>
     public ReactiveCommand<Unit, Unit> ToggleLeftPanelCommand { get; }
 
@@ -1152,6 +1168,9 @@ public class GameViewModel : ViewModelBase
         }
 
         AppendLog($"Welcome to {ZoneName}, {CharacterName}!");
+
+        // Activate the WebView2 Blazor game UI if the embedded server is running.
+        ActivateWebView();
     }
 
     // ── Region-map hub handlers ───────────────────────────────────────────────

@@ -228,7 +228,8 @@ public partial class App : Application
         services.AddSingleton<IHostedGameServer>(sp =>
         {
             var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-            return new HostedGameServer(serverBaseUrl, loggerFactory);
+            var tokenStore = sp.GetRequiredService<TokenStore>();
+            return new HostedGameServer(serverBaseUrl, loggerFactory, tokenStore);
         });
 
         // Native bridge service (WebView2 ↔ native interop)
