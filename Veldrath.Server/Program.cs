@@ -187,6 +187,7 @@ try
             options.AddPolicy(permission, p => p.RequireClaim("permission", permission));
     });
 
+
     builder.Services.Configure<Veldrath.Server.Settings.ModerationOptions>(
         builder.Configuration.GetSection("Moderation"));
 
