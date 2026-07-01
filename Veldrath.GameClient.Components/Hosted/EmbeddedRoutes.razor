@@ -1,0 +1,16 @@
+@using Veldrath.GameClient.Components.Components.Layout
+@using Veldrath.GameClient.Components.Components.Pages
+
+<Router AppAssembly="typeof(EmbeddedApp).Assembly"
+        AdditionalAssemblies="new[] { typeof(GameLayout).Assembly }">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(GameLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <div class="not-found">
+            <h1>Page not found</h1>
+            <p>Sorry, the requested page was not found.</p>
+        </div>
+    </NotFound>
+</Router>

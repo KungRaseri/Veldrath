@@ -1,0 +1,16 @@
+@using Veldrath.GameClient.Components.Components.Layout
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <link rel="stylesheet" href="_content/Veldrath.GameClient.Components/css/game.css" />
+    <HeadOutlet />
+</head>
+<body>
+    <EmbeddedRoutes @rendermode="InteractiveServer" />
+    <script src="_framework/blazor.web.js"></script>
+    <script src="_content/Veldrath.GameClient.Components/bridge.js"></script>
+</body>
+</html>

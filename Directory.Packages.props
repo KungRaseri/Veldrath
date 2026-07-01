@@ -79,6 +79,10 @@
     <PackageVersion Include="LibVLCSharp" Version="3.9.0" />
     <PackageVersion Include="VideoLAN.LibVLC.Windows" Version="3.0.21" />
   </ItemGroup>
+  <!-- ── WebView2 ────────────────────────────────────────────────────────── -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Web.WebView2" Version="1.0.2957.106" />
+  </ItemGroup>
   <!-- ── Avalonia ─────────────────────────────────────────────────────────── -->
   <ItemGroup>
     <PackageVersion Include="Avalonia" Version="11.2.3" />

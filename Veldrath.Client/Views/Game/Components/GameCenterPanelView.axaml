@@ -13,32 +13,15 @@
 
     <Border Background="{DynamicResource GameBackground0Brush}">
         <Grid>
-            <!-- Zone location panel (replaces tilemap control) -->
+            <!-- WebView2 hosted Blazor game UI (primary, when WebView2 available) -->
+            <Border
+                x:Name="WebViewContainer"
+                IsVisible="{Binding IsWebViewActive}" />
+
+            <!-- Zone location panel (native fallback or region/world placeholders) -->
             <views:ZoneLocationPanelView
                 DataContext="{Binding ZoneLocationPanel}"
-                IsVisible="{Binding IsZoneViewActive}" />
-
-            <!-- Region view — side panel handles the content -->
-            <Border
-                IsVisible="{Binding IsRegionViewActive}"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center">
-                <TextBlock
-                    Text="Select a zone from the side panel to enter"
-                    FontSize="16"
-                    Foreground="{DynamicResource GameSubtleBrush}" />
-            </Border>
-
-            <!-- World view — side panel handles the content -->
-            <Border
-                IsVisible="{Binding IsWorldViewActive}"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center">
-                <TextBlock
-                    Text="Select a region from the side panel to explore"
-                    FontSize="16"
-                    Foreground="{DynamicResource GameSubtleBrush}" />
-            </Border>
+                IsVisible="{Binding IsFallbackActive}" />
         </Grid>
     </Border>
 

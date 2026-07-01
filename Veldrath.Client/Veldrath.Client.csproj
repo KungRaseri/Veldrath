@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -29,13 +29,6 @@
     <PackageReference Include="Avalonia.ReactiveUI" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
     <PackageReference Include="FluentAvaloniaUI" />
-    <!-- DI + Logging + Configuration -->
-    <PackageReference Include="Microsoft.Extensions.Configuration" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-    <PackageReference Include="Microsoft.Extensions.Http" />
-    <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="Serilog" />
     <PackageReference Include="Serilog.Extensions.Logging" />
     <PackageReference Include="Serilog.Sinks.Console" />
@@ -49,6 +42,13 @@
     <PackageReference Include="VideoLAN.LibVLC.Windows" />
     <!-- Security: pin patched version of Tmds.DBus.Protocol (GHSA-xrw6-gwf8-vvr9) -->
     <PackageReference Include="Tmds.DBus.Protocol" />
+    <!-- Embedded WebView2 for Blazor game UI hosting -->
+    <PackageReference Include="Microsoft.Web.WebView2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Framework reference for embedded ASP.NET Core server (HostedWeb/) -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <ItemGroup>
@@ -58,6 +58,10 @@
     <ProjectReference Include="..\Veldrath.Contracts\Veldrath.Contracts.csproj" />
     <ProjectReference Include="..\RealmEngine.Core\RealmEngine.Core.csproj" />
     <ProjectReference Include="..\RealmEngine.Shared\RealmEngine.Shared.csproj" />
+    <!-- Embedded game client: RCL for Blazor UI + Core for shared services -->
+    <ProjectReference Include="..\Veldrath.GameClient.Components\Veldrath.GameClient.Components.csproj" />
+    <ProjectReference Include="..\Veldrath.GameClient.Core\Veldrath.GameClient.Core.csproj" />
+    <ProjectReference Include="..\Veldrath.Auth.Blazor\Veldrath.Auth.Blazor.csproj" />
   </ItemGroup>
 
   <ItemGroup>
