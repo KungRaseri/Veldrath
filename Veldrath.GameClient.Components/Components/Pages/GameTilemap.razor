@@ -1,35 +1,54 @@
 @using Veldrath.GameClient.Core.Abstractions
-@* Renders the zone tilemap as a CSS Grid with player, occupant, and enemy overlays. *@
+@* Renders a fixed 15×15 viewport of the zone tilemap, centered on the player with camera edge-clamping.
+   Tiles outside the viewport are not rendered. *@
 @inject IGameHubConnectionService Hub
 @inject IGameStateService GameState
 
 @if (GameState.ZoneTileMap is not null)
 {
     var tiles = (Veldrath.GameClient.Core.Abstractions.Tile[,])GameState.ZoneTileMap;
+    var mapW = tiles.GetLength(1);
+    var mapH = tiles.GetLength(0);
+    var camX = ComputeCameraX(mapW);
+    var camY = ComputeCameraY(mapH);
 
-    <div class="game-tilemap"
-         style="grid-template-columns: repeat(@_gridColumns, @(TileSize)px); grid-template-rows: repeat(@_gridRows, @(TileSize)px);">
-        @for (var y = 0; y < _gridRows; y++)
+    <div class="game-tilemap-viewport">
+        @for (var vy = 0; vy < ViewportSize; vy++)
         {
-            for (var x = 0; x < _gridColumns; x++)
+            var mapY = camY + vy;
+            for (var vx = 0; vx < ViewportSize; vx++)
             {
-                var tileX = x;
-                var tileY = y;
-                var tile = tiles[tileY, tileX];
-                var isPlayer = IsPlayerAt(tileX, tileY);
-                var occupant = GetOccupantAt(tileX, tileY);
-                var enemy = GetEnemyAt(tileX, tileY);
+                var mapX = camX + vx;
+                var inBounds = mapX >= 0 && mapX < mapW && mapY >= 0 && mapY < mapH;
+                var tile = inBounds
+                    ? tiles[mapY, mapX]
+                    : new Veldrath.GameClient.Core.Abstractions.Tile(mapX, mapY, -1, false);
+                var isPlayer = GameState.PlayerTileX == mapX &&
+                               GameState.PlayerTileY == mapY;
+                var occupant = GetOccupantAt(mapX, mapY);
+                var enemy = GetEnemyAt(mapX, mapY);
 
                 <Tile TileData="tile"
-                      X="tileX"
-                      Y="tileY"
+                      X="mapX"
+                      Y="mapY"
                       OnClick="OnTileClick"
+                      OnHover="OnTileHover"
                       IsPlayerHere="isPlayer"
                       Occupant="occupant"
                       Enemy="enemy" />
             }
         }
+
+        @if (_hoveredTile is not null)
+        {
+            <TileInfoCard X="_hoveredTile.Value.X"
+                          Y="_hoveredTile.Value.Y"
+                          TileTypeName="@GetTileName(tiles, _hoveredTile.Value.X, _hoveredTile.Value.Y, mapW, mapH)"
+                          EntityName="@GetEntityNameAt(_hoveredTile.Value.X, _hoveredTile.Value.Y)" />
+        }
     </div>
+
+    <TileStatusBar Description="@GetTileName(tiles, GameState.PlayerTileX, GameState.PlayerTileY, mapW, mapH)" />
 }
 else
 {
@@ -39,44 +58,36 @@ else
 }
 
 @code {
-    /// <summary>Size of each tile in pixels.</summary>
-    private const int TileSize = 36;
+    /// <summary>Number of tiles in each dimension of the fixed viewport.</summary>
+    private const int ViewportSize = 15;
 
-    private int _gridColumns = 20;
-    private int _gridRows = 20;
-    private IDisposable? _stateSubscription;
+    /// <summary>Half-viewport offset (floor of ViewportSize/2). Player sits at this offset from camera origin.</summary>
+    private const int HalfViewport = 7;
+
+    private (int X, int Y)? _hoveredTile;
 
     /// <inheritdoc />
     protected override void OnInitialized()
     {
-        _stateSubscription = GameState.OnStateChanged(() => InvokeAsync(() =>
-        {
-            UpdateGridSize();
-            StateHasChanged();
-        }));
-        UpdateGridSize();
+        GameState.OnStateChanged(() => InvokeAsync(StateHasChanged));
     }
 
-    private void UpdateGridSize()
-    {
-        if (GameState.ZoneTileMap is not null)
-        {
-            var tiles = (Veldrath.GameClient.Core.Abstractions.Tile[,])GameState.ZoneTileMap;
-            _gridColumns = tiles.GetLength(1);
-            _gridRows = tiles.GetLength(0);
-        }
-    }
+    /// <summary>Computes the camera X origin (leftmost tile column of the viewport), edge-clamped.</summary>
+    private int ComputeCameraX(int mapWidth) =>
+        Math.Clamp(GameState.PlayerTileX - HalfViewport, 0, Math.Max(0, mapWidth - ViewportSize));
+
+    /// <summary>Computes the camera Y origin (topmost tile row of the viewport), edge-clamped.</summary>
+    private int ComputeCameraY(int mapHeight) =>
+        Math.Clamp(GameState.PlayerTileY - HalfViewport, 0, Math.Max(0, mapHeight - ViewportSize));
 
     /// <summary>
-    /// Handles a tile click. If the tile has an NPC, sends TalkToNpc.
-    /// If it has an inspectable enemy/entity, sends InspectEntity.
-    /// Otherwise sends MoveCharacter.
+    /// Handles a tile click. Routes to NPC talk, enemy inspect, or character movement
+    /// depending on what occupies the tile.
     /// </summary>
     private async Task OnTileClick((int X, int Y) pos)
     {
         if (GameState.IsInCombat) return;
 
-        // G80: Talk to NPC if one is on this tile.
         var occupant = GetOccupantAt(pos.X, pos.Y);
         if (occupant is not null)
         {
@@ -89,7 +100,6 @@ else
             return;
         }
 
-        // G79: Inspect entity if an enemy is on this tile.
         var enemy = GetEnemyAt(pos.X, pos.Y);
         if (enemy is not null)
         {
@@ -102,13 +112,20 @@ else
             return;
         }
 
-        // Default: move character to the clicked tile.
         try
         {
             if (Hub.IsConnected)
                 await Hub.SendAsync("MoveCharacter", new { TileX = pos.X, TileY = pos.Y });
         }
         catch { }
+    }
+
+    /// <summary>Shows or hides the hover info card for a tile.</summary>
+    private void OnTileHover((int X, int Y) pos)
+    {
+        // (-1, -1) signals mouse leave — clear the hover card
+        _hoveredTile = pos.X < 0 || pos.Y < 0 ? null : pos;
+        StateHasChanged();
     }
 
     private bool IsPlayerAt(int x, int y) =>
@@ -119,4 +136,40 @@ else
 
     private EnemyInfo? GetEnemyAt(int x, int y) =>
         GameState.ZoneEnemies.FirstOrDefault(e => e.TileX == x && e.TileY == y);
+
+    /// <summary>Returns the human-readable entity name at a tile position, or null if none.</summary>
+    private string? GetEntityNameAt(int x, int y)
+    {
+        var occupant = GetOccupantAt(x, y);
+        if (occupant is not null) return occupant.CharacterName;
+
+        var enemy = GetEnemyAt(x, y);
+        if (enemy is not null) return $"{enemy.EnemyName} (Lv. {enemy.Level})";
+
+        return null;
+    }
+
+    /// <summary>Maps a tile type integer to a human-readable display name.</summary>
+    private static string GetTileTypeName(int type) => type switch
+    {
+        0 => "Grass",
+        1 => "Wall",
+        2 => "Water",
+        3 => "Door",
+        4 => "Path",
+        5 => "Dirt",
+        -1 => "Void",
+        _ => "Unknown"
+    };
+
+    /// <summary>
+    /// Returns the display name for the tile at the given map coordinates.
+    /// Returns "Void" for out-of-bounds positions.
+    /// </summary>
+    private static string GetTileName(Veldrath.GameClient.Core.Abstractions.Tile[,] tiles, int x, int y, int mapW, int mapH)
+    {
+        if (x < 0 || x >= mapW || y < 0 || y >= mapH)
+            return "Void";
+        return GetTileTypeName(tiles[y, x].Type);
+    }
 }

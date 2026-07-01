@@ -278,17 +278,35 @@
     font-size: var(--vds-text-sm, 12px);
 }
 
-/* ── Tilemap ─────────────────────────────────────────────────────────── */
+/* ── Tilemap Viewport ─────────────────────────────────────────────────── */
 
-.game-tilemap {
+/* Tile size set per breakpoint — mobile-first base */
+:root {
+    --tile-size: 24px;
+}
+
+/* md+ (640px): tablet */
+@media (min-width: 640px) {
+    :root { --tile-size: 34px; }
+}
+
+/* lg+ (1024px): desktop */
+@media (min-width: 1024px) {
+    :root { --tile-size: 42px; }
+}
+
+.game-tilemap-viewport {
     display: grid;
+    grid-template-columns: repeat(15, var(--tile-size));
+    grid-template-rows: repeat(15, var(--tile-size));
     gap: 1px;
-    padding: var(--vds-space-3, 12px);
-    background: var(--vds-bg-1, #14151F);
     justify-content: center;
     align-content: center;
+    padding: var(--vds-space-3, 12px);
+    background: var(--vds-bg-1, #14151F);
     flex: 1;
-    overflow: auto;
+    overflow: hidden;
+    position: relative;
 }
 
 .game-tilemap-empty {
@@ -301,8 +319,6 @@
 }
 
 .game-tile {
-    width: 36px;
-    height: 36px;
     border-radius: 2px;
     cursor: pointer;
     position: relative;
@@ -316,6 +332,65 @@
 .game-tile:hover {
     filter: brightness(1.25);
     border-color: var(--vds-text-subtle, #6E6860);
+}
+
+/* ── Hover Info Card ─────────────────────────────────────────────────── */
+
+.tile-info-card {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    z-index: 100;
+    background: var(--vds-bg-2, #1E1F2E);
+    border: 1px solid var(--vds-border, #2A2B3D);
+    border-radius: var(--vds-radius-sm, 4px);
+    padding: 6px 10px;
+    font-size: 12px;
+    color: var(--vds-text, #E2E0DA);
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.tile-info-card-type {
+    font-weight: 600;
+    color: var(--vds-seal-light, #C9A84C);
+}
+
+.tile-info-card-coords {
+    color: var(--vds-text-muted, #6E6860);
+    font-size: 11px;
+}
+
+.tile-info-card-entity {
+    margin-top: 2px;
+    color: var(--vds-accent, #60A5FA);
+}
+
+/* ── Status Bar ─────────────────────────────────────────────────────── */
+
+.tile-status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    background: var(--vds-bg-2, #1E1F2E);
+    border-top: 1px solid var(--vds-border, #2A2B3D);
+    font-size: 13px;
+    color: var(--vds-text-subtle, #B8B4A8);
+    min-height: 32px;
+    flex-shrink: 0;
+}
+
+.tile-status-bar-icon {
+    flex-shrink: 0;
+    font-size: 14px;
+}
+
+.tile-status-bar-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* Tile type backgrounds */

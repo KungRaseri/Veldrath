@@ -1,0 +1,24 @@
+@* Floating info card that appears near the hovered tile, showing tile type, coordinates, and any entity present. *@
+
+<div class="tile-info-card">
+    <div class="tile-info-card-type">@TileTypeName</div>
+    <div class="tile-info-card-coords">(@X, @Y)</div>
+    @if (EntityName is not null)
+    {
+        <div class="tile-info-card-entity">@EntityName</div>
+    }
+</div>
+
+@code {
+    /// <summary>The map column of the hovered tile.</summary>
+    [Parameter] public int X { get; set; }
+
+    /// <summary>The map row of the hovered tile.</summary>
+    [Parameter] public int Y { get; set; }
+
+    /// <summary>The human-readable tile type (Grass, Wall, Water, etc.).</summary>
+    [Parameter] public string TileTypeName { get; set; } = string.Empty;
+
+    /// <summary>The name of any entity (NPC or enemy) at this tile, or null if none.</summary>
+    [Parameter] public string? EntityName { get; set; }
+}
