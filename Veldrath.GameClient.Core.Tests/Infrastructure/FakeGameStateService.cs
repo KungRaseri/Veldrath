@@ -55,6 +55,32 @@ public sealed class FakeGameStateService : IGameStateService
     /// <summary>Gets or sets the simulated server connection identifier.</summary>
     public string? ServerConnectionId { get; set; }
 
+    // ── Live character state ──────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public CharacterState CurrentCharacter { get; set; } = new();
+
+    // ── Kick state ────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public bool IsKicked { get; set; }
+
+    /// <inheritdoc />
+    public string? KickReason { get; set; }
+
+    // ── Shop state ────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public bool InShop { get; set; }
+
+    /// <inheritdoc />
+    public string? ShopName { get; set; }
+
+    // ── Dungeon state ─────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public string? CurrentDungeonId { get; set; }
+
     // ── Call tracking ─────────────────────────────────────────────────────────
 
     /// <summary>Records all Apply* method calls for assertion.</summary>
@@ -197,5 +223,154 @@ public sealed class FakeGameStateService : IGameStateService
     {
         Settings = settings;
         AppliedCalls.Add((nameof(ApplySettings), settings));
+    }
+
+    // ── Kick ────────────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyKicked(string reason)
+    {
+        IsKicked = true;
+        KickReason = reason;
+        IsConnected = false;
+        AppliedCalls.Add((nameof(ApplyKicked), reason));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsKicked)));
+    }
+
+    // ── Progression ─────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyExperienceGained(int newLevel, int newXP, int newLeveledUpTo)
+    {
+        CurrentCharacterLevel = newLevel;
+        CurrentCharacter = CurrentCharacter with { Level = newLevel, XP = newXP };
+        AppliedCalls.Add((nameof(ApplyExperienceGained), (newLevel, newXP, newLeveledUpTo)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentCharacterLevel)));
+    }
+
+    /// <inheritdoc />
+    public void ApplyGoldChanged(int goldAdded, int newGoldTotal)
+    {
+        CurrentCharacterGold = newGoldTotal;
+        CurrentCharacter = CurrentCharacter with { Gold = newGoldTotal };
+        AppliedCalls.Add((nameof(ApplyGoldChanged), (goldAdded, newGoldTotal)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentCharacterGold)));
+    }
+
+    /// <inheritdoc />
+    public void ApplyDamageTaken(int damage, int currentHP, int maxHP, bool isDead)
+    {
+        CurrentCharacter = CurrentCharacter with
+        {
+            CurrentHealth = currentHP,
+            MaxHealth = maxHP,
+            IsDead = isDead,
+        };
+        AppliedCalls.Add((nameof(ApplyDamageTaken), (damage, currentHP, maxHP, isDead)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentCharacter)));
+    }
+
+    // ── Shop visit ──────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyShopVisited(string zoneId, string zoneName)
+    {
+        InShop = true;
+        ShopName = zoneName;
+        AppliedCalls.Add((nameof(ApplyShopVisited), (zoneId, zoneName)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(InShop)));
+    }
+
+    // ── Inventory transaction ───────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyItemTransacted(string itemName, int newGold, List<Item> inventory)
+    {
+        CurrentCharacterGold = newGold;
+        InventoryItems = inventory;
+        CurrentCharacter = CurrentCharacter with { Gold = newGold };
+        AppliedCalls.Add((nameof(ApplyItemTransacted), (itemName, newGold, inventory)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentCharacterGold)));
+    }
+
+    // ── Attributes ──────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyAttributePointsAllocated(int remaining, Dictionary<string, int> stats)
+    {
+        CurrentCharacter = CurrentCharacter with
+        {
+            UnspentAttributePoints = remaining,
+            Strength = stats.GetValueOrDefault("Strength", CurrentCharacter.Strength),
+            Dexterity = stats.GetValueOrDefault("Dexterity", CurrentCharacter.Dexterity),
+            Constitution = stats.GetValueOrDefault("Constitution", CurrentCharacter.Constitution),
+            Intelligence = stats.GetValueOrDefault("Intelligence", CurrentCharacter.Intelligence),
+            Wisdom = stats.GetValueOrDefault("Wisdom", CurrentCharacter.Wisdom),
+            Charisma = stats.GetValueOrDefault("Charisma", CurrentCharacter.Charisma),
+        };
+        AppliedCalls.Add((nameof(ApplyAttributePointsAllocated), (remaining, stats)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentCharacter)));
+    }
+
+    // ── Rest ────────────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyCharacterRested(int hp, int maxHp, int mp, int maxMp, int gold)
+    {
+        CurrentCharacter = CurrentCharacter with
+        {
+            CurrentHealth = hp,
+            MaxHealth = maxHp,
+            CurrentMana = mp,
+            MaxMana = maxMp,
+            Gold = gold,
+        };
+        CurrentCharacterGold = gold;
+        AppliedCalls.Add((nameof(ApplyCharacterRested), (hp, maxHp, mp, maxMp, gold)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentCharacter)));
+    }
+
+    // ── Ability ─────────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyAbilityUsed(string abilityId, int remainingMana, int hpRestored)
+    {
+        CurrentCharacter = CurrentCharacter with { CurrentMana = remainingMana };
+        if (hpRestored > 0)
+        {
+            var newHp = Math.Min(CurrentCharacter.CurrentHealth + hpRestored, CurrentCharacter.MaxHealth);
+            CurrentCharacter = CurrentCharacter with { CurrentHealth = newHp };
+        }
+        AppliedCalls.Add((nameof(ApplyAbilityUsed), (abilityId, remainingMana, hpRestored)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentCharacter)));
+    }
+
+    // ── Skill XP ────────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplySkillXpGained(string skillId, int xpGained, int newRank, bool rankedUp)
+    {
+        AppliedCalls.Add((nameof(ApplySkillXpGained), (skillId, xpGained, newRank, rankedUp)));
+    }
+
+    // ── Crafting ────────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyItemCrafted(string recipeName, int goldSpent, int remainingGold)
+    {
+        CurrentCharacterGold = remainingGold;
+        CurrentCharacter = CurrentCharacter with { Gold = remainingGold };
+        AppliedCalls.Add((nameof(ApplyItemCrafted), (recipeName, goldSpent, remainingGold)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentCharacterGold)));
+    }
+
+    // ── Dungeon ─────────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public void ApplyDungeonEntered(string dungeonId)
+    {
+        CurrentDungeonId = dungeonId;
+        AppliedCalls.Add((nameof(ApplyDungeonEntered), dungeonId));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentDungeonId)));
     }
 }
