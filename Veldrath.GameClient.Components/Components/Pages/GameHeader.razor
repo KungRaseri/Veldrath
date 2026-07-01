@@ -1,5 +1,6 @@
 @using Veldrath.GameClient.Core.Services
 @* Top bar showing character info, status bars, gold, and zone name. *@
+@inject GameStateService GameState
 
 @if (GameState.CurrentCharacter is { } character)
 {
@@ -33,9 +34,4 @@ else
     <div class="game-header">
         <span class="game-header-placeholder">No character selected</span>
     </div>
-}
-
-@code {
-    /// <summary>The game state service, injected by Blazor.</summary>
-    [Inject] private GameStateService GameState { get; set; } = null!;
 }

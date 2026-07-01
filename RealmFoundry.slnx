@@ -8,4 +8,5 @@
   <Project Path="Veldrath.Server/Veldrath.Server.csproj" />
   <Project Path="RealmFoundry/RealmFoundry.csproj" />
   <Project Path="RealmFoundry.Tests/RealmFoundry.Tests.csproj" />
+  <Project Path="Veldrath.GameClient.Components/Veldrath.GameClient.Components.csproj" />
 </Solution>

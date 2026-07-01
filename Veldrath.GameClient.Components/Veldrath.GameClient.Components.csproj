@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Veldrath.GameClient.Components</RootNamespace>
+    <AssemblyName>Veldrath.GameClient.Components</AssemblyName>
+    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Veldrath.GameClient.Core\Veldrath.GameClient.Core.csproj" />
+    <ProjectReference Include="..\Veldrath.Contracts\Veldrath.Contracts.csproj" />
+    <ProjectReference Include="..\Veldrath.Auth.Blazor\Veldrath.Auth.Blazor.csproj" />
+    <ProjectReference Include="..\RealmEngine.Shared\RealmEngine.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+</Project>

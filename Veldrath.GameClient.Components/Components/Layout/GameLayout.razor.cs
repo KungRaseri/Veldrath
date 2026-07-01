@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Components;
 
-namespace Veldrath.Web.Components.Layout;
+namespace Veldrath.GameClient.Components.Components.Layout;
 
 /// <summary>
 /// Layout used for game pages (routes under <c>/Game/</c>).  Applies a distinct CSS Grid

@@ -19,4 +19,5 @@
   <Project Path="Veldrath.Web.Tests/Veldrath.Web.Tests.csproj" />
   <Project Path="Veldrath.GameClient.Core/Veldrath.GameClient.Core.csproj" />
   <Project Path="Veldrath.GameClient.Core.Tests/Veldrath.GameClient.Core.Tests.csproj" />
+  <Project Path="Veldrath.GameClient.Components/Veldrath.GameClient.Components.csproj" />
 </Solution>

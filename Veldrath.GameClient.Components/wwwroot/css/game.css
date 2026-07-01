@@ -1,5 +1,5 @@
-/* Veldrath.Web — game UI styles
-   Loaded separately from app.css via <link> in App.razor.
+/* Veldrath.GameClient.Components — game UI styles
+   Loaded separately from app.css via <link> in host application's App.razor.
    Designed for the GameLayout which bypasses the main site chrome.
    Uses the same VDS design tokens defined in app.css :root. */
 

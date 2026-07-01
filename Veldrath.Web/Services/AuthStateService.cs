@@ -24,7 +24,7 @@ public class AuthStateService(VeldrathApiClient api) : AuthStateServiceBase(api)
     /// and <see cref="AuthStateServiceBase.TryRefreshAsync"/> in components.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public string? AccessToken => _accessToken;
+    public new string? AccessToken => _accessToken;
 
     /// <summary>
     /// The raw refresh token currently held in circuit memory.

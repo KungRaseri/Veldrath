@@ -1,5 +1,6 @@
 @using Veldrath.GameClient.Core.Services
 @* Bottom action bar showing zone info, connection status, and embedded ActionBar component. *@
+@inject GameStateService GameState
 
 <div class="game-footer">
     <div class="game-footer-left">
@@ -31,8 +32,3 @@
         }
     </div>
 </div>
-
-@code {
-    /// <summary>The game state service, injected by Blazor.</summary>
-    [Inject] private GameStateService GameState { get; set; } = null!;
-}

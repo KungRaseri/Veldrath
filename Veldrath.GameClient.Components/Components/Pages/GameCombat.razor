@@ -1,5 +1,7 @@
 @using Veldrath.GameClient.Core.Services
 @* Combat UI shown when GameState.IsInCombat is true. Displays enemy info, action buttons, and combat log. *@
+@inject IGameHubConnectionService Hub
+@inject GameStateService GameState
 
 @if (GameState.CombatEnemy is { } enemy)
 {
@@ -46,12 +48,6 @@ else
 }
 
 @code {
-    /// <summary>The game hub connection service, injected by Blazor.</summary>
-    [Inject] private GameHubConnectionService Hub { get; set; } = null!;
-
-    /// <summary>The game state service, injected by Blazor.</summary>
-    [Inject] private GameStateService GameState { get; set; } = null!;
-
     private bool _actionInProgress;
     private bool _showVictory;
     private IDisposable? _stateSubscription;

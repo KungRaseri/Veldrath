@@ -1,4 +1,7 @@
+@using Veldrath.GameClient.Core.Services
 @* Renders the zone tilemap as a CSS Grid with player, occupant, and enemy overlays. *@
+@inject IGameHubConnectionService Hub
+@inject GameStateService GameState
 
 @if (GameState.ZoneTileMap is not null)
 {
@@ -36,12 +39,6 @@ else
 }
 
 @code {
-    /// <summary>The game hub connection service, injected by Blazor.</summary>
-    [Inject] private Veldrath.GameClient.Core.Services.GameHubConnectionService Hub { get; set; } = null!;
-
-    /// <summary>The game state service, injected by Blazor.</summary>
-    [Inject] private Veldrath.GameClient.Core.Services.GameStateService GameState { get; set; } = null!;
-
     /// <summary>Size of each tile in pixels.</summary>
     private const int TileSize = 36;
 
@@ -81,9 +78,9 @@ else
     private bool IsPlayerAt(int x, int y) =>
         GameState.PlayerTileX == x && GameState.PlayerTileY == y;
 
-    private Veldrath.GameClient.Core.Services.OccupantInfo? GetOccupantAt(int x, int y) =>
+    private OccupantInfo? GetOccupantAt(int x, int y) =>
         GameState.ZoneOccupants.FirstOrDefault(o => o.TileX == x && o.TileY == y);
 
-    private Veldrath.GameClient.Core.Services.EnemyInfo? GetEnemyAt(int x, int y) =>
+    private EnemyInfo? GetEnemyAt(int x, int y) =>
         GameState.ZoneEnemies.FirstOrDefault(e => e.TileX == x && e.TileY == y);
 }

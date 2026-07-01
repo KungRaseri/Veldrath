@@ -58,6 +58,9 @@ public abstract class AuthStateServiceBase(IVeldrathAuthApiClient api)
     /// <summary>Gets the UTC expiry of the current access token, or <see langword="null"/> if not authenticated.</summary>
     public DateTimeOffset? AccessTokenExpiry { get; protected set; }
 
+    /// <summary>Gets the raw access token held in circuit memory, or <see langword="null"/> if not authenticated.</summary>
+    public string? AccessToken => _accessToken;
+
     /// <summary>
     /// Stores tokens and user info from an <see cref="AuthResponse"/> in circuit memory
     /// and propagates the bearer token to the API client.
