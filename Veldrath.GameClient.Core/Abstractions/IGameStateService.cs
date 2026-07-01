@@ -112,22 +112,90 @@ public interface IGameStateService : INotifyPropertyChanged
 
     // ── Inventory & equipment Apply methods ─────────────────────────────────
 
-    /// <summary>Replaces the entire inventory and equipped items with a fresh snapshot from the server.</summary>
-    /// <param name="items">The items in the character's inventory bag.</param>
-    /// <param name="equipped">The items currently equipped, keyed by slot name.</param>
-    void ApplyInventoryUpdated(IReadOnlyList<Item> items, IReadOnlyDictionary<string, Item> equipped);
-
-    /// <summary>Updates a single equipment slot after an equip or unequip action.</summary>
-    /// <param name="slot">The equipment slot name (Head, Chest, MainHand, etc.).</param>
-    /// <param name="item">The item now in the slot, or <c>null</c> if the slot was unequipped.</param>
-    void ApplyEquipmentChanged(string slot, Item? item);
-
-    // ── Shop Apply methods ──────────────────────────────────────────────────
-
-    /// <summary>Replaces the current shop catalog with a fresh list from the server.</summary>
-    /// <param name="catalog">The items for sale in the current merchant's shop.</param>
-    void ApplyShopCatalogUpdated(IReadOnlyList<ShopItemEntry> catalog);
-}
+        /// <summary>Replaces the entire inventory and equipped items with a fresh snapshot from the server.</summary>
+        /// <param name="items">The items in the character's inventory bag.</param>
+        /// <param name="equipped">The items currently equipped, keyed by slot name.</param>
+        void ApplyInventoryUpdated(IReadOnlyList<Item> items, IReadOnlyDictionary<string, Item> equipped);
+    
+        /// <summary>Updates a single equipment slot after an equip or unequip action.</summary>
+        /// <param name="slot">The equipment slot name (Head, Chest, MainHand, etc.).</param>
+        /// <param name="item">The item now in the slot, or <c>null</c> if the slot was unequipped.</param>
+        void ApplyEquipmentChanged(string slot, Item? item);
+    
+        // ── Shop Apply methods ──────────────────────────────────────────────────
+    
+        /// <summary>Replaces the current shop catalog with a fresh list from the server.</summary>
+        /// <param name="catalog">The items for sale in the current merchant's shop.</param>
+        void ApplyShopCatalogUpdated(IReadOnlyList<ShopItemEntry> catalog);
+    
+        // ── Quest log ───────────────────────────────────────────────────────────
+    
+        /// <summary>Gets the list of currently active quests for the selected character.</summary>
+        IReadOnlyList<QuestLogEntry> QuestLog { get; }
+    
+        /// <summary>Gets the list of completed quests for the selected character.</summary>
+        IReadOnlyList<QuestLogEntry> CompletedQuests { get; }
+    
+        /// <summary>Replaces the quest log with a fresh snapshot from the server.</summary>
+        /// <param name="active">The currently active quests.</param>
+        /// <param name="completed">The completed quests.</param>
+        void ApplyQuestLogUpdated(IReadOnlyList<QuestLogEntry> active, IReadOnlyList<QuestLogEntry> completed);
+    
+        // ── Settings ────────────────────────────────────────────────────────────
+    
+        /// <summary>Gets the current game settings for this session.</summary>
+        GameSettingsState Settings { get; }
+    
+        /// <summary>Updates the game settings with the provided values.</summary>
+        /// <param name="settings">The new settings to apply.</param>
+        void ApplySettings(GameSettingsState settings);
+    }
+    
+    /// <summary>
+    /// Represents a single quest entry in the character's quest journal.
+    /// </summary>
+    /// <param name="Id">The unique quest identifier.</param>
+    /// <param name="Title">The display title of the quest.</param>
+    /// <param name="Description">The flavor text or objective description.</param>
+    /// <param name="Progress">The current progress count toward completion.</param>
+    /// <param name="Total">The total required progress for completion.</param>
+    /// <param name="XpReward">Experience points awarded on completion.</param>
+    /// <param name="GoldReward">Gold awarded on completion.</param>
+    /// <param name="Objectives">Objective names and their required counts.</param>
+    /// <param name="ProgressData">Current progress toward each objective, keyed by objective name.</param>
+    public sealed record QuestLogEntry(
+        string Id,
+        string Title,
+        string Description,
+        int Progress,
+        int Total,
+        int XpReward,
+        int GoldReward,
+        IReadOnlyDictionary<string, int> Objectives,
+        IReadOnlyDictionary<string, int> ProgressData)
+    {
+        /// <summary>Gets whether the quest is complete (progress has reached the total).</summary>
+        public bool IsComplete => Progress >= Total;
+    }
+    
+    /// <summary>
+    /// Holds the current game settings for a player session.
+    /// </summary>
+    /// <param name="MusicVolume">Music volume percentage (0-100). Default is 80.</param>
+    /// <param name="SfxVolume">SFX volume percentage (0-100). Default is 80.</param>
+    /// <param name="IsMuted">Whether all audio is muted. Default is <c>false</c>.</param>
+    /// <param name="UiScale">UI scale percentage. Default is 100.</param>
+    /// <param name="Theme">The UI theme name (dark, light, sepia). Default is "dark".</param>
+    /// <param name="FontSize">The font size category (small, medium, large, x-large). Default is "medium".</param>
+    /// <param name="ReducedMotion">Whether reduced motion is enabled for accessibility. Default is <c>false</c>.</param>
+    public sealed record GameSettingsState(
+        int MusicVolume = 80,
+        int SfxVolume = 80,
+        bool IsMuted = false,
+        int UiScale = 100,
+        string Theme = "dark",
+        string FontSize = "medium",
+        bool ReducedMotion = false);
 
 /// <summary>
 /// Represents a single item for sale in a merchant's shop catalog.

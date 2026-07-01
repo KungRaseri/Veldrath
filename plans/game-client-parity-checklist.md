@@ -216,12 +216,12 @@ These 17 issues were identified in the initial RCL component audit. They cover d
 
 These 4 gaps were identified in Pass 4 analysis of [`CharacterSelect.razor`](Veldrath.GameClient.Components/Components/Pages/CharacterSelect.razor), focusing on hub event handling, missing UI, and error recovery.
 
-ID | Severity | Component | Description | Fix |
+| ID | Severity | Component | Description | Fix |
 |----|----------|-----------|-------------|-----|
-G101 | 🟠 HIGH | [`CharacterSelect.razor`](Veldrath.GameClient.Components/Components/Pages/CharacterSelect.razor) | Missing `CharacterAlreadyActive` hub event handler. Server sends this when character is already claimed by another connection. User sees stuck "Selecting..." button with no feedback. | Register `Hub.On<CharacterAlreadyActivePayload>("CharacterAlreadyActive", ...)` and show error message. |
-G102 | 🟡 MEDIUM | [`CharacterSelect.razor`](Veldrath.GameClient.Components/Components/Pages/CharacterSelect.razor) | No Delete Character UI. Server supports `DELETE /api/characters/{id}` (soft-delete) but no UI button exists. | Add delete button with confirmation dialog, calling `IGameApiClient.DeleteCharacterAsync(id)`. |
-G103 | 🟡 MEDIUM | [`CharacterSelect.razor`](Veldrath.GameClient.Components/Components/Pages/CharacterSelect.razor) | No timeout on `SelectCharacter` hub call. Fire-and-forget `Hub.SendAsync("SelectCharacter", id)` gets stuck if `CharacterSelected` event never arrives. | Add CancellationTokenSource with 10s timeout. On timeout, show "Connection timed out" error. |
-G104 | 🟢 LOW | [`CharacterSelect.razor`](Veldrath.GameClient.Components/Components/Pages/CharacterSelect.razor) | `CharacterStatusChanged` not surfaced. Server broadcasts online/offline status to account group but CharacterSelect doesn't listen. | Subscribe to `CharacterStatusChanged` and update UI badges. |
+| G101 | 🟠 HIGH | [`CharacterSelect.razor`](Veldrath.GameClient.Components/Components/Pages/CharacterSelect.razor) | Missing `CharacterAlreadyActive` hub event handler. Server sends this when character is already claimed by another connection. User sees stuck "Selecting..." button with no feedback. | Register `Hub.On<CharacterAlreadyActivePayload>("CharacterAlreadyActive", ...)` and show error message. |
+| G102 | 🟡 MEDIUM | [`CharacterSelect.razor`](Veldrath.GameClient.Components/Components/Pages/CharacterSelect.razor) | No Delete Character UI. Server supports `DELETE /api/characters/{id}` (soft-delete) but no UI button exists. | Add delete button with confirmation dialog, calling `IGameApiClient.DeleteCharacterAsync(id)`. |
+| G103 | 🟡 MEDIUM | [`CharacterSelect.razor`](Veldrath.GameClient.Components/Components/Pages/CharacterSelect.razor) | No timeout on `SelectCharacter` hub call. Fire-and-forget `Hub.SendAsync("SelectCharacter", id)` gets stuck if `CharacterSelected` event never arrives. | Add CancellationTokenSource with 10s timeout. On timeout, show "Connection timed out" error. |
+| G104 | 🟢 LOW | [`CharacterSelect.razor`](Veldrath.GameClient.Components/Components/Pages/CharacterSelect.razor) | `CharacterStatusChanged` not surfaced. Server broadcasts online/offline status to account group but CharacterSelect doesn't listen. | Subscribe to `CharacterStatusChanged` and update UI badges. |
 
 ---
 
@@ -229,14 +229,14 @@ G104 | 🟢 LOW | [`CharacterSelect.razor`](Veldrath.GameClient.Components/Compo
 
 These 6 gaps were identified in Pass 4 analysis of route configuration and layout composition across web and embedded hosts.
 
-ID | Severity | Component | Description | Fix |
+| ID | Severity | Component | Description | Fix |
 |----|----------|-----------|-------------|-----|
-G105 | 🟢 LOW | [`EmbeddedRoutes.razor`](Veldrath.GameClient.Components/Components/EmbeddedRoutes.razor) | Redundant `AdditionalAssemblies`. `typeof(GameLayout).Assembly` is same as `typeof(EmbeddedApp).Assembly`. | Remove redundant assembly reference (cosmetic). |
-G106 | 🟢 LOW | [`Routes.razor`](Veldrath.Web/Routes.razor) | Web routes only discovers RCL assembly as additional. If future pages are added to other assemblies, they won't be found. | Add `typeof(IGameStateService).Assembly` to AdditionalAssemblies for forward-compatibility. |
-G107 | 🟢 LOW | [`EmbeddedRoutes.razor`](Veldrath.GameClient.Components/Components/EmbeddedRoutes.razor) | Embedded NotFound page has no layout wrapper. Bare `<div>` without game chrome (header/footer). | Add `DefaultLayout="typeof(GameLayout)"` to NotFound route template. |
-G108 | 🟡 MEDIUM | [`GameLayout.razor`](Veldrath.GameClient.Components/Components/Layout/GameLayout.razor) / MainLayout | Web game pages render inside MainLayout site chrome. `.game-layout` uses `position: fixed; inset: 0` which may overlay site header/nav. | Verify game pages render correctly inside MainLayout. Add `z-index` management if needed. |
-G109 | 🟢 LOW | [`GameLayout.razor`](Veldrath.GameClient.Components/Components/Layout/GameLayout.razor) | GameLayout doesn't implement `IDisposable`. MainLayout does for unsubscribe. No current leak but pattern inconsistency. | Add `@implements IDisposable` with empty Dispose if no subscriptions to clean up. |
-G110 | 🟡 MEDIUM | [`GameLayout.razor`](Veldrath.GameClient.Components/Components/Layout/GameLayout.razor) | `bridge.js` loaded by URL heuristic (`StartsWith("http://localhost")`). If embedded server binds `127.0.0.1` explicitly, bridge won't load. | Use capability detection or configuration flag instead of URL heuristic. |
+| G105 | 🟢 LOW | [`EmbeddedRoutes.razor`](Veldrath.GameClient.Components/Components/EmbeddedRoutes.razor) | Redundant `AdditionalAssemblies`. `typeof(GameLayout).Assembly` is same as `typeof(EmbeddedApp).Assembly`. | Remove redundant assembly reference (cosmetic). |
+| G106 | 🟢 LOW | [`Routes.razor`](Veldrath.Web/Routes.razor) | Web routes only discovers RCL assembly as additional. If future pages are added to other assemblies, they won't be found. | Add `typeof(IGameStateService).Assembly` to AdditionalAssemblies for forward-compatibility. |
+| G107 | 🟢 LOW | [`EmbeddedRoutes.razor`](Veldrath.GameClient.Components/Components/EmbeddedRoutes.razor) | Embedded NotFound page has no layout wrapper. Bare `<div>` without game chrome (header/footer). | Add `DefaultLayout="typeof(GameLayout)"` to NotFound route template. |
+| G108 | 🟡 MEDIUM | [`GameLayout.razor`](Veldrath.GameClient.Components/Components/Layout/GameLayout.razor) / MainLayout | Web game pages render inside MainLayout site chrome. `.game-layout` uses `position: fixed; inset: 0` which may overlay site header/nav. | Verify game pages render correctly inside MainLayout. Add `z-index` management if needed. |
+| G109 | 🟢 LOW | [`GameLayout.razor`](Veldrath.GameClient.Components/Components/Layout/GameLayout.razor) | GameLayout doesn't implement `IDisposable`. MainLayout does for unsubscribe. No current leak but pattern inconsistency. | Add `@implements IDisposable` with empty Dispose if no subscriptions to clean up. |
+| G110 | 🟡 MEDIUM | [`GameLayout.razor`](Veldrath.GameClient.Components/Components/Layout/GameLayout.razor) | `bridge.js` loaded by URL heuristic (`StartsWith("http://localhost")`). If embedded server binds `127.0.0.1` explicitly, bridge won't load. | Use capability detection or configuration flag instead of URL heuristic. |
 
 ---
 
@@ -244,13 +244,13 @@ G110 | 🟡 MEDIUM | [`GameLayout.razor`](Veldrath.GameClient.Components/Compone
 
 These 5 gaps were identified in Pass 4 analysis of shared CSS token definitions, embedded font loading, and style consistency between web and embedded hosts.
 
-ID | Severity | Component | Description | Fix |
+| ID | Severity | Component | Description | Fix |
 |----|----------|-----------|-------------|-----|
-G111 | 🟠 HIGH | [`game.css`](Veldrath.GameClient.Components/wwwroot/css/game.css), [`tokens.css`](Veldrath.GameClient.Components/wwwroot/css/tokens.css) | `--vds-pink` CSS variable referenced by game.css for whisper messages but not defined in any loaded stylesheet. Fallback `#f472b6` works but theme changes won't affect whispers. | Add `--vds-pink: #f472b6;` to tokens.css `:root` block. |
-G112 | 🟢 LOW | [`game.css`](Veldrath.GameClient.Components/wwwroot/css/game.css) | Hardcoded `#94a3b8` for zone chat sender color instead of VDS token. Inconsistent with other chat types that use VDS tokens. | Replace with `var(--vds-slate-muted, #94a3b8)`. |
-G113 | 🟠 HIGH | [`EmbeddedApp.razor`](Veldrath.GameClient.Components/Components/EmbeddedApp.razor) | No Google Fonts loading in embedded version. tokens.css references Cinzel Decorative/Cinzel/Lora/Inter/JetBrains Mono but WebView2 will fall back to generic font families. Desktop and web will render with different fonts. | Add `<link>` tags for Google Fonts to `EmbeddedApp.razor` (same as web's App.razor). |
-G114 | 🟡 MEDIUM | [`tokens.css`](Veldrath.GameClient.Components/wwwroot/css/tokens.css) | Missing `a` tag and `.btn` base styles. CharacterSelect.razor uses `<a>` tags with `.btn` classes. In embedded version, these have no styling without host CSS. | Add `a` tag and `.btn` styles to `tokens.css` (copy from app.css). |
-G115 | 🟢 LOW | [`tokens.css`](Veldrath.GameClient.Components/wwwroot/css/tokens.css) | `--vds-success-muted` game.css fallback `#1A3A2C` differs slightly from tokens.css/app.css value `#1F3D2E`. | Standardize to `#1F3D2E` in game.css fallbacks. |
+| G111 | 🟠 HIGH | [`game.css`](Veldrath.GameClient.Components/wwwroot/css/game.css), [`tokens.css`](Veldrath.GameClient.Components/wwwroot/css/tokens.css) | `--vds-pink` CSS variable referenced by game.css for whisper messages but not defined in any loaded stylesheet. Fallback `#f472b6` works but theme changes won't affect whispers. | Add `--vds-pink: #f472b6;` to tokens.css `:root` block. |
+| G112 | 🟢 LOW | [`game.css`](Veldrath.GameClient.Components/wwwroot/css/game.css) | Hardcoded `#94a3b8` for zone chat sender color instead of VDS token. Inconsistent with other chat types that use VDS tokens. | Replace with `var(--vds-slate-muted, #94a3b8)`. |
+| G113 | 🟠 HIGH | [`EmbeddedApp.razor`](Veldrath.GameClient.Components/Components/EmbeddedApp.razor) | No Google Fonts loading in embedded version. tokens.css references Cinzel Decorative/Cinzel/Lora/Inter/JetBrains Mono but WebView2 will fall back to generic font families. Desktop and web will render with different fonts. | Add `<link>` tags for Google Fonts to `EmbeddedApp.razor` (same as web's App.razor). |
+| G114 | 🟡 MEDIUM | [`tokens.css`](Veldrath.GameClient.Components/wwwroot/css/tokens.css) | Missing `a` tag and `.btn` base styles. CharacterSelect.razor uses `<a>` tags with `.btn` classes. In embedded version, these have no styling without host CSS. | Add `a` tag and `.btn` styles to `tokens.css` (copy from app.css). |
+| G115 | 🟢 LOW | [`tokens.css`](Veldrath.GameClient.Components/wwwroot/css/tokens.css) | `--vds-success-muted` game.css fallback `#1A3A2C` differs slightly from tokens.css/app.css value `#1F3D2E`. | Standardize to `#1F3D2E` in game.css fallbacks. |
 
 ---
 
@@ -258,11 +258,11 @@ G115 | 🟢 LOW | [`tokens.css`](Veldrath.GameClient.Components/wwwroot/css/toke
 
 These 3 gaps were identified in Pass 4 analysis of the bridge.js ↔ NativeBridgeService interop layer used by the embedded WebView2 client.
 
-ID | Severity | Component | Description | Fix |
+| ID | Severity | Component | Description | Fix |
 |----|----------|-----------|-------------|-----|
-G116 | ⚪ NONE | bridge.js vs [`NativeBridgeService`](Veldrath.Client/Services/NativeBridgeService.cs) | All 7 message types in bridge.js have corresponding handlers in NativeBridgeService.cs. No missing methods. Perfect match. | No action needed. |
-G117 | 🟢 LOW | bridge.js | No incoming message listener. NativeBridgeService can send messages TO WebView but bridge.js has no listener. One-directional architecture. | Add `chrome.webview.addEventListener('message', ...)` listener for future bidirectional needs. |
-G118 | 🟢 LOW | [`NativeBridgeService`](Veldrath.Client/Services/NativeBridgeService.cs) | Notification handler is stub — only `Debug.WriteLine`, no actual Windows Toast notification. | Implement Windows Toast via `Microsoft.Toolkit.Uwp.Notifications` or similar. |
+| G116 | ⚪ NONE | bridge.js vs [`NativeBridgeService`](Veldrath.Client/Services/NativeBridgeService.cs) | All 7 message types in bridge.js have corresponding handlers in NativeBridgeService.cs. No missing methods. Perfect match. | No action needed. |
+| G117 | 🟢 LOW | bridge.js | No incoming message listener. NativeBridgeService can send messages TO WebView but bridge.js has no listener. One-directional architecture. | Add `chrome.webview.addEventListener('message', ...)` listener for future bidirectional needs. |
+| G118 | 🟢 LOW | [`NativeBridgeService`](Veldrath.Client/Services/NativeBridgeService.cs) | Notification handler is stub — only `Debug.WriteLine`, no actual Windows Toast notification. | Implement Windows Toast via `Microsoft.Toolkit.Uwp.Notifications` or similar. |
 
 ---
 
@@ -270,22 +270,22 @@ G118 | 🟢 LOW | [`NativeBridgeService`](Veldrath.Client/Services/NativeBridgeS
 
 These 14 gaps were identified in Pass 4 analysis of the RCL component test suite. 14 components currently have zero dedicated test coverage.
 
-ID | Severity | Component | Description | Fix |
+| ID | Severity | Component | Description | Fix |
 |----|----------|-----------|-------------|-----|
-G119 | 🟠 HIGH | [`CreateCharacter.razor`](Veldrath.GameClient.Components/Components/Pages/CreateCharacter.razor) | Complex multi-step wizard with class selection, name input/validation. No tests. | Add bUnit tests using FakeGameApiClient. Test: class list render, name validation, submission flow. |
-G120 | 🟠 HIGH | [`Game.razor`](Veldrath.GameClient.Components/Components/Pages/Game.razor) | Main game shell orchestrating all child components. No dedicated test. | Add bUnit test with mocked hub connection and verify child component rendering. |
-G121 | 🟡 MEDIUM | [`GameHeader.razor`](Veldrath.GameClient.Components/Components/Pages/GameHeader.razor) | No tests. Displays character name, class badge, level, HP/MP bars, gold, zone badge. | Add bUnit test verifying data display from GameState. |
-G122 | 🟡 MEDIUM | [`GameFooter.razor`](Veldrath.GameClient.Components/Components/Pages/GameFooter.razor) | No tests. Connection status dot, ping, zone info. | Add bUnit test verifying connection state display. |
-G123 | 🟡 MEDIUM | [`GameSidebar.razor`](Veldrath.GameClient.Components/Components/Pages/GameSidebar.razor) | No tests. Character stats, inventory list, party members. | Add bUnit test verifying stat display. |
-G124 | 🟡 MEDIUM | [`GameOverlay.razor`](Veldrath.GameClient.Components/Components/Pages/GameOverlay.razor) | No tests. Overlay host for Inventory/Shop/Journal panels. | Add bUnit test verifying overlay type switching. |
-G125 | 🟢 LOW | [`GameSettings.razor`](Veldrath.GameClient.Components/Components/Pages/GameSettings.razor) | No tests. Audio volume sliders, theme toggles. | Add bUnit test verifying default values and toggle behavior. |
-G126 | 🟡 MEDIUM | [`GamePanel.razor`](Veldrath.GameClient.Components/Components/Shared/GamePanel.razor) | No tests. Reusable modal panel with header/body/close. | Add bUnit test for open/close and title rendering. |
-G127 | 🟡 MEDIUM | [`InventoryOverlay.razor`](Veldrath.GameClient.Components/Components/Pages/InventoryOverlay.razor) | No tests. Equipment slots grid + item bag grid. | Add bUnit test verifying equipment slot rendering from GameState. |
-G128 | 🟡 MEDIUM | [`JournalOverlay.razor`](Veldrath.GameClient.Components/Components/Pages/JournalOverlay.razor) | No tests. Quest list + detail + completed log. | Add bUnit test verifying quest rendering from GameState. |
-G129 | 🟢 LOW | [`ReconnectOverlay.razor`](Veldrath.GameClient.Components/Components/Shared/ReconnectOverlay.razor) | No tests. Disconnection countdown + retry/return-to-menu. | Add bUnit test verifying state transitions. |
-G130 | 🟡 MEDIUM | [`ShopOverlay.razor`](Veldrath.GameClient.Components/Components/Pages/ShopOverlay.razor) | No tests. Merchant catalog + buy/sell flow. | Add bUnit test verifying catalog rendering and buy/sell interaction. |
-G131 | 🟢 LOW | [`StatusBar.razor`](Veldrath.GameClient.Components/Components/Shared/StatusBar.razor) | No tests. HP/MP/XP bar rendering with fill percentage. | Add bUnit test verifying fill percentage calculation. |
-G132 | 🟢 LOW | [`Tile.razor`](Veldrath.GameClient.Components/Components/Shared/Tile.razor) | No tests. Single tile with type-based coloring and entity indicators. | Add bUnit test verifying CSS class from tile type. |
+| G119 | 🟠 HIGH | [`CreateCharacter.razor`](Veldrath.GameClient.Components/Components/Pages/CreateCharacter.razor) | Complex multi-step wizard with class selection, name input/validation. No tests. | Add bUnit tests using FakeGameApiClient. Test: class list render, name validation, submission flow. |
+| G120 | 🟠 HIGH | [`Game.razor`](Veldrath.GameClient.Components/Components/Pages/Game.razor) | Main game shell orchestrating all child components. No dedicated test. | Add bUnit test with mocked hub connection and verify child component rendering. |
+| G121 | 🟡 MEDIUM | [`GameHeader.razor`](Veldrath.GameClient.Components/Components/Pages/GameHeader.razor) | No tests. Displays character name, class badge, level, HP/MP bars, gold, zone badge. | Add bUnit test verifying data display from GameState. |
+| G122 | 🟡 MEDIUM | [`GameFooter.razor`](Veldrath.GameClient.Components/Components/Pages/GameFooter.razor) | No tests. Connection status dot, ping, zone info. | Add bUnit test verifying connection state display. |
+| G123 | 🟡 MEDIUM | [`GameSidebar.razor`](Veldrath.GameClient.Components/Components/Pages/GameSidebar.razor) | No tests. Character stats, inventory list, party members. | Add bUnit test verifying stat display. |
+| G124 | 🟡 MEDIUM | [`GameOverlay.razor`](Veldrath.GameClient.Components/Components/Pages/GameOverlay.razor) | No tests. Overlay host for Inventory/Shop/Journal panels. | Add bUnit test verifying overlay type switching. |
+| G125 | 🟢 LOW | [`GameSettings.razor`](Veldrath.GameClient.Components/Components/Pages/GameSettings.razor) | No tests. Audio volume sliders, theme toggles. | Add bUnit test verifying default values and toggle behavior. |
+| G126 | 🟡 MEDIUM | [`GamePanel.razor`](Veldrath.GameClient.Components/Components/Shared/GamePanel.razor) | No tests. Reusable modal panel with header/body/close. | Add bUnit test for open/close and title rendering. |
+| G127 | 🟡 MEDIUM | [`InventoryOverlay.razor`](Veldrath.GameClient.Components/Components/Pages/InventoryOverlay.razor) | No tests. Equipment slots grid + item bag grid. | Add bUnit test verifying equipment slot rendering from GameState. |
+| G128 | 🟡 MEDIUM | [`JournalOverlay.razor`](Veldrath.GameClient.Components/Components/Pages/JournalOverlay.razor) | No tests. Quest list + detail + completed log. | Add bUnit test verifying quest rendering from GameState. |
+| G129 | 🟢 LOW | [`ReconnectOverlay.razor`](Veldrath.GameClient.Components/Components/Shared/ReconnectOverlay.razor) | No tests. Disconnection countdown + retry/return-to-menu. | Add bUnit test verifying state transitions. |
+| G130 | 🟡 MEDIUM | [`ShopOverlay.razor`](Veldrath.GameClient.Components/Components/Pages/ShopOverlay.razor) | No tests. Merchant catalog + buy/sell flow. | Add bUnit test verifying catalog rendering and buy/sell interaction. |
+| G131 | 🟢 LOW | [`StatusBar.razor`](Veldrath.GameClient.Components/Components/Shared/StatusBar.razor) | No tests. HP/MP/XP bar rendering with fill percentage. | Add bUnit test verifying fill percentage calculation. |
+| G132 | 🟢 LOW | [`Tile.razor`](Veldrath.GameClient.Components/Components/Shared/Tile.razor) | No tests. Single tile with type-based coloring and entity indicators. | Add bUnit test verifying CSS class from tile type. |
 
 ---
 
@@ -293,9 +293,9 @@ G132 | 🟢 LOW | [`Tile.razor`](Veldrath.GameClient.Components/Components/Share
 
 This 1 gap was identified in Pass 4 analysis verifying that the Veldrath.Web post-migration cleanup left no stale references.
 
-ID | Severity | Component | Description | Fix |
+| ID | Severity | Component | Description | Fix |
 |----|----------|-----------|-------------|-----|
-G133 | ⚪ NONE | [`Veldrath.Web`](Veldrath.Web/) | No stale Game/ references found. All references correctly point to RCL ([`_Imports.razor`](Veldrath.Web/_Imports.razor), App.razor, Routes.razor). Cleanup is complete. | No action needed. |
+| G133 | ⚪ NONE | [`Veldrath.Web`](Veldrath.Web/) | No stale Game/ references found. All references correctly point to RCL ([`_Imports.razor`](Veldrath.Web/_Imports.razor), App.razor, Routes.razor). Cleanup is complete. | No action needed. |
 
 ---
 
@@ -336,10 +336,23 @@ These are the 10 highest-impact fixes, ordered by dependency chain and player-vi
 | [`JournalOverlay.razor`](Veldrath.GameClient.Components/Components/Pages/JournalOverlay.razor) | 12, 67, 85 |
 | [`ReconnectOverlay.razor`](Veldrath.GameClient.Components/Components/Shared/ReconnectOverlay.razor) | 1, 97 |
 | [`GameSettings.razor`](Veldrath.GameClient.Components/Components/Pages/GameSettings.razor) | 86 |
-| [`CharacterSelect.razor`](Veldrath.GameClient.Components/Components/Pages/CharacterSelect.razor) | 88 |
-| [`CreateCharacter.razor`](Veldrath.GameClient.Components/Components/Pages/CreateCharacter.razor) | 89, 98 |
+| [`CharacterSelect.razor`](Veldrath.GameClient.Components/Components/Pages/CharacterSelect.razor) | 88, G101–G104 |
+| [`CreateCharacter.razor`](Veldrath.GameClient.Components/Components/Pages/CreateCharacter.razor) | 89, 98, G119 |
 | [`IGameStateService.cs`](Veldrath.GameClient.Core/Services/IGameStateService.cs) | 46–62 |
 | [`GameHubConnectionService.cs`](Veldrath.GameClient.Core/Services/GameHubConnectionService.cs) | 1–45 (handler registration), 58, 97 |
+| [`GameLayout.razor`](Veldrath.GameClient.Components/Components/Layout/GameLayout.razor) | G108–G110 |
+| [`EmbeddedRoutes.razor`](Veldrath.GameClient.Components/Components/EmbeddedRoutes.razor) | G105, G107 |
+| [`EmbeddedApp.razor`](Veldrath.GameClient.Components/Components/EmbeddedApp.razor) | G113 |
+| [`GameSidebar.razor`](Veldrath.GameClient.Components/Components/Pages/GameSidebar.razor) | G123 |
+| [`GameOverlay.razor`](Veldrath.GameClient.Components/Components/Pages/GameOverlay.razor) | G124 |
+| [`GamePanel.razor`](Veldrath.GameClient.Components/Components/Shared/GamePanel.razor) | G126 |
+| [`Tile.razor`](Veldrath.GameClient.Components/Components/Shared/Tile.razor) | G132 |
+| [`tokens.css`](Veldrath.GameClient.Components/wwwroot/css/tokens.css) | G111, G114, G115 |
+| [`game.css`](Veldrath.GameClient.Components/wwwroot/css/game.css) | G111, G112, G115 |
+| bridge.js | G116, G117 |
+| [`NativeBridgeService.cs`](Veldrath.Client/Services/NativeBridgeService.cs) | G116, G118 |
+| [`Routes.razor`](Veldrath.Web/Routes.razor) | G106 |
+| [`_Imports.razor`](Veldrath.Web/_Imports.razor) | G133 |
 
 ---
 

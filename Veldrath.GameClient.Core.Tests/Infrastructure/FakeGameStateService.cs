@@ -170,4 +170,32 @@ public sealed class FakeGameStateService : IGameStateService
         ShopCatalog = catalog;
         AppliedCalls.Add((nameof(ApplyShopCatalogUpdated), catalog));
     }
+
+    // ── Quest log ───────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public IReadOnlyList<QuestLogEntry> QuestLog { get; set; } = [];
+
+    /// <inheritdoc />
+    public IReadOnlyList<QuestLogEntry> CompletedQuests { get; set; } = [];
+
+    /// <inheritdoc />
+    public void ApplyQuestLogUpdated(IReadOnlyList<QuestLogEntry> active, IReadOnlyList<QuestLogEntry> completed)
+    {
+        QuestLog = active;
+        CompletedQuests = completed;
+        AppliedCalls.Add((nameof(ApplyQuestLogUpdated), (active, completed)));
+    }
+
+    // ── Settings ────────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public GameSettingsState Settings { get; set; } = new();
+
+    /// <inheritdoc />
+    public void ApplySettings(GameSettingsState settings)
+    {
+        Settings = settings;
+        AppliedCalls.Add((nameof(ApplySettings), settings));
+    }
 }

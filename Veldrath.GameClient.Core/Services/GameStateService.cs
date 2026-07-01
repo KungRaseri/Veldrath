@@ -310,6 +310,44 @@ public sealed class GameStateService : IGameStateService
         RaisePropertyChanged(nameof(ShopCatalog));
     }
 
+    // ── Quest log ───────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    IReadOnlyList<QuestLogEntry> IGameStateService.QuestLog => QuestLog;
+
+    /// <inheritdoc />
+    IReadOnlyList<QuestLogEntry> IGameStateService.CompletedQuests => CompletedQuests;
+
+    /// <summary>Gets the currently active quests for the selected character.</summary>
+    public List<QuestLogEntry> QuestLog { get; private set; } = [];
+
+    /// <summary>Gets the completed quests for the selected character.</summary>
+    public List<QuestLogEntry> CompletedQuests { get; private set; } = [];
+
+    /// <inheritdoc />
+    public void ApplyQuestLogUpdated(IReadOnlyList<QuestLogEntry> active, IReadOnlyList<QuestLogEntry> completed)
+    {
+        QuestLog = [.. active];
+        CompletedQuests = [.. completed];
+        RaisePropertyChanged(nameof(QuestLog));
+        RaisePropertyChanged(nameof(CompletedQuests));
+    }
+
+    // ── Settings ────────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    GameSettingsState IGameStateService.Settings => Settings;
+
+    /// <summary>Gets the current game settings for this session.</summary>
+    public GameSettingsState Settings { get; private set; } = new();
+
+    /// <inheritdoc />
+    public void ApplySettings(GameSettingsState settings)
+    {
+        Settings = settings;
+        RaisePropertyChanged(nameof(Settings));
+    }
+
     // ── Existing Apply methods (preserved for backward compatibility) ─────────
 
     /// <summary>Updates the connection ID after a successful hub connection.</summary>
@@ -510,6 +548,9 @@ public sealed class GameStateService : IGameStateService
         InventoryItems = [];
         EquippedItems = [];
         ShopCatalog = [];
+        QuestLog = [];
+        CompletedQuests = [];
+        Settings = new();
 
         RaisePropertyChanged(nameof(ServerConnectionId));
         RaisePropertyChanged(nameof(IsConnected));
@@ -528,6 +569,9 @@ public sealed class GameStateService : IGameStateService
         RaisePropertyChanged(nameof(InventoryItems));
         RaisePropertyChanged(nameof(EquippedItems));
         RaisePropertyChanged(nameof(ShopCatalog));
+        RaisePropertyChanged(nameof(QuestLog));
+        RaisePropertyChanged(nameof(CompletedQuests));
+        RaisePropertyChanged(nameof(Settings));
     }
 
     /// <summary>Subscribe to any property change. Returns an <see cref="IDisposable"/> that unsubscribes.</summary>
