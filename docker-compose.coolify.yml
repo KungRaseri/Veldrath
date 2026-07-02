@@ -1,0 +1,367 @@
+# docker-compose.coolify.yml — Coolify-compatible single-file compose stack for veldrath.com
+#
+# Generated from: docker-compose.yml (base) + docker-compose.prod.yml (overlay)
+# Caddy reverse proxy REMOVED — routing handled by Coolify's built-in Traefik.
+# All .NET services use pre-built GHCR images (no local build contexts).
+# All host port mappings removed — traffic routed via Traefik on the coolify network.
+#
+# Pre-deploy prerequisites:
+#   1. Add curl to RealmFoundry/Dockerfile and Veldrath.Web/Dockerfile runtime stages
+#   2. Add health check endpoints in Program.cs for foundry, web, and discord
+#   3. Configure GHCR registry credentials in Coolify
+#   4. Create Coolify secrets for all ${VARIABLE} references (see plans/docker-compose-coolify-spec.md)
+
+services:
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+
+  postgres:
+    image: postgres:17-alpine
+    ports: []
+    environment:
+      POSTGRES_DB: veldrath
+      POSTGRES_USER: veldrath
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U veldrath"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - veldrath
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+        reservations:
+          memory: 256M
+          cpus: "0.5"
+
+  stalwart:
+    image: stalwartlabs/stalwart:v0.15.5
+    # SMTP port 25 decision: The current stalwart config is a dev-only open relay.
+    # Do NOT publish port 25 to the host unless the config has been hardened:
+    #   1. Set relay = false in [session.rcpt]
+    #   2. Configure [server.listener."smtp"] with TLS and authentication
+    #   3. Configure [directory] with actual domain and accounts
+    # If inbound email is not needed, leave port 25 unpublished (safe default).
+    # To enable inbound SMTP, uncomment: #   - "25:25"
+    ports: []
+    environment:
+      - STALWART_PATH=/opt/stalwart
+      - ADMIN_SECRET=${STALWART_ADMIN_SECRET}
+    volumes:
+      - stalwart_data:/opt/stalwart
+      - ./config/stalwart:/opt/stalwart/etc:ro
+    healthcheck:
+      test: ["CMD-SHELL", "grep -q ':1F92 ' /proc/net/tcp6 || grep -q ':1F92 ' /proc/net/tcp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - veldrath
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+        reservations:
+          memory: 128M
+          cpus: "0.25"
+
+  # ── Application Services ────────────────────────────────────────────────────
+
+  server:
+    image: ghcr.io/kungraseri/veldrath-server:latest
+    ports: []
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=veldrath;Username=veldrath;Password=${POSTGRES_PASSWORD}
+      - Database__Provider=postgres
+      - Jwt__Key=${JWT_KEY}
+      - OAuth__Discord__ClientId=${OAUTH_DISCORD_CLIENT_ID}
+      - OAuth__Discord__ClientSecret=${OAUTH_DISCORD_CLIENT_SECRET}
+      - OAuth__Google__ClientId=${OAUTH_GOOGLE_CLIENT_ID}
+      - OAuth__Google__ClientSecret=${OAUTH_GOOGLE_CLIENT_SECRET}
+      - OAuth__Microsoft__ClientId=${OAUTH_MICROSOFT_CLIENT_ID}
+      - OAuth__Microsoft__ClientSecret=${OAUTH_MICROSOFT_CLIENT_SECRET}
+      - Email__SmtpHost=${EMAIL_SMTP_HOST}
+      - Email__SmtpPort=${EMAIL_SMTP_PORT:-587}
+      - Email__EnableTls=${EMAIL_ENABLE_TLS:-true}
+      - Email__User=${EMAIL_USER}
+      - Email__Password=${EMAIL_PASSWORD}
+      - Email__SenderAddress=${EMAIL_SENDER_ADDRESS:-noreply@veldrath.com}
+      - Email__SenderName=Veldrath
+      - Foundry__BaseUrl=https://foundry.veldrath.com
+      - Web__BaseUrl=https://veldrath.com
+      - Auth__CookieDomain=.veldrath.com
+      - Seq__ServerUrl=http://seq
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.server.rule=Host(`api.veldrath.com`)"
+      - "traefik.http.routers.server.tls.certresolver=coolify"
+      - "traefik.http.routers.server.entrypoints=websecure"
+      - "traefik.http.services.server.loadbalancer.server.port=8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      stalwart:
+        condition: service_healthy
+    volumes:
+      - dataprotection_keys:/root/.aspnet/DataProtection-Keys
+    restart: unless-stopped
+    networks:
+      - veldrath
+      - coolify
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "2.0"
+        reservations:
+          memory: 512M
+          cpus: "1.0"
+
+  discord:
+    image: ghcr.io/kungraseri/veldrath-discord:latest
+    ports: []
+    environment:
+      - DOTNET_ENVIRONMENT=Production
+      - Discord__Token=${DISCORD_TOKEN}
+      - Discord__DevGuildId=${DISCORD_DEV_GUILD_ID:-0}
+      - Discord__ServerBaseUrl=http://server:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=veldrath;Username=veldrath;Password=${POSTGRES_PASSWORD}
+    # TODO: Switch to HTTP health check after Discord Dockerfile moves to aspnet image
+    # healthcheck:
+    #   test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+    #   interval: 15s
+    #   timeout: 5s
+    #   retries: 3
+    #   start_period: 10s
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -x dotnet || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      server:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - veldrath
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+        reservations:
+          memory: 128M
+          cpus: "0.25"
+
+  foundry:
+    image: ghcr.io/kungraseri/realmfoundry:latest
+    ports: []
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8081
+      - Veldrath__ServerUrl=http://server:8080
+      - Veldrath__PublicServerUrl=${FOUNDRY_PUBLIC_SERVER_URL:-https://api.veldrath.com}
+      - Auth__CookieDomain=.veldrath.com
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.foundry.rule=Host(`foundry.veldrath.com`)"
+      - "traefik.http.routers.foundry.tls.certresolver=coolify"
+      - "traefik.http.routers.foundry.entrypoints=websecure"
+      - "traefik.http.services.foundry.loadbalancer.server.port=8081"
+      - "traefik.http.services.foundry.loadbalancer.sticky.cookie.name=foundry_lb"
+      - "traefik.http.services.foundry.loadbalancer.sticky.cookie.secure=true"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    volumes:
+      - foundry_dataprotection_keys:/root/.aspnet/DataProtection-Keys
+    depends_on:
+      server:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - veldrath
+      - coolify
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 256M
+          cpus: "0.5"
+
+  web:
+    image: ghcr.io/kungraseri/veldrath-web:latest
+    ports: []
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8082
+      - Veldrath__ServerUrl=http://server:8080
+      - Veldrath__PublicServerUrl=${WEB_PUBLIC_SERVER_URL:-https://api.veldrath.com}
+      - Auth__CookieDomain=.veldrath.com
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`veldrath.com`)"
+      - "traefik.http.routers.web.tls.certresolver=coolify"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      - "traefik.http.services.web.loadbalancer.server.port=8082"
+      - "traefik.http.services.web.loadbalancer.sticky.cookie.name=web_lb"
+      - "traefik.http.services.web.loadbalancer.sticky.cookie.secure=true"
+      - "traefik.http.routers.web-www.rule=Host(`www.veldrath.com`)"
+      - "traefik.http.routers.web-www.tls.certresolver=coolify"
+      - "traefik.http.routers.web-www.entrypoints=websecure"
+      - "traefik.http.routers.web-www.middlewares=web-www-redirect"
+      - "traefik.http.middlewares.web-www-redirect.redirectregex.regex=^https?://www\\.veldrath\\.com/(.*)"
+      - "traefik.http.middlewares.web-www-redirect.redirectregex.replacement=https://veldrath.com/$${1}"
+      - "traefik.http.middlewares.web-www-redirect.redirectregex.permanent=true"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8082/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    volumes:
+      - web_dataprotection_keys:/root/.aspnet/DataProtection-Keys
+    depends_on:
+      server:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - veldrath
+      - coolify
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 256M
+          cpus: "0.5"
+
+  # ── Monitoring ──────────────────────────────────────────────────────────────
+
+  seq:
+    image: datalust/seq:latest
+    ports: []
+    environment:
+      - ACCEPT_EULA=Y
+      - SEQ_FIRSTRUN_ADMINPASSWORD=${SEQ_ADMIN_PASSWORD}
+    volumes:
+      - seq_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - veldrath
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.25"
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports: []
+    volumes:
+      - prometheus_data:/prometheus
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9090/-/healthy || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      server:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - veldrath
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.25"
+
+  grafana:
+    image: grafana/grafana:11.6.1
+    ports: []
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - veldrath
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+        reservations:
+          memory: 128M
+          cpus: "0.25"
+
+# ── Networks ──────────────────────────────────────────────────────────────────
+
+networks:
+  veldrath:
+    driver: bridge
+  coolify:
+    external: true
+
+# ── Volumes ───────────────────────────────────────────────────────────────────
+
+volumes:
+  postgres_data:
+  dataprotection_keys:
+  foundry_dataprotection_keys:
+  web_dataprotection_keys:
+  stalwart_data:
+  seq_data:
+  prometheus_data:
+  grafana_data:

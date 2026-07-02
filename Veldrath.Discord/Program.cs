@@ -26,7 +26,7 @@ try
 {
     Log.Information("Veldrath.Discord starting...");
 
-    var builder = Host.CreateApplicationBuilder(args);
+    var builder = WebApplication.CreateBuilder(args);
 
     builder.Logging.ClearProviders();
     builder.Logging.AddSerilog(Log.Logger, dispose: true);
@@ -62,8 +62,13 @@ try
     builder.Services.AddSingleton<InteractionHandlingService>();
     builder.Services.AddHostedService<BotWorker>();
 
-    var host = builder.Build();
-    await host.RunAsync();
+    builder.Services.AddHealthChecks();
+
+    var app = builder.Build();
+
+    app.MapHealthChecks("/health");
+
+    await app.RunAsync();
 }
 catch (Exception ex)
 {
