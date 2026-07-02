@@ -85,7 +85,11 @@ try
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     });
 
+    builder.Services.AddHealthChecks();
+
     var app = builder.Build();
+
+    app.MapHealthChecks("/health");
 
     // Trust the Caddy reverse-proxy's forwarded headers so Request.Scheme is https
     // and Nav.BaseUri reflects the public HTTPS origin.  Required for correct OAuth
