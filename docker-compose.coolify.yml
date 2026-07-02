@@ -16,7 +16,6 @@ services:
 
   postgres:
     image: postgres:17-alpine
-    ports: []
     environment:
       POSTGRES_DB: veldrath
       POSTGRES_USER: veldrath
@@ -49,7 +48,6 @@ services:
     #   3. Configure [directory] with actual domain and accounts
     # If inbound email is not needed, leave port 25 unpublished (safe default).
     # To enable inbound SMTP, uncomment: #   - "25:25"
-    ports: []
     environment:
       - STALWART_PATH=/opt/stalwart
       - ADMIN_SECRET=${STALWART_ADMIN_SECRET}
@@ -78,7 +76,6 @@ services:
 
   server:
     image: ghcr.io/kungraseri/veldrath-server:latest
-    ports: []
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
@@ -136,7 +133,6 @@ services:
 
   discord:
     image: ghcr.io/kungraseri/veldrath-discord:latest
-    ports: []
     environment:
       - DOTNET_ENVIRONMENT=Production
       - Discord__Token=${DISCORD_TOKEN}
@@ -175,7 +171,6 @@ services:
 
   foundry:
     image: ghcr.io/kungraseri/realmfoundry:latest
-    ports: []
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8081
@@ -216,7 +211,6 @@ services:
 
   web:
     image: ghcr.io/kungraseri/veldrath-web:latest
-    ports: []
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8082
@@ -266,7 +260,6 @@ services:
 
   seq:
     image: datalust/seq:latest
-    ports: []
     environment:
       - ACCEPT_EULA=Y
       - SEQ_FIRSTRUN_ADMINPASSWORD=${SEQ_ADMIN_PASSWORD}
@@ -292,7 +285,6 @@ services:
 
   prometheus:
     image: prom/prometheus:latest
-    ports: []
     volumes:
       - prometheus_data:/prometheus
       - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -319,7 +311,6 @@ services:
 
   grafana:
     image: grafana/grafana:11.6.1
-    ports: []
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD}
     volumes:
