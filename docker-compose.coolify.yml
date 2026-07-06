@@ -106,7 +106,7 @@ services:
       - Discord__Token=${DISCORD_TOKEN}
       - Discord__DevGuildId=${DISCORD_DEV_GUILD_ID:-0}
       - Discord__ServerBaseUrl=http://server:8080
-      - ConnectionStrings__DefaultConnection=Host=veldrath-db;Port=5432;Database=veldrath;Username=veldrath;Password=${POSTGRES_PASSWORD}
+      - ConnectionStrings__DefaultConnection=Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
     # TODO: Switch to HTTP health check after Discord Dockerfile moves to aspnet image
     # healthcheck:
     #   test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
