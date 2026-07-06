@@ -10,7 +10,31 @@
 #   1. Add curl to RealmFoundry/Dockerfile and Veldrath.Web/Dockerfile runtime stages
 #   2. Add health check endpoints in Program.cs for foundry, web, and discord
 #   3. Configure GHCR registry credentials in Coolify
-#   4. Create Coolify secrets for all ${VARIABLE} references (see plans/docker-compose-coolify-spec.md)
+#
+# Coolify Secrets Required (create these in Coolify dashboard):
+#
+#   REQUIRED (no defaults — deployment fails without these):
+#     POSTGRES_PASSWORD     — Postgres superuser password
+#     POSTGRES_HOST         — Coolify-managed Postgres hostname (e.g., veldrath-db)
+#     POSTGRES_PORT         — Postgres port (e.g., 5432)
+#     JWT_KEY               — HMAC-SHA signing key (≥32 chars)
+#     DISCORD_TOKEN         — Discord bot token
+#     EMAIL_SMTP_HOST       — SMTP relay hostname (mxroute.com)
+#     EMAIL_USER            — SMTP auth username
+#     EMAIL_PASSWORD        — SMTP auth password
+#     SEQ_ADMIN_PASSWORD    — Seq admin password
+#     GF_ADMIN_PASSWORD     — Grafana admin password
+#
+#   OPTIONAL (have defaults, override if needed):
+#     OAUTH_DISCORD_CLIENT_ID / OAUTH_DISCORD_CLIENT_SECRET
+#     OAUTH_GOOGLE_CLIENT_ID / OAUTH_GOOGLE_CLIENT_SECRET
+#     OAUTH_MICROSOFT_CLIENT_ID / OAUTH_MICROSOFT_CLIENT_SECRET
+#     EMAIL_SMTP_PORT (default: 587)
+#     EMAIL_ENABLE_TLS (default: true)
+#     EMAIL_SENDER_ADDRESS (default: noreply@veldrath.com)
+#     DISCORD_DEV_GUILD_ID (default: 0)
+#     FOUNDRY_PUBLIC_SERVER_URL (default: https://api.veldrath.com)
+#     WEB_PUBLIC_SERVER_URL (default: https://api.veldrath.com)
 
 services:
   # ── Application Services ────────────────────────────────────────────────────
@@ -68,7 +92,7 @@ services:
       - Discord__Token=${DISCORD_TOKEN}
       - Discord__DevGuildId=${DISCORD_DEV_GUILD_ID:-0}
       - Discord__ServerBaseUrl=http://server:8080
-      - ConnectionStrings__DefaultConnection=Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - ConnectionStrings__DefaultConnection=Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SSL Mode=Require;
     # TODO: Switch to HTTP health check after Discord Dockerfile moves to aspnet image
     # healthcheck:
     #   test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
