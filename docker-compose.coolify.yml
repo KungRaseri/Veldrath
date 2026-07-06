@@ -13,41 +13,6 @@
 #   4. Create Coolify secrets for all ${VARIABLE} references (see plans/docker-compose-coolify-spec.md)
 
 services:
-  # ── Infrastructure ──────────────────────────────────────────────────────────
-
-  stalwart:
-    image: stalwartlabs/stalwart:v0.15.5
-    # SMTP port 25 decision: The current stalwart config is a dev-only open relay.
-    # Do NOT publish port 25 to the host unless the config has been hardened:
-    #   1. Set relay = false in [session.rcpt]
-    #   2. Configure [server.listener."smtp"] with TLS and authentication
-    #   3. Configure [directory] with actual domain and accounts
-    # If inbound email is not needed, leave port 25 unpublished (safe default).
-    # To enable inbound SMTP, uncomment: #   - "25:25"
-    environment:
-      - STALWART_PATH=/opt/stalwart
-      - ADMIN_SECRET=${STALWART_ADMIN_SECRET}
-    volumes:
-      - stalwart_data:/opt/stalwart
-      - ./config/stalwart:/opt/stalwart/etc:ro
-    healthcheck:
-      test: ["CMD-SHELL", "grep -q ':1F92 ' /proc/net/tcp6 || grep -q ':1F92 ' /proc/net/tcp"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    restart: unless-stopped
-    networks:
-      - veldrath
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "0.5"
-        reservations:
-          memory: 128M
-          cpus: "0.25"
-
   # ── Application Services ────────────────────────────────────────────────────
 
   server:
@@ -81,9 +46,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 15s
-    depends_on:
-      stalwart:
-        condition: service_healthy
     volumes:
       - dataprotection_keys:/root/.aspnet/DataProtection-Keys
     restart: unless-stopped
@@ -213,4 +175,3 @@ volumes:
   dataprotection_keys:
   foundry_dataprotection_keys:
   web_dataprotection_keys:
-  stalwart_data:
