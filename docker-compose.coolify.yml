@@ -55,7 +55,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Host=veldrath-db;Port=5432;Database=veldrath;Username=veldrath;Password=${POSTGRES_PASSWORD}
+      - ConnectionStrings__DefaultConnection=Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       - Database__Provider=postgres
       - Jwt__Key=${JWT_KEY}
       - OAuth__Discord__ClientId=${OAUTH_DISCORD_CLIENT_ID}
