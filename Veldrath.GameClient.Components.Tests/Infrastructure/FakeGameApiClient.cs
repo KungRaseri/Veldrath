@@ -14,10 +14,6 @@ public sealed class FakeGameApiClient : IGameApiClient
     /// <summary>Gets or sets the character list returned by <see cref="GetCharactersAsync"/>.</summary>
     public List<CharacterDto> Characters { get; set; } = [];
 
-    /// <summary>Gets or sets the result of <see cref="CreateCharacterAsync"/>.</summary>
-    public CharacterDto? CreatedCharacter { get; set; } = new CharacterDto(
-        Guid.NewGuid(), 1, "TestChar", "Warrior", 1, 0, DateTimeOffset.UtcNow, "fenwick-crossing");
-
     /// <summary>Gets or sets the result of <see cref="CheckCharacterNameAsync"/>.</summary>
     public CheckNameAvailabilityResponse? NameCheckResult { get; set; } = new CheckNameAvailabilityResponse(true, null);
 
@@ -37,9 +33,6 @@ public sealed class FakeGameApiClient : IGameApiClient
 
     /// <summary>Gets the last name passed to <see cref="CheckCharacterNameAsync"/>.</summary>
     public string? LastCheckedName { get; private set; }
-
-    /// <summary>Gets the last parameters passed to <see cref="CreateCharacterAsync"/>.</summary>
-    public (string Name, string ClassName, string DifficultyMode)? LastCreateParams { get; private set; }
 
     // ── Session-based creation — configurable stubs ──────────────────────────────
 
@@ -81,20 +74,11 @@ public sealed class FakeGameApiClient : IGameApiClient
     /// <summary>Gets the last class name passed to <see cref="SetCreationClassAsync"/>.</summary>
     public string? LastSetClassName { get; private set; }
 
-    // ── Legacy methods ───────────────────────────────────────────────────────────
-
     /// <inheritdoc />
     public Task<List<CharacterDto>> GetCharactersAsync(CancellationToken ct = default)
     {
         GetCharactersCallCount++;
         return Task.FromResult(new List<CharacterDto>(Characters));
-    }
-
-    /// <inheritdoc />
-    public Task<CharacterDto?> CreateCharacterAsync(string name, string className, string difficultyMode = "normal", CancellationToken ct = default)
-    {
-        LastCreateParams = (name, className, difficultyMode);
-        return Task.FromResult(CreatedCharacter);
     }
 
     /// <inheritdoc />
@@ -124,7 +108,7 @@ public sealed class FakeGameApiClient : IGameApiClient
 
     /// <inheritdoc />
     public Task<CharacterDto?> FinalizeCreationSessionAsync(Guid sessionId, FinalizeCreationSessionRequest request, CancellationToken ct = default)
-        => Task.FromResult(FinalizedCharacter ?? CreatedCharacter);
+        => Task.FromResult(FinalizedCharacter);
 
     /// <inheritdoc />
     public Task AbandonCreationSessionAsync(Guid sessionId, CancellationToken ct = default)

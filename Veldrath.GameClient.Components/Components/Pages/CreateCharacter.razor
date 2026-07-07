@@ -10,6 +10,7 @@
 @inject IGameApiClient Api
 @inject AuthStateServiceBase Auth
 @inject ILogger<CreateCharacter> Logger
+@inject IJSRuntime JsRuntime
 
 <div class="cc-container">
     <h1>Create Character</h1>
@@ -39,22 +40,98 @@
             <a href="/Game/CharacterSelect" class="btn btn-secondary">Back to Character Select</a>
         </div>
     }
+    else if (_sessionExpired)
+    {
+        <div class="cc-error">
+            <div class="alert alert-danger">
+                <h5>Session Expired</h5>
+                <p>Your character creation session has expired. Please start over.</p>
+            </div>
+            <button class="btn btn-primary" @onclick="ResetWizard">Start Over</button>
+            <a href="/Game/CharacterSelect" class="btn btn-secondary">Back to Character Select</a>
+        </div>
+    }
     else
     {
         <div class="cc-wizard">
+            @* Per-step error banner (M4) *@
+            @if (_stepError is not null)
+            {
+                <div class="alert alert-danger mb-3" role="alert">
+                    @_stepError
+                </div>
+            }
+
+            @* Session timeout warning banner *@
+            @{
+                var minutesRemaining = SessionMinutesRemaining;
+            }
+            @if (_sessionCreatedAt != default && minutesRemaining <= 5 && minutesRemaining > 0)
+            {
+                <div class="alert alert-warning py-1 small mb-3" role="alert">
+                    Session expires in @minutesRemaining minute(s). Please complete your character soon.
+                </div>
+            }
+            else if (_sessionCreatedAt != default && minutesRemaining <= 0)
+            {
+                <div class="alert alert-danger py-1 small mb-3" role="alert">
+                    Session expired. Please start over.
+                </div>
+            }
+
             <!-- Step indicator -->
             <nav class="cc-steps flex-wrap" role="navigation" aria-label="Character creation steps">
-                <span class="cc-step @(_currentStep >= 1 ? "cc-step-active" : "")" aria-current="@(_currentStep == 1 ? "step" : null)">1. Class</span>
-                <span class="cc-step @(_currentStep >= 2 ? "cc-step-active" : "")" aria-current="@(_currentStep == 2 ? "step" : null)">2. Species</span>
-                <span class="cc-step @(_currentStep >= 3 ? "cc-step-active" : "")" aria-current="@(_currentStep == 3 ? "step" : null)">3. Background</span>
-                <span class="cc-step @(_currentStep >= 4 ? "cc-step-active" : "")" aria-current="@(_currentStep == 4 ? "step" : null)">4. Attributes</span>
-                <span class="cc-step @(_currentStep >= 5 ? "cc-step-active" : "")" aria-current="@(_currentStep == 5 ? "step" : null)">5. Equipment</span>
-                <span class="cc-step @(_currentStep >= 6 ? "cc-step-active" : "")" aria-current="@(_currentStep == 6 ? "step" : null)">6. Name</span>
-                <span class="cc-step @(_currentStep >= 7 ? "cc-step-active" : "")" aria-current="@(_currentStep == 7 ? "step" : null)">7. Confirm</span>
+                <span class="cc-step @(_currentStep >= 1 ? "cc-step-active" : "")" aria-current="@(_currentStep == 1 ? "step" : null)">1. Name</span>
+                <span class="cc-step @(_currentStep >= 2 ? "cc-step-active" : "")" aria-current="@(_currentStep == 2 ? "step" : null)">2. Class</span>
+                <span class="cc-step @(_currentStep >= 3 ? "cc-step-active" : "")" aria-current="@(_currentStep == 3 ? "step" : null)">3. Species</span>
+                <span class="cc-step @(_currentStep >= 4 ? "cc-step-active" : "")" aria-current="@(_currentStep == 4 ? "step" : null)">4. Background</span>
+                <span class="cc-step @(_currentStep >= 5 ? "cc-step-active" : "")" aria-current="@(_currentStep == 5 ? "step" : null)">5. Attributes</span>
+                <span class="cc-step @(_currentStep >= 6 ? "cc-step-active" : "")" aria-current="@(_currentStep == 6 ? "step" : null)">6. Equipment</span>
+                <span class="cc-step @(_currentStep >= 7 ? "cc-step-active" : "")" aria-current="@(_currentStep == 7 ? "step" : null)">7. Review</span>
             </nav>
 
-            <!-- Step 1: Class Selection -->
+            <!-- Step 1: Name Input (moved to first, matching desktop order) -->
             @if (_currentStep == 1)
+            {
+                <div class="cc-step-content">
+                    <h2 @ref="_stepHeadingRef" tabindex="-1">Name Your Character</h2>
+                    <div class="cc-name-input">
+                        <label for="characterName">Character Name:</label>
+                        <input id="characterName"
+                               type="text"
+                               class="form-control @(_nameError is not null ? "is-invalid" : "") @(_nameAvailable == true ? "is-valid" : "")"
+                               @bind="_characterName"
+                               @bind:after="OnNameChanged"
+                               maxlength="20"
+                               placeholder="Enter a name (2-20 characters, letters only)"
+                               aria-describedby="cc-name-feedback" />
+                        <div id="cc-name-feedback">
+                            @if (_nameError is not null)
+                            {
+                                <p class="cc-name-error invalid-feedback d-block">@_nameError</p>
+                            }
+                            else if (_nameChecking)
+                            {
+                                <p class="cc-name-checking">Checking availability...</p>
+                            }
+                            else if (_nameAvailable == true)
+                            {
+                                <p class="cc-name-available valid-feedback d-block">Name is available!</p>
+                            }
+                        </div>
+                    </div>
+                    <div class="cc-nav">
+                        <button class="btn btn-outline-danger w-100 w-md-auto" @onclick="CancelWizard" disabled="@(_isCreating)">
+                            Cancel
+                        </button>
+                        <button class="btn btn-primary w-100 w-md-auto" @onclick="GoToStep2Async"
+                                disabled="@(string.IsNullOrWhiteSpace(_characterName) || _nameAvailable != true)">Next</button>
+                    </div>
+                </div>
+            }
+
+            <!-- Step 2: Class Selection -->
+            @if (_currentStep == 2)
             {
                 <div class="cc-step-content">
                     <h2 @ref="_stepHeadingRef" tabindex="-1">Choose a Class</h2>
@@ -77,14 +154,17 @@
                         }
                     </div>
                     <div class="cc-nav">
-                        <a href="/Game/CharacterSelect" class="btn btn-secondary w-100 w-md-auto">Back</a>
-                        <button class="btn btn-primary w-100 w-md-auto" @onclick="GoToStep2Async" disabled="@(_selectedClass is null)">Next</button>
+                        <button class="btn btn-secondary w-100 w-md-auto" @onclick="GoToStep1Async">Back</button>
+                        <button class="btn btn-outline-danger w-100 w-md-auto" @onclick="CancelWizard" disabled="@(_isCreating)">
+                            Cancel
+                        </button>
+                        <button class="btn btn-primary w-100 w-md-auto" @onclick="GoToStep3Async" disabled="@(_selectedClass is null)">Next</button>
                     </div>
                 </div>
             }
 
-            <!-- Step 2: Species Selection -->
-            @if (_currentStep == 2)
+            <!-- Step 3: Species Selection -->
+            @if (_currentStep == 3)
             {
                 <div class="cc-step-content">
                     <h2 @ref="_stepHeadingRef" tabindex="-1">Choose a Species</h2>
@@ -109,14 +189,17 @@
                         }
                     </div>
                     <div class="cc-nav">
-                        <button class="btn btn-secondary w-100 w-md-auto" @onclick="GoToStep1Async">Back</button>
-                        <button class="btn btn-primary w-100 w-md-auto" @onclick="GoToStep3Async" disabled="@(_selectedSpecies is null)">Next</button>
+                        <button class="btn btn-secondary w-100 w-md-auto" @onclick="GoToStep2Async">Back</button>
+                        <button class="btn btn-outline-danger w-100 w-md-auto" @onclick="CancelWizard" disabled="@(_isCreating)">
+                            Cancel
+                        </button>
+                        <button class="btn btn-primary w-100 w-md-auto" @onclick="GoToStep4Async" disabled="@(_selectedSpecies is null)">Next</button>
                     </div>
                 </div>
             }
 
-            <!-- Step 3: Background Selection -->
-            @if (_currentStep == 3)
+            <!-- Step 4: Background Selection -->
+            @if (_currentStep == 4)
             {
                 <div class="cc-step-content">
                     <h2 @ref="_stepHeadingRef" tabindex="-1">Choose a Background</h2>
@@ -141,14 +224,17 @@
                         }
                     </div>
                     <div class="cc-nav">
-                        <button class="btn btn-secondary w-100 w-md-auto" @onclick="GoToStep2Async">Back</button>
-                        <button class="btn btn-primary w-100 w-md-auto" @onclick="GoToStep4Async" disabled="@(_selectedBackground is null)">Next</button>
+                        <button class="btn btn-secondary w-100 w-md-auto" @onclick="GoToStep3Async">Back</button>
+                        <button class="btn btn-outline-danger w-100 w-md-auto" @onclick="CancelWizard" disabled="@(_isCreating)">
+                            Cancel
+                        </button>
+                        <button class="btn btn-primary w-100 w-md-auto" @onclick="GoToStep5Async" disabled="@(_selectedBackground is null)">Next</button>
                     </div>
                 </div>
             }
 
-            <!-- Step 4: Attributes -->
-            @if (_currentStep == 4)
+            <!-- Step 5: Attributes -->
+            @if (_currentStep == 5)
             {
                 <div class="cc-step-content">
                     <h2 @ref="_stepHeadingRef" tabindex="-1">Allocate Attributes</h2>
@@ -191,9 +277,12 @@
                     </div>
 
                     <div class="cc-nav">
-                        <button class="btn btn-secondary w-100 w-md-auto" @onclick="GoToStep3Async">Back</button>
+                        <button class="btn btn-secondary w-100 w-md-auto" @onclick="GoToStep4Async">Back</button>
+                        <button class="btn btn-outline-danger w-100 w-md-auto" @onclick="CancelWizard" disabled="@(_isCreating)">
+                            Cancel
+                        </button>
                         <button class="btn btn-primary w-100 w-md-auto"
-                                @onclick="GoToStep5Async"
+                                @onclick="GoToStep6Async"
                                 disabled="@(RemainingPoints != 0 || _isSavingAttributes)"
                                 title="@(RemainingPoints != 0 ? "Spend all 27 points to continue" : "")">
                             @(_isSavingAttributes ? "Saving..." : "Next")
@@ -202,8 +291,8 @@
                 </div>
             }
 
-            <!-- Step 5: Equipment Preferences -->
-            @if (_currentStep == 5)
+            <!-- Step 6: Equipment Preferences -->
+            @if (_currentStep == 6)
             {
                 <div class="cc-step-content">
                     <h2 @ref="_stepHeadingRef" tabindex="-1">Equipment Preferences</h2>
@@ -227,7 +316,7 @@
                                     <option value="">(Class Default)</option>
                                     @foreach (var weapon in WeaponTypes.Where(w => !string.IsNullOrEmpty(w)))
                                     {
-                                        <option value="@weapon.ToLowerInvariant()">@weapon</option>
+                                        <option value="@weapon.ToLowerInvariant().Replace(" ", "-")">@weapon</option>
                                     }
                                 </select>
                             </div>
@@ -239,50 +328,15 @@
                     </div>
 
                     <div class="cc-nav">
-                        <button class="btn btn-secondary w-100 w-md-auto" @onclick="GoToStep4Async">Back</button>
+                        <button class="btn btn-secondary w-100 w-md-auto" @onclick="GoToStep5Async">Back</button>
+                        <button class="btn btn-outline-danger w-100 w-md-auto" @onclick="CancelWizard" disabled="@(_isCreating)">
+                            Cancel
+                        </button>
                         <button class="btn btn-primary w-100 w-md-auto"
-                                @onclick="GoToStep6SaveEquipmentAsync"
+                                @onclick="GoToStep7SaveEquipmentAsync"
                                 disabled="@(_isSavingEquipment)">
                             @(_isSavingEquipment ? "Saving..." : "Next")
                         </button>
-                    </div>
-                </div>
-            }
-
-            <!-- Step 6: Name Input -->
-            @if (_currentStep == 6)
-            {
-                <div class="cc-step-content">
-                    <h2 @ref="_stepHeadingRef" tabindex="-1">Name Your Character</h2>
-                    <div class="cc-name-input">
-                        <label for="characterName">Character Name:</label>
-                        <input id="characterName"
-                               type="text"
-                               class="form-control @(_nameError is not null ? "is-invalid" : "") @(_nameAvailable == true ? "is-valid" : "")"
-                               @bind="_characterName"
-                               @bind:after="OnNameChanged"
-                               maxlength="20"
-                               placeholder="Enter a name (2-20 characters, letters and spaces only)"
-                               aria-describedby="cc-name-feedback" />
-                        <div id="cc-name-feedback">
-                            @if (_nameError is not null)
-                            {
-                                <p class="cc-name-error invalid-feedback d-block">@_nameError</p>
-                            }
-                            else if (_nameChecking)
-                            {
-                                <p class="cc-name-checking">Checking availability...</p>
-                            }
-                            else if (_nameAvailable == true)
-                            {
-                                <p class="cc-name-available valid-feedback d-block">Name is available!</p>
-                            }
-                        </div>
-                    </div>
-                    <div class="cc-nav">
-                        <button class="btn btn-secondary w-100 w-md-auto" @onclick="GoToStep5Async">Back</button>
-                        <button class="btn btn-primary w-100 w-md-auto" @onclick="GoToStep7Async"
-                                disabled="@(string.IsNullOrWhiteSpace(_characterName) || _nameAvailable != true)">Next</button>
                     </div>
                 </div>
             }
@@ -414,6 +468,9 @@
                         <button class="btn btn-outline-secondary w-100 w-md-auto" @onclick="GoToStep6Async" disabled="@(_isCreating)">
                             ← Back
                         </button>
+                        <button class="btn btn-outline-danger w-100 w-md-auto" @onclick="CancelWizard" disabled="@(_isCreating)">
+                            Cancel
+                        </button>
                         <button class="btn btn-success btn-lg w-100 w-md-auto" @onclick="ConfirmCreate" disabled="@(_isCreating)">
                             @(_isCreating ? "Creating..." : "Create Character")
                         </button>
@@ -440,8 +497,13 @@
     private string? _loadError;
     private int _currentStep = 1;
     private Guid? _sessionId;
+    private DateTime _sessionCreatedAt;
+    private bool _sessionExpired;
     private bool _isSavingAttributes;
     private bool _isSavingEquipment;
+
+    // Per-step error display (M4)
+    private string? _stepError;
 
     // Character preview
     private CharacterPreviewDto? _characterPreview;
@@ -453,6 +515,9 @@
     // Focus management
     private ElementReference _stepHeadingRef;
 
+    // Name check debounce (C6)
+    private CancellationTokenSource? _nameCheckCts;
+
     // Point-buy constants
     private static readonly Dictionary<int, int> StatCosts = new()
     {
@@ -462,23 +527,25 @@
     private const int MaxStat = 15;
     private const int TotalBudget = 27;
 
+    // C5: Stat keys use PascalCase to match desktop
     private Dictionary<string, int> _statAllocations = new()
     {
-        { "strength", 8 }, { "dexterity", 8 }, { "constitution", 8 },
-        { "intelligence", 8 }, { "wisdom", 8 }, { "charisma", 8 }
+        { "Strength", 8 }, { "Dexterity", 8 }, { "Constitution", 8 },
+        { "Intelligence", 8 }, { "Wisdom", 8 }, { "Charisma", 8 }
     };
 
     private int PointsSpent => _statAllocations.Sum(kvp => StatCosts[kvp.Value]);
     private int RemainingPoints => TotalBudget - PointsSpent;
 
+    // C5: StatDisplayNames use PascalCase keys
     private static readonly Dictionary<string, string> StatDisplayNames = new()
     {
-        { "strength", "Strength (STR)" },
-        { "dexterity", "Dexterity (DEX)" },
-        { "constitution", "Constitution (CON)" },
-        { "intelligence", "Intelligence (INT)" },
-        { "wisdom", "Wisdom (WIS)" },
-        { "charisma", "Charisma (CHA)" }
+        { "Strength", "Strength (STR)" },
+        { "Dexterity", "Dexterity (DEX)" },
+        { "Constitution", "Constitution (CON)" },
+        { "Intelligence", "Intelligence (INT)" },
+        { "Wisdom", "Wisdom (WIS)" },
+        { "Charisma", "Charisma (CHA)" }
     };
 
     // Equipment preferences
@@ -491,6 +558,12 @@
     // Difficulty mode
     private string _difficultyMode = "normal";
     private bool IsHardcore => _difficultyMode == "hardcore";
+
+    /// <summary>Gets the number of minutes remaining before the creation session expires.
+    /// Computed from <see cref="_sessionCreatedAt"/> and the server-side session idle timeout (30 minutes).</summary>
+    private int SessionMinutesRemaining => _sessionCreatedAt == default
+        ? 30
+        : 30 - (int)(DateTime.UtcNow - _sessionCreatedAt).TotalMinutes;
 
     /// <summary>Gets a human-readable summary of the selected equipment preferences.</summary>
     private string EquipmentSummary
@@ -509,9 +582,10 @@
 
             if (!string.IsNullOrEmpty(_selectedWeaponType))
             {
+                // M6: weapon slugs now use .Replace(" ", "-") consistently
                 var display = WeaponTypes.FirstOrDefault(w =>
                     !string.IsNullOrEmpty(w) &&
-                    w.ToLowerInvariant() == _selectedWeaponType) ?? _selectedWeaponType;
+                    w.ToLowerInvariant().Replace(" ", "-") == _selectedWeaponType) ?? _selectedWeaponType;
                 parts.Add(display);
             }
 
@@ -531,10 +605,12 @@
             return;
         }
 
+        Navigation.LocationChanged += OnLocationChanged;
+
         await LoadDataAsync();
     }
 
-    /// <summary>Fetches all reference data (classes, species, backgrounds) and begins a creation session.</summary>
+    /// <summary>Fetches all reference data (classes, species, backgrounds) in parallel and begins a creation session.</summary>
     private async Task LoadDataAsync()
     {
         _isInitializing = true;
@@ -543,11 +619,19 @@
 
         try
         {
-            // Fetch classes
+            // M5: Parallelize content loading with Task.WhenAll
+            var classesTask = Api.GetClassesAsync();
+            var speciesTask = Api.GetSpeciesAsync();
+            var backgroundsTask = Api.GetBackgroundsAsync();
+            var sessionTask = Api.BeginCreationSessionAsync();
+
+            await Task.WhenAll(classesTask, speciesTask, backgroundsTask, sessionTask);
+
+            // Process results individually with error handling per task
             List<ActorClassDto>? classes = null;
             try
             {
-                classes = await Api.GetClassesAsync();
+                classes = await classesTask;
             }
             catch (Exception ex)
             {
@@ -556,11 +640,10 @@
                 return;
             }
 
-            // Fetch species
             List<SpeciesDto>? speciesList = null;
             try
             {
-                speciesList = await Api.GetSpeciesAsync();
+                speciesList = await speciesTask;
             }
             catch (Exception ex)
             {
@@ -569,11 +652,10 @@
                 return;
             }
 
-            // Fetch backgrounds
             List<BackgroundDto>? backgrounds = null;
             try
             {
-                backgrounds = await Api.GetBackgroundsAsync();
+                backgrounds = await backgroundsTask;
             }
             catch (Exception ex)
             {
@@ -586,13 +668,30 @@
             _availableSpecies = speciesList!;
             _availableBackgrounds = backgrounds!;
 
-            // Begin a creation session so the server tracks wizard state.
+            // M1: Auto-select first item in each list
+            if (_availableClasses.Count > 0)
+            {
+                _selectedClass = _availableClasses[0];
+            }
+
+            if (_availableSpecies.Count > 0)
+            {
+                _selectedSpecies = _availableSpecies[0];
+            }
+
+            if (_availableBackgrounds.Count > 0)
+            {
+                _selectedBackground = _availableBackgrounds[0];
+            }
+
+            // Process session creation result
             try
             {
-                var sessionResult = await Api.BeginCreationSessionAsync();
+                var sessionResult = await sessionTask;
                 if (sessionResult is { Success: true })
                 {
                     _sessionId = sessionResult.SessionId;
+                    _sessionCreatedAt = DateTime.UtcNow;
                 }
                 else
                 {
@@ -619,6 +718,12 @@
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
+        Navigation.LocationChanged -= OnLocationChanged;
+        _nameCheckCts?.Cancel();
+        _nameCheckCts?.Dispose();
+
+        await DisableBeforeUnloadAsync();
+
         if (_sessionId.HasValue)
         {
             try
@@ -632,6 +737,56 @@
         }
     }
 
+    /// <summary>Handles in-app navigation away from the wizard by abandoning the creation session.</summary>
+    /// <param name="sender">The event source.</param>
+    /// <param name="e">The location changed event arguments.</param>
+    private async void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        if (!e.Location.Contains("/Game/CreateCharacter", StringComparison.OrdinalIgnoreCase))
+        {
+            await AbandonSessionIfNeeded();
+        }
+    }
+
+    /// <summary>Best-effort session abandonment for circuit disconnect or navigation away scenarios.
+    /// Does not throw — failures are silently logged.</summary>
+    private async Task AbandonSessionIfNeeded()
+    {
+        if (_sessionId.HasValue)
+        {
+            try
+            {
+                await Api.AbandonCreationSessionAsync(_sessionId.Value);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to abandon creation session {SessionId} on navigation", _sessionId);
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JsRuntime.InvokeVoidAsync("characterCreation.enableBeforeUnload");
+        }
+    }
+
+    /// <summary>Removes the browser beforeunload listener that warns users about unsaved progress.</summary>
+    private async Task DisableBeforeUnloadAsync()
+    {
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("characterCreation.disableBeforeUnload");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to disable beforeunload listener");
+        }
+    }
+
     /// <summary>Moves focus to the current step heading for screen reader accessibility.</summary>
     private async Task FocusStepHeadingAsync()
     {
@@ -642,10 +797,11 @@
         }
     }
 
-    /// <summary>Navigates to the specified step and moves focus to its heading.</summary>
+    /// <summary>Navigates to the specified step, clears any step error, and moves focus to its heading. (M4)</summary>
     /// <param name="step">The step number (1–7) to navigate to.</param>
     private async Task NavigateToStepAsync(int step)
     {
+        _stepError = null;
         _currentStep = step;
         await FocusStepHeadingAsync();
     }
@@ -661,11 +817,12 @@
         }
     }
 
+    /// <summary>Selects a class and eagerly persists the choice to the creation session.</summary>
+    /// <param name="cls">The class to select.</param>
     private async Task SelectClass(ActorClassDto cls)
     {
         _selectedClass = cls;
 
-        // Persist the class choice to the session if one is active.
         if (_sessionId.HasValue)
         {
             try
@@ -675,6 +832,7 @@
             catch (Exception ex)
             {
                 Logger.LogWarning(ex, "Failed to persist class choice to session {SessionId}", _sessionId);
+                _stepError = "Failed to save class choice. You can continue, but it may not be recorded.";
             }
         }
     }
@@ -694,6 +852,7 @@
             catch (Exception ex)
             {
                 Logger.LogWarning(ex, "Failed to persist species choice to session {SessionId}", _sessionId);
+                _stepError = "Failed to save species choice. You can continue, but it may not be recorded.";
             }
         }
     }
@@ -713,20 +872,54 @@
             catch (Exception ex)
             {
                 Logger.LogWarning(ex, "Failed to persist background choice to session {SessionId}", _sessionId);
+                _stepError = "Failed to save background choice. You can continue, but it may not be recorded.";
             }
         }
     }
 
+    // Step navigation methods. Steps are reordered to match desktop:
+    // 1=Name, 2=Class, 3=Species, 4=Background, 5=Attributes, 6=Equipment, 7=Review
     private async Task GoToStep1Async() => await NavigateToStepAsync(1);
-    private async Task GoToStep2Async() => await NavigateToStepAsync(2);
     private async Task GoToStep3Async() => await NavigateToStepAsync(3);
     private async Task GoToStep4Async() => await NavigateToStepAsync(4);
     private async Task GoToStep5Async() => await NavigateToStepAsync(5);
     private async Task GoToStep6Async() => await NavigateToStepAsync(6);
 
-    /// <summary>Navigates to the name step, saving equipment preferences first if any are set.</summary>
-    private async Task GoToStep6SaveEquipmentAsync()
+    /// <summary>Saves the character name to the session and advances from step 1 (Name) to step 2 (Class). (C3+M8)</summary>
+    private async Task GoToStep2Async()
     {
+        _stepError = null;
+
+        var trimmedName = _characterName.Trim();
+
+        // Save name to session before advancing (matching desktop behavior)
+        if (_sessionId.HasValue && !string.IsNullOrWhiteSpace(trimmedName))
+        {
+            try
+            {
+                var result = await Api.SetCreationNameAsync(_sessionId.Value, trimmedName);
+                if (result is not { Success: true })
+                {
+                    _stepError = "Failed to save character name to session. Please try again.";
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to persist character name to session {SessionId}", _sessionId);
+                _stepError = "Failed to save character name. Please try again.";
+                return;
+            }
+        }
+
+        await NavigateToStepAsync(2);
+    }
+
+    /// <summary>Saves equipment preferences and advances from step 6 (Equipment) to step 7 (Review).</summary>
+    private async Task GoToStep7SaveEquipmentAsync()
+    {
+        _stepError = null;
+
         // Only call the API if at least one equipment preference is set.
         if (_sessionId.HasValue &&
             (!string.IsNullOrEmpty(_selectedArmorType) || !string.IsNullOrEmpty(_selectedWeaponType) || _includeShield))
@@ -741,6 +934,7 @@
             catch (Exception ex)
             {
                 Logger.LogWarning(ex, "Failed to persist equipment preferences to session {SessionId}", _sessionId);
+                _stepError = "Failed to save equipment preferences. You can continue, but defaults will be used.";
             }
             finally
             {
@@ -748,12 +942,6 @@
             }
         }
 
-        await NavigateToStepAsync(6);
-    }
-
-    /// <summary>Navigates to the review step and loads the character preview from the server.</summary>
-    private async Task GoToStep7Async()
-    {
         _currentStep = 7;
         await FocusStepHeadingAsync();
         await LoadPreviewAsync();
@@ -791,7 +979,7 @@
     private void SetHardcoreDifficulty() => _difficultyMode = "hardcore";
 
     /// <summary>Increases the specified stat by 1 if within budget and cap.</summary>
-    /// <param name="statKey">The lowercase stat key (e.g. <c>"strength"</c>).</param>
+    /// <param name="statKey">The PascalCase stat key (e.g. <c>"Strength"</c>).</param>
     private async Task IncreaseStatAsync(string statKey)
     {
         if (!_statAllocations.TryGetValue(statKey, out var currentValue))
@@ -818,7 +1006,7 @@
     }
 
     /// <summary>Decreases the specified stat by 1 if above the minimum.</summary>
-    /// <param name="statKey">The lowercase stat key (e.g. <c>"strength"</c>).</param>
+    /// <param name="statKey">The PascalCase stat key (e.g. <c>"Strength"</c>).</param>
     private async Task DecreaseStatAsync(string statKey)
     {
         if (!_statAllocations.TryGetValue(statKey, out var currentValue))
@@ -853,12 +1041,19 @@
         }
     }
 
+    /// <summary>Handles name input changes with client-side validation and a 400 ms debounced server availability check. (C2, C6)</summary>
     private async Task OnNameChanged()
     {
+        _nameCheckCts?.Cancel();
+        _nameCheckCts = new CancellationTokenSource();
+        var ct = _nameCheckCts.Token;
+
         _nameError = null;
         _nameAvailable = null;
 
         var trimmed = _characterName?.Trim() ?? string.Empty;
+
+        // C2: Letters-only validation (no spaces, matching desktop and server)
         if (trimmed.Length < 2)
         {
             _nameError = "Name must be at least 2 characters.";
@@ -871,10 +1066,10 @@
             _srAnnouncement = "Name must be at most 20 characters";
             return;
         }
-        if (!System.Text.RegularExpressions.Regex.IsMatch(trimmed, @"^[a-zA-Z ]+$"))
+        if (!System.Text.RegularExpressions.Regex.IsMatch(trimmed, @"^[a-zA-Z]+$"))
         {
-            _nameError = "Name may only contain letters and spaces.";
-            _srAnnouncement = "Name may only contain letters and spaces";
+            _nameError = "Name may only contain letters.";
+            _srAnnouncement = "Name may only contain letters";
             return;
         }
 
@@ -882,7 +1077,15 @@
 
         try
         {
+            // C6: 400 ms debounce before server check, matching desktop behavior
+            await Task.Delay(400, ct);
+            if (ct.IsCancellationRequested)
+                return;
+
             var result = await Api.CheckCharacterNameAsync(trimmed);
+            if (ct.IsCancellationRequested)
+                return;
+
             if (result is null)
             {
                 _nameError = "Unexpected empty response from server. Please try again.";
@@ -901,6 +1104,10 @@
                 _srAnnouncement = "Name is available";
             }
         }
+        catch (TaskCanceledException)
+        {
+            // Debounced — a newer keystroke cancelled this check
+        }
         catch (HttpRequestException ex)
         {
             Logger.LogError(ex, "HTTP error while checking character name availability.");
@@ -915,10 +1122,14 @@
         }
         finally
         {
-            _nameChecking = false;
+            if (!ct.IsCancellationRequested)
+            {
+                _nameChecking = false;
+            }
         }
     }
 
+    /// <summary>Finalizes character creation. Passes <c>null</c> for the character name since it was already saved via <see cref="SetCreationNameAsync"/>. (C3+M8)</summary>
     private async Task ConfirmCreate()
     {
         if (_selectedClass is null || string.IsNullOrWhiteSpace(_characterName))
@@ -926,27 +1137,25 @@
 
         _isCreating = true;
         _loadError = null;
+        _stepError = null;
 
         try
         {
-            CharacterDto? result;
+            if (!_sessionId.HasValue)
+            {
+                _stepError = "No active creation session. Please restart the wizard.";
+                return;
+            }
 
-            if (_sessionId.HasValue)
-            {
-                // Use the session-based finalization endpoint with the selected difficulty mode.
-                result = await Api.FinalizeCreationSessionAsync(
-                    _sessionId.Value,
-                    new FinalizeCreationSessionRequest(_characterName.Trim(), _difficultyMode));
-            }
-            else
-            {
-                // Fallback to the legacy endpoint if no session exists.
-                result = await Api.CreateCharacterAsync(_characterName.Trim(), _selectedClass.DisplayName, _difficultyMode);
-            }
+            // C3+M8: Pass null for CharacterName — the server reads it from session state
+            // (set earlier via SetCreationNameAsync in GoToStep2Async).
+            var result = await Api.FinalizeCreationSessionAsync(
+                _sessionId.Value,
+                new FinalizeCreationSessionRequest(null, _difficultyMode));
 
             if (result is null)
             {
-                _loadError = "Failed to create character. The name may already be taken.";
+                _stepError = "Failed to create character. The name may already be taken.";
             }
             else
             {
@@ -956,7 +1165,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to create character.");
-            _loadError = "Failed to create character. Please try again.";
+            _stepError = "Failed to create character. Please try again.";
         }
         finally
         {
@@ -964,9 +1173,29 @@
         }
     }
 
+    /// <summary>Abandons the current creation session and returns to character select.</summary>
+    private async Task CancelWizard()
+    {
+        if (_sessionId.HasValue)
+        {
+            try
+            {
+                await Api.AbandonCreationSessionAsync(_sessionId.Value);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to abandon creation session {SessionId} during cancel", _sessionId);
+            }
+        }
+
+        Navigation.NavigateTo("/Game/CharacterSelect");
+    }
+
     private async Task ResetWizard()
     {
         _loadError = null;
+        _stepError = null;
+        _sessionExpired = false;
         _currentStep = 1;
 
         // Abandon the old session and start a fresh one.
@@ -977,6 +1206,7 @@
         }
 
         _sessionId = null;
+        _sessionCreatedAt = default;
         _selectedClass = null;
         _selectedSpecies = null;
         _selectedBackground = null;
@@ -987,8 +1217,8 @@
         _difficultyMode = "normal";
         _statAllocations = new Dictionary<string, int>
         {
-            { "strength", 8 }, { "dexterity", 8 }, { "constitution", 8 },
-            { "intelligence", 8 }, { "wisdom", 8 }, { "charisma", 8 }
+            { "Strength", 8 }, { "Dexterity", 8 }, { "Constitution", 8 },
+            { "Intelligence", 8 }, { "Wisdom", 8 }, { "Charisma", 8 }
         };
 
         try
@@ -997,6 +1227,7 @@
             if (sessionResult is { Success: true })
             {
                 _sessionId = sessionResult.SessionId;
+                _sessionCreatedAt = DateTime.UtcNow;
             }
         }
         catch (Exception ex)

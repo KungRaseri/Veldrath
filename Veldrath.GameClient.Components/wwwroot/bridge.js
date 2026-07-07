@@ -102,3 +102,21 @@
 
     console.log('[VeldrathBridge] Bridge initialized successfully.');
 })();
+
+// ── Browser tab/window close protection ─────────────────────────────────────
+// Works in all browsers (not just WebView2).
+// Used by the character creation wizard to warn users before navigating away
+// with unsaved progress.
+
+window.characterCreation = {
+    enableBeforeUnload: function () {
+        window.addEventListener('beforeunload', window.characterCreation._onBeforeUnload);
+    },
+    disableBeforeUnload: function () {
+        window.removeEventListener('beforeunload', window.characterCreation._onBeforeUnload);
+    },
+    _onBeforeUnload: function (e) {
+        e.preventDefault();
+        e.returnValue = 'You have an unfinished character. Are you sure you want to leave?';
+    }
+};
