@@ -51,7 +51,7 @@ public class VeldrathApiClient(HttpClient http) : VeldrathAuthApiClient(http), V
         return await resp.Content.ReadFromJsonAsync<CheckNameAvailabilityResponse>(ct);
     }
 
-    // ── Content (classes, species, etc.) ─────────────────────────────────────
+    // ── Content (classes, species, backgrounds, etc.) ────────────────────────
 
     /// <summary>Returns all active actor classes available for character creation.</summary>
     public async Task<List<ActorClassDto>> GetClassesAsync(CancellationToken ct = default)
@@ -59,6 +59,159 @@ public class VeldrathApiClient(HttpClient http) : VeldrathAuthApiClient(http), V
         var resp = await Http.GetAsync("/api/content/classes", ct);
         resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<List<ActorClassDto>>(ct) ?? [];
+    }
+
+    /// <summary>Returns all available playable species for character creation.</summary>
+    public async Task<List<SpeciesDto>> GetSpeciesAsync(CancellationToken ct = default)
+    {
+        var resp = await Http.GetAsync("/api/content/species", ct);
+        resp.EnsureSuccessStatusCode();
+        return await resp.Content.ReadFromJsonAsync<List<SpeciesDto>>(ct) ?? [];
+    }
+
+    /// <summary>Returns all available backgrounds for character creation.</summary>
+    public async Task<List<BackgroundDto>> GetBackgroundsAsync(CancellationToken ct = default)
+    {
+        var resp = await Http.GetAsync("/api/content/backgrounds", ct);
+        resp.EnsureSuccessStatusCode();
+        return await resp.Content.ReadFromJsonAsync<List<BackgroundDto>>(ct) ?? [];
+    }
+
+    // ── Session-based character creation ───────────────────────────────────────────
+
+    /// <summary>Begins a new character creation session and returns the session identifier.</summary>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task<BeginCreationSessionResponse?> BeginCreationSessionAsync(CancellationToken ct = default)
+    {
+        var resp = await Http.PostAsJsonAsync("/api/character-creation/sessions", new { }, ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<BeginCreationSessionResponse>(ct)
+            : null;
+    }
+
+    /// <summary>Returns a non-persisted preview of the character being built in the session.</summary>
+    /// <param name="sessionId">The session identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task<CharacterPreviewDto?> GetCreationPreviewAsync(Guid sessionId, CancellationToken ct = default)
+    {
+        var resp = await Http.GetAsync($"/api/character-creation/sessions/{sessionId}/preview", ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<CharacterPreviewDto>(ct)
+            : null;
+    }
+
+    /// <summary>Finalizes the session and creates the character.</summary>
+    /// <param name="sessionId">The session identifier.</param>
+    /// <param name="request">The finalization request containing the character name and difficulty mode.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task<CharacterDto?> FinalizeCreationSessionAsync(Guid sessionId, FinalizeCreationSessionRequest request, CancellationToken ct = default)
+    {
+        var resp = await Http.PostAsJsonAsync($"/api/character-creation/sessions/{sessionId}/finalize", request, ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<CharacterDto>(ct)
+            : null;
+    }
+
+    /// <summary>Abandons the creation session and releases server-side resources.</summary>
+    /// <param name="sessionId">The session identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task AbandonCreationSessionAsync(Guid sessionId, CancellationToken ct = default)
+    {
+        try { await Http.DeleteAsync($"/api/character-creation/sessions/{sessionId}", ct); }
+        catch { /* best-effort — session will expire server-side regardless */ }
+    }
+
+    /// <summary>Sets the character name on an existing creation session.</summary>
+    /// <param name="sessionId">The session identifier.</param>
+    /// <param name="characterName">The desired character name.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task<SetCreationChoiceResponse?> SetCreationNameAsync(Guid sessionId, string characterName, CancellationToken ct = default)
+    {
+        var resp = await Http.PatchAsJsonAsync($"/api/character-creation/sessions/{sessionId}/name",
+            new SetCreationNameRequest(characterName), ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<SetCreationChoiceResponse>(ct)
+            : null;
+    }
+
+    /// <summary>Sets the selected class on an existing creation session.</summary>
+    /// <param name="sessionId">The session identifier.</param>
+    /// <param name="className">The class display name or slug to select.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task<SetCreationChoiceResponse?> SetCreationClassAsync(Guid sessionId, string className, CancellationToken ct = default)
+    {
+        var resp = await Http.PatchAsJsonAsync($"/api/character-creation/sessions/{sessionId}/class",
+            new SetCreationClassRequest(className), ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<SetCreationChoiceResponse>(ct)
+            : null;
+    }
+
+    /// <summary>Sets the selected species on an existing creation session.</summary>
+    /// <param name="sessionId">The session identifier.</param>
+    /// <param name="speciesSlug">The species slug to select.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task<SetCreationChoiceResponse?> SetCreationSpeciesAsync(Guid sessionId, string speciesSlug, CancellationToken ct = default)
+    {
+        var resp = await Http.PatchAsJsonAsync($"/api/character-creation/sessions/{sessionId}/species",
+            new SetCreationSpeciesRequest(speciesSlug), ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<SetCreationChoiceResponse>(ct)
+            : null;
+    }
+
+    /// <summary>Sets the selected background on an existing creation session.</summary>
+    /// <param name="sessionId">The session identifier.</param>
+    /// <param name="backgroundId">The background identifier to select.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task<SetCreationChoiceResponse?> SetCreationBackgroundAsync(Guid sessionId, string backgroundId, CancellationToken ct = default)
+    {
+        var resp = await Http.PatchAsJsonAsync($"/api/character-creation/sessions/{sessionId}/background",
+            new SetCreationBackgroundRequest(backgroundId), ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<SetCreationChoiceResponse>(ct)
+            : null;
+    }
+
+    /// <summary>Sets the attribute allocations (point-buy) on an existing creation session.</summary>
+    /// <param name="sessionId">The session identifier.</param>
+    /// <param name="allocations">A mapping of attribute name to the allocated value.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task<AllocateCreationAttributesResponse?> SetCreationAttributesAsync(Guid sessionId, Dictionary<string, int> allocations, CancellationToken ct = default)
+    {
+        var resp = await Http.PatchAsJsonAsync($"/api/character-creation/sessions/{sessionId}/attributes",
+            new SetCreationAttributesRequest(allocations), ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<AllocateCreationAttributesResponse>(ct)
+            : null;
+    }
+
+    /// <summary>Sets the equipment preferences on an existing creation session.</summary>
+    /// <param name="sessionId">The session identifier.</param>
+    /// <param name="armorType">The preferred armor type slug, or <c>null</c> to skip.</param>
+    /// <param name="weaponType">The preferred weapon type slug, or <c>null</c> to skip.</param>
+    /// <param name="includeShield">Whether to include a shield in starting equipment.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task<SetCreationChoiceResponse?> SetCreationEquipmentPreferencesAsync(Guid sessionId, string? armorType, string? weaponType, bool includeShield, CancellationToken ct = default)
+    {
+        var resp = await Http.PatchAsJsonAsync($"/api/character-creation/sessions/{sessionId}/equipment",
+            new SetCreationEquipmentPreferencesRequest(armorType, weaponType, includeShield), ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<SetCreationChoiceResponse>(ct)
+            : null;
+    }
+
+    /// <summary>Sets the starting location on an existing creation session.</summary>
+    /// <param name="sessionId">The session identifier.</param>
+    /// <param name="locationId">The location identifier to select.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task<SetCreationChoiceResponse?> SetCreationLocationAsync(Guid sessionId, string locationId, CancellationToken ct = default)
+    {
+        var resp = await Http.PatchAsJsonAsync($"/api/character-creation/sessions/{sessionId}/location",
+            new SetCreationLocationRequest(locationId), ct);
+        return resp.IsSuccessStatusCode
+            ? await resp.Content.ReadFromJsonAsync<SetCreationChoiceResponse>(ct)
+            : null;
     }
 
     // ── Editorial (public, no auth required) ─────────────────────────────────
