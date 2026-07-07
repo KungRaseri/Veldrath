@@ -42,13 +42,13 @@ public class VeldrathApiClient(HttpClient http) : VeldrathAuthApiClient(http), V
 
     /// <summary>Checks whether a character name is available.</summary>
     /// <param name="name">The desired character name.</param>
-    /// <returns>A response indicating availability, or <c>null</c> on failure.</returns>
+    /// <returns>A response indicating availability, or <c>null</c> if the response body is empty.</returns>
+    /// <exception cref="HttpRequestException">Thrown when the server returns a non-success status code.</exception>
     public async Task<CheckNameAvailabilityResponse?> CheckCharacterNameAsync(string name, CancellationToken ct = default)
     {
-        var resp = await Http.GetAsync($"/api/characters/check-name?name={Uri.EscapeDataString(name)}", ct);
-        return resp.IsSuccessStatusCode
-            ? await resp.Content.ReadFromJsonAsync<CheckNameAvailabilityResponse>(ct)
-            : null;
+        var resp = await Http.GetAsync($"/api/character-creation/sessions/check-name?name={Uri.EscapeDataString(name)}", ct);
+        resp.EnsureSuccessStatusCode();
+        return await resp.Content.ReadFromJsonAsync<CheckNameAvailabilityResponse>(ct);
     }
 
     // ── Content (classes, species, etc.) ─────────────────────────────────────

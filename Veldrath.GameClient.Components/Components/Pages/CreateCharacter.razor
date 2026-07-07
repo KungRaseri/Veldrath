@@ -71,8 +71,8 @@
                                class="form-control"
                                @bind="_characterName"
                                @bind:after="OnNameChanged"
-                               maxlength="30"
-                               placeholder="Enter a name (2-30 characters)" />
+                               maxlength="20"
+                               placeholder="Enter a name (2-20 characters, letters and spaces only)" />
                         @if (_nameError is not null)
                         {
                             <p class="cc-name-error">@_nameError</p>
@@ -172,9 +172,14 @@
             _nameError = "Name must be at least 2 characters.";
             return;
         }
-        if (trimmed.Length > 30)
+        if (trimmed.Length > 20)
         {
-            _nameError = "Name must be at most 30 characters.";
+            _nameError = "Name must be at most 20 characters.";
+            return;
+        }
+        if (!System.Text.RegularExpressions.Regex.IsMatch(trimmed, @"^[a-zA-Z ]+$"))
+        {
+            _nameError = "Name may only contain letters and spaces.";
             return;
         }
 
@@ -185,7 +190,7 @@
             var result = await Api.CheckCharacterNameAsync(trimmed);
             if (result is null)
             {
-                _nameError = "Could not verify name availability. Please try again.";
+                _nameError = "Unexpected empty response from server. Please try again.";
             }
             else if (!result.Available)
             {
@@ -197,6 +202,11 @@
                 _nameAvailable = true;
                 _characterName = trimmed;
             }
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogError(ex, "HTTP error while checking character name availability.");
+            _nameError = "Server error while checking name. Please try again later.";
         }
         catch (Exception ex)
         {

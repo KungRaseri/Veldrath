@@ -390,7 +390,7 @@ internal sealed class EmbeddedGameApiClient : IGameApiClient
         string name, CancellationToken ct = default)
     {
         var encoded = Uri.EscapeDataString(name);
-        using var request = new HttpRequestMessage(HttpMethod.Get, $"/api/characters/check-name?name={encoded}");
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"/api/character-creation/sessions/check-name?name={encoded}");
         ApplyAuth(request);
         var response = await _httpClient.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();
