@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
 using Serilog.Events;
 using Veldrath.Auth.Blazor;
 using RealmFoundry;
+using RealmFoundry.Health;
 using RealmFoundry.Services;
 
 Log.Logger = new LoggerConfiguration()
@@ -45,6 +47,15 @@ try
         new RealmFoundryApiClient(
             sp.GetRequiredService<IHttpClientFactory>().CreateClient("foundry")));
 
+    // Registered client for the server-connectivity health check so Coolify/Traefik
+    // can detect when Foundry cannot reach the server API. Timeout is aggressive (5s)
+    // so health probes don't pile up.
+    builder.Services.AddHttpClient<ServerConnectivityHealthCheck>(client =>
+    {
+        client.BaseAddress = new Uri(serverUrl);
+        client.Timeout = TimeSpan.FromSeconds(5);
+    });
+
     builder.Services.AddScoped<AuthStateService>();
 
     // Register the base class so components can inject AuthStateServiceBase.
@@ -78,7 +89,11 @@ try
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     });
 
-    builder.Services.AddHealthChecks();
+    builder.Services.AddHealthChecks()
+        .AddCheck<ServerConnectivityHealthCheck>(
+            "server-connectivity",
+            tags: ["server", "api"],
+            failureStatus: HealthStatus.Degraded);
 
     var app = builder.Build();
 
