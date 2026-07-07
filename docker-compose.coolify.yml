@@ -10,44 +10,33 @@
 #   1. Add curl to RealmFoundry/Dockerfile and Veldrath.Web/Dockerfile runtime stages
 #   2. Add health check endpoints in Program.cs for foundry, web, and discord
 #   3. Configure GHCR registry credentials in Coolify
-#   4. Create Coolify secrets for all ${VARIABLE} references (see plans/docker-compose-coolify-spec.md)
+#
+# Coolify Secrets Required (create these in Coolify dashboard):
+#
+#   REQUIRED (no defaults — deployment fails without these):
+#     POSTGRES_PASSWORD     — Postgres superuser password
+#     POSTGRES_HOST         — Coolify-managed Postgres hostname (e.g., veldrath-db)
+#     POSTGRES_PORT         — Postgres port (e.g., 5432)
+#     JWT_KEY               — HMAC-SHA signing key (≥32 chars)
+#     DISCORD_TOKEN         — Discord bot token
+#     EMAIL_SMTP_HOST       — SMTP relay hostname (mxroute.com)
+#     EMAIL_USER            — SMTP auth username
+#     EMAIL_PASSWORD        — SMTP auth password
+#     SEQ_ADMIN_PASSWORD    — Seq admin password
+#     GF_ADMIN_PASSWORD     — Grafana admin password
+#
+#   OPTIONAL (have defaults, override if needed):
+#     OAUTH_DISCORD_CLIENT_ID / OAUTH_DISCORD_CLIENT_SECRET
+#     OAUTH_GOOGLE_CLIENT_ID / OAUTH_GOOGLE_CLIENT_SECRET
+#     OAUTH_MICROSOFT_CLIENT_ID / OAUTH_MICROSOFT_CLIENT_SECRET
+#     EMAIL_SMTP_PORT (default: 587)
+#     EMAIL_ENABLE_TLS (default: true)
+#     EMAIL_SENDER_ADDRESS (default: noreply@veldrath.com)
+#     DISCORD_DEV_GUILD_ID (default: 0)
+#     FOUNDRY_PUBLIC_SERVER_URL (default: https://api.veldrath.com)
+#     WEB_PUBLIC_SERVER_URL (default: https://api.veldrath.com)
 
 services:
-  # ── Infrastructure ──────────────────────────────────────────────────────────
-
-  stalwart:
-    image: stalwartlabs/stalwart:v0.15.5
-    # SMTP port 25 decision: The current stalwart config is a dev-only open relay.
-    # Do NOT publish port 25 to the host unless the config has been hardened:
-    #   1. Set relay = false in [session.rcpt]
-    #   2. Configure [server.listener."smtp"] with TLS and authentication
-    #   3. Configure [directory] with actual domain and accounts
-    # If inbound email is not needed, leave port 25 unpublished (safe default).
-    # To enable inbound SMTP, uncomment: #   - "25:25"
-    environment:
-      - STALWART_PATH=/opt/stalwart
-      - ADMIN_SECRET=${STALWART_ADMIN_SECRET}
-    volumes:
-      - stalwart_data:/opt/stalwart
-      - ./config/stalwart:/opt/stalwart/etc:ro
-    healthcheck:
-      test: ["CMD-SHELL", "grep -q ':1F92 ' /proc/net/tcp6 || grep -q ':1F92 ' /proc/net/tcp"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    restart: unless-stopped
-    networks:
-      - veldrath
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "0.5"
-        reservations:
-          memory: 128M
-          cpus: "0.25"
-
   # ── Application Services ────────────────────────────────────────────────────
 
   server:
@@ -55,7 +44,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Host=veldrath-db;Port=5432;Database=veldrath;Username=veldrath;Password=${POSTGRES_PASSWORD}
+      - ConnectionStrings__DefaultConnection=Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SSL Mode=Require;
       - Database__Provider=postgres
       - Jwt__Key=${JWT_KEY}
       - OAuth__Discord__ClientId=${OAUTH_DISCORD_CLIENT_ID}
@@ -87,9 +76,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 15s
-    depends_on:
-      stalwart:
-        condition: service_healthy
     volumes:
       - dataprotection_keys:/root/.aspnet/DataProtection-Keys
     restart: unless-stopped
@@ -109,19 +95,13 @@ services:
     image: ghcr.io/kungraseri/veldrath-discord:latest
     environment:
       - DOTNET_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8083
       - Discord__Token=${DISCORD_TOKEN}
       - Discord__DevGuildId=${DISCORD_DEV_GUILD_ID:-0}
       - Discord__ServerBaseUrl=http://server:8080
-      - ConnectionStrings__DefaultConnection=Host=veldrath-db;Port=5432;Database=veldrath;Username=veldrath;Password=${POSTGRES_PASSWORD}
-    # TODO: Switch to HTTP health check after Discord Dockerfile moves to aspnet image
-    # healthcheck:
-    #   test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
-    #   interval: 15s
-    #   timeout: 5s
-    #   retries: 3
-    #   start_period: 10s
+      - ConnectionStrings__DefaultConnection=Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SSL Mode=Require;
     healthcheck:
-      test: ["CMD-SHELL", "pgrep -x dotnet || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8083/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -132,6 +112,7 @@ services:
     restart: unless-stopped
     networks:
       - veldrath
+      - coolify
     deploy:
       resources:
         limits:
@@ -242,4 +223,3 @@ volumes:
   dataprotection_keys:
   foundry_dataprotection_keys:
   web_dataprotection_keys:
-  stalwart_data:

@@ -3,26 +3,6 @@
 # Only the database connection is overridden here to point at the Postgres container.
 
 services:
-  stalwart:
-    image: stalwartlabs/stalwart:v0.15.5
-    ports:
-      - "9004:8082"   # Web admin UI — http://localhost:9004 (login: admin / STALWART_ADMIN_SECRET)
-      - "5025:25"     # SMTP accessible from the Docker host for ad-hoc testing
-    environment:
-      - STALWART_PATH=/opt/stalwart
-      - ADMIN_SECRET=${STALWART_ADMIN_SECRET}
-    volumes:
-      - stalwart_data:/opt/stalwart
-      - ./config/stalwart:/opt/stalwart/etc:ro
-    healthcheck:
-      # wget/curl are not in the stalwartlabs/stalwart image (debian:trixie-slim, binaries only).
-      # Probe the kernel TCP socket table: 0x1F92 = decimal 8082 (management port).
-      test: ["CMD-SHELL", "grep -q ':1F92 ' /proc/net/tcp6 || grep -q ':1F92 ' /proc/net/tcp"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
   postgres:
     image: postgres:17-alpine
     environment:
@@ -60,8 +40,8 @@ services:
       - OAuth__Google__ClientSecret=${OAUTH_GOOGLE_CLIENT_SECRET}
       - OAuth__Microsoft__ClientId=${OAUTH_MICROSOFT_CLIENT_ID}
       - OAuth__Microsoft__ClientSecret=${OAUTH_MICROSOFT_CLIENT_SECRET}
-      # Email — relay through the local Stalwart container (plain SMTP, no TLS)
-      - Email__SmtpHost=stalwart
+      # Email — configure an external SMTP provider (e.g. mxroute.com) via .env
+      - Email__SmtpHost=${EMAIL_SMTP_HOST:-}
       - Email__SmtpPort=25
       - Email__EnableTls=false
       - Email__SenderAddress=noreply@veldrath.local
@@ -86,8 +66,6 @@ services:
       start_period: 15s
     depends_on:
       postgres:
-        condition: service_healthy
-      stalwart:
         condition: service_healthy
     volumes:
       - dataprotection_keys:/root/.aspnet/DataProtection-Keys
@@ -196,7 +174,6 @@ volumes:
   dataprotection_keys:
   foundry_dataprotection_keys:
   web_dataprotection_keys:
-  stalwart_data:
   seq_data:
   prometheus_data:
   grafana_data:

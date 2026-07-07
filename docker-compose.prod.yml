@@ -94,9 +94,6 @@ services:
     ports: []
     restart: unless-stopped
 
-  stalwart:
-    restart: unless-stopped
-
   seq:
     restart: unless-stopped
 
