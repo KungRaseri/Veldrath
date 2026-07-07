@@ -39,7 +39,7 @@ public static class CharacterCreationSessionEndpoints
     private const int NameMinLength = 2;
     private const int NameMaxLength = 20;
     private static readonly System.Text.RegularExpressions.Regex NamePattern =
-        new(@"^[a-zA-Z]+$", System.Text.RegularExpressions.RegexOptions.Compiled);
+        new(@"^[a-zA-Z ]+$", System.Text.RegularExpressions.RegexOptions.Compiled);
 
     private static string? ValidateNameFormat(string? name)
     {
@@ -47,7 +47,7 @@ public static class CharacterCreationSessionEndpoints
         var trimmed = name.Trim();
         if (trimmed.Length < NameMinLength) return $"Name must be at least {NameMinLength} characters.";
         if (trimmed.Length > NameMaxLength) return $"Name must be at most {NameMaxLength} characters.";
-        if (!NamePattern.IsMatch(trimmed)) return "Name may only contain letters.";
+        if (!NamePattern.IsMatch(trimmed)) return "Name may only contain letters and spaces.";
         return null;
     }
 
