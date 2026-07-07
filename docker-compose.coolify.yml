@@ -75,6 +75,12 @@ services:
       - Web__BaseUrl=https://veldrath.com
       - Auth__CookieDomain=.veldrath.com
       - Seq__ServerUrl=http://veldrath-seq
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.server.rule=Host(`api.veldrath.com`)"
+      - "traefik.http.routers.server.tls.certresolver=coolify"
+      - "traefik.http.routers.server.entrypoints=websecure"
+      - "traefik.http.services.server.loadbalancer.server.port=8080"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 10s
@@ -143,6 +149,14 @@ services:
       - Veldrath__ServerUrl=http://server:8080
       - Veldrath__PublicServerUrl=${FOUNDRY_PUBLIC_SERVER_URL:-https://api.veldrath.com}
       - Auth__CookieDomain=.veldrath.com
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.foundry.rule=Host(`foundry.veldrath.com`)"
+      - "traefik.http.routers.foundry.tls.certresolver=coolify"
+      - "traefik.http.routers.foundry.entrypoints=websecure"
+      - "traefik.http.services.foundry.loadbalancer.server.port=8081"
+      - "traefik.http.services.foundry.loadbalancer.sticky.cookie.name=foundry_lb"
+      - "traefik.http.services.foundry.loadbalancer.sticky.cookie.secure=true"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8081/health || exit 1"]
       interval: 10s
@@ -175,6 +189,21 @@ services:
       - Veldrath__ServerUrl=http://server:8080
       - Veldrath__PublicServerUrl=${WEB_PUBLIC_SERVER_URL:-https://api.veldrath.com}
       - Auth__CookieDomain=.veldrath.com
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`veldrath.com`)"
+      - "traefik.http.routers.web.tls.certresolver=coolify"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      - "traefik.http.services.web.loadbalancer.server.port=8082"
+      - "traefik.http.services.web.loadbalancer.sticky.cookie.name=web_lb"
+      - "traefik.http.services.web.loadbalancer.sticky.cookie.secure=true"
+      - "traefik.http.routers.web-www.rule=Host(`www.veldrath.com`)"
+      - "traefik.http.routers.web-www.tls.certresolver=coolify"
+      - "traefik.http.routers.web-www.entrypoints=websecure"
+      - "traefik.http.routers.web-www.middlewares=web-www-redirect"
+      - "traefik.http.middlewares.web-www-redirect.redirectregex.regex=^https?://www\\.veldrath\\.com/(.*)"
+      - "traefik.http.middlewares.web-www-redirect.redirectregex.replacement=https://veldrath.com/$${1}"
+      - "traefik.http.middlewares.web-www-redirect.redirectregex.permanent=true"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8082/health || exit 1"]
       interval: 10s
