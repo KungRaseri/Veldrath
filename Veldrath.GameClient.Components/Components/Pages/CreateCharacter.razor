@@ -1,6 +1,8 @@
 @page "/Game/CreateCharacter"
 @attribute [Authorize]
+@implements IAsyncDisposable
 @using Veldrath.GameClient.Core.Abstractions
+@using Veldrath.Contracts.Characters
 @using Veldrath.Contracts.Content
 @using Veldrath.Auth.Blazor
 @inject NavigationManager Navigation
@@ -32,8 +34,10 @@
             <!-- Step indicator -->
             <div class="cc-steps">
                 <span class="cc-step @(_currentStep >= 1 ? "cc-step-active" : "")">1. Class</span>
-                <span class="cc-step @(_currentStep >= 2 ? "cc-step-active" : "")">2. Name</span>
-                <span class="cc-step @(_currentStep >= 3 ? "cc-step-active" : "")">3. Confirm</span>
+                <span class="cc-step @(_currentStep >= 2 ? "cc-step-active" : "")">2. Species</span>
+                <span class="cc-step @(_currentStep >= 3 ? "cc-step-active" : "")">3. Background</span>
+                <span class="cc-step @(_currentStep >= 4 ? "cc-step-active" : "")">4. Name</span>
+                <span class="cc-step @(_currentStep >= 5 ? "cc-step-active" : "")">5. Confirm</span>
             </div>
 
             <!-- Step 1: Class Selection -->
@@ -59,8 +63,58 @@
                 </div>
             }
 
-            <!-- Step 2: Name Input -->
+            <!-- Step 2: Species Selection -->
             @if (_currentStep == 2)
+            {
+                <div class="cc-step-content">
+                    <h2>Choose a Species</h2>
+                    <div class="cc-class-list">
+                        @foreach (var species in _availableSpecies)
+                        {
+                            <div class="cc-class-card @(_selectedSpecies?.Slug == species.Slug ? "cc-class-card-selected" : "")"
+                                 @onclick="() => SelectSpecies(species)">
+                                <h3>@species.DisplayName</h3>
+                                @if (!string.IsNullOrWhiteSpace(species.Description))
+                                {
+                                    <p>@species.Description</p>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div class="cc-nav">
+                        <button class="btn btn-secondary" @onclick="GoToStep1">Back</button>
+                        <button class="btn btn-primary" @onclick="GoToStep3" disabled="@(_selectedSpecies is null)">Next</button>
+                    </div>
+                </div>
+            }
+
+            <!-- Step 3: Background Selection -->
+            @if (_currentStep == 3)
+            {
+                <div class="cc-step-content">
+                    <h2>Choose a Background</h2>
+                    <div class="cc-class-list">
+                        @foreach (var bg in _availableBackgrounds)
+                        {
+                            <div class="cc-class-card @(_selectedBackground?.Slug == bg.Slug ? "cc-class-card-selected" : "")"
+                                 @onclick="() => SelectBackground(bg)">
+                                <h3>@bg.DisplayName</h3>
+                                @if (!string.IsNullOrWhiteSpace(bg.Description))
+                                {
+                                    <p>@bg.Description</p>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div class="cc-nav">
+                        <button class="btn btn-secondary" @onclick="GoToStep2">Back</button>
+                        <button class="btn btn-primary" @onclick="GoToStep4" disabled="@(_selectedBackground is null)">Next</button>
+                    </div>
+                </div>
+            }
+
+            <!-- Step 4: Name Input -->
+            @if (_currentStep == 4)
             {
                 <div class="cc-step-content">
                     <h2>Name Your Character</h2>
@@ -87,25 +141,27 @@
                         }
                     </div>
                     <div class="cc-nav">
-                        <button class="btn btn-secondary" @onclick="GoToStep1">Back</button>
-                        <button class="btn btn-primary" @onclick="GoToStep3"
+                        <button class="btn btn-secondary" @onclick="GoToStep3">Back</button>
+                        <button class="btn btn-primary" @onclick="GoToStep5"
                                 disabled="@(string.IsNullOrWhiteSpace(_characterName) || _nameAvailable != true)">Next</button>
                     </div>
                 </div>
             }
 
-            <!-- Step 3: Confirm -->
-            @if (_currentStep == 3)
+            <!-- Step 5: Confirm -->
+            @if (_currentStep == 5)
             {
                 <div class="cc-step-content">
                     <h2>Confirm Character</h2>
                     <div class="cc-confirm-details">
                         <p><strong>Class:</strong> @(_selectedClass?.DisplayName ?? "—")</p>
+                        <p><strong>Species:</strong> @(_selectedSpecies?.DisplayName ?? "—")</p>
+                        <p><strong>Background:</strong> @(_selectedBackground?.DisplayName ?? "—")</p>
                         <p><strong>Name:</strong> @_characterName</p>
                         <p><strong>Difficulty:</strong> Normal</p>
                     </div>
                     <div class="cc-nav">
-                        <button class="btn btn-secondary" @onclick="GoToStep2">Back</button>
+                        <button class="btn btn-secondary" @onclick="GoToStep4">Back</button>
                         <button class="btn btn-primary" @onclick="ConfirmCreate" disabled="@_isCreating">
                             @(_isCreating ? "Creating..." : "Create Character")
                         </button>
@@ -119,6 +175,10 @@
 @code {
     private List<ActorClassDto> _availableClasses = [];
     private ActorClassDto? _selectedClass;
+    private List<SpeciesDto> _availableSpecies = [];
+    private SpeciesDto? _selectedSpecies;
+    private List<BackgroundDto> _availableBackgrounds = [];
+    private BackgroundDto? _selectedBackground;
     private string _characterName = string.Empty;
     private string? _nameError;
     private bool _nameChecking;
@@ -127,6 +187,7 @@
     private bool _isCreating;
     private string? _errorMessage;
     private int _currentStep = 1;
+    private Guid? _sessionId;
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
@@ -139,12 +200,29 @@
 
         try
         {
-            _availableClasses = await Api.GetClassesAsync();
+            var classesTask = Api.GetClassesAsync();
+            var speciesTask = Api.GetSpeciesAsync();
+            var backgroundsTask = Api.GetBackgroundsAsync();
+            await Task.WhenAll(classesTask, speciesTask, backgroundsTask);
+            _availableClasses = classesTask.Result;
+            _availableSpecies = speciesTask.Result;
+            _availableBackgrounds = backgroundsTask.Result;
+
+            // Begin a creation session so the server tracks wizard state.
+            var sessionResult = await Api.BeginCreationSessionAsync();
+            if (sessionResult is { Success: true })
+            {
+                _sessionId = sessionResult.SessionId;
+            }
+            else
+            {
+                Logger.LogWarning("BeginCreationSessionAsync returned null or failed; proceeding without session tracking.");
+            }
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to load character classes.");
-            _errorMessage = "Failed to load available classes. Please try again.";
+            Logger.LogError(ex, "Failed to load creation data or begin creation session.");
+            _errorMessage = "Failed to load available options. Please try again.";
         }
         finally
         {
@@ -152,14 +230,83 @@
         }
     }
 
-    private void SelectClass(ActorClassDto cls)
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (_sessionId.HasValue)
+        {
+            try
+            {
+                await Api.AbandonCreationSessionAsync(_sessionId.Value);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to abandon creation session {SessionId}", _sessionId);
+            }
+        }
+    }
+
+    private async Task SelectClass(ActorClassDto cls)
     {
         _selectedClass = cls;
+
+        // Persist the class choice to the session if one is active.
+        if (_sessionId.HasValue)
+        {
+            try
+            {
+                await Api.SetCreationClassAsync(_sessionId.Value, cls.DisplayName);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to persist class choice to session {SessionId}", _sessionId);
+            }
+        }
+    }
+
+    /// <summary>Selects a species and eagerly persists the choice to the creation session.</summary>
+    /// <param name="species">The species to select.</param>
+    private async Task SelectSpecies(SpeciesDto species)
+    {
+        _selectedSpecies = species;
+
+        if (_sessionId.HasValue)
+        {
+            try
+            {
+                await Api.SetCreationSpeciesAsync(_sessionId.Value, species.Slug);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to persist species choice to session {SessionId}", _sessionId);
+            }
+        }
+    }
+
+    /// <summary>Selects a background and eagerly persists the choice to the creation session.</summary>
+    /// <param name="background">The background to select.</param>
+    private async Task SelectBackground(BackgroundDto background)
+    {
+        _selectedBackground = background;
+
+        if (_sessionId.HasValue)
+        {
+            try
+            {
+                await Api.SetCreationBackgroundAsync(_sessionId.Value, background.Slug);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to persist background choice to session {SessionId}", _sessionId);
+            }
+        }
     }
 
     private void GoToStep1() => _currentStep = 1;
     private void GoToStep2() => _currentStep = 2;
     private void GoToStep3() => _currentStep = 3;
+    private void GoToStep4() => _currentStep = 4;
+    private void GoToStep5() => _currentStep = 5;
 
     private async Task OnNameChanged()
     {
@@ -229,7 +376,20 @@
 
         try
         {
-            var result = await Api.CreateCharacterAsync(_characterName, _selectedClass.DisplayName);
+            CharacterDto? result;
+
+            if (_sessionId.HasValue)
+            {
+                // Use the session-based finalization endpoint.
+                result = await Api.FinalizeCreationSessionAsync(
+                    _sessionId.Value,
+                    new FinalizeCreationSessionRequest(_characterName, "normal"));
+            }
+            else
+            {
+                // Fallback to the legacy endpoint if no session exists.
+                result = await Api.CreateCharacterAsync(_characterName, _selectedClass.DisplayName);
+            }
 
             if (result is null)
             {
@@ -251,9 +411,35 @@
         }
     }
 
-    private void ResetWizard()
+    private async Task ResetWizard()
     {
         _errorMessage = null;
         _currentStep = 1;
+
+        // Abandon the old session and start a fresh one.
+        if (_sessionId.HasValue)
+        {
+            try { await Api.AbandonCreationSessionAsync(_sessionId.Value); }
+            catch (Exception ex) { Logger.LogWarning(ex, "Failed to abandon session during reset"); }
+        }
+
+        _sessionId = null;
+        _selectedClass = null;
+        _selectedSpecies = null;
+        _selectedBackground = null;
+        _characterName = string.Empty;
+
+        try
+        {
+            var sessionResult = await Api.BeginCreationSessionAsync();
+            if (sessionResult is { Success: true })
+            {
+                _sessionId = sessionResult.SessionId;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to begin new session during reset");
+        }
     }
 }

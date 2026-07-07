@@ -72,3 +72,19 @@ public record CharacterPreviewDto(
 /// <param name="Available"><see langword="true"/> when the name is both well-formed and not already taken.</param>
 /// <param name="Error">Human-readable reason the name is unavailable, or <see langword="null"/> when available.</param>
 public record CheckNameAvailabilityResponse(bool Available, string? Error);
+
+/// <summary>Response from beginning a character creation session.</summary>
+/// <param name="SessionId">The session identifier to use in subsequent session commands.</param>
+/// <param name="Success">Whether the session was created successfully.</param>
+public record BeginCreationSessionResponse(Guid SessionId, bool Success);
+
+/// <summary>Response from a single-step session mutation (set name, class, species, etc.).</summary>
+/// <param name="Success">Whether the update was applied.</param>
+/// <param name="Message">A message describing the result.</param>
+public record SetCreationChoiceResponse(bool Success, string Message);
+
+/// <summary>Response from setting attribute allocations, including remaining point budget.</summary>
+/// <param name="Success">Whether the allocation was accepted.</param>
+/// <param name="Message">A message describing the result.</param>
+/// <param name="RemainingPoints">The remaining point budget after this allocation.</param>
+public record AllocateCreationAttributesResponse(bool Success, string Message, int RemainingPoints);
