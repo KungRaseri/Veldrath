@@ -1,6 +1,7 @@
 @page "/Game/CreateCharacter"
 @attribute [Authorize]
 @implements IAsyncDisposable
+@using Microsoft.AspNetCore.Components.Web
 @using Veldrath.GameClient.Core.Abstractions
 @using Veldrath.Contracts.Characters
 @using Veldrath.Contracts.Content
@@ -13,18 +14,28 @@
 <div class="cc-container">
     <h1>Create Character</h1>
 
-    @if (_isLoading)
+    @* Screen reader live region for announcements *@
+    <div class="visually-hidden" aria-live="polite" aria-atomic="true">
+        @_srAnnouncement
+    </div>
+
+    @if (_isInitializing)
     {
-        <div class="cc-loading">
-            <p>Loading...</p>
-            <div class="spinner"></div>
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-muted">Loading character creation...</p>
         </div>
     }
-    else if (_errorMessage is not null)
+    else if (_loadError is not null)
     {
         <div class="cc-error">
-            <p>@_errorMessage</p>
-            <button class="btn btn-primary" @onclick="ResetWizard">Try Again</button>
+            <div class="alert alert-danger">
+                <h5>Failed to load character creation</h5>
+                <p>@_loadError</p>
+            </div>
+            <button class="btn btn-primary" @onclick="LoadDataAsync">Retry</button>
             <a href="/Game/CharacterSelect" class="btn btn-secondary">Back to Character Select</a>
         </div>
     }
@@ -32,33 +43,42 @@
     {
         <div class="cc-wizard">
             <!-- Step indicator -->
-            <div class="cc-steps">
-                <span class="cc-step @(_currentStep >= 1 ? "cc-step-active" : "")">1. Class</span>
-                <span class="cc-step @(_currentStep >= 2 ? "cc-step-active" : "")">2. Species</span>
-                <span class="cc-step @(_currentStep >= 3 ? "cc-step-active" : "")">3. Background</span>
-                <span class="cc-step @(_currentStep >= 4 ? "cc-step-active" : "")">4. Name</span>
-                <span class="cc-step @(_currentStep >= 5 ? "cc-step-active" : "")">5. Confirm</span>
-            </div>
+            <nav class="cc-steps flex-wrap" role="navigation" aria-label="Character creation steps">
+                <span class="cc-step @(_currentStep >= 1 ? "cc-step-active" : "")" aria-current="@(_currentStep == 1 ? "step" : null)">1. Class</span>
+                <span class="cc-step @(_currentStep >= 2 ? "cc-step-active" : "")" aria-current="@(_currentStep == 2 ? "step" : null)">2. Species</span>
+                <span class="cc-step @(_currentStep >= 3 ? "cc-step-active" : "")" aria-current="@(_currentStep == 3 ? "step" : null)">3. Background</span>
+                <span class="cc-step @(_currentStep >= 4 ? "cc-step-active" : "")" aria-current="@(_currentStep == 4 ? "step" : null)">4. Attributes</span>
+                <span class="cc-step @(_currentStep >= 5 ? "cc-step-active" : "")" aria-current="@(_currentStep == 5 ? "step" : null)">5. Equipment</span>
+                <span class="cc-step @(_currentStep >= 6 ? "cc-step-active" : "")" aria-current="@(_currentStep == 6 ? "step" : null)">6. Name</span>
+                <span class="cc-step @(_currentStep >= 7 ? "cc-step-active" : "")" aria-current="@(_currentStep == 7 ? "step" : null)">7. Confirm</span>
+            </nav>
 
             <!-- Step 1: Class Selection -->
             @if (_currentStep == 1)
             {
                 <div class="cc-step-content">
-                    <h2>Choose a Class</h2>
-                    <div class="cc-class-list">
+                    <h2 @ref="_stepHeadingRef" tabindex="-1">Choose a Class</h2>
+                    <div class="row" role="listbox" aria-label="Available classes">
                         @foreach (var cls in _availableClasses)
                         {
-                            <div class="cc-class-card @(_selectedClass?.Slug == cls.Slug ? "cc-class-card-selected" : "")"
-                                 @onclick="() => SelectClass(cls)">
-                                <h3>@cls.DisplayName</h3>
-                                <p>Hit Die: d@(cls.HitDie)</p>
-                                <p>Primary: @cls.PrimaryStat</p>
+                            var isSelected = _selectedClass?.Slug == cls.Slug;
+                            <div class="col-12 col-sm-6 col-md-4 mb-3">
+                                <div class="cc-class-card h-100 @(isSelected ? "cc-class-card-selected" : "")"
+                                     role="option"
+                                     aria-selected="@(isSelected ? "true" : "false")"
+                                     tabindex="0"
+                                     @onclick="() => SelectClass(cls)"
+                                     @onkeydown="(e) => OnCardKeyDownAsync(e, () => SelectClass(cls))">
+                                    <h3>@cls.DisplayName</h3>
+                                    <p>Hit Die: d@(cls.HitDie)</p>
+                                    <p>Primary: @cls.PrimaryStat</p>
+                                </div>
                             </div>
                         }
                     </div>
                     <div class="cc-nav">
-                        <a href="/Game/CharacterSelect" class="btn btn-secondary">Back</a>
-                        <button class="btn btn-primary" @onclick="GoToStep2" disabled="@(_selectedClass is null)">Next</button>
+                        <a href="/Game/CharacterSelect" class="btn btn-secondary w-100 w-md-auto">Back</a>
+                        <button class="btn btn-primary w-100 w-md-auto" @onclick="GoToStep2Async" disabled="@(_selectedClass is null)">Next</button>
                     </div>
                 </div>
             }
@@ -67,23 +87,30 @@
             @if (_currentStep == 2)
             {
                 <div class="cc-step-content">
-                    <h2>Choose a Species</h2>
-                    <div class="cc-class-list">
+                    <h2 @ref="_stepHeadingRef" tabindex="-1">Choose a Species</h2>
+                    <div class="row" role="listbox" aria-label="Available species">
                         @foreach (var species in _availableSpecies)
                         {
-                            <div class="cc-class-card @(_selectedSpecies?.Slug == species.Slug ? "cc-class-card-selected" : "")"
-                                 @onclick="() => SelectSpecies(species)">
-                                <h3>@species.DisplayName</h3>
-                                @if (!string.IsNullOrWhiteSpace(species.Description))
-                                {
-                                    <p>@species.Description</p>
-                                }
+                            var isSelected = _selectedSpecies?.Slug == species.Slug;
+                            <div class="col-12 col-sm-6 col-md-4 mb-3">
+                                <div class="cc-class-card h-100 @(isSelected ? "cc-class-card-selected" : "")"
+                                     role="option"
+                                     aria-selected="@(isSelected ? "true" : "false")"
+                                     tabindex="0"
+                                     @onclick="() => SelectSpecies(species)"
+                                     @onkeydown="(e) => OnCardKeyDownAsync(e, () => SelectSpecies(species))">
+                                    <h3>@species.DisplayName</h3>
+                                    @if (!string.IsNullOrWhiteSpace(species.Description))
+                                    {
+                                        <p>@species.Description</p>
+                                    }
+                                </div>
                             </div>
                         }
                     </div>
                     <div class="cc-nav">
-                        <button class="btn btn-secondary" @onclick="GoToStep1">Back</button>
-                        <button class="btn btn-primary" @onclick="GoToStep3" disabled="@(_selectedSpecies is null)">Next</button>
+                        <button class="btn btn-secondary w-100 w-md-auto" @onclick="GoToStep1Async">Back</button>
+                        <button class="btn btn-primary w-100 w-md-auto" @onclick="GoToStep3Async" disabled="@(_selectedSpecies is null)">Next</button>
                     </div>
                 </div>
             }
@@ -92,77 +119,302 @@
             @if (_currentStep == 3)
             {
                 <div class="cc-step-content">
-                    <h2>Choose a Background</h2>
-                    <div class="cc-class-list">
+                    <h2 @ref="_stepHeadingRef" tabindex="-1">Choose a Background</h2>
+                    <div class="row" role="listbox" aria-label="Available backgrounds">
                         @foreach (var bg in _availableBackgrounds)
                         {
-                            <div class="cc-class-card @(_selectedBackground?.Slug == bg.Slug ? "cc-class-card-selected" : "")"
-                                 @onclick="() => SelectBackground(bg)">
-                                <h3>@bg.DisplayName</h3>
-                                @if (!string.IsNullOrWhiteSpace(bg.Description))
-                                {
-                                    <p>@bg.Description</p>
-                                }
+                            var isSelected = _selectedBackground?.Slug == bg.Slug;
+                            <div class="col-12 col-sm-6 col-md-4 mb-3">
+                                <div class="cc-class-card h-100 @(isSelected ? "cc-class-card-selected" : "")"
+                                     role="option"
+                                     aria-selected="@(isSelected ? "true" : "false")"
+                                     tabindex="0"
+                                     @onclick="() => SelectBackground(bg)"
+                                     @onkeydown="(e) => OnCardKeyDownAsync(e, () => SelectBackground(bg))">
+                                    <h3>@bg.DisplayName</h3>
+                                    @if (!string.IsNullOrWhiteSpace(bg.Description))
+                                    {
+                                        <p>@bg.Description</p>
+                                    }
+                                </div>
                             </div>
                         }
                     </div>
                     <div class="cc-nav">
-                        <button class="btn btn-secondary" @onclick="GoToStep2">Back</button>
-                        <button class="btn btn-primary" @onclick="GoToStep4" disabled="@(_selectedBackground is null)">Next</button>
+                        <button class="btn btn-secondary w-100 w-md-auto" @onclick="GoToStep2Async">Back</button>
+                        <button class="btn btn-primary w-100 w-md-auto" @onclick="GoToStep4Async" disabled="@(_selectedBackground is null)">Next</button>
                     </div>
                 </div>
             }
 
-            <!-- Step 4: Name Input -->
+            <!-- Step 4: Attributes -->
             @if (_currentStep == 4)
             {
                 <div class="cc-step-content">
-                    <h2>Name Your Character</h2>
+                    <h2 @ref="_stepHeadingRef" tabindex="-1">Allocate Attributes</h2>
+                    <p class="text-muted mb-3">Distribute 27 points across your six attributes. Click + to increase, − to decrease.</p>
+
+                    <div class="alert @(RemainingPoints == 0 ? "alert-success" : "alert-warning") mb-4" role="status">
+                        <strong>Points Remaining: @RemainingPoints / @TotalBudget</strong>
+                    </div>
+
+                    <div class="row justify-content-center">
+                        <div class="col-md-8 col-lg-6">
+                            @foreach (var stat in _statAllocations)
+                            {
+                                var cost = StatCosts[stat.Value];
+                                var nextValue = stat.Value + 1;
+                                var canIncrease = stat.Value < MaxStat && StatCosts.TryGetValue(nextValue, out var nextCost) && (PointsSpent - cost + nextCost) <= TotalBudget;
+                                var canDecrease = stat.Value > MinStat;
+
+                                <div class="cc-attrs-row d-flex align-items-center justify-content-between mb-3 p-3 border rounded">
+                                    <span class="cc-attrs-label fw-bold">@StatDisplayNames[stat.Key]</span>
+                                    <button class="btn btn-outline-secondary btn-lg cc-attrs-btn"
+                                            disabled="@(!canDecrease)"
+                                            @onclick="() => DecreaseStatAsync(stat.Key)"
+                                            aria-label="Decrease @StatDisplayNames[stat.Key]"
+                                            title="Decrease @StatDisplayNames[stat.Key]">
+                                        −
+                                    </button>
+                                    <span class="cc-attrs-value fs-4 fw-bold mx-3">@stat.Value</span>
+                                    <button class="btn btn-outline-primary btn-lg cc-attrs-btn"
+                                            disabled="@(!canIncrease)"
+                                            @onclick="() => IncreaseStatAsync(stat.Key)"
+                                            aria-label="Increase @StatDisplayNames[stat.Key]"
+                                            title="Increase @StatDisplayNames[stat.Key]">
+                                        +
+                                    </button>
+                                    <span class="cc-attrs-cost text-muted ms-3">Cost: @cost</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="cc-nav">
+                        <button class="btn btn-secondary w-100 w-md-auto" @onclick="GoToStep3Async">Back</button>
+                        <button class="btn btn-primary w-100 w-md-auto"
+                                @onclick="GoToStep5Async"
+                                disabled="@(RemainingPoints != 0 || _isSavingAttributes)"
+                                title="@(RemainingPoints != 0 ? "Spend all 27 points to continue" : "")">
+                            @(_isSavingAttributes ? "Saving..." : "Next")
+                        </button>
+                    </div>
+                </div>
+            }
+
+            <!-- Step 5: Equipment Preferences -->
+            @if (_currentStep == 5)
+            {
+                <div class="cc-step-content">
+                    <h2 @ref="_stepHeadingRef" tabindex="-1">Equipment Preferences</h2>
+                    <p class="text-muted mb-4">Optional — your class determines default gear. Customize if you prefer a specific playstyle.</p>
+
+                    <div class="row justify-content-center">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="armorType">Preferred Armor Type</label>
+                                <select id="armorType" class="form-select" @bind="_selectedArmorType">
+                                    <option value="">(Class Default)</option>
+                                    @foreach (var armor in ArmorTypes.Where(a => !string.IsNullOrEmpty(a)))
+                                    {
+                                        <option value="@armor.ToLowerInvariant().Replace(" ", "-")">@armor</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="weaponType">Preferred Weapon Type</label>
+                                <select id="weaponType" class="form-select" @bind="_selectedWeaponType">
+                                    <option value="">(Class Default)</option>
+                                    @foreach (var weapon in WeaponTypes.Where(w => !string.IsNullOrEmpty(w)))
+                                    {
+                                        <option value="@weapon.ToLowerInvariant()">@weapon</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input type="checkbox" class="form-check-input" @bind="_includeShield" id="shieldCheck" />
+                                <label class="form-check-label" for="shieldCheck">Include a Shield</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cc-nav">
+                        <button class="btn btn-secondary w-100 w-md-auto" @onclick="GoToStep4Async">Back</button>
+                        <button class="btn btn-primary w-100 w-md-auto"
+                                @onclick="GoToStep6SaveEquipmentAsync"
+                                disabled="@(_isSavingEquipment)">
+                            @(_isSavingEquipment ? "Saving..." : "Next")
+                        </button>
+                    </div>
+                </div>
+            }
+
+            <!-- Step 6: Name Input -->
+            @if (_currentStep == 6)
+            {
+                <div class="cc-step-content">
+                    <h2 @ref="_stepHeadingRef" tabindex="-1">Name Your Character</h2>
                     <div class="cc-name-input">
                         <label for="characterName">Character Name:</label>
                         <input id="characterName"
                                type="text"
-                               class="form-control"
+                               class="form-control @(_nameError is not null ? "is-invalid" : "") @(_nameAvailable == true ? "is-valid" : "")"
                                @bind="_characterName"
                                @bind:after="OnNameChanged"
                                maxlength="20"
-                               placeholder="Enter a name (2-20 characters, letters and spaces only)" />
-                        @if (_nameError is not null)
-                        {
-                            <p class="cc-name-error">@_nameError</p>
-                        }
-                        else if (_nameChecking)
-                        {
-                            <p class="cc-name-checking">Checking availability...</p>
-                        }
-                        else if (_nameAvailable == true)
-                        {
-                            <p class="cc-name-available">Name is available!</p>
-                        }
+                               placeholder="Enter a name (2-20 characters, letters and spaces only)"
+                               aria-describedby="cc-name-feedback" />
+                        <div id="cc-name-feedback">
+                            @if (_nameError is not null)
+                            {
+                                <p class="cc-name-error invalid-feedback d-block">@_nameError</p>
+                            }
+                            else if (_nameChecking)
+                            {
+                                <p class="cc-name-checking">Checking availability...</p>
+                            }
+                            else if (_nameAvailable == true)
+                            {
+                                <p class="cc-name-available valid-feedback d-block">Name is available!</p>
+                            }
+                        </div>
                     </div>
                     <div class="cc-nav">
-                        <button class="btn btn-secondary" @onclick="GoToStep3">Back</button>
-                        <button class="btn btn-primary" @onclick="GoToStep5"
+                        <button class="btn btn-secondary w-100 w-md-auto" @onclick="GoToStep5Async">Back</button>
+                        <button class="btn btn-primary w-100 w-md-auto" @onclick="GoToStep7Async"
                                 disabled="@(string.IsNullOrWhiteSpace(_characterName) || _nameAvailable != true)">Next</button>
                     </div>
                 </div>
             }
 
-            <!-- Step 5: Confirm -->
-            @if (_currentStep == 5)
+            <!-- Step 7: Review & Create -->
+            @if (_currentStep == 7)
             {
                 <div class="cc-step-content">
-                    <h2>Confirm Character</h2>
-                    <div class="cc-confirm-details">
-                        <p><strong>Class:</strong> @(_selectedClass?.DisplayName ?? "—")</p>
-                        <p><strong>Species:</strong> @(_selectedSpecies?.DisplayName ?? "—")</p>
-                        <p><strong>Background:</strong> @(_selectedBackground?.DisplayName ?? "—")</p>
-                        <p><strong>Name:</strong> @_characterName</p>
-                        <p><strong>Difficulty:</strong> Normal</p>
+                    <h2 @ref="_stepHeadingRef" tabindex="-1">Review & Create</h2>
+                    <p class="text-muted mb-4">Review your character before venturing into Veldrath.</p>
+
+                    @* Character Preview Panel *@
+                    @if (_characterPreview != null)
+                    {
+                        <div class="card mb-4 border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h3 class="h5 mb-0">Character Preview</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-12 col-md-6">
+                                        <p><strong>Class:</strong> @_characterPreview.ClassName</p>
+                                        <p><strong>Species:</strong> @_characterPreview.SpeciesName</p>
+                                        <p><strong>Background:</strong> @_characterPreview.BackgroundName</p>
+                                        <hr />
+                                        <p><strong>Health:</strong> <span class="text-danger fw-bold">@_characterPreview.Health</span></p>
+                                        <p><strong>Mana:</strong> <span class="text-primary fw-bold">@_characterPreview.Mana</span></p>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <h3 class="h6">Attributes</h3>
+                                        <div class="d-flex justify-content-between"><span>Strength</span> <strong>@_characterPreview.Strength</strong></div>
+                                        <div class="d-flex justify-content-between"><span>Dexterity</span> <strong>@_characterPreview.Dexterity</strong></div>
+                                        <div class="d-flex justify-content-between"><span>Constitution</span> <strong>@_characterPreview.Constitution</strong></div>
+                                        <div class="d-flex justify-content-between"><span>Intelligence</span> <strong>@_characterPreview.Intelligence</strong></div>
+                                        <div class="d-flex justify-content-between"><span>Wisdom</span> <strong>@_characterPreview.Wisdom</strong></div>
+                                        <div class="d-flex justify-content-between"><span>Charisma</span> <strong>@_characterPreview.Charisma</strong></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else if (_isLoadingPreview)
+                    {
+                        <div class="card mb-4">
+                            <div class="card-body text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading preview...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Calculating character stats...</p>
+                            </div>
+                        </div>
+                    }
+
+                    @* Choices Summary *@
+                    <div class="card mb-4">
+                        <div class="card-header"><h3 class="h5 mb-0">Your Choices</h3></div>
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-12 col-sm-4">Name</dt>
+                                <dd class="col-12 col-sm-8 fw-bold">@_characterName</dd>
+
+                                <dt class="col-12 col-sm-4">Class</dt>
+                                <dd class="col-12 col-sm-8">@(_selectedClass?.DisplayName ?? "—")</dd>
+
+                                <dt class="col-12 col-sm-4">Species</dt>
+                                <dd class="col-12 col-sm-8">@(_selectedSpecies?.DisplayName ?? "—")</dd>
+
+                                <dt class="col-12 col-sm-4">Background</dt>
+                                <dd class="col-12 col-sm-8">@(_selectedBackground?.DisplayName ?? "—")</dd>
+
+                                <dt class="col-12 col-sm-4">Attributes</dt>
+                                <dd class="col-12 col-sm-8">
+                                    @foreach (var stat in _statAllocations)
+                                    {
+                                        <span class="me-3">@StatDisplayNames[stat.Key].Split(' ')[0]: <strong>@stat.Value</strong></span>
+                                    }
+                                </dd>
+
+                                <dt class="col-12 col-sm-4">Equipment</dt>
+                                <dd class="col-12 col-sm-8">
+                                    @if (!string.IsNullOrEmpty(_selectedArmorType) || !string.IsNullOrEmpty(_selectedWeaponType) || _includeShield)
+                                    {
+                                        <span>@(string.IsNullOrEmpty(_selectedArmorType) ? "Class Default" : _selectedArmorType)</span>
+                                        <span class="mx-1">/</span>
+                                        <span>@(string.IsNullOrEmpty(_selectedWeaponType) ? "Class Default" : _selectedWeaponType)</span>
+                                        @if (_includeShield)
+                                        {
+                                            <span class="ms-1">+ Shield</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span>Class Defaults</span>
+                                    }
+                                </dd>
+                            </dl>
+                        </div>
                     </div>
-                    <div class="cc-nav">
-                        <button class="btn btn-secondary" @onclick="GoToStep4">Back</button>
-                        <button class="btn btn-primary" @onclick="ConfirmCreate" disabled="@_isCreating">
+
+                    @* Difficulty Mode *@
+                    <div class="card mb-4">
+                        <div class="card-header"><h3 class="h5 mb-0">Difficulty</h3></div>
+                        <div class="card-body">
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" name="difficulty" value="normal" id="diffNormal"
+                                       checked="@(_difficultyMode == "normal")"
+                                       @onchange="SetNormalDifficulty" />
+                                <label class="form-check-label" for="diffNormal">Normal — Standard gameplay, death is recoverable</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" name="difficulty" value="hardcore" id="diffHardcore"
+                                       checked="@(_difficultyMode == "hardcore")"
+                                       @onchange="SetHardcoreDifficulty" />
+                                <label class="form-check-label" for="diffHardcore">Hardcore — Permadeath. Character is permanently lost upon death.</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (IsHardcore)
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <strong>⚠️ Hardcore Mode:</strong> If your character dies, they are permanently lost.
+                            This cannot be undone. Are you sure?
+                        </div>
+                    }
+
+                    @* Create Button *@
+                    <div class="d-flex justify-content-between flex-wrap gap-2">
+                        <button class="btn btn-outline-secondary w-100 w-md-auto" @onclick="GoToStep6Async" disabled="@(_isCreating)">
+                            ← Back
+                        </button>
+                        <button class="btn btn-success btn-lg w-100 w-md-auto" @onclick="ConfirmCreate" disabled="@(_isCreating)">
                             @(_isCreating ? "Creating..." : "Create Character")
                         </button>
                     </div>
@@ -183,11 +435,92 @@
     private string? _nameError;
     private bool _nameChecking;
     private bool? _nameAvailable;
-    private bool _isLoading = true;
+    private bool _isInitializing = true;
     private bool _isCreating;
-    private string? _errorMessage;
+    private string? _loadError;
     private int _currentStep = 1;
     private Guid? _sessionId;
+    private bool _isSavingAttributes;
+    private bool _isSavingEquipment;
+
+    // Character preview
+    private CharacterPreviewDto? _characterPreview;
+    private bool _isLoadingPreview;
+
+    // Screen reader announcement text
+    private string _srAnnouncement = string.Empty;
+
+    // Focus management
+    private ElementReference _stepHeadingRef;
+
+    // Point-buy constants
+    private static readonly Dictionary<int, int> StatCosts = new()
+    {
+        { 8, 0 }, { 9, 1 }, { 10, 2 }, { 11, 3 }, { 12, 4 }, { 13, 5 }, { 14, 7 }, { 15, 9 }
+    };
+    private const int MinStat = 8;
+    private const int MaxStat = 15;
+    private const int TotalBudget = 27;
+
+    private Dictionary<string, int> _statAllocations = new()
+    {
+        { "strength", 8 }, { "dexterity", 8 }, { "constitution", 8 },
+        { "intelligence", 8 }, { "wisdom", 8 }, { "charisma", 8 }
+    };
+
+    private int PointsSpent => _statAllocations.Sum(kvp => StatCosts[kvp.Value]);
+    private int RemainingPoints => TotalBudget - PointsSpent;
+
+    private static readonly Dictionary<string, string> StatDisplayNames = new()
+    {
+        { "strength", "Strength (STR)" },
+        { "dexterity", "Dexterity (DEX)" },
+        { "constitution", "Constitution (CON)" },
+        { "intelligence", "Intelligence (INT)" },
+        { "wisdom", "Wisdom (WIS)" },
+        { "charisma", "Charisma (CHA)" }
+    };
+
+    // Equipment preferences
+    private static readonly List<string> ArmorTypes = new() { "", "Light Armor", "Medium Armor", "Heavy Armor", "Unarmored" };
+    private static readonly List<string> WeaponTypes = new() { "", "Sword", "Axe", "Dagger", "Staff", "Bow", "Mace" };
+    private string _selectedArmorType = "";
+    private string _selectedWeaponType = "";
+    private bool _includeShield = false;
+
+    // Difficulty mode
+    private string _difficultyMode = "normal";
+    private bool IsHardcore => _difficultyMode == "hardcore";
+
+    /// <summary>Gets a human-readable summary of the selected equipment preferences.</summary>
+    private string EquipmentSummary
+    {
+        get
+        {
+            var parts = new List<string>();
+
+            if (!string.IsNullOrEmpty(_selectedArmorType))
+            {
+                var display = ArmorTypes.FirstOrDefault(a =>
+                    !string.IsNullOrEmpty(a) &&
+                    a.ToLowerInvariant().Replace(" ", "-") == _selectedArmorType) ?? _selectedArmorType;
+                parts.Add(display);
+            }
+
+            if (!string.IsNullOrEmpty(_selectedWeaponType))
+            {
+                var display = WeaponTypes.FirstOrDefault(w =>
+                    !string.IsNullOrEmpty(w) &&
+                    w.ToLowerInvariant() == _selectedWeaponType) ?? _selectedWeaponType;
+                parts.Add(display);
+            }
+
+            if (_includeShield)
+                parts.Add("Shield");
+
+            return parts.Count > 0 ? string.Join(", ", parts) : "Class Defaults";
+        }
+    }
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
@@ -198,35 +531,88 @@
             return;
         }
 
+        await LoadDataAsync();
+    }
+
+    /// <summary>Fetches all reference data (classes, species, backgrounds) and begins a creation session.</summary>
+    private async Task LoadDataAsync()
+    {
+        _isInitializing = true;
+        _loadError = null;
+        StateHasChanged();
+
         try
         {
-            var classesTask = Api.GetClassesAsync();
-            var speciesTask = Api.GetSpeciesAsync();
-            var backgroundsTask = Api.GetBackgroundsAsync();
-            await Task.WhenAll(classesTask, speciesTask, backgroundsTask);
-            _availableClasses = classesTask.Result;
-            _availableSpecies = speciesTask.Result;
-            _availableBackgrounds = backgroundsTask.Result;
+            // Fetch classes
+            List<ActorClassDto>? classes = null;
+            try
+            {
+                classes = await Api.GetClassesAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to load available classes");
+                _loadError = "Could not load available classes. Please check your connection and try again.";
+                return;
+            }
+
+            // Fetch species
+            List<SpeciesDto>? speciesList = null;
+            try
+            {
+                speciesList = await Api.GetSpeciesAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to load available species");
+                _loadError = "Could not load available species. Please check your connection and try again.";
+                return;
+            }
+
+            // Fetch backgrounds
+            List<BackgroundDto>? backgrounds = null;
+            try
+            {
+                backgrounds = await Api.GetBackgroundsAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to load available backgrounds");
+                _loadError = "Could not load available backgrounds. Please check your connection and try again.";
+                return;
+            }
+
+            _availableClasses = classes!;
+            _availableSpecies = speciesList!;
+            _availableBackgrounds = backgrounds!;
 
             // Begin a creation session so the server tracks wizard state.
-            var sessionResult = await Api.BeginCreationSessionAsync();
-            if (sessionResult is { Success: true })
+            try
             {
-                _sessionId = sessionResult.SessionId;
+                var sessionResult = await Api.BeginCreationSessionAsync();
+                if (sessionResult is { Success: true })
+                {
+                    _sessionId = sessionResult.SessionId;
+                }
+                else
+                {
+                    Logger.LogWarning("BeginCreationSessionAsync returned null or failed; proceeding without session tracking.");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Logger.LogWarning("BeginCreationSessionAsync returned null or failed; proceeding without session tracking.");
+                Logger.LogWarning(ex, "Failed to begin creation session; proceeding without session tracking.");
             }
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to load creation data or begin creation session.");
-            _errorMessage = "Failed to load available options. Please try again.";
+            Logger.LogError(ex, "Unexpected error during character creation initialization");
+            _loadError = "An unexpected error occurred while loading character creation. Please try again.";
         }
         finally
         {
-            _isLoading = false;
+            _isInitializing = false;
+            StateHasChanged();
         }
     }
 
@@ -243,6 +629,35 @@
             {
                 Logger.LogWarning(ex, "Failed to abandon creation session {SessionId}", _sessionId);
             }
+        }
+    }
+
+    /// <summary>Moves focus to the current step heading for screen reader accessibility.</summary>
+    private async Task FocusStepHeadingAsync()
+    {
+        await Task.Delay(50); // Allow DOM to update after step change
+        if (_stepHeadingRef.Context != null)
+        {
+            await _stepHeadingRef.FocusAsync();
+        }
+    }
+
+    /// <summary>Navigates to the specified step and moves focus to its heading.</summary>
+    /// <param name="step">The step number (1–7) to navigate to.</param>
+    private async Task NavigateToStepAsync(int step)
+    {
+        _currentStep = step;
+        await FocusStepHeadingAsync();
+    }
+
+    /// <summary>Handles keyboard navigation on selection cards (Enter or Space to select).</summary>
+    /// <param name="e">The keyboard event arguments.</param>
+    /// <param name="action">The selection action to invoke.</param>
+    private async Task OnCardKeyDownAsync(KeyboardEventArgs e, Func<Task> action)
+    {
+        if (e.Key is "Enter" or " ")
+        {
+            await action();
         }
     }
 
@@ -302,11 +717,141 @@
         }
     }
 
-    private void GoToStep1() => _currentStep = 1;
-    private void GoToStep2() => _currentStep = 2;
-    private void GoToStep3() => _currentStep = 3;
-    private void GoToStep4() => _currentStep = 4;
-    private void GoToStep5() => _currentStep = 5;
+    private async Task GoToStep1Async() => await NavigateToStepAsync(1);
+    private async Task GoToStep2Async() => await NavigateToStepAsync(2);
+    private async Task GoToStep3Async() => await NavigateToStepAsync(3);
+    private async Task GoToStep4Async() => await NavigateToStepAsync(4);
+    private async Task GoToStep5Async() => await NavigateToStepAsync(5);
+    private async Task GoToStep6Async() => await NavigateToStepAsync(6);
+
+    /// <summary>Navigates to the name step, saving equipment preferences first if any are set.</summary>
+    private async Task GoToStep6SaveEquipmentAsync()
+    {
+        // Only call the API if at least one equipment preference is set.
+        if (_sessionId.HasValue &&
+            (!string.IsNullOrEmpty(_selectedArmorType) || !string.IsNullOrEmpty(_selectedWeaponType) || _includeShield))
+        {
+            _isSavingEquipment = true;
+            try
+            {
+                var armorSlug = string.IsNullOrEmpty(_selectedArmorType) ? null : _selectedArmorType;
+                var weaponSlug = string.IsNullOrEmpty(_selectedWeaponType) ? null : _selectedWeaponType;
+                await Api.SetCreationEquipmentPreferencesAsync(_sessionId.Value, armorSlug, weaponSlug, _includeShield);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to persist equipment preferences to session {SessionId}", _sessionId);
+            }
+            finally
+            {
+                _isSavingEquipment = false;
+            }
+        }
+
+        await NavigateToStepAsync(6);
+    }
+
+    /// <summary>Navigates to the review step and loads the character preview from the server.</summary>
+    private async Task GoToStep7Async()
+    {
+        _currentStep = 7;
+        await FocusStepHeadingAsync();
+        await LoadPreviewAsync();
+    }
+
+    /// <summary>Loads a non-persisted character preview from the server. Failures are silently ignored — the preview is non-critical.</summary>
+    private async Task LoadPreviewAsync()
+    {
+        if (_sessionId == Guid.Empty || _sessionId is null)
+            return;
+
+        _isLoadingPreview = true;
+        StateHasChanged();
+
+        try
+        {
+            _characterPreview = await Api.GetCreationPreviewAsync(_sessionId.Value);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to load character preview for session {SessionId}", _sessionId);
+            _characterPreview = null;
+        }
+        finally
+        {
+            _isLoadingPreview = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>Sets difficulty mode to normal.</summary>
+    private void SetNormalDifficulty() => _difficultyMode = "normal";
+
+    /// <summary>Sets difficulty mode to hardcore.</summary>
+    private void SetHardcoreDifficulty() => _difficultyMode = "hardcore";
+
+    /// <summary>Increases the specified stat by 1 if within budget and cap.</summary>
+    /// <param name="statKey">The lowercase stat key (e.g. <c>"strength"</c>).</param>
+    private async Task IncreaseStatAsync(string statKey)
+    {
+        if (!_statAllocations.TryGetValue(statKey, out var currentValue))
+            return;
+
+        var nextValue = currentValue + 1;
+        if (nextValue > MaxStat)
+            return;
+
+        if (!StatCosts.TryGetValue(nextValue, out var nextCost))
+            return;
+
+        var currentCost = StatCosts[currentValue];
+        if (PointsSpent - currentCost + nextCost > TotalBudget)
+            return;
+
+        _statAllocations[statKey] = nextValue;
+        await SaveAttributesAsync();
+
+        if (RemainingPoints == 0)
+        {
+            _srAnnouncement = "All points allocated";
+        }
+    }
+
+    /// <summary>Decreases the specified stat by 1 if above the minimum.</summary>
+    /// <param name="statKey">The lowercase stat key (e.g. <c>"strength"</c>).</param>
+    private async Task DecreaseStatAsync(string statKey)
+    {
+        if (!_statAllocations.TryGetValue(statKey, out var currentValue))
+            return;
+
+        if (currentValue <= MinStat)
+            return;
+
+        _statAllocations[statKey] = currentValue - 1;
+        await SaveAttributesAsync();
+    }
+
+    /// <summary>Eagerly persists the current stat allocations to the creation session.</summary>
+    private async Task SaveAttributesAsync()
+    {
+        if (!_sessionId.HasValue)
+            return;
+
+        _isSavingAttributes = true;
+        try
+        {
+            await Api.SetCreationAttributesAsync(_sessionId.Value, new Dictionary<string, int>(_statAllocations));
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to persist attribute allocation to session {SessionId}", _sessionId);
+        }
+        finally
+        {
+            _isSavingAttributes = false;
+            StateHasChanged();
+        }
+    }
 
     private async Task OnNameChanged()
     {
@@ -317,16 +862,19 @@
         if (trimmed.Length < 2)
         {
             _nameError = "Name must be at least 2 characters.";
+            _srAnnouncement = "Name must be at least 2 characters";
             return;
         }
         if (trimmed.Length > 20)
         {
             _nameError = "Name must be at most 20 characters.";
+            _srAnnouncement = "Name must be at most 20 characters";
             return;
         }
         if (!System.Text.RegularExpressions.Regex.IsMatch(trimmed, @"^[a-zA-Z ]+$"))
         {
             _nameError = "Name may only contain letters and spaces.";
+            _srAnnouncement = "Name may only contain letters and spaces";
             return;
         }
 
@@ -338,27 +886,32 @@
             if (result is null)
             {
                 _nameError = "Unexpected empty response from server. Please try again.";
+                _srAnnouncement = "Error checking name availability";
             }
             else if (!result.Available)
             {
                 _nameError = result.Error ?? "Name is not available.";
                 _nameAvailable = false;
+                _srAnnouncement = "Name is not available";
             }
             else
             {
                 _nameAvailable = true;
                 _characterName = trimmed;
+                _srAnnouncement = "Name is available";
             }
         }
         catch (HttpRequestException ex)
         {
             Logger.LogError(ex, "HTTP error while checking character name availability.");
             _nameError = "Server error while checking name. Please try again later.";
+            _srAnnouncement = "Server error while checking name";
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to check character name availability.");
             _nameError = "Could not verify name availability. Please try again.";
+            _srAnnouncement = "Could not verify name availability";
         }
         finally
         {
@@ -372,7 +925,7 @@
             return;
 
         _isCreating = true;
-        _errorMessage = null;
+        _loadError = null;
 
         try
         {
@@ -380,20 +933,20 @@
 
             if (_sessionId.HasValue)
             {
-                // Use the session-based finalization endpoint.
+                // Use the session-based finalization endpoint with the selected difficulty mode.
                 result = await Api.FinalizeCreationSessionAsync(
                     _sessionId.Value,
-                    new FinalizeCreationSessionRequest(_characterName, "normal"));
+                    new FinalizeCreationSessionRequest(_characterName.Trim(), _difficultyMode));
             }
             else
             {
                 // Fallback to the legacy endpoint if no session exists.
-                result = await Api.CreateCharacterAsync(_characterName, _selectedClass.DisplayName);
+                result = await Api.CreateCharacterAsync(_characterName.Trim(), _selectedClass.DisplayName, _difficultyMode);
             }
 
             if (result is null)
             {
-                _errorMessage = "Failed to create character. The name may already be taken.";
+                _loadError = "Failed to create character. The name may already be taken.";
             }
             else
             {
@@ -403,7 +956,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to create character.");
-            _errorMessage = "Failed to create character. Please try again.";
+            _loadError = "Failed to create character. Please try again.";
         }
         finally
         {
@@ -413,7 +966,7 @@
 
     private async Task ResetWizard()
     {
-        _errorMessage = null;
+        _loadError = null;
         _currentStep = 1;
 
         // Abandon the old session and start a fresh one.
@@ -428,6 +981,15 @@
         _selectedSpecies = null;
         _selectedBackground = null;
         _characterName = string.Empty;
+        _selectedArmorType = "";
+        _selectedWeaponType = "";
+        _includeShield = false;
+        _difficultyMode = "normal";
+        _statAllocations = new Dictionary<string, int>
+        {
+            { "strength", 8 }, { "dexterity", 8 }, { "constitution", 8 },
+            { "intelligence", 8 }, { "wisdom", 8 }, { "charisma", 8 }
+        };
 
         try
         {
@@ -441,5 +1003,7 @@
         {
             Logger.LogWarning(ex, "Failed to begin new session during reset");
         }
+
+        await FocusStepHeadingAsync();
     }
 }

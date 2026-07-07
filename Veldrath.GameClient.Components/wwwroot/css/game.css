@@ -1497,6 +1497,50 @@
     display: inline-block;
 }
 
+/* ── Attribute Allocation (Point-Buy) ────────────────────────────────── */
+
+.cc-attrs-row {
+    background: var(--vds-bg-3, #262736);
+    border-color: var(--vds-border, #2A2B3D) !important;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.cc-attrs-row:hover {
+    border-color: var(--vds-border-strong, #3D3F58) !important;
+    background: var(--vds-bg-4, #2E2F42);
+}
+
+.cc-attrs-label {
+    min-width: 180px;
+    font-family: var(--vds-font-heading, 'Cinzel', serif);
+    font-size: var(--vds-text-base, 14px);
+    color: var(--vds-text, #F0EDE8);
+}
+
+.cc-attrs-value {
+    min-width: 40px;
+    text-align: center;
+    font-family: var(--vds-font-mono, 'JetBrains Mono', monospace);
+    color: var(--vds-text, #F0EDE8);
+}
+
+.cc-attrs-cost {
+    min-width: 80px;
+    text-align: right;
+    font-family: var(--vds-font-mono, 'JetBrains Mono', monospace);
+    font-size: var(--vds-text-sm, 12px);
+    color: var(--vds-text-muted, #A8A09A);
+}
+
+.cc-attrs-btn {
+    width: 48px;
+    font-size: var(--vds-text-lg, 20px);
+    font-weight: 700;
+    line-height: 1;
+    padding: 6px 0;
+    text-align: center;
+}
+
 /* ── Scrollbar styling (game panels) ────────────────────────────────── */
 
 .game-sidebar::-webkit-scrollbar,
@@ -2580,5 +2624,109 @@
 
     .settings-label {
         min-width: 80px;
+    }
+}
+
+/* ── Character Creation Polish ────────────────────────────────────────── */
+
+/* Card focus ring for keyboard navigation */
+.cc-class-card:focus-visible {
+    outline: 2px solid var(--vds-seal-light, #E05545);
+    outline-offset: 2px;
+    border-color: var(--vds-seal-light, #E05545);
+}
+
+/* Card focus fallback for browsers without :focus-visible support */
+.cc-class-card:focus {
+    outline: 2px solid var(--vds-seal-light, #E05545);
+    outline-offset: 2px;
+}
+
+/* Preserve hover style for keyboard-focused cards */
+.cc-class-card:focus-visible:not(.cc-class-card-selected) {
+    border-color: var(--vds-border-strong, #3D3F58);
+    background: var(--vds-bg-4, #2E2F42);
+}
+
+/* Step indicator wrapping on narrow screens */
+.cc-steps.flex-wrap {
+    flex-wrap: wrap;
+}
+
+.cc-steps.flex-wrap .cc-step {
+    flex: 0 0 auto;
+    min-width: fit-content;
+    white-space: nowrap;
+}
+
+/* Navigation button row — allow wrapping on mobile */
+.cc-nav {
+    flex-wrap: wrap;
+}
+
+/* Name input validation states — override Bootstrap defaults for dark theme */
+.cc-name-input .form-control.is-invalid {
+    border-color: var(--vds-danger, #E05252);
+    box-shadow: 0 0 0 2px rgba(224, 82, 82, 0.25);
+    background-image: none;
+}
+
+.cc-name-input .form-control.is-valid {
+    border-color: var(--vds-success, #5CAB7D);
+    box-shadow: 0 0 0 2px rgba(92, 171, 125, 0.25);
+    background-image: none;
+}
+
+/* ── Character Creation Responsive ────────────────────────────────────── */
+
+@media (max-width: 575px) {
+    .cc-container {
+        padding: var(--vds-space-4, 16px) var(--vds-space-3, 12px);
+        margin-top: var(--vds-space-4, 16px);
+    }
+
+    .cc-wizard {
+        padding: var(--vds-space-4, 16px);
+    }
+
+    .cc-attrs-label {
+        min-width: 120px;
+        font-size: var(--vds-text-sm, 12px);
+    }
+
+    .cc-attrs-btn {
+        width: 40px;
+        font-size: var(--vds-text-md, 16px);
+        padding: 4px 0;
+    }
+
+    .cc-attrs-value {
+        min-width: 32px;
+        font-size: var(--vds-text-md, 16px);
+    }
+
+    .cc-attrs-cost {
+        display: none;
+    }
+}
+
+@media (max-width: 767px) {
+    .cc-steps {
+        font-size: var(--vds-text-xs, 10px);
+        gap: var(--vds-space-1, 4px);
+    }
+
+    .cc-step {
+        padding: var(--vds-space-1, 4px) var(--vds-space-2, 8px);
+        letter-spacing: 0;
+    }
+
+    .cc-nav .btn {
+        width: 100%;
+        margin-bottom: var(--vds-space-2, 8px);
+    }
+
+    .cc-nav .btn:last-child {
+        margin-bottom: 0;
     }
 }
