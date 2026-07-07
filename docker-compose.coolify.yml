@@ -40,6 +40,7 @@ services:
   # ── Application Services ────────────────────────────────────────────────────
 
   server:
+    container_name: veldrath-server
     image: ghcr.io/kungraseri/veldrath-server:latest
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
@@ -80,8 +81,11 @@ services:
       - dataprotection_keys:/root/.aspnet/DataProtection-Keys
     restart: unless-stopped
     networks:
-      - veldrath
-      - coolify
+      veldrath:
+      coolify:
+        aliases:
+          - veldrath-server
+          - server
     deploy:
       resources:
         limits:
@@ -123,6 +127,7 @@ services:
           cpus: "0.25"
 
   foundry:
+    container_name: realmfoundry
     image: ghcr.io/kungraseri/realmfoundry:latest
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
@@ -140,6 +145,7 @@ services:
       - "traefik.http.services.foundry.loadbalancer.server.port=8081"
       - "traefik.http.services.foundry.loadbalancer.sticky.cookie.name=foundry_lb"
       - "traefik.http.services.foundry.loadbalancer.sticky.cookie.secure=true"
+      - "traefik.http.services.foundry.loadbalancer.server.scheme=http"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8081/health || exit 1"]
       interval: 10s
@@ -153,8 +159,11 @@ services:
         condition: service_healthy
     restart: unless-stopped
     networks:
-      - veldrath
-      - coolify
+      veldrath:
+      coolify:
+        aliases:
+          - realmfoundry
+          - foundry
     deploy:
       resources:
         limits:
@@ -165,6 +174,7 @@ services:
           cpus: "0.5"
 
   web:
+    container_name: veldrath-web
     image: ghcr.io/kungraseri/veldrath-web:latest
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
@@ -182,6 +192,7 @@ services:
       - "traefik.http.services.web.loadbalancer.server.port=8082"
       - "traefik.http.services.web.loadbalancer.sticky.cookie.name=web_lb"
       - "traefik.http.services.web.loadbalancer.sticky.cookie.secure=true"
+      - "traefik.http.services.web.loadbalancer.server.scheme=http"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8082/health || exit 1"]
       interval: 10s
@@ -195,8 +206,11 @@ services:
         condition: service_healthy
     restart: unless-stopped
     networks:
-      - veldrath
-      - coolify
+      veldrath:
+      coolify:
+        aliases:
+          - veldrath-web
+          - web
     deploy:
       resources:
         limits:
