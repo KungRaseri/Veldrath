@@ -54,8 +54,17 @@
     private GameOverlay.OverlayKind _activeOverlay;
 
     /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        Auth.OnChange += OnAuthStateChanged;
+    }
+
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
+        if (!Auth.IsAuthReady)
+            return;
+
         if (!Auth.IsLoggedIn)
         {
             Navigation.NavigateTo("/login");
@@ -67,6 +76,12 @@
         _hubStateSubscription = SubscribeToHubState();
 
         await ConnectAndRegisterHandlers();
+    }
+
+    private void OnAuthStateChanged()
+    {
+        if (Auth.IsAuthReady)
+            InvokeAsync(StateHasChanged);
     }
 
     /// <summary>
@@ -584,6 +599,7 @@
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
+        Auth.OnChange -= OnAuthStateChanged;
         _stateSubscription?.Dispose();
         _hubStateSubscription?.Dispose();
 

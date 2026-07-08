@@ -395,9 +395,15 @@ else
         }
     }
 
-    private void OnAuthStateChanged()
+    private async void OnAuthStateChanged()
     {
-        InvokeAsync(StateHasChanged);
+        if (AuthState.IsAuthReady && AuthState.IsLoggedIn && _profile is null)
+        {
+            await LoadProfileWithRetryAsync();
+            if (_profile is not null)
+                await LoadSessionsWithRetryAsync();
+        }
+        await InvokeAsync(StateHasChanged);
     }
 
     /// <inheritdoc />

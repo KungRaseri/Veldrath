@@ -78,8 +78,17 @@ else
     private readonly List<IDisposable> _hubSubscriptions = [];
 
     /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        Auth.OnChange += OnAuthStateChanged;
+    }
+
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
+        if (!Auth.IsAuthReady)
+            return;
+
         if (!Auth.IsLoggedIn)
         {
             Navigation.NavigateTo("/login");
@@ -87,6 +96,12 @@ else
         }
 
         await ConnectAndLoadCharacters();
+    }
+
+    private void OnAuthStateChanged()
+    {
+        if (Auth.IsAuthReady)
+            InvokeAsync(StateHasChanged);
     }
 
     private async Task ConnectAndLoadCharacters()
@@ -187,6 +202,8 @@ else
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
+        Auth.OnChange -= OnAuthStateChanged;
+
         foreach (var sub in _hubSubscriptions)
         {
             sub.Dispose();

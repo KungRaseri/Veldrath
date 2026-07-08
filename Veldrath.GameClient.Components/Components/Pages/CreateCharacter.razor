@@ -596,8 +596,17 @@
     }
 
     /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        Auth.OnChange += OnAuthStateChanged;
+    }
+
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
+        if (!Auth.IsAuthReady)
+            return;
+
         if (!Auth.IsLoggedIn)
         {
             Navigation.NavigateTo("/login");
@@ -607,6 +616,12 @@
         Navigation.LocationChanged += OnLocationChanged;
 
         await LoadDataAsync();
+    }
+
+    private void OnAuthStateChanged()
+    {
+        if (Auth.IsAuthReady)
+            InvokeAsync(StateHasChanged);
     }
 
     /// <summary>Fetches all reference data (classes, species, backgrounds) in parallel and begins a creation session.</summary>
@@ -717,6 +732,7 @@
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
+        Auth.OnChange -= OnAuthStateChanged;
         Navigation.LocationChanged -= OnLocationChanged;
         _nameCheckCts?.Cancel();
         _nameCheckCts?.Dispose();
