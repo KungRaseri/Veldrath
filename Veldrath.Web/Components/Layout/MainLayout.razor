@@ -5,6 +5,7 @@
 @inject IHttpContextAccessor HttpContextAccessor
 @inject PersistentComponentState ApplicationState
 @inject VeldrathApiClient Api
+@inject ILogger<MainLayout> Logger
 @using Veldrath.Contracts.Editorial
 @using Veldrath.Contracts.Foundry
 
@@ -66,12 +67,14 @@
         if (ctx is not null)
         {
             // SSR prerender pass — HttpContext is available.
-            // The rt cookie is now scoped to .veldrath.com, so it is visible to both
-            // veldrath.com and foundry.veldrath.com without a second login.
             var rt = ctx.Request.Cookies["rt"];
+            Logger.LogInformation("SSR pass: rt cookie present: {HasRt}", !string.IsNullOrEmpty(rt));
+
             if (!string.IsNullOrEmpty(rt))
             {
                 var renewed = await Api.RenewJwtAsync(rt);
+                Logger.LogInformation("SSR pass: RenewJwtAsync returned null: {IsNull}", renewed is null);
+
                 if (renewed is not null)
                 {
                     var authResponse = new Veldrath.Contracts.Auth.AuthResponse(
@@ -87,26 +90,55 @@
 
                     _subscription = ApplicationState.RegisterOnPersisting(() =>
                     {
-                        ApplicationState.PersistAsJson("auth", authResponse);
+                        ApplicationState.PersistAsJson("rt", rt);
+                        Logger.LogInformation("SSR pass: Persisted rt token (len={Len})", rt.Length);
                         return Task.CompletedTask;
                     });
 
                     await AuthState.SetTokensAsync(authResponse);
+                    Logger.LogInformation("SSR pass: SetTokensAsync completed. IsLoggedIn={IsLoggedIn}, AccessToken len={Len}",
+                        AuthState.IsLoggedIn, authResponse.AccessToken?.Length ?? 0);
                 }
             }
 
             AuthState.MarkReady();
+            Logger.LogInformation("SSR pass: MarkReady called. IsAuthReady={Ready}, IsLoggedIn={In}",
+                AuthState.IsAuthReady, AuthState.IsLoggedIn);
             return;
         }
 
-        // Interactive circuit pass — restore auth from the persisted SSR JSON.
-        if (ApplicationState.TryTakeFromJson<Veldrath.Contracts.Auth.AuthResponse>("auth", out var persisted)
-            && persisted is not null)
+        // Interactive circuit pass.
+        var hasRt = ApplicationState.TryTakeFromJson<string>("rt", out var persistedRt);
+        Logger.LogInformation("Circuit pass: TryTakeFromJson rt: success={Success}, hasValue={HasValue}",
+            hasRt, !string.IsNullOrEmpty(persistedRt));
+
+        if (hasRt && !string.IsNullOrEmpty(persistedRt))
         {
-            await AuthState.SetTokensAsync(persisted);
+            var renewed = await Api.RenewJwtAsync(persistedRt);
+            Logger.LogInformation("Circuit pass: RenewJwtAsync returned null: {IsNull}", renewed is null);
+
+            if (renewed is not null)
+            {
+                var authResponse = new Veldrath.Contracts.Auth.AuthResponse(
+                    renewed.AccessToken,
+                    persistedRt,
+                    renewed.AccessTokenExpiry,
+                    renewed.AccountId,
+                    renewed.Username,
+                    renewed.Roles,
+                    renewed.Permissions,
+                    renewed.IsCurator,
+                    renewed.SessionId);
+
+                await AuthState.SetTokensAsync(authResponse);
+                Logger.LogInformation("Circuit pass: SetTokensAsync completed. IsLoggedIn={In}, AccessToken len={Len}",
+                    AuthState.IsLoggedIn, renewed.AccessToken?.Length ?? 0);
+            }
         }
 
         AuthState.MarkReady();
+        Logger.LogInformation("Circuit pass: MarkReady called. IsAuthReady={Ready}, IsLoggedIn={In}",
+            AuthState.IsAuthReady, AuthState.IsLoggedIn);
 
         // Fetch published announcements on circuit init (after SSR auth is restored).
         try
