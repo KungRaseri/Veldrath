@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -67,6 +69,44 @@ try
     // the AuthenticationStateProvider via the component hierarchy.
     builder.Services.AddCascadingAuthenticationState();
 
+    // Register authentication services so the AuthorizationMiddleware can call
+    // HttpContext.ChallengeAsync() without throwing. The actual auth state is
+    // driven by AuthStateService (AuthenticationStateProvider); cookie auth is
+    // configured here only as middleware infrastructure for Blazor Server.
+    builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+        .AddCookie(options =>
+        {
+            options.Cookie.Name = "vw-auth";
+            options.LoginPath = "/login";
+            options.LogoutPath = "/auth/sign-out";
+            // 🔴 CRITICAL: Suppress HTTP-level redirects — Blazor handles auth internally.
+            // The cookie handler is registered only to satisfy ASP.NET Core's middleware
+            // infrastructure (IAuthenticationService, Challenge/Forbid). Without this,
+            // the cookie handler would redirect unauthenticated SSR requests to /login,
+            // causing a redirect loop since there is no vw-auth cookie. Instead, return
+            // 401/403 silently and let Blazor's AuthorizeRouteView handle navigation.
+            options.Events.OnRedirectToLogin = context =>
+            {
+                context.Response.StatusCode = 401;
+                return Task.CompletedTask;
+            };
+            options.Events.OnRedirectToAccessDenied = context =>
+            {
+                context.Response.StatusCode = 403;
+                return Task.CompletedTask;
+            };
+        });
+
+    builder.Services.AddAuthorization(options =>
+    {
+        // HTTP-level authorization passes through — Blazor's component-level auth
+        // (AuthorizeRouteView/AuthorizeView) handles the actual access control
+        // using the AuthenticationStateProvider (AuthStateService with JWT).
+        options.DefaultPolicy = new AuthorizationPolicyBuilder()
+            .RequireAssertion(_ => true)
+            .Build();
+    });
+
     // Game client services — registered as interfaces for abstraction.
     builder.Services.AddScoped<IGameHubConnectionService, GameHubConnectionService>();
     builder.Services.AddScoped<IGameStateService, GameStateService>();
@@ -107,7 +147,6 @@ try
         app.UseExceptionHandler("/Error");
         app.UseHsts();
     }
-    app.UseAntiforgery();
 
     // Security headers applied to every response.
     app.Use(async (ctx, next) =>
@@ -124,7 +163,17 @@ try
         await next(ctx);
     });
 
-    app.UseStaticFiles();
+    // Routing must be explicit to ensure correct middleware ordering.
+    app.UseRouting();
+
+    // Authentication and Authorization middleware must be registered so
+    // EndpointMiddleware doesn't throw on [Authorize]-decorated endpoints.
+    // The cookie handler is configured to never redirect (see AddCookie above),
+    // so Blazor's AuthorizeRouteView handles auth at the component level.
+    app.UseAuthentication();
+    app.UseAuthorization();
+
+    // Static assets must be mapped after routing.
     app.MapStaticAssets();
 
     // Revokes the refresh token stored in the cookie (server-side), deletes the cookie,
@@ -149,6 +198,9 @@ try
         .AddAdditionalAssemblies(typeof(GameLayout).Assembly)
         .AddInteractiveServerRenderMode()
         .DisableAntiforgery();
+
+    // Antiforgery must be positioned after endpoint mappings so it can see endpoint metadata.
+    app.UseAntiforgery();
 
     app.Run();
 }
