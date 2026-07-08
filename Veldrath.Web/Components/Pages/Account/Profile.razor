@@ -332,9 +332,17 @@ else
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
-        // Check IsAuthReady to prevent premature redirect during SSR
-        // (before AuthStateService has restored JWT tokens)
-        if (AuthState.IsAuthReady && !AuthState.IsLoggedIn)
+        // SSR prerender pass: IsAuthReady is false because MainLayout's
+        // OnInitializedAsync hasn't completed yet (it's still fetching the JWT).
+        // Skip API calls entirely — the Bearer token isn't set, so any HTTP
+        // request would get a 401. When MarkReady() fires via OnChange,
+        // the component re-renders and OnInitializedAsync runs again with
+        // IsAuthReady = true, at which point the Bearer token is available.
+        if (!AuthState.IsAuthReady)
+            return;
+
+        // Circuit pass with auth fully initialized.
+        if (!AuthState.IsLoggedIn)
         {
             Nav.NavigateTo("/login", forceLoad: false);
             return;
@@ -344,8 +352,7 @@ else
         // condition where MainLayout.OnLocationChanged fires TryRefreshAsync()
         // fire-and-forget on navigation, and the API call below could use a stale
         // token if the refresh hasn't completed yet.
-        if (AuthState.IsLoggedIn)
-            await AuthState.TryRefreshAsync();
+        await AuthState.TryRefreshAsync();
 
         // Handle query-param feedback from the OAuth link redirect.
         if (LinkedParam == "1")
