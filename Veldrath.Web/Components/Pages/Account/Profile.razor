@@ -4,6 +4,7 @@
 @inject IConfiguration Config
 @inject VeldrathApiClient Api
 @inject AuthStateService AuthState
+@implements IDisposable
 
 <PageTitle>My Account — Veldrath</PageTitle>
 
@@ -321,6 +322,14 @@ else
     private string? _emailMessage;
 
     /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        // Subscribe to auth state changes so the UI re-renders when MarkReady()
+        // is called (transitions IsAuthReady from false → true).
+        AuthState.OnChange += OnAuthStateChanged;
+    }
+
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         // Check IsAuthReady to prevent premature redirect during SSR
@@ -339,6 +348,17 @@ else
 
         await LoadProfileAsync();
         await LoadSessionsAsync();
+    }
+
+    private void OnAuthStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        AuthState.OnChange -= OnAuthStateChanged;
     }
 
     private async Task LoadProfileAsync()
