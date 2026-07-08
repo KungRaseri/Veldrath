@@ -13,7 +13,7 @@
 }
 else if (!AuthState.IsLoggedIn)
 {
-    <!-- Redirect handled in OnInitializedAsync; render nothing while navigating. -->
+    <p>Checking authentication...</p>
 }
 else if (_profile is null)
 {
@@ -323,7 +323,9 @@ else
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
-        if (!AuthState.IsLoggedIn)
+        // Check IsAuthReady to prevent premature redirect during SSR
+        // (before AuthStateService has restored JWT tokens)
+        if (AuthState.IsAuthReady && !AuthState.IsLoggedIn)
         {
             Nav.NavigateTo("/login", forceLoad: false);
             return;
