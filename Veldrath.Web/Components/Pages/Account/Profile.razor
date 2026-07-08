@@ -354,8 +354,38 @@ else
             _errorMessage = "Failed to link provider. Please try again.";
 
         // Reload profile and sessions even when already loaded (page refresh case).
+        // If the API call returns null (e.g. 401 due to stale Bearer token from a
+        // concurrent renew), retry once after a fresh token refresh.
+        await LoadProfileWithRetryAsync();
+        if (_profile is not null)
+            await LoadSessionsWithRetryAsync();
+    }
+
+    /// <summary>
+    /// Loads the profile from the API, retrying once if the initial call fails
+    /// (e.g. with a 401 due to a stale Bearer token from a concurrent renew).
+    /// </summary>
+    private async Task LoadProfileWithRetryAsync()
+    {
         await LoadProfileAsync();
+        if (_profile is null && AuthState.IsLoggedIn)
+        {
+            await AuthState.TryRefreshAsync();
+            await LoadProfileAsync();
+        }
+    }
+
+    /// <summary>
+    /// Loads the session list from the API, retrying once if the initial call fails.
+    /// </summary>
+    private async Task LoadSessionsWithRetryAsync()
+    {
         await LoadSessionsAsync();
+        if (_sessions.Count == 0 && AuthState.IsLoggedIn)
+        {
+            await AuthState.TryRefreshAsync();
+            await LoadSessionsAsync();
+        }
     }
 
     private void OnAuthStateChanged()
@@ -371,12 +401,26 @@ else
 
     private async Task LoadProfileAsync()
     {
-        _profile = await Api.GetMyProfileAsync();
+        try
+        {
+            _profile = await Api.GetMyProfileAsync();
+        }
+        catch
+        {
+            _profile = null;
+        }
     }
 
     private async Task LoadSessionsAsync()
     {
-        _sessions = (await Api.GetSessionsAsync(AuthState.SessionId)).ToList();
+        try
+        {
+            _sessions = (await Api.GetSessionsAsync(AuthState.SessionId)).ToList();
+        }
+        catch
+        {
+            _sessions = [];
+        }
     }
 
     // ── Profile edit ──────────────────────────────────────────────────────────
