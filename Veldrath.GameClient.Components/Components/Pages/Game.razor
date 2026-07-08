@@ -59,7 +59,7 @@
     {
         if (!Auth.IsLoggedIn)
         {
-            Navigation.NavigateTo("/Login");
+            Navigation.NavigateTo("/login");
             return;
         }
 
@@ -103,7 +103,7 @@
             var tokenValid = await Auth.TryRefreshAsync();
             if (!tokenValid || Auth.AccessToken is null)
             {
-                Navigation.NavigateTo("/Login");
+                Navigation.NavigateTo("/login");
                 return;
             }
 
