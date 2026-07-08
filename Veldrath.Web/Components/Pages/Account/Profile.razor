@@ -340,12 +340,20 @@ else
             return;
         }
 
+        // Proactively refresh the JWT before making API calls. This prevents a race
+        // condition where MainLayout.OnLocationChanged fires TryRefreshAsync()
+        // fire-and-forget on navigation, and the API call below could use a stale
+        // token if the refresh hasn't completed yet.
+        if (AuthState.IsLoggedIn)
+            await AuthState.TryRefreshAsync();
+
         // Handle query-param feedback from the OAuth link redirect.
         if (LinkedParam == "1")
             _successMessage = "Provider linked successfully.";
         else if (ErrorParam == "link_failed")
             _errorMessage = "Failed to link provider. Please try again.";
 
+        // Reload profile and sessions even when already loaded (page refresh case).
         await LoadProfileAsync();
         await LoadSessionsAsync();
     }
