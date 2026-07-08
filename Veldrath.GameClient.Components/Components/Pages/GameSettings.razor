@@ -1,10 +1,11 @@
 @page "/Game/Settings"
-@attribute [Authorize]
 @using Microsoft.Extensions.Logging
 @using Veldrath.GameClient.Core.Abstractions
+@using Veldrath.Auth.Blazor
 @inject IGameHubConnectionService Hub
 @inject IGameStateService GameState
 @inject NavigationManager Navigation
+@inject AuthStateServiceBase Auth
 @inject ILogger<GameSettings> Logger
 
 @* Settings page for audio, display, and accessibility options. *@
@@ -140,6 +141,12 @@
     /// <inheritdoc />
     protected override void OnInitialized()
     {
+        if (!Auth.IsLoggedIn)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
         LoadSettings();
     }
 

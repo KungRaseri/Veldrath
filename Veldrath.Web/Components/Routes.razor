@@ -1,22 +1,9 @@
-@using Microsoft.AspNetCore.Components.Authorization
 @using Veldrath.GameClient.Components.Components.Layout
 
 <Router AppAssembly="typeof(App).Assembly"
         AdditionalAssemblies="new[] { typeof(GameLayout).Assembly }">
     <Found Context="routeData">
-        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
-            <NotAuthorized>
-                <LayoutView Layout="typeof(Layout.MainLayout)">
-                    <div class="auth-redirect-container">
-                        <PageTitle>Authentication required</PageTitle>
-                        <h2>Authentication Required</h2>
-                        <p>You need to be logged in to access this page.</p>
-                        <a href="/login" class="btn btn-primary">Log in</a>
-                        <p>Don't have an account? <a href="/register">Register here</a>.</p>
-                    </div>
-                </LayoutView>
-            </NotAuthorized>
-        </AuthorizeRouteView>
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
     </Found>
     <NotFound>
         <PageTitle>Not found</PageTitle>

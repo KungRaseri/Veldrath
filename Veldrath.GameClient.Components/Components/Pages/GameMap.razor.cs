@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Veldrath.Auth.Blazor;
 using Veldrath.Contracts.Tilemap;
 using Veldrath.GameClient.Components.Models;
 using Veldrath.GameClient.Core.Abstractions;
@@ -39,9 +40,18 @@ public partial class GameMap : IDisposable
     [Inject]
     private NavigationManager Navigation { get; set; } = null!;
 
+    [Inject]
+    private AuthStateServiceBase Auth { get; set; } = null!;
+
     /// <inheritdoc />
     protected override void OnInitialized()
     {
+        if (!Auth.IsLoggedIn)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
         _stateSubscription = GameState.OnStateChanged(() => InvokeAsync(StateHasChanged));
 
         // Subscribe to the RegionMap hub event before sending the request,
