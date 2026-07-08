@@ -1,4 +1,5 @@
 @page "/Game/Settings"
+@implements IDisposable
 @using Microsoft.Extensions.Logging
 @using Veldrath.GameClient.Core.Abstractions
 @using Veldrath.Auth.Blazor
@@ -141,6 +142,11 @@
     /// <inheritdoc />
     protected override void OnInitialized()
     {
+        Auth.OnChange += OnAuthStateChanged;
+
+        if (!Auth.IsAuthReady)
+            return;
+
         if (!Auth.IsLoggedIn)
         {
             Navigation.NavigateTo("/login");
@@ -148,6 +154,18 @@
         }
 
         LoadSettings();
+    }
+
+    private void OnAuthStateChanged()
+    {
+        if (Auth.IsAuthReady)
+            InvokeAsync(StateHasChanged);
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        Auth.OnChange -= OnAuthStateChanged;
     }
 
     private void LoadSettings()

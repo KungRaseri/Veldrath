@@ -46,6 +46,11 @@ public partial class GameMap : IDisposable
     /// <inheritdoc />
     protected override void OnInitialized()
     {
+        Auth.OnChange += OnAuthStateChanged;
+
+        if (!Auth.IsAuthReady)
+            return;
+
         if (!Auth.IsLoggedIn)
         {
             Navigation.NavigateTo("/login");
@@ -60,6 +65,12 @@ public partial class GameMap : IDisposable
 
         // Request the region map from the server.
         _ = LoadRegionMapAsync();
+    }
+
+    private void OnAuthStateChanged()
+    {
+        if (Auth.IsAuthReady)
+            InvokeAsync(StateHasChanged);
     }
 
     /// <summary>
@@ -217,6 +228,7 @@ public partial class GameMap : IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
+        Auth.OnChange -= OnAuthStateChanged;
         _regionMapSubscription?.Dispose();
         _stateSubscription?.Dispose();
     }

@@ -4,6 +4,7 @@
 @inject IConfiguration Config
 @inject VeldrathApiClient Api
 @inject AuthStateService AuthState
+@inject IHttpContextAccessor HttpContextAccessor
 
 <PageTitle>Sign In — Veldrath</PageTitle>
 
@@ -104,7 +105,8 @@
 
     private void OnAuthStateChanged()
     {
-        if (AuthState.IsAuthReady && AuthState.IsLoggedIn)
+        // Only redirect during interactive circuit, not during SSR prerender
+        if (AuthState.IsAuthReady && AuthState.IsLoggedIn && HttpContextAccessor.HttpContext is null)
             Nav.NavigateTo("/account/profile", replace: true);
     }
 
