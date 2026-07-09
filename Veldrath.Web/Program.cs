@@ -125,6 +125,11 @@ try
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     });
 
+    // Singleton cache that bridges auth state from SSR to circuit without relying on
+    // PersistentComponentState's complex-type serialization (which can fail silently
+    // for IReadOnlyList, DateTimeOffset, Guid?, etc.).
+    builder.Services.AddSingleton<AuthStateCache>();
+
     builder.Services.AddHealthChecks();
 
     var app = builder.Build();
