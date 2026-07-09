@@ -100,8 +100,15 @@
 
         Hub.StateChanged += Handler;
 
-        // Check initial state
-        _ = InvokeAsync(() => OnHubStateChanged(Hub.State));
+        // Check initial state ONLY when auth is ready. During SSR prerender,
+        // auth isn't ready yet (MainLayout hasn't called MarkReady), so the
+        // hub hasn't had a chance to connect. Checking the initial
+        // Disconnected state during SSR would show a false "Connection Lost"
+        // overlay before the circuit even has a chance to connect.
+        if (Auth.IsAuthReady)
+        {
+            _ = InvokeAsync(() => OnHubStateChanged(Hub.State));
+        }
 
         return new Subscription(() => Hub.StateChanged -= Handler);
     }
