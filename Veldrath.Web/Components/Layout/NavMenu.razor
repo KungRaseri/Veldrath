@@ -1,24 +1,26 @@
 @implements IDisposable
 @inject AuthStateService AuthState
+@inject NavigationManager Nav
 
-<nav class="main-nav">
-    <a href="/">Home</a>
-    <a href="/lore">World</a>
-    <a href="/patch-notes">Patch Notes</a>
-    <a href="/community">Community</a>
+<MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+    <MudNavLink Href="/" Match="NavLinkMatch.All">Home</MudNavLink>
+    <MudNavLink Href="/lore" Match="NavLinkMatch.Prefix">World</MudNavLink>
+    <MudNavLink Href="/patch-notes" Match="NavLinkMatch.Prefix">Patch Notes</MudNavLink>
+    <MudNavLink Href="/community" Match="NavLinkMatch.All">Community</MudNavLink>
     @if (AuthState.IsLoggedIn)
     {
-        <a href="/game/characterselect">
-            <span class="oi oi-game-controller" aria-hidden="true"></span> Play
-        </a>
-        <a href="/account/profile">@AuthState.Username</a>
-        <a href="/auth/sign-out" data-enhance-nav="false">Sign Out</a>
+        <MudNavLink Href="/game/characterselect" Match="NavLinkMatch.Prefix">
+            <MudIcon Icon="@Icons.Material.Filled.SportsEsports" Size="Size.Small" Style="margin-right:4px" />
+            Play
+        </MudNavLink>
+        <MudNavLink Href="/account/profile" Match="NavLinkMatch.Prefix">@AuthState.Username</MudNavLink>
+        <MudNavLink Href="/auth/sign-out" Match="NavLinkMatch.All" ForceLoad="true">Sign Out</MudNavLink>
     }
     else
     {
-        <a href="/login">Sign In</a>
+        <MudNavLink Href="/login" Match="NavLinkMatch.All">Sign In</MudNavLink>
     }
-</nav>
+</MudStack>
 
 @code {
     protected override void OnInitialized()

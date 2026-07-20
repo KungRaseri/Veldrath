@@ -5,42 +5,46 @@
 
 <PageTitle>Patch Notes — Veldrath</PageTitle>
 
-<h1>Patch Notes</h1>
+<MudContainer MaxWidth="MaxWidth.Large" Style="margin-top:32px">
+    <MudText Typo="Typo.h4" GutterBottom="true">Patch Notes</MudText>
 
-@if (_loading)
-{
-    <p>Loading…</p>
-}
-else if (_result is null || _result.Items.Count == 0)
-{
-    <p>No patch notes published yet. Check back soon!</p>
-}
-else
-{
-    <ul class="patch-list">
+    @if (_loading)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="my-4 d-flex justify-center" />
+    }
+    else if (_result is null || _result.Items.Count == 0)
+    {
+        <MudText>No patch notes published yet. Check back soon!</MudText>
+    }
+    else
+    {
         @foreach (var item in _result.Items)
         {
-            <li class="patch-summary">
-                <a class="patch-title" href="/patch-notes/@item.Slug">@item.Title</a>
-                <span class="patch-version">v@item.Version</span>
-                @if (item.PublishedAt.HasValue)
-                {
-                    <time class="patch-date">@item.PublishedAt.Value.ToLocalTime().ToString("MMMM d, yyyy")</time>
-                }
-                <p class="patch-excerpt">@item.Summary</p>
-            </li>
+            <MudPaper Class="pa-4 mb-3" Outlined="true">
+                <MudLink Href="@($"/patch-notes/{item.Slug}")" Typo="Typo.h6">@item.Title</MudLink>
+                <div class="mt-1" style="display:flex;align-items:center;gap:0.5rem">
+                    <MudText Typo="Typo.caption" Color="Color.Primary">v@item.Version</MudText>
+                    @if (item.PublishedAt.HasValue)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            @item.PublishedAt.Value.ToLocalTime().ToString("MMMM d, yyyy")
+                        </MudText>
+                    }
+                </div>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@item.Summary</MudText>
+            </MudPaper>
         }
-    </ul>
 
-    @if (_result.TotalCount > _result.PageSize)
-    {
-        <div class="pagination">
-            <button class="btn btn-sm" @onclick="PrevPage" disabled="@(_page <= 1)">← Newer</button>
-            <span>Page @_page</span>
-            <button class="btn btn-sm" @onclick="NextPage" disabled="@(_result.Items.Count < _result.PageSize)">Older →</button>
-        </div>
+        @if (_result.TotalCount > _result.PageSize)
+        {
+            <MudPagination Selected="_page"
+                           Count="@((int)Math.Ceiling((double)_result.TotalCount / _result.PageSize))"
+                           Size="Size.Small"
+                           Class="mt-4"
+                           SelectedChanged="OnPageChanged" />
+        }
     }
-}
+</MudContainer>
 
 @code {
     private PagedResult<PatchNoteSummaryDto>? _result;
@@ -57,6 +61,9 @@ else
         _loading = false;
     }
 
-    private async Task PrevPage() { _page--; await LoadAsync(); }
-    private async Task NextPage() { _page++; await LoadAsync(); }
+    private async Task OnPageChanged(int page)
+    {
+        _page = page;
+        await LoadAsync();
+    }
 }

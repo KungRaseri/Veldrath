@@ -5,49 +5,47 @@
 
 <PageTitle>World Lore — Veldrath</PageTitle>
 
-<h1>World Lore</h1>
+<MudContainer MaxWidth="MaxWidth.Large" Style="margin-top:32px">
+    <MudText Typo="Typo.h4" GutterBottom="true">World Lore</MudText>
 
-<div class="filter-bar">
-    <select @bind="_category" @bind:after="OnCategoryChanged">
-        <option value="">All Categories</option>
-        <option value="History">History</option>
-        <option value="Factions">Factions</option>
-        <option value="Geography">Geography</option>
-        <option value="Mythology">Mythology</option>
-        <option value="Characters">Characters</option>
-    </select>
-</div>
+    <MudSelect @bind-Value="_category" Label="Category" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4" Style="max-width:280px">
+        <MudSelectItem Value="@((string?)null)">All Categories</MudSelectItem>
+        <MudSelectItem Value="@("History")">History</MudSelectItem>
+        <MudSelectItem Value="@("Factions")">Factions</MudSelectItem>
+        <MudSelectItem Value="@("Geography")">Geography</MudSelectItem>
+        <MudSelectItem Value="@("Mythology")">Mythology</MudSelectItem>
+        <MudSelectItem Value="@("Characters")">Characters</MudSelectItem>
+    </MudSelect>
 
-@if (_loading)
-{
-    <p>Loading…</p>
-}
-else if (_result is null || _result.Items.Count == 0)
-{
-    <p>No lore articles published yet. The world awaits its history.</p>
-}
-else
-{
-    <ul class="lore-list">
+    @if (_loading)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="my-4 d-flex justify-center" />
+    }
+    else if (_result is null || _result.Items.Count == 0)
+    {
+        <MudText>No lore articles published yet. The world awaits its history.</MudText>
+    }
+    else
+    {
         @foreach (var item in _result.Items)
         {
-            <li class="lore-summary">
-                <a class="lore-title" href="/lore/@item.Slug">@item.Title</a>
-                <span class="lore-category">@item.Category</span>
-                <p class="lore-excerpt">@item.Summary</p>
-            </li>
+            <MudPaper Class="pa-4 mb-3" Outlined="true">
+                <MudLink Href="@($"/lore/{item.Slug}")" Typo="Typo.h6">@item.Title</MudLink>
+                <MudText Typo="Typo.caption" Color="Color.Primary" Class="mt-1">@item.Category</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@item.Summary</MudText>
+            </MudPaper>
         }
-    </ul>
 
-    @if (_result.TotalCount > _result.PageSize)
-    {
-        <div class="pagination">
-            <button class="btn btn-sm" @onclick="PrevPage" disabled="@(_page <= 1)">← Prev</button>
-            <span>Page @_page</span>
-            <button class="btn btn-sm" @onclick="NextPage" disabled="@(_result.Items.Count < _result.PageSize)">Next →</button>
-        </div>
+        @if (_result.TotalCount > _result.PageSize)
+        {
+            <MudPagination Selected="_page"
+                           Count="@((int)Math.Ceiling((double)_result.TotalCount / _result.PageSize))"
+                           Size="Size.Small"
+                           Class="mt-4"
+                           SelectedChanged="OnPageChanged" />
+        }
     }
-}
+</MudContainer>
 
 @code {
     private PagedResult<LoreArticleSummaryDto>? _result;
@@ -65,12 +63,16 @@ else
         _loading = false;
     }
 
-    private async Task OnCategoryChanged()
+    protected override async Task OnParametersSetAsync()
     {
-        _page = 1;
-        await LoadAsync();
+        // Re-trigger load when category changes via bind
+        if (_result is not null)
+            await LoadAsync();
     }
 
-    private async Task PrevPage() { _page--; await LoadAsync(); }
-    private async Task NextPage() { _page++; await LoadAsync(); }
+    private async Task OnPageChanged(int page)
+    {
+        _page = page;
+        await LoadAsync();
+    }
 }

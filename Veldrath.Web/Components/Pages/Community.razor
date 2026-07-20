@@ -2,17 +2,32 @@
 
 <PageTitle>Community — Veldrath</PageTitle>
 
-<h1>Community</h1>
+<MudContainer MaxWidth="MaxWidth.Large" Style="margin-top:32px">
+    <MudText Typo="Typo.h4" GutterBottom="true">Community</MudText>
 
-<section class="community-links">
-    <div class="community-card">
-        <h2>Discord</h2>
-        <p>Join the conversation, share builds, and connect with other players.</p>
-        <a class="btn" href="https://discord.gg/veldrath" target="_blank" rel="noopener noreferrer">Join Discord</a>
-    </div>
-    <div class="community-card">
-        <h2>RealmFoundry</h2>
-        <p>Submit and curate community content that shapes the world of Veldrath.</p>
-        <a class="btn" href="https://foundry.veldrath.com" target="_blank" rel="noopener noreferrer">Open RealmFoundry</a>
-    </div>
-</section>
+    <MudGrid Spacing="4">
+        <MudItem xs="12" sm="6">
+            <MudPaper Class="pa-6" Outlined="true">
+                <MudText Typo="Typo.h6" GutterBottom="true">Discord</MudText>
+                <MudText Class="mb-4">Join the conversation, share builds, and connect with other players.</MudText>
+                <MudButton Variant="Variant.Filled"
+                            Href="https://discord.gg/veldrath"
+                            Target="_blank"
+                            Style="background-color:#5865f2;color:#fff">
+                    Join Discord
+                </MudButton>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudPaper Class="pa-6" Outlined="true">
+                <MudText Typo="Typo.h6" GutterBottom="true">RealmFoundry</MudText>
+                <MudText Class="mb-4">Submit and curate community content that shapes the world of Veldrath.</MudText>
+                <MudButton Variant="Variant.Filled"
+                            Href="https://foundry.veldrath.com"
+                            Target="_blank">
+                    Open RealmFoundry
+                </MudButton>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>

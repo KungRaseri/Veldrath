@@ -7,73 +7,98 @@
 
 <PageTitle>Create Account — Veldrath</PageTitle>
 
-<div class="auth-card">
-    <h1>Create an Account</h1>
+<MudContainer MaxWidth="MaxWidth.ExtraSmall" Style="margin-top:64px">
+    <MudPaper Class="pa-8" Outlined="true">
+        <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true">Create an Account</MudText>
 
-    @if (_registered)
-    {
-        <div class="alert alert-success">
-            <strong>Account created!</strong> Please check your email to confirm your address.
-        </div>
-        <p style="margin-top:1rem;text-align:center"><a href="/login">Back to sign in</a></p>
-    }
-    else
-    {
-        <p class="lead">Register with your email to track your progress, join the community, and more.</p>
-
-        @if (_error is not null)
+        @if (_registered)
         {
-            <div class="alert alert-error">@_error</div>
+            <MudAlert Severity="Severity.Success" Class="mb-4">
+                <strong>Account created!</strong> Please check your email to confirm your address.
+            </MudAlert>
+            <MudText Align="Align.Center"><MudLink Href="/login">Back to sign in</MudLink></MudText>
         }
+        else
+        {
+            <MudText Color="Color.Secondary" Class="mb-4">
+                Register with your email to track your progress, join the community, and more.
+            </MudText>
 
-        <form @onsubmit="DoRegisterAsync" @onsubmit:preventDefault>
-            <label class="field-label">Email</label>
-            <input type="email" class="field-input" @bind="_email" placeholder="you@example.com" />
+            @if (_error is not null)
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+            }
 
-            <label class="field-label" style="margin-top:.75rem">Username</label>
-            <input type="text" class="field-input" @bind="_username" placeholder="Choose a username" />
+            <EditForm OnValidSubmit="DoRegisterAsync">
+                <MudTextField @bind-Value="_email"
+                               Label="Email"
+                               InputType="InputType.Email"
+                               Placeholder="you@example.com"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Class="mb-3" />
+                <MudTextField @bind-Value="_username"
+                               Label="Username"
+                               Placeholder="Choose a username"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Class="mb-3" />
+                <MudTextField @bind-Value="_password"
+                               Label="Password"
+                               InputType="InputType.Password"
+                               Placeholder="Create a password"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Class="mb-3" />
+                <MudTextField @bind-Value="_confirmPassword"
+                               Label="Confirm Password"
+                               InputType="InputType.Password"
+                               Placeholder="Repeat your password"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Class="mb-4" />
+                <MudButton ButtonType="ButtonType.Submit"
+                            Variant="Variant.Filled"
+                            Color="Color.Primary"
+                            FullWidth="true"
+                            Disabled="@_submitting">
+                    @(_submitting ? "Creating account…" : "Create account")
+                </MudButton>
+            </EditForm>
 
-            <label class="field-label" style="margin-top:.75rem">Password</label>
-            <input type="password" class="field-input" @bind="_password" placeholder="Create a password" />
+            <MudText Align="Align.Center" Class="mt-2" Typo="Typo.body2">
+                Already have an account? <MudLink Href="/login">Sign in</MudLink>
+            </MudText>
 
-            <label class="field-label" style="margin-top:.75rem">Confirm Password</label>
-            <input type="password" class="field-input" @bind="_confirmPassword" placeholder="Repeat your password" />
+            <div class="my-4" style="display:flex;align-items:center;gap:.75rem;color:var(--vds-text-muted);font-size:.85rem">
+                <span style="flex:1;border-top:1px solid var(--vds-border)"></span>
+                <span>or register with</span>
+                <span style="flex:1;border-top:1px solid var(--vds-border)"></span>
+            </div>
 
-            <button type="submit" class="btn btn-primary" disabled="@_submitting" style="margin-top:1rem;width:100%">
-                @(_submitting ? "Creating account…" : "Create account")
-            </button>
-        </form>
-
-        <p style="margin-top:.75rem;text-align:center;font-size:.9rem">
-            Already have an account? <a href="/login">Sign in</a>
-        </p>
-
-        <div class="divider"><span>or register with</span></div>
-
-        <div class="oauth-buttons">
-            <a class="btn btn-discord" href="@_discordUrl">Register with Discord</a>
-            <a class="btn btn-google" href="@_googleUrl">Register with Google</a>
-            <a class="btn btn-microsoft" href="@_msUrl">Register with Microsoft</a>
-        </div>
-    }
-</div>
-
-<style>
-    .auth-card { max-width: 420px; margin: 4rem auto; padding: 2rem; border: 1px solid var(--vds-border); border-radius: 8px; }
-    .lead { color: var(--vds-text-muted); margin-bottom: 1.25rem; }
-    .field-label { display: block; font-size: .85rem; color: var(--vds-text-muted); margin-bottom: .35rem; }
-    .field-input { width: 100%; padding: .4rem .6rem; border-radius: 4px;
-        border: 1px solid var(--vds-border); background: var(--vds-bg-3);
-        color: inherit; font-size: .95rem; box-sizing: border-box; }
-    .btn-primary { background: var(--vds-accent); color: #fff; border: none; padding: .5rem 1rem;
-        border-radius: 4px; cursor: pointer; font-size: .95rem; }
-    .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
-    .divider { display: flex; align-items: center; gap: .75rem; margin: 1.25rem 0; color: var(--vds-text-muted); font-size: .85rem; }
-    .divider::before, .divider::after { content: ""; flex: 1; border-top: 1px solid var(--vds-border); }
-    .alert { padding: .6rem .9rem; border-radius: 4px; margin-bottom: 1rem; font-size: .9rem; }
-    .alert-success { background: var(--vds-success-bg, #e6f9ec); color: var(--vds-success, #1a7a3a); }
-    .alert-error   { background: var(--vds-danger-bg, #fde8e8); color: var(--vds-danger,  #c53030); }
-</style>
+            <MudStack Spacing="2">
+                <MudButton Href="@_discordUrl"
+                            Variant="Variant.Filled"
+                            Style="background-color:#5865f2;color:#fff"
+                            FullWidth="true">
+                    Register with Discord
+                </MudButton>
+                <MudButton Href="@_googleUrl"
+                            Variant="Variant.Filled"
+                            Style="background-color:#4285f4;color:#fff"
+                            FullWidth="true">
+                    Register with Google
+                </MudButton>
+                <MudButton Href="@_msUrl"
+                            Variant="Variant.Filled"
+                            Style="background-color:#0078d4;color:#fff"
+                            FullWidth="true">
+                    Register with Microsoft
+                </MudButton>
+            </MudStack>
+        }
+    </MudPaper>
+</MudContainer>
 
 @code {
     private string  _email           = string.Empty;
@@ -137,12 +162,10 @@
                 return;
             }
 
-            // Redirect through session endpoint to set the rt cookie for full session persistence.
             Api.SetBearerToken(response.AccessToken);
             var code = await Api.CreateExchangeCodeAsync();
             if (code is null)
             {
-                // Account was created but we couldn't set the rt cookie — show success and let user sign in.
                 _registered = true;
                 return;
             }
