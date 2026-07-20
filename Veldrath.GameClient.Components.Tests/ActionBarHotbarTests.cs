@@ -14,7 +14,7 @@ namespace Veldrath.GameClient.Components.Tests;
 /// bUnit tests for the <see cref="ActionBar"/> component's hotbar ability quick-slot functionality.
 /// Verifies hotbar rendering, slot states, cooldown display, and ability click handling.
 /// </summary>
-public class ActionBarHotbarTests : TestContext
+public class ActionBarHotbarTests : BunitContext
 {
     private readonly FakeGameHubConnectionService _fakeHub;
     private readonly GameStateService _gameState;

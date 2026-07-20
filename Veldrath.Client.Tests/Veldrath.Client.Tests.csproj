@@ -3,6 +3,7 @@
   <PropertyGroup>
     <IsTestProject>true</IsTestProject>
     <StaticWebAssetsEnabled>true</StaticWebAssetsEnabled>
+    <NoWarn>$(NoWarn);MSB3277</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

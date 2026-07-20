@@ -11,7 +11,7 @@ namespace Veldrath.GameClient.Components.Tests;
 /// <summary>
 /// Tests for the <see cref="GameTilemap"/> component using the fixed 15×15 viewport model.
 /// </summary>
-public class GameTilemapComponentTests : TestContext
+public class GameTilemapComponentTests : BunitContext
 {
     private const int ViewportSize = 15;
 

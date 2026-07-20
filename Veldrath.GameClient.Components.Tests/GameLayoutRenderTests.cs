@@ -15,7 +15,7 @@ namespace Veldrath.GameClient.Components.Tests;
 /// Tests for the <see cref="GameLayout"/> component, ensuring it renders with
 /// the correct CSS classes and layout structure.
 /// </summary>
-public class GameLayoutRenderTests : TestContext
+public class GameLayoutRenderTests : BunitContext
 {
     private readonly FakeGameHubConnectionService _fakeHub;
     private readonly GameStateService _gameState;

@@ -18,7 +18,7 @@ namespace Veldrath.GameClient.Components.Tests;
 /// Tests for the <see cref="CharacterSelect"/> component, verifying character
 /// list rendering and selection behaviour.
 /// </summary>
-public class CharacterSelectPageTests : TestContext
+public class CharacterSelectPageTests : BunitContext
 {
     private readonly FakeGameHubConnectionService _fakeHub;
     private readonly FakeGameApiClient _fakeApi;

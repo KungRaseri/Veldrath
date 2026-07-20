@@ -14,7 +14,7 @@ namespace Veldrath.GameClient.Components.Tests;
 /// Verifies rendering of zone cards, current-zone highlighting,
 /// undiscovered zone display, and navigation click handling.
 /// </summary>
-public class GameMapComponentTests : TestContext
+public class GameMapComponentTests : BunitContext
 {
     private readonly FakeGameHubConnectionService _fakeHub;
     private readonly GameStateService _gameState;

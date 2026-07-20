@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AngleSharp" />
     <PackageReference Include="bunit" />
     <PackageReference Include="Moq" />
     <ProjectReference Include="..\Veldrath.Web\Veldrath.Web.csproj" />
