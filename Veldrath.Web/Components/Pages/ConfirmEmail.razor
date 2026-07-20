@@ -4,30 +4,24 @@
 
 <PageTitle>Confirm Email — Veldrath</PageTitle>
 
-@if (_loading)
-{
-    <p>Confirming your email address…</p>
-}
-else if (_done)
-{
-    <div class="result">
-        <p class="success">Your email has been confirmed! <a href="/">Return to Veldrath</a></p>
-    </div>
-}
-else
-{
-    <div class="result">
-        <p class="error">@(_error ?? "Confirmation failed. The link may have expired.")</p>
-        <p><a href="/login">Back to sign in</a></p>
-    </div>
-}
-
-<style>
-    .result  { max-width: 420px; margin: 4rem auto; padding: 2rem;
-               border: 1px solid var(--vds-border); border-radius: 8px; }
-    .success { color: var(--vds-success, #1a7a3a); }
-    .error   { color: var(--vds-danger); }
-</style>
+<MudContainer MaxWidth="MaxWidth.ExtraSmall" Style="margin-top:64px">
+    <MudPaper Class="pa-8" Outlined="true">
+        @if (_loading)
+        {
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+            <MudText>Confirming your email address…</MudText>
+        }
+        else if (_done)
+        {
+            <MudText Color="Color.Success">Your email has been confirmed! <MudLink Href="/">Return to Veldrath</MudLink></MudText>
+        }
+        else
+        {
+            <MudText Color="Color.Error">@(_error ?? "Confirmation failed. The link may have expired.")</MudText>
+            <MudText Class="mt-4"><MudLink Href="/login">Back to sign in</MudLink></MudText>
+        }
+    </MudPaper>
+</MudContainer>
 
 @code {
     [SupplyParameterFromQuery(Name = "userId")] private string? UserId { get; set; }

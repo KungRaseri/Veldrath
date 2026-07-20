@@ -10,14 +10,16 @@
 @using Veldrath.Contracts.Editorial
 @using Veldrath.Contracts.Foundry
 
-<div class="layout">
-    <header class="site-header">
-        <div>
-            <img class="header-logo" src="images/veldrath-full-logo-transparent.png" />
-            <a class="brand" href="/">Veldrath</a>
-        </div>
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudImage Src="images/veldrath-full-logo-transparent.png"
+                  Style="max-height:36px;height:auto;object-fit:contain;vertical-align:middle" />
+        <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-family:var(--vds-font-heading);font-weight:600;margin-left:12px">
+            Veldrath
+        </MudText>
+        <MudSpacer />
         <NavMenu />
-    </header>
+    </MudAppBar>
     @if (_announcements.Count > 0)
     {
         <div class="announcement-bar">
@@ -25,21 +27,26 @@
             {
                 @if (!_dismissed.Contains(a.Id))
                 {
-                    <div class="announcement-banner">
+                    <MudAlert Severity="Severity.Info"
+                              Variant="Variant.Filled"
+                              Style="border-radius:0;margin:0">
                         <strong>@a.Title</strong> — @a.Body
-                        <button class="dismiss-btn" aria-label="Dismiss" @onclick="() => Dismiss(a.Id)">&#x2715;</button>
-                    </div>
+                        <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                       Size="Size.Small"
+                                       OnClick="() => Dismiss(a.Id)"
+                                       aria-label="Dismiss" />
+                    </MudAlert>
                 }
             }
         </div>
     }
-    <main class="site-content">
+    <MudMainContent Style="padding:32px 40px;max-width:1200px;margin:0 auto;width:100%">
         @Body
-    </main>
+    </MudMainContent>
     <footer class="site-footer">
         <p>&copy; Veldrath. All rights reserved.</p>
     </footer>
-</div>
+</MudLayout>
 
 <div id="blazor-error-ui">
     An unhandled error has occurred.

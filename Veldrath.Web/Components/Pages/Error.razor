@@ -1,156 +1,64 @@
 @page "/Error"
 @using Microsoft.AspNetCore.Diagnostics
 @using Veldrath.Web.Components.Layout
-
-@* error handling *@
+@inject NavigationManager Nav
 
 <PageTitle>Error — Veldrath</PageTitle>
 
-<div class="error-card">
-    <div class="error-icon">&#x26A0;</div>
+<MudContainer MaxWidth="MaxWidth.Medium" Style="margin-top:64px">
+    <MudPaper Class="pa-8" Outlined="true">
+        <MudText Align="Align.Center" Style="font-size:3rem;line-height:1;margin-bottom:.5rem" Color="Color.Error">
+            &#x26A0;
+        </MudText>
 
-    @if (IsDevelopment)
-    {
-        <h1>Development Error</h1>
-        <p class="lead">An unhandled exception occurred while processing your request.</p>
-
-        @if (Exception is not null)
+        @if (IsDevelopment)
         {
-            <div class="error-detail">
-                <h2>Exception Details</h2>
-                <p><strong>Type:</strong> <code>@Exception.GetType().FullName</code></p>
-                <p><strong>Message:</strong> @Exception.Message</p>
+            <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true">Development Error</MudText>
+            <MudText Color="Color.Secondary" Align="Align.Center" Class="mb-4">
+                An unhandled exception occurred while processing your request.
+            </MudText>
+
+            @if (Exception is not null)
+            {
+                <MudPaper Class="pa-4 mb-4" Style="background-color:var(--vds-danger-muted);border:1px solid var(--vds-danger)">
+                    <MudText Typo="Typo.h6" GutterBottom="true">Exception Details</MudText>
+                    <MudText><strong>Type:</strong> <code>@Exception.GetType().FullName</code></MudText>
+                    <MudText><strong>Message:</strong> @Exception.Message</MudText>
+                    @if (OriginalPath is not null)
+                    {
+                        <MudText><strong>Original Path:</strong> <code>@OriginalPath@OriginalQueryString</code></MudText>
+                    }
+                    <MudPaper Class="pa-3 mt-3" Style="background:var(--vds-bg-3);border:1px solid var(--vds-border);max-height:300px;overflow-y:auto">
+                        <pre style="white-space:pre-wrap;word-break:break-all;font-size:.78rem;margin:0;line-height:1.4">@Exception.StackTrace</pre>
+                    </MudPaper>
+                </MudPaper>
+            }
+            else
+            {
+                <MudText Class="mb-4">The exception details are not available.</MudText>
                 @if (OriginalPath is not null)
                 {
-                    <p><strong>Original Path:</strong> <code>@OriginalPath@OriginalQueryString</code></p>
+                    <MudText><strong>Original Path:</strong> <code>@OriginalPath@OriginalQueryString</code></MudText>
                 }
-                <pre class="stack-trace">@Exception.StackTrace</pre>
-            </div>
+            }
+
+            <MudText Color="Color.Secondary" Typo="Typo.body2" Class="mb-4">
+                <strong>Tip:</strong> See the browser's developer console and the server logs for more information.
+            </MudText>
         }
         else
         {
-            <p>The exception details are not available.</p>
-            @if (OriginalPath is not null)
-            {
-                <p><strong>Original Path:</strong> <code>@OriginalPath@OriginalQueryString</code></p>
-            }
+            <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true">Something went wrong</MudText>
+            <MudText Color="Color.Secondary" Align="Align.Center" Class="mb-4">
+                An error occurred while processing your request.
+                Our team has been notified and we're working to resolve the issue.
+            </MudText>
+            <MudText Align="Align.Center" Class="mb-4">Please try again in a few moments.</MudText>
         }
 
-        <p class="dev-hint">
-            <strong>Tip:</strong> See the browser's developer console and the server logs for more information.
-        </p>
-    }
-    else
-    {
-        <h1>Something went wrong</h1>
-        <p class="lead">
-            An error occurred while processing your request.
-            Our team has been notified and we're working to resolve the issue.
-        </p>
-        <p>Please try again in a few moments.</p>
-    }
-
-    <div class="error-actions">
-        <a class="btn btn-primary" href="/">Return to Home</a>
-        <a class="btn btn-secondary" href="" onclick="location.reload()">Try Again</a>
-    </div>
-</div>
-
-<style>
-    .error-card {
-        max-width: 600px;
-        margin: 4rem auto;
-        padding: 2.5rem 2rem;
-        border: 1px solid var(--vds-border);
-        border-radius: 8px;
-        text-align: center;
-    }
-    .error-icon {
-        font-size: 3rem;
-        line-height: 1;
-        margin-bottom: .5rem;
-        color: var(--vds-danger, #c53030);
-    }
-    h1 {
-        margin: 0 0 .5rem;
-        font-size: 1.75rem;
-    }
-    .lead {
-        color: var(--vds-text-muted);
-        margin-bottom: 1.25rem;
-        line-height: 1.5;
-    }
-    .error-detail {
-        text-align: left;
-        margin: 1.5rem 0;
-        padding: 1rem;
-        background: var(--vds-danger-bg, #fde8e8);
-        border-radius: 4px;
-        font-size: .85rem;
-    }
-    .error-detail h2 {
-        margin: 0 0 .5rem;
-        font-size: 1rem;
-    }
-    .error-detail p {
-        margin: .25rem 0;
-    }
-    .error-detail code {
-        background: rgba(0,0,0,.08);
-        padding: .1rem .3rem;
-        border-radius: 3px;
-        font-size: .82rem;
-    }
-    .stack-trace {
-        margin-top: .75rem;
-        padding: .75rem;
-        background: var(--vds-bg-3, #1a1a2e);
-        border-radius: 4px;
-        font-size: .78rem;
-        white-space: pre-wrap;
-        word-break: break-all;
-        max-height: 300px;
-        overflow-y: auto;
-        line-height: 1.4;
-        border: 1px solid var(--vds-border);
-    }
-    .dev-hint {
-        margin-top: 1rem;
-        font-size: .85rem;
-        color: var(--vds-text-muted);
-    }
-    .error-actions {
-        display: flex;
-        gap: .75rem;
-        justify-content: center;
-        margin-top: 1.75rem;
-    }
-    .btn-primary {
-        background: var(--vds-accent);
-        color: #fff;
-        border: none;
-        padding: .5rem 1.25rem;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: .95rem;
-        text-decoration: none;
-        display: inline-block;
-    }
-    .btn-primary:hover {
-        opacity: .9;
-    }
-    .btn-secondary {
-        background: transparent;
-        color: inherit;
-        border: 1px solid var(--vds-border);
-        padding: .5rem 1.25rem;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: .95rem;
-        text-decoration: none;
-        display: inline-block;
-    }
-    .btn-secondary:hover {
-        background: var(--vds-bg-3);
-    }
-</style>
+        <MudStack Row="true" Justify="Justify.Center" Spacing="2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/">Return to Home</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="() => Nav.Refresh(forceReload: true)">Try Again</MudButton>
+        </MudStack>
+    </MudPaper>
+</MudContainer>

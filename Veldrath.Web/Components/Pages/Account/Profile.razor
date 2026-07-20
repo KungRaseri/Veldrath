@@ -10,270 +10,250 @@
 
 @if (!AuthState.IsAuthReady)
 {
-    <p class="loading">Loading…</p>
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="my-8 d-flex justify-center" />
 }
 else if (!AuthState.IsLoggedIn)
 {
-    <p>Checking authentication...</p>
+    <MudText>Checking authentication...</MudText>
 }
 else if (_profile is null)
 {
-    <p class="loading">Loading profile…</p>
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="my-8 d-flex justify-center" />
 }
 else
 {
-    @if (_successMessage is not null)
-    {
-        <div class="alert alert-success">@_successMessage</div>
-    }
-    @if (_errorMessage is not null)
-    {
-        <div class="alert alert-error">@_errorMessage</div>
-    }
+    <MudContainer MaxWidth="MaxWidth.Medium" Style="margin-top:32px">
+        @if (_successMessage is not null)
+        {
+            <MudAlert Severity="Severity.Success" Class="mb-4">@_successMessage</MudAlert>
+        }
+        @if (_errorMessage is not null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@_errorMessage</MudAlert>
+        }
 
-    <!-- ── Profile ─────────────────────────────────────────────────────── -->
-    <section class="account-section">
-        <h2>Profile</h2>
+        <!-- Profile -->
+        <MudPaper Class="pa-6 mb-4" Outlined="true">
+            <MudText Typo="Typo.h6" GutterBottom="true">Profile</MudText>
 
-        <div class="field-row">
-            <span class="field-label">Username</span>
-            @if (_editingUsername)
+            <MudStack Spacing="3">
+                <MudGrid>
+                    <MudItem xs="12" sm="4">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Username</MudText>
+                    </MudItem>
+                    <MudItem xs="12" sm="8">
+                        @if (_editingUsername)
+                        {
+                            <MudStack Row="true" Spacing="2">
+                                <MudTextField @bind-Value="_newUsername" Variant="Variant.Outlined" Margin="Margin.Dense" Style="flex:1" />
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="SaveUsernameAsync" Disabled="@_saving">Save</MudButton>
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="() => _editingUsername = false">Cancel</MudButton>
+                            </MudStack>
+                            @if (_usernameError is not null)
+                            {
+                                <MudText Color="Color.Error" Typo="Typo.body2">@_usernameError</MudText>
+                            }
+                        }
+                        else
+                        {
+                            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                                <MudText>@_profile.Username</MudText>
+                                <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="StartEditUsername">Change</MudButton>
+                            </MudStack>
+                        }
+                    </MudItem>
+                </MudGrid>
+
+                <MudGrid>
+                    <MudItem xs="12" sm="4">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Display Name</MudText>
+                    </MudItem>
+                    <MudItem xs="12" sm="8">
+                        @if (_editingProfile)
+                        {
+                            <MudTextField @bind-Value="_newDisplayName" Placeholder="Optional public name" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        }
+                        else
+                        {
+                            <MudText Color="Color.Secondary">@(_profile.DisplayName ?? "—")</MudText>
+                        }
+                    </MudItem>
+                </MudGrid>
+
+                <MudGrid>
+                    <MudItem xs="12" sm="4">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Bio</MudText>
+                    </MudItem>
+                    <MudItem xs="12" sm="8">
+                        @if (_editingProfile)
+                        {
+                            <MudTextField @bind-Value="_newBio" Lines="3" Placeholder="Tell the community about yourself" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        }
+                        else
+                        {
+                            <MudText Color="Color.Secondary">@(_profile.Bio ?? "—")</MudText>
+                        }
+                    </MudItem>
+                </MudGrid>
+            </MudStack>
+
+            @if (_editingProfile)
             {
-                <div class="inline-form">
-                    <input type="text" class="field-input" @bind="_newUsername" />
-                    <button class="btn btn-sm btn-primary" @onclick="SaveUsernameAsync" disabled="@_saving">Save</button>
-                    <button class="btn btn-sm btn-ghost" @onclick="() => _editingUsername = false">Cancel</button>
-                </div>
-                @if (_usernameError is not null)
+                <MudStack Row="true" Spacing="2" Class="mt-4">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveProfileAsync" Disabled="@_saving">Save</MudButton>
+                    <MudButton Variant="Variant.Outlined" OnClick="CancelEditProfile">Cancel</MudButton>
+                </MudStack>
+                @if (_profileError is not null)
                 {
-                    <p class="field-error">@_usernameError</p>
+                    <MudText Color="Color.Error" Typo="Typo.body2" Class="mt-2">@_profileError</MudText>
                 }
             }
             else
             {
-                <span class="field-value">@_profile.Username</span>
-                <button class="btn btn-sm btn-ghost" @onclick="StartEditUsername">Change</button>
+                <MudButton Variant="Variant.Text" OnClick="StartEditProfile" Class="mt-2">Edit profile</MudButton>
             }
-        </div>
+        </MudPaper>
 
-        <div class="field-row">
-            <span class="field-label">Display Name</span>
-            @if (_editingProfile)
-            {
-                <input type="text" class="field-input" @bind="_newDisplayName" placeholder="Optional public name" />
-            }
-            else
-            {
-                <span class="field-value muted">@(_profile.DisplayName ?? "—")</span>
-            }
-        </div>
+        <!-- Email -->
+        <MudPaper Class="pa-6 mb-4" Outlined="true">
+            <MudText Typo="Typo.h6" GutterBottom="true">Email</MudText>
+            <MudGrid>
+                <MudItem xs="12" sm="4">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Address</MudText>
+                </MudItem>
+                <MudItem xs="12" sm="8">
+                    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                        <MudText>@(_profile.Email ?? "—")</MudText>
+                        @if (_profile.EmailConfirmed)
+                        {
+                            <span class="chip chip-success">Confirmed</span>
+                        }
+                        else
+                        {
+                            <span class="chip chip-warning">Unconfirmed</span>
+                            <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="ResendConfirmationAsync" Disabled="@_saving">Resend confirmation</MudButton>
+                        }
+                    </MudStack>
+                    @if (_emailMessage is not null)
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">@_emailMessage</MudText>
+                    }
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
 
-        <div class="field-row">
-            <span class="field-label">Bio</span>
-            @if (_editingProfile)
+        <!-- Security -->
+        <MudPaper Class="pa-6 mb-4" Outlined="true">
+            <MudText Typo="Typo.h6" GutterBottom="true">Security</MudText>
+            @if (!_profile.HasPassword)
             {
-                <textarea class="field-input" @bind="_newBio" rows="3" placeholder="Tell the community about yourself"></textarea>
-            }
-            else
-            {
-                <span class="field-value muted">@(_profile.Bio ?? "—")</span>
-            }
-        </div>
-
-        @if (_editingProfile)
-        {
-            <div class="action-row">
-                <button class="btn btn-primary" @onclick="SaveProfileAsync" disabled="@_saving">Save</button>
-                <button class="btn btn-ghost" @onclick="CancelEditProfile">Cancel</button>
-            </div>
-            @if (_profileError is not null)
-            {
-                <p class="field-error">@_profileError</p>
-            }
-        }
-        else
-        {
-            <button class="btn btn-ghost" @onclick="StartEditProfile">Edit profile</button>
-        }
-    </section>
-
-    <!-- ── Email ───────────────────────────────────────────────────────── -->
-    <section class="account-section">
-        <h2>Email</h2>
-
-        <div class="field-row">
-            <span class="field-label">Address</span>
-            <span class="field-value">@(_profile.Email ?? "—")</span>
-            @if (_profile.EmailConfirmed)
-            {
-                <span class="badge badge-green">Confirmed</span>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Your account uses OAuth login only. Use <MudLink Href="/forgot-password">Forgot Password</MudLink>
+                    to set a password so you can also sign in with email.
+                </MudText>
             }
             else
             {
-                <span class="badge badge-yellow">Unconfirmed</span>
-                <button class="btn btn-sm btn-ghost" @onclick="ResendConfirmationAsync" disabled="@_saving">Resend confirmation</button>
-            }
-        </div>
-        @if (_emailMessage is not null)
-        {
-            <p class="field-hint">@_emailMessage</p>
-        }
-    </section>
-
-    <!-- ── Security ────────────────────────────────────────────────────── -->
-    <section class="account-section">
-        <h2>Security</h2>
-
-        @if (!_profile.HasPassword)
-        {
-            <p class="field-hint muted">
-                Your account uses OAuth login only. Use <a href="/forgot-password">Forgot Password</a>
-                to set a password so you can also sign in with email.
-            </p>
-        }
-        else
-        {
-            @if (_changingPassword)
-            {
-                <div class="form-stack">
-                    <label class="field-label">Current Password</label>
-                    <input type="password" class="field-input" @bind="_currentPassword" />
-
-                    <label class="field-label" style="margin-top:.5rem">New Password</label>
-                    <input type="password" class="field-input" @bind="_newPassword" />
-
-                    <label class="field-label" style="margin-top:.5rem">Confirm New Password</label>
-                    <input type="password" class="field-input" @bind="_confirmPassword" />
-                </div>
-                <div class="action-row" style="margin-top:.75rem">
-                    <button class="btn btn-primary" @onclick="SavePasswordAsync" disabled="@_saving">Update password</button>
-                    <button class="btn btn-ghost" @onclick="CancelChangePassword">Cancel</button>
-                </div>
-                @if (_passwordError is not null)
+                @if (_changingPassword)
                 {
-                    <p class="field-error">@_passwordError</p>
-                }
-            }
-            else
-            {
-                <button class="btn btn-ghost" @onclick="() => _changingPassword = true">Change password</button>
-            }
-        }
-    </section>
-
-    <!-- ── Connected Providers ─────────────────────────────────────────── -->
-    <section class="account-section">
-        <h2>Connected Accounts</h2>
-        <p class="field-hint muted">Link a provider to sign in without a password.</p>
-
-        @foreach (var row in _providerRows)
-        {
-            var linked = _profile.LinkedProviders.FirstOrDefault(
-                p => p.ProviderName.Equals(row.Name, StringComparison.OrdinalIgnoreCase));
-
-            <div class="provider-row">
-                <span class="provider-name">@row.Label</span>
-                @if (linked is not null)
-                {
-                    <span class="badge badge-green">Linked @(linked.LinkedAt?.ToLocalTime().ToString("d") ?? "–")</span>
-                    <button class="btn btn-sm btn-danger"
-                            @onclick="() => UnlinkAsync(row.Name, linked.ProviderKey)"
-                            disabled="@_saving">
-                        Unlink
-                    </button>
+                    <MudStack Spacing="3">
+                        <MudTextField @bind-Value="_currentPassword" Label="Current Password" InputType="InputType.Password" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        <MudTextField @bind-Value="_newPassword" Label="New Password" InputType="InputType.Password" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        <MudTextField @bind-Value="_confirmPassword" Label="Confirm New Password" InputType="InputType.Password" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudStack>
+                    <MudStack Row="true" Spacing="2" Class="mt-3">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SavePasswordAsync" Disabled="@_saving">Update password</MudButton>
+                        <MudButton Variant="Variant.Outlined" OnClick="CancelChangePassword">Cancel</MudButton>
+                    </MudStack>
+                    @if (_passwordError is not null)
+                    {
+                        <MudText Color="Color.Error" Typo="Typo.body2" Class="mt-2">@_passwordError</MudText>
+                    }
                 }
                 else
                 {
-                    <a class="btn btn-sm btn-ghost" href="@BuildLinkUrl(row.Name)">Link</a>
+                    <MudButton Variant="Variant.Text" OnClick="() => _changingPassword = true">Change password</MudButton>
                 }
-            </div>
-        }
-        @if (_providerError is not null)
-        {
-            <p class="field-error">@_providerError</p>
-        }
-    </section>
+            }
+        </MudPaper>
 
-    <!-- ── Active Sessions ─────────────────────────────────────────────── -->
-    <section class="account-section">
-        <h2>Active Sessions</h2>
-        <p class="field-hint muted">Each entry represents an active sign-in from a device or browser.</p>
+        <!-- Connected Providers -->
+        <MudPaper Class="pa-6 mb-4" Outlined="true">
+            <MudText Typo="Typo.h6" GutterBottom="true">Connected Accounts</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">Link a provider to sign in without a password.</MudText>
 
-        @foreach (var s in _sessions)
-        {
-            <div class="session-row">
-                <div class="session-info">
-                    <span class="session-ip">@s.CreatedByIp</span>
-                    <span class="session-dates muted">
-                        Started @s.CreatedAt.ToLocalTime().ToString("g") ·
-                        Expires @s.ExpiresAt.ToLocalTime().ToString("d")
-                    </span>
-                </div>
-                @if (s.IsCurrent)
-                {
-                    <span class="badge badge-green">Current</span>
-                }
-                else
-                {
-                    <button class="btn btn-sm btn-danger"
-                            @onclick="() => RevokeSessionAsync(s.Id)"
-                            disabled="@_saving">
-                        Revoke
-                    </button>
-                }
-            </div>
-        }
-        @if (_sessions.Count > 1)
-        {
-            <button class="btn btn-ghost" style="margin-top:.75rem"
-                    @onclick="RevokeOtherSessionsAsync"
-                    disabled="@(_saving || AuthState.SessionId is null)">
-                Sign out everywhere else
-            </button>
-        }
-        @if (_sessionError is not null)
-        {
-            <p class="field-error">@_sessionError</p>
-        }
-    </section>
+            @foreach (var row in _providerRows)
+            {
+                var linked = _profile.LinkedProviders.FirstOrDefault(
+                    p => p.ProviderName.Equals(row.Name, StringComparison.OrdinalIgnoreCase));
+
+                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="py-2" Style="border-bottom:1px solid var(--vds-border)">
+                    <MudText Style="min-width:100px">@row.Label</MudText>
+                    @if (linked is not null)
+                    {
+                        <span class="chip chip-success">Linked @(linked.LinkedAt?.ToLocalTime().ToString("d") ?? "–")</span>
+                        <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small"
+                                    OnClick="() => UnlinkAsync(row.Name, linked.ProviderKey)"
+                                    Disabled="@_saving">
+                            Unlink
+                        </MudButton>
+                    }
+                    else
+                    {
+                        <MudButton Variant="Variant.Text" Size="Size.Small" Href="@BuildLinkUrl(row.Name)">Link</MudButton>
+                    }
+                </MudStack>
+            }
+            @if (_providerError is not null)
+            {
+                <MudText Color="Color.Error" Typo="Typo.body2" Class="mt-2">@_providerError</MudText>
+            }
+        </MudPaper>
+
+        <!-- Active Sessions -->
+        <MudPaper Class="pa-6 mb-4" Outlined="true">
+            <MudText Typo="Typo.h6" GutterBottom="true">Active Sessions</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">Each entry represents an active sign-in from a device or browser.</MudText>
+
+            @foreach (var s in _sessions)
+            {
+                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="py-2" Style="border-bottom:1px solid var(--vds-border)">
+                    <MudStack Spacing="0" Style="flex:1">
+                        <MudText>@s.CreatedByIp</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">
+                            Started @s.CreatedAt.ToLocalTime().ToString("g") ·
+                            Expires @s.ExpiresAt.ToLocalTime().ToString("d")
+                        </MudText>
+                    </MudStack>
+                    @if (s.IsCurrent)
+                    {
+                        <span class="chip chip-success">Current</span>
+                    }
+                    else
+                    {
+                        <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small"
+                                    OnClick="() => RevokeSessionAsync(s.Id)"
+                                    Disabled="@_saving">
+                            Revoke
+                        </MudButton>
+                    }
+                </MudStack>
+            }
+            @if (_sessions.Count > 1)
+            {
+                <MudButton Variant="Variant.Text" Class="mt-3"
+                            OnClick="RevokeOtherSessionsAsync"
+                            Disabled="@(_saving || AuthState.SessionId is null)">
+                    Sign out everywhere else
+                </MudButton>
+            }
+            @if (_sessionError is not null)
+            {
+                <MudText Color="Color.Error" Typo="Typo.body2" Class="mt-2">@_sessionError</MudText>
+            }
+        </MudPaper>
+    </MudContainer>
 }
-
-<style>
-    .account-section { max-width: 560px; margin: 2rem auto; padding: 1.5rem; border: 1px solid var(--vds-border); border-radius: 8px; }
-    .account-section h2 { margin: 0 0 1rem; font-size: 1.1rem; }
-    .field-row { display: flex; align-items: center; gap: .75rem; padding: .35rem 0; flex-wrap: wrap; }
-    .field-label { min-width: 120px; font-size: .85rem; color: var(--vds-text-muted); }
-    .field-value { flex: 1; font-size: .95rem; }
-    .field-input { flex: 1; padding: .35rem .6rem; border-radius: 4px; border: 1px solid var(--vds-border); background: var(--vds-bg-3); color: inherit; font-size: .9rem; min-width: 0; }
-    textarea.field-input { width: 100%; box-sizing: border-box; }
-    .field-hint { font-size: .85rem; color: var(--vds-text-muted); margin: .35rem 0 0; }
-    .field-error { font-size: .85rem; color: var(--vds-danger, #c53030); margin: .25rem 0 0; }
-    .inline-form { display: flex; align-items: center; gap: .5rem; flex: 1; flex-wrap: wrap; }
-    .form-stack .field-label { display: block; margin-bottom: .25rem; }
-    .action-row { display: flex; gap: .5rem; align-items: center; margin-top: .75rem; }
-    .provider-row { display: flex; align-items: center; gap: .75rem; padding: .5rem 0; border-bottom: 1px solid var(--vds-border); }
-    .provider-row:last-child { border-bottom: none; }
-    .provider-name { min-width: 100px; font-size: .95rem; }
-    .alert { padding: .6rem .9rem; border-radius: 4px; margin-bottom: 1rem; font-size: .9rem; max-width: 560px; margin-left: auto; margin-right: auto; }
-    .alert-success { background: var(--vds-success-bg, #e6f9ec); color: var(--vds-success, #1a7a3a); }
-    .alert-error   { background: var(--vds-danger-bg,  #fde8e8); color: var(--vds-danger,  #c53030); }
-    .badge { display: inline-block; padding: .15rem .5rem; border-radius: 12px; font-size: .78rem; font-weight: 600; }
-    .badge-green  { background: var(--vds-success-bg, #e6f9ec); color: var(--vds-success, #1a7a3a); }
-    .badge-yellow { background: #fff8e1; color: #7a5a00; }
-    .btn { border-radius: 4px; cursor: pointer; font-size: .9rem; padding: .4rem .9rem; border: 1px solid transparent; }
-    .btn-sm { padding: .2rem .6rem; font-size: .82rem; }
-    .btn-primary { background: var(--vds-accent); color: #fff; border-color: var(--vds-accent); }
-    .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
-    .btn-ghost { background: transparent; border-color: var(--vds-border); color: inherit; }
-    .btn-danger { background: transparent; border-color: var(--vds-danger, #c53030); color: var(--vds-danger, #c53030); }
-    .session-row { display: flex; align-items: center; gap: .75rem; padding: .5rem 0; border-bottom: 1px solid var(--vds-border); flex-wrap: wrap; }
-    .session-row:last-child { border-bottom: none; }
-    .session-info { display: flex; flex-direction: column; flex: 1; }
-    .session-ip { font-size: .92rem; }
-    .session-dates { font-size: .8rem; margin-top: .1rem; }
-    .loading { text-align: center; padding: 3rem; color: var(--vds-text-muted); }
-    .muted { color: var(--vds-text-muted); }
-</style>
 
 @code {
     private record ProviderRow(string Name, string Label);
@@ -324,45 +304,28 @@ else
     /// <inheritdoc />
     protected override void OnInitialized()
     {
-        // Subscribe to auth state changes so the UI re-renders when MarkReady()
-        // is called (transitions IsAuthReady from false → true).
         AuthState.OnChange += OnAuthStateChanged;
     }
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
-        // SSR prerender pass: IsAuthReady is false because MainLayout's
-        // OnInitializedAsync hasn't completed yet (it's still fetching the JWT).
-        // Skip API calls entirely — the Bearer token isn't set, so any HTTP
-        // request would get a 401. When MarkReady() fires via OnChange,
-        // the component re-renders and OnInitializedAsync runs again with
-        // IsAuthReady = true, at which point the Bearer token is available.
         if (!AuthState.IsAuthReady)
             return;
 
-        // Circuit pass with auth fully initialized.
         if (!AuthState.IsLoggedIn)
         {
             Nav.NavigateTo("/login", forceLoad: false);
             return;
         }
 
-        // Proactively refresh the JWT before making API calls. This prevents a race
-        // condition where MainLayout.OnLocationChanged fires TryRefreshAsync()
-        // fire-and-forget on navigation, and the API call below could use a stale
-        // token if the refresh hasn't completed yet.
         await AuthState.TryRefreshAsync();
 
-        // Handle query-param feedback from the OAuth link redirect.
         if (LinkedParam == "1")
             _successMessage = "Provider linked successfully.";
         else if (ErrorParam == "link_failed")
             _errorMessage = "Failed to link provider. Please try again.";
 
-        // Reload profile and sessions even when already loaded (page refresh case).
-        // If the API call returns null (e.g. 401 due to stale Bearer token from a
-        // concurrent renew), retry once after a fresh token refresh.
         await LoadProfileWithRetryAsync();
         if (_profile is not null)
             await LoadSessionsWithRetryAsync();
