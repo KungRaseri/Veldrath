@@ -21,6 +21,7 @@
     <ProjectReference Include="..\Veldrath.Contracts\Veldrath.Contracts.csproj" />
     <ProjectReference Include="..\Veldrath.GameClient.Core\Veldrath.GameClient.Core.csproj" />
     <ProjectReference Include="..\Veldrath.GameClient.Components\Veldrath.GameClient.Components.csproj" />
+    <ProjectReference Include="..\Veldrath.Server\Veldrath.Server.csproj" />
   </ItemGroup>
 
 </Project>

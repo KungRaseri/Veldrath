@@ -124,6 +124,7 @@ a:hover { text-decoration: underline; }
 .layout { display: flex; flex-direction: column; min-height: 100vh; }
 .site-header { display: flex; align-items: center; gap: 1.5rem; padding: .75rem 2rem; background: var(--vds-bg-1); border-bottom: 1px solid var(--vds-border); }
 .brand { font-family: var(--vds-font-heading); font-size: var(--vds-text-lg); font-weight: 600; color: var(--vds-seal-light); }
+.header-logo { max-height: 36px; height: auto; object-fit: contain; vertical-align: middle; }
 .main-nav { display: flex; gap: 1rem; margin-left: auto; }
 .site-content { flex: 1; padding: 2rem; max-width: var(--vds-content-max); margin: 0 auto; width: 100%; }
 .site-footer { padding: 1rem 2rem; background: var(--vds-bg-1); text-align: center; color: var(--vds-text-subtle); font-size: var(--vds-text-sm); }

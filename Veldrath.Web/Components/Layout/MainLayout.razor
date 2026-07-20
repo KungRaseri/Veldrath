@@ -12,7 +12,10 @@
 
 <div class="layout">
     <header class="site-header">
-        <a class="brand" href="/">Veldrath</a>
+        <div>
+            <img class="header-logo" src="images/veldrath-v-logo-transparent.png" />
+            <a class="brand" href="/">Veldrath</a>
+        </div>
         <NavMenu />
     </header>
     @if (_announcements.Count > 0)
@@ -186,8 +189,8 @@
     /// <inheritdoc />
     public void Dispose()
     {
-        AuthState.OnChange    -= OnAuthStateChanged;
-        Nav.LocationChanged   -= OnLocationChanged;
+        AuthState.OnChange -= OnAuthStateChanged;
+        Nav.LocationChanged -= OnLocationChanged;
         _subscription.Dispose();
     }
 }
