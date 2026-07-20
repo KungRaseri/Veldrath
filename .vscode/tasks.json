@@ -397,7 +397,20 @@
 			"group": "build"
 		},
 		{
-			"label": "build-veldrath-client",
+		    "label": "build-veldrath-web",
+		    "type": "shell",
+		    "command": "dotnet",
+		    "args": [
+		        "build",
+		        "${workspaceFolder}/Veldrath.Web/Veldrath.Web.csproj",
+		        "/property:GenerateFullPaths=true",
+		        "/consoleloggerparameters:NoSummary"
+		    ],
+		    "problemMatcher": "$msCompile",
+		    "group": "build"
+		},
+		{
+		    "label": "build-veldrath-client",
 			"type": "shell",
 			"command": "dotnet",
 			"args": [
