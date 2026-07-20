@@ -407,4 +407,60 @@ internal sealed class EmbeddedGameApiClient : IGameApiClient
         return await response.Content.ReadFromJsonAsync<List<Veldrath.Contracts.Content.ActorClassDto>>(cancellationToken: ct)
                ?? [];
     }
+
+    // ── Session-based character creation ───────────────────────────────────────────
+
+    /// <inheritdoc />
+    public Task<Veldrath.Contracts.Characters.BeginCreationSessionResponse?> BeginCreationSessionAsync(CancellationToken ct = default)
+        => throw new NotSupportedException("Session-based creation is not available in the embedded client.");
+
+    /// <inheritdoc />
+    public Task<Veldrath.Contracts.Characters.CharacterPreviewDto?> GetCreationPreviewAsync(Guid sessionId, CancellationToken ct = default)
+        => throw new NotSupportedException("Session-based creation is not available in the embedded client.");
+
+    /// <inheritdoc />
+    public Task<Veldrath.Contracts.Characters.CharacterDto?> FinalizeCreationSessionAsync(Guid sessionId, Veldrath.Contracts.Characters.FinalizeCreationSessionRequest request, CancellationToken ct = default)
+        => throw new NotSupportedException("Session-based creation is not available in the embedded client.");
+
+    /// <inheritdoc />
+    public Task AbandonCreationSessionAsync(Guid sessionId, CancellationToken ct = default)
+        => throw new NotSupportedException("Session-based creation is not available in the embedded client.");
+
+    /// <inheritdoc />
+    public Task<Veldrath.Contracts.Characters.SetCreationChoiceResponse?> SetCreationNameAsync(Guid sessionId, string characterName, CancellationToken ct = default)
+        => throw new NotSupportedException("Session-based creation is not available in the embedded client.");
+
+    /// <inheritdoc />
+    public Task<Veldrath.Contracts.Characters.SetCreationChoiceResponse?> SetCreationClassAsync(Guid sessionId, string className, CancellationToken ct = default)
+        => throw new NotSupportedException("Session-based creation is not available in the embedded client.");
+
+    /// <inheritdoc />
+    public Task<Veldrath.Contracts.Characters.SetCreationChoiceResponse?> SetCreationSpeciesAsync(Guid sessionId, string speciesSlug, CancellationToken ct = default)
+        => throw new NotSupportedException("Session-based creation is not available in the embedded client.");
+
+    /// <inheritdoc />
+    public Task<Veldrath.Contracts.Characters.SetCreationChoiceResponse?> SetCreationBackgroundAsync(Guid sessionId, string backgroundId, CancellationToken ct = default)
+        => throw new NotSupportedException("Session-based creation is not available in the embedded client.");
+
+    /// <inheritdoc />
+    public Task<Veldrath.Contracts.Characters.AllocateCreationAttributesResponse?> SetCreationAttributesAsync(Guid sessionId, Dictionary<string, int> allocations, CancellationToken ct = default)
+        => throw new NotSupportedException("Session-based creation is not available in the embedded client.");
+
+    /// <inheritdoc />
+    public Task<Veldrath.Contracts.Characters.SetCreationChoiceResponse?> SetCreationEquipmentPreferencesAsync(Guid sessionId, string? armorType, string? weaponType, bool includeShield, CancellationToken ct = default)
+        => throw new NotSupportedException("Session-based creation is not available in the embedded client.");
+
+    /// <inheritdoc />
+    public Task<Veldrath.Contracts.Characters.SetCreationChoiceResponse?> SetCreationLocationAsync(Guid sessionId, string locationId, CancellationToken ct = default)
+        => throw new NotSupportedException("Session-based creation is not available in the embedded client.");
+
+    // ── Content lookups ────────────────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public Task<List<Veldrath.Contracts.Content.SpeciesDto>> GetSpeciesAsync(CancellationToken ct = default)
+        => throw new NotSupportedException("Content lookups are not available in the embedded client.");
+
+    /// <inheritdoc />
+    public Task<List<Veldrath.Contracts.Content.BackgroundDto>> GetBackgroundsAsync(CancellationToken ct = default)
+        => throw new NotSupportedException("Content lookups are not available in the embedded client.");
 }
