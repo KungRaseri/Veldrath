@@ -79,16 +79,28 @@ public class AuthStateServiceTests
     [Fact]
     public async Task SetTokensAsync_TokensNotExposedViaPublicProperties()
     {
-        // Neither the access token nor the refresh token must be reachable through
-        // any public property. Tokens are circuit-scoped memory only and must not
-        // be accessible to Razor component templates or other callers.
+        // AccessToken and AccessTokenExpiry are intentionally public so that
+        // SignalR hubs and other infrastructure consumers can obtain the bearer
+        // token for outbound authentication. All other public properties must
+        // not leak raw token values — tokens remain circuit-scoped memory.
         var (svc, _) = Build();
         await svc.SetTokensAsync(MakeResponse());
+
+        var excluded = new HashSet<string> { "AccessToken", "AccessTokenExpiry" };
         var publicProps = typeof(AuthStateService)
             .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+            .Where(p => !excluded.Contains(p.Name))
             .Select(p => p.GetValue(svc)?.ToString() ?? "");
-        publicProps.Should().NotContain("jwt-token");
-        publicProps.Should().NotContain("refresh-token");
+
+        publicProps.Should().NotContain("jwt-token",
+            "no public property other than AccessToken should expose the raw JWT");
+        publicProps.Should().NotContain("refresh-token",
+            "no public property should expose the raw refresh token");
+
+        // Confirm the intentional public API works as designed.
+        svc.AccessToken.Should().Be("jwt-token",
+            "AccessToken is intentionally public for SignalR/HTTP auth consumers");
+        svc.AccessTokenExpiry.Should().NotBeNull();
     }
 
     [Fact]

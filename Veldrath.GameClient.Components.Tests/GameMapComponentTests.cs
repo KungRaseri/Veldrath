@@ -1,5 +1,6 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
+using Veldrath.Auth.Blazor;
 using Veldrath.Contracts.Tilemap;
 using Veldrath.GameClient.Components.Components.Pages;
 using Veldrath.GameClient.Components.Tests.Infrastructure;
@@ -26,6 +27,9 @@ public class GameMapComponentTests : BunitContext
     {
         _fakeHub = new FakeGameHubConnectionService();
         _gameState = new GameStateService();
+
+        var fakeAuthApi = new FakeVeldrathAuthApiClient();
+        Services.AddSingleton<AuthStateServiceBase>(new FakeAuthStateService(fakeAuthApi));
 
         Services.AddSingleton<IGameHubConnectionService>(_fakeHub);
         Services.AddSingleton<IGameStateService>(_gameState);
