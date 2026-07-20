@@ -21,7 +21,7 @@ public class ValidationBehaviorTests
 
         var result = await behavior.Handle(
             new TestPipelineRequest(),
-            () => Task.FromResult("ok"),
+            (ct) => Task.FromResult("ok"),
             CancellationToken.None);
 
         result.Should().Be("ok");
@@ -35,7 +35,7 @@ public class ValidationBehaviorTests
 
         var result = await behavior.Handle(
             new TestPipelineRequest(),
-            () => Task.FromResult("ok"),
+            (ct) => Task.FromResult("ok"),
             CancellationToken.None);
 
         result.Should().Be("ok");
@@ -50,7 +50,7 @@ public class ValidationBehaviorTests
 
         var act = () => behavior.Handle(
             new TestPipelineRequest(),
-            () => Task.FromResult("ok"),
+            (ct) => Task.FromResult("ok"),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<ValidationException>().WithMessage("*Always fails*");
@@ -67,7 +67,7 @@ public class ValidationBehaviorTests
 
         var act = () => behavior.Handle(
             new TestPipelineRequest(),
-            () => Task.FromResult("ok"),
+            (ct) => Task.FromResult("ok"),
             CancellationToken.None);
 
         var ex = await act.Should().ThrowAsync<ValidationException>();
@@ -87,7 +87,7 @@ public class ValidationBehaviorTests
 
         var act = () => behavior.Handle(
             new TestPipelineRequest(),
-            () => { nextCalled = true; return Task.FromResult("ok"); },
+            (ct) => { nextCalled = true; return Task.FromResult("ok"); },
             CancellationToken.None);
 
         await act.Should().ThrowAsync<ValidationException>();
@@ -125,7 +125,7 @@ public class LoggingBehaviorTests
 
         await behavior.Handle(
             new TestPipelineRequest(),
-            () => Task.FromResult("ok"),
+            (ct) => Task.FromResult("ok"),
             CancellationToken.None);
 
         VerifyLog(mockLogger, LogLevel.Information, "Executing", Times.Once());
@@ -140,7 +140,7 @@ public class LoggingBehaviorTests
 
         var result = await behavior.Handle(
             new TestPipelineRequest(),
-            () => Task.FromResult("response"),
+            (ct) => Task.FromResult("response"),
             CancellationToken.None);
 
         result.Should().Be("response");
@@ -155,7 +155,7 @@ public class LoggingBehaviorTests
 
         var act = () => behavior.Handle(
             new TestPipelineRequest(),
-            () => throw exception,
+            (ct) => throw exception,
             CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
@@ -171,7 +171,7 @@ public class LoggingBehaviorTests
 
         var act = () => behavior.Handle(
             new TestPipelineRequest(),
-            () => throw new InvalidOperationException("boom"),
+            (ct) => throw new InvalidOperationException("boom"),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
@@ -207,7 +207,7 @@ public class PerformanceBehaviorTests
 
         await behavior.Handle(
             new TestPipelineRequest(),
-            () => Task.FromResult("fast"),
+            (ct) => Task.FromResult("fast"),
             CancellationToken.None);
 
         VerifyWarningLog(mockLogger, Times.Never());
@@ -221,7 +221,7 @@ public class PerformanceBehaviorTests
 
         var result = await behavior.Handle(
             new TestPipelineRequest(),
-            () => Task.FromResult("result"),
+            (ct) => Task.FromResult("result"),
             CancellationToken.None);
 
         result.Should().Be("result");
@@ -235,7 +235,7 @@ public class PerformanceBehaviorTests
 
         await behavior.Handle(
             new TestPipelineRequest(),
-            async () =>
+            async (ct) =>
             {
                 await Task.Delay(510);
                 return "slow";
