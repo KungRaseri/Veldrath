@@ -37,6 +37,10 @@ public class RclComponentRenderTests : BunitContext
         var fakeAuthApi = new FakeVeldrathAuthApiClient();
         _fakeAuth = new FakeAuthStateService(fakeAuthApi);
 
+        // Set up JSInterop for components that call JavaScript functions.
+        JSInterop.SetupVoid("characterCreation.enableBeforeUnload");
+        JSInterop.SetupVoid("characterCreation.disableBeforeUnload");
+
         // Register stubs for interface-injected services.
         Services.AddSingleton<IGameHubConnectionService>(_fakeHub);
         Services.AddSingleton<IGameStateService>(_gameState);

@@ -27,6 +27,7 @@ public class GameCombatComponentTests : BunitContext
 
         Services.AddSingleton<IGameHubConnectionService>(_fakeHub);
         Services.AddSingleton(_gameState);
+        Services.AddSingleton<IGameStateService>(_gameState);
     }
 
     /// <summary>
