@@ -12,7 +12,7 @@ namespace Veldrath.GameClient.Components.Tests;
 /// Tests for the <see cref="GameCombat"/> component, verifying combat state
 /// rendering, attack button behaviour, and combat log display.
 /// </summary>
-public class GameCombatComponentTests : TestContext
+public class GameCombatComponentTests : BunitContext
 {
     private readonly FakeGameHubConnectionService _fakeHub;
     private readonly GameStateService _gameState;

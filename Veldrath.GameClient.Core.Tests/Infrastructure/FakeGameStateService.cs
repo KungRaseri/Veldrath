@@ -65,8 +65,10 @@ public sealed class FakeGameStateService : IGameStateService
     /// <inheritdoc />
     public IReadOnlyList<ChatMessage> ChatMessages { get; set; } = [];
 
+#pragma warning disable CS0067
     /// <inheritdoc />
     public event Action<string>? ChatMessageReceived;
+#pragma warning restore CS0067
 
     /// <inheritdoc />
     public IDisposable OnStateChanged(Action handler)

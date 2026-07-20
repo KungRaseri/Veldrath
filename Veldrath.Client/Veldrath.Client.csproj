@@ -4,6 +4,7 @@
     <OutputType>WinExe</OutputType>
     <RootNamespace>Veldrath.Client</RootNamespace>
     <AssemblyName>Veldrath.Client</AssemblyName>
+    <NoWarn>$(NoWarn);MSB3277</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

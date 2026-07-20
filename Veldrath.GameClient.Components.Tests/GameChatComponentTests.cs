@@ -12,7 +12,7 @@ namespace Veldrath.GameClient.Components.Tests;
 /// Tests for the <see cref="GameChat"/> component, verifying chat message
 /// rendering, channel pills, system message styling, and empty state display.
 /// </summary>
-public class GameChatComponentTests : TestContext
+public class GameChatComponentTests : BunitContext
 {
     private readonly FakeGameHubConnectionService _fakeHub;
     private readonly GameStateService _gameState;

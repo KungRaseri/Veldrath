@@ -17,7 +17,7 @@ namespace Veldrath.GameClient.Components.Tests;
 /// Verifies that each major RCL component renders without throwing exceptions
 /// when provided with minimal mock services.
 /// </summary>
-public class RclComponentRenderTests : TestContext
+public class RclComponentRenderTests : BunitContext
 {
     private readonly FakeGameHubConnectionService _fakeHub;
     private readonly FakeGameApiClient _fakeApi;
