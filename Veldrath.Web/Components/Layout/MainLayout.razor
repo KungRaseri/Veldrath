@@ -9,7 +9,7 @@
 @inject ILogger<MainLayout> Logger
 @using Veldrath.Contracts.Editorial
 
-<MudLayout>
+<MudLayout Class="d-flex flex-column" Style="min-height: 100vh">
     <MudAppBar Elevation="1">
         <MudImage Src="images/veldrath-final-horizontal-transparent.png" Height="64" Class="mx-2" />
         <MudSpacer />
@@ -31,7 +31,7 @@
             }
         </div>
     }
-    <MudMainContent>
+    <MudMainContent Class="flex-grow-1">
         @Body
     </MudMainContent>
     <footer class="fat-footer">
@@ -42,7 +42,8 @@
                     <div class="fat-footer-brand">
                         <MudImage Src="images/veldrath-final-horizontal-transparent.png" Height="40" Class="mud-mb-4" />
                         <MudText Typo="Typo.body2" Class="fat-footer-description">
-                            A multiplayer RPG built on the RealmEngine framework. Explore, craft, fight, and build your legend in the world of Veldrath.
+                            A multiplayer RPG built on the RealmEngine framework. Explore, craft, fight, and build your
+                            legend in the world of Veldrath.
                         </MudText>
                     </div>
                 </MudItem>
@@ -53,14 +54,23 @@
                     <MudLink Href="/lore" Typo="Typo.body2" Class="fat-footer-link">World & Lore</MudLink>
                     <MudLink Href="/patch-notes" Typo="Typo.body2" Class="fat-footer-link">Patch Notes</MudLink>
                     <MudLink Href="/community" Typo="Typo.body2" Class="fat-footer-link">Community</MudLink>
-                    <MudLink Href="/login" Typo="Typo.body2" Class="fat-footer-link">Sign In</MudLink>
+                    @if (AuthState.IsLoggedIn)
+                    {
+                        <MudLink Typo="Typo.body2" Class="fat-footer-link" Href="/auth/sign-out">Sign Out</MudLink>
+                    }
+                    else
+                    {
+                        <MudLink Typo="Typo.body2" Class="fat-footer-link" Href="/login">Sign In</MudLink>
+                    }
                 </MudItem>
 
                 @* Column 3: Resources *@
                 <MudItem xs="12" sm="6" md="3">
                     <MudText Typo="Typo.subtitle1" Class="fat-footer-heading">Resources</MudText>
-                    <MudLink Href="https://kungraseri.github.io/RealmEngine/" Typo="Typo.body2" Class="fat-footer-link" Target="_blank">Documentation</MudLink>
-                    <MudLink Href="https://github.com/kungraseri/RealmEngine/wiki" Typo="Typo.body2" Class="fat-footer-link" Target="_blank">Wiki</MudLink>
+                    <MudLink Href="https://kungraseri.github.io/RealmEngine/" Typo="Typo.body2" Class="fat-footer-link"
+                             Target="_blank">Documentation</MudLink>
+                    <MudLink Href="https://github.com/kungraseri/RealmEngine/wiki" Typo="Typo.body2"
+                             Class="fat-footer-link" Target="_blank">Wiki</MudLink>
                     <MudLink Href="/support" Typo="Typo.body2" Class="fat-footer-link">Support</MudLink>
                     <MudLink Href="/api" Typo="Typo.body2" Class="fat-footer-link">API Status</MudLink>
                 </MudItem>
@@ -69,16 +79,15 @@
                 <MudItem xs="12" sm="6" md="3">
                     <MudText Typo="Typo.subtitle1" Class="fat-footer-heading">Community</MudText>
                     <div class="fat-footer-social">
-                        <MudLink Href="https://github.com/kungraseri/RealmEngine" Target="_blank" Class="fat-footer-social-link">
+                        <MudLink Href="https://github.com/kungraseri/RealmEngine" Target="_blank"
+                                 Class="fat-footer-social-link">
                             <MudIcon Icon="@Icons.Material.Filled.Code" Size="Size.Small" Class="mud-mr-1" /> GitHub
                         </MudLink>
                         <MudLink Href="https://discord.gg/veldrath" Target="_blank" Class="fat-footer-social-link">
-                            <MudIcon Icon="@Icons.Material.Filled.QuestionAnswer" Size="Size.Small" Class="mud-mr-1" /> Discord
+                            <MudIcon Icon="@Icons.Material.Filled.QuestionAnswer" Size="Size.Small" Class="mud-mr-1" />
+                            Discord
                         </MudLink>
                     </div>
-                    <MudText Typo="Typo.body2" Class="fat-footer-description mud-mt-3">
-                        Join our community to share feedback, report bugs, and connect with other players.
-                    </MudText>
                 </MudItem>
             </MudGrid>
         </MudContainer>
