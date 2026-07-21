@@ -11,7 +11,7 @@
 
 <MudLayout Class="d-flex flex-column" Style="min-height: 100vh">
     <MudAppBar Elevation="1">
-        <MudImage Src="images/veldrath-final-horizontal-transparent.png" Height="64" Class="mx-2" />
+        <MudImage Src="images/veldrath-text-flat-true-transparent.png" Height="28" Class="mx-2" />
         <MudSpacer />
         <NavMenu />
     </MudAppBar>
@@ -35,12 +35,12 @@
         @Body
     </MudMainContent>
     <footer class="fat-footer">
-        <MudContainer MaxWidth="MaxWidth.Large">
+        <MudContainer MaxWidth="MaxWidth.Large" class="mb-5">
             <MudGrid Spacing="4">
                 @* Column 1: Branding *@
                 <MudItem xs="12" sm="6" md="4">
                     <div class="fat-footer-brand">
-                        <MudImage Src="images/veldrath-final-horizontal-transparent.png" Height="40" Class="mud-mb-4" />
+                        <MudImage Src="images/veldrath-final-horizontal-transparent.png" Height="64" Class="mud-mb-4" />
                         <MudText Typo="Typo.body2" Class="fat-footer-description">
                             A multiplayer RPG built on the RealmEngine framework. Explore, craft, fight, and build your
                             legend in the world of Veldrath.
@@ -93,7 +93,7 @@
         </MudContainer>
 
         <MudDivider Class="fat-footer-divider" />
-        <MudContainer MaxWidth="MaxWidth.Large">
+        <MudContainer MaxWidth="MaxWidth.Large" class="mt-5">
             <div class="fat-footer-bottom">
                 <MudText Typo="Typo.caption" Class="fat-footer-copyright">
                     &copy; @DateTime.Now.Year Veldrath. All rights reserved.
