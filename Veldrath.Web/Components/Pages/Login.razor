@@ -34,7 +34,7 @@
             Sign in with your Veldrath account or a connected provider.
         </MudText>
 
-        <EditForm OnValidSubmit="DoLoginAsync">
+        <EditForm Model="this" OnValidSubmit="DoLoginAsync">
             <MudTextField @bind-Value="_email"
                            Label="Email"
                            InputType="InputType.Email"

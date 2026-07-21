@@ -2,25 +2,22 @@
 @inject AuthStateService AuthState
 @inject NavigationManager Nav
 
-<MudStack Row="true" Spacing="0" AlignItems="AlignItems.Stretch" Class="nav-bar">
-    <MudNavLink Href="/" Match="NavLinkMatch.All">Home</MudNavLink>
-    <MudNavLink Href="/lore" Match="NavLinkMatch.Prefix">World</MudNavLink>
-    <MudNavLink Href="/patch-notes" Match="NavLinkMatch.Prefix">Patch Notes</MudNavLink>
-    <MudNavLink Href="/community" Match="NavLinkMatch.All">Community</MudNavLink>
+<MudButtonGroup Variant="Variant.Filled" Class="d-flex align-stretch">
+    <MudButton Href="/">Home</MudButton>
+    <MudButton Href="/lore">World</MudButton>
+    <MudButton Href="/patch-notes">Patch Notes</MudButton>
+    <MudButton Href="/community">Community</MudButton>
     @if (AuthState.IsLoggedIn)
     {
-        <MudNavLink Href="/game/characterselect" Match="NavLinkMatch.Prefix" ActiveClass="gold-accent">
-            <MudIcon Icon="@Icons.Material.Filled.SportsEsports" Size="Size.Small" Style="margin-right:4px" />
-            Play
-        </MudNavLink>
-        <MudNavLink Href="/account/profile" Match="NavLinkMatch.Prefix">@AuthState.Username</MudNavLink>
-        <MudNavLink Href="/auth/sign-out" Match="NavLinkMatch.All" ForceLoad="true">Sign Out</MudNavLink>
+        <MudButton StartIcon="@Icons.Material.Filled.SportsEsports" Href="/game/characterselect">Play</MudButton>
+        <MudButton Href="/account/profile">@AuthState.Username</MudButton>
+        <MudButton Href="/auth/sign-out">Sign Out</MudButton>
     }
     else
     {
-        <MudNavLink Href="/login" Match="NavLinkMatch.All">Sign In</MudNavLink>
+        <MudButton Href="/login">Sign In</MudButton>
     }
-</MudStack>
+</MudButtonGroup>
 
 @code {
     protected override void OnInitialized()
