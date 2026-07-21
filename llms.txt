@@ -1,0 +1,309 @@
+# MudBlazor
+
+Material Design component library for Blazor — 80+ components, theming system, CSS utilities, chart support, and injectable services. Single NuGet package: `MudBlazor` v8+. Targets .NET 8+.
+
+## Docs
+
+- [GitHub](https://github.com/MudBlazor/MudBlazor): Source, issues, discussions
+- [Releases](https://github.com/MudBlazor/MudBlazor/releases): Changelog and version history
+- [NuGet](https://www.nuget.org/packages/MudBlazor): Package listing
+
+## Getting Started
+
+- [Installation](https://mudblazor.com/getting-started/installation): NuGet package, `AddMudServices()`, required CSS/JS assets, root components (`MudThemeProvider`, `MudDialogProvider`, `MudSnackbarProvider`), `@using MudBlazor` import, Material Icons font setup
+- [Layouts](https://mudblazor.com/getting-started/layouts): Structuring pages with `MudLayout`, `MudAppBar`, `MudDrawer`, `MudMainContent`, `MudFooter`, and responsive sidebar navigation
+- [Usage](https://mudblazor.com/getting-started/usage): Basic component usage patterns, two-way binding, event handling, parameter patterns
+- [Wireframes](https://mudblazor.com/getting-started/wireframes): Common page layout templates and patterns for admin panels, dashboards, forms, and more
+
+## [Explore (Component Overview)](https://mudblazor.com/docs/overview)
+
+Overview page listing all components with live previews. Entry point for browsing the complete component catalog.
+
+## Components
+
+### Top-Level Components
+
+- [Container](https://mudblazor.com/components/container): `MudContainer` — responsive fixed-width container with `MaxWidth`
+- [Grid](https://mudblazor.com/components/grid): `MudGrid` + `MudItem` — 12-column CSS Grid with breakpoint-aware column widths (`xs`/`sm`/`md`/`lg`/`xl`/`xxl`) and `Spacing`
+- [Hidden](https://mudblazor.com/components/hidden): `MudHidden` — conditionally hide content based on `Breakpoint` with `Invert` option
+- [Breakpoint Provider](https://mudblazor.com/components/breakpointprovider): `MudBreakpointProvider` — exposes current responsive breakpoint as cascading value to descendants
+- [Chips](https://mudblazor.com/components/chips): `MudChip` — material design chip component; used standalone or as filter/input chips
+- [Chip Set](https://mudblazor.com/components/chipset): `MudChipSet<T>` — container for multiple chips with selection handling (Filter, Choice, Input modes)
+- [Badge](https://mudblazor.com/components/badge): `MudBadge` — badge overlay (numeric, dot, icon) on any child content with `Origin` and `Overlap`
+- [App Bar](https://mudblazor.com/components/appbar): `MudAppBar` — top application bar with `Elevation`, `Dense`, `Fixed`, `Bottom` positioning
+- [Drawer](https://mudblazor.com/components/drawer): `MudDrawer`/`MudDrawerContainer`/`MudDrawerHeader` — side navigation drawer with `Variant` (Responsive/Mini/Persistent/Temporary), `Anchor` (Left/Right), `@bind-Open`
+- [Drop Zone](https://mudblazor.com/components/dropzone): `MudDropZone<T>`/`MudDropContainer<T>`/`MudDynamicDropItem<T>` — drag-and-drop zone system for reorderable lists and cross-zone drops
+- [Link](https://mudblazor.com/components/link): `MudLink` — styled hyperlink with `Href`, `Color`, `Typo`, `Underline` (None/Hover/Always)
+- [Menu](https://mudblazor.com/components/menu): `MudMenu`/`MudMenuItem` — dropdown/popover menu with `ActivatorContent`, nested menus, `AnchorOrigin`/`TransformOrigin`, `OpenOn` (Click/Hover)
+- [Message Box](https://mudblazor.com/components/messagebox): `MudMessageBox` — pre-built alert/confirm/prompt dialog (inject `IDialogService` and call `ShowMessageBox`)
+- [Nav Menu](https://mudblazor.com/components/navmenu): `MudNavMenu`/`MudNavLink`/`MudNavGroup` — navigation menu with collapsible groups, `Match` (All/Prefix) for active state, `ForceLoad`, `Icon`
+- [Tabs](https://mudblazor.com/components/tabs): `MudTabs`/`MudTabPanel`/`MudDynamicTabs` — tabbed content interface with `Position` (Top/Bottom/Left/Right), `@bind-ActivePanelIndex`, `KeepPanelsAlive`, dynamic tab add/remove
+- [Progress](https://mudblazor.com/components/progress): `MudProgressCircular` + `MudProgressLinear` — indeterminate and determinate progress indicators with `Color`, `Size`, `Min`/`Max`, `Value`
+- [Dialog](https://mudblazor.com/components/dialog): `MudDialog`/`MudDialogContainer`/`MudDialogProvider` — modal dialogs; inject `IDialogService`, call `ShowAsync<T>()`, custom dialogs inherit `MudDialog` with `[CascadingParameter] MudDialogInstance`; `DialogOptions` for CloseOnEscapeKey, MaxWidth, FullWidth, Position, BackdropClick
+- [Snackbar](https://mudblazor.com/components/snackbar): `MudSnackbarProvider` + `MudSnackbarElement` + inject `ISnackbar`; `Add(message, severity, configure)`, `Clear()`, `Remove()`; config for PositionClass, MaxDisplayedSnackbars, PreventDuplicates, VisibleStateDuration, ShowCloseIcon, Action/Onclick
+- [Avatar](https://mudblazor.com/components/avatar): `MudAvatar`/`MudAvatarGroup` — circular avatar with `Image` src, initials, or icon; group stacking with overlap
+- [Alert](https://mudblazor.com/components/alert): `MudAlert` — alert banner with `Severity` (Normal/Info/Success/Warning/Error), `Variant` (Text/Filled/Outlined), `CloseIcon`, customizable content
+- [Card](https://mudblazor.com/components/card): `MudCard`/`MudCardHeader`/`MudCardContent`/`MudCardActions`/`MudCardMedia` — material card with header, content body, action buttons, and media (image/video) sections; `Elevation`, `Outlined`, `Square`
+- [Divider](https://mudblazor.com/components/divider): `MudDivider` — horizontal or vertical divider line with `Vertical`, `DividerType` (FullWidth/Inset/Middle), `Light`
+- [Expansion Panels](https://mudblazor.com/components/expansionpanels): `MudExpansionPanels`/`MudExpansionPanel` — accordion-style expandable panels with `MultiExpansion`, `@bind-Expanded`, `IsInitiallyExpanded`, `Disabled`, `HeaderClass`
+- [Image](https://mudblazor.com/components/image): `MudImage` — responsive image with `ObjectFit` (Fill/Contain/Cover/None/ScaleDown), `Elevation`, `Src`, `Alt`, loading/error placeholders
+- [Icons](https://mudblazor.com/components/icons): `MudIcon` — material icon renderer; `Icons.Material.Filled.*`, `.Outlined.*`, `.Rounded.*`, `.Sharp.*`, `.TwoTone.*`, `Icons.Custom.*`; `Color`, `Size`, `Title`
+- [List](https://mudblazor.com/components/list): `MudList<T>`/`MudListItem<T>`/`MudListSubheader` — material list with `Clickable`, `Icon`, `Avatar`, secondary text, multi-selection, `@bind-SelectedValue`, `ItemTemplate`
+- [Paper](https://mudblazor.com/components/paper): `MudPaper` — material paper surface with `Elevation` (0–25), `Outlined`, `Square`
+- [Rating](https://mudblazor.com/components/rating): `MudRating`/`MudRatingItem` — star rating with `MaxValue`, `Disabled`, `ReadOnly`, `@bind-SelectedValue`, `Size`
+- [Skeleton](https://mudblazor.com/components/skeleton): `MudSkeleton` — loading placeholder with types: Text, Circle, Rectangle; `Height`, `Width`, animation
+- [Table](https://mudblazor.com/components/table): `MudTable<T>` + `MudTHeadRow`/`MudTFootRow`/`MudTh`/`MudTd`/`MudTr` + `MudTablePager` + `MudTableSortLabel<T>` + `MudTableGroupRow<T>` — full-featured data table with sorting, paging (`MudTablePager`), filtering (toolbar), `ServerData` for server-side operations, `MultiSelection` with `SelectColumn`, grouping, inline editing, `FixedHeader`, `Height`
+- [Data Grid](https://mudblazor.com/components/datagrid): `MudDataGrid<T>` + `Column<T>`/`TemplateColumn<T>`/`HierarchyColumn<T>` + `FilterHeaderCell<T>`/`HeaderCell<T>`/`FooterCell<T>` + `MudDataGridPager<T>` — advanced data grid with `Filterable`, `Sortable`, `Groupable`, column reordering, aggregation, `EditMode` (Cell/Form), Excel export, virtualization, `QuickFilter`
+- [Simple Table](https://mudblazor.com/components/simpletable): `MudSimpleTable` — lightweight HTML table with MudBlazor styling (no sorting/paging/filtering)
+- [Tooltip](https://mudblazor.com/components/tooltip): `MudTooltip` — hover tooltip with `Text`, `Placement` (Top/Bottom/Left/Right and variants), `Arrow`, `Delay`, `Duration`
+- [Typography](https://mudblazor.com/components/typography): `MudText` — typography component with `Typo` enum (h1–h6, subtitle1/2, body1/2, caption, overline, button, inherit), `Align`, `Color`, `GutterBottom`, `Inline`, `Truncate`
+- [Overlay](https://mudblazor.com/components/overlay): `MudOverlay` — semi-transparent overlay with `Visible`, `AutoShow`/`AutoHide`, `DarkBackground`/`LightBackground`, `Absolute`, `ZIndex`, `ChildContent`
+- [Highlighter](https://mudblazor.com/components/highlighter): `MudHighlighter` — text search highlighting with `Text` (full string) and `HighlightedText` (matched portion), `Markup`, `UntilNextMatch`
+- [Element](https://mudblazor.com/components/element): `MudElement` — generic HTML element wrapper with `HtmlTag`, `Class`, `Style`; renders any HTML tag with MudBlazor styling
+- [Focus Trap](https://mudblazor.com/components/focustrap): `MudFocusTrap` — traps tab focus within child content; for modals, dialogs, and other focus-containment scenarios
+- [Tree View](https://mudblazor.com/components/treeview): `MudTreeView<T>`/`MudTreeViewItem<T>`/`MudTreeViewItemToggleButton` — hierarchical tree with `Items`, `ItemsSource`, lazy loading (`ServerData`), checkboxes, icons, expand/collapse, `ItemTemplate`
+- [Breadcrumbs](https://mudblazor.com/components/breadcrumbs): `MudBreadcrumbs` — breadcrumb navigation trail with `Items` (IReadOnlyList of BreadcrumbItem) and custom `Separator`
+- [Scroll To Top](https://mudblazor.com/components/scrolltotop): `MudScrollToTop` — floating scroll-to-top button that appears after scrolling past a threshold
+- [Popover](https://mudblazor.com/components/popover): `MudPopover` — generic floating popover with `AnchorOrigin`, `TransformOrigin`, `Fixed`, `Open`, `Paper`, `Class`
+- [Swipe Area](https://mudblazor.com/components/swipearea): `MudSwipeArea` — touch-enabled swipe area with `OnSwipe`, `SwipeThreshold`, sensitivity configuration
+- [Tool Bar](https://mudblazor.com/components/toolbar): `MudToolBar` — toolbar container for action buttons, filters, and tools; horizontal layout with wrapping
+- [Carousel](https://mudblazor.com/components/carousel): `MudCarousel<T>`/`MudCarouselItem` — slide carousel with `SelectedIndex`, auto-play, `AutoCycle`, navigation bullets, `Transition`
+- [Timeline](https://mudblazor.com/components/timeline): `MudTimeline`/`MudTimelineItem` — vertical timeline with icons, content slots, `TimelineOrientation`, `TimelinePosition`
+- [Pagination](https://mudblazor.com/components/pagination): `MudPagination` — page navigation with `Selected`, `Count`, `Size`, `BoundaryCount`, `MiddleCount`, `@bind-Selected`, `HidePrevNext`, `Disabled`
+- [Stack](https://mudblazor.com/components/stack): `MudStack` — vertical or horizontal (via `Row="true"`) flexbox stack with `Spacing` (0–16), `Justify`, `AlignItems`
+- [Spacer](https://mudblazor.com/components/spacer): `MudSpacer` — flex spacer consuming remaining space (sets `flex-grow: 1`)
+- [Collapse](https://mudblazor.com/components/collapse): `MudCollapse` — collapsible content panel with `Expanded`, `MaxHeight`, animation
+- [Stepper](https://mudblazor.com/components/stepper): `MudStepper`/`MudStep` — wizard/stepper with `ActiveIndex`, `Linear` mode, `StepContent`, header actions, `Result`
+- [Split Panel](https://mudblazor.com/components/splitpanel): `MudSplitPanel` — resizable split panel with draggable divider, `LeftPanel`/`RightPanel`, `SplitterSize`, `Direction`
+- [Exit Prompt](https://mudblazor.com/components/exitprompt): `MudExitPrompt` — prompts user before navigating away or closing the browser tab; configurable message
+- [Hotkey](https://mudblazor.com/components/hotkey): `MudHotkey` — keyboard shortcut handler with `Key`, `Modifier` (Ctrl/Alt/Shift/Meta), `OnHotkey`, `PreventDefault`
+
+### Form & Inputs
+
+- [Radio](https://mudblazor.com/components/radio): `MudRadio<T>`/`MudRadioGroup<T>` — radio button group with `@bind-Value`, `Color`, `Size`, `Dense`, `Disabled`
+- [Check Box](https://mudblazor.com/components/checkbox): `MudCheckBox<T>` — checkbox with `@bind-Checked`, `TriState`, `Label`, `Color`, `Size`, `Dense`, `Disabled`
+- [Select](https://mudblazor.com/components/select): `MudSelect<T>`/`MudSelectItem<T>` — dropdown select with `@bind-Value`, `MultiSelection`, `ToStringFunc`, `SearchFunc`, `Dense`, `Required`
+- [Slider](https://mudblazor.com/components/slider): `MudSlider<T>` — range/value slider with `Min`, `Max`, `Step`, `@bind-Value`, `Disabled`, `Immediate`, `TickMarks`
+- [Switch](https://mudblazor.com/components/switch): `MudSwitch<T>` — toggle switch with `@bind-Checked`, `Color`, `Label`, `Disabled`, `LabelPosition`
+- [Text Field](https://mudblazor.com/components/textfield): `MudTextField<T>` — text input with `@bind-Value`, `Label`, `InputType` (Text/Password/Email/Number/Telephone/Url), `Lines` for multiline, `Adornment`/`AdornmentIcon`, `Immediate`, `HelperText`, `Placeholder`, `Mask`, `Clearable`, `Validation`
+- [Numeric Field](https://mudblazor.com/components/numericfield): `MudNumericField<T>` — numeric input with `Min`, `Max`, `Step`, `HideSpinButtons`, `Culture`, `Format`
+- [Form](https://mudblazor.com/components/form): `MudForm` — form container wrapping `EditForm`; validation via `MudTextField.Validation` (accepts `ValidationAttribute` or `Func`), `Required`, `RequiredError`, `Pattern`, `MinLength`, `MaxLength`; `@ref` exposes `IsValid`, `Errors`
+- [Autocomplete](https://mudblazor.com/components/autocomplete): `MudAutocomplete<T>` — type-ahead autocomplete with `SearchFunc`, `DebounceInterval`, `ToStringFunc`, `MinCharacters`, `CoerceValue`, `ResetValueOnEmptyText`, `MaxItems`, `Adornment`
+- [Field](https://mudblazor.com/components/field): `MudField` — base field component for building custom input components with label, helper text, validation display
+- [File Upload](https://mudblazor.com/components/fileupload): `MudFileUpload<T>` — file upload with `OnFilesChanged`, drag-and-drop, `Accept` (MIME types), `Multiple`, `ButtonTemplate`, `SelectedTemplate`, `Files`
+- [Toggle Group](https://mudblazor.com/components/togglegroup): `MudToggleGroup<T>`/`MudToggleItem<T>` — toggle button group with `SelectionMode` (Single/Multiple), `FixedContent`, `CheckMark`, `@bind-Value`
+
+### Pickers
+
+- [Date Picker](https://mudblazor.com/components/datepicker): `MudDatePicker` — date picker with calendar popover, `@bind-Date`, `MinDate`, `MaxDate`, `DateFormat`, `Editable`, `ClosedOnClick`, `PickerVariant` (Inline/Dialog/Static)
+- [Date Range Picker](https://mudblazor.com/components/daterangepicker): `MudDateRangePicker` — date range picker with `@bind-DateRange`, `MinDate`, `MaxDate`, `DateFormat`
+- [Time Picker](https://mudblazor.com/components/timepicker): `MudTimePicker` — time picker with `@bind-Time`, `AmPm` (12h/24h toggle), `TimeEditMode` (Normal/OnlyHours/OnlyMinutes)
+- [Color Picker](https://mudblazor.com/components/colorpicker): `MudColorPicker` — full color picker with `@bind-Value` (MudColor), `ShowAlpha`, `ShowMode` (RGB/HSL/HEX), `ColorPickerMode` (Spectrum/Palette/Grid), `DisabledAlpha`, `ShowToolbar`
+
+### Buttons
+
+- [Button](https://mudblazor.com/components/button): `MudButton` — material button with `Variant` (Text/Filled/Outlined), `Color`, `Size`, `ButtonType` (Submit/Button/Reset), `Href`, `Disabled`, `StartIcon`/`EndIcon`, `FullWidth`, `Loading`, `Link`
+- [Button Group](https://mudblazor.com/components/buttongroup): `MudButtonGroup` — groups buttons together with shared styling; `Vertical`, `Overridden` styles
+- [Icon Button](https://mudblazor.com/components/iconbutton): `MudIconButton` — icon-only button with `Icon`, `Color`, `Size`, `Variant`, `Edge` (Start/End), `Disabled`, `Link`
+- [Toggle Icon Button](https://mudblazor.com/components/toggleiconbutton): `MudToggleIconButton` — toggleable icon button with `Toggled`, `Icon`/`ToggledIcon`, `Color`/`ToggledColor`
+- [Button FAB](https://mudblazor.com/components/buttonfab): `MudFab` — Floating Action Button with `Color`, `Size`, `Icon`, `Label`, `StartIcon`/`EndIcon`, `Disabled`
+- [Button FAB Menu](https://mudblazor.com/components/buttonfabmenu): `MudFabMenu` — FAB that expands into a menu of additional action buttons; `Direction` (Top/Bottom/Left/Right)
+
+### Charts
+
+MudBlazor includes built-in chart components in `MudBlazor.Charts` namespace:
+
+- [Donut Chart](https://mudblazor.com/components/donutchart): `Donut<T>` with `DonutChartOptions` and `Legend<T>` — donut/doughnut chart
+- [Line Chart](https://mudblazor.com/components/linechart): `Line<T>` with `LineChartOptions` and `Legend<T>` — line chart with series
+- [Pie Chart](https://mudblazor.com/components/piechart): `Pie<T>` with `PieChartOptions` and `Legend<T>` — pie chart
+- [Bar Chart](https://mudblazor.com/components/barchart): `Bar<T>` with `BarChartOptions` and `Legend<T>` — vertical bar chart
+- [Heat Map Chart](https://mudblazor.com/components/heatmapchart): `HeatMap<T>` with `HeatMapChartOptions` and `Legend<T>` — heat map visualization
+- [Stacked Bar Chart](https://mudblazor.com/components/stackedbarchart): `StackedBar<T>` with `StackedBarChartOptions` and `Legend<T>` — stacked bar chart
+- [Time Series Chart](https://mudblazor.com/components/timeserieschart): `TimeSeries<T>` with `TimeSeriesChartOptions` and `Legend<T>` — time-series line chart
+- [Radar Chart](https://mudblazor.com/components/radarchart): `Radar<T>` with `RadarChartOptions` and `Legend<T>` — radar/spider chart
+- [Rose Chart](https://mudblazor.com/components/rosechart): `Rose<T>` with `RoseChartOptions` and `Legend<T>` — rose/polar area chart
+- [Sankey Chart](https://mudblazor.com/components/sankeychart): `Sankey<T>` with `SankeyChartOptions` and `Legend<T>` — sankey flow diagram
+- [Scatter Plot Chart](https://mudblazor.com/components/scatterplotchart): `ScatterPlot<T>` with `ScatterPlotChartOptions` and `Legend<T>` — scatter plot
+- [Universal Chart](https://mudblazor.com/components/universalchart): `MudChart<T>`/`MudAxisChartBase<T, U>`/`ChartOptions` — base chart classes for custom chart implementations
+
+## [API](https://mudblazor.com/api/)
+
+Full generated API reference for every component, enum, and service. Includes inherited members, parameters, event callbacks, and type definitions.
+
+## Features
+
+- [Breakpoints](https://mudblazor.com/features/breakpoints): Responsive breakpoint system — Xs(0), Sm(600px), Md(960px), Lg(1280px), Xl(1920px), Xxl(2560px); used by `MudHidden`, `MudGrid`/`MudItem`, `MudDrawer`
+- [Colors](https://mudblazor.com/features/colors): Color system overview — `Color` enum values (Default, Primary, Secondary, Tertiary, Info, Success, Warning, Error, Dark, Light, Inherit, Transparent, Surface) and their usage across components
+- [Elevation](https://mudblazor.com/features/elevation): Material Design elevation system — shadow levels 0–25 applied via `Elevation` parameter on `MudPaper`, `MudCard`, `MudAppBar`, `MudButton`
+- [Converters](https://mudblazor.com/features/converters): Built-in `Converter<T>` system for two-way value conversion between display and backing values (e.g., formatting numbers, dates); used by `MudTextField`, `MudSelect`, etc.
+- [Icon Reference](https://mudblazor.com/features/icons): Searchable reference of all available Material Icons; access via `Icons.Material.Filled.*`, `.Outlined.*`, `.Rounded.*`, `.Sharp.*`, `.TwoTone.*`, plus `Icons.Custom.*` for custom SVG icons
+- [Parameter State](https://mudblazor.com/features/parameterstate): `ParameterState<T>` framework — MudBlazor's internal mechanism for two-way parameter binding and state management; relevant for advanced component extensibility
+- [Masking](https://mudblazor.com/features/masking): Input masking for `MudTextField` using `Mask` parameter with pattern-based masks (e.g., phone numbers, dates, credit cards), `MaskChars`, `CleanDelimiters`
+- [RTL Languages](https://mudblazor.com/features/rtl-languages): Right-to-left language support via `MudRTLProvider`; automatic layout mirroring for Arabic, Hebrew, Persian, etc.
+- [Localization](https://mudblazor.com/features/localization): Localization of internal strings (e.g., "Items per page", "No records") via `MudLocalizer` and resource files
+- [Analyzers](https://mudblazor.com/features/analyzers): Roslyn analyzers for MudBlazor — compile-time checks for common mistakes (missing `MudThemeProvider`, incorrect parameter usage)
+- [Services](https://mudblazor.com/features/services): Overview of injectable services — `ISnackbar`, `IDialogService`, `IScrollListener`, `IResizeListener`, `IKeyInterceptor`, `IJsEvent`, `IMudPopoverService`, `IBrowserWindowSizeProvider`, `IBrowserViewportService`
+
+## Customization
+
+- [Default theme](https://mudblazor.com/customization/default-theme): Reference for the built-in default `MudTheme` — all default palette colors, typography values, layout properties, and z-index values in one place
+- [Overview](https://mudblazor.com/customization/overview): Theming architecture overview — how `MudThemeProvider` applies themes, dark/light mode toggle, `Theme` parameter, cascading theme values
+- [Palette](https://mudblazor.com/customization/palette): Customizing `PaletteLight` and `PaletteDark` — all color properties (Primary, Secondary, Tertiary, Info, Success, Warning, Error, Dark, Light, Background, Surface, TextPrimary, TextSecondary, DrawerBackground, AppbarBackground, Divider, OverlayDark/Light, HoverOpacity, RippleOpacity, etc.)
+- [Typography](https://mudblazor.com/customization/typography): Customizing `Typography` — `DefaultFamily`, H1–H6, Subtitle1/2, Body1/2, Button, Caption, Overline; each with `Family`, `FontWeight`, `FontSize`, `LineHeight`, `LetterSpacing`, `TextTransform`
+- [z-index](https://mudblazor.com/customization/z-index): Customizing `ZIndex` — Drawer (default 1100), Popover (1200), AppBar (1300), Dialog (1400), Snackbar (1500), Tooltip (1600)
+- [Pseudo CSS](https://mudblazor.com/customization/pseudocss): Customizing `PseudoCss` — CSS pseudo-class overrides for component states (hover, focus, active, disabled)
+- [Globals](https://mudblazor.com/customization/globals): Global CSS custom property overrides for framework-wide defaults
+
+## CSS Utilities
+
+### Layout
+
+- [Display](https://mudblazor.com/utilities/display): `d-block`, `d-inline`, `d-flex`, `d-inline-flex`, `d-none`, `d-{breakpoint}-{value}` responsive variants
+- [Z-Index](https://mudblazor.com/utilities/z-index): `z-{n}` (n = 0, 10, 20, 30, 40, 50, auto)
+- [Overflow](https://mudblazor.com/utilities/overflow): `overflow-auto`, `overflow-hidden`, `overflow-visible`, `overflow-scroll`, `overflow-x-*`, `overflow-y-*`
+- [Visibility](https://mudblazor.com/utilities/visibility): `visible`, `invisible`, `d-none` (hidden)
+- [Object Fit](https://mudblazor.com/utilities/object-fit): `object-fit-fill`, `object-fit-contain`, `object-fit-cover`, `object-fit-none`, `object-fit-scale-down`
+- [Object Position](https://mudblazor.com/utilities/object-position): `object-position-{position}` for controlling image positioning
+- [Position](https://mudblazor.com/utilities/position): `position-static`, `position-relative`, `position-absolute`, `position-fixed`, `position-sticky`
+
+### Flexbox
+
+- [Enable Flexbox](https://mudblazor.com/utilities/enable-flex): `d-flex`, `d-inline-flex`, responsive: `d-{breakpoint}-flex`
+- [Flex Direction](https://mudblazor.com/utilities/flex-direction): `flex-row`, `flex-column`, `flex-row-reverse`, `flex-column-reverse`
+- [Flex Wrap](https://mudblazor.com/utilities/flex-wrap): `flex-wrap`, `flex-nowrap`, `flex-wrap-reverse`
+- [Flex](https://mudblazor.com/utilities/flex): `flex-1`, `flex-auto`, `flex-initial`, `flex-none`
+- [Flex Grow](https://mudblazor.com/utilities/flex-grow): `flex-grow-0`, `flex-grow-1`
+- [Flex Shrink](https://mudblazor.com/utilities/flex-shrink): `flex-shrink-0`, `flex-shrink-1`
+- [Order](https://mudblazor.com/utilities/order): `order-{n}` (n = 0–12), `order-first`, `order-last`
+- [Gap](https://mudblazor.com/utilities/gap): `gap-{n}` (n = 0–16, ×4px), `gap-x-{n}`, `gap-y-{n}`
+- [Justify Content](https://mudblazor.com/utilities/justify-content): `justify-start`, `justify-center`, `justify-end`, `justify-space-between`, `justify-space-around`, `justify-space-evenly`
+- [Align Content](https://mudblazor.com/utilities/align-content): `align-content-start`, `align-content-center`, `align-content-end`, `align-content-space-between`, `align-content-space-around`, `align-content-stretch`
+- [Align Items](https://mudblazor.com/utilities/align-items): `align-items-start`, `align-items-center`, `align-items-end`, `align-items-stretch`, `align-items-baseline`
+- [Align Self](https://mudblazor.com/utilities/align-self): `align-self-start`, `align-self-center`, `align-self-end`, `align-self-stretch`, `align-self-baseline`, `align-self-auto`
+
+### Spacing
+
+- [Spacing](https://mudblazor.com/utilities/spacing): `pa-{n}`, `px-{n}`, `py-{n}`, `pt-{n}`, `pb-{n}`, `pl-{n}`, `pr-{n}` (padding); `ma-{n}`, `mx-{n}`, `my-{n}`, `mt-{n}`, `mb-{n}`, `ml-{n}`, `mr-{n}` (margin); n = 0–16 (×4px); also `ma-auto`, `mx-auto`, `my-auto`, `ml-auto`, `mr-auto`
+
+### Borders
+
+- [Border Radius](https://mudblazor.com/utilities/border-radius): `rounded-0`, `rounded-sm`, `rounded`, `rounded-lg`, `rounded-xl`, `rounded-circle`, `rounded-pill`, plus corner-specific variants
+- [Border Style](https://mudblazor.com/utilities/border-style): `border-solid`, `border-dashed`, `border-dotted`, `border-none`
+- [Border Width](https://mudblazor.com/utilities/border-width): `border-0`, `border`, `border-2`, `border-4`, `border-t-*`, `border-b-*`, `border-l-*`, `border-r-*`
+
+### Interactivity
+
+- [Cursor](https://mudblazor.com/utilities/cursor): `cursor-default`, `cursor-pointer`, `cursor-text`, `cursor-move`, `cursor-not-allowed`, `cursor-wait`, `cursor-grab`, `cursor-zoom-in`
+- [Pointer Events](https://mudblazor.com/utilities/pointer-events): `pointer-events-none`, `pointer-events-auto`
+
+## Learn More
+
+- [What is MudBlazor?](https://mudblazor.com/mud/introduction): Project philosophy, goals, and key differentiators
+- [Announcements](https://mudblazor.com/mud/announcements): Important project announcements and release notes
+- [Getting Help](https://mudblazor.com/mud/community/getting-help): Where to ask questions — Discord, GitHub Discussions, Stack Overflow
+- [Reporting Bugs](https://mudblazor.com/mud/community/reporting-bugs): Bug reporting guidelines and templates
+- [Contribution](https://mudblazor.com/mud/community/contribution): How to contribute — PR process, coding standards, CLA
+- [Community Extensions](https://mudblazor.com/mud/community/extensions): Third-party extensions and integrations built on MudBlazor
+- [Releases](https://mudblazor.com/mud/project/releases): Full release history and changelog
+- [Roadmap](https://mudblazor.com/mud/project/roadmap): Planned features and future direction
+- [Sponsors & Backers](https://mudblazor.com/mud/project/sponsor): Financial supporters and sponsorship tiers
+- [Team & Contributors](https://mudblazor.com/mud/project/team): Core team members and top contributors
+- [How it Started](https://mudblazor.com/mud/project/how-it-started): Origin story of the MudBlazor project
+
+## Quick Reference
+
+### Setup (Program.cs)
+
+```csharp
+using MudBlazor.Services;
+builder.Services.AddMudServices();
+```
+
+Individual service registrations: `AddMudBlazorSnackbar()`, `AddMudBlazorDialog()`, `AddMudBlazorScrollListener()`, `AddMudBlazorResizeListener()`, `AddMudBlazorKeyInterceptor()`, `AddMudBlazorJsEvent()`, `AddMudPopoverService()`, `AddMudMarkdownServices()`.
+
+### Required in App.razor
+
+```razor
+@using MudBlazor  @* in _Imports.razor *@
+
+<MudThemeProvider Theme="@_theme" />  @* theme + dark/light mode *@
+<MudDialogProvider />                  @* dialog rendering surface *@
+<MudSnackbarProvider />                @* snackbar rendering surface *@
+```
+
+### Static Assets (index.html)
+
+```html
+<link rel="stylesheet" href="_content/MudBlazor/MudBlazor.min.css" />
+<script src="_content/MudBlazor/MudBlazor.min.js"></script>
+```
+
+### Common Enums
+
+| Enum | Values |
+|------|--------|
+| **Color** | Default, Primary, Secondary, Tertiary, Info, Success, Warning, Error, Dark, Light, Inherit, Transparent, Surface |
+| **Variant** | Text, Filled, Outlined |
+| **Size** | Small, Medium, Large |
+| **Severity** | Normal, Info, Success, Warning, Error |
+| **Typo** | h1, h2, h3, h4, h5, h6, subtitle1, subtitle2, body1, body2, caption, overline, button, inherit |
+| **Align** | Left, Center, Right, Justify, Inherit |
+| **Justify** | FlexStart, Center, FlexEnd, SpaceBetween, SpaceAround, SpaceEvenly |
+| **Margin** | None, Dense, Normal |
+| **MaxWidth** | ExtraSmall, Small, Medium, Large, ExtraLarge, False |
+| **InputType** | Text, Password, Email, Number, Telephone, Url |
+| **Placement** | Top, Bottom, Left, Right, TopStart, TopEnd, BottomStart, BottomEnd, Start, End |
+| **Breakpoint** | Xs, Sm, Md, Lg, Xl, Xxl, Always, None |
+| **Elevation** | int 0–25 |
+| **Spacing** | int 0–16 (×4px) |
+
+### Two-Way Binding
+
+| Binding | Components |
+|---------|------------|
+| `@bind-Value` | MudTextField, MudNumericField, MudSelect, MudAutocomplete, MudCheckBox, MudSwitch, MudSlider, MudRadioGroup, MudRating, MudDatePicker, MudTimePicker, MudColorPicker, MudPagination |
+| `@bind-Text` | MudTextField, MudAutocomplete |
+| `@bind-Checked` | MudCheckBox, MudSwitch, MudRadio |
+| `@bind-Selected` | MudTable, MudList, MudTreeView, MudTabs |
+| `@bind-Expanded` | MudExpansionPanels, MudNavGroup |
+| `@bind-Open` | MudDrawer |
+| `@bind-Date` | MudDatePicker |
+| `@bind-Time` | MudTimePicker |
+| `@bind-DateRange` | MudDateRangePicker |
+
+### ISnackbar
+
+```csharp
+@inject ISnackbar Snackbar
+
+Snackbar.Add("Saved", Severity.Success);
+Snackbar.Add("Error", Severity.Error, config => {
+    config.Action = "Retry";
+    config.ActionColor = Color.Primary;
+    config.Onclick = _ => Retry();
+    config.VisibleStateDuration = 5000;
+    config.ShowCloseIcon = true;
+});
+Snackbar.Clear();           // Remove all
+Snackbar.Remove(snackbar);  // Remove specific
+```
+
+### IDialogService
+
+```csharp
+@inject IDialogService DialogService
+
+var options = new DialogOptions {
+    CloseOnEscapeKey = true,
+    MaxWidth = MaxWidth.Small,
+    FullWidth = true,
+    Position = DialogPosition.Center,
+    BackdropClick = false,
+};
+var parameters = new DialogParameters { ["Model"] = model };
+var dialog = await DialogService.ShowAsync<MyDialog>("Title", parameters, options);
+var result = await dialog.Result;
+if (!result.Canceled && result.Data is MyData data) { /* handle */ }
+```
+
+Custom dialog component inherits `MudDialog` with `[CascadingParameter] MudDialogInstance MudDialog`, calls `MudDialog.Close(DialogResult.Ok(data))` or `MudDialog.Cancel()`.
