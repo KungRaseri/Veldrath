@@ -8,7 +8,6 @@
 @inject AuthStateCache AuthCache
 @inject ILogger<MainLayout> Logger
 @using Veldrath.Contracts.Editorial
-@using Veldrath.Contracts.Foundry
 
 <MudLayout>
     <MudAppBar Elevation="1">
@@ -32,10 +31,10 @@
             }
         </div>
     }
-    <MudMainContent Class="main-content">
+    <MudMainContent>
         @Body
     </MudMainContent>
-    <footer class="site-footer">
+    <footer>
         <p>&copy; Veldrath. All rights reserved.</p>
     </footer>
 </MudLayout>

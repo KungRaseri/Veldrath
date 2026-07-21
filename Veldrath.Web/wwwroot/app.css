@@ -298,13 +298,6 @@ a:hover {
 
 /* ── VDS layout utilities (supplement MudBlazor spacing/flex utilities) ─── */
 
-.main-content {
-  padding: 32px 40px;
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
-}
-
 .border-b-vds {
   border-bottom: 1px solid var(--vds-border);
 }

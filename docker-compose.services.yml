@@ -1,0 +1,158 @@
+﻿# Development docker-compose — HTTP only, no certs required.
+# appsettings.Development.json supplies the JWT key and log levels.
+# Only the database connection is overridden here to point at the Postgres container.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: veldrath
+      POSTGRES_USER: veldrath
+      POSTGRES_PASSWORD: veldrath_dev
+    ports:
+      - "5433:5432" # host:container — use 5433 to avoid conflicts with other local Postgres instances
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U veldrath" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: .
+      dockerfile: Veldrath.Server/Dockerfile
+    ports:
+      - "9000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      # Override DB to the Postgres container; everything else comes from appsettings.Development.json
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=veldrath;Username=veldrath;Password=veldrath_dev
+      - Database__Provider=postgres
+      # JWT signing key — set in .env, never hardcode here
+      - Jwt__Key=${JWT_KEY}
+      # OAuth provider credentials — set in .env, never hardcode here
+      - OAuth__Discord__ClientId=${OAUTH_DISCORD_CLIENT_ID}
+      - OAuth__Discord__ClientSecret=${OAUTH_DISCORD_CLIENT_SECRET}
+      - OAuth__Google__ClientId=${OAUTH_GOOGLE_CLIENT_ID}
+      - OAuth__Google__ClientSecret=${OAUTH_GOOGLE_CLIENT_SECRET}
+      - OAuth__Microsoft__ClientId=${OAUTH_MICROSOFT_CLIENT_ID}
+      - OAuth__Microsoft__ClientSecret=${OAUTH_MICROSOFT_CLIENT_SECRET}
+      # Email — configure an external SMTP provider (e.g. mxroute.com) via .env
+      - Email__SmtpHost=${EMAIL_SMTP_HOST:-}
+      - Email__SmtpPort=25
+      - Email__EnableTls=false
+      - Email__SenderAddress=noreply@veldrath.local
+      - Email__SenderName=Veldrath Dev
+      # Public base URLs for OAuth redirect validation and email links.
+      # Override these in .env when accessing via Tailscale or a custom hostname:
+      #   FOUNDRY_PUBLIC_URL=http://kung-gaming.tail3ff356.ts.net:8081
+      #   WEB_PUBLIC_URL=http://kung-gaming.tail3ff356.ts.net:8082
+      - Foundry__BaseUrl=${FOUNDRY_PUBLIC_URL:-http://localhost:8081}
+      - Web__BaseUrl=${WEB_PUBLIC_URL:-http://localhost:8082}
+      # Comma-separated list of additional hostnames/IPs accepted as valid OAuth return URLs.
+      # Override in .env to add Tailscale hostname and IP alongside localhost:
+      #   ALLOWED_RETURN_URL_HOSTS=kung-gaming.tail3ff356.ts.net,100.115.128.32
+      - AllowedReturnUrlHosts=${ALLOWED_RETURN_URL_HOSTS:-}
+      # Structured log shipping — relay to the local Seq container inside Docker
+      - Seq__ServerUrl=http://seq
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - dataprotection_keys:/root/.aspnet/DataProtection-Keys
+
+  discord:
+    build:
+      context: .
+      dockerfile: Veldrath.Discord/Dockerfile
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+      # Bot token — set via .env file or shell environment, never hardcoded here.
+      # Create a .env file at the repo root with: DISCORD_TOKEN=your_token_here
+      - Discord__Token=${DISCORD_TOKEN}
+      # Optional: set to your dev server ID for instant slash command registration.
+      # Leave as 0 (or unset) to register commands globally in production.
+      - Discord__DevGuildId=${DISCORD_DEV_GUILD_ID:-0}
+      # Use the Docker service name — "localhost" inside the container refers to itself, not the server.
+      - Discord__ServerBaseUrl=http://server:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=veldrath;Username=veldrath;Password=veldrath_dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      server:
+        condition: service_healthy
+    restart: unless-stopped
+
+  foundry:
+    build:
+      context: .
+      dockerfile: RealmFoundry/Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8081
+      # Internal URL for server-side HttpClient calls (container-to-container)
+      - Veldrath__ServerUrl=http://server:8080
+      # Public URL the browser navigates to for OAuth redirects.
+      # Override in .env when accessing via Tailscale (e.g. http://kung-gaming.tail3ff356.ts.net:9000)
+      - Veldrath__PublicServerUrl=${SERVER_PUBLIC_URL:-http://localhost:9000}
+    volumes:
+      - foundry_dataprotection_keys:/root/.aspnet/DataProtection-Keys
+    depends_on:
+      server:
+        condition: service_healthy
+
+  seq:
+    image: datalust/seq:latest
+    ports:
+      - "9001:80" # Web UI — http://localhost:9001
+    environment:
+      - ACCEPT_EULA=Y
+      # SEQ_FIRSTRUN_ADMINPASSWORD is read once (first run) to set the admin password.
+      # Set via .env — see .env.example for details.
+      - SEQ_FIRSTRUN_ADMINPASSWORD=${SEQ_ADMIN_PASSWORD}
+    volumes:
+      - seq_data:/data
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9003:9090" # Web UI — http://localhost:9003
+    volumes:
+      - prometheus_data:/prometheus
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      server:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:11.6.1
+    ports:
+      - "9002:3000" # Dashboard — http://localhost:9002
+    environment:
+      # GF_SECURITY_ADMIN_PASSWORD sets the Grafana admin password.
+      # Set via .env — see .env.example for details.
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+volumes:
+  postgres_data:
+  dataprotection_keys:
+  foundry_dataprotection_keys:
+  seq_data:
+  prometheus_data:
+  grafana_data:
