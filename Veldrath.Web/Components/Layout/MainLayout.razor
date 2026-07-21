@@ -34,8 +34,68 @@
     <MudMainContent>
         @Body
     </MudMainContent>
-    <footer>
-        <p>&copy; Veldrath. All rights reserved.</p>
+    <footer class="fat-footer">
+        <MudContainer MaxWidth="MaxWidth.Large">
+            <MudGrid Spacing="4">
+                @* Column 1: Branding *@
+                <MudItem xs="12" sm="6" md="4">
+                    <div class="fat-footer-brand">
+                        <MudImage Src="images/veldrath-final-horizontal-transparent.png" Height="40" Class="mud-mb-4" />
+                        <MudText Typo="Typo.body2" Class="fat-footer-description">
+                            A multiplayer RPG built on the RealmEngine framework. Explore, craft, fight, and build your legend in the world of Veldrath.
+                        </MudText>
+                    </div>
+                </MudItem>
+
+                @* Column 2: Quick Links *@
+                <MudItem xs="12" sm="6" md="2">
+                    <MudText Typo="Typo.subtitle1" Class="fat-footer-heading">Quick Links</MudText>
+                    <MudLink Href="/lore" Typo="Typo.body2" Class="fat-footer-link">World & Lore</MudLink>
+                    <MudLink Href="/patch-notes" Typo="Typo.body2" Class="fat-footer-link">Patch Notes</MudLink>
+                    <MudLink Href="/community" Typo="Typo.body2" Class="fat-footer-link">Community</MudLink>
+                    <MudLink Href="/login" Typo="Typo.body2" Class="fat-footer-link">Sign In</MudLink>
+                </MudItem>
+
+                @* Column 3: Resources *@
+                <MudItem xs="12" sm="6" md="3">
+                    <MudText Typo="Typo.subtitle1" Class="fat-footer-heading">Resources</MudText>
+                    <MudLink Href="https://kungraseri.github.io/RealmEngine/" Typo="Typo.body2" Class="fat-footer-link" Target="_blank">Documentation</MudLink>
+                    <MudLink Href="https://github.com/kungraseri/RealmEngine/wiki" Typo="Typo.body2" Class="fat-footer-link" Target="_blank">Wiki</MudLink>
+                    <MudLink Href="/support" Typo="Typo.body2" Class="fat-footer-link">Support</MudLink>
+                    <MudLink Href="/api" Typo="Typo.body2" Class="fat-footer-link">API Status</MudLink>
+                </MudItem>
+
+                @* Column 4: Community / Social *@
+                <MudItem xs="12" sm="6" md="3">
+                    <MudText Typo="Typo.subtitle1" Class="fat-footer-heading">Community</MudText>
+                    <div class="fat-footer-social">
+                        <MudLink Href="https://github.com/kungraseri/RealmEngine" Target="_blank" Class="fat-footer-social-link">
+                            <MudIcon Icon="@Icons.Material.Filled.Code" Size="Size.Small" Class="mud-mr-1" /> GitHub
+                        </MudLink>
+                        <MudLink Href="https://discord.gg/veldrath" Target="_blank" Class="fat-footer-social-link">
+                            <MudIcon Icon="@Icons.Material.Filled.QuestionAnswer" Size="Size.Small" Class="mud-mr-1" /> Discord
+                        </MudLink>
+                    </div>
+                    <MudText Typo="Typo.body2" Class="fat-footer-description mud-mt-3">
+                        Join our community to share feedback, report bugs, and connect with other players.
+                    </MudText>
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+
+        <MudDivider Class="fat-footer-divider" />
+        <MudContainer MaxWidth="MaxWidth.Large">
+            <div class="fat-footer-bottom">
+                <MudText Typo="Typo.caption" Class="fat-footer-copyright">
+                    &copy; @DateTime.Now.Year Veldrath. All rights reserved.
+                </MudText>
+                <div class="fat-footer-bottom-links">
+                    <MudLink Href="/privacy" Typo="Typo.caption" Class="fat-footer-link">Privacy Policy</MudLink>
+                    <MudLink Href="/terms" Typo="Typo.caption" Class="fat-footer-link">Terms of Service</MudLink>
+                    <MudLink Href="/contact" Typo="Typo.caption" Class="fat-footer-link">Contact</MudLink>
+                </div>
+            </div>
+        </MudContainer>
     </footer>
 </MudLayout>
 
