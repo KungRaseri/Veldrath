@@ -34,13 +34,13 @@
     <MudMainContent Class="flex-grow-1" Style="overflow-y: auto; min-height: 0">
         @Body
     </MudMainContent>
-    <footer class="fat-footer">
+    <footer class="fat-footer pt-10 pb-8 mt-auto">
         <MudContainer MaxWidth="MaxWidth.Large" class="mb-5">
             <MudGrid Spacing="4">
                 @* Column 1: Branding *@
                 <MudItem xs="12" sm="6" md="4">
-                    <div class="fat-footer-brand">
-                        <MudImage Src="images/veldrath-final-horizontal-transparent.png" Height="64" Class="mud-mb-4" />
+                    <div class="fat-footer-brand pr-4">
+                        <MudImage Src="images/veldrath-final-horizontal-transparent.png" Height="64" Class="mb-4" />
                         <MudText Typo="Typo.body2" Class="fat-footer-description">
                             A multiplayer RPG built on the RealmEngine framework. Explore, craft, fight, and build your
                             legend in the world of Veldrath.
@@ -50,7 +50,7 @@
 
                 @* Column 2: Quick Links *@
                 <MudItem xs="12" sm="6" md="2">
-                    <MudText Typo="Typo.subtitle1" Class="fat-footer-heading">Quick Links</MudText>
+                    <MudText Typo="Typo.subtitle1" Class="fat-footer-heading mb-3">Quick Links</MudText>
                     <MudLink Href="/lore" Typo="Typo.body2" Class="fat-footer-link">World & Lore</MudLink>
                     <MudLink Href="/patch-notes" Typo="Typo.body2" Class="fat-footer-link">Patch Notes</MudLink>
                     <MudLink Href="/community" Typo="Typo.body2" Class="fat-footer-link">Community</MudLink>
@@ -66,7 +66,7 @@
 
                 @* Column 3: Resources *@
                 <MudItem xs="12" sm="6" md="3">
-                    <MudText Typo="Typo.subtitle1" Class="fat-footer-heading">Resources</MudText>
+                    <MudText Typo="Typo.subtitle1" Class="fat-footer-heading mb-3">Resources</MudText>
                     <MudLink Href="https://kungraseri.github.io/RealmEngine/" Typo="Typo.body2" Class="fat-footer-link"
                              Target="_blank">Documentation</MudLink>
                     <MudLink Href="https://github.com/kungraseri/RealmEngine/wiki" Typo="Typo.body2"
@@ -77,14 +77,14 @@
 
                 @* Column 4: Community / Social *@
                 <MudItem xs="12" sm="6" md="3">
-                    <MudText Typo="Typo.subtitle1" Class="fat-footer-heading">Community</MudText>
-                    <div class="fat-footer-social">
+                    <MudText Typo="Typo.subtitle1" Class="fat-footer-heading mb-3">Community</MudText>
+                    <div class="fat-footer-social gap-2">
                         <MudLink Href="https://github.com/kungraseri/RealmEngine" Target="_blank"
                                  Class="fat-footer-social-link">
-                            <MudIcon Icon="@Icons.Material.Filled.Code" Size="Size.Small" Class="mud-mr-1" /> GitHub
+                            <MudIcon Icon="@Icons.Material.Filled.Code" Size="Size.Small" Class="mr-1" /> GitHub
                         </MudLink>
                         <MudLink Href="https://discord.gg/veldrath" Target="_blank" Class="fat-footer-social-link">
-                            <MudIcon Icon="@Icons.Material.Filled.QuestionAnswer" Size="Size.Small" Class="mud-mr-1" />
+                            <MudIcon Icon="@Icons.Material.Filled.QuestionAnswer" Size="Size.Small" Class="mr-1" />
                             Discord
                         </MudLink>
                     </div>
@@ -92,13 +92,13 @@
             </MudGrid>
         </MudContainer>
 
-        <MudDivider Class="fat-footer-divider" />
+        <MudDivider Class="fat-footer-divider mt-8 mb-5" />
         <MudContainer MaxWidth="MaxWidth.Large" class="mt-5">
-            <div class="fat-footer-bottom">
+            <div class="fat-footer-bottom gap-3">
                 <MudText Typo="Typo.caption" Class="fat-footer-copyright">
                     &copy; @DateTime.Now.Year Veldrath. All rights reserved.
                 </MudText>
-                <div class="fat-footer-bottom-links">
+                <div class="fat-footer-bottom-links gap-5">
                     <MudLink Href="/privacy" Typo="Typo.caption" Class="fat-footer-link">Privacy Policy</MudLink>
                     <MudLink Href="/terms" Typo="Typo.caption" Class="fat-footer-link">Terms of Service</MudLink>
                     <MudLink Href="/contact" Typo="Typo.caption" Class="fat-footer-link">Contact</MudLink>
