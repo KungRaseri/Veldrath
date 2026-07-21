@@ -24,6 +24,11 @@
   --vds-ember-dark: #943018;
   --vds-ember-muted: #361a10;
 
+  --vds-gold-light: #d4b96a;
+  --vds-gold: #c9a84c;
+  --vds-gold-dark: #a68a2e;
+  --vds-gold-muted: #3d3216;
+
   --vds-text: #f0ede8;
   --vds-text-muted: #a8a09a;
   --vds-text-subtle: #6e6860;
@@ -107,6 +112,13 @@ a:hover {
   text-decoration: underline;
 }
 
+/* ── Gold-accented nav link (overrides MudBlazor active indicator) ──────── */
+
+.mud-nav-link.gold-accent.active {
+  color: var(--vds-gold-light) !important;
+  border-color: var(--vds-gold) !important;
+}
+
 /* ── Header logo ─────────────────────────────────────────────────────────── */
 
 .header-logo {
@@ -114,6 +126,15 @@ a:hover {
   height: auto;
   object-fit: contain;
   vertical-align: middle;
+}
+
+/* ── Brand text (app bar) ───────────────────────────────────────────────── */
+
+.brand-text {
+  font-family: var(--vds-font-heading);
+  font-weight: 600;
+  margin-left: 12px;
+  color: var(--vds-seal-light);
 }
 
 /* ── Announcement bar ────────────────────────────────────────────────────── */
@@ -205,7 +226,54 @@ a:hover {
   color: var(--vds-danger);
 }
 
-/* ── Markdown / article content styling ──────────────────────────────────── */
+/* ── VDS text utility classes (§4.4 of docs/design-system.md) ───────────── */
+
+.text-hero {
+  font-family: var(--vds-font-display);
+  font-size: var(--vds-text-hero);
+  font-weight: 400;
+  color: var(--vds-text);
+}
+
+.text-title-large {
+  font-family: var(--vds-font-heading);
+  font-size: var(--vds-text-xl);
+  font-weight: 600;
+  color: var(--vds-text);
+}
+
+.text-title {
+  font-family: var(--vds-font-heading);
+  font-size: var(--vds-text-lg);
+  font-weight: 600;
+  color: var(--vds-text);
+}
+
+.text-subtitle {
+  font-size: var(--vds-text-md);
+  font-weight: 500;
+  color: var(--vds-text-muted);
+}
+
+.text-muted {
+  font-size: var(--vds-text-sm);
+  color: var(--vds-text-subtle);
+}
+
+.text-caption {
+  font-size: var(--vds-text-xs);
+  color: var(--vds-text-subtle);
+}
+
+.text-accent {
+  font-weight: 600;
+  color: var(--vds-seal-light);
+}
+
+.text-gold {
+  font-weight: 600;
+  color: var(--vds-gold-light);
+}
 
 .text-lore {
   font-family: var(--vds-font-reading);
@@ -218,3 +286,21 @@ a:hover {
   font-size: var(--vds-text-sm);
   color: var(--vds-text-muted);
 }
+
+.text-success {
+  color: var(--vds-success);
+}
+
+.text-danger {
+  color: var(--vds-danger);
+}
+
+.text-warning {
+  color: var(--vds-warning);
+}
+
+.text-info {
+  color: var(--vds-info);
+}
+
+/* ── Markdown / article content styling ──────────────────────────────────── */

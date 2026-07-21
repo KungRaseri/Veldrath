@@ -9,7 +9,7 @@
     <MudNavLink Href="/community" Match="NavLinkMatch.All">Community</MudNavLink>
     @if (AuthState.IsLoggedIn)
     {
-        <MudNavLink Href="/game/characterselect" Match="NavLinkMatch.Prefix">
+        <MudNavLink Href="/game/characterselect" Match="NavLinkMatch.Prefix" ActiveClass="gold-accent">
             <MudIcon Icon="@Icons.Material.Filled.SportsEsports" Size="Size.Small" Style="margin-right:4px" />
             Play
         </MudNavLink>
