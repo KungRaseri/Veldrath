@@ -37,27 +37,6 @@
   --vds-font-body: "Inter", system-ui, sans-serif;
   --vds-font-mono: "JetBrains Mono", "Cascadia Code", monospace;
 
-  --vds-text-xs: 11px;
-  --vds-text-sm: 12px;
-  --vds-text-base: 14px;
-  --vds-text-md: 16px;
-  --vds-text-lg: 20px;
-  --vds-text-xl: 28px;
-  --vds-text-hero: 40px;
-
-  --vds-radius-sm: 4px;
-  --vds-radius-md: 6px;
-  --vds-radius-lg: 8px;
-  --vds-radius-full: 9999px;
-
-  --vds-content-max: 1200px;
-  --vds-sidebar-w: 220px;
-  --vds-topbar-h: 48px;
-
-  --vds-bp-sm: 640px;
-  --vds-bp-md: 768px;
-  --vds-bp-lg: 1024px;
-  --vds-bp-xl: 1280px;
 }
 
 /* ── Body defaults ───────────────────────────────────────────────────────── */
@@ -114,7 +93,6 @@ a:hover {
 
 .fat-footer-heading {
   font-family: var(--vds-font-heading);
-  font-size: var(--vds-text-md);
   font-weight: 600;
   color: var(--mud-palette-secondary-lighten);
 }
@@ -160,7 +138,7 @@ a:hover {
 }
 ::-webkit-scrollbar-thumb {
   background: var(--mud-palette-gray-light);
-  border-radius: var(--vds-radius-full);
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--mud-palette-lines-inputs);
@@ -196,11 +174,6 @@ a:hover {
 
 /* ── VDS text utility classes (§4.4 of docs/design-system.md) ───────────── */
 
-.text-muted {
-  font-size: var(--vds-text-sm);
-  color: var(--vds-text-subtle);
-}
-
 .text-caption {
   color: var(--vds-text-subtle);
 }
@@ -219,12 +192,6 @@ a:hover {
   font-family: var(--vds-font-reading);
   line-height: 1.7;
   color: var(--mud-palette-text-primary);
-}
-
-.text-mono {
-  font-family: var(--vds-font-mono);
-  font-size: var(--vds-text-sm);
-  color: var(--mud-palette-text-secondary);
 }
 
 .text-success {
