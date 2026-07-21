@@ -263,32 +263,6 @@ a:hover {
   top: 0.5rem;
 }
 
-/* ── Chip badges (replaces MudChip) ────────────────────────────────────────── */
-
-.chip {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1.4;
-}
-
-.chip-success {
-  background: var(--vds-success-muted);
-  color: var(--vds-success);
-}
-
-.chip-warning {
-  background: #fff8e1;
-  color: #7a5a00;
-}
-
-.chip-error {
-  background: var(--vds-danger-muted);
-  color: var(--vds-danger);
-}
-
 /* ── VDS text utility classes (§4.4 of docs/design-system.md) ───────────── */
 
 .text-hero {
