@@ -182,19 +182,19 @@ a:hover {
 
 /* ── OAuth provider buttons ────────────────────────────────────────────── */
 
-.btn-oauth-discord {
-  background-color: var(--vds-oauth-discord);
-  color: #fff;
+.mud-button-filled.btn-oauth-discord {
+  background-color: var(--vds-oauth-discord) !important;
+  color: #fff !important;
 }
 
-.btn-oauth-google {
-  background-color: var(--vds-oauth-google);
-  color: #fff;
+.mud-button-filled.btn-oauth-google {
+  background-color: var(--vds-oauth-google) !important;
+  color: #fff !important;
 }
 
-.btn-oauth-microsoft {
-  background-color: var(--vds-oauth-microsoft);
-  color: #fff;
+.mud-button-filled.btn-oauth-microsoft {
+  background-color: var(--vds-oauth-microsoft) !important;
+  color: #fff !important;
 }
 
 /* ── OAuth divider ("or continue with") ────────────────────────────────── */
