@@ -56,24 +56,6 @@ a:hover {
   text-decoration: underline;
 }
 
-/* ── Header logo ─────────────────────────────────────────────────────────── */
-
-.header-logo {
-  max-height: 36px;
-  height: auto;
-  object-fit: contain;
-  vertical-align: middle;
-}
-
-/* ── Brand text (app bar) ───────────────────────────────────────────────── */
-
-.brand-text {
-  font-family: var(--vds-font-heading);
-  font-weight: 600;
-  margin-left: 12px;
-  color: var(--mud-palette-primary-lighten);
-}
-
 /* ── Announcement bar ────────────────────────────────────────────────────── */
 
 .announcement-bar {
@@ -86,9 +68,6 @@ a:hover {
 .fat-footer {
   background: var(--mud-palette-surface);
   border-top: 1px solid var(--mud-palette-lines-default);
-}
-
-.fat-footer-brand {
 }
 
 .fat-footer-heading {
@@ -108,16 +87,6 @@ a:hover {
 }
 
 .fat-footer-link:hover {
-  color: var(--mud-palette-primary-lighten);
-  text-decoration: none;
-}
-
-.fat-footer-social-link {
-  color: var(--mud-palette-text-secondary);
-  transition: color 0.15s ease;
-}
-
-.fat-footer-social-link:hover {
   color: var(--mud-palette-primary-lighten);
   text-decoration: none;
 }
@@ -172,42 +141,12 @@ a:hover {
   top: 0.5rem;
 }
 
-/* ── VDS text utility classes (§4.4 of docs/design-system.md) ───────────── */
-
-.text-caption {
-  color: var(--vds-text-subtle);
-}
-
-.text-accent {
-  font-weight: 600;
-  color: var(--mud-palette-primary-lighten);
-}
-
-.text-gold {
-  font-weight: 600;
-  color: var(--mud-palette-secondary-lighten);
-}
+/* ── VDS text utilities ── */
 
 .text-lore {
   font-family: var(--vds-font-reading);
   line-height: 1.7;
   color: var(--mud-palette-text-primary);
-}
-
-.text-success {
-  color: var(--mud-palette-success);
-}
-
-.text-danger {
-  color: var(--mud-palette-error);
-}
-
-.text-warning {
-  color: var(--mud-palette-warning);
-}
-
-.text-info {
-  color: var(--mud-palette-info);
 }
 
 /* ── VDS layout utilities (supplement MudBlazor spacing/flex utilities) ─── */
