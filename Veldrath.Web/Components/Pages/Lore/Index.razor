@@ -5,10 +5,10 @@
 
 <PageTitle>World Lore — Veldrath</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Large" Style="margin-top:32px">
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
     <MudText Typo="Typo.h4" GutterBottom="true">World Lore</MudText>
 
-    <MudSelect @bind-Value="_category" Label="Category" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4" Style="max-width:280px">
+    <MudSelect @bind-Value="_category" Label="Category" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4 select-narrow">
         <MudSelectItem Value="@((string?)null)">All Categories</MudSelectItem>
         <MudSelectItem Value="@("History")">History</MudSelectItem>
         <MudSelectItem Value="@("Factions")">Factions</MudSelectItem>

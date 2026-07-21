@@ -6,7 +6,7 @@
 
 <PageTitle>@(_note?.Title ?? "Patch Note") — Veldrath</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Large" Style="margin-top:32px">
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
     @if (_loading)
     {
         <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="my-8 d-flex justify-center" />

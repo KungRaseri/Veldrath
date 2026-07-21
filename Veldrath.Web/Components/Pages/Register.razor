@@ -7,7 +7,7 @@
 
 <PageTitle>Create Account — Veldrath</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraSmall" Style="margin-top:64px">
+<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mt-16">
     <MudPaper Class="pa-8" Outlined="true">
         <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true">Create an Account</MudText>
 
@@ -70,28 +70,28 @@
                 Already have an account? <MudLink Href="/login">Sign in</MudLink>
             </MudText>
 
-            <div class="my-4" style="display:flex;align-items:center;gap:.75rem;color:var(--vds-text-muted);font-size:.85rem">
-                <span style="flex:1;border-top:1px solid var(--vds-border)"></span>
+            <div class="my-4 oauth-divider">
+                <span class="oauth-divider-line"></span>
                 <span>or register with</span>
-                <span style="flex:1;border-top:1px solid var(--vds-border)"></span>
+                <span class="oauth-divider-line"></span>
             </div>
 
             <MudStack Spacing="2">
                 <MudButton Href="@_discordUrl"
                             Variant="Variant.Filled"
-                            Style="background-color:#5865f2;color:#fff"
+                            Class="btn-oauth-discord"
                             FullWidth="true">
                     Register with Discord
                 </MudButton>
                 <MudButton Href="@_googleUrl"
                             Variant="Variant.Filled"
-                            Style="background-color:#4285f4;color:#fff"
+                            Class="btn-oauth-google"
                             FullWidth="true">
                     Register with Google
                 </MudButton>
                 <MudButton Href="@_msUrl"
                             Variant="Variant.Filled"
-                            Style="background-color:#0078d4;color:#fff"
+                            Class="btn-oauth-microsoft"
                             FullWidth="true">
                     Register with Microsoft
                 </MudButton>

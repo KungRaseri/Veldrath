@@ -307,3 +307,67 @@ if (!result.Canceled && result.Data is MyData data) { /* handle */ }
 ```
 
 Custom dialog component inherits `MudDialog` with `[CascadingParameter] MudDialogInstance MudDialog`, calls `MudDialog.Close(DialogResult.Ok(data))` or `MudDialog.Cancel()`.
+
+## VDS (Veldrath Design System) CSS Utilities
+
+Custom CSS classes from `Veldrath.Web/wwwroot/app.css` that supplement MudBlazor. See `docs/design-system.md` for the full specification.
+
+### Typography Text Classes
+
+| Class | Font | Size | Weight | Color |
+|-------|------|------|--------|-------|
+| `.text-hero` | Cinzel Decorative | 40px | 400 | `--vds-text` |
+| `.text-title-large` | Cinzel | 28px | 600 | `--vds-text` |
+| `.text-title` | Cinzel | 20px | 600 | `--vds-text` |
+| `.text-subtitle` | Inter | 16px | 500 | `--vds-text-muted` |
+| `.text-muted` | Inter | 12px | — | `--vds-text-subtle` |
+| `.text-caption` | Inter | 11px | — | `--vds-text-subtle` |
+| `.text-accent` | Inter | — | 600 | `--vds-seal-light` |
+| `.text-gold` | Inter | — | 600 | `--vds-gold-light` |
+| `.text-lore` | Lora | 14px | — | `--vds-text` |
+| `.text-mono` | JetBrains Mono | 12px | — | `--vds-text-muted` |
+| `.text-success` / `.text-danger` / `.text-warning` / `.text-info` | Inter | — | — | Semantic color |
+
+### Brand & Layout
+
+| Class | Purpose |
+|-------|---------|
+| `.brand-text` | App bar brand name — Cinzel, Seal Light, 600 weight |
+| `.main-content` | Centers content: `max-width:1200px`, `margin:0 auto`, `padding:32px 40px` |
+| `.header-logo` | Logo image: `max-height:36px`, `object-fit:contain` |
+| `.announcement-bar` | Top banner: `--vds-bg-2` background, bottom border |
+| `.site-footer` | Page footer: `--vds-bg-1` bg, centered muted text |
+
+### Borders & Surfaces
+
+| Class | Purpose |
+|-------|---------|
+| `.border-b-vds` | Bottom border using `--vds-border` |
+| `.paper-danger` | Danger-tinted surface: `--vds-danger-muted` bg + danger border |
+| `.paper-code` | Code block surface: `--vds-bg-3` bg + border, scrollable |
+| `.stack-trace` | Monospace pre block for exception traces |
+
+### Sizing Helpers
+
+| Class | Purpose |
+|-------|---------|
+| `.icon-3x` | 3rem icon (larger than `Size.Large`) |
+| `.select-narrow` | `max-width:280px` for narrow selects |
+
+### MudBlazor → VDS Class Mapping
+
+Prefer MudBlazor utilities; use VDS classes only when MudBlazor has no equivalent:
+
+| MudBlazor class | Effect | VDS class (when MudBlazor can't do it) |
+|-----------------|--------|----------------------------------------|
+| `mt-8`, `mt-16` | Margin top 32px / 64px | — |
+| `flex-1` | Flex grow | — |
+| `rounded-0` | No border radius | — |
+| `ma-0` | No margin | — |
+| `pa-6`, `pa-8` | Padding 24px / 32px | — |
+| `d-flex justify-center` | Centered flex | — |
+| `px-2`, `py-2` | Horizontal/vertical padding 8px | — |
+| — | Bottom border with VDS color | `.border-b-vds` |
+| — | Danger-tinted background | `.paper-danger` |
+| — | Brand heading font | `.text-title` |
+| — | Lore body font | `.text-lore` |

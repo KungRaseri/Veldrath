@@ -23,7 +23,7 @@
             {
                 @if (!_dismissed.Contains(a.Id))
                 {
-                    <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Style="border-radius:0;margin:0">
+                    <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Class="rounded-0 ma-0">
                         <strong>@a.Title</strong> — @a.Body
                         <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="() => Dismiss(a.Id)"
                                        aria-label="Dismiss" />
@@ -32,7 +32,7 @@
             }
         </div>
     }
-    <MudMainContent Style="padding:32px 40px;max-width:1200px;margin:0 auto;width:100%">
+    <MudMainContent Class="main-content">
         @Body
     </MudMainContent>
     <footer class="site-footer">
