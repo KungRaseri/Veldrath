@@ -2,12 +2,12 @@
 @inject AuthStateService AuthState
 @inject NavigationManager Nav
 
-<footer class="fat-footer pt-10 pb-8 mt-auto">
-    <MudContainer MaxWidth="MaxWidth.Large" class="mb-5">
+<footer class="fat-footer py-5 mt-10">
+    <MudContainer MaxWidth="MaxWidth.Large" Class="pa-5">
         <MudGrid Spacing="4">
             @* Column 1: Branding *@
             <MudItem xs="12" sm="6" md="4">
-                <div class="pr-4">
+                <div>
                     <MudImage Src="images/veldrath-final-horizontal-transparent.png" Height="64" Class="mb-4" />
                     <MudText Typo="Typo.body2" Class="fat-footer-description">
                         A multiplayer RPG built on the RealmEngine framework. Explore, craft, fight, and build your
@@ -50,11 +50,11 @@
                 <div class="d-flex flex-column gap-2">
                     <MudLink Href="https://github.com/kungraseri/RealmEngine" Target="_blank"
                              Class="fat-footer-link d-inline-flex align-center">
-                        <MudIcon Icon="@Icons.Material.Filled.Code" Size="Size.Small" Class="mr-1" /> GitHub
+                        <MudIcon Icon="@Icons.Custom.Brands.GitHub" Size="Size.Small" Class="mr-1" /> GitHub
                     </MudLink>
                     <MudLink Href="https://discord.gg/veldrath" Target="_blank"
                              Class="fat-footer-link d-inline-flex align-center">
-                        <MudIcon Icon="@Icons.Material.Filled.QuestionAnswer" Size="Size.Small" Class="mr-1" />
+                        <MudIcon Icon="@Icons.Custom.Brands.Discord" Size="Size.Small" Class="mr-1" />
                         Discord
                     </MudLink>
                 </div>
@@ -62,8 +62,8 @@
         </MudGrid>
     </MudContainer>
 
-    <MudDivider Class="mt-8 mb-5" />
-    <MudContainer MaxWidth="MaxWidth.Large" class="mt-5">
+    <MudDivider Class="py-5" />
+    <MudContainer MaxWidth="MaxWidth.Large" Class="pa-5">
         <div class="d-flex flex-wrap justify-space-between align-center gap-3">
             <MudText Typo="Typo.caption" Class="fat-footer-copyright">
                 &copy; @DateTime.Now.Year Veldrath. All rights reserved.
