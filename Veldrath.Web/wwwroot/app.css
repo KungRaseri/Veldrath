@@ -69,17 +69,6 @@
   --vds-text-xl: 28px;
   --vds-text-hero: 40px;
 
-  --vds-space-1: 4px;
-  --vds-space-2: 8px;
-  --vds-space-3: 12px;
-  --vds-space-4: 16px;
-  --vds-space-5: 20px;
-  --vds-space-6: 24px;
-  --vds-space-8: 32px;
-  --vds-space-10: 40px;
-  --vds-space-12: 48px;
-  --vds-space-16: 64px;
-
   --vds-radius-sm: 4px;
   --vds-radius-md: 6px;
   --vds-radius-lg: 8px;
@@ -142,13 +131,9 @@ a:hover {
 .fat-footer {
   background: var(--vds-bg-1);
   border-top: 1px solid var(--vds-border);
-  padding-top: var(--vds-space-10);
-  padding-bottom: var(--vds-space-8);
-  margin-top: auto;
 }
 
 .fat-footer-brand {
-  padding-right: var(--vds-space-4);
 }
 
 .fat-footer-heading {
@@ -156,7 +141,6 @@ a:hover {
   font-size: var(--vds-text-md);
   font-weight: 600;
   color: var(--vds-gold-light);
-  margin-bottom: var(--vds-space-3);
 }
 
 .fat-footer-description {
@@ -179,7 +163,6 @@ a:hover {
 .fat-footer-social {
   display: flex;
   flex-direction: column;
-  gap: var(--vds-space-2);
 }
 
 .fat-footer-social-link {
@@ -195,8 +178,6 @@ a:hover {
 }
 
 .fat-footer-divider {
-  margin-top: var(--vds-space-8);
-  margin-bottom: var(--vds-space-5);
   border-color: var(--vds-border);
 }
 
@@ -205,7 +186,6 @@ a:hover {
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: var(--vds-space-3);
 }
 
 .fat-footer-copyright {
@@ -214,7 +194,6 @@ a:hover {
 
 .fat-footer-bottom-links {
   display: flex;
-  gap: var(--vds-space-5);
 }
 
 /* ── MudBlazor dark-theme overrides ──────────────────────────────────────── */

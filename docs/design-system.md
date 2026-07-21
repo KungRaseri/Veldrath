@@ -374,6 +374,19 @@ All spacing values are multiples of **4px**. Never use values that are not on th
 | `radius-lg` | 8px | `--vds-radius-lg` | `CornerRadius="8"` | Dialogs, modals, feature cards |
 | `radius-full` | 9999px | `--vds-radius-full` | `CornerRadius="9999"` | Pills, badge corners |
 
+### 5.5 Spacing Delegation to MudBlazor
+
+Margins, padding, and gap should be applied via MudBlazor CSS utility classes (`mt-{n}`, `pb-{n}`, `gap-{n}`, etc.) in Razor markup rather than embedded in VDS custom CSS classes.
+
+**Status:** The `--vds-space-*` CSS custom properties have been removed from [`Veldrath.Web/wwwroot/app.css`](../Veldrath.Web/wwwroot/app.css) — web spacing is now handled entirely by MudBlazor utilities. The spacing scale table in [§5.1](#51-base-unit) remains the canonical reference for the design system and is still used by:
+
+- [`Veldrath.GameClient.Components/wwwroot/css/tokens.css`](../Veldrath.GameClient.Components/wwwroot/css/tokens.css) — game UI components (loaded alongside `game.css`)
+- [`RealmFoundry/wwwroot/app.css`](../RealmFoundry/wwwroot/app.css) — community content portal
+
+Avalonia surfaces (Veldrath.Client, RealmForge) use platform-specific numeric values derived from the same scale (see [§5.1](#51-base-unit)).
+
+**Rule:** If a CSS property in `app.css` references a `--vds-space-*` token for margin, padding, or gap, extract it to a MudBlazor utility class in the Razor markup instead.
+
 ---
 
 ## 6. Iconography
