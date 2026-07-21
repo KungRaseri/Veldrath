@@ -65,6 +65,10 @@ public abstract class AuthStateServiceBase(IVeldrathAuthApiClient api) : Authent
     /// <summary>Gets the raw access token held in circuit memory, or <see langword="null"/> if not authenticated.</summary>
     public string? AccessToken => _accessToken;
 
+    /// <summary>Gets the current refresh token, or <see langword="null"/> if not authenticated.
+    /// Exposed for the <see cref="AuthDelegatingHandler"/> to perform reactive token renewal on 401 responses.</summary>
+    public string? RefreshToken => _refreshToken;
+
     /// <summary>
     /// Stores tokens and user info from an <see cref="AuthResponse"/> in circuit memory
     /// and propagates the bearer token to the API client.

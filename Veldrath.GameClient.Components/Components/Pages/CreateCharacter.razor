@@ -598,6 +598,9 @@
 
         try
         {
+            // Ensure the JWT is fresh before making API calls.
+            await Auth.TryRefreshAsync();
+
             // M5: Parallelize content loading with Task.WhenAll
             var classesTask = Api.GetClassesAsync();
             var speciesTask = Api.GetSpeciesAsync();
@@ -807,6 +810,7 @@
         {
             try
             {
+                await Auth.TryRefreshAsync();
                 await Api.SetCreationClassAsync(_sessionId.Value, cls.DisplayName);
             }
             catch (Exception ex)
@@ -827,6 +831,7 @@
         {
             try
             {
+                await Auth.TryRefreshAsync();
                 await Api.SetCreationSpeciesAsync(_sessionId.Value, species.Slug);
             }
             catch (Exception ex)
@@ -847,6 +852,7 @@
         {
             try
             {
+                await Auth.TryRefreshAsync();
                 await Api.SetCreationBackgroundAsync(_sessionId.Value, background.Slug);
             }
             catch (Exception ex)
@@ -878,6 +884,7 @@
         {
             try
             {
+                await Auth.TryRefreshAsync();
                 var result = await Api.SetCreationNameAsync(_sessionId.Value, trimmedName);
                 if (result is not { Success: true })
                 {
@@ -908,6 +915,7 @@
             _isSavingEquipment = true;
             try
             {
+                await Auth.TryRefreshAsync();
                 var armorSlug = string.IsNullOrEmpty(_selectedArmorType) ? null : _selectedArmorType;
                 var weaponSlug = string.IsNullOrEmpty(_selectedWeaponType) ? null : _selectedWeaponType;
                 await Api.SetCreationEquipmentPreferencesAsync(_sessionId.Value, armorSlug, weaponSlug, _includeShield);
@@ -940,6 +948,7 @@
 
         try
         {
+            await Auth.TryRefreshAsync();
             _characterPreview = await Api.GetCreationPreviewAsync(_sessionId.Value);
         }
         catch (Exception ex)
@@ -1010,6 +1019,7 @@
         _isSavingAttributes = true;
         try
         {
+            await Auth.TryRefreshAsync();
             await Api.SetCreationAttributesAsync(_sessionId.Value, new Dictionary<string, int>(_statAllocations));
         }
         catch (Exception ex)
@@ -1060,6 +1070,9 @@
 
         try
         {
+            // Ensure the JWT is fresh before the server check.
+            await Auth.TryRefreshAsync();
+
             // C6: 400 ms debounce before server check, matching desktop behavior
             await Task.Delay(400, ct);
             if (ct.IsCancellationRequested)
@@ -1090,6 +1103,12 @@
         catch (TaskCanceledException)
         {
             // Debounced — a newer keystroke cancelled this check
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode is not null && (int)ex.StatusCode == 401)
+        {
+            Logger.LogWarning(ex, "Session expired while checking character name availability.");
+            _nameError = "Your session has expired. Please refresh the page.";
+            _stepError = "Session expired — please refresh the page";
         }
         catch (HttpRequestException ex)
         {
@@ -1130,6 +1149,9 @@
                 _stepError = "No active creation session. Please restart the wizard.";
                 return;
             }
+
+            // Ensure the JWT is fresh before the final creation call.
+            await Auth.TryRefreshAsync();
 
             // C3+M8: Pass null for CharacterName — the server reads it from session state
             // (set earlier via SetCreationNameAsync in GoToStep2Async).
