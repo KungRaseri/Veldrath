@@ -6,29 +6,29 @@
 
 <PageTitle>@(_article?.Title ?? "Lore") — Veldrath</PageTitle>
 
-@if (_loading)
-{
-    <p>Loading…</p>
-}
-else if (_article is null)
-{
-    <h1>Not Found</h1>
-    <p>That article doesn't exist or hasn't been published yet.</p>
-    <a href="/lore">← Back to Lore</a>
-}
-else
-{
-    <article class="editorial-article">
-        <header class="article-header">
-            <a class="back-link" href="/lore">← World Lore</a>
-            <div class="lore-category">@_article.Category</div>
-            <h1>@_article.Title</h1>
-        </header>
-        <div class="article-body markdown-content">
-            @((MarkupString)_html)
-        </div>
-    </article>
-}
+<MudContainer MaxWidth="MaxWidth.Large" Style="margin-top:32px">
+    @if (_loading)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="my-8 d-flex justify-center" />
+    }
+    else if (_article is null)
+    {
+        <MudText Typo="Typo.h4" GutterBottom="true">Not Found</MudText>
+        <MudText Class="mb-4">That article doesn't exist or hasn't been published yet.</MudText>
+        <MudLink Href="/lore">← Back to Lore</MudLink>
+    }
+    else
+    {
+        <MudLink Href="/lore" Typo="Typo.body2" Class="mb-2 d-block">← World Lore</MudLink>
+        <MudChip T="string" Color="Color.Primary" Size="Size.Small" Class="mb-2">@_article.Category</MudChip>
+        <MudText Typo="Typo.h3" GutterBottom="true">@_article.Title</MudText>
+        <MudPaper Class="pa-6" Outlined="true">
+            <div class="markdown-content text-lore">
+                @((MarkupString)_html)
+            </div>
+        </MudPaper>
+    }
+</MudContainer>
 
 @code {
     [Parameter] public string Slug { get; set; } = "";

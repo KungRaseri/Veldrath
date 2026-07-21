@@ -155,6 +155,30 @@
             "stopAtEntry": false
         },
         {
+            "name": "Veldrath Web (Watch)",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "dotnet",
+            "args": [
+                "watch",
+                "run",
+                "--project",
+                "${workspaceFolder}/Veldrath.Web/Veldrath.Web.csproj",
+                "--non-interactive"
+            ],
+            "cwd": "${workspaceFolder}/Veldrath.Web",
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "DOTNET_WATCH_RESTART_ON_RUDE_EDIT": "true"
+            },
+            "console": "integratedTerminal",
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "Now listening on: (https?://\\S+)"
+            },
+            "stopAtEntry": false
+        },
+        {
             "name": "Test: Veldrath.Server.Tests",
             "type": "coreclr",
             "request": "launch",

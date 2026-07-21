@@ -29,7 +29,7 @@
                 <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
             }
 
-            <EditForm OnValidSubmit="DoRegisterAsync">
+            <EditForm Model="this" OnValidSubmit="DoRegisterAsync">
                 <MudTextField @bind-Value="_email"
                                Label="Email"
                                InputType="InputType.Email"

@@ -126,11 +126,11 @@ else
                         <MudText>@(_profile.Email ?? "—")</MudText>
                         @if (_profile.EmailConfirmed)
                         {
-                            <span class="chip chip-success">Confirmed</span>
+                            <MudChip T="string" Color="Color.Success" Size="Size.Small">Confirmed</MudChip>
                         }
                         else
                         {
-                            <span class="chip chip-warning">Unconfirmed</span>
+                            <MudChip T="string" Color="Color.Warning" Size="Size.Small">Unconfirmed</MudChip>
                             <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="ResendConfirmationAsync" Disabled="@_saving">Resend confirmation</MudButton>
                         }
                     </MudStack>
@@ -191,7 +191,7 @@ else
                     <MudText Style="min-width:100px">@row.Label</MudText>
                     @if (linked is not null)
                     {
-                        <span class="chip chip-success">Linked @(linked.LinkedAt?.ToLocalTime().ToString("d") ?? "–")</span>
+                        <MudChip T="string" Color="Color.Success" Size="Size.Small">Linked @(linked.LinkedAt?.ToLocalTime().ToString("d") ?? "–")</MudChip>
                         <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small"
                                     OnClick="() => UnlinkAsync(row.Name, linked.ProviderKey)"
                                     Disabled="@_saving">
@@ -227,7 +227,7 @@ else
                     </MudStack>
                     @if (s.IsCurrent)
                     {
-                        <span class="chip chip-success">Current</span>
+                        <MudChip T="string" Color="Color.Success" Size="Size.Small">Current</MudChip>
                     }
                     else
                     {
