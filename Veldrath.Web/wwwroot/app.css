@@ -296,4 +296,84 @@ a:hover {
   color: var(--vds-info);
 }
 
+/* ── VDS layout utilities (supplement MudBlazor spacing/flex utilities) ─── */
+
+.main-content {
+  padding: 32px 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.border-b-vds {
+  border-bottom: 1px solid var(--vds-border);
+}
+
+.paper-danger {
+  background-color: var(--vds-danger-muted);
+  border: 1px solid var(--vds-danger);
+}
+
+.paper-code {
+  background: var(--vds-bg-3);
+  border: 1px solid var(--vds-border);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.stack-trace {
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 0.78rem;
+  margin: 0;
+  line-height: 1.4;
+  font-family: var(--vds-font-mono);
+}
+
+.icon-3x {
+  font-size: 3rem;
+}
+
+.select-narrow {
+  max-width: 280px;
+}
+
+/* ── OAuth provider buttons ────────────────────────────────────────────── */
+
+.btn-oauth-discord {
+  background-color: var(--vds-oauth-discord);
+  color: #fff;
+}
+
+.btn-oauth-google {
+  background-color: var(--vds-oauth-google);
+  color: #fff;
+}
+
+.btn-oauth-microsoft {
+  background-color: var(--vds-oauth-microsoft);
+  color: #fff;
+}
+
+/* ── OAuth divider ("or continue with") ────────────────────────────────── */
+
+.oauth-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--vds-text-muted);
+  font-size: 0.85rem;
+}
+
+.oauth-divider-line {
+  flex: 1;
+  border-top: 1px solid var(--vds-border);
+}
+
+/* ── Sizing helpers ────────────────────────────────────────────────────── */
+
+.min-w-100 {
+  min-width: 100px;
+}
+
 /* ── Markdown / article content styling ──────────────────────────────────── */

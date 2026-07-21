@@ -5,9 +5,9 @@
 
 <PageTitle>Error — Veldrath</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Medium" Style="margin-top:64px">
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-16">
     <MudPaper Class="pa-8" Outlined="true">
-        <MudIcon Icon="@Icons.Material.Filled.WarningAmber" Color="Color.Error" Size="Size.Large" Class="mb-2" Style="font-size:3rem" />
+        <MudIcon Icon="@Icons.Material.Filled.WarningAmber" Color="Color.Error" Size="Size.Large" Class="mb-2 icon-3x" />
 
         @if (IsDevelopment)
         {
@@ -18,7 +18,7 @@
 
             @if (Exception is not null)
             {
-                <MudPaper Class="pa-4 mb-4" Style="background-color:var(--vds-danger-muted);border:1px solid var(--vds-danger)">
+                <MudPaper Class="pa-4 mb-4 paper-danger">
                     <MudText Typo="Typo.h6" GutterBottom="true">Exception Details</MudText>
                     <MudText><strong>Type:</strong> <code>@Exception.GetType().FullName</code></MudText>
                     <MudText><strong>Message:</strong> @Exception.Message</MudText>
@@ -26,8 +26,8 @@
                     {
                         <MudText><strong>Original Path:</strong> <code>@OriginalPath@OriginalQueryString</code></MudText>
                     }
-                    <MudPaper Class="pa-3 mt-3" Style="background:var(--vds-bg-3);border:1px solid var(--vds-border);max-height:300px;overflow-y:auto">
-                        <pre style="white-space:pre-wrap;word-break:break-all;font-size:.78rem;margin:0;line-height:1.4">@Exception.StackTrace</pre>
+                    <MudPaper Class="pa-3 mt-3 paper-code">
+                        <pre class="stack-trace">@Exception.StackTrace</pre>
                     </MudPaper>
                 </MudPaper>
             }
