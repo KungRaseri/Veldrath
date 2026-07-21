@@ -31,6 +31,9 @@ This repository also contains the **official game built on top of that engine**:
 
 - **RealmForge** — Avalonia DB content editor for managing game entities in Postgres
 - **RealmFoundry** — Blazor Server web app for community content submission and curation
+- **Veldrath.Web** — Blazor Server (InteractiveServer) public website and game portal; uses MudBlazor for UI
+- **Veldrath.GameClient.Core** — Shared client-side game logic library (connection state, payloads, hub services)
+- **Veldrath.GameClient.Components** — Shared Razor Class Library with reusable Blazor UI components
 - **Veldrath.Discord** — Discord bot integration
 - **Veldrath.Auth** — Shared authentication libraries (OAuth, JWT)
 - **Veldrath.Contracts** — Shared API contracts and DTOs
@@ -46,35 +49,44 @@ This repository also contains the **official game built on top of that engine**:
 | Solution | Contains | Use For |
 |----------|----------|---------|
 | [`RealmEngine.slnx`](RealmEngine.slnx) | Core + Data + Shared + tests | Engine-only development, CI |
-| [`Veldrath.slnx`](Veldrath.slnx) | Client + Server + tests | Multiplayer development |
+| [`Veldrath.slnx`](Veldrath.slnx) | Client + Server + GameClient.* + tests | Multiplayer development |
 | [`RealmForge.slnx`](RealmForge.slnx) | RealmForge + tests | Tooling development |
-| [`RealmFoundry.slnx`](RealmFoundry.slnx) | RealmFoundry + Server + tests | Community portal development |
+| [`RealmFoundry.slnx`](RealmFoundry.slnx) | RealmFoundry + tests | Community portal development |
 | [`Realm.Full.slnx`](Realm.Full.slnx) | Everything | Full-stack local development |
 
 ### Directory Layout
 
 ```
 .
-├── RealmEngine.Core/          # Game logic, MediatR handlers (zero UI dependencies)
-├── RealmEngine.Shared/        # Models, interfaces, abstractions (zero UI dependencies)
-├── RealmEngine.Data/          # EF Core persistence, repositories (zero UI dependencies)
-├── Veldrath.Server/           # ASP.NET Core game server with SignalR hub
-├── Veldrath.Client/           # Avalonia cross-platform desktop client (ReactiveUI)
-├── RealmForge/                # Avalonia DB content editor (ReactiveUI)
-├── RealmFoundry/              # Blazor Server community content portal
-├── Veldrath.Discord/          # Discord bot
-├── Veldrath.Auth/             # Auth libraries (OAuth, JWT, Blazor auth state)
-├── Veldrath.Contracts/        # Shared API contracts and DTOs
-├── Veldrath.Assets/           # Asset store/management
-├── RealmUI.Fonts/             # Custom fonts
-├── [Project].Tests/           # One test project per library/application
+├── RealmEngine.Core/             # Game logic, MediatR handlers (zero UI dependencies)
+├── RealmEngine.Shared/           # Models, interfaces, abstractions (zero UI dependencies)
+├── RealmEngine.Data/             # EF Core persistence, repositories (zero UI dependencies)
+├── Veldrath.Server/              # ASP.NET Core game server with SignalR hub
+├── Veldrath.Client/              # Avalonia cross-platform desktop client (ReactiveUI)
+├── Veldrath.Web/                 # Blazor Server (InteractiveServer) public website with MudBlazor
+├── Veldrath.GameClient.Core/     # Shared client-side logic: connection state, payloads, hub services
+├── Veldrath.GameClient.Components/ # Razor Class Library: reusable Blazor UI components
+├── RealmForge/                   # Avalonia DB content editor (ReactiveUI)
+├── RealmFoundry/                 # Blazor Server community content portal
+├── Veldrath.Discord/             # Discord bot
+├── Veldrath.Auth/                # Auth libraries (OAuth, JWT, Blazor auth state)
+├── Veldrath.Contracts/           # Shared API contracts and DTOs
+├── Veldrath.Assets/              # Asset store/management
+├── RealmUI.Fonts/                # Custom fonts
+├── [Project].Tests/              # One test project per library/application (13 total)
 ├── .github/
-│   ├── agent-memory/          # Canonical memory store (8 files, see Required Reading)
-│   └── workflows/             # CI/CD workflows (per-component Codecov flags)
-├── docs/                      # Documentation (DocFX → GitHub Pages)
-├── wiki/                      # GitHub Wiki content (git submodule)
-├── versions/                  # Component version props files
-└── config/                    # Grafana dashboards, Prometheus config, etc.
+│   ├── agent-memory/             # Canonical memory store (8 files, see Required Reading)
+│   └── workflows/                # CI/CD workflows (per-component + deploy + docs + release)
+├── .roo/skills/                  # Agent skills for common tasks (build, test, run, etc.)
+├── docs/                         # Documentation (DocFX → GitHub Pages)
+├── wiki/                         # GitHub Wiki content (git submodule)
+├── plans/                        # Architecture and implementation plans
+├── versions/                     # Component version props files
+├── config/                       # Grafana dashboards, Prometheus config, etc.
+├── scripts/                      # Build, asset, and release scripts
+├── llms.txt                      # MudBlazor comprehensive reference for LLMs
+├── SECURITY.md                   # Security policy
+└── THIRD-PARTY-NOTICES.md        # Third-party license notices
 ```
 
 > **Note:** The directory [`.github/agent-memory/`](.github/agent-memory/) is referenced throughout this document with clickable links.
@@ -113,7 +125,7 @@ SignalR hubs in [`Veldrath.Server`](Veldrath.Server/) never call Core handlers d
 SignalR Hub → MediatR.Send(command) → Handler → Response → Hub returns result to client
 ```
 
-This keeps the engine truly UI-agnostic and allows any consumer (Avalonia client, Godot, Unity, console, Discord bot) to reuse the same game operations.
+This keeps the engine truly UI-agnostic and allows any consumer (Avalonia client, Godot, Unity, console, Discord bot, Blazor web app) to reuse the same game operations.
 
 ### Engine Agnosticism
 
@@ -125,6 +137,13 @@ var result = await mediator.Send(new SomeGameCommand { ... });
 // result is a typed DTO with the outcome of the operation
 ```
 
+### Shared Client Architecture
+
+The client-side code is split into two libraries to enable reuse across the Avalonia desktop client and the Blazor web portal:
+
+- [`Veldrath.GameClient.Core/`](Veldrath.GameClient.Core/) — Framework-agnostic client logic: `IGameHubConnectionService`, `IGameStateService`, connection state model, and typed payloads (Chat, Combat, Dungeon, Economy, Entity, Inventory, Progression, Quest, Shop, Zone)
+- [`Veldrath.GameClient.Components/`](Veldrath.GameClient.Components/) — Razor Class Library with reusable Blazor components that consume GameClient.Core services
+
 ---
 
 ## Key Technologies & Versions
@@ -134,20 +153,25 @@ All package versions are centrally managed in [`Directory.Packages.props`](Direc
 | Technology | Version | Purpose |
 |---|---|---|
 | .NET / C# | 10.0 | All projects |
-| MediatR | 12.4.1 | CQRS command/query dispatch |
+| MediatR | 12.5.0 | CQRS command/query dispatch |
 | FluentValidation | 12.1.1 | Input validation pipeline behavior |
-| Serilog | 4.3.0 | Structured logging pipeline behavior |
+| Serilog | 4.4.0 | Structured logging pipeline behavior |
 | Bogus | 35.6.5 | Procedural content generation |
-| Polly | 8.6.5 | Resilience patterns |
-| Humanizer | 3.0.1 | Natural language formatting |
+| Polly | 8.7.0 | Resilience patterns |
+| Humanizer | 3.0.10 | Natural language formatting |
 | Avalonia | 11.2.3 | UI framework (Veldrath.Client, RealmForge) |
 | Avalonia.Headless.XUnit | 11.2.3 | Headless UI testing |
 | ReactiveUI | 20.1.1 | MVVM for Avalonia projects |
-| ASP.NET Core + SignalR | .NET 10 | Veldrath.Server |
-| Entity Framework Core | .NET 10 | ORM (Postgres, SQLite, InMemory) |
+| MudBlazor | 9.7.0 | Material Design component library (Veldrath.Web) |
+| ASP.NET Core + SignalR | .NET 10 | Veldrath.Server, Veldrath.Web |
+| Entity Framework Core | .NET 10 | ORM (Postgres production, SQLite/InMemory for tests) |
 | xUnit | 2.9.3 | Testing framework |
-| FluentAssertions | 8.8.0 | Assertion library |
-| Discord.Net | 3.15.3 | Discord bot SDK |
+| FluentAssertions | 8.10.0 | Assertion library |
+| bunit | 2.6.2 | Blazor component testing (Veldrath.Web.Tests, Veldrath.GameClient.Components.Tests) |
+| coverlet.collector | 10.0.1 | Code coverage collection |
+| Discord.Net | 3.20.1 | Discord bot SDK |
+
+For a comprehensive MudBlazor reference used in this project, see [`llms.txt`](llms.txt).
 
 ---
 
@@ -204,19 +228,25 @@ Prefer `FakeXxx` stub classes in `Infrastructure/` directories over mocking fram
   - `RaiseAndSetIfChanged` for bindable properties
   - `ReactiveCommand.CreateFromTask` for async operations
   - `WhenAnyValue` for derived state
+- Blazor components use standard Razor patterns:
+  - `@inject` for dependency injection
+  - `[Parameter]` for component parameters
+  - `EventCallback<T>` for component events
+  - `@bind-Value` / `@bind-{Property}` for two-way binding
 - Avoid one-off abstractions, helpers, or comments explaining what the code does — **only comment the *why* when it isn't obvious**
 
 ---
 
 ## Testing Conventions
 
-- **11 test projects** (mirroring each source library/application), all in the solution — see [`.github/agent-memory/engine-codebase.md`](.github/agent-memory/engine-codebase.md) for current test counts
+- **13 test projects** (mirroring each source library/application), all in the solution — see [`.github/agent-memory/engine-codebase.md`](.github/agent-memory/engine-codebase.md) for current test counts
 - **8,500+ tests** — all must pass; `dotnet test Realm.Full.slnx` runs the full suite
 - Test files mirror source structure: [`RealmEngine.Core/Features/Combat/`](RealmEngine.Core/Features/Combat/) → [`RealmEngine.Core.Tests/Features/Combat/`](RealmEngine.Core.Tests/Features/Combat/)
 - Use `[Fact]` / `[Theory]` with FluentAssertions; standard **Arrange / Act / Assert** layout
 - Prefer `FakeXxx` stub classes in `Infrastructure/` directories over mocking frameworks
 - EF Core `InMemory` provider is the default for most data tests; SQLite is used for [`Veldrath.Server.Tests`](Veldrath.Server.Tests/) integration tests where SQL semantics matter
 - Avalonia headless tests use `[AvaloniaFact]` from [`Avalonia.Headless.XUnit`](https://github.com/AvaloniaUI/Avalonia.Headless.XUnit); add `[Trait("Category", "UI")]` only when a real display is required
+- Blazor component tests use [`bunit`](https://bunit.dev/) (v2.6.2) — render components with `RenderComponent<T>()`, assert with `Find()`, `MarkupMatches()`, `FindComponent<T>()`
 - Apply `[ExcludeFromCodeCoverage]` to: entry points (`Program`), app bootstrappers (`App`), compiled XAML resources, thin infrastructure wrappers (e.g. `HubConnectionFactory`, `HubConnectionWrapper` in [`Veldrath.Client`](Veldrath.Client/))
 - Every test project's [`Properties/AssemblyInfo.cs`](RealmEngine.Core.Tests/Properties/AssemblyInfo.cs) has `[assembly: ExcludeFromCodeCoverage]`
 
@@ -228,14 +258,17 @@ Prefer `FakeXxx` stub classes in `Infrastructure/` directories over mocking fram
 # Full build
 dotnet build Realm.Full.slnx
 
-# All 8,500+ tests
+# All 8,500+ tests (with coverage)
 dotnet test Realm.Full.slnx
 
 # Start the game server (ASP.NET Core + SignalR)
 dotnet run --project Veldrath.Server
 
-# Start the game client (Avalonia desktop)
+# Start the desktop game client (Avalonia)
 dotnet run --project Veldrath.Client
+
+# Start the web portal (Blazor Server + MudBlazor)
+dotnet run --project Veldrath.Web
 
 # Launch the DB content editor
 dotnet run --project RealmForge
@@ -245,6 +278,24 @@ dotnet run --project RealmFoundry
 ```
 
 Use `Ctrl+Shift+B` in VS Code to trigger the default build task, or `F5` to debug.
+
+---
+
+## Agent Skills
+
+The [`.roo/skills/`](.roo/skills/) directory contains agent skills for common development workflows:
+
+| Skill | Purpose |
+|-------|---------|
+| [`build-full`](.roo/skills/build-full/SKILL.md) | Build the complete Realm.Full.slnx solution |
+| [`create-new-feature`](.roo/skills/create-new-feature/SKILL.md) | Scaffold a new MediatR vertical-slice feature |
+| [`run-all-tests`](.roo/skills/run-all-tests/SKILL.md) | Run the complete test suite with coverage |
+| [`run-client`](.roo/skills/run-client/SKILL.md) | Start the Veldrath Avalonia desktop client |
+| [`run-realmforge`](.roo/skills/run-realmforge/SKILL.md) | Start the RealmForge DB content editor |
+| [`run-realmfoundry`](.roo/skills/run-realmfoundry/SKILL.md) | Start the RealmFoundry community portal |
+| [`run-server`](.roo/skills/run-server/SKILL.md) | Start the Veldrath ASP.NET Core game server |
+| [`run-tests-by-component`](.roo/skills/run-tests-by-component/SKILL.md) | Run tests for a single component |
+| [`start-dev-stack`](.roo/skills/start-dev-stack/SKILL.md) | Start the full local dev environment (DB + server + client) |
 
 ---
 
@@ -261,6 +312,10 @@ CI workflows live in [`.github/workflows/`](.github/workflows/). Coverage is upl
 | [`ci-discord.yml`](.github/workflows/ci-discord.yml) | Veldrath.Discord | `discord` |
 | [`ci-foundry.yml`](.github/workflows/ci-foundry.yml) | RealmFoundry | `foundry` |
 | [`ci-web.yml`](.github/workflows/ci-web.yml) | Veldrath.Web | `web` |
+| [`deploy.yml`](.github/workflows/deploy.yml) | Deployment pipeline | — |
+| [`docs.yml`](.github/workflows/docs.yml) | DocFX documentation build & deploy | — |
+| [`release.yml`](.github/workflows/release.yml) | Release tagging and publishing | — |
+| [`sonarcloud.yml`](.github/workflows/sonarcloud.yml) | SonarCloud static analysis | — |
 
 Coverage exclusions are configured in [`coverage.runsettings`](coverage.runsettings).
 
@@ -278,7 +333,9 @@ Coverage exclusions are configured in [`coverage.runsettings`](coverage.runsetti
   - [`wiki/Engine-Combat.md`](wiki/Engine-Combat.md) — Combat system design
   - [`wiki/Engine-Character-Creation.md`](wiki/Engine-Character-Creation.md) — Character creation design
   - [`wiki/Engine-Implementation-Status.md`](wiki/Engine-Implementation-Status.md) — Implementation status tracker
+  - [`plans/`](plans/) — Architecture and implementation plans (game client unification, web architecture, rendering extraction, etc.)
 - **DocFX config:** [`docfx.json`](docfx.json) — sources the full solution (`Realm.Full.slnx`) and outputs to `_site/`
+- **MudBlazor reference:** [`llms.txt`](llms.txt) — Comprehensive MudBlazor component and API reference for LLM context
 
 ---
 
@@ -335,8 +392,13 @@ Do **not** create new memory files unless the existing 8 files are insufficient.
 | CQRS | MediatR `IRequest<TResponse>` records |
 | Validation | FluentValidation pipeline behavior |
 | Logging | Serilog pipeline behavior |
-| UI | Avalonia + ReactiveUI (MVVM) |
+| Desktop UI | Avalonia + ReactiveUI (MVVM) |
+| Web UI | Blazor Server + MudBlazor (9.7.0) |
+| Client Core | Veldrath.GameClient.Core (framework-agnostic payloads and services) |
+| Shared Components | Veldrath.GameClient.Components (Razor Class Library) |
 | Testing | xUnit + FluentAssertions |
+| Blazor Testing | bunit (v2.6.2) |
 | Mocks | Prefer `FakeXxx` stubs; Moq/NSubstitute as fallback |
 | Database | EF Core (Postgres production, SQLite/InMemory for tests) |
 | Documentation | XML doc comments (CS1591 = error), DocFX → GitHub Pages |
+| Agent Skills | [`.roo/skills/`](.roo/skills/) for common dev workflows |
