@@ -865,7 +865,8 @@
     private async Task GoToStep5Async() => await NavigateToStepAsync(5);
     private async Task GoToStep6Async() => await NavigateToStepAsync(6);
 
-    /// <summary>Saves the character name to the session and advances from step 1 (Name) to step 2 (Class). (C3+M8)</summary>
+    /// <summary>Saves the character name to the session and advances from step 1 (Name)
+    /// to step 2 (Class). (C3+M8)</summary>
     private async Task GoToStep2Async()
     {
         _stepError = null;
@@ -927,7 +928,8 @@
         await LoadPreviewAsync();
     }
 
-    /// <summary>Loads a non-persisted character preview from the server. Failures are silently ignored — the preview is non-critical.</summary>
+    /// <summary>Loads a non-persisted character preview from the server.
+    /// Failures are silently ignored — the preview is non-critical.</summary>
     private async Task LoadPreviewAsync()
     {
         if (_sessionId == Guid.Empty || _sessionId is null)
@@ -1021,7 +1023,8 @@
         }
     }
 
-    /// <summary>Handles name input changes with client-side validation and a 400 ms debounced server availability check. (C2, C6)</summary>
+    /// <summary>Handles name input changes with client-side validation
+    /// and a 400 ms debounced server availability check. (C2, C6)</summary>
     private async Task OnNameChanged()
     {
         _nameCheckCts?.Cancel();
@@ -1109,7 +1112,8 @@
         }
     }
 
-    /// <summary>Finalizes character creation. Passes <c>null</c> for the character name since it was already saved via <see cref="SetCreationNameAsync"/>. (C3+M8)</summary>
+    /// <summary>Finalizes character creation. Passes <c>null</c> for the character name
+    /// since it was already saved via <see cref="SetCreationNameAsync"/>. (C3+M8)</summary>
     private async Task ConfirmCreate()
     {
         if (_selectedClass is null || string.IsNullOrWhiteSpace(_characterName))
@@ -1227,7 +1231,8 @@
         return string.Empty;
     }
 
-    /// <summary>Returns the adornment position for the character name field. Shows an icon when there is validation state.</summary>
+    /// <summary>Returns the adornment position for the character name field.
+    /// Shows an icon when there is validation state.</summary>
     private Adornment GetNameAdornment()
     {
         if (_nameError is not null || _nameChecking || _nameAvailable == true)
@@ -1244,7 +1249,8 @@
         return string.Empty;
     }
 
-    /// <summary>Returns the appropriate color for the character name field adornment icon based on validation state.</summary>
+    /// <summary>Returns the appropriate color for the character name field adornment icon
+    /// based on validation state.</summary>
     private Color GetNameAdornmentColor()
     {
         if (_nameError is not null) return Color.Error;
