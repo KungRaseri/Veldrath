@@ -31,6 +31,6 @@ public class AuthStateService(VeldrathApiClient api) : AuthStateServiceBase(api)
     /// Exposed for SSR initialisation only — do not pass this value to client-side code.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public string? RefreshToken => _refreshToken;
+    public new string? RefreshToken => _refreshToken;
 }
 

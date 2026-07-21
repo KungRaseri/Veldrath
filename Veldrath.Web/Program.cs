@@ -45,10 +45,21 @@ try
             "Veldrath:ServerUrl is not configured. Set it in appsettings.json, " +
             "appsettings.{Environment}.json, or the Veldrath__ServerUrl environment variable.");
 
-    // Scoped named client so all Blazor circuit components share the one instance
-    // that AuthStateService.SetTokensAsync already called SetBearerToken on.
+    // Scoped handler that intercepts 401 responses for automatic JWT renewal.
+    // Registered as scoped so the SemaphoreSlim serialises refresh per-circuit.
+    builder.Services.AddScoped<AuthDelegatingHandler>();
+
+    // Primary authenticated client — all game API calls go through this pipeline.
+    // AuthDelegatingHandler intercepts 401 responses for automatic token refresh.
     builder.Services.AddHttpClient("veldrath-web", client =>
+        client.BaseAddress = new Uri(serverUrl))
+        .AddHttpMessageHandler<AuthDelegatingHandler>();
+
+    // Raw client with NO auth handler — used exclusively by AuthDelegatingHandler
+    // for the renew-jwt call, avoiding circular interception.
+    builder.Services.AddHttpClient("veldrath-web-raw", client =>
         client.BaseAddress = new Uri(serverUrl));
+
     builder.Services.AddScoped<VeldrathApiClient>(sp =>
         new VeldrathApiClient(
             sp.GetRequiredService<IHttpClientFactory>().CreateClient("veldrath-web")));
@@ -111,7 +122,17 @@ try
     });
 
     // Game client services — registered as interfaces for abstraction.
-    builder.Services.AddScoped<IGameHubConnectionService, GameHubConnectionService>();
+    // The factory registration passes a dynamic token provider so SignalR automatic
+    // reconnection gets the current JWT on each retry, not the token captured at
+    // initial connection time.
+    builder.Services.AddScoped<IGameHubConnectionService>(sp =>
+    {
+        var authState = sp.GetRequiredService<AuthStateServiceBase>();
+        return new GameHubConnectionService(
+            sp,
+            sp.GetRequiredService<ILogger<GameHubConnectionService>>(),
+            () => Task.FromResult(authState.AccessToken));
+    });
     builder.Services.AddScoped<IGameStateService, GameStateService>();
     builder.Services.AddHttpContextAccessor();
 

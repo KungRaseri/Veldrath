@@ -16,6 +16,7 @@ public sealed class GameHubConnectionService : IGameHubConnectionService, IAsync
     private HubConnection? _connection;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<GameHubConnectionService> _logger;
+    private readonly Func<Task<string?>>? _accessTokenProviderFactory;
     private readonly SemaphoreSlim _connectionLock = new(1, 1);
     private bool _disposed;
     private ConnectionState _state = ConnectionState.Disconnected;
@@ -32,12 +33,21 @@ public sealed class GameHubConnectionService : IGameHubConnectionService, IAsync
     /// </summary>
     /// <param name="serviceProvider">The service provider for resolving scoped dependencies.</param>
     /// <param name="logger">The logger instance.</param>
+    /// <param name="accessTokenProviderFactory">
+    /// An optional delegate that returns the current JWT access token each time it is called.
+    /// When provided, SignalR automatic reconnection will use this delegate to obtain a fresh
+    /// token on each retry attempt, rather than reusing the token captured at initial connection
+    /// time. When <see langword="null"/>, the static token passed to <see cref="ConnectAsync"/>
+    /// is used for all reconnection attempts.
+    /// </param>
     public GameHubConnectionService(
         IServiceProvider serviceProvider,
-        ILogger<GameHubConnectionService> logger)
+        ILogger<GameHubConnectionService> logger,
+        Func<Task<string?>>? accessTokenProviderFactory = null)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
+        _accessTokenProviderFactory = accessTokenProviderFactory;
     }
 
     /// <inheritdoc />
@@ -86,7 +96,13 @@ public sealed class GameHubConnectionService : IGameHubConnectionService, IAsync
             _connection = new HubConnectionBuilder()
                 .WithUrl(hubUrl, opts =>
                 {
-                    opts.AccessTokenProvider = () => Task.FromResult<string?>(accessToken);
+                    // Use the dynamic token provider factory when available so that
+                    // SignalR automatic reconnection (up to 10 retries over ~5 minutes)
+                    // gets the current JWT on each attempt instead of reusing the
+                    // token that was valid at initial connection time.
+                    opts.AccessTokenProvider = _accessTokenProviderFactory is not null
+                        ? _accessTokenProviderFactory
+                        : () => Task.FromResult<string?>(accessToken);
                 })
                 .WithAutomaticReconnect(new RetryPolicy())
                 .Build();
