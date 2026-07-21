@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Veldrath.Contracts.Auth;
 
@@ -28,7 +29,7 @@ namespace Veldrath.Auth.Blazor;
 /// </remarks>
 public sealed class AuthDelegatingHandler : DelegatingHandler
 {
-    private readonly AuthStateServiceBase _authState;
+    private readonly IServiceProvider _serviceProvider;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
     private readonly ILogger<AuthDelegatingHandler> _logger;
@@ -44,17 +45,19 @@ public sealed class AuthDelegatingHandler : DelegatingHandler
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthDelegatingHandler"/> class.
     /// </summary>
-    /// <param name="authState">The circuit-scoped auth state holding the refresh token.</param>
+    /// <param name="serviceProvider">The <see cref="IServiceProvider"/> used to lazily resolve
+    /// <see cref="AuthStateServiceBase"/> during request processing, avoiding a
+    /// <see cref="Lazy{T}"/> circular dependency in the HttpClientFactory pipeline.</param>
     /// <param name="httpClientFactory">Factory for creating the raw <c>HttpClient</c> used by renew calls.</param>
     /// <param name="configuration">Provides <c>Auth:RefreshHandler</c> settings.</param>
     /// <param name="logger">Structured logger for diagnostic messages.</param>
     public AuthDelegatingHandler(
-        AuthStateServiceBase authState,
+        IServiceProvider serviceProvider,
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration,
         ILogger<AuthDelegatingHandler> logger)
     {
-        _authState = authState;
+        _serviceProvider = serviceProvider;
         _httpClientFactory = httpClientFactory;
         _configuration = configuration;
         _logger = logger;
@@ -70,6 +73,11 @@ public sealed class AuthDelegatingHandler : DelegatingHandler
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request, CancellationToken cancellationToken)
     {
+        // Lazy-resolve AuthStateServiceBase to break the Lazy<T> circular dependency:
+        // AuthStateService → VeldrathApiClient → HttpClient("veldrath-web") → AuthDelegatingHandler → AuthStateServiceBase → (cycle)
+        // By resolving here instead of in the constructor, we defer until the DI container is fully initialized.
+        var authState = _serviceProvider.GetRequiredService<AuthStateServiceBase>();
+
         var response = await base.SendAsync(request, cancellationToken);
 
         if (!ShouldIntercept(request, response))
@@ -95,8 +103,8 @@ public sealed class AuthDelegatingHandler : DelegatingHandler
         try
         {
             // Double-check: did another request already refresh the token while we waited?
-            if (_authState.AccessToken is not null &&
-                !string.Equals(_authState.AccessToken, failedToken, StringComparison.Ordinal))
+            if (authState.AccessToken is not null &&
+                !string.Equals(authState.AccessToken, failedToken, StringComparison.Ordinal))
             {
                 _logger.LogDebug(
                     "Token was already refreshed by another concurrent request. Retrying with current token.");
@@ -113,7 +121,7 @@ public sealed class AuthDelegatingHandler : DelegatingHandler
             }
 
             // Update circuit auth state — this also calls SetBearerToken on the scoped HttpClient.
-            await _authState.SetTokensAsync(renewed, _authState.RefreshToken!);
+            await authState.SetTokensAsync(renewed, authState.RefreshToken!);
 
             _logger.LogInformation(
                 "JWT renewed successfully. Retrying {Method} {Path} with fresh token.",
@@ -188,7 +196,8 @@ public sealed class AuthDelegatingHandler : DelegatingHandler
             return null;
         }
 
-        var refreshToken = _authState.RefreshToken;
+        var authState = _serviceProvider.GetRequiredService<AuthStateServiceBase>();
+        var refreshToken = authState.RefreshToken;
         if (string.IsNullOrWhiteSpace(refreshToken))
         {
             _logger.LogDebug("No refresh token available in auth state — cannot renew JWT.");
@@ -231,9 +240,10 @@ public sealed class AuthDelegatingHandler : DelegatingHandler
     }
 
     /// <summary>
-    /// Clones the original request, applies the current access token from
-    /// <see cref="_authState"/>, marks it with <c>X-Auth-Retry: 1</c> to prevent
-    /// re-interception, and sends it through the inner handler pipeline.
+    /// Clones the original request, applies the current access token from the
+    /// lazily-resolved <see cref="AuthStateServiceBase"/>, marks it with
+    /// <c>X-Auth-Retry: 1</c> to prevent re-interception, and sends it through
+    /// the inner handler pipeline.
     /// </summary>
     /// <param name="original">The original request that received a 401.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
@@ -243,7 +253,8 @@ public sealed class AuthDelegatingHandler : DelegatingHandler
     {
         var retry = await CloneRequestAsync(original);
 
-        var currentToken = _authState.AccessToken;
+        var authState = _serviceProvider.GetRequiredService<AuthStateServiceBase>();
+        var currentToken = authState.AccessToken;
         if (currentToken is not null)
         {
             retry.Headers.Authorization =
