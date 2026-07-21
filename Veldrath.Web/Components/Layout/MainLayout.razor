@@ -51,39 +51,39 @@
                 @* Column 2: Quick Links *@
                 <MudItem xs="12" sm="6" md="2">
                     <MudText Typo="Typo.subtitle1" Class="fat-footer-heading mb-3">Quick Links</MudText>
-                    <MudLink Href="/lore" Typo="Typo.body2" Class="fat-footer-link">World & Lore</MudLink>
-                    <MudLink Href="/patch-notes" Typo="Typo.body2" Class="fat-footer-link">Patch Notes</MudLink>
-                    <MudLink Href="/community" Typo="Typo.body2" Class="fat-footer-link">Community</MudLink>
+                    <MudLink Href="/lore" Typo="Typo.body2" Class="fat-footer-link d-block py-0">World & Lore</MudLink>
+                    <MudLink Href="/patch-notes" Typo="Typo.body2" Class="fat-footer-link d-block py-0">Patch Notes</MudLink>
+                    <MudLink Href="/community" Typo="Typo.body2" Class="fat-footer-link d-block py-0">Community</MudLink>
                     @if (AuthState.IsLoggedIn)
                     {
-                        <MudLink Typo="Typo.body2" Class="fat-footer-link" Href="/auth/sign-out">Sign Out</MudLink>
+                        <MudLink Typo="Typo.body2" Class="fat-footer-link d-block py-0" Href="/auth/sign-out">Sign Out</MudLink>
                     }
                     else
                     {
-                        <MudLink Typo="Typo.body2" Class="fat-footer-link" Href="/login">Sign In</MudLink>
+                        <MudLink Typo="Typo.body2" Class="fat-footer-link d-block py-0" Href="/login">Sign In</MudLink>
                     }
                 </MudItem>
 
                 @* Column 3: Resources *@
                 <MudItem xs="12" sm="6" md="3">
                     <MudText Typo="Typo.subtitle1" Class="fat-footer-heading mb-3">Resources</MudText>
-                    <MudLink Href="https://kungraseri.github.io/RealmEngine/" Typo="Typo.body2" Class="fat-footer-link"
+                    <MudLink Href="https://kungraseri.github.io/RealmEngine/" Typo="Typo.body2" Class="fat-footer-link d-block py-0"
                              Target="_blank">Documentation</MudLink>
                     <MudLink Href="https://github.com/kungraseri/RealmEngine/wiki" Typo="Typo.body2"
-                             Class="fat-footer-link" Target="_blank">Wiki</MudLink>
-                    <MudLink Href="/support" Typo="Typo.body2" Class="fat-footer-link">Support</MudLink>
-                    <MudLink Href="/api" Typo="Typo.body2" Class="fat-footer-link">API Status</MudLink>
+                             Class="fat-footer-link d-block py-0" Target="_blank">Wiki</MudLink>
+                    <MudLink Href="/support" Typo="Typo.body2" Class="fat-footer-link d-block py-0">Support</MudLink>
+                    <MudLink Href="/api" Typo="Typo.body2" Class="fat-footer-link d-block py-0">API Status</MudLink>
                 </MudItem>
 
                 @* Column 4: Community / Social *@
                 <MudItem xs="12" sm="6" md="3">
                     <MudText Typo="Typo.subtitle1" Class="fat-footer-heading mb-3">Community</MudText>
-                    <div class="fat-footer-social gap-2">
+                    <div class="d-flex flex-column gap-2">
                         <MudLink Href="https://github.com/kungraseri/RealmEngine" Target="_blank"
-                                 Class="fat-footer-social-link">
+                                 Class="fat-footer-social-link d-inline-flex align-center">
                             <MudIcon Icon="@Icons.Material.Filled.Code" Size="Size.Small" Class="mr-1" /> GitHub
                         </MudLink>
-                        <MudLink Href="https://discord.gg/veldrath" Target="_blank" Class="fat-footer-social-link">
+                        <MudLink Href="https://discord.gg/veldrath" Target="_blank" Class="fat-footer-social-link d-inline-flex align-center">
                             <MudIcon Icon="@Icons.Material.Filled.QuestionAnswer" Size="Size.Small" Class="mr-1" />
                             Discord
                         </MudLink>
@@ -92,16 +92,16 @@
             </MudGrid>
         </MudContainer>
 
-        <MudDivider Class="fat-footer-divider mt-8 mb-5" />
+        <MudDivider Class="mt-8 mb-5" />
         <MudContainer MaxWidth="MaxWidth.Large" class="mt-5">
-            <div class="fat-footer-bottom gap-3">
+            <div class="d-flex flex-wrap justify-space-between align-center gap-3">
                 <MudText Typo="Typo.caption" Class="fat-footer-copyright">
                     &copy; @DateTime.Now.Year Veldrath. All rights reserved.
                 </MudText>
-                <div class="fat-footer-bottom-links gap-5">
-                    <MudLink Href="/privacy" Typo="Typo.caption" Class="fat-footer-link">Privacy Policy</MudLink>
-                    <MudLink Href="/terms" Typo="Typo.caption" Class="fat-footer-link">Terms of Service</MudLink>
-                    <MudLink Href="/contact" Typo="Typo.caption" Class="fat-footer-link">Contact</MudLink>
+                <div class="d-flex gap-5">
+                    <MudLink Href="/privacy" Typo="Typo.caption" Class="fat-footer-link d-block py-0">Privacy Policy</MudLink>
+                    <MudLink Href="/terms" Typo="Typo.caption" Class="fat-footer-link d-block py-0">Terms of Service</MudLink>
+                    <MudLink Href="/contact" Typo="Typo.caption" Class="fat-footer-link d-block py-0">Contact</MudLink>
                 </div>
             </div>
         </MudContainer>

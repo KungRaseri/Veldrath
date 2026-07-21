@@ -149,9 +149,7 @@ a:hover {
 }
 
 .fat-footer-link {
-  display: block;
   color: var(--vds-text-muted);
-  padding: 2px 0;
   transition: color 0.15s ease;
 }
 
@@ -160,14 +158,7 @@ a:hover {
   text-decoration: none;
 }
 
-.fat-footer-social {
-  display: flex;
-  flex-direction: column;
-}
-
 .fat-footer-social-link {
-  display: inline-flex;
-  align-items: center;
   color: var(--vds-text-muted);
   transition: color 0.15s ease;
 }
@@ -177,23 +168,8 @@ a:hover {
   text-decoration: none;
 }
 
-.fat-footer-divider {
-  border-color: var(--vds-border);
-}
-
-.fat-footer-bottom {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-}
-
 .fat-footer-copyright {
   color: var(--vds-text-subtle);
-}
-
-.fat-footer-bottom-links {
-  display: flex;
 }
 
 /* ── MudBlazor dark-theme overrides ──────────────────────────────────────── */
@@ -258,26 +234,12 @@ a:hover {
   color: var(--vds-text);
 }
 
-.text-title {
-  font-family: var(--vds-font-heading);
-  font-size: var(--vds-text-lg);
-  font-weight: 600;
-  color: var(--vds-text);
-}
-
-.text-subtitle {
-  font-size: var(--vds-text-md);
-  font-weight: 500;
-  color: var(--vds-text-muted);
-}
-
 .text-muted {
   font-size: var(--vds-text-sm);
   color: var(--vds-text-subtle);
 }
 
 .text-caption {
-  font-size: var(--vds-text-xs);
   color: var(--vds-text-subtle);
 }
 
@@ -320,10 +282,6 @@ a:hover {
 }
 
 /* ── VDS layout utilities (supplement MudBlazor spacing/flex utilities) ─── */
-
-.border-b-vds {
-  border-bottom: 1px solid var(--vds-border);
-}
 
 .paper-danger {
   background-color: var(--vds-danger-muted);
@@ -374,15 +332,11 @@ a:hover {
 /* ── OAuth divider ("or continue with") ────────────────────────────────── */
 
 .oauth-divider {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
   color: var(--vds-text-muted);
   font-size: 0.85rem;
 }
 
 .oauth-divider-line {
-  flex: 1;
   border-top: 1px solid var(--vds-border);
 }
 
