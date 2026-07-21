@@ -8,43 +8,19 @@
 /* ── VDS design tokens ───────────────────────────────────────────────────── */
 
 :root {
-  --vds-bg-0: #0c0d13;
-  --vds-bg-1: #14151f;
-  --vds-bg-2: #1c1d2b;
   --vds-bg-3: #262736;
-  --vds-bg-4: #2e2f42;
 
-  --vds-seal-light: #e05545;
-  --vds-seal: #c0392b;
-  --vds-seal-dark: #8c2018;
   --vds-seal-muted: #3d1a16;
 
-  --vds-ember-light: #e05e35;
-  --vds-ember: #cc4125;
-  --vds-ember-dark: #943018;
   --vds-ember-muted: #361a10;
 
-  --vds-gold-light: #d4b96a;
-  --vds-gold: #c9a84c;
-  --vds-gold-dark: #a68a2e;
   --vds-gold-muted: #3d3216;
 
-  --vds-text: #f0ede8;
-  --vds-text-muted: #a8a09a;
   --vds-text-subtle: #6e6860;
-  --vds-text-disabled: #4a4540;
 
-  --vds-border-subtle: #1e1f2d;
-  --vds-border: #2a2b3d;
-  --vds-border-strong: #3d3f58;
-
-  --vds-success: #5cab7d;
   --vds-success-muted: #1f3d2e;
-  --vds-danger: #e05252;
   --vds-danger-muted: #4a1a1a;
-  --vds-warning: #d4964a;
   --vds-warning-muted: #4a3018;
-  --vds-info: #5a9ed6;
   --vds-info-muted: #1a3250;
 
   --vds-hover: #1e2030;
@@ -53,7 +29,7 @@
 
   --vds-oauth-discord: #5865f2;
   --vds-oauth-google: #4285f4;
-  --vds-oauth-microsoft: #00a4ef;
+  --vds-oauth-microsoft: #0078d4;
 
   --vds-font-display: "Cinzel Decorative", "Cinzel", serif;
   --vds-font-heading: "Cinzel", serif;
@@ -89,12 +65,12 @@
 body {
   margin: 0;
   font-family: var(--vds-font-body);
-  background: var(--vds-bg-0);
-  color: var(--vds-text);
+  background: var(--mud-palette-background);
+  color: var(--mud-palette-text-primary);
 }
 
 a {
-  color: var(--vds-seal-light);
+  color: var(--mud-palette-primary-lighten);
   text-decoration: none;
 }
 a:hover {
@@ -116,21 +92,21 @@ a:hover {
   font-family: var(--vds-font-heading);
   font-weight: 600;
   margin-left: 12px;
-  color: var(--vds-seal-light);
+  color: var(--mud-palette-primary-lighten);
 }
 
 /* ── Announcement bar ────────────────────────────────────────────────────── */
 
 .announcement-bar {
-  background: var(--vds-bg-2);
-  border-bottom: 1px solid var(--vds-border);
+  background: var(--mud-palette-dark-lighten);
+  border-bottom: 1px solid var(--mud-palette-lines-default);
 }
 
 /* ── Fat footer ──────────────────────────────────────────────────────────── */
 
 .fat-footer {
-  background: var(--vds-bg-1);
-  border-top: 1px solid var(--vds-border);
+  background: var(--mud-palette-surface);
+  border-top: 1px solid var(--mud-palette-lines-default);
 }
 
 .fat-footer-brand {
@@ -140,31 +116,31 @@ a:hover {
   font-family: var(--vds-font-heading);
   font-size: var(--vds-text-md);
   font-weight: 600;
-  color: var(--vds-gold-light);
+  color: var(--mud-palette-secondary-lighten);
 }
 
 .fat-footer-description {
-  color: var(--vds-text-muted);
+  color: var(--mud-palette-text-secondary);
   line-height: 1.6;
 }
 
 .fat-footer-link {
-  color: var(--vds-text-muted);
+  color: var(--mud-palette-text-secondary);
   transition: color 0.15s ease;
 }
 
 .fat-footer-link:hover {
-  color: var(--vds-seal-light);
+  color: var(--mud-palette-primary-lighten);
   text-decoration: none;
 }
 
 .fat-footer-social-link {
-  color: var(--vds-text-muted);
+  color: var(--mud-palette-text-secondary);
   transition: color 0.15s ease;
 }
 
 .fat-footer-social-link:hover {
-  color: var(--vds-seal-light);
+  color: var(--mud-palette-primary-lighten);
   text-decoration: none;
 }
 
@@ -180,20 +156,20 @@ a:hover {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--vds-bg-1);
+  background: var(--mud-palette-surface);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--vds-bg-4);
+  background: var(--mud-palette-gray-light);
   border-radius: var(--vds-radius-full);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--vds-border-strong);
+  background: var(--mud-palette-lines-inputs);
 }
 
 /* Selection color */
 ::selection {
   background: var(--vds-seal-muted);
-  color: var(--vds-text);
+  color: var(--mud-palette-text-primary);
 }
 
 /* ── Blazor error UI ─────────────────────────────────────────────────────── */
@@ -208,8 +184,8 @@ a:hover {
   position: fixed;
   width: 100%;
   z-index: 1000;
-  border-top: 1px solid var(--vds-danger);
-  color: var(--vds-danger);
+  border-top: 1px solid var(--mud-palette-error);
+  color: var(--mud-palette-error);
 }
 #blazor-error-ui .dismiss {
   cursor: pointer;
@@ -219,20 +195,6 @@ a:hover {
 }
 
 /* ── VDS text utility classes (§4.4 of docs/design-system.md) ───────────── */
-
-.text-hero {
-  font-family: var(--vds-font-display);
-  font-size: var(--vds-text-hero);
-  font-weight: 400;
-  color: var(--vds-text);
-}
-
-.text-title-large {
-  font-family: var(--vds-font-heading);
-  font-size: var(--vds-text-xl);
-  font-weight: 600;
-  color: var(--vds-text);
-}
 
 .text-muted {
   font-size: var(--vds-text-sm);
@@ -245,52 +207,52 @@ a:hover {
 
 .text-accent {
   font-weight: 600;
-  color: var(--vds-seal-light);
+  color: var(--mud-palette-primary-lighten);
 }
 
 .text-gold {
   font-weight: 600;
-  color: var(--vds-gold-light);
+  color: var(--mud-palette-secondary-lighten);
 }
 
 .text-lore {
   font-family: var(--vds-font-reading);
   line-height: 1.7;
-  color: var(--vds-text);
+  color: var(--mud-palette-text-primary);
 }
 
 .text-mono {
   font-family: var(--vds-font-mono);
   font-size: var(--vds-text-sm);
-  color: var(--vds-text-muted);
+  color: var(--mud-palette-text-secondary);
 }
 
 .text-success {
-  color: var(--vds-success);
+  color: var(--mud-palette-success);
 }
 
 .text-danger {
-  color: var(--vds-danger);
+  color: var(--mud-palette-error);
 }
 
 .text-warning {
-  color: var(--vds-warning);
+  color: var(--mud-palette-warning);
 }
 
 .text-info {
-  color: var(--vds-info);
+  color: var(--mud-palette-info);
 }
 
 /* ── VDS layout utilities (supplement MudBlazor spacing/flex utilities) ─── */
 
 .paper-danger {
   background-color: var(--vds-danger-muted);
-  border: 1px solid var(--vds-danger);
+  border: 1px solid var(--mud-palette-error);
 }
 
 .paper-code {
   background: var(--vds-bg-3);
-  border: 1px solid var(--vds-border);
+  border: 1px solid var(--mud-palette-lines-default);
   max-height: 300px;
   overflow-y: auto;
 }
@@ -332,12 +294,12 @@ a:hover {
 /* ── OAuth divider ("or continue with") ────────────────────────────────── */
 
 .oauth-divider {
-  color: var(--vds-text-muted);
+  color: var(--mud-palette-text-secondary);
   font-size: 0.85rem;
 }
 
 .oauth-divider-line {
-  border-top: 1px solid var(--vds-border);
+  border-top: 1px solid var(--mud-palette-lines-default);
 }
 
 /* ── Sizing helpers ────────────────────────────────────────────────────── */
