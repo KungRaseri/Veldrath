@@ -112,49 +112,6 @@ a:hover {
   text-decoration: underline;
 }
 
-/* ── Gold-accented nav link (overrides MudBlazor active indicator) ──────── */
-
-.mud-nav-link.gold-accent.active {
-  color: var(--vds-gold-light) !important;
-  border-color: var(--vds-gold) !important;
-}
-
-/* ── Nav bar (uniform-height fit-width links) ───────────────────────────── */
-
-.nav-bar {
-  height: 100%;
-}
-
-.nav-bar .mud-nav-link {
-  display: inline-flex;
-  align-items: center;
-  height: 100%;
-  padding: 0 16px;
-  white-space: nowrap;
-  text-decoration: none;
-  color: var(--vds-text);
-  font-family: var(--vds-font-body);
-  font-size: var(--vds-text-base);
-  font-weight: 500;
-  border-bottom: 2px solid transparent;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
-}
-
-.nav-bar .mud-nav-link:hover {
-  color: var(--vds-text);
-  background: var(--vds-hover);
-}
-
-.nav-bar .mud-nav-link.active {
-  color: var(--vds-seal-light);
-  border-bottom-color: var(--vds-seal);
-}
-
-.nav-bar .mud-nav-link.gold-accent.active {
-  color: var(--vds-gold-light);
-  border-bottom-color: var(--vds-gold);
-}
-
 /* ── Header logo ─────────────────────────────────────────────────────────── */
 
 .header-logo {
