@@ -22,7 +22,7 @@
         {
             <MudPaper Class="pa-4 mb-3" Outlined="true">
                 <MudLink Href="@($"/patch-notes/{item.Slug}")" Typo="Typo.h6">@item.Title</MudLink>
-                <div class="mt-1" style="display:flex;align-items:center;gap:0.5rem">
+                <MudStack Row="true" Spacing="3" Class="mt-1">
                     <MudText Typo="Typo.caption" Color="Color.Primary">v@item.Version</MudText>
                     @if (item.PublishedAt.HasValue)
                     {
@@ -30,7 +30,7 @@
                             @item.PublishedAt.Value.ToLocalTime().ToString("MMMM d, yyyy")
                         </MudText>
                     }
-                </div>
+                </MudStack>
                 <MudText Typo="Typo.body2" Color="Color.Secondary">@item.Summary</MudText>
             </MudPaper>
         }

@@ -6,35 +6,37 @@
 
 <PageTitle>@(_note?.Title ?? "Patch Note") — Veldrath</PageTitle>
 
-@if (_loading)
-{
-    <p>Loading…</p>
-}
-else if (_note is null)
-{
-    <h1>Not Found</h1>
-    <p>That patch note doesn't exist or hasn't been published yet.</p>
-    <a href="/patch-notes">← Back to Patch Notes</a>
-}
-else
-{
-    <article class="editorial-article">
-        <header class="article-header">
-            <a class="back-link" href="/patch-notes">← Patch Notes</a>
-            <h1>@_note.Title</h1>
-            <div class="article-meta">
-                <span class="patch-version">v@_note.Version</span>
-                @if (_note.PublishedAt.HasValue)
-                {
-                    <time>@_note.PublishedAt.Value.ToLocalTime().ToString("MMMM d, yyyy")</time>
-                }
+<MudContainer MaxWidth="MaxWidth.Large" Style="margin-top:32px">
+    @if (_loading)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="my-8 d-flex justify-center" />
+    }
+    else if (_note is null)
+    {
+        <MudText Typo="Typo.h4" GutterBottom="true">Not Found</MudText>
+        <MudText Class="mb-4">That patch note doesn't exist or hasn't been published yet.</MudText>
+        <MudLink Href="/patch-notes">← Back to Patch Notes</MudLink>
+    }
+    else
+    {
+        <MudLink Href="/patch-notes" Typo="Typo.body2" Class="mb-2 d-block">← Patch Notes</MudLink>
+        <MudText Typo="Typo.h3" GutterBottom="true">@_note.Title</MudText>
+        <MudStack Row="true" Spacing="3" Class="mb-4">
+            <MudChip T="string" Color="Color.Primary" Size="Size.Small">v@_note.Version</MudChip>
+            @if (_note.PublishedAt.HasValue)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    @_note.PublishedAt.Value.ToLocalTime().ToString("MMMM d, yyyy")
+                </MudText>
+            }
+        </MudStack>
+        <MudPaper Class="pa-6" Outlined="true">
+            <div class="markdown-content">
+                @((MarkupString)_html)
             </div>
-        </header>
-        <div class="article-body markdown-content">
-            @((MarkupString)_html)
-        </div>
-    </article>
-}
+        </MudPaper>
+    }
+</MudContainer>
 
 @code {
     [Parameter] public string Slug { get; set; } = "";
