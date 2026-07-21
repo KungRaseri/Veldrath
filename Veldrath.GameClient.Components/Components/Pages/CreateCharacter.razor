@@ -35,403 +35,415 @@
             </MudAlert>
             <MudStack Row="true" Spacing="2">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadDataAsync">Retry</MudButton>
-                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Href="/Game/CharacterSelect">Back to Character Select</MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Href="/Game/CharacterSelect">Back to Character
+                    Select</MudButton>
+                </MudStack>
             </MudStack>
-        </MudStack>
-    }
+        }
     else if (_sessionExpired)
-    {
-        <MudStack Row="false" AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 60vh;" Spacing="4">
-            <MudAlert Severity="Severity.Error" Class="mb-4">
-                <MudText Typo="Typo.h6">Session Expired</MudText>
-                <MudText>Your character creation session has expired. Please start over.</MudText>
-            </MudAlert>
-            <MudStack Row="true" Spacing="2">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ResetWizard">Start Over</MudButton>
-                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Href="/Game/CharacterSelect">Back to Character Select</MudButton>
-            </MudStack>
-        </MudStack>
-    }
+        {
+            <MudStack Row="false" AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 60vh;" Spacing="4">
+                <MudAlert Severity="Severity.Error" Class="mb-4">
+                    <MudText Typo="Typo.h6">Session Expired</MudText>
+                    <MudText>Your character creation session has expired. Please start over.</MudText>
+                </MudAlert>
+                <MudStack Row="true" Spacing="2">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ResetWizard">Start Over</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Href="/Game/CharacterSelect">Back to Character
+                        Select</MudButton>
+                    </MudStack>
+                </MudStack>
+            }
     else
-    {
-        @* Per-step error banner (M4) *@
-        @if (_stepError is not null)
-        {
-            <MudAlert Severity="Severity.Error" Class="mb-3">@_stepError</MudAlert>
-        }
+            {
+                @* Per-step error banner (M4) *@
+                @if (_stepError is not null)
+                {
+                    <MudAlert Severity="Severity.Error" Class="mb-3">@_stepError</MudAlert>
+                }
 
-        @* Session timeout warning banner *@
-        var minutesRemaining = SessionMinutesRemaining;
-        @if (_sessionCreatedAt != default && minutesRemaining <= 5 && minutesRemaining > 0)
-        {
-            <MudAlert Severity="Severity.Warning" Class="mb-3 pa-2">Session expires in @minutesRemaining minute(s). Please complete your character soon.</MudAlert>
-        }
+                @* Session timeout warning banner *@
+                var minutesRemaining = SessionMinutesRemaining;
+                @if (_sessionCreatedAt != default && minutesRemaining <= 5 && minutesRemaining > 0)
+                {
+                    <MudAlert Severity="Severity.Warning" Class="mb-3 pa-2">Session expires in @minutesRemaining minute(s). Please
+                        complete your character soon.</MudAlert>
+                    }
         else if (_sessionCreatedAt != default && minutesRemaining <= 0)
-        {
-            <MudAlert Severity="Severity.Error" Class="mb-3 pa-2">Session expired. Please start over.</MudAlert>
-        }
-
-        @* Step indicator header *@
-        <MudStack Row="true" Justify="Justify.Center" Spacing="1" Class="mb-6" Style="flex-wrap: wrap;">
-            @{
-                var stepLabels = new[] { "1. Name", "2. Class", "3. Species", "4. Background", "5. Attributes", "6. Equipment", "7. Review" };
-                for (int i = 0; i < stepLabels.Length; i++)
-                {
-                    var stepNum = i + 1;
-                    var isActive = _currentStep == stepNum;
-                    var isCompleted = _currentStep > stepNum;
-                    <MudChip T="string"
-                             Text="@stepLabels[i]"
-                             Color="@(isActive ? Color.Primary : (isCompleted ? Color.Secondary : Color.Dark))"
-                             Variant="@(isActive ? Variant.Filled : Variant.Text)"
-                             Size="Size.Small" />
-                }
-            }
-        </MudStack>
-
-        @* Step content with scroll management *@
-        <div style="overflow-y: auto; max-height: calc(100vh - 250px);">
-
-            @* Step 1: Name Input *@
-            @if (_currentStep == 1)
-            {
-                <h2 @ref="_stepHeadingRef" tabindex="-1" class="mud-typography mud-typography-h5 mb-4">Name Your Character</h2>
-                <MudTextField @bind-Value="_characterName"
-                              Label="Character Name"
-                              Variant="Variant.Outlined"
-                              MaxLength="20"
-                              Placeholder="Enter a name (2-20 characters, letters only)"
-                              HelperText="@GetNameHelperText()"
-                              Immediate="true"
-                              Adornment="@GetNameAdornment()"
-                              AdornmentIcon="@GetNameAdornmentIcon()"
-                              AdornmentColor="@GetNameAdornmentColor()"
-                              OnBlur="OnNameChangedAsync" />
-                <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
-                    <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="CancelWizard" Disabled="@(_isCreating)">
-                        Cancel
-                    </MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GoToStep2Async"
-                               Disabled="@(string.IsNullOrWhiteSpace(_characterName) || _nameAvailable != true)">Next</MudButton>
-                </MudStack>
-            }
-
-            @* Step 2: Class Selection *@
-            @if (_currentStep == 2)
-            {
-                <h2 @ref="_stepHeadingRef" tabindex="-1" class="mud-typography mud-typography-h5 mb-4">Choose a Class</h2>
-                <MudGrid>
-                    @foreach (var cls in _availableClasses)
                     {
-                        var isSelected = _selectedClass?.Slug == cls.Slug;
-                        <MudItem xs="12" sm="6" md="4">
-                            <div @onclick="() => SelectClass(cls)"
-                                 @onkeydown="(e) => OnCardKeyDownAsync(e, () => SelectClass(cls))"
-                                 tabindex="0" role="option"
-                                 aria-selected="@(isSelected ? "true" : "false")"
-                                 style="cursor: pointer;">
-                                <MudCard Elevation="@(isSelected ? 5 : 1)"
-                                         Style="@(isSelected ? "border: 2px solid var(--mud-palette-primary);" : "")">
-                                    <MudCardContent>
-                                        <MudText Typo="Typo.h6">@cls.DisplayName</MudText>
-                                        <MudText Typo="Typo.body2" Color="Color.Dark">Hit Die: d@(cls.HitDie)</MudText>
-                                        <MudText Typo="Typo.body2" Color="Color.Dark">Primary: @cls.PrimaryStat</MudText>
-                                    </MudCardContent>
-                                </MudCard>
-                            </div>
-                        </MudItem>
+                        <MudAlert Severity="Severity.Error" Class="mb-3 pa-2">Session expired. Please start over.</MudAlert>
                     }
-                </MudGrid>
-                <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
-                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="GoToStep1Async">Back</MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="CancelWizard" Disabled="@(_isCreating)">
-                        Cancel
-                    </MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GoToStep3Async" Disabled="@(_selectedClass is null)">Next</MudButton>
-                </MudStack>
-            }
 
-            @* Step 3: Species Selection *@
-            @if (_currentStep == 3)
-            {
-                <h2 @ref="_stepHeadingRef" tabindex="-1" class="mud-typography mud-typography-h5 mb-4">Choose a Species</h2>
-                <MudGrid>
-                    @foreach (var species in _availableSpecies)
-                    {
-                        var isSelected = _selectedSpecies?.Slug == species.Slug;
-                        <MudItem xs="12" sm="6" md="4">
-                            <div @onclick="() => SelectSpecies(species)"
-                                 @onkeydown="(e) => OnCardKeyDownAsync(e, () => SelectSpecies(species))"
-                                 tabindex="0" role="option"
-                                 aria-selected="@(isSelected ? "true" : "false")"
-                                 style="cursor: pointer;">
-                                <MudCard Elevation="@(isSelected ? 5 : 1)"
-                                         Style="@(isSelected ? "border: 2px solid var(--mud-palette-primary);" : "")">
-                                    <MudCardContent>
-                                        <MudText Typo="Typo.h6">@species.DisplayName</MudText>
-                                        @if (!string.IsNullOrWhiteSpace(species.Description))
-                                        {
-                                            <MudText Typo="Typo.body2" Color="Color.Dark">@species.Description</MudText>
-                                        }
-                                    </MudCardContent>
-                                </MudCard>
-                            </div>
-                        </MudItem>
-                    }
-                </MudGrid>
-                <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
-                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="GoToStep2Async">Back</MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="CancelWizard" Disabled="@(_isCreating)">
-                        Cancel
-                    </MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GoToStep4Async" Disabled="@(_selectedSpecies is null)">Next</MudButton>
-                </MudStack>
-            }
-
-            @* Step 4: Background Selection *@
-            @if (_currentStep == 4)
-            {
-                <h2 @ref="_stepHeadingRef" tabindex="-1" class="mud-typography mud-typography-h5 mb-4">Choose a Background</h2>
-                <MudGrid>
-                    @foreach (var bg in _availableBackgrounds)
-                    {
-                        var isSelected = _selectedBackground?.Slug == bg.Slug;
-                        <MudItem xs="12" sm="6" md="4">
-                            <div @onclick="() => SelectBackground(bg)"
-                                 @onkeydown="(e) => OnCardKeyDownAsync(e, () => SelectBackground(bg))"
-                                 tabindex="0" role="option"
-                                 aria-selected="@(isSelected ? "true" : "false")"
-                                 style="cursor: pointer;">
-                                <MudCard Elevation="@(isSelected ? 5 : 1)"
-                                         Style="@(isSelected ? "border: 2px solid var(--mud-palette-primary);" : "")">
-                                    <MudCardContent>
-                                        <MudText Typo="Typo.h6">@bg.DisplayName</MudText>
-                                        @if (!string.IsNullOrWhiteSpace(bg.Description))
-                                        {
-                                            <MudText Typo="Typo.body2" Color="Color.Dark">@bg.Description</MudText>
-                                        }
-                                    </MudCardContent>
-                                </MudCard>
-                            </div>
-                        </MudItem>
-                    }
-                </MudGrid>
-                <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
-                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="GoToStep3Async">Back</MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="CancelWizard" Disabled="@(_isCreating)">
-                        Cancel
-                    </MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GoToStep5Async" Disabled="@(_selectedBackground is null)">Next</MudButton>
-                </MudStack>
-            }
-
-            @* Step 5: Attributes *@
-            @if (_currentStep == 5)
-            {
-                <h2 @ref="_stepHeadingRef" tabindex="-1" class="mud-typography mud-typography-h5 mb-4">Allocate Attributes</h2>
-                <MudText Typo="Typo.body2" Color="Color.Dark" Class="mb-4">Distribute @TotalBudget points across your six attributes. Click + to increase, − to decrease.</MudText>
-
-                <MudProgressLinear Value="@(TotalBudget - RemainingPoints)" Min="0" Max="@TotalBudget"
-                                   Color="@(RemainingPoints == 0 ? Color.Success : Color.Warning)"
-                                   Class="mb-2" />
-                <MudText Typo="Typo.body1" Class="mb-4">
-                    <strong>Points Remaining: @RemainingPoints / @TotalBudget</strong>
-                </MudText>
-
-                <MudStack Row="false" Spacing="2">
-                    @foreach (var stat in _statAllocations)
-                    {
-                        var cost = StatCosts[stat.Value];
-                        var nextValue = stat.Value + 1;
-                        var canIncrease = stat.Value < MaxStat && StatCosts.TryGetValue(nextValue, out var nextCost) && (PointsSpent - cost + nextCost) <= TotalBudget;
-                        var canDecrease = stat.Value > MinStat;
-                        var decreaseLabel = $"Decrease {StatDisplayNames[stat.Key]}";
-                        var increaseLabel = $"Increase {StatDisplayNames[stat.Key]}";
-
-                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="pa-3 mud-border rounded-lg">
-                            <MudText Typo="Typo.body1" Style="min-width: 180px;">@StatDisplayNames[stat.Key]</MudText>
-                            <MudIconButton Icon="@Icons.Material.Filled.Remove"
-                                            Disabled="@(!canDecrease)"
-                                            OnClick="() => DecreaseStatAsync(stat.Key)"
-                                            aria-label="@decreaseLabel" />
-                            <MudText Typo="Typo.h6" Class="mx-3" Style="min-width: 40px; text-align: center;">@stat.Value</MudText>
-                            <MudIconButton Icon="@Icons.Material.Filled.Add"
-                                            Disabled="@(!canIncrease)"
-                                            OnClick="() => IncreaseStatAsync(stat.Key)"
-                                            aria-label="@increaseLabel" />
-                            <MudText Typo="Typo.body2" Color="Color.Dark" Style="min-width: 80px; text-align: right;">Cost: @cost</MudText>
-                        </MudStack>
-                    }
-                </MudStack>
-
-                <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
-                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="GoToStep4Async">Back</MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="CancelWizard" Disabled="@(_isCreating)">
-                        Cancel
-                    </MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                               OnClick="GoToStep6Async"
-                               Disabled="@(RemainingPoints != 0 || _isSavingAttributes)">
-                        @(_isSavingAttributes ? "Saving..." : "Next")
-                    </MudButton>
-                </MudStack>
-            }
-
-            @* Step 6: Equipment Preferences *@
-            @if (_currentStep == 6)
-            {
-                <h2 @ref="_stepHeadingRef" tabindex="-1" class="mud-typography mud-typography-h5 mb-4">Equipment Preferences</h2>
-                <MudText Typo="Typo.body2" Color="Color.Dark" Class="mb-4">Optional — your class determines default gear. Customize if you prefer a specific playstyle.</MudText>
-
-                <MudContainer MaxWidth="MaxWidth.Small" Class="pa-0">
-                    <MudSelect @bind-Value="_selectedArmorType" T="string" Label="Preferred Armor Type" Variant="Variant.Outlined" Class="mb-3">
-                        <MudSelectItem Value="@((string?)null)">(Class Default)</MudSelectItem>
-                        @foreach (var armor in ArmorTypes.Where(a => !string.IsNullOrEmpty(a)))
-                        {
-                            <MudSelectItem Value="@armor.ToLowerInvariant().Replace(" ", "-")">@armor</MudSelectItem>
+                    @* Step indicator header *@
+                    <MudStack Row="true" Justify="Justify.Center" Spacing="1" Class="mb-6">
+                        @{
+                            var stepLabels = new[] { "1. Name", "2. Class", "3. Species", "4. Background", "5. Attributes", "6. Equipment",
+      "7. Review" };
+                            for (int i = 0; i < stepLabels.Length; i++)
+                            {
+                                var stepNum = i + 1;
+                                var isActive = _currentStep == stepNum;
+                                var isCompleted = _currentStep > stepNum;
+                                <MudChip T="string" Text="@stepLabels[i]"
+                                         Color="@(isActive ? Color.Tertiary : (isCompleted ? Color.Primary : Color.Secondary))"
+                                         Variant="@(isActive ? Variant.Filled : Variant.Text)" Size="Size.Small" />
+                            }
                         }
-                    </MudSelect>
-                    <MudSelect @bind-Value="_selectedWeaponType" T="string" Label="Preferred Weapon Type" Variant="Variant.Outlined" Class="mb-3">
-                        <MudSelectItem Value="@((string?)null)">(Class Default)</MudSelectItem>
-                        @foreach (var weapon in WeaponTypes.Where(w => !string.IsNullOrEmpty(w)))
+                    </MudStack>
+
+                    @* Step content with scroll management *@
+                    <div style="overflow-y: auto; max-height: calc(100vh - 250px);">
+
+                        @* Step 1: Name Input *@
+                        @if (_currentStep == 1)
                         {
-                            <MudSelectItem Value="@weapon.ToLowerInvariant().Replace(" ", "-")">@weapon</MudSelectItem>
+                            <h2 @ref="_stepHeadingRef" tabindex="-1" class="mud-typography mud-typography-h5 mb-4">Name Your Character</h2>
+                            <MudTextField @bind-Value="_characterName" Label="Character Name" Variant="Variant.Outlined" MaxLength="20"
+                                          Placeholder="Enter a name (2-20 characters, letters only)" HelperText="@GetNameHelperText()"
+                                          Immediate="true" Adornment="@GetNameAdornment()" AdornmentIcon="@GetNameAdornmentIcon()"
+                                          AdornmentColor="@GetNameAdornmentColor()" OnBlur="OnNameChangedAsync" />
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+                                <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="CancelWizard" Disabled="@(_isCreating)">
+                                    Cancel
+                                </MudButton>
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GoToStep2Async"
+                                           Disabled="@(string.IsNullOrWhiteSpace(_characterName) || _nameAvailable != true)">Next</MudButton>
+                            </MudStack>
                         }
-                    </MudSelect>
-                    <MudCheckBox @bind-Value="_includeShield" T="bool" Label="Include a Shield" Class="mb-3" />
-                </MudContainer>
 
-                <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
-                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="GoToStep5Async">Back</MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="CancelWizard" Disabled="@(_isCreating)">
-                        Cancel
-                    </MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                               OnClick="GoToStep7SaveEquipmentAsync"
-                               Disabled="@(_isSavingEquipment)">
-                        @(_isSavingEquipment ? "Saving..." : "Next")
-                    </MudButton>
-                </MudStack>
-            }
-
-            @* Step 7: Review & Create *@
-            @if (_currentStep == 7)
-            {
-                <h2 @ref="_stepHeadingRef" tabindex="-1" class="mud-typography mud-typography-h5 mb-4">Review & Create</h2>
-                <MudText Typo="Typo.body2" Color="Color.Dark" Class="mb-4">Review your character before venturing into Veldrath.</MudText>
-
-                @* Character Preview Panel *@
-                @if (_characterPreview != null)
-                {
-                    <MudCard Elevation="3" Class="mb-4">
-                        <MudCardHeader>
-                            <CardHeaderContent>
-                                <MudText Typo="Typo.h5">Character Preview</MudText>
-                            </CardHeaderContent>
-                        </MudCardHeader>
-                        <MudCardContent>
+                        @* Step 2: Class Selection *@
+                        @if (_currentStep == 2)
+                        {
+                            <h2 @ref="_stepHeadingRef" tabindex="-1" class="mud-typography mud-typography-h5 mb-4">Choose a Class</h2>
                             <MudGrid>
-                                <MudItem xs="12" md="6">
-                                    <MudStack Row="false" Spacing="2">
-                                        <MudChip T="string" Text="@_characterPreview.ClassName" Color="Color.Primary" Size="Size.Small" />
-                                        <MudChip T="string" Text="@_characterPreview.SpeciesName" Color="Color.Secondary" Size="Size.Small" />
-                                        <MudChip T="string" Text="@_characterPreview.BackgroundName" Color="Color.Tertiary" Size="Size.Small" />
-                                        <MudDivider Class="my-2" />
-                                        <MudText Typo="Typo.body1">
-                                            <strong>Health:</strong> <span class="mud-text-error"><strong>@_characterPreview.Health</strong></span>
-                                        </MudText>
-                                        <MudText Typo="Typo.body1">
-                                            <strong>Mana:</strong> <span class="mud-text-primary"><strong>@_characterPreview.Mana</strong></span>
-                                        </MudText>
-                                    </MudStack>
-                                </MudItem>
-                                <MudItem xs="12" md="6">
-                                    <MudText Typo="Typo.h6">Attributes</MudText>
-                                    <div class="d-flex justify-space-between"><span>Strength</span> <strong>@_characterPreview.Strength</strong></div>
-                                    <div class="d-flex justify-space-between"><span>Dexterity</span> <strong>@_characterPreview.Dexterity</strong></div>
-                                    <div class="d-flex justify-space-between"><span>Constitution</span> <strong>@_characterPreview.Constitution</strong></div>
-                                    <div class="d-flex justify-space-between"><span>Intelligence</span> <strong>@_characterPreview.Intelligence</strong></div>
-                                    <div class="d-flex justify-space-between"><span>Wisdom</span> <strong>@_characterPreview.Wisdom</strong></div>
-                                    <div class="d-flex justify-space-between"><span>Charisma</span> <strong>@_characterPreview.Charisma</strong></div>
-                                </MudItem>
-                            </MudGrid>
-                        </MudCardContent>
-                    </MudCard>
-                }
-                else if (_isLoadingPreview)
-                {
-                    <MudCard Elevation="1" Class="mb-4">
-                        <MudCardContent Class="text-center py-4">
-                            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="mb-2" />
-                            <MudText Typo="Typo.body2" Color="Color.Dark">Calculating character stats...</MudText>
-                        </MudCardContent>
-                    </MudCard>
-                }
-
-                @* Choices Summary *@
-                <MudCard Elevation="1" Class="mb-4">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.h5">Your Choices</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudStack Row="false" Spacing="2">
-                            <MudText Typo="Typo.body1"><strong>Name:</strong> @_characterName</MudText>
-                            <MudText Typo="Typo.body1"><strong>Class:</strong> @(_selectedClass?.DisplayName ?? "—")</MudText>
-                            <MudText Typo="Typo.body1"><strong>Species:</strong> @(_selectedSpecies?.DisplayName ?? "—")</MudText>
-                            <MudText Typo="Typo.body1"><strong>Background:</strong> @(_selectedBackground?.DisplayName ?? "—")</MudText>
-                            <MudText Typo="Typo.body1">
-                                <strong>Attributes:</strong>
-                                @foreach (var stat in _statAllocations)
+                                @foreach (var cls in _availableClasses)
                                 {
-                                    <span class="mr-3">@StatDisplayNames[stat.Key].Split(' ')[0]: <strong>@stat.Value</strong></span>
+                                    var isSelected = _selectedClass?.Slug == cls.Slug;
+                                    <MudItem xs="12" sm="6" md="4">
+                                        <div @onclick="() => SelectClass(cls)" @onkeydown="(e) => OnCardKeyDownAsync(e, () => SelectClass(cls))"
+                                             tabindex="0" role="option" aria-selected="@(isSelected ? "true" : "false")"
+                                             style="cursor: pointer;">
+                                            <MudCard Elevation="@(isSelected ? 5 : 1)"
+                                                     Style="@(isSelected ? "border: 2px solid var(--mud-palette-primary);" : "")">
+                                                <MudCardContent>
+                                                    <MudText Typo="Typo.h6">@cls.DisplayName</MudText>
+                                                    <MudText Typo="Typo.body2" Color="Color.Dark">Hit Die: d@(cls.HitDie)</MudText>
+                                                    <MudText Typo="Typo.body2" Color="Color.Dark">Primary: @cls.PrimaryStat</MudText>
+                                                </MudCardContent>
+                                            </MudCard>
+                                        </div>
+                                    </MudItem>
                                 }
-                            </MudText>
-                            <MudText Typo="Typo.body1"><strong>Equipment:</strong> @EquipmentSummary</MudText>
-                        </MudStack>
-                    </MudCardContent>
-                </MudCard>
+                            </MudGrid>
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+                                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="GoToStep1Async">Back</MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="CancelWizard" Disabled="@(_isCreating)">
+                                    Cancel
+                                </MudButton>
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GoToStep3Async"
+                                           Disabled="@(_selectedClass is null)">Next</MudButton>
+                            </MudStack>
+                        }
 
-                @* Difficulty Mode *@
-                <MudCard Elevation="1" Class="mb-4">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.h5">Difficulty</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudRadioGroup @bind-Value="_difficultyMode" T="string">
-                            <MudRadio T="string" Value="@("normal")" Color="Color.Success">Normal — Standard gameplay, death is recoverable</MudRadio>
-                            <MudRadio T="string" Value="@("hardcore")" Color="Color.Error">Hardcore — Permadeath. Character is permanently lost upon death.</MudRadio>
-                        </MudRadioGroup>
-                    </MudCardContent>
-                </MudCard>
+                        @* Step 3: Species Selection *@
+                        @if (_currentStep == 3)
+                        {
+                            <h2 @ref="_stepHeadingRef" tabindex="-1" class="mud-typography mud-typography-h5 mb-4">Choose a Species</h2>
+                            <MudGrid>
+                                @foreach (var species in _availableSpecies)
+                                {
+                                    var isSelected = _selectedSpecies?.Slug == species.Slug;
+                                    <MudItem xs="12" sm="6" md="4">
+                                        <div @onclick="() => SelectSpecies(species)"
+                                             @onkeydown="(e) => OnCardKeyDownAsync(e, () => SelectSpecies(species))" tabindex="0" role="option"
+                                             aria-selected="@(isSelected ? "true" : "false")" style="cursor: pointer;">
+                                            <MudCard Elevation="@(isSelected ? 5 : 1)"
+                                                     Style="@(isSelected ? "border: 2px solid var(--mud-palette-primary);" : "")">
+                                                <MudCardContent>
+                                                    <MudText Typo="Typo.h6">@species.DisplayName</MudText>
+                                                    @if (!string.IsNullOrWhiteSpace(species.Description))
+                                                    {
+                                                        <MudText Typo="Typo.body2" Color="Color.Dark">@species.Description</MudText>
+                                                    }
+                                                </MudCardContent>
+                                            </MudCard>
+                                        </div>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+                                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="GoToStep2Async">Back</MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="CancelWizard" Disabled="@(_isCreating)">
+                                    Cancel
+                                </MudButton>
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GoToStep4Async"
+                                           Disabled="@(_selectedSpecies is null)">Next</MudButton>
+                            </MudStack>
+                        }
 
-                @if (IsHardcore)
-                {
-                    <MudAlert Severity="Severity.Error" Class="mb-4">
-                        <strong>⚠️ Hardcore Mode:</strong> If your character dies, they are permanently lost.
-                        This cannot be undone. Are you sure?
-                    </MudAlert>
-                }
+                        @* Step 4: Background Selection *@
+                        @if (_currentStep == 4)
+                        {
+                            <h2 @ref="_stepHeadingRef" tabindex="-1" class="mud-typography mud-typography-h5 mb-4">Choose a Background</h2>
+                            <MudGrid>
+                                @foreach (var bg in _availableBackgrounds)
+                                {
+                                    var isSelected = _selectedBackground?.Slug == bg.Slug;
+                                    <MudItem xs="12" sm="6" md="4">
+                                        <div @onclick="() => SelectBackground(bg)"
+                                             @onkeydown="(e) => OnCardKeyDownAsync(e, () => SelectBackground(bg))" tabindex="0" role="option"
+                                             aria-selected="@(isSelected ? "true" : "false")" style="cursor: pointer;">
+                                            <MudCard Elevation="@(isSelected ? 5 : 1)"
+                                                     Style="@(isSelected ? "border: 2px solid var(--mud-palette-primary);" : "")">
+                                                <MudCardContent>
+                                                    <MudText Typo="Typo.h6">@bg.DisplayName</MudText>
+                                                    @if (!string.IsNullOrWhiteSpace(bg.Description))
+                                                    {
+                                                        <MudText Typo="Typo.body2" Color="Color.Dark">@bg.Description</MudText>
+                                                    }
+                                                </MudCardContent>
+                                            </MudCard>
+                                        </div>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+                                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="GoToStep3Async">Back</MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="CancelWizard" Disabled="@(_isCreating)">
+                                    Cancel
+                                </MudButton>
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GoToStep5Async"
+                                           Disabled="@(_selectedBackground is null)">Next</MudButton>
+                            </MudStack>
+                        }
 
-                @* Create Button *@
-                <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
-                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="GoToStep6Async" Disabled="@(_isCreating)">
-                        ← Back
-                    </MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="CancelWizard" Disabled="@(_isCreating)">
-                        Cancel
-                    </MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Large" OnClick="ConfirmCreate" Disabled="@(_isCreating)">
-                        @(_isCreating ? "Creating..." : "Create Character")
-                    </MudButton>
-                </MudStack>
-            }
-        </div>
-    }
-</MudContainer>
+                        @* Step 5: Attributes *@
+                        @if (_currentStep == 5)
+                        {
+                            <h2 @ref="_stepHeadingRef" tabindex="-1" class="mud-typography mud-typography-h5 mb-4">Allocate Attributes</h2>
+                            <MudText Typo="Typo.body2" Color="Color.Dark" Class="mb-4">Distribute @TotalBudget points across your six
+                                attributes. Click + to increase, − to decrease.</MudText>
+
+                                <MudProgressLinear Value="@(TotalBudget - RemainingPoints)" Min="0" Max="@TotalBudget"
+                                                   Color="@(RemainingPoints == 0 ? Color.Success : Color.Warning)" Class="mb-2" />
+                                <MudText Typo="Typo.body1" Class="mb-4">
+                                    <strong>Points Remaining: @RemainingPoints / @TotalBudget</strong>
+                                </MudText>
+
+                                <MudStack Row="false" Spacing="2">
+                                    @foreach (var stat in _statAllocations)
+                                    {
+                                        var cost = StatCosts[stat.Value];
+                                        var nextValue = stat.Value + 1;
+                                        var canIncrease = stat.Value < MaxStat && StatCosts.TryGetValue(nextValue, out var nextCost) && (PointsSpent
+                            - cost + nextCost) <= TotalBudget;
+                                        var canDecrease = stat.Value > MinStat;
+                                        var decreaseLabel = $"Decrease {StatDisplayNames[stat.Key]}";
+                                        var increaseLabel = $"Increase {StatDisplayNames[stat.Key]}";
+
+                                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center"
+                                                  Class="pa-3 mud-border rounded-lg">
+                                            <MudText Typo="Typo.body1" Style="min-width: 180px;">@StatDisplayNames[stat.Key]</MudText>
+                                            <MudIconButton Icon="@Icons.Material.Filled.Remove" Disabled="@(!canDecrease)"
+                                                           OnClick="() => DecreaseStatAsync(stat.Key)" aria-label="@decreaseLabel" />
+                                            <MudText Typo="Typo.h6" Class="mx-3" Style="min-width: 40px; text-align: center;">@stat.Value</MudText>
+                                            <MudIconButton Icon="@Icons.Material.Filled.Add" Disabled="@(!canIncrease)"
+                                                           OnClick="() => IncreaseStatAsync(stat.Key)" aria-label="@increaseLabel" />
+                                            <MudText Typo="Typo.body2" Color="Color.Dark" Style="min-width: 80px; text-align: right;">Cost: @cost
+                                            </MudText>
+                                        </MudStack>
+                                    }
+                                </MudStack>
+
+                                <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+                                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="GoToStep4Async">Back</MudButton>
+                                    <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="CancelWizard" Disabled="@(_isCreating)">
+                                        Cancel
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GoToStep6Async"
+                                               Disabled="@(RemainingPoints != 0 || _isSavingAttributes)">
+                                        @(_isSavingAttributes ? "Saving..." : "Next")
+                                    </MudButton>
+                                </MudStack>
+                            }
+
+                            @* Step 6: Equipment Preferences *@
+                            @if (_currentStep == 6)
+                            {
+                                <h2 @ref="_stepHeadingRef" tabindex="-1" class="mud-typography mud-typography-h5 mb-4">Equipment Preferences
+                                </h2>
+                                <MudText Typo="Typo.body2" Color="Color.Dark" Class="mb-4">Optional — your class determines default gear.
+                                    Customize if you prefer a specific playstyle.</MudText>
+
+                                    <MudContainer MaxWidth="MaxWidth.Small" Class="pa-0">
+                                        <MudSelect @bind-Value="_selectedArmorType" T="string" Label="Preferred Armor Type"
+                                                   Variant="Variant.Outlined" Class="mb-3">
+                                            <MudSelectItem Value="@((string?)null)">(Class Default)</MudSelectItem>
+                                            @foreach (var armor in ArmorTypes.Where(a => !string.IsNullOrEmpty(a)))
+                                            {
+                                                <MudSelectItem Value="@armor.ToLowerInvariant().Replace(" ", "-")">@armor</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                        <MudSelect @bind-Value="_selectedWeaponType" T="string" Label="Preferred Weapon Type"
+                                                   Variant="Variant.Outlined" Class="mb-3">
+                                            <MudSelectItem Value="@((string?)null)">(Class Default)</MudSelectItem>
+                                            @foreach (var weapon in WeaponTypes.Where(w => !string.IsNullOrEmpty(w)))
+                                            {
+                                                <MudSelectItem Value="@weapon.ToLowerInvariant().Replace(" ", "-")">@weapon</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                        <MudCheckBox @bind-Value="_includeShield" T="bool" Label="Include a Shield" Class="mb-3" />
+                                    </MudContainer>
+
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+                                        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="GoToStep5Async">Back</MudButton>
+                                        <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="CancelWizard" Disabled="@(_isCreating)">
+                                            Cancel
+                                        </MudButton>
+                                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GoToStep7SaveEquipmentAsync"
+                                                   Disabled="@(_isSavingEquipment)">
+                                            @(_isSavingEquipment ? "Saving..." : "Next")
+                                        </MudButton>
+                                    </MudStack>
+                                }
+
+                                @* Step 7: Review & Create *@
+                                @if (_currentStep == 7)
+                                {
+                                    <h2 @ref="_stepHeadingRef" tabindex="-1" class="mud-typography mud-typography-h5 mb-4">Review & Create</h2>
+                                    <MudText Typo="Typo.body2" Color="Color.Dark" Class="mb-4">Review your character before venturing into Veldrath.
+                                    </MudText>
+
+                                    @* Character Preview Panel *@
+                                    @if (_characterPreview != null)
+                                    {
+                                        <MudCard Elevation="3" Class="mb-4">
+                                            <MudCardHeader>
+                                                <CardHeaderContent>
+                                                    <MudText Typo="Typo.h5">Character Preview</MudText>
+                                                </CardHeaderContent>
+                                            </MudCardHeader>
+                                            <MudCardContent>
+                                                <MudGrid>
+                                                    <MudItem xs="12" md="6">
+                                                        <MudStack Row="false" Spacing="2">
+                                                            <MudChip T="string" Text="@_characterPreview.ClassName" Color="Color.Primary"
+                                                                     Size="Size.Small" />
+                                                            <MudChip T="string" Text="@_characterPreview.SpeciesName" Color="Color.Secondary"
+                                                                     Size="Size.Small" />
+                                                            <MudChip T="string" Text="@_characterPreview.BackgroundName" Color="Color.Tertiary"
+                                                                     Size="Size.Small" />
+                                                            <MudDivider Class="my-2" />
+                                                            <MudText Typo="Typo.body1">
+                                                                <strong>Health:</strong> <span
+                                                                class="mud-text-error"><strong>@_characterPreview.Health</strong></span>
+                                                            </MudText>
+                                                            <MudText Typo="Typo.body1">
+                                                                <strong>Mana:</strong> <span
+                                                                class="mud-text-primary"><strong>@_characterPreview.Mana</strong></span>
+                                                            </MudText>
+                                                        </MudStack>
+                                                    </MudItem>
+                                                    <MudItem xs="12" md="6">
+                                                        <MudText Typo="Typo.h6">Attributes</MudText>
+                                                        <div class="d-flex justify-space-between"><span>Strength</span>
+                                                            <strong>@_characterPreview.Strength</strong></div>
+                                                            <div class="d-flex justify-space-between"><span>Dexterity</span>
+                                                                <strong>@_characterPreview.Dexterity</strong></div>
+                                                                <div class="d-flex justify-space-between"><span>Constitution</span>
+                                                                    <strong>@_characterPreview.Constitution</strong></div>
+                                                                    <div class="d-flex justify-space-between"><span>Intelligence</span>
+                                                                        <strong>@_characterPreview.Intelligence</strong></div>
+                                                                        <div class="d-flex justify-space-between"><span>Wisdom</span>
+                                                                            <strong>@_characterPreview.Wisdom</strong></div>
+                                                                            <div class="d-flex justify-space-between"><span>Charisma</span>
+                                                                                <strong>@_characterPreview.Charisma</strong></div>
+                                                                            </MudItem>
+                                                                        </MudGrid>
+                                                                    </MudCardContent>
+                                                                </MudCard>
+                                                            }
+                else if (_isLoadingPreview)
+                                                            {
+                                                                <MudCard Elevation="1" Class="mb-4">
+                                                                    <MudCardContent Class="text-center py-4">
+                                                                        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="mb-2" />
+                                                                        <MudText Typo="Typo.body2" Color="Color.Dark">Calculating character stats...</MudText>
+                                                                    </MudCardContent>
+                                                                </MudCard>
+                                                            }
+
+                                                            @* Choices Summary *@
+                                                            <MudCard Elevation="1" Class="mb-4">
+                                                                <MudCardHeader>
+                                                                    <CardHeaderContent>
+                                                                        <MudText Typo="Typo.h5">Your Choices</MudText>
+                                                                    </CardHeaderContent>
+                                                                </MudCardHeader>
+                                                                <MudCardContent>
+                                                                    <MudStack Row="false" Spacing="2">
+                                                                        <MudText Typo="Typo.body1"><strong>Name:</strong> @_characterName</MudText>
+                                                                        <MudText Typo="Typo.body1"><strong>Class:</strong> @(_selectedClass?.DisplayName ?? "—")</MudText>
+                                                                        <MudText Typo="Typo.body1"><strong>Species:</strong> @(_selectedSpecies?.DisplayName ?? "—")
+                                                                        </MudText>
+                                                                        <MudText Typo="Typo.body1"><strong>Background:</strong> @(_selectedBackground?.DisplayName ?? "—")
+                                                                        </MudText>
+                                                                        <MudText Typo="Typo.body1">
+                                                                            <strong>Attributes:</strong>
+                                                                            @foreach (var stat in _statAllocations)
+                                                                            {
+                                                                                <span class="mr-3">@StatDisplayNames[stat.Key].Split(' ')[0]:
+                                                                                    <strong>@stat.Value</strong></span>
+                                                                                }
+                                                                            </MudText>
+                                                                            <MudText Typo="Typo.body1"><strong>Equipment:</strong> @EquipmentSummary</MudText>
+                                                                        </MudStack>
+                                                                    </MudCardContent>
+                                                                </MudCard>
+
+                                                                @* Difficulty Mode *@
+                                                                <MudCard Elevation="1" Class="mb-4">
+                                                                    <MudCardHeader>
+                                                                        <CardHeaderContent>
+                                                                            <MudText Typo="Typo.h5">Difficulty</MudText>
+                                                                        </CardHeaderContent>
+                                                                    </MudCardHeader>
+                                                                    <MudCardContent>
+                                                                        <MudRadioGroup @bind-Value="_difficultyMode" T="string">
+                                                                            <MudRadio T="string" Value="@("normal")" Color="Color.Success">Normal — Standard gameplay, death is
+                                                                                recoverable</MudRadio>
+                                                                                <MudRadio T="string" Value="@("hardcore")" Color="Color.Error">Hardcore — Permadeath. Character is
+                                                                                    permanently lost upon death.</MudRadio>
+                                                                                </MudRadioGroup>
+                                                                            </MudCardContent>
+                                                                        </MudCard>
+
+                                                                        @if (IsHardcore)
+                                                                        {
+                                                                            <MudAlert Severity="Severity.Error" Class="mb-4">
+                                                                                <strong>⚠️ Hardcore Mode:</strong> If your character dies, they are permanently lost.
+                                                                                This cannot be undone. Are you sure?
+                                                                            </MudAlert>
+                                                                        }
+
+                                                                        @* Create Button *@
+                                                                        <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+                                                                            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="GoToStep6Async"
+                                                                                       Disabled="@(_isCreating)">
+                                                                                ← Back
+                                                                            </MudButton>
+                                                                            <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="CancelWizard" Disabled="@(_isCreating)">
+                                                                                Cancel
+                                                                            </MudButton>
+                                                                            <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Large" OnClick="ConfirmCreate"
+                                                                                       Disabled="@(_isCreating)">
+                                                                                @(_isCreating ? "Creating..." : "Create Character")
+                                                                            </MudButton>
+                                                                        </MudStack>
+                                                                    }
+                                                                </div>
+                                                            }
+                                                        </MudContainer>
 
 @code {
     private List<ActorClassDto> _availableClasses = [];
@@ -1025,19 +1037,19 @@
         if (trimmed.Length < 2)
         {
             _nameError = "Name must be at least 2 characters.";
-            _srAnnouncement = "Name must be at least 2 characters";
+            _stepError = "Name must be at least 2 characters";
             return;
         }
         if (trimmed.Length > 20)
         {
             _nameError = "Name must be at most 20 characters.";
-            _srAnnouncement = "Name must be at most 20 characters";
+            _stepError = "Name must be at most 20 characters";
             return;
         }
         if (!System.Text.RegularExpressions.Regex.IsMatch(trimmed, @"^[a-zA-Z]+$"))
         {
             _nameError = "Name may only contain letters.";
-            _srAnnouncement = "Name may only contain letters";
+            _stepError = "Name may only contain letters";
             return;
         }
 
@@ -1057,19 +1069,19 @@
             if (result is null)
             {
                 _nameError = "Unexpected empty response from server. Please try again.";
-                _srAnnouncement = "Error checking name availability";
+                _stepError = "Error checking name availability";
             }
             else if (!result.Available)
             {
                 _nameError = result.Error ?? "Name is not available.";
                 _nameAvailable = false;
-                _srAnnouncement = "Name is not available";
+                _stepError = "Name is not available";
             }
             else
             {
                 _nameAvailable = true;
                 _characterName = trimmed;
-                _srAnnouncement = "Name is available";
+                _stepError = "Name is available";
             }
         }
         catch (TaskCanceledException)
@@ -1080,13 +1092,13 @@
         {
             Logger.LogError(ex, "HTTP error while checking character name availability.");
             _nameError = "Server error while checking name. Please try again later.";
-            _srAnnouncement = "Server error while checking name";
+            _stepError = "Server error while checking name";
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to check character name availability.");
             _nameError = "Could not verify name availability. Please try again.";
-            _srAnnouncement = "Could not verify name availability";
+            _stepError = "Could not verify name availability";
         }
         finally
         {
