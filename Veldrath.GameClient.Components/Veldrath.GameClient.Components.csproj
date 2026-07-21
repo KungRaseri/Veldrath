@@ -12,6 +12,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="MudBlazor" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Veldrath.GameClient.Core\Veldrath.GameClient.Core.csproj" />
     <ProjectReference Include="..\Veldrath.Contracts\Veldrath.Contracts.csproj" />
     <ProjectReference Include="..\Veldrath.Auth.Blazor\Veldrath.Auth.Blazor.csproj" />
