@@ -121,6 +121,11 @@ public record LootTableDto(
 /// <param name="BaseHealth">Starting hit points at level 1, or <see langword="null"/> if not configured.</param>
 /// <param name="BaseMana">Starting mana at level 1, or <see langword="null"/> if not configured.</param>
 /// <param name="HealthGrowth">HP gained per level, or <see langword="null"/> if not configured.</param>
+/// <param name="ManaGrowth">MP gained per level, or <see langword="null"/> if not configured.</param>
+/// <param name="StrengthGrowth">Strength gained per level, or <see langword="null"/> if not configured.</param>
+/// <param name="DexterityGrowth">Dexterity gained per level, or <see langword="null"/> if not configured.</param>
+/// <param name="IntelligenceGrowth">Intelligence gained per level, or <see langword="null"/> if not configured.</param>
+/// <param name="ConstitutionGrowth">Constitution gained per level, or <see langword="null"/> if not configured.</param>
 /// <param name="IsSpellcaster"><see langword="true"/> when the class can cast spells.</param>
 /// <param name="IsMelee"><see langword="true"/> when the class is primarily melee-focused.</param>
 /// <param name="IsRanged"><see langword="true"/> when the class is primarily ranged-focused.</param>
@@ -138,6 +143,11 @@ public record ActorClassDto(
     int? BaseHealth = null,
     int? BaseMana = null,
     float? HealthGrowth = null,
+    float? ManaGrowth = null,
+    float? StrengthGrowth = null,
+    float? DexterityGrowth = null,
+    float? IntelligenceGrowth = null,
+    float? ConstitutionGrowth = null,
     bool IsSpellcaster = false,
     bool IsMelee = false,
     bool IsRanged = false,
