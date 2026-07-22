@@ -1,4 +1,4 @@
-﻿@page "/admin/status"
+@page "/admin/status"
 @using Veldrath.Contracts.Admin
 @using Veldrath.Contracts.Account
 @inject RealmFoundryApiClient Api
@@ -12,106 +12,85 @@
 }
 else if (_loading)
 {
-    <p>Loading…</p>
+    <MudText>Loading…</MudText>
 }
 else if (_status is null)
 {
-    <p class="error">Could not retrieve server status.</p>
+    <MudAlert Severity="Severity.Error" Class="mud-mb-4">Could not retrieve server status.</MudAlert>
 }
 else
 {
-    <h1>Server Status</h1>
+    <MudText Typo="Typo.h3" Class="mud-mb-4">Server Status</MudText>
 
-    <div class="status-summary">
-        <div class="status-stat">
-            <span class="stat-label">Connected Players</span>
-            <span class="stat-value">@_status.ConnectedPlayers</span>
-        </div>
-        <div class="status-stat">
-            <span class="stat-label">Registered Accounts</span>
-            <span class="stat-value">@_status.RegisteredAccounts</span>
-        </div>
-        <div class="status-stat">
-            <span class="stat-label">Total Characters</span>
-            <span class="stat-value">@_status.TotalCharacters</span>
-        </div>
-        <div class="status-stat">
-            <span class="stat-label">Uptime</span>
-            <span class="stat-value">@FormatUptime(_status.ServerStartedAt)</span>
-        </div>
-        <div class="status-stat">
-            <span class="stat-label">Started At</span>
-            <span class="stat-value muted">@_status.ServerStartedAt.ToLocalTime().ToString("g")</span>
-        </div>
+    <div class="d-flex flex-wrap gap-4 mb-4">
+        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4" Style="min-width: 160px;">
+            <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="text-transform: uppercase; letter-spacing: .06em;">Connected Players</MudText>
+            <MudText Typo="Typo.h4" Class="mud-mt-1">@_status.ConnectedPlayers</MudText>
+        </MudPaper>
+        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4" Style="min-width: 160px;">
+            <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="text-transform: uppercase; letter-spacing: .06em;">Registered Accounts</MudText>
+            <MudText Typo="Typo.h4" Class="mud-mt-1">@_status.RegisteredAccounts</MudText>
+        </MudPaper>
+        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4" Style="min-width: 160px;">
+            <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="text-transform: uppercase; letter-spacing: .06em;">Total Characters</MudText>
+            <MudText Typo="Typo.h4" Class="mud-mt-1">@_status.TotalCharacters</MudText>
+        </MudPaper>
+        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4" Style="min-width: 160px;">
+            <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="text-transform: uppercase; letter-spacing: .06em;">Uptime</MudText>
+            <MudText Typo="Typo.h4" Class="mud-mt-1">@FormatUptime(_status.ServerStartedAt)</MudText>
+        </MudPaper>
+        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4" Style="min-width: 160px;">
+            <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="text-transform: uppercase; letter-spacing: .06em;">Started At</MudText>
+            <MudText Typo="Typo.h4" Class="mud-mt-1 mud-text-secondary">@_status.ServerStartedAt.ToLocalTime().ToString("g")</MudText>
+        </MudPaper>
     </div>
 
     @if (_status.ZonePopulations.Count > 0)
     {
-        <h2>Zone Population</h2>
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Zone</th>
-                    <th>Zone ID</th>
-                    <th>Players</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var z in _status.ZonePopulations.OrderByDescending(z => z.PlayerCount))
-                {
-                    <tr>
-                        <td>@z.ZoneName</td>
-                        <td class="muted">@z.ZoneId</td>
-                        <td>@z.PlayerCount</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <MudText Typo="Typo.h5" Class="mud-mb-2">Zone Population</MudText>
+        <MudTable Items="@_status.ZonePopulations.OrderByDescending(z => z.PlayerCount).ToList()"
+                  Hover="true" Elevation="0" Outlined="true" Class="mud-mb-4">
+            <HeaderContent>
+                <MudTh>Zone</MudTh>
+                <MudTh>Zone ID</MudTh>
+                <MudTh>Players</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.ZoneName</MudTd>
+                <MudTd Class="mud-text-secondary">@context.ZoneId</MudTd>
+                <MudTd>@context.PlayerCount</MudTd>
+            </RowTemplate>
+        </MudTable>
     }
     else
     {
-        <p class="muted">No active zones.</p>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mud-mb-4">No active zones.</MudText>
     }
 
     @if (_status.HealthChecks is { Count: > 0 })
     {
-        <h2>Health Checks</h2>
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Check</th>
-                    <th>Status</th>
-                    <th>Details</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var check in _status.HealthChecks)
-                {
-                    <tr>
-                        <td>@check.Name</td>
-                        <td><span class="badge @HealthBadgeClass(check.Status)">@check.Status</span></td>
-                        <td class="muted">@(check.Description ?? "—")</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <MudText Typo="Typo.h5" Class="mud-mb-2">Health Checks</MudText>
+        <MudTable Items="@_status.HealthChecks"
+                  Hover="true" Elevation="0" Outlined="true" Class="mud-mb-4">
+            <HeaderContent>
+                <MudTh>Check</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Details</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Name</MudTd>
+                <MudTd>
+                    <MudChip T="string" Size="Size.Small" Color="@HealthChipColor(context.Status)">@context.Status</MudChip>
+                </MudTd>
+                <MudTd Class="mud-text-secondary">@(context.Description ?? "—")</MudTd>
+            </RowTemplate>
+        </MudTable>
     }
 
-    <div style="margin-top:1rem">
-        <button class="btn btn-sm" @onclick="RefreshAsync">Refresh</button>
+    <div class="mud-mt-4">
+        <MudButton Variant="Variant.Filled" Size="Size.Small" OnClick="RefreshAsync">Refresh</MudButton>
     </div>
 }
-
-<style>
-    .status-summary { display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
-    .status-stat { display: flex; flex-direction: column; gap: .25rem; padding: 1rem 1.5rem;
-        border: 1px solid var(--vds-border); border-radius: 8px; min-width: 160px; }
-    .stat-label { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--vds-text-muted); }
-    .stat-value { font-size: 1.5rem; font-weight: 600; }
-    .badge-healthy   { background: var(--vds-success-muted); color: var(--vds-success); }
-    .badge-degraded  { background: var(--vds-warning-muted); color: var(--vds-warning); }
-    .badge-unhealthy { background: var(--vds-danger-muted);  color: var(--vds-danger);  }
-</style>
 
 @code {
     private ServerStatusDto? _status;
@@ -139,10 +118,10 @@ else
         return $"{span.Minutes}m";
     }
 
-    private static string HealthBadgeClass(string status) => status switch
+    private static Color HealthChipColor(string status) => status switch
     {
-        "Healthy"   => "badge badge-healthy",
-        "Degraded"  => "badge badge-degraded",
-        _           => "badge badge-unhealthy"
+        "Healthy"   => Color.Success,
+        "Degraded"  => Color.Warning,
+        _           => Color.Error,
     };
 }

@@ -1,4 +1,4 @@
-﻿@page "/mod"
+@page "/mod"
 @inject AuthStateService AuthState
 
 <PageTitle>Moderation — RealmFoundry</PageTitle>
@@ -9,25 +9,23 @@
 }
 else
 {
-    <h1>Moderation Dashboard</h1>
+    <MudText Typo="Typo.h3" Class="mud-mb-4">Moderation Dashboard</MudText>
 
-    <div class="admin-grid">
-        <a class="admin-card" href="/mod/users">
-            <h2>Player Search</h2>
-            <p>Look up player accounts, view history, and apply kick, warn, mute, or ban actions.</p>
-        </a>
+    <MudGrid Spacing="4">
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4">
+                <MudText Typo="Typo.h6" Class="mud-mb-2">Player Search</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mud-mb-3">Look up player accounts, view history, and apply kick, warn, mute, or ban actions.</MudText>
+                <MudButton Variant="Variant.Filled" Href="/mod/users">Search Players</MudButton>
+            </MudPaper>
+        </MudItem>
 
-        <a class="admin-card" href="/mod/reports">
-            <h2>Player Reports</h2>
-            <p>Review open player-submitted reports and mark them resolved.</p>
-        </a>
-    </div>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4">
+                <MudText Typo="Typo.h6" Class="mud-mb-2">Player Reports</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mud-mb-3">Review open player-submitted reports and mark them resolved.</MudText>
+                <MudButton Variant="Variant.Filled" Href="/mod/reports">View Reports</MudButton>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 }
-
-<style>
-    .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
-    .admin-card { display: block; padding: 1.25rem 1.5rem; border: 1px solid var(--vds-border); border-radius: 8px; text-decoration: none; color: inherit; transition: border-color .15s; }
-    .admin-card:hover { border-color: var(--vds-seal-light); }
-    .admin-card h2 { margin: 0 0 .5rem; font-size: 1.05rem; }
-    .admin-card p { margin: 0; color: var(--vds-text-muted); font-size: .9rem; }
-</style>

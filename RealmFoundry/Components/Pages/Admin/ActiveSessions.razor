@@ -1,4 +1,4 @@
-﻿@page "/admin/sessions"
+@page "/admin/sessions"
 @inject AuthStateService AuthState
 @inject RealmFoundryApiClient Api
 
@@ -10,56 +10,63 @@
 }
 else
 {
-    <h1>Active Sessions</h1>
+    <MudText Typo="Typo.h3" Class="mud-mb-4">Active Sessions</MudText>
 
-    <div class="toolbar">
-        <input class="filter-input" placeholder="Region ID…" @bind="_regionId" @bind:event="oninput" />
-        <input class="filter-input" placeholder="Zone ID…"   @bind="_zoneId"   @bind:event="oninput" />
-        <button class="btn" @onclick="LoadAsync">Filter</button>
-        <button class="btn btn-secondary" @onclick="ClearFiltersAsync">Clear</button>
-        <a class="btn btn-secondary" href="/admin">← Back</a>
-        <span class="player-count">@(_sessions?.Count ?? 0) player(s) online</span>
+    <div class="d-flex flex-wrap gap-3 mb-4 align-items-center">
+        <MudTextField @bind-Value="_regionId"
+                      T="string"
+                      Placeholder="Region ID…"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Immediate="true"
+                      Style="width: 160px;" />
+        <MudTextField @bind-Value="_zoneId"
+                      T="string"
+                      Placeholder="Zone ID…"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Immediate="true"
+                      Style="width: 160px;" />
+        <MudButton Variant="Variant.Filled" Size="Size.Small" OnClick="LoadAsync">Filter</MudButton>
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="ClearFiltersAsync">Clear</MudButton>
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/admin">← Back</MudButton>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">@(_sessions?.Count ?? 0) player(s) online</MudText>
     </div>
 
     @if (_loading)
     {
-        <p>Loading…</p>
+        <MudText>Loading…</MudText>
     }
     else if (_sessions is null)
     {
-        <p class="error">Failed to load sessions.</p>
+        <MudAlert Severity="Severity.Error" Class="mud-mb-4">Failed to load sessions.</MudAlert>
     }
     else if (_sessions.Count == 0)
     {
-        <p class="muted">No active sessions match the current filter.</p>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">No active sessions match the current filter.</MudText>
     }
     else
     {
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Character</th>
-                    <th>Account</th>
-                    <th>Region</th>
-                    <th>Zone</th>
-                    <th>Since</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var s in _sessions)
-                {
-                    <tr>
-                        <td>@s.CharacterName</td>
-                        <td class="muted">@s.AccountUsername</td>
-                        <td class="muted">@s.RegionId</td>
-                        <td class="muted">@(s.ZoneId ?? "—")</td>
-                        <td class="muted">@s.EnteredAt.ToLocalTime().ToString("g")</td>
-                        <td><a class="btn btn-sm" href="/admin/users/@s.AccountId">Manage Account</a></td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <MudTable Items="@_sessions" Hover="true" Elevation="0" Outlined="true">
+            <HeaderContent>
+                <MudTh>Character</MudTh>
+                <MudTh>Account</MudTh>
+                <MudTh>Region</MudTh>
+                <MudTh>Zone</MudTh>
+                <MudTh>Since</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.CharacterName</MudTd>
+                <MudTd Class="mud-text-secondary">@context.AccountUsername</MudTd>
+                <MudTd Class="mud-text-secondary">@context.RegionId</MudTd>
+                <MudTd Class="mud-text-secondary">@(context.ZoneId ?? "—")</MudTd>
+                <MudTd Class="mud-text-secondary">@context.EnteredAt.ToLocalTime().ToString("g")</MudTd>
+                <MudTd>
+                    <MudButton Variant="Variant.Filled" Size="Size.Small" Href="@($"/admin/users/{context.AccountId}")">Manage Account</MudButton>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
     }
 }
 
@@ -95,14 +102,3 @@ else
         await LoadAsync();
     }
 }
-
-<style>
-    .toolbar { display: flex; gap: .5rem; margin-bottom: 1rem; align-items: center; flex-wrap: wrap; }
-    .filter-input { padding: .45rem .75rem; border: 1px solid var(--vds-border); border-radius: 6px; background: var(--vds-bg-3); color: inherit; width: 160px; }
-    .player-count { margin-left: auto; font-weight: 600; color: var(--vds-seal-light); }
-    .admin-table { width: 100%; border-collapse: collapse; }
-    .admin-table th, .admin-table td { padding: .5rem .75rem; border-bottom: 1px solid var(--vds-border); text-align: left; }
-    .admin-table th { font-weight: 600; color: var(--vds-text-muted); font-size: .85rem; }
-    .muted { color: var(--vds-text-muted); font-size: .9rem; }
-    .error { color: var(--vds-danger); }
-</style>

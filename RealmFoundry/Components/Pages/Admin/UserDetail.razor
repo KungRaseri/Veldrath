@@ -1,4 +1,4 @@
-﻿@page "/admin/users/{Id:guid}"
+@page "/admin/users/{Id:guid}"
 @inject AuthStateService AuthState
 @inject RealmFoundryApiClient Api
 @inject NavigationManager Nav
@@ -11,165 +11,193 @@
 }
 else
 {
-    <div class="back-bar"><a href="/admin/users">← Back to User Management</a></div>
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <MudLink Href="/admin/users">← Back to User Management</MudLink>
+    </div>
 
     @if (_loading)
     {
-        <p>Loading…</p>
+        <MudText>Loading…</MudText>
     }
     else if (_detail is null)
     {
-        <p class="error">@_error</p>
+        <MudAlert Severity="Severity.Error" Class="mud-mb-4">@_error</MudAlert>
     }
     else
     {
-        <h1>@_detail.Username</h1>
-        <p class="muted">@_detail.Email &nbsp;|&nbsp; Joined @_detail.CreatedAt.ToLocalTime().ToString("d") &nbsp;|&nbsp; Last seen @(_detail.LastSeenAt?.ToLocalTime().ToString("g") ?? "never")</p>
+        <MudText Typo="Typo.h3" Class="mud-mb-1">@_detail.Username</MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mud-mb-4">
+            @_detail.Email &nbsp;|&nbsp; Joined @_detail.CreatedAt.ToLocalTime().ToString("d") &nbsp;|&nbsp; Last seen @(_detail.LastSeenAt?.ToLocalTime().ToString("g") ?? "never")
+        </MudText>
 
-        <div class="sections">
+        <MudGrid Spacing="4">
             @* ── Roles ─────────────────────────────── *@
-            <section class="card">
-                <h2>Roles</h2>
-                @foreach (var role in _allRoles)
-                {
-                    var has = _detail.Roles.Contains(role);
-                    <div class="role-row">
-                        <span class="@(has ? "badge badge-blue" : "badge badge-off")">@role</span>
-                        @if (has)
-                        {
-                            <button class="btn btn-sm btn-danger" @onclick="() => RevokeRoleAsync(role)">Remove</button>
-                        }
-                        else
-                        {
-                            <button class="btn btn-sm" @onclick="() => AssignRoleAsync(role)">Add</button>
-                        }
-                    </div>
-                }
-            </section>
-
-            @* ── Per-user permissions ──────────────── *@
-            <section class="card">
-                <h2>Extra Permissions</h2>
-                <p class="muted small">Override grants not inherited from any role.</p>
-                @foreach (var perm in _allPermissions)
-                {
-                    var roleHas = _detail.EffectivePermissions.Contains(perm) && !_detail.UserPermissions.Contains(perm);
-                    var userHas = _detail.UserPermissions.Contains(perm);
-                    <div class="perm-row">
-                        <span class="@(userHas ? "badge badge-green" : roleHas ? "badge badge-grey" : "badge badge-off")">
-                            @perm @(roleHas ? " (role)" : "")
-                        </span>
-                        @if (userHas)
-                        {
-                            <button class="btn btn-sm btn-danger" @onclick="() => RevokePermAsync(perm)">Revoke</button>
-                        }
-                        else if (!roleHas)
-                        {
-                            <button class="btn btn-sm" @onclick="() => GrantPermAsync(perm)">Grant</button>
-                        }
-                    </div>
-                }
-            </section>
-
-            @* ── Ban / Unban ───────────────────────── *@
-            <section class="card">
-                <h2>Moderation</h2>
-
-                @* Warnings *@
-                <div class="mod-subsection">
-                    <h3>Warnings <span class="badge @(_detail.WarnCount > 0 ? "badge-orange" : "badge-off")">@_detail.WarnCount</span></h3>
-                    <div class="form-inline">
-                        <input @bind="_warnReason" placeholder="Warning reason…" class="input-sm" />
-                        <button class="btn btn-sm btn-warn" @onclick="WarnAsync">Issue Warning</button>
-                    </div>
-                </div>
-
-                @* Mute *@
-                <div class="mod-subsection">
-                    <h3>Chat Mute</h3>
-                    @if (_detail.IsMuted)
+            <MudItem xs="12" md="6">
+                <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4">
+                    <MudText Typo="Typo.h6" Class="mud-mb-3">Roles</MudText>
+                    @foreach (var role in _allRoles)
                     {
-                        <p>
-                            <span class="badge badge-orange">Muted</span>
-                            @if (_detail.MutedUntil.HasValue)
+                        var has = _detail.Roles.Contains(role);
+                        <div class="d-flex align-items-center gap-2 mud-mb-2">
+                            <MudChip T="string" Size="Size.Small" Color="@(has ? Color.Primary : Color.Default)" Variant="@(has ? Variant.Filled : Variant.Outlined)">@role</MudChip>
+                            @if (has)
                             {
-                                <span class="muted"> until @_detail.MutedUntil.Value.ToLocalTime().ToString("g")</span>
+                                <MudButton Variant="Variant.Filled" Color="Color.Error" Size="Size.Small" OnClick="() => RevokeRoleAsync(role)">Remove</MudButton>
                             }
                             else
                             {
-                                <span class="muted"> (permanent)</span>
+                                <MudButton Variant="Variant.Filled" Size="Size.Small" OnClick="() => AssignRoleAsync(role)">Add</MudButton>
                             }
-                            @if (!string.IsNullOrEmpty(_detail.MuteReason))
+                        </div>
+                    }
+                </MudPaper>
+            </MudItem>
+
+            @* ── Per-user permissions ──────────────── *@
+            <MudItem xs="12" md="6">
+                <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4">
+                    <MudText Typo="Typo.h6" Class="mud-mb-1">Extra Permissions</MudText>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary mud-mb-3">Override grants not inherited from any role.</MudText>
+                    @foreach (var perm in _allPermissions)
+                    {
+                        var roleHas = _detail.EffectivePermissions.Contains(perm) && !_detail.UserPermissions.Contains(perm);
+                        var userHas = _detail.UserPermissions.Contains(perm);
+                        <div class="d-flex align-items-center gap-2 mud-mb-2">
+                            <MudChip T="string" Size="Size.Small"
+                                     Color="@(userHas ? Color.Success : roleHas ? Color.Default : Color.Default)"
+                                     Variant="@(userHas || roleHas ? Variant.Filled : Variant.Outlined)">
+                                @perm @(roleHas ? " (role)" : "")
+                            </MudChip>
+                            @if (userHas)
                             {
-                                <span class="muted"> — @_detail.MuteReason</span>
+                                <MudButton Variant="Variant.Filled" Color="Color.Error" Size="Size.Small" OnClick="() => RevokePermAsync(perm)">Revoke</MudButton>
                             }
-                        </p>
-                        <button class="btn btn-sm" @onclick="UnmuteAsync">Lift Mute</button>
+                            else if (!roleHas)
+                            {
+                                <MudButton Variant="Variant.Filled" Size="Size.Small" OnClick="() => GrantPermAsync(perm)">Grant</MudButton>
+                            }
+                        </div>
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        @* ── Ban / Unban ───────────────────────── *@
+        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4 mud-mt-4">
+            <MudText Typo="Typo.h6" Class="mud-mb-3">Moderation</MudText>
+
+            @* Warnings *@
+            <MudText Typo="Typo.subtitle2" Class="mud-mb-2">
+                Warnings
+                <MudChip T="string" Size="Size.Small" Color="@(_detail.WarnCount > 0 ? Color.Warning : Color.Default)" Class="mud-ml-2">@_detail.WarnCount</MudChip>
+            </MudText>
+            <div class="d-flex gap-2 align-items-center mud-mb-3">
+                <MudTextField @bind-Value="_warnReason"
+                              T="string"
+                              Placeholder="Warning reason…"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Style="flex: 1;" />
+                <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small" OnClick="WarnAsync">Issue Warning</MudButton>
+            </div>
+
+            @* Mute *@
+            <MudDivider Class="mud-mb-3" />
+            <MudText Typo="Typo.subtitle2" Class="mud-mb-2">Chat Mute</MudText>
+            @if (_detail.IsMuted)
+            {
+                <div class="mud-mb-2">
+                    <MudChip T="string" Size="Size.Small" Color="Color.Warning">Muted</MudChip>
+                    @if (_detail.MutedUntil.HasValue)
+                    {
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary mud-ml-1" Inline="true"> until @_detail.MutedUntil.Value.ToLocalTime().ToString("g")</MudText>
                     }
                     else
                     {
-                        <div class="form-group">
-                            <label>Mute Reason</label>
-                            <input @bind="_muteReason" placeholder="Reason…" />
-                        </div>
-                        <div class="form-group">
-                            <label>Duration (minutes, blank = permanent)</label>
-                            <input type="number" @bind="_muteDuration" placeholder="e.g. 60" />
-                        </div>
-                        <button class="btn btn-sm btn-warn" @onclick="MuteAsync">Mute Player</button>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary mud-ml-1" Inline="true"> (permanent)</MudText>
+                    }
+                    @if (!string.IsNullOrEmpty(_detail.MuteReason))
+                    {
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary mud-ml-1" Inline="true"> — @_detail.MuteReason</MudText>
                     }
                 </div>
+                <MudButton Variant="Variant.Filled" Size="Size.Small" OnClick="UnmuteAsync">Lift Mute</MudButton>
+            }
+            else
+            {
+                <MudTextField @bind-Value="_muteReason"
+                              T="string"
+                              Label="Mute Reason"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Class="mud-mb-2" />
+                <MudTextField @bind-Value="_muteDuration"
+                              T="int?"
+                              Label="Duration (minutes, blank = permanent)"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Class="mud-mb-3" />
+                <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small" OnClick="MuteAsync">Mute Player</MudButton>
+            }
 
-                @* Ban *@
-                <div class="mod-subsection">
-                    <h3>Ban</h3>
-                    @if (_detail.IsBanned)
+            @* Ban *@
+            <MudDivider Class="mud-my-3" />
+            <MudText Typo="Typo.subtitle2" Class="mud-mb-2">Ban</MudText>
+            @if (_detail.IsBanned)
+            {
+                <div class="mud-mb-2">
+                    <MudChip T="string" Size="Size.Small" Color="Color.Error">Banned</MudChip>
+                    @if (_detail.BannedUntil.HasValue)
                     {
-                        <p><span class="badge badge-red">Banned</span>
-                        @if (_detail.BannedUntil.HasValue)
-                        {
-                            <span class="muted"> until @_detail.BannedUntil.Value.ToLocalTime().ToString("g")</span>
-                        }
-                        else
-                        {
-                            <span class="muted"> (permanent)</span>
-                        }
-                        @if (!string.IsNullOrEmpty(_detail.BanReason))
-                        {
-                            <span class="muted"> — @_detail.BanReason</span>
-                        }
-                        </p>
-                        <button class="btn" @onclick="UnbanAsync">Unban Player</button>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary mud-ml-1" Inline="true"> until @_detail.BannedUntil.Value.ToLocalTime().ToString("g")</MudText>
                     }
                     else
                     {
-                        <div class="form-group">
-                            <label>Ban Reason <span class="req">*</span></label>
-                            <input @bind="_banReason" placeholder="Reason for ban…" />
-                        </div>
-                        <div class="form-group">
-                            <label>Duration (minutes, blank = permanent)</label>
-                            <input type="number" @bind="_banDuration" placeholder="e.g. 1440 for 24 hours" />
-                        </div>
-                        <button class="btn btn-danger" @onclick="BanAsync" disabled="@string.IsNullOrWhiteSpace(_banReason)">Ban Player</button>
-                        <button class="btn btn-warning" style="margin-left:.5rem" @onclick="KickAsync">Kick Player</button>
-                        <div class="form-group" style="margin-top:.5rem">
-                            <label>Kick Reason</label>
-                            <input @bind="_kickReason" placeholder="Optional…" />
-                        </div>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary mud-ml-1" Inline="true"> (permanent)</MudText>
+                    }
+                    @if (!string.IsNullOrEmpty(_detail.BanReason))
+                    {
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary mud-ml-1" Inline="true"> — @_detail.BanReason</MudText>
                     }
                 </div>
-
-                <div class="mod-links">
-                    <a class="btn btn-sm btn-secondary" href="/admin/audit?targetId=@Id">View Audit Log</a>
-                    <a class="btn btn-sm btn-secondary" href="/admin/reports">Player Reports</a>
+                <MudButton Variant="Variant.Filled" OnClick="UnbanAsync">Unban Player</MudButton>
+            }
+            else
+            {
+                <MudTextField @bind-Value="_banReason"
+                              T="string"
+                              Label="Ban Reason *"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Required="true"
+                              Class="mud-mb-2" />
+                <MudTextField @bind-Value="_banDuration"
+                              T="int?"
+                              Label="Duration (minutes, blank = permanent)"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Class="mud-mb-3" />
+                <div class="d-flex gap-2 mud-mb-3">
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="BanAsync" Disabled="@string.IsNullOrWhiteSpace(_banReason)">Ban Player</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="KickAsync">Kick Player</MudButton>
                 </div>
-            </section>
-        </div>
+                <MudTextField @bind-Value="_kickReason"
+                              T="string"
+                              Label="Kick Reason"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense" />
+            }
+
+            <MudDivider Class="mud-my-3" />
+            <div class="d-flex gap-2">
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="@($"/admin/audit?targetId={Id}")">View Audit Log</MudButton>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/admin/reports">Player Reports</MudButton>
+            </div>
+        </MudPaper>
 
         @if (!string.IsNullOrEmpty(_actionMessage))
         {
-            <div class="toast @(_actionOk ? "toast-ok" : "toast-err")">@_actionMessage</div>
+            <MudAlert Severity="@(_actionOk ? Severity.Success : Severity.Error)" Class="mud-mt-4">@_actionMessage</MudAlert>
         }
     }
 }
@@ -299,24 +327,3 @@ else
         StateHasChanged();
     }
 }
-
-<style>
-    .back-bar { margin-bottom: 1rem; }
-    .back-bar a { color: var(--vds-seal-light); text-decoration: none; }
-    .sections { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
-    .card { background: var(--vds-bg-2); border: 1px solid var(--vds-border); border-radius: 8px; padding: 1rem 1.25rem; }
-    .card h2 { margin: 0 0 .75rem; font-size: 1rem; }
-    .role-row, .perm-row { display: flex; align-items: center; gap: .5rem; margin-bottom: .35rem; }
-    .badge { display: inline-block; padding: .15rem .45rem; border-radius: 4px; font-size: .78rem; font-weight: 600; }
-    .muted  { color: var(--vds-text-muted); }
-    .small  { font-size: .85rem; }
-    .req    { color: var(--vds-danger); }
-    .error  { color: var(--vds-danger); }
-    .form-group { display: flex; flex-direction: column; gap: .25rem; margin-bottom: .5rem; }
-    .form-group input { padding: .4rem .65rem; border: 1px solid var(--vds-border); border-radius: 6px; background: var(--vds-bg-3); color: inherit; }
-    .mod-subsection { border-top: 1px solid var(--vds-border); padding-top: .75rem; margin-top: .75rem; }
-    .mod-subsection h3 { margin: 0 0 .5rem; font-size: .9rem; font-weight: 600; color: var(--vds-text-muted); }
-    .mod-links { border-top: 1px solid var(--vds-border); padding-top: .75rem; margin-top: .75rem; display: flex; gap: .5rem; }
-    .form-inline { display: flex; gap: .5rem; align-items: center; }
-    .input-sm { padding: .3rem .6rem; border: 1px solid var(--vds-border); border-radius: 6px; background: var(--vds-bg-3); color: inherit; flex: 1; }
-</style>

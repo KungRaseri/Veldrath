@@ -1,4 +1,4 @@
-﻿@page "/admin/audit"
+@page "/admin/audit"
 @inject AuthStateService AuthState
 @inject RealmFoundryApiClient Api
 
@@ -10,68 +10,68 @@
 }
 else
 {
-    <h1>Audit Log</h1>
+    <MudText Typo="Typo.h3" Class="mud-mb-4">Audit Log</MudText>
 
-    <div class="toolbar">
-        <input class="filter-input" placeholder="Target Account ID (GUID)…"
-               @bind="_targetIdRaw" @bind:event="oninput" />
-        <button class="btn" @onclick="ApplyFilterAsync">Filter</button>
-        <button class="btn btn-secondary" @onclick="ClearFilterAsync">Clear</button>
-        <a class="btn btn-secondary" href="/admin">← Back</a>
-        <span class="total-count">@(_result?.Total ?? 0) total entries</span>
+    <div class="d-flex flex-wrap gap-3 mb-4 align-items-center">
+        <MudTextField @bind-Value="_targetIdRaw"
+                      T="string"
+                      Placeholder="Target Account ID (GUID)…"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Immediate="true"
+                      Style="width: 260px;" />
+        <MudButton Variant="Variant.Filled" Size="Size.Small" OnClick="ApplyFilterAsync">Filter</MudButton>
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="ClearFilterAsync">Clear</MudButton>
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/admin">← Back</MudButton>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">@(_result?.Total ?? 0) total entries</MudText>
     </div>
 
     @if (_loading)
     {
-        <p>Loading…</p>
+        <MudText>Loading…</MudText>
     }
     else if (_result is null)
     {
-        <p class="error">Failed to load audit log.</p>
+        <MudAlert Severity="Severity.Error" Class="mud-mb-4">Failed to load audit log.</MudAlert>
     }
     else if (_result.Items.Count == 0)
     {
-        <p class="muted">No entries found.</p>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">No entries found.</MudText>
     }
     else
     {
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>When</th>
-                    <th>Actor</th>
-                    <th>Action</th>
-                    <th>Target</th>
-                    <th>Details</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var e in _result.Items)
-                {
-                    <tr>
-                        <td class="muted nowrap">@e.OccurredAt.ToLocalTime().ToString("g")</td>
-                        <td>@e.ActorUsername</td>
-                        <td><span class="badge badge-action">@e.Action</span></td>
-                        <td class="muted">
-                            @if (e.TargetAccountId.HasValue)
-                            {
-                                <a href="/admin/users/@e.TargetAccountId">@(e.TargetUsername ?? e.TargetAccountId.ToString())</a>
-                            }
-                            else
-                            {
-                                <span>—</span>
-                            }
-                        </td>
-                        <td class="muted detail-cell">@(e.Details ?? "—")</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <MudTable Items="@_result.Items" Hover="true" Elevation="0" Outlined="true">
+            <HeaderContent>
+                <MudTh>When</MudTh>
+                <MudTh>Actor</MudTh>
+                <MudTh>Action</MudTh>
+                <MudTh>Target</MudTh>
+                <MudTh>Details</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd Class="mud-text-secondary" Style="white-space: nowrap;">@context.OccurredAt.ToLocalTime().ToString("g")</MudTd>
+                <MudTd>@context.ActorUsername</MudTd>
+                <MudTd>
+                    <MudChip T="string" Size="Size.Small" Color="Color.Primary">@context.Action</MudChip>
+                </MudTd>
+                <MudTd Class="mud-text-secondary">
+                    @if (context.TargetAccountId.HasValue)
+                    {
+                        <MudLink Href="@($"/admin/users/{context.TargetAccountId}")">@(context.TargetUsername ?? context.TargetAccountId.ToString())</MudLink>
+                    }
+                    else
+                    {
+                        <span>—</span>
+                    }
+                </MudTd>
+                <MudTd Class="mud-text-secondary" Style="max-width: 320px; overflow-wrap: break-word;">@(context.Details ?? "—")</MudTd>
+            </RowTemplate>
+        </MudTable>
 
-        <div class="pagination">
-            <button class="btn btn-sm" disabled="@(_page <= 1)" @onclick="PrevPageAsync">← Prev</button>
-            <span>Page @_page of @((_result.Total + _pageSize - 1) / _pageSize)</span>
-            <button class="btn btn-sm" disabled="@(_page * _pageSize >= _result.Total)" @onclick="NextPageAsync">Next →</button>
+        <div class="d-flex align-items-center justify-content-center gap-3 mt-4">
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="PrevPageAsync" Disabled="@(_page <= 1)">← Prev</MudButton>
+            <MudText Typo="Typo.body2">Page @_page of @TotalPages</MudText>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="NextPageAsync" Disabled="@(_page >= TotalPages)">Next →</MudButton>
         </div>
     }
 }
@@ -84,6 +84,8 @@ else
     private int     _page     = 1;
     private int     _pageSize = 50;
     private PagedAdminResult<AuditEntryDto>? _result;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_result?.Total ?? 0 / (double)_pageSize));
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -112,21 +114,3 @@ else
     private async Task PrevPageAsync() { if (_page > 1) { _page--; await LoadAsync(); } }
     private async Task NextPageAsync() { _page++; await LoadAsync(); }
 }
-
-<style>
-    .toolbar { display: flex; gap: .5rem; margin-bottom: 1rem; align-items: center; flex-wrap: wrap; }
-    .filter-input { padding: .45rem .75rem; border: 1px solid var(--vds-border); border-radius: 6px; background: var(--vds-bg-3); color: inherit; width: 260px; }
-    .total-count { margin-left: auto; color: var(--vds-text-muted); font-size: .9rem; }
-    .admin-table { width: 100%; border-collapse: collapse; }
-    .admin-table th, .admin-table td { padding: .5rem .75rem; border-bottom: 1px solid var(--vds-border); text-align: left; vertical-align: top; }
-    .admin-table th { font-weight: 600; color: var(--vds-text-muted); font-size: .85rem; }
-    .muted { color: var(--vds-text-muted); font-size: .9rem; }
-    .nowrap { white-space: nowrap; }
-    .detail-cell { max-width: 320px; overflow-wrap: break-word; font-size: .85rem; }
-    .badge { display: inline-block; padding: .15rem .45rem; border-radius: 4px; font-size: .78rem; font-weight: 600; }
-    .badge-action { background: var(--vds-info-muted); color: var(--vds-info); }
-    .error { color: var(--vds-danger); }
-    .pagination { display: flex; gap: 1rem; align-items: center; margin-top: 1rem; }
-    a { color: var(--vds-seal-light); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-</style>

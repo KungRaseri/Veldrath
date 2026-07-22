@@ -1,4 +1,4 @@
-﻿@page "/admin/reports"
+@page "/admin/reports"
 @inject AuthStateService AuthState
 @inject RealmFoundryApiClient Api
 
@@ -10,85 +10,85 @@
 }
 else
 {
-    <h1>Player Reports</h1>
+    <MudText Typo="Typo.h3" Class="mud-mb-4">Player Reports</MudText>
 
-    <div class="toolbar">
-        <select class="filter-select" @bind="_showResolved" @bind:after="OnFilterChangedAsync">
-            <option value="">All Reports</option>
-            <option value="false">Open Only</option>
-            <option value="true">Resolved Only</option>
-        </select>
-        <a class="btn btn-secondary" href="/admin">← Back</a>
-        <span class="total-count">@(_result?.Total ?? 0) total</span>
+    <div class="d-flex flex-wrap gap-3 mb-4 align-items-center">
+        <MudSelect Value="_showResolved"
+                   ValueChanged="@(async (string v) => { _showResolved = v; await OnFilterChangedAsync(); })"
+                   T="string"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   AnchorOrigin="Origin.BottomCenter"
+                   Clearable="true"
+                   Placeholder="All Reports"
+                   Style="min-width: 180px;">
+            <MudSelectItem Value="@("false")">Open Only</MudSelectItem>
+            <MudSelectItem Value="@("true")">Resolved Only</MudSelectItem>
+        </MudSelect>
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/admin">← Back</MudButton>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">@(_result?.Total ?? 0) total</MudText>
     </div>
 
     @if (!string.IsNullOrEmpty(_actionMessage))
     {
-        <div class="@(_actionError ? "alert alert-error" : "alert alert-success")">@_actionMessage</div>
+        <MudAlert Severity="@(_actionError ? Severity.Error : Severity.Success)" Class="mud-mb-4">@_actionMessage</MudAlert>
     }
 
     @if (_loading)
     {
-        <p>Loading…</p>
+        <MudText>Loading…</MudText>
     }
     else if (_result is null)
     {
-        <p class="error">Failed to load reports.</p>
+        <MudAlert Severity="Severity.Error" Class="mud-mb-4">Failed to load reports.</MudAlert>
     }
     else if (_result.Items.Count == 0)
     {
-        <p class="muted">No reports found.</p>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">No reports found.</MudText>
     }
     else
     {
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Submitted</th>
-                    <th>Reporter</th>
-                    <th>Target</th>
-                    <th>Reason</th>
-                    <th>Status</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var r in _result.Items)
-                {
-                    <tr>
-                        <td class="muted nowrap">@r.SubmittedAt.ToLocalTime().ToString("g")</td>
-                        <td>@r.ReporterName</td>
-                        <td>@r.TargetName</td>
-                        <td class="reason-cell">@r.Reason</td>
-                        <td>
-                            @if (r.IsResolved)
-                            {
-                                <span class="badge badge-green">Resolved</span>
-                                @if (r.ResolvedAt.HasValue)
-                                {
-                                    <span class="muted small"> @r.ResolvedAt.Value.ToLocalTime().ToString("g")</span>
-                                }
-                            }
-                            else
-                            {
-                                <span class="badge badge-orange">Open</span>
-                            }
-                        </td>
-                        <td>
-                            @if (!r.IsResolved)
-                            {
-                                <button class="btn btn-sm" @onclick="() => ResolveAsync(r.Id)">Resolve</button>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <MudTable Items="@_result.Items" Hover="true" Elevation="0" Outlined="true">
+            <HeaderContent>
+                <MudTh>Submitted</MudTh>
+                <MudTh>Reporter</MudTh>
+                <MudTh>Target</MudTh>
+                <MudTh>Reason</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd Class="mud-text-secondary" Style="white-space: nowrap;">@context.SubmittedAt.ToLocalTime().ToString("g")</MudTd>
+                <MudTd>@context.ReporterName</MudTd>
+                <MudTd>@context.TargetName</MudTd>
+                <MudTd Style="max-width: 360px; overflow-wrap: break-word;">@context.Reason</MudTd>
+                <MudTd>
+                    @if (context.IsResolved)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success">Resolved</MudChip>
+                        @if (context.ResolvedAt.HasValue)
+                        {
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary mud-ml-1" Inline="true">@context.ResolvedAt.Value.ToLocalTime().ToString("g")</MudText>
+                        }
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Warning">Open</MudChip>
+                    }
+                </MudTd>
+                <MudTd>
+                    @if (!context.IsResolved)
+                    {
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" OnClick="() => ResolveAsync(context.Id)">Resolve</MudButton>
+                    }
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
 
-        <div class="pagination">
-            <button class="btn btn-sm" disabled="@(_page <= 1)" @onclick="PrevPageAsync">← Prev</button>
-            <span>Page @_page of @((_result.Total + _pageSize - 1) / _pageSize)</span>
-            <button class="btn btn-sm" disabled="@(_page * _pageSize >= _result.Total)" @onclick="NextPageAsync">Next →</button>
+        <div class="d-flex align-items-center justify-content-center gap-3 mt-4">
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="PrevPageAsync" Disabled="@(_page <= 1)">← Prev</MudButton>
+            <MudText Typo="Typo.body2">Page @_page of @TotalPages</MudText>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="NextPageAsync" Disabled="@(_page >= TotalPages)">Next →</MudButton>
         </div>
     }
 }
@@ -101,6 +101,8 @@ else
     private int     _page     = 1;
     private int     _pageSize = 50;
     private PagedAdminResult<PlayerReportDto>? _result;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_result?.Total ?? 0 / (double)_pageSize));
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -139,19 +141,3 @@ else
         else StateHasChanged();
     }
 }
-
-<style>
-    .toolbar { display: flex; gap: .5rem; margin-bottom: 1rem; align-items: center; flex-wrap: wrap; }
-    .filter-select { padding: .45rem .6rem; border: 1px solid var(--vds-border); border-radius: 6px; background: var(--vds-bg-3); color: inherit; }
-    .total-count { margin-left: auto; color: var(--vds-text-muted); font-size: .9rem; }
-    .admin-table { width: 100%; border-collapse: collapse; }
-    .admin-table th, .admin-table td { padding: .5rem .75rem; border-bottom: 1px solid var(--vds-border); text-align: left; vertical-align: top; }
-    .admin-table th { font-weight: 600; color: var(--vds-text-muted); font-size: .85rem; }
-    .muted { color: var(--vds-text-muted); font-size: .9rem; }
-    .small { font-size: .82rem; }
-    .nowrap { white-space: nowrap; }
-    .reason-cell { max-width: 360px; overflow-wrap: break-word; }
-    .badge { display: inline-block; padding: .15rem .45rem; border-radius: 4px; font-size: .78rem; font-weight: 600; margin-right: .25rem; }
-    .error { color: var(--vds-danger); }
-    .pagination { display: flex; gap: 1rem; align-items: center; margin-top: 1rem; }
-</style>

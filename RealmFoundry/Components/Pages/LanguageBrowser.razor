@@ -5,56 +5,81 @@
 
 <PageTitle>Languages — RealmFoundry</PageTitle>
 
-<div class="content-browser">
-    <header class="browser-header">
-        <h1>Languages</h1>
-        <p class="browser-desc">
-            Explore constructed and natural languages of Veldrath.
-            Each language defines phonology, morphology, a root dictionary, and register rules
-            — the building blocks for procedural name generation across species and locations.
-        </p>
-        <a class="btn btn-primary" href="/languages/new">Build a Language</a>
-    </header>
-
-    <div class="search-bar" style="margin-bottom: 1rem;">
-        <input placeholder="Search languages…"
-               value="@_search"
-               @oninput="OnSearchInput" />
-    </div>
-
-    @if (_loading)
-    {
-        <p class="loading">Loading…</p>
-    }
-    else if (_items.Count == 0)
-    {
-        <div class="detail-empty">
-            <p>No languages have been submitted yet.</p>
-            <p><a href="/languages/new">Be the first — build a language.</a></p>
-        </div>
-    }
-    else
-    {
-        <div class="content-type-grid">
-            @foreach (var lang in _items)
-            {
-                <a class="content-type-card" href="/content/language/@lang.Slug">
-                    <span class="card-label">@(lang.DisplayName ?? lang.Slug)</span>
-                    <span class="card-desc">@lang.TypeKey</span>
-                </a>
-            }
+<MudContainer MaxWidth="MaxWidth.Large" Class="mud-my-8">
+    <MudPaper Elevation="0" Outlined="true" Class="pa-6">
+        <div class="d-flex align-items-center justify-space-between mb-4">
+            <div>
+                <MudText Typo="Typo.h4" Class="mb-2">Languages</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Explore constructed and natural languages of Veldrath.
+                    Each language defines phonology, morphology, a root dictionary, and register rules
+                    — the building blocks for procedural name generation across species and locations.
+                </MudText>
+            </div>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/languages/new">
+                Build a Language
+            </MudButton>
         </div>
 
-        @if (_totalCount > _pageSize)
+        <MudTextField @bind-Value="_search"
+                      @bind-Value:after="OnSearchChanged"
+                      Placeholder="Search languages…"
+                      Variant="Variant.Outlined"
+                      Immediate="true"
+                      Class="mb-4"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search" />
+
+        @if (_loading)
         {
-            <div class="pagination" style="margin-top:1rem;">
-                <button disabled="@(_page <= 1)" @onclick="PrevPage">‹ Prev</button>
-                <span>@_page / @TotalPages</span>
-                <button disabled="@(_page >= TotalPages)" @onclick="Next">Next ›</button>
+            <div class="d-flex justify-center my-6">
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Small" />
             </div>
         }
-    }
-</div>
+        else if (_items.Count == 0)
+        {
+            <MudPaper Elevation="0" Class="pa-4 text-center">
+                <MudText Typo="Typo.body1">No languages have been submitted yet.</MudText>
+                <MudLink Href="/languages/new">Be the first — build a language.</MudLink>
+            </MudPaper>
+        }
+        else
+        {
+            <MudGrid>
+                @foreach (var lang in _items)
+                {
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <a href="/content/language/@lang.Slug" style="text-decoration:none;">
+                            <MudPaper Elevation="0" Outlined="true" Class="pa-3">
+                                <MudText Typo="Typo.body1" Style="font-weight:600;">@(lang.DisplayName ?? lang.Slug)</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@lang.TypeKey</MudText>
+                            </MudPaper>
+                        </a>
+                    </MudItem>
+                }
+            </MudGrid>
+
+            @if (_totalCount > _pageSize)
+            {
+                <div class="d-flex align-items-center justify-center gap-3 mt-4">
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               OnClick="PrevPage"
+                               Disabled="@(_page <= 1)">
+                        ← Prev
+                    </MudButton>
+                    <MudText Typo="Typo.body2">@_page / @TotalPages</MudText>
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               OnClick="Next"
+                               Disabled="@(_page >= TotalPages)">
+                        Next →
+                    </MudButton>
+                </div>
+            }
+        }
+    </MudPaper>
+</MudContainer>
 
 @code {
     private List<ContentSummaryDto> _items = [];
@@ -68,10 +93,9 @@
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
-    private async Task OnSearchInput(ChangeEventArgs e)
+    private async Task OnSearchChanged()
     {
-        _search = e.Value?.ToString() ?? string.Empty;
-        _page   = 1;
+        _page = 1;
         await LoadAsync();
     }
 

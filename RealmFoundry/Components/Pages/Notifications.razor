@@ -15,54 +15,46 @@ else if (!AuthState.IsLoggedIn)
 }
 else
 {
-    <div class="toolbar">
-        <h1>Notifications</h1>
-        @if (_notifications.Any(n => !n.IsRead))
-        {
-            <button class="btn btn-sm" @onclick="MarkAllReadAsync">Mark all as read</button>
-        }
-    </div>
-
-    @if (_loading)
-    {
-        <p>Loading…</p>
-    }
-    else if (_notifications.Count == 0)
-    {
-        <p class="muted">No notifications yet.</p>
-    }
-    else
-    {
-        <ul class="notification-list">
-            @foreach (var n in _notifications)
+    <MudContainer MaxWidth="MaxWidth.Medium" Class="mud-my-8">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <MudText Typo="Typo.h4" Class="mud-mb-0">Notifications</MudText>
+            @if (_notifications.Any(n => !n.IsRead))
             {
-                <li class="notification-item @(n.IsRead ? "read" : "unread")" @key="n.Id">
-                    <div class="notification-body">
-                        <a href="/submissions/@n.SubmissionId">@n.SubmissionTitle</a>
-                        <span class="notification-message">@n.Message</span>
-                        <span class="muted notification-date">@n.CreatedAt.ToLocalTime().ToString("g")</span>
-                    </div>
-                    @if (!n.IsRead)
-                    {
-                        <button class="btn btn-sm" @onclick="() => MarkReadAsync(n.Id)">Dismiss</button>
-                    }
-                </li>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="MarkAllReadAsync">Mark all as read</MudButton>
             }
-        </ul>
-    }
-}
+        </div>
 
-<style>
-    .toolbar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
-    .toolbar h1 { margin: 0; }
-    .notification-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
-    .notification-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
-        padding: .75rem 1rem; border: 1px solid var(--vds-border); border-radius: 6px; }
-    .notification-item.unread { border-left: 3px solid var(--vds-seal); }
-    .notification-body { display: flex; flex-direction: column; gap: .2rem; }
-    .notification-message { font-size: .9rem; }
-    .notification-date { font-size: .8rem; }
-</style>
+        @if (_loading)
+        {
+            <MudText>Loading…</MudText>
+        }
+        else if (_notifications.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">No notifications yet.</MudText>
+        }
+        else
+        {
+            <MudStack Spacing="2">
+                @foreach (var n in _notifications)
+                {
+                    <MudPaper Elevation="0" Outlined="true" Class="@($"mud-pa-3 {(n.IsRead ? "" : "mud-paper-border-left-primary")}")" @key="n.Id">
+                        <div class="d-flex align-items-start justify-space-between gap-3">
+                            <div class="d-flex flex-column gap-1">
+                                <MudLink Href="@($"/submissions/{n.SubmissionId}")">@n.SubmissionTitle</MudLink>
+                                <MudText Typo="Typo.body2">@n.Message</MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">@n.CreatedAt.ToLocalTime().ToString("g")</MudText>
+                            </div>
+                            @if (!n.IsRead)
+                            {
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="() => MarkReadAsync(n.Id)">Dismiss</MudButton>
+                            }
+                        </div>
+                    </MudPaper>
+                }
+            </MudStack>
+        }
+    </MudContainer>
+}
 
 @code {
     private List<FoundryNotificationDto> _notifications = [];

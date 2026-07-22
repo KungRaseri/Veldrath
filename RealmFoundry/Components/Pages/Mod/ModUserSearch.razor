@@ -1,4 +1,4 @@
-﻿@page "/mod/users"
+@page "/mod/users"
 @using Veldrath.Contracts.Admin
 @inject AuthStateService AuthState
 @inject RealmFoundryApiClient Api
@@ -12,67 +12,84 @@
 }
 else
 {
-    <div class="toolbar">
-        <input class="search-input" placeholder="Search username…"
-               @bind="_search" @bind:event="oninput" @onkeyup="OnSearchKeyUp" />
-        <select class="filter-select" @bind="_filterStatus" @bind:after="OnFilterChangedAsync">
-            <option value="">All Status</option>
-            <option value="active">Active</option>
-            <option value="banned">Banned</option>
-            <option value="muted">Muted</option>
-        </select>
-        <button class="btn" @onclick="LoadUsersAsync">Search</button>
-        <a class="btn btn-secondary" href="/mod">← Back</a>
+    <div class="d-flex flex-wrap gap-3 mb-4 align-items-center">
+        <MudTextField @bind-Value="_search"
+                      T="string"
+                      Placeholder="Search username…"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Immediate="true"
+                      Style="min-width: 200px;"
+                      OnKeyUp="OnSearchKeyUp" />
+        <MudSelect Value="_filterStatus"
+                   ValueChanged="@(async (string v) => { _filterStatus = v; await OnFilterChangedAsync(); })"
+                   T="string"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   AnchorOrigin="Origin.BottomCenter"
+                   Clearable="true"
+                   Placeholder="All Status"
+                   Style="min-width: 150px;">
+            <MudSelectItem Value="@("active")">Active</MudSelectItem>
+            <MudSelectItem Value="@("banned")">Banned</MudSelectItem>
+            <MudSelectItem Value="@("muted")">Muted</MudSelectItem>
+        </MudSelect>
+        <MudButton Variant="Variant.Filled" Size="Size.Small" OnClick="LoadUsersAsync">Search</MudButton>
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/mod">← Back</MudButton>
     </div>
 
     @if (_loading)
     {
-        <p>Loading…</p>
+        <MudText>Loading…</MudText>
     }
     else if (_result is null)
     {
-        <p class="error">Failed to load users.</p>
+        <MudAlert Severity="Severity.Error" Class="mud-mb-4">Failed to load users.</MudAlert>
     }
     else if (_result.Items.Count == 0)
     {
-        <p class="muted">No players found.</p>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">No players found.</MudText>
     }
     else
     {
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Status</th>
-                    <th>Warnings</th>
-                    <th>Last Seen</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var u in _result.Items)
-                {
-                    <tr>
-                        <td>@u.Username</td>
-                        <td>
-                            @if (u.IsBanned)  { <span class="badge badge-red">Banned</span> }
-                            else if (u.IsMuted) { <span class="badge badge-orange">Muted</span> }
-                            else               { <span class="badge badge-green">Active</span> }
-                        </td>
-                        <td>@u.WarnCount</td>
-                        <td class="muted nowrap">@(u.LastSeenAt?.ToLocalTime().ToString("g") ?? "—")</td>
-                        <td><a class="btn btn-sm" href="/mod/users/@u.Id">View</a></td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <MudTable Items="@_result.Items" Hover="true" Elevation="0" Outlined="true">
+            <HeaderContent>
+                <MudTh>Username</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Warnings</MudTh>
+                <MudTh>Last Seen</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Username</MudTd>
+                <MudTd>
+                    @if (context.IsBanned)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Error">Banned</MudChip>
+                    }
+                    else if (context.IsMuted)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Warning">Muted</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success">Active</MudChip>
+                    }
+                </MudTd>
+                <MudTd>@context.WarnCount</MudTd>
+                <MudTd Class="mud-text-secondary" Style="white-space: nowrap;">@(context.LastSeenAt?.ToLocalTime().ToString("g") ?? "—")</MudTd>
+                <MudTd>
+                    <MudButton Variant="Variant.Filled" Size="Size.Small" Href="@($"/mod/users/{context.Id}")">View</MudButton>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
 
         @if (_result.Total > _result.PageSize)
         {
-            <div class="pagination">
-                <button class="btn btn-sm" @onclick="PrevPageAsync" disabled="@(_page <= 1)">← Prev</button>
-                <span class="muted">Page @_page of @((int)Math.Ceiling(_result.Total / (double)_result.PageSize))</span>
-                <button class="btn btn-sm" @onclick="NextPageAsync" disabled="@(_page * _result.PageSize >= _result.Total)">Next →</button>
+            <div class="d-flex align-items-center justify-content-center gap-3 mt-4">
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="PrevPageAsync" Disabled="@(_page <= 1)">← Prev</MudButton>
+                <MudText Typo="Typo.body2">Page @_page of @((int)Math.Ceiling(_result.Total / (double)_result.PageSize))</MudText>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="NextPageAsync" Disabled="@(_page * _result.PageSize >= _result.Total)">Next →</MudButton>
             </div>
         }
     }

@@ -63,10 +63,10 @@ else
 
                     @if (_totalCount > _pageSize)
                     {
-                        <div class="pagination">
-                            <button disabled="@(_page <= 1)" @onclick="PrevPage">‹ Prev</button>
-                            <span>@_page / @TotalPages</span>
-                            <button disabled="@(_page >= TotalPages)" @onclick="NextPage">Next ›</button>
+                        <div class="d-flex align-items-center justify-content-center gap-2 mt-2">
+                            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="PrevPage" Disabled="@(_page <= 1)">← Prev</MudButton>
+                            <MudText Typo="Typo.body2">@_page / @TotalPages</MudText>
+                            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="NextPage" Disabled="@(_page >= TotalPages)">Next →</MudButton>
                         </div>
                     }
                 }
@@ -94,17 +94,17 @@ else
                 <div class="detail-header">
                     <h2>@(_detail.Summary.DisplayName ?? _detail.Summary.Slug)</h2>
                     <div class="detail-meta">
-                        <span class="badge">@_detail.Summary.TypeKey</span>
-                        <span class="badge">Rarity @_detail.Summary.RarityWeight</span>
-                        <span class="badge @(_detail.Summary.IsActive ? "badge-green" : "badge-red")">
+                        <MudChip T="string" Size="Size.Small" Color="Color.Default">@_detail.Summary.TypeKey</MudChip>
+                        <MudChip T="string" Size="Size.Small" Color="Color.Default">Rarity @_detail.Summary.RarityWeight</MudChip>
+                        <MudChip T="string" Size="Size.Small" Color="@(_detail.Summary.IsActive ? Color.Success : Color.Error)">
                             @(_detail.Summary.IsActive ? "Active" : "Inactive")
-                        </span>
+                        </MudChip>
                         <span class="updated">Updated @_detail.Summary.UpdatedAt.ToString("yyyy-MM-dd")</span>
                     </div>
-                    <a class="btn btn-sm btn-primary"
-                       href="/submissions/new?type=@ContentType&ref=@_detail.Summary.Slug">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                               Href="@($"/submissions/new?type={ContentType}&ref={_detail.Summary.Slug}")">
                         Submit based on this
-                    </a>
+                    </MudButton>
                 </div>
 
                 @foreach (var group in _schema.Groups)

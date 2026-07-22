@@ -1,7 +1,7 @@
 # RealmFoundry MudBlazor Migration — Status & Remaining Work
 
-> **Last updated:** 2026-07-22  
-> **Overall progress:** ~60% complete (foundation + layout + auth pages + CSS done; ~26 content/admin pages remain)
+> **Last updated:** 2026-07-22
+> **Overall progress:** ~95% complete (all ~30 pages migrated; only CSS final cleanup remaining)
 
 ---
 
@@ -46,9 +46,11 @@
 ### Phase 8 — CSS Cleanup
 | Task | Details | Status |
 |---|---|---|
-| Strip app.css | 1077 → 220 lines (80% reduction) | ✅ |
-| Deleted CSS | Layout (`.layout`, `.sidebar`, `.content`, `.top-bar`, `.page-body`), Cards (`.card`, `.card-elevated`, `.card-accent`, `.feature-cards`), Buttons (`.btn`, `.btn-primary`, `.btn-secondary`, `.btn-ghost`, `.btn-danger`, `.btn-red`, `.btn-orange`, `.btn-warn`, `.btn-sm`), Badges (`.badge-*`), Forms (`.form-group`, `.field-group`, `.form-actions`, `.form-check`, `.checkbox-label`, `.schema-form`), Tables (`.data-table`, `.content-list-table`), Pagination (`.pagination`), Alerts (`.alert-*`), Toasts (`.toast-*`), Typography utilities, Page header/filters, Auth card, Content browser, Nav elements, Mobile responsive overrides | ✅ |
-| Kept CSS | Legacy `--color-*` aliases, VDS text utilities (`.text-lore`, `.text-mono`, `.text-muted`, `.text-caption`, `.text-accent`), OAuth buttons (`.btn-discord`, `.btn-google`, `.btn-microsoft`), Content detail split-pane, Submission form shell, Vote bar, Payload display, Field-list, Detail groups, JSON block | ✅ |
+| Initial CSS strip | 1077 → 220 lines (80% reduction) | ✅ |
+| Batch 7 final cleanup | 220 → 179 lines (19% further reduction; 83% total from original) | ✅ |
+| Deleted CSS (initial) | Layout (`.layout`, `.sidebar`, `.content`, `.top-bar`, `.page-body`), Cards (`.card`, `.card-elevated`, `.card-accent`, `.feature-cards`), Buttons (`.btn`, `.btn-primary`, `.btn-secondary`, `.btn-ghost`, `.btn-danger`, `.btn-red`, `.btn-orange`, `.btn-warn`, `.btn-sm`), Badges (`.badge-*`), Forms (`.form-group`, `.field-group`, `.form-actions`, `.form-check`, `.checkbox-label`, `.schema-form`), Tables (`.data-table`, `.content-list-table`), Pagination (`.pagination`), Alerts (`.alert-*`), Toasts (`.toast-*`), Typography utilities, Page header/filters, Auth card, Content browser, Nav elements, Mobile responsive overrides | ✅ |
+| Deleted CSS (Batch 7) | VDS text utilities (`.text-lore`, `.text-mono`, `.text-muted`, `.text-caption`, `.text-accent`), Submission form shell (`.submission-form-shell`), `.required`, Vote score (`.vote-score`, `.vote-score.positive`, `.vote-score.negative`), Legacy `--color-accent` variable — all confirmed 0 references across all ~30 `.razor` files | ✅ |
+| Kept CSS (final) | Legacy `--color-*` aliases (used by remaining CSS rules), OAuth buttons (`.btn-discord`, `.btn-google`, `.btn-microsoft` — preserved per policy), Content detail split-pane (all classes), `.detail-group`, `.field-list`, `.bool-true`, `.bool-false`, `.json-block`, `.vote-bar`, `.payload`, Blazor error UI, Universal reset, `body`/`a` base styles | ✅ |
 
 ### Cross-Project
 | Task | Status |
@@ -57,63 +59,27 @@
 | Veldrath.GameClient.Components Razor migration (11 files → MudButton + utilities) | ✅ |
 | Veldrath.Web final sweep | ✅ (no issues found) |
 
----
+## ✅ Migration Batches Summary
+
+All ~30 RealmFoundry pages have been fully migrated from Bootstrap-style CSS to MudBlazor across 7 batches:
+
+| Batch | Pages | Description |
+|---|---|---|
+| 1 | Login, Register, ConfirmEmail, ForgotPassword, Error | Auth pages |
+| 2 | Home | Core content landing page |
+| 3 | ResetPassword | Auth completion |
+| 4 | Submissions, ContentBrowser, ContentDetail, NewSubmission, SubmissionDetail, Notifications, PlayerProfile | Core content pages (7) |
+| 5 | AdminDashboard, UserManagement, UserDetail, RoleManagement, ActiveSessions, AuditLog, PlayerReports, ServerStatus, ServerCommands | Admin pages (9) |
+| 6 | ModDashboard, ModReports, ModUserDetail, ModUserSearch, Announcements, AnnouncementDetail, LoreArticles, LoreArticleDetail, PatchNotes, PatchNoteDetail | Mod + Editorial pages (10) |
+| 7 | LanguageBrowser, LanguageBuilder | Language pages (2) |
+
+**Post-migration quality sweep:** All `.btn` classes, `<style>` blocks, and Bootstrap-era patterns replaced. Zero Bootstrap CSS dependencies remain.
 
 ## ⬜ Remaining Work
 
-### ResetPassword.razor
-- **File:** [`RealmFoundry/Components/Pages/ResetPassword.razor`](RealmFoundry/Components/Pages/ResetPassword.razor)
-- **`.btn` count:** 1
-- **Embedded `<style>`:** Yes — needs deletion
-- **Migration:** `<MudContainer>`, `<MudPaper>`, `<MudTextField>`, `<MudButton>`, `<MudAlert>`
-
-### Core Content Pages (6 files, ~15 `.btn` usages)
-| Page | File | `.btn` count | Other patterns |
-|---|---|---|---|
-| Submissions | [`Submissions.razor`](RealmFoundry/Components/Pages/Submissions.razor) | 4 | `.page-header`, `.filters`, `.pagination` → MudBlazor |
-| ContentBrowser | [`ContentBrowser.razor`](RealmFoundry/Components/Pages/ContentBrowser.razor) | 0 | `.content-type-grid`, `.content-type-card` → `<MudGrid>` + `<MudPaper>` |
-| ContentDetail | [`ContentDetail.razor`](RealmFoundry/Components/Pages/ContentDetail.razor) | 1 | Complex split-pane (CSS kept intentionally) |
-| NewSubmission | [`NewSubmission.razor`](RealmFoundry/Components/Pages/NewSubmission.razor) | 2 | `.form-actions` → `<MudButton>` |
-| SubmissionDetail | [`SubmissionDetail.razor`](RealmFoundry/Components/Pages/SubmissionDetail.razor) | 7 | `.review-actions`, `.vote-bar` (CSS kept) |
-| Notifications | [`Notifications.razor`](RealmFoundry/Components/Pages/Notifications.razor) | 2 | Simple |
-| PlayerProfile | [`PlayerProfile.razor`](RealmFoundry/Components/Pages/PlayerProfile.razor) | 0 | Needs read |
-
-### Admin Pages (8 files, ~30 `.btn` usages)
-| Page | File | `.btn` count | Notes |
-|---|---|---|---|
-| AdminDashboard | [`AdminDashboard.razor`](RealmFoundry/Components/Pages/Admin/AdminDashboard.razor) | ~2 | Simple |
-| UserManagement | [`UserManagement.razor`](RealmFoundry/Components/Pages/Admin/UserManagement.razor) | 7 | Table + pagination + filters |
-| UserDetail | [`UserDetail.razor`](RealmFoundry/Components/Pages/Admin/UserDetail.razor) | 12 | Most complex admin page |
-| RoleManagement | [`RoleManagement.razor`](RealmFoundry/Components/Pages/Admin/RoleManagement.razor) | ~2 | Needs read |
-| ActiveSessions | [`ActiveSessions.razor`](RealmFoundry/Components/Pages/Admin/ActiveSessions.razor) | 4 | Table + filters |
-| AuditLog | [`AuditLog.razor`](RealmFoundry/Components/Pages/Admin/AuditLog.razor) | 4 | Table + pagination |
-| PlayerReports | [`PlayerReports.razor`](RealmFoundry/Components/Pages/Admin/PlayerReports.razor) | 4 | Table + pagination |
-| ServerStatus | [`ServerStatus.razor`](RealmFoundry/Components/Pages/Admin/ServerStatus.razor) | 1 | Simple |
-| ServerCommands | [`ServerCommands.razor`](RealmFoundry/Components/Pages/Admin/ServerCommands.razor) | 1 | Simple |
-
-### Mod Pages (4 files, ~12 `.btn` usages)
-| Page | File | `.btn` count | Notes |
-|---|---|---|---|
-| ModDashboard | [`ModDashboard.razor`](RealmFoundry/Components/Pages/Mod/ModDashboard.razor) | ~2 | Needs read |
-| ModReports | [`ModReports.razor`](RealmFoundry/Components/Pages/Mod/ModReports.razor) | 4 | Table + pagination |
-| ModUserDetail | [`ModUserDetail.razor`](RealmFoundry/Components/Pages/Mod/ModUserDetail.razor) | 10 | Complex mod actions |
-| ModUserSearch | [`ModUserSearch.razor`](RealmFoundry/Components/Pages/Mod/ModUserSearch.razor) | 4 | Table + pagination |
-
-### Editorial Pages (6 files, ~18 `.btn` usages)
-| Page | File | `.btn` count | Notes |
-|---|---|---|---|
-| Announcements | [`Announcements.razor`](RealmFoundry/Components/Pages/Editorial/Announcements.razor) | 5 | Table + pagination |
-| AnnouncementDetail | [`AnnouncementDetail.razor`](RealmFoundry/Components/Pages/Editorial/AnnouncementDetail.razor) | 3 | Form + publish toggle |
-| LoreArticles | [`LoreArticles.razor`](RealmFoundry/Components/Pages/Editorial/LoreArticles.razor) | 5 | Table + pagination |
-| LoreArticleDetail | [`LoreArticleDetail.razor`](RealmFoundry/Components/Pages/Editorial/LoreArticleDetail.razor) | 3 | Form + publish toggle |
-| PatchNotes | [`PatchNotes.razor`](RealmFoundry/Components/Pages/Editorial/PatchNotes.razor) | 5 | Table + pagination |
-| PatchNoteDetail | [`PatchNoteDetail.razor`](RealmFoundry/Components/Pages/Editorial/PatchNoteDetail.razor) | 3 | Form + publish toggle |
-
-### Language Pages (2 files, ~25 `.btn` usages)
-| Page | File | `.btn` count | Notes |
-|---|---|---|---|
-| LanguageBrowser | [`LanguageBrowser.razor`](RealmFoundry/Components/Pages/LanguageBrowser.razor) | 1 | Simple |
-| LanguageBuilder | [`LanguageBuilder.razor`](RealmFoundry/Components/Pages/LanguageBuilder.razor) | 25 | **Most complex page** — multi-step wizard with add/remove buttons per section |
+### Minimal
+- **OAuth button classes** (`.btn-discord`, `.btn-google`, `.btn-microsoft`) — preserved in `app.css` for future re-authentication flows. Currently 0 references in Razor markup; may be removed in a future cleanup once auth flows are finalized.
+- **Periodic CSS re-audit** — as MudBlazor component usage evolves, remaining custom CSS in `app.css` (179 lines) should be re-evaluated for further reduction opportunities.
 
 ---
 

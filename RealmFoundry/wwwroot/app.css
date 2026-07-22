@@ -12,7 +12,6 @@
   --color-border:  var(--vds-border);
   --color-text:    var(--vds-text);
   --color-muted:   var(--vds-text-muted);
-  --color-accent:  var(--vds-seal);
   --color-link:    var(--vds-seal-light);
   --sidebar-w:     var(--vds-sidebar-w);
 }
@@ -28,14 +27,6 @@ body {
 
 a { color: var(--color-link); text-decoration: none; }
 a:hover { text-decoration: underline; }
-
-/* ── VDS text utility classes (§4.4) ───────────────────────────────── */
-
-.text-lore        { font-family: var(--vds-font-reading); line-height: 1.7; color: var(--vds-text); }
-.text-mono        { font-family: var(--vds-font-mono);    font-size: var(--vds-text-sm); color: var(--vds-text-muted); }
-.text-muted       { font-size: var(--vds-text-sm);   color: var(--vds-text-subtle); }
-.text-caption     { font-size: var(--vds-text-xs);   color: var(--vds-text-subtle); }
-.text-accent      { font-weight: 600; color: var(--vds-seal-light); }
 
 /* ── Blazor error UI — matches canonical tokens.css version ──────────────── */
 
@@ -162,13 +153,6 @@ a:hover { text-decoration: underline; }
     word-break: break-all;
 }
 
-/* ── Submission form shell ────────────────────────────────────────────── */
-
-.submission-form-shell { max-width: 720px; }
-.submission-form-shell h1 { margin-bottom: 1.5rem; }
-
-.required { color: var(--vds-danger); margin-left: 0.15rem; }
-
 /* ── Vote bar ─────────────────────────────────────────────────────────── */
 
 .vote-bar {
@@ -177,16 +161,6 @@ a:hover { text-decoration: underline; }
     gap: 0.75rem;
     margin: 1.25rem 0;
 }
-
-.vote-score {
-    font-size: 1.1rem;
-    font-weight: 700;
-    min-width: 2.5rem;
-    text-align: center;
-}
-
-.vote-score.positive { color: var(--vds-success); }
-.vote-score.negative { color: var(--vds-danger); }
 
 /* ── Payload display ──────────────────────────────────────────────────── */
 

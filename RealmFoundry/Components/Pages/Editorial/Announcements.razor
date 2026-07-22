@@ -13,66 +13,61 @@
 }
 else
 {
-    <div class="page-header">
-        <h1>Announcements</h1>
-        <a class="btn" href="/editorial/announcements/new">+ New Announcement</a>
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <MudText Typo="Typo.h3">Announcements</MudText>
+        <MudButton Variant="Variant.Filled" Href="/editorial/announcements/new">+ New Announcement</MudButton>
     </div>
 
     @if (!string.IsNullOrEmpty(_message))
     {
-        <div class="@(_error ? "alert alert-error" : "alert alert-success")">@_message</div>
+        <MudAlert Severity="@(_error ? Severity.Error : Severity.Success)" Class="mud-mb-4">@_message</MudAlert>
     }
 
     @if (_loading)
     {
-        <p>Loading…</p>
+        <MudText>Loading…</MudText>
     }
     else if (_result is null)
     {
-        <p>Failed to load announcements.</p>
+        <MudAlert Severity="Severity.Error" Class="mud-mb-4">Failed to load announcements.</MudAlert>
     }
     else
     {
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Title</th>
-                    <th>Status</th>
-                    <th>Published</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in _result.Items)
-                {
-                    <tr>
-                        <td>@item.Title</td>
-                        <td>
-                            @if (item.Status == "Published")
-                            {
-                                <span class="badge badge-green">Published</span>
-                            }
-                            else
-                            {
-                                <span class="badge">Draft</span>
-                            }
-                        </td>
-                        <td class="muted">@(item.PublishedAt?.ToLocalTime().ToString("g") ?? "—")</td>
-                        <td class="actions-cell">
-                            <a class="btn btn-sm" href="/editorial/announcements/@item.Id">Edit</a>
-                            <button class="btn btn-sm btn-warn" @onclick="() => DeleteAsync(item.Id, item.Title)">Delete</button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <MudTable Items="@_result.Items" Hover="true" Elevation="0" Outlined="true">
+            <HeaderContent>
+                <MudTh>Title</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Published</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Title</MudTd>
+                <MudTd>
+                    @if (context.Status == "Published")
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success">Published</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small">Draft</MudChip>
+                    }
+                </MudTd>
+                <MudTd Class="mud-text-secondary">@(context.PublishedAt?.ToLocalTime().ToString("g") ?? "—")</MudTd>
+                <MudTd>
+                    <div class="d-flex gap-1">
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" Href="@($"/editorial/announcements/{context.Id}")">Edit</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small" OnClick="() => DeleteAsync(context.Id, context.Title)">Delete</MudButton>
+                    </div>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
 
         @if (_result.TotalCount > _result.PageSize)
         {
-            <div class="pagination">
-                <button class="btn btn-sm" @onclick="PrevPage" disabled="@(_page <= 1)">← Prev</button>
-                <span>Page @_page of @((_result.TotalCount + _result.PageSize - 1) / _result.PageSize)</span>
-                <button class="btn btn-sm" @onclick="NextPage" disabled="@(_result.Items.Count < _result.PageSize)">Next →</button>
+            <div class="d-flex align-items-center justify-content-center gap-3 mt-4">
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="PrevPage" Disabled="@(_page <= 1)">← Prev</MudButton>
+                <MudText Typo="Typo.body2">Page @_page of @((_result.TotalCount + _result.PageSize - 1) / _result.PageSize)</MudText>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="NextPage" Disabled="@(_result.Items.Count < _result.PageSize)">Next →</MudButton>
             </div>
         }
     }

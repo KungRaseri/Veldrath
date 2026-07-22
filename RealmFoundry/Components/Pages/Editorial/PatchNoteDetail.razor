@@ -13,56 +13,80 @@
 }
 else if (_loading)
 {
-    <p>Loading…</p>
+    <MudText>Loading…</MudText>
 }
 else
 {
-    <div class="page-header">
-        <h1>@(_isNew ? "New Patch Note" : "Edit Patch Note")</h1>
-        <a class="btn btn-secondary" href="/editorial/patch-notes">← Back</a>
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <MudText Typo="Typo.h3">@(_isNew ? "New Patch Note" : "Edit Patch Note")</MudText>
+        <MudButton Variant="Variant.Outlined" Href="/editorial/patch-notes">← Back</MudButton>
     </div>
 
     @if (!string.IsNullOrEmpty(_message))
     {
-        <div class="@(_error ? "alert alert-error" : "alert alert-success")">@_message</div>
+        <MudAlert Severity="@(_error ? Severity.Error : Severity.Success)" Class="mud-mb-4">@_message</MudAlert>
     }
 
     @if (!_isNew)
     {
-        <div class="toolbar" style="margin-bottom:1rem">
-            <button class="btn @(_status == "Published" ? "btn-warn" : "btn-primary")" @onclick="TogglePublishAsync">
+        <div class="d-flex align-items-center gap-2 mb-4">
+            <MudButton Variant="Variant.Filled"
+                       Color="@(_status == "Published" ? Color.Warning : Color.Primary)"
+                       OnClick="TogglePublishAsync">
                 @(_status == "Published" ? "Unpublish" : "Publish")
-            </button>
-            <span class="badge @(_status == "Published" ? "badge-green" : "")">@_status</span>
+            </MudButton>
+            <MudChip T="string" Size="Size.Small" Color="@(_status == "Published" ? Color.Success : null)">@_status</MudChip>
         </div>
     }
 
-    <div class="form-grid">
-        <label class="form-label">Slug
-            <input class="form-input" @bind="_slug" disabled="@(!_isNew)" placeholder="patch-1-2-0" />
-        </label>
+    <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4 mud-mb-4">
+        <div class="d-flex gap-3 mb-4">
+            <MudTextField @bind-Value="_slug"
+                          T="string"
+                          Label="Slug"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Disabled="@(!_isNew)"
+                          Placeholder="patch-1-2-0"
+                          Style="flex: 1;" />
 
-        <label class="form-label">Version
-            <input class="form-input" @bind="_version" placeholder="1.2.0" />
-        </label>
+            <MudTextField @bind-Value="_version"
+                          T="string"
+                          Label="Version"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Placeholder="1.2.0"
+                          Style="flex: 1;" />
+        </div>
 
-        <label class="form-label" style="grid-column: 1 / -1">Title
-            <input class="form-input" @bind="_title" placeholder="Patch 1.2.0 — Balance Pass" />
-        </label>
+        <MudTextField @bind-Value="_title"
+                      T="string"
+                      Label="Title"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Placeholder="Patch 1.2.0 — Balance Pass"
+                      Class="mud-mb-4" />
 
-        <label class="form-label" style="grid-column: 1 / -1">Summary
-            <input class="form-input" @bind="_summary" placeholder="Brief description for list views…" />
-        </label>
+        <MudTextField @bind-Value="_summary"
+                      T="string"
+                      Label="Summary"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Placeholder="Brief description for list views…"
+                      Class="mud-mb-4" />
 
-        <label class="form-label" style="grid-column: 1 / -1">Content (Markdown)
-            <textarea class="form-textarea" rows="20" @bind="_content"></textarea>
-        </label>
-    </div>
+        <MudTextField @bind-Value="_content"
+                      T="string"
+                      Label="Content (Markdown)"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Lines="20" />
+    </MudPaper>
 
-    <div class="form-actions">
-        <button class="btn btn-primary" @onclick="SaveAsync">@(_isNew ? "Create" : "Save Changes")</button>
-        <a class="btn btn-secondary" href="/editorial/patch-notes">Cancel</a>
-    </div>
+    <MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync">@(_isNew ? "Create" : "Save Changes")</MudButton>
+        <MudButton Variant="Variant.Outlined" Href="/editorial/patch-notes">Cancel</MudButton>
+    </MudStack>
 }
 
 @code {

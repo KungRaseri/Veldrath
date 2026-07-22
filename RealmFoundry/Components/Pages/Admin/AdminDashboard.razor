@@ -1,4 +1,4 @@
-﻿@page "/admin"
+@page "/admin"
 @inject AuthStateService AuthState
 @inject NavigationManager Nav
 
@@ -10,50 +10,63 @@
 }
 else
 {
-    <h1>Admin Dashboard</h1>
+    <MudText Typo="Typo.h3" Class="mud-mb-4">Admin Dashboard</MudText>
 
-    <div class="admin-grid">
-        <a class="admin-card" href="/admin/users">
-            <h2>User Management</h2>
-            <p>View accounts, assign roles, grant or revoke per-user permissions, kick and ban players.</p>
-        </a>
+    <MudGrid Spacing="4">
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4">
+                <MudText Typo="Typo.h6" Class="mud-mb-2">User Management</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mud-mb-3">View accounts, assign roles, grant or revoke per-user permissions, kick and ban players.</MudText>
+                <MudButton Variant="Variant.Filled" Href="/admin/users">Manage Users</MudButton>
+            </MudPaper>
+        </MudItem>
 
-        <a class="admin-card" href="/admin/roles">
-            <h2>Roles &amp; Permissions</h2>
-            <p>Review the permission set for each role.</p>
-        </a>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4">
+                <MudText Typo="Typo.h6" Class="mud-mb-2">Roles & Permissions</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mud-mb-3">Review the permission set for each role.</MudText>
+                <MudButton Variant="Variant.Filled" Href="/admin/roles">View Roles</MudButton>
+            </MudPaper>
+        </MudItem>
 
-        <a class="admin-card" href="/admin/server">
-            <h2>Server Commands</h2>
-            <p>Broadcast server-wide announcements to all connected players.</p>
-        </a>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4">
+                <MudText Typo="Typo.h6" Class="mud-mb-2">Server Commands</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mud-mb-3">Broadcast server-wide announcements to all connected players.</MudText>
+                <MudButton Variant="Variant.Filled" Href="/admin/server">Server Commands</MudButton>
+            </MudPaper>
+        </MudItem>
 
-        <a class="admin-card" href="/admin/sessions">
-            <h2>Active Sessions</h2>
-            <p>View all players currently online, filterable by region and zone.</p>
-        </a>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4">
+                <MudText Typo="Typo.h6" Class="mud-mb-2">Active Sessions</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mud-mb-3">View all players currently online, filterable by region and zone.</MudText>
+                <MudButton Variant="Variant.Filled" Href="/admin/sessions">View Sessions</MudButton>
+            </MudPaper>
+        </MudItem>
 
-        <a class="admin-card" href="/admin/audit">
-            <h2>Audit Log</h2>
-            <p>Review admin actions taken across all accounts with a full timestamped trail.</p>
-        </a>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4">
+                <MudText Typo="Typo.h6" Class="mud-mb-2">Audit Log</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mud-mb-3">Review admin actions taken across all accounts with a full timestamped trail.</MudText>
+                <MudButton Variant="Variant.Filled" Href="/admin/audit">View Audit Log</MudButton>
+            </MudPaper>
+        </MudItem>
 
-        <a class="admin-card" href="/admin/reports">
-            <h2>Player Reports</h2>
-            <p>Manage reports submitted by players against other players. Resolve open reports.</p>
-        </a>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4">
+                <MudText Typo="Typo.h6" Class="mud-mb-2">Player Reports</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mud-mb-3">Manage reports submitted by players against other players. Resolve open reports.</MudText>
+                <MudButton Variant="Variant.Filled" Href="/admin/reports">View Reports</MudButton>
+            </MudPaper>
+        </MudItem>
 
-        <a class="admin-card" href="/admin/status">
-            <h2>Server Status</h2>
-            <p>Live player count, uptime, and per-zone population overview.</p>
-        </a>
-    </div>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4">
+                <MudText Typo="Typo.h6" Class="mud-mb-2">Server Status</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mud-mb-3">Live player count, uptime, and per-zone population overview.</MudText>
+                <MudButton Variant="Variant.Filled" Href="/admin/status">View Status</MudButton>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 }
-
-<style>
-    .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
-    .admin-card { display: block; padding: 1.25rem 1.5rem; border: 1px solid var(--vds-border); border-radius: 8px; text-decoration: none; color: inherit; transition: border-color .15s; }
-    .admin-card:hover { border-color: var(--vds-seal-light); }
-    .admin-card h2 { margin: 0 0 .5rem; font-size: 1.05rem; }
-    .admin-card p { margin: 0; color: var(--vds-text-muted); font-size: .9rem; }
-</style>

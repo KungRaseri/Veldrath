@@ -1,70 +1,77 @@
-﻿@page "/players/{Id:guid}"
+@page "/players/{Id:guid}"
 @using Veldrath.Contracts.Players
 @inject RealmFoundryApiClient Api
 
 <PageTitle>Player Profile — RealmFoundry</PageTitle>
 
-@if (_loading)
-{
-    <p class="loading">Loading profile…</p>
-}
-else if (_profile is null)
-{
-    <p class="error">Player not found.</p>
-    <a href="/">← Back to Home</a>
-}
-else
-{
-    <div class="profile-card">
-        <h1>@_profile.Username</h1>
+<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mud-my-8">
+    @if (_loading)
+    {
+        <MudText>Loading profile…</MudText>
+    }
+    else if (_profile is null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mud-mb-4">Player not found.</MudAlert>
+        <MudLink Href="/">← Back to Home</MudLink>
+    }
+    else
+    {
+        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-6">
+            <MudText Typo="Typo.h4" Class="mud-mb-4">@_profile.Username</MudText>
 
-        <div class="profile-row">
-            <span class="label">Account ID</span>
-            <span class="value muted">@_profile.AccountId</span>
-        </div>
-
-        <div class="profile-row">
-            <span class="label">Registered</span>
-            <span class="value">@_profile.RegisteredAt.ToLocalTime().ToString("d")</span>
-        </div>
-
-        @if (_profile.Level > 0)
-        {
-            <div class="profile-row">
-                <span class="label">Level</span>
-                <span class="value">@_profile.Level</span>
-            </div>
-
-            @if (_profile.CharacterClass is not null)
-            {
-                <div class="profile-row">
-                    <span class="label">Class</span>
-                    <span class="value">@_profile.CharacterClass</span>
+            <MudStack Spacing="3">
+                <div class="d-flex justify-space-between">
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">Account ID</MudText>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">@_profile.AccountId</MudText>
                 </div>
-            }
 
-            @if (_profile.Species is not null)
-            {
-                <div class="profile-row">
-                    <span class="label">Species</span>
-                    <span class="value">@_profile.Species</span>
+                <div class="d-flex justify-space-between">
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">Registered</MudText>
+                    <MudText Typo="Typo.body2">@_profile.RegisteredAt.ToLocalTime().ToString("d")</MudText>
                 </div>
-            }
 
-            @if (_profile.CurrentZone is not null)
-            {
-                <div class="profile-row">
-                    <span class="label">Current Zone</span>
-                    <span class="value">@_profile.CurrentZone</span>
-                </div>
-            }
-        }
-        else
-        {
-            <p class="muted" style="margin-top:1rem">This player has no active characters.</p>
-        }
-    </div>
-}
+                @if (_profile.Level > 0)
+                {
+                    <MudDivider />
+
+                    <div class="d-flex justify-space-between">
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">Level</MudText>
+                        <MudText Typo="Typo.body2">@_profile.Level</MudText>
+                    </div>
+
+                    @if (_profile.CharacterClass is not null)
+                    {
+                        <div class="d-flex justify-space-between">
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">Class</MudText>
+                            <MudText Typo="Typo.body2">@_profile.CharacterClass</MudText>
+                        </div>
+                    }
+
+                    @if (_profile.Species is not null)
+                    {
+                        <div class="d-flex justify-space-between">
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">Species</MudText>
+                            <MudText Typo="Typo.body2">@_profile.Species</MudText>
+                        </div>
+                    }
+
+                    @if (_profile.CurrentZone is not null)
+                    {
+                        <div class="d-flex justify-space-between">
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">Current Zone</MudText>
+                            <MudText Typo="Typo.body2">@_profile.CurrentZone</MudText>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <MudDivider />
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">This player has no active characters.</MudText>
+                }
+            </MudStack>
+        </MudPaper>
+    }
+</MudContainer>
 
 @code {
     /// <summary>Account ID supplied via the route.</summary>

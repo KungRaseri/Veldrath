@@ -1,4 +1,4 @@
-﻿@page "/admin/users"
+@page "/admin/users"
 @inject AuthStateService AuthState
 @inject RealmFoundryApiClient Api
 @inject NavigationManager Nav
@@ -11,109 +11,135 @@
 }
 else
 {
-    <h1>User Management</h1>
+    <MudText Typo="Typo.h3" Class="mud-mb-4">User Management</MudText>
 
-    <div class="toolbar">
-        <input class="search-input" placeholder="Search username or email…"
-               @bind="_search" @bind:event="oninput" @onkeyup="OnSearchKeyUp" />
-        <select class="filter-select" @bind="_filterRole" @bind:after="OnFilterChanged">
-            <option value="">All Roles</option>
-            <option value="Admin">Admin</option>
-            <option value="Moderator">Moderator</option>
-            <option value="Player">Player</option>
-        </select>
-        <select class="filter-select" @bind="_filterStatus" @bind:after="OnFilterChanged">
-            <option value="">All Status</option>
-            <option value="active">Active</option>
-            <option value="banned">Banned</option>
-            <option value="muted">Muted</option>
-        </select>
-        <select class="filter-select" @bind="_sort" @bind:after="OnFilterChanged">
-            <option value="">Sort: Default</option>
-            <option value="username">Username</option>
-            <option value="lastseen">Last Seen</option>
-            <option value="warncount">Warn Count</option>
-        </select>
-        <button class="btn" @onclick="LoadUsersAsync">Search</button>
-        <a class="btn btn-secondary" href="/admin">← Back</a>
+    <div class="d-flex flex-wrap gap-3 mb-4 align-items-center">
+        <MudTextField @bind-Value="_search"
+                      T="string"
+                      Placeholder="Search username or email…"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Immediate="true"
+                      Style="min-width: 200px;"
+                      OnKeyUp="OnSearchKeyUp" />
+        <MudSelect Value="_filterRole"
+                   ValueChanged="@(async (string v) => { _filterRole = v; await OnFilterChanged(); })"
+                   T="string"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   AnchorOrigin="Origin.BottomCenter"
+                   Clearable="true"
+                   Placeholder="All Roles"
+                   Style="min-width: 150px;">
+            <MudSelectItem Value="@("Admin")">Admin</MudSelectItem>
+            <MudSelectItem Value="@("Moderator")">Moderator</MudSelectItem>
+            <MudSelectItem Value="@("Player")">Player</MudSelectItem>
+        </MudSelect>
+        <MudSelect Value="_filterStatus"
+                   ValueChanged="@(async (string v) => { _filterStatus = v; await OnFilterChanged(); })"
+                   T="string"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   AnchorOrigin="Origin.BottomCenter"
+                   Clearable="true"
+                   Placeholder="All Status"
+                   Style="min-width: 150px;">
+            <MudSelectItem Value="@("active")">Active</MudSelectItem>
+            <MudSelectItem Value="@("banned")">Banned</MudSelectItem>
+            <MudSelectItem Value="@("muted")">Muted</MudSelectItem>
+        </MudSelect>
+        <MudSelect Value="_sort"
+                   ValueChanged="@(async (string v) => { _sort = v; await OnFilterChanged(); })"
+                   T="string"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   AnchorOrigin="Origin.BottomCenter"
+                   Clearable="true"
+                   Placeholder="Sort: Default"
+                   Style="min-width: 150px;">
+            <MudSelectItem Value="@("username")">Username</MudSelectItem>
+            <MudSelectItem Value="@("lastseen")">Last Seen</MudSelectItem>
+            <MudSelectItem Value="@("warncount")">Warn Count</MudSelectItem>
+        </MudSelect>
+        <MudButton Variant="Variant.Filled" Size="Size.Small" OnClick="LoadUsersAsync">Search</MudButton>
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/admin">← Back</MudButton>
     </div>
 
     @if (!string.IsNullOrEmpty(_actionMessage))
     {
-        <div class="@(_actionError ? "alert alert-error" : "alert alert-success")">@_actionMessage</div>
+        <MudAlert Severity="@(_actionError ? Severity.Error : Severity.Success)" Class="mud-mb-4">@_actionMessage</MudAlert>
     }
 
     @if (_loading)
     {
-        <p>Loading…</p>
+        <MudText>Loading…</MudText>
     }
     else if (_users is null)
     {
-        <p>@_error</p>
+        <MudAlert Severity="Severity.Error" Class="mud-mb-4">@_error</MudAlert>
     }
     else
     {
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Email</th>
-                    <th>Roles</th>
-                    <th>Status</th>
-                    <th>Warns</th>
-                    <th>Last Seen</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var u in _users.Items)
-                {
-                    <tr>
-                        <td>@u.Username</td>
-                        <td class="muted">@u.Email</td>
-                        <td>
-                            @foreach (var r in u.Roles)
-                            {
-                                <span class="badge badge-blue">@r</span>
-                            }
-                        </td>
-                        <td>
-                            @if (u.IsBanned)
-                            {
-                                <span class="badge badge-red">Banned</span>
-                            }
-                            else if (u.IsMuted)
-                            {
-                                <span class="badge badge-orange">Muted</span>
-                            }
-                            else
-                            {
-                                <span class="badge badge-green">Active</span>
-                            }
-                        </td>
-                        <td class="@(u.WarnCount > 0 ? "warn-count" : "muted")">@u.WarnCount</td>
-                        <td class="muted">@(u.LastSeenAt?.ToLocalTime().ToString("g") ?? "Never")</td>
-                        <td class="actions-cell">
-                            <a class="btn btn-sm" href="/admin/users/@u.Id">Manage</a>
-                            <button class="btn btn-sm btn-warn" @onclick="() => QuickWarnAsync(u.Id, u.Username)">Warn</button>
-                            @if (u.IsMuted)
-                            {
-                                <button class="btn btn-sm btn-secondary" @onclick="() => QuickUnmuteAsync(u.Id, u.Username)">Unmute</button>
-                            }
-                            else
-                            {
-                                <button class="btn btn-sm btn-warn" @onclick="() => QuickMuteAsync(u.Id, u.Username)">Mute</button>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <MudTable Items="@_users.Items" Hover="true" Elevation="0" Outlined="true">
+            <HeaderContent>
+                <MudTh>Username</MudTh>
+                <MudTh>Email</MudTh>
+                <MudTh>Roles</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Warns</MudTh>
+                <MudTh>Last Seen</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Username</MudTd>
+                <MudTd Class="mud-text-secondary">@context.Email</MudTd>
+                <MudTd>
+                    <div class="d-flex flex-wrap gap-1">
+                        @foreach (var r in context.Roles)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Primary">@r</MudChip>
+                        }
+                    </div>
+                </MudTd>
+                <MudTd>
+                    @if (context.IsBanned)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Error">Banned</MudChip>
+                    }
+                    else if (context.IsMuted)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Warning">Muted</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success">Active</MudChip>
+                    }
+                </MudTd>
+                <MudTd Class="@(context.WarnCount > 0 ? "mud-warning-text" : "mud-text-secondary")">
+                    <MudText Typo="Typo.body2" Class="@(context.WarnCount > 0 ? "mud-warning-text fw-bold" : "")">@context.WarnCount</MudText>
+                </MudTd>
+                <MudTd Class="mud-text-secondary">@(context.LastSeenAt?.ToLocalTime().ToString("g") ?? "Never")</MudTd>
+                <MudTd>
+                    <div class="d-flex gap-1 flex-wrap">
+                        <MudButton Variant="Variant.Filled" Size="Size.Small" Href="@($"/admin/users/{context.Id}")">Manage</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small" OnClick="() => QuickWarnAsync(context.Id, context.Username)">Warn</MudButton>
+                        @if (context.IsMuted)
+                        {
+                            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="() => QuickUnmuteAsync(context.Id, context.Username)">Unmute</MudButton>
+                        }
+                        else
+                        {
+                            <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small" OnClick="() => QuickMuteAsync(context.Id, context.Username)">Mute</MudButton>
+                        }
+                    </div>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
 
-        <div class="pagination">
-            <button class="btn btn-sm" disabled="@(_page <= 1)" @onclick="PrevPageAsync">← Prev</button>
-            <span>Page @_page of @((_users.Total + _pageSize - 1) / _pageSize)</span>
-            <button class="btn btn-sm" disabled="@(_page * _pageSize >= _users.Total)" @onclick="NextPageAsync">Next →</button>
+        <div class="d-flex align-items-center justify-content-center gap-3 mt-4">
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="PrevPageAsync" Disabled="@(_page <= 1)">← Prev</MudButton>
+            <MudText Typo="Typo.body2">Page @_page of @TotalPages</MudText>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="NextPageAsync" Disabled="@(_page >= TotalPages)">Next →</MudButton>
         </div>
     }
 }
@@ -130,6 +156,8 @@ else
     private AdminUserListResponse? _users;
     private int _page     = 1;
     private int _pageSize = 25;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_users?.Total ?? 0 / (double)_pageSize));
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -196,16 +224,3 @@ else
         StateHasChanged();
     }
 }
-
-<style>
-    .toolbar { display: flex; gap: .5rem; margin-bottom: 1rem; align-items: center; flex-wrap: wrap; }
-    .search-input { flex: 1; min-width: 160px; padding: .45rem .75rem; border: 1px solid var(--vds-border); border-radius: 6px; background: var(--vds-bg-3); color: inherit; }
-    .filter-select { padding: .45rem .6rem; border: 1px solid var(--vds-border); border-radius: 6px; background: var(--vds-bg-3); color: inherit; }
-    .admin-table { width: 100%; border-collapse: collapse; }
-    .admin-table th, .admin-table td { padding: .5rem .75rem; border-bottom: 1px solid var(--vds-border); text-align: left; }
-    .admin-table th { font-weight: 600; color: var(--vds-text-muted); font-size: .85rem; }
-    .muted { color: var(--vds-text-muted); font-size: .9rem; }
-    .warn-count { color: var(--vds-warning); font-weight: 600; }
-    .actions-cell { display: flex; gap: .3rem; flex-wrap: wrap; align-items: center; }
-    .pagination { display: flex; gap: 1rem; align-items: center; margin-top: 1rem; }
-</style>
