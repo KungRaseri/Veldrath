@@ -43,6 +43,13 @@ public sealed class AuthDelegatingHandler : DelegatingHandler
     private string? _lastFailedAccessToken;
 
     /// <summary>
+    /// Guards against re-entrancy when <see cref="AuthStateServiceBase.LogOutAsync"/> is
+    /// called during auth state cleanup after a renewal failure. Prevents the handler from
+    /// intercepting the logout HTTP request itself.
+    /// </summary>
+    private bool _isClearingAuthState;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="AuthDelegatingHandler"/> class.
     /// </summary>
     /// <param name="serviceProvider">The <see cref="IServiceProvider"/> used to lazily resolve
@@ -115,8 +122,25 @@ public sealed class AuthDelegatingHandler : DelegatingHandler
             if (renewed is null)
             {
                 _logger.LogWarning(
-                    "JWT renewal failed for {Method} {Path}. Propagating original 401.",
+                    "JWT renewal failed for {Method} {Path}. Clearing stale auth state and propagating 401.",
                     request.Method, request.RequestUri?.AbsolutePath);
+
+                _isClearingAuthState = true;
+                try
+                {
+                    await authState.LogOutAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex,
+                        "Error clearing auth state after JWT renewal failure for {Method} {Path}.",
+                        request.Method, request.RequestUri?.AbsolutePath);
+                }
+                finally
+                {
+                    _isClearingAuthState = false;
+                }
+
                 return response;
             }
 
@@ -152,13 +176,20 @@ public sealed class AuthDelegatingHandler : DelegatingHandler
     /// <summary>
     /// Determines whether the handler should intercept this response for JWT refresh.
     /// Returns <c>false</c> for the renew endpoint itself, non-401 status codes,
-    /// requests lacking an Authorization header, and already-retried requests.
+    /// requests lacking an Authorization header, already-retried requests, and when
+    /// auth state is already being cleared (re-entrancy guard).
     /// </summary>
     /// <param name="request">The outgoing HTTP request message.</param>
     /// <param name="response">The received HTTP response message.</param>
     /// <returns><c>true</c> if the handler should attempt a token refresh; otherwise <c>false</c>.</returns>
-    private static bool ShouldIntercept(HttpRequestMessage request, HttpResponseMessage response)
+    private bool ShouldIntercept(HttpRequestMessage request, HttpResponseMessage response)
     {
+        // Re-entrancy guard: when we're already clearing stale auth state (e.g. after
+        // a renewal failure), don't intercept any requests — including the logout call
+        // itself — to avoid loops and deadlocks on the refresh semaphore.
+        if (_isClearingAuthState)
+            return false;
+
         // Never intercept the renew endpoint itself (defense in depth).
         if (request.RequestUri?.AbsolutePath.EndsWith("/api/auth/renew-jwt",
                 StringComparison.OrdinalIgnoreCase) == true)

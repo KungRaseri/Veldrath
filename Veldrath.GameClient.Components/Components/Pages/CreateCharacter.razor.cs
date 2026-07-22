@@ -217,7 +217,9 @@ public partial class CreateCharacter : IAsyncDisposable
     }
 
     /// <summary>Reacts to auth state changes. Cancels any pending auth timeout and triggers
-    /// data load when auth becomes ready after prerendering, or refreshes the UI otherwise.</summary>
+    /// data load when auth becomes ready after prerendering, or refreshes the UI otherwise.
+    /// Redirects to the login page when the auth state indicates the user is no longer logged in
+    /// (e.g. after the <see cref="AuthDelegatingHandler"/> cleared stale tokens on a 401).</summary>
     private void OnAuthStateChanged()
     {
         if (!Auth.IsAuthReady)
@@ -225,6 +227,14 @@ public partial class CreateCharacter : IAsyncDisposable
 
         // Cancel any pending auth timeout since auth is now ready.
         _authTimeoutCts?.Cancel();
+
+        // If the auth state was cleared (e.g. by the delegating handler after a renewal
+        // failure), redirect to login so the user can re-authenticate.
+        if (!Auth.IsLoggedIn)
+        {
+            try { Navigation.NavigateTo("/login"); } catch (InvalidOperationException) { }
+            return;
+        }
 
         if (!_hasLoadedData && Auth.IsLoggedIn)
         {
@@ -742,7 +752,14 @@ public partial class CreateCharacter : IAsyncDisposable
         try
         {
             // Ensure the JWT is fresh before the server check.
-            await Auth.TryRefreshAsync();
+            var tokenValid = await Auth.TryRefreshAsync();
+            if (!tokenValid || Auth.AccessToken is null)
+            {
+                _nameError = "Your session has expired. Please refresh the page.";
+                SetStepError("Session expired — please refresh the page");
+                _nameChecking = false;
+                return;
+            }
 
             // C6: 400 ms debounce before server check, matching desktop behavior
             await Task.Delay(400, ct);
