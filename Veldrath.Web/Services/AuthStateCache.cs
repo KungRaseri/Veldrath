@@ -11,13 +11,13 @@ namespace Veldrath.Web.Services;
 /// persists a simple string key via <c>PersistAsJson</c>.
 /// </summary>
 /// <remarks>
-/// Entries expire after 30 seconds to prevent stale data from being served across
-/// unrelated page loads.
+/// Entries expire after 120 seconds to handle slow circuit establishment after SSR
+/// under load. Prevents stale data from being served across unrelated page loads.
 /// </remarks>
 public sealed class AuthStateCache
 {
     private readonly ConcurrentDictionary<string, AuthResponse> _cache = new(StringComparer.Ordinal);
-    private readonly TimeSpan _ttl = TimeSpan.FromSeconds(30);
+    private readonly TimeSpan _ttl = TimeSpan.FromSeconds(120);
 
     /// <summary>
     /// Stores an <see cref="AuthResponse"/> and returns a unique key that can be used

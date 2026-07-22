@@ -3,9 +3,8 @@
     category. Supports selection highlight and keyboard navigation. *@
 @using Veldrath.Contracts.Content
 
-<div @onclick="HandleClick" @onkeydown="HandleKeyDown"
-     tabindex="0" role="option" aria-selected="@(IsSelected ? "true" : "false")"
-     style="cursor: pointer;">
+<div @onclick="HandleClick" @onkeydown="HandleKeyDown" tabindex="0" role="option"
+     aria-selected="@(IsSelected ? "true" : "false")" style="cursor: pointer;">
     <MudCard Elevation="@(IsSelected ? 5 : 1)"
              Style="@(IsSelected ? "border: 2px solid var(--mud-palette-primary);" : "")">
         <MudCardContent>
@@ -16,29 +15,27 @@
                     <MudText Typo="Typo.h6">@Class.DisplayName</MudText>
                     @if (!string.IsNullOrWhiteSpace(Class.TypeKey))
                     {
-                        <MudChip T="string" Text="@FormatTypeKey(Class.TypeKey)" Size="Size.Small"
-                                 Color="Color.Default" Variant="Variant.Text" />
+                        <MudChip T="string" Text="@FormatTypeKey(Class.TypeKey)" Size="Size.Small" Color="Color.Default"
+                                 Variant="Variant.Text" />
                     }
                 </MudStack>
 
                 @* Core stats: Hit Die + Primary Stat + HP/MP *@
                 <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Style="flex-wrap: wrap;">
-                    <MudChip T="string" Text="@($"d{Class.HitDie}")" Size="Size.Small"
-                             Color="Color.Error" Variant="Variant.Outlined"
-                             Icon="@Icons.Material.Filled.FavoriteBorder" />
-                    <MudChip T="string" Text="@FormatPrimaryStat(Class.PrimaryStat)" Size="Size.Small"
-                             Color="Color.Info" Variant="Variant.Outlined"
-                             Icon="@GetStatIcon(Class.PrimaryStat)" />
                     @if (Class.BaseHealth.HasValue && Class.BaseHealth > 0)
                     {
-                        <MudChip T="string" Text="@($"{Class.BaseHealth} HP")" Size="Size.Small"
-                                 Color="Color.Error" Variant="Variant.Text" />
+                        <MudChip T="string" Text="@($"{Class.BaseHealth} HP")" Size="Size.Small" Color="Color.Error"
+                                 Variant="Variant.Text" />
                     }
                     @if (Class.BaseMana.HasValue && Class.BaseMana > 0)
                     {
-                        <MudChip T="string" Text="@($"{Class.BaseMana} MP")" Size="Size.Small"
-                                 Color="Color.Info" Variant="Variant.Text" />
+                        <MudChip T="string" Text="@($"{Class.BaseMana} MP")" Size="Size.Small" Color="Color.Info"
+                                 Variant="Variant.Text" />
                     }
+                    <MudChip T="string" Text="@($"d{Class.HitDie}")" Size="Size.Small" Color="Color.Error"
+                             Variant="Variant.Outlined" Icon="@Icons.Material.Filled.FavoriteBorder" />
+                    <MudChip T="string" Text="@FormatPrimaryStat(Class.PrimaryStat)" Size="Size.Small"
+                             Color="Color.Info" Variant="Variant.Outlined" Icon="@GetStatIcon(Class.PrimaryStat)" />
                 </MudStack>
 
                 @* Per-stat growth rates — compact row *@
@@ -47,8 +44,8 @@
                     <MudStack Row="true" Spacing="1" Style="flex-wrap: wrap;">
                         @foreach (var (label, value) in GetGrowthStats())
                         {
-                            <MudChip T="string" Text="@($"{label} +{value:F1}")" Size="Size.Small"
-                                     Color="Color.Success" Variant="Variant.Text" />
+                            <MudChip T="string" Text="@($"{label} +{value:F1}")" Size="Size.Small" Color="Color.Success"
+                                     Variant="Variant.Text" />
                         }
                     </MudStack>
                 }
@@ -59,8 +56,8 @@
                     <MudStack Row="true" Spacing="1" Style="flex-wrap: wrap;">
                         @foreach (var trait in GetActiveTraits())
                         {
-                            <MudChip T="string" Text="@trait" Size="Size.Small"
-                                     Color="Color.Primary" Variant="Variant.Filled" />
+                            <MudChip T="string" Text="@trait" Size="Size.Small" Color="Color.Primary"
+                                     Variant="Variant.Filled" />
                         }
                     </MudStack>
                 }

@@ -27,6 +27,7 @@ public partial class CreateCharacter : IAsyncDisposable
     private bool _isInitializing = true;
     private bool _isCreating;
     private string? _loadError;
+    private bool _isWaitingForAuth;
     private int _currentStep = 1;
     private Guid? _sessionId;
     private DateTime _sessionCreatedAt;
@@ -77,6 +78,9 @@ public partial class CreateCharacter : IAsyncDisposable
 
     // Name check debounce (C6)
     private CancellationTokenSource? _nameCheckCts;
+
+    // Auth readiness timeout — cancelled when auth becomes ready or component disposes.
+    private CancellationTokenSource? _authTimeoutCts;
 
     // Point-buy configuration — populated from server session response.
     // Fallback defaults match the engine's PointBuyConfig until the API responds.
@@ -172,11 +176,16 @@ public partial class CreateCharacter : IAsyncDisposable
     protected override async Task OnInitializedAsync()
     {
         if (!Auth.IsAuthReady)
+        {
+            _isInitializing = false;
+            _isWaitingForAuth = true;
+            StartAuthTimeout();
             return;
+        }
 
         if (!Auth.IsLoggedIn)
         {
-            Navigation.NavigateTo("/login");
+            try { Navigation.NavigateTo("/login"); } catch (InvalidOperationException) { }
             return;
         }
 
@@ -185,15 +194,41 @@ public partial class CreateCharacter : IAsyncDisposable
         await LoadDataAsync();
     }
 
-    /// <summary>Reacts to auth state changes. Triggers data load when auth becomes ready
-    /// after prerendering, or refreshes the UI otherwise.</summary>
+    /// <summary>Starts a 10-second countdown; if auth is still not ready when it fires,
+    /// sets <see cref="_loadError"/> so the error UI with Retry button appears.</summary>
+    private async void StartAuthTimeout()
+    {
+        _authTimeoutCts?.Cancel();
+        _authTimeoutCts = new CancellationTokenSource();
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(10), _authTimeoutCts.Token);
+            if (!Auth.IsAuthReady)
+            {
+                _isWaitingForAuth = false;
+                _loadError = "Authentication is taking longer than expected. The server may be starting up.";
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            // Timeout was cancelled — auth became ready or component disposed.
+        }
+    }
+
+    /// <summary>Reacts to auth state changes. Cancels any pending auth timeout and triggers
+    /// data load when auth becomes ready after prerendering, or refreshes the UI otherwise.</summary>
     private void OnAuthStateChanged()
     {
         if (!Auth.IsAuthReady)
             return;
 
+        // Cancel any pending auth timeout since auth is now ready.
+        _authTimeoutCts?.Cancel();
+
         if (!_hasLoadedData && Auth.IsLoggedIn)
         {
+            _isWaitingForAuth = false;
             _hasLoadedData = true;
             InvokeAsync(async () =>
             {
@@ -211,8 +246,8 @@ public partial class CreateCharacter : IAsyncDisposable
     /// session.</summary>
     private async Task LoadDataAsync()
     {
-        _hasLoadedData = true;
         _isInitializing = true;
+        _isWaitingForAuth = false;
         _loadError = null;
         StateHasChanged();
 
@@ -307,6 +342,8 @@ public partial class CreateCharacter : IAsyncDisposable
             {
                 Logger.LogWarning(ex, "Failed to begin creation session; proceeding without session tracking.");
             }
+
+            _hasLoadedData = true;
         }
         catch (Exception ex)
         {
@@ -327,6 +364,8 @@ public partial class CreateCharacter : IAsyncDisposable
         Navigation.LocationChanged -= OnLocationChanged;
         _nameCheckCts?.Cancel();
         _nameCheckCts?.Dispose();
+        _authTimeoutCts?.Cancel();
+        _authTimeoutCts?.Dispose();
 
         await DisableBeforeUnloadAsync();
 

@@ -19,6 +19,14 @@
         <div class="spinner"></div>
     </div>
 }
+else if (_isWaitingForAuth)
+{
+    <div class="cs-error">
+        <p>Waiting for authentication... The server may be starting up.</p>
+        <button class="btn btn-primary" @onclick="ConnectAndLoadCharacters">Retry</button>
+        <a href="/" class="btn btn-secondary">Back to Home</a>
+    </div>
+}
 else if (_errorMessage is not null)
 {
     <div class="cs-error">
@@ -75,6 +83,9 @@ else
     private bool _isLoading = true;
     private string? _errorMessage;
     private string? _selectedCharacterId;
+    private bool _isWaitingForAuth;
+    private CancellationTokenSource? _authTimeoutCts;
+    private bool _hasLoadedCharacters;
     private readonly List<IDisposable> _hubSubscriptions = [];
 
     /// <inheritdoc />
@@ -87,26 +98,73 @@ else
     protected override async Task OnInitializedAsync()
     {
         if (!Auth.IsAuthReady)
+        {
+            _isLoading = false;
+            _isWaitingForAuth = true;
+            StartAuthTimeout();
             return;
+        }
 
         if (!Auth.IsLoggedIn)
         {
-            Navigation.NavigateTo("/login");
+            try { Navigation.NavigateTo("/login"); } catch (InvalidOperationException) { }
             return;
         }
 
         await ConnectAndLoadCharacters();
     }
 
+    /// <summary>Starts a 10-second countdown; if auth is still not ready when it fires,
+    /// sets <see cref="_errorMessage"/> so the error UI with Retry button appears.</summary>
+    private async void StartAuthTimeout()
+    {
+        _authTimeoutCts?.Cancel();
+        _authTimeoutCts = new CancellationTokenSource();
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(10), _authTimeoutCts.Token);
+            if (!Auth.IsAuthReady)
+            {
+                _isWaitingForAuth = false;
+                _errorMessage = "Authentication is taking longer than expected. The server may be starting up.";
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            // Timeout was cancelled — auth became ready or component disposed.
+        }
+    }
+
+    /// <summary>Reacts to auth state changes. Cancels any pending auth timeout and triggers
+    /// character load when auth becomes ready after prerendering.</summary>
     private void OnAuthStateChanged()
     {
-        if (Auth.IsAuthReady)
-            InvokeAsync(StateHasChanged);
+        if (!Auth.IsAuthReady)
+            return;
+
+        // Cancel any pending auth timeout since auth is now ready.
+        _authTimeoutCts?.Cancel();
+
+        if (!_hasLoadedCharacters && Auth.IsLoggedIn)
+        {
+            _isWaitingForAuth = false;
+            _hasLoadedCharacters = true;
+            InvokeAsync(async () =>
+            {
+                await ConnectAndLoadCharacters();
+                StateHasChanged();
+            });
+            return;
+        }
+
+        InvokeAsync(StateHasChanged);
     }
 
     private async Task ConnectAndLoadCharacters()
     {
         _isLoading = true;
+        _isWaitingForAuth = false;
         _errorMessage = null;
         StateHasChanged();
 
@@ -203,6 +261,8 @@ else
     public async ValueTask DisposeAsync()
     {
         Auth.OnChange -= OnAuthStateChanged;
+        _authTimeoutCts?.Cancel();
+        _authTimeoutCts?.Dispose();
 
         foreach (var sub in _hubSubscriptions)
         {
