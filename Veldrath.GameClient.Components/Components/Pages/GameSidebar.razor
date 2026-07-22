@@ -1,5 +1,6 @@
 @using Veldrath.GameClient.Core.Abstractions
 @using Microsoft.Extensions.Logging
+@using MudBlazor
 @* Sidebar panel showing player info, stats, zone occupants/enemies, and navigation buttons. *@
 @inject IGameStateService GameState
 @inject NavigationManager Navigation
@@ -70,12 +71,14 @@
                 @foreach (var conn in GameState.CurrentLocationConnections)
                 {
                     <li class="sidebar-list-item">
-                        <button class="btn btn-sm btn-link sidebar-nav-btn"
-                                @onclick="() => NavigateToLocationAsync(conn.Slug)"
-                                disabled="@(!Hub.IsConnected)"
-                                title="@($"Navigate to {conn.TargetZoneId}")">
+                        <MudButton Variant="Variant.Text"
+                                   Size="Size.Small"
+                                   OnClick="() => NavigateToLocationAsync(conn.Slug)"
+                                   Disabled="@(!Hub.IsConnected)"
+                                   Class="sidebar-nav-btn"
+                                   title="@($"Navigate to {conn.TargetZoneId}")">
                             @conn.Slug @(conn.IsCrossZone ? "(Zone Transition)" : "")
-                        </button>
+                        </MudButton>
                     </li>
                 }
             </ul>
@@ -83,76 +86,102 @@
     }
 
     <div class="sidebar-section sidebar-actions">
-        <button class="btn btn-secondary sidebar-btn"
-                @onclick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Inventory)">
+        <MudButton Variant="Variant.Outlined"
+                   FullWidth="true"
+                   OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Inventory)"
+                   Class="sidebar-btn">
             Inventory
-        </button>
-        <button class="btn btn-secondary sidebar-btn"
-                @onclick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Shop)">
+        </MudButton>
+        <MudButton Variant="Variant.Outlined"
+                   FullWidth="true"
+                   OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Shop)"
+                   Class="sidebar-btn">
             Shop
-        </button>
-        <button class="btn btn-secondary sidebar-btn"
-                @onclick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Journal)">
+        </MudButton>
+        <MudButton Variant="Variant.Outlined"
+                   FullWidth="true"
+                   OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Journal)"
+                   Class="sidebar-btn">
             Journal
-        </button>
-        <button class="btn btn-secondary sidebar-btn"
-                @onclick='() => Navigation.NavigateTo("/Game/Map")'>
+        </MudButton>
+        <MudButton Variant="Variant.Outlined"
+                   FullWidth="true"
+                   Href="/Game/Map"
+                   Class="sidebar-btn">
             Map
-        </button>
-        <button class="btn btn-secondary sidebar-btn"
-                @onclick='() => Navigation.NavigateTo("/Game/Settings")'>
+        </MudButton>
+        <MudButton Variant="Variant.Outlined"
+                   FullWidth="true"
+                   Href="/Game/Settings"
+                   Class="sidebar-btn">
             Settings
-        </button>
+        </MudButton>
 
         @* G68: Visit Shop — conditional on zone having a merchant *@
         @if (GameState.CurrentZone.HasMerchant)
         {
-            <button class="btn btn-primary sidebar-btn"
-                    @onclick="VisitShopAsync"
-                    disabled="@(!Hub.IsConnected)">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       FullWidth="true"
+                       OnClick="VisitShopAsync"
+                       Disabled="@(!Hub.IsConnected)"
+                       Class="sidebar-btn">
                 Visit Shop
-            </button>
+            </MudButton>
         }
 
         @* G75: Rest at Inn — conditional on zone having an inn *@
         @if (GameState.CurrentZone.HasInn)
         {
-            <button class="btn btn-primary sidebar-btn"
-                    @onclick="RestAtLocationAsync"
-                    disabled="@(!Hub.IsConnected)">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       FullWidth="true"
+                       OnClick="RestAtLocationAsync"
+                       Disabled="@(!Hub.IsConnected)"
+                       Class="sidebar-btn">
                 Rest
-            </button>
+            </MudButton>
         }
 
         @* G76: Allocate Attribute Points — conditional on having unspent points *@
         @if (GameState.CurrentCharacter.UnspentAttributePoints > 0)
         {
-            <button class="btn btn-accent sidebar-btn"
-                    @onclick="AllocateStrengthAsync"
-                    disabled="@(!Hub.IsConnected)"
-                    title="@($"Unspent: {GameState.CurrentCharacter.UnspentAttributePoints}")">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Tertiary"
+                       FullWidth="true"
+                       OnClick="AllocateStrengthAsync"
+                       Disabled="@(!Hub.IsConnected)"
+                       Class="sidebar-btn"
+                       title="@($"Unspent: {GameState.CurrentCharacter.UnspentAttributePoints}")">
                 Attributes (+STR)
-            </button>
+            </MudButton>
         }
 
         @* G70: Search Area *@
-        <button class="btn btn-secondary sidebar-btn"
-                @onclick="SearchAreaAsync"
-                disabled="@(!Hub.IsConnected)">
+        <MudButton Variant="Variant.Outlined"
+                   FullWidth="true"
+                   OnClick="SearchAreaAsync"
+                   Disabled="@(!Hub.IsConnected)"
+                   Class="sidebar-btn">
             Search Area
-        </button>
+        </MudButton>
 
         @* G74: Exit Zone *@
-        <button class="btn btn-secondary sidebar-btn"
-                @onclick="ExitZoneAsync"
-                disabled="@(!Hub.IsConnected)">
+        <MudButton Variant="Variant.Outlined"
+                   FullWidth="true"
+                   OnClick="ExitZoneAsync"
+                   Disabled="@(!Hub.IsConnected)"
+                   Class="sidebar-btn">
             Exit Zone
-        </button>
+        </MudButton>
 
-        <button class="btn btn-danger sidebar-btn"
-                @onclick="Logout">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Error"
+                   FullWidth="true"
+                   OnClick="Logout"
+                   Class="sidebar-btn">
             Logout
-        </button>
+        </MudButton>
     </div>
 </div>
 

@@ -1,5 +1,6 @@
 @* Reusable action button bar that shows context-sensitive buttons based on game state
     and a hotbar row with ability quick-slot buttons. *@
+@using MudBlazor
 
 <div class="action-bar-wrapper">
     @* Hotbar ability quick-slot buttons row *@
@@ -36,19 +37,42 @@
     <div class="action-bar">
         @if (ShowAttack)
         {
-            <button class="action-btn action-btn-attack" @onclick="OnAttack" disabled="@Disabled">Attack</button>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="OnAttack"
+                       Disabled="@Disabled"
+                       Size="Size.Small">
+                Attack
+            </MudButton>
         }
         @if (ShowDefend)
         {
-            <button class="action-btn action-btn-defend" @onclick="OnDefend" disabled="@Disabled">Defend</button>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Info"
+                       OnClick="OnDefend"
+                       Disabled="@Disabled"
+                       Size="Size.Small">
+                Defend
+            </MudButton>
         }
         @if (ShowFlee)
         {
-            <button class="action-btn action-btn-flee" @onclick="OnFlee" disabled="@Disabled">Flee</button>
+            <MudButton Variant="Variant.Outlined"
+                       OnClick="OnFlee"
+                       Disabled="@Disabled"
+                       Size="Size.Small">
+                Flee
+            </MudButton>
         }
         @if (ShowRespawn)
         {
-            <button class="action-btn action-btn-respawn" @onclick="OnRespawn" disabled="@Disabled">Respawn</button>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Warning"
+                       OnClick="OnRespawn"
+                       Disabled="@Disabled"
+                       Size="Size.Small">
+                Respawn
+            </MudButton>
         }
     </div>
 </div>

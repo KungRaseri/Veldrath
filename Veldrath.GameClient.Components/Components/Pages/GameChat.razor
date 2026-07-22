@@ -1,3 +1,4 @@
+@using MudBlazor
 @* Chat panel showing message history with channel pills, input field, and send button. *@
 
 <div class="game-chat">
@@ -39,10 +40,12 @@
                @onkeydown="HandleKeyDown"
                placeholder="@WhisperPlaceholder"
                disabled="@(!GameState.IsConnected)" />
-        <button class="game-chat-send-btn"
-                @onclick="SendMessage"
-                disabled="@(string.IsNullOrWhiteSpace(_inputText) || !GameState.IsConnected)">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Size="Size.Small"
+                   OnClick="SendMessage"
+                   Disabled="@(string.IsNullOrWhiteSpace(_inputText) || !GameState.IsConnected)">
             @(IsWhisperActive ? "Whisper" : "Send")
-        </button>
+        </MudButton>
     </div>
 </div>
