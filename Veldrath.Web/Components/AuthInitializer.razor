@@ -1,0 +1,153 @@
+@* Auth initialization only — no UI rendered.
+   Handles both the SSR prerender pass and the interactive circuit pass,
+   ensuring AuthState.MarkReady() is called before any page renders,
+   regardless of which layout the page uses. *@
+@implements IDisposable
+@inject AuthStateService AuthState
+@inject IHttpContextAccessor HttpContextAccessor
+@inject PersistentComponentState ApplicationState
+@inject VeldrathApiClient Api
+@inject AuthStateCache AuthCache
+@inject ILogger<AuthInitializer> Logger
+@using Veldrath.Contracts.Auth
+
+@code {
+    private PersistingComponentStateSubscription _subscription;
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        var ctx = HttpContextAccessor.HttpContext;
+
+        if (ctx is not null)
+        {
+            // SSR prerender pass — HttpContext is available.
+            var rt = ctx.Request.Cookies["rt"];
+            Logger.LogInformation("SSR pass: rt cookie present: {HasRt}", !string.IsNullOrEmpty(rt));
+
+            if (!string.IsNullOrEmpty(rt))
+            {
+                try
+                {
+                    using var renewCts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                    var renewed = await Api.RenewJwtAsync(rt, renewCts.Token);
+                    Logger.LogInformation("SSR pass: RenewJwtAsync returned null: {IsNull}", renewed is null);
+
+                    if (renewed is not null)
+                    {
+                        var authResponse = new AuthResponse(
+                            renewed.AccessToken,
+                            rt,
+                            renewed.AccessTokenExpiry,
+                            renewed.AccountId,
+                            renewed.Username,
+                            renewed.Roles,
+                            renewed.Permissions,
+                            renewed.IsCurator,
+                            renewed.SessionId);
+
+                        // Store the full auth response in the singleton cache and persist
+                        // only the GUID key. This avoids silent serialization failures with
+                        // PersistentComponentState for complex types like IReadOnlyList,
+                        // DateTimeOffset, Guid?, etc.
+                        var cacheKey = AuthCache.Store(authResponse);
+                        _subscription = ApplicationState.RegisterOnPersisting(() =>
+                        {
+                            ApplicationState.PersistAsJson("auth-key", cacheKey);
+                            Logger.LogInformation("SSR pass: Persisted auth cache key (len={Len})", cacheKey.Length);
+                            return Task.CompletedTask;
+                        });
+
+                        await AuthState.SetTokensAsync(authResponse);
+                        Logger.LogInformation("SSR pass: SetTokensAsync completed. IsLoggedIn={IsLoggedIn}, AccessToken len={Len}",
+                            AuthState.IsLoggedIn, authResponse.AccessToken?.Length ?? 0);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    Logger.LogWarning("SSR pass: RenewJwtAsync timed out after 10 seconds");
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning(ex, "SSR pass: RenewJwtAsync failed");
+                }
+            }
+
+            AuthState.MarkReady();
+            Logger.LogInformation("SSR pass: MarkReady called. IsAuthReady={Ready}, IsLoggedIn={In}",
+                AuthState.IsAuthReady, AuthState.IsLoggedIn);
+            return;
+        }
+
+        // Interactive circuit pass — restore auth from the cache using the persisted GUID key.
+        try
+        {
+            if (ApplicationState.TryTakeFromJson<string>("auth-key", out var cachedKey)
+                && !string.IsNullOrEmpty(cachedKey))
+            {
+                var cached = AuthCache.Take(cachedKey);
+                Logger.LogInformation("Circuit pass: AuthCache.Take success={Success}", cached is not null);
+
+                if (cached is not null)
+                {
+                    await AuthState.SetTokensAsync(cached);
+                    Logger.LogInformation("Circuit pass: SetTokensAsync completed. IsLoggedIn={In}, AccessToken len={Len}",
+                        AuthState.IsLoggedIn, cached.AccessToken?.Length ?? 0);
+                }
+            }
+            else
+            {
+                // Fallback: try to restore from the raw refresh token (for backward compatibility
+                // with previously persisted state before the cache approach).
+                if (ApplicationState.TryTakeFromJson<string>("rt", out var persistedRt)
+                    && !string.IsNullOrEmpty(persistedRt))
+                {
+                    Logger.LogInformation("Circuit pass: Fallback TryTakeFromJson rt succeeded");
+                    try
+                    {
+                        using var renewCts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                        var renewed = await Api.RenewJwtAsync(persistedRt, renewCts.Token);
+                        if (renewed is not null)
+                        {
+                            var authResponse = new AuthResponse(
+                                renewed.AccessToken,
+                                persistedRt,
+                                renewed.AccessTokenExpiry,
+                                renewed.AccountId,
+                                renewed.Username,
+                                renewed.Roles,
+                                renewed.Permissions,
+                                renewed.IsCurator,
+                                renewed.SessionId);
+
+                            await AuthState.SetTokensAsync(authResponse);
+                            Logger.LogInformation("Circuit pass: Fallback SetTokensAsync completed");
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        Logger.LogWarning("Circuit pass: Fallback RenewJwtAsync timed out after 10 seconds");
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogWarning(ex, "Circuit pass: Fallback RenewJwtAsync failed");
+                    }
+                }
+            }
+        }
+        finally
+        {
+            // MarkReady must always be called so child components can proceed,
+            // even when auth restoration fails or times out.
+            AuthState.MarkReady();
+            Logger.LogInformation("Circuit pass: MarkReady called. IsAuthReady={Ready}, IsLoggedIn={In}",
+                AuthState.IsAuthReady, AuthState.IsLoggedIn);
+        }
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        _subscription.Dispose();
+    }
+}

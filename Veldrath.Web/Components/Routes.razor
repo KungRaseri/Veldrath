@@ -1,4 +1,11 @@
 @using Veldrath.GameClient.Components.Components.Layout
+@using Veldrath.Web.Components
+
+@* AuthInitializer runs before the Router so auth state is always ready
+   before any page renders, regardless of which layout the page uses.
+   Fixes page-refresh-on-game-routes where GameLayout (which contains
+   no auth init logic) overrides MainLayout. *@
+<AuthInitializer />
 
 <Router AppAssembly="typeof(App).Assembly"
         AdditionalAssemblies="new[] { typeof(GameLayout).Assembly }">
