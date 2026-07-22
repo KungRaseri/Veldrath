@@ -29,6 +29,7 @@ public static class CharacterEndpoints
         group.MapGet("/",            ListAsync);
         group.MapPost("/",           CreateAsync);
         group.MapDelete("/{id:guid}", DeleteAsync);
+        group.MapGet("/last-session", GetLastSessionAsync);
 
         return app;
     }
@@ -125,6 +126,40 @@ public static class CharacterEndpoints
 
         await repo.SoftDeleteAsync(id, ct);
         return Results.NoContent();
+    }
+
+    /// <summary>
+    /// Returns the authenticated account's most recently played character
+    /// and its last known location. Used by the Blazor client to restore
+    /// game state after a page refresh without requiring the user to
+    /// manually re-select a character.
+    /// </summary>
+    private static async Task<IResult> GetLastSessionAsync(
+        ClaimsPrincipal user,
+        ICharacterRepository repo,
+        IZoneRepository zoneRepo,
+        CancellationToken ct)
+    {
+        var accountId = GetAccountId(user);
+        var lastChar = await repo.GetLastPlayedAsync(accountId, ct);
+
+        if (lastChar is null)
+            return Results.NoContent();
+
+        string? regionId = null;
+        if (!string.IsNullOrEmpty(lastChar.CurrentZoneId))
+        {
+            var zone = await zoneRepo.GetByIdAsync(lastChar.CurrentZoneId);
+            regionId = zone?.RegionId;
+        }
+
+        return Results.Ok(new LastSessionDto(
+            CharacterId: lastChar.Id,
+            CharacterName: lastChar.Name,
+            ZoneId: lastChar.CurrentZoneId,
+            RegionId: regionId,
+            TileX: lastChar.TileX,
+            TileY: lastChar.TileY));
     }
 
     // Helpers

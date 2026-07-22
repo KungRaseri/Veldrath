@@ -26,6 +26,22 @@ public class VeldrathApiClient(HttpClient http) : VeldrathAuthApiClient(http), V
         return await resp.Content.ReadFromJsonAsync<List<CharacterDto>>(ct) ?? [];
     }
 
+    /// <summary>
+    /// Returns the last active session info for the authenticated account,
+    /// or <see langword="null"/> if no characters exist. Used after page refresh
+    /// to restore game state without manual character selection.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A <see cref="LastSessionDto"/> with the last character and location, or <see langword="null"/>.</returns>
+    public async Task<LastSessionDto?> GetLastSessionAsync(CancellationToken ct = default)
+    {
+        var resp = await Http.GetAsync("/api/characters/last-session", ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.NoContent)
+            return null;
+        resp.EnsureSuccessStatusCode();
+        return await resp.Content.ReadFromJsonAsync<LastSessionDto>(ct);
+    }
+
     /// <summary>Checks whether a character name is available.</summary>
     /// <param name="name">The desired character name.</param>
     /// <returns>A response indicating availability, or <c>null</c> if the response body is empty.</returns>

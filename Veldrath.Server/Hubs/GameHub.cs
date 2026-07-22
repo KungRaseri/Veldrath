@@ -133,23 +133,56 @@ public class GameHub : Hub
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        // Release any active character claim and notify account peers
         var characterId = _activeCharacters.GetCharacterForConnection(Context.ConnectionId);
-        _activeCharacters.Release(Context.ConnectionId);
 
-        if (characterId.HasValue && Context.Items.TryGetValue("AccountId", out var aid) && aid is Guid accountId)
+        if (exception is null)
         {
-            await Clients.Group(AccountGroup(accountId)).SendAsync("CharacterStatusChanged", new
+            // ── Clean disconnect (explicit sign-out, navigation away) ──
+            // Release immediately — the user intended to leave.
+            _activeCharacters.Release(Context.ConnectionId);
+
+            if (characterId.HasValue && Context.Items.TryGetValue("AccountId", out var aid) && aid is Guid accountId)
             {
-                CharacterId = characterId.Value,
-                IsOnline = false,
-            });
+                await Clients.Group(AccountGroup(accountId)).SendAsync("CharacterStatusChanged", new
+                {
+                    CharacterId = characterId.Value,
+                    IsOnline = false,
+                });
+            }
+
+            await LeaveCurrentZoneAsync(Context.ConnectionId, notifyPeers: true);
+        }
+        else
+        {
+            // ── Unexpected disconnect (page refresh, network drop, browser close) ──
+            // Mark the claim as "disconnecting" but do NOT release it yet.
+            // The player has 30 seconds to reconnect with the same character.
+            if (characterId.HasValue)
+            {
+                _activeCharacters.MarkDisconnecting(characterId.Value);
+                var capturedCharId = characterId.Value;
+                var capturedConnId = Context.ConnectionId;
+
+                // Schedule cleanup after grace period.
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(30));
+                    var currentHolder = _activeCharacters.GetCharacterForConnection(capturedConnId);
+                    if (currentHolder == capturedCharId)
+                    {
+                        _activeCharacters.Release(capturedConnId);
+                    }
+                });
+            }
+
+            // Still leave the zone group and notify peers — the character
+            // appears to leave, but the claim is held for reconnection.
+            await LeaveCurrentZoneAsync(Context.ConnectionId, notifyPeers: true);
         }
 
-        // Clean up zone session — broadcast departure to zone peers
-        await LeaveCurrentZoneAsync(Context.ConnectionId, notifyPeers: true);
-
-        _logger.LogInformation("Client disconnected: {ConnectionId}", Context.ConnectionId);
+        _logger.LogInformation(
+            "Client disconnected: {ConnectionId} (hasException: {HasException})",
+            Context.ConnectionId, exception is not null);
         await base.OnDisconnectedAsync(exception);
     }
 

@@ -6,6 +6,7 @@
 @using Veldrath.Contracts.Tilemap
 @inject IGameHubConnectionService Hub
 @inject IGameStateService GameState
+@inject IGameApiClient Api
 @inject NavigationManager Navigation
 @inject AuthStateServiceBase Auth
 @inject IConfiguration Configuration
@@ -21,7 +22,14 @@
         </div>
 
         <div class="game-center">
-            @if (GameState.IsInCombat)
+            @if (_isRestoringSession)
+            {
+                <div class="game-loading-zone">
+                    <p>Restoring your game session...</p>
+                    <div class="spinner"></div>
+                </div>
+            }
+            else if (GameState.IsInCombat)
             {
                 <GameCombat />
             }
@@ -50,6 +58,7 @@
     private IDisposable? _stateSubscription;
     private IDisposable? _hubStateSubscription;
     private bool _hubConnected;
+    private bool _isRestoringSession;
     private bool _showOverlay;
     private GameOverlay.OverlayKind _activeOverlay;
 
@@ -76,6 +85,12 @@
         _hubStateSubscription = SubscribeToHubState();
 
         await ConnectAndRegisterHandlers();
+
+        // ── Auto-restore on fresh circuit (page refresh) ──
+        if (_hubConnected && GameState.CurrentCharacterId is null)
+        {
+            await RestoreSessionFromServerAsync();
+        }
     }
 
     private void OnAuthStateChanged()
@@ -194,6 +209,45 @@
         }
     }
 
+    /// <summary>
+    /// Queries the server for the account's last active session and restores it.
+    /// Called on a fresh circuit (after page refresh) where no character is selected.
+    /// On success, the existing <c>CharacterSelected</c> hub handler populates
+    /// <see cref="IGameStateService"/> and auto-enters the zone.
+    /// On failure, redirects to the character select screen.
+    /// </summary>
+    private async Task RestoreSessionFromServerAsync()
+    {
+        _isRestoringSession = true;
+        StateHasChanged();
+
+        try
+        {
+            var session = await Api.GetLastSessionAsync();
+            if (session is null)
+            {
+                // No prior session — redirect to character select.
+                Navigation.NavigateTo("/Game/CharacterSelect");
+                return;
+            }
+
+            // Call SelectCharacter on the hub. The existing CharacterSelected
+            // handler already handles the response: it calls GameState.ApplyCharacterSelected
+            // and auto-enters the zone if CurrentZoneId is set.
+            await Hub.SendAsync("SelectCharacter", session.CharacterId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to restore session from server");
+            GameState.ApplySystemMessage("Failed to restore your game session. Please select a character manually.");
+            Navigation.NavigateTo("/Game/CharacterSelect");
+        }
+        finally
+        {
+            _isRestoringSession = false;
+        }
+    }
+
     private void HandleOpenOverlay(GameOverlay.OverlayKind kind)
     {
         _activeOverlay = kind;
@@ -225,6 +279,40 @@
             }
 
             await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── Handle CharacterAlreadyActive during session restore ──
+        // Sent by GameHub.SelectCharacter when TryClaim fails because the
+        // character is still claimed (within the 30-second grace period).
+        _hubSubscriptions.Add(Hub.On<Guid>("CharacterAlreadyActive", async characterId =>
+        {
+            if (!_isRestoringSession)
+            {
+                // Not in restore flow — show error as before.
+                GameState.ApplySystemMessage("This character is already active in another session.");
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            // We're restoring — the old circuit's claim hasn't expired yet.
+            // Wait a few seconds and retry.
+            Logger.LogInformation(
+                "Character {CharId} is still claimed by old circuit; retrying in 3s...",
+                characterId);
+
+            await Task.Delay(3000);
+
+            try
+            {
+                // Retry SelectCharacter — the grace period may have expired by now.
+                await Hub.SendAsync("SelectCharacter", characterId);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Retry SelectCharacter failed for {CharId}", characterId);
+                GameState.ApplySystemMessage("Failed to reclaim your character. Please select a character manually.");
+                Navigation.NavigateTo("/Game/CharacterSelect");
+            }
         }));
 
         _hubSubscriptions.Add(Hub.On<ZoneEnteredPayload>("ZoneEntered", async payload =>
