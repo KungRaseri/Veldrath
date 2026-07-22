@@ -1,0 +1,307 @@
+/* Veldrath.GameClient.Components — Blazor circuit reconnect modal
+   Styles the #components-reconnect-modal element that blazor.web.js
+   manages for InteractiveServer circuit disconnection/reconnection.
+   Mirrors the VDS design of ReconnectOverlay.razor for visual consistency.
+
+   Framework state classes applied to #components-reconnect-modal:
+     .components-reconnect-show     — modal is visible, reconnecting
+     .components-reconnect-hide     — modal is hiding (after successful reconnect)
+     .components-reconnect-failed   — reconnection gave up (show return-home)
+     .components-reconnect-rejected — server rejected (tab/circuit stale) */
+
+/* ── Outer container (display managed by blazor.web.js inline style) ─── */
+
+#components-reconnect-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    /* display is toggled by the framework via inline style;
+       our child overlay handles layout when the container is visible */
+}
+
+/* ── Full-screen overlay backdrop ─────────────────────────────────────── */
+
+#components-reconnect-modal .reconnect-modal-overlay {
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--vds-space-4, 16px);
+}
+
+/* ── Card ─────────────────────────────────────────────────────────────── */
+
+#components-reconnect-modal .reconnect-modal-card {
+    background: var(--vds-bg-2, #1C1D2B);
+    border: 1px solid var(--vds-border-strong, #3D3F58);
+    border-radius: var(--vds-radius-lg, 8px);
+    padding: var(--vds-space-8, 32px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--vds-space-4, 16px);
+    min-width: 320px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(192, 57, 43, 0.15);
+    position: relative;
+    overflow: hidden;
+}
+
+/* ── Top accent stripe ────────────────────────────────────────────────── */
+
+#components-reconnect-modal .reconnect-modal-accent {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--vds-seal, #C0392B);
+    border-radius: var(--vds-radius-lg, 8px) var(--vds-radius-lg, 8px) 0 0;
+}
+
+/* ── Icon ─────────────────────────────────────────────────────────────── */
+
+#components-reconnect-modal .reconnect-modal-icon {
+    font-size: 48px;
+    line-height: 1;
+    color: var(--vds-warning, #D4964A);
+    margin-top: var(--vds-space-2, 8px);
+}
+
+/* ── Title ────────────────────────────────────────────────────────────── */
+
+#components-reconnect-modal .reconnect-modal-title {
+    font-family: var(--vds-font-heading, 'Cinzel', serif);
+    font-size: var(--vds-text-lg, 20px);
+    font-weight: 600;
+    color: var(--vds-text, #F0EDE8);
+    text-align: center;
+    margin: 0;
+}
+
+/* ── Message ──────────────────────────────────────────────────────────── */
+
+#components-reconnect-modal .reconnect-modal-message {
+    font-size: var(--vds-text-base, 14px);
+    color: var(--vds-text-muted, #A8A09A);
+    text-align: center;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* ── Countdown / progress indicator ───────────────────────────────────── */
+
+#components-reconnect-modal .reconnect-modal-countdown {
+    display: flex;
+    align-items: center;
+    gap: var(--vds-space-1, 4px);
+    font-family: var(--vds-font-mono, 'JetBrains Mono', monospace);
+    font-size: var(--vds-text-xl, 28px);
+    font-weight: 700;
+    color: var(--vds-warning, #D4964A);
+    padding: var(--vds-space-2, 8px) var(--vds-space-4, 16px);
+    background: var(--vds-bg-3, #262736);
+    border-radius: var(--vds-radius-md, 6px);
+    min-width: 60px;
+    justify-content: center;
+}
+
+#components-reconnect-modal .reconnect-modal-countdown-unit {
+    font-size: var(--vds-text-sm, 12px);
+    font-weight: 400;
+    color: var(--vds-text-muted, #A8A09A);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ── Animated waiting dots (shown while reconnecting) ─────────────────── */
+
+#components-reconnect-modal .reconnect-modal-dots {
+    display: inline-flex;
+    gap: 3px;
+}
+
+#components-reconnect-modal .reconnect-modal-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--vds-warning, #D4964A);
+    animation: reconnect-dot-pulse 1.4s ease-in-out infinite;
+}
+
+#components-reconnect-modal .reconnect-modal-dots span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+#components-reconnect-modal .reconnect-modal-dots span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes reconnect-dot-pulse {
+    0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1); }
+}
+
+/* ── Actions row ──────────────────────────────────────────────────────── */
+
+#components-reconnect-modal .reconnect-modal-actions {
+    display: flex;
+    gap: var(--vds-space-3, 12px);
+    width: 100%;
+    justify-content: center;
+    margin-top: var(--vds-space-2, 8px);
+    flex-wrap: wrap;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────── */
+
+#components-reconnect-modal .reconnect-modal-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 24px;
+    border-radius: var(--vds-radius-md, 6px);
+    font-family: var(--vds-font-heading, 'Cinzel', serif);
+    font-size: var(--vds-text-sm, 12px);
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--vds-border, #2A2B3D);
+    transition: all 0.15s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-decoration: none;
+    white-space: nowrap;
+    min-width: 140px;
+}
+
+#components-reconnect-modal .reconnect-modal-btn-primary {
+    background: var(--vds-seal, #C0392B);
+    border-color: var(--vds-seal-dark, #8C2018);
+    color: #fff;
+}
+
+#components-reconnect-modal .reconnect-modal-btn-primary:hover {
+    background: var(--vds-seal-light, #E05545);
+    text-decoration: none;
+    box-shadow: 0 0 12px rgba(192, 57, 43, 0.3);
+}
+
+#components-reconnect-modal .reconnect-modal-btn-secondary {
+    background: var(--vds-bg-3, #262736);
+    color: var(--vds-text-muted, #A8A09A);
+    border-color: var(--vds-border-strong, #3D3F58);
+}
+
+#components-reconnect-modal .reconnect-modal-btn-secondary:hover {
+    background: var(--vds-hover, #1E2030);
+    color: var(--vds-text, #F0EDE8);
+    text-decoration: none;
+}
+
+/* ── State-based visibility ───────────────────────────────────────────── */
+
+/* Default (reconnecting): hide failed & rejected messages, show reconnecting content */
+#components-reconnect-modal .reconnect-modal-failed-message,
+#components-reconnect-modal .reconnect-modal-rejected-message {
+    display: none;
+}
+
+#components-reconnect-modal .reconnect-modal-rejected-actions {
+    display: none;
+}
+
+/* Failed state: swap message and actions */
+#components-reconnect-modal.components-reconnect-failed .reconnect-modal-reconnecting,
+#components-reconnect-modal.components-reconnect-failed .reconnect-modal-countdown {
+    display: none;
+}
+
+#components-reconnect-modal.components-reconnect-failed .reconnect-modal-failed-message {
+    display: block;
+}
+
+/* Rejected state: show refresh-only message */
+#components-reconnect-modal.components-reconnect-rejected .reconnect-modal-reconnecting,
+#components-reconnect-modal.components-reconnect-rejected .reconnect-modal-countdown,
+#components-reconnect-modal.components-reconnect-rejected .reconnect-modal-actions {
+    display: none;
+}
+
+#components-reconnect-modal.components-reconnect-rejected .reconnect-modal-rejected-message {
+    display: block;
+}
+
+#components-reconnect-modal.components-reconnect-rejected .reconnect-modal-rejected-actions {
+    display: flex;
+}
+
+/* ── Animations ───────────────────────────────────────────────────────── */
+
+/* Fade-in the overlay when the framework shows the modal */
+#components-reconnect-modal.components-reconnect-show .reconnect-modal-overlay {
+    animation: reconnect-fade-in 0.3s ease forwards;
+}
+
+/* Scale-up the card for a subtle entrance */
+#components-reconnect-modal.components-reconnect-show .reconnect-modal-card {
+    animation: reconnect-card-enter 0.35s ease forwards;
+}
+
+/* Fade-out when reconnection succeeds */
+#components-reconnect-modal.components-reconnect-hide .reconnect-modal-overlay {
+    animation: reconnect-fade-out 0.25s ease forwards;
+}
+
+@keyframes reconnect-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes reconnect-fade-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+}
+
+@keyframes reconnect-card-enter {
+    from { opacity: 0; transform: translateY(8px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+    #components-reconnect-modal .reconnect-modal-card {
+        min-width: unset;
+        max-width: 100%;
+        padding: var(--vds-space-6, 24px);
+        gap: var(--vds-space-3, 12px);
+    }
+
+    #components-reconnect-modal .reconnect-modal-icon {
+        font-size: 36px;
+    }
+
+    #components-reconnect-modal .reconnect-modal-title {
+        font-size: var(--vds-text-md, 16px);
+    }
+
+    #components-reconnect-modal .reconnect-modal-countdown {
+        font-size: var(--vds-text-lg, 20px);
+    }
+
+    #components-reconnect-modal .reconnect-modal-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #components-reconnect-modal .reconnect-modal-btn {
+        min-width: unset;
+        width: 100%;
+    }
+}
