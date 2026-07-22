@@ -158,4 +158,17 @@ public sealed class FakeGameApiClient : IGameApiClient
     /// <inheritdoc />
     public Task<List<BackgroundDto>> GetBackgroundsAsync(CancellationToken ct = default)
         => Task.FromResult(new List<BackgroundDto>(Backgrounds));
+
+    /// <summary>Gets or sets the result of <see cref="GetLastSessionAsync"/>.</summary>
+    public LastSessionDto? LastSessionResult { get; set; }
+
+    /// <summary>Gets the number of times <see cref="GetLastSessionAsync"/> was called.</summary>
+    public int GetLastSessionCallCount { get; private set; }
+
+    /// <inheritdoc />
+    public Task<LastSessionDto?> GetLastSessionAsync(CancellationToken ct = default)
+    {
+        GetLastSessionCallCount++;
+        return Task.FromResult(LastSessionResult);
+    }
 }

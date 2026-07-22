@@ -463,4 +463,16 @@ internal sealed class EmbeddedGameApiClient : IGameApiClient
     /// <inheritdoc />
     public Task<List<Veldrath.Contracts.Content.BackgroundDto>> GetBackgroundsAsync(CancellationToken ct = default)
         => throw new NotSupportedException("Content lookups are not available in the embedded client.");
+
+    /// <inheritdoc />
+    public async Task<Veldrath.Contracts.Characters.LastSessionDto?> GetLastSessionAsync(CancellationToken ct = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/characters/last-session");
+        ApplyAuth(request);
+        var response = await _httpClient.SendAsync(request, ct);
+        if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+            return null;
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<Veldrath.Contracts.Characters.LastSessionDto>(cancellationToken: ct);
+    }
 }
