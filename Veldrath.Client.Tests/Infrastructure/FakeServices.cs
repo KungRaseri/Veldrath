@@ -521,8 +521,8 @@ public class FakeAnnouncementService : IAnnouncementService
 /// <summary>Configurable stub for <see cref="ICharacterCreationService"/>.</summary>
 public class FakeCharacterCreationService : ICharacterCreationService
 {
-    /// <summary>Gets or sets the session ID returned by <see cref="BeginSessionAsync"/>. <see langword="null"/> simulates a failed begin.</summary>
-    public Guid? SessionIdResult { get; set; } = Guid.NewGuid();
+    /// <summary>Gets or sets the session response returned by <see cref="BeginSessionAsync"/>. <see langword="null"/> simulates a failed begin.</summary>
+    public BeginCreationSessionResponse? BeginSessionResponse { get; set; } = new(Guid.NewGuid(), true);
 
     /// <summary>Gets or sets whether <see cref="SetNameAsync"/> succeeds.</summary>
     public bool SetNameResult { get; set; } = true;
@@ -562,7 +562,7 @@ public class FakeCharacterCreationService : ICharacterCreationService
     public Dictionary<string, int>? LastAttributeAllocations { get; private set; }
 
     /// <inheritdoc/>
-    public Task<Guid?> BeginSessionAsync() => Task.FromResult(SessionIdResult);
+    public Task<BeginCreationSessionResponse?> BeginSessionAsync() => Task.FromResult(BeginSessionResponse);
 
     /// <inheritdoc/>
     public Task<bool> SetNameAsync(Guid sessionId, string name) => Task.FromResult(SetNameResult);

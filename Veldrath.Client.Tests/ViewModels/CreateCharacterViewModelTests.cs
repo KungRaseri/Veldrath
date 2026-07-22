@@ -50,7 +50,7 @@ public class CreateCharacterViewModelTests : TestBase
     [Fact]
     public async Task InitializeAsync_Sets_ErrorMessage_When_Session_Fails()
     {
-        var creation = new FakeCharacterCreationService { SessionIdResult = null };
+        var creation = new FakeCharacterCreationService { BeginSessionResponse = null };
         var vm = MakeVm(creation: creation);
         await Task.Yield();
 

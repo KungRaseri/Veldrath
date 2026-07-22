@@ -15,6 +15,9 @@ public class PointBuyConfig
     /// <summary>Gets the maximum allowed value for any single stat before bonuses are applied.</summary>
     public int MaxStatValue { get; init; } = 15;
 
+    /// <summary>Gets a read-only snapshot of the point-buy cost table (stat value → cumulative cost).</summary>
+    public IReadOnlyDictionary<int, int> CostTableSnapshot => CostTable;
+
     private static readonly IReadOnlyDictionary<int, int> CostTable = new Dictionary<int, int>
     {
         [8]  = 0,

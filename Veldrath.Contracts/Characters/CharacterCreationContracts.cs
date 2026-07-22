@@ -73,10 +73,41 @@ public record CharacterPreviewDto(
 /// <param name="Error">Human-readable reason the name is unavailable, or <see langword="null"/> when available.</param>
 public record CheckNameAvailabilityResponse(bool Available, string? Error);
 
+/// <summary>Server-authoritative point-buy configuration for character creation.</summary>
+/// <param name="TotalPoints">Total budget of points to spend across all stats.</param>
+/// <param name="MinStatValue">Minimum allowed base value for any single stat.</param>
+/// <param name="MaxStatValue">Maximum allowed base value for any single stat.</param>
+/// <param name="CostTable">Cost lookup keyed by stat value (8–15), each entry giving the cumulative point cost.</param>
+public record PointBuyConfigDto(
+    int TotalPoints,
+    int MinStatValue,
+    int MaxStatValue,
+    IReadOnlyDictionary<int, int> CostTable);
+
+/// <summary>A single equipment type option with slug and display name.</summary>
+/// <param name="Slug">The canonical slug used in API calls (e.g. <c>"light"</c>, <c>"sword"</c>).</param>
+/// <param name="DisplayName">The human-readable label for UI display (e.g. <c>"Light Armor"</c>, <c>"Sword"</c>).</param>
+public record EquipmentTypeOptionDto(string Slug, string DisplayName);
+
+/// <summary>Catalog of available equipment types for character creation preferences.</summary>
+/// <param name="ArmorTypes">Available armor type options, ordered by typical progression.</param>
+/// <param name="WeaponTypes">Available weapon type options, ordered alphabetically.</param>
+public record EquipmentTypeCatalogDto(
+    IReadOnlyList<EquipmentTypeOptionDto> ArmorTypes,
+    IReadOnlyList<EquipmentTypeOptionDto> WeaponTypes);
+
 /// <summary>Response from beginning a character creation session.</summary>
 /// <param name="SessionId">The session identifier to use in subsequent session commands.</param>
 /// <param name="Success">Whether the session was created successfully.</param>
-public record BeginCreationSessionResponse(Guid SessionId, bool Success);
+/// <param name="PointBuyConfig">The server-authoritative point-buy configuration, or <see langword="null"/> when <paramref name="Success"/> is <see langword="false"/>.</param>
+/// <param name="EquipmentTypeCatalog">The available armor and weapon type catalog, or <see langword="null"/> when unavailable.</param>
+/// <param name="SessionTimeoutMinutes">The session idle timeout in minutes. Defaults to 30 when not provided by the server.</param>
+public record BeginCreationSessionResponse(
+    Guid SessionId,
+    bool Success,
+    PointBuyConfigDto? PointBuyConfig = null,
+    EquipmentTypeCatalogDto? EquipmentTypeCatalog = null,
+    int SessionTimeoutMinutes = 30);
 
 /// <summary>Response from a single-step session mutation (set name, class, species, etc.).</summary>
 /// <param name="Success">Whether the update was applied.</param>

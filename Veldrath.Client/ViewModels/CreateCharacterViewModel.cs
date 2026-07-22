@@ -34,11 +34,12 @@ public class CreateCharacterViewModel : ViewModelBase
     private IReadOnlyList<string> _availableBackgrounds = [];
     private string _selectedBackground = string.Empty;
 
-    // D&D 5e point-buy cost table: index = stat value - 8
-    private static readonly int[] StatCosts = [0, 1, 2, 3, 4, 5, 7, 9];
-    private const int PointBuyTotal = 27;
-    private const int StatMin = 8;
-    private const int StatMax = 15;
+    // Point-buy configuration — populated from server session response.
+    private PointBuyConfigDto? _pointBuyConfig;
+    private int[] _statCosts = [0, 1, 2, 3, 4, 5, 7, 9];
+    private int PointBuyTotal => _pointBuyConfig?.TotalPoints ?? 27;
+    private int StatMin => _pointBuyConfig?.MinStatValue ?? 8;
+    private int StatMax => _pointBuyConfig?.MaxStatValue ?? 15;
     private int _strength = 8;
     private int _dexterity = 8;
     private int _constitution = 8;
@@ -46,12 +47,8 @@ public class CreateCharacterViewModel : ViewModelBase
     private int _wisdom = 8;
     private int _charisma = 8;
 
-    // Equipment preferences
-    private static readonly IReadOnlyList<string> ArmorTypes =
-        ["Light Armor", "Medium Armor", "Heavy Armor", "Unarmored"];
-    private static readonly IReadOnlyList<string> WeaponTypes =
-        ["Sword", "Axe", "Dagger", "Staff", "Bow", "Mace"];
-
+    // Equipment preferences — catalog populated from server session response.
+    private EquipmentTypeCatalogDto? _equipmentCatalog;
     private string _selectedArmorType = string.Empty;
     private string _selectedWeaponType = string.Empty;
     private bool _includeShield;
@@ -62,7 +59,7 @@ public class CreateCharacterViewModel : ViewModelBase
     private CharacterPreviewDto? _characterPreview;
 
     private static readonly System.Text.RegularExpressions.Regex NameLettersPattern =
-        new(@"^[a-zA-Z]+$", System.Text.RegularExpressions.RegexOptions.Compiled);
+        new(@"^[a-zA-Z ]+$", System.Text.RegularExpressions.RegexOptions.Compiled);
 
     private static string? ValidateNameFormat(string? name)
     {
@@ -70,7 +67,7 @@ public class CreateCharacterViewModel : ViewModelBase
         var trimmed = name.Trim();
         if (trimmed.Length < 2) return "Name must be at least 2 characters.";
         if (trimmed.Length > 20) return "Name must be at most 20 characters.";
-        if (!NameLettersPattern.IsMatch(trimmed)) return "Name may only contain letters.";
+        if (!NameLettersPattern.IsMatch(trimmed)) return "Name may only contain letters and spaces.";
         return null;
     }
 
@@ -197,9 +194,9 @@ public class CreateCharacterViewModel : ViewModelBase
 
     /// <summary>Gets the number of point-buy points remaining.</summary>
     public int RemainingPoints =>
-        PointBuyTotal - (StatCosts[Strength - StatMin] + StatCosts[Dexterity - StatMin] +
-                         StatCosts[Constitution - StatMin] + StatCosts[Intelligence - StatMin] +
-                         StatCosts[Wisdom - StatMin] + StatCosts[Charisma - StatMin]);
+        PointBuyTotal - (_statCosts[Strength - StatMin] + _statCosts[Dexterity - StatMin] +
+                         _statCosts[Constitution - StatMin] + _statCosts[Intelligence - StatMin] +
+                         _statCosts[Wisdom - StatMin] + _statCosts[Charisma - StatMin]);
 
     /// <summary>Increases the named stat by one point, if the player has enough point-buy budget.</summary>
     public ReactiveCommand<string, Unit> IncreaseStatCommand { get; }
@@ -207,11 +204,13 @@ public class CreateCharacterViewModel : ViewModelBase
     /// <summary>Decreases the named stat by one point, down to the minimum of 8.</summary>
     public ReactiveCommand<string, Unit> DecreaseStatCommand { get; }
 
-    /// <summary>Gets the static list of available armor type choices.</summary>
-    public IReadOnlyList<string> AvailableArmorTypes => ArmorTypes;
+    /// <summary>Gets the list of available armor type display names from the server catalog.</summary>
+    public IReadOnlyList<string> AvailableArmorTypes => _equipmentCatalog?.ArmorTypes
+        .Select(a => a.DisplayName).ToArray() ?? [];
 
-    /// <summary>Gets the static list of available weapon type choices.</summary>
-    public IReadOnlyList<string> AvailableWeaponTypes => WeaponTypes;
+    /// <summary>Gets the list of available weapon type display names from the server catalog.</summary>
+    public IReadOnlyList<string> AvailableWeaponTypes => _equipmentCatalog?.WeaponTypes
+        .Select(w => w.DisplayName).ToArray() ?? [];
 
     /// <summary>Gets or sets the selected armor type display name, or empty string for none.</summary>
     public string SelectedArmorType
@@ -385,10 +384,26 @@ public class CreateCharacterViewModel : ViewModelBase
 
             await Task.WhenAll(sessionTask, classesTask, speciesTask, backgroundsTask);
 
-            _sessionId = await sessionTask;
-            if (_sessionId is null)
+            var sessionResponse = await sessionTask;
+            if (sessionResponse is { Success: true })
             {
-                _logger.LogWarning("BeginSessionAsync returned null — session could not be started");
+                _sessionId = sessionResponse.SessionId;
+                _pointBuyConfig = sessionResponse.PointBuyConfig;
+                _equipmentCatalog = sessionResponse.EquipmentTypeCatalog;
+
+                // Rebuild the stat cost array from the server config.
+                if (_pointBuyConfig is not null)
+                {
+                    var min = _pointBuyConfig.MinStatValue;
+                    var max = _pointBuyConfig.MaxStatValue;
+                    _statCosts = new int[max - min + 1];
+                    for (int v = min; v <= max; v++)
+                        _statCosts[v - min] = _pointBuyConfig.CostTable.TryGetValue(v, out var c) ? c : int.MaxValue;
+                }
+            }
+            else
+            {
+                _logger.LogWarning("BeginSessionAsync returned null or failed — session could not be started");
                 ErrorMessage = "Could not start creation session. Please check your connection.";
             }
 
@@ -546,7 +561,7 @@ public class CreateCharacterViewModel : ViewModelBase
     {
         var current = GetStat(stat);
         if (current >= StatMax) return;
-        var delta = StatCosts[current - StatMin + 1] - StatCosts[current - StatMin];
+        var delta = _statCosts[current - StatMin + 1] - _statCosts[current - StatMin];
         if (RemainingPoints < delta) return;
         SetStat(stat, current + 1);
     }

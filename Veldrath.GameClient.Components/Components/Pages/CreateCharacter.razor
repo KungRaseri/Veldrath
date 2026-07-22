@@ -289,17 +289,17 @@
                                         <MudSelect @bind-Value="_selectedArmorType" T="string" Label="Preferred Armor Type"
                                                    Variant="Variant.Outlined" Class="mb-3">
                                             <MudSelectItem Value="@((string?)null)">(Class Default)</MudSelectItem>
-                                            @foreach (var armor in ArmorTypes.Where(a => !string.IsNullOrEmpty(a)))
+                                            @foreach (var armor in EquipmentArmorTypes)
                                             {
-                                                <MudSelectItem Value="@armor.ToLowerInvariant().Replace(" ", "-")">@armor</MudSelectItem>
+                                                <MudSelectItem Value="@armor.Slug">@armor.DisplayName</MudSelectItem>
                                             }
                                         </MudSelect>
                                         <MudSelect @bind-Value="_selectedWeaponType" T="string" Label="Preferred Weapon Type"
                                                    Variant="Variant.Outlined" Class="mb-3">
                                             <MudSelectItem Value="@((string?)null)">(Class Default)</MudSelectItem>
-                                            @foreach (var weapon in WeaponTypes.Where(w => !string.IsNullOrEmpty(w)))
+                                            @foreach (var weapon in EquipmentWeaponTypes)
                                             {
-                                                <MudSelectItem Value="@weapon.ToLowerInvariant().Replace(" ", "-")">@weapon</MudSelectItem>
+                                                <MudSelectItem Value="@weapon.Slug">@weapon.DisplayName</MudSelectItem>
                                             }
                                         </MudSelect>
                                         <MudCheckBox @bind-Value="_includeShield" T="bool" Label="Include a Shield" Class="mb-3" />
@@ -478,6 +478,7 @@
     private int _currentStep = 1;
     private Guid? _sessionId;
     private DateTime _sessionCreatedAt;
+    private int _sessionTimeoutMinutes = 30;
     private bool _sessionExpired;
     private bool _isSavingAttributes;
     private bool _isSavingEquipment;
@@ -525,14 +526,18 @@
     // Name check debounce (C6)
     private CancellationTokenSource? _nameCheckCts;
 
-    // Point-buy constants
-    private static readonly Dictionary<int, int> StatCosts = new()
+    // Point-buy configuration — populated from server session response.
+    // Fallback defaults match the engine's PointBuyConfig until the API responds.
+    private PointBuyConfigDto? _pointBuyConfig;
+    private IReadOnlyDictionary<int, int> StatCosts => _pointBuyConfig?.CostTable ?? s_defaultStatCosts;
+    private int MinStat => _pointBuyConfig?.MinStatValue ?? 8;
+    private int MaxStat => _pointBuyConfig?.MaxStatValue ?? 15;
+    private int TotalBudget => _pointBuyConfig?.TotalPoints ?? 27;
+
+    private static readonly Dictionary<int, int> s_defaultStatCosts = new()
     {
         { 8, 0 }, { 9, 1 }, { 10, 2 }, { 11, 3 }, { 12, 4 }, { 13, 5 }, { 14, 7 }, { 15, 9 }
     };
-    private const int MinStat = 8;
-    private const int MaxStat = 15;
-    private const int TotalBudget = 27;
 
     // C5: Stat keys use PascalCase to match desktop
     private Dictionary<string, int> _statAllocations = new()
@@ -555,9 +560,12 @@
         { "Charisma", "Charisma (CHA)" }
     };
 
-    // Equipment preferences
-    private static readonly List<string> ArmorTypes = new() { "", "Light Armor", "Medium Armor", "Heavy Armor", "Unarmored" };
-    private static readonly List<string> WeaponTypes = new() { "", "Sword", "Axe", "Dagger", "Staff", "Bow", "Mace" };
+    // Equipment preferences — catalog populated from server session response.
+    private EquipmentTypeCatalogDto? _equipmentCatalog;
+    private IReadOnlyList<EquipmentTypeOptionDto> EquipmentArmorTypes =>
+        _equipmentCatalog?.ArmorTypes ?? [];
+    private IReadOnlyList<EquipmentTypeOptionDto> EquipmentWeaponTypes =>
+        _equipmentCatalog?.WeaponTypes ?? [];
     private string _selectedArmorType = "";
     private string _selectedWeaponType = "";
     private bool _includeShield = false;
@@ -567,10 +575,10 @@
     private bool IsHardcore => _difficultyMode == "hardcore";
 
     /// <summary>Gets the number of minutes remaining before the creation session expires.
-    /// Computed from <see cref="_sessionCreatedAt"/> and the server-side session idle timeout (30 minutes).</summary>
+    /// Computed from <see cref="_sessionCreatedAt"/> and the server-provided session timeout.</summary>
     private int SessionMinutesRemaining => _sessionCreatedAt == default
-        ? 30
-        : 30 - (int)(DateTime.UtcNow - _sessionCreatedAt).TotalMinutes;
+        ? _sessionTimeoutMinutes
+        : _sessionTimeoutMinutes - (int)(DateTime.UtcNow - _sessionCreatedAt).TotalMinutes;
 
     /// <summary>Gets a human-readable summary of the selected equipment preferences.</summary>
     private string EquipmentSummary
@@ -581,18 +589,15 @@
 
             if (!string.IsNullOrEmpty(_selectedArmorType))
             {
-                var display = ArmorTypes.FirstOrDefault(a =>
-                    !string.IsNullOrEmpty(a) &&
-                    a.ToLowerInvariant().Replace(" ", "-") == _selectedArmorType) ?? _selectedArmorType;
+                var display = EquipmentArmorTypes.FirstOrDefault(a =>
+                    a.Slug == _selectedArmorType)?.DisplayName ?? _selectedArmorType;
                 parts.Add(display);
             }
 
             if (!string.IsNullOrEmpty(_selectedWeaponType))
             {
-                // M6: weapon slugs now use .Replace(" ", "-") consistently
-                var display = WeaponTypes.FirstOrDefault(w =>
-                    !string.IsNullOrEmpty(w) &&
-                    w.ToLowerInvariant().Replace(" ", "-") == _selectedWeaponType) ?? _selectedWeaponType;
+                var display = EquipmentWeaponTypes.FirstOrDefault(w =>
+                    w.Slug == _selectedWeaponType)?.DisplayName ?? _selectedWeaponType;
                 parts.Add(display);
             }
 
@@ -729,7 +734,7 @@
                 _selectedBackground = _availableBackgrounds[0];
             }
 
-            // Process session creation result
+            // Process session creation result — extract config for point-buy and equipment catalogs.
             try
             {
                 var sessionResult = await sessionTask;
@@ -737,6 +742,9 @@
                 {
                     _sessionId = sessionResult.SessionId;
                     _sessionCreatedAt = DateTime.UtcNow;
+                    _pointBuyConfig = sessionResult.PointBuyConfig;
+                    _equipmentCatalog = sessionResult.EquipmentTypeCatalog;
+                    _sessionTimeoutMinutes = sessionResult.SessionTimeoutMinutes;
                 }
                 else
                 {
@@ -1131,10 +1139,10 @@
             SetStepError("Name must be at most 20 characters");
             return;
         }
-        if (!System.Text.RegularExpressions.Regex.IsMatch(trimmed, @"^[a-zA-Z]+$"))
+        if (!System.Text.RegularExpressions.Regex.IsMatch(trimmed, @"^[a-zA-Z ]+$"))
         {
-            _nameError = "Name may only contain letters.";
-            SetStepError("Name may only contain letters");
+            _nameError = "Name may only contain letters and spaces.";
+            SetStepError("Name may only contain letters and spaces");
             return;
         }
 
@@ -1285,6 +1293,9 @@
 
         _sessionId = null;
         _sessionCreatedAt = default;
+        _sessionTimeoutMinutes = 30;
+        _pointBuyConfig = null;
+        _equipmentCatalog = null;
         _selectedClass = null;
         _selectedSpecies = null;
         _selectedBackground = null;

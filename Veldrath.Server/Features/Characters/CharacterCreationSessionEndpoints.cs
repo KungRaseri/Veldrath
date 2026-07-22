@@ -95,7 +95,50 @@ public static class CharacterCreationSessionEndpoints
             await sessionStore.UpdateSessionAsync(session);
         }
 
-        return Results.Created($"/api/character-creation/sessions/{result.SessionId}", result);
+        var pointBuyConfig = MapPointBuyConfig(result.PointBuyConfig);
+        var equipmentCatalog = BuildEquipmentTypeCatalog();
+
+        var response = new BeginCreationSessionResponse(
+            SessionId: result.SessionId,
+            Success: true,
+            PointBuyConfig: pointBuyConfig,
+            EquipmentTypeCatalog: equipmentCatalog,
+            SessionTimeoutMinutes: 30);
+
+        return Results.Created($"/api/character-creation/sessions/{result.SessionId}", response);
+    }
+
+    private static PointBuyConfigDto MapPointBuyConfig(RealmEngine.Shared.Models.PointBuyConfig config)
+    {
+        // Copy the cost table as a new dictionary so System.Text.Json can serialize it.
+        var costTable = new Dictionary<int, int>(config.CostTableSnapshot);
+        return new PointBuyConfigDto(config.TotalPoints, config.MinStatValue, config.MaxStatValue, costTable);
+    }
+
+    private static EquipmentTypeCatalogDto BuildEquipmentTypeCatalog()
+    {
+        var armorTypes = new List<EquipmentTypeOptionDto>
+        {
+            new("light", "Light Armor"),
+            new("medium", "Medium Armor"),
+            new("heavy", "Heavy Armor"),
+            new("shield", "Shield"),
+            new("unarmored", "Unarmored"),
+        };
+
+        var weaponTypes = new List<EquipmentTypeOptionDto>
+        {
+            new("sword", "Sword"),
+            new("axe", "Axe"),
+            new("mace", "Mace"),
+            new("dagger", "Dagger"),
+            new("staff", "Staff"),
+            new("bow", "Bow"),
+            new("spear", "Spear"),
+            new("crossbow", "Crossbow"),
+        };
+
+        return new EquipmentTypeCatalogDto(armorTypes, weaponTypes);
     }
 
     private static async Task<IResult> GetSessionAsync(
