@@ -128,20 +128,10 @@
                             <MudGrid>
                                 @foreach (var cls in _availableClasses)
                                 {
-                                    var isSelected = _selectedClass?.Slug == cls.Slug;
                                     <MudItem xs="12" sm="6" md="4">
-                                        <div @onclick="() => SelectClass(cls)" @onkeydown="(e) => OnCardKeyDownAsync(e, () => SelectClass(cls))"
-                                             tabindex="0" role="option" aria-selected="@(isSelected ? "true" : "false")"
-                                             style="cursor: pointer;">
-                                            <MudCard Elevation="@(isSelected ? 5 : 1)"
-                                                     Style="@(isSelected ? "border: 2px solid var(--mud-palette-primary);" : "")">
-                                                <MudCardContent>
-                                                    <MudText Typo="Typo.h6">@cls.DisplayName</MudText>
-                                                    <MudText Typo="Typo.body2" Color="Color.Dark">Hit Die: d@(cls.HitDie)</MudText>
-                                                    <MudText Typo="Typo.body2" Color="Color.Dark">Primary: @cls.PrimaryStat</MudText>
-                                                </MudCardContent>
-                                            </MudCard>
-                                        </div>
+                                        <CharacterClassCard Class="cls"
+                                                            IsSelected="@(_selectedClass?.Slug == cls.Slug)"
+                                                            OnSelect="SelectClass" />
                                     </MudItem>
                                 }
                             </MudGrid>

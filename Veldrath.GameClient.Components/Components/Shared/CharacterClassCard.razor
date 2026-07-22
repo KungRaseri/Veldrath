@@ -1,0 +1,133 @@
+@* Reusable class selection card for character creation. Displays class name, hit die,
+    primary stat, health/mana, playstyle traits, and category. Supports selection highlight
+    and keyboard navigation. *@
+@using Veldrath.Contracts.Content
+
+<div @onclick="HandleClick" @onkeydown="HandleKeyDown"
+     tabindex="0" role="option" aria-selected="@(IsSelected ? "true" : "false")"
+     style="cursor: pointer;">
+    <MudCard Elevation="@(IsSelected ? 5 : 1)"
+             Style="@(IsSelected ? "border: 2px solid var(--mud-palette-primary);" : "")">
+        <MudCardContent>
+            <MudStack Row="false" Spacing="2">
+
+                @* Header: name + type badge *@
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                    <MudText Typo="Typo.h6">@Class.DisplayName</MudText>
+                    @if (!string.IsNullOrWhiteSpace(Class.TypeKey))
+                    {
+                        <MudChip T="string" Text="@FormatTypeKey(Class.TypeKey)" Size="Size.Small"
+                                 Color="Color.Dark" Variant="Variant.Text" />
+                    }
+                </MudStack>
+
+                @* Core stats row: Hit Die + Primary Stat + Health + Mana *@
+                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Style="flex-wrap: wrap;">
+                    <MudChip T="string" Text="@($"d{Class.HitDie}")" Size="Size.Small"
+                             Color="Color.Info" Variant="Variant.Outlined"
+                             Icon="@Icons.Material.Filled.FavoriteBorder" />
+                    <MudChip T="string" Text="@FormatPrimaryStat(Class.PrimaryStat)" Size="Size.Small"
+                             Color="Color.Secondary" Variant="Variant.Outlined"
+                             Icon="@GetStatIcon(Class.PrimaryStat)" />
+                    @if (Class.BaseHealth.HasValue && Class.BaseHealth > 0)
+                    {
+                        <MudChip T="string" Text="@($"{Class.BaseHealth} HP")" Size="Size.Small"
+                                 Color="Color.Error" Variant="Variant.Outlined"
+                                 Icon="@Icons.Material.Filled.Favorite" />
+                    }
+                    @if (Class.BaseMana.HasValue && Class.BaseMana > 0)
+                    {
+                        <MudChip T="string" Text="@($"{Class.BaseMana} MP")" Size="Size.Small"
+                                 Color="Color.Info" Variant="Variant.Outlined"
+                                 Icon="@Icons.Material.Filled.Bolt" />
+                    }
+                </MudStack>
+
+                @* Playstyle trait tags *@
+                @if (HasAnyTrait)
+                {
+                    <MudStack Row="true" Spacing="1" Style="flex-wrap: wrap;">
+                        @foreach (var trait in GetActiveTraits())
+                        {
+                            <MudChip T="string" Text="@trait" Size="Size.Small"
+                                     Color="Color.Tertiary" Variant="Variant.Filled" />
+                        }
+                    </MudStack>
+                }
+
+            </MudStack>
+        </MudCardContent>
+    </MudCard>
+</div>
+
+@code {
+    /// <summary>The class data to display.</summary>
+    [Parameter, EditorRequired]
+    public ActorClassDto Class { get; set; } = null!;
+
+    /// <summary>Whether this card is currently selected.</summary>
+    [Parameter]
+    public bool IsSelected { get; set; }
+
+    /// <summary>Callback invoked when the card is clicked or activated via keyboard.</summary>
+    [Parameter]
+    public EventCallback<ActorClassDto> OnSelect { get; set; }
+
+    private bool HasAnyTrait =>
+        Class.IsSpellcaster || Class.IsMelee || Class.IsRanged || Class.IsStealth ||
+        Class.CanDualWield || Class.CanWearHeavy || Class.CanWearShield;
+
+    private List<string> GetActiveTraits()
+    {
+        var traits = new List<string>();
+        if (Class.IsMelee) traits.Add("Melee");
+        if (Class.IsRanged) traits.Add("Ranged");
+        if (Class.IsSpellcaster) traits.Add("Caster");
+        if (Class.IsStealth) traits.Add("Stealth");
+        if (Class.CanDualWield) traits.Add("Dual Wield");
+        if (Class.CanWearHeavy) traits.Add("Heavy Armor");
+        if (Class.CanWearShield) traits.Add("Shield");
+        return traits;
+    }
+
+    private async Task HandleClick() => await OnSelect.InvokeAsync(Class);
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or " ")
+        {
+            await OnSelect.InvokeAsync(Class);
+        }
+    }
+
+    private static string FormatPrimaryStat(string stat) => stat?.ToLowerInvariant() switch
+    {
+        "strength" => "Strength",
+        "dexterity" => "Dexterity",
+        "constitution" => "Constitution",
+        "intelligence" => "Intelligence",
+        "wisdom" => "Wisdom",
+        "charisma" => "Charisma",
+        _ => stat ?? "—",
+    };
+
+    private static string GetStatIcon(string stat) => stat?.ToLowerInvariant() switch
+    {
+        "strength" => Icons.Material.Filled.FitnessCenter,
+        "dexterity" => Icons.Material.Filled.DirectionsRun,
+        "constitution" => Icons.Material.Filled.Shield,
+        "intelligence" => Icons.Material.Filled.Psychology,
+        "wisdom" => Icons.Material.Filled.Lightbulb,
+        "charisma" => Icons.Material.Filled.RecordVoiceOver,
+        _ => Icons.Material.Filled.Star,
+    };
+
+    private static string FormatTypeKey(string typeKey) => typeKey switch
+    {
+        "warriors" => "Warrior",
+        "casters" => "Caster",
+        "hybrids" => "Hybrid",
+        "specialists" => "Specialist",
+        _ => typeKey,
+    };
+}
