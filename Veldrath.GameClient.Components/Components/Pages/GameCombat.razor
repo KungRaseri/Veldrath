@@ -6,21 +6,21 @@
 
 @if (GameState.CombatEnemy is { } enemy)
 {
-    <div class="game-combat">
+    <div class="game-combat flex-1 mud-d-flex flex-column align-items-center justify-center">
         <div class="game-combat-enemy">
             <h2>@enemy.EnemyName</h2>
             <p>Level @enemy.Level</p>
             <StatusBar Label="HP" Current="enemy.CurrentHealth" Max="enemy.MaxHealth" Color="#e53935" />
         </div>
 
-        <div class="game-combat-log">
+        <div class="game-combat-log mud-d-flex align-items-center justify-center mud-text-center">
             @if (!string.IsNullOrEmpty(GameState.LastCombatActionResult))
             {
                 <p class="game-combat-result">@GameState.LastCombatActionResult</p>
             }
         </div>
 
-        <div class="game-combat-actions">
+        <div class="game-combat-actions mud-d-flex gap-3">
             <ActionBar ShowAttack="true"
                        ShowDefend="true"
                        ShowFlee="true"

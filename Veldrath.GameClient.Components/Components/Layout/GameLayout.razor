@@ -4,7 +4,7 @@
 @inject IGameHubConnectionService Hub
 @inject Microsoft.AspNetCore.Components.NavigationManager Navigation
 
-<div class="game-layout @(GameState.IsConnected ? "in-game" : "")">
+<div class="game-layout mud-d-flex flex-column overflow-hidden @(GameState.IsConnected ? "in-game" : "")">
     @Body
 </div>
 
