@@ -1,6 +1,6 @@
 @* Reusable class selection card for character creation. Displays class name, hit die,
-    primary stat, health/mana, playstyle traits, and category. Supports selection highlight
-    and keyboard navigation. *@
+    primary stat, health/mana, health growth, playstyle traits, and category. Supports
+    selection highlight and keyboard navigation. *@
 @using Veldrath.Contracts.Content
 
 <div @onclick="HandleClick" @onkeydown="HandleKeyDown"
@@ -17,31 +17,43 @@
                     @if (!string.IsNullOrWhiteSpace(Class.TypeKey))
                     {
                         <MudChip T="string" Text="@FormatTypeKey(Class.TypeKey)" Size="Size.Small"
-                                 Color="Color.Dark" Variant="Variant.Text" />
+                                 Color="Color.Default" Variant="Variant.Text" />
                     }
                 </MudStack>
 
-                @* Core stats row: Hit Die + Primary Stat + Health + Mana *@
+                @* Core stats row: Hit Die + Primary Stat *@
                 <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Style="flex-wrap: wrap;">
                     <MudChip T="string" Text="@($"d{Class.HitDie}")" Size="Size.Small"
-                             Color="Color.Info" Variant="Variant.Outlined"
+                             Color="Color.Error" Variant="Variant.Outlined"
                              Icon="@Icons.Material.Filled.FavoriteBorder" />
                     <MudChip T="string" Text="@FormatPrimaryStat(Class.PrimaryStat)" Size="Size.Small"
-                             Color="Color.Secondary" Variant="Variant.Outlined"
+                             Color="Color.Info" Variant="Variant.Outlined"
                              Icon="@GetStatIcon(Class.PrimaryStat)" />
-                    @if (Class.BaseHealth.HasValue && Class.BaseHealth > 0)
-                    {
-                        <MudChip T="string" Text="@($"{Class.BaseHealth} HP")" Size="Size.Small"
-                                 Color="Color.Error" Variant="Variant.Outlined"
-                                 Icon="@Icons.Material.Filled.Favorite" />
-                    }
-                    @if (Class.BaseMana.HasValue && Class.BaseMana > 0)
-                    {
-                        <MudChip T="string" Text="@($"{Class.BaseMana} MP")" Size="Size.Small"
-                                 Color="Color.Info" Variant="Variant.Outlined"
-                                 Icon="@Icons.Material.Filled.Bolt" />
-                    }
                 </MudStack>
+
+                @* Health / Mana row — only shown when data is available *@
+                @if ((Class.BaseHealth.HasValue && Class.BaseHealth > 0) ||
+                     (Class.BaseMana.HasValue && Class.BaseMana > 0) ||
+                     (Class.HealthGrowth.HasValue && Class.HealthGrowth > 0))
+                {
+                    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Style="flex-wrap: wrap;">
+                        @if (Class.BaseHealth.HasValue && Class.BaseHealth > 0)
+                        {
+                            <MudChip T="string" Text="@($"HP {Class.BaseHealth}")" Size="Size.Small"
+                                     Color="Color.Error" Variant="Variant.Text" />
+                        }
+                        @if (Class.BaseMana.HasValue && Class.BaseMana > 0)
+                        {
+                            <MudChip T="string" Text="@($"MP {Class.BaseMana}")" Size="Size.Small"
+                                     Color="Color.Info" Variant="Variant.Text" />
+                        }
+                        @if (Class.HealthGrowth.HasValue && Class.HealthGrowth > 0)
+                        {
+                            <MudChip T="string" Text="@($"+{Class.HealthGrowth:F0} HP/lvl")" Size="Size.Small"
+                                     Color="Color.Success" Variant="Variant.Text" />
+                        }
+                    </MudStack>
+                }
 
                 @* Playstyle trait tags *@
                 @if (HasAnyTrait)
@@ -50,7 +62,7 @@
                         @foreach (var trait in GetActiveTraits())
                         {
                             <MudChip T="string" Text="@trait" Size="Size.Small"
-                                     Color="Color.Tertiary" Variant="Variant.Filled" />
+                                     Color="Color.Primary" Variant="Variant.Filled" />
                         }
                     </MudStack>
                 }

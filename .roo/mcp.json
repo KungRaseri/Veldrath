@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "mcp/postgres",
+        "postgresql://veldrath:veldrath_dev@localhost:5433/veldrath"
+      ]
+    }
+  }
+}
