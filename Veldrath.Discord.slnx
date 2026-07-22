@@ -1,0 +1,11 @@
+<Solution>
+  <Project Path="Veldrath.Discord/Veldrath.Discord.csproj" />
+  <Project Path="Veldrath.Discord.Tests/Veldrath.Discord.Tests.csproj" />
+  <Project Path="Veldrath.Contracts/Veldrath.Contracts.csproj" />
+  <Project Path="RealmEngine.Core/RealmEngine.Core.csproj" />
+  <Project Path="RealmEngine.Core.Tests/RealmEngine.Core.Tests.csproj" />
+  <Project Path="RealmEngine.Data/RealmEngine.Data.csproj" />
+  <Project Path="RealmEngine.Data.Tests/RealmEngine.Data.Tests.csproj" />
+  <Project Path="RealmEngine.Shared/RealmEngine.Shared.csproj" />
+  <Project Path="RealmEngine.Shared.Tests/RealmEngine.Shared.Tests.csproj" />
+</Solution>
