@@ -30,34 +30,21 @@
 
 ## Architecture: Hub → MediatR Bridge Pattern
 
-`SelectCharacter` and `EnterZone` are **session management** — they do NOT call `mediator.Send`. The character tracker and zone session repository ARE the implementation. This is intentional.
+> **See [`.github/instructions/hub-development.md`](../../.github/instructions/hub-development.md) for the canonical hub development conventions, including the Hub→MediatR bridge pattern, single-DTO parameter rule, and DI registration patterns.**
 
-All gameplay operations follow this pattern:
-1. Create `Features/{Feature}/{Name}HubCommand.cs` — command record + result record + handler class
-2. Handler reads/writes the server `Character.Attributes` JSON blob (NOT the Core domain `Character`)
-3. Add hub method in `GameHub.cs`: `TryGetCharacterId` guard → `mediator.Send` → zone-group broadcast or caller fallback
-4. Add `ReactiveCommand` + callback on `GameViewModel`, wire hub subscription in `CharacterSelectViewModel`
-
-**CRITICAL**: `Veldrath.Server.Data.Entities.Character` ≠ `RealmEngine.Shared.Models.Character`. Hub handlers work ONLY with the server EF entity and its JSON blob — they never call Core handlers directly.
+`SelectCharacter` and `EnterZone` are **session management** — they do NOT call `mediator.Send`. The character tracker and player session repository ARE the implementation. This is intentional.
 
 ## DI Registration — UseExternal Pattern
 
-The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionally skips all persistence-layer registrations**. The server must manually register every `IXxxRepository` and `IXxxService` it needs in `Program.cs`.
+> **See [`.github/instructions/ef-core-patterns.md`](../../.github/instructions/ef-core-patterns.md#di-registration--the-useexternal-pattern) for the UseExternal DI pattern.**
 
-- If a new Core handler injects an interface not already in Program.cs, the server will crash at startup with `Unable to resolve service for type 'IFoo'`.
-- Pattern: `builder.Services.AddScoped<IFoo, EfCoreFoo>();` grouped with the existing content repo block (~line 200 in Program.cs).
-- Fixed 2026-03-19 session-5: `IArmorRepository → EfCoreArmorRepository`, `IEquipmentSetRepository → EfCoreEquipmentSetRepository`, `INamePatternRepository → EfCoreNamePatternRepository` also missing. Added `using RealmEngine.Core.Abstractions` and `using RealmEngine.Core.Repositories` to Program.cs for these.
-- Always run `dotnet build Veldrath.Server` after adding a new Core handler to catch missing registrations before Docker.
+The server calls `AddRealmEngineCore(p => p.UseExternal())` which **intentionally skips all persistence-layer registrations**. The server must manually register every `IXxxRepository` and `IXxxService` it needs in `Program.cs`. Always run `dotnet build Veldrath.Server` after adding a new Core handler to catch missing registrations before Docker.
 
 ## SignalR Parameter Binding — Critical Rule
 
-Hub methods that the client calls **must** use a single request DTO (record) as their parameter — NOT multiple separate primitives. Multiple-primitive signatures (e.g. `GainExperience(int amount, string? source)`) cause SignalR binding failures when the client sends an anonymous object via `InvokeAsync(..., new { Amount, Source })` because SignalR tries to deserialize the JSON object as the first `int` parameter.
+> **See [`.github/instructions/hub-development.md`](../../.github/instructions/hub-development.md#the-single-dto-parameter-rule-critical) for the single-DTO parameter rule and binding failure explanation.**
 
-Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamage` hub methods to accept `GainExperienceHubRequest`, `AddGoldHubRequest`, `TakeDamageHubRequest` DTOs.
-
-**Pattern for all hub methods**: Use a DTO record at the protocol boundary, just like `AwardSkillXp(AwardSkillXpHubRequest)` and `EquipItem(EquipItemHubRequest)`.
-
-**`IServerConnectionService` zero-arg overload**: Use `SendCommandAsync(string method)` (no command object) for hub methods that take no parameters, e.g. `LeaveZone`. The underlying `IHubConnection.InvokeAsync<TResult>(string methodName)` zero-arg overload is also available.
+Hub methods that the client calls **must** use a single request DTO (record) as their parameter — NOT multiple separate primitives. Fixed 2026-03-21 (session-17): Converted `GainExperience`, `AddGold`, `TakeDamage` hub methods to accept `GainExperienceHubRequest`, `AddGoldHubRequest`, `TakeDamageHubRequest` DTOs.
 
 ## Wired Hub→MediatR Bridges
 
@@ -370,28 +357,9 @@ When deleting all zones in tests: delete `ZoneConnections` first (FK Restrict on
 
 ## DbContext Separation (established 2026-03-19 session-6)
 
-Three DbContexts share the same Postgres database but own distinct table sets:
+> **See [`.github/instructions/ef-core-patterns.md`](../../.github/instructions/ef-core-patterns.md) for the canonical DbContext separation rules, migration workflow, entity placement conventions, and now four DbContexts (Application, Game, Content, Editorial).**
 
-| Context | Namespace | Tables | Purpose |
-|---|---|---|---|
-| `ApplicationDbContext` | `Veldrath.Server.Data` | Identity (AspNet*), Characters, RefreshTokens, Zones, ZoneSessions, Foundry* | Server auth + operational |
-| `GameDbContext` | `RealmEngine.Data.Persistence` | SaveGames, HallOfFameEntries, InventoryRecords | Game-state entities (portable across clients) |
-| `ContentDbContext` | `RealmEngine.Data.Persistence` | Weapons, Armors, Skills, Spells, Abilities, Recipes, etc. | Read-only content catalog |
-
-**Rule**: game entities (saves, inventory, hall of fame) always go in `GameDbContext`, NOT in `ApplicationDbContext`. Server auth + operational rows go in `ApplicationDbContext`.
-
-`ServerSaveGameRepository` and `ServerHallOfFameRepository` inject `GameDbContext` (not `ApplicationDbContext`).
-
-Migrations for each context:
-- `ApplicationDbContext`: `Veldrath.Server/Migrations/` (original) + `Migrations/Application/` (newer)
-- `GameDbContext`: `RealmEngine.Data/Migrations/GameDb/`
-- `ContentDbContext`: `RealmEngine.Data/Migrations/`
-
-All three are migrated at startup in `Program.cs` with shared `allKnown` set to avoid `RepairStaleMigrationsAsync` false-positives.
-
-Test factories in `Veldrath.Server.Tests/Infrastructure/`:
-- `TestDbContextFactory` → `ApplicationDbContext` (SQLite) — used by Zone, Auth, Character, GameHub tests
-- `TestGameDbContextFactory` → `GameDbContext` (SQLite) — used by `ServerSaveGameRepositoryTests` + `ServerHallOfFameRepositoryTests`
+Historical note: DbContext separation was established in session-6 when `GameDbContext` was extracted from `ApplicationDbContext` to fix Docker startup failures. `EditorialDbContext` was added in session-35 for patch notes, lore articles, and editorial announcements. Server operational entities (`ServerSaveGameRepository`, `ServerHallOfFameRepository`) inject `GameDbContext`, not `ApplicationDbContext`.
 
 
 
