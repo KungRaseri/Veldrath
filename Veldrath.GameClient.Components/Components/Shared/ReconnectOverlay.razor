@@ -2,6 +2,7 @@
 @using Veldrath.GameClient.Core.Abstractions
 @using Veldrath.GameClient.Core.Models
 @using Veldrath.Auth.Blazor
+@using MudBlazor
 @* Full-screen overlay shown when the SignalR hub connection is lost or reconnecting.
     Displays a countdown timer with auto-retry and manual reconnect/return-to-menu options. *@
 
@@ -26,17 +27,20 @@
             <div class="reconnect-overlay-actions">
                 @if (!_isReconnecting)
                 {
-                    <button class="reconnect-overlay-btn reconnect-overlay-btn-primary"
-                            @onclick="ReconnectNow"
-                            disabled="@_isBusy">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               OnClick="ReconnectNow"
+                               Disabled="@_isBusy"
+                               Size="Size.Small">
                         @(_isBusy ? "Reconnecting..." : "Reconnect Now")
-                    </button>
+                    </MudButton>
                 }
-                <button class="reconnect-overlay-btn reconnect-overlay-btn-secondary"
-                        @onclick="ReturnToMenu"
-                        disabled="@_isBusy">
+                <MudButton Variant="Variant.Outlined"
+                           OnClick="ReturnToMenu"
+                           Disabled="@_isBusy"
+                           Size="Size.Small">
                     Return to Menu
-                </button>
+                </MudButton>
             </div>
         </div>
     </div>

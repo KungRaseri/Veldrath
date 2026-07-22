@@ -3,6 +3,7 @@
 @using RealmEngine.Shared.Models
 @using Veldrath.GameClient.Core.Abstractions
 @using Veldrath.GameClient.Core.Payloads
+@using MudBlazor
 @inject IGameStateService GameState
 @inject IGameHubConnectionService Hub
 @inject ILogger<ShopOverlay> Logger
@@ -26,11 +27,13 @@
                             <span class="shop-item-rarity @GetRarityClass(entry.Rarity)">@entry.Rarity</span>
                         </div>
                         <span class="shop-item-price">@entry.Price g</span>
-                        <button class="btn btn-sm btn-primary"
-                                @onclick="() => BuyItem(entry)"
-                                disabled="@(!Hub.IsConnected || GameState.CurrentCharacterGold < entry.Price)">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   Size="Size.Small"
+                                   OnClick="() => BuyItem(entry)"
+                                   Disabled="@(!Hub.IsConnected || GameState.CurrentCharacterGold < entry.Price)">
                             Buy
-                        </button>
+                        </MudButton>
                     </div>
                 }
             </div>
@@ -58,11 +61,12 @@
                             }
                         </div>
                         <span class="shop-item-price">@sellPrice g</span>
-                        <button class="btn btn-sm btn-secondary"
-                                @onclick="() => SellItem(item.Slug, Math.Min(1, item.Quantity))"
-                                disabled="@(!Hub.IsConnected)">
+                        <MudButton Variant="Variant.Outlined"
+                                   Size="Size.Small"
+                                   OnClick="() => SellItem(item.Slug, Math.Min(1, item.Quantity))"
+                                   Disabled="@(!Hub.IsConnected)">
                             Sell
-                        </button>
+                        </MudButton>
                     </div>
                 }
             </div>

@@ -4,6 +4,7 @@
 @using Veldrath.Contracts.Characters
 @using Veldrath.Contracts.Connection
 @using Veldrath.Auth.Blazor
+@using MudBlazor
 @inject IGameHubConnectionService Hub
 @inject IGameStateService GameState
 @inject NavigationManager Navigation
@@ -23,16 +24,16 @@ else if (_isWaitingForAuth)
 {
     <div class="cs-error">
         <p>Waiting for authentication... The server may be starting up.</p>
-        <button class="btn btn-primary" @onclick="ConnectAndLoadCharacters">Retry</button>
-        <a href="/" class="btn btn-secondary">Back to Home</a>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ConnectAndLoadCharacters">Retry</MudButton>
+        <MudButton Variant="Variant.Outlined" Href="/">Back to Home</MudButton>
     </div>
 }
 else if (_errorMessage is not null)
 {
     <div class="cs-error">
         <p>@_errorMessage</p>
-        <button class="btn btn-primary" @onclick="ConnectAndLoadCharacters">Retry</button>
-        <a href="/" class="btn btn-secondary">Back to Home</a>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ConnectAndLoadCharacters">Retry</MudButton>
+        <MudButton Variant="Variant.Outlined" Href="/">Back to Home</MudButton>
     </div>
 }
 else
@@ -44,7 +45,7 @@ else
         {
             <div class="cs-empty">
                 <p>You have no characters yet.</p>
-                <a href="/Game/CreateCharacter" class="btn btn-primary">Create New Character</a>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/Game/CreateCharacter">Create New Character</MudButton>
             </div>
         }
         else
@@ -60,19 +61,20 @@ else
                             <p class="cs-card-last-played">Last played: @character.LastPlayedAt.ToLocalTime().ToString("g")</p>
                         </div>
                         <div class="cs-card-actions">
-                            <button class="btn btn-primary"
-                                    @onclick="() => SelectCharacter(character.Id)"
-                                    disabled="@(_selectedCharacterId == character.Id.ToString())">
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       OnClick="() => SelectCharacter(character.Id)"
+                                       Disabled="@(_selectedCharacterId == character.Id.ToString())">
                                 @(_selectedCharacterId == character.Id.ToString() ? "Selecting..." : "Select")
-                            </button>
+                            </MudButton>
                         </div>
                     </div>
                 }
             </div>
 
             <div class="cs-footer">
-                <a href="/Game/CreateCharacter" class="btn btn-secondary">Create New Character</a>
-                <a href="/" class="btn btn-secondary">Back to Home</a>
+                <MudButton Variant="Variant.Outlined" Href="/Game/CreateCharacter">Create New Character</MudButton>
+                <MudButton Variant="Variant.Outlined" Href="/">Back to Home</MudButton>
             </div>
         }
     </div>

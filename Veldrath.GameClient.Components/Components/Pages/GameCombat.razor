@@ -1,4 +1,5 @@
 @using Veldrath.GameClient.Core.Abstractions
+@using MudBlazor
 @* Combat UI shown when GameState.IsInCombat is true. Displays enemy info, action buttons, and combat log. *@
 @inject IGameHubConnectionService Hub
 @inject IGameStateService GameState
@@ -35,7 +36,11 @@
         {
             <div class="game-combat-victory">
                 <h2>Victory!</h2>
-                <button class="btn btn-primary" @onclick="DismissVictory">Continue</button>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="DismissVictory">
+                    Continue
+                </MudButton>
             </div>
         }
     </div>

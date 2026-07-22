@@ -2,6 +2,7 @@
 @using Microsoft.Extensions.Logging
 @using RealmEngine.Shared.Models
 @using Veldrath.GameClient.Core.Payloads
+@using MudBlazor
 @inject IGameStateService GameState
 @inject IGameHubConnectionService Hub
 @inject ILogger<InventoryOverlay> Logger
@@ -155,25 +156,30 @@
             <div class="inventory-tooltip-actions">
                 @if (IsEquippable(_selectedItem.Type))
                 {
-                    <button class="btn btn-sm btn-primary"
-                            @onclick="() => EquipItem(_selectedItem)"
-                            disabled="@(!Hub.IsConnected)">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               OnClick="() => EquipItem(_selectedItem)"
+                               Disabled="@(!Hub.IsConnected)">
                         Equip
-                    </button>
+                    </MudButton>
                 }
                 @if (_selectedItem.Type == ItemType.Consumable)
                 {
-                    <button class="btn btn-sm btn-secondary"
-                            @onclick="() => UseItem(_selectedItem)"
-                            disabled="@(!Hub.IsConnected)">
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               OnClick="() => UseItem(_selectedItem)"
+                               Disabled="@(!Hub.IsConnected)">
                         Use
-                    </button>
+                    </MudButton>
                 }
-                <button class="btn btn-sm btn-danger"
-                        @onclick="() => DropItem(_selectedItem)"
-                        disabled="@(!Hub.IsConnected)">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Error"
+                           Size="Size.Small"
+                           OnClick="() => DropItem(_selectedItem)"
+                           Disabled="@(!Hub.IsConnected)">
                     Drop
-                </button>
+                </MudButton>
             </div>
         </div>
     }

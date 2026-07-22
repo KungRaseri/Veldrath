@@ -3,6 +3,7 @@
 @using Veldrath.GameClient.Core.Abstractions
 @using Veldrath.GameClient.Components.Models
 @using Veldrath.Contracts.Tilemap
+@using MudBlazor
 
 @* Region map page showing zones as interactive cards. *@
 
@@ -10,10 +11,12 @@
     <div class="game-map-header">
         <h2 class="game-map-title">Region Map</h2>
         <span class="game-map-region-name">@RegionName</span>
-        <button class="btn btn-sm btn-secondary game-map-close"
-                @onclick="GoBack">
+        <MudButton Variant="Variant.Outlined"
+                   Size="Size.Small"
+                   OnClick="GoBack"
+                   Class="game-map-close">
             Back
-        </button>
+        </MudButton>
     </div>
 
     @if (_isLoading)
@@ -27,14 +30,22 @@
     {
         <div class="game-map-error">
             <p>@_errorMessage</p>
-            <button class="btn btn-primary" @onclick="LoadRegionMap">Retry</button>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="LoadRegionMap">
+                Retry
+            </MudButton>
         </div>
     }
     else if (_zones.Count == 0)
     {
         <div class="game-map-empty">
             <p>No zones available for this region.</p>
-            <button class="btn btn-primary" @onclick="LoadRegionMap">Refresh</button>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="LoadRegionMap">
+                Refresh
+            </MudButton>
         </div>
     }
     else
@@ -79,11 +90,13 @@
                        @bind:event="oninput"
                        placeholder="Target region ID..."
                        disabled="@(!Hub.IsConnected)" />
-                <button class="btn btn-sm btn-primary"
-                        @onclick="ChangeRegionAsync"
-                        disabled="@(string.IsNullOrWhiteSpace(_targetRegionId) || !Hub.IsConnected)">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Size="Size.Small"
+                           OnClick="ChangeRegionAsync"
+                           Disabled="@(string.IsNullOrWhiteSpace(_targetRegionId) || !Hub.IsConnected)">
                     Travel
-                </button>
+                </MudButton>
             </div>
         </div>
     }
