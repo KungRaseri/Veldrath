@@ -9,6 +9,7 @@
     <PackageReference Include="AngleSharp" />
     <PackageReference Include="HtmlSanitizer" />
     <PackageReference Include="Markdig" />
+    <PackageReference Include="MudBlazor" />
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Serilog.Sinks.Console" />
     <PackageReference Include="Serilog.Sinks.File" />
@@ -18,6 +19,7 @@
     <ProjectReference Include="..\Veldrath.Auth\Veldrath.Auth.csproj" />
     <ProjectReference Include="..\Veldrath.Auth.Blazor\Veldrath.Auth.Blazor.csproj" />
     <ProjectReference Include="..\Veldrath.Contracts\Veldrath.Contracts.csproj" />
+    <ProjectReference Include="..\Veldrath.GameClient.Components\Veldrath.GameClient.Components.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 @implements IDisposable
 @inject AuthStateService AuthState
 @inject NavigationManager Nav
@@ -6,22 +6,24 @@
 @inject PersistentComponentState ApplicationState
 @inject RealmFoundryApiClient Api
 
-<div class="layout">
-    <nav class="sidebar">
-        <div class="brand">
-            <a href="">RealmFoundry</a>
-        </div>
+<MudLayout>
+    <MudAppBar Elevation="0" Class="mud-appbar-custom">
+        <MudText Typo="Typo.h6" Class="mud-text-primary">RealmFoundry</MudText>
+        <MudSpacer />
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">Community Content for Veldrath</MudText>
+    </MudAppBar>
+    <MudDrawer Open="true" Variant="DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always" Elevation="0">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6" Style="font-family: var(--vds-font-heading); color: var(--vds-seal-light);">RealmFoundry</MudText>
+        </MudDrawerHeader>
         <NavMenu />
-    </nav>
-    <main class="content">
-        <div class="top-bar">
-            <span>Community Content for Veldrath</span>
-        </div>
-        <article class="page-body">
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="mud-pa-4 mud-pt-4">
             @Body
-        </article>
-    </main>
-</div>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
 
 <div id="blazor-error-ui">
     An unhandled error has occurred.
@@ -44,19 +46,12 @@
 
         if (ctx is not null)
         {
-            // SSR prerender pass — HttpContext is available.
-            // Read the rt cookie directly and call RenewJwtAsync (no cookie writes, so
-            // no "headers are read-only" exception after the await).
-            // RegisterOnPersisting works here because MainLayout is inside
-            // <Routes @rendermode="InteractiveServer">, making it part of the interactive
-            // subtree rather than a sibling SSR-only component.
             var rt = ctx.Request.Cookies["rt"];
             if (!string.IsNullOrEmpty(rt))
             {
                 var renewed = await Api.RenewJwtAsync(rt);
                 if (renewed is not null)
                 {
-                    // Re-use the same rt value — the refresh token is unchanged.
                     var authResponse = new AuthResponse(
                         renewed.AccessToken, rt, renewed.AccessTokenExpiry,
                         renewed.AccountId, renewed.Username, renewed.Roles,
@@ -72,20 +67,15 @@
                 }
             }
 
-            // Mark auth check complete whether or not we found a session, so that
-            // guarded pages can stop showing a blank placeholder.
             if (!AuthState.IsAuthReady)
                 AuthState.MarkReady();
 
             return;
         }
 
-        // Circuit pass — HttpContext is null (WebSocket scope).
-        // Restore from the JSON that was embedded in the prerendered HTML above.
         if (ApplicationState.TryTakeFromJson<AuthResponse>("auth-state", out var saved) && saved is not null)
             await AuthState.SetTokensAsync(saved);
 
-        // Mark ready on the circuit side too (handles no-session and TryTakeFromJson failure).
         if (!AuthState.IsAuthReady)
             AuthState.MarkReady();
     }
