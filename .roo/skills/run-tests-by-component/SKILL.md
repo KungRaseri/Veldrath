@@ -1,6 +1,6 @@
 ---
 name: run-tests-by-component
-description: Run tests for a specific RealmEngine/Veldrath component (engine, server, client, forge, foundry, discord, web, auth, assets, shared, data) with optional coverage collection. Use when you need to test only one component instead of the full suite.
+description: Run tests for a specific RealmEngine/Veldrath component (engine, server, client, forge, foundry, discord, web, auth, assets, libraries) with optional coverage collection. Use when you need to test only one component instead of the full suite. Build the matching .slnx first per the build strategy in .github/instructions/build-strategy.md.
 ---
 
 # Skill: run-tests-by-component
@@ -18,64 +18,62 @@ Invoke this skill when you need to:
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) installed
 - PowerShell terminal
-- Working directory: `g:/code/Veldrath`
+- Working directory: `c:/code/Veldrath`
 
 ## Parameters
 
 | Parameter | Values | Description |
 |-----------|--------|-------------|
-| `component` (required) | `engine`, `server`, `client`, `forge`, `foundry`, `discord`, `web`, `auth`, `assets`, `shared`, `data` | The component to test |
+| `component` (required) | `engine`, `server`, `client`, `forge`, `foundry`, `discord`, `web`, `auth`, `assets`, `libraries` | The component to test |
 | `coverage` (optional) | `true`, `false` | Collect XPlat Code Coverage (default: `false`) |
 
 ## Component Mapping
 
-| Component | Command | Test Project | Notes |
-|-----------|---------|-------------|-------|
-| `engine` | `dotnet test RealmEngine.slnx` | Core + Shared + Data tests | Uses the engine-only solution; 3 test projects |
-| `server` | `dotnet test Veldrath.Server.Tests` | Server integration tests | Uses SQLite for SQL-semantics tests |
-| `client` | `dotnet test Veldrath.Client.Tests --filter "Category!=UI"` | Client Avalonia tests | Skips UI tests needing a display |
-| `forge` | `dotnet test RealmForge.Tests --filter "Category!=UI"` | Forge editor tests | Skips UI tests needing a display |
-| `foundry` | `dotnet test RealmFoundry.Tests` | Foundry portal tests | Blazor Server unit tests |
-| `discord` | `dotnet test Veldrath.Discord.Tests` | Discord bot tests | — |
-| `web` | `dotnet test Veldrath.Web.Tests` | Web portal tests | — |
-| `auth` | `dotnet test Veldrath.Auth.Tests` | Auth library tests | — |
-| `assets` | `dotnet test Veldrath.Assets.Tests` | Asset management tests | — |
-| `shared` | `dotnet test RealmEngine.Shared.Tests` | Shared model/utility tests | — |
-| `data` | `dotnet test RealmEngine.Data.Tests` | Repository/persistence tests | Uses EF Core InMemory provider |
+Build the matching solution first, then run the tests. See [`.github/instructions/build-strategy.md`](../../.github/instructions/build-strategy.md) for the full decision logic.
+
+| Component | Build Command | Test Command | Notes |
+|-----------|--------------|-------------|-------|
+| `engine` | `dotnet build RealmEngine.slnx` | `dotnet test RealmEngine.slnx` | Core + Shared + Data + GameClient.Core tests; 4 test projects |
+| `server` | `dotnet build Veldrath.Server.slnx` | `dotnet test Veldrath.Server.slnx` | Server + engine + assets tests |
+| `client` | `dotnet build Veldrath.Client.slnx` | `dotnet test Veldrath.Client.slnx --filter "Category!=UI"` | Client + engine + auth + assets + GameClient tests; skips UI tests needing a display |
+| `forge` | `dotnet build RealmForge.slnx` | `dotnet test RealmForge.slnx --filter "Category!=UI"` | Forge editor tests; skips UI tests needing a display |
+| `foundry` | `dotnet build RealmFoundry.slnx` | `dotnet test RealmFoundry.slnx` | Foundry portal tests; Blazor Server unit tests |
+| `discord` | `dotnet build Veldrath.Discord.slnx` | `dotnet test Veldrath.Discord.slnx` | Discord bot + engine tests |
+| `web` | `dotnet build Veldrath.Web.slnx` | `dotnet test Veldrath.Web.slnx` | Web portal + Server + engine + auth + assets + GameClient tests |
+| `auth` | `dotnet build Veldrath.Libraries.slnx` | `dotnet test Veldrath.Libraries.slnx --filter "FullyQualifiedName~Veldrath.Auth"` | Auth library tests only |
+| `assets` | `dotnet build Veldrath.Libraries.slnx` | `dotnet test Veldrath.Libraries.slnx --filter "FullyQualifiedName~Veldrath.Assets"` | Asset management tests only |
+| `libraries` | `dotnet build Veldrath.Libraries.slnx` | `dotnet test Veldrath.Libraries.slnx` | Auth + Assets + GameClient.Core + GameClient.Components + engine tests |
 
 ## Steps
 
-1. **Build the component** (tests won't run if compilation fails):
+1. **Build the component** using the matching `.slnx` file (tests won't run if compilation fails):
 
    ```powershell
-   # For engine component:
-   dotnet build RealmEngine.slnx
-
-   # For any other component, build the relevant test project:
-   dotnet build Veldrath.Server.Tests
+   # Build the smallest solution covering your component:
+   dotnet build Veldrath.Server.slnx
    ```
 
-2. **Run tests for the selected component without coverage:**
+2. **Run tests for the selected component without coverage** (using the matching `.slnx`):
 
    ```powershell
-   dotnet test Veldrath.Server.Tests
+   dotnet test Veldrath.Server.slnx
    ```
 
 3. **Run tests with coverage collection:**
 
    ```powershell
-   dotnet test Veldrath.Server.Tests --collect "XPlat Code Coverage" --settings coverage.runsettings
+   dotnet test Veldrath.Server.slnx --collect "XPlat Code Coverage" --settings coverage.runsettings
    ```
 
 4. **Run with a specific test filter** (e.g., by category):
 
    ```powershell
-   dotnet test Veldrath.Server.Tests --filter "Category=Integration"
+   dotnet test Veldrath.Server.slnx --filter "Category=Integration"
    ```
 
 ## Notes
 
-- The `engine` component uses [`RealmEngine.slnx`](../../RealmEngine.slnx) instead of `Realm.Full.slnx` for a faster, engine-only build-test loop.
+- Each component now has a dedicated `.slnx` file that includes the source project, its test project, and all transitive dependencies. See [`.github/instructions/build-strategy.md`](../../.github/instructions/build-strategy.md) for the full mapping.
 - `client` and `forge` components exclude `Category=UI` tests by default. Remove the `--filter` argument if you have a display available and want to run UI tests.
 - Coverage results are written to `TestResults/` under the test project directory.
 - If using `--no-build`, ensure the project is already built to avoid stale binary issues.
@@ -83,6 +81,7 @@ Invoke this skill when you need to:
 ## See Also
 
 - [run-all-tests](../run-all-tests/SKILL.md) — Run the full test suite
-- [build-full](../build-full/SKILL.md) — Build the full solution
+- [build-full](../build-full/SKILL.md) — Build the full solution (final verification)
+- [`.github/instructions/build-strategy.md`](../../.github/instructions/build-strategy.md) — Smart build strategy
 - [`coverage.runsettings`](../../coverage.runsettings) — Coverage configuration
 - [`.github/agent-memory/engine-codebase.md`](../../.github/agent-memory/engine-codebase.md) — Testing gotchas and known quirks
