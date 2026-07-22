@@ -5,39 +5,6 @@
   box-sizing: border-box;
 }
 
-/* ── VDS design tokens ───────────────────────────────────────────────────── */
-
-:root {
-  --vds-bg-3: #262736;
-
-  --vds-seal-muted: #3d1a16;
-
-  --vds-ember-muted: #361a10;
-
-  --vds-gold-muted: #3d3216;
-
-  --vds-text-subtle: #6e6860;
-
-  --vds-success-muted: #1f3d2e;
-  --vds-danger-muted: #4a1a1a;
-  --vds-warning-muted: #4a3018;
-  --vds-info-muted: #1a3250;
-
-  --vds-hover: #1e2030;
-  --vds-pressed: #252639;
-  --vds-selected: #252639;
-
-  --vds-oauth-discord: #5865f2;
-  --vds-oauth-google: #4285f4;
-  --vds-oauth-microsoft: #0078d4;
-
-  --vds-font-display: "Cinzel Decorative", "Cinzel", serif;
-  --vds-font-heading: "Cinzel", serif;
-  --vds-font-reading: "Lora", Georgia, serif;
-  --vds-font-body: "Inter", system-ui, sans-serif;
-  --vds-font-mono: "JetBrains Mono", "Cascadia Code", monospace;
-
-}
 
 /* ── Body defaults ───────────────────────────────────────────────────────── */
 

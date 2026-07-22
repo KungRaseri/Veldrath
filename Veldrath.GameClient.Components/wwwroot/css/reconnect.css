@@ -241,11 +241,9 @@
     display: flex;
 }
 
-/* ── Animations ───────────────────────────────────────────────────────── */
-
 /* Fade-in the overlay when the framework shows the modal */
 #components-reconnect-modal.components-reconnect-show .reconnect-modal-overlay {
-    animation: reconnect-fade-in 0.3s ease forwards;
+    animation: fade-in 0.3s ease forwards;
 }
 
 /* Scale-up the card for a subtle entrance */
@@ -256,11 +254,6 @@
 /* Fade-out when reconnection succeeds */
 #components-reconnect-modal.components-reconnect-hide .reconnect-modal-overlay {
     animation: reconnect-fade-out 0.25s ease forwards;
-}
-
-@keyframes reconnect-fade-in {
-    from { opacity: 0; }
-    to   { opacity: 1; }
 }
 
 @keyframes reconnect-fade-out {

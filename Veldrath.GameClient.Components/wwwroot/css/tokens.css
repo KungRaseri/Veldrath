@@ -19,6 +19,8 @@
   --vds-ember-dark:  #943018;
   --vds-ember-muted: #361A10;
 
+  --vds-gold-muted: #3D3216;
+
   --vds-text:          #F0EDE8;
   --vds-text-muted:    #A8A09A;
   --vds-text-subtle:   #6E6860;
@@ -42,6 +44,27 @@
   --vds-selected: #252639;
 
   --vds-pink: #f472b6;
+
+  --vds-accent: #60A5FA;
+
+  --vds-rarity-common:    #C0C0C0;
+  --vds-rarity-uncommon:  #4ADE80;
+  --vds-rarity-rare:      #60A5FA;
+  --vds-rarity-epic:      #C084FC;
+  --vds-rarity-legendary: #FBBF24;
+
+  --vds-tile-grass: #3A3A5C;
+  --vds-tile-wall:  #2A1A1A;
+  --vds-tile-water: #1A3A5C;
+  --vds-tile-door:  #5C4A1A;
+  --vds-tile-path:  #4A4A3A;
+  --vds-tile-dirt:  #3A2A1A;
+  --vds-tile-void:  #0D0D1A;
+  --vds-tile-empty: #1A1A2E;
+
+  --vds-indicator-player:   #C9A84C;
+  --vds-indicator-occupant: #5A9ED6;
+  --vds-indicator-enemy:    #E53935;
 
   --vds-oauth-discord:   #5865F2;
   --vds-oauth-google:    #4285F4;
@@ -116,10 +139,10 @@ a:hover { text-decoration: underline; }
 .btn-google    { background: var(--vds-oauth-google);    color: #fff; border: none; }
 .btn-microsoft { background: var(--vds-oauth-microsoft); color: #fff; border: none; }
 
-/* Blazor error UI */
+/* Blazor error UI — uses MudBlazor palette tokens for border/color per app.css conventions. */
 #blazor-error-ui {
-    background: var(--vds-danger-muted); bottom: 0; box-shadow: 0 -1px 2px rgba(0,0,0,.2);
+    background: var(--vds-danger-muted, #4A1A1A); bottom: 0; box-shadow: 0 -1px 2px rgba(0,0,0,.2);
     display: none; left: 0; padding: .6rem 1.25rem .7rem; position: fixed; width: 100%; z-index: 1000;
-    border-top: 1px solid var(--vds-danger); color: var(--vds-danger);
+    border-top: 1px solid var(--mud-palette-error, #E05252); color: var(--mud-palette-error, #E05252);
 }
 #blazor-error-ui .dismiss { cursor: pointer; position: absolute; right: .75rem; top: .5rem; }
