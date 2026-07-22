@@ -1,24 +1,30 @@
-﻿@page "/"
+@page "/"
 
 <PageTitle>RealmFoundry — Community Content</PageTitle>
 
-<h1>RealmFoundry</h1>
-<p class="lead">Browse and contribute community-created content for Veldrath.</p>
+<MudText Typo="Typo.h3" Class="mud-mb-2">RealmFoundry</MudText>
+<MudText Typo="Typo.body1" Class="mud-text-secondary mud-mb-6">Browse and contribute community-created content for Veldrath.</MudText>
 
-<div class="feature-cards">
-    <div class="card">
-        <h3>Browse</h3>
-        <p>Explore items and more created by the community.</p>
-        <a href="submissions" class="btn">View Submissions</a>
-    </div>
-    <div class="card">
-        <h3>Submit</h3>
-        <p>Propose your own content for inclusion in the game.</p>
-        <a href="submissions/new" class="btn">New Submission</a>
-    </div>
-    <div class="card">
-        <h3>Vote</h3>
-        <p>Support the community's best ideas.</p>
-        <a href="submissions" class="btn">Vote Now</a>
-    </div>
-</div>
+<MudGrid Spacing="4">
+    <MudItem xs="12" sm="4">
+        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-6">
+            <MudText Typo="Typo.h6" Class="mud-mb-2">Browse</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mud-mb-4">Explore items and more created by the community.</MudText>
+            <MudButton Variant="Variant.Filled" Href="submissions">View Submissions</MudButton>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="4">
+        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-6">
+            <MudText Typo="Typo.h6" Class="mud-mb-2">Submit</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mud-mb-4">Propose your own content for inclusion in the game.</MudText>
+            <MudButton Variant="Variant.Filled" Href="submissions/new">New Submission</MudButton>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="4">
+        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-6">
+            <MudText Typo="Typo.h6" Class="mud-mb-2">Vote</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mud-mb-4">Support the community's best ideas.</MudText>
+            <MudButton Variant="Variant.Filled" Href="submissions">Vote Now</MudButton>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
