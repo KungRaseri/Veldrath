@@ -7,6 +7,7 @@
     <base href="/" />
     <link rel="stylesheet" href="_content/Veldrath.GameClient.Components/css/tokens.css" />
     <link rel="stylesheet" href="_content/Veldrath.GameClient.Components/css/game.css" />
+    <link rel="stylesheet" href="_content/Veldrath.GameClient.Components/css/reconnect.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
     <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400&family=Cinzel:wght@400;600&family=Lora:ital,wght@0,400;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -14,6 +15,41 @@
 </head>
 <body>
     <EmbeddedRoutes @rendermode="InteractiveServer" />
+
+    <!-- Blazor circuit reconnect modal (VDS dark theme) -->
+    <div id="components-reconnect-modal">
+        <div class="reconnect-modal-overlay">
+            <div class="reconnect-modal-card">
+                <div class="reconnect-modal-accent"></div>
+                <div class="reconnect-modal-icon">⚠</div>
+                <h2 class="reconnect-modal-title">Connection Lost</h2>
+                <div class="reconnect-modal-reconnecting">
+                    <p class="reconnect-modal-message">Attempting to reconnect to the server...</p>
+                    <div class="reconnect-modal-countdown">
+                        <div class="reconnect-modal-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="reconnect-modal-failed-message">
+                    <p class="reconnect-modal-message">Reconnection failed. The server may be temporarily unavailable.</p>
+                </div>
+                <div class="reconnect-modal-rejected-message">
+                    <p class="reconnect-modal-message">The server rejected the connection. Your session may have expired.</p>
+                </div>
+                <div class="reconnect-modal-actions">
+                    <button class="reconnect-modal-btn reconnect-modal-btn-primary" onclick="location.reload()">Reconnect Now</button>
+                    <a href="/" class="reconnect-modal-btn reconnect-modal-btn-secondary">Return Home</a>
+                </div>
+                <div class="reconnect-modal-rejected-actions">
+                    <button class="reconnect-modal-btn reconnect-modal-btn-primary" onclick="location.reload()">Refresh Page</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="_framework/blazor.web.js"></script>
     <script src="_content/Veldrath.GameClient.Components/bridge.js"></script>
 </body>
