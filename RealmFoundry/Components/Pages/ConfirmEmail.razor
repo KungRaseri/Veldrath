@@ -7,51 +7,45 @@
 
 @if (_loading)
 {
-    <p>Confirming your email address…</p>
+    <MudText Typo="Typo.body1">Confirming your email address…</MudText>
 }
 else if (_done)
 {
-    <div class="result">
-        <p class="success">Your email has been confirmed! <a href="/">Go to RealmFoundry</a></p>
-    </div>
+    <MudAlert Severity="Severity.Success" Class="mud-mt-8">
+        Your email has been confirmed! <MudLink Href="/">Go to RealmFoundry</MudLink>
+    </MudAlert>
 }
 else
 {
-    <div class="result">
-        <p class="error">@(_error ?? "Confirmation failed. The link may have expired.")</p>
+    <MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mud-my-8">
+        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-8">
+            <MudAlert Severity="Severity.Error" Class="mud-mb-4">@(_error ?? "Confirmation failed. The link may have expired.")</MudAlert>
 
-        @if (AuthState.IsLoggedIn)
-        {
-            @if (_resendSent)
+            @if (AuthState.IsLoggedIn)
             {
-                <p class="info">A new confirmation email has been sent. Check your inbox.</p>
-            }
-            else
-            {
-                <button class="btn" @onclick="ResendAsync" disabled="@_resending" style="margin-top:.75rem">
-                    @(_resending ? "Sending…" : "Resend confirmation email")
-                </button>
-                @if (_resendError is not null)
+                @if (_resendSent)
                 {
-                    <p class="error" style="margin-top:.5rem">@_resendError</p>
+                    <MudAlert Severity="Severity.Info" Class="mud-mb-4">A new confirmation email has been sent. Check your inbox.</MudAlert>
+                }
+                else
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               OnClick="ResendAsync"
+                               Disabled="@_resending">
+                        @(_resending ? "Sending…" : "Resend confirmation email")
+                    </MudButton>
+                    @if (_resendError is not null)
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Error" Class="mud-mt-2">@_resendError</MudText>
+                    }
                 }
             }
-        }
 
-        <p style="margin-top:1rem"><a href="/login">Back to sign in</a></p>
-    </div>
+            <MudLink Href="/login" Class="mud-mt-4 mud-d-block">Back to sign in</MudLink>
+        </MudPaper>
+    </MudContainer>
 }
-
-<style>
-    .result { max-width: 420px; margin: 4rem auto; padding: 2rem;
-              border: 1px solid var(--vds-border); border-radius: 8px; }
-    .success { color: var(--vds-success); }
-    .info    { color: var(--vds-info,  #1a6fa3); font-size: .9rem; margin-top: .5rem; }
-    .error   { color: var(--vds-danger); }
-    .btn     { background: var(--vds-accent); color: #fff; border: none; padding: .4rem .85rem;
-               border-radius: 4px; cursor: pointer; font-size: .9rem; }
-    .btn:disabled { opacity: .6; cursor: not-allowed; }
-</style>
 
 @code {
     [SupplyParameterFromQuery(Name = "userId")] private string? UserId { get; set; }
