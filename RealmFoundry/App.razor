@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
+    <link rel="stylesheet" href="_content/MudBlazor/MudBlazor.min.css" />
     <link rel="stylesheet" href="app.css" />
     <link rel="stylesheet" href="_content/Veldrath.GameClient.Components/css/tokens.css" />
     <link rel="stylesheet" href="_content/Veldrath.GameClient.Components/css/reconnect.css" />
@@ -13,9 +14,12 @@
     <HeadOutlet />
 </head>
 <body>
+    <MudThemeProvider Theme="VeldrathTheme.Default" IsDarkMode="true" />
+    <MudDialogProvider />
+    <MudSnackbarProvider />
     <Routes @rendermode="InteractiveServer" />
 
-    <!-- Blazor circuit reconnect modal (VDS dark theme) -->
+    <!-- Blazor circuit reconnect modal (VDS dark theme — styles in reconnect.css) -->
     <div id="components-reconnect-modal">
         <div class="reconnect-modal-overlay">
             <div class="reconnect-modal-card">
@@ -50,5 +54,6 @@
     </div>
 
     <script src="_framework/blazor.web.js"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
 </body>
 </html>

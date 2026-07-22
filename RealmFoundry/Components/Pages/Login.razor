@@ -1,4 +1,4 @@
-﻿@page "/login"
+@page "/login"
 @implements IDisposable
 @inject NavigationManager Nav
 @inject IConfiguration Config
@@ -7,77 +7,88 @@
 
 <PageTitle>Sign In — RealmFoundry</PageTitle>
 
-<div class="auth-card">
-    <h1>Sign In</h1>
+<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mud-my-8">
+    <MudPaper Elevation="0" Outlined="true" Class="mud-pa-8">
+        <MudText Typo="Typo.h4" Align="Align.Center" Class="mud-mb-4">Sign In</MudText>
 
-    @if (PendingLinkParam is not null)
-    {
-        <div class="alert alert-info">
-            <strong>One more step!</strong> We've sent a confirmation link to your email address.
-            Click it to finish linking your account with this provider, then sign in again.
+        @if (PendingLinkParam is not null)
+        {
+            <MudAlert Severity="Severity.Info" Class="mud-mb-4">
+                <strong>One more step!</strong> We've sent a confirmation link to your email address.
+                Click it to finish linking your account with this provider, then sign in again.
+            </MudAlert>
+        }
+        @if (ErrorParam is not null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mud-mb-4">
+                <strong>Sign-in failed.</strong> Something went wrong during authentication. Please try again.
+            </MudAlert>
+        }
+        @if (_loginError is not null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mud-mb-4">@_loginError</MudAlert>
+        }
+
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mud-mb-4">
+            Sign in with your Veldrath account or a connected provider.
+        </MudText>
+
+        <MudForm>
+            <MudTextField @bind-Value="_email"
+                          Label="Email"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Email"
+                          Margin="Margin.Dense"
+                          Class="mud-mb-3" />
+            <MudTextField @bind-Value="_password"
+                          Label="Password"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Margin="Margin.Dense"
+                          Class="mud-mb-3" />
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="DoLoginAsync"
+                       FullWidth="true"
+                       Disabled="@_submitting"
+                       Class="mud-mt-2">
+                @(_submitting ? "Signing in…" : "Sign in with email")
+            </MudButton>
+        </MudForm>
+
+        <MudText Typo="Typo.body2" Align="Align.Center" Class="mud-mt-3">
+            No account? <MudLink Href="/register">Create one</MudLink>
+            &nbsp;·&nbsp; <MudLink Href="/forgot-password">Forgot password?</MudLink>
+        </MudText>
+
+        <div class="mud-d-flex align-items-center gap-3 mud-my-4" style="color: var(--mud-palette-text-secondary); font-size: 0.85rem;">
+            <MudDivider Class="flex-1" />
+            <span>or continue with</span>
+            <MudDivider Class="flex-1" />
         </div>
-    }
-    @if (ErrorParam is not null)
-    {
-        <div class="alert alert-error">
-            <strong>Sign-in failed.</strong> Something went wrong during authentication. Please try again.
-        </div>
-    }
-    @if (_loginError is not null)
-    {
-        <div class="alert alert-error">@_loginError</div>
-    }
 
-    <p class="lead">Sign in with your Veldrath account or a connected provider.</p>
-
-    <!-- Email / password login -->
-    <form @onsubmit="DoLoginAsync" @onsubmit:preventDefault>
-        <label class="field-label">Email</label>
-        <input type="email" class="field-input" @bind="_email" placeholder="you@example.com" />
-
-        <label class="field-label" style="margin-top:.75rem">Password</label>
-        <input type="password" class="field-input" @bind="_password" placeholder="Your password" />
-
-        <button type="submit" class="btn btn-primary" disabled="@_submitting" style="margin-top:1rem;width:100%">
-            @(_submitting ? "Signing in…" : "Sign in with email")
-        </button>
-    </form>
-
-    <p style="margin-top:.6rem;text-align:center;font-size:.9rem">
-        No account? <a href="/register">Create one</a> &nbsp;·&nbsp; <a href="/forgot-password">Forgot password?</a>
-    </p>
-
-    <div class="divider"><span>or continue with</span></div>
-
-    <div class="oauth-buttons">
-        <a class="btn btn-discord" href="@_discordUrl">
-            Sign in with Discord
-        </a>
-        <a class="btn btn-google" href="@_googleUrl">
-            Sign in with Google
-        </a>
-        <a class="btn btn-microsoft" href="@_msUrl">
-            Sign in with Microsoft
-        </a>
-    </div>
-</div>
-
-<style>
-    .auth-card { max-width: 420px; margin: 4rem auto; padding: 2rem; border: 1px solid var(--vds-border); border-radius: 8px; }
-    .lead { color: var(--vds-text-muted); margin-bottom: 1.25rem; }
-    .field-label { display: block; font-size: .85rem; color: var(--vds-text-muted); margin-bottom: .35rem; }
-    .field-input { width: 100%; padding: .4rem .6rem; border-radius: 4px;
-        border: 1px solid var(--vds-border); background: var(--vds-bg-3);
-        color: inherit; font-size: .95rem; box-sizing: border-box; }
-    .btn-primary { background: var(--vds-accent); color: #fff; border: none; padding: .5rem 1rem;
-        border-radius: 4px; cursor: pointer; font-size: .95rem; }
-    .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
-    .divider { display: flex; align-items: center; gap: .75rem; margin: 1.25rem 0; color: var(--vds-text-muted); font-size: .85rem; }
-    .divider::before, .divider::after { content: ""; flex: 1; border-top: 1px solid var(--vds-border); }
-    .alert { padding: .6rem .9rem; border-radius: 4px; margin-bottom: 1rem; font-size: .9rem; }
-    .alert-info  { background: var(--vds-info-bg,  #e8f4fd); color: var(--vds-info,  #1a6fa3); }
-    .alert-error { background: var(--vds-danger-bg, #fde8e8); color: var(--vds-danger, #c53030); }
-</style>
+        <MudStack Spacing="2">
+            <MudButton Variant="Variant.Filled"
+                       Href="@_discordUrl"
+                       FullWidth="true"
+                       Style="background-color: var(--vds-oauth-discord); color: #fff;">
+                Sign in with Discord
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Href="@_googleUrl"
+                       FullWidth="true"
+                       Style="background-color: var(--vds-oauth-google); color: #fff;">
+                Sign in with Google
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Href="@_msUrl"
+                       FullWidth="true"
+                       Style="background-color: var(--vds-oauth-microsoft); color: #fff;">
+                Sign in with Microsoft
+            </MudButton>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
 
 @code {
     [SupplyParameterFromQuery(Name = "pending_link")] private string? PendingLinkParam { get; set; }
@@ -96,10 +107,7 @@
     {
         AuthState.OnChange += OnAuthStateChanged;
 
-        // PublicServerUrl is the browser-reachable address; ServerUrl may be an internal Docker hostname.
         var serverUrl = (Config["Veldrath:PublicServerUrl"] ?? Config["Veldrath:ServerUrl"])?.TrimEnd('/') ?? "";
-        // The server's /api/auth/session endpoint exchanges the code, sets the cross-subdomain
-        // rt cookie, and redirects back to this app via the redirectTo param.
         var callbackBase = $"{serverUrl}/api/auth/session?redirectTo={Uri.EscapeDataString(Nav.BaseUri.TrimEnd('/') + "/")}";
 
         _discordUrl   = $"{serverUrl}/api/auth/external/discord?returnUrl={Uri.EscapeDataString(callbackBase)}";
@@ -132,8 +140,6 @@
                 return;
             }
 
-            // Use the exchange-code redirect so the server sets the rt cookie — this keeps the
-            // session alive across page reloads (same mechanism used by OAuth providers).
             Api.SetBearerToken(response.AccessToken);
             var code = await Api.CreateExchangeCodeAsync();
             if (code is null)

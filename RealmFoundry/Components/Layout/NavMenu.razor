@@ -1,55 +1,56 @@
-﻿@implements IDisposable
+@implements IDisposable
 @inject AuthStateService AuthState
 @inject RealmFoundryApiClient Api
 @inject NavigationManager Nav
 @inject IConfiguration Config
 
-<nav class="nav-links">
-    <NavLink class="nav-item" href="" Match="NavLinkMatch.All">
-        Home
-    </NavLink>
-    <NavLink class="nav-item" href="content">
-        Content
-    </NavLink>
-    <NavLink class="nav-item" href="languages">
-        Languages
-    </NavLink>
-    <NavLink class="nav-item" href="submissions">
-        Submissions
-    </NavLink>
+<MudNavMenu>
+    <MudNavLink Href="" Match="NavLinkMatch.All">Home</MudNavLink>
+    <MudNavLink Href="content">Content</MudNavLink>
+    <MudNavLink Href="languages">Languages</MudNavLink>
+    <MudNavLink Href="submissions">Submissions</MudNavLink>
 
-    <div class="nav-spacer"></div>
+    <MudDivider Class="mud-my-2" />
 
     @if (AuthState.IsLoggedIn)
     {
         @if (AuthState.HasPermission("manage_content"))
         {
-            <NavLink class="nav-item" href="editorial/patch-notes">Patch Notes</NavLink>
-            <NavLink class="nav-item" href="editorial/lore">Lore</NavLink>
-            <NavLink class="nav-item" href="editorial/announcements">Announcements</NavLink>
+            <MudNavLink Href="editorial/patch-notes">Patch Notes</MudNavLink>
+            <MudNavLink Href="editorial/lore">Lore</MudNavLink>
+            <MudNavLink Href="editorial/announcements">Announcements</MudNavLink>
         }
         @if (AuthState.IsAdmin)
         {
-            <NavLink class="nav-item" href="admin">Admin</NavLink>
+            <MudNavLink Href="admin">Admin</MudNavLink>
         }
         @if (AuthState.IsModerator && !AuthState.IsAdmin)
         {
-            <NavLink class="nav-item" href="mod">Moderation</NavLink>
+            <MudNavLink Href="mod">Moderation</MudNavLink>
         }
         @if (_unreadCount > 0)
         {
-            <NavLink class="nav-item nav-bell" href="notifications">
-                🔔 <span class="badge badge-red">@_unreadCount</span>
-            </NavLink>
+            <MudNavLink Href="notifications">
+                Notifications
+                <MudChip T="int" Size="Size.Small" Color="Color.Error" Class="mud-ml-2">@_unreadCount</MudChip>
+            </MudNavLink>
         }
-        <button class="nav-item nav-logout" @onclick="LogOutAsync">Sign out</button>
-        <a class="nav-item nav-account" href="@_accountProfileUrl">My Account</a>
+        <MudNavLink Href="@_accountProfileUrl">My Account</MudNavLink>
+
+        <MudDivider Class="mud-my-2" />
+        <MudButton Variant="Variant.Text"
+                   FullWidth="true"
+                   Color="Color.Error"
+                   OnClick="LogOutAsync"
+                   Class="mud-text-left">
+            Sign out
+        </MudButton>
     }
     else
     {
-        <NavLink class="nav-item" href="login">Sign in</NavLink>
+        <MudNavLink Href="login">Sign in</MudNavLink>
     }
-</nav>
+</MudNavMenu>
 
 @code {
     private int     _unreadCount;
@@ -66,8 +67,6 @@
     {
         if (!firstRender) return;
         await AuthState.InitialiseAsync();
-        // Force a re-render immediately so the nav shows the correct login state
-        // regardless of whether the notification fetch below succeeds or fails.
         StateHasChanged();
         if (AuthState.IsLoggedIn)
             await LoadNotificationCountAsync();
@@ -78,7 +77,6 @@
 
     private void Refresh() => InvokeAsync(async () =>
     {
-        // Always update the nav first, then try to load the notification count.
         StateHasChanged();
         if (AuthState.IsLoggedIn)
             await LoadNotificationCountAsync();
@@ -102,9 +100,6 @@
 
     private void LogOutAsync()
     {
-        // Navigate to the server-side /auth/sign-out endpoint with forceLoad=true.
-        // The endpoint revokes the refresh token, deletes the rt cookie, then redirects
-        // to /.  forceLoad tears down the Blazor circuit so no stale auth state lingers.
         _unreadCount = 0;
         Nav.NavigateTo("/auth/sign-out", forceLoad: true);
     }
