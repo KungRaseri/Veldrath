@@ -3,62 +3,30 @@
    Designed for the GameLayout which bypasses the main site chrome.
    Uses the same VDS design tokens defined in app.css :root. */
 
-/* ── Game Layout ─────────────────────────────────────────────────────── */
+/* ── Game Layout ───────────────────────────────────────────────────────
+   Flex, gap, alignment, and overflow handled by MudBlazor CSS utilities
+   in Razor markup. Only VDS-specific properties remain in custom CSS. */
 
 .game-layout {
     position: fixed;
     inset: 0;
-    display: flex;
-    flex-direction: column;
     background: var(--vds-bg-0, #0C0D13);
     color: var(--vds-text, #F0EDE8);
     font-family: var(--vds-font-body, 'Inter', system-ui, sans-serif);
-    overflow: hidden;
     z-index: 10;
 }
 
-.game-container {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    width: 100vw;
-    overflow: hidden;
-}
-
-.game-main {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-    min-height: 0;
-}
 
 .game-sidebar {
     width: 260px;
     min-width: 260px;
     background: var(--vds-bg-1, #14151F);
     border-right: 1px solid var(--vds-border, #2A2B3D);
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-.game-center {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    position: relative;
 }
 
 .game-loading-zone {
     position: absolute;
     inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--vds-space-4, 16px);
     color: var(--vds-text-muted, #A8A09A);
     font-family: var(--vds-font-heading, 'Cinzel', serif);
     font-size: var(--vds-text-lg, 20px);
@@ -77,23 +45,12 @@
     to { transform: rotate(360deg); }
 }
 
-/* ── Game Header ─────────────────────────────────────────────────────── */
+/* ── Game Header ───────────────────────────────────────────────────────
+   Flex, gap, alignment, padding handled by MudBlazor utilities in markup. */
 
 .game-header {
-    display: flex;
-    align-items: center;
-    padding: var(--vds-space-3, 12px) var(--vds-space-4, 16px);
     background: var(--vds-bg-2, #1C1D2B);
     border-bottom: 1px solid var(--vds-border, #2A2B3D);
-    gap: var(--vds-space-4, 16px);
-    flex-shrink: 0;
-    min-height: 56px;
-}
-
-.game-header-character {
-    display: flex;
-    align-items: center;
-    gap: var(--vds-space-2, 8px);
 }
 
 .game-header-name {
@@ -118,10 +75,6 @@
 }
 
 .game-header-bars {
-    display: flex;
-    align-items: center;
-    gap: var(--vds-space-3, 12px);
-    flex: 1;
     max-width: 500px;
 }
 
@@ -131,20 +84,11 @@
 }
 
 .game-header-gold {
-    display: flex;
-    align-items: center;
-    gap: var(--vds-space-1, 4px);
     font-family: var(--vds-font-heading, 'Cinzel', serif);
     font-size: var(--vds-text-base, 14px);
     color: var(--vds-warning, #D4964A);
     font-weight: 600;
     white-space: nowrap;
-    margin-left: auto;
-}
-
-.game-header-zone {
-    display: flex;
-    align-items: center;
 }
 
 .game-header-zone-badge {
@@ -480,12 +424,9 @@
 /* ── Chat Channel Pills ─────────────────────────────────────────────── */
 
 .game-chat-pills {
-    display: flex;
-    gap: 2px;
     padding: 4px 8px 0;
     background: var(--vds-bg-0, #0C0D13);
     border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);
-    flex-shrink: 0;
 }
 
 .game-chat-pill {
@@ -609,9 +550,6 @@
 }
 
 .game-chat-input {
-    display: flex;
-    align-items: center;
-    gap: var(--vds-space-2, 8px);
     padding: var(--vds-space-2, 8px) var(--vds-space-3, 12px);
     border-top: 1px solid var(--vds-border, #2A2B3D);
     background: var(--vds-bg-1, #14151F);
@@ -661,14 +599,10 @@
     cursor: not-allowed;
 }
 
-/* ── Combat ──────────────────────────────────────────────────────────── */
+/* ── Combat ────────────────────────────────────────────────────────────
+   Flex, alignment handled by MudBlazor utilities in markup. */
 
 .game-combat {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
     padding: var(--vds-space-8, 32px);
     gap: var(--vds-space-6, 24px);
     background: radial-gradient(ellipse at center, var(--vds-bg-2, #1C1D2B) 0%, var(--vds-bg-0, #0C0D13) 100%);
@@ -702,11 +636,7 @@
 }
 
 .game-combat-log {
-    text-align: center;
     min-height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 .game-combat-result {
@@ -722,14 +652,8 @@
     to   { opacity: 1; transform: translateY(0); }
 }
 
-.game-combat-actions {
-    display: flex;
-    gap: var(--vds-space-3, 12px);
-}
-
-.game-combat-actions .action-bar {
-    gap: var(--vds-space-3, 12px);
-}
+/* .game-combat-actions — replaced by MudBlazor utilities */
+/* .game-combat-actions .action-bar gap kept by inline style if needed */
 
 .game-combat-victory {
     position: fixed;
@@ -761,42 +685,21 @@
     font-style: italic;
 }
 
-/* ── Footer ──────────────────────────────────────────────────────────── */
+/* ── Footer ────────────────────────────────────────────────────────────
+   Flex, gap, alignment, padding handled by MudBlazor utilities in markup. */
 
 .game-footer {
-    display: flex;
-    align-items: center;
-    padding: var(--vds-space-2, 8px) var(--vds-space-4, 16px);
     background: var(--vds-bg-2, #1C1D2B);
     border-top: 1px solid var(--vds-border, #2A2B3D);
-    gap: var(--vds-space-3, 12px);
-    flex-shrink: 0;
-    min-height: 40px;
-    position: relative;
 }
 
-.game-footer-left {
-    display: flex;
-    align-items: center;
-    gap: var(--vds-space-2, 8px);
-}
+/* .game-footer-left — replaced by MudBlazor utilities */
+/* .game-footer-center — replaced by MudBlazor utilities */
+/* .game-footer-right — replaced by MudBlazor utilities */
 
 .game-footer-zone {
     font-size: var(--vds-text-sm, 12px);
     color: var(--vds-text-muted, #A8A09A);
-}
-
-.game-footer-center {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-}
-
-.game-footer-right {
-    display: flex;
-    align-items: center;
-    gap: var(--vds-space-2, 8px);
-    margin-left: auto;
 }
 
 .game-footer-status {

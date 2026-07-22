@@ -2,9 +2,9 @@
 
 @if (Visible)
 {
-    <div class="game-panel-backdrop" @onclick="HandleBackdropClick">
-        <div class="game-panel" @onclick:stopPropagation="true">
-            <div class="game-panel-header">
+    <div class="game-panel-backdrop mud-d-flex align-items-center justify-center" @onclick="HandleBackdropClick">
+        <div class="game-panel mud-d-flex flex-column" @onclick:stopPropagation="true">
+            <div class="game-panel-header mud-d-flex align-items-center justify-space-between">
                 <span class="game-panel-title">@Title</span>
                 @if (ShowClose)
                 {

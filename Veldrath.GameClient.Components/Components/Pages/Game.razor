@@ -12,16 +12,16 @@
 @inject IConfiguration Configuration
 @inject ILogger<Game> Logger
 
-<div class="game-container">
+<div class="mud-d-flex flex-column mud-height-full mud-width-full overflow-hidden">
     <GameHeader />
 
-    <div class="game-main">
-        <div class="game-sidebar">
+    <div class="flex-1 mud-d-flex overflow-hidden" style="min-height: 0;">
+        <div class="game-sidebar mud-d-flex flex-column overflow-y-auto overflow-x-hidden">
             <GameSidebar OnOpenOverlay="HandleOpenOverlay" />
             <GameChat />
         </div>
 
-        <div class="game-center">
+        <div class="flex-1 mud-d-flex flex-column overflow-hidden position-relative">
             @if (_isRestoringSession)
             {
                 <div class="game-loading-zone">
