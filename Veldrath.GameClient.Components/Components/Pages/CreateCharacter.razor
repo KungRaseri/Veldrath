@@ -603,6 +603,8 @@
         }
     }
 
+    private bool _hasLoadedData;
+
     /// <inheritdoc />
     protected override void OnInitialized()
     {
@@ -626,16 +628,33 @@
         await LoadDataAsync();
     }
 
+    /// <summary>Reacts to auth state changes. Triggers data load when auth becomes ready
+    /// after prerendering, or refreshes the UI otherwise.</summary>
     private void OnAuthStateChanged()
     {
-        if (Auth.IsAuthReady)
-            InvokeAsync(StateHasChanged);
+        if (!Auth.IsAuthReady)
+            return;
+
+        if (!_hasLoadedData && Auth.IsLoggedIn)
+        {
+            _hasLoadedData = true;
+            InvokeAsync(async () =>
+            {
+                Navigation.LocationChanged += OnLocationChanged;
+                await LoadDataAsync();
+                StateHasChanged();
+            });
+            return;
+        }
+
+        InvokeAsync(StateHasChanged);
     }
 
     /// <summary>Fetches all reference data (classes, species, backgrounds) in parallel and begins a creation
     /// session.</summary>
     private async Task LoadDataAsync()
     {
+        _hasLoadedData = true;
         _isInitializing = true;
         _loadError = null;
         StateHasChanged();
@@ -795,18 +814,27 @@
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (firstRender && _hasLoadedData)
         {
             await JsRuntime.InvokeVoidAsync("characterCreation.enableBeforeUnload");
         }
     }
 
-    /// <summary>Removes the browser beforeunload listener that warns users about unsaved progress.</summary>
+    /// <summary>Removes the browser beforeunload listener that warns users about unsaved progress.
+    /// Swallows JS interop failures from prerendering or disconnected circuits.</summary>
     private async Task DisableBeforeUnloadAsync()
     {
         try
         {
             await JsRuntime.InvokeVoidAsync("characterCreation.disableBeforeUnload");
+        }
+        catch (JSDisconnectedException)
+        {
+            // Circuit already disconnected — nothing to clean up.
+        }
+        catch (InvalidOperationException)
+        {
+            // Still in static prerendering — JS interop not available.
         }
         catch (Exception ex)
         {
