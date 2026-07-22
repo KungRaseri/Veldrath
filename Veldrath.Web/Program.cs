@@ -144,7 +144,7 @@ try
     // Antiforgery with a fixed cookie name and Strict same-site policy.
     builder.Services.AddAntiforgery(options =>
     {
-        options.Cookie.Name     = "vw-af";
+        options.Cookie.Name = "vw-af";
         options.Cookie.SameSite = SameSiteMode.Strict;
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     });
@@ -178,17 +178,26 @@ try
     }
 
     // Security headers applied to every response.
+    // In Development, connect-src allows localhost WebSockets for Blazor Server SignalR
+    // circuits and aspnetcore-browser-refresh hot reload. In Production, only 'self' is
+    // permitted since the SignalR endpoint shares the same origin.
     app.Use(async (ctx, next) =>
     {
-        ctx.Response.Headers["X-Frame-Options"]         = "DENY";
-        ctx.Response.Headers["X-Content-Type-Options"]  = "nosniff";
-        ctx.Response.Headers["Referrer-Policy"]         = "strict-origin-when-cross-origin";
-        ctx.Response.Headers["Permissions-Policy"]      = "camera=(), microphone=(), geolocation=()";
+        ctx.Response.Headers["X-Frame-Options"] = "DENY";
+        ctx.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        ctx.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        ctx.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
         ctx.Response.Headers["Content-Security-Policy"] =
-            "default-src 'self'; script-src 'self' 'unsafe-inline'; " +
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-            "font-src 'self' https://fonts.gstatic.com; " +
-            "img-src 'self' data:; frame-ancestors 'none';";
+            app.Environment.IsDevelopment()
+                ? "default-src 'self'; script-src 'self' 'unsafe-inline'; " +
+                  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                  "font-src 'self' https://fonts.gstatic.com; " +
+                  "img-src 'self' data:; frame-ancestors 'none'; " +
+                  "connect-src 'self' ws://localhost:* wss://localhost:*;"
+                : "default-src 'self'; script-src 'self' 'unsafe-inline'; " +
+                  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                  "font-src 'self' https://fonts.gstatic.com; " +
+                  "img-src 'self' data:; frame-ancestors 'none';";
         await next(ctx);
     });
 
@@ -214,7 +223,7 @@ try
         if (rt is not null)
         {
             await api.LogoutAsync(rt);
-            var cookieDomain  = config["Auth:CookieDomain"];
+            var cookieDomain = config["Auth:CookieDomain"];
             var deleteOptions = new CookieOptions { Path = "/" };
             if (!string.IsNullOrWhiteSpace(cookieDomain))
                 deleteOptions.Domain = cookieDomain;

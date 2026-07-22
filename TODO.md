@@ -1,0 +1,1 @@
+TODO: [AI] Figure out options for only building the solution or projects where changes were made
