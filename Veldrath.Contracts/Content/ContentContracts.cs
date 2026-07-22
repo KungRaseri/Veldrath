@@ -118,13 +118,33 @@ public record LootTableDto(
 /// <param name="HitDie">Sides of the health die rolled per level (e.g. 10 for Fighter, 6 for Wizard).</param>
 /// <param name="PrimaryStat">Primary scaling attribute (e.g. "strength", "intelligence").</param>
 /// <param name="RarityWeight">Rarity weight for procedural selection — lower values are more common.</param>
+/// <param name="BaseHealth">Starting hit points at level 1, or <see langword="null"/> if not configured.</param>
+/// <param name="BaseMana">Starting mana at level 1, or <see langword="null"/> if not configured.</param>
+/// <param name="HealthGrowth">HP gained per level, or <see langword="null"/> if not configured.</param>
+/// <param name="IsSpellcaster"><see langword="true"/> when the class can cast spells.</param>
+/// <param name="IsMelee"><see langword="true"/> when the class is primarily melee-focused.</param>
+/// <param name="IsRanged"><see langword="true"/> when the class is primarily ranged-focused.</param>
+/// <param name="IsStealth"><see langword="true"/> when the class has stealth abilities.</param>
+/// <param name="CanDualWield"><see langword="true"/> when the class can wield two weapons.</param>
+/// <param name="CanWearHeavy"><see langword="true"/> when the class is proficient with heavy armor.</param>
+/// <param name="CanWearShield"><see langword="true"/> when the class is proficient with shields.</param>
 public record ActorClassDto(
     string Slug,
     string DisplayName,
     string TypeKey,
     int HitDie,
     string PrimaryStat,
-    int RarityWeight);
+    int RarityWeight,
+    int? BaseHealth = null,
+    int? BaseMana = null,
+    float? HealthGrowth = null,
+    bool IsSpellcaster = false,
+    bool IsMelee = false,
+    bool IsRanged = false,
+    bool IsStealth = false,
+    bool CanDualWield = false,
+    bool CanWearHeavy = false,
+    bool CanWearShield = false);
 
 // Species
 /// <summary>A playable species (e.g. Human, Elf) selectable during character creation.</summary>
