@@ -479,22 +479,27 @@ public static class ContentEndpoints
 
     // Mapping helpers (new content types)
     private static ActorClassDto ToDto(RealmEngine.Data.Entities.ActorClass c) => new(
-        Slug:         c.Slug,
-        DisplayName:  c.DisplayName ?? c.Slug,
-        TypeKey:      c.TypeKey,
-        HitDie:       c.HitDie,
-        PrimaryStat:  c.PrimaryStat,
-        RarityWeight: c.RarityWeight,
-        BaseHealth:   c.Stats.BaseHealth,
-        BaseMana:     c.Stats.BaseMana,
-        HealthGrowth: c.Stats.HealthGrowth,
-        IsSpellcaster: c.Traits.Spellcaster == true,
-        IsMelee:       c.Traits.Melee == true,
-        IsRanged:      c.Traits.Ranged == true,
-        IsStealth:     c.Traits.Stealth == true,
-        CanDualWield:  c.Traits.CanDualWield == true,
-        CanWearHeavy:  c.Traits.CanWearHeavy == true,
-        CanWearShield: c.Traits.CanWearShield == true);
+        Slug:              c.Slug,
+        DisplayName:       c.DisplayName ?? c.Slug,
+        TypeKey:           c.TypeKey,
+        HitDie:            c.HitDie,
+        PrimaryStat:       c.PrimaryStat,
+        RarityWeight:      c.RarityWeight,
+        BaseHealth:        c.Stats.BaseHealth,
+        BaseMana:          c.Stats.BaseMana,
+        HealthGrowth:      c.Stats.HealthGrowth,
+        ManaGrowth:        c.Stats.ManaGrowth,
+        StrengthGrowth:    c.Stats.StrengthGrowth,
+        DexterityGrowth:   c.Stats.DexterityGrowth,
+        IntelligenceGrowth: c.Stats.IntelligenceGrowth,
+        ConstitutionGrowth: c.Stats.ConstitutionGrowth,
+        IsSpellcaster:     c.Traits.Spellcaster == true,
+        IsMelee:           c.Traits.Melee == true,
+        IsRanged:          c.Traits.Ranged == true,
+        IsStealth:         c.Traits.Stealth == true,
+        CanDualWield:      c.Traits.CanDualWield == true,
+        CanWearHeavy:      c.Traits.CanWearHeavy == true,
+        CanWearShield:     c.Traits.CanWearShield == true);
 
     private static SpeciesDto ToDto(RealmEngine.Data.Entities.Species s) => new(
         Slug:        s.Slug,

@@ -1,6 +1,6 @@
 @* Reusable class selection card for character creation. Displays class name, hit die,
-    primary stat, health/mana, health growth, playstyle traits, and category. Supports
-    selection highlight and keyboard navigation. *@
+    primary stat, health/mana base values, per-stat growth rates, playstyle traits, and
+    category. Supports selection highlight and keyboard navigation. *@
 @using Veldrath.Contracts.Content
 
 <div @onclick="HandleClick" @onkeydown="HandleKeyDown"
@@ -21,7 +21,7 @@
                     }
                 </MudStack>
 
-                @* Core stats row: Hit Die + Primary Stat *@
+                @* Core stats: Hit Die + Primary Stat + HP/MP *@
                 <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Style="flex-wrap: wrap;">
                     <MudChip T="string" Text="@($"d{Class.HitDie}")" Size="Size.Small"
                              Color="Color.Error" Variant="Variant.Outlined"
@@ -29,27 +29,25 @@
                     <MudChip T="string" Text="@FormatPrimaryStat(Class.PrimaryStat)" Size="Size.Small"
                              Color="Color.Info" Variant="Variant.Outlined"
                              Icon="@GetStatIcon(Class.PrimaryStat)" />
+                    @if (Class.BaseHealth.HasValue && Class.BaseHealth > 0)
+                    {
+                        <MudChip T="string" Text="@($"{Class.BaseHealth} HP")" Size="Size.Small"
+                                 Color="Color.Error" Variant="Variant.Text" />
+                    }
+                    @if (Class.BaseMana.HasValue && Class.BaseMana > 0)
+                    {
+                        <MudChip T="string" Text="@($"{Class.BaseMana} MP")" Size="Size.Small"
+                                 Color="Color.Info" Variant="Variant.Text" />
+                    }
                 </MudStack>
 
-                @* Health / Mana row — only shown when data is available *@
-                @if ((Class.BaseHealth.HasValue && Class.BaseHealth > 0) ||
-                     (Class.BaseMana.HasValue && Class.BaseMana > 0) ||
-                     (Class.HealthGrowth.HasValue && Class.HealthGrowth > 0))
+                @* Per-stat growth rates — compact row *@
+                @if (HasAnyGrowth)
                 {
-                    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Style="flex-wrap: wrap;">
-                        @if (Class.BaseHealth.HasValue && Class.BaseHealth > 0)
+                    <MudStack Row="true" Spacing="1" Style="flex-wrap: wrap;">
+                        @foreach (var (label, value) in GetGrowthStats())
                         {
-                            <MudChip T="string" Text="@($"HP {Class.BaseHealth}")" Size="Size.Small"
-                                     Color="Color.Error" Variant="Variant.Text" />
-                        }
-                        @if (Class.BaseMana.HasValue && Class.BaseMana > 0)
-                        {
-                            <MudChip T="string" Text="@($"MP {Class.BaseMana}")" Size="Size.Small"
-                                     Color="Color.Info" Variant="Variant.Text" />
-                        }
-                        @if (Class.HealthGrowth.HasValue && Class.HealthGrowth > 0)
-                        {
-                            <MudChip T="string" Text="@($"+{Class.HealthGrowth:F0} HP/lvl")" Size="Size.Small"
+                            <MudChip T="string" Text="@($"{label} +{value:F1}")" Size="Size.Small"
                                      Color="Color.Success" Variant="Variant.Text" />
                         }
                     </MudStack>
@@ -84,6 +82,23 @@
     /// <summary>Callback invoked when the card is clicked or activated via keyboard.</summary>
     [Parameter]
     public EventCallback<ActorClassDto> OnSelect { get; set; }
+
+    private bool HasAnyGrowth =>
+        Class.HealthGrowth.HasValue || Class.ManaGrowth.HasValue ||
+        Class.StrengthGrowth.HasValue || Class.DexterityGrowth.HasValue ||
+        Class.IntelligenceGrowth.HasValue || Class.ConstitutionGrowth.HasValue;
+
+    private List<(string Label, float Value)> GetGrowthStats()
+    {
+        var stats = new List<(string, float)>();
+        if (Class.HealthGrowth is > 0) stats.Add(("HP", Class.HealthGrowth.Value));
+        if (Class.ManaGrowth is > 0) stats.Add(("MP", Class.ManaGrowth.Value));
+        if (Class.StrengthGrowth is > 0) stats.Add(("STR", Class.StrengthGrowth.Value));
+        if (Class.DexterityGrowth is > 0) stats.Add(("DEX", Class.DexterityGrowth.Value));
+        if (Class.IntelligenceGrowth is > 0) stats.Add(("INT", Class.IntelligenceGrowth.Value));
+        if (Class.ConstitutionGrowth is > 0) stats.Add(("CON", Class.ConstitutionGrowth.Value));
+        return stats;
+    }
 
     private bool HasAnyTrait =>
         Class.IsSpellcaster || Class.IsMelee || Class.IsRanged || Class.IsStealth ||
