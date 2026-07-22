@@ -377,164 +377,25 @@ Historical note: DbContext separation was established in session-6 when `GameDbC
 
 ## Session Log
 
-### Session-3 (2026-03-19)
-- Fixed `ActorClassDto` breaking change in `FakeServices.cs` and `CharacterSelectViewModelTests.cs`
-- Fixed `AvailableClasses_Should_Contain_Expected_Classes` test (empty catalog + delay pattern)
-- Fixed P3 stub: `MainMenuViewModel.SettingsCommand` navigates to `SettingsViewModel`
-- Created `SettingsViewModel` with `BackCommand`
-- Implemented `AllocateAttributePoints` hub bridge (command + handler + hub method)
-- Added 9 server tests + client tests for `AllocateAttributePoints`
+### Early Sessions (3–18, March 2026) — Summary
 
-### Session-4 (2026-03-19)
-- Implemented `UseAbility` hub bridge end-to-end
-- Fixed `IZoneRepository` + `IZoneSessionRepository` XML docs (8 summaries)
-- Added 10 server tests + 6 client tests = 16 new tests
-- Total: 274 client + 246 server = 520 passing
+> See git history for per-session code-level details.
 
-### Session-16 (2026-03-21) — GameView UI redesign
-- **GameView.axaml** fully rewritten: 3-row (Auto/\*/Auto) × 3-column (Auto/\*/220) layout
-  - Row 0: topbar border — character name → zone name + zone-type badge (StringConverters.IsNotNullOrEmpty), status message, logout button
-  - Row 1 col 0: collapsible left panel via DockPanel `LastChildFill="False"` — toggle button always visible (28px, docked Right), content Border (196px, IsVisible="{Binding IsLeftPanelOpen}") with HP/MP ProgressBars + action log
-  - Row 1 col 1: center map placeholder
-  - Row 1 col 2: right character panel (220px) — level, XP progress (ExperienceToNextLevel), gold, unspent points badge, online players, dev tools Expander
-  - Row 2: context-sensitive action bar (HasInn → "Rest at Inn", HasMerchant → "Shop", always: Craft Item, Enter Dungeon, Use Ability)
-- **GameViewModel.cs** extended with 11 new properties/commands:
-  - `IsLeftPanelOpen` (bool, default true) + `LeftPanelToggleIcon` (◀/▶) + `ToggleLeftPanelCommand`
-  - `HasInn`, `HasMerchant`, `ZoneType` — set from `ZoneDto` in `InitializeAsync`
-  - `HasUnspentPoints` (computed, raised when `UnspentAttributePoints` changes)
-  - `ExperienceToNextLevel` (computed `Math.Max(1L, Level * 500L)`, raised when `Level` changes)
-  - `DevGainXpCommand` (gains 100 XP), `DevAddGoldCommand` (+50 gold), `DevTakeDamageCommand` (takes 10 damage)
-- **22 new tests** added to `GameViewModelTests.cs` for all new properties/commands
-- AXAML bug: old layout content was left below `</UserControl>` after rewrite → caused AVLN1001 "multiple root elements"; fixed by stripping duplicate content after first closing tag
-- Final count: **362 client + 416 server = 778 total passing**
-
-### Session-5 (2026-03-19)
-- Fixed 3 latent DI gaps: `IArmorRepository`, `IEquipmentSetRepository`, `INamePatternRepository`; added 2 new using directives to Program.cs
-- Fixed P4 XML docs: 10 missing summaries across `IPlayerAccountRepository`, `ICharacterRepository`, `IRefreshTokenRepository`
-- Fixed P3 `ServerUrl` stub: created `ClientSettings` singleton, injected into `CharacterSelectViewModel` + `SettingsViewModel`; both ViewModels now use plain `AddTransient<T>()`
-- Promoted `SettingsViewModel` from placeholder to real (has `ServerUrl` property)
-- Implemented `AwardSkillXp` hub bridge: `AwardSkillXpHubCommand` + handler + `GameHub.AwardSkillXp(AwardSkillXpHubRequest)` + client `AwardSkillXpCommand` + `OnSkillXpGained`
-- Added `SkillXpGained` subscription + `SkillXpGainedPayload` in `CharacterSelectViewModel`
-- Added 14 server tests (3 GetActiveCharacters + 11 AwardSkillXp) + 4 GameViewModel tests + 3 SettingsViewModelTests
-- Total: 281 client + 260 server = 541 passing
-
-### Session-6 (2026-03-19) — Docker startup fix
-- Root cause: `GameDbContext` was never registered in server DI; `EfCoreInventoryService` injected it → `AggregateException` at container build time
-- Architectural fix: removed `SaveGames`/`HallOfFameEntries` from `ApplicationDbContext` (they were added incorrectly in session-5)
-- Established DbContext separation rule (see section above)
-- `ServerSaveGameRepository` + `ServerHallOfFameRepository` now inject `GameDbContext`
-- Registered `GameDbContext` with Npgsql in `Program.cs`; threaded into migration startup block with `allKnown` union
-- New `ApplicationDbContext` migration: `RemoveGameEntitiesFromApplicationDbContext` (drops SaveGames/HallOfFameEntries)
-- `GameDbContext` already had Postgres migrations in `Migrations/GameDb/` (created earlier sessions)
-- Created `TestGameDbContextFactory` (SQLite `GameDbContext`) for server tests; updated `ServerRepositoryTests.cs`
-- 260 server tests passing; Docker server reaches Healthy status clean
-
-### Session-8 (2026-03-20) — EquipItem bridge + P2 coverage
-- Added `Character.EquipmentBlob` (`text`, default `{}`) to server EF entity
-- Configured in `ApplicationDbContext.OnModelCreating` + migration `AddEquipmentBlob` in `Migrations/Application/`
-- Implemented `EquipItemHubCommand` + `EquipItemHubResult` + `EquipItemHubCommandHandler` (8 valid slots, case-insensitive)
-- Added `GameHub.EquipItem(EquipItemHubRequest)` + `EquipItemHubRequest` record at bottom of `GameHub.cs`
-- Added client `GameViewModel.EquipItemCommand` (ReactiveCommand<(string, string?), Unit>) + `DoEquipItemAsync` + `OnItemEquipped`
-- Added 19 server tests: 2 SelectCharacter P2, 1 OnDisconnectedAsync P2, 5 catch-block (mediator throws), 6 EquipItem hub method, 5 EquipItemHubCommandHandler handler
-- KEY GOTCHA: `OnDisconnectedAsync` reads `AccountId` from `Context.Items` (set by `OnConnectedAsync`); tests that call `OnDisconnectedAsync` directly must pre-seed `ctx.Items["AccountId"] = accountId`
-- Also: `CreateHub` factory now accepts optional `IActiveCharacterTracker? tracker` param for P2 tests requiring pre-seeded trackers
-- Final: 281 client + 279 server = 560 total passing
-
-### Session-9 (2026-03-20) — AddGold bridge + DamageTaken prep
-- Implemented `AddGold` hub bridge: `AddGoldHubCommand` + handler + `GameHub.AddGold` + client `AddGoldCommand` + `OnGoldChanged`
-- Added `GoldChanged` subscription + `GoldChangedPayload` in `CharacterSelectViewModel`
-- Fixed P3 stub: `ItemEquipped` hub subscription missing from `CharacterSelectViewModel` — added `_itemEquippedSub` + `ItemEquippedPayload`
-- Added 8 server tests + 8 client tests
-- Total: 288 client + 292 server = 580 total passing
-
-### Session-10 (2026-03-20) — TakeDamage bridge
-- Implemented `TakeDamage` hub bridge: `TakeDamageHubCommand` + handler + `GameHub.TakeDamage` + client `TakeDamageCommand` + `OnDamageTaken`
-- Added `DamageTaken` subscription + `DamageTakenPayload` in `CharacterSelectViewModel`
-- Added `AvailableClasses_Should_Fall_Back_To_Builtins_When_Catalog_Empty` test (NotBeEmpty guard)
-- Added 8 server tests + 8 client tests
-- Total: 296 client + 304 server = 600 total passing
-
-### Session-11 (2026-03-20) — GainExperience client wiring
-- Added `GameViewModel.Level` (int) + `Experience` (long) reactive properties
-- Implemented `GainExperienceCommand : ReactiveCommand<(int Amount, string? Source), Unit>`
-- Implemented `OnExperienceGained(int newLevel, long newExperience, bool leveledUp, int? leveledUpTo)` — updates `Level`, `Experience`, `AppendLog`
-- Added `ExperienceGainedPayload` record + `_experienceGainedSub` field/disposal/subscription in `CharacterSelectViewModel`
-- 8 new tests (4 server + 4 client)
-- Total: 304 client + 304 server = 608 total passing
-
-### Session-12 (2026-03-20) — CharacterSelected payload + SeedInitialStats
-- Extended `GameHub.SelectCharacter`: deserializes `Attributes` blob, includes `Experience`, `CurrentHealth`, `MaxHealth`, `CurrentMana`, `MaxMana`, `Gold`, `UnspentAttributePoints` in `CharacterSelected` payload
-- Added `GameViewModel.SeedInitialStats(int level, long experience, int currentHealth, int maxHealth, int currentMana, int maxMana, int gold, int unspentAttributePoints)` — eliminates all-zero HUD on login
-- Added `CharacterSelectedPayload` internal record in `CharacterSelectViewModel.cs`
-- Added `_characterSelectedSub` field + disposal + `"CharacterSelected"` subscription in `DoSelectAsync` — 15th subscription total (14th active; `_characterStatusSub` declared but reserved)
-- Added 7 new tests: 3 server (CharacterSelected payload content including blob defaults) + 2 GameViewModel (SeedInitialStats) + 2 CharacterSelectViewModel (CharacterSelected subscription)
-- Total: 308 client + 307 server = 615 total passing
-- NOTE: actual server count at end of session was already 362 (includes +55 from subsequent Content service tests added during this session but logged as session-13)
-
-### Session-13 (2026-03-20) — Content service extension + CraftItem + EnterDungeon bridges
-- **Goal 1**: Extended `IContentService` / `HttpContentService` with 12 new methods (2 per type) for 6 new content types: `Organization`, `WorldLocation`, `Dialogue`, `ActorInstance`, `MaterialProperty`, `TraitDefinition`
-- **Goal 2**: Added 24 new tests to `HttpContentServiceTests.cs` (4 per type); client 308→332
-- **Goal 3**: Implemented `CraftItem` hub bridge end-to-end: `CraftItemHubCommand.cs` (handler deducts 50 gold), `GameHub.CraftItem`, client `CraftItemCommand` + `OnItemCrafted`, `ItemCraftedPayload` + `_itemCraftedSub` in `CharacterSelectViewModel`
-- **Goal 4**: Implemented `EnterDungeon` hub bridge end-to-end: `EnterDungeonHubCommand.cs` (uses `IZoneRepository`, validates `ZoneType.Dungeon`), `GameHub.EnterDungeon`, client `EnterDungeonCommand` + `OnDungeonEntered`, `DungeonEnteredPayload` + `_dungeonEnteredSub` in `CharacterSelectViewModel`
-- Key discovery: `IDungeonRepository` doesn't exist — `EnterDungeon` uses `IZoneRepository.GetByIdAsync(slug)` + `ZoneType.Dungeon` check
-- Tests: 21 server tests for Goals 3+4 added to `GameHubTests.cs`; 5 client tests in `GameViewModelTests.cs`; 3 client tests in `CharacterSelectViewModelTests.cs`
-- Final count: **340 client + 383 server = 723 total passing**
-
-### Session-17 (2026-03-21) — VisitShop hub bridge
-- **Gap analysis**: found 1 remaining P3 stub — `DoVisitShopAsync` logged "Shop coming in M5." with no hub call; no server counterpart existed
-- **P4 false positive**: subagent reported missing CraftItem/EnterDungeon handler tests — already existed (5 CraftItem + 4 EnterDungeon handler tests in `GameHubTests.cs`)
-- Created `Veldrath.Server/Features/Characters/VisitShopHubCommand.cs` — validates zone + `HasMerchant == true`; broadcasts `ShopVisited` to Caller only
-- Added `GameHub.VisitShop(VisitShopHubRequest)` + `VisitShopHubRequest(string ZoneId)` DTO to `GameHub.cs`
-- Replaced `DoVisitShopAsync` stub; added `GameViewModel.OnShopVisited`; added 18th subscription `_shopVisitedSub` + `ShopVisitedPayload` in `CharacterSelectViewModel`
-- Added 9 server tests (5 hub dispatch + 4 handler) + 2 GameViewModel tests + 1 CharacterSelectViewModel test
-- Key fix: subscription test used non-existent `MakeConnectedVmAsync` helper + `conn.Subscriptions` property — rewritten to follow `DungeonEntered` event-fire pattern; assertion changed to `Contain(msg => msg.Contains("Welcome to the shop at Fenwick Crossing"))` since zone name appears in multiple log entries
-- Final count: **401 client + 425 server = 826 total passing**
-
-### Session-18 (2026-03-24) — Hidden ZoneLocations + Discovery System
-
-**Feature**: Hidden ZoneLocations, passive/active discovery, zone-to-zone traversal connections.
-
-**Data model additions:**
-- `ZoneLocationTraits` gained 4 fields: `IsHidden bool?`, `UnlockType string?`, `UnlockKey string?`, `DiscoverThreshold int?` (all in owned JSON column — backward compatible)
-- `ZoneLocationConnection` new content entity: `Id PK`, `FromLocationSlug`, `ToLocationSlug?`, `ToZoneId?`, `ConnectionType`, `IsTraversable` — in `ContentDbContext.ZoneLocationConnections`
-- `CharacterUnlockedLocation` new application entity: `Id PK`, `CharacterId Guid FK`, `LocationSlug`, `UnlockedAt`, `UnlockSource` — unique index on `(CharacterId, LocationSlug)`, cascade delete
-- EF migrations generated: `AddZoneLocationConnectionsAndHiddenTraits` (Content), `AddCharacterUnlockedLocations` (Application)
-
-**Repository layer:**
-- `IZoneLocationRepository.GetByZoneIdAsync(zoneId)` now filters `IsHidden != true` (null = not hidden → backward compatible)
-- `IZoneLocationRepository.GetByZoneIdAsync(zoneId, unlockedSlugs)` — character-aware overload
-- `IZoneLocationRepository.GetHiddenByZoneIdAsync(zoneId)` — only `IsHidden == true` rows
-- `IZoneLocationRepository.GetConnectionsFromAsync(locationSlug)` — queries `ZoneLocationConnections`
-- `ICharacterUnlockedLocationRepository` + `CharacterUnlockedLocationRepository` — 3 methods: `GetUnlockedSlugsAsync`, `IsUnlockedAsync`, `AddUnlockAsync` (deduplication guard)
-
-**Hub commands:**
-- `NavigateToLocationHubCommand` — updated handler: uses `GetByZoneIdAsync(zoneId, unlockedSlugs)`, loads connections, runs passive discovery sweep; result gains `AvailableConnections` + `PassiveDiscoveries`
-- `UnlockZoneLocationHubCommand` — explicit unlock (quest/item/manual); validates location is hidden; `WasAlreadyUnlocked` flag for idempotency
-- `SearchAreaHubCommand` — active roll: `characterLevel + Random.Shared.Next(-5, 10)` checked against `DiscoverThreshold` for `skill_check_active` hidden locations
-- `TraverseConnectionHubCommand` — validates connection edge, checks `IsTraversable`, persists new location (cross-zone: updates both `CurrentZoneId` + `CurrentZoneLocationSlug`)
-
-**Hub methods added:**
-- `GameHub.UnlockZoneLocation(UnlockZoneLocationHubRequest)` — broadcasts `ZoneLocationUnlocked` to Caller
-- `GameHub.SearchArea()` — zero-arg; broadcasts `AreaSearched` + `ZoneLocationUnlocked` per discovery
-- `GameHub.TraverseConnection(TraverseConnectionHubRequest)` — handles SignalR group management for cross-zone; broadcasts `ConnectionTraversed`
-- `GameHub.NavigateToLocation` — enriched: also broadcasts `ZoneLocationUnlocked` per passive discovery
-
-**Client wiring:**
-- `IZoneService.GetZoneLocationsAsync` gained optional `Guid? characterId = null`; URL appends `?characterId=` when set
-- `GameViewModel`: `SearchAreaCommand`, `TraverseConnectionCommand`, `OnZoneLocationUnlocked`, `OnAreaSearched`, `OnConnectionTraversed` added
-- `CharacterSelectViewModel`: 3 new subscriptions (`_zoneLocationUnlockedSub`, `_areaSearchedSub`, `_connectionTraversedSub`), 3 payload records (`ZoneLocationUnlockedPayload`, `AreaSearchedPayload`, `ConnectionTraversedPayload`)
-
-**Tests added:**
-- `EfCoreZoneLocationRepositoryTests`: 8 new tests (hidden filtering, unlocked-slug overload, `GetHiddenByZoneIdAsync`, `GetConnectionsFromAsync`)
-- `CharacterUnlockedLocationRepositoryTests`: 8 new tests (new file in `Veldrath.Server.Tests/Data/`)
-- `GameHubTests`: 16 new tests (hub methods + all 3 new handlers + updated NavigateToLocation handler with passive discovery)
-- `HttpServiceTests`: 2 new tests for `GetZoneLocationsAsync` with/without `characterId`
-- **Fixed**: 4 existing `NavigateToLocation_Handler_*` tests that broke when handler constructor gained `ICharacterUnlockedLocationRepository` arg
-- **Fixed**: duplicate class definitions in `NavigateToLocationHubCommand.cs` (old unedited body left at bottom of file — removed)
-
-**Key gotcha**: `TraverseConnection` hub method checks BOTH `TryGetCharacterId` AND `TryGetCharacterName`; tests must set `ctx.Items["CharacterName"]` or the hub returns Error before dispatching to mediator.
-
-**Final count: 466 client + 461 server = 927 total passing**
+| Session | Date | Key Work | Tests (C+S) |
+|---------|------|----------|-------------|
+| 3 | 2026-03-19 | ActorClassDto fix, AllocateAttributePoints hub bridge, SettingsViewModel, P3 MainMenu stub fixed | 503 |
+| 4 | 2026-03-19 | UseAbility hub bridge, XML doc fixes (IZoneRepository + IZoneSessionRepository) | 520 |
+| 5 | 2026-03-19 | AwardSkillXp hub bridge, ClientSettings singleton, P4 XML docs (10 summaries), P3 ServerUrl stub fixed | 541 |
+| 6 | 2026-03-19 | Docker startup fix (GameDbContext DI), DbContext separation rule established | 260 server |
+| 8 | 2026-03-20 | EquipItem hub bridge, EquipmentBlob migration, P2 coverage (19 server tests) | 560 |
+| 9 | 2026-03-20 | AddGold hub bridge, ItemEquipped subscription fix (P3 stub) | 580 |
+| 10 | 2026-03-20 | TakeDamage hub bridge | 600 |
+| 11 | 2026-03-20 | GainExperience client wiring (Level/Experience reactive properties) | 608 |
+| 12 | 2026-03-20 | CharacterSelected payload enriched, SeedInitialStats (zero-HUD fix) | 615 |
+| 13 | 2026-03-20 | Content service extension (6 types), CraftItem + EnterDungeon hub bridges; IDungeonRepository discovered nonexistent | 723 |
+| 16 | 2026-03-21 | GameView UI redesign (3×3 layout, collapsible panels, dev tools, 11 new VM properties) | 778 |
+| 17 | 2026-03-21 | VisitShop hub bridge (last P3 stub), single-DTO parameter rule discovered | 826 |
+| 18 | 2026-03-24 | Hidden ZoneLocations + Discovery System (passive/active, traversal, cross-zone, 34 new tests) | 927 |
 
 ### Session-24 (2026-03-26) — Map redesign + ZoneLocations panel + cross-zone traversal reinit
 

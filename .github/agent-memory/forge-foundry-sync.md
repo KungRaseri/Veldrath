@@ -2,7 +2,7 @@
 
 > **Status**: Reviewed and current as of Session-39 (2026-06-27).
 
-> For Veldrath Server + Client iteration history, see [unbound-memory.md](unbound-memory.md).
+> For Veldrath Server + Client iteration history, see [veldrath-memory.md](veldrath-memory.md).
 
 ## ContentSchema Foundation (March 2026)
 
