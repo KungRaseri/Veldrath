@@ -3,130 +3,144 @@
 @using Microsoft.Extensions.Logging
 @using Veldrath.GameClient.Core.Abstractions
 @using Veldrath.Auth.Blazor
+@using MudBlazor
 @inject IGameHubConnectionService Hub
 @inject IGameStateService GameState
 @inject NavigationManager Navigation
 @inject AuthStateServiceBase Auth
 @inject ILogger<GameSettings> Logger
 
-@* Settings page for audio, display, and accessibility options. *@
+@* Settings page for audio, display, and accessibility options. Rebuilt with MudBlazor components per CSS audit (plans/css-audit-game-client-components.md). *@
 
-<div class="game-settings-page">
-    <div class="game-settings-header">
-        <h2 class="game-settings-title">Settings</h2>
-        <button class="btn btn-sm btn-secondary game-settings-close"
-                @onclick="GoBack">
-            Back
-        </button>
-    </div>
-
-    <div class="game-settings-sections">
-        @* Audio section *@
-        <div class="game-settings-section">
-            <h3>Audio</h3>
-            <div class="settings-row">
-                <label class="settings-label">Music Volume</label>
-                <div class="settings-control">
-                    <input type="range" class="settings-slider"
-                           min="0" max="100" step="1"
-                           @bind="_musicVolume"
-                           @bind:event="oninput" />
-                    <span class="settings-value">@_musicVolume%</span>
-                </div>
-            </div>
-            <div class="settings-row">
-                <label class="settings-label">SFX Volume</label>
-                <div class="settings-control">
-                    <input type="range" class="settings-slider"
-                           min="0" max="100" step="1"
-                           @bind="_sfxVolume"
-                           @bind:event="oninput" />
-                    <span class="settings-value">@_sfxVolume%</span>
-                </div>
-            </div>
-            <div class="settings-row">
-                <label class="settings-label">Mute All</label>
-                <div class="settings-control">
-                    <label class="settings-toggle">
-                        <input type="checkbox" @bind="_isMuted" />
-                        <span class="settings-toggle-slider"></span>
-                    </label>
-                    <span class="settings-value">@(_isMuted ? "Muted" : "Enabled")</span>
-                </div>
-            </div>
+<MudContainer MaxWidth="MaxWidth.Small" Class="mud-pa-4">
+    <MudStack Spacing="4">
+        @* Header *@
+        <div class="mud-d-flex align-items-center gap-3" style="padding-bottom: 12px; border-bottom: 1px solid var(--vds-border, #2A2B3D);">
+            <MudText Typo="Typo.h5" Class="mud-text-primary">Settings</MudText>
+            <MudSpacer />
+            <MudButton Variant="Variant.Outlined"
+                       Size="Size.Small"
+                       OnClick="GoBack"
+                       StartIcon="@Icons.Material.Filled.ArrowBack">
+                Back
+            </MudButton>
         </div>
+
+        @* Audio section *@
+        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4">
+            <MudText Typo="Typo.h6" Class="mud-mb-3" Style="padding-bottom: 8px; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">Audio</MudText>
+            <MudStack Spacing="2">
+                <div class="mud-d-flex align-items-center gap-3" style="padding: 8px 0; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">
+                    <MudText Typo="Typo.body1" Class="mud-text-primary" Style="min-width: 130px;">Music Volume</MudText>
+                    <MudSlider @bind-Value="_musicVolume"
+                               Min="0" Max="100" Step="1"
+                               Class="flex-1 mud-mx-0"
+                               Style="max-width: 200px;"
+                               Color="Color.Primary"
+                               Immediate="true" />
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="min-width: 48px; text-align: right;">@_musicVolume%</MudText>
+                </div>
+                <div class="mud-d-flex align-items-center gap-3" style="padding: 8px 0; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">
+                    <MudText Typo="Typo.body1" Class="mud-text-primary" Style="min-width: 130px;">SFX Volume</MudText>
+                    <MudSlider @bind-Value="_sfxVolume"
+                               Min="0" Max="100" Step="1"
+                               Class="flex-1 mud-mx-0"
+                               Style="max-width: 200px;"
+                               Color="Color.Primary"
+                               Immediate="true" />
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="min-width: 48px; text-align: right;">@_sfxVolume%</MudText>
+                </div>
+                <div class="mud-d-flex align-items-center gap-3" style="padding: 8px 0;">
+                    <MudText Typo="Typo.body1" Class="mud-text-primary" Style="min-width: 130px;">Mute All</MudText>
+                    <MudSwitch @bind-Value="_isMuted" Color="Color.Primary" />
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="min-width: 48px; text-align: right;">@(_isMuted ? "Muted" : "Enabled")</MudText>
+                </div>
+            </MudStack>
+        </MudPaper>
 
         @* Display section *@
-        <div class="game-settings-section">
-            <h3>Display</h3>
-            <div class="settings-row">
-                <label class="settings-label">UI Scale</label>
-                <div class="settings-control">
-                    <select class="settings-select" @bind="_uiScale">
-                        <option value="75">75%</option>
-                        <option value="90">90%</option>
-                        <option value="100">100%</option>
-                        <option value="110">110%</option>
-                        <option value="125">125%</option>
-                        <option value="150">150%</option>
-                    </select>
+        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4">
+            <MudText Typo="Typo.h6" Class="mud-mb-3" Style="padding-bottom: 8px; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">Display</MudText>
+            <MudStack Spacing="2">
+                <div class="mud-d-flex align-items-center gap-3" style="padding: 8px 0; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">
+                    <MudText Typo="Typo.body1" Class="mud-text-primary" Style="min-width: 130px;">UI Scale</MudText>
+                    <MudSelect @bind-Value="_uiScale"
+                               Variant="Variant.Outlined"
+                               Class="mud-width-full"
+                               Style="max-width: 200px;"
+                               AnchorOrigin="Origin.BottomCenter">
+                        <MudSelectItem Value="75">75%</MudSelectItem>
+                        <MudSelectItem Value="90">90%</MudSelectItem>
+                        <MudSelectItem Value="100">100%</MudSelectItem>
+                        <MudSelectItem Value="110">110%</MudSelectItem>
+                        <MudSelectItem Value="125">125%</MudSelectItem>
+                        <MudSelectItem Value="150">150%</MudSelectItem>
+                    </MudSelect>
                 </div>
-            </div>
-            <div class="settings-row">
-                <label class="settings-label">Theme</label>
-                <div class="settings-control">
-                    <select class="settings-select" @bind="_theme">
-                        <option value="dark">Dark</option>
-                        <option value="light">Light</option>
-                        <option value="sepia">Sepia</option>
-                    </select>
+                <div class="mud-d-flex align-items-center gap-3" style="padding: 8px 0;">
+                    <MudText Typo="Typo.body1" Class="mud-text-primary" Style="min-width: 130px;">Theme</MudText>
+                    <MudSelect @bind-Value="_theme"
+                               Variant="Variant.Outlined"
+                               Class="mud-width-full"
+                               Style="max-width: 200px;"
+                               AnchorOrigin="Origin.BottomCenter">
+                        <MudSelectItem Value="@("dark")">Dark</MudSelectItem>
+                        <MudSelectItem Value="@("light")">Light</MudSelectItem>
+                        <MudSelectItem Value="@("sepia")">Sepia</MudSelectItem>
+                    </MudSelect>
                 </div>
-            </div>
-        </div>
+            </MudStack>
+        </MudPaper>
 
         @* Accessibility section *@
-        <div class="game-settings-section">
-            <h3>Accessibility</h3>
-            <div class="settings-row">
-                <label class="settings-label">Font Size</label>
-                <div class="settings-control">
-                    <select class="settings-select" @bind="_fontSize">
-                        <option value="small">Small</option>
-                        <option value="medium">Medium</option>
-                        <option value="large">Large</option>
-                        <option value="x-large">Extra Large</option>
-                    </select>
+        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4">
+            <MudText Typo="Typo.h6" Class="mud-mb-3" Style="padding-bottom: 8px; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">Accessibility</MudText>
+            <MudStack Spacing="2">
+                <div class="mud-d-flex align-items-center gap-3" style="padding: 8px 0; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">
+                    <MudText Typo="Typo.body1" Class="mud-text-primary" Style="min-width: 130px;">Font Size</MudText>
+                    <MudSelect @bind-Value="_fontSize"
+                               Variant="Variant.Outlined"
+                               Class="mud-width-full"
+                               Style="max-width: 200px;"
+                               AnchorOrigin="Origin.BottomCenter">
+                        <MudSelectItem Value="@("small")">Small</MudSelectItem>
+                        <MudSelectItem Value="@("medium")">Medium</MudSelectItem>
+                        <MudSelectItem Value="@("large")">Large</MudSelectItem>
+                        <MudSelectItem Value="@("x-large")">Extra Large</MudSelectItem>
+                    </MudSelect>
                 </div>
-            </div>
-            <div class="settings-row">
-                <label class="settings-label">Reduced Motion</label>
-                <div class="settings-control">
-                    <label class="settings-toggle">
-                        <input type="checkbox" @bind="_reducedMotion" />
-                        <span class="settings-toggle-slider"></span>
-                    </label>
-                    <span class="settings-value">@(_reducedMotion ? "On" : "Off")</span>
+                <div class="mud-d-flex align-items-center gap-3" style="padding: 8px 0;">
+                    <MudText Typo="Typo.body1" Class="mud-text-primary" Style="min-width: 130px;">Reduced Motion</MudText>
+                    <MudSwitch @bind-Value="_reducedMotion" Color="Color.Primary" />
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="min-width: 48px; text-align: right;">@(_reducedMotion ? "On" : "Off")</MudText>
                 </div>
-            </div>
-        </div>
-    </div>
+            </MudStack>
+        </MudPaper>
 
-    <div class="game-settings-footer">
-        <button class="btn btn-primary" @onclick="SaveSettings">
-            Save Settings
-        </button>
-        <button class="btn btn-secondary" @onclick="ResetDefaults">
-            Reset to Defaults
-        </button>
-    </div>
-
-    @if (_statusMessage is not null)
-    {
-        <div class="game-settings-status @(_statusIsError ? "status-error" : "status-success")">
-            @_statusMessage
+        @* Footer *@
+        <div class="mud-d-flex gap-3 justify-center" style="padding: 16px 0; border-top: 1px solid var(--vds-border, #2A2B3D); margin-top: 16px;">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="SaveSettings">
+                Save Settings
+            </MudButton>
+            <MudButton Variant="Variant.Outlined"
+                       OnClick="ResetDefaults">
+                Reset to Defaults
+            </MudButton>
         </div>
-    }
-</div>
+
+        @* Status message *@
+        @if (_statusMessage is not null)
+        {
+            <MudAlert Severity="@(_statusIsError ? Severity.Error : Severity.Success)"
+                      Class="mud-mt-2"
+                      Dense="true">
+                @_statusMessage
+            </MudAlert>
+        }
+    </MudStack>
+</MudContainer>
 
 @code {
     private int _musicVolume;

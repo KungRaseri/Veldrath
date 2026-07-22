@@ -394,37 +394,37 @@
     white-space: nowrap;
 }
 
-/* Tile type backgrounds */
+/* Tile type backgrounds — reference VDS tile tokens defined in tokens.css */
 .tile-grass {
-    background: #3a3a5c;
+    background: var(--vds-tile-grass, #3A3A5C);
 }
 
 .tile-wall {
-    background: #2a1a1a;
+    background: var(--vds-tile-wall, #2A1A1A);
 }
 
 .tile-water {
-    background: #1a3a5c;
+    background: var(--vds-tile-water, #1A3A5C);
 }
 
 .tile-door {
-    background: #5c4a1a;
+    background: var(--vds-tile-door, #5C4A1A);
 }
 
 .tile-path {
-    background: #4a4a3a;
+    background: var(--vds-tile-path, #4A4A3A);
 }
 
 .tile-dirt {
-    background: #3a2a1a;
+    background: var(--vds-tile-dirt, #3A2A1A);
 }
 
 .tile-void {
-    background: #0d0d1a;
+    background: var(--vds-tile-void, #0D0D1A);
 }
 
 .tile-empty {
-    background: #1a1a2e;
+    background: var(--vds-tile-empty, #1A1A2E);
 }
 
 /* Entity indicators (12px circles positioned in center of tile) */
@@ -442,7 +442,7 @@
 }
 
 .tile-indicator-player {
-    background: #c9a84c;
+    background: var(--vds-indicator-player, #C9A84C);
     box-shadow: 0 0 6px rgba(201, 168, 76, 0.6);
     width: 14px;
     height: 14px;
@@ -450,12 +450,12 @@
 }
 
 .tile-indicator-occupant {
-    background: #5a9ed6;
+    background: var(--vds-indicator-occupant, #5A9ED6);
     box-shadow: 0 0 4px rgba(90, 158, 214, 0.5);
 }
 
 .tile-indicator-enemy {
-    background: #e53935;
+    background: var(--vds-indicator-enemy, #E53935);
     box-shadow: 0 0 4px rgba(229, 57, 53, 0.6);
     animation: pulse-enemy 1.5s ease-in-out infinite;
 }
@@ -470,7 +470,7 @@
 .game-chat {
     display: flex;
     flex-direction: column;
-    background: #0d0d1a;
+    background: var(--vds-tile-void, #0D0D1A);
     border-top: 1px solid var(--vds-border, #2A2B3D);
     flex-shrink: 0;
     max-height: 260px;
@@ -483,7 +483,7 @@
     display: flex;
     gap: 2px;
     padding: 4px 8px 0;
-    background: #0a0a14;
+    background: var(--vds-bg-0, #0C0D13);
     border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);
     flex-shrink: 0;
 }
@@ -602,7 +602,7 @@
 }
 
 .game-chat-message-zone .game-chat-sender {
-    color: var(--vds-text-muted, #94a3b8);
+    color: var(--vds-text-muted, #A8A09A);
 }
 .game-chat-message-zone .game-chat-text {
     color: var(--vds-text, #F0EDE8);
@@ -614,7 +614,7 @@
     gap: var(--vds-space-2, 8px);
     padding: var(--vds-space-2, 8px) var(--vds-space-3, 12px);
     border-top: 1px solid var(--vds-border, #2A2B3D);
-    background: #0f0f1e;
+    background: var(--vds-bg-1, #14151F);
 }
 
 .game-chat-input-field {
@@ -1077,12 +1077,12 @@
 
 .action-btn-defend {
     background: var(--vds-info, #5A9ED6);
-    border-color: #3a7ab6;
+    border-color: var(--vds-info, #3A7AB6);
     color: #fff;
 }
 
 .action-btn-defend:hover:not(:disabled) {
-    background: #6db0ea;
+    background: var(--vds-info, #6DB0EA);
 }
 
 .action-btn-flee {
@@ -1097,12 +1097,12 @@
 
 .action-btn-respawn {
     background: var(--vds-warning, #D4964A);
-    border-color: #b07830;
-    color: #1a1a2e;
+    border-color: var(--vds-warning, #B07830);
+    color: var(--vds-tile-empty, #1A1A2E);
 }
 
 .action-btn-respawn:hover:not(:disabled) {
-    background: #e4a85a;
+    background: var(--vds-warning, #E4A85A);
 }
 
 /* ── Game Panel / Overlay ────────────────────────────────────────────── */
@@ -1626,7 +1626,7 @@
 }
 
 .hotbar-slot-ready:hover:not(:disabled) {
-    border-color: #6dcb8d;
+    border-color: var(--vds-success, #6DCB8D);
     box-shadow: 0 0 6px rgba(92, 171, 125, 0.3);
 }
 
@@ -1802,21 +1802,21 @@
     letter-spacing: 0.5px;
 }
 
-/* Rarity colors */
+/* Rarity colors — reference VDS rarity tokens defined in tokens.css */
 .rarity-common {
-    color: #C0C0C0;
+    color: var(--vds-rarity-common, #C0C0C0);
 }
 .rarity-uncommon {
-    color: #4ADE80;
+    color: var(--vds-rarity-uncommon, #4ADE80);
 }
 .rarity-rare {
-    color: #60A5FA;
+    color: var(--vds-rarity-rare, #60A5FA);
 }
 .rarity-epic {
-    color: #C084FC;
+    color: var(--vds-rarity-epic, #C084FC);
 }
 .rarity-legendary {
-    color: #FBBF24;
+    color: var(--vds-rarity-legendary, #FBBF24);
 }
 
 .rarity-badge {
@@ -2155,230 +2155,8 @@
     text-decoration: line-through;
 }
 
-/* ── Settings Page ───────────────────────────────────────────────────── */
-
-.game-settings-page {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: var(--vds-space-4, 16px);
-    background: var(--vds-bg-1, #14151F);
-    overflow-y: auto;
-}
-
-.game-settings-header {
-    display: flex;
-    align-items: center;
-    gap: var(--vds-space-3, 12px);
-    margin-bottom: var(--vds-space-4, 16px);
-    padding-bottom: var(--vds-space-3, 12px);
-    border-bottom: 1px solid var(--vds-border, #2A2B3D);
-}
-
-.game-settings-title {
-    font-family: var(--vds-font-heading, 'Cinzel', serif);
-    font-size: var(--vds-text-lg, 20px);
-    color: var(--vds-text, #F0EDE8);
-    margin: 0;
-}
-
-.game-settings-close {
-    margin-left: auto;
-}
-
-.game-settings-sections {
-    display: flex;
-    flex-direction: column;
-    gap: var(--vds-space-4, 16px);
-    flex: 1;
-}
-
-.game-settings-section {
-    background: var(--vds-bg-2, #1C1D2B);
-    border: 1px solid var(--vds-border, #2A2B3D);
-    border-radius: var(--vds-radius-md, 6px);
-    padding: var(--vds-space-4, 16px);
-}
-
-.game-settings-section h3 {
-    font-family: var(--vds-font-heading, 'Cinzel', serif);
-    font-size: var(--vds-text-md, 16px);
-    margin: 0 0 var(--vds-space-3, 12px);
-    color: var(--vds-text, #F0EDE8);
-    padding-bottom: var(--vds-space-2, 8px);
-    border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);
-}
-
-.settings-row {
-    display: flex;
-    align-items: center;
-    gap: var(--vds-space-3, 12px);
-    padding: var(--vds-space-2, 8px) 0;
-    border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);
-}
-
-.settings-row:last-child {
-    border-bottom: none;
-}
-
-.settings-label {
-    font-size: var(--vds-text-base, 14px);
-    color: var(--vds-text, #F0EDE8);
-    min-width: 120px;
-    font-weight: 500;
-}
-
-.settings-control {
-    display: flex;
-    align-items: center;
-    gap: var(--vds-space-2, 8px);
-    flex: 1;
-}
-
-.settings-slider {
-    flex: 1;
-    max-width: 200px;
-    -webkit-appearance: none;
-    appearance: none;
-    height: 6px;
-    background: var(--vds-bg-4, #2E2F42);
-    border-radius: 3px;
-    outline: none;
-    cursor: pointer;
-}
-
-.settings-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: var(--vds-seal, #C0392B);
-    border: 2px solid var(--vds-seal-dark, #8C2018);
-    cursor: pointer;
-    transition: background 0.15s ease;
-}
-
-.settings-slider::-webkit-slider-thumb:hover {
-    background: var(--vds-seal-light, #E05545);
-}
-
-.settings-slider::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: var(--vds-seal, #C0392B);
-    border: 2px solid var(--vds-seal-dark, #8C2018);
-    cursor: pointer;
-}
-
-.settings-value {
-    font-family: var(--vds-font-mono, 'JetBrains Mono', monospace);
-    font-size: var(--vds-text-sm, 12px);
-    color: var(--vds-text-muted, #A8A09A);
-    min-width: 48px;
-    text-align: right;
-}
-
-.settings-select {
-    background: var(--vds-bg-3, #262736);
-    border: 1px solid var(--vds-border, #2A2B3D);
-    border-radius: var(--vds-radius-md, 6px);
-    padding: 6px 10px;
-    color: var(--vds-text, #F0EDE8);
-    font-family: var(--vds-font-body, 'Inter', system-ui, sans-serif);
-    font-size: var(--vds-text-base, 14px);
-    outline: none;
-    cursor: pointer;
-    min-width: 120px;
-}
-
-.settings-select:focus {
-    border-color: var(--vds-seal, #C0392B);
-    box-shadow: 0 0 0 2px var(--vds-seal-muted, #3D1A16);
-}
-
-/* Toggle switch */
-.settings-toggle {
-    position: relative;
-    display: inline-block;
-    width: 44px;
-    height: 24px;
-    cursor: pointer;
-}
-
-.settings-toggle input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.settings-toggle-slider {
-    position: absolute;
-    inset: 0;
-    background: var(--vds-bg-4, #2E2F42);
-    border-radius: 12px;
-    transition: background 0.2s ease;
-    border: 1px solid var(--vds-border, #2A2B3D);
-}
-
-.settings-toggle-slider::before {
-    content: "";
-    position: absolute;
-    left: 2px;
-    top: 2px;
-    width: 18px;
-    height: 18px;
-    background: var(--vds-text-muted, #A8A09A);
-    border-radius: 50%;
-    transition: transform 0.2s ease, background 0.2s ease;
-}
-
-.settings-toggle input:checked + .settings-toggle-slider {
-    background: var(--vds-seal-muted, #3D1A16);
-    border-color: var(--vds-seal, #C0392B);
-}
-
-.settings-toggle input:checked + .settings-toggle-slider::before {
-    transform: translateX(20px);
-    background: var(--vds-seal-light, #E05545);
-}
-
-.settings-toggle input:focus-visible + .settings-toggle-slider {
-    box-shadow: 0 0 0 2px var(--vds-seal-muted, #3D1A16);
-}
-
-.game-settings-footer {
-    display: flex;
-    gap: var(--vds-space-3, 12px);
-    padding: var(--vds-space-4, 16px) 0;
-    justify-content: center;
-    border-top: 1px solid var(--vds-border, #2A2B3D);
-    margin-top: var(--vds-space-4, 16px);
-}
-
-.game-settings-status {
-    font-size: var(--vds-text-sm, 12px);
-    padding: var(--vds-space-2, 8px) var(--vds-space-3, 12px);
-    border-radius: var(--vds-radius-sm, 4px);
-    text-align: center;
-    animation: fade-in 0.2s ease;
-}
-
-.game-settings-status.status-success {
-    background: var(--vds-success-muted, #1A3A2C);
-    color: var(--vds-success, #5CAB7D);
-    border: 1px solid var(--vds-success, #5CAB7D);
-}
-
-.game-settings-status.status-error {
-    background: var(--vds-seal-muted, #3D1A16);
-    color: var(--vds-seal-light, #E05545);
-    border: 1px solid var(--vds-seal, #C0392B);
-}
 
 /* ── Responsive (overlays) ───────────────────────────────────────────── */
-
 @media (max-width: 1024px) {
     .equipment-grid {
         grid-template-columns: 1fr;
@@ -2386,14 +2164,6 @@
 
     .inventory-grid {
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    }
-
-    .game-settings-page {
-        padding: var(--vds-space-3, 12px);
-    }
-
-    .settings-label {
-        min-width: 80px;
     }
 }
 
