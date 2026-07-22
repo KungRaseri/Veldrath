@@ -10,7 +10,7 @@ with thoroughness **thorough**.
 
 ```
 Thorough gap analysis of RealmEngine.Core, RealmEngine.Shared, and RealmEngine.Data.
-Cross-check .github/copilot-memory/ for items already fixed before reporting them.
+Cross-check .github/agent-memory/ for items already fixed before reporting them.
 
 Return findings ranked by priority tier:
 

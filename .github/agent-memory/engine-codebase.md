@@ -180,11 +180,11 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - `GameStateService` depends on `ISaveGameService` (not concrete `SaveGameService`)
 - All test mocks use `Mock<IGameStateService>`; `FakeGameStateService` implements `IGameStateService` directly
 
-### P3 Stubs — see [unbound-memory.md](unbound-memory.md) for full status
+### P3 Stubs — see [veldrath-memory.md](veldrath-memory.md) for full status
 
 ### Veldrath — Hub Architecture, Blob Schema, P3/P4 Status
 
-> Full details in [unbound-memory.md](unbound-memory.md). Summary:
+> Full details in [veldrath-memory.md](veldrath-memory.md). Summary:
 
 - Server hub commands follow the **blob pattern**: read `Character.Attributes` JSON, mutate, save. Never call Core handlers (type mismatch).
 - Wired bridges: `GainExperience`, `RestAtLocation`, `AllocateAttributePoints`, `UseAbility`

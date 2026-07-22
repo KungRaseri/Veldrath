@@ -186,7 +186,7 @@ Add below zone-location content:
 - ZoneLocation: `ActorPool` JSON column (list of {ArchetypeSlug, Weight}); procedural fallback if empty.
 - ICombatSettings extracted from ISaveGameService; DifficultySettings implements it.
 - Rescue fund: per-zone (RescueFundTotal on Zone) + global (GlobalStat table).
-- Scope: Engine (Core/Shared/Data) + Unbound (Server/Client/Contracts) ONLY.
+- Scope: Engine (Core/Shared/Data) + Veldrath (Server/Client/Contracts) ONLY.
 
 ---
 
