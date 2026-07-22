@@ -105,4 +105,13 @@ public interface IGameApiClient
     /// <summary>Returns all available backgrounds for character creation.</summary>
     /// <param name="ct">Cancellation token.</param>
     Task<List<BackgroundDto>> GetBackgroundsAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Returns the last active session info for the authenticated account,
+    /// or <see langword="null"/> if no characters exist. Used after page refresh
+    /// to restore game state without manual character selection.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A <see cref="LastSessionDto"/> with the last character and location, or <see langword="null"/>.</returns>
+    Task<LastSessionDto?> GetLastSessionAsync(CancellationToken ct = default);
 }
