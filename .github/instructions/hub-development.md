@@ -584,5 +584,5 @@ These are things you must **never** do in hub code:
 - [`Veldrath.Contracts/`](../../Veldrath.Contracts/) — Shared request/response DTOs
 - [`Veldrath.GameClient.Core/Services/GameHubConnectionService.cs`](../../Veldrath.GameClient.Core/Services/GameHubConnectionService.cs) — Client-side hub connection management
 - [`Veldrath.Server.Tests/Features/GameHubTests.cs`](../../Veldrath.Server.Tests/Features/GameHubTests.cs) — Hub test patterns and Fake infrastructure
-- [`.github/agent-memory/unbound-memory.md`](../agent-memory/unbound-memory.md) — Hub→MediatR bridge history, SignalR parameter binding fix log
+- [`.github/agent-memory/veldrath-memory.md`](../agent-memory/veldrath-memory.md) — Hub→MediatR bridge history, SignalR parameter binding fix log
 - [`AGENTS.md`](../../AGENTS.md) — Overall architecture and Hub→MediatR pattern overview

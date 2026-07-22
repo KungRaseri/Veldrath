@@ -380,5 +380,5 @@ This avoids explosion of join tables for properties that are always loaded/saved
 - [`Veldrath.Server/Data/ApplicationDbContext.cs`](../../Veldrath.Server/Data/ApplicationDbContext.cs) — Server operational context
 - [`Veldrath.Server/Data/EditorialDbContext.cs`](../../Veldrath.Server/Data/EditorialDbContext.cs) — Editorial content context
 - [`Veldrath.Server/Program.cs`](../../Veldrath.Server/Program.cs) — DI registrations and startup migration
-- [`.github/agent-memory/unbound-memory.md`](../agent-memory/unbound-memory.md) — Session log with DbContext separation history
+- [`.github/agent-memory/veldrath-memory.md`](../agent-memory/veldrath-memory.md) — Session log with DbContext separation history
 - [`.github/agent-memory/engine-codebase.md`](../agent-memory/engine-codebase.md) — Testing gotchas and EF Core quirks
