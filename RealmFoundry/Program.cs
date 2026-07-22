@@ -119,6 +119,9 @@ try
     app.UseAntiforgery();
 
     // Security headers — applied to every response before any other middleware writes output.
+    // In Development, connect-src allows localhost WebSockets for Blazor Server SignalR
+    // circuits and aspnetcore-browser-refresh hot reload. In Production, only 'self' is
+    // permitted since the SignalR endpoint shares the same origin.
     app.Use(async (ctx, next) =>
     {
         ctx.Response.Headers["X-Frame-Options"]         = "DENY";
@@ -127,10 +130,16 @@ try
         ctx.Response.Headers["Permissions-Policy"]      = "camera=(), microphone=(), geolocation=()";
         // Blazor requires 'unsafe-inline' for its auto-generated inline scripts.
         ctx.Response.Headers["Content-Security-Policy"] =
-            "default-src 'self'; script-src 'self' 'unsafe-inline'; " +
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-            "font-src 'self' https://fonts.gstatic.com; " +
-            "img-src 'self' data:; frame-ancestors 'none';";
+            app.Environment.IsDevelopment()
+                ? "default-src 'self'; script-src 'self' 'unsafe-inline'; " +
+                  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                  "font-src 'self' https://fonts.gstatic.com; " +
+                  "img-src 'self' data:; frame-ancestors 'none'; " +
+                  "connect-src 'self' ws://localhost:* wss://localhost:*;"
+                : "default-src 'self'; script-src 'self' 'unsafe-inline'; " +
+                  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                  "font-src 'self' https://fonts.gstatic.com; " +
+                  "img-src 'self' data:; frame-ancestors 'none';";
         await next(ctx);
     });
 
