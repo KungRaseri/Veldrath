@@ -18,13 +18,13 @@ else
             <h1>@_submission.Title</h1>
             <p class="muted">@_submission.ContentType · @_submission.SubmitterName · @_submission.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd")</p>
         </div>
-        <span class="badge @BadgeClass(_submission.Status)">@_submission.Status</span>
+        <MudChip T="string" Size="Size.Small" Color="@ChipColor(_submission.Status)">@_submission.Status</MudChip>
     </div>
 
     <div class="vote-bar">
-        <button class="btn btn-sm" @onclick="() => VoteAsync(1)"  disabled="@(!AuthState.IsLoggedIn)">▲ Upvote</button>
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="() => VoteAsync(1)" Disabled="@(!AuthState.IsLoggedIn)">▲ Upvote</MudButton>
         <strong>@_submission.VoteScore</strong>
-        <button class="btn btn-sm" @onclick="() => VoteAsync(-1)" disabled="@(!AuthState.IsLoggedIn)">▼ Downvote</button>
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="() => VoteAsync(-1)" Disabled="@(!AuthState.IsLoggedIn)">▼ Downvote</MudButton>
         @if (!AuthState.IsLoggedIn)
         {
             <span class="muted"> (<a href="/login">sign in</a> to vote)</span>
@@ -55,9 +55,10 @@ else
                 <div class="payload-col canonical">
                     <h3>
                         Canonical
-                        <a class="badge badge-blue" href="/content/@_submission.ContentType/@_canonical.Summary.Slug">
+                        <MudChip T="string" Size="Size.Small" Color="Color.Info"
+                                 Href="@($"/content/{_submission.ContentType}/{_canonical.Summary.Slug}")">
                             @(_canonical.Summary.DisplayName ?? _canonical.Summary.Slug)
-                        </a>
+                        </MudChip>
                     </h3>
                     @RenderPayload(_canonical.Payload, _schema)
                 </div>
@@ -80,9 +81,9 @@ else
         <div class="review-panel">
             <h2>Review</h2>
             <textarea @bind="_reviewNotes" placeholder="Optional notes…" rows="3"></textarea>
-            <div class="review-actions">
-                <button class="btn btn-green" @onclick="() => SubmitReviewAsync(true)">Approve</button>
-                <button class="btn btn-red"   @onclick="() => SubmitReviewAsync(false)">Reject</button>
+            <div class="d-flex gap-2 mt-3">
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="() => SubmitReviewAsync(true)">Approve</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="() => SubmitReviewAsync(false)">Reject</MudButton>
             </div>
             @if (_reviewMessage is not null) { <p class="feedback">@_reviewMessage</p> }
         </div>
@@ -93,15 +94,15 @@ else
         <div class="report-panel">
             @if (!_reportVisible)
             {
-                <button class="btn btn-sm btn-red" @onclick="() => _reportVisible = true">Report User</button>
+                <MudButton Variant="Variant.Filled" Color="Color.Error" Size="Size.Small" OnClick="() => _reportVisible = true">Report User</MudButton>
             }
             else
             {
                 <h2>Report @_submission.SubmitterName</h2>
                 <textarea @bind="_reportReason" placeholder="Describe the violation…" rows="3"></textarea>
-                <div class="review-actions">
-                    <button class="btn btn-red"  @onclick="SubmitReportAsync">Submit Report</button>
-                    <button class="btn btn-sm"   @onclick="() => _reportVisible = false">Cancel</button>
+                <div class="d-flex gap-2 mt-3">
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="SubmitReportAsync">Submit Report</MudButton>
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="() => _reportVisible = false">Cancel</MudButton>
                 </div>
                 @if (_reportMessage is not null) { <p class="feedback">@_reportMessage</p> }
             }
@@ -258,10 +259,10 @@ else
         };
     }
 
-    private static string BadgeClass(string status) => status switch
+    private static Color ChipColor(string status) => status switch
     {
-        "Approved" or "Curated" => "badge-green",
-        "Rejected"              => "badge-red",
-        _                       => "badge-grey",
+        "Approved" or "Curated" => Color.Success,
+        "Rejected"              => Color.Error,
+        _                       => Color.Default,
     };
 }

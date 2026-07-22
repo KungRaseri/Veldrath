@@ -1,4 +1,4 @@
-﻿@page "/submissions/new"
+@page "/submissions/new"
 @using Veldrath.Contracts.Content
 @using System.Text.Json
 @using System.Globalization
@@ -18,129 +18,133 @@ else if (!AuthState.IsLoggedIn)
 }
 else
 {
-    <div class="submission-form-shell">
-        <h1>New Submission</h1>
+    <MudContainer MaxWidth="MaxWidth.Medium" Class="mud-my-8">
+        <MudText Typo="Typo.h4" Class="mud-mb-6">New Submission</MudText>
 
-        <div class="form-group">
-            <label>Content Type</label>
-            <select @bind="_contentType" @bind:after="OnTypeChanged">
-                <option value="">— select type —</option>
-                @foreach (var schema in ContentSchemaRegistry.All.Values.OrderBy(s => s.DisplayLabel))
-                {
-                    <option value="@schema.ContentType">@schema.DisplayLabel</option>
-                }
-            </select>
-            @if (_schema is not null)
+        <MudSelect @bind-Value="_contentType"
+                   @bind-Value:after="OnTypeChanged"
+                   T="string"
+                   Label="Content Type"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   AnchorOrigin="Origin.BottomCenter"
+                   Class="mud-mb-4">
+            @foreach (var schema in ContentSchemaRegistry.All.Values.OrderBy(s => s.DisplayLabel))
             {
-                <p class="field-hint">@_schema.Description</p>
+                <MudSelectItem Value="@schema.ContentType">@schema.DisplayLabel</MudSelectItem>
             }
-        </div>
+        </MudSelect>
+        @if (_schema is not null)
+        {
+            <MudText Typo="Typo.caption" Class="mud-text-secondary mud-mb-4" Style="margin-top: -0.75rem;">@_schema.Description</MudText>
+        }
 
-        <div class="form-group">
-            <label>Title</label>
-            <input @bind="_title" placeholder="Give your submission a short name" maxlength="200" />
-        </div>
+        <MudTextField @bind-Value="_title"
+                      Label="Title"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Placeholder="Give your submission a short name"
+                      MaxLength="200"
+                      Class="mud-mb-4" />
 
-        <div class="form-group">
-            <label>Description <span class="optional">(Markdown, optional)</span></label>
-            <textarea @bind="_description" rows="4"
-                      placeholder="Describe what this content adds, its lore context, balance reasoning, etc."></textarea>
-        </div>
+        <MudTextField @bind-Value="_description"
+                      Label="Description"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Lines="4"
+                      Placeholder="Describe what this content adds, its lore context, balance reasoning, etc."
+                      HelperText="Markdown, optional"
+                      Class="mud-mb-6" />
 
         @if (_schema is not null)
         {
-            <div class="schema-form">
-                @foreach (var group in _schema.Groups)
+            foreach (var group in _schema.Groups)
+            {
+                <MudText Typo="Typo.h6" Class="mud-mb-3">@group.Label</MudText>
+
+                foreach (var field in group.Fields)
                 {
-                    <fieldset class="field-group">
-                        <legend>@group.Label</legend>
-                        @foreach (var field in group.Fields)
+                    @if (field.FieldType == ContentFieldType.Boolean)
+                    {
+                        <MudCheckBox T="bool"
+                                     Value="@GetBool(field.Name)"
+                                     ValueChanged="@((bool v) => SetBool(field.Name, v))"
+                                     Label="@($"{field.Label}{(field.Required ? " *" : "")}")"
+                                     Class="mud-mb-3" />
+                        if (field.Hint is not null)
                         {
-                            @if (field.FieldType == ContentFieldType.Boolean)
-                            {
-                                <div class="form-group form-check">
-                                    <label class="checkbox-label">
-                                        <input type="checkbox"
-                                               checked="@GetBool(field.Name)"
-                                               @onchange="e => SetBool(field.Name, (bool)(e.Value ?? false))" />
-                                        <span>
-                                            @field.Label
-                                            @if (field.Required) { <span class="required">*</span> }
-                                        </span>
-                                    </label>
-                                    @if (field.Hint is not null)
-                                    {
-                                        <p class="field-hint">@field.Hint</p>
-                                    }
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="form-group">
-                                    <label>
-                                        @field.Label
-                                        @if (field.Required) { <span class="required">*</span> }
-                                    </label>
-
-                                    @if (field.FieldType == ContentFieldType.LongText)
-                                    {
-                                        <textarea rows="4"
-                                                  value="@GetString(field.Name)"
-                                                  @oninput="e => SetString(field.Name, e.Value?.ToString())"
-                                                  placeholder="@field.Hint"></textarea>
-                                    }
-                                    else if (field.FieldType == ContentFieldType.EnumString && field.EnumValues is not null)
-                                    {
-                                        <select value="@GetString(field.Name)"
-                                                @onchange="e => SetString(field.Name, e.Value?.ToString())">
-                                            <option value="">— select —</option>
-                                            @foreach (var v in field.EnumValues.Where(v => v != ""))
-                                            {
-                                                <option value="@v">@v</option>
-                                            }
-                                        </select>
-                                    }
-                                    else if (field.FieldType is ContentFieldType.Integer or ContentFieldType.Decimal)
-                                    {
-                                        <input type="number"
-                                               step="@(field.FieldType == ContentFieldType.Decimal ? "any" : "1")"
-                                               min="@field.Min" max="@field.Max"
-                                               value="@GetString(field.Name)"
-                                               @oninput="e => SetString(field.Name, e.Value?.ToString())"
-                                               placeholder="@field.Default" />
-                                    }
-                                    else
-                                    {
-                                        <input type="text"
-                                               value="@GetString(field.Name)"
-                                               @oninput="e => SetString(field.Name, e.Value?.ToString())"
-                                               placeholder="@(field.FieldType == ContentFieldType.Slug ? "e.g. my-content-slug" : field.Hint ?? "")" />
-                                    }
-
-                                    @if (field.Hint is not null && field.FieldType != ContentFieldType.LongText)
-                                    {
-                                        <p class="field-hint">@field.Hint</p>
-                                    }
-                                </div>
-                            }
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="margin-top: -0.75rem; margin-bottom: 1rem;">@field.Hint</MudText>
                         }
-                    </fieldset>
+                    }
+                    else if (field.FieldType == ContentFieldType.LongText)
+                    {
+                        <MudTextField Value="@GetString(field.Name)"
+                                      ValueChanged="@((string v) => SetString(field.Name, v))"
+                                      Label="@($"{field.Label}{(field.Required ? " *" : "")}")"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Lines="4"
+                                      Placeholder="@field.Hint"
+                                      Class="mud-mb-4" />
+                    }
+                    else if (field.FieldType == ContentFieldType.EnumString && field.EnumValues is not null)
+                    {
+                        <MudSelect Value="@GetString(field.Name)"
+                                   ValueChanged="@((string v) => SetString(field.Name, v))"
+                                   T="string"
+                                   Label="@($"{field.Label}{(field.Required ? " *" : "")}")"
+                                   Variant="Variant.Outlined"
+                                   Margin="Margin.Dense"
+                                   AnchorOrigin="Origin.BottomCenter"
+                                   Class="mud-mb-4">
+                            @foreach (var v in field.EnumValues.Where(v => v != ""))
+                            {
+                                <MudSelectItem Value="@v">@v</MudSelectItem>
+                            }
+                        </MudSelect>
+                    }
+                    else if (field.FieldType is ContentFieldType.Integer or ContentFieldType.Decimal)
+                    {
+                        <MudTextField Value="@GetString(field.Name)"
+                                      ValueChanged="@((string v) => SetString(field.Name, v))"
+                                      Label="@($"{field.Label}{(field.Required ? " *" : "")}")"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      InputType="InputType.Number"
+                                      Placeholder="@field.Default"
+                                      Class="mud-mb-4" />
+                    }
+                    else
+                    {
+                        <MudTextField Value="@GetString(field.Name)"
+                                      ValueChanged="@((string v) => SetString(field.Name, v))"
+                                      Label="@($"{field.Label}{(field.Required ? " *" : "")}")"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Placeholder="@(field.FieldType == ContentFieldType.Slug ? "e.g. my-content-slug" : field.Hint ?? "")"
+                                      Class="mud-mb-4" />
+                    }
+
+                    @if (field.Hint is not null && field.FieldType != ContentFieldType.LongText)
+                    {
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="margin-top: -0.75rem; margin-bottom: 1rem;">@field.Hint</MudText>
+                    }
                 }
-            </div>
+            }
         }
 
         @if (_error is not null)
         {
-            <p class="error">@_error</p>
+            <MudAlert Severity="Severity.Error" Class="mud-mb-4">@_error</MudAlert>
         }
 
-        <div class="form-actions">
-            <button class="btn btn-primary" @onclick="SubmitAsync" disabled="@_submitting">
+        <MudStack Row="true" Spacing="2" Class="mud-mt-4">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitAsync" Disabled="@_submitting">
                 @(_submitting ? "Submitting…" : "Submit")
-            </button>
-            <a class="btn btn-secondary" href="/submissions">Cancel</a>
-        </div>
-    </div>
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Href="/submissions">Cancel</MudButton>
+        </MudStack>
+    </MudContainer>
 }
 
 @code {

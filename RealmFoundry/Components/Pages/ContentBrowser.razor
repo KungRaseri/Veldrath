@@ -1,24 +1,23 @@
-﻿@page "/content"
+@page "/content"
 @using Veldrath.Contracts.Content
 
 <PageTitle>Content — RealmFoundry</PageTitle>
 
-<div class="content-browser">
-    <header class="browser-header">
-        <h1>Base Content</h1>
-        <p class="browser-desc">
-            Browse all canonical game content authored in RealmForge.
-            Select a content type below to explore the full catalog.
-        </p>
-    </header>
+<MudText Typo="Typo.h4" Class="mud-mb-2">Base Content</MudText>
+<MudText Typo="Typo.body1" Class="mud-text-secondary mud-mb-6">
+    Browse all canonical game content authored in RealmForge.
+    Select a content type below to explore the full catalog.
+</MudText>
 
-    <div class="content-type-grid">
-        @foreach (var schema in ContentSchemaRegistry.All.Values.OrderBy(s => s.DisplayLabel))
-        {
-            <a class="content-type-card" href="/content/@schema.ContentType">
-                <span class="card-label">@schema.DisplayLabel</span>
-                <span class="card-desc">@schema.Description</span>
-            </a>
-        }
-    </div>
-</div>
+<MudGrid Spacing="4">
+    @foreach (var schema in ContentSchemaRegistry.All.Values.OrderBy(s => s.DisplayLabel))
+    {
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4 mud-height-full">
+                <MudText Typo="Typo.h6" Class="mud-mb-1">@schema.DisplayLabel</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mud-mb-3">@schema.Description</MudText>
+                <MudButton Variant="Variant.Filled" Size="Size.Small" Href="@($"/content/{schema.ContentType}")">Browse</MudButton>
+            </MudPaper>
+        </MudItem>
+    }
+</MudGrid>

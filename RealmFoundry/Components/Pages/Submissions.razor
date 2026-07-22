@@ -1,73 +1,83 @@
-﻿@page "/submissions"
+@page "/submissions"
 @using Veldrath.Contracts.Content
 @inject RealmFoundryApiClient Api
 
 <PageTitle>Submissions — RealmFoundry</PageTitle>
 
-<div class="page-header">
-    <h1>Submissions</h1>
-    <a href="submissions/new" class="btn">+ New Submission</a>
+<div class="d-flex align-items-center gap-3 mb-4">
+    <MudText Typo="Typo.h4" Class="mud-mb-0">Submissions</MudText>
+    <MudButton Variant="Variant.Filled" Href="submissions/new">+ New Submission</MudButton>
 </div>
 
-<div class="filters">
-    <input @bind="_searchFilter" @bind:event="oninput" placeholder="Search by title…" />
-    <select @bind="_statusFilter">
-        <option value="">All statuses</option>
-        <option value="Pending">Pending</option>
-        <option value="Approved">Approved</option>
-        <option value="Curated">Curated</option>
-        <option value="Rejected">Rejected</option>
-    </select>
-    <select @bind="_typeFilter">
-        <option value="">All types</option>
+<div class="d-flex flex-wrap gap-3 mb-4">
+    <MudTextField @bind-Value="_searchFilter"
+                  Placeholder="Search by title…"
+                  Immediate="true"
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense"
+                  Style="min-width: 200px;" />
+    <MudSelect @bind-Value="_statusFilter"
+               T="string"
+               Variant="Variant.Outlined"
+               Margin="Margin.Dense"
+               AnchorOrigin="Origin.BottomCenter"
+               Clearable="true"
+               Placeholder="All statuses"
+               Style="min-width: 180px;">
+        <MudSelectItem Value="@("Pending")">Pending</MudSelectItem>
+        <MudSelectItem Value="@("Approved")">Approved</MudSelectItem>
+        <MudSelectItem Value="@("Curated")">Curated</MudSelectItem>
+        <MudSelectItem Value="@("Rejected")">Rejected</MudSelectItem>
+    </MudSelect>
+    <MudSelect @bind-Value="_typeFilter"
+               T="string"
+               Variant="Variant.Outlined"
+               Margin="Margin.Dense"
+               AnchorOrigin="Origin.BottomCenter"
+               Clearable="true"
+               Placeholder="All types"
+               Style="min-width: 180px;">
         @foreach (var schema in ContentSchemaRegistry.All.Values.OrderBy(s => s.DisplayLabel))
         {
-            <option value="@schema.ContentType">@schema.DisplayLabel</option>
+            <MudSelectItem Value="@schema.ContentType">@schema.DisplayLabel</MudSelectItem>
         }
-    </select>
-    <button class="btn" @onclick="SearchAsync">Search</button>
+    </MudSelect>
+    <MudButton Variant="Variant.Filled" OnClick="SearchAsync" Size="Size.Small">Search</MudButton>
 </div>
 
 @if (_loading)
 {
-    <p>Loading…</p>
+    <MudText>Loading…</MudText>
 }
 else if (_result.Items.Count == 0)
 {
-    <p class="muted">No submissions found.</p>
+    <MudText Typo="Typo.body2" Class="mud-text-secondary">No submissions found.</MudText>
 }
 else
 {
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>Title</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th>By</th>
-                <th>Score</th>
-                <th>Date</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var s in _result.Items)
-            {
-                <tr>
-                    <td><a href="submissions/@s.Id">@s.Title</a></td>
-                    <td>@s.ContentType</td>
-                    <td><span class="badge @BadgeClass(s.Status)">@s.Status</span></td>
-                    <td>@s.SubmitterName</td>
-                    <td>@s.VoteScore</td>
-                    <td>@s.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd")</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <MudTable Items="@_result.Items" Hover="true" Elevation="0" Outlined="true">
+        <HeaderContent>
+            <MudTh>Title</MudTh>
+            <MudTh>Type</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>By</MudTh>
+            <MudTh>Score</MudTh>
+            <MudTh>Date</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd><MudLink Href="@($"submissions/{context.Id}")">@context.Title</MudLink></MudTd>
+            <MudTd>@context.ContentType</MudTd>
+            <MudTd><MudChip T="string" Size="Size.Small" Color="@ChipColor(context.Status)">@context.Status</MudChip></MudTd>
+            <MudTd>@context.SubmitterName</MudTd>
+            <MudTd>@context.VoteScore</MudTd>
+            <MudTd>@context.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd")</MudTd>
+        </RowTemplate>
+    </MudTable>
 
-    <div class="pagination">
-        <button class="btn btn-sm" @onclick="PrevPageAsync" disabled="@(_page <= 1)">&#x2190; Prev</button>
-        <span>Page @_page of @TotalPages</span>
-        <button class="btn btn-sm" @onclick="NextPageAsync" disabled="@(_page >= TotalPages)">Next &#x2192;</button>
+    <div class="d-flex align-items-center justify-content-center gap-3 mt-4">
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="PrevPageAsync" Disabled="@(_page <= 1)">← Prev</MudButton>
+        <MudText Typo="Typo.body2">Page @_page of @TotalPages</MudText>
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="NextPageAsync" Disabled="@(_page >= TotalPages)">Next →</MudButton>
     </div>
 }
 
@@ -101,10 +111,10 @@ else
         _loading = false;
     }
 
-    private static string BadgeClass(string status) => status switch
+    private static Color ChipColor(string status) => status switch
     {
-        "Approved" or "Curated" => "badge-green",
-        "Rejected"              => "badge-red",
-        _                       => "badge-grey",
+        "Approved" or "Curated" => Color.Success,
+        "Rejected"              => Color.Error,
+        _                       => Color.Default,
     };
 }

@@ -9,20 +9,22 @@
 
 <PageTitle>Language Builder — RealmFoundry</PageTitle>
 
-<div class="submission-form">
+<MudContainer MaxWidth="MaxWidth.Large" Class="mud-my-8">
 
     @* ── Stepper header ───────────────────────────────────────────────────── *@
-    <div class="wizard-stepper">
+    <div class="d-flex align-items-center gap-2 mb-4 flex-wrap">
         @for (int i = 1; i <= 6; i++)
         {
             var stepNum = i;
-            <div class="wizard-step @(_step == stepNum ? "active" : stepNum < _step ? "done" : "")">
-                <span class="step-num">@stepNum</span>
-                <span class="step-label">@StepLabel(stepNum)</span>
-            </div>
+            <MudChip T="string"
+                     Color="@(_step == stepNum ? Color.Primary : stepNum < _step ? Color.Success : Color.Default)"
+                     Variant="@(_step == stepNum ? Variant.Filled : Variant.Outlined)"
+                     Size="Size.Small">
+                @stepNum. @StepLabel(stepNum)
+            </MudChip>
             @if (i < 6)
             {
-                <div class="step-connector @(i < _step ? "done" : "")"></div>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">›</MudText>
             }
         }
     </div>
@@ -30,49 +32,66 @@
     @* ── Step 1: Identity ─────────────────────────────────────────────────── *@
     @if (_step == 1)
     {
-        <section class="wizard-section">
-            <h2>Step 1 — Identity</h2>
-            <p class="section-hint">Give your language a name, family, and one-line tonal description.</p>
+        <MudPaper Elevation="0" Outlined="true" Class="pa-4 mb-4">
+            <MudText Typo="Typo.h5" Class="mb-2">Step 1 — Identity</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+                Give your language a name, family, and one-line tonal description.
+            </MudText>
 
-            <div class="field-group">
-                <label>Display Name <span class="required">*</span></label>
-                <input value="@_s.DisplayName"
-                       @oninput="OnDisplayNameInput"
-                       placeholder="e.g. Calethic" />
-            </div>
-            <div class="field-group">
-                <label>Slug <span class="required">*</span></label>
-                <input @bind="_s.Slug" placeholder="e.g. calethic" />
-                <span class="field-hint">Lowercase letters, numbers, and hyphens only.</span>
-            </div>
-            <div class="field-group">
-                <label>Language Family</label>
-                <input @bind="_s.TypeKey" placeholder="e.g. imperial, elven, orcish, priestly" />
-            </div>
-            <div class="field-group">
-                <label>Tonal Character</label>
-                <input @bind="_s.TonalCharacter"
-                       placeholder="e.g. Hard + Formal — short architectural roots; drawn-out compound titles" />
-                <span class="field-hint">One-line characterisation of the language's sound and feel.</span>
-            </div>
-            <div class="field-group">
-                <label>Description</label>
-                <textarea @bind="_s.Description" rows="4"
-                          placeholder="Origins, in-world usage, cultural significance…"></textarea>
-            </div>
-        </section>
+            <MudTextField @bind-Value="_s.DisplayName"
+                          @bind-Value:after="OnDisplayNameChanged"
+                          Label="Display Name"
+                          Required="true"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="mb-3"
+                          Placeholder="e.g. Calethic" />
+
+            <MudTextField @bind-Value="_s.Slug"
+                          Label="Slug"
+                          Required="true"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="mb-3"
+                          Placeholder="e.g. calethic"
+                          HelperText="Lowercase letters, numbers, and hyphens only." />
+
+            <MudTextField @bind-Value="_s.TypeKey"
+                          Label="Language Family"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="mb-3"
+                          Placeholder="e.g. imperial, elven, orcish, priestly" />
+
+            <MudTextField @bind-Value="_s.TonalCharacter"
+                          Label="Tonal Character"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="mb-3"
+                          Placeholder="e.g. Hard + Formal — short architectural roots; drawn-out compound titles"
+                          HelperText="One-line characterisation of the language's sound and feel." />
+
+            <MudTextField @bind-Value="_s.Description"
+                          Label="Description"
+                          Variant="Variant.Outlined"
+                          Lines="4"
+                          Margin="Margin.Dense"
+                          Placeholder="Origins, in-world usage, cultural significance…" />
+        </MudPaper>
     }
 
     @* ── Step 2: Phonology ───────────────────────────────────────────────── *@
     @if (_step == 2)
     {
-        <section class="wizard-section">
-            <h2>Step 2 — Phonology</h2>
-            <p class="section-hint">Define the sounds that make up the language.</p>
+        <MudPaper Elevation="0" Outlined="true" Class="pa-4 mb-4">
+            <MudText Typo="Typo.h5" Class="mb-2">Step 2 — Phonology</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+                Define the sounds that make up the language.
+            </MudText>
 
             <!-- Consonants -->
-            <h3>Consonant Inventory</h3>
-            <table class="builder-table">
+            <MudText Typo="Typo.h6" Class="mb-2">Consonant Inventory</MudText>
+            <table class="mb-2">
                 <thead>
                     <tr><th>Symbol</th><th>Description</th><th>Notes</th><th></th></tr>
                 </thead>
@@ -83,16 +102,25 @@
                             <td><input @bind="c.Symbol"      placeholder="K" /></td>
                             <td><input @bind="c.Description" placeholder="Voiceless velar stop" /></td>
                             <td><input @bind="c.Notes"       placeholder="Optional notes" /></td>
-                            <td><button class="btn btn-sm btn-danger" @onclick="() => _s.Consonants.Remove(c)">✕</button></td>
+                            <td>
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Error"
+                                           Size="Size.Small"
+                                           OnClick="@(() => _s.Consonants.Remove(c))">
+                                    ✕
+                                </MudButton>
+                            </td>
                         </tr>
                     }
                 </tbody>
             </table>
-            <button class="btn btn-sm btn-secondary" @onclick="AddConsonant">+ Add Consonant</button>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="AddConsonant" Class="mb-4">
+                + Add Consonant
+            </MudButton>
 
             <!-- Vowels -->
-            <h3 style="margin-top:1.5rem;">Vowel Inventory</h3>
-            <table class="builder-table">
+            <MudText Typo="Typo.h6" Class="mb-2">Vowel Inventory</MudText>
+            <table class="mb-2">
                 <thead>
                     <tr><th>Symbol</th><th>Sound</th><th>Register</th><th>Notes</th><th></th></tr>
                 </thead>
@@ -104,69 +132,96 @@
                             <td><input @bind="v.Sound"    placeholder="/eɪ/ as in 'day'" /></td>
                             <td><input @bind="v.Register" placeholder="formal (or leave blank)" /></td>
                             <td><input @bind="v.Notes"    placeholder="Optional notes" /></td>
-                            <td><button class="btn btn-sm btn-danger" @onclick="() => _s.Vowels.Remove(v)">✕</button></td>
+                            <td>
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Error"
+                                           Size="Size.Small"
+                                           OnClick="@(() => _s.Vowels.Remove(v))">
+                                    ✕
+                                </MudButton>
+                            </td>
                         </tr>
                     }
                 </tbody>
             </table>
-            <button class="btn btn-sm btn-secondary" @onclick="AddVowel">+ Add Vowel</button>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="AddVowel" Class="mb-4">
+                + Add Vowel
+            </MudButton>
 
             <!-- Syllable Patterns -->
-            <h3 style="margin-top:1.5rem;">Syllable Patterns</h3>
-            <div class="chip-row">
+            <MudText Typo="Typo.h6" Class="mb-2">Syllable Patterns</MudText>
+            <div class="d-flex flex-wrap gap-2 mb-2">
                 @foreach (var p in _s.SyllablePatterns)
                 {
-                    <span class="chip">@p <button @onclick="() => _s.SyllablePatterns.Remove(p)">✕</button></span>
+                    <MudChip T="string" OnClose="@(() => _s.SyllablePatterns.Remove(p))">@p</MudChip>
                 }
             </div>
-            <div class="chip-input">
-                <input @bind="_s.NewSyllablePattern" placeholder="e.g. CVC" />
-                <button class="btn btn-sm btn-secondary" @onclick="AddSyllablePattern">+ Add</button>
+            <div class="d-flex align-items-center gap-2 mb-4">
+                <MudTextField @bind-Value="_s.NewSyllablePattern"
+                              Placeholder="e.g. CVC"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Style="width:200px;" />
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="AddSyllablePattern">+ Add</MudButton>
             </div>
 
             <!-- Allowed Initial Clusters -->
-            <h3 style="margin-top:1.5rem;">Allowed Initial Clusters</h3>
-            <div class="chip-row">
+            <MudText Typo="Typo.h6" Class="mb-2">Allowed Initial Clusters</MudText>
+            <div class="d-flex flex-wrap gap-2 mb-2">
                 @foreach (var c in _s.InitialClusters)
                 {
-                    <span class="chip">@c <button @onclick="() => _s.InitialClusters.Remove(c)">✕</button></span>
+                    <MudChip T="string" OnClose="@(() => _s.InitialClusters.Remove(c))">@c</MudChip>
                 }
             </div>
-            <div class="chip-input">
-                <input @bind="_s.NewInitialCluster" placeholder="e.g. KR–" />
-                <button class="btn btn-sm btn-secondary" @onclick="AddInitialCluster">+ Add</button>
+            <div class="d-flex align-items-center gap-2 mb-4">
+                <MudTextField @bind-Value="_s.NewInitialCluster"
+                              Placeholder="e.g. KR–"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Style="width:200px;" />
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="AddInitialCluster">+ Add</MudButton>
             </div>
 
             <!-- Forbidden Clusters -->
-            <h3 style="margin-top:1.5rem;">Forbidden Clusters</h3>
-            <div class="chip-row">
+            <MudText Typo="Typo.h6" Class="mb-2">Forbidden Clusters</MudText>
+            <div class="d-flex flex-wrap gap-2 mb-2">
                 @foreach (var c in _s.ForbiddenClusters)
                 {
-                    <span class="chip">@c <button @onclick="() => _s.ForbiddenClusters.Remove(c)">✕</button></span>
+                    <MudChip T="string" OnClose="@(() => _s.ForbiddenClusters.Remove(c))">@c</MudChip>
                 }
             </div>
-            <div class="chip-input">
-                <input @bind="_s.NewForbiddenCluster" placeholder="e.g. three consecutive consonants" />
-                <button class="btn btn-sm btn-secondary" @onclick="AddForbiddenCluster">+ Add</button>
+            <div class="d-flex align-items-center gap-2 mb-4">
+                <MudTextField @bind-Value="_s.NewForbiddenCluster"
+                              Placeholder="e.g. three consecutive consonants"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Style="width:200px;" />
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="AddForbiddenCluster">+ Add</MudButton>
             </div>
 
             <!-- Allowed Final Clusters -->
-            <h3 style="margin-top:1.5rem;">Allowed Final Clusters</h3>
-            <div class="chip-row">
+            <MudText Typo="Typo.h6" Class="mb-2">Allowed Final Clusters</MudText>
+            <div class="d-flex flex-wrap gap-2 mb-2">
                 @foreach (var c in _s.FinalClusters)
                 {
-                    <span class="chip">@c <button @onclick="() => _s.FinalClusters.Remove(c)">✕</button></span>
+                    <MudChip T="string" OnClose="@(() => _s.FinalClusters.Remove(c))">@c</MudChip>
                 }
             </div>
-            <div class="chip-input">
-                <input @bind="_s.NewFinalCluster" placeholder="e.g. –LD" />
-                <button class="btn btn-sm btn-secondary" @onclick="AddFinalCluster">+ Add</button>
+            <div class="d-flex align-items-center gap-2 mb-4">
+                <MudTextField @bind-Value="_s.NewFinalCluster"
+                              Placeholder="e.g. –LD"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Style="width:200px;" />
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="AddFinalCluster">+ Add</MudButton>
             </div>
 
             <!-- Junction Rules -->
-            <h3 style="margin-top:1.5rem;">Junction Reduction Rules</h3>
-            <p class="section-hint">Rules that govern consonant changes when roots are compounded.</p>
-            <table class="builder-table">
+            <MudText Typo="Typo.h6" Class="mb-2">Junction Reduction Rules</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">
+                Rules that govern consonant changes when roots are compounded.
+            </MudText>
+            <table class="mb-2">
                 <thead>
                     <tr><th>Cluster</th><th>Rule</th><th>Formal Example</th><th>Administrative Example</th><th></th></tr>
                 </thead>
@@ -178,25 +233,36 @@
                             <td><input @bind="j.Rule"                 placeholder="V-drop; euphonic –d– bridge" /></td>
                             <td><input @bind="j.FormalExample"        placeholder="vel + vrath → veldrath" /></td>
                             <td><input @bind="j.AdministrativeExample" placeholder="vael + vren → vaelren" /></td>
-                            <td><button class="btn btn-sm btn-danger" @onclick="() => _s.JunctionRules.Remove(j)">✕</button></td>
+                            <td>
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Error"
+                                           Size="Size.Small"
+                                           OnClick="@(() => _s.JunctionRules.Remove(j))">
+                                    ✕
+                                </MudButton>
+                            </td>
                         </tr>
                     }
                 </tbody>
             </table>
-            <button class="btn btn-sm btn-secondary" @onclick="AddJunctionRule">+ Add Rule</button>
-        </section>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="AddJunctionRule">
+                + Add Rule
+            </MudButton>
+        </MudPaper>
     }
 
     @* ── Step 3: Affixes ──────────────────────────────────────────────────── *@
     @if (_step == 3)
     {
-        <section class="wizard-section">
-            <h2>Step 3 — Affixes</h2>
-            <p class="section-hint">Define bound prefixes and suffixes. These attach to roots and change meaning or grammatical category.</p>
+        <MudPaper Elevation="0" Outlined="true" Class="pa-4 mb-4">
+            <MudText Typo="Typo.h5" Class="mb-2">Step 3 — Affixes</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+                Define bound prefixes and suffixes. These attach to roots and change meaning or grammatical category.
+            </MudText>
 
             <!-- Prefixes -->
-            <h3>Prefixes</h3>
-            <table class="builder-table">
+            <MudText Typo="Typo.h6" Class="mb-2">Prefixes</MudText>
+            <table class="mb-2">
                 <thead>
                     <tr><th>Form</th><th>Category</th><th>Core Meaning</th><th>Notes</th><th></th></tr>
                 </thead>
@@ -208,16 +274,25 @@
                             <td><input @bind="a.Category"    placeholder="great / first / paramount" /></td>
                             <td><input @bind="a.CoreMeaning" placeholder="What it contributes" /></td>
                             <td><input @bind="a.Notes"       placeholder="Usage notes" /></td>
-                            <td><button class="btn btn-sm btn-danger" @onclick="() => _s.Prefixes.Remove(a)">✕</button></td>
+                            <td>
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Error"
+                                           Size="Size.Small"
+                                           OnClick="@(() => _s.Prefixes.Remove(a))">
+                                    ✕
+                                </MudButton>
+                            </td>
                         </tr>
                     }
                 </tbody>
             </table>
-            <button class="btn btn-sm btn-secondary" @onclick="() => _s.Prefixes.Add(new())">+ Add Prefix</button>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => _s.Prefixes.Add(new()))" Class="mb-4">
+                + Add Prefix
+            </MudButton>
 
             <!-- Suffixes -->
-            <h3 style="margin-top:1.5rem;">Suffixes</h3>
-            <table class="builder-table">
+            <MudText Typo="Typo.h6" Class="mb-2">Suffixes</MudText>
+            <table class="mb-2">
                 <thead>
                     <tr><th>Form</th><th>Category</th><th>Core Meaning</th><th>Notes</th><th></th></tr>
                 </thead>
@@ -229,26 +304,35 @@
                             <td><input @bind="a.Category"    placeholder="polity / territory / collective" /></td>
                             <td><input @bind="a.CoreMeaning" placeholder="What it contributes" /></td>
                             <td><input @bind="a.Notes"       placeholder="Usage notes" /></td>
-                            <td><button class="btn btn-sm btn-danger" @onclick="() => _s.Suffixes.Remove(a)">✕</button></td>
+                            <td>
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Error"
+                                           Size="Size.Small"
+                                           OnClick="@(() => _s.Suffixes.Remove(a))">
+                                    ✕
+                                </MudButton>
+                            </td>
                         </tr>
                     }
                 </tbody>
             </table>
-            <button class="btn btn-sm btn-secondary" @onclick="() => _s.Suffixes.Add(new())">+ Add Suffix</button>
-        </section>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => _s.Suffixes.Add(new()))">
+                + Add Suffix
+            </MudButton>
+        </MudPaper>
     }
 
     @* ── Step 4: Root Dictionary ──────────────────────────────────────────── *@
     @if (_step == 4)
     {
-        <section class="wizard-section">
-            <h2>Step 4 — Root Dictionary</h2>
-            <p class="section-hint">
+        <MudPaper Elevation="0" Outlined="true" Class="pa-4 mb-4">
+            <MudText Typo="Typo.h5" Class="mb-2">Step 4 — Root Dictionary</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
                 Roots are atomic meaning units from which all words are built.
                 Use the Category column to group thematically (e.g. "metaphysical", "geographic", "actions").
-            </p>
+            </MudText>
 
-            <table class="builder-table">
+            <table class="mb-2">
                 <thead>
                     <tr><th>Token</th><th>Core Meaning</th><th>Extended Meanings</th><th>Example Word</th><th>Category</th><th></th></tr>
                 </thead>
@@ -261,26 +345,35 @@
                             <td><input @bind="r.ExtendedMeanings" placeholder="great, first (as prefix)" /></td>
                             <td><input @bind="r.ExampleWord"      placeholder="Kaeldor, Aethori…" /></td>
                             <td><input @bind="r.Category"         placeholder="metaphysical" /></td>
-                            <td><button class="btn btn-sm btn-danger" @onclick="() => _s.Roots.Remove(r)">✕</button></td>
+                            <td>
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Error"
+                                           Size="Size.Small"
+                                           OnClick="@(() => _s.Roots.Remove(r))">
+                                    ✕
+                                </MudButton>
+                            </td>
                         </tr>
                     }
                 </tbody>
             </table>
-            <button class="btn btn-sm btn-secondary" @onclick="() => _s.Roots.Add(new())">+ Add Root</button>
-        </section>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => _s.Roots.Add(new()))">
+                + Add Root
+            </MudButton>
+        </MudPaper>
     }
 
     @* ── Step 5: Register System ──────────────────────────────────────────── *@
     @if (_step == 5)
     {
-        <section class="wizard-section">
-            <h2>Step 5 — Register System</h2>
-            <p class="section-hint">
+        <MudPaper Elevation="0" Outlined="true" Class="pa-4 mb-4">
+            <MudText Typo="Typo.h5" Class="mb-2">Step 5 — Register System</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
                 Registers define distinct speech modes with their own syntax rules and phonological constraints.
                 Skip this step if your language has no register distinction.
-            </p>
+            </MudText>
 
-            <table class="builder-table">
+            <table class="mb-2">
                 <thead>
                     <tr><th>Name</th><th>Usage</th><th>Word Order</th><th>Vowel Quality</th><th>Notes</th><th></th></tr>
                 </thead>
@@ -293,20 +386,29 @@
                             <td><input @bind="r.WordOrder"   placeholder="SVO" /></td>
                             <td><input @bind="r.VowelQuality" placeholder="Short vowels throughout" /></td>
                             <td><input @bind="r.Notes"       placeholder="Optional notes" /></td>
-                            <td><button class="btn btn-sm btn-danger" @onclick="() => _s.Registers.Remove(r)">✕</button></td>
+                            <td>
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Error"
+                                           Size="Size.Small"
+                                           OnClick="@(() => _s.Registers.Remove(r))">
+                                    ✕
+                                </MudButton>
+                            </td>
                         </tr>
                     }
                 </tbody>
             </table>
-            <button class="btn btn-sm btn-secondary" @onclick="() => _s.Registers.Add(new())">+ Add Register</button>
-        </section>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => _s.Registers.Add(new()))">
+                + Add Register
+            </MudButton>
+        </MudPaper>
     }
 
     @* ── Step 6: Preview & Submit ─────────────────────────────────────────── *@
     @if (_step == 6)
     {
-        <section class="wizard-section">
-            <h2>Step 6 — Preview & Submit</h2>
+        <MudPaper Elevation="0" Outlined="true" Class="pa-4 mb-4">
+            <MudText Typo="Typo.h5" Class="mb-2">Step 6 — Preview & Submit</MudText>
 
             <div class="preview-summary">
 
@@ -368,42 +470,52 @@
 
             </div>
 
-            <div class="field-group" style="margin-top:1.5rem;">
-                <label>Example Sentences / Sample Words</label>
-                <textarea @bind="_s.SampleText" rows="6"
-                          placeholder="Demonstrate the language in use — provide translations where possible…"></textarea>
-                <span class="field-hint">This will be visible to other contributors as a reference.</span>
-            </div>
+            <MudTextField @bind-Value="_s.SampleText"
+                          Label="Example Sentences / Sample Words"
+                          Variant="Variant.Outlined"
+                          Lines="6"
+                          Margin="Margin.Dense"
+                          Class="mt-4"
+                          Placeholder="Demonstrate the language in use — provide translations where possible…"
+                          HelperText="This will be visible to other contributors as a reference." />
 
             @if (!string.IsNullOrWhiteSpace(_submitError))
             {
-                <div class="error" style="margin-top:1rem;">@_submitError</div>
+                <MudText Color="Color.Error" Class="mt-4">@_submitError</MudText>
             }
-        </section>
+        </MudPaper>
     }
 
     @* ── Navigation buttons ───────────────────────────────────────────────── *@
-    <div class="wizard-nav">
-        <a class="btn btn-secondary" href="/languages">Cancel</a>
-        <div class="wizard-nav-right">
+    <div class="d-flex align-items-center justify-space-between">
+        <MudButton Variant="Variant.Outlined" Href="/languages">Cancel</MudButton>
+        <div class="d-flex align-items-center gap-2">
             @if (_step > 1)
             {
-                <button class="btn btn-secondary" @onclick="() => _step--">← Previous</button>
+                <MudButton Variant="Variant.Outlined" OnClick="@(() => _step--)">← Previous</MudButton>
             }
             @if (_step < 6)
             {
-                <button class="btn btn-primary" @onclick="NextStep" disabled="@(!CanAdvance())">Next →</button>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="NextStep"
+                           Disabled="@(!CanAdvance())">
+                    Next →
+                </MudButton>
             }
             else
             {
-                <button class="btn btn-primary" @onclick="SubmitAsync" disabled="@(_submitting || !CanAdvance())">
-                    @if (_submitting) { <span>Submitting…</span> } else { <span>Submit Language</span> }
-                </button>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="SubmitAsync"
+                           Disabled="@(_submitting || !CanAdvance())">
+                    @(_submitting ? "Submitting…" : "Submit Language")
+                </MudButton>
             }
         </div>
     </div>
 
-</div>
+</MudContainer>
 
 @code {
     private readonly LanguageBuilderState _s = new();
@@ -422,9 +534,8 @@
         _ => string.Empty,
     };
 
-    private void OnDisplayNameInput(ChangeEventArgs e)
+    private void OnDisplayNameChanged()
     {
-        _s.DisplayName = e.Value?.ToString() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(_s.Slug) || _s.Slug == LanguageBuilderState.DeriveSlug(string.Empty))
             _s.Slug = LanguageBuilderState.DeriveSlug(_s.DisplayName);
     }

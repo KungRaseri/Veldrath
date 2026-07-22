@@ -1,4 +1,4 @@
-﻿@page "/mod/reports"
+@page "/mod/reports"
 @using Veldrath.Contracts.Admin
 @inject AuthStateService AuthState
 @inject RealmFoundryApiClient Api
@@ -11,89 +11,89 @@
 }
 else
 {
-    <div class="toolbar">
-        <h1>Player Reports</h1>
-        <select class="filter-select" @bind="_showResolved" @bind:after="OnFilterChangedAsync">
-            <option value="">All Reports</option>
-            <option value="false">Open Only</option>
-            <option value="true">Resolved Only</option>
-        </select>
-        <a class="btn btn-secondary" href="/mod">← Back</a>
+    <div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+        <MudText Typo="Typo.h3" Class="mb-0">Player Reports</MudText>
+        <MudSelect Value="_showResolved"
+                   ValueChanged="@(async (string v) => { _showResolved = v; await OnFilterChangedAsync(); })"
+                   T="string"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   AnchorOrigin="Origin.BottomCenter"
+                   Clearable="true"
+                   Placeholder="All Reports"
+                   Style="min-width: 150px;">
+            <MudSelectItem Value="@("false")">Open Only</MudSelectItem>
+            <MudSelectItem Value="@("true")">Resolved Only</MudSelectItem>
+        </MudSelect>
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/mod">← Back</MudButton>
         @if (_result is not null)
         {
-            <span class="muted">@_result.Total total</span>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">@_result.Total total</MudText>
         }
     </div>
 
     @if (!string.IsNullOrEmpty(_actionMessage))
     {
-        <div class="@(_actionError ? "alert alert-error" : "alert alert-success")">@_actionMessage</div>
+        <MudAlert Severity="@(_actionError ? Severity.Error : Severity.Success)" Class="mud-mb-4">@_actionMessage</MudAlert>
     }
 
     @if (_loading)
     {
-        <p>Loading…</p>
+        <MudText>Loading…</MudText>
     }
     else if (_result is null)
     {
-        <p class="error">Failed to load reports.</p>
+        <MudAlert Severity="Severity.Error" Class="mud-mb-4">Failed to load reports.</MudAlert>
     }
     else if (_result.Items.Count == 0)
     {
-        <p class="muted">No reports found.</p>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">No reports found.</MudText>
     }
     else
     {
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Submitted</th>
-                    <th>Reporter</th>
-                    <th>Target</th>
-                    <th>Reason</th>
-                    <th>Status</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var r in _result.Items)
-                {
-                    <tr>
-                        <td class="muted nowrap">@r.SubmittedAt.ToLocalTime().ToString("g")</td>
-                        <td>@r.ReporterName</td>
-                        <td>@r.TargetName</td>
-                        <td>@r.Reason</td>
-                        <td>
-                            @if (r.IsResolved)
-                            {
-                                <span class="badge badge-green">Resolved</span>
-                                @if (r.ResolvedAt.HasValue)
-                                {
-                                    <span class="muted small"> @r.ResolvedAt.Value.ToLocalTime().ToString("g")</span>
-                                }
-                            }
-                            else
-                            {
-                                <span class="badge badge-orange">Open</span>
-                            }
-                        </td>
-                        <td>
-                            @if (!r.IsResolved)
-                            {
-                                <button class="btn btn-sm btn-green" @onclick="() => ResolveAsync(r.Id)">Resolve</button>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <MudTable Items="@_result.Items" Hover="true" Elevation="0" Outlined="true">
+            <HeaderContent>
+                <MudTh>Submitted</MudTh>
+                <MudTh>Reporter</MudTh>
+                <MudTh>Target</MudTh>
+                <MudTh>Reason</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd Class="mud-text-secondary" Style="white-space: nowrap;">@context.SubmittedAt.ToLocalTime().ToString("g")</MudTd>
+                <MudTd>@context.ReporterName</MudTd>
+                <MudTd>@context.TargetName</MudTd>
+                <MudTd>@context.Reason</MudTd>
+                <MudTd>
+                    @if (context.IsResolved)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success">Resolved</MudChip>
+                        @if (context.ResolvedAt.HasValue)
+                        {
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary d-inline"> @context.ResolvedAt.Value.ToLocalTime().ToString("g")</MudText>
+                        }
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Warning">Open</MudChip>
+                    }
+                </MudTd>
+                <MudTd>
+                    @if (!context.IsResolved)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small" OnClick="() => ResolveAsync(context.Id)">Resolve</MudButton>
+                    }
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
 
         @if (_result.Total > _result.PageSize)
         {
-            <div class="pagination">
-                <button class="btn btn-sm" @onclick="PrevPageAsync" disabled="@(_page <= 1)">← Prev</button>
-                <span class="muted">Page @_page of @((int)Math.Ceiling(_result.Total / (double)_result.PageSize))</span>
-                <button class="btn btn-sm" @onclick="NextPageAsync" disabled="@(_page * _result.PageSize >= _result.Total)">Next →</button>
+            <div class="d-flex align-items-center justify-content-center gap-3 mt-4">
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="PrevPageAsync" Disabled="@(_page <= 1)">← Prev</MudButton>
+                <MudText Typo="Typo.body2">Page @_page of @((int)Math.Ceiling(_result.Total / (double)_result.PageSize))</MudText>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="NextPageAsync" Disabled="@(_page * _result.PageSize >= _result.Total)">Next →</MudButton>
             </div>
         }
     }
