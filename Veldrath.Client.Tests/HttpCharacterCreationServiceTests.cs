@@ -21,11 +21,13 @@ public class HttpCharacterCreationServiceTests : TestBase
     public async Task BeginSessionAsync_Returns_SessionId_On_Success()
     {
         var sessionId = Guid.NewGuid();
-        var sut = MakeSut(FakeHttpHandler.Json(new { SessionId = sessionId, Success = true }));
+        var sut = MakeSut(FakeHttpHandler.Json(new BeginCreationSessionResponse(sessionId, true)));
 
         var result = await sut.BeginSessionAsync();
 
-        result.Should().Be(sessionId);
+        result.Should().NotBeNull();
+        result!.SessionId.Should().Be(sessionId);
+        result.Success.Should().BeTrue();
     }
 
     [Fact]

@@ -11,8 +11,9 @@ namespace Veldrath.Client.Services;
 /// </summary>
 public interface ICharacterCreationService
 {
-    /// <summary>Starts a new creation session and returns the session identifier, or <see langword="null"/> on failure.</summary>
-    Task<Guid?> BeginSessionAsync();
+    /// <summary>Starts a new creation session and returns the full response including point-buy config
+    /// and equipment type catalog, or <see langword="null"/> on failure.</summary>
+    Task<BeginCreationSessionResponse?> BeginSessionAsync();
 
     /// <summary>Sets the character name on an existing session. Returns <see langword="true"/> on success.</summary>
     Task<bool> SetNameAsync(Guid sessionId, string name);
@@ -59,10 +60,8 @@ public class HttpCharacterCreationService(
 {
     private AuthenticationHeaderValue? BearerHeader => tokens.BearerHeader();
 
-    private record BeginSessionResponse(Guid SessionId, bool Success);
-
     /// <inheritdoc />
-    public async Task<Guid?> BeginSessionAsync()
+    public async Task<BeginCreationSessionResponse?> BeginSessionAsync()
     {
         try
         {
@@ -74,8 +73,7 @@ public class HttpCharacterCreationService(
                 logger.LogWarning("BeginSessionAsync received non-success HTTP {StatusCode}", response.StatusCode);
                 return null;
             }
-            var body = await response.Content.ReadFromJsonAsync<BeginSessionResponse>();
-            return body?.SessionId;
+            return await response.Content.ReadFromJsonAsync<BeginCreationSessionResponse>();
         }
         catch (Exception ex)
         {
