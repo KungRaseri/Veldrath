@@ -228,11 +228,16 @@ Prefer `FakeXxx` stub classes in `Infrastructure/` directories over mocking fram
   - `RaiseAndSetIfChanged` for bindable properties
   - `ReactiveCommand.CreateFromTask` for async operations
   - `WhenAnyValue` for derived state
-- Blazor components use standard Razor patterns:
-  - `@inject` for dependency injection
-  - `[Parameter]` for component parameters
-  - `EventCallback<T>` for component events
-  - `@bind-Value` / `@bind-{Property}` for two-way binding
+- Blazor components follow detailed conventions in [`.github/instructions/blazor-component-development.md`](.github/instructions/blazor-component-development.md):
+  - MudBlazor-first: always check [`llms.txt`](llms.txt) for an existing MudBlazor component before writing custom UI
+  - Code-behind partial class pattern (`Component.razor` + `Component.razor.cs`)
+  - Components reused across multiple pages go in `Components/Shared/`; single-use UI stays in the page
+  - `[Parameter]` for data in, `EventCallback<T>` for events out, `@bind-{Property}` for two-way binding
+- Styling follows the priority hierarchy in [`.github/instructions/styling-and-css.md`](.github/instructions/styling-and-css.md):
+  - 1) MudBlazor CSS utilities (`Class="mt-4 d-flex gap-2"`) — always first
+  - 2) MudBlazor theme system ([`VeldrathTheme.cs`](Veldrath.Web/Themes/VeldrathTheme.cs))
+  - 3) Custom CSS with VDS design tokens (kebab-case, BEM-like naming)
+  - 4) Inline `style=""` attributes — absolute last resort, only for truly dynamic values
 - Avoid one-off abstractions, helpers, or comments explaining what the code does — **only comment the *why* when it isn't obvious**
 
 ---
