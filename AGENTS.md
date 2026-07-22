@@ -34,6 +34,7 @@
 | [`.github/instructions/engine-features.md`](.github/instructions/engine-features.md) | When creating new MediatR commands/queries |
 | [`.github/instructions/blazor-component-development.md`](.github/instructions/blazor-component-development.md) | When building Blazor UI components |
 | [`.github/instructions/styling-and-css.md`](.github/instructions/styling-and-css.md) | When writing CSS or styling Blazor UI |
+| [`.github/instructions/build-strategy.md`](.github/instructions/build-strategy.md) | When deciding which solution to build after making changes |
 
 ---
 
@@ -62,7 +63,12 @@ This repository also contains the **official game built on top of that engine**:
 
 | Solution | Contains | Use For |
 |----------|----------|---------|
-| [`RealmEngine.slnx`](RealmEngine.slnx) | Core + Data + Shared + tests | Engine-only development, CI |
+| [`RealmEngine.slnx`](RealmEngine.slnx) | Core + Data + Shared + GameClient.Core + tests | Engine-only development, CI |
+| [`Veldrath.Web.slnx`](Veldrath.Web.slnx) | Web + Server + engine + auth + assets + GameClient + tests | Web portal development |
+| [`Veldrath.Client.slnx`](Veldrath.Client.slnx) | Client + engine + auth + assets + GameClient + fonts + tests | Desktop client development |
+| [`Veldrath.Server.slnx`](Veldrath.Server.slnx) | Server + engine + assets + contracts + tests | Game server development |
+| [`Veldrath.Discord.slnx`](Veldrath.Discord.slnx) | Discord + engine + contracts + tests | Discord bot development |
+| [`Veldrath.Libraries.slnx`](Veldrath.Libraries.slnx) | Auth + Assets + Contracts + GameClient + fonts + engine + tests | Shared library development |
 | [`Veldrath.slnx`](Veldrath.slnx) | Client + Server + GameClient.* + tests | Multiplayer development |
 | [`RealmForge.slnx`](RealmForge.slnx) | RealmForge + tests | Tooling development |
 | [`RealmFoundry.slnx`](RealmFoundry.slnx) | RealmFoundry + tests | Community portal development |
@@ -189,14 +195,42 @@ For a comprehensive MudBlazor reference, see [`llms.txt`](llms.txt).
 
 ## Build & Test Commands
 
+### Smart Build (Recommended During Development)
+
+Build only what changed. The rule is simple: **build the `.slnx` file matching the directory you changed.**
+
+> **Full decision logic: [`.github/instructions/build-strategy.md`](.github/instructions/build-strategy.md)**
+
+| Changed Path | Build Command |
+|---|---|
+| `RealmEngine.*/**` | `dotnet build RealmEngine.slnx` |
+| `RealmForge/**` | `dotnet build RealmForge.slnx` |
+| `RealmFoundry/**` | `dotnet build RealmFoundry.slnx` |
+| `Veldrath.Web/**` | `dotnet build Veldrath.Web.slnx` |
+| `Veldrath.Client/**` | `dotnet build Veldrath.Client.slnx` |
+| `Veldrath.Server/**` | `dotnet build Veldrath.Server.slnx` |
+| `Veldrath.Discord/**` | `dotnet build Veldrath.Discord.slnx` |
+| `Veldrath.Auth/**`, `Veldrath.Assets/**`, `Veldrath.Contracts/**` | `dotnet build Veldrath.Libraries.slnx` |
+| Cross-component / `Directory.Build.*` | `dotnet build Realm.Full.slnx` |
+
+> **When NOT to build:** Skip builds for `.razor` (during watch), `.css`, `.js`, `.md`, and non-embedded `.json` changes.
+
+### Full Build (Final Verification)
+
 ```powershell
-dotnet build Realm.Full.slnx    # Full build
-dotnet test Realm.Full.slnx     # All 4,700+ tests (with coverage)
+dotnet build Realm.Full.slnx    # Full build (30 projects)
+dotnet test Realm.Full.slnx     # All 8,500+ tests (with coverage)
 ```
 
-Individual project runs: `dotnet run --project Veldrath.Server`, `Veldrath.Client`, `Veldrath.Web`, `RealmForge`, `RealmFoundry`.
+### Running Projects
 
-> **See [`.roo/skills/`](.roo/skills/) for agent skills** that automate build, test, run, and dev-stack workflows. Use `Ctrl+Shift+B` in VS Code for the default build task, or `F5` to debug.
+```powershell
+dotnet run --project Veldrath.Server
+dotnet run --project Veldrath.Client
+dotnet run --project Veldrath.Web
+dotnet run --project RealmForge
+dotnet run --project RealmFoundry
+```
 
 ---
 
