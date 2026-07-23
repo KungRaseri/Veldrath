@@ -314,20 +314,12 @@
   grid-template-columns: repeat(15, var(--tile-size));
   grid-template-rows: repeat(15, var(--tile-size));
   gap: 1px;
-  justify-content: center;
-  align-content: center;
   padding: var(--vds-space-3, 12px);
   background: var(--vds-bg-1, #14151f);
-  flex: 1;
-  overflow: hidden;
   position: relative;
 }
 
 .game-tilemap-empty {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   color: var(--vds-text-subtle, #6e6860);
   font-style: italic;
 }
@@ -336,9 +328,6 @@
   border-radius: 2px;
   cursor: pointer;
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   transition: filter 0.1s ease;
   border: 1px solid transparent;
 }
@@ -384,16 +373,12 @@
 /* ── Status Bar ─────────────────────────────────────────────────────── */
 
 .tile-status-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   padding: 6px 16px;
   background: var(--vds-bg-2, #1e1f2e);
   border-top: 1px solid var(--vds-border, #2a2b3d);
   font-size: 13px;
   color: var(--vds-text-subtle, #b8b4a8);
   min-height: 32px;
-  flex-shrink: 0;
 }
 
 .tile-status-bar-icon {
@@ -998,6 +983,8 @@
 }
 
 /* ── Reconnect Toast ─────────────────────────────────────────────────── */
+/*   MudBlazor migration: display:flex → d-flex, align-items:center → align-center,
+     gap:8px → gap-2 applied in ReconnectOverlay.razor markup. */
 
 .reconnect-toast {
   position: fixed;
@@ -1007,9 +994,6 @@
   border: 1px solid var(--vds-success, #5cab7d);
   border-radius: var(--vds-radius-md, 6px);
   padding: var(--vds-space-3, 12px) var(--vds-space-4, 16px);
-  display: flex;
-  align-items: center;
-  gap: var(--vds-space-2, 8px);
   font-size: var(--vds-text-sm, 12px);
   color: var(--vds-success, #5cab7d);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
@@ -1198,6 +1182,8 @@
 }
 
 /* ── Status Dot (connection indicator) ───────────────────────────────── */
+/*   MudBlazor migration: display:inline-block has no utility (no d-inline-block
+     in MudBlazor v9.7.0). Kept in CSS. */
 
 .status-dot {
   width: 10px;
@@ -1251,14 +1237,13 @@
   text-align: center;
 }
 
+/*   MudBlazor migration: display:flex → d-flex, flex-direction:column → flex-column,
+     align-items:center → align-center, justify-content:center → justify-center,
+     gap:16px → gap-4 applied in CharacterSelect.razor markup. */
+
 .cs-loading,
 .cs-error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   min-height: 60vh;
-  gap: var(--vds-space-4, 16px);
   color: var(--vds-text-muted, #a8a09a);
 }
 
@@ -1272,16 +1257,17 @@
   margin-bottom: var(--vds-space-4, 16px);
 }
 
+/*   MudBlazor migration: display:flex → d-flex, flex-direction:column → flex-column,
+     gap:12px → gap-3 applied in CharacterSelect.razor markup. */
+
 .cs-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--vds-space-3, 12px);
 }
 
+/*   MudBlazor migration: display:flex → d-flex, align-items:center → align-center,
+     justify-content:space-between → justify-space-between
+     applied in CharacterSelect.razor markup. */
+
 .cs-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   padding: var(--vds-space-4, 16px);
   background: var(--vds-bg-2, #1c1d2b);
   border: 1px solid var(--vds-border, #2a2b3d);
@@ -1325,14 +1311,17 @@
   color: var(--vds-text-subtle, #6e6860);
 }
 
+/*   MudBlazor migration: flex-shrink:0 → flex-shrink-0
+     applied in CharacterSelect.razor markup. */
+
 .cs-card-actions {
-  flex-shrink: 0;
 }
 
+/*   MudBlazor migration: display:flex → d-flex, gap:12px → gap-3,
+     justify-content:center → justify-center
+     applied in CharacterSelect.razor markup. */
+
 .cs-footer {
-  display: flex;
-  gap: var(--vds-space-3, 12px);
-  justify-content: center;
   margin-top: var(--vds-space-6, 24px);
 }
 
@@ -1366,18 +1355,11 @@
 /* ── Game Map (Region View) ─────────────────────────────────────────── */
 
 .game-map-page {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
   padding: var(--vds-space-4, 16px);
   background: var(--vds-bg-1, #14151f);
-  overflow-y: auto;
 }
 
 .game-map-header {
-  display: flex;
-  align-items: center;
-  gap: var(--vds-space-3, 12px);
   margin-bottom: var(--vds-space-4, 16px);
   padding-bottom: var(--vds-space-3, 12px);
   border-bottom: 1px solid var(--vds-border, #2a2b3d);
@@ -1401,18 +1383,11 @@
 }
 
 .game-map-close {
-  margin-left: auto;
 }
 
 .game-map-loading,
 .game-map-error,
 .game-map-empty {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--vds-space-4, 16px);
   color: var(--vds-text-muted, #a8a09a);
   min-height: 200px;
 }
@@ -1422,15 +1397,10 @@
 .game-map-zones {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: var(--vds-space-3, 12px);
   margin-bottom: var(--vds-space-4, 16px);
 }
 
 .game-map-zone-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--vds-space-1, 4px);
   padding: var(--vds-space-4, 16px) var(--vds-space-3, 12px);
   background: var(--vds-bg-2, #1c1d2b);
   border: 1px solid var(--vds-border, #2a2b3d);
@@ -1536,20 +1506,13 @@
 /* Map legend */
 
 .game-map-legend {
-  display: flex;
-  gap: var(--vds-space-4, 16px);
   padding: var(--vds-space-3, 12px);
   background: var(--vds-bg-2, #1c1d2b);
   border: 1px solid var(--vds-border, #2a2b3d);
   border-radius: var(--vds-radius-md, 6px);
-  justify-content: center;
-  flex-wrap: wrap;
 }
 
 .legend-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   font-size: var(--vds-text-xs, 11px);
   color: var(--vds-text-muted, #a8a09a);
 }
@@ -1691,6 +1654,8 @@
 }
 
 /* ── Overlay / Panel shared ──────────────────────────────────────────── */
+/*   MudBlazor migration: text-align:center has no utility (no text-center
+     in MudBlazor v9.7.0). Kept in CSS. */
 
 .overlay-placeholder {
   color: var(--vds-text-muted, #a8a09a);
@@ -1701,10 +1666,10 @@
 
 /* ── Inventory Overlay ───────────────────────────────────────────────── */
 
+/*   MudBlazor migration: display:flex → d-flex, flex-direction:column → flex-column,
+     gap:16px → gap-4 applied in InventoryOverlay.razor markup. */
+
 .inventory-overlay {
-  display: flex;
-  flex-direction: column;
-  gap: var(--vds-space-4, 16px);
   min-height: 300px;
 }
 
@@ -1731,9 +1696,11 @@
   gap: var(--vds-space-2, 8px);
 }
 
+/*   MudBlazor migration: display:flex → d-flex, flex-direction:column → flex-column
+     applied in InventoryOverlay.razor markup. gap:2px has no utility (4px step);
+     kept in CSS. */
+
 .equipment-slot {
-  display: flex;
-  flex-direction: column;
   gap: 2px;
   padding: var(--vds-space-2, 8px);
   background: var(--vds-bg-3, #262736);
@@ -1783,10 +1750,12 @@
   gap: var(--vds-space-2, 8px);
 }
 
+/*   MudBlazor migration: display:flex → d-flex, flex-direction:column → flex-column,
+     align-items:center → align-center applied in InventoryOverlay.razor markup.
+     gap:2px has no utility (4px step); text-align:center has no utility;
+     both kept in CSS. */
+
 .inventory-slot {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   gap: 2px;
   padding: var(--vds-space-2, 8px);
   background: var(--vds-bg-3, #262736);
@@ -1851,22 +1820,22 @@
 }
 
 /* Inventory tooltip / item detail card */
+/*   MudBlazor migration: display:flex → d-flex, flex-direction:column → flex-column,
+     gap:8px → gap-2 applied in InventoryOverlay.razor markup. */
+
 .inventory-tooltip {
   background: var(--vds-bg-2, #1c1d2b);
   border: 1px solid var(--vds-border-strong, #3d3f58);
   border-radius: var(--vds-radius-md, 6px);
   padding: var(--vds-space-3, 12px);
-  display: flex;
-  flex-direction: column;
-  gap: var(--vds-space-2, 8px);
   animation: panel-enter 0.2s ease;
 }
 
+/*   MudBlazor migration: display:flex → d-flex, align-items:center → align-center,
+     justify-content:space-between → justify-space-between, gap:8px → gap-2
+     applied in InventoryOverlay.razor markup. */
+
 .inventory-tooltip-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--vds-space-2, 8px);
 }
 
 .inventory-tooltip-header strong {
@@ -1891,27 +1860,28 @@
   padding-left: var(--vds-space-2, 8px);
 }
 
+/*   MudBlazor migration: display:flex → d-flex, flex-wrap:wrap → flex-wrap,
+     gap:8px → gap-2 applied in InventoryOverlay.razor markup. */
+
 .inventory-tooltip-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--vds-space-2, 8px);
   font-family: var(--vds-font-mono, "JetBrains Mono", monospace);
   font-size: var(--vds-text-xs, 11px);
   color: var(--vds-text-muted, #a8a09a);
 }
 
+/*   MudBlazor migration: display:flex → d-flex, gap:8px → gap-2
+     applied in InventoryOverlay.razor markup. */
+
 .inventory-tooltip-actions {
-  display: flex;
-  gap: var(--vds-space-2, 8px);
   margin-top: var(--vds-space-1, 4px);
 }
 
 /* ── Shop Overlay ────────────────────────────────────────────────────── */
 
+/*   MudBlazor migration: display:flex → d-flex, flex-direction:column → flex-column,
+     gap:16px → gap-4 applied in ShopOverlay.razor markup. */
+
 .shop-overlay {
-  display: flex;
-  flex-direction: column;
-  gap: var(--vds-space-4, 16px);
   min-height: 300px;
 }
 
@@ -1940,16 +1910,16 @@
   padding: var(--vds-space-3, 12px);
 }
 
+/*   MudBlazor migration: display:flex → d-flex, flex-direction:column → flex-column,
+     gap:4px → gap-1 applied in ShopOverlay.razor markup. */
+
 .shop-items {
-  display: flex;
-  flex-direction: column;
-  gap: var(--vds-space-1, 4px);
 }
 
+/*   MudBlazor migration: display:flex → d-flex, align-items:center → align-center,
+     gap:8px → gap-2 applied in ShopOverlay.razor markup. */
+
 .shop-item {
-  display: flex;
-  align-items: center;
-  gap: var(--vds-space-2, 8px);
   padding: var(--vds-space-2, 8px);
   background: var(--vds-bg-3, #262736);
   border: 1px solid var(--vds-border-subtle, #1e1f2d);
@@ -1961,10 +1931,11 @@
   border-color: var(--vds-border, #2a2b3d);
 }
 
+/*   MudBlazor migration: flex:1 → flex-1, display:flex → d-flex,
+     flex-direction:column → flex-column applied in ShopOverlay.razor markup.
+     gap:1px has no utility (4px step); min-width kept in CSS. */
+
 .shop-item-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
   gap: 1px;
   min-width: 0;
 }
@@ -2022,10 +1993,10 @@
 
 /* ── Journal / Quest Log Overlay ─────────────────────────────────────── */
 
+/*   MudBlazor migration: display:flex → d-flex, flex-direction:column → flex-column,
+     gap:16px → gap-4 applied in JournalOverlay.razor markup. */
+
 .journal-overlay {
-  display: flex;
-  flex-direction: column;
-  gap: var(--vds-space-4, 16px);
   min-height: 300px;
 }
 
@@ -2062,10 +2033,10 @@
   padding: var(--vds-space-3, 12px);
 }
 
+/*   MudBlazor migration: display:flex → d-flex, align-items:center → align-center,
+     gap:8px → gap-2 applied in JournalOverlay.razor markup. */
+
 .journal-quest {
-  display: flex;
-  align-items: center;
-  gap: var(--vds-space-2, 8px);
   padding: var(--vds-space-2, 8px);
   background: var(--vds-bg-3, #262736);
   border: 1px solid var(--vds-border-subtle, #1e1f2d);
@@ -2085,8 +2056,9 @@
   background: var(--vds-seal-muted, #3d1a16);
 }
 
+/*   MudBlazor migration: flex:1 → flex-1 applied in JournalOverlay.razor markup. */
+
 .journal-quest-title {
-  flex: 1;
   font-size: var(--vds-text-sm, 12px);
   color: var(--vds-text, #f0ede8);
   font-weight: 500;
@@ -2105,14 +2077,14 @@
   font-weight: 700;
 }
 
+/*   MudBlazor migration: display:flex → d-flex, flex-direction:column → flex-column,
+     gap:8px → gap-2 applied in JournalOverlay.razor markup. */
+
 .journal-quest-detail {
   background: var(--vds-bg-2, #1c1d2b);
   border: 1px solid var(--vds-border-strong, #3d3f58);
   border-radius: var(--vds-radius-md, 6px);
   padding: var(--vds-space-3, 12px);
-  display: flex;
-  flex-direction: column;
-  gap: var(--vds-space-2, 8px);
   animation: panel-enter 0.2s ease;
 }
 
@@ -2163,9 +2135,11 @@
   padding: var(--vds-space-3, 12px);
 }
 
+/*   MudBlazor migration: display:flex → d-flex, flex-direction:column → flex-column
+     applied in JournalOverlay.razor markup. gap:2px has no utility (4px step);
+     kept in CSS. */
+
 .journal-completed-list {
-  display: flex;
-  flex-direction: column;
   gap: 2px;
 }
 

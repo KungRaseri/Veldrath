@@ -6,7 +6,7 @@
 @inject ILogger<JournalOverlay> Logger
 @implements IAsyncDisposable
 
-<div class="journal-overlay">
+<div class="journal-overlay d-flex flex-column gap-4">
     <div class="journal-quest-list">
         <h4>Active Quests (@GameState.QuestLog.Count)</h4>
         @if (GameState.QuestLog.Count == 0)
@@ -17,9 +17,9 @@
         {
             @foreach (var quest in GameState.QuestLog)
             {
-                <div class="journal-quest @(_selectedQuest == quest ? "journal-quest-selected" : "")"
+                <div class="journal-quest d-flex align-center gap-2 @(_selectedQuest == quest ? "journal-quest-selected" : "")"
                      @onclick="() => SelectQuest(quest)">
-                    <span class="journal-quest-title">@quest.Title</span>
+                    <span class="journal-quest-title flex-1">@quest.Title</span>
                     <span class="journal-quest-progress">@quest.Progress / @quest.Total</span>
                     @if (quest.IsComplete)
                     {
@@ -32,7 +32,7 @@
 
     @if (_selectedQuest is not null)
     {
-        <div class="journal-quest-detail">
+        <div class="journal-quest-detail d-flex flex-column gap-2">
             <h4>@_selectedQuest.Title</h4>
             @if (!string.IsNullOrEmpty(_selectedQuest.Description))
             {
@@ -70,7 +70,7 @@
     {
         <div class="journal-completed">
             <h4>Completed Quests (@GameState.CompletedQuests.Count)</h4>
-            <div class="journal-completed-list">
+            <div class="journal-completed-list d-flex flex-column">
                 @foreach (var quest in GameState.CompletedQuests)
                 {
                     <div class="journal-completed-item">@quest.Title</div>

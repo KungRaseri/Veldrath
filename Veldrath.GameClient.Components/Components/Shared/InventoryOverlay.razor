@@ -8,11 +8,11 @@
 @inject ILogger<InventoryOverlay> Logger
 @implements IAsyncDisposable
 
-<div class="inventory-overlay">
+<div class="inventory-overlay d-flex flex-column gap-4">
     <div class="inventory-equipment">
         <h4>Equipment</h4>
         <div class="equipment-grid">
-            <div class="equipment-slot" title="Head">
+            <div class="equipment-slot d-flex flex-column" title="Head">
                 <span class="equipment-slot-label">Head</span>
                 @if (GameState.EquippedItems.TryGetValue("Head", out var headItem))
                 {
@@ -23,7 +23,7 @@
                     <span class="equipment-slot-empty">—</span>
                 }
             </div>
-            <div class="equipment-slot" title="Chest">
+            <div class="equipment-slot d-flex flex-column" title="Chest">
                 <span class="equipment-slot-label">Chest</span>
                 @if (GameState.EquippedItems.TryGetValue("Chest", out var chestItem))
                 {
@@ -34,7 +34,7 @@
                     <span class="equipment-slot-empty">—</span>
                 }
             </div>
-            <div class="equipment-slot" title="Main Hand">
+            <div class="equipment-slot d-flex flex-column" title="Main Hand">
                 <span class="equipment-slot-label">Main Hand</span>
                 @if (GameState.EquippedItems.TryGetValue("MainHand", out var mhItem))
                 {
@@ -45,7 +45,7 @@
                     <span class="equipment-slot-empty">—</span>
                 }
             </div>
-            <div class="equipment-slot" title="Off Hand">
+            <div class="equipment-slot d-flex flex-column" title="Off Hand">
                 <span class="equipment-slot-label">Off Hand</span>
                 @if (GameState.EquippedItems.TryGetValue("OffHand", out var ohItem))
                 {
@@ -56,7 +56,7 @@
                     <span class="equipment-slot-empty">—</span>
                 }
             </div>
-            <div class="equipment-slot" title="Legs">
+            <div class="equipment-slot d-flex flex-column" title="Legs">
                 <span class="equipment-slot-label">Legs</span>
                 @if (GameState.EquippedItems.TryGetValue("Legs", out var legsItem))
                 {
@@ -67,7 +67,7 @@
                     <span class="equipment-slot-empty">—</span>
                 }
             </div>
-            <div class="equipment-slot" title="Feet">
+            <div class="equipment-slot d-flex flex-column" title="Feet">
                 <span class="equipment-slot-label">Feet</span>
                 @if (GameState.EquippedItems.TryGetValue("Feet", out var feetItem))
                 {
@@ -78,7 +78,7 @@
                     <span class="equipment-slot-empty">—</span>
                 }
             </div>
-            <div class="equipment-slot" title="Ring">
+            <div class="equipment-slot d-flex flex-column" title="Ring">
                 <span class="equipment-slot-label">Ring</span>
                 @if (GameState.EquippedItems.TryGetValue("Ring", out var ringItem))
                 {
@@ -89,7 +89,7 @@
                     <span class="equipment-slot-empty">—</span>
                 }
             </div>
-            <div class="equipment-slot" title="Amulet">
+            <div class="equipment-slot d-flex flex-column" title="Amulet">
                 <span class="equipment-slot-label">Amulet</span>
                 @if (GameState.EquippedItems.TryGetValue("Amulet", out var amuItem))
                 {
@@ -114,7 +114,7 @@
             <div class="inventory-grid">
                 @foreach (var item in GameState.InventoryItems)
                 {
-                    <div class="inventory-slot @GetRarityClass(item.Rarity)"
+                    <div class="inventory-slot d-flex flex-column align-center @GetRarityClass(item.Rarity)"
                          @onclick="() => SelectItem(item)"
                          title="@BuildTooltip(item)">
                         <span class="inventory-slot-name">@item.GetShortName()</span>
@@ -131,8 +131,8 @@
 
     @if (_selectedItem is not null)
     {
-        <div class="inventory-tooltip">
-            <div class="inventory-tooltip-header">
+        <div class="inventory-tooltip d-flex flex-column gap-2">
+            <div class="inventory-tooltip-header d-flex align-center justify-space-between gap-2">
                 <strong>@_selectedItem.GetDisplayName()</strong>
                 <span class="rarity-badge @GetRarityClass(_selectedItem.Rarity)">@_selectedItem.Rarity</span>
             </div>
@@ -141,7 +141,7 @@
             {
                 <p class="inventory-tooltip-lore">"@_selectedItem.Lore"</p>
             }
-            <div class="inventory-tooltip-stats">
+            <div class="inventory-tooltip-stats d-flex flex-wrap gap-2">
                 @if (_selectedItem.Type == ItemType.Weapon && _selectedItem.Damage is not null)
                 {
                     <span>Damage: @_selectedItem.Damage.Min–@_selectedItem.Damage.Max</span>
@@ -153,7 +153,7 @@
                 <span>Weight: @_selectedItem.Weight.ToString("F1")</span>
                 <span>Value: @_selectedItem.Price gold</span>
             </div>
-            <div class="inventory-tooltip-actions">
+            <div class="inventory-tooltip-actions d-flex gap-2">
                 @if (IsEquippable(_selectedItem.Type))
                 {
                     <MudButton Variant="Variant.Filled"

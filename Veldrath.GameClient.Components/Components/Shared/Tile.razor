@@ -2,7 +2,7 @@
 @* Single tile renderer for the zone tilemap viewport. Renders a <div> with the appropriate CSS class,
    entity overlays, and hover/mouseleave events for the info card. *@
 
-<div class="game-tile @GetTileClass()"
+<div class="game-tile @GetTileClass() d-flex align-center justify-center"
      @onclick="() => OnClick.InvokeAsync((X, Y))"
      @onmouseenter="() => OnHover.InvokeAsync((X, Y))"
      @onmouseleave="() => OnHover.InvokeAsync((-1, -1))"
