@@ -9,21 +9,31 @@
 @inject IGameApiClient Api
 
 <div class="game-sidebar">
-    @if (GameState.CurrentCharacterInfo is { } character)
-    {
-        <div class="sidebar-section sidebar-character">
-            <h3>@character.Name</h3>
-            <p>@character.ClassName · Level @character.Level</p>
-            <p>◎ @character.Gold gold</p>
-        </div>
 
-        <div class="sidebar-section sidebar-attrs">
-            <h4>Attributes</h4>
-            <p>HP: @character.CurrentHealth / @character.MaxHealth</p>
-            <p>MP: @character.CurrentMana / @character.MaxMana</p>
-            <p>XP: @character.Experience / @character.EffectiveExperienceToNextLevel</p>
+    @* Navigation section *@
+    <div class="sidebar-section sidebar-nav">
+        <h4>Game</h4>
+        <div class="mud-d-flex flex-column gap-2">
+            <MudButton Variant="Variant.Outlined"
+                       FullWidth="true"
+                       OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Inventory)"
+                       Class="sidebar-btn">
+                🎒 Inventory
+            </MudButton>
+            <MudButton Variant="Variant.Outlined"
+                       FullWidth="true"
+                       Href="/Game/Map"
+                       Class="sidebar-btn">
+                🗺 Map
+            </MudButton>
+            <MudButton Variant="Variant.Outlined"
+                       FullWidth="true"
+                       OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Journal)"
+                       Class="sidebar-btn">
+                📜 Journal
+            </MudButton>
         </div>
-    }
+    </div>
 
     <div class="sidebar-section sidebar-occupants">
         <h4>Nearby Players (@(!string.IsNullOrEmpty(GameState.CurrentZoneId) ? GameState.ZoneOccupants.Count.ToString() : "0"))</h4>
@@ -113,36 +123,6 @@
     }
 
     <div class="sidebar-section sidebar-actions mud-d-flex flex-column gap-2" style="padding-top: 16px;">
-        <MudButton Variant="Variant.Outlined"
-                   FullWidth="true"
-                   OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Inventory)"
-                   Class="sidebar-btn">
-            Inventory
-        </MudButton>
-        <MudButton Variant="Variant.Outlined"
-                   FullWidth="true"
-                   OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Shop)"
-                   Class="sidebar-btn">
-            Shop
-        </MudButton>
-        <MudButton Variant="Variant.Outlined"
-                   FullWidth="true"
-                   OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Journal)"
-                   Class="sidebar-btn">
-            Journal
-        </MudButton>
-        <MudButton Variant="Variant.Outlined"
-                   FullWidth="true"
-                   Href="/Game/Map"
-                   Class="sidebar-btn">
-            Map
-        </MudButton>
-        <MudButton Variant="Variant.Outlined"
-                   FullWidth="true"
-                   Href="/Game/Settings"
-                   Class="sidebar-btn">
-            Settings
-        </MudButton>
 
         @* G68: Visit Shop — conditional on zone having a merchant *@
         @if (GameState.CurrentZone.HasMerchant)
@@ -202,12 +182,11 @@
             Exit Zone
         </MudButton>
 
-        <MudButton Variant="Variant.Filled"
-                   Color="Color.Error"
+        <MudButton Variant="Variant.Outlined"
                    FullWidth="true"
-                   OnClick="Logout"
+                   OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Inventory)"
                    Class="sidebar-btn">
-            Logout
+            👤 Character Sheet
         </MudButton>
     </div>
 </div>
