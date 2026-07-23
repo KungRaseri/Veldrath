@@ -16,7 +16,7 @@
             <StatusBar Label="MP" Current="@character.CurrentMana" Max="@character.MaxMana" Color="#1e88e5" />
         </div>
 
-        <span class="game-header-gold mud-text-secondary" title="Gold" style="white-space: nowrap;">◎ @character.Gold.ToString("N0")</span>
+        <span class="game-header-gold" title="Gold" style="white-space: nowrap;">◎ @character.Gold.ToString("N0")</span>
 
         @if (!string.IsNullOrEmpty(GameState.CurrentZoneName))
         {

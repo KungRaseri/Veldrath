@@ -26,7 +26,7 @@ else
             <MudSelectItem Value="@("true")">Resolved Only</MudSelectItem>
         </MudSelect>
         <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/admin">← Back</MudButton>
-        <MudText Typo="Typo.body2" Class="mud-text-secondary">@(_result?.Total ?? 0) total</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@(_result?.Total ?? 0) total</MudText>
     </div>
 
     @if (!string.IsNullOrEmpty(_actionMessage))
@@ -44,7 +44,7 @@ else
     }
     else if (_result.Items.Count == 0)
     {
-        <MudText Typo="Typo.body2" Class="mud-text-secondary">No reports found.</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">No reports found.</MudText>
     }
     else
     {
@@ -68,7 +68,7 @@ else
                         <MudChip T="string" Size="Size.Small" Color="Color.Success">Resolved</MudChip>
                         @if (context.ResolvedAt.HasValue)
                         {
-                            <MudText Typo="Typo.caption" Class="mud-text-secondary ml-1" Inline="true">@context.ResolvedAt.Value.ToLocalTime().ToString("g")</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-1" Inline="true">@context.ResolvedAt.Value.ToLocalTime().ToString("g")</MudText>
                         }
                     }
                     else

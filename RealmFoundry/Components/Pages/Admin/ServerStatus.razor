@@ -24,24 +24,24 @@ else
 
     <div class="d-flex flex-wrap gap-4 mb-4">
         <MudPaper Elevation="0" Outlined="true" Class="pa-4" Style="min-width: 160px;">
-            <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="text-transform: uppercase; letter-spacing: .06em;">Connected Players</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Style="text-transform: uppercase; letter-spacing: .06em;">Connected Players</MudText>
             <MudText Typo="Typo.h4" Class="mt-1">@_status.ConnectedPlayers</MudText>
         </MudPaper>
         <MudPaper Elevation="0" Outlined="true" Class="pa-4" Style="min-width: 160px;">
-            <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="text-transform: uppercase; letter-spacing: .06em;">Registered Accounts</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Style="text-transform: uppercase; letter-spacing: .06em;">Registered Accounts</MudText>
             <MudText Typo="Typo.h4" Class="mt-1">@_status.RegisteredAccounts</MudText>
         </MudPaper>
         <MudPaper Elevation="0" Outlined="true" Class="pa-4" Style="min-width: 160px;">
-            <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="text-transform: uppercase; letter-spacing: .06em;">Total Characters</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Style="text-transform: uppercase; letter-spacing: .06em;">Total Characters</MudText>
             <MudText Typo="Typo.h4" Class="mt-1">@_status.TotalCharacters</MudText>
         </MudPaper>
         <MudPaper Elevation="0" Outlined="true" Class="pa-4" Style="min-width: 160px;">
-            <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="text-transform: uppercase; letter-spacing: .06em;">Uptime</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Style="text-transform: uppercase; letter-spacing: .06em;">Uptime</MudText>
             <MudText Typo="Typo.h4" Class="mt-1">@FormatUptime(_status.ServerStartedAt)</MudText>
         </MudPaper>
         <MudPaper Elevation="0" Outlined="true" Class="pa-4" Style="min-width: 160px;">
-            <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="text-transform: uppercase; letter-spacing: .06em;">Started At</MudText>
-            <MudText Typo="Typo.h4" Class="mt-1 mud-text-secondary">@_status.ServerStartedAt.ToLocalTime().ToString("g")</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Style="text-transform: uppercase; letter-spacing: .06em;">Started At</MudText>
+            <MudText Typo="Typo.h4" Class="mt-1">@_status.ServerStartedAt.ToLocalTime().ToString("g")</MudText>
         </MudPaper>
     </div>
 
@@ -64,7 +64,7 @@ else
     }
     else
     {
-        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">No active zones.</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">No active zones.</MudText>
     }
 
     @if (_status.HealthChecks is { Count: > 0 })

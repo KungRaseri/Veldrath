@@ -30,7 +30,7 @@ else
         }
         else if (_notifications.Count == 0)
         {
-            <MudText Typo="Typo.body2" Class="mud-text-secondary">No notifications yet.</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">No notifications yet.</MudText>
         }
         else
         {
@@ -42,7 +42,7 @@ else
                             <div class="d-flex flex-column gap-1">
                                 <MudLink Href="@($"/submissions/{n.SubmissionId}")">@n.SubmissionTitle</MudLink>
                                 <MudText Typo="Typo.body2">@n.Message</MudText>
-                                <MudText Typo="Typo.caption" Class="mud-text-secondary">@n.CreatedAt.ToLocalTime().ToString("g")</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@n.CreatedAt.ToLocalTime().ToString("g")</MudText>
                             </div>
                             @if (!n.IsRead)
                             {

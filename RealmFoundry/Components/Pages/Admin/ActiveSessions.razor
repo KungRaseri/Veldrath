@@ -30,7 +30,7 @@ else
         <MudButton Variant="Variant.Filled" Size="Size.Small" OnClick="LoadAsync">Filter</MudButton>
         <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="ClearFiltersAsync">Clear</MudButton>
         <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/admin">← Back</MudButton>
-        <MudText Typo="Typo.body2" Class="mud-text-secondary">@(_sessions?.Count ?? 0) player(s) online</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@(_sessions?.Count ?? 0) player(s) online</MudText>
     </div>
 
     @if (_loading)
@@ -43,7 +43,7 @@ else
     }
     else if (_sessions.Count == 0)
     {
-        <MudText Typo="Typo.body2" Class="mud-text-secondary">No active sessions match the current filter.</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">No active sessions match the current filter.</MudText>
     }
     else
     {

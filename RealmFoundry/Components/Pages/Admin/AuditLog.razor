@@ -23,7 +23,7 @@ else
         <MudButton Variant="Variant.Filled" Size="Size.Small" OnClick="ApplyFilterAsync">Filter</MudButton>
         <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="ClearFilterAsync">Clear</MudButton>
         <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/admin">← Back</MudButton>
-        <MudText Typo="Typo.body2" Class="mud-text-secondary">@(_result?.Total ?? 0) total entries</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@(_result?.Total ?? 0) total entries</MudText>
     </div>
 
     @if (_loading)
@@ -36,7 +36,7 @@ else
     }
     else if (_result.Items.Count == 0)
     {
-        <MudText Typo="Typo.body2" Class="mud-text-secondary">No entries found.</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">No entries found.</MudText>
     }
     else
     {

@@ -89,7 +89,7 @@
                                    Size="Size.Small"
                                    OnClick="() => NavigateToLocationAsync(loc.Slug)"
                                    Disabled="@(!Hub.IsConnected || isHere)"
-                                   Class="@(isHere ? "sidebar-nav-btn mud-text-secondary" : "sidebar-nav-btn")"
+                                   Class="@(isHere ? "sidebar-nav-btn" : "sidebar-nav-btn")"
                                    title="@(isHere ? "You are here" : $"Fast travel to {loc.DisplayName}")">
                             📍 @loc.DisplayName @(isHere ? "(here)" : "")
                         </MudButton>

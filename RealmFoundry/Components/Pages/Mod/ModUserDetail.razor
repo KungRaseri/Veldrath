@@ -32,30 +32,30 @@ else
 
     <MudPaper Elevation="0" Outlined="true" Class="pa-4 mb-4">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <MudText Typo="Typo.body2" Class="mud-text-secondary">Account ID</MudText>
-            <MudText Typo="Typo.body2" Class="mud-text-secondary">@_user.Id</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Account ID</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@_user.Id</MudText>
         </div>
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <MudText Typo="Typo.body2" Class="mud-text-secondary">Roles</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Roles</MudText>
             <MudText Typo="Typo.body2">@string.Join(", ", _user.Roles)</MudText>
         </div>
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <MudText Typo="Typo.body2" Class="mud-text-secondary">Warnings</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Warnings</MudText>
             <MudText Typo="Typo.body2">@_user.WarnCount</MudText>
         </div>
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <MudText Typo="Typo.body2" Class="mud-text-secondary">Status</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Status</MudText>
             <div>
                 @if (_user.IsBanned)
                 {
                     <MudChip T="string" Size="Size.Small" Color="Color.Error">Banned</MudChip>
                     @if (_user.BannedUntil.HasValue)
                     {
-                        <MudText Typo="Typo.caption" Class="mud-text-secondary d-inline"> until @_user.BannedUntil.Value.ToLocalTime().ToString("g")</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-inline"> until @_user.BannedUntil.Value.ToLocalTime().ToString("g")</MudText>
                     }
                     @if (_user.BanReason is not null)
                     {
-                        <MudText Typo="Typo.caption" Class="mud-text-secondary d-inline"> — @_user.BanReason</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-inline"> — @_user.BanReason</MudText>
                     }
                 }
                 else if (_user.IsMuted)
@@ -63,11 +63,11 @@ else
                     <MudChip T="string" Size="Size.Small" Color="Color.Warning">Muted</MudChip>
                     @if (_user.MutedUntil.HasValue)
                     {
-                        <MudText Typo="Typo.caption" Class="mud-text-secondary d-inline"> until @_user.MutedUntil.Value.ToLocalTime().ToString("g")</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-inline"> until @_user.MutedUntil.Value.ToLocalTime().ToString("g")</MudText>
                     }
                     @if (_user.MuteReason is not null)
                     {
-                        <MudText Typo="Typo.caption" Class="mud-text-secondary d-inline"> — @_user.MuteReason</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-inline"> — @_user.MuteReason</MudText>
                     }
                 }
                 else
@@ -77,12 +77,12 @@ else
             </div>
         </div>
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <MudText Typo="Typo.body2" Class="mud-text-secondary">Last Seen</MudText>
-            <MudText Typo="Typo.body2" Class="mud-text-secondary">@(_user.LastSeenAt?.ToLocalTime().ToString("g") ?? "—")</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Last Seen</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@(_user.LastSeenAt?.ToLocalTime().ToString("g") ?? "—")</MudText>
         </div>
         <div class="d-flex justify-content-between align-items-center">
-            <MudText Typo="Typo.body2" Class="mud-text-secondary">Created</MudText>
-            <MudText Typo="Typo.body2" Class="mud-text-secondary">@_user.CreatedAt.ToLocalTime().ToString("g")</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Created</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@_user.CreatedAt.ToLocalTime().ToString("g")</MudText>
         </div>
     </MudPaper>
 
