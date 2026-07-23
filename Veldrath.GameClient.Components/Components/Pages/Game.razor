@@ -11,71 +11,70 @@
 @inject IConfiguration Configuration
 
 <div class="mud-d-flex flex-column mud-height-full mud-width-full overflow-hidden">
-    <GameHeader />
+    <CascadingValue Value="GameState">
+        <GameHeader />
 
-    <div class="game-main-row">
-        @* Left sidebar — collapsible *@
-        <div class="game-sidebar @(_sidebarCollapsed ? "sidebar-collapsed" : "")">
-            <button class="sidebar-toggle" @onclick="ToggleSidebar"
-                    title="@(_sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar")">
-                @(_sidebarCollapsed ? "▶" : "◀")
-            </button>
-            @if (!_sidebarCollapsed)
-            {
-                <GameSidebar OnOpenOverlay="HandleOpenOverlay" />
-                <div class="sidebar-char-panel">
-                    <CharacterPanel />
-                </div>
-            }
-        </div>
-
-        @* Center — tilemap + location panel *@
-        <div class="game-center-area">
-            @if (_isRestoringSession)
-            {
-                <div class="game-loading-zone">
-                    <p>Restoring your game session...</p>
-                    <div class="spinner"></div>
-                </div>
-            }
-            else if (GameState.IsInCombat)
-            {
-                <GameCombat />
-            }
-            else if (GameState.ZoneTileMap is not null)
-            {
-                <GameTilemap />
-                @if (GameState.IsAtLocation)
+        <div class="game-main-row">
+            <div class="game-sidebar @(_sidebarCollapsed ? "sidebar-collapsed" : "")">
+                <button class="sidebar-toggle" @onclick="ToggleSidebar"
+                        title="@(_sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar")">
+                    @(_sidebarCollapsed ? "▶" : "◀")
+                </button>
+                @if (!_sidebarCollapsed)
                 {
-                    <ZoneLocationPanel />
+                    <GameSidebar OnOpenOverlay="HandleOpenOverlay" />
+                    <div class="sidebar-char-panel">
+                        <CharacterPanel />
+                    </div>
                 }
-            }
-            else
-            {
-                <div class="game-loading-zone">
-                    <p>Loading zone...</p>
-                    <div class="spinner"></div>
-                </div>
-            }
+            </div>
+
+            <div class="game-center-area">
+                @if (_isRestoringSession)
+                {
+                    <div class="game-loading-zone">
+                        <p>Restoring your game session...</p>
+                        <div class="spinner"></div>
+                    </div>
+                }
+                else if (GameState.IsInCombat)
+                {
+                    <GameCombat />
+                }
+                else if (GameState.ZoneTileMap is not null)
+                {
+                    <GameTilemap />
+                    @if (GameState.IsAtLocation)
+                    {
+                        <ZoneLocationPanel />
+                    }
+                }
+                else
+                {
+                    <div class="game-loading-zone">
+                        <p>Loading zone...</p>
+                        <div class="spinner"></div>
+                    </div>
+                }
+            </div>
+
+            <div class="game-chat-panel @(_chatCollapsed ? "chat-collapsed" : "")">
+                <button class="chat-toggle" @onclick="ToggleChat"
+                        title="@(_chatCollapsed ? "Expand chat" : "Collapse chat")">
+                    @(_chatCollapsed ? "◀" : "▶")
+                </button>
+                @if (!_chatCollapsed)
+                {
+                    <GameChat />
+                }
+            </div>
         </div>
 
-        @* Right sidebar — chat, collapsible *@
-        <div class="game-chat-panel @(_chatCollapsed ? "chat-collapsed" : "")">
-            <button class="chat-toggle" @onclick="ToggleChat"
-                    title="@(_chatCollapsed ? "Expand chat" : "Collapse chat")">
-                @(_chatCollapsed ? "◀" : "▶")
-            </button>
-            @if (!_chatCollapsed)
-            {
-                <GameChat />
-            }
-        </div>
-    </div>
-
-    <GameFooter />
-    <GameOverlay Visible="_showOverlay"
-                 OverlayType="_activeOverlay"
-                 OnClose="HandleCloseOverlay" />
+        <GameFooter />
+        <GameOverlay Visible="_showOverlay"
+                     OverlayType="_activeOverlay"
+                     OnClose="HandleCloseOverlay" />
+    </CascadingValue>
 </div>
 
 @* Reconnect overlay shown when the SignalR circuit drops during gameplay.
@@ -205,6 +204,12 @@
             {
                 await EnterZoneAfterConnectAsync();
             }
+        }
+        catch (ObjectDisposedException)
+        {
+            // Expected during SSR prerender — the DI scope is disposed after HTML is generated.
+            // The interactive circuit will retry connection via OnGameInitializedAsync.
+            Logger.LogDebug("Hub connection skipped during SSR prerender.");
         }
         catch (Exception ex)
         {

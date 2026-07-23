@@ -1,7 +1,6 @@
 @using Veldrath.GameClient.Core.Abstractions
 @using MudBlazor
 @* Vertical character status panel showing HP, MP, XP bars and attributes. *@
-@inject IGameStateService GameState
 
 @if (GameState.CurrentCharacterInfo is { } info && GameState.CurrentCharacter is { } state)
 {
@@ -54,6 +53,10 @@
 }
 
 @code {
+    /// <summary>Gets or sets the game state service, received from the parent via cascading value.</summary>
+    [CascadingParameter]
+    private IGameStateService GameState { get; set; } = null!;
+
     private double GetHpPercent()
     {
         var s = GameState.CurrentCharacter;
