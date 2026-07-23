@@ -10,14 +10,14 @@
     case EntryPageState.WaitingForAuth:
         <MudStack Row="false" AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 60vh;">
             <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" Class="mb-3" />
-            <MudText Typo="Typo.body2" Color="Color.Dark">Waiting for authentication...</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Default">Waiting for authentication...</MudText>
         </MudStack>
         break;
 
     case EntryPageState.Loading:
         <MudStack Row="false" AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 60vh;">
             <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" Class="mb-3" />
-            <MudText Typo="Typo.body2" Color="Color.Dark">Preparing your adventure...</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Default">Preparing your adventure...</MudText>
         </MudStack>
         break;
 
@@ -38,7 +38,7 @@
         @* Dialog is shown programmatically; render a minimal placeholder *@
         <MudStack Row="false" AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 60vh;">
             <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" Class="mb-3" />
-            <MudText Typo="Typo.body2" Color="Color.Dark">Loading...</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Default">Loading...</MudText>
         </MudStack>
         break;
 }

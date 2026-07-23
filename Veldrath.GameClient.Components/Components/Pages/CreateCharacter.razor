@@ -23,7 +23,7 @@
     {
         <MudStack Row="false" AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 60vh;">
             <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" Class="mb-3" />
-            <MudText Typo="Typo.body2" Color="Color.Dark">Loading character creation...</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Default">Loading character creation...</MudText>
         </MudStack>
     }
     else if (_isWaitingForAuth)
@@ -175,7 +175,7 @@
                                                     <MudText Typo="Typo.h6">@species.DisplayName</MudText>
                                                     @if (!string.IsNullOrWhiteSpace(species.Description))
                                                     {
-                                                        <MudText Typo="Typo.body2" Color="Color.Dark">@species.Description</MudText>
+                                                        <MudText Typo="Typo.body2" Color="Color.Default">@species.Description</MudText>
                                                     }
                                                 </MudCardContent>
                                             </MudCard>
@@ -211,7 +211,7 @@
                                                     <MudText Typo="Typo.h6">@bg.DisplayName</MudText>
                                                     @if (!string.IsNullOrWhiteSpace(bg.Description))
                                                     {
-                                                        <MudText Typo="Typo.body2" Color="Color.Dark">@bg.Description</MudText>
+                                                        <MudText Typo="Typo.body2" Color="Color.Default">@bg.Description</MudText>
                                                     }
                                                 </MudCardContent>
                                             </MudCard>
@@ -233,7 +233,7 @@
                         @if (_currentStep == 5)
                         {
                             <h2 @ref="_stepHeadingRef" tabindex="-1" class="mud-typography mud-typography-h5 mb-4">Allocate Attributes</h2>
-                            <MudText Typo="Typo.body2" Color="Color.Dark" Class="mb-4">Distribute @TotalBudget points across your six
+                            <MudText Typo="Typo.body2" Color="Color.Default" Class="mb-4">Distribute @TotalBudget points across your six
                                 attributes. Click + to increase, − to decrease.</MudText>
 
                                 <MudProgressLinear Value="@(TotalBudget - RemainingPoints)" Min="0" Max="@TotalBudget"
@@ -261,7 +261,7 @@
                                             <MudText Typo="Typo.h6" Class="mx-3" Style="min-width: 40px; text-align: center;">@stat.Value</MudText>
                                             <MudIconButton Icon="@Icons.Material.Filled.Add" Disabled="@(!canIncrease)"
                                                            OnClick="() => IncreaseStatAsync(stat.Key)" aria-label="@increaseLabel" />
-                                            <MudText Typo="Typo.body2" Color="Color.Dark" Style="min-width: 80px; text-align: right;">Cost: @cost
+                                            <MudText Typo="Typo.body2" Color="Color.Default" Style="min-width: 80px; text-align: right;">Cost: @cost
                                             </MudText>
                                         </MudStack>
                                     }
@@ -284,7 +284,7 @@
                             {
                                 <h2 @ref="_stepHeadingRef" tabindex="-1" class="mud-typography mud-typography-h5 mb-4">Equipment Preferences
                                 </h2>
-                                <MudText Typo="Typo.body2" Color="Color.Dark" Class="mb-4">Optional — your class determines default gear.
+                                <MudText Typo="Typo.body2" Color="Color.Default" Class="mb-4">Optional — your class determines default gear.
                                     Customize if you prefer a specific playstyle.</MudText>
 
                                     <MudContainer MaxWidth="MaxWidth.Small" Class="pa-0">
@@ -323,7 +323,8 @@
                                 @if (_currentStep == 7)
                                 {
                                     <h2 @ref="_stepHeadingRef" tabindex="-1" class="mud-typography mud-typography-h5 mb-4">Review & Create</h2>
-                                    <MudText Typo="Typo.body2" Color="Color.Dark" Class="mb-4">Review your character before venturing into Veldrath.
+                                    <MudText Typo="Typo.body2" Color="Color.Default" Class="mb-4">Review your character before venturing into
+                                        Veldrath.
                                     </MudText>
 
                                     @* Character Preview Panel *@
@@ -386,7 +387,7 @@
                                         <MudCard Elevation="1" Class="mb-4">
                                             <MudCardContent Class="text-center py-4">
                                                 <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="mb-2" />
-                                                <MudText Typo="Typo.body2" Color="Color.Dark">Calculating character stats...</MudText>
+                                                <MudText Typo="Typo.body2" Color="Color.Default">Calculating character stats...</MudText>
                                             </MudCardContent>
                                         </MudCard>
                                     }

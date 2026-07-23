@@ -475,4 +475,13 @@ internal sealed class EmbeddedGameApiClient : IGameApiClient
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<Veldrath.Contracts.Characters.LastSessionDto>(cancellationToken: ct);
     }
+
+    /// <inheritdoc />
+    public async Task DeleteLastSessionAsync(CancellationToken ct = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Delete, "/api/characters/last-session");
+        ApplyAuth(request);
+        var response = await _httpClient.SendAsync(request, ct);
+        response.EnsureSuccessStatusCode();
+    }
 }
