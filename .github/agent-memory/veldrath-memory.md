@@ -2,6 +2,16 @@
 
 > **Status**: Updated through Session-41 (2026-06-30).
 
+---
+
+## CRITICAL — CSS/Styling Rule for Veldrath Web/Client
+
+**Before writing ANY CSS** (custom properties, modifying `.css` files, or adding CSS classes to Razor markup), **ALWAYS first read** [`.github/instructions/styling-and-css.md`](../instructions/styling-and-css.md). MudBlazor CSS utility classes (`d-flex`, `flex-column`, `flex-1`, `overflow-hidden`, `gap-*`, `pa-*`, etc.) MUST be used instead of equivalent raw CSS properties. Only use custom CSS for VDS-specific properties (colors, fonts, borders, animations, shadows) that have no MudBlazor utility equivalent.
+
+**Applies to**: [`Veldrath.Web`](../../Veldrath.Web/), [`Veldrath.GameClient.Components`](../../Veldrath.GameClient.Components/), [`RealmFoundry`](../../RealmFoundry/). Does **NOT apply to** Avalonia projects ([`Veldrath.Client`](../../Veldrath.Client/), [`RealmForge`](../../RealmForge/)).
+
+---
+
 ## OAuth Provider-Link Confirmation Flow (session-30, 2026-04-10)
 
 **Security fix**: `AuthService.ExternalLoginOrRegisterAsync` previously auto-linked a new OAuth provider to an existing account if the emails matched (step 2). This allowed a hostile provider to hijack an account. It now triggers an email-confirmation flow instead.
