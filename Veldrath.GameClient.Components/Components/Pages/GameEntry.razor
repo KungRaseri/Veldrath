@@ -1,0 +1,44 @@
+@page "/Game"
+@implements IAsyncDisposable
+@using MudBlazor
+@using Veldrath.Auth.Blazor
+@using Veldrath.GameClient.Core.Abstractions
+@using Veldrath.Contracts.Characters
+
+@switch (_state)
+{
+    case EntryPageState.WaitingForAuth:
+        <MudStack Row="false" AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 60vh;">
+            <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" Class="mb-3" />
+            <MudText Typo="Typo.body2" Color="Color.Dark">Waiting for authentication...</MudText>
+        </MudStack>
+        break;
+
+    case EntryPageState.Loading:
+        <MudStack Row="false" AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 60vh;">
+            <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" Class="mb-3" />
+            <MudText Typo="Typo.body2" Color="Color.Dark">Preparing your adventure...</MudText>
+        </MudStack>
+        break;
+
+    case EntryPageState.Error:
+        <MudStack Row="false" AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 60vh;" Spacing="4">
+            <MudAlert Severity="Severity.Error" Class="mb-4">
+                <MudText Typo="Typo.h6">Connection Error</MudText>
+                <MudText>@_errorMessage</MudText>
+            </MudAlert>
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="DiscoverAndRouteAsync">Retry</MudButton>
+                <MudButton Variant="Variant.Outlined" Href="/">Back to Home</MudButton>
+            </MudStack>
+        </MudStack>
+        break;
+
+    case EntryPageState.Ready:
+        @* Dialog is shown programmatically; render a minimal placeholder *@
+        <MudStack Row="false" AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 60vh;">
+            <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" Class="mb-3" />
+            <MudText Typo="Typo.body2" Color="Color.Dark">Loading...</MudText>
+        </MudStack>
+        break;
+}

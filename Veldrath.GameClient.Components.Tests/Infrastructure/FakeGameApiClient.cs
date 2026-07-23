@@ -75,13 +75,6 @@ public sealed class FakeGameApiClient : IGameApiClient
     public string? LastSetClassName { get; private set; }
 
     /// <inheritdoc />
-    public Task<List<CharacterDto>> GetCharactersAsync(CancellationToken ct = default)
-    {
-        GetCharactersCallCount++;
-        return Task.FromResult(new List<CharacterDto>(Characters));
-    }
-
-    /// <inheritdoc />
     public Task<CheckNameAvailabilityResponse?> CheckCharacterNameAsync(string name, CancellationToken ct = default)
     {
         CheckNameCallCount++;
@@ -165,10 +158,33 @@ public sealed class FakeGameApiClient : IGameApiClient
     /// <summary>Gets the number of times <see cref="GetLastSessionAsync"/> was called.</summary>
     public int GetLastSessionCallCount { get; private set; }
 
+    /// <summary>
+    /// Gets or sets an exception to throw when <see cref="GetCharactersAsync"/> is called.
+    /// When set, the method throws this exception instead of returning <see cref="Characters"/>.
+    /// </summary>
+    public Exception? GetCharactersException { get; set; }
+
+    /// <summary>
+    /// Gets or sets an exception to throw when <see cref="GetLastSessionAsync"/> is called.
+    /// When set, the method throws this exception instead of returning <see cref="LastSessionResult"/>.
+    /// </summary>
+    public Exception? GetLastSessionException { get; set; }
+
+    /// <inheritdoc />
+    public Task<List<CharacterDto>> GetCharactersAsync(CancellationToken ct = default)
+    {
+        GetCharactersCallCount++;
+        if (GetCharactersException is not null)
+            throw GetCharactersException;
+        return Task.FromResult(new List<CharacterDto>(Characters));
+    }
+
     /// <inheritdoc />
     public Task<LastSessionDto?> GetLastSessionAsync(CancellationToken ct = default)
     {
         GetLastSessionCallCount++;
+        if (GetLastSessionException is not null)
+            throw GetLastSessionException;
         return Task.FromResult(LastSessionResult);
     }
 }
