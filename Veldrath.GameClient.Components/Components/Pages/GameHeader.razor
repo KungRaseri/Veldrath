@@ -1,36 +1,44 @@
 @using Veldrath.GameClient.Core.Abstractions
-@* Top bar showing character info, status bars, gold, and zone name. *@
+@using MudBlazor
+@* Top bar showing compact character info, breadcrumb, gold, zone, and system actions. *@
 
 @if (GameState.CurrentCharacterInfo is { } character)
 {
-    <div class="game-header mud-d-flex align-items-center gap-4 mud-px-4 mud-py-3 flex-shrink-0" style="min-height: 56px;">
+    <div class="game-header mud-d-flex align-items-center gap-3 mud-px-3 mud-py-2 flex-shrink-0" style="min-height: 44px;">
         <div class="game-header-character mud-d-flex align-items-center gap-2">
             <span class="game-header-name">@character.Name</span>
-            <span class="game-header-class">@character.ClassName</span>
             <span class="game-header-level">Lv. @character.Level</span>
+            <span class="game-header-class">@character.ClassName</span>
         </div>
 
-        <div class="game-header-bars mud-d-flex align-items-center gap-3 flex-1">
+        <div class="game-header-bars mud-d-flex align-items-center gap-2" style="min-width: 280px;">
             <StatusBar Label="HP" Current="@character.CurrentHealth" Max="@character.MaxHealth" Color="#e53935" />
             <StatusBar Label="MP" Current="@character.CurrentMana" Max="@character.MaxMana" Color="#1e88e5" />
-            <StatusBar Label="XP" Current="@((int)character.Experience)" Max="@((int)character.EffectiveExperienceToNextLevel)" Color="#43a047" />
         </div>
 
-        <div class="game-header-gold mud-d-flex align-items-center gap-1 ml-auto">
-            <span title="Gold">◎ @character.Gold</span>
-        </div>
+        <span class="game-header-gold mud-text-secondary" title="Gold" style="white-space: nowrap;">◎ @character.Gold.ToString("N0")</span>
 
-        <div class="game-header-zone mud-d-flex align-items-center">
-            @if (!string.IsNullOrEmpty(GameState.CurrentZoneName))
-            {
-                <span class="game-header-zone-badge">@GameState.CurrentZoneName</span>
-            }
+        @if (!string.IsNullOrEmpty(GameState.CurrentZoneName))
+        {
+            <span class="game-header-zone-badge" style="white-space: nowrap;">📍 @GameState.CurrentZoneName</span>
+        }
+
+        <div class="mud-d-flex align-items-center gap-1" style="margin-left: auto;">
+            <MudTooltip Text="Character Sheet">
+                <MudIconButton Icon="@Icons.Material.Filled.Person" Size="Size.Small" Href="/Game/Settings" />
+            </MudTooltip>
+            <MudTooltip Text="Settings">
+                <MudIconButton Icon="@Icons.Material.Filled.Settings" Size="Size.Small" Href="/Game/Settings" />
+            </MudTooltip>
+            <MudTooltip Text="Logout">
+                <MudIconButton Icon="@Icons.Material.Filled.Logout" Size="Size.Small" OnClick="HandleLogout" />
+            </MudTooltip>
         </div>
     </div>
 }
 else
 {
-    <div class="game-header mud-d-flex align-items-center gap-4 mud-px-4 mud-py-3 flex-shrink-0" style="min-height: 56px;">
+    <div class="game-header mud-d-flex align-items-center gap-4 mud-px-4 mud-py-3 flex-shrink-0" style="min-height: 44px;">
         <span class="game-header-placeholder">No character selected</span>
     </div>
 }
@@ -39,4 +47,22 @@ else
     /// <summary>Gets or sets the game state service, received from the parent via cascading value.</summary>
     [CascadingParameter]
     private IGameStateService GameState { get; set; } = null!;
+
+    /// <summary>Gets or sets the navigation manager, injected by DI.</summary>
+    [Inject]
+    private NavigationManager Navigation { get; set; } = null!;
+
+    /// <summary>Gets or sets the game API client, injected by DI.</summary>
+    [Inject]
+    private IGameApiClient Api { get; set; } = null!;
+
+    private async void HandleLogout()
+    {
+        try
+        {
+            await Api.DeleteLastSessionAsync();
+        }
+        catch { /* Best-effort */ }
+        Navigation.NavigateTo("/");
+    }
 }
