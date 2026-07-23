@@ -1,0 +1,75 @@
+﻿# Development docker-compose — HTTP only, no certs required.
+# appsettings.Development.json supplies the JWT key and log levels.
+# Only the database connection is overridden here to point at the Postgres container.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: veldrath
+      POSTGRES_USER: veldrath
+      POSTGRES_PASSWORD: veldrath_dev
+    ports:
+      - "5433:5432" # host:container — use 5433 to avoid conflicts with other local Postgres instances
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U veldrath" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: .
+      dockerfile: Veldrath.Server/Dockerfile
+    ports:
+      - "9000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      # Override DB to the Postgres container; everything else comes from appsettings.Development.json
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=veldrath;Username=veldrath;Password=veldrath_dev
+      - Database__Provider=postgres
+      # JWT signing key — set in .env, never hardcode here
+      - Jwt__Key=${JWT_KEY}
+      # OAuth provider credentials — set in .env, never hardcode here
+      - OAuth__Discord__ClientId=${OAUTH_DISCORD_CLIENT_ID}
+      - OAuth__Discord__ClientSecret=${OAUTH_DISCORD_CLIENT_SECRET}
+      - OAuth__Google__ClientId=${OAUTH_GOOGLE_CLIENT_ID}
+      - OAuth__Google__ClientSecret=${OAUTH_GOOGLE_CLIENT_SECRET}
+      - OAuth__Microsoft__ClientId=${OAUTH_MICROSOFT_CLIENT_ID}
+      - OAuth__Microsoft__ClientSecret=${OAUTH_MICROSOFT_CLIENT_SECRET}
+      # Email — configure an external SMTP provider (e.g. mxroute.com) via .env
+      - Email__SmtpHost=${EMAIL_SMTP_HOST:-}
+      - Email__SmtpPort=25
+      - Email__EnableTls=false
+      - Email__SenderAddress=noreply@veldrath.local
+      - Email__SenderName=Veldrath Dev
+      # Public base URLs for OAuth redirect validation and email links.
+      # Override these in .env when accessing via Tailscale or a custom hostname:
+      #   FOUNDRY_PUBLIC_URL=http://kung-gaming.tail3ff356.ts.net:8081
+      #   WEB_PUBLIC_URL=http://kung-gaming.tail3ff356.ts.net:8082
+      - Foundry__BaseUrl=${FOUNDRY_PUBLIC_URL:-http://localhost:8081}
+      - Web__BaseUrl=${WEB_PUBLIC_URL:-http://localhost:8082}
+      # Comma-separated list of additional hostnames/IPs accepted as valid OAuth return URLs.
+      # Override in .env to add Tailscale hostname and IP alongside localhost:
+      #   ALLOWED_RETURN_URL_HOSTS=kung-gaming.tail3ff356.ts.net,100.115.128.32
+      - AllowedReturnUrlHosts=${ALLOWED_RETURN_URL_HOSTS:-}
+      # Structured log shipping — relay to the local Seq container inside Docker
+      - Seq__ServerUrl=http://seq
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - dataprotection_keys:/root/.aspnet/DataProtection-Keys
+
+volumes:
+  postgres_data:
+  dataprotection_keys:
