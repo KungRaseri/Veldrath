@@ -11,13 +11,14 @@
         <MudText Typo="Typo.h6" Style="font-family: var(--vds-font-heading); color: var(--vds-seal-light);">
             RealmFoundry</MudText>
             <MudSpacer />
-            <MudText Typo="Typo.caption" Class="mud-text-secondary">Community Content for Veldrath</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Community Content for Veldrath</MudText>
         </MudAppBar>
+        <div class="my-2"></div>
         <MudDrawer Open="true" Variant="DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always" Elevation="0">
             <NavMenu />
         </MudDrawer>
         <MudMainContent>
-            <MudContainer MaxWidth="MaxWidth.Medium" Class="mud-pa-4 mud-pt-4">
+            <MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4">
                 @Body
             </MudContainer>
         </MudMainContent>
