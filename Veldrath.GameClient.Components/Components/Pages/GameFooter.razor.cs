@@ -311,7 +311,10 @@ public partial class GameFooter : INotifyPropertyChanged, IDisposable, IAsyncDis
     {
         _pingCts?.Cancel();
         if (_pingLoop is not null)
-            await _pingLoop;
+        {
+            try { await _pingLoop; }
+            catch (OperationCanceledException) { /* Expected during disposal */ }
+        }
         _pingCts?.Dispose();
         GameState.PropertyChanged -= OnGameStatePropertyChanged;
         Hub.StateChanged -= OnHubStateChanged;
