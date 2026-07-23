@@ -1,7 +1,7 @@
 # Gameplay View Refactor — Hybrid Tilemap + Location Panel Plan
 
 > **Date:** 2026-07-23
-> **Status:** Design Phase — Revised for Hybrid Approach
+> **Status:** Implementation In Progress — Phases 1-2 Complete, Phase 3 In Progress
 > **Version:** v2.1
 > **Scope:** Redesign the main game/play view to integrate tilemap exploration with location-based interactions, wire all gameplay through the Hub→MediatR bridge, and bridge the tilemap/location gap by adding tile coordinates to `ZoneLocation` and `Location` models. Includes click-to-move movement design with BFS pathfinding and walk queuing.
 
@@ -795,4 +795,49 @@ If the location panel integration proves problematic:
 
 ---
 
-*End of revised architecture & implementation plan (v2.0).*
+## Implementation Progress
+
+### ✅ Phase 1: Data Model + Server Bridge — COMPLETE
+
+| File | Change |
+|------|--------|
+| [`RealmEngine.Data/Entities/Content/ZoneLocation.cs`](RealmEngine.Data/Entities/Content/ZoneLocation.cs:7) | Added `TileX` (int?), `TileY` (int?) properties |
+| [`RealmEngine.Shared/Models/ZoneLocationEntry.cs`](RealmEngine.Shared/Models/ZoneLocationEntry.cs:4) | Added `TileX`, `TileY` to record |
+| [`RealmEngine.Shared/Models/WorldModels.cs`](RealmEngine.Shared/Models/WorldModels.cs:6) | Added `TileX` (int?), `TileY` (int?) to `Location` class |
+| [`RealmEngine.Data/Repositories/EfCoreZoneLocationRepository.cs`](RealmEngine.Data/Repositories/EfCoreZoneLocationRepository.cs:87) | Updated `MapToModel` to include TileX, TileY, DominantLanguageSlug |
+| [`Veldrath.GameClient.Core/Payloads/ZonePayloads.cs`](Veldrath.GameClient.Core/Payloads/ZonePayloads.cs:108) | Added `Description` (string?), `TileX` (int?), `TileY` (int?) to `LocationEnteredPayload` |
+| [`Veldrath.Server/Features/Zones/MoveCharacterHubCommand.cs`](Veldrath.Server/Features/Zones/MoveCharacterHubCommand.cs:23) | Injected `IZoneLocationRepository`; added location tile detection after move |
+| [`Veldrath.Server/Features/Zones/NavigateToLocationHubCommand.cs`](Veldrath.Server/Features/Zones/NavigateToLocationHubCommand.cs:19) | Added TileX/TileY to result; updates character tile position on navigation |
+| [`Veldrath.Server/Hubs/GameHub.cs`](Veldrath.Server/Hubs/GameHub.cs:468) | MoveCharacter now broadcasts `LocationEntered` when stepping on location tile |
+
+**Build:** `dotnet build RealmEngine.slnx` — 0 errors, 0 warnings ✅
+
+### ✅ Phase 2: Client State — COMPLETE
+
+| File | Change |
+|------|--------|
+| [`IGameStateService.cs`](Veldrath.GameClient.Core/Abstractions/IGameStateService.cs:158) | Added `LocationReference` record, `KnownLocations`, `IsAtLocation`, `CurrentLocationDescription` properties; added `ApplyLocationDiscovered`, `ApplyLocationExited` methods |
+| [`GameStateService.cs`](Veldrath.GameClient.Core/Services/GameStateService.cs:18) | Implemented all new members; enhanced `ApplyLocationEntered` to store description and auto-discover; enhanced `ApplyZoneLocationUnlocked` to add to KnownLocations |
+| [`FakeGameStateService.cs`](Veldrath.GameClient.Core.Tests/Infrastructure/FakeGameStateService.cs:12) | Added stubs for all new interface members |
+
+**Build:** `dotnet build Veldrath.Web.slnx` — 0 errors, 0 warnings ✅
+
+### 🔧 Phase 3: Sidebar Known Locations + Fast Travel — IN PROGRESS
+
+Remaining work: Update `GameSidebar.razor` to show `KnownLocations` list with fast-travel [Go] buttons. Current sidebar already has `NavigateToLocationAsync` wired — just needs a "Known Locations" section.
+
+### ⬜ Phase 4: Location Panel Full
+
+Remaining work: Create `ZoneLocationPanel.razor` component with location description, exits, NPCs, services, and enemy list.
+
+### ⬜ Phase 5: CharacterPanel + Layout
+
+Remaining work: Create `CharacterPanel.razor`, simplify `GameHeader.razor`/`GameFooter.razor`, new CSS grid layout in `game.css`.
+
+### ⬜ Phase 6: ActionBar + Polish
+
+Remaining work: Context-aware ActionBar, hotbar, CSS transitions, responsive breakpoints.
+
+---
+
+*End of revised architecture & implementation plan (v2.1).*
