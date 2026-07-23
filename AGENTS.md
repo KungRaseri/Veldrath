@@ -183,6 +183,8 @@ MudBlazor CSS utility classes have a strict naming convention. **Layout, spacing
 | Elevation | `mud-elevation-` | `mud-elevation-4` | `elevation-4` |
 | Themed borders | `mud-border-` | `mud-border-primary` | `border-primary` |
 
+**Prefer component `Color` parameters over CSS color classes.** For text colors, use `<MudText Color="Color.Secondary">` instead of `<MudText Class="mud-text-secondary">`. The only exception is `MudTd` (table cells), which has no `Color` parameter — CSS classes are acceptable there.
+
 > **See [`.github/instructions/styling-and-css.md`](.github/instructions/styling-and-css.md) for the complete, verified list of MudBlazor v9.7.0 CSS utilities.**
 
 ---

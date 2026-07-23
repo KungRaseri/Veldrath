@@ -116,7 +116,7 @@ else
                     }
                 </MudTd>
                 <MudTd Class="@(context.WarnCount > 0 ? "mud-warning-text" : "mud-text-secondary")">
-                    <MudText Typo="Typo.body2" Class="@(context.WarnCount > 0 ? "mud-warning-text fw-bold" : "")">@context.WarnCount</MudText>
+                    <MudText Typo="Typo.body2" Color="@(context.WarnCount > 0 ? Color.Warning : Color.Inherit)">@context.WarnCount</MudText>
                 </MudTd>
                 <MudTd Class="mud-text-secondary">@(context.LastSeenAt?.ToLocalTime().ToString("g") ?? "Never")</MudTd>
                 <MudTd>
