@@ -1,4 +1,5 @@
 @page "/Game/Play"
+@inherits GamePageBase
 @using Veldrath.GameClient.Core.Payloads
 @using Veldrath.GameClient.Core.Abstractions
 @using Veldrath.Auth.Blazor
@@ -7,10 +8,7 @@
 @inject IGameHubConnectionService Hub
 @inject IGameStateService GameState
 @inject IGameApiClient Api
-@inject NavigationManager Navigation
-@inject AuthStateServiceBase Auth
 @inject IConfiguration Configuration
-@inject ILogger<Game> Logger
 
 <div class="mud-d-flex flex-column mud-height-full mud-width-full overflow-hidden">
     <GameHeader />
@@ -95,6 +93,15 @@
     private GameOverlay.OverlayKind _activeOverlay;
     private bool _sidebarCollapsed;
     private bool _chatCollapsed;
+    private ILogger<Game> _logger = null!;
+
+    /// <summary>Gets or sets the logger, injected by DI.</summary>
+    [Inject]
+    private ILogger<Game> Logger
+    {
+        get => _logger;
+        set => _logger = value;
+    }
 
     private void ToggleSidebar()
     {
@@ -114,7 +121,7 @@
     private async Task HandleReturnToMenu()
     {
         GameState.ApplySystemMessage("Returning to main menu...");
-        Navigation.NavigateTo("/");
+        SafeNavigate("/");
     }
 
     /// <summary>
@@ -128,26 +135,11 @@
     }
 
     /// <inheritdoc />
-    protected override void OnInitialized()
+    protected override async Task OnGameInitializedAsync()
     {
-        Auth.OnChange += OnAuthStateChanged;
-    }
-
-    /// <inheritdoc />
-    protected override async Task OnInitializedAsync()
-    {
-        if (!Auth.IsAuthReady)
-            return;
-
-        if (!Auth.IsLoggedIn)
-        {
-            Navigation.NavigateTo("/login");
-            return;
-        }
-
         // Subscribe to hub state changes so we can detect when a reconnection
         // succeeds and restore the game session (re-send SelectCharacter, EnterZone, etc.).
-        _hubStateSubscription = SubscribeToHubState();
+        _hubStateSubscription ??= SubscribeToHubState();
 
         await ConnectAndRegisterHandlers();
 
@@ -156,12 +148,6 @@
         {
             await RestoreSessionFromServerAsync();
         }
-    }
-
-    private void OnAuthStateChanged()
-    {
-        if (Auth.IsAuthReady)
-            InvokeAsync(StateHasChanged);
     }
 
     /// <summary>
@@ -336,7 +322,14 @@
 
         _hubSubscriptions.Add(Hub.On<CharacterSelectedPayload>("CharacterSelected", async payload =>
         {
+            Logger.LogInformation(
+                "CharacterSelected received: {Name} Lv.{Level} {Class} in zone {Zone}",
+                payload.Name, payload.Level, payload.ClassName, payload.CurrentZoneId);
             GameState.ApplyCharacterSelected(payload);
+            Logger.LogInformation(
+                "ApplyCharacterSelected done. CurrentCharacter={Char}, CurrentCharacterInfo={Info}",
+                GameState.CurrentCharacterInfo?.Name ?? "null",
+                ((IGameStateService)GameState).CurrentCharacterInfo?.Name ?? "null");
 
             if (!string.IsNullOrEmpty(payload.CurrentZoneId) && GameState.ZoneTileMap is null)
             {
@@ -344,6 +337,7 @@
             }
 
             await InvokeAsync(StateHasChanged);
+            Logger.LogInformation("StateHasChanged invoked after CharacterSelected.");
         }));
 
         // ── Handle CharacterAlreadyActive during session restore ──
@@ -750,9 +744,9 @@
     }
 
     /// <inheritdoc />
-    public async ValueTask DisposeAsync()
+    public override async ValueTask DisposeAsync()
     {
-        Auth.OnChange -= OnAuthStateChanged;
+        await base.DisposeAsync();
         _stateSubscription?.Dispose();
         _hubStateSubscription?.Dispose();
 
