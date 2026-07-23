@@ -17,6 +17,9 @@ COPY RealmFoundry/Directory.Build.props                     RealmFoundry/
 COPY Veldrath.Contracts/Veldrath.Contracts.csproj           Veldrath.Contracts/
 COPY Veldrath.Auth/Veldrath.Auth.csproj                     Veldrath.Auth/
 COPY Veldrath.Auth.Blazor/Veldrath.Auth.Blazor.csproj       Veldrath.Auth.Blazor/
+COPY Veldrath.GameClient.Components/Veldrath.GameClient.Components.csproj Veldrath.GameClient.Components/
+COPY Veldrath.GameClient.Core/Veldrath.GameClient.Core.csproj Veldrath.GameClient.Core/
+COPY RealmEngine.Shared/RealmEngine.Shared.csproj           RealmEngine.Shared/
 
 RUN dotnet restore RealmFoundry/RealmFoundry.csproj
 
