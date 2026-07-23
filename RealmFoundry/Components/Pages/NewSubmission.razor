@@ -36,7 +36,7 @@ else
         </MudSelect>
         @if (_schema is not null)
         {
-            <MudText Typo="Typo.caption" Class="mud-text-secondary mb-4" Style="margin-top: -0.75rem;">@_schema.Description</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-4" Style="margin-top: -0.75rem;">@_schema.Description</MudText>
         }
 
         <MudTextField @bind-Value="_title"
@@ -73,7 +73,7 @@ else
                                      Class="mb-3" />
                         if (field.Hint is not null)
                         {
-                            <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="margin-top: -0.75rem; margin-bottom: 1rem;">@field.Hint</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary" Style="margin-top: -0.75rem; margin-bottom: 1rem;">@field.Hint</MudText>
                         }
                     }
                     else if (field.FieldType == ContentFieldType.LongText)
@@ -127,7 +127,7 @@ else
 
                     @if (field.Hint is not null && field.FieldType != ContentFieldType.LongText)
                     {
-                        <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="margin-top: -0.75rem; margin-bottom: 1rem;">@field.Hint</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Style="margin-top: -0.75rem; margin-bottom: 1rem;">@field.Hint</MudText>
                     }
                 }
             }
