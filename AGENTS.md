@@ -186,6 +186,24 @@ MudBlazor CSS utility classes have a strict naming convention. **Layout, spacing
 
 > **See [`.github/instructions/styling-and-css.md`](.github/instructions/styling-and-css.md) for the complete, verified list of MudBlazor v9.7.0 CSS utilities.**
 
+### Rule 5: MudBlazor Components Over Raw HTML
+
+When building Blazor UI, **prefer MudBlazor components over raw HTML elements** whenever a suitable component exists. MudBlazor components provide built-in theming, accessibility, and consistent styling that raw HTML + custom CSS cannot match.
+
+| Raw HTML | MudBlazor Replacement |
+|---|---|
+| `<button>` with styling | `<MudButton>` — supports `Variant`, `Color`, `Size`, `StartIcon`, `EndIcon` |
+| `<button>` icon-only | `<MudIconButton>` — supports `Icon`, `Color`, `Size` |
+| `<input type="text">` | `<MudTextField>` — supports `Variant`, `Label`, `Placeholder`, validation |
+| `<input type="checkbox">` | `<MudCheckBox>` — supports `Label`, `Color`, `TriState` |
+| Custom pill/tag/chip | `<MudChip>` — supports `Color`, `Size`, `Variant`, `Icon` |
+| Custom progress bar | `<MudProgressLinear>` — supports `Value`, `Color`, `Size`, `Min`/`Max` |
+| Material icon | `<MudIcon>` — supports `Icon`, `Color`, `Size` |
+| Panel/modal | `<MudPaper>` + `<MudOverlay>` or `<MudDialog>` — built-in elevation, outline, animation |
+| Separator line | `<MudDivider>` — built-in theme colors |
+
+**Exception:** Complex game-specific UI (tilemap, combat enemy display, hotbar ability slots, status dots) may require custom HTML + CSS when no MudBlazor component matches the interaction pattern. These are legitimate exceptions — document why in a code comment.
+
 ---
 
 ## Key Technologies & Versions

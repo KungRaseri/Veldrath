@@ -17,6 +17,14 @@ When styling any UI element, follow this strict priority order. Each level is a 
 | 3 | **Custom CSS classes** | `.game-panel { ... }` in a `.css` file |
 | 4 | **Inline `style=""` attributes** | `style="min-height: 60vh;"` — ABSOLUTE LAST RESORT |
 
+> **Prefer MudBlazor components over raw HTML.** For interactive elements, use the MudBlazor equivalent:
+> - Raw `<button>` → `<MudButton>` or `<MudIconButton>`
+> - Raw `<input>` / `<textarea>` → `<MudTextField>`
+> - Custom pill/tag → `<MudChip>`
+> - Custom progress bar → `<MudProgressLinear>`
+> - Custom icon → `<MudIcon>`
+> - Raw close button → `<MudIconButton Icon="@Icons.Material.Filled.Close" />`
+
 ---
 
 ## Level 1: MudBlazor CSS Utilities (Always First)
@@ -37,7 +45,7 @@ MudBlazor ships with a comprehensive set of CSS utility classes. These are the *
 | `mt-{0..16}`, `mb-`, `ml-`, `mr-` | Margin top/bottom/left/right | `mt-4` |
 | `mx-{0..16}`, `my-{0..16}` | Margin x-axis / y-axis | `mx-auto` |
 | `p-{0..16}`, `pt-`, `pb-`, `pl-`, `pr-`, `px-`, `py-` | Padding (same pattern) | `pa-4` = 1rem padding all sides |
-| `gap-{0..16}` | Gap in flex/grid containers | `gap-4` |
+| `gap-{0..20}`, `gap-x-{0..20}`, `gap-y-{0..20}` | Gap / column-gap / row-gap in flex/grid containers | `gap-4`, `gap-x-2` |
 
 **Flexbox — NO `mud-` prefix:**
 
@@ -45,13 +53,39 @@ MudBlazor ships with a comprehensive set of CSS utility classes. These are the *
 |---|---|
 | `d-flex` | `display: flex` |
 | `d-inline-flex` | `display: inline-flex` |
-| `flex-column` | `flex-direction: column` |
-| `flex-row` | `flex-direction: row` (default) |
-| `justify-center`, `justify-space-between`, `justify-space-around`, `justify-end`, `justify-start` | `justify-content` |
-| `align-center`, `align-start`, `align-end`, `align-stretch` | `align-items` |
+| `flex-row`, `flex-row-reverse` | `flex-direction` |
+| `flex-column`, `flex-column-reverse` | `flex-direction` |
+| `flex-wrap`, `flex-nowrap`, `flex-wrap-reverse` | `flex-wrap` |
+
+**Flex item shorthands — NO `mud-` prefix:**
+
+| Class | Effect |
+|---|---|
+| `flex-1` | `flex: 1 1 0%` (equivalent to CSS `flex: 1`) |
+| `flex-auto` | `flex: 1 1 auto` |
+| `flex-initial` | `flex: 0 1 auto` |
+| `flex-none` | `flex: none` |
 | `flex-grow-0`, `flex-grow-1` | `flex-grow` |
 | `flex-shrink-0`, `flex-shrink-1` | `flex-shrink` |
-| `flex-wrap`, `flex-nowrap` | `flex-wrap` |
+
+**Justify / Align — NO `mud-` prefix:**
+
+| Class | Effect |
+|---|---|
+| `justify-start`, `justify-end`, `justify-center` | `justify-content` |
+| `justify-space-between`, `justify-space-around`, `justify-space-evenly` | `justify-content` |
+| `align-start`, `align-end`, `align-center`, `align-baseline`, `align-stretch` | `align-items` |
+| `align-content-start`, `align-content-end`, `align-content-center` | `align-content` |
+| `align-content-space-between`, `align-content-space-around`, `align-content-stretch` | `align-content` |
+| `align-self-auto`, `align-self-start`, `align-self-end`, `align-self-center`, `align-self-stretch` | `align-self` |
+
+**Order — NO `mud-` prefix:**
+
+| Class | Effect |
+|---|---|
+| `order-first` | `order: -9999` |
+| `order-last` | `order: 9999` |
+| `order-{0..12}` | `order` value |
 
 **Display — NO `mud-` prefix:**
 
@@ -60,6 +94,19 @@ MudBlazor ships with a comprehensive set of CSS utility classes. These are the *
 | `d-none` | `display: none` |
 | `d-block` | `display: block` |
 | `d-inline` | `display: inline` |
+
+**Overflow — NO `mud-` prefix:**
+
+| Class | Effect |
+|---|---|
+| `overflow-auto` | `overflow: auto` |
+| `overflow-hidden` | `overflow: hidden` |
+| `overflow-visible` | `overflow: visible` |
+| `overflow-scroll` | `overflow: scroll` |
+| `overflow-x-auto`, `overflow-y-auto` | Axis-specific overflow |
+| `overflow-x-hidden`, `overflow-y-hidden` | Axis-specific overflow |
+| `overflow-x-visible`, `overflow-y-visible` | Axis-specific overflow |
+| `overflow-x-scroll`, `overflow-y-scroll` | Axis-specific overflow |
 
 **Border radius — NO `mud-` prefix:**
 
@@ -144,6 +191,28 @@ These common CSS patterns have **no MudBlazor utility class** in v9.7.0. Use Mud
 | Font weight (bold/light) | `MudText` parameter: `Typo="Typo.h6"` (typography levels carry weight), or custom CSS |
 | Width/height percentages | `MudSelect` / `MudTextField`: `FullWidth="true"`. For `<div>`: use flex properties (`flex-grow-1`) or inline `style` |
 | Screen-reader-only | Custom CSS class (MudBlazor has no `visually-hidden` or `sr-only` utility) |
+| `gap: 2px` (gap scale is 4px increments: `gap-0`=0px, `gap-1`=4px, `gap-2`=8px...) | Custom CSS or inline `style="gap:2px"` |
+| `border-radius: 6px` (VDS `--vds-radius-md`) | MudBlazor has `rounded-sm` (~4px) and `rounded-lg` (~8px) but no `rounded-md`. Use custom CSS with VDS token or accept slight visual change |
+| Custom scrollbar styling | CSS `::-webkit-scrollbar` — MudBlazor has no scrollbar utilities |
+
+### Audit Checklist for Custom CSS
+
+Before writing a new custom CSS rule, verify none of these MudBlazor utilities already cover the same property:
+
+- **Layout:** `d-flex`, `d-block`, `d-none`, `flex-row`, `flex-row-reverse`, `flex-column`, `flex-column-reverse`, `flex-wrap`, `flex-nowrap`, `flex-wrap-reverse`, `flex-1`, `flex-auto`, `flex-initial`, `flex-none`, `flex-grow-0`, `flex-grow-1`, `flex-shrink-0`, `flex-shrink-1`, `order-first`, `order-last`, `order-{0..12}`
+- **Alignment:** `justify-start`, `justify-end`, `justify-center`, `justify-space-between`, `justify-space-around`, `justify-space-evenly`, `align-start`, `align-end`, `align-center`, `align-baseline`, `align-stretch`, `align-content-start`, `align-content-end`, `align-content-center`, `align-content-space-between`, `align-content-space-around`, `align-content-stretch`, `align-self-auto`, `align-self-start`, `align-self-end`, `align-self-center`, `align-self-stretch`
+- **Spacing:** `gap-{0..20}`, `gap-x-{0..20}`, `gap-y-{0..20}`, `m{t|b|l|r|x|y}-{0..16}`, `p{t|b|l|r|x|y|a}-{0..16}`
+- **Radius:** `rounded-0`, `rounded-sm`, `rounded-lg`, `rounded-xl`, `rounded-circle`
+- **Elevation:** `mud-elevation-{0..25}`
+- **Borders:** `mud-border-{primary|secondary|tertiary|info|success|warning|error}`
+
+**Common anti-patterns found in the codebase:**
+- `display: flex` in CSS → Use `Class="d-flex"` in markup
+- `flex-direction: column` in CSS → Use `Class="flex-column"` in markup
+- `align-items: center` in CSS → Use `Class="align-center"` in markup
+- `justify-content: center` in CSS → Use `Class="justify-center"` in markup
+- `gap: 16px` / `gap: var(--vds-space-4, 16px)` in CSS → Use `Class="gap-4"` in markup (1rem = 16px, matches VDS spacing)
+- `flex: 1` in CSS → Use `Class="flex-1"` in markup (MudBlazor provides the exact `flex: 1 1 0%` shorthand)
 
 ### Quick Reference: Prefix Decision Table
 
