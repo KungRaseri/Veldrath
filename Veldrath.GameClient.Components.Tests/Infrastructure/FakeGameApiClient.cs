@@ -158,6 +158,9 @@ public sealed class FakeGameApiClient : IGameApiClient
     /// <summary>Gets the number of times <see cref="GetLastSessionAsync"/> was called.</summary>
     public int GetLastSessionCallCount { get; private set; }
 
+    /// <summary>Gets the number of times <see cref="DeleteLastSessionAsync"/> was called.</summary>
+    public int DeleteLastSessionCallCount { get; private set; }
+
     /// <summary>
     /// Gets or sets an exception to throw when <see cref="GetCharactersAsync"/> is called.
     /// When set, the method throws this exception instead of returning <see cref="Characters"/>.
@@ -169,6 +172,12 @@ public sealed class FakeGameApiClient : IGameApiClient
     /// When set, the method throws this exception instead of returning <see cref="LastSessionResult"/>.
     /// </summary>
     public Exception? GetLastSessionException { get; set; }
+
+    /// <summary>
+    /// Gets or sets an exception to throw when <see cref="DeleteLastSessionAsync"/> is called.
+    /// When set, the method throws this exception instead of returning normally.
+    /// </summary>
+    public Exception? DeleteLastSessionException { get; set; }
 
     /// <inheritdoc />
     public Task<List<CharacterDto>> GetCharactersAsync(CancellationToken ct = default)
@@ -186,5 +195,14 @@ public sealed class FakeGameApiClient : IGameApiClient
         if (GetLastSessionException is not null)
             throw GetLastSessionException;
         return Task.FromResult(LastSessionResult);
+    }
+
+    /// <inheritdoc />
+    public Task DeleteLastSessionAsync(CancellationToken ct = default)
+    {
+        DeleteLastSessionCallCount++;
+        if (DeleteLastSessionException is not null)
+            throw DeleteLastSessionException;
+        return Task.CompletedTask;
     }
 }

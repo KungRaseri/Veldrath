@@ -30,6 +30,7 @@ public static class CharacterEndpoints
         group.MapPost("/",           CreateAsync);
         group.MapDelete("/{id:guid}", DeleteAsync);
         group.MapGet("/last-session", GetLastSessionAsync);
+        group.MapDelete("/last-session", DeleteLastSessionAsync);
 
         return app;
     }
@@ -160,6 +161,21 @@ public static class CharacterEndpoints
             RegionId: regionId,
             TileX: lastChar.TileX,
             TileY: lastChar.TileY));
+    }
+
+    /// <summary>
+    /// Clears the last-played timestamps for all characters belonging to the
+    /// authenticated account. Called during in-game logout so the routing guard
+    /// does not show a "Resume Session" prompt on the next login.
+    /// </summary>
+    private static async Task<IResult> DeleteLastSessionAsync(
+        ClaimsPrincipal user,
+        ICharacterRepository repo,
+        CancellationToken ct)
+    {
+        var accountId = GetAccountId(user);
+        await repo.ClearLastPlayedAsync(accountId, ct);
+        return Results.NoContent();
     }
 
     // Helpers
