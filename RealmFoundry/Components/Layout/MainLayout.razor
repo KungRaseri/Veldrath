@@ -49,21 +49,29 @@
             var rt = ctx.Request.Cookies["rt"];
             if (!string.IsNullOrEmpty(rt))
             {
-                var renewed = await Api.RenewJwtAsync(rt);
-                if (renewed is not null)
+                try
                 {
-                    var authResponse = new AuthResponse(
-                        renewed.AccessToken, rt, renewed.AccessTokenExpiry,
-                        renewed.AccountId, renewed.Username, renewed.Roles,
-                        renewed.Permissions, renewed.IsCurator, renewed.SessionId);
-
-                    await AuthState.SetTokensAsync(authResponse);
-
-                    _subscription = ApplicationState.RegisterOnPersisting(() =>
+                    var renewed = await Api.RenewJwtAsync(rt);
+                    if (renewed is not null)
                     {
-                        ApplicationState.PersistAsJson("auth-state", authResponse);
-                        return Task.CompletedTask;
-                    });
+                        var authResponse = new AuthResponse(
+                            renewed.AccessToken, rt, renewed.AccessTokenExpiry,
+                            renewed.AccountId, renewed.Username, renewed.Roles,
+                            renewed.Permissions, renewed.IsCurator, renewed.SessionId);
+
+                        await AuthState.SetTokensAsync(authResponse);
+
+                        _subscription = ApplicationState.RegisterOnPersisting(() =>
+                        {
+                            ApplicationState.PersistAsJson("auth-state", authResponse);
+                            return Task.CompletedTask;
+                        });
+                    }
+                }
+                catch
+                {
+                    // Server unreachable or network error during prerendering —
+                    // proceed as unauthenticated so the circuit can still establish.
                 }
             }
 

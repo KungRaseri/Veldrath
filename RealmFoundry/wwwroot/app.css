@@ -28,6 +28,12 @@ body {
 a { color: var(--color-link); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
+/* ── Blazor reconnect modal — hidden by default, shown by framework JS ──── */
+
+#components-reconnect-modal {
+    display: none;
+}
+
 /* ── Blazor error UI — matches canonical tokens.css version ──────────────── */
 
 #blazor-error-ui {
