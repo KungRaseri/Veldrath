@@ -7,26 +7,26 @@
 
 <PageTitle>Create Account — RealmFoundry</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mud-my-8">
-    <MudPaper Elevation="0" Outlined="true" Class="mud-pa-8">
-        <MudText Typo="Typo.h4" Align="Align.Center" Class="mud-mb-4">Create an Account</MudText>
+<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="my-8">
+    <MudPaper Elevation="0" Outlined="true" Class="pa-8">
+        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-4">Create an Account</MudText>
 
         @if (_registered)
         {
-            <MudAlert Severity="Severity.Success" Class="mud-mb-4">
+            <MudAlert Severity="Severity.Success" Class="mb-4">
                 <strong>Welcome!</strong> Your account has been created. Please check your email to confirm your address before signing in.
             </MudAlert>
             <MudLink Href="/login">Back to sign in</MudLink>
         }
         else
         {
-            <MudText Typo="Typo.body2" Class="mud-text-secondary mud-mb-4">
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
                 Register with your email to access RealmFoundry, or use a connected provider below.
             </MudText>
 
             @if (_error is not null)
             {
-                <MudAlert Severity="Severity.Error" Class="mud-mb-4">@_error</MudAlert>
+                <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
             }
 
             <MudForm>
@@ -35,39 +35,39 @@
                               Variant="Variant.Outlined"
                               InputType="InputType.Email"
                               Margin="Margin.Dense"
-                              Class="mud-mb-3" />
+                              Class="mb-3" />
                 <MudTextField @bind-Value="_username"
                               Label="Username"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
-                              Class="mud-mb-3" />
+                              Class="mb-3" />
                 <MudTextField @bind-Value="_password"
                               Label="Password"
                               Variant="Variant.Outlined"
                               InputType="InputType.Password"
                               Margin="Margin.Dense"
-                              Class="mud-mb-3" />
+                              Class="mb-3" />
                 <MudTextField @bind-Value="_confirmPassword"
                               Label="Confirm Password"
                               Variant="Variant.Outlined"
                               InputType="InputType.Password"
                               Margin="Margin.Dense"
-                              Class="mud-mb-3" />
+                              Class="mb-3" />
                 <MudButton Variant="Variant.Filled"
                            Color="Color.Primary"
                            FullWidth="true"
                            OnClick="DoRegisterAsync"
                            Disabled="@_submitting"
-                           Class="mud-mt-2">
+                           Class="mt-2">
                     @(_submitting ? "Creating account…" : "Create account")
                 </MudButton>
             </MudForm>
 
-            <MudText Typo="Typo.body2" Align="Align.Center" Class="mud-mt-3">
+            <MudText Typo="Typo.body2" Align="Align.Center" Class="mt-3">
                 Already have an account? <MudLink Href="/login">Sign in</MudLink>
             </MudText>
 
-            <div class="mud-d-flex align-items-center gap-3 mud-my-4" style="color: var(--mud-palette-text-secondary); font-size: 0.85rem;">
+            <div class="d-flex align-items-center gap-3 my-4" style="color: var(--mud-palette-text-secondary); font-size: 0.85rem;">
                 <MudDivider Class="flex-1" />
                 <span>or register with</span>
                 <MudDivider Class="flex-1" />

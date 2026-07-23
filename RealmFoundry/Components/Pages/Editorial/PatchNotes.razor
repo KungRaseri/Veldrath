@@ -20,7 +20,7 @@ else
 
     @if (!string.IsNullOrEmpty(_message))
     {
-        <MudAlert Severity="@(_error ? Severity.Error : Severity.Success)" Class="mud-mb-4">@_message</MudAlert>
+        <MudAlert Severity="@(_error ? Severity.Error : Severity.Success)" Class="mb-4">@_message</MudAlert>
     }
 
     @if (_loading)
@@ -29,7 +29,7 @@ else
     }
     else if (_result is null)
     {
-        <MudAlert Severity="Severity.Error" Class="mud-mb-4">Failed to load patch notes.</MudAlert>
+        <MudAlert Severity="Severity.Error" Class="mb-4">Failed to load patch notes.</MudAlert>
     }
     else
     {

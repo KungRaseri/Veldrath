@@ -10,7 +10,7 @@
     <MudNavLink Href="languages">Languages</MudNavLink>
     <MudNavLink Href="submissions">Submissions</MudNavLink>
 
-    <MudDivider Class="mud-my-2" />
+    <MudDivider Class="my-2" />
 
     @if (AuthState.IsLoggedIn)
     {
@@ -32,12 +32,12 @@
         {
             <MudNavLink Href="notifications">
                 Notifications
-                <MudChip T="int" Size="Size.Small" Color="Color.Error" Class="mud-ml-2">@_unreadCount</MudChip>
+                <MudChip T="int" Size="Size.Small" Color="Color.Error" Class="ml-2">@_unreadCount</MudChip>
             </MudNavLink>
         }
         <MudNavLink Href="@_accountProfileUrl">My Account</MudNavLink>
 
-        <MudDivider Class="mud-my-2" />
+        <MudDivider Class="my-2" />
         <MudButton Variant="Variant.Text"
                    FullWidth="true"
                    Color="Color.Error"

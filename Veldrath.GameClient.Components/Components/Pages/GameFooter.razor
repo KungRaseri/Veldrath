@@ -2,7 +2,7 @@
     and embedded ActionBar component. The reconnecting banner is shown above the footer
     when the hub connection enters the Reconnecting state. *@
 
-<div class="game-footer mud-d-flex align-items-center gap-3 mud-px-4 mud-py-2 flex-shrink-0 position-relative" style="min-height: 40px;">
+<div class="game-footer d-flex align-items-center gap-3 px-4 py-2 flex-shrink-0 position-relative" style="min-height: 40px;">
     @* Reconnecting banner (absolute positioned above footer) *@
     @if (ShowReconnectingBanner)
     {
@@ -12,7 +12,7 @@
         </div>
     }
 
-    <div class="game-footer-left mud-d-flex align-items-center gap-2">
+    <div class="game-footer-left d-flex align-items-center gap-2">
         @if (!string.IsNullOrEmpty(GameState.CurrentZoneName))
         {
             <span class="game-footer-zone">📍 @GameState.CurrentZoneName</span>
@@ -27,7 +27,7 @@
         }
     </div>
 
-    <div class="game-footer-center flex-1 mud-d-flex justify-center">
+    <div class="game-footer-center flex-1 d-flex justify-center">
         @if (GameState.IsInCombat)
         {
             <ActionBar ShowAttack="true"
@@ -44,7 +44,7 @@
         }
     </div>
 
-    <div class="game-footer-right mud-d-flex align-items-center gap-2 ml-auto">
+    <div class="game-footer-right d-flex align-items-center gap-2 ml-auto">
         <span class="game-footer-status">
             <span class="game-footer-dot @DotClass"></span>
             @StatusText

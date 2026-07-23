@@ -10,7 +10,7 @@
 }
 else
 {
-    <MudText Typo="Typo.h3" Class="mud-mb-4">Player Reports</MudText>
+    <MudText Typo="Typo.h3" Class="mb-4">Player Reports</MudText>
 
     <div class="d-flex flex-wrap gap-3 mb-4 align-items-center">
         <MudSelect Value="_showResolved"
@@ -31,7 +31,7 @@ else
 
     @if (!string.IsNullOrEmpty(_actionMessage))
     {
-        <MudAlert Severity="@(_actionError ? Severity.Error : Severity.Success)" Class="mud-mb-4">@_actionMessage</MudAlert>
+        <MudAlert Severity="@(_actionError ? Severity.Error : Severity.Success)" Class="mb-4">@_actionMessage</MudAlert>
     }
 
     @if (_loading)
@@ -40,7 +40,7 @@ else
     }
     else if (_result is null)
     {
-        <MudAlert Severity="Severity.Error" Class="mud-mb-4">Failed to load reports.</MudAlert>
+        <MudAlert Severity="Severity.Error" Class="mb-4">Failed to load reports.</MudAlert>
     }
     else if (_result.Items.Count == 0)
     {
@@ -68,7 +68,7 @@ else
                         <MudChip T="string" Size="Size.Small" Color="Color.Success">Resolved</MudChip>
                         @if (context.ResolvedAt.HasValue)
                         {
-                            <MudText Typo="Typo.caption" Class="mud-text-secondary mud-ml-1" Inline="true">@context.ResolvedAt.Value.ToLocalTime().ToString("g")</MudText>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary ml-1" Inline="true">@context.ResolvedAt.Value.ToLocalTime().ToString("g")</MudText>
                         }
                     }
                     else

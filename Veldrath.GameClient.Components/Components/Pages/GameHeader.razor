@@ -4,14 +4,14 @@
 
 @if (GameState.CurrentCharacterInfo is { } character)
 {
-    <div class="game-header mud-d-flex align-items-center gap-3 mud-px-3 mud-py-2 flex-shrink-0" style="min-height: 44px;">
-        <div class="game-header-character mud-d-flex align-items-center gap-2">
+    <div class="game-header d-flex align-items-center gap-3 px-3 py-2 flex-shrink-0" style="min-height: 44px;">
+        <div class="game-header-character d-flex align-items-center gap-2">
             <span class="game-header-name">@character.Name</span>
             <span class="game-header-level">Lv. @character.Level</span>
             <span class="game-header-class">@character.ClassName</span>
         </div>
 
-        <div class="game-header-bars mud-d-flex align-items-center gap-2" style="min-width: 280px;">
+        <div class="game-header-bars d-flex align-items-center gap-2" style="min-width: 280px;">
             <StatusBar Label="HP" Current="@character.CurrentHealth" Max="@character.MaxHealth" Color="#e53935" />
             <StatusBar Label="MP" Current="@character.CurrentMana" Max="@character.MaxMana" Color="#1e88e5" />
         </div>
@@ -23,7 +23,7 @@
             <span class="game-header-zone-badge" style="white-space: nowrap;">📍 @GameState.CurrentZoneName</span>
         }
 
-        <div class="mud-d-flex align-items-center gap-1" style="margin-left: auto;">
+        <div class="d-flex align-items-center gap-1" style="margin-left: auto;">
             <MudTooltip Text="Character Sheet">
                 <MudIconButton Icon="@Icons.Material.Filled.Person" Size="Size.Small" Href="/Game/Settings" />
             </MudTooltip>
@@ -38,7 +38,7 @@
 }
 else
 {
-    <div class="game-header mud-d-flex align-items-center gap-4 mud-px-4 mud-py-3 flex-shrink-0" style="min-height: 44px;">
+    <div class="game-header d-flex align-items-center gap-4 px-4 py-3 flex-shrink-0" style="min-height: 44px;">
         <span class="game-header-placeholder">No character selected</span>
     </div>
 }

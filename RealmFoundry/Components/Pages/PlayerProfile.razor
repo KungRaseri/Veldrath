@@ -4,20 +4,20 @@
 
 <PageTitle>Player Profile — RealmFoundry</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mud-my-8">
+<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="my-8">
     @if (_loading)
     {
         <MudText>Loading profile…</MudText>
     }
     else if (_profile is null)
     {
-        <MudAlert Severity="Severity.Error" Class="mud-mb-4">Player not found.</MudAlert>
+        <MudAlert Severity="Severity.Error" Class="mb-4">Player not found.</MudAlert>
         <MudLink Href="/">← Back to Home</MudLink>
     }
     else
     {
-        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-6">
-            <MudText Typo="Typo.h4" Class="mud-mb-4">@_profile.Username</MudText>
+        <MudPaper Elevation="0" Outlined="true" Class="pa-6">
+            <MudText Typo="Typo.h4" Class="mb-4">@_profile.Username</MudText>
 
             <MudStack Spacing="3">
                 <div class="d-flex justify-space-between">

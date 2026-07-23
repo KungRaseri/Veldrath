@@ -10,7 +10,7 @@
 }
 else
 {
-    <MudText Typo="Typo.h3" Class="mud-mb-4">Audit Log</MudText>
+    <MudText Typo="Typo.h3" Class="mb-4">Audit Log</MudText>
 
     <div class="d-flex flex-wrap gap-3 mb-4 align-items-center">
         <MudTextField @bind-Value="_targetIdRaw"
@@ -32,7 +32,7 @@ else
     }
     else if (_result is null)
     {
-        <MudAlert Severity="Severity.Error" Class="mud-mb-4">Failed to load audit log.</MudAlert>
+        <MudAlert Severity="Severity.Error" Class="mb-4">Failed to load audit log.</MudAlert>
     }
     else if (_result.Items.Count == 0)
     {

@@ -22,7 +22,7 @@
         {
             <div class="location-section location-services">
                 <h4>Services</h4>
-                <div class="mud-d-flex flex-wrap gap-2">
+                <div class="d-flex flex-wrap gap-2">
                     @if (GameState.CurrentZone.HasInn)
                     {
                         <MudButton Variant="Variant.Filled"
@@ -79,7 +79,7 @@
                     @foreach (var enemy in GameState.ZoneEnemies)
                     {
                         <li class="sidebar-list-item">
-                            <div class="mud-d-flex align-items-center gap-2">
+                            <div class="d-flex align-items-center gap-2">
                                 <span>🟠 @enemy.EnemyName (Lv. @enemy.Level)</span>
                             </div>
                         </li>

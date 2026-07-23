@@ -34,7 +34,7 @@ else
 
     @if (!string.IsNullOrEmpty(_actionMessage))
     {
-        <MudAlert Severity="@(_actionError ? Severity.Error : Severity.Success)" Class="mud-mb-4">@_actionMessage</MudAlert>
+        <MudAlert Severity="@(_actionError ? Severity.Error : Severity.Success)" Class="mb-4">@_actionMessage</MudAlert>
     }
 
     @if (_loading)
@@ -43,7 +43,7 @@ else
     }
     else if (_result is null)
     {
-        <MudAlert Severity="Severity.Error" Class="mud-mb-4">Failed to load reports.</MudAlert>
+        <MudAlert Severity="Severity.Error" Class="mb-4">Failed to load reports.</MudAlert>
     }
     else if (_result.Items.Count == 0)
     {

@@ -16,7 +16,7 @@ else if (_loading)
 }
 else if (_user is null)
 {
-    <MudAlert Severity="Severity.Error" Class="mud-mb-4">Player not found. <MudLink Href="/mod/users">← Back</MudLink></MudAlert>
+    <MudAlert Severity="Severity.Error" Class="mb-4">Player not found. <MudLink Href="/mod/users">← Back</MudLink></MudAlert>
 }
 else
 {
@@ -27,10 +27,10 @@ else
 
     @if (!string.IsNullOrEmpty(_actionMessage))
     {
-        <MudAlert Severity="@(_actionError ? Severity.Error : Severity.Success)" Class="mud-mb-4">@_actionMessage</MudAlert>
+        <MudAlert Severity="@(_actionError ? Severity.Error : Severity.Success)" Class="mb-4">@_actionMessage</MudAlert>
     }
 
-    <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4 mud-mb-4">
+    <MudPaper Elevation="0" Outlined="true" Class="pa-4 mb-4">
         <div class="d-flex justify-content-between align-items-center mb-2">
             <MudText Typo="Typo.body2" Class="mud-text-secondary">Account ID</MudText>
             <MudText Typo="Typo.body2" Class="mud-text-secondary">@_user.Id</MudText>
@@ -86,7 +86,7 @@ else
         </div>
     </MudPaper>
 
-    <MudText Typo="Typo.h5" Class="mud-mb-3">Actions</MudText>
+    <MudText Typo="Typo.h5" Class="mb-3">Actions</MudText>
 
     <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
         <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small" OnClick="() => KickAsync()">Kick</MudButton>

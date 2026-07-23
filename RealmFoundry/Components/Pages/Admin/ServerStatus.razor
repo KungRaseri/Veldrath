@@ -16,40 +16,40 @@ else if (_loading)
 }
 else if (_status is null)
 {
-    <MudAlert Severity="Severity.Error" Class="mud-mb-4">Could not retrieve server status.</MudAlert>
+    <MudAlert Severity="Severity.Error" Class="mb-4">Could not retrieve server status.</MudAlert>
 }
 else
 {
-    <MudText Typo="Typo.h3" Class="mud-mb-4">Server Status</MudText>
+    <MudText Typo="Typo.h3" Class="mb-4">Server Status</MudText>
 
     <div class="d-flex flex-wrap gap-4 mb-4">
-        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4" Style="min-width: 160px;">
+        <MudPaper Elevation="0" Outlined="true" Class="pa-4" Style="min-width: 160px;">
             <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="text-transform: uppercase; letter-spacing: .06em;">Connected Players</MudText>
-            <MudText Typo="Typo.h4" Class="mud-mt-1">@_status.ConnectedPlayers</MudText>
+            <MudText Typo="Typo.h4" Class="mt-1">@_status.ConnectedPlayers</MudText>
         </MudPaper>
-        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4" Style="min-width: 160px;">
+        <MudPaper Elevation="0" Outlined="true" Class="pa-4" Style="min-width: 160px;">
             <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="text-transform: uppercase; letter-spacing: .06em;">Registered Accounts</MudText>
-            <MudText Typo="Typo.h4" Class="mud-mt-1">@_status.RegisteredAccounts</MudText>
+            <MudText Typo="Typo.h4" Class="mt-1">@_status.RegisteredAccounts</MudText>
         </MudPaper>
-        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4" Style="min-width: 160px;">
+        <MudPaper Elevation="0" Outlined="true" Class="pa-4" Style="min-width: 160px;">
             <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="text-transform: uppercase; letter-spacing: .06em;">Total Characters</MudText>
-            <MudText Typo="Typo.h4" Class="mud-mt-1">@_status.TotalCharacters</MudText>
+            <MudText Typo="Typo.h4" Class="mt-1">@_status.TotalCharacters</MudText>
         </MudPaper>
-        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4" Style="min-width: 160px;">
+        <MudPaper Elevation="0" Outlined="true" Class="pa-4" Style="min-width: 160px;">
             <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="text-transform: uppercase; letter-spacing: .06em;">Uptime</MudText>
-            <MudText Typo="Typo.h4" Class="mud-mt-1">@FormatUptime(_status.ServerStartedAt)</MudText>
+            <MudText Typo="Typo.h4" Class="mt-1">@FormatUptime(_status.ServerStartedAt)</MudText>
         </MudPaper>
-        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4" Style="min-width: 160px;">
+        <MudPaper Elevation="0" Outlined="true" Class="pa-4" Style="min-width: 160px;">
             <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="text-transform: uppercase; letter-spacing: .06em;">Started At</MudText>
-            <MudText Typo="Typo.h4" Class="mud-mt-1 mud-text-secondary">@_status.ServerStartedAt.ToLocalTime().ToString("g")</MudText>
+            <MudText Typo="Typo.h4" Class="mt-1 mud-text-secondary">@_status.ServerStartedAt.ToLocalTime().ToString("g")</MudText>
         </MudPaper>
     </div>
 
     @if (_status.ZonePopulations.Count > 0)
     {
-        <MudText Typo="Typo.h5" Class="mud-mb-2">Zone Population</MudText>
+        <MudText Typo="Typo.h5" Class="mb-2">Zone Population</MudText>
         <MudTable Items="@_status.ZonePopulations.OrderByDescending(z => z.PlayerCount).ToList()"
-                  Hover="true" Elevation="0" Outlined="true" Class="mud-mb-4">
+                  Hover="true" Elevation="0" Outlined="true" Class="mb-4">
             <HeaderContent>
                 <MudTh>Zone</MudTh>
                 <MudTh>Zone ID</MudTh>
@@ -64,14 +64,14 @@ else
     }
     else
     {
-        <MudText Typo="Typo.body2" Class="mud-text-secondary mud-mb-4">No active zones.</MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">No active zones.</MudText>
     }
 
     @if (_status.HealthChecks is { Count: > 0 })
     {
-        <MudText Typo="Typo.h5" Class="mud-mb-2">Health Checks</MudText>
+        <MudText Typo="Typo.h5" Class="mb-2">Health Checks</MudText>
         <MudTable Items="@_status.HealthChecks"
-                  Hover="true" Elevation="0" Outlined="true" Class="mud-mb-4">
+                  Hover="true" Elevation="0" Outlined="true" Class="mb-4">
             <HeaderContent>
                 <MudTh>Check</MudTh>
                 <MudTh>Status</MudTh>
@@ -87,7 +87,7 @@ else
         </MudTable>
     }
 
-    <div class="mud-mt-4">
+    <div class="mt-4">
         <MudButton Variant="Variant.Filled" Size="Size.Small" OnClick="RefreshAsync">Refresh</MudButton>
     </div>
 }

@@ -10,7 +10,7 @@
 }
 else
 {
-    <MudText Typo="Typo.h3" Class="mud-mb-4">Active Sessions</MudText>
+    <MudText Typo="Typo.h3" Class="mb-4">Active Sessions</MudText>
 
     <div class="d-flex flex-wrap gap-3 mb-4 align-items-center">
         <MudTextField @bind-Value="_regionId"
@@ -39,7 +39,7 @@ else
     }
     else if (_sessions is null)
     {
-        <MudAlert Severity="Severity.Error" Class="mud-mb-4">Failed to load sessions.</MudAlert>
+        <MudAlert Severity="Severity.Error" Class="mb-4">Failed to load sessions.</MudAlert>
     }
     else if (_sessions.Count == 0)
     {
