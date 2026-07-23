@@ -4,11 +4,12 @@
    Uses the same VDS design tokens defined in app.css :root. */
 
 /* ── Game Layout ───────────────────────────────────────────────────────
-   Flex, gap, alignment, and overflow handled by MudBlazor CSS utilities
-   in Razor markup. Only VDS-specific properties remain in custom CSS. */
+   display: flex, flex-direction: column, overflow: hidden, position: fixed
+   migrated to MudBlazor utilities in Razor markup.
+   Only VDS-specific and non-utility properties (inset, background, color,
+   font-family, z-index) remain in custom CSS. */
 
 .game-layout {
-  position: fixed;
   inset: 0;
   background: var(--vds-bg-0, #0c0d13);
   color: var(--vds-text, #f0ede8);
@@ -16,13 +17,12 @@
   z-index: 10;
 }
 
-/* ── Main Row (Grid Layout) ────────────────────────────────────────────── */
+/* ── Main Row (Grid Layout) ──────────────────────────────────────────────
+   display: flex, flex: 1, overflow: hidden migrated to MudBlazor utilities
+   in Razor markup. min-height: 0 has no MudBlazor utility equivalent. */
 
 .game-main-row {
-  display: flex;
-  flex: 1;
   min-height: 0;
-  overflow: hidden;
 }
 
 /* ── Sidebar (Left) ────────────────────────────────────────────────────── */
@@ -145,6 +145,8 @@
   max-width: 500px;
 }
 
+/* flex: 1 kept as custom CSS — applies via descendant selector to a shared
+   StatusBar component; min-width: 0 has no MudBlazor utility equivalent. */
 .game-header-bars .status-bar {
   flex: 1;
   min-width: 120px;
@@ -792,10 +794,9 @@
   color: var(--vds-text-muted, #a8a09a);
 }
 
+/* display: flex, align-items: center, gap migrated to MudBlazor utilities
+   in Razor markup. 6px gap mapped to gap-1 (4px) — closest MudBlazor scale. */
 .game-footer-status {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   font-size: var(--vds-text-xs, 11px);
   color: var(--vds-text-muted, #a8a09a);
 }
@@ -870,7 +871,9 @@
   color: var(--vds-text-subtle, #6e6860);
 }
 
-/* ── Reconnecting Banner (above footer) ─────────────────────────────── */
+/* ── Reconnecting Banner (above footer) ───────────────────────────────
+   display: flex, align-items: center, justify-content: center, gap
+   migrated to MudBlazor utilities in Razor markup. */
 
 .game-footer-reconnecting-banner {
   position: absolute;
@@ -884,10 +887,6 @@
   );
   border-bottom: 1px solid var(--vds-warning, #d4964a);
   padding: 6px var(--vds-space-4, 16px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--vds-space-2, 8px);
   font-size: var(--vds-text-sm, 12px);
   color: var(--vds-warning, #d4964a);
   animation: slide-down-banner 0.3s ease;
@@ -915,16 +914,15 @@
   flex-shrink: 0;
 }
 
-/* ── Reconnect Overlay ────────────────────────────────────────────────── */
+/* ── Reconnect Overlay ──────────────────────────────────────────────────
+   display: flex, flex-direction: column, align-items: center,
+   justify-content: center, gap migrated to MudBlazor utilities
+   in Razor markup for .reconnect-overlay, .reconnect-overlay-card,
+   and .reconnect-overlay-actions. */
 
 .reconnect-overlay {
   position: fixed;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--vds-space-6, 24px);
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(4px);
   z-index: 200;
@@ -936,10 +934,6 @@
   border: 1px solid var(--vds-border-strong, #3d3f58);
   border-radius: var(--vds-radius-lg, 8px);
   padding: var(--vds-space-8, 32px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--vds-space-4, 16px);
   min-width: 320px;
   max-width: 420px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
@@ -981,11 +975,10 @@
   text-align: center;
 }
 
+/* display: flex, gap, justify-content: center migrated to MudBlazor utilities
+   in Razor markup. */
 .reconnect-overlay-actions {
-  display: flex;
-  gap: var(--vds-space-3, 12px);
   width: 100%;
-  justify-content: center;
   margin-top: var(--vds-space-2, 8px);
 }
 
@@ -1137,15 +1130,14 @@
   background: var(--vds-warning, #e4a85a);
 }
 
-/* ── Game Panel / Overlay ────────────────────────────────────────────── */
+/* ── Game Panel / Overlay ──────────────────────────────────────────────
+   display: flex, align-items: center, justify-content: center migrated
+   to MudBlazor utilities in Razor markup. */
 
 .game-panel-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.65);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: 100;
   animation: fade-in 0.2s ease;
 }
@@ -1159,6 +1151,8 @@
   }
 }
 
+/* display: flex, flex-direction: column migrated to MudBlazor utilities
+   in Razor markup. */
 .game-panel {
   background: var(--vds-bg-2, #1c1d2b);
   border: 1px solid var(--vds-border-strong, #3d3f58);
@@ -1166,8 +1160,6 @@
   min-width: 360px;
   max-width: 560px;
   max-height: 80vh;
-  display: flex;
-  flex-direction: column;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   animation: panel-enter 0.25s ease;
 }
@@ -1183,10 +1175,9 @@
   }
 }
 
+/* display: flex, align-items: center, justify-content: space-between migrated
+   to MudBlazor utilities in Razor markup. */
 .game-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   padding: var(--vds-space-3, 12px) var(--vds-space-4, 16px);
   border-bottom: 1px solid var(--vds-border, #2a2b3d);
   background: var(--vds-bg-1, #14151f);

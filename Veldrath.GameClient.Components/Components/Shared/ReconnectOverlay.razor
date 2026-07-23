@@ -8,8 +8,8 @@
 
 @if (_visible)
 {
-    <div class="reconnect-overlay">
-        <div class="reconnect-overlay-card">
+    <div class="reconnect-overlay d-flex flex-column align-center justify-center gap-6">
+        <div class="reconnect-overlay-card d-flex flex-column align-center gap-4">
             <div class="reconnect-overlay-icon">⚠</div>
             <h2 class="reconnect-overlay-title">Connection Lost</h2>
             <p class="reconnect-overlay-message">
@@ -24,7 +24,7 @@
                 </p>
             }
 
-            <div class="reconnect-overlay-actions">
+            <div class="reconnect-overlay-actions d-flex gap-3 justify-center">
                 @if (!_isReconnecting)
                 {
                     <MudButton Variant="Variant.Filled"

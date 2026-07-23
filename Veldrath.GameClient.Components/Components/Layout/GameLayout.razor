@@ -6,7 +6,7 @@
 
 <MudDialogProvider />
 
-<div class="game-layout d-flex flex-column overflow-hidden @(GameState.IsConnected ? "in-game" : "")">
+<div class="game-layout d-flex flex-column overflow-hidden position-fixed @(GameState.IsConnected ? "in-game" : "")">
     @Body
 </div>
 

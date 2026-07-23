@@ -14,7 +14,7 @@
     <CascadingValue Value="GameState">
         <GameHeader />
 
-        <div class="game-main-row">
+        <div class="game-main-row d-flex flex-1 overflow-hidden">
             <div class="game-sidebar @(_sidebarCollapsed ? "sidebar-collapsed" : "")">
                 <button class="sidebar-toggle" @onclick="ToggleSidebar"
                         title="@(_sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar")">

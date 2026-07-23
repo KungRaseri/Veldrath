@@ -6,7 +6,7 @@
     @* Reconnecting banner (absolute positioned above footer) *@
     @if (ShowReconnectingBanner)
     {
-        <div class="game-footer-reconnecting-banner">
+        <div class="game-footer-reconnecting-banner d-flex align-center justify-center gap-2">
             <div class="spinner-small"></div>
             <span>Reconnecting to game server...</span>
         </div>
@@ -45,7 +45,7 @@
     </div>
 
     <div class="game-footer-right d-flex align-items-center gap-2 ml-auto">
-        <span class="game-footer-status">
+        <span class="game-footer-status d-flex align-center gap-1">
             <span class="game-footer-dot @DotClass"></span>
             @StatusText
         </span>
