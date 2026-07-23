@@ -17,7 +17,7 @@ namespace RealmEngine.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.0")
+                .HasAnnotation("ProductVersion", "10.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -1275,6 +1275,12 @@ namespace RealmEngine.Data.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
+                    b.Property<int?>("TileX")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("TileY")
+                        .HasColumnType("integer");
+
                     b.Property<string>("TypeKey")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -1404,7 +1410,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("ActorArchetypes");
 
-                            b1.ToJson("Stats");
+                            b1
+                                .ToJson("Stats")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("ActorArchetypeId");
@@ -1448,7 +1456,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("ActorArchetypes");
 
-                            b1.ToJson("Traits");
+                            b1
+                                .ToJson("Traits")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("ActorArchetypeId");
@@ -1495,7 +1505,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("ActorClasses");
 
-                            b1.ToJson("Stats");
+                            b1
+                                .ToJson("Stats")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("ActorClassId");
@@ -1523,7 +1535,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("ActorClasses");
 
-                            b1.ToJson("Traits");
+                            b1
+                                .ToJson("Traits")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("ActorClassId");
@@ -1581,7 +1595,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("ActorInstances");
 
-                            b1.ToJson("StatOverrides");
+                            b1
+                                .ToJson("StatOverrides")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("ActorInstanceId");
@@ -1638,7 +1654,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Backgrounds");
 
-                            b1.ToJson("Stats");
+                            b1
+                                .ToJson("Stats")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("BackgroundId");
@@ -1666,7 +1684,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Backgrounds");
 
-                            b1.ToJson("Traits");
+                            b1
+                                .ToJson("Traits")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("BackgroundId");
@@ -1715,7 +1735,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Dialogues");
 
-                            b1.ToJson("Stats");
+                            b1
+                                .ToJson("Stats")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("DialogueId");
@@ -1741,7 +1763,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Dialogues");
 
-                            b1.ToJson("Traits");
+                            b1
+                                .ToJson("Traits")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("DialogueId");
@@ -1780,7 +1804,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Enchantments");
 
-                            b1.ToJson("Stats");
+                            b1
+                                .ToJson("Stats")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("EnchantmentId");
@@ -1804,7 +1830,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Enchantments");
 
-                            b1.ToJson("Traits");
+                            b1
+                                .ToJson("Traits")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("EnchantmentId");
@@ -1830,7 +1858,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("EquipmentSets");
 
-                            b1.ToJson("Data");
+                            b1
+                                .ToJson("Data")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("EquipmentSetEntryId");
@@ -1933,7 +1963,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Items");
 
-                            b1.ToJson("Stats");
+                            b1
+                                .ToJson("Stats")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("ItemId");
@@ -1981,7 +2013,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Items");
 
-                            b1.ToJson("Traits");
+                            b1
+                                .ToJson("Traits")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("ItemId");
@@ -2004,7 +2038,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Languages");
 
-                            b1.ToJson("Morphology");
+                            b1
+                                .ToJson("Morphology")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("LanguageId");
@@ -2115,7 +2151,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Languages");
 
-                            b1.ToJson("Phonology");
+                            b1
+                                .ToJson("Phonology")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("LanguageId");
@@ -2208,7 +2246,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Languages");
 
-                            b1.ToJson("RegisterSystem");
+                            b1
+                                .ToJson("RegisterSystem")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("LanguageId");
@@ -2277,7 +2317,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("LootTables");
 
-                            b1.ToJson("Traits");
+                            b1
+                                .ToJson("Traits")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("LootTableId");
@@ -2318,7 +2360,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Materials");
 
-                            b1.ToJson("Stats");
+                            b1
+                                .ToJson("Stats")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("MaterialId");
@@ -2344,7 +2388,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Materials");
 
-                            b1.ToJson("Traits");
+                            b1
+                                .ToJson("Traits")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("MaterialId");
@@ -2379,7 +2425,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("MaterialProperties");
 
-                            b1.ToJson("Stats");
+                            b1
+                                .ToJson("Stats")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("MaterialPropertyId");
@@ -2407,7 +2455,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("MaterialProperties");
 
-                            b1.ToJson("Traits");
+                            b1
+                                .ToJson("Traits")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("MaterialPropertyId");
@@ -2460,7 +2510,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Organizations");
 
-                            b1.ToJson("Stats");
+                            b1
+                                .ToJson("Stats")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("OrganizationId");
@@ -2484,7 +2536,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Organizations");
 
-                            b1.ToJson("Traits");
+                            b1
+                                .ToJson("Traits")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("OrganizationId");
@@ -2517,7 +2571,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Powers");
 
-                            b1.ToJson("Effects");
+                            b1
+                                .ToJson("Effects")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("PowerId");
@@ -2553,7 +2609,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Powers");
 
-                            b1.ToJson("Stats");
+                            b1
+                                .ToJson("Stats")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("PowerId");
@@ -2583,7 +2641,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Powers");
 
-                            b1.ToJson("Traits");
+                            b1
+                                .ToJson("Traits")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("PowerId");
@@ -2609,7 +2669,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Quests");
 
-                            b1.ToJson("Objectives");
+                            b1
+                                .ToJson("Objectives")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("QuestId");
@@ -2650,7 +2712,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Quests");
 
-                            b1.ToJson("Rewards");
+                            b1
+                                .ToJson("Rewards")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("QuestId");
@@ -2698,7 +2762,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Quests");
 
-                            b1.ToJson("Stats");
+                            b1
+                                .ToJson("Stats")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("QuestId");
@@ -2722,7 +2788,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Quests");
 
-                            b1.ToJson("Traits");
+                            b1
+                                .ToJson("Traits")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("QuestId");
@@ -2763,7 +2831,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Recipes");
 
-                            b1.ToJson("Traits");
+                            b1
+                                .ToJson("Traits")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("RecipeId");
@@ -2800,7 +2870,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Skills");
 
-                            b1.ToJson("Stats");
+                            b1
+                                .ToJson("Stats")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("SkillId");
@@ -2824,7 +2896,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Skills");
 
-                            b1.ToJson("Traits");
+                            b1
+                                .ToJson("Traits")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("SkillId");
@@ -2875,7 +2949,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Species");
 
-                            b1.ToJson("Stats");
+                            b1
+                                .ToJson("Stats")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("SpeciesId");
@@ -2909,7 +2985,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("Species");
 
-                            b1.ToJson("Traits");
+                            b1
+                                .ToJson("Traits")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("SpeciesId");
@@ -2959,7 +3037,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("ZoneLocations");
 
-                            b1.ToJson("ActorPool");
+                            b1
+                                .ToJson("ActorPool")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("ZoneLocationId");
@@ -2983,7 +3063,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("ZoneLocations");
 
-                            b1.ToJson("Stats");
+                            b1
+                                .ToJson("Stats")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("ZoneLocationId");
@@ -3015,7 +3097,9 @@ namespace RealmEngine.Data.Migrations
 
                             b1.ToTable("ZoneLocations");
 
-                            b1.ToJson("Traits");
+                            b1
+                                .ToJson("Traits")
+                                .HasColumnType("jsonb");
 
                             b1.WithOwner()
                                 .HasForeignKey("ZoneLocationId");
