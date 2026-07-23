@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using MudBlazor.Services;
 using Serilog;
 using Serilog.Events;
 using Veldrath.Auth.Blazor;
@@ -31,6 +32,8 @@ try
 
     builder.Services.AddRazorComponents()
         .AddInteractiveServerComponents();
+
+    builder.Services.AddMudServices();
 
     // HttpClient for calling Veldrath.Server APIs.
     var serverUrl = builder.Configuration["Veldrath:ServerUrl"]
