@@ -1,6 +1,5 @@
 @using Veldrath.GameClient.Core.Abstractions
 @* Top bar showing character info, status bars, gold, and zone name. *@
-@inject IGameStateService GameState
 
 @if (GameState.CurrentCharacterInfo is { } character)
 {
@@ -34,4 +33,10 @@ else
     <div class="game-header mud-d-flex align-items-center gap-4 mud-px-4 mud-py-3 flex-shrink-0" style="min-height: 56px;">
         <span class="game-header-placeholder">No character selected</span>
     </div>
+}
+
+@code {
+    /// <summary>Gets or sets the game state service, received from the parent via cascading value.</summary>
+    [CascadingParameter]
+    private IGameStateService GameState { get; set; } = null!;
 }
