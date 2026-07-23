@@ -30,6 +30,7 @@ public sealed partial class GameEntry : ComponentBase, IAsyncDisposable
     private EntryPageState _state = EntryPageState.Loading;
     private string? _errorMessage;
     private CancellationTokenSource? _authTimeoutCts;
+    private bool _isDiscovering;
 
     /// <summary>Gets or sets the auth state service, injected by DI.</summary>
     [Inject]
@@ -76,6 +77,23 @@ public sealed partial class GameEntry : ComponentBase, IAsyncDisposable
         await DiscoverAndRouteAsync();
     }
 
+    /// <inheritdoc />
+    /// <remarks>
+    /// After a Blazor Server circuit reconnect, <see cref="OnInitializedAsync"/> is not
+    /// re-executed on preserved component instances.  This override recovers from any
+    /// stuck <see cref="EntryPageState.WaitingForAuth"/> or <see cref="EntryPageState.Loading"/>
+    /// state by re-triggering discovery when auth is now ready.
+    /// </remarks>
+    protected override async Task OnParametersSetAsync()
+    {
+        if ((_state == EntryPageState.WaitingForAuth || _state == EntryPageState.Loading)
+            && Auth.IsAuthReady && Auth.IsLoggedIn)
+        {
+            _authTimeoutCts?.Cancel();
+            await DiscoverAndRouteAsync();
+        }
+    }
+
     /// <summary>
     /// Reacts to auth state changes. Cancels any pending auth timeout and triggers
     /// discovery when auth becomes ready after prerendering. Redirects to the login
@@ -111,6 +129,10 @@ public sealed partial class GameEntry : ComponentBase, IAsyncDisposable
     /// </summary>
     private async Task DiscoverAndRouteAsync()
     {
+        if (_isDiscovering)
+            return;
+
+        _isDiscovering = true;
         _state = EntryPageState.Loading;
         _errorMessage = null;
         StateHasChanged();
@@ -150,6 +172,7 @@ public sealed partial class GameEntry : ComponentBase, IAsyncDisposable
             Logger.LogError(ex, "Failed to discover game session");
             _state = EntryPageState.Error;
             _errorMessage = "Failed to connect to the game server. Please try again.";
+            _isDiscovering = false;
             StateHasChanged();
         }
     }

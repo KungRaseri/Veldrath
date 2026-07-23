@@ -104,7 +104,7 @@ public class GameEntryPageTests : BunitContext
     [Fact]
     public void Redirects_To_Login_When_Token_Refresh_Fails()
     {
-        _fakeAuth.TryRefreshResult = false;
+        _fakeAuthApi.RenewJwtResponse = null; // Causes TryRefreshAsync to return false.
         _fakeAuth.IsLoggedInOverride = true;
 
         Render<GameEntry>();
@@ -311,7 +311,7 @@ public class GameEntryPageTests : BunitContext
         _fakeApi.Characters = [CreateCharacterDto()];
         _fakeApi.LastSessionResult = null;
 
-        Render<GameEntry>();
+        var cut = Render<GameEntry>();
 
         // Simulate auth logout.
         _fakeAuth.IsLoggedInOverride = false;
