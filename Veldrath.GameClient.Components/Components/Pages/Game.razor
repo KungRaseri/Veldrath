@@ -15,16 +15,24 @@
 <div class="mud-d-flex flex-column mud-height-full mud-width-full overflow-hidden">
     <GameHeader />
 
-    <div class="flex-1 mud-d-flex overflow-hidden" style="min-height: 0;">
-        <div class="game-sidebar mud-d-flex flex-column overflow-y-auto overflow-x-hidden">
-            <GameSidebar OnOpenOverlay="HandleOpenOverlay" />
+    <div class="game-main-row">
+        @* Left sidebar — collapsible *@
+        <div class="game-sidebar @(_sidebarCollapsed ? "sidebar-collapsed" : "")">
+            <button class="sidebar-toggle" @onclick="ToggleSidebar"
+                    title="@(_sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar")">
+                @(_sidebarCollapsed ? "▶" : "◀")
+            </button>
+            @if (!_sidebarCollapsed)
+            {
+                <GameSidebar OnOpenOverlay="HandleOpenOverlay" />
+                <div class="sidebar-char-panel">
+                    <CharacterPanel />
+                </div>
+            }
         </div>
 
-        <div class="game-char-panel">
-            <CharacterPanel />
-        </div>
-
-        <div class="flex-1 mud-d-flex flex-column overflow-hidden position-relative">
+        @* Center — tilemap + location panel *@
+        <div class="game-center-area">
             @if (_isRestoringSession)
             {
                 <div class="game-loading-zone">
@@ -53,8 +61,16 @@
             }
         </div>
 
-        <div class="game-chat-panel mud-d-flex flex-column">
-            <GameChat />
+        @* Right sidebar — chat, collapsible *@
+        <div class="game-chat-panel @(_chatCollapsed ? "chat-collapsed" : "")">
+            <button class="chat-toggle" @onclick="ToggleChat"
+                    title="@(_chatCollapsed ? "Expand chat" : "Collapse chat")">
+                @(_chatCollapsed ? "◀" : "▶")
+            </button>
+            @if (!_chatCollapsed)
+            {
+                <GameChat />
+            }
         </div>
     </div>
 
@@ -77,6 +93,20 @@
     private bool _isRestoringSession;
     private bool _showOverlay;
     private GameOverlay.OverlayKind _activeOverlay;
+    private bool _sidebarCollapsed;
+    private bool _chatCollapsed;
+
+    private void ToggleSidebar()
+    {
+        _sidebarCollapsed = !_sidebarCollapsed;
+        StateHasChanged();
+    }
+
+    private void ToggleChat()
+    {
+        _chatCollapsed = !_chatCollapsed;
+        StateHasChanged();
+    }
 
     /// <summary>
     /// Called by <see cref="ReconnectOverlay"/> when the user chooses to return to the main menu.
