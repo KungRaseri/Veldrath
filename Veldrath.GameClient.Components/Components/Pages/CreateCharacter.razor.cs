@@ -421,11 +421,21 @@ public partial class CreateCharacter : IAsyncDisposable
     }
 
     /// <inheritdoc />
+    /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && _hasLoadedData)
         {
-            await JsRuntime.InvokeVoidAsync("characterCreation.enableBeforeUnload");
+            try
+            {
+                await JsRuntime.InvokeVoidAsync("characterCreation.enableBeforeUnload");
+            }
+            catch (JSException)
+            {
+                // JS module not loaded yet (e.g., after circuit reconnect on page refresh).
+                // Safe to ignore — the beforeunload warning isn't critical,
+                // and the module will be available on subsequent renders.
+            }
         }
     }
 
