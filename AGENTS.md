@@ -168,6 +168,23 @@ Engine libraries ([`RealmEngine.Core`](RealmEngine.Core/), [`RealmEngine.Shared`
 
 Prefer `FakeXxx` stub classes in `Infrastructure/` directories over mocking frameworks. [`Moq`](https://github.com/moq/moq4) and [`NSubstitute`](https://nsubstitute.github.io/) are available only when stubs aren't practical.
 
+### Rule 4: MudBlazor CSS Utility Prefixes
+
+MudBlazor CSS utility classes have a strict naming convention. **Layout, spacing, flex, and display utilities do NOT use a `mud-` prefix.** Only themed classes (colors, elevation, borders) use the `mud-` prefix.
+
+| Category | Prefix | Correct ✅ | Wrong ❌ |
+|---|---|---|---|
+| Flex | None | `d-flex`, `justify-center` | `mud-d-flex` |
+| Spacing | None | `mt-4`, `pa-4`, `gap-3` | `mud-mt-4`, `mud-pa-4` |
+| Display | None | `d-block`, `d-none` | `mud-d-block` |
+| Border radius | None | `rounded-sm` | `mud-rounded-sm` |
+| Text-on-bg colors | `mud-text-` | `mud-text-primary`, `mud-text-secondary` | `text-primary` |
+| Palette-as-text colors | `mud-*-text` | `mud-primary-text`, `mud-error-text` | `mud-text-error` |
+| Elevation | `mud-elevation-` | `mud-elevation-4` | `elevation-4` |
+| Themed borders | `mud-border-` | `mud-border-primary` | `border-primary` |
+
+> **See [`.github/instructions/styling-and-css.md`](.github/instructions/styling-and-css.md) for the complete, verified list of MudBlazor v9.7.0 CSS utilities.**
+
 ---
 
 ## Key Technologies & Versions
