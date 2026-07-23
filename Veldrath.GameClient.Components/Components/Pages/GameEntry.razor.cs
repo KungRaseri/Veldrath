@@ -1,3 +1,4 @@
+using System.Threading;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
@@ -30,7 +31,9 @@ public sealed partial class GameEntry : ComponentBase, IAsyncDisposable
     private EntryPageState _state = EntryPageState.Loading;
     private string? _errorMessage;
     private CancellationTokenSource? _authTimeoutCts;
-    private bool _isDiscovering;
+
+    /// <summary>Reentrancy guard: 0 = idle, 1 = discovering. Uses <see cref="Interlocked"/> for atomicity.</summary>
+    private int _discoveringFlag;
 
     /// <summary>Gets or sets the auth state service, injected by DI.</summary>
     [Inject]
@@ -129,10 +132,10 @@ public sealed partial class GameEntry : ComponentBase, IAsyncDisposable
     /// </summary>
     private async Task DiscoverAndRouteAsync()
     {
-        if (_isDiscovering)
+        // Atomic reentrancy guard: only one discovery may run at a time.
+        if (Interlocked.Exchange(ref _discoveringFlag, 1) == 1)
             return;
 
-        _isDiscovering = true;
         _state = EntryPageState.Loading;
         _errorMessage = null;
         StateHasChanged();
@@ -142,7 +145,7 @@ public sealed partial class GameEntry : ComponentBase, IAsyncDisposable
             var tokenValid = await Auth.TryRefreshAsync();
             if (!tokenValid || Auth.AccessToken is null)
             {
-                Navigation.NavigateTo("/login");
+                SafeNavigate("/login");
                 return;
             }
 
@@ -150,7 +153,7 @@ public sealed partial class GameEntry : ComponentBase, IAsyncDisposable
             var characters = await Api.GetCharactersAsync();
             if (characters.Count == 0)
             {
-                Navigation.NavigateTo("/Game/CreateCharacter");
+                SafeNavigate("/Game/CreateCharacter");
                 return;
             }
 
@@ -158,7 +161,7 @@ public sealed partial class GameEntry : ComponentBase, IAsyncDisposable
             var session = await Api.GetLastSessionAsync();
             if (session is null)
             {
-                Navigation.NavigateTo("/Game/CharacterSelect");
+                SafeNavigate("/Game/CharacterSelect");
                 return;
             }
 
@@ -172,9 +175,30 @@ public sealed partial class GameEntry : ComponentBase, IAsyncDisposable
             Logger.LogError(ex, "Failed to discover game session");
             _state = EntryPageState.Error;
             _errorMessage = "Failed to connect to the game server. Please try again.";
-            _isDiscovering = false;
+            _discoveringFlag = 0;
             StateHasChanged();
         }
+        finally
+        {
+            // Ensure the guard is always released on paths that do not navigate away.
+            // Navigation paths reset the flag via SafeNavigate.
+            if (_state != EntryPageState.Ready)
+            {
+                _discoveringFlag = 0;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Navigates to the specified URI, catching any exceptions that may occur
+    /// if the circuit is terminating or the component has been disposed.
+    /// Releases the discovery guard so future attempts are not blocked.
+    /// </summary>
+    /// <param name="uri">The target URI to navigate to.</param>
+    private void SafeNavigate(string uri)
+    {
+        _discoveringFlag = 0;
+        try { Navigation.NavigateTo(uri); } catch (Exception ex) { Logger.LogWarning(ex, "Navigation to {Uri} failed", uri); }
     }
 
     /// <summary>
@@ -197,18 +221,29 @@ public sealed partial class GameEntry : ComponentBase, IAsyncDisposable
             FullWidth = true,
         };
 
-        var dialog = await DialogService.ShowAsync<ResumeSessionDialog>(
-            "Resume Session", parameters, options);
-
-        var result = await dialog.Result;
-
-        if (result?.Data is bool shouldResume && shouldResume)
+        try
         {
-            Navigation.NavigateTo("/Game/Play");
+            var dialog = await DialogService.ShowAsync<ResumeSessionDialog>(
+                "Resume Session", parameters, options);
+
+            var result = await dialog.Result;
+
+            if (result?.Data is bool shouldResume && shouldResume)
+            {
+                SafeNavigate("/Game/Play");
+            }
+            else
+            {
+                SafeNavigate("/Game/CharacterSelect");
+            }
         }
-        else
+        catch (Exception ex)
         {
-            Navigation.NavigateTo("/Game/CharacterSelect");
+            Logger.LogError(ex, "Failed to show resume dialog");
+            _state = EntryPageState.Error;
+            _errorMessage = "Failed to display the session resume dialog. Please try again.";
+            _discoveringFlag = 0;
+            StateHasChanged();
         }
     }
 
