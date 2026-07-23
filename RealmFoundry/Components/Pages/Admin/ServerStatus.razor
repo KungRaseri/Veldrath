@@ -57,7 +57,7 @@ else
             </HeaderContent>
             <RowTemplate>
                 <MudTd>@context.ZoneName</MudTd>
-                <MudTd Class="mud-text-secondary">@context.ZoneId</MudTd>
+                <MudTd Class="mud-secondary-text">@context.ZoneId</MudTd>
                 <MudTd>@context.PlayerCount</MudTd>
             </RowTemplate>
         </MudTable>
@@ -82,7 +82,7 @@ else
                 <MudTd>
                     <MudChip T="string" Size="Size.Small" Color="@HealthChipColor(context.Status)">@context.Status</MudChip>
                 </MudTd>
-                <MudTd Class="mud-text-secondary">@(context.Description ?? "—")</MudTd>
+                <MudTd Class="mud-secondary-text">@(context.Description ?? "—")</MudTd>
             </RowTemplate>
         </MudTable>
     }

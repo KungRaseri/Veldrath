@@ -52,7 +52,7 @@ else
                         <MudChip T="string" Size="Size.Small">Draft</MudChip>
                     }
                 </MudTd>
-                <MudTd Class="mud-text-secondary">@(context.PublishedAt?.ToLocalTime().ToString("g") ?? "—")</MudTd>
+                <MudTd Class="mud-secondary-text">@(context.PublishedAt?.ToLocalTime().ToString("g") ?? "—")</MudTd>
                 <MudTd>
                     <div class="d-flex gap-1">
                         <MudButton Variant="Variant.Filled" Size="Size.Small" Href="@($"/editorial/announcements/{context.Id}")">Edit</MudButton>

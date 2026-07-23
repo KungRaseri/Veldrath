@@ -44,8 +44,8 @@ else
             </HeaderContent>
             <RowTemplate>
                 <MudTd>@context.Title</MudTd>
-                <MudTd Class="mud-text-secondary">@context.Version</MudTd>
-                <MudTd Class="mud-text-secondary">@context.Slug</MudTd>
+                <MudTd Class="mud-secondary-text">@context.Version</MudTd>
+                <MudTd Class="mud-secondary-text">@context.Slug</MudTd>
                 <MudTd>
                     @if (context.Status == "Published")
                     {
@@ -56,7 +56,7 @@ else
                         <MudChip T="string" Size="Size.Small">Draft</MudChip>
                     }
                 </MudTd>
-                <MudTd Class="mud-text-secondary">@(context.PublishedAt?.ToLocalTime().ToString("d") ?? "—")</MudTd>
+                <MudTd Class="mud-secondary-text">@(context.PublishedAt?.ToLocalTime().ToString("d") ?? "—")</MudTd>
                 <MudTd>
                     <div class="d-flex gap-1">
                         <MudButton Variant="Variant.Filled" Size="Size.Small" Href="@($"/editorial/patch-notes/{context.Id}")">Edit</MudButton>

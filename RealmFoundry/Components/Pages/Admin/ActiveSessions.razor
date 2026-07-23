@@ -58,10 +58,10 @@ else
             </HeaderContent>
             <RowTemplate>
                 <MudTd>@context.CharacterName</MudTd>
-                <MudTd Class="mud-text-secondary">@context.AccountUsername</MudTd>
-                <MudTd Class="mud-text-secondary">@context.RegionId</MudTd>
-                <MudTd Class="mud-text-secondary">@(context.ZoneId ?? "—")</MudTd>
-                <MudTd Class="mud-text-secondary">@context.EnteredAt.ToLocalTime().ToString("g")</MudTd>
+                <MudTd Class="mud-secondary-text">@context.AccountUsername</MudTd>
+                <MudTd Class="mud-secondary-text">@context.RegionId</MudTd>
+                <MudTd Class="mud-secondary-text">@(context.ZoneId ?? "—")</MudTd>
+                <MudTd Class="mud-secondary-text">@context.EnteredAt.ToLocalTime().ToString("g")</MudTd>
                 <MudTd>
                     <MudButton Variant="Variant.Filled" Size="Size.Small" Href="@($"/admin/users/{context.AccountId}")">Manage Account</MudButton>
                 </MudTd>
