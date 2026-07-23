@@ -46,6 +46,12 @@ public class Location
     
     /// <summary>Gets or sets the difficulty level (Easy, Medium, Hard, Deadly).</summary>
     public string? Difficulty { get; set; }
+
+    /// <summary>Gets or sets the tile column on the zone's tilemap where this location sits. Null if off-grid.</summary>
+    public int? TileX { get; set; }
+
+    /// <summary>Gets or sets the tile row on the zone's tilemap where this location sits. Null if off-grid.</summary>
+    public int? TileY { get; set; }
     
     /// <summary>Gets or sets the features.</summary>
     public List<string> Features { get; set; } = new();

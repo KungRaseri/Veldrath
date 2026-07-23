@@ -161,6 +161,26 @@ public sealed class GameStateService : IGameStateService
     /// <summary>The traversal connections available from the current location.</summary>
     public List<ZoneConnectionLink> CurrentLocationConnections { get; private set; } = [];
 
+    // ── Location discovery state ─────────────────────────────────────────────────
+
+    /// <summary>The locations the character has discovered and can fast-travel to.</summary>
+    public List<IGameStateService.LocationReference> KnownLocations { get; private set; } = [];
+
+    /// <summary>Whether the player is currently standing on a location tile.</summary>
+    public bool IsAtLocation { get; private set; }
+
+    /// <summary>The prose description of the current location, or <c>null</c>.</summary>
+    public string? CurrentLocationDescription { get; private set; }
+
+    /// <inheritdoc />
+    IReadOnlyList<IGameStateService.LocationReference> IGameStateService.KnownLocations => KnownLocations;
+
+    /// <inheritdoc />
+    bool IGameStateService.IsAtLocation => IsAtLocation;
+
+    /// <inheritdoc />
+    string? IGameStateService.CurrentLocationDescription => CurrentLocationDescription;
+
     // ── Combat state ────────────────────────────────────────────────────────────
 
     /// <summary>Whether the player is currently engaged in combat.</summary>
@@ -719,10 +739,23 @@ public sealed class GameStateService : IGameStateService
             Name = location.Name,
             Type = location.Type,
         };
+        CurrentLocationDescription = location.Description;
+        IsAtLocation = true;
+
+        // Auto-discover this location for fast travel.
+        var locRef = new IGameStateService.LocationReference(
+            location.Slug, location.Name, location.Type,
+            CurrentZoneId ?? "", location.TileX, location.TileY);
+        if (KnownLocations.All(l => l.Slug != location.Slug))
+            KnownLocations.Add(locRef);
+
         RaisePropertyChanged(nameof(CurrentZoneLocationSlug));
         RaisePropertyChanged(nameof(CurrentLocationConnections));
         RaisePropertyChanged(nameof(ZoneEnemies));
         RaisePropertyChanged(nameof(CurrentZone));
+        RaisePropertyChanged(nameof(CurrentLocationDescription));
+        RaisePropertyChanged(nameof(IsAtLocation));
+        RaisePropertyChanged(nameof(KnownLocations));
         ApplySystemMessage($"Entered {location.Name}.");
     }
 
@@ -734,7 +767,31 @@ public sealed class GameStateService : IGameStateService
             ZoneLocations.Add(new ZoneLocationEntry(slug, name, type, CurrentZoneId ?? "", 0, null, null));
         }
         RaisePropertyChanged(nameof(ZoneLocations));
+
+        // Also add to known locations for fast travel.
+        var locRef = new IGameStateService.LocationReference(slug, name, type, CurrentZoneId ?? "");
+        if (KnownLocations.All(l => l.Slug != slug))
+            KnownLocations.Add(locRef);
+        RaisePropertyChanged(nameof(KnownLocations));
+
         ApplySystemMessage($"Discovered {name} ({type})!");
+    }
+
+    /// <inheritdoc />
+    public void ApplyLocationDiscovered(IGameStateService.LocationReference location)
+    {
+        if (KnownLocations.All(l => l.Slug != location.Slug))
+            KnownLocations.Add(location);
+        RaisePropertyChanged(nameof(KnownLocations));
+    }
+
+    /// <inheritdoc />
+    public void ApplyLocationExited()
+    {
+        IsAtLocation = false;
+        CurrentLocationDescription = null;
+        RaisePropertyChanged(nameof(IsAtLocation));
+        RaisePropertyChanged(nameof(CurrentLocationDescription));
     }
 
     /// <inheritdoc />

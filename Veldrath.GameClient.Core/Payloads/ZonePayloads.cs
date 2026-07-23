@@ -109,6 +109,9 @@ public sealed record LocationEnteredPayload(
     string Slug,
     string Name,
     string Type,
+    string? Description,
+    int? TileX,
+    int? TileY,
     IReadOnlyList<EnemyReference> Enemies,
     IReadOnlyList<ZoneConnectionLink> Connections);
 

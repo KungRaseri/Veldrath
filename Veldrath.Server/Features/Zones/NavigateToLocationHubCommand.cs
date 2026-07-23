@@ -42,6 +42,12 @@ public record NavigateToLocationHubResult
 
     /// <summary>Gets the live enemies currently present at the arrived location.</summary>
     public IReadOnlyList<SpawnedEnemySummary> SpawnedEnemies { get; init; } = [];
+
+    /// <summary>Gets the tile column of the location on the zone tilemap, or <see langword="null"/>.</summary>
+    public int? TileX { get; init; }
+
+    /// <summary>Gets the tile row of the location on the zone tilemap, or <see langword="null"/>.</summary>
+    public int? TileY { get; init; }
 }
 
 /// <summary>A lightweight snapshot of a live enemy visible to all players at a location.</summary>
@@ -120,6 +126,14 @@ public class NavigateToLocationHubCommandHandler
 
         await _characterRepo.UpdateCurrentZoneLocationAsync(request.CharacterId, location.Slug, cancellationToken);
 
+        // Update tile position to match the location coordinates, if available.
+        if (location.TileX.HasValue && location.TileY.HasValue)
+        {
+            await _characterRepo.UpdateTilePositionAsync(
+                request.CharacterId, location.TileX.Value, location.TileY.Value,
+                request.ZoneId, cancellationToken);
+        }
+
         _logger.LogInformation(
             "Character {CharacterIdPrefix} navigated to {LocationSlug} in zone {ZoneId}",
             request.CharacterId.ToString()[..8], location.Slug, request.ZoneId);
@@ -154,6 +168,8 @@ public class NavigateToLocationHubCommandHandler
             TypeKey              = location.TypeKey,
             PassiveDiscoveries   = passiveDiscoveries,
             SpawnedEnemies       = spawnedEnemies,
+            TileX                = location.TileX,
+            TileY                = location.TileY,
         };
     }
 

@@ -14,7 +14,9 @@ public record ZoneLocationEntry(
     string? UnlockKey = null,
     int? DiscoverThreshold = null,
     IReadOnlyList<ActorPoolEntry>? ActorPool = null,
-    string? DominantLanguageSlug = null);
+    string? DominantLanguageSlug = null,
+    int? TileX = null,
+    int? TileY = null);
 
 /// <summary>A weighted entry in a zone location actor pool.</summary>
 /// <param name="ArchetypeSlug">Slug of the archetype that can spawn at this location.</param>

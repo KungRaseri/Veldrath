@@ -86,7 +86,33 @@
             "program": "${workspaceFolder}/RealmFoundry/bin/Debug/net10.0/RealmFoundry.dll",
             "args": [],
             "cwd": "${workspaceFolder}/RealmFoundry",
-            "env": { "ASPNETCORE_ENVIRONMENT": "Development" },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "console": "integratedTerminal",
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "Now listening on: (https?://\\S+)"
+            },
+            "stopAtEntry": false
+        },
+        {
+            "name": "RealmFoundry (Watch)",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "dotnet",
+            "args": [
+                "watch",
+                "run",
+                "--project",
+                "${workspaceFolder}/RealmFoundry/RealmFoundry.csproj",
+                "--non-interactive"
+            ],
+            "cwd": "${workspaceFolder}/RealmFoundry",
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "DOTNET_WATCH_RESTART_ON_RUDE_EDIT": "true"
+            },
             "console": "integratedTerminal",
             "serverReadyAction": {
                 "action": "openExternally",
@@ -100,18 +126,20 @@
             "request": "launch",
             "preLaunchTask": "test-realmfoundry",
             "program": "dotnet",
-            "args": ["test", "${workspaceFolder}/RealmFoundry.Tests/RealmFoundry.Tests.csproj", "--no-build"],
+            "args": [
+                "test",
+                "${workspaceFolder}/RealmFoundry.Tests/RealmFoundry.Tests.csproj",
+                "--no-build"
+            ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "stopAtEntry": false
         },
-
         {
             "name": ".NET Core Attach",
             "type": "coreclr",
             "request": "attach"
         },
-
         // ── Veldrath ─────────────────────────────────────────────────────────
         {
             "name": "Veldrath Server (Debug)",
@@ -146,7 +174,9 @@
             "program": "${workspaceFolder}/Veldrath.Web/bin/Debug/net10.0/Veldrath.Web.dll",
             "args": [],
             "cwd": "${workspaceFolder}/Veldrath.Web",
-            "env": { "ASPNETCORE_ENVIRONMENT": "Development" },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
             "console": "integratedTerminal",
             "serverReadyAction": {
                 "action": "openExternally",
@@ -194,11 +224,13 @@
             "stopAtEntry": false
         }
     ],
-
     "compounds": [
         {
             "name": "Veldrath (Full Stack)",
-            "configurations": ["Veldrath Server (Debug)", "Veldrath Web (Debug)"],
+            "configurations": [
+                "Veldrath Server (Debug)",
+                "Veldrath Web (Debug)"
+            ],
             "stopAll": true
         }
     ]
