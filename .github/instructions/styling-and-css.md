@@ -23,9 +23,11 @@ When styling any UI element, follow this strict priority order. Each level is a 
 
 MudBlazor ships with a comprehensive set of CSS utility classes. These are the **first and primary** tool for spacing, layout, and visual adjustments. Do not write custom CSS for anything a MudBlazor utility already covers.
 
-### Common Utility Classes
+> **Critical naming rule:** MudBlazor utility classes follow a strict convention. **Layout, spacing, flex, and generic utilities do NOT have a `mud-` prefix.** Only MudBlazor-themed classes (colors, elevation, borders tied to the theme palette) use the `mud-` prefix. Using `mud-d-flex`, `mud-pa-4`, `mud-mt-2`, etc. is **invalid** — these classes will not apply any styles.
 
-**Spacing (margin/padding):**
+### Available Utility Classes (Verified against MudBlazor v9.7.0)
+
+**Spacing (margin/padding) — NO `mud-` prefix:**
 
 | Pattern | Meaning | Example |
 |---|---|---|
@@ -35,7 +37,7 @@ MudBlazor ships with a comprehensive set of CSS utility classes. These are the *
 | `p-{0..16}`, `pt-`, `pb-`, `pl-`, `pr-`, `px-`, `py-` | Padding (same pattern) | `pa-4` = 1rem padding all sides |
 | `gap-{0..16}` | Gap in flex/grid containers | `gap-4` |
 
-**Flexbox (display: flex helpers):**
+**Flexbox — NO `mud-` prefix:**
 
 | Class | Effect |
 |---|---|
@@ -49,61 +51,116 @@ MudBlazor ships with a comprehensive set of CSS utility classes. These are the *
 | `flex-shrink-0`, `flex-shrink-1` | `flex-shrink` |
 | `flex-wrap`, `flex-nowrap` | `flex-wrap` |
 
-**Grid:**
-
-Use `MudGrid` + `MudItem` for CSS Grid layouts. The `MudItem` breakpoint parameters (`xs`, `sm`, `md`, `lg`, `xl`, `xxl`) define column spans on a 12-column grid.
-
-**Display & visibility:**
+**Display — NO `mud-` prefix:**
 
 | Class | Effect |
 |---|---|
 | `d-none` | `display: none` |
 | `d-block` | `display: block` |
 | `d-inline` | `display: inline` |
-| `visually-hidden` | Screen-reader-only (visible to SR, hidden visually) |
 
-**Typography:**
-
-| Class | Effect |
-|---|---|
-| `text-left`, `text-center`, `text-right`, `text-justify` | Text alignment |
-| `text-nowrap` | `white-space: nowrap` |
-| `text-truncate` | Truncate with ellipsis |
-| `text-lowercase`, `text-uppercase`, `text-capitalize` | Text transform |
-| `font-weight-bold`, `font-weight-normal`, `font-weight-light` | Font weight |
-
-**Colors (text/background):**
+**Border radius — NO `mud-` prefix:**
 
 | Class | Effect |
 |---|---|
-| `mud-text-primary`, `mud-text-secondary`, `mud-text-disabled` | Text color from theme palette |
-| `mud-text-error`, `mud-text-success`, `mud-text-warning`, `mud-text-info` | Semantic text colors |
-| `mud-background-primary`, `mud-background-secondary` | Background from theme palette |
+| `rounded-0` | `border-radius: 0` |
+| `rounded-sm` | Small border radius |
+| `rounded-lg` | Large border radius |
+| `rounded-xl` | Extra large border radius |
+| `rounded-circle` | 50% border radius (circle) |
 
-**Elevation (box-shadow):**
+**Grid:**
+
+Use `MudGrid` + `MudItem` for CSS Grid layouts. The `MudItem` breakpoint parameters (`xs`, `sm`, `md`, `lg`, `xl`, `xxl`) define column spans on a 12-column grid.
+
+**Text colors (HAVE `mud-` prefix):**
+
+| Class | Effect |
+|---|---|
+| `mud-text-primary` | `color: var(--mud-palette-text-primary)` |
+| `mud-text-secondary` | `color: var(--mud-palette-text-secondary)` |
+| `mud-text-disabled` | `color: var(--mud-palette-text-disabled)` |
+
+**Palette colors as text (HAVE `mud-` prefix):**
+
+| Class | Effect |
+|---|---|
+| `mud-primary-text` | `color: var(--mud-palette-primary)` |
+| `mud-secondary-text` | `color: var(--mud-palette-secondary)` |
+| `mud-tertiary-text` | `color: var(--mud-palette-tertiary)` |
+| `mud-info-text` | `color: var(--mud-palette-info)` |
+| `mud-success-text` | `color: var(--mud-palette-success)` |
+| `mud-warning-text` | `color: var(--mud-palette-warning)` |
+| `mud-error-text` | `color: var(--mud-palette-error)` |
+
+> **⚠️ Common mistake:** `mud-text-error`, `mud-text-success`, `mud-text-warning`, `mud-text-info` do **not** exist. Use `mud-error-text`, `mud-success-text`, `mud-warning-text`, `mud-info-text` instead.
+
+**Background colors (HAVE `mud-` prefix):**
+
+| Class | Effect |
+|---|---|
+| `mud-background` | `background-color: var(--mud-palette-background)` |
+| `mud-primary` | `background-color: var(--mud-palette-primary)` |
+| `mud-secondary` | `background-color: var(--mud-palette-secondary)` |
+| `mud-tertiary` | `background-color: var(--mud-palette-tertiary)` |
+| `mud-info`, `mud-success`, `mud-warning`, `mud-error` | Semantic background colors |
+| `mud-dark` | `background-color: var(--mud-palette-dark)` |
+
+> **⚠️ Common mistake:** `mud-background-primary`, `mud-background-secondary` do **not** exist. Use `mud-primary`, `mud-secondary` for palette backgrounds, or `mud-background` for the generic background.
+
+**Theme combos (HAVE `mud-` prefix):**
+
+| Class | Effect |
+|---|---|
+| `mud-theme-primary` | Text + background using primary palette |
+| `mud-theme-secondary` | Text + background using secondary palette |
+| `mud-theme-tertiary`, `mud-theme-info`, `mud-theme-success`, `mud-theme-warning`, `mud-theme-error` | Themed combo variants |
+
+**Elevation (HAVE `mud-` prefix):**
 
 | Class | Effect |
 |---|---|
 | `mud-elevation-{0..25}` | Material Design elevation shadow |
-| `mud-elevation-hover-{0..25}` | Elevation applied on hover |
 
-**Borders:**
+> **Note:** Hover elevation classes (`mud-elevation-hover-*`) do **not** exist in v9.7.0. For hover elevation effects, use the `MudPaper` component which has built-in hover elevation support via its `Elevation` parameter.
 
-| Class | Effect |
-|---|---|
-| `mud-border` | 1px solid border using `LinesDefault` color |
-| `mud-border-primary`, `mud-border-secondary`, etc. | Themed border colors |
-| `rounded-0`, `rounded-sm`, `rounded-lg`, `rounded-xl`, `rounded-circle` | Border radius |
-
-Use `MudDivider` for separator lines rather than custom border CSS.
-
-**Sizing:**
+**Borders (HAVE `mud-` prefix):**
 
 | Class | Effect |
 |---|---|
-| `w-100`, `w-75`, `w-50`, `w-25` | Width percentages |
-| `h-100`, `h-75`, `h-50`, `h-25` | Height percentages |
-| `w-auto`, `h-auto` | Auto width/height |
+| `mud-border-primary` | `border-color: var(--mud-palette-primary)` |
+| `mud-border-secondary` | `border-color: var(--mud-palette-secondary)` |
+| `mud-border-tertiary`, `mud-border-info`, `mud-border-success`, `mud-border-warning`, `mud-border-error` | Themed border color variants |
+
+> **Note:** A generic `mud-border` class does **not** exist. Use specific `mud-border-{color}` variants, or use `MudPaper` with `Outlined="true"` for a generic bordered container. Use `MudDivider` for separator lines rather than custom border CSS.
+
+### What MudBlazor Does NOT Provide
+
+These common CSS patterns have **no MudBlazor utility class** in v9.7.0. Use MudBlazor component parameters or custom CSS instead:
+
+| Need | Correct Approach |
+|---|---|
+| Text alignment (center/left/right) | `MudText` parameter: `Align="Align.Center"` |
+| Text transform (uppercase/lowercase) | Custom CSS or inline `style="text-transform: uppercase;"` |
+| Text truncation / nowrap | Custom CSS class |
+| Font weight (bold/light) | `MudText` parameter: `Typo="Typo.h6"` (typography levels carry weight), or custom CSS |
+| Width/height percentages | `MudSelect` / `MudTextField`: `FullWidth="true"`. For `<div>`: use flex properties (`flex-grow-1`) or inline `style` |
+| Screen-reader-only | Custom CSS class (MudBlazor has no `visually-hidden` or `sr-only` utility) |
+
+### Quick Reference: Prefix Decision Table
+
+| Category | Prefix | Example |
+|---|---|---|
+| Spacing (margin/padding/gap) | **None** | `mt-4`, `pa-4`, `gap-3` |
+| Flexbox | **None** | `d-flex`, `justify-center`, `align-center` |
+| Display | **None** | `d-block`, `d-none`, `d-inline` |
+| Border radius | **None** | `rounded-sm`, `rounded-circle` |
+| Text-on-background colors | `mud-text-` | `mud-text-primary`, `mud-text-secondary` |
+| Palette-as-text colors | `mud-*-text` | `mud-primary-text`, `mud-error-text` |
+| Background colors | `mud-` | `mud-primary`, `mud-background`, `mud-dark` |
+| Theme combos | `mud-theme-` | `mud-theme-primary` |
+| Elevation | `mud-elevation-` | `mud-elevation-4` |
+| Themed borders | `mud-border-` | `mud-border-primary` |
 
 ---
 
