@@ -15,7 +15,7 @@
         <h4>Game</h4>
         <div class="d-flex flex-column gap-2">
             <MudButton Variant="Variant.Outlined" FullWidth="true"
-                       OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Inventory)" Class="sidebar-btn">
+                       OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.CharacterSheet)" Class="sidebar-btn">
                 👤 Character Sheet
             </MudButton>
             <MudButton Variant="Variant.Outlined" FullWidth="true"
@@ -34,7 +34,7 @@
 
     <div class="sidebar-section sidebar-occupants">
         <h4>Nearby Players (@(!string.IsNullOrEmpty(GameState.CurrentZoneId) ? GameState.ZoneOccupants.Count.ToString()
-                        : "0"))</h4>
+                                    : "0"))</h4>
             @if (GameState.ZoneOccupants.Count == 0)
             {
                 <p class="sidebar-empty">No other players nearby.</p>

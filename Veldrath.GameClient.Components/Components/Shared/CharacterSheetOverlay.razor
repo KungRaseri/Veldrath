@@ -1,337 +1,130 @@
-@* Inventory overlay showing the character's inventory grid and equipped items. *@
-@using Microsoft.Extensions.Logging
+@* Character Sheet overlay showing the character's stats, attributes, and equipment. *@
 @using RealmEngine.Shared.Models
-@using Veldrath.GameClient.Core.Payloads
+@using Veldrath.GameClient.Core.Abstractions
 @using MudBlazor
 @inject IGameStateService GameState
-@inject IGameHubConnectionService Hub
-@inject ILogger<InventoryOverlay> Logger
-@implements IAsyncDisposable
 
-<div class="inventory-overlay">
-    <div class="inventory-equipment">
-        <h4>Equipment</h4>
-        <div class="equipment-grid">
-            <div class="equipment-slot" title="Head">
-                <span class="equipment-slot-label">Head</span>
-                @if (GameState.EquippedItems.TryGetValue("Head", out var headItem))
-                {
-                    <span class="equipment-slot-item" title="@headItem.GetDisplayName()">@headItem.GetShortName()</span>
-                }
-                else
-                {
-                    <span class="equipment-slot-empty">—</span>
-                }
-            </div>
-            <div class="equipment-slot" title="Chest">
-                <span class="equipment-slot-label">Chest</span>
-                @if (GameState.EquippedItems.TryGetValue("Chest", out var chestItem))
-                {
-                    <span class="equipment-slot-item" title="@chestItem.GetDisplayName()">@chestItem.GetShortName()</span>
-                }
-                else
-                {
-                    <span class="equipment-slot-empty">—</span>
-                }
-            </div>
-            <div class="equipment-slot" title="Main Hand">
-                <span class="equipment-slot-label">Main Hand</span>
-                @if (GameState.EquippedItems.TryGetValue("MainHand", out var mhItem))
-                {
-                    <span class="equipment-slot-item" title="@mhItem.GetDisplayName()">@mhItem.GetShortName()</span>
-                }
-                else
-                {
-                    <span class="equipment-slot-empty">—</span>
-                }
-            </div>
-            <div class="equipment-slot" title="Off Hand">
-                <span class="equipment-slot-label">Off Hand</span>
-                @if (GameState.EquippedItems.TryGetValue("OffHand", out var ohItem))
-                {
-                    <span class="equipment-slot-item" title="@ohItem.GetDisplayName()">@ohItem.GetShortName()</span>
-                }
-                else
-                {
-                    <span class="equipment-slot-empty">—</span>
-                }
-            </div>
-            <div class="equipment-slot" title="Legs">
-                <span class="equipment-slot-label">Legs</span>
-                @if (GameState.EquippedItems.TryGetValue("Legs", out var legsItem))
-                {
-                    <span class="equipment-slot-item" title="@legsItem.GetDisplayName()">@legsItem.GetShortName()</span>
-                }
-                else
-                {
-                    <span class="equipment-slot-empty">—</span>
-                }
-            </div>
-            <div class="equipment-slot" title="Feet">
-                <span class="equipment-slot-label">Feet</span>
-                @if (GameState.EquippedItems.TryGetValue("Feet", out var feetItem))
-                {
-                    <span class="equipment-slot-item" title="@feetItem.GetDisplayName()">@feetItem.GetShortName()</span>
-                }
-                else
-                {
-                    <span class="equipment-slot-empty">—</span>
-                }
-            </div>
-            <div class="equipment-slot" title="Ring">
-                <span class="equipment-slot-label">Ring</span>
-                @if (GameState.EquippedItems.TryGetValue("Ring", out var ringItem))
-                {
-                    <span class="equipment-slot-item" title="@ringItem.GetDisplayName()">@ringItem.GetShortName()</span>
-                }
-                else
-                {
-                    <span class="equipment-slot-empty">—</span>
-                }
-            </div>
-            <div class="equipment-slot" title="Amulet">
-                <span class="equipment-slot-label">Amulet</span>
-                @if (GameState.EquippedItems.TryGetValue("Amulet", out var amuItem))
-                {
-                    <span class="equipment-slot-item" title="@amuItem.GetDisplayName()">@amuItem.GetShortName()</span>
-                }
-                else
-                {
-                    <span class="equipment-slot-empty">—</span>
-                }
-            </div>
-        </div>
-    </div>
-
-    <div class="inventory-bag">
-        <h4>Inventory (@GameState.InventoryItems.Count items)</h4>
-        @if (GameState.InventoryItems.Count == 0)
-        {
-            <p class="inventory-empty">Your inventory is empty.</p>
-        }
-        else
-        {
-            <div class="inventory-grid">
-                @foreach (var item in GameState.InventoryItems)
-                {
-                    <div class="inventory-slot @GetRarityClass(item.Rarity)"
-                         @onclick="() => SelectItem(item)"
-                         title="@BuildTooltip(item)">
-                        <span class="inventory-slot-name">@item.GetShortName()</span>
-                        @if (item.Quantity > 1)
-                        {
-                            <span class="inventory-slot-qty">x@item.Quantity</span>
-                        }
-                        <span class="inventory-slot-rarity">@item.Rarity</span>
-                    </div>
-                }
-            </div>
-        }
-    </div>
-
-    @if (_selectedItem is not null)
+<div class="character-sheet-overlay">
+    @if (GameState.CurrentCharacterInfo is { } info && GameState.CurrentCharacter is { } state)
     {
-        <div class="inventory-tooltip">
-            <div class="inventory-tooltip-header">
-                <strong>@_selectedItem.GetDisplayName()</strong>
-                <span class="rarity-badge @GetRarityClass(_selectedItem.Rarity)">@_selectedItem.Rarity</span>
+        <div class="d-flex flex-column gap-4 pa-4">
+            @* ── Header: Name, Class, Level ── *@
+            <div class="d-flex align-items-center gap-3">
+                <div class="character-sheet-portrait">@info.Name[0]</div>
+                <div class="d-flex flex-column">
+                    <MudText Typo="Typo.h5">@info.Name</MudText>
+                    <MudText Color="Color.Secondary" Inline="true">
+                        @info.ClassName · Level @state.Level
+                    </MudText>
+                </div>
             </div>
-            <p class="inventory-tooltip-desc">@_selectedItem.Description</p>
-            @if (!string.IsNullOrEmpty(_selectedItem.Lore))
-            {
-                <p class="inventory-tooltip-lore">"@_selectedItem.Lore"</p>
-            }
-            <div class="inventory-tooltip-stats">
-                @if (_selectedItem.Type == ItemType.Weapon && _selectedItem.Damage is not null)
-                {
-                    <span>Damage: @_selectedItem.Damage.Min–@_selectedItem.Damage.Max</span>
-                }
-                @if (IsArmorType(_selectedItem.Type) && !string.IsNullOrEmpty(_selectedItem.ArmorClass))
-                {
-                    <span>Armor: @_selectedItem.ArmorClass</span>
-                }
-                <span>Weight: @_selectedItem.Weight.ToString("F1")</span>
-                <span>Value: @_selectedItem.Price gold</span>
+
+            <MudDivider />
+
+            @* ── HP Bar ── *@
+            <div class="d-flex flex-column gap-1">
+                <div class="d-flex justify-space-between">
+                    <MudText Typo="Typo.body2" Color="Color.Error">HP</MudText>
+                    <MudText Typo="Typo.body2">@state.CurrentHealth / @state.MaxHealth</MudText>
+                </div>
+                <MudProgressLinear Value="@GetHpPercent()" Color="Color.Error" Size="Size.Small" />
             </div>
-            <div class="inventory-tooltip-actions">
-                @if (IsEquippable(_selectedItem.Type))
-                {
-                    <MudButton Variant="Variant.Filled"
-                               Color="Color.Primary"
-                               Size="Size.Small"
-                               OnClick="() => EquipItem(_selectedItem)"
-                               Disabled="@(!Hub.IsConnected)">
-                        Equip
-                    </MudButton>
-                }
-                @if (_selectedItem.Type == ItemType.Consumable)
-                {
-                    <MudButton Variant="Variant.Outlined"
-                               Size="Size.Small"
-                               OnClick="() => UseItem(_selectedItem)"
-                               Disabled="@(!Hub.IsConnected)">
-                        Use
-                    </MudButton>
-                }
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Error"
-                           Size="Size.Small"
-                           OnClick="() => DropItem(_selectedItem)"
-                           Disabled="@(!Hub.IsConnected)">
-                    Drop
-                </MudButton>
+
+            @* ── MP Bar ── *@
+            <div class="d-flex flex-column gap-1">
+                <div class="d-flex justify-space-between">
+                    <MudText Typo="Typo.body2" Color="Color.Info">MP</MudText>
+                    <MudText Typo="Typo.body2">@state.CurrentMana / @state.MaxMana</MudText>
+                </div>
+                <MudProgressLinear Value="@GetMpPercent()" Color="Color.Info" Size="Size.Small" />
             </div>
-        </div>
-    }
-</div>
+
+            @* ── XP Bar ── *@
+            <div class="d-flex flex-column gap-1">
+                <div class="d-flex justify-space-between">
+                    <MudText Typo="Typo.body2" Color="Color.Success">XP</MudText>
+                    <MudText Typo="Typo.body2">@state.XP.ToString("N0") /
+                        @info.EffectiveExperienceToNextLevel.ToString("N0")</MudText>
+                    </div>
+                    <MudProgressLinear Value="@GetXpPercent()" Color="Color.Success" Size="Size.Small" />
+                </div>
+
+                <MudDivider />
+
+                @* ── Gold & Unspent Points ── *@
+                <div class="d-flex align-items-center gap-3">
+                    <MudText Typo="Typo.body1">
+                        <MudIcon Icon="@Icons.Material.Filled.MonetizationOn" Size="Size.Small" Color="Color.Warning" />
+                        @state.Gold.ToString("N0") gold
+                    </MudText>
+                    @if (state.UnspentAttributePoints > 0)
+                    {
+                        <MudChip T="string" Color="Color.Tertiary" Size="Size.Small">
+                            +@state.UnspentAttributePoints pts
+                        </MudChip>
+                    }
+                </div>
+
+                <MudDivider />
+
+                @* ── Attributes ── *@
+                <MudText Typo="Typo.subtitle1">Attributes</MudText>
+                <div class="character-sheet-attrs">
+                    <div class="char-sheet-attr">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Inline="true">STR</MudText>
+                        <MudText Typo="Typo.h6">@state.Strength</MudText>
+                    </div>
+                    <div class="char-sheet-attr">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Inline="true">DEX</MudText>
+                        <MudText Typo="Typo.h6">@state.Dexterity</MudText>
+                    </div>
+                    <div class="char-sheet-attr">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Inline="true">CON</MudText>
+                        <MudText Typo="Typo.h6">@state.Constitution</MudText>
+                    </div>
+                    <div class="char-sheet-attr">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Inline="true">INT</MudText>
+                        <MudText Typo="Typo.h6">@state.Intelligence</MudText>
+                    </div>
+                    <div class="char-sheet-attr">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Inline="true">WIS</MudText>
+                        <MudText Typo="Typo.h6">@state.Wisdom</MudText>
+                    </div>
+                    <div class="char-sheet-attr">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Inline="true">CHA</MudText>
+                        <MudText Typo="Typo.h6">@state.Charisma</MudText>
+                    </div>
+                </div>
+            </div>
+        }
+    else
+        {
+            <div class="d-flex align-items-center justify-center pa-8">
+                <MudText Color="Color.Secondary">No character selected.</MudText>
+            </div>
+        }
+    </div>
 
 @code {
-    private readonly List<IDisposable> _hubSubscriptions = [];
-    private Item? _selectedItem;
-
-    /// <inheritdoc />
-    protected override void OnInitialized()
+    private double GetHpPercent()
     {
-        // Subscribe to hub events that keep inventory state in sync with the server.
-        _hubSubscriptions.Add(Hub.On<InventoryUpdatedPayload>("InventoryUpdated", payload =>
-        {
-            GameState.ApplyInventoryUpdated(payload.InventoryItems, payload.EquippedItems);
-            return Task.CompletedTask;
-        }));
-
-        _hubSubscriptions.Add(Hub.On<EquipmentChangedPayload>("EquipmentChanged", payload =>
-        {
-            GameState.ApplyEquipmentChanged(payload.Slot, payload.Item);
-            return Task.CompletedTask;
-        }));
-
-        // G66: Request the character's inventory from the server on component init.
-        _ = FetchInventoryAsync();
+        var s = GameState.CurrentCharacter;
+        if (s is null || s.MaxHealth <= 0) return 0;
+        return Math.Clamp((double)s.CurrentHealth / s.MaxHealth * 100, 0, 100);
     }
 
-    private async Task FetchInventoryAsync()
+    private double GetMpPercent()
     {
-        try
-        {
-            if (Hub.IsConnected)
-                await Hub.SendAsync("GetInventory");
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning(ex, "Failed to request inventory.");
-        }
+        var s = GameState.CurrentCharacter;
+        if (s is null || s.MaxMana <= 0) return 0;
+        return Math.Clamp((double)s.CurrentMana / s.MaxMana * 100, 0, 100);
     }
 
-    /// <inheritdoc />
-    public async ValueTask DisposeAsync()
+    private double GetXpPercent()
     {
-        foreach (var sub in _hubSubscriptions)
-            sub.Dispose();
-        _hubSubscriptions.Clear();
-
-        await Task.CompletedTask;
-    }
-
-    private void SelectItem(Item item)
-    {
-        _selectedItem = item;
-    }
-
-    private async Task EquipItem(Item item)
-    {
-        try
-        {
-            await Hub.SendAsync("EquipItem", new { Slot = GuessSlot(item.Type, item.WeaponType), ItemRef = item.Slug });
-            Logger.LogInformation("Equipped {ItemName}", item.Name);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning(ex, "Failed to equip {ItemName}.", item.Name);
-        }
-    }
-
-    private async Task UseItem(Item item)
-    {
-        try
-        {
-            await Hub.SendAsync("UseItem", item.Slug);
-            Logger.LogInformation("Used {ItemName}", item.Name);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning(ex, "Failed to use {ItemName}.", item.Name);
-        }
-    }
-
-    private async Task DropItem(Item item)
-    {
-        try
-        {
-            await Hub.SendAsync("DropItem", item.Slug);
-            if (_selectedItem == item) _selectedItem = null;
-            Logger.LogInformation("Dropped {ItemName}", item.Name);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning(ex, "Failed to drop {ItemName}.", item.Name);
-        }
-    }
-
-    private static bool IsEquippable(ItemType type) => type is ItemType.Weapon or ItemType.Shield or ItemType.OffHand
-        or ItemType.Helmet or ItemType.Chest or ItemType.Legs or ItemType.Boots
-        or ItemType.Shoulders or ItemType.Bracers or ItemType.Gloves or ItemType.Belt
-        or ItemType.Necklace or ItemType.Ring;
-
-    private static bool IsArmorType(ItemType type) => type is ItemType.Helmet or ItemType.Chest or ItemType.Legs
-        or ItemType.Boots or ItemType.Shoulders or ItemType.Bracers or ItemType.Gloves or ItemType.Belt
-        or ItemType.Necklace or ItemType.Ring;
-
-    private static string GuessSlot(ItemType type, string? weaponType)
-    {
-        if (IsArmorType(type))
-        {
-            return type switch
-            {
-                ItemType.Helmet => "Head",
-                ItemType.Chest => "Chest",
-                ItemType.Legs => "Legs",
-                ItemType.Boots => "Feet",
-                ItemType.Shoulders => "Chest",
-                ItemType.Bracers => "Chest",
-                ItemType.Gloves => "Chest",
-                ItemType.Belt => "Chest",
-                ItemType.Necklace => "Amulet",
-                ItemType.Ring => "Ring",
-                _ => "Chest"
-            };
-        }
-        if (weaponType?.Contains("shield", StringComparison.OrdinalIgnoreCase) == true) return "OffHand";
-        return "MainHand";
-    }
-
-    private static string GetRarityClass(ItemRarity rarity) => rarity switch
-    {
-        ItemRarity.Common => "rarity-common",
-        ItemRarity.Uncommon => "rarity-uncommon",
-        ItemRarity.Rare => "rarity-rare",
-        ItemRarity.Epic => "rarity-epic",
-        ItemRarity.Legendary => "rarity-legendary",
-        _ => "rarity-common"
-    };
-
-    private static string BuildTooltip(Item item)
-    {
-        var lines = new List<string>
-        {
-            item.GetDisplayName(),
-            $"Rarity: {item.Rarity}",
-            $"Weight: {item.Weight:F1}",
-            $"Value: {item.Price} gold"
-        };
-        if (item.Type == ItemType.Weapon && item.Damage is not null)
-            lines.Add($"Damage: {item.Damage.Min}–{item.Damage.Max}");
-        if (!string.IsNullOrEmpty(item.Description))
-            lines.Add(item.Description);
-        return string.Join("\n", lines);
+        var info = GameState.CurrentCharacterInfo;
+        var state = GameState.CurrentCharacter;
+        if (info is null || state is null || info.EffectiveExperienceToNextLevel <= 0) return 0;
+        return Math.Clamp((double)state.XP / info.EffectiveExperienceToNextLevel * 100, 0, 100);
     }
 }
