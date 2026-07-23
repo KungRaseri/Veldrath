@@ -275,6 +275,28 @@ public partial class GameFooter : INotifyPropertyChanged, IDisposable, IAsyncDis
         return _pingSimulator.Next(15, 80);
     }
 
+    /// <summary>Sends the SearchArea hub command.</summary>
+    private async Task SearchAsync()
+    {
+        try
+        {
+            if (Hub.IsConnected)
+                await Hub.SendAsync("SearchArea");
+        }
+        catch { /* Best-effort */ }
+    }
+
+    /// <summary>Sends the RestAtLocation hub command.</summary>
+    private async Task RestAsync()
+    {
+        try
+        {
+            if (Hub.IsConnected)
+                await Hub.SendAsync("RestAtLocation");
+        }
+        catch { /* Best-effort */ }
+    }
+
     /// <inheritdoc />
     public void Dispose()
     {

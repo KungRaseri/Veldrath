@@ -2070,3 +2070,144 @@
     }
 }
 
+
+/* ── Character Panel ─────────────────────────────────────────────────── */
+
+.game-char-panel {
+    width: 220px;
+    min-width: 220px;
+    background: var(--vds-bg-1, #14151F);
+    border-right: 1px solid var(--vds-border, #2A2B3D);
+    overflow-y: auto;
+}
+
+.character-panel {
+    padding: var(--vds-space-3, 12px);
+    display: flex;
+    flex-direction: column;
+    gap: var(--vds-space-3, 12px);
+}
+
+.character-panel-header {
+    display: flex;
+    align-items: center;
+    gap: var(--vds-space-2, 8px);
+}
+
+.character-portrait {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--vds-primary, #6C5CE7);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.character-panel-bars {
+    display: flex;
+    flex-direction: column;
+    gap: var(--vds-space-1, 4px);
+}
+
+.char-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.char-bar-label {
+    font-size: var(--vds-text-xs, 11px);
+    color: var(--vds-text-muted, #A8A09A);
+    font-weight: 600;
+}
+
+.char-bar-text {
+    font-size: var(--vds-text-xs, 10px);
+    color: var(--vds-text-subtle, #6E6860);
+    text-align: right;
+}
+
+.character-panel-attrs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--vds-space-1, 4px);
+}
+
+.char-attr {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 6px;
+    background: var(--vds-bg-2, #1A1B2E);
+    border-radius: 4px;
+    font-size: var(--vds-text-xs, 11px);
+}
+
+.char-attr span:first-child {
+    color: var(--vds-text-muted, #A8A09A);
+    font-weight: 600;
+}
+
+.character-panel-gold {
+    display: flex;
+    align-items: center;
+    gap: var(--vds-space-2, 8px);
+    padding-top: var(--vds-space-1, 4px);
+    border-top: 1px solid var(--vds-border, #2A2B3D);
+    font-weight: 600;
+}
+
+/* ── Zone Location Panel ─────────────────────────────────────────────── */
+
+.zone-location-panel {
+    border-top: 1px solid var(--vds-border, #2A2B3D);
+    background: var(--vds-bg-1, #14151F);
+    padding: var(--vds-space-3, 12px);
+    max-height: 35%;
+    overflow-y: auto;
+}
+
+.location-header h3 {
+    margin: 0 0 var(--vds-space-1, 4px) 0;
+    font-size: var(--vds-text-lg, 16px);
+}
+
+.location-description {
+    color: var(--vds-text-muted, #A8A09A);
+    font-size: var(--vds-text-sm, 13px);
+    line-height: 1.5;
+    margin: 0 0 var(--vds-space-2, 8px) 0;
+    font-style: italic;
+}
+
+.location-section {
+    margin-bottom: var(--vds-space-2, 8px);
+}
+
+.location-section h4 {
+    font-size: var(--vds-text-xs, 11px);
+    color: var(--vds-text-muted, #A8A09A);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 var(--vds-space-1, 4px) 0;
+}
+
+.location-exit-btn {
+    width: 100%;
+    justify-content: flex-start;
+    text-transform: none;
+    font-size: var(--vds-text-sm, 13px);
+}
+
+/* ── Chat Panel (right side) ─────────────────────────────────────────── */
+
+.game-chat-panel {
+    width: 280px;
+    min-width: 280px;
+    background: var(--vds-bg-1, #14151F);
+    border-left: 1px solid var(--vds-border, #2A2B3D);
+}

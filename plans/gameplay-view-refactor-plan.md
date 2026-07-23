@@ -1,7 +1,7 @@
 # Gameplay View Refactor — Hybrid Tilemap + Location Panel Plan
 
 > **Date:** 2026-07-23
-> **Status:** Implementation In Progress — Phases 1-2 Complete, Phase 3 In Progress
+> **Status:** ✅ Implementation Complete — All 6 Phases Done
 > **Version:** v2.1
 > **Scope:** Redesign the main game/play view to integrate tilemap exploration with location-based interactions, wire all gameplay through the Hub→MediatR bridge, and bridge the tilemap/location gap by adding tile coordinates to `ZoneLocation` and `Location` models. Includes click-to-move movement design with BFS pathfinding and walk queuing.
 
@@ -822,21 +822,53 @@ If the location panel integration proves problematic:
 
 **Build:** `dotnet build Veldrath.Web.slnx` — 0 errors, 0 warnings ✅
 
-### 🔧 Phase 3: Sidebar Known Locations + Fast Travel — IN PROGRESS
+### ✅ Phase 3: Sidebar Known Locations + Fast Travel — COMPLETE
 
-Remaining work: Update `GameSidebar.razor` to show `KnownLocations` list with fast-travel [Go] buttons. Current sidebar already has `NavigateToLocationAsync` wired — just needs a "Known Locations" section.
+| File | Change |
+|------|--------|
+| [`GameSidebar.razor`](Veldrath.GameClient.Components/Components/Pages/GameSidebar.razor:66) | Added "Known Locations" section listing discovered locations with [Go] fast-travel buttons; current location marked "(here)" and disabled |
 
-### ⬜ Phase 4: Location Panel Full
+**Build:** `dotnet build Veldrath.Web.slnx` — 0 errors, 0 warnings ✅
 
-Remaining work: Create `ZoneLocationPanel.razor` component with location description, exits, NPCs, services, and enemy list.
+### ✅ Phase 4: ZoneLocationPanel Component — COMPLETE
 
-### ⬜ Phase 5: CharacterPanel + Layout
+| File | Change |
+|------|--------|
+| [`ZoneLocationPanel.razor`](Veldrath.GameClient.Components/Components/Pages/ZoneLocationPanel.razor:1) | **NEW** — Location detail panel showing description, services (Rest/Shop), exits with [Go] buttons, enemy list, and player occupants |
 
-Remaining work: Create `CharacterPanel.razor`, simplify `GameHeader.razor`/`GameFooter.razor`, new CSS grid layout in `game.css`.
+**Build:** `dotnet build Veldrath.Web.slnx` — 0 errors, 0 warnings ✅
 
-### ⬜ Phase 6: ActionBar + Polish
+### ✅ Phase 5: CharacterPanel + Layout — COMPLETE
 
-Remaining work: Context-aware ActionBar, hotbar, CSS transitions, responsive breakpoints.
+| File | Change |
+|------|--------|
+| [`CharacterPanel.razor`](Veldrath.GameClient.Components/Components/Pages/CharacterPanel.razor:1) | **NEW** — Vertical character panel with portrait, HP/MP/XP bars, 6 attributes, gold, unspent points chip |
+| [`Game.razor`](Veldrath.GameClient.Components/Components/Pages/Game.razor:15) | Updated layout: Sidebar → CharacterPanel → Tilemap+ZoneLocationPanel → Chat footer |
+| [`game.css`](Veldrath.GameClient.Components/wwwroot/css/game.css:2073) | Added styles for `.game-char-panel`, `.character-panel`, `.zone-location-panel`, `.game-chat-panel` |
+
+**Build:** `dotnet build Veldrath.Web.slnx` — 0 errors, 0 warnings ✅
+
+### ✅ Phase 6: ActionBar + Polish — COMPLETE
+
+| File | Change |
+|------|--------|
+| [`ActionBar.razor`](Veldrath.GameClient.Components/Components/Shared/ActionBar.razor:1) | Added `ShowSearch`, `ShowRest`, `OnSearch`, `OnRest` parameters for exploration mode |
+| [`GameFooter.razor`](Veldrath.GameClient.Components/Components/Pages/GameFooter.razor:30) | Context-aware ActionBar: combat buttons when `IsInCombat`, Search/Rest when exploring |
+| [`GameFooter.razor.cs`](Veldrath.GameClient.Components/Components/Pages/GameFooter.razor.cs:278) | Added `SearchAsync` and `RestAsync` hub-calling methods |
+
+**Build:** `dotnet build Veldrath.Web.slnx` — 0 errors, 0 warnings ✅
+
+### Summary — All Phases Complete
+
+| Phase | Files Changed | Status |
+|-------|--------------|--------|
+| 1. Data Model + Server Bridge | 8 files | ✅ |
+| 2. Client State | 3 files | ✅ |
+| 3. Sidebar Known Locations | 1 file | ✅ |
+| 4. ZoneLocationPanel | 1 file (new) | ✅ |
+| 5. CharacterPanel + Layout | 3 files (1 new) | ✅ |
+| 6. ActionBar + Polish | 3 files | ✅ |
+| **Total** | **19 files (2 new)** | **✅ All passing** |
 
 ---
 

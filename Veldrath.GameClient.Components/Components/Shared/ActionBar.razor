@@ -74,6 +74,26 @@
                 Respawn
             </MudButton>
         }
+        @if (ShowSearch)
+        {
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Secondary"
+                       OnClick="OnSearch"
+                       Disabled="@Disabled"
+                       Size="Size.Small">
+                🔍 Search
+            </MudButton>
+        }
+        @if (ShowRest)
+        {
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Tertiary"
+                       OnClick="OnRest"
+                       Disabled="@Disabled"
+                       Size="Size.Small">
+                🛏 Rest
+            </MudButton>
+        }
     </div>
 </div>
 
@@ -96,6 +116,12 @@
     /// <summary>Whether to show the Respawn button.</summary>
     [Parameter] public bool ShowRespawn { get; set; }
 
+    /// <summary>Whether to show the Search button (exploration mode).</summary>
+    [Parameter] public bool ShowSearch { get; set; }
+
+    /// <summary>Whether to show the Rest button (inn/exploration mode).</summary>
+    [Parameter] public bool ShowRest { get; set; }
+
     /// <summary>Whether action buttons are disabled (e.g. during combat turn processing).</summary>
     [Parameter] public bool Disabled { get; set; }
 
@@ -110,6 +136,12 @@
 
     /// <summary>Callback when the Respawn button is clicked.</summary>
     [Parameter] public EventCallback OnRespawn { get; set; }
+
+    /// <summary>Callback when the Search button is clicked.</summary>
+    [Parameter] public EventCallback OnSearch { get; set; }
+
+    /// <summary>Callback when the Rest button is clicked.</summary>
+    [Parameter] public EventCallback OnRest { get; set; }
 
     /// <summary>
     /// Callback invoked when a hotbar ability quick-slot is clicked.

@@ -1,0 +1,78 @@
+@using Veldrath.GameClient.Core.Abstractions
+@using MudBlazor
+@* Vertical character status panel showing HP, MP, XP bars and attributes. *@
+@inject IGameStateService GameState
+
+@if (GameState.CurrentCharacterInfo is { } info && GameState.CurrentCharacter is { } state)
+{
+    <div class="character-panel">
+        <div class="character-panel-header">
+            <div class="character-portrait">@info.Name[0]</div>
+            <div>
+                <h4>@info.Name</h4>
+                <span class="mud-text-secondary">@info.ClassName · Level @state.Level</span>
+            </div>
+        </div>
+
+        <div class="character-panel-bars">
+            <div class="char-bar char-bar-hp">
+                <span class="char-bar-label">HP</span>
+                <MudProgressLinear Value="@GetHpPercent()" Color="Color.Error" Size="Size.Small" />
+                <span class="char-bar-text">@state.CurrentHealth / @state.MaxHealth</span>
+            </div>
+            <div class="char-bar char-bar-mp">
+                <span class="char-bar-label">MP</span>
+                <MudProgressLinear Value="@GetMpPercent()" Color="Color.Info" Size="Size.Small" />
+                <span class="char-bar-text">@state.CurrentMana / @state.MaxMana</span>
+            </div>
+            <div class="char-bar char-bar-xp">
+                <span class="char-bar-label">XP</span>
+                <MudProgressLinear Value="@GetXpPercent()" Color="Color.Success" Size="Size.Small" />
+                <span class="char-bar-text">@state.XP / @info.EffectiveExperienceToNextLevel</span>
+            </div>
+        </div>
+
+        <div class="character-panel-attrs">
+            <div class="char-attr"><span>STR</span><span>@state.Strength</span></div>
+            <div class="char-attr"><span>DEX</span><span>@state.Dexterity</span></div>
+            <div class="char-attr"><span>CON</span><span>@state.Constitution</span></div>
+            <div class="char-attr"><span>INT</span><span>@state.Intelligence</span></div>
+            <div class="char-attr"><span>WIS</span><span>@state.Wisdom</span></div>
+            <div class="char-attr"><span>CHA</span><span>@state.Charisma</span></div>
+        </div>
+
+        <div class="character-panel-gold">
+            ◎ @state.Gold.ToString("N0") gold
+            @if (state.UnspentAttributePoints > 0)
+            {
+                <MudChip T="string" Color="Color.Tertiary" Size="Size.Small">
+                    +@state.UnspentAttributePoints pts
+                </MudChip>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private double GetHpPercent()
+    {
+        var s = GameState.CurrentCharacter;
+        if (s is null || s.MaxHealth <= 0) return 0;
+        return Math.Clamp((double)s.CurrentHealth / s.MaxHealth * 100, 0, 100);
+    }
+
+    private double GetMpPercent()
+    {
+        var s = GameState.CurrentCharacter;
+        if (s is null || s.MaxMana <= 0) return 0;
+        return Math.Clamp((double)s.CurrentMana / s.MaxMana * 100, 0, 100);
+    }
+
+    private double GetXpPercent()
+    {
+        var info = GameState.CurrentCharacterInfo;
+        var state = GameState.CurrentCharacter;
+        if (info is null || state is null || info.EffectiveExperienceToNextLevel <= 0) return 0;
+        return Math.Clamp((double)state.XP / info.EffectiveExperienceToNextLevel * 100, 0, 100);
+    }
+}

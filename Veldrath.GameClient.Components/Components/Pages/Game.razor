@@ -18,7 +18,10 @@
     <div class="flex-1 mud-d-flex overflow-hidden" style="min-height: 0;">
         <div class="game-sidebar mud-d-flex flex-column overflow-y-auto overflow-x-hidden">
             <GameSidebar OnOpenOverlay="HandleOpenOverlay" />
-            <GameChat />
+        </div>
+
+        <div class="game-char-panel">
+            <CharacterPanel />
         </div>
 
         <div class="flex-1 mud-d-flex flex-column overflow-hidden position-relative">
@@ -36,6 +39,10 @@
             else if (GameState.ZoneTileMap is not null)
             {
                 <GameTilemap />
+                @if (GameState.IsAtLocation)
+                {
+                    <ZoneLocationPanel />
+                }
             }
             else
             {
@@ -44,6 +51,10 @@
                     <div class="spinner"></div>
                 </div>
             }
+        </div>
+
+        <div class="game-chat-panel mud-d-flex flex-column">
+            <GameChat />
         </div>
     </div>
 
