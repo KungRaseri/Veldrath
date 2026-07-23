@@ -25,6 +25,8 @@ MudBlazor ships with a comprehensive set of CSS utility classes. These are the *
 
 > **Critical naming rule:** MudBlazor utility classes follow a strict convention. **Layout, spacing, flex, and generic utilities do NOT have a `mud-` prefix.** Only MudBlazor-themed classes (colors, elevation, borders tied to the theme palette) use the `mud-` prefix. Using `mud-d-flex`, `mud-pa-4`, `mud-mt-2`, etc. is **invalid** — these classes will not apply any styles.
 
+> **Color rule:** When applying theme colors, **always prefer a MudBlazor component's `Color` parameter** over CSS utility classes. For example, use `<MudText Color="Color.Secondary">` instead of `<MudText Class="mud-text-secondary">`. The only exception is `MudTd` (table cell), which has no `Color` parameter — CSS classes like `mud-text-secondary` are acceptable on `MudTd`.
+
 ### Available Utility Classes (Verified against MudBlazor v9.7.0)
 
 **Spacing (margin/padding) — NO `mud-` prefix:**
