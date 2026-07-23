@@ -9,7 +9,7 @@
     <MudButton Href="/community">Community</MudButton>
     @if (AuthState.IsLoggedIn)
     {
-        <MudButton StartIcon="@Icons.Material.Filled.SportsEsports" Href="/game/characterselect">Play</MudButton>
+        <MudButton StartIcon="@Icons.Material.Filled.SportsEsports" Href="/game">Play</MudButton>
         <MudButton Href="/account/profile">@AuthState.Username</MudButton>
         <MudButton Href="/auth/sign-out">Sign Out</MudButton>
     }

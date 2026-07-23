@@ -1,0 +1,34 @@
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="4">
+            <MudText Typo="Typo.h5">Active Game Session Found</MudText>
+
+            <MudText Typo="Typo.body1">
+                You have an active game session as
+                <MudText Typo="Typo.body1" Color="Color.Primary" Inline="true">
+                    <strong>@CharacterName</strong>
+                </MudText>@(string.IsNullOrEmpty(ZoneId) ? "." : $" in {@ZoneId}.")
+            </MudText>
+
+            <MudText Typo="Typo.body2">
+                Would you like to resume where you left off, or choose a different character?
+            </MudText>
+        </MudStack>
+    </DialogContent>
+
+    <DialogActions>
+        <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd">
+            <MudButton Variant="Variant.Outlined"
+                       OnClick="OnChooseDifferent">
+                Choose Different Character
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="OnResume">
+                Resume
+            </MudButton>
+        </MudStack>
+    </DialogActions>
+</MudDialog>
