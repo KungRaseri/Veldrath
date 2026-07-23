@@ -12,7 +12,7 @@
     var camX = ComputeCameraX(mapW);
     var camY = ComputeCameraY(mapH);
 
-    <div class="game-tilemap-viewport">
+    <div class="game-tilemap-viewport justify-center align-content-center flex-1 overflow-hidden">
         @for (var vy = 0; vy < ViewportSize; vy++)
         {
             var capturedY = camY + vy;
@@ -52,7 +52,7 @@
 }
 else
 {
-    <div class="game-tilemap-empty">
+    <div class="game-tilemap-empty flex-1 d-flex align-center justify-center">
         <p>No tilemap data available.</p>
     </div>
 }

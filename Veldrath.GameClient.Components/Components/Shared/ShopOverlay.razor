@@ -9,7 +9,7 @@
 @inject ILogger<ShopOverlay> Logger
 @implements IAsyncDisposable
 
-<div class="shop-overlay">
+<div class="shop-overlay d-flex flex-column gap-4">
     <div class="shop-catalog">
         <h4>Merchant Wares</h4>
         @if (GameState.ShopCatalog.Count == 0)
@@ -18,11 +18,11 @@
         }
         else
         {
-            <div class="shop-items">
+            <div class="shop-items d-flex flex-column gap-1">
                 @foreach (var entry in GameState.ShopCatalog)
                 {
-                    <div class="shop-item">
-                        <div class="shop-item-info">
+                    <div class="shop-item d-flex align-center gap-2">
+                        <div class="shop-item-info flex-1 d-flex flex-column">
                             <span class="shop-item-name">@entry.Name</span>
                             <span class="shop-item-rarity @GetRarityClass(entry.Rarity)">@entry.Rarity</span>
                         </div>
@@ -48,12 +48,12 @@
         }
         else
         {
-            <div class="shop-items">
+            <div class="shop-items d-flex flex-column gap-1">
                 @foreach (var item in GameState.InventoryItems)
                 {
                     var sellPrice = item.Price / 2;
-                    <div class="shop-item">
-                        <div class="shop-item-info">
+                    <div class="shop-item d-flex align-center gap-2">
+                        <div class="shop-item-info flex-1 d-flex flex-column">
                             <span class="shop-item-name">@item.GetShortName()</span>
                             @if (item.Quantity > 1)
                             {

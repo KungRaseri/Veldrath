@@ -15,14 +15,14 @@
 
 @if (_isLoading)
 {
-    <div class="cs-loading">
+    <div class="cs-loading d-flex flex-column align-center justify-center gap-4">
         <p>Connecting to game server...</p>
         <div class="spinner"></div>
     </div>
 }
 else if (_isWaitingForAuth)
 {
-    <div class="cs-error">
+    <div class="cs-error d-flex flex-column align-center justify-center gap-4">
         <p>Waiting for authentication... The server may be starting up.</p>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ConnectAndLoadCharacters">Retry</MudButton>
         <MudButton Variant="Variant.Outlined" Href="/">Back to Home</MudButton>
@@ -30,7 +30,7 @@ else if (_isWaitingForAuth)
 }
 else if (_errorMessage is not null)
 {
-    <div class="cs-error">
+    <div class="cs-error d-flex flex-column align-center justify-center gap-4">
         <p>@_errorMessage</p>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ConnectAndLoadCharacters">Retry</MudButton>
         <MudButton Variant="Variant.Outlined" Href="/">Back to Home</MudButton>
@@ -50,17 +50,17 @@ else
         }
         else
         {
-            <div class="cs-list">
+            <div class="cs-list d-flex flex-column gap-3">
                 @foreach (var character in _characters)
                 {
-                    <div class="cs-card @(_selectedCharacterId == character.Id.ToString() ? "cs-card-selected" : "")">
+                    <div class="cs-card d-flex align-center justify-space-between @(_selectedCharacterId == character.Id.ToString() ? "cs-card-selected" : "")">
                         <div class="cs-card-info">
                             <h3>@character.Name</h3>
                             <p>@character.ClassName · Level @character.Level</p>
                             <p>⛁ @character.Experience XP</p>
                             <p class="cs-card-last-played">Last played: @character.LastPlayedAt.ToLocalTime().ToString("g")</p>
                         </div>
-                        <div class="cs-card-actions">
+                        <div class="cs-card-actions flex-shrink-0">
                             <MudButton Variant="Variant.Filled"
                                        Color="Color.Primary"
                                        OnClick="() => SelectCharacter(character.Id)"
@@ -72,7 +72,7 @@ else
                 }
             </div>
 
-            <div class="cs-footer">
+            <div class="cs-footer d-flex gap-3 justify-center">
                 <MudButton Variant="Variant.Outlined" Href="/Game/CreateCharacter">Create New Character</MudButton>
                 <MudButton Variant="Variant.Outlined" Href="/">Back to Home</MudButton>
             </div>

@@ -8,27 +8,27 @@
 @* Region map page showing zones as interactive cards. *@
 
 <div class="game-map-page flex-1 d-flex flex-column overflow-y-auto">
-    <div class="game-map-header d-flex align-items-center gap-3">
+    <div class="game-map-header d-flex align-center gap-3">
         <h2 class="game-map-title">Region Map</h2>
         <span class="game-map-region-name">@RegionName</span>
         <MudButton Variant="Variant.Outlined"
                    Size="Size.Small"
                    OnClick="GoBack"
-                   Class="game-map-close">
+                   Class="game-map-close ml-auto">
             Back
         </MudButton>
     </div>
 
     @if (_isLoading)
     {
-        <div class="game-map-loading">
+        <div class="game-map-loading flex-1 d-flex flex-column align-center justify-center gap-4">
             <div class="spinner"></div>
             <p>Loading region map...</p>
         </div>
     }
     else if (_errorMessage is not null)
     {
-        <div class="game-map-error">
+        <div class="game-map-error flex-1 d-flex flex-column align-center justify-center gap-4">
             <p>@_errorMessage</p>
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
@@ -39,7 +39,7 @@
     }
     else if (_zones.Count == 0)
     {
-        <div class="game-map-empty">
+        <div class="game-map-empty flex-1 d-flex flex-column align-center justify-center gap-4">
             <p>No zones available for this region.</p>
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
@@ -50,10 +50,10 @@
     }
     else
     {
-        <div class="game-map-zones">
+        <div class="game-map-zones gap-3">
             @foreach (var zone in _zones)
             {
-                <button class="game-map-zone-card @GetZoneCardClass(zone)"
+                <button class="game-map-zone-card d-flex flex-column align-center gap-1 @GetZoneCardClass(zone)"
                         @onclick="() => NavigateToZone(zone.Id)"
                         disabled="@(!zone.IsClickable)"
                         title="@(zone.IsDiscovered ? $"{zone.Name} (Lv.{zone.MinLevel}+)" : "Undiscovered")">
@@ -73,10 +73,10 @@
 
         @if (_showLegend)
         {
-            <div class="game-map-legend">
-                <span class="legend-item"><span class="legend-dot dot-current"></span> Current Zone</span>
-                <span class="legend-item"><span class="legend-dot dot-available"></span> Available</span>
-                <span class="legend-item"><span class="legend-dot dot-locked"></span> Undiscovered</span>
+            <div class="game-map-legend d-flex gap-4 justify-center flex-wrap">
+                <span class="legend-item d-flex align-center gap-1"><span class="legend-dot dot-current"></span> Current Zone</span>
+                <span class="legend-item d-flex align-center gap-1"><span class="legend-dot dot-available"></span> Available</span>
+                <span class="legend-item d-flex align-center gap-1"><span class="legend-dot dot-locked"></span> Undiscovered</span>
             </div>
         }
 
