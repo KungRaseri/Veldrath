@@ -77,7 +77,7 @@ else
                     }
                 </MudTd>
                 <MudTd>@context.WarnCount</MudTd>
-                <MudTd Class="mud-text-secondary" Style="white-space: nowrap;">@(context.LastSeenAt?.ToLocalTime().ToString("g") ?? "—")</MudTd>
+                <MudTd Class="mud-secondary-text" Style="white-space: nowrap;">@(context.LastSeenAt?.ToLocalTime().ToString("g") ?? "—")</MudTd>
                 <MudTd>
                     <MudButton Variant="Variant.Filled" Size="Size.Small" Href="@($"/mod/users/{context.Id}")">View</MudButton>
                 </MudTd>

@@ -25,7 +25,7 @@ MudBlazor ships with a comprehensive set of CSS utility classes. These are the *
 
 > **Critical naming rule:** MudBlazor utility classes follow a strict convention. **Layout, spacing, flex, and generic utilities do NOT have a `mud-` prefix.** Only MudBlazor-themed classes (colors, elevation, borders tied to the theme palette) use the `mud-` prefix. Using `mud-d-flex`, `mud-pa-4`, `mud-mt-2`, etc. is **invalid** — these classes will not apply any styles.
 
-> **Color rule:** When applying theme colors, **always prefer a MudBlazor component's `Color` parameter** over CSS utility classes. For example, use `<MudText Color="Color.Secondary">` instead of `<MudText Class="mud-text-secondary">`. The only exception is `MudTd` (table cell), which has no `Color` parameter — CSS classes like `mud-text-secondary` are acceptable on `MudTd`.
+> **Color rule:** When applying theme colors, **always prefer a MudBlazor component's `Color` parameter** over CSS utility classes. For example, use `<MudText Color="Color.Secondary">` instead of `<MudText Class="mud-secondary-text">`. The only exception is `MudTd` (table cell), which has no `Color` parameter — CSS classes like `mud-secondary-text` are acceptable on `MudTd`.
 
 ### Available Utility Classes (Verified against MudBlazor v9.7.0)
 
@@ -77,13 +77,7 @@ Use `MudGrid` + `MudItem` for CSS Grid layouts. The `MudItem` breakpoint paramet
 
 **Text colors (HAVE `mud-` prefix):**
 
-| Class | Effect |
-|---|---|
-| `mud-text-primary` | `color: var(--mud-palette-text-primary)` |
-| `mud-text-secondary` | `color: var(--mud-palette-text-secondary)` |
-| `mud-text-disabled` | `color: var(--mud-palette-text-disabled)` |
-
-**Palette colors as text (HAVE `mud-` prefix):**
+The official MudBlazor theme palette color classes use the `mud-{color}-text` pattern. See [Theme Palette Colors](https://mudblazor.com/features/colors#theme-palette-colors).
 
 | Class | Effect |
 |---|---|
@@ -95,7 +89,9 @@ Use `MudGrid` + `MudItem` for CSS Grid layouts. The `MudItem` breakpoint paramet
 | `mud-warning-text` | `color: var(--mud-palette-warning)` |
 | `mud-error-text` | `color: var(--mud-palette-error)` |
 
-> **⚠️ Common mistake:** `mud-text-error`, `mud-text-success`, `mud-text-warning`, `mud-text-info` do **not** exist. Use `mud-error-text`, `mud-success-text`, `mud-warning-text`, `mud-info-text` instead.
+> **⚠️ Common mistakes:**
+> - `mud-text-primary`, `mud-text-secondary`, `mud-text-disabled` — these exist but set text-on-background colors (`--mud-palette-text-*`), NOT the theme palette colors. For theme palette colors, use `mud-{color}-text`.
+> - `mud-text-error`, `mud-text-success`, `mud-text-warning`, `mud-text-info` do **not** exist. Use `mud-error-text`, `mud-success-text`, `mud-warning-text`, `mud-info-text`.
 
 **Background colors (HAVE `mud-` prefix):**
 
@@ -157,8 +153,7 @@ These common CSS patterns have **no MudBlazor utility class** in v9.7.0. Use Mud
 | Flexbox | **None** | `d-flex`, `justify-center`, `align-center` |
 | Display | **None** | `d-block`, `d-none`, `d-inline` |
 | Border radius | **None** | `rounded-sm`, `rounded-circle` |
-| Text-on-background colors | `mud-text-` | `mud-text-primary`, `mud-text-secondary` |
-| Palette-as-text colors | `mud-*-text` | `mud-primary-text`, `mud-error-text` |
+| Palette text colors | `mud-*-text` | `mud-primary-text`, `mud-secondary-text`, `mud-error-text` |
 | Background colors | `mud-` | `mud-primary`, `mud-background`, `mud-dark` |
 | Theme combos | `mud-theme-` | `mud-theme-primary` |
 | Elevation | `mud-elevation-` | `mud-elevation-4` |

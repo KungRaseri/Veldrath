@@ -49,12 +49,12 @@ else
                 <MudTh>Details</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd Class="mud-text-secondary" Style="white-space: nowrap;">@context.OccurredAt.ToLocalTime().ToString("g")</MudTd>
+                <MudTd Class="mud-secondary-text" Style="white-space: nowrap;">@context.OccurredAt.ToLocalTime().ToString("g")</MudTd>
                 <MudTd>@context.ActorUsername</MudTd>
                 <MudTd>
                     <MudChip T="string" Size="Size.Small" Color="Color.Primary">@context.Action</MudChip>
                 </MudTd>
-                <MudTd Class="mud-text-secondary">
+                <MudTd Class="mud-secondary-text">
                     @if (context.TargetAccountId.HasValue)
                     {
                         <MudLink Href="@($"/admin/users/{context.TargetAccountId}")">@(context.TargetUsername ?? context.TargetAccountId.ToString())</MudLink>
@@ -64,7 +64,7 @@ else
                         <span>—</span>
                     }
                 </MudTd>
-                <MudTd Class="mud-text-secondary" Style="max-width: 320px; overflow-wrap: break-word;">@(context.Details ?? "—")</MudTd>
+                <MudTd Class="mud-secondary-text" Style="max-width: 320px; overflow-wrap: break-word;">@(context.Details ?? "—")</MudTd>
             </RowTemplate>
         </MudTable>
 

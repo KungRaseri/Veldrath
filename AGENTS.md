@@ -178,8 +178,7 @@ MudBlazor CSS utility classes have a strict naming convention. **Layout, spacing
 | Spacing | None | `mt-4`, `pa-4`, `gap-3` | `mud-mt-4`, `mud-pa-4` |
 | Display | None | `d-block`, `d-none` | `mud-d-block` |
 | Border radius | None | `rounded-sm` | `mud-rounded-sm` |
-| Text-on-bg colors | `mud-text-` | `mud-text-primary`, `mud-text-secondary` | `text-primary` |
-| Palette-as-text colors | `mud-*-text` | `mud-primary-text`, `mud-error-text` | `mud-text-error` |
+| Palette text colors | `mud-*-text` | `mud-primary-text`, `mud-secondary-text`, `mud-error-text` | `mud-text-primary`, `mud-text-error` |
 | Elevation | `mud-elevation-` | `mud-elevation-4` | `elevation-4` |
 | Themed borders | `mud-border-` | `mud-border-primary` | `border-primary` |
 

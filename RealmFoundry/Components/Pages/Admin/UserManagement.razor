@@ -92,7 +92,7 @@ else
             </HeaderContent>
             <RowTemplate>
                 <MudTd>@context.Username</MudTd>
-                <MudTd Class="mud-text-secondary">@context.Email</MudTd>
+                <MudTd Class="mud-secondary-text">@context.Email</MudTd>
                 <MudTd>
                     <div class="d-flex flex-wrap gap-1">
                         @foreach (var r in context.Roles)
@@ -115,10 +115,10 @@ else
                         <MudChip T="string" Size="Size.Small" Color="Color.Success">Active</MudChip>
                     }
                 </MudTd>
-                <MudTd Class="@(context.WarnCount > 0 ? "mud-warning-text" : "mud-text-secondary")">
+                <MudTd Class="@(context.WarnCount > 0 ? "mud-warning-text" : "mud-secondary-text")">
                     <MudText Typo="Typo.body2" Color="@(context.WarnCount > 0 ? Color.Warning : Color.Inherit)">@context.WarnCount</MudText>
                 </MudTd>
-                <MudTd Class="mud-text-secondary">@(context.LastSeenAt?.ToLocalTime().ToString("g") ?? "Never")</MudTd>
+                <MudTd Class="mud-secondary-text">@(context.LastSeenAt?.ToLocalTime().ToString("g") ?? "Never")</MudTd>
                 <MudTd>
                     <div class="d-flex gap-1 flex-wrap">
                         <MudButton Variant="Variant.Filled" Size="Size.Small" Href="@($"/admin/users/{context.Id}")">Manage</MudButton>
