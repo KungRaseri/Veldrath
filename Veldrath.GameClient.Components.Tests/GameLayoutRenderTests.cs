@@ -2,6 +2,7 @@ using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MudBlazor.Services;
 using Veldrath.Auth.Blazor;
 using Veldrath.GameClient.Components.Components.Layout;
 using Veldrath.GameClient.Components.Tests.Infrastructure;
@@ -31,6 +32,7 @@ public class GameLayoutRenderTests : BunitContext
         Services.AddSingleton<IGameHubConnectionService>(_fakeHub);
         Services.AddSingleton<IGameStateService>(_gameState);
         Services.AddSingleton(_gameState);
+        Services.AddMudServices();
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>

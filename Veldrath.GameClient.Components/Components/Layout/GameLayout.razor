@@ -1,8 +1,11 @@
 @using Veldrath.GameClient.Core.Abstractions
+@using MudBlazor
 @inherits LayoutComponentBase
 @inject IGameStateService GameState
 @inject IGameHubConnectionService Hub
 @inject Microsoft.AspNetCore.Components.NavigationManager Navigation
+
+<MudDialogProvider />
 
 <div class="game-layout mud-d-flex flex-column overflow-hidden @(GameState.IsConnected ? "in-game" : "")">
     @Body

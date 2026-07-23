@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using MudBlazor;
 using Veldrath.Auth;
 using Veldrath.Auth.Blazor;
 using Veldrath.GameClient.Components.Components.Pages;
@@ -53,6 +54,8 @@ public class RclComponentRenderTests : BunitContext
 
         // Register the concrete GameStateService for components that inject it directly.
         Services.AddSingleton(_gameState);
+
+        Services.AddSingleton<IDialogService>(new FakeDialogService());
 
         // Register a stub IConfiguration with a default server URL.
         var config = new ConfigurationBuilder()

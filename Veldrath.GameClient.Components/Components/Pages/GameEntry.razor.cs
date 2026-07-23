@@ -70,7 +70,7 @@ public sealed partial class GameEntry : ComponentBase, IAsyncDisposable
 
         if (!Auth.IsLoggedIn)
         {
-            try { Navigation.NavigateTo("/login"); } catch (InvalidOperationException) { }
+            try { Navigation.NavigateTo("/login"); } catch (Exception) { }
             return;
         }
 
@@ -108,7 +108,7 @@ public sealed partial class GameEntry : ComponentBase, IAsyncDisposable
 
         if (!Auth.IsLoggedIn)
         {
-            try { Navigation.NavigateTo("/login"); } catch (InvalidOperationException) { }
+            try { Navigation.NavigateTo("/login"); } catch (Exception) { }
             return;
         }
 
