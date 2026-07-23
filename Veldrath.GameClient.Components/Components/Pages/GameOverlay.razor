@@ -1,11 +1,12 @@
 @* Full-screen overlay for inventory, shop, and journal panels. *@
 @using Veldrath.GameClient.Components.Components.Shared
 
-<GamePanel Title="@PanelTitle"
-           Visible="Visible"
-           ShowClose="ShowClose"
-           OnClose="HandleClose">
-    @if (OverlayType == OverlayKind.Inventory)
+<GamePanel Title="@PanelTitle" Visible="Visible" ShowClose="ShowClose" OnClose="HandleClose">
+    @if (OverlayType == OverlayKind.CharacterSheet)
+    {
+        <CharacterSheetOverlay />
+    }
+    else if (OverlayType == OverlayKind.Inventory)
     {
         <InventoryOverlay />
     }
@@ -27,6 +28,7 @@
     /// <summary>Kinds of overlay panel that can be displayed.</summary>
     public enum OverlayKind
     {
+        CharacterSheet,
         /// <summary>Inventory panel showing character items and equipment.</summary>
         Inventory,
 
@@ -40,6 +42,7 @@
     /// <summary>Gets the panel title based on the active overlay type.</summary>
     private string PanelTitle => OverlayType switch
     {
+        OverlayKind.CharacterSheet => "CharacterSheet",
         OverlayKind.Inventory => "Inventory",
         OverlayKind.Shop => "Shop",
         OverlayKind.Journal => "Journal",
