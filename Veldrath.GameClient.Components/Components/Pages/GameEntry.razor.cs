@@ -64,20 +64,30 @@ public sealed partial class GameEntry : ComponentBase, IAsyncDisposable
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
-        if (!Auth.IsAuthReady)
+        try
         {
-            _state = EntryPageState.WaitingForAuth;
-            StartAuthTimeout();
-            return;
-        }
+            if (!Auth.IsAuthReady)
+            {
+                _state = EntryPageState.WaitingForAuth;
+                StartAuthTimeout();
+                return;
+            }
 
-        if (!Auth.IsLoggedIn)
+            if (!Auth.IsLoggedIn)
+            {
+                try { Navigation.NavigateTo("/login"); } catch (Exception) { }
+                return;
+            }
+
+            await DiscoverAndRouteAsync();
+        }
+        catch (Exception ex)
         {
-            try { Navigation.NavigateTo("/login"); } catch (Exception) { }
-            return;
+            Logger.LogError(ex, "Unhandled exception during GameEntry initialization");
+            _state = EntryPageState.Error;
+            _errorMessage = "An unexpected error occurred. Please try refreshing the page.";
+            StateHasChanged();
         }
-
-        await DiscoverAndRouteAsync();
     }
 
     /// <inheritdoc />

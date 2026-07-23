@@ -53,6 +53,11 @@
                  OnClose="HandleCloseOverlay" />
 </div>
 
+@* Reconnect overlay shown when the SignalR circuit drops during gameplay.
+    OnReconnected triggers session restoration via the hub state subscription. *@
+<ReconnectOverlay OnReturnToMenu="HandleReturnToMenu"
+                  OnReconnected="HandleReconnected" />
+
 @code {
     private readonly List<IDisposable> _hubSubscriptions = [];
     private IDisposable? _stateSubscription;
@@ -61,6 +66,25 @@
     private bool _isRestoringSession;
     private bool _showOverlay;
     private GameOverlay.OverlayKind _activeOverlay;
+
+    /// <summary>
+    /// Called by <see cref="ReconnectOverlay"/> when the user chooses to return to the main menu.
+    /// </summary>
+    private async Task HandleReturnToMenu()
+    {
+        GameState.ApplySystemMessage("Returning to main menu...");
+        Navigation.NavigateTo("/");
+    }
+
+    /// <summary>
+    /// Called by <see cref="ReconnectOverlay"/> after a successful reconnection.
+    /// Forces a re-render so the hub state subscription can detect the transition
+    /// and restore the game session state.
+    /// </summary>
+    private void HandleReconnected()
+    {
+        StateHasChanged();
+    }
 
     /// <inheritdoc />
     protected override void OnInitialized()
