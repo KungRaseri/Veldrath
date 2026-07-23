@@ -63,6 +63,32 @@
         }
     </div>
 
+    @* Known Locations — discovered locations for fast travel *@
+    @if (GameState.KnownLocations.Count > 0)
+    {
+        <div class="sidebar-section sidebar-known-locations">
+            <h4>Known Locations (@GameState.KnownLocations.Count)</h4>
+            <ul class="sidebar-list">
+                @foreach (var loc in GameState.KnownLocations)
+                {
+                    <li class="sidebar-list-item">
+                        @{
+                            var isHere = loc.Slug == GameState.CurrentZoneLocationSlug;
+                        }
+                        <MudButton Variant="Variant.Text"
+                                   Size="Size.Small"
+                                   OnClick="() => NavigateToLocationAsync(loc.Slug)"
+                                   Disabled="@(!Hub.IsConnected || isHere)"
+                                   Class="@(isHere ? "sidebar-nav-btn mud-text-secondary" : "sidebar-nav-btn")"
+                                   title="@(isHere ? "You are here" : $"Fast travel to {loc.DisplayName}")">
+                            📍 @loc.DisplayName @(isHere ? "(here)" : "")
+                        </MudButton>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+
     @* G81: NavigateToLocation — show available location connections in the zone *@
     @if (GameState.CurrentLocationConnections.Count > 0)
     {

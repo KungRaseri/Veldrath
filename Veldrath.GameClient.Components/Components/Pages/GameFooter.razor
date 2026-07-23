@@ -28,10 +28,20 @@
     </div>
 
     <div class="game-footer-center flex-1 mud-d-flex justify-center">
-        <ActionBar ShowAttack="GameState.IsInCombat"
-                   ShowDefend="GameState.IsInCombat"
-                   ShowFlee="GameState.IsInCombat"
-                   ShowRespawn="false" />
+        @if (GameState.IsInCombat)
+        {
+            <ActionBar ShowAttack="true"
+                       ShowDefend="true"
+                       ShowFlee="true"
+                       ShowRespawn="GameState.CurrentCharacter.IsDead" />
+        }
+        else
+        {
+            <ActionBar ShowSearch="!GameState.IsInCombat"
+                       ShowRest="GameState.CurrentZone.HasInn"
+                       OnSearch="SearchAsync"
+                       OnRest="RestAsync" />
+        }
     </div>
 
     <div class="game-footer-right mud-d-flex align-items-center gap-2 ml-auto">

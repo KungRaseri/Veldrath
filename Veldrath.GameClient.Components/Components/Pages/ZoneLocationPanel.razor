@@ -1,0 +1,153 @@
+@using Veldrath.GameClient.Core.Abstractions
+@using Microsoft.Extensions.Logging
+@using MudBlazor
+@* Location detail panel — shown when the player is standing on a location tile. *@
+@inject IGameStateService GameState
+@inject IGameHubConnectionService Hub
+@inject ILogger<ZoneLocationPanel> Logger
+
+@if (GameState.IsAtLocation)
+{
+    <div class="zone-location-panel">
+        <div class="location-header">
+            <h3>📍 @(GameState.CurrentZoneLocationSlug ?? "Unknown Location")</h3>
+            @if (!string.IsNullOrEmpty(GameState.CurrentLocationDescription))
+            {
+                <p class="location-description">@GameState.CurrentLocationDescription</p>
+            }
+        </div>
+
+        @* Services section *@
+        @if (GameState.CurrentZone.HasInn || GameState.CurrentZone.HasMerchant)
+        {
+            <div class="location-section location-services">
+                <h4>Services</h4>
+                <div class="mud-d-flex flex-wrap gap-2">
+                    @if (GameState.CurrentZone.HasInn)
+                    {
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   Size="Size.Small"
+                                   OnClick="RestAsync"
+                                   Disabled="@(!Hub.IsConnected)">
+                            🛏 Rest (5g)
+                        </MudButton>
+                    }
+                    @if (GameState.CurrentZone.HasMerchant)
+                    {
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Secondary"
+                                   Size="Size.Small"
+                                   OnClick="VisitShopAsync"
+                                   Disabled="@(!Hub.IsConnected)">
+                            🛒 Visit Shop
+                        </MudButton>
+                    }
+                </div>
+            </div>
+        }
+
+        @* Exits section *@
+        @if (GameState.CurrentLocationConnections.Count > 0)
+        {
+            <div class="location-section location-exits">
+                <h4>Exits</h4>
+                <ul class="sidebar-list">
+                    @foreach (var conn in GameState.CurrentLocationConnections)
+                    {
+                        <li class="sidebar-list-item">
+                            <MudButton Variant="Variant.Outlined"
+                                       Size="Size.Small"
+                                       OnClick="() => NavigateAsync(conn.Slug)"
+                                       Disabled="@(!Hub.IsConnected)"
+                                       Class="location-exit-btn"
+                                       title="@(conn.IsCrossZone ? $"Travel to {conn.TargetZoneId}" : $"Go to {conn.Slug}")">
+                                ➤ @conn.Slug @(conn.IsCrossZone ? "(Zone)" : "")
+                            </MudButton>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+
+        @* Enemies section *@
+        @if (GameState.ZoneEnemies.Count > 0)
+        {
+            <div class="location-section location-enemies">
+                <h4>Creatures (@GameState.ZoneEnemies.Count)</h4>
+                <ul class="sidebar-list">
+                    @foreach (var enemy in GameState.ZoneEnemies)
+                    {
+                        <li class="sidebar-list-item">
+                            <div class="mud-d-flex align-items-center gap-2">
+                                <span>🟠 @enemy.EnemyName (Lv. @enemy.Level)</span>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+
+        @* Occupants section *@
+        @if (GameState.ZoneOccupants.Count > 0)
+        {
+            <div class="location-section location-occupants">
+                <h4>Players Here (@GameState.ZoneOccupants.Count)</h4>
+                <ul class="sidebar-list">
+                    @foreach (var occupant in GameState.ZoneOccupants)
+                    {
+                        <li class="sidebar-list-item">
+                            👤 @occupant.CharacterName
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    /// <summary>Sends the RestAtLocation hub command.</summary>
+    private async Task RestAsync()
+    {
+        try
+        {
+            if (Hub.IsConnected)
+                await Hub.SendAsync("RestAtLocation");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to rest at location.");
+        }
+    }
+
+    /// <summary>Sends the VisitShop hub command.</summary>
+    private async Task VisitShopAsync()
+    {
+        try
+        {
+            if (Hub.IsConnected)
+                await Hub.SendAsync("VisitShop");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to visit shop.");
+        }
+    }
+
+    /// <summary>Sends the NavigateToLocation hub command for fast travel.</summary>
+    /// <param name="slug">The target location slug.</param>
+    private async Task NavigateAsync(string slug)
+    {
+        if (string.IsNullOrEmpty(slug)) return;
+        try
+        {
+            if (Hub.IsConnected)
+                await Hub.SendAsync("NavigateToLocation", slug);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to navigate to {Slug}.", slug);
+        }
+    }
+}
