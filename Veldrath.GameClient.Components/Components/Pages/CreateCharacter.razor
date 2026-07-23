@@ -142,8 +142,7 @@
                                 @foreach (var cls in _availableClasses)
                                 {
                                     <MudItem xs="12" sm="6" md="4">
-                                        <CharacterClassCard Class="cls"
-                                                            IsSelected="@(_selectedClass?.Slug == cls.Slug)"
+                                        <CharacterClassCard Class="cls" IsSelected="@(_selectedClass?.Slug == cls.Slug)"
                                                             OnSelect="SelectClass" />
                                     </MudItem>
                                 }
