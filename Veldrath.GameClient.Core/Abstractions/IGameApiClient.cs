@@ -114,4 +114,7 @@ public interface IGameApiClient
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A <see cref="LastSessionDto"/> with the last character and location, or <see langword="null"/>.</returns>
     Task<LastSessionDto?> GetLastSessionAsync(CancellationToken ct = default);
+
+    /// <summary>Deletes the last session record so the routing guard won't show a resume prompt.</summary>
+    Task DeleteLastSessionAsync(CancellationToken ct = default);
 }

@@ -1,11 +1,14 @@
 @using Veldrath.GameClient.Core.Abstractions
 @using Microsoft.Extensions.Logging
 @using MudBlazor
+@using Veldrath.Auth.Blazor
 @* Sidebar panel showing player info, stats, zone occupants/enemies, and navigation buttons. *@
 @inject IGameStateService GameState
 @inject NavigationManager Navigation
 @inject IGameHubConnectionService Hub
 @inject ILogger<GameSidebar> Logger
+@inject IGameApiClient Api
+@inject AuthStateServiceBase Auth
 
 <div class="game-sidebar">
     @if (GameState.CurrentCharacterInfo is { } character)
@@ -296,6 +299,26 @@
         catch
         {
             // Best-effort disconnect.
+        }
+
+        // Clear server-side session so the routing guard won't show "Resume" on next login.
+        try
+        {
+            await Api.DeleteLastSessionAsync();
+        }
+        catch
+        {
+            // Best-effort.
+        }
+
+        // Clear auth tokens.
+        try
+        {
+            await Auth.LogOutAsync();
+        }
+        catch
+        {
+            // Best-effort.
         }
 
         GameState.Reset();

@@ -105,4 +105,12 @@ public class CharacterRepository : ICharacterRepository
         character.LastPlayedAt = DateTimeOffset.UtcNow;
         await _db.SaveChangesAsync(ct);
     }
+
+    /// <inheritdoc />
+    public async Task ClearLastPlayedAsync(Guid accountId, CancellationToken ct = default)
+    {
+        await _db.Characters
+            .Where(c => c.AccountId == accountId && c.DeletedAt == null)
+            .ExecuteUpdateAsync(s => s.SetProperty(c => c.LastPlayedAt, DateTimeOffset.MinValue), ct);
+    }
 }

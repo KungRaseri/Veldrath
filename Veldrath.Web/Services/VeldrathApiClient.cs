@@ -42,6 +42,12 @@ public class VeldrathApiClient(HttpClient http) : VeldrathAuthApiClient(http), V
         return await resp.Content.ReadFromJsonAsync<LastSessionDto>(ct);
     }
 
+    /// <summary>Deletes the last session record so the routing guard won't show a resume prompt.</summary>
+    public async Task DeleteLastSessionAsync(CancellationToken ct = default)
+    {
+        await Http.DeleteAsync("/api/characters/last-session", ct);
+    }
+
     /// <summary>Checks whether a character name is available.</summary>
     /// <param name="name">The desired character name.</param>
     /// <returns>A response indicating availability, or <c>null</c> if the response body is empty.</returns>
