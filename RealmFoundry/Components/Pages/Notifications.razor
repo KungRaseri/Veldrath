@@ -1,13 +1,13 @@
-ï»¿@page "/notifications"
+@page "/notifications"
 @using Veldrath.Contracts.Foundry
 @inject RealmFoundryApiClient Api
 @inject AuthStateService AuthState
 
-<PageTitle>Notifications â€” RealmFoundry</PageTitle>
+<PageTitle>Notifications — RealmFoundry</PageTitle>
 
 @if (!AuthState.IsAuthReady)
 {
-    @* Auth check still running â€” render nothing to avoid flashing "must sign in". *@
+    @* Auth check still running — render nothing to avoid flashing "must sign in". *@
 }
 else if (!AuthState.IsLoggedIn)
 {
@@ -15,9 +15,9 @@ else if (!AuthState.IsLoggedIn)
 }
 else
 {
-    <MudContainer MaxWidth="MaxWidth.Medium" Class="mud-my-8">
+    <MudContainer MaxWidth="MaxWidth.Medium" Class="my-8">
         <div class="d-flex align-items-center gap-3 mb-4">
-            <MudText Typo="Typo.h4" Class="mud-mb-0">Notifications</MudText>
+            <MudText Typo="Typo.h4" Class="mb-0">Notifications</MudText>
             @if (_notifications.Any(n => !n.IsRead))
             {
                 <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="MarkAllReadAsync">Mark all as read</MudButton>
@@ -26,7 +26,7 @@ else
 
         @if (_loading)
         {
-            <MudText>Loadingâ€¦</MudText>
+            <MudText>Loading…</MudText>
         }
         else if (_notifications.Count == 0)
         {
@@ -37,7 +37,7 @@ else
             <MudStack Spacing="2">
                 @foreach (var n in _notifications)
                 {
-                    <MudPaper Elevation="0" Outlined="true" Class="@($"mud-pa-3 {(n.IsRead ? "" : "mud-paper-border-left-primary")}")" @key="n.Id">
+                    <MudPaper Elevation="0" Outlined="true" Class="@($"pa-3 {(n.IsRead ? "" : "mud-paper-border-left-primary")}")" @key="n.Id">
                         <div class="d-flex align-items-start justify-space-between gap-3">
                             <div class="d-flex flex-column gap-1">
                                 <MudLink Href="@($"/submissions/{n.SubmissionId}")">@n.SubmissionTitle</MudLink>

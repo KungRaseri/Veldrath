@@ -21,24 +21,24 @@ else
     }
     else if (_detail is null)
     {
-        <MudAlert Severity="Severity.Error" Class="mud-mb-4">@_error</MudAlert>
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
     }
     else
     {
-        <MudText Typo="Typo.h3" Class="mud-mb-1">@_detail.Username</MudText>
-        <MudText Typo="Typo.body2" Class="mud-text-secondary mud-mb-4">
+        <MudText Typo="Typo.h3" Class="mb-1">@_detail.Username</MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
             @_detail.Email &nbsp;|&nbsp; Joined @_detail.CreatedAt.ToLocalTime().ToString("d") &nbsp;|&nbsp; Last seen @(_detail.LastSeenAt?.ToLocalTime().ToString("g") ?? "never")
         </MudText>
 
         <MudGrid Spacing="4">
             @* ── Roles ─────────────────────────────── *@
             <MudItem xs="12" md="6">
-                <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4">
-                    <MudText Typo="Typo.h6" Class="mud-mb-3">Roles</MudText>
+                <MudPaper Elevation="0" Outlined="true" Class="pa-4">
+                    <MudText Typo="Typo.h6" Class="mb-3">Roles</MudText>
                     @foreach (var role in _allRoles)
                     {
                         var has = _detail.Roles.Contains(role);
-                        <div class="d-flex align-items-center gap-2 mud-mb-2">
+                        <div class="d-flex align-items-center gap-2 mb-2">
                             <MudChip T="string" Size="Size.Small" Color="@(has ? Color.Primary : Color.Default)" Variant="@(has ? Variant.Filled : Variant.Outlined)">@role</MudChip>
                             @if (has)
                             {
@@ -55,14 +55,14 @@ else
 
             @* ── Per-user permissions ──────────────── *@
             <MudItem xs="12" md="6">
-                <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4">
-                    <MudText Typo="Typo.h6" Class="mud-mb-1">Extra Permissions</MudText>
-                    <MudText Typo="Typo.caption" Class="mud-text-secondary mud-mb-3">Override grants not inherited from any role.</MudText>
+                <MudPaper Elevation="0" Outlined="true" Class="pa-4">
+                    <MudText Typo="Typo.h6" Class="mb-1">Extra Permissions</MudText>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary mb-3">Override grants not inherited from any role.</MudText>
                     @foreach (var perm in _allPermissions)
                     {
                         var roleHas = _detail.EffectivePermissions.Contains(perm) && !_detail.UserPermissions.Contains(perm);
                         var userHas = _detail.UserPermissions.Contains(perm);
-                        <div class="d-flex align-items-center gap-2 mud-mb-2">
+                        <div class="d-flex align-items-center gap-2 mb-2">
                             <MudChip T="string" Size="Size.Small"
                                      Color="@(userHas ? Color.Success : roleHas ? Color.Default : Color.Default)"
                                      Variant="@(userHas || roleHas ? Variant.Filled : Variant.Outlined)">
@@ -83,15 +83,15 @@ else
         </MudGrid>
 
         @* ── Ban / Unban ───────────────────────── *@
-        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4 mud-mt-4">
-            <MudText Typo="Typo.h6" Class="mud-mb-3">Moderation</MudText>
+        <MudPaper Elevation="0" Outlined="true" Class="pa-4 mt-4">
+            <MudText Typo="Typo.h6" Class="mb-3">Moderation</MudText>
 
             @* Warnings *@
-            <MudText Typo="Typo.subtitle2" Class="mud-mb-2">
+            <MudText Typo="Typo.subtitle2" Class="mb-2">
                 Warnings
-                <MudChip T="string" Size="Size.Small" Color="@(_detail.WarnCount > 0 ? Color.Warning : Color.Default)" Class="mud-ml-2">@_detail.WarnCount</MudChip>
+                <MudChip T="string" Size="Size.Small" Color="@(_detail.WarnCount > 0 ? Color.Warning : Color.Default)" Class="ml-2">@_detail.WarnCount</MudChip>
             </MudText>
-            <div class="d-flex gap-2 align-items-center mud-mb-3">
+            <div class="d-flex gap-2 align-items-center mb-3">
                 <MudTextField @bind-Value="_warnReason"
                               T="string"
                               Placeholder="Warning reason…"
@@ -102,23 +102,23 @@ else
             </div>
 
             @* Mute *@
-            <MudDivider Class="mud-mb-3" />
-            <MudText Typo="Typo.subtitle2" Class="mud-mb-2">Chat Mute</MudText>
+            <MudDivider Class="mb-3" />
+            <MudText Typo="Typo.subtitle2" Class="mb-2">Chat Mute</MudText>
             @if (_detail.IsMuted)
             {
-                <div class="mud-mb-2">
+                <div class="mb-2">
                     <MudChip T="string" Size="Size.Small" Color="Color.Warning">Muted</MudChip>
                     @if (_detail.MutedUntil.HasValue)
                     {
-                        <MudText Typo="Typo.caption" Class="mud-text-secondary mud-ml-1" Inline="true"> until @_detail.MutedUntil.Value.ToLocalTime().ToString("g")</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary ml-1" Inline="true"> until @_detail.MutedUntil.Value.ToLocalTime().ToString("g")</MudText>
                     }
                     else
                     {
-                        <MudText Typo="Typo.caption" Class="mud-text-secondary mud-ml-1" Inline="true"> (permanent)</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary ml-1" Inline="true"> (permanent)</MudText>
                     }
                     @if (!string.IsNullOrEmpty(_detail.MuteReason))
                     {
-                        <MudText Typo="Typo.caption" Class="mud-text-secondary mud-ml-1" Inline="true"> — @_detail.MuteReason</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary ml-1" Inline="true"> — @_detail.MuteReason</MudText>
                     }
                 </div>
                 <MudButton Variant="Variant.Filled" Size="Size.Small" OnClick="UnmuteAsync">Lift Mute</MudButton>
@@ -130,34 +130,34 @@ else
                               Label="Mute Reason"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
-                              Class="mud-mb-2" />
+                              Class="mb-2" />
                 <MudTextField @bind-Value="_muteDuration"
                               T="int?"
                               Label="Duration (minutes, blank = permanent)"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
-                              Class="mud-mb-3" />
+                              Class="mb-3" />
                 <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small" OnClick="MuteAsync">Mute Player</MudButton>
             }
 
             @* Ban *@
-            <MudDivider Class="mud-my-3" />
-            <MudText Typo="Typo.subtitle2" Class="mud-mb-2">Ban</MudText>
+            <MudDivider Class="my-3" />
+            <MudText Typo="Typo.subtitle2" Class="mb-2">Ban</MudText>
             @if (_detail.IsBanned)
             {
-                <div class="mud-mb-2">
+                <div class="mb-2">
                     <MudChip T="string" Size="Size.Small" Color="Color.Error">Banned</MudChip>
                     @if (_detail.BannedUntil.HasValue)
                     {
-                        <MudText Typo="Typo.caption" Class="mud-text-secondary mud-ml-1" Inline="true"> until @_detail.BannedUntil.Value.ToLocalTime().ToString("g")</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary ml-1" Inline="true"> until @_detail.BannedUntil.Value.ToLocalTime().ToString("g")</MudText>
                     }
                     else
                     {
-                        <MudText Typo="Typo.caption" Class="mud-text-secondary mud-ml-1" Inline="true"> (permanent)</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary ml-1" Inline="true"> (permanent)</MudText>
                     }
                     @if (!string.IsNullOrEmpty(_detail.BanReason))
                     {
-                        <MudText Typo="Typo.caption" Class="mud-text-secondary mud-ml-1" Inline="true"> — @_detail.BanReason</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary ml-1" Inline="true"> — @_detail.BanReason</MudText>
                     }
                 </div>
                 <MudButton Variant="Variant.Filled" OnClick="UnbanAsync">Unban Player</MudButton>
@@ -170,14 +170,14 @@ else
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Required="true"
-                              Class="mud-mb-2" />
+                              Class="mb-2" />
                 <MudTextField @bind-Value="_banDuration"
                               T="int?"
                               Label="Duration (minutes, blank = permanent)"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
-                              Class="mud-mb-3" />
-                <div class="d-flex gap-2 mud-mb-3">
+                              Class="mb-3" />
+                <div class="d-flex gap-2 mb-3">
                     <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="BanAsync" Disabled="@string.IsNullOrWhiteSpace(_banReason)">Ban Player</MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="KickAsync">Kick Player</MudButton>
                 </div>
@@ -188,7 +188,7 @@ else
                               Margin="Margin.Dense" />
             }
 
-            <MudDivider Class="mud-my-3" />
+            <MudDivider Class="my-3" />
             <div class="d-flex gap-2">
                 <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="@($"/admin/audit?targetId={Id}")">View Audit Log</MudButton>
                 <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="/admin/reports">Player Reports</MudButton>
@@ -197,7 +197,7 @@ else
 
         @if (!string.IsNullOrEmpty(_actionMessage))
         {
-            <MudAlert Severity="@(_actionOk ? Severity.Success : Severity.Error)" Class="mud-mt-4">@_actionMessage</MudAlert>
+            <MudAlert Severity="@(_actionOk ? Severity.Success : Severity.Error)" Class="mt-4">@_actionMessage</MudAlert>
         }
     }
 }

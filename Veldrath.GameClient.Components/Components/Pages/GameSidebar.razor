@@ -13,7 +13,7 @@
     @* Navigation section *@
     <div class="sidebar-section sidebar-nav">
         <h4>Game</h4>
-        <div class="mud-d-flex flex-column gap-2">
+        <div class="d-flex flex-column gap-2">
             <MudButton Variant="Variant.Outlined"
                        FullWidth="true"
                        OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Inventory)"
@@ -122,7 +122,7 @@
         </div>
     }
 
-    <div class="sidebar-section sidebar-actions mud-d-flex flex-column gap-2" style="padding-top: 16px;">
+    <div class="sidebar-section sidebar-actions d-flex flex-column gap-2" style="padding-top: 16px;">
 
         @* G68: Visit Shop — conditional on zone having a merchant *@
         @if (GameState.CurrentZone.HasMerchant)

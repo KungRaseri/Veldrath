@@ -12,10 +12,10 @@
 
 @* Settings page for audio, display, and accessibility options. Rebuilt with MudBlazor components per CSS audit (plans/css-audit-game-client-components.md). *@
 
-<MudContainer MaxWidth="MaxWidth.Small" Class="mud-pa-4">
+<MudContainer MaxWidth="MaxWidth.Small" Class="pa-4">
     <MudStack Spacing="4">
         @* Header *@
-        <div class="mud-d-flex align-items-center gap-3" style="padding-bottom: 12px; border-bottom: 1px solid var(--vds-border, #2A2B3D);">
+        <div class="d-flex align-items-center gap-3" style="padding-bottom: 12px; border-bottom: 1px solid var(--vds-border, #2A2B3D);">
             <MudText Typo="Typo.h5" Class="mud-text-primary">Settings</MudText>
             <MudSpacer />
             <MudButton Variant="Variant.Outlined"
@@ -27,30 +27,30 @@
         </div>
 
         @* Audio section *@
-        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4">
-            <MudText Typo="Typo.h6" Class="mud-mb-3" Style="padding-bottom: 8px; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">Audio</MudText>
+        <MudPaper Elevation="0" Outlined="true" Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3" Style="padding-bottom: 8px; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">Audio</MudText>
             <MudStack Spacing="2">
-                <div class="mud-d-flex align-items-center gap-3" style="padding: 8px 0; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">
+                <div class="d-flex align-items-center gap-3" style="padding: 8px 0; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">
                     <MudText Typo="Typo.body1" Class="mud-text-primary" Style="min-width: 130px;">Music Volume</MudText>
                     <MudSlider @bind-Value="_musicVolume"
                                Min="0" Max="100" Step="1"
-                               Class="flex-1 mud-mx-0"
+                               Class="flex-1 mx-0"
                                Style="max-width: 200px;"
                                Color="Color.Primary"
                                Immediate="true" />
                     <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="min-width: 48px; text-align: right;">@_musicVolume%</MudText>
                 </div>
-                <div class="mud-d-flex align-items-center gap-3" style="padding: 8px 0; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">
+                <div class="d-flex align-items-center gap-3" style="padding: 8px 0; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">
                     <MudText Typo="Typo.body1" Class="mud-text-primary" Style="min-width: 130px;">SFX Volume</MudText>
                     <MudSlider @bind-Value="_sfxVolume"
                                Min="0" Max="100" Step="1"
-                               Class="flex-1 mud-mx-0"
+                               Class="flex-1 mx-0"
                                Style="max-width: 200px;"
                                Color="Color.Primary"
                                Immediate="true" />
                     <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="min-width: 48px; text-align: right;">@_sfxVolume%</MudText>
                 </div>
-                <div class="mud-d-flex align-items-center gap-3" style="padding: 8px 0;">
+                <div class="d-flex align-items-center gap-3" style="padding: 8px 0;">
                     <MudText Typo="Typo.body1" Class="mud-text-primary" Style="min-width: 130px;">Mute All</MudText>
                     <MudSwitch @bind-Value="_isMuted" Color="Color.Primary" />
                     <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="min-width: 48px; text-align: right;">@(_isMuted ? "Muted" : "Enabled")</MudText>
@@ -59,15 +59,14 @@
         </MudPaper>
 
         @* Display section *@
-        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4">
-            <MudText Typo="Typo.h6" Class="mud-mb-3" Style="padding-bottom: 8px; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">Display</MudText>
+        <MudPaper Elevation="0" Outlined="true" Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3" Style="padding-bottom: 8px; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">Display</MudText>
             <MudStack Spacing="2">
-                <div class="mud-d-flex align-items-center gap-3" style="padding: 8px 0; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">
+                <div class="d-flex align-items-center gap-3" style="padding: 8px 0; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">
                     <MudText Typo="Typo.body1" Class="mud-text-primary" Style="min-width: 130px;">UI Scale</MudText>
                     <MudSelect @bind-Value="_uiScale"
                                Variant="Variant.Outlined"
-                               Class="mud-width-full"
-                               Style="max-width: 200px;"
+                               FullWidth="true" Style="max-width: 200px;"
                                AnchorOrigin="Origin.BottomCenter">
                         <MudSelectItem Value="75">75%</MudSelectItem>
                         <MudSelectItem Value="90">90%</MudSelectItem>
@@ -77,12 +76,11 @@
                         <MudSelectItem Value="150">150%</MudSelectItem>
                     </MudSelect>
                 </div>
-                <div class="mud-d-flex align-items-center gap-3" style="padding: 8px 0;">
+                <div class="d-flex align-items-center gap-3" style="padding: 8px 0;">
                     <MudText Typo="Typo.body1" Class="mud-text-primary" Style="min-width: 130px;">Theme</MudText>
                     <MudSelect @bind-Value="_theme"
                                Variant="Variant.Outlined"
-                               Class="mud-width-full"
-                               Style="max-width: 200px;"
+                               FullWidth="true" Style="max-width: 200px;"
                                AnchorOrigin="Origin.BottomCenter">
                         <MudSelectItem Value="@("dark")">Dark</MudSelectItem>
                         <MudSelectItem Value="@("light")">Light</MudSelectItem>
@@ -93,15 +91,14 @@
         </MudPaper>
 
         @* Accessibility section *@
-        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4">
-            <MudText Typo="Typo.h6" Class="mud-mb-3" Style="padding-bottom: 8px; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">Accessibility</MudText>
+        <MudPaper Elevation="0" Outlined="true" Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3" Style="padding-bottom: 8px; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">Accessibility</MudText>
             <MudStack Spacing="2">
-                <div class="mud-d-flex align-items-center gap-3" style="padding: 8px 0; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">
+                <div class="d-flex align-items-center gap-3" style="padding: 8px 0; border-bottom: 1px solid var(--vds-border-subtle, #1E1F2D);">
                     <MudText Typo="Typo.body1" Class="mud-text-primary" Style="min-width: 130px;">Font Size</MudText>
                     <MudSelect @bind-Value="_fontSize"
                                Variant="Variant.Outlined"
-                               Class="mud-width-full"
-                               Style="max-width: 200px;"
+                               FullWidth="true" Style="max-width: 200px;"
                                AnchorOrigin="Origin.BottomCenter">
                         <MudSelectItem Value="@("small")">Small</MudSelectItem>
                         <MudSelectItem Value="@("medium")">Medium</MudSelectItem>
@@ -109,7 +106,7 @@
                         <MudSelectItem Value="@("x-large")">Extra Large</MudSelectItem>
                     </MudSelect>
                 </div>
-                <div class="mud-d-flex align-items-center gap-3" style="padding: 8px 0;">
+                <div class="d-flex align-items-center gap-3" style="padding: 8px 0;">
                     <MudText Typo="Typo.body1" Class="mud-text-primary" Style="min-width: 130px;">Reduced Motion</MudText>
                     <MudSwitch @bind-Value="_reducedMotion" Color="Color.Primary" />
                     <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="min-width: 48px; text-align: right;">@(_reducedMotion ? "On" : "Off")</MudText>
@@ -118,7 +115,7 @@
         </MudPaper>
 
         @* Footer *@
-        <div class="mud-d-flex gap-3 justify-center" style="padding: 16px 0; border-top: 1px solid var(--vds-border, #2A2B3D); margin-top: 16px;">
+        <div class="d-flex gap-3 justify-center" style="padding: 16px 0; border-top: 1px solid var(--vds-border, #2A2B3D); margin-top: 16px;">
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
                        OnClick="SaveSettings">
@@ -134,7 +131,7 @@
         @if (_statusMessage is not null)
         {
             <MudAlert Severity="@(_statusIsError ? Severity.Error : Severity.Success)"
-                      Class="mud-mt-2"
+                      Class="mt-2"
                       Dense="true">
                 @_statusMessage
             </MudAlert>

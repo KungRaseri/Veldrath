@@ -24,7 +24,7 @@ else
 
     @if (!string.IsNullOrEmpty(_message))
     {
-        <MudAlert Severity="@(_error ? Severity.Error : Severity.Success)" Class="mud-mb-4">@_message</MudAlert>
+        <MudAlert Severity="@(_error ? Severity.Error : Severity.Success)" Class="mb-4">@_message</MudAlert>
     }
 
     @if (!_isNew)
@@ -39,14 +39,14 @@ else
         </div>
     }
 
-    <MudPaper Elevation="0" Outlined="true" Class="mud-pa-4 mud-mb-4">
+    <MudPaper Elevation="0" Outlined="true" Class="pa-4 mb-4">
         <MudTextField @bind-Value="_title"
                       T="string"
                       Label="Title"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
                       Placeholder="Scheduled maintenance on Friday…"
-                      Class="mud-mb-4" />
+                      Class="mb-4" />
 
         <MudTextField @bind-Value="_body"
                       T="string"
@@ -55,7 +55,7 @@ else
                       Margin="Margin.Dense"
                       Lines="6"
                       MaxLength="1000" />
-        <MudText Typo="Typo.caption" Class="mud-text-secondary mud-mt-1">@_body.Length / 1000</MudText>
+        <MudText Typo="Typo.caption" Class="mud-text-secondary mt-1">@_body.Length / 1000</MudText>
     </MudPaper>
 
     <MudStack Row="true" Spacing="2">

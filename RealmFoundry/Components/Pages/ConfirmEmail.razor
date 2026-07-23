@@ -11,21 +11,21 @@
 }
 else if (_done)
 {
-    <MudAlert Severity="Severity.Success" Class="mud-mt-8">
+    <MudAlert Severity="Severity.Success" Class="mt-8">
         Your email has been confirmed! <MudLink Href="/">Go to RealmFoundry</MudLink>
     </MudAlert>
 }
 else
 {
-    <MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mud-my-8">
-        <MudPaper Elevation="0" Outlined="true" Class="mud-pa-8">
-            <MudAlert Severity="Severity.Error" Class="mud-mb-4">@(_error ?? "Confirmation failed. The link may have expired.")</MudAlert>
+    <MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="my-8">
+        <MudPaper Elevation="0" Outlined="true" Class="pa-8">
+            <MudAlert Severity="Severity.Error" Class="mb-4">@(_error ?? "Confirmation failed. The link may have expired.")</MudAlert>
 
             @if (AuthState.IsLoggedIn)
             {
                 @if (_resendSent)
                 {
-                    <MudAlert Severity="Severity.Info" Class="mud-mb-4">A new confirmation email has been sent. Check your inbox.</MudAlert>
+                    <MudAlert Severity="Severity.Info" Class="mb-4">A new confirmation email has been sent. Check your inbox.</MudAlert>
                 }
                 else
                 {
@@ -37,12 +37,12 @@ else
                     </MudButton>
                     @if (_resendError is not null)
                     {
-                        <MudText Typo="Typo.body2" Color="Color.Error" Class="mud-mt-2">@_resendError</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Error" Class="mt-2">@_resendError</MudText>
                     }
                 }
             }
 
-            <MudLink Href="/login" Class="mud-mt-4 mud-d-block">Back to sign in</MudLink>
+            <MudLink Href="/login" Class="mt-4 d-block">Back to sign in</MudLink>
         </MudPaper>
     </MudContainer>
 }

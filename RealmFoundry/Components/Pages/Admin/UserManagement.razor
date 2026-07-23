@@ -11,7 +11,7 @@
 }
 else
 {
-    <MudText Typo="Typo.h3" Class="mud-mb-4">User Management</MudText>
+    <MudText Typo="Typo.h3" Class="mb-4">User Management</MudText>
 
     <div class="d-flex flex-wrap gap-3 mb-4 align-items-center">
         <MudTextField @bind-Value="_search"
@@ -67,7 +67,7 @@ else
 
     @if (!string.IsNullOrEmpty(_actionMessage))
     {
-        <MudAlert Severity="@(_actionError ? Severity.Error : Severity.Success)" Class="mud-mb-4">@_actionMessage</MudAlert>
+        <MudAlert Severity="@(_actionError ? Severity.Error : Severity.Success)" Class="mb-4">@_actionMessage</MudAlert>
     }
 
     @if (_loading)
@@ -76,7 +76,7 @@ else
     }
     else if (_users is null)
     {
-        <MudAlert Severity="Severity.Error" Class="mud-mb-4">@_error</MudAlert>
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
     }
     else
     {

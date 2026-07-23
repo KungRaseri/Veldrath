@@ -18,8 +18,8 @@ else if (!AuthState.IsLoggedIn)
 }
 else
 {
-    <MudContainer MaxWidth="MaxWidth.Medium" Class="mud-my-8">
-        <MudText Typo="Typo.h4" Class="mud-mb-6">New Submission</MudText>
+    <MudContainer MaxWidth="MaxWidth.Medium" Class="my-8">
+        <MudText Typo="Typo.h4" Class="mb-6">New Submission</MudText>
 
         <MudSelect @bind-Value="_contentType"
                    @bind-Value:after="OnTypeChanged"
@@ -28,7 +28,7 @@ else
                    Variant="Variant.Outlined"
                    Margin="Margin.Dense"
                    AnchorOrigin="Origin.BottomCenter"
-                   Class="mud-mb-4">
+                   Class="mb-4">
             @foreach (var schema in ContentSchemaRegistry.All.Values.OrderBy(s => s.DisplayLabel))
             {
                 <MudSelectItem Value="@schema.ContentType">@schema.DisplayLabel</MudSelectItem>
@@ -36,7 +36,7 @@ else
         </MudSelect>
         @if (_schema is not null)
         {
-            <MudText Typo="Typo.caption" Class="mud-text-secondary mud-mb-4" Style="margin-top: -0.75rem;">@_schema.Description</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary mb-4" Style="margin-top: -0.75rem;">@_schema.Description</MudText>
         }
 
         <MudTextField @bind-Value="_title"
@@ -45,7 +45,7 @@ else
                       Margin="Margin.Dense"
                       Placeholder="Give your submission a short name"
                       MaxLength="200"
-                      Class="mud-mb-4" />
+                      Class="mb-4" />
 
         <MudTextField @bind-Value="_description"
                       Label="Description"
@@ -54,13 +54,13 @@ else
                       Lines="4"
                       Placeholder="Describe what this content adds, its lore context, balance reasoning, etc."
                       HelperText="Markdown, optional"
-                      Class="mud-mb-6" />
+                      Class="mb-6" />
 
         @if (_schema is not null)
         {
             foreach (var group in _schema.Groups)
             {
-                <MudText Typo="Typo.h6" Class="mud-mb-3">@group.Label</MudText>
+                <MudText Typo="Typo.h6" Class="mb-3">@group.Label</MudText>
 
                 foreach (var field in group.Fields)
                 {
@@ -70,7 +70,7 @@ else
                                      Value="@GetBool(field.Name)"
                                      ValueChanged="@((bool v) => SetBool(field.Name, v))"
                                      Label="@($"{field.Label}{(field.Required ? " *" : "")}")"
-                                     Class="mud-mb-3" />
+                                     Class="mb-3" />
                         if (field.Hint is not null)
                         {
                             <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="margin-top: -0.75rem; margin-bottom: 1rem;">@field.Hint</MudText>
@@ -85,7 +85,7 @@ else
                                       Margin="Margin.Dense"
                                       Lines="4"
                                       Placeholder="@field.Hint"
-                                      Class="mud-mb-4" />
+                                      Class="mb-4" />
                     }
                     else if (field.FieldType == ContentFieldType.EnumString && field.EnumValues is not null)
                     {
@@ -96,7 +96,7 @@ else
                                    Variant="Variant.Outlined"
                                    Margin="Margin.Dense"
                                    AnchorOrigin="Origin.BottomCenter"
-                                   Class="mud-mb-4">
+                                   Class="mb-4">
                             @foreach (var v in field.EnumValues.Where(v => v != ""))
                             {
                                 <MudSelectItem Value="@v">@v</MudSelectItem>
@@ -112,7 +112,7 @@ else
                                       Margin="Margin.Dense"
                                       InputType="InputType.Number"
                                       Placeholder="@field.Default"
-                                      Class="mud-mb-4" />
+                                      Class="mb-4" />
                     }
                     else
                     {
@@ -122,7 +122,7 @@ else
                                       Variant="Variant.Outlined"
                                       Margin="Margin.Dense"
                                       Placeholder="@(field.FieldType == ContentFieldType.Slug ? "e.g. my-content-slug" : field.Hint ?? "")"
-                                      Class="mud-mb-4" />
+                                      Class="mb-4" />
                     }
 
                     @if (field.Hint is not null && field.FieldType != ContentFieldType.LongText)
@@ -135,10 +135,10 @@ else
 
         @if (_error is not null)
         {
-            <MudAlert Severity="Severity.Error" Class="mud-mb-4">@_error</MudAlert>
+            <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
         }
 
-        <MudStack Row="true" Spacing="2" Class="mud-mt-4">
+        <MudStack Row="true" Spacing="2" Class="mt-4">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitAsync" Disabled="@_submitting">
                 @(_submitting ? "Submitting…" : "Submit")
             </MudButton>

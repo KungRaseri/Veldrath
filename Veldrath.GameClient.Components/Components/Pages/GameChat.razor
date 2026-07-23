@@ -1,8 +1,8 @@
 @using MudBlazor
 @* Chat panel showing message history with channel pills, input field, and send button. *@
 
-<div class="game-chat mud-d-flex flex-column flex-shrink-0">
-    <div class="game-chat-pills mud-d-flex gap-0 flex-shrink-0">
+<div class="game-chat d-flex flex-column flex-shrink-0">
+    <div class="game-chat-pills d-flex gap-0 flex-shrink-0">
         @foreach (var channel in ChannelNames)
         {
             <button class="game-chat-pill @(ActiveChannel == channel ? "game-chat-pill-active" : "")"
@@ -32,7 +32,7 @@
         }
     </div>
 
-    <div class="game-chat-input mud-d-flex align-items-center gap-2">
+    <div class="game-chat-input d-flex align-items-center gap-2">
         <input type="text"
                class="game-chat-input-field"
                @bind="_inputText"
