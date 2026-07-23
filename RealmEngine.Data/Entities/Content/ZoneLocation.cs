@@ -10,6 +10,18 @@ public class ZoneLocation : ContentBase
     public string ZoneId { get; set; } = string.Empty;
 
     /// <summary>
+    /// Tile column on the zone's tilemap where this location sits.
+    /// <see langword="null"/> when the location is off-grid or not yet positioned.
+    /// </summary>
+    public int? TileX { get; set; }
+
+    /// <summary>
+    /// Tile row on the zone's tilemap where this location sits.
+    /// <see langword="null"/> when the location is off-grid or not yet positioned.
+    /// </summary>
+    public int? TileY { get; set; }
+
+    /// <summary>
     /// Slug of the language predominantly spoken at this location, if any.
     /// Soft reference — no FK constraint; <c>null</c> means no language is linked.
     /// </summary>

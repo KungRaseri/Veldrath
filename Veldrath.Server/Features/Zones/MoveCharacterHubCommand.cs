@@ -1,6 +1,7 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Models;
 using RealmEngine.Shared.Models.Tiled;
 using Veldrath.Contracts.Tilemap;
 using Veldrath.Server.Data.Repositories;
@@ -14,6 +15,7 @@ namespace Veldrath.Server.Features.Zones;
 /// validates walkability and rate-limiting, persists the new position, and
 /// returns a <see cref="MoveCharacterHubResult"/> so the hub can broadcast
 /// <see cref="CharacterMovedPayload"/> and/or <see cref="ExitTileDto"/> events.
+/// Also detects when the character steps onto a <see cref="ZoneLocationEntry"/> tile.
 /// </summary>
 /// <param name="CharacterId">ID of the character to move.</param>
 /// <param name="ToX">Target tile column.</param>
@@ -45,6 +47,9 @@ public record MoveCharacterHubResult
 
     /// <summary>Gets the exit tile the character stepped on, or <see langword="null"/> if no transition is triggered.</summary>
     public ExitTileDto? ExitTriggered { get; init; }
+
+    /// <summary>Gets the location entered by stepping on its tile, or <see langword="null"/>.</summary>
+    public ZoneLocationEntry? LocationEntered { get; init; }
 }
 
 // ── Handler ──────────────────────────────────────────────────────────────────
@@ -67,22 +72,26 @@ public class MoveCharacterHubCommandHandler : IRequestHandler<MoveCharacterHubCo
     private readonly ITileMapRepository _tilemapRepo;
     private readonly ICharacterRepository _characterRepo;
     private readonly IPlayerSessionRepository _sessionRepo;
+    private readonly IZoneLocationRepository _locationRepo;
     private readonly ILogger<MoveCharacterHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="MoveCharacterHubCommandHandler"/>.</summary>
     /// <param name="tilemapRepo">Tilemap repository for collision data.</param>
     /// <param name="characterRepo">Character repository to persist the new tile position.</param>
     /// <param name="sessionRepo">Player session repository for rate-limit tracking.</param>
+    /// <param name="locationRepo">Zone location repository for location tile detection.</param>
     /// <param name="logger">Logger for diagnostic output.</param>
     public MoveCharacterHubCommandHandler(
         ITileMapRepository tilemapRepo,
         ICharacterRepository characterRepo,
         IPlayerSessionRepository sessionRepo,
+        IZoneLocationRepository locationRepo,
         ILogger<MoveCharacterHubCommandHandler> logger)
     {
         _tilemapRepo    = tilemapRepo;
         _characterRepo  = characterRepo;
         _sessionRepo    = sessionRepo;
+        _locationRepo   = locationRepo;
         _logger         = logger;
     }
 
@@ -138,17 +147,31 @@ public class MoveCharacterHubCommandHandler : IRequestHandler<MoveCharacterHubCo
                 exitTriggered = new ExitTileDto(exit.TileX, exit.TileY, exit.ToZoneId);
         }
 
+        // ── Location tile check ──────────────────────────────────────────────
+        ZoneLocationEntry? locationEntered = null;
+        var zoneLocations = await _locationRepo.GetByZoneIdAsync(request.ZoneId);
+        locationEntered = zoneLocations.FirstOrDefault(l =>
+            l.TileX == request.ToX && l.TileY == request.ToY);
+
+        if (locationEntered is not null)
+        {
+            _logger.LogInformation(
+                "Character {CharacterIdPrefix} stepped onto location {LocationSlug} at ({X},{Y})",
+                request.CharacterId.ToString()[..8], locationEntered.Slug, request.ToX, request.ToY);
+        }
+
         _logger.LogDebug(
             "Character {Id} moved to ({X},{Y}) facing {Dir} in zone {Zone}",
             request.CharacterId, request.ToX, request.ToY, dir, request.ZoneId);
 
         return new MoveCharacterHubResult
         {
-            Success        = true,
-            TileX          = request.ToX,
-            TileY          = request.ToY,
-            Direction      = dir,
-            ExitTriggered  = exitTriggered,
+            Success           = true,
+            TileX             = request.ToX,
+            TileY             = request.ToY,
+            Direction         = dir,
+            ExitTriggered     = exitTriggered,
+            LocationEntered   = locationEntered,
         };
     }
 

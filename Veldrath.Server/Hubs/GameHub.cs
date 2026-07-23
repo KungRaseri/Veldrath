@@ -503,6 +503,22 @@ public class GameHub : Hub
 
             if (result.ExitTriggered is not null)
                 await Clients.Caller.SendAsync("TileExitTriggered", result.ExitTriggered);
+
+            if (result.LocationEntered is not null)
+            {
+                var loc = result.LocationEntered;
+                await Clients.Caller.SendAsync("LocationEntered", new
+                {
+                    loc.Slug,
+                    Name = loc.DisplayName,
+                    loc.TypeKey,
+                    Description = (string?)null, // Future: load from location data
+                    loc.TileX,
+                    loc.TileY,
+                    Enemies = Array.Empty<object>(),
+                    Connections = Array.Empty<object>(),
+                });
+            }
         }
         catch (Exception ex)
         {

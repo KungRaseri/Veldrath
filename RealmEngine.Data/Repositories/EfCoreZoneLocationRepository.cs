@@ -88,5 +88,7 @@ public class EfCoreZoneLocationRepository(ContentDbContext db, ILogger<EfCoreZon
         new(w.Slug, w.DisplayName ?? w.Slug, w.TypeKey, w.ZoneId, w.RarityWeight,
             w.Stats.MinLevel, w.Stats.MaxLevel,
             w.Traits.IsHidden ?? false, w.Traits.UnlockType, w.Traits.UnlockKey, w.Traits.DiscoverThreshold,
-            w.ActorPool.Select(e => new ActorPoolEntry(e.ArchetypeSlug, e.Weight)).ToList());
+            w.ActorPool.Select(e => new ActorPoolEntry(e.ArchetypeSlug, e.Weight)).ToList(),
+            w.DominantLanguageSlug,
+            w.TileX, w.TileY);
 }

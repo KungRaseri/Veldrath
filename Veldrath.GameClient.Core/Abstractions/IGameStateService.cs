@@ -157,6 +157,23 @@ public sealed record ZoneState
 /// </summary>
 public interface IGameStateService : INotifyPropertyChanged
 {
+    // ── Nested DTOs ──────────────────────────────────────────────────────────
+
+    /// <summary>Lightweight reference to a discovered zone location for fast-travel and UI display.</summary>
+    /// <param name="Slug">The URL-safe location identifier.</param>
+    /// <param name="DisplayName">The human-readable location name.</param>
+    /// <param name="TypeKey">The location type category (e.g. "dungeons", "locations").</param>
+    /// <param name="ZoneId">The zone this location belongs to.</param>
+    /// <param name="TileX">The tile column on the zone tilemap, or <c>null</c> if off-grid.</param>
+    /// <param name="TileY">The tile row on the zone tilemap, or <c>null</c> if off-grid.</param>
+    public sealed record LocationReference(
+        string Slug,
+        string DisplayName,
+        string TypeKey,
+        string ZoneId,
+        int? TileX = null,
+        int? TileY = null);
+
     // ── Connection state ────────────────────────────────────────────────────
 
     /// <summary>The server-assigned connection ID for the current SignalR session, or <c>null</c>.</summary>
@@ -262,6 +279,17 @@ public interface IGameStateService : INotifyPropertyChanged
 
     /// <summary>The result description of the last combat action (e.g. "You hit for 12 damage").</summary>
     string? LastCombatActionResult { get; }
+
+    // ── Location discovery state ──────────────────────────────────────────────
+
+    /// <summary>The locations the character has discovered and can fast-travel to.</summary>
+    IReadOnlyList<LocationReference> KnownLocations { get; }
+
+    /// <summary>Whether the player is currently standing on a location tile.</summary>
+    bool IsAtLocation { get; }
+
+    /// <summary>The prose description of the current location, or <c>null</c>.</summary>
+    string? CurrentLocationDescription { get; }
 
     // ── Apply methods (called from hub event handlers) ───────────────────────
 
@@ -492,6 +520,13 @@ public interface IGameStateService : INotifyPropertyChanged
     /// <param name="name">The location display name.</param>
     /// <param name="type">The location type.</param>
     void ApplyZoneLocationUnlocked(string slug, string name, string type);
+
+    /// <summary>Records a location as discovered, enabling fast travel.</summary>
+    /// <param name="location">The location reference to add to known locations.</param>
+    void ApplyLocationDiscovered(LocationReference location);
+
+    /// <summary>Clears current location state when the player walks off a location tile.</summary>
+    void ApplyLocationExited();
 
     /// <summary>Updates state after traversing a connection between locations or zones.</summary>
     /// <param name="slug">The connection identifier slug.</param>

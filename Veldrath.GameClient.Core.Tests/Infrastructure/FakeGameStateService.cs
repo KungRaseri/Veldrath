@@ -142,6 +142,17 @@ public sealed class FakeGameStateService : IGameStateService
     /// <inheritdoc />
     public IReadOnlyList<ZoneConnectionLink> CurrentLocationConnections { get; set; } = [];
 
+    // ── Location discovery state ────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    public IReadOnlyList<IGameStateService.LocationReference> KnownLocations { get; set; } = [];
+
+    /// <inheritdoc />
+    public bool IsAtLocation { get; set; }
+
+    /// <inheritdoc />
+    public string? CurrentLocationDescription { get; set; }
+
     // ── Call tracking ─────────────────────────────────────────────────────────
 
     /// <summary>Records all Apply* method calls for assertion.</summary>
@@ -492,6 +503,20 @@ public sealed class FakeGameStateService : IGameStateService
     }
 
     /// <inheritdoc />
+    public void ApplyLocationDiscovered(IGameStateService.LocationReference location)
+    {
+        AppliedCalls.Add((nameof(ApplyLocationDiscovered), location));
+    }
+
+    /// <inheritdoc />
+    public void ApplyLocationExited()
+    {
+        IsAtLocation = false;
+        CurrentLocationDescription = null;
+        AppliedCalls.Add((nameof(ApplyLocationExited), null));
+    }
+
+    /// <inheritdoc />
     public void ApplyConnectionTraversed(string slug, string zoneId, bool isCrossZone, IReadOnlyList<ZoneConnectionLink> connections)
     {
         CurrentLocationConnections = connections;
@@ -579,6 +604,9 @@ public sealed class FakeGameStateService : IGameStateService
         CurrentZoneLocationSlug = null;
         ZoneLocations = [];
         CurrentLocationConnections = [];
+        KnownLocations = [];
+        IsAtLocation = false;
+        CurrentLocationDescription = null;
         InventoryItems = [];
         EquippedItems = new Dictionary<string, Item>();
         ShopCatalog = [];
