@@ -15,8 +15,8 @@
         <GameHeader />
 
         <div class="game-main-row d-flex flex-1 overflow-hidden">
-            <div class="game-sidebar @(_sidebarCollapsed ? "sidebar-collapsed" : "")">
-                <button class="sidebar-toggle" @onclick="ToggleSidebar"
+            <div class="game-sidebar d-flex flex-column overflow-y-auto overflow-x-hidden flex-shrink-0 @(_sidebarCollapsed ? "sidebar-collapsed" : "")">
+                <button class="sidebar-toggle align-self-end flex-shrink-0" @onclick="ToggleSidebar"
                         title="@(_sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar")">
                     @(_sidebarCollapsed ? "▶" : "◀")
                 </button>
@@ -55,7 +55,7 @@
                 }
             </div>
 
-            <div class="game-chat-panel @(_chatCollapsed ? "chat-collapsed" : "")">
+            <div class="game-chat-panel d-flex flex-column flex-shrink-0 overflow-y-auto @(_chatCollapsed ? "chat-collapsed" : "")">
                 <button class="chat-toggle" @onclick="ToggleChat"
                         title="@(_chatCollapsed ? "Expand chat" : "Collapse chat")">
                     @(_chatCollapsed ? "◀" : "▶")

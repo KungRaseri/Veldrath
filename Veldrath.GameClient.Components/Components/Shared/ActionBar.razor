@@ -2,14 +2,14 @@
     and a hotbar row with ability quick-slot buttons. *@
 @using MudBlazor
 
-<div class="action-bar-wrapper">
+<div class="action-bar-wrapper d-flex flex-column align-center gap-2">
     @* Hotbar ability quick-slot buttons row *@
     @if (ShowHotbar)
     {
-        <div class="hotbar">
+        <div class="hotbar d-flex gap-1 align-center">
             @foreach (var slot in HotbarSlots)
             {
-                <button class="hotbar-slot @slot.CssClass"
+                <button class="hotbar-slot d-flex flex-column align-center justify-center @slot.CssClass"
                         @onclick="() => OnUseAbility.InvokeAsync(slot.AbilityId)"
                         disabled="@(slot.IsEmpty || !slot.IsAvailable)"
                         title="@(slot.Name ?? $"Slot {slot.SlotNumber}")">
@@ -34,7 +34,7 @@
     }
 
     @* Context-sensitive action buttons *@
-    <div class="action-bar">
+    <div class="action-bar d-flex gap-2 align-center">
         @if (ShowAttack)
         {
             <MudButton Variant="Variant.Filled"

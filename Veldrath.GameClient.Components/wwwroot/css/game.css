@@ -25,7 +25,9 @@
   min-height: 0;
 }
 
-/* ── Sidebar (Left) ────────────────────────────────────────────────────── */
+/* ── Sidebar (Left) ──────────────────────────────────────────────────────
+   display: flex, flex-direction: column, overflow-y: auto, overflow-x: hidden,
+   flex-shrink: 0 migrated to MudBlazor utilities in Razor markup. */
 
 .game-sidebar {
   width: 260px;
@@ -33,15 +35,10 @@
   max-width: 260px;
   background: var(--vds-bg-1, #14151f);
   border-right: 1px solid var(--vds-border, #2a2b3d);
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
   position: relative;
   transition:
     width 0.2s ease,
     max-width 0.2s ease;
-  flex-shrink: 0;
 }
 
 .game-sidebar.sidebar-collapsed {
@@ -51,10 +48,11 @@
   overflow: hidden;
 }
 
+/* align-self: flex-end, flex-shrink: 0 migrated to MudBlazor utilities
+   in Razor markup. */
 .sidebar-toggle {
   position: sticky;
   top: 4px;
-  align-self: flex-end;
   z-index: 5;
   background: var(--vds-bg-2, #1a1b2e);
   border: 1px solid var(--vds-border, #2a2b3d);
@@ -65,7 +63,6 @@
   border-radius: 4px;
   line-height: 1;
   margin: 4px;
-  flex-shrink: 0;
 }
 
 .sidebar-toggle:hover {
@@ -177,11 +174,10 @@
 }
 
 /* ── Status Bars ─────────────────────────────────────────────────────── */
+/*   MudBlazor migration: display:flex → d-flex, align-items:center → align-center,
+     gap:8px → gap-2 applied in StatusBar.razor markup. */
 
 .status-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--vds-space-2, 8px);
   font-size: var(--vds-text-xs, 11px);
   font-family: var(--vds-font-mono, "JetBrains Mono", monospace);
 }
@@ -195,12 +191,13 @@
   font-size: 10px;
 }
 
+/*   MudBlazor migration: overflow:hidden → overflow-hidden applied in StatusBar.razor markup. */
+
 .status-bar-track {
   flex: 1;
   height: 10px;
   background: var(--vds-bg-4, #2e2f42);
   border-radius: var(--vds-radius-sm, 4px);
-  overflow: hidden;
   border: 1px solid var(--vds-border, #2a2b3d);
   min-width: 60px;
 }
@@ -279,10 +276,9 @@
   color: var(--vds-seal-light, #e05545);
 }
 
+/* display: flex, flex-direction: column, gap migrated to MudBlazor utilities
+   (d-flex flex-column gap-2) in Razor markup. */
 .sidebar-actions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--vds-space-2, 8px);
   padding-top: var(--vds-space-4, 16px);
 }
 
@@ -490,11 +486,8 @@
 /* ── Chat ────────────────────────────────────────────────────────────── */
 
 .game-chat {
-  display: flex;
-  flex-direction: column;
   background: var(--vds-tile-void, #0d0d1a);
   border-top: 1px solid var(--vds-border, #2a2b3d);
-  flex-shrink: 0;
   max-height: 260px;
   min-height: 140px;
 }
@@ -546,11 +539,7 @@
 /* ── Chat Messages ──────────────────────────────────────────────────── */
 
 .game-chat-messages {
-  flex: 1;
-  overflow-y: auto;
   padding: var(--vds-space-2, 8px) var(--vds-space-3, 12px);
-  display: flex;
-  flex-direction: column;
   gap: 2px;
   scrollbar-width: thin;
   scrollbar-color: var(--vds-bg-4, #2e2f42) transparent;
@@ -561,9 +550,6 @@
   font-size: var(--vds-text-xs, 11px);
   line-height: 1.5;
   color: var(--vds-text, #f0ede8);
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
   padding: 1px 0;
 }
 
@@ -638,7 +624,6 @@
 }
 
 .game-chat-input-field {
-  flex: 1;
   background: var(--vds-bg-2, #1c1d2b);
   border: 1px solid var(--vds-border, #2a2b3d);
   border-radius: var(--vds-radius-md, 6px);
@@ -747,14 +732,12 @@
 /* .game-combat-actions — replaced by MudBlazor utilities */
 /* .game-combat-actions .action-bar gap kept by inline style if needed */
 
+/*   MudBlazor migration: display:flex → d-flex, flex-direction:column → flex-column,
+     align-items:center → align-center, justify-content:center → justify-center,
+     gap:16px → gap-4 applied in GameCombat.razor markup. */
 .game-combat-victory {
   position: fixed;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--vds-space-4, 16px);
   background: rgba(0, 0, 0, 0.75);
   z-index: 50;
   animation: fade-in 0.3s ease;
@@ -768,11 +751,10 @@
   margin: 0;
 }
 
+/*   MudBlazor migration: flex:1 → flex-1, display:flex → d-flex,
+     align-items:center → align-center, justify-content:center → justify-center
+     applied in GameCombat.razor markup. */
 .game-combat-empty {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   color: var(--vds-text-subtle, #6e6860);
   font-style: italic;
 }
@@ -1059,11 +1041,10 @@
 }
 
 /* ── Action Bar ──────────────────────────────────────────────────────── */
+/*   MudBlazor migration: display:flex → d-flex, gap:8px → gap-2,
+     align-items:center → align-center applied in ActionBar.razor markup. */
 
 .action-bar {
-  display: flex;
-  gap: var(--vds-space-2, 8px);
-  align-items: center;
 }
 
 .action-btn {
@@ -1593,27 +1574,24 @@
 }
 
 /* ── Hotbar Ability Quick-Slots ──────────────────────────────────────── */
+/*   MudBlazor migration: display:flex → d-flex, flex-direction:column → flex-column,
+     align-items:center → align-center, gap:8px → gap-2, gap:4px → gap-1
+     applied in ActionBar.razor markup. */
 
 .action-bar-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--vds-space-2, 8px);
 }
 
 .hotbar {
-  display: flex;
-  gap: 4px;
-  align-items: center;
 }
+
+/*   MudBlazor migration: display:flex → d-flex, flex-direction:column → flex-column,
+     align-items:center → align-center, justify-content:center → justify-center
+     applied in ActionBar.razor markup. gap:1px has no MudBlazor utility (4px step);
+     kept in CSS. */
 
 .hotbar-slot {
   width: 48px;
   height: 48px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   border: 1px solid var(--vds-border, #2a2b3d);
   border-radius: var(--vds-radius-md, 6px);
   background: var(--vds-bg-3, #262736);
@@ -2347,12 +2325,8 @@
   width: 280px;
   min-width: 0;
   max-width: 280px;
-  flex-shrink: 0;
   background: var(--vds-bg-1, #14151f);
   border-left: 1px solid var(--vds-border, #2a2b3d);
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
   position: relative;
   transition:
     width 0.2s ease,
