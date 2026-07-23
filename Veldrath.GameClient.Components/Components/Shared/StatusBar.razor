@@ -1,8 +1,8 @@
 @* Reusable health/mana/XP bar component. *@
 
-<div class="status-bar">
+<div class="status-bar d-flex align-center gap-2">
     <span class="status-bar-label">@Label</span>
-    <div class="status-bar-track">
+    <div class="status-bar-track flex-1 overflow-hidden">
         <div class="status-bar-fill"
              style="width: @(Percentage)%; background-color: @Color;"
              role="progressbar"

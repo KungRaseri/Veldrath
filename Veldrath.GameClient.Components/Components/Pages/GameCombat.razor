@@ -34,7 +34,7 @@
 
         @if (_showVictory)
         {
-            <div class="game-combat-victory">
+            <div class="game-combat-victory d-flex flex-column align-center justify-center gap-4">
                 <h2>Victory!</h2>
                 <MudButton Variant="Variant.Filled"
                            Color="Color.Primary"
@@ -47,7 +47,7 @@
 }
 else
 {
-    <div class="game-combat-empty">
+    <div class="game-combat-empty flex-1 d-flex align-center justify-center">
         <p>No enemy engaged.</p>
     </div>
 }
