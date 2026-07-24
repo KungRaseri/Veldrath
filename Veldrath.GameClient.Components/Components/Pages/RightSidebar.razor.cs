@@ -42,9 +42,6 @@ public record ChannelMessage(
 /// </summary>
 public partial class RightSidebar : INotifyPropertyChanged
 {
-    /// <summary>Callback invoked when the player wants to open an overlay panel.</summary>
-    [Parameter] public EventCallback<GameOverlay.OverlayKind> OnOpenOverlay { get; set; }
-
     /// <summary>
     /// Gets or sets the main content rendered between the left and right sidebars.
     /// Must be provided by the parent page (e.g., <see cref="Game"/> wraps its

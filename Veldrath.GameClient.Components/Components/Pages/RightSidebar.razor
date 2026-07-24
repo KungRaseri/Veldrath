@@ -8,10 +8,8 @@
 @inject IGameApiClient Api
 
 @* ── RIGHT SIDEBAR: Chat ── *@
-<MudDrawer Open="true" Anchor="Anchor.Right" Elevation="1" Variant="DrawerVariant.Responsive">
-    <MudDrawerHeader>
-        <MudText Typo="Typo.h6">Chat</MudText>
-    </MudDrawerHeader>
+<MudNavMenu Class="d-flex">
+    <MudText Typo="Typo.h6">Chat</MudText>
     <MudTabs>
         @foreach (var channel in ChannelNames)
         {
@@ -45,4 +43,4 @@
             @(IsWhisperActive ? "Whisper" : "Send")
         </MudButton>
     </div>
-</MudDrawer>
+</MudNavMenu>
