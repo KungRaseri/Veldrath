@@ -325,6 +325,8 @@ try
     builder.Services.AddScoped<IRegionRepository, RegionRepository>();
     builder.Services.AddScoped<IWorldRepository, WorldRepository>();
     builder.Services.AddSingleton<IActiveCharacterTracker, ActiveCharacterTracker>();
+    builder.Services.Configure<Veldrath.Server.Settings.ActiveCharacterTrackerOptions>(
+        builder.Configuration.GetSection("ActiveCharacterTracker"));
     builder.Services.AddSingleton<ICharacterCreationSessionStore, InMemoryCharacterCreationSessionStore>();
     builder.Services.AddSingleton<IZoneEntityTracker, ZoneEntityTracker>();
     builder.Services.AddSingleton<RealmEngine.Shared.Abstractions.ITileMapRepository>(sp => new RealmEngine.Data.Repositories.CompositeITileMapRepository(

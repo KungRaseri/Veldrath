@@ -60,6 +60,7 @@
     private IDisposable? _hubStateSubscription;
     private bool _hubConnected;
     private bool _isRestoringSession;
+    private CancellationTokenSource? _claimRetryCts;
     private bool _showOverlay;
     private GameOverlay.OverlayKind _activeOverlay;
     private ILogger<Game> _logger = null!;
@@ -176,6 +177,75 @@
         }
     }
 
+    /// <summary>
+    /// Attempts to reclaim a character by sending <c>SelectCharacter</c> to the hub
+    /// with a polling retry loop that covers the server's 30-second grace period.
+    /// Returns <c>true</c> when the <c>CharacterSelected</c> hub handler has populated
+    /// <see cref="IGameStateService.CurrentCharacterId"/>; <c>false</c> if all
+    /// retries are exhausted or the operation is cancelled.
+    /// </summary>
+    /// <param name="characterId">The character ID to reclaim.</param>
+    /// <param name="ct">Cancellation token tied to the retry lifecycle.</param>
+    /// <returns><c>true</c> if the character was reclaimed successfully; <c>false</c> otherwise.</returns>
+    private async Task<bool> ReclaimCharacterAsync(Guid characterId, CancellationToken ct)
+    {
+        // Retry delays: 3s, 6s, 10s, 15s — total ~34s to cover the 30s grace period.
+        int[] retryDelays = [3000, 6000, 10000, 15000];
+
+        for (int attempt = 0; attempt < retryDelays.Length; attempt++)
+        {
+            if (ct.IsCancellationRequested)
+                return false;
+
+            Logger.LogInformation(
+                "ReclaimCharacterAsync attempt {Attempt}/{Max} for character {CharId}...",
+                attempt + 1, retryDelays.Length, characterId);
+
+            try
+            {
+                await Hub.SendAsync("SelectCharacter", characterId);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "SelectCharacter send failed on attempt {Attempt} for {CharId}", attempt + 1, characterId);
+                // Network-level error — not retryable in this loop; let caller decide.
+                return false;
+            }
+
+            // Wait for the backoff period to give the server time to respond.
+            // The CharacterSelected or CharacterAlreadyActive hub callback may fire
+            // during this window.
+            try
+            {
+                await Task.Delay(retryDelays[attempt], ct);
+            }
+            catch (OperationCanceledException)
+            {
+                Logger.LogInformation("ReclaimCharacterAsync cancelled for {CharId}.", characterId);
+                return false;
+            }
+
+            // Check whether CharacterSelected handler has populated the state.
+            if (GameState.CurrentCharacterId == characterId.ToString())
+            {
+                Logger.LogInformation(
+                    "Character {CharId} successfully reclaimed on attempt {Attempt}.",
+                    characterId, attempt + 1);
+                GameState.ApplySystemMessage("Session restored successfully.");
+                return true;
+            }
+
+            Logger.LogInformation(
+                "Character {CharId} not yet reclaimed after attempt {Attempt}/{Max} — will retry.",
+                characterId, attempt + 1, retryDelays.Length);
+        }
+
+        Logger.LogWarning(
+            "Failed to reclaim character {CharId} after {Max} attempts — grace period may have expired or character is stuck.",
+            characterId, retryDelays.Length);
+        return false;
+    }
+
     private async Task EnterZoneAfterConnectAsync()
     {
         if (GameState.ZoneTileMap is not null)
@@ -188,18 +258,20 @@
             Logger.LogInformation(
                 "No zone ID known yet — re-selecting character to obtain zone info.");
 
-            try
+            var charId = GameState.CurrentCharacterId;
+            if (charId is not null && Guid.TryParse(charId, out var guid))
             {
-                var charId = GameState.CurrentCharacterId;
-                if (charId is not null && Guid.TryParse(charId, out var guid))
+                // Cancel any in-flight claim retry and start a fresh one.
+                _claimRetryCts?.Cancel();
+                _claimRetryCts?.Dispose();
+                _claimRetryCts = new CancellationTokenSource();
+
+                var reclaimed = await ReclaimCharacterAsync(guid, _claimRetryCts.Token);
+                if (!reclaimed)
                 {
-                    await Hub.SendAsync("SelectCharacter", guid);
+                    Logger.LogWarning("Failed to reclaim character {CharId} during reconnection.", guid);
+                    GameState.ApplySystemMessage("Failed to restore game session after reconnection.");
                 }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Failed to re-select character after connecting.");
-                GameState.ApplySystemMessage("Failed to restore game session.");
             }
             return;
         }
@@ -224,7 +296,8 @@
     }
 
     /// <summary>
-    /// Queries the server for the account's last active session and restores it.
+    /// Queries the server for the account's last active session and restores it
+    /// using a polling retry loop that covers the server's 30-second claim grace period.
     /// Called on a fresh circuit (after page refresh) where no character is selected.
     /// On success, the existing <c>CharacterSelected</c> hub handler populates
     /// <see cref="IGameStateService"/> and auto-enters the zone.
@@ -245,10 +318,19 @@
                 return;
             }
 
-            // Call SelectCharacter on the hub. The existing CharacterSelected
-            // handler already handles the response: it calls GameState.ApplyCharacterSelected
-            // and auto-enters the zone if CurrentZoneId is set.
-            await Hub.SendAsync("SelectCharacter", session.CharacterId);
+            // Cancel any in-flight claim retry and start a fresh one.
+            _claimRetryCts?.Cancel();
+            _claimRetryCts?.Dispose();
+            _claimRetryCts = new CancellationTokenSource();
+
+            var reclaimed = await ReclaimCharacterAsync(session.CharacterId, _claimRetryCts.Token);
+
+            if (!reclaimed)
+            {
+                Logger.LogWarning("Unable to reclaim character {CharId} after all retries.", session.CharacterId);
+                GameState.ApplySystemMessage("Unable to reconnect to your character. Please select a character manually.");
+                Navigation.NavigateTo("/Game/CharacterSelect");
+            }
         }
         catch (Exception ex)
         {
@@ -259,6 +341,7 @@
         finally
         {
             _isRestoringSession = false;
+            StateHasChanged();
         }
     }
 
@@ -306,35 +389,25 @@
         // ── Handle CharacterAlreadyActive during session restore ──
         // Sent by GameHub.SelectCharacter when TryClaim fails because the
         // character is still claimed (within the 30-second grace period).
+        // The actual retry logic lives in ReclaimCharacterAsync; this handler
+        // only logs when a retry loop is active, or shows a fallback error if not.
         _hubSubscriptions.Add(Hub.On<Guid>("CharacterAlreadyActive", async characterId =>
         {
-            if (!_isRestoringSession)
+            // If a claim retry loop is active, the loop handles retries — just log.
+            if (_claimRetryCts is not null && !_claimRetryCts.IsCancellationRequested)
             {
-                // Not in restore flow — show error as before.
-                GameState.ApplySystemMessage("This character is already active in another session.");
-                await InvokeAsync(StateHasChanged);
+                Logger.LogInformation(
+                    "Character {CharId} is still claimed by old circuit — retry loop will continue.",
+                    characterId);
                 return;
             }
 
-            // We're restoring — the old circuit's claim hasn't expired yet.
-            // Wait a few seconds and retry.
-            Logger.LogInformation(
-                "Character {CharId} is still claimed by old circuit; retrying in 3s...",
+            // No active retry loop — show generic error as fallback.
+            Logger.LogWarning(
+                "CharacterAlreadyActive received for {CharId} with no active retry loop.",
                 characterId);
-
-            await Task.Delay(3000);
-
-            try
-            {
-                // Retry SelectCharacter — the grace period may have expired by now.
-                await Hub.SendAsync("SelectCharacter", characterId);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Retry SelectCharacter failed for {CharId}", characterId);
-                GameState.ApplySystemMessage("Failed to reclaim your character. Please select a character manually.");
-                Navigation.NavigateTo("/Game/CharacterSelect");
-            }
+            GameState.ApplySystemMessage("This character is already active in another session.");
+            await InvokeAsync(StateHasChanged);
         }));
 
         _hubSubscriptions.Add(Hub.On<ZoneEnteredPayload>("ZoneEntered", async payload =>
@@ -711,6 +784,10 @@ payload =>
     public override async ValueTask DisposeAsync()
     {
         await base.DisposeAsync();
+
+        _claimRetryCts?.Cancel();
+        _claimRetryCts?.Dispose();
+
         _stateSubscription?.Dispose();
         _hubStateSubscription?.Dispose();
 
