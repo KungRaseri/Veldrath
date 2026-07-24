@@ -103,6 +103,7 @@
   --vds-content-max: 1200px;
   --vds-sidebar-w:   220px;
   --vds-topbar-h:    48px;
+  --vds-game-footer-h: 44px;
 }
 
 /* Base element styles needed by the game UI (mirrors app.css essentials). */
