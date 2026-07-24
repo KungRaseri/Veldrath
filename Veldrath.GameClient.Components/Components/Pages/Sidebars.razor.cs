@@ -58,17 +58,6 @@ public partial class Sidebars : INotifyPropertyChanged
     private IDisposable? _stateSubscription;
     private IDisposable? _chatMessageSubscription;
     private bool _disposed;
-    private bool _isLeftSidebarOpen, _isRightSidebarOpen = true;
-
-    private void ToggleLeftSidebar()
-    {
-        _isLeftSidebarOpen = !_isLeftSidebarOpen;
-    }
-
-    private void ToggleRightSidebar()
-    {
-        _isRightSidebarOpen = !_isRightSidebarOpen;
-    }
 
     /// <summary>G68: Sends the VisitShop hub command to open the merchant interface.</summary>
     private async Task VisitShopAsync()

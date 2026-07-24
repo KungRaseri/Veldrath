@@ -1,28 +1,36 @@
 @using Veldrath.GameClient.Core.Abstractions
 @using Microsoft.Extensions.Logging
 @using MudBlazor
-@* Sidebar panel showing player info, stats, zone occupants/enemies, and navigation buttons. *@
+@* Combined sidebar component: left drawer (navigation/actions) and right drawer (chat).
+   The MudDrawerContainer wraps both drawers and the main content (passed via ChildContent). *@
 @inject NavigationManager Navigation
 @inject ILogger<Sidebars> Logger
 @inject IGameApiClient Api
 
 <MudDrawerContainer>
-    <MudDrawer @bind-Open="@_isLeftSidebarOpen" Anchor="Anchor.Left">
-        <MudNavLink OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.CharacterSheet)">
-            👤 Character Sheet
+    @* ── LEFT SIDEBAR: Navigation, zone info, game actions ── *@
+    <MudDrawer Anchor="Anchor.Left" Elevation="1" Variant="DrawerVariant.Responsive">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">Navigation</MudText>
+        </MudDrawerHeader>
+        <MudNavLink Icon="@Icons.Material.Filled.Person"
+                    OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.CharacterSheet)">
+            Character Sheet
         </MudNavLink>
-        <MudNavLink OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Inventory)">
-            🎒 Inventory
+        <MudNavLink Icon="@Icons.Material.Filled.Inventory"
+                    OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Inventory)">
+            Inventory
         </MudNavLink>
-        <MudNavLink Href="/Game/Map">
-            🗺 Map
+        <MudNavLink Icon="@Icons.Material.Filled.Map" Href="/Game/Map">
+            Map
         </MudNavLink>
-        <MudNavLink OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Journal)">
-            📜 Journal
+        <MudNavLink Icon="@Icons.Material.Filled.CollectionsBookmark"
+                    OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Journal)">
+            Journal
         </MudNavLink>
         <div class="sidebar-section sidebar-occupants">
             <h4>Nearby Players (@(!string.IsNullOrEmpty(GameState.CurrentZoneId) ?
-                                                                                                                                                                GameState.ZoneOccupants.Count.ToString() : "0"))</h4>
+                                                                                                                                                                                                                                                                                GameState.ZoneOccupants.Count.ToString() : "0"))</h4>
                 @if (GameState.ZoneOccupants.Count == 0)
                 {
                     <p class="sidebar-empty">No other players nearby.</p>
@@ -73,7 +81,7 @@
                                 }
                                 <MudButton Variant="Variant.Text" Size="Size.Small"
                                            OnClick="() => NavigateToLocationAsync(loc.Slug)" Disabled="@(!Hub.IsConnected || isHere)"
-                                           Class="@(isHere ? "sidebar-nav-btn" : "sidebar-nav-btn")"
+                                           Class="sidebar-nav-btn"
                                            title="@(isHere ? "You are here" : $"Fast travel to {loc.DisplayName}")">
                                     📍 @loc.DisplayName @(isHere ? "(here)" : "")
                                 </MudButton>
@@ -146,7 +154,12 @@
                 </MudButton>
             </div>
         </MudDrawer>
-        <MudDrawer @bind-Open="@_isRightSidebarOpen"  Anchor="Anchor.Right">
+
+        @* ── RIGHT SIDEBAR: Chat ── *@
+        <MudDrawer Anchor="Anchor.Right" Elevation="1" Variant="DrawerVariant.Responsive">
+            <MudDrawerHeader>
+                <MudText Typo="Typo.h6">Chat</MudText>
+            </MudDrawerHeader>
             <div class="game-chat-pills d-flex gap-0 flex-shrink-0">
                 @foreach (var channel in ChannelNames)
                 {
