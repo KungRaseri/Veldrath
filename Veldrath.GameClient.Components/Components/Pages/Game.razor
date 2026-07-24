@@ -10,46 +10,46 @@
 @inject IGameApiClient Api
 @inject IConfiguration Configuration
 
-<CascadingValue Value="GameState">
-    <GameHeader />
+<MudLayout>
+    <CascadingValue Value="GameState">
+        <GameHeader />
 
-    <Sidebars OnOpenOverlay="HandleOpenOverlay" />
+        <LeftSidebar OnOpenOverlay="HandleOpenOverlay" />
 
-    @* <MudContainer>
-        @if (_isRestoringSession)
-        {
-            <div>
-                <p>Restoring your game session...</p>
-                <div class="spinner"></div>
-            </div>
-        }
-        else if (GameState.IsInCombat)
-        {
-            <GameCombat />
-        }
-        else if (GameState.ZoneTileMap is not null)
-        {
-            <GameTilemap />
-            @if (GameState.IsAtLocation)
+        <MudContainer>
+            @if (_isRestoringSession)
             {
-                <ZoneLocationPanel />
+                <div>
+                    <p>Restoring your game session...</p>
+                    <div class="spinner"></div>
+                </div>
             }
-        }
-        else
-        {
-            <div>
-                <p>Loading zone...</p>
-                <div class="spinner"></div>
-            </div>
-        }
-    </MudContainer> *@
+            else if (GameState.IsInCombat)
+            {
+                <GameCombat />
+            }
+            else if (GameState.ZoneTileMap is not null)
+            {
+                <GameTilemap />
+                @if (GameState.IsAtLocation)
+                {
+                    <ZoneLocationPanel />
+                }
+            }
+            else
+            {
+                <div>
+                    <p>Loading zone...</p>
+                    <div class="spinner"></div>
+                </div>
+            }
+        </MudContainer>
+        <RightSidebar OnOpenOverlay="HandleOpenOverlay" />
 
-    <GameFooter />
-    <GameOverlay Visible="_showOverlay" OverlayType="_activeOverlay" OnClose="HandleCloseOverlay" />
-</CascadingValue>
-
-@* <div class="d-flex flex-column overflow-hidden flex-1">
-</div> *@
+        <GameFooter />
+        <GameOverlay Visible="_showOverlay" OverlayType="_activeOverlay" OnClose="HandleCloseOverlay" />
+    </CascadingValue>
+</MudLayout>
 
 @* Reconnect overlay shown when the SignalR circuit drops during gameplay.
     OnReconnected triggers session restoration via the hub state subscription. *@

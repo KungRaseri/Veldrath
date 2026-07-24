@@ -2,7 +2,7 @@
     and embedded ActionBar component. The reconnecting banner is shown above the footer
     when the hub connection enters the Reconnecting state. *@
 
-<div class="game-footer d-flex align-items-center gap-3 px-4 py-2 position-fixed">
+<MudDrawer Open="true" Anchor="Anchor.Bottom" Elevation="1" Variant="DrawerVariant.Responsive">
     @* Reconnecting banner (absolute positioned above footer) *@
     @if (ShowReconnectingBanner)
     {
@@ -30,16 +30,12 @@
     <div class="game-footer-center flex-1 d-flex justify-center">
         @if (GameState.IsInCombat)
         {
-            <ActionBar ShowAttack="true"
-                       ShowDefend="true"
-                       ShowFlee="true"
+            <ActionBar ShowAttack="true" ShowDefend="true" ShowFlee="true"
                        ShowRespawn="GameState.CurrentCharacter.IsDead" />
         }
         else
         {
-            <ActionBar ShowSearch="!GameState.IsInCombat"
-                       ShowRest="GameState.CurrentZone.HasInn"
-                       OnSearch="SearchAsync"
+            <ActionBar ShowSearch="!GameState.IsInCombat" ShowRest="GameState.CurrentZone.HasInn" OnSearch="SearchAsync"
                        OnRest="RestAsync" />
         }
     </div>
@@ -55,7 +51,8 @@
         }
         @if (!string.IsNullOrEmpty(GameState.ServerConnectionId))
         {
-            <span class="game-footer-connid" title="Connection ID">#@GameState.ServerConnectionId[..Math.Min(8, GameState.ServerConnectionId.Length)]</span>
-        }
-    </div>
-</div>
+            <span class="game-footer-connid" title="Connection ID">#@GameState.ServerConnectionId[..Math.Min(8,
+                                                            GameState.ServerConnectionId.Length)]</span>
+            }
+        </div>
+    </MudDrawer>
