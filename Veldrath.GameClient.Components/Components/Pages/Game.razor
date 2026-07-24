@@ -13,35 +13,37 @@
 <CascadingValue Value="GameState">
     <GameHeader />
 
-    <Sidebars OnOpenOverlay="HandleOpenOverlay" />
-    <MudContainer Gutters="false" Fixed="true">
-        @if (_isRestoringSession)
-        {
-            <div class="game-loading-zone">
-                <p>Restoring your game session...</p>
-                <div class="spinner"></div>
-            </div>
-        }
-        else if (GameState.IsInCombat)
-        {
-            <GameCombat />
-        }
-        else if (GameState.ZoneTileMap is not null)
-        {
-            <GameTilemap />
-            @if (GameState.IsAtLocation)
+    <MudDrawerContainer Class="mud-height-full">
+        <Sidebars OnOpenOverlay="HandleOpenOverlay" />
+        <MudContainer Gutters="false" Class="d-flex justify-center align-center mud-height-full">
+            @if (_isRestoringSession)
             {
-                <ZoneLocationPanel />
+                <div class="game-loading-zone">
+                    <p>Restoring your game session...</p>
+                    <div class="spinner"></div>
+                </div>
             }
-        }
-        else
-        {
-            <div class="game-loading-zone">
-                <p>Loading zone...</p>
-                <div class="spinner"></div>
-            </div>
-        }
-    </MudContainer>
+            else if (GameState.IsInCombat)
+            {
+                <GameCombat />
+            }
+            else if (GameState.ZoneTileMap is not null)
+            {
+                <GameTilemap />
+                @if (GameState.IsAtLocation)
+                {
+                    <ZoneLocationPanel />
+                }
+            }
+            else
+            {
+                <div class="game-loading-zone">
+                    <p>Loading zone...</p>
+                    <div class="spinner"></div>
+                </div>
+            }
+        </MudContainer>
+    </MudDrawerContainer>
 
     <GameFooter />
     <GameOverlay Visible="_showOverlay" OverlayType="_activeOverlay" OnClose="HandleCloseOverlay" />
