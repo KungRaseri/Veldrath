@@ -14,8 +14,7 @@
     <GameHeader />
 
     <Sidebars OnOpenOverlay="HandleOpenOverlay" />
-
-    <MudContainer>
+    <MudContainer Gutters="false" Fixed="true">
         @if (_isRestoringSession)
         {
             <div class="game-loading-zone">
