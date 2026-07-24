@@ -58,8 +58,9 @@
                 <MudList T="string">
                     @foreach (var enemy in GameState.ZoneEnemies)
                     {
-                        <MudListItem Text="@enemy.EnemyName (Lv. @enemy.Level)"
-                                     SecondaryText="HP: @enemy.CurrentHealth/@enemy.MaxHealth" />
+                        <MudListItem Text="@($"{enemy.EnemyName}")">
+                            @enemy.EnemyName (Lv. @enemy.Level) — HP: @enemy.CurrentHealth/@enemy.MaxHealth
+                        </MudListItem>
                     }
                 </MudList>
             }
