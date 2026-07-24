@@ -6,7 +6,7 @@
 @inject IGameApiClient Api
 
 @* ── LEFT SIDEBAR: Navigation, zone info, game actions ── *@
-<MudNavMenu class="d-flex">
+<MudNavMenu>
     <MudText Typo="Typo.h6">Navigation</MudText>
     <MudNavLink Icon="@Icons.Material.Filled.Person"
                 OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.CharacterSheet)">
@@ -24,53 +24,56 @@
         Journal
     </MudNavLink>
     <MudDivider />
-    <MudText>
-        Nearby Players (@(!string.IsNullOrEmpty(GameState.CurrentZoneId) ? GameState.ZoneOccupants.Count.ToString() :
-         "0"))
-    </MudText>
-    <div class="sidebar-section sidebar-occupants">
 
-        @if (GameState.ZoneOccupants.Count == 0)
-        {
-            <p class="sidebar-empty">No other players nearby.</p>
-        }
-        else
-        {
-            <ul class="sidebar-list">
-                @foreach (var occupant in GameState.ZoneOccupants)
-                {
-                    <li class="sidebar-list-item" title="@($"Entered {occupant.EnteredAt.ToLocalTime():g}")">
-                        @occupant.CharacterName
-                    </li>
-                }
-            </ul>
-        }
-    </div>
+    <MudStack>
+        <MudPaper Class="pa-3">
+            <MudText Typo="Typo.h6">
+                Nearby Players (@GameState.ZoneOccupants.Count)
+            </MudText>
+            @if (GameState.ZoneOccupants.Count == 0)
+            {
+                <MudText>No other players nearby.</MudText>
+            }
+            else
+            {
+                <MudList T="string">
+                    @foreach (var occupant in GameState.ZoneOccupants)
+                    {
+                        <MudListItem Text="@occupant.CharacterName"
+                                     SecondaryText="@($"Entered {occupant.EnteredAt.ToLocalTime():g}")" />
+                    }
+                </MudList>
+            }
+        </MudPaper>
+        <MudPaper Class="pa-3">
+            <MudText Typo="Typo.h6">
+                Nearby Enemies (@GameState.ZoneEnemies.Count)
+            </MudText>
+            @if (GameState.ZoneEnemies.Count == 0)
+            {
+                <MudText>No enemies nearby.</MudText>
+            }
+            else
+            {
+                <MudList T="string">
+                    @foreach (var enemy in GameState.ZoneEnemies)
+                    {
+                        <MudListItem Text="@enemy.EnemyName (Lv. @enemy.Level)"
+                                     SecondaryText="HP: @enemy.CurrentHealth/@enemy.MaxHealth" />
+                    }
+                </MudList>
+            }
+        </MudPaper>
 
-    <div class="sidebar-section sidebar-enemies">
-        <h4>Nearby Enemies (@GameState.ZoneEnemies.Count)</h4>
-        @if (GameState.ZoneEnemies.Count == 0)
-        {
-            <p class="sidebar-empty">No enemies nearby.</p>
-        }
-        else
-        {
-            <ul class="sidebar-list">
-                @foreach (var enemy in GameState.ZoneEnemies)
-                {
-                    <li class="sidebar-list-item">
-                        @enemy.EnemyName (Lv. @enemy.Level) — HP: @enemy.CurrentHealth/@enemy.MaxHealth
-                    </li>
-                }
-            </ul>
-        }
-    </div>
+    </MudStack>
 
     @* Known Locations — discovered locations for fast travel *@
     @if (GameState.KnownLocations.Count > 0)
     {
         <div class="sidebar-section sidebar-known-locations">
-            <h4>Known Locations (@GameState.KnownLocations.Count)</h4>
+            <MudText Typo="Typo.h6">
+                Known Locations (@GameState.KnownLocations.Count)
+            </MudText>
             <ul class="sidebar-list">
                 @foreach (var loc in GameState.KnownLocations)
                 {
@@ -93,7 +96,9 @@
     @if (GameState.CurrentLocationConnections.Count > 0)
     {
         <div class="sidebar-section sidebar-navigation">
-            <h4>Locations (@GameState.CurrentLocationConnections.Count)</h4>
+            <MudText Typo="Typo.h6">
+                Locations (@GameState.CurrentLocationConnections.Count)
+            </MudText>
             <ul class="sidebar-list">
                 @foreach (var conn in GameState.CurrentLocationConnections)
                 {
