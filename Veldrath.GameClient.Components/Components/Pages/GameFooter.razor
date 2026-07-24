@@ -2,7 +2,7 @@
     and embedded ActionBar component. The reconnecting banner is shown above the footer
     when the hub connection enters the Reconnecting state. *@
 
-<MudDrawer Open="true" Anchor="Anchor.Bottom" Elevation="1" Variant="DrawerVariant.Responsive">
+<MudAppBar Bottom="true" Fixed="true">
     @* Reconnecting banner (absolute positioned above footer) *@
     @if (ShowReconnectingBanner)
     {
@@ -52,7 +52,7 @@
         @if (!string.IsNullOrEmpty(GameState.ServerConnectionId))
         {
             <span class="game-footer-connid" title="Connection ID">#@GameState.ServerConnectionId[..Math.Min(8,
-                                                            GameState.ServerConnectionId.Length)]</span>
+                                                                                            GameState.ServerConnectionId.Length)]</span>
             }
         </div>
-    </MudDrawer>
+    </MudAppBar>
