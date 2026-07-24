@@ -13,37 +13,36 @@
 <CascadingValue Value="GameState">
     <GameHeader />
 
-    <MudDrawerContainer Class="mud-height-full">
-        <Sidebars OnOpenOverlay="HandleOpenOverlay" />
-        <MudContainer Gutters="false" Class="d-flex justify-center align-center mud-height-full">
-            @if (_isRestoringSession)
+    <Sidebars OnOpenOverlay="HandleOpenOverlay" />
+
+    @* <MudContainer>
+        @if (_isRestoringSession)
+        {
+            <div>
+                <p>Restoring your game session...</p>
+                <div class="spinner"></div>
+            </div>
+        }
+        else if (GameState.IsInCombat)
+        {
+            <GameCombat />
+        }
+        else if (GameState.ZoneTileMap is not null)
+        {
+            <GameTilemap />
+            @if (GameState.IsAtLocation)
             {
-                <div class="game-loading-zone">
-                    <p>Restoring your game session...</p>
-                    <div class="spinner"></div>
-                </div>
+                <ZoneLocationPanel />
             }
-            else if (GameState.IsInCombat)
-            {
-                <GameCombat />
-            }
-            else if (GameState.ZoneTileMap is not null)
-            {
-                <GameTilemap />
-                @if (GameState.IsAtLocation)
-                {
-                    <ZoneLocationPanel />
-                }
-            }
-            else
-            {
-                <div class="game-loading-zone">
-                    <p>Loading zone...</p>
-                    <div class="spinner"></div>
-                </div>
-            }
-        </MudContainer>
-    </MudDrawerContainer>
+        }
+        else
+        {
+            <div>
+                <p>Loading zone...</p>
+                <div class="spinner"></div>
+            </div>
+        }
+    </MudContainer> *@
 
     <GameFooter />
     <GameOverlay Visible="_showOverlay" OverlayType="_activeOverlay" OnClose="HandleCloseOverlay" />
