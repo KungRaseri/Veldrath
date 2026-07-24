@@ -203,7 +203,7 @@ public partial class Sidebars : INotifyPropertyChanged
             }
         }
     }
-
+    
     /// <summary>
     /// Gets or sets the target character name for whisper messages.
     /// Set automatically when the input starts with <c>/w</c> or <c>/whisper</c>.
