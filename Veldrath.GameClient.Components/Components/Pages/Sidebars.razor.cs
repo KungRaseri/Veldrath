@@ -45,6 +45,13 @@ public partial class Sidebars : INotifyPropertyChanged
     /// <summary>Callback invoked when the player wants to open an overlay panel.</summary>
     [Parameter] public EventCallback<GameOverlay.OverlayKind> OnOpenOverlay { get; set; }
 
+    /// <summary>
+    /// Gets or sets the main content rendered between the left and right sidebars.
+    /// Must be provided by the parent page (e.g., <see cref="Game"/> wraps its
+    /// <c>MudContainer</c> inside <c>Sidebars</c> tags).
+    /// </summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
     private string _inputText = string.Empty;
     private string _activeChannel = "Zone";
     private string? _whisperTarget;
@@ -60,7 +67,7 @@ public partial class Sidebars : INotifyPropertyChanged
 
     private void ToggleRightSidebar()
     {
-        _isLeftSidebarOpen = !_isLeftSidebarOpen;
+        _isRightSidebarOpen = !_isRightSidebarOpen;
     }
 
     /// <summary>G68: Sends the VisitShop hub command to open the merchant interface.</summary>
