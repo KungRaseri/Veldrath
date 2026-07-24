@@ -10,74 +10,50 @@
 @inject IGameApiClient Api
 @inject IConfiguration Configuration
 
-<div class="d-flex flex-column overflow-hidden" style="height: 100%; width: 100%;">
-    <CascadingValue Value="GameState">
-        <GameHeader />
+<CascadingValue Value="GameState">
+    <GameHeader />
 
-        <div class="game-main-row d-flex flex-1 overflow-hidden">
-            <div class="game-sidebar d-flex flex-column overflow-y-auto overflow-x-hidden flex-shrink-0 @(_sidebarCollapsed ? "sidebar-collapsed" : "")">
-                <button class="sidebar-toggle align-self-end flex-shrink-0" @onclick="ToggleSidebar"
-                        title="@(_sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar")">
-                    @(_sidebarCollapsed ? "▶" : "◀")
-                </button>
-                @if (!_sidebarCollapsed)
-                {
-                    <GameSidebar OnOpenOverlay="HandleOpenOverlay" />
-                }
+    <Sidebars OnOpenOverlay="HandleOpenOverlay" />
+
+    <MudContainer>
+        @if (_isRestoringSession)
+        {
+            <div class="game-loading-zone">
+                <p>Restoring your game session...</p>
+                <div class="spinner"></div>
             </div>
-
-            <div class="d-flex flex-column flex-1 overflow-hidden game-center-area">
-                @if (_isRestoringSession)
-                {
-                    <div class="game-loading-zone">
-                        <p>Restoring your game session...</p>
-                        <div class="spinner"></div>
-                    </div>
-                }
-                else if (GameState.IsInCombat)
-                {
-                    <GameCombat />
-                }
-                else if (GameState.ZoneTileMap is not null)
-                {
-                    <GameTilemap />
-                    @if (GameState.IsAtLocation)
-                    {
-                        <ZoneLocationPanel />
-                    }
-                }
-                else
-                {
-                    <div class="game-loading-zone">
-                        <p>Loading zone...</p>
-                        <div class="spinner"></div>
-                    </div>
-                }
+        }
+        else if (GameState.IsInCombat)
+        {
+            <GameCombat />
+        }
+        else if (GameState.ZoneTileMap is not null)
+        {
+            <GameTilemap />
+            @if (GameState.IsAtLocation)
+            {
+                <ZoneLocationPanel />
+            }
+        }
+        else
+        {
+            <div class="game-loading-zone">
+                <p>Loading zone...</p>
+                <div class="spinner"></div>
             </div>
+        }
+    </MudContainer>
 
-            <div class="game-chat-panel d-flex flex-column flex-shrink-0 overflow-y-auto @(_chatCollapsed ? "chat-collapsed" : "")">
-                <button class="chat-toggle" @onclick="ToggleChat"
-                        title="@(_chatCollapsed ? "Expand chat" : "Collapse chat")">
-                    @(_chatCollapsed ? "◀" : "▶")
-                </button>
-                @if (!_chatCollapsed)
-                {
-                    <GameChat />
-                }
-            </div>
-        </div>
+    <GameFooter />
+    <GameOverlay Visible="_showOverlay" OverlayType="_activeOverlay" OnClose="HandleCloseOverlay" />
+</CascadingValue>
 
-        <GameFooter />
-        <GameOverlay Visible="_showOverlay"
-                     OverlayType="_activeOverlay"
-                     OnClose="HandleCloseOverlay" />
-    </CascadingValue>
-</div>
+@* <div class="d-flex flex-column overflow-hidden flex-1">
+</div> *@
 
 @* Reconnect overlay shown when the SignalR circuit drops during gameplay.
     OnReconnected triggers session restoration via the hub state subscription. *@
-<ReconnectOverlay OnReturnToMenu="HandleReturnToMenu"
-                  OnReconnected="HandleReconnected" />
+<ReconnectOverlay OnReturnToMenu="HandleReturnToMenu" OnReconnected="HandleReconnected" />
 
 @code {
     private readonly List<IDisposable> _hubSubscriptions = [];
@@ -87,8 +63,6 @@
     private bool _isRestoringSession;
     private bool _showOverlay;
     private GameOverlay.OverlayKind _activeOverlay;
-    private bool _sidebarCollapsed;
-    private bool _chatCollapsed;
     private ILogger<Game> _logger = null!;
 
     /// <summary>Gets or sets the logger, injected by DI.</summary>
@@ -97,18 +71,6 @@
     {
         get => _logger;
         set => _logger = value;
-    }
-
-    private void ToggleSidebar()
-    {
-        _sidebarCollapsed = !_sidebarCollapsed;
-        StateHasChanged();
-    }
-
-    private void ToggleChat()
-    {
-        _chatCollapsed = !_chatCollapsed;
-        StateHasChanged();
     }
 
     /// <summary>
@@ -456,7 +418,8 @@
             await InvokeAsync(StateHasChanged);
         }));
 
-        _hubSubscriptions.Add(Hub.On<Veldrath.Contracts.Tilemap.ZoneEntitiesSnapshotPayload>("ZoneEntitiesSnapshot", async payload =>
+        _hubSubscriptions.Add(Hub.On<Veldrath.Contracts.Tilemap.ZoneEntitiesSnapshotPayload>("ZoneEntitiesSnapshot", async
+payload =>
         {
             GameState.ApplyZoneEntitiesSnapshot(payload);
             await InvokeAsync(StateHasChanged);

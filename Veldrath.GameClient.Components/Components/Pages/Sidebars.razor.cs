@@ -2,8 +2,8 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.Logging;
 using Veldrath.GameClient.Core.Abstractions;
-using Veldrath.GameClient.Core.Models;
 
 namespace Veldrath.GameClient.Components.Components.Pages;
 
@@ -37,17 +37,154 @@ public record ChannelMessage(
 }
 
 /// <summary>
-/// Code-behind for the <see cref="GameChat"/> component.
+/// Code-behind for the <see cref="Sidebars"/> component.
 /// Manages channel pill state, whisper prefix parsing, and filtered message display.
 /// </summary>
-public partial class GameChat : INotifyPropertyChanged
+public partial class Sidebars : INotifyPropertyChanged
 {
+    /// <summary>Callback invoked when the player wants to open an overlay panel.</summary>
+    [Parameter] public EventCallback<GameOverlay.OverlayKind> OnOpenOverlay { get; set; }
+
     private string _inputText = string.Empty;
     private string _activeChannel = "Zone";
     private string? _whisperTarget;
     private IDisposable? _stateSubscription;
     private IDisposable? _chatMessageSubscription;
     private bool _disposed;
+    private bool _isLeftSidebarOpen, _isRightSidebarOpen = true;
+
+    private void ToggleLeftSidebar()
+    {
+        _isLeftSidebarOpen = !_isLeftSidebarOpen;
+    }
+
+    private void ToggleRightSidebar()
+    {
+        _isLeftSidebarOpen = !_isLeftSidebarOpen;
+    }
+
+    /// <summary>G68: Sends the VisitShop hub command to open the merchant interface.</summary>
+    private async Task VisitShopAsync()
+    {
+        try
+        {
+            if (Hub.IsConnected)
+                await Hub.SendAsync("VisitShop");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to visit shop.");
+        }
+    }
+
+    /// <summary>G70: Sends the SearchArea hub command to search the current tile.</summary>
+    private async Task SearchAreaAsync()
+    {
+        try
+        {
+            if (Hub.IsConnected)
+                await Hub.SendAsync("SearchArea");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to search area.");
+        }
+    }
+
+    /// <summary>G74: Sends the ExitZone hub command to leave the current zone.</summary>
+    private async Task ExitZoneAsync()
+    {
+        try
+        {
+            if (Hub.IsConnected)
+                await Hub.SendAsync("ExitZone");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to exit zone.");
+        }
+    }
+
+    /// <summary>G75: Sends the RestAtLocation hub command to rest at an inn.</summary>
+    private async Task RestAtLocationAsync()
+    {
+        try
+        {
+            if (Hub.IsConnected)
+                await Hub.SendAsync("RestAtLocation");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to rest.");
+        }
+    }
+
+    /// <summary>G76: Sends the AllocateAttributePoints hub command with a default Strength allocation.</summary>
+    private async Task AllocateStrengthAsync()
+    {
+        try
+        {
+            if (Hub.IsConnected)
+            {
+                var allocation = new Dictionary<string, int>
+                {
+                    { "Strength", 1 },
+                };
+                await Hub.SendAsync("AllocateAttributePoints", allocation);
+                Logger.LogInformation("Allocated 1 point to Strength.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to allocate attribute points.");
+        }
+    }
+
+    /// <summary>G81: Sends the NavigateToLocation hub command to move to a zone location.</summary>
+    /// <param name="slug">The target location slug.</param>
+    private async Task NavigateToLocationAsync(string slug)
+    {
+        if (string.IsNullOrEmpty(slug))
+            return;
+
+        try
+        {
+            if (Hub.IsConnected)
+            {
+                await Hub.SendAsync("NavigateToLocation", slug);
+                Logger.LogInformation("Navigating to location: {LocationSlug}", slug);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to navigate to location {LocationSlug}.", slug);
+        }
+    }
+
+    private async Task Logout()
+    {
+        try
+        {
+            await Hub.DisconnectAsync();
+        }
+        catch
+        {
+            // Best-effort disconnect.
+        }
+
+        // Clear server-side session so the routing guard won't show "Resume" on next login.
+        try
+        {
+            await Api.DeleteLastSessionAsync();
+        }
+        catch
+        {
+            // Best-effort.
+        }
+
+        GameState.Reset();
+        Navigation.NavigateTo("/");
+    }
 
     /// <summary>
     /// Gets the list of available channel names for the pill bar.

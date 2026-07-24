@@ -6,10 +6,9 @@
 
 <MudDialogProvider />
 
-<div class="game-layout d-flex flex-column overflow-hidden position-fixed @(GameState.IsConnected ? "in-game" : "")">
+<MudContainer Fixed="true" Class="@(GameState.IsConnected ? "in-game" : "")" Gutters="false">
     @Body
-</div>
-
+</MudContainer>
 @* Desktop bridge: loaded when running inside Avalonia WebView2 *@
 @if (Navigation.BaseUri.StartsWith("http://localhost", StringComparison.OrdinalIgnoreCase))
 {

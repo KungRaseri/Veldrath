@@ -748,8 +748,13 @@
    Flex, gap, alignment, padding handled by MudBlazor utilities in markup. */
 
 .game-footer {
+  position: fixed;
   background: var(--vds-bg-2, #1c1d2b);
   border-top: 1px solid var(--vds-border, #2a2b3d);
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 15;
 }
 
 /* .game-footer-left — replaced by MudBlazor utilities */

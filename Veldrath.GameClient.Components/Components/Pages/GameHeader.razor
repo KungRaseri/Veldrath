@@ -2,46 +2,34 @@
 @using MudBlazor
 @* Top bar showing compact character info, breadcrumb, gold, zone, and system actions. *@
 
-@if (GameState.CurrentCharacterInfo is { } character)
-{
-    <div class="game-header d-flex align-items-center gap-3 px-3 py-2 flex-shrink-0" style="min-height: 44px;">
-        <div class="game-header-character d-flex align-items-center gap-2">
-            <span class="game-header-name">@character.Name</span>
-            <span class="game-header-level">Lv. @character.Level</span>
-            <span class="game-header-class">@character.ClassName</span>
-        </div>
-
-        <div class="game-header-bars d-flex align-items-center gap-2" style="min-width: 280px;">
+<MudAppBar>
+    @if (GameState.CurrentCharacterInfo is { } character)
+    {
+        <MudStack Row="true">
+            <MudText>@character.Name</MudText>
+            <MudText>Lv. @character.Level</MudText>
+            <MudText>@character.ClassName</MudText>
             <StatusBar Label="HP" Current="@character.CurrentHealth" Max="@character.MaxHealth" Color="#e53935" />
             <StatusBar Label="MP" Current="@character.CurrentMana" Max="@character.MaxMana" Color="#1e88e5" />
-        </div>
 
-        <span class="game-header-gold" title="Gold" style="white-space: nowrap;">◎ @character.Gold.ToString("N0")</span>
-
-        @if (!string.IsNullOrEmpty(GameState.CurrentZoneName))
-        {
-            <span class="game-header-zone-badge" style="white-space: nowrap;">📍 @GameState.CurrentZoneName</span>
-        }
-
-        <div class="d-flex align-items-center gap-1" style="margin-left: auto;">
-            <MudTooltip Text="Character Sheet">
-                <MudIconButton Icon="@Icons.Material.Filled.Person" Size="Size.Small" Href="/Game/Settings" />
-            </MudTooltip>
-            <MudTooltip Text="Settings">
-                <MudIconButton Icon="@Icons.Material.Filled.Settings" Size="Size.Small" Href="/Game/Settings" />
-            </MudTooltip>
-            <MudTooltip Text="Logout">
-                <MudIconButton Icon="@Icons.Material.Filled.Logout" Size="Size.Small" OnClick="HandleLogout" />
-            </MudTooltip>
-        </div>
-    </div>
-}
-else
-{
-    <div class="game-header d-flex align-items-center gap-4 px-4 py-3 flex-shrink-0" style="min-height: 44px;">
-        <span class="game-header-placeholder">No character selected</span>
-    </div>
-}
+            <MudText Color="Color.Secondary">◎ @character.Gold.ToString("N0")</MudText>
+        </MudStack>
+        <MudSpacer />
+        <MudTooltip Text="Character Sheet">
+            <MudIconButton Icon="@Icons.Material.Filled.Person" Size="Size.Small" Href="/Game/Settings" />
+        </MudTooltip>
+        <MudTooltip Text="Settings">
+            <MudIconButton Icon="@Icons.Material.Filled.Settings" Size="Size.Small" Href="/Game/Settings" />
+        </MudTooltip>
+        <MudTooltip Text="Logout">
+            <MudIconButton Icon="@Icons.Material.Filled.Logout" Size="Size.Small" OnClick="HandleLogout" />
+        </MudTooltip>
+    }
+    else
+    {
+        <MudText Color="Color.Error">No character selected</MudText>
+    }
+</MudAppBar>
 
 @code {
     /// <summary>Gets or sets the game state service, received from the parent via cascading value.</summary>

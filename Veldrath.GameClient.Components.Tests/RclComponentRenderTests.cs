@@ -139,12 +139,12 @@ public class RclComponentRenderTests : BunitContext
     }
 
     /// <summary>
-    /// Verifies <see cref="GameSidebar"/> renders without exceptions.
+    /// Verifies <see cref="Sidebars"/> renders without exceptions.
     /// </summary>
     [Fact]
     public void GameSidebar_Renders_Successfully()
     {
-        var cut = Render<GameSidebar>();
+        var cut = Render<Sidebars>();
         Assert.NotNull(cut);
     }
 
