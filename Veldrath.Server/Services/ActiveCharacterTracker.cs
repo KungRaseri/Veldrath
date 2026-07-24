@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Options;
+using Veldrath.Server.Settings;
 
 namespace Veldrath.Server.Services;
 
@@ -46,15 +48,34 @@ public interface IActiveCharacterTracker
 /// <summary>
 /// In-memory implementation of <see cref="IActiveCharacterTracker"/>.
 /// Uses <see cref="ConcurrentDictionary{TKey,TValue}"/> for thread-safe claim tracking
-/// with a 30-second grace period for unexpected disconnects.
+/// with a configurable grace period (default 30 seconds) for unexpected disconnects.
 /// </summary>
 public class ActiveCharacterTracker : IActiveCharacterTracker
 {
     private readonly ConcurrentDictionary<Guid, ClaimEntry> _characterToClaim = new();
     private readonly ConcurrentDictionary<string, Guid> _connectionToCharacter = new();
+    private readonly TimeSpan _gracePeriod;
 
-    /// <summary>Grace period during which a disconnecting claim cannot be taken by another connection.</summary>
-    private static readonly TimeSpan GracePeriod = TimeSpan.FromSeconds(30);
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ActiveCharacterTracker"/> class
+    /// with default settings (30-second grace period). For use in tests where DI is not available.
+    /// </summary>
+    public ActiveCharacterTracker()
+    {
+        _gracePeriod = TimeSpan.FromSeconds(30);
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ActiveCharacterTracker"/> class.
+    /// </summary>
+    /// <param name="options">The active character tracker options.</param>
+    public ActiveCharacterTracker(IOptions<ActiveCharacterTrackerOptions> options)
+    {
+        var seconds = options.Value.GracePeriodSeconds;
+        if (seconds < 1)
+            seconds = 30;
+        _gracePeriod = TimeSpan.FromSeconds(seconds);
+    }
 
     /// <summary>Internal tracking entry for a single character claim.</summary>
     private sealed class ClaimEntry
@@ -91,7 +112,7 @@ public class ActiveCharacterTracker : IActiveCharacterTracker
 
             // Within grace period — deny.
             var age = DateTimeOffset.UtcNow - other.DisconnectedAt.Value;
-            if (age < GracePeriod)
+            if (age < _gracePeriod)
                 return false;
 
             // Claim is stale (grace period expired) — forcibly release the old connection.
