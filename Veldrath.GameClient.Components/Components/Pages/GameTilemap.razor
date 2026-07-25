@@ -12,33 +12,36 @@
     var camX = ComputeCameraX(mapW);
     var camY = ComputeCameraY(mapH);
 
-    <div class="game-tilemap-viewport justify-center align-content-center flex-1 overflow-hidden">
-        @for (var vy = 0; vy < ViewportSize; vy++)
-        {
-            var capturedY = camY + vy;
-            for (var vx = 0; vx < ViewportSize; vx++)
+    <MudPaper Elevation="0" Class="flex-1 overflow-hidden">
+        <MudStack Spacing="0" Class="align-center">
+            @for (var vy = 0; vy < ViewportSize; vy++)
             {
-                var capturedX = camX + vx;
-                var inBounds = capturedX >= 0 && capturedX < mapW && capturedY >= 0 && capturedY < mapH;
-                var tile = inBounds
-                    ? tiles[capturedY, capturedX]
-                    : new Veldrath.GameClient.Core.Abstractions.Tile(capturedX, capturedY, -1, false);
-                var isPlayer = GameState.PlayerTileX == capturedX &&
-                               GameState.PlayerTileY == capturedY;
-                var occupant = GetOccupantAt(capturedX, capturedY);
-                var enemy = GetEnemyAt(capturedX, capturedY);
+                var capturedY = camY + vy;
+                <MudStack Row="true" Spacing="0">
+                    @for (var vx = 0; vx < ViewportSize; vx++)
+                    {
+                        var capturedX = camX + vx;
+                        var inBounds = capturedX >= 0 && capturedX < mapW && capturedY >= 0 && capturedY < mapH;
+                        var tile = inBounds
+                            ? tiles[capturedY, capturedX]
+                            : new Veldrath.GameClient.Core.Abstractions.Tile(capturedX, capturedY, -1, false);
+                        var isPlayer = GameState.PlayerTileX == capturedX &&
+                                       GameState.PlayerTileY == capturedY;
+                        var occupant = GetOccupantAt(capturedX, capturedY);
+                        var enemy = GetEnemyAt(capturedX, capturedY);
 
-                <Tile TileData="@tile"
-                      X="@capturedX"
-                      Y="@capturedY"
-                      OnClick="OnTileClick"
-                      OnHover="OnTileHover"
-                      IsPlayerHere="@isPlayer"
-                      Occupant="@occupant"
-                      Enemy="@enemy" />
+                        <Tile TileData="@tile"
+                              X="@capturedX"
+                              Y="@capturedY"
+                              OnClick="OnTileClick"
+                              OnHover="OnTileHover"
+                              IsPlayerHere="@isPlayer"
+                              Occupant="@occupant"
+                              Enemy="@enemy" />
+                    }
+                </MudStack>
             }
-        }
-
+        </MudStack>
         @if (_hoveredTile is not null)
         {
             <TileInfoCard X="@_hoveredTile.Value.X"
@@ -46,15 +49,18 @@
                           TileTypeName="@HoveredTileName"
                           EntityName="@HoveredEntityName" />
         }
-    </div>
+    </MudPaper>
 
     <TileStatusBar Description="@CurrentTileDescription" />
 }
 else
 {
-    <div class="game-tilemap-empty flex-1 d-flex align-center justify-center">
-        <p>No tilemap data available.</p>
-    </div>
+    <MudPaper Elevation="0" Class="flex-1 d-flex align-center justify-center">
+        <MudStack Justify="Justify.Center" AlignItems="AlignItems.Center" Class="gap-2">
+            <MudIcon Icon="Icons.Material.Filled.Map" Size="Size.Large" Color="Color.Default" />
+            <MudText Typo="Typo.body2" Color="Color.Default">No tilemap data available.</MudText>
+        </MudStack>
+    </MudPaper>
 }
 
 @code {
