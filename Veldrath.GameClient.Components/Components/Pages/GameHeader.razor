@@ -3,7 +3,7 @@
 @using Veldrath.GameClient.Core.Abstractions
 @* Top bar showing compact character info in order: Name → Level → Class → HP → MP → Currency. *@
 
-<MudAppBar Dense="true">
+<MudAppBar Fixed Dense>
     @if (GameState.CurrentCharacterInfo is { } character)
     {
         <MudContainer Fixed Gutters="false">

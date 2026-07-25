@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 using Veldrath.GameClient.Core.Abstractions;
 using Veldrath.GameClient.Core.Models;
 
@@ -65,10 +66,10 @@ public partial class GameFooter : INotifyPropertyChanged, IDisposable, IAsyncDis
     /// </summary>
     public string DotClass => _status switch
     {
-        StatusIndicator.Connected => "dot-connected",
-        StatusIndicator.Degraded => "dot-degraded",
-        StatusIndicator.Reconnecting => "dot-reconnecting",
-        _ => "dot-disconnected"
+        StatusIndicator.Connected => $"color: {Colors.Green.Default}",
+        StatusIndicator.Degraded => $"color: {Colors.Amber.Default}",
+        StatusIndicator.Reconnecting => $"color: {Colors.Yellow.Default}",
+        _ => $"color: {Colors.Red.Default}"
     };
 
     /// <summary>
