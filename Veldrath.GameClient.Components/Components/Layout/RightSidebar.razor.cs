@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.Logging;
 using Veldrath.GameClient.Core.Abstractions;
 
-namespace Veldrath.GameClient.Components.Components.Pages;
+namespace Veldrath.GameClient.Components.Components.Layout;
 
 /// <summary>
 /// Represents a single chat message with display metadata for the chat panel.

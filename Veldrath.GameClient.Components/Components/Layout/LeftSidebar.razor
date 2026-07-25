@@ -6,8 +6,8 @@
 @inject IGameApiClient Api
 
 @* ── LEFT SIDEBAR: Navigation, zone info, game actions ── *@
-<MudNavMenu>
-    <MudText Typo="Typo.h6">Navigation</MudText>
+<MudStack>  
+    <MudText Typo="Typo.h3" Align="Align.Center" Class="pa-3">Navigation</MudText>
     <MudNavLink Icon="@Icons.Material.Filled.Person"
                 OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.CharacterSheet)">
         Character Sheet
@@ -23,7 +23,7 @@
                 OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Journal)">
         Journal
     </MudNavLink>
-    <MudDivider />
+    @* <MudDivider /> *@
 
     <MudStack>
         <MudPaper Class="pa-3">
@@ -157,4 +157,4 @@
             Exit Zone
         </MudButton>
     </div>
-</MudNavMenu>
+</MudStack>

@@ -13,10 +13,10 @@
 <CascadingValue Value="GameState">
     <GameHeader />
 
-    <div class="d-flex flex-row" style="height: calc(100vh - var(--mud-appbar-height));">
+    <MudStack Row StretchItems="StretchItems.StartAndEnd">
         <LeftSidebar OnOpenOverlay="HandleOpenOverlay" />
 
-        <MudContainer class="flex-grow-1 pa-4 overflow-y-auto">
+        <MudContainer Fixed="true">
             @if (_isRestoringSession)
             {
                 <div>
@@ -46,7 +46,7 @@
         </MudContainer>
 
         <RightSidebar />
-    </div>
+    </MudStack>
 
     <GameFooter />
     <GameOverlay Visible="_showOverlay" OverlayType="_activeOverlay" OnClose="HandleCloseOverlay" />

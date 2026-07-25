@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.Logging;
+using Veldrath.GameClient.Components.Components.Pages;
 using Veldrath.GameClient.Core.Abstractions;
 
-namespace Veldrath.GameClient.Components.Components.Pages;
+namespace Veldrath.GameClient.Components.Components.Layout;
 
 /// <summary>
 /// Code-behind for the <see cref="LeftSidebar"/> component.

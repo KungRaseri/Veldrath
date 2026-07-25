@@ -2,7 +2,7 @@
 @using MudBlazor
 @* Top bar showing compact character info, breadcrumb, gold, zone, and system actions. *@
 
-<MudAppBar>
+<MudAppBar Dense="true">
     @if (GameState.CurrentCharacterInfo is { } character)
     {
         <MudStack Row="true">
