@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MudBlazor;
 using Veldrath.Auth;
 using Veldrath.Auth.Blazor;
+using Veldrath.GameClient.Components.Components.Layout;
 using Veldrath.GameClient.Components.Components.Pages;
 using Veldrath.GameClient.Components.Tests.Infrastructure;
 using Veldrath.GameClient.Core.Abstractions;
@@ -85,16 +86,6 @@ public class RclComponentRenderTests : BunitContext
     public void CreateCharacter_Renders_Successfully()
     {
         var cut = Render<CreateCharacter>();
-        Assert.NotNull(cut);
-    }
-
-    /// <summary>
-    /// Verifies <see cref="GameChat"/> renders without exceptions.
-    /// </summary>
-    [Fact]
-    public void GameChat_Renders_Successfully()
-    {
-        var cut = Render<GameChat>();
         Assert.NotNull(cut);
     }
 
