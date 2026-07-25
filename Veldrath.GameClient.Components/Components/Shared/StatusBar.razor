@@ -1,8 +1,9 @@
+@using MudBlazor.Utilities
 @* Reusable health/mana/XP bar component. *@
 
-<MudStack Row>
-    <span class="status-bar-label">@Label</span>
-    <MudProgressLinear Min="0" Max="@Max" Value="@Current" Class="@BarColor">
+<MudStack Row AlignItems="AlignItems.Center">
+    <MudText Typo="Typo.h5">@Label</MudText>
+    <MudProgressLinear Min="0" Max="@Max" Value="@Current" Color="@BarColor" Rounded Size="Size.Large">
         <ChildContent>
             @Current / @Max
         </ChildContent>
@@ -20,7 +21,7 @@
     [Parameter] public int Max { get; set; }
 
     /// <summary>The CSS color value for the bar fill.</summary>
-    [Parameter] public string BarColor { get; set; } = "gray";
+    [Parameter] public Color BarColor { get; set; }
 
     private double Percentage => Max > 0 ? Math.Clamp((double)Current / Max * 100.0, 0, 100) : 0;
 }

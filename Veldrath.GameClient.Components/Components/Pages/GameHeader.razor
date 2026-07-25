@@ -1,24 +1,32 @@
-@using Veldrath.GameClient.Core.Abstractions
 @using MudBlazor
-@* Top bar showing compact character info, breadcrumb, gold, zone, and system actions. *@
+@using MudBlazor.Utilities
+@using Veldrath.GameClient.Core.Abstractions
+@* Top bar showing compact character info in order: Name → Level → Class → HP → MP → Currency. *@
 
 <MudAppBar Dense="true">
     @if (GameState.CurrentCharacterInfo is { } character)
     {
-        <MudStack Row="true" StretchItems="StretchItems.All" Justify="Justify.SpaceEvenly">
-            <MudText>@character.Name</MudText>
-            <MudText>Lv. @character.Level</MudText>
-            <MudText>@character.ClassName</MudText>
-        </MudStack>
-        <MudContainer Fixed>
-            <MudStack Row StretchItems="StretchItems.All">
-                <StatusBar Label="HP" Current="@character.CurrentHealth" Max="@character.MaxHealth" BarColor="red" />
-                <StatusBar Label="MP" Current="@character.CurrentMana" Max="@character.MaxMana" BarColor="blue" />
-
-                <MudText Color="Color.Secondary">◎ @character.Gold.ToString("N0")</MudText>
+        <MudContainer Fixed Gutters="false">
+            <MudStack Row StretchItems="StretchItems.End">
+                <MudStack Row AlignItems="AlignItems.Center">
+                    <MudText Typo="Typo.h4" Color="Color.Primary">@character.Name</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Lv. @character.Level</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@character.ClassName</MudText>
+                </MudStack>
+                <MudStack Row StretchItems="StretchItems.All" AlignItems="AlignItems.Center" >
+                    <StatusBar Label="HP" Current="@character.CurrentHealth" Max="@character.MaxHealth"
+                               BarColor="@Color.Error" />
+                    <StatusBar Label="MP" Current="@character.CurrentMana" Max="@character.MaxMana"
+                               BarColor="@Color.Info" />
+                    <MudText Color="Color.Secondary" Inline>
+                        <MudStack Row AlignItems="AlignItems.Center">
+                            <MudIcon Icon="@Icons.Material.Outlined.Diamond" Size="Size.Small" />
+                            @character.Gold.ToString("N0")
+                        </MudStack>
+                    </MudText>
+                </MudStack>
             </MudStack>
         </MudContainer>
-
         <MudSpacer />
 
         <MudTooltip Text="Settings">
