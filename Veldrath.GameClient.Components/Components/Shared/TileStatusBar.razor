@@ -1,9 +1,9 @@
 @* Status bar displayed below the tilemap viewport, showing the current tile's type description. *@
 
-<div class="tile-status-bar d-flex align-center gap-2 flex-shrink-0">
-    <span class="tile-status-bar-icon" aria-hidden="true">📍</span>
-    <span class="tile-status-bar-text">@Description</span>
-</div>
+<MudStack Row="true" Spacing="2" Class="flex-shrink-0 px-4 py-2" Style="background-color: #1C1D2B; border-top: 1px solid #2A2B3D;">
+    <MudIcon Icon="Icons.Material.Filled.PushPin" Color="Color.Default" Size="Size.Small" />
+    <MudText Typo="Typo.body2">@Description</MudText>
+</MudStack>
 
 @code {
     /// <summary>The human-readable description of the player's current tile (e.g. "Grass", "Path").</summary>

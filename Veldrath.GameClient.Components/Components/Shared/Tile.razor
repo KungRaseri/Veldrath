@@ -2,24 +2,24 @@
 @* Single tile renderer for the zone tilemap viewport. Renders a <div> with the appropriate CSS class,
    entity overlays, and hover/mouseleave events for the info card. *@
 
-<div class="game-tile @GetTileClass() d-flex align-center justify-center"
-     @onclick="() => OnClick.InvokeAsync((X, Y))"
-     @onmouseenter="() => OnHover.InvokeAsync((X, Y))"
-     @onmouseleave="() => OnHover.InvokeAsync((-1, -1))"
-     title="@($"({X}, {Y})")">
+<MudPaper Elevation="1" Class="d-flex align-center justify-center" Style="@GetTileStyle()"
+          @onclick="() => OnClick.InvokeAsync((X, Y))"
+          @onmouseenter="() => OnHover.InvokeAsync((X, Y))"
+          @onmouseleave="() => OnHover.InvokeAsync((-1, -1))"
+          title="@($"({X}, {Y})")">
     @if (IsPlayerHere)
     {
-        <div class="tile-indicator tile-indicator-player" title="You are here"></div>
+        <MudIcon Icon="Icons.Material.Filled.PersonPinCircle" Color="Color.Warning" Size="Size.Small" title="You are here" />
     }
     @if (Occupant is not null)
     {
-        <div class="tile-indicator tile-indicator-occupant" title="@Occupant.CharacterName"></div>
+        <MudIcon Icon="Icons.Material.Filled.Person" Color="Color.Info" Size="Size.Small" title="@Occupant.CharacterName" />
     }
     @if (Enemy is not null)
     {
-        <div class="tile-indicator tile-indicator-enemy" title="@Enemy.EnemyName (Lv. @Enemy.Level)"></div>
+        <MudIcon Icon="Icons.Material.Filled.Dangerous" Color="Color.Error" Size="Size.Small" title="@($"{Enemy.EnemyName} (Lv. {Enemy.Level})")" />
     }
-</div>
+</MudPaper>
 
 @code {
     /// <summary>The tile data to render.</summary>
@@ -49,15 +49,16 @@
     /// <summary>An enemy on this tile, if any.</summary>
     [Parameter] public EnemyInfo? Enemy { get; set; }
 
-    private string GetTileClass() => TileData.Type switch
+    /// <summary>Returns an inline CSS style string for the tile based on its type, including fixed dimensions and background color.</summary>
+    private string GetTileStyle() => TileData.Type switch
     {
-        0 => "tile-grass",
-        1 => "tile-wall",
-        2 => "tile-water",
-        3 => "tile-door",
-        4 => "tile-path",
-        5 => "tile-dirt",
-        -1 => "tile-void",
-        _ => "tile-empty"
+        0 => "background-color: #3A3A5C; width: 36px; height: 36px; border-radius: 4px; cursor: pointer;",
+        1 => "background-color: #2A1A1A; width: 36px; height: 36px; border-radius: 4px; cursor: pointer;",
+        2 => "background-color: #1A3A5C; width: 36px; height: 36px; border-radius: 4px; cursor: pointer;",
+        3 => "background-color: #5C4A1A; width: 36px; height: 36px; border-radius: 4px; cursor: pointer;",
+        4 => "background-color: #4A4A3A; width: 36px; height: 36px; border-radius: 4px; cursor: pointer;",
+        5 => "background-color: #3A2A1A; width: 36px; height: 36px; border-radius: 4px; cursor: pointer;",
+        -1 => "background-color: #0D0D1A; width: 36px; height: 36px; border-radius: 4px; cursor: pointer;",
+        _ => "background-color: #1A1A2E; width: 36px; height: 36px; border-radius: 4px; cursor: pointer;"
     };
 }

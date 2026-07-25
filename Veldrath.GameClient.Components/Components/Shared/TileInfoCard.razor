@@ -1,13 +1,15 @@
 @* Floating info card that appears near the hovered tile, showing tile type, coordinates, and any entity present. *@
 
-<div class="tile-info-card">
-    <div class="tile-info-card-type">@TileTypeName</div>
-    <div class="tile-info-card-coords">(@X, @Y)</div>
-    @if (EntityName is not null)
-    {
-        <div class="tile-info-card-entity">@EntityName</div>
-    }
-</div>
+<MudPaper Elevation="4" Class="pa-3" Style="position: absolute; z-index: 100; min-width: 120px; background-color: #1C1D2B; border: 1px solid #2A2B3D;">
+    <MudStack Spacing="1">
+        <MudText Typo="Typo.body2" Color="Color.Primary">@TileTypeName</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Default">(@X, @Y)</MudText>
+        @if (EntityName is not null)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@EntityName</MudText>
+        }
+    </MudStack>
+</MudPaper>
 
 @code {
     /// <summary>The map column of the hovered tile.</summary>
