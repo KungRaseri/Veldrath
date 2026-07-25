@@ -1,18 +1,13 @@
 @* Reusable health/mana/XP bar component. *@
 
-<div class="status-bar d-flex align-center gap-2">
+<MudStack Row>
     <span class="status-bar-label">@Label</span>
-    <div class="status-bar-track flex-1 overflow-hidden">
-        <div class="status-bar-fill"
-             style="width: @(Percentage)%; background-color: @Color;"
-             role="progressbar"
-             aria-valuenow="@Current"
-             aria-valuemin="0"
-             aria-valuemax="@Max">
-        </div>
-    </div>
-    <span class="status-bar-text">@Current / @Max</span>
-</div>
+    <MudProgressLinear Min="0" Max="@Max" Value="@Current" Class="@BarColor">
+        <ChildContent>
+            <span>@Current / @Max</span>
+        </ChildContent>
+    </MudProgressLinear>
+</MudStack>
 
 @code {
     /// <summary>The label displayed to the left of the bar (e.g. "HP", "MP", "XP").</summary>
@@ -24,8 +19,8 @@
     /// <summary>The maximum value of the stat.</summary>
     [Parameter] public int Max { get; set; }
 
-    /// <summary>The CSS color value for the bar fill (e.g. "red", "#ff4444").</summary>
-    [Parameter] public string Color { get; set; } = "gray";
+    /// <summary>The CSS color value for the bar fill.</summary>
+    [Parameter] public string BarColor { get; set; } = "gray";
 
     private double Percentage => Max > 0 ? Math.Clamp((double)Current / Max * 100.0, 0, 100) : 0;
 }

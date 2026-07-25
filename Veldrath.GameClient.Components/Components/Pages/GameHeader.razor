@@ -5,19 +5,22 @@
 <MudAppBar Dense="true">
     @if (GameState.CurrentCharacterInfo is { } character)
     {
-        <MudStack Row="true">
+        <MudStack Row="true" StretchItems="StretchItems.All" Justify="Justify.SpaceEvenly">
             <MudText>@character.Name</MudText>
             <MudText>Lv. @character.Level</MudText>
             <MudText>@character.ClassName</MudText>
-            <StatusBar Label="HP" Current="@character.CurrentHealth" Max="@character.MaxHealth" Color="#e53935" />
-            <StatusBar Label="MP" Current="@character.CurrentMana" Max="@character.MaxMana" Color="#1e88e5" />
-
-            <MudText Color="Color.Secondary">◎ @character.Gold.ToString("N0")</MudText>
         </MudStack>
+        <MudContainer Fixed>
+            <MudStack Row StretchItems="StretchItems.All">
+                <StatusBar Label="HP" Current="@character.CurrentHealth" Max="@character.MaxHealth" BarColor="red" />
+                <StatusBar Label="MP" Current="@character.CurrentMana" Max="@character.MaxMana" BarColor="blue" />
+
+                <MudText Color="Color.Secondary">◎ @character.Gold.ToString("N0")</MudText>
+            </MudStack>
+        </MudContainer>
+
         <MudSpacer />
-        <MudTooltip Text="Character Sheet">
-            <MudIconButton Icon="@Icons.Material.Filled.Person" Size="Size.Small" Href="/Game/Settings" />
-        </MudTooltip>
+
         <MudTooltip Text="Settings">
             <MudIconButton Icon="@Icons.Material.Filled.Settings" Size="Size.Small" Href="/Game/Settings" />
         </MudTooltip>
