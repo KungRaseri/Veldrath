@@ -13,40 +13,47 @@
 <CascadingValue Value="GameState">
     <GameHeader />
 
-    <MudStack Row StretchItems="StretchItems.StartAndEnd">
-        <LeftSidebar OnOpenOverlay="HandleOpenOverlay" />
+    <MudContainer Fixed Gutters="false">
+        <MudStack Row StretchItems="StretchItems.All">
+            <LeftSidebar OnOpenOverlay="HandleOpenOverlay" />
 
-        <MudContainer Fixed="true">
-            @if (_isRestoringSession)
-            {
-                <div>
-                    <p>Restoring your game session...</p>
-                    <div class="spinner"></div>
-                </div>
-            }
-            else if (GameState.IsInCombat)
-            {
-                <GameCombat />
-            }
-            else if (GameState.ZoneTileMap is not null)
-            {
-                <GameTilemap />
-                @if (GameState.IsAtLocation)
+            <MudContainer>
+                @if (_isRestoringSession)
                 {
-                    <ZoneLocationPanel />
-                }
-            }
-            else
-            {
-                <div>
-                    <p>Loading zone...</p>
-                    <div class="spinner"></div>
-                </div>
-            }
-        </MudContainer>
 
-        <RightSidebar />
-    </MudStack>
+                    <MudText>
+                        <MudStack Row AlignItems="AlignItems.Center">
+                            <MudProgressCircular Indeterminate Size="Size.Small" />
+                            Restoring your game session...
+                        </MudStack>
+                    </MudText>
+                }
+                else if (GameState.IsInCombat)
+                {
+                    <GameCombat />
+                }
+                else if (GameState.ZoneTileMap is not null)
+                {
+                    <GameTilemap />
+                    @if (GameState.IsAtLocation)
+                    {
+                        <ZoneLocationPanel />
+                    }
+                }
+                else
+                {
+                    <MudText>
+                        <MudStack Row AlignItems="AlignItems.Center">
+                            <MudProgressCircular Indeterminate Size="Size.Small" />
+                            Loading zone...
+                        </MudStack>
+                    </MudText>
+                }
+            </MudContainer>
+
+            <RightSidebar />
+        </MudStack>
+    </MudContainer>
 
     <GameFooter />
     <GameOverlay Visible="_showOverlay" OverlayType="_activeOverlay" OnClose="HandleCloseOverlay" />

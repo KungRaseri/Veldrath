@@ -58,7 +58,7 @@
         }
         @if (!string.IsNullOrEmpty(GameState.ServerConnectionId))
         {
-            <MudText Typo="Typo.caption" Color="Color.Transparent">
+            <MudText Typo="Typo.caption" Color="Color.Transparent" Class="hover">
                 #@GameState.ServerConnectionId[..Math.Min(8, GameState.ServerConnectionId.Length)]
             </MudText>
         }

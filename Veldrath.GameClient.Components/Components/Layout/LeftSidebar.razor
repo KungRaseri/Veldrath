@@ -6,8 +6,8 @@
 @inject IGameApiClient Api
 
 @* ── LEFT SIDEBAR: Navigation, zone info, game actions ── *@
-<MudStack>  
-    <MudText Typo="Typo.h3" Align="Align.Center" Class="pa-3">Navigation</MudText>
+<MudStack StretchItems="StretchItems.All">
+    <MudText Typo="Typo.h3" Class="pa-3">Navigation</MudText>
     <MudNavLink Icon="@Icons.Material.Filled.Person"
                 OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.CharacterSheet)">
         Character
