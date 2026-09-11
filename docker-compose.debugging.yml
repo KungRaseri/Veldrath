@@ -92,27 +92,6 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  foundry:
-    build:
-      context: .
-      dockerfile: RealmFoundry/Dockerfile
-    ports:
-      - "8081:8081"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8081
-      # Internal URL for server-side HttpClient calls (container-to-container)
-      - Veldrath__ServerUrl=http://server:8080
-      # Public URL the browser navigates to for OAuth redirects.
-      # Override in .env when accessing via Tailscale (e.g. http://kung-gaming.tail3ff356.ts.net:9000)
-      - Veldrath__PublicServerUrl=${SERVER_PUBLIC_URL:-http://localhost:9000}
-    volumes:
-      - foundry_dataprotection_keys:/root/.aspnet/DataProtection-Keys
-    depends_on:
-      server:
-        condition: service_healthy
-
 volumes:
   postgres_data:
   dataprotection_keys:
-  foundry_dataprotection_keys:
