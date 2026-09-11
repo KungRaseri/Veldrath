@@ -25,6 +25,10 @@ COPY Veldrath.GameClient.Core/Veldrath.GameClient.Core.csproj Veldrath.GameClien
 COPY Veldrath.GameClient.Components/Veldrath.GameClient.Components.csproj Veldrath.GameClient.Components/
 COPY RealmEngine.Data/RealmEngine.Data.csproj               RealmEngine.Data/
 COPY RealmEngine.Data/Directory.Build.props                 RealmEngine.Data/
+COPY Veldrath.Server/Veldrath.Server.csproj                 Veldrath.Server/
+COPY Veldrath.Server/Directory.Build.props                  Veldrath.Server/
+COPY Veldrath.Assets/Veldrath.Assets.csproj                 Veldrath.Assets/
+COPY Veldrath.Assets/Directory.Build.props                  Veldrath.Assets/
 
 RUN dotnet restore Veldrath.Web/Veldrath.Web.csproj
 

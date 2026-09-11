@@ -15,6 +15,27 @@
 #
 # When editing non-code files (appsettings.json, .cshtml, .razor, .css) the
 # restart is near-instant since no compilation is needed.
+#
+# ── obj/ + bin/ isolation (why this file uses anonymous volumes) ──────────
+# Every bind-mounted project directory also gets anonymous volumes mounted
+# over its obj/ and bin/ subdirectories, e.g.:
+#     - ./Veldrath.Server:/src/Veldrath.Server
+#     - /src/Veldrath.Server/obj
+#     - /src/Veldrath.Server/bin
+# Bind mounts bypass .dockerignore, so without these the Linux container would
+# read the Windows host's obj/ (the host directory is bind-mounted at the same
+# path). Host restore artifacts record Windows-only paths — for example
+# obj/project.assets.json carries "packagesPath": "C:\\Users\\<user>\\.nuget\\packages\\"
+# and obj/<project>.csproj.nuget.g.props carries <NuGetPackageFolders> pointing
+# at the same Windows path — which makes the Linux build fail with NETSDK1064
+# ("Package ... was not found") and makes dotnet-watch's polling watcher churn
+# (and crash) while the host rewrites obj/ underneath it.
+# The anonymous volumes give the container its own obj/bin, so restore runs
+# once, cleanly, against the container-local package cache (NUGET_PACKAGES).
+#
+# NuGet packages live in the container-local "nuget_cache" named volume
+# (mounted at /root/.nuget/packages and pinned via NUGET_PACKAGES) so a clean
+# container restore never depends on the host NuGet cache.
 
 services:
   # ── Infrastructure ───────────────────────────────────────────────────────
@@ -64,6 +85,8 @@ services:
       - Web__BaseUrl=${WEB_PUBLIC_URL:-http://localhost:8082}
       - AllowedReturnUrlHosts=${ALLOWED_RETURN_URL_HOSTS:-}
       - Seq__ServerUrl=http://seq
+      # Container-local NuGet cache (matches the nuget_cache volume mount)
+      - NUGET_PACKAGES=/root/.nuget/packages
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 10s
@@ -74,13 +97,27 @@ services:
       postgres:
         condition: service_healthy
     volumes:
-      # Source code — mounted for dotnet watch to detect changes
+      # Source code — mounted for dotnet watch to detect changes.
+      # Each project also gets anonymous volumes over obj/ + bin/ so the Linux
+      # container never consumes the Windows host's restore artifacts.
       - ./Veldrath.Server:/src/Veldrath.Server
+      - /src/Veldrath.Server/obj
+      - /src/Veldrath.Server/bin
       - ./Veldrath.Contracts:/src/Veldrath.Contracts
+      - /src/Veldrath.Contracts/obj
+      - /src/Veldrath.Contracts/bin
       - ./Veldrath.Assets:/src/Veldrath.Assets
+      - /src/Veldrath.Assets/obj
+      - /src/Veldrath.Assets/bin
       - ./RealmEngine.Core:/src/RealmEngine.Core
+      - /src/RealmEngine.Core/obj
+      - /src/RealmEngine.Core/bin
       - ./RealmEngine.Data:/src/RealmEngine.Data
+      - /src/RealmEngine.Data/obj
+      - /src/RealmEngine.Data/bin
       - ./RealmEngine.Shared:/src/RealmEngine.Shared
+      - /src/RealmEngine.Shared/obj
+      - /src/RealmEngine.Shared/bin
       # Root MSBuild files
       - ./Directory.Build.props:/src/Directory.Build.props
       - ./Directory.Build.targets:/src/Directory.Build.targets
@@ -100,6 +137,8 @@ services:
       - Discord__DevGuildId=${DISCORD_DEV_GUILD_ID:-0}
       - Discord__ServerBaseUrl=http://server:8080
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=veldrath;Username=veldrath;Password=veldrath_dev
+      # Container-local NuGet cache (matches the nuget_cache volume mount)
+      - NUGET_PACKAGES=/root/.nuget/packages
     depends_on:
       postgres:
         condition: service_healthy
@@ -107,11 +146,22 @@ services:
         condition: service_healthy
     restart: unless-stopped
     volumes:
+      # Anonymous obj/ + bin/ volumes isolate the Linux build from the Windows host
       - ./Veldrath.Discord:/src/Veldrath.Discord
+      - /src/Veldrath.Discord/obj
+      - /src/Veldrath.Discord/bin
       - ./Veldrath.Contracts:/src/Veldrath.Contracts
+      - /src/Veldrath.Contracts/obj
+      - /src/Veldrath.Contracts/bin
       - ./RealmEngine.Core:/src/RealmEngine.Core
+      - /src/RealmEngine.Core/obj
+      - /src/RealmEngine.Core/bin
       - ./RealmEngine.Data:/src/RealmEngine.Data
+      - /src/RealmEngine.Data/obj
+      - /src/RealmEngine.Data/bin
       - ./RealmEngine.Shared:/src/RealmEngine.Shared
+      - /src/RealmEngine.Shared/obj
+      - /src/RealmEngine.Shared/bin
       - ./Directory.Build.props:/src/Directory.Build.props
       - ./Directory.Build.targets:/src/Directory.Build.targets
       - ./Directory.Packages.props:/src/Directory.Packages.props
@@ -129,11 +179,37 @@ services:
       - ASPNETCORE_URLS=http://+:8081
       - Veldrath__ServerUrl=http://server:8080
       - Veldrath__PublicServerUrl=${SERVER_PUBLIC_URL:-http://localhost:9000}
+      # Container-local NuGet cache (matches the nuget_cache volume mount)
+      - NUGET_PACKAGES=/root/.nuget/packages
     volumes:
+      # Anonymous obj/ + bin/ volumes isolate the Linux build from the Windows host
       - ./RealmFoundry:/src/RealmFoundry
+      - /src/RealmFoundry/obj
+      - /src/RealmFoundry/bin
       - ./Veldrath.Contracts:/src/Veldrath.Contracts
+      - /src/Veldrath.Contracts/obj
+      - /src/Veldrath.Contracts/bin
       - ./Veldrath.Auth:/src/Veldrath.Auth
+      - /src/Veldrath.Auth/obj
+      - /src/Veldrath.Auth/bin
       - ./Veldrath.Auth.Blazor:/src/Veldrath.Auth.Blazor
+      - /src/Veldrath.Auth.Blazor/obj
+      - /src/Veldrath.Auth.Blazor/bin
+      - ./Veldrath.GameClient.Components:/src/Veldrath.GameClient.Components
+      - /src/Veldrath.GameClient.Components/obj
+      - /src/Veldrath.GameClient.Components/bin
+      - ./Veldrath.GameClient.Core:/src/Veldrath.GameClient.Core
+      - /src/Veldrath.GameClient.Core/obj
+      - /src/Veldrath.GameClient.Core/bin
+      - ./RealmEngine.Core:/src/RealmEngine.Core
+      - /src/RealmEngine.Core/obj
+      - /src/RealmEngine.Core/bin
+      - ./RealmEngine.Data:/src/RealmEngine.Data
+      - /src/RealmEngine.Data/obj
+      - /src/RealmEngine.Data/bin
+      - ./RealmEngine.Shared:/src/RealmEngine.Shared
+      - /src/RealmEngine.Shared/obj
+      - /src/RealmEngine.Shared/bin
       - ./Directory.Build.props:/src/Directory.Build.props
       - ./Directory.Build.targets:/src/Directory.Build.targets
       - ./Directory.Packages.props:/src/Directory.Packages.props
@@ -189,14 +265,43 @@ services:
       - ASPNETCORE_URLS=http://+:8082
       - Veldrath__ServerUrl=http://server:8080
       - Veldrath__PublicServerUrl=${SERVER_PUBLIC_URL:-http://localhost:9000}
+      # Container-local NuGet cache (matches the nuget_cache volume mount)
+      - NUGET_PACKAGES=/root/.nuget/packages
     volumes:
+      # Anonymous obj/ + bin/ volumes isolate the Linux build from the Windows host
       - ./Veldrath.Web:/src/Veldrath.Web
+      - /src/Veldrath.Web/obj
+      - /src/Veldrath.Web/bin
       - ./Veldrath.Contracts:/src/Veldrath.Contracts
+      - /src/Veldrath.Contracts/obj
+      - /src/Veldrath.Contracts/bin
       - ./Veldrath.Auth:/src/Veldrath.Auth
+      - /src/Veldrath.Auth/obj
+      - /src/Veldrath.Auth/bin
       - ./Veldrath.Auth.Blazor:/src/Veldrath.Auth.Blazor
+      - /src/Veldrath.Auth.Blazor/obj
+      - /src/Veldrath.Auth.Blazor/bin
       - ./RealmEngine.Core:/src/RealmEngine.Core
+      - /src/RealmEngine.Core/obj
+      - /src/RealmEngine.Core/bin
       - ./RealmEngine.Data:/src/RealmEngine.Data
+      - /src/RealmEngine.Data/obj
+      - /src/RealmEngine.Data/bin
       - ./RealmEngine.Shared:/src/RealmEngine.Shared
+      - /src/RealmEngine.Shared/obj
+      - /src/RealmEngine.Shared/bin
+      - ./Veldrath.GameClient.Core:/src/Veldrath.GameClient.Core
+      - /src/Veldrath.GameClient.Core/obj
+      - /src/Veldrath.GameClient.Core/bin
+      - ./Veldrath.GameClient.Components:/src/Veldrath.GameClient.Components
+      - /src/Veldrath.GameClient.Components/obj
+      - /src/Veldrath.GameClient.Components/bin
+      - ./Veldrath.Server:/src/Veldrath.Server
+      - /src/Veldrath.Server/obj
+      - /src/Veldrath.Server/bin
+      - ./Veldrath.Assets:/src/Veldrath.Assets
+      - /src/Veldrath.Assets/obj
+      - /src/Veldrath.Assets/bin
       - ./Directory.Build.props:/src/Directory.Build.props
       - ./Directory.Build.targets:/src/Directory.Build.targets
       - ./Directory.Packages.props:/src/Directory.Packages.props

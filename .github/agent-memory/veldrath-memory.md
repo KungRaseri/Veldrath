@@ -761,6 +761,79 @@ Replaces `ZoneSessionRepository`. Implements all 12 interface methods.
 - **Final test count verified**: `dotnet test Realm.Full.slnx` — **4,739 tests, 0 failures** across all 11 test projects. Full suite is fully green.
 - **Open items for next session**: Hub integration success-path tests for region methods; world lore resolution (6 open design items); audio/sound expansion.
 
+### Session-42 (2026-09-11) — NuGet Fallback Folder / Linux Docker `dotnet watch` Fix
+- **Symptom**: `dotnet watch` build of `Veldrath.Server` inside the Linux dev container failed with
+  `error MSB4018: NuGet.Packaging.Core.PackagingException: Unable to find fallback package folder 'C:\Program Files (x86)\Microsoft Visual Studio\Shared\NuGetPackages'`
+  raised by `ResolvePackageAssets` at `Microsoft.PackageDependencyResolution.targets(266,5)` (`/usr/share/dotnet/sdk/10.0.401`).
+- **Root cause**: The repo had **no** `NuGet.config`. On Windows dev machines, the machine-wide
+  `C:\Program Files (x86)\NuGet\Config\Microsoft.VisualStudio.FallbackLocation.config` injects the VS offline
+  fallback folder. NuGet records inherited fallback folders into the generated restore output
+  (`obj/project.assets.json` → `fallbackFolders`; `obj/<project>.csproj.nuget.g.props` → `NuGetPackageFolders`;
+  `obj/<project>.csproj.nuget.dgspec.json`). `docker-compose.dev.yml` **bind-mounts the host project dirs**
+  (lines 78–91) — and bind mounts bypass `.dockerignore` (which *does* already exclude `**/obj/` / `**/bin/`) —
+  so the Linux container consumed the Windows-generated `obj/` and tried to resolve the non-existent Windows folder.
+- **Fix**: Added repo-root [`NuGet.config`](NuGet.config) containing `<fallbackPackageFolders><clear /></fallbackPackageFolders>`.
+  This stops the Windows-only VS fallback folder from being inherited/recorded on any OS, so the `obj/`
+  artifacts that leak into the container are portable. **Do not remove the `<clear />`.**
+- **Verified**: `dotnet restore Veldrath.Server/Veldrath.Server.csproj` regenerates `obj/*.nuget.g.props` and
+  `obj/project.assets.json` with no `Microsoft Visual Studio\Shared\NuGetPackages` entry (dgspec `configFilePaths`
+  now lists `G:\code\Veldrath\NuGet.Config` first); `dotnet build Veldrath.Server.slnx` succeeds with 0 errors.
+- **Convention**: Any future repo NuGet configuration must not reintroduce a machine-specific `fallbackPackageFolders`
+  entry.
+- **Superseded (Session-43)**: The follow-on assumption that host `obj/` merely needs to be *portable* is no longer
+  required — `docker-compose.dev.yml` now gives each container its own `obj/`/`bin/` via anonymous volumes (see Session-43).
+
+---
+
+### Session-43 (2026-09-11) — Dev-container `obj/`/`bin/` isolation (fixes NETSDK1064 + dotnet-watch watcher crash)
+
+**Symptom (after the Session-42 NuGet.config fix)**: `dotnet watch` inside the Linux dev container failed with
+`error NETSDK1064: Package <name>, version <ver> was not found. It might have been deleted since NuGet restore...`
+for `Veldrath.Server`, and earlier crashed with
+`System.ArgumentException: An item with the same key has already been added. Key: /src/Veldrath.Server/obj/Veldrath.Server.csproj.nuget.g.targets`
+from `Microsoft.DotNet.Watch.PollingDirectoryWatcher`.
+
+**Root cause**: `docker-compose.dev.yml` bind-mounts each host project directory into the container at the same path
+(e.g. `./Veldrath.Server:/src/Veldrath.Server`). Bind mounts bypass `.dockerignore`, so the Linux container inherited
+the **Windows host's** `obj/` restore output:
+- `obj/<project>.csproj.nuget.g.props` → `<NuGetPackageFolders>C:\Users\<user>\.nuget\packages\</NuGetPackageFolders>`
+  and `<SourceRoot Include="C:\Users\<user>\.nuget\packages\" />`
+- `obj/project.assets.json` → `"packagesPath": "C:\\Users\\<user>\\.nuget\\packages\\"`
+
+Because the mounted `project.assets.json` looked "up to date", the container's restore was a no-op and MSBuild resolved
+packages from the non-existent Windows path → `NETSDK1064`. The same host-rewritten `obj/` tree also churned under the
+container's polling watcher, causing the duplicate-key `ArgumentException`.
+
+**Fix** (`docker-compose.dev.yml`): every bind-mounted project directory also gets **anonymous volumes** over its `obj/`
+and `bin/`, so the container restores into its own Linux build output:
+```yaml
+- ./Veldrath.Server:/src/Veldrath.Server
+- /src/Veldrath.Server/obj
+- /src/Veldrath.Server/bin
+```
+Applied to all mounted projects: `server` (Veldrath.Server, Veldrath.Contracts, Veldrath.Assets, RealmEngine.Core/.Data/.Shared),
+`discord` (Veldrath.Discord + Contracts + RealmEngine.*), `foundry` (RealmFoundry, Contracts, Veldrath.Auth, Veldrath.Auth.Blazor),
+`web` (Veldrath.Web, Contracts, Auth, Auth.Blazor, RealmEngine.Core/.Data/.Shared). Each .NET service also sets
+`NUGET_PACKAGES=/root/.nuget/packages` explicitly, backed by the existing `nuget_cache` named volume.
+
+**Verified** (Docker Desktop 29.4.3, Linux containers): `docker compose -f docker-compose.dev.yml down` then
+`up -d --build` → `server` and `discord` log `Build succeeded.` / `Application started.` with **no** `MSB4018`,
+**no** `NETSDK1064`, and **no** `PollingDirectoryWatcher` `ArgumentException`. Inside the container,
+`/src/Veldrath.Server/obj/Veldrath.Server.csproj.nuget.g.props` now records `/root/.nuget/packages` (Linux), confirming
+the host Windows metadata no longer leaks in. Server healthcheck reaches `healthy`.
+
+**Convention**: Do NOT remove the per-project `obj`/`bin` anonymous volumes. Any newly bind-mounted project in
+`docker-compose.dev.yml` MUST also get `- /src/<Project>/obj` and `- /src/<Project>/bin` entries.
+
+**Separate pre-existing issue discovered (NOT fixed here — out of scope)**: `web` and `foundry` cannot build because their
+compose mounts are incomplete. `Veldrath.Web.csproj` references `Veldrath.Server.csproj` (line 25) but the `web` service
+does not mount `./Veldrath.Server` (and `Veldrath.Web/Dockerfile.dev` never `COPY`s its csproj). `RealmFoundry.csproj`
+→ `Veldrath.GameClient.Components` → `Veldrath.GameClient.Core` → `RealmEngine.Core`, but the `foundry` service mounts
+none of those. Result: `dotnet watch ❌ The project file could not be loaded. Could not find a part of the path
+'/src/Veldrath.Server/Veldrath.Server.csproj'` (web) and `'/src/RealmEngine.Core/RealmEngine.Core.csproj'` (foundry).
+These services previously never started because they use `depends_on: server (healthy)`, and the server never became
+healthy. Fixing them requires adding the missing source bind mounts + Dockerfile `COPY` lines.
+
 ---
 
 
