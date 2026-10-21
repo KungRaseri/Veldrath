@@ -869,6 +869,9 @@ a stale cache caused `NETSDK1064` (MudBlazor missing) inside containers.
 - `RealmFoundry.Tests` excludes the intentionally public `RefreshToken` (used by `AuthDelegatingHandler`).
 - `FakeCharacterCreationService` supplies an `EquipmentTypeCatalogDto`; the two `AvailableArmor/WeaponTypes`
   client tests await initialization.
+- `ApplyStatusEffectHandler` now skips immunity/resistance rolls for beneficial effects (`Buff`, `HealOverTime`).
+  Wisdom-derived resistance (1% per 10 Wisdom) previously gave every buff a ~1% chance to fail, which made
+  `Should_Refresh_Duration_When_Enabled` intermittently fail (verified 5 consecutive clean runs after the fix).
 
 **DataProtection native-run fix (commit e0fe2529)**: `Veldrath.Server`, `Veldrath.Web`, and `RealmFoundry` hardcoded
 `/root/.aspnet/DataProtection-Keys`, breaking auth/register on native non-root Linux (500 in

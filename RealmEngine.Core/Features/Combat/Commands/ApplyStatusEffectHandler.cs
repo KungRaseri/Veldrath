@@ -40,15 +40,21 @@ public class ApplyStatusEffectHandler : IRequestHandler<ApplyStatusEffectCommand
         }
 
         var targetName = request.TargetCharacter?.Name ?? request.TargetEnemy?.Name ?? "Unknown";
-        var activeEffects = request.TargetCharacter?.ActiveStatusEffects 
-            ?? request.TargetEnemy?.ActiveStatusEffects 
+        var activeEffects = request.TargetCharacter?.ActiveStatusEffects
+            ?? request.TargetEnemy?.ActiveStatusEffects
             ?? new List<StatusEffect>();
 
         // Get target traits for resistance/immunity calculations (only enemies have traits)
         var traits = request.TargetEnemy?.Traits ?? new Dictionary<string, TraitValue>();
 
+        // Beneficial effects (buffs and heal-over-time) are always applied — they cannot be resisted.
+        // Without this guard, the Wisdom-derived resistance (1% per 10 Wisdom) could randomly
+        // reject a buff, making buff application non-deterministic.
+        var isBeneficial = request.Effect.Category is
+            StatusEffectCategory.Buff or StatusEffectCategory.HealOverTime;
+
         // Check for immunity
-        if (IsImmune(request.Effect, traits, request.TargetCharacter, request.TargetEnemy))
+        if (!isBeneficial && IsImmune(request.Effect, traits, request.TargetCharacter, request.TargetEnemy))
         {
             _logger.LogInformation("{Target} is immune to {EffectType}", targetName, request.Effect.Type);
             return Task.FromResult(new ApplyStatusEffectResult
@@ -60,11 +66,13 @@ public class ApplyStatusEffectHandler : IRequestHandler<ApplyStatusEffectCommand
             });
         }
 
-        // Calculate resistance
-        var resistancePercentage = CalculateResistance(request.Effect, traits, request.TargetCharacter, request.TargetEnemy);
+        // Calculate resistance (beneficial effects cannot be resisted)
+        var resistancePercentage = isBeneficial
+            ? 0
+            : CalculateResistance(request.Effect, traits, request.TargetCharacter, request.TargetEnemy);
         
         // Roll for resistance (if resistance > 0, there's a chance to resist)
-        if (resistancePercentage >= 100)
+        if (!isBeneficial && resistancePercentage >= 100)
         {
             _logger.LogInformation("{Target} resisted {EffectType} (100% resistance)", targetName, request.Effect.Type);
             return Task.FromResult(new ApplyStatusEffectResult
@@ -77,9 +85,9 @@ public class ApplyStatusEffectHandler : IRequestHandler<ApplyStatusEffectCommand
         }
 
         // Random resistance check (resistancePercentage is chance to resist)
-        if (resistancePercentage > 0 && Random.Shared.Next(100) < resistancePercentage)
+        if (!isBeneficial && resistancePercentage > 0 && Random.Shared.Next(100) < resistancePercentage)
         {
-            _logger.LogInformation("{Target} resisted {EffectType} ({Resistance}% chance)", 
+            _logger.LogInformation("{Target} resisted {EffectType} ({Resistance}% chance)",
                 targetName, request.Effect.Type, resistancePercentage);
             return Task.FromResult(new ApplyStatusEffectResult
             {

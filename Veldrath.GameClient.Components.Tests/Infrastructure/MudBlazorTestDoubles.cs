@@ -21,13 +21,13 @@ public sealed class NoopKeyInterceptorService : IKeyInterceptorService, IDisposa
     public Task SubscribeAsync(string elementId, KeyInterceptorOptions options, Action<KeyMapBuilder> configure) => Task.CompletedTask;
 
     /// <inheritdoc />
-    public Task SubscribeAsync(string elementId, KeyInterceptorOptions options, IKeyDownObserver keyDown, IKeyUpObserver keyUp) => Task.CompletedTask;
+    public Task SubscribeAsync(string elementId, KeyInterceptorOptions options, IKeyDownObserver? keyDown = null, IKeyUpObserver? keyUp = null) => Task.CompletedTask;
 
     /// <inheritdoc />
-    public Task SubscribeAsync(string elementId, KeyInterceptorOptions options, Action<KeyboardEventArgs> keyDown, Action<KeyboardEventArgs> keyUp) => Task.CompletedTask;
+    public Task SubscribeAsync(string elementId, KeyInterceptorOptions options, Action<KeyboardEventArgs>? keyDown = null, Action<KeyboardEventArgs>? keyUp = null) => Task.CompletedTask;
 
     /// <inheritdoc />
-    public Task SubscribeAsync(string elementId, KeyInterceptorOptions options, Func<KeyboardEventArgs, Task> keyDown, Func<KeyboardEventArgs, Task> keyUp) => Task.CompletedTask;
+    public Task SubscribeAsync(string elementId, KeyInterceptorOptions options, Func<KeyboardEventArgs, Task>? keyDown = null, Func<KeyboardEventArgs, Task>? keyUp = null) => Task.CompletedTask;
 
     /// <inheritdoc />
     public Task DispatchAsync(string elementId, KeyEventKind kind, KeyboardEventArgs args) => Task.CompletedTask;
@@ -75,8 +75,8 @@ public sealed class NoopResizeObserver : IResizeObserver, IDisposable
 #pragma warning restore CS0067
 
     /// <inheritdoc />
-    public Task<BoundingClientRect> Observe(ElementReference element) =>
-        Task.FromResult(default(BoundingClientRect));
+    public Task<BoundingClientRect?> Observe(ElementReference element) =>
+        Task.FromResult<BoundingClientRect?>(null);
 
     /// <inheritdoc />
     public Task<IEnumerable<BoundingClientRect>> Observe(IEnumerable<ElementReference> elements) =>
@@ -92,7 +92,7 @@ public sealed class NoopResizeObserver : IResizeObserver, IDisposable
     public double GetHeight(ElementReference reference) => 0;
 
     /// <inheritdoc />
-    public BoundingClientRect GetSizeInfo(ElementReference reference) => default;
+    public BoundingClientRect GetSizeInfo(ElementReference reference) => default!;
 
     /// <inheritdoc />
     public bool IsElementObserved(ElementReference reference) => false;
