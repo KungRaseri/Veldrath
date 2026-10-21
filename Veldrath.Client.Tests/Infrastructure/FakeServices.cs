@@ -522,7 +522,12 @@ public class FakeAnnouncementService : IAnnouncementService
 public class FakeCharacterCreationService : ICharacterCreationService
 {
     /// <summary>Gets or sets the session response returned by <see cref="BeginSessionAsync"/>. <see langword="null"/> simulates a failed begin.</summary>
-    public BeginCreationSessionResponse? BeginSessionResponse { get; set; } = new(Guid.NewGuid(), true);
+    public BeginCreationSessionResponse? BeginSessionResponse { get; set; } = new(
+        Guid.NewGuid(),
+        true,
+        EquipmentTypeCatalog: new EquipmentTypeCatalogDto(
+            [new("light", "Light Armor"), new("medium", "Medium Armor"), new("heavy", "Heavy Armor")],
+            [new("sword", "Sword"), new("axe", "Axe"), new("staff", "Staff")]));
 
     /// <summary>Gets or sets whether <see cref="SetNameAsync"/> succeeds.</summary>
     public bool SetNameResult { get; set; } = true;

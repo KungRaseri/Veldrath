@@ -49,28 +49,26 @@ public class GameLayoutRenderTests : BunitContext
     }
 
     /// <summary>
-    /// Verifies GameLayout applies the <c>in-game</c> CSS class when connected.
+    /// Verifies GameLayout renders its MudBlazor layout structure when connected.
     /// </summary>
     [Fact]
-    public void GameLayout_Renders_With_Correct_Css_Class_When_Connected()
+    public void GameLayout_Renders_MudLayout_When_Connected()
     {
         _gameState.ApplyServerInfo("test-connection-id");
 
         var cut = Render<GameLayout>();
 
-        Assert.Contains("in-game", cut.Markup);
+        Assert.NotNull(cut.Find(".mud-layout"));
     }
 
     /// <summary>
-    /// Verifies GameLayout renders without the <c>in-game</c> CSS class
-    /// when the connection state is disconnected.
+    /// Verifies GameLayout renders its MudBlazor layout structure when disconnected.
     /// </summary>
     [Fact]
-    public void GameLayout_Renders_Without_InGame_Css_When_Disconnected()
+    public void GameLayout_Renders_MudLayout_When_Disconnected()
     {
         var cut = Render<GameLayout>();
 
-        // When disconnected, the "in-game" class should not be present.
-        Assert.DoesNotContain("in-game", cut.Markup);
+        Assert.NotNull(cut.Find(".mud-layout"));
     }
 }

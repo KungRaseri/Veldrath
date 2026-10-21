@@ -1,6 +1,7 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
+using MudBlazor.Services;
 using Veldrath.GameClient.Components.Components.Pages;
 using Veldrath.GameClient.Components.Tests.Infrastructure;
 using Veldrath.GameClient.Core.Abstractions;
@@ -30,6 +31,7 @@ public class GameCombatComponentTests : BunitContext
         Services.AddSingleton(_gameState);
         Services.AddSingleton<IGameStateService>(_gameState);
         Services.AddSingleton<IDialogService>(new FakeDialogService());
+        Services.AddMudServices();
     }
 
     /// <summary>

@@ -79,14 +79,14 @@ public class AuthStateServiceTests
     [Fact]
     public async Task SetTokensAsync_TokensNotExposedViaPublicProperties()
     {
-        // AccessToken and AccessTokenExpiry are intentionally public so that
-        // SignalR hubs and other infrastructure consumers can obtain the bearer
-        // token for outbound authentication. All other public properties must
-        // not leak raw token values — tokens remain circuit-scoped memory.
+        // AccessToken, AccessTokenExpiry, and RefreshToken are intentionally public so
+        // infrastructure consumers (SignalR hubs, AuthDelegatingHandler) can authenticate
+        // outbound calls and renew tokens. All other public properties must not leak raw
+        // token values — tokens remain circuit-scoped memory.
         var (svc, _) = Build();
         await svc.SetTokensAsync(MakeResponse());
 
-        var excluded = new HashSet<string> { "AccessToken", "AccessTokenExpiry" };
+        var excluded = new HashSet<string> { "AccessToken", "AccessTokenExpiry", "RefreshToken" };
         var publicProps = typeof(AuthStateService)
             .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
             .Where(p => !excluded.Contains(p.Name))

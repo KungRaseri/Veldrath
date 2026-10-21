@@ -390,17 +390,23 @@ public class CreateCharacterViewModelTests : TestBase
 
     // Equipment preferences
     [Fact]
-    public void AvailableArmorTypes_Is_Populated()
+    public async Task AvailableArmorTypes_Is_Populated()
     {
         var vm = MakeVm();
+
+        // InitializeAsync is fire-and-forget in the constructor; wait for the
+        // begin-session response to populate the equipment catalog.
+        await Task.Delay(50);
 
         vm.AvailableArmorTypes.Should().NotBeEmpty();
     }
 
     [Fact]
-    public void AvailableWeaponTypes_Is_Populated()
+    public async Task AvailableWeaponTypes_Is_Populated()
     {
         var vm = MakeVm();
+
+        await Task.Delay(50);
 
         vm.AvailableWeaponTypes.Should().NotBeEmpty();
     }

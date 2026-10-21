@@ -2,14 +2,16 @@
 @* Single tile renderer for the zone tilemap viewport. Renders a <div> with the appropriate CSS class,
    entity overlays, and hover/mouseleave events for the info card. *@
 
-<MudPaper Elevation="1" Class="d-flex align-center justify-center" Style="@GetTileStyle()"
+<MudPaper Elevation="1" Class="@TileCssClass" Style="@GetTileStyle()"
           @onclick="() => OnClick.InvokeAsync((X, Y))"
           @onmouseenter="() => OnHover.InvokeAsync((X, Y))"
           @onmouseleave="() => OnHover.InvokeAsync((-1, -1))"
           title="@($"({X}, {Y})")">
     @if (IsPlayerHere)
     {
-        <MudIcon Icon="Icons.Material.Filled.PersonPinCircle" Color="Color.Warning" Size="Size.Small" title="You are here" />
+        <span class="tile-indicator-player">
+            <MudIcon Icon="Icons.Material.Filled.PersonPinCircle" Color="Color.Warning" Size="Size.Small" title="You are here" />
+        </span>
     }
     @if (Occupant is not null)
     {
@@ -48,6 +50,22 @@
 
     /// <summary>An enemy on this tile, if any.</summary>
     [Parameter] public EnemyInfo? Enemy { get; set; }
+
+    /// <summary>CSS classes identifying this tile for rendering and tests.</summary>
+    private string TileCssClass => $"game-tile {GetTileTypeCssClass(TileData.Type)}";
+
+    /// <summary>Maps a tile type integer to its CSS class.</summary>
+    private static string GetTileTypeCssClass(int type) => type switch
+    {
+        0 => "tile-grass",
+        1 => "tile-wall",
+        2 => "tile-water",
+        3 => "tile-door",
+        4 => "tile-path",
+        5 => "tile-dirt",
+        -1 => "tile-void",
+        _ => "tile-unknown"
+    };
 
     /// <summary>Returns an inline CSS style string for the tile based on its type, including fixed dimensions and background color.</summary>
     private string GetTileStyle() => TileData.Type switch

@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MudBlazor;
+using MudBlazor.Services;
 using Veldrath.Auth;
 using Veldrath.Auth.Blazor;
 using Veldrath.GameClient.Components.Components.Layout;
@@ -43,6 +44,10 @@ public class RclComponentRenderTests : BunitContext
         JSInterop.SetupVoid("characterCreation.enableBeforeUnload");
         JSInterop.SetupVoid("characterCreation.disableBeforeUnload");
 
+        // MudBlazor components (text inputs, tabs, resize observers) invoke JS interop;
+        // loose mode lets unconfigured calls succeed instead of failing the render.
+        JSInterop.Mode = JSRuntimeMode.Loose;
+
         // Register stubs for interface-injected services.
         Services.AddSingleton<IGameHubConnectionService>(_fakeHub);
         Services.AddSingleton<IGameStateService>(_gameState);
@@ -57,6 +62,7 @@ public class RclComponentRenderTests : BunitContext
         Services.AddSingleton(_gameState);
 
         Services.AddSingleton<IDialogService>(new FakeDialogService());
+        Services.AddMudServices();
 
         // Register a stub IConfiguration with a default server URL.
         var config = new ConfigurationBuilder()
@@ -115,7 +121,8 @@ public class RclComponentRenderTests : BunitContext
     [Fact]
     public void GameHeader_Renders_Successfully()
     {
-        var cut = Render<GameHeader>();
+        var cut = Render<GameHeader>(parameters =>
+            parameters.AddCascadingValue<IGameStateService>(_gameState));
         Assert.NotNull(cut);
     }
 
@@ -135,7 +142,8 @@ public class RclComponentRenderTests : BunitContext
     [Fact]
     public void GameSidebar_Renders_Successfully()
     {
-        var cut = Render<RightSidebar>();
+        var cut = Render<RightSidebar>(parameters =>
+            parameters.AddCascadingValue<IGameStateService>(_gameState));
         Assert.NotNull(cut);
     }
 
