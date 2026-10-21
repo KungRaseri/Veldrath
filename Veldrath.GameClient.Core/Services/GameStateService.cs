@@ -59,12 +59,6 @@ public sealed class GameStateService : IGameStateService
     int IGameStateService.CurrentCharacterGold => CurrentCharacter?.Gold ?? 0;
 
     /// <inheritdoc />
-    object? IGameStateService.ZoneTileMap => ZoneTileMap;
-
-    /// <inheritdoc />
-    RegionState IGameStateService.CurrentRegion => CurrentRegion;
-
-    /// <inheritdoc />
     ZoneState IGameStateService.CurrentZone => CurrentZone;
 
     /// <inheritdoc />
@@ -132,23 +126,11 @@ public sealed class GameStateService : IGameStateService
     /// <summary>The display name of the current zone.</summary>
     public string? CurrentZoneName { get; private set; }
 
-    /// <summary>The tile map for the current zone, or <c>null</c> if not yet loaded.</summary>
-    public Tile[,]? ZoneTileMap { get; private set; }
-
-    /// <summary>The player's current tile column within the zone.</summary>
-    public int PlayerTileX { get; private set; }
-
-    /// <summary>The player's current tile row within the zone.</summary>
-    public int PlayerTileY { get; private set; }
-
     /// <summary>Other players occupying the current zone.</summary>
     public List<OccupantInfo> ZoneOccupants { get; private set; } = [];
 
     /// <summary>Visible enemies in the current zone.</summary>
     public List<EnemyInfo> ZoneEnemies { get; private set; } = [];
-
-    /// <summary>The current region state including tilemap, exits, and player positions.</summary>
-    public RegionState CurrentRegion { get; private set; } = new();
 
     /// <summary>The current zone metadata.</summary>
     public ZoneState CurrentZone { get; private set; } = new();
@@ -272,7 +254,7 @@ public sealed class GameStateService : IGameStateService
     /// <inheritdoc />
     public void ApplyZoneEntered(ZoneEnteredPayload payload)
     {
-        ApplyZoneEntered(payload.Id, payload.Name, 0, 0, null);
+        ApplyZoneEntered(payload.Id, payload.Name);
 
         if (!string.IsNullOrWhiteSpace(payload.CurrentMapId))
             CurrentMapId = payload.CurrentMapId;
@@ -343,7 +325,7 @@ public sealed class GameStateService : IGameStateService
     {
         var enemy = new EnemyInfo(
             payload.EnemyId, payload.EnemyName, payload.EnemyLevel,
-            payload.EnemyCurrentHealth, payload.EnemyMaxHealth, 0, 0);
+            payload.EnemyCurrentHealth, payload.EnemyMaxHealth);
         ApplyCombatStarted(enemy);
     }
 
@@ -382,46 +364,6 @@ public sealed class GameStateService : IGameStateService
     public void ApplyPlayerLeft(PlayerLeftPayload payload)
     {
         ApplyPlayerLeft(payload.CharacterId);
-    }
-
-    /// <inheritdoc />
-    public void ApplyCharacterMoved(Veldrath.Contracts.Tilemap.CharacterMovedPayload payload)
-    {
-        ApplyCharacterMoved(payload.TileX, payload.TileY);
-    }
-
-    /// <inheritdoc />
-    public void ApplyZoneEntitiesSnapshot(Veldrath.Contracts.Tilemap.ZoneEntitiesSnapshotPayload payload)
-    {
-        var occupants = new List<OccupantInfo>();
-        var enemies = new List<EnemyInfo>();
-
-        foreach (var entity in payload.Entities)
-        {
-            switch (entity.EntityType)
-            {
-                case "player":
-                    occupants.Add(new OccupantInfo(
-                        entity.EntityId,
-                        entity.SpriteKey,
-                        DateTimeOffset.UtcNow,
-                        entity.TileX,
-                        entity.TileY));
-                    break;
-                case "enemy":
-                    enemies.Add(new EnemyInfo(
-                        entity.EntityId,
-                        entity.SpriteKey,
-                        1,
-                        100,
-                        100,
-                        entity.TileX,
-                        entity.TileY));
-                    break;
-            }
-        }
-
-        ApplyZoneEntitiesSnapshot(occupants, enemies);
     }
 
     /// <inheritdoc />
@@ -767,51 +709,7 @@ public sealed class GameStateService : IGameStateService
         ApplySystemMessage("Entering dungeon...");
     }
 
-    // ── Zone / Region / Location Apply methods (G36-G47) ────────────────────────
-
-    /// <inheritdoc />
-    public void ApplyZoneExited(string regionId, int tileX, int tileY)
-    {
-        // Clear zone tile state
-        CurrentZoneId = null;
-        CurrentZoneName = null;
-        ZoneTileMap = null;
-        RaisePropertyChanged(nameof(CurrentZoneId));
-        RaisePropertyChanged(nameof(CurrentZoneName));
-        RaisePropertyChanged(nameof(ZoneTileMap));
-
-        // Set exit position on region
-        CurrentRegion = CurrentRegion with { RegionId = regionId };
-        RaisePropertyChanged(nameof(CurrentRegion));
-
-        ApplySystemMessage("You left the zone.");
-    }
-
-    /// <inheritdoc />
-    public void ApplyRegionMapReceived(RegionState region)
-    {
-        CurrentRegion = region;
-        RaisePropertyChanged(nameof(CurrentRegion));
-    }
-
-    /// <inheritdoc />
-    public void ApplyRegionChanged(string regionId, int tileX, int tileY)
-    {
-        CurrentRegion = CurrentRegion with { RegionId = regionId };
-        RaisePropertyChanged(nameof(CurrentRegion));
-        ApplySystemMessage($"Entering {regionId}...");
-    }
-
-    /// <inheritdoc />
-    public void ApplyRegionPlayerMoved(string charId, int x, int y, string direction)
-    {
-        var players = new Dictionary<string, (int X, int Y, string Direction)>(CurrentRegion.Players)
-        {
-            [charId] = (x, y, direction),
-        };
-        CurrentRegion = CurrentRegion with { Players = players };
-        RaisePropertyChanged(nameof(CurrentRegion));
-    }
+    // ── Zone / Location Apply methods (G36-G47) ─────────────────────────────────
 
     /// <inheritdoc />
     public void ApplyLocationEntered(LocationEnteredPayload location)
@@ -819,7 +717,7 @@ public sealed class GameStateService : IGameStateService
         CurrentZoneLocationSlug = location.Slug;
         CurrentLocationConnections = [.. location.Connections];
         ZoneEnemies = location.Enemies.Select(e => new EnemyInfo(
-            Guid.Empty, e.Name, e.Level, 100, 100, 0, 0)).ToList();
+            Guid.Empty, e.Name, e.Level, 100, 100)).ToList();
         CurrentZone = CurrentZone with
         {
             Name = location.Name,
@@ -914,51 +812,19 @@ public sealed class GameStateService : IGameStateService
         CurrentCharacter = character;
         if (currentZoneId is not null)
             CurrentZoneId = currentZoneId;
-        PlayerTileX = 0;
-        PlayerTileY = 0;
         RaisePropertyChanged(nameof(CurrentCharacter));
         RaisePropertyChanged(nameof(CurrentZoneId));
-        RaisePropertyChanged(nameof(PlayerTileX));
-        RaisePropertyChanged(nameof(PlayerTileY));
     }
 
     /// <summary>Updates state after entering a zone.</summary>
     /// <param name="zoneId">The zone identifier.</param>
     /// <param name="zoneName">The zone display name.</param>
-    /// <param name="tileX">The player's spawn tile column.</param>
-    /// <param name="tileY">The player's spawn tile row.</param>
-    /// <param name="tileMap">The zone tile map, or <c>null</c> if not yet loaded.</param>
-    public void ApplyZoneEntered(string zoneId, string zoneName, int tileX, int tileY, Tile[,]? tileMap)
+    public void ApplyZoneEntered(string zoneId, string zoneName)
     {
         CurrentZoneId = zoneId;
         CurrentZoneName = zoneName;
-        PlayerTileX = tileX;
-        PlayerTileY = tileY;
-        ZoneTileMap = tileMap;
         RaisePropertyChanged(nameof(CurrentZoneId));
         RaisePropertyChanged(nameof(CurrentZoneName));
-        RaisePropertyChanged(nameof(PlayerTileX));
-        RaisePropertyChanged(nameof(PlayerTileY));
-        RaisePropertyChanged(nameof(ZoneTileMap));
-    }
-
-    /// <summary>Updates the zone tile map (e.g. after requesting a fresh map).</summary>
-    /// <param name="tileMap">The tile map data.</param>
-    public void ApplyZoneTileMap(Tile[,] tileMap)
-    {
-        ZoneTileMap = tileMap;
-        RaisePropertyChanged(nameof(ZoneTileMap));
-    }
-
-    /// <summary>Updates the player's position after a movement action.</summary>
-    /// <param name="tileX">The new tile column.</param>
-    /// <param name="tileY">The new tile row.</param>
-    public void ApplyCharacterMoved(int tileX, int tileY)
-    {
-        PlayerTileX = tileX;
-        PlayerTileY = tileY;
-        RaisePropertyChanged(nameof(PlayerTileX));
-        RaisePropertyChanged(nameof(PlayerTileY));
     }
 
     /// <summary>Adds an occupant that entered the zone.</summary>
@@ -966,26 +832,6 @@ public sealed class GameStateService : IGameStateService
     public void ApplyPlayerEntered(OccupantInfo occupant)
     {
         ZoneOccupants.Add(occupant);
-        RaisePropertyChanged(nameof(ZoneOccupants));
-    }
-
-    /// <summary>Adds or updates an occupant with a known tile position.</summary>
-    /// <param name="characterId">The occupant's character identifier.</param>
-    /// <param name="characterName">The occupant's display name.</param>
-    /// <param name="tileX">The occupant's tile column.</param>
-    /// <param name="tileY">The occupant's tile row.</param>
-    public void ApplyPlayerPositioned(Guid characterId, string characterName, int tileX, int tileY)
-    {
-        var existing = ZoneOccupants.FirstOrDefault(o => o.CharacterId == characterId);
-        if (existing is not null)
-        {
-            var idx = ZoneOccupants.IndexOf(existing);
-            ZoneOccupants[idx] = existing with { TileX = tileX, TileY = tileY };
-        }
-        else
-        {
-            ZoneOccupants.Add(new OccupantInfo(characterId, characterName, DateTimeOffset.UtcNow, tileX, tileY));
-        }
         RaisePropertyChanged(nameof(ZoneOccupants));
     }
 
@@ -1060,17 +906,6 @@ public sealed class GameStateService : IGameStateService
         RaisePropertyChanged(nameof(ChatMessages));
     }
 
-    /// <summary>Replaces the current zone occupants and enemies with a fresh snapshot.</summary>
-    /// <param name="occupants">The current occupants in the zone.</param>
-    /// <param name="enemies">The current enemies in the zone.</param>
-    public void ApplyZoneEntitiesSnapshot(List<OccupantInfo> occupants, List<EnemyInfo> enemies)
-    {
-        ZoneOccupants = occupants;
-        ZoneEnemies = enemies;
-        RaisePropertyChanged(nameof(ZoneOccupants));
-        RaisePropertyChanged(nameof(ZoneEnemies));
-    }
-
     /// <summary>
     /// Resets all state to defaults.  Call when disconnecting, logging out, or when
     /// the game session ends.
@@ -1083,9 +918,6 @@ public sealed class GameStateService : IGameStateService
         CurrentCharacterState = new();
         CurrentZoneId = null;
         CurrentZoneName = null;
-        ZoneTileMap = null;
-        PlayerTileX = 0;
-        PlayerTileY = 0;
         ZoneOccupants = [];
         ZoneEnemies = [];
         IsInCombat = false;
@@ -1105,7 +937,6 @@ public sealed class GameStateService : IGameStateService
         SkillXp = [];
         SkillRanks = [];
         CurrentDungeonId = null;
-        CurrentRegion = new();
         CurrentZone = new();
         CurrentZoneLocationSlug = null;
         ZoneLocations = [];
@@ -1117,9 +948,6 @@ public sealed class GameStateService : IGameStateService
         RaisePropertyChanged(nameof(CurrentCharacterState));
         RaisePropertyChanged(nameof(CurrentZoneId));
         RaisePropertyChanged(nameof(CurrentZoneName));
-        RaisePropertyChanged(nameof(ZoneTileMap));
-        RaisePropertyChanged(nameof(PlayerTileX));
-        RaisePropertyChanged(nameof(PlayerTileY));
         RaisePropertyChanged(nameof(ZoneOccupants));
         RaisePropertyChanged(nameof(ZoneEnemies));
         RaisePropertyChanged(nameof(IsInCombat));
@@ -1139,7 +967,6 @@ public sealed class GameStateService : IGameStateService
         RaisePropertyChanged(nameof(SkillXp));
         RaisePropertyChanged(nameof(SkillRanks));
         RaisePropertyChanged(nameof(CurrentDungeonId));
-        RaisePropertyChanged(nameof(CurrentRegion));
         RaisePropertyChanged(nameof(CurrentZone));
         RaisePropertyChanged(nameof(CurrentZoneLocationSlug));
         RaisePropertyChanged(nameof(ZoneLocations));

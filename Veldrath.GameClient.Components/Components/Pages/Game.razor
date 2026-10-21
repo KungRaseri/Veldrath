@@ -6,7 +6,6 @@
 @using Veldrath.Auth.Blazor
 @using Veldrath.Contracts.Connection
 @using Veldrath.Contracts.Map
-@using Veldrath.Contracts.Tilemap
 @inject IGameHubConnectionService Hub
 @inject IGameStateService GameState
 @inject IGameApiClient Api
@@ -47,14 +46,6 @@
                                     CanTravel="@Hub.IsConnected"
                                     OnTravel="HandleTravelToNode" />
                 </div>
-            }
-            else if (GameState.ZoneTileMap is not null)
-            {
-                <GameTilemap />
-                @if (GameState.IsAtLocation)
-                {
-                    <ZoneLocationPanel />
-                }
             }
             else
             {
@@ -275,7 +266,7 @@
 
     private async Task EnterZoneAfterConnectAsync()
     {
-        if (GameState.ZoneTileMap is not null)
+        if (GameState.CurrentMap is not null)
             return;
 
         var zoneId = GameState.CurrentZoneId;
@@ -313,7 +304,6 @@
         try
         {
             await Hub.SendAsync("EnterZone", zoneId);
-            await Hub.SendAsync("GetZoneTileMap");
             await Hub.RequestMapGraphAsync();
         }
         catch (Exception ex)
@@ -436,7 +426,7 @@
                 GameState.CurrentCharacterInfo?.Name ?? "null",
                 ((IGameStateService)GameState).CurrentCharacterInfo?.Name ?? "null");
 
-            if (!string.IsNullOrEmpty(payload.CurrentZoneId) && GameState.ZoneTileMap is null)
+            if (!string.IsNullOrEmpty(payload.CurrentZoneId) && GameState.CurrentMap is null)
             {
                 await EnterZoneAsync(payload.CurrentZoneId);
             }
@@ -498,19 +488,6 @@
             await InvokeAsync(StateHasChanged);
         }));
 
-        _hubSubscriptions.Add(Hub.On<TileMapDto>("ZoneTileMap", async dto =>
-        {
-            var tiles = ConvertTileMap(dto);
-            GameState.ApplyZoneTileMap(tiles);
-            await InvokeAsync(StateHasChanged);
-        }));
-
-        _hubSubscriptions.Add(Hub.On<Veldrath.Contracts.Tilemap.CharacterMovedPayload>("CharacterMoved", async payload =>
-        {
-            GameState.ApplyCharacterMoved(payload);
-            await InvokeAsync(StateHasChanged);
-        }));
-
         _hubSubscriptions.Add(Hub.On<PlayerEnteredPayload>("PlayerEntered", async payload =>
         {
             GameState.ApplyPlayerEntered(payload);
@@ -569,13 +546,6 @@
         {
             Logger.LogWarning("Hub error: {Error}", error);
             GameState.ApplySystemMessage($"Error: {error}");
-            await InvokeAsync(StateHasChanged);
-        }));
-
-        _hubSubscriptions.Add(Hub.On<Veldrath.Contracts.Tilemap.ZoneEntitiesSnapshotPayload>("ZoneEntitiesSnapshot", async
-payload =>
-        {
-            GameState.ApplyZoneEntitiesSnapshot(payload);
             await InvokeAsync(StateHasChanged);
         }));
 
@@ -724,64 +694,6 @@ payload =>
             await InvokeAsync(StateHasChanged);
         }));
 
-        // ── G37: ZoneExited ─────────────────────────────────────────────────
-        _hubSubscriptions.Add(Hub.On<ZoneExitedPayload>("ZoneExited", async payload =>
-        {
-            GameState.ApplyZoneExited(payload.RegionId, payload.TileX, payload.TileY);
-            await InvokeAsync(StateHasChanged);
-        }));
-
-        // ── G38: RegionMapData ──────────────────────────────────────────────
-        _hubSubscriptions.Add(Hub.On<RegionMapDto>("RegionMapData", async dto =>
-        {
-            var region = new RegionState
-            {
-                RegionId = dto.RegionId,
-                TileWidth = dto.Width,
-                TileHeight = dto.Height,
-            };
-            GameState.ApplyRegionMapReceived(region);
-            await InvokeAsync(StateHasChanged);
-        }));
-
-        // ── G39: RegionChanged ──────────────────────────────────────────────
-        _hubSubscriptions.Add(Hub.On<RegionChangedPayload>("RegionChanged", async payload =>
-        {
-            GameState.ApplyRegionChanged(payload.RegionId, payload.TileX, payload.TileY);
-            GameState.ApplySystemMessage($"Entering {payload.RegionId}...");
-            try { await Hub.SendAsync("GetRegionMap"); } catch { }
-            await InvokeAsync(StateHasChanged);
-        }));
-
-        // ── G40: RegionPlayerMoved ──────────────────────────────────────────
-        _hubSubscriptions.Add(Hub.On<RegionPlayerMovedPayload>("RegionPlayerMoved", async payload =>
-        {
-            GameState.ApplyRegionPlayerMoved(
-                payload.CharacterId.ToString(), payload.TileX, payload.TileY, payload.Direction);
-            await InvokeAsync(StateHasChanged);
-        }));
-
-        // ── G41: ZoneEntryTriggered ─────────────────────────────────────────
-        _hubSubscriptions.Add(Hub.On<ZoneEntryTriggeredPayload>("ZoneEntryTriggered", async payload =>
-        {
-            GameState.ApplySystemMessage($"Enter {payload.Name}?");
-            await InvokeAsync(StateHasChanged);
-        }));
-
-        // ── G42: RegionExitTriggered ────────────────────────────────────────
-        _hubSubscriptions.Add(Hub.On<RegionExitTriggeredPayload>("RegionExitTriggered", async payload =>
-        {
-            GameState.ApplySystemMessage($"Cross border into {payload.TargetRegion}?");
-            await InvokeAsync(StateHasChanged);
-        }));
-
-        // ── G43: TileExitTriggered ──────────────────────────────────────────
-        _hubSubscriptions.Add(Hub.On<TileExitTriggeredPayload>("TileExitTriggered", async payload =>
-        {
-            GameState.ApplySystemMessage($"Transitioning to zone {payload.ToZoneId}...");
-            await InvokeAsync(StateHasChanged);
-        }));
-
         // ── G44: LocationEntered ────────────────────────────────────────────
         _hubSubscriptions.Add(Hub.On<LocationEnteredPayload>("LocationEntered", async payload =>
         {
@@ -814,42 +726,6 @@ payload =>
                 payload.Slug, payload.ZoneId, payload.IsCrossZone, payload.Connections);
             await InvokeAsync(StateHasChanged);
         }));
-    }
-
-    private static Veldrath.GameClient.Core.Abstractions.Tile[,] ConvertTileMap(TileMapDto dto)
-    {
-        var width = dto.Width;
-        var height = dto.Height;
-        var tiles = new Veldrath.GameClient.Core.Abstractions.Tile[height, width];
-
-        var groundLayer = dto.Layers.FirstOrDefault();
-
-        for (var y = 0; y < height; y++)
-        {
-            for (var x = 0; x < width; x++)
-            {
-                var idx = y * width + x;
-                var tileType = groundLayer is not null && idx < groundLayer.Data.Length
-                    ? groundLayer.Data[idx]
-                    : 0;
-                var isBlocked = dto.CollisionMask is not null && idx < dto.CollisionMask.Length && dto.CollisionMask[idx];
-
-                var simplifiedType = tileType switch
-                {
-                    -1 => -1,
-                    0 => 0,
-                    1 => 1,
-                    2 => 2,
-                    3 => 3,
-                    _ when isBlocked => 1,
-                    _ => 0
-                };
-
-                tiles[y, x] = new Veldrath.GameClient.Core.Abstractions.Tile(x, y, simplifiedType, isBlocked);
-            }
-        }
-
-        return tiles;
     }
 
     /// <summary>

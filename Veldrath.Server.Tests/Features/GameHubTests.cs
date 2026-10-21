@@ -154,10 +154,7 @@ public class GameHubTests : IDisposable
                                   new PlayerSessionRepository(db),
                                   tracker ?? new ActiveCharacterTracker(),
                                   mediator ?? Mock.Of<ISender>(),
-                                  new ZoneEntityTracker(),
-                                  Mock.Of<ITileMapRepository>(),
                                   Mock.Of<IMapGraphRepository>(),
-                                  Mock.Of<IEnemyRepository>(),
                                   options,
                                   userManager,
                                   modOptions,
@@ -561,30 +558,6 @@ public class GameHubTests : IDisposable
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "Error");
-    }
-
-    [Fact]
-    public async Task EnterZone_Should_Include_Player_In_ZoneEntitiesSnapshot()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-        var character = await SeedCharacterAsync(db, accountId);
-        var (hub, clients, _, ctx) = CreateHub(db, accountId);
-
-        ctx.Items["CharacterId"]   = character.Id;
-        ctx.Items["CharacterName"] = character.Name;
-
-        await hub.EnterZone("crestfall");
-
-        var snapshotMsg = clients.CallerProxy.SentMessages
-            .Should().ContainSingle(m => m.Method == "ZoneEntitiesSnapshot")
-            .Which;
-
-        var json = JsonSerializer.Serialize(snapshotMsg.Args[0]);
-        using var doc = JsonDocument.Parse(json);
-        doc.RootElement.GetProperty("Entities")
-            .EnumerateArray()
-            .Should().Contain(e => e.GetProperty("EntityId").GetGuid() == character.Id);
     }
 
     // GainExperience
@@ -1526,10 +1499,7 @@ public class GameHubTests : IDisposable
                                new PlayerSessionRepository(db),
                                tracker,
                                Mock.Of<ISender>(),
-                               new ZoneEntityTracker(),
-                               Mock.Of<ITileMapRepository>(),
                                Mock.Of<IMapGraphRepository>(),
-                               Mock.Of<IEnemyRepository>(),
                                Options.Create(new VersionCompatibilitySettings()),
                                new Mock<UserManager<PlayerAccount>>(Mock.Of<IUserStore<PlayerAccount>>(), null!, null!, null!, null!, null!, null!, null!, null!).Object,
                                Options.Create(new ModerationOptions()),
@@ -1564,10 +1534,7 @@ public class GameHubTests : IDisposable
                               new PlayerSessionRepository(db),
                               tracker,
                               Mock.Of<ISender>(),
-                              new ZoneEntityTracker(),
-                              Mock.Of<ITileMapRepository>(),
                               Mock.Of<IMapGraphRepository>(),
-                              Mock.Of<IEnemyRepository>(),
                               Options.Create(new VersionCompatibilitySettings()),
                               new Mock<UserManager<PlayerAccount>>(Mock.Of<IUserStore<PlayerAccount>>(), null!, null!, null!, null!, null!, null!, null!, null!).Object,
                               Options.Create(new ModerationOptions()),

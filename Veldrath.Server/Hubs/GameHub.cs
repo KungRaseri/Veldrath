@@ -9,11 +9,9 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
-using RealmEngine.Shared.Models.Tiled;
 using Veldrath.Contracts.Chat;
 using Veldrath.Contracts.Connection;
 using Veldrath.Contracts.Map;
-using Veldrath.Contracts.Tilemap;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
@@ -51,10 +49,7 @@ public class GameHub : Hub
     private readonly IPlayerSessionRepository _playerSessionRepo;
     private readonly IActiveCharacterTracker _activeCharacters;
     private readonly ISender _mediator;
-    private readonly IZoneEntityTracker _entityTracker;
-    private readonly ITileMapRepository _tilemapRepo;
     private readonly IMapGraphRepository _mapRepo;
-    private readonly IEnemyRepository _enemyRepo;
     private readonly IOptions<VersionCompatibilitySettings> _versionOptions;
     private readonly UserManager<PlayerAccount> _userManager;
     private readonly IOptions<ModerationOptions> _modOptions;
@@ -74,10 +69,7 @@ public class GameHub : Hub
         IPlayerSessionRepository playerSessionRepo,
         IActiveCharacterTracker activeCharacters,
         ISender mediator,
-        IZoneEntityTracker entityTracker,
-        ITileMapRepository tilemapRepo,
         IMapGraphRepository mapRepo,
-        IEnemyRepository enemyRepo,
         IOptions<VersionCompatibilitySettings> versionOptions,
         UserManager<PlayerAccount> userManager,
         IOptions<ModerationOptions> modOptions,
@@ -90,10 +82,7 @@ public class GameHub : Hub
         _playerSessionRepo = playerSessionRepo;
         _activeCharacters  = activeCharacters;
         _mediator          = mediator;
-        _entityTracker     = entityTracker;
-        _tilemapRepo       = tilemapRepo;
         _mapRepo           = mapRepo;
-        _enemyRepo         = enemyRepo;
         _versionOptions    = versionOptions;
         _userManager       = userManager;
         _modOptions        = modOptions;
@@ -258,28 +247,6 @@ public class GameHub : Hub
         if (staleRegionSession is not null)
             await _playerSessionRepo.RemoveAsync(staleRegionSession);
 
-        // Restore the character's saved tile position, falling back to (1, 1) when never placed.
-        var savedX = character.TileX != 0 || character.TileY != 0 ? character.TileX : 1;
-        var savedY = character.TileX != 0 || character.TileY != 0 ? character.TileY : 1;
-
-        // Auto-unstick safety net: if the saved position is (0,0) or blocked on the region map,
-        // force-teleport the character to the nearest walkable tile.
-        // If the region tilemap isn't available yet, the check is deferred to EnterZone
-        // (which always has a zone map and already calls FindWalkableSpawn).
-        var regionMap = await _tilemapRepo.GetByRegionIdAsync(regionId);
-        if (regionMap is not null)
-        {
-            if ((savedX == 0 && savedY == 0) || regionMap.IsBlocked(savedX, savedY))
-            {
-                var originalX = savedX;
-                var originalY = savedY;
-                (savedX, savedY) = FindWalkableSpawn(regionMap, 1, 1);
-                _logger.LogWarning(
-                    "Character {CharacterName} was stuck at ({OriginalX},{OriginalY}) on region map — relocated to ({NewX},{NewY})",
-                    character.Name, originalX, originalY, savedX, savedY);
-            }
-        }
-
         // Create a region-map session (ZoneId = null means on the region map, not inside a zone)
         await _playerSessionRepo.AddAsync(new PlayerSession
         {
@@ -290,8 +257,6 @@ public class GameHub : Hub
             ZoneId        = null,
             CurrentMapId  = regionGraph?.Id ?? character.CurrentMapId,
             CurrentNodeId = regionGraph?.EntryNodeId ?? character.CurrentNodeId,
-            TileX         = savedX,
-            TileY         = savedY,
         });
 
         // Join the per-region broadcast group for RegionPlayerMoved broadcasts
@@ -424,9 +389,6 @@ public class GameHub : Hub
         var zoneGroup = ComputeZoneGroup(zone.Type, zoneId, difficultyMode);
         Context.Items["CurrentZoneGroupName"] = zoneGroup;
 
-        // Register zone group name for background services (e.g. EnemyAiService)
-        _entityTracker.SetZoneGroupName(zoneId, zoneGroup);
-
         // Join SignalR group
         await Groups.AddToGroupAsync(Context.ConnectionId, zoneGroup);
 
@@ -453,42 +415,6 @@ public class GameHub : Hub
             Occupants = occupants,
         });
 
-        // Determine spawn position (first spawn point or tile (1,1) fallback), then validate walkability.
-        var map = await _tilemapRepo.GetByZoneIdAsync(zoneId);
-        var spawns = map?.GetSpawnPoints();
-        var preferredX = spawns is { Count: > 0 } ? spawns[0].TileX : 1;
-        var preferredY = spawns is { Count: > 0 } ? spawns[0].TileY : 1;
-
-        var (spawnX, spawnY) = FindWalkableSpawn(map, preferredX, preferredY);
-        _entityTracker.TrackPlayer(zoneId, characterId, spawnX, spawnY);
-
-        // Persist the spawn tile so MoveCharacter can validate 1-tile steps from the correct origin.
-        await _characterRepo.UpdateTilePositionAsync(characterId, spawnX, spawnY, zoneId);
-
-        // Spawn enemies only in non-town zones; towns are safe areas with no hostile spawns.
-        var existingEntities = _entityTracker.GetEntities(zoneId);
-        if (existingEntities.Count == 0 && map is not null && zone.Type != ZoneType.Town)
-        {
-            var spawned = await SpawnEnemiesForZoneAsync(zoneId, map);
-            if (spawned.Count > 0)
-            {
-                var spawnPayload = new ZoneEntitiesSnapshotPayload(
-                    spawned.Select(e => new TileEntityDto(e.EntityId, e.EntityType, e.SpriteKey, e.TileX, e.TileY, e.Direction)).ToList());
-                await Clients.OthersInGroup(zoneGroup).SendAsync("ZoneEntitiesSnapshot", spawnPayload);
-            }
-        }
-
-        // Always send the entering player a complete snapshot: all current enemies plus all tracked
-        // player positions. This ensures their own character appears on the tilemap immediately,
-        // without waiting for the first CharacterMoved broadcast.
-        var allEnemies = _entityTracker.GetEntities(zoneId);
-        var allPlayers = _entityTracker.GetPlayerPositions(zoneId);
-        var callerSnapshot = new ZoneEntitiesSnapshotPayload(
-            allEnemies.Select(e => new TileEntityDto(e.EntityId, e.EntityType, e.SpriteKey, e.TileX, e.TileY, e.Direction))
-                      .Concat(allPlayers.Select(p => new TileEntityDto(p.CharacterId, "player", "player", p.X, p.Y, "S")))
-                      .ToList());
-        await Clients.Caller.SendAsync("ZoneEntitiesSnapshot", callerSnapshot);
-
         _logger.LogInformation("Character {Name} entered zone {ZoneId}", characterName, zoneId);
     }
 
@@ -497,160 +423,6 @@ public class GameHub : Hub
     {
         await LeaveCurrentZoneAsync(Context.ConnectionId, notifyPeers: true);
         await Clients.Caller.SendAsync("ZoneLeft");
-    }
-
-    // Tilemap movement
-    /// <summary>
-    /// Requests a one-tile movement for the caller's active character.
-    /// The server validates the step (1-tile distance, collision mask, 100 ms cooldown) and,
-    /// on success, persists the new position and broadcasts <c>CharacterMoved</c> to the zone group.
-    /// If the destination is an exit tile the caller additionally receives <c>TileExitTriggered</c>.
-    /// </summary>
-    /// <remarks>Deprecated: prefer <see cref="TravelToNode"/> and the map graph API.</remarks>
-    /// <param name="request">Target tile coordinates and facing direction.</param>
-    public async Task MoveCharacter(MoveCharacterHubRequest request)
-    {
-        if (!TryGetCharacterId(out var characterId))
-        {
-            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before MoveCharacter");
-            return;
-        }
-
-        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string s ? s : string.Empty;
-        if (string.IsNullOrEmpty(zoneId))
-        {
-            await Clients.Caller.SendAsync("Error", "EnterZone must be called before MoveCharacter");
-            return;
-        }
-
-        try
-        {
-            var result = await _mediator.Send(new MoveCharacterHubCommand(
-                characterId, request.ToX, request.ToY, request.Direction, zoneId));
-
-            if (!result.Success)
-            {
-                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Move rejected");
-                return;
-            }
-
-            var payload = new CharacterMovedPayload(characterId, result.TileX, result.TileY, result.Direction);
-
-            // Keep player position up-to-date for AI pathfinding
-            _entityTracker.TrackPlayer(zoneId, characterId, result.TileX, result.TileY);
-
-            if (TryGetCurrentZoneGroup(out var zoneGroup))
-                await Clients.Group(zoneGroup).SendAsync("CharacterMoved", payload);
-            else
-                await Clients.Caller.SendAsync("CharacterMoved", payload);
-
-            if (result.ExitTriggered is not null)
-                await Clients.Caller.SendAsync("TileExitTriggered", result.ExitTriggered);
-
-            if (result.LocationEntered is not null)
-            {
-                var loc = result.LocationEntered;
-                await Clients.Caller.SendAsync("LocationEntered", new
-                {
-                    loc.Slug,
-                    Name = loc.DisplayName,
-                    loc.TypeKey,
-                    Description = (string?)null, // Future: load from location data
-                    loc.TileX,
-                    loc.TileY,
-                    Enemies = Array.Empty<object>(),
-                    Connections = Array.Empty<object>(),
-                });
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in MoveCharacter for character {CharacterId}", characterId);
-            await Clients.Caller.SendAsync("Error", "Failed to process move");
-        }
-    }
-
-    /// <summary>
-    /// Loads and returns the <see cref="Veldrath.Contracts.Tilemap.TileMapDto"/> for the caller's current zone.
-    /// Sends <c>ZoneTileMap</c> to the caller on success.
-    /// </summary>
-    /// <remarks>Deprecated: prefer <see cref="GetMapGraph"/>.</remarks>
-    public async Task GetZoneTileMap()
-    {
-        if (!TryGetCharacterId(out _))
-        {
-            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetZoneTileMap");
-            return;
-        }
-
-        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string s ? s : string.Empty;
-        if (string.IsNullOrEmpty(zoneId))
-        {
-            await Clients.Caller.SendAsync("Error", "EnterZone must be called before GetZoneTileMap");
-            return;
-        }
-
-        try
-        {
-            var result = await _mediator.Send(new GetZoneTileMapHubCommand(zoneId));
-
-            if (!result.Success)
-            {
-                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to load tilemap");
-                return;
-            }
-
-            await Clients.Caller.SendAsync("ZoneTileMap", result.TileMap);
-
-            _logger.LogDebug("Sent tilemap for zone {ZoneId} to {ConnectionId}", zoneId, Context.ConnectionId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in GetZoneTileMap for zone {ZoneId}", zoneId);
-            await Clients.Caller.SendAsync("Error", "Failed to load tilemap");
-        }
-    }
-
-    // Region map
-    /// <summary>
-    /// Loads and returns the <see cref="Veldrath.Contracts.Tilemap.RegionMapDto"/> for the
-    /// caller's current region. Sends <c>RegionMapData</c> to the caller on success.
-    /// </summary>
-    /// <remarks>Deprecated: prefer <see cref="GetMapGraph"/>.</remarks>
-    public async Task GetRegionMap()
-    {
-        if (!TryGetCharacterId(out _))
-        {
-            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetRegionMap");
-            return;
-        }
-
-        var regionId = Context.Items.TryGetValue("CurrentRegionId", out var r) && r is string rs ? rs : string.Empty;
-        if (string.IsNullOrEmpty(regionId))
-        {
-            await Clients.Caller.SendAsync("Error", "No active region. Call SelectCharacter first");
-            return;
-        }
-
-        try
-        {
-            var result = await _mediator.Send(new GetRegionMapHubCommand(regionId));
-
-            if (!result.Success)
-            {
-                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to load region map");
-                return;
-            }
-
-            await Clients.Caller.SendAsync("RegionMapData", result.RegionMap);
-
-            _logger.LogDebug("Sent region map for '{RegionId}' to {ConnectionId}", regionId, Context.ConnectionId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in GetRegionMap for region {RegionId}", regionId);
-            await Clients.Caller.SendAsync("Error", "Failed to load region map");
-        }
     }
 
     // Text map graph API
@@ -724,204 +496,6 @@ public class GameHub : Hub
         {
             _logger.LogError(ex, "Error in TravelToNode for character {CharacterId}", characterId);
             await Clients.Caller.SendAsync("Error", "Failed to travel to node");
-        }
-    }
-
-    /// <summary>
-    /// Requests a one-tile movement for the caller's active character on the region map.
-    /// The server validates the step (1-tile distance, collision mask, 100 ms cooldown) and,
-    /// on success, persists the new position and broadcasts <c>RegionPlayerMoved</c> to the region group.
-    /// If the destination is a zone-entry tile the caller additionally receives <c>ZoneEntryTriggered</c>;
-    /// if it is a region-exit tile the caller receives <c>RegionExitTriggered</c>.
-    /// </summary>
-    /// <remarks>Deprecated: prefer <see cref="TravelToNode"/> and the map graph API.</remarks>
-    /// <param name="request">Target tile coordinates and facing direction.</param>
-    public async Task MoveOnRegion(MoveOnRegionHubRequest request)
-    {
-        if (!TryGetCharacterId(out var characterId))
-        {
-            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before MoveOnRegion");
-            return;
-        }
-
-        var regionId = Context.Items.TryGetValue("CurrentRegionId", out var r) && r is string rs ? rs : string.Empty;
-        if (string.IsNullOrEmpty(regionId))
-        {
-            await Clients.Caller.SendAsync("Error", "Not on a region map");
-            return;
-        }
-
-        try
-        {
-            var result = await _mediator.Send(new MoveOnRegionHubCommand(
-                characterId, request.ToX, request.ToY, request.Direction, regionId));
-
-            if (!result.Success)
-            {
-                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Move rejected");
-                return;
-            }
-
-            var payload = new RegionPlayerMovedPayload(characterId, result.TileX, result.TileY, result.Direction);
-            await Clients.Group(RegionGroup(regionId)).SendAsync("RegionPlayerMoved", payload);
-
-            if (result.ZoneEntryTriggered is not null)
-                await Clients.Caller.SendAsync("ZoneEntryTriggered", result.ZoneEntryTriggered);
-            else if (result.RegionExitTriggered is not null)
-                await Clients.Caller.SendAsync("RegionExitTriggered", result.RegionExitTriggered);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in MoveOnRegion for character {CharacterId}", characterId);
-            await Clients.Caller.SendAsync("Error", "Failed to process region move");
-        }
-    }
-
-    /// <summary>
-    /// Exits the caller's current zone and returns them to the region map at the zone-entry tile.
-    /// Leaves the zone SignalR group, joins the region group, and notifies zone peers of the departure.
-    /// Sends <c>ZoneExited</c> to the caller with the region ID and spawn tile coordinates.
-    /// </summary>
-    /// <remarks>Deprecated: prefer <see cref="TravelToNode"/> through a <c>RegionExit</c> node.</remarks>
-    public async Task ExitZone()
-    {
-        if (!TryGetCharacterId(out var characterId))
-        {
-            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before ExitZone");
-            return;
-        }
-
-        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zs ? zs : string.Empty;
-        if (string.IsNullOrEmpty(zoneId))
-        {
-            await Clients.Caller.SendAsync("Error", "Not currently in a zone");
-            return;
-        }
-
-        if (!Context.Items.TryGetValue("CurrentRegionId", out var r) || r is not string regionId)
-        {
-            await Clients.Caller.SendAsync("Error", "No active region context; call SelectCharacter first");
-            return;
-        }
-
-        try
-        {
-            var result = await _mediator.Send(new ExitZoneHubCommand(characterId, regionId, zoneId));
-
-            if (!result.Success)
-            {
-                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to exit zone");
-                return;
-            }
-
-            // Notify zone peers and leave zone SignalR group
-            if (TryGetCurrentZoneGroup(out var zoneGroup))
-            {
-                TryGetCharacterName(out var characterName);
-                await Clients.OthersInGroup(zoneGroup).SendAsync("PlayerLeft", new
-                {
-                    CharacterId   = characterId,
-                    CharacterName = characterName,
-                    ZoneId        = zoneId,
-                });
-                await Groups.RemoveFromGroupAsync(Context.ConnectionId, zoneGroup);
-            }
-
-            // Clean up entity tracking for the zone we just left
-            _entityTracker.UntrackPlayer(zoneId, characterId);
-            if (_entityTracker.GetPlayerPositions(zoneId).Count == 0)
-                _entityTracker.ClearZone(zoneId);
-
-            // Clear zone context items so subsequent hub calls see the region-map state
-            Context.Items["CurrentZoneId"]        = null;
-            Context.Items["CurrentZoneGroupName"] = null;
-
-            // Join the region broadcast group
-            await Groups.AddToGroupAsync(Context.ConnectionId, RegionGroup(regionId));
-
-            await Clients.Caller.SendAsync("ZoneExited", new
-            {
-                RegionId   = regionId,
-                result.TileX,
-                result.TileY,
-            });
-
-            _logger.LogInformation(
-                "Character {CharacterId} exited zone '{ZoneId}' → region '{RegionId}' at ({X},{Y})",
-                characterId, zoneId, regionId, result.TileX, result.TileY);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in ExitZone for character {CharacterId}", characterId);
-            await Clients.Caller.SendAsync("Error", "Failed to exit zone");
-        }
-    }
-
-    /// <summary>
-    /// Moves the caller's character across a region boundary into an adjacent region.
-    /// Only valid when the character is on the region map (not inside a zone) and
-    /// a pending region-exit has been highlighted by <c>MoveOnRegion</c>.
-    /// Leaves the current region SignalR group, joins the new one, and sends
-    /// <c>RegionMapData</c> and <c>RegionChanged</c> to the caller.
-    /// </summary>
-    /// <remarks>Deprecated: prefer <see cref="TravelToNode"/> through a <c>RegionExit</c> node.</remarks>
-    /// <param name="request">Target region identifier.</param>
-    public async Task ChangeRegion(ChangeRegionHubRequest request)
-    {
-        if (!TryGetCharacterId(out var characterId))
-        {
-            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before ChangeRegion");
-            return;
-        }
-
-        if (!Context.Items.TryGetValue("CurrentRegionId", out var r) || r is not string currentRegionId)
-        {
-            await Clients.Caller.SendAsync("Error", "No active region context; call SelectCharacter first");
-            return;
-        }
-
-        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var z) && z is string zs ? zs : string.Empty;
-        if (!string.IsNullOrEmpty(zoneId))
-        {
-            await Clients.Caller.SendAsync("Error", "Cannot change region while inside a zone; exit first");
-            return;
-        }
-
-        try
-        {
-            var result = await _mediator.Send(new ChangeRegionHubCommand(characterId, currentRegionId, request.TargetRegionId));
-
-            if (!result.Success)
-            {
-                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to change region");
-                return;
-            }
-
-            // Leave old region group, join new one
-            await Groups.RemoveFromGroupAsync(Context.ConnectionId, RegionGroup(currentRegionId));
-            Context.Items["CurrentRegionId"] = result.NewRegionId;
-            await Groups.AddToGroupAsync(Context.ConnectionId, RegionGroup(result.NewRegionId));
-
-            // Send the new region's tilemap
-            var mapResult = await _mediator.Send(new GetRegionMapHubCommand(result.NewRegionId));
-            if (mapResult.Success && mapResult.RegionMap is not null)
-                await Clients.Caller.SendAsync("RegionMapData", mapResult.RegionMap);
-
-            await Clients.Caller.SendAsync("RegionChanged", new
-            {
-                result.NewRegionId,
-                result.TileX,
-                result.TileY,
-            });
-
-            _logger.LogInformation(
-                "Character {CharacterId} changed region '{From}' → '{To}' at ({X},{Y})",
-                characterId, currentRegionId, result.NewRegionId, result.TileX, result.TileY);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in ChangeRegion for character {CharacterId}", characterId);
-            await Clients.Caller.SendAsync("Error", "Failed to change region");
         }
     }
 
@@ -2312,11 +1886,6 @@ public class GameHub : Hub
             return;
         }
 
-        // Untrack player; if zone is now empty of players, despawn all entities
-        _entityTracker.UntrackPlayer(zoneId, characterId);
-        if (_entityTracker.GetPlayerPositions(zoneId).Count == 0)
-            _entityTracker.ClearZone(zoneId);
-
         // Use the stored group name so Wilderness players leave the correct difficulty-scoped group.
         var groupName = Context.Items.TryGetValue("CurrentZoneGroupName", out var gn) && gn is string gs
             ? gs
@@ -2457,66 +2026,6 @@ public class GameHub : Hub
         // Echo to sender so they see their own whisper in the chat log
         var echoDto = dto with { CharacterId = Guid.Empty, Sender = $"To {request.TargetCharacterName}" };
         await Clients.Caller.SendAsync("ReceiveChatMessage", echoDto);
-    }
-
-    /// <summary>
-    /// Spawns a small set of enemies into the zone when the first player enters.
-    /// Picks up to 3 archetypes from the enemy repository and places them at random
-    /// non-blocked, non-spawn-point tiles.
-    /// </summary>
-    private async Task<IReadOnlyList<ZoneEntitySnapshot>> SpawnEnemiesForZoneAsync(string zoneId, TiledMap map)
-    {
-        try
-        {
-            var archetypes = (await _enemyRepo.GetAllAsync()).Take(3).ToList();
-            if (archetypes.Count == 0) return [];
-
-            var spawnPointSet = map.GetSpawnPoints()
-                .Select(p => (p.TileX, p.TileY))
-                .ToHashSet();
-
-            var rng = new Random(zoneId.GetHashCode());
-            var snapshots = new List<ZoneEntitySnapshot>(archetypes.Count);
-
-            foreach (var archetype in archetypes)
-            {
-                // Pick a random non-blocked tile that isn't a player spawn point
-                var (ex, ey) = FindSpawnTile(map, spawnPointSet, rng);
-                var snapshot = new ZoneEntitySnapshot(
-                    EntityId:      Guid.NewGuid(),
-                    EntityType:    "enemy",
-                    ArchetypeSlug: archetype.Slug,
-                    SpriteKey:     archetype.Slug,
-                    TileX:         ex,
-                    TileY:         ey,
-                    Direction:     "S",
-                    MaxHealth:     archetype.MaxHealth,
-                    CurrentHealth: archetype.Health);
-                snapshots.Add(snapshot);
-            }
-
-            _entityTracker.SetEntities(zoneId, snapshots);
-            return snapshots;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to spawn enemies for zone {ZoneId}", zoneId);
-            return [];
-        }
-    }
-
-    private static (int x, int y) FindSpawnTile(TiledMap map, HashSet<(int, int)> exclusions, Random rng)
-    {
-        // Make up to 50 attempts to find a valid non-blocked, non-spawn-point tile
-        for (var attempt = 0; attempt < 50; attempt++)
-        {
-            var x = rng.Next(1, map.Width - 1);
-            var y = rng.Next(1, map.Height - 1);
-            if (!map.IsBlocked(x, y) && !exclusions.Contains((x, y)))
-                return (x, y);
-        }
-        // Fallback: top-left-ish corner
-        return (2, 2);
     }
 
     private static string ComputeZoneGroup(ZoneType zoneType, string zoneId, string difficultyMode) =>
@@ -3291,50 +2800,6 @@ public class GameHub : Hub
         return false;
     }
 
-    /// <summary>
-    /// Finds a walkable spawn tile near the preferred position. If the preferred tile is walkable,
-    /// it is returned directly. Otherwise, a spiral search finds the nearest walkable tile within
-    /// the map bounds. Falls back to (1, 1) if no walkable tile is found.
-    /// </summary>
-    /// <param name="map">The zone tilemap, or null if no map is defined.</param>
-    /// <param name="preferredX">Preferred tile column.</param>
-    /// <param name="preferredY">Preferred tile row.</param>
-    /// <returns>A tuple of (x, y) guaranteed to be within map bounds and walkable.</returns>
-    private static (int X, int Y) FindWalkableSpawn(TiledMap? map, int preferredX, int preferredY)
-    {
-        if (map is null)
-            return (preferredX, preferredY);
-
-        // Preferred tile is walkable — use it.
-        if (!map.IsBlocked(preferredX, preferredY))
-            return (preferredX, preferredY);
-
-        // Spiral search for the nearest walkable tile.
-        var maxRadius = Math.Max(map.Width, map.Height);
-        for (var radius = 1; radius <= maxRadius; radius++)
-        {
-            for (var dx = -radius; dx <= radius; dx++)
-            {
-                for (var dy = -radius; dy <= radius; dy++)
-                {
-                    if (Math.Abs(dx) != radius && Math.Abs(dy) != radius)
-                        continue; // Only check the perimeter of each radius layer.
-
-                    var x = preferredX + dx;
-                    var y = preferredY + dy;
-
-                    if (x < 0 || x >= map.Width || y < 0 || y >= map.Height)
-                        continue;
-
-                    if (!map.IsBlocked(x, y))
-                        return (x, y);
-                }
-            }
-        }
-
-        // Fallback — should never be reached if the map has at least one walkable tile.
-        return (1, 1);
-    }
 }
 
 /// <summary>Request DTO sent by the client when calling <see cref="GameHub.RestAtLocation"/>.</summary>
@@ -3409,9 +2874,6 @@ public record EngageEnemyHubRequest(string LocationSlug, Guid EnemyId);
 /// <summary>Request DTO sent by the client when calling <see cref="GameHub.UseAbilityInCombat"/>.</summary>
 /// <param name="AbilityId">Identifier of the ability to activate.</param>
 public record UseAbilityInCombatHubRequest(string AbilityId);
-
-/// <summary>Request payload for <see cref="GameHub.ChangeRegion"/>.</summary>
-public record ChangeRegionHubRequest(string TargetRegionId);
 
 /// <summary>Request DTO sent by the client when calling <see cref="GameHub.TalkToNpc"/>.</summary>
 /// <param name="TargetEntityId">Unique instance ID of the NPC entity to talk to.</param>

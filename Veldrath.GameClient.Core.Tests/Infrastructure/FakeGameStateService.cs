@@ -29,9 +29,6 @@ public sealed class FakeGameStateService : IGameStateService
     /// <summary>Gets or sets the simulated current zone name.</summary>
     public string? CurrentZoneName { get; set; }
 
-    /// <summary>Gets or sets the simulated ZonTileMap.</summary>
-    public object? ZoneTileMap { get; set; }
-
     /// <summary>Gets or sets the simulated current character identifier.</summary>
     public string? CurrentCharacterId { get; set; }
 
@@ -86,12 +83,6 @@ public sealed class FakeGameStateService : IGameStateService
     /// <inheritdoc />
     public IReadOnlyList<EnemyInfo> ZoneEnemies { get; set; } = [];
 
-    /// <inheritdoc />
-    public int PlayerTileX { get; set; }
-
-    /// <inheritdoc />
-    public int PlayerTileY { get; set; }
-
     // ── Combat state extras ────────────────────────────────────────────────────
 
     /// <inheritdoc />
@@ -126,10 +117,7 @@ public sealed class FakeGameStateService : IGameStateService
     /// <inheritdoc />
     public string? CurrentDungeonId { get; set; }
 
-    // ── Region / Zone / Location state (G48-G52) ──────────────────────────────
-
-    /// <inheritdoc />
-    public RegionState CurrentRegion { get; set; } = new();
+    // ── Zone / Location state (G48-G52) ───────────────────────────────────────
 
     /// <inheritdoc />
     public ZoneState CurrentZone { get; set; } = new();
@@ -266,18 +254,6 @@ public sealed class FakeGameStateService : IGameStateService
     public void ApplyPlayerLeft(PlayerLeftPayload payload)
     {
         AppliedCalls.Add((nameof(ApplyPlayerLeft), payload));
-    }
-
-    /// <inheritdoc />
-    public void ApplyCharacterMoved(Veldrath.Contracts.Tilemap.CharacterMovedPayload payload)
-    {
-        AppliedCalls.Add((nameof(ApplyCharacterMoved), payload));
-    }
-
-    /// <inheritdoc />
-    public void ApplyZoneEntitiesSnapshot(Veldrath.Contracts.Tilemap.ZoneEntitiesSnapshotPayload payload)
-    {
-        AppliedCalls.Add((nameof(ApplyZoneEntitiesSnapshot), payload));
     }
 
     /// <inheritdoc />
@@ -490,45 +466,7 @@ public sealed class FakeGameStateService : IGameStateService
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentDungeonId)));
     }
 
-    // ── Zone / Region / Location Apply methods (G36-G47) ────────────────────────
-
-    /// <inheritdoc />
-    public void ApplyZoneExited(string regionId, int tileX, int tileY)
-    {
-        CurrentZoneId = null;
-        CurrentZoneName = null;
-        CurrentRegion = CurrentRegion with { RegionId = regionId };
-        AppliedCalls.Add((nameof(ApplyZoneExited), (regionId, tileX, tileY)));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentZoneId)));
-    }
-
-    /// <inheritdoc />
-    public void ApplyRegionMapReceived(RegionState region)
-    {
-        CurrentRegion = region;
-        AppliedCalls.Add((nameof(ApplyRegionMapReceived), region));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentRegion)));
-    }
-
-    /// <inheritdoc />
-    public void ApplyRegionChanged(string regionId, int tileX, int tileY)
-    {
-        CurrentRegion = CurrentRegion with { RegionId = regionId };
-        AppliedCalls.Add((nameof(ApplyRegionChanged), (regionId, tileX, tileY)));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentRegion)));
-    }
-
-    /// <inheritdoc />
-    public void ApplyRegionPlayerMoved(string charId, int x, int y, string direction)
-    {
-        var players = new Dictionary<string, (int X, int Y, string Direction)>(CurrentRegion.Players)
-        {
-            [charId] = (x, y, direction),
-        };
-        CurrentRegion = CurrentRegion with { Players = players };
-        AppliedCalls.Add((nameof(ApplyRegionPlayerMoved), (charId, x, y, direction)));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentRegion)));
-    }
+    // ── Zone / Location Apply methods (G36-G47) ─────────────────────────────────
 
     /// <inheritdoc />
     public void ApplyLocationEntered(LocationEnteredPayload location)
@@ -591,14 +529,6 @@ public sealed class FakeGameStateService : IGameStateService
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsConnected)));
     }
 
-    /// <inheritdoc />
-    public void ApplyZoneTileMap(Tile[,] tileMap)
-    {
-        ZoneTileMap = tileMap;
-        AppliedCalls.Add((nameof(ApplyZoneTileMap), tileMap));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ZoneTileMap)));
-    }
-
     // ── Respawn ─────────────────────────────────────────────────────────────────
 
     /// <inheritdoc />
@@ -629,21 +559,17 @@ public sealed class FakeGameStateService : IGameStateService
         ChatMessages = [];
         ZoneOccupants = [];
         ZoneEnemies = [];
-        PlayerTileX = 0;
-        PlayerTileY = 0;
         CombatEnemy = null;
         LastCombatActionResult = null;
         CurrentCharacter = new();
         CurrentZoneId = null;
         CurrentZoneName = null;
-        ZoneTileMap = null;
         IsInCombat = false;
         IsKicked = false;
         KickReason = null;
         InShop = false;
         ShopName = null;
         CurrentDungeonId = null;
-        CurrentRegion = new();
         CurrentZone = new();
         CurrentZoneLocationSlug = null;
         ZoneLocations = [];

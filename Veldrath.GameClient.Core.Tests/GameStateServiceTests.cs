@@ -132,20 +132,6 @@ public sealed class GameStateServiceTests
         state.AppliedCalls.Should().ContainSingle(c => c.Method == nameof(IGameStateService.ApplyPlayerLeft));
     }
 
-    // ── Movement ───────────────────────────────────────────────────────────────
-
-    /// <summary>Verifies ApplyCharacterMoved records the call.</summary>
-    [Fact]
-    public void ApplyCharacterMoved_Records_Call()
-    {
-        var state = new FakeGameStateService();
-        var payload = new Veldrath.Contracts.Tilemap.CharacterMovedPayload(Guid.NewGuid(), 5, 10, "N");
-
-        state.ApplyCharacterMoved(payload);
-
-        state.AppliedCalls.Should().ContainSingle(c => c.Method == nameof(IGameStateService.ApplyCharacterMoved));
-    }
-
     // ── Enemy defeated ─────────────────────────────────────────────────────────
 
     /// <summary>Verifies ApplyEnemyDefeated records the call.</summary>
@@ -201,19 +187,4 @@ public sealed class GameStateServiceTests
         state.AppliedCalls[1].Method.Should().Be(nameof(IGameStateService.ApplyZoneEntered));
     }
 
-    // ── ZoneEntitiesSnapshot ───────────────────────────────────────────────────
-
-    /// <summary>Verifies ApplyZoneEntitiesSnapshot records the call.</summary>
-    [Fact]
-    public void ApplyZoneEntitiesSnapshot_Records_Call()
-    {
-        var state = new FakeGameStateService();
-        var payload = new Veldrath.Contracts.Tilemap.ZoneEntitiesSnapshotPayload([
-            new Veldrath.Contracts.Tilemap.TileEntityDto(Guid.NewGuid(), "player", "hero", 3, 7, "S")
-        ]);
-
-        state.ApplyZoneEntitiesSnapshot(payload);
-
-        state.AppliedCalls.Should().ContainSingle(c => c.Method == nameof(IGameStateService.ApplyZoneEntitiesSnapshot));
-    }
 }

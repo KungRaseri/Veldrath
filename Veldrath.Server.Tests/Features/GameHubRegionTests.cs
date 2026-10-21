@@ -73,10 +73,7 @@ public class GameHubRegionTests : IDisposable
             new PlayerSessionRepository(db),
             new ActiveCharacterTracker(),
             mediator ?? Mock.Of<ISender>(),
-            new ZoneEntityTracker(),
-            Mock.Of<ITileMapRepository>(),
             Mock.Of<IMapGraphRepository>(),
-            Mock.Of<IEnemyRepository>(),
             options,
             userManager,
             modOptions,
@@ -158,49 +155,4 @@ public class GameHubRegionTests : IDisposable
         regionProp.GetString().Should().NotBeNullOrEmpty();
     }
 
-    // ── GetRegionMap — guard when no character selected ────────────────────────
-
-    [Fact]
-    public async Task GetRegionMap_Sends_Error_When_SelectCharacter_Not_Called()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-        var (hub, clients, _, _) = CreateHub(db, accountId);
-
-        // No SelectCharacter → no CharacterId in Context.Items
-        await hub.GetRegionMap();
-
-        clients.CallerProxy.SentMessages.Should().ContainSingle(m => m.Method == "Error",
-            "GetRegionMap must send an Error when no character has been selected");
-    }
-
-    // ── MoveOnRegion — guard when no character selected ────────────────────────
-
-    [Fact]
-    public async Task MoveOnRegion_Sends_Error_When_SelectCharacter_Not_Called()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-        var (hub, clients, _, _) = CreateHub(db, accountId);
-
-        await hub.MoveOnRegion(new Veldrath.Server.Features.Zones.MoveOnRegionHubRequest(6, 5, "right"));
-
-        clients.CallerProxy.SentMessages.Should().ContainSingle(m => m.Method == "Error",
-            "MoveOnRegion must send an Error when no character has been selected");
-    }
-
-    // ── ExitZone — guard when no active zone session ───────────────────────────
-
-    [Fact]
-    public async Task ExitZone_Sends_Error_When_SelectCharacter_Not_Called()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-        var (hub, clients, _, _) = CreateHub(db, accountId);
-
-        await hub.ExitZone();
-
-        clients.CallerProxy.SentMessages.Should().ContainSingle(m => m.Method == "Error",
-            "ExitZone must send an Error when no character has been selected");
-    }
 }

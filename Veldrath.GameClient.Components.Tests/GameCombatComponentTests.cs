@@ -54,7 +54,7 @@ public class GameCombatComponentTests : BunitContext
     public void Combat_Shows_Enemy_HP_When_Engaged()
     {
         _gameState.ApplyCombatStarted(new EnemyInfo(
-            Guid.NewGuid(), "Goblin", 3, 25, 25, 5, 5));
+            Guid.NewGuid(), "Goblin", 3, 25, 25));
 
         var cut = Render<GameCombat>();
 
@@ -74,7 +74,7 @@ public class GameCombatComponentTests : BunitContext
     public void AttackButton_Renders_When_Combat_Active()
     {
         _gameState.ApplyCombatStarted(new EnemyInfo(
-            Guid.NewGuid(), "Goblin", 3, 25, 25, 5, 5));
+            Guid.NewGuid(), "Goblin", 3, 25, 25));
 
         var cut = Render<GameCombat>();
 
@@ -90,7 +90,7 @@ public class GameCombatComponentTests : BunitContext
     public void DefendButton_Renders_When_Combat_Active()
     {
         _gameState.ApplyCombatStarted(new EnemyInfo(
-            Guid.NewGuid(), "Goblin", 3, 25, 25, 5, 5));
+            Guid.NewGuid(), "Goblin", 3, 25, 25));
 
         var cut = Render<GameCombat>();
 
@@ -106,7 +106,7 @@ public class GameCombatComponentTests : BunitContext
     public void FleeButton_Renders_When_Combat_Active()
     {
         _gameState.ApplyCombatStarted(new EnemyInfo(
-            Guid.NewGuid(), "Goblin", 3, 25, 25, 5, 5));
+            Guid.NewGuid(), "Goblin", 3, 25, 25));
 
         var cut = Render<GameCombat>();
 
@@ -122,7 +122,7 @@ public class GameCombatComponentTests : BunitContext
     public void CombatLog_Displays_Entries()
     {
         _gameState.ApplyCombatStarted(new EnemyInfo(
-            Guid.NewGuid(), "Goblin", 3, 25, 25, 5, 5));
+            Guid.NewGuid(), "Goblin", 3, 25, 25));
 
         // Simulate a combat turn result.
         _gameState.ApplyCombatTurn("You hit for 12 damage. Enemy hits you for 5 damage.");

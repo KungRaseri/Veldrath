@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using RealmEngine.Shared.Models;
 using Veldrath.Contracts.Map;
-using Veldrath.Contracts.Tilemap;
 using Veldrath.GameClient.Core.Payloads;
 
 namespace Veldrath.GameClient.Core.Abstractions;
@@ -37,13 +36,6 @@ public record CharacterBasicInfo(
     public long EffectiveExperienceToNextLevel => ExperienceToNextLevel > 0 ? ExperienceToNextLevel : Level * 1000L;
 }
 
-/// <summary>A single tile on the zone tilemap.  The <see cref="Type"/> value maps to a CSS class for rendering.</summary>
-/// <param name="X">Tile column.</param>
-/// <param name="Y">Tile row.</param>
-/// <param name="Type">Tile type identifier (0=grass, 1=wall, 2=water, 3=door, 4=path, 5=dirt, -1=void).</param>
-/// <param name="IsBlocked">Whether the tile blocks movement.</param>
-public record Tile(int X, int Y, int Type, bool IsBlocked);
-
 /// <summary>A chat message received from the game server.</summary>
 /// <param name="CharacterId">The sending character's unique identifier.</param>
 /// <param name="Channel">The chat channel (e.g. "zone", "global", "whisper").</param>
@@ -61,9 +53,7 @@ public record ChatMessage(
 /// <param name="CharacterId">The occupying character's unique identifier.</param>
 /// <param name="CharacterName">The occupying character's display name.</param>
 /// <param name="EnteredAt">When this character entered the zone.</param>
-/// <param name="TileX">The occupant's tile column, or <c>-1</c> if unknown.</param>
-/// <param name="TileY">The occupant's tile row, or <c>-1</c> if unknown.</param>
-public record OccupantInfo(Guid CharacterId, string CharacterName, DateTimeOffset EnteredAt, int TileX = -1, int TileY = -1);
+public record OccupantInfo(Guid CharacterId, string CharacterName, DateTimeOffset EnteredAt);
 
 /// <summary>Information about an enemy in the current zone.</summary>
 /// <param name="EnemyId">The unique enemy identifier.</param>
@@ -71,57 +61,12 @@ public record OccupantInfo(Guid CharacterId, string CharacterName, DateTimeOffse
 /// <param name="Level">The enemy's level.</param>
 /// <param name="CurrentHealth">The enemy's current health points.</param>
 /// <param name="MaxHealth">The enemy's maximum health points.</param>
-/// <param name="TileX">The column of the tile the enemy is standing on.</param>
-/// <param name="TileY">The row of the tile the enemy is standing on.</param>
 public record EnemyInfo(
     Guid EnemyId,
     string EnemyName,
     int Level,
     int CurrentHealth,
-    int MaxHealth,
-    int TileX,
-    int TileY);
-
-// ── Region / Zone state records ────────────────────────────────────────────
-
-/// <summary>
-/// Holds the current region state including tilemap data, exits, and player positions.
-/// </summary>
-public sealed record RegionState
-{
-    /// <summary>The region's unique identifier.</summary>
-    public string RegionId { get; init; } = "";
-
-    /// <summary>The region's display name.</summary>
-    public string Name { get; init; } = "";
-
-    /// <summary>A description of the region.</summary>
-    public string Description { get; init; } = "";
-
-    /// <summary>The region type (e.g. "forest", "mountain", "swamp").</summary>
-    public string Type { get; init; } = "";
-
-    /// <summary>The minimum character level recommended for this region.</summary>
-    public int MinLevel { get; init; }
-
-    /// <summary>The maximum character level for which this region provides challenge.</summary>
-    public int MaxLevel { get; init; }
-
-    /// <summary>The width of the region tilemap in tiles.</summary>
-    public int TileWidth { get; init; }
-
-    /// <summary>The height of the region tilemap in tiles.</summary>
-    public int TileHeight { get; init; }
-
-    /// <summary>The region tilemap data, or <c>null</c> if not yet loaded.</summary>
-    public int[,]? Tiles { get; init; }
-
-    /// <summary>Zone entry points on the region map, keyed by tile position.</summary>
-    public Dictionary<(int X, int Y), string> Exits { get; init; } = new();
-
-    /// <summary>Other players on the region map, keyed by character ID.</summary>
-    public Dictionary<string, (int X, int Y, string Direction)> Players { get; init; } = new();
-}
+    int MaxHealth);
 
 /// <summary>
 /// Holds the current zone metadata.
@@ -218,14 +163,6 @@ public interface IGameStateService : INotifyPropertyChanged
     /// <summary>The display name of the current zone, or <c>null</c> if not in a zone.</summary>
     string? CurrentZoneName { get; }
 
-    /// <summary>The tile map for the current zone, or <c>null</c> if not yet loaded.</summary>
-    object? ZoneTileMap { get; }
-
-    // ── Region state (G48-G52) ──────────────────────────────────────────────
-
-    /// <summary>The current region state including tilemap data, exits, and player positions.</summary>
-    RegionState CurrentRegion { get; }
-
     /// <summary>The current zone metadata (description, type, facilities).</summary>
     ZoneState CurrentZone { get; }
 
@@ -277,12 +214,6 @@ public interface IGameStateService : INotifyPropertyChanged
 
     /// <summary>Visible enemies in the current zone.</summary>
     IReadOnlyList<EnemyInfo> ZoneEnemies { get; }
-
-    /// <summary>The player's current tile column within the zone.</summary>
-    int PlayerTileX { get; }
-
-    /// <summary>The player's current tile row within the zone.</summary>
-    int PlayerTileY { get; }
 
     // ── Combat state ────────────────────────────────────────────────────────
 
@@ -347,14 +278,6 @@ public interface IGameStateService : INotifyPropertyChanged
     /// <summary>Updates state when another player leaves the zone.</summary>
     /// <param name="payload">The player left payload from the hub event.</param>
     void ApplyPlayerLeft(PlayerLeftPayload payload);
-
-    /// <summary>Updates the player's position after a movement action.</summary>
-    /// <param name="payload">The character moved payload from the hub event.</param>
-    void ApplyCharacterMoved(Veldrath.Contracts.Tilemap.CharacterMovedPayload payload);
-
-    /// <summary>Replaces the current zone entities snapshot (occupants and enemies).</summary>
-    /// <param name="payload">The zone entities snapshot payload from the hub event.</param>
-    void ApplyZoneEntitiesSnapshot(Veldrath.Contracts.Tilemap.ZoneEntitiesSnapshotPayload payload);
 
     /// <summary>Handles notification that an enemy has been defeated.</summary>
     /// <param name="payload">The enemy defeated payload from the hub event.</param>
@@ -509,30 +432,7 @@ public interface IGameStateService : INotifyPropertyChanged
     /// <param name="dungeonId">The dungeon's unique identifier.</param>
     void ApplyDungeonEntered(string dungeonId);
 
-    // ── Zone / Region / Location Apply methods (G36-G47) ────────────────────
-
-    /// <summary>Updates state after exiting a zone into the region map.</summary>
-    /// <param name="regionId">The region the player is exiting into.</param>
-    /// <param name="tileX">The tile column of the exit position on the region map.</param>
-    /// <param name="tileY">The tile row of the exit position on the region map.</param>
-    void ApplyZoneExited(string regionId, int tileX, int tileY);
-
-    /// <summary>Stores the region map data received from the server.</summary>
-    /// <param name="region">The region state containing tilemap and exit data.</param>
-    void ApplyRegionMapReceived(RegionState region);
-
-    /// <summary>Updates state when the player's current region changes.</summary>
-    /// <param name="regionId">The new region identifier.</param>
-    /// <param name="tileX">The tile column of the entry position.</param>
-    /// <param name="tileY">The tile row of the entry position.</param>
-    void ApplyRegionChanged(string regionId, int tileX, int tileY);
-
-    /// <summary>Updates another player's position on the region map.</summary>
-    /// <param name="charId">The character identifier.</param>
-    /// <param name="x">The tile column of the player's new position.</param>
-    /// <param name="y">The tile row of the player's new position.</param>
-    /// <param name="direction">The facing direction of the player.</param>
-    void ApplyRegionPlayerMoved(string charId, int x, int y, string direction);
+    // ── Zone / Location Apply methods (G36-G47) ─────────────────────────────
 
     /// <summary>Updates state after entering a named location within a zone.</summary>
     /// <param name="location">The location entered payload containing enemies and connections.</param>
@@ -567,10 +467,6 @@ public interface IGameStateService : INotifyPropertyChanged
     /// <summary>Updates the connection ID after a successful hub connection.</summary>
     /// <param name="connectionId">The server-assigned connection ID.</param>
     void ApplyServerInfo(string connectionId);
-
-    /// <summary>Updates the zone tile map (e.g. after requesting a fresh map).</summary>
-    /// <param name="tileMap">The tile map data.</param>
-    void ApplyZoneTileMap(Tile[,] tileMap);
 
     // ── Respawn ─────────────────────────────────────────────────────────────
 
