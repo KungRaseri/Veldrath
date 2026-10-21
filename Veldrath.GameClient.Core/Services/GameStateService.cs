@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using RealmEngine.Shared.Models;
+using Veldrath.Contracts.Map;
 using Veldrath.GameClient.Core.Abstractions;
 using Veldrath.GameClient.Core.Payloads;
 
@@ -155,6 +156,21 @@ public sealed class GameStateService : IGameStateService
     /// <summary>The slug of the current zone location (POI), or <c>null</c> if not at a named location.</summary>
     public string? CurrentZoneLocationSlug { get; private set; }
 
+    /// <summary>Stable identifier of the current region or zone map.</summary>
+    public string? CurrentMapId { get; private set; }
+
+    /// <summary>Stable identifier of the node the character occupies.</summary>
+    public string? CurrentNodeId { get; private set; }
+
+    /// <summary>The currently loaded map graph, or <c>null</c> before it is requested.</summary>
+    public MapGraphDto? CurrentMap { get; private set; }
+
+    /// <summary>Summaries of all active maps.</summary>
+    public List<MapSummaryDto> AvailableMaps { get; private set; } = [];
+
+    /// <inheritdoc />
+    IReadOnlyList<MapSummaryDto> IGameStateService.AvailableMaps => AvailableMaps;
+
     /// <summary>The zone locations available in the current zone.</summary>
     public List<ZoneLocationEntry> ZoneLocations { get; private set; } = [];
 
@@ -225,6 +241,11 @@ public sealed class GameStateService : IGameStateService
 
         ApplyCharacterSelected(character, payload.CurrentZoneId);
 
+        if (!string.IsNullOrWhiteSpace(payload.CurrentMapId))
+            CurrentMapId = payload.CurrentMapId;
+        if (!string.IsNullOrWhiteSpace(payload.CurrentNodeId))
+            CurrentNodeId = payload.CurrentNodeId;
+
         CurrentCharacterState = new CharacterState
         {
             Level = payload.Level,
@@ -244,12 +265,77 @@ public sealed class GameStateService : IGameStateService
             UnspentAttributePoints = payload.UnspentAttributePoints,
         };
         RaisePropertyChanged(nameof(CurrentCharacterState));
+        RaisePropertyChanged(nameof(CurrentMapId));
+        RaisePropertyChanged(nameof(CurrentNodeId));
     }
 
     /// <inheritdoc />
     public void ApplyZoneEntered(ZoneEnteredPayload payload)
     {
         ApplyZoneEntered(payload.Id, payload.Name, 0, 0, null);
+
+        if (!string.IsNullOrWhiteSpace(payload.CurrentMapId))
+            CurrentMapId = payload.CurrentMapId;
+        if (!string.IsNullOrWhiteSpace(payload.CurrentNodeId))
+            CurrentNodeId = payload.CurrentNodeId;
+
+        RaisePropertyChanged(nameof(CurrentMapId));
+        RaisePropertyChanged(nameof(CurrentNodeId));
+    }
+
+    /// <inheritdoc />
+    public void ApplyMapGraph(MapGraphReceivedPayload payload)
+    {
+        if (!payload.Success || payload.Map is null)
+        {
+            if (!string.IsNullOrWhiteSpace(payload.ErrorMessage))
+                ApplySystemMessage(payload.ErrorMessage);
+            return;
+        }
+
+        CurrentMap = payload.Map;
+        CurrentMapId = payload.Map.Id;
+        CurrentNodeId = string.IsNullOrWhiteSpace(payload.CurrentNodeId)
+            ? payload.Map.EntryNodeId
+            : payload.CurrentNodeId;
+        AvailableMaps = payload.AvailableMaps is null ? [] : [.. payload.AvailableMaps];
+
+        RaisePropertyChanged(nameof(CurrentMap));
+        RaisePropertyChanged(nameof(CurrentMapId));
+        RaisePropertyChanged(nameof(CurrentNodeId));
+        RaisePropertyChanged(nameof(AvailableMaps));
+    }
+
+    /// <inheritdoc />
+    public void ApplyNodeTraveled(NodeTraveledPayload payload)
+    {
+        if (!payload.Success)
+        {
+            if (!string.IsNullOrWhiteSpace(payload.ErrorMessage))
+                ApplySystemMessage(payload.ErrorMessage);
+            return;
+        }
+
+        var mapChanged = !string.IsNullOrWhiteSpace(payload.MapId) &&
+                         !string.Equals(payload.MapId, CurrentMapId, StringComparison.OrdinalIgnoreCase);
+
+        CurrentMapId = string.IsNullOrWhiteSpace(payload.MapId) ? CurrentMapId : payload.MapId;
+        CurrentNodeId = string.IsNullOrWhiteSpace(payload.NodeId) ? CurrentNodeId : payload.NodeId;
+        CurrentZoneLocationSlug = payload.LocationSlug;
+        IsAtLocation = !string.IsNullOrWhiteSpace(payload.LocationSlug);
+
+        if (mapChanged)
+            CurrentMap = null;
+
+        RaisePropertyChanged(nameof(CurrentMapId));
+        RaisePropertyChanged(nameof(CurrentNodeId));
+        RaisePropertyChanged(nameof(CurrentZoneLocationSlug));
+        RaisePropertyChanged(nameof(IsAtLocation));
+        if (mapChanged)
+            RaisePropertyChanged(nameof(CurrentMap));
+
+        if (!string.IsNullOrWhiteSpace(payload.Message))
+            ApplySystemMessage(payload.Message);
     }
 
     /// <inheritdoc />

@@ -1,82 +1,59 @@
-@* Journal / Quest Log overlay showing active and completed quests. *@
+@* Journal / quest log as text lists with a detail pane. *@
 @using Microsoft.Extensions.Logging
 @using Veldrath.GameClient.Core.Abstractions
+@using Veldrath.GameClient.Components.Models
+@using MudBlazor
 @inject IGameHubConnectionService Hub
 @inject IGameStateService GameState
 @inject ILogger<JournalOverlay> Logger
 @implements IAsyncDisposable
 
-<div class="journal-overlay d-flex flex-column gap-4">
-    <div class="journal-quest-list">
-        <h4>Active Quests (@GameState.QuestLog.Count)</h4>
-        @if (GameState.QuestLog.Count == 0)
-        {
-            <p class="journal-empty">No active quests. Find an NPC in town to get started!</p>
-        }
-        else
-        {
-            @foreach (var quest in GameState.QuestLog)
-            {
-                <div class="journal-quest d-flex align-center gap-2 @(_selectedQuest == quest ? "journal-quest-selected" : "")"
-                     @onclick="() => SelectQuest(quest)">
-                    <span class="journal-quest-title flex-1">@quest.Title</span>
-                    <span class="journal-quest-progress">@quest.Progress / @quest.Total</span>
-                    @if (quest.IsComplete)
-                    {
-                        <span class="journal-quest-complete-badge">✓</span>
-                    }
-                </div>
-            }
-        }
-    </div>
+<div class="journal-overlay d-flex flex-column gap-3">
+    <EntityList Title="@($"Active Quests ({GameState.QuestLog.Count})")"
+                Icon="@Icons.Material.Filled.MenuBook"
+                Items="@ActiveQuestItems"
+                EmptyText="No active quests. Find an NPC in town to get started!"
+                OnSelect="SelectQuest" />
 
     @if (_selectedQuest is not null)
     {
-        <div class="journal-quest-detail d-flex flex-column gap-2">
-            <h4>@_selectedQuest.Title</h4>
-            @if (!string.IsNullOrEmpty(_selectedQuest.Description))
-            {
-                <p class="journal-quest-desc">@_selectedQuest.Description</p>
-            }
-            <div class="journal-quest-objectives">
-                <h5>Objectives</h5>
+        <DetailPane Title="@_selectedQuest.Title"
+                    Subtitle="@($"{_selectedQuest.Progress} / {_selectedQuest.Total}")"
+                    Description="@_selectedQuest.Description"
+                    Icon="@Icons.Material.Filled.Flag"
+                    TestId="journal-quest-detail">
+            <TextPanel Title="Objectives" Dense="true">
                 @if (_selectedQuest.Objectives.Count == 0)
                 {
-                    <p class="journal-empty">No specific objectives listed.</p>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">No specific objectives listed.</MudText>
                 }
                 else
                 {
-                    <ul>
-                        @foreach (var (objName, required) in _selectedQuest.Objectives)
-                        {
-                            var progress = _selectedQuest.ProgressData.GetValueOrDefault(objName, 0);
-                            var done = progress >= required;
-                            <li class="@(done ? "objective-done" : "objective-pending")">
-                                @if (done) { <span class="objective-check">✓</span> }
-                                @objName: @progress / @required
-                            </li>
-                        }
-                    </ul>
+                    @foreach (var (objectiveName, required) in _selectedQuest.Objectives)
+                    {
+                        var progress = _selectedQuest.ProgressData.GetValueOrDefault(objectiveName, 0);
+                        var done = progress >= required;
+                        <StatRow Label="@objectiveName"
+                                 Value="@($"{progress} / {required}")"
+                                 Icon="@(done ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)"
+                                 IconColor="@(done ? Color.Success : Color.Default)" />
+                    }
                 }
-            </div>
-            <div class="journal-quest-rewards">
-                <h5>Rewards</h5>
-                <p>@_selectedQuest.XpReward XP · @_selectedQuest.GoldReward gold</p>
-            </div>
-        </div>
+            </TextPanel>
+
+            <TextPanel Title="Rewards" Dense="true" Class="mt-2">
+                <StatRow Label="Experience" Value="@($"{_selectedQuest.XpReward} XP")" Icon="@Icons.Material.Filled.TrendingUp" />
+                <StatRow Label="Gold" Value="@($"{_selectedQuest.GoldReward} gold")" Icon="@Icons.Material.Outlined.Diamond" />
+            </TextPanel>
+        </DetailPane>
     }
 
     @if (GameState.CompletedQuests.Count > 0)
     {
-        <div class="journal-completed">
-            <h4>Completed Quests (@GameState.CompletedQuests.Count)</h4>
-            <div class="journal-completed-list d-flex flex-column">
-                @foreach (var quest in GameState.CompletedQuests)
-                {
-                    <div class="journal-completed-item">@quest.Title</div>
-                }
-            </div>
-        </div>
+        <EntityList Title="@($"Completed Quests ({GameState.CompletedQuests.Count})")"
+                    Icon="@Icons.Material.Filled.TaskAlt"
+                    Items="@CompletedQuestItems"
+                    EmptyText="No completed quests yet." />
     }
 </div>
 
@@ -93,10 +70,29 @@
         IReadOnlyList<QuestLogEntry> Active,
         IReadOnlyList<QuestLogEntry> Completed);
 
+    private IReadOnlyList<EntityListItem> ActiveQuestItems =>
+        GameState.QuestLog
+            .Select(quest => new EntityListItem(
+                quest.Title,
+                quest.Title,
+                $"{quest.Progress} / {quest.Total}",
+                Icons.Material.Filled.Flag,
+                quest.IsComplete ? "Complete" : null,
+                IsSelected: string.Equals(quest.Title, _selectedQuest?.Title, StringComparison.Ordinal)))
+            .ToList();
+
+    private IReadOnlyList<EntityListItem> CompletedQuestItems =>
+        GameState.CompletedQuests
+            .Select(quest => new EntityListItem(
+                quest.Title,
+                quest.Title,
+                quest.Description,
+                Icons.Material.Filled.CheckCircle))
+            .ToList();
+
     /// <inheritdoc />
     protected override void OnInitialized()
     {
-        // Subscribe to hub event for quest log updates
         _questLogSubscription = Hub.On<QuestLogPayload>("QuestLogReceived", payload =>
         {
             GameState.ApplyQuestLogUpdated(payload.Active, payload.Completed);
@@ -104,7 +100,6 @@
             return Task.CompletedTask;
         });
 
-        // Request current quest log from the server
         _ = RequestQuestLogAsync();
     }
 
@@ -121,9 +116,10 @@
         }
     }
 
-    private void SelectQuest(QuestLogEntry quest)
+    private void SelectQuest(EntityListItem item)
     {
-        _selectedQuest = quest;
+        _selectedQuest = GameState.QuestLog.FirstOrDefault(quest =>
+            string.Equals(quest.Title, item.Id, StringComparison.Ordinal));
     }
 
     /// <inheritdoc />

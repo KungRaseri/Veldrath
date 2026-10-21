@@ -1,40 +1,69 @@
-@* Reusable action button bar that shows context-sensitive buttons based on game state
-    and a hotbar row with ability quick-slot buttons. *@
+@* Context-sensitive action buttons plus a text-table ability hotbar with keybinds and icons. *@
 @using MudBlazor
+@using Veldrath.GameClient.Components.Models
 
-<div class="action-bar-wrapper d-flex flex-column align-center gap-2">
-    @* Hotbar ability quick-slot buttons row *@
-    @if (ShowHotbar)
+<div class="action-bar-wrapper d-flex flex-column gap-2">
+    @if (ShowHotbar && HotbarSlots.Count > 0)
     {
-        <div class="hotbar d-flex gap-1 align-center">
-            @foreach (var slot in HotbarSlots)
-            {
-                <button class="hotbar-slot d-flex flex-column align-center justify-center @slot.CssClass"
-                        @onclick="() => OnUseAbility.InvokeAsync(slot.AbilityId)"
-                        disabled="@(slot.IsEmpty || !slot.IsAvailable)"
-                        title="@(slot.Name ?? $"Slot {slot.SlotNumber}")">
-                    <span class="hotbar-slot-key">@slot.KeyBind</span>
-                    <span class="hotbar-slot-icon">
-                        @if (slot.IsEmpty)
-                        {
-                            <span class="hotbar-slot-empty-icon">—</span>
-                        }
-                        else if (!slot.IsAvailable && slot.CooldownRemaining > 0)
-                        {
-                            <span class="hotbar-slot-cooldown">@slot.CooldownRemaining</span>
-                        }
-                        else
-                        {
-                            <span class="hotbar-slot-ability-name">@slot.Name?[..Math.Min(3, slot.Name?.Length ?? 0)]</span>
-                        }
-                    </span>
-                </button>
-            }
-        </div>
+        <TextPanel Title="Abilities" Icon="@Icons.Material.Filled.AutoAwesome" Dense="true" TestId="hotbar">
+            <MudSimpleTable Dense="true" Hover="true" Class="hotbar-table" data-testid="hotbar-table">
+                <thead>
+                    <tr>
+                        <th class="text-center">Key</th>
+                        <th>Ability</th>
+                        <th>Status</th>
+                        <th class="text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var slot in HotbarSlots)
+                    {
+                        <tr class="hotbar-slot @slot.CssClass" data-testid="@($"hotbar-slot-{slot.SlotNumber}")">
+                            <td class="text-center">
+                                <kbd class="hotbar-slot-key">@slot.KeyBind</kbd>
+                            </td>
+                            <td>
+                                <div class="d-flex align-center gap-2">
+                                    <MudIcon Icon="@SlotIcon(slot)" Size="Size.Small" Color="@SlotColor(slot)" />
+                                    <MudText Typo="Typo.body2">@(slot.IsEmpty ? "Empty slot" : slot.Name)</MudText>
+                                </div>
+                            </td>
+                            <td>
+                                @if (slot.IsEmpty)
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Unassigned</MudText>
+                                }
+                                else if (!slot.IsAvailable && slot.CooldownRemaining > 0)
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Info">Cooldown @slot.CooldownRemaining s</MudText>
+                                }
+                                else if (!slot.IsAvailable)
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Warning">Unavailable</MudText>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Success">Ready</MudText>
+                                }
+                            </td>
+                            <td class="text-right">
+                                <MudButton Variant="Variant.Text"
+                                           Size="Size.Small"
+                                           Color="Color.Primary"
+                                           OnClick="() => OnUseAbility.InvokeAsync(slot.AbilityId)"
+                                           Disabled="@(slot.IsEmpty || !slot.IsAvailable)">
+                                    Use
+                                </MudButton>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        </TextPanel>
     }
 
     @* Context-sensitive action buttons *@
-    <div class="action-bar d-flex gap-2 align-center">
+    <div class="action-bar d-flex gap-2 align-center flex-wrap">
         @if (ShowAttack)
         {
             <MudButton Variant="Variant.Filled"
@@ -42,6 +71,7 @@
                        OnClick="OnAttack"
                        Disabled="@Disabled"
                        Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Gavel"
                        Class="action-btn-attack">
                 Attack
             </MudButton>
@@ -53,6 +83,7 @@
                        OnClick="OnDefend"
                        Disabled="@Disabled"
                        Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Shield"
                        Class="action-btn-defend">
                 Defend
             </MudButton>
@@ -63,6 +94,7 @@
                        OnClick="OnFlee"
                        Disabled="@Disabled"
                        Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.DirectionsRun"
                        Class="action-btn-flee">
                 Flee
             </MudButton>
@@ -73,7 +105,8 @@
                        Color="Color.Warning"
                        OnClick="OnRespawn"
                        Disabled="@Disabled"
-                       Size="Size.Small">
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Refresh">
                 Respawn
             </MudButton>
         }
@@ -83,8 +116,9 @@
                        Color="Color.Secondary"
                        OnClick="OnSearch"
                        Disabled="@Disabled"
-                       Size="Size.Small">
-                🔍 Search
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Search">
+                Search
             </MudButton>
         }
         @if (ShowRest)
@@ -93,19 +127,20 @@
                        Color="Color.Tertiary"
                        OnClick="OnRest"
                        Disabled="@Disabled"
-                       Size="Size.Small">
-                🛏 Rest
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Hotel">
+                Rest
             </MudButton>
         }
     </div>
 </div>
 
 @code {
-    /// <summary>Whether to show the hotbar ability quick-slot row.</summary>
+    /// <summary>Whether to show the hotbar ability table.</summary>
     [Parameter] public bool ShowHotbar { get; set; } = true;
 
     /// <summary>The list of hotbar ability slots to display.</summary>
-    [Parameter] public List<Veldrath.GameClient.Components.Models.HotbarAbility> HotbarSlots { get; set; } = [];
+    [Parameter] public List<HotbarAbility> HotbarSlots { get; set; } = [];
 
     /// <summary>Whether to show the Attack button.</summary>
     [Parameter] public bool ShowAttack { get; set; }
@@ -147,8 +182,22 @@
     [Parameter] public EventCallback OnRest { get; set; }
 
     /// <summary>
-    /// Callback invoked when a hotbar ability quick-slot is clicked.
-    /// The parameter is the <see cref="Veldrath.GameClient.Components.Models.HotbarAbility.AbilityId"/>.
+    /// Callback invoked when a hotbar ability's Use action is clicked.
+    /// The parameter is the <see cref="HotbarAbility.AbilityId"/>.
     /// </summary>
     [Parameter] public EventCallback<string?> OnUseAbility { get; set; }
+
+    private static string SlotIcon(HotbarAbility slot) =>
+        slot.IsEmpty
+            ? Icons.Material.Filled.RemoveCircleOutline
+            : slot.IsAvailable
+                ? Icons.Material.Filled.AutoAwesome
+                : Icons.Material.Filled.HourglassBottom;
+
+    private static Color SlotColor(HotbarAbility slot) =>
+        slot.IsEmpty
+            ? Color.Default
+            : slot.IsAvailable
+                ? Color.Primary
+                : Color.Info;
 }

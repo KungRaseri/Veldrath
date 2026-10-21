@@ -1,4 +1,4 @@
-@* Shop overlay showing merchant catalog and buy/sell interface. *@
+@* Shop overlay showing merchant catalog and buy/sell interface as text tables and detail panes. *@
 @using Microsoft.Extensions.Logging
 @using RealmEngine.Shared.Models
 @using Veldrath.GameClient.Core.Abstractions
@@ -9,82 +9,111 @@
 @inject ILogger<ShopOverlay> Logger
 @implements IAsyncDisposable
 
-<div class="shop-overlay d-flex flex-column gap-4">
-    <div class="shop-catalog">
-        <h4>Merchant Wares</h4>
-        @if (GameState.ShopCatalog.Count == 0)
-        {
-            <p class="shop-empty">This merchant has nothing for sale.</p>
-        }
-        else
-        {
-            <div class="shop-items d-flex flex-column gap-1">
-                @foreach (var entry in GameState.ShopCatalog)
-                {
-                    <div class="shop-item d-flex align-center gap-2">
-                        <div class="shop-item-info flex-1 d-flex flex-column">
-                            <span class="shop-item-name">@entry.Name</span>
-                            <span class="shop-item-rarity @GetRarityClass(entry.Rarity)">@entry.Rarity</span>
-                        </div>
-                        <span class="shop-item-price">@entry.Price g</span>
-                        <MudButton Variant="Variant.Filled"
-                                   Color="Color.Primary"
-                                   Size="Size.Small"
-                                   OnClick="() => BuyItem(entry)"
-                                   Disabled="@(!Hub.IsConnected || GameState.CurrentCharacterGold < entry.Price)">
-                            Buy
-                        </MudButton>
-                    </div>
-                }
-            </div>
-        }
-    </div>
+<div class="shop-overlay d-flex flex-column gap-3">
+    <TextPanel Title="Trade" Icon="@Icons.Material.Filled.Storefront" TestId="shop-summary">
+        <StatTable Title="Merchant" Stats="@MerchantStats" />
+    </TextPanel>
 
-    <div class="shop-player-inventory">
-        <h4>Your Items (@GameState.InventoryItems.Count)</h4>
-        @if (GameState.InventoryItems.Count == 0)
-        {
-            <p class="shop-empty">You have no items to sell.</p>
-        }
-        else
-        {
-            <div class="shop-items d-flex flex-column gap-1">
-                @foreach (var item in GameState.InventoryItems)
-                {
-                    var sellPrice = item.Price / 2;
-                    <div class="shop-item d-flex align-center gap-2">
-                        <div class="shop-item-info flex-1 d-flex flex-column">
-                            <span class="shop-item-name">@item.GetShortName()</span>
-                            @if (item.Quantity > 1)
-                            {
-                                <span class="shop-item-qty">x@item.Quantity</span>
-                            }
-                        </div>
-                        <span class="shop-item-price">@sellPrice g</span>
-                        <MudButton Variant="Variant.Outlined"
-                                   Size="Size.Small"
-                                   OnClick="() => SellItem(item.Slug, Math.Min(1, item.Quantity))"
-                                   Disabled="@(!Hub.IsConnected)">
-                            Sell
-                        </MudButton>
-                    </div>
-                }
+    <ItemTable Title="Merchant Wares"
+               Icon="@Icons.Material.Filled.Storefront"
+               Items="@CatalogRows"
+               Selectable="true"
+               OnSelect="SelectCatalogEntry"
+               EmptyText="This merchant has nothing for sale."
+               TestId="shop-catalog" />
+
+    @if (_selectedEntry is { } entry)
+    {
+        <DetailPane Title="@entry.Name"
+                    Subtitle="@entry.Rarity.ToString()"
+                    Icon="@Icons.Material.Filled.Sell"
+                    TestId="shop-detail">
+            <StatTable Title="Purchase" Stats="@BuildPurchaseStats(entry)" />
+
+            <div class="d-flex gap-2 mt-2">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Size="Size.Small"
+                           OnClick="() => BuyItem(entry)"
+                           Disabled="@(!Hub.IsConnected || GameState.CurrentCharacterGold < entry.Price)">
+                    Buy
+                </MudButton>
             </div>
-        }
-    </div>
+        </DetailPane>
+    }
+
+    <ItemTable Title="@($"Your Items ({GameState.InventoryItems.Count})")"
+               Icon="@Icons.Material.Filled.Inventory2"
+               Items="@InventoryRows"
+               Selectable="true"
+               OnSelect="SelectInventoryItem"
+               EmptyText="You have no items to sell."
+               TestId="shop-inventory" />
+
+    @if (_selectedItem is not null)
+    {
+        <DetailPane Title="@_selectedItem.GetDisplayName()"
+                    Subtitle="Sell"
+                    Icon="@Icons.Material.Filled.Sell"
+                    TestId="shop-sell-detail">
+            <StatTable Title="Sale" Stats="@BuildSaleStats(_selectedItem)" />
+
+            <div class="d-flex gap-2 mt-2">
+                <MudButton Variant="Variant.Outlined"
+                           Size="Size.Small"
+                           OnClick="() => SellItem(_selectedItem, Math.Max(1, Math.Min(1, _selectedItem.Quantity)))"
+                           Disabled="@(!Hub.IsConnected)">
+                    Sell
+                </MudButton>
+            </div>
+        </DetailPane>
+    }
 
     @if (_lastMessage is not null)
     {
-        <div class="shop-message @(_lastMessageIsError ? "shop-message-error" : "shop-message-success")">
+        <MudAlert Severity="@(_lastMessageIsError ? Severity.Error : Severity.Success)"
+                  Dense="true"
+                  Class="shop-message">
             @_lastMessage
-        </div>
+        </MudAlert>
     }
 </div>
 
 @code {
     private readonly List<IDisposable> _hubSubscriptions = [];
+    private ShopItemEntry? _selectedEntry;
+    private Item? _selectedItem;
     private string? _lastMessage;
     private bool _lastMessageIsError;
+
+    private IReadOnlyList<StatEntry> MerchantStats =>
+    [
+        new("Gold", $"{GameState.CurrentCharacterGold} g", Icons.Material.Filled.Paid),
+        new("Wares", GameState.ShopCatalog.Count.ToString(), Icons.Material.Filled.Storefront),
+        new("Carrying", GameState.InventoryItems.Count.ToString(), Icons.Material.Filled.Inventory2),
+    ];
+
+    private IReadOnlyList<ItemTableEntry> CatalogRows =>
+        GameState.ShopCatalog
+            .Select(entry => new ItemTableEntry(
+                entry.Slug,
+                entry.Name,
+                1,
+                entry.Rarity.ToString(),
+                $"{entry.Price} g",
+                Icons.Material.Filled.Sell))
+            .ToList();
+
+    private IReadOnlyList<ItemTableEntry> InventoryRows =>
+        GameState.InventoryItems
+            .Select(item => new ItemTableEntry(
+                item.Slug,
+                item.GetDisplayName(),
+                item.Quantity,
+                item.Type.ToString(),
+                $"{item.Price / 2} g",
+                ItemIcon(item)))
+            .ToList();
 
     /// <inheritdoc />
     protected override void OnInitialized()
@@ -107,6 +136,41 @@
         await Task.CompletedTask;
     }
 
+    private void SelectCatalogEntry(ItemTableEntry row)
+    {
+        _selectedEntry = GameState.ShopCatalog.FirstOrDefault(entry =>
+            string.Equals(entry.Slug, row.Id, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void SelectInventoryItem(ItemTableEntry row)
+    {
+        _selectedItem = GameState.InventoryItems.FirstOrDefault(item =>
+            string.Equals(item.Slug, row.Id, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private IReadOnlyList<StatEntry> BuildPurchaseStats(ShopItemEntry entry) =>
+    [
+        new("Rarity", entry.Rarity.ToString(), Icons.Material.Filled.Star),
+        new("Price", $"{entry.Price} g", Icons.Material.Filled.Paid),
+        new("Affordable", GameState.CurrentCharacterGold >= entry.Price ? "Yes" : "No", Icons.Material.Filled.Savings),
+    ];
+
+    private IReadOnlyList<StatEntry> BuildSaleStats(Item item) =>
+    [
+        new("Quantity", item.Quantity.ToString(), Icons.Material.Filled.Numbers),
+        new("Sell price", $"{item.Price / 2} g", Icons.Material.Filled.Paid),
+        new("Type", item.Type.ToString(), ItemIcon(item)),
+    ];
+
+    private static string ItemIcon(Item item) => item.Type switch
+    {
+        ItemType.Weapon => Icons.Material.Filled.Gavel,
+        ItemType.Shield or ItemType.OffHand => Icons.Material.Filled.Shield,
+        ItemType.Consumable => Icons.Material.Filled.LocalDrink,
+        ItemType.Material => Icons.Material.Filled.Category,
+        _ => Icons.Material.Filled.Inventory2,
+    };
+
     private async Task BuyItem(ShopItemEntry entry)
     {
         try
@@ -124,30 +188,20 @@
         }
     }
 
-    private async Task SellItem(string itemSlug, int quantity)
+    private async Task SellItem(Item item, int quantity)
     {
         try
         {
-            await Hub.SendAsync("SellItem", new { ItemSlug = itemSlug, Quantity = quantity });
-            _lastMessage = $"Sold {itemSlug}.";
+            await Hub.SendAsync("SellItem", new { ItemSlug = item.Slug, Quantity = quantity });
+            _lastMessage = $"Sold {item.GetDisplayName()}.";
             _lastMessageIsError = false;
-            Logger.LogInformation("Sold {ItemSlug}", itemSlug);
+            Logger.LogInformation("Sold {ItemSlug}", item.Slug);
         }
         catch (Exception ex)
         {
-            _lastMessage = $"Failed to sell {itemSlug}.";
+            _lastMessage = $"Failed to sell {item.GetDisplayName()}.";
             _lastMessageIsError = true;
-            Logger.LogWarning(ex, "Failed to sell {ItemSlug}.", itemSlug);
+            Logger.LogWarning(ex, "Failed to sell {ItemSlug}.", item.Slug);
         }
     }
-
-    private static string GetRarityClass(ItemRarity rarity) => rarity switch
-    {
-        ItemRarity.Common => "rarity-common",
-        ItemRarity.Uncommon => "rarity-uncommon",
-        ItemRarity.Rare => "rarity-rare",
-        ItemRarity.Epic => "rarity-epic",
-        ItemRarity.Legendary => "rarity-legendary",
-        _ => "rarity-common"
-    };
 }

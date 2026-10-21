@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using RealmEngine.Shared.Models;
+using Veldrath.Contracts.Map;
 using Veldrath.GameClient.Core.Abstractions;
 using Veldrath.GameClient.Core.Payloads;
 
@@ -137,6 +138,18 @@ public sealed class FakeGameStateService : IGameStateService
     public string? CurrentZoneLocationSlug { get; set; }
 
     /// <inheritdoc />
+    public string? CurrentMapId { get; set; }
+
+    /// <inheritdoc />
+    public string? CurrentNodeId { get; set; }
+
+    /// <inheritdoc />
+    public MapGraphDto? CurrentMap { get; set; }
+
+    /// <inheritdoc />
+    public IReadOnlyList<MapSummaryDto> AvailableMaps { get; set; } = [];
+
+    /// <inheritdoc />
     public IReadOnlyList<ZoneLocationEntry> ZoneLocations { get; set; } = [];
 
     /// <inheritdoc />
@@ -180,8 +193,39 @@ public sealed class FakeGameStateService : IGameStateService
     {
         CurrentZoneId = payload.Id;
         CurrentZoneName = payload.Name;
+        CurrentMapId = payload.CurrentMapId ?? CurrentMapId;
+        CurrentNodeId = payload.CurrentNodeId ?? CurrentNodeId;
         AppliedCalls.Add((nameof(ApplyZoneEntered), payload));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentZoneId)));
+    }
+
+    /// <inheritdoc />
+    public void ApplyMapGraph(MapGraphReceivedPayload payload)
+    {
+        if (payload.Success && payload.Map is not null)
+        {
+            CurrentMap = payload.Map;
+            CurrentMapId = payload.Map.Id;
+            CurrentNodeId = payload.CurrentNodeId ?? payload.Map.EntryNodeId;
+            AvailableMaps = payload.AvailableMaps ?? [];
+        }
+
+        AppliedCalls.Add((nameof(ApplyMapGraph), payload));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentMap)));
+    }
+
+    /// <inheritdoc />
+    public void ApplyNodeTraveled(NodeTraveledPayload payload)
+    {
+        if (payload.Success)
+        {
+            CurrentMapId = payload.MapId ?? CurrentMapId;
+            CurrentNodeId = payload.NodeId ?? CurrentNodeId;
+            CurrentZoneLocationSlug = payload.LocationSlug;
+        }
+
+        AppliedCalls.Add((nameof(ApplyNodeTraveled), payload));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentNodeId)));
     }
 
     /// <inheritdoc />

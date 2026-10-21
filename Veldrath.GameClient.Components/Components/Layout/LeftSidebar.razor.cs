@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.Logging;
+using MudBlazor;
 using Veldrath.GameClient.Components.Components.Pages;
+using Veldrath.GameClient.Components.Models;
 using Veldrath.GameClient.Core.Abstractions;
 
 namespace Veldrath.GameClient.Components.Components.Layout;
@@ -25,6 +27,50 @@ public partial class LeftSidebar
     private IDisposable? _stateSubscription;
     private bool _disposed;
 
+    private IReadOnlyList<EntityListItem> OccupantItems =>
+        GameState.ZoneOccupants
+            .Select(occupant => new EntityListItem(
+                occupant.CharacterId.ToString(),
+                occupant.CharacterName,
+                $"Entered {occupant.EnteredAt.ToLocalTime():g}",
+                Icons.Material.Filled.Person))
+            .ToList();
+
+    private IReadOnlyList<EntityListItem> EnemyItems =>
+        GameState.ZoneEnemies
+            .Select(enemy => new EntityListItem(
+                enemy.EnemyId.ToString(),
+                enemy.EnemyName,
+                $"Level {enemy.Level} · HP {enemy.CurrentHealth}/{enemy.MaxHealth}",
+                Icons.Material.Filled.BugReport))
+            .ToList();
+
+    private IReadOnlyList<EntityListItem> KnownLocationItems =>
+        GameState.KnownLocations
+            .Select(location => new EntityListItem(
+                location.Slug,
+                location.DisplayName,
+                location.TypeKey,
+                Icons.Material.Filled.Place,
+                location.Slug == GameState.CurrentZoneLocationSlug ? "Here" : null,
+                IsSelected: location.Slug == GameState.CurrentZoneLocationSlug,
+                IsDisabled: !Hub.IsConnected ||
+                            GameState.CurrentCharacterId is null ||
+                            location.Slug == GameState.CurrentZoneLocationSlug))
+            .ToList();
+
+    private IReadOnlyList<EntityListItem> ConnectionItems =>
+        GameState.CurrentLocationConnections
+            .Select(connection => new EntityListItem(
+                connection.Slug,
+                connection.Slug,
+                connection.IsCrossZone ? "Zone transition" : connection.TargetZoneId,
+                Icons.Material.Filled.AltRoute,
+                IsDisabled: !Hub.IsConnected || GameState.CurrentCharacterId is null))
+            .ToList();
+
+    private Task OnLocationSelected(EntityListItem item) =>
+        NavigateToLocationAsync(item.Id);
 
     /// <summary>G68: Sends the VisitShop hub command to open the merchant interface.</summary>
     private async Task VisitShopAsync()

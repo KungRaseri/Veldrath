@@ -1,0 +1,68 @@
+@* A text detail pane with heading, description, optional actions, and body content. *@
+
+<MudPaper Elevation="0" Outlined="true" Class="@($"detail-pane pa-3 {Class}")" data-testid="@TestId">
+    @if (string.IsNullOrWhiteSpace(Title) &&
+         string.IsNullOrWhiteSpace(Subtitle) &&
+         string.IsNullOrWhiteSpace(Description))
+    {
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@EmptyText</MudText>
+    }
+    else
+    {
+        <div class="detail-pane-header d-flex align-center justify-space-between gap-2 mb-2">
+            <div class="d-flex align-center gap-2">
+                @if (!string.IsNullOrWhiteSpace(Icon))
+                {
+                    <MudIcon Icon="@Icon" Size="Size.Small" Color="Color.Primary" />
+                }
+                <div class="d-flex flex-column">
+                    <MudText Typo="Typo.subtitle1">@Title</MudText>
+                    @if (!string.IsNullOrWhiteSpace(Subtitle))
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@Subtitle</MudText>
+                    }
+                </div>
+            </div>
+            @if (Actions is not null)
+            {
+                <div class="d-flex align-center gap-1">@Actions</div>
+            }
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Description))
+        {
+            <MudText Typo="Typo.body2" Class="detail-pane-description mb-2">@Description</MudText>
+        }
+
+        @ChildContent
+    }
+</MudPaper>
+
+@code {
+    /// <summary>The detail heading.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>Optional supporting text below the heading.</summary>
+    [Parameter] public string? Subtitle { get; set; }
+
+    /// <summary>Optional Material icon key.</summary>
+    [Parameter] public string? Icon { get; set; }
+
+    /// <summary>Optional prose description.</summary>
+    [Parameter] public string? Description { get; set; }
+
+    /// <summary>Optional actions rendered at the right side of the header.</summary>
+    [Parameter] public RenderFragment? Actions { get; set; }
+
+    /// <summary>Additional detail content.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Text shown when there is no title or content.</summary>
+    [Parameter] public string EmptyText { get; set; } = "Select something to see details.";
+
+    /// <summary>Additional CSS classes.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Optional test identifier applied to the pane.</summary>
+    [Parameter] public string? TestId { get; set; }
+}

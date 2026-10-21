@@ -1,46 +1,46 @@
 @using MudBlazor
-@using MudBlazor.Utilities
 @using Veldrath.GameClient.Core.Abstractions
-@* Top bar showing compact character info in order: Name → Level → Class → HP → MP → Currency. *@
+@* Compact text header: identity, vitals, currency, and current map position. *@
 
-<MudAppBar Fixed Dense>
+<MudPaper Elevation="0" Outlined="true" Class="game-header pa-2 mb-2">
     @if (GameState.CurrentCharacterInfo is { } character)
     {
-        <MudContainer Fixed Gutters="false">
-            <MudStack Row StretchItems="StretchItems.End">
-                <MudStack Row AlignItems="AlignItems.Center">
-                    <MudText Typo="Typo.h4" Color="Color.Primary">@character.Name</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">Lv. @character.Level</MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">@character.ClassName</MudText>
-                </MudStack>
-                <MudStack Row StretchItems="StretchItems.All" AlignItems="AlignItems.Center" >
-                    <StatusBar Label="HP" Current="@character.CurrentHealth" Max="@character.MaxHealth"
-                               BarColor="@Color.Error" />
-                    <StatusBar Label="MP" Current="@character.CurrentMana" Max="@character.MaxMana"
-                               BarColor="@Color.Info" />
-                    <MudText Color="Color.Secondary" Inline>
-                        <MudStack Row AlignItems="AlignItems.Center">
-                            <MudIcon Icon="@Icons.Material.Outlined.Diamond" Size="Size.Small" />
-                            @character.Gold.ToString("N0")
-                        </MudStack>
-                    </MudText>
-                </MudStack>
-            </MudStack>
-        </MudContainer>
-        <MudSpacer />
+        <div class="d-flex align-center gap-3 flex-wrap">
+            <MudIcon Icon="@Icons.Material.Filled.Person" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">@character.Name</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Level @character.Level</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@character.ClassName</MudText>
 
-        <MudTooltip Text="Settings">
-            <MudIconButton Icon="@Icons.Material.Filled.Settings" Size="Size.Small" Href="/Game/Settings" />
-        </MudTooltip>
-        <MudTooltip Text="Logout">
-            <MudIconButton Icon="@Icons.Material.Filled.Logout" Size="Size.Small" OnClick="HandleLogout" />
-        </MudTooltip>
+            <div class="game-header-divider" aria-hidden="true"></div>
+
+            <MudText Typo="Typo.body2">HP @character.CurrentHealth / @character.MaxHealth</MudText>
+            <MudText Typo="Typo.body2">MP @character.CurrentMana / @character.MaxMana</MudText>
+            <MudText Typo="Typo.body2">
+                <MudIcon Icon="@Icons.Material.Outlined.Diamond" Size="Size.Small" />
+                @character.Gold.ToString("N0")
+            </MudText>
+
+            <div class="game-header-divider" aria-hidden="true"></div>
+
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="game-header-map">
+                @MapPositionText
+            </MudText>
+
+            <MudSpacer />
+
+            <MudTooltip Text="Settings">
+                <MudIconButton Icon="@Icons.Material.Filled.Settings" Size="Size.Small" Href="/Game/Settings" />
+            </MudTooltip>
+            <MudTooltip Text="Logout">
+                <MudIconButton Icon="@Icons.Material.Filled.Logout" Size="Size.Small" OnClick="HandleLogout" />
+            </MudTooltip>
+        </div>
     }
     else
     {
         <MudText Color="Color.Error">No character selected</MudText>
     }
-</MudAppBar>
+</MudPaper>
 
 @code {
     /// <summary>Gets or sets the game state service, received from the parent via cascading value.</summary>
@@ -54,6 +54,24 @@
     /// <summary>Gets or sets the game API client, injected by DI.</summary>
     [Inject]
     private IGameApiClient Api { get; set; } = null!;
+
+    private string MapPositionText
+    {
+        get
+        {
+            if (GameState.CurrentMap is { } map)
+            {
+                var node = map.Nodes.FirstOrDefault(n => n.Id == GameState.CurrentNodeId);
+                return node is null
+                    ? map.Name
+                    : $"{map.Name} / {node.DisplayName}";
+            }
+
+            return string.IsNullOrWhiteSpace(GameState.CurrentMapId)
+                ? "No map"
+                : GameState.CurrentMapId;
+        }
+    }
 
     private async void HandleLogout()
     {

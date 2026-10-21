@@ -1,46 +1,50 @@
 @using Veldrath.GameClient.Core.Abstractions
 @using Microsoft.Extensions.Logging
 @using MudBlazor
-@* Combined sidebar component: left drawer (navigation/actions) and right drawer (chat).
-   The MudDrawerContainer wraps both drawers and the main content (passed via ChildContent). *@
+@* ── RIGHT SIDEBAR: text chat console ── *@
 @inject NavigationManager Navigation
 @inject ILogger<RightSidebar> Logger
 @inject IGameApiClient Api
 
-@* ── RIGHT SIDEBAR: Chat ── *@
-<MudStack>
-    <MudText Typo="Typo.h3" Class="pa-3">Chat</MudText>
-    <MudTabs>
+<TextPanel Title="Chat" Icon="@Icons.Material.Filled.Chat" Class="game-sidebar game-sidebar-right">
+    <MudTabs Elevation="0" Rounded="true">
         @foreach (var channel in ChannelNames)
         {
             <MudTabPanel Text="@channel" OnClick="() => SetActiveChannel(channel)">
-                @if (FilteredMessages.Any())
-                {
-                    @foreach (var msg in FilteredMessages)
+                <div class="game-chat-log d-flex flex-column pt-2">
+                    @if (FilteredMessages.Any())
                     {
-                        <div class="game-chat-message d-flex align-baseline gap-1 @msg.ChannelClass">
-                            <span class="game-chat-timestamp">@msg.TimestampFormatted</span>
-                            <span class="game-chat-channel">[@msg.Channel]</span>
-                            <span class="game-chat-sender">@msg.Sender:</span>
-                            <span class="game-chat-text">@msg.Message</span>
-                        </div>
+                        @foreach (var msg in FilteredMessages)
+                        {
+                            <div class="game-chat-message d-flex align-baseline gap-1 @msg.ChannelClass">
+                                <span class="game-chat-timestamp">@msg.TimestampFormatted</span>
+                                <span class="game-chat-channel">[@msg.Channel]</span>
+                                <span class="game-chat-sender">@msg.Sender:</span>
+                                <span class="game-chat-text">@msg.Message</span>
+                            </div>
+                        }
                     }
-                }
-                else
-                {
-                    <div class="game-chat-empty">No messages in this channel.</div>
-                }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">No messages in this channel.</MudText>
+                    }
+                </div>
             </MudTabPanel>
         }
     </MudTabs>
 
-    <div class="game-chat-input d-flex align-center gap-2">
-        <input type="text" class="game-chat-input-field flex-1" @bind="_inputText" @bind:event="oninput"
-               @onkeydown="HandleKeyDown" placeholder="@WhisperPlaceholder"
-               disabled="@(!GameState.IsConnected || GameState.CurrentCharacterId is null)" />
+    <div class="d-flex align-center gap-2 mt-2" @onkeydown="HandleKeyDown">
+        <MudTextField T="string"
+                      @bind-Value="_inputText"
+                      Immediate="true"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Placeholder="@WhisperPlaceholder"
+                      Disabled="@(!GameState.IsConnected || GameState.CurrentCharacterId is null)"
+                      Class="flex-grow-1" />
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="SendMessage"
                    Disabled="@(string.IsNullOrWhiteSpace(_inputText) || !GameState.IsConnected || GameState.CurrentCharacterId is null)">
             @(IsWhisperActive ? "Whisper" : "Send")
         </MudButton>
     </div>
-</MudStack>
+</TextPanel>

@@ -120,6 +120,23 @@ public partial class GameFooter : INotifyPropertyChanged, IDisposable, IAsyncDis
         }
     }
 
+    /// <summary>Gets the current map and node label for the footer.</summary>
+    public string MapPositionText
+    {
+        get
+        {
+            if (GameState.CurrentMap is { } map)
+            {
+                var node = map.Nodes.FirstOrDefault(n => n.Id == GameState.CurrentNodeId);
+                return node is null ? map.Name : $"{map.Name} / {node.DisplayName}";
+            }
+
+            return string.IsNullOrWhiteSpace(GameState.CurrentMapId)
+                ? "No map"
+                : GameState.CurrentMapId;
+        }
+    }
+
     /// <summary>
     /// Gets the estimated number of players currently connected (if available from the hub state).
     /// </summary>

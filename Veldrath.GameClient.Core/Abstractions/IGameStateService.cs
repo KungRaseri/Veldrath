@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using RealmEngine.Shared.Models;
+using Veldrath.Contracts.Map;
 using Veldrath.Contracts.Tilemap;
 using Veldrath.GameClient.Core.Payloads;
 
@@ -231,6 +232,20 @@ public interface IGameStateService : INotifyPropertyChanged
     /// <summary>The slug of the current zone location (POI), or <c>null</c> if not at a named location.</summary>
     string? CurrentZoneLocationSlug { get; }
 
+    // ── Map graph state ─────────────────────────────────────────────────────
+
+    /// <summary>Stable identifier of the current region or zone map, or <c>null</c>.</summary>
+    string? CurrentMapId { get; }
+
+    /// <summary>Stable identifier of the node the character occupies, or <c>null</c>.</summary>
+    string? CurrentNodeId { get; }
+
+    /// <summary>The currently loaded map graph, or <c>null</c> before it is requested.</summary>
+    MapGraphDto? CurrentMap { get; }
+
+    /// <summary>Summaries of all active maps available to the character.</summary>
+    IReadOnlyList<MapSummaryDto> AvailableMaps { get; }
+
     /// <summary>The zone locations available in the current zone for navigation.</summary>
     IReadOnlyList<ZoneLocationEntry> ZoneLocations { get; }
 
@@ -296,6 +311,14 @@ public interface IGameStateService : INotifyPropertyChanged
     /// <summary>Updates state after a character has been selected on the server.</summary>
     /// <param name="payload">The character selected payload from the hub event.</param>
     void ApplyCharacterSelected(CharacterSelectedPayload payload);
+
+    /// <summary>Replaces the current map graph and available-map summaries.</summary>
+    /// <param name="payload">The map graph payload from the hub event.</param>
+    void ApplyMapGraph(MapGraphReceivedPayload payload);
+
+    /// <summary>Updates the current map/node after travelling through the map graph.</summary>
+    /// <param name="payload">The node-traveled payload from the hub event.</param>
+    void ApplyNodeTraveled(NodeTraveledPayload payload);
 
     /// <summary>Updates state after entering a zone.</summary>
     /// <param name="payload">The zone entered payload from the hub event.</param>

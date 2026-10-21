@@ -1,160 +1,97 @@
 @using Veldrath.GameClient.Core.Abstractions
 @using Microsoft.Extensions.Logging
 @using MudBlazor
+@using Veldrath.GameClient.Components.Models
 @inject NavigationManager Navigation
 @inject ILogger<RightSidebar> Logger
 @inject IGameApiClient Api
 
-@* ── LEFT SIDEBAR: Navigation, zone info, game actions ── *@
-<MudStack StretchItems="StretchItems.All">
-    <MudText Typo="Typo.h3" Class="pa-3">Navigation</MudText>
-    <MudNavLink Icon="@Icons.Material.Filled.Person"
-                OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.CharacterSheet)">
-        Character
-    </MudNavLink>
-    <MudNavLink Icon="@Icons.Material.Filled.Inventory"
-                OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Inventory)">
-        Inventory
-    </MudNavLink>
-    <MudNavLink Icon="@Icons.Material.Filled.Map" Href="/Game/Map">
-        Map
-    </MudNavLink>
-    <MudNavLink Icon="@Icons.Material.Filled.CollectionsBookmark"
-                OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Journal)">
-        Journal
-    </MudNavLink>
-    @* <MudDivider /> *@
+@* ── LEFT SIDEBAR: navigation, nearby entities, discovery, and actions ── *@
+<MudStack Spacing="2" Class="game-sidebar game-sidebar-left">
+    <TextPanel Title="Navigation" Icon="@Icons.Material.Filled.Explore">
+        <MudNavLink Icon="@Icons.Material.Filled.Person"
+                    OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.CharacterSheet)">
+            Character
+        </MudNavLink>
+        <MudNavLink Icon="@Icons.Material.Filled.Inventory"
+                    OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Inventory)">
+            Inventory
+        </MudNavLink>
+        <MudNavLink Icon="@Icons.Material.Filled.Map" Href="/Game/Map">
+            Map
+        </MudNavLink>
+        <MudNavLink Icon="@Icons.Material.Filled.CollectionsBookmark"
+                    OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Journal)">
+            Journal
+        </MudNavLink>
+    </TextPanel>
 
-    <MudStack>
-        <MudPaper Class="pa-3">
-            <MudText Typo="Typo.h6">
-                Nearby Players (@GameState.ZoneOccupants.Count)
-            </MudText>
-            @if (GameState.ZoneOccupants.Count == 0)
-            {
-                <MudText>No other players nearby.</MudText>
-            }
-            else
-            {
-                <MudList T="string">
-                    @foreach (var occupant in GameState.ZoneOccupants)
-                    {
-                        <MudListItem Text="@occupant.CharacterName"
-                                     SecondaryText="@($"Entered {occupant.EnteredAt.ToLocalTime():g}")" />
-                    }
-                </MudList>
-            }
-        </MudPaper>
-        <MudPaper Class="pa-3">
-            <MudText Typo="Typo.h6">
-                Nearby Enemies (@GameState.ZoneEnemies.Count)
-            </MudText>
-            @if (GameState.ZoneEnemies.Count == 0)
-            {
-                <MudText>No enemies nearby.</MudText>
-            }
-            else
-            {
-                <MudList T="string">
-                    @foreach (var enemy in GameState.ZoneEnemies)
-                    {
-                        <MudListItem Text="@($"{enemy.EnemyName}")">
-                            @enemy.EnemyName (Lv. @enemy.Level) — HP: @enemy.CurrentHealth/@enemy.MaxHealth
-                        </MudListItem>
-                    }
-                </MudList>
-            }
-        </MudPaper>
+    <EntityList Title="Nearby Players"
+                Icon="@Icons.Material.Filled.Group"
+                Items="@OccupantItems"
+                EmptyText="No other players nearby." />
 
-    </MudStack>
+    <EntityList Title="Nearby Enemies"
+                Icon="@Icons.Material.Filled.BugReport"
+                Items="@EnemyItems"
+                EmptyText="No enemies nearby." />
 
-    @* Known Locations — discovered locations for fast travel *@
     @if (GameState.KnownLocations.Count > 0)
     {
-        <div class="sidebar-section sidebar-known-locations">
-            <MudText Typo="Typo.h6">
-                Known Locations (@GameState.KnownLocations.Count)
-            </MudText>
-            <ul class="sidebar-list">
-                @foreach (var loc in GameState.KnownLocations)
-                {
-                    <li class="sidebar-list-item">
-                        @{
-                            var isHere = loc.Slug == GameState.CurrentZoneLocationSlug;
-                        }
-                        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="() => NavigateToLocationAsync(loc.Slug)"
-                                   Disabled="@(!Hub.IsConnected || isHere || GameState.CurrentCharacterId is null)"
-                                   Class="sidebar-nav-btn" title="@(isHere ? "You are here" : $"Fast travel to {loc.DisplayName}")">
-                            📍 @loc.DisplayName @(isHere ? "(here)" : "")
-                        </MudButton>
-                    </li>
-                }
-            </ul>
-        </div>
+        <EntityList Title="Known Locations"
+                    Icon="@Icons.Material.Filled.Place"
+                    Items="@KnownLocationItems"
+                    OnSelect="OnLocationSelected"
+                    EmptyText="No known locations." />
     }
 
-    @* G81: NavigateToLocation — show available location connections in the zone *@
     @if (GameState.CurrentLocationConnections.Count > 0)
     {
-        <div class="sidebar-section sidebar-navigation">
-            <MudText Typo="Typo.h6">
-                Locations (@GameState.CurrentLocationConnections.Count)
-            </MudText>
-            <ul class="sidebar-list">
-                @foreach (var conn in GameState.CurrentLocationConnections)
-                {
-                    <li class="sidebar-list-item">
-                        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="() => NavigateToLocationAsync(conn.Slug)"
-                                   Disabled="@(!Hub.IsConnected || GameState.CurrentCharacterId is null)" Class="sidebar-nav-btn"
-                                   title="@($"Navigate to {conn.TargetZoneId}")">
-                            @conn.Slug @(conn.IsCrossZone ? "(Zone Transition)" : "")
-                        </MudButton>
-                    </li>
-                }
-            </ul>
-        </div>
+        <EntityList Title="Connections"
+                    Icon="@Icons.Material.Filled.AltRoute"
+                    Items="@ConnectionItems"
+                    OnSelect="OnLocationSelected"
+                    EmptyText="No connections from here." />
     }
 
-    <div class="sidebar-section sidebar-actions d-flex flex-column gap-2" style="padding-top: 16px;">
+    <TextPanel Title="Actions" Icon="@Icons.Material.Filled.Bolt">
+        <MudStack Spacing="2">
+            @if (GameState.CurrentZone.HasMerchant)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="VisitShopAsync"
+                           Disabled="@(!Hub.IsConnected || GameState.CurrentCharacterId is null)" Class="sidebar-btn">
+                    Visit Shop
+                </MudButton>
+            }
 
-        @* G68: Visit Shop — conditional on zone having a merchant *@
-        @if (GameState.CurrentZone.HasMerchant)
-        {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="VisitShopAsync"
-                       Disabled="@(!Hub.IsConnected || GameState.CurrentCharacterId is null)" Class="sidebar-btn">
-                Visit Shop
-            </MudButton>
-        }
+            @if (GameState.CurrentZone.HasInn)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="RestAtLocationAsync"
+                           Disabled="@(!Hub.IsConnected || GameState.CurrentCharacterId is null)" Class="sidebar-btn">
+                    Rest
+                </MudButton>
+            }
 
-        @* G75: Rest at Inn — conditional on zone having an inn *@
-        @if (GameState.CurrentZone.HasInn)
-        {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="RestAtLocationAsync"
-                       Disabled="@(!Hub.IsConnected || GameState.CurrentCharacterId is null)" Class="sidebar-btn">
-                Rest
-            </MudButton>
-        }
+            @if (GameState.CurrentCharacter.UnspentAttributePoints > 0)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Tertiary" FullWidth="true" OnClick="AllocateStrengthAsync"
+                           Disabled="@(!Hub.IsConnected || GameState.CurrentCharacterId is null)" Class="sidebar-btn"
+                           title="@($"Unspent: {GameState.CurrentCharacter.UnspentAttributePoints}")">
+                    Allocate Attribute Point
+                </MudButton>
+            }
 
-        @* G76: Allocate Attribute Points — conditional on having unspent points *@
-        @if (GameState.CurrentCharacter.UnspentAttributePoints > 0)
-        {
-            <MudButton Variant="Variant.Filled" Color="Color.Tertiary" FullWidth="true" OnClick="AllocateStrengthAsync"
+            <MudButton Variant="Variant.Outlined" FullWidth="true" OnClick="SearchAreaAsync"
                        Disabled="@(!Hub.IsConnected || GameState.CurrentCharacterId is null)" Class="sidebar-btn"
-                       title="@($"Unspent: {GameState.CurrentCharacter.UnspentAttributePoints}")">
-                Attributes (+STR)
+                       StartIcon="@Icons.Material.Filled.Search">
+                Search Area
             </MudButton>
-        }
 
-        @* G70: Search Area *@
-        <MudButton Variant="Variant.Outlined" FullWidth="true" OnClick="SearchAreaAsync"
-                   Disabled="@(!Hub.IsConnected || GameState.CurrentCharacterId is null)" Class="sidebar-btn">
-            Search Area
-        </MudButton>
-
-        @* G74: Exit Zone *@
-        <MudButton Variant="Variant.Outlined" FullWidth="true" OnClick="ExitZoneAsync"
-                   Disabled="@(!Hub.IsConnected || GameState.CurrentCharacterId is null)" Class="sidebar-btn">
-            Exit Zone
-        </MudButton>
-    </div>
+            <MudButton Variant="Variant.Outlined" FullWidth="true" OnClick="ExitZoneAsync"
+                       Disabled="@(!Hub.IsConnected || GameState.CurrentCharacterId is null)" Class="sidebar-btn"
+                       StartIcon="@Icons.Material.Filled.Logout">
+                Exit Zone
+            </MudButton>
+        </MudStack>
+    </TextPanel>
 </MudStack>

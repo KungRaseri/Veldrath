@@ -1,0 +1,84 @@
+@using Veldrath.Contracts.Map
+@* Text details for the selected map node, with a travel action. *@
+
+<DetailPane Title="@Node?.DisplayName"
+            Subtitle="@Node?.NodeType"
+            Icon="@IconFor(Node)"
+            Description="@Node?.Description"
+            TestId="map-detail-pane"
+            EmptyText="Select a node to see its details.">
+    @if (Node is not null)
+    {
+        <MudStack Spacing="1">
+            @if (Node.IsEntryPoint)
+            {
+                <StatRow Label="Role" Value="Arrival point" Icon="@Icons.Material.Filled.Login" />
+            }
+            else if (Node.IsExitPoint)
+            {
+                <StatRow Label="Role" Value="Map transition" Icon="@Icons.Material.Filled.ExitToApp" />
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Node.TargetMapId))
+            {
+                <StatRow Label="Destination map" Value="@Node.TargetMapId" Icon="@Icons.Material.Filled.Map" />
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Node.TargetNodeId))
+            {
+                <StatRow Label="Destination node" Value="@Node.TargetNodeId" Icon="@Icons.Material.Filled.Place" />
+            }
+
+            @if (Node.IsHidden)
+            {
+                <StatRow Label="Discovery"
+                         Value="@(Node.UnlockType ?? "Hidden")"
+                         Icon="@Icons.Material.Filled.VisibilityOff" />
+                @if (!string.IsNullOrWhiteSpace(Node.UnlockKey))
+                {
+                    <StatRow Label="Unlock key" Value="@Node.UnlockKey" Icon="@Icons.Material.Filled.Key" />
+                }
+                @if (Node.DiscoverThreshold is not null)
+                {
+                    <StatRow Label="Threshold" Value="@Node.DiscoverThreshold.Value.ToString()" Icon="@Icons.Material.Filled.Search" />
+                }
+            }
+
+            <div class="d-flex gap-2 mt-2">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.DirectionsWalk"
+                           Disabled="@(IsCurrent || !CanTravel)"
+                           OnClick="() => OnTravel.InvokeAsync(Node)">
+                    @(IsCurrent ? "You are here" : "Travel")
+                </MudButton>
+            </div>
+        </MudStack>
+    }
+</DetailPane>
+
+@code {
+    /// <summary>The selected node, or <see langword="null"/>.</summary>
+    [Parameter] public MapNodeDto? Node { get; set; }
+
+    /// <summary>Whether the selected node is the character's current node.</summary>
+    [Parameter] public bool IsCurrent { get; set; }
+
+    /// <summary>Whether travel is currently available.</summary>
+    [Parameter] public bool CanTravel { get; set; }
+
+    /// <summary>Raised when the player requests travel to the selected node.</summary>
+    [Parameter] public EventCallback<MapNodeDto> OnTravel { get; set; }
+
+    private static string IconFor(MapNodeDto? node) => node?.IconKey?.ToLowerInvariant() switch
+    {
+        "login" => Icons.Material.Filled.Login,
+        "map" => Icons.Material.Filled.Map,
+        "place" => Icons.Material.Filled.Place,
+        "exit_to_app" => Icons.Material.Filled.ExitToApp,
+        "public" => Icons.Material.Filled.Public,
+        "stairs" => Icons.Material.Filled.Stairs,
+        "flag" => Icons.Material.Filled.Flag,
+        _ => Icons.Material.Filled.Circle,
+    };
+}

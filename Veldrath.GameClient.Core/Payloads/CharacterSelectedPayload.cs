@@ -46,4 +46,6 @@ public sealed record CharacterSelectedPayload(
     int Wisdom,
     int Charisma,
     List<string> LearnedAbilities,
-    DateTimeOffset SelectedAt);
+    DateTimeOffset SelectedAt,
+    string? CurrentMapId = null,
+    string? CurrentNodeId = null);

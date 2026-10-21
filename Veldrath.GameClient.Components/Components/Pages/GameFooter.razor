@@ -1,68 +1,62 @@
-@* Bottom action bar showing zone info, connection status with ping, degraded detection,
-    and embedded ActionBar component. The reconnecting banner is shown above the footer
-    when the hub connection enters the Reconnecting state. *@
+@* Text footer: connection status, zone/map position, occupancy, and contextual actions. *@
 
-<MudAppBar Bottom="true" Fixed Dense>
-    <MudContainer Fixed Gutters="false">
-        @* Reconnecting banner (absolute positioned above footer) *@
-        @if (ShowReconnectingBanner)
+<MudPaper Elevation="0" Outlined="true" Class="game-footer pa-2 mt-2">
+    @if (ShowReconnectingBanner)
+    {
+        <MudStack Row AlignItems="AlignItems.Center" Class="mb-1">
+            <MudProgressCircular Indeterminate Size="Size.Small" />
+            <MudText Typo="Typo.caption">Reconnecting to game server...</MudText>
+        </MudStack>
+    }
+
+    <div class="d-flex align-center gap-3 flex-wrap">
+        <div class="d-flex align-center gap-1">
+            <MudIcon Icon="@Icons.Material.Filled.Place" Size="Size.Small" Color="Color.Secondary" />
+            <MudText Typo="Typo.body2">
+                @(string.IsNullOrEmpty(GameState.CurrentZoneName) ? "No zone" : GameState.CurrentZoneName)
+            </MudText>
+        </div>
+
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@MapPositionText</MudText>
+
+        @if (PlayerCount > 0)
         {
-            <MudStack Row AlignItems="AlignItems.Center">
-                <MudProgressCircular Indeterminate Size="Size.Small" />
-                <MudText Typo="Typo.caption">Reconnecting to game server...</MudText>
-            </MudStack>
+            <div class="d-flex align-center gap-1">
+                <MudIcon Icon="@Icons.Material.Filled.Group" Size="Size.Small" Color="Color.Secondary" />
+                <MudText Typo="Typo.body2">@PlayerCount online</MudText>
+            </div>
         }
 
-        <MudStack Row StretchItems="StretchItems.All">
-            <MudStack Row>
-                @if (!string.IsNullOrEmpty(GameState.CurrentZoneName))
-                {
-                    <span class="game-footer-zone">📍 @GameState.CurrentZoneName</span>
-                }
-                else
-                {
-                    <span class="game-footer-zone">No zone</span>
-                }
-                @if (PlayerCount > 0)
-                {
-                    <span class="game-footer-connid" title="Players online">👥 @PlayerCount</span>
-                }
-            </MudStack>
+        <MudSpacer />
 
+        @if (GameState.IsInCombat)
+        {
+            <ActionBar ShowAttack="true" ShowDefend="true" ShowFlee="true"
+                       ShowRespawn="GameState.CurrentCharacter.IsDead" />
+        }
+        else
+        {
+            <ActionBar ShowSearch="!GameState.IsInCombat" ShowRest="GameState.CurrentZone.HasInn"
+                       OnSearch="SearchAsync" OnRest="RestAsync" />
+        }
 
-            <MudStack Row>
-                @if (GameState.IsInCombat)
-                {
-                    <ActionBar ShowAttack="true" ShowDefend="true" ShowFlee="true"
-                               ShowRespawn="GameState.CurrentCharacter.IsDead" />
-                }
-                else
-                {
-                    <ActionBar ShowSearch="!GameState.IsInCombat" ShowRest="GameState.CurrentZone.HasInn"
-                               OnSearch="SearchAsync" OnRest="RestAsync" />
-                }
-            </MudStack>
-        </MudStack>
-    </MudContainer>
-    <MudSpacer />
-    <MudStack Row StretchItems="StretchItems.Middle" AlignItems="AlignItems.Center">
-        <MudText Typo="Typo.caption">
-            <MudStack Row AlignItems="AlignItems.Center" Spacing="1" style="@DotClass">
-                <MudIcon Icon="@Icons.Material.Filled.Circle" Size="Size.Small" />
-                @StatusText
-            </MudStack>
-        </MudText>
+        <div class="game-header-divider" aria-hidden="true"></div>
+
+        <div class="d-flex align-center gap-1" title="@StatusText">
+            <MudIcon Icon="@Icons.Material.Filled.Circle" Size="Size.Small" Style="@DotClass" />
+            <MudText Typo="Typo.caption">@StatusText</MudText>
+        </div>
+
         @if (PingMs > 0 && Status != StatusIndicator.Reconnecting)
         {
-            <MudText Typo="Typo.caption">@($"{PingMs}ms")</MudText>
+            <MudText Typo="Typo.caption">@($"{PingMs} ms")</MudText>
         }
+
         @if (!string.IsNullOrEmpty(GameState.ServerConnectionId))
         {
-            <MudText Typo="Typo.caption" Color="Color.Transparent" Class="hover">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
                 #@GameState.ServerConnectionId[..Math.Min(8, GameState.ServerConnectionId.Length)]
             </MudText>
         }
-    </MudStack>
-
-
-</MudAppBar>
+    </div>
+</MudPaper>

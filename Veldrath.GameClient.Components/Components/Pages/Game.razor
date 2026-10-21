@@ -2,8 +2,10 @@
 @inherits GamePageBase
 @using Veldrath.GameClient.Core.Payloads
 @using Veldrath.GameClient.Core.Abstractions
+@using Veldrath.GameClient.Core.Services
 @using Veldrath.Auth.Blazor
 @using Veldrath.Contracts.Connection
+@using Veldrath.Contracts.Map
 @using Veldrath.Contracts.Tilemap
 @inject IGameHubConnectionService Hub
 @inject IGameStateService GameState
@@ -13,47 +15,62 @@
 <CascadingValue Value="GameState">
     <GameHeader />
 
-    <MudContainer Fixed Gutters="false">
-        <MudStack Row StretchItems="StretchItems.All">
+    <div class="game-shell">
+        <aside class="game-column game-column-left">
             <LeftSidebar OnOpenOverlay="HandleOpenOverlay" />
+        </aside>
 
-            <MudContainer>
-                @if (_isRestoringSession)
+        <main class="game-column game-column-main">
+            @if (_isRestoringSession)
+            {
+                <MudPaper Elevation="0" Outlined="true" Class="pa-6 d-flex align-center justify-center">
+                    <MudStack Row AlignItems="AlignItems.Center">
+                        <MudProgressCircular Indeterminate Size="Size.Small" />
+                        <MudText Typo="Typo.body2">Restoring your game session...</MudText>
+                    </MudStack>
+                </MudPaper>
+            }
+            else if (GameState.IsInCombat)
+            {
+                <GameCombat />
+            }
+            else if (GameState.CurrentMap is not null)
+            {
+                <div class="d-flex flex-column gap-2">
+                    <CardinalMap Map="GameState.CurrentMap"
+                                 CurrentNodeId="GameState.CurrentNodeId"
+                                 SelectedNodeId="@_selectedNodeId"
+                                 OnSelect="HandleMapNodeSelected"
+                                 OnTravel="HandleTravelToNode" />
+                    <MapDetailPanel Node="@SelectedNode"
+                                    IsCurrent="@IsSelectedNodeCurrent"
+                                    CanTravel="@Hub.IsConnected"
+                                    OnTravel="HandleTravelToNode" />
+                </div>
+            }
+            else if (GameState.ZoneTileMap is not null)
+            {
+                <GameTilemap />
+                @if (GameState.IsAtLocation)
                 {
+                    <ZoneLocationPanel />
+                }
+            }
+            else
+            {
+                <MudPaper Elevation="0" Outlined="true" Class="pa-6 d-flex align-center justify-center">
+                    <MudStack Row AlignItems="AlignItems.Center">
+                        <MudProgressCircular Indeterminate Size="Size.Small" />
+                        <MudText Typo="Typo.body2">Loading zone...</MudText>
+                    </MudStack>
+                </MudPaper>
+            }
+        </main>
 
-                    <MudText>
-                        <MudStack Row AlignItems="AlignItems.Center">
-                            <MudProgressCircular Indeterminate Size="Size.Small" />
-                            Restoring your game session...
-                        </MudStack>
-                    </MudText>
-                }
-                else if (GameState.IsInCombat)
-                {
-                    <GameCombat />
-                }
-                else if (GameState.ZoneTileMap is not null)
-                {
-                    <GameTilemap />
-                    @if (GameState.IsAtLocation)
-                    {
-                        <ZoneLocationPanel />
-                    }
-                }
-                else
-                {
-                    <MudText>
-                        <MudStack Row AlignItems="AlignItems.Center">
-                            <MudProgressCircular Indeterminate Size="Size.Small" />
-                            Loading zone...
-                        </MudStack>
-                    </MudText>
-                }
-            </MudContainer>
-
+        <aside class="game-column game-column-right">
             <RightSidebar />
-        </MudStack>
-    </MudContainer>
+        </aside>
+    </div>
 
     <GameFooter />
     <GameOverlay Visible="_showOverlay" OverlayType="_activeOverlay" OnClose="HandleCloseOverlay" />
@@ -65,6 +82,7 @@
 
 @code {
     private readonly List<IDisposable> _hubSubscriptions = [];
+    private string? _selectedNodeId;
     private IDisposable? _stateSubscription;
     private IDisposable? _hubStateSubscription;
     private bool _hubConnected;
@@ -296,6 +314,7 @@
         {
             await Hub.SendAsync("EnterZone", zoneId);
             await Hub.SendAsync("GetZoneTileMap");
+            await Hub.RequestMapGraphAsync();
         }
         catch (Exception ex)
         {
@@ -367,6 +386,37 @@
         StateHasChanged();
     }
 
+    private MapNodeDto? SelectedNode
+    {
+        get
+        {
+            if (GameState.CurrentMap is not { } map)
+                return null;
+
+            var nodeId = _selectedNodeId ?? GameState.CurrentNodeId;
+            return map.Nodes.FirstOrDefault(node =>
+                string.Equals(node.Id, nodeId, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    private bool IsSelectedNodeCurrent =>
+        SelectedNode is { } node &&
+        string.Equals(node.Id, GameState.CurrentNodeId, StringComparison.OrdinalIgnoreCase);
+
+    private void HandleMapNodeSelected(MapNodeDto node)
+    {
+        _selectedNodeId = node.Id;
+        StateHasChanged();
+    }
+
+    private async Task HandleTravelToNode(MapNodeDto node)
+    {
+        if (!Hub.IsConnected || GameState.CurrentMap is null)
+            return;
+
+        await Hub.TravelToNodeAsync(GameState.CurrentMap.Id, node.Id);
+    }
+
     private void RegisterHubHandlers()
     {
         _hubSubscriptions.Add(Hub.On<ServerInfoPayload>("ServerInfo", async payload =>
@@ -422,6 +472,29 @@
         _hubSubscriptions.Add(Hub.On<ZoneEnteredPayload>("ZoneEntered", async payload =>
         {
             GameState.ApplyZoneEntered(payload);
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        _hubSubscriptions.Add(Hub.On<MapGraphReceivedPayload>("MapGraphReceived", async payload =>
+        {
+            GameState.ApplyMapGraph(payload);
+
+            if (payload.Success)
+                _selectedNodeId = GameState.CurrentNodeId;
+
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        _hubSubscriptions.Add(Hub.On<NodeTraveledPayload>("NodeTraveled", async payload =>
+        {
+            GameState.ApplyNodeTraveled(payload);
+
+            if (payload.Success)
+                _selectedNodeId = payload.NodeId;
+
+            if (payload.Success && payload.MapChanged && !string.IsNullOrWhiteSpace(payload.MapId))
+                await Hub.RequestMapGraphAsync(payload.MapId);
+
             await InvokeAsync(StateHasChanged);
         }));
 

@@ -1,130 +1,68 @@
-@* Character Sheet overlay showing the character's stats, attributes, and equipment. *@
-@using RealmEngine.Shared.Models
+@* Character sheet as text stat panels. *@
 @using Veldrath.GameClient.Core.Abstractions
+@using Veldrath.GameClient.Components.Models
 @using MudBlazor
 @inject IGameStateService GameState
 
-<div class="character-sheet-overlay">
+<div class="character-sheet-overlay d-flex flex-column gap-3">
     @if (GameState.CurrentCharacterInfo is { } info && GameState.CurrentCharacter is { } state)
     {
-        <div class="d-flex flex-column gap-4 pa-4">
-            @* ── Header: Name, Class, Level ── *@
-            <div class="d-flex align-items-center gap-3">
-                <div class="character-sheet-portrait">@info.Name[0]</div>
-                <div class="d-flex flex-column">
-                    <MudText Typo="Typo.h5">@info.Name</MudText>
-                    <MudText Color="Color.Secondary" Inline="true">
-                        @info.ClassName · Level @state.Level
-                    </MudText>
-                </div>
+        <TextPanel Title="@info.Name"
+                   Subtitle="@($"{info.ClassName} · Level {state.Level}")"
+                   Icon="@Icons.Material.Filled.Person"
+                   TestId="character-sheet">
+            <StatTable Title="Vitals" Stats="@VitalStats" EmptyText="No vitals available." />
+        </TextPanel>
+
+        <div class="d-flex gap-3 flex-wrap">
+            <div class="flex-grow-1">
+                <StatTable Title="Attributes" Stats="@AttributeStats" Icon="@Icons.Material.Filled.Insights" />
             </div>
-
-            <MudDivider />
-
-            @* ── HP Bar ── *@
-            <div class="d-flex flex-column gap-1">
-                <div class="d-flex justify-space-between">
-                    <MudText Typo="Typo.body2" Color="Color.Error">HP</MudText>
-                    <MudText Typo="Typo.body2">@state.CurrentHealth / @state.MaxHealth</MudText>
-                </div>
-                <MudProgressLinear Value="@GetHpPercent()" Color="Color.Error" Size="Size.Small" />
+            <div class="flex-grow-1">
+                <StatTable Title="Progression" Stats="@ProgressionStats" Icon="@Icons.Material.Filled.TrendingUp" />
             </div>
-
-            @* ── MP Bar ── *@
-            <div class="d-flex flex-column gap-1">
-                <div class="d-flex justify-space-between">
-                    <MudText Typo="Typo.body2" Color="Color.Info">MP</MudText>
-                    <MudText Typo="Typo.body2">@state.CurrentMana / @state.MaxMana</MudText>
-                </div>
-                <MudProgressLinear Value="@GetMpPercent()" Color="Color.Info" Size="Size.Small" />
-            </div>
-
-            @* ── XP Bar ── *@
-            <div class="d-flex flex-column gap-1">
-                <div class="d-flex justify-space-between">
-                    <MudText Typo="Typo.body2" Color="Color.Success">XP</MudText>
-                    <MudText Typo="Typo.body2">@state.XP.ToString("N0") /
-                        @info.EffectiveExperienceToNextLevel.ToString("N0")</MudText>
-                    </div>
-                    <MudProgressLinear Value="@GetXpPercent()" Color="Color.Success" Size="Size.Small" />
-                </div>
-
-                <MudDivider />
-
-                @* ── Gold & Unspent Points ── *@
-                <div class="d-flex align-items-center gap-3">
-                    <MudText Typo="Typo.body1">
-                        <MudIcon Icon="@Icons.Material.Filled.MonetizationOn" Size="Size.Small" Color="Color.Warning" />
-                        @state.Gold.ToString("N0") gold
-                    </MudText>
-                    @if (state.UnspentAttributePoints > 0)
-                    {
-                        <MudChip T="string" Color="Color.Tertiary" Size="Size.Small">
-                            +@state.UnspentAttributePoints pts
-                        </MudChip>
-                    }
-                </div>
-
-                <MudDivider />
-
-                @* ── Attributes ── *@
-                <MudText Typo="Typo.subtitle1">Attributes</MudText>
-                <div class="character-sheet-attrs">
-                    <div class="char-sheet-attr">
-                        <MudText Typo="Typo.body2" Color="Color.Secondary" Inline="true">STR</MudText>
-                        <MudText Typo="Typo.h6">@state.Strength</MudText>
-                    </div>
-                    <div class="char-sheet-attr">
-                        <MudText Typo="Typo.body2" Color="Color.Secondary" Inline="true">DEX</MudText>
-                        <MudText Typo="Typo.h6">@state.Dexterity</MudText>
-                    </div>
-                    <div class="char-sheet-attr">
-                        <MudText Typo="Typo.body2" Color="Color.Secondary" Inline="true">CON</MudText>
-                        <MudText Typo="Typo.h6">@state.Constitution</MudText>
-                    </div>
-                    <div class="char-sheet-attr">
-                        <MudText Typo="Typo.body2" Color="Color.Secondary" Inline="true">INT</MudText>
-                        <MudText Typo="Typo.h6">@state.Intelligence</MudText>
-                    </div>
-                    <div class="char-sheet-attr">
-                        <MudText Typo="Typo.body2" Color="Color.Secondary" Inline="true">WIS</MudText>
-                        <MudText Typo="Typo.h6">@state.Wisdom</MudText>
-                    </div>
-                    <div class="char-sheet-attr">
-                        <MudText Typo="Typo.body2" Color="Color.Secondary" Inline="true">CHA</MudText>
-                        <MudText Typo="Typo.h6">@state.Charisma</MudText>
-                    </div>
-                </div>
-            </div>
-        }
+        </div>
+    }
     else
-        {
-            <div class="d-flex align-items-center justify-center pa-8">
-                <MudText Color="Color.Secondary">No character selected.</MudText>
-            </div>
-        }
-    </div>
+    {
+        <TextPanel Title="Character Sheet" Icon="@Icons.Material.Filled.Person">
+            <MudText Typo="Typo.body2" Color="Color.Secondary">No character selected.</MudText>
+        </TextPanel>
+    }
+</div>
 
 @code {
-    private double GetHpPercent()
-    {
-        var s = GameState.CurrentCharacter;
-        if (s is null || s.MaxHealth <= 0) return 0;
-        return Math.Clamp((double)s.CurrentHealth / s.MaxHealth * 100, 0, 100);
-    }
+    private IReadOnlyList<StatEntry> VitalStats =>
+        GameState.CurrentCharacter is { } state
+            ?
+            [
+                new StatEntry("Health", $"{state.CurrentHealth} / {state.MaxHealth}", Icons.Material.Filled.Favorite, Color.Error),
+                new StatEntry("Mana", $"{state.CurrentMana} / {state.MaxMana}", Icons.Material.Filled.AutoAwesome, Color.Info),
+                new StatEntry("Experience", state.XP.ToString("N0"), Icons.Material.Filled.TrendingUp, Color.Success),
+            ]
+            : [];
 
-    private double GetMpPercent()
-    {
-        var s = GameState.CurrentCharacter;
-        if (s is null || s.MaxMana <= 0) return 0;
-        return Math.Clamp((double)s.CurrentMana / s.MaxMana * 100, 0, 100);
-    }
+    private IReadOnlyList<StatEntry> AttributeStats =>
+        GameState.CurrentCharacter is { } state
+            ?
+            [
+                new StatEntry("Strength", state.Strength.ToString(), Icons.Material.Filled.FitnessCenter),
+                new StatEntry("Dexterity", state.Dexterity.ToString(), Icons.Material.Filled.DirectionsRun),
+                new StatEntry("Constitution", state.Constitution.ToString(), Icons.Material.Filled.FavoriteBorder),
+                new StatEntry("Intelligence", state.Intelligence.ToString(), Icons.Material.Filled.Psychology),
+                new StatEntry("Wisdom", state.Wisdom.ToString(), Icons.Material.Filled.Visibility),
+                new StatEntry("Charisma", state.Charisma.ToString(), Icons.Material.Filled.RecordVoiceOver),
+            ]
+            : [];
 
-    private double GetXpPercent()
-    {
-        var info = GameState.CurrentCharacterInfo;
-        var state = GameState.CurrentCharacter;
-        if (info is null || state is null || info.EffectiveExperienceToNextLevel <= 0) return 0;
-        return Math.Clamp((double)state.XP / info.EffectiveExperienceToNextLevel * 100, 0, 100);
-    }
+    private IReadOnlyList<StatEntry> ProgressionStats =>
+        GameState.CurrentCharacter is { } state
+            ?
+            [
+                new StatEntry("Level", state.Level.ToString(), Icons.Material.Filled.MilitaryTech),
+                new StatEntry("Gold", $"{state.Gold:N0}", Icons.Material.Outlined.Diamond, Color.Warning),
+                new StatEntry("Unspent points", state.UnspentAttributePoints.ToString(), Icons.Material.Filled.AddCircle),
+                new StatEntry("Next level", $"{GameState.CurrentCharacterInfo?.EffectiveExperienceToNextLevel:N0} XP", Icons.Material.Filled.Flag),
+            ]
+            : [];
 }

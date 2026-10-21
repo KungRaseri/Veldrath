@@ -1,0 +1,70 @@
+@using Veldrath.Contracts.Map
+@using Veldrath.GameClient.Components.Layout
+@* Text-first cardinal map view. Nodes are CSS cards; connectors are orthogonal lines. *@
+
+@if (Map is null || _placements.Count == 0)
+{
+    <TextPanel Title="Map" Icon="@Icons.Material.Filled.Map" TestId="cardinal-map-empty">
+        <MudText Typo="Typo.body2" Color="Color.Secondary">No map graph loaded.</MudText>
+    </TextPanel>
+}
+else
+{
+    <TextPanel Title="@Map.Name" Subtitle="@($"{Map.MapType} map")" Icon="@Icons.Material.Filled.Map" TestId="cardinal-map-panel">
+        <div class="cardinal-map-viewport"
+             tabindex="0"
+             data-testid="cardinal-map"
+             @onkeydown="HandleKeyDown">
+            <div class="cardinal-map-canvas" style="@CanvasStyle">
+                @foreach (var connector in _connectors)
+                {
+                    <div class="@($"map-connector {(connector.IsHorizontal ? "map-connector-h" : "map-connector-v")}")"
+                         style="@($"left:{connector.Left}px;top:{connector.Top}px;width:{connector.Width}px;height:{connector.Height}px;")"
+                         aria-hidden="true"></div>
+                }
+
+                @foreach (var placement in _placements)
+                {
+                    var node = FindNode(placement.NodeId);
+                    if (node is null)
+                        continue;
+
+                    var pixel = new NodePixel(
+                        (placement.X - _minX) * 200 + 16,
+                        (placement.Y - _minY) * 112 + 16);
+
+                    <button type="button"
+                            class="@NodeClass(node, CurrentNodeId, SelectedNodeId)"
+                            style="@($"left:{pixel.Left}px;top:{pixel.Top}px;")"
+                            data-testid="@($"map-node-{node.Id}")"
+                            title="@node.Description"
+                            @onclick="() => SelectNodeAsync(node)">
+                        <span class="map-node-heading d-flex align-center gap-1">
+                            <MudIcon Icon="@IconFor(node)" Size="Size.Small" Color="Color.Primary" />
+                            <span class="map-node-name">@node.DisplayName</span>
+                        </span>
+                        <span class="map-node-meta d-flex align-center gap-1">
+                            <span>@node.NodeType</span>
+                            @if (node.IsEntryPoint)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Info">Entry</MudChip>
+                            }
+                            else if (node.IsExitPoint)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Warning">Exit</MudChip>
+                            }
+                        </span>
+                        @if (string.Equals(node.Id, CurrentNodeId, StringComparison.OrdinalIgnoreCase))
+                        {
+                            <span class="map-node-current-label">You are here</span>
+                        }
+                    </button>
+                }
+            </div>
+        </div>
+
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
+            Arrow keys select a neighbouring node. Enter travels.
+        </MudText>
+    </TextPanel>
+}

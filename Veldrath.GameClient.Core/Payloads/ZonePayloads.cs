@@ -16,7 +16,9 @@ public sealed record ZoneEnteredPayload(
     string Name,
     string Description,
     string ZoneType,
-    IReadOnlyList<OccupantEntry> Occupants);
+    IReadOnlyList<OccupantEntry> Occupants,
+    string? CurrentMapId = null,
+    string? CurrentNodeId = null);
 
 /// <summary>
 /// A single occupant entry within a <see cref="ZoneEnteredPayload"/>.
