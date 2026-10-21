@@ -1,8 +1,13 @@
-# Map View Refactor — Fixed Viewport Grid
+# Map View Refactor — Fixed Viewport Grid (SUPERSEDED)
 
+> **Status**: Superseded by [`text-dashboard-map-graph-plan.md`](text-dashboard-map-graph-plan.md).
+> The tilemap center view has been removed from the live hosts in favour of the cardinal
+> map-graph renderer (`CardinalMap` + `MapDetailPanel`). This document is retained for
+> historical reference only.
+>
 > **Date:** 2026-07-01
-> **Status:** Design Approved — Awaiting Implementation
-> **Scope:** Refactor [`GameTilemap.razor`](Veldrath.GameClient.Components/Components/Pages/GameTilemap.razor) from "render all tiles" to a fixed 15×15 viewport with camera tracking, responsive tile sizes, and tile description overlays. Unified across web (Blazor) and desktop (via WebView2).
+> **Original status:** Design Approved — Awaiting Implementation
+> **Original scope:** Refactor [`GameTilemap.razor`](Veldrath.GameClient.Components/Components/Pages/GameTilemap.razor) from "render all tiles" to a fixed 15×15 viewport with camera tracking, responsive tile sizes, and tile description overlays. Unified across web (Blazor) and desktop (via WebView2).
 
 ---
 

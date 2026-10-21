@@ -445,9 +445,44 @@ flowchart TB
 - **Verification**: `RealmEngine.Data.Tests` 265 passing; `Veldrath.Server.Tests` 806 passing;
   `Veldrath.Server.slnx` builds with 0 warnings / 0 errors.
 
+### Completed — Phases 3–6 (2026-10-21, commit `9625d071`)
+
+- **Client core**: `MapGraphReceivedPayload`, `NodeTraveledPayload`, current map/node and
+  graph state on `IGameStateService`, `ApplyMapGraph`/`ApplyNodeTraveled`, and
+  `RequestMapGraphAsync`/`TravelToNodeAsync` hub extensions. 10 map-state tests.
+- **Text UI foundation**: `TextPanel`, `StatRow`, `StatTable`, `EntityList`, `ItemTable`,
+  and `DetailPane`, plus shared text UI models and `game.css` primitives.
+- **Shell**: `GameHeader`, `GameFooter`, `LeftSidebar`, `RightSidebar`, and `Game.razor`
+  rebuilt as a responsive text dashboard grid.
+- **Cardinal map**: deterministic `CardinalGraphLayout` engine (authored positions,
+  cardinal BFS placement, overlap avoidance) with 9 tests; `CardinalMap` with orthogonal
+  connectors, keyboard selection, and travel; `MapDetailPanel` for node metadata.
+- **Panels**: combat, inventory, shop, journal, character sheet, and the hotbar converted
+  to text tables/detail panes with Material icons (no emoji).
+
+### Completed — Phase 7a: tile removal from live hosts (2026-10-21, commit `f40f761a`)
+
+- Removed `MoveCharacter`, `GetZoneTileMap`, `GetRegionMap`, `MoveOnRegion`, `ExitZone`,
+  and `ChangeRegion` hub methods and their MediatR handlers.
+- Removed tile repository registration, tile enemy spawning, tile entity snapshots,
+  and `EnemyAiService` from the server.
+- Removed tile/region state (`ZoneTileMap`, `PlayerTileX/Y`, `RegionState`), tile apply
+  methods, and tile payload subscriptions from `GameClient.Core`.
+- Deleted the Blazor `GameTilemap`, `GameMap`, `Tile`, `TileInfoCard`, and `TileStatusBar`
+  components and their tests; `Game.razor` now renders only the map graph.
+- Verified with `Realm.Full.slnx` (0 warnings / 0 errors) and the full test suite
+  (4,877 passing).
+
 ### Remaining
 
-- Phase 3: client-core map state and hub wiring.
-- Phases 4–6: text dashboard shell, cardinal map, and in-game panel conversion.
-- Phase 7: delete TMX layer and tile-bound systems, update docs, full runtime smoke tests.
-- Phase 8 (optional): RealmForge map graph editor and JSON import/export.
+- Phase 7b: delete `Veldrath.Contracts/Tilemap`, the RealmEngine tile query/repository,
+  `TiledMap` models, `TmxToMapGraphImporter` (one-time, output already committed), and
+  tilemap assets/manifests/TMX files.
+- Phase 7b: remove the Avalonia native tile stack (`TilemapViewModel`,
+  `RegionTilemapViewModel`, `MapViewModel`, `MapRegionGroupViewModel`,
+  `ZoneLocationPanelViewModel`, `TileDescriptionService`, map/zone views and tests).
+- Phase 7b: drop `Character.TileX/TileY/TileZoneId`, `PlayerSession.TileX/TileY`, tile
+  repository methods, and the compatibility tile write in `TravelToNodeHubCommand`.
+- Phase 8: update older tilemap plans to "superseded", refresh agent memory (started),
+  run runtime smoke tests on web and desktop hosts.
+- Phase 9 (optional): RealmForge map graph editor and JSON import/export.
