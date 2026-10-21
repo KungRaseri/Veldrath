@@ -17,7 +17,7 @@ namespace Veldrath.Server.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.0")
+                .HasAnnotation("ProductVersion", "10.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -242,6 +242,14 @@ namespace Veldrath.Server.Migrations
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CurrentMapId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("CurrentNodeId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("CurrentZoneId")
                         .IsRequired()
@@ -705,6 +713,14 @@ namespace Veldrath.Server.Migrations
                     b.Property<string>("ConnectionId")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("CurrentMapId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("CurrentNodeId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<DateTimeOffset>("EnteredAt")
                         .HasColumnType("timestamp with time zone");

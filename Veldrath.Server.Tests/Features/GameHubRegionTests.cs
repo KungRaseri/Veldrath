@@ -75,6 +75,7 @@ public class GameHubRegionTests : IDisposable
             mediator ?? Mock.Of<ISender>(),
             new ZoneEntityTracker(),
             Mock.Of<ITileMapRepository>(),
+            Mock.Of<IMapGraphRepository>(),
             Mock.Of<IEnemyRepository>(),
             options,
             userManager,

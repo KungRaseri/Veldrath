@@ -414,3 +414,40 @@ flowchart TB
 - `dotnet build Realm.Full.slnx` is 0 warnings / 0 errors.
 - All tests pass, with new coverage for graph, travel, layout, and UI panels.
 - Docs and agent memory record the new map model and the TMX removal.
+
+---
+
+## 15. Implementation status (2026-10-21)
+
+### Completed — Phases 0–2 (schema through server navigation)
+
+- **Schema**: `Map`, `MapNode`, `MapEdge` entities in `RealmEngine.Data/Entities/Content/MapGraph.cs`;
+  DbSets and EF configuration in `ContentDbContext` / `ContentModelConfiguration`.
+- **Player position**: `Character.CurrentMapId/CurrentNodeId` and `PlayerSession.CurrentMapId/CurrentNodeId`.
+- **Migrations**: `20261021172256_AddMapGraph`, `20261021172306_AddCharacterMapPosition`.
+- **Shared models**: enums and read models in `RealmEngine.Shared/Models/MapGraphModels.cs`;
+  `IMapGraphRepository` and `EfCoreMapGraphRepository`.
+- **Validation**: `MapGraphValidator` plus 9 unit tests.
+- **TMX importer**: `TmxToMapGraphImporter` with fixture tests and a real-asset smoke test.
+  Uses new `GetZoneExits()` / `GetDefaultSpawn()` Tiled helpers.
+- **Committed seeder**: `RealmEngine.Data/Seeders/MapGraphSeeder.cs`, wired into `DatabaseSeeder`.
+  Snapshot contains **23 maps** (4 region + 19 zone, including the dev playground),
+  **130 nodes**, and **196 edges**.
+  Verified on a fresh Postgres database and on a second server start (idempotent; counts unchanged).
+- **Server API**: `GetMapGraphHubCommand` (discovery-filtered graph) and
+  `TravelToNodeHubCommand` (adjacency validation, exit transitions, character/session persistence,
+  passive discovery, and location rosters), each with 10 handler tests.
+- **Hub wiring**: `GameHub.GetMapGraph` / `GameHub.TravelToNode`; `SelectCharacter` starts the
+  character on the region entry node, `EnterZone` starts them on the zone entry node.
+  Old tile methods are marked deprecated in XML remarks (not yet removed).
+- **Contracts**: `MapGraphDto`, `MapNodeDto`, `MapEdgeDto`, `MapSummaryDto`, `TravelToNodeResultDto`,
+  `TravelToNodeHubRequest`.
+- **Verification**: `RealmEngine.Data.Tests` 265 passing; `Veldrath.Server.Tests` 806 passing;
+  `Veldrath.Server.slnx` builds with 0 warnings / 0 errors.
+
+### Remaining
+
+- Phase 3: client-core map state and hub wiring.
+- Phases 4–6: text dashboard shell, cardinal map, and in-game panel conversion.
+- Phase 7: delete TMX layer and tile-bound systems, update docs, full runtime smoke tests.
+- Phase 8 (optional): RealmForge map graph editor and JSON import/export.

@@ -41,6 +41,18 @@ public interface ICharacterRepository
     /// <summary>Updates <see cref="Character.TileX"/>, <see cref="Character.TileY"/>, and <see cref="Character.TileZoneId"/> without loading the full entity.</summary>
     Task UpdateTilePositionAsync(Guid id, int tileX, int tileY, string tileZoneId, CancellationToken ct = default);
 
+    /// <summary>
+    /// Updates the character's current map/node and optional zone context without loading the full entity.
+    /// Pass <see langword="null"/> for <paramref name="zoneId"/> when the character is on a region map.
+    /// </summary>
+    Task UpdateMapPositionAsync(
+        Guid id,
+        string mapId,
+        string nodeId,
+        string? zoneId,
+        string? locationSlug,
+        CancellationToken ct = default);
+
     /// <summary>Clears the last-played timestamp for all non-deleted characters of the account.</summary>
     Task ClearLastPlayedAsync(Guid accountId, CancellationToken ct = default);
 }

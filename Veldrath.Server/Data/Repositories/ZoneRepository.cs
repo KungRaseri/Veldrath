@@ -97,4 +97,24 @@ public class PlayerSessionRepository(ApplicationDbContext db) : IPlayerSessionRe
         session.ZoneId   = null;
         await db.SaveChangesAsync();
     }
+
+    public async Task UpdateMapPositionAsync(
+        Guid characterId,
+        string mapId,
+        string nodeId,
+        string? zoneId,
+        string? regionId)
+    {
+        var session = await GetByCharacterIdAsync(characterId);
+        if (session is null) return;
+
+        session.CurrentMapId = mapId;
+        session.CurrentNodeId = nodeId;
+
+        if (!string.IsNullOrWhiteSpace(regionId))
+            session.RegionId = regionId;
+
+        session.ZoneId = zoneId;
+        await db.SaveChangesAsync();
+    }
 }

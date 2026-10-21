@@ -910,4 +910,47 @@ the session; the three `Dockerfile.dev` fixes remained uncommitted at audit end.
 
 ---
 
+### Session-44 (2026-10-21) — Text dashboard map graph: Phases 0–2 complete
+
+**Schema + persistence**
+- `RealmEngine.Data/Entities/Content/MapGraph.cs`: `Map`, `MapNode`, `MapEdge` (string enums stored via
+  `HasConversion<string>()`; unique `(MapType, OwnerId)` and `(MapId, FromNodeId, Direction)`).
+- `ContentDbContext` DbSets + `ContentModelConfiguration`; entities only exist in `ContentDbContext`.
+- Added `Character.CurrentMapId/CurrentNodeId` and `PlayerSession.CurrentMapId/CurrentNodeId`.
+- Migrations: `20261021172256_AddMapGraph` (Data), `20261021172306_AddCharacterMapPosition` (Server).
+- `IMapGraphRepository` / `EfCoreMapGraphRepository`; DI registration in `Veldrath.Server/Program.cs`.
+
+**Importer + seeder**
+- `RealmEngine.Data/Import/TmxToMapGraphImporter.cs` is pure (no DB/TMX repo dependency); input is
+  `MapGraphImportCatalog` + in-memory `TiledMap` dictionaries.
+- Region maps: TMX `zones`, `region_exits`, `spawns`, `paths`; zone maps: TMX `labels`, `exits`, `spawns`,
+  `paths`, supplemented by `ZoneLocation` and `ZoneLocationConnection` rows.
+- Generates deterministic edge GUIDs (SHA-256 of map/from/direction/to) and unique layout positions.
+- `MapGraphImportReport` separates warnings (auto-connected, synthesized exits, direction conflicts) from
+  errors (unknown refs, missing target maps/nodes).
+- `RealmEngine.Data/Seeders/MapGraphSeeder.cs` is the generated snapshot: **23 maps / 130 nodes / 196 edges**.
+  It does not read TMX. Wired into `DatabaseSeeder` after zone-location connections.
+- Fresh Postgres verification: counts matched; second server start left counts unchanged (idempotent).
+- `MapGraphSeederTests` assert exact counts, structural validity, and idempotency.
+
+**Server navigation**
+- `GetMapGraphHubCommand`: resolves current map (or explicit), filters hidden nodes/edges using
+  `ICharacterUnlockedLocationRepository`, always includes the current node, returns map summaries.
+- `TravelToNodeHubCommand`: validates current map/position, visibility, direct edge, and exit target;
+  updates Character + PlayerSession via new `UpdateMapPositionAsync` methods; sets zone/region context;
+  updates tile coords from node layout for zone maps; runs passive discovery and location roster spawn.
+- `GameHub`: `GetMapGraph(string? mapId)` → `MapGraphReceived`; `TravelToNode(TravelToNodeHubRequest)` →
+  `NodeTraveled`. `SelectCharacter` sets region entry; `EnterZone` sets zone entry.
+  Old tile methods are deprecated in XML remarks only (keep until TMX removal).
+
+**Test baselines**
+- `RealmEngine.Data.Tests`: 265 passing (9 validator, 9 importer incl. real TMX asset, 3 seeder).
+- `Veldrath.Server.Tests`: 806 passing (10 GetMapGraph, 10 TravelToNode).
+- `Veldrath.Server.slnx`: 0 warnings / 0 errors.
+
+**Next**: Phase 3 client core (`IGameStateService`/`GameStateService` map state, hub subscriptions),
+then Phases 4–6 UI, then Phase 7 TMX removal.
+
+---
+
 

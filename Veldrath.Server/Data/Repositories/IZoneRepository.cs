@@ -66,4 +66,15 @@ public interface IPlayerSessionRepository
     /// Called when a character crosses a region boundary.
     /// </summary>
     Task SetRegionAsync(Guid characterId, string regionId);
+
+    /// <summary>
+    /// Updates the session's current map/node and optional zone/region context.
+    /// Pass <see langword="null"/> for <paramref name="zoneId"/> when the character is on a region map.
+    /// </summary>
+    Task UpdateMapPositionAsync(
+        Guid characterId,
+        string mapId,
+        string nodeId,
+        string? zoneId,
+        string? regionId);
 }

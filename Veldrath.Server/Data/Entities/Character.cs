@@ -54,6 +54,12 @@ public class Character
     /// <summary>Slug of the ZoneLocation the character is currently at within the zone, or <see langword="null"/> if not at a specific location.</summary>
     public string? CurrentZoneLocationSlug { get; set; }
 
+    /// <summary>Stable identifier of the region or zone map the character is currently on, or <see langword="null"/>.</summary>
+    public string? CurrentMapId { get; set; }
+
+    /// <summary>Stable identifier of the map node the character currently occupies, or <see langword="null"/>.</summary>
+    public string? CurrentNodeId { get; set; }
+
     /// <summary>Identifier of the background chosen at character creation (e.g. "acolyte", "criminal"), or <see langword="null"/> if none was selected.</summary>
     public string? BackgroundId { get; set; }
 

@@ -31,6 +31,12 @@ public class PlayerSession
     /// </summary>
     public string? ZoneId { get; set; }
 
+    /// <summary>Stable identifier of the region or zone map the character is currently on, or <see langword="null"/>.</summary>
+    public string? CurrentMapId { get; set; }
+
+    /// <summary>Stable identifier of the map node the character currently occupies, or <see langword="null"/>.</summary>
+    public string? CurrentNodeId { get; set; }
+
     /// <summary>Tile column of the character's current position (region map or zone).</summary>
     public int TileX { get; set; }
 

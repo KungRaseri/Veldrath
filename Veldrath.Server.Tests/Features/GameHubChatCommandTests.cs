@@ -48,6 +48,7 @@ public class GameHubChatCommandTests : IDisposable
             Mock.Of<MediatR.ISender>(),
             new Veldrath.Server.Services.ZoneEntityTracker(),
             Mock.Of<RealmEngine.Shared.Abstractions.ITileMapRepository>(),
+            Mock.Of<RealmEngine.Shared.Abstractions.IMapGraphRepository>(),
             Mock.Of<RealmEngine.Shared.Abstractions.IEnemyRepository>(),
             options,
             userManager,

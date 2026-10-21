@@ -302,6 +302,71 @@ public static class TiledMapGameExtensions
         return exits;
     }
 
+    // ── Zone map: exits ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Extracts all zone-transition definitions from the objectgroup layer named <c>"exits"</c>.
+    /// Each object must define either a <c>toZoneId</c> or a <c>toRegionId</c> custom string property;
+    /// objects with neither are ignored.
+    /// </summary>
+    /// <returns>A read-only list of zone-exit definitions. Returns an empty list if the <c>exits</c> layer is absent.</returns>
+    public static IReadOnlyList<ZoneExitDefinition> GetZoneExits(this TiledMap map)
+    {
+        var layer = map.Layers.Find(l =>
+            l.Type == "objectgroup" &&
+            l.Name.Equals("exits", StringComparison.OrdinalIgnoreCase));
+
+        if (layer is null) return [];
+
+        var exits = new List<ZoneExitDefinition>();
+        foreach (var obj in layer.Objects)
+        {
+            var targetZoneId = obj.Properties.Find(p => p.Name == "toZoneId")?.AsString();
+            var targetRegionId = obj.Properties.Find(p => p.Name == "toRegionId")?.AsString();
+
+            if (string.IsNullOrWhiteSpace(targetZoneId) && string.IsNullOrWhiteSpace(targetRegionId))
+                continue;
+
+            exits.Add(new ZoneExitDefinition
+            {
+                TileX = (int)(obj.X / map.TileWidth),
+                TileY = (int)(obj.Y / map.TileHeight),
+                DisplayName = obj.Properties.Find(p => p.Name == "displayName")?.AsString()
+                              ?? (string.IsNullOrEmpty(obj.Name) ? "Exit" : obj.Name),
+                TargetZoneId = string.IsNullOrWhiteSpace(targetZoneId) ? null : targetZoneId,
+                TargetRegionId = string.IsNullOrWhiteSpace(targetRegionId) ? null : targetRegionId,
+            });
+        }
+
+        return exits;
+    }
+
+    // ── Zone map: spawns ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns the preferred player spawn from the objectgroup layer named <c>"spawns"</c>.
+    /// The object named <c>default-spawn</c> is preferred; otherwise the first spawn object is used.
+    /// </summary>
+    /// <returns>The spawn tile, or <see langword="null"/> when the map has no spawn objects.</returns>
+    public static SpawnPointDefinition? GetDefaultSpawn(this TiledMap map)
+    {
+        var layer = map.Layers.Find(l =>
+            l.Type == "objectgroup" &&
+            l.Name.Equals("spawns", StringComparison.OrdinalIgnoreCase));
+
+        if (layer is null || layer.Objects.Count == 0) return null;
+
+        var obj = layer.Objects.Find(o => o.Name.Equals("default-spawn", StringComparison.OrdinalIgnoreCase))
+                  ?? layer.Objects.Find(o => o.Type.Equals("spawn", StringComparison.OrdinalIgnoreCase))
+                  ?? layer.Objects[0];
+
+        return new SpawnPointDefinition
+        {
+            TileX = (int)(obj.X / map.TileWidth),
+            TileY = (int)(obj.Y / map.TileHeight),
+        };
+    }
+
     // ── Region map: zone labels ────────────────────────────────────────────────
 
     /// <summary>

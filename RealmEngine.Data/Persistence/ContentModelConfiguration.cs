@@ -289,6 +289,65 @@ public static class ContentModelConfiguration
             e.Property(x => x.ConnectionType).HasMaxLength(32).IsRequired();
         });
 
+        // Region and zone map graphs
+        builder.Entity<Map>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasMaxLength(128);
+            e.Property(x => x.MapType).HasConversion<string>().HasMaxLength(16).IsRequired();
+            e.Property(x => x.OwnerId).HasMaxLength(128).IsRequired();
+            e.Property(x => x.Name).HasMaxLength(200).IsRequired();
+            e.Property(x => x.Description).HasMaxLength(4000);
+            e.Property(x => x.EntryNodeId).HasMaxLength(200);
+            e.HasIndex(x => new { x.MapType, x.OwnerId }).IsUnique();
+            e.HasMany(x => x.Nodes)
+             .WithOne(x => x.Map)
+             .HasForeignKey(x => x.MapId)
+             .OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(x => x.Edges)
+             .WithOne(x => x.Map)
+             .HasForeignKey(x => x.MapId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<MapNode>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasMaxLength(200);
+            e.Property(x => x.MapId).HasMaxLength(128).IsRequired();
+            e.Property(x => x.NodeType).HasConversion<string>().HasMaxLength(24).IsRequired();
+            e.Property(x => x.RefId).HasMaxLength(128);
+            e.Property(x => x.DisplayName).HasMaxLength(200).IsRequired();
+            e.Property(x => x.Description).HasMaxLength(4000);
+            e.Property(x => x.IconKey).HasMaxLength(64);
+            e.Property(x => x.TargetMapId).HasMaxLength(128);
+            e.Property(x => x.TargetNodeId).HasMaxLength(200);
+            e.Property(x => x.UnlockType).HasMaxLength(64);
+            e.Property(x => x.UnlockKey).HasMaxLength(128);
+            e.HasIndex(x => new { x.MapId, x.NodeType });
+        });
+
+        builder.Entity<MapEdge>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.MapId).HasMaxLength(128).IsRequired();
+            e.Property(x => x.FromNodeId).HasMaxLength(200).IsRequired();
+            e.Property(x => x.ToNodeId).HasMaxLength(200).IsRequired();
+            e.Property(x => x.Direction).HasConversion<string>().HasMaxLength(16).IsRequired();
+            e.Property(x => x.EdgeType).HasConversion<string>().HasMaxLength(24).IsRequired();
+            e.Property(x => x.Label).HasMaxLength(200);
+            e.HasIndex(x => new { x.MapId, x.FromNodeId, x.Direction }).IsUnique();
+            e.HasIndex(x => new { x.MapId, x.ToNodeId });
+            e.HasOne(x => x.FromNode)
+             .WithMany(x => x.OutgoingEdges)
+             .HasForeignKey(x => x.FromNodeId)
+             .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.ToNode)
+             .WithMany(x => x.IncomingEdges)
+             .HasForeignKey(x => x.ToNodeId)
+             .OnDelete(DeleteBehavior.Restrict);
+        });
+
         // Dialogue
         builder.Entity<Dialogue>(e =>
         {

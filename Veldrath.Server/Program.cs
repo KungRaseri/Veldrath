@@ -367,6 +367,7 @@ try
     builder.Services.AddScoped<INodeRepository, EfCoreNodeRepository>();
     builder.Services.AddScoped<IOrganizationRepository, EfCoreOrganizationRepository>();
     builder.Services.AddScoped<IZoneLocationRepository, EfCoreZoneLocationRepository>();
+    builder.Services.AddScoped<IMapGraphRepository, EfCoreMapGraphRepository>();
     builder.Services.AddScoped<ICharacterUnlockedLocationRepository, CharacterUnlockedLocationRepository>();
     builder.Services.AddScoped<IDialogueRepository, EfCoreDialogueRepository>();
     builder.Services.AddScoped<IActorInstanceRepository, EfCoreActorInstanceRepository>();

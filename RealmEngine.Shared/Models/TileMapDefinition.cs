@@ -58,6 +58,28 @@ public class RegionExitDefinition
     public string TargetRegionId { get; set; } = string.Empty;
 }
 
+/// <summary>
+/// A zone transition on a zone map, placed in the <c>exits</c> objectgroup layer.
+/// Exactly one of <see cref="TargetZoneId"/> or <see cref="TargetRegionId"/> is set.
+/// </summary>
+public class ZoneExitDefinition
+{
+    /// <summary>Tile column of the exit object centre.</summary>
+    public int TileX { get; set; }
+
+    /// <summary>Tile row of the exit object centre.</summary>
+    public int TileY { get; set; }
+
+    /// <summary>Human-readable label from the <c>displayName</c> property, falling back to the object name.</summary>
+    public string DisplayName { get; set; } = string.Empty;
+
+    /// <summary>Slug of the destination zone, or <see langword="null"/> for a region exit.</summary>
+    public string? TargetZoneId { get; set; }
+
+    /// <summary>Slug of the destination region, or <see langword="null"/> for a zone exit.</summary>
+    public string? TargetRegionId { get; set; }
+}
+
 /// <summary>A label overlay on a region map, placed in the <c>labels</c> objectgroup layer.</summary>
 public class ZoneLabelDefinition
 {

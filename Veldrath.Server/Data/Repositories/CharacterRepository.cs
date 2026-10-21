@@ -107,6 +107,29 @@ public class CharacterRepository : ICharacterRepository
     }
 
     /// <inheritdoc />
+    public async Task UpdateMapPositionAsync(
+        Guid id,
+        string mapId,
+        string nodeId,
+        string? zoneId,
+        string? locationSlug,
+        CancellationToken ct = default)
+    {
+        var character = await _db.Characters.FindAsync([id], ct);
+        if (character is null) return;
+
+        character.CurrentMapId = mapId;
+        character.CurrentNodeId = nodeId;
+        character.CurrentZoneLocationSlug = locationSlug;
+
+        if (!string.IsNullOrWhiteSpace(zoneId))
+            character.CurrentZoneId = zoneId;
+
+        character.LastPlayedAt = DateTimeOffset.UtcNow;
+        await _db.SaveChangesAsync(ct);
+    }
+
+    /// <inheritdoc />
     public async Task ClearLastPlayedAsync(Guid accountId, CancellationToken ct = default)
     {
         await _db.Characters

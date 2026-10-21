@@ -55,6 +55,12 @@ public class ContentDbContext : DbContext
     public DbSet<ZoneLocation> ZoneLocations => Set<ZoneLocation>();
     /// <summary>Directed connections between zone locations (intra-zone and cross-zone).</summary>
     public DbSet<ZoneLocationConnection> ZoneLocationConnections => Set<ZoneLocationConnection>();
+    /// <summary>Region and zone map definitions.</summary>
+    public DbSet<Map> Maps => Set<Map>();
+    /// <summary>Nodes within region and zone maps.</summary>
+    public DbSet<MapNode> MapNodes => Set<MapNode>();
+    /// <summary>Directed cardinal edges between nodes on the same map.</summary>
+    public DbSet<MapEdge> MapEdges => Set<MapEdge>();
     /// <summary>NPC dialogue trees.</summary>
     public DbSet<Dialogue> Dialogues => Set<Dialogue>();
     /// <summary>Constructed and natural language definitions — phonology, morphology, and lexicon.</summary>

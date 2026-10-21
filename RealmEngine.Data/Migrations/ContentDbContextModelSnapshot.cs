@@ -685,6 +685,186 @@ namespace RealmEngine.Data.Migrations
                     b.ToTable("LootTableEntries");
                 });
 
+            modelBuilder.Entity("RealmEngine.Data.Entities.Map", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("EntryNodeId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("MapType")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MapType", "OwnerId")
+                        .IsUnique();
+
+                    b.ToTable("Maps");
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.MapEdge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Direction")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("EdgeType")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.Property<string>("FromNodeId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("IsHidden")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsTraversable")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Label")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("MapId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ToNodeId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromNodeId");
+
+                    b.HasIndex("ToNodeId");
+
+                    b.HasIndex("MapId", "ToNodeId");
+
+                    b.HasIndex("MapId", "FromNodeId", "Direction")
+                        .IsUnique();
+
+                    b.ToTable("MapEdges");
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.MapNode", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<int?>("DiscoverThreshold")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("IconKey")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<bool>("IsEntryPoint")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsExitPoint")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsHidden")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("LayoutX")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("LayoutY")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MapId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("NodeType")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.Property<string>("RefId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TargetMapId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("TargetNodeId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("UnlockKey")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("UnlockType")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MapId", "NodeType");
+
+                    b.ToTable("MapNodes");
+                });
+
             modelBuilder.Entity("RealmEngine.Data.Entities.Material", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2340,6 +2520,44 @@ namespace RealmEngine.Data.Migrations
                     b.Navigation("LootTable");
                 });
 
+            modelBuilder.Entity("RealmEngine.Data.Entities.MapEdge", b =>
+                {
+                    b.HasOne("RealmEngine.Data.Entities.MapNode", "FromNode")
+                        .WithMany("OutgoingEdges")
+                        .HasForeignKey("FromNodeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RealmEngine.Data.Entities.Map", "Map")
+                        .WithMany("Edges")
+                        .HasForeignKey("MapId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RealmEngine.Data.Entities.MapNode", "ToNode")
+                        .WithMany("IncomingEdges")
+                        .HasForeignKey("ToNodeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FromNode");
+
+                    b.Navigation("Map");
+
+                    b.Navigation("ToNode");
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.MapNode", b =>
+                {
+                    b.HasOne("RealmEngine.Data.Entities.Map", "Map")
+                        .WithMany("Nodes")
+                        .HasForeignKey("MapId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Map");
+                });
+
             modelBuilder.Entity("RealmEngine.Data.Entities.Material", b =>
                 {
                     b.OwnsOne("RealmEngine.Data.Entities.MaterialStats", "Stats", b1 =>
@@ -3136,6 +3354,20 @@ namespace RealmEngine.Data.Migrations
             modelBuilder.Entity("RealmEngine.Data.Entities.LootTable", b =>
                 {
                     b.Navigation("Entries");
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.Map", b =>
+                {
+                    b.Navigation("Edges");
+
+                    b.Navigation("Nodes");
+                });
+
+            modelBuilder.Entity("RealmEngine.Data.Entities.MapNode", b =>
+                {
+                    b.Navigation("IncomingEdges");
+
+                    b.Navigation("OutgoingEdges");
                 });
 
             modelBuilder.Entity("RealmEngine.Data.Entities.NamePatternSet", b =>
