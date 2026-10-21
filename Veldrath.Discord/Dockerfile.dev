@@ -30,4 +30,4 @@ ENV DOTNET_WATCH_RESTART_ON_CHANGES=true
 ENV DOTNET_ENVIRONMENT=Development
 
 WORKDIR /src/Veldrath.Discord
-ENTRYPOINT ["dotnet", "watch", "run", "-c", "Debug"]
+ENTRYPOINT ["dotnet", "watch", "run", "-c", "Debug", "--no-launch-profile"]

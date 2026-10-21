@@ -22,7 +22,7 @@
 | Veldrath Client | [![Client release](https://img.shields.io/github/v/release/KungRaseri/RealmEngine?filter=client%2Fv*&label=client&color=brightgreen)](https://github.com/KungRaseri/RealmEngine/releases?q=client&expanded=true) |
 | Veldrath Server | [![Server release](https://img.shields.io/github/v/release/KungRaseri/RealmEngine?filter=server%2Fv*&label=server&color=brightgreen)](https://github.com/KungRaseri/RealmEngine/releases?q=server&expanded=true) |
 
-RPG backend engine implementing CQRS with MediatR for clean command/query separation. Includes a multiplayer client/server (Veldrath) and a JSON data editor (RealmForge).
+RPG backend engine implementing CQRS with MediatR for clean command/query separation. Includes a multiplayer client/server (Veldrath) and a PostgreSQL content editor (RealmForge).
 
 ## Architecture
 
@@ -30,13 +30,13 @@ RPG backend engine implementing CQRS with MediatR for clean command/query separa
 
 ### Core Libraries (`RealmEngine.slnx`)
 - **RealmEngine.Core** — Game logic (combat, inventory, crafting, quests)
-- **RealmEngine.Data** — JSON data loading, persistence (SQLite / PostgreSQL)
+- **RealmEngine.Data** — EF Core persistence and content repositories (PostgreSQL; SQLite for tests)
 - **RealmEngine.Shared** — Models, utilities, abstractions
 
 ### Applications
 - **Veldrath.Server** — ASP.NET Core game server with SignalR hub
 - **Veldrath.Client** — Avalonia UI desktop client with ReactiveUI
-- **RealmForge** — Avalonia UI tool for editing JSON game data
+- **RealmForge** — Avalonia UI tool for editing game content stored in PostgreSQL
 
 Code is organized by business feature (Features/Combat, Features/Inventory, etc.) with automatic validation and logging via MediatR pipeline behaviors.
 
@@ -64,7 +64,7 @@ All operations return structured DTOs and pass through FluentValidation and Seri
 # Build engine libraries only
 dotnet build RealmEngine.slnx
 
-# Build everything (requires Avalonia workloads)
+# Build everything (29 projects)
 dotnet build Realm.Full.slnx
 
 # Run all tests
@@ -96,9 +96,9 @@ dotnet test RealmEngine.slnx
 - Procedural enemy generation with difficulty scaling
 
 **Data & Persistence**
-- Extensible JSON data files (enemies, items, abilities, spells, materials) with customizable content
-- Cross-reference system for linking data across files (`@domain/path:item`)
-- SQLite for testing, PostgreSQL for local development and production
+- EF Core content catalog backed by PostgreSQL (SQLite for tests)
+- Seeded content for items, enemies, abilities, quests, zones, and other content types
+- Four DbContexts: application auth/ops, game state, content catalog, and editorial content
 - Budget-based item costing using `rarityWeight` inverse formula
 
 **Integration**
@@ -109,16 +109,23 @@ dotnet test RealmEngine.slnx
 
 ## Testing
 
-Comprehensive test suite across six test projects:
+Comprehensive test suite across 13 test projects:
 
 | Project | Scope |
 |---------|-------|
 | `RealmEngine.Core.Tests` | Combat, crafting, inventory, quests, character progression |
-| `RealmEngine.Data.Tests` | JSON compliance, reference integrity, data validation |
+| `RealmEngine.Data.Tests` | Repository/persistence and content validation |
 | `RealmEngine.Shared.Tests` | Models, utilities, services |
 | `RealmForge.Tests` | RealmForge UI and service logic |
+| `RealmFoundry.Tests` | Community content portal services and auth state |
 | `Veldrath.Client.Tests` | Client ViewModels, services, navigation |
 | `Veldrath.Server.Tests` | Server endpoints, game hub, services |
+| `Veldrath.Web.Tests` | Blazor web portal services |
+| `Veldrath.Discord.Tests` | Discord bot modules and embeds |
+| `Veldrath.Auth.Tests` | Shared auth libraries |
+| `Veldrath.Assets.Tests` | Asset store and manifests |
+| `Veldrath.GameClient.Core.Tests` | Shared client core services |
+| `Veldrath.GameClient.Components.Tests` | Razor Class Library components (bUnit) |
 
 ```powershell
 # Run all non-UI tests with coverage
@@ -129,13 +136,13 @@ dotnet test Realm.Full.slnx --filter "Category!=UI" `
 ## Key Dependencies
 
 **Core Libraries**
-- MediatR 14.x+ — CQRS command/query pattern
+- MediatR 12.5.x — CQRS command/query pattern
 - SQLite — Embedded database for testing
 - PostgreSQL — Database for local development and production
-- Newtonsoft.Json 13.0.x+ — JSON data loading
-- FluentValidation 12.1.x+ — Input validation
-- Serilog 4.3.x+ — Structured logging
-- Polly 8.6.x+ — Resilience patterns
+- System.Text.Json — Serialization (JSON→DB migration complete; Newtonsoft remains only in legacy server/Forge paths)
+- FluentValidation 12.1.x — Input validation
+- Serilog 4.4.x — Structured logging
+- Polly 8.7.x — Resilience patterns
 
 **Client / Server**
 - Avalonia 11.2.x+ — Cross-platform UI (Client, RealmForge)
@@ -145,21 +152,29 @@ dotnet test Realm.Full.slnx --filter "Category!=UI" `
 
 **Testing**
 - xUnit 2.9.x+ — Test framework
-- FluentAssertions 8.8.x+ — Test assertions
+- FluentAssertions 8.10.x — Test assertions
 - Avalonia.Headless.XUnit — Headless UI testing
 
 ## Project Structure
 
 ```
 RealmEngine/
-├── RealmEngine.Core/           # Game logic and MediatR handlers
-│   └── Features/               # Vertical slices (Combat, Crafting, Inventory, etc.)
-├── RealmEngine.Data/           # Data access and JSON loading
-├── RealmEngine.Shared/         # Shared models and utilities
-├── Veldrath.Server/        # ASP.NET Core game server
-├── Veldrath.Client/        # Avalonia desktop client
-├── RealmForge/                 # JSON data editor tool
-└── [Project].Tests/            # Test projects (one per library/app)
+├── RealmEngine.Core/                 # Game logic and MediatR handlers
+│   └── Features/                     # Vertical slices (Combat, Crafting, Inventory, etc.)
+├── RealmEngine.Data/                 # EF Core persistence and content repositories
+├── RealmEngine.Shared/               # Shared models and utilities
+├── Veldrath.Server/                  # ASP.NET Core game server
+├── Veldrath.Client/                  # Avalonia desktop client
+├── Veldrath.Web/                     # Blazor Server game portal
+├── RealmForge/                       # PostgreSQL content editor (Avalonia)
+├── RealmFoundry/                     # Community content portal (Blazor Server)
+├── Veldrath.Discord/                 # Discord bot
+├── Veldrath.Auth/                    # Shared auth libraries
+├── Veldrath.Contracts/               # Shared DTOs and contracts
+├── Veldrath.Assets/                  # Asset store and manifests
+├── Veldrath.GameClient.Core/         # Shared client-side game logic
+├── Veldrath.GameClient.Components/   # Shared Razor Class Library
+└── [Project].Tests/                  # 13 test projects
 ```
 
 ## Solution Files

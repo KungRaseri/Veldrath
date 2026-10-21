@@ -254,8 +254,8 @@ Build only what changed. The rule is simple: **build the `.slnx` file matching t
 ### Full Build (Final Verification)
 
 ```powershell
-dotnet build Realm.Full.slnx    # Full build (30 projects)
-dotnet test Realm.Full.slnx     # All 8,500+ tests (with coverage)
+dotnet build Realm.Full.slnx    # Full build (29 projects)
+dotnet test Realm.Full.slnx     # All ~4,850 tests across 13 test projects (with coverage)
 ```
 
 ### Running Projects

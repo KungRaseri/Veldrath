@@ -42,4 +42,4 @@ ENV ASPNETCORE_URLS=http://+:8082
 EXPOSE 8082
 
 WORKDIR /src/Veldrath.Web
-ENTRYPOINT ["dotnet", "watch", "run", "-c", "Debug"]
+ENTRYPOINT ["dotnet", "watch", "run", "-c", "Debug", "--no-launch-profile"]

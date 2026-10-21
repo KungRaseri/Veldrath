@@ -40,4 +40,4 @@ ENV ASPNETCORE_URLS=http://+:8081
 EXPOSE 8081
 
 WORKDIR /src/RealmFoundry
-ENTRYPOINT ["dotnet", "watch", "run", "-c", "Debug"]
+ENTRYPOINT ["dotnet", "watch", "run", "-c", "Debug", "--no-launch-profile"]

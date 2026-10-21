@@ -1,11 +1,11 @@
 ---
 name: run-all-tests
-description: Run the complete RealmEngine/Veldrath test suite (~8,500+ tests across 11 test projects) with XPlat Code Coverage collection. Use when you need to verify all tests pass before committing or merging.
+description: Run the complete RealmEngine/Veldrath test suite (~4,850 tests across 13 test projects) with XPlat Code Coverage collection. Use when you need to verify all tests pass before committing or merging.
 ---
 
 # Skill: run-all-tests
 
-Run all tests across the entire RealmEngine/Veldrath monorepo (~8,500+ tests in 11 test projects) with code coverage collection.
+Run all tests across the entire RealmEngine/Veldrath monorepo (~4,850 tests in 13 test projects) with code coverage collection.
 
 ## Usage
 
@@ -16,30 +16,29 @@ Invoke this skill when you need to:
 
 ## Requirements
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) installed
-- PowerShell terminal
-- Working directory: `g:/code/Veldrath`
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) installed (10.0.x)
+- Repository root as the working directory (any OS shell; PowerShell optional)
 - Solution must build successfully first (see [build-full](../build-full/SKILL.md))
 
 ## Steps
 
 1. **Ensure the solution builds** (tests won't run if compilation fails):
 
-   ```powershell
+   ```bash
    dotnet build Realm.Full.slnx
    ```
 
 2. **Run all tests with coverage collection:**
 
-   ```powershell
+   ```bash
    dotnet test Realm.Full.slnx --collect "XPlat Code Coverage" --settings coverage.runsettings
    ```
 
-   This runs tests from all 11 test projects and collects coverage data per component.
+   This runs tests from all 13 test projects and collects coverage data per component.
 
 3. **Review results:**
    - Test results stream to the console in real time.
-   - A summary line at the end shows: `Passed! - Failed: 0, Passed: ~8500, Skipped: 0, Total: ~8500, Duration: ~Xm Ys`
+   - A summary line in each project shows: `Passed! - Failed: 0, Passed: <n>, Skipped: 0, Total: <n>`; the suite total is ~4,850.
    - Coverage results are written to `TestResults/` directories under each test project. The `coverage.runsettings` file controls which assemblies and methods are included/excluded.
 
 ## Test Project Breakdown
@@ -57,6 +56,8 @@ Invoke this skill when you need to:
 | `Veldrath.Web.Tests` | Web portal tests | `web` |
 | `Veldrath.Auth.Tests` | Auth library tests | — |
 | `Veldrath.Assets.Tests` | Asset management tests | — |
+| `Veldrath.GameClient.Core.Tests` | Shared client core tests | `client` |
+| `Veldrath.GameClient.Components.Tests` | Razor Class Library component tests (bUnit) | `client` |
 
 ## Notes
 
