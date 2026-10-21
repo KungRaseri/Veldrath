@@ -399,10 +399,15 @@ try
 
     // DataProtection key persistence
     // Keys are used to encrypt OAuth correlation and external cookies.
-    // Persisting to a mounted volume prevents key loss on container restart.
-    builder.Services.AddDataProtection()
-        .PersistKeysToFileSystem(new DirectoryInfo("/root/.aspnet/DataProtection-Keys"))
+    // ASP.NET Core persists keys to $HOME/.aspnet/DataProtection-Keys by default,
+    // which is /root/.aspnet/DataProtection-Keys inside the container where the
+    // compose volume is mounted. Set DataProtection:KeysPath to override (for example,
+    // a writable location when running natively on Linux as a non-root user).
+    var dataProtection = builder.Services.AddDataProtection()
         .SetApplicationName("Veldrath.Server");
+    var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
+    if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
+        dataProtection.PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
 
     // Health checks
     builder.Services.AddHealthChecks()

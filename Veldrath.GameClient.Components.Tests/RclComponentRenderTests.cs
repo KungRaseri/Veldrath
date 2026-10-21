@@ -62,6 +62,13 @@ public class RclComponentRenderTests : BunitContext
         Services.AddSingleton(_gameState);
 
         Services.AddSingleton<IDialogService>(new FakeDialogService());
+
+        // MudBlazor's production key-interceptor and resize-observer services are
+        // async-dispose-only, while bUnit disposes the test container synchronously.
+        // Register sync-disposable no-op doubles first so AddMudServices' TryAdd
+        // registrations do not override them.
+        Services.AddSingleton<IKeyInterceptorService, NoopKeyInterceptorService>();
+        Services.AddSingleton<IResizeObserverFactory, NoopResizeObserverFactory>();
         Services.AddMudServices();
 
         // Register a stub IConfiguration with a default server URL.

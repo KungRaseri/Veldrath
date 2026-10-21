@@ -137,9 +137,14 @@ try
     builder.Services.AddHttpContextAccessor();
 
     // DataProtection key persistence — prevents antiforgery token failures on container restart.
-    builder.Services.AddDataProtection()
-        .PersistKeysToFileSystem(new DirectoryInfo("/root/.aspnet/DataProtection-Keys"))
+    // ASP.NET Core persists keys to $HOME/.aspnet/DataProtection-Keys by default, which is
+    // /root/.aspnet/DataProtection-Keys inside the container where the compose volume is
+    // mounted. Set DataProtection:KeysPath to override for native non-root Linux runs.
+    var dataProtection = builder.Services.AddDataProtection()
         .SetApplicationName("Veldrath.Web");
+    var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
+    if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
+        dataProtection.PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
 
     // Antiforgery with a fixed cookie name and Strict same-site policy.
     builder.Services.AddAntiforgery(options =>
