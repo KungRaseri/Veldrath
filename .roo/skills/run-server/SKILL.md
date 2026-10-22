@@ -81,6 +81,8 @@ docker compose down
 - The server uses **SignalR** for real-time communication. Clients connect to the SignalR hub at `/hub/game` (or the path configured in `Veldrath.Server`).
 - **Hot reload** is supported: use `dotnet watch run --project Veldrath.Server` for automatic recompilation on file changes.
 - Configuration is loaded from `Veldrath.Server/appsettings*.json`, environment variables, and user secrets.
+- In **Development**, the server automatically loads the repo-root `.env` (OAuth credentials, `JWT_KEY`, email, public URLs). Restart the server after editing `.env`. Production and Docker Compose pass real environment variables directly.
+- If an OAuth provider is not configured, `/api/auth/external/{provider}` returns **503** with an "OAuth provider not configured" detail instead of a 500. Startup logs list the registered providers.
 - The server references engine libraries via project references — no separate NuGet feed is needed.
 - For production deployments, see [`docs/deployment.md`](../../docs/deployment.md).
 

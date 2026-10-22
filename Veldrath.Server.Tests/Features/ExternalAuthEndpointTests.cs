@@ -40,6 +40,27 @@ public sealed class ExternalAuthEndpointTests(WebAppFactory factory) : IAsyncLif
     /// <inheritdoc/>
     public Task DisposeAsync() => Task.CompletedTask;
 
+    /// <summary>
+    /// Verifies an unconfigured OAuth provider returns a clear 503 instead of throwing
+    /// "No authentication handler is registered" from the challenge.
+    /// </summary>
+    [Fact]
+    public async Task Challenge_UnconfiguredProvider_Returns503()
+    {
+        var response = await _client.GetAsync("/api/auth/external/discord");
+
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+    }
+
+    /// <summary>Verifies unknown provider names are rejected with 400.</summary>
+    [Fact]
+    public async Task Challenge_UnknownProvider_Returns400()
+    {
+        var response = await _client.GetAsync("/api/auth/external/unknown");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
     // ── Helpers ────────────────────────────────────────────────────────────────
 
     /// <summary>

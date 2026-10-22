@@ -38,6 +38,7 @@ using Veldrath.Server.Infrastructure.Email;
 using Veldrath.Server.Services;
 using Veldrath.Server.Health;
 using Veldrath.Server.Hubs;
+using Veldrath.Server.Infrastructure;
 using Veldrath.Server.Settings;
 using RealmEngine.Shared.Abstractions;
 using System.Text;
@@ -75,6 +76,10 @@ Log.Logger = loggerConfig.CreateLogger();
 try
 {
     Log.Information("Veldrath.Server starting...");
+
+    // Local `dotnet run` does not read .env automatically; Docker Compose injects the
+    // same values directly. Development-only and never overrides existing variables.
+    DotEnvConfiguration.LoadForDevelopment(Directory.GetCurrentDirectory());
 
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
@@ -246,9 +251,16 @@ try
     // absent (CI, local dev without OAuth app registrations).
     // SignInScheme must be explicitly set to IdentityConstants.ExternalScheme so
     // the OAuth middleware writes the external cookie that GetExternalLoginInfoAsync reads.
-    var discordId = builder.Configuration["OAuth:Discord:ClientId"];
-    var discordSecret = builder.Configuration["OAuth:Discord:ClientSecret"];
+    var oauthProviders = new List<string>();
+
+    // Compose maps OAUTH_* to OAuth__*; fall back to the .env names so a locally
+    // sourced .env (set -a; source .env; dotnet run) also works.
+    var discordId = builder.Configuration["OAuth:Discord:ClientId"]
+        ?? Environment.GetEnvironmentVariable("OAUTH_DISCORD_CLIENT_ID");
+    var discordSecret = builder.Configuration["OAuth:Discord:ClientSecret"]
+        ?? Environment.GetEnvironmentVariable("OAUTH_DISCORD_CLIENT_SECRET");
     if (!string.IsNullOrEmpty(discordId) && !string.IsNullOrEmpty(discordSecret))
+    {
         builder.Services.AddAuthentication()
             .AddDiscord(o =>
             {
@@ -261,10 +273,15 @@ try
                 o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
                 o.CorrelationCookie.SameSite   = SameSiteMode.Lax;
             });
+        oauthProviders.Add("Discord");
+    }
 
-    var googleId = builder.Configuration["OAuth:Google:ClientId"];
-    var googleSecret = builder.Configuration["OAuth:Google:ClientSecret"];
+    var googleId = builder.Configuration["OAuth:Google:ClientId"]
+        ?? Environment.GetEnvironmentVariable("OAUTH_GOOGLE_CLIENT_ID");
+    var googleSecret = builder.Configuration["OAuth:Google:ClientSecret"]
+        ?? Environment.GetEnvironmentVariable("OAUTH_GOOGLE_CLIENT_SECRET");
     if (!string.IsNullOrEmpty(googleId) && !string.IsNullOrEmpty(googleSecret))
+    {
         builder.Services.AddAuthentication()
             .AddGoogle(o =>
             {
@@ -276,10 +293,15 @@ try
                 o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
                 o.CorrelationCookie.SameSite   = SameSiteMode.Lax;
             });
+        oauthProviders.Add("Google");
+    }
 
-    var msId = builder.Configuration["OAuth:Microsoft:ClientId"];
-    var msSecret = builder.Configuration["OAuth:Microsoft:ClientSecret"];
+    var msId = builder.Configuration["OAuth:Microsoft:ClientId"]
+        ?? Environment.GetEnvironmentVariable("OAUTH_MICROSOFT_CLIENT_ID");
+    var msSecret = builder.Configuration["OAuth:Microsoft:ClientSecret"]
+        ?? Environment.GetEnvironmentVariable("OAUTH_MICROSOFT_CLIENT_SECRET");
     if (!string.IsNullOrEmpty(msId) && !string.IsNullOrEmpty(msSecret))
+    {
         builder.Services.AddAuthentication()
             .AddMicrosoftAccount(o =>
             {
@@ -296,6 +318,14 @@ try
                 o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
                 o.CorrelationCookie.SameSite   = SameSiteMode.Lax;
             });
+        oauthProviders.Add("Microsoft");
+    }
+
+    Log.Information(
+        "OAuth providers configured: {Providers}",
+        oauthProviders.Count == 0
+            ? "none (external login endpoints will return 503 until credentials are set)"
+            : string.Join(", ", oauthProviders));
 
 
     builder.Services.AddScoped<AuthService>();

@@ -107,6 +107,7 @@ The portal web app starts and is available at the URL shown in the console outpu
 
 ## Notes
 
+- **OAuth credentials:** in Development, `Veldrath.Server` loads the repo-root `.env` automatically (mapped to `OAuth:*`, `Jwt:Key`, email, and public URL settings). Restart the server after editing `.env`. Unconfigured providers return **503** from `/api/auth/external/{provider}`.
 - **Order matters:** Postgres must be healthy before the server starts. The server will fail to connect if the database isn't ready.
 - The server and client run in **separate terminal windows** — use `Ctrl+Shift+5` in VS Code to split terminals.
 - For **hot reload** with auto-restart, use `dotnet watch run` instead of `dotnet run` in Steps 3–5.

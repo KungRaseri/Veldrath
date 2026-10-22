@@ -180,10 +180,24 @@ public static class ExternalAuthEndpoints
     // Kicks off the OAuth redirect for the requested provider.
     // When mode=link and accountId are supplied the provider will be linked to the specified
     // existing account instead of creating a new session.
-    private static IResult Challenge(string provider, string? returnUrl, string? mode, Guid? accountId, HttpContext context)
+    private static async Task<IResult> Challenge(string provider, string? returnUrl, string? mode, Guid? accountId, HttpContext context)
     {
         if (!ProviderSchemes.TryGetValue(provider, out var scheme))
             return Results.BadRequest("Unknown OAuth provider.");
+
+        // OAuth handlers are registered conditionally (credentials are optional in dev/CI).
+        // Without this guard, Challenge throws "No authentication handler is registered"
+        // and surfaces as a 500. Return an explicit configuration error instead.
+        var schemeProvider = context.RequestServices.GetRequiredService<IAuthenticationSchemeProvider>();
+        if (await schemeProvider.GetSchemeAsync(scheme) is null)
+        {
+            return Results.Problem(
+                title: "OAuth provider not configured",
+                detail: $"The '{provider}' provider is not registered on this server. " +
+                        $"Set OAuth:{scheme}:ClientId and OAuth:{scheme}:ClientSecret " +
+                        $"(or the matching OAUTH_* environment variables) and restart the server.",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
 
         var config        = context.RequestServices.GetRequiredService<IConfiguration>();
         var foundryBase   = config["Foundry:BaseUrl"];
