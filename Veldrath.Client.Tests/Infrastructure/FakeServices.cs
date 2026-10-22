@@ -560,14 +560,26 @@ public class FakeCharacterCreationService : ICharacterCreationService
     /// <summary>Gets the number of times <see cref="SetEquipmentPreferencesAsync"/> was called.</summary>
     public int SetEquipmentPreferencesCallCount { get; private set; }
 
+    /// <summary>Gets the last equipment preferences request sent to the server.</summary>
+    public SetCreationEquipmentPreferencesRequest? LastEquipmentPreferences { get; private set; }
+
     /// <summary>Gets the number of times <see cref="SetLocationAsync"/> was called.</summary>
     public int SetLocationCallCount { get; private set; }
 
     /// <summary>Gets the last attribute allocations passed to <see cref="SetAttributesAsync"/>.</summary>
     public Dictionary<string, int>? LastAttributeAllocations { get; private set; }
 
+    /// <summary>Gets or sets an optional gate that delays <see cref="BeginSessionAsync"/> completion.</summary>
+    public TaskCompletionSource? BeginSessionGate { get; set; }
+
     /// <inheritdoc/>
-    public Task<BeginCreationSessionResponse?> BeginSessionAsync() => Task.FromResult(BeginSessionResponse);
+    public async Task<BeginCreationSessionResponse?> BeginSessionAsync()
+    {
+        if (BeginSessionGate is not null)
+            await BeginSessionGate.Task;
+
+        return BeginSessionResponse;
+    }
 
     /// <inheritdoc/>
     public Task<bool> SetNameAsync(Guid sessionId, string name) => Task.FromResult(SetNameResult);
@@ -592,6 +604,7 @@ public class FakeCharacterCreationService : ICharacterCreationService
     public Task<bool> SetEquipmentPreferencesAsync(Guid sessionId, SetCreationEquipmentPreferencesRequest preferences)
     {
         SetEquipmentPreferencesCallCount++;
+        LastEquipmentPreferences = preferences;
         return Task.FromResult(SetEquipmentPreferencesResult);
     }
 

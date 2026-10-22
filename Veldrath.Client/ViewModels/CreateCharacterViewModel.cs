@@ -212,6 +212,13 @@ public class CreateCharacterViewModel : ViewModelBase
     public IReadOnlyList<string> AvailableWeaponTypes => _equipmentCatalog?.WeaponTypes
         .Select(w => w.DisplayName).ToArray() ?? [];
 
+    private void SetEquipmentCatalog(EquipmentTypeCatalogDto? catalog)
+    {
+        _equipmentCatalog = catalog;
+        this.RaisePropertyChanged(nameof(AvailableArmorTypes));
+        this.RaisePropertyChanged(nameof(AvailableWeaponTypes));
+    }
+
     /// <summary>Gets or sets the selected armor type display name, or empty string for none.</summary>
     public string SelectedArmorType
     {
@@ -389,7 +396,7 @@ public class CreateCharacterViewModel : ViewModelBase
             {
                 _sessionId = sessionResponse.SessionId;
                 _pointBuyConfig = sessionResponse.PointBuyConfig;
-                _equipmentCatalog = sessionResponse.EquipmentTypeCatalog;
+                SetEquipmentCatalog(sessionResponse.EquipmentTypeCatalog);
 
                 // Rebuild the stat cost array from the server config.
                 if (_pointBuyConfig is not null)
@@ -495,8 +502,16 @@ public class CreateCharacterViewModel : ViewModelBase
                 case 5:
                     if (!string.IsNullOrEmpty(SelectedArmorType) || !string.IsNullOrEmpty(SelectedWeaponType) || IncludeShield)
                     {
-                        var armorSlug  = string.IsNullOrEmpty(SelectedArmorType)  ? null : SelectedArmorType.ToLowerInvariant().Replace(' ', '-');
-                        var weaponSlug = string.IsNullOrEmpty(SelectedWeaponType) ? null : SelectedWeaponType.ToLowerInvariant().Replace(' ', '-');
+                        // The catalog carries canonical slugs ("light", "sword"); the UI binds
+                        // display names ("Light Armor", "Sword"), so map through the catalog.
+                        var armorSlug = string.IsNullOrEmpty(SelectedArmorType)
+                            ? null
+                            : _equipmentCatalog?.ArmorTypes
+                                .FirstOrDefault(a => a.DisplayName == SelectedArmorType)?.Slug;
+                        var weaponSlug = string.IsNullOrEmpty(SelectedWeaponType)
+                            ? null
+                            : _equipmentCatalog?.WeaponTypes
+                                .FirstOrDefault(w => w.DisplayName == SelectedWeaponType)?.Slug;
                         if (!await _creationService.SetEquipmentPreferencesAsync(
                                 _sessionId.Value, new SetCreationEquipmentPreferencesRequest(armorSlug, weaponSlug, IncludeShield)))
                         { StepError = "Could not save equipment preferences. Please try again."; return; }

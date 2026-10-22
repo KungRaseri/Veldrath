@@ -1138,3 +1138,14 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
 - Verified: plain Development `dotnet run` on port 9001 registered Discord, Google, and Microsoft; `/health` returned 200 and `/api/auth/external/discord` returned a 302 to Discord.
 - Tests: 2 new `ExternalAuthEndpointTests` (unconfigured → 503, unknown → 400). Full suite **4,761 passing**.
 - Operational: restart the long-running server after editing `.env`; the dev client/server are launched via `dotnet run`.
+
+---
+
+### Session-50 (2026-10-22) — Character creation equipment dropdowns fixed
+
+- **Root cause (Avalonia wizard)**: `AvailableArmorTypes` / `AvailableWeaponTypes` are computed from `_equipmentCatalog`, but assigning the catalog after the async session load never raised `PropertyChanged`. The ComboBoxes were bound while the catalog was null and never refreshed, so both lists stayed empty.
+- `CreateCharacterViewModel` now assigns the catalog through `SetEquipmentCatalog(...)`, which raises change notifications for both lists.
+- **Second bug**: step 5 derived API slugs from display names (`"Light Armor"` → `light-armor`). It now maps display names back to `EquipmentTypeOptionDto.Slug` through the catalog (`light`, `sword`, …).
+- `FakeCharacterCreationService` records `LastEquipmentPreferences` and supports a `BeginSessionGate` for async-notification tests.
+- Tests: 3 new `CreateCharacterViewModelTests` (catalog populated, change notifications raised, canonical slugs sent). All 44 CreateCharacter tests pass.
+- Note: the web/RCL wizard already bound slugs directly and re-renders after load, so it was unaffected.

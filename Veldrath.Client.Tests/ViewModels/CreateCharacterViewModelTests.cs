@@ -564,6 +564,50 @@ public class CreateCharacterViewModelTests : TestBase
         vm.CurrentStepIndex.Should().Be(5);
     }
 
+    [Fact]
+    public async Task InitializeAsync_Populates_Equipment_Catalogs()
+    {
+        var vm = MakeVm();
+        await Task.Yield();
+
+        vm.AvailableArmorTypes.Should().Contain("Light Armor");
+        vm.AvailableWeaponTypes.Should().Contain("Sword");
+    }
+
+    [Fact]
+    public async Task InitializeAsync_Raises_Equipment_Catalog_Change_Notifications()
+    {
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var creation = new FakeCharacterCreationService { BeginSessionGate = gate };
+        var vm = MakeVm(creation: creation);
+
+        var changed = new List<string?>();
+        vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        gate.SetResult();
+        await Task.Delay(100);
+
+        changed.Should().Contain(nameof(CreateCharacterViewModel.AvailableArmorTypes));
+        changed.Should().Contain(nameof(CreateCharacterViewModel.AvailableWeaponTypes));
+    }
+
+    [Fact]
+    public async Task NextCommand_Sends_Catalog_Slugs_For_Equipment_Preferences()
+    {
+        var creation = new FakeCharacterCreationService();
+        var vm = MakeVm(creation: creation);
+        vm.Name = "Hero";
+        vm.SelectedArmorType = "Light Armor";
+        vm.SelectedWeaponType = "Sword";
+
+        await AdvanceAsync(vm, 6); // execute steps 0–5, including equipment
+
+        creation.SetEquipmentPreferencesCallCount.Should().Be(1);
+        creation.LastEquipmentPreferences.Should().NotBeNull();
+        creation.LastEquipmentPreferences!.PreferredArmorType.Should().Be("light");
+        creation.LastEquipmentPreferences.PreferredWeaponType.Should().Be("sword");
+    }
+
     // CancelCommand
     [Fact]
     public async Task CancelCommand_Calls_AbandonAsync_When_Session_Exists()    {
