@@ -158,7 +158,7 @@ All previously planned gap-closure tasks have been completed:
 
 10. ⬜ **Implement Playwright E2E tests** — Add a Playwright test project for full browser-based E2E testing
 11. ⬜ **Cross-platform WebView support** — Add `Avalonia.WebView` or `CefGlue` for Linux/macOS desktop
-12. ⬜ **CSS Grid tilemap → Canvas rendering** — For large tilemaps (>50×50), consider canvas-based rendering
+12. ~~**CSS Grid tilemap → Canvas rendering**~~ — obsolete: the tile/TMX layer was removed and replaced by the cardinal map graph.
 13. ⬜ **RCL component namespace cleanup** — Rename `Components/Components/` to eliminate the double "Components" namespace
 14. ⬜ **Publish RCL as NuGet package** — Allow third-party consumers to use the game UI components
 15. ⬜ **Add accessibility attributes** — ARIA labels, keyboard navigation, screen reader support for all RCL components

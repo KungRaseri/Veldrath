@@ -59,14 +59,39 @@ else
                             <p>@character.ClassName · Level @character.Level</p>
                             <p>⛁ @character.Experience XP</p>
                             <p class="cs-card-last-played">Last played: @character.LastPlayedAt.ToLocalTime().ToString("g")</p>
+                            <p class="cs-card-last-played">@(IsOnline(character.Id) ? "● Online" : "○ Offline")</p>
                         </div>
-                        <div class="cs-card-actions flex-shrink-0">
+                        <div class="cs-card-actions flex-shrink-0 d-flex flex-column gap-1">
                             <MudButton Variant="Variant.Filled"
                                        Color="Color.Primary"
                                        OnClick="() => SelectCharacter(character.Id)"
-                                       Disabled="@(_selectedCharacterId == character.Id.ToString())">
+                                       Disabled="@(_selectedCharacterId == character.Id.ToString() || _pendingDeleteId == character.Id)">
                                 @(_selectedCharacterId == character.Id.ToString() ? "Selecting..." : "Select")
                             </MudButton>
+                            @if (_pendingDeleteId == character.Id)
+                            {
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Error"
+                                           Size="Size.Small"
+                                           OnClick="() => ConfirmDeleteAsync(character)">
+                                    Confirm
+                                </MudButton>
+                                <MudButton Variant="Variant.Text"
+                                           Size="Size.Small"
+                                           OnClick="CancelDelete">
+                                    Cancel
+                                </MudButton>
+                            }
+                            else
+                            {
+                                <MudButton Variant="Variant.Text"
+                                           Color="Color.Error"
+                                           Size="Size.Small"
+                                           OnClick="() => RequestDelete(character.Id)"
+                                           Disabled="@(_isDeletingId == character.Id)">
+                                    Delete
+                                </MudButton>
+                            }
                         </div>
                     </div>
                 }
@@ -87,8 +112,12 @@ else
     private string? _selectedCharacterId;
     private bool _isWaitingForAuth;
     private CancellationTokenSource? _authTimeoutCts;
+    private CancellationTokenSource? _selectTimeoutCts;
     private bool _hasLoadedCharacters;
     private readonly List<IDisposable> _hubSubscriptions = [];
+    private readonly Dictionary<Guid, bool> _onlineStatuses = [];
+    private Guid? _pendingDeleteId;
+    private Guid? _isDeletingId;
 
     /// <inheritdoc />
     protected override void OnInitialized()
@@ -206,8 +235,16 @@ else
             // Register handler for CharacterSelected event BEFORE connecting.
             _hubSubscriptions.Add(Hub.On<CharacterSelectedPayload>("CharacterSelected", async payload =>
             {
+                TryCancelSelectTimeout();
                 GameState.ApplyCharacterSelected(payload);
                 await InvokeAsync(() => Navigation.NavigateTo("/Game/Play"));
+            }));
+
+            // Track online/offline changes broadcast to this account's group.
+            _hubSubscriptions.Add(Hub.On<CharacterStatusChangedPayload>("CharacterStatusChanged", async payload =>
+            {
+                _onlineStatuses[payload.CharacterId] = payload.IsOnline;
+                await InvokeAsync(StateHasChanged);
             }));
 
             // Register handler for CharacterAlreadyActive before connecting.
@@ -254,7 +291,14 @@ else
     private async Task SelectCharacter(Guid characterId)
     {
         _selectedCharacterId = characterId.ToString();
+        _errorMessage = null;
         StateHasChanged();
+
+        TryCancelSelectTimeout();
+        _selectTimeoutCts?.Dispose();
+
+        var timeoutCts = new CancellationTokenSource();
+        _selectTimeoutCts = timeoutCts;
 
         try
         {
@@ -265,9 +309,89 @@ else
             Logger.LogError(ex, "Failed to select character {CharacterId}.", characterId);
             _errorMessage = "Failed to select character. Please try again.";
             _selectedCharacterId = null;
+            TryCancelSelectTimeout();
+            StateHasChanged();
+            return;
+        }
+
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(10), timeoutCts.Token);
+
+            // The server never sent CharacterSelected within the timeout window.
+            _selectedCharacterId = null;
+            _errorMessage = "Connection timed out while selecting the character. Please try again.";
+            StateHasChanged();
+        }
+        catch (TaskCanceledException)
+        {
+            // CharacterSelected arrived and cancelled the timeout.
+        }
+        finally
+        {
+            if (ReferenceEquals(_selectTimeoutCts, timeoutCts))
+                _selectTimeoutCts = null;
+            timeoutCts.Dispose();
+        }
+    }
+
+    private void TryCancelSelectTimeout()
+    {
+        try
+        {
+            _selectTimeoutCts?.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+            // The timeout already completed and was disposed.
+        }
+    }
+
+    private void RequestDelete(Guid characterId)
+    {
+        _pendingDeleteId = characterId;
+        _errorMessage = null;
+        StateHasChanged();
+    }
+
+    private void CancelDelete()
+    {
+        _pendingDeleteId = null;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmDeleteAsync(CharacterDto character)
+    {
+        _isDeletingId = character.Id;
+        StateHasChanged();
+
+        try
+        {
+            if (await Api.DeleteCharacterAsync(character.Id))
+            {
+                _characters.RemoveAll(c => c.Id == character.Id);
+                _onlineStatuses.Remove(character.Id);
+            }
+            else
+            {
+                _errorMessage = $"Failed to delete {character.Name}. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to delete character {CharacterId}.", character.Id);
+            _errorMessage = $"Failed to delete {character.Name}. Please try again.";
+        }
+        finally
+        {
+            _pendingDeleteId = null;
+            _isDeletingId = null;
             StateHasChanged();
         }
     }
+
+    private bool IsOnline(Guid characterId) =>
+        _onlineStatuses.TryGetValue(characterId, out var online) && online;
 
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
@@ -275,6 +399,9 @@ else
         Auth.OnChange -= OnAuthStateChanged;
         _authTimeoutCts?.Cancel();
         _authTimeoutCts?.Dispose();
+        TryCancelSelectTimeout();
+        _selectTimeoutCts?.Dispose();
+        _selectTimeoutCts = null;
 
         foreach (var sub in _hubSubscriptions)
         {

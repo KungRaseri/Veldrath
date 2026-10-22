@@ -1,17 +1,16 @@
 # Game Client Parity Gap Checklist
 
-> **Status:** In Progress | **Updated:** 2026-07-01 (after Session 43 fix batches)
+> **Status:** Re-audited Session-47 (2026-10-22) | originally 2026-07-01 (after Session 43 fix batches)
 > **Scope:** Comprehensive gap analysis between the RCL ([`Veldrath.GameClient.Components`](Veldrath.GameClient.Components/)) and the server hub events / Avalonia [`GameViewModel`](Veldrath.Client/).
+>
+> **Session-47 re-audit:** The tile/TMX layer and its components were removed. Every row referencing `GameTilemap`, `GameMap`, `Tile.razor`, `ZoneEntitiesSnapshot`, `GetRegionMap`, `MoveOnRegion`, `ExitZone`, `ChangeRegion`, `InspectEntity`, or `TalkToNpc` is historical and no longer actionable. Several "no tests" rows are now covered by `RclComponentRenderTests` and `OverlayTextUiTests`. The live remaining gaps are listed in §16 below.
 
 ---
 
-## Summary
-- Total gaps: 133
-- ✅ Fixed: 81 (61%) — 21 foundation + 18 CRITICAL + 42 HIGH
-- 🔴 CRITICAL remaining: 0 (all 18 fixed)
-- 🟠 HIGH remaining: 13 (55→42 fixed, 13 remain)
-- 🟡 MEDIUM remaining: 34 (unchanged)
-- 🟢 LOW remaining: 22 (unchanged)
+## Summary (Session-47 re-audit)
+- Historical gap IDs below are retained for traceability.
+- Live remaining: missing social/moderation hub subscriptions, CharacterSelect delete/timeout/status UI, route/layout cleanups, CSS/interop items, and targeted component tests.
+- Obsolete: all tile/region-handler rows, `GameSidebar` (replaced by `LeftSidebar`/`RightSidebar`), and `Tile.razor` (deleted).
 - ⚪ NONE/INFO: 3 (unchanged)
 - Missing hub event handlers fixed: 45 (all CRITICAL + HIGH navigation events resolved)
 - GameStateService property gaps closed: all critical and high-priority properties added
@@ -380,12 +379,23 @@ These are the 10 highest-impact fixes, ordered by dependency chain and player-vi
 - All 7+1 components now use IGameStateService instead of concrete GameStateService
 - Build verified: 26/26 projects, 0 errors
 
-### Remaining Work (52 gaps)
-- 8 MEDIUM social hub handlers (G31-G38)
-- 7 LOW admin/interaction handlers (G39-G45)
-- ~14 test coverage gaps (G119-G132)
-- 5 low-priority CSS/cleanup items
-- 6 hub methods not surfaced in either client (crafting, dungeon, non-combat abilities)
+### Remaining Work (Session-47 re-audit, updated same session)
+
+**Fixed in Session-47**
+- RCL hub subscriptions added for `EnemyEngaged`, `EnemySpawned`, `OnWhisper`, `OnEmote`, `OnAnnouncement`, `CharacterIgnored`, `OnWarned`, `OnMuted`, `OnTeleported`, `OnSummoned`, and `OnItemReceived`; covered by two new `Game` shell tests.
+- `CharacterSelect`: delete-character UI with inline confirmation (G102), 10-second `SelectCharacter` timeout (G103), and `CharacterStatusChanged` online/offline badges (G104); covered by two new tests.
+- Routes: G105 (redundant `AdditionalAssemblies`) and G107 (NotFound layout) fixed.
+- Test coverage: `Game.razor` shell (G120), `GamePanel` (G126), and `ReconnectOverlay` (G129) now have render tests. G121/G122/G124/G127/G128/G130/G131 already have render smoke coverage.
+- G112, G113, and G115 were already resolved before the re-audit (no action needed).
+
+**Still open**
+- Routes/layout: G106, G108 (runtime verify), G109, G110.
+- bridge.js interop: G117 (incoming message listener), G118 (Windows toast notification).
+- Tests: G119 (`CreateCharacter` wizard interaction coverage beyond the render smoke test). G125 (`GameSettings`) remains blocked by MudBlazor's internal async-dispose-only `PointerEventsNoneService`, which bUnit cannot dispose synchronously.
+
+**Obsolete (do not action)**
+- Tile/region handler rows (`GameTilemap`, `GameMap`, `Tile`, `ZoneEntitiesSnapshot`, `GetRegionMap`, `MoveOnRegion`, `ExitZone`, `ChangeRegion`).
+- G123 (`GameSidebar` no longer exists) and G132 (`Tile.razor` deleted).
 
 ---
 

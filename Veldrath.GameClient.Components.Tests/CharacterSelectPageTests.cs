@@ -9,6 +9,7 @@ using Veldrath.Contracts.Characters;
 using Veldrath.GameClient.Components.Components.Pages;
 using Veldrath.GameClient.Components.Tests.Infrastructure;
 using Veldrath.GameClient.Core.Abstractions;
+using Veldrath.GameClient.Core.Payloads;
 using Veldrath.GameClient.Core.Services;
 using Xunit;
 
@@ -133,5 +134,49 @@ public class CharacterSelectPageTests : BunitContext
         var sentSelect = _fakeHub.SentCommands
             .FirstOrDefault(c => c.Method == "SelectCharacter");
         Assert.NotEqual(default, sentSelect);
+    }
+
+    /// <summary>Verifies deleting a character requires an explicit confirmation click.</summary>
+    [Fact]
+    public void CharacterSelect_Delete_Requires_Confirmation_Then_Deletes()
+    {
+        var charId = Guid.NewGuid();
+        _fakeApi.Characters =
+        [
+            new CharacterDto(charId, 1, "TestHero", "Warrior", 1, 0, DateTimeOffset.UtcNow, "fenwick-crossing"),
+        ];
+        _fakeHub.StateValue = Veldrath.GameClient.Core.Models.ConnectionState.Connected;
+
+        var cut = Render<CharacterSelect>();
+
+        cut.FindAll("button").First(b => b.TextContent.Contains("Delete")).Click();
+
+        Assert.Empty(_fakeApi.DeletedCharacterIds);
+        Assert.Contains("Confirm", cut.Markup);
+
+        cut.FindAll("button").First(b => b.TextContent.Contains("Confirm")).Click();
+
+        Assert.Contains(charId, _fakeApi.DeletedCharacterIds);
+        Assert.DoesNotContain("TestHero", cut.Markup);
+    }
+
+    /// <summary>Verifies the online badge updates when CharacterStatusChanged is received.</summary>
+    [Fact]
+    public void CharacterSelect_Shows_Online_Status_From_Hub()
+    {
+        var charId = Guid.NewGuid();
+        _fakeApi.Characters =
+        [
+            new CharacterDto(charId, 1, "TestHero", "Warrior", 1, 0, DateTimeOffset.UtcNow, "fenwick-crossing"),
+        ];
+        _fakeHub.StateValue = Veldrath.GameClient.Core.Models.ConnectionState.Connected;
+
+        var cut = Render<CharacterSelect>();
+
+        Assert.Contains("○ Offline", cut.Markup);
+
+        _fakeHub.FireEvent("CharacterStatusChanged", new CharacterStatusChangedPayload(charId, true));
+
+        Assert.Contains("● Online", cut.Markup);
     }
 }

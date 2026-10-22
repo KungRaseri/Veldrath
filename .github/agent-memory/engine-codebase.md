@@ -367,18 +367,14 @@ Enhanced [`ActionBar.razor`](Veldrath.GameClient.Components/Components/Shared/Ac
 
 **Tests:** 14 new tests (6 GameMap + 8 ActionBar hotbar), all 51 tests passing
 
-### Open Items (Post-Session-42)
+### Open Items (re-audited Session-47, 2026-10-22)
 
-- **All 4 CharacterCreationSessionEndpointTests now passing** — verified in Session-41 full test run. No remaining failures. Full suite is fully green at 4,739 tests.
-- **`PurgeExpiredAsync` not scheduled** — exists on `EfCorePendingLinkRepository` but no `IHostedService` calls it
-- **Wiki implementation status tracker** (`wiki/Engine-Implementation-Status.md`) last updated March 19 — stale
-- **Discord bot embed builder tests** (Session-40): 24 tests added for ServerModule and GenerateModule
-- **Achievement triggers wired** (Session-40): 5 handlers now call CheckAchievementProgressCommand
-- **Settings deleted** (Session-40): 6 orphaned RealmEngine.Core/Settings/ files removed
-- **Hub integration success-path tests** still missing for GetRegionMap, MoveOnRegion, ExitZone, ChangeRegion
-- **Pure Reactive UI pivot** (Session-41): Removed all sprite/ASCII rendering (Veldrath.Client.Rendering/ + TilemapControl/RegionTilemapControl). Replaced Zone tilemap with ZoneLocationPanelView+VM (reactive list-based panel showing room description, exits, entities). Region view now handled entirely by side panel (GameRegionPanelView). Keyboard movement removed — pure point-and-click. Client-side tile description service added. See `plans/reactive-ui-pivot-plan.md`.
-- **ExternalAuthEndpointTests fixed (Session-41)**: Added `SecurityStamp` to test user creation to fix `InvalidOperationException: User security stamp cannot be null`.
-- **EnemyAiService fixed (Session-41)**: Added disposal-state guard in `StopAsync`/`Dispose` to fix `ObjectDisposedException: The CancellationTokenSource has been disposed`.
+- **`PurgeExpiredAsync` is scheduled** — `PendingLinkCleanupService` runs every 30 minutes and is registered in `Program.cs`. The previous "not scheduled" note was stale.
+- **Wiki implementation status tracker** — refreshed Session-47 (`wiki/Engine-Implementation-Status.md`); zone/region wiki pages now reference map graph ids instead of TMX files.
+- **Tile-era hub tests are obsolete** — `GetRegionMap`, `MoveOnRegion`, `ExitZone`, and `ChangeRegion` were removed with the tile layer; do not add success-path tests for them.
+- **Web character creation is session-based** — the RCL `CreateCharacter` wizard already calls `/api/character-creation/sessions/*` for class, species, background, name, attributes, equipment, and finalize. The older "web uses a minimal 3-step flow" plan is superseded.
+- **Remaining real RCL test gaps** — `CreateCharacter` wizard and the `Game.razor` shell; see the Session-47 re-audit in `plans/game-client-parity-checklist.md`.
+- **Historical fixes kept for context** — all CharacterCreationSessionEndpointTests passing (Session-41), ExternalAuth SecurityStamp fix, EnemyAiService disposal guard, achievement triggers, settings cleanup, Discord embed tests.
 ### Map graph authoring tools (Session-47, 2026-10-22)
 
 - **JSON authoring format** — `RealmEngine.Data/Authoring/MapGraphJsonSerializer.cs` wraps

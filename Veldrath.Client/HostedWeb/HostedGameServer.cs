@@ -371,6 +371,15 @@ internal sealed class EmbeddedGameApiClient : IGameApiClient
     }
 
     /// <inheritdoc />
+    public async Task<bool> DeleteCharacterAsync(Guid characterId, CancellationToken ct = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/characters/{characterId}");
+        ApplyAuth(request);
+        var response = await _httpClient.SendAsync(request, ct);
+        return response.IsSuccessStatusCode;
+    }
+
+    /// <inheritdoc />
     public async Task<Veldrath.Contracts.Characters.CharacterDto?> CreateCharacterAsync(
         string name, string className, string difficultyMode = "normal", CancellationToken ct = default)
     {

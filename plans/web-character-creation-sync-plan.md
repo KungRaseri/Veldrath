@@ -1,7 +1,7 @@
 # Web Character Creation Sync-Up Plan
 
 > **Date:** 2026-07-07
-> **Status:** Draft — For Review
+> **Status:** ⚠️ Superseded — implemented ahead of this plan. The RCL [`CreateCharacter.razor`](Veldrath.GameClient.Components/Components/Pages/CreateCharacter.razor) wizard now drives the full `/api/character-creation/sessions/*` API (class, species, background, name, attributes, equipment, preview, finalize, abandon), and `Veldrath.Web` hosts that RCL route directly. This document is retained as historical design context.
 > **Scope:** Bring [`Veldrath.GameClient.Components/Components/Pages/CreateCharacter.razor`](Veldrath.GameClient.Components/Components/Pages/CreateCharacter.razor) (Blazor RCL) character creation flow to full parity with the desktop Avalonia wizard.
 
 ---

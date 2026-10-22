@@ -26,6 +26,16 @@ public class VeldrathApiClient(HttpClient http) : VeldrathAuthApiClient(http), V
         return await resp.Content.ReadFromJsonAsync<List<CharacterDto>>(ct) ?? [];
     }
 
+    /// <summary>Soft-deletes a character belonging to the authenticated account.</summary>
+    /// <param name="characterId">Identifier of the character to delete.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><see langword="true"/> when the server accepted the deletion.</returns>
+    public async Task<bool> DeleteCharacterAsync(Guid characterId, CancellationToken ct = default)
+    {
+        var resp = await Http.DeleteAsync($"/api/characters/{characterId}", ct);
+        return resp.IsSuccessStatusCode;
+    }
+
     /// <summary>
     /// Returns the last active session info for the authenticated account,
     /// or <see langword="null"/> if no characters exist. Used after page refresh

@@ -7,10 +7,13 @@ using MudBlazor;
 using MudBlazor.Services;
 using Veldrath.Auth;
 using Veldrath.Auth.Blazor;
+using Veldrath.Contracts.Connection;
 using Veldrath.GameClient.Components.Components.Layout;
 using Veldrath.GameClient.Components.Components.Pages;
+using Veldrath.GameClient.Components.Components.Shared;
 using Veldrath.GameClient.Components.Tests.Infrastructure;
 using Veldrath.GameClient.Core.Abstractions;
+using Veldrath.GameClient.Core.Payloads;
 using Veldrath.GameClient.Core.Services;
 using Xunit;
 
@@ -154,4 +157,63 @@ public class RclComponentRenderTests : BunitContext
         Assert.NotNull(cut);
     }
 
+    // NOTE: GameSettings has no bUnit render test because it resolves MudBlazor's
+    // internal async-dispose-only PointerEventsNoneService, which bUnit's synchronous
+    // container disposal cannot handle.
+
+    /// <summary>Verifies <see cref="GamePanel"/> renders without exceptions.</summary>
+    [Fact]
+    public void GamePanel_Renders_Successfully()
+    {
+        var cut = Render<GamePanel>();
+        Assert.NotNull(cut);
+    }
+
+    /// <summary>Verifies <see cref="ReconnectOverlay"/> renders without exceptions.</summary>
+    [Fact]
+    public void ReconnectOverlay_Renders_Successfully()
+    {
+        var cut = Render<ReconnectOverlay>(parameters =>
+            parameters.AddCascadingValue<IGameStateService>(_gameState));
+        Assert.NotNull(cut);
+    }
+
+    /// <summary>Verifies the game shell handles social and moderation hub events.</summary>
+    [Fact]
+    public void Game_Registers_Social_And_Moderation_Handlers()
+    {
+        var cut = Render<Game>();
+
+        _fakeHub.FireEvent("OnWhisper", new WhisperPayload(Guid.NewGuid(), "Aria", "hello there"));
+        _fakeHub.FireEvent("OnAnnouncement", new AnnouncementPayload("Server restart in 5 minutes", "warning"));
+        _fakeHub.FireEvent("OnWarned", new WarnedPayload("Spam", 2));
+        _fakeHub.FireEvent("OnMuted", new MutedPayload("Spam", null));
+        _fakeHub.FireEvent("OnEmote", new EmotePayload(Guid.NewGuid(), "Aria", "waves hello"));
+
+        _gameState.ChatMessages.Should().Contain(m => m.Channel == "whisper" && m.Message == "hello there");
+        _gameState.ChatMessages.Should().Contain(m => m.Message.Contains("Server restart in 5 minutes"));
+        _gameState.ChatMessages.Should().Contain(m => m.Message.Contains("total warnings: 2"));
+        _gameState.ChatMessages.Should().Contain(m => m.Message.Contains("muted indefinitely"));
+        _gameState.ChatMessages.Should().Contain(m => m.Message.Contains("waves hello"));
+        Assert.NotNull(cut);
+    }
+
+    /// <summary>Verifies the game shell handles enemy and staff-action hub events.</summary>
+    [Fact]
+    public void Game_Registers_Enemy_And_Staff_Action_Handlers()
+    {
+        var cut = Render<Game>();
+
+        _fakeHub.FireEvent("EnemySpawned", new EnemySpawnedPayload(Guid.NewGuid(), "Bog Lurker", 3, 40, 40));
+        _fakeHub.FireEvent("OnItemReceived", new ItemReceivedPayload("iron-sword", 2, "GM"));
+        _fakeHub.FireEvent("OnSummoned", new SummonedPayload("GM", "crestfall"));
+        _fakeHub.FireEvent("OnTeleported", new TeleportedPayload("crestfall", "Crestfall"));
+
+        _gameState.ChatMessages.Should().Contain(m => m.Message.Contains("Bog Lurker"));
+        _gameState.ChatMessages.Should().Contain(m => m.Message.Contains("2× iron-sword"));
+        _gameState.ChatMessages.Should().Contain(m => m.Message.Contains("summoned you"));
+        _gameState.ChatMessages.Should().Contain(m => m.Message.Contains("Teleported to Crestfall"));
+        _fakeHub.SentMethods.Should().Contain("GetMapGraph");
+        Assert.NotNull(cut);
+    }
 }

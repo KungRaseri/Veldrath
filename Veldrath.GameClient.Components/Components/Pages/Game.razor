@@ -726,6 +726,91 @@
                 payload.Slug, payload.ZoneId, payload.IsCrossZone, payload.Connections);
             await InvokeAsync(StateHasChanged);
         }));
+
+        // ── World: other players engaging or spawning enemies ──────────────
+        _hubSubscriptions.Add(Hub.On<EnemyEngagedPayload>("EnemyEngaged", async payload =>
+        {
+            GameState.ApplySystemMessage($"{payload.EnemyName} is now engaged by another adventurer.");
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        _hubSubscriptions.Add(Hub.On<EnemySpawnedPayload>("EnemySpawned", async payload =>
+        {
+            GameState.ApplySystemMessage($"{payload.Name} (Lv {payload.Level}) appears nearby.");
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── Social: whispers and emotes ────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<WhisperPayload>("OnWhisper", async payload =>
+        {
+            GameState.ApplyChatMessage(new ChatMessageHubDto(
+                payload.FromCharacterId,
+                "whisper",
+                payload.FromCharacterName,
+                payload.Message,
+                DateTimeOffset.UtcNow));
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        _hubSubscriptions.Add(Hub.On<EmotePayload>("OnEmote", async payload =>
+        {
+            GameState.ApplySystemMessage($"* {payload.CharacterName} {payload.Action}");
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        _hubSubscriptions.Add(Hub.On<AnnouncementPayload>("OnAnnouncement", async payload =>
+        {
+            GameState.ApplySystemMessage($"[{payload.Severity}] {payload.Message}");
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        _hubSubscriptions.Add(Hub.On<CharacterIgnoredPayload>("CharacterIgnored", async payload =>
+        {
+            GameState.ApplySystemMessage($"Ignore list updated: {payload.CharacterName}.");
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── Moderation notifications ───────────────────────────────────────
+        _hubSubscriptions.Add(Hub.On<WarnedPayload>("OnWarned", async payload =>
+        {
+            GameState.ApplySystemMessage(
+                $"Warning: {payload.Reason} (total warnings: {payload.NewWarnCount}).");
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        _hubSubscriptions.Add(Hub.On<MutedPayload>("OnMuted", async payload =>
+        {
+            var until = payload.Until is null
+                ? "indefinitely"
+                : $"until {payload.Until:yyyy-MM-dd HH:mm} UTC";
+            var reason = string.IsNullOrWhiteSpace(payload.Reason) ? string.Empty : $" {payload.Reason}";
+            GameState.ApplySystemMessage($"You have been muted {until}.{reason}");
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        // ── Staff actions: teleport, summon, item grants ───────────────────
+        _hubSubscriptions.Add(Hub.On<TeleportedPayload>("OnTeleported", async payload =>
+        {
+            GameState.ApplyZoneEntered(new ZoneEnteredPayload(
+                payload.ZoneId, payload.ZoneName, string.Empty, string.Empty, []));
+            GameState.ApplySystemMessage($"Teleported to {payload.ZoneName}.");
+            await Hub.RequestMapGraphAsync();
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        _hubSubscriptions.Add(Hub.On<SummonedPayload>("OnSummoned", async payload =>
+        {
+            GameState.ApplySystemMessage(
+                $"{payload.ByCharacterName} summoned you. Enter the destination zone to continue.");
+            await InvokeAsync(StateHasChanged);
+        }));
+
+        _hubSubscriptions.Add(Hub.On<ItemReceivedPayload>("OnItemReceived", async payload =>
+        {
+            GameState.ApplySystemMessage(
+                $"{payload.GivenByUsername} gave you {payload.Quantity}× {payload.ItemSlug}.");
+            await InvokeAsync(StateHasChanged);
+        }));
     }
 
     /// <summary>

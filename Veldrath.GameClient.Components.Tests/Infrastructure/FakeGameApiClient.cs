@@ -152,6 +152,15 @@ public sealed class FakeGameApiClient : IGameApiClient
     public Task<List<BackgroundDto>> GetBackgroundsAsync(CancellationToken ct = default)
         => Task.FromResult(new List<BackgroundDto>(Backgrounds));
 
+    /// <summary>Gets or sets the result of <see cref="DeleteCharacterAsync"/>.</summary>
+    public bool DeleteCharacterResult { get; set; } = true;
+
+    /// <summary>Gets the identifiers passed to <see cref="DeleteCharacterAsync"/>.</summary>
+    public List<Guid> DeletedCharacterIds { get; } = [];
+
+    /// <summary>Gets the number of times <see cref="DeleteCharacterAsync"/> was called.</summary>
+    public int DeleteCharacterCallCount { get; private set; }
+
     /// <summary>Gets or sets the result of <see cref="GetLastSessionAsync"/>.</summary>
     public LastSessionDto? LastSessionResult { get; set; }
 
@@ -186,6 +195,16 @@ public sealed class FakeGameApiClient : IGameApiClient
         if (GetCharactersException is not null)
             throw GetCharactersException;
         return Task.FromResult(new List<CharacterDto>(Characters));
+    }
+
+    /// <inheritdoc />
+    public Task<bool> DeleteCharacterAsync(Guid characterId, CancellationToken ct = default)
+    {
+        DeleteCharacterCallCount++;
+        DeletedCharacterIds.Add(characterId);
+        if (DeleteCharacterResult)
+            Characters.RemoveAll(c => c.Id == characterId);
+        return Task.FromResult(DeleteCharacterResult);
     }
 
     /// <inheritdoc />

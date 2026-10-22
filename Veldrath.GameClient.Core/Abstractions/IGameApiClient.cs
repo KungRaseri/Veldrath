@@ -12,6 +12,12 @@ public interface IGameApiClient
     /// <summary>Returns all characters belonging to the authenticated account.</summary>
     Task<List<CharacterDto>> GetCharactersAsync(CancellationToken ct = default);
 
+    /// <summary>Soft-deletes a character belonging to the authenticated account.</summary>
+    /// <param name="characterId">Identifier of the character to delete.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><see langword="true"/> when the server accepted the deletion.</returns>
+    Task<bool> DeleteCharacterAsync(Guid characterId, CancellationToken ct = default);
+
     /// <summary>Checks whether a character name is available.</summary>
     /// <param name="name">The desired character name.</param>
     /// <returns>A response indicating availability, or <c>null</c> on failure.</returns>
