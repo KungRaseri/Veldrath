@@ -67,7 +67,6 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
             e.Property(c => c.Attributes).HasColumnType("text");
             e.Property(c => c.EquipmentBlob).HasColumnType("text").HasDefaultValue("{}");
             e.Property(c => c.DifficultyMode).HasMaxLength(16).HasDefaultValue("normal");
-            e.Property(c => c.TileZoneId).HasMaxLength(64).IsRequired(false);
             e.Property(c => c.CurrentMapId).HasMaxLength(128).IsRequired(false);
             e.Property(c => c.CurrentNodeId).HasMaxLength(200).IsRequired(false);
             e.HasOne(c => c.Account)

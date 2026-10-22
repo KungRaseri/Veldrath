@@ -7,8 +7,8 @@ namespace RealmEngine.Data.Seeders;
 
 /// <summary>
 /// Seeds the authored map graph (region and zone nodes plus cardinal edges).
-/// Generated once from the legacy TMX layer by <c>TmxToMapGraphImporter</c>; this seeder
-/// is the long-term source of truth and does not read TMX assets.
+/// Generated once from the legacy TMX layer during migration; this seeder is the
+/// long-term source of truth and no longer depends on TMX assets or importer code.
 /// </summary>
 public static class MapGraphSeeder
 {

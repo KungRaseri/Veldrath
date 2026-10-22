@@ -51,7 +51,7 @@
                 </StackPanel>
             </StackPanel>
 
-            <!--  Center: ability hotbar — 6 always-visible slots  -->
+            <!--  Center: ability hotbar ï¿½ 6 always-visible slots  -->
             <ItemsControl
                 Grid.Column="1"
                 HorizontalAlignment="Center"
@@ -85,9 +85,8 @@
                 <Button
                     Height="34"
                     Classes="ghost"
-                    Classes.accent="{Binding Tilemap.IsMiniMapOpen}"
-                    Command="{Binding Tilemap.ToggleMiniMapCommand}"
-                    Content="Mini-map"
+                    Command="{Binding RefreshMapCommand}"
+                    Content="Map"
                     FontSize="12" />
                 <Button
                     Height="34"

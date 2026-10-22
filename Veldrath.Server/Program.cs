@@ -328,7 +328,6 @@ try
     builder.Services.Configure<Veldrath.Server.Settings.ActiveCharacterTrackerOptions>(
         builder.Configuration.GetSection("ActiveCharacterTracker"));
     builder.Services.AddSingleton<ICharacterCreationSessionStore, InMemoryCharacterCreationSessionStore>();
-    builder.Services.AddSingleton<IZoneEntityTracker, ZoneEntityTracker>();
 
     // RealmEngine services
     builder.Services.AddRealmEngineMediatR();

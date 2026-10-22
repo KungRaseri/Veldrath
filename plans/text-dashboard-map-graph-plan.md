@@ -473,16 +473,31 @@ flowchart TB
 - Verified with `Realm.Full.slnx` (0 warnings / 0 errors) and the full test suite
   (4,877 passing).
 
+### Completed — Phase 7b: full TMX removal (2026-10-22)
+
+- **Contracts/engine**: deleted `Veldrath.Contracts/Tilemap`, `GetTileMapQuery`,
+  `ITileMapRepository` and all implementations, `TiledMap` models/extensions,
+  `DungeonGenerator`, `TmxToMapGraphImporter`, and their tests.
+- **Assets**: deleted `TilemapAssets` plus all TMX/TSX/spritesheet/world assets and the
+  TMX generation/scan scripts.
+- **Avalonia client**: removed `TilemapViewModel`, `RegionTilemapViewModel`, `MapViewModel`,
+  `MapRegionGroupViewModel`, `ZoneLocationPanelViewModel`, `TileDescriptionService`,
+  `Views/Map/*`, and related tests. `GameViewModel` now exposes `CurrentMap`,
+  `CurrentNodeId`, `MapNodes`, `RefreshMapCommand`, and `TravelToSelectedNodeCommand`;
+  the native fallback centre panel is a text map/node picker.
+- **Schema**: dropped `Character.TileX/TileY/TileZoneId`, `PlayerSession.TileX/TileY`,
+  `PlayerSession.LastMovedAt`, tile repository methods, and the compatibility tile writes
+  in `TravelToNodeHubCommand`/`NavigateToLocationHubCommand`; migration
+  `20261022142119_RemoveTilePositionFields`.
+- **Orphaned handlers**: removed `TalkToNpc`/`InspectEntity` and `ZoneEntityTracker`
+  (their only producer was the removed tile spawner). A future node-scoped NPC/enemy
+  source will re-introduce these interactions.
+- **Runtime verification**: Postgres + server started clean; `/health` 200; database
+  contains **23 maps / 130 nodes / 196 edges** and **0** tile columns; web host `/`,
+  `/Game`, `/Game/Play`, and `/health` all 200; Avalonia client ran 25 s without error.
+- **Tests**: full suite **4,725 passing**, 0 failures; no `Tilemap`, `TiledMap`, `.tmx`,
+  or tile-state references remain outside historical migrations and docs.
+
 ### Remaining
 
-- Phase 7b: delete `Veldrath.Contracts/Tilemap`, the RealmEngine tile query/repository,
-  `TiledMap` models, `TmxToMapGraphImporter` (one-time, output already committed), and
-  tilemap assets/manifests/TMX files.
-- Phase 7b: remove the Avalonia native tile stack (`TilemapViewModel`,
-  `RegionTilemapViewModel`, `MapViewModel`, `MapRegionGroupViewModel`,
-  `ZoneLocationPanelViewModel`, `TileDescriptionService`, map/zone views and tests).
-- Phase 7b: drop `Character.TileX/TileY/TileZoneId`, `PlayerSession.TileX/TileY`, tile
-  repository methods, and the compatibility tile write in `TravelToNodeHubCommand`.
-- Phase 8: update older tilemap plans to "superseded", refresh agent memory (started),
-  run runtime smoke tests on web and desktop hosts.
-- Phase 9 (optional): RealmForge map graph editor and JSON import/export.
+- Phase 9 (optional): RealmForge map graph editor and JSON import/export tooling.

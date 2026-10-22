@@ -4,7 +4,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:views="using:Veldrath.Client.Views"
     xmlns:vm="using:Veldrath.Client.ViewModels"
     d:DesignHeight="720"
     d:DesignWidth="800"
@@ -18,10 +17,69 @@
                 x:Name="WebViewContainer"
                 IsVisible="{Binding IsWebViewActive}" />
 
-            <!-- Zone location panel (native fallback or region/world placeholders) -->
-            <views:ZoneLocationPanelView
-                DataContext="{Binding ZoneLocationPanel}"
-                IsVisible="{Binding IsFallbackActive}" />
+            <!-- Native text map fallback (WebView2 unavailable) -->
+            <Border
+                Margin="16"
+                Padding="16"
+                Background="{DynamicResource GameBackground1Brush}"
+                BorderBrush="{DynamicResource GameBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="6"
+                IsVisible="{Binding IsFallbackActive}">
+                <Grid RowDefinitions="Auto,Auto,*,Auto">
+                    <Grid Grid.Row="0" Margin="0,0,0,8" ColumnDefinitions="*,Auto">
+                        <StackPanel Spacing="2">
+                            <TextBlock
+                                FontSize="18"
+                                FontWeight="SemiBold"
+                                Text="{Binding CurrentMapName}" />
+                            <TextBlock
+                                FontSize="12"
+                                Foreground="{DynamicResource GameTextMutedBrush}"
+                                Text="{Binding MapPositionText}" />
+                        </StackPanel>
+                        <Button
+                            Grid.Column="1"
+                            Classes="ghost"
+                            Command="{Binding RefreshMapCommand}"
+                            Content="Refresh map"
+                            FontSize="12" />
+                    </Grid>
+
+                    <TextBlock
+                        Grid.Row="1"
+                        Margin="0,0,0,8"
+                        FontSize="12"
+                        Foreground="{DynamicResource GameTextMutedBrush}"
+                        Text="Select a node, then choose Travel." />
+
+                    <ListBox
+                        Grid.Row="2"
+                        ItemsSource="{Binding MapNodes}"
+                        SelectedItem="{Binding SelectedMapNode}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:MapNodeItemViewModel">
+                                <StackPanel Spacing="2">
+                                    <TextBlock FontSize="14" Text="{Binding DisplayLabel}" />
+                                    <TextBlock
+                                        FontSize="11"
+                                        Foreground="{DynamicResource GameTextMutedBrush}"
+                                        Text="{Binding NodeType}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <Button
+                        Grid.Row="3"
+                        Margin="0,8,0,0"
+                        HorizontalAlignment="Right"
+                        Classes="accent"
+                        Command="{Binding TravelToSelectedNodeCommand}"
+                        Content="Travel"
+                        FontSize="13" />
+                </Grid>
+            </Border>
         </Grid>
     </Border>
 

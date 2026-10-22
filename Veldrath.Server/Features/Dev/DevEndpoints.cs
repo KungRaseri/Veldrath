@@ -116,7 +116,6 @@ public static class DevEndpoints
                 character.CurrentZoneLocationSlug = null; // clear location within zone on teleport
             }
 
-            character.TileZoneId = null; // force tile-snap on next zone entry
             await db.SaveChangesAsync();
 
             return Results.Ok(new TeleportResult(character.Id, zone.Id, zone.Name, character.CurrentZoneLocationSlug));

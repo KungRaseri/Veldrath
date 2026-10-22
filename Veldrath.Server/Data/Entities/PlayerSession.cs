@@ -37,20 +37,8 @@ public class PlayerSession
     /// <summary>Stable identifier of the map node the character currently occupies, or <see langword="null"/>.</summary>
     public string? CurrentNodeId { get; set; }
 
-    /// <summary>Tile column of the character's current position (region map or zone).</summary>
-    public int TileX { get; set; }
-
-    /// <summary>Tile row of the character's current position (region map or zone).</summary>
-    public int TileY { get; set; }
-
     /// <summary>UTC timestamp of when this session was created.</summary>
     public DateTimeOffset EnteredAt { get; set; } = DateTimeOffset.UtcNow;
-
-    /// <summary>
-    /// UTC timestamp of the character's last accepted tile move in this session.
-    /// Used by the server-side rate limiter to cap movement at 10 tiles/second.
-    /// </summary>
-    public DateTimeOffset LastMovedAt { get; set; } = DateTimeOffset.MinValue;
 
     // Navigation
     /// <summary>The character this session belongs to.</summary>

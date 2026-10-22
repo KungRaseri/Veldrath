@@ -159,8 +159,8 @@ public static class CharacterEndpoints
             CharacterName: lastChar.Name,
             ZoneId: lastChar.CurrentZoneId,
             RegionId: regionId,
-            TileX: lastChar.TileX,
-            TileY: lastChar.TileY));
+            CurrentMapId: lastChar.CurrentMapId,
+            CurrentNodeId: lastChar.CurrentNodeId));
     }
 
     /// <summary>

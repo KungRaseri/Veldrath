@@ -9,7 +9,8 @@ using Veldrath.Client.Services;
 using Veldrath.Contracts.Characters;
 using Veldrath.Contracts.Chat;
 using Veldrath.Contracts.Connection;
-using Veldrath.Contracts.Tilemap;
+using Veldrath.Contracts.Map;
+using Veldrath.GameClient.Core.Payloads;
 
 namespace Veldrath.Client.ViewModels;
 
@@ -61,18 +62,9 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _itemSoldSub;
     private IDisposable? _itemDroppedSub;
     private IDisposable? _chatMessageSub;
-    private IDisposable? _characterMovedSub;
-    private IDisposable? _zoneTileMapSub;
-    private IDisposable? _tileExitSub;
-    private IDisposable? _enemyMovedSub;
-    private IDisposable? _zoneEntitiesSnapshotSub;
+    private IDisposable? _mapGraphSub;
+    private IDisposable? _nodeTraveledSub;
     private IDisposable? _questLogSub;
-    private IDisposable? _regionMapDataSub;
-    private IDisposable? _regionPlayerMovedSub;
-    private IDisposable? _zoneEntryTriggeredSub;
-    private IDisposable? _regionExitTriggeredSub;
-    private IDisposable? _zoneExitedSub;
-    private IDisposable? _regionChangedSub;
     private IDisposable? _chatCommandsSub;
     private IDisposable? _systemMessageSub;
     private IDisposable? _onWhisperSub;
@@ -85,8 +77,6 @@ public class CharacterSelectViewModel : ViewModelBase
     private IDisposable? _onSummonedSub;
     private IDisposable? _onItemReceivedSub;
     private IDisposable? _characterIgnoredSub;
-    private IDisposable? _npcDialogueSub;
-    private IDisposable? _entityInspectedSub;
     private IDisposable? _tokenRefreshTimer;
 
     public ObservableCollection<CharacterEntryViewModel> Characters { get; } = [];
@@ -243,18 +233,9 @@ public class CharacterSelectViewModel : ViewModelBase
             _itemSoldSub?.Dispose();
             _itemDroppedSub?.Dispose();
             _chatMessageSub?.Dispose();
-            _characterMovedSub?.Dispose();
-            _zoneTileMapSub?.Dispose();
-            _tileExitSub?.Dispose();
-            _enemyMovedSub?.Dispose();
-            _zoneEntitiesSnapshotSub?.Dispose();
+            _mapGraphSub?.Dispose();
+            _nodeTraveledSub?.Dispose();
             _questLogSub?.Dispose();
-            _regionMapDataSub?.Dispose();
-            _regionPlayerMovedSub?.Dispose();
-            _zoneEntryTriggeredSub?.Dispose();
-            _regionExitTriggeredSub?.Dispose();
-            _zoneExitedSub?.Dispose();
-            _regionChangedSub?.Dispose();
             _chatCommandsSub?.Dispose();
             _systemMessageSub?.Dispose();
             _onWhisperSub?.Dispose();
@@ -267,8 +248,6 @@ public class CharacterSelectViewModel : ViewModelBase
             _onSummonedSub?.Dispose();
             _onItemReceivedSub?.Dispose();
             _characterIgnoredSub?.Dispose();
-            _npcDialogueSub?.Dispose();
-            _entityInspectedSub?.Dispose();
             _tokenRefreshTimer?.Dispose();
 
             // Subscribe to zone hub events before sending commands so no events are missed
@@ -392,32 +371,12 @@ public class CharacterSelectViewModel : ViewModelBase
                 _gameVm.OnItemDropped(payload.ItemRef, payload.NewInventory));
             _chatMessageSub = _connection.On<ChatMessagePayload>("ReceiveChatMessage", payload =>
                 _gameVm.OnChatMessageReceived(payload.CharacterId, payload.Channel, payload.Sender, payload.Message, payload.Timestamp));
-            _characterMovedSub = _connection.On<CharacterMovedPayload>("CharacterMoved", payload =>
-                _gameVm.OnCharacterMoved(payload.CharacterId, payload.TileX, payload.TileY, payload.Direction));
-            _zoneTileMapSub = _connection.On<TileMapDto>("ZoneTileMap", dto =>
-                _gameVm.OnZoneTileMap(dto));
-            _tileExitSub = _connection.On<ExitTileDto>("TileExitTriggered", payload =>
-                _gameVm.OnTileExitTriggered(payload.ToZoneId));
-            _enemyMovedSub = _connection.On<EnemyMovedPayload>("EnemyMoved", payload =>
-                _gameVm.OnEnemyMoved(payload.EntityId, payload.SpriteKey, payload.TileX, payload.TileY, payload.Direction));
-            _zoneEntitiesSnapshotSub = _connection.On<ZoneEntitiesSnapshotPayload>("ZoneEntitiesSnapshot", payload =>
-                _gameVm.OnZoneEntitiesSnapshot(payload.Entities));
+            _mapGraphSub = _connection.On<MapGraphReceivedPayload>("MapGraphReceived", payload =>
+                _gameVm.ApplyMapGraph(payload));
+            _nodeTraveledSub = _connection.On<NodeTraveledPayload>("NodeTraveled", payload =>
+                _gameVm.ApplyNodeTraveled(payload));
             _questLogSub = _connection.On<IReadOnlyList<QuestLogEntryDto>>("QuestLogReceived", quests =>
                 _gameVm.OnQuestLogReceived(quests));
-
-            // Region-map subscriptions
-            _regionMapDataSub = _connection.On<RegionMapDto>("RegionMapData", dto =>
-                _gameVm.OnRegionMapReceived(dto));
-            _regionPlayerMovedSub = _connection.On<RegionPlayerMovedPayload>("RegionPlayerMoved", payload =>
-                _gameVm.OnRegionPlayerMoved(payload.CharacterId, payload.TileX, payload.TileY, payload.Direction));
-            _zoneEntryTriggeredSub = _connection.On<ZoneObjectDto>("ZoneEntryTriggered", dto =>
-                _gameVm.OnZoneEntryTriggered(dto));
-            _regionExitTriggeredSub = _connection.On<RegionExitDto>("RegionExitTriggered", dto =>
-                _gameVm.OnRegionExitTriggered(dto));
-            _zoneExitedSub = _connection.On<ZoneExitedPayload>("ZoneExited", payload =>
-                _gameVm.OnZoneExited(payload.RegionId, payload.TileX, payload.TileY));
-            _regionChangedSub = _connection.On<RegionChangedPayload>("RegionChanged", payload =>
-                _gameVm.OnRegionChanged(payload.NewRegionId, payload.TileX, payload.TileY));
             _chatCommandsSub = _connection.On<List<ChatCommandInfoDto>>("ChatCommandsReceived", commands =>
                 _gameVm.OnChatCommandsReceived(commands));
 
@@ -443,10 +402,6 @@ public class CharacterSelectViewModel : ViewModelBase
                 _gameVm.OnItemReceived(payload.ItemSlug, payload.Quantity, payload.GivenByUsername));
             _characterIgnoredSub = _connection.On<CharacterIgnoredPayload>("CharacterIgnored", payload =>
                 _gameVm.OnCharacterIgnored(payload.CharacterId, payload.CharacterName));
-            _npcDialogueSub = _connection.On<NpcDialoguePayload>("NpcDialogue", payload =>
-                _gameVm.OnNpcDialogueReceived(payload.NpcName, payload.DialogueText));
-            _entityInspectedSub = _connection.On<EntityInspectedPayload>("EntityInspected", payload =>
-                _gameVm.OnEntityInspected(payload.EntityName, payload.EntityType, payload.Description));
 
             // Proactively refresh the access token every 5 minutes during gameplay so it
             // never silently expires mid-session and cause hub reconnects to fail with 401.
@@ -456,8 +411,8 @@ public class CharacterSelectViewModel : ViewModelBase
 
             await _connection.SendCommandAsync<object>("SelectCharacter", character.Id);
             await _connection.SendCommandAsync("GetChatCommands");
-            await _connection.SendCommandAsync("GetRegionMap");
             await _connection.SendCommandAsync<object>("EnterZone", zoneId);
+            await _connection.SendCommandAsync("GetMapGraph");
             await _gameVm.InitializeAsync(character.Name, zoneId);
         }
         catch (Exception ex)
@@ -520,10 +475,6 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record ItemTransactionPayload(Guid CharacterId, string ItemRef, string ItemDisplayName, int GoldDelta, int NewGoldTotal, IReadOnlyList<InventoryItemEntry> NewInventory);
     internal record ItemDroppedPayload(Guid CharacterId, string ItemRef, IReadOnlyList<InventoryItemEntry> NewInventory);
     internal record ChatMessagePayload(Guid CharacterId, string Channel, string Sender, string Message, DateTimeOffset Timestamp);
-    internal record ZoneExitedPayload(string RegionId, int TileX, int TileY);
-    internal record RegionChangedPayload(string NewRegionId, int TileX, int TileY);
-    internal record NpcDialoguePayload(string NpcName, string DialogueText);
-    internal record EntityInspectedPayload(string EntityName, string EntityType, string Description);
 
     private void PopulateCharacters(IEnumerable<CharacterDto> characters)
     {

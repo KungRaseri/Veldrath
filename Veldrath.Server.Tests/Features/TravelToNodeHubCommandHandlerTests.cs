@@ -184,9 +184,6 @@ public class TravelToNodeHubCommandHandlerTests
             "secret-location",
             It.IsAny<CancellationToken>()), Times.Once);
 
-        characterRepo.Verify(r => r.UpdateTilePositionAsync(
-            CharacterId, 14, 10, "crestfall", It.IsAny<CancellationToken>()), Times.Once);
-
         unlockedRepo.Verify(r => r.AddUnlockAsync(
             CharacterId, "passive-location", "skill_check_passive", It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -327,14 +324,6 @@ public class TravelToNodeHubCommandHandlerTests
                 It.IsAny<string?>(),
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        characterRepo.Setup(r => r.UpdateTilePositionAsync(
-                It.IsAny<Guid>(),
-                It.IsAny<int>(),
-                It.IsAny<int>(),
-                It.IsAny<string>(),
-                It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
         unlockedRepo.Setup(r => r.GetUnlockedSlugsAsync(CharacterId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
         unlockedRepo.Setup(r => r.AddUnlockAsync(

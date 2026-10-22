@@ -95,18 +95,6 @@ public class CharacterRepository : ICharacterRepository
     }
 
     /// <inheritdoc />
-    public async Task UpdateTilePositionAsync(Guid id, int tileX, int tileY, string tileZoneId, CancellationToken ct = default)
-    {
-        var character = await _db.Characters.FindAsync([id], ct);
-        if (character is null) return;
-        character.TileX      = tileX;
-        character.TileY      = tileY;
-        character.TileZoneId = tileZoneId;
-        character.LastPlayedAt = DateTimeOffset.UtcNow;
-        await _db.SaveChangesAsync(ct);
-    }
-
-    /// <inheritdoc />
     public async Task UpdateMapPositionAsync(
         Guid id,
         string mapId,

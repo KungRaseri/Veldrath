@@ -155,7 +155,7 @@ public class GameEntryPageTests : BunitContext
     {
         _fakeApi.Characters = [];
         _fakeApi.LastSessionResult = new LastSessionDto(
-            Guid.NewGuid(), "Hero", "zone-1", "fenwick-crossing", 10, 20);
+            Guid.NewGuid(), "Hero", "zone-1", "fenwick-crossing", "map-1", "node-1");
 
         Render<GameEntry>();
 
@@ -173,7 +173,7 @@ public class GameEntryPageTests : BunitContext
     {
         _fakeApi.Characters = [CreateCharacterDto("Aragorn")];
         _fakeApi.LastSessionResult = new LastSessionDto(
-            Guid.NewGuid(), "Aragorn", "darkwood-forest", "fenwick-crossing", 10, 20);
+            Guid.NewGuid(), "Aragorn", "darkwood-forest", "fenwick-crossing", "map-1", "node-1");
 
         Render<GameEntry>();
 
@@ -192,7 +192,7 @@ public class GameEntryPageTests : BunitContext
         _fakeDialog.DialogResultValue = true;
         _fakeApi.Characters = [CreateCharacterDto()];
         _fakeApi.LastSessionResult = new LastSessionDto(
-            Guid.NewGuid(), "Hero", "zone-1", "fenwick-crossing", 10, 20);
+            Guid.NewGuid(), "Hero", "zone-1", "fenwick-crossing", "map-1", "node-1");
 
         Render<GameEntry>();
 
@@ -210,7 +210,7 @@ public class GameEntryPageTests : BunitContext
         _fakeDialog.DialogResultValue = false;
         _fakeApi.Characters = [CreateCharacterDto()];
         _fakeApi.LastSessionResult = new LastSessionDto(
-            Guid.NewGuid(), "Hero", "zone-1", "fenwick-crossing", 10, 20);
+            Guid.NewGuid(), "Hero", "zone-1", "fenwick-crossing", "map-1", "node-1");
 
         Render<GameEntry>();
 

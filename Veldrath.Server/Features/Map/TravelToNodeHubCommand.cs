@@ -248,18 +248,6 @@ public class TravelToNodeHubCommandHandler
             zoneId,
             regionId);
 
-        if (zoneId is not null &&
-            destinationNode.LayoutX is not null &&
-            destinationNode.LayoutY is not null)
-        {
-            await _characterRepo.UpdateTilePositionAsync(
-                request.CharacterId,
-                destinationNode.LayoutX.Value,
-                destinationNode.LayoutY.Value,
-                zoneId,
-                cancellationToken);
-        }
-
         var discoveries = destinationMap.MapType == MapType.Zone &&
                           destinationNode.NodeType == MapNodeType.Location &&
                           zoneId is not null

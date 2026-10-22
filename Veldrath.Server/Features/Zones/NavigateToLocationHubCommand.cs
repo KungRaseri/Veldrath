@@ -126,14 +126,6 @@ public class NavigateToLocationHubCommandHandler
 
         await _characterRepo.UpdateCurrentZoneLocationAsync(request.CharacterId, location.Slug, cancellationToken);
 
-        // Update tile position to match the location coordinates, if available.
-        if (location.TileX.HasValue && location.TileY.HasValue)
-        {
-            await _characterRepo.UpdateTilePositionAsync(
-                request.CharacterId, location.TileX.Value, location.TileY.Value,
-                request.ZoneId, cancellationToken);
-        }
-
         _logger.LogInformation(
             "Character {CharacterIdPrefix} navigated to {LocationSlug} in zone {ZoneId}",
             request.CharacterId.ToString()[..8], location.Slug, request.ZoneId);

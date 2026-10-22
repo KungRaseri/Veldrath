@@ -48,25 +48,6 @@ public interface IPlayerSessionRepository
     /// <summary>Removes the session associated with <paramref name="connectionId"/>, if one exists.</summary>
     Task RemoveByConnectionIdAsync(string connectionId);
 
-    /// <summary>Updates <see cref="PlayerSession.LastMovedAt"/> for the session belonging to <paramref name="characterId"/>.</summary>
-    Task UpdateLastMovedAtAsync(Guid characterId, DateTimeOffset time);
-
-    /// <summary>Updates <see cref="PlayerSession.TileX"/> and <see cref="PlayerSession.TileY"/> for the session belonging to <paramref name="characterId"/>.</summary>
-    Task UpdatePositionAsync(Guid characterId, int tileX, int tileY);
-
-    /// <summary>
-    /// Sets <see cref="PlayerSession.ZoneId"/> for the session belonging to <paramref name="characterId"/>.
-    /// Pass <see langword="null"/> to indicate the character has returned to the region map.
-    /// </summary>
-    Task SetZoneAsync(Guid characterId, string? zoneId);
-
-    /// <summary>
-    /// Updates <see cref="PlayerSession.RegionId"/> and clears <see cref="PlayerSession.ZoneId"/> for
-    /// the session belonging to <paramref name="characterId"/>.
-    /// Called when a character crosses a region boundary.
-    /// </summary>
-    Task SetRegionAsync(Guid characterId, string regionId);
-
     /// <summary>
     /// Updates the session's current map/node and optional zone/region context.
     /// Pass <see langword="null"/> for <paramref name="zoneId"/> when the character is on a region map.

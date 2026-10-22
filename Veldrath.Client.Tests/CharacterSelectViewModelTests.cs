@@ -3,7 +3,8 @@ using Veldrath.Client;
 using Veldrath.Client.Services;
 using Veldrath.Client.Tests.Infrastructure;
 using Veldrath.Client.ViewModels;
-using Veldrath.Contracts.Tilemap;
+using Veldrath.Contracts.Map;
+using Veldrath.GameClient.Core.Payloads;
 
 namespace Veldrath.Client.Tests;
 
@@ -680,77 +681,30 @@ public class CharacterSelectViewModelTests : TestBase
         vm.ErrorMessage.Should().Be("Version mismatch \u2014 client v0.1 / server v9.0");
     }
 
-    // -- Region-map hub subscriptions ------------------------------------------
+    // -- Map graph hub subscriptions -------------------------------------------
 
     [Fact]
-    public async Task SelectCommand_Should_Set_RegionTilemap_MapData_When_RegionMapData_Fires()
+    public async Task SelectCommand_Should_Apply_MapGraph_When_MapGraphReceived_Fires()
     {
         var conn   = new FakeServerConnectionService();
         var gameVm = MakeGameVm(conn: conn);
         var vm     = MakeVm(conn: conn, gameVm: gameVm);
         var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
             "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var map = new MapGraphDto("region:thornveil", "Region", "thornveil",
+            "Thornveil", "A region", "entry", [], []);
 
         await vm.SelectCommand.Execute(new CharacterEntryViewModel(character));
-        var map = new RegionMapDto("thornveil", "overworld", 10, 10, 16,
-            [], new bool[100], [], [], [], []);
-        conn.FireEvent("RegionMapData", map);
+        conn.FireEvent("MapGraphReceived",
+            new MapGraphReceivedPayload(true, null, map, "entry"));
 
-        gameVm.RegionTilemap!.RegionMapData.Should().Be(map);
+        gameVm.CurrentMap.Should().Be(map);
+        gameVm.CurrentNodeId.Should().Be("entry");
+        gameVm.CurrentMapName.Should().Be("Thornveil");
     }
 
     [Fact]
-    public async Task SelectCommand_Should_Upsert_Region_Player_When_RegionPlayerMoved_Fires()
-    {
-        var conn   = new FakeServerConnectionService();
-        var gameVm = MakeGameVm(conn: conn);
-        var vm     = MakeVm(conn: conn, gameVm: gameVm);
-        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
-            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
-        var otherId = Guid.NewGuid();
-
-        await vm.SelectCommand.Execute(new CharacterEntryViewModel(character));
-        conn.FireEvent("RegionPlayerMoved",
-            new RegionPlayerMovedPayload(otherId, 4, 9, "right"));
-
-        gameVm.RegionTilemap!.Entities.Should().ContainSingle(e =>
-            e.EntityId == otherId && e.TileX == 4 && e.TileY == 9);
-    }
-
-    [Fact]
-    public async Task SelectCommand_Should_Set_PendingZoneEntry_When_ZoneEntryTriggered_Fires()
-    {
-        var conn   = new FakeServerConnectionService();
-        var gameVm = MakeGameVm(conn: conn);
-        var vm     = MakeVm(conn: conn, gameVm: gameVm);
-        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
-            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
-        var entry = new ZoneObjectDto(5, 8, "fenwick-crossing", "Fenwick Crossing", 1, 5);
-
-        await vm.SelectCommand.Execute(new CharacterEntryViewModel(character));
-        conn.FireEvent("ZoneEntryTriggered", entry);
-
-        gameVm.PendingZoneEntry.Should().Be(entry);
-    }
-
-    [Fact]
-    public async Task SelectCommand_Should_Set_PendingRegionExit_When_RegionExitTriggered_Fires()
-    {
-        var conn   = new FakeServerConnectionService();
-        var gameVm = MakeGameVm(conn: conn);
-        var vm     = MakeVm(conn: conn, gameVm: gameVm);
-        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
-            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
-        var exit = new RegionExitDto(29, 10, "varenmark");
-
-        await vm.SelectCommand.Execute(new CharacterEntryViewModel(character));
-        conn.FireEvent("RegionExitTriggered", exit);
-
-        gameVm.PendingRegionExit.Should().Be(exit);
-    }
-
-    [Fact]
-    public async Task SelectCommand_Should_Clear_Pending_When_ZoneExited_Fires()
+    public async Task SelectCommand_Should_Apply_NodeTraveled_When_NodeTraveled_Fires()
     {
         var conn   = new FakeServerConnectionService();
         var gameVm = MakeGameVm(conn: conn);
@@ -759,29 +713,12 @@ public class CharacterSelectViewModelTests : TestBase
             "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
 
         await vm.SelectCommand.Execute(new CharacterEntryViewModel(character));
-        conn.FireEvent("ZoneEntryTriggered",
-            new ZoneObjectDto(5, 8, "fenwick-crossing", "Fenwick Crossing", 1, 5));
-        conn.FireEvent("ZoneExited",
-            new CharacterSelectViewModel.ZoneExitedPayload("thornveil", 5, 8));
+        conn.FireEvent("NodeTraveled", new NodeTraveledPayload(
+            true, null, "zone:fenwick-crossing", "town-square", "Location",
+            true, "Entered Fenwick Crossing at Town Square.", "fenwick-crossing",
+            "thornveil", "town-square"));
 
-        gameVm.PendingZoneEntry.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task SelectCommand_Should_Clear_PendingRegionExit_When_RegionChanged_Fires()
-    {
-        var conn   = new FakeServerConnectionService();
-        var gameVm = MakeGameVm(conn: conn);
-        var vm     = MakeVm(conn: conn, gameVm: gameVm);
-        var character = new CharacterDto(Guid.NewGuid(), 1, "Hero",
-            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
-
-        await vm.SelectCommand.Execute(new CharacterEntryViewModel(character));
-        conn.FireEvent("RegionExitTriggered", new RegionExitDto(29, 10, "varenmark"));
-        conn.FireEvent("RegionChanged",
-            new CharacterSelectViewModel.RegionChangedPayload("varenmark", 0, 5));
-
-        gameVm.PendingRegionExit.Should().BeNull();
+        gameVm.CurrentNodeId.Should().Be("town-square");
     }
 
 }

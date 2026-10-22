@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Veldrath.Contracts.Tilemap;
 using Veldrath.GameClient.Core.Payloads;
 
 namespace Veldrath.GameClient.Core.Tests;
@@ -216,41 +215,6 @@ public sealed class PayloadRecordTests
     }
 
     // ── EntityPayloads ─────────────────────────────────────────────────────────
-
-    /// <summary>Verifies CharacterMovedPayload (from Veldrath.Contracts) can be constructed.</summary>
-    [Fact]
-    public void CharacterMovedPayload_Can_Be_Constructed()
-    {
-        var payload = new Veldrath.Contracts.Tilemap.CharacterMovedPayload(
-            CharacterId: Guid.NewGuid(),
-            TileX: 5,
-            TileY: 10,
-            Direction: "N");
-
-        payload.TileX.Should().Be(5);
-        payload.TileY.Should().Be(10);
-        payload.Direction.Should().Be("N");
-    }
-
-    /// <summary>Verifies ZoneEntitiesSnapshotPayload (from Veldrath.Contracts) contains entities.</summary>
-    [Fact]
-    public void ZoneEntitiesSnapshotPayload_Contains_Entities()
-    {
-        var entity = new Veldrath.Contracts.Tilemap.TileEntityDto(
-            EntityId: Guid.NewGuid(),
-            EntityType: "player",
-            SpriteKey: "hero",
-            TileX: 3,
-            TileY: 7,
-            Direction: "S");
-
-        var payload = new Veldrath.Contracts.Tilemap.ZoneEntitiesSnapshotPayload(
-            Entities: new List<Veldrath.Contracts.Tilemap.TileEntityDto> { entity });
-
-        payload.Entities.Should().HaveCount(1);
-        payload.Entities[0].EntityType.Should().Be("player");
-        payload.Entities[0].TileX.Should().Be(3);
-    }
 
     /// <summary>Verifies EnemyDefeatedPayload can be constructed.</summary>
     [Fact]

@@ -9,6 +9,8 @@ using Veldrath.Assets;
 using Veldrath.Assets.Manifest;
 using Veldrath.Client.Services;
 using Veldrath.Contracts.Chat;
+using Veldrath.Contracts.Map;
+using Veldrath.GameClient.Core.Payloads;
 
 namespace Veldrath.Client.ViewModels;
 
@@ -57,14 +59,10 @@ public class GameViewModel : ViewModelBase
     private readonly IHostedGameServer? _hostedServer;
     private readonly NativeBridgeService? _bridge;
 
-    // Tilemap
-    private TilemapViewModel? _tilemapViewModel;
-    private RegionTilemapViewModel? _regionTilemapViewModel;
-    private ZoneLocationPanelViewModel? _zoneLocationPanel;
-
-    // Region pending tile transitions
-    private Veldrath.Contracts.Tilemap.ZoneObjectDto? _pendingZoneEntry;
-    private Veldrath.Contracts.Tilemap.RegionExitDto? _pendingRegionExit;
+    // Map graph
+    private MapGraphDto? _currentMap;
+    private string? _currentNodeId;
+    private MapNodeItemViewModel? _selectedMapNode;
 
     // Zone state
     private string _zoneName = string.Empty;
@@ -553,45 +551,64 @@ public class GameViewModel : ViewModelBase
     private string _worldName = string.Empty;
     private string _worldEra = string.Empty;
 
-    // ── Tilemap ──────────────────────────────────────────────────────────────
+    // ── Map graph ────────────────────────────────────────────────────────────
 
-    /// <summary>View model for the real-time tilemap canvas. Initialized when the character selects a character.</summary>
-    public TilemapViewModel? Tilemap
+    /// <summary>The currently loaded map graph, or <see langword="null"/> before it is requested.</summary>
+    public MapGraphDto? CurrentMap
     {
-        get => _tilemapViewModel;
-        private set => this.RaiseAndSetIfChanged(ref _tilemapViewModel, value);
+        get => _currentMap;
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref _currentMap, value);
+            this.RaisePropertyChanged(nameof(CurrentMapName));
+            this.RaisePropertyChanged(nameof(MapPositionText));
+        }
     }
 
-    /// <summary>View model for the region-map tilemap canvas. Initialized when the character selects a character.</summary>
-    public RegionTilemapViewModel? RegionTilemap
+    /// <summary>Stable identifier of the node the character occupies, or <see langword="null"/>.</summary>
+    public string? CurrentNodeId
     {
-        get => _regionTilemapViewModel;
-        private set => this.RaiseAndSetIfChanged(ref _regionTilemapViewModel, value);
+        get => _currentNodeId;
+        private set
+        {
+            this.RaiseAndSetIfChanged(ref _currentNodeId, value);
+            this.RaisePropertyChanged(nameof(MapPositionText));
+        }
     }
 
-    /// <summary>
-    /// View model for the zone location panel (replaces the old tilemap control).
-    /// Derives room description, exit list, entity list, and contextual actions from the tilemap data.
-    /// </summary>
-    public ZoneLocationPanelViewModel? ZoneLocationPanel
+    /// <summary>Display name of the current map, or an empty string when no map is loaded.</summary>
+    public string CurrentMapName => CurrentMap?.Name ?? string.Empty;
+
+    /// <summary>Text summary of the current map and node for the footer.</summary>
+    public string MapPositionText
     {
-        get => _zoneLocationPanel;
-        private set => this.RaiseAndSetIfChanged(ref _zoneLocationPanel, value);
+        get
+        {
+            if (CurrentMap is null)
+                return "No map loaded";
+
+            var node = CurrentMap.Nodes.FirstOrDefault(n => n.Id == CurrentNodeId);
+            return node is null
+                ? CurrentMap.Name
+                : $"{CurrentMap.Name} · {node.DisplayName}";
+        }
     }
 
-    /// <summary>Zone-entry tile the character last stepped on, or <see langword="null"/> if none is pending.</summary>
-    public Veldrath.Contracts.Tilemap.ZoneObjectDto? PendingZoneEntry
+    /// <summary>Selectable nodes on the current map.</summary>
+    public ObservableCollection<MapNodeItemViewModel> MapNodes { get; } = [];
+
+    /// <summary>The node selected in the native fallback map panel.</summary>
+    public MapNodeItemViewModel? SelectedMapNode
     {
-        get => _pendingZoneEntry;
-        private set => this.RaiseAndSetIfChanged(ref _pendingZoneEntry, value);
+        get => _selectedMapNode;
+        set => this.RaiseAndSetIfChanged(ref _selectedMapNode, value);
     }
 
-    /// <summary>Region-exit tile the character last stepped on, or <see langword="null"/> if none is pending.</summary>
-    public Veldrath.Contracts.Tilemap.RegionExitDto? PendingRegionExit
-    {
-        get => _pendingRegionExit;
-        private set => this.RaiseAndSetIfChanged(ref _pendingRegionExit, value);
-    }
+    /// <summary>Requests a fresh map graph from the server.</summary>
+    public ReactiveCommand<Unit, Unit> RefreshMapCommand { get; }
+
+    /// <summary>Travels the character to <see cref="SelectedMapNode"/>.</summary>
+    public ReactiveCommand<Unit, Unit> TravelToSelectedNodeCommand { get; }
 
     // ────────────────────────────────────────────────────────────────────────
 
@@ -893,9 +910,6 @@ public class GameViewModel : ViewModelBase
     /// <summary>Load a specific region's zone details in the Region panel and switch to that view.</summary>
     public ReactiveCommand<string, Unit> ViewRegionCommand { get; }
 
-    /// <summary>Open the traversal-graph map screen.</summary>
-    public ReactiveCommand<Unit, Unit> OpenMapCommand { get; }
-
     /// <summary>Opens the quest journal panel: sends <c>GetQuestLog</c> to the server and displays quests when the data arrives.</summary>
     public ReactiveCommand<Unit, Unit> OpenJournalCommand { get; }
 
@@ -924,21 +938,6 @@ public class GameViewModel : ViewModelBase
 
     /// <summary>Respawn the character after defeat in normal mode.</summary>
     public ReactiveCommand<Unit, Unit> RespawnCommand { get; }
-
-    /// <summary>Request the region tilemap from the server.</summary>
-    public ReactiveCommand<Unit, Unit> GetRegionMapCommand { get; }
-
-    /// <summary>Request a one-tile region-map move. Tuple: (toX, toY, direction).</summary>
-    public ReactiveCommand<(int ToX, int ToY, string Direction), Unit> MoveOnRegionCommand { get; }
-
-    /// <summary>Exit the current zone and return to the region map.</summary>
-    public ReactiveCommand<Unit, Unit> ExitZoneCommand { get; }
-
-    /// <summary>Confirms entering the pending zone from the region map (E key or button).</summary>
-    public ReactiveCommand<Unit, Unit> ConfirmZoneEntryCommand { get; }
-
-    /// <summary>Confirms crossing to the adjacent region when standing on a region-exit tile.</summary>
-    public ReactiveCommand<Unit, Unit> ConfirmRegionCrossCommand { get; }
 
     /// <summary>Initializes a new instance of <see cref="GameViewModel"/>.</summary>
     public GameViewModel(
@@ -1026,8 +1025,9 @@ public class GameViewModel : ViewModelBase
         ShowWorldViewCommand = ReactiveCommand.Create(() => { ZoneViewMode = "World"; });
         TravelToZoneCommand = ReactiveCommand.CreateFromTask<string>(DoTravelToZoneAsync);
         ViewRegionCommand = ReactiveCommand.CreateFromTask<string>(DoShowRegionDetailsAsync);
-        OpenMapCommand = ReactiveCommand.Create(DoOpenMap);
         OpenJournalCommand = ReactiveCommand.CreateFromTask(DoOpenJournalAsync);
+        RefreshMapCommand = ReactiveCommand.CreateFromTask(DoRefreshMapAsync);
+        TravelToSelectedNodeCommand = ReactiveCommand.CreateFromTask(DoTravelToSelectedNodeAsync);
 
         EngageEnemyCommand        = ReactiveCommand.CreateFromTask<Guid>(DoEngageEnemyAsync);
         AttackEnemyCommand        = ReactiveCommand.CreateFromTask(DoAttackEnemyAsync);
@@ -1043,53 +1043,6 @@ public class GameViewModel : ViewModelBase
         LearnedAbilities.CollectionChanged += (_, _) => SyncHotbarSlots();
 
         SpawnedEnemies.CollectionChanged += (_, _) => HasSpawnedEnemies = SpawnedEnemies.Count > 0;
-
-        // Tilemap VM — forward move requests to the hub
-        Tilemap = new TilemapViewModel(async (toX, toY, dir) =>
-        {
-            await _connection.SendCommandAsync<object>(
-                "MoveCharacter",
-                new { ToX = toX, ToY = toY, Direction = dir });
-        });
-
-        // Zone location panel VM — wraps the tilemap to derive reactive panel data,
-        // with callbacks for entity interactions that forward to the server hub.
-        ZoneLocationPanel = new ZoneLocationPanelViewModel(
-            Tilemap,
-            onTalkToEntity: async entityId => await DoTalkToNpcAsync(entityId),
-            onInspectEntity: async entityId => await DoInspectEntityAsync(entityId),
-            onFightEntity: async entityId => await DoEngageEnemyAsync(entityId));
-
-        // Forward zone name changes to the location panel.
-        // SelfEntityId is forwarded automatically because ZoneLocationPanelViewModel
-        // already subscribes to tilemap.WhenAnyValue(x => x.SelfEntityId).
-        this.WhenAnyValue(x => x.ZoneName)
-            .Subscribe(name => ZoneLocationPanel?.SetZoneName(name ?? "Unknown"));
-
-        // Region tilemap VM — forward region move requests to the hub, confirm zone/region transitions on E
-        RegionTilemap = new RegionTilemapViewModel(
-            onMove: async (toX, toY, dir) =>
-            {
-                await _connection.SendCommandAsync<object>(
-                    "MoveOnRegion",
-                    new { ToX = toX, ToY = toY, Direction = dir });
-            },
-            onConfirm: async () =>
-            {
-                if (PendingZoneEntry is not null)
-                    await DoConfirmZoneEntryAsync();
-                else if (PendingRegionExit is not null)
-                    await DoConfirmRegionCrossAsync();
-            });
-
-        GetRegionMapCommand  = ReactiveCommand.CreateFromTask(DoGetRegionMapAsync);
-        MoveOnRegionCommand  = ReactiveCommand.CreateFromTask<(int, int, string)>(t => DoMoveOnRegionAsync(t.Item1, t.Item2, t.Item3));
-        ExitZoneCommand      = ReactiveCommand.CreateFromTask(DoExitZoneAsync);
-
-        var canConfirmZoneEntry  = this.WhenAnyValue(x => x.PendingZoneEntry).Select(e  => e is not null);
-        var canConfirmRegionExit = this.WhenAnyValue(x => x.PendingRegionExit).Select(e => e is not null);
-        ConfirmZoneEntryCommand  = ReactiveCommand.CreateFromTask(DoConfirmZoneEntryAsync,  canConfirmZoneEntry);
-        ConfirmRegionCrossCommand = ReactiveCommand.CreateFromTask(DoConfirmRegionCrossAsync, canConfirmRegionExit);
 
         // Settings + audio mute commands
         ToggleSettingsCommand  = ReactiveCommand.Create(() => { IsSettingsOpen = !IsSettingsOpen; });
@@ -1155,9 +1108,6 @@ public class GameViewModel : ViewModelBase
 
         await LoadZoneCoreAsync(zoneId);
 
-        // Request the tilemap for the new zone from the server
-        await _connection.SendCommandAsync("GetZoneTileMap");
-
         if (_assetStore is not null && _audioPlayer is not null)
         {
             var musicPath = ZoneType.Equals("Dungeon", StringComparison.OrdinalIgnoreCase)
@@ -1173,94 +1123,64 @@ public class GameViewModel : ViewModelBase
         ActivateWebView();
     }
 
-    // ── Region-map hub handlers ───────────────────────────────────────────────
+    // ── Map graph hub handlers ────────────────────────────────────────────────
 
-    /// <summary>Called from hub when a <c>RegionMapData</c> message arrives with the region's tilemap.</summary>
-    /// <param name="regionMap">The region map DTO received from the server.</param>
-    public void OnRegionMapReceived(Veldrath.Contracts.Tilemap.RegionMapDto regionMap)
+    /// <summary>Applies a map graph received from the server and rebuilds the native map list.</summary>
+    /// <param name="payload">The map graph payload from the hub event.</param>
+    public void ApplyMapGraph(MapGraphReceivedPayload payload)
     {
-        if (RegionTilemap is null) return;
-        RegionTilemap.RegionMapData = regionMap;
-        RegionTilemap.RevealedTiles.Clear();
-    }
-
-    /// <summary>Called from hub when any player moves on the region map.</summary>
-    /// <param name="characterId">The character who moved.</param>
-    /// <param name="tileX">New tile column.</param>
-    /// <param name="tileY">New tile row.</param>
-    /// <param name="direction">Cardinal facing direction.</param>
-    public void OnRegionPlayerMoved(Guid characterId, int tileX, int tileY, string direction)
-    {
-        if (RegionTilemap is null) return;
-        RegionTilemap.UpsertEntity(characterId, "player", "player", tileX, tileY, direction);
-
-        if (characterId == _characterId)
+        if (!payload.Success || payload.Map is null)
         {
-            RegionTilemap.CenterCameraOn(tileX, tileY);
-            RegionTilemap.RevealAround(tileX, tileY);
-        }
-    }
-
-    /// <summary>Called from hub when the character steps onto a zone-entry tile on the region map.</summary>
-    /// <param name="entry">The zone-entry object at the destination tile.</param>
-    public void OnZoneEntryTriggered(Veldrath.Contracts.Tilemap.ZoneObjectDto entry)
-    {
-        PendingZoneEntry  = entry;
-        PendingRegionExit = null;
-        AppendLog($"Zone entry detected: {entry.DisplayName} (level {entry.MinLevel}\u2013{entry.MaxLevel}).");
-    }
-
-    /// <summary>Called from hub when the character steps onto a region-exit tile on the region map.</summary>
-    /// <param name="exit">The region-exit object at the destination tile.</param>
-    public void OnRegionExitTriggered(Veldrath.Contracts.Tilemap.RegionExitDto exit)
-    {
-        PendingRegionExit = exit;
-        PendingZoneEntry  = null;
-        AppendLog($"Region border reached: exit to '{exit.TargetRegionId}'.");
-    }
-
-    /// <summary>Called from hub when the character successfully exits a zone and returns to the region map.</summary>
-    /// <param name="regionId">The region the character returned to.</param>
-    /// <param name="tileX">Spawn tile column.</param>
-    /// <param name="tileY">Spawn tile row.</param>
-    public void OnZoneExited(string regionId, int tileX, int tileY)
-    {
-        ZoneViewMode   = "Region";
-        _currentZoneId = string.Empty;
-        PendingZoneEntry  = null;
-        PendingRegionExit = null;
-
-        if (RegionTilemap is not null && _characterId.HasValue)
-        {
-            RegionTilemap.UpsertEntity(_characterId.Value, "player", "player", tileX, tileY, "S");
-            RegionTilemap.CenterCameraOn(tileX, tileY);
-            RegionTilemap.RevealAround(tileX, tileY);
+            if (!string.IsNullOrWhiteSpace(payload.ErrorMessage))
+                AppendLog($"Map load failed: {payload.ErrorMessage}");
+            return;
         }
 
-        AppendLog($"Returned to region map at ({tileX},{tileY}).");
+        CurrentMap = payload.Map;
+        CurrentNodeId = payload.CurrentNodeId ?? payload.Map.EntryNodeId;
+        RebuildMapNodes();
     }
 
-    /// <summary>Called from hub when the character successfully crosses to a different region.</summary>
-    /// <param name="newRegionId">The region the character has entered.</param>
-    /// <param name="tileX">Spawn tile column on the new region map.</param>
-    /// <param name="tileY">Spawn tile row on the new region map.</param>
-    public void OnRegionChanged(string newRegionId, int tileX, int tileY)
+    /// <summary>Applies a node-travel result received from the server.</summary>
+    /// <param name="payload">The node-traveled payload from the hub event.</param>
+    public void ApplyNodeTraveled(NodeTraveledPayload payload)
     {
-        _regionId         = newRegionId;
-        PendingRegionExit = null;
-        PendingZoneEntry  = null;
-
-        if (RegionTilemap is not null && _characterId.HasValue)
+        if (!payload.Success)
         {
-            RegionTilemap.UpsertEntity(_characterId.Value, "player", "player", tileX, tileY, "S");
-            RegionTilemap.CenterCameraOn(tileX, tileY);
-            RegionTilemap.RevealAround(tileX, tileY);
+            if (!string.IsNullOrWhiteSpace(payload.ErrorMessage))
+                AppendLog($"Travel failed: {payload.ErrorMessage}");
+            return;
         }
 
-        AppendLog($"Crossed into region '{newRegionId}' at ({tileX},{tileY}).");
+        CurrentNodeId = payload.NodeId ?? CurrentNodeId;
+        if (!string.IsNullOrWhiteSpace(payload.Message))
+            AppendLog(payload.Message);
+
+        RebuildMapNodes();
     }
 
-    // ── Zone tilemap hub handlers ─────────────────────────────────────────────
+    private void RebuildMapNodes()
+    {
+        MapNodes.Clear();
+        if (CurrentMap is null)
+        {
+            SelectedMapNode = null;
+            return;
+        }
+
+        foreach (var node in CurrentMap.Nodes.OrderBy(n => n.SortOrder))
+        {
+            MapNodes.Add(new MapNodeItemViewModel(
+                node.Id,
+                node.DisplayName,
+                node.NodeType,
+                string.Equals(node.Id, CurrentNodeId, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        SelectedMapNode = MapNodes.FirstOrDefault(n => n.IsCurrent) ?? MapNodes.FirstOrDefault();
+    }
+
+    // ── Zone presence hub handlers ────────────────────────────────────────────
 
     /// <summary>Called from hub when another player enters the zone.</summary>
     public void OnPlayerEntered(string playerName)
@@ -1277,78 +1197,6 @@ public class GameViewModel : ViewModelBase
         if (existing is not null)
             OnlinePlayers.Remove(existing);
         AppendLog($"{playerName} left the zone.");
-    }
-
-    // ── Tilemap hub handlers ─────────────────────────────────────────────────
-
-    /// <summary>Called from hub when a <c>ZoneTileMap</c> message arrives with the zone's full tilemap.</summary>
-    public void OnZoneTileMap(Veldrath.Contracts.Tilemap.TileMapDto tileMap)
-    {
-        if (Tilemap is null) return;
-        Tilemap.TileMapData = tileMap;
-        Tilemap.RevealedTiles.Clear();
-    }
-
-    /// <summary>Called from hub when a character (self or other player) moves on the tilemap.</summary>
-    public void OnCharacterMoved(Guid characterId, int tileX, int tileY, string direction)
-    {
-        if (Tilemap is null) return;
-        Tilemap.UpsertEntity(characterId, "player", "player", tileX, tileY, direction);
-
-        // If this is our own character, re-center the camera
-        if (characterId == _characterId)
-        {
-            Tilemap.CenterCameraOn(tileX, tileY);
-            Tilemap.RevealAround(tileX, tileY);
-        }
-    }
-
-    /// <summary>Called from hub when tiles are revealed from fog-of-war for this character.</summary>
-    public void OnFogRevealed(IEnumerable<string> tileKeys)
-    {
-        if (Tilemap is null) return;
-        foreach (var key in tileKeys)
-            Tilemap.RevealedTiles.Add(key);
-    }
-
-    /// <summary>Called from hub when the character steps on an exit tile and triggers a zone transition.</summary>
-    public async void OnTileExitTriggered(string toZoneId)
-    {
-        if (string.IsNullOrEmpty(toZoneId))
-        {
-            // Empty toZoneId means "exit to region map" — same as ExitZoneCommand.
-            await DoExitZoneAsync();
-            return;
-        }
-        AppendLog($"Traveling to {toZoneId}...");
-        try { await DoTravelToZoneAsync(toZoneId); }
-        catch (Exception ex) { AppendLog($"Zone transition failed: {ex.Message}"); }
-    }
-
-    /// <summary>Called from hub when an enemy moves one tile on the map.</summary>
-    public void OnEnemyMoved(Guid entityId, string spriteKey, int tileX, int tileY, string direction)
-    {
-        Tilemap?.UpsertEntity(entityId, "enemy", spriteKey, tileX, tileY, direction);
-    }
-
-    /// <summary>Called from hub when the zone's initial entity snapshot is received (e.g. on zone entry).</summary>
-    public void OnZoneEntitiesSnapshot(IReadOnlyList<Veldrath.Contracts.Tilemap.TileEntityDto> entities)
-    {
-        if (Tilemap is null) return;
-        foreach (var e in entities)
-            Tilemap.UpsertEntity(e.EntityId, e.EntityType, e.SpriteKey, e.TileX, e.TileY, e.Direction);
-
-        // If our own character is present in the snapshot, center the camera immediately
-        // so the player sees their position without waiting for the first CharacterMoved.
-        if (_characterId.HasValue)
-        {
-            var self = entities.FirstOrDefault(e => e.EntityId == _characterId.Value);
-            if (self is not null)
-            {
-                Tilemap.CenterCameraOn(self.TileX, self.TileY);
-                Tilemap.RevealAround(self.TileX, self.TileY);
-            }
-        }
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -1484,30 +1332,6 @@ public class GameViewModel : ViewModelBase
         var msg = $"You have been muted {display}. Reason: {reason ?? "No reason given."}";
         foreach (var tab in ChatTabs)
             tab.AddMessage(new ChatMessageViewModel("System", "System", msg, DateTimeOffset.UtcNow, false));
-    }
-
-    /// <summary>Called from hub when an NPC dialogue response is received.</summary>
-    /// <param name="npcName">The display name of the NPC that responded.</param>
-    /// <param name="dialogueText">The NPC's dialogue text.</param>
-    public void OnNpcDialogueReceived(string npcName, string dialogueText)
-    {
-        AppendLog($"{npcName} says: {dialogueText}");
-    }
-
-    /// <summary>Called from hub when entity inspection results are received.</summary>
-    /// <param name="entityName">The display name of the inspected entity.</param>
-    /// <param name="entityType">The type of entity: <c>"player"</c>, <c>"enemy"</c>, or <c>"npc"</c>.</param>
-    /// <param name="description">A human-readable description of the entity.</param>
-    public void OnEntityInspected(string entityName, string entityType, string description)
-    {
-        var typeIcon = entityType switch
-        {
-            "npc" => "\ud83d\udc64",
-            "enemy" => "\ud83d\udc79",
-            "player" => "\ud83e\uddd9",
-            _ => "\u2753",
-        };
-        AppendLog($"[Inspect] {typeIcon} {entityName} ({entityType}): {description}");
     }
 
     /// <summary>Called from hub when the local character has been teleported to a new zone.</summary>
@@ -1748,18 +1572,12 @@ public class GameViewModel : ViewModelBase
             }
             else
             {
-                var msg = $"Zone '{zoneId}' metadata not available from the server.";
-                AppendLog($"Warning: {msg}");
-                if (ZoneLocationPanel is not null)
-                    ZoneLocationPanel.ErrorMessage = msg;
+                AppendLog($"Warning: Zone '{zoneId}' metadata not available from the server.");
             }
         }
         catch (Exception ex)
         {
-            var msg = $"Failed to load zone metadata: {ex.Message}";
-            AppendLog($"Warning: {msg}");
-            if (ZoneLocationPanel is not null)
-                ZoneLocationPanel.ErrorMessage = msg;
+            AppendLog($"Warning: Failed to load zone metadata: {ex.Message}");
         }
 
         try
@@ -1768,10 +1586,7 @@ public class GameViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            var msg = $"Failed to load zone locations: {ex.Message}";
-            AppendLog($"Warning: {msg}");
-            if (ZoneLocationPanel is not null)
-                ZoneLocationPanel.ErrorMessage = msg;
+            AppendLog($"Warning: Failed to load zone locations: {ex.Message}");
         }
     }
 
@@ -1787,8 +1602,6 @@ public class GameViewModel : ViewModelBase
                 isCurrent: loc.Slug == CurrentZoneLocationSlug,
                 onNavigate: () => DoNavigateToLocationAsync(slug)));
         }
-        // Forward zone locations to the reactive location panel
-        ZoneLocationPanel?.SetZoneLocations(ZoneLocations);
         this.RaisePropertyChanged(nameof(CurrentZoneLocationDisplayName));
     }
 
@@ -1899,13 +1712,7 @@ public class GameViewModel : ViewModelBase
         Wisdom = args.Wisdom;
         Charisma = args.Charisma;
         if (args.CharacterId.HasValue)
-        {
             _characterId = args.CharacterId;
-            if (Tilemap is not null)
-                Tilemap.SelfEntityId = _characterId;
-            if (RegionTilemap is not null)
-                RegionTilemap.SelfEntityId = _characterId;
-        }
         ClassName = args.ClassName;
 
         LearnedAbilities.Clear();
@@ -1939,13 +1746,6 @@ public class GameViewModel : ViewModelBase
         _navigation.NavigateTo<MainMenuViewModel>();
     }
 
-    private void DoOpenMap()
-    {
-        var mapVm = new MapViewModel(_zoneService, _currentZoneId, _regionId, _currentZoneLocationSlug, _characterId);
-        mapVm.CloseCommand.Subscribe(_ => _navigation.NavigateTo(this));
-        _navigation.NavigateTo(mapVm);
-    }
-
     private async Task DoRestAtLocationAsync()
     {
         try
@@ -1958,71 +1758,32 @@ public class GameViewModel : ViewModelBase
         }
     }
 
-    private async Task DoGetRegionMapAsync()
+    private async Task DoRefreshMapAsync()
     {
         try
         {
-            await _connection.SendCommandAsync("GetRegionMap");
+            await _connection.SendCommandAsync("GetMapGraph");
         }
         catch (Exception ex)
         {
-            AppendLog($"Region map load failed: {ex.Message}");
+            AppendLog($"Map load failed: {ex.Message}");
         }
     }
 
-    private async Task DoMoveOnRegionAsync(int toX, int toY, string direction)
+    private async Task DoTravelToSelectedNodeAsync()
     {
-        try
-        {
-            await _connection.SendCommandAsync<object>(
-                "MoveOnRegion",
-                new { ToX = toX, ToY = toY, Direction = direction });
-        }
-        catch (Exception ex)
-        {
-            AppendLog($"Region move failed: {ex.Message}");
-        }
-    }
+        if (CurrentMap is null || SelectedMapNode is null)
+            return;
 
-    private async Task DoExitZoneAsync()
-    {
-        try
-        {
-            await _connection.SendCommandAsync("ExitZone");
-        }
-        catch (Exception ex)
-        {
-            AppendLog($"Zone exit failed: {ex.Message}");
-        }
-    }
-
-    private async Task DoConfirmZoneEntryAsync()
-    {
-        if (PendingZoneEntry is null) return;
-        var zoneId = PendingZoneEntry.ZoneSlug;
-        PendingZoneEntry = null;
-        await DoTravelToZoneAsync(zoneId);
-    }
-
-    private async Task DoConfirmRegionCrossAsync()
-    {
-        if (PendingRegionExit is null) return;
-        var targetRegionId = PendingRegionExit.TargetRegionId;
-        PendingRegionExit = null;
-        await DoChangeRegionAsync(targetRegionId);
-    }
-
-    private async Task DoChangeRegionAsync(string targetRegionId)
-    {
         try
         {
             await _connection.SendCommandAsync<object>(
-                "ChangeRegion",
-                new { TargetRegionId = targetRegionId });
+                "TravelToNode",
+                new TravelToNodeHubRequest(CurrentMap.Id, SelectedMapNode.NodeId));
         }
         catch (Exception ex)
         {
-            AppendLog($"Region change failed: {ex.Message}");
+            AppendLog($"Travel failed: {ex.Message}");
         }
     }
 
@@ -2361,32 +2122,6 @@ public class GameViewModel : ViewModelBase
         catch (Exception ex)
         {
             AppendLog($"Engage failed: {ex.Message}");
-        }
-    }
-
-    private async Task DoTalkToNpcAsync(Guid entityId)
-    {
-        try
-        {
-            await _connection.SendCommandAsync<object>("TalkToNpc",
-                new { TargetEntityId = entityId });
-        }
-        catch (Exception ex)
-        {
-            AppendLog($"Talk failed: {ex.Message}");
-        }
-    }
-
-    private async Task DoInspectEntityAsync(Guid entityId)
-    {
-        try
-        {
-            await _connection.SendCommandAsync<object>("InspectEntity",
-                new { TargetEntityId = entityId });
-        }
-        catch (Exception ex)
-        {
-            AppendLog($"Inspect failed: {ex.Message}");
         }
     }
 

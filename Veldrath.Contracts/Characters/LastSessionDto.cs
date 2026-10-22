@@ -15,12 +15,12 @@ namespace Veldrath.Contracts.Characters;
 /// The region ID derived from the character's last zone, or <see langword="null"/>
 /// if the zone could not be resolved.
 /// </param>
-/// <param name="TileX">Last known tile X position.</param>
-/// <param name="TileY">Last known tile Y position.</param>
+/// <param name="CurrentMapId">Stable identifier of the map the character was last on, or <see langword="null"/>.</param>
+/// <param name="CurrentNodeId">Stable identifier of the node the character occupied, or <see langword="null"/>.</param>
 public sealed record LastSessionDto(
     Guid CharacterId,
     string CharacterName,
     string? ZoneId,
     string? RegionId,
-    int TileX,
-    int TileY);
+    string? CurrentMapId = null,
+    string? CurrentNodeId = null);
