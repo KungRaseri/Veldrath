@@ -498,6 +498,29 @@ flowchart TB
 - **Tests**: full suite **4,725 passing**, 0 failures; no `Tilemap`, `TiledMap`, `.tmx`,
   or tile-state references remain outside historical migrations and docs.
 
+### Completed — Phase 8: RealmForge map graph editor + JSON authoring (2026-10-22)
+
+- **JSON format**: `RealmEngine.Data/Authoring/MapGraphJsonSerializer.cs` defines
+  `MapGraphFile(formatVersion: 1, exportedAt, maps)`. Export uses camelCase, indented
+  output, string enums, and deterministic node/edge ordering. Import rejects empty or
+  malformed JSON, unsupported format versions, and duplicate map ids. 9 tests.
+- **Editor service**: `RealmForge/Services/MapGraphEditorService.cs` — load one/all maps,
+  save with explicit node/edge synchronization (stale rows deleted), delete, structural
+  `MapGraphValidator` checks, JSON export/import for strings and files with an overwrite
+  toggle, and graceful handling when the content database is not configured.
+- **Editor UI**: `MapGraphEditorViewModel`, `MapNodeRowViewModel`, `MapEdgeRowViewModel`,
+  and `MapGraphEditorView.axaml` — map picker, map metadata, node/edge lists with detail
+  forms (type, direction, targets, unlock data, layout), add/remove, validate, save,
+  delete, and Import/Export JSON file pickers. Wired into `MainWindowViewModel` through
+  `OpenMapGraphEditorCommand` and a **Maps** toolbar button; `MapGraphEditorService` is
+  registered in `App.axaml.cs`.
+- **Tests**: 19 new RealmForge tests (9 service, 10 view-model) covering persistence,
+  child synchronization, version increments, delete, JSON round-trips, overwrite rules,
+  id generation, edge cleanup, and validation summaries.
+- **Verification**: `Realm.Full.slnx` builds with 0 warnings / 0 errors; full suite
+  **4,753 passing** across 13 projects; RealmForge launches and stays up with the content
+  database offline (expected connection error is handled).
+
 ### Remaining
 
-- Phase 9 (optional): RealmForge map graph editor and JSON import/export tooling.
+- None — the text dashboard and unified map graph work is complete.

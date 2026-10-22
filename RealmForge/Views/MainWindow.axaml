@@ -33,6 +33,11 @@
                 <Panel Grid.Column="1" />
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+                    <Button Content="Maps"
+                            Command="{Binding OpenMapGraphEditorCommand}"
+                            Background="Transparent" Foreground="{DynamicResource GameTextSecondaryBrush}"
+                            Padding="8,4" CornerRadius="4"
+                            ToolTip.Tip="Edit map graphs and import/export JSON" />
                     <Button Content="↺"
                             Command="{Binding RefreshTreeCommand}"
                             Background="Transparent" Foreground="{DynamicResource GameTextSecondaryBrush}"
@@ -227,6 +232,9 @@
                     </DataTemplate>
                     <DataTemplate DataType="vm:NewEntityViewModel">
                         <views:NewEntityView />
+                    </DataTemplate>
+                    <DataTemplate DataType="vm:MapGraphEditorViewModel">
+                        <views:MapGraphEditorView />
                     </DataTemplate>
                 </ContentControl.DataTemplates>
             </ContentControl>

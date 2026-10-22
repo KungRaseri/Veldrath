@@ -1,0 +1,396 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RealmForge.ViewModels"
+             xmlns:shared="using:RealmEngine.Shared.Models"
+             x:Class="RealmForge.Views.MapGraphEditorView">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- ── Header ─────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Background="{DynamicResource GameBackground1Brush}" Padding="12,8"
+                BorderThickness="0,0,0,1" BorderBrush="{DynamicResource GameBorderBrush}">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Spacing="2">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="{Binding Title}"
+                                   FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource GameTextPrimaryBrush}" />
+                        <Border Background="{DynamicResource GameWarningMutedBrush}" CornerRadius="4" Padding="8,4"
+                                IsVisible="{Binding IsDirty}">
+                            <TextBlock Text="Unsaved changes" Foreground="{DynamicResource GameWarningBrush}" FontSize="11" />
+                        </Border>
+                        <Border Background="{DynamicResource GameSuccessMutedBrush}" CornerRadius="4" Padding="8,4"
+                                IsVisible="{Binding IsNew}">
+                            <TextBlock Text="New" Foreground="{DynamicResource GameSuccessBrush}" FontSize="11" />
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Text="{Binding StatusMessage}"
+                               Foreground="{DynamicResource GameTextTertiaryBrush}" FontSize="11" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                    <Button Content="Refresh" Command="{Binding RefreshCommand}" Classes="ghost"
+                            Padding="12,6" CornerRadius="4" />
+                    <Button Content="New Map" Command="{Binding NewMapCommand}" Classes="ghost"
+                            Padding="12,6" CornerRadius="4" />
+                    <Button Content="Import JSON…" Click="OnImportClick" Classes="ghost"
+                            Padding="12,6" CornerRadius="4" />
+                    <Button Content="Export JSON…" Click="OnExportClick" Classes="ghost"
+                            Padding="12,6" CornerRadius="4" />
+                    <Button Content="Validate" Command="{Binding ValidateCommand}" Classes="ghost"
+                            Padding="12,6" CornerRadius="4" />
+                    <Button Content="Delete" Command="{Binding DeleteCommand}" Classes="ghost"
+                            Padding="12,6" CornerRadius="4" />
+                    <Button Content="Save" Command="{Binding SaveCommand}" Classes="accent"
+                            Padding="20,6" CornerRadius="4" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ── Map selection + metadata ──────────────────────────────────── -->
+        <Border Grid.Row="1" Background="{DynamicResource GameBackground1Brush}" Padding="16,12"
+                BorderThickness="0,0,0,1" BorderBrush="{DynamicResource GameBorderSubtleBrush}">
+            <StackPanel Spacing="10">
+
+                <Grid ColumnDefinitions="Auto,280,Auto,130,Auto,*,Auto,160">
+                    <TextBlock Grid.Column="0" Text="Map"
+                               Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="12"
+                               VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <ComboBox Grid.Column="1" ItemsSource="{Binding Maps}" SelectedItem="{Binding SelectedMap}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate DataType="shared:MapSummary">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="{Binding Name}" FontSize="12" />
+                                    <TextBlock Text="{Binding MapType}" FontSize="11"
+                                               Foreground="{DynamicResource GameTextTertiaryBrush}" />
+                                    <TextBlock Text="{Binding Id}" FontSize="11"
+                                               FontFamily="{DynamicResource GameFontMono}"
+                                               Foreground="{DynamicResource GameTextTertiaryBrush}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <TextBlock Grid.Column="2" Text="Type"
+                               Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="12"
+                               VerticalAlignment="Center" Margin="16,0,8,0" />
+                    <ComboBox Grid.Column="3" ItemsSource="{Binding MapTypes}" SelectedItem="{Binding SelectedMapType}" />
+
+                    <TextBlock Grid.Column="4" Text="Owner Slug"
+                               Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="12"
+                               VerticalAlignment="Center" Margin="16,0,8,0" />
+                    <TextBox Grid.Column="5" Text="{Binding OwnerId}"
+                             Watermark="region-or-zone-slug" FontFamily="{DynamicResource GameFontMono}" />
+
+                    <TextBlock Grid.Column="6" Text="Entry Node"
+                               Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="12"
+                               VerticalAlignment="Center" Margin="16,0,8,0" />
+                    <TextBox Grid.Column="7" Text="{Binding EntryNodeId}"
+                             Watermark="node id" FontFamily="{DynamicResource GameFontMono}" />
+                </Grid>
+
+                <Grid ColumnDefinitions="Auto,*,Auto,200">
+                    <TextBlock Grid.Column="0" Text="Map Id"
+                               Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="12"
+                               VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <TextBox Grid.Column="1" Text="{Binding MapId}" IsReadOnly="{Binding !IsNew}"
+                             Watermark="zone-or-region-map-id" FontFamily="{DynamicResource GameFontMono}" />
+
+                    <TextBlock Grid.Column="2" Text="Name"
+                               Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="12"
+                               VerticalAlignment="Center" Margin="16,0,8,0" />
+                    <TextBox Grid.Column="3" Text="{Binding Name}" Watermark="Human-readable map name" />
+                </Grid>
+
+                <Grid ColumnDefinitions="Auto,*">
+                    <TextBlock Grid.Column="0" Text="Description"
+                               Foreground="{DynamicResource GameTextSecondaryBrush}" FontSize="12"
+                               VerticalAlignment="Top" Margin="0,6,8,0" />
+                    <TextBox Grid.Column="1" Text="{Binding Description}"
+                             AcceptsReturn="True" TextWrapping="Wrap" MinHeight="48"
+                             Watermark="Map description shown in the game UI" />
+                </Grid>
+
+            </StackPanel>
+        </Border>
+
+        <!-- ── Lists + details ───────────────────────────────────────────── -->
+        <Grid Grid.Row="2" ColumnDefinitions="*,360" Margin="12">
+
+            <!-- Nodes and edges -->
+            <Grid Grid.Column="0" ColumnDefinitions="*,*" Margin="0,0,8,0">
+
+                <Border Grid.Column="0" Background="{DynamicResource GameBackground1Brush}"
+                        CornerRadius="6" Padding="12" Margin="0,0,6,0">
+                    <Grid RowDefinitions="Auto,*,Auto">
+                        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+                            <TextBlock Grid.Column="0" Text="Nodes"
+                                       FontSize="12" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource GameTextSecondaryBrush}" LetterSpacing="1" />
+                            <TextBlock Grid.Column="1" Text="{Binding NodeCountText}"
+                                       FontSize="11" Foreground="{DynamicResource GameTextTertiaryBrush}" />
+                        </Grid>
+
+                        <ListBox Grid.Row="1"
+                                 ItemsSource="{Binding Nodes}"
+                                 SelectedItem="{Binding SelectedNode}"
+                                 Background="Transparent" BorderThickness="0">
+                            <ListBox.Styles>
+                                <Style Selector="ListBoxItem">
+                                    <Setter Property="Padding" Value="6,4" />
+                                    <Setter Property="CornerRadius" Value="4" />
+                                </Style>
+                                <Style Selector="ListBoxItem:selected">
+                                    <Setter Property="Background" Value="{DynamicResource GameInteractiveSelectedBrush}" />
+                                </Style>
+                            </ListBox.Styles>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="vm:MapNodeRowViewModel">
+                                    <Grid ColumnDefinitions="140,*,100">
+                                        <TextBlock Grid.Column="0" Text="{Binding Id}"
+                                                   FontFamily="{DynamicResource GameFontMono}" FontSize="11"
+                                                   Foreground="{DynamicResource GameTextTertiaryBrush}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding DisplayName}" FontSize="12"
+                                                   Foreground="{DynamicResource GameTextPrimaryBrush}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Grid.Column="2" Text="{Binding NodeType}" FontSize="11"
+                                                   Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
+                            <Button Content="+ Add Node" Command="{Binding AddNodeCommand}" Classes="ghost"
+                                    Padding="10,4" CornerRadius="4" FontSize="11" />
+                            <Button Content="Remove" Command="{Binding RemoveNodeCommand}" Classes="ghost"
+                                    Padding="10,4" CornerRadius="4" FontSize="11" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="1" Background="{DynamicResource GameBackground1Brush}"
+                        CornerRadius="6" Padding="12" Margin="6,0,0,0">
+                    <Grid RowDefinitions="Auto,*,Auto">
+                        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+                            <TextBlock Grid.Column="0" Text="Edges"
+                                       FontSize="12" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource GameTextSecondaryBrush}" LetterSpacing="1" />
+                            <TextBlock Grid.Column="1" Text="{Binding EdgeCountText}"
+                                       FontSize="11" Foreground="{DynamicResource GameTextTertiaryBrush}" />
+                        </Grid>
+
+                        <ListBox Grid.Row="1"
+                                 ItemsSource="{Binding Edges}"
+                                 SelectedItem="{Binding SelectedEdge}"
+                                 Background="Transparent" BorderThickness="0">
+                            <ListBox.Styles>
+                                <Style Selector="ListBoxItem">
+                                    <Setter Property="Padding" Value="6,4" />
+                                    <Setter Property="CornerRadius" Value="4" />
+                                </Style>
+                                <Style Selector="ListBoxItem:selected">
+                                    <Setter Property="Background" Value="{DynamicResource GameInteractiveSelectedBrush}" />
+                                </Style>
+                            </ListBox.Styles>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="vm:MapEdgeRowViewModel">
+                                    <Grid ColumnDefinitions="*,90">
+                                        <TextBlock Grid.Column="0" Text="{Binding DisplayLabel}"
+                                                   FontFamily="{DynamicResource GameFontMono}" FontSize="11"
+                                                   Foreground="{DynamicResource GameTextPrimaryBrush}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Grid.Column="1" Text="{Binding EdgeType}" FontSize="11"
+                                                   Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
+                            <Button Content="+ Add Edge" Command="{Binding AddEdgeCommand}" Classes="ghost"
+                                    Padding="10,4" CornerRadius="4" FontSize="11" />
+                            <Button Content="Remove" Command="{Binding RemoveEdgeCommand}" Classes="ghost"
+                                    Padding="10,4" CornerRadius="4" FontSize="11" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+            </Grid>
+
+            <!-- Detail pane -->
+            <Border Grid.Column="1" Background="{DynamicResource GameBackground1Brush}"
+                    CornerRadius="6" Padding="12">
+                <ScrollViewer>
+                    <StackPanel Spacing="14">
+
+                        <TextBlock Text="Select a node or edge to edit its details."
+                                   FontSize="12" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource GameTextTertiaryBrush}"
+                                   IsVisible="{Binding !HasDetailSelection}" />
+
+                        <!-- Node details -->
+                        <StackPanel Spacing="8"
+                                    IsVisible="{Binding SelectedNode, Converter={x:Static ObjectConverters.IsNotNull}}">
+                            <TextBlock Text="Node" FontSize="12" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource GameTextSecondaryBrush}" LetterSpacing="1" />
+
+                            <Grid ColumnDefinitions="90,*">
+                                <TextBlock Text="Id" VerticalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                <TextBox Grid.Column="1" Text="{Binding SelectedNode.Id}"
+                                         FontFamily="{DynamicResource GameFontMono}" />
+                            </Grid>
+                            <Grid ColumnDefinitions="90,*">
+                                <TextBlock Text="Type" VerticalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                <ComboBox Grid.Column="1"
+                                          ItemsSource="{Binding SelectedNode.NodeTypes}"
+                                          SelectedItem="{Binding SelectedNode.NodeType}" />
+                            </Grid>
+                            <Grid ColumnDefinitions="90,*">
+                                <TextBlock Text="Display" VerticalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                <TextBox Grid.Column="1" Text="{Binding SelectedNode.DisplayName}" />
+                            </Grid>
+                            <Grid ColumnDefinitions="90,*">
+                                <TextBlock Text="Ref Slug" VerticalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                <TextBox Grid.Column="1" Text="{Binding SelectedNode.RefId}"
+                                         FontFamily="{DynamicResource GameFontMono}" Watermark="zone/location/region slug" />
+                            </Grid>
+                            <Grid ColumnDefinitions="90,*">
+                                <TextBlock Text="Description" VerticalAlignment="Top" Margin="0,6,0,0" FontSize="12"
+                                           Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                <TextBox Grid.Column="1" Text="{Binding SelectedNode.Description}"
+                                         AcceptsReturn="True" TextWrapping="Wrap" MinHeight="52" />
+                            </Grid>
+                            <Grid ColumnDefinitions="90,*,90,*">
+                                <TextBlock Text="Layout X" VerticalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                <NumericUpDown Grid.Column="1" Value="{Binding SelectedNode.LayoutX}"
+                                               Minimum="-100" Maximum="100" Increment="1" Padding="4" />
+                                <TextBlock Grid.Column="2" Text="Layout Y" VerticalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource GameTextSecondaryBrush}" Margin="8,0,0,0" />
+                                <NumericUpDown Grid.Column="3" Value="{Binding SelectedNode.LayoutY}"
+                                               Minimum="-100" Maximum="100" Increment="1" Padding="4" />
+                            </Grid>
+                            <Grid ColumnDefinitions="90,*,90,*">
+                                <TextBlock Text="Sort Order" VerticalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                <NumericUpDown Grid.Column="1" Value="{Binding SelectedNode.SortOrder}"
+                                               Minimum="0" Maximum="10000" Increment="1" Padding="4" />
+                                <TextBlock Grid.Column="2" Text="Discover" VerticalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource GameTextSecondaryBrush}" Margin="8,0,0,0" />
+                                <NumericUpDown Grid.Column="3" Value="{Binding SelectedNode.DiscoverThreshold}"
+                                               Minimum="0" Maximum="10000" Increment="1" Padding="4" />
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Spacing="14">
+                                <CheckBox IsChecked="{Binding SelectedNode.IsEntryPoint}" Content="Entry point"
+                                          FontSize="12" Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                <CheckBox IsChecked="{Binding SelectedNode.IsExitPoint}" Content="Exit point"
+                                          FontSize="12" Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                <CheckBox IsChecked="{Binding SelectedNode.IsHidden}" Content="Hidden"
+                                          FontSize="12" Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                            </StackPanel>
+                            <Grid ColumnDefinitions="90,*">
+                                <TextBlock Text="Target Map" VerticalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                <TextBox Grid.Column="1" Text="{Binding SelectedNode.TargetMapId}"
+                                         FontFamily="{DynamicResource GameFontMono}" Watermark="destination map id" />
+                            </Grid>
+                            <Grid ColumnDefinitions="90,*">
+                                <TextBlock Text="Target Node" VerticalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                <TextBox Grid.Column="1" Text="{Binding SelectedNode.TargetNodeId}"
+                                         FontFamily="{DynamicResource GameFontMono}" Watermark="destination node id" />
+                            </Grid>
+                            <Grid ColumnDefinitions="90,*">
+                                <TextBlock Text="Icon Key" VerticalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                <TextBox Grid.Column="1" Text="{Binding SelectedNode.IconKey}"
+                                         Watermark="Material icon key" />
+                            </Grid>
+                            <Grid ColumnDefinitions="90,*,90,*">
+                                <TextBlock Text="Unlock Type" VerticalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                <TextBox Grid.Column="1" Text="{Binding SelectedNode.UnlockType}"
+                                         Watermark="quest/item/achievement" />
+                                <TextBlock Grid.Column="2" Text="Unlock Key" VerticalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource GameTextSecondaryBrush}" Margin="8,0,0,0" />
+                                <TextBox Grid.Column="3" Text="{Binding SelectedNode.UnlockKey}" />
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Edge details -->
+                        <StackPanel Spacing="8"
+                                    IsVisible="{Binding SelectedEdge, Converter={x:Static ObjectConverters.IsNotNull}}">
+                            <TextBlock Text="Edge" FontSize="12" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource GameTextSecondaryBrush}" LetterSpacing="1" />
+                            <Grid ColumnDefinitions="90,*">
+                                <TextBlock Text="From" VerticalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                <TextBox Grid.Column="1" Text="{Binding SelectedEdge.FromNodeId}"
+                                         FontFamily="{DynamicResource GameFontMono}" />
+                            </Grid>
+                            <Grid ColumnDefinitions="90,*">
+                                <TextBlock Text="To" VerticalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                <TextBox Grid.Column="1" Text="{Binding SelectedEdge.ToNodeId}"
+                                         FontFamily="{DynamicResource GameFontMono}" />
+                            </Grid>
+                            <Grid ColumnDefinitions="90,*">
+                                <TextBlock Text="Direction" VerticalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                <ComboBox Grid.Column="1"
+                                          ItemsSource="{Binding SelectedEdge.Directions}"
+                                          SelectedItem="{Binding SelectedEdge.Direction}" />
+                            </Grid>
+                            <Grid ColumnDefinitions="90,*">
+                                <TextBlock Text="Edge Type" VerticalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                <ComboBox Grid.Column="1"
+                                          ItemsSource="{Binding SelectedEdge.EdgeTypes}"
+                                          SelectedItem="{Binding SelectedEdge.EdgeType}" />
+                            </Grid>
+                            <Grid ColumnDefinitions="90,*">
+                                <TextBlock Text="Label" VerticalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                <TextBox Grid.Column="1" Text="{Binding SelectedEdge.Label}"
+                                         Watermark="East Road" />
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Spacing="14">
+                                <CheckBox IsChecked="{Binding SelectedEdge.IsTraversable}" Content="Traversable"
+                                          FontSize="12" Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                <CheckBox IsChecked="{Binding SelectedEdge.IsHidden}" Content="Hidden"
+                                          FontSize="12" Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Validation -->
+                        <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource GameBorderSubtleBrush}"
+                                Padding="0,10,0,0">
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="Validation" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource GameTextSecondaryBrush}" LetterSpacing="1" />
+                                <TextBlock Text="{Binding ValidationSummary}" FontSize="11"
+                                           Foreground="{DynamicResource GameTextTertiaryBrush}" TextWrapping="Wrap" />
+                                <ListBox ItemsSource="{Binding ValidationIssues}" MaxHeight="180"
+                                         Background="Transparent" BorderThickness="0">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" FontSize="11" TextWrapping="Wrap"
+                                                       Foreground="{DynamicResource GameTextSecondaryBrush}" />
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </StackPanel>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+        </Grid>
+    </Grid>
+</UserControl>

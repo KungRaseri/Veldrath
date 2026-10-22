@@ -12,6 +12,7 @@ public class MainWindowViewModel : ReactiveObject
 {
     private readonly ContentEditorService _contentEditorService;
     private readonly ContentTreeService _contentTreeService;
+    private readonly MapGraphEditorService _mapGraphEditorService;
     private object? _currentPage;
     private bool _isPaneOpen = true;
     private bool _isDarkMode = true;
@@ -26,10 +27,12 @@ public class MainWindowViewModel : ReactiveObject
     public MainWindowViewModel(
         EditorSettingsService settingsService,
         ContentEditorService contentEditorService,
-        ContentTreeService contentTreeService)
+        ContentTreeService contentTreeService,
+        MapGraphEditorService mapGraphEditorService)
     {
         _contentEditorService = contentEditorService;
         _contentTreeService = contentTreeService;
+        _mapGraphEditorService = mapGraphEditorService;
 
         const string iconBase = "avares://RealmForge/Resources/Icons/domains";
         ActivitySections =
@@ -46,6 +49,7 @@ public class MainWindowViewModel : ReactiveObject
         ToggleThemeCommand  = ReactiveCommand.Create(() => { IsDarkMode = !IsDarkMode; });
         RefreshTreeCommand  = ReactiveCommand.CreateFromTask(LoadTreeAsync);
         ShowAboutCommand    = ReactiveCommand.CreateFromTask(ShowAboutAsync);
+        OpenMapGraphEditorCommand = ReactiveCommand.Create(OpenMapGraphEditor);
         SelectActivityCommand = ReactiveCommand.Create<string>(key =>
         {
             if (key == _selectedActivityKey)
@@ -163,6 +167,7 @@ public class MainWindowViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> RefreshTreeCommand { get; }
     public ReactiveCommand<string, Unit> SelectActivityCommand { get; }
     public ReactiveCommand<Unit, Unit> ShowAboutCommand { get; }
+    public ReactiveCommand<Unit, Unit> OpenMapGraphEditorCommand { get; }
     public ReactiveCommand<FileTreeNodeViewModel, Unit> OpenTypeKeyCommand { get; }
 
     public async Task LoadTreeAsync()
@@ -223,6 +228,14 @@ public class MainWindowViewModel : ReactiveObject
             foreach (var n in nodes)
                 TreeNodes.Add(n);
         SelectedDomainGroup = TreeNodes.FirstOrDefault();
+    }
+
+    private void OpenMapGraphEditor()
+    {
+        var editor = new MapGraphEditorViewModel(_mapGraphEditorService);
+        CurrentPage = editor;
+        IsPaneOpen = false;
+        _ = editor.LoadMapsAsync();
     }
 
     private async Task OpenEntityAsync(FileTreeNodeViewModel node)

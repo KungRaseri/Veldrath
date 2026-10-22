@@ -379,3 +379,15 @@ Enhanced [`ActionBar.razor`](Veldrath.GameClient.Components/Components/Shared/Ac
 - **Pure Reactive UI pivot** (Session-41): Removed all sprite/ASCII rendering (Veldrath.Client.Rendering/ + TilemapControl/RegionTilemapControl). Replaced Zone tilemap with ZoneLocationPanelView+VM (reactive list-based panel showing room description, exits, entities). Region view now handled entirely by side panel (GameRegionPanelView). Keyboard movement removed — pure point-and-click. Client-side tile description service added. See `plans/reactive-ui-pivot-plan.md`.
 - **ExternalAuthEndpointTests fixed (Session-41)**: Added `SecurityStamp` to test user creation to fix `InvalidOperationException: User security stamp cannot be null`.
 - **EnemyAiService fixed (Session-41)**: Added disposal-state guard in `StopAsync`/`Dispose` to fix `ObjectDisposedException: The CancellationTokenSource has been disposed`.
+### Map graph authoring tools (Session-47, 2026-10-22)
+
+- **JSON authoring format** — `RealmEngine.Data/Authoring/MapGraphJsonSerializer.cs` wraps
+  `MapGraphFile(FormatVersion=1, ExportedAt, Maps)`; camelCase, indented, string enums,
+  deterministic ordering. Import throws `InvalidDataException` for empty/malformed JSON,
+  unsupported versions, and duplicate map ids.
+- **RealmForge editor** — `RealmForge/Services/MapGraphEditorService.cs` syncs nodes/edges
+  against `ContentDbContext`; `MapGraphEditorViewModel`/`MapGraphEditorView` provide the
+  UI. `Map.Version` starts at 1 and increments per save.
+- **EF InMemory test gotcha** — never generate the InMemory database name inside the
+  `AddDbContext` options lambda; it executes per scope and creates a fresh database per
+  context. Capture the name once.
