@@ -14,12 +14,12 @@ namespace Veldrath.GameClient.Components.Components.Shared;
 /// </summary>
 public partial class CardinalMap
 {
-    // Compact text-map geometry: a 24px gutter between 160x64 node cards.
-    private const int CellWidth = 184;
-    private const int CellHeight = 96;
-    private const int NodeWidth = 160;
-    private const int NodeHeight = 64;
-    private const int CanvasPadding = 24;
+    // Compact text-map geometry: 12px horizontal / 16px vertical gutters around 152x60 cards.
+    private const int CellWidth = 164;
+    private const int CellHeight = 76;
+    private const int NodeWidth = 152;
+    private const int NodeHeight = 60;
+    private const int CanvasPadding = 12;
     private const int ConnectorThickness = 2;
 
     private IReadOnlyList<CardinalNodePlacement> _placements = [];

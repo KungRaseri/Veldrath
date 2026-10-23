@@ -443,12 +443,13 @@ Enhanced [`ActionBar.razor`](Veldrath.GameClient.Components/Components/Shared/Ac
 
 ### Cardinal map layout (Session-55, 2026-10-23)
 
-- **Post-tile layout** — `CardinalMap` uses 160×64 node cards in 184×96 cells with 24px canvas
+- **Post-tile layout** — `CardinalMap` uses 152×60 node cards in 164×76 cells with 12px canvas
   padding, a bounded scroll viewport, and connector labels (`N/S/E/W/In/Out`). Do not reintroduce
   tile-sized cells, tile backgrounds, or `--vds-tile-*` tokens.
-- **Authored coordinates are compacted** — `CardinalGraphLayout` maps distinct `LayoutX`/`LayoutY`
-  values to ordered indices before reserving cells, so TMX-era gaps do not create giant canvases
-  while relative cardinal order is preserved.
+- **Authored coordinates are density-gated** — dense authored grids are kept (compacted to
+  ordered indices); sparse TMX-era layouts (e.g. 8 nodes spread across a 64×40 tile rectangle)
+  are discarded and replaced by a compact edge-driven layout seeded at the entry node. This is
+  the fix for large empty gaps between nodes.
 - **Connectors run edge-to-edge** — horizontal/vertical lines start at facing card edges, not
   centres; L-shaped routes are used only when authored positions are not cardinally aligned.
 - **Keyboard navigation follows edges** — arrow keys first look for a traversable edge in that

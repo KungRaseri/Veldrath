@@ -33,6 +33,40 @@ public class CardinalGraphLayoutTests
     }
 
     [Fact]
+    public void Compute_IgnoresSparseTileLayout()
+    {
+        // Four nodes at tile positions spread across a 60x40 area: the compact edge-driven
+        // layout must win so the text map does not become a giant empty grid.
+        var nodes = new[]
+        {
+            Node("a", layoutX: 0, layoutY: 0, sortOrder: 1),
+            Node("b", layoutX: 10, layoutY: 5, sortOrder: 2),
+            Node("c", layoutX: 40, layoutY: 20, sortOrder: 3),
+            Node("d", layoutX: 60, layoutY: 40, sortOrder: 4),
+        };
+        var edges = new[]
+        {
+            Edge("a", "b", "East"),
+            Edge("b", "c", "East"),
+            Edge("c", "d", "East"),
+        };
+
+        var placements = CardinalGraphLayout.Compute(nodes, edges);
+
+        var a = placements.Single(p => p.NodeId == "a");
+        var b = placements.Single(p => p.NodeId == "b");
+        var c = placements.Single(p => p.NodeId == "c");
+        var d = placements.Single(p => p.NodeId == "d");
+
+        Assert.Equal(0, a.X);
+        Assert.Equal(1, b.X);
+        Assert.Equal(2, c.X);
+        Assert.Equal(3, d.X);
+        Assert.All(placements, placement => Assert.Equal(0, placement.Y));
+        Assert.All(placements, placement => Assert.False(placement.IsAuthored));
+    }
+
+    [Fact]
     public void Compute_ResolvesOverlappingAuthoredPositions()
     {
         var nodes = new[]

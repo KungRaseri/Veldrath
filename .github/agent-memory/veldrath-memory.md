@@ -1246,14 +1246,15 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
 
 **Layout**
 - `CardinalMap` is now a compact text graph rather than a tile-sized canvas: node cards are
-  160×64 with 24px gutters (cells 184×96), a 24px canvas padding, and a centred canvas inside a
-  bounded (`max-height: 56vh`) bordered viewport.
+  152×60 with 12px horizontal / 16px vertical gutters (cells 164×76), a 12px canvas padding,
+  and a centred canvas inside a bounded (`max-height: 52vh`) bordered viewport.
 - Connectors now run between facing card edges instead of card centres, and each carries a
   cardinal badge (`N`/`S`/`E`/`W`/`In`/`Out`) plus a tooltip with the edge label. Blocked and
   hidden connectors get distinct styles.
-- Authored `LayoutX/LayoutY` values are compacted (distinct X/Y values mapped to ordered indices)
-  so TMX-era tile coordinates no longer create huge empty canvases; relative cardinal order is
-  preserved.
+- Authored `LayoutX/LayoutY` values are density-gated: dense layouts keep their relative grid
+  (compacted to ordered indices), while sparse TMX-era layouts (e.g. 8 nodes spread across a
+  64×40 tile rectangle) are discarded in favour of a compact edge-driven layout seeded at the
+  entry node. This removes the large empty gaps between nodes.
 - Node metadata uses compact inline badges (`Entry`/`Exit`) instead of MudChips; the current node
   uses the player-indicator gold token and a `● You are here` label.
 - Added a map legend toolbar (Current / Selected / Exit) and `MapSubtitle` counts.

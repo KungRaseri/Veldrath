@@ -32,6 +32,9 @@ public static class CardinalGraphLayout
             .ThenBy(node => node.Id, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
+        if (orderedNodes.Count == 0)
+            return [];
+
         var nodeIds = new HashSet<string>(
             orderedNodes.Select(node => node.Id),
             StringComparer.OrdinalIgnoreCase);
@@ -57,14 +60,28 @@ public static class CardinalGraphLayout
         var authoredNodes = orderedNodes
             .Where(node => node.LayoutX is not null && node.LayoutY is not null)
             .ToList();
-        var xIndex = BuildCompactIndex(authoredNodes.Select(node => node.LayoutX!.Value));
-        var yIndex = BuildCompactIndex(authoredNodes.Select(node => node.LayoutY!.Value));
 
-        foreach (var node in authoredNodes)
+        // TMX-era authored coordinates are frequently sparse: a handful of nodes spread across
+        // a 60x40 tile rectangle. Keeping those relative gaps produces a mostly empty text map.
+        // Only honour authored positions when their bounding grid is reasonably dense;
+        // otherwise fall back to a compact edge-driven layout.
+        if (authoredNodes.Count > 0 && IsDenseAuthoredLayout(authoredNodes))
         {
-            var position = Reserve(xIndex[node.LayoutX!.Value], yIndex[node.LayoutY!.Value], occupied);
-            positions[node.Id] = position;
-            authored.Add(node.Id);
+            var xIndex = BuildCompactIndex(authoredNodes.Select(node => node.LayoutX!.Value));
+            var yIndex = BuildCompactIndex(authoredNodes.Select(node => node.LayoutY!.Value));
+
+            foreach (var node in authoredNodes)
+            {
+                var position = Reserve(xIndex[node.LayoutX!.Value], yIndex[node.LayoutY!.Value], occupied);
+                positions[node.Id] = position;
+                authored.Add(node.Id);
+            }
+        }
+        else
+        {
+            // Seed the compact layout at the entry point so connected nodes radiate from arrival.
+            var root = orderedNodes.FirstOrDefault(node => node.IsEntryPoint) ?? orderedNodes[0];
+            positions[root.Id] = Reserve(0, 0, occupied);
         }
 
         var outgoing = orderedEdges
@@ -137,6 +154,14 @@ public static class CardinalGraphLayout
                     authored.Contains(node.Id));
             })
             .ToList();
+    }
+
+    private static bool IsDenseAuthoredLayout(IReadOnlyList<MapNodeDto> authoredNodes)
+    {
+        var columns = authoredNodes.Select(node => node.LayoutX!.Value).Distinct().Count();
+        var rows = authoredNodes.Select(node => node.LayoutY!.Value).Distinct().Count();
+        var cells = columns * rows;
+        return cells <= authoredNodes.Count * 2;
     }
 
     private static Dictionary<int, int> BuildCompactIndex(IEnumerable<int> values) =>

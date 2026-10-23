@@ -126,9 +126,9 @@
 .cardinal-map-viewport {
   overflow: auto;
   outline: none;
-  max-height: 56vh;
-  min-height: 240px;
-  padding: var(--vds-space-2);
+  max-height: 52vh;
+  min-height: 180px;
+  padding: 6px;
   border: 1px solid var(--vds-border);
   border-radius: var(--vds-radius-md);
   background: var(--vds-bg-0);
@@ -178,13 +178,13 @@
 .map-node-card {
   position: absolute;
   z-index: 1;
-  width: 160px;
-  height: 64px;
+  width: 152px;
+  height: 60px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 1px;
-  padding: 6px 8px;
+  gap: 0;
+  padding: 5px 7px;
   text-align: left;
   background: var(--vds-bg-2);
   border: 1px solid var(--vds-border);
@@ -221,18 +221,18 @@
 }
 
 .map-node-name {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 132px;
+  max-width: 124px;
 }
 
 .map-node-meta {
-  font-size: 0.66rem;
+  font-size: 0.62rem;
   color: var(--vds-text-muted);
-  gap: 5px !important;
+  gap: 4px !important;
 }
 
 .map-node-type {
@@ -241,14 +241,14 @@
 }
 
 .map-node-badge {
-  padding: 0 4px;
+  padding: 0 3px;
   border: 1px solid var(--vds-border-strong);
   border-radius: var(--vds-radius-sm);
-  font-size: 0.58rem;
+  font-size: 0.54rem;
   font-weight: 700;
-  line-height: 1.35;
+  line-height: 1.3;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
 }
 
 .map-node-badge-entry {
@@ -262,15 +262,15 @@
 }
 
 .map-node-current-label {
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   color: var(--vds-indicator-player);
   white-space: nowrap;
 }
 
 .map-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: var(--vds-space-3);
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: var(--vds-space-2);
   align-items: start;
 }
 
