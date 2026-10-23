@@ -267,11 +267,22 @@ public sealed class GameStateService : IGameStateService
     {
         ApplyZoneEntered(payload.Id, payload.Name);
 
+        CurrentZone = new ZoneState
+        {
+            ZoneId       = payload.Id,
+            Name         = payload.Name,
+            Description  = payload.Description,
+            Type         = payload.ZoneType,
+            HasInn       = payload.HasInn,
+            HasMerchant  = payload.HasMerchant,
+        };
+
         if (!string.IsNullOrWhiteSpace(payload.CurrentMapId))
             CurrentMapId = payload.CurrentMapId;
         if (!string.IsNullOrWhiteSpace(payload.CurrentNodeId))
             CurrentNodeId = payload.CurrentNodeId;
 
+        RaisePropertyChanged(nameof(CurrentZone));
         RaisePropertyChanged(nameof(CurrentMapId));
         RaisePropertyChanged(nameof(CurrentNodeId));
     }

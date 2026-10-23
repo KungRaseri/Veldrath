@@ -1199,3 +1199,23 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
 - New: 4 Avalonia delete-confirmation tests, 2 shield-granting tests, 2 server inventory-snapshot tests, 2 Avalonia inventory-slot tests, 1 EquipmentSelected-seeding test, 2 item-mapping tests.
 - Full suite: **4,780 passing** across 13 projects; `Realm.Full.slnx` builds with 0 warnings / 0 errors.
 - Runtime note: restart the server and rebuild the client; existing characters keep their existing blobs, so only newly created characters show the synthesized shield.
+
+---
+
+### Session-53 (2026-10-23) — Web-first pivot and RCL action correctness
+
+**Direction**
+- The browser game client (RCL hosted by `Veldrath.Web`) is now the primary experience. Desktop/Avalonia follows decisions made in the web client. See `plans/web-first-roadmap.md`.
+
+**Web action fixes**
+- `LeftSidebar` now sends the server-bound request shapes: `VisitShop { ZoneId }`, `RestAtLocation { LocationId, CostInGold }`, `NavigateToLocation { LocationSlug }`.
+- `ExitZone` (removed hub method) replaced with `LeaveZone` plus `RequestMapGraphAsync`; button relabelled "Leave Zone".
+- Removed the dead `/Game/Map` link; the cardinals map is inline on `/Game/Play`.
+- `GameFooter` no longer renders an unbound combat `ActionBar`; `GameCombat` owns Attack/Defend/Flee/Respawn bindings.
+- `ZoneEntered` now carries `HasInn`/`HasMerchant`; `GameStateService.ApplyZoneEntered` stores `ZoneState` (including `Description`/`Type`) so the web sidebar/footer render shop and rest actions.
+- `GameFooter.RestAsync` uses the same `RestAtLocation` payload.
+
+**Tests**
+- New `Veldrath.GameClient.Components.Tests/WebGameActionTests.cs` (6 tests) covering payloads, `LeaveZone` + map refresh, removed map route, and no dead footer combat buttons.
+- `GameStateServiceTests` covers zone facilities from `ZoneEntered`.
+- `Veldrath.Web.slnx` builds clean; Components tests 92 passing.

@@ -17,9 +17,7 @@
                     OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Inventory)">
             Inventory
         </MudNavLink>
-        <MudNavLink Icon="@Icons.Material.Filled.Map" Href="/Game/Map">
-            Map
-        </MudNavLink>
+        @* The text map is rendered inline on /Game/Play; there is no separate /Game/Map route. *@
         <MudNavLink Icon="@Icons.Material.Filled.CollectionsBookmark"
                     OnClick="() => OnOpenOverlay.InvokeAsync(GameOverlay.OverlayKind.Journal)">
             Journal
@@ -87,10 +85,10 @@
                 Search Area
             </MudButton>
 
-            <MudButton Variant="Variant.Outlined" FullWidth="true" OnClick="ExitZoneAsync"
+            <MudButton Variant="Variant.Outlined" FullWidth="true" OnClick="LeaveZoneAsync"
                        Disabled="@(!Hub.IsConnected || GameState.CurrentCharacterId is null)" Class="sidebar-btn"
                        StartIcon="@Icons.Material.Filled.Logout">
-                Exit Zone
+                Leave Zone
             </MudButton>
         </MudStack>
     </TextPanel>

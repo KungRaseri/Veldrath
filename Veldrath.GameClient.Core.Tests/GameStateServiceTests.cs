@@ -54,6 +54,22 @@ public sealed class GameStateServiceTests
         state.EquippedItems["OffHand"].Name.Should().Be("Wooden Shield");
     }
 
+    /// <summary>Verifies zone facilities from the ZoneEntered payload reach CurrentZone (shop/rest buttons).</summary>
+    [Fact]
+    public void ApplyZoneEntered_Sets_Facilities_From_Payload()
+    {
+        var state = new GameStateService();
+
+        state.ApplyZoneEntered(new ZoneEnteredPayload(
+            "fenwick-crossing", "Fenwick's Crossing", "A quiet town.", "town", [],
+            HasInn: true,
+            HasMerchant: true));
+
+        state.CurrentZone.ZoneId.Should().Be("fenwick-crossing");
+        state.CurrentZone.HasInn.Should().BeTrue();
+        state.CurrentZone.HasMerchant.Should().BeTrue();
+    }
+
     // ── Zone entry ─────────────────────────────────────────────────────────────
 
     /// <summary>Verifies ApplyZoneEntered updates the zone state.</summary>

@@ -11,6 +11,10 @@ namespace Veldrath.GameClient.Core.Payloads;
 /// <param name="Description">A description of the zone.</param>
 /// <param name="ZoneType">The type of zone (e.g. "town", "wilderness", "dungeon").</param>
 /// <param name="Occupants">The list of players currently in the zone.</param>
+/// <param name="CurrentMapId">The map graph the zone belongs to, when known.</param>
+/// <param name="CurrentNodeId">The node the character enters at, when known.</param>
+/// <param name="HasInn">Whether the zone has an inn where the character can rest.</param>
+/// <param name="HasMerchant">Whether the zone has a merchant the character can visit.</param>
 public sealed record ZoneEnteredPayload(
     string Id,
     string Name,
@@ -18,7 +22,9 @@ public sealed record ZoneEnteredPayload(
     string ZoneType,
     IReadOnlyList<OccupantEntry> Occupants,
     string? CurrentMapId = null,
-    string? CurrentNodeId = null);
+    string? CurrentNodeId = null,
+    bool HasInn = false,
+    bool HasMerchant = false);
 
 /// <summary>
 /// A single occupant entry within a <see cref="ZoneEnteredPayload"/>.

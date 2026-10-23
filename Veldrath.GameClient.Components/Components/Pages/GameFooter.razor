@@ -29,14 +29,11 @@
 
         <MudSpacer />
 
-        @if (GameState.IsInCombat)
+        @* Combat actions live in GameCombat, which has the working command bindings.
+           The footer only carries exploration actions so it never shows dead buttons. *@
+        @if (!GameState.IsInCombat)
         {
-            <ActionBar ShowAttack="true" ShowDefend="true" ShowFlee="true"
-                       ShowRespawn="GameState.CurrentCharacter.IsDead" />
-        }
-        else
-        {
-            <ActionBar ShowSearch="!GameState.IsInCombat" ShowRest="GameState.CurrentZone.HasInn"
+            <ActionBar ShowSearch="true" ShowRest="GameState.CurrentZone.HasInn"
                        OnSearch="SearchAsync" OnRest="RestAsync" />
         }
 

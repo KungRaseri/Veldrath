@@ -5,6 +5,7 @@ using MudBlazor;
 using Veldrath.GameClient.Components.Components.Pages;
 using Veldrath.GameClient.Components.Models;
 using Veldrath.GameClient.Core.Abstractions;
+using Veldrath.GameClient.Core.Services;
 
 namespace Veldrath.GameClient.Components.Components.Layout;
 
@@ -72,7 +73,7 @@ public partial class LeftSidebar
     private Task OnLocationSelected(EntityListItem item) =>
         NavigateToLocationAsync(item.Id);
 
-    /// <summary>G68: Sends the VisitShop hub command to open the merchant interface.</summary>
+    /// <summary>G68: Sends the VisitShop hub command with the current zone ID.</summary>
     private async Task VisitShopAsync()
     {
         try
@@ -84,7 +85,7 @@ public partial class LeftSidebar
             }
 
             if (Hub.IsConnected)
-                await Hub.SendAsync("VisitShop");
+                await Hub.SendAsync("VisitShop", new { ZoneId = GameState.CurrentZoneId });
         }
         catch (Exception ex)
         {
@@ -112,8 +113,8 @@ public partial class LeftSidebar
         }
     }
 
-    /// <summary>G74: Sends the ExitZone hub command to leave the current zone.</summary>
-    private async Task ExitZoneAsync()
+    /// <summary>Leaves the current zone and reloads the region map graph.</summary>
+    private async Task LeaveZoneAsync()
     {
         try
         {
@@ -123,16 +124,19 @@ public partial class LeftSidebar
                 return;
             }
 
-            if (Hub.IsConnected)
-                await Hub.SendAsync("ExitZone");
+            if (!Hub.IsConnected)
+                return;
+
+            await Hub.SendAsync("LeaveZone");
+            await Hub.RequestMapGraphAsync();
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Failed to exit zone.");
+            Logger.LogWarning(ex, "Failed to leave zone.");
         }
     }
 
-    /// <summary>G75: Sends the RestAtLocation hub command to rest at an inn.</summary>
+    /// <summary>G75: Sends the RestAtLocation hub command with the current location and cost.</summary>
     private async Task RestAtLocationAsync()
     {
         try
@@ -144,13 +148,24 @@ public partial class LeftSidebar
             }
 
             if (Hub.IsConnected)
-                await Hub.SendAsync("RestAtLocation");
+            {
+                await Hub.SendAsync("RestAtLocation", new
+                {
+                    LocationId = GetCurrentLocationId(),
+                    CostInGold = 10,
+                });
+            }
         }
         catch (Exception ex)
         {
             Logger.LogWarning(ex, "Failed to rest.");
         }
     }
+
+    private string GetCurrentLocationId() =>
+        !string.IsNullOrWhiteSpace(GameState.CurrentZoneLocationSlug)
+            ? GameState.CurrentZoneLocationSlug!
+            : GameState.CurrentZoneId ?? string.Empty;
 
     /// <summary>G76: Sends the AllocateAttributePoints hub command with a default Strength allocation.</summary>
     private async Task AllocateStrengthAsync()
@@ -179,7 +194,7 @@ public partial class LeftSidebar
         }
     }
 
-    /// <summary>G81: Sends the NavigateToLocation hub command to move to a zone location.</summary>
+    /// <summary>G81: Sends the NavigateToLocation hub command with the target location slug.</summary>
     /// <param name="slug">The target location slug.</param>
     private async Task NavigateToLocationAsync(string slug)
     {
@@ -196,7 +211,7 @@ public partial class LeftSidebar
         {
             if (Hub.IsConnected)
             {
-                await Hub.SendAsync("NavigateToLocation", slug);
+                await Hub.SendAsync("NavigateToLocation", new { LocationSlug = slug });
                 Logger.LogInformation("Navigating to location: {LocationSlug}", slug);
             }
         }

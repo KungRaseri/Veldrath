@@ -417,3 +417,16 @@ Enhanced [`ActionBar.razor`](Veldrath.GameClient.Components/Components/Shared/Ac
 - **`EfCoreItemRepository.MapToModel`** maps `Item.Type` from the persisted `ItemType`
   discriminator (`weapon` / `armor`) plus the category (`shield`, `head`, `chest`, `legs`,
   `feet`, etc.). This drives the RCL equip button and slot routing.
+
+### Web-first RCL actions (Session-53, 2026-10-23)
+
+- The browser game client is the primary experience; see `plans/web-first-roadmap.md`.
+  Desktop/Avalonia follows web decisions.
+- **Hub request shapes matter.** `VisitShop` requires `{ ZoneId }`, `RestAtLocation` requires
+  `{ LocationId, CostInGold }`, and `NavigateToLocation` requires `{ LocationSlug }`. Sending a
+  bare string or no argument fails SignalR binding before the hub body runs.
+- `ExitZone` no longer exists; use `LeaveZone` (no args) and then `RequestMapGraphAsync`.
+- The `/Game/Map` route does not exist; the cardinals map is inline on `/Game/Play`.
+- `ZoneEntered` carries `HasInn` / `HasMerchant`; `GameStateService.ApplyZoneEntered` stores them
+  in `ZoneState` so `LeftSidebar`/`GameFooter` render shop/rest actions.
+- `GameCombat` owns combat actions; do not add an unbound `ActionBar` in `GameFooter`.

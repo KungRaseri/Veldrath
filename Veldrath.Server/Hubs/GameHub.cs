@@ -433,6 +433,8 @@ public class GameHub : Hub
             CurrentMapId = zoneGraph?.Id,
             CurrentNodeId = zoneGraph?.EntryNodeId,
             Occupants = occupants,
+            HasInn = zone.HasInn,
+            HasMerchant = zone.HasMerchant,
         });
 
         _logger.LogInformation("Character {Name} entered zone {ZoneId}", characterName, zoneId);

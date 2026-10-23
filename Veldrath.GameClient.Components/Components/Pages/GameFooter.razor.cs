@@ -304,13 +304,21 @@ public partial class GameFooter : INotifyPropertyChanged, IDisposable, IAsyncDis
         catch { /* Best-effort */ }
     }
 
-    /// <summary>Sends the RestAtLocation hub command.</summary>
+    /// <summary>Sends the RestAtLocation hub command with the current location and cost.</summary>
     private async Task RestAsync()
     {
         try
         {
-            if (Hub.IsConnected)
-                await Hub.SendAsync("RestAtLocation");
+            if (!Hub.IsConnected || GameState.CurrentCharacterId is null)
+                return;
+
+            await Hub.SendAsync("RestAtLocation", new
+            {
+                LocationId = !string.IsNullOrWhiteSpace(GameState.CurrentZoneLocationSlug)
+                    ? GameState.CurrentZoneLocationSlug
+                    : GameState.CurrentZoneId,
+                CostInGold = 10,
+            });
         }
         catch { /* Best-effort */ }
     }

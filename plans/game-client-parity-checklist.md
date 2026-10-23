@@ -388,9 +388,17 @@ These are the 10 highest-impact fixes, ordered by dependency chain and player-vi
 - Test coverage: `Game.razor` shell (G120), `GamePanel` (G126), and `ReconnectOverlay` (G129) now have render tests. G121/G122/G124/G127/G128/G130/G131 already have render smoke coverage.
 - G112, G113, and G115 were already resolved before the re-audit (no action needed).
 
+**Session-53 web-first fixes (2026-10-23)**
+- RCL `LeftSidebar` now sends the request shapes the server binds: `VisitShop { ZoneId }`, `RestAtLocation { LocationId, CostInGold }`, and `NavigateToLocation { LocationSlug }`.
+- Replaced the removed `ExitZone` call with `LeaveZone` plus a map-graph refresh; rebuilt the action as "Leave Zone".
+- Removed the dead `/Game/Map` link — the map is rendered inline on `/Game/Play`.
+- `GameFooter` no longer renders an unbound combat `ActionBar`; `GameCombat` owns the working combat actions.
+- `ZoneEntered` now includes `HasInn`/`HasMerchant`, and `GameStateService.ApplyZoneEntered` stores them in `ZoneState`, so shop/rest actions render in the web client.
+- Added `WebGameActionTests` (6 tests) for the hub payloads, map-route removal, and footer combat-button removal.
+
 **Still open**
 - Routes/layout: G106, G108 (runtime verify), G109, G110.
-- bridge.js interop: G117 (incoming message listener), G118 (Windows toast notification).
+- bridge.js interop: G117 (incoming message listener), G118 (Windows toast notification) — desktop-only until the web bridge needs them.
 - Tests: G119 (`CreateCharacter` wizard interaction coverage beyond the render smoke test). G125 (`GameSettings`) remains blocked by MudBlazor's internal async-dispose-only `PointerEventsNoneService`, which bUnit cannot dispose synchronously.
 
 **Obsolete (do not action)**
