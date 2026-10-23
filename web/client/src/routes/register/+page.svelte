@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { authClient } from '$lib/auth-client';
 
 	let username = $state('');
@@ -25,7 +26,7 @@
 				email,
 				password,
 				name: username,
-				username,
+				username
 			});
 
 			if (error) {
@@ -33,7 +34,7 @@
 				return;
 			}
 
-			await goto('/game');
+			await goto(resolve('/game'));
 		} finally {
 			submitting = false;
 		}
@@ -45,7 +46,7 @@
 </svelte:head>
 
 <div class="mx-auto max-w-md p-6">
-	<div class="card space-y-4 p-6">
+	<div class="space-y-4 card p-6">
 		<h1 class="h2">Create account</h1>
 
 		{#if errorMessage}
@@ -85,13 +86,13 @@
 				/>
 			</label>
 
-			<button class="btn preset-filled-primary-500 w-full" type="submit" disabled={submitting}>
+			<button class="btn w-full preset-filled-primary-500" type="submit" disabled={submitting}>
 				{submitting ? 'Creating account…' : 'Create account'}
 			</button>
 		</form>
 
 		<p class="text-sm text-surface-600-400">
-			Already have an account? <a class="anchor" href="/login">Sign in</a>
+			Already have an account? <a class="anchor" href={resolve('/login')}>Sign in</a>
 		</p>
 	</div>
 </div>

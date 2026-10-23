@@ -12,6 +12,6 @@ export const GET: RequestHandler = async ({ locals }) => {
 
 	return json(
 		{ token, expiresIn: GAME_TOKEN_TTL_SECONDS },
-		{ headers: { 'cache-control': 'no-store' } },
+		{ headers: { 'cache-control': 'no-store' } }
 	);
 };

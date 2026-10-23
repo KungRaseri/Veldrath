@@ -1,8 +1,4 @@
-import {
-	HubConnectionBuilder,
-	LogLevel,
-	type HubConnection,
-} from '@microsoft/signalr';
+import { HubConnectionBuilder, LogLevel, type HubConnection } from '@microsoft/signalr';
 import { env } from '$env/dynamic/public';
 
 async function fetchGameToken(): Promise<string> {
@@ -30,7 +26,7 @@ export function createGameHub(): HubConnection {
 
 	return new HubConnectionBuilder()
 		.withUrl(hubUrl, {
-			accessTokenFactory: fetchGameToken,
+			accessTokenFactory: fetchGameToken
 		})
 		.withAutomaticReconnect()
 		.configureLogging(LogLevel.Information)

@@ -7,26 +7,22 @@ import { env } from '$env/dynamic/private';
 import { account, session, user, verification } from '@veldrath/shared/db';
 import { getAuthDb } from './db';
 
-type Auth = ReturnType<typeof betterAuth>;
-
-let authInstance: Auth | undefined;
-
 function buildSocialProviders() {
 	return {
 		...(env.DISCORD_CLIENT_ID && env.DISCORD_CLIENT_SECRET
 			? {
 					discord: {
 						clientId: env.DISCORD_CLIENT_ID,
-						clientSecret: env.DISCORD_CLIENT_SECRET,
-					},
+						clientSecret: env.DISCORD_CLIENT_SECRET
+					}
 				}
 			: {}),
 		...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
 			? {
 					google: {
 						clientId: env.GOOGLE_CLIENT_ID,
-						clientSecret: env.GOOGLE_CLIENT_SECRET,
-					},
+						clientSecret: env.GOOGLE_CLIENT_SECRET
+					}
 				}
 			: {}),
 		...(env.MICROSOFT_CLIENT_ID && env.MICROSOFT_CLIENT_SECRET
@@ -34,12 +30,53 @@ function buildSocialProviders() {
 					microsoft: {
 						clientId: env.MICROSOFT_CLIENT_ID,
 						clientSecret: env.MICROSOFT_CLIENT_SECRET,
-						...(env.MICROSOFT_TENANT_ID ? { tenantId: env.MICROSOFT_TENANT_ID } : {}),
-					},
+						...(env.MICROSOFT_TENANT_ID ? { tenantId: env.MICROSOFT_TENANT_ID } : {})
+					}
 				}
-			: {}),
+			: {})
 	};
 }
+
+function createAuth() {
+	if (!env.BETTER_AUTH_SECRET) {
+		throw new Error('BETTER_AUTH_SECRET is not configured.');
+	}
+
+	return betterAuth({
+		appName: 'Veldrath',
+		baseURL: env.BETTER_AUTH_URL || env.ORIGIN || undefined,
+		secret: env.BETTER_AUTH_SECRET,
+		database: drizzleAdapter(getAuthDb(), {
+			provider: 'pg',
+			schema: { user, session, account, verification }
+		}),
+		emailAndPassword: {
+			enabled: true,
+			// Enable this once transactional email is wired up.
+			requireEmailVerification: false
+		},
+		socialProviders: buildSocialProviders(),
+		advanced: {
+			database: {
+				// Account IDs are GUIDs so they can be used directly as the
+				// Veldrath.Server account identifier.
+				generateId: () => crypto.randomUUID()
+			}
+		},
+		plugins: [
+			username(),
+			// Must remain the last plugin.
+			sveltekitCookies(getRequestEvent)
+		],
+		trustedOrigins: [env.ORIGIN, env.BETTER_AUTH_URL].filter((value): value is string =>
+			Boolean(value)
+		)
+	});
+}
+
+type Auth = ReturnType<typeof createAuth>;
+
+let authInstance: Auth | undefined;
 
 /**
  * Lazy Better Auth singleton.
@@ -49,44 +86,9 @@ function buildSocialProviders() {
  * build remains database-free.
  */
 export function getAuth(): Auth {
-	if (authInstance) {
-		return authInstance;
+	if (!authInstance) {
+		authInstance = createAuth();
 	}
-
-	if (!env.BETTER_AUTH_SECRET) {
-		throw new Error('BETTER_AUTH_SECRET is not configured.');
-	}
-
-	authInstance = betterAuth({
-		appName: 'Veldrath',
-		baseURL: env.BETTER_AUTH_URL || env.ORIGIN || undefined,
-		secret: env.BETTER_AUTH_SECRET,
-		database: drizzleAdapter(getAuthDb(), {
-			provider: 'pg',
-			schema: { user, session, account, verification },
-		}),
-		emailAndPassword: {
-			enabled: true,
-			// Enable this once transactional email is wired up.
-			requireEmailVerification: false,
-		},
-		socialProviders: buildSocialProviders(),
-		advanced: {
-			database: {
-				// Account IDs are GUIDs so they can be used directly as the
-				// Veldrath.Server account identifier.
-				generateId: () => crypto.randomUUID(),
-			},
-		},
-		plugins: [
-			username(),
-			// Must remain the last plugin.
-			sveltekitCookies(getRequestEvent),
-		],
-		trustedOrigins: [env.ORIGIN, env.BETTER_AUTH_URL].filter(
-			(value): value is string => Boolean(value),
-		),
-	});
 
 	return authInstance;
 }

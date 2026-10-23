@@ -2,6 +2,7 @@
 	import { onDestroy } from 'svelte';
 	import type { HubConnection } from '@microsoft/signalr';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import type { PageData } from './$types';
 	import { authClient } from '$lib/auth-client';
 	import { createGameHub } from '$lib/hub';
@@ -71,7 +72,7 @@
 	async function signOut() {
 		await disconnectHub();
 		await authClient.signOut();
-		await goto('/');
+		await goto(resolve('/'));
 	}
 
 	onDestroy(() => {
@@ -84,13 +85,17 @@
 </svelte:head>
 
 <div class="mx-auto max-w-3xl space-y-6 p-6">
-	<div class="card space-y-3 p-6">
+	<div class="space-y-3 card p-6">
 		<h1 class="h2">Welcome, {data.user.username ?? data.user.name}</h1>
 		<p class="text-sm text-surface-600-400">Account ID: {data.user.id}</p>
 		<p class="text-sm text-surface-600-400">Email: {data.user.email}</p>
 
 		<div class="flex flex-wrap gap-2">
-			<button class="btn preset-filled-primary-500" onclick={fetchGameToken} disabled={loadingToken}>
+			<button
+				class="btn preset-filled-primary-500"
+				onclick={fetchGameToken}
+				disabled={loadingToken}
+			>
 				{loadingToken ? 'Minting…' : 'Mint game token'}
 			</button>
 			<button
@@ -100,7 +105,11 @@
 			>
 				{hubState === 'connecting' ? 'Connecting…' : 'Connect to SignalR'}
 			</button>
-			<button class="btn preset-tonal-surface" onclick={disconnectHub} disabled={hubState === 'idle'}>
+			<button
+				class="btn preset-tonal-surface"
+				onclick={disconnectHub}
+				disabled={hubState === 'idle'}
+			>
 				Disconnect
 			</button>
 			<button class="btn preset-tonal-surface" onclick={signOut}>Sign out</button>

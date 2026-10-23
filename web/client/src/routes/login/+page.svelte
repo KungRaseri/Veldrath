@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { authClient } from '$lib/auth-client';
 
 	let email = $state('');
@@ -19,7 +20,7 @@
 				return;
 			}
 
-			await goto('/game');
+			await goto(resolve('/game'));
 		} finally {
 			submitting = false;
 		}
@@ -31,7 +32,7 @@
 </svelte:head>
 
 <div class="mx-auto max-w-md p-6">
-	<div class="card space-y-4 p-6">
+	<div class="space-y-4 card p-6">
 		<h1 class="h2">Sign in</h1>
 
 		{#if errorMessage}
@@ -41,13 +42,7 @@
 		<form class="space-y-4" onsubmit={submit}>
 			<label class="label">
 				<span>Email</span>
-				<input
-					class="input"
-					type="email"
-					bind:value={email}
-					required
-					autocomplete="email"
-				/>
+				<input class="input" type="email" bind:value={email} required autocomplete="email" />
 			</label>
 
 			<label class="label">
@@ -61,13 +56,13 @@
 				/>
 			</label>
 
-			<button class="btn preset-filled-primary-500 w-full" type="submit" disabled={submitting}>
+			<button class="btn w-full preset-filled-primary-500" type="submit" disabled={submitting}>
 				{submitting ? 'Signing in…' : 'Sign in'}
 			</button>
 		</form>
 
 		<p class="text-sm text-surface-600-400">
-			No account? <a class="anchor" href="/register">Create one</a>
+			No account? <a class="anchor" href={resolve('/register')}>Create one</a>
 		</p>
 	</div>
 </div>
