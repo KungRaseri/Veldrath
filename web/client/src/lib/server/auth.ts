@@ -1,0 +1,92 @@
+import { betterAuth } from 'better-auth';
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { username } from 'better-auth/plugins';
+import { sveltekitCookies } from 'better-auth/svelte-kit';
+import { getRequestEvent } from '$app/server';
+import { env } from '$env/dynamic/private';
+import { account, session, user, verification } from '@veldrath/shared/db';
+import { getAuthDb } from './db';
+
+type Auth = ReturnType<typeof betterAuth>;
+
+let authInstance: Auth | undefined;
+
+function buildSocialProviders() {
+	return {
+		...(env.DISCORD_CLIENT_ID && env.DISCORD_CLIENT_SECRET
+			? {
+					discord: {
+						clientId: env.DISCORD_CLIENT_ID,
+						clientSecret: env.DISCORD_CLIENT_SECRET,
+					},
+				}
+			: {}),
+		...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+			? {
+					google: {
+						clientId: env.GOOGLE_CLIENT_ID,
+						clientSecret: env.GOOGLE_CLIENT_SECRET,
+					},
+				}
+			: {}),
+		...(env.MICROSOFT_CLIENT_ID && env.MICROSOFT_CLIENT_SECRET
+			? {
+					microsoft: {
+						clientId: env.MICROSOFT_CLIENT_ID,
+						clientSecret: env.MICROSOFT_CLIENT_SECRET,
+						...(env.MICROSOFT_TENANT_ID ? { tenantId: env.MICROSOFT_TENANT_ID } : {}),
+					},
+				}
+			: {}),
+	};
+}
+
+/**
+ * Lazy Better Auth singleton.
+ *
+ * Better Auth owns web credentials, sessions, OAuth, and email flows. The
+ * database connection is deliberately created on first use so the SvelteKit
+ * build remains database-free.
+ */
+export function getAuth(): Auth {
+	if (authInstance) {
+		return authInstance;
+	}
+
+	if (!env.BETTER_AUTH_SECRET) {
+		throw new Error('BETTER_AUTH_SECRET is not configured.');
+	}
+
+	authInstance = betterAuth({
+		appName: 'Veldrath',
+		baseURL: env.BETTER_AUTH_URL || env.ORIGIN || undefined,
+		secret: env.BETTER_AUTH_SECRET,
+		database: drizzleAdapter(getAuthDb(), {
+			provider: 'pg',
+			schema: { user, session, account, verification },
+		}),
+		emailAndPassword: {
+			enabled: true,
+			// Enable this once transactional email is wired up.
+			requireEmailVerification: false,
+		},
+		socialProviders: buildSocialProviders(),
+		advanced: {
+			database: {
+				// Account IDs are GUIDs so they can be used directly as the
+				// Veldrath.Server account identifier.
+				generateId: () => crypto.randomUUID(),
+			},
+		},
+		plugins: [
+			username(),
+			// Must remain the last plugin.
+			sveltekitCookies(getRequestEvent),
+		],
+		trustedOrigins: [env.ORIGIN, env.BETTER_AUTH_URL].filter(
+			(value): value is string => Boolean(value),
+		),
+	});
+
+	return authInstance;
+}
