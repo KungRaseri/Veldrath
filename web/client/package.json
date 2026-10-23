@@ -62,7 +62,7 @@
 		"typescript": "^6.0.3",
 		"typescript-eslint": "^8.60.1",
 		"vite": "^7.3.6",
-		"vitest": "^3.2.7"
+		"vitest": "^5.0.5"
 	},
 	"optionalDependencies": {
 		"@tailwindcss/oxide-linux-x64-gnu": "4.3.3",
