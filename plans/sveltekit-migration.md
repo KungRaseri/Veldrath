@@ -28,7 +28,11 @@ Phase 1 is complete and verified:
   - Live smoke result: `CharacterSelected` → `ZoneEntered` (Aldenmere) → `MapGraphReceived` (4 nodes) → `TravelToNode` (Grey Cup) → `InventoryLoaded` with no hub errors.
   - Playwright covers unauthenticated redirects for `/characters`, `/play/:id`, and `/game`.
 
-Phase 2 is in progress. Next: port the full game shell, stores, combat/chat/overlays, and `CardinalGraphLayout` to TypeScript.
+Phase 2 is in progress:
+
+- `CardinalGraphLayout` is ported to [`cardinal-layout.ts`](../web/client/src/lib/game/cardinal-layout.ts) with all 13 Vitest cases; [`CardinalMap.svelte`](../web/client/src/lib/game/CardinalMap.svelte) renders the placed graph on the play page.
+- Browser SignalR verification exposed a CORS gap: negotiate preflights send `x-signalr-user-agent`, and the policy only allowed the dev origin. The server now allows that header and builds the origin list from `Cors:AllowedOrigins` (falling back to local dev plus `Web:BaseUrl`), with regression tests.
+- Next: port the full game shell, sidebars, combat/chat/overlays, and settings.
 
 ## Decision
 
@@ -297,7 +301,7 @@ Exit criteria: a real character can log in through Better Auth, enter a zone, tr
 ### Phase 2 — Game client parity
 
 - Port the game shell, header, footer, sidebars, map, detail panel, combat, chat, all overlays, settings, and reconnect behavior.
-- Port `CardinalGraphLayout` to TypeScript with its tests.
+- ✅ Port `CardinalGraphLayout` to TypeScript with its tests.
 - Group the hub handlers into stores: session, character, zone/map, combat, inventory/shop, chat/social, moderation.
 - Reuse `tokens.css` and `game.css`, adapted to the SvelteKit layout.
 - Add Playwright flows for character creation, travel, combat, shop, inventory, and reconnect.

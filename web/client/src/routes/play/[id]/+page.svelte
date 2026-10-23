@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { PageData } from './$types';
+	import CardinalMap from '$lib/game/CardinalMap.svelte';
 	import { GameSession } from '$lib/game/session.svelte';
 	import { itemLabel, itemSubtitle } from '$lib/game/types';
 
@@ -20,14 +21,6 @@
 	function barPercent(value: number | undefined, max: number | undefined): number {
 		if (!value || !max || max <= 0) return 0;
 		return Math.min(100, Math.round((value / max) * 100));
-	}
-
-	function directionFor(nodeId: string): string | null {
-		const edge = session.map?.edges.find(
-			(candidate) => candidate.fromNodeId === session.currentNodeId && candidate.toNodeId === nodeId
-		);
-		if (!edge) return null;
-		return edge.label ? `${edge.direction} · ${edge.label}` : edge.direction;
 	}
 
 	async function returnToCharacters() {
@@ -139,44 +132,13 @@
 			{:else if !session.map}
 				<p class="text-sm text-surface-600-400">Select a character to load the map.</p>
 			{:else}
-				<ul class="space-y-2">
-					{#each [...session.map.nodes].sort((a, b) => a.sortOrder - b.sortOrder) as node (node.id)}
-						{@const isCurrent = node.id === session.currentNodeId}
-						{@const isReachable = session.adjacentNodeIds.includes(node.id)}
-						<li>
-							<button
-								class="flex w-full items-start justify-between gap-3 rounded border p-3 text-left {isCurrent
-									? 'border-primary-500 bg-primary-500/10'
-									: isReachable
-										? 'border-surface-300-700'
-										: 'border-surface-200-800 opacity-60'}"
-								onclick={() => session.selectNode(node.id)}
-								aria-current={isCurrent ? 'location' : undefined}
-							>
-								<span class="space-y-1">
-									<span class="flex flex-wrap items-center gap-2">
-										<strong>{node.displayName}</strong>
-										{#if isCurrent}
-											<span class="chip preset-filled-primary-500 text-xs">You are here</span>
-										{/if}
-										{#if node.nodeType === 'Zone'}
-											<span class="chip preset-tonal-surface text-xs">Zone</span>
-										{/if}
-										{#if node.isExitPoint}
-											<span class="chip preset-tonal-surface text-xs">Exit</span>
-										{/if}
-									</span>
-									<span class="block text-xs text-surface-600-400">
-										{directionFor(node.id) ?? node.nodeType}
-									</span>
-								</span>
-								{#if isReachable}
-									<span class="text-xs text-primary-500">Reachable</span>
-								{/if}
-							</button>
-						</li>
-					{/each}
-				</ul>
+				<CardinalMap
+					map={session.map}
+					currentNodeId={session.currentNodeId}
+					selectedNodeId={session.selectedNodeId}
+					adjacentNodeIds={session.adjacentNodeIds}
+					onSelect={(nodeId) => session.selectNode(nodeId)}
+				/>
 			{/if}
 		</section>
 

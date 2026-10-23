@@ -91,14 +91,34 @@ try
     // SignalR
     builder.Services.AddSignalR();
 
-    // CORS — allow Avalonia client on loopback during development
+    // CORS — browser clients (SvelteKit dev server, Docker web, production domain).
+    // Configured origins win; otherwise allow local dev plus Web:BaseUrl so the deployed
+    // SvelteKit origin (cross-subdomain from api.veldrath.com) is always accepted.
+    var configuredCorsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+    var webBaseUrl = builder.Configuration["Web:BaseUrl"];
+    var allowedCorsOrigins = (configuredCorsOrigins is { Length: > 0 }
+            ? configuredCorsOrigins
+            : new[]
+            {
+                "http://localhost:5173",
+                "https://localhost:5173",
+                "http://localhost:8080",
+            })
+        .Concat(string.IsNullOrWhiteSpace(webBaseUrl)
+            ? []
+            : new[] { webBaseUrl.TrimEnd('/') })
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowLocalClient", policy =>
-            policy.WithOrigins("http://localhost:5173", "https://localhost:5173")
+            policy.WithOrigins(allowedCorsOrigins)
                   // Explicit allow-list prevents TRACE/CONNECT and limits header exposure.
+                  // SignalR adds x-signalr-user-agent to negotiate preflight requests.
                   .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                  .WithHeaders("Authorization", "Content-Type", "X-Requested-With")
+                  .WithHeaders(
+                      "Authorization", "Content-Type", "X-Requested-With", "X-SignalR-User-Agent")
                   .AllowCredentials());
     });
 

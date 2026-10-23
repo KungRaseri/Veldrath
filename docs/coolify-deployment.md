@@ -70,6 +70,7 @@ ASPNETCORE_ENVIRONMENT=Production
 | `OAuth__Microsoft__ClientId` | `OAuth:Microsoft:ClientId` | [`Program.cs:280`](../Veldrath.Server/Program.cs:280) | Microsoft OAuth app client ID. |
 | `OAuth__Microsoft__ClientSecret` | `OAuth:Microsoft:ClientSecret` | [`Program.cs:281`](../Veldrath.Server/Program.cs:281) | Microsoft OAuth app client secret. |
 | `Jwt__Key` | `Jwt:Key` | [`Program.cs:141`](../Veldrath.Server/Program.cs:141) | HMAC-SHA JWT signing key. **Required.** |
+| `Cors__AllowedOrigins__0`, `Cors__AllowedOrigins__1`, … | `Cors:AllowedOrigins` | [`Program.cs:95`](../Veldrath.Server/Program.cs:95) | Optional extra browser origins for SignalR CORS. Defaults to local dev plus `Web:BaseUrl`. |
 | `InternalBridge__Token` | `InternalBridge:Token` | [`InternalAccountBridgeEndpoints.cs`](../Veldrath.Server/Features/Auth/InternalAccountBridgeEndpoints.cs) | Shared secret for the temporary SvelteKit → Identity account bridge. Unset disables the endpoint (503). |
 | `Email__SmtpHost` | `Email:SmtpHost` | [`Program.cs:308`](../Veldrath.Server/Program.cs:308) | SMTP relay hostname. If empty, uses `NullEmailSender` (no emails sent). |
 | `Email__SmtpPort` | `Email:SmtpPort` | [`appsettings.json:42`](../Veldrath.Server/appsettings.json:42) | SMTP port (default: 587). |

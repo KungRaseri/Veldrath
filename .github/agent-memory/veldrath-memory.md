@@ -1365,3 +1365,13 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
 - Local smoke scripts live in `scripts/dev/` (gitignored). The SignalR package must be loaded via
   `createRequire` from `web/node_modules/@microsoft/signalr/dist/cjs/index.js` because the ESM
   build uses extensionless imports Node cannot resolve.
+
+**Phase 2 start**
+- `CardinalGraphLayout` is ported to `web/client/src/lib/game/cardinal-layout.ts`; all 13 C#
+  layout tests were mirrored in `cardinal-layout.test.ts` and pass unchanged. `CardinalMap.svelte`
+  renders the computed grid (current/reachable/known, direction hints, entry/exit badges).
+- Browser SignalR CORS gotcha: the negotiate preflight includes `x-signalr-user-agent`. The
+  `AllowLocalClient` policy now allows it, and origins come from `Cors:AllowedOrigins` with
+  fallback local dev origins + `Web:BaseUrl`. Regression tests live in `CorsTests`.
+- Playwright UI smoke with a real session confirmed the play page renders the map, enters the
+  zone, opens the inventory drawer, and produces no page errors.
