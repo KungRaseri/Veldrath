@@ -1345,3 +1345,23 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
 - Verified live: migrated Identity-only account signed in through Better Auth with its legacy
   password, minted a game token, and `/api/characters` returned `200`.
 - Client Vitest: **4 passing** (`auth-password.test.ts`). Server tests: **776 passing**.
+
+**Phase 1 vertical slice (complete)**
+- `/characters` is an SSR page: `game-api.ts` mints a token and calls `/api/characters` using
+  `INTERNAL_BRIDGE_URL` (or `PUBLIC_API_URL` as fallback).
+- `/play/[id]` uses `GameSession` (`$lib/game/session.svelte.ts`), a runes store that owns the
+  SignalR connection. Hub methods: `SelectCharacter`, `EnterZone`, `GetMapGraph`, `TravelToNode`,
+  `GetInventory`. Events: `CharacterSelected`, `ZoneEntered`, `MapGraphReceived`, `NodeTraveled`,
+  `InventoryLoaded`, `SystemMessage`, `Error`, `OnKicked`.
+- SelectCharacter always resets the character to the region-map entry. If `currentZoneId` is set,
+  the client calls `EnterZone` first, then `GetMapGraph`; `EnterZone` moves the session to the zone
+  map, so the subsequent graph request returns the zone map.
+- Travel into a zone node returns `NodeTraveled.mapChanged=true` with `zoneId`; request the new
+  graph with `mapId`.
+- `/game` now redirects to `/characters`; Playwright covers unauthenticated guards.
+- Live smoke (local DB, migrated legacy user + seeded character `Thornwarden`):
+  CharacterSelected → ZoneEntered (Aldenmere, 1 occupant) → MapGraphReceived (4 nodes) →
+  TravelToNode (The Grey Cup) → InventoryLoaded (overlay true), no hub errors.
+- Local smoke scripts live in `scripts/dev/` (gitignored). The SignalR package must be loaded via
+  `createRequire` from `web/node_modules/@microsoft/signalr/dist/cjs/index.js` because the ESM
+  build uses extensionless imports Node cannot resolve.

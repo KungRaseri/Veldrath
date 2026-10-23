@@ -67,3 +67,6 @@ Veldrath.Assets/GameAssets/**/*.flac
 
 # Packaged asset zip produced by scripts/package-assets.ps1 -- upload to GitHub Release, don't commit.
 scripts/GameAssets-*.zip
+
+# Local smoke scripts and runtime artifacts (never committed)
+/scripts/dev/

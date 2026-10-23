@@ -1,9 +1,7 @@
 import { redirect } from '@sveltejs/kit';
+import type { PageServerLoad } from './$types';
 
-export const load = ({ locals }) => {
-	if (!locals.user) {
-		redirect(302, '/login?redirectTo=/game');
-	}
-
-	return { user: locals.user };
+/** The Phase 0 smoke page moved to the real character-select / play flow. */
+export const load: PageServerLoad = () => {
+	redirect(307, '/characters');
 };

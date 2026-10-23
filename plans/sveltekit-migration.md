@@ -11,7 +11,7 @@ Phase 0 is complete and verified on the existing Blazor Postgres database:
 - `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` pass.
 - Discord, Google, and Microsoft social providers are configured and Discord login is confirmed working.
 
-Phase 1 is in progress. The auth bridge, Foundry bridge, and account migration are complete and verified:
+Phase 1 is complete and verified:
 
 - [`JwtClaimsEnrichment`](../Veldrath.Server/Features/Auth/JwtClaimsEnrichment.cs) runs on `JwtBearerEvents.OnTokenValidated` and enriches identity-only SvelteKit tokens with Identity role and `permission` claims.
 - [`AccountProvisioningService`](../Veldrath.Server/Features/Auth/AccountProvisioningService.cs) provisions a `PlayerAccount` for an unknown `sub` GUID on first use, using the Better Auth username/email claims. Account-access snapshots are cached for 60 seconds per account, and concurrent provisioning races are handled.
@@ -21,8 +21,14 @@ Phase 1 is in progress. The auth bridge, Foundry bridge, and account migration a
 - [`migrate-identity-accounts.mjs`](../web/scripts/migrate-identity-accounts.mjs) copies `AspNetUsers` and `AspNetUserLogins` into Better Auth with matching GUIDs. Legacy Identity PBKDF2 hashes stay valid through the dual-format verifier in [`auth-password.ts`](../web/client/src/lib/server/auth-password.ts).
 - Live verification: a Better Auth user with no `AspNetUsers` row received `200` from `/api/characters` and the row was provisioned with the token GUID; `/api/foundry-bridge/register` returned `synced: true`; .NET `/api/auth/login` succeeded for the bridged password; after migrating an Identity-only account, Better Auth `/api/auth/sign-in/email` succeeded with the legacy password and `/api/characters` returned `200`.
 - `Veldrath.Server.Tests` passes (776 tests, including 13 provisioning/bridge tests); client Vitest passes (4 password-verifier tests).
+- The first vertical slice is live:
+  - [`/characters`](../web/client/src/routes/characters/+page.svelte) loads the account roster through SSR using a freshly minted game token.
+  - [`/play/[id]`](../web/client/src/routes/play/[id]/+page.svelte) connects SignalR, selects the character, enters the zone, renders the map, travels between nodes, and opens the inventory overlay.
+  - [`GameSession`](../web/client/src/lib/game/session.svelte.ts) reduces hub events into Svelte runes and handles reconnect.
+  - Live smoke result: `CharacterSelected` → `ZoneEntered` (Aldenmere) → `MapGraphReceived` (4 nodes) → `TravelToNode` (Grey Cup) → `InventoryLoaded` with no hub errors.
+  - Playwright covers unauthenticated redirects for `/characters`, `/play/:id`, and `/game`.
 
-Remaining Phase 1 work: the first game vertical slice (login → character select → enter zone → map/travel → inventory).
+Phase 2 is in progress. Next: port the full game shell, stores, combat/chat/overlays, and `CardinalGraphLayout` to TypeScript.
 
 ## Decision
 
@@ -283,8 +289,8 @@ Exit criteria: Better Auth registration and login work against Postgres, a prote
 - ✅ Implement SvelteKit login, register, logout, session hooks, and game-token minting.
 - ✅ Update OAuth redirect URIs and migrate existing users, logins, and passwords
   (dual-format password verification, no forced resets).
-- Port one vertical slice: login, character select, enter zone, map graph, travel, and inventory overlay.
-- Connect SignalR directly with a short-lived token.
+- ✅ Port one vertical slice: login, character select, enter zone, map graph, travel, and inventory overlay.
+- ✅ Connect SignalR directly with a short-lived token.
 
 Exit criteria: a real character can log in through Better Auth, enter a zone, travel, and open the inventory in SvelteKit. The .NET API and hub accept the SvelteKit-issued token.
 
