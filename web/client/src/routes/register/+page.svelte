@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { authClient } from '$lib/auth-client';
+	import SocialLoginButtons from '$lib/components/auth/SocialLoginButtons.svelte';
 
 	let username = $state('');
 	let email = $state('');
@@ -52,6 +53,15 @@
 		{#if errorMessage}
 			<p class="text-sm text-error-500">{errorMessage}</p>
 		{/if}
+
+		<SocialLoginButtons />
+
+		<div class="flex items-center gap-3">
+			<span class="h-px flex-1 bg-surface-200-800"></span>
+			<span class="text-xs tracking-wide text-surface-600-400 uppercase">or sign up with email</span
+			>
+			<span class="h-px flex-1 bg-surface-200-800"></span>
+		</div>
 
 		<form class="space-y-4" onsubmit={submit}>
 			<label class="label">

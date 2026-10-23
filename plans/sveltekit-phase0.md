@@ -171,7 +171,46 @@ in Development. Copy that same value into `web/client/.env`. The checked-in
 example uses the appsettings fallback and will not match if a different root
 `.env` key is present.
 
-## 9. Exit criteria
+## 9. Social auth
+
+Better Auth is configured for Discord, Google, and Microsoft. The login and
+register pages render a **Continue with Discord / Google / Microsoft** button
+group.
+
+Server env vars:
+
+```ini
+DISCORD_CLIENT_ID
+DISCORD_CLIENT_SECRET
+GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET
+MICROSOFT_CLIENT_ID
+MICROSOFT_CLIENT_SECRET
+MICROSOFT_TENANT_ID   # optional; empty uses the common/consumers endpoint
+```
+
+The compose files map the existing `OAUTH_*` variables from the root `.env`
+into these names for the web container. No duplicate OAuth app configuration
+is required.
+
+Callback URLs to register with each provider:
+
+- Discord: `http://localhost:5173/api/auth/callback/discord`
+- Google: `http://localhost:5173/api/auth/callback/google`
+- Microsoft: `http://localhost:5173/api/auth/callback/microsoft`
+- Production: `https://veldrath.com/api/auth/callback/{provider}`
+
+Verified redirect targets:
+
+- Discord: `discord.com/api/oauth2/authorize`
+- Google: `accounts.google.com/o/oauth2/v2/auth`
+- Microsoft: `login.microsoftonline.com/common/oauth2/v2.0/authorize`
+
+All three received the correct `redirect_uri` and a non-empty `client_id`.
+A real provider login still requires the callback URL to be registered in the
+provider portal and a valid account.
+
+## 10. Exit criteria
 
 Phase 0 is complete when:
 

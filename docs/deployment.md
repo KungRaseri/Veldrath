@@ -30,7 +30,7 @@ mappings.
 | `EMAIL_SMTP_HOST` / `EMAIL_USER` / `EMAIL_PASSWORD` | server | Outbound email. |
 | `SEQ_ADMIN_PASSWORD` / `GF_ADMIN_PASSWORD` | seq / grafana | Admin passwords. |
 
-Optional OAuth provider credentials:
+Optional OAuth provider credentials, shared by the .NET server and Better Auth:
 
 ```ini
 OAUTH_DISCORD_CLIENT_ID
@@ -39,7 +39,18 @@ OAUTH_GOOGLE_CLIENT_ID
 OAUTH_GOOGLE_CLIENT_SECRET
 OAUTH_MICROSOFT_CLIENT_ID
 OAUTH_MICROSOFT_CLIENT_SECRET
+OAUTH_MICROSOFT_TENANT_ID
 ```
+
+Register these redirect URIs with each provider:
+
+- Discord: `https://veldrath.com/api/auth/callback/discord`
+- Google: `https://veldrath.com/api/auth/callback/google`
+- Microsoft: `https://veldrath.com/api/auth/callback/microsoft`
+
+For local development use `http://localhost:5173/api/auth/callback/{provider}`.
+The compose files map the `OAUTH_*` variables into the web container's
+`DISCORD_CLIENT_ID`, `GOOGLE_CLIENT_ID`, and `MICROSOFT_CLIENT_ID` variables.
 
 ## First boot and migrations
 

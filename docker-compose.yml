@@ -176,6 +176,15 @@ services:
       # Browser-reachable .NET endpoints.
       - PUBLIC_API_URL=${SERVER_PUBLIC_URL:-http://localhost:9000}
       - PUBLIC_HUB_URL=${SERVER_PUBLIC_URL:-http://localhost:9000}/hubs/game
+      # Better Auth social providers. Reuse the same OAuth app credentials as
+      # the .NET server; register /api/auth/callback/{provider} on this origin.
+      - DISCORD_CLIENT_ID=${OAUTH_DISCORD_CLIENT_ID}
+      - DISCORD_CLIENT_SECRET=${OAUTH_DISCORD_CLIENT_SECRET}
+      - GOOGLE_CLIENT_ID=${OAUTH_GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${OAUTH_GOOGLE_CLIENT_SECRET}
+      - MICROSOFT_CLIENT_ID=${OAUTH_MICROSOFT_CLIENT_ID}
+      - MICROSOFT_CLIENT_SECRET=${OAUTH_MICROSOFT_CLIENT_SECRET}
+      - MICROSOFT_TENANT_ID=${OAUTH_MICROSOFT_TENANT_ID:-}
     depends_on:
       postgres:
         condition: service_healthy
