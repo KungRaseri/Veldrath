@@ -237,4 +237,33 @@ public sealed class PayloadRecordTests
         var b = new ChatMessageHubDto(id, "global", "Test", "Hello", now);
         a.Should().Be(b);
     }
+
+    // ── InventoryLoadedPayload ────────────────────────────────────────────────
+
+    /// <summary>
+    /// Verifies the payload binds the server's inventory snapshot shape: item references in
+    /// <c>items</c>, full details in <c>itemDetails</c>, string refs in <c>equipped</c>, and
+    /// full item objects in <c>equippedItems</c>.
+    /// </summary>
+    [Fact]
+    public void InventoryLoadedPayload_Deserializes_Server_Shape()
+    {
+        const string json = """
+        {
+          "characterId": "11111111-1111-1111-1111-111111111111",
+          "items": [ { "itemRef": "health-potion", "quantity": 2, "durability": null } ],
+          "itemDetails": [ { "slug": "health-potion", "name": "Health Potion", "quantity": 2 } ],
+          "equipped": { "MainHand": "iron-sword" },
+          "equippedItems": { "MainHand": { "slug": "iron-sword", "name": "Iron Sword" } }
+        }
+        """;
+
+        var payload = JsonSerializer.Deserialize<InventoryLoadedPayload>(
+            json, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        payload.Should().NotBeNull();
+        payload!.ItemDetails.Should().ContainSingle(i => i.Slug == "health-potion");
+        payload.EquippedItems.Should().ContainKey("MainHand");
+        payload.EquippedItems!["MainHand"].Slug.Should().Be("iron-sword");
+    }
 }

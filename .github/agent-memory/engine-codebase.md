@@ -395,10 +395,13 @@ Enhanced [`ActionBar.razor`](Veldrath.GameClient.Components/Components/Shared/Ac
   filters currently-equipped refs out of the bag list (and resolves full `Item` details for the
   bag and equipment maps), so clients do not show the same item twice. Unequipping restores
   the item because the inventory blob still holds it.
-- **InventoryLoaded wire shape** — `{ CharacterId, Items, ItemDetails, Equipped }`.
-  `Items` is the Avalonia `InventoryItemDto` list; `ItemDetails`/`Equipped` are full
-  `RealmEngine.Shared.Models.Item` objects used by the RCL. `InventoryLoadedPayload` in
-  `Veldrath.GameClient.Core` binds `ItemDetails`/`Equipped` and ignores `Items`.
+- **InventoryLoaded wire shape** — `{ CharacterId, Items, ItemDetails, Equipped, EquippedItems }`.
+  `Items` is the Avalonia `InventoryItemDto` list; `Equipped` is the slot→ref string map
+  (Avalonia); `ItemDetails` and `EquippedItems` are full `RealmEngine.Shared.Models.Item`
+  objects used by the RCL. `InventoryLoadedPayload` in `Veldrath.GameClient.Core` binds
+  `ItemDetails`/`EquippedItems` and ignores `Items`/`Equipped`. Do not put full item objects
+  under `Equipped`: the Avalonia record binds that name as `string`, and deserialization
+  failure prevents the inventory overlay from opening.
 - **ItemEquipped wire shape** — includes both `AllEquippedItems` (slot→ref, Avalonia) and
   `Equipped` (slot→`Item`, RCL). `GameHub.EquipItem` follows the event with a caller-only
   `InventoryLoaded` snapshot so bag/equipment state refreshes atomically.

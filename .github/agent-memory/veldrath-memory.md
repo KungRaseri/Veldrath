@@ -1188,7 +1188,7 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
 
 **Inventory duplication and equipment visibility**
 - `GetInventoryHubCommand` now injects `IItemRepository`, filters equipped refs out of the bag list, and returns full `ItemDetails` plus a slot→`Item` `Equipped` map.
-- `InventoryLoaded` payload shape is `{ CharacterId, Items, ItemDetails, Equipped }`. Avalonia uses `Items`/`Equipped` refs; the RCL uses `ItemDetails`/`Equipped`.
+- `InventoryLoaded` payload shape is `{ CharacterId, Items, ItemDetails, Equipped, EquippedItems }`: `Equipped` is the slot→ref map (Avalonia) and `EquippedItems` is the slot→`Item` map (RCL). Keep those two names distinct — binding full item objects into the Avalonia string-ref map throws during SignalR deserialization and the inventory overlay never opens.
 - `GetInventoryHubCommandResult` filtering means an equipped item is no longer listed in the bag; unequipping makes it reappear because the inventory blob still contains it.
 - `GameHub.EquipItem` now sends a resolved `Equipped` map in `ItemEquipped` and follows it with a caller-only `InventoryLoaded` snapshot, removing the doubled-item view immediately after equipping.
 - `CharacterSelected` now includes `Equipment` (slot→ref); Avalonia applies it in `SeedInitialStats` and the RCL seeds placeholder `GameState.EquippedItems`, so starter items appear equipped at login.

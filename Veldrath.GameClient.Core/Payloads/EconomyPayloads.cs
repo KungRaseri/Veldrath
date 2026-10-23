@@ -48,10 +48,10 @@ public sealed record ItemDroppedPayload(string ItemRef, List<Item> Inventory);
 /// <paramref name="ItemDetails"/> so the same item is never shown in both panels.
 /// </summary>
 /// <param name="ItemDetails">All items currently in the character's inventory bag.</param>
-/// <param name="Equipped">All items currently equipped, keyed by canonical slot name.</param>
+/// <param name="EquippedItems">All items currently equipped with full details, keyed by canonical slot name.</param>
 public sealed record InventoryLoadedPayload(
     List<Item>? ItemDetails = null,
-    Dictionary<string, Item>? Equipped = null);
+    Dictionary<string, Item>? EquippedItems = null);
 
 /// <summary>
 /// Hub event payload received when the character successfully crafts an item.

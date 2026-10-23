@@ -642,8 +642,8 @@
         _hubSubscriptions.Add(Hub.On<InventoryLoadedPayload>("InventoryLoaded", async payload =>
         {
             var items = payload.ItemDetails ?? [];
-            if (payload.Equipped is not null)
-                GameState.ApplyInventoryUpdated(items, payload.Equipped);
+            if (payload.EquippedItems is not null)
+                GameState.ApplyInventoryUpdated(items, payload.EquippedItems);
             else
                 GameState.ApplyInventoryUpdated(items, GameState.EquippedItems);
 

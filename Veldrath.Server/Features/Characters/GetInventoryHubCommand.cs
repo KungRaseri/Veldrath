@@ -38,7 +38,14 @@ public record GetInventoryHubResult
     /// </summary>
     public IReadOnlyList<Item> ItemDetails { get; init; } = [];
 
-    /// <summary>Gets the currently equipped items keyed by canonical slot name.</summary>
+    /// <summary>Gets the currently equipped item references keyed by canonical slot name.</summary>
+    public IReadOnlyDictionary<string, string> EquippedRefs { get; init; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Gets the currently equipped items with full catalog details keyed by canonical slot name.
+    /// Sent under a separate property so string-based and item-based clients can both bind it.
+    /// </summary>
     public IReadOnlyDictionary<string, Item> Equipped { get; init; } =
         new Dictionary<string, Item>(StringComparer.OrdinalIgnoreCase);
 }
@@ -110,10 +117,11 @@ public class GetInventoryHubCommandHandler : IRequestHandler<GetInventoryHubComm
 
         return new GetInventoryHubResult
         {
-            Success     = true,
-            Items       = bagItems,
-            ItemDetails = itemDetails,
-            Equipped    = equippedItems,
+            Success      = true,
+            Items        = bagItems,
+            ItemDetails  = itemDetails,
+            EquippedRefs = equipment,
+            Equipped     = equippedItems,
         };
     }
 

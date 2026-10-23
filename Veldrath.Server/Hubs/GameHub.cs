@@ -2715,7 +2715,8 @@ public class GameHub : Hub
             CharacterId = characterId,
             Items       = result.Items,
             ItemDetails = result.ItemDetails,
-            Equipped    = result.Equipped,
+            Equipped    = result.EquippedRefs,
+            EquippedItems = result.Equipped,
         });
     }
 
