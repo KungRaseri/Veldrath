@@ -1309,3 +1309,39 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
 - Verified live: Better Auth user with `0` matching `AspNetUsers` rows → `/api/characters` `200` →
   row created with matching GUID/username/email → repeat request keeps one row →
   `/hubs/game/negotiate` `200`. `Veldrath.Server.Tests`: **771 passing** (8 new).
+
+**Temporary Blazor Foundry bridge**
+- `POST /api/internal/accounts/sync` (`InternalAccountBridgeEndpoints`) accepts a Better Auth
+  account (GUID, username, email, optional plaintext password, optional provider logins) and
+  writes the Identity password hash directly via `PasswordHasher.HashPassword` (bypasses the
+  12-char policy on purpose). Guarded by `X-Internal-Bridge-Token` == `InternalBridge:Token`;
+  returns `503` when unconfigured.
+- `web/client/src/lib/server/foundry-bridge.ts` calls it server-side. Registration posts the
+  plaintext password once to `/api/foundry-bridge/register`; `hooks.server.ts` does a once-per-user
+  account/provider-login sync and retries on failure. `INTERNAL_BRIDGE_URL=http://server:8080`
+  inside Docker.
+- Provider IDs are normalized `discord|google|microsoft` → `Discord|Google|Microsoft` for
+  `AspNetUserLogins`.
+- Concurrency gotcha: registration and the hooks sync race to provision the same account.
+  `CreateAccountAsync` catches `DbUpdateException` (duplicate `PK_AspNetUsers`), detaches the
+  failed entity, and re-queries the winning row.
+- Identity requires a unique email (`RequireUniqueEmail`), so accounts without one get
+  `{accountId:N}@external.veldrath.local`.
+
+**Existing-account migration**
+- `web/scripts/migrate-identity-accounts.mjs` (`npm run db:migrate-identity --workspace client`)
+  copies `AspNetUsers` → `auth.user` (same GUID), `PasswordHash` → `auth.account`
+  (`provider_id='credential'`), and `AspNetUserLogins` → `auth.account`. Idempotent; `--dry-run`
+  rolls back.
+- Better Auth 1.7.1 matches credential accounts by `issuer` too. Insert
+  `issuer='local:credential'` for password accounts and `issuer='local:oauth:{provider}'` for
+  social logins, or sign-in reports `INVALID_EMAIL_OR_PASSWORD` even with a correct hash.
+- Migration needs `MIGRATION_DATABASE_URL` with access to `public."AspNetUsers"`; the restricted
+  `veldrath_auth` role cannot read public tables (and its `search_path=auth` resolves unqualified
+  `"AspNetUsers"` to `auth."AspNetUsers"`).
+- Identity PBKDF2 v3 hashes stay valid: `auth.ts` uses a custom `emailAndPassword.password.verify`
+  that handles Better Auth scrypt (`salt:key`) and Identity v3
+  (`0x01 | prf | iterations | saltLen | salt | subkey`). New password changes write scrypt.
+- Verified live: migrated Identity-only account signed in through Better Auth with its legacy
+  password, minted a game token, and `/api/characters` returned `200`.
+- Client Vitest: **4 passing** (`auth-password.test.ts`). Server tests: **776 passing**.

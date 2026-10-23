@@ -11,16 +11,18 @@ Phase 0 is complete and verified on the existing Blazor Postgres database:
 - `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` pass.
 - Discord, Google, and Microsoft social providers are configured and Discord login is confirmed working.
 
-Phase 1 is in progress. The .NET auth bridge is complete and verified:
+Phase 1 is in progress. The auth bridge, Foundry bridge, and account migration are complete and verified:
 
 - [`JwtClaimsEnrichment`](../Veldrath.Server/Features/Auth/JwtClaimsEnrichment.cs) runs on `JwtBearerEvents.OnTokenValidated` and enriches identity-only SvelteKit tokens with Identity role and `permission` claims.
-- [`AccountProvisioningService`](../Veldrath.Server/Features/Auth/AccountProvisioningService.cs) provisions a `PlayerAccount` for an unknown `sub` GUID on first use, using the Better Auth username/email claims. Account-access snapshots are cached for 60 seconds per account.
+- [`AccountProvisioningService`](../Veldrath.Server/Features/Auth/AccountProvisioningService.cs) provisions a `PlayerAccount` for an unknown `sub` GUID on first use, using the Better Auth username/email claims. Account-access snapshots are cached for 60 seconds per account, and concurrent provisioning races are handled.
 - [`RolePermissionResolver`](../Veldrath.Server/Features/Auth/RolePermissionResolver.cs) is shared by token issuance and inbound enrichment so both paths derive RBAC claims identically.
 - The SvelteKit game token now includes `email` and `email_verified` claims.
-- Live verification: a Better Auth user with no `AspNetUsers` row received `200` from `/api/characters`; the row was created with the token GUID, username, and email; repeat requests did not duplicate it; `/hubs/game/negotiate` returned `200`.
-- `Veldrath.Server.Tests` passes (771 tests, including 8 new provisioning/enrichment tests).
+- The temporary Foundry bridge ([`InternalAccountBridgeEndpoints`](../Veldrath.Server/Features/Auth/InternalAccountBridgeEndpoints.cs), [`foundry-bridge.ts`](../web/client/src/lib/server/foundry-bridge.ts)) mirrors registration passwords and OAuth logins into Identity, guarded by `INTERNAL_BRIDGE_TOKEN`.
+- [`migrate-identity-accounts.mjs`](../web/scripts/migrate-identity-accounts.mjs) copies `AspNetUsers` and `AspNetUserLogins` into Better Auth with matching GUIDs. Legacy Identity PBKDF2 hashes stay valid through the dual-format verifier in [`auth-password.ts`](../web/client/src/lib/server/auth-password.ts).
+- Live verification: a Better Auth user with no `AspNetUsers` row received `200` from `/api/characters` and the row was provisioned with the token GUID; `/api/foundry-bridge/register` returned `synced: true`; .NET `/api/auth/login` succeeded for the bridged password; after migrating an Identity-only account, Better Auth `/api/auth/sign-in/email` succeeded with the legacy password and `/api/characters` returned `200`.
+- `Veldrath.Server.Tests` passes (776 tests, including 13 provisioning/bridge tests); client Vitest passes (4 password-verifier tests).
 
-Remaining Phase 1 work: the temporary Foundry account bridge, OAuth redirect updates, existing-user/password migration, and the first game vertical slice.
+Remaining Phase 1 work: the first game vertical slice (login → character select → enter zone → map/travel → inventory).
 
 ## Decision
 
@@ -277,9 +279,10 @@ Exit criteria: Better Auth registration and login work against Postgres, a prote
 - ✅ Add the .NET CORS policy for the SvelteKit origin.
 - ✅ Add the .NET claims transformation and JIT account provisioning
   (`JwtClaimsEnrichment`, `AccountProvisioningService`, `RolePermissionResolver`).
-- Add the temporary internal account bridge for Blazor Foundry.
-- Implement SvelteKit login, register, logout, session hooks, and game-token minting.
-- Update OAuth redirect URIs and migrate existing users, logins, and passwords.
+- ✅ Add the temporary internal account bridge for Blazor Foundry.
+- ✅ Implement SvelteKit login, register, logout, session hooks, and game-token minting.
+- ✅ Update OAuth redirect URIs and migrate existing users, logins, and passwords
+  (dual-format password verification, no forced resets).
 - Port one vertical slice: login, character select, enter zone, map graph, travel, and inventory overlay.
 - Connect SignalR directly with a short-lived token.
 

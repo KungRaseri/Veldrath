@@ -36,6 +36,10 @@ OAuth__Microsoft__ClientSecret=your_microsoft_client_secret
 # ── JWT (256-bit+ signing key) ──
 Jwt__Key=your-base64-or-random-string-at-least-32-chars
 
+# ── Temporary SvelteKit → Identity account bridge (Blazor Foundry transition) ──
+# Must match INTERNAL_BRIDGE_TOKEN on Veldrath.Web. Remove when Foundry is ported.
+InternalBridge__Token=your-shared-internal-bridge-secret
+
 # ── Email (SMTP) ──
 Email__SmtpHost=smtp.example.com
 Email__SmtpPort=587
@@ -65,7 +69,8 @@ ASPNETCORE_ENVIRONMENT=Production
 | `OAuth__Google__ClientSecret` | `OAuth:Google:ClientSecret` | [`Program.cs:266`](../Veldrath.Server/Program.cs:266) | Google OAuth app client secret. |
 | `OAuth__Microsoft__ClientId` | `OAuth:Microsoft:ClientId` | [`Program.cs:280`](../Veldrath.Server/Program.cs:280) | Microsoft OAuth app client ID. |
 | `OAuth__Microsoft__ClientSecret` | `OAuth:Microsoft:ClientSecret` | [`Program.cs:281`](../Veldrath.Server/Program.cs:281) | Microsoft OAuth app client secret. |
-| `Jwt__Key` | `Jwt:Key` | [`Program.cs:136`](../Veldrath.Server/Program.cs:136) | HMAC-SHA JWT signing key. **Required.** |
+| `Jwt__Key` | `Jwt:Key` | [`Program.cs:141`](../Veldrath.Server/Program.cs:141) | HMAC-SHA JWT signing key. **Required.** |
+| `InternalBridge__Token` | `InternalBridge:Token` | [`InternalAccountBridgeEndpoints.cs`](../Veldrath.Server/Features/Auth/InternalAccountBridgeEndpoints.cs) | Shared secret for the temporary SvelteKit → Identity account bridge. Unset disables the endpoint (503). |
 | `Email__SmtpHost` | `Email:SmtpHost` | [`Program.cs:308`](../Veldrath.Server/Program.cs:308) | SMTP relay hostname. If empty, uses `NullEmailSender` (no emails sent). |
 | `Email__SmtpPort` | `Email:SmtpPort` | [`appsettings.json:42`](../Veldrath.Server/appsettings.json:42) | SMTP port (default: 587). |
 | `Email__User` | `Email:User` | [`appsettings.json:44`](../Veldrath.Server/appsettings.json:44) | SMTP auth username. |
@@ -110,6 +115,10 @@ JWT_AUDIENCE=Veldrath.Client
 PUBLIC_API_URL=https://api.veldrath.com
 PUBLIC_HUB_URL=https://api.veldrath.com/hubs/game
 
+# ── Temporary SvelteKit → Identity account bridge (server-side only) ──
+INTERNAL_BRIDGE_URL=http://server:8080
+INTERNAL_BRIDGE_TOKEN=your-shared-internal-bridge-secret
+
 # ── Better Auth social providers (same OAuth apps as the .NET server) ──
 DISCORD_CLIENT_ID=${OAUTH_DISCORD_CLIENT_ID}
 DISCORD_CLIENT_SECRET=${OAUTH_DISCORD_CLIENT_SECRET}
@@ -137,7 +146,23 @@ XFF_DEPTH=1
 | `JWT_KEY` / `JWT_ISSUER` / `JWT_AUDIENCE` | game token minting | Must match `Veldrath.Server` JWT validation. |
 | `PUBLIC_API_URL` | browser SSR/client | Public .NET API origin. |
 | `PUBLIC_HUB_URL` | browser SignalR | Public SignalR hub URL. |
+| `INTERNAL_BRIDGE_URL` | `foundry-bridge.ts` | Internal .NET base URL (`http://server:8080`). Never exposed to the browser. |
+| `INTERNAL_BRIDGE_TOKEN` | `foundry-bridge.ts` | Shared secret matching `InternalBridge__Token`. |
 | `PROTOCOL_HEADER` / `HOST_HEADER` / `ADDRESS_HEADER` / `XFF_DEPTH` | adapter-node | Trust Traefik's forwarded headers. |
+
+### Temporary Identity bridge (Blazor Foundry transition)
+
+While Blazor Foundry still authenticates through the .NET `/api/auth/*` endpoints,
+SvelteKit mirrors accounts into ASP.NET Core Identity:
+
+- Registration posts the plaintext password once to `/api/foundry-bridge/register`,
+  which calls the internal .NET endpoint and stores an Identity password hash.
+  SvelteKit never persists the password.
+- [`hooks.server.ts`](../web/client/src/hooks.server.ts) performs an account-only sync
+  once per user per web process and links Discord/Google/Microsoft provider accounts.
+- The internal endpoint requires the `X-Internal-Bridge-Token` header and returns
+  `503` when `InternalBridge__Token` is not configured.
+- Remove the bridge and its two environment variables once Foundry runs on SvelteKit.
 
 ### Migrations
 

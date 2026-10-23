@@ -15,7 +15,8 @@
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright install && playwright test",
-		"auth:schema": "auth generate --config src/lib/server/auth.ts --output ../shared/src/db/auth.schema.ts --yes"
+		"auth:schema": "auth generate --config src/lib/server/auth.ts --output ../shared/src/db/auth.schema.ts --yes",
+		"db:migrate-identity": "node ../scripts/migrate-identity-accounts.mjs"
 	},
 	"dependencies": {
 		"@microsoft/signalr": "^8.0.0",

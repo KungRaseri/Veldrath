@@ -1,10 +1,12 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { hashPassword, verifyPassword } from 'better-auth/crypto';
 import { username } from 'better-auth/plugins';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { getRequestEvent } from '$app/server';
 import { env } from '$env/dynamic/private';
 import { account, session, user, verification } from '@veldrath/shared/db';
+import { verifyIdentityPassword } from './auth-password';
 import { getAuthDb } from './db';
 
 function buildSocialProviders() {
@@ -53,7 +55,18 @@ function createAuth() {
 		emailAndPassword: {
 			enabled: true,
 			// Enable this once transactional email is wired up.
-			requireEmailVerification: false
+			requireEmailVerification: false,
+			password: {
+				hash: hashPassword,
+				// Accounts migrated from AspNetUsers keep their Identity PBKDF2 hash until
+				// the password is next changed, so existing players are not forced to reset.
+				verify: async ({ hash, password }) => {
+					if (hash.includes(':')) {
+						return verifyPassword({ hash, password });
+					}
+					return verifyIdentityPassword(hash, password);
+				}
+			}
 		},
 		socialProviders: buildSocialProviders(),
 		advanced: {

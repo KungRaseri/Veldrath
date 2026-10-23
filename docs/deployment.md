@@ -26,6 +26,7 @@ mappings.
 | `DATABASE_URL` | web | Better Auth/Drizzle connection. Must be able to create the `auth` schema on first boot. |
 | `JWT_KEY` | server + web | Shared HMAC signing key, at least 32 chars. |
 | `BETTER_AUTH_SECRET` | web | Better Auth session secret, at least 32 chars. |
+| `INTERNAL_BRIDGE_TOKEN` | server + web | Shared secret for the temporary SvelteKit → Identity account bridge. Remove when Foundry is ported. |
 | `DISCORD_TOKEN` | discord | Bot token. |
 | `EMAIL_SMTP_HOST` / `EMAIL_USER` / `EMAIL_PASSWORD` | server | Outbound email. |
 | `SEQ_ADMIN_PASSWORD` / `GF_ADMIN_PASSWORD` | seq / grafana | Admin passwords. |
@@ -87,6 +88,36 @@ ALTER ROLE veldrath_auth SET search_path = auth;
 The local compose stack automates this with
 [`config/postgres/init-auth-schema.sh`](../config/postgres/init-auth-schema.sh),
 which Postgres runs on a fresh volume. Existing volumes need the SQL run once.
+
+## Migrating existing accounts
+
+Copy existing ASP.NET Core Identity accounts into Better Auth before cutover:
+
+```bash
+MIGRATION_DATABASE_URL="postgres://user:pass@host:5432/veldrath" \
+  node web/scripts/migrate-identity-accounts.mjs --dry-run
+
+# Re-run without --dry-run to apply
+```
+
+The script:
+
+- Copies `AspNetUsers` → `auth.user` using the same GUID.
+- Copies `AspNetUsers.PasswordHash` → `auth.account`
+  (`provider_id = 'credential'`, `issuer = 'local:credential'`).
+- Copies `AspNetUserLogins` → `auth.account` with
+  `issuer = 'local:oauth:{provider}'`.
+- Is idempotent and leaves existing Better Auth users untouched.
+
+Existing Identity PBKDF2 password hashes keep working because Better Auth uses the
+dual-format verifier in
+[`web/client/src/lib/server/auth-password.ts`](../web/client/src/lib/server/auth-password.ts).
+A password change writes a Better Auth scrypt hash.
+
+The migration role must be able to read `public."AspNetUsers"` and write `auth.*`;
+the restricted `veldrath_auth` role cannot, which is why `MIGRATION_DATABASE_URL`
+uses the owner/admin connection. Do not delete `AspNetUsers` until Foundry and the
+desktop client are ported.
 
 ## Deploying
 
