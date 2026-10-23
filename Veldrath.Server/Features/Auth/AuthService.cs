@@ -403,34 +403,12 @@ public class AuthService(
 
     /// <summary>
     /// Resolves the full effective role and permission sets for a user.
-    /// Role claims are accumulated from <see cref="RoleManager{TRole}.GetClaimsAsync"/> and
-    /// per-user overrides are read from <see cref="UserManager{TUser}.GetClaimsAsync"/>.
-    /// The union of both sets forms the effective permission list embedded in the JWT.
+    /// Delegates to <see cref="RolePermissionResolver"/> so token issuance and inbound
+    /// token enrichment always derive RBAC claims the same way.
     /// </summary>
-    private async Task<(IReadOnlyList<string> Roles, IReadOnlyList<string> Permissions)>
-        ResolveRolesAndPermissionsAsync(PlayerAccount user)
-    {
-        var roleNames = (await userManager.GetRolesAsync(user)).ToList();
-
-        var permissions = new HashSet<string>(StringComparer.Ordinal);
-
-        // Collect permissions granted to each role.
-        foreach (var roleName in roleNames)
-        {
-            var role = await roleManager.FindByNameAsync(roleName);
-            if (role is null) continue;
-            var roleClaims = await roleManager.GetClaimsAsync(role);
-            foreach (var c in roleClaims.Where(c => c.Type == "permission"))
-                permissions.Add(c.Value);
-        }
-
-        // Merge per-user permission grants (individual overrides on top of role defaults).
-        var userClaims = await userManager.GetClaimsAsync(user);
-        foreach (var c in userClaims.Where(c => c.Type == "permission"))
-            permissions.Add(c.Value);
-
-        return (roleNames, permissions.ToList());
-    }
+    private Task<(IReadOnlyList<string> Roles, IReadOnlyList<string> Permissions)>
+        ResolveRolesAndPermissionsAsync(PlayerAccount user) =>
+        RolePermissionResolver.ResolveAsync(user, userManager, roleManager);
 
     private (string Jwt, DateTimeOffset Expiry) GenerateJwt(
         PlayerAccount user,
@@ -459,7 +437,7 @@ public class AuthService(
         // Embed all effective permissions so permission-based policies evaluate from the JWT
         // without a database round-trip per request.
         foreach (var perm in permissions)
-            claims.Add(new Claim("permission", perm));
+            claims.Add(new Claim(RolePermissionResolver.PermissionClaimType, perm));
 
         var token = new JwtSecurityToken(
             issuer: config["Jwt:Issuer"],

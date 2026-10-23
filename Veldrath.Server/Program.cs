@@ -178,7 +178,10 @@ try
                         ctx.Request.Path.StartsWithSegments("/hubs"))
                         ctx.Token = token;
                     return Task.CompletedTask;
-                }
+                },
+                // Identity-only tokens (minted by SvelteKit) are enriched with RBAC claims
+                // here; unknown accounts are provisioned just in time.
+                OnTokenValidated = JwtClaimsEnrichment.EnrichAsync,
             };
         });
 
@@ -330,6 +333,8 @@ try
 
     builder.Services.AddScoped<AuthService>();
     builder.Services.AddScoped<AccountService>();
+    // Provisions Identity rows for external (Better Auth) identities on first token use.
+    builder.Services.AddScoped<AccountProvisioningService>();
     builder.Services.AddScoped<FoundryService>();
     builder.Services.AddScoped<AccountLinkService>();
 

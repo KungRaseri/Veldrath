@@ -9,9 +9,15 @@ export const GAME_TOKEN_TTL_SECONDS = 600;
  *
  * The token intentionally contains only identity claims. Roles and permissions
  * are enriched server-side by Veldrath.Server's claims transformation so the
- * existing RBAC tables remain the source of truth.
+ * existing RBAC tables remain the source of truth. Email claims are included so
+ * the server can just-in-time provision a matching Identity account.
  */
-export async function mintGameToken(userId: string, username: string): Promise<string> {
+export async function mintGameToken(
+	userId: string,
+	username: string,
+	email?: string,
+	emailVerified = false
+): Promise<string> {
 	if (!env.JWT_KEY) {
 		throw new Error('JWT_KEY is not configured.');
 	}
@@ -24,7 +30,12 @@ export async function mintGameToken(userId: string, username: string): Promise<s
 
 	const key = new TextEncoder().encode(env.JWT_KEY);
 
-	return new SignJWT({ unique_name: username })
+	const claims: Record<string, unknown> = { unique_name: username, email_verified: emailVerified };
+	if (email) {
+		claims.email = email;
+	}
+
+	return new SignJWT(claims)
 		.setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
 		.setSubject(userId)
 		.setIssuer(env.JWT_ISSUER)

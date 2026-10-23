@@ -165,6 +165,30 @@ The runbook was executed successfully on the existing Blazor database:
 - The `auth` schema contains `user`, `session`, `account`, `verification`, and
   `__drizzle_migrations`; the 66 public EF Core tables were untouched.
 
+Re-validation after the Docker, social-auth, and Caddy-removal changes:
+
+- `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test`
+  (Playwright) pass with zero errors.
+- `npm run db:generate` reports no schema drift and
+  `git diff --exit-code -- shared/db/migrations` is clean.
+- `docker compose config --quiet` passes for the base, dev, prod overlay, and
+  Coolify compose files.
+- Discord OAuth login completes and returns a Better Auth session.
+- Live runtime smoke test against `Veldrath.Server` (`localhost:9000`) and the
+  SvelteKit dev server (`localhost:5173`):
+  - `/api/game-token` minted a 356-character HS256 JWT from the session cookie.
+  - `GET /api/characters` returned `200`.
+  - `POST /hubs/game/negotiate` returned `200` with WebSockets offered.
+  - `@microsoft/signalr` connected over WebSockets (`101`) and received
+    `ServerInfo` with `serverVersion` `0.1`.
+- Cookie note: Better Auth scopes the session cookie to the exact host used at
+  login. Use `localhost` consistently, not `127.0.0.1`.
+
+> **Additional verified result:** a fresh Postgres volume created the
+> `veldrath_auth` role and `auth` schema through the init script, the web
+> entrypoint applied Drizzle migrations on first boot, and a container restart
+> was a no-op.
+
 One important local-development detail: the root `.env` `JWT_KEY` overrides
 `appsettings.Development.json` because `Veldrath.Server` loads the root `.env`
 in Development. Copy that same value into `web/client/.env`. The checked-in

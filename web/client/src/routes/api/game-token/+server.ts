@@ -8,7 +8,12 @@ export const GET: RequestHandler = async ({ locals }) => {
 	}
 
 	const username = locals.user.username ?? locals.user.name;
-	const token = await mintGameToken(locals.user.id, username);
+	const token = await mintGameToken(
+		locals.user.id,
+		username,
+		locals.user.email,
+		locals.user.emailVerified
+	);
 
 	return json(
 		{ token, expiresIn: GAME_TOKEN_TTL_SECONDS },
