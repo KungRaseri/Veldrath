@@ -90,6 +90,10 @@ jobs:
         working-directory: web
         run: npm run build
 
+      - name: Build desktop bundle
+        working-directory: web
+        run: npm run build:desktop
+
       - name: Install Playwright browsers
         working-directory: web
         run: npx playwright install --with-deps chromium
@@ -103,7 +107,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: web-build
-          path: web/client/build
+          path: |
+            web/client/build
+            web/client/build-desktop
           if-no-files-found: ignore
           retention-days: 14
 

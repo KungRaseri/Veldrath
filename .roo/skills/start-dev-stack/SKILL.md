@@ -71,15 +71,16 @@ dotnet run --project Veldrath.Client
 
 The client connects to the server and opens the game window.
 
-### 5. (Optional) Start RealmFoundry
+### 5. (Optional) Start the SvelteKit web app
 
 Open another **new terminal** and run:
 
 ```powershell
-dotnet run --project RealmFoundry
+cd web/client
+npm run dev
 ```
 
-The portal web app starts and is available at the URL shown in the console output.
+The web app starts at `http://localhost:5173`.
 
 ### 6. Verify the stack
 
@@ -88,7 +89,7 @@ The portal web app starts and is available at the URL shown in the console outpu
 | PostgreSQL | `localhost:5432` | `docker compose ps` shows `healthy` |
 | Game Server | `https://localhost:5001` | `curl -k https://localhost:5001/health` or check terminal |
 | Game Client | GUI window | Window opens on screen |
-| RealmFoundry | `https://localhost:5002` | Open in browser |
+| Web app | `http://localhost:5173` | Open in browser |
 
 ## Stopping the Stack
 

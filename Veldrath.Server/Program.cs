@@ -638,7 +638,7 @@ try
     Log.Information("Veldrath.Server running at {Urls}", string.Join(", ", app.Urls));
 
     // Guard: Auth:CookieDomain must be configured in non-Development environments.
-    // Without it, the rt cookie is not cross-subdomain and RealmFoundry / Veldrath.Web
+    // Without it, the rt cookie is not cross-subdomain and the web app's session
     // cannot share the session established by /api/auth/session.
     if (app.Environment.IsProduction()
         && string.IsNullOrWhiteSpace(app.Configuration["Auth:CookieDomain"]))

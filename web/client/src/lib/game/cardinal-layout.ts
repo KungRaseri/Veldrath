@@ -28,7 +28,7 @@ function compareIgnoreCase(a: string, b: string): number {
  * consistent with edge directions; remaining nodes are placed cardinally from already-placed
  * neighbours. Every grid cell is unique, and computed neighbours share a row or column.
  *
- * Ported from `Veldrath.GameClient.Components/Layout/CardinalGraphLayout.cs`.
+ * Ported from the former Blazor `CardinalGraphLayout.cs` implementation.
  */
 export function computeCardinalLayout(
 	nodes: MapNode[],

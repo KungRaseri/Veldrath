@@ -200,8 +200,9 @@ public static class ExternalAuthEndpoints
         }
 
         var config        = context.RequestServices.GetRequiredService<IConfiguration>();
-        var foundryBase   = config["Foundry:BaseUrl"];
         var webBase       = config["Web:BaseUrl"];
+        // Legacy Foundry configuration is retained as a fallback for older deployments.
+        var foundryBase   = config["Foundry:BaseUrl"] ?? webBase;
         var serverBase    = $"{context.Request.Scheme}://{context.Request.Host}";
         var allowedHosts  = config["AllowedReturnUrlHosts"];
 
@@ -246,7 +247,7 @@ public static class ExternalAuthEndpoints
         var email         = info.Principal.FindFirstValue(ClaimTypes.Email);
         var displayName   = info.Principal.FindFirstValue(ClaimTypes.Name);
         var clientIp      = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        var foundryBase   = config["Foundry:BaseUrl"];
+        var foundryBase   = config["Foundry:BaseUrl"] ?? config["Web:BaseUrl"];
         var allowedHosts  = config["AllowedReturnUrlHosts"];
 
         string? returnUrl = null;

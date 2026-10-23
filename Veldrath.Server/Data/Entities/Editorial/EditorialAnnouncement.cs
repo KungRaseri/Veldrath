@@ -1,6 +1,6 @@
 namespace Veldrath.Server.Data.Entities.Editorial;
 
-/// <summary>A site-wide announcement shown as a dismissible banner on Veldrath.Web.</summary>
+/// <summary>A site-wide announcement shown as a dismissible banner on the Veldrath web app.</summary>
 public class EditorialAnnouncement
 {
     /// <summary>Gets or sets the primary key.</summary>

@@ -64,6 +64,16 @@ Phase 5 is complete for the desktop client (WebView2 execution verified on the b
 - The desktop client no longer references `Veldrath.GameClient.Components` or `Veldrath.Auth.Blazor`. The native Avalonia UI remains the fallback when WebView2 is unavailable; Tauri remains deferred.
 - Verification: `npm run build:desktop`, typecheck/lint, **677** `Veldrath.Client.Tests` (including 7 `DesktopUiServer` integration tests for static hosting, SPA fallback, auth-injecting proxying, 401 handling, and shutdown), and a Chromium smoke of the static bundle with a mocked character API.
 
+Phase 6 is complete:
+
+- Deleted `Veldrath.Web`, `Veldrath.Web.Tests`, `RealmFoundry`, `RealmFoundry.Tests`, `Veldrath.Auth.Blazor`, `Veldrath.GameClient.Components`, and `Veldrath.GameClient.Components.Tests`, plus `Veldrath.Web.slnx`, `RealmFoundry.slnx`, the `web`/`foundry` version props, the Foundry CI workflow, and the MudBlazor/bunit/Markdig/HtmlSanitizer package entries.
+- Updated `Realm.Full.slnx`, `Veldrath.slnx`, `Veldrath.Client.slnx`, `Veldrath.Libraries.slnx`, and `RealmForge.slnx`; `Veldrath.Auth.Tests` now references only the shared `Veldrath.Auth` library.
+- Removed the Foundry service and volumes from all compose files and the Foundry tag/release/deploy paths. `ci-web.yml` now also builds the static desktop bundle; `ci-client.yml` builds it before the .NET client so `SvelteApp/` is bundled.
+- Kept the .NET auth endpoints and the internal SvelteKit → Identity bridge: the desktop client's native fallback still signs in through ASP.NET Core Identity. OAuth redirect validation now falls back to `Web:BaseUrl` when `Foundry:BaseUrl` is absent.
+- Replaced the old Veldrath.Web/RealmFoundry VS Code launch/task entries with `web:dev`, `web:build`, `web:desktop`, `web:test`, and a SvelteKit launch/compound configuration.
+- Updated `AGENTS.md`, the build-strategy and testing instructions, deployment docs, the design-system migration note, and removed the obsolete Blazor/MudBlazor instruction files, `llms.txt`, and the `run-realmfoundry` skill.
+- Verification: full `Realm.Full.slnx` build, **4,617** .NET tests across 9 projects, SvelteKit typecheck/lint, **31** Vitest, **15** Playwright, and the web and desktop builds.
+
 ## Decision
 
 Replace the Blazor frontends with a **single SvelteKit application** using route groups, built from the in-repo [`Veldrath.Web.Sveltekit`](../Veldrath.Web.Sveltekit/TEMPLATE-GUIDE.md) workspace.
@@ -369,22 +379,22 @@ Exit criteria: the desktop client runs the Svelte UI, and the Razor Class Librar
 
 ### Phase 6 — Decommission and cleanup
 
-- Delete `Veldrath.Web`, `RealmFoundry`'s Blazor host, `Veldrath.Auth.Blazor`, `Veldrath.GameClient.Components`, `Veldrath.Web.Tests`, and `RealmFoundry.Tests`.
-- Remove the old .NET auth endpoints after the desktop and Foundry no longer need them.
-- Remove `Caddyfile`, the old web service, and obsolete compose entries.
-- Update all `.slnx` files, CI workflows, VS Code tasks, `AGENTS.md`, memory files, and documentation.
-- Run the full .NET test suite and the full SvelteKit test suite.
+- ✅ Delete `Veldrath.Web`, `RealmFoundry`'s Blazor host, `Veldrath.Auth.Blazor`, `Veldrath.GameClient.Components`, `Veldrath.Web.Tests`, and `RealmFoundry.Tests`.
+- ✅ Keep the .NET auth endpoints and internal Identity bridge while the desktop client's native sign-in still relies on them. OAuth redirects fall back to `Web:BaseUrl`.
+- ✅ Remove the Caddy references, the old Foundry/Web services, and obsolete compose entries.
+- ✅ Update all `.slnx` files, CI workflows, VS Code tasks, `AGENTS.md`, memory files, and documentation.
+- ✅ Run the full .NET test suite and the full SvelteKit test suite.
 
 ## Repository and tooling changes
 
-- Add `web/` to the root documentation and agent instructions. Create a `web/AGENTS.md` adapted from the template.
-- Update `.gitignore` for Node artifacts and keep `.env.example` files tracked.
-- Replace the `run-veldrath-web` VS Code task with `web:dev`, `web:build`, `web:test`, and a compound server plus web task.
-- Replace `ci-web.yml` with a Node workflow that runs install, typecheck, lint, Vitest, Playwright, build, and Docker packaging.
-- Replace the `web` service in `docker-compose.yml` and `docker-compose.prod.yml` with the SvelteKit Node image.
-- Remove the Caddy service after the old stack is retired. TLS and routing are handled by the hosting platform.
-- Keep the .NET server CORS policy restricted to the known web origins.
-- Keep `versions/web.props` only until the old .NET web app is deleted.
+- ✅ Add `web/` to the root documentation and agent instructions.
+- ✅ Update `.gitignore` for Node artifacts and keep `.env.example` files tracked.
+- ✅ Replace the old web/Foundry VS Code entries with `web:dev`, `web:build`, `web:desktop`, `web:test`, and a SvelteKit launch/compound configuration.
+- ✅ `ci-web.yml` runs install, typecheck, lint, Vitest, Playwright, web build, desktop build, and Docker packaging.
+- ✅ The SvelteKit `web` service replaces the Blazor web service in compose.
+- ✅ Caddy is gone; TLS and routing are handled by Coolify's Traefik.
+- ✅ Keep the .NET server CORS policy restricted to the known web origins.
+- ✅ `versions/web.props` and `versions/foundry.props` deleted with their projects.
 
 ## Testing strategy
 
@@ -403,22 +413,13 @@ Exit criteria: the desktop client runs the Svelte UI, and the Razor Class Librar
 | Password hash migration fails | High | Script with dry run and per-account fallback to password reset |
 | SignalR auth or CORS breaks | High | Direct hub connection with short-lived token; integration test before UI port |
 | Better Auth table naming collides | Medium | Dedicated `auth` schema or prefixed table names; verify adapter support in Phase 0 |
-| Blazor Foundry cannot authenticate Better Auth users | High during transition | Temporary password/account bridge; migrate Foundry before removing .NET auth endpoints |
+| Desktop native sign-in depends on ASP.NET Identity | Medium | Keep the .NET auth endpoints and internal identity bridge until the desktop fully adopts Better Auth |
 | Route guards are bypassed | High | Server-side layout guards plus .NET API authorization; never rely on client checks |
-| Markdown sanitization regressions | Medium | `marked` plus DOMPurify; keep server-side sanitization on write |
+| Markdown sanitization regressions | Medium | `marked` plus `sanitize-html`; keep server-side sanitization on read/write |
 | Node runtime and dependency operations | Medium | Pinned versions, lockfile, CI audit, Docker image rebuilds |
 | Desktop divergence | Medium | Keep the Svelte UI embeddable; defer the shell decision |
 | Dual maintenance during migration | Medium | Time-box Blazor to critical fixes; migrate route by route |
 
-## Immediate next step
+## Post-migration status
 
-Start Phase 0 with a narrow vertical slice:
-
-1. Move the template into `web/` and remove Colyseus and the TypeScript engine.
-2. Scaffold Better Auth, Drizzle, and the missing SvelteKit server files.
-3. Prove Better Auth login against Postgres.
-4. Prove SvelteKit can mint a token that `Veldrath.Server` accepts.
-5. Prove the browser can open a SignalR connection and receive one event.
-6. Only then port character select and the map.
-
-That sequence validates the three hard parts — auth, token compatibility, and real-time connectivity — before any large UI port begins.
+Phases 0–6 are complete. The remaining release check is a Windows WebView2 runtime smoke of the desktop Svelte shell with a live session. Keep the .NET auth endpoints and the internal identity bridge while the desktop native fallback uses ASP.NET Core Identity; retire them when the desktop fully moves to Better Auth.

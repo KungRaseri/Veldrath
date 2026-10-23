@@ -4,7 +4,7 @@
 #
 # This file:
 #   - Uses an external reverse proxy (Coolify Traefik) for TLS and routing
-#   - Switches server/foundry/web/discord to pre-built GHCR images
+#   - Switches server/web/discord to pre-built GHCR images
 #   - Removes host port exposure; services are reached on the Docker network
 #   - Wires production environment variables for email and public URLs
 #   - Sets restart policies for all services
@@ -27,10 +27,7 @@ services:
       - Email__Password=${EMAIL_PASSWORD}
       - Email__SenderAddress=${EMAIL_SENDER_ADDRESS:-noreply@veldrath.com}
       - Email__SenderName=Veldrath
-      # Foundry public base URL — used for OAuth redirect validation and email links.
-      # Must be the browser-reachable HTTPS address, NOT the internal container address.
-      - Foundry__BaseUrl=https://foundry.veldrath.com
-      # Public base URL for the main website (used to validate session redirects)
+      # Public base URL for the main website (used for OAuth redirect validation)
       - Web__BaseUrl=https://veldrath.com
       # Shared secret for the temporary SvelteKit → Identity account bridge.
       - InternalBridge__Token=${INTERNAL_BRIDGE_TOKEN}
@@ -38,23 +35,6 @@ services:
       - Auth__CookieDomain=.veldrath.com
       # Seq log shipping — internal container reference (unchanged from base)
       - Seq__ServerUrl=http://seq
-    restart: unless-stopped
-
-  foundry:
-    # Use the pre-built image from GHCR.
-    image: ghcr.io/kungraseri/realmfoundry:latest
-    # Reached by the external proxy on the Docker network.
-    ports: []
-    expose:
-      - "8081"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      # Internal URL for server-side HttpClient calls
-      - Veldrath__ServerUrl=http://server:8080
-      # Public URL the browser uses for OAuth redirects — must be the real HTTPS URL
-      - Veldrath__PublicServerUrl=${FOUNDRY_PUBLIC_SERVER_URL:-https://api.veldrath.com}
-      # Cross-subdomain rt cookie domain
-      - Auth__CookieDomain=.veldrath.com
     restart: unless-stopped
 
   web:

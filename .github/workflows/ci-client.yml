@@ -13,6 +13,8 @@ on:
       - 'RealmEngine.Core/**'
       - 'RealmEngine.Shared/**'
       - 'RealmEngine.Data/**'
+      - 'web/client/**'
+      - 'web/package-lock.json'
       - 'versions/client.props'
       - 'versions/engine.props'
       - 'Directory.Build.props'
@@ -25,6 +27,8 @@ on:
       - 'RealmEngine.Core/**'
       - 'RealmEngine.Shared/**'
       - 'RealmEngine.Data/**'
+      - 'web/client/**'
+      - 'web/package-lock.json'
       - 'versions/client.props'
       - 'versions/engine.props'
       - 'Directory.Build.props'
@@ -56,6 +60,19 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: npm
+        cache-dependency-path: web/package-lock.json
+
+    - name: Build Svelte desktop bundle
+      working-directory: web
+      run: |
+        npm ci --allow-git=all
+        npm run build:desktop
 
     - name: Restore dependencies
       run: dotnet restore Veldrath.Client.Tests/Veldrath.Client.Tests.csproj

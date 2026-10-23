@@ -54,7 +54,7 @@ public record ContentTypeSchema(
 
 /// <summary>
 /// Static registry mapping every content type key to its <see cref="ContentTypeSchema"/>.
-/// Used by RealmFoundry to render structured submission forms, and by RealmForge to provide
+/// Used by the Foundry portal to render structured submission forms, and by RealmForge to provide
 /// explicit field metadata (labels, constraints) in place of raw reflection.
 /// </summary>
 public static class ContentSchemaRegistry

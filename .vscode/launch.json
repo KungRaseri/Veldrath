@@ -1,237 +1,149 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "RealmForge (Debug)",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build-realmforge",
-            "program": "${workspaceFolder}/RealmForge/bin/Debug/net10.0/RealmForge.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}/RealmForge",
-            "console": "internalConsole",
-            "stopAtEntry": false
-        },
-        {
-            "name": "Test: RealmEngine.Shared.Tests",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "test-shared",
-            "program": "dotnet",
-            "args": [
-                "test",
-                "${workspaceFolder}/RealmEngine.Shared.Tests/RealmEngine.Shared.Tests.csproj",
-                "--no-build"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "stopAtEntry": false
-        },
-        {
-            "name": "Test: RealmEngine.Core.Tests",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "test-core",
-            "program": "dotnet",
-            "args": [
-                "test",
-                "${workspaceFolder}/RealmEngine.Core.Tests/RealmEngine.Core.Tests.csproj",
-                "--no-build"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "stopAtEntry": false
-        },
-        {
-            "name": "Test: RealmEngine.Data.Tests",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "test-data",
-            "program": "dotnet",
-            "args": [
-                "test",
-                "${workspaceFolder}/RealmEngine.Data.Tests/RealmEngine.Data.Tests.csproj",
-                "--no-build"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "stopAtEntry": false
-        },
-        {
-            "name": "Test: All Tests",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "dotnet",
-            "args": [
-                "test",
-                "${workspaceFolder}/RealmEngine.slnx",
-                "--filter",
-                "Category!=UI",
-                "--no-build"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "stopAtEntry": false
-        },
-        // ── RealmFoundry ─────────────────────────────────────────────────────────────────
-        {
-            "name": "RealmFoundry (Debug)",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build-realmfoundry",
-            "program": "${workspaceFolder}/RealmFoundry/bin/Debug/net10.0/RealmFoundry.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}/RealmFoundry",
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
-            },
-            "console": "integratedTerminal",
-            "serverReadyAction": {
-                "action": "openExternally",
-                "pattern": "Now listening on: (https?://\\S+)"
-            },
-            "stopAtEntry": false
-        },
-        {
-            "name": "RealmFoundry (Watch)",
-            "type": "coreclr",
-            "request": "launch",
-            "program": "dotnet",
-            "args": [
-                "watch",
-                "run",
-                "--project",
-                "${workspaceFolder}/RealmFoundry/RealmFoundry.csproj",
-                "--non-interactive"
-            ],
-            "cwd": "${workspaceFolder}/RealmFoundry",
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development",
-                "DOTNET_WATCH_RESTART_ON_RUDE_EDIT": "true"
-            },
-            "console": "integratedTerminal",
-            "serverReadyAction": {
-                "action": "openExternally",
-                "pattern": "Now listening on: (https?://\\S+)"
-            },
-            "stopAtEntry": false
-        },
-        {
-            "name": "Test: RealmFoundry.Tests",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "test-realmfoundry",
-            "program": "dotnet",
-            "args": [
-                "test",
-                "${workspaceFolder}/RealmFoundry.Tests/RealmFoundry.Tests.csproj",
-                "--no-build"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "stopAtEntry": false
-        },
-        {
-            "name": ".NET Core Attach",
-            "type": "coreclr",
-            "request": "attach"
-        },
-        // ── Veldrath ─────────────────────────────────────────────────────────
-        {
-            "name": "Veldrath Server (Debug)",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build-veldrath-server",
-            "program": "${workspaceFolder}/Veldrath.Server/bin/Debug/net10.0/Veldrath.Server.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}/Veldrath.Server",
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
-            },
-            "console": "integratedTerminal",
-            "stopAtEntry": false
-        },
-        {
-            "name": "Veldrath Client (Debug)",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build-veldrath-client",
-            "program": "${workspaceFolder}/Veldrath.Client/bin/Debug/net10.0/Veldrath.Client.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}/Veldrath.Client",
-            "console": "internalConsole",
-            "stopAtEntry": false
-        },
-        {
-            "name": "Veldrath Web (Debug)",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build-veldrath-web",
-            "program": "${workspaceFolder}/Veldrath.Web/bin/Debug/net10.0/Veldrath.Web.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}/Veldrath.Web",
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
-            },
-            "console": "integratedTerminal",
-            "serverReadyAction": {
-                "action": "openExternally",
-                "pattern": "Now listening on: (https?://\\S+)"
-            },
-            "stopAtEntry": false
-        },
-        {
-            "name": "Veldrath Web (Watch)",
-            "type": "coreclr",
-            "request": "launch",
-            "program": "dotnet",
-            "args": [
-                "watch",
-                "run",
-                "--project",
-                "${workspaceFolder}/Veldrath.Web/Veldrath.Web.csproj",
-                "--non-interactive"
-            ],
-            "cwd": "${workspaceFolder}/Veldrath.Web",
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development",
-                "DOTNET_WATCH_RESTART_ON_RUDE_EDIT": "true"
-            },
-            "console": "integratedTerminal",
-            "serverReadyAction": {
-                "action": "openExternally",
-                "pattern": "Now listening on: (https?://\\S+)"
-            },
-            "stopAtEntry": false
-        },
-        {
-            "name": "Test: Veldrath.Server.Tests",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "test-veldrath-server",
-            "program": "dotnet",
-            "args": [
-                "test",
-                "${workspaceFolder}/Veldrath.Server.Tests/Veldrath.Server.Tests.csproj",
-                "--no-build"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "stopAtEntry": false
-        }
-    ],
-    "compounds": [
-        {
-            "name": "Veldrath (Full Stack)",
-            "configurations": [
-                "Veldrath Server (Debug)",
-                "Veldrath Web (Debug)"
-            ],
-            "stopAll": true
-        }
-    ]
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "RealmForge (Debug)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-realmforge",
+      "program": "${workspaceFolder}/RealmForge/bin/Debug/net10.0/RealmForge.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/RealmForge",
+      "console": "internalConsole",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Test: RealmEngine.Shared.Tests",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "test-shared",
+      "program": "dotnet",
+      "args": [
+        "test",
+        "${workspaceFolder}/RealmEngine.Shared.Tests/RealmEngine.Shared.Tests.csproj",
+        "--no-build"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Test: RealmEngine.Core.Tests",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "test-core",
+      "program": "dotnet",
+      "args": [
+        "test",
+        "${workspaceFolder}/RealmEngine.Core.Tests/RealmEngine.Core.Tests.csproj",
+        "--no-build"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Test: RealmEngine.Data.Tests",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "test-data",
+      "program": "dotnet",
+      "args": [
+        "test",
+        "${workspaceFolder}/RealmEngine.Data.Tests/RealmEngine.Data.Tests.csproj",
+        "--no-build"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Test: All Tests",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "dotnet",
+      "args": [
+        "test",
+        "${workspaceFolder}/RealmEngine.slnx",
+        "--filter",
+        "Category!=UI",
+        "--no-build"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": ".NET Core Attach",
+      "type": "coreclr",
+      "request": "attach"
+    },
+    // ── Veldrath ─────────────────────────────────────────────────────────
+    {
+      "name": "Veldrath Server (Debug)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-veldrath-server",
+      "program": "${workspaceFolder}/Veldrath.Server/bin/Debug/net10.0/Veldrath.Server.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/Veldrath.Server",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Veldrath Client (Debug)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-veldrath-client",
+      "program": "${workspaceFolder}/Veldrath.Client/bin/Debug/net10.0/Veldrath.Client.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/Veldrath.Client",
+      "console": "internalConsole",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Web (SvelteKit)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "${workspaceFolder}/web/client",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "Local:\\s+(https?://\\S+)"
+      },
+      "stopAtEntry": false
+    },
+    {
+      "name": "Test: Veldrath.Server.Tests",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "test-veldrath-server",
+      "program": "dotnet",
+      "args": [
+        "test",
+        "${workspaceFolder}/Veldrath.Server.Tests/Veldrath.Server.Tests.csproj",
+        "--no-build"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Veldrath (Full Stack)",
+      "configurations": ["Veldrath Server (Debug)", "Web (SvelteKit)"],
+      "stopAll": true
+    }
+  ]
 }

@@ -85,7 +85,6 @@ services:
       - Email__EnableTls=false
       - Email__SenderAddress=noreply@veldrath.local
       - Email__SenderName=Veldrath Dev
-      - Foundry__BaseUrl=${FOUNDRY_PUBLIC_URL:-http://localhost:8081}
       - Web__BaseUrl=${WEB_PUBLIC_URL:-http://localhost:8080}
       - AllowedReturnUrlHosts=${ALLOWED_RETURN_URL_HOSTS:-}
       - Seq__ServerUrl=http://seq
@@ -172,58 +171,6 @@ services:
       - ./versions:/src/versions
       - nuget_cache:/root/.nuget/packages
 
-  foundry:
-    build:
-      context: .
-      dockerfile: RealmFoundry/Dockerfile.dev
-    ports:
-      - "8081:8081"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8081
-      - Veldrath__ServerUrl=http://server:8080
-      - Veldrath__PublicServerUrl=${SERVER_PUBLIC_URL:-http://localhost:9000}
-      # Container-local NuGet cache (matches the nuget_cache volume mount)
-      - NUGET_PACKAGES=/root/.nuget/packages
-    volumes:
-      # Anonymous obj/ + bin/ volumes isolate the Linux build from the Windows host
-      - ./RealmFoundry:/src/RealmFoundry
-      - /src/RealmFoundry/obj
-      - /src/RealmFoundry/bin
-      - ./Veldrath.Contracts:/src/Veldrath.Contracts
-      - /src/Veldrath.Contracts/obj
-      - /src/Veldrath.Contracts/bin
-      - ./Veldrath.Auth:/src/Veldrath.Auth
-      - /src/Veldrath.Auth/obj
-      - /src/Veldrath.Auth/bin
-      - ./Veldrath.Auth.Blazor:/src/Veldrath.Auth.Blazor
-      - /src/Veldrath.Auth.Blazor/obj
-      - /src/Veldrath.Auth.Blazor/bin
-      - ./Veldrath.GameClient.Components:/src/Veldrath.GameClient.Components
-      - /src/Veldrath.GameClient.Components/obj
-      - /src/Veldrath.GameClient.Components/bin
-      - ./Veldrath.GameClient.Core:/src/Veldrath.GameClient.Core
-      - /src/Veldrath.GameClient.Core/obj
-      - /src/Veldrath.GameClient.Core/bin
-      - ./RealmEngine.Core:/src/RealmEngine.Core
-      - /src/RealmEngine.Core/obj
-      - /src/RealmEngine.Core/bin
-      - ./RealmEngine.Data:/src/RealmEngine.Data
-      - /src/RealmEngine.Data/obj
-      - /src/RealmEngine.Data/bin
-      - ./RealmEngine.Shared:/src/RealmEngine.Shared
-      - /src/RealmEngine.Shared/obj
-      - /src/RealmEngine.Shared/bin
-      - ./Directory.Build.props:/src/Directory.Build.props
-      - ./Directory.Build.targets:/src/Directory.Build.targets
-      - ./Directory.Packages.props:/src/Directory.Packages.props
-      - ./versions:/src/versions
-      - foundry_dataprotection_keys:/root/.aspnet/DataProtection-Keys
-      - nuget_cache:/root/.nuget/packages
-    depends_on:
-      server:
-        condition: service_healthy
-
   seq:
     image: datalust/seq:latest
     ports:
@@ -299,7 +246,6 @@ services:
 volumes:
   postgres_data:
   dataprotection_keys:
-  foundry_dataprotection_keys:
   seq_data:
   prometheus_data:
   grafana_data:

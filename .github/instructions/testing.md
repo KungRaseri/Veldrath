@@ -1,8 +1,8 @@
 # Testing Conventions
 
-Scope: **ALL 13 test projects** in the solution — [`RealmEngine.Core.Tests`](../../RealmEngine.Core.Tests/), [`RealmEngine.Shared.Tests`](../../RealmEngine.Shared.Tests/), [`RealmEngine.Data.Tests`](../../RealmEngine.Data.Tests/), [`Veldrath.Server.Tests`](../../Veldrath.Server.Tests/), [`Veldrath.Client.Tests`](../../Veldrath.Client.Tests/), [`Veldrath.Web.Tests`](../../Veldrath.Web.Tests/), [`Veldrath.GameClient.Core.Tests`](../../Veldrath.GameClient.Core.Tests/), [`Veldrath.GameClient.Components.Tests`](../../Veldrath.GameClient.Components.Tests/), [`Veldrath.Auth.Tests`](../../Veldrath.Auth.Tests/), [`Veldrath.Assets.Tests`](../../Veldrath.Assets.Tests/), [`Veldrath.Discord.Tests`](../../Veldrath.Discord.Tests/), [`RealmForge.Tests`](../../RealmForge.Tests/), [`RealmFoundry.Tests`](../../RealmFoundry.Tests/).
+Scope: **ALL 9 .NET test projects** in the solution — [`RealmEngine.Core.Tests`](../../RealmEngine.Core.Tests/), [`RealmEngine.Shared.Tests`](../../RealmEngine.Shared.Tests/), [`RealmEngine.Data.Tests`](../../RealmEngine.Data.Tests/), [`Veldrath.Server.Tests`](../../Veldrath.Server.Tests/), [`Veldrath.Client.Tests`](../../Veldrath.Client.Tests/), [`Veldrath.GameClient.Core.Tests`](../../Veldrath.GameClient.Core.Tests/), [`Veldrath.Auth.Tests`](../../Veldrath.Auth.Tests/), [`Veldrath.Assets.Tests`](../../Veldrath.Assets.Tests/), [`Veldrath.Discord.Tests`](../../Veldrath.Discord.Tests/), and [`RealmForge.Tests`](../../RealmForge.Tests/). The SvelteKit app is tested with Vitest + Playwright in `web/client`.
 
-This file covers every test surface type in the solution: EF Core data tests, MediatR handler tests, Avalonia UI tests, Blazor/bunit component tests, SignalR hub integration tests, and code coverage configuration.
+This file covers every test surface type in the solution: EF Core data tests, MediatR handler tests, Avalonia UI tests, SignalR hub integration tests, and code coverage configuration.
 
 ---
 
@@ -285,66 +285,6 @@ public void MainWindow_ContainsExpectedControls()
 
 ---
 
-## Blazor / bunit Testing
-
-Applies to: [`Veldrath.Web.Tests`](../../Veldrath.Web.Tests/), [`Veldrath.GameClient.Components.Tests`](../../Veldrath.GameClient.Components.Tests/), [`RealmFoundry.Tests`](../../RealmFoundry.Tests/).
-
-**Use bunit v2.6.2.**
-
-### Core API
-
-| Operation | Method | Purpose |
-|---|---|---|
-| Render | `RenderComponent<T>()` | Render a component for testing |
-| Find single | `Find("css-selector")` | Locate one element |
-| Find many | `FindAll("css-selector")` | Locate multiple elements |
-| Find component | `FindComponent<TChild>()` | Locate a child component by type |
-| Markup assertion | `MarkupMatches(...)` | Assert HTML structure matches expected |
-| Event callback | `callback.AssertNotCalled()` / `callback.AssertCalledOnce()` | Verify event callbacks |
-
-### MudBlazor Service Registration
-
-Components that depend on MudBlazor must have `MudServices` registered in bunit's `TestContext`:
-
-```csharp
-using var ctx = new TestContext();
-ctx.Services.AddMudServices();
-
-// Now render the component — MudBlazor dependencies are available
-var cut = ctx.RenderComponent<MyMudComponent>();
-```
-
-### Component Parameter Testing
-
-```csharp
-var cut = ctx.RenderComponent<MyComponent>(parameters => parameters
-    .Add(p => p.Title, "Test Title")
-    .Add(p => p.IsEnabled, true)
-    .Add(p => p.OnClick, () => clicked = true));
-```
-
-### EventCallback Testing
-
-```csharp
-var callback = ctx.RenderComponent<ParentComponent>(parameters => parameters
-    .Add(p => p.OnSubmit, args => receivedArgs = args));
-
-var child = callback.FindComponent<ChildForm>();
-child.Find("button[type='submit']").Click();
-
-receivedArgs.Should().NotBeNull();
-```
-
-### What NOT to Test
-
-Do not test MudBlazor's internal behavior — only test your component's logic, parameter bindings, and event handling. The framework's rendering, theming, and interaction behavior is MudBlazor's responsibility.
-
-### Detailed Reference
-
-For comprehensive bunit patterns, parameter testing, and MudBlazor-specific configuration, see [`.github/instructions/blazor-component-development.md`](blazor-component-development.md#testing).
-
----
-
 ## Server / Integration Testing
 
 Applies to: [`Veldrath.Server.Tests`](../../Veldrath.Server.Tests/).
@@ -409,7 +349,7 @@ dotnet test --collect:"XPlat Code Coverage"
 Apply `[ExcludeFromCodeCoverage]` to:
 
 - **Entry points** — `Program` classes (minimal API / ASP.NET Core startup)
-- **App bootstrappers** — `App` classes (Avalonia, Blazor)
+- **App bootstrappers** — Avalonia `App` classes
 - **Compiled XAML resources** — `.axaml` / `.xaml` code-behind files
 - **Thin infrastructure wrappers** — `HubConnectionFactory`, `HubConnectionWrapper` in [`Veldrath.Client`](../../Veldrath.Client/)
 
@@ -437,7 +377,7 @@ Every test project references:
 | `FluentAssertions` | 8.10.0 | Assertion library |
 | `coverlet.collector` | 10.0.1 | Code coverage collection |
 
-Additional project-specific references (bunit, Avalonia.Headless.XUnit, etc.) are added per testing surface.
+Additional project-specific references (Avalonia.Headless.XUnit, etc.) are added per testing surface.
 
 ### Required Files
 
@@ -504,7 +444,6 @@ When writing a new test, verify:
 ## See Also
 
 - [`.github/instructions/hub-development.md`](hub-development.md) — Hub integration test patterns, Fake SignalR infrastructure
-- [`.github/instructions/blazor-component-development.md`](blazor-component-development.md#testing) — Detailed bunit component testing patterns
 - [`.github/instructions/ef-core-patterns.md`](ef-core-patterns.md#testing-with-ef-core) — EF Core test provider selection and gotchas
 - [`.github/instructions/engine-features.md`](engine-features.md) — How to test new MediatR handlers
 - [`.github/agent-memory/engine-codebase.md`](../agent-memory/engine-codebase.md) — Testing gotchas, model facts, handler quirks

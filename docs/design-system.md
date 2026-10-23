@@ -1,8 +1,10 @@
 # Veldrath Design System
 
-> **Status:** Living document — decisions recorded in [§ Decision Log](#9-decision-log).  
-> **Surfaces covered:** Veldrath.Client (Avalonia desktop), RealmForge (Avalonia editor), RealmFoundry (Blazor Server portal), Veldrath.Web (Blazor Server website).  
-> **Last updated:** 2026-04-16
+> **Status:** Living document — decisions recorded in [§ Decision Log](#9-decision-log).
+> **Surfaces covered:** Veldrath.Client (Avalonia desktop + WebView2), RealmForge (Avalonia editor), and the SvelteKit web app.
+> **Last updated:** 2026-10-23
+>
+> **Migration note:** The Blazor `Veldrath.Web` and `RealmFoundry` projects were retired in favor of the SvelteKit app in [`web/`](../web/). MudBlazor-specific sections in this document are historical; Avalonia/RealmForge guidance still applies. Current web design tokens live in [`theme.css`](../web/client/src/theme.css) and [`layout.css`](../web/client/src/layout.css).
 
 ---
 

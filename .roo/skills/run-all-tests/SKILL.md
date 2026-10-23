@@ -49,15 +49,14 @@ Invoke this skill when you need to:
 | `RealmEngine.Shared.Tests` | Shared model/utility tests | `engine` |
 | `RealmEngine.Data.Tests` | Repository/persistence tests | `engine` |
 | `Veldrath.Server.Tests` | Server integration tests | `server` |
-| `Veldrath.Client.Tests` | Client UI tests (Avalonia headless) | `client` |
+| `Veldrath.Client.Tests` | Client UI + DesktopUiServer tests (Avalonia headless) | `client` |
 | `RealmForge.Tests` | Forge editor tests | `forge` |
-| `RealmFoundry.Tests` | Foundry portal tests | `foundry` |
 | `Veldrath.Discord.Tests` | Discord bot tests | `discord` |
-| `Veldrath.Web.Tests` | Web portal tests | `web` |
 | `Veldrath.Auth.Tests` | Auth library tests | — |
 | `Veldrath.Assets.Tests` | Asset management tests | — |
 | `Veldrath.GameClient.Core.Tests` | Shared client core tests | `client` |
-| `Veldrath.GameClient.Components.Tests` | Razor Class Library component tests (bUnit) | `client` |
+
+The SvelteKit web suite runs with `npm run test` in `web/client` (Vitest + Playwright, `web` coverage flag).
 
 ## Notes
 

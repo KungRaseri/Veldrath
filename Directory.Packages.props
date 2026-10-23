@@ -18,8 +18,8 @@
   </ItemGroup>
   <!-- ── Microsoft.Extensions ────────────────────────────────────────────── -->
   <ItemGroup>
-    <!-- Aligned to the 10.0.13 servicing train; SignalR.Client 10.0.13 and bunit 2.6.2
-         require 10.0.13, and the installed runtime is 10.0.13. -->
+    <!-- Aligned to the 10.0.13 servicing train; SignalR.Client 10.0.13 requires
+         10.0.13, and the installed runtime is 10.0.13. -->
     <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.0.13" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.13" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.FileExtensions" Version="10.0.13" />
@@ -60,17 +60,9 @@
     <PackageVersion Include="prometheus-net.AspNetCore" Version="8.2.1" />
     <PackageVersion Include="prometheus-net.DotNetRuntime" Version="4.4.1" />
   </ItemGroup>
-  <!-- ── Security ────────────────────────────────────────────────────────── -->
-  <ItemGroup>
-    <PackageVersion Include="AngleSharp" Version="1.5.2" />
-    <PackageVersion Include="AngleSharp.Css" Version="1.0.0-beta.159" />
-    <!-- HtmlSanitizer 9.1.x targets AngleSharp >= 1.4.0; 9.0.x required 0.17.x which conflicts with bunit -->
-    <PackageVersion Include="HtmlSanitizer" Version="9.1.893-beta" />
-  </ItemGroup>
   <!-- ── Serilog ──────────────────────────────────────────────────────────── -->
   <ItemGroup>
     <PackageVersion Include="Serilog" Version="4.4.0" />
-    <PackageVersion Include="Markdig" Version="0.45.0" />
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="9.0.2" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
@@ -99,10 +91,6 @@
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.2.3" />
     <PackageVersion Include="FluentAvaloniaUI" Version="2.2.0" />
   </ItemGroup>
-  <!-- ── MudBlazor ─────────────────────────────────────────────────────────── -->
-  <ItemGroup>
-    <PackageVersion Include="MudBlazor" Version="9.7.0" />
-  </ItemGroup>
   <!-- ── ReactiveUI ───────────────────────────────────────────────────────── -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.Reactive.Testing" Version="6.1.0" />
@@ -110,7 +98,6 @@
   </ItemGroup>
   <!-- ── Testing ──────────────────────────────────────────────────────────── -->
   <ItemGroup>
-    <PackageVersion Include="bunit" Version="2.6.2" />
     <PackageVersion Include="coverlet.collector" Version="10.0.1" />
     <PackageVersion Include="FluentAssertions" Version="8.10.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />

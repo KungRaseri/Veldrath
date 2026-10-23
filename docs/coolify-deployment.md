@@ -9,8 +9,7 @@ Environment variable reference for deploying all Veldrath services in Coolify as
 | Service | Dockerfile | Container Port | Coolify Resource Name | Persistent Volume |
 |---|---|---|---|---|
 | **Veldrath.Server** | [`Veldrath.Server/Dockerfile`](../Veldrath.Server/Dockerfile) | 8080 | `veldrath-server` | `dataprotection_keys` |
-| **Veldrath.Web (SvelteKit)** | [`web/client/Dockerfile`](../web/client/Dockerfile) | 3000 | `veldrath-web` | None needed |
-| **RealmFoundry** | [`RealmFoundry/Dockerfile`](../RealmFoundry/Dockerfile) | 8081 | `realmfoundry` | `foundry_dataprotection_keys` |
+| **SvelteKit web app** | [`web/client/Dockerfile`](../web/client/Dockerfile) | 3000 | `veldrath-web` | None needed |
 | **Veldrath.Discord** | [`Veldrath.Discord/Dockerfile`](../Veldrath.Discord/Dockerfile) | 8080 | `veldrath-discord` | None needed |
 
 > **Important:** In Coolify's standalone Dockerfile mode, container names are auto-generated UUIDs. For inter-service DNS to work, set a fixed **Container Name** in Coolify Advanced settings for each resource matching the names above. Containers can then resolve each other by that name on Coolify's internal Docker network.
@@ -36,8 +35,8 @@ OAuth__Microsoft__ClientSecret=your_microsoft_client_secret
 # ── JWT (256-bit+ signing key) ──
 Jwt__Key=your-base64-or-random-string-at-least-32-chars
 
-# ── Temporary SvelteKit → Identity account bridge (Blazor Foundry transition) ──
-# Must match INTERNAL_BRIDGE_TOKEN on Veldrath.Web. Remove when Foundry is ported.
+# ── Internal SvelteKit → Identity account bridge (desktop sign-in compatibility) ──
+# Must match INTERNAL_BRIDGE_TOKEN on the SvelteKit web container.
 InternalBridge__Token=your-shared-internal-bridge-secret
 
 # ── Email (SMTP) ──
@@ -93,7 +92,7 @@ Point Coolify's health check to `http://localhost:8080/health` (exposed at [`Pro
 
 ---
 
-## 2. Veldrath.Web (SvelteKit)
+## 2. SvelteKit web app
 
 ### Environment Variables
 
@@ -151,10 +150,10 @@ XFF_DEPTH=1
 | `INTERNAL_BRIDGE_TOKEN` | `foundry-bridge.ts` | Shared secret matching `InternalBridge__Token`. |
 | `PROTOCOL_HEADER` / `HOST_HEADER` / `ADDRESS_HEADER` / `XFF_DEPTH` | adapter-node | Trust Traefik's forwarded headers. |
 
-### Temporary Identity bridge (Blazor Foundry transition)
+### Internal Identity bridge (desktop compatibility)
 
-While Blazor Foundry still authenticates through the .NET `/api/auth/*` endpoints,
-SvelteKit mirrors accounts into ASP.NET Core Identity:
+The Avalonia desktop client's native sign-in still authenticates through the .NET
+`/api/auth/*` endpoints, so SvelteKit mirrors web accounts into ASP.NET Core Identity:
 
 - Registration posts the plaintext password once to `/api/foundry-bridge/register`,
   which calls the internal .NET endpoint and stores an Identity password hash.
@@ -163,7 +162,7 @@ SvelteKit mirrors accounts into ASP.NET Core Identity:
   once per user per web process and links Discord/Google/Microsoft provider accounts.
 - The internal endpoint requires the `X-Internal-Bridge-Token` header and returns
   `503` when `InternalBridge__Token` is not configured.
-- Remove the bridge and its two environment variables once Foundry runs on SvelteKit.
+- Keep the bridge while the desktop client relies on .NET Identity sign-in.
 
 ### Migrations
 
@@ -187,50 +186,7 @@ Point Coolify's health check to `http://localhost:3000/`.
 
 ---
 
-## 3. RealmFoundry
-
-### Environment Variables
-
-```ini
-# ── API Server URL (REQUIRED — app crashes without this) ──
-Veldrath__ServerUrl=http://veldrath-server:8080
-
-# ── Public API Server URL (optional, for OAuth redirect URLs) ──
-Veldrath__PublicServerUrl=https://api.veldrath.com
-
-# ── Auth Cookie Domain (REQUIRED in production) ──
-Auth__CookieDomain=.veldrath.com
-
-# ── ASP.NET Core ──
-ASPNETCORE_URLS=http://+:8081
-ASPNETCORE_ENVIRONMENT=Production
-```
-
-### Config Key Reference
-
-| Env Var | Config Key | Read at | Purpose |
-|---|---|---|---|
-| `Veldrath__ServerUrl` | `Veldrath:ServerUrl` | [`Program.cs:36-37`](../RealmFoundry/Program.cs:36) | HTTP client base address. **Required** — throws if empty. |
-| `Veldrath__PublicServerUrl` | `Veldrath:PublicServerUrl` | [`appsettings.json:14`](../RealmFoundry/appsettings.json:14) | Public origin for OAuth redirects. |
-| `Auth__CookieDomain` | `Auth:CookieDomain` | [`Program.cs:157`](../RealmFoundry/Program.cs:157) | Cookie domain for `rt` cookie on sign-out. Must match server's `Auth__CookieDomain`. |
-| `ASPNETCORE_URLS` | — | Kestrel | Binds to `http://+:8081` ([`Dockerfile:31`](../RealmFoundry/Dockerfile:31)). |
-| `ASPNETCORE_ENVIRONMENT` | — | ASP.NET Core | Sets `Production` mode. |
-
-### Persistent Volume
-
-| Volume Name (source) | Mount Path (destination) |
-|---|---|
-| `foundry_dataprotection_keys` | `/root/.aspnet/DataProtection-Keys` |
-
-Data Protection keys at [`Program.cs:79`](../RealmFoundry/Program.cs:79) with application name `RealmFoundry`. Required for antiforgery token stability.
-
-### Health Check
-
-Point Coolify's health check to `http://localhost:8081/health`. Includes a [`ServerConnectivityHealthCheck`](../RealmFoundry/Health/ServerConnectivityHealthCheck.cs) that pings the server — reports Degraded (not Unhealthy) if server is unreachable.
-
----
-
-## 4. Veldrath.Discord
+## 3. Veldrath.Discord
 
 ### Environment Variables
 
@@ -270,7 +226,7 @@ DOTNET_ENVIRONMENT=Production
 
 ---
 
-## 5. Supporting Infrastructure
+## 4. Supporting Infrastructure
 
 ### Postgres (if not using Coolify's managed Postgres)
 
@@ -369,7 +325,7 @@ scrape_configs:
 
 ---
 
-## 6. Grafana (Already Deployed)
+## 5. Grafana (Already Deployed)
 
 ### Provisioning Config Mounts
 
@@ -430,9 +386,8 @@ Services with health check dependencies should be deployed in this order:
 2. **Seq** — log sink (optional, no dependency)
 3. **Veldrath.Server** — waits for Postgres, auto-migrates on startup
 4. **Prometheus** — waits for server's `/metrics`
-5. **Veldrath.Web** — waits for server's `/health`
-6. **RealmFoundry** — waits for server's `/health`
-7. **Veldrath.Discord** — waits for server's `/health`
-8. **Grafana** — waits for Prometheus (already deployed)
+5. **SvelteKit web app** — waits for server's `/health`
+6. **Veldrath.Discord** — waits for server's `/health`
+7. **Grafana** — waits for Prometheus (already deployed)
 
 In Coolify standalone mode, set up health check endpoints so Coolify knows when each service is ready before routing traffic.

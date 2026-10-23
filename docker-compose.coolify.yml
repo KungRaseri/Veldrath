@@ -66,7 +66,6 @@ services:
       - Email__Password=${EMAIL_PASSWORD}
       - Email__SenderAddress=${EMAIL_SENDER_ADDRESS:-noreply@veldrath.com}
       - Email__SenderName=Veldrath
-      - Foundry__BaseUrl=https://foundry.veldrath.com
       - Web__BaseUrl=https://veldrath.com
       - Auth__CookieDomain=.veldrath.com
       - Seq__ServerUrl=http://veldrath-seq
@@ -130,53 +129,6 @@ services:
         reservations:
           memory: 128M
           cpus: "0.25"
-
-  foundry:
-    container_name: realmfoundry
-    image: ghcr.io/kungraseri/realmfoundry:latest
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://+:8081
-      - Veldrath__ServerUrl=http://server:8080
-      - Veldrath__PublicServerUrl=${FOUNDRY_PUBLIC_SERVER_URL:-https://api.veldrath.com}
-      - Auth__CookieDomain=.veldrath.com
-    expose:
-      - "8081"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.foundry.rule=Host(`foundry.veldrath.com`)"
-      - "traefik.http.routers.foundry.tls.certresolver=coolify"
-      - "traefik.http.routers.foundry.entrypoints=websecure"
-      - "traefik.http.services.foundry.loadbalancer.server.port=8081"
-      - "traefik.http.services.foundry.loadbalancer.sticky.cookie.name=foundry_lb"
-      - "traefik.http.services.foundry.loadbalancer.sticky.cookie.secure=true"
-      - "traefik.http.services.foundry.loadbalancer.server.scheme=http"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8081/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
-    volumes:
-      - foundry_dataprotection_keys:/root/.aspnet/DataProtection-Keys
-    depends_on:
-      server:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      veldrath:
-      coolify:
-        aliases:
-          - realmfoundry
-          - foundry
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "1.0"
-        reservations:
-          memory: 256M
-          cpus: "0.5"
 
   web:
     container_name: veldrath-web
@@ -259,4 +211,3 @@ networks:
 
 volumes:
   dataprotection_keys:
-  foundry_dataprotection_keys:

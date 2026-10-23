@@ -37,12 +37,11 @@ Build the matching solution first, then run the tests. See [`.github/instruction
 | `server` | `dotnet build Veldrath.Server.slnx` | `dotnet test Veldrath.Server.slnx` | Server + engine + assets tests |
 | `client` | `dotnet build Veldrath.Client.slnx` | `dotnet test Veldrath.Client.slnx --filter "Category!=UI"` | Client + engine + auth + assets + GameClient tests; skips UI tests needing a display |
 | `forge` | `dotnet build RealmForge.slnx` | `dotnet test RealmForge.slnx --filter "Category!=UI"` | Forge editor tests; skips UI tests needing a display |
-| `foundry` | `dotnet build RealmFoundry.slnx` | `dotnet test RealmFoundry.slnx` | Foundry portal tests; Blazor Server unit tests |
 | `discord` | `dotnet build Veldrath.Discord.slnx` | `dotnet test Veldrath.Discord.slnx` | Discord bot + engine tests |
-| `web` | `dotnet build Veldrath.Web.slnx` | `dotnet test Veldrath.Web.slnx` | Web portal + Server + engine + auth + assets + GameClient tests |
+| `web` | — | `npm run test` in `web/client` | SvelteKit Vitest + Playwright tests |
 | `auth` | `dotnet build Veldrath.Libraries.slnx` | `dotnet test Veldrath.Libraries.slnx --filter "FullyQualifiedName~Veldrath.Auth"` | Auth library tests only |
 | `assets` | `dotnet build Veldrath.Libraries.slnx` | `dotnet test Veldrath.Libraries.slnx --filter "FullyQualifiedName~Veldrath.Assets"` | Asset management tests only |
-| `libraries` | `dotnet build Veldrath.Libraries.slnx` | `dotnet test Veldrath.Libraries.slnx` | Auth + Assets + GameClient.Core + GameClient.Components + engine tests |
+| `libraries` | `dotnet build Veldrath.Libraries.slnx` | `dotnet test Veldrath.Libraries.slnx` | Auth + Assets + GameClient.Core + engine tests |
 
 ## Steps
 

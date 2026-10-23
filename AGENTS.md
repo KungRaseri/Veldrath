@@ -32,8 +32,6 @@
 | [`.github/instructions/hub-development.md`](.github/instructions/hub-development.md) | When adding or modifying SignalR hub methods |
 | [`.github/instructions/testing.md`](.github/instructions/testing.md) | When writing tests of any kind |
 | [`.github/instructions/engine-features.md`](.github/instructions/engine-features.md) | When creating new MediatR commands/queries |
-| [`.github/instructions/blazor-component-development.md`](.github/instructions/blazor-component-development.md) | When building Blazor UI components |
-| [`.github/instructions/styling-and-css.md`](.github/instructions/styling-and-css.md) | When writing CSS or styling Blazor UI |
 | [`.github/instructions/build-strategy.md`](.github/instructions/build-strategy.md) | When deciding which solution to build after making changes |
 
 ---
@@ -42,13 +40,11 @@
 
 **RealmEngine** is a **framework-agnostic .NET 10 RPG game logic library**. It exposes all game operations as MediatR commands and queries — any .NET application (Avalonia, Godot via GDNative, Unity, ASP.NET Core, console, etc.) can consume it by calling `mediator.Send(command)`.
 
-This repository also contains the **official game built on top of that engine**: **Veldrath**, a multiplayer RPG with an Avalonia desktop client and an ASP.NET Core server. Additional tooling and portals include:
+This repository also contains the **official game built on top of that engine**: **Veldrath**, a multiplayer RPG with an Avalonia desktop client, an ASP.NET Core server, and a SvelteKit web app. Additional tooling and portals include:
 
 - **RealmForge** — Avalonia DB content editor for managing game entities in Postgres
-- **RealmFoundry** — Blazor Server web app for community content submission and curation
-- **Veldrath.Web** — Blazor Server (InteractiveServer) public website and game portal; uses MudBlazor for UI
+- **SvelteKit web app** (`web/`) — the single web frontend: public site, auth, game client, Foundry, editorial, admin, and moderation
 - **Veldrath.GameClient.Core** — Shared client-side game logic library (connection state, payloads, hub services)
-- **Veldrath.GameClient.Components** — Shared Razor Class Library with reusable Blazor UI components
 - **Veldrath.Discord** — Discord bot integration
 - **Veldrath.Auth** — Shared authentication libraries (OAuth, JWT)
 - **Veldrath.Contracts** — Shared API contracts and DTOs
@@ -64,15 +60,15 @@ This repository also contains the **official game built on top of that engine**:
 | Solution | Contains | Use For |
 |----------|----------|---------|
 | [`RealmEngine.slnx`](RealmEngine.slnx) | Core + Data + Shared + GameClient.Core + tests | Engine-only development, CI |
-| [`Veldrath.Web.slnx`](Veldrath.Web.slnx) | Web + Server + engine + auth + assets + GameClient + tests | Web portal development |
 | [`Veldrath.Client.slnx`](Veldrath.Client.slnx) | Client + engine + auth + assets + GameClient + fonts + tests | Desktop client development |
 | [`Veldrath.Server.slnx`](Veldrath.Server.slnx) | Server + engine + assets + contracts + tests | Game server development |
 | [`Veldrath.Discord.slnx`](Veldrath.Discord.slnx) | Discord + engine + contracts + tests | Discord bot development |
 | [`Veldrath.Libraries.slnx`](Veldrath.Libraries.slnx) | Auth + Assets + Contracts + GameClient + fonts + engine + tests | Shared library development |
-| [`Veldrath.slnx`](Veldrath.slnx) | Client + Server + GameClient.* + tests | Multiplayer development |
+| [`Veldrath.slnx`](Veldrath.slnx) | Client + Server + GameClient.Core + tests | Multiplayer development |
 | [`RealmForge.slnx`](RealmForge.slnx) | RealmForge + tests | Tooling development |
-| [`RealmFoundry.slnx`](RealmFoundry.slnx) | RealmFoundry + tests | Community portal development |
-| [`Realm.Full.slnx`](Realm.Full.slnx) | Everything | Full-stack local development |
+| [`Realm.Full.slnx`](Realm.Full.slnx) | Everything (.NET) | Full .NET local development |
+
+The SvelteKit app in [`web/`](web/) is verified with npm scripts rather than a `.slnx`.
 
 ### Directory Layout
 
@@ -82,18 +78,16 @@ This repository also contains the **official game built on top of that engine**:
 ├── RealmEngine.Shared/           # Models, interfaces, abstractions (zero UI dependencies)
 ├── RealmEngine.Data/             # EF Core persistence, repositories (zero UI dependencies)
 ├── Veldrath.Server/              # ASP.NET Core game server with SignalR hub
-├── Veldrath.Client/              # Avalonia cross-platform desktop client (ReactiveUI)
-├── Veldrath.Web/                 # Blazor Server (InteractiveServer) public website with MudBlazor
+├── Veldrath.Client/              # Avalonia cross-platform desktop client (ReactiveUI + WebView2 Svelte shell)
 ├── Veldrath.GameClient.Core/     # Shared client-side logic: connection state, payloads, hub services
-├── Veldrath.GameClient.Components/ # Razor Class Library: reusable Blazor UI components
 ├── RealmForge/                   # Avalonia DB content editor (ReactiveUI)
-├── RealmFoundry/                 # Blazor Server community content portal
 ├── Veldrath.Discord/             # Discord bot
-├── Veldrath.Auth/                # Auth libraries (OAuth, JWT, Blazor auth state)
+├── Veldrath.Auth/                # Auth libraries (OAuth, JWT)
 ├── Veldrath.Contracts/           # Shared API contracts and DTOs
 ├── Veldrath.Assets/              # Asset store/management
 ├── RealmUI.Fonts/                # Custom fonts
-├── [Project].Tests/              # One test project per library/application (13 total)
+├── web/                          # SvelteKit 2 / Svelte 5 web app (client + shared workspaces)
+├── [Project].Tests/              # One test project per library/application (9 total)
 ├── .github/
 │   ├── agent-memory/             # Canonical memory store (8 files, see Required Reading)
 │   ├── instructions/             # Detailed instruction files (7 files)
@@ -105,7 +99,6 @@ This repository also contains the **official game built on top of that engine**:
 ├── versions/                     # Component version props files
 ├── config/                       # Grafana dashboards, Prometheus config, etc.
 ├── scripts/                      # Build, asset, and release scripts
-├── llms.txt                      # MudBlazor comprehensive reference for LLMs
 ├── SECURITY.md                   # Security policy
 └── THIRD-PARTY-NOTICES.md        # Third-party license notices
 ```
@@ -121,8 +114,6 @@ Version metadata lives in [`versions/`](versions/):
 | [`versions/server.props`](versions/server.props) | Veldrath.Server |
 | [`versions/client.props`](versions/client.props) | Veldrath.Client |
 | [`versions/discord.props`](versions/discord.props) | Veldrath.Discord |
-| [`versions/web.props`](versions/web.props) | Veldrath.Web |
-| [`versions/foundry.props`](versions/foundry.props) | RealmFoundry |
 | [`versions/assets.props`](versions/assets.props) | Veldrath.Assets |
 
 ---
@@ -147,8 +138,8 @@ The engine is UI-agnostic by design: any .NET consumer calls `await mediator.Sen
 
 ### Shared Client Architecture
 
-- [`Veldrath.GameClient.Core/`](Veldrath.GameClient.Core/) — Framework-agnostic client logic: `IGameHubConnectionService`, `IGameStateService`, connection state model, and typed payloads
-- [`Veldrath.GameClient.Components/`](Veldrath.GameClient.Components/) — Razor Class Library with reusable Blazor components that consume GameClient.Core services
+- [`Veldrath.GameClient.Core/`](Veldrath.GameClient.Core/) — Framework-agnostic .NET client logic: `IGameHubConnectionService`, `IGameStateService`, connection state model, and typed payloads
+- [`web/client/src/lib/game/`](web/client/src/lib/game/) — Svelte game shell, `GameSession` runes store, `CardinalGraphLayout` port, and hub payload types
 
 ---
 
@@ -168,42 +159,6 @@ Engine libraries ([`RealmEngine.Core`](RealmEngine.Core/), [`RealmEngine.Shared`
 
 Prefer `FakeXxx` stub classes in `Infrastructure/` directories over mocking frameworks. [`Moq`](https://github.com/moq/moq4) and [`NSubstitute`](https://nsubstitute.github.io/) are available only when stubs aren't practical.
 
-### Rule 4: MudBlazor CSS Utility Prefixes
-
-MudBlazor CSS utility classes have a strict naming convention. **Layout, spacing, flex, and display utilities do NOT use a `mud-` prefix.** Only themed classes (colors, elevation, borders) use the `mud-` prefix.
-
-| Category | Prefix | Correct ✅ | Wrong ❌ |
-|---|---|---|---|
-| Flex | None | `d-flex`, `justify-center` | `mud-d-flex` |
-| Spacing | None | `mt-4`, `pa-4`, `gap-3` | `mud-mt-4`, `mud-pa-4` |
-| Display | None | `d-block`, `d-none` | `mud-d-block` |
-| Border radius | None | `rounded-sm` | `mud-rounded-sm` |
-| Palette text colors | `mud-*-text` | `mud-primary-text`, `mud-secondary-text`, `mud-error-text` | `mud-text-primary`, `mud-text-error` |
-| Elevation | `mud-elevation-` | `mud-elevation-4` | `elevation-4` |
-| Themed borders | `mud-border-` | `mud-border-primary` | `border-primary` |
-
-**Prefer component `Color` parameters over CSS color classes.** For text colors, use `<MudText Color="Color.Secondary">` instead of `<MudText Class="mud-text-secondary">`. The only exception is `MudTd` (table cells), which has no `Color` parameter — CSS classes are acceptable there.
-
-> **See [`.github/instructions/styling-and-css.md`](.github/instructions/styling-and-css.md) for the complete, verified list of MudBlazor v9.7.0 CSS utilities.**
-
-### Rule 5: MudBlazor Components Over Raw HTML
-
-When building Blazor UI, **prefer MudBlazor components over raw HTML elements** whenever a suitable component exists. MudBlazor components provide built-in theming, accessibility, and consistent styling that raw HTML + custom CSS cannot match.
-
-| Raw HTML | MudBlazor Replacement |
-|---|---|
-| `<button>` with styling | `<MudButton>` — supports `Variant`, `Color`, `Size`, `StartIcon`, `EndIcon` |
-| `<button>` icon-only | `<MudIconButton>` — supports `Icon`, `Color`, `Size` |
-| `<input type="text">` | `<MudTextField>` — supports `Variant`, `Label`, `Placeholder`, validation |
-| `<input type="checkbox">` | `<MudCheckBox>` — supports `Label`, `Color`, `TriState` |
-| Custom pill/tag/chip | `<MudChip>` — supports `Color`, `Size`, `Variant`, `Icon` |
-| Custom progress bar | `<MudProgressLinear>` — supports `Value`, `Color`, `Size`, `Min`/`Max` |
-| Material icon | `<MudIcon>` — supports `Icon`, `Color`, `Size` |
-| Panel/modal | `<MudPaper>` + `<MudOverlay>` or `<MudDialog>` — built-in elevation, outline, animation |
-| Separator line | `<MudDivider>` — built-in theme colors |
-
-**Exception:** Complex game-specific UI (tilemap, combat enemy display, hotbar ability slots, status dots) may require custom HTML + CSS when no MudBlazor component matches the interaction pattern. These are legitimate exceptions — document why in a code comment.
-
 ---
 
 ## Key Technologies & Versions
@@ -218,14 +173,12 @@ All package versions are centrally managed in [`Directory.Packages.props`](Direc
 | Serilog | 4.4.0 | Structured logging pipeline behavior |
 | Avalonia | 11.2.3 | UI framework (Veldrath.Client, RealmForge) |
 | ReactiveUI | 20.1.1 | MVVM for Avalonia projects |
-| MudBlazor | 9.7.0 | Material Design component library (Veldrath.Web) |
-| ASP.NET Core + SignalR | .NET 10 | Veldrath.Server, Veldrath.Web |
+| SvelteKit / Svelte | 2.x / 5 | Web app framework with runes (`web/`) |
+| Tailwind CSS + Skeleton | 4.x / 5 | Styling and UI utilities (`web/`) |
+| ASP.NET Core + SignalR | .NET 10 | Veldrath.Server API and hub |
 | Entity Framework Core | .NET 10 | ORM (Postgres production, SQLite/InMemory for tests) |
 | xUnit | 2.9.3 | Testing framework |
 | FluentAssertions | 8.10.0 | Assertion library |
-| bunit | 2.6.2 | Blazor component testing |
-
-For a comprehensive MudBlazor reference, see [`llms.txt`](llms.txt).
 
 ---
 
@@ -241,21 +194,20 @@ Build only what changed. The rule is simple: **build the `.slnx` file matching t
 |---|---|
 | `RealmEngine.*/**` | `dotnet build RealmEngine.slnx` |
 | `RealmForge/**` | `dotnet build RealmForge.slnx` |
-| `RealmFoundry/**` | `dotnet build RealmFoundry.slnx` |
-| `Veldrath.Web/**` | `dotnet build Veldrath.Web.slnx` |
-| `Veldrath.Client/**` | `dotnet build Veldrath.Client.slnx` |
+| `Veldrath.Client/**` | `dotnet build Veldrath.Client.slnx` (run `npm run build:desktop` first in `web/client` to bundle the Svelte UI) |
 | `Veldrath.Server/**` | `dotnet build Veldrath.Server.slnx` |
 | `Veldrath.Discord/**` | `dotnet build Veldrath.Discord.slnx` |
 | `Veldrath.Auth/**`, `Veldrath.Assets/**`, `Veldrath.Contracts/**` | `dotnet build Veldrath.Libraries.slnx` |
+| `web/**` | `npm run typecheck && npm run lint && npm run test && npm run build` in `web/client` |
 | Cross-component / `Directory.Build.*` | `dotnet build Realm.Full.slnx` |
 
-> **When NOT to build:** Skip builds for `.razor` (during watch), `.css`, `.js`, `.md`, and non-embedded `.json` changes.
+> **When NOT to build:** The Vite dev server hot-reloads Svelte and CSS changes. Skip full rebuilds for `.css`, `.js`, `.md`, and non-embedded `.json` changes.
 
 ### Full Build (Final Verification)
 
 ```powershell
-dotnet build Realm.Full.slnx    # Full build (29 projects)
-dotnet test Realm.Full.slnx     # All ~4,850 tests across 13 test projects (with coverage)
+dotnet build Realm.Full.slnx    # Full build (22 projects)
+dotnet test Realm.Full.slnx     # All 4,617 tests across 9 test projects (with coverage)
 ```
 
 ### Running Projects
@@ -263,9 +215,8 @@ dotnet test Realm.Full.slnx     # All ~4,850 tests across 13 test projects (with
 ```powershell
 dotnet run --project Veldrath.Server
 dotnet run --project Veldrath.Client
-dotnet run --project Veldrath.Web
 dotnet run --project RealmForge
-dotnet run --project RealmFoundry
+npm run dev --workspace client   # SvelteKit web app (from web/)
 ```
 
 ---
@@ -281,8 +232,7 @@ CI workflows live in [`.github/workflows/`](.github/workflows/). Coverage is upl
 | [`ci-server.yml`](.github/workflows/ci-server.yml) | Veldrath.Server | `server` |
 | [`ci-tooling.yml`](.github/workflows/ci-tooling.yml) | RealmForge | `forge` |
 | [`ci-discord.yml`](.github/workflows/ci-discord.yml) | Veldrath.Discord | `discord` |
-| [`ci-foundry.yml`](.github/workflows/ci-foundry.yml) | RealmFoundry | `foundry` |
-| [`ci-web.yml`](.github/workflows/ci-web.yml) | Veldrath.Web | `web` |
+| [`ci-web.yml`](.github/workflows/ci-web.yml) | SvelteKit web | `web` |
 | [`deploy.yml`](.github/workflows/deploy.yml) | Deployment pipeline | — |
 | [`docs.yml`](.github/workflows/docs.yml) | DocFX documentation build & deploy | — |
 | [`release.yml`](.github/workflows/release.yml) | Release tagging and publishing | — |
@@ -300,7 +250,6 @@ Coverage exclusions are configured in [`coverage.runsettings`](coverage.runsetti
   - [`docs/deployment.md`](docs/deployment.md) — Deployment guide
   - [`docs/design-system.md`](docs/design-system.md) — UI design system reference
   - [`docs/lore/calethic-language.md`](docs/lore/calethic-language.md) — Calethic language reference
-- **MudBlazor reference:** [`llms.txt`](llms.txt) — Comprehensive component and API reference for LLM context
 
 ---
 
@@ -357,12 +306,10 @@ Do **not** create new memory files unless the existing 8 files are insufficient.
 | CQRS | MediatR `IRequest<TResponse>` records |
 | Validation | FluentValidation pipeline behavior |
 | Logging | Serilog pipeline behavior |
-| Desktop UI | Avalonia + ReactiveUI (MVVM) |
-| Web UI | Blazor Server + MudBlazor (9.7.0) |
-| Client Core | Veldrath.GameClient.Core (framework-agnostic payloads and services) |
-| Shared Components | Veldrath.GameClient.Components (Razor Class Library) |
-| Testing | xUnit + FluentAssertions |
-| Blazor Testing | bunit (v2.6.2) |
+| Desktop UI | Avalonia + ReactiveUI (MVVM), WebView2 hosts the Svelte desktop build |
+| Web UI | SvelteKit 2 + Svelte 5 runes + Tailwind/Skeleton |
+| Client Core | Veldrath.GameClient.Core (framework-agnostic .NET payloads and services) |
+| Testing | xUnit + FluentAssertions (server/desktop); Vitest + Playwright (web) |
 | Mocks | Prefer `FakeXxx` stubs; Moq/NSubstitute as fallback |
 | Database | EF Core (Postgres production, SQLite/InMemory for tests) |
 | Documentation | XML doc comments (CS1591 = error), DocFX → GitHub Pages |

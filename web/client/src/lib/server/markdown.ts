@@ -4,7 +4,7 @@ import sanitizeHtml from 'sanitize-html';
 /**
  * Renders trusted editorial Markdown to sanitized HTML for SSR.
  *
- * Editorial content is authored by staff through RealmFoundry, but it is still
+ * Editorial content is authored by staff through the editorial admin, but it is still
  * sanitized defensively before being injected with `{@html ...}`.
  */
 export function renderMarkdown(markdown: string): string {

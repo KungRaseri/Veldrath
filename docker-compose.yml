@@ -54,9 +54,7 @@ services:
       - Email__SenderName=Veldrath Dev
       # Public base URLs for OAuth redirect validation and email links.
       # Override these in .env when accessing via Tailscale or a custom hostname:
-      #   FOUNDRY_PUBLIC_URL=http://kung-gaming.tail3ff356.ts.net:8081
       #   WEB_PUBLIC_URL=http://kung-gaming.tail3ff356.ts.net:8082
-      - Foundry__BaseUrl=${FOUNDRY_PUBLIC_URL:-http://localhost:8081}
       - Web__BaseUrl=${WEB_PUBLIC_URL:-http://localhost:8080}
       # Comma-separated list of additional hostnames/IPs accepted as valid OAuth return URLs.
       # Override in .env to add Tailscale hostname and IP alongside localhost:
@@ -97,26 +95,6 @@ services:
       server:
         condition: service_healthy
     restart: unless-stopped
-
-  foundry:
-    build:
-      context: .
-      dockerfile: RealmFoundry/Dockerfile
-    ports:
-      - "8081:8081"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8081
-      # Internal URL for server-side HttpClient calls (container-to-container)
-      - Veldrath__ServerUrl=http://server:8080
-      # Public URL the browser navigates to for OAuth redirects.
-      # Override in .env when accessing via Tailscale (e.g. http://kung-gaming.tail3ff356.ts.net:9000)
-      - Veldrath__PublicServerUrl=${SERVER_PUBLIC_URL:-http://localhost:9000}
-    volumes:
-      - foundry_dataprotection_keys:/root/.aspnet/DataProtection-Keys
-    depends_on:
-      server:
-        condition: service_healthy
 
   seq:
     image: datalust/seq:latest
@@ -211,7 +189,6 @@ services:
 volumes:
   postgres_data:
   dataprotection_keys:
-  foundry_dataprotection_keys:
   seq_data:
   prometheus_data:
   grafana_data:

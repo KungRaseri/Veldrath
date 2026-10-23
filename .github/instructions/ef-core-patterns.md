@@ -1,6 +1,6 @@
 # EF Core Patterns
 
-Scope: All projects that use Entity Framework Core — [`RealmEngine.Data`](../../RealmEngine.Data/), [`Veldrath.Server`](../../Veldrath.Server/), [`Veldrath.Web`](../../Veldrath.Web/). Repository abstractions live in [`RealmEngine.Shared`](../../RealmEngine.Shared/).
+Scope: All projects that use Entity Framework Core — [`RealmEngine.Data`](../../RealmEngine.Data/) and [`Veldrath.Server`](../../Veldrath.Server/). Repository abstractions live in [`RealmEngine.Shared`](../../RealmEngine.Shared/).
 
 ---
 

@@ -109,7 +109,7 @@ dotnet test RealmEngine.slnx
 
 ## Testing
 
-Comprehensive test suite across 13 test projects:
+Comprehensive test suite across 9 .NET test projects plus the SvelteKit web suite:
 
 | Project | Scope |
 |---------|-------|
@@ -117,15 +117,14 @@ Comprehensive test suite across 13 test projects:
 | `RealmEngine.Data.Tests` | Repository/persistence and content validation |
 | `RealmEngine.Shared.Tests` | Models, utilities, services |
 | `RealmForge.Tests` | RealmForge UI and service logic |
-| `RealmFoundry.Tests` | Community content portal services and auth state |
-| `Veldrath.Client.Tests` | Client ViewModels, services, navigation |
+| `Veldrath.Client.Tests` | Client ViewModels, services, navigation, DesktopUiServer |
 | `Veldrath.Server.Tests` | Server endpoints, game hub, services |
-| `Veldrath.Web.Tests` | Blazor web portal services |
 | `Veldrath.Discord.Tests` | Discord bot modules and embeds |
 | `Veldrath.Auth.Tests` | Shared auth libraries |
 | `Veldrath.Assets.Tests` | Asset store and manifests |
 | `Veldrath.GameClient.Core.Tests` | Shared client core services |
-| `Veldrath.GameClient.Components.Tests` | Razor Class Library components (bUnit) |
+
+The SvelteKit app is tested separately with Vitest and Playwright in `web/client`.
 
 ```powershell
 # Run all non-UI tests with coverage
@@ -147,6 +146,7 @@ dotnet test Realm.Full.slnx --filter "Category!=UI" `
 **Client / Server**
 - Avalonia 11.2.x+ — Cross-platform UI (Client, RealmForge)
 - ReactiveUI 20.1.x+ — MVVM framework
+- SvelteKit 2 / Svelte 5 — Web frontend (`web/`)
 - ASP.NET Core — Server framework
 - SignalR — Real-time client/server communication
 
@@ -164,17 +164,15 @@ RealmEngine/
 ├── RealmEngine.Data/                 # EF Core persistence and content repositories
 ├── RealmEngine.Shared/               # Shared models and utilities
 ├── Veldrath.Server/                  # ASP.NET Core game server
-├── Veldrath.Client/                  # Avalonia desktop client
-├── Veldrath.Web/                     # Blazor Server game portal
+├── Veldrath.Client/                  # Avalonia desktop client (WebView2 Svelte shell)
 ├── RealmForge/                       # PostgreSQL content editor (Avalonia)
-├── RealmFoundry/                     # Community content portal (Blazor Server)
 ├── Veldrath.Discord/                 # Discord bot
 ├── Veldrath.Auth/                    # Shared auth libraries
 ├── Veldrath.Contracts/               # Shared DTOs and contracts
 ├── Veldrath.Assets/                  # Asset store and manifests
 ├── Veldrath.GameClient.Core/         # Shared client-side game logic
-├── Veldrath.GameClient.Components/   # Shared Razor Class Library
-└── [Project].Tests/                  # 13 test projects
+├── web/                              # SvelteKit web app
+└── [Project].Tests/                  # 9 .NET test projects
 ```
 
 ## Solution Files

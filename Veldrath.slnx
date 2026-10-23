@@ -4,7 +4,6 @@
   <Project Path="Veldrath.Assets.Tests/Veldrath.Assets.Tests.csproj" />
   <Project Path="Veldrath.Contracts/Veldrath.Contracts.csproj" />
   <Project Path="Veldrath.Auth/Veldrath.Auth.csproj" />
-  <Project Path="Veldrath.Auth.Blazor/Veldrath.Auth.Blazor.csproj" />
   <Project Path="Veldrath.Auth.Tests/Veldrath.Auth.Tests.csproj" />
   <Project Path="RealmEngine.Core/RealmEngine.Core.csproj" />
   <Project Path="RealmEngine.Data/RealmEngine.Data.csproj" />
@@ -15,10 +14,6 @@
   <Project Path="Veldrath.Server.Tests/Veldrath.Server.Tests.csproj" />
   <Project Path="Veldrath.Discord/Veldrath.Discord.csproj" />
   <Project Path="Veldrath.Discord.Tests/Veldrath.Discord.Tests.csproj" />
-  <Project Path="Veldrath.Web/Veldrath.Web.csproj" />
-  <Project Path="Veldrath.Web.Tests/Veldrath.Web.Tests.csproj" />
   <Project Path="Veldrath.GameClient.Core/Veldrath.GameClient.Core.csproj" />
   <Project Path="Veldrath.GameClient.Core.Tests/Veldrath.GameClient.Core.Tests.csproj" />
-  <Project Path="Veldrath.GameClient.Components/Veldrath.GameClient.Components.csproj" />
-  <Project Path="Veldrath.GameClient.Components.Tests/Veldrath.GameClient.Components.Tests.csproj" />
 </Solution>

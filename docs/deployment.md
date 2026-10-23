@@ -10,7 +10,6 @@ There is **no Caddy** in the deployment path.
 |---|---|---|---|
 | `server` | `ghcr.io/kungraseri/veldrath-server:latest` | 8080 | `api.veldrath.com` |
 | `web` | `ghcr.io/kungraseri/veldrath-web:latest` (built from [`web/client/Dockerfile`](../web/client/Dockerfile)) | 3000 | `veldrath.com` |
-| `foundry` | `ghcr.io/kungraseri/realmfoundry:latest` | 8081 | `foundry.veldrath.com` |
 | `discord` | `ghcr.io/kungraseri/veldrath-discord:latest` | 8083 | none |
 | `postgres` | Coolify-managed Postgres | 5432 | none |
 
@@ -26,7 +25,7 @@ mappings.
 | `DATABASE_URL` | web | Better Auth/Drizzle connection. Must be able to create the `auth` schema on first boot. |
 | `JWT_KEY` | server + web | Shared HMAC signing key, at least 32 chars. |
 | `BETTER_AUTH_SECRET` | web | Better Auth session secret, at least 32 chars. |
-| `INTERNAL_BRIDGE_TOKEN` | server + web | Shared secret for the temporary SvelteKit → Identity account bridge. Remove when Foundry is ported. |
+| `INTERNAL_BRIDGE_TOKEN` | server + web | Shared secret for the internal SvelteKit → Identity account bridge used by the desktop client's native sign-in. |
 | `DISCORD_TOKEN` | discord | Bot token. |
 | `EMAIL_SMTP_HOST` / `EMAIL_USER` / `EMAIL_PASSWORD` | server | Outbound email. |
 | `SEQ_ADMIN_PASSWORD` / `GF_ADMIN_PASSWORD` | seq / grafana | Admin passwords. |
@@ -59,7 +58,7 @@ The two applications own different schemas:
 
 - **Veldrath.Server** applies its EF Core migrations to the `public` schema at
   startup.
-- **Veldrath.Web** runs Drizzle auth migrations before adapter-node starts.
+- **The SvelteKit web app** runs Drizzle auth migrations before adapter-node starts.
 
 The web entrypoint in [`web/client/docker-entrypoint.sh`](../web/client/docker-entrypoint.sh):
 
@@ -116,8 +115,8 @@ A password change writes a Better Auth scrypt hash.
 
 The migration role must be able to read `public."AspNetUsers"` and write `auth.*`;
 the restricted `veldrath_auth` role cannot, which is why `MIGRATION_DATABASE_URL`
-uses the owner/admin connection. Do not delete `AspNetUsers` until Foundry and the
-desktop client are ported.
+uses the owner/admin connection. Keep `AspNetUsers` while the desktop client's
+native sign-in and the internal identity bridge still use ASP.NET Core Identity.
 
 ## Deploying
 
@@ -130,11 +129,9 @@ desktop client are ported.
 4. Deploy. Traefik routes:
    - `veldrath.com` → `web:3000`
    - `api.veldrath.com` → `server:8080`
-   - `foundry.veldrath.com` → `foundry:8081`
 5. Confirm health:
    - `https://veldrath.com/`
    - `https://api.veldrath.com/health`
-   - `https://foundry.veldrath.com/health`
 
 ## Reverse proxy
 
@@ -158,4 +155,5 @@ also trusts forwarded headers through `UseForwardedHeaders`.
   as an overlay, with an external reverse proxy on the Docker network.
 - Coolify: [`docker-compose.coolify.yml`](../docker-compose.coolify.yml) only.
 
-The old Blazor `Veldrath.Web` container and Caddy configuration are retired.
+The old Blazor `Veldrath.Web` and `RealmFoundry` containers and the Caddy
+configuration are retired.

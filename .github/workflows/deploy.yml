@@ -1,6 +1,6 @@
 name: Deploy to Production
 
-# Reusable deployment workflow — called by ci-server.yml, ci-discord.yml, and ci-foundry.yml
+# Reusable deployment workflow — called by ci-server.yml and ci-discord.yml
 # after their image has been published to GHCR.
 #
 # The `environment: production` gate requires manual approval in the GitHub Actions UI
@@ -15,7 +15,7 @@ on:
   workflow_call:
     inputs:
       service:
-        description: 'Service to deploy: server | foundry | discord'
+        description: 'Service to deploy: server | discord | web'
         required: true
         type: string
     secrets:
@@ -36,16 +36,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Sync the compose files, Caddyfile, and infrastructure configs to the VPS.
+    # Sync the compose files and infrastructure configs to the VPS.
     # This ensures the VPS always has the same definitions as the commit that
     # triggered this deployment — even when compose files changed alongside service code.
-    - name: Sync compose and proxy files to VPS
+    - name: Sync compose files to VPS
       uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.HETZNER_HOST }}
         username: ${{ secrets.HETZNER_SSH_USER }}
         key: ${{ secrets.HETZNER_SSH_KEY }}
-        source: "docker-compose.yml,docker-compose.prod.yml,Caddyfile,config/"
+        source: "docker-compose.yml,docker-compose.prod.yml,config/"
         target: /opt/veldrath/
 
     # Pull the :latest image (already published to GHCR by the upstream CI job)
@@ -63,15 +63,3 @@ jobs:
           cd /opt/veldrath
           docker compose -f docker-compose.yml -f docker-compose.prod.yml pull ${{ inputs.service }}
           docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-deps --wait --timeout 120 ${{ inputs.service }}
-
-    # Reload Caddy so any Caddyfile changes take effect without a full Caddy restart.
-    # Skipped for discord — it has no HTTP routing through Caddy.
-    - name: Reload Caddy configuration
-      if: inputs.service != 'discord'
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.HETZNER_HOST }}
-        username: ${{ secrets.HETZNER_SSH_USER }}
-        key: ${{ secrets.HETZNER_SSH_KEY }}
-        script: |
-          docker compose -f /opt/veldrath/docker-compose.yml -f /opt/veldrath/docker-compose.prod.yml exec caddy caddy reload --config /etc/caddy/Caddyfile

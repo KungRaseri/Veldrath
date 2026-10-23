@@ -3,7 +3,7 @@ using System.Web;
 namespace Veldrath.Server.Features.Auth;
 
 /// <summary>
-/// Shared OAuth landing endpoint for all Veldrath sub-applications (RealmFoundry, Veldrath.Web).
+/// Shared OAuth landing endpoint for Veldrath applications (SvelteKit web and desktop client).
 /// After a successful OAuth exchange, the browser visits <c>GET /api/auth/session</c> carrying
 /// the single-use exchange code.  The endpoint redeems the code, writes the <c>rt</c>
 /// refresh-token cookie with <c>Domain=Auth:CookieDomain</c> (covering every subdomain in

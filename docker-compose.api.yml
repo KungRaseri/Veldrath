@@ -48,9 +48,7 @@ services:
       - Email__SenderName=Veldrath Dev
       # Public base URLs for OAuth redirect validation and email links.
       # Override these in .env when accessing via Tailscale or a custom hostname:
-      #   FOUNDRY_PUBLIC_URL=http://kung-gaming.tail3ff356.ts.net:8081
       #   WEB_PUBLIC_URL=http://kung-gaming.tail3ff356.ts.net:8082
-      - Foundry__BaseUrl=${FOUNDRY_PUBLIC_URL:-http://localhost:8081}
       - Web__BaseUrl=${WEB_PUBLIC_URL:-http://localhost:8082}
       # Comma-separated list of additional hostnames/IPs accepted as valid OAuth return URLs.
       # Override in .env to add Tailscale hostname and IP alongside localhost:
