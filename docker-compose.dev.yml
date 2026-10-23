@@ -46,12 +46,15 @@ services:
       POSTGRES_DB: veldrath
       POSTGRES_USER: veldrath
       POSTGRES_PASSWORD: veldrath_dev
+      AUTH_DB_USER: ${AUTH_DB_USER:-veldrath_auth}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD:-veldrath_auth_dev}
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./config/postgres/init-auth-schema.sh:/docker-entrypoint-initdb.d/01-auth-schema.sh:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U veldrath"]
+      test: ["CMD-SHELL", "pg_isready -U veldrath -d veldrath"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -82,7 +85,7 @@ services:
       - Email__SenderAddress=noreply@veldrath.local
       - Email__SenderName=Veldrath Dev
       - Foundry__BaseUrl=${FOUNDRY_PUBLIC_URL:-http://localhost:8081}
-      - Web__BaseUrl=${WEB_PUBLIC_URL:-http://localhost:8082}
+      - Web__BaseUrl=${WEB_PUBLIC_URL:-http://localhost:8080}
       - AllowedReturnUrlHosts=${ALLOWED_RETURN_URL_HOSTS:-}
       - Seq__ServerUrl=http://seq
       # Container-local NuGet cache (matches the nuget_cache volume mount)
@@ -256,59 +259,30 @@ services:
 
   web:
     build:
-      context: .
-      dockerfile: Veldrath.Web/Dockerfile.dev
+      context: ./web
+      dockerfile: client/Dockerfile.dev
     ports:
-      - "8080:8082"
+      - "8080:5173"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8082
-      - Veldrath__ServerUrl=http://server:8080
-      - Veldrath__PublicServerUrl=${SERVER_PUBLIC_URL:-http://localhost:9000}
-      # Container-local NuGet cache (matches the nuget_cache volume mount)
-      - NUGET_PACKAGES=/root/.nuget/packages
+      - NODE_ENV=development
+      - ORIGIN=http://localhost:8080
+      - BETTER_AUTH_URL=http://localhost:8080
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:-dev-better-auth-secret-change-me}
+      - DATABASE_URL=postgres://${AUTH_DB_USER:-veldrath_auth}:${AUTH_DB_PASSWORD:-veldrath_auth_dev}@postgres:5432/veldrath
+      - JWT_KEY=${JWT_KEY:-dev-secret-key-change-in-production-must-be-32-chars}
+      - JWT_ISSUER=Veldrath.Server
+      - JWT_AUDIENCE=Veldrath.Client
+      - PUBLIC_API_URL=${SERVER_PUBLIC_URL:-http://localhost:9000}
+      - PUBLIC_HUB_URL=${SERVER_PUBLIC_URL:-http://localhost:9000}/hubs/game
     volumes:
-      # Anonymous obj/ + bin/ volumes isolate the Linux build from the Windows host
-      - ./Veldrath.Web:/src/Veldrath.Web
-      - /src/Veldrath.Web/obj
-      - /src/Veldrath.Web/bin
-      - ./Veldrath.Contracts:/src/Veldrath.Contracts
-      - /src/Veldrath.Contracts/obj
-      - /src/Veldrath.Contracts/bin
-      - ./Veldrath.Auth:/src/Veldrath.Auth
-      - /src/Veldrath.Auth/obj
-      - /src/Veldrath.Auth/bin
-      - ./Veldrath.Auth.Blazor:/src/Veldrath.Auth.Blazor
-      - /src/Veldrath.Auth.Blazor/obj
-      - /src/Veldrath.Auth.Blazor/bin
-      - ./RealmEngine.Core:/src/RealmEngine.Core
-      - /src/RealmEngine.Core/obj
-      - /src/RealmEngine.Core/bin
-      - ./RealmEngine.Data:/src/RealmEngine.Data
-      - /src/RealmEngine.Data/obj
-      - /src/RealmEngine.Data/bin
-      - ./RealmEngine.Shared:/src/RealmEngine.Shared
-      - /src/RealmEngine.Shared/obj
-      - /src/RealmEngine.Shared/bin
-      - ./Veldrath.GameClient.Core:/src/Veldrath.GameClient.Core
-      - /src/Veldrath.GameClient.Core/obj
-      - /src/Veldrath.GameClient.Core/bin
-      - ./Veldrath.GameClient.Components:/src/Veldrath.GameClient.Components
-      - /src/Veldrath.GameClient.Components/obj
-      - /src/Veldrath.GameClient.Components/bin
-      - ./Veldrath.Server:/src/Veldrath.Server
-      - /src/Veldrath.Server/obj
-      - /src/Veldrath.Server/bin
-      - ./Veldrath.Assets:/src/Veldrath.Assets
-      - /src/Veldrath.Assets/obj
-      - /src/Veldrath.Assets/bin
-      - ./Directory.Build.props:/src/Directory.Build.props
-      - ./Directory.Build.targets:/src/Directory.Build.targets
-      - ./Directory.Packages.props:/src/Directory.Packages.props
-      - ./versions:/src/versions
-      - web_dataprotection_keys:/root/.aspnet/DataProtection-Keys
-      - nuget_cache:/root/.nuget/packages
+      # Bind-mounted source for Vite HMR; keep the image's node_modules.
+      - ./web:/app
+      - /app/node_modules
+      - /app/client/node_modules
+    command: sh -c "node /app/migrate.mjs && npm run dev -- --host 0.0.0.0"
     depends_on:
+      postgres:
+        condition: service_healthy
       server:
         condition: service_healthy
 
@@ -316,7 +290,6 @@ volumes:
   postgres_data:
   dataprotection_keys:
   foundry_dataprotection_keys:
-  web_dataprotection_keys:
   seq_data:
   prometheus_data:
   grafana_data:

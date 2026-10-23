@@ -6,10 +6,10 @@ Environment variable reference for deploying all Veldrath services in Coolify as
 
 ## Service Overview
 
-| Service | Dockerfile | Container Port | Coolify Resource Name | Data Protection Volume |
+| Service | Dockerfile | Container Port | Coolify Resource Name | Persistent Volume |
 |---|---|---|---|---|
 | **Veldrath.Server** | [`Veldrath.Server/Dockerfile`](../Veldrath.Server/Dockerfile) | 8080 | `veldrath-server` | `dataprotection_keys` |
-| **Veldrath.Web** | [`Veldrath.Web/Dockerfile`](../Veldrath.Web/Dockerfile) | 8082 | `veldrath-web` | `web_dataprotection_keys` |
+| **Veldrath.Web (SvelteKit)** | [`web/client/Dockerfile`](../web/client/Dockerfile) | 3000 | `veldrath-web` | None needed |
 | **RealmFoundry** | [`RealmFoundry/Dockerfile`](../RealmFoundry/Dockerfile) | 8081 | `realmfoundry` | `foundry_dataprotection_keys` |
 | **Veldrath.Discord** | [`Veldrath.Discord/Dockerfile`](../Veldrath.Discord/Dockerfile) | 8080 | `veldrath-discord` | None needed |
 
@@ -87,46 +87,68 @@ Point Coolify's health check to `http://localhost:8080/health` (exposed at [`Pro
 
 ---
 
-## 2. Veldrath.Web
+## 2. Veldrath.Web (SvelteKit)
 
 ### Environment Variables
 
 ```ini
-# ── API Server URL (REQUIRED — app crashes without this) ──
-Veldrath__ServerUrl=http://veldrath-server:8080
+# ── SvelteKit / adapter-node ──
+NODE_ENV=production
+ORIGIN=https://veldrath.com
+BETTER_AUTH_URL=https://veldrath.com
+BETTER_AUTH_SECRET=your-better-auth-secret-at-least-32-chars
 
-# ── Public API Server URL (optional, falls back to ServerUrl) ──
-Veldrath__PublicServerUrl=https://api.veldrath.com
+# ── Auth database (Coolify Postgres; the container applies Drizzle migrations) ──
+DATABASE_URL=${POSTGRES_URL}
 
-# ── Auth Cookie Domain (REQUIRED in production) ──
-Auth__CookieDomain=.veldrath.com
+# ── JWT shared with Veldrath.Server ──
+JWT_KEY=your-jwt-signing-key-at-least-32-chars
+JWT_ISSUER=Veldrath.Server
+JWT_AUDIENCE=Veldrath.Client
 
-# ── ASP.NET Core ──
-ASPNETCORE_URLS=http://+:8082
-ASPNETCORE_ENVIRONMENT=Production
+# ── Browser-reachable .NET endpoints ──
+PUBLIC_API_URL=https://api.veldrath.com
+PUBLIC_HUB_URL=https://api.veldrath.com/hubs/game
+
+# ── Traefik forwarded headers ──
+PROTOCOL_HEADER=x-forwarded-proto
+HOST_HEADER=x-forwarded-host
+ADDRESS_HEADER=x-forwarded-for
+XFF_DEPTH=1
 ```
 
 ### Config Key Reference
 
-| Env Var | Config Key | Read at | Purpose |
-|---|---|---|---|
-| `Veldrath__ServerUrl` | `Veldrath:ServerUrl` | [`Program.cs:37`](../Veldrath.Web/Program.cs:37) | HTTP client base address for all API calls. **Required** — throws if empty. |
-| `Veldrath__PublicServerUrl` | `Veldrath:PublicServerUrl` | [`appsettings.json:14`](../Veldrath.Web/appsettings.json:14) | Public origin for OAuth redirect URLs. |
-| `Auth__CookieDomain` | `Auth:CookieDomain` | [`Program.cs:139`](../Veldrath.Web/Program.cs:139) | Domain for the `rt` refresh token cookie on sign-out. Must match server's `Auth__CookieDomain`. |
-| `ASPNETCORE_URLS` | — | Kestrel | Binds to `http://+:8082` ([`Dockerfile:42`](../Veldrath.Web/Dockerfile:42)). |
-| `ASPNETCORE_ENVIRONMENT` | — | ASP.NET Core | Sets `Production` mode. |
+| Env Var | Read by | Purpose |
+|---|---|---|
+| `ORIGIN` | adapter-node | Public origin used for redirects and URL construction. |
+| `BETTER_AUTH_URL` | Better Auth | Public base URL for auth callbacks and cookies. |
+| `BETTER_AUTH_SECRET` | Better Auth | Session signing secret. **Required.** |
+| `DATABASE_URL` | Drizzle / Better Auth | Postgres connection for the `auth` schema. The user must be able to create the schema on first boot. |
+| `JWT_KEY` / `JWT_ISSUER` / `JWT_AUDIENCE` | game token minting | Must match `Veldrath.Server` JWT validation. |
+| `PUBLIC_API_URL` | browser SSR/client | Public .NET API origin. |
+| `PUBLIC_HUB_URL` | browser SignalR | Public SignalR hub URL. |
+| `PROTOCOL_HEADER` / `HOST_HEADER` / `ADDRESS_HEADER` / `XFF_DEPTH` | adapter-node | Trust Traefik's forwarded headers. |
+
+### Migrations
+
+The container entrypoint waits for Postgres, creates the `auth` schema if it
+does not exist, applies Drizzle migrations from
+[`web/shared/db/migrations`](../web/shared/db/migrations), then starts
+adapter-node. Drizzle and Better Auth tables are schema-qualified, so the
+connection does not need a special `search_path`.
+
+The bookkeeping table is `auth.__drizzle_migrations`. Runtime and
+`drizzle-kit` use the same table.
 
 ### Persistent Volume
 
-| Volume Name (source) | Mount Path (destination) |
-|---|---|
-| `web_dataprotection_keys` | `/root/.aspnet/DataProtection-Keys` |
-
-Data Protection keys at [`Program.cs:77`](../Veldrath.Web/Program.cs:77) with application name `Veldrath.Web`. Required for antiforgery token stability.
+None. The SvelteKit web container is stateless; sessions live in the Better
+Auth `auth.session` table.
 
 ### Health Check
 
-Point Coolify's health check to `http://localhost:8082/health`.
+Point Coolify's health check to `http://localhost:3000/`.
 
 ---
 

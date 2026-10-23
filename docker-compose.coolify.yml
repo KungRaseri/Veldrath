@@ -1,15 +1,17 @@
 # docker-compose.coolify.yml — Coolify-compatible single-file compose stack for veldrath.com
 #
-# Generated from: docker-compose.yml (base) + docker-compose.prod.yml (overlay)
-# Caddy reverse proxy REMOVED — routing, TLS, and sticky sessions handled by Coolify's built-in Traefik.
-# Traefik labels are defined per-service below for explicit routing; Coolify auto-generates labels for any service without them.
-# All .NET services use pre-built GHCR images (no local build contexts).
-# All host port mappings removed — traffic routed via Traefik on the coolify network.
+# SvelteKit web + .NET API stack for Coolify.
+# No Caddy: routing, TLS, and forwarded headers are handled by Coolify's Traefik.
+# Traefik labels are defined per-service below for explicit routing.
+# All application services use pre-built GHCR images.
+# Host port mappings are removed; traffic is routed via Traefik on the coolify network.
 #
 # Pre-deploy prerequisites:
-#   1. Add curl to RealmFoundry/Dockerfile and Veldrath.Web/Dockerfile runtime stages
-#   2. Add health check endpoints in Program.cs for foundry, web, and discord
-#   3. Configure GHCR registry credentials in Coolify
+#   1. Configure GHCR registry credentials in Coolify.
+#   2. Set DATABASE_URL to the Coolify Postgres connection. The web entrypoint
+#      creates the auth schema and applies Drizzle migrations on first boot.
+#   3. Set BETTER_AUTH_SECRET and JWT_KEY; the same JWT_KEY is used by the
+#      server and by SvelteKit token minting.
 #
 # Coolify Secrets Required (create these in Coolify dashboard):
 #
@@ -17,6 +19,8 @@
 #     POSTGRES_PASSWORD     — Postgres superuser password
 #     POSTGRES_HOST         — Coolify-managed Postgres hostname (e.g., veldrath-db)
 #     POSTGRES_PORT         — Postgres port (e.g., 5432)
+#     DATABASE_URL          — Postgres connection for Better Auth (schema-qualified)
+#     BETTER_AUTH_SECRET    — Better Auth session secret (≥32 chars)
 #     JWT_KEY               — HMAC-SHA signing key (≥32 chars)
 #     DISCORD_TOKEN         — Discord bot token
 #     EMAIL_SMTP_HOST       — SMTP relay hostname (mxroute.com)
@@ -177,30 +181,42 @@ services:
     container_name: veldrath-web
     image: ghcr.io/kungraseri/veldrath-web:latest
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://+:8082
-      - Veldrath__ServerUrl=http://server:8080
-      - Veldrath__PublicServerUrl=${WEB_PUBLIC_SERVER_URL:-https://api.veldrath.com}
-      - Auth__CookieDomain=.veldrath.com
+      - NODE_ENV=production
+      - ORIGIN=https://veldrath.com
+      - BETTER_AUTH_URL=https://veldrath.com
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_KEY=${JWT_KEY}
+      - JWT_ISSUER=Veldrath.Server
+      - JWT_AUDIENCE=Veldrath.Client
+      - PUBLIC_API_URL=https://api.veldrath.com
+      - PUBLIC_HUB_URL=https://api.veldrath.com/hubs/game
+      # Coolify's Traefik sets these forwarded headers.
+      - PROTOCOL_HEADER=x-forwarded-proto
+      - HOST_HEADER=x-forwarded-host
+      - ADDRESS_HEADER=x-forwarded-for
+      - XFF_DEPTH=1
     expose:
-      - "8082"
+      - "3000"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.web.rule=Host(`veldrath.com`)"
       - "traefik.http.routers.web.tls.certresolver=coolify"
       - "traefik.http.routers.web.entrypoints=websecure"
-      - "traefik.http.services.web.loadbalancer.server.port=8082"
-      - "traefik.http.services.web.loadbalancer.sticky.cookie.name=web_lb"
-      - "traefik.http.services.web.loadbalancer.sticky.cookie.secure=true"
+      - "traefik.http.services.web.loadbalancer.server.port=3000"
       - "traefik.http.services.web.loadbalancer.server.scheme=http"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8082/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 15s
-    volumes:
-      - web_dataprotection_keys:/root/.aspnet/DataProtection-Keys
+      start_period: 30s
     depends_on:
       server:
         condition: service_healthy
@@ -233,4 +249,3 @@ networks:
 volumes:
   dataprotection_keys:
   foundry_dataprotection_keys:
-  web_dataprotection_keys:

@@ -9,12 +9,16 @@ services:
       POSTGRES_DB: veldrath
       POSTGRES_USER: veldrath
       POSTGRES_PASSWORD: veldrath_dev
+      # Dedicated Better Auth role. The init script creates it on a fresh volume.
+      AUTH_DB_USER: ${AUTH_DB_USER:-veldrath_auth}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD:-veldrath_auth_dev}
     ports:
       - "5433:5432"   # host:container — use 5433 to avoid conflicts with other local Postgres instances
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./config/postgres/init-auth-schema.sh:/docker-entrypoint-initdb.d/01-auth-schema.sh:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U veldrath"]
+      test: ["CMD-SHELL", "pg_isready -U veldrath -d veldrath"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -51,7 +55,7 @@ services:
       #   FOUNDRY_PUBLIC_URL=http://kung-gaming.tail3ff356.ts.net:8081
       #   WEB_PUBLIC_URL=http://kung-gaming.tail3ff356.ts.net:8082
       - Foundry__BaseUrl=${FOUNDRY_PUBLIC_URL:-http://localhost:8081}
-      - Web__BaseUrl=${WEB_PUBLIC_URL:-http://localhost:8082}
+      - Web__BaseUrl=${WEB_PUBLIC_URL:-http://localhost:8080}
       # Comma-separated list of additional hostnames/IPs accepted as valid OAuth return URLs.
       # Override in .env to add Tailscale hostname and IP alongside localhost:
       #   ALLOWED_RETURN_URL_HOSTS=kung-gaming.tail3ff356.ts.net,100.115.128.32
@@ -152,28 +156,48 @@ services:
 
   web:
     build:
-      context: .
-      dockerfile: Veldrath.Web/Dockerfile
+      # Build context is web/ so the npm workspaces resolve.
+      context: ./web
+      dockerfile: client/Dockerfile
     ports:
-      - "8080:8082"
+      - "8080:3000"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8082
-      - Veldrath__ServerUrl=http://server:8080
-      # Public URL the browser navigates to for OAuth redirects.
-      # Override in .env when accessing via Tailscale (e.g. http://kung-gaming.tail3ff356.ts.net:9000)
-      - Veldrath__PublicServerUrl=${SERVER_PUBLIC_URL:-http://localhost:9000}
-    volumes:
-      - web_dataprotection_keys:/root/.aspnet/DataProtection-Keys
+      - NODE_ENV=production
+      # Public origin of the SvelteKit app. Override WEB_PUBLIC_URL when
+      # accessing via Tailscale or another hostname.
+      - ORIGIN=${WEB_PUBLIC_URL:-http://localhost:8080}
+      - BETTER_AUTH_URL=${WEB_PUBLIC_URL:-http://localhost:8080}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:-dev-better-auth-secret-change-me}
+      - DATABASE_URL=postgres://${AUTH_DB_USER:-veldrath_auth}:${AUTH_DB_PASSWORD:-veldrath_auth_dev}@postgres:5432/veldrath
+      # Must match the .NET server's Jwt:Key / Issuer / Audience.
+      - JWT_KEY=${JWT_KEY:-dev-secret-key-change-in-production-must-be-32-chars}
+      - JWT_ISSUER=Veldrath.Server
+      - JWT_AUDIENCE=Veldrath.Client
+      # Browser-reachable .NET endpoints.
+      - PUBLIC_API_URL=${SERVER_PUBLIC_URL:-http://localhost:9000}
+      - PUBLIC_HUB_URL=${SERVER_PUBLIC_URL:-http://localhost:9000}/hubs/game
     depends_on:
+      postgres:
+        condition: service_healthy
       server:
         condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 volumes:
   postgres_data:
   dataprotection_keys:
   foundry_dataprotection_keys:
-  web_dataprotection_keys:
   seq_data:
   prometheus_data:
   grafana_data:

@@ -1,0 +1,25 @@
+# client/Dockerfile.dev — SvelteKit dev server for docker-compose.dev.yml
+#
+# Build context is web/ so the npm workspaces resolve. Source is bind-mounted
+# by the compose file for Vite HMR; node_modules stays in anonymous volumes so
+# the image's install is not hidden by the bind mount.
+
+FROM node:22-alpine
+
+WORKDIR /app
+
+COPY package.json package-lock.json tsconfig.base.json ./
+COPY shared/package.json shared/package.json
+COPY client/package.json client/package.json
+
+RUN npm ci --allow-git=all
+
+COPY shared ./shared
+COPY client ./client
+COPY migrate.mjs ./migrate.mjs
+
+WORKDIR /app/client
+
+EXPOSE 5173
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

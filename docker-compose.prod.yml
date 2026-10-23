@@ -3,36 +3,20 @@
 # Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 #
 # This file:
-#   - Adds the Caddy reverse proxy (TLS termination, auto-certs via Let's Encrypt)
-#   - Switches server/foundry/discord to pre-built GHCR images (no local source build)
-#   - Removes direct port exposure from server, foundry, and postgres (only Caddy is public)
+#   - Uses an external reverse proxy (Coolify Traefik) for TLS and routing
+#   - Switches server/foundry/web/discord to pre-built GHCR images
+#   - Removes host port exposure; services are reached on the Docker network
 #   - Wires production environment variables for email and public URLs
 #   - Sets restart policies for all services
 
 services:
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      server:
-        condition: service_healthy
-      foundry:
-        condition: service_started
-      web:
-        condition: service_started
-
   server:
     # Use the pre-built image from GHCR; CI pushes this on every merge to main.
     image: ghcr.io/kungraseri/veldrath-server:latest
-    # Remove dev port exposure — only Caddy reaches server:8080 internally.
+    # Reached by the external proxy on the Docker network.
     ports: []
+    expose:
+      - "8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       # Email: use the production SMTP relay defined in .env
@@ -57,8 +41,10 @@ services:
   foundry:
     # Use the pre-built image from GHCR.
     image: ghcr.io/kungraseri/realmfoundry:latest
-    # Remove dev port exposure — only Caddy reaches foundry:8081 internally.
+    # Reached by the external proxy on the Docker network.
     ports: []
+    expose:
+      - "8081"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       # Internal URL for server-side HttpClient calls
@@ -72,13 +58,28 @@ services:
   web:
     image: ghcr.io/kungraseri/veldrath-web:latest
     ports: []
+    expose:
+      - "3000"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - Veldrath__ServerUrl=http://server:8080
-      - Veldrath__PublicServerUrl=${WEB_PUBLIC_SERVER_URL:-https://api.veldrath.com}
-      - Auth__CookieDomain=.veldrath.com
+      - NODE_ENV=production
+      - ORIGIN=https://veldrath.com
+      - BETTER_AUTH_URL=https://veldrath.com
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - DATABASE_URL=postgres://${AUTH_DB_USER:-veldrath_auth}:${AUTH_DB_PASSWORD}@postgres:5432/veldrath
+      - JWT_KEY=${JWT_KEY}
+      - JWT_ISSUER=Veldrath.Server
+      - JWT_AUDIENCE=Veldrath.Client
+      - PUBLIC_API_URL=https://api.veldrath.com
+      - PUBLIC_HUB_URL=https://api.veldrath.com/hubs/game
+      # External proxy forwarded headers (Traefik / Coolify).
+      - PROTOCOL_HEADER=x-forwarded-proto
+      - HOST_HEADER=x-forwarded-host
+      - ADDRESS_HEADER=x-forwarded-for
+      - XFF_DEPTH=1
     restart: unless-stopped
     depends_on:
+      postgres:
+        condition: service_healthy
       server:
         condition: service_healthy
 
@@ -92,6 +93,10 @@ services:
   postgres:
     # Remove direct port exposure in production — only internal services connect.
     ports: []
+    environment:
+      # Used by the first-boot auth schema init script.
+      - AUTH_DB_USER=${AUTH_DB_USER:-veldrath_auth}
+      - AUTH_DB_PASSWORD=${AUTH_DB_PASSWORD}
     restart: unless-stopped
 
   seq:
@@ -103,6 +108,4 @@ services:
   grafana:
     restart: unless-stopped
 
-volumes:
-  caddy_data:
-  caddy_config:
+# No proxy volumes: TLS and routing are handled by the external platform proxy.

@@ -6,14 +6,15 @@
 #   dockerfile: client/Dockerfile
 #
 # Notes / assumptions:
-#   - The client imports @your-scope/shared as TypeScript source (workspace
+#   - The client imports @veldrath/shared as TypeScript source (workspace
 #     `main`/`exports` -> `src/index.ts`), so shared/ must be present at build
 #     and runtime (vite + the adapter-node output resolve it via node_modules).
 #   - adapter-node emits client/build/; the runtime runs `node build` with the
 #     prod deps present. We copy the full root node_modules (which contains the
 #     client's prod `dependencies` that SvelteKit externalises) — correct, if
 #     slightly larger than a `--omit=dev` prune.
-#   - ORIGIN / WS_URL / secrets are supplied by docker-compose at runtime.
+#   - The entrypoint waits for Postgres, applies Drizzle auth migrations, then
+#     starts SvelteKit. ORIGIN / DATABASE_URL / secrets come from compose.
 #   - Base image node:22-alpine (npm 10) avoids the npm >= 12 EALLOWGIT issue
 #     with the lockfile's git dependency (uWebSockets.js).
 
@@ -53,6 +54,13 @@ ENV NODE_ENV=production
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/shared ./shared
 
+# Auth migrations + startup entrypoint. migrate.mjs resolves the migrations
+# from /app/shared/db/migrations; the entrypoint waits for Postgres, applies
+# them, then starts adapter-node.
+COPY migrate.mjs ./migrate.mjs
+COPY client/docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
+
 # The built SvelteKit app (adapter-node output).
 COPY --from=build /app/client/package.json ./client/package.json
 COPY --from=build /app/client/build ./client/build
@@ -61,4 +69,4 @@ WORKDIR /app/client
 
 EXPOSE 3000
 
-CMD ["node", "build"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

@@ -23,12 +23,27 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const workspaceMigrations = join(__dirname, "shared", "db", "migrations");
 const migrationsFolder = existsSync(workspaceMigrations) ? workspaceMigrations : join(__dirname, "migrations");
 
-console.log("[migrate] Connecting to database…");
+console.log("[migrate] Connecting to database...");
 const connection = postgres(DATABASE_URL, { max: 1 });
-const db = drizzle(connection);
 
-console.log("[migrate] Running migrations from", migrationsFolder);
-await migrate(db, { migrationsFolder });
-console.log("[migrate] Migrations complete");
+try {
+  // Drizzle tables are defined with pgSchema("auth"), so all generated SQL is
+  // schema-qualified and works regardless of the role's search_path. Creating
+  // the schema here makes a fresh Coolify-managed database work out of the box.
+  await connection`create schema if not exists auth`;
 
-await connection.end();
+  const [row] = await connection`select current_user as db_user, current_schema() as schema`;
+  console.log(`[migrate] db_user=${row.db_user} schema=${row.schema ?? "null"}`);
+
+  const db = drizzle(connection);
+  console.log("[migrate] Running migrations from", migrationsFolder);
+  await migrate(db, {
+    migrationsFolder,
+    // Keep runtime and drizzle-kit bookkeeping in the same table.
+    migrationsSchema: "auth",
+    migrationsTable: "__drizzle_migrations",
+  });
+  console.log("[migrate] Migrations complete");
+} finally {
+  await connection.end();
+}

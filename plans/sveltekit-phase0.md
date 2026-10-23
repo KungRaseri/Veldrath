@@ -124,7 +124,34 @@ The .NET server's existing `AllowLocalClient` CORS policy already allows
 `http://localhost:5173`, so the SignalR connection should work without a server
 change. Production origins will be added in Phase 1.
 
-## 7. Verified results
+## 7. Docker first-boot verification
+
+The production image builds from [`web/client/Dockerfile`](../web/client/Dockerfile)
+with the `web/` build context. The runtime entrypoint:
+
+1. Waits for Postgres.
+2. Runs [`web/migrate.mjs`](../web/migrate.mjs), which creates the `auth` schema if needed.
+3. Applies Drizzle migrations.
+4. Starts adapter-node.
+
+Verified with a fresh Postgres 17 container and the Postgres init script:
+
+- The init script created the `veldrath_auth` role and the `auth` schema.
+- The web entrypoint applied both migrations.
+- The resulting tables were `auth.user`, `auth.session`, `auth.account`,
+  `auth.verification`, and `auth.__drizzle_migrations`.
+- `GET /` returned `200`.
+- Restarting the web container re-ran the entrypoint and was idempotent.
+- Running the same image against the existing database was a no-op because
+  `auth.__drizzle_migrations` already existed.
+
+The Coolify deployment file is [`docker-compose.coolify.yml`](../docker-compose.coolify.yml).
+It has no Caddy service; Traefik labels route `veldrath.com` to `web:3000`,
+`api.veldrath.com` to `server:8080`, and `foundry.veldrath.com` to
+`foundry:8081`. The web container receives Traefik forwarded headers through
+`PROTOCOL_HEADER`, `HOST_HEADER`, `ADDRESS_HEADER`, and `XFF_DEPTH`.
+
+## 8. Verified results
 
 The runbook was executed successfully on the existing Blazor database:
 
@@ -144,7 +171,7 @@ in Development. Copy that same value into `web/client/.env`. The checked-in
 example uses the appsettings fallback and will not match if a different root
 `.env` key is present.
 
-## 8. Exit criteria
+## 9. Exit criteria
 
 Phase 0 is complete when:
 

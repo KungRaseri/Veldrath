@@ -32,8 +32,11 @@ compose maps Postgres to `localhost:5433`; the web-only compose maps it to
 DATABASE_URL=postgres://veldrath_auth:replace-me@localhost:5433/veldrath
 ```
 
-Because the role's `search_path` is `auth`, Better Auth tables and Drizzle's
-migration table are created in `auth`.
+The checked-in Drizzle tables use `pgSchema("auth")`, so migrations and Better
+Auth queries are schema-qualified (`"auth"."user"`). The role `search_path` is
+additional defense in depth, not a correctness requirement. The container
+entrypoint creates the `auth` schema before running migrations, so a fresh
+Coolify-managed database also works without a manual schema step.
 
 ## Why this is safe on the existing Blazor database
 
