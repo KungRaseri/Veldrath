@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
 
 namespace Veldrath.Server.Features.Auth;
@@ -36,6 +38,7 @@ public sealed record AccountAccessSnapshot(
 public sealed class AccountProvisioningService(
     UserManager<PlayerAccount> userManager,
     RoleManager<IdentityRole<Guid>> roleManager,
+    ApplicationDbContext db,
     ILogger<AccountProvisioningService> logger)
 {
     // Identity is configured with RequireUniqueEmail, so every account needs an address.
@@ -122,7 +125,24 @@ public sealed class AccountProvisioningService(
             CreatedAt = DateTimeOffset.UtcNow,
         };
 
-        var result = await userManager.CreateAsync(user);
+        IdentityResult result;
+        try
+        {
+            result = await userManager.CreateAsync(user);
+        }
+        catch (DbUpdateException)
+        {
+            // Two requests can provision the same account concurrently (for example the
+            // registration page and the background hooks sync). The losing insert fails on
+            // the primary key; detach it and use the row the winning request created.
+            db.Entry(user).State = EntityState.Detached;
+
+            var concurrent = await userManager.FindByIdAsync(accountId.ToString());
+            if (concurrent is not null)
+                return concurrent;
+
+            throw;
+        }
 
         // An existing Identity account may already own this email. Retry with the
         // deterministic placeholder address instead of failing the login.

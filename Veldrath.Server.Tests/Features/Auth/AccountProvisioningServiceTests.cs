@@ -51,6 +51,7 @@ public class AccountProvisioningServiceTests : IDisposable
         services.AddSingleton(sp => new AccountProvisioningService(
             sp.GetRequiredService<UserManager<PlayerAccount>>(),
             sp.GetRequiredService<RoleManager<IdentityRole<Guid>>>(),
+            _db,
             Mock.Of<ILogger<AccountProvisioningService>>()));
 
         _provider    = services.BuildServiceProvider();
