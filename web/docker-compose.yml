@@ -37,7 +37,7 @@ services:
       ORIGIN: ${ORIGIN:-http://localhost:8080}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:8080}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-dev-better-auth-secret-change-me}
-      DATABASE_URL: ${DATABASE_URL:-postgres://veldrath:veldrath_dev@postgres:5432/veldrath}
+      DATABASE_URL: ${DATABASE_URL:-postgres://veldrath_auth:veldrath_auth_dev@postgres:5432/veldrath}
       JWT_KEY: ${JWT_KEY:-dev-secret-key-change-in-production-must-be-32-chars}
       JWT_ISSUER: ${JWT_ISSUER:-Veldrath.Server}
       JWT_AUDIENCE: ${JWT_AUDIENCE:-Veldrath.Client}

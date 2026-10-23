@@ -45,29 +45,34 @@ Edit `client/.env`:
 
 ## 3. Prepare the auth schema
 
-Start the root Postgres service and create the dedicated schema:
+Start the root Postgres service and create a dedicated auth role and schema:
 
 ```bash
 cd ..
 docker compose up -d postgres
 
-docker compose exec postgres psql -U veldrath -d veldrath \
-  -c "CREATE SCHEMA IF NOT EXISTS auth;"
+docker compose exec postgres psql -U veldrath -d veldrath <<'SQL'
+CREATE SCHEMA IF NOT EXISTS auth;
 
-docker compose exec postgres psql -U veldrath -d veldrath \
-  -c "ALTER DATABASE veldrath SET search_path TO auth, public;"
-```
-
-If the database already has active connections and the `ALTER DATABASE` fails,
-use a dedicated auth role instead:
-
-```sql
-CREATE ROLE veldrath_auth LOGIN PASSWORD 'replace-me';
-ALTER ROLE veldrath_auth SET search_path = auth, public;
+CREATE ROLE veldrath_auth LOGIN PASSWORD 'veldrath_auth_dev';
+GRANT CONNECT ON DATABASE veldrath TO veldrath_auth;
 GRANT USAGE, CREATE ON SCHEMA auth TO veldrath_auth;
+
+-- Only this role gets the auth search_path. Do not change the database-wide
+-- search_path or the shared `veldrath` role: EF Core still owns `public`.
+ALTER ROLE veldrath_auth SET search_path = auth;
+SQL
 ```
 
-Then point `DATABASE_URL` at that role.
+Then point `DATABASE_URL` in `web/client/.env` at that role:
+
+```text
+postgres://veldrath_auth:veldrath_auth_dev@localhost:5433/veldrath
+```
+
+This is safe on the existing Blazor database because the auth role cannot see
+or modify the `public` tables that EF Core owns. Take a normal database backup
+before running migrations anyway.
 
 ## 4. Generate and apply migrations
 

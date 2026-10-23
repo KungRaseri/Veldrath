@@ -1,7 +1,12 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
+import { pgSchema, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
 
-export const user = pgTable("user", {
+// Better Auth tables are isolated in the `auth` schema. Using pgSchema here
+// makes Drizzle generate schema-qualified tables and foreign keys instead of
+// referencing `public`.
+const auth = pgSchema("auth");
+
+export const user = auth.table("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   username: text("username").unique(),
@@ -16,7 +21,7 @@ export const user = pgTable("user", {
     .notNull(),
 });
 
-export const session = pgTable(
+export const session = auth.table(
   "session",
   {
     id: text("id").primaryKey(),
@@ -35,7 +40,7 @@ export const session = pgTable(
   (table) => [index("session_userId_idx").on(table.userId)],
 );
 
-export const account = pgTable(
+export const account = auth.table(
   "account",
   {
     id: text("id").primaryKey(),
@@ -59,7 +64,7 @@ export const account = pgTable(
   (table) => [index("account_userId_idx").on(table.userId)],
 );
 
-export const verification = pgTable(
+export const verification = auth.table(
   "verification",
   {
     id: text("id").primaryKey(),

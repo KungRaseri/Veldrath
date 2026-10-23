@@ -3,17 +3,22 @@
 Better Auth tables live in a dedicated Postgres schema so they cannot collide
 with the EF Core tables in the `public` schema.
 
-## One-time database setup
+## Recommended: dedicated role
 
-Run as a Postgres administrator:
+Run as a Postgres administrator (the `veldrath` user created by the root
+`docker-compose.yml` is a superuser):
 
 ```sql
 CREATE SCHEMA IF NOT EXISTS auth;
 
 CREATE ROLE veldrath_auth LOGIN PASSWORD 'replace-me';
-ALTER ROLE veldrath_auth SET search_path = auth, public;
-
+GRANT CONNECT ON DATABASE veldrath TO veldrath_auth;
 GRANT USAGE, CREATE ON SCHEMA auth TO veldrath_auth;
+
+-- Only this role gets the auth search_path. Do not change the database-wide
+-- search_path or the shared `veldrath` role: EF Core and the existing game
+-- tables remain in `public`.
+ALTER ROLE veldrath_auth SET search_path = auth;
 ```
 
 Set `DATABASE_URL` in `client/.env` to use that role. The repository root
@@ -24,9 +29,19 @@ compose maps Postgres to `localhost:5433`; the web-only compose maps it to
 DATABASE_URL=postgres://veldrath_auth:replace-me@localhost:5433/veldrath
 ```
 
-Because the role's `search_path` starts with `auth`, the generated Better Auth
-tables (`user`, `session`, `account`, `verification`) and Drizzle's migration
-table are created in the `auth` schema.
+Because the role's `search_path` is `auth`, Better Auth tables and Drizzle's
+migration table are created in `auth`.
+
+## Why this is safe on the existing Blazor database
+
+- Better Auth uses `user`, `session`, `account`, and `verification`; those
+  names are isolated in the `auth` schema. The Blazor setup uses
+  `AspNetUsers`, `AspNetRoles`, characters, and the other EF Core tables in
+  `public`.
+- The auth role has no privileges on `public`, so a bad migration cannot drop
+  or alter game tables.
+- The SvelteKit process never issues raw SQL against `public`.
+- The .NET server continues to use the `veldrath` connection string unchanged.
 
 ## Migrations
 
@@ -34,6 +49,10 @@ table are created in the `auth` schema.
 npm run db:generate
 npm run db:migrate
 ```
+
+Use `generate` + `migrate`, not `db:push`, against the shared database.
+`drizzle-kit push` is convenient for throwaway databases, but it is the wrong
+tool when the database also contains EF Core-owned tables.
 
 `drizzle-kit` loads `client/.env` from the `shared` workspace, so the root
 commands work without exporting `DATABASE_URL`.
