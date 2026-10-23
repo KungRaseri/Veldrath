@@ -19,15 +19,17 @@
 		"db:migrate-identity": "node ../scripts/migrate-identity-accounts.mjs"
 	},
 	"dependencies": {
-		"@microsoft/signalr": "^8.0.0",
-		"@veldrath/shared": "*",
 		"@iconify/svelte": "^5.2.2",
 		"@lucide/svelte": "^1.29.0",
+		"@microsoft/signalr": "^8.0.0",
+		"@veldrath/shared": "*",
 		"better-auth": "^1.7.1",
 		"bits-ui": "^2.18.1",
 		"drizzle-orm": "^0.45.2",
 		"jose": "^6.0.0",
+		"marked": "^18.1.1",
 		"postgres": "^3.4.9",
+		"sanitize-html": "^2.18.1",
 		"simple-icons": "^16.28.0"
 	},
 	"devDependencies": {
@@ -45,6 +47,7 @@
 		"@testing-library/jest-dom": "^7.0.0",
 		"@testing-library/svelte": "^5.4.2",
 		"@types/node": "^24",
+		"@types/sanitize-html": "^2.16.2",
 		"auth": "^1.7.1",
 		"eslint": "^10.4.1",
 		"eslint-config-prettier": "^10.1.8",

@@ -35,7 +35,16 @@ Phase 2 is complete and verified for the SvelteKit client:
 - [`GameSession`](../web/client/src/lib/game/session.svelte.ts) handles character/zone/map, travel, chat, inventory/equipment, combat, rest, search, shop, quests, XP/gold/health/mana, respawn, and reconnect. Pure event math lives in [`reducers.ts`](../web/client/src/lib/game/reducers.ts) with Vitest coverage.
 - Browser SignalR verification exposed a CORS gap: negotiate preflights send `x-signalr-user-agent`. The server now allows that header and builds origins from `Cors:AllowedOrigins` (falling back to local dev plus `Web:BaseUrl`), with regression tests.
 - Verification: 778 server tests, **31** client unit/component tests, 4 Playwright guard tests, live hub smoke (chat, rest, search, quest log, shop catalog, inventory), and a real-browser smoke (map, inventory, quests, settings, chat, zero console errors). Combat events are covered by reducer/component tests; the seeded zone spawns no live enemies.
-- Next: Phase 3 public site and account pages.
+
+Phase 3 is complete and verified for the SvelteKit public site and account pages:
+
+- SSR public routes: [`/`](../web/client/src/routes/+page.svelte) (announcements, latest lore, patch notes, server status), [`/lore`](../web/client/src/routes/lore/+page.svelte) and `/lore/[slug]`, [`/patch-notes`](../web/client/src/routes/patch-notes/+page.svelte) and `/patch-notes/[slug]`, [`/community`](../web/client/src/routes/community/+page.svelte), and [`/players/[id]`](../web/client/src/routes/players/[id]/+page.svelte).
+- Auth and account routes: `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email`, and [`/account`](../web/client/src/routes/account/+page.svelte) (profile, linked providers, password change, sign-out).
+- [`editorial-api.ts`](../web/client/src/lib/server/editorial-api.ts) parses the server's `PagedResult` shape (`items`/`totalCount`) for lore, patch notes, and announcements, with empty-page fallbacks and a 5s timeout.
+- [`markdown.ts`](../web/client/src/lib/server/markdown.ts) renders content with `marked` and `sanitize-html`; anchors get `rel="noopener noreferrer"`. Verified that an injected `<script>` payload is stripped from the rendered page.
+- The account provider query lives in [`account.ts`](../web/client/src/lib/server/account.ts) so routes never import `@veldrath/shared/db` directly (DB boundary lint rule).
+- Verification: `format`, `typecheck`, `lint`, production build, **31** Vitest tests, and **10** Playwright tests pass. Live SSR checks covered every page with seeded editorial rows; the live account flow passed sign-up → provider list → password change (browser `Origin` required by Better Auth CSRF) → Foundry bridge password sync → Better Auth and .NET Identity login with the new password while the old password was rejected.
+- The Blazor public routes remain in `Veldrath.Web` until the Phase 6 retirement so the current deployment keeps working until SvelteKit is deployed; SvelteKit is now the canonical implementation.
 
 ## Decision
 
@@ -313,11 +322,11 @@ Exit criteria: the SvelteKit game UI replaces the Blazor game routes, and the RC
 
 ### Phase 3 — Public site and account pages
 
-- Port home, community, lore index and detail, patch notes index and detail, login, register, forgot password, reset password, confirm email, and account profile.
-- Use SvelteKit server loads for SSR and SEO.
-- Remove the corresponding Blazor pages from `Veldrath.Web`.
+- ✅ Port home, community, lore index and detail, patch notes index and detail, login, register, forgot password, reset password, confirm email, and account profile.
+- ✅ Use SvelteKit server loads for SSR and SEO.
+- ⏳ Remove the corresponding Blazor pages from `Veldrath.Web` in Phase 6, after the SvelteKit deployment replaces the Blazor one.
 
-Exit criteria: the public site is fully served by SvelteKit and the Blazor web app has no remaining public routes.
+Exit criteria: the public site is fully served by SvelteKit. Blazor route removal and the final switchover happen in Phase 6.
 
 ### Phase 4 — Foundry, admin, moderation, editorial
 

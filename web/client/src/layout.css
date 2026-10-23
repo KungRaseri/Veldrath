@@ -1,0 +1,59 @@
+/* Rendered editorial Markdown (lore articles, patch notes). */
+.markdown > * + * {
+	margin-top: 1rem;
+}
+.markdown h2 {
+	margin-top: 1.75rem;
+	font-size: 1.35rem;
+	font-weight: 700;
+}
+.markdown h3 {
+	margin-top: 1.25rem;
+	font-size: 1.1rem;
+	font-weight: 600;
+}
+.markdown a {
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+.markdown ul,
+.markdown ol {
+	padding-left: 1.5rem;
+}
+.markdown ul {
+	list-style: disc;
+}
+.markdown ol {
+	list-style: decimal;
+}
+.markdown blockquote {
+	border-left: 3px solid currentColor;
+	padding-left: 1rem;
+	opacity: 0.85;
+}
+.markdown code {
+	border-radius: 0.25rem;
+	background: rgba(127, 127, 127, 0.15);
+	padding: 0.1rem 0.3rem;
+	font-size: 0.9em;
+}
+.markdown pre {
+	overflow-x: auto;
+	border-radius: 0.5rem;
+	background: rgba(127, 127, 127, 0.15);
+	padding: 1rem;
+}
+.markdown pre code {
+	background: transparent;
+	padding: 0;
+}
+.markdown table {
+	width: 100%;
+	border-collapse: collapse;
+}
+.markdown th,
+.markdown td {
+	border: 1px solid rgba(127, 127, 127, 0.3);
+	padding: 0.4rem 0.6rem;
+	text-align: left;
+}
