@@ -48,10 +48,10 @@ public class CardinalMapComponentTests : BunitContext
             .Add(p => p.Map, MakeGraph())
             .Add(p => p.CurrentNodeId, Entry));
 
-        // Three nodes in one row: 3 * 156px cells + 2 * 6px canvas padding.
+        // Three nodes in one row: 3 * 160px cells + 2 * 8px canvas padding.
         cut.Find(".cardinal-map-canvas").GetAttribute("style")
-            .Should().Contain("width:480px")
-            .And.Contain("height:78px");
+            .Should().Contain("width:496px")
+            .And.Contain("height:86px");
     }
 
     [Fact]

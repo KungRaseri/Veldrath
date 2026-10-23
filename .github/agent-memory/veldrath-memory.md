@@ -1246,7 +1246,7 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
 
 **Layout**
 - `CardinalMap` is now a compact text graph rather than a tile-sized canvas: node cards are
-  152×60 with 4px horizontal / 6px vertical gutters (cells 156×66), a 6px canvas padding,
+  152×60 with 8px horizontal / 10px vertical gutters (cells 160×70), an 8px canvas padding,
   and a centred canvas inside a bounded (`max-height: 52vh`) bordered viewport.
 - Connectors now run between facing card edges instead of card centres, and each carries a
   cardinal arrow (`↑`/`↓`/`→`/`←`) plus a tooltip with the edge label. Blocked and hidden
@@ -1258,8 +1258,8 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
 - Node metadata uses compact inline badges (`Entry`/`Exit`) instead of MudChips; the current node
   uses the player-indicator gold token and a `● You are here` label.
 - Added a map legend toolbar (Current / Selected / Exit) and `MapSubtitle` counts.
-- `Game.razor` now uses a two-column `.map-layout` (map + detail panel), collapsing to one column
-  below 960px.
+- `Game.razor` keeps the shell at exactly three columns (left sidebar / center / right chat);
+  `.map-layout` stacks the map above the detail panel inside the center column.
 - Keyboard arrow navigation now prefers a traversable graph edge in the requested direction before
   falling back to spatial nearest-neighbour selection. Enter no longer travels to the current node.
 - Removed the unused `--vds-tile-*` design tokens from the RCL token file.

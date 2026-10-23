@@ -443,8 +443,8 @@ Enhanced [`ActionBar.razor`](Veldrath.GameClient.Components/Components/Shared/Ac
 
 ### Cardinal map layout (Session-55, 2026-10-23)
 
-- **Post-tile layout** — `CardinalMap` uses 152×60 node cards in 156×66 cells (4px/6px gutters)
-  with 6px canvas padding, a bounded scroll viewport, and arrow connector labels
+- **Post-tile layout** — `CardinalMap` uses 152×60 node cards in 160×70 cells (8px/10px gutters)
+  with 8px canvas padding, a bounded scroll viewport, and arrow connector labels
   (`↑/↓/→/←`). Do not reintroduce tile-sized cells, tile backgrounds, or `--vds-tile-*` tokens.
 - **Authored coordinates are density-gated** — dense authored grids are kept (compacted to
   ordered indices); sparse TMX-era layouts (e.g. 8 nodes spread across a 64×40 tile rectangle)
@@ -454,5 +454,6 @@ Enhanced [`ActionBar.razor`](Veldrath.GameClient.Components/Components/Shared/Ac
   centres; L-shaped routes are used only when authored positions are not cardinally aligned.
 - **Keyboard navigation follows edges** — arrow keys first look for a traversable edge in that
   direction (including incoming edges), then fall back to the nearest spatial node.
-- **Map/detail layout** — `Game.razor` uses `.map-layout` (map + `MapDetailPanel` side by side),
-  collapsing to a single column below 960px.
+- **Map/detail layout** — the game shell is exactly three columns (left sidebar / center / right
+  chat). `.map-layout` stacks the map above `MapDetailPanel` inside the center column; do not
+  add another grid column there.

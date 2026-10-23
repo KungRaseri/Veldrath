@@ -263,17 +263,13 @@
   white-space: nowrap;
 }
 
+/* Keep the game shell at exactly three columns (left sidebar / center / right chat).
+   The map and its location details stack vertically inside the center column. */
 .map-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
+  display: flex;
+  flex-direction: column;
   gap: var(--vds-space-2);
-  align-items: start;
-}
-
-@media (max-width: 960px) {
-  .map-layout {
-    grid-template-columns: 1fr;
-  }
+  min-width: 0;
 }
 
 .text-panel-host {
