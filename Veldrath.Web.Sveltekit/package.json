@@ -1,0 +1,44 @@
+{
+  "name": "veldrath-web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Veldrath web frontend — SvelteKit, Better Auth, Drizzle, and shared contracts.",
+  "type": "module",
+  "workspaces": [
+    "shared",
+    "client"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "coverage": "npm run coverage --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "dev": "npm run dev --workspace client",
+    "dev:client": "npm run dev --workspace client",
+    "db:generate": "npm run db:generate --workspace shared",
+    "db:migrate": "npm run db:migrate --workspace shared",
+    "db:push": "npm run db:push --workspace shared",
+    "db:studio": "npm run db:studio --workspace shared",
+    "icons:curate": "node scripts/curate-icons.mjs && prettier --write client/src/lib/components/ui/curated-icons.ts"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^3.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.4.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^3.0.0"
+  },
+  "overrides": {
+    "vite": "^7.3.6",
+    "cookie": "^0.7.0",
+    "lodash": "^4.18.1",
+    "esbuild": "^0.28.1"
+  }
+}

@@ -1,0 +1,40 @@
+# .dockerignore — build context for server/Dockerfile and client/Dockerfile
+# (build context = repo root). Keeps secrets and build artifacts out of the
+# image build context while preserving the .env.example templates the
+# Dockerfiles copy.
+
+# Git / CI
+.git
+.gitignore
+.gitattributes
+.github
+
+# Dependencies (installed inside the image)
+node_modules
+**/node_modules
+
+# Env / secrets — exclude real .env files but KEEP the .env.example templates
+# (server/Dockerfile copies server/.env.example as a fallback).
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Build output / artifacts
+dist
+**/dist
+client/build
+client/.svelte-kit
+**/coverage
+coverage
+
+# Logs / temp
+*.log
+logs
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode
+.idea

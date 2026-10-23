@@ -1,0 +1,196 @@
+# Tailwind CSS
+
+> Tailwind CSS v4.3 — a utility-first CSS framework. You build UI by composing utility classes in markup; the framework compiles exactly the CSS you use. In v4, configuration is **CSS-first** (`@theme`), content is auto-detected, and builds are handled by a Vite plugin.
+>
+> Latest docs: https://tailwindcss.com/docs · Latest version: v4.3 (release v4.3.3) · GitHub: https://github.com/tailwindlabs/tailwindcss · Releases: https://github.com/tailwindlabs/tailwindcss/releases/tag/v4.3.3
+>
+> **Verification note (2026-08-04):** this index was built from the live docs navigation at tailwindcss.com/docs (203 URLs) and cross-checked with HTTP status probes. Tailwind publishes no `sitemap.xml` (404) and no official `llms.txt`.
+
+## How this repo uses it (this client)
+
+- Version: `tailwindcss ^4.3.0`, `@tailwindcss/vite ^4.3.0`, plus plugins `@tailwindcss/forms` and `@tailwindcss/typography` (client).
+- Vite plugin registered in `client/vite.config.ts` (`tailwindcss()` from `@tailwindcss/vite`).
+- Single CSS entry: `client/src/routes/layout.css`:
+
+```css
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+```
+
+- There is **no `tailwind.config.js`** — configuration lives in CSS (see `@theme` below).
+
+## Key v4 concepts (hand-built reference)
+
+### Installation with Vite
+
+```bash
+npm install tailwindcss @tailwindcss/vite
+```
+
+```ts
+// vite.config.ts
+import tailwindcss from '@tailwindcss/vite';
+// add to the plugin array: tailwindcss()
+```
+
+```css
+/* your CSS entry */
+@import "tailwindcss";
+```
+
+### CSS-first configuration — `@theme`
+
+v4 has no config file by default. Customize the design system with `@theme` in CSS. Every `--token` becomes a CSS variable **and** generates utilities:
+
+```css
+@theme {
+  --color-brand: oklch(0.5 0.2 250);        /* bg-brand, text-brand, border-brand… */
+  --font-display: "Inter", sans-serif;      /* font-display */
+  --spacing: 0.25rem;                        /* spacing scale base (dynamic) */
+  --breakpoint-xs: 30rem;                    /* new responsive variant xs: */
+}
+```
+
+Reference tokens in your own CSS with `var(--color-brand)`. v4's default palette uses the **oklch** color space.
+
+### Custom utilities — `@utility`
+
+```css
+@utility text-shadow-lg {
+  text-shadow: 0 2px 8px rgb(0 0 0 / 0.5);
+}
+/* usage: <div class="text-shadow-lg"> */
+```
+
+### Custom variants — `@variant` / `@custom-variant`
+
+```css
+@variant pointer-coarse (@media (pointer: coarse));
+
+/* class-based dark mode (instead of default prefers-color-scheme): */
+@custom-variant dark (&:where(.dark, .dark *));
+```
+
+### Dark mode
+
+By default `dark:` follows `prefers-color-scheme`. For a class/toggle-based dark mode, add `@custom-variant dark (&:where(.dark, .dark *));` in your CSS, then toggle `class="dark"` on `<html>` and use `dark:bg-gray-900 dark:text-white`.
+
+### Variants and stacking
+
+- **Responsive** (mobile-first): `sm:`, `md:`, `lg:`, `xl:`, `2xl:`; also `max-sm:` and arbitrary `min-[...]:` / `max-[...]:`.
+- **State**: `hover:`, `focus:`, `focus-visible:`, `active:`, `disabled:`, `visited:`, `checked:`, `required:`, `invalid:`, `placeholder-shown:`, `selection:`.
+- **Structural**: `first:`, `last:`, `odd:`, `even:`, `only:`, `not-*:`.
+- **Group/peer**: `group-hover:`, `group-focus-within:`, `group-data-[...]:`, `peer-checked:`, etc.
+- **Other**: `aria-*:`, `data-[...]:`, `*:` (children), `&:` (self), `motion-safe:`, `motion-reduce:`, `print:`, `portrait:`, `landscape:`, `rtl:`, `ltr:`.
+- **Container queries** (built in): mark a parent `@container`, then use `@sm:`, `@md:`, `@min-[...]:`, `@max-[...]:`.
+- Variants **stack**: `hover:focus:bg-…`.
+
+### Color / alpha modifiers
+
+```html
+<div class="bg-black/50 text-red-500/75">…</div>  <!-- /0–100, or /50% -->
+```
+
+### Reusing styles — `@apply`
+
+```css
+.btn { @apply inline-flex items-center gap-2 rounded-md px-4 py-2 font-semibold; }
+```
+
+Use sparingly (prefer utility classes in markup). In separate CSS files (not the entry), import the theme without emitting utilities via `@reference`:
+
+```css
+@reference "layout.css";
+.btn { @apply …; }
+```
+
+### Explicit content sources — `@source`
+
+Content is auto-detected. Only add `@source` when a file path is missed:
+
+```css
+@source "../node_modules/@your-scope/…";
+```
+
+### Functions & directives summary
+
+| Directive | Purpose |
+| --- | --- |
+| `@import "tailwindcss"` | Single entry (includes Preflight reset + utilities) |
+| `@theme { … }` | Define design tokens → CSS variables + utilities |
+| `@utility name { … }` | Custom utility |
+| `@variant` / `@custom-variant` | Custom variant / redefine a built-in variant |
+| `@apply …` | Inline existing utilities in your CSS |
+| `@reference "file.css"` | Import theme/tokens into a separate file without emitting utilities |
+| `@source "…"` | Explicit content scan path |
+| `@config "tailwind.config.js"` | Load a legacy v3-style config (migration) |
+
+`theme()` is legacy in v4 — use `var(--token)` instead.
+
+### Notable v4 utilities
+
+`text-balance`, `text-pretty`, `outline-hidden`, `field-sizing-content`, dynamic viewport units (`h-dvh`, `min-h-dvh`), subgrid (`grid-cols-subgrid`, `col-span-subgrid`), and a fully **dynamic spacing scale** (any value works: `mt-17`, `w-29`, `p-[13px]`).
+
+---
+
+## Official docs index (verified against the live docs site)
+
+### Getting started
+- [Installation overview](https://tailwindcss.com/docs/installation)
+- [Using Vite](https://tailwindcss.com/docs/installation/using-vite): `@tailwindcss/vite` plugin + CSS entry
+- [Using PostCSS](https://tailwindcss.com/docs/installation/using-postcss)
+- [Tailwind CLI](https://tailwindcss.com/docs/installation/tailwind-cli)
+- [Play CDN](https://tailwindcss.com/docs/installation/play-cdn)
+- [Framework guides](https://tailwindcss.com/docs/installation/framework-guides): SvelteKit, Svelte, Next.js, Astro, Remix, Nuxt, SolidStart, Angular, Laravel, Django, Rails, Symfony, Spring Boot, ASP.NET Core
+- [Upgrade guide](https://tailwindcss.com/docs/upgrade-guide): v3 → v4 (`@config`, `@theme`, content detection)
+- [Compatibility](https://tailwindcss.com/docs/compatibility): browser/build requirements
+- [Editor setup](https://tailwindcss.com/docs/editor-setup): Tailwind CSS IntelliSense
+- [Detecting classes in source files](https://tailwindcss.com/docs/detecting-classes-in-source-files): how `@source`/auto-detection works
+
+### Core concepts
+- [Styling with utility classes](https://tailwindcss.com/docs/styling-with-utility-classes)
+- [Hover, focus & other states](https://tailwindcss.com/docs/hover-focus-and-other-states): state variants, stacking, `group-*`/`peer-*`
+- [Responsive design](https://tailwindcss.com/docs/responsive-design): breakpoints, `max-*`, arbitrary `min-[...]:`
+- [Dark mode](https://tailwindcss.com/docs/dark-mode): `dark:` + `@custom-variant`
+- [Reusing styles](https://tailwindcss.com/docs/reusing-styles): `@apply`, extracting components
+- [Adding custom styles](https://tailwindcss.com/docs/adding-custom-styles): `@theme`, `@utility`, `@layer`, `@reference`
+- [Functions and directives](https://tailwindcss.com/docs/functions-and-directives): the full CSS API reference
+- [Optimizing for production](https://tailwindcss.com/docs/optimizing-for-production): unused-style removal, Lightning CSS
+
+### Customization
+- [Theme](https://tailwindcss.com/docs/theme): `@theme`, design tokens (`--color-*`, `--font-*`, `--spacing`, `--breakpoint-*`, …)
+- [Colors](https://tailwindcss.com/docs/colors): default palette (oklch), alpha modifiers
+
+### Utility reference — Layout
+- [Display](https://tailwindcss.com/docs/display) · [Position](https://tailwindcss.com/docs/position) · [Top / right / bottom / left](https://tailwindcss.com/docs/top-right-bottom-left) · [Z-index](https://tailwindcss.com/docs/z-index) · [Overflow](https://tailwindcss.com/docs/overflow) · [Overscroll behavior](https://tailwindcss.com/docs/overscroll-behavior) · [Object fit](https://tailwindcss.com/docs/object-fit) · [Object position](https://tailwindcss.com/docs/object-position) · [Aspect ratio](https://tailwindcss.com/docs/aspect-ratio) · [Columns](https://tailwindcss.com/docs/columns) · [Box sizing](https://tailwindcss.com/docs/box-sizing) · [Box decoration break](https://tailwindcss.com/docs/box-decoration-break) · [Float](https://tailwindcss.com/docs/float) · [Clear](https://tailwindcss.com/docs/clear) · [Isolation](https://tailwindcss.com/docs/isolation) · [Visibility](https://tailwindcss.com/docs/visibility) · [Backface visibility](https://tailwindcss.com/docs/backface-visibility) · [Perspective](https://tailwindcss.com/docs/perspective) · [Perspective origin](https://tailwindcss.com/docs/perspective-origin) · [Transform style](https://tailwindcss.com/docs/transform-style)
+
+### Utility reference — Flexbox & Grid
+- [Flex direction](https://tailwindcss.com/docs/flex-direction) · [Flex wrap](https://tailwindcss.com/docs/flex-wrap) · [Flex](https://tailwindcss.com/docs/flex) · [Flex basis](https://tailwindcss.com/docs/flex-basis) · [Flex grow](https://tailwindcss.com/docs/flex-grow) · [Flex shrink](https://tailwindcss.com/docs/flex-shrink) · [Order](https://tailwindcss.com/docs/order) · [Grid template columns](https://tailwindcss.com/docs/grid-template-columns) · [Grid template rows](https://tailwindcss.com/docs/grid-template-rows) · [Grid column](https://tailwindcss.com/docs/grid-column) · [Grid row](https://tailwindcss.com/docs/grid-row) · [Grid auto flow](https://tailwindcss.com/docs/grid-auto-flow) · [Grid auto columns](https://tailwindcss.com/docs/grid-auto-columns) · [Grid auto rows](https://tailwindcss.com/docs/grid-auto-rows) · [Gap](https://tailwindcss.com/docs/gap) · [Justify content](https://tailwindcss.com/docs/justify-content) · [Justify items](https://tailwindcss.com/docs/justify-items) · [Justify self](https://tailwindcss.com/docs/justify-self) · [Align content](https://tailwindcss.com/docs/align-content) · [Align items](https://tailwindcss.com/docs/align-items) · [Align self](https://tailwindcss.com/docs/align-self) · [Place content](https://tailwindcss.com/docs/place-content) · [Place items](https://tailwindcss.com/docs/place-items) · [Place self](https://tailwindcss.com/docs/place-self)
+
+### Utility reference — Spacing & Sizing
+- [Padding](https://tailwindcss.com/docs/padding) · [Margin](https://tailwindcss.com/docs/margin) · [Width](https://tailwindcss.com/docs/width) · [Min-width](https://tailwindcss.com/docs/min-width) · [Max-width](https://tailwindcss.com/docs/max-width) · [Height](https://tailwindcss.com/docs/height) · [Min-height](https://tailwindcss.com/docs/min-height) · [Max-height](https://tailwindcss.com/docs/max-height) · [Size](https://tailwindcss.com/docs/size) · [Block size](https://tailwindcss.com/docs/block-size) · [Inline size](https://tailwindcss.com/docs/inline-size) · [Min block size](https://tailwindcss.com/docs/min-block-size) · [Min inline size](https://tailwindcss.com/docs/min-inline-size) · [Max block size](https://tailwindcss.com/docs/max-block-size) · [Max inline size](https://tailwindcss.com/docs/max-inline-size)
+
+### Utility reference — Typography
+- [Font family](https://tailwindcss.com/docs/font-family) · [Font size](https://tailwindcss.com/docs/font-size) · [Font weight](https://tailwindcss.com/docs/font-weight) · [Font style](https://tailwindcss.com/docs/font-style) · [Font smoothing](https://tailwindcss.com/docs/font-smoothing) · [Font stretch](https://tailwindcss.com/docs/font-stretch) · [Font feature settings](https://tailwindcss.com/docs/font-feature-settings) · [Font variant numeric](https://tailwindcss.com/docs/font-variant-numeric) · [Letter spacing](https://tailwindcss.com/docs/letter-spacing) · [Line height](https://tailwindcss.com/docs/line-height) · [List style type](https://tailwindcss.com/docs/list-style-type) · [List style position](https://tailwindcss.com/docs/list-style-position) · [List style image](https://tailwindcss.com/docs/list-style-image) · [Color](https://tailwindcss.com/docs/color) · [Color scheme](https://tailwindcss.com/docs/color-scheme) · [Text align](https://tailwindcss.com/docs/text-align) · [Text decoration line](https://tailwindcss.com/docs/text-decoration-line) · [Text decoration color](https://tailwindcss.com/docs/text-decoration-color) · [Text decoration style](https://tailwindcss.com/docs/text-decoration-style) · [Text decoration thickness](https://tailwindcss.com/docs/text-decoration-thickness) · [Text underline offset](https://tailwindcss.com/docs/text-underline-offset) · [Text transform](https://tailwindcss.com/docs/text-transform) · [Text overflow](https://tailwindcss.com/docs/text-overflow) · [Text wrap](https://tailwindcss.com/docs/text-wrap) · [Text indent](https://tailwindcss.com/docs/text-indent) · [Text shadow](https://tailwindcss.com/docs/text-shadow) · [Vertical align](https://tailwindcss.com/docs/vertical-align) · [White space](https://tailwindcss.com/docs/white-space) · [Word break](https://tailwindcss.com/docs/word-break) · [Overflow wrap](https://tailwindcss.com/docs/overflow-wrap) · [Hyphens](https://tailwindcss.com/docs/hyphens) · [Content](https://tailwindcss.com/docs/content) · [Tab size](https://tailwindcss.com/docs/tab-size)
+
+### Utility reference — Backgrounds & Borders
+- [Background color](https://tailwindcss.com/docs/background-color) · [Background image](https://tailwindcss.com/docs/background-image) · [Background position](https://tailwindcss.com/docs/background-position) · [Background size](https://tailwindcss.com/docs/background-size) · [Background repeat](https://tailwindcss.com/docs/background-repeat) · [Background attachment](https://tailwindcss.com/docs/background-attachment) · [Background clip](https://tailwindcss.com/docs/background-clip) · [Background origin](https://tailwindcss.com/docs/background-origin) · [Background blend mode](https://tailwindcss.com/docs/background-blend-mode) · [Border radius](https://tailwindcss.com/docs/border-radius) · [Border width](https://tailwindcss.com/docs/border-width) · [Border color](https://tailwindcss.com/docs/border-color) · [Border style](https://tailwindcss.com/docs/border-style) · [Divide width](https://tailwindcss.com/docs/divide-width) · [Divide color](https://tailwindcss.com/docs/divide-color) · [Divide style](https://tailwindcss.com/docs/divide-style) · [Outline width](https://tailwindcss.com/docs/outline-width) · [Outline color](https://tailwindcss.com/docs/outline-color) · [Outline style](https://tailwindcss.com/docs/outline-style) · [Outline offset](https://tailwindcss.com/docs/outline-offset) · [Ring width](https://tailwindcss.com/docs/ring-width) · [Ring color](https://tailwindcss.com/docs/ring-color) · [Ring offset width](https://tailwindcss.com/docs/ring-offset-width) · [Ring offset color](https://tailwindcss.com/docs/ring-offset-color)
+
+### Utility reference — Effects, Filters, Transforms, Animation
+- [Box shadow](https://tailwindcss.com/docs/box-shadow) · [Opacity](https://tailwindcss.com/docs/opacity) · [Mix blend mode](https://tailwindcss.com/docs/mix-blend-mode) · [Mask image](https://tailwindcss.com/docs/mask-image) · [Mask clip](https://tailwindcss.com/docs/mask-clip) · [Mask composite](https://tailwindcss.com/docs/mask-composite) · [Mask mode](https://tailwindcss.com/docs/mask-mode) · [Mask origin](https://tailwindcss.com/docs/mask-origin) · [Mask position](https://tailwindcss.com/docs/mask-position) · [Mask repeat](https://tailwindcss.com/docs/mask-repeat) · [Mask size](https://tailwindcss.com/docs/mask-size) · [Mask type](https://tailwindcss.com/docs/mask-type) · [Filter](https://tailwindcss.com/docs/filter) · [Filter blur](https://tailwindcss.com/docs/filter-blur) · [Filter brightness](https://tailwindcss.com/docs/filter-brightness) · [Filter contrast](https://tailwindcss.com/docs/filter-contrast) · [Filter drop shadow](https://tailwindcss.com/docs/filter-drop-shadow) · [Filter grayscale](https://tailwindcss.com/docs/filter-grayscale) · [Filter hue rotate](https://tailwindcss.com/docs/filter-hue-rotate) · [Filter invert](https://tailwindcss.com/docs/filter-invert) · [Filter saturate](https://tailwindcss.com/docs/filter-saturate) · [Filter sepia](https://tailwindcss.com/docs/filter-sepia) · [Backdrop filter](https://tailwindcss.com/docs/backdrop-filter) · [Backdrop filter blur](https://tailwindcss.com/docs/backdrop-filter-blur) · [Backdrop filter brightness](https://tailwindcss.com/docs/backdrop-filter-brightness) · [Backdrop filter contrast](https://tailwindcss.com/docs/backdrop-filter-contrast) · [Backdrop filter grayscale](https://tailwindcss.com/docs/backdrop-filter-grayscale) · [Backdrop filter hue rotate](https://tailwindcss.com/docs/backdrop-filter-hue-rotate) · [Backdrop filter invert](https://tailwindcss.com/docs/backdrop-filter-invert) · [Backdrop filter opacity](https://tailwindcss.com/docs/backdrop-filter-opacity) · [Backdrop filter saturate](https://tailwindcss.com/docs/backdrop-filter-saturate) · [Backdrop filter sepia](https://tailwindcss.com/docs/backdrop-filter-sepia) · [Transition property](https://tailwindcss.com/docs/transition-property) · [Transition duration](https://tailwindcss.com/docs/transition-duration) · [Transition timing function](https://tailwindcss.com/docs/transition-timing-function) · [Transition delay](https://tailwindcss.com/docs/transition-delay) · [Transition behavior](https://tailwindcss.com/docs/transition-behavior) · [Animation](https://tailwindcss.com/docs/animation) · [Transform](https://tailwindcss.com/docs/transform) · [Translate](https://tailwindcss.com/docs/translate) · [Rotate](https://tailwindcss.com/docs/rotate) · [Skew](https://tailwindcss.com/docs/skew) · [Scale](https://tailwindcss.com/docs/scale) · [Transform origin](https://tailwindcss.com/docs/transform-origin)
+
+### Utility reference — Tables, Interactivity, SVG, Accessibility
+- [Border collapse](https://tailwindcss.com/docs/border-collapse) · [Border spacing](https://tailwindcss.com/docs/border-spacing) · [Table layout](https://tailwindcss.com/docs/table-layout) · [Caption side](https://tailwindcss.com/docs/caption-side) · [Accent color](https://tailwindcss.com/docs/accent-color) · [Appearance](https://tailwindcss.com/docs/appearance) · [Cursor](https://tailwindcss.com/docs/cursor) · [Caret color](https://tailwindcss.com/docs/caret-color) · [Pointer events](https://tailwindcss.com/docs/pointer-events) · [Resize](https://tailwindcss.com/docs/resize) · [Scroll behavior](https://tailwindcss.com/docs/scroll-behavior) · [Scroll margin](https://tailwindcss.com/docs/scroll-margin) · [Scroll padding](https://tailwindcss.com/docs/scroll-padding) · [Scroll snap align](https://tailwindcss.com/docs/scroll-snap-align) · [Scroll snap stop](https://tailwindcss.com/docs/scroll-snap-stop) · [Scroll snap type](https://tailwindcss.com/docs/scroll-snap-type) · [Scrollbar color](https://tailwindcss.com/docs/scrollbar-color) · [Scrollbar gutter](https://tailwindcss.com/docs/scrollbar-gutter) · [Scrollbar width](https://tailwindcss.com/docs/scrollbar-width) · [Touch action](https://tailwindcss.com/docs/touch-action) · [User select](https://tailwindcss.com/docs/user-select) · [Will change](https://tailwindcss.com/docs/will-change) · [Forced color adjust](https://tailwindcss.com/docs/forced-color-adjust) · [Zoom](https://tailwindcss.com/docs/zoom) · [Field sizing](https://tailwindcss.com/docs/field-sizing) · [Line clamp](https://tailwindcss.com/docs/line-clamp) · [Fill](https://tailwindcss.com/docs/fill) · [Stroke](https://tailwindcss.com/docs/stroke) · [Stroke width](https://tailwindcss.com/docs/stroke-width) · [Screen readers](https://tailwindcss.com/docs/screen-readers) · [Preflight](https://tailwindcss.com/docs/preflight)
+
+### Plugins (used in this repo)
+- `@tailwindcss/forms` — form-element styling, installed via `@plugin '@tailwindcss/forms'`. Repo: https://github.com/tailwindlabs/tailwindcss-forms
+- `@tailwindcss/typography` — `prose` classes, installed via `@plugin '@tailwindcss/typography'`. Repo: https://github.com/tailwindlabs/tailwindcss-typography
+
+### Sources
+- [GitHub](https://github.com/tailwindlabs/tailwindcss)
+- [Releases](https://github.com/tailwindlabs/tailwindcss/releases)
+
+---
+
+This file is hand-built (Tailwind's authors do not publish an official `llms.txt`; `sitemap.xml` returns 404). Content targets **v4.3**, and the index was verified against the live docs navigation on 2026-08-04.
