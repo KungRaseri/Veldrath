@@ -56,6 +56,9 @@ CREATE SCHEMA IF NOT EXISTS auth;
 
 CREATE ROLE veldrath_auth LOGIN PASSWORD 'veldrath_auth_dev';
 GRANT CONNECT ON DATABASE veldrath TO veldrath_auth;
+-- Drizzle runs CREATE SCHEMA IF NOT EXISTS auth before migrating; that
+-- statement requires CREATE on the database even if the schema exists.
+GRANT CREATE ON DATABASE veldrath TO veldrath_auth;
 GRANT USAGE, CREATE ON SCHEMA auth TO veldrath_auth;
 
 -- Only this role gets the auth search_path. Do not change the database-wide
@@ -121,7 +124,27 @@ The .NET server's existing `AllowLocalClient` CORS policy already allows
 `http://localhost:5173`, so the SignalR connection should work without a server
 change. Production origins will be added in Phase 1.
 
-## 7. Exit criteria
+## 7. Verified results
+
+The runbook was executed successfully on the existing Blazor database:
+
+- Better Auth sign-up returned a GUID user ID and set the session cookie.
+- `/api/game-token` returned a JWT with `sub`, `unique_name`, `iss`,
+  `aud`, and `exp` matching the .NET server configuration.
+- `GET /api/characters` with the token returned `200` and an empty list for
+  the fresh user.
+- `POST /hubs/game/negotiate` returned `200`.
+- A real WebSocket connection received `ServerInfo` with the server version.
+- The `auth` schema contains `user`, `session`, `account`, `verification`, and
+  `__drizzle_migrations`; the 66 public EF Core tables were untouched.
+
+One important local-development detail: the root `.env` `JWT_KEY` overrides
+`appsettings.Development.json` because `Veldrath.Server` loads the root `.env`
+in Development. Copy that same value into `web/client/.env`. The checked-in
+example uses the appsettings fallback and will not match if a different root
+`.env` key is present.
+
+## 8. Exit criteria
 
 Phase 0 is complete when:
 

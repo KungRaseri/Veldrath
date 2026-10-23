@@ -13,6 +13,9 @@ CREATE SCHEMA IF NOT EXISTS auth;
 
 CREATE ROLE veldrath_auth LOGIN PASSWORD 'replace-me';
 GRANT CONNECT ON DATABASE veldrath TO veldrath_auth;
+-- Drizzle runs CREATE SCHEMA IF NOT EXISTS auth before migrating; that
+-- statement requires CREATE on the database even if the schema exists.
+GRANT CREATE ON DATABASE veldrath TO veldrath_auth;
 GRANT USAGE, CREATE ON SCHEMA auth TO veldrath_auth;
 
 -- Only this role gets the auth search_path. Do not change the database-wide
@@ -70,3 +73,9 @@ npm run db:migrate
 The regeneration writes `shared/src/db/auth.schema.ts`. Do not hand-edit
 generated columns beyond app-specific additions unless you also update the
 Better Auth configuration.
+
+The checked-in schema intentionally wraps the generated tables in
+`pgSchema("auth")`. The `auth generate` CLI emits `pgTable` definitions without
+schema qualification, so after regenerating, re-apply the `pgSchema("auth")`
+wrapper and the `username`/`display_username` additions before generating the
+next Drizzle migration.

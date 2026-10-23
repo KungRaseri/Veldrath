@@ -15,6 +15,9 @@ END
 $$;
 
 GRANT CONNECT ON DATABASE veldrath TO veldrath_auth;
+-- Drizzle runs CREATE SCHEMA IF NOT EXISTS auth before migrating, which
+-- requires CREATE on the database even when the schema already exists.
+GRANT CREATE ON DATABASE veldrath TO veldrath_auth;
 GRANT USAGE, CREATE ON SCHEMA auth TO veldrath_auth;
 
 -- Keep the auth role inside the auth schema. Do NOT set this on the database

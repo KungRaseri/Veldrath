@@ -1,5 +1,17 @@
 # SvelteKit Migration Plan
 
+## Status
+
+Phase 0 is complete and verified on the existing Blazor Postgres database:
+
+- The template moved to `web/`; Colyseus, the TypeScript engine, the ticket helper, and the room schema were removed.
+- Better Auth owns the `auth` schema; `auth.user`, `auth.session`, `auth.account`, `auth.verification`, and `auth.__drizzle_migrations` exist.
+- The SvelteKit server mints a JWT that `Veldrath.Server` accepts.
+- `/api/characters` returns `200` with the minted token, `/hubs/game/negotiate` returns `200`, and a real WebSocket connection receives `ServerInfo`.
+- `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` pass.
+
+Next: Phase 1 — .NET claims transformation and JIT provisioning, the temporary Foundry account bridge, OAuth redirects, and the first game slice.
+
 ## Decision
 
 Replace the Blazor frontends with a **single SvelteKit application** using route groups, built from the in-repo [`Veldrath.Web.Sveltekit`](../Veldrath.Web.Sveltekit/TEMPLATE-GUIDE.md) workspace.
