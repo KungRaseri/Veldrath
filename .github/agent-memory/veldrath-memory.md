@@ -1280,3 +1280,32 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
 - `CardinalGraphLayoutTests` updated for compacted authored coordinates.
 - `CardinalMapComponentTests` adds direction-label, compact badge, edge-first keyboard navigation,
   and no-travel-to-current-node coverage. Components project: **102 passing**.
+
+## SvelteKit Migration — Phase 0 + .NET Auth Bridge (Session-57, 2026-10-23)
+
+**Phase 0 (complete)**
+- SvelteKit app lives in `web/` (`shared` + `client` workspaces). Colyseus, the TypeScript engine,
+  and the Caddyfile are gone.
+- Better Auth 1.7.1 owns the `auth` Postgres schema (`user`, `session`, `account`, `verification`,
+  `__drizzle_migrations`). `pgSchema("auth")` keeps FKs out of `public`.
+- SvelteKit mints the .NET JWT with `jose` (issuer `Veldrath.Server`, audience `Veldrath.Client`,
+  HS256, 10-minute TTL). The `JWT_KEY` in `web/client/.env` must match the root `.env` value.
+- Social providers configured: Discord, Google, Microsoft (Discord confirmed working).
+- Docker: web entrypoint waits for Postgres, applies Drizzle migrations, then starts adapter-node.
+  `config/postgres/init-auth-schema.sh` creates the `veldrath_auth` role/schema on first boot.
+  Deployment is Coolify + Traefik; no Caddy.
+- Gotcha: Better Auth scopes the session cookie to the login host. Use `localhost`, not `127.0.0.1`.
+
+**.NET auth bridge (complete)**
+- `JwtClaimsEnrichment.EnrichAsync` is wired to `JwtBearerEvents.OnTokenValidated`. It validates the
+  `sub` GUID, provisions unknown accounts, and appends `ClaimTypes.Role` + `permission` claims.
+- `AccountProvisioningService` creates a `PlayerAccount` with the token GUID as its primary key.
+  Identity is configured with `RequireUniqueEmail`, so accounts without an email claim (or whose
+  email is already owned) get a deterministic placeholder: `{accountId:N}@external.veldrath.local`.
+  Access snapshots are cached for 60 seconds (`ClearCache()` exists for tests/admin changes).
+- `RolePermissionResolver` is shared by `AuthService` token issuance and inbound enrichment so RBAC
+  derivation cannot drift.
+- `game-token.ts` now includes `email` and `email_verified`.
+- Verified live: Better Auth user with `0` matching `AspNetUsers` rows → `/api/characters` `200` →
+  row created with matching GUID/username/email → repeat request keeps one row →
+  `/hubs/game/negotiate` `200`. `Veldrath.Server.Tests`: **771 passing** (8 new).

@@ -9,8 +9,18 @@ Phase 0 is complete and verified on the existing Blazor Postgres database:
 - The SvelteKit server mints a JWT that `Veldrath.Server` accepts.
 - `/api/characters` returns `200` with the minted token, `/hubs/game/negotiate` returns `200`, and a real WebSocket connection receives `ServerInfo`.
 - `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run test` pass.
+- Discord, Google, and Microsoft social providers are configured and Discord login is confirmed working.
 
-Next: Phase 1 — .NET claims transformation and JIT provisioning, the temporary Foundry account bridge, OAuth redirects, and the first game slice.
+Phase 1 is in progress. The .NET auth bridge is complete and verified:
+
+- [`JwtClaimsEnrichment`](../Veldrath.Server/Features/Auth/JwtClaimsEnrichment.cs) runs on `JwtBearerEvents.OnTokenValidated` and enriches identity-only SvelteKit tokens with Identity role and `permission` claims.
+- [`AccountProvisioningService`](../Veldrath.Server/Features/Auth/AccountProvisioningService.cs) provisions a `PlayerAccount` for an unknown `sub` GUID on first use, using the Better Auth username/email claims. Account-access snapshots are cached for 60 seconds per account.
+- [`RolePermissionResolver`](../Veldrath.Server/Features/Auth/RolePermissionResolver.cs) is shared by token issuance and inbound enrichment so both paths derive RBAC claims identically.
+- The SvelteKit game token now includes `email` and `email_verified` claims.
+- Live verification: a Better Auth user with no `AspNetUsers` row received `200` from `/api/characters`; the row was created with the token GUID, username, and email; repeat requests did not duplicate it; `/hubs/game/negotiate` returned `200`.
+- `Veldrath.Server.Tests` passes (771 tests, including 8 new provisioning/enrichment tests).
+
+Remaining Phase 1 work: the temporary Foundry account bridge, OAuth redirect updates, existing-user/password migration, and the first game vertical slice.
 
 ## Decision
 
@@ -264,8 +274,9 @@ Exit criteria: Better Auth registration and login work against Postgres, a prote
 
 ### Phase 1 — Auth bridge and first game slice
 
-- Add the .NET CORS policy for the SvelteKit origin.
-- Add the .NET claims transformation and JIT account provisioning.
+- ✅ Add the .NET CORS policy for the SvelteKit origin.
+- ✅ Add the .NET claims transformation and JIT account provisioning
+  (`JwtClaimsEnrichment`, `AccountProvisioningService`, `RolePermissionResolver`).
 - Add the temporary internal account bridge for Blazor Foundry.
 - Implement SvelteKit login, register, logout, session hooks, and game-token minting.
 - Update OAuth redirect URIs and migrate existing users, logins, and passwords.
