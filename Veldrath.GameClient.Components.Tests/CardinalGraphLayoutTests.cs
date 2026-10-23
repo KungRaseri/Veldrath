@@ -33,6 +33,46 @@ public class CardinalGraphLayoutTests
     }
 
     [Fact]
+    public void Compute_KeepsSparseZoneGraphCompact()
+    {
+        // Crestfall's tile-era layout spreads 8 nodes across x=0..63 / y=0..40.
+        // The compact graph layout must keep the whole map within a small text grid.
+        var nodes = new[]
+        {
+            Node("entry", layoutX: 30, layoutY: 18, sortOrder: 0, isEntry: true),
+            Node("aurelian", layoutX: 42, layoutY: 24, sortOrder: 20),
+            Node("square", layoutX: 30, layoutY: 22, sortOrder: 30),
+            Node("hearthbound", layoutX: 17, layoutY: 28, sortOrder: 40),
+            Node("low-quarter", layoutX: 30, layoutY: 40, sortOrder: 50),
+            Node("varenmark", layoutX: 30, layoutY: 0, sortOrder: 60),
+            Node("ashlen", layoutX: 0, layoutY: 22, sortOrder: 70),
+            Node("droveway", layoutX: 63, layoutY: 22, sortOrder: 80),
+        };
+        var edges = new[]
+        {
+            Edge("entry", "square", "South"),
+            Edge("square", "ashlen", "West"),
+            Edge("varenmark", "square", "South"),
+            Edge("low-quarter", "square", "North"),
+            Edge("hearthbound", "aurelian", "East"),
+            Edge("square", "droveway", "East"),
+            Edge("square", "low-quarter", "South"),
+            Edge("ashlen", "square", "East"),
+            Edge("square", "varenmark", "North"),
+            Edge("droveway", "square", "West"),
+            Edge("aurelian", "square", "West"),
+        };
+
+        var placements = CardinalGraphLayout.Compute(nodes, edges);
+
+        var xs = placements.Select(p => p.X).ToList();
+        var ys = placements.Select(p => p.Y).ToList();
+        Assert.True(xs.Max() - xs.Min() <= 3, "The compact zone layout should span at most 4 columns.");
+        Assert.True(ys.Max() - ys.Min() <= 2, "The compact zone layout should span at most 3 rows.");
+        Assert.All(placements, placement => Assert.False(placement.IsAuthored));
+    }
+
+    [Fact]
     public void Compute_IgnoresSparseTileLayout()
     {
         // Four nodes at tile positions spread across a 60x40 area: the compact edge-driven
@@ -198,7 +238,8 @@ public class CardinalGraphLayoutTests
         string id,
         int? layoutX = null,
         int? layoutY = null,
-        int sortOrder = 0) =>
+        int sortOrder = 0,
+        bool isEntry = false) =>
         new(
             id,
             "zone:test",
@@ -209,7 +250,7 @@ public class CardinalGraphLayoutTests
             "place",
             layoutX,
             layoutY,
-            IsEntryPoint: false,
+            IsEntryPoint: isEntry,
             IsExitPoint: false,
             TargetMapId: null,
             TargetNodeId: null,

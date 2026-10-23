@@ -443,9 +443,9 @@ Enhanced [`ActionBar.razor`](Veldrath.GameClient.Components/Components/Shared/Ac
 
 ### Cardinal map layout (Session-55, 2026-10-23)
 
-- **Post-tile layout** — `CardinalMap` uses 152×60 node cards in 164×76 cells with 12px canvas
-  padding, a bounded scroll viewport, and connector labels (`N/S/E/W/In/Out`). Do not reintroduce
-  tile-sized cells, tile backgrounds, or `--vds-tile-*` tokens.
+- **Post-tile layout** — `CardinalMap` uses 152×60 node cards in 156×66 cells (4px/6px gutters)
+  with 6px canvas padding, a bounded scroll viewport, and arrow connector labels
+  (`↑/↓/→/←`). Do not reintroduce tile-sized cells, tile backgrounds, or `--vds-tile-*` tokens.
 - **Authored coordinates are density-gated** — dense authored grids are kept (compacted to
   ordered indices); sparse TMX-era layouts (e.g. 8 nodes spread across a 64×40 tile rectangle)
   are discarded and replaced by a compact edge-driven layout seeded at the entry node. This is

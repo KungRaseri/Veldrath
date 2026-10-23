@@ -162,17 +162,13 @@
 .map-connector-label {
   position: absolute;
   z-index: 2;
-  min-width: 10px;
-  padding: 0 1px;
-  border: 1px solid var(--vds-border-strong);
-  border-radius: 2px;
-  background: var(--vds-bg-1);
-  color: var(--vds-text-muted);
-  font-size: 0.55rem;
+  color: var(--vds-text-subtle);
+  font-size: 0.62rem;
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 1;
   text-align: center;
-  letter-spacing: 0.02em;
+  text-shadow: 0 0 2px var(--vds-bg-0);
+  pointer-events: none;
 }
 
 .map-node-card {

@@ -42,6 +42,19 @@ public class CardinalMapComponentTests : BunitContext
     }
 
     [Fact]
+    public void CardinalMap_UsesCompactCellDimensions()
+    {
+        var cut = Render<CardinalMap>(parameters => parameters
+            .Add(p => p.Map, MakeGraph())
+            .Add(p => p.CurrentNodeId, Entry));
+
+        // Three nodes in one row: 3 * 156px cells + 2 * 6px canvas padding.
+        cut.Find(".cardinal-map-canvas").GetAttribute("style")
+            .Should().Contain("width:480px")
+            .And.Contain("height:78px");
+    }
+
+    [Fact]
     public void CardinalMap_RendersDirectionLabels_OnConnectors()
     {
         var cut = Render<CardinalMap>(parameters => parameters
@@ -50,7 +63,7 @@ public class CardinalMapComponentTests : BunitContext
 
         var labels = cut.FindAll(".map-connector-label");
         labels.Should().HaveCount(2);
-        labels.Should().OnlyContain(label => label.TextContent.Trim() == "E");
+        labels.Should().OnlyContain(label => label.TextContent.Trim() == "→");
     }
 
     [Fact]

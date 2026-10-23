@@ -14,12 +14,12 @@ namespace Veldrath.GameClient.Components.Components.Shared;
 /// </summary>
 public partial class CardinalMap
 {
-    // Tight text-map geometry: 8px horizontal / 10px vertical gutters around 152x60 cards.
-    private const int CellWidth = 160;
-    private const int CellHeight = 70;
+    // Minimal text-map geometry: 4px horizontal / 6px vertical gutters around 152x60 cards.
+    private const int CellWidth = 156;
+    private const int CellHeight = 66;
     private const int NodeWidth = 152;
     private const int NodeHeight = 60;
-    private const int CanvasPadding = 8;
+    private const int CanvasPadding = 6;
     private const int ConnectorThickness = 2;
 
     private IReadOnlyList<CardinalNodePlacement> _placements = [];
@@ -351,13 +351,13 @@ public partial class CardinalMap
 
     private static string DirectionShort(string direction) => direction.ToLowerInvariant() switch
     {
-        "north" or "up" => "N",
-        "south" or "down" => "S",
-        "east" => "E",
-        "west" => "W",
-        "in" => "In",
-        "out" => "Out",
-        _ => "•",
+        "north" or "up" => "↑",
+        "south" or "down" => "↓",
+        "east" => "→",
+        "west" => "←",
+        "in" => "↥",
+        "out" => "↧",
+        _ => "·",
     };
 
     private static string IconFor(MapNodeDto node) => node.IconKey?.ToLowerInvariant() switch

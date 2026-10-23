@@ -1246,11 +1246,11 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
 
 **Layout**
 - `CardinalMap` is now a compact text graph rather than a tile-sized canvas: node cards are
-  152×60 with 12px horizontal / 16px vertical gutters (cells 164×76), a 12px canvas padding,
+  152×60 with 4px horizontal / 6px vertical gutters (cells 156×66), a 6px canvas padding,
   and a centred canvas inside a bounded (`max-height: 52vh`) bordered viewport.
 - Connectors now run between facing card edges instead of card centres, and each carries a
-  cardinal badge (`N`/`S`/`E`/`W`/`In`/`Out`) plus a tooltip with the edge label. Blocked and
-  hidden connectors get distinct styles.
+  cardinal arrow (`↑`/`↓`/`→`/`←`) plus a tooltip with the edge label. Blocked and hidden
+  connectors get distinct styles.
 - Authored `LayoutX/LayoutY` values are density-gated: dense layouts keep their relative grid
   (compacted to ordered indices), while sparse TMX-era layouts (e.g. 8 nodes spread across a
   64×40 tile rectangle) are discarded in favour of a compact edge-driven layout seeded at the
