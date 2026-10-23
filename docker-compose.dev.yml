@@ -73,6 +73,7 @@ services:
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=veldrath;Username=veldrath;Password=veldrath_dev
       - Database__Provider=postgres
       - Jwt__Key=${JWT_KEY}
+      - InternalBridge__Token=${INTERNAL_BRIDGE_TOKEN:-}
       - OAuth__Discord__ClientId=${OAUTH_DISCORD_CLIENT_ID}
       - OAuth__Discord__ClientSecret=${OAUTH_DISCORD_CLIENT_SECRET}
       - OAuth__Google__ClientId=${OAUTH_GOOGLE_CLIENT_ID}
@@ -274,6 +275,8 @@ services:
       - JWT_AUDIENCE=Veldrath.Client
       - PUBLIC_API_URL=${SERVER_PUBLIC_URL:-http://localhost:9000}
       - PUBLIC_HUB_URL=${SERVER_PUBLIC_URL:-http://localhost:9000}/hubs/game
+      - INTERNAL_BRIDGE_URL=http://server:8080
+      - INTERNAL_BRIDGE_TOKEN=${INTERNAL_BRIDGE_TOKEN:-}
       - DISCORD_CLIENT_ID=${OAUTH_DISCORD_CLIENT_ID}
       - DISCORD_CLIENT_SECRET=${OAUTH_DISCORD_CLIENT_SECRET}
       - GOOGLE_CLIENT_ID=${OAUTH_GOOGLE_CLIENT_ID}

@@ -32,6 +32,8 @@ services:
       - Foundry__BaseUrl=https://foundry.veldrath.com
       # Public base URL for the main website (used to validate session redirects)
       - Web__BaseUrl=https://veldrath.com
+      # Shared secret for the temporary SvelteKit → Identity account bridge.
+      - InternalBridge__Token=${INTERNAL_BRIDGE_TOKEN}
       # Cross-subdomain rt cookie domain — covers veldrath.com and all subdomains
       - Auth__CookieDomain=.veldrath.com
       # Seq log shipping — internal container reference (unchanged from base)
@@ -71,6 +73,9 @@ services:
       - JWT_AUDIENCE=Veldrath.Client
       - PUBLIC_API_URL=https://api.veldrath.com
       - PUBLIC_HUB_URL=https://api.veldrath.com/hubs/game
+      # Internal container URL for the temporary Identity account bridge.
+      - INTERNAL_BRIDGE_URL=http://server:8080
+      - INTERNAL_BRIDGE_TOKEN=${INTERNAL_BRIDGE_TOKEN}
       - DISCORD_CLIENT_ID=${OAUTH_DISCORD_CLIENT_ID}
       - DISCORD_CLIENT_SECRET=${OAUTH_DISCORD_CLIENT_SECRET}
       - GOOGLE_CLIENT_ID=${OAUTH_GOOGLE_CLIENT_ID}

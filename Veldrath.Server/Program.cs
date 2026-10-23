@@ -564,6 +564,8 @@ try
 
     // Auth, character, zone, content & admin endpoints
     app.MapAuthEndpoints();
+    // Temporary bridge for Blazor Foundry / desktop while Better Auth owns web credentials.
+    app.MapInternalAccountBridgeEndpoints();
     app.MapPasswordResetEndpoints();
     app.MapEmailConfirmationEndpoints();
     app.MapExternalAuthEndpoints();

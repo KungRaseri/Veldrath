@@ -20,6 +20,7 @@ internal static class DotEnvConfiguration
         ["OAUTH_MICROSOFT_CLIENT_SECRET"] = "OAuth__Microsoft__ClientSecret",
         ["FOUNDRY_PUBLIC_URL"] = "Foundry__BaseUrl",
         ["WEB_PUBLIC_URL"] = "Web__BaseUrl",
+        ["INTERNAL_BRIDGE_TOKEN"] = "InternalBridge__Token",
         ["ALLOWED_RETURN_URL_HOSTS"] = "AllowedReturnUrlHosts",
         ["EMAIL_SMTP_HOST"] = "Email__SmtpHost",
         ["EMAIL_SMTP_PORT"] = "Email__SmtpPort",

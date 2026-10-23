@@ -57,6 +57,8 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifeti
         builder.UseSetting("Jwt:AccessTokenExpiryMinutes",          "15");
         builder.UseSetting("Jwt:RefreshTokenExpiryDays",            "30");
         builder.UseSetting("RealmEngine:DataPath",                  "");
+        // Shared secret for the temporary SvelteKit → Identity account bridge.
+        builder.UseSetting("InternalBridge:Token",                   "test-internal-bridge-token");
         // Rate limiting must not interfere with integration tests; set a very high permit limit.
         builder.UseSetting("RateLimit:FoundryWritesPerMinute",  "100000");
         builder.UseSetting("RateLimit:AdminActionsPerMinute",   "100000");
