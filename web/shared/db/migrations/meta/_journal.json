@@ -8,6 +8,13 @@
       "when": 1792727413938,
       "tag": "0000_eager_absorbing_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792727889130,
+      "tag": "0001_married_power_man",
+      "breakpoints": true
     }
   ]
 }

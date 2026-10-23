@@ -1,0 +1,1 @@
+ALTER TABLE "auth"."account" ADD COLUMN "issuer" text;
