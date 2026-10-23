@@ -52,8 +52,16 @@
    `HotbarAbility` slots from `GameState`, and show cooldown/availability.
 2. **Death/respawn flow** — verify `Respawn` works outside and inside combat, and that the
    character sheet/no-zone states recover after defeat.
-3. **Inventory/equipment browser verification** — equip, unequip, drop, buy, sell, and verify the
-   bag no longer duplicates equipped items; add bUnit interaction tests for equip/drop.
+3. **Inventory/equipment browser verification** — ✅ Completed Session-53.
+   - Equip routes shields to OffHand, weapons to MainHand, and armor/jewellery to their slots.
+   - Drop sends the bare item slug accepted by `DropItem(string itemRef)`.
+   - Buy/sell send the bare slugs accepted by `BuyItem(string itemRef)` / `SellItem(string itemRef)`.
+   - The merchant catalog is requested after `ShopVisited` and rendered from the new `Catalog` field.
+   - Shop/drop transactions refresh the bag/equipment via a background `InventoryLoaded` snapshot
+     (`OpenOverlay = false`) so the current panel stays open.
+   - Equipped items render in the equipment panel only; the bag list excludes them.
+   - The dead `UseItem` button was removed (no matching hub method).
+   - `WebInventoryInteractionTests` covers equip, drop, no-duplication, no-Use, buy, and sell.
 4. **Zone transitions** — ensure `ZoneLeft` clears zone state (not just a system message), and that
    region-map travel/enter-zone flows update the footer/map consistently.
 

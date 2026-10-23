@@ -1347,6 +1347,16 @@ public class GameViewModelTests : TestBase
     }
 
     [Fact]
+    public void OnInventoryLoaded_With_BackgroundRefresh_Should_Not_Open_Inventory()
+    {
+        var vm = MakeVm();
+
+        vm.OnInventoryLoaded([], openOverlay: false);
+
+        vm.IsInventoryOpen.Should().BeFalse();
+    }
+
+    [Fact]
     public void OnInventoryLoaded_Should_Populate_InventoryItems()
     {
         var vm = MakeVm();

@@ -155,7 +155,6 @@ public class OverlayTextUiTests : BunitContext
 
         cut.Find("[data-testid='inventory-detail']").Should().NotBeNull();
         cut.Markup.Should().Contain("Item Stats");
-        cut.Markup.Should().Contain("Use");
         cut.Markup.Should().Contain("Drop");
     }
 

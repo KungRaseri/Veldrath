@@ -254,7 +254,8 @@ public sealed class PayloadRecordTests
           "items": [ { "itemRef": "health-potion", "quantity": 2, "durability": null } ],
           "itemDetails": [ { "slug": "health-potion", "name": "Health Potion", "quantity": 2 } ],
           "equipped": { "MainHand": "iron-sword" },
-          "equippedItems": { "MainHand": { "slug": "iron-sword", "name": "Iron Sword" } }
+          "equippedItems": { "MainHand": { "slug": "iron-sword", "name": "Iron Sword" } },
+          "openOverlay": false
         }
         """;
 
@@ -265,5 +266,6 @@ public sealed class PayloadRecordTests
         payload!.ItemDetails.Should().ContainSingle(i => i.Slug == "health-potion");
         payload.EquippedItems.Should().ContainKey("MainHand");
         payload.EquippedItems!["MainHand"].Slug.Should().Be("iron-sword");
+        payload.OpenOverlay.Should().BeFalse();
     }
 }

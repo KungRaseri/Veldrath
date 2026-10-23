@@ -2350,9 +2350,14 @@ public class GameViewModel : ViewModelBase
     /// <summary>Called from the hub when the server responds with the character's current inventory items.</summary>
     /// <param name="items">Bag entries loaded from the server. Equipped items are excluded by the server.</param>
     /// <param name="equipped">Optional snapshot of equipped item refs keyed by slot name.</param>
+    /// <param name="openOverlay">
+    /// Whether to open the inventory panel. Background refreshes after equipping or trading
+    /// pass <see langword="false"/> so the current panel stays open.
+    /// </param>
     public void OnInventoryLoaded(
         IReadOnlyList<InventoryItemEntry> items,
-        IReadOnlyDictionary<string, string>? equipped = null)
+        IReadOnlyDictionary<string, string>? equipped = null,
+        bool openOverlay = true)
     {
         InventoryItems.Clear();
         foreach (var item in items)
@@ -2361,7 +2366,8 @@ public class GameViewModel : ViewModelBase
         if (equipped is not null)
             ApplyEquipmentSnapshot(equipped);
 
-        IsInventoryOpen = true;
+        if (openOverlay)
+            IsInventoryOpen = true;
     }
 
     /// <summary>Populates the shop catalog with items received from the server.</summary>

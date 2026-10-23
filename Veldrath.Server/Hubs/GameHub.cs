@@ -869,8 +869,9 @@ public class GameHub : Hub
                 await Clients.Caller.SendAsync("ItemEquipped", payload);
 
             // Inventory contents are private to the caller; only send the refreshed snapshot to them.
+            // Do not force the inventory overlay open — the player may be equipping from another panel.
             if (snapshotValid)
-                await SendInventorySnapshotAsync(characterId, snapshot!);
+                await SendInventorySnapshotAsync(characterId, snapshot!, openOverlay: false);
 
             _logger.LogInformation(
                 "Character {CharacterId} {Action} '{ItemRef}' in slot {Slot}",
@@ -1154,7 +1155,15 @@ public class GameHub : Hub
             await Clients.Caller.SendAsync("ShopCatalog", new
             {
                 ZoneId = zoneId,
-                Items  = result.Items,
+                // Avalonia binds Items (ShopItemDto); the RCL binds Catalog (ShopItemEntry).
+                Items = result.Items,
+                Catalog = result.Items.Select(item => new
+                {
+                    Slug  = item.ItemRef,
+                    Name  = item.DisplayName,
+                    Rarity = RealmEngine.Shared.Models.ItemRarity.Common,
+                    Price = item.BuyPrice,
+                }),
             });
         }
         catch (Exception ex)
@@ -1196,6 +1205,8 @@ public class GameHub : Hub
                 result.GoldSpent,
                 result.RemainingGold,
             });
+
+            await TrySendInventorySnapshotAsync(characterId);
 
             _logger.LogInformation(
                 "Character {CharacterId} bought '{ItemRef}' for {Gold} gold",
@@ -1241,6 +1252,8 @@ public class GameHub : Hub
                 result.NewGoldTotal,
             });
 
+            await TrySendInventorySnapshotAsync(characterId);
+
             _logger.LogInformation(
                 "Character {CharacterId} sold '{ItemRef}' for {Gold} gold",
                 characterId, itemRef, result.GoldReceived);
@@ -1281,6 +1294,8 @@ public class GameHub : Hub
                 result.ItemRef,
                 result.RemainingQuantity,
             });
+
+            await TrySendInventorySnapshotAsync(characterId);
 
             _logger.LogInformation(
                 "Character {CharacterId} dropped '{ItemRef}'; {Remaining} remaining",
@@ -2710,7 +2725,30 @@ public class GameHub : Hub
         return "Available commands:\n" + string.Join('\n', lines);
     }
 
-    private async Task SendInventorySnapshotAsync(Guid characterId, GetInventoryHubResult result)
+    /// <summary>
+    /// Best-effort inventory/equipment refresh after a shop or drop transaction. A failed
+    /// snapshot must not turn a successful transaction into an error.
+    /// </summary>
+    private async Task TrySendInventorySnapshotAsync(Guid characterId)
+    {
+        try
+        {
+            var snapshot = await _mediator.Send(new GetInventoryHubCommand(characterId));
+            if (snapshot is { Success: true })
+                await SendInventorySnapshotAsync(characterId, snapshot, openOverlay: false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Failed to build inventory snapshot after a transaction for character {CharacterId}",
+                characterId);
+        }
+    }
+
+    private async Task SendInventorySnapshotAsync(
+        Guid characterId,
+        GetInventoryHubResult result,
+        bool openOverlay = true)
     {
         await Clients.Caller.SendAsync("InventoryLoaded", new
         {
@@ -2719,6 +2757,7 @@ public class GameHub : Hub
             ItemDetails = result.ItemDetails,
             Equipped    = result.EquippedRefs,
             EquippedItems = result.Equipped,
+            OpenOverlay = openOverlay,
         });
     }
 

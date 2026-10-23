@@ -342,7 +342,7 @@ public class CharacterSelectViewModel : ViewModelBase
             _zoneLeftSub = _connection.On("ZoneLeft", () => _gameVm.OnZoneLeft());
 
             _inventoryLoadedSub = _connection.On<InventoryLoadedPayload>("InventoryLoaded", payload =>
-                _gameVm.OnInventoryLoaded(payload.Items, payload.Equipped));
+                _gameVm.OnInventoryLoaded(payload.Items, payload.Equipped, payload.OpenOverlay));
             _locationEnteredSub = _connection.On<LocationEnteredPayload>("LocationEntered", payload =>
                 _gameVm.OnLocationEntered(payload.LocationSlug, payload.LocationDisplayName, payload.TypeKey,
                     payload.SpawnedEnemies
@@ -475,7 +475,7 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record ItemCraftedPayload(Guid CharacterId, string RecipeSlug, int GoldSpent, int RemainingGold);
     internal record DungeonEnteredPayload(Guid CharacterId, string DungeonId, string DungeonSlug);
     internal record ShopVisitedPayload(Guid CharacterId, string ZoneId, string ZoneName);
-    internal record InventoryLoadedPayload(Guid CharacterId, IReadOnlyList<InventoryItemEntry> Items, IReadOnlyDictionary<string, string>? Equipped);
+    internal record InventoryLoadedPayload(Guid CharacterId, IReadOnlyList<InventoryItemEntry> Items, IReadOnlyDictionary<string, string>? Equipped, bool OpenOverlay = true);
     internal record LocationEnteredPayload(Guid CharacterId, string LocationSlug, string LocationDisplayName, string TypeKey, IReadOnlyList<SpawnedEnemyEntry> SpawnedEnemies);
     internal record SpawnedEnemyEntry(Guid Id, string Name, int Level, int CurrentHealth, int MaxHealth);
     internal record ConnectionEntry(string FromLocationSlug, string ToLocationSlug, string? ToZoneId, string ConnectionType, bool IsTraversable);

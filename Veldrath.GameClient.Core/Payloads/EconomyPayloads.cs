@@ -19,28 +19,32 @@ public sealed record ItemEquippedPayload(
 
 /// <summary>
 /// Hub event payload received when the character purchases an item from a shop.
+/// The server follows this event with an <c>InventoryLoaded</c> snapshot containing the
+/// updated bag and equipment state.
 /// </summary>
 /// <param name="ItemRef">The slug reference of the purchased item.</param>
-/// <param name="Name">The display name of the purchased item.</param>
 /// <param name="GoldSpent">The amount of gold spent on the purchase.</param>
-/// <param name="Inventory">The full inventory snapshot after the purchase.</param>
-public sealed record ItemPurchasedPayload(string ItemRef, string Name, int GoldSpent, List<Item> Inventory);
+/// <param name="RemainingGold">The character's gold total after the purchase.</param>
+public sealed record ItemPurchasedPayload(string ItemRef, int GoldSpent, int RemainingGold);
 
 /// <summary>
 /// Hub event payload received when the character sells an item to a shop.
+/// The server follows this event with an <c>InventoryLoaded</c> snapshot containing the
+/// updated bag and equipment state.
 /// </summary>
 /// <param name="ItemRef">The slug reference of the sold item.</param>
-/// <param name="Name">The display name of the sold item.</param>
 /// <param name="GoldReceived">The amount of gold received from the sale.</param>
-/// <param name="Inventory">The full inventory snapshot after the sale.</param>
-public sealed record ItemSoldPayload(string ItemRef, string Name, int GoldReceived, List<Item> Inventory);
+/// <param name="NewGoldTotal">The character's gold total after the sale.</param>
+public sealed record ItemSoldPayload(string ItemRef, int GoldReceived, int NewGoldTotal);
 
 /// <summary>
 /// Hub event payload received when the character drops an item from inventory.
+/// The server follows this event with an <c>InventoryLoaded</c> snapshot containing the
+/// updated bag and equipment state.
 /// </summary>
 /// <param name="ItemRef">The slug reference of the dropped item.</param>
-/// <param name="Inventory">The full inventory snapshot after the drop.</param>
-public sealed record ItemDroppedPayload(string ItemRef, List<Item> Inventory);
+/// <param name="RemainingQuantity">Quantity left in the slot after the drop (0 when removed).</param>
+public sealed record ItemDroppedPayload(string ItemRef, int RemainingQuantity);
 
 /// <summary>
 /// Hub event payload received when the character's inventory and equipment are loaded from the server.
@@ -49,9 +53,14 @@ public sealed record ItemDroppedPayload(string ItemRef, List<Item> Inventory);
 /// </summary>
 /// <param name="ItemDetails">All items currently in the character's inventory bag.</param>
 /// <param name="EquippedItems">All items currently equipped with full details, keyed by canonical slot name.</param>
+/// <param name="OpenOverlay">
+/// Whether the client should open the inventory overlay. Background refreshes after equipping,
+/// buying, selling, or dropping set this to <see langword="false"/> so the current panel stays open.
+/// </param>
 public sealed record InventoryLoadedPayload(
     List<Item>? ItemDetails = null,
-    Dictionary<string, Item>? EquippedItems = null);
+    Dictionary<string, Item>? EquippedItems = null,
+    bool OpenOverlay = true);
 
 /// <summary>
 /// Hub event payload received when the character successfully crafts an item.

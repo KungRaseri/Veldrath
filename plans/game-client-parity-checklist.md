@@ -396,6 +396,15 @@ These are the 10 highest-impact fixes, ordered by dependency chain and player-vi
 - `ZoneEntered` now includes `HasInn`/`HasMerchant`, and `GameStateService.ApplyZoneEntered` stores them in `ZoneState`, so shop/rest actions render in the web client.
 - Added `WebGameActionTests` (6 tests) for the hub payloads, map-route removal, and footer combat-button removal.
 
+**Session-53 inventory/shop transaction fixes**
+- RCL `ShopOverlay` now sends `BuyItem`/`SellItem` with the bare item slug the server binds (it previously sent an object that failed SignalR binding).
+- `ShopVisited` requests `GetShopCatalog`; the server sends both `Items` (Avalonia) and `Catalog` (`ShopItemEntry`, RCL).
+- `ItemPurchased`/`ItemSold`/`ItemDropped` RCL payloads now match the server's fields; handlers update gold/messages and rely on a follow-up `InventoryLoaded` snapshot for bag/equipment state.
+- `InventoryLoaded` carries `OpenOverlay`; background refreshes do not switch the visible panel.
+- Removed the dead `UseItem` button (no hub method exists).
+- Equipment panel uses `GetDisplayName()` so names render correctly.
+- Added `WebInventoryInteractionTests` (6 tests): equip slot/ref, drop, no duplication, no Use button, buy slug, sell slug.
+
 **Still open**
 - Routes/layout: G106, G108 (runtime verify), G109, G110.
 - bridge.js interop: G117 (incoming message listener), G118 (Windows toast notification) — desktop-only until the web bridge needs them.

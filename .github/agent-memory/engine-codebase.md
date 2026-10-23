@@ -430,3 +430,13 @@ Enhanced [`ActionBar.razor`](Veldrath.GameClient.Components/Components/Shared/Ac
 - `ZoneEntered` carries `HasInn` / `HasMerchant`; `GameStateService.ApplyZoneEntered` stores them
   in `ZoneState` so `LeftSidebar`/`GameFooter` render shop/rest actions.
 - `GameCombat` owns combat actions; do not add an unbound `ActionBar` in `GameFooter`.
+- **Shop hub method signatures** — `BuyItem(string itemRef)`, `SellItem(string itemRef)`, and
+  `DropItem(string itemRef)` take a single string, not an object. `GetShopCatalog()` takes no
+  arguments. `ShopVisited` only announces the merchant; clients must send `GetShopCatalog`.
+- **ShopCatalog payload** — server sends both `Items` (Avalonia `ShopItemDto`: ItemRef,
+  DisplayName, BuyPrice, SellPrice) and `Catalog` (RCL `ShopItemEntry`: Slug, Name, Rarity,
+  Price). Keep both until the desktop client moves to the shared payload.
+- **Transaction refresh** — after buy/sell/drop the server sends a background `InventoryLoaded`
+  snapshot with `OpenOverlay = false`; clients update bag/equipment/gold without switching panels.
+  Explicit `GetInventory` uses `OpenOverlay = true`.
+- **No `UseItem` hub method** — do not render a Use action in the RCL inventory until one exists.

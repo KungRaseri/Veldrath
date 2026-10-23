@@ -2,12 +2,10 @@
 @using Microsoft.Extensions.Logging
 @using RealmEngine.Shared.Models
 @using Veldrath.GameClient.Core.Abstractions
-@using Veldrath.GameClient.Core.Payloads
 @using MudBlazor
 @inject IGameStateService GameState
 @inject IGameHubConnectionService Hub
 @inject ILogger<ShopOverlay> Logger
-@implements IAsyncDisposable
 
 <div class="shop-overlay d-flex flex-column gap-3">
     <TextPanel Title="Trade" Icon="@Icons.Material.Filled.Storefront" TestId="shop-summary">
@@ -61,7 +59,7 @@
             <div class="d-flex gap-2 mt-2">
                 <MudButton Variant="Variant.Outlined"
                            Size="Size.Small"
-                           OnClick="() => SellItem(_selectedItem, Math.Max(1, Math.Min(1, _selectedItem.Quantity)))"
+                           OnClick="() => SellItem(_selectedItem)"
                            Disabled="@(!Hub.IsConnected)">
                     Sell
                 </MudButton>
@@ -80,7 +78,6 @@
 </div>
 
 @code {
-    private readonly List<IDisposable> _hubSubscriptions = [];
     private ShopItemEntry? _selectedEntry;
     private Item? _selectedItem;
     private string? _lastMessage;
@@ -114,27 +111,6 @@
                 $"{item.Price / 2} g",
                 ItemIcon(item)))
             .ToList();
-
-    /// <inheritdoc />
-    protected override void OnInitialized()
-    {
-        // Subscribe to shop catalog updates from the hub.
-        _hubSubscriptions.Add(Hub.On<ShopCatalogPayload>("ShopCatalogUpdated", payload =>
-        {
-            GameState.ApplyShopCatalogUpdated(payload.Catalog);
-            return Task.CompletedTask;
-        }));
-    }
-
-    /// <inheritdoc />
-    public async ValueTask DisposeAsync()
-    {
-        foreach (var sub in _hubSubscriptions)
-            sub.Dispose();
-        _hubSubscriptions.Clear();
-
-        await Task.CompletedTask;
-    }
 
     private void SelectCatalogEntry(ItemTableEntry row)
     {
@@ -175,7 +151,8 @@
     {
         try
         {
-            await Hub.SendAsync("BuyItem", new { ItemSlug = entry.Slug, Quantity = 1 });
+            // BuyItem takes a single item-reference string on the server.
+            await Hub.SendAsync("BuyItem", entry.Slug);
             _lastMessage = $"Purchased {entry.Name}.";
             _lastMessageIsError = false;
             Logger.LogInformation("Bought {ItemName}", entry.Name);
@@ -188,11 +165,12 @@
         }
     }
 
-    private async Task SellItem(Item item, int quantity)
+    private async Task SellItem(Item item)
     {
         try
         {
-            await Hub.SendAsync("SellItem", new { ItemSlug = item.Slug, Quantity = quantity });
+            // SellItem takes a single item-reference string on the server.
+            await Hub.SendAsync("SellItem", item.Slug);
             _lastMessage = $"Sold {item.GetDisplayName()}.";
             _lastMessageIsError = false;
             Logger.LogInformation("Sold {ItemSlug}", item.Slug);

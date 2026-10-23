@@ -604,6 +604,9 @@
             GameState.ApplyShopVisited(payload.ZoneId, payload.ZoneName);
             _activeOverlay = GameOverlay.OverlayKind.Shop;
             _showOverlay = true;
+
+            // Visiting the shop only announces the merchant; the catalog must be requested.
+            await Hub.SendAsync("GetShopCatalog");
             await InvokeAsync(StateHasChanged);
         }));
 
@@ -617,24 +620,25 @@
         // ── G25: ItemPurchased ─────────────────────────────────────────────
         _hubSubscriptions.Add(Hub.On<ItemPurchasedPayload>("ItemPurchased", async payload =>
         {
-            GameState.ApplyItemTransacted(payload.Name, payload.GoldSpent, payload.Inventory);
-            GameState.ApplySystemMessage($"Purchased {payload.Name}.");
+            GameState.ApplyGoldChanged(-payload.GoldSpent, payload.RemainingGold);
+            GameState.ApplySystemMessage($"Purchased {payload.ItemRef}.");
             await InvokeAsync(StateHasChanged);
         }));
 
         // ── G26: ItemSold ──────────────────────────────────────────────────
         _hubSubscriptions.Add(Hub.On<ItemSoldPayload>("ItemSold", async payload =>
         {
-            GameState.ApplyItemTransacted(payload.Name, payload.GoldReceived, payload.Inventory);
-            GameState.ApplySystemMessage($"Sold {payload.Name}.");
+            GameState.ApplyGoldChanged(payload.GoldReceived, payload.NewGoldTotal);
+            GameState.ApplySystemMessage($"Sold {payload.ItemRef}.");
             await InvokeAsync(StateHasChanged);
         }));
 
         // ── G27: ItemDropped ───────────────────────────────────────────────
         _hubSubscriptions.Add(Hub.On<ItemDroppedPayload>("ItemDropped", async payload =>
         {
-            GameState.ApplyItemTransacted(payload.ItemRef, GameState.CurrentCharacterGold, payload.Inventory);
-            GameState.ApplySystemMessage($"Dropped {payload.ItemRef}.");
+            GameState.ApplySystemMessage(payload.RemainingQuantity > 0
+                ? $"Dropped {payload.ItemRef} ({payload.RemainingQuantity} left)."
+                : $"Dropped {payload.ItemRef}.");
             await InvokeAsync(StateHasChanged);
         }));
 
@@ -647,8 +651,14 @@
             else
                 GameState.ApplyInventoryUpdated(items, GameState.EquippedItems);
 
-            _activeOverlay = GameOverlay.OverlayKind.Inventory;
-            _showOverlay = true;
+            // Background snapshots (equip/buy/sell/drop) only refresh state; only an explicit
+            // inventory request switches the visible overlay.
+            if (payload.OpenOverlay)
+            {
+                _activeOverlay = GameOverlay.OverlayKind.Inventory;
+                _showOverlay = true;
+            }
+
             await InvokeAsync(StateHasChanged);
         }));
 
