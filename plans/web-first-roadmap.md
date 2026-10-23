@@ -72,8 +72,10 @@
 6. **Game settings** — replace the blocked `GameSettings` test workaround and verify persistence
    through the web client.
 7. **Chat** — channel tabs, whisper, ignore list, slash-command hints, and message filtering.
-8. **Map panel** — make node selection/travel keyboard- and screen-reader-friendly; align the
-   inline map with the sidebar/footer labels.
+8. **Map panel** — layout refreshed Session-55: compact text cards, direction-labelled
+   connectors, compacted authored coordinates, edge-first keyboard navigation, and a
+   two-column map/detail layout. Remaining: screen-reader announcements for selection/travel and
+   a final browser visual pass.
 
 ### P2 — Web-first gameplay features
 

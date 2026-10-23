@@ -1,6 +1,6 @@
 @using Veldrath.Contracts.Map
 @using Veldrath.GameClient.Components.Layout
-@* Text-first cardinal map view. Nodes are CSS cards; connectors are orthogonal lines. *@
+@* Text-first cardinal map view. Nodes are compact cards; connectors carry direction labels. *@
 
 @if (Map is null || _placements.Count == 0)
 {
@@ -10,7 +10,21 @@
 }
 else
 {
-    <TextPanel Title="@Map.Name" Subtitle="@($"{Map.MapType} map")" Icon="@Icons.Material.Filled.Map" TestId="cardinal-map-panel">
+    <TextPanel Title="@Map.Name" Subtitle="@MapSubtitle" Icon="@Icons.Material.Filled.Map" TestId="cardinal-map-panel">
+        <div class="cardinal-map-toolbar d-flex align-center gap-2 flex-wrap">
+            <span class="map-legend-item">
+                <span class="map-legend-dot map-legend-current"></span>Current
+            </span>
+            <span class="map-legend-item">
+                <span class="map-legend-dot map-legend-selected"></span>Selected
+            </span>
+            <span class="map-legend-item">
+                <span class="map-legend-dot map-legend-exit"></span>Exit
+            </span>
+            <MudSpacer />
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Arrow keys select · Enter travels</MudText>
+        </div>
+
         <div class="cardinal-map-viewport"
              tabindex="0"
              data-testid="cardinal-map"
@@ -18,9 +32,13 @@ else
             <div class="cardinal-map-canvas" style="@CanvasStyle">
                 @foreach (var connector in _connectors)
                 {
-                    <div class="@($"map-connector {(connector.IsHorizontal ? "map-connector-h" : "map-connector-v")}")"
-                         style="@($"left:{connector.Left}px;top:{connector.Top}px;width:{connector.Width}px;height:{connector.Height}px;")"
+                    <div class="@ConnectorClass(connector)"
+                         style="@ConnectorStyle(connector)"
+                         title="@ConnectorTitle(connector)"
                          aria-hidden="true"></div>
+                    <span class="map-connector-label"
+                          style="@ConnectorLabelStyle(connector)"
+                          aria-hidden="true">@DirectionShort(connector.Direction)</span>
                 }
 
                 @foreach (var placement in _placements)
@@ -30,8 +48,8 @@ else
                         continue;
 
                     var pixel = new NodePixel(
-                        (placement.X - _minX) * 200 + 16,
-                        (placement.Y - _minY) * 112 + 16);
+                        (placement.X - _minX) * CellWidth + CanvasPadding,
+                        (placement.Y - _minY) * CellHeight + CanvasPadding);
 
                     <button type="button"
                             class="@NodeClass(node, CurrentNodeId, SelectedNodeId)"
@@ -44,27 +62,23 @@ else
                             <span class="map-node-name">@node.DisplayName</span>
                         </span>
                         <span class="map-node-meta d-flex align-center gap-1">
-                            <span>@node.NodeType</span>
+                            <span class="map-node-type">@node.NodeType</span>
                             @if (node.IsEntryPoint)
                             {
-                                <MudChip T="string" Size="Size.Small" Color="Color.Info">Entry</MudChip>
+                                <span class="map-node-badge map-node-badge-entry">Entry</span>
                             }
                             else if (node.IsExitPoint)
                             {
-                                <MudChip T="string" Size="Size.Small" Color="Color.Warning">Exit</MudChip>
+                                <span class="map-node-badge map-node-badge-exit">Exit</span>
                             }
                         </span>
                         @if (string.Equals(node.Id, CurrentNodeId, StringComparison.OrdinalIgnoreCase))
                         {
-                            <span class="map-node-current-label">You are here</span>
+                            <span class="map-node-current-label">● You are here</span>
                         }
                     </button>
                 }
             </div>
         </div>
-
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
-            Arrow keys select a neighbouring node. Enter travels.
-        </MudText>
     </TextPanel>
 }

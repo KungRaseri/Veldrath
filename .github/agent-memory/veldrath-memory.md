@@ -1239,3 +1239,31 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
 **Tests**
 - New `WebInventoryInteractionTests` (6 tests): shield→OffHand equip payload, drop slug, no bag duplication of equipped gear, no Use button, buy slug, sell slug.
 - Components tests **98 passing**; Core tests 51 passing; targeted server shop/transaction tests 29 passing.
+
+---
+
+### Session-55 (2026-10-23) — Cardinal map layout refresh for the post-tile world
+
+**Layout**
+- `CardinalMap` is now a compact text graph rather than a tile-sized canvas: node cards are
+  160×64 with 24px gutters (cells 184×96), a 24px canvas padding, and a centred canvas inside a
+  bounded (`max-height: 56vh`) bordered viewport.
+- Connectors now run between facing card edges instead of card centres, and each carries a
+  cardinal badge (`N`/`S`/`E`/`W`/`In`/`Out`) plus a tooltip with the edge label. Blocked and
+  hidden connectors get distinct styles.
+- Authored `LayoutX/LayoutY` values are compacted (distinct X/Y values mapped to ordered indices)
+  so TMX-era tile coordinates no longer create huge empty canvases; relative cardinal order is
+  preserved.
+- Node metadata uses compact inline badges (`Entry`/`Exit`) instead of MudChips; the current node
+  uses the player-indicator gold token and a `● You are here` label.
+- Added a map legend toolbar (Current / Selected / Exit) and `MapSubtitle` counts.
+- `Game.razor` now uses a two-column `.map-layout` (map + detail panel), collapsing to one column
+  below 960px.
+- Keyboard arrow navigation now prefers a traversable graph edge in the requested direction before
+  falling back to spatial nearest-neighbour selection. Enter no longer travels to the current node.
+- Removed the unused `--vds-tile-*` design tokens from the RCL token file.
+
+**Tests**
+- `CardinalGraphLayoutTests` updated for compacted authored coordinates.
+- `CardinalMapComponentTests` adds direction-label, compact badge, edge-first keyboard navigation,
+  and no-travel-to-current-node coverage. Components project: **102 passing**.

@@ -8,22 +8,28 @@ namespace Veldrath.GameClient.Components.Tests;
 public class CardinalGraphLayoutTests
 {
     [Fact]
-    public void Compute_UsesAuthoredPositions()
+    public void Compute_CompactsAuthoredTileCoordinates()
     {
         var nodes = new[]
         {
             Node("a", layoutX: 4, layoutY: 7, sortOrder: 1),
             Node("b", layoutX: 5, layoutY: 7, sortOrder: 2),
+            Node("c", layoutX: 5, layoutY: 19, sortOrder: 3),
         };
 
         var placements = CardinalGraphLayout.Compute(nodes);
 
         var a = placements.Single(p => p.NodeId == "a");
         var b = placements.Single(p => p.NodeId == "b");
-        Assert.Equal((4, 7), (a.X, a.Y));
-        Assert.Equal((5, 7), (b.X, b.Y));
+        var c = placements.Single(p => p.NodeId == "c");
+
+        // Relative order is preserved, but the tile-era gaps are removed.
+        Assert.Equal((0, 0), (a.X, a.Y));
+        Assert.Equal((1, 0), (b.X, b.Y));
+        Assert.Equal((1, 1), (c.X, c.Y));
         Assert.True(a.IsAuthored);
         Assert.True(b.IsAuthored);
+        Assert.True(c.IsAuthored);
     }
 
     [Fact]

@@ -51,14 +51,20 @@ public static class CardinalGraphLayout
         var occupied = new HashSet<(int X, int Y)>();
         var authored = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var node in orderedNodes)
+        // Authored positions originated as tile-grid coordinates. Compact their distinct
+        // X/Y values so large tile-era gaps do not create a huge, mostly empty text canvas
+        // while preserving relative cardinal order.
+        var authoredNodes = orderedNodes
+            .Where(node => node.LayoutX is not null && node.LayoutY is not null)
+            .ToList();
+        var xIndex = BuildCompactIndex(authoredNodes.Select(node => node.LayoutX!.Value));
+        var yIndex = BuildCompactIndex(authoredNodes.Select(node => node.LayoutY!.Value));
+
+        foreach (var node in authoredNodes)
         {
-            if (node.LayoutX is not null && node.LayoutY is not null)
-            {
-                var position = Reserve(node.LayoutX.Value, node.LayoutY.Value, occupied);
-                positions[node.Id] = position;
-                authored.Add(node.Id);
-            }
+            var position = Reserve(xIndex[node.LayoutX!.Value], yIndex[node.LayoutY!.Value], occupied);
+            positions[node.Id] = position;
+            authored.Add(node.Id);
         }
 
         var outgoing = orderedEdges
@@ -132,6 +138,13 @@ public static class CardinalGraphLayout
             })
             .ToList();
     }
+
+    private static Dictionary<int, int> BuildCompactIndex(IEnumerable<int> values) =>
+        values
+            .Distinct()
+            .OrderBy(value => value)
+            .Select((value, index) => (value, index))
+            .ToDictionary(pair => pair.value, pair => pair.index);
 
     /// <summary>Returns whether two placements share a row or column.</summary>
     /// <param name="first">First placement.</param>

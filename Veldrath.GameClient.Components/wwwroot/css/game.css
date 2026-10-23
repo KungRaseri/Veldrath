@@ -95,20 +95,53 @@
   color: var(--vds-info);
 }
 
+.cardinal-map-toolbar {
+  padding: 0 0 var(--vds-space-2) 0;
+  border-bottom: 1px solid var(--vds-border);
+  margin-bottom: var(--vds-space-2);
+}
+
+.map-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vds-space-1);
+  font-size: var(--vds-text-xs);
+  color: var(--vds-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.map-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--vds-radius-full);
+  border: 1px solid var(--vds-border-strong);
+  background: var(--vds-bg-3);
+}
+
+.map-legend-current { background: var(--vds-indicator-player); border-color: var(--vds-indicator-player); }
+.map-legend-selected { background: var(--vds-selected); border-color: var(--vds-accent); }
+.map-legend-exit { background: var(--vds-warning); border-color: var(--vds-warning); }
+
 .cardinal-map-viewport {
   overflow: auto;
   outline: none;
-  padding-bottom: 4px;
+  max-height: 56vh;
+  min-height: 240px;
+  padding: var(--vds-space-2);
+  border: 1px solid var(--vds-border);
+  border-radius: var(--vds-radius-md);
+  background: var(--vds-bg-0);
 }
 
 .cardinal-map-viewport:focus-visible {
   box-shadow: inset 0 0 0 2px var(--vds-accent);
-  border-radius: 4px;
+  border-radius: var(--vds-radius-md);
 }
 
 .cardinal-map-canvas {
   position: relative;
-  min-width: 100%;
+  margin: 0 auto;
 }
 
 .map-connector {
@@ -117,20 +150,45 @@
   z-index: 0;
 }
 
+.map-connector-blocked {
+  background: var(--vds-danger-muted);
+  opacity: 0.8;
+}
+
+.map-connector-hidden {
+  opacity: 0.3;
+}
+
+.map-connector-label {
+  position: absolute;
+  z-index: 2;
+  min-width: 14px;
+  padding: 0 3px;
+  border: 1px solid var(--vds-border-strong);
+  border-radius: var(--vds-radius-sm);
+  background: var(--vds-bg-1);
+  color: var(--vds-text-muted);
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
 .map-node-card {
   position: absolute;
   z-index: 1;
-  width: 168px;
-  height: 80px;
+  width: 160px;
+  height: 64px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 3px;
-  padding: 8px 10px;
+  gap: 1px;
+  padding: 6px 8px;
   text-align: left;
   background: var(--vds-bg-2);
   border: 1px solid var(--vds-border);
-  border-radius: 6px;
+  border-radius: var(--vds-radius-md);
   color: var(--vds-text);
   cursor: pointer;
 }
@@ -141,13 +199,17 @@
 }
 
 .map-node-current {
-  border-color: var(--vds-accent);
-  box-shadow: 0 0 0 1px var(--vds-accent);
+  border-color: var(--vds-indicator-player);
+  box-shadow: 0 0 0 1px var(--vds-indicator-player);
 }
 
 .map-node-selected {
   background: var(--vds-selected);
   border-color: var(--vds-accent);
+}
+
+.map-node-entry {
+  border-left: 3px solid var(--vds-info);
 }
 
 .map-node-exit {
@@ -159,22 +221,63 @@
 }
 
 .map-node-name {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 140px;
+  max-width: 132px;
 }
 
 .map-node-meta {
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   color: var(--vds-text-muted);
+  gap: 5px !important;
+}
+
+.map-node-type {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.map-node-badge {
+  padding: 0 4px;
+  border: 1px solid var(--vds-border-strong);
+  border-radius: var(--vds-radius-sm);
+  font-size: 0.58rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.map-node-badge-entry {
+  color: var(--vds-info);
+  border-color: var(--vds-info);
+}
+
+.map-node-badge-exit {
+  color: var(--vds-warning);
+  border-color: var(--vds-warning);
 }
 
 .map-node-current-label {
-  font-size: 0.7rem;
-  color: var(--vds-accent);
+  font-size: 0.62rem;
+  color: var(--vds-indicator-player);
+  white-space: nowrap;
+}
+
+.map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: var(--vds-space-3);
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .map-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 .text-panel-host {

@@ -440,3 +440,18 @@ Enhanced [`ActionBar.razor`](Veldrath.GameClient.Components/Components/Shared/Ac
   snapshot with `OpenOverlay = false`; clients update bag/equipment/gold without switching panels.
   Explicit `GetInventory` uses `OpenOverlay = true`.
 - **No `UseItem` hub method** — do not render a Use action in the RCL inventory until one exists.
+
+### Cardinal map layout (Session-55, 2026-10-23)
+
+- **Post-tile layout** — `CardinalMap` uses 160×64 node cards in 184×96 cells with 24px canvas
+  padding, a bounded scroll viewport, and connector labels (`N/S/E/W/In/Out`). Do not reintroduce
+  tile-sized cells, tile backgrounds, or `--vds-tile-*` tokens.
+- **Authored coordinates are compacted** — `CardinalGraphLayout` maps distinct `LayoutX`/`LayoutY`
+  values to ordered indices before reserving cells, so TMX-era gaps do not create giant canvases
+  while relative cardinal order is preserved.
+- **Connectors run edge-to-edge** — horizontal/vertical lines start at facing card edges, not
+  centres; L-shaped routes are used only when authored positions are not cardinally aligned.
+- **Keyboard navigation follows edges** — arrow keys first look for a traversable edge in that
+  direction (including incoming edges), then fall back to the nearest spatial node.
+- **Map/detail layout** — `Game.razor` uses `.map-layout` (map + `MapDetailPanel` side by side),
+  collapsing to a single column below 960px.

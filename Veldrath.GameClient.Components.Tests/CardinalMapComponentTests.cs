@@ -42,6 +42,72 @@ public class CardinalMapComponentTests : BunitContext
     }
 
     [Fact]
+    public void CardinalMap_RendersDirectionLabels_OnConnectors()
+    {
+        var cut = Render<CardinalMap>(parameters => parameters
+            .Add(p => p.Map, MakeGraph())
+            .Add(p => p.CurrentNodeId, Entry));
+
+        var labels = cut.FindAll(".map-connector-label");
+        labels.Should().HaveCount(2);
+        labels.Should().OnlyContain(label => label.TextContent.Trim() == "E");
+    }
+
+    [Fact]
+    public void CardinalMap_RendersCompactEntryAndExitBadges()
+    {
+        var cut = Render<CardinalMap>(parameters => parameters
+            .Add(p => p.Map, MakeGraph())
+            .Add(p => p.CurrentNodeId, Entry));
+
+        cut.Find($"[data-testid='map-node-{Entry}'] .map-node-badge-entry")
+            .TextContent.Trim().Should().Be("Entry");
+        cut.Find($"[data-testid='map-node-{Exit}'] .map-node-badge-exit")
+            .TextContent.Trim().Should().Be("Exit");
+    }
+
+    [Fact]
+    public void CardinalMap_KeyNavigation_PrefersGraphEdgeDirection()
+    {
+        // Entry is East of the square in the authored layout, but the edge says South.
+        // ArrowDown must follow the edge to the square instead of falling back to space.
+        var graph = new MapGraphDto(
+            "zone:test", "Zone", "test", "Test Zone", "A test map.", Entry,
+            [
+                Node(Entry, "EntryPoint", null, "Arrival", 0, 0, isEntry: true, sortOrder: 0),
+                Node(Square, "Location", "square", "The Square", 1, 0, sortOrder: 1),
+            ],
+            [Edge(Entry, Square, "South")]);
+
+        MapNodeDto? selected = null;
+        var cut = Render<CardinalMap>(parameters => parameters
+            .Add(p => p.Map, graph)
+            .Add(p => p.CurrentNodeId, Entry)
+            .Add(p => p.OnSelect, node => selected = node));
+
+        cut.Find("[data-testid='cardinal-map']")
+            .TriggerEvent("onkeydown", new KeyboardEventArgs { Key = "ArrowDown" });
+
+        selected.Should().NotBeNull();
+        selected!.Id.Should().Be(Square);
+    }
+
+    [Fact]
+    public void CardinalMap_Enter_DoesNotTravelToCurrentNode()
+    {
+        MapNodeDto? travelled = null;
+        var cut = Render<CardinalMap>(parameters => parameters
+            .Add(p => p.Map, MakeGraph())
+            .Add(p => p.CurrentNodeId, Entry)
+            .Add(p => p.OnTravel, node => travelled = node));
+
+        cut.Find("[data-testid='cardinal-map']")
+            .TriggerEvent("onkeydown", new KeyboardEventArgs { Key = "Enter" });
+
+        travelled.Should().BeNull();
+    }
+
+    [Fact]
     public void CardinalMap_ClickSelectsNode()
     {
         MapNodeDto? selected = null;
