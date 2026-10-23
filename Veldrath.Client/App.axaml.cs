@@ -22,7 +22,7 @@ namespace Veldrath.Client;
 [ExcludeFromCodeCoverage]
 public partial class App : Application
 {
-    private IHostedGameServer? _hostedServer;
+    private IHostedGameServer? _desktopUiServer;
 
     /// <summary>Gets the application's root service provider.</summary>
     public static IServiceProvider Services { get; private set; } = null!;
@@ -104,11 +104,11 @@ public partial class App : Application
 #pragma warning restore CA1416
         }
 
-        // Start the embedded Blazor game server (runs on a random localhost port).
+        // Start the loopback desktop UI server (static Svelte build + API/SignalR proxy).
         // This must happen before the main window is created so the URL is available
         // for the WebView2 control when the game view is first navigated to.
-        _hostedServer = Services.GetRequiredService<IHostedGameServer>();
-        _ = StartEmbeddedServerAsync();
+        _desktopUiServer = Services.GetRequiredService<IHostedGameServer>();
+        _ = StartDesktopUiServerAsync();
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
@@ -117,11 +117,11 @@ public partial class App : Application
                 DataContext = Services.GetRequiredService<MainWindowViewModel>()
             };
 
-            // Stop the embedded server when the main window closes.
+            // Stop the desktop UI server when the main window closes.
             desktop.MainWindow.Closed += async (_, _) =>
             {
-                if (_hostedServer is not null)
-                    await _hostedServer.StopAsync();
+                if (_desktopUiServer is not null)
+                    await _desktopUiServer.StopAsync();
             };
         }
 
@@ -140,18 +140,18 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Starts the embedded ASP.NET Core server that hosts the Blazor game UI.
-    /// The server is used by the WebView2 control in the game view.
+    /// Starts the loopback server that serves the Svelte desktop UI and proxies API/SignalR
+    /// traffic to the remote game server. The WebView2 control navigates to this server.
     /// </summary>
-    private async Task StartEmbeddedServerAsync()
+    private async Task StartDesktopUiServerAsync()
     {
         try
         {
-            await _hostedServer!.StartAsync();
+            await _desktopUiServer!.StartAsync();
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Failed to start embedded game server. WebView game UI will be unavailable.");
+            Log.Warning(ex, "Failed to start the desktop UI server. WebView game UI will be unavailable.");
         }
     }
 
@@ -224,12 +224,21 @@ public partial class App : Application
             catch { return new NullAudioPlayer(); }
         });
 
-        // ── Hosted game server (embedded ASP.NET Core + Blazor) ─────────────
+        // ── Desktop UI server (static Svelte build + API/SignalR proxy) ─────
         services.AddSingleton<IHostedGameServer>(sp =>
         {
             var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
             var tokenStore = sp.GetRequiredService<TokenStore>();
-            return new HostedGameServer(serverBaseUrl, loggerFactory, tokenStore);
+            return new DesktopUiServer(serverBaseUrl, loggerFactory, tokenStore, async () =>
+            {
+                if (tokenStore.IsExpiringSoon)
+                {
+                    var auth = sp.GetRequiredService<IAuthService>();
+                    await auth.RefreshAsync();
+                }
+
+                return tokenStore.AccessToken;
+            });
         });
 
         // Native bridge service (WebView2 ↔ native interop)

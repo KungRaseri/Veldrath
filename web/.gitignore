@@ -146,6 +146,9 @@ build
 # SvelteKit build / generate output
 .svelte-kit
 
+# Static Svelte desktop bundle consumed by Veldrath.Client
+client/build-desktop
+
 ### VisualStudioCode ###
 .vscode/*
 !.vscode/settings.json

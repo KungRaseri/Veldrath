@@ -59,10 +59,8 @@
     <ProjectReference Include="..\Veldrath.Contracts\Veldrath.Contracts.csproj" />
     <ProjectReference Include="..\RealmEngine.Core\RealmEngine.Core.csproj" />
     <ProjectReference Include="..\RealmEngine.Shared\RealmEngine.Shared.csproj" />
-    <!-- Embedded game client: RCL for Blazor UI + Core for shared services -->
-    <ProjectReference Include="..\Veldrath.GameClient.Components\Veldrath.GameClient.Components.csproj" />
+    <!-- Shared client-side services used by the native Avalonia UI and hub connection. -->
     <ProjectReference Include="..\Veldrath.GameClient.Core\Veldrath.GameClient.Core.csproj" />
-    <ProjectReference Include="..\Veldrath.Auth.Blazor\Veldrath.Auth.Blazor.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -71,6 +69,19 @@
 
   <ItemGroup>
     <Content Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!--
+    Bundle the static Svelte desktop build when it has been produced first by running
+    "npm run build:desktop" in web/client. DesktopUiServer also falls back to
+    web/client/build-desktop during development and to the SvelteApp folder next to
+    the executable in published builds.
+  -->
+  <ItemGroup Condition="Exists('..\web\client\build-desktop\index.html')">
+    <Content Include="..\web\client\build-desktop\**\*"
+             Link="SvelteApp\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

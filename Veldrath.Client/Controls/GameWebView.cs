@@ -57,7 +57,7 @@ public class GameWebView : NativeControlHost
     /// Navigates the WebView2 control to the specified URL.
     /// Can be called before the control is fully initialized; the navigation will be deferred.
     /// </summary>
-    /// <param name="url">The URL to navigate to (typically <c>http://localhost:{port}/Game/CharacterSelect</c>).</param>
+    /// <param name="url">The URL to navigate to (typically <c>http://127.0.0.1:{port}/desktop</c>).</param>
     public void Navigate(string url)
     {
         if (_coreWebView is not null)

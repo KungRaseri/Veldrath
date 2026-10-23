@@ -1,10 +1,10 @@
 namespace Veldrath.Client.HostedWeb;
 
 /// <summary>
-/// Manages the lifecycle of an embedded ASP.NET Core web server that hosts the
-/// <c>Veldrath.GameClient.Components</c> Razor Class Library for rendering inside an
-/// Avalonia WebView2 control.  The server binds to <c>127.0.0.1</c> with a random
-/// port so it is only accessible from the local machine.
+/// Manages the lifecycle of the loopback web server that serves the static Svelte
+/// desktop build to the Avalonia WebView2 control and proxies authenticated API and
+/// SignalR traffic to the remote server. The server binds to <c>127.0.0.1</c> with a
+/// random port so it is only accessible from the local machine.
 /// </summary>
 public interface IHostedGameServer
 {

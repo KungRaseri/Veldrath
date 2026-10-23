@@ -764,7 +764,7 @@ public class GameViewModel : ViewModelBase
 
     // ── Embedded WebView state ───────────────────────────────────────────
 
-    /// <summary>Whether the WebView2 Blazor game UI is active (embedded server running + WebView2 available).</summary>
+    /// <summary>Whether the WebView2 Svelte game UI is active (desktop UI server running + WebView2 available).</summary>
     public bool IsWebViewActive { get; private set; }
 
     /// <summary>Whether the native Avalonia game UI fallback is active (WebView2 unavailable).</summary>
@@ -774,10 +774,10 @@ public class GameViewModel : ViewModelBase
     /// The URL of the embedded Blazor game server's character select page, or <c>null</c>
     /// if the embedded server has not yet started.
     /// </summary>
-    public string? WebViewUrl => _hostedServer?.BaseUrl is { } url ? $"{url}/Game/CharacterSelect" : null;
+    public string? WebViewUrl => _hostedServer?.BaseUrl is { } url ? $"{url}/desktop" : null;
 
     /// <summary>
-    /// Activates the WebView2 Blazor game UI. Called when the embedded server is running
+    /// Activates the WebView2 Svelte game UI. Called when the desktop UI server is running
     /// and the game view becomes active. When not called (WebView2 runtime unavailable or
     /// server failed to start), <see cref="IsFallbackActive"/> remains <c>true</c>.
     /// </summary>
@@ -1120,7 +1120,7 @@ public class GameViewModel : ViewModelBase
 
         AppendLog($"Welcome to {ZoneName}, {CharacterName}!");
 
-        // Activate the WebView2 Blazor game UI if the embedded server is running.
+        // Activate the WebView2 Svelte game UI if the desktop UI server is running.
         ActivateWebView();
     }
 

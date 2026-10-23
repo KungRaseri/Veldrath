@@ -11,23 +11,35 @@ async function fetchGameToken(): Promise<string> {
 	return payload.token;
 }
 
+/** Optional hub connection overrides used by the desktop WebView host. */
+export interface GameHubOptions {
+	/** Overrides the configured hub URL (the desktop host uses a same-origin proxy). */
+	hubUrl?: string;
+	/** Supplies a token per request; omitted for the desktop proxy, which injects auth. */
+	accessTokenFactory?: () => string | Promise<string>;
+}
+
 /**
  * Browser SignalR connection to Veldrath.Server.
  *
- * Tokens are minted by the SvelteKit server on demand so the browser never
- * holds a long-lived credential. The server's CORS policy must allow the
- * SvelteKit origin.
+ * In the web app, tokens are minted by the SvelteKit server on demand so the browser
+ * never holds a long-lived credential. In the desktop host, the local DesktopUiServer
+ * forwards `/hubs` to the game server and injects the desktop JWT server-side.
  */
-export function createGameHub(): HubConnection {
-	const hubUrl = env.PUBLIC_HUB_URL;
+export function createGameHub(options: GameHubOptions = {}): HubConnection {
+	const hubUrl = options.hubUrl ?? env.PUBLIC_HUB_URL;
 	if (!hubUrl) {
 		throw new Error('PUBLIC_HUB_URL is not configured.');
 	}
 
+	const urlOptions = options.accessTokenFactory
+		? { accessTokenFactory: options.accessTokenFactory }
+		: options.hubUrl
+			? {}
+			: { accessTokenFactory: fetchGameToken };
+
 	return new HubConnectionBuilder()
-		.withUrl(hubUrl, {
-			accessTokenFactory: fetchGameToken
-		})
+		.withUrl(hubUrl, urlOptions)
 		.withAutomaticReconnect()
 		.configureLogging(LogLevel.Information)
 		.build();

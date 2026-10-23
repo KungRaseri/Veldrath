@@ -55,6 +55,15 @@ Phase 4 is complete and verified for the SvelteKit staff portals:
 - Verification: typecheck/lint/format clean, production build, **31** Vitest tests, **15** Playwright tests (5 staff guards), and **30** Foundry server tests. Live verification on the local stack covered every gated page with an Admin+Curator account, editorial create → publish → public visibility → delete, Foundry create → vote → Curator approve → notification + audit entry, the language builder, and an admin broadcast.
 - RealmFoundry Blazor is functionally superseded; the project is deleted in Phase 6 together with `Veldrath.Web`.
 
+Phase 5 is complete for the desktop client (WebView2 execution verified on the build/test path; a Windows runtime smoke remains):
+
+- [`DesktopUiServer`](../Veldrath.Client/HostedWeb/DesktopUiServer.cs) replaces the embedded Blazor `HostedGameServer`. It serves the static Svelte build from a random loopback port, exposes `/health`, and reverse-proxies `/api` and `/hubs` (including WebSockets) to the game server while injecting the desktop JWT server-side.
+- [`vite.config.ts`](../web/client/vite.config.ts) switches to `@sveltejs/adapter-static` for `vite build --mode desktop`, producing a pure SPA fallback in `web/client/build-desktop` (ignored by git, copied into `Veldrath.Client` output as `SvelteApp/` when present).
+- The client-only [`/desktop`](../web/client/src/routes/desktop/+page.svelte) route loads characters through the same-origin proxy, then reuses the shared [`GameScreen`](../web/client/src/lib/game/GameScreen.svelte) and `GameSession` with `{ hubUrl: '/hubs/game' }`. `/play/[id]` now uses the same component.
+- The root layout hides the website chrome on `/desktop` and tolerates missing server data in the SPA fallback.
+- The desktop client no longer references `Veldrath.GameClient.Components` or `Veldrath.Auth.Blazor`. The native Avalonia UI remains the fallback when WebView2 is unavailable; Tauri remains deferred.
+- Verification: `npm run build:desktop`, typecheck/lint, **677** `Veldrath.Client.Tests` (including 7 `DesktopUiServer` integration tests for static hosting, SPA fallback, auth-injecting proxying, 401 handling, and shutdown), and a Chromium smoke of the static bundle with a mocked character API.
+
 ## Decision
 
 Replace the Blazor frontends with a **single SvelteKit application** using route groups, built from the in-repo [`Veldrath.Web.Sveltekit`](../Veldrath.Web.Sveltekit/TEMPLATE-GUIDE.md) workspace.
@@ -350,12 +359,13 @@ Exit criteria: RealmFoundry Blazor can be retired. Actual project deletion happe
 
 ### Phase 5 — Desktop
 
-- Replace `HostedGameServer` and `EmbeddedApp` with a static Svelte build served by the Avalonia WebView2 shell.
-- Add a local token bridge that reuses the desktop authentication result.
-- Keep the native Avalonia fallback until the WebView path is stable.
+- ✅ Replace `HostedGameServer` and `EmbeddedApp` with a static Svelte build served by the Avalonia WebView2 shell.
+- ✅ Add a local token bridge (server-side injection plus refresh) that reuses the desktop authentication result.
+- ✅ Keep the native Avalonia fallback until the WebView path is stable.
+- ⏳ Run a Windows WebView2 runtime smoke before release.
 - Defer Tauri unless the Avalonia shell becomes a limitation.
 
-Exit criteria: the desktop client runs the Svelte UI, and the Razor Class Library is no longer referenced.
+Exit criteria: the desktop client runs the Svelte UI, and the Razor Class Library is no longer referenced. Met on the build/test path; the Windows runtime smoke is the remaining release check.
 
 ### Phase 6 — Decommission and cleanup
 

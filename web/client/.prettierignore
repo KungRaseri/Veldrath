@@ -1,2 +1,9 @@
 # Generated test coverage output (vitest v8 provider)
 coverage/
+
+# Generated SvelteKit and desktop build output
+.svelte-kit/
+build/
+build-desktop/
+test-results/
+playwright-report/
