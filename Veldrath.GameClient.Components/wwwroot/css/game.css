@@ -127,8 +127,8 @@
   overflow: auto;
   outline: none;
   max-height: 52vh;
-  min-height: 180px;
-  padding: 6px;
+  min-height: 160px;
+  padding: 4px;
   border: 1px solid var(--vds-border);
   border-radius: var(--vds-radius-md);
   background: var(--vds-bg-0);
@@ -162,17 +162,17 @@
 .map-connector-label {
   position: absolute;
   z-index: 2;
-  min-width: 14px;
-  padding: 0 3px;
+  min-width: 10px;
+  padding: 0 1px;
   border: 1px solid var(--vds-border-strong);
-  border-radius: var(--vds-radius-sm);
+  border-radius: 2px;
   background: var(--vds-bg-1);
   color: var(--vds-text-muted);
-  font-size: 0.62rem;
+  font-size: 0.55rem;
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.15;
   text-align: center;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
 
 .map-node-card {

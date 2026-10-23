@@ -142,6 +142,7 @@ public static class CardinalGraphLayout
         }
 
         AlignComputedEdges(orderedEdges, positions, occupied, authored);
+        CompactOccupiedGrid(positions);
 
         return orderedNodes
             .Select(node =>
@@ -156,12 +157,43 @@ public static class CardinalGraphLayout
             .ToList();
     }
 
+    /// <summary>
+    /// Removes empty rows and columns from the final grid so connectors only span the
+    /// distance between occupied rows/columns. Mapping distinct coordinates preserves
+    /// same-row/same-column relationships and therefore keeps every edge cardinal.
+    /// </summary>
+    private static void CompactOccupiedGrid(Dictionary<string, (int X, int Y)> positions)
+    {
+        if (positions.Count == 0)
+            return;
+
+        var xValues = positions.Values.Select(position => position.X).Distinct().Order().ToList();
+        var yValues = positions.Values.Select(position => position.Y).Distinct().Order().ToList();
+
+        var xIndex = xValues
+            .Select((value, index) => (value, index))
+            .ToDictionary(pair => pair.value, pair => pair.index);
+        var yIndex = yValues
+            .Select((value, index) => (value, index))
+            .ToDictionary(pair => pair.value, pair => pair.index);
+
+        foreach (var nodeId in positions.Keys.ToList())
+        {
+            var position = positions[nodeId];
+            positions[nodeId] = (xIndex[position.X], yIndex[position.Y]);
+        }
+    }
+
     private static bool IsDenseAuthoredLayout(IReadOnlyList<MapNodeDto> authoredNodes)
     {
         var columns = authoredNodes.Select(node => node.LayoutX!.Value).Distinct().Count();
         var rows = authoredNodes.Select(node => node.LayoutY!.Value).Distinct().Count();
         var cells = columns * rows;
-        return cells <= authoredNodes.Count * 2;
+
+        // Allow a little breathing room for genuine authored layouts, but reject
+        // tile-era grids that leave large holes (e.g. 14 nodes across a 5x5 grid).
+        var allowedCells = authoredNodes.Count + Math.Max(2, authoredNodes.Count / 4);
+        return cells <= allowedCells;
     }
 
     private static Dictionary<int, int> BuildCompactIndex(IEnumerable<int> values) =>
