@@ -103,6 +103,20 @@ public class FoundryEndpointTests(WebAppFactory factory)
     }
 
     [Fact]
+    public async Task CreateSubmission_Should_Accept_Language_ContentType()
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndLanguage_User"));
+
+        var response = await _client.PostAsJsonAsync("/api/foundry/submissions",
+            new { ContentType = "language", Title = "FndLanguage_Title", Payload = "{}" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var dto = await response.Content.ReadFromJsonAsync<FoundrySubmissionDto>();
+        dto!.ContentType.Should().Be("Language");
+    }
+
+    [Fact]
     public async Task CreateSubmission_Should_Set_Location_Header()
     {
         _client.DefaultRequestHeaders.Authorization =

@@ -46,6 +46,15 @@ Phase 3 is complete and verified for the SvelteKit public site and account pages
 - Verification: `format`, `typecheck`, `lint`, production build, **31** Vitest tests, and **10** Playwright tests pass. Live SSR checks covered every page with seeded editorial rows; the live account flow passed sign-up → provider list → password change (browser `Origin` required by Better Auth CSRF) → Foundry bridge password sync → Better Auth and .NET Identity login with the new password while the old password was rejected.
 - The Blazor public routes remain in `Veldrath.Web` until the Phase 6 retirement so the current deployment keeps working until SvelteKit is deployed; SvelteKit is now the canonical implementation.
 
+Phase 4 is complete and verified for the SvelteKit staff portals:
+
+- Route groups now mirror the Foundry surfaces: `(foundry)` (submissions, notifications, content browser, languages + builder), `(editorial)` (lore, patch notes, announcements), `(admin)` (dashboard, users, roles, audit, sessions, reports, status, server commands), and `(mod)` (dashboard, user search/detail, reports).
+- Typed server clients replace `RealmFoundryApiClient`: [`game-request.ts`](../web/client/src/lib/server/game-request.ts), [`foundry-api.ts`](../web/client/src/lib/server/foundry-api.ts), [`content-api.ts`](../web/client/src/lib/server/content-api.ts), [`admin-api.ts`](../web/client/src/lib/server/admin-api.ts), and the editorial admin additions in [`editorial-api.ts`](../web/client/src/lib/server/editorial-api.ts).
+- [`access.ts`](../web/client/src/lib/server/access.ts) resolves RBAC from `GET /api/account/profile` using a minted game token and mirrors the server's role/permission constants. Group layouts enforce `admin.users`, `content.manage`, and `players.view`; Foundry requires authentication. Root layout data drives conditional Foundry/Editorial/Mod/Admin nav links.
+- Foundry review remains Curator-role gated to match the server's legacy `Curator` policy. `FoundryContentType.Language` was added (with a regression test) so the language builder matches `ContentSchemaRegistry`.
+- Verification: typecheck/lint/format clean, production build, **31** Vitest tests, **15** Playwright tests (5 staff guards), and **30** Foundry server tests. Live verification on the local stack covered every gated page with an Admin+Curator account, editorial create → publish → public visibility → delete, Foundry create → vote → Curator approve → notification + audit entry, the language builder, and an admin broadcast.
+- RealmFoundry Blazor is functionally superseded; the project is deleted in Phase 6 together with `Veldrath.Web`.
+
 ## Decision
 
 Replace the Blazor frontends with a **single SvelteKit application** using route groups, built from the in-repo [`Veldrath.Web.Sveltekit`](../Veldrath.Web.Sveltekit/TEMPLATE-GUIDE.md) workspace.
@@ -330,13 +339,14 @@ Exit criteria: the public site is fully served by SvelteKit. Blazor route remova
 
 ### Phase 4 — Foundry, admin, moderation, editorial
 
-- Port the 35 Foundry route declarations into the `(foundry)`, `(admin)`, `(mod)`, and `(editorial)` groups.
-- Replace MudBlazor tables, selects, text fields, dialogs, and forms with Skeleton and Bits UI components.
-- Replace Markdig and HtmlSanitizer with `marked` and DOMPurify. Keep server-side sanitization on write.
-- Replace `RealmFoundryApiClient` with typed API client modules.
-- Add role-based layout guards and Playwright coverage for submission review, user management, moderation, and editorial CRUD.
+- ✅ Port the Foundry, admin, moderation, and editorial route groups (`(foundry)`, `(admin)`, `(mod)`, `(editorial)`).
+- ✅ Replace MudBlazor tables, selects, text fields, and forms with Skeleton utility classes and native form controls.
+- ✅ Use `marked` + `sanitize-html` for editorial rendering, with server-side sanitization on read/write.
+- ✅ Replace `RealmFoundryApiClient` with typed API client modules.
+- ✅ Add role-based layout guards plus Playwright coverage for the staff route groups.
+- ✅ Add `FoundryContentType.Language` so language submissions are accepted.
 
-Exit criteria: RealmFoundry Blazor can be retired.
+Exit criteria: RealmFoundry Blazor can be retired. Actual project deletion happens in Phase 6.
 
 ### Phase 5 — Desktop
 

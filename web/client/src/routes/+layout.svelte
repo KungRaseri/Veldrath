@@ -19,6 +19,22 @@
 			<a class="rounded px-2 py-1 hover:bg-surface-200-800" href={resolve('/community')}>
 				Community
 			</a>
+			{#if data.staff.foundry}
+				<a class="rounded px-2 py-1 hover:bg-surface-200-800" href={resolve('/submissions')}>
+					Foundry
+				</a>
+			{/if}
+			{#if data.staff.editorial}
+				<a class="rounded px-2 py-1 hover:bg-surface-200-800" href={resolve('/editorial')}>
+					Editorial
+				</a>
+			{/if}
+			{#if data.staff.mod}
+				<a class="rounded px-2 py-1 hover:bg-surface-200-800" href={resolve('/mod')}>Mod</a>
+			{/if}
+			{#if data.staff.admin}
+				<a class="rounded px-2 py-1 hover:bg-surface-200-800" href={resolve('/admin')}>Admin</a>
+			{/if}
 		</nav>
 
 		<nav class="flex items-center gap-2">

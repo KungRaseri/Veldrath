@@ -10,6 +10,9 @@ public enum FoundryContentType
     Quest,
     Recipe,
     LootTable,
+
+    /// <summary>A constructed or natural language submission.</summary>
+    Language,
 }
 
 /// <summary>Current review state of a <see cref="FoundrySubmission"/>.</summary>

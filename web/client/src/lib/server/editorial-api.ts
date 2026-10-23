@@ -1,5 +1,7 @@
 import { env } from '$env/dynamic/private';
 import { env as publicEnv } from '$env/dynamic/public';
+import type { GameIdentity } from '$lib/server/game-request';
+import { gameApiFetch } from '$lib/server/game-request';
 
 export interface PagedResult<T> {
 	items: T[];
@@ -181,4 +183,166 @@ export async function getPlayerProfile(
 		`/api/players/${encodeURIComponent(accountId)}`
 	);
 	return { profile: result.data, error: result.error };
+}
+
+// ── Editorial administration (requires content.manage) ───────────────────────
+
+export interface CreatePatchNoteInput {
+	slug: string;
+	title: string;
+	content: string;
+	summary: string;
+	version: string;
+}
+
+export interface UpdatePatchNoteInput {
+	title: string;
+	content: string;
+	summary: string;
+	version: string;
+	status: string;
+}
+
+export interface CreateLoreArticleInput {
+	slug: string;
+	title: string;
+	content: string;
+	summary: string;
+	category: string;
+}
+
+export interface UpdateLoreArticleInput {
+	title: string;
+	content: string;
+	summary: string;
+	category: string;
+	status: string;
+}
+
+export interface CreateAnnouncementInput {
+	title: string;
+	body: string;
+}
+
+export interface UpdateAnnouncementInput {
+	title: string;
+	body: string;
+	status: string;
+}
+
+export function adminListPatchNotes(identity: GameIdentity, page = 1, pageSize = 20) {
+	return gameApiFetch<PagedResult<PatchNoteSummary>>(identity, '/api/editorial/admin/patch-notes', {
+		query: { page, pageSize }
+	});
+}
+
+export function adminGetPatchNote(identity: GameIdentity, id: string) {
+	return gameApiFetch<PatchNote>(identity, `/api/editorial/admin/patch-notes/${id}`);
+}
+
+export function adminCreatePatchNote(identity: GameIdentity, input: CreatePatchNoteInput) {
+	return gameApiFetch<PatchNote>(identity, '/api/editorial/admin/patch-notes', { json: input });
+}
+
+export function adminUpdatePatchNote(
+	identity: GameIdentity,
+	id: string,
+	input: UpdatePatchNoteInput
+) {
+	return gameApiFetch<PatchNote>(identity, `/api/editorial/admin/patch-notes/${id}`, {
+		method: 'PUT',
+		json: input
+	});
+}
+
+export function adminPublishPatchNote(identity: GameIdentity, id: string) {
+	return gameApiFetch<PatchNote>(identity, `/api/editorial/admin/patch-notes/${id}/publish`, {
+		method: 'POST'
+	});
+}
+
+export function adminDeletePatchNote(identity: GameIdentity, id: string) {
+	return gameApiFetch<null>(identity, `/api/editorial/admin/patch-notes/${id}`, {
+		method: 'DELETE'
+	});
+}
+
+export function adminListLoreArticles(identity: GameIdentity, page = 1, pageSize = 20) {
+	return gameApiFetch<PagedResult<LoreArticleSummary>>(identity, '/api/editorial/admin/lore', {
+		query: { page, pageSize }
+	});
+}
+
+export function adminGetLoreArticle(identity: GameIdentity, id: string) {
+	return gameApiFetch<LoreArticle>(identity, `/api/editorial/admin/lore/${id}`);
+}
+
+export function adminCreateLoreArticle(identity: GameIdentity, input: CreateLoreArticleInput) {
+	return gameApiFetch<LoreArticle>(identity, '/api/editorial/admin/lore', { json: input });
+}
+
+export function adminUpdateLoreArticle(
+	identity: GameIdentity,
+	id: string,
+	input: UpdateLoreArticleInput
+) {
+	return gameApiFetch<LoreArticle>(identity, `/api/editorial/admin/lore/${id}`, {
+		method: 'PUT',
+		json: input
+	});
+}
+
+export function adminPublishLoreArticle(identity: GameIdentity, id: string) {
+	return gameApiFetch<LoreArticle>(identity, `/api/editorial/admin/lore/${id}/publish`, {
+		method: 'POST'
+	});
+}
+
+export function adminDeleteLoreArticle(identity: GameIdentity, id: string) {
+	return gameApiFetch<null>(identity, `/api/editorial/admin/lore/${id}`, { method: 'DELETE' });
+}
+
+export function adminListAnnouncements(identity: GameIdentity, page = 1, pageSize = 20) {
+	return gameApiFetch<PagedResult<EditorialAnnouncement>>(
+		identity,
+		'/api/editorial/admin/announcements',
+		{
+			query: { page, pageSize }
+		}
+	);
+}
+
+export function adminGetAnnouncement(identity: GameIdentity, id: string) {
+	return gameApiFetch<EditorialAnnouncement>(identity, `/api/editorial/admin/announcements/${id}`);
+}
+
+export function adminCreateAnnouncement(identity: GameIdentity, input: CreateAnnouncementInput) {
+	return gameApiFetch<EditorialAnnouncement>(identity, '/api/editorial/admin/announcements', {
+		json: input
+	});
+}
+
+export function adminUpdateAnnouncement(
+	identity: GameIdentity,
+	id: string,
+	input: UpdateAnnouncementInput
+) {
+	return gameApiFetch<EditorialAnnouncement>(identity, `/api/editorial/admin/announcements/${id}`, {
+		method: 'PUT',
+		json: input
+	});
+}
+
+export function adminPublishAnnouncement(identity: GameIdentity, id: string) {
+	return gameApiFetch<EditorialAnnouncement>(
+		identity,
+		`/api/editorial/admin/announcements/${id}/publish`,
+		{ method: 'POST' }
+	);
+}
+
+export function adminDeleteAnnouncement(identity: GameIdentity, id: string) {
+	return gameApiFetch<null>(identity, `/api/editorial/admin/announcements/${id}`, {
+		method: 'DELETE'
+	});
 }
