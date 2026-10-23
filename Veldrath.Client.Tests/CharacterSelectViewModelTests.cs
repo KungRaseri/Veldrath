@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using System.Text.Json;
 using Veldrath.Client;
 using Veldrath.Client.Services;
 using Veldrath.Client.Tests.Infrastructure;
@@ -233,6 +234,29 @@ public class CharacterSelectViewModelTests : TestBase
 
         entry.IsPendingDelete.Should().BeFalse();
         vm.Characters.Should().Contain(entry);
+    }
+
+    // Inventory payload shape
+    [Fact]
+    public void InventoryLoadedPayload_Deserializes_Server_Shape()
+    {
+        const string json = """
+        {
+          "characterId": "11111111-1111-1111-1111-111111111111",
+          "items": [ { "itemRef": "wooden-shield", "quantity": 1, "durability": null } ],
+          "itemDetails": [ { "slug": "wooden-shield", "name": "Wooden Shield" } ],
+          "equipped": { "MainHand": "iron-sword", "OffHand": "wooden-shield" },
+          "equippedItems": { "MainHand": { "slug": "iron-sword", "name": "Iron Sword" } }
+        }
+        """;
+
+        var payload = JsonSerializer.Deserialize<CharacterSelectViewModel.InventoryLoadedPayload>(
+            json, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        payload.Should().NotBeNull();
+        payload!.Items.Should().ContainSingle(i => i.ItemRef == "wooden-shield");
+        payload.Equipped.Should().NotBeNull();
+        payload.Equipped!["OffHand"].Should().Be("wooden-shield");
     }
 
     // Select character (connection error)
