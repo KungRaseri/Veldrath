@@ -22,6 +22,7 @@ else
                 <span class="map-legend-dot map-legend-exit"></span>Exit
             </span>
             <MudSpacer />
+            <span class="map-compass-hint" title="North is up">N ↑ · E → · S ↓ · W ←</span>
             <MudText Typo="Typo.caption" Color="Color.Secondary">Arrow keys select · Enter travels</MudText>
         </div>
 
@@ -36,9 +37,12 @@ else
                          style="@ConnectorStyle(connector)"
                          title="@ConnectorTitle(connector)"
                          aria-hidden="true"></div>
-                    <span class="map-connector-label"
-                          style="@ConnectorLabelStyle(connector)"
-                          aria-hidden="true">@DirectionShort(connector.Direction)</span>
+                    @if (connector.IsCardinal)
+                    {
+                        <span class="map-connector-label"
+                              style="@ConnectorLabelStyle(connector)"
+                              aria-hidden="true">@DirectionShort(connector.Direction)</span>
+                    }
                 }
 
                 @foreach (var placement in _placements)

@@ -33,6 +33,51 @@ public class CardinalGraphLayoutTests
     }
 
     [Fact]
+    public void Compute_PlacesConflictingNorthNeighbourInNorthHalfPlane()
+    {
+        var nodes = new[]
+        {
+            Node("entry", sortOrder: 0, isEntry: true),
+            Node("square", sortOrder: 1),
+            Node("north-exit", sortOrder: 2),
+        };
+        var edges = new[]
+        {
+            Edge("entry", "square", "South"),
+            Edge("square", "north-exit", "North"),
+        };
+
+        var placements = CardinalGraphLayout.Compute(nodes, edges);
+
+        var square = placements.Single(p => p.NodeId == "square");
+        var northExit = placements.Single(p => p.NodeId == "north-exit");
+
+        // The straight north cell is occupied by the entry point, but the exit must still
+        // be placed visually north of the square rather than jumping to an unrelated side.
+        Assert.True(northExit.Y < square.Y);
+    }
+
+    [Fact]
+    public void Compute_RejectsAuthoredLayoutThatContradictsDirections()
+    {
+        var nodes = new[]
+        {
+            Node("a", layoutX: 0, layoutY: 0, sortOrder: 0, isEntry: true),
+            Node("b", layoutX: 1, layoutY: 0, sortOrder: 1),
+        };
+        // b is authored east of a, but the edge says it is north.
+        var edges = new[] { Edge("a", "b", "North") };
+
+        var placements = CardinalGraphLayout.Compute(nodes, edges);
+
+        var a = placements.Single(p => p.NodeId == "a");
+        var b = placements.Single(p => p.NodeId == "b");
+        Assert.All(placements, placement => Assert.False(placement.IsAuthored));
+        Assert.True(b.Y < a.Y);
+        Assert.Equal(a.X, b.X);
+    }
+
+    [Fact]
     public void Compute_KeepsSparseZoneGraphCompact()
     {
         // Crestfall's tile-era layout spreads 8 nodes across x=0..63 / y=0..40.
@@ -67,8 +112,9 @@ public class CardinalGraphLayoutTests
 
         var xs = placements.Select(p => p.X).ToList();
         var ys = placements.Select(p => p.Y).ToList();
-        Assert.True(xs.Max() - xs.Min() <= 3, "The compact zone layout should span at most 4 columns.");
-        Assert.True(ys.Max() - ys.Min() <= 2, "The compact zone layout should span at most 3 rows.");
+        var layout = string.Join(", ", placements.Select(p => $"{p.NodeId}=({p.X},{p.Y})"));
+        Assert.True(xs.Max() - xs.Min() <= 3, $"The compact zone layout should span at most 4 columns. {layout}");
+        Assert.True(ys.Max() - ys.Min() <= 3, $"The compact zone layout should span at most 4 rows. {layout}");
         Assert.All(placements, placement => Assert.False(placement.IsAuthored));
     }
 

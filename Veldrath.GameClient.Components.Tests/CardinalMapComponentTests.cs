@@ -55,6 +55,26 @@ public class CardinalMapComponentTests : BunitContext
     }
 
     [Fact]
+    public void CardinalMap_LShapedConnector_HasNoDirectionArrow()
+    {
+        var graph = new MapGraphDto(
+            "zone:test", "Zone", "test", "Test Zone", "A test map.", Entry,
+            [
+                Node(Entry, "EntryPoint", null, "Arrival", 0, 0, isEntry: true, sortOrder: 0),
+                Node(Square, "Location", "square", "The Square", 1, 1, sortOrder: 1),
+            ],
+            [Edge(Entry, Square, "East")]);
+
+        var cut = Render<CardinalMap>(parameters => parameters
+            .Add(p => p.Map, graph)
+            .Add(p => p.CurrentNodeId, Entry));
+
+        cut.FindAll(".map-connector").Should().HaveCount(2);
+        cut.FindAll(".map-connector-label").Should().BeEmpty(
+            "L-shaped routes do not have a single cardinal direction to label");
+    }
+
+    [Fact]
     public void CardinalMap_RendersDirectionLabels_OnConnectors()
     {
         var cut = Render<CardinalMap>(parameters => parameters

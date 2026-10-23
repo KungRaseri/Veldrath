@@ -123,6 +123,7 @@ public partial class CardinalMap
                 Math.Max(ConnectorThickness, width),
                 ConnectorThickness,
                 IsHorizontal: true,
+                IsCardinal: true,
                 edge.Direction,
                 edge.Label,
                 edge.IsTraversable,
@@ -152,6 +153,7 @@ public partial class CardinalMap
                 ConnectorThickness,
                 Math.Max(ConnectorThickness, height),
                 IsHorizontal: false,
+                IsCardinal: true,
                 edge.Direction,
                 edge.Label,
                 edge.IsTraversable,
@@ -161,11 +163,12 @@ public partial class CardinalMap
             return;
         }
 
-        // Rare L-shaped route for authored positions that are not cardinally aligned.
-        // Horizontal segment: source card edge to the destination column at the source row.
+        // Short L-shaped route for authored positions that are not cardinally aligned.
+        // Hug the destination card's side so the connector stays compact.
+        var targetEdgeX = toCenterX > fromCenterX ? to.Left : to.Left + NodeWidth;
         var horizontalStart = toCenterX > fromCenterX ? from.Left + NodeWidth : from.Left;
-        var horizontalLeft = Math.Min(horizontalStart, toCenterX);
-        var horizontalWidth = Math.Abs(toCenterX - horizontalStart);
+        var horizontalLeft = Math.Min(horizontalStart, targetEdgeX);
+        var horizontalWidth = Math.Abs(targetEdgeX - horizontalStart);
 
         if (horizontalWidth >= ConnectorThickness)
         {
@@ -175,33 +178,35 @@ public partial class CardinalMap
                 horizontalWidth,
                 ConnectorThickness,
                 IsHorizontal: true,
+                IsCardinal: false,
                 edge.Direction,
                 edge.Label,
                 edge.IsTraversable,
                 edge.IsHidden,
-                horizontalLeft + horizontalWidth / 2 - 7,
-                fromCenterY - 18));
+                0,
+                0));
         }
 
         // Vertical segment: source row to the facing edge of the destination card.
-        var verticalEnd = toCenterY > fromCenterY ? to.Top : to.Top + NodeHeight;
-        var verticalTop = Math.Min(fromCenterY, verticalEnd);
-        var verticalHeight = Math.Abs(verticalEnd - fromCenterY);
+        var targetEdgeY = toCenterY > fromCenterY ? to.Top : to.Top + NodeHeight;
+        var verticalTop = Math.Min(fromCenterY, targetEdgeY);
+        var verticalHeight = Math.Abs(targetEdgeY - fromCenterY);
 
         if (verticalHeight >= ConnectorThickness)
         {
             connectors.Add(new MapConnector(
-                toCenterX - ConnectorThickness / 2,
+                targetEdgeX - ConnectorThickness / 2,
                 verticalTop,
                 ConnectorThickness,
                 verticalHeight,
                 IsHorizontal: false,
+                IsCardinal: false,
                 edge.Direction,
                 edge.Label,
                 edge.IsTraversable,
                 edge.IsHidden,
-                toCenterX + 8,
-                verticalTop + verticalHeight / 2 - 5));
+                0,
+                0));
         }
     }
 
@@ -440,6 +445,7 @@ public partial class CardinalMap
         int Width,
         int Height,
         bool IsHorizontal,
+        bool IsCardinal,
         string Direction,
         string? Label,
         bool IsTraversable,

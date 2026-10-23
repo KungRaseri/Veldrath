@@ -63,9 +63,12 @@ public static class CardinalGraphLayout
 
         // TMX-era authored coordinates are frequently sparse: a handful of nodes spread across
         // a 60x40 tile rectangle. Keeping those relative gaps produces a mostly empty text map.
-        // Only honour authored positions when their bounding grid is reasonably dense;
-        // otherwise fall back to a compact edge-driven layout.
-        if (authoredNodes.Count > 0 && IsDenseAuthoredLayout(authoredNodes))
+        // Only honour authored positions when their bounding grid is dense AND cardinally
+        // consistent with the edge directions; otherwise use a compact edge-driven layout so
+        // arrows and node placement agree visually.
+        if (authoredNodes.Count > 0 &&
+            IsDenseAuthoredLayout(authoredNodes) &&
+            IsCardinallyConsistent(authoredNodes, orderedEdges))
         {
             var xIndex = BuildCompactIndex(authoredNodes.Select(node => node.LayoutX!.Value));
             var yIndex = BuildCompactIndex(authoredNodes.Select(node => node.LayoutY!.Value));
@@ -115,8 +118,8 @@ public static class CardinalGraphLayout
                     if (positions.ContainsKey(edge.ToNodeId))
                         continue;
 
-                    var preferred = Offset(positions[nodeId], edge.Direction, forward: true);
-                    positions[edge.ToNodeId] = Reserve(preferred.X, preferred.Y, occupied);
+                    var (dx, dy) = DirectionVector(edge.Direction);
+                    positions[edge.ToNodeId] = ReserveDirectional(positions[nodeId], dx, dy, occupied);
                     queue.Enqueue(edge.ToNodeId);
                 }
             }
@@ -128,8 +131,8 @@ public static class CardinalGraphLayout
                     if (positions.ContainsKey(edge.FromNodeId))
                         continue;
 
-                    var preferred = Offset(positions[nodeId], edge.Direction, forward: false);
-                    positions[edge.FromNodeId] = Reserve(preferred.X, preferred.Y, occupied);
+                    var (dx, dy) = DirectionVector(edge.Direction);
+                    positions[edge.FromNodeId] = ReserveDirectional(positions[nodeId], -dx, -dy, occupied);
                     queue.Enqueue(edge.FromNodeId);
                 }
             }
@@ -196,6 +199,63 @@ public static class CardinalGraphLayout
         return cells <= allowedCells;
     }
 
+    /// <summary>
+    /// Returns whether the authored positions place each edge's target in the direction named
+    /// by the edge (at least 80% of checked edges). If not, the authored grid is visually
+    /// misleading and the compact edge-driven layout should be used instead.
+    /// </summary>
+    private static bool IsCardinallyConsistent(
+        IReadOnlyList<MapNodeDto> authoredNodes,
+        IReadOnlyList<MapEdgeDto> edges)
+    {
+        if (edges.Count == 0)
+            return true;
+
+        var positions = authoredNodes
+            .Where(node => node.LayoutX is not null && node.LayoutY is not null)
+            .ToDictionary(
+                node => node.Id,
+                node => (X: node.LayoutX!.Value, Y: node.LayoutY!.Value),
+                StringComparer.OrdinalIgnoreCase);
+
+        var checkedEdges = 0;
+        var consistentEdges = 0;
+
+        foreach (var edge in edges)
+        {
+            if (!positions.TryGetValue(edge.FromNodeId, out var from) ||
+                !positions.TryGetValue(edge.ToNodeId, out var to))
+            {
+                continue;
+            }
+
+            checkedEdges++;
+            if (MatchesDirectionHalfPlane(from, to, edge.Direction))
+                consistentEdges++;
+        }
+
+        return checkedEdges == 0 ||
+               consistentEdges >= Math.Ceiling(checkedEdges * 0.8);
+    }
+
+    private static bool MatchesDirectionHalfPlane(
+        (int X, int Y) from,
+        (int X, int Y) to,
+        string direction)
+    {
+        var dx = to.X - from.X;
+        var dy = to.Y - from.Y;
+
+        return direction.ToLowerInvariant() switch
+        {
+            "north" or "up" or "in" => dy < 0,
+            "south" or "down" or "out" => dy > 0,
+            "east" => dx > 0,
+            "west" => dx < 0,
+            _ => true,
+        };
+    }
+
     private static Dictionary<int, int> BuildCompactIndex(IEnumerable<int> values) =>
         values
             .Distinct()
@@ -244,8 +304,13 @@ public static class CardinalGraphLayout
         Dictionary<string, (int X, int Y)> positions,
         HashSet<(int X, int Y)> occupied)
     {
+        // If the alignment cell is occupied, keep the short L-shaped route instead of
+        // pushing the node into an unrelated cell that contradicts its direction.
+        if (!occupied.Add(target))
+            return;
+
         occupied.Remove(positions[nodeId]);
-        positions[nodeId] = Reserve(target.X, target.Y, occupied);
+        positions[nodeId] = target;
     }
 
     private static bool IsVertical(string direction) =>
@@ -256,12 +321,8 @@ public static class CardinalGraphLayout
         direction.Equals("In", StringComparison.OrdinalIgnoreCase) ||
         direction.Equals("Out", StringComparison.OrdinalIgnoreCase);
 
-    private static (int X, int Y) Offset(
-        (int X, int Y) origin,
-        string direction,
-        bool forward)
-    {
-        var (dx, dy) = direction.ToLowerInvariant() switch
+    private static (int Dx, int Dy) DirectionVector(string direction) =>
+        direction.ToLowerInvariant() switch
         {
             "north" => (0, -1),
             "south" => (0, 1),
@@ -274,9 +335,42 @@ public static class CardinalGraphLayout
             _ => (0, -1),
         };
 
-        return forward
-            ? (origin.X + dx, origin.Y + dy)
-            : (origin.X - dx, origin.Y - dy);
+    /// <summary>
+    /// Reserves a free cell in the requested cardinal direction. The straight ray is tried
+    /// first; if it is blocked, adjacent perpendicular offsets are tried so the target stays
+    /// visually north/south/east/west of its origin instead of jumping to an unrelated cell.
+    /// </summary>
+    private static (int X, int Y) ReserveDirectional(
+        (int X, int Y) origin,
+        int dx,
+        int dy,
+        HashSet<(int X, int Y)> occupied)
+    {
+        // 90-degree rotation of the direction vector.
+        var perpendicularX = dy;
+        var perpendicularY = dx;
+
+        for (var step = 1; step <= 128; step++)
+        {
+            var baseX = origin.X + dx * step;
+            var baseY = origin.Y + dy * step;
+
+            if (occupied.Add((baseX, baseY)))
+                return (baseX, baseY);
+
+            for (var offset = 1; offset <= 8; offset++)
+            {
+                var left = (baseX + perpendicularX * offset, baseY + perpendicularY * offset);
+                if (occupied.Add(left))
+                    return left;
+
+                var right = (baseX - perpendicularX * offset, baseY - perpendicularY * offset);
+                if (occupied.Add(right))
+                    return right;
+            }
+        }
+
+        return Reserve(origin.X + dx, origin.Y + dy, occupied);
     }
 
     private static (int X, int Y) Reserve(

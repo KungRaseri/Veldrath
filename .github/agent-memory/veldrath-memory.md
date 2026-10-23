@@ -1264,6 +1264,18 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
   falling back to spatial nearest-neighbour selection. Enter no longer travels to the current node.
 - Removed the unused `--vds-tile-*` design tokens from the RCL token file.
 
+**Orientation follow-up (Session-56)**
+- `CardinalGraphLayout` now reserves computed nodes in the edge's cardinal half-plane, so a North
+  edge cannot place its target to the west when the straight cell is occupied; it uses a nearby
+  perpendicular offset instead.
+- Dense authored grids are only used when their positions agree with the edge directions (80%
+  threshold); otherwise the compact edge-driven layout is used. This keeps arrows and placement
+  consistent.
+- L-shaped routes hug the destination card and suppress the direction arrow (no single direction).
+- Added a compass hint to the map toolbar: `N ↑ · E → · S ↓ · W ←`.
+- Tests cover conflicting north placement, authored-layout rejection on contradiction, and
+  arrow-free L connectors.
+
 **Tests**
 - `CardinalGraphLayoutTests` updated for compacted authored coordinates.
 - `CardinalMapComponentTests` adds direction-label, compact badge, edge-first keyboard navigation,

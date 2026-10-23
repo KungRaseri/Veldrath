@@ -454,6 +454,14 @@ Enhanced [`ActionBar.razor`](Veldrath.GameClient.Components/Components/Shared/Ac
   centres; L-shaped routes are used only when authored positions are not cardinally aligned.
 - **Keyboard navigation follows edges** — arrow keys first look for a traversable edge in that
   direction (including incoming edges), then fall back to the nearest spatial node.
+- **Direction-aware placement** — computed nodes are reserved in the edge's cardinal half-plane
+  (`ReserveDirectional`), so a north edge never places its target west just because the straight
+  cell is occupied. If the straight ray is blocked, adjacent perpendicular offsets are used.
+- **Authored layouts must agree with edges** — a dense authored grid is only kept when at least
+  80% of checked edges place the target in the direction the edge names; otherwise the compact
+  edge-driven layout wins. This prevents arrow labels contradicting the visual layout.
+- **L-shaped routes** — when two nodes still end up diagonal, the connector hugs the destination
+  card's side in two short segments and hides the direction arrow (no single cardinal direction).
 - **Map/detail layout** — the game shell is exactly three columns (left sidebar / center / right
   chat). `.map-layout` stacks the map above `MapDetailPanel` inside the center column; do not
   add another grid column there.

@@ -123,6 +123,13 @@
 .map-legend-selected { background: var(--vds-selected); border-color: var(--vds-accent); }
 .map-legend-exit { background: var(--vds-warning); border-color: var(--vds-warning); }
 
+.map-compass-hint {
+  color: var(--vds-text-subtle);
+  font-size: var(--vds-text-xs);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
 .cardinal-map-viewport {
   overflow: auto;
   outline: none;
