@@ -244,6 +244,9 @@
 
     private static string GuessSlot(ItemType type, string? weaponType)
     {
+        if (type is ItemType.Shield or ItemType.OffHand)
+            return "OffHand";
+
         if (IsArmorType(type))
         {
             return type switch

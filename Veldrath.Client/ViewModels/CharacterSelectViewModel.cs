@@ -90,7 +90,16 @@ public class CharacterSelectViewModel : ViewModelBase
 
     public ReactiveCommand<CharacterEntryViewModel, Unit> SelectCommand { get; }
     public ReactiveCommand<Unit, Unit> ShowCreateCommand { get; }
+
+    /// <summary>Shows the inline confirmation prompt for deleting a character.</summary>
+    public ReactiveCommand<CharacterEntryViewModel, Unit> RequestDeleteCommand { get; }
+
+    /// <summary>Dismisses the inline delete confirmation prompt without deleting.</summary>
+    public ReactiveCommand<CharacterEntryViewModel, Unit> CancelDeleteCommand { get; }
+
+    /// <summary>Permanently deletes a character. The view only invokes this after the user confirms.</summary>
     public ReactiveCommand<CharacterEntryViewModel, Unit> DeleteCommand { get; }
+
     public ReactiveCommand<Unit, Unit> LogoutCommand { get; }
 
     /// <summary>Initializes a new instance of <see cref="CharacterSelectViewModel"/>.</summary>
@@ -115,6 +124,13 @@ public class CharacterSelectViewModel : ViewModelBase
 
         SelectCommand = ReactiveCommand.CreateFromTask<CharacterEntryViewModel>(DoSelectAsync);
         ShowCreateCommand = ReactiveCommand.Create(() => _navigation.NavigateTo<CreateCharacterViewModel>());
+        RequestDeleteCommand = ReactiveCommand.Create<CharacterEntryViewModel>(entry =>
+        {
+            // Only one entry may ask for confirmation at a time.
+            foreach (var other in Characters)
+                other.IsPendingDelete = ReferenceEquals(other, entry);
+        });
+        CancelDeleteCommand = ReactiveCommand.Create<CharacterEntryViewModel>(entry => entry.IsPendingDelete = false);
         DeleteCommand = ReactiveCommand.CreateFromTask<CharacterEntryViewModel>(DoDeleteAsync);
         LogoutCommand = ReactiveCommand.CreateFromTask(async () =>
         {
@@ -311,7 +327,8 @@ public class CharacterSelectViewModel : ViewModelBase
                     payload.LearnedAbilities,
                     payload.Id,
                     payload.ClassName,
-                    payload.RegionId)));
+                    payload.RegionId,
+                    payload.Equipment)));
 
             _itemCraftedSub = _connection.On<ItemCraftedPayload>("ItemCrafted", payload =>
                 _gameVm.OnItemCrafted(payload.RecipeSlug, payload.GoldSpent, payload.RemainingGold));
@@ -325,7 +342,7 @@ public class CharacterSelectViewModel : ViewModelBase
             _zoneLeftSub = _connection.On("ZoneLeft", () => _gameVm.OnZoneLeft());
 
             _inventoryLoadedSub = _connection.On<InventoryLoadedPayload>("InventoryLoaded", payload =>
-                _gameVm.OnInventoryLoaded(payload.Items));
+                _gameVm.OnInventoryLoaded(payload.Items, payload.Equipped));
             _locationEnteredSub = _connection.On<LocationEnteredPayload>("LocationEntered", payload =>
                 _gameVm.OnLocationEntered(payload.LocationSlug, payload.LocationDisplayName, payload.TypeKey,
                     payload.SpawnedEnemies
@@ -454,11 +471,11 @@ public class CharacterSelectViewModel : ViewModelBase
     internal record GoldChangedPayload(Guid CharacterId, int GoldAdded, int NewGoldTotal, string? Source);
     internal record DamageTakenPayload(Guid CharacterId, int DamageAmount, int CurrentHealth, int MaxHealth, bool IsDead, string? Source);
     internal record ExperienceGainedPayload(Guid CharacterId, int NewLevel, long NewExperience, bool LeveledUp, int? LeveledUpTo, string? Source);
-    internal record CharacterSelectedPayload(Guid Id, string Name, string ClassName, int Level, long Experience, string CurrentZoneId, string RegionId, int CurrentHealth, int MaxHealth, int CurrentMana, int MaxMana, int Gold, int UnspentAttributePoints, int Strength, int Dexterity, int Constitution, int Intelligence, int Wisdom, int Charisma, IReadOnlyList<string> LearnedAbilities, DateTimeOffset SelectedAt);
+    internal record CharacterSelectedPayload(Guid Id, string Name, string ClassName, int Level, long Experience, string CurrentZoneId, string RegionId, int CurrentHealth, int MaxHealth, int CurrentMana, int MaxMana, int Gold, int UnspentAttributePoints, int Strength, int Dexterity, int Constitution, int Intelligence, int Wisdom, int Charisma, IReadOnlyList<string> LearnedAbilities, DateTimeOffset SelectedAt, IReadOnlyDictionary<string, string>? Equipment = null);
     internal record ItemCraftedPayload(Guid CharacterId, string RecipeSlug, int GoldSpent, int RemainingGold);
     internal record DungeonEnteredPayload(Guid CharacterId, string DungeonId, string DungeonSlug);
     internal record ShopVisitedPayload(Guid CharacterId, string ZoneId, string ZoneName);
-    internal record InventoryLoadedPayload(Guid CharacterId, IReadOnlyList<InventoryItemEntry> Items);
+    internal record InventoryLoadedPayload(Guid CharacterId, IReadOnlyList<InventoryItemEntry> Items, IReadOnlyDictionary<string, string>? Equipped);
     internal record LocationEnteredPayload(Guid CharacterId, string LocationSlug, string LocationDisplayName, string TypeKey, IReadOnlyList<SpawnedEnemyEntry> SpawnedEnemies);
     internal record SpawnedEnemyEntry(Guid Id, string Name, int Level, int CurrentHealth, int MaxHealth);
     internal record ConnectionEntry(string FromLocationSlug, string ToLocationSlug, string? ToZoneId, string ConnectionType, bool IsTraversable);
@@ -510,12 +527,14 @@ public class CharacterSelectViewModel : ViewModelBase
     {
         var error = await _characters.DeleteCharacterAsync(entry.Character.Id);
         if (error is null)
-            Characters.Remove(entry);
-        else
         {
-            ErrorMessage = error.Message;
-            ErrorDetails = error.Details ?? string.Empty;
+            Characters.Remove(entry);
+            return;
         }
+
+        entry.IsPendingDelete = false;
+        ErrorMessage = error.Message;
+        ErrorDetails = error.Details ?? string.Empty;
     }
 }
 

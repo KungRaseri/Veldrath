@@ -65,6 +65,42 @@ public class EfCoreItemRepositoryTests
     }
 
     [Fact]
+    public async Task GetBySlugAsync_Maps_Weapon_Type()
+    {
+        await using var db = CreateDbContext();
+        db.Items.Add(new Item
+        {
+            Slug = "iron-sword", ItemType = "weapon", TypeKey = "heavy-blades",
+            WeaponType = "swords", IsActive = true, DisplayName = "Iron Sword",
+        });
+        await db.SaveChangesAsync();
+        var repo = new EfCoreItemRepository(db, NullLogger<EfCoreItemRepository>.Instance);
+
+        var result = await repo.GetBySlugAsync("iron-sword");
+
+        result!.Type.Should().Be(RealmEngine.Shared.Models.ItemType.Weapon);
+        result.WeaponType.Should().Be("swords");
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_Maps_Shield_Type()
+    {
+        await using var db = CreateDbContext();
+        db.Items.Add(new Item
+        {
+            Slug = "tower-shield", ItemType = "armor", TypeKey = "shield",
+            ArmorType = "shield", IsActive = true, DisplayName = "Tower Shield",
+        });
+        await db.SaveChangesAsync();
+        var repo = new EfCoreItemRepository(db, NullLogger<EfCoreItemRepository>.Instance);
+
+        var result = await repo.GetBySlugAsync("tower-shield");
+
+        result!.Type.Should().Be(RealmEngine.Shared.Models.ItemType.Shield);
+        result.ArmorType.Should().Be("shield");
+    }
+
+    [Fact]
     public async Task GetByTypeAsync_FiltersOnItemType()
     {
         await using var db = CreateDbContext();

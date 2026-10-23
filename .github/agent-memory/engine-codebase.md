@@ -387,3 +387,30 @@ Enhanced [`ActionBar.razor`](Veldrath.GameClient.Components/Components/Shared/Ac
 - **EF InMemory test gotcha** — never generate the InMemory database name inside the
   `AddDbContext` options lambda; it executes per scope and creates a fresh database per
   context. Capture the name once.
+
+### Inventory & starter equipment (Session-52, 2026-10-23)
+
+- **Equipped items live in both blobs** — character creation adds starter items to
+  `InventoryBlob` and also records their refs in `EquipmentBlob`. `GetInventoryHubCommandHandler`
+  filters currently-equipped refs out of the bag list (and resolves full `Item` details for the
+  bag and equipment maps), so clients do not show the same item twice. Unequipping restores
+  the item because the inventory blob still holds it.
+- **InventoryLoaded wire shape** — `{ CharacterId, Items, ItemDetails, Equipped }`.
+  `Items` is the Avalonia `InventoryItemDto` list; `ItemDetails`/`Equipped` are full
+  `RealmEngine.Shared.Models.Item` objects used by the RCL. `InventoryLoadedPayload` in
+  `Veldrath.GameClient.Core` binds `ItemDetails`/`Equipped` and ignores `Items`.
+- **ItemEquipped wire shape** — includes both `AllEquippedItems` (slot→ref, Avalonia) and
+  `Equipped` (slot→`Item`, RCL). `GameHub.EquipItem` follows the event with a caller-only
+  `InventoryLoaded` snapshot so bag/equipment state refreshes atomically.
+- **CharacterSelected includes `Equipment`** — slot→ref map seeded into the HUD, so starter
+  gear is visible before the player opens the inventory.
+- **Canonical slot names** — `MainHand`, `OffHand`, `Head`, `Chest`, `Legs`, `Feet`, `Ring`,
+  `Amulet`. Character creation maps engine properties to these (`Helmet`→`Head`,
+  `Boots`→`Feet`, `Necklace`→`Amulet`).
+- **No shield item in the seeded catalog** — `CreateCharacterHandler` synthesizes the fallback
+  `wooden-shield` (`ItemType.Shield`, `TypeKey`/`ArmorType` = `shield`) when
+  `IncludeShield` is true. Shield matching also accepts `TypeKey == "shield"`, not just
+  `ArmorType`.
+- **`EfCoreItemRepository.MapToModel`** maps `Item.Type` from the persisted `ItemType`
+  discriminator (`weapon` / `armor`) plus the category (`shield`, `head`, `chest`, `legs`,
+  `feet`, etc.). This drives the RCL equip button and slot routing.

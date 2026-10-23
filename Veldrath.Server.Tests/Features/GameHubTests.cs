@@ -2238,6 +2238,98 @@ public class GameHubTests : IDisposable
         result.ErrorMessage.Should().Contain("not found");
     }
 
+    // GetInventoryHubCommandHandler
+    [Fact]
+    public async Task GetInventory_Handler_Should_Exclude_Equipped_Items_From_Bag_And_Return_Equipment()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+
+        var c = new Character
+        {
+            AccountId     = accountId,
+            Name          = $"Inv_{Guid.NewGuid():N}",
+            ClassName     = "Warrior",
+            SlotIndex     = 1,
+            InventoryBlob = JsonSerializer.Serialize(new[]
+            {
+                new { ItemRef = "iron_sword",   Quantity = 1, Durability = (int?)80 },
+                new { ItemRef = "health_potion", Quantity = 3, Durability = (int?)null },
+            }),
+            EquipmentBlob = JsonSerializer.Serialize(new Dictionary<string, string>
+            {
+                ["MainHand"] = "iron_sword",
+            }),
+        };
+        db.Characters.Add(c);
+        await db.SaveChangesAsync();
+
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetBySlugAsync("iron_sword"))
+            .ReturnsAsync(new RealmEngine.Shared.Models.Item
+            {
+                Slug = "iron_sword", Name = "Iron Sword",
+                Type = RealmEngine.Shared.Models.ItemType.Weapon,
+            });
+        itemRepo.Setup(r => r.GetBySlugAsync("health_potion"))
+            .ReturnsAsync(new RealmEngine.Shared.Models.Item
+            {
+                Slug = "health_potion", Name = "Health Potion",
+                Type = RealmEngine.Shared.Models.ItemType.Consumable,
+            });
+
+        var handler = new GetInventoryHubCommandHandler(
+            new CharacterRepository(db),
+            itemRepo.Object,
+            NullLogger<GetInventoryHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new GetInventoryHubCommand(c.Id), CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.Items.Should().ContainSingle(i => i.ItemRef == "health_potion");
+        result.ItemDetails.Should().ContainSingle(i => i.Slug == "health_potion" && i.Quantity == 3);
+        result.Equipped.Should().ContainKey("MainHand");
+        result.Equipped["MainHand"].Slug.Should().Be("iron_sword");
+    }
+
+    [Fact]
+    public async Task GetInventory_Handler_Should_Build_Fallback_Details_When_Catalog_Misses_Item()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId      = await SeedAccountAsync(db);
+
+        var c = new Character
+        {
+            AccountId     = accountId,
+            Name          = $"Inv_{Guid.NewGuid():N}",
+            ClassName     = "Warrior",
+            SlotIndex     = 1,
+            InventoryBlob = JsonSerializer.Serialize(new[]
+            {
+                new { ItemRef = "wooden-shield", Quantity = 1, Durability = (int?)null },
+            }),
+        };
+        db.Characters.Add(c);
+        await db.SaveChangesAsync();
+
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetBySlugAsync(It.IsAny<string>()))
+            .ReturnsAsync((RealmEngine.Shared.Models.Item?)null);
+
+        var handler = new GetInventoryHubCommandHandler(
+            new CharacterRepository(db),
+            itemRepo.Object,
+            NullLogger<GetInventoryHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new GetInventoryHubCommand(c.Id), CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        var detail = result.ItemDetails.Should().ContainSingle().Subject;
+        detail.Slug.Should().Be("wooden-shield");
+        detail.Name.Should().Be("Wooden Shield");
+        detail.Type.Should().Be(RealmEngine.Shared.Models.ItemType.Shield);
+    }
+
     // AddGold helpers
     private static async Task<Character> SeedCharacterWithGoldAsync(
         ApplicationDbContext db, Guid accountId, int gold)

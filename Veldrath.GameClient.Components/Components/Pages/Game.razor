@@ -581,11 +581,20 @@
         // ── G22: ItemEquipped ──────────────────────────────────────────────
         _hubSubscriptions.Add(Hub.On<ItemEquippedPayload>("ItemEquipped", async payload =>
         {
-            foreach (var (slot, item) in payload.Equipped)
+            // The server sends a resolved equipment snapshot alongside the legacy slot→ref map.
+            // Apply the resolved items when present; older servers omit it and the follow-up
+            // InventoryLoaded snapshot will populate equipment instead.
+            if (payload.Equipped is not null)
             {
-                GameState.ApplyEquipmentChanged(slot, item);
+                foreach (var (slot, item) in payload.Equipped)
+                {
+                    GameState.ApplyEquipmentChanged(slot, item);
+                }
             }
-            GameState.ApplySystemMessage($"Equipped {payload.ItemRef}.");
+
+            GameState.ApplySystemMessage(payload.ItemRef is null
+                ? $"Unequipped {payload.Slot}."
+                : $"Equipped {payload.ItemRef}.");
             await InvokeAsync(StateHasChanged);
         }));
 
@@ -632,7 +641,12 @@
         // ── G28: InventoryLoaded ───────────────────────────────────────────
         _hubSubscriptions.Add(Hub.On<InventoryLoadedPayload>("InventoryLoaded", async payload =>
         {
-            GameState.ApplyInventoryUpdated(payload.Items, GameState.EquippedItems);
+            var items = payload.ItemDetails ?? [];
+            if (payload.Equipped is not null)
+                GameState.ApplyInventoryUpdated(items, payload.Equipped);
+            else
+                GameState.ApplyInventoryUpdated(items, GameState.EquippedItems);
+
             _activeOverlay = GameOverlay.OverlayKind.Inventory;
             _showOverlay = true;
             await InvokeAsync(StateHasChanged);

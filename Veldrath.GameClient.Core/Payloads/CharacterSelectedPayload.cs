@@ -25,6 +25,9 @@ namespace Veldrath.GameClient.Core.Payloads;
 /// <param name="Charisma">Charisma attribute value.</param>
 /// <param name="LearnedAbilities">List of ability slugs the character has learned.</param>
 /// <param name="SelectedAt">When the selection was confirmed on the server.</param>
+/// <param name="CurrentMapId">Map the character is currently on, when known.</param>
+/// <param name="CurrentNodeId">Node the character is currently at, when known.</param>
+/// <param name="Equipment">Equipped item references keyed by canonical slot name, so starter equipment is visible immediately.</param>
 public sealed record CharacterSelectedPayload(
     Guid Id,
     string Name,
@@ -48,4 +51,5 @@ public sealed record CharacterSelectedPayload(
     List<string> LearnedAbilities,
     DateTimeOffset SelectedAt,
     string? CurrentMapId = null,
-    string? CurrentNodeId = null);
+    string? CurrentNodeId = null,
+    Dictionary<string, string>? Equipment = null);

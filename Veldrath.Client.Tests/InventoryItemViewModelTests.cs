@@ -125,4 +125,19 @@ public class InventoryItemViewModelTests : TestBase
         var vm = new InventoryItemViewModel("magic_staff", 1, null);
         vm.ItemRef.Should().Be("magic_staff");
     }
+
+    // EquipSlot
+    [Fact]
+    public void EquipSlot_Defaults_To_MainHand()
+    {
+        var vm = new InventoryItemViewModel("iron_sword", 1, null);
+        vm.EquipSlot.Should().Be("MainHand");
+    }
+
+    [Fact]
+    public void EquipSlot_Can_Be_Overridden()
+    {
+        var vm = new InventoryItemViewModel("wooden_shield", 1, null, equipSlot: "OffHand");
+        vm.EquipSlot.Should().Be("OffHand");
+    }
 }

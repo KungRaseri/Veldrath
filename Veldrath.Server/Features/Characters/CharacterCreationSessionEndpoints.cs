@@ -412,18 +412,20 @@ public static class CharacterCreationSessionEndpoints
             ["Gold"] = engineChar.Gold,
         });
 
+        // Slot names must match EquipItemHubCommandHandler.ValidSlots and the client equipment panels.
         var equipmentDict = new Dictionary<string, string>();
         if (engineChar.EquippedMainHand is { Slug: { Length: > 0 } s1 }) equipmentDict["MainHand"] = s1;
         if (engineChar.EquippedOffHand is { Slug: { Length: > 0 } s2 }) equipmentDict["OffHand"] = s2;
-        if (engineChar.EquippedHelmet is { Slug: { Length: > 0 } s3 }) equipmentDict["Helmet"] = s3;
+        if (engineChar.EquippedHelmet is { Slug: { Length: > 0 } s3 }) equipmentDict["Head"] = s3;
         if (engineChar.EquippedShoulders is { Slug: { Length: > 0 } s4 }) equipmentDict["Shoulders"] = s4;
         if (engineChar.EquippedChest is { Slug: { Length: > 0 } s5 }) equipmentDict["Chest"] = s5;
         if (engineChar.EquippedBracers is { Slug: { Length: > 0 } s6 }) equipmentDict["Bracers"] = s6;
         if (engineChar.EquippedGloves is { Slug: { Length: > 0 } s7 }) equipmentDict["Gloves"] = s7;
         if (engineChar.EquippedBelt is { Slug: { Length: > 0 } s8 }) equipmentDict["Belt"] = s8;
         if (engineChar.EquippedLegs is { Slug: { Length: > 0 } s9 }) equipmentDict["Legs"] = s9;
-        if (engineChar.EquippedBoots is { Slug: { Length: > 0 } s10 }) equipmentDict["Boots"] = s10;
-        if (engineChar.EquippedNecklace is { Slug: { Length: > 0 } s11 }) equipmentDict["Necklace"] = s11;
+        if (engineChar.EquippedBoots is { Slug: { Length: > 0 } s10 }) equipmentDict["Feet"] = s10;
+        if (engineChar.EquippedNecklace is { Slug: { Length: > 0 } s11 }) equipmentDict["Amulet"] = s11;
+        if (engineChar.EquippedRing1 is { Slug: { Length: > 0 } s12 }) equipmentDict["Ring"] = s12;
 
         var inventoryItems = engineChar.Inventory
             .Where(i => !string.IsNullOrWhiteSpace(i.Slug))

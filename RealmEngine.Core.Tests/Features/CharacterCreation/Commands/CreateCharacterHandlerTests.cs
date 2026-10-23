@@ -2,6 +2,7 @@ using FluentAssertions;
 using MediatR;
 using Moq;
 using RealmEngine.Core.Features.CharacterCreation.Commands;
+using RealmEngine.Core.Features.Equipment.Queries;
 using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
@@ -294,6 +295,96 @@ public class CreateCharacterHandlerTests
         result.Character.Intelligence.Should().Be(8);
         result.Character.Wisdom.Should().Be(8);
         result.Character.Charisma.Should().Be(8);
+    }
+
+    [Fact]
+    public async Task Handle_Should_Grant_And_Equip_Shield_When_Requested_And_Catalog_Has_No_Shield()
+    {
+        // Arrange
+        var warriorClass = CreateWarriorClass();
+        warriorClass.Slug = "warrior";
+        var sword = new Item
+        {
+            Slug = "iron-sword", Name = "Iron Sword", Type = ItemType.Weapon,
+            TypeKey = "heavy-blades", WeaponType = "swords",
+        };
+        var armor = new Item
+        {
+            Slug = "heavy-armor", Name = "Heavy Armor", Type = ItemType.Chest,
+            TypeKey = "heavy", ArmorType = "heavy",
+        };
+
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetEquipmentForClassQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GetEquipmentForClassResult
+            {
+                Success = true,
+                Weapons = [sword],
+                Armor = [armor],
+            });
+        _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingAbilitiesCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new InitializeStartingAbilitiesResult { Success = true });
+        _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingPowersCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new InitializeStartingPowersResult { Success = true });
+
+        var command = new CreateCharacterCommand
+        {
+            CharacterName = "ShieldHero",
+            CharacterClass = warriorClass,
+            IncludeShield = true,
+        };
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        var character = result.Character!;
+        character.EquippedMainHand.Should().Be(sword);
+        character.EquippedChest.Should().Be(armor);
+        character.EquippedOffHand.Should().NotBeNull();
+        character.EquippedOffHand!.Type.Should().Be(ItemType.Shield);
+        character.Inventory.Should().Contain(character.EquippedOffHand);
+        result.EquipmentSelected.Should().Contain(character.EquippedOffHand);
+    }
+
+    [Fact]
+    public async Task Handle_Should_Use_Catalog_Shield_When_Available()
+    {
+        // Arrange
+        var warriorClass = CreateWarriorClass();
+        warriorClass.Slug = "warrior";
+        var catalogShield = new Item
+        {
+            Slug = "tower-shield", Name = "Tower Shield", Type = ItemType.Shield,
+            TypeKey = "shield", ArmorType = "shield",
+        };
+
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetEquipmentForClassQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GetEquipmentForClassResult
+            {
+                Success = true,
+                Weapons = [],
+                Armor = [catalogShield],
+            });
+        _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingAbilitiesCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new InitializeStartingAbilitiesResult { Success = true });
+        _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingPowersCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new InitializeStartingPowersResult { Success = true });
+
+        var command = new CreateCharacterCommand
+        {
+            CharacterName = "TowerHero",
+            CharacterClass = warriorClass,
+            IncludeShield = true,
+        };
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Character!.EquippedOffHand.Should().Be(catalogShield);
+        result.Character.EquippedChest.Should().BeNull("a shield must never be equipped to an armor slot");
     }
 
     // Helper methods to create test character classes

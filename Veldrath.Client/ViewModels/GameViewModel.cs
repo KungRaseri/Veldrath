@@ -43,7 +43,8 @@ public record SeedInitialStatsArgs(
     IReadOnlyList<string>? LearnedAbilities = null,
     Guid? CharacterId = null,
     string ClassName = "",
-    string CurrentRegionId = "");
+    string CurrentRegionId = "",
+    IReadOnlyDictionary<string, string>? Equipment = null);
 
 /// <summary>In-game view model. Active after a character has entered a zone.</summary>
 public class GameViewModel : ViewModelBase
@@ -1483,20 +1484,30 @@ public class GameViewModel : ViewModelBase
     public void OnItemEquipped(string slot, string? itemRef, IReadOnlyDictionary<string, string>? allEquippedItems = null)
     {
         if (allEquippedItems is not null)
-        {
-            foreach (var equipSlot in EquipmentSlots)
-            {
-                allEquippedItems.TryGetValue(equipSlot.SlotName, out var currentRef);
-                equipSlot.ItemRef  = currentRef;
-                if (currentRef is null)
-                    equipSlot.ItemIcon = null;
-            }
-            if (_assetStore is not null)
-                _ = RefreshAllEquippedIconsAsync(_assetStore);
-        }
+            ApplyEquipmentSnapshot(allEquippedItems);
+
         AppendLog(itemRef is not null
             ? $"Equipped '{itemRef}' in {slot} slot."
             : $"Unequipped {slot} slot.");
+    }
+
+    /// <summary>
+    /// Replaces the equipment slot contents with a full snapshot of slot → item-reference pairs.
+    /// Used by <c>InventoryLoaded</c> so starter equipment is visible immediately after login.
+    /// </summary>
+    /// <param name="equipped">Map of canonical slot name to equipped item-reference slug.</param>
+    public void ApplyEquipmentSnapshot(IReadOnlyDictionary<string, string> equipped)
+    {
+        foreach (var equipSlot in EquipmentSlots)
+        {
+            equipped.TryGetValue(equipSlot.SlotName, out var currentRef);
+            equipSlot.ItemRef = currentRef;
+            if (currentRef is null)
+                equipSlot.ItemIcon = null;
+        }
+
+        if (_assetStore is not null)
+            _ = RefreshAllEquippedIconsAsync(_assetStore);
     }
 
     /// <summary>Called from hub when the active character's gold total has changed.</summary>
@@ -1714,6 +1725,9 @@ public class GameViewModel : ViewModelBase
         if (args.CharacterId.HasValue)
             _characterId = args.CharacterId;
         ClassName = args.ClassName;
+
+        if (args.Equipment is not null)
+            ApplyEquipmentSnapshot(args.Equipment);
 
         LearnedAbilities.Clear();
         if (args.LearnedAbilities is not null)
@@ -2334,12 +2348,19 @@ public class GameViewModel : ViewModelBase
         => AppendLog("You have left the zone.");
 
     /// <summary>Called from the hub when the server responds with the character's current inventory items.</summary>
-    /// <param name="items">Inventory entries loaded from the server.</param>
-    public void OnInventoryLoaded(IReadOnlyList<InventoryItemEntry> items)
+    /// <param name="items">Bag entries loaded from the server. Equipped items are excluded by the server.</param>
+    /// <param name="equipped">Optional snapshot of equipped item refs keyed by slot name.</param>
+    public void OnInventoryLoaded(
+        IReadOnlyList<InventoryItemEntry> items,
+        IReadOnlyDictionary<string, string>? equipped = null)
     {
         InventoryItems.Clear();
         foreach (var item in items)
-            InventoryItems.Add(new InventoryItemViewModel(item.ItemRef, item.Quantity, item.Durability, t => DoEquipItemAsync(t.Item1, t.Item2), DoDropItemAsync));
+            InventoryItems.Add(new InventoryItemViewModel(item.ItemRef, item.Quantity, item.Durability, t => DoEquipItemAsync(t.Item1, t.Item2), DoDropItemAsync, GuessEquipSlot(item.ItemRef)));
+
+        if (equipped is not null)
+            ApplyEquipmentSnapshot(equipped);
+
         IsInventoryOpen = true;
     }
 
@@ -2360,7 +2381,7 @@ public class GameViewModel : ViewModelBase
         Gold = newGoldTotal;
         InventoryItems.Clear();
         foreach (var item in newInventory)
-            InventoryItems.Add(new InventoryItemViewModel(item.ItemRef, item.Quantity, item.Durability, t => DoEquipItemAsync(t.Item1, t.Item2), DoDropItemAsync));
+            InventoryItems.Add(new InventoryItemViewModel(item.ItemRef, item.Quantity, item.Durability, t => DoEquipItemAsync(t.Item1, t.Item2), DoDropItemAsync, GuessEquipSlot(item.ItemRef)));
         AppendLog($"Purchased {displayName}.");
     }
 
@@ -2370,7 +2391,7 @@ public class GameViewModel : ViewModelBase
         Gold = newGoldTotal;
         InventoryItems.Clear();
         foreach (var item in newInventory)
-            InventoryItems.Add(new InventoryItemViewModel(item.ItemRef, item.Quantity, item.Durability, t => DoEquipItemAsync(t.Item1, t.Item2), DoDropItemAsync));
+            InventoryItems.Add(new InventoryItemViewModel(item.ItemRef, item.Quantity, item.Durability, t => DoEquipItemAsync(t.Item1, t.Item2), DoDropItemAsync, GuessEquipSlot(item.ItemRef)));
         AppendLog($"Sold {displayName}.");
     }
 
@@ -2379,8 +2400,25 @@ public class GameViewModel : ViewModelBase
     {
         InventoryItems.Clear();
         foreach (var item in newInventory)
-            InventoryItems.Add(new InventoryItemViewModel(item.ItemRef, item.Quantity, item.Durability, t => DoEquipItemAsync(t.Item1, t.Item2), DoDropItemAsync));
+            InventoryItems.Add(new InventoryItemViewModel(item.ItemRef, item.Quantity, item.Durability, t => DoEquipItemAsync(t.Item1, t.Item2), DoDropItemAsync, GuessEquipSlot(item.ItemRef)));
         AppendLog($"Dropped {itemRef}.");
+    }
+
+    /// <summary>
+    /// Infers the target equipment slot from an item-reference slug so the inventory Equip
+    /// button routes shields, armor, and jewellery to the correct slot.
+    /// </summary>
+    private static string GuessEquipSlot(string itemRef)
+    {
+        var slug = itemRef.ToLowerInvariant();
+        if (slug.Contains("shield")) return "OffHand";
+        if (slug.Contains("helm") || slug.Contains("hat") || slug.Contains("hood")) return "Head";
+        if (slug.Contains("boots") || slug.Contains("shoes")) return "Feet";
+        if (slug.Contains("legs") || slug.Contains("pants") || slug.Contains("greaves")) return "Legs";
+        if (slug.Contains("ring")) return "Ring";
+        if (slug.Contains("amulet") || slug.Contains("necklace")) return "Amulet";
+        if (slug.Contains("armor") || slug.Contains("chest") || slug.Contains("robe") || slug.Contains("plate") || slug.Contains("mail")) return "Chest";
+        return "MainHand";
     }
 
     private async Task DoToggleInventoryAsync()

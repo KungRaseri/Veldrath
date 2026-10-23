@@ -296,14 +296,17 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
                 _logger.LogInformation("Equipped weapon: {WeaponName} ({WeaponType})", weapon.Name, weapon.WeaponType);
             }
 
-            // Select armor if available (prefer specified type if provided)
-            if (equipmentResult.Armor.Count > 0)
+            // Select armor if available (prefer specified type if provided).
+            // Shields are handled separately below and must never be equipped to an armor slot.
+            var armorCandidates = equipmentResult.Armor.Where(a => !IsShield(a)).ToList();
+            if (armorCandidates.Count > 0)
             {
                 var armor = preferredArmorType != null
-                    ? equipmentResult.Armor.FirstOrDefault(a => 
-                        a.ArmorType?.Contains(preferredArmorType, StringComparison.OrdinalIgnoreCase) == true)
-                      ?? equipmentResult.Armor.First()
-                    : equipmentResult.Armor.First();
+                    ? armorCandidates.FirstOrDefault(a =>
+                        a.ArmorType?.Contains(preferredArmorType, StringComparison.OrdinalIgnoreCase) == true
+                        || a.TypeKey?.Contains(preferredArmorType, StringComparison.OrdinalIgnoreCase) == true)
+                      ?? armorCandidates.First()
+                    : armorCandidates.First();
 
                 // Equip armor to appropriate slot based on armor type
                 EquipArmorToSlot(character, armor);
@@ -312,19 +315,24 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
                 _logger.LogInformation("Equipped armor: {ArmorName} ({ArmorType})", armor.Name, armor.ArmorType);
             }
 
-            // Optionally equip a shield if requested
-            if (includeShield)
+            // Optionally equip a shield if requested. Content may not yet include a shield item,
+            // so fall back to a standard issue shield rather than silently dropping the choice.
+            if (includeShield && character.EquippedOffHand == null)
             {
-                var shield = equipmentResult.Armor.FirstOrDefault(a => 
-                    a.ArmorType?.Contains("shield", StringComparison.OrdinalIgnoreCase) == true);
-                
-                if (shield != null && character.EquippedOffHand == null)
+                var shield = equipmentResult.Armor.FirstOrDefault(IsShield);
+                if (shield is null)
                 {
-                    character.EquippedOffHand = shield;
-                    character.Inventory.Add(shield);
-                    selectedEquipment.Add(shield);
-                    _logger.LogInformation("Equipped shield: {ShieldName}", shield.Name);
+                    shield = CreateFallbackShield();
+                    _logger.LogInformation(
+                        "No shield item found for class {ClassSlug}; granting standard issue {ShieldName}",
+                        classSlug,
+                        shield.Name);
                 }
+
+                character.EquippedOffHand = shield;
+                character.Inventory.Add(shield);
+                selectedEquipment.Add(shield);
+                _logger.LogInformation("Equipped shield: {ShieldName}", shield.Name);
             }
 
             return selectedEquipment;
@@ -378,13 +386,44 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
     }
 
     /// <summary>
+    /// Returns <see langword="true"/> when the item is a shield, identified by its catalog
+    /// type key, model type, or armor type.
+    /// </summary>
+    private static bool IsShield(Item item) =>
+        string.Equals(item.TypeKey, "shield", StringComparison.OrdinalIgnoreCase)
+        || item.Type == ItemType.Shield
+        || item.ArmorType?.Contains("shield", StringComparison.OrdinalIgnoreCase) == true;
+
+    /// <summary>
+    /// Creates a standard issue shield used when the content catalog contains no shield item.
+    /// Keeps the "start with shield" character creation choice functional in every deployment.
+    /// </summary>
+    private static Item CreateFallbackShield() => new()
+    {
+        Slug        = "wooden-shield",
+        Name        = "Wooden Shield",
+        Description = "A simple wooden shield issued to new adventurers.",
+        Type        = ItemType.Shield,
+        TypeKey     = "shield",
+        ArmorType   = "shield",
+        ArmorClass  = "light",
+        Price       = 10,
+        Weight      = 6.0,
+        Rarity      = ItemRarity.Common,
+        StackSize   = 1,
+        IsStackable = false,
+    };
+
+    /// <summary>
     /// Equips armor to the appropriate equipment slot based on its armor type.
     /// </summary>
     private void EquipArmorToSlot(Character character, Item armor)
     {
         var armorType = armor.ArmorType?.ToLowerInvariant() ?? "";
 
-        if (armorType.Contains("helm") || armorType.Contains("hat") || armorType.Contains("hood"))
+        if (armorType.Contains("shield"))
+            character.EquippedOffHand ??= armor;
+        else if (armorType.Contains("helm") || armorType.Contains("hat") || armorType.Contains("hood"))
             character.EquippedHelmet = armor;
         else if (armorType.Contains("chest") || armorType.Contains("robe") || armorType.Contains("breastplate"))
             character.EquippedChest = armor;

@@ -157,6 +157,84 @@ public class CharacterSelectViewModelTests : TestBase
         vm.ErrorMessage.Should().Be("Character not found");
     }
 
+    [Fact]
+    public async Task RequestDeleteCommand_Should_Mark_Entry_Pending_Without_Deleting()
+    {
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Alice",
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var fake = new FakeCharacterService { Characters = [character] };
+        var vm   = MakeVm(chars: fake);
+        await Task.Yield();
+
+        var entry = vm.Characters.Single(e => e.Character.Id == character.Id);
+        await vm.RequestDeleteCommand.Execute(entry);
+
+        entry.IsPendingDelete.Should().BeTrue();
+        entry.IsNotPendingDelete.Should().BeFalse();
+        fake.DeleteCallCount.Should().Be(0);
+        vm.Characters.Should().Contain(entry);
+    }
+
+    [Fact]
+    public async Task CancelDeleteCommand_Should_Clear_Pending_State()
+    {
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Alice",
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var fake = new FakeCharacterService { Characters = [character] };
+        var vm   = MakeVm(chars: fake);
+        await Task.Yield();
+
+        var entry = vm.Characters.Single(e => e.Character.Id == character.Id);
+        await vm.RequestDeleteCommand.Execute(entry);
+        await vm.CancelDeleteCommand.Execute(entry);
+
+        entry.IsPendingDelete.Should().BeFalse();
+        fake.DeleteCallCount.Should().Be(0);
+        vm.Characters.Should().Contain(entry);
+    }
+
+    [Fact]
+    public async Task RequestDeleteCommand_Should_Clear_Pending_State_On_Other_Entries()
+    {
+        var first  = new CharacterDto(Guid.NewGuid(), 1, "Alice",
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var second = new CharacterDto(Guid.NewGuid(), 2, "Bob",
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var fake = new FakeCharacterService { Characters = [first, second] };
+        var vm   = MakeVm(chars: fake);
+        await Task.Yield();
+
+        var firstEntry  = vm.Characters.Single(e => e.Character.Id == first.Id);
+        var secondEntry = vm.Characters.Single(e => e.Character.Id == second.Id);
+
+        await vm.RequestDeleteCommand.Execute(firstEntry);
+        await vm.RequestDeleteCommand.Execute(secondEntry);
+
+        firstEntry.IsPendingDelete.Should().BeFalse();
+        secondEntry.IsPendingDelete.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task DeleteCommand_Should_Clear_Pending_State_When_Delete_Fails()
+    {
+        var character = new CharacterDto(Guid.NewGuid(), 1, "Alice",
+            "Warrior", 1, 0, DateTimeOffset.UtcNow, "starting-zone");
+        var fake = new FakeCharacterService
+        {
+            Characters  = [character],
+            DeleteError = new AppError("Character not found")
+        };
+        var vm = MakeVm(chars: fake);
+        await Task.Yield();
+
+        var entry = vm.Characters.Single(e => e.Character.Id == character.Id);
+        await vm.RequestDeleteCommand.Execute(entry);
+        await vm.DeleteCommand.Execute(entry);
+
+        entry.IsPendingDelete.Should().BeFalse();
+        vm.Characters.Should().Contain(entry);
+    }
+
     // Select character (connection error)
     [Fact]
     public async Task SelectCommand_Should_Show_Error_When_Connection_Fails()

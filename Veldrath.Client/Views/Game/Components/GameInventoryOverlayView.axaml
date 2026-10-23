@@ -91,7 +91,7 @@
                                                 Margin="4,0,0,0"
                                                 Classes="ghost"
                                                 Command="{Binding EquipCommand}"
-                                                CommandParameter="MainHand"
+                                                CommandParameter="{Binding EquipSlot}"
                                                 Content="Equip"
                                                 FontSize="12" />
                                             <Button

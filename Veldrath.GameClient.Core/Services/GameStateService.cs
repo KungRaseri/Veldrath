@@ -228,6 +228,17 @@ public sealed class GameStateService : IGameStateService
         if (!string.IsNullOrWhiteSpace(payload.CurrentNodeId))
             CurrentNodeId = payload.CurrentNodeId;
 
+        // Seed equipment from the selection payload so starter gear is visible before the
+        // first inventory request. Full catalog details replace these placeholders later.
+        if (payload.Equipment is { Count: > 0 })
+        {
+            EquippedItems = payload.Equipment.ToDictionary(
+                pair => pair.Key,
+                pair => (Item)new() { Slug = pair.Value, Name = HumanizeItemRef(pair.Value) },
+                StringComparer.OrdinalIgnoreCase);
+            RaisePropertyChanged(nameof(EquippedItems));
+        }
+
         CurrentCharacterState = new CharacterState
         {
             Level = payload.Level,
@@ -1004,6 +1015,16 @@ public sealed class GameStateService : IGameStateService
     }
 
     /// <summary>Builds a human-readable combat result string from the turn payload.</summary>
+    private static string HumanizeItemRef(string itemRef)
+    {
+        var leaf = itemRef.Split(':', '/').LastOrDefault() ?? itemRef;
+        var words = leaf.Split(['-', '_'], StringSplitOptions.RemoveEmptyEntries)
+            .Select(word => word.Length == 0
+                ? word
+                : char.ToUpperInvariant(word[0]) + word[1..]);
+        return string.Join(' ', words);
+    }
+
     private static string BuildCombatResultText(CombatTurnPayload p)
     {
         var parts = new List<string>();

@@ -140,13 +140,32 @@
                                                 Height="36"
                                                 Margin="8,0" />
 
-                                        <Button Grid.Row="0" Grid.Column="2"
-                                                Content="Delete"
-                                                Classes="danger"
-                                                Command="{Binding $parent[UserControl].DataContext.DeleteCommand}"
-                                                CommandParameter="{Binding}"
-                                                IsEnabled="{Binding !IsOnline}"
-                                                Height="36" />
+                                        <StackPanel Grid.Row="0" Grid.Column="2"
+                                                    Orientation="Horizontal"
+                                                    Spacing="6"
+                                                    VerticalAlignment="Center">
+                                            <!--  Default state: ask for confirmation first  -->
+                                            <Button Content="Delete"
+                                                    Classes="danger"
+                                                    Command="{Binding $parent[UserControl].DataContext.RequestDeleteCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    IsEnabled="{Binding !IsOnline}"
+                                                    IsVisible="{Binding IsNotPendingDelete}"
+                                                    Height="36" />
+                                            <!--  Confirmation state: destructive action only happens on Confirm  -->
+                                            <Button Content="Confirm"
+                                                    Classes="danger"
+                                                    Command="{Binding $parent[UserControl].DataContext.DeleteCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    IsVisible="{Binding IsPendingDelete}"
+                                                    Height="36" />
+                                            <Button Content="Cancel"
+                                                    Classes="ghost"
+                                                    Command="{Binding $parent[UserControl].DataContext.CancelDeleteCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    IsVisible="{Binding IsPendingDelete}"
+                                                    Height="36" />
+                                        </StackPanel>
                                     </Grid>
                                 </Border>
                             </DataTemplate>

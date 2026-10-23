@@ -12,6 +12,7 @@ namespace Veldrath.Client.ViewModels;
 public class CharacterEntryViewModel : ViewModelBase
 {
     private bool _isOnline;
+    private bool _isPendingDelete;
     private Bitmap? _classIcon;
     private Bitmap? _hardcoreIcon;
 
@@ -37,6 +38,23 @@ public class CharacterEntryViewModel : ViewModelBase
         get => _isOnline;
         set => this.RaiseAndSetIfChanged(ref _isOnline, value);
     }
+
+    /// <summary>
+    /// True while the user has asked to delete this character but has not yet confirmed.
+    /// Drives the inline Confirm/Cancel buttons on the character select screen.
+    /// </summary>
+    public bool IsPendingDelete
+    {
+        get => _isPendingDelete;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _isPendingDelete, value);
+            this.RaisePropertyChanged(nameof(IsNotPendingDelete));
+        }
+    }
+
+    /// <summary><see langword="true"/> when no delete confirmation is pending; used for inverse visibility bindings.</summary>
+    public bool IsNotPendingDelete => !_isPendingDelete;
 
     /// <summary>True if this character was created in hardcore mode.</summary>
     public bool IsHardcore => Character.IsHardcore;

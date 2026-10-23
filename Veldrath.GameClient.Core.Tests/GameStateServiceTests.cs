@@ -1,5 +1,6 @@
 using Veldrath.GameClient.Core.Abstractions;
 using Veldrath.GameClient.Core.Payloads;
+using Veldrath.GameClient.Core.Services;
 using Veldrath.GameClient.Core.Tests.Infrastructure;
 
 namespace Veldrath.GameClient.Core.Tests;
@@ -29,6 +30,28 @@ public sealed class GameStateServiceTests
         state.CurrentCharacterName.Should().Be("TestHero");
         state.CurrentCharacterLevel.Should().Be(5);
         state.AppliedCalls.Should().ContainSingle(c => c.Method == nameof(IGameStateService.ApplyCharacterSelected));
+    }
+
+    /// <summary>Verifies starter equipment references from CharacterSelected are visible immediately.</summary>
+    [Fact]
+    public void ApplyCharacterSelected_Seeds_Equipment_Placeholders()
+    {
+        var state = new GameStateService();
+        var payload = new CharacterSelectedPayload(
+            Guid.NewGuid(), "Hero", "Warrior", 1, 0L,
+            "fenwick-crossing", "thornveil", 12, 12, 4, 4, 0, 0,
+            10, 10, 10, 10, 10, 10, [], DateTimeOffset.UtcNow,
+            Equipment: new Dictionary<string, string>
+            {
+                ["MainHand"] = "iron-sword",
+                ["OffHand"]  = "wooden-shield",
+            });
+
+        state.ApplyCharacterSelected(payload);
+
+        state.EquippedItems.Should().ContainKey("MainHand");
+        state.EquippedItems["MainHand"].Slug.Should().Be("iron-sword");
+        state.EquippedItems["OffHand"].Name.Should().Be("Wooden Shield");
     }
 
     // ── Zone entry ─────────────────────────────────────────────────────────────

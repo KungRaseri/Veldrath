@@ -1362,6 +1362,24 @@ public class GameViewModelTests : TestBase
     }
 
     [Fact]
+    public void OnInventoryLoaded_Should_Assign_EquipSlot_Based_On_ItemRef()
+    {
+        var vm = MakeVm();
+
+        vm.OnInventoryLoaded([
+            new InventoryItemEntry("wooden-shield", 1, null),
+            new InventoryItemEntry("iron_sword", 1, null),
+            new InventoryItemEntry("leather-helm", 1, null),
+            new InventoryItemEntry("heavy-armor", 1, null),
+        ]);
+
+        vm.InventoryItems[0].EquipSlot.Should().Be("OffHand");
+        vm.InventoryItems[1].EquipSlot.Should().Be("MainHand");
+        vm.InventoryItems[2].EquipSlot.Should().Be("Head");
+        vm.InventoryItems[3].EquipSlot.Should().Be("Chest");
+    }
+
+    [Fact]
     public void OnInventoryLoaded_Should_Clear_Previous_Items_Before_Populating()
     {
         var vm = MakeVm();
@@ -1370,6 +1388,25 @@ public class GameViewModelTests : TestBase
         vm.OnInventoryLoaded([new InventoryItemEntry("new_item", 1, null)]);
 
         vm.InventoryItems.Should().ContainSingle(i => i.ItemRef == "new_item");
+    }
+
+    [Fact]
+    public void OnInventoryLoaded_WithEquippedMap_Should_Populate_Equipment_Slots()
+    {
+        var vm = MakeVm();
+
+        vm.OnInventoryLoaded(
+            [new InventoryItemEntry("health_potion", 2, null)],
+            new Dictionary<string, string>
+            {
+                ["MainHand"] = "iron_sword",
+                ["OffHand"]  = "wooden-shield",
+            });
+
+        vm.EquipmentSlots.Single(s => s.SlotName == "MainHand").ItemRef.Should().Be("iron_sword");
+        vm.EquipmentSlots.Single(s => s.SlotName == "OffHand").ItemRef.Should().Be("wooden-shield");
+        vm.EquipmentSlots.Single(s => s.SlotName == "Chest").ItemRef.Should().BeNull();
+        vm.InventoryItems.Should().ContainSingle(i => i.ItemRef == "health_potion");
     }
 
     // OnShopVisited (new state)

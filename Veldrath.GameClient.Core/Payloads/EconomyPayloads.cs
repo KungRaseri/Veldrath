@@ -3,12 +3,19 @@ using RealmEngine.Shared.Models;
 namespace Veldrath.GameClient.Core.Payloads;
 
 /// <summary>
-/// Hub event payload received when the character equips an item.
+/// Hub event payload received when a character equips an item.
 /// </summary>
+/// <param name="CharacterId">ID of the character whose equipment changed.</param>
 /// <param name="Slot">The equipment slot name (Head, Chest, MainHand, OffHand, Legs, Feet, Ring, Amulet).</param>
-/// <param name="ItemRef">The slug reference of the equipped item.</param>
-/// <param name="Equipped">The full snapshot of all currently equipped items keyed by slot name.</param>
-public sealed record ItemEquippedPayload(string Slot, string ItemRef, Dictionary<string, Item> Equipped);
+/// <param name="ItemRef">The slug reference of the equipped item, or <see langword="null"/> when the slot was cleared.</param>
+/// <param name="Equipped">The full snapshot of all currently equipped items keyed by slot name, when resolved by the server.</param>
+/// <param name="AllEquippedItems">The full equipment map (slot → item ref) after the update.</param>
+public sealed record ItemEquippedPayload(
+    Guid CharacterId,
+    string Slot,
+    string? ItemRef,
+    Dictionary<string, Item>? Equipped = null,
+    Dictionary<string, string>? AllEquippedItems = null);
 
 /// <summary>
 /// Hub event payload received when the character purchases an item from a shop.
@@ -36,11 +43,15 @@ public sealed record ItemSoldPayload(string ItemRef, string Name, int GoldReceiv
 public sealed record ItemDroppedPayload(string ItemRef, List<Item> Inventory);
 
 /// <summary>
-/// Hub event payload received when the character's inventory is loaded from the server.
-/// Contains the full inventory snapshot.
+/// Hub event payload received when the character's inventory and equipment are loaded from the server.
+/// Contains the full bag and equipment snapshots. Items that are equipped are excluded from
+/// <paramref name="ItemDetails"/> so the same item is never shown in both panels.
 /// </summary>
-/// <param name="Items">All items currently in the character's inventory bag.</param>
-public sealed record InventoryLoadedPayload(List<Item> Items);
+/// <param name="ItemDetails">All items currently in the character's inventory bag.</param>
+/// <param name="Equipped">All items currently equipped, keyed by canonical slot name.</param>
+public sealed record InventoryLoadedPayload(
+    List<Item>? ItemDetails = null,
+    Dictionary<string, Item>? Equipped = null);
 
 /// <summary>
 /// Hub event payload received when the character successfully crafts an item.

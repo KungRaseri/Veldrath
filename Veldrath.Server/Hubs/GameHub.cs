@@ -285,6 +285,25 @@ public class GameHub : Hub
             string.IsNullOrWhiteSpace(character.AbilitiesBlob) ? "[]" : character.AbilitiesBlob)
             ?? [];
 
+        // Deserialise the equipment blob so starter gear renders in the equipment panel
+        // immediately, without waiting for the player to open the inventory overlay.
+        var equippedItems = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(character.EquipmentBlob) && character.EquipmentBlob != "{}")
+        {
+            try
+            {
+                var parsed = JsonSerializer.Deserialize<Dictionary<string, string>>(character.EquipmentBlob, _jsonOptions);
+                if (parsed is not null)
+                    equippedItems = new Dictionary<string, string>(parsed, StringComparer.OrdinalIgnoreCase);
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogWarning(ex,
+                    "Failed to deserialise equipment blob for character {CharacterId}; treating as empty.",
+                    character.Id);
+            }
+        }
+
         await Clients.Caller.SendAsync("CharacterSelected", new
         {
             character.Id,
@@ -310,6 +329,7 @@ public class GameHub : Hub
             Charisma               = initAttrs.GetValueOrDefault("Charisma", 10),
             LearnedAbilities       = learnedAbilities,
             SelectedAt             = DateTimeOffset.UtcNow,
+            Equipment              = equippedItems,
         });
     }
 
@@ -812,18 +832,43 @@ public class GameHub : Hub
                 return;
             }
 
+            // Refresh the bag/equipment snapshot so the client can remove the newly equipped
+            // item from the bag list and update the equipment panel in one step.
+            GetInventoryHubResult? snapshot = null;
+            try
+            {
+                snapshot = await _mediator.Send(new GetInventoryHubCommand(characterId));
+            }
+            catch (Exception ex)
+            {
+                // The equip itself succeeded; a failed snapshot should not turn it into an error.
+                _logger.LogWarning(
+                    ex,
+                    "Failed to build inventory snapshot after equipping for character {CharacterId}",
+                    characterId);
+            }
+
+            var snapshotValid = snapshot is { Success: true };
+
             var payload = new
             {
                 CharacterId      = characterId,
                 result.Slot,
                 result.ItemRef,
                 result.AllEquippedItems,
+                Equipped         = snapshotValid
+                    ? snapshot!.Equipped
+                    : new Dictionary<string, RealmEngine.Shared.Models.Item>(),
             };
 
             if (TryGetCurrentZoneGroup(out var zoneGroup))
                 await Clients.Group(zoneGroup).SendAsync("ItemEquipped", payload);
             else
                 await Clients.Caller.SendAsync("ItemEquipped", payload);
+
+            // Inventory contents are private to the caller; only send the refreshed snapshot to them.
+            if (snapshotValid)
+                await SendInventorySnapshotAsync(characterId, snapshot!);
 
             _logger.LogInformation(
                 "Character {CharacterId} {Action} '{ItemRef}' in slot {Slot}",
@@ -1476,11 +1521,7 @@ public class GameHub : Hub
                 return;
             }
 
-            await Clients.Caller.SendAsync("InventoryLoaded", new
-            {
-                CharacterId = characterId,
-                Items       = result.Items,
-            });
+            await SendInventorySnapshotAsync(characterId, result);
         }
         catch (Exception ex)
         {
@@ -2665,6 +2706,17 @@ public class GameHub : Hub
             });
 
         return "Available commands:\n" + string.Join('\n', lines);
+    }
+
+    private async Task SendInventorySnapshotAsync(Guid characterId, GetInventoryHubResult result)
+    {
+        await Clients.Caller.SendAsync("InventoryLoaded", new
+        {
+            CharacterId = characterId,
+            Items       = result.Items,
+            ItemDetails = result.ItemDetails,
+            Equipped    = result.Equipped,
+        });
     }
 
     private static List<InventoryItemDto> ParseInventory(string blob)
