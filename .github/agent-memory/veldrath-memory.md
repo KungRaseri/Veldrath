@@ -1375,3 +1375,21 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
   fallback local dev origins + `Web:BaseUrl`. Regression tests live in `CorsTests`.
 - Playwright UI smoke with a real session confirmed the play page renders the map, enters the
   zone, opens the inventory drawer, and produces no page errors.
+
+**Phase 2 shell (complete)**
+- Game UI components under `web/client/src/lib/game/`: `GameHeader`, `GameFooter`, `LeftSidebar`,
+  `RightSidebar` (Zone/Global/Whisper chat), `CombatPanel`, `GameOverlays` (inventory/shop/quests/
+  settings), `CardinalMap`.
+- `GameSession` now tracks stats, occupants, location/enemies, chat buffer, shop catalog, quests,
+  combat log, death, and overlays. Pure math lives in `reducers.ts` (`appendChat`,
+  `describeCombatTurn`, stat reducers, `barPercent`).
+- Hub methods wired: SelectCharacter, EnterZone, GetMapGraph, TravelToNode, GetInventory,
+  EquipItem, GetQuestLog, SearchArea, RestAtLocation, LeaveZone, VisitShop, GetShopCatalog,
+  BuyItem, SellItem, DropItem, EngageEnemy, AttackEnemy, DefendAction, FleeFromCombat,
+  UseAbilityInCombat, Respawn, SendZoneMessage, SendGlobalMessage, SendWhisper.
+- Live hub smoke: chat round-trip, inventory, quest log (empty), search, rest (CharacterRested),
+  shop catalog (23 items), no errors. Seeded Aldenmere spawns no enemies, so combat is covered by
+  reducer/component tests rather than a live fight.
+- Browser smoke: map, inventory, quests, settings, chat send — zero page/console errors.
+- Vitest now has 31 tests (layout 13, reducers 10, components 5, password 4 minus overlap).
+  Playwright still covers unauthenticated guards; authenticated flows need the seeded local stack.

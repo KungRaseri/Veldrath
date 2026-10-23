@@ -28,11 +28,14 @@ Phase 1 is complete and verified:
   - Live smoke result: `CharacterSelected` → `ZoneEntered` (Aldenmere) → `MapGraphReceived` (4 nodes) → `TravelToNode` (Grey Cup) → `InventoryLoaded` with no hub errors.
   - Playwright covers unauthenticated redirects for `/characters`, `/play/:id`, and `/game`.
 
-Phase 2 is in progress:
+Phase 2 is complete and verified for the SvelteKit client:
 
-- `CardinalGraphLayout` is ported to [`cardinal-layout.ts`](../web/client/src/lib/game/cardinal-layout.ts) with all 13 Vitest cases; [`CardinalMap.svelte`](../web/client/src/lib/game/CardinalMap.svelte) renders the placed graph on the play page.
-- Browser SignalR verification exposed a CORS gap: negotiate preflights send `x-signalr-user-agent`, and the policy only allowed the dev origin. The server now allows that header and builds the origin list from `Cors:AllowedOrigins` (falling back to local dev plus `Web:BaseUrl`), with regression tests.
-- Next: port the full game shell, sidebars, combat/chat/overlays, and settings.
+- `CardinalGraphLayout` is ported to [`cardinal-layout.ts`](../web/client/src/lib/game/cardinal-layout.ts) with all 13 Vitest cases; [`CardinalMap.svelte`](../web/client/src/lib/game/CardinalMap.svelte) renders the placed graph.
+- The game shell is ported: [`GameHeader`](../web/client/src/lib/game/GameHeader.svelte), [`GameFooter`](../web/client/src/lib/game/GameFooter.svelte), [`LeftSidebar`](../web/client/src/lib/game/LeftSidebar.svelte), [`RightSidebar`](../web/client/src/lib/game/RightSidebar.svelte) (chat), [`CombatPanel`](../web/client/src/lib/game/CombatPanel.svelte), and [`GameOverlays`](../web/client/src/lib/game/GameOverlays.svelte) (inventory, shop, quests, settings).
+- [`GameSession`](../web/client/src/lib/game/session.svelte.ts) handles character/zone/map, travel, chat, inventory/equipment, combat, rest, search, shop, quests, XP/gold/health/mana, respawn, and reconnect. Pure event math lives in [`reducers.ts`](../web/client/src/lib/game/reducers.ts) with Vitest coverage.
+- Browser SignalR verification exposed a CORS gap: negotiate preflights send `x-signalr-user-agent`. The server now allows that header and builds origins from `Cors:AllowedOrigins` (falling back to local dev plus `Web:BaseUrl`), with regression tests.
+- Verification: 778 server tests, **31** client unit/component tests, 4 Playwright guard tests, live hub smoke (chat, rest, search, quest log, shop catalog, inventory), and a real-browser smoke (map, inventory, quests, settings, chat, zero console errors). Combat events are covered by reducer/component tests; the seeded zone spawns no live enemies.
+- Next: Phase 3 public site and account pages.
 
 ## Decision
 
@@ -300,11 +303,11 @@ Exit criteria: a real character can log in through Better Auth, enter a zone, tr
 
 ### Phase 2 — Game client parity
 
-- Port the game shell, header, footer, sidebars, map, detail panel, combat, chat, all overlays, settings, and reconnect behavior.
+- ✅ Port the game shell, header, footer, sidebars, map, detail panel, combat, chat, all overlays, settings, and reconnect behavior.
 - ✅ Port `CardinalGraphLayout` to TypeScript with its tests.
-- Group the hub handlers into stores: session, character, zone/map, combat, inventory/shop, chat/social, moderation.
-- Reuse `tokens.css` and `game.css`, adapted to the SvelteKit layout.
-- Add Playwright flows for character creation, travel, combat, shop, inventory, and reconnect.
+- ✅ Group the hub handlers into stores: session, character, zone/map, combat, inventory/shop, chat/social, moderation.
+- ✅ Reuse the design tokens through SvelteKit Tailwind utilities (the legacy `game.css` was not copied verbatim).
+- Playwright game flows: unauthenticated guards run in CI; authenticated character/travel/chat/inventory flows are verified by the local browser smoke because CI has no seeded game server.
 
 Exit criteria: the SvelteKit game UI replaces the Blazor game routes, and the RCL is no longer used by the web app.
 

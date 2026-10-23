@@ -132,7 +132,7 @@ export interface NodeTraveledPayload {
 	regionId?: string | null;
 	locationSlug?: string | null;
 	passiveDiscoveries?: unknown[] | null;
-	spawnedEnemies?: unknown[] | null;
+	spawnedEnemies?: SpawnedEnemy[] | null;
 }
 
 /** Subset of the engine `Item` model that the inventory overlay renders. */
@@ -158,6 +158,140 @@ export interface InventoryLoadedPayload {
 
 export interface KickedPayload {
 	reason?: string | null;
+}
+
+export interface ChatMessage {
+	characterId?: string;
+	channel: string;
+	sender: string;
+	message: string;
+	timestamp: string;
+}
+
+export interface ShopCatalogItem {
+	slug: string;
+	name: string;
+	rarity?: string;
+	price: number;
+}
+
+export interface ShopCatalogPayload {
+	zoneId: string;
+	catalog: ShopCatalogItem[];
+}
+
+export interface QuestLogEntry {
+	slug: string;
+	title: string;
+	status: string;
+}
+
+export interface SpawnedEnemy {
+	id: string;
+	name: string;
+	level: number;
+	currentHealth: number;
+	maxHealth: number;
+}
+
+export interface LocationEnteredPayload {
+	slug: string;
+	name: string;
+	type: string;
+	description?: string | null;
+	enemies?: SpawnedEnemy[] | null;
+	connections?: unknown[] | null;
+}
+
+export interface AreaSearchedPayload {
+	rollValue?: number;
+	anyFound: boolean;
+	discovered?: { slug: string; displayName: string; typeKey: string }[];
+}
+
+export interface CharacterRestedPayload {
+	currentHealth: number;
+	maxHealth: number;
+	currentMana: number;
+	maxMana: number;
+	goldRemaining: number;
+}
+
+export interface AbilityUsedPayload {
+	abilityId: string;
+	manaCost: number;
+	remainingMana: number;
+	healthRestored: number;
+}
+
+export interface CombatStartedPayload {
+	characterId: string;
+	enemyId: string;
+	enemyName: string;
+	enemyLevel: number;
+	enemyCurrentHealth: number;
+	enemyMaxHealth: number;
+	enemyAbilityNames: string[];
+}
+
+export interface CombatTurnPayload {
+	action: string;
+	playerDamage?: number;
+	enemyRemainingHealth?: number;
+	enemyDefeated?: boolean;
+	enemyDamage?: number;
+	enemyAbilityUsed?: string | null;
+	playerRemainingHealth?: number;
+	playerDefeated?: boolean;
+	playerHardcoreDeath?: boolean;
+	xpEarned?: number;
+	goldEarned?: number;
+	abilityId?: string | null;
+	abilityDamage?: number;
+	healthRestored?: number;
+	manaCost?: number;
+	playerRemainingMana?: number;
+}
+
+export interface CombatEndedPayload {
+	characterId: string;
+	reason: string;
+}
+
+export interface PlayerEnteredPayload {
+	characterId: string;
+	characterName: string;
+	zoneId: string;
+}
+
+export interface PlayerLeftPayload {
+	characterId: string;
+	characterName: string;
+	zoneId: string;
+}
+
+export interface CharacterStats {
+	currentHealth: number;
+	maxHealth: number;
+	currentMana: number;
+	maxMana: number;
+	gold: number;
+	level: number;
+	experience: number;
+	unspentAttributePoints: number;
+}
+
+export interface CombatState {
+	active: boolean;
+	enemy: {
+		id: string;
+		name: string;
+		level: number;
+		currentHealth: number;
+		maxHealth: number;
+		abilities: string[];
+	} | null;
+	log: string[];
 }
 
 export function itemLabel(item: InventoryItem): string {
