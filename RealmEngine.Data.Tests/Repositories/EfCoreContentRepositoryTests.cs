@@ -445,6 +445,29 @@ public class EfCoreCharacterClassRepositoryTests
         result.Should().NotBeNull();
         result!.Slug.Should().Be("warrior");
     }
+
+    [Fact]
+    public void GetById_Derives_Equipment_Proficiencies_From_Class_Traits()
+    {
+        using var db = CreateDbContext();
+        var warrior = MakeClass("warrior", "fighters", "Warrior");
+        warrior.Traits = new ActorClassTraits
+        {
+            Melee = true,
+            CanWearHeavy = true,
+            CanWearShield = true,
+        };
+        db.ActorClasses.Add(warrior);
+        db.SaveChanges();
+        var repo = new EfCoreCharacterClassRepository(db, NullLogger<EfCoreCharacterClassRepository>.Instance);
+
+        var result = repo.GetById("warrior");
+
+        result.Should().NotBeNull();
+        result!.ArmorProficiency.Should().Contain(new[] { "light", "medium", "heavy", "shields" });
+        result.WeaponProficiency.Should().Contain(
+            new[] { "simple", "daggers", "swords", "axes", "maces", "polearms" });
+    }
 }
 
 [Trait("Category", "Repository")]

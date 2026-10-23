@@ -432,7 +432,7 @@ public class GameHub : Hub
     /// Sends <c>MapGraphReceived</c> to the caller on success.
     /// </summary>
     /// <param name="mapId">Optional map to load; defaults to the character's current map.</param>
-    public async Task GetMapGraph(string? mapId = null)
+    public async Task GetMapGraph(string? mapId)
     {
         if (!TryGetCharacterId(out var characterId))
         {

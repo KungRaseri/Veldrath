@@ -1762,7 +1762,8 @@ public class GameViewModel : ViewModelBase
     {
         try
         {
-            await _connection.SendCommandAsync("GetMapGraph");
+            // SignalR hub methods do not support optional parameters; send null explicitly.
+            await _connection.SendCommandAsync<object?>("GetMapGraph", null!);
         }
         catch (Exception ex)
         {

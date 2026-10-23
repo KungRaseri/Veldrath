@@ -266,23 +266,35 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
 
             var equipmentResult = await _mediator.Send(equipmentQuery, cancellationToken);
 
-            if (!equipmentResult.Success || equipmentResult.Weapons.Count == 0)
+            if (!equipmentResult.Success)
             {
-                _logger.LogWarning("No equipment found for class {ClassSlug}", classSlug);
+                _logger.LogWarning(
+                    "Equipment query failed for class {ClassSlug}: {Error}",
+                    classSlug,
+                    equipmentResult.ErrorMessage);
                 return selectedEquipment;
             }
 
-            // Select one weapon (prefer specified type if provided)
-            var weapon = preferredWeaponType != null
-                ? equipmentResult.Weapons.FirstOrDefault(w => 
-                    w.WeaponType?.Contains(preferredWeaponType, StringComparison.OrdinalIgnoreCase) == true)
-                  ?? equipmentResult.Weapons.First()
-                : equipmentResult.Weapons.First();
+            if (equipmentResult.Weapons.Count == 0)
+            {
+                _logger.LogWarning(
+                    "No weapons found for class {ClassSlug}; continuing with armor selection",
+                    classSlug);
+            }
+            else
+            {
+                // Select one weapon (prefer specified type if provided)
+                var weapon = preferredWeaponType != null
+                    ? equipmentResult.Weapons.FirstOrDefault(w =>
+                        w.WeaponType?.Contains(preferredWeaponType, StringComparison.OrdinalIgnoreCase) == true)
+                      ?? equipmentResult.Weapons.First()
+                    : equipmentResult.Weapons.First();
 
-            character.EquippedMainHand = weapon;
-            character.Inventory.Add(weapon);
-            selectedEquipment.Add(weapon);
-            _logger.LogInformation("Equipped weapon: {WeaponName} ({WeaponType})", weapon.Name, weapon.WeaponType);
+                character.EquippedMainHand = weapon;
+                character.Inventory.Add(weapon);
+                selectedEquipment.Add(weapon);
+                _logger.LogInformation("Equipped weapon: {WeaponName} ({WeaponType})", weapon.Name, weapon.WeaponType);
+            }
 
             // Select armor if available (prefer specified type if provided)
             if (equipmentResult.Armor.Count > 0)

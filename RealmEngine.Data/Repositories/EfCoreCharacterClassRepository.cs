@@ -99,8 +99,8 @@ public class EfCoreCharacterClassRepository(ContentDbContext db, ILogger<EfCoreC
         IsSubclass   = false,
         ParentClassId = null,
         PrimaryAttributes  = string.IsNullOrEmpty(entity.PrimaryStat) ? [] : [entity.PrimaryStat],
-        ArmorProficiency   = [],
-        WeaponProficiency  = [],
+        ArmorProficiency   = BuildArmorProficiencies(entity),
+        WeaponProficiency  = BuildWeaponProficiencies(entity),
         StartingHealth     = entity.Stats.BaseHealth ?? 100,
         StartingMana       = entity.Stats.BaseMana   ?? 50,
         BonusStrength      = 0,
@@ -126,4 +126,48 @@ public class EfCoreCharacterClassRepository(ContentDbContext db, ILogger<EfCoreC
         },
         Progression = new ClassProgression(),
     };
+
+    // ActorClass stores playstyle traits rather than explicit proficiency lists. Derive the
+    // proficiency tokens expected by GetEquipmentForClassHandler from those traits.
+    private static List<string> BuildArmorProficiencies(Entities.ActorClass entity)
+    {
+        var proficiencies = new List<string> { "light" };
+
+        if (entity.Traits.CanWearHeavy == true)
+        {
+            proficiencies.Add("medium");
+            proficiencies.Add("heavy");
+        }
+
+        if (entity.Traits.CanWearShield == true)
+            proficiencies.Add("shields");
+
+        return proficiencies;
+    }
+
+    private static List<string> BuildWeaponProficiencies(Entities.ActorClass entity)
+    {
+        var proficiencies = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "simple",
+            "daggers",
+        };
+
+        if (entity.Traits.Melee == true)
+            proficiencies.UnionWith(["swords", "axes", "maces", "polearms"]);
+
+        if (entity.Traits.Ranged == true)
+            proficiencies.UnionWith(["bows", "crossbows"]);
+
+        if (entity.Traits.Spellcaster == true)
+            proficiencies.UnionWith(["staves", "wands"]);
+
+        if (entity.Traits.Stealth == true)
+            proficiencies.UnionWith(["swords", "shortswords", "rapiers"]);
+
+        if (entity.Traits.CanDualWield == true)
+            proficiencies.UnionWith(["shortswords", "rapiers"]);
+
+        return [.. proficiencies];
+    }
 }

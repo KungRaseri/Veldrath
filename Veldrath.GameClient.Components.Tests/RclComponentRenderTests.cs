@@ -213,7 +213,8 @@ public class RclComponentRenderTests : BunitContext
         _gameState.ChatMessages.Should().Contain(m => m.Message.Contains("2× iron-sword"));
         _gameState.ChatMessages.Should().Contain(m => m.Message.Contains("summoned you"));
         _gameState.ChatMessages.Should().Contain(m => m.Message.Contains("Teleported to Crestfall"));
-        _fakeHub.SentMethods.Should().Contain("GetMapGraph");
+        // GetMapGraph now sends an explicit null argument (SignalR has no optional parameters).
+        _fakeHub.SentCommands.Should().Contain(c => c.Method == "GetMapGraph");
         Assert.NotNull(cut);
     }
 }

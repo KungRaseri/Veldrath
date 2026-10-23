@@ -412,7 +412,8 @@ public class CharacterSelectViewModel : ViewModelBase
             await _connection.SendCommandAsync<object>("SelectCharacter", character.Id);
             await _connection.SendCommandAsync("GetChatCommands");
             await _connection.SendCommandAsync<object>("EnterZone", zoneId);
-            await _connection.SendCommandAsync("GetMapGraph");
+            // SignalR hub methods do not support optional parameters; send null explicitly.
+            await _connection.SendCommandAsync<object?>("GetMapGraph", null!);
             await _gameVm.InitializeAsync(character.Name, zoneId);
         }
         catch (Exception ex)

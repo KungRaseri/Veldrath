@@ -140,12 +140,14 @@ public sealed class MapStateTests
     }
 
     [Fact]
-    public async Task RequestMapGraphAsync_SendsNoArgument_WhenMapIdMissing()
+    public async Task RequestMapGraphAsync_SendsNullArgument_WhenMapIdMissing()
     {
         var hub = new FakeGameHubConnectionService();
 
         await hub.RequestMapGraphAsync();
 
+        // SignalR hub methods do not support optional parameters, so the null map id
+        // must still be sent as an explicit argument.
         hub.SentCommands.Should().ContainSingle(c => c.MethodName == "GetMapGraph" && c.Arg1 == null);
     }
 

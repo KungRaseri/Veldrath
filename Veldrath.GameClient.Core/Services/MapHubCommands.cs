@@ -16,9 +16,9 @@ public static class MapHubCommands
         this IGameHubConnectionService hub,
         string? mapId = null,
         CancellationToken ct = default) =>
-        string.IsNullOrWhiteSpace(mapId)
-            ? hub.SendAsync("GetMapGraph", ct)
-            : hub.SendAsync("GetMapGraph", mapId, ct);
+        // SignalR hub methods do not support optional parameters, so always send the
+        // argument explicitly (null means "use the character's current map").
+        hub.SendAsync("GetMapGraph", mapId, ct);
 
     /// <summary>Requests travel to a node on the map graph.</summary>
     /// <param name="hub">Game hub connection.</param>
