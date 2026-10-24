@@ -1,5 +1,5 @@
 import { building } from '$app/env';
-import type { Handle } from '@sveltejs/kit/hooks';
+import type { Handle, HandleServerError } from '@sveltejs/kit/hooks';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { getAuth } from '#lib/server/auth';
 import { loadExternalLogins, syncAccountToGameServer } from '#lib/server/foundry-bridge';
@@ -62,4 +62,17 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	return svelteKitHandler({ event, resolve, auth, building });
+};
+
+/**
+ * SvelteKit hides server error details from clients in production, so log the full error
+ * (kind + stack) where the container logs can see it. Without this a failing OAuth callback
+ * or load function only surfaces as an opaque "500 Internal Error" page.
+ *
+ * Kit 3 passes a discriminated union: `kind` is `app` / `framework` / `validation` /
+ * `unknown` and `error` is typed accordingly; returning nothing keeps SvelteKit's defaults.
+ */
+export const handleError: HandleServerError = ({ kind, error, event }) => {
+	const detail = error instanceof Error ? (error.stack ?? error.message) : error;
+	console.error(`[handleError] ${kind} ${event.request.method} ${event.url.pathname}:`, detail);
 };

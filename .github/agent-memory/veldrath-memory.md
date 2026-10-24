@@ -1788,6 +1788,22 @@ account. A `401` therefore means the token was rejected — never "no session" (
   key is ignored whenever `.env` defines `JWT_KEY`.
 - `fetchCharactersForUser` now delegates to `gameApiFetch` (shared token + diagnostics) instead of
   its own fetch loop.
+- `[access] could not load the account profile. An unexpected error occurred.` is the .NET 500
+  ProblemDetails title (from `UseExceptionHandler` in `Program.cs`): the JWT validated, but the
+  endpoint — or provisioning inside `OnTokenValidated` — threw. Root cause found: a fresh login makes
+  SvelteKit fire four concurrent SSR calls (profile, characters, slots, last-session) with the same
+  brand-new subject; each raced to insert the same Identity primary key and the losers rethrew
+  `DbUpdateException` → 500. `AccountProvisioningService` now serializes provisioning per account
+  (`ProvisionLocks` semaphore, cache re-check inside the lock) and polls up to ~200 ms for the
+  winning row; `JwtClaimsEnrichment` catches provisioning exceptions, logs them, and rejects the
+  token instead of surfacing a 500.
+- SvelteKit gained `handleError` in `hooks.server.ts` (Kit 3 signature: `{ kind, error, event }`,
+  returns void — do not destructure `status`/`message`) so server exceptions print a stack trace in
+  the container log instead of vanishing into an "Internal Error" page.
+- Coolify internal hostname is `veldrath-server` (set as the resource's Container Name), so
+  `INTERNAL_BRIDGE_URL` must be `http://veldrath-server:8080` — `http://server:8080` is the
+  docker-compose service name and does not resolve inside Coolify. Without it the account bridge is
+  skipped (`[foundry-bridge] skipped`) and Identity rows only appear via JIT provisioning.
 
 **Security note:** a GitHub PAT was briefly committed inside `.roo/mcp.json` (`6648b6c5`) and the
 file was deleted in `85bb8492`. Never commit MCP tokens — pass them via environment variables, and

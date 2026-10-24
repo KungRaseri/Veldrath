@@ -137,6 +137,12 @@ export async function gameApiFetch<T>(
 				console.warn(
 					`[game-request] ${method} ${path} responded ${response.status}${reason ? `: ${reason}` : ''}`
 				);
+			} else if (response.status >= 500) {
+				// Server faults come back as ProblemDetails with only a generic title, so keep the
+				// raw body in the container logs where it can be matched to the server stack trace.
+				console.error(
+					`[game-request] ${method} ${path} responded ${response.status}: ${text.slice(0, 300)}`
+				);
 			}
 			return { status: response.status, data: null, error: extractError(text, response.status) };
 		}

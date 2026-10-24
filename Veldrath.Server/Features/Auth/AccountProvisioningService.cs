@@ -52,6 +52,12 @@ public sealed class AccountProvisioningService(
     private static readonly TimeSpan CacheDuration = TimeSpan.FromSeconds(60);
     private static readonly ConcurrentDictionary<Guid, (AccountAccessSnapshot Snapshot, DateTimeOffset ExpiresAt)> Cache = new();
 
+    // A fresh login triggers several concurrent SSR calls (profile, characters, slots,
+    // last-session), all carrying the same brand-new subject. Without serialization they all
+    // try to insert the same primary key and every loser fails with DbUpdateException, which
+    // surfaces as a 500. Provision one at a time per account.
+    private static readonly ConcurrentDictionary<Guid, SemaphoreSlim> ProvisionLocks = new();
+
     /// <summary>
     /// Clears the per-process access snapshot cache. Call after changing a user's roles or
     /// permissions when the change must take effect immediately (tests, admin tooling).
@@ -80,25 +86,38 @@ public sealed class AccountProvisioningService(
         if (Cache.TryGetValue(accountId, out var cached) && cached.ExpiresAt > DateTimeOffset.UtcNow)
             return cached.Snapshot;
 
-        var user = await userManager.FindByIdAsync(accountId.ToString());
-        if (user is null)
-            user = await CreateAccountAsync(accountId, username, email, emailVerified);
+        var gate = ProvisionLocks.GetOrAdd(accountId, _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(ct);
+        try
+        {
+            // Another request may have provisioned the account while this one waited.
+            if (Cache.TryGetValue(accountId, out cached) && cached.ExpiresAt > DateTimeOffset.UtcNow)
+                return cached.Snapshot;
 
-        if (user is null)
-            return null;
+            var user = await userManager.FindByIdAsync(accountId.ToString());
+            if (user is null)
+                user = await CreateAccountAsync(accountId, username, email, emailVerified);
 
-        var (roles, permissions) = await RolePermissionResolver.ResolveAsync(user, userManager, roleManager);
+            if (user is null)
+                return null;
 
-        var snapshot = new AccountAccessSnapshot(
-            user.Id,
-            user.UserName ?? accountId.ToString(),
-            user.IsBanned,
-            user.BannedUntil,
-            roles,
-            permissions);
+            var (roles, permissions) = await RolePermissionResolver.ResolveAsync(user, userManager, roleManager);
 
-        Cache[accountId] = (snapshot, DateTimeOffset.UtcNow.Add(CacheDuration));
-        return snapshot;
+            var snapshot = new AccountAccessSnapshot(
+                user.Id,
+                user.UserName ?? accountId.ToString(),
+                user.IsBanned,
+                user.BannedUntil,
+                roles,
+                permissions);
+
+            Cache[accountId] = (snapshot, DateTimeOffset.UtcNow.Add(CacheDuration));
+            return snapshot;
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private async Task<PlayerAccount?> CreateAccountAsync(
@@ -132,14 +151,19 @@ public sealed class AccountProvisioningService(
         }
         catch (DbUpdateException)
         {
-            // Two requests can provision the same account concurrently (for example the
-            // registration page and the background hooks sync). The losing insert fails on
-            // the primary key; detach it and use the row the winning request created.
+            // Another process (a second replica, or the background hooks sync) can provision
+            // the same account concurrently. The losing insert fails on the primary key; detach
+            // it and poll briefly for the winning row before giving up.
             db.Entry(user).State = EntityState.Detached;
 
-            var concurrent = await userManager.FindByIdAsync(accountId.ToString());
-            if (concurrent is not null)
-                return concurrent;
+            for (var poll = 0; poll < 5; poll++)
+            {
+                var concurrent = await userManager.FindByIdAsync(accountId.ToString());
+                if (concurrent is not null)
+                    return concurrent;
+
+                await Task.Delay(40);
+            }
 
             throw;
         }

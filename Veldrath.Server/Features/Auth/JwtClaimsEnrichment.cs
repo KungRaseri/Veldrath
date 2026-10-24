@@ -54,11 +54,30 @@ public static class JwtClaimsEnrichment
         var emailVerified = bool.TryParse(
             context.Principal.FindFirstValue("email_verified"), out var verified) && verified;
 
-        var snapshot = await provisioning.EnsureAccountAsync(
-            accountId, username, email, emailVerified, context.HttpContext.RequestAborted);
+        AccountAccessSnapshot? snapshot;
+        try
+        {
+            snapshot = await provisioning.EnsureAccountAsync(
+                accountId, username, email, emailVerified, context.HttpContext.RequestAborted);
+        }
+        catch (Exception ex)
+        {
+            // Never let provisioning turn an authenticated request into an opaque 500: log the
+            // cause (the client only sees a rejected token) and reject the token explicitly.
+            context.HttpContext.RequestServices
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger(typeof(JwtClaimsEnrichment))
+                .LogError(ex, "Account provisioning threw for {AccountId}.", accountId);
+            context.Fail("The account for this token could not be provisioned.");
+            return;
+        }
 
         if (snapshot is null)
         {
+            context.HttpContext.RequestServices
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger(typeof(JwtClaimsEnrichment))
+                .LogWarning("Account provisioning returned no snapshot for {AccountId}.", accountId);
             context.Fail("The account for this token could not be provisioned.");
             return;
         }

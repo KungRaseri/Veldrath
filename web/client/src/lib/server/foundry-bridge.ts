@@ -38,7 +38,9 @@ export async function syncAccountToGameServer(
 
 	if (!baseUrl || !token) {
 		console.warn(
-			'[foundry-bridge] skipped: INTERNAL_BRIDGE_URL or INTERNAL_BRIDGE_TOKEN is not configured.'
+			'[foundry-bridge] skipped: INTERNAL_BRIDGE_URL and INTERNAL_BRIDGE_TOKEN must be set ' +
+				'so web accounts are mirrored into ASP.NET Identity (Coolify: ' +
+				'INTERNAL_BRIDGE_URL=http://veldrath-server:8080).'
 		);
 		return false;
 	}

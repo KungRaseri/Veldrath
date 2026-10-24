@@ -186,7 +186,9 @@ PUBLIC_API_URL=https://api.veldrath.com
 PUBLIC_HUB_URL=https://api.veldrath.com/hubs/game
 
 # ── Temporary SvelteKit → Identity account bridge (server-side only) ──
-INTERNAL_BRIDGE_URL=http://server:8080
+# Use the server resource's fixed Container Name (veldrath-server) — "server" is
+# the docker-compose service name and does not resolve inside Coolify.
+INTERNAL_BRIDGE_URL=http://veldrath-server:8080
 INTERNAL_BRIDGE_TOKEN=your-shared-internal-bridge-secret
 
 # ── Better Auth social providers (same OAuth apps as the .NET server) ──
@@ -216,7 +218,7 @@ XFF_DEPTH=1
 | `JWT_KEY` / `JWT_ISSUER` / `JWT_AUDIENCE` | game token minting | Must match `Veldrath.Server` JWT validation. |
 | `PUBLIC_API_URL` | browser SSR/client | Public .NET API origin. |
 | `PUBLIC_HUB_URL` | browser SignalR | Public SignalR hub URL. |
-| `INTERNAL_BRIDGE_URL` | `game-request.ts`, `game-api.ts`, `editorial-api.ts`, `foundry-bridge.ts`, `email.ts` | Internal .NET base URL (`http://server:8080`); falls back to `PUBLIC_API_URL` when unset. Never exposed to the browser. |
+| `INTERNAL_BRIDGE_URL` | `game-request.ts`, `game-api.ts`, `editorial-api.ts`, `foundry-bridge.ts`, `email.ts` | Internal .NET base URL — `http://veldrath-server:8080` in Coolify, `http://server:8080` in docker compose. Falls back to `PUBLIC_API_URL` when unset, but the account bridge is then skipped (`[foundry-bridge] skipped`). Never exposed to the browser. |
 | `INTERNAL_BRIDGE_TOKEN` | `foundry-bridge.ts`, `email.ts` | Shared secret matching `InternalBridge__Token`. Unset ⇒ the bridge returns `503`. |
 | `PROTOCOL_HEADER` / `HOST_HEADER` / `ADDRESS_HEADER` / `XFF_DEPTH` | adapter-node | Trust Traefik's forwarded headers. |
 
@@ -260,6 +262,18 @@ would have redirected to `/login` instead.
    `JWT authentication failed: IDX10517: Signature validation failed…`.
    A signature/audience failure answers in ~1 ms, while a successful call takes a few
    hundred milliseconds the first time (just-in-time Identity account provisioning).
+4. **A `500` "Internal Error" page** (for example on `/api/auth/callback/{provider}`) is now
+   logged with its stack trace by `handleError` in
+   [`hooks.server.ts`](../web/client/src/hooks.server.ts); a failing .NET endpoint logs
+   `Unhandled exception for GET /api/account/profile`. Use the first stack trace, not the
+   symptom. A `[game-request] … responded 500` line in the web log carries the .NET
+   ProblemDetails body.
+5. **`[foundry-bridge] skipped`** means `INTERNAL_BRIDGE_URL` and/or
+   `INTERNAL_BRIDGE_TOKEN` are unset on the web resource, so web accounts are never mirrored
+   into Identity (desktop sign-in and the Identity-backed endpoints then rely on JIT
+   provisioning). See §2 for the correct internal hostname.
+6. **`BETTER_AUTH_SECRET appears low-entropy`** — regenerate with `openssl rand -base64 32`
+   and redeploy. This invalidates existing web sessions.
 
 ### Transactional email
 
