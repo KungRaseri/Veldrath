@@ -1705,3 +1705,25 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
 - All web scripts run from `web/` (workspaces root); `npm run test` there runs 56 Vitest tests and
   22 Playwright tests, and the Playwright webServer performs the production `vite build`.
 - `.NET` solution `Realm.Full.slnx` has 22 projects: 12 source + 10 test projects.
+
+### Dependency consolidation (Session-64)
+
+Dependabot PRs #9–#15 were consolidated into `main` instead of merged individually:
+
+- **Applied:** the `actions` group (checkout v7, setup-node v7, setup-dotnet v6, upload-artifact v7,
+  download-artifact v8, codecov v7, docker buildx v4 / build-push v7, pages v5, SonarQube scan v8),
+  the `web-minor-patch` group, `vitest`/`@vitest/coverage-v8` **5.0.5**, `vite` **7.3.7** (security
+  patch), and `@microsoft/signalr` **10.0.11**.
+- **Deferred:** `@sveltejs/adapter-static` 4.0.0 (and `adapter-node` 6) require `@sveltejs/kit` **3**;
+  Vite 8 requires `@sveltejs/vite-plugin-svelte` **7**. Both are Kit-3 migration work — do not bump
+  them independently, and do not merge the `npm_and_yarn` PR that pairs Vite 8 with plugin-svelte 6.
+- `svelte/no-navigation-without-resolve` is disabled in `web/client/eslint.config.js`: the app is
+  served from the domain root (`paths.base` unset), so plain hrefs are correct. Re-enable and adopt
+  `resolve()` from `$app/paths` before introducing a base path.
+- After the bumps: `npm audit` reports 8 low/moderate advisories (SvelteKit 2.x URL/cache advisories,
+  `runed`/`svelte-toolbelt`, and `@tailwindcss/typography` → `postcss-selector-parser`); all clear
+  with a SvelteKit 3 / Tailwind typography refresh.
+
+**Security note:** a GitHub PAT was briefly committed inside `.roo/mcp.json` (`6648b6c5`) and the
+file was deleted in `85bb8492`. Never commit MCP tokens — pass them via environment variables, and
+treat any token that landed in git history as compromised (rotate it).
