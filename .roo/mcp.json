@@ -1,5 +1,15 @@
 {
   "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "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"
+      }
+    },
     "postgres": {
       "command": "docker",
       "args": [
@@ -7,7 +17,7 @@
         "-i",
         "--rm",
         "mcp/postgres",
-        "postgresql://veldrath:veldrath_dev@localhost:5433/veldrath"
+        "postgres://veldrath:veldrath_dev@localhost:5433/veldrath"
       ]
     }
   }

@@ -19,7 +19,8 @@ test('patch notes index renders', async ({ page }) => {
 test('community page renders', async ({ page }) => {
 	await page.goto('/community');
 	await expect(page.getByRole('heading', { name: 'Community', level: 1 })).toBeVisible();
-	await expect(page.getByText('Game server')).toBeVisible();
+	// Scope to the heading: the offline-state copy also contains "game server".
+	await expect(page.getByRole('heading', { name: 'Game server' })).toBeVisible();
 });
 
 test('forgot password page renders', async ({ page }) => {
