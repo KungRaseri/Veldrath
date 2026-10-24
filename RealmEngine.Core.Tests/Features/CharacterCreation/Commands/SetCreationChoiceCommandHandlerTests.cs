@@ -312,19 +312,22 @@ public class SetCreationChoiceCommandHandlerTests
         var result = await handler.Handle(new SetCreationNameCommand(Guid.NewGuid(), "H3ro"), default);
 
         result.Success.Should().BeFalse();
-        result.Message.Should().Contain("only contain letters");
+        result.Message.Should().Contain("letters and spaces");
     }
 
     [Fact]
-    public async Task SetCreationName_ContainsSpace_ReturnsFailed()
+    public async Task SetCreationName_ContainsSpace_IsAccepted()
     {
+        var session = MakeSession();
+        _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
+        _sessionStoreMock.Setup(s => s.UpdateSessionAsync(session)).Returns(Task.CompletedTask);
         var handler = new SetCreationNameHandler(_sessionStoreMock.Object,
             NullLogger<SetCreationNameHandler>.Instance);
 
-        var result = await handler.Handle(new SetCreationNameCommand(Guid.NewGuid(), "Hero One"), default);
+        var result = await handler.Handle(new SetCreationNameCommand(session.SessionId, "Hero One"), default);
 
-        result.Success.Should().BeFalse();
-        result.Message.Should().Contain("only contain letters");
+        result.Success.Should().BeTrue();
+        session.CharacterName.Should().Be("Hero One");
     }
 
     [Fact]

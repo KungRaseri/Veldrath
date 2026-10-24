@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Veldrath.Server.Data.Entities;
 
@@ -7,7 +5,8 @@ namespace Veldrath.Server.Features.Auth;
 
 /// <summary>
 /// Payload sent by the SvelteKit front end to mirror a Better Auth identity into
-/// ASP.NET Core Identity. Used only during the Blazor Foundry transition.
+/// ASP.NET Core Identity. Retained while the desktop client's native fallback signs in
+/// through Identity.
 /// </summary>
 /// <param name="AccountId">Better Auth user ID, which is also the game account GUID.</param>
 /// <param name="Username">Preferred username for the Identity account.</param>
@@ -15,16 +14,18 @@ namespace Veldrath.Server.Features.Auth;
 /// <param name="EmailVerified">Whether Better Auth considers the email verified.</param>
 /// <param name="Password">
 /// Optional plaintext password captured at registration or password change. It is hashed with
-/// Identity's password hasher so Blazor Foundry's existing login endpoint keeps working.
+/// Identity's password hasher so the desktop client's native sign-in keeps working.
 /// </param>
 /// <param name="ExternalLogins">Optional linked OAuth providers so Foundry's OAuth login finds the account.</param>
+/// <param name="DisplayName">Optional display name owned by Better Auth; mirrored to <c>PlayerAccount.DisplayName</c>.</param>
 public sealed record InternalAccountSyncRequest(
     Guid AccountId,
     string? Username,
     string? Email,
     bool EmailVerified,
     string? Password,
-    IReadOnlyList<InternalExternalLogin>? ExternalLogins);
+    IReadOnlyList<InternalExternalLogin>? ExternalLogins,
+    string? DisplayName = null);
 
 /// <summary>An OAuth login linked to a Better Auth account.</summary>
 /// <param name="Provider">Better Auth provider ID, for example <c>discord</c>.</param>
@@ -45,8 +46,8 @@ public sealed record InternalAccountSyncResponse(
 
 /// <summary>
 /// Temporary internal endpoints used by the SvelteKit front end to keep ASP.NET Core
-/// Identity accounts in sync while Blazor Foundry and the desktop client still authenticate
-/// through the .NET auth endpoints.
+/// Identity accounts in sync while the desktop client still authenticates through the
+/// .NET auth endpoints.
 /// <para>
 /// Requests must present the shared secret from <c>InternalBridge:Token</c> in the
 /// <c>X-Internal-Bridge-Token</c> header. The endpoints are intentionally not exposed to
@@ -94,13 +95,8 @@ public static class InternalAccountBridgeEndpoints
         if (request.AccountId == Guid.Empty)
             return Results.BadRequest(new { error = "AccountId is required." });
 
-        var expectedToken = config[BridgeTokenConfigurationKey];
-        if (string.IsNullOrWhiteSpace(expectedToken))
-            return Results.Json(
-                new { error = "Internal account bridge is not configured." }, statusCode: 503);
-
-        if (!IsAuthorized(context, expectedToken))
-            return Results.Json(new { error = "Invalid internal bridge token." }, statusCode: 401);
+        if (InternalBridgeAuthorization.Validate(context, config, "account") is { } failure)
+            return failure;
 
         var snapshot = await provisioning.EnsureAccountAsync(
             request.AccountId, request.Username, request.Email, request.EmailVerified, ct);
@@ -111,6 +107,9 @@ public static class InternalAccountBridgeEndpoints
         var user = await userManager.FindByIdAsync(request.AccountId.ToString());
         if (user is null)
             return Results.Json(new { error = "Account provisioning failed." }, statusCode: 500);
+
+        if (!await ApplyIdentityUpdateAsync(user, request, userManager, logger))
+            return Results.Json(new { error = "Account identity sync failed." }, statusCode: 500);
 
         var passwordSynced = false;
         if (!string.IsNullOrWhiteSpace(request.Password))
@@ -140,6 +139,82 @@ public static class InternalAccountBridgeEndpoints
             user.UserName ?? request.AccountId.ToString(),
             passwordSynced,
             linkedLogins));
+    }
+
+    /// <summary>
+    /// Mirrors username, email, verification, and display-name changes from Better Auth onto
+    /// the existing Identity row. JIT provisioning only creates rows, so updates must be
+    /// applied explicitly on every sync.
+    /// </summary>
+    private static async Task<bool> ApplyIdentityUpdateAsync(
+        PlayerAccount user,
+        InternalAccountSyncRequest request,
+        UserManager<PlayerAccount> userManager,
+        ILogger logger)
+    {
+        var changed = false;
+
+        var username = request.Username?.Trim();
+        if (!string.IsNullOrWhiteSpace(username)
+            && !string.Equals(user.UserName, username, StringComparison.Ordinal))
+        {
+            var result = await userManager.SetUserNameAsync(user, username);
+            if (result.Succeeded)
+            {
+                changed = true;
+            }
+            else
+            {
+                logger.LogWarning(
+                    "Internal account sync could not update the username for {AccountId}: {Errors}",
+                    request.AccountId, string.Join("; ", result.Errors.Select(e => e.Description)));
+            }
+        }
+
+        var email = request.Email?.Trim();
+        if (!string.IsNullOrWhiteSpace(email)
+            && !string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase))
+        {
+            var result = await userManager.SetEmailAsync(user, email);
+            if (result.Succeeded)
+            {
+                changed = true;
+            }
+            else
+            {
+                logger.LogWarning(
+                    "Internal account sync could not update the email for {AccountId}: {Errors}",
+                    request.AccountId, string.Join("; ", result.Errors.Select(e => e.Description)));
+            }
+        }
+
+        var emailMatches = string.IsNullOrWhiteSpace(email)
+            || string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase);
+        if (emailMatches && user.EmailConfirmed != request.EmailVerified)
+        {
+            user.EmailConfirmed = request.EmailVerified;
+            changed = true;
+        }
+
+        var displayName = request.DisplayName?.Trim();
+        if (!string.IsNullOrWhiteSpace(displayName)
+            && !string.Equals(user.DisplayName, displayName, StringComparison.Ordinal))
+        {
+            user.DisplayName = displayName;
+            changed = true;
+        }
+
+        if (!changed)
+            return true;
+
+        var update = await userManager.UpdateAsync(user);
+        if (update.Succeeded)
+            return true;
+
+        logger.LogError(
+            "Internal account sync failed to update the identity for {AccountId}: {Errors}",
+            request.AccountId, string.Join("; ", update.Errors.Select(e => e.Description)));
+        return false;
     }
 
     private static async Task<List<string>> LinkExternalLoginsAsync(
@@ -194,14 +269,4 @@ public static class InternalAccountBridgeEndpoints
     internal static string NormalizeProvider(string provider) =>
         ProviderAliases.TryGetValue(provider, out var canonical) ? canonical : provider;
 
-    private static bool IsAuthorized(HttpContext context, string expected)
-    {
-        var provided = context.Request.Headers[BridgeTokenHeader].ToString();
-        if (string.IsNullOrEmpty(provided))
-            return false;
-
-        return CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(provided),
-            Encoding.UTF8.GetBytes(expected));
-    }
 }

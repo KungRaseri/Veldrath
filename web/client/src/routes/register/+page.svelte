@@ -75,12 +75,26 @@
 		<form class="space-y-4" onsubmit={submit}>
 			<label class="label">
 				<span>Username</span>
-				<input class="input" type="text" bind:value={username} required autocomplete="username" />
+				<input
+					class="input"
+					type="text"
+					bind:value={username}
+					required
+					minlength="3"
+					maxlength="30"
+					autocomplete="username"
+				/>
+				<span class="text-xs text-surface-600-400">
+					3–30 characters: letters, numbers, dots, and underscores.
+				</span>
 			</label>
 
 			<label class="label">
 				<span>Email</span>
 				<input class="input" type="email" bind:value={email} required autocomplete="email" />
+				<span class="text-xs text-surface-600-400">
+					We’ll send a confirmation link so you can verify this address.
+				</span>
 			</label>
 
 			<label class="label">

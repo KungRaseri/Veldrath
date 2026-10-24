@@ -38,6 +38,21 @@ The desktop host serves the SPA from a loopback port and proxies `/api` and `/hu
 game server, injecting the desktop client's JWT server-side. The WebView never holds a
 token. The native Avalonia UI remains the fallback when WebView2 is unavailable.
 
+## Account and character flows
+
+- `/register`, `/login` (email **or** username), `/forgot-password`, `/reset-password`, and
+  `/verify-email` cover the full credential lifecycle.
+- `/account` edits the display name and username, changes the email (confirmation required),
+  resends verification, links/unlinks Discord/Google/Microsoft, lists active sessions with
+  revoke actions, changes the password, and signs out.
+- `/characters` shows roster capacity, a resume-last-session card, character deletion, and
+  the entry point to `/characters/new`.
+- `/characters/new` is a seven-step wizard (name, class, species, background, point-buy
+  attributes, equipment, review/difficulty) backed by the .NET character-creation session API.
+- Transactional email is sent through the .NET server's SMTP configuration via the internal
+  bridge (`src/lib/server/email.ts`). Without `INTERNAL_BRIDGE_URL`/`INTERNAL_BRIDGE_TOKEN`
+  the reset/verification links are logged to the SvelteKit server console for local testing.
+
 ## Checks
 
 ```sh

@@ -19,7 +19,8 @@
 		try {
 			const { data, error } = await authClient.signIn.social({
 				provider,
-				callbackURL: `${window.location.origin}/game`
+				callbackURL: `${window.location.origin}/characters`,
+				errorCallbackURL: `${window.location.origin}/login`
 			});
 
 			if (error) {

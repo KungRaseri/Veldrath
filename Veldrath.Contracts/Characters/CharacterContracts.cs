@@ -36,3 +36,9 @@ public record CharacterDto(
     string? BackgroundId = null,
     string? SpeciesSlug = null,
     string? CurrentZoneLocationSlug = null);
+
+/// <summary>Roster capacity for the authenticated account.</summary>
+/// <param name="Used">Number of active characters currently owned by the account.</param>
+/// <param name="Max">Maximum number of character slots available to the account.</param>
+/// <param name="Remaining">Number of unused character slots.</param>
+public record CharacterSlotsDto(int Used, int Max, int Remaining);

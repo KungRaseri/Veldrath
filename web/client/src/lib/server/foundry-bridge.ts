@@ -10,12 +10,13 @@ export interface FoundryExternalLogin {
 	displayName?: string;
 }
 
-/** Account data mirrored into ASP.NET Core Identity for the Blazor Foundry transition. */
+/** Account data mirrored into ASP.NET Core Identity for the desktop client's native sign-in. */
 export interface FoundryAccountSyncPayload {
 	accountId: string;
 	username?: string | null;
 	email?: string | null;
 	emailVerified?: boolean;
+	displayName?: string | null;
 	password?: string;
 	externalLogins?: FoundryExternalLogin[];
 }
@@ -24,8 +25,8 @@ const SYNC_TIMEOUT_MS = 5000;
 
 /**
  * Mirrors a Better Auth identity into the .NET Identity tables through the temporary
- * internal account bridge. This keeps Blazor Foundry and the desktop login working while
- * Better Auth owns web credentials.
+ * internal account bridge. This keeps the desktop client's native Identity login working
+ * while Better Auth owns web credentials.
  *
  * Failures are logged and reported to the caller but must never block web authentication.
  */
@@ -54,6 +55,7 @@ export async function syncAccountToGameServer(
 				username: payload.username ?? null,
 				email: payload.email ?? null,
 				emailVerified: payload.emailVerified ?? false,
+				displayName: payload.displayName ?? null,
 				password: payload.password ?? null,
 				externalLogins: payload.externalLogins ?? []
 			}),

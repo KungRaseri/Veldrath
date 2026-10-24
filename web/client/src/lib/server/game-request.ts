@@ -18,7 +18,7 @@ export interface GameApiResult<T> {
 
 /** Options for {@link gameApiFetch}. */
 export interface GameRequestOptions {
-	method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+	method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 	json?: unknown;
 	query?: Record<string, string | number | boolean | null | undefined>;
 	timeoutMs?: number;

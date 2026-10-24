@@ -25,6 +25,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 		username: locals.user.username ?? locals.user.name,
 		email: locals.user.email,
 		emailVerified: locals.user.emailVerified,
+		displayName: locals.user.name,
 		password: body.password
 	});
 

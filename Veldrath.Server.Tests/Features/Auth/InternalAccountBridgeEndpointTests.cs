@@ -140,6 +140,49 @@ public class InternalAccountBridgeEndpointTests(WebAppFactory factory)
         matches.Should().Be(1);
     }
 
+    [Fact]
+    public async Task Sync_Updates_Identity_Fields_For_Existing_Account()
+    {
+        var accountId = Guid.NewGuid();
+        var firstName = UniqueName("before");
+        var secondName = UniqueName("after");
+        var firstEmail = $"{firstName}@example.com";
+        var secondEmail = $"{secondName}@example.com";
+
+        var create = await _client.SendAsync(SyncRequest(new
+        {
+            accountId,
+            username = firstName,
+            email = firstEmail,
+            emailVerified = false,
+        }));
+        create.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var update = await _client.SendAsync(SyncRequest(new
+        {
+            accountId,
+            username = secondName,
+            email = secondEmail,
+            emailVerified = true,
+            displayName = "Updated Hero",
+        }));
+
+        update.StatusCode.Should().Be(HttpStatusCode.OK);
+        var payload = await update.Content.ReadFromJsonAsync<InternalAccountSyncResponse>();
+        payload.Should().NotBeNull();
+        payload!.Username.Should().Be(secondName);
+
+        using var scope = factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<PlayerAccount>>();
+        var user = await userManager.FindByIdAsync(accountId.ToString());
+
+        user.Should().NotBeNull();
+        user!.UserName.Should().Be(secondName);
+        user.Email.Should().Be(secondEmail);
+        user.EmailConfirmed.Should().BeTrue();
+        user.DisplayName.Should().Be("Updated Hero");
+    }
+
     private HttpRequestMessage SyncRequest(object body, string? token = BridgeToken)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/internal/accounts/sync")

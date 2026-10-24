@@ -37,6 +37,39 @@ public class CharacterEndpointTests(WebAppFactory factory)
     }
 
     [Fact]
+    public async Task CharacterSlots_Should_Report_Capacity_For_New_Account()
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_SlotsInfo_User"));
+
+        var response = await _client.GetAsync("/api/characters/slots");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var slots = await response.Content.ReadFromJsonAsync<CharacterSlotsDto>();
+        slots.Should().NotBeNull();
+        slots!.Used.Should().Be(0);
+        slots.Max.Should().BeGreaterThan(0);
+        slots.Remaining.Should().Be(slots.Max);
+    }
+
+    [Fact]
+    public async Task CharacterSlots_Should_Decrease_After_Creating_A_Character()
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_SlotsDrop_User"));
+
+        var before = await _client.GetFromJsonAsync<CharacterSlotsDto>("/api/characters/slots");
+        await _client.PostAsJsonAsync("/api/characters",
+            new { Name = "SlotTracker", ClassName = "Warrior" });
+        var after = await _client.GetFromJsonAsync<CharacterSlotsDto>("/api/characters/slots");
+
+        before.Should().NotBeNull();
+        after.Should().NotBeNull();
+        after!.Used.Should().Be(before!.Used + 1);
+        after.Remaining.Should().Be(Math.Max(0, before.Remaining - 1));
+    }
+
+    [Fact]
     public async Task ListCharacters_Should_Require_Authentication()
     {
         using var unauthClient = factory.CreateClient();

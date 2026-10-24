@@ -584,8 +584,11 @@ try
 
     // Auth, character, zone, content & admin endpoints
     app.MapAuthEndpoints();
-    // Temporary bridge for Blazor Foundry / desktop while Better Auth owns web credentials.
+    // Temporary bridge for the desktop client's native Identity sign-in while Better Auth
+    // owns web credentials.
     app.MapInternalAccountBridgeEndpoints();
+    // Transactional email for Better Auth password-reset and address-verification flows.
+    app.MapInternalEmailEndpoints();
     app.MapPasswordResetEndpoints();
     app.MapEmailConfirmationEndpoints();
     app.MapExternalAuthEndpoints();

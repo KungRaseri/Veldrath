@@ -385,6 +385,15 @@ Exit criteria: the desktop client runs the Svelte UI, and the Razor Class Librar
 - ✅ Update all `.slnx` files, CI workflows, VS Code tasks, `AGENTS.md`, memory files, and documentation.
 - ✅ Run the full .NET test suite and the full SvelteKit test suite.
 
+### Account and character lifecycle completion (post-Phase 6)
+
+- ✅ Transactional email: Better Auth password-reset and address-verification messages are delivered through the .NET server's existing `IEmailSender` (SMTP in production, `NullEmailSender` in development) via the bridge-token-guarded `/api/internal/email/password-reset` and `/api/internal/email/verification` endpoints. `sendResetPassword` and `sendVerificationEmail` build links to the SvelteKit `/reset-password` and `/verify-email` pages.
+- ✅ Account management: editable display name and username, verified email change, resend verification, link/unlink social providers, active-session list with single/other-session revocation, and password change. Profile changes are mirrored to ASP.NET Core Identity, including username, email, verification state, and display name.
+- ✅ Character lifecycle: `/characters/new` is a seven-step wizard (name, class, species, background, point-buy attributes, equipment, review/difficulty) backed by the existing creation-session API. The roster now shows slot usage, offers a resume-last-session card, supports character deletion with confirmation, and replaces the old "use the desktop client" dead end.
+- ✅ `GET /api/characters/slots` exposes account roster capacity (`used`, `max`, `remaining`).
+- ✅ Engine name validation accepts letters and spaces, matching the server endpoint and both UI clients.
+- ✅ Verification: full .NET suite, Vitest, Playwright, web build, desktop build, and a live end-to-end run (register → verify email → reset password → create normal and hardcore characters → enter world over SignalR → edit profile/change email/revoke sessions → delete characters).
+
 ## Repository and tooling changes
 
 - ✅ Add `web/` to the root documentation and agent instructions.
@@ -422,4 +431,4 @@ Exit criteria: the desktop client runs the Svelte UI, and the Razor Class Librar
 
 ## Post-migration status
 
-Phases 0–6 are complete. The remaining release check is a Windows WebView2 runtime smoke of the desktop Svelte shell with a live session. Keep the .NET auth endpoints and the internal identity bridge while the desktop native fallback uses ASP.NET Core Identity; retire them when the desktop fully moves to Better Auth.
+Phases 0–6 and the account/character lifecycle completion are complete. The remaining release check is a Windows WebView2 runtime smoke of the desktop Svelte shell with a live session. Keep the .NET auth endpoints and the internal identity bridge while the desktop native fallback uses ASP.NET Core Identity; retire them when the desktop fully moves to Better Auth.

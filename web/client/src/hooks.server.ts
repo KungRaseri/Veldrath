@@ -4,16 +4,22 @@ import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { getAuth } from '$lib/server/auth';
 import { loadExternalLogins, syncAccountToGameServer } from '$lib/server/foundry-bridge';
 
-// The temporary Identity bridge only needs to run once per account per server process.
-// Password sync is handled separately by /api/foundry-bridge/register.
-const bridgedUserIds = new Set<string>();
+// The temporary Identity bridge runs when an account's identity snapshot changes so username,
+// email, and verification updates reach Identity. Password sync is handled separately by
+// /api/foundry-bridge/register.
+const bridgedSnapshots = new Map<string, string>();
+
+function identitySnapshot(user: AuthUser): string {
+	return `${user.username ?? user.name}\u0000${user.email}\u0000${user.emailVerified}`;
+}
 
 async function bridgeAccountOnce(user: AuthUser): Promise<void> {
-	if (bridgedUserIds.has(user.id)) {
+	const snapshot = identitySnapshot(user);
+	if (bridgedSnapshots.get(user.id) === snapshot) {
 		return;
 	}
 
-	bridgedUserIds.add(user.id);
+	bridgedSnapshots.set(user.id, snapshot);
 
 	try {
 		const externalLogins = await loadExternalLogins(user.id);
@@ -22,15 +28,16 @@ async function bridgeAccountOnce(user: AuthUser): Promise<void> {
 			username: user.username ?? user.name,
 			email: user.email,
 			emailVerified: user.emailVerified,
+			displayName: user.name,
 			externalLogins
 		});
 
 		if (!synced) {
-			bridgedUserIds.delete(user.id);
+			bridgedSnapshots.delete(user.id);
 		}
 	} catch (error) {
 		// Allow a retry on the next request; never block page rendering on the bridge.
-		bridgedUserIds.delete(user.id);
+		bridgedSnapshots.delete(user.id);
 		console.warn('[foundry-bridge] background account sync failed.', error);
 	}
 }

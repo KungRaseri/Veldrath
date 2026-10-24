@@ -99,8 +99,8 @@ public class SetCreationNameHandler(
             return new SetCreationChoiceResult { Success = false, Message = "Character name must be at least 2 characters." };
         if (trimmed.Length > 30)
             return new SetCreationChoiceResult { Success = false, Message = "Character name cannot exceed 30 characters." };
-        if (!trimmed.All(char.IsLetter))
-            return new SetCreationChoiceResult { Success = false, Message = "Character name may only contain letters." };
+        if (!trimmed.All(c => char.IsLetter(c) || c == ' '))
+            return new SetCreationChoiceResult { Success = false, Message = "Character name may only contain letters and spaces." };
 
         var session = await sessionStore.GetSessionAsync(request.SessionId);
         if (session is null)

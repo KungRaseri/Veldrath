@@ -27,6 +27,7 @@ public static class CharacterEndpoints
             .RequireAuthorization();
 
         group.MapGet("/",            ListAsync);
+        group.MapGet("/slots",       GetSlotsAsync);
         group.MapPost("/",           CreateAsync);
         group.MapDelete("/{id:guid}", DeleteAsync);
         group.MapGet("/last-session", GetLastSessionAsync);
@@ -44,6 +45,23 @@ public static class CharacterEndpoints
         var accountId = GetAccountId(user);
         var characters = await repo.GetByAccountIdAsync(accountId, ct);
         return Results.Ok(characters.Select(c => ToDto(c, activeCharacters.IsActive(c.Id))));
+    }
+
+    private static async Task<IResult> GetSlotsAsync(
+        ClaimsPrincipal user,
+        ICharacterRepository repo,
+        IPlayerAccountRepository accountRepo,
+        CancellationToken ct)
+    {
+        var accountId = GetAccountId(user);
+        var account = await accountRepo.FindByIdAsync(accountId, ct);
+        if (account is null) return Results.Unauthorized();
+
+        var used = await repo.GetActiveCountAsync(accountId, ct);
+        return Results.Ok(new CharacterSlotsDto(
+            Used: used,
+            Max: account.MaxCharacterSlots,
+            Remaining: Math.Max(0, account.MaxCharacterSlots - used)));
     }
 
     private static async Task<IResult> CreateAsync(

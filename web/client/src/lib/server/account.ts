@@ -4,6 +4,8 @@ import { getAuthDb } from '$lib/server/db';
 
 /** A linked authentication provider for an account. */
 export interface LinkedProvider {
+	/** Better Auth account row ID, used when unlinking a provider. */
+	id: string;
 	providerId: string;
 	createdAt: string;
 }
@@ -16,11 +18,12 @@ export interface LinkedProvider {
  */
 export async function listLinkedProviders(userId: string): Promise<LinkedProvider[]> {
 	const providers = await getAuthDb()
-		.select({ providerId: account.providerId, createdAt: account.createdAt })
+		.select({ id: account.id, providerId: account.providerId, createdAt: account.createdAt })
 		.from(account)
 		.where(eq(account.userId, userId));
 
 	return providers.map((provider) => ({
+		id: provider.id,
 		providerId: provider.providerId,
 		createdAt: provider.createdAt.toISOString()
 	}));

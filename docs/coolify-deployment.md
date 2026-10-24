@@ -146,8 +146,8 @@ XFF_DEPTH=1
 | `JWT_KEY` / `JWT_ISSUER` / `JWT_AUDIENCE` | game token minting | Must match `Veldrath.Server` JWT validation. |
 | `PUBLIC_API_URL` | browser SSR/client | Public .NET API origin. |
 | `PUBLIC_HUB_URL` | browser SignalR | Public SignalR hub URL. |
-| `INTERNAL_BRIDGE_URL` | `foundry-bridge.ts` | Internal .NET base URL (`http://server:8080`). Never exposed to the browser. |
-| `INTERNAL_BRIDGE_TOKEN` | `foundry-bridge.ts` | Shared secret matching `InternalBridge__Token`. |
+| `INTERNAL_BRIDGE_URL` | `foundry-bridge.ts`, `email.ts`, `character-api.ts` | Internal .NET base URL (`http://server:8080`). Never exposed to the browser. |
+| `INTERNAL_BRIDGE_TOKEN` | `foundry-bridge.ts`, `email.ts` | Shared secret matching `InternalBridge__Token`. |
 | `PROTOCOL_HEADER` / `HOST_HEADER` / `ADDRESS_HEADER` / `XFF_DEPTH` | adapter-node | Trust Traefik's forwarded headers. |
 
 ### Internal Identity bridge (desktop compatibility)
@@ -158,11 +158,22 @@ The Avalonia desktop client's native sign-in still authenticates through the .NE
 - Registration posts the plaintext password once to `/api/foundry-bridge/register`,
   which calls the internal .NET endpoint and stores an Identity password hash.
   SvelteKit never persists the password.
-- [`hooks.server.ts`](../web/client/src/hooks.server.ts) performs an account-only sync
-  once per user per web process and links Discord/Google/Microsoft provider accounts.
+- [`hooks.server.ts`](../web/client/src/hooks.server.ts) synchronizes the account whenever
+  the username, email, or verification state changes, and links Discord/Google/Microsoft
+  provider accounts. The sync mirrors username, email, verification, and display name onto
+  the existing Identity row.
 - The internal endpoint requires the `X-Internal-Bridge-Token` header and returns
   `503` when `InternalBridge__Token` is not configured.
 - Keep the bridge while the desktop client relies on .NET Identity sign-in.
+
+### Transactional email
+
+Better Auth password-reset and email-verification messages are delivered by the .NET
+server's `IEmailSender` (SMTP in production, `NullEmailSender` locally) through
+`/api/internal/email/password-reset` and `/api/internal/email/verification`. Configure the
+`EMAIL_*` variables on the **server** service and the internal bridge URL/token on the
+**web** service. The web app rebuilds links to its own `/reset-password` and
+`/verify-email` pages, so `BETTER_AUTH_URL`/`ORIGIN` must be the public site origin.
 
 ### Migrations
 
