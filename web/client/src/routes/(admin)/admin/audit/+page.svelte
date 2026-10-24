@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import Pager from '$lib/components/Pager.svelte';
+	import Pager from '#lib/components/Pager.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -11,7 +11,7 @@
 </svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-4 p-6">
-	<a class="text-sm text-primary-500" href={resolve('/admin')}>← Admin</a>
+	<a class="text-sm text-primary-500" href={resolve('/(admin)/admin')}>← Admin</a>
 
 	<header class="space-y-1">
 		<h1 class="h1">Audit log</h1>

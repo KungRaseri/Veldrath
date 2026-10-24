@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { brandDiscordPath, brandGooglePath } from '$lib/brand-icons';
-	import { authClient } from '$lib/auth-client';
+	import { brandDiscordPath, brandGooglePath } from '#lib/brand-icons';
+	import { authClient } from '#lib/auth-client';
 
 	type Provider = 'discord' | 'google' | 'microsoft';
 

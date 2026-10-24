@@ -1,6 +1,6 @@
 import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { env } from '$env/dynamic/private';
+import { env } from '#lib/server/env';
 import * as schema from '@veldrath/shared/db';
 
 let client: ReturnType<typeof postgres> | undefined;

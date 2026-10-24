@@ -1,4 +1,4 @@
-import type { CharacterSummary } from '$lib/game/types';
+import type { CharacterSummary } from '#lib/game/types';
 
 /** Result of loading the signed-in account's characters through the desktop proxy. */
 export interface DesktopCharacterLoad {

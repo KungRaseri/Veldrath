@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import GameScreen from '$lib/game/GameScreen.svelte';
-	import { GameSession } from '$lib/game/session.svelte';
-	import { loadDesktopCharacters } from '$lib/desktop/api';
-	import type { CharacterSummary } from '$lib/game/types';
+	import GameScreen from '#lib/game/GameScreen.svelte';
+	import { GameSession } from '#lib/game/session.svelte';
+	import { loadDesktopCharacters } from '#lib/desktop/api';
+	import type { CharacterSummary } from '#lib/game/types';
 
 	let characters = $state<CharacterSummary[]>([]);
 	let authenticated = $state(true);

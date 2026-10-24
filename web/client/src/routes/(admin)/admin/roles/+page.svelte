@@ -10,13 +10,13 @@
 </svelte:head>
 
 <div class="mx-auto max-w-5xl space-y-4 p-6">
-	<a class="text-sm text-primary-500" href={resolve('/admin')}>← Admin</a>
+	<a class="text-sm text-primary-500" href={resolve('/(admin)/admin')}>← Admin</a>
 
 	<header class="space-y-1">
 		<h1 class="h1">Role management</h1>
 		<p class="text-surface-600-400">
 			Roles are seeded at server startup. Adjust a player's roles or per-user permissions from
-			<a class="anchor" href={resolve('/admin/users')}>user management</a>.
+			<a class="anchor" href={resolve('/(admin)/admin/users')}>user management</a>.
 		</p>
 	</header>
 

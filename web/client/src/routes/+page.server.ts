@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { listAnnouncements, listLoreArticles, listPatchNotes } from '$lib/server/editorial-api';
+import { listAnnouncements, listLoreArticles, listPatchNotes } from '#lib/server/editorial-api';
 
 export const load: PageServerLoad = async () => {
 	const [announcements, lore, notes] = await Promise.all([

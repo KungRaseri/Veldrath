@@ -1,8 +1,8 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { toGameIdentity } from '$lib/server/access';
-import { listNotifications, markNotificationRead } from '$lib/server/foundry-api';
-import { stringField } from '$lib/server/form';
+import { toGameIdentity } from '#lib/server/access';
+import { listNotifications, markNotificationRead } from '#lib/server/foundry-api';
+import { stringField } from '#lib/server/form';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const result = await listNotifications(toGameIdentity(locals.user!));

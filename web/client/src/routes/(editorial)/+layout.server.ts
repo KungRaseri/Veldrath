@@ -1,4 +1,4 @@
-import { Permissions, requirePermission, requireUser } from '$lib/server/access';
+import { Permissions, requirePermission, requireUser } from '#lib/server/access';
 
 /** Editorial management requires the `content.manage` permission. */
 export const load = async ({ locals, parent }) => {

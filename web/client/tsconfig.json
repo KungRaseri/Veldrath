@@ -1,6 +1,11 @@
 {
 	"extends": "./.svelte-kit/tsconfig.json",
 	"compilerOptions": {
+		"paths": {
+			"#lib": ["./src/lib"],
+			"#lib/*": ["./src/lib/*"],
+			"$app/types": ["./.svelte-kit/types/index.d.ts"]
+		},
 		"experimentalDecorators": true,
 		"useDefineForClassFields": false,
 		"rewriteRelativeImportExtensions": true,

@@ -3,7 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { KeyRound, Lock, ShieldCheck } from '@lucide/svelte';
-	import { authClient } from '$lib/auth-client';
+	import { authClient } from '#lib/auth-client';
 
 	const token = page.url.searchParams.get('token') ?? '';
 

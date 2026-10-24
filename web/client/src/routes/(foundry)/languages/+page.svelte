@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import Pager from '$lib/components/Pager.svelte';
+	import Pager from '#lib/components/Pager.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -18,7 +18,9 @@
 				Constructed and natural languages of Veldrath — phonology, morphology, roots, and registers.
 			</p>
 		</div>
-		<a class="btn preset-filled-primary-500" href={resolve('/languages/new')}>Build a language</a>
+		<a class="btn preset-filled-primary-500" href={resolve('/(foundry)/languages/new')}
+			>Build a language</a
+		>
 	</header>
 
 	{#if data.error}

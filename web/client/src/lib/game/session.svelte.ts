@@ -1,6 +1,6 @@
 import type { HubConnection } from '@microsoft/signalr';
 import { SvelteDate } from 'svelte/reactivity';
-import { createGameHub, type GameHubOptions } from '$lib/hub';
+import { createGameHub, type GameHubOptions } from '#lib/hub';
 import {
 	appendChat,
 	applyAbilityToStats,

@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { listLoreArticles } from '$lib/server/editorial-api';
+import { listLoreArticles } from '#lib/server/editorial-api';
 
 export const load: PageServerLoad = async ({ url }) => {
 	const category = url.searchParams.get('category');

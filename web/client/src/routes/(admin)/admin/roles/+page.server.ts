@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { Permissions, Roles } from '$lib/server/access';
+import { Permissions, Roles } from '#lib/server/access';
 
 const roleCatalog = [
 	{

@@ -64,11 +64,11 @@
   <ItemGroup>
     <PackageVersion Include="Serilog" Version="4.4.0" />
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
-    <PackageVersion Include="Serilog.Extensions.Logging" Version="9.0.2" />
+    <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageVersion Include="Serilog.Sinks.Debug" Version="3.0.0" />
     <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
-    <PackageVersion Include="Serilog.Sinks.Seq" Version="8.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Seq" Version="9.1.0" />
   </ItemGroup>
   <!-- ── Audio ─────────────────────────────────────────────────────────────────── -->
   <ItemGroup>
@@ -93,6 +93,8 @@
   </ItemGroup>
   <!-- ── ReactiveUI ───────────────────────────────────────────────────────── -->
   <ItemGroup>
+    <!-- ReactiveUI 26 replaces System.Reactive.Unit with ReactiveUI.Primitives.RxVoid and
+         Avalonia.ReactiveUI has no matching 12.x release; migrate together with Avalonia 12. -->
     <PackageVersion Include="Microsoft.Reactive.Testing" Version="6.1.0" />
     <PackageVersion Include="ReactiveUI" Version="20.4.1" />
   </ItemGroup>
@@ -102,8 +104,8 @@
     <PackageVersion Include="FluentAssertions" Version="8.11.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageVersion Include="Moq" Version="4.21.0" />
-    <PackageVersion Include="NSubstitute" Version="5.3.0" />
+    <PackageVersion Include="NSubstitute" Version="6.2.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
   </ItemGroup>
 </Project>

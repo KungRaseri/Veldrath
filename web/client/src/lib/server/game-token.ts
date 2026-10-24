@@ -1,5 +1,5 @@
 import { SignJWT } from 'jose';
-import { env } from '$env/dynamic/private';
+import { env } from '#lib/server/env';
 
 /** Short-lived tokens are minted on demand and kept in browser memory. */
 export const GAME_TOKEN_TTL_SECONDS = 600;

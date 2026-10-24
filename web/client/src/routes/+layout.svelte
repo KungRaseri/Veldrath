@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { page } from '$app/state';
-	import SiteFooter from '$lib/components/site/SiteFooter.svelte';
-	import SiteHeader from '$lib/components/site/SiteHeader.svelte';
+	import SiteFooter from '#lib/components/site/SiteFooter.svelte';
+	import SiteHeader from '#lib/components/site/SiteHeader.svelte';
 	import type { LayoutData } from './$types';
 	import './layout.css';
 

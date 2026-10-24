@@ -1,4 +1,4 @@
-import { gameApiFetch } from '$lib/server/game-request';
+import { gameApiFetch } from '#lib/server/game-request';
 
 /** Summary row returned by the content browse endpoint. */
 export interface ContentSummary {

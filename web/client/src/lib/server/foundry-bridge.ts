@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { env } from '$env/dynamic/private';
+import { env } from '#lib/server/env';
 import { account } from '@veldrath/shared/db';
 import { getAuthDb } from './db';
 

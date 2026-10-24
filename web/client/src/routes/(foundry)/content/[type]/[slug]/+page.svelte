@@ -32,5 +32,7 @@
 		<pre class="overflow-auto text-xs">{prettyPayload}</pre>
 	</section>
 
-	<a class="text-sm text-primary-500" href={resolve('/content')}>← Back to content types</a>
+	<a class="text-sm text-primary-500" href={resolve('/(foundry)/content')}
+		>← Back to content types</a
+	>
 </div>

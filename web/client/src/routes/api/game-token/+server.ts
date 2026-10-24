@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { GAME_TOKEN_TTL_SECONDS, mintGameToken } from '$lib/server/game-token';
+import { GAME_TOKEN_TTL_SECONDS, mintGameToken } from '#lib/server/game-token';
 
 export const GET: RequestHandler = async ({ locals }) => {
 	if (!locals.user) {

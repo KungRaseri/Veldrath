@@ -1,14 +1,14 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { toGameIdentity } from '$lib/server/access';
+import { toGameIdentity } from '#lib/server/access';
 import {
 	adminCreatePatchNote,
 	adminDeletePatchNote,
 	adminGetPatchNote,
 	adminPublishPatchNote,
 	adminUpdatePatchNote
-} from '$lib/server/editorial-api';
-import { stringField } from '$lib/server/form';
+} from '#lib/server/editorial-api';
+import { stringField } from '#lib/server/form';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	if (params.id === 'new') {

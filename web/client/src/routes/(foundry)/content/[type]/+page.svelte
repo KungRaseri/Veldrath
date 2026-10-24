@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import Pager from '$lib/components/Pager.svelte';
+	import Pager from '#lib/components/Pager.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -11,7 +11,7 @@
 </svelte:head>
 
 <div class="mx-auto max-w-5xl space-y-4 p-6">
-	<a class="text-sm text-primary-500" href={resolve('/content')}>← All content types</a>
+	<a class="text-sm text-primary-500" href={resolve('/(foundry)/content')}>← All content types</a>
 
 	<header class="space-y-1">
 		<h1 class="h1">{data.contentType}</h1>

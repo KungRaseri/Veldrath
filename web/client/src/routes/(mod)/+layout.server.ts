@@ -1,4 +1,4 @@
-import { Permissions, requirePermission, requireUser } from '$lib/server/access';
+import { Permissions, requirePermission, requireUser } from '#lib/server/access';
 
 /** Moderation routes require the `players.view` permission. */
 export const load = async ({ locals, parent }) => {

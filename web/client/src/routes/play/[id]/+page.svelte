@@ -2,8 +2,8 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import GameScreen from '$lib/game/GameScreen.svelte';
-	import { GameSession } from '$lib/game/session.svelte';
+	import GameScreen from '#lib/game/GameScreen.svelte';
+	import { GameSession } from '#lib/game/session.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

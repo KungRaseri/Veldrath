@@ -1,8 +1,8 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { fetchCharactersForUser } from '$lib/server/game-api';
-import { deleteCharacter, fetchCharacterSlots, fetchLastSession } from '$lib/server/character-api';
-import { stringField } from '$lib/server/form';
+import { fetchCharactersForUser } from '#lib/server/game-api';
+import { deleteCharacter, fetchCharacterSlots, fetchLastSession } from '#lib/server/character-api';
+import { stringField } from '#lib/server/form';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) {

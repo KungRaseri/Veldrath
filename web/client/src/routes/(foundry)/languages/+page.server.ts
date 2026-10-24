@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { browseContent } from '$lib/server/content-api';
+import { browseContent } from '#lib/server/content-api';
 
 export const load: PageServerLoad = async ({ url }) => {
 	const search = url.searchParams.get('search');

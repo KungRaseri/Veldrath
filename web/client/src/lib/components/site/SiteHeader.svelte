@@ -62,26 +62,30 @@
 				<a
 					class="site-nav-link"
 					aria-current={active('/submissions')}
-					href={resolve('/submissions')}
+					href={resolve('/(foundry)/submissions')}
 				>
 					<Hammer size={16} aria-hidden="true" />
 					<span>Foundry</span>
 				</a>
 			{/if}
 			{#if staff?.editorial}
-				<a class="site-nav-link" aria-current={active('/editorial')} href={resolve('/editorial')}>
+				<a
+					class="site-nav-link"
+					aria-current={active('/editorial')}
+					href={resolve('/(editorial)/editorial')}
+				>
 					<PenLine size={16} aria-hidden="true" />
 					<span>Editorial</span>
 				</a>
 			{/if}
 			{#if staff?.mod}
-				<a class="site-nav-link" aria-current={active('/mod')} href={resolve('/mod')}>
+				<a class="site-nav-link" aria-current={active('/mod')} href={resolve('/(mod)/mod')}>
 					<Shield size={16} aria-hidden="true" />
 					<span>Mod</span>
 				</a>
 			{/if}
 			{#if staff?.admin}
-				<a class="site-nav-link" aria-current={active('/admin')} href={resolve('/admin')}>
+				<a class="site-nav-link" aria-current={active('/admin')} href={resolve('/(admin)/admin')}>
 					<Crown size={16} aria-hidden="true" />
 					<span>Admin</span>
 				</a>

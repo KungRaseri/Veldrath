@@ -3,13 +3,13 @@
 	import { resolve } from '$app/paths';
 	import { Check, ChevronLeft, ChevronRight, Sparkles, X } from '@lucide/svelte';
 	import { onMount } from 'svelte';
-	import { validateCharacterName } from '$lib/game/character-name';
+	import { validateCharacterName } from '#lib/game/character-name';
 	import type {
 		BeginCreationSessionResponse,
 		CharacterPreview,
 		EquipmentTypeCatalog,
 		PointBuyConfig
-	} from '$lib/game/creation-types';
+	} from '#lib/game/creation-types';
 	import {
 		STAT_NAMES as statNames,
 		decreaseAllocation,
@@ -18,7 +18,7 @@
 		pointsRemaining,
 		type StatAllocation,
 		type StatName
-	} from '$lib/game/point-buy';
+	} from '#lib/game/point-buy';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

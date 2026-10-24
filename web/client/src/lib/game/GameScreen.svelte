@@ -8,14 +8,14 @@
 		Store,
 		Users
 	} from '@lucide/svelte';
-	import CardinalMap from '$lib/game/CardinalMap.svelte';
-	import CombatPanel from '$lib/game/CombatPanel.svelte';
-	import GameFooter from '$lib/game/GameFooter.svelte';
-	import GameHeader from '$lib/game/GameHeader.svelte';
-	import GameOverlays from '$lib/game/GameOverlays.svelte';
-	import LeftSidebar from '$lib/game/LeftSidebar.svelte';
-	import RightSidebar from '$lib/game/RightSidebar.svelte';
-	import type { GameSession } from '$lib/game/session.svelte';
+	import CardinalMap from '#lib/game/CardinalMap.svelte';
+	import CombatPanel from '#lib/game/CombatPanel.svelte';
+	import GameFooter from '#lib/game/GameFooter.svelte';
+	import GameHeader from '#lib/game/GameHeader.svelte';
+	import GameOverlays from '#lib/game/GameOverlays.svelte';
+	import LeftSidebar from '#lib/game/LeftSidebar.svelte';
+	import RightSidebar from '#lib/game/RightSidebar.svelte';
+	import type { GameSession } from '#lib/game/session.svelte';
 
 	let { session, onLeave }: { session: GameSession; onLeave: () => void } = $props();
 </script>

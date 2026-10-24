@@ -10,7 +10,7 @@
 </svelte:head>
 
 <div class="mx-auto max-w-5xl space-y-4 p-6">
-	<a class="text-sm text-primary-500" href={resolve('/admin')}>← Admin</a>
+	<a class="text-sm text-primary-500" href={resolve('/(admin)/admin')}>← Admin</a>
 
 	<header class="space-y-1">
 		<h1 class="h1">Server status</h1>

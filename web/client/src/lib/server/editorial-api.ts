@@ -1,7 +1,7 @@
-import { env } from '$env/dynamic/private';
+import { env } from '#lib/server/env';
 import { env as publicEnv } from '$env/dynamic/public';
-import type { GameIdentity } from '$lib/server/game-request';
-import { gameApiFetch } from '$lib/server/game-request';
+import type { GameIdentity } from '#lib/server/game-request';
+import { gameApiFetch } from '#lib/server/game-request';
 
 export interface PagedResult<T> {
 	items: T[];

@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { requireUser } from '$lib/server/access';
-import { fetchCharacterSlots, fetchCreationCatalog } from '$lib/server/character-api';
+import { requireUser } from '#lib/server/access';
+import { fetchCharacterSlots, fetchCreationCatalog } from '#lib/server/character-api';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = requireUser(locals);

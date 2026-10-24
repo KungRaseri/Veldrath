@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { syncAccountToGameServer } from '$lib/server/foundry-bridge';
+import { syncAccountToGameServer } from '#lib/server/foundry-bridge';
 
 /**
  * Mirrors a freshly registered Better Auth account into ASP.NET Core Identity, including

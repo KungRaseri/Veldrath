@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
-import { toGameIdentity } from '$lib/server/access';
-import { listModReports, listModUsers } from '$lib/server/admin-api';
+import { toGameIdentity } from '#lib/server/access';
+import { listModReports, listModUsers } from '#lib/server/admin-api';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const identity = toGameIdentity(locals.user!);

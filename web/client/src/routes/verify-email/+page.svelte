@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { CircleAlert, CircleCheck, Mail, Send } from '@lucide/svelte';
-	import { authClient } from '$lib/auth-client';
+	import { authClient } from '#lib/auth-client';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

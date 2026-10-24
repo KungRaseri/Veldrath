@@ -1,14 +1,14 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { toGameIdentity } from '$lib/server/access';
+import { toGameIdentity } from '#lib/server/access';
 import {
 	getModUser,
 	kickPlayer,
 	mutePlayer,
 	unmutePlayer,
 	warnPlayer
-} from '$lib/server/admin-api';
-import { numberField, stringField } from '$lib/server/form';
+} from '#lib/server/admin-api';
+import { numberField, stringField } from '#lib/server/form';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const result = await getModUser(toGameIdentity(locals.user!), params.id);

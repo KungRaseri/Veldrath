@@ -1,6 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { Permissions, Roles, toGameIdentity } from '$lib/server/access';
+import { Permissions, Roles, toGameIdentity } from '#lib/server/access';
 import {
 	assignRole,
 	banPlayer,
@@ -13,8 +13,8 @@ import {
 	unbanPlayer,
 	unmutePlayer,
 	warnPlayer
-} from '$lib/server/admin-api';
-import { numberField, stringField } from '$lib/server/form';
+} from '#lib/server/admin-api';
+import { numberField, stringField } from '#lib/server/form';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const result = await getUser(toGameIdentity(locals.user!), params.id);

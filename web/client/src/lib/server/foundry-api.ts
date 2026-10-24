@@ -1,5 +1,5 @@
-import type { GameIdentity } from '$lib/server/game-request';
-import { gameApiFetch } from '$lib/server/game-request';
+import type { GameIdentity } from '#lib/server/game-request';
+import { gameApiFetch } from '#lib/server/game-request';
 
 /** Paged response returned by the Foundry submission list endpoint. */
 export interface FoundryPagedResult<T> {

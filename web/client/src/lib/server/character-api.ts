@@ -1,4 +1,4 @@
-import type { CharacterSummary } from '$lib/game/types';
+import type { CharacterSummary } from '#lib/game/types';
 import type {
 	AllocateCreationAttributesResponse,
 	BeginCreationSessionResponse,
@@ -10,7 +10,7 @@ import type {
 	CreationOption,
 	LastSession,
 	SetCreationChoiceResponse
-} from '$lib/game/creation-types';
+} from '#lib/game/creation-types';
 import { toGameIdentity } from './access';
 import { gameApiFetch, type GameApiResult } from './game-request';
 
@@ -28,7 +28,7 @@ export type {
 	LastSession,
 	PointBuyConfig,
 	SetCreationChoiceResponse
-} from '$lib/game/creation-types';
+} from '#lib/game/creation-types';
 
 const BASE = '/api/character-creation/sessions';
 

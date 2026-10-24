@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getPatchNote } from '$lib/server/editorial-api';
-import { renderMarkdown } from '$lib/server/markdown';
+import { getPatchNote } from '#lib/server/editorial-api';
+import { renderMarkdown } from '#lib/server/markdown';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const { note, error: apiError } = await getPatchNote(params.slug);

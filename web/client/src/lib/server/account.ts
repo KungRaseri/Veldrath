@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { account } from '@veldrath/shared/db';
-import { getAuthDb } from '$lib/server/db';
+import { getAuthDb } from '#lib/server/db';
 
 /** A linked authentication provider for an account. */
 export interface LinkedProvider {

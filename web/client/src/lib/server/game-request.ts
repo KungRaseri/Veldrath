@@ -1,5 +1,5 @@
-import { env } from '$env/dynamic/private';
-import { mintGameToken } from '$lib/server/game-token';
+import { env } from '#lib/server/env';
+import { mintGameToken } from '#lib/server/game-token';
 
 /** Minimal identity needed to mint a Veldrath.Server game token. */
 export interface GameIdentity {

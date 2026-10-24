@@ -21,6 +21,15 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "FluentAvaloniaUI"
         update-types: ["version-update:semver-major"]
+      # ReactiveUI 26 + Microsoft.Reactive.Testing 7 replace System.Reactive.Unit with
+      # RxVoid; take them together with Avalonia 12.
+      - dependency-name: "ReactiveUI"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.Reactive.Testing"
+        update-types: ["version-update:semver-major"]
+      # MediatR 13+ is commercially licensed; upgrade only after a licensing decision.
+      - dependency-name: "MediatR"
+        update-types: ["version-update:semver-major"]
 
   # SvelteKit web app — npm workspaces rooted at web/
   - package-ecosystem: "npm"
@@ -46,6 +55,9 @@ updates:
       - dependency-name: "@sveltejs/vite-plugin-svelte"
         update-types: ["version-update:semver-major"]
       - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+      # TypeScript 7 is the native port; wait for typescript-eslint/svelte-check support.
+      - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
 
   # GitHub Actions used by .github/workflows/*

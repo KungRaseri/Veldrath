@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { loadExternalLogins, syncAccountToGameServer } from '$lib/server/foundry-bridge';
+import { loadExternalLogins, syncAccountToGameServer } from '#lib/server/foundry-bridge';
 
 /**
  * Re-mirrors the signed-in account's identity into ASP.NET Core Identity after a profile,

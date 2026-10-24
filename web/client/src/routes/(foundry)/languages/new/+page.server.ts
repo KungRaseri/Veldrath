@@ -1,8 +1,8 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { toGameIdentity } from '$lib/server/access';
-import { createSubmission } from '$lib/server/foundry-api';
-import { stringField } from '$lib/server/form';
+import { toGameIdentity } from '#lib/server/access';
+import { createSubmission } from '#lib/server/foundry-api';
+import { stringField } from '#lib/server/form';
 
 export const load: PageServerLoad = async () => ({});
 

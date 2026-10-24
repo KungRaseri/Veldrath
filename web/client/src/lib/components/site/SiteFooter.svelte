@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { brandDiscordPath, brandGithubPath } from '$lib/brand-icons';
+	import { brandDiscordPath, brandGithubPath } from '#lib/brand-icons';
 
 	let { user = null }: { user?: AuthUser | null } = $props();
 </script>

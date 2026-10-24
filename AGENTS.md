@@ -86,7 +86,7 @@ The SvelteKit app in [`web/`](web/) is verified with npm scripts rather than a `
 ├── Veldrath.Contracts/           # Shared API contracts and DTOs
 ├── Veldrath.Assets/              # Asset store/management
 ├── RealmUI.Fonts/                # Custom fonts
-├── web/                          # SvelteKit 2 / Svelte 5 web app (shared + client workspaces)
+├── web/                          # SvelteKit 3 / Svelte 5 web app (shared + client workspaces)
 ├── [Project].Tests/              # One test project per .NET library/application (10 total)
 ├── .github/
 │   ├── agent-memory/             # Canonical memory store (8 files, see Required Reading)
@@ -146,7 +146,7 @@ The engine is UI-agnostic by design: any .NET consumer calls `await mediator.Sen
 [`web/`](web/) is the single web frontend (public site, auth, game client, Foundry, editorial, admin, moderation). It is its own npm-workspaces monorepo (`shared`, `client`) with its own tooling — run all web commands **from `web/`**, never from `web/client/`.
 
 - **Workspaces:** [`web/shared`](web/shared) (`@veldrath/shared` — Better Auth Drizzle schema and generated contracts) and [`web/client`](web/client) (`@veldrath/web` — SvelteKit app).
-- **Stack:** SvelteKit 2, Svelte 5 runes, Vite, Tailwind CSS 4, Skeleton v5, Bits UI, Lucide, Better Auth, Drizzle ORM, adapter-node (web) plus adapter-static (desktop bundle).
+- **Stack:** SvelteKit 3, Svelte 5 runes, Vite 8, Tailwind CSS 4, Skeleton v5, Bits UI, Lucide, Better Auth, Drizzle ORM, adapter-node (web) plus adapter-static (desktop bundle).
 - **Auth:** Better Auth owns web credentials and sessions via [`web/client/src/lib/server/auth.ts`](web/client/src/lib/server/auth.ts) (lazy `getAuth()`) and [`web/client/src/hooks.server.ts`](web/client/src/hooks.server.ts). SvelteKit mints short-lived JWTs; `Veldrath.Server` remains the game authority.
 - **Database:** schema in [`web/shared/src/db/schema.ts`](web/shared/src/db/schema.ts); migrations under `web/shared/db/migrations/`.
 - **Theme/assets:** Veldrath Design System tokens in [`web/client/src/routes/theme.css`](web/client/src/routes/theme.css) and [`web/client/src/routes/brand.css`](web/client/src/routes/brand.css); self-hosted fonts in `web/client/static/fonts/`, imagery in `web/client/static/images/`.
@@ -185,7 +185,7 @@ All package versions are centrally managed in [`Directory.Packages.props`](Direc
 | Serilog | 4.4.0 | Structured logging pipeline behavior |
 | Avalonia | 11.2.3 | UI framework (Veldrath.Client, RealmForge) |
 | ReactiveUI | 20.1.1 | MVVM for Avalonia projects |
-| SvelteKit / Svelte | 2.x / 5 | Web app framework with runes (`web/`) |
+| SvelteKit / Svelte | 3.x / 5 | Web app framework with runes (`web/`, Vite 8) |
 | Tailwind CSS + Skeleton | 4.x / 5 | Styling and UI utilities (`web/`) |
 | ASP.NET Core + SignalR | .NET 10 | Veldrath.Server API and hub |
 | Entity Framework Core | .NET 10 | ORM (Postgres production, SQLite/InMemory for tests) |
@@ -319,7 +319,7 @@ Do **not** create new memory files unless the existing 8 files are insufficient.
 | Validation | FluentValidation pipeline behavior |
 | Logging | Serilog pipeline behavior |
 | Desktop UI | Avalonia + ReactiveUI (MVVM), WebView2 hosts the Svelte desktop build |
-| Web UI | SvelteKit 2 + Svelte 5 runes + Tailwind/Skeleton (Veldrath tokens only) |
+| Web UI | SvelteKit 3 + Svelte 5 runes + Tailwind/Skeleton (Veldrath tokens only) |
 | Web auth/DB | Better Auth + Drizzle (schema in `web/shared`, migrations committed) |
 | Client Core | Veldrath.GameClient.Core (framework-agnostic .NET payloads and services) |
 | Testing | xUnit + FluentAssertions (server/desktop); Vitest + Playwright (web, run from `web/`) |

@@ -1,5 +1,5 @@
 import type { RequestHandler } from './$types';
-import { getAuth } from '$lib/server/auth';
+import { getAuth } from '#lib/server/auth';
 
 export const GET: RequestHandler = ({ request }) => getAuth().handler(request);
 

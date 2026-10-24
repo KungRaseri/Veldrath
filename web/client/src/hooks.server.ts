@@ -1,8 +1,8 @@
-import { building } from '$app/environment';
-import type { Handle } from '@sveltejs/kit';
+import { building } from '$app/env';
+import type { Handle } from '@sveltejs/kit/hooks';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
-import { getAuth } from '$lib/server/auth';
-import { loadExternalLogins, syncAccountToGameServer } from '$lib/server/foundry-bridge';
+import { getAuth } from '#lib/server/auth';
+import { loadExternalLogins, syncAccountToGameServer } from '#lib/server/foundry-bridge';
 
 // The temporary Identity bridge runs when an account's identity snapshot changes so username,
 // email, and verification updates reach Identity. Password sync is handled separately by
@@ -43,19 +43,22 @@ async function bridgeAccountOnce(user: AuthUser): Promise<void> {
 }
 
 export const handle: Handle = async ({ event, resolve }) => {
+	// During prerendering there is no request session and no auth database, and the
+	// build must not require BETTER_AUTH_SECRET. Render routes directly.
+	if (building) {
+		return resolve(event);
+	}
+
 	const auth = getAuth();
+	const session = await auth.api.getSession({ headers: event.request.headers });
 
-	if (!building) {
-		const session = await auth.api.getSession({ headers: event.request.headers });
+	if (session) {
+		event.locals.session = session.session;
+		event.locals.user = session.user;
 
-		if (session) {
-			event.locals.session = session.session;
-			event.locals.user = session.user;
-
-			// Fire-and-forget: provisions the Identity row and links OAuth providers so
-			// Blazor Foundry and the desktop client can still authenticate this account.
-			void bridgeAccountOnce(session.user);
-		}
+		// Fire-and-forget: provisions the Identity row and links OAuth providers so
+		// Blazor Foundry and the desktop client can still authenticate this account.
+		void bridgeAccountOnce(session.user);
 	}
 
 	return svelteKitHandler({ event, resolve, auth, building });

@@ -3,8 +3,8 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { Lock, LogIn, Mail } from '@lucide/svelte';
-	import SocialLoginButtons from '$lib/components/auth/SocialLoginButtons.svelte';
-	import { authClient } from '$lib/auth-client';
+	import SocialLoginButtons from '#lib/components/auth/SocialLoginButtons.svelte';
+	import { authClient } from '#lib/auth-client';
 
 	let identifier = $state('');
 	let password = $state('');

@@ -1724,6 +1724,31 @@ Dependabot PRs #9–#15 were consolidated into `main` instead of merged individu
   `runed`/`svelte-toolbelt`, and `@tailwindcss/typography` → `postcss-selector-parser`); all clear
   with a SvelteKit 3 / Tailwind typography refresh.
 
+### SvelteKit 3 + Vite 8 migration (Session-64)
+
+The web app now runs SvelteKit **3.1.0**, Vite **8.3.5**, `@sveltejs/vite-plugin-svelte` **7**,
+`adapter-node` **6**, `adapter-static` **4**, and `#lib` subpath imports.
+
+- `$lib` is removed in Kit 3. Imports now use `#lib/*`, backed by `web/client/package.json`
+  `"imports": { "#lib/*": "./src/lib/*" }` plus `paths` in `web/client/tsconfig.json` for
+  TypeScript (the package `imports` map alone is not picked up by TS here).
+- `resolve()` is now typed against the generated `RouteId` union, which **includes route groups**
+  (e.g. `/(mod)/mod`). Dynamic routes use `resolve('/play/[id]', { id })`.
+- `$app/environment` is now `$app/env`; `Handle` moved to `@sveltejs/kit/hooks`.
+- `$env/dynamic/private` is snapshotted by the Kit 3 + Vite 8 (Rolldown) build and gets
+  constant-folded, so server secrets must come from `process.env`. `#lib/server/env.ts` reads
+  `process.env` and loads `.env` (trimming quotes) for local dev/preview; all server modules import
+  `env` from there instead of `$env/dynamic/private`.
+- The root `hooks.server.ts` returns `resolve(event)` early while `building` so prerendering needs
+  no auth secret.
+- The `cookie` override is now `^1.1.1` (adapter-node 6 needs `parseCookie`); the `vite` override
+  is `^8.3.5`.
+- Web e2e (`vite preview`) relies on `#lib/server/env.ts` loading `.env`; do not parse `.env` in
+  `playwright.config.ts` — quoted values like `ORIGIN="http://…"` break `new URL()`.
+- Remaining blocked majors are ignored in `.github/dependabot.yml`: Avalonia 12,
+  FluentAvaloniaUI 3, ReactiveUI 26 / Microsoft.Reactive.Testing 7 (RxVoid), MediatR 14
+  (commercial licence), TypeScript 7 (native port; tooling not ready).
+
 **Security note:** a GitHub PAT was briefly committed inside `.roo/mcp.json` (`6648b6c5`) and the
 file was deleted in `85bb8492`. Never commit MCP tokens — pass them via environment variables, and
 treat any token that landed in git history as compromised (rotate it).

@@ -12,7 +12,7 @@
 </svelte:head>
 
 <div class="mx-auto max-w-5xl space-y-4 p-6">
-	<a class="text-sm text-primary-500" href={resolve('/admin/users')}>← User management</a>
+	<a class="text-sm text-primary-500" href={resolve('/(admin)/admin/users')}>← User management</a>
 
 	{#if form?.error}
 		<p class="text-sm text-error-500">{form.error}</p>

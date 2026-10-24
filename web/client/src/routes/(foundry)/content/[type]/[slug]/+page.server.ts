@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getContentDetail } from '$lib/server/content-api';
+import { getContentDetail } from '#lib/server/content-api';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const result = await getContentDetail(params.type, params.slug);

@@ -1,4 +1,4 @@
-import { env } from '$env/dynamic/private';
+import { env } from '#lib/server/env';
 import { env as publicEnv } from '$env/dynamic/public';
 
 /** Transactional messages that Better Auth can ask the game server to deliver. */

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { Mail, Send } from '@lucide/svelte';
-	import { authClient } from '$lib/auth-client';
+	import { authClient } from '#lib/auth-client';
 
 	let email = $state('');
 	let message = $state('');

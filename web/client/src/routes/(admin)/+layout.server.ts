@@ -1,4 +1,4 @@
-import { Permissions, requirePermission, requireUser } from '$lib/server/access';
+import { Permissions, requirePermission, requireUser } from '#lib/server/access';
 
 /** Admin routes require the `admin.users` permission. */
 export const load = async ({ locals, parent }) => {

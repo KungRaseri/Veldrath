@@ -1,8 +1,8 @@
 import { redirect } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
+import { env } from '#lib/server/env';
 import type { PageServerLoad } from './$types';
-import { listLinkedProviders, type LinkedProvider } from '$lib/server/account';
-import { getAuth } from '$lib/server/auth';
+import { listLinkedProviders, type LinkedProvider } from '#lib/server/account';
+import { getAuth } from '#lib/server/auth';
 
 interface AccountSession {
 	id: string;

@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
-	import Pager from '$lib/components/Pager.svelte';
+	import Pager from '#lib/components/Pager.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -18,7 +17,7 @@
 				Review, vote on, and curate community-created items, powers, quests, and languages.
 			</p>
 		</div>
-		<a class="btn preset-filled-primary-500" href={resolve('/submissions/new')}>New submission</a>
+		<a class="btn preset-filled-primary-500" href="/submissions/new">New submission</a>
 	</header>
 
 	{#if data.error}

@@ -10,7 +10,7 @@
 </svelte:head>
 
 <div class="mx-auto max-w-3xl space-y-4 p-6">
-	<a class="text-sm text-primary-500" href={resolve('/admin')}>← Admin</a>
+	<a class="text-sm text-primary-500" href={resolve('/(admin)/admin')}>← Admin</a>
 
 	<header class="space-y-1">
 		<h1 class="h1">Server commands</h1>
@@ -42,5 +42,5 @@
 		<button class="btn preset-filled-primary-500" type="submit">Broadcast announcement</button>
 	</form>
 
-	<a class="text-sm text-primary-500" href={resolve('/admin/status')}>← Server status</a>
+	<a class="text-sm text-primary-500" href={resolve('/(admin)/admin/status')}>← Server status</a>
 </div>

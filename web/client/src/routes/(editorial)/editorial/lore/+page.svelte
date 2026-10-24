@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import Pager from '$lib/components/Pager.svelte';
+	import Pager from '#lib/components/Pager.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -11,14 +11,14 @@
 </svelte:head>
 
 <div class="mx-auto max-w-5xl space-y-4 p-6">
-	<a class="text-sm text-primary-500" href={resolve('/editorial')}>← Editorial</a>
+	<a class="text-sm text-primary-500" href={resolve('/(editorial)/editorial')}>← Editorial</a>
 
 	<header class="flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<h1 class="h1">Lore articles</h1>
 			<p class="text-surface-600-400">{data.total} articles, including drafts.</p>
 		</div>
-		<a class="btn preset-filled-primary-500" href={resolve('/editorial/lore/new')}>New article</a>
+		<a class="btn preset-filled-primary-500" href="/editorial/lore/new">New article</a>
 	</header>
 
 	{#if data.error}

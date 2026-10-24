@@ -1,8 +1,8 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { toGameIdentity } from '$lib/server/access';
-import { listReports, resolveReport } from '$lib/server/admin-api';
-import { stringField } from '$lib/server/form';
+import { toGameIdentity } from '#lib/server/access';
+import { listReports, resolveReport } from '#lib/server/admin-api';
+import { stringField } from '#lib/server/form';
 
 function parseResolved(value: string | null): boolean | null {
 	if (value === 'true') return true;

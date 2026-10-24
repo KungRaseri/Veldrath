@@ -146,7 +146,7 @@ dotnet test Realm.Full.slnx --filter "Category!=UI" `
 **Client / Server**
 - Avalonia 11.2.x+ — Cross-platform UI (Client, RealmForge)
 - ReactiveUI 20.1.x+ — MVVM framework
-- SvelteKit 2 / Svelte 5 — Web frontend (`web/`)
+- SvelteKit 3 / Svelte 5 — Web frontend (`web/`)
 - ASP.NET Core — Server framework
 - SignalR — Real-time client/server communication
 

@@ -22,12 +22,12 @@
 	{/each}
 
 	<div class="grid gap-3 sm:grid-cols-2">
-		<a class="space-y-1 card p-4" href={resolve('/mod/users')}>
+		<a class="space-y-1 card p-4" href={resolve('/(mod)/mod/users')}>
 			<span class="text-3xl font-semibold text-primary-500">{data.userCount}</span>
 			<h2 class="h3">Player accounts</h2>
 			<p class="text-sm text-surface-600-400">Search accounts, view status, warn, mute, or kick.</p>
 		</a>
-		<a class="space-y-1 card p-4" href={resolve('/mod/reports')}>
+		<a class="space-y-1 card p-4" href={resolve('/(mod)/mod/reports')}>
 			<span class="text-3xl font-semibold text-primary-500">{data.openReports}</span>
 			<h2 class="h3">Open reports</h2>
 			<p class="text-sm text-surface-600-400">Review player-submitted behaviour reports.</p>

@@ -1,7 +1,7 @@
-import { env } from '$env/dynamic/private';
+import { env } from '#lib/server/env';
 import { env as publicEnv } from '$env/dynamic/public';
 import { mintGameToken } from './game-token';
-import type { CharacterSummary } from '$lib/game/types';
+import type { CharacterSummary } from '#lib/game/types';
 
 export interface CharacterListResult {
 	characters: CharacterSummary[];

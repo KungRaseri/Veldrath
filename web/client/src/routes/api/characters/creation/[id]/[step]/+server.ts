@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { requireUser } from '$lib/server/access';
+import { requireUser } from '#lib/server/access';
 import {
 	finalizeCreationSession,
 	getCreationPreview,
@@ -10,8 +10,8 @@ import {
 	setCreationEquipment,
 	setCreationName,
 	setCreationSpecies
-} from '$lib/server/character-api';
-import { gameResultResponse } from '$lib/server/game-response';
+} from '#lib/server/character-api';
+import { gameResultResponse } from '#lib/server/game-response';
 
 const choiceSteps = new Set(['name', 'class', 'species', 'background', 'attributes', 'equipment']);
 

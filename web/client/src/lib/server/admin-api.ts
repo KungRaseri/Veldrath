@@ -1,5 +1,5 @@
-import type { GameIdentity } from '$lib/server/game-request';
-import { gameApiFetch } from '$lib/server/game-request';
+import type { GameIdentity } from '#lib/server/game-request';
+import { gameApiFetch } from '#lib/server/game-request';
 
 /** Row returned by the admin/mod user list endpoints. */
 export interface PlayerSummary {

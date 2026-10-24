@@ -1,10 +1,10 @@
 import type { PageServerLoad } from './$types';
-import { toGameIdentity } from '$lib/server/access';
+import { toGameIdentity } from '#lib/server/access';
 import {
 	adminListAnnouncements,
 	adminListLoreArticles,
 	adminListPatchNotes
-} from '$lib/server/editorial-api';
+} from '#lib/server/editorial-api';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const identity = toGameIdentity(locals.user!);

@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
-import { toGameIdentity } from '$lib/server/access';
-import { adminListAnnouncements } from '$lib/server/editorial-api';
+import { toGameIdentity } from '#lib/server/access';
+import { adminListAnnouncements } from '#lib/server/editorial-api';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const page = Math.max(1, Number(url.searchParams.get('page') ?? 1));

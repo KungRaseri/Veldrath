@@ -2,8 +2,8 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { Lock, Mail, ShieldCheck, User, UserPlus } from '@lucide/svelte';
-	import SocialLoginButtons from '$lib/components/auth/SocialLoginButtons.svelte';
-	import { authClient } from '$lib/auth-client';
+	import SocialLoginButtons from '#lib/components/auth/SocialLoginButtons.svelte';
+	import { authClient } from '#lib/auth-client';
 
 	let username = $state('');
 	let email = $state('');

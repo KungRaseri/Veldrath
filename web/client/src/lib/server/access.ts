@@ -1,6 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
-import type { GameIdentity } from '$lib/server/game-request';
-import { gameApiFetch } from '$lib/server/game-request';
+import type { GameIdentity } from '#lib/server/game-request';
+import { gameApiFetch } from '#lib/server/game-request';
 
 /** Canonical role names mirrored from Veldrath.Server's `Roles` class. */
 export const Roles = {

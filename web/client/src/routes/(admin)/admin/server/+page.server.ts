@@ -1,8 +1,8 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions } from './$types';
-import { toGameIdentity } from '$lib/server/access';
-import { broadcastAnnouncement } from '$lib/server/admin-api';
-import { stringField } from '$lib/server/form';
+import { toGameIdentity } from '#lib/server/access';
+import { broadcastAnnouncement } from '#lib/server/admin-api';
+import { stringField } from '#lib/server/form';
 
 export const actions: Actions = {
 	broadcast: async ({ request, locals }) => {

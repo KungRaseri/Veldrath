@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { listPatchNotes } from '$lib/server/editorial-api';
+import { listPatchNotes } from '#lib/server/editorial-api';
 
 export const load: PageServerLoad = async () => {
 	const { page, error } = await listPatchNotes();

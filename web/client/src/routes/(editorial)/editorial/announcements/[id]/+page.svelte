@@ -14,7 +14,7 @@
 </svelte:head>
 
 <div class="mx-auto max-w-3xl space-y-4 p-6">
-	<a class="text-sm text-primary-500" href={resolve('/editorial/announcements')}>
+	<a class="text-sm text-primary-500" href={resolve('/(editorial)/editorial/announcements')}>
 		← Announcements
 	</a>
 

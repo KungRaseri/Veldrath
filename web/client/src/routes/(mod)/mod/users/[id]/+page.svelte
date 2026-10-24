@@ -12,7 +12,7 @@
 </svelte:head>
 
 <div class="mx-auto max-w-4xl space-y-4 p-6">
-	<a class="text-sm text-primary-500" href={resolve('/mod/users')}>← Player accounts</a>
+	<a class="text-sm text-primary-500" href={resolve('/(mod)/mod/users')}>← Player accounts</a>
 
 	{#if form?.error}
 		<p class="text-sm text-error-500">{form.error}</p>

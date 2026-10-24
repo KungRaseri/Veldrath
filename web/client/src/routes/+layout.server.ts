@@ -1,4 +1,4 @@
-import { hasPermission, loadAccountAccess, Permissions } from '$lib/server/access';
+import { hasPermission, loadAccountAccess, Permissions } from '#lib/server/access';
 
 export const load = async ({ locals }) => {
 	const user = locals.user ?? null;
