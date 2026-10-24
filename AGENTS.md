@@ -95,7 +95,7 @@ The SvelteKit app in [`web/`](web/) is verified with npm scripts rather than a `
 ├── .roo/skills/                  # Agent skills (build, test, run, web); catalog in .roo/skills/README.md
 ├── docs/                         # Documentation (DocFX → GitHub Pages)
 ├── wiki/                         # GitHub Wiki content (git submodule)
-├── plans/                        # Architecture and implementation plans
+├── plans/                        # Live plans only; finished designs are folded into docs/
 ├── versions/                     # Component version props files
 ├── config/                       # Grafana dashboards, Prometheus config, etc.
 ├── scripts/                      # Build, asset, and release scripts

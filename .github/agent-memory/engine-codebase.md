@@ -373,7 +373,7 @@ Enhanced [`ActionBar.razor`](Veldrath.GameClient.Components/Components/Shared/Ac
 - **Wiki implementation status tracker** — refreshed Session-47 (`wiki/Engine-Implementation-Status.md`); zone/region wiki pages now reference map graph ids instead of TMX files.
 - **Tile-era hub tests are obsolete** — `GetRegionMap`, `MoveOnRegion`, `ExitZone`, and `ChangeRegion` were removed with the tile layer; do not add success-path tests for them.
 - **Web character creation is session-based** — the RCL `CreateCharacter` wizard already calls `/api/character-creation/sessions/*` for class, species, background, name, attributes, equipment, and finalize. The older "web uses a minimal 3-step flow" plan is superseded.
-- **Remaining real RCL test gaps** — `CreateCharacter` wizard and the `Game.razor` shell; see the Session-47 re-audit in `plans/game-client-parity-checklist.md`.
+- **RCL test gaps** — historical: the Blazor RCL and its test project were deleted in Phase 6; web UI coverage now lives in `web/client/tests`.
 - **Historical fixes kept for context** — all CharacterCreationSessionEndpointTests passing (Session-41), ExternalAuth SecurityStamp fix, EnemyAiService disposal guard, achievement triggers, settings cleanup, Discord embed tests.
 ### Map graph authoring tools (Session-47, 2026-10-22)
 
@@ -420,7 +420,7 @@ Enhanced [`ActionBar.razor`](Veldrath.GameClient.Components/Components/Shared/Ac
 
 ### Web-first RCL actions (Session-53, 2026-10-23)
 
-- The browser game client is the primary experience; see `plans/web-first-roadmap.md`.
+- The browser game client (SvelteKit) is the primary experience; see `docs/client-ui-architecture.md`.
   Desktop/Avalonia follows web decisions.
 - **Hub request shapes matter.** `VisitShop` requires `{ ZoneId }`, `RestAtLocation` requires
   `{ LocationId, CostInGold }`, and `NavigateToLocation` requires `{ LocationSlug }`. Sending a

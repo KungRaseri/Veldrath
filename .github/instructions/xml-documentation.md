@@ -357,4 +357,3 @@ When you add or modify a public member, run through this mental list:
 ## See Also
 
 - [`Directory.Build.targets`](../../Directory.Build.targets) — The enforcement mechanism.
-- [`.github/instructions/blazor-component-development.md`](blazor-component-development.md) — Blazor-specific doc conventions for components.

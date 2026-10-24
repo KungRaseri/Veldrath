@@ -29,10 +29,10 @@ So the remaining work is **residue removal (no behaviour risk)** plus **one real
 | [`docs/design-system.md`](../docs/design-system.md) | MudBlazor-only content: §5.5 spacing delegation, MudBlazor token map in §8.2, RealmFoundry tables (§3.1, §7.8), §8.3, §8.4, §8.5 migration notes. | Move to a single appendix "Retired surfaces (Blazor/MudBlazor)" at the end; keep Avalonia + SvelteKit sections as the live reference. |
 | [`web/shared/db/README.md`](../web/shared/db/README.md:41) | Section "Why this is safe on the existing Blazor database" | Reword to "the existing Postgres database". |
 | `wiki/` (submodule) | `Foundry-Overview.md` describes a Blazor Server app; `Home.md`, `_Sidebar.md`, `Engine-Implementation-Status.md` list RealmFoundry / `Veldrath.Auth.Blazor` / Caddy. | Rewrite `Foundry-Overview.md` as the `/foundry` route group doc, fix Home/Sidebar/Implementation-Status. Separate commit inside the submodule. |
-| `plans/` (19 files) | Historical Blazor designs: `web-client-architecture`, `game-client-unification-plan/_gaps`, `game-client-parity-checklist`, `realmfoundry-web-audit`, `realmfoundry-migration-status`, `css-audit-game-client-components`, `media-breakpoint-strategy`, `page-refresh-resilience-plan`, `game-routing-guard-plan`, `gameplay-view-refactor-plan`, `map-view-refactor-plan`, `text-dashboard-map-graph-plan`, `auth-delegating-handler-design`, `web-character-creation-sync-plan`, `infrastructure-coolify-extraction-plan`, `coolify-compatibility-analysis`, `web-first-roadmap`, `docker-compose-coolify-spec`. | Add a one-line historical banner (`> **Status:** historical — Blazor era, superseded by …`) and index them under `plans/README.md` as archived. Do **not** delete: they document why the current design looks the way it does. |
+| `plans/` (23 files) | Historical designs: the 19 Blazor-era plans, the two superseded rendering plans, `reactive-ui-pivot-plan`, and `sveltekit-phase0`. | **Delete them.** First extract what is still true: the panel-driven UI and map-graph decisions moved to [`docs/client-ui-architecture.md`](../docs/client-ui-architecture.md); everything else is already covered by `docs/` and the agent memory. `plans/` keeps only `blazor-decommission-and-cleanup.md`, `sveltekit-migration.md`, and a short `README.md`. |
 | [`docs/deployment.md`](../docs/deployment.md:180) | "The old Blazor `Veldrath.Web` and `RealmFoundry` containers … are retired." | Keep — accurate history. |
 
-Acceptance: `rg -i "blazor|mudblazor" --glob '!plans/**' --glob '!web/llms/**'` returns only intended mentions (design-system appendix, archived plans, deployment history note).
+Acceptance: `grep -ril "blazor\|mudblazor"` (excluding `node_modules`, `bin`, `obj`, `.vs`, `web/llms`, build output) returns only intended mentions: the design-system appendix, the deployment history note, agent-memory session logs, and historical port comments.
 
 ---
 
@@ -110,15 +110,26 @@ graph LR
 **Acceptance for the whole effort**
 1. `rg -i blazor` outside `plans/`, `web/llms/`, and the design-system appendix finds nothing.
 2. `dotnet build Realm.Full.slnx`, the 10 .NET test projects, and `cd web && npm run typecheck && npm run lint && npm run test && npm run build` all pass after every PR.
-3. `plans/README.md` marks every plan with a status; no active plan references a deleted project.
+3. `plans/` contains only live plans plus a short `README.md`; no document references a deleted project or plan.
 4. No documentation tells a reader to run a command that no longer exists.
 
 ---
 
-## 6. Open questions (need answers before implementation)
+## 6. Decisions locked
 
-1. **`scripts/dev/blazor/`** — delete outright, or move to `docs/archive/blazor/` first?
-2. **Plans** — banner + index (recommended), or move the Blazor-era ones into `plans/archive/`?
-3. **Identity** — confirm Option 1 (keep) until the desktop shell decision, or start Option 2 now?
-4. **`docker-compose.api.yml` / `docker-compose.debugging.yml`** — keep for local API debugging, or delete as unused?
-5. **Cleanup scope** — do you want the whole W1–W6 sweep, or only W1 + W2 (docs + dead code) first?
+1. **`scripts/dev/blazor/`** — deleted (it was untracked, so nothing needed committing).
+2. **Plans** — delete finished/superseded plans; keep only `blazor-decommission-and-cleanup.md`,
+   `sveltekit-migration.md`, and a short `README.md`. Durable decisions were extracted first into
+   [`docs/client-ui-architecture.md`](../docs/client-ui-architecture.md) (the only unique knowledge
+   in the deleted set: panel-driven UI and the DB map graph).
+3. **Identity** — Option 1 (keep ASP.NET Core Identity) until the desktop shell decision; Option 2 is
+   revisited together with desktop finalization, Option 3 only after that.
+4. **Scope** — full W1–W6 sweep, executed in order, Part 1 as its own commit.
+5. **`docker-compose.api.yml` / `docker-compose.debugging.yml`** — still open; decided in W5.
+
+## 7. Open questions
+
+1. **`docker-compose.api.yml` / `docker-compose.debugging.yml`** — keep for local API debugging, or
+   delete as unused?
+2. **`web/llms/`** (~5 MB of vendored upstream docs) — keep in-repo or move to a release artifact?
+3. **`Veldrath.Contracts`** — do internal DTOs stay there, or move next to their feature slices?

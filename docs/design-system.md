@@ -751,9 +751,8 @@ were retired when the web moved to the SvelteKit app in [`web/`](../web/).
 - **Historical only:** every MudBlazor rule (component mapping, `--mud-palette-*` usage,
   `.mud-button-filled` overrides, `#blazor-error-ui`, reconnect-modal CSS, MudBlazor spacing
   utilities) and the RealmFoundry / Veldrath.Web columns in the §3.1 audit table.
-- **Detailed history:** [`plans/realmfoundry-web-audit.md`](../plans/realmfoundry-web-audit.md),
-  [`plans/realmfoundry-migration-status.md`](../plans/realmfoundry-migration-status.md),
-  [`plans/css-audit-game-client-components.md`](../plans/css-audit-game-client-components.md), and
-  [`plans/sveltekit-migration.md`](../plans/sveltekit-migration.md).
+- **Detailed history:** [`plans/sveltekit-migration.md`](../plans/sveltekit-migration.md) and the
+  session notes in [`.github/agent-memory/`](../.github/agent-memory/). The Blazor-era design
+  documents were deleted once their durable decisions moved into this repository's docs.
 - **Do not reintroduce:** Razor/MudBlazor guidance for web UI. New web work uses Svelte 5 runes,
   Skeleton, and VDS tokens — see the [`web-ui`](../.roo/skills/web-ui/SKILL.md) skill.

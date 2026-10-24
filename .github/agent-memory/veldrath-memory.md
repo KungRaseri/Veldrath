@@ -755,7 +755,7 @@ Replaces `ZoneSessionRepository`. Implements all 12 interface methods.
 - **Open items for next session**: Hub integration success-path tests for region methods; world lore resolution (6 open design items); audio/sound expansion
 
 ### Session-41 (2026-06-30) — Reactive UI Pivot + Test Fixes
-- **Reactive UI pivot**: Removed all sprite/ASCII rendering (`Veldrath.Client.Rendering/` + `TilemapControl`/`RegionTilemapControl`). Replaced Zone tilemap with `ZoneLocationPanelView`+VM (reactive list-based panel showing room description, exits, entities). Region view now handled entirely by side panel (`GameRegionPanelView`). Keyboard movement removed — pure point-and-click. Client-side tile description service added. See `plans/reactive-ui-pivot-plan.md`.
+- **Reactive UI pivot**: Removed all sprite/ASCII rendering (`Veldrath.Client.Rendering/` + `TilemapControl`/`RegionTilemapControl`). Replaced Zone tilemap with `ZoneLocationPanelView`+VM (reactive list-based panel showing room description, exits, entities). Region view now handled entirely by side panel (`GameRegionPanelView`). Keyboard movement removed — pure point-and-click. Client-side tile description service added. See `docs/client-ui-architecture.md`.
 - **ExternalAuthEndpointTests fix**: Added `SecurityStamp` to test user creation in `ExternalAuthEndpointTests.cs` — was throwing `InvalidOperationException: User security stamp cannot be null`. The `UserManager.CreateAsync` call requires a non-null security stamp for external login flows.
 - **EnemyAiService fix**: Added disposal-state guard in `StopAsync`/`Dispose` to prevent `ObjectDisposedException: The CancellationTokenSource has been disposed` — happens when `Dispose` is called concurrently with the periodic AI update loop. Added `_disposed` flag checks in both `StopAsync` and the timer callback.
 - **Final test count verified**: `dotnet test Realm.Full.slnx` — **4,739 tests, 0 failures** across all 11 test projects. Full suite is fully green.
@@ -1098,8 +1098,8 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
   Server 759, Client 663, Core 1,944, Shared 803, Components 80, others).
 - RealmForge ran 20 s without crashing; the expected Postgres connection error is handled
   and the window stays up when the content database is offline.
-- `plans/text-dashboard-map-graph-plan.md` Phase 8 marked complete; no remaining phases in
-  the text-dashboard/map-graph effort.
+- The text-dashboard/map-graph effort is complete; the plan was later folded into
+  `docs/client-ui-architecture.md` and deleted.
 
 ---
 
@@ -1109,8 +1109,8 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
 - Wiki zone/region pages now show `Map Graph` (`zone:<slug>` / `region:varenmark`) and entry-node ids instead of TMX file names and sizes.
 - `wiki/Engine-Implementation-Status.md` refreshed for Session-47/48 (4,759 tests, unified map graph).
 - `engine-codebase.md` open items corrected: `PurgeExpiredAsync` is scheduled, tile-era hub tests are obsolete, and web character creation is session-based.
-- `game-client-parity-checklist.md` re-audited; obsolete tile rows are flagged and live gaps documented.
-- `web-character-creation-sync-plan.md` marked superseded; auth-plan leftovers corrected (idempotency and rate limiting already implemented).
+- The game-client parity checklist was re-audited (later deleted with the Blazor RCL); the live hub contract is `Veldrath.GameClient.Core/Payloads` + `web/client/src/lib/game/types.ts`.
+- The character-creation sync plan was marked superseded (later deleted); auth-plan leftovers corrected (idempotency and rate limiting already implemented).
 
 **P2 code**
 - `Game.razor`: subscriptions added for `EnemyEngaged`, `EnemySpawned`, `OnWhisper`, `OnEmote`, `OnAnnouncement`, `CharacterIgnored`, `OnWarned`, `OnMuted`, `OnTeleported`, `OnSummoned`, and `OnItemReceived`.
@@ -1205,7 +1205,7 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
 ### Session-53 (2026-10-23) — Web-first pivot and RCL action correctness
 
 **Direction**
-- The browser game client (RCL hosted by `Veldrath.Web`) is now the primary experience. Desktop/Avalonia follows decisions made in the web client. See `plans/web-first-roadmap.md`.
+- The browser game client (SvelteKit) is now the primary experience. Desktop/Avalonia follows decisions made in the web client. See `docs/client-ui-architecture.md`.
 
 **Web action fixes**
 - `LeftSidebar` now sends the server-bound request shapes: `VisitShop { ZoneId }`, `RestAtLocation { LocationId, CostInGold }`, `NavigateToLocation { LocationSlug }`.
