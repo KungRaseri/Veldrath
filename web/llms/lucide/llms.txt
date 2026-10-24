@@ -16,7 +16,7 @@ Made by the community.
 
 - [Color - Lucide](/guide/lucide/basics/color.md): Learn how to customize the color of Lucide icons in your Vanilla JavaScript applications using the color attribute and CSS.
 - [Sizing - Lucide](/guide/lucide/basics/sizing.md): Learn how to adjust the size of Lucide icons in your Vanilla JavaScript applications using the width and height attributes and CSS.
-- [Stroke width - Lucide](/guide/lucide/basics/stroke-width.md): Learn how to customize the stroke width of Lucide icons in your Vanilla JavaScript applications using the strokeWidth and absoluteStrokeWidth attributes.
+- [Stroke width - Lucide](/guide/lucide/basics/stroke-width.md): Learn how to customize the stroke width of Lucide icons in your Vanilla JavaScript applications using the strokeWidth and nonScalingStroke attributes.
 
 ### Advanced
 
@@ -29,7 +29,7 @@ Made by the community.
 
 ### Resources
 
-- [Accessibility](/guide/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
+- [Accessibility](/how-to/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
 
 - [Lucide for React](/guide/react.md): Lucide provides a React icon component library that makes it easy to integrate icons into your React applications. Each icon is available as a standalone React component, allowing for seamless integration and customization.
 - [Getting started - React](/guide/react/getting-started.md): This guide will help you get started with Lucide in your React project.
@@ -40,7 +40,7 @@ Made by the community.
 
 - [Color - React](/guide/react/basics/color.md): Learn how to adjust the color of icons in your React application using the `color` prop or by using parent elements text color value.
 - [Sizing - React](/guide/react/basics/sizing.md): Learn how to adjust the size of icons in your React application using the `size` prop or by using CSS.
-- [Stroke width - React](/guide/react/basics/stroke-width.md): Learn how to adjust the stroke width of icons in your React application using the `strokeWidth` prop or adjust the strokeWidth appearance using the `absoluteStrokeWidth` prop.
+- [Stroke width - React](/guide/react/basics/stroke-width.md): Learn how to adjust the stroke width of icons in your React application using the `strokeWidth` prop or adjust the strokeWidth appearance using the `nonScalingStroke` prop.
 
 ### Advanced
 
@@ -55,7 +55,7 @@ Made by the community.
 
 ### Resources
 
-- [Accessibility](/guide/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
+- [Accessibility](/how-to/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
 - [Visual Studio Code](/guide/vscode.md): Learn how to use Lucide icons in Visual Studio Code, including tips on turning off autocomplete, viewing JS docs and icon previews, and exploring third-party plugins for enhanced functionality.
 
 - [Lucide for Vue](/guide/vue.md): Lucide provides a Vue icon component library that makes it easy to integrate icons into your Vue applications. Each icon is available as a standalone Vue component, allowing for seamless integration and customization.
@@ -66,7 +66,7 @@ Made by the community.
 
 - [Color - Vue](/guide/vue/basics/color.md): Learn how to adjust the color of icons in your Vue application using the `color` prop or by using parent elements text color value.
 - [Sizing - Vue](/guide/vue/basics/sizing.md): Learn how to adjust the size of icons in your Vue application using the `size` prop or by using CSS.
-- [Stroke width - Vue](/guide/vue/basics/stroke-width.md): Learn how to adjust the stroke width of icons in your Vue application using the `strokeWidth` prop or adjust the strokeWidth appearance using the `absoluteStrokeWidth` prop.
+- [Stroke width - Vue](/guide/vue/basics/stroke-width.md): Learn how to adjust the stroke width of icons in your Vue application using the `strokeWidth` prop or adjust the strokeWidth appearance using the `nonScalingStroke` prop.
 
 ### Advanced
 
@@ -80,7 +80,7 @@ Made by the community.
 
 ### Resources
 
-- [Accessibility](/guide/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
+- [Accessibility](/how-to/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
 - [Visual Studio Code](/guide/vscode.md): Learn how to use Lucide icons in Visual Studio Code, including tips on turning off autocomplete, viewing JS docs and icon previews, and exploring third-party plugins for enhanced functionality.
 
 - [Lucide for Svelte](/guide/svelte.md): Lucide provides a Svelte icon component library that makes it easy to integrate icons into your Svelte applications. Each icon is available as a standalone Svelte component, allowing for seamless integration and customization.
@@ -91,7 +91,7 @@ Made by the community.
 
 - [Color - Svelte](/guide/svelte/basics/color.md): Learn how to adjust the color of icons in your Svelte application using the `color` prop or by using parent elements text color value.
 - [Sizing - Svelte](/guide/svelte/basics/sizing.md): Learn how to adjust the size of icons in your Svelte application using the `size` prop or by using CSS.
-- [Stroke width - Svelte](/guide/svelte/basics/stroke-width.md): Learn how to adjust the stroke width of icons in your Svelte application using the `strokeWidth` prop or adjust the strokeWidth appearance using the `absoluteStrokeWidth` prop.
+- [Stroke width - Svelte](/guide/svelte/basics/stroke-width.md): Learn how to adjust the stroke width of icons in your Svelte application using the `strokeWidth` prop or adjust the strokeWidth appearance using the `nonScalingStroke` prop.
 
 ### Advanced
 
@@ -104,7 +104,7 @@ Made by the community.
 
 ### Resources
 
-- [Accessibility](/guide/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
+- [Accessibility](/how-to/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
 - [Visual Studio Code](/guide/vscode.md): Learn how to use Lucide icons in Visual Studio Code, including tips on turning off autocomplete, viewing JS docs and icon previews, and exploring third-party plugins for enhanced functionality.
 
 - [Lucide for Solid](/guide/solid.md): Lucide provides a Solid icon component library that makes it easy to integrate icons into your Solid applications. Each icon is available as a standalone Solid component, allowing for seamless integration and customization.
@@ -115,7 +115,7 @@ Made by the community.
 
 - [Color - Solid](/guide/solid/basics/color.md): Learn how to adjust the color of icons in your Solid application using the `color` prop or by using parent elements text color value.
 - [Sizing - Solid](/guide/solid/basics/sizing.md): Learn how to adjust the size of icons in your Solid application using the `size` prop or by using CSS.
-- [Stroke width - Solid](/guide/solid/basics/stroke-width.md): Learn how to adjust the stroke width of icons in your Solid application using the `strokeWidth` prop or adjust the strokeWidth appearance using the `absoluteStrokeWidth` prop.
+- [Stroke width - Solid](/guide/solid/basics/stroke-width.md): Learn how to adjust the stroke width of icons in your Solid application using the `strokeWidth` prop or adjust the strokeWidth appearance using the `nonScalingStroke` prop.
 
 ### Advanced
 
@@ -128,7 +128,7 @@ Made by the community.
 
 ### Resources
 
-- [Accessibility](/guide/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
+- [Accessibility](/how-to/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
 - [Visual Studio Code](/guide/vscode.md): Learn how to use Lucide icons in Visual Studio Code, including tips on turning off autocomplete, viewing JS docs and icon previews, and exploring third-party plugins for enhanced functionality.
 
 - [Lucide for Astro](/guide/astro.md): Learn how to use Lucide icons in your Astro applications with our comprehensive guide.
@@ -139,7 +139,7 @@ Made by the community.
 
 - [Color - Astro](/guide/astro/basics/color.md): Learn how to customize the color of Lucide icons in your Astro applications using the color prop and CSS.
 - [Sizing - Astro](/guide/astro/basics/sizing.md): Learn how to adjust the size of Lucide icons in your Astro applications using the size prop and CSS.
-- [Stroke width - Astro](/guide/astro/basics/stroke-width.md): Learn how to customize the stroke width of Lucide icons in your Astro applications using the strokeWidth and absoluteStrokeWidth props.
+- [Stroke width - Astro](/guide/astro/basics/stroke-width.md): Learn how to customize the stroke width of Lucide icons in your Astro applications using the strokeWidth and nonScalingStroke props.
 
 ### Advanced
 
@@ -150,7 +150,7 @@ Made by the community.
 
 ### Resources
 
-- [Accessibility](/guide/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
+- [Accessibility](/how-to/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
 - [Visual Studio Code](/guide/vscode.md): Learn how to use Lucide icons in Visual Studio Code, including tips on turning off autocomplete, viewing JS docs and icon previews, and exploring third-party plugins for enhanced functionality.
 
 - [Lucide for Preact](/guide/preact.md): Lucide provides a Preact icon component library that makes it easy to integrate icons into your Preact applications. Each icon is available as a standalone Preact component, allowing for seamless integration and customization.
@@ -161,7 +161,7 @@ Made by the community.
 
 - [Color - Preact](/guide/preact/basics/color.md): Learn how to adjust the color of icons in your Preact application using the `color` prop or by using parent elements text color value.
 - [Sizing - Preact](/guide/preact/basics/sizing.md): Learn how to adjust the size of icons in your Preact application using the `size` prop or by using CSS.
-- [Stroke width - Preact](/guide/preact/basics/stroke-width.md): Learn how to adjust the stroke width of icons in your Preact application using the `strokeWidth` prop or adjust the strokeWidth appearance using the `absoluteStrokeWidth` prop.
+- [Stroke width - Preact](/guide/preact/basics/stroke-width.md): Learn how to adjust the stroke width of icons in your Preact application using the `strokeWidth` prop or adjust the strokeWidth appearance using the `nonScalingStroke` prop.
 
 ### Advanced
 
@@ -175,7 +175,7 @@ Made by the community.
 
 ### Resources
 
-- [Accessibility](/guide/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
+- [Accessibility](/how-to/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
 - [Visual Studio Code](/guide/vscode.md): Learn how to use Lucide icons in Visual Studio Code, including tips on turning off autocomplete, viewing JS docs and icon previews, and exploring third-party plugins for enhanced functionality.
 
 - [Lucide for React Native](/guide/react-native.md): Lucide provides a React Native icon component library that makes it easy to integrate icons into your React Native applications. Each icon is available as a standalone React Native component, allowing for seamless integration and customization.
@@ -186,7 +186,7 @@ Made by the community.
 
 - [Color - React Native](/guide/react-native/basics/color.md): Learn how to adjust the color of icons in your React Native application using the `color` prop or by using parent elements text color value.
 - [Sizing - React Native](/guide/react-native/basics/sizing.md): Learn how to adjust the size of icons in your React Native application using the `size` prop or by using CSS.
-- [Stroke width - React Native](/guide/react-native/basics/stroke-width.md): Learn how to adjust the stroke width of icons in your React Native application using the `strokeWidth` prop or adjust the strokeWidth appearance using the `absoluteStrokeWidth` prop.
+- [Stroke width - React Native](/guide/react-native/basics/stroke-width.md): Learn how to adjust the stroke width of icons in your React Native application using the `strokeWidth` prop or adjust the strokeWidth appearance using the `nonScalingStroke` prop.
 
 ### Advanced
 
@@ -210,7 +210,7 @@ Made by the community.
 
 - [Color - Angular](/guide/angular/basics/color.md): Learn how to adjust the color of icons in your Angular application using the `color` input or by using parent elements text color value.
 - [Sizing - Angular](/guide/angular/basics/sizing.md): Learn how to adjust the size of icons in your Angular application using the `size` input or by using CSS.
-- [Stroke width - Angular](/guide/angular/basics/stroke-width.md): Learn how to adjust the stroke width of icons in your Angular application using the `strokeWidth` input or adjust the strokeWidth appearance using the `absoluteStrokeWidth` input.
+- [Stroke width - Angular](/guide/angular/basics/stroke-width.md): Learn how to adjust the stroke width of icons in your Angular application using the `strokeWidth` input or adjust the strokeWidth appearance using the `nonScalingStroke` input.
 
 ### Advanced
 
@@ -224,7 +224,7 @@ Made by the community.
 
 ### Resources
 
-- [Accessibility](/guide/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
+- [Accessibility](/how-to/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
 - [Visual Studio Code](/guide/vscode.md): Learn how to use Lucide icons in Visual Studio Code, including tips on turning off autocomplete, viewing JS docs and icon previews, and exploring third-party plugins for enhanced functionality.
 
 - [Overview](/guide/static.md)
@@ -249,92 +249,230 @@ Made by the community.
 
 ### Resources
 
-- [Accessibility](/guide/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
+- [Accessibility](/how-to/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
 - [Visual Studio Code](/guide/vscode.md): Learn how to use Lucide icons in Visual Studio Code, including tips on turning off autocomplete, viewing JS docs and icon previews, and exploring third-party plugins for enhanced functionality.
 
 ### About
 
 - [License](/license.md): Review the licensing terms for using Lucide icons and resources.
 - [Community Guide](/community.md)
+
+### Contribute
+
 - [Contribution guide](/contribute.md): Guidelines and instructions for contributing to the Lucide project.
 
-### Designing icons
+### How to use Lucide icons
 
-- [Icon Design Guide](/contribute/icon-design-guide.md): Guidelines and best practices for designing icons for the Lucide icon library.
-- [Illustrator Template Guide](/contribute/illustrator-guide.md)
-- [Icon Design Guide](/contribute/inkscape-guide.md)
-- [Figma Template Guide](/contribute/figma-guide.md)
-- [Affinity Designer Template Guide](/contribute/affinity-designer-guide.md)
+- [How to use Lucide icons](/how-to.md): Learn how to use icons in an accessible, user-friendly way
+- [Accessibility](/how-to/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
+- [How to pick the right icon](/how-to/icon-guide.md): Learn when to use icons, when to avoid them, and how to choose icons that make interfaces easier to understand.
+
+### Contributing icons
+
+- [Designing icons for Lucide](/contribute/icons.md): Guidelines and instructions for contributing icons to Lucide
+- [Lucide design language](/contribute/icons/design-principles.md): Learn the visual principles that make Lucide icons consistent and recognizable.
+- [Icon design specification](/contribute/icons/specification.md): Rules Lucide icons must follow.
+- [Naming conventions](/contribute/icons/naming-conventions.md): Learn how to choose clear and consistent names for Lucide icons.
+- [Metadata conventions](/contribute/icons/metadata-conventions.md): Learn how to write clear and consistent metadata for Lucide icons.
+- [SVG conventions](/contribute/icons/code-conventions.md): Learn about allowed SVG elements and attributes, optimization, and other code conventions.
+
+#### Metadata conventions
+
+- [Use case guide](/contribute/icons/metadata-conventions/use-case-guide.md): Learn the best practices for writing use cases for Lucide icons.
+- [Tag guide](/contribute/icons/metadata-conventions/tag-guide.md): Learn the best practices for writing tags for Lucide icons.
+
+#### Design software guides
+
+- [Adobe Illustrator template guide](/contribute/icons/illustrator-guide.md): Learn how to use the Adobe Illustrator template for Lucide.
+- [Inkscape setup guide](/contribute/icons/inkscape-guide.md): Learn how to create Lucide icons in Inkscape.
+- [Figma template guide](/contribute/icons/figma-guide.md): Learn how to create Lucide icons in Figma.
+- [Affinity Designer template guide](/contribute/icons/affinity-designer-guide.md): Learn how to use the Affinity Designer template for Lucide.
 
 ### About
 
 - [License](/license.md): Review the licensing terms for using Lucide icons and resources.
 - [Community Guide](/community.md)
+
+### Contribute
+
 - [Contribution guide](/contribute.md): Guidelines and instructions for contributing to the Lucide project.
 
-### Designing icons
+### How to use Lucide icons
 
-- [Icon Design Guide](/contribute/icon-design-guide.md): Guidelines and best practices for designing icons for the Lucide icon library.
-- [Illustrator Template Guide](/contribute/illustrator-guide.md)
-- [Icon Design Guide](/contribute/inkscape-guide.md)
-- [Figma Template Guide](/contribute/figma-guide.md)
-- [Affinity Designer Template Guide](/contribute/affinity-designer-guide.md)
+- [How to use Lucide icons](/how-to.md): Learn how to use icons in an accessible, user-friendly way
+- [Accessibility](/how-to/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
+- [How to pick the right icon](/how-to/icon-guide.md): Learn when to use icons, when to avoid them, and how to choose icons that make interfaces easier to understand.
+
+### Contributing icons
+
+- [Designing icons for Lucide](/contribute/icons.md): Guidelines and instructions for contributing icons to Lucide
+- [Lucide design language](/contribute/icons/design-principles.md): Learn the visual principles that make Lucide icons consistent and recognizable.
+- [Icon design specification](/contribute/icons/specification.md): Rules Lucide icons must follow.
+- [Naming conventions](/contribute/icons/naming-conventions.md): Learn how to choose clear and consistent names for Lucide icons.
+- [Metadata conventions](/contribute/icons/metadata-conventions.md): Learn how to write clear and consistent metadata for Lucide icons.
+- [SVG conventions](/contribute/icons/code-conventions.md): Learn about allowed SVG elements and attributes, optimization, and other code conventions.
+
+#### Metadata conventions
+
+- [Use case guide](/contribute/icons/metadata-conventions/use-case-guide.md): Learn the best practices for writing use cases for Lucide icons.
+- [Tag guide](/contribute/icons/metadata-conventions/tag-guide.md): Learn the best practices for writing tags for Lucide icons.
+
+#### Design software guides
+
+- [Adobe Illustrator template guide](/contribute/icons/illustrator-guide.md): Learn how to use the Adobe Illustrator template for Lucide.
+- [Inkscape setup guide](/contribute/icons/inkscape-guide.md): Learn how to create Lucide icons in Inkscape.
+- [Figma template guide](/contribute/icons/figma-guide.md): Learn how to create Lucide icons in Figma.
+- [Affinity Designer template guide](/contribute/icons/affinity-designer-guide.md): Learn how to use the Affinity Designer template for Lucide.
 
 ### About
 
 - [License](/license.md): Review the licensing terms for using Lucide icons and resources.
 - [Community Guide](/community.md)
+
+### Contribute
+
 - [Contribution guide](/contribute.md): Guidelines and instructions for contributing to the Lucide project.
 
-### Designing icons
+### How to use Lucide icons
 
-- [Icon Design Guide](/contribute/icon-design-guide.md): Guidelines and best practices for designing icons for the Lucide icon library.
-- [Illustrator Template Guide](/contribute/illustrator-guide.md)
-- [Icon Design Guide](/contribute/inkscape-guide.md)
-- [Figma Template Guide](/contribute/figma-guide.md)
-- [Affinity Designer Template Guide](/contribute/affinity-designer-guide.md)
+- [How to use Lucide icons](/how-to.md): Learn how to use icons in an accessible, user-friendly way
+- [Accessibility](/how-to/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
+- [How to pick the right icon](/how-to/icon-guide.md): Learn when to use icons, when to avoid them, and how to choose icons that make interfaces easier to understand.
+
+### Contributing icons
+
+- [Designing icons for Lucide](/contribute/icons.md): Guidelines and instructions for contributing icons to Lucide
+- [Lucide design language](/contribute/icons/design-principles.md): Learn the visual principles that make Lucide icons consistent and recognizable.
+- [Icon design specification](/contribute/icons/specification.md): Rules Lucide icons must follow.
+- [Naming conventions](/contribute/icons/naming-conventions.md): Learn how to choose clear and consistent names for Lucide icons.
+- [Metadata conventions](/contribute/icons/metadata-conventions.md): Learn how to write clear and consistent metadata for Lucide icons.
+- [SVG conventions](/contribute/icons/code-conventions.md): Learn about allowed SVG elements and attributes, optimization, and other code conventions.
+
+#### Metadata conventions
+
+- [Use case guide](/contribute/icons/metadata-conventions/use-case-guide.md): Learn the best practices for writing use cases for Lucide icons.
+- [Tag guide](/contribute/icons/metadata-conventions/tag-guide.md): Learn the best practices for writing tags for Lucide icons.
+
+#### Design software guides
+
+- [Adobe Illustrator template guide](/contribute/icons/illustrator-guide.md): Learn how to use the Adobe Illustrator template for Lucide.
+- [Inkscape setup guide](/contribute/icons/inkscape-guide.md): Learn how to create Lucide icons in Inkscape.
+- [Figma template guide](/contribute/icons/figma-guide.md): Learn how to create Lucide icons in Figma.
+- [Affinity Designer template guide](/contribute/icons/affinity-designer-guide.md): Learn how to use the Affinity Designer template for Lucide.
 
 ### About
 
 - [License](/license.md): Review the licensing terms for using Lucide icons and resources.
 - [Community Guide](/community.md)
+
+### Contribute
+
 - [Contribution guide](/contribute.md): Guidelines and instructions for contributing to the Lucide project.
 
-### Designing icons
+### How to use Lucide icons
 
-- [Icon Design Guide](/contribute/icon-design-guide.md): Guidelines and best practices for designing icons for the Lucide icon library.
-- [Illustrator Template Guide](/contribute/illustrator-guide.md)
-- [Icon Design Guide](/contribute/inkscape-guide.md)
-- [Figma Template Guide](/contribute/figma-guide.md)
-- [Affinity Designer Template Guide](/contribute/affinity-designer-guide.md)
+- [How to use Lucide icons](/how-to.md): Learn how to use icons in an accessible, user-friendly way
+- [Accessibility](/how-to/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
+- [How to pick the right icon](/how-to/icon-guide.md): Learn when to use icons, when to avoid them, and how to choose icons that make interfaces easier to understand.
+
+### Contributing icons
+
+- [Designing icons for Lucide](/contribute/icons.md): Guidelines and instructions for contributing icons to Lucide
+- [Lucide design language](/contribute/icons/design-principles.md): Learn the visual principles that make Lucide icons consistent and recognizable.
+- [Icon design specification](/contribute/icons/specification.md): Rules Lucide icons must follow.
+- [Naming conventions](/contribute/icons/naming-conventions.md): Learn how to choose clear and consistent names for Lucide icons.
+- [Metadata conventions](/contribute/icons/metadata-conventions.md): Learn how to write clear and consistent metadata for Lucide icons.
+- [SVG conventions](/contribute/icons/code-conventions.md): Learn about allowed SVG elements and attributes, optimization, and other code conventions.
+
+#### Metadata conventions
+
+- [Use case guide](/contribute/icons/metadata-conventions/use-case-guide.md): Learn the best practices for writing use cases for Lucide icons.
+- [Tag guide](/contribute/icons/metadata-conventions/tag-guide.md): Learn the best practices for writing tags for Lucide icons.
+
+#### Design software guides
+
+- [Adobe Illustrator template guide](/contribute/icons/illustrator-guide.md): Learn how to use the Adobe Illustrator template for Lucide.
+- [Inkscape setup guide](/contribute/icons/inkscape-guide.md): Learn how to create Lucide icons in Inkscape.
+- [Figma template guide](/contribute/icons/figma-guide.md): Learn how to create Lucide icons in Figma.
+- [Affinity Designer template guide](/contribute/icons/affinity-designer-guide.md): Learn how to use the Affinity Designer template for Lucide.
 
 ### About
 
 - [License](/license.md): Review the licensing terms for using Lucide icons and resources.
 - [Community Guide](/community.md)
+
+### Contribute
+
 - [Contribution guide](/contribute.md): Guidelines and instructions for contributing to the Lucide project.
 
-### Designing icons
+### How to use Lucide icons
 
-- [Icon Design Guide](/contribute/icon-design-guide.md): Guidelines and best practices for designing icons for the Lucide icon library.
-- [Illustrator Template Guide](/contribute/illustrator-guide.md)
-- [Icon Design Guide](/contribute/inkscape-guide.md)
-- [Figma Template Guide](/contribute/figma-guide.md)
-- [Affinity Designer Template Guide](/contribute/affinity-designer-guide.md)
+- [How to use Lucide icons](/how-to.md): Learn how to use icons in an accessible, user-friendly way
+- [Accessibility](/how-to/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
+- [How to pick the right icon](/how-to/icon-guide.md): Learn when to use icons, when to avoid them, and how to choose icons that make interfaces easier to understand.
+
+### Contributing icons
+
+- [Designing icons for Lucide](/contribute/icons.md): Guidelines and instructions for contributing icons to Lucide
+- [Lucide design language](/contribute/icons/design-principles.md): Learn the visual principles that make Lucide icons consistent and recognizable.
+- [Icon design specification](/contribute/icons/specification.md): Rules Lucide icons must follow.
+- [Naming conventions](/contribute/icons/naming-conventions.md): Learn how to choose clear and consistent names for Lucide icons.
+- [Metadata conventions](/contribute/icons/metadata-conventions.md): Learn how to write clear and consistent metadata for Lucide icons.
+- [SVG conventions](/contribute/icons/code-conventions.md): Learn about allowed SVG elements and attributes, optimization, and other code conventions.
+
+#### Metadata conventions
+
+- [Use case guide](/contribute/icons/metadata-conventions/use-case-guide.md): Learn the best practices for writing use cases for Lucide icons.
+- [Tag guide](/contribute/icons/metadata-conventions/tag-guide.md): Learn the best practices for writing tags for Lucide icons.
+
+#### Design software guides
+
+- [Adobe Illustrator template guide](/contribute/icons/illustrator-guide.md): Learn how to use the Adobe Illustrator template for Lucide.
+- [Inkscape setup guide](/contribute/icons/inkscape-guide.md): Learn how to create Lucide icons in Inkscape.
+- [Figma template guide](/contribute/icons/figma-guide.md): Learn how to create Lucide icons in Figma.
+- [Affinity Designer template guide](/contribute/icons/affinity-designer-guide.md): Learn how to use the Affinity Designer template for Lucide.
+
+### About
+
+- [License](/license.md): Review the licensing terms for using Lucide icons and resources.
+- [Community Guide](/community.md)
+
+### Contribute
+
+- [Contribution guide](/contribute.md): Guidelines and instructions for contributing to the Lucide project.
+
+### How to use Lucide icons
+
+- [How to use Lucide icons](/how-to.md): Learn how to use icons in an accessible, user-friendly way
+- [Accessibility](/how-to/accessibility.md): Learn how to make your icons accessible to all users, including those with disabilities.
+- [How to pick the right icon](/how-to/icon-guide.md): Learn when to use icons, when to avoid them, and how to choose icons that make interfaces easier to understand.
+
+### Contributing icons
+
+- [Designing icons for Lucide](/contribute/icons.md): Guidelines and instructions for contributing icons to Lucide
+- [Lucide design language](/contribute/icons/design-principles.md): Learn the visual principles that make Lucide icons consistent and recognizable.
+- [Icon design specification](/contribute/icons/specification.md): Rules Lucide icons must follow.
+- [Naming conventions](/contribute/icons/naming-conventions.md): Learn how to choose clear and consistent names for Lucide icons.
+- [Metadata conventions](/contribute/icons/metadata-conventions.md): Learn how to write clear and consistent metadata for Lucide icons.
+- [SVG conventions](/contribute/icons/code-conventions.md): Learn about allowed SVG elements and attributes, optimization, and other code conventions.
+
+#### Metadata conventions
+
+- [Use case guide](/contribute/icons/metadata-conventions/use-case-guide.md): Learn the best practices for writing use cases for Lucide icons.
+- [Tag guide](/contribute/icons/metadata-conventions/tag-guide.md): Learn the best practices for writing tags for Lucide icons.
+
+#### Design software guides
+
+- [Adobe Illustrator template guide](/contribute/icons/illustrator-guide.md): Learn how to use the Adobe Illustrator template for Lucide.
+- [Inkscape setup guide](/contribute/icons/inkscape-guide.md): Learn how to create Lucide icons in Inkscape.
+- [Figma template guide](/contribute/icons/figma-guide.md): Learn how to create Lucide icons in Figma.
+- [Affinity Designer template guide](/contribute/icons/affinity-designer-guide.md): Learn how to use the Affinity Designer template for Lucide.
 
 ### Other
 
-- [@lucide/icons](/guide/packages/icons.md)
-- [`@lucide/angular`](/guide/packages/angular.md)
+- [@lucide/icons](/guide/icons.md)
 - [Combining icons - Solid](/guide/solid/advanced/combining-icons.md): Learn how to combine multiple icons into a single icon nested SVG elements in your Solid application.
 - [Comparison](/guide/comparison.md): A comparison between Lucide and Feather Icons, highlighting the differences and benefits of each.
 - [Installation](/guide/installation.md): A guide on how to install Lucide, an open-source icon library, for various platforms and frameworks.
-- [Lucide Astro](/guide/packages/lucide-astro.md)
-- [Lucide Preact](/guide/packages/lucide-preact.md)
-- [Lucide React Native](/guide/packages/lucide-react-native.md)
-- [Lucide Solid](/guide/packages/lucide-solid.md)
-- [Lucide Static](/guide/packages/lucide-static.md)
-- [Lucide Svelte](/guide/packages/lucide-svelte.md)
-- [Lucide Vue](/guide/packages/lucide-vue.md)
 - [Version 1 🚀](/guide/version-1.md): After years of work and dedication, Lucide Version 1 has been officially released! This milestone marks a significant achievement in our journey to provide a comprehensive and versatile icon library for developers and designers alike.
 - [What is Lucide?](/guide.md): An introduction to Lucide, an open-source icon library that provides 1600+ vector (svg) files for displaying icons and symbols in digital and non-digital projects.

@@ -21,6 +21,9 @@
 - [IP addresses](https://zod.dev/api?id=ip-addresses)
 - [IP blocks (CIDR)](https://zod.dev/api?id=ip-blocks-cidr)
 - [MAC Addresses](https://zod.dev/api?id=mac-addresses)
+- [Credit card numbers](https://zod.dev/api?id=credit-card-numbers)
+- [Currency codes](https://zod.dev/api?id=currency-codes)
+- [IBANs](https://zod.dev/api?id=ibans)
 - [JWTs](https://zod.dev/api?id=jwts)
 - [Hashes](https://zod.dev/api?id=hashes)
 - [Custom formats](https://zod.dev/api?id=custom-formats)
@@ -51,7 +54,10 @@
 - [.pick()](https://zod.dev/api?id=pick)
 - [.omit()](https://zod.dev/api?id=omit)
 - [.partial()](https://zod.dev/api?id=partial)
+- [.exactPartial()](https://zod.dev/api?id=exactpartial)
+- [z.deepPartial()](https://zod.dev/api?id=deep-partial)
 - [.required()](https://zod.dev/api?id=required)
+- [Symbol keys](https://zod.dev/api?id=symbol-keys)
 - [Recursive objects](https://zod.dev/api?id=recursive-objects)
 - [Circularity errors](https://zod.dev/api?id=circularity-errors)
 - [Arrays](https://zod.dev/api?id=arrays)
@@ -59,6 +65,7 @@
 - [Unions](https://zod.dev/api?id=unions)
 - [Exclusive unions (XOR)](https://zod.dev/api?id=exclusive-unions-xor)
 - [Discriminated unions](https://zod.dev/api?id=discriminated-unions)
+- [z.getDiscriminatedOption()](https://zod.dev/api?id=zgetdiscriminatedoption)
 - [Intersections](https://zod.dev/api?id=intersections)
 - [Records](https://zod.dev/api?id=records)
 - [z.record](https://zod.dev/api?id=zrecord)
@@ -69,7 +76,8 @@
 - [Files](https://zod.dev/api?id=files)
 - [Promises](https://zod.dev/api?id=promises)
 - [Instanceof](https://zod.dev/api?id=instanceof)
-- [Property](https://zod.dev/api?id=property)
+- [z.property()](https://zod.dev/api?id=property)
+- [z.properties()](https://zod.dev/api?id=properties)
 - [Refinements](https://zod.dev/api?id=refinements)
 - [.refine()](https://zod.dev/api?id=refine)
 - [error](https://zod.dev/api?id=error)
@@ -80,6 +88,7 @@
 - [.check()](https://zod.dev/api?id=check)
 - [Codecs](https://zod.dev/api?id=codecs)
 - [Pipes](https://zod.dev/api?id=pipes)
+- [z.input() and z.output()](https://zod.dev/api?id=input-output)
 - [Transforms](https://zod.dev/api?id=transforms)
 - [.transform()](https://zod.dev/api?id=transform)
 - [.preprocess()](https://zod.dev/api?id=preprocess)
@@ -92,6 +101,7 @@
 - [Functions](https://zod.dev/api?id=functions)
 - [Custom](https://zod.dev/api?id=custom)
 - [Apply](https://zod.dev/api?id=apply)
+- [Matching an existing type](https://zod.dev/api?id=matching-an-existing-type)
 
 ## Basic usage
 
@@ -135,6 +145,18 @@
 - [stringToURL](https://zod.dev/codecs?id=stringtourl)
 - [stringToHttpURL](https://zod.dev/codecs?id=stringtohttpurl)
 - [uriComponent](https://zod.dev/codecs?id=uricomponent)
+
+## AOT compilation
+
+- [AOT compilation](https://zod.dev/compile): Ahead-of-time schema compilation for hot validation paths
+
+- [z.compile()](https://zod.dev/compile?id=zcompile)
+- [import "zod/compile"](https://zod.dev/compile?id=import-zodcompile)
+- [How it works](https://zod.dev/compile?id=how-it-works)
+- [Unsupported schemas](https://zod.dev/compile?id=unsupported-schemas)
+- [Content Security Policy](https://zod.dev/compile?id=content-security-policy)
+- [Bundle size](https://zod.dev/compile?id=bundle-size)
+- [Benchmarks](https://zod.dev/compile?id=benchmarks)
 
 ## Ecosystem
 
@@ -232,14 +254,37 @@
 - [Referencing inferred types](https://zod.dev/metadata?id=referencing-inferred-types)
 - [Constraining schema types](https://zod.dev/metadata?id=constraining-schema-types)
 
-## Joining Clerk as an OSS Fellow to work on Zod 4
+## Zod Core
 
-- [Joining Clerk as an OSS Fellow to work on Zod 4](https://zod.dev/blog/clerk-fellowship): Announcing my Clerk OSS Fellowship and what's coming in Zod 4.
+- [Zod Core](https://zod.dev/packages/core): Zod Core package - minimal core functionality for custom implementations
 
-- [On deck: Zod 4](https://zod.dev/blog/clerk-fellowship?id=on-deck-zod-4)
-- [Zod's current funding story](https://zod.dev/blog/clerk-fellowship?id=zods-current-funding-story)
-- [The Clerk fellowship](https://zod.dev/blog/clerk-fellowship?id=the-clerk-fellowship)
-- [OSS, funding models, and trying new things](https://zod.dev/blog/clerk-fellowship?id=oss-funding-models-and-trying-new-things)
+- [Schemas](https://zod.dev/packages/core?id=schemas)
+- [Internals](https://zod.dev/packages/core?id=internals)
+- [Parsing](https://zod.dev/packages/core?id=parsing)
+- [Checks](https://zod.dev/packages/core?id=checks)
+- [Errors](https://zod.dev/packages/core?id=errors)
+- [Issues](https://zod.dev/packages/core?id=issues)
+
+## Zod Mini
+
+- [Zod Mini](https://zod.dev/packages/mini): Zod Mini - a tree-shakable Zod
+
+- [Tree-shaking](https://zod.dev/packages/mini?id=tree-shaking)
+- [When (not) to use Zod Mini](https://zod.dev/packages/mini?id=when-not-to-use-zod-mini)
+- [DX](https://zod.dev/packages/mini?id=dx)
+- [Backend development](https://zod.dev/packages/mini?id=backend-development)
+- [Internet speed](https://zod.dev/packages/mini?id=internet-speed)
+- [ZodMiniType](https://zod.dev/packages/mini?id=zodminitype)
+- [.parse](https://zod.dev/packages/mini?id=parse)
+- [.check()](https://zod.dev/packages/mini?id=check)
+- [.register()](https://zod.dev/packages/mini?id=register)
+- [.brand()](https://zod.dev/packages/mini?id=brand)
+- [.clone(def)](https://zod.dev/packages/mini?id=clonedef)
+- [No default locale](https://zod.dev/packages/mini?id=no-default-locale)
+
+## Zod
+
+- [Zod](https://zod.dev/packages/zod): Internals and structure of the Zod library
 
 ## Migration guide
 
@@ -349,38 +394,6 @@
 - [Versioning in Zod 4](https://zod.dev/v4/versioning?id=versioning-in-zod-4)
 - [Why?](https://zod.dev/v4/versioning?id=why)
 - [Why can't libraries just support v3 and v4 simultaneously?](https://zod.dev/v4/versioning?id=why-cant-libraries-just-support-v3-and-v4-simultaneously)
-
-## Zod Core
-
-- [Zod Core](https://zod.dev/packages/core): Zod Core package - minimal core functionality for custom implementations
-
-- [Schemas](https://zod.dev/packages/core?id=schemas)
-- [Internals](https://zod.dev/packages/core?id=internals)
-- [Parsing](https://zod.dev/packages/core?id=parsing)
-- [Checks](https://zod.dev/packages/core?id=checks)
-- [Errors](https://zod.dev/packages/core?id=errors)
-- [Issues](https://zod.dev/packages/core?id=issues)
-
-## Zod Mini
-
-- [Zod Mini](https://zod.dev/packages/mini): Zod Mini - a tree-shakable Zod
-
-- [Tree-shaking](https://zod.dev/packages/mini?id=tree-shaking)
-- [When (not) to use Zod Mini](https://zod.dev/packages/mini?id=when-not-to-use-zod-mini)
-- [DX](https://zod.dev/packages/mini?id=dx)
-- [Backend development](https://zod.dev/packages/mini?id=backend-development)
-- [Internet speed](https://zod.dev/packages/mini?id=internet-speed)
-- [ZodMiniType](https://zod.dev/packages/mini?id=zodminitype)
-- [.parse](https://zod.dev/packages/mini?id=parse)
-- [.check()](https://zod.dev/packages/mini?id=check)
-- [.register()](https://zod.dev/packages/mini?id=register)
-- [.brand()](https://zod.dev/packages/mini?id=brand)
-- [.clone(def)](https://zod.dev/packages/mini?id=clonedef)
-- [No default locale](https://zod.dev/packages/mini?id=no-default-locale)
-
-## Zod
-
-- [Zod](https://zod.dev/packages/zod): Internals and structure of the Zod library
 
 ---
 

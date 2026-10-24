@@ -21,9 +21,9 @@ Learn Vite through interactive tutorials on Scrimba
 
 ## Browser Support
 
-During development, Vite assumes that a modern browser is used. This means the browser supports most of the latest JavaScript and CSS features. For that reason, Vite sets [`esnext` as the transform target](https://oxc.rs/docs/guide/usage/transformer/lowering.html#target). This prevents syntax lowering, letting Vite serve modules as close as possible to the original source code. Vite injects some runtime code to make the development server work. This code uses features included in [Baseline](https://web-platform-dx.github.io/web-features/) Newly Available at the time of each major release (2026-01-01 for this major).
+During development, Vite assumes that a modern browser is used. This means the browser supports most of the latest JavaScript and CSS features. For that reason, Vite sets [`esnext` as the transform target](https://oxc.rs/docs/guide/usage/transformer/lowering.html#target). This prevents syntax lowering, letting Vite serve modules as close as possible to the original source code. Vite injects some runtime code to make the development server work. This code uses features included in [Baseline](https://web-platform-dx.github.io/baseline/) Newly Available at the time of each major release (2026-01-01 for this major).
 
-For production builds, Vite by default targets [Baseline](https://web-platform-dx.github.io/web-features/) Widely Available browsers. These are browsers that were released at least 2.5 years ago. The target can be lowered via configuration. Additionally, legacy browsers can be supported via the official [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy). See the [Building for Production](./build) section for more details.
+For production builds, Vite by default targets [Baseline](https://web-platform-dx.github.io/baseline/) Widely Available browser versions as of a date fixed for each major release. For this major, that corresponds to [browser versions released around mid-2023](https://web-platform-dx.github.io/supported-browsers/?widelyAvailableOnDate=2026-01-01). The target can be lowered via configuration. Additionally, legacy browsers can be supported via the official [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy). See the [Building for Production](./build) section for more details.
 
 ## Trying Vite Online
 
@@ -424,7 +424,7 @@ export type { T }
 
 ### TypeScript Compiler Options
 
-Vite respects some of the options in `tsconfig.json` and sets the corresponding Oxc Transformer options. For each file, Vite uses the closest parent `tsconfig.json` that matches the file, or a config referenced by its [`references`](https://www.typescriptlang.org/tsconfig/#references) field that matches the file. Vite treats a config as matching the file when the file satisfies the config's [`files`](https://www.typescriptlang.org/tsconfig/#files), [`include`](https://www.typescriptlang.org/tsconfig/#include), and [`exclude`](https://www.typescriptlang.org/tsconfig/#exclude) fields.
+Vite respects some of the options in `tsconfig.json` and sets the corresponding Oxc Transformer options. By default, Vite uses the closest parent `tsconfig.json` that matches each file. A config referenced by that config's [`references`](https://www.typescriptlang.org/tsconfig/#references) field is used when it matches the file. Vite treats a config as matching the file when the file satisfies the config's [`files`](https://www.typescriptlang.org/tsconfig/#files), [`include`](https://www.typescriptlang.org/tsconfig/#include), and [`exclude`](https://www.typescriptlang.org/tsconfig/#exclude) fields.
 
 When the options are set in both the Vite config and the `tsconfig.json`, the value in the Vite config takes precedence.
 
@@ -652,7 +652,7 @@ Vite is pre-configured to support CSS `@import` inlining via `postcss-import`. V
 
 If the project contains valid PostCSS config (any format supported by [postcss-load-config](https://github.com/postcss/postcss-load-config), e.g. `postcss.config.js`), it will be automatically applied to all imported CSS.
 
-Note that CSS minification will run after PostCSS and will use [`build.cssTarget`](/config/build-options.md#build-csstarget) option.
+Note that CSS minification will run after PostCSS and will use the [`build.cssTarget`](/config/build-options.md#build-csstarget) option.
 
 ### CSS Modules
 
@@ -1026,7 +1026,7 @@ Note that variables only represent file names one level deep. If `file` is `'foo
 
 Also note that the dynamic import must match the following rules to be bundled:
 
-* Imports must start with `./` or `../`: ``import(`./dir/${foo}.js`)`` is valid, but ``import(`${foo}.js`)`` is not.
+* Imports must start with `./` or `../` or `#`: ``import(`./dir/${foo}.js`)`` is valid, but ``import(`${foo}.js`)`` is not.
 * Imports must end with a file extension: ``import(`./dir/${foo}.js`)`` is valid, but ``import(`./dir/${foo}`)`` is not.
 * Imports to the own directory must specify a file name pattern: ``import(`./prefix-${foo}.js`)`` is valid, but ``import(`./${foo}.js`)`` is not.
 
@@ -1307,12 +1307,13 @@ vite [root]
 | `--cors`                  | Enable CORS (`boolean`)                                                                                                                                                               |
 | `--strictPort`            | Exit if specified port is already in use (`boolean`)                                                                                                                                  |
 | `--force`                 | Force the optimizer to ignore the cache and re-bundle (`boolean`)                                                                                                                     |
+| `--experimentalBundle`    | Use experimental full bundle mode (this is highly experimental) (`boolean`)                                                                                                           |
 | `-c, --config <file>`     | Use specified config file (`string`)                                                                                                                                                  |
 | `--base <path>`           | Public base path (default: `/`) (`string`)                                                                                                                                            |
 | `-l, --logLevel <level>`  | info | warn | error | silent (`string`)                                                                                                                                            |
 | `--clearScreen`           | Allow/disable clear screen when logging (`boolean`)                                                                                                                                   |
 | `--configLoader <loader>` | Use `bundle` to bundle the config with Rolldown, or `runner` (experimental) to process it on the fly, or `native` (experimental) to load using the native runtime (default: `bundle`) |
-| `--profile`               | Start built-in Node.js inspector (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks))                                                                    |
+| `--profile [name]`        | Start built-in Node.js inspector and write the profile to `<name>.cpuprofile` (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks)) (`boolean \| string`) |
 | `-d, --debug [feat]`      | Show debug logs (`string \| boolean`)                                                                                                                                                 |
 | `-f, --filter <filter>`   | Filter debug logs (`string`)                                                                                                                                                          |
 | `-m, --mode <mode>`       | Set env mode (`string`)                                                                                                                                                               |
@@ -1348,10 +1349,10 @@ vite build [root]
 | `-w, --watch`                  | Rebuilds when modules have changed on disk (`boolean`)                                                                                                                                |
 | `-c, --config <file>`          | Use specified config file (`string`)                                                                                                                                                  |
 | `--base <path>`                | Public base path (default: `/`) (`string`)                                                                                                                                            |
-| `-l, --logLevel <level>`       | Info | warn | error | silent (`string`)                                                                                                                                            |
+| `-l, --logLevel <level>`       | info | warn | error | silent (`string`)                                                                                                                                            |
 | `--clearScreen`                | Allow/disable clear screen when logging (`boolean`)                                                                                                                                   |
 | `--configLoader <loader>`      | Use `bundle` to bundle the config with Rolldown, or `runner` (experimental) to process it on the fly, or `native` (experimental) to load using the native runtime (default: `bundle`) |
-| `--profile`                    | Start built-in Node.js inspector (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks))                                                                    |
+| `--profile [name]`             | Start built-in Node.js inspector and write the profile to `<name>.cpuprofile` (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks)) (`boolean \| string`) |
 | `-d, --debug [feat]`           | Show debug logs (`string \| boolean`)                                                                                                                                                 |
 | `-f, --filter <filter>`        | Filter debug logs (`string`)                                                                                                                                                          |
 | `-m, --mode <mode>`            | Set env mode (`string`)                                                                                                                                                               |
@@ -1379,7 +1380,7 @@ vite optimize [root]
 | `--force`                 | Force the optimizer to ignore the cache and re-bundle (`boolean`)                                                                                                                     |
 | `-c, --config <file>`     | Use specified config file (`string`)                                                                                                                                                  |
 | `--base <path>`           | Public base path (default: `/`) (`string`)                                                                                                                                            |
-| `-l, --logLevel <level>`  | Info | warn | error | silent (`string`)                                                                                                                                            |
+| `-l, --logLevel <level>`  | info | warn | error | silent (`string`)                                                                                                                                            |
 | `--clearScreen`           | Allow/disable clear screen when logging (`boolean`)                                                                                                                                   |
 | `--configLoader <loader>` | Use `bundle` to bundle the config with Rolldown, or `runner` (experimental) to process it on the fly, or `native` (experimental) to load using the native runtime (default: `bundle`) |
 | `-d, --debug [feat]`      | Show debug logs (`string \| boolean`)                                                                                                                                                 |
@@ -1410,7 +1411,7 @@ vite preview [root]
 | `--outDir <dir>`          | Output directory (default: `dist`) (`string`)                                                                                                                                         |
 | `-c, --config <file>`     | Use specified config file (`string`)                                                                                                                                                  |
 | `--base <path>`           | Public base path (default: `/`) (`string`)                                                                                                                                            |
-| `-l, --logLevel <level>`  | Info | warn | error | silent (`string`)                                                                                                                                            |
+| `-l, --logLevel <level>`  | info | warn | error | silent (`string`)                                                                                                                                            |
 | `--clearScreen`           | Allow/disable clear screen when logging (`boolean`)                                                                                                                                   |
 | `--configLoader <loader>` | Use `bundle` to bundle the config with Rolldown, or `runner` (experimental) to process it on the fly, or `native` (experimental) to load using the native runtime (default: `bundle`) |
 | `-d, --debug [feat]`      | Show debug logs (`string \| boolean`)                                                                                                                                                 |
@@ -1666,6 +1667,7 @@ Assets can be explicitly imported with inlining or no inlining using the `?inlin
 ```js twoslash
 import 'vite/client'
 // ---cut---
+// prettier-ignore
 import imgUrl1 from './img.svg?no-inline'
 import imgUrl2 from './img.png?inline'
 ```
@@ -1793,7 +1795,7 @@ Watch an interactive lesson on Scrimba
 
 ## Browser Compatibility
 
-By default, the production bundle assumes a modern browser that is included in the [Baseline](https://web-platform-dx.github.io/web-features/) Widely Available targets. The default browser support range is:
+By default, the production bundle targets the minimum browser versions compatible with [Baseline](https://web-platform-dx.github.io/baseline/) Widely Available as of a date fixed for each major release. The default browser support range for this major is:
 
 * Chrome >=111
 * Edge >=111
@@ -1863,11 +1865,11 @@ window.addEventListener('vite:preloadError', (event) => {
 })
 ```
 
-When a new deployment occurs, the hosting service may delete the assets from previous deployments. As a result, a user who visited your site before the new deployment might encounter an import error. This error happens because the assets running on that user's device are outdated and it tries to import the corresponding old chunk, which is deleted. This event is useful for addressing this situation. In this case, make sure to set `Cache-Control: no-cache` on the HTML file, otherwise the old assets will be still referenced.
+When a new deployment occurs, the hosting service may delete the assets from previous deployments. As a result, a user who visited your site before the new deployment might encounter an import error. This error happens because the assets running on that user's device are outdated and the code tries to import the corresponding old chunk, which is deleted. This event is useful for addressing this situation. In this case, make sure to set `Cache-Control: no-cache` on the HTML file, otherwise the old assets will be still referenced.
 
 ## Rebuild on Files Changes
 
-You can enable rollup watcher with `vite build --watch`. Or, you can directly adjust the underlying [`WatcherOptions`](https://rolldown.rs/reference/InputOptions.watch) via `build.watch`:
+You can enable Rolldown watcher with `vite build --watch`. Or, you can directly adjust the underlying [`WatcherOptions`](https://rolldown.rs/reference/InputOptions.watch) via `build.watch`:
 
 ```js [vite.config.js]
 export default defineConfig({
@@ -1985,8 +1987,8 @@ export default defineConfig({
 The entry file would contain exports that can be imported by users of your package:
 
 ```js [lib/main.js]
-import Foo from './Foo.vue'
 import Bar from './Bar.vue'
+import Foo from './Foo.vue'
 export { Foo, Bar }
 ```
 
@@ -2117,8 +2119,8 @@ experimental: {
 If the hashed assets and public files aren't deployed together, options for each group can be defined independently using asset `type` included in the second `context` param given to the function.
 
 ```ts twoslash
-import type { UserConfig } from 'vite'
 import path from 'node:path'
+import type { UserConfig } from 'vite'
 // prettier-ignore
 const config: UserConfig = {
 // ---cut-before---
@@ -2274,7 +2276,7 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
              path: './dist'
          - name: Deploy to GitHub Pages
            id: deployment
-           uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5
+           uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
    ```
 
 ## GitLab Pages and GitLab CI
@@ -2361,8 +2363,8 @@ $ npm install --save-dev @cloudflare/vite-plugin
 ```
 
 ```js [vite.config.js]
-import { defineConfig } from 'vite'
 import { cloudflare } from '@cloudflare/vite-plugin'
+import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [cloudflare()],
@@ -2477,10 +2479,6 @@ You can also add a [custom domain](https://render.com/docs/custom-domains) to yo
 ## Flightcontrol
 
 Deploy your static site using [Flightcontrol](https://www.flightcontrol.dev/?ref=docs-vite) by following these [instructions](https://www.flightcontrol.dev/docs/reference/examples/vite?ref=docs-vite).
-
-## Kinsta Static Site Hosting
-
-Deploy your static site using [Kinsta](https://kinsta.com/static-site-hosting/) by following these [instructions](https://kinsta.com/docs/static-site-hosting/static-site-quick-start/react-static-site-examples/#react-with-vite).
 
 ## xmit Static Site Hosting
 
@@ -2811,7 +2809,7 @@ This is statically replaced during build so it will allow tree-shaking of unused
 
 When building an SSR app, you likely want to have full control over your main server and decouple Vite from the production environment. It is therefore recommended to use Vite in middleware mode. Here is an example with [express](https://expressjs.com/):
 
-```js{15-18} twoslash [server.js]
+```js{12-15} twoslash [server.js]
 import fs from 'node:fs'
 import path from 'node:path'
 import express from 'express'
@@ -2847,6 +2845,52 @@ createServer()
 ```
 
 Here `vite` is an instance of [ViteDevServer](./api-javascript#vitedevserver). `vite.middlewares` is a [Connect](https://github.com/senchalabs/connect) instance which can be used as a middleware in any connect-compatible Node.js framework.
+
+::: tip SSR-only module updates
+By default, updating a module that is only imported by the SSR environment does not reload the page in the browser. Framework integrations usually handle this for you. For a low-level custom SSR setup, you can add a plugin that reloads the browser when an SSR-only module changes:
+
+```ts twoslash
+import type { EnvironmentModuleNode, Plugin } from 'vite'
+
+export function ssrReload(): Plugin {
+  return {
+    name: 'ssr-reload',
+    enforce: 'post',
+    hotUpdate: {
+      order: 'post',
+      handler({ modules, server, timestamp }) {
+        if (this.environment.name !== 'ssr') return
+
+        const invalidatedModules = new Set<EnvironmentModuleNode>()
+        let hasSsrOnlyModules = false
+
+        for (const mod of modules) {
+          if (mod.file == null) continue
+          const clientModules =
+            server.environments.client.moduleGraph.getModulesByFile(mod.file)
+          if (clientModules != null) continue
+
+          this.environment.moduleGraph.invalidateModule(
+            mod,
+            invalidatedModules,
+            timestamp,
+            true,
+          )
+          hasSsrOnlyModules = true
+        }
+
+        if (hasSsrOnlyModules) {
+          server.environments.client.hot.send({ type: 'full-reload' })
+          return []
+        }
+      },
+    },
+  }
+}
+```
+
+Add `ssrReload()` to the `plugins` array passed to `createViteServer` in the example above. See the [`hotUpdate` hook](./api-environment-plugins#the-hotupdate-hook) for details.
+:::
 
 The next step is implementing the `*` handler to serve server-rendered HTML:
 
@@ -3463,6 +3507,20 @@ This is because [the port forwarding feature in VS Code does not support IPv6](h
 
 See [#16522](https://github.com/vitejs/vite/issues/16522) for more details.
 
+### Illegal operation error when watching files
+
+If the file or directory is located on a file system that does not support file system events, Vite may be unable to watch it.
+
+An example error you may encounter is:
+
+```
+Error: EISDIR: illegal operation on a directory, watch 'C:/Users/me/project/vite.config.js'
+```
+
+For example, this can happen with a VirtualBox shared folder.
+
+To solve this, you can enable [`server.watch.usePolling`](/config/server-options#server-watch). Note that [`usePolling` leads to high CPU utilization](https://github.com/paulmillr/chokidar/tree/3.6.0#performance).
+
 ## HMR
 
 ### Vite detects a file change but the HMR is not working
@@ -3568,7 +3626,7 @@ vite build --profile
 Once your application is opened in the browser, just await finish loading it and then go back to the terminal and press `p` key (will stop the Node.js inspector) then press `q` key to stop the dev server.
 :::
 
-Node.js inspector will generate `vite-profile-0.cpuprofile` in the root folder, go to https://www.speedscope.app/, and upload the CPU profile using the `BROWSE` button to inspect the result.
+Node.js inspector will generate `vite-profile-0.cpuprofile` in the root folder. You can pass `--profile <name>` (or `--profile=<name>`) to write `<name>.cpuprofile` instead. Go to https://www.speedscope.app/, and upload the CPU profile using the `BROWSE` button to inspect the result.
 
 You can install [vite-plugin-inspect](https://github.com/antfu/vite-plugin-inspect), which lets you inspect the intermediate state of Vite plugins and can also help you to identify which plugins or middlewares are the bottleneck in your applications. The plugin can be used in both dev and build modes. Check the readme file for more details.
 
@@ -3775,7 +3833,7 @@ The default browser values of `build.target` and `'baseline-widely-available'` a
 * Firefox 104 → 114
 * Safari 16.0 → 16.4
 
-These browser versions align with [Baseline Widely Available](https://web-platform-dx.github.io/web-features/) feature sets as of 2026-01-01. In other words, they were all released about two and a half years ago.
+These browser versions align with [Baseline Widely Available](https://web-platform-dx.github.io/baseline/) feature sets as of 2026-01-01. In other words, they were all released about two and a half years ago.
 
 ## Rolldown
 
@@ -3893,8 +3951,8 @@ $ deno add -D npm:@rolldown/plugin-babel npm:@babel/plugin-proposal-decorators
 :::
 
 ```ts [vite.config.ts]
-import { defineConfig } from 'vite'
 import babel from '@rolldown/plugin-babel'
+import { defineConfig } from 'vite'
 
 function decoratorPreset(options: Record<string, unknown>) {
   return {
@@ -3942,6 +4000,7 @@ $ deno add -D npm:@rollup/plugin-swc npm:@swc/core
 :::
 
 ```js
+import swc from '@rollup/plugin-swc'
 import { defineConfig, withFilter } from 'vite'
 
 export default defineConfig({
@@ -4221,8 +4280,8 @@ See also [Virtual Modules Convention](https://rolldown.rs/apis/plugin-api#virtua
 Users will add plugins to the project `devDependencies` and configure them using the `plugins` array option.
 
 ```js [vite.config.js]
-import vitePlugin from 'vite-plugin-feature'
 import rollupPlugin from 'rollup-plugin-feature'
+import vitePlugin from 'vite-plugin-feature'
 
 export default defineConfig({
   plugins: [vitePlugin(), rollupPlugin()],
@@ -4234,9 +4293,9 @@ Falsy plugins will be ignored, which can be used to easily activate or deactivat
 `plugins` also accepts presets including several plugins as a single element. This is useful for complex features (like framework integration) that are implemented using several plugins. The array will be flattened internally.
 
 ```js
+import frameworkDevtools from 'vite-plugin-framework-devtools'
 // framework-plugin
 import frameworkRefresh from 'vite-plugin-framework-refresh'
-import frameworkDevtools from 'vite-plugin-framework-devtools'
 
 export default function framework(config) {
   return [frameworkRefresh(config), frameworkDevTools(config)]
@@ -4515,6 +4574,59 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   })
   ```
 
+### `closeServer`
+
+* **Type:** `(context: { reason: 'restart' | 'close' }) => void | Promise<void>`
+* **Kind:** `async`, `parallel`
+* **Scope:** [Global](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks)
+
+  Called when the dev server is restarted or closed, after the server has been torn down. Typically used to dispose resources created in [`configureServer`](/guide/api-plugin.html#configureserver).
+
+  The `context.reason` distinguishes the two cases:
+
+  * `'restart'`: the server is restarting (e.g. a config file change or a call to `server.restart()`).
+  * `'close'`: the server is shutting down (e.g. the `q` shortcut, or a call to `server.close()`).
+
+  ```js
+  const myPlugin = () => {
+    let resource
+    return {
+      name: 'close-server',
+      configureServer(server) {
+        resource = createResource()
+      },
+      async closeServer({ reason }) {
+        if (reason === 'close') {
+          await resource.dispose()
+        }
+      },
+    }
+  }
+  ```
+
+### `closePreviewServer`
+
+* **Type:** `() => void | Promise<void>`
+* **Kind:** `async`, `parallel`
+* **Scope:** [Global](/guide/api-environment-plugins#per-environment-hooks-and-global-hooks)
+
+  Same as [`closeServer`](/guide/api-plugin.html#closeserver) but for the preview server. The preview server never restarts, so there is no `reason`.
+
+  ```js
+  const myPlugin = () => {
+    let resource
+    return {
+      name: 'close-preview-server',
+      configurePreviewServer(server) {
+        resource = createResource()
+      },
+      async closePreviewServer() {
+        await resource.dispose()
+      },
+    }
+  }
+  ```
+
 ### `transformIndexHtml`
 
 * **Type:** `IndexHtmlTransformHook | { order?: 'pre' | 'post', handler: IndexHtmlTransformHook }`
@@ -4561,7 +4673,9 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       originalUrl?: string
     },
   ) =>
-    IndexHtmlTransformResult | void | Promise<IndexHtmlTransformResult | void>
+    | IndexHtmlTransformResult
+    | void
+    | Promise<IndexHtmlTransformResult | void>
 
   type IndexHtmlTransformResult =
     | string
@@ -4660,7 +4774,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 ## Plugin Context Meta
 
-For plugin hooks that has access to the plugin context, Vite exposes additional properties on `this.meta`:
+For plugin hooks that have access to the plugin context, Vite exposes additional properties on `this.meta`:
 
 * `this.meta.viteVersion`: The current Vite version string (e.g. `"8.0.0"`).
 
@@ -4722,6 +4836,33 @@ function outputMetadataPlugin(): Plugin {
     },
   }
 }
+```
+
+## Referencing Emitted Assets
+
+To emit an asset from a plugin, call [`this.emitFile({ type: 'asset', ... })`](https://rolldown.rs/reference/Interface.PluginContext#in-depth-type-asset). It returns a `referenceId` that you can use to generate the asset's URL, since its final file name isn't known until the bundle is generated.
+
+### In JavaScript
+
+Use `import.meta.ROLLDOWN_FILE_URL_<referenceId>`:
+
+```js
+const referenceId = this.emitFile({
+  type: 'asset',
+  name: 'icon.png',
+  source: fileContent,
+})
+
+// it's a JavaScript expression, so append any query or hash with string concatenation
+return `export default import.meta.ROLLDOWN_FILE_URL_${referenceId} + '#frag'`
+```
+
+### In CSS or HTML
+
+`import.meta.ROLLDOWN_FILE_URL_<referenceId>` only works in JavaScript expression position. In CSS or HTML, use the `__VITE_ASSET__<referenceId>__` token instead, appending any query or hash right after it:
+
+```css
+background: url(__VITE_ASSET__<referenceId>__#frag);
 ```
 
 ## Plugin Ordering
@@ -4954,7 +5095,7 @@ export default defineConfig({
 Internally, vite infers the type of a payload from the `CustomEventMap` interface, it is possible to type custom events by extending the interface:
 
 :::tip Note
-Make sure to include the `.d.ts` extension when specifying TypeScript declaration files. Otherwise, Typescript may not know which file the module is trying to extend.
+Make sure to include the `.d.ts` extension when specifying TypeScript declaration files. Otherwise, TypeScript may not know which file the module is trying to extend.
 :::
 
 ```ts [events.d.ts]
@@ -5004,11 +5145,11 @@ The manual HMR API is primarily intended for framework and tooling authors. As a
 Vite exposes its manual HMR API via the special `import.meta.hot` object:
 
 ```ts twoslash
-import type { ModuleNamespace } from 'vite/types/hot.d.ts'
 import type {
   CustomEventName,
   InferCustomEventPayload,
 } from 'vite/types/customEvent.d.ts'
+import type { ModuleNamespace } from 'vite/types/hot.d.ts'
 
 // ---cut---
 interface ImportMeta {
@@ -5164,7 +5305,7 @@ if (import.meta.hot) {
 
 ## `hot.prune(cb)`
 
-Register a callback that will call when the module is no longer imported on the page. Compared to `hot.dispose`, this can be used if the source code cleans up side-effects by itself on updates and you only need to clean-up when it's removed from the page. Vite currently uses this for `.css` imports.
+Register a callback that will be called when the module is no longer imported on the page. Compared to `hot.dispose`, this can be used if the source code cleans up side-effects by itself on updates and you only need to clean-up when it's removed from the page. Vite currently uses this for `.css` imports.
 
 ```js twoslash
 import 'vite/client'
@@ -5261,7 +5402,7 @@ url: /guide/api-javascript.md
 ---
 # JavaScript API
 
-Vite's JavaScript APIs are fully typed, and it's recommended to use TypeScript or enable JS type checking in VS Code to leverage the intellisense and validation.
+Vite's JavaScript APIs are fully typed, and it's recommended to use TypeScript or enable JS type checking in VS Code to leverage the IntelliSense and validation.
 
 ## `createServer`
 
@@ -5445,7 +5586,7 @@ interface ViteDevServer {
 ```
 
 :::info
-`waitForRequestsIdle` is meant to be used as a escape hatch to improve DX for features that can't be implemented following the on-demand nature of the Vite dev server. It can be used during startup by tools like Tailwind to delay generating the app CSS classes until the app code has been seen, avoiding flashes of style changes. When this function is used in a load or transform hook, and the default HTTP1 server is used, one of the six http channels will be blocked until the server processes all static imports. Vite's dependency optimizer currently uses this function to avoid full-page reloads on missing dependencies by delaying loading of pre-bundled dependencies until all imported dependencies have been collected from static imported sources. Vite may switch to a different strategy in a future major release, setting `optimizeDeps.crawlUntilStaticImports: false` by default to avoid the performance hit in large applications during cold start.
+`waitForRequestsIdle` is meant to be used as an escape hatch to improve DX for features that can't be implemented following the on-demand nature of the Vite dev server. It can be used during startup by tools like Tailwind to delay generating the app CSS classes until the app code has been seen, avoiding flashes of style changes. When this function is used in a load or transform hook, and the default HTTP1 server is used, one of the six http channels will be blocked until the server processes all static imports. Vite's dependency optimizer currently uses this function to avoid full-page reloads on missing dependencies by delaying loading of pre-bundled dependencies until all imported dependencies have been collected from static imported sources. Vite may switch to a different strategy in a future major release, setting `optimizeDeps.holdUntilCrawlEnd: false` by default to avoid the performance hit in large applications during cold start.
 :::
 
 ## `build`
@@ -5460,7 +5601,7 @@ async function build(
 
 **Example Usage:**
 
-```ts twoslash [vite.config.js]
+```ts twoslash
 import path from 'node:path'
 import { build } from 'vite'
 
@@ -5777,7 +5918,7 @@ By default, Vite uses [Rolldown](https://rolldown.rs/) to bundle the config into
 
 ## Config Intellisense
 
-Since Vite ships with TypeScript typings, you can leverage your IDE's intellisense with jsdoc type hints:
+Since Vite ships with TypeScript typings, you can leverage your IDE's intellisense with JSDoc type hints:
 
 ```js
 /** @type {import('vite').UserConfig} */
@@ -5786,7 +5927,7 @@ export default {
 }
 ```
 
-Alternatively, you can use the `defineConfig` helper which should provide intellisense without the need for jsdoc annotations:
+Alternatively, you can use the `defineConfig` helper which should provide intellisense without the need for JSDoc annotations:
 
 ```js
 import { defineConfig } from 'vite'
@@ -5956,7 +6097,7 @@ When we move to a typical server-side rendered (SSR) app, we'll have two environ
 * `client`: runs the app in the browser.
 * `ssr`: runs the app in node (or other server runtimes) which renders pages before sending them to the browser.
 
-In dev, Vite executes the server code in the same Node process as the Vite dev server, giving a close approximation to the production environment. However, it is also possible for servers to run in other JS runtimes, like [Cloudflare's workerd](https://github.com/cloudflare/workerd) which have different constraints. Modern apps may also run in more than two environments, e.g. a browser, a node server, and an edge server. Vite 5 didn't allow to properly represent these environments.
+In dev, Vite executes the server code in the same Node process as the Vite dev server, giving a close approximation to the production environment. However, it is also possible for servers to run in other JS runtimes, like [Cloudflare's workerd](https://github.com/cloudflare/workerd) which have different constraints. Modern apps may also run in more than two environments, e.g. a browser, a node server, and an edge server. Vite 5 didn't allow these environments to be properly represented.
 
 Vite 6 allows users to configure their app during build and dev to map all of its environments. During dev, a single Vite dev server can now be used to run code in multiple different environments concurrently. The app source code is still transformed by Vite dev server. On top of the shared HTTP server, middlewares, resolved config, and plugins pipeline, the Vite dev server now has a set of independent dev environments. Each of them is configured to match the production environment as closely as possible, and is connected to a dev runtime where the code is executed (for workerd, the server code can now run in miniflare locally). In the client, the browser imports and executes the code. In other environments, a module runner fetches and evaluates the transformed code.
 
@@ -6395,7 +6536,7 @@ Plugins run on a shared pipeline, but their hooks fall into two categories depen
 
 Global hooks are called a single time, independent of the configured environments. They handle app-wide concerns such as resolving the config or setting up the dev and preview servers, so `this.environment` is not relevant to them. Config resolution related hooks and server related hooks are global hooks.
 
-Per-environment hooks are called once for each environment, and expose the current environment through `this.environment` in their context. All [universal hooks](/guide/api-plugin#universal-hooks) are per-environment, as are other Vite-specific hooks that handle modules. However, note that `buildStart` and `buildEnd` are only called for the client environment without [the `perEnvironmentStartEndDuringDev: true` flag](##per-environment-state-in-plugins).
+Per-environment hooks are called once for each environment, and expose the current environment through `this.environment` in their context. All [Rolldown hooks](/guide/api-plugin#rolldown-hooks) are per-environment, as are other Vite-specific hooks that handle modules. However, note that `buildStart` and `buildEnd` are only called for the client environment without [the `perEnvironmentStartEndDuringDev: true` flag](#per-environment-state-in-plugins).
 
 ## Accessing the Current Environment in Hooks
 
@@ -6479,7 +6620,7 @@ interface HotUpdateOptions {
 
 * `modules` is an array of modules in this environment that are affected by the changed file. It's an array because a single file may map to multiple served modules (e.g. Vue SFCs).
 
-* `read` is an async read function that returns the content of the file. This is provided because, on some systems, the file change callback may fire too fast before the editor finishes updating the file, and direct `fs.readFile` will return empty content. The read function passed in normalizes this behavior.
+* `read` is an async read function that returns the content of the file. This is provided because on some systems, the file change callback may fire too fast before the editor finishes updating the file, and direct `fs.readFile` will return empty content. The read function passed in normalizes this behavior.
 
 The hook can choose to:
 
@@ -6617,6 +6758,8 @@ export default defineConfig({
   ],
 })
 ```
+
+Note that the plugin returned from `applyToEnvironment` or `perEnvironmentPlugin` should not use Vite-specific hooks.
 
 The `applyToEnvironment` hook is called at config time, currently after `configResolved` due to projects in the ecosystem modifying the plugins in it. Environment plugins resolution may be moved before `configResolved` in the future.
 
@@ -6882,7 +7025,7 @@ If your code can run in the same runtime as the user modules (i.e., it does not 
 // code using the Vite's APIs
 import { createServer } from 'vite'
 
-const server = createServer({
+const server = await createServer({
   plugins: [
     // a plugin that handles `virtual:entrypoint`
     {
@@ -6891,7 +7034,7 @@ const server = createServer({
     },
   ],
 })
-const ssrEnvironment = server.environment.ssr
+const ssrEnvironment = server.environments.ssr
 const input = {}
 
 // use exposed functions by each environment factories that runs the code
@@ -6954,7 +7097,7 @@ If your code requires Node.js APIs, you can use `hot.send` to communicate with t
 // code using the Vite's APIs
 import { createServer } from 'vite'
 
-const server = createServer({
+const server = await createServer({
   plugins: [
     // a plugin that handles `virtual:entrypoint`
     {
@@ -6963,13 +7106,13 @@ const server = createServer({
     },
   ],
 })
-const ssrEnvironment = server.environment.ssr
+const ssrEnvironment = server.environments.ssr
 const input = {}
 
 // use exposed functions by each environment factories that runs the code
 // check for each environment factories what they provide
 if (ssrEnvironment instanceof RunnableDevEnvironment) {
-  ssrEnvironment.runner.import('virtual:entrypoint')
+  await ssrEnvironment.runner.import('virtual:entrypoint')
 } else if (ssrEnvironment instanceof CustomDevEnvironment) {
   ssrEnvironment.runEntrypoint('virtual:entrypoint')
 } else {
@@ -6979,9 +7122,9 @@ if (ssrEnvironment instanceof RunnableDevEnvironment) {
 const req = new Request('http://example.com/')
 
 const uniqueId = 'a-unique-id'
-ssrEnvironment.send('request', serialize({ req, uniqueId }))
+ssrEnvironment.hot.send('request', serialize({ req, uniqueId }))
 const response = await new Promise((resolve) => {
-  ssrEnvironment.on('response', (data) => {
+  ssrEnvironment.hot.on('response', (data) => {
     data = deserialize(data)
     if (data.uniqueId === uniqueId) {
       resolve(data.res)
@@ -7290,12 +7433,12 @@ await moduleRunner.import('/src/entry-point.js')
 ## `ModuleRunnerOptions`
 
 ```ts twoslash
+import type { Debug } from '@type-challenges/utils'
 import type {
   InterceptorOptions as InterceptorOptionsRaw,
   ModuleRunnerHmr as ModuleRunnerHmrRaw,
   EvaluatedModules,
 } from 'vite/module-runner'
-import type { Debug } from '@type-challenges/utils'
 
 type InterceptorOptions = Debug<InterceptorOptionsRaw>
 type ModuleRunnerHmr = Debug<ModuleRunnerHmrRaw>
@@ -7317,7 +7460,10 @@ interface ModuleRunnerOptions {
    * source maps are resolved for files that were not processed by Vite.
    */
   sourcemapInterceptor?:
-    false | 'node' | 'prepareStackTrace' | InterceptorOptions
+    | false
+    | 'node'
+    | 'prepareStackTrace'
+    | InterceptorOptions
   /**
    * Disable HMR or configure HMR options.
    *
@@ -7337,8 +7483,8 @@ interface ModuleRunnerOptions {
 **Type Signature:**
 
 ```ts twoslash
-import type { ModuleRunnerContext as ModuleRunnerContextRaw } from 'vite/module-runner'
 import type { Debug } from '@type-challenges/utils'
+import type { ModuleRunnerContext as ModuleRunnerContextRaw } from 'vite/module-runner'
 
 type ModuleRunnerContext = Debug<ModuleRunnerContextRaw>
 
@@ -7394,8 +7540,8 @@ You need to couple it with the `HotChannel` instance on the server like in this 
 ::: code-group
 
 ```js [worker.js]
-import { parentPort } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
+import { parentPort } from 'node:worker_threads'
 import {
   ESModulesEvaluator,
   ModuleRunner,
@@ -7424,7 +7570,7 @@ const runner = new ModuleRunner(
 
 ```js [server.js]
 import { BroadcastChannel } from 'node:worker_threads'
-import { createServer, RemoteEnvironmentTransport, DevEnvironment } from 'vite'
+import { createServer, DevEnvironment } from 'vite'
 
 function createWorkerEnvironment(name, config, context) {
   const worker = new Worker('./worker.js')
@@ -7856,7 +8002,8 @@ export default defineConfig({
     globalModulePaths?: RegExp[]
     exportGlobals?: boolean
     generateScopedName?:
-      string | ((name: string, filename: string, css: string) => string)
+      | string
+      | ((name: string, filename: string, css: string) => string)
     hashPrefix?: string
     /**
      * default: undefined
@@ -8182,10 +8329,38 @@ Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlew
 * **Type:** `boolean` | `DevToolsConfig`
 * **Default:** `false`
 
-Enable devtools integration for visualizing the internal state and build analysis.
-Ensure that `@vitejs/devtools` is installed as a dependency. This feature is currently supported only in build mode.
+Enable devtools integration for inspecting the dev server and analyzing builds.
+Ensure that `@vitejs/devtools` is installed as a dependency. Install `@vitejs/devtools-vite` to inspect the Vite dev server and `@vitejs/devtools-rolldown` to enable build analysis. DevTools runs for both `serve` and `build` by default; use `apply` to limit it to either command.
+
+Plugin `config` hooks cannot change the `devtools` option. Set it in the user config instead.
+
+When installed, `@vitejs/devtools` provides the type definitions for this option:
+
+```ts
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  devtools: {
+    apply: 'serve',
+  },
+})
+```
 
 See [Vite DevTools](https://github.com/vitejs/devtools) for more details.
+
+## tsconfig
+
+* **Type:** `string`
+
+Path to the TypeScript configuration file used by Vite. Relative paths are resolved from the project [`root`](#root).
+
+When this option is not set, Vite discovers the closest matching `tsconfig.json` for each file. See [TypeScript Compiler Options](/guide/features#typescript-compiler-options) for more details.
+
+::: warning Prefer automatic discovery
+Setting this option is discouraged because it overrides Vite's per-file tsconfig discovery which is aligned with TypeScript language server. Prefer placing a `tsconfig.json` near the files it configures and using TypeScript [`references`](https://www.typescriptlang.org/tsconfig/#references) for multi-project setups.
+
+If the goal is to remap imports, prefer [`resolve.alias`](#resolve-alias) or the `imports` and `exports` fields in `package.json` instead of selecting a tsconfig solely for [`compilerOptions.paths`](https://www.typescriptlang.org/tsconfig/#paths). Use this option only when automatic discovery cannot identify the intended configuration.
+:::
 
 ## future
 
@@ -8363,6 +8538,12 @@ export default defineConfig({
 })
 ```
 
+::: warning Origin check for WebSockets
+
+Vite does not check the origin of WebSocket requests before proxying. The proxy target is expected to check the `Origin` header or other checks. Note that the `rewriteWsOrigin` option will rewrite the origin to the target origin and will cause the origin check to be bypassed.
+
+:::
+
 ## server.cors
 
 * **Type:** `boolean | CorsOptions`
@@ -8508,6 +8689,8 @@ export default defineConfig({
 
 File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar/tree/3.6.0#api).
 
+When bundled-dev mode is enabled, [Rolldown watch options](https://rolldown.rs/reference/InputOptions.watch) (for example, `usePolling`, `pollInterval`, `useDebounce`, `debounceDuration`, `include`, `exclude`) are also accepted. The chokidar-only options are still used by the chokidar watcher, which keeps watching files outside the module graph, such as config file dependencies and env files.
+
 The Vite server watcher watches the `root` and skips the `.git/`, `node_modules/`, `test-results/`, and Vite's `cacheDir` and `build.outDir` directories by default. When updating a watched file, Vite will apply HMR and update the page only if needed.
 
 If set to `null`, no files will be watched. [`server.watcher`](/guide/api-javascript.html#vitedevserver) will provide a compatible event emitter, but calling `add` or `unwatch` will have no effect.
@@ -8533,10 +8716,12 @@ To fix it, you could either:
 
 ## server.middlewareMode
 
-* **Type:** `boolean`
+* **Type:** `boolean | { server: http.Server }`
 * **Default:** `false`
 
 Create Vite server in middleware mode.
+
+If [proxy](./server-options#server-proxy) is setup for WebSocket, the `server` should be provided to bind the proxy correctly.
 
 * **Related:** [appType](./shared-options#apptype), [SSR - Setting Up the Dev Server](/guide/ssr#setting-up-the-dev-server)
 
@@ -8660,28 +8845,28 @@ export default defineConfig({
 ## server.sourcemapIgnoreList
 
 * **Type:** `false | (sourcePath: string, sourcemapPath: string) => boolean`
-* **Default:** `(sourcePath) => sourcePath.includes('node_modules')`
+* **Default:** `(sourcePath) => /(?:^|[\\/])node_modules(?:[\\/]|$)/.test(sourcePath)`
 
 Whether or not to ignore source files in the server sourcemap, used to populate the [`x_google_ignoreList` source map extension](https://developer.chrome.com/articles/x-google-ignore-list/).
 
-`server.sourcemapIgnoreList` is the equivalent of [`build.rolldownOptions.output.sourcemapIgnoreList`](https://rollupjs.org/configuration-options/#output-sourcemapignorelist) for the dev server. A difference between the two config options is that the rollup function is called with a relative path for `sourcePath` while `server.sourcemapIgnoreList` is called with an absolute path. During dev, most modules have the map and the source in the same folder, so the relative path for `sourcePath` is the file name itself. In these cases, absolute paths makes it convenient to be used instead.
+`server.sourcemapIgnoreList` is the equivalent of [`build.rolldownOptions.output.sourcemapIgnoreList`](https://rolldown.rs/reference/OutputOptions.sourcemapIgnoreList) for the dev server. A difference between the two config options is that the Rolldown function is called with a relative path for `sourcePath` while `server.sourcemapIgnoreList` is called with an absolute path. During dev, most modules have the map and the source in the same folder, so the relative path for `sourcePath` is the file name itself. In these cases, absolute paths make it convenient to be used instead.
 
-By default, it excludes all paths containing `node_modules`. You can pass `false` to disable this behavior, or, for full control, a function that takes the source path and sourcemap path and returns whether to ignore the source path.
+By default, it excludes all paths that contain `node_modules` as a path segment. You can pass `false` to disable this behavior, or, for full control, a function that takes the source path and sourcemap path and returns whether to ignore the source path.
 
 ```js
 export default defineConfig({
   server: {
-    // This is the default value, and will add all files with node_modules
-    // in their paths to the ignore list.
+    // This is the default value, and will add all files that have
+    // node_modules as a path segment to the ignore list.
     sourcemapIgnoreList(sourcePath, sourcemapPath) {
-      return sourcePath.includes('node_modules')
+      return /(?:^|[\\/])node_modules(?:[\\/]|$)/.test(sourcePath)
     },
   },
 })
 ```
 
 ::: tip Note
-[`server.sourcemapIgnoreList`](#server-sourcemapignorelist) and [`build.rolldownOptions.output.sourcemapIgnoreList`](https://rollupjs.org/configuration-options/#output-sourcemapignorelist) need to be set independently. `server.sourcemapIgnoreList` is a server only config and doesn't get its default value from the defined rollup options.
+[`server.sourcemapIgnoreList`](#server-sourcemapignorelist) and [`build.rolldownOptions.output.sourcemapIgnoreList`](https://rolldown.rs/reference/OutputOptions.sourcemapIgnoreList) need to be set independently. `server.sourcemapIgnoreList` is a server only config and doesn't get its default value from the defined Rolldown options.
 :::
 
 ---
@@ -8699,7 +8884,7 @@ Unless noted, the options in this section are only applied to build.
 * **Default:** `'baseline-widely-available'`
 * **Related:** [Browser Compatibility](/guide/build#browser-compatibility)
 
-Browser compatibility target for the final bundle. The default value is a Vite special value, `'baseline-widely-available'`, which targets browsers that are included in the [Baseline](https://web-platform-dx.github.io/web-features/) Widely Available on 2026-01-01. Specifically, it is `['chrome111', 'edge111', 'firefox114', 'safari16.4', 'ios16.4']`.
+Browser compatibility target for the final bundle. The default value is a Vite special value, `'baseline-widely-available'`, which targets the minimum browser versions compatible with [Baseline](https://web-platform-dx.github.io/baseline/) Widely Available as of a date fixed for each major release ([2026-01-01 for this major](https://web-platform-dx.github.io/supported-browsers/?widelyAvailableOnDate=2026-01-01)). Specifically, it is `['chrome111', 'edge111', 'firefox114', 'safari16.4', 'ios16.4']`.
 
 Another special value is `'esnext'` - which assumes native dynamic imports support and will only perform minimal transpiling.
 
@@ -8777,7 +8962,7 @@ Specify the output directory (relative to [project root](/guide/#index-html-and-
 * **Type:** `string`
 * **Default:** `assets`
 
-Specify the directory to nest generated assets under (relative to `build.outDir`. This is not used in [Library Mode](/guide/build#library-mode)).
+Specify the directory to nest generated assets under (relative to `build.outDir`). This is not used in [Library Mode](/guide/build#library-mode).
 
 ## build.assetsInlineLimit
 
@@ -8814,9 +8999,11 @@ If you specify `build.lib`, `build.cssCodeSplit` will be `false` as default.
 
 This option allows users to set a different browser target for CSS minification from the one used for JavaScript transpilation.
 
+When `build.cssMinify` is `'lightningcss'` (the default), this option takes precedence over [`css.lightningcss.targets`](./shared-options.md#css-lightningcss) for the minification step.
+
 It should only be used when you are targeting a non-mainstream browser.
 One example is Android WeChat WebView, which supports most modern JavaScript features but not the [`#RGBA` hexadecimal color notation in CSS](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#rgb_colors).
-In this case, you need to set `build.cssTarget` to `chrome61` to prevent vite from transforming `rgba()` colors into `#RGBA` hexadecimal notations.
+In this case, you need to set `build.cssTarget` to `chrome61` to prevent Vite from transforming `rgba()` colors into `#RGBA` hexadecimal notations.
 
 ## build.cssMinify
 
@@ -8854,6 +9041,8 @@ Note that this option requires [`import.meta.resolve` support](https://caniuse.c
 * **Type:** [`RolldownOptions`](https://rolldown.rs/reference/)
 
 Directly customize the underlying Rolldown bundle. This is the same as options that can be exported from a Rolldown config file and will be merged with Vite's internal Rolldown options. See [Rolldown options docs](https://rolldown.rs/reference/) for more details.
+
+Vite overrides Rolldown's default for `preserveEntrySignatures`. When this option is not set, Vite uses `false` for regular client builds, `'strict'` for library builds, and `'allow-extension'` for SSR builds.
 
 Instead of `build.rolldownOptions.input`, it is recommended to set the top-level [`input`](/config/shared-options#input) option, because it will be used in dev as well. If `build.rolldownOptions.input` is set, it overrides the top-level `input` option for build only.
 
@@ -9055,7 +9244,7 @@ Limit for chunk size warnings (in kB). It is compared against the uncompressed c
 * **Type:** [`WatcherOptions`](https://rolldown.rs/reference/InputOptions.watch)`| null`
 * **Default:** `null`
 
-Set to `{}` to enable rollup watcher. This is mostly used in cases that involve build-only plugins or integrations processes.
+Set to `{}` to enable Rolldown watcher. This is mostly used in cases that involve build-only plugins or integrations processes.
 
 ::: warning Using Vite on Windows Subsystem for Linux (WSL) 2
 
@@ -9624,7 +9813,7 @@ url: /changes/ssr-using-modulerunner.md
 Give us feedback at [Environment API feedback discussion](https://github.com/vitejs/vite/discussions/16358)
 :::
 
-`server.ssrLoadModule` has been replaced by importing from a [Module Runner](/guide/api-environment#modulerunner).
+`server.ssrLoadModule` has been replaced by importing from a [Module Runner](/guide/api-environment-runtimes#modulerunner).
 
 Affected scope: `Vite Plugin Authors`
 
@@ -9832,11 +10021,11 @@ Provides legacy browsers support for the production build.
 
 Check out [Vite Plugin Registry](https://registry.vite.dev/plugins) for the list of plugins published to npm.
 
-## Rolldown Builtin Plugins
+## Rolldown Built-in Plugins
 
-Vite uses [Rolldown](https://rolldown.rs/) under the hood and it provides a few builtin plugins for common use cases.
+Vite uses [Rolldown](https://rolldown.rs/) under the hood and it provides a few built-in plugins for common use cases.
 
-Read the [Rolldown Builtin Plugins section](https://rolldown.rs/builtin-plugins/) for more information.
+Read the [Rolldown Built-in Plugins section](https://rolldown.rs/builtin-plugins/) for more information.
 
 ## Rolldown / Rollup Plugins
 

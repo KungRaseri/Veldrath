@@ -1,0 +1,84 @@
+# Vite
+
+> The Build Tool for the Web
+
+- 💡 Instant Server Start
+- ⚡️ Lightning Fast HMR
+- 🛠️ Rich Features
+- 📦 Optimized Build
+- 🔩 Universal Plugin Interface
+- 🔑 Fully Typed APIs
+
+Vite is a build tool that aims to provide a faster and leaner development experience for modern web projects. It consists of two major parts:
+
+- A dev server that provides [rich feature enhancements](https://vite.dev/guide/features.md) over [native ES modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules), for example extremely fast [Hot Module Replacement (HMR)](https://vite.dev/guide/features.md#hot-module-replacement).
+
+- A build command that bundles your code with [Rolldown](https://rolldown.rs), pre-configured to output highly optimized static assets for production.
+
+In addition, Vite is highly extensible via its [Plugin API](https://vite.dev/guide/api-plugin.md) and [JavaScript API](https://vite.dev/guide/api-javascript.md) with full typing support.
+
+## Table of Contents
+
+### Introduction
+
+- [Getting Started](/guide.md)
+- [Project Philosophy](/guide/philosophy.md)
+- [Why Vite](/guide/why.md)
+
+### Guide
+
+- [Features](/guide/features.md)
+- [Command Line Interface](/guide/cli.md)
+- [Using Plugins](/guide/using-plugins.md)
+- [Dependency Pre-Bundling](/guide/dep-pre-bundling.md)
+- [Static Asset Handling](/guide/assets.md)
+- [Building for Production](/guide/build.md)
+- [Deploying a Static Site](/guide/static-deploy.md)
+- [Env Variables and Modes](/guide/env-and-mode.md)
+- [Server-Side Rendering (SSR)](/guide/ssr.md)
+- [Backend Integration](/guide/backend-integration.md)
+- [Troubleshooting](/guide/troubleshooting.md)
+- [Performance](/guide/performance.md)
+- [Migration from v7](/guide/migration.md)
+- [Breaking Changes](/changes.md)
+
+### APIs
+
+- [Plugin API](/guide/api-plugin.md)
+- [HMR API](/guide/api-hmr.md)
+- [JavaScript API](/guide/api-javascript.md)
+- [Configuring Vite](/config.md)
+
+### Environment API
+
+- [Environment API](/guide/api-environment.md)
+- [Using `Environment` Instances](/guide/api-environment-instances.md)
+- [Environment API for Plugins](/guide/api-environment-plugins.md)
+- [Environment API for Frameworks](/guide/api-environment-frameworks.md)
+- [Environment API for Runtimes](/guide/api-environment-runtimes.md)
+
+### Config
+
+- [Configuring Vite](/config.md)
+- [Shared Options](/config/shared-options.md)
+- [Server Options](/config/server-options.md)
+- [Build Options](/config/build-options.md)
+- [Preview Options](/config/preview-options.md)
+- [Dep Optimization Options](/config/dep-optimization-options.md)
+- [SSR Options](/config/ssr-options.md)
+- [Worker Options](/config/worker-options.md)
+
+### Future
+
+- [`this.environment` in Hooks](/changes/this-environment-in-hooks.md)
+- [HMR `hotUpdate` Plugin Hook](/changes/hotupdate-hook.md)
+- [Move to Per-environment APIs](/changes/per-environment-apis.md)
+- [SSR Using `ModuleRunner` API](/changes/ssr-using-modulerunner.md)
+- [Shared Plugins during Build](/changes/shared-plugins-during-build.md)
+
+### Other
+
+- [5th anniversary of the Vite Team Creation](/live.md): Vite: The Documentary re-premiere. Join the ecosystem this March 19th at 3 PM UTC to remember the story we wrote together. And participate in the live stage to discuss our past, present, and future. We'll be waiting for you!
+- [Acknowledgements](/acknowledgements.md): Vite is built upon the shoulders of giants. Thank you to all the projects and contributors that make Vite possible.
+- [Plugins](/plugins.md)
+- [Releases](/releases.md)

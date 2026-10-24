@@ -31,6 +31,10 @@
 - [Get Started with Drizzle and PlanetScale in existing project](https://orm.drizzle.team/docs/get-started/planetscale-existing)
 - [Get Started with Drizzle and PlanetScale Postgres](https://orm.drizzle.team/docs/get-started/planetscale-postgres-new)
 - [Get Started with Drizzle and PlanetScale Postgres in existing project](https://orm.drizzle.team/docs/get-started/planetscale-postgres-existing)
+- [Get Started with Drizzle and Appwrite Postgres](https://orm.drizzle.team/docs/get-started/appwrite-postgres-new)
+- [Get Started with Drizzle and Appwrite Postgres in existing project](https://orm.drizzle.team/docs/get-started/appwrite-postgres-existing)
+- [Get Started with Drizzle and Appwrite MySQL](https://orm.drizzle.team/docs/get-started/appwrite-mysql-new)
+- [Get Started with Drizzle and Appwrite MySQL in existing project](https://orm.drizzle.team/docs/get-started/appwrite-mysql-existing)
 - [Get Started with Drizzle and TiDB](https://orm.drizzle.team/docs/get-started/tidb-new)
 - [Get Started with Drizzle and TiDB in existing project](https://orm.drizzle.team/docs/get-started/tidb-existing)
 - [Get Started with Drizzle and SQLite](https://orm.drizzle.team/docs/get-started/sqlite-new)
@@ -308,6 +312,7 @@
 - [Drizzle \<\> MySQL](https://orm.drizzle.team/docs/mysql/get-started-mysql)
 - [Drizzle \<\> PlanetScale MySQL](https://orm.drizzle.team/docs/mysql/connect-planetscale)
 - [Drizzle \<\> TiDB Serverless](https://orm.drizzle.team/docs/mysql/connect-tidb)
+- [Drizzle \<\> Appwrite MySQL](https://orm.drizzle.team/docs/mysql/connect-appwrite-mysql)
 - [Drizzle \<\> Bun SQL](https://orm.drizzle.team/docs/mysql/connect-bun-sql)
 - [Drizzle \<\> AWS Data API MySQL](https://orm.drizzle.team/docs/mysql/connect-aws-data-api-mysql)
 - [Drizzle HTTP proxy](https://orm.drizzle.team/docs/mysql/connect-drizzle-proxy)
@@ -413,6 +418,7 @@
 - [Drizzle \<\> Bun SQL](https://orm.drizzle.team/docs/pg/connect-bun-sql)
 - [Drizzle \<\> Effect Postgres](https://orm.drizzle.team/docs/pg/connect-effect-postgres)
 - [Drizzle \<\> Netlify Database](https://orm.drizzle.team/docs/pg/connect-netlify-db)
+- [Drizzle \<\> Appwrite Postgres](https://orm.drizzle.team/docs/pg/connect-appwrite-postgres)
 - [Drizzle \<\> AWS Data API Postgres](https://orm.drizzle.team/docs/pg/connect-aws-data-api-pg)
 - [Drizzle HTTP proxy](https://orm.drizzle.team/docs/pg/connect-drizzle-proxy)
 
@@ -678,6 +684,10 @@
 
 - [Guides](https://orm.drizzle.team/docs/guides)
 
+## Drizzle Studio
+
+- [Meet Drizzle Studio](https://orm.drizzle.team/drizzle-studio/overview)
+
 ## Tutorials
 
 - [Tutorials](https://orm.drizzle.team/docs/tutorials)
@@ -695,3 +705,8 @@
 - [Drizzle with Vercel Postgres](https://orm.drizzle.team/docs/tutorials/drizzle-with-vercel)
 - [Drizzle with Xata](https://orm.drizzle.team/docs/tutorials/drizzle-with-xata)
 - [Drizzle with Node.js and PostgreSQL on Railway](https://orm.drizzle.team/docs/tutorials/node-railway-pg)
+- [Connect Drizzle Kit to a private Railway database with Tailscale [OUTDATED]](https://orm.drizzle.team/docs/tutorials/railway-postgres-tailscale-legacy)
+- [Run Drizzle Kit against a private Railway database over Tailscale](https://orm.drizzle.team/docs/tutorials/railway-postgres-tailscale)
+- [Drizzle Studio and Gateway on Railway behind Tailscale [OUTDATED]](https://orm.drizzle.team/docs/tutorials/railway-studio-tailscale-legacy)
+- [Deploy Drizzle Studio or Gateway on Railway with private access over Tailscale](https://orm.drizzle.team/docs/tutorials/railway-studio-tailscale)
+- [Add private access to Drizzle Studio, Gateway or a database on Railway with Tailscale](https://orm.drizzle.team/docs/tutorials/railway-tailscale-existing-project)

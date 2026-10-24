@@ -414,29 +414,26 @@ import { useState } from 'react';
 export default function Default() {
 	const [checked, setChecked] = useState(false);
 
-    return (
-    	<Switch checked={checked} onCheckedChange={(e) => setChecked(e.checked)}>
-    		<Switch.Control>
-    			<Switch.Thumb />
-    		</Switch.Control>
-    		<Switch.Label>Label</Switch.Label>
-    		<Switch.HiddenInput />
-    	</Switch>
-    );
-
+	return (
+		<Switch checked={checked} onCheckedChange={(e) => setChecked(e.checked)}>
+			<Switch.Control>
+				<Switch.Thumb />
+			</Switch.Control>
+			<Switch.Label>Label</Switch.Label>
+			<Switch.HiddenInput />
+		</Switch>
+	);
 }
-
 ```
-
-{/* prettier-ignore */}
 
 ```svelte
 <script lang="ts">
 	import { Switch } from '@skeletonlabs/skeleton-svelte';
+
 	let checked = $state(false);
 </script>
 
-<Switch checked={checked} onCheckedChange={(e) => (checked = e.checked)}>
+<Switch {checked} onCheckedChange={(e) => (checked = e.checked)}>
 	<Switch.Control>
 		<Switch.Thumb />
 	</Switch.Control>
@@ -507,9 +504,6 @@ export default function TooltipExample() {
 ### Learn More
 
 For a comprehensive guide to how Skeleton implements components, refer to our [contribution guidelines](/docs/\[framework]/resources/contribute/components).
-
-```
-```
 
 # Core API
 

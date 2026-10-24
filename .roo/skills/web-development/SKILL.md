@@ -36,8 +36,11 @@ Build and change the SvelteKit web app ([`web/client`](../../../web/client)) tha
 
 - **Workspaces:** `npm` workspaces live in [`web/package.json`](../../../web/package.json) (`shared`, `client`). Run all root scripts from `web/`, not `web/client/`.
 - **Svelte 5 runes only.** Runes mode is forced in `vite.config.ts`; use `$state`, `$derived`, `$props`, `$bindable`. No `export let`, no `$:`.
-- **Route layout is flat:** `web/client/src/routes/<route>/` with per-route `+page.server.ts` guards. Do not reintroduce route groups from the original template.
-- **Server-only boundary:** `$lib/server`, `$env/*/private`, and `hooks.server.*` must never be imported (directly or indirectly) by client components — SvelteKit fails the build.
+- **Route layout:** top-level pages are flat (`web/client/src/routes/<route>/`); staff areas use route groups `(admin)`, `(foundry)`, `(editorial)`, and `(mod)`. Each guarded route has a `+page.server.ts`/`+layout.server.ts` that redirects unauthenticated users.
+- **Imports use `#lib`, not `$lib`.** SvelteKit 3 removed the `$lib` alias; the mapping is `"imports": { "#lib/*": "./src/lib/*" }` in `web/client/package.json` (plus `paths` in `tsconfig.json` for TypeScript).
+- **Server-only boundary:** `#lib/server`, `$env/*/private`, and `hooks.server.*` must never be imported (directly or indirectly) by client components — SvelteKit fails the build.
+- **Private env:** read secrets through `#lib/server/env.ts` (it reads `process.env` and loads `.env` locally). Do **not** use `$env/dynamic/private` for server secrets: the SvelteKit 3 + Vite 8 (Rolldown) build constant-folds it and bakes in build-time values.
+- **`resolve()` takes route IDs**, including group segments: `resolve('/(mod)/mod/users')`; dynamic routes use `resolve('/play/[id]', { id })`.
 - **Auth:** Better Auth owns web credentials/sessions. Keep `getAuth()` and the Postgres client lazy so `vite build` never touches the database.
 - **Game tokens:** SvelteKit mints short-lived JWTs for `Veldrath.Server`; all game API calls go through `gameApiFetch` in `src/lib/server/game-request.ts`.
 - **Email:** transactional mail is sent through the .NET server's SMTP service via the internal bridge (`src/lib/server/email.ts`); without `INTERNAL_BRIDGE_URL`/`INTERNAL_BRIDGE_TOKEN` links are logged locally.

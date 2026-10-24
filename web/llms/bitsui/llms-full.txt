@@ -2836,12 +2836,12 @@ If you're using an `AlertDialog` *within* a form, you'll need to ensure that the
 
 The root component used to set and manage the state of the alert dialog.
 
-| Property               | Type                                 | Description                                                                                                        | Details |
-| ---------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ------- |
-| `open` $bindable       | `boolean`                            | The open state of the component.`Default: false`                                                                   |         |
-| `onOpenChange`         | `function` - (open: boolean) => void | A callback function called when the open state changes.`Default:  —— undefined`                                    |         |
-| `onOpenChangeComplete` | `function` - (open: boolean) => void | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined` |         |
-| `children`             | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                            |         |
+| Property               | Type                                 | Description                                                                                                                                                                                                            | Details |
+| ---------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `open` $bindable       | `boolean`                            | The open state of the component.`Default: false`                                                                                                                                                                       |         |
+| `onOpenChange`         | `function` - (open: boolean) => void | A callback function called when the component changes the open state, such as from user interaction. It is not called when you set `open` yourself, so run any related logic where you set it.`Default:  —— undefined` |         |
+| `onOpenChangeComplete` | `function` - (open: boolean) => void | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined`                                                                                                     |         |
+| `children`             | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                                                                                                                                |         |
 
 ### AlertDialog.Trigger
 
@@ -3280,7 +3280,7 @@ Expand Code
     </Avatar.Root>
   </LinkPreview.Trigger>
   <LinkPreview.Content
-    class="border-muted bg-background shadow-popover w-[331px] rounded-xl border p-[17px]"
+    class="border-muted bg-background shadow-popover z-50 w-[331px] rounded-xl border p-[17px]"
     sideOffset={8}
   >
     <div class="flex space-x-4">
@@ -4807,6 +4807,7 @@ The button component used to toggle the state of the checkbox.
 | `disabled`                | `boolean`                                                                                                            | Whether or not the checkbox button is disabled. This prevents the user from interacting with it.`Default: false`                                                                |         |
 | `required`                | `boolean`                                                                                                            | Whether or not the checkbox is required.`Default: false`                                                                                                                        |         |
 | `name`                    | `string`                                                                                                             | The name of the checkbox. If provided a hidden input will be render to use for form submission. If not provided, the hidden input will not be rendered.`Default:  —— undefined` |         |
+| `form`                    | `string`                                                                                                             | The id of a form element the checkbox button and hidden input will be attached to.`Default:  —— undefined`                                                                      |         |
 | `value`                   | `string`                                                                                                             | The value of the checkbox. This is what is submitted with the form when the checkbox is checked.`Default:  —— undefined`                                                        |         |
 | `readonly`                | `boolean`                                                                                                            | Whether or not the checkbox is read only. If `true`, the checkbox will be focusable by the user, but will not be able to be checked/unchecked.`Default: false`                  |         |
 | `ref` $bindable           | `HTMLButtonElement`                                                                                                  | The underlying DOM element being rendered. You can bind to this to get a reference to the element.`Default: null`                                                               |         |
@@ -5152,8 +5153,8 @@ Expand Code
           demonstrates the
           <code class="bg-muted rounded px-1 py-0.5 text-xs"
             >hiddenUntilFound</code
-          > feature. When you search for text within this collapsed section, the
-          browser will automatically expand it to show the matching results.
+          > feature. When you search for text within this collapsed section, the browser
+          will automatically expand it to show the matching results.
         </p>
       </div>
     </Collapsible.Content>
@@ -5187,15 +5188,15 @@ Expand Code
 
 The root collapsible container which manages the state of the collapsible.
 
-| Property               | Type                                                                  | Description                                                                                                                                   | Details |
-| ---------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `open` $bindable       | `boolean`                                                             | The open state of the collapsible. The content will be visible when this is true, and hidden when it's false.`Default: false`                 |         |
-| `onOpenChange`         | `function` - (open: boolean) => void                                  | A callback function called when the open state changes.`Default:  —— undefined`                                                               |         |
-| `onOpenChangeComplete` | `function` - (open: boolean) => void                                  | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined`                            |         |
-| `disabled`             | `boolean`                                                             | Whether or not the collapsible is disabled. This prevents the user from interacting with it.`Default: false`                                  |         |
-| `ref` $bindable        | `HTMLDivElement`                                                      | The underlying DOM element being rendered. You can bind to this to get a reference to the element.`Default: null`                             |         |
-| `children`             | `Snippet`                                                             | The children content to render.`Default:  —— undefined`                                                                                       |         |
-| `child`                | `Snippet` - type SnippetProps = { props: Record\<string, unknown>; }; | Use render delegation to render your own element. See [Child Snippet](/docs/child-snippet) docs for more information.`Default:  —— undefined` |         |
+| Property               | Type                                                                  | Description                                                                                                                                                                                                            | Details |
+| ---------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `open` $bindable       | `boolean`                                                             | The open state of the collapsible. The content will be visible when this is true, and hidden when it's false.`Default: false`                                                                                          |         |
+| `onOpenChange`         | `function` - (open: boolean) => void                                  | A callback function called when the component changes the open state, such as from user interaction. It is not called when you set `open` yourself, so run any related logic where you set it.`Default:  —— undefined` |         |
+| `onOpenChangeComplete` | `function` - (open: boolean) => void                                  | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined`                                                                                                     |         |
+| `disabled`             | `boolean`                                                             | Whether or not the collapsible is disabled. This prevents the user from interacting with it.`Default: false`                                                                                                           |         |
+| `ref` $bindable        | `HTMLDivElement`                                                      | The underlying DOM element being rendered. You can bind to this to get a reference to the element.`Default: null`                                                                                                      |         |
+| `children`             | `Snippet`                                                             | The children content to render.`Default:  —— undefined`                                                                                                                                                                |         |
+| `child`                | `Snippet` - type SnippetProps = { props: Record\<string, unknown>; }; | Use render delegation to render your own element. See [Child Snippet](/docs/child-snippet) docs for more information.`Default:  —— undefined`                                                                          |         |
 
 | Data Attribute          | Value                       | Description                               | Details |
 | ----------------------- | --------------------------- | ----------------------------------------- | ------- |
@@ -5890,7 +5891,7 @@ Expand Code
   </div>
   <Combobox.Portal>
     <Combobox.Content
-      class="border-muted bg-background shadow-popover outline-hidden h-96 max-h-[var(--bits-combobox-content-available-height)] w-[var(--bits-combobox-anchor-width)] min-w-[var(--bits-combobox-anchor-width)] rounded-xl border px-1 py-3"
+      class="border-muted bg-background shadow-popover outline-hidden z-50 h-96 max-h-[var(--bits-combobox-content-available-height)] w-[var(--bits-combobox-anchor-width)] min-w-[var(--bits-combobox-anchor-width)] rounded-xl border px-1 py-3"
       sideOffset={10}
       forceMount
     >
@@ -5951,7 +5952,7 @@ The root combobox component which manages & scopes the state of the combobox.
 | `value` $bindable      | `union` - string \| string\[]                                     | The value of the combobox. When the type is `'single'`, this should be a string. When the type is `'multiple'`, this should be an array of strings.`Default:  —— undefined`                                                                                              |         |
 | `onValueChange`        | `function` - (string) => void \| (string\[]) => void              | A callback that is fired when the combobox value changes. When the type is `'single'`, the argument will be a string. When the type is `'multiple'`, the argument will be an array of strings.`Default:  —— undefined`                                                   |         |
 | `open` $bindable       | `boolean`                                                         | The open state of the combobox menu.`Default: false`                                                                                                                                                                                                                     |         |
-| `onOpenChange`         | `function` - (open: boolean) => void                              | A callback function called when the open state changes.`Default:  —— undefined`                                                                                                                                                                                          |         |
+| `onOpenChange`         | `function` - (open: boolean) => void                              | A callback function called when the component changes the open state, such as from user interaction. It is not called when you set `open` yourself, so run any related logic where you set it.`Default:  —— undefined`                                                   |         |
 | `onOpenChangeComplete` | `function` - (open: boolean) => void                              | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined`                                                                                                                                                       |         |
 | `disabled`             | `boolean`                                                         | Whether or not the combobox component is disabled.`Default: false`                                                                                                                                                                                                       |         |
 | `name`                 | `string`                                                          | The name to apply to the hidden input element for form submission. If provided, a hidden input element will be rendered to submit the value of the combobox.`Default:  —— undefined`                                                                                     |         |
@@ -6982,7 +6983,7 @@ command.updateSelectedByItem(-1); // previous item
 
 ### Duplicate `value`s
 
-The value of each `Command.Item` ***must*** be unique. If you have two items with the same value, the component will not be able to determine which one to select, causing unexpected behavior when navigating with the keyboard or hovering with the mouse.
+The value of each `Command.Item` **_must_** be unique. If you have two items with the same value, the component will not be able to determine which one to select, causing unexpected behavior when navigating with the keyboard or hovering with the mouse.
 
 If the text content of two items are the same for one reason or another, you should use the `value` prop to set a unique value for each item. When a `value` is set, the text content is used for display purposes only. The `value` prop is used for filtering and selection.
 
@@ -7236,7 +7237,7 @@ Copy Page
   </ContextMenu.Trigger>
   <ContextMenu.Portal>
     <ContextMenu.Content
-      class="border-muted bg-background shadow-popover w-[229px] rounded-xl border px-1 py-1.5 outline-none focus-visible:outline-none"
+      class="border-muted bg-background shadow-popover z-50 w-[229px] rounded-xl border px-1 py-1.5 outline-none focus-visible:outline-none"
     >
       <ContextMenu.Item
         class="rounded-button data-highlighted:bg-muted flex h-10 select-none items-center py-3 pl-3 pr-1.5 text-sm font-medium focus-visible:outline-none"
@@ -7654,7 +7655,7 @@ Expand Code
     { value: "mentions", label: "@mentions" }
   ] as const;
   const contentClass =
-    "border-muted bg-background shadow-popover outline-hidden focus-visible:outline-hidden w-[250px] rounded-xl border px-1 py-1.5";
+    "z-50 border-muted bg-background shadow-popover outline-hidden focus-visible:outline-hidden w-[250px] rounded-xl border px-1 py-1.5";
   const subContentClass =
     "border-muted bg-background shadow-popover outline-hidden focus-visible:outline-hidden z-100 w-[230px] rounded-xl border px-1 py-1.5";
   const itemClass =
@@ -7901,7 +7902,7 @@ Expand Code
   </ContextMenu.Trigger>
   <ContextMenu.Portal>
     <ContextMenu.Content
-      class="focus-override border-muted bg-background shadow-popover w-[229px] rounded-xl border px-1 py-1.5 focus-visible:outline-none"
+      class="focus-override border-muted bg-background shadow-popover z-50 w-[229px] rounded-xl border px-1 py-1.5 focus-visible:outline-none"
       forceMount
     >
       {#snippet child({ wrapperProps, props, open })}
@@ -8024,13 +8025,13 @@ Expand Code
 
 The root component which manages & scopes the state of the context menu.
 
-| Property               | Type                                 | Description                                                                                                        | Details |
-| ---------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ------- |
-| `open` $bindable       | `boolean`                            | The open state of the menu.`Default: false`                                                                        |         |
-| `onOpenChange`         | `function` - (open: boolean) => void | A callback function called when the open state changes.`Default:  —— undefined`                                    |         |
-| `onOpenChangeComplete` | `function` - (open: boolean) => void | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined` |         |
-| `dir`                  | `enum` - 'ltr' \| 'rtl'              | The reading direction of the app.`Default: 'ltr'`                                                                  |         |
-| `children`             | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                            |         |
+| Property               | Type                                 | Description                                                                                                                                                                                                            | Details |
+| ---------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `open` $bindable       | `boolean`                            | The open state of the menu.`Default: false`                                                                                                                                                                            |         |
+| `onOpenChange`         | `function` - (open: boolean) => void | A callback function called when the component changes the open state, such as from user interaction. It is not called when you set `open` yourself, so run any related logic where you set it.`Default:  —— undefined` |         |
+| `onOpenChangeComplete` | `function` - (open: boolean) => void | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined`                                                                                                     |         |
+| `dir`                  | `enum` - 'ltr' \| 'rtl'              | The reading direction of the app.`Default: 'ltr'`                                                                                                                                                                      |         |
+| `children`             | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                                                                                                                                |         |
 
 ### ContextMenu.Trigger
 
@@ -8308,12 +8309,12 @@ A heading for a group which will be skipped when navigating with the keyboard. I
 
 A submenu belonging to the parent context menu. Responsible for managing the state of the submenu.
 
-| Property               | Type                                 | Description                                                                                                        | Details |
-| ---------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ------- |
-| `open` $bindable       | `boolean`                            | The open state of the submenu.`Default: false`                                                                     |         |
-| `onOpenChange`         | `function` - (open: boolean) => void | A callback function called when the open state changes.`Default:  —— undefined`                                    |         |
-| `onOpenChangeComplete` | `function` - (open: boolean) => void | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined` |         |
-| `children`             | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                            |         |
+| Property               | Type                                 | Description                                                                                                                                                                                                            | Details |
+| ---------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `open` $bindable       | `boolean`                            | The open state of the submenu.`Default: false`                                                                                                                                                                         |         |
+| `onOpenChange`         | `function` - (open: boolean) => void | A callback function called when the component changes the open state, such as from user interaction. It is not called when you set `open` yourself, so run any related logic where you set it.`Default:  —— undefined` |         |
+| `onOpenChangeComplete` | `function` - (open: boolean) => void | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined`                                                                                                     |         |
+| `children`             | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                                                                                                                                |         |
 
 ### ContextMenu.SubTrigger
 
@@ -9228,7 +9229,7 @@ The root date picker component.
 | `value`                   | `DateValue` - import type { CalendarDate, CalendarDateTime, ZonedDateTime } from "@internationalized/date"; type DateValue = CalendarDate \| CalendarDateTime \| ZonedDateTime | The selected date.`Default:  —— undefined`                                                                                                                                                                                                                              |         |
 | `onValueChange`           | `function` - (value: DateValue) => void \| (value: DateValue\[]) => void                                                                                                       | A function that is called when the selected date changes.`Default:  —— undefined`                                                                                                                                                                                       |         |
 | `open` $bindable          | `boolean`                                                                                                                                                                      | The open state of the popover content.`Default: false`                                                                                                                                                                                                                  |         |
-| `onOpenChange`            | `function` - (open: boolean) => void                                                                                                                                           | A callback function called when the open state changes.`Default:  —— undefined`                                                                                                                                                                                         |         |
+| `onOpenChange`            | `function` - (open: boolean) => void                                                                                                                                           | A callback function called when the component changes the open state, such as from user interaction. It is not called when you set `open` yourself, so run any related logic where you set it.`Default:  —— undefined`                                                  |         |
 | `onOpenChangeComplete`    | `function` - (open: boolean) => void                                                                                                                                           | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined`                                                                                                                                                      |         |
 | `placeholder`             | `DateValue` - import type { CalendarDate, CalendarDateTime, ZonedDateTime } from "@internationalized/date"; type DateValue = CalendarDate \| CalendarDateTime \| ZonedDateTime | The placeholder date, which is used to determine what month to display when no date is selected. This updates as the user navigates the calendar, and can be used to programmatically control the calendar's view.`Default:  —— undefined`                              |         |
 | `onPlaceholderChange`     | `function` - (date: DateValue) => void                                                                                                                                         | A function that is called when the placeholder date changes.`Default:  —— undefined`                                                                                                                                                                                    |         |
@@ -10273,7 +10274,7 @@ The root date picker component.
 | `isDateDisabled`          | `function` - (date: DateValue) => boolean                                                                                                                                      | A function that returns whether or not a date is disabled.`Default:  —— undefined`                                                                                                                                                                                      |         |
 | `numberOfMonths`          | `number`                                                                                                                                                                       | The number of months to display at once.`Default: 1`                                                                                                                                                                                                                    |         |
 | `open` $bindable          | `boolean`                                                                                                                                                                      | The open state of the popover content.`Default: false`                                                                                                                                                                                                                  |         |
-| `onOpenChange`            | `function` - (open: boolean) => void                                                                                                                                           | A callback function called when the open state changes.`Default:  —— undefined`                                                                                                                                                                                         |         |
+| `onOpenChange`            | `function` - (open: boolean) => void                                                                                                                                           | A callback function called when the component changes the open state, such as from user interaction. It is not called when you set `open` yourself, so run any related logic where you set it.`Default:  —— undefined`                                                  |         |
 | `onOpenChangeComplete`    | `function` - (open: boolean) => void                                                                                                                                           | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined`                                                                                                                                                      |         |
 | `onEndValueChange`        | `function` - (value: DateValue) => void                                                                                                                                        | A function that is called when the end date changes.`Default:  —— undefined`                                                                                                                                                                                            |         |
 | `onStartValueChange`      | `function` - (value: DateValue) => void                                                                                                                                        | A function that is called when the start date changes.`Default:  —— undefined`                                                                                                                                                                                          |         |
@@ -11004,6 +11005,12 @@ To change which element receives focus when the Dialog closes, use the `onCloseA
 </Dialog.Root>
 ```
 
+#### When the trigger is removed
+
+If closing the dialog also removes its trigger (for example, after deleting a row), use `onCloseAutoFocus` to prevent the default focus return and focus a logical element that remains in the page, such as the next row's action or an Add button. Keep that destination outside the content being removed.
+
+Test both paths with the keyboard: canceling should return focus to the existing trigger, while deleting should move focus to the chosen destination without leaving focus on the document body.
+
 ### Best Practices
 
 - Always maintain a clear focus management strategy for your Dialogs.
@@ -11374,12 +11381,12 @@ If you're using a `Dialog` *within* a form, you'll need to ensure that the `Port
 
 The root component used to set and manage the state of the dialog.
 
-| Property               | Type                                 | Description                                                                                                        | Details |
-| ---------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ------- |
-| `open` $bindable       | `boolean`                            | Whether or not the dialog is open.`Default: false`                                                                 |         |
-| `onOpenChange`         | `function` - (open: boolean) => void | A callback function called when the open state changes.`Default:  —— undefined`                                    |         |
-| `onOpenChangeComplete` | `function` - (open: boolean) => void | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined` |         |
-| `children`             | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                            |         |
+| Property               | Type                                 | Description                                                                                                                                                                                                            | Details |
+| ---------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `open` $bindable       | `boolean`                            | Whether or not the dialog is open.`Default: false`                                                                                                                                                                     |         |
+| `onOpenChange`         | `function` - (open: boolean) => void | A callback function called when the component changes the open state, such as from user interaction. It is not called when you set `open` yourself, so run any related logic where you set it.`Default:  —— undefined` |         |
+| `onOpenChangeComplete` | `function` - (open: boolean) => void | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined`                                                                                                     |         |
+| `children`             | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                                                                                                                                |         |
 
 ### Dialog.Trigger
 
@@ -11550,7 +11557,7 @@ Copy Page
   </DropdownMenu.Trigger>
   <DropdownMenu.Portal>
     <DropdownMenu.Content
-      class="border-muted bg-background shadow-popover outline-hidden focus-visible:outline-hidden w-[229px] rounded-xl border px-1 py-1.5"
+      class="border-muted bg-background shadow-popover outline-hidden focus-visible:outline-hidden z-50 w-[229px] rounded-xl border px-1 py-1.5"
       sideOffset={8}
     >
       <DropdownMenu.Item
@@ -11643,7 +11650,7 @@ Copy Page
         </DropdownMenu.SubTrigger>
         <DropdownMenu.Portal>
           <DropdownMenu.SubContent
-            class="border-muted bg-background shadow-popover ring-0! ring-transparent! w-[209px] rounded-xl border px-1 py-1.5 outline-none"
+            class="border-muted bg-background shadow-popover ring-0! ring-transparent! z-50 w-[209px] rounded-xl border px-1 py-1.5 outline-none"
             sideOffset={10}
           >
             <DropdownMenu.RadioGroup bind:value={invited}>
@@ -12065,7 +12072,7 @@ Expand Code
     { value: "mentions", label: "@mentions" }
   ] as const;
   const contentClass =
-    "border-muted bg-background shadow-popover outline-hidden focus-visible:outline-hidden w-[250px] rounded-xl border px-1 py-1.5";
+    "z-50 border-muted bg-background shadow-popover outline-hidden focus-visible:outline-hidden w-[250px] rounded-xl border px-1 py-1.5";
   const subContentClass =
     "border-muted bg-background shadow-popover outline-hidden focus-visible:outline-hidden z-100 w-[230px] rounded-xl border px-1 py-1.5";
   const itemClass =
@@ -12322,7 +12329,7 @@ Expand Code
   </DropdownMenu.Trigger>
   <DropdownMenu.Portal>
     <DropdownMenu.Content
-      class="border-muted bg-background shadow-popover w-[229px] rounded-xl border px-1 py-1.5 focus-visible:outline-none"
+      class="border-muted bg-background shadow-popover z-50 w-[229px] rounded-xl border px-1 py-1.5 focus-visible:outline-none"
       sideOffset={8}
       forceMount
     >
@@ -12419,7 +12426,7 @@ Expand Code
                   </div>
                 </DropdownMenu.SubTrigger>
                 <DropdownMenu.SubContent
-                  class="border-muted bg-background shadow-popover w-[209px] rounded-xl border px-1 py-1.5 focus-visible:outline-none"
+                  class="border-muted bg-background shadow-popover z-50 w-[209px] rounded-xl border px-1 py-1.5 focus-visible:outline-none"
                   sideOffset={10}
                 >
                   <DropdownMenu.RadioGroup bind:value={invited}>
@@ -12558,13 +12565,13 @@ If you wish to instead anchor the content to a different element, you can pass e
 
 The root component which manages & scopes the state of the dropdown menu.
 
-| Property               | Type                                 | Description                                                                                                        | Details |
-| ---------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ------- |
-| `open` $bindable       | `boolean`                            | The open state of the menu.`Default: false`                                                                        |         |
-| `onOpenChange`         | `function` - (open: boolean) => void | A callback function called when the open state changes.`Default:  —— undefined`                                    |         |
-| `onOpenChangeComplete` | `function` - (open: boolean) => void | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined` |         |
-| `dir`                  | `enum` - 'ltr' \| 'rtl'              | The reading direction of the app.`Default: 'ltr'`                                                                  |         |
-| `children`             | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                            |         |
+| Property               | Type                                 | Description                                                                                                                                                                                                            | Details |
+| ---------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `open` $bindable       | `boolean`                            | The open state of the menu.`Default: false`                                                                                                                                                                            |         |
+| `onOpenChange`         | `function` - (open: boolean) => void | A callback function called when the component changes the open state, such as from user interaction. It is not called when you set `open` yourself, so run any related logic where you set it.`Default:  —— undefined` |         |
+| `onOpenChangeComplete` | `function` - (open: boolean) => void | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined`                                                                                                     |         |
+| `dir`                  | `enum` - 'ltr' \| 'rtl'              | The reading direction of the app.`Default: 'ltr'`                                                                                                                                                                      |         |
+| `children`             | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                                                                                                                                |         |
 
 ### DropdownMenu.Trigger
 
@@ -12842,12 +12849,12 @@ A heading for a group which will be skipped when navigating with the keyboard. I
 
 A submenu belonging to the parent dropdown menu. Responsible for managing the state of the submenu.
 
-| Property               | Type                                 | Description                                                                                                        | Details |
-| ---------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ------- |
-| `open` $bindable       | `boolean`                            | The open state of the submenu.`Default: false`                                                                     |         |
-| `onOpenChange`         | `function` - (open: boolean) => void | A callback function called when the open state changes.`Default:  —— undefined`                                    |         |
-| `onOpenChangeComplete` | `function` - (open: boolean) => void | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined` |         |
-| `children`             | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                            |         |
+| Property               | Type                                 | Description                                                                                                                                                                                                            | Details |
+| ---------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `open` $bindable       | `boolean`                            | The open state of the submenu.`Default: false`                                                                                                                                                                         |         |
+| `onOpenChange`         | `function` - (open: boolean) => void | A callback function called when the component changes the open state, such as from user interaction. It is not called when you set `open` yourself, so run any related logic where you set it.`Default:  —— undefined` |         |
+| `onOpenChangeComplete` | `function` - (open: boolean) => void | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined`                                                                                                     |         |
+| `children`             | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                                                                                                                                |         |
 
 ### DropdownMenu.SubTrigger
 
@@ -13062,7 +13069,7 @@ Copy Page
     </Avatar.Root>
   </LinkPreview.Trigger>
   <LinkPreview.Content
-    class="border-muted bg-background shadow-popover w-[331px] rounded-xl border p-[17px]"
+    class="border-muted bg-background shadow-popover z-50 w-[331px] rounded-xl border p-[17px]"
     sideOffset={8}
   >
     <div class="flex space-x-4">
@@ -13254,7 +13261,7 @@ Expand Code
     </Avatar.Root>
   </LinkPreview.Trigger>
   <LinkPreview.Content
-    class="border-muted bg-background shadow-popover w-[331px] rounded-xl border p-[17px]"
+    class="border-muted bg-background shadow-popover z-50 w-[331px] rounded-xl border p-[17px]"
     sideOffset={8}
     forceMount
   >
@@ -13310,16 +13317,16 @@ Expand Code
 
 The root component used to manage the state of the state of the link preview.
 
-| Property                 | Type                                 | Description                                                                                                        | Details |
-| ------------------------ | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ------- |
-| `open` $bindable         | `boolean`                            | The open state of the link preview component.`Default: false`                                                      |         |
-| `onOpenChange`           | `function` - (open: boolean) => void | A callback function called when the open state changes.`Default:  —— undefined`                                    |         |
-| `onOpenChangeComplete`   | `function` - (open: boolean) => void | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined` |         |
-| `openDelay`              | `number`                             | The amount of time in milliseconds to delay opening the preview when hovering over the trigger.`Default: 700`      |         |
-| `closeDelay`             | `number`                             | The amount of time in milliseconds to delay closing the preview when the mouse leaves the trigger.`Default: 300`   |         |
-| `disabled`               | `boolean`                            | Whether or not the link preview is disabled.`Default: false`                                                       |         |
-| `ignoreNonKeyboardFocus` | `boolean`                            | Whether the link preview should ignore non-keyboard focus.`Default: false`                                         |         |
-| `children`               | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                            |         |
+| Property                 | Type                                 | Description                                                                                                                                                                                                            | Details |
+| ------------------------ | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `open` $bindable         | `boolean`                            | The open state of the link preview component.`Default: false`                                                                                                                                                          |         |
+| `onOpenChange`           | `function` - (open: boolean) => void | A callback function called when the component changes the open state, such as from user interaction. It is not called when you set `open` yourself, so run any related logic where you set it.`Default:  —— undefined` |         |
+| `onOpenChangeComplete`   | `function` - (open: boolean) => void | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined`                                                                                                     |         |
+| `openDelay`              | `number`                             | The amount of time in milliseconds to delay opening the preview when hovering over the trigger.`Default: 700`                                                                                                          |         |
+| `closeDelay`             | `number`                             | The amount of time in milliseconds to delay closing the preview when the mouse leaves the trigger.`Default: 300`                                                                                                       |         |
+| `disabled`               | `boolean`                            | Whether or not the link preview is disabled.`Default: false`                                                                                                                                                           |         |
+| `ignoreNonKeyboardFocus` | `boolean`                            | Whether the link preview should ignore non-keyboard focus.`Default: false`                                                                                                                                             |         |
+| `children`               | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                                                                                                                                |         |
 
 ### LinkPreview\.Trigger
 
@@ -13602,7 +13609,7 @@ Copy Page
             </div>
           </Menubar.SubTrigger>
           <Menubar.SubContent
-            class="focus-override border-muted bg-background shadow-popover focus-visible:outline-hidden w-full max-w-[209px] rounded-xl border px-1 py-1.5"
+            class="focus-override border-muted bg-background shadow-popover focus-visible:outline-hidden z-50 w-full max-w-[209px] rounded-xl border px-1 py-1.5"
           >
             <Menubar.Item
               class="rounded-button data-highlighted:bg-muted flex h-10 select-none items-center py-3 pl-3 pr-1.5 text-sm font-medium focus-visible:outline-none"
@@ -14078,11 +14085,11 @@ The root menubar component which manages & scopes the state of the menubar.
 
 A menu within the menubar.
 
-| Property       | Type                                 | Description                                                                                                                   | Details |
-| -------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `value`        | `string`                             | The value of this menu within the menubar, used to identify it when determining which menu is active.`Default:  —— undefined` |         |
-| `onOpenChange` | `function` - (open: boolean) => void | A callback function called when the open state changes.`Default:  —— undefined`                                               |         |
-| `children`     | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                                       |         |
+| Property       | Type                                 | Description                                                                                                                                                                                                            | Details |
+| -------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `value`        | `string`                             | The value of this menu within the menubar, used to identify it when determining which menu is active.`Default:  —— undefined`                                                                                          |         |
+| `onOpenChange` | `function` - (open: boolean) => void | A callback function called when the component changes the open state, such as from user interaction. It is not called when you set `open` yourself, so run any related logic where you set it.`Default:  —— undefined` |         |
+| `children`     | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                                                                                                                                |         |
 
 ### Menubar.Trigger
 
@@ -14330,12 +14337,12 @@ A heading for a group which will be skipped when navigating with the keyboard. I
 
 A submenu belonging to the parent dropdown menu. Responsible for managing the state of the submenu.
 
-| Property               | Type                                 | Description                                                                                                        | Details |
-| ---------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ------- |
-| `open` $bindable       | `boolean`                            | The open state of the submenu.`Default: false`                                                                     |         |
-| `onOpenChange`         | `function` - (open: boolean) => void | A callback function called when the open state changes.`Default:  —— undefined`                                    |         |
-| `onOpenChangeComplete` | `function` - (open: boolean) => void | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined` |         |
-| `children`             | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                            |         |
+| Property               | Type                                 | Description                                                                                                                                                                                                            | Details |
+| ---------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `open` $bindable       | `boolean`                            | The open state of the submenu.`Default: false`                                                                                                                                                                         |         |
+| `onOpenChange`         | `function` - (open: boolean) => void | A callback function called when the component changes the open state, such as from user interaction. It is not called when you set `open` yourself, so run any related logic where you set it.`Default:  —— undefined` |         |
+| `onOpenChangeComplete` | `function` - (open: boolean) => void | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined`                                                                                                     |         |
+| `children`             | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                                                                                                                                |         |
 
 ### Menubar.SubTrigger
 
@@ -16161,7 +16168,7 @@ Copy Page
   </Popover.Trigger>
   <Popover.Portal>
     <Popover.Content
-      class="border-dark-10 bg-background shadow-popover data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--bits-popover-content-transform-origin) z-30 w-full max-w-[328px] rounded-[12px] border p-4"
+      class="border-dark-10 bg-background shadow-popover data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--bits-popover-content-transform-origin) z-50 w-full max-w-[328px] rounded-[12px] border p-4"
       sideOffset={8}
     >
       <div class="flex items-center">
@@ -16308,7 +16315,7 @@ Expand Code
   </Popover.Trigger>
   <Popover.Portal>
     <Popover.Content
-      class="border-dark-10 bg-background shadow-popover data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--bits-popover-content-transform-origin) z-30 w-full max-w-[300px] rounded-[12px] border p-4 focus-visible:outline-none"
+      class="border-dark-10 bg-background shadow-popover data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--bits-popover-content-transform-origin) z-50 w-full max-w-[300px] rounded-[12px] border p-4 focus-visible:outline-none"
       sideOffset={8}
     >
       <div class="flex items-start justify-between gap-3">
@@ -16557,7 +16564,7 @@ Expand Code
   </Popover.Trigger>
   <Popover.Portal>
     <Popover.Content
-      class="border-dark-10 bg-background shadow-popover z-30 w-full max-w-[328px] rounded-[12px] border p-4"
+      class="border-dark-10 bg-background shadow-popover z-50 w-full max-w-[328px] rounded-[12px] border p-4"
       sideOffset={8}
       forceMount
     >
@@ -16722,12 +16729,12 @@ Expand Code
 
 The root component used to manage the state of the state of the popover.
 
-| Property               | Type                                 | Description                                                                                                        | Details |
-| ---------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ------- |
-| `open` $bindable       | `boolean`                            | The open state of the component.`Default: false`                                                                   |         |
-| `onOpenChange`         | `function` - (open: boolean) => void | A callback function called when the open state changes.`Default:  —— undefined`                                    |         |
-| `onOpenChangeComplete` | `function` - (open: boolean) => void | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined` |         |
-| `children`             | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                            |         |
+| Property               | Type                                 | Description                                                                                                                                                                                                            | Details |
+| ---------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `open` $bindable       | `boolean`                            | The open state of the component.`Default: false`                                                                                                                                                                       |         |
+| `onOpenChange`         | `function` - (open: boolean) => void | A callback function called when the component changes the open state, such as from user interaction. It is not called when you set `open` yourself, so run any related logic where you set it.`Default:  —— undefined` |         |
+| `onOpenChangeComplete` | `function` - (open: boolean) => void | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined`                                                                                                     |         |
+| `children`             | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                                                                                                                                |         |
 
 ### Popover.Trigger
 
@@ -17386,6 +17393,7 @@ The radio group component used to group radio items under a common name for form
 | `loop`            | `boolean`                                                             | Whether or not the radio group should loop through the items when navigating with the arrow keys.`Default: false`                                                         |         |
 | `orientation`     | `enum` - 'vertical' \| 'horizontal'                                   | The orientation of the radio group. This will determine how keyboard navigation will work within the component.`Default: 'vertical'`                                      |         |
 | `readonly`        | `boolean`                                                             | Whether or not the radio group is readonly. When readonly, users can focus and navigate through items but cannot change the value.`Default: false`                        |         |
+| `autocomplete`    | `string`                                                              | The autocomplete attribute to forward to the hidden input element. It defaults to `off` so browsers don't autofill the hidden input.`Default: off`                        |         |
 | `ref` $bindable   | `HTMLDivElement`                                                      | The underlying DOM element being rendered. You can bind to this to get a reference to the element.`Default: null`                                                         |         |
 | `children`        | `Snippet`                                                             | The children content to render.`Default:  —— undefined`                                                                                                                   |         |
 | `child`           | `Snippet` - type SnippetProps = { props: Record\<string, unknown>; }; | Use render delegation to render your own element. See [Child Snippet](/docs/child-snippet) docs for more information.`Default:  —— undefined`                             |         |
@@ -19187,7 +19195,7 @@ TypeScript Discriminated Unions + destructing (required for "bindable") do not
 get along, so we shut typescript up by casting `value` to `never`, however,
 from the perspective of the consumer of this component, it will be typed appropriately.
 -->
-<Select.Root bind:value={value as never} {...restProps}>
+<Select.Root {items} bind:value={value as never} {...restProps}>
   <Select.Trigger>
     <Select.Value {placeholder} />
   </Select.Trigger>
@@ -19869,7 +19877,7 @@ The root select component which manages & scopes the state of the select.
 | `value` $bindable      | `union` - string \| string\[]                                      | The value of the select. When the type is `'single'`, this should be a string. When the type is `'multiple'`, this should be an array of strings.`Default: string`                                                                                                                         |         |
 | `onValueChange`        | `function` - (value: string) => void \| (value: string\[]) => void | A callback that is fired when the select value changes. When the type is `'single'`, the argument will be a string. When the type is `'multiple'`, the argument will be an array of strings.`Default:  —— undefined`                                                                       |         |
 | `open` $bindable       | `boolean`                                                          | The open state of the component.`Default: false`                                                                                                                                                                                                                                           |         |
-| `onOpenChange`         | `function` - (open: boolean) => void                               | A callback function called when the open state changes.`Default:  —— undefined`                                                                                                                                                                                                            |         |
+| `onOpenChange`         | `function` - (open: boolean) => void                               | A callback function called when the component changes the open state, such as from user interaction. It is not called when you set `open` yourself, so run any related logic where you set it.`Default:  —— undefined`                                                                     |         |
 | `onOpenChangeComplete` | `function` - (open: boolean) => void                               | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined`                                                                                                                                                                         |         |
 | `disabled`             | `boolean`                                                          | Whether or not the select component is disabled.`Default: false`                                                                                                                                                                                                                           |         |
 | `name`                 | `string`                                                           | The name to apply to the hidden input element for form submission. If provided, a hidden input element will be rendered to submit the value of the select.`Default:  —— undefined`                                                                                                         |         |
@@ -20259,7 +20267,7 @@ MyMultiSlider.svelte
 ```svelte
 <script lang="ts">
   import type { ComponentProps } from "svelte";
-  import { Slider } from "bits-ui";
+  import { Slider, type WithoutChildren } from "bits-ui";
   type Props = WithoutChildren<ComponentProps<typeof Slider.Root>>;
   let {
     value = $bindable(),
@@ -21373,6 +21381,18 @@ When set to `'manual'`, the user will need to activate the tab by pressing the t
 <Tabs.Root activationMode="manual">
   <!-- ... -->
 </Tabs.Root>
+```
+
+## Panel Focus
+
+`Tabs.Content` defaults to `tabindex="0"`, so keyboard users can focus the panel. Keep this default when the panel has no focusable elements or its first meaningful content is not focusable, even if a button or link appears later.
+
+When the first meaningful content is focusable, set `tabindex={-1}` to let Tab move directly to that element. Choose this based on your content, following the [WAI-ARIA tabs pattern](https://www.w3.org/WAI/ARIA/apg/patterns/tabs/).
+
+```svelte
+<Tabs.Content value="settings" tabindex={-1}>
+  <button>Update settings</button>
+</Tabs.Content>
 ```
 
 ## API Reference
@@ -22754,7 +22774,7 @@ Copy Page
     </Tooltip.Trigger>
     <Tooltip.Content
       sideOffset={8}
-      class="animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--bits-tooltip-content-transform-origin)"
+      class="animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--bits-tooltip-content-transform-origin) z-50"
     >
       <div
         class="rounded-input border-dark-10 bg-background shadow-popover outline-hidden z-0 flex items-center justify-center border p-3 text-sm font-medium"
@@ -23012,7 +23032,7 @@ Expand Code
       <Tooltip.Portal>
         <Tooltip.Content
           sideOffset={8}
-          class="data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--bits-tooltip-content-transform-origin)"
+          class="data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--bits-tooltip-content-transform-origin) z-50"
         >
           <div
             class="rounded-input border-dark-10 bg-background shadow-popover outline-hidden z-0 w-[280px] border p-3"
@@ -23145,7 +23165,7 @@ Expand Code
       <Tooltip.Portal>
         <Tooltip.Content
           sideOffset={8}
-          class="data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--bits-tooltip-content-transform-origin)"
+          class="data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--bits-tooltip-content-transform-origin) z-50"
         >
           <div
             class="rounded-input border-dark-10 bg-background shadow-popover outline-hidden z-0 w-[280px] border p-3"
@@ -23292,7 +23312,7 @@ Expand Code
       <Tooltip.Portal>
         <Tooltip.Content
           sideOffset={8}
-          class="animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 origin-(--bits-tooltip-content-transform-origin)"
+          class="animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 origin-(--bits-tooltip-content-transform-origin) z-50"
         >
           <div
             class="rounded-input border-dark-10 bg-background shadow-popover outline-hidden z-0 w-[290px] border p-3"
@@ -23455,7 +23475,7 @@ Expand Code
         <Tooltip.Portal>
           <Tooltip.Content
             sideOffset={8}
-            class="data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 origin-(--bits-tooltip-content-transform-origin)"
+            class="data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 origin-(--bits-tooltip-content-transform-origin) z-50"
           >
             <div
               class="rounded-input border-dark-10 bg-background shadow-popover outline-hidden flex items-center gap-2 border px-2.5 py-1.5"
@@ -23477,7 +23497,7 @@ Expand Code
 
 ## Close on Trigger Click
 
-By default, the tooltip will close when the user clicks the trigger. If you want to disable this behavior, you can set the `disableCloseOnTriggerClick` prop to `true`.
+By default, the tooltip will close when the user presses the trigger with any pointer button, including right and middle click. If you want to disable this behavior, you can set the `disableCloseOnTriggerClick` prop to `true`.
 
 ```svelte
 <Tooltip.Root disableCloseOnTriggerClick>
@@ -23548,7 +23568,7 @@ Expand Code
     >
       <MagicWand class="size-5" />
     </Tooltip.Trigger>
-    <Tooltip.Content sideOffset={8} forceMount>
+    <Tooltip.Content class="z-50" sideOffset={8} forceMount>
       {#snippet child({ wrapperProps, props, open })}
         {#if open}
           <div {...wrapperProps}>
@@ -23627,7 +23647,7 @@ Expand Code
         {/each}
       </div>
       <Tooltip.Portal>
-        <Tooltip.Content sideOffset={8} forceMount>
+        <Tooltip.Content class="z-50" sideOffset={8} forceMount>
           {#snippet child({ wrapperProps, props, open })}
             {#if open}
               <div {...wrapperProps}>
@@ -23716,7 +23736,7 @@ Expand Code
       <Tooltip.Content
         sideOffset={8}
         {customAnchor}
-        class="animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--bits-tooltip-content-transform-origin)"
+        class="animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--bits-tooltip-content-transform-origin) z-50"
       >
         <div
           class="rounded-input border-dark-10 bg-background shadow-popover outline-hidden z-0 flex items-center justify-center border p-3 text-sm font-medium"
@@ -23740,7 +23760,7 @@ A provider component which contains shared state and logic for the tooltips with
 | `delayDuration`              | `number`  | The amount of time in milliseconds to delay opening the tooltip when hovering over the trigger.`Default: 700`                                             |         |
 | `disableHoverableContent`    | `boolean` | Whether or not to disable the hoverable content. This is useful when the content contains interactive elements.`Default: false`                           |         |
 | `disabled`                   | `boolean` | Whether or not the tooltip is disabled.`Default: false`                                                                                                   |         |
-| `disableCloseOnTriggerClick` | `boolean` | Whether or not to close the tooltip when pressing the escape key. This is useful when the content contains interactive elements.`Default: false`          |         |
+| `disableCloseOnTriggerClick` | `boolean` | Whether or not to prevent the tooltip from closing when the trigger is pressed with any pointer button.`Default: false`                                   |         |
 | `skipDelayDuration`          | `number`  | The amount of time in milliseconds to delay opening the tooltip when the user has used their mouse to hover over the trigger.`Default: 300`               |         |
 | `ignoreNonKeyboardFocus`     | `boolean` | Whether or not to ignore the tooltip when the focus is not on the trigger. This is useful when the content contains interactive elements.`Default: false` |         |
 | `children`                   | `Snippet` | The children content to render.`Default:  —— undefined`                                                                                                   |         |
@@ -23749,19 +23769,19 @@ A provider component which contains shared state and logic for the tooltips with
 
 The root component containing the parts of the tooltip. Must be a descendant of a `Tooltip.Provider` component. In singleton mode, root children snippet props include `open`, `triggerId`, and `payload`.
 
-| Property                     | Type                                 | Description                                                                                                                                                | Details |
-| ---------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `open` $bindable             | `boolean`                            | The open state of the component.`Default: false`                                                                                                           |         |
-| `onOpenChange`               | `function` - (open: boolean) => void | A callback function called when the open state changes.`Default:  —— undefined`                                                                            |         |
-| `onOpenChangeComplete`       | `function` - (open: boolean) => void | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined`                                         |         |
-| `disabled`                   | `boolean`                            | Whether or not the tooltip is disabled.`Default: false`                                                                                                    |         |
-| `delayDuration`              | `number`                             | The amount of time in milliseconds to delay opening the tooltip when hovering over the trigger.`Default: 700`                                              |         |
-| `disableHoverableContent`    | `boolean`                            | Whether or not to disable the hoverable content. This is useful when the content contains interactive elements.`Default: false`                            |         |
-| `disableCloseOnTriggerClick` | `boolean`                            | Whether or not to close the tooltip when pressing the escape key. This is useful when the content contains interactive elements.`Default: false`           |         |
-| `ignoreNonKeyboardFocus`     | `boolean`                            | Whether or not to ignore the tooltip when the focus is not on the trigger. This is useful when the content contains interactive elements.`Default: false`  |         |
-| `triggerId` $bindable        | `string \| null`                     | The active trigger id for controlled singleton tooltips. Useful with `bind:triggerId` and programmatic open behavior.`Default: null`                       |         |
-| `tether`                     | `TooltipTether<any>`                 | A shared tether object created by `Tooltip.createTether()` used to connect detached triggers and infer root snippet payload types.`Default:  —— undefined` |         |
-| `children`                   | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                                                                    |         |
+| Property                     | Type                                 | Description                                                                                                                                                                                                            | Details |
+| ---------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `open` $bindable             | `boolean`                            | The open state of the component.`Default: false`                                                                                                                                                                       |         |
+| `onOpenChange`               | `function` - (open: boolean) => void | A callback function called when the component changes the open state, such as from user interaction. It is not called when you set `open` yourself, so run any related logic where you set it.`Default:  —— undefined` |         |
+| `onOpenChangeComplete`       | `function` - (open: boolean) => void | A callback function called after the open state changes and all animations have completed.`Default:  —— undefined`                                                                                                     |         |
+| `disabled`                   | `boolean`                            | Whether or not the tooltip is disabled.`Default: false`                                                                                                                                                                |         |
+| `delayDuration`              | `number`                             | The amount of time in milliseconds to delay opening the tooltip when hovering over the trigger.`Default: 700`                                                                                                          |         |
+| `disableHoverableContent`    | `boolean`                            | Whether or not to disable the hoverable content. This is useful when the content contains interactive elements.`Default: false`                                                                                        |         |
+| `disableCloseOnTriggerClick` | `boolean`                            | Whether or not to prevent the tooltip from closing when the trigger is pressed with any pointer button.`Default: false`                                                                                                |         |
+| `ignoreNonKeyboardFocus`     | `boolean`                            | Whether or not to ignore the tooltip when the focus is not on the trigger. This is useful when the content contains interactive elements.`Default: false`                                                              |         |
+| `triggerId` $bindable        | `string \| null`                     | The active trigger id for controlled singleton tooltips. Useful with `bind:triggerId` and programmatic open behavior.`Default: null`                                                                                   |         |
+| `tether`                     | `TooltipTether<any>`                 | A shared tether object created by `Tooltip.createTether()` used to connect detached triggers and infer root snippet payload types.`Default:  —— undefined`                                                             |         |
+| `children`                   | `Snippet`                            | The children content to render.`Default:  —— undefined`                                                                                                                                                                |         |
 
 ### Tooltip.Trigger
 
