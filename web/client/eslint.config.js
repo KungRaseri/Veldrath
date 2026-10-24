@@ -1,16 +1,25 @@
 import prettier from 'eslint-config-prettier';
-import path from 'node:path';
 import js from '@eslint/js';
 import svelte from 'eslint-plugin-svelte';
-import { defineConfig, includeIgnoreFile } from 'eslint/config';
+import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import ts from 'typescript-eslint';
 
-// Ignore rules are consolidated in the repository-root .gitignore.
-const gitignorePath = path.resolve(import.meta.dirname, '../../.gitignore');
-
 export default defineConfig(
-	includeIgnoreFile(gitignorePath),
+	// Git-ignored paths come from the repository-root .gitignore; ESLint needs
+	// them as explicit globs scoped to this package.
+	{
+		ignores: [
+			'node_modules/**',
+			'.svelte-kit/**',
+			'build/**',
+			'build-desktop/**',
+			'.output/**',
+			'coverage/**',
+			'test-results/**',
+			'playwright-report/**'
+		]
+	},
 	js.configs.recommended,
 	ts.configs.recommended,
 	svelte.configs.recommended,
