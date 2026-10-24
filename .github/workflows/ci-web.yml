@@ -160,9 +160,9 @@ jobs:
           context: ./web
           file: web/client/Dockerfile
           # SvelteKit 3 inlines public env vars into the browser bundle at build
-          # time; the deploy target must also set the same PUBLIC_API_URL /
-          # PUBLIC_HUB_URL as runtime env vars or the container exits with
-          # `env_invalid` on boot.
+          # time and validates them from process.env at startup; the Dockerfile
+          # re-declares these args as runtime ENV defaults so the image boots
+          # without extra runtime config.
           build-args: |
             PUBLIC_API_URL=${{ vars.PUBLIC_API_URL || 'https://api.veldrath.com' }}
             PUBLIC_HUB_URL=${{ vars.PUBLIC_HUB_URL || 'https://api.veldrath.com/hubs/game' }}

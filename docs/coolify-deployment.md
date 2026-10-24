@@ -109,11 +109,11 @@ Point Coolify's health check to `http://localhost:8080/health` (exposed at [`Pro
 
 > SvelteKit 3 resolves public variables in **two** places: they are inlined into
 > the browser bundle at **build** time and validated from `process.env` when
-> `node build` starts. Set `PUBLIC_API_URL` and `PUBLIC_HUB_URL` as Coolify
-> build arguments **and** as runtime environment variables (see below), with
-> identical values. Build args alone make the container exit on boot with
-> `env_invalid`; runtime values alone would leave the browser bundle pointing at
-> the build-time defaults.
+> `node build` starts. The Dockerfile re-declares the build args as runtime `ENV`
+> defaults, so setting them as Coolify **build arguments** is enough for the
+> container to boot. The runtime entries below are optional; if you set them they
+> must match the build args exactly, otherwise SSR and the browser bundle point
+> at different hosts.
 
 ### Environment Variables
 
