@@ -81,9 +81,9 @@
   </ItemGroup>
   <!-- ── Avalonia ─────────────────────────────────────────────────────────── -->
   <ItemGroup>
-    <PackageVersion Include="Avalonia" Version="11.3.22" />
+    <PackageVersion Include="Avalonia" Version="12.1.4" />
     <PackageVersion Include="Avalonia.AvaloniaEdit" Version="11.2.0" />
-    <PackageVersion Include="Avalonia.Desktop" Version="11.3.22" />
+    <PackageVersion Include="Avalonia.Desktop" Version="12.1.4" />
     <PackageVersion Include="Tmds.DBus.Protocol" Version="0.95.1" />
     <PackageVersion Include="Avalonia.Fonts.Inter" Version="11.3.22" />
     <PackageVersion Include="Avalonia.Headless.XUnit" Version="11.3.22" />
