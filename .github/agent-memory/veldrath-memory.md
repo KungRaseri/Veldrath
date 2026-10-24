@@ -1676,3 +1676,32 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
   game. Computed body background `rgb(12,13,19)`, Cinzel headings, loaded logos/crests,
   8-node map with 11 connector lines, 10 header icons, 7 sidebar icons, 3 footer icons, and no
   site header/footer on `/play`.
+
+## Repository Config Consolidation (Session-64, 2026-10-24)
+
+**Removed nested config (single source of truth is now the repo root)**
+- `web/.github/` (template `node.yml` + CI-CD-DASHBOARD.md) — superseded by `.github/workflows/ci-web.yml`.
+- `web/.roo/skills/` — merged into root `.roo/skills/` as `web-development` and `web-ui`;
+  catalog added at `.roo/skills/README.md`.
+- `web/.gitignore` and `web/client/.gitignore` — patterns folded into the root `.gitignore`.
+- `web/AGENTS.md` (stale Colyseus/template guidance) and `web/TEMPLATE-GUIDE.md` — content merged
+  into the root `AGENTS.md` → **Web App (SvelteKit)** section.
+- `web/scripts/ci-summary.mjs` — only used by the deleted template workflow.
+
+**Workflow/config fixes**
+- `.github/dependabot.yml` had an empty `package-ecosystem` (invalid); now configures nuget,
+  npm (`/web`), github-actions, and docker with grouped weekly updates.
+- `.github/workflows/sonarcloud.yml` was missing a checkout and used the deprecated
+  `sonarcloud-github-action`; now checks out with `fetch-depth: 0` and uses
+  `SonarSource/sonarqube-scan-action@v5`.
+- `ci-web.yml` gained a `deploy` job calling `deploy.yml` with `service: web` (disabled via
+  `if: false`, matching server/discord until the VPS exists).
+- `docs.yml` API landing table no longer claims RealmEngine.Data uses JSON/LiteDB.
+
+**Gotchas**
+- Deleting `web/client/.gitignore` broke `includeIgnoreFile` in `web/client/eslint.config.js`;
+  that config now declares generated-output ignores (`.svelte-kit`, `build`, `build-desktop`,
+  coverage, Playwright artifacts) explicitly. Keep this in sync if more outputs appear.
+- All web scripts run from `web/` (workspaces root); `npm run test` there runs 56 Vitest tests and
+  22 Playwright tests, and the Playwright webServer performs the production `vite build`.
+- `.NET` solution `Realm.Full.slnx` has 22 projects: 12 source + 10 test projects.
