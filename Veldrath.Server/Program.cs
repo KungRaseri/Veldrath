@@ -103,7 +103,8 @@ try
             {
                 "http://localhost:5173",
                 "https://localhost:5173",
-                "http://localhost:8080",
+                // SvelteKit web container (see web/client/Dockerfile).
+                "http://localhost:8081",
             })
         .Concat(string.IsNullOrWhiteSpace(webBaseUrl)
             ? []

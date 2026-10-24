@@ -30,7 +30,6 @@ services:
       - ASPNETCORE_URLS=http://+:8080
       # Override DB to the Postgres container; everything else comes from appsettings.Development.json
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=veldrath;Username=veldrath;Password=veldrath_dev
-      - Database__Provider=postgres
       # JWT signing key — set in .env, never hardcode here
       - Jwt__Key=${JWT_KEY}
       # OAuth provider credentials — set in .env, never hardcode here
@@ -48,8 +47,8 @@ services:
       - Email__SenderName=Veldrath Dev
       # Public base URLs for OAuth redirect validation and email links.
       # Override these in .env when accessing via Tailscale or a custom hostname:
-      #   WEB_PUBLIC_URL=http://kung-gaming.tail3ff356.ts.net:8082
-      - Web__BaseUrl=${WEB_PUBLIC_URL:-http://localhost:8082}
+      #   WEB_PUBLIC_URL=http://kung-gaming.tail3ff356.ts.net:8081
+      - Web__BaseUrl=${WEB_PUBLIC_URL:-http://localhost:8081}
       # Comma-separated list of additional hostnames/IPs accepted as valid OAuth return URLs.
       # Override in .env to add Tailscale hostname and IP alongside localhost:
       #   ALLOWED_RETURN_URL_HOSTS=kung-gaming.tail3ff356.ts.net,100.115.128.32

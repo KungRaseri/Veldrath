@@ -71,7 +71,6 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=veldrath;Username=veldrath;Password=veldrath_dev
-      - Database__Provider=postgres
       - Jwt__Key=${JWT_KEY}
       - InternalBridge__Token=${INTERNAL_BRIDGE_TOKEN:-}
       - OAuth__Discord__ClientId=${OAUTH_DISCORD_CLIENT_ID}
@@ -85,7 +84,7 @@ services:
       - Email__EnableTls=false
       - Email__SenderAddress=noreply@veldrath.local
       - Email__SenderName=Veldrath Dev
-      - Web__BaseUrl=${WEB_PUBLIC_URL:-http://localhost:8080}
+      - Web__BaseUrl=${WEB_PUBLIC_URL:-http://localhost:8081}
       - AllowedReturnUrlHosts=${ALLOWED_RETURN_URL_HOSTS:-}
       - Seq__ServerUrl=http://seq
       # Container-local NuGet cache (matches the nuget_cache volume mount)

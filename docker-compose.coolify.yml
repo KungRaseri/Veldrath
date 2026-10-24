@@ -37,8 +37,8 @@
 #     EMAIL_ENABLE_TLS (default: true)
 #     EMAIL_SENDER_ADDRESS (default: noreply@veldrath.com)
 #     DISCORD_DEV_GUILD_ID (default: 0)
-#     FOUNDRY_PUBLIC_SERVER_URL (default: https://api.veldrath.com)
-#     WEB_PUBLIC_SERVER_URL (default: https://api.veldrath.com)
+#     (there are no configurable public-URL variables here — the origins are
+#     fixed to https://veldrath.com and https://api.veldrath.com)
 
 services:
   # ── Application Services ────────────────────────────────────────────────────
@@ -50,7 +50,6 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SSL Mode=Require;
-      - Database__Provider=postgres
       - Jwt__Key=${JWT_KEY}
       - InternalBridge__Token=${INTERNAL_BRIDGE_TOKEN}
       - OAuth__Discord__ClientId=${OAUTH_DISCORD_CLIENT_ID}

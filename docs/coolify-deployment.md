@@ -19,6 +19,37 @@ compose files in this repository are for local development only.
 
 ---
 
+## 0. Variables shared between the server and web resources
+
+Coolify resources do not share an environment: anything below must be set **identically
+on both** the `veldrath-server` and `veldrath-web` resources.
+
+| Concept | Server variable | Web variable | Why they must match |
+|---|---|---|---|
+| Game token signing key | `Jwt__Key` | `JWT_KEY` | The web mints the JWT, the server validates it. Any difference ⇒ `401` on `/api/characters` in ~1 ms. |
+| Token issuer | `Jwt__Issuer` (`Veldrath.Server`) | `JWT_ISSUER` | Validated exactly. |
+| Token audience | `Jwt__Audience` (`Veldrath.Client`) | `JWT_AUDIENCE` | Validated exactly. |
+| Identity bridge secret | `InternalBridge__Token` | `INTERNAL_BRIDGE_TOKEN` | Sent as `X-Internal-Bridge-Token`; the server answers `503` when unset and `401` when it differs. |
+| OAuth apps | `OAuth__{Discord,Google,Microsoft}__ClientId` / `ClientSecret` | `{DISCORD,GOOGLE,MICROSOFT}_CLIENT_ID` / `_SECRET` | Same provider apps; only the registered redirect URI differs (`/signin-{provider}` on the API vs `/api/auth/callback/{provider}` on the web). |
+| Microsoft tenant | — (not read by the server) | `MICROSOFT_TENANT_ID` | Web-only. |
+
+Values that are **not** shared but must agree semantically:
+
+| Concept | Server variable | Web variable |
+|---|---|---|
+| Site origin | `Web__BaseUrl` (`https://veldrath.com`) | `ORIGIN`, `BETTER_AUTH_URL` |
+| API origin (browser) | `ASPNETCORE_URLS` / public host | `PUBLIC_API_URL`, `PUBLIC_HUB_URL` (SignalR: `<PUBLIC_API_URL>/hubs/game`) |
+| Postgres | `ConnectionStrings__DefaultConnection` (owner role) | `DATABASE_URL` (restricted `veldrath_auth` role, `auth` schema) |
+
+Server-only: `Auth__CookieDomain`, `Email__*`, `Seq__ServerUrl`, `DataProtection__KeysPath`,
+`Cors__AllowedOrigins`, `AllowedReturnUrlHosts`, `Foundry__BaseUrl`.
+Web-only: `BETTER_AUTH_SECRET`, `INTERNAL_BRIDGE_URL`, `PROTOCOL_HEADER`/`HOST_HEADER`/`ADDRESS_HEADER`/`XFF_DEPTH`.
+
+Verify a key mismatch with the fingerprints both services log at startup
+(`JWT configuration: … keyFingerprint=…` and `[game-token] … keyFingerprint=…`).
+
+---
+
 ## 1. Veldrath.Server (API)
 
 ### Environment Variables
@@ -37,6 +68,10 @@ OAuth__Microsoft__ClientSecret=your_microsoft_client_secret
 
 # ── JWT (256-bit+ signing key) ──
 Jwt__Key=your-base64-or-random-string-at-least-32-chars
+# Optional — these are the appsettings.json defaults. Set them on the web
+# resource too (JWT_ISSUER / JWT_AUDIENCE) if you change them here.
+Jwt__Issuer=Veldrath.Server
+Jwt__Audience=Veldrath.Client
 
 # ── Internal SvelteKit → Identity account bridge (desktop sign-in compatibility) ──
 # Must match INTERNAL_BRIDGE_TOKEN on the SvelteKit web container.
@@ -48,9 +83,20 @@ Email__SmtpPort=587
 Email__User=noreply@veldrath.com
 Email__Password=your_smtp_password
 Email__SenderName=Veldrath
+# Optional — defaults are true (STARTTLS) and noreply@veldrath.com.
+# Email__EnableTls=true
+# Email__SenderAddress=noreply@veldrath.com
 
 # ── Auth (REQUIRED in production — server throws at startup if missing) ──
 Auth__CookieDomain=.veldrath.com
+
+# ── Public origins (OAuth return URLs + default CORS origin) ──
+# Must equal the web resource's ORIGIN / BETTER_AUTH_URL.
+Web__BaseUrl=https://veldrath.com
+# Optional — Foundry is served by the web app, so this normally equals Web__BaseUrl.
+# Foundry__BaseUrl=https://veldrath.com
+# Optional — extra hostnames accepted as OAuth return URLs (comma-separated).
+# AllowedReturnUrlHosts=
 
 # ── Cross-service URLs ──
 Seq__ServerUrl=http://veldrath-seq:5341
@@ -71,14 +117,17 @@ ASPNETCORE_ENVIRONMENT=Production
 | `OAuth__Google__ClientSecret` | `OAuth:Google:ClientSecret` | [`Program.cs:266`](../Veldrath.Server/Program.cs:266) | Google OAuth app client secret. |
 | `OAuth__Microsoft__ClientId` | `OAuth:Microsoft:ClientId` | [`Program.cs:280`](../Veldrath.Server/Program.cs:280) | Microsoft OAuth app client ID. |
 | `OAuth__Microsoft__ClientSecret` | `OAuth:Microsoft:ClientSecret` | [`Program.cs:281`](../Veldrath.Server/Program.cs:281) | Microsoft OAuth app client secret. |
-| `Jwt__Key` | `Jwt:Key` | [`Program.cs:141`](../Veldrath.Server/Program.cs:141) | HMAC-SHA JWT signing key. **Required.** |
+| `Jwt__Key` | `Jwt:Key` | [`Program.cs`](../Veldrath.Server/Program.cs) | HMAC-SHA JWT signing key. **Required.** Must match the web's `JWT_KEY`. |
+| `Jwt__Issuer` / `Jwt__Audience` | `Jwt:Issuer` / `Jwt:Audience` | [`Program.cs`](../Veldrath.Server/Program.cs) | Optional; default `Veldrath.Server` / `Veldrath.Client`. Must match the web's `JWT_ISSUER` / `JWT_AUDIENCE`. |
+| `Web__BaseUrl` | `Web:BaseUrl` | [`Program.cs`](../Veldrath.Server/Program.cs) | Public SvelteKit origin: OAuth return-URL fallback, email links, and default SignalR CORS origin. Must equal the web's `ORIGIN`. |
+| `Foundry__BaseUrl` | `Foundry:BaseUrl` | [`ExternalAuthEndpoints.cs`](../Veldrath.Server/Features/Auth/ExternalAuthEndpoints.cs) | Optional; Foundry now lives in the web app, so this normally equals `Web__BaseUrl`. |
 | `Cors__AllowedOrigins__0`, `Cors__AllowedOrigins__1`, … | `Cors:AllowedOrigins` | [`Program.cs:95`](../Veldrath.Server/Program.cs:95) | Optional extra browser origins for SignalR CORS. Defaults to local dev plus `Web:BaseUrl`. |
 | `InternalBridge__Token` | `InternalBridge:Token` | [`InternalAccountBridgeEndpoints.cs`](../Veldrath.Server/Features/Auth/InternalAccountBridgeEndpoints.cs) | Shared secret for the temporary SvelteKit → Identity account bridge. Unset disables the endpoint (503). |
 | `Email__SmtpHost` | `Email:SmtpHost` | [`Program.cs:308`](../Veldrath.Server/Program.cs:308) | SMTP relay hostname. If empty, uses `NullEmailSender` (no emails sent). |
 | `Email__SmtpPort` | `Email:SmtpPort` | [`appsettings.json:42`](../Veldrath.Server/appsettings.json:42) | SMTP port (default: 587). |
 | `Email__User` | `Email:User` | [`appsettings.json:44`](../Veldrath.Server/appsettings.json:44) | SMTP auth username. |
 | `Email__Password` | `Email:Password` | [`appsettings.json:45`](../Veldrath.Server/appsettings.json:45) | SMTP auth password. |
-| `Auth__CookieDomain` | `Auth:CookieDomain` | [`Program.cs:584`](../Veldrath.Server/Program.cs:584) | Cookie domain for cross-subdomain session sharing. **Required in production** — server throws if missing. |
+| `Auth__CookieDomain` | `Auth:CookieDomain` | [`Program.cs`](../Veldrath.Server/Program.cs) | Cookie domain for cross-subdomain session sharing (`.veldrath.com`). **Required when `ASPNETCORE_ENVIRONMENT=Production`** — the server throws at startup if missing. |
 | `Seq__ServerUrl` | `Seq:ServerUrl` | [`Program.cs:56`](../Veldrath.Server/Program.cs:56) | Seq server URL for structured log shipping. |
 
 ### Persistent Volume
@@ -167,8 +216,8 @@ XFF_DEPTH=1
 | `JWT_KEY` / `JWT_ISSUER` / `JWT_AUDIENCE` | game token minting | Must match `Veldrath.Server` JWT validation. |
 | `PUBLIC_API_URL` | browser SSR/client | Public .NET API origin. |
 | `PUBLIC_HUB_URL` | browser SignalR | Public SignalR hub URL. |
-| `INTERNAL_BRIDGE_URL` | `foundry-bridge.ts`, `email.ts`, `character-api.ts` | Internal .NET base URL (`http://server:8080`). Never exposed to the browser. |
-| `INTERNAL_BRIDGE_TOKEN` | `foundry-bridge.ts`, `email.ts` | Shared secret matching `InternalBridge__Token`. |
+| `INTERNAL_BRIDGE_URL` | `game-request.ts`, `game-api.ts`, `editorial-api.ts`, `foundry-bridge.ts`, `email.ts` | Internal .NET base URL (`http://server:8080`); falls back to `PUBLIC_API_URL` when unset. Never exposed to the browser. |
+| `INTERNAL_BRIDGE_TOKEN` | `foundry-bridge.ts`, `email.ts` | Shared secret matching `InternalBridge__Token`. Unset ⇒ the bridge returns `503`. |
 | `PROTOCOL_HEADER` / `HOST_HEADER` / `ADDRESS_HEADER` / `XFF_DEPTH` | adapter-node | Trust Traefik's forwarded headers. |
 
 ### Internal Identity bridge (desktop compatibility)

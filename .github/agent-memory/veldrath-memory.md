@@ -1792,3 +1792,37 @@ account. A `401` therefore means the token was rejected — never "no session" (
 **Security note:** a GitHub PAT was briefly committed inside `.roo/mcp.json` (`6648b6c5`) and the
 file was deleted in `85bb8492`. Never commit MCP tokens — pass them via environment variables, and
 treat any token that landed in git history as compromised (rotate it).
+
+### Environment variable audit (Session-66)
+
+Authoritative inventory — anything not listed is not read by code.
+
+- **Veldrath.Server** (`Configuration[...]`): `ConnectionStrings:DefaultConnection`,
+  `Jwt:Key` / `Jwt:Issuer` / `Jwt:Audience` / `Jwt:AccessTokenExpiryMinutes` /
+  `Jwt:RefreshTokenExpiryDays`, `OAuth:{Discord,Google,Microsoft}:ClientId/ClientSecret`,
+  `Email:{SmtpHost,SmtpPort,EnableTls,User,Password,SenderAddress,SenderName}`,
+  `Web:BaseUrl`, `Foundry:BaseUrl`, `AllowedReturnUrlHosts`, `Auth:CookieDomain`,
+  `Auth:PendingLinkExpiryMinutes`, `Seq:ServerUrl`, `DataProtection:KeysPath`,
+  `Cors:AllowedOrigins`, plus the `Moderation` / `VersionCompatibility` /
+  `ActiveCharacterTracker` / `CharacterCreation` sections. In Development
+  `DotEnvConfiguration` maps `.env` names onto these (`JWT_KEY` → `Jwt__Key`, etc.).
+- **SvelteKit web**: `DATABASE_URL` (read by `web/migrate.mjs` and by the
+  Drizzle/Better Auth client), `ORIGIN`, `BETTER_AUTH_URL`,
+  `BETTER_AUTH_SECRET`, `JWT_KEY` / `JWT_ISSUER` / `JWT_AUDIENCE`,
+  `PUBLIC_API_URL` / `PUBLIC_HUB_URL` (inlined at build + validated at runtime),
+  `INTERNAL_BRIDGE_URL` (falls back to `PUBLIC_API_URL`), `INTERNAL_BRIDGE_TOKEN`,
+  `{DISCORD,GOOGLE,MICROSOFT}_CLIENT_ID` / `_SECRET`, `MICROSOFT_TENANT_ID`,
+  and adapter-node's `PORT` / `HOST` / `PROTOCOL_HEADER` / `HOST_HEADER` /
+  `ADDRESS_HEADER` / `XFF_DEPTH`.
+- **Removed as dead (Session-66):** `Database__Provider` / `Database:Provider` (never
+  read — every DbContext is `UseNpgsql`), `CERT_PASSWORD` (no consumer anywhere),
+  `FOUNDRY_PUBLIC_SERVER_URL` (the `.env` alias is `FOUNDRY_PUBLIC_URL`), stale
+  `Web__BaseUrl` defaults of `:8080` / `:8082` in the compose files (web is `:8081`),
+  and the `http://localhost:8080` default CORS origin in `Program.cs` (now `:8081`).
+- **Must be identical on server + web:** `JWT_KEY` ↔ `Jwt__Key`,
+  `JWT_ISSUER`/`JWT_AUDIENCE` ↔ `Jwt__Issuer`/`Jwt__Audience`,
+  `INTERNAL_BRIDGE_TOKEN` ↔ `InternalBridge__Token`, and the OAuth client
+  id/secret pairs. Web-only: `MICROSOFT_TENANT_ID`, `BETTER_AUTH_SECRET`,
+  `INTERNAL_BRIDGE_URL`, proxy headers. Server-only: `Auth__CookieDomain`,
+  `Email__*`, `Seq__ServerUrl`, `Web__BaseUrl`, `AllowedReturnUrlHosts`.
+- `docs/coolify-deployment.md` §0 carries the same matrix for humans.

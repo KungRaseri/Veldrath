@@ -40,6 +40,8 @@ than the browser bundle.
 |---|---|---|
 | `POSTGRES_HOST` / `POSTGRES_PORT` / `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | server | Builds the .NET connection string. |
 | `DATABASE_URL` | web | Better Auth/Drizzle connection. Must be able to create the `auth` schema on first boot. |
+| `Web__BaseUrl` | server | Public site origin (`https://veldrath.com`); OAuth return URLs, email links, default SignalR CORS origin. Must equal the web's `ORIGIN` / `BETTER_AUTH_URL`. |
+| `Auth__CookieDomain` | server | `.veldrath.com` — cross-subdomain session cookie. **Required**: the server throws at startup when `ASPNETCORE_ENVIRONMENT=Production` and this is missing. |
 | `JWT_KEY` | server + web | Shared HMAC signing key, at least 32 chars. Must be **byte-identical** on both resources — the web mints game tokens with it and the server validates them, so any drift surfaces as `401` on `/api/characters` (see [the troubleshooting steps](coolify-deployment.md#troubleshooting-401-from-the-game-api)). |
 | `BETTER_AUTH_SECRET` | web | Better Auth session secret, at least 32 chars. |
 | `INTERNAL_BRIDGE_TOKEN` | server + web | Shared secret for the internal SvelteKit → Identity account bridge used by the desktop client's native sign-in. |
