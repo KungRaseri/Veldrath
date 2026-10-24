@@ -60,7 +60,7 @@ FROM node:22-alpine AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production
-# adapter-node listens on PORT; 8081 matches the replaced Blazor web deployment.
+# adapter-node listens on PORT; 8081 is the port the retired Blazor web deployment used.
 ENV PORT=8081
 ENV HOST=0.0.0.0
 

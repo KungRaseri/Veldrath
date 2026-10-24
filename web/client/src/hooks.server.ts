@@ -56,8 +56,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 		event.locals.session = session.session;
 		event.locals.user = session.user;
 
-		// Fire-and-forget: provisions the Identity row and links OAuth providers so
-		// Blazor Foundry and the desktop client can still authenticate this account.
+		// Fire-and-forget: provisions the Identity row and links OAuth providers so the
+		// desktop client's native sign-in can still authenticate this account.
 		void bridgeAccountOnce(session.user);
 	}
 

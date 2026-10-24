@@ -21,6 +21,6 @@ GRANT CREATE ON DATABASE veldrath TO veldrath_auth;
 GRANT USAGE, CREATE ON SCHEMA auth TO veldrath_auth;
 
 -- Keep the auth role inside the auth schema. Do NOT set this on the database
--- or on the shared `veldrath` role: EF Core and the Blazor-era tables still
+-- or on the shared `veldrath` role: EF Core and the Identity-era tables still
 -- live in `public`.
 ALTER ROLE veldrath_auth SET search_path = auth;

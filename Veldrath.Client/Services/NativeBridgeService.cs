@@ -6,7 +6,7 @@ using Veldrath.Client.Controls;
 namespace Veldrath.Client.Services;
 
 /// <summary>
-/// Handles the JavaScript interop bridge between the embedded WebView2 (Blazor game UI)
+/// Handles the JavaScript interop bridge between the embedded WebView2 (Svelte game UI)
 /// and native Avalonia services (audio, notifications, system tray, clipboard).
 /// Incoming messages from the WebView are dispatched to the appropriate service;
 /// outgoing messages can be sent back to the WebView via <see cref="PostMessage"/>.
@@ -33,7 +33,7 @@ public sealed class NativeBridgeService
     /// Attaches the bridge service to a <see cref="GameWebView"/> control and begins
     /// listening for messages from the JavaScript bridge.
     /// </summary>
-    /// <param name="webView">The WebView2 control hosting the Blazor game UI.</param>
+    /// <param name="webView">The WebView2 control hosting the Svelte game UI.</param>
     public void Attach(GameWebView webView)
     {
         _webView = webView;
@@ -196,7 +196,7 @@ public sealed class NativeBridgeService
     private static void HandleClipboardCopy(string text)
     {
         // Clipboard access in Avalonia requires a TopLevel reference.
-        // This is a best-effort implementation; the Blazor UI typically handles
+        // This is a best-effort implementation; the Svelte UI typically handles
         // clipboard access via the browser's built-in navigator.clipboard API.
         try
         {

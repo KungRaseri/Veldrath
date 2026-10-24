@@ -12,7 +12,7 @@
 
     <Border Background="{DynamicResource GameBackground0Brush}">
         <Grid>
-            <!-- WebView2 hosted Blazor game UI (primary, when WebView2 available) -->
+            <!-- WebView2-hosted Svelte game UI (primary, when WebView2 is available) -->
             <Border
                 x:Name="WebViewContainer"
                 IsVisible="{Binding IsWebViewActive}" />

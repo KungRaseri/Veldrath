@@ -34,7 +34,7 @@ public record GetInventoryHubResult
 
     /// <summary>
     /// Gets the full catalog details for <see cref="Items"/>, in the same order.
-    /// Used by clients that render item names, rarity, and type (the Blazor RCL).
+    /// Used by clients that render item names, rarity, and type.
     /// </summary>
     public IReadOnlyList<Item> ItemDetails { get; init; } = [];
 

@@ -38,10 +38,10 @@ additional defense in depth, not a correctness requirement. The container
 entrypoint creates the `auth` schema before running migrations, so a fresh
 Coolify-managed database also works without a manual schema step.
 
-## Why this is safe on the existing Blazor database
+## Why this is safe on the existing game database
 
 - Better Auth uses `user`, `session`, `account`, and `verification`; those
-  names are isolated in the `auth` schema. The Blazor setup uses
+  names are isolated in the `auth` schema. The .NET server uses
   `AspNetUsers`, `AspNetRoles`, characters, and the other EF Core tables in
   `public`.
 - The auth role has no privileges on `public`, so a bad migration cannot drop

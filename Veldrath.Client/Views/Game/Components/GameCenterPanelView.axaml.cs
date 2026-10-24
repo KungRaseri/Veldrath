@@ -9,7 +9,7 @@ using Veldrath.Client.ViewModels;
 
 namespace Veldrath.Client.Views;
 
-/// <summary>Center panel shell: hosts the WebView2 Blazor game UI or the native fallback.</summary>
+/// <summary>Center panel shell: hosts the WebView2 Svelte game UI or the native fallback.</summary>
 [ExcludeFromCodeCoverage]
 public partial class GameCenterPanelView : UserControl
 {
@@ -29,7 +29,7 @@ public partial class GameCenterPanelView : UserControl
         if (DataContext is GameViewModel vm)
         {
             // When IsWebViewActive becomes true, initialize the WebView2 control
-            // and navigate to the embedded Blazor game server.
+            // and navigate to the embedded UI server.
             vm.WhenAnyValue(x => x.IsWebViewActive)
                 .Where(active => active)
                 .Take(1)
@@ -45,7 +45,7 @@ public partial class GameCenterPanelView : UserControl
     /// Initializes the WebView2 control and places it inside <see cref="WebViewContainer"/>.
     /// Called by the view when the ViewModel signals that the embedded server has started.
     /// </summary>
-    /// <param name="embeddedServerUrl">The URL of the embedded Blazor server.</param>
+    /// <param name="embeddedServerUrl">The URL of the embedded UI server.</param>
     public async Task InitializeWebViewAsync(string embeddedServerUrl)
     {
         if (_webView is not null)

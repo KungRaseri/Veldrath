@@ -98,7 +98,7 @@ public sealed record ZoneState
 /// <summary>
 /// Per-session game state manager.  Holds the authoritative state for the current player's
 /// game session and implements <see cref="INotifyPropertyChanged"/> so consumers
-/// (Blazor components, Avalonia ViewModels) can react to state changes.
+/// (Avalonia ViewModels and other client consumers) can react to state changes.
 /// Call <c>Apply*</c> methods from hub event handlers to update state.
 /// </summary>
 public interface IGameStateService : INotifyPropertyChanged

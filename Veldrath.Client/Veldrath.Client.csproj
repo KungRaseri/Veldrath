@@ -44,7 +44,7 @@
     <PackageReference Include="VideoLAN.LibVLC.Windows" />
     <!-- Security: pin patched version of Tmds.DBus.Protocol (GHSA-xrw6-gwf8-vvr9) -->
     <PackageReference Include="Tmds.DBus.Protocol" />
-    <!-- Embedded WebView2 for Blazor game UI hosting -->
+    <!-- Embedded WebView2 hosting the Svelte desktop build (see HostedWeb/DesktopUiServer) -->
     <PackageReference Include="Microsoft.Web.WebView2" />
   </ItemGroup>
 

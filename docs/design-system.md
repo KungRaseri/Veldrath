@@ -57,7 +57,7 @@ The Veldrath Design System (VDS) defines the shared visual language across every
 
 ### 3.1 Current-state audit
 
-Before the unified system, each surface has grown its own colours. This table captures the as-is state so the migration scope is visible.
+Before the unified system, each surface grew its own colours. This table is the historical as-is audit kept for reference — the `RealmFoundry` and `Veldrath.Web` columns belong to retired Blazor surfaces (see [§10](#10-retired-surfaces-blazor--mudblazor)). Only `Veldrath.Client` and `RealmForge` are still live Avalonia surfaces.
 
 | Token | Veldrath.Client | RealmForge | RealmFoundry | Veldrath.Web |
 |---|---|---|---|---|
@@ -381,18 +381,14 @@ All spacing values are multiples of **4px**. Never use values that are not on th
 | `radius-lg` | 8px | `--vds-radius-lg` | `CornerRadius="8"` | Dialogs, modals, feature cards |
 | `radius-full` | 9999px | `--vds-radius-full` | `CornerRadius="9999"` | Pills, badge corners |
 
-### 5.5 Spacing Delegation to MudBlazor
+### 5.5 Spacing
 
-Margins, padding, and gap should be applied via MudBlazor CSS utility classes (`mt-{n}`, `pb-{n}`, `gap-{n}`, etc.) in Razor markup rather than embedded in VDS custom CSS classes.
+Spacing follows the scale in [§5.1](#51-base-unit) on every surface that is still live:
 
-**Status:** The `--vds-space-*` CSS custom properties have been removed from [`Veldrath.Web/wwwroot/app.css`](../Veldrath.Web/wwwroot/app.css) — web spacing is now handled entirely by MudBlazor utilities. The spacing scale table in [§5.1](#51-base-unit) remains the canonical reference for the design system and is still used by:
+- **Avalonia (`Veldrath.Client`, `RealmForge`):** numeric `Margin` / `Padding` / `Spacing` values derived from the scale.
+- **SvelteKit ([`web/`](../web/)):** Tailwind spacing utilities (`p-4`, `gap-2`, …). The web app does not use VDS custom properties for spacing.
 
-- [`Veldrath.GameClient.Components/wwwroot/css/tokens.css`](../Veldrath.GameClient.Components/wwwroot/css/tokens.css) — game UI components (loaded alongside `game.css`)
-- [`RealmFoundry/wwwroot/app.css`](../RealmFoundry/wwwroot/app.css) — community content portal
-
-Avalonia surfaces (Veldrath.Client, RealmForge) use platform-specific numeric values derived from the same scale (see [§5.1](#51-base-unit)).
-
-**Rule:** If a CSS property in `app.css` references a `--vds-space-*` token for margin, padding, or gap, extract it to a MudBlazor utility class in the Razor markup instead.
+The previous rule — "delegate spacing to MudBlazor utilities in Razor markup" — was retired with the Blazor apps; see [§10](#10-retired-surfaces-blazor--mudblazor).
 
 ---
 
@@ -572,7 +568,7 @@ input.error  { border-color: var(--vds-danger); background: var(--vds-danger-mut
 
 ---
 
-### 7.8 Data tables (RealmForge + RealmFoundry)
+### 7.8 Data tables (RealmForge)
 
 - Header row: Layer 3 background, Small 12px, Text Secondary, Cinzel or Inter SemiBold.
 - Body rows: Layer 1 background, Body 14px, Text Primary.
@@ -718,24 +714,14 @@ RealmForge currently has no design token system — colors are hardcoded inline 
 
 ---
 
-### 8.4 RealmFoundry migration
+### 8.4 Retired web surfaces
 
-1. Replace the current `:root` block (6 `--color-*` variables) with the full `--vds-*` block from § 8.1.
-2. Find/replace `var(--color-bg)` → `var(--vds-bg-0)`, `var(--color-surface)` → `var(--vds-bg-1)`, `var(--color-border)` → `var(--vds-border)`, `var(--color-text)` → `var(--vds-text)`, `var(--color-muted)` → `var(--vds-text-muted)`, `var(--color-accent)` → `var(--vds-seal)`, `var(--color-link)` → `var(--vds-seal-light)`.
-3. Replace `rgba(124, 92, 191, 0.2)` nav hover → `var(--vds-hover)` or `var(--vds-seal-muted)`.
-4. Update badge colours to VDS semantic palette.
-5. Add Google Fonts link for Cinzel, Cinzel Decorative, Lora, Inter, JetBrains Mono.
-6. Apply Cinzel to `h1`, `h2`, `h3` and `.brand a`; apply Lora to `.lore-body` contexts.
-7. Apply Inter as the base `font-family` on `body`.
-
----
-
-### 8.5 Veldrath.Web migration
-
-1. Replace `body { background: #0d0d0d }` and all hardcoded hex values with `var(--vds-*)` variables (add the `:root` block from § 8.1).
-2. Replace purple `#7c3aed`, `#6d28d9`, `#c4b5fd`, `#a78bfa` occurrences with `--vds-seal`, `--vds-seal-dark`, `--vds-seal-light`, `--vds-seal-light` respectively.
-3. Add Google Fonts link.
-4. Apply Cinzel Decorative to `.brand`, Cinzel to `h1`/`h2`/`h3`, Inter to `body`.
+`RealmFoundry` and `Veldrath.Web` were Blazor + MudBlazor applications and have been deleted,
+so their token-migration steps are history rather than instructions. The current web surface is
+the SvelteKit app; its tokens live in
+[`web/client/src/routes/theme.css`](../web/client/src/routes/theme.css) and
+[`web/client/src/routes/brand.css`](../web/client/src/routes/brand.css). See
+[§10](#10-retired-surfaces-blazor--mudblazor).
 
 ---
 
@@ -751,3 +737,23 @@ RealmForge currently has no design token system — colors are hardcoded inline 
 | 2026-04-16 | **Font pairing strategy: Option B** | A (Cinzel + Almendra + Lora — triple display), C (Cinzel + Inter only) | Option B (Cinzel headings + Lora reading) balances richness and maintainability; adds a meaningful typographic distinction between UI and content without the complexity of three competing display fonts. |
 | 2026-04-16 | **Background layer model: kept from Veldrath.Client** | Flatten to 3 layers, redesign from scratch | The 5-layer model is already well-calibrated against the dark canvas and is in active use in the most mature surface; standardising on it eliminates drift rather than introducing it. |
 | 2026-10-24 | **SvelteKit theme: Skeleton tokens mapped to VDS** | Keep Skeleton defaults; rebuild the theme ad hoc per page | A single `[data-theme='veldrath']` token block plus a brand layer restores the Crimson Seal / Emberfall / Gold palette, VDS type scale, and self-hosted fonts across public, auth, account, and game surfaces. |
+| 2026-10-24 | **Retire the Blazor/MudBlazor sections of this document** | Keep them as live rules next to Avalonia and SvelteKit guidance | `Veldrath.Web`, `RealmFoundry`, `Veldrath.Auth.Blazor`, and `Veldrath.GameClient.Components` are deleted; keeping MudBlazor rules as live guidance makes agents write Razor for a surface that no longer exists. |
+
+---
+
+## 10. Retired surfaces (Blazor / MudBlazor)
+
+`Veldrath.Web`, `RealmFoundry`, `Veldrath.Auth.Blazor`, and `Veldrath.GameClient.Components`
+were retired when the web moved to the SvelteKit app in [`web/`](../web/).
+
+- **Live surfaces:** `Veldrath.Client` (Avalonia), `RealmForge` (Avalonia), and the SvelteKit
+  app ([`theme.css`](../web/client/src/routes/theme.css) + [`brand.css`](../web/client/src/routes/brand.css)).
+- **Historical only:** every MudBlazor rule (component mapping, `--mud-palette-*` usage,
+  `.mud-button-filled` overrides, `#blazor-error-ui`, reconnect-modal CSS, MudBlazor spacing
+  utilities) and the RealmFoundry / Veldrath.Web columns in the §3.1 audit table.
+- **Detailed history:** [`plans/realmfoundry-web-audit.md`](../plans/realmfoundry-web-audit.md),
+  [`plans/realmfoundry-migration-status.md`](../plans/realmfoundry-migration-status.md),
+  [`plans/css-audit-game-client-components.md`](../plans/css-audit-game-client-components.md), and
+  [`plans/sveltekit-migration.md`](../plans/sveltekit-migration.md).
+- **Do not reintroduce:** Razor/MudBlazor guidance for web UI. New web work uses Svelte 5 runes,
+  Skeleton, and VDS tokens — see the [`web-ui`](../.roo/skills/web-ui/SKILL.md) skill.

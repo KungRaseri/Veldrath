@@ -7,7 +7,7 @@ namespace Veldrath.GameClient.Core.Services;
 
 /// <summary>
 /// Manages the server-to-server SignalR <see cref="HubConnection"/> to Veldrath.Server's
-/// GameHub at <c>/hubs/game</c>.  Registered as a scoped service so each Blazor circuit
+/// GameHub at <c>/hubs/game</c>.  Registered as a scoped service so each client session
 /// gets its own isolated game connection.
 /// Implements <see cref="IGameHubConnectionService"/> for abstraction across consumers.
 /// </summary>

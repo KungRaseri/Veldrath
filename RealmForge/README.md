@@ -1,222 +1,72 @@
-# RealmForge - Blazor Hybrid JSON Editor
+# RealmForge — content editor
 
-**Status**: ✅ Functional - Form-based editing with JSON fallback  
-**Technology**: .NET MAUI Blazor Hybrid  
-**Target**: Windows Desktop (cross-platform ready)
+**Status:** ✅ Functional
+**Technology:** Avalonia 11 + ReactiveUI (MVVM), EF Core (Npgsql)
+**Target:** Desktop (Linux/macOS/Windows); edits the **Postgres** content database
 
 ## Overview
 
-RealmForge is a desktop application for editing RealmEngine's JSON data files. Built with Blazor Hybrid, it provides a dynamic form-based editor backed by RealmEngine.Shared models, with a JSON fallback mode for advanced editing.
+RealmForge is the editor for the game's content database. Every content type the
+engine reads — abilities, spells, species, classes, backgrounds, items, materials,
+enemies, zones, maps, languages, and so on — is stored as a row in Postgres, and
+RealmForge is how that content is authored, reviewed, and fixed without hand-written SQL.
+
+It is **not** a JSON editor and it is **not** Blazor/MAUI: the app is a normal Avalonia
+desktop program ([`Program.cs`](Program.cs) → `AppBuilder.Configure<App>()`).
+
+The player-facing counterpart is the SvelteKit app in [`web/`](../web/), whose `(foundry)`
+route group handles community submissions. RealmForge is staff tooling and talks to the
+database directly.
 
 ## Features
 
-### ✅ Implemented
-- **Dynamic Form Editor** - Auto-generated forms from C# models using reflection
-- **Form/JSON Toggle** - Switch between form editing (default) and raw JSON
-- **Model Detection** - Automatically detects Item, Enemy, Spell, Ability from filename
-- **Type-Specific Inputs** - String, int, double, bool, enum fields with proper controls
-- **Bi-Directional Sync** - Form ↔ JSON serialization
-- **Save/Load** - Persist changes to files
-- **Basic Validation** - JSON parsing validation
+- **Content tree** — domains grouped into five activity-bar sections, driven by
+  [`ContentDomainCatalog`](Services/ContentDomainCatalog.cs) (group → domain → sub-domain,
+  e.g. `abilities/active/offensive`, `actors/species/humanoid`).
+- **Entity editor** — reflection-driven field groups with typed rows, plus JSON editing for
+  the blob columns (`Effects`, `Stats`, `Traits`, …).
+- **Junction editing** — many-to-many tables (e.g. class → starting powers) get dedicated
+  add/remove editors.
+- **Map graph editor** — nodes, edges, and layout for the DB-backed map graph
+  ([`MapGraphEditorService`](Services/MapGraphEditorService.cs), validated by
+  `RealmEngine.Data/Validation/MapGraphValidator`).
+- **Settings** — remembered database connection and editor preferences
+  ([`Models/EditorSettings.cs`](Models/EditorSettings.cs)).
 
-### 🚧 Planned
-- **Monaco Editor** - Syntax highlighting for JSON mode
-- **FluentValidation Integration** - Display model validation errors in form
-- **Complex Property Editing** - Recursive forms or inline JSON for lists/nested objects
-- **Folder Picker** - Native file system dialog (currently hardcoded path)
-- **Better Model Detection** - Parse JSON metadata instead of filename matching
-- **Undo/Redo** - Change history
-- **Search and Filter** - Find files by name or content
-- **Dark Mode** - Theme support
+## Running
 
-## Running the App
-
-### Development
-```powershell
-dotnet run --project RealmForge/RealmForge.csproj -f net9.0-windows10.0.19041.0
+```bash
+# from the repository root
+dotnet run --project RealmForge
 ```
 
-### Build
-```powershell
-dotnet build RealmForge/RealmForge.csproj -f net9.0-windows10.0.19041.0
+Requires a reachable Postgres instance with the game schema. The default connection in
+[`appsettings.json`](appsettings.json) targets the local compose database:
+
+```json
+"ConnectionStrings": { "ContentDb": "Host=localhost;Port=5433;Database=veldrath;Username=veldrath;Password=veldrath_dev" }
 ```
 
-### Build Release
-```powershell
-dotnet publish -f net9.0-windows10.0.19041.0 -c Release
-```
+Start it with `docker compose up -d postgres` (see [`docker-compose.yml`](../docker-compose.yml)).
+Override the connection string with `ConnectionStrings__ContentDb` or in the app's settings.
 
-## Usage
-
-1. Launch RealmForge
-2. Click "JSON Editor" in navigation
-3. Browse to a JSON file (e.g., `items/weapons/swords/catalog.json`)
-4. **Form Mode (Default)**: Edit fields in generated form
-5. **JSON Mode**: Switch to raw JSON editing
-6. Save changes
-
-## Component Architecture
-
-### DynamicFormEditor.razor (~200 lines)
-
-Generic form generator for any C# model:
-
-```razor
-<DynamicFormEditor TModel="Item" 
-                  Model="@itemModel" 
-                  OnSave="@HandleSave" 
-                  OnCancel="@HandleCancel" />
-```
-
-**Features:**
-- Reflection-based property inspection
-- Type-specific controls (InputText, InputNumber, InputCheckbox, select)
-- Automatic label generation (PascalCase → Title Case)
-- Complex type detection (read-only display)
-- EventCallback for save/cancel actions
-
-**Supported Property Types:**
-- `string` → `<InputText>`
-- `int` → `<InputNumber>`
-- `double`/`float` → `<InputNumber>`
-- `bool` → `<InputCheckbox>`
-- `enum` → `<select>` dropdown
-- Complex types → Read-only message
-
-### JsonEditor.razor (~300 lines)
-
-Main editor with Form/JSON toggle:
-
-**Model Detection Logic:**
-- `*item*` → `RealmEngine.Shared.Models.Item`
-- `*enemy*` → `RealmEngine.Shared.Models.Enemy`
-- `*spell*` → `RealmEngine.Shared.Models.Spell`
-- `*ability*` → `RealmEngine.Shared.Models.Ability`
-- Unknown → JSON-only mode
-
-**Mode Switching:**
-- Form → JSON: Serialize model with `JsonSerializer.Serialize()`
-- JSON → Form: Deserialize with `JsonSerializer.Deserialize<T>()`
-
-**Features:**
-- Two-panel layout (file tree + editor)
-- Radio button mode toggle
-- Bi-directional sync
-- File operations (load/save/validate)
-
-## Project Structure
+## Project layout
 
 ```
 RealmForge/
-├── Components/
-│   ├── Layout/
-│   │   ├── MainLayout.razor      # App layout
-│   │   └── NavMenu.razor         # Navigation menu
-│   ├── Pages/
-│   │   ├── Home.razor           # Welcome screen
-│   │   └── JsonEditor.razor     # Main editor (~300 lines)
-│   ├── Shared/
-│   │   └── DynamicFormEditor.razor  # Generic form (~200 lines)
-│   └── Routes.razor
-├── Resources/
-│   └── Images/
-├── wwwroot/
-│   ├── css/
-│   └── index.html
-├── MainPage.xaml               # MAUI entry point
-├── MauiProgram.cs             # App configuration
-└── RealmForge.csproj          # Project file
+├── Program.cs / App.axaml        Avalonia entry point
+├── Services/                     content catalog, editor + map-graph services, settings
+├── ViewModels/                   ReactiveUI view models (one per screen/section)
+├── Views/                        AXAML views
+├── Models/                       editor settings
+├── Converters/                   Avalonia value converters
+├── Resources/ , Assets/          icons, brand imagery, RealmUI fonts
+└── appsettings.json              ContentDb connection string
 ```
 
-## Technology Stack
+## Related
 
-- **.NET 9.0** - Runtime
-- **MAUI** - Cross-platform framework
-- **Blazor** - Web UI framework
-- **Razor Components** - UI components
-- **WebView2** - Embedded browser (Windows)
-
-## Why Blazor Hybrid?
-
-**Advantages over WPF:**
-✅ Simpler UI development (HTML/CSS/Razor vs XAML)  
-✅ No complex data binding syntax  
-✅ Web-standard layout (flexbox, grid)  
-✅ Easier to maintain
-
-**Advantages over Electron:**
-✅ 100% C# codebase (no JavaScript/TypeScript)  
-✅ Direct C# model integration  
-✅ Smaller bundle size (~25-30MB vs 100+MB)  
-✅ Better performance (native .NET runtime)
-
-**Advantages over VS Code Extension:**
-✅ Standalone deployable app  
-✅ Ships with DLLs (no separate installation)  
-✅ Doesn't require VS Code installed  
-✅ Native desktop integration
-
-**Shared Benefits:**
-✅ Cross-platform ready (Windows, macOS, Linux)  
-✅ Modern tooling (hot reload, dev tools)  
-✅ Direct DLL integration (no IPC/CLI spawning)
-
-## Known Limitations
-
-1. **Simple Model Detection**: Based on filename string matching
-   - TODO: Parse JSON metadata/type field for better detection
-
-2. **Complex Types Not Editable**: Lists, Dictionaries, nested objects show as read-only
-   - TODO: Recursive form generation or inline JSON editor for complex fields
-
-3. **Basic JSON Editor**: Plain textarea
-   - TODO: Integrate Monaco Editor for syntax highlighting, error detection
-
-4. **No Validation Feedback**: Model validation not yet integrated
-   - TODO: Display FluentValidation errors in form
-
-## Technical Implementation
-
-### Reflection-Based Property Inspection
-
-```csharp
-var properties = typeof(TModel).GetProperties(BindingFlags.Public | BindingFlags.Instance)
-    .Where(p => p.CanRead && p.CanWrite)
-    .Where(p => !p.Name.Equals("Id", StringComparison.OrdinalIgnoreCase))
-    .ToArray();
-```
-
-### Model Serialization
-
-```csharp
-// Form → JSON
-var json = JsonSerializer.Serialize(model, new JsonSerializerOptions 
-{ 
-    WriteIndented = true 
-});
-
-// JSON → Form
-var model = JsonSerializer.Deserialize<Item>(jsonContent);
-```
-
-### Enum Handling
-
-```razor
-<select class="form-select" 
-        value="@GetEnumValue(prop)" 
-        @onchange="@(e => SetEnumValue(prop, e))">
-    @foreach (var enumVal in Enum.GetValues(prop.PropertyType))
-    {
-        <option value="@enumVal">@enumVal</option>
-    }
-</select>
-```
-
-## Building for Distribution
-
-### Single-File Executable
-```powershell
-dotnet publish -c Release -f net9.0-windows10.0.19041.0 -p:PublishSingleFile=true
-```
-
-Output: Single `.exe` with all dependencies bundled (~25-30MB).
+- [`RealmEngine.Data`](../RealmEngine.Data/) — EF Core persistence and the map graph validator.
+- [`RealmEngine.Shared`](../RealmEngine.Shared/) — models the editor binds to.
+- [`docs/design-system.md`](../docs/design-system.md) — tokens and typography used by the Avalonia surfaces.
+- [`plans/sveltekit-migration.md`](../plans/sveltekit-migration.md) — why Foundry moved to the web app while RealmForge stayed native.

@@ -289,9 +289,9 @@ try
                     Window      = TimeSpan.FromMinutes(1),
                     PermitLimit = authAttemptsLimit,
                 }));
-        // renew-jwt is called automatically by Blazor SSR on every page load — it is not a
-        // brute-force surface (requires a valid refresh token) but benefits from a generous
-        // per-IP cap to prevent runaway clients.
+        // renew-jwt is called by clients that hold a long-lived session (the desktop app) — it
+        // is not a brute-force surface (it requires a valid refresh token) but benefits from a
+        // generous per-IP cap to prevent runaway clients.
         opts.AddPolicy("jwt-renewal", ctx =>
             RateLimitPartition.GetFixedWindowLimiter(
                 partitionKey: ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",

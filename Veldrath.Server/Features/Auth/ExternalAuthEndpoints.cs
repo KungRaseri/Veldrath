@@ -103,7 +103,7 @@ public static class ExternalAuthEndpoints
                          && l.LinkedAt      == null)
                 .ExecuteUpdateAsync(s => s.SetProperty(l => l.LinkedAt, DateTimeOffset.UtcNow));
 
-            // Issue a fresh session so the Blazor circuit on the callback page has live tokens.
+            // Issue a fresh session so the callback page has live tokens.
             // Route through the shared session endpoint so the rt cookie is set with the
             // cross-subdomain domain before redirecting back to the originating application.
             var session = await authSvc.CreateSessionAsync(linkTarget, clientIp);

@@ -771,7 +771,7 @@ public class GameViewModel : ViewModelBase
     public bool IsFallbackActive => !IsWebViewActive;
 
     /// <summary>
-    /// The URL of the embedded Blazor game server's character select page, or <c>null</c>
+    /// The URL of the embedded UI server's character-select page, or <c>null</c>
     /// if the embedded server has not yet started.
     /// </summary>
     public string? WebViewUrl => _hostedServer?.BaseUrl is { } url ? $"{url}/desktop" : null;

@@ -149,8 +149,8 @@ public static class CharacterEndpoints
 
     /// <summary>
     /// Returns the authenticated account's most recently played character
-    /// and its last known location. Used by the Blazor client to restore
-    /// game state after a page refresh without requiring the user to
+    /// and its last known location. Used by the web and desktop clients to
+    /// restore game state after a refresh without requiring the user to
     /// manually re-select a character.
     /// </summary>
     private static async Task<IResult> GetLastSessionAsync(

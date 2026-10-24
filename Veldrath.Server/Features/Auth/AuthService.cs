@@ -135,8 +135,8 @@ public class AuthService(
     /// <summary>
     /// Issues a fresh JWT for the account that owns <paramref name="rawRefreshToken"/>
     /// without rotating the refresh token. The refresh token is validated (must be active and
-    /// unexpired) but is left unchanged. Intended for Blazor circuit proactive JWT renewal so
-    /// the HttpOnly cookie refresh token never needs to rotate on the client side.
+    /// unexpired) but is left unchanged. Intended for long-lived clients (the desktop app) that
+    /// renew proactively so the stored refresh token never has to rotate mid-session.
     /// </summary>
     /// <param name="rawRefreshToken">The raw refresh token from the client.</param>
     /// <param name="clientIp">Caller IP for audit purposes.</param>
