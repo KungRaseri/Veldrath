@@ -53,6 +53,21 @@ token. The native Avalonia UI remains the fallback when WebView2 is unavailable.
   bridge (`src/lib/server/email.ts`). Without `INTERNAL_BRIDGE_URL`/`INTERNAL_BRIDGE_TOKEN`
   the reset/verification links are logged to the SvelteKit server console for local testing.
 
+## Theme and assets
+
+- [`src/routes/theme.css`](src/routes/theme.css) maps Skeleton v5 tokens to the Veldrath design
+  system (Crimson Seal, Emberfall, Gold, warm charcoal surfaces).
+- [`src/routes/brand.css`](src/routes/brand.css) owns self-hosted `@font-face` rules, base
+  typography, site chrome, auth cards, and game-surface primitives.
+- Typography: Cinzel / Cinzel Decorative / Lora / JetBrains Mono in `static/fonts/` (from
+  `RealmUI.Fonts`); Inter loads from Google Fonts with a `system-ui` fallback.
+- Brand imagery and favicons live in `static/images/`; keep `static/images/favicon/site.webmanifest`
+  in sync with the files there.
+- UI icons use `@lucide/svelte`. Brand glyph paths for Discord/Google/GitHub are vendored in
+  `src/lib/brand-icons.ts` to avoid bundling all of Simple Icons.
+- [`src/lib/components/site/`](src/lib/components/site/) holds the shared site header/footer;
+  both are hidden on `/play/*` and `/desktop`, which render the full-screen game shell.
+
 ## Checks
 
 ```sh

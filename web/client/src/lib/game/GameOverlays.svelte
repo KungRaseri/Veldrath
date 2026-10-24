@@ -1,4 +1,16 @@
 <script lang="ts">
+	import {
+		Backpack,
+		Coins,
+		Gem,
+		RefreshCw,
+		ScrollText,
+		Settings,
+		Store,
+		Trash2,
+		Undo2,
+		X
+	} from '@lucide/svelte';
 	import { itemLabel, itemSubtitle, type InventoryItem } from './types';
 	import type { GameSession } from './session.svelte';
 
@@ -7,16 +19,28 @@
 	function itemRef(item: InventoryItem): string {
 		return item.itemRef ?? item.slug ?? '';
 	}
+
+	function rarityClass(rarity: string | undefined): string {
+		return rarity ? `rarity-${rarity.toLowerCase()}` : 'text-surface-600-400';
+	}
 </script>
 
 {#if session.showInventory}
 	<section
-		class="fixed inset-y-0 right-0 z-50 w-full max-w-md overflow-y-auto border-l border-surface-200-800 bg-surface-100-900 p-5 shadow-2xl"
+		class="fixed inset-y-0 right-0 z-50 w-full max-w-md overflow-y-auto border-l border-surface-800 bg-surface-900 p-5 shadow-2xl"
 		aria-label="Inventory"
 	>
 		<div class="mb-4 flex items-center justify-between">
-			<h2 class="h3">Inventory</h2>
-			<button class="btn preset-tonal-surface" onclick={() => (session.showInventory = false)}>
+			<h2 class="game-panel-header">
+				<Backpack size={18} aria-hidden="true" />
+				Inventory
+			</h2>
+			<button
+				class="btn preset-tonal-surface"
+				type="button"
+				onclick={() => (session.showInventory = false)}
+			>
+				<X size={15} aria-hidden="true" />
 				Close
 			</button>
 		</div>
@@ -27,7 +51,7 @@
 				<ul class="space-y-1">
 					{#each session.equippedEntries as [slot, item] (slot)}
 						<li
-							class="flex items-center justify-between gap-2 rounded border border-surface-200-800 p-2 text-sm"
+							class="flex items-center justify-between gap-2 rounded border border-surface-800 p-2 text-sm"
 						>
 							<span>
 								<strong>{slot}</strong>
@@ -35,8 +59,10 @@
 							</span>
 							<button
 								class="btn preset-tonal-surface px-2 py-1 text-xs"
+								type="button"
 								onclick={() => session.equip(slot, null)}
 							>
+								<Undo2 size={13} aria-hidden="true" />
 								Unequip
 							</button>
 						</li>
@@ -52,10 +78,10 @@
 			{:else}
 				<ul class="space-y-1">
 					{#each session.inventory as item, index (item.id ?? `${itemLabel(item)}-${index}`)}
-						<li class="space-y-1 rounded border border-surface-200-800 p-2 text-sm">
+						<li class="space-y-1 rounded border border-surface-800 p-2 text-sm">
 							<div class="flex items-center justify-between gap-2">
 								<span>
-									<strong>{itemLabel(item)}</strong>
+									<strong class={rarityClass(item.rarity)}>{itemLabel(item)}</strong>
 									{#if (item.quantity ?? 1) > 1}
 										<span class="text-surface-600-400">× {item.quantity}</span>
 									{/if}
@@ -64,15 +90,19 @@
 									{#if session.canShop}
 										<button
 											class="btn preset-tonal-surface px-2 py-1 text-xs"
+											type="button"
 											onclick={() => session.sell(itemRef(item))}
 										>
+											<Coins size={13} aria-hidden="true" />
 											Sell
 										</button>
 									{/if}
 									<button
 										class="btn preset-tonal-surface px-2 py-1 text-xs"
+										type="button"
 										onclick={() => session.drop(itemRef(item))}
 									>
+										<Trash2 size={13} aria-hidden="true" />
 										Drop
 									</button>
 								</div>
@@ -88,12 +118,20 @@
 
 {#if session.showShop}
 	<section
-		class="fixed inset-y-0 right-0 z-50 w-full max-w-md overflow-y-auto border-l border-surface-200-800 bg-surface-100-900 p-5 shadow-2xl"
+		class="fixed inset-y-0 right-0 z-50 w-full max-w-md overflow-y-auto border-l border-surface-800 bg-surface-900 p-5 shadow-2xl"
 		aria-label="Shop"
 	>
 		<div class="mb-4 flex items-center justify-between">
-			<h2 class="h3">Shop{session.shopZone ? ` · ${session.shopZone}` : ''}</h2>
-			<button class="btn preset-tonal-surface" onclick={() => (session.showShop = false)}>
+			<h2 class="game-panel-header">
+				<Store size={18} aria-hidden="true" />
+				Shop{session.shopZone ? ` · ${session.shopZone}` : ''}
+			</h2>
+			<button
+				class="btn preset-tonal-surface"
+				type="button"
+				onclick={() => (session.showShop = false)}
+			>
+				<X size={15} aria-hidden="true" />
 				Close
 			</button>
 		</div>
@@ -104,19 +142,24 @@
 			<ul class="space-y-1">
 				{#each session.shopCatalog as item (item.slug)}
 					<li
-						class="flex items-center justify-between gap-2 rounded border border-surface-200-800 p-2 text-sm"
+						class="flex items-center justify-between gap-2 rounded border border-surface-800 p-2 text-sm"
 					>
 						<span>
 							<strong>{item.name}</strong>
-							<span class="block text-xs text-surface-600-400">{item.rarity ?? 'Item'}</span>
+							<span class="block text-xs {rarityClass(item.rarity)}">{item.rarity ?? 'Item'}</span>
 						</span>
 						<span class="flex items-center gap-2">
-							<span>{item.price} g</span>
+							<span class="inline-flex items-center gap-1">
+								<Gem class="text-secondary-500" size={13} aria-hidden="true" />
+								{item.price} g
+							</span>
 							<button
 								class="btn preset-filled-primary-500 px-2 py-1 text-xs"
+								type="button"
 								onclick={() => session.buy(item.slug)}
 								disabled={session.stats.gold < item.price}
 							>
+								<Coins size={13} aria-hidden="true" />
 								Buy
 							</button>
 						</span>
@@ -129,12 +172,20 @@
 
 {#if session.showQuests}
 	<section
-		class="fixed inset-y-0 right-0 z-50 w-full max-w-md overflow-y-auto border-l border-surface-200-800 bg-surface-100-900 p-5 shadow-2xl"
+		class="fixed inset-y-0 right-0 z-50 w-full max-w-md overflow-y-auto border-l border-surface-800 bg-surface-900 p-5 shadow-2xl"
 		aria-label="Quest log"
 	>
 		<div class="mb-4 flex items-center justify-between">
-			<h2 class="h3">Quest log</h2>
-			<button class="btn preset-tonal-surface" onclick={() => (session.showQuests = false)}>
+			<h2 class="game-panel-header">
+				<ScrollText size={18} aria-hidden="true" />
+				Quest log
+			</h2>
+			<button
+				class="btn preset-tonal-surface"
+				type="button"
+				onclick={() => (session.showQuests = false)}
+			>
+				<X size={15} aria-hidden="true" />
 				Close
 			</button>
 		</div>
@@ -145,7 +196,7 @@
 			<ul class="space-y-1">
 				{#each session.quests as quest (quest.slug)}
 					<li
-						class="flex items-center justify-between gap-2 rounded border border-surface-200-800 p-2 text-sm"
+						class="flex items-center justify-between gap-2 rounded border border-surface-800 p-2 text-sm"
 					>
 						<span>{quest.title}</span>
 						<span class="chip preset-tonal-surface text-xs">{quest.status}</span>
@@ -158,12 +209,20 @@
 
 {#if session.showSettings}
 	<section
-		class="fixed inset-y-0 right-0 z-50 w-full max-w-md overflow-y-auto border-l border-surface-200-800 bg-surface-100-900 p-5 shadow-2xl"
+		class="fixed inset-y-0 right-0 z-50 w-full max-w-md overflow-y-auto border-l border-surface-800 bg-surface-900 p-5 shadow-2xl"
 		aria-label="Settings"
 	>
 		<div class="mb-4 flex items-center justify-between">
-			<h2 class="h3">Settings</h2>
-			<button class="btn preset-tonal-surface" onclick={() => (session.showSettings = false)}>
+			<h2 class="game-panel-header">
+				<Settings size={18} aria-hidden="true" />
+				Settings
+			</h2>
+			<button
+				class="btn preset-tonal-surface"
+				type="button"
+				onclick={() => (session.showSettings = false)}
+			>
+				<X size={15} aria-hidden="true" />
 				Close
 			</button>
 		</div>
@@ -192,10 +251,20 @@
 		</dl>
 
 		<div class="mt-4 grid gap-2">
-			<button class="btn preset-tonal-surface" onclick={() => session.requestMapGraph(null)}>
+			<button
+				class="btn preset-tonal-surface"
+				type="button"
+				onclick={() => session.requestMapGraph(null)}
+			>
+				<RefreshCw size={15} aria-hidden="true" />
 				Refresh map
 			</button>
-			<button class="btn preset-tonal-surface" onclick={() => session.openInventory()}>
+			<button
+				class="btn preset-tonal-surface"
+				type="button"
+				onclick={() => session.openInventory()}
+			>
+				<Backpack size={15} aria-hidden="true" />
 				Refresh inventory
 			</button>
 		</div>

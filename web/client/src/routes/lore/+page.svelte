@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { BookOpen } from '@lucide/svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -16,7 +17,10 @@
 
 <div class="mx-auto max-w-4xl space-y-6 p-6">
 	<header class="space-y-2">
-		<h1 class="h1">Lore</h1>
+		<h1 class="text-title-large flex items-center gap-3">
+			<BookOpen class="text-secondary-500" size={28} aria-hidden="true" />
+			Lore
+		</h1>
 		<p class="text-surface-600-400">Histories, factions, and legends of the world of Veldrath.</p>
 	</header>
 

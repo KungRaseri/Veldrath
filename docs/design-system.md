@@ -290,7 +290,12 @@ All pairings measured against WCAG 2.1. **AA** requires 4.5:1 at normal text (< 
 
 ### 4.5 Font loading — web surfaces
 
-Add to `<head>` in Blazor `App.razor`:
+**SvelteKit implementation (current):** Cinzel, Cinzel Decorative, Lora, and JetBrains Mono are
+self-hosted from `web/client/static/fonts/` (copied from `RealmUI.Fonts`) and declared with
+`@font-face` in [`web/client/src/routes/brand.css`](../web/client/src/routes/brand.css).
+Inter loads from Google Fonts in [`web/client/src/app.html`](../web/client/src/app.html) with a
+`system-ui` fallback for offline/desktop use. The legacy Blazor `<head>` block is retained below
+for reference:
 
 ```html
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -395,7 +400,13 @@ Avalonia surfaces (Veldrath.Client, RealmForge) use platform-specific numeric va
 
 ### 6.1 Current asset inventory
 
-Icons currently live at `RealmForge/Resources/Icons/`. They are used within the editor for toolbar actions and entity type indicators.
+Icons for the Avalonia tools live at `RealmForge/Resources/Icons/` and are used within the editor for toolbar actions and entity type indicators.
+
+**SvelteKit web surfaces:** brand imagery lives in `web/client/static/images/` — logos,
+herald emblems, and the favicon/manifest set restored from the former Blazor web app. UI icons
+use `@lucide/svelte` outline glyphs; OAuth/GitHub/Discord brand paths are vendored in
+[`web/client/src/lib/brand-icons.ts`](../web/client/src/lib/brand-icons.ts) so the SSR bundle does
+not pull the entire icon set.
 
 ### 6.2 Style guidance
 
@@ -739,3 +750,4 @@ RealmForge currently has no design token system — colors are hardcoded inline 
 | 2026-04-16 | **Reading font: Lora** | Almendra, DM Serif Display | Screen-optimized serif; comfortable at body sizes for long-form lore text and Foundry/Web article copy; pairs cleanly with Cinzel and Inter. |
 | 2026-04-16 | **Font pairing strategy: Option B** | A (Cinzel + Almendra + Lora — triple display), C (Cinzel + Inter only) | Option B (Cinzel headings + Lora reading) balances richness and maintainability; adds a meaningful typographic distinction between UI and content without the complexity of three competing display fonts. |
 | 2026-04-16 | **Background layer model: kept from Veldrath.Client** | Flatten to 3 layers, redesign from scratch | The 5-layer model is already well-calibrated against the dark canvas and is in active use in the most mature surface; standardising on it eliminates drift rather than introducing it. |
+| 2026-10-24 | **SvelteKit theme: Skeleton tokens mapped to VDS** | Keep Skeleton defaults; rebuild the theme ad hoc per page | A single `[data-theme='veldrath']` token block plus a brand layer restores the Crimson Seal / Emberfall / Gold palette, VDS type scale, and self-hosted fonts across public, auth, account, and game surfaces. |

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { Check, ChevronLeft, ChevronRight, Sparkles, X } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import { validateCharacterName } from '$lib/game/character-name';
 	import type {
@@ -335,7 +336,15 @@
 <div class="mx-auto max-w-2xl space-y-6 p-6">
 	<header class="space-y-1">
 		<div class="flex flex-wrap items-center justify-between gap-2">
-			<h1 class="h2">Create your character</h1>
+			<div class="flex items-center gap-3">
+				<img
+					class="h-10 w-10 object-contain"
+					src="/images/veldrath-final-crest-transparent.png"
+					alt=""
+					aria-hidden="true"
+				/>
+				<h1 class="h2">Create your character</h1>
+			</div>
 			{#if data.slots}
 				<span class="text-sm text-surface-600-400">
 					{data.slots.used} / {data.slots.max} slots used
@@ -345,9 +354,9 @@
 		<p class="text-sm text-surface-600-400">
 			Step {Math.min(step + 1, steps.length)} of {steps.length} · {steps[step]}
 		</p>
-		<div class="h-2 overflow-hidden rounded bg-surface-200-800">
+		<div class="h-2 overflow-hidden rounded bg-surface-800">
 			<div
-				class="h-full bg-primary-500 transition-all"
+				class="h-full bg-gradient-to-r from-primary-600 via-primary-500 to-secondary-500 transition-all"
 				style={`width: ${((step + 1) / steps.length) * 100}%`}
 			></div>
 		</div>
@@ -589,6 +598,7 @@
 						onclick={cancel}
 						disabled={busy || finalizing}
 					>
+						<X size={15} aria-hidden="true" />
 						Cancel
 					</button>
 					{#if step > 0}
@@ -598,6 +608,7 @@
 							onclick={previous}
 							disabled={busy || finalizing}
 						>
+							<ChevronLeft size={15} aria-hidden="true" />
 							Back
 						</button>
 					{/if}
@@ -610,11 +621,14 @@
 					disabled={busy || finalizing || (step === 0 && nameStatus !== 'available')}
 				>
 					{#if step === 6}
+						<Check size={16} aria-hidden="true" />
 						{finalizing ? 'Creating…' : 'Create character'}
 					{:else if busy}
+						<Sparkles size={16} aria-hidden="true" />
 						Saving…
 					{:else}
 						Continue
+						<ChevronRight size={16} aria-hidden="true" />
 					{/if}
 				</button>
 			</div>

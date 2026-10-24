@@ -24,7 +24,7 @@
 		{/if}
 	</header>
 
-	<div class="markdown card p-6">
+	<div class="markdown text-lore card p-6">
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -- sanitized by renderMarkdown() in the server load -->
 		{@html data.html}
 	</div>

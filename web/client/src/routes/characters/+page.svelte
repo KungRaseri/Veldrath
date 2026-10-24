@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { Gamepad2, MailWarning, Plus, RotateCcw, Shield, Trash2, Wifi } from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -31,20 +32,29 @@
 
 <div class="mx-auto max-w-3xl space-y-6 p-6">
 	<header class="flex flex-wrap items-end justify-between gap-3">
-		<div class="space-y-1">
-			<h1 class="h2">Choose your character</h1>
-			<p class="text-sm text-surface-600-400">
-				Select an existing character to enter Veldrath, or create a new one.
-			</p>
-			{#if data.slots}
+		<div class="flex items-center gap-3">
+			<img
+				class="h-12 w-12 object-contain"
+				src="/images/veldrath-final-crest-transparent.png"
+				alt=""
+				aria-hidden="true"
+			/>
+			<div class="space-y-1">
+				<h1 class="h2">Choose your character</h1>
 				<p class="text-sm text-surface-600-400">
-					{data.slots.used} of {data.slots.max} character slots used
+					Select an existing character to enter Veldrath, or create a new one.
 				</p>
-			{/if}
+				{#if data.slots}
+					<p class="text-sm text-surface-600-400">
+						{data.slots.used} of {data.slots.max} character slots used
+					</p>
+				{/if}
+			</div>
 		</div>
 
 		{#if canCreate}
 			<a class="btn preset-filled-primary-500" href={resolve('/characters/new')}>
+				<Plus size={16} aria-hidden="true" />
 				Create character
 			</a>
 		{:else}
@@ -55,7 +65,8 @@
 	</header>
 
 	{#if !data.emailVerified}
-		<div class="card border border-warning-500/40 p-4 text-sm">
+		<div class="flex items-center gap-2 card border border-warning-500/40 p-4 text-sm">
+			<MailWarning class="shrink-0 text-warning-500" size={18} aria-hidden="true" />
 			<p>
 				Your email address is not verified.
 				<a class="anchor" href={resolve('/account')}>Resend the confirmation link</a>
@@ -103,6 +114,7 @@
 				type="button"
 				onclick={() => enterWorld(lastSessionCharacter.id)}
 			>
+				<RotateCcw size={16} aria-hidden="true" />
 				Resume
 			</button>
 		</div>
@@ -114,6 +126,7 @@
 			<p class="text-sm text-surface-600-400">Create your first character to enter Veldrath.</p>
 			{#if canCreate}
 				<a class="btn w-fit preset-filled-primary-500" href={resolve('/characters/new')}>
+					<Plus size={16} aria-hidden="true" />
 					Create character
 				</a>
 			{:else}
@@ -130,10 +143,16 @@
 						<div class="flex items-center gap-2">
 							<h2 class="h3">{character.name}</h2>
 							{#if character.isOnline}
-								<span class="chip preset-filled-success-500 text-xs">Online</span>
+								<span class="chip preset-filled-success-500 text-xs">
+									<Wifi size={11} aria-hidden="true" />
+									Online
+								</span>
 							{/if}
 							{#if character.isHardcore}
-								<span class="chip preset-filled-error-500 text-xs">Hardcore</span>
+								<span class="chip preset-filled-error-500 text-xs">
+									<Shield size={11} aria-hidden="true" />
+									Hardcore
+								</span>
 							{/if}
 							{#if data.lastSession?.characterId === character.id}
 								<span class="preset-tonal-primary-500 chip text-xs">Last played</span>
@@ -156,6 +175,7 @@
 							onclick={() => enterWorld(character.id)}
 							disabled={character.isOnline}
 						>
+							<Gamepad2 size={16} aria-hidden="true" />
 							{character.isOnline ? 'Already online' : 'Enter world'}
 						</button>
 
@@ -173,6 +193,7 @@
 									? 'Sign out the character before deleting it.'
 									: undefined}
 							>
+								<Trash2 size={15} aria-hidden="true" />
 								Delete
 							</button>
 						</form>

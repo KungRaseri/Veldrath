@@ -394,6 +394,14 @@ Exit criteria: the desktop client runs the Svelte UI, and the Razor Class Librar
 - ✅ Engine name validation accepts letters and spaces, matching the server endpoint and both UI clients.
 - ✅ Verification: full .NET suite, Vitest, Playwright, web build, desktop build, and a live end-to-end run (register → verify email → reset password → create normal and hardcore characters → enter world over SignalR → edit profile/change email/revoke sessions → delete characters).
 
+### Theme and asset parity (post-Phase 6)
+
+- ✅ Restored the VDS palette (Crimson Seal / Emberfall / Gold / warm charcoal surfaces), Cinzel/Cinzel Decorative/Lora/JetBrains Mono typography, and the 4/6px radius scale in SvelteKit via `theme.css` + `brand.css`.
+- ✅ Restored the former Blazor brand imagery and favicon/manifest set into `web/client/static/images/`; self-hosted the RealmUI fonts in `web/client/static/fonts/`.
+- ✅ Restored site chrome (brand logo header, primary/staff nav, fat footer) and hid it on `/play/*` and `/desktop` so the game shell remains full-screen.
+- ✅ Added Lucide icons across public, auth, account, roster, wizard, and game surfaces; ported the map connector visuals and game panel/token styles.
+- ✅ Visual smoke at 1600×1000 verified the palette, Cinzel headings, loaded logos/crests, 8-node map with connectors, and game-shell isolation.
+
 ## Repository and tooling changes
 
 - ✅ Add `web/` to the root documentation and agent instructions.

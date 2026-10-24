@@ -1,4 +1,13 @@
 <script lang="ts">
+	import {
+		Compass,
+		Footprints,
+		Map as MapIcon,
+		MapPin,
+		RefreshCw,
+		Store,
+		Users
+	} from '@lucide/svelte';
 	import CardinalMap from '$lib/game/CardinalMap.svelte';
 	import CombatPanel from '$lib/game/CombatPanel.svelte';
 	import GameFooter from '$lib/game/GameFooter.svelte';
@@ -19,17 +28,17 @@
 	<GameHeader {session} {onLeave} />
 
 	{#if session.phase === 'reconnecting'}
-		<div class="card border border-warning-500/40 p-3 text-sm">
+		<div class="game-panel border border-warning-500/40 p-3 text-sm">
 			Connection lost. Reconnecting and restoring your session…
 		</div>
 	{/if}
 
 	{#if session.dead}
 		<div
-			class="flex flex-wrap items-center justify-between gap-3 card border border-error-500/40 p-3 text-sm"
+			class="game-panel flex flex-wrap items-center justify-between gap-3 border border-error-500/40 p-3 text-sm"
 		>
 			<span>You have been defeated.</span>
-			<button class="btn preset-filled-primary-500" onclick={() => session.respawn()}>
+			<button class="btn preset-filled-primary-500" type="button" onclick={() => session.respawn()}>
 				Respawn
 			</button>
 		</div>
@@ -37,11 +46,12 @@
 
 	{#if session.error}
 		<div
-			class="flex items-center justify-between gap-3 card border border-error-500/40 p-3 text-sm text-error-500"
+			class="game-panel flex items-center justify-between gap-3 border border-error-500/40 p-3 text-sm text-error-500"
 		>
 			<span>{session.error}</span>
 			<button
 				class="btn preset-tonal-surface px-2 py-1 text-xs"
+				type="button"
 				onclick={() => (session.error = null)}
 			>
 				Dismiss
@@ -49,17 +59,22 @@
 		</div>
 	{/if}
 
-	<div class="grid min-h-0 flex-1 gap-3 lg:grid-cols-[15rem_minmax(0,1fr)_20rem]">
-		<LeftSidebar {session} />
+	<div class="game-shell min-h-0 flex-1">
+		<div class="game-column game-column-left">
+			<LeftSidebar {session} />
+		</div>
 
-		<main class="min-w-0 space-y-3">
+		<main class="game-column game-column-main min-w-0 space-y-3">
 			{#if session.combat.active}
 				<CombatPanel {session} />
 			{:else}
-				<section class="card p-4">
+				<section class="game-panel p-4">
 					<div class="mb-3 flex flex-wrap items-center justify-between gap-3">
 						<div>
-							<h2 class="h3">{session.map?.name ?? 'Map'}</h2>
+							<h2 class="game-panel-header">
+								<MapIcon size={19} aria-hidden="true" />
+								{session.map?.name ?? 'Map'}
+							</h2>
 							<p class="text-sm text-surface-600-400">
 								{session.map?.mapType ?? 'Loading'} · {session.map?.nodes.length ?? 0} nodes
 							</p>
@@ -67,16 +82,20 @@
 						<div class="flex gap-2">
 							<button
 								class="btn preset-tonal-surface"
+								type="button"
 								onclick={() => session.requestMapGraph(null)}
 							>
+								<RefreshCw size={15} aria-hidden="true" />
 								Refresh
 							</button>
 							{#if session.zone}
 								<button
 									class="btn preset-tonal-surface"
+									type="button"
 									onclick={() => session.visitShop()}
 									disabled={!session.canShop}
 								>
+									<Store size={15} aria-hidden="true" />
 									Merchant
 								</button>
 							{/if}
@@ -98,30 +117,36 @@
 					{/if}
 				</section>
 
-				<section class="space-y-3 card p-4">
-					<h2 class="h3">Node details</h2>
+				<section class="game-panel space-y-3 p-4">
+					<h2 class="game-panel-header">
+						<Compass size={18} aria-hidden="true" />
+						Node details
+					</h2>
 
 					{#if session.selectedNode}
 						<div class="flex flex-wrap items-start justify-between gap-3">
 							<div class="space-y-1">
-								<p class="font-semibold">
+								<p class="flex items-center gap-2 font-semibold">
+									<MapPin class="text-secondary-500" size={15} aria-hidden="true" />
 									{session.selectedNode.displayName}
 									<span class="text-surface-600-400">· {session.selectedNode.nodeType}</span>
 								</p>
-								<p class="text-sm text-surface-600-400">{session.selectedNode.description}</p>
+								<p class="text-lore text-sm text-surface-600-400">
+									{session.selectedNode.description}
+								</p>
 								{#if session.selectedNode.refId}
-									<p class="text-xs text-surface-600-400">
-										Reference: {session.selectedNode.refId}
-									</p>
+									<p class="text-mono text-xs">Reference: {session.selectedNode.refId}</p>
 								{/if}
 							</div>
 
 							<button
 								class="btn preset-filled-primary-500"
+								type="button"
 								disabled={!session.adjacentNodeIds.includes(session.selectedNode.id) ||
 									session.dead}
 								onclick={() => session.travel(session.selectedNode!.id)}
 							>
+								<Footprints size={15} aria-hidden="true" />
 								{session.adjacentNodeIds.includes(session.selectedNode.id)
 									? `Travel to ${session.selectedNode.displayName}`
 									: 'Not directly reachable'}
@@ -132,8 +157,13 @@
 					{/if}
 
 					{#if session.zone && session.occupants.length > 0}
-						<div class="space-y-1 border-t border-surface-200-800 pt-3">
-							<p class="text-xs tracking-wide text-surface-600-400 uppercase">Also here</p>
+						<div class="space-y-1 border-t border-surface-800 pt-3">
+							<p
+								class="flex items-center gap-1 text-xs tracking-wide text-surface-600-400 uppercase"
+							>
+								<Users size={12} aria-hidden="true" />
+								Also here
+							</p>
 							<ul class="flex flex-wrap gap-2 text-sm">
 								{#each session.occupants as occupant (occupant.characterId)}
 									<li class="chip preset-tonal-surface text-xs">{occupant.characterName}</li>
@@ -145,7 +175,9 @@
 			{/if}
 		</main>
 
-		<RightSidebar {session} />
+		<div class="game-column game-column-right">
+			<RightSidebar {session} />
+		</div>
 	</div>
 
 	<GameFooter {session} />

@@ -1,6 +1,22 @@
 <script lang="ts">
 	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import {
+		KeyRound,
+		Link2,
+		LogOut,
+		Mail,
+		MonitorSmartphone,
+		Pencil,
+		Plus,
+		RefreshCw,
+		Save,
+		Send,
+		Unlink,
+		User,
+		Users,
+		X
+	} from '@lucide/svelte';
 	import { authClient } from '$lib/auth-client';
 	import type { PageData } from './$types';
 
@@ -309,12 +325,23 @@
 
 <div class="mx-auto max-w-3xl space-y-4 p-6">
 	<header class="space-y-1">
-		<h1 class="h1">Account</h1>
+		<h1 class="text-title-large flex items-center gap-3">
+			<img
+				class="h-11 w-11 object-contain"
+				src="/images/veldrath-final-crest-transparent.png"
+				alt=""
+				aria-hidden="true"
+			/>
+			Account
+		</h1>
 		<p class="text-surface-600-400">Manage your Veldrath account.</p>
 	</header>
 
 	<section class="space-y-3 card p-6">
-		<h2 class="h3">Profile</h2>
+		<h2 class="flex items-center gap-2 h3">
+			<User class="text-secondary-500" size={18} aria-hidden="true" />
+			Profile
+		</h2>
 		<dl class="grid gap-2 text-sm sm:grid-cols-2">
 			<div>
 				<dt class="text-surface-600-400">Username</dt>
@@ -358,13 +385,17 @@
 				onclick={resendVerification}
 				disabled={sendingVerification}
 			>
+				<RefreshCw size={15} aria-hidden="true" />
 				{sendingVerification ? 'Sending…' : 'Resend verification email'}
 			</button>
 		{/if}
 	</section>
 
 	<section class="space-y-3 card p-6">
-		<h2 class="h3">Edit profile</h2>
+		<h2 class="flex items-center gap-2 h3">
+			<Pencil class="text-secondary-500" size={18} aria-hidden="true" />
+			Edit profile
+		</h2>
 		{#if profileMessage}
 			<p class="text-sm text-success-500">{profileMessage}</p>
 		{/if}
@@ -397,6 +428,7 @@
 			</label>
 			<div class="sm:col-span-2">
 				<button class="btn preset-filled-primary-500" type="submit" disabled={savingProfile}>
+					<Save size={15} aria-hidden="true" />
 					{savingProfile ? 'Saving…' : 'Save profile'}
 				</button>
 			</div>
@@ -404,7 +436,10 @@
 	</section>
 
 	<section class="space-y-3 card p-6">
-		<h2 class="h3">Email address</h2>
+		<h2 class="flex items-center gap-2 h3">
+			<Mail class="text-secondary-500" size={18} aria-hidden="true" />
+			Email address
+		</h2>
 		{#if emailMessage}
 			<p class="text-sm text-success-500">{emailMessage}</p>
 		{/if}
@@ -419,6 +454,7 @@
 			</label>
 			<div class="sm:col-span-2">
 				<button class="btn preset-filled-primary-500" type="submit" disabled={savingEmail}>
+					<Send size={15} aria-hidden="true" />
 					{savingEmail ? 'Sending…' : 'Send confirmation link'}
 				</button>
 			</div>
@@ -426,7 +462,10 @@
 	</section>
 
 	<section class="space-y-3 card p-6">
-		<h2 class="h3">Linked sign-in methods</h2>
+		<h2 class="flex items-center gap-2 h3">
+			<Link2 class="text-secondary-500" size={18} aria-hidden="true" />
+			Linked sign-in methods
+		</h2>
 		{#if data.oauthError}
 			<p class="text-sm text-error-500">{oauthErrorMessage(data.oauthError)}</p>
 		{/if}
@@ -457,6 +496,7 @@
 									)}
 								disabled={pendingProvider !== null}
 							>
+								<Unlink size={13} aria-hidden="true" />
 								Unlink
 							</button>
 						{/if}
@@ -475,6 +515,7 @@
 							onclick={() => linkProvider(provider.id as ProviderId)}
 							disabled={pendingProvider !== null}
 						>
+							<Plus size={14} aria-hidden="true" />
 							{pendingProvider === provider.id
 								? `Connecting ${provider.label}…`
 								: `Link ${provider.label}`}
@@ -487,7 +528,10 @@
 
 	<section class="space-y-3 card p-6">
 		<div class="flex flex-wrap items-center justify-between gap-2">
-			<h2 class="h3">Active sessions</h2>
+			<h2 class="flex items-center gap-2 h3">
+				<MonitorSmartphone class="text-secondary-500" size={18} aria-hidden="true" />
+				Active sessions
+			</h2>
 			{#if data.sessions.length > 1}
 				<button
 					class="btn preset-tonal-surface text-sm"
@@ -495,6 +539,7 @@
 					onclick={revokeOtherSessions}
 					disabled={revokingOthers}
 				>
+					<LogOut size={14} aria-hidden="true" />
 					{revokingOthers ? 'Signing out…' : 'Sign out other sessions'}
 				</button>
 			{/if}
@@ -533,6 +578,7 @@
 								onclick={() => revokeSession(session.token)}
 								disabled={revokingToken !== null}
 							>
+								<X size={13} aria-hidden="true" />
 								{revokingToken === session.token ? 'Revoking…' : 'Revoke'}
 							</button>
 						{/if}
@@ -543,7 +589,10 @@
 	</section>
 
 	<section class="space-y-3 card p-6">
-		<h2 class="h3">Change password</h2>
+		<h2 class="flex items-center gap-2 h3">
+			<KeyRound class="text-secondary-500" size={18} aria-hidden="true" />
+			Change password
+		</h2>
 		{#if passwordError}
 			<p class="text-sm text-error-500">{passwordError}</p>
 		{/if}
@@ -584,10 +633,17 @@
 			</label>
 			<div class="flex flex-wrap gap-2 sm:col-span-2">
 				<button class="btn preset-filled-primary-500" type="submit" disabled={savingPassword}>
+					<KeyRound size={15} aria-hidden="true" />
 					{savingPassword ? 'Saving…' : 'Update password'}
 				</button>
-				<a class="btn preset-tonal-surface" href={resolve('/characters')}>Characters</a>
-				<button class="btn preset-tonal-surface" type="button" onclick={signOut}>Sign out</button>
+				<a class="btn preset-tonal-surface" href={resolve('/characters')}>
+					<Users size={15} aria-hidden="true" />
+					Characters
+				</a>
+				<button class="btn preset-tonal-surface" type="button" onclick={signOut}>
+					<LogOut size={15} aria-hidden="true" />
+					Sign out
+				</button>
 			</div>
 		</form>
 	</section>

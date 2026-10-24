@@ -1,59 +1,113 @@
 /* Rendered editorial Markdown (lore articles, patch notes). */
+
 .markdown > * + * {
 	margin-top: 1rem;
 }
+
 .markdown h2 {
 	margin-top: 1.75rem;
-	font-size: 1.35rem;
-	font-weight: 700;
+	font-family: var(--vds-font-heading);
+	font-size: 1.5rem;
+	font-weight: 600;
+	color: var(--vds-text);
 }
+
 .markdown h3 {
 	margin-top: 1.25rem;
-	font-size: 1.1rem;
+	font-family: var(--vds-font-heading);
+	font-size: 1.25rem;
 	font-weight: 600;
+	color: var(--vds-text);
 }
+
 .markdown a {
+	color: var(--vds-seal-light);
 	text-decoration: underline;
 	text-underline-offset: 2px;
 }
+
+.markdown a:hover {
+	color: var(--vds-gold-light);
+}
+
+.markdown strong {
+	color: var(--vds-gold-light);
+	font-weight: 600;
+}
+
 .markdown ul,
 .markdown ol {
 	padding-left: 1.5rem;
 }
+
 .markdown ul {
 	list-style: disc;
 }
+
 .markdown ol {
 	list-style: decimal;
 }
+
+.markdown li::marker {
+	color: var(--vds-gold);
+}
+
 .markdown blockquote {
-	border-left: 3px solid currentColor;
+	border-left: 3px solid var(--vds-gold-muted);
 	padding-left: 1rem;
-	opacity: 0.85;
+	color: var(--vds-text-muted);
+	font-style: italic;
 }
+
 .markdown code {
-	border-radius: 0.25rem;
-	background: rgba(127, 127, 127, 0.15);
+	border: 1px solid var(--vds-border);
+	border-radius: var(--vds-radius-sm);
+	background: var(--vds-bg-2);
 	padding: 0.1rem 0.3rem;
-	font-size: 0.9em;
+	font-family: var(--vds-font-mono);
+	font-size: 0.85em;
+	color: var(--vds-gold-light);
 }
+
 .markdown pre {
 	overflow-x: auto;
-	border-radius: 0.5rem;
-	background: rgba(127, 127, 127, 0.15);
+	border: 1px solid var(--vds-border);
+	border-radius: var(--vds-radius-md);
+	background: var(--vds-bg-0);
 	padding: 1rem;
 }
+
 .markdown pre code {
+	border: none;
 	background: transparent;
 	padding: 0;
+	color: var(--vds-text);
 }
+
 .markdown table {
 	width: 100%;
 	border-collapse: collapse;
 }
+
 .markdown th,
 .markdown td {
-	border: 1px solid rgba(127, 127, 127, 0.3);
-	padding: 0.4rem 0.6rem;
+	border: 1px solid var(--vds-border);
+	padding: 0.45rem 0.65rem;
 	text-align: left;
+}
+
+.markdown th {
+	background: var(--vds-bg-2);
+	font-family: var(--vds-font-heading);
+	color: var(--vds-text);
+}
+
+.markdown tr:nth-child(even) td {
+	background: color-mix(in srgb, var(--vds-bg-1) 70%, transparent);
+}
+
+.markdown hr {
+	border: none;
+	border-top: 1px solid var(--vds-border);
+	margin: 2rem 0;
 }
