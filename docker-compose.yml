@@ -139,23 +139,25 @@ services:
       # Build context is web/ so the npm workspaces resolve.
       context: ./web
       dockerfile: client/Dockerfile
+      # Public values are inlined by SvelteKit at build time, not read at runtime.
+      args:
+        PUBLIC_API_URL: ${SERVER_PUBLIC_URL:-http://localhost:9000}
+        PUBLIC_HUB_URL: ${SERVER_PUBLIC_URL:-http://localhost:9000}/hubs/game
     ports:
-      - "8080:3000"
+      - "8081:8081"
     environment:
       - NODE_ENV=production
+      - PORT=8081
       # Public origin of the SvelteKit app. Override WEB_PUBLIC_URL when
       # accessing via Tailscale or another hostname.
-      - ORIGIN=${WEB_PUBLIC_URL:-http://localhost:8080}
-      - BETTER_AUTH_URL=${WEB_PUBLIC_URL:-http://localhost:8080}
+      - ORIGIN=${WEB_PUBLIC_URL:-http://localhost:8081}
+      - BETTER_AUTH_URL=${WEB_PUBLIC_URL:-http://localhost:8081}
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:-dev-better-auth-secret-change-me}
       - DATABASE_URL=postgres://${AUTH_DB_USER:-veldrath_auth}:${AUTH_DB_PASSWORD:-veldrath_auth_dev}@postgres:5432/veldrath
       # Must match the .NET server's Jwt:Key / Issuer / Audience.
       - JWT_KEY=${JWT_KEY:-dev-secret-key-change-in-production-must-be-32-chars}
       - JWT_ISSUER=Veldrath.Server
       - JWT_AUDIENCE=Veldrath.Client
-      # Browser-reachable .NET endpoints.
-      - PUBLIC_API_URL=${SERVER_PUBLIC_URL:-http://localhost:9000}
-      - PUBLIC_HUB_URL=${SERVER_PUBLIC_URL:-http://localhost:9000}/hubs/game
       # Internal container URL for the temporary Identity account bridge.
       - INTERNAL_BRIDGE_URL=http://server:8080
       - INTERNAL_BRIDGE_TOKEN=${INTERNAL_BRIDGE_TOKEN:-}
@@ -179,7 +181,7 @@ services:
           "CMD",
           "node",
           "-e",
-          "fetch('http://127.0.0.1:3000/').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+          "fetch('http://127.0.0.1:8081/').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
         ]
       interval: 10s
       timeout: 5s

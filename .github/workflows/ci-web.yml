@@ -159,6 +159,10 @@ jobs:
         with:
           context: ./web
           file: web/client/Dockerfile
+          # SvelteKit 3 inlines public env vars at build time.
+          build-args: |
+            PUBLIC_API_URL=${{ vars.PUBLIC_API_URL || 'https://api.veldrath.com' }}
+            PUBLIC_HUB_URL=${{ vars.PUBLIC_HUB_URL || 'https://api.veldrath.com/hubs/game' }}
           push: true
           tags: |
             ${{ steps.image.outputs.registry }}:latest

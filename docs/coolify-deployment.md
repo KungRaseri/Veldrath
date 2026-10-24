@@ -6,11 +6,14 @@ Environment variable reference for deploying all Veldrath services in Coolify as
 
 ## Service Overview
 
-| Service | Dockerfile | Container Port | Coolify Resource Name | Persistent Volume |
+Coolify builds each service from its Dockerfile (one resource per service); the
+compose files in this repository are for local development only.
+
+| Service | Base dir / Dockerfile | Container Port | Coolify Resource Name | Persistent Volume |
 |---|---|---|---|---|
-| **Veldrath.Server** | [`Veldrath.Server/Dockerfile`](../Veldrath.Server/Dockerfile) | 8080 | `veldrath-server` | `dataprotection_keys` |
-| **SvelteKit web app** | [`web/client/Dockerfile`](../web/client/Dockerfile) | 3000 | `veldrath-web` | None needed |
-| **Veldrath.Discord** | [`Veldrath.Discord/Dockerfile`](../Veldrath.Discord/Dockerfile) | 8080 | `veldrath-discord` | None needed |
+| **Veldrath.Server** | `/` / [`Veldrath.Server/Dockerfile`](../Veldrath.Server/Dockerfile) | 8080 | `veldrath-server` | `dataprotection_keys` |
+| **SvelteKit web app** | `/web` / [`web/client/Dockerfile`](../web/client/Dockerfile) | 8081 | `veldrath-web` | None needed |
+| **Veldrath.Discord** | `/` / [`Veldrath.Discord/Dockerfile`](../Veldrath.Discord/Dockerfile) | 8083 | `veldrath-discord` | None needed |
 
 > **Important:** In Coolify's standalone Dockerfile mode, container names are auto-generated UUIDs. For inter-service DNS to work, set a fixed **Container Name** in Coolify Advanced settings for each resource matching the names above. Containers can then resolve each other by that name on Coolify's internal Docker network.
 
@@ -93,6 +96,20 @@ Point Coolify's health check to `http://localhost:8080/health` (exposed at [`Pro
 ---
 
 ## 2. SvelteKit web app
+
+### Coolify resource settings
+
+| Field | Value |
+|---|---|
+| **Base Directory** | `/web` |
+| **Dockerfile Location** | `/client/Dockerfile` |
+| **Port** | `8081` |
+| **Health Check** | `http://localhost:8081/` |
+| **Build args** | `PUBLIC_API_URL=https://api.veldrath.com`, `PUBLIC_HUB_URL=https://api.veldrath.com/hubs/game` |
+
+> SvelteKit 3 inlines public environment variables at **build** time. Set
+> `PUBLIC_API_URL` and `PUBLIC_HUB_URL` as Coolify build arguments; runtime-only
+> environment values are not picked up by `$app/env/public`.
 
 ### Environment Variables
 
@@ -193,7 +210,7 @@ Auth `auth.session` table.
 
 ### Health Check
 
-Point Coolify's health check to `http://localhost:3000/`.
+Point Coolify's health check to `http://localhost:8081/`.
 
 ---
 
@@ -215,7 +232,7 @@ Discord__ServerBaseUrl=http://veldrath-server:8080
 ConnectionStrings__DefaultConnection=${POSTGRES_URL}
 
 # ── ASP.NET Core ──
-ASPNETCORE_URLS=http://+:8080
+ASPNETCORE_URLS=http://+:8083
 DOTNET_ENVIRONMENT=Production
 ```
 
@@ -227,13 +244,13 @@ DOTNET_ENVIRONMENT=Production
 | `Discord__DevGuildId` | `Discord:DevGuildId` | [`DiscordSettings.cs:17`](../Veldrath.Discord/Settings/DiscordSettings.cs:17) | Guild ID for instant slash-command registration. `0` = global. |
 | `Discord__ServerBaseUrl` | `Discord:ServerBaseUrl` | [`Program.cs:46`](../Veldrath.Discord/Program.cs:46) | Base URL of the game server API. |
 | `ConnectionStrings__DefaultConnection` | `ConnectionStrings:DefaultConnection` | [`Program.cs:37-38`](../Veldrath.Discord/Program.cs:37) | Postgres connection string. **Required** — throws if missing. |
-| `ASPNETCORE_URLS` | — | Kestrel | Binds to `http://+:8080` ([`Dockerfile:36`](../Veldrath.Discord/Dockerfile:36)). |
+| `ASPNETCORE_URLS` | — | Kestrel | Binds to `http://+:8083` ([`Dockerfile:36`](../Veldrath.Discord/Dockerfile:36)). |
 | `DOTNET_ENVIRONMENT` | — | ASP.NET Core | Hardcoded to `Production` in Dockerfile (line 42). |
 
 ### Notes
 
 - **No Data Protection volume needed** — The Discord bot doesn't issue cookies or antiforgery tokens.
-- **Health check** at `http://localhost:8080/health` ([`Program.cs:69`](../Veldrath.Discord/Program.cs:69)). Curl is already installed in the Dockerfile (line 33).
+- **Health check** at `http://localhost:8083/health` ([`Program.cs:69`](../Veldrath.Discord/Program.cs:69)). Curl is already installed in the Dockerfile (line 33).
 
 ---
 
@@ -376,8 +393,8 @@ If you want auto-provisioned dashboards and datasources, mount these from the re
 │  └────┬───────────────────────────────────┘  │
 │       │                                      │
 │  ┌────▼─────┐  ┌──────────┐  ┌────────────┐ │
-│  │ Web/FW   │  │ Prometheus│  │  Discord   │ │
-│  │ :8082/81 │  │  :9090   │  │   :8080    │ │
+│  │   Web    │  │ Prometheus│  │  Discord   │ │
+│  │  :8081   │  │  :9090   │  │   :8080    │ │
 │  └──────────┘  └────┬─────┘  └────────────┘ │
 │                     │                        │
 │              ┌──────▼─────┐                  │

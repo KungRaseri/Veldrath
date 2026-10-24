@@ -1,9 +1,10 @@
 # client/Dockerfile — SvelteKit client (@sveltejs/adapter-node)
 #
-# This file lives in client/, but the build context MUST be the repo root so
-# the npm workspaces resolve. docker-compose.yml (and Coolify) build with:
-#   context: .          # repo root — required for the npm workspace layout
-#   dockerfile: client/Dockerfile
+# Build context MUST be web/ so the npm workspaces resolve.
+# Coolify (one Dockerfile-based resource per service) uses:
+#   Base directory: /web
+#   Dockerfile:     /client/Dockerfile
+# docker-compose.yml/dev/prod build with context ./web and the same file.
 #
 # Notes / assumptions:
 #   - The client imports @veldrath/shared as TypeScript source (workspace
@@ -14,14 +15,21 @@
 #     client's prod `dependencies` that SvelteKit externalises) — correct, if
 #     slightly larger than a `--omit=dev` prune.
 #   - The entrypoint waits for Postgres, applies Drizzle auth migrations, then
-#     starts SvelteKit. ORIGIN / DATABASE_URL / secrets come from compose.
-#   - Base image node:22-alpine (npm 10) avoids the npm >= 12 EALLOWGIT issue
-#     with the lockfile's git dependency (uWebSockets.js).
+#     starts SvelteKit on PORT (default 8081).
+#   - PUBLIC_API_URL / PUBLIC_HUB_URL are PUBLIC env vars: SvelteKit 3 inlines
+#     them at build time, so they must be supplied as build args.
+#   - Base image node:22-alpine meets SvelteKit 3's Node >= 22.17 requirement.
 
 # ---- Stage 1: install the whole workspace + build the client ----
 FROM node:22-alpine AS build
 
 WORKDIR /app
+
+# Public values are baked into the client/server bundle by SvelteKit.
+ARG PUBLIC_API_URL=http://localhost:9000
+ARG PUBLIC_HUB_URL=http://localhost:9000/hubs/game
+ENV PUBLIC_API_URL=$PUBLIC_API_URL
+ENV PUBLIC_HUB_URL=$PUBLIC_HUB_URL
 
 # Install first so layer caching works when only sources change.
 COPY package.json package-lock.json ./
@@ -47,6 +55,9 @@ FROM node:22-alpine AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production
+# adapter-node listens on PORT; 8081 matches the replaced Blazor web deployment.
+ENV PORT=8081
+ENV HOST=0.0.0.0
 
 # Prod deps: copy the full node_modules (contains the client's `dependencies`
 # that adapter-node externalises) + the shared sources behind the workspace
@@ -67,6 +78,6 @@ COPY --from=build /app/client/build ./client/build
 
 WORKDIR /app/client
 
-EXPOSE 3000
+EXPOSE 8081
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]

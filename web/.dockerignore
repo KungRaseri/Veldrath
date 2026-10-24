@@ -1,7 +1,6 @@
-# .dockerignore — build context for server/Dockerfile and client/Dockerfile
-# (build context = repo root). Keeps secrets and build artifacts out of the
-# image build context while preserving the .env.example templates the
-# Dockerfiles copy.
+# .dockerignore — build context for web/client/Dockerfile and Dockerfile.dev.
+# The build context is web/ (Coolify base directory /web, Dockerfile
+# /client/Dockerfile), so project-relative paths below are relative to web/.
 
 # Git / CI
 .git
@@ -24,6 +23,7 @@ node_modules
 dist
 **/dist
 client/build
+client/build-desktop
 client/.svelte-kit
 **/coverage
 coverage

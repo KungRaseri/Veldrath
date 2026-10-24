@@ -41,7 +41,7 @@ services:
     image: ghcr.io/kungraseri/veldrath-web:latest
     ports: []
     expose:
-      - "3000"
+      - "8081"
     environment:
       - NODE_ENV=production
       - ORIGIN=https://veldrath.com

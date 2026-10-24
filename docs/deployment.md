@@ -6,16 +6,25 @@ There is **no Caddy** in the deployment path.
 
 ## Stack
 
-| Service | Image / Dockerfile | Internal port | Public host |
+Coolify runs **one Dockerfile-based resource per service**; it builds each image
+from this repository. Compose files are for local development only.
+
+| Service | Coolify base / Dockerfile | Internal port | Public host |
 |---|---|---|---|
-| `server` | `ghcr.io/kungraseri/veldrath-server:latest` | 8080 | `api.veldrath.com` |
-| `web` | `ghcr.io/kungraseri/veldrath-web:latest` (built from [`web/client/Dockerfile`](../web/client/Dockerfile)) | 3000 | `veldrath.com` |
-| `discord` | `ghcr.io/kungraseri/veldrath-discord:latest` | 8083 | none |
+| `server` | `/` / [`Veldrath.Server/Dockerfile`](../Veldrath.Server/Dockerfile) | 8080 | `api.veldrath.com` |
+| `web` | `/web` / [`web/client/Dockerfile`](../web/client/Dockerfile) | 8081 | `veldrath.com` |
+| `discord` | `/` / [`Veldrath.Discord/Dockerfile`](../Veldrath.Discord/Dockerfile) | 8083 | none |
 | `postgres` | Coolify-managed Postgres | 5432 | none |
 
-The Coolify deployment file is [`docker-compose.coolify.yml`](../docker-compose.coolify.yml).
-It is a single, self-contained compose file with Traefik labels and no host port
-mappings.
+For the web resource set the Coolify fields to:
+
+- **Base Directory:** `/web`
+- **Dockerfile Location:** `/client/Dockerfile`
+- **Port:** `8081`
+- **Health check:** `http://localhost:8081/`
+- **Build args:** `PUBLIC_API_URL=https://api.veldrath.com`,
+  `PUBLIC_HUB_URL=https://api.veldrath.com/hubs/game` (SvelteKit inlines public
+  env vars at build time)
 
 ## Required Coolify secrets
 
@@ -120,14 +129,14 @@ native sign-in and the internal identity bridge still use ASP.NET Core Identity.
 
 ## Deploying
 
-1. Push the SvelteKit web image to GHCR. The [`ci-web.yml`](../.github/workflows/ci-web.yml)
-   workflow builds `web/client/Dockerfile` from the `web/` context and pushes
-   `ghcr.io/kungraseri/veldrath-web:latest`.
-2. In Coolify, create or update the Docker Compose application pointing at
-   [`docker-compose.coolify.yml`](../docker-compose.coolify.yml).
-3. Set the required secrets listed above.
-4. Deploy. Traefik routes:
-   - `veldrath.com` → `web:3000`
+1. Create one Coolify **Dockerfile** resource per service (see the table above).
+2. Point each resource at this repository and set its base directory, Dockerfile
+   location, container port, health check, and environment variables.
+3. For the web resource add the public build args `PUBLIC_API_URL` and
+   `PUBLIC_HUB_URL`. They are baked into the bundle at build time; setting them
+   only as runtime environment variables has no effect in SvelteKit 3.
+4. Set the required secrets listed above and deploy. Traefik routes:
+   - `veldrath.com` → `web:8081`
    - `api.veldrath.com` → `server:8080`
 5. Confirm health:
    - `https://veldrath.com/`
@@ -150,10 +159,12 @@ also trusts forwarded headers through `UseForwardedHeaders`.
 ## Local deployment
 
 - Local development: [`docker-compose.yml`](../docker-compose.yml) with
-  `docker compose up -d --build`.
+  `docker compose up -d --build` (web on `http://localhost:8081`).
+- Hot-reload web development: `docker compose -f docker-compose.dev.yml up web`
+  (Vite on `http://localhost:8081`) or `cd web && npm run dev` (port 5173).
 - Production-like local: [`docker-compose.prod.yml`](../docker-compose.prod.yml)
   as an overlay, with an external reverse proxy on the Docker network.
-- Coolify: [`docker-compose.coolify.yml`](../docker-compose.coolify.yml) only.
+- Coolify uses Dockerfile resources, not a compose file.
 
 The old Blazor `Veldrath.Web` and `RealmFoundry` containers and the Caddy
 configuration are retired.

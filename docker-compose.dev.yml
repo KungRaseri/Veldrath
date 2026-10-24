@@ -210,11 +210,11 @@ services:
       context: ./web
       dockerfile: client/Dockerfile.dev
     ports:
-      - "8080:5173"
+      - "8081:5173"
     environment:
       - NODE_ENV=development
-      - ORIGIN=http://localhost:8080
-      - BETTER_AUTH_URL=http://localhost:8080
+      - ORIGIN=http://localhost:8081
+      - BETTER_AUTH_URL=http://localhost:8081
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:-dev-better-auth-secret-change-me}
       - DATABASE_URL=postgres://${AUTH_DB_USER:-veldrath_auth}:${AUTH_DB_PASSWORD:-veldrath_auth_dev}@postgres:5432/veldrath
       - JWT_KEY=${JWT_KEY:-dev-secret-key-change-in-production-must-be-32-chars}
