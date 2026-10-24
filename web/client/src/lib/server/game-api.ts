@@ -1,5 +1,5 @@
 import { env } from '#lib/server/env';
-import { env as publicEnv } from '$env/dynamic/public';
+import { PUBLIC_API_URL } from '$app/env/public';
 import { mintGameToken } from './game-token';
 import type { CharacterSummary } from '#lib/game/types';
 
@@ -15,7 +15,7 @@ export interface CharacterListResult {
  * preferred so the request never leaves the Docker network in production.
  */
 export async function fetchCharactersForUser(user: AuthUser): Promise<CharacterListResult> {
-	const baseUrl = env.INTERNAL_BRIDGE_URL ?? publicEnv.PUBLIC_API_URL;
+	const baseUrl = env.INTERNAL_BRIDGE_URL ?? PUBLIC_API_URL;
 	if (!baseUrl) {
 		return { characters: [], error: 'The game server URL is not configured.' };
 	}

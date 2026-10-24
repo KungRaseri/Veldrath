@@ -1,10 +1,9 @@
 {
-	"extends": "./.svelte-kit/tsconfig.json",
+	"extends": "$app/tsconfig",
 	"compilerOptions": {
 		"paths": {
 			"#lib": ["./src/lib"],
-			"#lib/*": ["./src/lib/*"],
-			"$app/types": ["./.svelte-kit/types/index.d.ts"]
+			"#lib/*": ["./src/lib/*"]
 		},
 		"experimentalDecorators": true,
 		"useDefineForClassFields": false,
@@ -18,10 +17,7 @@
 		"sourceMap": true,
 		"strict": true,
 		"moduleResolution": "bundler"
-	}
-	// Path aliases are handled by https://svelte.dev/docs/kit/configuration#alias
-	// except $lib which is handled by https://svelte.dev/docs/kit/configuration#files
-	//
-	// To make changes to top-level options such as include and exclude, we recommend extending
-	// the generated config; see https://svelte.dev/docs/kit/configuration#typescript
+	},
+	"include": ["src", "tests", "vite.config.ts", "vitest.config.ts", "playwright.config.ts"],
+	"exclude": ["src/service-worker"]
 }

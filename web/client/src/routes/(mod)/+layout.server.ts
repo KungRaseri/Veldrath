@@ -1,7 +1,8 @@
+import type { LayoutServerLoad } from './$types';
 import { Permissions, requirePermission, requireUser } from '#lib/server/access';
 
 /** Moderation routes require the `players.view` permission. */
-export const load = async ({ locals, parent }) => {
+export const load: LayoutServerLoad = async ({ locals, parent }) => {
 	requireUser(locals);
 	const { access } = await parent();
 	requirePermission(

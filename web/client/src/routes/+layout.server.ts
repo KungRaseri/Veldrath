@@ -1,6 +1,7 @@
+import type { LayoutServerLoad } from './$types';
 import { hasPermission, loadAccountAccess, Permissions } from '#lib/server/access';
 
-export const load = async ({ locals }) => {
+export const load: LayoutServerLoad = async ({ locals }) => {
 	const user = locals.user ?? null;
 	const access = user ? await loadAccountAccess(user) : null;
 

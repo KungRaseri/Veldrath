@@ -1735,6 +1735,14 @@ The web app now runs SvelteKit **3.1.0**, Vite **8.3.5**, `@sveltejs/vite-plugin
 - `resolve()` is now typed against the generated `RouteId` union, which **includes route groups**
   (e.g. `/(mod)/mod`). Dynamic routes use `resolve('/play/[id]', { id })`.
 - `$app/environment` is now `$app/env`; `Handle` moved to `@sveltejs/kit/hooks`.
+- `web/client/tsconfig.json` extends **`$app/tsconfig`** (generated in
+  `node_modules/$app/tsconfig.json`) with an explicit `include` (`src`, `tests`, config files) and
+  the `#lib` paths mapping. Extending `./.svelte-kit/tsconfig.json` still works but Kit warns
+  `tsconfig_extends_missing` on every dev start.
+- Public env vars are declared in `web/client/src/env.ts` via `defineEnvVars` and imported by name
+  from `$app/env/public` (`PUBLIC_API_URL`, `PUBLIC_HUB_URL`). `$env/dynamic/*` is legacy in Kit 3.
+- `+layout.server.ts` / `+page.server.ts` load functions now annotate `LayoutServerLoad` /
+  `PageServerLoad` from `./$types`; raw `tsc` (not just svelte-check) needs those annotations.
 - `$env/dynamic/private` is snapshotted by the Kit 3 + Vite 8 (Rolldown) build and gets
   constant-folded, so server secrets must come from `process.env`. `#lib/server/env.ts` reads
   `process.env` and loads `.env` (trimming quotes) for local dev/preview; all server modules import

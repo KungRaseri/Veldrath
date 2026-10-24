@@ -1,5 +1,5 @@
 import { env } from '#lib/server/env';
-import { env as publicEnv } from '$env/dynamic/public';
+import { PUBLIC_API_URL } from '$app/env/public';
 import type { GameIdentity } from '#lib/server/game-request';
 import { gameApiFetch } from '#lib/server/game-request';
 
@@ -62,7 +62,7 @@ export interface ApiResult<T> {
 }
 
 function apiBaseUrl(): string | null {
-	const base = env.INTERNAL_BRIDGE_URL ?? publicEnv.PUBLIC_API_URL;
+	const base = env.INTERNAL_BRIDGE_URL ?? PUBLIC_API_URL;
 	return base ? base.replace(/\/+$/, '') : null;
 }
 

@@ -1,5 +1,5 @@
 import { env } from '#lib/server/env';
-import { env as publicEnv } from '$env/dynamic/public';
+import { PUBLIC_API_URL } from '$app/env/public';
 
 /** Transactional messages that Better Auth can ask the game server to deliver. */
 export type TransactionalEmailKind = 'password-reset' | 'verification';
@@ -28,7 +28,7 @@ export async function sendTransactionalEmail(
 	kind: TransactionalEmailKind,
 	email: TransactionalEmail
 ): Promise<boolean> {
-	const baseUrl = env.INTERNAL_BRIDGE_URL ?? publicEnv.PUBLIC_API_URL;
+	const baseUrl = env.INTERNAL_BRIDGE_URL ?? PUBLIC_API_URL;
 	const token = env.INTERNAL_BRIDGE_TOKEN;
 
 	if (!baseUrl || !token) {

@@ -1,5 +1,5 @@
 import { HubConnectionBuilder, LogLevel, type HubConnection } from '@microsoft/signalr';
-import { env } from '$env/dynamic/public';
+import { PUBLIC_HUB_URL } from '$app/env/public';
 
 async function fetchGameToken(): Promise<string> {
 	const response = await fetch('/api/game-token', { cache: 'no-store' });
@@ -27,7 +27,7 @@ export interface GameHubOptions {
  * forwards `/hubs` to the game server and injects the desktop JWT server-side.
  */
 export function createGameHub(options: GameHubOptions = {}): HubConnection {
-	const hubUrl = options.hubUrl ?? env.PUBLIC_HUB_URL;
+	const hubUrl = options.hubUrl ?? PUBLIC_HUB_URL;
 	if (!hubUrl) {
 		throw new Error('PUBLIC_HUB_URL is not configured.');
 	}
