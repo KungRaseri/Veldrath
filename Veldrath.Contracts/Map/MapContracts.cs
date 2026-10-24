@@ -103,17 +103,3 @@ public record MapEdgeDto(
 /// <param name="NodeId">Destination node identifier.</param>
 public record TravelToNodeHubRequest(string MapId, string NodeId);
 
-/// <summary>Result of travelling to a map node.</summary>
-/// <param name="Success">Whether the travel succeeded.</param>
-/// <param name="ErrorMessage">Failure reason when <paramref name="Success"/> is <see langword="false"/>.</param>
-/// <param name="MapId">Map the character is on after the action.</param>
-/// <param name="NodeId">Node the character occupies after the action.</param>
-/// <param name="MapChanged">Whether the action moved the character to another map.</param>
-/// <param name="Message">Human-readable outcome message.</param>
-public record TravelToNodeResultDto(
-    bool Success,
-    string? ErrorMessage,
-    string? MapId,
-    string? NodeId,
-    bool MapChanged,
-    string? Message);

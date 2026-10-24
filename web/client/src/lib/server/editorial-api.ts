@@ -1,7 +1,5 @@
-import { env } from '#lib/server/env';
-import { PUBLIC_API_URL } from '$app/env/public';
 import type { GameIdentity } from '#lib/server/game-request';
-import { gameApiFetch } from '#lib/server/game-request';
+import { gameApiBaseUrl, gameApiFetch } from '#lib/server/game-request';
 
 export interface PagedResult<T> {
 	items: T[];
@@ -61,36 +59,26 @@ export interface ApiResult<T> {
 	error: string | null;
 }
 
-function apiBaseUrl(): string | null {
-	const base = env.INTERNAL_BRIDGE_URL ?? PUBLIC_API_URL;
-	return base ? base.replace(/\/+$/, '') : null;
-}
-
+/**
+ * Anonymous JSON read. Delegates to {@link gameApiFetch} so every server→API call shares one
+ * transport (base URL resolution, timeouts, 401/5xx diagnostics).
+ */
 async function getJson<T>(path: string): Promise<ApiResult<T>> {
-	const base = apiBaseUrl();
-	if (!base) {
-		return { data: null, error: 'The game server URL is not configured.' };
+	const result = await gameApiFetch<T>(null, path, { timeoutMs: 5000 });
+
+	// A missing article/announcement is a normal lookup outcome, not an error.
+	if (result.status === 404) {
+		return { data: null, error: null };
 	}
 
-	try {
-		const response = await fetch(`${base}${path}`, {
-			headers: { accept: 'application/json' },
-			signal: AbortSignal.timeout(5000)
-		});
-
-		if (response.status === 404) {
-			return { data: null, error: null };
-		}
-
-		if (!response.ok) {
-			return { data: null, error: `Request failed (${response.status}).` };
-		}
-
-		return { data: (await response.json()) as T, error: null };
-	} catch (error) {
-		console.warn(`[editorial-api] ${path} failed.`, error);
-		return { data: null, error: 'Could not reach the game server.' };
+	if (!result.data) {
+		return {
+			data: null,
+			error: result.status ? `Request failed (${result.status}).` : result.error
+		};
 	}
+
+	return { data: result.data, error: null };
 }
 
 const emptyPage = <T>(page: number, pageSize: number): PagedResult<T> => ({
@@ -163,7 +151,7 @@ export async function listAnnouncements(
 }
 
 export async function getServerHealth(): Promise<boolean> {
-	const base = apiBaseUrl();
+	const base = gameApiBaseUrl();
 	if (!base) return false;
 
 	try {
