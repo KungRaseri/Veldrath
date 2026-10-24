@@ -16,8 +16,13 @@
 #     slightly larger than a `--omit=dev` prune.
 #   - The entrypoint waits for Postgres, applies Drizzle auth migrations, then
 #     starts SvelteKit on PORT (default 8081).
-#   - PUBLIC_API_URL / PUBLIC_HUB_URL are PUBLIC env vars: SvelteKit 3 inlines
-#     them at build time, so they must be supplied as build args.
+#   - PUBLIC_API_URL / PUBLIC_HUB_URL are PUBLIC env vars declared in
+#     client/src/env.ts. SvelteKit 3 inlines them into the browser bundle at
+#     build time AND validates them from process.env when `node build` starts,
+#     so they must be supplied BOTH as build args and as runtime env vars.
+#     The runtime defaults below match the build-arg defaults; an orchestrator
+#     (Coolify/compose) can override them at runtime but must keep them equal to
+#     the build values, otherwise SSR and the browser bundle disagree.
 #   - Base image node:22-alpine meets SvelteKit 3's Node >= 22.17 requirement.
 
 # ---- Stage 1: install the whole workspace + build the client ----
@@ -58,6 +63,14 @@ ENV NODE_ENV=production
 # adapter-node listens on PORT; 8081 matches the replaced Blazor web deployment.
 ENV PORT=8081
 ENV HOST=0.0.0.0
+
+# Public values are validated by SvelteKit at startup (`node build`), so the
+# image carries the same defaults it was built with. Override them at runtime
+# only if the values match the ones used for the build args above.
+ARG PUBLIC_API_URL=http://localhost:9000
+ARG PUBLIC_HUB_URL=http://localhost:9000/hubs/game
+ENV PUBLIC_API_URL=$PUBLIC_API_URL
+ENV PUBLIC_HUB_URL=$PUBLIC_HUB_URL
 
 # Prod deps: copy the full node_modules (contains the client's `dependencies`
 # that adapter-node externalises) + the shared sources behind the workspace

@@ -148,6 +148,10 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=8081
+      # Public values are inlined at build time AND validated at startup, so the
+      # runtime values must match the build args above.
+      - PUBLIC_API_URL=${SERVER_PUBLIC_URL:-http://localhost:9000}
+      - PUBLIC_HUB_URL=${SERVER_PUBLIC_URL:-http://localhost:9000}/hubs/game
       # Public origin of the SvelteKit app. Override WEB_PUBLIC_URL when
       # accessing via Tailscale or another hostname.
       - ORIGIN=${WEB_PUBLIC_URL:-http://localhost:8081}

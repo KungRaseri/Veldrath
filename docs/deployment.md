@@ -24,7 +24,12 @@ For the web resource set the Coolify fields to:
 - **Health check:** `http://localhost:8081/`
 - **Build args:** `PUBLIC_API_URL=https://api.veldrath.com`,
   `PUBLIC_HUB_URL=https://api.veldrath.com/hubs/game` (SvelteKit inlines public
-  env vars at build time)
+  env vars into the browser bundle at build time)
+- **Environment variables:** the same `PUBLIC_API_URL` / `PUBLIC_HUB_URL` values.
+  SvelteKit also validates public vars from `process.env` when the server starts,
+  so an image built with the build args but started without the runtime env vars
+  exits with `env_invalid`. Keep both values identical or SSR and the browser
+  bundle will point at different hosts.
 
 ## Required Coolify secrets
 
@@ -132,9 +137,10 @@ native sign-in and the internal identity bridge still use ASP.NET Core Identity.
 1. Create one Coolify **Dockerfile** resource per service (see the table above).
 2. Point each resource at this repository and set its base directory, Dockerfile
    location, container port, health check, and environment variables.
-3. For the web resource add the public build args `PUBLIC_API_URL` and
-   `PUBLIC_HUB_URL`. They are baked into the bundle at build time; setting them
-   only as runtime environment variables has no effect in SvelteKit 3.
+3. For the web resource set `PUBLIC_API_URL` and `PUBLIC_HUB_URL` **both** as
+   build args and as runtime environment variables, with identical values.
+   SvelteKit 3 inlines them into the browser bundle at build time and validates
+   them from `process.env` at server startup, so build args alone are not enough.
 4. Set the required secrets listed above and deploy. Traefik routes:
    - `veldrath.com` → `web:8081`
    - `api.veldrath.com` → `server:8080`

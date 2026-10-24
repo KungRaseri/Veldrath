@@ -107,9 +107,13 @@ Point Coolify's health check to `http://localhost:8080/health` (exposed at [`Pro
 | **Health Check** | `http://localhost:8081/` |
 | **Build args** | `PUBLIC_API_URL=https://api.veldrath.com`, `PUBLIC_HUB_URL=https://api.veldrath.com/hubs/game` |
 
-> SvelteKit 3 inlines public environment variables at **build** time. Set
-> `PUBLIC_API_URL` and `PUBLIC_HUB_URL` as Coolify build arguments; runtime-only
-> environment values are not picked up by `$app/env/public`.
+> SvelteKit 3 resolves public variables in **two** places: they are inlined into
+> the browser bundle at **build** time and validated from `process.env` when
+> `node build` starts. Set `PUBLIC_API_URL` and `PUBLIC_HUB_URL` as Coolify
+> build arguments **and** as runtime environment variables (see below), with
+> identical values. Build args alone make the container exit on boot with
+> `env_invalid`; runtime values alone would leave the browser bundle pointing at
+> the build-time defaults.
 
 ### Environment Variables
 

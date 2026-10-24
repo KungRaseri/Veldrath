@@ -1741,6 +1741,12 @@ The web app now runs SvelteKit **3.1.0**, Vite **8.3.5**, `@sveltejs/vite-plugin
   `tsconfig_extends_missing` on every dev start.
 - Public env vars are declared in `web/client/src/env.ts` via `defineEnvVars` and imported by name
   from `$app/env/public` (`PUBLIC_API_URL`, `PUBLIC_HUB_URL`). `$env/dynamic/*` is legacy in Kit 3.
+- **Public env vars are needed twice in containers:** inlined into the browser bundle at build time
+  (`--build-arg`) *and* validated from `process.env` when `node build` starts. An image built with
+  the build args but started without the runtime env vars dies with
+  `SvelteKit error: env_invalid … PUBLIC_API_URL Value is missing`. `web/client/Dockerfile` therefore
+  re-declares the ARGs in the runtime stage as `ENV` defaults, and compose/Coolify must set the same
+  values at runtime. Keep build and runtime values identical or the browser bundle and SSR disagree.
 - `+layout.server.ts` / `+page.server.ts` load functions now annotate `LayoutServerLoad` /
   `PageServerLoad` from `./$types`; raw `tsc` (not just svelte-check) needs those annotations.
 - `$env/dynamic/private` is snapshotted by the Kit 3 + Vite 8 (Rolldown) build and gets
