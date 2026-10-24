@@ -15,6 +15,12 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # Avalonia 12 needs a deliberate UI migration; stay on 11.3.x for now.
+      - dependency-name: "Avalonia*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "FluentAvaloniaUI"
+        update-types: ["version-update:semver-major"]
 
   # SvelteKit web app — npm workspaces rooted at web/
   - package-ecosystem: "npm"
@@ -28,6 +34,19 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # SvelteKit 3, the adapters, Vite 8 and plugin-svelte 7 are a coupled
+      # migration — take them together, deliberately, not as bot PRs.
+      - dependency-name: "@sveltejs/kit"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@sveltejs/adapter-node"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@sveltejs/adapter-static"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@sveltejs/vite-plugin-svelte"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions used by .github/workflows/*
   - package-ecosystem: "github-actions"
