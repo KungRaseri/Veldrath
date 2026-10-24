@@ -14,6 +14,7 @@
         <PackageReference Include="Avalonia.ReactiveUI" />
         <PackageReference Include="Avalonia.Themes.Fluent" />
         <PackageReference Include="FluentAvaloniaUI" />
+        <PackageReference Include="ReactiveUI" />
 
         <PackageReference Include="Microsoft.EntityFrameworkCore" />
         <PackageReference Include="Microsoft.Extensions.Configuration" />
@@ -35,7 +36,9 @@
         <ProjectReference Include="..\RealmUI.Fonts\RealmUI.Fonts.csproj" />
         <ProjectReference Include="..\RealmEngine.Core\RealmEngine.Core.csproj" />
         <ProjectReference Include="..\RealmEngine.Data\RealmEngine.Data.csproj" />
-        <ProjectReference Include="..\RealmEngine.Shared\RealmEngine.Shared.csproj" />        <ProjectReference Include="..\.\Veldrath.Contracts\Veldrath.Contracts.csproj" />    </ItemGroup>
+        <ProjectReference Include="..\RealmEngine.Shared\RealmEngine.Shared.csproj" />
+        <ProjectReference Include="..\Veldrath.Contracts\Veldrath.Contracts.csproj" />
+    </ItemGroup>
 
     <ItemGroup>
         <AvaloniaResource Include="Resources\**" />
