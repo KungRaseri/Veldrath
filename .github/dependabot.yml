@@ -72,9 +72,21 @@ updates:
         patterns:
           - "*"
 
-  # Container images referenced by docker-compose*.yml
+  # Base images in Dockerfiles (the docker ecosystem reads Dockerfiles, not compose files).
+  # Root covers Veldrath.Server and Veldrath.Discord; /web covers web/client/Dockerfile.
   - package-ecosystem: "docker"
     directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      containers:
+        applies-to: version-updates
+        patterns:
+          - "*"
+
+  - package-ecosystem: "docker"
+    directory: "/web"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5

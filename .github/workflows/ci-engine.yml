@@ -39,7 +39,9 @@ env:
 jobs:
   build-and-test:
     name: Build and Test Engine Libraries
-    runs-on: windows-latest
+    # The engine libraries and their tests are platform-neutral; Linux is cheaper and matches
+    # the server/web runners. Only the desktop client (WebView2/native) needs Windows.
+    runs-on: ubuntu-latest
 
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -142,7 +144,7 @@ jobs:
     name: Package Engine Artifacts
     needs: build-and-test
     if: github.ref == 'refs/heads/main'
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     outputs:
       version: ${{ steps.version.outputs.version }}

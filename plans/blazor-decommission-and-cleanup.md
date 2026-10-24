@@ -124,7 +124,7 @@ graph LR
 | W2 — dead code (contracts audit, `editorial-api` → `gameApiFetch`) | ✅ Done | `5684f0d9` |
 | W3 — engine/server hygiene | 🟡 Started: CORS policy extracted to `Infrastructure/CorsSetup.cs` (policy name is now a constant). Remaining: JWT/auth registration extraction, P4 XML doc gaps, obsolete `StartingSpellIds`. | `456ad367` |
 | W4 — testing/CI (stub consolidation, coverage floors, markdown link check, authenticated Playwright path) | ⏳ Not started | — |
-| W5 — config consolidation (compose/docs cross-check, unused compose files, GHCR jobs) | ⏳ Not started — needs the compose-file decision below | — |
+| W5 — config consolidation | 🟡 Workflows done: obsolete SSH deploy path removed (`deploy.yml` + the three `if: false` deploy jobs), `docs.yml` now watches `**/*.cs` instead of a hand-maintained project list, engine CI moved to `ubuntu-latest`, Dependabot gained a `/web` Dockerfile entry. Remaining: the compose-file decision below. | workflow cleanup commit |
 | W6 — repository hygiene | ✅ Done: `.gitignore` already covers `/scripts/dev/`, `.env*`, `build-desktop/`, and packaged asset zips; `.dockerignore` verified (bin/obj, secrets, TestResults, IDE dirs, `client/build-desktop`). Remaining judgement call is `web/llms/` size. | — |
 
 W2 findings worth keeping: of the 130 types in `Veldrath.Contracts`, only

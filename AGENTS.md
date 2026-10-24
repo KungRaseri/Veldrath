@@ -235,7 +235,7 @@ cd web && npm run dev            # SvelteKit web app → http://localhost:5173
 
 ## CI / Coverage
 
-CI workflows live in [`.github/workflows/`](.github/workflows/). Coverage is uploaded to Codecov with per-component flags.
+CI workflows live in [`.github/workflows/`](.github/workflows/). Coverage is uploaded to Codecov with per-component flags. Each component workflow also builds and pushes its GHCR image (server/web/discord) or release artifact; **deployment is not done by Actions** — Coolify pulls the published images.
 
 | Workflow | Component | Coverage Flag |
 |---|---|---|
@@ -245,7 +245,6 @@ CI workflows live in [`.github/workflows/`](.github/workflows/). Coverage is upl
 | [`ci-tooling.yml`](.github/workflows/ci-tooling.yml) | RealmForge | `forge` |
 | [`ci-discord.yml`](.github/workflows/ci-discord.yml) | Veldrath.Discord | `discord` |
 | [`ci-web.yml`](.github/workflows/ci-web.yml) | SvelteKit web | `web` |
-| [`deploy.yml`](.github/workflows/deploy.yml) | Deployment pipeline | — |
 | [`docs.yml`](.github/workflows/docs.yml) | DocFX documentation build & deploy | — |
 | [`release.yml`](.github/workflows/release.yml) | Release tagging and publishing | — |
 | [`sonarcloud.yml`](.github/workflows/sonarcloud.yml) | SonarCloud static analysis | — |
