@@ -1,8 +1,16 @@
+import { createHash } from 'node:crypto';
 import { SignJWT } from 'jose';
 import { env } from '#lib/server/env';
 
 /** Short-lived tokens are minted on demand and kept in browser memory. */
 export const GAME_TOKEN_TTL_SECONDS = 600;
+
+let loggedConfiguration = false;
+
+/** Short, non-reversible fingerprint used to compare the signing key across containers. */
+function keyFingerprint(key: string): string {
+	return createHash('sha256').update(key, 'utf8').digest('hex').slice(0, 12);
+}
 
 /**
  * Mint a Veldrath.Server-compatible JWT.
@@ -26,6 +34,15 @@ export async function mintGameToken(
 	}
 	if (!env.JWT_AUDIENCE) {
 		throw new Error('JWT_AUDIENCE is not configured.');
+	}
+
+	// Veldrath.Server logs the same fingerprint at startup. If the two differ the server
+	// rejects every minted token with 401, so surface it once in the web container logs.
+	if (!loggedConfiguration) {
+		loggedConfiguration = true;
+		console.info(
+			`[game-token] issuer=${env.JWT_ISSUER} audience=${env.JWT_AUDIENCE} keyFingerprint=${keyFingerprint(env.JWT_KEY)}`
+		);
 	}
 
 	const key = new TextEncoder().encode(env.JWT_KEY);

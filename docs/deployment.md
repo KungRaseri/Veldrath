@@ -40,7 +40,7 @@ than the browser bundle.
 |---|---|---|
 | `POSTGRES_HOST` / `POSTGRES_PORT` / `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | server | Builds the .NET connection string. |
 | `DATABASE_URL` | web | Better Auth/Drizzle connection. Must be able to create the `auth` schema on first boot. |
-| `JWT_KEY` | server + web | Shared HMAC signing key, at least 32 chars. |
+| `JWT_KEY` | server + web | Shared HMAC signing key, at least 32 chars. Must be **byte-identical** on both resources — the web mints game tokens with it and the server validates them, so any drift surfaces as `401` on `/api/characters` (see [the troubleshooting steps](coolify-deployment.md#troubleshooting-401-from-the-game-api)). |
 | `BETTER_AUTH_SECRET` | web | Better Auth session secret, at least 32 chars. |
 | `INTERNAL_BRIDGE_TOKEN` | server + web | Shared secret for the internal SvelteKit → Identity account bridge used by the desktop client's native sign-in. |
 | `DISCORD_TOKEN` | discord | Bot token. |

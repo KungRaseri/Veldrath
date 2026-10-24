@@ -187,6 +187,31 @@ The Avalonia desktop client's native sign-in still authenticates through the .NE
   `503` when `InternalBridge__Token` is not configured.
 - Keep the bridge while the desktop client relies on .NET Identity sign-in.
 
+### Troubleshooting: `401` from the game API
+
+The `/characters` load calls `GET /api/characters` with a short-lived game token minted
+by SvelteKit. A `401` means Veldrath.Server rejected that token — a missing web session
+would have redirected to `/login` instead.
+
+1. **Compare the signing-key fingerprints.** Both services log a SHA-256 fingerprint of
+   the key (never the key itself):
+   - server: `JWT configuration: issuer=… audience=… keyFingerprint=…`
+   - web: `[game-token] issuer=… audience=… keyFingerprint=…`
+
+   Different fingerprints mean `JWT_KEY` on the web resource is not the value the server
+   uses for `Jwt__Key` (a pasted trailing space/newline is enough). Align the variable and
+   redeploy both.
+2. **Compare issuer/audience.** The server validates both exactly — `Veldrath.Server` and
+   `Veldrath.Client` by default. `JWT_ISSUER` / `JWT_AUDIENCE` on the web resource must
+   match; a mismatch is also a `401`.
+3. **Read the rejection reason.** The server puts it in the `WWW-Authenticate` header and
+   the web logs it for any `401`/`403`:
+   `[game-request] GET /api/characters responded 401: The signature key was not found`.
+   The server log shows the matching
+   `JWT authentication failed: IDX10517: Signature validation failed…`.
+   A signature/audience failure answers in ~1 ms, while a successful call takes a few
+   hundred milliseconds the first time (just-in-time Identity account provisioning).
+
 ### Transactional email
 
 Better Auth password-reset and email-verification messages are delivered by the .NET

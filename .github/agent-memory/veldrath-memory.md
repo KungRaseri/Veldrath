@@ -1763,6 +1763,32 @@ The web app now runs SvelteKit **3.1.0**, Vite **8.3.5**, `@sveltejs/vite-plugin
   FluentAvaloniaUI 3, ReactiveUI 26 / Microsoft.Reactive.Testing 7 (RxVoid), MediatR 14
   (commercial licence), TypeScript 7 (native port; tooling not ready).
 
+### Diagnosing `401` from the game API (Session-65)
+
+`/characters` (and every other authenticated page) mints a game JWT in
+`#lib/server/game-token.ts` (`HS256`, `iss`, `aud`, `sub` = Better Auth user id, which is a GUID
+because `generateId: () => crypto.randomUUID()`), and Veldrath.Server validates it against
+`Jwt:Key` / `Jwt:Issuer` / `Jwt:Audience` before `JwtClaimsEnrichment` JIT-provisions the Identity
+account. A `401` therefore means the token was rejected — never "no session" (that redirects to
+`/login`).
+
+- Verified signatures (local repro, server on `:9099`, dev key from `.env`):
+  - correct key → `200` in ~220 ms, body `[]`, log `JIT provisioned game account <guid> as 'probe'`;
+  - wrong key → `401` in ~1 ms with
+    `WWW-Authenticate: Bearer error="invalid_token", error_description="The signature key was not found"`
+    and server log `JWT authentication failed: IDX10517: Signature validation failed…`.
+  A sub-2 ms `401` in production is a **key/issuer/audience mismatch**, not an account problem.
+- Instrumentation added: the server logs `JWT configuration: issuer=… audience=… keyFingerprint=…`
+  at startup (SHA-256 prefix) plus an `OnAuthenticationFailed` warning; the web logs
+  `[game-token] issuer=… audience=… keyFingerprint=…` on the first mint and
+  `[game-request] <METHOD> <path> responded 401: <reason>` (reason parsed from
+  `WWW-Authenticate` by `describeAuthFailure`). Compare the two fingerprints first.
+- In Development the server key comes from the repo `.env` via `DotEnvConfiguration`
+  (`JWT_KEY` → `Jwt__Key`), which overrides `appsettings.Development.json`; the appsettings dev
+  key is ignored whenever `.env` defines `JWT_KEY`.
+- `fetchCharactersForUser` now delegates to `gameApiFetch` (shared token + diagnostics) instead of
+  its own fetch loop.
+
 **Security note:** a GitHub PAT was briefly committed inside `.roo/mcp.json` (`6648b6c5`) and the
 file was deleted in `85bb8492`. Never commit MCP tokens — pass them via environment variables, and
 treat any token that landed in git history as compromised (rotate it).

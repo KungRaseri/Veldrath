@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Security.Cryptography;
 using System.Threading.RateLimiting;
 using AspNet.Security.OAuth.Discord;
 using Microsoft.AspNetCore.Identity;
@@ -170,6 +171,16 @@ try
     if (string.IsNullOrWhiteSpace(jwtAudience))
         throw new InvalidOperationException("Jwt:Audience is not configured or is empty.");
 
+    // Log a short fingerprint of the signing key (never the key itself) plus the issuer and
+    // audience. Tokens minted by the SvelteKit front end are only accepted when all three
+    // match, and a mismatched JWT_KEY between the two Coolify resources otherwise surfaces as
+    // an opaque 401 on /api/characters. The web container logs the same fingerprint.
+    Log.Information(
+        "JWT configuration: issuer={Issuer} audience={Audience} keyFingerprint={Fingerprint}",
+        jwtIssuer,
+        jwtAudience,
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(jwtKey)))[..12]);
+
     builder.Services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -202,6 +213,15 @@ try
                 // Identity-only tokens (minted by SvelteKit) are enriched with RBAC claims
                 // here; unknown accounts are provisioned just in time.
                 OnTokenValidated = JwtClaimsEnrichment.EnrichAsync,
+                // Make token rejections explainable: without this the API only returns an
+                // opaque 401 (signature key mismatch, wrong issuer/audience, expired token).
+                OnAuthenticationFailed = ctx =>
+                {
+                    Log.Warning(
+                        "JWT authentication failed: {Reason}",
+                        ctx.Exception?.Message ?? "unknown reason");
+                    return Task.CompletedTask;
+                },
             };
         });
 

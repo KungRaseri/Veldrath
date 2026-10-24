@@ -30,6 +30,21 @@ export function gameApiBaseUrl(): string | null {
 	return base ? base.replace(/\/+$/, '') : null;
 }
 
+/**
+ * Extracts the JWT rejection reason that ASP.NET Core puts in the `WWW-Authenticate`
+ * header (for example `The signature key was not found` or `IDX10214: Audience
+ * validation failed`). Returns `null` when the header carries no usable detail.
+ */
+export function describeAuthFailure(response: Response): string | null {
+	const header = response.headers.get('www-authenticate');
+	if (!header) return null;
+
+	const description = /error_description="([^"]+)"/i.exec(header)?.[1];
+	if (description) return description;
+
+	return /error="([^"]+)"/i.exec(header)?.[1] ?? header;
+}
+
 function extractError(body: string, status: number): string {
 	if (body) {
 		try {
@@ -69,6 +84,7 @@ export async function gameApiFetch<T>(
 		}
 	}
 
+	const method = options.method ?? (options.json === undefined ? 'GET' : 'POST');
 	const headers: Record<string, string> = { accept: 'application/json' };
 	if (options.json !== undefined) headers['content-type'] = 'application/json';
 
@@ -88,7 +104,7 @@ export async function gameApiFetch<T>(
 
 	try {
 		const response = await fetch(url, {
-			method: options.method ?? (options.json === undefined ? 'GET' : 'POST'),
+			method,
 			headers,
 			body: options.json === undefined ? undefined : JSON.stringify(options.json),
 			signal: AbortSignal.timeout(options.timeoutMs ?? 8000)
@@ -114,6 +130,14 @@ export async function gameApiFetch<T>(
 		}
 
 		if (!response.ok) {
+			// The API reports token problems as an opaque 401 body; the reason lives in the
+			// WWW-Authenticate header, so log it (no secrets, only error codes/messages).
+			if (response.status === 401 || response.status === 403) {
+				const reason = describeAuthFailure(response);
+				console.warn(
+					`[game-request] ${method} ${path} responded ${response.status}${reason ? `: ${reason}` : ''}`
+				);
+			}
 			return { status: response.status, data: null, error: extractError(text, response.status) };
 		}
 
