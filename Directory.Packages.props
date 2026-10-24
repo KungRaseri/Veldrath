@@ -4,17 +4,17 @@
   </PropertyGroup>
   <!-- ── Discord ──────────────────────────────────────────────────────────── -->
   <ItemGroup>
-    <PackageVersion Include="Discord.Net" Version="3.20.1" />
+    <PackageVersion Include="Discord.Net" Version="3.20.2" />
   </ItemGroup>
   <!-- ── Game / CQRS ──────────────────────────────────────────────────────── -->
   <ItemGroup>
     <PackageVersion Include="Bogus" Version="35.6.5" />
-    <PackageVersion Include="FluentValidation" Version="12.1.1" />
-    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+    <PackageVersion Include="FluentValidation" Version="12.2.0" />
+    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.2.0" />
     <PackageVersion Include="Humanizer" Version="3.0.10" />
     <PackageVersion Include="MediatR" Version="12.5.0" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageVersion Include="Polly" Version="8.7.0" />
+    <PackageVersion Include="Polly" Version="8.8.0" />
   </ItemGroup>
   <!-- ── Microsoft.Extensions ────────────────────────────────────────────── -->
   <ItemGroup>
@@ -37,11 +37,11 @@
   </ItemGroup>
   <!-- ── Entity Framework Core ───────────────────────────────────────────── -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
     <!-- Transitive pin: SQLitePCLRaw.lib.e_sqlite3 2.1.11 has known heap-buffer-overflow (GHSA-2m69-gcr7-jv3q); 3.53.3 embeds a patched native SQLite -->
     <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
@@ -50,11 +50,11 @@
   <ItemGroup>
     <PackageVersion Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
     <PackageVersion Include="AspNet.Security.OAuth.Discord" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.13" />
     <!-- 10.0.9 pulls SignalR.Common 10.0.9, flagged by GHSA-334f-vvp4-7g6p (NU1903) -->
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.13" />
     <PackageVersion Include="prometheus-net.AspNetCore" Version="8.2.1" />
@@ -72,36 +72,36 @@
   </ItemGroup>
   <!-- ── Audio ─────────────────────────────────────────────────────────────────── -->
   <ItemGroup>
-    <PackageVersion Include="LibVLCSharp" Version="3.10.0" />
-    <PackageVersion Include="VideoLAN.LibVLC.Windows" Version="3.0.23.1" />
+    <PackageVersion Include="LibVLCSharp" Version="3.10.2" />
+    <PackageVersion Include="VideoLAN.LibVLC.Windows" Version="3.0.24" />
   </ItemGroup>
   <!-- ── WebView2 ────────────────────────────────────────────────────────── -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Web.WebView2" Version="1.0.2957.106" />
+    <PackageVersion Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
   </ItemGroup>
   <!-- ── Avalonia ─────────────────────────────────────────────────────────── -->
   <ItemGroup>
-    <PackageVersion Include="Avalonia" Version="11.2.3" />
+    <PackageVersion Include="Avalonia" Version="11.3.22" />
     <PackageVersion Include="Avalonia.AvaloniaEdit" Version="11.2.0" />
-    <PackageVersion Include="Avalonia.Desktop" Version="11.2.3" />
-    <PackageVersion Include="Tmds.DBus.Protocol" Version="0.21.3" />
-    <PackageVersion Include="Avalonia.Fonts.Inter" Version="11.2.3" />
-    <PackageVersion Include="Avalonia.Headless.XUnit" Version="11.2.3" />
-    <PackageVersion Include="Avalonia.ReactiveUI" Version="11.2.3" />
-    <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.2.3" />
-    <PackageVersion Include="FluentAvaloniaUI" Version="2.2.0" />
+    <PackageVersion Include="Avalonia.Desktop" Version="11.3.22" />
+    <PackageVersion Include="Tmds.DBus.Protocol" Version="0.95.1" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="11.3.22" />
+    <PackageVersion Include="Avalonia.Headless.XUnit" Version="11.3.22" />
+    <PackageVersion Include="Avalonia.ReactiveUI" Version="11.3.8" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.3.22" />
+    <PackageVersion Include="FluentAvaloniaUI" Version="2.5.1" />
   </ItemGroup>
   <!-- ── ReactiveUI ───────────────────────────────────────────────────────── -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.Reactive.Testing" Version="6.1.0" />
-    <PackageVersion Include="ReactiveUI" Version="20.1.1" />
+    <PackageVersion Include="ReactiveUI" Version="20.4.1" />
   </ItemGroup>
   <!-- ── Testing ──────────────────────────────────────────────────────────── -->
   <ItemGroup>
-    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
-    <PackageVersion Include="FluentAssertions" Version="8.10.0" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
-    <PackageVersion Include="Moq" Version="4.20.72" />
+    <PackageVersion Include="coverlet.collector" Version="10.1.0" />
+    <PackageVersion Include="FluentAssertions" Version="8.11.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageVersion Include="Moq" Version="4.21.0" />
     <PackageVersion Include="NSubstitute" Version="5.3.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
