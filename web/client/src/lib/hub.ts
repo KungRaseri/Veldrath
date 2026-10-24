@@ -32,6 +32,20 @@ export function createGameHub(options: GameHubOptions = {}): HubConnection {
 		throw new Error('PUBLIC_HUB_URL is not configured.');
 	}
 
+	// A HTTPS page cannot reach an http:// hub — the browser blocks it and SignalR only reports
+	// "Failed to complete negotiation with the server: NetworkError". Name the real cause.
+	if (
+		!options.hubUrl &&
+		typeof location !== 'undefined' &&
+		location.protocol === 'https:' &&
+		hubUrl.startsWith('http:')
+	) {
+		throw new Error(
+			`PUBLIC_HUB_URL (${hubUrl}) is not HTTPS but this page is; rebuild the web image with ` +
+				`PUBLIC_HUB_URL=https://<api-host>/hubs/game (Docker build arg).`
+		);
+	}
+
 	const urlOptions = options.accessTokenFactory
 		? { accessTokenFactory: options.accessTokenFactory }
 		: options.hubUrl

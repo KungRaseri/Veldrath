@@ -274,6 +274,16 @@ would have redirected to `/login` instead.
    provisioning). See §2 for the correct internal hostname.
 6. **`BETTER_AUTH_SECRET appears low-entropy`** — regenerate with `openssl rand -base64 32`
    and redeploy. This invalidates existing web sessions.
+7. **`Failed to complete negotiation with the server: TypeError: NetworkError`** — the browser
+   cannot reach `PUBLIC_HUB_URL`. Two causes:
+   - **CORS:** the API allows `Web__BaseUrl` (plus localhost) unless `Cors__AllowedOrigins__*`
+     is set. The server logs `CORS allowed origins: …` at startup — `https://veldrath.com` must
+     appear there. Setting only localhost in Production now throws at startup instead of failing
+     silently in the browser.
+   - **Build arg:** the image was built with the default `PUBLIC_HUB_URL`
+     (`http://localhost:9000/hubs/game`), which a `https://` page blocks. Rebuild with
+     `PUBLIC_HUB_URL=https://api.veldrath.com/hubs/game`; the client now throws a descriptive
+     error naming this case.
 
 ### Transactional email
 

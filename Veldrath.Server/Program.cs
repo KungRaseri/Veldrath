@@ -95,9 +95,14 @@ try
     // CORS — browser clients (SvelteKit dev server, Docker web, production domain).
     // Configured origins win; otherwise allow local dev plus Web:BaseUrl so the deployed
     // SvelteKit origin (cross-subdomain from api.veldrath.com) is always accepted.
-    var configuredCorsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+    // Both the indexed form (Cors__AllowedOrigins__0) and a single comma-separated value
+    // (Cors__AllowedOrigins=https://a,https://b) are accepted.
+    var configuredCorsOrigins = (builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [])
+        .SelectMany(entry => entry.Split(
+            ',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        .ToArray();
     var webBaseUrl = builder.Configuration["Web:BaseUrl"];
-    var allowedCorsOrigins = (configuredCorsOrigins is { Length: > 0 }
+    var allowedCorsOrigins = (configuredCorsOrigins.Length > 0
             ? configuredCorsOrigins
             : new[]
             {
@@ -111,6 +116,20 @@ try
             : new[] { webBaseUrl.TrimEnd('/') })
         .Distinct(StringComparer.OrdinalIgnoreCase)
         .ToArray();
+
+    // Allowing only localhost in production can never work: the browser blocks the cross-origin
+    // SignalR negotiate and API calls, surfacing as an opaque
+    // "Failed to complete negotiation with the server: NetworkError" in the client.
+    if (builder.Environment.IsProduction() &&
+        !allowedCorsOrigins.Any(origin => !origin.Contains("localhost", StringComparison.OrdinalIgnoreCase)))
+    {
+        throw new InvalidOperationException(
+            "No public browser origin is allowed by CORS. Set Web__BaseUrl (for example " +
+            "https://veldrath.com) or Cors__AllowedOrigins__0 in production, otherwise SignalR " +
+            "negotiation and browser API calls fail with a NetworkError.");
+    }
+
+    Log.Information("CORS allowed origins: {Origins}", string.Join(", ", allowedCorsOrigins));
 
     builder.Services.AddCors(options =>
     {

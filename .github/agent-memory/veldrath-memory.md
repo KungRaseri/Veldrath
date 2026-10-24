@@ -1804,6 +1804,13 @@ account. A `401` therefore means the token was rejected — never "no session" (
   `INTERNAL_BRIDGE_URL` must be `http://veldrath-server:8080` — `http://server:8080` is the
   docker-compose service name and does not resolve inside Coolify. Without it the account bridge is
   skipped (`[foundry-bridge] skipped`) and Identity rows only appear via JIT provisioning.
+- **SignalR `Failed to complete negotiation … NetworkError`** is a browser-side CORS/transport
+  problem, not a hub bug. The policy `AllowLocalClient` allows `Web__BaseUrl` (trimmed) plus
+  localhost unless `Cors__AllowedOrigins` is set (indexed `__0` or one comma-separated value).
+  `Program.cs` now logs `CORS allowed origins: …` at startup and **throws in Production** when the
+  list contains only localhost — a silent misconfiguration otherwise. The other cause is an image
+  built with the default `PUBLIC_HUB_URL=http://localhost:9000/hubs/game`, which an `https://` page
+  blocks; `createGameHub` throws a descriptive error for that case.
 
 **Security note:** a GitHub PAT was briefly committed inside `.roo/mcp.json` (`6648b6c5`) and the
 file was deleted in `85bb8492`. Never commit MCP tokens — pass them via environment variables, and
