@@ -84,13 +84,48 @@ Ordered by risk/return. Each item is a single reviewable PR.
 
 ### W5 — Configuration and deploy consolidation
 - One source of truth for public URLs/ports: `docker-compose*.yml`, `.env.example`, `web/client/.env.example`, and the two deploy docs (now consistent after the env audit — verify with a scripted cross-check).
-- Decide the fate of `docker-compose.api.yml` and `docker-compose.debugging.yml` (both still reference the old API-only/dev-debug flows) and of `deploy.yml`/GHCR jobs that publish images Coolify does not consume.
+- Decide the fate of `docker-compose.api.yml` and `docker-compose.debugging.yml` (both still reference the old API-only/dev-debug flows).
 - Add a `scripts/check-env-docs.mjs`-style guard that fails CI when a documented env var is not read by code (or vice versa).
+- ✅ Done: the SSH deploy path (`deploy.yml` + three `if: false` deploy jobs) is gone; Actions publishes images and Coolify deploys.
 
 ### W6 — Repository hygiene
-- Remove `scripts/dev/blazor/` (Part 1) and any other orphan scratch folders.
-- Re-check `.gitignore` / `.dockerignore` after the file moves (`client/build-desktop`, `SvelteApp/`, `.env`).
+- ✅ Remove `scripts/dev/blazor/` (Part 1) and any other orphan scratch folders.
+- ✅ Re-check `.gitignore` / `.dockerignore` after the file moves (`client/build-desktop`, `SvelteApp/`, `.env`).
 - Review `web/llms/` size (~5 MB of vendored docs) and whether it should stay in-repo.
+
+### W7 — Authenticated browser coverage of the game loop
+Moved here from migration Phase 2: only the unauthenticated guards run in CI today, so the
+roster → play → travel → chat → inventory path has nothing above reducer-unit coverage.
+
+- Add `web/client/tests/game-loop.e2e.ts`: sign up, create a character through the
+  `/characters/new` wizard, assert `/play/:id` renders the zone, travel to a node via the map,
+  then open the inventory.
+- **A real API is required, not a mock.** SSR calls `/api/characters` from the SvelteKit server
+  process (browser-level `page.route` cannot intercept it) and SignalR needs a live hub, so the
+  job must boot `Veldrath.Server`.
+- `ci-web.yml`: new `e2e-game` job — Postgres service + `dotnet run --project Veldrath.Server`
+  with `ConnectionStrings__DefaultConnection`, `Jwt__Key`, `Web__BaseUrl=http://localhost:4173`,
+  `Cors__AllowedOrigins__0=http://localhost:4173`, `INTERNAL_BRIDGE_TOKEN`; wait on `/health`,
+  then run the game spec.
+- Gate the spec behind `E2E_GAME=1` so plain `npm run test` stays server-free for local runs.
+- Exit criteria: the job fails if roster load, zone entry, node travel, or the inventory break.
+
+### W8 — Windows WebView2 runtime smoke
+Moved here from migration Phase 5. `ci-client.yml` already runs on `windows-latest`, which ships
+the WebView2 Evergreen runtime, so the manual pre-release check can become a gate.
+
+- After packaging, start `DesktopUiServer` with the bundled `SvelteApp/` and the game API stubbed,
+  then assert the served page loads (title/URL) over the loopback port.
+- Fallback if the WebView probe proves flaky: assert `/health`, the SPA index, and that
+  `SvelteApp/` is present in the published output.
+
+### W9 — Payload contract drift
+`Veldrath.GameClient.Core/Payloads/*.cs` and `web/client/src/lib/game/types.ts` are hand-mirrored;
+a field rename can silently break the web client.
+
+- Add a Vitest/Node check that parses the C# payload records (type + property names) and asserts
+  each has a TypeScript counterpart with the same camelCase property set.
+- Full OpenAPI → TypeScript generation stays deferred; this is the cheap guard.
 
 ---
 
@@ -104,7 +139,10 @@ graph LR
     D --> E[W4 testing and CI]
     E --> F[W5 config consolidation]
     F --> G[W6 repo hygiene]
-    H[Identity decision with desktop finalization] -.-> D
+    G --> H[W7 authenticated game loop]
+    H --> I[W8 WebView2 smoke]
+    I --> J[W9 payload drift check]
+    K[Identity decision with desktop finalization] -.-> D
 ```
 
 **Acceptance for the whole effort**
@@ -123,9 +161,12 @@ graph LR
 | W1 — documentation truth pass (AGENTS/README/CONTRIBUTING, dangling skill + instruction links) | ✅ Done | `ebc70430` |
 | W2 — dead code (contracts audit, `editorial-api` → `gameApiFetch`) | ✅ Done | `5684f0d9` |
 | W3 — engine/server hygiene | 🟡 Started: CORS policy extracted to `Infrastructure/CorsSetup.cs` (policy name is now a constant). Remaining: JWT/auth registration extraction, P4 XML doc gaps, obsolete `StartingSpellIds`. | `456ad367` |
-| W4 — testing/CI (stub consolidation, coverage floors, markdown link check, authenticated Playwright path) | ⏳ Not started | — |
+| W4 — testing/CI (stub consolidation, coverage floors) | ⏳ Not started. The authenticated Playwright path moved to W7. | — |
 | W5 — config consolidation | 🟡 Workflows done: obsolete SSH deploy path removed (`deploy.yml` + the three `if: false` deploy jobs), `docs.yml` now watches `**/*.cs` instead of a hand-maintained project list, engine CI moved to `ubuntu-latest`, Dependabot gained a `/web` Dockerfile entry. Remaining: the compose-file decision below. | workflow cleanup commit |
 | W6 — repository hygiene | ✅ Done: `.gitignore` already covers `/scripts/dev/`, `.env*`, `build-desktop/`, and packaged asset zips; `.dockerignore` verified (bin/obj, secrets, TestResults, IDE dirs, `client/build-desktop`). Remaining judgement call is `web/llms/` size. | — |
+| W7 — authenticated game loop in CI (from migration Phase 2) | ✅ Done: `tests/game-loop.e2e.ts` covers register → roster → play → travel → inventory against a real server (verified locally, 34s, 1 passed); `ci-web.yml` gained an `e2e-game` job that boots `Veldrath.Server` on the Postgres service. The spec self-skips without `E2E_GAME=1`, so `npm run test` stays server-free (22 passed, 1 skipped). | W7 commit |
+| W8 — WebView2 runtime smoke on the Windows runner (from migration Phase 5) | ⏳ Not started | — |
+| W9 — payload contract drift check (from migration testing strategy) | ⏳ Not started | — |
 
 W2 findings worth keeping: of the 130 types in `Veldrath.Contracts`, only
 `TravelToNodeResultDto` was genuinely dead (removed). `ContentTypeSchema`,

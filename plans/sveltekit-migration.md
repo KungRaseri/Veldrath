@@ -2,6 +2,12 @@
 
 ## Status
 
+> **This plan is complete.** Phases 0–6 shipped and the Blazor applications are deleted. The
+> three items that were never finished here — authenticated browser coverage of the game loop,
+> the Windows WebView2 runtime smoke, and payload/contract drift — moved to
+> [`plans/blazor-decommission-and-cleanup.md`](blazor-decommission-and-cleanup.md) as W7, W8, and W9.
+> Keep this file as the decision record; do not add new work to it.
+
 Phase 0 is complete and verified on the existing Blazor Postgres database:
 
 - The template moved to `web/`; Colyseus, the TypeScript engine, the ticket helper, and the room schema were removed.
@@ -76,7 +82,7 @@ Phase 6 is complete:
 
 ## Decision
 
-Replace the Blazor frontends with a **single SvelteKit application** using route groups, built from the in-repo [`Veldrath.Web.Sveltekit`](../Veldrath.Web.Sveltekit/TEMPLATE-GUIDE.md) workspace.
+Replace the Blazor frontends with a **single SvelteKit application** using route groups, built from the in-repo `Veldrath.Web.Sveltekit` template workspace (since moved into [`web/`](../web/); the template folder no longer exists).
 
 - The SvelteKit app becomes the only web frontend: public site, auth pages, game client, Foundry, admin, moderation, and editorial.
 - The `Veldrath.Server` .NET app remains the API and SignalR hub. It is not rewritten.
@@ -344,7 +350,7 @@ Exit criteria: a real character can log in through Better Auth, enter a zone, tr
 - ✅ Port `CardinalGraphLayout` to TypeScript with its tests.
 - ✅ Group the hub handlers into stores: session, character, zone/map, combat, inventory/shop, chat/social, moderation.
 - ✅ Reuse the design tokens through SvelteKit Tailwind utilities (the legacy `game.css` was not copied verbatim).
-- Playwright game flows: unauthenticated guards run in CI; authenticated character/travel/chat/inventory flows are verified by the local browser smoke because CI has no seeded game server.
+- Playwright game flows: unauthenticated guards run in CI; authenticated character/travel/chat/inventory flows were only covered by a local browser smoke because CI has no seeded game server. **Moved to W7** in the decommission plan.
 
 Exit criteria: the SvelteKit game UI replaces the Blazor game routes, and the RCL is no longer used by the web app.
 
@@ -352,7 +358,7 @@ Exit criteria: the SvelteKit game UI replaces the Blazor game routes, and the RC
 
 - ✅ Port home, community, lore index and detail, patch notes index and detail, login, register, forgot password, reset password, confirm email, and account profile.
 - ✅ Use SvelteKit server loads for SSR and SEO.
-- ⏳ Remove the corresponding Blazor pages from `Veldrath.Web` in Phase 6, after the SvelteKit deployment replaces the Blazor one.
+- ✅ The corresponding Blazor pages were removed with `Veldrath.Web` in Phase 6.
 
 Exit criteria: the public site is fully served by SvelteKit. Blazor route removal and the final switchover happen in Phase 6.
 
@@ -372,7 +378,7 @@ Exit criteria: RealmFoundry Blazor can be retired. Actual project deletion happe
 - ✅ Replace `HostedGameServer` and `EmbeddedApp` with a static Svelte build served by the Avalonia WebView2 shell.
 - ✅ Add a local token bridge (server-side injection plus refresh) that reuses the desktop authentication result.
 - ✅ Keep the native Avalonia fallback until the WebView path is stable.
-- ⏳ Run a Windows WebView2 runtime smoke before release.
+- ⏳ Run a Windows WebView2 runtime smoke before release. **Moved to W8** (automate it on the existing `windows-latest` runner).
 - Defer Tauri unless the Avalonia shell becomes a limitation.
 
 Exit criteria: the desktop client runs the Svelte UI, and the Razor Class Library is no longer referenced. Met on the build/test path; the Windows runtime smoke is the remaining release check.
@@ -415,12 +421,12 @@ Exit criteria: the desktop client runs the Svelte UI, and the Razor Class Librar
 
 ## Testing strategy
 
-- Vitest: API clients, auth helpers, game stores, map layout, and component behavior.
-- Playwright: auth, character creation, game loop, shop, inventory, combat, Foundry submission and review, admin role guards, and editorial CRUD.
-- Contract generation: generate TypeScript from the .NET OpenAPI document and fail CI on drift.
-- SignalR payloads: generate or verify TypeScript event types against `Veldrath.GameClient.Core/Payloads`.
-- .NET: add tests for SvelteKit-issued JWTs, claims transformation, JIT provisioning, and CORS.
-- Keep the existing .NET test suite intact until the corresponding Blazor projects are deleted.
+- Vitest: API clients, auth helpers, game stores, map layout, and component behavior. ✅ Delivered.
+- Playwright: auth and account flows, staff guards, public pages. ✅ Delivered. The authenticated game loop (roster → play → travel → chat → inventory) is **W7**.
+- Contract generation: generate TypeScript from the .NET OpenAPI document and fail CI on drift. ❌ Not implemented — reduced to the narrower payload drift check in **W9**.
+- SignalR payloads: generate or verify TypeScript event types against `Veldrath.GameClient.Core/Payloads`. ❌ Not implemented — **W9**.
+- .NET: tests for SvelteKit-issued JWTs, claims transformation, JIT provisioning, and CORS. ✅ Delivered (provisioning/bridge tests, `CorsTests`, `JwtClaimsEnrichment` coverage).
+- ~~Keep the existing .NET test suite intact until the corresponding Blazor projects are deleted.~~ Obsolete: the Blazor projects are gone and the suite is intact.
 
 ## Risks
 

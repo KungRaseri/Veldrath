@@ -75,3 +75,23 @@ npm run typecheck
 npm run lint
 npm run test        # Vitest + Playwright
 ```
+
+### Game-loop e2e (needs a running server)
+
+`tests/game-loop.e2e.ts` covers the authenticated path — register → roster → play → travel →
+inventory — and skips itself unless `E2E_GAME=1`. It cannot be mocked: the roster is rendered by
+SSR through `/api/characters` and the game shell needs a live SignalR hub.
+
+```sh
+# 1. start the API with the preview origin allowed
+cd Veldrath.Server && ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:9000 \
+  Cors__AllowedOrigins__0=http://localhost:4173 dotnet run --no-launch-profile
+
+# 2. run the spec
+cd web/client && E2E_GAME=1 E2E_API_URL=http://127.0.0.1:9000 \
+  ORIGIN=http://localhost:4173 BETTER_AUTH_URL=http://localhost:4173 \
+  PUBLIC_API_URL=http://127.0.0.1:9000 PUBLIC_HUB_URL=http://127.0.0.1:9000/hubs/game \
+  INTERNAL_BRIDGE_URL=http://127.0.0.1:9000 npm run test:e2e:game
+```
+
+CI runs the same thing in the `e2e-game` job of [`ci-web.yml`](../../.github/workflows/ci-web.yml).

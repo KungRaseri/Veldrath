@@ -7,7 +7,7 @@ deleted (git history keeps it).
 | Plan | Status | Purpose |
 |---|---|---|
 | [`blazor-decommission-and-cleanup.md`](blazor-decommission-and-cleanup.md) | 🟢 Active | Finish the Blazor residue, decide the ASP.NET Core Identity question, run the W1–W6 cleanup sweep. |
-| [`sveltekit-migration.md`](sveltekit-migration.md) | ✅ Complete (phases 0–6) | Canonical record of the Blazor → SvelteKit migration and the post-migration log for account/character lifecycle, theme parity, and deployment. |
+| [`sveltekit-migration.md`](sveltekit-migration.md) | ✅ Complete (phases 0–6) | Canonical record of the Blazor → SvelteKit migration and the post-migration log. Its three unfinished items (authenticated game-loop coverage, WebView2 smoke, payload drift) now live in the decommission plan as W7–W9. |
 
 ## Where the deleted plans' knowledge went
 

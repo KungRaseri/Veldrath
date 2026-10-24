@@ -124,6 +124,121 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  # W7 in plans/blazor-decommission-and-cleanup.md: the authenticated game loop needs the real
+  # .NET API (SSR calls /api/characters server-side) and a live SignalR hub, so this job boots
+  # Veldrath.Server against the Postgres service instead of mocking anything.
+  e2e-game:
+    name: Game loop e2e (real server)
+    needs: build-test
+    runs-on: ubuntu-latest
+
+    env:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://127.0.0.1:9000
+      DOTNET_VERSION: '10.0.x'
+      CI: 'true'
+      # SvelteKit (SSR + Better Auth)
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/veldrath
+      BETTER_AUTH_SECRET: test-better-auth-secret-change-me-0123456789abcdef
+      ORIGIN: http://localhost:4173
+      BETTER_AUTH_URL: http://localhost:4173
+      JWT_KEY: test-jwt-signing-key-change-me-0123456789abcdef
+      JWT_ISSUER: Veldrath.Server
+      JWT_AUDIENCE: Veldrath.Client
+      PUBLIC_API_URL: http://127.0.0.1:9000
+      PUBLIC_HUB_URL: http://127.0.0.1:9000/hubs/game
+      INTERNAL_BRIDGE_URL: http://127.0.0.1:9000
+      INTERNAL_BRIDGE_TOKEN: test-internal-bridge-token-change-me
+      # Playwright spec gate
+      E2E_GAME: '1'
+      E2E_API_URL: http://127.0.0.1:9000
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: veldrath
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d veldrath"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: web
+        run: npm ci --allow-git=all
+
+      - name: Apply auth migrations
+        working-directory: web
+        run: npm run db:migrate
+
+      # The server migrates and seeds its databases at startup, so only the connection string
+      # and the shared secrets/jwt settings are needed here.
+      - name: Start Veldrath.Server
+        working-directory: Veldrath.Server
+        run: |
+          ConnectionStrings__DefaultConnection="Host=127.0.0.1;Port=5432;Database=veldrath;Username=postgres;Password=postgres" \
+          Jwt__Key="$JWT_KEY" \
+          Jwt__Issuer="$JWT_ISSUER" \
+          Jwt__Audience="$JWT_AUDIENCE" \
+          Web__BaseUrl="$ORIGIN" \
+          Cors__AllowedOrigins__0="$ORIGIN" \
+          InternalBridge__Token="$INTERNAL_BRIDGE_TOKEN" \
+          nohup dotnet run --no-launch-profile > "$RUNNER_TEMP/server.log" 2>&1 &
+          for attempt in $(seq 1 60); do
+            sleep 3
+            if curl -fsS http://127.0.0.1:9000/health > /dev/null; then
+              echo "server healthy after $((attempt * 3))s"
+              exit 0
+            fi
+          done
+          echo "server did not become healthy" >&2
+          tail -n 120 "$RUNNER_TEMP/server.log" >&2
+          exit 1
+
+      - name: Install Playwright browser
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+
+      - name: Run the game loop spec
+        working-directory: web/client
+        run: npx playwright test tests/game-loop.e2e.ts
+
+      - name: Server log
+        if: failure()
+        run: tail -n 200 "$RUNNER_TEMP/server.log"
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: web-game-e2e-report
+          path: |
+            web/client/playwright-report
+            web/client/test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
   package:
     name: Package Web Image
     needs: build-test

@@ -19,6 +19,7 @@
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright install && playwright test",
+		"test:e2e:game": "playwright test tests/game-loop.e2e.ts",
 		"auth:schema": "auth generate --config src/lib/server/auth.ts --output ../shared/src/db/auth.schema.ts --yes",
 		"db:migrate-identity": "node ../scripts/migrate-identity-accounts.mjs"
 	},
