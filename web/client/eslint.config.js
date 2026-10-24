@@ -65,8 +65,11 @@ export default defineConfig(
 		}
 	},
 	{
-		// Override or add rule settings here, such as:
-		// 'svelte/button-has-type': 'error'
-		rules: {}
+		rules: {
+			// The app is served from the domain root (SvelteKit `paths.base` is unset),
+			// so plain string hrefs are correct. If a base path is ever introduced,
+			// migrate these links to `resolve()` from `$app/paths` and re-enable.
+			'svelte/no-navigation-without-resolve': 'off'
+		}
 	}
 );
