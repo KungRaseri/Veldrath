@@ -115,7 +115,28 @@ graph LR
 
 ---
 
-## 6. Decisions locked
+## 6. Progress log
+
+| Step | Status | Commit |
+|---|---|---|
+| Part 1 — residue removal, plan pruning, design-system appendix, wiki, READMEs | ✅ Done | `33ac36ab`, `ebc70430` |
+| W1 — documentation truth pass (AGENTS/README/CONTRIBUTING, dangling skill + instruction links) | ✅ Done | `ebc70430` |
+| W2 — dead code (contracts audit, `editorial-api` → `gameApiFetch`) | ✅ Done | `5684f0d9` |
+| W3 — engine/server hygiene (P4 XML docs, obsolete `StartingSpellIds`, split `Program.cs`) | ⏳ Not started | — |
+| W4 — testing/CI (stub consolidation, coverage floors, markdown link check, authenticated Playwright path) | ⏳ Not started | — |
+| W5 — config consolidation (compose/docs cross-check, unused compose files, GHCR jobs) | ⏳ Not started | — |
+| W6 — repository hygiene (`gitignore`/`dockerignore`, `web/llms` size) | ⏳ Not started | — |
+
+W2 findings worth keeping: of the 130 types in `Veldrath.Contracts`, only
+`TravelToNodeResultDto` was genuinely dead (removed). `ContentTypeSchema`,
+`ContentFieldGroup`, and `ContentFieldType` look unreferenced to a naive grep but are the return
+types of `ContentSchemaRegistry`, which RealmForge and `ContentEndpoints` use — do not delete them.
+`Veldrath.Auth` is used only by `Veldrath.Client` and its tests, which matches the Identity
+decision below. The C# `Veldrath.GameClient.Core/Payloads/*` records and the TypeScript
+`web/client/src/lib/game/types.ts` stay duplicated by design (two runtimes); change both in the
+same PR rather than generating one from the other.
+
+## 7. Decisions locked
 
 1. **`scripts/dev/blazor/`** — deleted (it was untracked, so nothing needed committing).
 2. **Plans** — delete finished/superseded plans; keep only `blazor-decommission-and-cleanup.md`,
