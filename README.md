@@ -64,7 +64,7 @@ All operations return structured DTOs and pass through FluentValidation and Seri
 # Build engine libraries only
 dotnet build RealmEngine.slnx
 
-# Build everything (29 projects)
+# Build everything (22 .NET projects)
 dotnet build Realm.Full.slnx
 
 # Run all tests

@@ -332,7 +332,7 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - **Dev endpoints use minimal API endpoints** — NOT through SignalR. They're in `DevEndpoints.cs` with `IsDevEnvironment()` guard
 - **Auth library has its own test project** — `Veldrath.Auth.Tests` with 2 test files (436+ lines). Must not be overlooked when running full test suite
 - **Editorial endpoints use separate DbContext** — `EditorialDbContext` in `Veldrath.Server/Data/` with its own migration history. Not to be confused with `ContentDbContext` or `GameDbContext`
-- **Roo skills are project-specific** — defined in `.roo/skills/` and `.roo/skills-orchestrator/`. They are NOT auto-loaded; must be explicitly invoked
+- **Roo skills are project-specific** — defined in `.roo/skills/` (catalog in `.roo/skills/README.md`); the former nested `web/.roo/` skills were merged into `web-development` and `web-ui`. They are NOT auto-loaded; must be explicitly invoked
 - **Three DbContext separation expanded** — now 4: `ApplicationDbContext` (server auth/ops), `GameDbContext` (game state), `ContentDbContext` (catalog), `EditorialDbContext` (editorial content)
 
 ### RCL Unification — Map & Hotbar (Session-42, 2026-07-01)

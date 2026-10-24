@@ -1,6 +1,6 @@
 # llms/ — Third-Party LLM Reference Files
 
-This folder holds official `llms.txt` files (the [llmstxt.org](https://llmstxt.org) standard) downloaded from **other projects' documentation**. They are the **reference corpus** that the skills in [`../.roo/skills`](../.roo/skills) are built from.
+This folder holds official `llms.txt` files (the [llmstxt.org](https://llmstxt.org) standard) downloaded from **other projects' documentation**. They are the **reference corpus** that the root agent skills in [`.roo/skills`](../../.roo/skills) are built from.
 
 We do **not** create an `llms.txt` for this project itself — this folder is only for external reference material.
 
@@ -26,17 +26,16 @@ llms/
 
 | Folder | Source | Used for |
 | --- | --- | --- |
-| `sveltekit/` | svelte.dev + kit.svelte.dev | Svelte 5 runes + SvelteKit conventions → [`.roo/skills/sveltekit-development`](../.roo/skills/sveltekit-development/SKILL.md) |
-| `betterauth/` | better-auth.com | Better Auth → [`.roo/skills/auth-setup`](../.roo/skills/auth-setup/SKILL.md) |
-| `drizzle/` | orm.drizzle.team | Drizzle ORM + drizzle-kit → [`.roo/skills/database-workflow`](../.roo/skills/database-workflow/SKILL.md) |
-| `vite/` | vite.dev | Vite dev/build/HMR → [`.roo/skills/verification`](../.roo/skills/verification/SKILL.md) + [`.roo/skills/sveltekit-development`](../.roo/skills/sveltekit-development/SKILL.md) |
-| `vitest/` | vitest.dev | Vitest (unit/browser/coverage/mocking) → [`.roo/skills/verification`](../.roo/skills/verification/SKILL.md) |
+| `sveltekit/` | svelte.dev + kit.svelte.dev | Svelte 5 runes + SvelteKit conventions → [`.roo/skills/web-development`](../../.roo/skills/web-development/SKILL.md) |
+| `betterauth/` | better-auth.com | Better Auth → [`.roo/skills/web-development`](../../.roo/skills/web-development/SKILL.md) |
+| `drizzle/` | orm.drizzle.team | Drizzle ORM + drizzle-kit → [`.roo/skills/web-development`](../../.roo/skills/web-development/SKILL.md) |
+| `vite/` | vite.dev | Vite dev/build/HMR → [`.roo/skills/web-development`](../../.roo/skills/web-development/SKILL.md) |
+| `vitest/` | vitest.dev | Vitest (unit/browser/coverage/mocking) → [`.roo/skills/web-development`](../../.roo/skills/web-development/SKILL.md) |
 | `zod/` | zod.dev | Zod v4 validation reference (transitive dependency only) |
-| `tailwindcss/` | hand-built, verified against live docs nav 2026-08-04 (v4.3) | Tailwind v4 (CSS-first `@theme`, `@utility`, variants, forms/typography plugins) → [`.roo/skills/sveltekit-development`](../.roo/skills/sveltekit-development/SKILL.md) + [`.roo/skills/ui-development`](../.roo/skills/ui-development/SKILL.md) |
-| `colyseus/` | docs.colyseus.io (`llms.txt` index; **no `llms-full.txt` published** — verified 2026-08-06) | Colyseus (rooms, schema state sync, auth, database, best practices) — transport + state-sync foundation |
-| `bitsui/` | bits-ui.com (`llms.txt` index + `llms-full.txt` from `bits-ui.com/docs/llms.txt`, fetched 2026-08-06) | Bits UI headless Svelte components (tabs, popover, tooltip, dropdown, dialog, combobox, meter, slider, avatar, scroll area). **`llms-full.txt` is the offline reference** (the `llms.txt` index is kept untouched) → [`.roo/skills/ui-development`](../.roo/skills/ui-development/SKILL.md) |
-| `skeletondev/` | skeleton.dev (`llms.txt` index + `llms-full.txt`) | Skeleton v5 design system (themes, tokens, color pairings, presets, Svelte components, Tailwind utilities) → [`.roo/skills/ui-development`](../.roo/skills/ui-development/SKILL.md) |
-| `lucide/` | lucide.dev (`llms.txt` index only — **no full file published**; verified 2026-08-06) | Lucide icon set for general UI icons. Authoritative icon inventory is the installed package `node_modules/@lucide/svelte/dist/icons/*`, imported per-icon via `@lucide/svelte/icons/<kebab-name>` → [`.roo/skills/ui-development`](../.roo/skills/ui-development/SKILL.md) |
+| `tailwindcss/` | hand-built, verified against live docs nav 2026-08-04 (v4.3) | Tailwind v4 (CSS-first `@theme`, `@utility`, variants, forms/typography plugins) → [`.roo/skills/web-ui`](../../.roo/skills/web-ui/SKILL.md) |
+| `bitsui/` | bits-ui.com (`llms.txt` index + `llms-full.txt` from `bits-ui.com/docs/llms.txt`, fetched 2026-08-06) | Bits UI headless Svelte components (tabs, popover, tooltip, dropdown, dialog, combobox, meter, slider, avatar, scroll area). **`llms-full.txt` is the offline reference** (the `llms.txt` index is kept untouched) → [`.roo/skills/web-ui`](../../.roo/skills/web-ui/SKILL.md) |
+| `skeletondev/` | skeleton.dev (`llms.txt` index + `llms-full.txt`) | Skeleton v5 design system (themes, tokens, color pairings, presets, Svelte components, Tailwind utilities) → [`.roo/skills/web-ui`](../../.roo/skills/web-ui/SKILL.md) |
+| `lucide/` | lucide.dev (`llms.txt` index only — **no full file published**; verified 2026-08-06) | Lucide icon set for general UI icons. Authoritative icon inventory is the installed package `node_modules/@lucide/svelte/dist/icons/*`, imported per-icon via `@lucide/svelte/icons/<kebab-name>` → [`.roo/skills/web-ui`](../../.roo/skills/web-ui/SKILL.md) |
 
 ## Where files come from
 
@@ -49,7 +48,6 @@ Many projects publish `llms.txt` at their docs root (and often `llms-full.txt` w
 - zod: `https://zod.dev/llms.txt`
 - Bits UI: `https://bits-ui.com/docs/llms.txt` (the complete Bits UI docs, incl. all components, type helpers, utilities)
 - Lucide: `https://lucide.dev/llms.txt` (index only — no full file; the authoritative icon inventory is the installed `@lucide/svelte` package, `node_modules/@lucide/svelte/dist/icons/*`)
-- Colyseus: `https://docs.colyseus.io/llms.txt` (index only — `llms-full.txt` does not exist there)
 - Others: check the project's docs site for `/llms.txt` (some projects, e.g. Tailwind, intentionally do not publish one — handle those later with a hand-built reference).
 
 ## Recommended additions
@@ -75,5 +73,5 @@ Handled: **Tailwind CSS** — its authors deliberately don't publish an `llms.tx
 ## Usage
 
 1. Create a subdirectory per project and drop the downloaded file(s) in.
-2. Skills in [`../.roo/skills`](../.roo/skills) reference these files by path in their **References** section.
+2. Skills in [`../../.roo/skills`](../../.roo/skills) reference these files by path in their **References** section.
 3. After adding a file, open the relevant skill(s) and tune the steps to match the actual content of the file.

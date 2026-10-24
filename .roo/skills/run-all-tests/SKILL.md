@@ -1,11 +1,11 @@
 ---
 name: run-all-tests
-description: Run the complete RealmEngine/Veldrath test suite (~4,850 tests across 13 test projects) with XPlat Code Coverage collection. Use when you need to verify all tests pass before committing or merging.
+description: Run the complete RealmEngine/Veldrath test suite (~4,850 .NET tests across 10 test projects, plus the web Vitest/Playwright suites) with XPlat Code Coverage collection. Use when you need to verify all tests pass before committing or merging.
 ---
 
 # Skill: run-all-tests
 
-Run all tests across the entire RealmEngine/Veldrath monorepo (~4,850 tests in 13 test projects) with code coverage collection.
+Run all tests across the entire RealmEngine/Veldrath monorepo (~4,850 .NET tests in 10 test projects) with code coverage collection, then the web suites.
 
 ## Usage
 
@@ -34,7 +34,7 @@ Invoke this skill when you need to:
    dotnet test Realm.Full.slnx --collect "XPlat Code Coverage" --settings coverage.runsettings
    ```
 
-   This runs tests from all 13 test projects and collects coverage data per component.
+   This runs tests from all 10 .NET test projects and collects coverage data per component.
 
 3. **Review results:**
    - Test results stream to the console in real time.
@@ -56,7 +56,7 @@ Invoke this skill when you need to:
 | `Veldrath.Assets.Tests` | Asset management tests | — |
 | `Veldrath.GameClient.Core.Tests` | Shared client core tests | `client` |
 
-The SvelteKit web suite runs with `npm run test` in `web/client` (Vitest + Playwright, `web` coverage flag).
+The SvelteKit web suite runs with `npm run test` from `web/` (Vitest + Playwright, `web` coverage flag).
 
 ## Notes
 

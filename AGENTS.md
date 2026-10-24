@@ -86,13 +86,13 @@ The SvelteKit app in [`web/`](web/) is verified with npm scripts rather than a `
 ├── Veldrath.Contracts/           # Shared API contracts and DTOs
 ├── Veldrath.Assets/              # Asset store/management
 ├── RealmUI.Fonts/                # Custom fonts
-├── web/                          # SvelteKit 2 / Svelte 5 web app (client + shared workspaces)
-├── [Project].Tests/              # One test project per library/application (9 total)
+├── web/                          # SvelteKit 2 / Svelte 5 web app (shared + client workspaces)
+├── [Project].Tests/              # One test project per .NET library/application (10 total)
 ├── .github/
 │   ├── agent-memory/             # Canonical memory store (8 files, see Required Reading)
 │   ├── instructions/             # Detailed instruction files (7 files)
 │   └── workflows/                # CI/CD workflows (per-component + deploy + docs + release)
-├── .roo/skills/                  # Agent skills for common tasks (build, test, run, etc.)
+├── .roo/skills/                  # Agent skills (build, test, run, web); catalog in .roo/skills/README.md
 ├── docs/                         # Documentation (DocFX → GitHub Pages)
 ├── wiki/                         # GitHub Wiki content (git submodule)
 ├── plans/                        # Architecture and implementation plans
@@ -140,6 +140,18 @@ The engine is UI-agnostic by design: any .NET consumer calls `await mediator.Sen
 
 - [`Veldrath.GameClient.Core/`](Veldrath.GameClient.Core/) — Framework-agnostic .NET client logic: `IGameHubConnectionService`, `IGameStateService`, connection state model, and typed payloads
 - [`web/client/src/lib/game/`](web/client/src/lib/game/) — Svelte game shell, `GameSession` runes store, `CardinalGraphLayout` port, and hub payload types
+
+### Web App (SvelteKit)
+
+[`web/`](web/) is the single web frontend (public site, auth, game client, Foundry, editorial, admin, moderation). It is its own npm-workspaces monorepo (`shared`, `client`) with its own tooling — run all web commands **from `web/`**, never from `web/client/`.
+
+- **Workspaces:** [`web/shared`](web/shared) (`@veldrath/shared` — Better Auth Drizzle schema and generated contracts) and [`web/client`](web/client) (`@veldrath/web` — SvelteKit app).
+- **Stack:** SvelteKit 2, Svelte 5 runes, Vite, Tailwind CSS 4, Skeleton v5, Bits UI, Lucide, Better Auth, Drizzle ORM, adapter-node (web) plus adapter-static (desktop bundle).
+- **Auth:** Better Auth owns web credentials and sessions via [`web/client/src/lib/server/auth.ts`](web/client/src/lib/server/auth.ts) (lazy `getAuth()`) and [`web/client/src/hooks.server.ts`](web/client/src/hooks.server.ts). SvelteKit mints short-lived JWTs; `Veldrath.Server` remains the game authority.
+- **Database:** schema in [`web/shared/src/db/schema.ts`](web/shared/src/db/schema.ts); migrations under `web/shared/db/migrations/`.
+- **Theme/assets:** Veldrath Design System tokens in [`web/client/src/routes/theme.css`](web/client/src/routes/theme.css) and [`web/client/src/routes/brand.css`](web/client/src/routes/brand.css); self-hosted fonts in `web/client/static/fonts/`, imagery in `web/client/static/images/`.
+- **Reference corpus:** third-party `llms.txt` docs live in [`web/llms/`](web/llms/).
+- **Agent skills:** [`web-development`](.roo/skills/web-development/SKILL.md) (routes, auth, Drizzle, verification) and [`web-ui`](.roo/skills/web-ui/SKILL.md) (tokens, Skeleton, icons, fonts).
 
 ---
 
@@ -194,11 +206,11 @@ Build only what changed. The rule is simple: **build the `.slnx` file matching t
 |---|---|
 | `RealmEngine.*/**` | `dotnet build RealmEngine.slnx` |
 | `RealmForge/**` | `dotnet build RealmForge.slnx` |
-| `Veldrath.Client/**` | `dotnet build Veldrath.Client.slnx` (run `npm run build:desktop` first in `web/client` to bundle the Svelte UI) |
+| `Veldrath.Client/**` | `dotnet build Veldrath.Client.slnx` (run `cd web && npm run build:desktop` first to bundle the Svelte UI) |
 | `Veldrath.Server/**` | `dotnet build Veldrath.Server.slnx` |
 | `Veldrath.Discord/**` | `dotnet build Veldrath.Discord.slnx` |
 | `Veldrath.Auth/**`, `Veldrath.Assets/**`, `Veldrath.Contracts/**` | `dotnet build Veldrath.Libraries.slnx` |
-| `web/**` | `npm run typecheck && npm run lint && npm run test && npm run build` in `web/client` |
+| `web/**` | `cd web && npm run typecheck && npm run lint && npm run test && npm run build` (add `npm run build:desktop` for the desktop WebView shell) |
 | Cross-component / `Directory.Build.*` | `dotnet build Realm.Full.slnx` |
 
 > **When NOT to build:** The Vite dev server hot-reloads Svelte and CSS changes. Skip full rebuilds for `.css`, `.js`, `.md`, and non-embedded `.json` changes.
@@ -206,8 +218,8 @@ Build only what changed. The rule is simple: **build the `.slnx` file matching t
 ### Full Build (Final Verification)
 
 ```powershell
-dotnet build Realm.Full.slnx    # Full build (22 projects)
-dotnet test Realm.Full.slnx     # All 4,617 tests across 9 test projects (with coverage)
+dotnet build Realm.Full.slnx    # Full build (all .NET projects)
+dotnet test Realm.Full.slnx     # All tests across the 10 .NET test projects (with coverage)
 ```
 
 ### Running Projects
@@ -216,7 +228,7 @@ dotnet test Realm.Full.slnx     # All 4,617 tests across 9 test projects (with c
 dotnet run --project Veldrath.Server
 dotnet run --project Veldrath.Client
 dotnet run --project RealmForge
-npm run dev --workspace client   # SvelteKit web app (from web/)
+cd web && npm run dev            # SvelteKit web app → http://localhost:5173
 ```
 
 ---
@@ -307,9 +319,10 @@ Do **not** create new memory files unless the existing 8 files are insufficient.
 | Validation | FluentValidation pipeline behavior |
 | Logging | Serilog pipeline behavior |
 | Desktop UI | Avalonia + ReactiveUI (MVVM), WebView2 hosts the Svelte desktop build |
-| Web UI | SvelteKit 2 + Svelte 5 runes + Tailwind/Skeleton |
+| Web UI | SvelteKit 2 + Svelte 5 runes + Tailwind/Skeleton (Veldrath tokens only) |
+| Web auth/DB | Better Auth + Drizzle (schema in `web/shared`, migrations committed) |
 | Client Core | Veldrath.GameClient.Core (framework-agnostic .NET payloads and services) |
-| Testing | xUnit + FluentAssertions (server/desktop); Vitest + Playwright (web) |
+| Testing | xUnit + FluentAssertions (server/desktop); Vitest + Playwright (web, run from `web/`) |
 | Mocks | Prefer `FakeXxx` stubs; Moq/NSubstitute as fallback |
 | Database | EF Core (Postgres production, SQLite/InMemory for tests) |
 | Documentation | XML doc comments (CS1591 = error), DocFX → GitHub Pages |

@@ -59,10 +59,11 @@ jobs:
           |---------|-------------|
           | **RealmEngine.Core** | Game logic — combat, crafting, inventory, quests, spells |
           | **RealmEngine.Shared** | Shared models, domain entities, interfaces |
-          | **RealmEngine.Data** | JSON data loading, LiteDB persistence, repositories |
-          | **RealmForge** | Avalonia UI JSON game data editor |
+          | **RealmEngine.Data** | EF Core persistence (Postgres), entity models, repositories |
+          | **RealmForge** | Avalonia content editor for Postgres game data |
           | **Veldrath.Client** | Avalonia desktop client with ReactiveUI |
           | **Veldrath.Server** | ASP.NET Core game server with SignalR |
+          | **Veldrath.Discord** | Discord bot integration |
           EOF
 
       - name: Build documentation

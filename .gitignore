@@ -16,6 +16,27 @@ package/
 
 # Environment Variables
 .env
+.env.*
+!.env.example
+
+# Node / SvelteKit web app (web/ — npm workspaces: shared + client)
+node_modules/
+*.tsbuildinfo
+.eslintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+web/client/.svelte-kit/
+web/client/build/
+web/client/build-desktop/
+web/client/.output/
+web/client/coverage/
+web/client/test-results/
+web/client/playwright-report/
+web/ci-results/
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
 
 # Logs
 logs/
@@ -27,6 +48,8 @@ logs/
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+.history/
+.ionide
 
 # OS
 .DS_Store

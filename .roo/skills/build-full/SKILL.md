@@ -1,11 +1,11 @@
 ---
 name: build-full
-description: Build the complete RealmEngine/Veldrath solution (Realm.Full.slnx) covering all 29 projects including engine, server, client, tools, and tests. Use for final verification before commit/PR. For development iteration, prefer the smart build strategy in `.github/instructions/build-strategy.md`.
+description: Build the complete RealmEngine/Veldrath solution (Realm.Full.slnx) covering all 22 .NET projects including engine, server, client, tools, and tests. Use for final verification before commit/PR. For development iteration, prefer the smart build strategy in `.github/instructions/build-strategy.md`.
 ---
 
 # Skill: build-full
 
-Build the complete RealmEngine/Veldrath monorepo by compiling `Realm.Full.slnx`, which includes all 29 projects (engine, data, shared, server, client, tools, auth, contracts, assets, fonts, and all 13 test projects).
+Build the complete RealmEngine/Veldrath monorepo by compiling `Realm.Full.slnx`, which includes all 22 .NET projects (engine, data, shared, server, client, tools, auth, contracts, assets, fonts, and all 10 test projects).
 
 ## Usage
 
@@ -52,7 +52,7 @@ Invoke this skill when you need to:
 - **CS1591 is a compile-time error, not a warning.** Never add `<NoWarn>CS1591</NoWarn>` to any `.csproj` file or to [`Directory.Build.props`](../../Directory.Build.props)/[`Directory.Build.targets`](../../Directory.Build.targets).
 - The build uses central package management defined in [`Directory.Packages.props`](../../Directory.Packages.props) — all project-specific NuGet versions are ignored.
 - Engine libraries (`RealmEngine.Core`, `RealmEngine.Shared`, `RealmEngine.Data`) must never take dependencies on UI frameworks (Avalonia, ASP.NET Core MVC/Razor, Blazor, etc.).
-- This skill builds **all 29 projects**. For faster iteration, use the smart build strategy: build the `.slnx` matching the directory you changed (see [`.github/instructions/build-strategy.md`](../../.github/instructions/build-strategy.md)).
+- This skill builds **all 22 .NET projects**. For faster iteration, use the smart build strategy: build the `.slnx` matching the directory you changed (see [`.github/instructions/build-strategy.md`](../../.github/instructions/build-strategy.md)).
 - Test projects have `ExcludeFromCodeCoverage` applied at the assembly level (see `Properties/AssemblyInfo.cs` in each test project).
 
 ## See Also
