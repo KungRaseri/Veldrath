@@ -1,4 +1,4 @@
-﻿name: CI - Server (Veldrath.Server)
+name: CI - Server (Veldrath.Server)
 
 concurrency:
   group: ci-server-${{ github.ref }}
@@ -50,12 +50,12 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         fetch-depth: 0
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -80,7 +80,7 @@ jobs:
       run: reportgenerator "-reports:./TestResults/*/coverage.cobertura.xml" "-targetdir:./CoverageReport" "-reporttypes:Html;Cobertura;MarkdownSummaryGithub"
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v7
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./CoverageReport/Cobertura.xml
@@ -89,7 +89,7 @@ jobs:
         fail_ci_if_error: false
 
     - name: Upload coverage report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: coverage-server
@@ -97,7 +97,7 @@ jobs:
         retention-days: 14
 
     - name: Add coverage summary to PR
-      uses: marocchino/sticky-pull-request-comment@v2
+      uses: marocchino/sticky-pull-request-comment@v3
       if: github.event_name == 'pull_request'
       with:
         recreate: true
@@ -126,12 +126,12 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         fetch-depth: 0
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -157,7 +157,7 @@ jobs:
         echo "Created Veldrath-Server-$VERSION.zip"
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      uses: docker/setup-buildx-action@v4
 
     - name: Log in to GitHub Container Registry
       uses: docker/login-action@v3
@@ -173,7 +173,7 @@ jobs:
         echo "registry=ghcr.io/$OWNER/${{ env.IMAGE_NAME }}" >> $GITHUB_OUTPUT
 
     - name: Build and push Docker image
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v7
       with:
         context: .
         file: Veldrath.Server/Dockerfile
@@ -188,7 +188,7 @@ jobs:
         cache-to: type=gha,mode=max
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: server-release-artifacts
         path: Veldrath-Server-*.zip
