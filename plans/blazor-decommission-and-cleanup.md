@@ -122,10 +122,10 @@ graph LR
 | Part 1 — residue removal, plan pruning, design-system appendix, wiki, READMEs | ✅ Done | `33ac36ab`, `ebc70430` |
 | W1 — documentation truth pass (AGENTS/README/CONTRIBUTING, dangling skill + instruction links) | ✅ Done | `ebc70430` |
 | W2 — dead code (contracts audit, `editorial-api` → `gameApiFetch`) | ✅ Done | `5684f0d9` |
-| W3 — engine/server hygiene (P4 XML docs, obsolete `StartingSpellIds`, split `Program.cs`) | ⏳ Not started | — |
+| W3 — engine/server hygiene | 🟡 Started: CORS policy extracted to `Infrastructure/CorsSetup.cs` (policy name is now a constant). Remaining: JWT/auth registration extraction, P4 XML doc gaps, obsolete `StartingSpellIds`. | `456ad367` |
 | W4 — testing/CI (stub consolidation, coverage floors, markdown link check, authenticated Playwright path) | ⏳ Not started | — |
-| W5 — config consolidation (compose/docs cross-check, unused compose files, GHCR jobs) | ⏳ Not started | — |
-| W6 — repository hygiene (`gitignore`/`dockerignore`, `web/llms` size) | ⏳ Not started | — |
+| W5 — config consolidation (compose/docs cross-check, unused compose files, GHCR jobs) | ⏳ Not started — needs the compose-file decision below | — |
+| W6 — repository hygiene | ✅ Done: `.gitignore` already covers `/scripts/dev/`, `.env*`, `build-desktop/`, and packaged asset zips; `.dockerignore` verified (bin/obj, secrets, TestResults, IDE dirs, `client/build-desktop`). Remaining judgement call is `web/llms/` size. | — |
 
 W2 findings worth keeping: of the 130 types in `Veldrath.Contracts`, only
 `TravelToNodeResultDto` was genuinely dead (removed). `ContentTypeSchema`,
