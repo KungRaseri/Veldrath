@@ -579,6 +579,119 @@ public class GameHub : Hub
         }
     }
 
+    /// <summary>Invites a character, by name, to the caller's party.</summary>
+    /// <param name="targetCharacterName">Name of the character to invite.</param>
+    public async Task InviteToParty(string targetCharacterName)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before InviteToParty");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(
+                new InviteToPartyHubCommand(characterId, targetCharacterName ?? string.Empty));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to invite that character");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("PartyUpdated", result.Party);
+            await NotifyInviteeAsync(result.InvitedCharacterId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in InviteToParty for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to invite that character");
+        }
+    }
+
+    /// <summary>
+    /// Accepts a pending invite, joins the party's broadcast group and sends every member the new snapshot.
+    /// </summary>
+    /// <param name="partyId">Party being joined.</param>
+    public async Task AcceptPartyInvite(Guid partyId)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before AcceptPartyInvite");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new AcceptPartyInviteHubCommand(characterId, partyId));
+            if (!result.Success || result.Party is null)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to join the party");
+                return;
+            }
+
+            await Groups.AddToGroupAsync(Context.ConnectionId, PartyGroup(result.Party.PartyId));
+            await Clients.Group(PartyGroup(result.Party.PartyId)).SendAsync("PartyUpdated", result.Party);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in AcceptPartyInvite for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to join the party");
+        }
+    }
+
+    /// <summary>Declines a pending invite and asks the caller to refresh its invite list.</summary>
+    /// <param name="partyId">Party being declined.</param>
+    public async Task DeclinePartyInvite(Guid partyId)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before DeclinePartyInvite");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new DeclinePartyInviteHubCommand(characterId, partyId));
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to decline the invite");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("PartyInvitesChanged", new { PartyId = (Guid?)partyId });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in DeclinePartyInvite for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to decline the invite");
+        }
+    }
+
+    /// <summary>
+    /// Nudges the invitee's connection to refresh its invite list. Invites are deliberately not pushed as payloads:
+    /// the client re-reads them through <see cref="GetParty"/>, so an offline invitee and a reconnecting one follow
+    /// exactly the same path.
+    /// </summary>
+    /// <param name="invitedCharacterId">Character that was invited, if any.</param>
+    private async Task NotifyInviteeAsync(Guid? invitedCharacterId)
+    {
+        if (invitedCharacterId is not { } targetId)
+        {
+            return;
+        }
+
+        var session = await _playerSessionRepo.GetByCharacterIdAsync(targetId);
+        if (session is null)
+        {
+            // Offline: they will see the invite when GetParty runs at login.
+            return;
+        }
+
+        await Clients.Client(session.ConnectionId).SendAsync("PartyInvitesChanged", new { PartyId = (Guid?)null });
+    }
+
     private static string PartyGroup(Guid partyId) => $"party:{partyId}";
 
     // Zone management
