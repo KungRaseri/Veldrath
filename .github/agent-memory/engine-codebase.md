@@ -375,18 +375,24 @@ sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewMod
 ### Inventory & starter equipment (Session-52, 2026-10-23)
 
 - **Equipped items live in both blobs** — character creation adds starter items to
-  `InventoryBlob` and also records their refs in `EquipmentBlob`. `GetInventoryHubCommandHandler`
-  filters currently-equipped refs out of the bag list (and resolves full `Item` details for the
-  bag and equipment maps), so clients do not show the same item twice. Unequipping restores
-  the item because the inventory blob still holds it.
-- **InventoryLoaded wire shape** — `{ CharacterId, ItemDetails, EquippedItems, OpenOverlay }`.
-  `ItemDetails` is the bag as full `RealmEngine.Shared.Models.Item` objects and `EquippedItems`
-  is the slot→`Item` map; the Avalonia-only `Items`/`Equipped` ref projections were removed with
-  the desktop client. `web/client/src/lib/game/types.ts` mirrors exactly these fields, and
-  `payload-contract.test.ts` fails if they drift.
-- **ItemEquipped wire shape** — includes both `AllEquippedItems` (slot→ref, Avalonia) and
-  `Equipped` (slot→`Item`, RCL). `GameHub.EquipItem` follows the event with a caller-only
-  `InventoryLoaded` snapshot so bag/equipment state refreshes atomically.
+  `InventoryBlob` and also records their refs in `EquipmentBlob`. Since Session-70
+  `GetInventoryHubCommandHandler` no longer filters equipped refs out of the list: it returns every
+  owned item flagged with `IsEquipped` (equipment-blob-only starters are appended), because the web
+  character sheet renders one bag list with an "Equipped" badge.
+- **InventoryLoaded wire shape (Session-70)** — `{ CharacterId, Items, Equipped, OpenOverlay }`.
+  Both sides are flat `InventoryItemView` records (`ItemRef, Name, Description, Rarity, Type, TypeKey,
+  Slot, Quantity, StackSize, IsStackable, IsEquipped, Price, Weight, Durability`) — **rarity and type
+  are strings**, because `ItemRarity`/`ItemType` enums serialise as numbers over SignalR (that bug made
+  `itemSubtitle` print `2` and killed every `rarity-*` colour). `Items` includes equipped entries;
+  `Equipped` is slot → view. `web/client/src/lib/game/types.ts` mirrors these fields and
+  `payload-contract.test.ts` fails on drift.
+- **ItemEquipped wire shape** — `{ CharacterId, Slot, ItemRef, AllEquippedItems, Equipped }` where
+  `Equipped` is now slot → `InventoryItemView`. `GameHub.EquipItem` follows the event with a
+  caller-only `InventoryLoaded` snapshot so bag/equipment state refreshes atomically.
+- **`EquipItemHubCommand.Slot` is optional (Session-70)** — when omitted the handler resolves it from
+  the catalog item via `EquipmentSlots.ForItem` (`Weapon`→`MainHand`, `Shield`/`OffHand`→`OffHand`,
+  `Helmet`→`Head`, `Chest`, `Legs`, `Boots`→`Feet`, `Ring`, `Necklace`→`Amulet`, everything else
+  `null` = not equippable). An explicit but unknown slot still returns `Invalid equipment slot '…'`.
 - **CharacterSelected includes `Equipment`** — slot→ref map seeded into the HUD, so starter
   gear is visible before the player opens the inventory.
 - **Canonical slot names** — `MainHand`, `OffHand`, `Head`, `Chest`, `Legs`, `Feet`, `Ring`,

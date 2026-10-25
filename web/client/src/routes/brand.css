@@ -495,10 +495,10 @@
 	opacity: 0.3;
 }
 
-.game-header,
-.game-footer {
+.game-header {
 	background: var(--vds-bg-1);
-	border-color: var(--vds-border);
+	border: 1px solid var(--vds-border);
+	border-radius: var(--vds-radius-md);
 	color: var(--vds-text);
 }
 
@@ -553,6 +553,152 @@
 
 .game-chat-message-global .game-chat-text {
 	color: var(--vds-info);
+}
+
+/* ── Character sheet (left column) ──────────────────────────────────────── */
+
+.character-sheet {
+	display: flex;
+	flex-direction: column;
+	gap: var(--vds-space-3);
+	min-width: 0;
+}
+
+.equip-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--vds-space-2);
+}
+
+.equip-slot {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+	padding: 6px 8px;
+	background: var(--vds-bg-2);
+	border: 1px solid var(--vds-border);
+	border-radius: var(--vds-radius-sm);
+}
+
+.equip-slot-empty {
+	background: transparent;
+	border-style: dashed;
+}
+
+.equip-slot-head {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.equip-slot-head svg {
+	color: var(--vds-gold);
+}
+
+.equip-slot-name {
+	overflow: hidden;
+	font-size: var(--vds-text-xs);
+	font-weight: 600;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.bag-list {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	max-height: 22rem;
+	overflow-y: auto;
+}
+
+.bag-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 6px;
+	background: var(--vds-bg-2);
+	border: 1px solid var(--vds-border);
+	border-radius: var(--vds-radius-sm);
+}
+
+.bag-row-equipped {
+	border-color: var(--vds-seal);
+}
+
+.bag-icon {
+	display: inline-flex;
+	flex: none;
+	color: var(--vds-text-muted);
+}
+
+.bag-actions {
+	display: flex;
+	flex: none;
+	gap: 2px;
+}
+
+.sheet-menu {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.sheet-menu-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 8px;
+	border-radius: var(--vds-radius-sm);
+	color: var(--vds-text-muted);
+	font-size: var(--vds-text-sm);
+	text-align: left;
+	transition: background-color 120ms ease;
+}
+
+.sheet-menu-item:hover {
+	background: var(--vds-bg-3);
+	color: var(--vds-text);
+}
+
+.sheet-menu-item svg {
+	color: var(--vds-gold);
+}
+
+/* ── Centered dialogs (quest log, shop, settings) ───────────────────────── */
+
+.game-dialog-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 60;
+	background: rgb(4 5 10 / 72%);
+	backdrop-filter: blur(2px);
+}
+
+.game-dialog {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	z-index: 61;
+	display: flex;
+	flex-direction: column;
+	gap: var(--vds-space-2);
+	width: min(40rem, calc(100vw - 2rem));
+	max-height: min(80vh, 44rem);
+	padding: var(--vds-space-4);
+	overflow-y: auto;
+	background: var(--vds-bg-1);
+	border: 1px solid var(--vds-border-strong);
+	border-radius: var(--vds-radius-lg);
+	box-shadow: 0 24px 64px rgb(0 0 0 / 55%);
+	transform: translate(-50%, -50%);
+}
+
+.game-dialog-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--vds-space-2);
 }
 
 /* ── Rarity + status ────────────────────────────────────────────────────── */
