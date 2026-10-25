@@ -2,12 +2,14 @@
 	import {
 		Backpack,
 		Coins,
+		FlaskConical,
 		HeartPulse,
 		RefreshCw,
 		ScrollText,
 		Settings,
 		Sparkles,
 		Store,
+		Swords,
 		Trash2,
 		Undo2,
 		Zap
@@ -15,10 +17,12 @@
 	import { itemIcon, slotIcon, slotLabel } from './item-icons';
 	import { barPercent } from './reducers';
 	import {
+		ATTRIBUTE_ORDER,
 		EQUIPMENT_SLOTS,
 		itemLabel,
 		itemSubtitle,
 		isEquippable,
+		isUsable,
 		rarityClass,
 		type InventoryItem
 	} from './types';
@@ -98,12 +102,26 @@
 				<span class="text-surface-600-400">XP</span>
 				<span class="text-mono">{session.stats.experience.toLocaleString()}</span>
 			</span>
+		</div>
+
+		<button
+			class="sheet-attributes"
+			type="button"
+			title="Open attributes"
+			onclick={() => (session.showAttributes = true)}
+		>
+			{#each ATTRIBUTE_ORDER as attribute (attribute.key)}
+				<span class="sheet-attribute">
+					<span class="text-surface-600-400">{attribute.label.slice(0, 3)}</span>
+					<span class="text-mono">{session.attributes[attribute.key]}</span>
+				</span>
+			{/each}
 			{#if session.stats.unspentAttributePoints > 0}
 				<span class="chip preset-filled-secondary-500 text-xs">
-					{session.stats.unspentAttributePoints} points to spend
+					+{session.stats.unspentAttributePoints}
 				</span>
 			{/if}
-		</div>
+		</button>
 	</section>
 
 	<section class="game-panel space-y-2 p-3">
@@ -124,9 +142,14 @@
 						</span>
 					</span>
 					{#if item}
-						<span class="equip-slot-name {rarityClass(item.rarity)}" title={item.description ?? ''}>
+						<button
+							class="equip-slot-name {rarityClass(item.rarity)}"
+							type="button"
+							title={`Inspect ${itemLabel(item)}`}
+							onclick={() => session.inspectItem(item)}
+						>
 							{itemLabel(item)}
-						</span>
+						</button>
 						<button
 							class="btn preset-tonal-surface px-1 py-0.5 text-xs"
 							type="button"
@@ -173,7 +196,12 @@
 						<span class="bag-icon">
 							<ItemIcon size={13} aria-hidden="true" />
 						</span>
-						<span class="min-w-0 flex-1">
+						<button
+							class="min-w-0 flex-1 text-left"
+							type="button"
+							title={`Inspect ${itemLabel(item)}`}
+							onclick={() => session.inspectItem(item)}
+						>
 							<span class="flex items-center gap-1">
 								<span class="truncate text-xs font-semibold {rarityClass(item.rarity)}">
 									{itemLabel(item)}
@@ -190,7 +218,7 @@
 							<span class="block truncate text-xs text-surface-600-400">
 								{itemSubtitle(item)}
 							</span>
-						</span>
+						</button>
 
 						{#if pendingDiscard === item.itemRef}
 							<span class="bag-actions">
@@ -211,6 +239,18 @@
 							</span>
 						{:else}
 							<span class="bag-actions">
+								{#if isUsable(item) && !session.combat.active}
+									<button
+										class="btn preset-tonal-surface px-1 py-0.5"
+										type="button"
+										title={`Use ${itemLabel(item)}`}
+										aria-label={`Use ${itemLabel(item)}`}
+										onclick={() => session.useItem(item.itemRef)}
+									>
+										<FlaskConical size={12} aria-hidden="true" />
+									</button>
+								{/if}
+
 								{#if item.isEquipped}
 									<button
 										class="btn preset-tonal-surface px-1 py-0.5"
@@ -229,7 +269,7 @@
 										aria-label={`Equip ${itemLabel(item)}`}
 										onclick={() => session.equipItem(item.itemRef)}
 									>
-										<ItemIcon size={12} aria-hidden="true" />
+										<Swords size={12} aria-hidden="true" />
 									</button>
 								{/if}
 
@@ -266,6 +306,10 @@
 		<button class="sheet-menu-item" type="button" onclick={() => session.loadQuests()}>
 			<ScrollText size={14} aria-hidden="true" />
 			Quest log
+		</button>
+		<button class="sheet-menu-item" type="button" onclick={() => (session.showAbilities = true)}>
+			<Sparkles size={14} aria-hidden="true" />
+			Abilities
 		</button>
 		{#if session.canShop}
 			<button class="sheet-menu-item" type="button" onclick={() => session.visitShop()}>

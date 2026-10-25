@@ -858,6 +858,7 @@ public class GameHub : Hub
                 result.Slot,
                 result.ItemRef,
                 result.AllEquippedItems,
+                result.ClearedSlots,
                 Equipped = snapshotValid
                     ? snapshot!.Equipped
                     : new Dictionary<string, InventoryItemView>(StringComparer.OrdinalIgnoreCase),
@@ -1303,6 +1304,58 @@ public class GameHub : Hub
         {
             _logger.LogError(ex, "Error in DropItem for character {CharacterId}", characterId);
             await Clients.Caller.SendAsync("Error", "Failed to drop item");
+        }
+    }
+
+    /// <summary>
+    /// Consumes one unit of a usable item (potion, elixir) and sends <c>ItemUsed</c> with the resulting
+    /// health/mana values, followed by a caller-only inventory snapshot.
+    /// </summary>
+    /// <param name="itemRef">Item-reference slug to consume.</param>
+    public async Task UseItem(string itemRef)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before UseItem");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new UseItemHubCommand
+            {
+                CharacterId = characterId,
+                ItemRef = itemRef,
+            });
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to use item");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("ItemUsed", new
+            {
+                CharacterId = characterId,
+                result.ItemRef,
+                result.RemainingQuantity,
+                result.CurrentHealth,
+                result.MaxHealth,
+                result.CurrentMana,
+                result.MaxMana,
+                result.Message,
+            });
+
+            await TrySendInventorySnapshotAsync(characterId);
+
+            _logger.LogInformation(
+                "Character {CharacterId} used '{ItemRef}'; {Remaining} remaining",
+                characterId, result.ItemRef, result.RemainingQuantity);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in UseItem for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to use item");
         }
     }
 

@@ -55,6 +55,9 @@ public class GetInventoryHubCommandHandler : IRequestHandler<GetInventoryHubComm
         PropertyNameCaseInsensitive = true,
     };
 
+    private static readonly IReadOnlyDictionary<string, int> NoAttributes =
+        new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
     private readonly ICharacterRepository _characterRepo;
     private readonly IItemRepository _itemRepository;
     private readonly ILogger<GetInventoryHubCommandHandler> _logger;
@@ -182,7 +185,18 @@ public class GetInventoryHubCommandHandler : IRequestHandler<GetInventoryHubComm
             IsEquipped: isEquipped,
             Price: catalogItem.Price,
             Weight: catalogItem.Weight,
-            Durability: durability);
+            Durability: durability,
+            Effect: string.IsNullOrWhiteSpace(catalogItem.Effect) ? null : catalogItem.Effect,
+            EffectPower: catalogItem.Power,
+            IsTwoHanded: catalogItem.IsTwoHanded,
+            ArmorClass: catalogItem.ArmorClass,
+            ArmorType: catalogItem.ArmorType,
+            WeaponType: catalogItem.WeaponType,
+            DamageMin: catalogItem.Damage?.Min,
+            DamageMax: catalogItem.Damage?.Max,
+            RequirementsLevel: catalogItem.Requirements?.Level ?? 1,
+            Requirements: catalogItem.Requirements?.Attributes ?? NoAttributes,
+            Bonuses: catalogItem.BaseAttributes ?? NoAttributes);
     }
 
     private static InventoryItemView BuildFallbackView(
@@ -208,7 +222,18 @@ public class GetInventoryHubCommandHandler : IRequestHandler<GetInventoryHubComm
             IsEquipped: isEquipped,
             Price: 0,
             Weight: 0,
-            Durability: durability);
+            Durability: durability,
+            Effect: null,
+            EffectPower: 0,
+            IsTwoHanded: false,
+            ArmorClass: null,
+            ArmorType: isShield ? "shield" : null,
+            WeaponType: null,
+            DamageMin: null,
+            DamageMax: null,
+            RequirementsLevel: 1,
+            Requirements: NoAttributes,
+            Bonuses: NoAttributes);
     }
 
     private List<InventoryItemDto> ParseInventory(string? blob)
@@ -259,7 +284,11 @@ public class GetInventoryHubCommandHandler : IRequestHandler<GetInventoryHubComm
         {
             EquipmentSlots.MainHand => ItemType.Weapon,
             EquipmentSlots.Head => ItemType.Helmet,
+            EquipmentSlots.Shoulders => ItemType.Shoulders,
             EquipmentSlots.Chest => ItemType.Chest,
+            EquipmentSlots.Bracers => ItemType.Bracers,
+            EquipmentSlots.Gloves => ItemType.Gloves,
+            EquipmentSlots.Belt => ItemType.Belt,
             EquipmentSlots.Legs => ItemType.Legs,
             EquipmentSlots.Feet => ItemType.Boots,
             EquipmentSlots.Ring => ItemType.Ring,

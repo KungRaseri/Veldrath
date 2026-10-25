@@ -2,6 +2,7 @@ using System.Text.Json;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Models;
 using Veldrath.Server.Data.Repositories;
 
 namespace Veldrath.Server.Features.Characters;
@@ -45,6 +46,12 @@ public record EquipItemHubResult
 
     /// <summary>Gets the full equipment map (slot → item-ref) after the update.</summary>
     public Dictionary<string, string> AllEquippedItems { get; init; } = [];
+
+    /// <summary>
+    /// Gets the slots that were emptied as a side effect of this equip (currently the off hand when a
+    /// two-handed weapon is equipped in the main hand).
+    /// </summary>
+    public IReadOnlyList<string> ClearedSlots { get; init; } = [];
 }
 
 /// <summary>
@@ -57,7 +64,18 @@ public class EquipItemHubCommandHandler : IRequestHandler<EquipItemHubCommand, E
     /// <summary>The set of valid slot names accepted by this handler.</summary>
     public static readonly IReadOnlySet<string> ValidSlots = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
-        "MainHand", "OffHand", "Head", "Chest", "Legs", "Feet", "Ring", "Amulet",
+        EquipmentSlots.MainHand,
+        EquipmentSlots.OffHand,
+        EquipmentSlots.Head,
+        EquipmentSlots.Shoulders,
+        EquipmentSlots.Chest,
+        EquipmentSlots.Bracers,
+        EquipmentSlots.Gloves,
+        EquipmentSlots.Belt,
+        EquipmentSlots.Legs,
+        EquipmentSlots.Feet,
+        EquipmentSlots.Ring,
+        EquipmentSlots.Amulet,
     };
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -131,10 +149,35 @@ public class EquipItemHubCommandHandler : IRequestHandler<EquipItemHubCommand, E
             }
         }
 
+        var clearedSlots = new List<string>();
         if (request.ItemRef is null)
+        {
             equipment.Remove(canonicalSlot);
+        }
         else
+        {
+            // Two-handed weapons own both hands: equipping one frees the off hand, and an occupied
+            // two-handed main hand blocks off-hand items until it is unequipped.
+            if (canonicalSlot == EquipmentSlots.MainHand)
+            {
+                var incoming = await LookupItemAsync(request.ItemRef, cancellationToken);
+                if (incoming?.IsTwoHanded == true && equipment.Remove(EquipmentSlots.OffHand))
+                    clearedSlots.Add(EquipmentSlots.OffHand);
+            }
+            else if (canonicalSlot == EquipmentSlots.OffHand
+                     && equipment.TryGetValue(EquipmentSlots.MainHand, out var mainHandRef)
+                     && !string.IsNullOrWhiteSpace(mainHandRef))
+            {
+                var mainHand = await LookupItemAsync(mainHandRef, cancellationToken);
+                if (mainHand?.IsTwoHanded == true)
+                {
+                    return Fail(
+                        $"'{mainHandRef}' occupies both hands — unequip it before using an off-hand item.");
+                }
+            }
+
             equipment[canonicalSlot] = request.ItemRef;
+        }
 
         character.EquipmentBlob = JsonSerializer.Serialize(equipment);
         await _characterRepo.UpdateAsync(character, cancellationToken);
@@ -152,6 +195,7 @@ public class EquipItemHubCommandHandler : IRequestHandler<EquipItemHubCommand, E
             Slot = canonicalSlot,
             ItemRef = request.ItemRef,
             AllEquippedItems = new Dictionary<string, string>(equipment, StringComparer.OrdinalIgnoreCase),
+            ClearedSlots = clearedSlots,
         };
     }
 
@@ -165,16 +209,25 @@ public class EquipItemHubCommandHandler : IRequestHandler<EquipItemHubCommand, E
         string itemRef,
         CancellationToken cancellationToken)
     {
+        var item = await LookupItemAsync(itemRef, cancellationToken);
+        return item is null ? null : EquipmentSlots.ForItem(item);
+    }
+
+    /// <summary>Loads a catalog item by slug, returning <see langword="null"/> on a miss or failure.</summary>
+    /// <param name="itemRef">Item-reference slug.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The catalog item, or <see langword="null"/>.</returns>
+    private async Task<Item?> LookupItemAsync(string itemRef, CancellationToken cancellationToken)
+    {
         try
         {
-            var item = await _itemRepository.GetBySlugAsync(itemRef);
-            return item is null ? null : EquipmentSlots.ForItem(item);
+            return await _itemRepository.GetBySlugAsync(itemRef);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogWarning(
                 ex,
-                "Failed to resolve the equipment slot for item '{ItemRef}'.",
+                "Failed to resolve item '{ItemRef}' from the catalog.",
                 itemRef);
             return null;
         }
