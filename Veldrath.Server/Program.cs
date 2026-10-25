@@ -1,16 +1,9 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
-using System.Security.Cryptography;
 using System.Threading.RateLimiting;
-using AspNet.Security.OAuth.Discord;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Events;
 using RealmEngine.Core;
@@ -42,7 +35,6 @@ using Veldrath.Server.Hubs;
 using Veldrath.Server.Infrastructure;
 using Veldrath.Server.Settings;
 using RealmEngine.Shared.Abstractions;
-using System.Text;
 using Prometheus;
 using Prometheus.DotNetRuntime;
 
@@ -112,102 +104,9 @@ try
     builder.Services.AddDbContext<EditorialDbContext>(options =>
         options.UseNpgsql(connectionString));
 
-    // ASP.NET Core Identity
-    // AddIdentity must be registered before AddAuthentication so that the explicit
-    // AddAuthentication call below can override Identity's default cookie schemes
-    // with JWT Bearer (this is an API server, not a cookie-based web app).
-    builder.Services.AddIdentity<PlayerAccount, IdentityRole<Guid>>(options =>
-        {
-            options.Password.RequireDigit = true;
-            options.Password.RequiredLength = 12;
-            options.Password.RequireNonAlphanumeric = true;
-            options.Password.RequireUppercase = false;
-            options.User.RequireUniqueEmail = true;
-            options.Lockout.MaxFailedAccessAttempts = 5;
-            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
-        })
-        .AddEntityFrameworkStores<ApplicationDbContext>()
-        .AddDefaultTokenProviders();
-
-    // JWT authentication — validate all required configuration values early so the
-    // app fails fast at startup rather than producing opaque runtime errors.
-    // Registered after AddIdentity so the JwtBearer defaults override Identity's cookie defaults.
-    var jwtKey = builder.Configuration["Jwt:Key"];
-    if (string.IsNullOrWhiteSpace(jwtKey))
-        throw new InvalidOperationException("Jwt:Key is not configured or is empty.");
-
-    var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-    if (string.IsNullOrWhiteSpace(jwtIssuer))
-        throw new InvalidOperationException("Jwt:Issuer is not configured or is empty.");
-
-    var jwtAudience = builder.Configuration["Jwt:Audience"];
-    if (string.IsNullOrWhiteSpace(jwtAudience))
-        throw new InvalidOperationException("Jwt:Audience is not configured or is empty.");
-
-    // Log a short fingerprint of the signing key (never the key itself) plus the issuer and
-    // audience. Tokens minted by the SvelteKit front end are only accepted when all three
-    // match, and a mismatched JWT_KEY between the two Coolify resources otherwise surfaces as
-    // an opaque 401 on /api/characters. The web container logs the same fingerprint.
-    Log.Information(
-        "JWT configuration: issuer={Issuer} audience={Audience} keyFingerprint={Fingerprint}",
-        jwtIssuer,
-        jwtAudience,
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(jwtKey)))[..12]);
-
-    builder.Services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer(options =>
-        {
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-                ValidateIssuer = true,
-                ValidIssuer = jwtIssuer,
-                ValidateAudience = true,
-                ValidAudience = jwtAudience,
-                ClockSkew = TimeSpan.FromSeconds(30),
-            };
-
-            // Allow SignalR to read the JWT from the query string (hub connections).
-            options.Events = new JwtBearerEvents
-            {
-                OnMessageReceived = ctx =>
-                {
-                    var token = ctx.Request.Query["access_token"];
-                    if (!string.IsNullOrEmpty(token) &&
-                        ctx.Request.Path.StartsWithSegments("/hubs"))
-                        ctx.Token = token;
-                    return Task.CompletedTask;
-                },
-                // Identity-only tokens (minted by SvelteKit) are enriched with RBAC claims
-                // here; unknown accounts are provisioned just in time.
-                OnTokenValidated = JwtClaimsEnrichment.EnrichAsync,
-                // Make token rejections explainable: without this the API only returns an
-                // opaque 401 (signature key mismatch, wrong issuer/audience, expired token).
-                OnAuthenticationFailed = ctx =>
-                {
-                    Log.Warning(
-                        "JWT authentication failed: {Reason}",
-                        ctx.Exception?.Message ?? "unknown reason");
-                    return Task.CompletedTask;
-                },
-            };
-        });
-
-    builder.Services.AddAuthorization(options =>
-    {
-        // Legacy Curator role policy (kept for backward compat with existing Foundry endpoints).
-        options.AddPolicy("Curator", p => p.RequireRole(Roles.Curator));
-
-        // Fine-grained permission policies — each permission string maps to a JWT claim.
-        foreach (var permission in Permissions.All)
-            options.AddPolicy(permission, p => p.RequireClaim("permission", permission));
-    });
-
+    // ASP.NET Core Identity + JWT bearer authentication + authorization policies + the optional
+    // OAuth providers. Registered before the rate limiter; details in Infrastructure/AuthSetup.cs.
+    builder.AddVeldrathIdentityAndAuth();
 
     builder.Services.Configure<Veldrath.Server.Settings.ModerationOptions>(
         builder.Configuration.GetSection("Moderation"));
@@ -261,88 +160,6 @@ try
         });
         opts.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     });
-
-    // OAuth providers
-    // Registered conditionally so the server starts cleanly when credentials are
-    // absent (CI, local dev without OAuth app registrations).
-    // SignInScheme must be explicitly set to IdentityConstants.ExternalScheme so
-    // the OAuth middleware writes the external cookie that GetExternalLoginInfoAsync reads.
-    var oauthProviders = new List<string>();
-
-    // Compose maps OAUTH_* to OAuth__*; fall back to the .env names so a locally
-    // sourced .env (set -a; source .env; dotnet run) also works.
-    var discordId = builder.Configuration["OAuth:Discord:ClientId"]
-        ?? Environment.GetEnvironmentVariable("OAUTH_DISCORD_CLIENT_ID");
-    var discordSecret = builder.Configuration["OAuth:Discord:ClientSecret"]
-        ?? Environment.GetEnvironmentVariable("OAUTH_DISCORD_CLIENT_SECRET");
-    if (!string.IsNullOrEmpty(discordId) && !string.IsNullOrEmpty(discordSecret))
-    {
-        builder.Services.AddAuthentication()
-            .AddDiscord(o =>
-            {
-                o.SignInScheme = IdentityConstants.ExternalScheme;
-                o.ClientId = discordId;
-                o.ClientSecret = discordSecret;
-                o.Scope.Add("email");
-                o.Events.OnTicketReceived = ExternalAuthEndpoints.HandleOAuthTicket;
-                // Correlation cookie must not require Secure on plain HTTP (Docker dev).
-                o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-                o.CorrelationCookie.SameSite   = SameSiteMode.Lax;
-            });
-        oauthProviders.Add("Discord");
-    }
-
-    var googleId = builder.Configuration["OAuth:Google:ClientId"]
-        ?? Environment.GetEnvironmentVariable("OAUTH_GOOGLE_CLIENT_ID");
-    var googleSecret = builder.Configuration["OAuth:Google:ClientSecret"]
-        ?? Environment.GetEnvironmentVariable("OAUTH_GOOGLE_CLIENT_SECRET");
-    if (!string.IsNullOrEmpty(googleId) && !string.IsNullOrEmpty(googleSecret))
-    {
-        builder.Services.AddAuthentication()
-            .AddGoogle(o =>
-            {
-                o.SignInScheme = IdentityConstants.ExternalScheme;
-                o.ClientId = googleId;
-                o.ClientSecret = googleSecret;
-                o.Events.OnTicketReceived = ExternalAuthEndpoints.HandleOAuthTicket;
-                // Correlation cookie must not require Secure on plain HTTP (Docker dev).
-                o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-                o.CorrelationCookie.SameSite   = SameSiteMode.Lax;
-            });
-        oauthProviders.Add("Google");
-    }
-
-    var msId = builder.Configuration["OAuth:Microsoft:ClientId"]
-        ?? Environment.GetEnvironmentVariable("OAUTH_MICROSOFT_CLIENT_ID");
-    var msSecret = builder.Configuration["OAuth:Microsoft:ClientSecret"]
-        ?? Environment.GetEnvironmentVariable("OAUTH_MICROSOFT_CLIENT_SECRET");
-    if (!string.IsNullOrEmpty(msId) && !string.IsNullOrEmpty(msSecret))
-    {
-        builder.Services.AddAuthentication()
-            .AddMicrosoftAccount(o =>
-            {
-                o.SignInScheme = IdentityConstants.ExternalScheme;
-                o.ClientId = msId;
-                o.ClientSecret = msSecret;
-                // /consumers/ targets personal Microsoft accounts (Xbox/Live/Outlook) only,
-                // which avoids the userAudience mismatch that /common/ produces with a
-                // single-tenant app registration.
-                o.AuthorizationEndpoint = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize";
-                o.TokenEndpoint         = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";
-                o.Events.OnTicketReceived = ExternalAuthEndpoints.HandleOAuthTicket;
-                // Correlation cookie must not require Secure on plain HTTP (Docker dev).
-                o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-                o.CorrelationCookie.SameSite   = SameSiteMode.Lax;
-            });
-        oauthProviders.Add("Microsoft");
-    }
-
-    Log.Information(
-        "OAuth providers configured: {Providers}",
-        oauthProviders.Count == 0
-            ? "none (external login endpoints will return 503 until credentials are set)"
-            : string.Join(", ", oauthProviders));
-
 
     builder.Services.AddScoped<AuthService>();
     builder.Services.AddScoped<AccountService>();

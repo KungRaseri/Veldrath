@@ -74,7 +74,15 @@ Ordered by risk/return. Each item is a single reviewable PR.
 ### W3 — Engine/server hygiene
 - XML doc gaps flagged as P4 in [`.github/agent-memory/engine-codebase.md`](../.github/agent-memory/engine-codebase.md) — close them or move to "won't fix".
 - Review `RealmEngine.Core` handler quirks listed in the memory file and either fix or document at the call site.
-- `Program.cs` is ~730 lines: extract auth, CORS, email, SignalR, and startup seeding into extension methods (`AddVeldrathAuth`, `AddVeldrathCors`, …). Pure refactor, no behaviour change.
+- ✅ CORS extracted to [`Infrastructure/CorsSetup.cs`](../Veldrath.Server/Infrastructure/CorsSetup.cs) and
+  Identity + JWT bearer + authorization policies + OAuth providers extracted to
+  [`Infrastructure/AuthSetup.cs`](../Veldrath.Server/Infrastructure/AuthSetup.cs). `Program.cs` went
+  from 703 to 520 lines and the dead `using` directives went with the code. Pure refactor — 788 server
+  tests still pass. The rate limiter and health checks are the remaining inline blocks if this
+  continues.
+- ✅ `[Obsolete] StartingSpellIds` on `CharacterClass` deleted: it had no readers anywhere in the
+  tree (only `StartingPowerIds` is used), and JSON payloads that still carry
+  `startingSpellIds` are ignored on deserialize.
 
 ### W4 — Testing and CI
 - Consolidate `FakeXxx` stubs; delete stubs with no consumers.
@@ -84,14 +92,20 @@ Ordered by risk/return. Each item is a single reviewable PR.
 
 ### W5 — Configuration and deploy consolidation
 - One source of truth for public URLs/ports: `docker-compose*.yml`, `.env.example`, `web/client/.env.example`, and the two deploy docs (now consistent after the env audit — verify with a scripted cross-check).
-- Decide the fate of `docker-compose.api.yml` and `docker-compose.debugging.yml` (both still reference the old API-only/dev-debug flows).
+- ✅ `docker-compose.api.yml` and `docker-compose.debugging.yml` deleted. Both were strict subsets of
+  `docker-compose.dev.yml` (postgres + server, plus discord in the debugging one), predated the web
+  app, and nothing referenced them — not the docs, not the scripts, not the skills. `docker compose -f
+  docker-compose.dev.yml up postgres server` covers the same need.
 - Add a `scripts/check-env-docs.mjs`-style guard that fails CI when a documented env var is not read by code (or vice versa).
 - ✅ Done: the SSH deploy path (`deploy.yml` + three `if: false` deploy jobs) is gone; Actions publishes images and Coolify deploys.
 
 ### W6 — Repository hygiene
 - ✅ Remove `scripts/dev/blazor/` (Part 1) and any other orphan scratch folders.
 - ✅ Re-check `.gitignore` / `.dockerignore` after the file moves (`client/build-desktop`, `SvelteApp/`, `.env`).
-- Review `web/llms/` size (~5 MB of vendored docs) and whether it should stay in-repo.
+- ✅ `web/llms/` **stays in-repo.** 16 files, 6.4 MB, one-time clone cost; it is the offline reference
+  corpus the `web-development` / `web-ui` skills and agent sessions read, and moving it to a release
+  artifact would add a network dependency plus a version pin for no real gain. `web/llms/README.md`
+  already records provenance and the refresh procedure.
 
 ### W7 — Authenticated browser coverage of the game loop
 Moved here from migration Phase 2: only the unauthenticated guards run in CI today, so the
@@ -169,10 +183,10 @@ graph LR
 | Part 1 — residue removal, plan pruning, design-system appendix, wiki, READMEs | ✅ Done | `33ac36ab`, `ebc70430` |
 | W1 — documentation truth pass (AGENTS/README/CONTRIBUTING, dangling skill + instruction links) | ✅ Done | `ebc70430` |
 | W2 — dead code (contracts audit, `editorial-api` → `gameApiFetch`) | ✅ Done | `5684f0d9` |
-| W3 — engine/server hygiene | 🟡 Started: CORS policy extracted to `Infrastructure/CorsSetup.cs` (policy name is now a constant). Remaining: JWT/auth registration extraction, P4 XML doc gaps, obsolete `StartingSpellIds`. | `456ad367` |
+| W3 — engine/server hygiene | 🟡 Mostly done: CORS extracted to `Infrastructure/CorsSetup.cs`, Identity/JWT/authorization/OAuth extracted to `Infrastructure/AuthSetup.cs` (`Program.cs` 703 → 520 lines, 788 server tests green), and the unused `[Obsolete] StartingSpellIds` deleted. Remaining: the P4 XML doc gaps, and optionally the rate limiter + health-check blocks. | `456ad367` + tail commit |
 | W4 — testing/CI (stub consolidation, coverage floors) | ⏳ Not started. The authenticated Playwright path moved to W7. | — |
-| W5 — config consolidation | 🟡 Workflows done: obsolete SSH deploy path removed (`deploy.yml` + the three `if: false` deploy jobs), `docs.yml` now watches `**/*.cs` instead of a hand-maintained project list, engine CI moved to `ubuntu-latest`, Dependabot gained a `/web` Dockerfile entry. Remaining: the compose-file decision below. | workflow cleanup commit |
-| W6 — repository hygiene | ✅ Done: `.gitignore` already covers `/scripts/dev/`, `.env*`, `build-desktop/`, and packaged asset zips; `.dockerignore` verified (bin/obj, secrets, TestResults, IDE dirs, `client/build-desktop`). Remaining judgement call is `web/llms/` size. | — |
+| W5 — config consolidation | ✅ Done: obsolete SSH deploy path removed (`deploy.yml` + the three `if: false` deploy jobs), `docs.yml` now watches `**/*.cs` instead of a hand-maintained project list, engine CI moved to `ubuntu-latest`, Dependabot gained a `/web` Dockerfile entry, and the two redundant compose files were deleted. The env-var documentation cross-check script is the one optional leftover. | `9b890ef8` + tail commit |
+| W6 — repository hygiene | ✅ Done: `.gitignore` already covers `/scripts/dev/`, `.env*`, `build-desktop/`, and packaged asset zips; `.dockerignore` verified (bin/obj, secrets, TestResults, IDE dirs, `client/build-desktop`); `web/llms/` kept in-repo by decision. | — |
 | W7 — authenticated game loop in CI (from migration Phase 2) | ✅ Done: `tests/game-loop.e2e.ts` covers register → roster → play → travel → inventory against a real server (verified locally, 34s, 1 passed); `ci-web.yml` gained an `e2e-game` job that boots `Veldrath.Server` on the Postgres service. The spec self-skips without `E2E_GAME=1`, so `npm run test` stays server-free (22 passed, 1 skipped). | W7 commit |
 | W8 — desktop bundle smoke on the Windows runner (from migration Phase 5) | ✅ Done: 4 `Bundle`-trait tests serve the real `build-desktop` through `DesktopUiServer` (index + hashed asset + SPA fallback + health + `WebView2Loader.dll` presence). `ci-client.yml` already builds the bundle first, so they run on CI. A true WebView2 render probe is left optional. | W8/W9 commit |
 | W9 — payload contract drift check (from migration testing strategy) | ✅ Done: `payload-contract.test.ts` compares every mirrored C# record with its TS interface. It found 5 real drifts on day one — see below. | W8/W9 commit |
@@ -206,11 +220,10 @@ the location panel read `name`/`type`/`description`, none of which exist on the 
 3. **Identity** — Option 1 (keep ASP.NET Core Identity) until the desktop shell decision; Option 2 is
    revisited together with desktop finalization, Option 3 only after that.
 4. **Scope** — full W1–W6 sweep, executed in order, Part 1 as its own commit.
-5. **`docker-compose.api.yml` / `docker-compose.debugging.yml`** — still open; decided in W5.
+5. **Compose files** — `docker-compose.api.yml` and `docker-compose.debugging.yml` deleted;
+   `docker-compose.dev.yml` is the only local dev stack.
+6. **`web/llms/`** — stays in-repo (6.4 MB, 16 files); it is the offline corpus the web skills read.
 
 ## 7. Open questions
 
-1. **`docker-compose.api.yml` / `docker-compose.debugging.yml`** — keep for local API debugging, or
-   delete as unused?
-2. **`web/llms/`** (~5 MB of vendored upstream docs) — keep in-repo or move to a release artifact?
-3. **`Veldrath.Contracts`** — do internal DTOs stay there, or move next to their feature slices?
+1. **`Veldrath.Contracts`** — do internal DTOs stay there, or move next to their feature slices?

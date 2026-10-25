@@ -131,13 +131,6 @@ public class CharacterClass
     public List<string> StartingPowerIds { get; set; } = new();
 
     /// <summary>
-    /// Spell reference IDs this class starts with (level-1 unlocks from ClassSpellUnlocks).
-    /// Empty for non-spellcaster classes.
-    /// </summary>
-    [Obsolete("Use StartingPowerIds — abilities and spells are unified under Power.")]
-    public List<string> StartingSpellIds { get; set; } = new();
-
-    /// <summary>
     /// Collection of starting equipment reference IDs (v4.1 format) that characters of this class begin with.
     /// Each ID is a JSON reference like "@items/weapons/swords:longsword".
     /// </summary>
