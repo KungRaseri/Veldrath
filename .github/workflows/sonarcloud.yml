@@ -24,6 +24,9 @@ permissions:
 jobs:
   analysis:
     name: Analyze
+    # If SonarCloud's "Automatic Analysis" is enabled for the project, manual CI scans are
+    # rejected with a bare scanner exit 1. Turn it off in the SonarCloud project settings
+    # (Administration → Analysis Method → Automatic Analysis) before debugging the token.
     runs-on: ubuntu-latest
 
     steps:
@@ -31,6 +34,27 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+
+      # The scan itself only reports `exit code 1` for an expired token, which is
+      # indistinguishable from a code-quality failure. Validate first so the log names the
+      # actual problem.
+      - name: Validate the SonarCloud token
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SONAR_TOKEN}" ]; then
+            echo "::error title=SonarCloud::SONAR_TOKEN is not configured. Add it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+          status=$(curl -s -o /tmp/sonar-validate.json -w '%{http_code}' \
+            -u "${SONAR_TOKEN}:" https://sonarcloud.io/api/authentication/validate)
+
+          if [ "${status}" != "200" ] || ! grep -q '"valid":true' /tmp/sonar-validate.json; then
+            echo "::error title=SonarCloud::SONAR_TOKEN was rejected by SonarCloud (expired, revoked, or for a different organization). Rotate it at https://sonarcloud.io/account/security/."
+            exit 1
+          fi
 
       - name: Analyze with SonarQube Cloud
         uses: SonarSource/sonarqube-scan-action@v8

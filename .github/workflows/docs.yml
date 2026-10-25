@@ -37,7 +37,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: '10.0.402'
 
       - name: Restore NuGet packages
         run: dotnet restore Realm.Full.slnx

@@ -32,7 +32,8 @@ on:
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: '10.0.x'
+  # Pinned SDK: '10.0.x' resolved to 10.0.403, which dotnet-install could not find.
+  DOTNET_VERSION: '10.0.402'
   CONFIGURATION: 'Release'
   PROPS_FILE: 'versions/tooling.props'
 
