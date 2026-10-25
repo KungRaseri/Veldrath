@@ -195,13 +195,20 @@ graph LR
 | Part 1 — residue removal, plan pruning, design-system appendix, wiki, READMEs | ✅ Done | `33ac36ab`, `ebc70430` |
 | W1 — documentation truth pass (AGENTS/README/CONTRIBUTING, dangling skill + instruction links) | ✅ Done | `ebc70430` |
 | W2 — dead code (contracts audit, `editorial-api` → `gameApiFetch`) | ✅ Done | `5684f0d9` |
-| W3 — engine/server hygiene | 🟡 Mostly done: CORS extracted to `Infrastructure/CorsSetup.cs`, Identity/JWT/authorization/OAuth extracted to `Infrastructure/AuthSetup.cs` (`Program.cs` 703 → 520 lines, 788 server tests green), and the unused `[Obsolete] StartingSpellIds` deleted. Remaining: the P4 XML doc gaps, and optionally the rate limiter + health-check blocks. | `456ad367` + tail commit |
+| W3 — engine/server hygiene | ✅ Done: CORS extracted to `Infrastructure/CorsSetup.cs`, Identity/JWT/authorization/OAuth extracted to `Infrastructure/AuthSetup.cs` (`Program.cs` 703 → 520 lines, 788 server tests green), the unused `[Obsolete] StartingSpellIds` deleted, and the P4 XML-doc list closed (already fully documented; CS1591 enforces it). Optional leftover: the rate limiter and health-check blocks. | `456ad367` + tail commits |
 | W4 — testing/CI (stub consolidation, coverage floors) | ✅ Done: stub audit found no dead fakes; `codecov.yml` adds per-component flags with informational statuses; `scripts/check-markdown-links.mjs` + `repo-hygiene.yml` gate documentation links (18 broken links fixed). `dotnet format --verify-no-changes` deferred until a standalone reformat pass lands. | W4 commit |
 | W5 — config consolidation | ✅ Done: obsolete SSH deploy path removed (`deploy.yml` + the three `if: false` deploy jobs), `docs.yml` now watches `**/*.cs` instead of a hand-maintained project list, engine CI moved to `ubuntu-latest`, Dependabot gained a `/web` Dockerfile entry, and the two redundant compose files were deleted. The env-var documentation cross-check script is the one optional leftover. | `9b890ef8` + tail commit |
 | W6 — repository hygiene | ✅ Done: `.gitignore` already covers `/scripts/dev/`, `.env*`, `build-desktop/`, and packaged asset zips; `.dockerignore` verified (bin/obj, secrets, TestResults, IDE dirs, `client/build-desktop`); `web/llms/` kept in-repo by decision. | — |
 | W7 — authenticated game loop in CI (from migration Phase 2) | ✅ Done: `tests/game-loop.e2e.ts` covers register → roster → play → travel → inventory against a real server (verified locally, 34s, 1 passed); `ci-web.yml` gained an `e2e-game` job that boots `Veldrath.Server` on the Postgres service. The spec self-skips without `E2E_GAME=1`, so `npm run test` stays server-free (22 passed, 1 skipped). | W7 commit |
 | W8 — desktop bundle smoke on the Windows runner (from migration Phase 5) | ✅ Done: 4 `Bundle`-trait tests serve the real `build-desktop` through `DesktopUiServer` (index + hashed asset + SPA fallback + health + `WebView2Loader.dll` presence). `ci-client.yml` already builds the bundle first, so they run on CI. A true WebView2 render probe is left optional. | W8/W9 commit |
 | W9 — payload contract drift check (from migration testing strategy) | ✅ Done: `payload-contract.test.ts` compares every mirrored C# record with its TS interface. It found 5 real drifts on day one — see below. | W8/W9 commit |
+
+**Final verification (2026-10-24):** `dotnet build Realm.Full.slnx` clean and
+`dotnet test Realm.Full.slnx` = **4,630 tests, 0 failures** across the 10 .NET projects; web
+`npm run typecheck` (0 errors) / `npm run lint` (clean) / `npm run test` (22 passed, 1 skipped, the
+gated game-loop spec) / `npm run build` unaffected; `node scripts/check-markdown-links.mjs` clean over
+38 Markdown files. Remaining open item is the Identity decision (§7), which is blocked on desktop
+finalization rather than on this plan.
 
 W2 findings worth keeping: of the 130 types in `Veldrath.Contracts`, only
 `TravelToNodeResultDto` was genuinely dead (removed). `ContentTypeSchema`,
