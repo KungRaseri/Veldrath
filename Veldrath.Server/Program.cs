@@ -185,6 +185,11 @@ try
         .Bind(builder.Configuration.GetSection(DeathPenaltyOptions.SectionName))
         .ValidateDataAnnotations()
         .ValidateOnStart();
+
+    builder.Services.AddOptions<TutorialOptions>()
+        .Bind(builder.Configuration.GetSection(TutorialOptions.SectionName))
+        .ValidateDataAnnotations()
+        .ValidateOnStart();
     builder.Services.AddScoped<IPlayerSessionRepository, PlayerSessionRepository>();
     builder.Services.AddScoped<IGroundItemRepository, EfCoreGroundItemRepository>();
     builder.Services.AddScoped<IRegionRepository, RegionRepository>();
