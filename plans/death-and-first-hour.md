@@ -3,6 +3,7 @@
 > **Position in the roadmap:** D → C → **A** → B.
 > Death consequences ride on D (respawn location and combat end state are world state) and C (a party wiping
 > together is a different experience from a solo death).
+> **Tracker:** epic #38 — phases A1–A6 become issues when the milestone starts.
 
 ---
 

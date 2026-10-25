@@ -59,14 +59,14 @@ fork the world. Party, death consequences and content validation all build on th
 **Filed:** epic #31 — D1 #32 (schema), D2 #33 (DB-backed stores), D3 #34 (respawn sweeper),
 D4 #35 (multi-instance safety, reconnect grace, AFK service), D5 #36 (content validator + failsafes).
 
-### C — Play together → [`party-play.md`](party-play.md)
+### C — Play together → [`party-play.md`](party-play.md) — filed as #37
 1. Party panel + invite flow — `Party`/`PartyMember` exist in `RealmEngine.Shared` with no hub or UI.
    Party state persists through the D storage layer rather than a new static dictionary.
 2. Guilds (#4, rewritten).
 3. Trading (#6, rewritten).
 4. PvP (#5, rewritten; duels first).
 
-### A — Death consequences + first hour → [`death-and-first-hour.md`](death-and-first-hour.md)
+### A — Death consequences + first hour → [`death-and-first-hour.md`](death-and-first-hour.md) — filed as #38
 5. **Death cost tuning.** A cost already exists — [`HandleDeathIfNeededAsync`](../Veldrath.Server/Features/Characters/Combat/CombatHelpers.cs:185)
    removes 10% of XP **and** 10% of gold at the moment of death. Agreed direction: make it **small and
    gold-first** — take a small share of carried gold, and only when the character carries (almost) no
@@ -82,7 +82,7 @@ D4 #35 (multi-instance safety, reconnect grace, AFK service), D5 #36 (content va
     (`DeletedAt`), and the player gets a per-account *memorial roster* of their fallen characters while
     the world gets a *global hardcore leaderboard*. Data already exists; this is a query + UI feature.
 
-### B — Content pipeline and hygiene → [`content-pipeline.md`](content-pipeline.md)
+### B — Content pipeline and hygiene → [`content-pipeline.md`](content-pipeline.md) — filed as #39
 11. Foundry → DB → engine validation gates, plus the startup content validator and failsafe tests
     described in [`server-first-world-state.md`](server-first-world-state.md) §4.
 12. Make the coverage gates honest: `@veldrath/shared` cannot pass its own `coverage` script today, and
