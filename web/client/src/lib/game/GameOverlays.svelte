@@ -1,8 +1,10 @@
 <script lang="ts">
 	import {
+		Check,
 		Coins,
 		FlaskConical,
 		Gem,
+		LogOut,
 		Minus,
 		Plus,
 		RefreshCw,
@@ -12,6 +14,9 @@
 		Store,
 		Swords,
 		Undo2,
+		UserMinus,
+		UserPlus,
+		Users,
 		X
 	} from '@lucide/svelte';
 	import { Dialog } from 'bits-ui';
@@ -33,6 +38,8 @@
 	let { session }: { session: GameSession } = $props();
 
 	let pendingPoints = $state<Record<string, number>>({});
+	/** Character name typed into the party panel's invite box. */
+	let inviteName = $state('');
 
 	const spentPoints = $derived(Object.values(pendingPoints).reduce((sum, value) => sum + value, 0));
 	const remainingPoints = $derived(session.stats.unspentAttributePoints - spentPoints);
@@ -86,6 +93,13 @@
 	function closeAttributes() {
 		pendingPoints = {};
 		session.showAttributes = false;
+	}
+
+	async function sendInvite() {
+		const name = inviteName.trim();
+		if (!name) return;
+		inviteName = '';
+		await session.inviteToParty(name);
 	}
 </script>
 
@@ -504,6 +518,98 @@
 	</Dialog.Portal>
 </Dialog.Root>
 
+<Dialog.Root open={session.showParty} onOpenChange={(open) => (session.showParty = open)}>
+	<Dialog.Portal>
+		<Dialog.Overlay class="game-dialog-backdrop" />
+		<Dialog.Content class="game-dialog" aria-label="Party">
+			<header class="game-dialog-header">
+				<Dialog.Title class="game-panel-header">
+					<Users size={18} aria-hidden="true" />
+					Party
+				</Dialog.Title>
+				<Dialog.Close class="btn preset-tonal-surface px-2 py-1 text-xs" aria-label="Close party">
+					<X size={14} aria-hidden="true" />
+				</Dialog.Close>
+			</header>
+			<Dialog.Description class="text-xs text-surface-600-400">
+				Adventure together: every member shares the fights and the rewards.
+			</Dialog.Description>
+
+			{#if session.party}
+				<ul class="mt-3 space-y-2">
+					{#each session.party.members as member (member.characterId)}
+						<li
+							class="flex items-center justify-between gap-2 rounded border border-surface-800 p-2 text-sm"
+						>
+							<span class="space-y-0.5">
+								<span class="flex items-center gap-1 font-semibold">
+									{member.name}
+									{#if member.isLeader}
+										<span class="chip preset-tonal-surface text-xs">Leader</span>
+									{/if}
+								</span>
+								<span class="block text-xs text-surface-600-400">
+									Level {member.level} · {member.currentHealth} / {member.maxHealth} health
+								</span>
+							</span>
+							{#if session.isPartyLeader && !member.isLeader}
+								<button
+									class="btn preset-tonal-surface px-1.5 py-0.5 text-xs"
+									type="button"
+									title={`Remove ${member.name} from the party`}
+									onclick={() => session.kickPartyMember(member.characterId)}
+								>
+									<UserMinus size={12} aria-hidden="true" />
+									Remove
+								</button>
+							{/if}
+						</li>
+					{/each}
+				</ul>
+
+				<div class="mt-4 flex items-end gap-2">
+					<label class="flex-1 text-xs text-surface-600-400">
+						Invite by name
+						<input
+							class="mt-1 input w-full"
+							bind:value={inviteName}
+							placeholder="Character name"
+							autocomplete="off"
+						/>
+					</label>
+					<button class="btn preset-filled-primary-500" type="button" onclick={sendInvite}>
+						<UserPlus size={14} aria-hidden="true" />
+						Invite
+					</button>
+				</div>
+
+				<div class="mt-4 flex justify-end">
+					<button
+						class="btn preset-tonal-surface"
+						type="button"
+						onclick={() => session.leaveParty()}
+					>
+						<LogOut size={14} aria-hidden="true" />
+						{session.isPartyLeader ? 'Disband or leave' : 'Leave party'}
+					</button>
+				</div>
+			{:else}
+				<p class="mt-3 text-sm text-surface-600-400">You are adventuring alone.</p>
+				<div class="mt-4 flex justify-end">
+					<button
+						class="btn preset-filled-primary-500"
+						type="button"
+						onclick={() => session.createParty()}
+					>
+						<Users size={14} aria-hidden="true" />
+						Create party
+					</button>
+				</div>
+			{/if}
+		</Dialog.Content>
+	</Dialog.Portal>
+</Dialog.Root>
+
 <Dialog.Root open={session.showSettings} onOpenChange={(open) => (session.showSettings = open)}>
 	<Dialog.Portal>
 		<Dialog.Overlay class="game-dialog-backdrop" />
@@ -568,3 +674,39 @@
 		</Dialog.Content>
 	</Dialog.Portal>
 </Dialog.Root>
+
+{#if session.partyInvites.length > 0}
+	<div
+		class="pointer-events-none fixed right-4 bottom-4 z-50 flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2"
+	>
+		{#each session.partyInvites as invite (invite.partyId)}
+			<div class="game-panel pointer-events-auto space-y-2 p-3" role="status">
+				<p class="text-sm">
+					<span class="font-semibold">{invite.invitedByName}</span> invited you to
+					<span class="font-semibold">{invite.partyLeaderName}</span>'s party.
+				</p>
+				<p class="text-xs text-surface-600-400">
+					Expires {new Date(invite.expiresAt).toLocaleTimeString()}
+				</p>
+				<div class="flex justify-end gap-2">
+					<button
+						class="btn preset-filled-primary-500 px-2 py-1 text-xs"
+						type="button"
+						onclick={() => session.acceptPartyInvite(invite.partyId)}
+					>
+						<Check size={13} aria-hidden="true" />
+						Accept
+					</button>
+					<button
+						class="btn preset-tonal-surface px-2 py-1 text-xs"
+						type="button"
+						onclick={() => session.declinePartyInvite(invite.partyId)}
+					>
+						<X size={13} aria-hidden="true" />
+						Decline
+					</button>
+				</div>
+			</div>
+		{/each}
+	</div>
+{/if}

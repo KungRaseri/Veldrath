@@ -5,7 +5,8 @@
 > enemy instances, so enemy and combat state must already live in Postgres ([`server-first-world-state.md`](server-first-world-state.md)).
 > Guilds, trading and duels stay out of this milestone; they extend the same storage layer afterwards.
 > **Tracker:** epic #37 — C1 #43 (schema + hub commands, shipped in `c7133ac6` and closed), C2 #40 (invites,
-> snapshot fan-out, party panel), C3 #41 (shared combat + contribution rewards), C4 #42 (party chat).
+> snapshot fan-out, party panel — shipped server `99ebe3a4`/`07ac81b7`, client in the same session, and closed),
+> C3 #41 (shared combat + contribution rewards), C4 #42 (party chat).
 
 ---
 

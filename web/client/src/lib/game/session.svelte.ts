@@ -31,6 +31,10 @@ import type {
 	MapGraphReceivedPayload,
 	NodeTraveledPayload,
 	OccupantEntry,
+	PartyDisbandedPayload,
+	PartyInviteView,
+	PartyInvitesChangedPayload,
+	PartySnapshot,
 	PlayerEnteredPayload,
 	PlayerLeftPayload,
 	QuestLogEntry,
@@ -83,6 +87,8 @@ export class GameSession {
 	attributes = $state<CharacterAttributes>({ ...EMPTY_ATTRIBUTES });
 	zone = $state<ZoneEnteredPayload | null>(null);
 	occupants = $state<OccupantEntry[]>([]);
+	party = $state<PartySnapshot | null>(null);
+	partyInvites = $state<PartyInviteView[]>([]);
 	map = $state<MapGraph | null>(null);
 	currentNodeId = $state<string | null>(null);
 	selectedNodeId = $state<string | null>(null);
@@ -107,6 +113,7 @@ export class GameSession {
 	showSettings = $state(false);
 	showAbilities = $state(false);
 	showAttributes = $state(false);
+	showParty = $state(false);
 	loadingMap = $state(false);
 	/** Item shown in the detail dialog, or `null` when it is closed. */
 	inspectedItem = $state<InventoryItem | null>(null);
@@ -139,6 +146,12 @@ export class GameSession {
 		if (this.zone) return this.zone.name;
 		if (this.map?.mapType === 'Zone') return this.map.name;
 		return 'Region map';
+	}
+
+	/** True when the active character leads the party it belongs to. */
+	get isPartyLeader(): boolean {
+		if (!this.party || !this.character) return false;
+		return this.party.leaderCharacterId === this.character.id;
 	}
 
 	get equippedEntries(): [string, InventoryItem][] {
@@ -433,6 +446,60 @@ export class GameSession {
 		if (!this.hub) return;
 		this.error = null;
 		await this.hub.invoke('Respawn');
+	}
+
+	/** Re-reads the party and its pending invites. Being solo is a normal answer, not an error. */
+	async requestParty(): Promise<void> {
+		if (!this.hub) return;
+		await this.hub.invoke('GetParty');
+	}
+
+	async openParty(): Promise<void> {
+		this.showParty = true;
+		await this.requestParty();
+	}
+
+	async createParty(): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('CreateParty');
+	}
+
+	async leaveParty(): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('LeaveParty');
+	}
+
+	async kickPartyMember(characterId: string): Promise<void> {
+		if (!this.hub || !characterId) return;
+		this.error = null;
+		await this.hub.invoke('KickPartyMember', characterId);
+	}
+
+	async inviteToParty(targetCharacterName: string): Promise<void> {
+		if (!this.hub) return;
+		const trimmed = targetCharacterName.trim();
+		if (!trimmed) {
+			this.error = 'Enter the name of the character to invite.';
+			return;
+		}
+		this.error = null;
+		await this.hub.invoke('InviteToParty', trimmed);
+	}
+
+	async acceptPartyInvite(partyId: string): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('AcceptPartyInvite', partyId);
+	}
+
+	async declinePartyInvite(partyId: string): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		// Drop it locally first so the toast disappears even before the server confirms.
+		this.partyInvites = this.partyInvites.filter((invite) => invite.partyId !== partyId);
+		await this.hub.invoke('DeclinePartyInvite', partyId);
 	}
 
 	async sendChat(text: string): Promise<void> {
@@ -744,6 +811,51 @@ export class GameSession {
 			);
 		});
 
+		hub.on('PartyUpdated', (payload: PartySnapshot | null) => {
+			const previousMemberCount = this.party?.members.length ?? 0;
+			this.party = payload;
+
+			if (payload === null) {
+				this.partyInvites = [];
+				return;
+			}
+
+			// An invite to the party we just joined is no longer actionable.
+			this.partyInvites = this.partyInvites.filter((invite) => invite.partyId !== payload.partyId);
+
+			const leader = payload.members.find((member) => member.isLeader) ?? payload.members[0];
+			if (previousMemberCount === 0) {
+				if (leader) this.addSystemMessage(`You joined ${leader.name}'s party.`);
+				return;
+			}
+
+			if (payload.members.length > previousMemberCount) {
+				this.addSystemMessage('A new member joined the party.');
+			} else if (payload.members.length < previousMemberCount) {
+				this.addSystemMessage('A member left the party.');
+			}
+		});
+
+		hub.on('PartyDisbanded', (payload: PartyDisbandedPayload) => {
+			if (this.party?.partyId !== payload.partyId) return;
+			this.party = null;
+			this.showParty = false;
+			this.addSystemMessage('Your party disbanded.');
+		});
+
+		hub.on('PartyInvitesChanged', (payload: PartyInvitesChangedPayload) => {
+			if (payload.partyId) {
+				this.partyInvites = this.partyInvites.filter(
+					(invite) => invite.partyId !== payload.partyId
+				);
+				return;
+			}
+
+			// The server only nudges us: invites are re-read, so a live invite and a login invite
+			// follow exactly the same path.
+			void this.requestParty();
+		});
+
 		hub.on('ReceiveChatMessage', (payload: ChatMessage) => {
 			this.chat = appendChat(this.chat, payload);
 		});
@@ -783,6 +895,10 @@ export class GameSession {
 			wisdom: payload.wisdom,
 			charisma: payload.charisma
 		};
+
+		// A party outlives a restart, so pull it (and any pending invites) as soon as the character
+		// is selected instead of waiting for the panel to be opened.
+		await this.requestParty();
 
 		// The character sheet renders the bag and the equipment rack, so pull the snapshot as soon
 		// as the character is selected instead of waiting for a manual refresh.

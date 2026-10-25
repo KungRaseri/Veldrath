@@ -355,6 +355,45 @@ export interface PlayerLeftPayload {
 	zoneId: string;
 }
 
+/** One member of the player's party, as the server broadcasts it. */
+export interface PartyMemberView {
+	characterId: string;
+	name: string;
+	level: number;
+	currentHealth: number;
+	maxHealth: number;
+	isLeader: boolean;
+}
+
+/** Complete party snapshot. Every mutation rebroadcasts one of these, so the client never assembles deltas. */
+export interface PartySnapshot {
+	partyId: string;
+	leaderCharacterId: string;
+	lootRule: string;
+	members: PartyMemberView[];
+}
+
+/** A pending invitation waiting for the player's answer. */
+export interface PartyInviteView {
+	partyId: string;
+	partyLeaderName: string;
+	invitedByName: string;
+	expiresAt: string;
+}
+
+/** Sent to the party that just lost its last member. */
+export interface PartyDisbandedPayload {
+	partyId: string;
+}
+
+/**
+ * Nudge to refresh the invite list. A `partyId` means that specific invite is gone (declined here or
+ * expired); `null` means the server invited us, so the list has to be re-read.
+ */
+export interface PartyInvitesChangedPayload {
+	partyId?: string | null;
+}
+
 export interface CharacterStats {
 	currentHealth: number;
 	maxHealth: number;

@@ -7,6 +7,9 @@ import type {
 	MapEdge,
 	MapGraph,
 	MapNode,
+	PartyInviteView,
+	PartyMemberView,
+	PartySnapshot,
 	SpawnedEnemy,
 	ZoneEnteredPayload
 } from './types';
@@ -218,6 +221,41 @@ function chat(channel: string, message: string): ChatMessage {
 	return { channel, sender: 'Tester', message, timestamp: '2026-01-01T00:00:00Z' };
 }
 
+function partyMember(
+	characterId: string,
+	overrides: Partial<PartyMemberView> = {}
+): PartyMemberView {
+	return {
+		characterId,
+		name: characterId,
+		level: 1,
+		currentHealth: 50,
+		maxHealth: 50,
+		isLeader: false,
+		...overrides
+	};
+}
+
+function party(overrides: Partial<PartySnapshot> = {}): PartySnapshot {
+	return {
+		partyId: 'party-1',
+		leaderCharacterId: 'char-1',
+		lootRule: 'FreeForAll',
+		members: [partyMember('char-1', { name: 'Thornwarden', isLeader: true })],
+		...overrides
+	};
+}
+
+function invite(overrides: Partial<PartyInviteView> = {}): PartyInviteView {
+	return {
+		partyId: 'party-2',
+		partyLeaderName: 'Aria',
+		invitedByName: 'Aria',
+		expiresAt: '2026-01-01T00:05:00Z',
+		...overrides
+	};
+}
+
 let hub: FakeHub;
 
 /** Creates a session already connected to the fake hub, with the connect-time calls cleared. */
@@ -226,6 +264,13 @@ async function connected() {
 	await session.connect('char-1');
 	hub.invocations.length = 0;
 	session.chat = [];
+	return session;
+}
+
+/** A connected session that already knows which character it plays, like the game does. */
+async function playing() {
+	const session = await connected();
+	session.character = selected();
 	return session;
 }
 
@@ -554,6 +599,192 @@ describe('GameSession chat', () => {
 	});
 });
 
+describe('GameSession party', () => {
+	it('refreshes the party when the character is selected', async () => {
+		const session = await connected();
+
+		hub.emit('CharacterSelected', selected());
+		await flush();
+
+		expect(hub.methods()).toContain('GetParty');
+		expect(session.party).toBeNull();
+	});
+
+	it('stores the snapshot the server broadcasts', async () => {
+		const session = await playing();
+
+		hub.emit('PartyUpdated', party());
+
+		expect(session.party?.partyId).toBe('party-1');
+		expect(session.party?.members).toHaveLength(1);
+		expect(session.isPartyLeader).toBe(true);
+		expect(session.chat.at(-1)?.message).toBe("You joined Thornwarden's party.");
+	});
+
+	it('is not the leader when someone else leads', async () => {
+		const session = await playing();
+
+		hub.emit(
+			'PartyUpdated',
+			party({
+				leaderCharacterId: 'char-2',
+				members: [partyMember('char-2', { isLeader: true }), partyMember('char-1')]
+			})
+		);
+
+		expect(session.party?.members).toHaveLength(2);
+		expect(session.isPartyLeader).toBe(false);
+	});
+
+	it('treats a null snapshot as being solo', async () => {
+		const session = await playing();
+		hub.emit('PartyUpdated', party());
+		session.partyInvites = [invite()];
+
+		hub.emit('PartyUpdated', null);
+
+		expect(session.party).toBeNull();
+		expect(session.partyInvites).toEqual([]);
+		expect(session.isPartyLeader).toBe(false);
+	});
+
+	it('announces members joining and leaving', async () => {
+		const session = await playing();
+		hub.emit('PartyUpdated', party());
+
+		hub.emit(
+			'PartyUpdated',
+			party({ members: [partyMember('char-1', { isLeader: true }), partyMember('char-2')] })
+		);
+		expect(session.chat.at(-1)?.message).toBe('A new member joined the party.');
+
+		hub.emit('PartyUpdated', party());
+		expect(session.chat.at(-1)?.message).toBe('A member left the party.');
+	});
+
+	it('clears the party when it disbands', async () => {
+		const session = await playing();
+		hub.emit('PartyUpdated', party());
+		session.showParty = true;
+
+		hub.emit('PartyDisbanded', { partyId: 'party-1' });
+
+		expect(session.party).toBeNull();
+		expect(session.showParty).toBe(false);
+		expect(session.chat.at(-1)?.message).toBe('Your party disbanded.');
+	});
+
+	it('ignores a disband for another party', async () => {
+		const session = await playing();
+		hub.emit('PartyUpdated', party());
+
+		hub.emit('PartyDisbanded', { partyId: 'party-9' });
+
+		expect(session.party?.partyId).toBe('party-1');
+	});
+
+	it('re-reads the party when the server nudges us about an invite', async () => {
+		await playing();
+
+		hub.emit('PartyInvitesChanged', { partyId: null });
+		await flush();
+
+		expect(hub.methods()).toEqual(['GetParty']);
+	});
+
+	it('drops the invite the server reports as gone', async () => {
+		const session = await playing();
+		session.partyInvites = [invite(), invite({ partyId: 'party-3' })];
+
+		hub.emit('PartyInvitesChanged', { partyId: 'party-2' });
+
+		expect(session.partyInvites.map((entry) => entry.partyId)).toEqual(['party-3']);
+		expect(hub.methods()).toEqual([]);
+	});
+
+	it('removes an invite for the party that was joined', async () => {
+		const session = await playing();
+		session.partyInvites = [invite({ partyId: 'party-1' })];
+
+		hub.emit('PartyUpdated', party());
+
+		expect(session.partyInvites).toEqual([]);
+	});
+
+	it('drops an invite locally before declining it', async () => {
+		const session = await playing();
+		session.partyInvites = [invite()];
+
+		await session.declinePartyInvite('party-2');
+
+		expect(session.partyInvites).toEqual([]);
+		expect(hub.lastCall('DeclinePartyInvite')).toEqual(['party-2']);
+	});
+
+	it('maps the party commands to hub methods', async () => {
+		const session = await playing();
+
+		await session.createParty();
+		await session.leaveParty();
+		await session.kickPartyMember('char-2');
+		await session.acceptPartyInvite('party-2');
+		await session.requestParty();
+
+		expect(hub.methods()).toEqual([
+			'CreateParty',
+			'LeaveParty',
+			'KickPartyMember',
+			'AcceptPartyInvite',
+			'GetParty'
+		]);
+		expect(hub.lastCall('KickPartyMember')).toEqual(['char-2']);
+	});
+
+	it('trims the invite target and clears the previous error', async () => {
+		const session = await playing();
+		session.error = 'stale';
+
+		await session.inviteToParty('  Aria  ');
+
+		expect(session.error).toBeNull();
+		expect(hub.lastCall('InviteToParty')).toEqual(['Aria']);
+	});
+
+	it('refuses a blank invite target', async () => {
+		const session = await playing();
+
+		await session.inviteToParty('   ');
+
+		expect(session.error).toBe('Enter the name of the character to invite.');
+		expect(hub.methods()).toEqual([]);
+	});
+
+	it('opens the panel and refreshes the party', async () => {
+		const session = await playing();
+
+		await session.openParty();
+
+		expect(session.showParty).toBe(true);
+		expect(hub.methods()).toEqual(['GetParty']);
+	});
+
+	it('ignores every party command without a connection', async () => {
+		const session = new GameSession();
+
+		await session.createParty();
+		await session.leaveParty();
+		await session.kickPartyMember('char-2');
+		await session.inviteToParty('Aria');
+		await session.acceptPartyInvite('party-2');
+		await session.declinePartyInvite('party-2');
+		await session.requestParty();
+		await session.openParty();
+
+		expect(hub.invocations).toEqual([]);
+		expect(session.showParty).toBe(true);
+	});
+});
+
 describe('GameSession character and world events', () => {
 	it('announces the server on ServerInfo', async () => {
 		const session = await connected();
@@ -583,6 +814,7 @@ describe('GameSession character and world events', () => {
 		});
 		expect(session.currentNodeId).toBe('market');
 		expect(hub.invocations).toEqual([
+			{ method: 'GetParty', args: [] },
 			{ method: 'GetInventory', args: [] },
 			{ method: 'EnterZone', args: ['zone-1'] },
 			{ method: 'GetMapGraph', args: [null] }
@@ -596,7 +828,7 @@ describe('GameSession character and world events', () => {
 		await flush();
 
 		expect(session.currentNodeId).toBeNull();
-		expect(hub.methods()).toEqual(['GetInventory', 'GetMapGraph']);
+		expect(hub.methods()).toEqual(['GetParty', 'GetInventory', 'GetMapGraph']);
 	});
 
 	it('reports a character that is active elsewhere', async () => {
