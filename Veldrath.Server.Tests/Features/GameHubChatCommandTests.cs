@@ -50,7 +50,10 @@ public class GameHubChatCommandTests : IDisposable
             options,
             userManager,
             modOptions,
-            db);
+            db,
+            new Veldrath.Server.Services.AfkTracker(),
+            new Veldrath.Server.Tests.Infrastructure.FakeCombatSessionStore(),
+            new Veldrath.Server.Tests.Infrastructure.FakeEnemyInstanceStore());
 
         var clients = new FakeHubCallerClients();
         var ctx = new FakeHubCallerContext("conn-chat", MakeUser(accountId, permissions));

@@ -73,10 +73,14 @@ public class EfCoreCombatSessionStore : ICombatSessionStore
     }
 
     /// <inheritdoc />
-    public Task RemoveAsync(Guid characterId, CancellationToken cancellationToken = default) =>
-        _db.CombatSessions
+    public async Task RemoveAsync(Guid characterId, CancellationToken cancellationToken = default)
+    {
+        await _db.CombatSessions
             .Where(s => s.CharacterId == characterId)
             .ExecuteDeleteAsync(cancellationToken);
+
+        DetachTracked([characterId]);
+    }
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<Guid>> RemoveByEnemyIdAsync(
@@ -93,9 +97,47 @@ public class EfCoreCombatSessionStore : ICombatSessionStore
             await _db.CombatSessions
                 .Where(s => s.EnemyInstanceId == enemyId)
                 .ExecuteDeleteAsync(cancellationToken);
+
+            DetachTracked(released);
         }
 
         return released;
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> MarkDisconnectedAsync(
+        Guid characterId,
+        CancellationToken cancellationToken = default)
+    {
+        var affected = await _db.CombatSessions
+            .Where(s => s.CharacterId == characterId)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(s => s.DisconnectedAt, DateTimeOffset.UtcNow)
+                    .SetProperty(s => s.UpdatedAt, DateTimeOffset.UtcNow),
+                cancellationToken);
+
+        DetachTracked([characterId]);
+
+        return affected == 1;
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> MarkConnectedAsync(
+        Guid characterId,
+        CancellationToken cancellationToken = default)
+    {
+        var affected = await _db.CombatSessions
+            .Where(s => s.CharacterId == characterId && s.DisconnectedAt != null)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(s => s.DisconnectedAt, (DateTimeOffset?)null)
+                    .SetProperty(s => s.UpdatedAt, DateTimeOffset.UtcNow),
+                cancellationToken);
+
+        DetachTracked([characterId]);
+
+        return affected == 1;
     }
 
     /// <inheritdoc />
@@ -115,9 +157,32 @@ public class EfCoreCombatSessionStore : ICombatSessionStore
             await _db.CombatSessions
                 .Where(s => expired.Contains(s.CharacterId))
                 .ExecuteDeleteAsync(cancellationToken);
+
+            DetachTracked(expired);
         }
 
         return expired;
+    }
+
+    /// <summary>
+    /// Detaches tracked rows that <c>ExecuteUpdate</c>/<c>ExecuteDelete</c> changed behind the change tracker's back,
+    /// so a later read in the same scope cannot serve a stale copy. Same trap as the enemy store hit in D2.
+    /// </summary>
+    /// <param name="characterIds">Session owner ids whose tracked copies must be dropped.</param>
+    private void DetachTracked(IEnumerable<Guid> characterIds)
+    {
+        var ids = characterIds.ToHashSet();
+        if (ids.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var entry in _db.ChangeTracker.Entries<CombatSession>()
+                     .Where(entry => ids.Contains(entry.Entity.CharacterId))
+                     .ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
     }
 
     private static ActiveCombatSession ToSession(CombatSession row) =>

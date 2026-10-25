@@ -161,6 +161,9 @@ try
     builder.Services.AddScoped<IEnemyInstanceStore, EfCoreEnemyInstanceStore>();
     builder.Services.AddScoped<ICombatSessionStore, EfCoreCombatSessionStore>();
 
+    // AFK is ephemeral by design: in-memory for the process lifetime, cleared on any action or reconnect.
+    builder.Services.AddSingleton<IAfkTracker, AfkTracker>();
+
     // World tuning is validated at startup: a missing or nonsensical value fails the host rather than silently
     // falling back to a default.
     builder.Services.AddOptions<EnemyWorldOptions>()

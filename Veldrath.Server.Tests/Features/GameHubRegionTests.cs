@@ -77,7 +77,10 @@ public class GameHubRegionTests : IDisposable
             options,
             userManager,
             modOptions,
-            db);
+            db,
+            new Veldrath.Server.Services.AfkTracker(),
+            new Veldrath.Server.Tests.Infrastructure.FakeCombatSessionStore(),
+            new Veldrath.Server.Tests.Infrastructure.FakeEnemyInstanceStore());
 
         var clients = new FakeHubCallerClients();
         var groups = new FakeGroupManager();

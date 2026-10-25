@@ -646,6 +646,35 @@ describe('GameSession character and world events', () => {
 		expect(session.enemies).toEqual([]);
 	});
 
+	it('keeps the enemy being fought out of the location list after a reconnect', async () => {
+		const session = await connected();
+		const foe = enemy('wolf');
+		const other = enemy('boar');
+
+		// The server re-sends the combat snapshot for a fight the reconnect grace window kept alive.
+		hub.emit('CombatStarted', {
+			characterId: 'char-1',
+			enemyId: foe.id,
+			enemyName: foe.name,
+			enemyLevel: foe.level,
+			enemyCurrentHealth: 12,
+			enemyMaxHealth: 20,
+			enemyAbilityNames: []
+		} as CombatStartedPayload);
+		expect(session.combat.enemy?.id).toBe(foe.id);
+
+		// Entering the zone afterwards repopulates the roster, which still contains the engaged enemy.
+		hub.emit('LocationEntered', {
+			locationSlug: 'woods',
+			locationDisplayName: 'Woods',
+			typeKey: 'Wild',
+			spawnedEnemies: [foe, other]
+		});
+
+		expect(session.combat.enemy?.id).toBe(foe.id);
+		expect(session.enemies.map((visible) => visible.id)).toEqual([other.id]);
+	});
+
 	it('derives rest and shop availability from the zone', async () => {
 		const session = await connected();
 		expect(session.canRest).toBe(false);

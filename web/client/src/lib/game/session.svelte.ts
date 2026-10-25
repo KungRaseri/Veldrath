@@ -523,7 +523,10 @@ export class GameSession {
 
 		hub.on('LocationEntered', (payload: LocationEnteredPayload) => {
 			this.location = payload;
-			this.enemies = payload.spawnedEnemies ?? [];
+			// The enemy the player is already fighting is still on the roster, but it belongs to the combat panel,
+			// not the location list. Filtering here also keeps a fight resumed after a reconnect from appearing twice.
+			const engagedEnemyId = this.combat.enemy?.id;
+			this.enemies = (payload.spawnedEnemies ?? []).filter((enemy) => enemy.id !== engagedEnemyId);
 			// Ground items belong to the location, so refresh them whenever the player moves.
 			void this.requestGroundItems();
 		});

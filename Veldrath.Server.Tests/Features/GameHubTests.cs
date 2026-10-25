@@ -142,7 +142,8 @@ public class GameHubTests : IDisposable
 
     private (GameHub Hub, FakeHubCallerClients Clients, FakeGroupManager Groups, FakeHubCallerContext Ctx)
         CreateHub(ApplicationDbContext db, Guid accountId, string connId = "conn-1", ISender? mediator = null, IActiveCharacterTracker? tracker = null,
-                  VersionCompatibilitySettings? versionSettings = null)
+                  VersionCompatibilitySettings? versionSettings = null, FakeCombatSessionStore? sessions = null,
+                  FakeEnemyInstanceStore? enemies = null)
     {
         var options = Options.Create(versionSettings ?? new VersionCompatibilitySettings());
         var modOptions = Options.Create(new ModerationOptions());
@@ -158,7 +159,10 @@ public class GameHubTests : IDisposable
                                   options,
                                   userManager,
                                   modOptions,
-                                  db);
+                                  db,
+                                  new AfkTracker(),
+                                  sessions ?? new FakeCombatSessionStore(),
+                                  enemies ?? new FakeEnemyInstanceStore());
         var clients = new FakeHubCallerClients();
         var groups = new FakeGroupManager();
         var ctx = new FakeHubCallerContext(connId, MakeUser(accountId));
@@ -1523,7 +1527,10 @@ public class GameHubTests : IDisposable
                                Options.Create(new VersionCompatibilitySettings()),
                                new Mock<UserManager<PlayerAccount>>(Mock.Of<IUserStore<PlayerAccount>>(), null!, null!, null!, null!, null!, null!, null!, null!).Object,
                                Options.Create(new ModerationOptions()),
-                               db);
+                               db,
+                               new AfkTracker(),
+                               new FakeCombatSessionStore(),
+                               new FakeEnemyInstanceStore());
         hub2.Clients = hub.Clients;
         hub2.Groups = hub.Groups;
         hub2.Context = ctx;
@@ -1558,7 +1565,10 @@ public class GameHubTests : IDisposable
                               Options.Create(new VersionCompatibilitySettings()),
                               new Mock<UserManager<PlayerAccount>>(Mock.Of<IUserStore<PlayerAccount>>(), null!, null!, null!, null!, null!, null!, null!, null!).Object,
                               Options.Create(new ModerationOptions()),
-                              db);
+                              db,
+                              new AfkTracker(),
+                              new FakeCombatSessionStore(),
+                              new FakeEnemyInstanceStore());
         hub.Clients = new FakeHubCallerClients();
         hub.Groups = new FakeGroupManager();
         hub.Context = ctx;
@@ -1566,6 +1576,61 @@ public class GameHubTests : IDisposable
         var result = await hub.GetActiveCharacters();
 
         result.Should().Contain(charA.Id).And.Contain(charB.Id);
+    }
+
+    [Fact]
+    public async Task SelectCharacter_Resumes_An_In_Flight_Fight()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+
+        var sessions = new FakeCombatSessionStore();
+        var enemies = new FakeEnemyInstanceStore();
+        var enemy = new SpawnedEnemy
+        {
+            ArchetypeSlug = "goblin",
+            Name = "Goblin",
+            Level = 2,
+            CurrentHealth = 7,
+            MaxHealth = 20,
+        };
+        enemies.Add("zone:test", "square", enemy);
+        sessions.Set(character.Id, new ActiveCombatSession("zone:test", "square", enemy.Id, false, 3, DateTimeOffset.UtcNow));
+
+        var (hub, clients, _, _) = CreateHub(db, accountId, sessions: sessions, enemies: enemies);
+
+        await hub.SelectCharacter(character.Id);
+
+        clients.CallerProxy.SentMessages.Should().Contain(
+            message => message.Method == "CombatStarted",
+            "the client must re-render the fight the grace window kept alive");
+        clients.CallerProxy.SentMessages.Should().Contain(
+            message => message.Method == "SystemMessage",
+            "the player is told the fight resumed");
+    }
+
+    [Fact]
+    public async Task SelectCharacter_Ends_A_Fight_That_Did_Not_Survive()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+
+        var sessions = new FakeCombatSessionStore();
+        var enemies = new FakeEnemyInstanceStore();
+        // A session whose enemy row no longer exists — deleted content, or a respawn that produced a new row.
+        sessions.Set(character.Id, new ActiveCombatSession("zone:test", "square", Guid.NewGuid(), false, 3, DateTimeOffset.UtcNow));
+
+        var (hub, clients, _, _) = CreateHub(db, accountId, sessions: sessions, enemies: enemies);
+
+        await hub.SelectCharacter(character.Id);
+
+        sessions.IsInCombat(character.Id).Should().BeFalse("a fight with no enemy is closed, not left dangling");
+        clients.CallerProxy.SentMessages.Should().NotContain(message => message.Method == "CombatStarted");
+        clients.CallerProxy.SentMessages.Should().Contain(
+            message => message.Method == "SystemMessage",
+            "the player is told why the fight is gone");
     }
 
     // AwardSkillXp
