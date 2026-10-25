@@ -9,15 +9,15 @@ were deleted with its retirement.
 
 | Project | Tests |
 |---------|-------|
-| `RealmEngine.Core.Tests` | 1,946 |
-| `RealmEngine.Shared.Tests` | 803 |
+| `RealmEngine.Core.Tests` | 2,021 |
+| `RealmEngine.Shared.Tests` | 793 |
 | `RealmEngine.Data.Tests` | 265 |
-| `Veldrath.Server.Tests` | 675 |
+| `Veldrath.Server.Tests` | 807 |
 | `Veldrath.Discord.Tests` | 29 |
 | `Veldrath.Assets.Tests` | 10 |
-| `RealmForge.Tests` | 27 |
-| **Total (verified 2026-10-25, after the Identity auth-surface removal)** | **3,755** |
+| **Total (verified 2026-10-25, after the RealmForge removal)** | **3,925** |
 
+`RealmForge.Tests` (27 tests) was deleted with the rest of the Avalonia tooling in Milestone B.
 `Veldrath.Server.Tests` lost ~107 tests with the deleted `/api/auth/*` endpoint suites; the
 integration tests now authenticate through `WebAppFactory.CreateAccountTokenAsync`.
 
@@ -365,9 +365,10 @@ sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewMod
   `MapGraphFile(FormatVersion=1, ExportedAt, Maps)`; camelCase, indented, string enums,
   deterministic ordering. Import throws `InvalidDataException` for empty/malformed JSON,
   unsupported versions, and duplicate map ids.
-- **RealmForge editor** — `RealmForge/Services/MapGraphEditorService.cs` syncs nodes/edges
-  against `ContentDbContext`; `MapGraphEditorViewModel`/`MapGraphEditorView` provide the
-  UI. `Map.Version` starts at 1 and increments per save.
+- **Map graph editor (retired)** — `RealmForge/Services/MapGraphEditorService.cs` used to sync
+  nodes/edges against `ContentDbContext`. `RealmForge` was deleted in Milestone B; the map graph
+  is now authored as data through the Foundry write path. `Map.Version` starts at 1 and increments
+  per save.
 - **EF InMemory test gotcha** — never generate the InMemory database name inside the
   `AddDbContext` options lambda; it executes per scope and creates a fresh database per
   context. Capture the name once.

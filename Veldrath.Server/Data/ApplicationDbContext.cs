@@ -12,7 +12,7 @@ namespace Veldrath.Server.Data;
 /// Inherits ASP.NET Core Identity tables (AspNetUsers, AspNetRoles, etc.) via
 /// <see cref="IdentityDbContext{TUser,TRole,TKey}"/>.
 /// Always backed by PostgreSQL; use <see cref="ContentDbContext"/> for standalone
-/// content-browsing tools (e.g. RealmForge) that don't need Identity.
+/// content-browsing tools (e.g. the Foundry portal) that don't need Identity.
 /// </summary>
 public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRole<Guid>, Guid,
     IdentityUserClaim<Guid>, IdentityUserRole<Guid>, PlayerUserLogin, IdentityRoleClaim<Guid>, IdentityUserToken<Guid>>

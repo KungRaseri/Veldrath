@@ -11,9 +11,7 @@
 <div class="mx-auto max-w-5xl space-y-4 p-6">
 	<header class="space-y-1">
 		<h1 class="h1">Base content</h1>
-		<p class="text-surface-600-400">
-			Browse canonical game content authored in RealmForge and seeded into the database.
-		</p>
+		<p class="text-surface-600-400">Browse the canonical game content stored in the database.</p>
 	</header>
 
 	{#if data.error}

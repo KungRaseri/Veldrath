@@ -5,8 +5,8 @@ namespace RealmEngine.Data.Persistence;
 
 /// <summary>
 /// Standalone EF Core context for the game content catalog (abilities, enemies, items, etc.).
-/// Does not include ASP.NET Core Identity tables — use this in tools like RealmForge or
-/// any consumer that needs to read/write game content without the server auth stack.
+/// Does not include ASP.NET Core Identity tables — use this in tools like the Foundry content
+/// editor or any consumer that needs to read/write game content without the server auth stack.
 /// Always backed by PostgreSQL.
 /// </summary>
 public class ContentDbContext : DbContext

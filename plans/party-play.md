@@ -22,8 +22,8 @@
 | UI | No party panel, no invite surface | New overlay work in `GameOverlays.svelte` |
 
 **Key decision:** do not try to repurpose the single-player `Party`/`PartyService`. Keep it as the
-save-game NPC party (RealmForge and single-player consumers use it) and add a separate server-side
-party aggregate. Sharing the model would tie a multiplayer invariant to a save file.
+save-game NPC party (single-player consumers use it) and add a separate server-side party
+aggregate. Sharing the model would tie a multiplayer invariant to a save file.
 
 ## 2. Target design
 

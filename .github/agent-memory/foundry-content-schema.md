@@ -1,6 +1,8 @@
-# RealmEngine — Forge ↔ Foundry Sync Notes
+# RealmEngine — Foundry Content Schema Notes
 
-> **Status**: Reviewed and current as of Session-39 (2026-06-27).
+> **Status**: Reviewed and current as of Session-39 (2026-06-27). The RealmForge desktop editor was
+> removed in Milestone B; Foundry (the SvelteKit portal under `web/client/src/routes/(foundry)/`) is
+> the only content editing surface.
 
 > For Veldrath Server + Client iteration history, see [veldrath-memory.md](veldrath-memory.md).
 
@@ -25,9 +27,10 @@
 - Browse uses `BrowseSet<T>` generic helper with `EF.Functions.ILike` search on ContentDbContext
 - Type aliases `SharedAbility/Quest/Recipe/Spell` resolve ambiguity with RealmEngine.Shared.Models
 
-## RealmFoundryApiClient Additions
-- `GetContentTypesAsync()` → schema list
-- `BrowseContentAsync(type, search, page, pageSize)` → `PagedResult<ContentSummaryDto>`
+## Web client wrappers (`web/client/src/lib/server/content-api.ts`)
+- `listContentTypes()` → schema list
+- `browseContent(type, search, page, pageSize)` → `PagedResult<ContentSummaryDto>`
+- `getContentDetail(type, slug)` → `ContentDetailDto`
 - `GetContentDetailAsync(type, slug)` → `ContentDetailDto?`
 
 ## Foundry UI Changes

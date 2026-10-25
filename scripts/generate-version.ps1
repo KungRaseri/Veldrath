@@ -4,9 +4,9 @@
 #
 # Component-specific versions are stored in versions/*.props:
 #   -PropsFile versions/engine.props   → RealmEngine libraries
-#   -PropsFile versions/tooling.props  → RealmForge tooling
 #   -PropsFile versions/server.props   → Veldrath.Server
 #   -PropsFile versions/discord.props  → Veldrath.Discord
+#   -PropsFile versions/assets.props   → Veldrath.Assets
 #
 # If -PropsFile is not specified, reads from Directory.Build.props (used by test projects
 # and local dev where a specific component is not targeted).

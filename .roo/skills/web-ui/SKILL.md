@@ -17,7 +17,6 @@ Apply the Veldrath Design System (VDS) to the SvelteKit web app — the single g
 ## When not to use
 
 - Route/load/action logic, runes state, auth, or build config — use [`web-development`](../web-development/SKILL.md).
-- Avalonia (`RealmForge`) styling — that uses the ResourceDictionary token map in [`docs/design-system.md`](../../../docs/design-system.md).
 
 ## References
 

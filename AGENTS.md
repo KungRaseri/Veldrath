@@ -14,7 +14,7 @@
 |---|------|-------------|
 | 1 | [`.github/agent-memory/engine-codebase.md`](.github/agent-memory/engine-codebase.md) | Key model facts, positional record constructors, known handler quirks, testing gotchas, known open P3/P4 items |
 | 2 | [`.github/agent-memory/json-migration-status.md`](.github/agent-memory/json-migration-status.md) | JSON → DB migration history and completed work log |
-| 3 | [`.github/agent-memory/forge-foundry-sync.md`](.github/agent-memory/forge-foundry-sync.md) | Forge ↔ Foundry content schema, Foundry endpoint notes, integration test gotchas |
+| 3 |  [`.github/agent-memory/foundry-content-schema.md`](.github/agent-memory/foundry-content-schema.md) | Foundry content schema, write endpoints, integration test gotchas |
 | 4 | [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) | Veldrath Server + web client hub architecture, blob schema, auth/env matrix, session log |
 | 5 | [`.github/agent-memory/gap-analysis-process.md`](.github/agent-memory/gap-analysis-process.md) | Process template for gap analysis at session start |
 | 6 | [`.github/agent-memory/auth-and-character-creation-plan.md`](.github/agent-memory/auth-and-character-creation-plan.md) | Auth flow & character creation gap fix plan, implementation decisions |
@@ -38,16 +38,14 @@
 
 ## Project Overview
 
-**RealmEngine** is a **framework-agnostic .NET 10 RPG game logic library**. It exposes all game operations as MediatR commands and queries — any .NET application (Avalonia, Godot via GDNative, Unity, ASP.NET Core, console, etc.) can consume it by calling `mediator.Send(command)`.
+**RealmEngine** is a **framework-agnostic .NET 10 RPG game logic library**. It exposes all game operations as MediatR commands and queries — any .NET application (Godot via GDNative, Unity, ASP.NET Core, console, etc.) can consume it by calling `mediator.Send(command)`.
 
-This repository also contains the **official game built on top of that engine**: **Veldrath**, a multiplayer RPG with an ASP.NET Core server and a SvelteKit web app. **Veldrath is web-first: the SvelteKit app is the only game client** (the Avalonia desktop shell was retired — see [`plans/blazor-decommission-and-cleanup.md`](plans/blazor-decommission-and-cleanup.md)). Additional tooling and portals include:
+This repository also contains the **official game built on top of that engine**: **Veldrath**, a multiplayer RPG with an ASP.NET Core server and a SvelteKit web app. **Veldrath is web-first: the SvelteKit app is the only client and the only editing surface** (the Avalonia desktop client and the RealmForge desktop editor were retired). Additional projects include:
 
-- **RealmForge** — Avalonia DB content editor for managing game entities in Postgres
-- **SvelteKit web app** (`web/`) — the single client and web frontend: public site, auth, game, Foundry, editorial, admin, and moderation
+- **SvelteKit web app** (`web/`) — the single client and web frontend: public site, auth, game, **Foundry** (the content editor), editorial, admin, and moderation
 - **Veldrath.Discord** — Discord bot integration
 - **Veldrath.Contracts** — Shared API contracts and DTOs
 - **Veldrath.Assets** — Asset store and management
-- **RealmUI.Fonts** — Custom font resources (RealmForge only)
 
 ---
 
@@ -60,8 +58,7 @@ This repository also contains the **official game built on top of that engine**:
 | [`RealmEngine.slnx`](RealmEngine.slnx) | Core + Data + Shared + tests | Engine-only development, CI |
 | [`Veldrath.Server.slnx`](Veldrath.Server.slnx) | Server + engine + assets + contracts + tests | Game server development |
 | [`Veldrath.Discord.slnx`](Veldrath.Discord.slnx) | Discord + engine + contracts + tests | Discord bot development |
-| [`Veldrath.Libraries.slnx`](Veldrath.Libraries.slnx) | Assets + Contracts + fonts + engine + tests | Shared library development |
-| [`RealmForge.slnx`](RealmForge.slnx) | RealmForge + tests | Tooling development |
+| [`Veldrath.Libraries.slnx`](Veldrath.Libraries.slnx) | Assets + Contracts + engine + tests | Shared library development |
 | [`Realm.Full.slnx`](Realm.Full.slnx) | Everything (.NET) | Full .NET local development |
 
 The SvelteKit app in [`web/`](web/) is verified with npm scripts rather than a `.slnx`.
@@ -74,26 +71,23 @@ The SvelteKit app in [`web/`](web/) is verified with npm scripts rather than a `
 ├── RealmEngine.Shared/           # Models, interfaces, abstractions (zero UI dependencies)
 ├── RealmEngine.Data/             # EF Core persistence, repositories (zero UI dependencies)
 ├── Veldrath.Server/              # ASP.NET Core game server with SignalR hub
-├── RealmForge/                   # Avalonia DB content editor (ReactiveUI)
 ├── Veldrath.Discord/             # Discord bot
 ├── Veldrath.Contracts/           # Shared API contracts and DTOs
 ├── Veldrath.Assets/              # Asset store/management
-├── RealmUI.Fonts/                # Custom fonts
-├── web/                          # SvelteKit 3 / Svelte 5 app — the only game client (shared + client workspaces)
-├── [Project].Tests/              # One test project per .NET library/application (7 total)
+├── web/                          # SvelteKit 3 / Svelte 5 app — the only client, plus Foundry (shared + client workspaces)
+├── [Project].Tests/              # One test project per .NET library/application (6 total)
 ├── .github/
 │   ├── agent-memory/             # Canonical memory store (8 files, see Required Reading)
 │   ├── instructions/             # Detailed instruction files (7 files)
 │   └── workflows/                # CI/CD workflows (per-component + docs + hygiene + release)
-├── .roo/skills/                  # Agent skills (build, test, run server/tooling, web); catalog in .roo/skills/README.md
+├── .roo/skills/                  # Agent skills (build, test, run server, web); catalog in .roo/skills/README.md
 ├── docs/                         # Documentation (DocFX → GitHub Pages)
 ├── wiki/                         # GitHub Wiki content (git submodule)
 ├── plans/                        # Live plans only; finished designs are folded into docs/
 ├── versions/                     # Component version props files
 ├── config/                       # Grafana dashboards, Prometheus config, etc.
 ├── scripts/                      # Build, asset, and release scripts
-├── SECURITY.md                   # Security policy
-└── THIRD-PARTY-NOTICES.md        # Third-party license notices
+└── SECURITY.md                   # Security policy
 ```
 
 ### Component Versions
@@ -103,7 +97,6 @@ Version metadata lives in [`versions/`](versions/):
 | Props File | Component |
 |------------|-----------|
 | [`versions/engine.props`](versions/engine.props) | RealmEngine.Core, Shared, Data |
-| [`versions/tooling.props`](versions/tooling.props) | RealmForge |
 | [`versions/server.props`](versions/server.props) | Veldrath.Server |
 | [`versions/discord.props`](versions/discord.props) | Veldrath.Discord |
 | [`versions/assets.props`](versions/assets.props) | Veldrath.Assets |
@@ -175,8 +168,6 @@ All package versions are centrally managed in [`Directory.Packages.props`](Direc
 | MediatR | 12.5.0 | CQRS command/query dispatch |
 | FluentValidation | 12.1.1 | Input validation pipeline behavior |
 | Serilog | 4.4.0 | Structured logging pipeline behavior |
-| Avalonia | 11.2.3 | UI framework (RealmForge only) |
-| ReactiveUI | 20.1.1 | MVVM for RealmForge |
 | SvelteKit / Svelte | 3.x / 5 | Web app framework with runes (`web/`, Vite 8) |
 | Tailwind CSS + Skeleton | 4.x / 5 | Styling and UI utilities (`web/`) |
 | ASP.NET Core + SignalR | .NET 10 | Veldrath.Server API and hub |
@@ -197,7 +188,6 @@ Build only what changed. The rule is simple: **build the `.slnx` file matching t
 | Changed Path | Build Command |
 |---|---|
 | `RealmEngine.*/**` | `dotnet build RealmEngine.slnx` |
-| `RealmForge/**` | `dotnet build RealmForge.slnx` |
 | `Veldrath.Server/**` | `dotnet build Veldrath.Server.slnx` |
 | `Veldrath.Discord/**` | `dotnet build Veldrath.Discord.slnx` |
 | `Veldrath.Assets/**`, `Veldrath.Contracts/**` | `dotnet build Veldrath.Libraries.slnx` |
@@ -210,7 +200,7 @@ Build only what changed. The rule is simple: **build the `.slnx` file matching t
 
 ```powershell
 dotnet build Realm.Full.slnx    # Full build (all .NET projects)
-dotnet test Realm.Full.slnx     # All tests across the 7 .NET test projects (with coverage)
+dotnet test Realm.Full.slnx     # All tests across the 6 .NET test projects (with coverage)
 dotnet format Realm.Full.slnx   # Apply the .editorconfig formatting rules
 ```
 
@@ -222,7 +212,6 @@ dotnet format Realm.Full.slnx   # Apply the .editorconfig formatting rules
 
 ```powershell
 dotnet run --project Veldrath.Server
-dotnet run --project RealmForge
 cd web && npm run dev            # SvelteKit web app → http://localhost:5173
 ```
 
@@ -236,7 +225,6 @@ CI workflows live in [`.github/workflows/`](.github/workflows/). Coverage is upl
 |---|---|---|
 | [`ci-engine.yml`](.github/workflows/ci-engine.yml) | Core + Shared + Data | `engine` |
 | [`ci-server.yml`](.github/workflows/ci-server.yml) | Veldrath.Server | `server` |
-| [`ci-tooling.yml`](.github/workflows/ci-tooling.yml) | RealmForge | `forge` |
 | [`ci-discord.yml`](.github/workflows/ci-discord.yml) | Veldrath.Discord | `discord` |
 | [`ci-web.yml`](.github/workflows/ci-web.yml) | SvelteKit web | `web` |
 | [`docs.yml`](.github/workflows/docs.yml) | DocFX documentation build & deploy | — |
@@ -278,7 +266,7 @@ The directory [`.github/agent-memory/`](.github/agent-memory/) is the **canonica
 |------|---------|
 | [`.github/agent-memory/engine-codebase.md`](.github/agent-memory/engine-codebase.md) | Codebase notes: model facts, constructor patterns, handler quirks, testing gotchas, open items |
 | [`.github/agent-memory/json-migration-status.md`](.github/agent-memory/json-migration-status.md) | JSON → DB migration log, completed work, deleted files |
-| [`.github/agent-memory/forge-foundry-sync.md`](.github/agent-memory/forge-foundry-sync.md) | Forge ↔ Foundry content schema, endpoint notes, integration test gotchas |
+| [`.github/agent-memory/foundry-content-schema.md`](.github/agent-memory/foundry-content-schema.md) | Foundry content schema, write endpoints, integration test gotchas |
 | [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) | Server + web client hub architecture, blob schema, auth/env matrix, session log |
 | [`.github/agent-memory/gap-analysis-process.md`](.github/agent-memory/gap-analysis-process.md) | Process template for gap analysis at session start (prompt templates) |
 | [`.github/agent-memory/auth-and-character-creation-plan.md`](.github/agent-memory/auth-and-character-creation-plan.md) | Auth flow & character creation gap fix plan, decisions made, next steps |
@@ -315,7 +303,7 @@ Do **not** create new memory files unless the existing 8 files are insufficient.
 | CQRS | MediatR `IRequest<TResponse>` records |
 | Validation | FluentValidation pipeline behavior |
 | Logging | Serilog pipeline behavior |
-| Tooling UI | Avalonia + ReactiveUI (RealmForge) |
+| Content editor | Foundry, inside the SvelteKit app (no desktop tooling) |
 | Web UI | SvelteKit 3 + Svelte 5 runes + Tailwind/Skeleton (Veldrath tokens only) |
 | Web auth/DB | Better Auth owns credentials/sessions; Drizzle schema in `web/shared`, migrations committed |
 | Game client | The SvelteKit app only (web-first) |

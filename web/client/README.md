@@ -1,9 +1,9 @@
 # Veldrath web client (SvelteKit)
 
-**The Veldrath game client and the whole web frontend** — public site, auth, game, Foundry,
-editorial, admin, and moderation (the Avalonia desktop client was retired; web-first is the
-product decision). The .NET server remains the API and SignalR hub; SvelteKit mints short-lived
-game JWTs and Better Auth owns credentials and sessions.
+**The Veldrath game client, the Foundry content editor, and the whole web frontend** — public
+site, auth, game, Foundry, editorial, admin, and moderation (web-first is the product decision;
+there is no desktop client). The .NET server remains the API and SignalR hub; SvelteKit mints
+short-lived game JWTs and Better Auth owns credentials and sessions.
 
 ## Development
 
@@ -44,8 +44,8 @@ npm run preview
   system (Crimson Seal, Emberfall, Gold, warm charcoal surfaces).
 - [`src/routes/brand.css`](src/routes/brand.css) owns self-hosted `@font-face` rules, base
   typography, site chrome, auth cards, and game-surface primitives.
-- Typography: Cinzel / Cinzel Decorative / Lora / JetBrains Mono in `static/fonts/` (from
-  `RealmUI.Fonts`); Inter loads from Google Fonts with a `system-ui` fallback.
+- Typography: Cinzel / Cinzel Decorative / Lora / JetBrains Mono self-hosted in `static/fonts/`;
+  Inter loads from Google Fonts with a `system-ui` fallback.
 - Brand imagery and favicons live in `static/images/`; keep `static/images/favicon/site.webmanifest`
   in sync with the files there.
 - UI icons use `@lucide/svelte`. Brand glyph paths for Discord/Google/GitHub are vendored in

@@ -19,7 +19,7 @@ Everything below was checked in the working tree, not assumed:
 
 | Fact | Evidence |
 |---|---|
-| The SvelteKit app is the only game client; Avalonia survives only in RealmForge | `AGENTS.md`, `plans/blazor-decommission-and-cleanup.md` §W11 |
+| The SvelteKit app is the only client and the only editing surface; every Avalonia project (desktop client, `RealmForge`, `RealmUI.Fonts`) is deleted | `AGENTS.md`, `plans/content-pipeline.md` §Scope shift |
 | Movement is a **DB map graph** (nodes + edges), rendered as panels — **no tilemap, no sprites, no TMX** | [`docs/client-ui-architecture.md`](../docs/client-ui-architecture.md): "panel-driven client UI (no tilemap/sprite rendering)"; `GetMapGraph`, `TravelToNode`, `EnterZone`, `LeaveZone`, `NavigateToLocation` in `GameHub` |
 | Login resumes the saved node (Session-72), and that seam is the intended hook for onboarding | `veldrath-memory.md` §Session-72 |
 | Quests are real: journal blob, objectives, accept/abandon/turn-in, and a client quest dialog | `QuestJournal`, `AcceptQuest`/`AbandonQuest`/`TurnInQuest`; [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte:92) |

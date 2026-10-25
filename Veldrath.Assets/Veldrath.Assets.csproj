@@ -14,8 +14,7 @@
   <!--
     All files under GameAssets/ are content files that copy to the output directory
     of any project that references this library (transitive via MSBuild CopyToOutputDirectory).
-    The folder is named "GameAssets" to avoid conflicting with Avalonia's "Assets" folder
-    in the client and RealmForge projects.
+    The folder is named "GameAssets" to stay distinct from the web client's "assets" folder.
   -->
   <ItemGroup>
     <Content Include="GameAssets\**\*" CopyToOutputDirectory="PreserveNewest" />

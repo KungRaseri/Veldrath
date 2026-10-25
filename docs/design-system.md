@@ -1,10 +1,10 @@
 # Veldrath Design System
 
 > **Status:** Living document — decisions recorded in [§ Decision Log](#9-decision-log).
-> **Surfaces covered:** the SvelteKit web app (the only game client) and RealmForge (Avalonia editor). The `Veldrath.Client` Avalonia desktop client was retired — see [§10](#10-retired-surfaces-blazor--mudblazor).
-> **Last updated:** 2026-10-23
+> **Surfaces covered:** the SvelteKit web app only ([`web/`](../web/)) — the game client, the Foundry content editor, and every staff portal. There is no desktop surface.
+> **Last updated:** 2026-10-25
 >
-> **Migration note:** The Blazor `Veldrath.Web` and `RealmFoundry` projects were retired in favor of the SvelteKit app in [`web/`](../web/). MudBlazor-specific sections in this document are historical; Avalonia/RealmForge guidance still applies. Current web design tokens live in [`theme.css`](../web/client/src/routes/theme.css) and [`brand.css`](../web/client/src/routes/brand.css).
+> **Migration note:** Every non-web surface has been retired — the Blazor `Veldrath.Web` / `RealmFoundry` apps, the `Veldrath.Client` Avalonia desktop client, and the `RealmForge` Avalonia content editor. MudBlazor **and** Avalonia guidance in this document is historical: the `Avalonia key` columns, AXAML snippets, `GameColors.axaml`, `ForgeTheme.axaml`, and `RealmUI.Fonts` references are kept only as a record of how the tokens were mapped. Live tokens are [`theme.css`](../web/client/src/routes/theme.css) and [`brand.css`](../web/client/src/routes/brand.css).
 
 ---
 
@@ -33,7 +33,7 @@ The Veldrath Design System (VDS) defines the shared visual language across every
 | **Dark-first** | All surfaces are built on a near-black background. Depth is created by layering lighter surfaces, not by introducing light-mode alternatives. |
 | **Restrained drama** | The palette uses controlled doses of strong colour (Crimson Seal, Emberfall) against a muted dark canvas. Every accent earns its presence. |
 | **Legibility before atmosphere** | Typography is always readable. Decorative fonts appear at display sizes only; Inter carries the functional UI load at every size. |
-| **Platform-coherent, not identical** | Avalonia and Blazor surfaces share tokens and design intent but are permitted platform-appropriate implementations. A card in the game client and a card on the web are recognisably the same concept, even though one is AXAML and the other is CSS. |
+| **One surface, one implementation** | Every player-facing and staff-facing surface is the SvelteKit app. Tokens are defined once in CSS custom properties and consumed through Skeleton classes, so there is no second platform to keep in sync. |
 | **Semantic colour** | Colour communicates meaning. Red = danger/combat. Orange-red = heat/energy. Green = health/success. Blue = information. These meanings must not be violated by decorative use. |
 
 ---
@@ -57,7 +57,7 @@ The Veldrath Design System (VDS) defines the shared visual language across every
 
 ### 3.1 Current-state audit
 
-Before the unified system, each surface grew its own colours. This table is the historical as-is audit kept for reference — the `RealmFoundry` and `Veldrath.Web` columns belong to retired Blazor surfaces, and the `Veldrath.Client` column belongs to the retired Avalonia desktop client (see [§10](#10-retired-surfaces-blazor--mudblazor)). Only `RealmForge` remains a live Avalonia surface.
+Before the unified system, each surface grew its own colours. This table is the historical as-is audit kept for reference — the `RealmFoundry` and `Veldrath.Web` columns belong to retired Blazor surfaces, and the `Veldrath.Client` and `RealmForge` columns belong to retired Avalonia surfaces (see [§10](#10-retired-surfaces-blazor--mudblazor)). The SvelteKit app is the only live surface.
 
 | Token | Veldrath.Client | RealmForge | RealmFoundry | Veldrath.Web |
 |---|---|---|---|---|
@@ -291,7 +291,7 @@ All pairings measured against WCAG 2.1. **AA** requires 4.5:1 at normal text (< 
 ### 4.5 Font loading — web surfaces
 
 **SvelteKit implementation (current):** Cinzel, Cinzel Decorative, Lora, and JetBrains Mono are
-self-hosted from `web/client/static/fonts/` (copied from `RealmUI.Fonts`) and declared with
+self-hosted from `web/client/static/fonts/` (originally copied from the now-deleted `RealmUI.Fonts`) and declared with
 `@font-face` in [`web/client/src/routes/brand.css`](../web/client/src/routes/brand.css).
 Inter loads from Google Fonts in [`web/client/src/app.html`](../web/client/src/app.html) with a
 `system-ui` fallback for offline/desktop use. The legacy Blazor `<head>` block is retained below
@@ -303,23 +303,14 @@ for reference:
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400&family=Cinzel:wght@400;600&family=Lora:ital,wght@0,400;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 ```
 
-### 4.6 Font loading — Avalonia (RealmForge only)
+### 4.6 Font loading — web only
 
-- **Inter:** `Avalonia.Fonts.Inter` NuGet package, already referenced. Registered via `UseInterFont()`.
-- **Cinzel / Cinzel Decorative / Lora / JetBrains Mono:** ship them as `AvaloniaResource`s from
-  [`RealmUI.Fonts`](../RealmUI.Fonts/) (the shared font project RealmForge references) and declare
-  the family keys in `App.axaml`:
+The SvelteKit app is the only surface, so fonts load exactly one way: the `@font-face` rules in
+[`brand.css`](../web/client/src/routes/brand.css) pointing at the self-hosted files in
+`web/client/static/fonts/`. The former `RealmUI.Fonts` project and its `avares://` family keys were
+deleted with `RealmForge`; do not reintroduce an `AvaloniaResource` font pipeline.
 
-```xml
-<Application.Resources>
-  <FontFamily x:Key="GameFontTitle">avares://RealmUI.Fonts/Assets/Fonts#Cinzel</FontFamily>
-  <FontFamily x:Key="GameFontDisplay">avares://RealmUI.Fonts/Assets/Fonts#Cinzel Decorative</FontFamily>
-  <FontFamily x:Key="GameFontReading">avares://RealmUI.Fonts/Assets/Fonts#Lora</FontFamily>
-  <FontFamily x:Key="GameFontMono">avares://RealmUI.Fonts/Assets/Fonts#JetBrains Mono</FontFamily>
-</Application.Resources>
-```
-
-> Font files can be downloaded from Google Fonts and placed at `Assets/Fonts/` in each Avalonia project. Cinzel and Cinzel Decorative are variable/static OFL-licensed fonts — no attribution required in binary distributions.
+> Cinzel and Cinzel Decorative are variable/static OFL-licensed fonts — no attribution required in binary distributions.
 
 ---
 
@@ -396,9 +387,9 @@ The previous rule — "delegate spacing to MudBlazor utilities in Razor markup" 
 
 ## 6. Iconography
 
-### 6.1 Current asset inventory
+### 6.1 Asset inventory
 
-Icons for the Avalonia tools live at `RealmForge/Resources/Icons/` and are used within the editor for toolbar actions and entity type indicators.
+The Avalonia editor's icons (`RealmForge/Resources/Icons/`) left with `RealmForge` in Milestone B; the game-icons attribution that used to live in `THIRD-PARTY-NOTICES.md` is no longer needed because none of those files remain in the repository.
 
 **SvelteKit web surfaces:** brand imagery lives in `web/client/static/images/` — logos,
 herald emblems, and the favicon/manifest set restored from the former Blazor web app. UI icons
@@ -706,13 +697,12 @@ The Avalonia token keys in `GameColors.axaml` map directly to VDS tokens:
 
 ---
 
-### 8.3 RealmForge migration
+### 8.3 RealmForge (retired)
 
-RealmForge currently has no design token system — colors are hardcoded inline in AXAML views. Migration steps:
-
-1. Add a `RealmForge/Assets/Themes/ForgeColors.axaml` ResourceDictionary that imports the VDS Avalonia token set (mirroring the token names in §8.2).
-2. Add `ForgeTheme.axaml` with the same base control styles from `GameTheme.axaml` — minus game-specific UI (progress bars, etc. that RealmForge doesn't use).
-3. Replace hardcoded `#1e1e1e`, `#252526`, `#e0e0e0`, `#888`, `#6a4a20` etc. in view markup with `DynamicResource` bindings.
+The `RealmForge` Avalonia editor was removed in Milestone B; the planned AXAML token migration
+never happened and is no longer relevant. Foundry — the portal in the `(foundry)` route group under
+[`web/client/src/routes`](../web/client/src/routes) — is the content editing surface and consumes
+the same VDS web tokens as the rest of the app.
 
 ---
 
@@ -740,6 +730,7 @@ the SvelteKit app; its tokens live in
 | 2026-04-16 | **Background layer model: kept from the original desktop client** | Flatten to 3 layers, redesign from scratch | The 5-layer model is well-calibrated against the dark canvas and already implemented in the web app; standardising on it eliminates drift rather than introducing it. |
 | 2026-10-24 | **SvelteKit theme: Skeleton tokens mapped to VDS** | Keep Skeleton defaults; rebuild the theme ad hoc per page | A single `[data-theme='veldrath']` token block plus a brand layer restores the Crimson Seal / Emberfall / Gold palette, VDS type scale, and self-hosted fonts across public, auth, account, and game surfaces. |
 | 2026-10-24 | **Retire the Blazor/MudBlazor sections of this document** | Keep them as live rules next to Avalonia and SvelteKit guidance | `Veldrath.Web`, `RealmFoundry`, `Veldrath.Auth.Blazor`, and `Veldrath.GameClient.Components` are deleted; keeping MudBlazor rules as live guidance makes agents write Razor for a surface that no longer exists. |
+| 2026-10-25 | **Retire the Avalonia/RealmForge guidance in this document** | Keep Avalonia token tables as live rules | `RealmForge`, `RealmUI.Fonts`, and the Avalonia desktop client are deleted; Foundry in the SvelteKit app is the only content editor. The Avalonia columns and AXAML snippets stay as history and must not be treated as instructions. |
 
 ---
 
@@ -748,13 +739,16 @@ the SvelteKit app; its tokens live in
 `Veldrath.Web`, `RealmFoundry`, `Veldrath.Auth.Blazor`, and `Veldrath.GameClient.Components`
 were retired when the web moved to the SvelteKit app in [`web/`](../web/).
 
-- **Live surfaces:** `RealmForge` (Avalonia) and the SvelteKit
-  app ([`theme.css`](../web/client/src/routes/theme.css) + [`brand.css`](../web/client/src/routes/brand.css)).
+- **Live surface:** the SvelteKit app ([`theme.css`](../web/client/src/routes/theme.css) +
+  [`brand.css`](../web/client/src/routes/brand.css)).
 - **Historical only:** every MudBlazor rule (component mapping, `--mud-palette-*` usage,
   `.mud-button-filled` overrides, `#blazor-error-ui`, reconnect-modal CSS, MudBlazor spacing
-  utilities) and the RealmFoundry / Veldrath.Web columns in the §3.1 audit table.
+  utilities), the RealmFoundry / Veldrath.Web columns in the §3.1 audit table, and every Avalonia
+  artifact — the `Avalonia key` / `Avalonia class` / `Avalonia usage` columns, `GameColors.axaml`,
+  `GameTheme.axaml`, `ForgeTheme.axaml`, `UseInterFont()`, and `RealmUI.Fonts` `avares://` paths
+  (`RealmForge` was deleted in Milestone B; Foundry is the editor).
 - **Detailed history:** [`plans/sveltekit-migration.md`](../plans/sveltekit-migration.md) and the
   session notes in [`.github/agent-memory/`](../.github/agent-memory/). The Blazor-era design
   documents were deleted once their durable decisions moved into this repository's docs.
-- **Do not reintroduce:** Razor/MudBlazor guidance for web UI. New web work uses Svelte 5 runes,
-  Skeleton, and VDS tokens — see the [`web-ui`](../.roo/skills/web-ui/SKILL.md) skill.
+- **Do not reintroduce:** Razor/MudBlazor or Avalonia/AXAML guidance for UI. New UI work uses
+  Svelte 5 runes, Skeleton, and VDS tokens — see the [`web-ui`](../.roo/skills/web-ui/SKILL.md) skill.

@@ -15,7 +15,7 @@ public abstract class ContentBase
     /// <summary>Subcategory within the domain — e.g. "wolves", "active/offensive", "swords".</summary>
     public string TypeKey { get; set; } = string.Empty;
 
-    /// <summary>Human-readable label for RealmForge and log output.</summary>
+    /// <summary>Human-readable label for Foundry and log output.</summary>
     public string? DisplayName { get; set; }
 
     /// <summary>Selection weight for random draws — higher = more common (range 1–100).</summary>

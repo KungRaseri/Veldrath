@@ -7,7 +7,6 @@ Security fixes are applied to the **latest release** of each component. Older re
 | Component | Supported |
 |-----------|-----------|
 | Engine Libraries (latest `engine/v*`) | ✅ |
-| RealmForge Tooling (latest `tooling/v*`) | ✅ |
 | Veldrath Server (latest `server/v*`) | ✅ |
 | Veldrath Client (latest `client/v*`) | ✅ |
 | Any previous release | ❌ |
@@ -30,7 +29,7 @@ If you are unable to use GitHub's advisory system, you may contact the maintaine
 To help us triage quickly, please include:
 
 - A description of the vulnerability and its potential impact.
-- The affected component(s) (Engine, Server, Client, RealmForge) and version(s).
+- The affected component(s) (Engine, Server, Web) and version(s).
 - Steps to reproduce or a proof-of-concept (if safe to share).
 - Any suggested mitigations you have identified.
 
@@ -60,7 +59,7 @@ The following are generally **out of scope**:
 - Bugs that require local, authenticated access to a machine already controlled by the attacker.
 - Denial-of-service issues caused by extremely large or malformed input files in a single-player or offline context.
 - Vulnerabilities in third-party dependencies — please report those directly to the dependency maintainer.
-- Issues in documentation, tooling scripts, or the RealmForge data editor that do not affect a networked or multi-user deployment.
+- Issues in documentation, tooling scripts, or the Foundry content portal that do not affect a networked or multi-user deployment.
 
 ## Sensitive Data in Logs
 

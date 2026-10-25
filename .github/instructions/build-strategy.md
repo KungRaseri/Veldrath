@@ -12,12 +12,10 @@
 
 2. Which directory?
    - `RealmEngine.Core/`, `RealmEngine.Shared/`, `RealmEngine.Data/`, `RealmEngine.*.Tests/` → Build `RealmEngine.slnx`
-   - `RealmForge/`, `RealmForge.Tests/` → Build `RealmForge.slnx`
    - `Veldrath.Server/`, `Veldrath.Server.Tests/` → Build `Veldrath.Server.slnx`
    - `Veldrath.Discord/`, `Veldrath.Discord.Tests/` → Build `Veldrath.Discord.slnx`
    - `Veldrath.Assets/`, `Veldrath.Assets.Tests/`, `Veldrath.Contracts/` → Build `Veldrath.Libraries.slnx`
-   - `web/` → Run `npm run typecheck && npm run lint && npm run test && npm run build` in `web/client`
-   - `RealmUI.Fonts/` → Build `RealmForge.slnx` (smallest solution containing it)
+   - `web/` → Run `npm run typecheck && npm run lint && npm run test && npm run build` in `web`
 
 3. Are all changed directories covered by a SINGLE existing sub-solution?
    - **Yes** → Build that sub-solution
@@ -47,12 +45,10 @@
 | Changed Path | Build Command |
 |---|---|
 | `RealmEngine.*/**` | `dotnet build RealmEngine.slnx` |
-| `RealmForge/**` or `RealmForge.Tests/**` | `dotnet build RealmForge.slnx` |
-| `web/**` | npm scripts in `web/client` (`typecheck`, `lint`, `test`, `build`) |
+| `web/**` | npm scripts in `web` (`typecheck`, `lint`, `test`, `build`) |
 | `Veldrath.Server/**` or `Veldrath.Server.Tests/**` | `dotnet build Veldrath.Server.slnx` |
 | `Veldrath.Discord/**` or `Veldrath.Discord.Tests/**` | `dotnet build Veldrath.Discord.slnx` |
 | `Veldrath.Assets/**`, `Veldrath.Contracts/**` | `dotnet build Veldrath.Libraries.slnx` |
-| `RealmUI.Fonts/**` | `dotnet build RealmForge.slnx` |
 | Cross-component changes | `dotnet build Realm.Full.slnx` |
 | `Directory.Build.*` / `Directory.Packages.props` | `dotnet build Realm.Full.slnx` |
 

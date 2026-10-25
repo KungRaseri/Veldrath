@@ -8,17 +8,18 @@ The canonical memory store with 8 files:
 |------|---------|
 | `engine-codebase.md` | Model facts, constructor patterns, handler quirks, testing gotchas |
 | `json-migration-status.md` | JSON → DB migration log |
-| `forge-foundry-sync.md` | Forge ↔ Foundry content schema, endpoint notes |
-| `unbound-memory.md` | Server + Client hub architecture, blob schema, OAuth flow |
+| `foundry-content-schema.md` | Foundry content schema, endpoint notes |
+| `veldrath-memory.md` | Server + web client hub architecture, blob schema, auth/env matrix |
 | `gap-analysis-process.md` | Gap analysis process template |
 | `auth-and-character-creation-plan.md` | Auth flow & character creation gap fix plan |
 | `combat-loop-plan.md` | Combat loop architecture plan |
 | `world-lore-plan.md` | World lore & Calethic language reference |
 
 ### Solution Structure
-- `Realm.Full.slnx` contains ALL projects (25 total)
+- `Realm.Full.slnx` contains ALL .NET projects
 - `RealmEngine.slnx` — engine only (Core + Shared + Data)
-- `Veldrath.slnx` — multiplayer (Client + Server + all)
+- `Veldrath.Server.slnx` — game server + engine + assets + contracts
+- `web/` — SvelteKit app (game client, site, Foundry, editorial, admin, moderation)
 
 ### Architecture Documentation
 - `wiki/Engine-GDD.md` — Game Design Document
@@ -32,7 +33,7 @@ The canonical memory store with 8 files:
 - Feature handlers: `RealmEngine.Core/Features/{FeatureName}/`
 - Server endpoints/hubs: `Veldrath.Server/`
 - Game client: `web/client/src/lib/game/` (session store, panels, hub payload types)
-- Tooling UI: `RealmForge/ViewModels/`, `RealmForge/Views/`
+- Foundry content editor: `web/client/src/routes/(foundry)/`
 - Test files mirror source structure
 - Build config: `Directory.Build.props`, `Directory.Build.targets`
 

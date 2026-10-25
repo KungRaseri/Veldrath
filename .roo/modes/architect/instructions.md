@@ -22,12 +22,11 @@ This keeps engine UI-agnostic. Any consumer (Avalonia, Godot, Unity, console, AS
 | Solution | Purpose |
 |----------|---------|
 | `RealmEngine.slnx` | Engine-only (Core + Shared + Data + tests) |
-| `Veldrath.slnx` | Multiplayer (Client + Server + all) |
-| `RealmForge.slnx` | Tooling (RealmForge + tests) |
+| `Veldrath.Server.slnx` | Server (game server + engine + assets + contracts + tests) |
 | `Realm.Full.slnx` | Everything (.NET) |
 
 ## Project Structure Key Points
-- 10 .NET source projects + 7 test projects = 17 total, plus the SvelteKit `web/` app (the only client)
+- 9 .NET source projects + 7 test projects = 16 total, plus the SvelteKit `web/` app (the only client and the Foundry content editor)
 - Version metadata in `versions/*.props` (one per component)
 - Test files mirror source structure path-for-path
 - All NuGet versions centrally managed in `Directory.Packages.props`

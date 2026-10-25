@@ -1,8 +1,8 @@
 # Testing Conventions
 
-Scope: **ALL 8 .NET test projects** in the solution — [`RealmEngine.Core.Tests`](../../RealmEngine.Core.Tests/), [`RealmEngine.Shared.Tests`](../../RealmEngine.Shared.Tests/), [`RealmEngine.Data.Tests`](../../RealmEngine.Data.Tests/), [`Veldrath.Server.Tests`](../../Veldrath.Server.Tests/), [`Veldrath.Assets.Tests`](../../Veldrath.Assets.Tests/), [`Veldrath.Discord.Tests`](../../Veldrath.Discord.Tests/), and [`RealmForge.Tests`](../../RealmForge.Tests/). The SvelteKit app is tested with Vitest + Playwright in `web/client`.
+Scope: **ALL 6 .NET test projects** in the solution — [`RealmEngine.Core.Tests`](../../RealmEngine.Core.Tests/), [`RealmEngine.Shared.Tests`](../../RealmEngine.Shared.Tests/), [`RealmEngine.Data.Tests`](../../RealmEngine.Data.Tests/), [`Veldrath.Server.Tests`](../../Veldrath.Server.Tests/), [`Veldrath.Assets.Tests`](../../Veldrath.Assets.Tests/), [`Veldrath.Discord.Tests`](../../Veldrath.Discord.Tests/). The SvelteKit app is tested with Vitest + Playwright from `web/`.
 
-This file covers every test surface type in the solution: EF Core data tests, MediatR handler tests, Avalonia UI tests, SignalR hub integration tests, and code coverage configuration.
+This file covers every test surface type in the solution: EF Core data tests, MediatR handler tests, SignalR hub integration tests, web (Vitest/Playwright) tests, and code coverage configuration.
 
 ---
 
@@ -33,7 +33,6 @@ public async Task SomeHandler_WithValidInput_ReturnsExpectedResult()
 
 - **`[Fact]`** — Single-case test with no parameters.
 - **`[Theory]`** — Parameterized test. Use `[InlineData]` or `[MemberData]` for inputs.
-- **`[AvaloniaFact]`** — Required for any test that touches Avalonia types (dispatcher, brushes, view models with AvaloniaObject dependencies). See [Avalonia / UI Testing](#avalonia--ui-testing).
 
 ### Assertions
 
@@ -222,69 +221,6 @@ public async Task AttackEnemyValidator_WithDeadPlayer_ReturnsError()
 
 ---
 
-## Avalonia / UI Testing
-
-Applies to: [`RealmForge.Tests`](../../RealmForge.Tests/).
-
-### Thread Affinity (Critical)
-
-Avalonia objects require the Avalonia dispatcher thread. Any test that creates `AvaloniaObject` derivatives (brushes, styles, view models that reference UI types) **MUST use `[AvaloniaFact]`** from `Avalonia.Headless.XUnit`.
-
-```csharp
-// ❌ WRONG — will throw "Call from invalid thread"
-[Fact]
-public void MapEdgeViewModel_CreatesStyle_Works() { ... }
-
-// ✅ CORRECT — runs on Avalonia UI thread
-[AvaloniaFact]
-public void MapEdgeViewModel_CreatesStyle_Works() { ... }
-```
-
-- Tests that create `MapEdgeViewModel` (or `MapViewModel` with zone-exit edges) MUST use `[AvaloniaFact]`.
-- Tests that create `MapViewModel` with NO zone connections (no `MapEdgeViewModel` created) can safely use `[Fact]`.
-
-### `[Trait("Category", "UI")]`
-
-Add `[Trait("Category", "UI")]` **only** when a real display is required. Headless tests do not need this trait.
-
-### ViewModel Testing
-
-Instantiate ViewModels directly and test ReactiveUI patterns:
-
-```csharp
-[AvaloniaFact]
-public void CharacterViewModel_TakeDamage_UpdatesHealthProperty()
-{
-    var vm = new CharacterViewModel(new Character { Health = 100 });
-    using var monitor = vm.WhenAnyValue(x => x.CurrentHealth).Subscribe(_ => { });
-
-    vm.TakeDamage(30);
-
-    vm.CurrentHealth.Should().Be(70);
-}
-```
-
-ReactiveUI patterns to test:
-- `RaiseAndSetIfChanged` — verify property change notifications
-- `ReactiveCommand.CreateFromTask` — verify async command execution and `IsExecuting`
-- `WhenAnyValue` — verify derived computed properties
-
-### View Testing (Headless)
-
-```csharp
-[AvaloniaFact]
-public void MainWindow_ContainsExpectedControls()
-{
-    var window = new MainWindow { DataContext = new MainViewModel() };
-    window.Show();
-
-    var button = window.FindControl<Button>("attackButton");
-    button.Should().NotBeNull();
-}
-```
-
----
-
 ## Server / Integration Testing
 
 Applies to: [`Veldrath.Server.Tests`](../../Veldrath.Server.Tests/).
@@ -349,8 +285,6 @@ dotnet test --collect:"XPlat Code Coverage"
 Apply `[ExcludeFromCodeCoverage]` to:
 
 - **Entry points** — `Program` classes (minimal API / ASP.NET Core startup)
-- **App bootstrappers** — Avalonia `App` classes
-- **Compiled XAML resources** — `.axaml` / `.xaml` code-behind files
 - **Thin infrastructure wrappers** — trivial pass-through services around framework types
 
 EF Core migrations (`**/Migrations/**/*.cs`, including `*.Designer.cs` and model snapshots) are generated code and are excluded by file in [`coverage.runsettings`](../../coverage.runsettings) — no attribute needed.
@@ -383,7 +317,7 @@ Every test project references:
 | `FluentAssertions` | 8.10.0 | Assertion library |
 | `coverlet.collector` | 10.0.1 | Code coverage collection |
 
-Additional project-specific references (Avalonia.Headless.XUnit, etc.) are added per testing surface.
+Additional project-specific package references are added per testing surface.
 
 ### Required Files
 
@@ -426,10 +360,6 @@ ValidationBehavior runs validators via `Task.WhenAll` but passes the **same** `V
 ### PowerDto.School Is Raw
 
 `EfCorePowerRepository` returns `Power.School` directly (e.g. `"fire"`, `"arcane"`). No tradition mapping is applied. Tests asserting on `PowerDto.School` should check raw values.
-
-### Avalonia Thread Affinity
-
-`MapEdgeViewModel.ComputeStyle` creates `SolidColorBrush` (inherits `AvaloniaObject`) which requires the Avalonia dispatcher thread. Any test that constructs `MapEdgeViewModel` must use `[AvaloniaFact]`.
 
 ---
 
