@@ -619,6 +619,12 @@ public class GameHub : Hub
             }
 
             await Clients.Caller.SendAsync("NodeTraveled", result);
+
+            // Failsafe reporting: content debt the player just walked into is said out loud, not silently swallowed.
+            foreach (var warning in result.ContentWarnings)
+            {
+                await Clients.Caller.SendAsync("SystemMessage", warning);
+            }
         }
         catch (Exception ex)
         {
@@ -1775,6 +1781,12 @@ public class GameHub : Hub
                 await Clients.Caller.SendAsync("LocationEntered", payload);
 
             await AdvanceQuestObjectivesAsync(characterId, "visit", result.LocationSlug);
+
+            // Failsafe reporting: content debt the player just walked into is said out loud, not silently swallowed.
+            foreach (var warning in result.ContentWarnings)
+            {
+                await Clients.Caller.SendAsync("SystemMessage", warning);
+            }
 
             // Notify the caller about each passively discovered location.
             foreach (var discovery in result.PassiveDiscoveries)

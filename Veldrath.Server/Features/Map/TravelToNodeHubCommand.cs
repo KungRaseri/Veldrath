@@ -61,6 +61,12 @@ public record TravelToNodeHubResult
 
     /// <summary>Gets the live enemies present at the arrived location.</summary>
     public IReadOnlyList<SpawnedEnemySummary> SpawnedEnemies { get; init; } = [];
+
+    /// <summary>
+    /// Gets content problems that affected this arrival — for example a spawn pool that references no known actors.
+    /// Surface them to the player; they mean an operator has content to fix.
+    /// </summary>
+    public IReadOnlyList<string> ContentWarnings { get; init; } = [];
 }
 
 /// <summary>
@@ -262,7 +268,7 @@ public class TravelToNodeHubCommandHandler
                 cancellationToken)
             : [];
 
-        var spawnedEnemies = await EnsureRosterAsync(
+        var (spawnedEnemies, contentWarnings) = await EnsureRosterAsync(
             request.ZoneGroup,
             destinationMap,
             destinationNode,
@@ -292,10 +298,11 @@ public class TravelToNodeHubCommandHandler
             LocationSlug = locationSlug,
             PassiveDiscoveries = discoveries,
             SpawnedEnemies = spawnedEnemies,
+            ContentWarnings = contentWarnings,
         };
     }
 
-    private async Task<IReadOnlyList<SpawnedEnemySummary>> EnsureRosterAsync(
+    private async Task<(IReadOnlyList<SpawnedEnemySummary> Enemies, IReadOnlyList<string> Warnings)> EnsureRosterAsync(
         string zoneGroup,
         MapGraph destinationMap,
         MapNodeEntry destinationNode,
@@ -306,25 +313,33 @@ public class TravelToNodeHubCommandHandler
             string.IsNullOrWhiteSpace(destinationNode.RefId) ||
             zoneId is null)
         {
-            return [];
+            return ([], []);
         }
 
         var effectiveZoneGroup = string.IsNullOrWhiteSpace(zoneGroup)
             ? $"zone:{zoneId}"
             : zoneGroup;
 
+        // The node's RefId must resolve to a real location; a dangling one is content debt, not a normal state.
+        var location = await _locationRepo.GetBySlugAsync(destinationNode.RefId);
+        if (location is null)
+        {
+            _logger.LogError(
+                "Map node {NodeId} references unknown zone location '{LocationSlug}'; no roster was spawned",
+                destinationNode.Id,
+                destinationNode.RefId);
+
+            return ([], [$"Content error: the location '{destinationNode.RefId}' is missing from the content catalog."]);
+        }
+
+        var pool = location.ActorPool ?? [];
+
         // Reads the stored roster, spawning it on first arrival. Dead rows with an elapsed respawn time are
         // revived by the store, so this is also where a wiped world comes back.
         var alive = await _enemyStore.GetAliveOrSpawnAsync(
             effectiveZoneGroup,
             destinationNode.RefId,
-            async ct =>
-            {
-                var location = await _locationRepo.GetBySlugAsync(destinationNode.RefId);
-                return location is null
-                    ? []
-                    : await _actorPoolResolver.SpawnRosterAsync(location.ActorPool);
-            },
+            _ => _actorPoolResolver.SpawnRosterAsync(pool),
             CancellationToken.None);
 
         _logger.LogInformation(
@@ -333,14 +348,22 @@ public class TravelToNodeHubCommandHandler
             effectiveZoneGroup,
             destinationNode.RefId);
 
-        return alive
+        // Failsafe, not fallback: an authored pool that produced nothing means broken content.
+        var warnings = new List<string>();
+        if (alive.Count == 0 && pool.Count > 0)
+        {
+            warnings.Add(
+                $"Content error: the spawn pool for '{location.Slug}' references no known actors. Please report this to a staff member.");
+        }
+
+        return (alive
             .Select(enemy => new SpawnedEnemySummary(
                 enemy.Id,
                 enemy.Name,
                 enemy.Level,
                 enemy.CurrentHealth,
                 enemy.MaxHealth))
-            .ToList();
+            .ToList(), warnings);
     }
 
     private async Task<IReadOnlyList<ZoneLocationEntry>> RunPassiveDiscoveryAsync(

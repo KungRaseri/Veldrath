@@ -43,6 +43,12 @@ public record NavigateToLocationHubResult
     /// <summary>Gets the live enemies currently present at the arrived location.</summary>
     public IReadOnlyList<SpawnedEnemySummary> SpawnedEnemies { get; init; } = [];
 
+    /// <summary>
+    /// Gets content problems that affected this arrival — for example a spawn pool that references no known actors.
+    /// Surface them to the player; they mean an operator has content to fix.
+    /// </summary>
+    public IReadOnlyList<string> ContentWarnings { get; init; } = [];
+
     /// <summary>Gets the tile column of the location on the zone tilemap, or <see langword="null"/>.</summary>
     public int? TileX { get; init; }
 
@@ -141,17 +147,29 @@ public class NavigateToLocationHubCommandHandler
         // Load the roster, spawning it on first arrival. The store revives dead rows whose respawn time has
         // elapsed, so arriving here is also how a wiped world comes back.
         var spawnedEnemies = new List<SpawnedEnemySummary>();
+        var contentWarnings = new List<string>();
+
         if (!string.IsNullOrEmpty(request.ZoneGroup))
         {
+            var pool = location.ActorPool ?? [];
+
             var alive = await _enemyStore.GetAliveOrSpawnAsync(
                 request.ZoneGroup,
                 location.Slug,
-                _ => _actorPoolResolver.SpawnRosterAsync(location.ActorPool),
+                _ => _actorPoolResolver.SpawnRosterAsync(pool),
                 cancellationToken);
 
             spawnedEnemies = alive
                 .Select(e => new SpawnedEnemySummary(e.Id, e.Name, e.Level, e.CurrentHealth, e.MaxHealth))
                 .ToList();
+
+            // Failsafe, not fallback: an authored spawn pool that produced nothing means the content is broken.
+            // The player gets a message and the operator gets the resolver's Error log naming the bad slug.
+            if (spawnedEnemies.Count == 0 && pool.Count > 0)
+            {
+                contentWarnings.Add(
+                    $"Content error: the spawn pool for '{location.Slug}' references no known actors. Please report this to a staff member.");
+            }
 
             _logger.LogInformation(
                 "{Count} enemies present at {ZoneGroup}/{LocationSlug}",
@@ -166,6 +184,7 @@ public class NavigateToLocationHubCommandHandler
             TypeKey = location.TypeKey,
             PassiveDiscoveries = passiveDiscoveries,
             SpawnedEnemies = spawnedEnemies,
+            ContentWarnings = contentWarnings,
             TileX = location.TileX,
             TileY = location.TileY,
         };
