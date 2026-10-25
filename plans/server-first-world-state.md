@@ -178,6 +178,13 @@ What D must guarantee:
 - No handler reads world state without going through the store, so a stale cache is a latency problem,
   never a correctness one.
 
+**D4 shipped with one honest limitation.** Claims keep the per-process `ActiveCharacterTracker` as the fast path,
+and the existing unique index on `PlayerSessions.CharacterId` is now translated into the same user-visible
+"character is active elsewhere" refusal instead of a 500. What is *not* solved: `SelectCharacter` still sweeps a
+previous session row for the character before inserting, so a second instance claiming the same character while
+the first is live would delete-then-recreate that row. Fencing that properly needs either a lease column compared
+against the claim or the SignalR backplane work — deliberately left out of D4 rather than half-built.
+
 ## 4. Failsafes, not fallbacks (project-wide rule)
 
 This milestone sets the rule the user asked for, and every later milestone inherits it:
