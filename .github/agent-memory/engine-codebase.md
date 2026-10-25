@@ -188,8 +188,12 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 
 - Server hub commands follow the **blob pattern**: read `Character.Attributes` JSON, mutate, save. Never call Core handlers (type mismatch).
 - Wired bridges: `GainExperience`, `RestAtLocation`, `AllocateAttributePoints`, `UseAbility`
-- Last P3 stub open: `CharacterSelectViewModel.ServerUrl` hardcoded to `"http://localhost:8080"`
-- P4 XML docs: `IPlayerAccountRepository` still missing; `IZoneRepository`/`IZoneSessionRepository` fixed session-4
+- **P3 stubs: closed.** `CharacterSelectViewModel.ServerUrl` is no longer hardcoded — the desktop client
+  reads `Server:BaseUrl` and the old `ScopedSession`/`TravelToNode` stubs were wired to real hub commands.
+- **P4 XML docs: closed** (re-audited 2026-10-24). `IPlayerAccountRepository`, `IZoneRepository`, and
+  `IZoneSessionRepository` all carry `<summary>` docs, and CS1591 is a compile error, so an undocumented
+  public member cannot land in the first place.
+======= REPLACE
 
 ### Avalonia Thread Affinity in Client Tests
 - `MapEdgeViewModel.ComputeStyle` creates `SolidColorBrush` (inherits `AvaloniaObject`) which requires the Avalonia dispatcher thread.
