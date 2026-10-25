@@ -123,7 +123,8 @@ function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
 		}[],
 		bagItems: [healthPotion, ironSword],
 		carriedItemCount: 1,
-		quests: [],
+		quests: [] as unknown[],
+		availableQuests: [] as unknown[],
 		shopCatalog: [],
 		shopZone: null,
 		canShop: false,
@@ -148,6 +149,9 @@ function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
 		discard: vi.fn(),
 		buy: vi.fn(),
 		useItem: vi.fn(),
+		acceptQuest: vi.fn(),
+		abandonQuest: vi.fn(),
+		turnInQuest: vi.fn(),
 		dropToGround: vi.fn(),
 		pickUpGroundItem: vi.fn(),
 		requestGroundItems: vi.fn(),
@@ -267,13 +271,26 @@ describe('GameOverlays (dialogs)', () => {
 	it('renders the quest log dialog when open', async () => {
 		const session = fakeSession({
 			showQuests: true,
-			quests: [{ slug: 'rats', title: 'Clear the cellar', status: 'Active' }]
+			quests: [
+				{
+					slug: 'rats',
+					title: 'Clear the cellar',
+					description: 'Cull the rats below the inn.',
+					status: 'Active',
+					goldReward: 50,
+					xpReward: 120,
+					canTurnIn: true,
+					objectives: [{ key: 'kill:giant-rat', current: 3, required: 3, complete: true }]
+				}
+			]
 		});
 
 		render(GameOverlays, { props: { session } });
 
 		expect(await screen.findByText('Clear the cellar')).toBeTruthy();
-		expect(screen.getByText('Active')).toBeTruthy();
+		expect(screen.getByText('3/3')).toBeTruthy();
+		screen.getByRole('button', { name: 'Turn in' }).click();
+		expect(session.turnInQuest).toHaveBeenCalledWith('rats');
 	});
 
 	it('renders shop catalog entries with buy buttons', async () => {
@@ -352,5 +369,28 @@ describe('LeftSidebar (ground items)', () => {
 
 		(await screen.findByRole('button', { name: 'Drop Health Potion' })).click();
 		expect(session.dropToGround).toHaveBeenCalledWith('health_potion');
+	});
+});
+
+describe('GameOverlays (available quests)', () => {
+	it('accepts a catalog quest', async () => {
+		const session = fakeSession({
+			showQuests: true,
+			availableQuests: [
+				{
+					slug: 'wolves',
+					title: 'Thin the pack',
+					description: '',
+					goldReward: 25,
+					xpReward: 60,
+					objectives: ['kill:barrow-wolf']
+				}
+			]
+		});
+
+		render(GameOverlays, { props: { session } });
+
+		(await screen.findByRole('button', { name: 'Accept' })).click();
+		expect(session.acceptQuest).toHaveBeenCalledWith('wolves');
 	});
 });

@@ -45,6 +45,12 @@ public class Character
     /// </summary>
     public string InventoryBlob { get; set; } = "[]";
 
+    /// <summary>
+    /// JSON-serialised quest journal: an array of accepted quest entries with their objective
+    /// progress and status. Deserialised on demand. Empty array when the character has no quests.
+    /// </summary>
+    public string QuestBlob { get; set; } = "[]";
+
     /// <summary>Zone the character starts in (fixed on creation).</summary>
     public string StartingZoneId { get; set; } = "crestfall";
 

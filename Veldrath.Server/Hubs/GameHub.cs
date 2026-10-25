@@ -1206,6 +1206,7 @@ public class GameHub : Hub
             });
 
             await TrySendInventorySnapshotAsync(characterId);
+            await AdvanceQuestObjectivesAsync(characterId, "collect", itemRef);
 
             _logger.LogInformation(
                 "Character {CharacterId} bought '{ItemRef}' for {Gold} gold",
@@ -1390,6 +1391,7 @@ public class GameHub : Hub
                 await Clients.Caller.SendAsync("GroundItemsChanged", new { CharacterId = characterId, ItemRef = result.ItemRef, Items = result.Items });
 
             await TrySendInventorySnapshotAsync(characterId);
+            await AdvanceQuestObjectivesAsync(characterId, "collect", result.ItemRef);
         }
         catch (Exception ex)
         {
@@ -1471,7 +1473,12 @@ public class GameHub : Hub
                 return;
             }
 
-            await Clients.Caller.SendAsync("QuestLogReceived", result.Quests);
+            await Clients.Caller.SendAsync("QuestLogReceived", new
+            {
+                CharacterId = characterId,
+                Quests = result.Quests,
+                result.Available,
+            });
 
             _logger.LogInformation(
                 "Quest log sent to character {CharacterId}: {Count} entries",
@@ -1481,6 +1488,135 @@ public class GameHub : Hub
         {
             _logger.LogError(ex, "Error in GetQuestLog for character {CharacterId}", characterId);
             await Clients.Caller.SendAsync("Error", "Failed to load quest log");
+        }
+    }
+
+    /// <summary>
+    /// Accepts a catalog quest into the character's journal and sends the updated journal back.
+    /// </summary>
+    /// <param name="slug">Quest slug.</param>
+    public async Task AcceptQuest(string slug)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before AcceptQuest");
+            return;
+        }
+
+        var result = await _mediator.Send(new AcceptQuestHubCommand(characterId, slug));
+        if (!result.Success)
+        {
+            await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to accept quest");
+            return;
+        }
+
+        await Clients.Caller.SendAsync("QuestLogReceived", new { CharacterId = characterId, result.Quests });
+    }
+
+    /// <summary>
+    /// Abandons an active quest and sends the updated journal back.
+    /// </summary>
+    /// <param name="slug">Quest slug.</param>
+    public async Task AbandonQuest(string slug)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before AbandonQuest");
+            return;
+        }
+
+        var result = await _mediator.Send(new AbandonQuestHubCommand(characterId, slug));
+        if (!result.Success)
+        {
+            await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to abandon quest");
+            return;
+        }
+
+        await Clients.Caller.SendAsync("QuestLogReceived", new { CharacterId = characterId, result.Quests });
+    }
+
+    /// <summary>
+    /// Turns in a completed quest, grants its gold/experience rewards through the existing commands,
+    /// and broadcasts <c>QuestTurnedIn</c>.
+    /// </summary>
+    /// <param name="slug">Quest slug.</param>
+    public async Task TurnInQuest(string slug)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before TurnInQuest");
+            return;
+        }
+
+        var result = await _mediator.Send(new TurnInQuestHubCommand(characterId, slug));
+        if (!result.Success)
+        {
+            await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to turn in quest");
+            return;
+        }
+
+        if (result.GoldReward > 0)
+        {
+            await _mediator.Send(new AddGoldHubCommand
+            {
+                CharacterId = characterId,
+                Amount = result.GoldReward,
+            });
+        }
+
+        if (result.XpReward > 0)
+        {
+            await _mediator.Send(new GainExperienceHubCommand
+            {
+                CharacterId = characterId,
+                Amount = result.XpReward,
+                Source = "Quest",
+            });
+        }
+
+        await Clients.Caller.SendAsync("QuestTurnedIn", new
+        {
+            CharacterId = characterId,
+            result.Slug,
+            result.GoldReward,
+            result.XpReward,
+            result.Quests,
+        });
+
+        _logger.LogInformation(
+            "Character {CharacterId} turned in quest '{Slug}' (+{Gold} gold, +{Xp} xp)",
+            characterId, result.Slug, result.GoldReward, result.XpReward);
+    }
+
+    /// <summary>
+    /// Best-effort quest objective advance for game events (kill / collect / visit). A failure here
+    /// must never break the action that triggered it.
+    /// </summary>
+    /// <param name="characterId">Character whose journal to advance.</param>
+    /// <param name="kind">Objective kind (<c>kill</c>, <c>collect</c>, <c>visit</c>).</param>
+    /// <param name="key">Enemy, item or location identifier.</param>
+    private async Task AdvanceQuestObjectivesAsync(Guid characterId, string kind, string? key)
+    {
+        if (string.IsNullOrWhiteSpace(key)) return;
+
+        try
+        {
+            var result = await _mediator.Send(new AdvanceQuestObjectivesHubCommand(characterId, kind, key));
+            if (result.Success && result.QuestsChanged > 0)
+            {
+                await Clients.Caller.SendAsync("QuestLogReceived", new
+                {
+                    CharacterId = characterId,
+                    result.Quests,
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Failed to advance quest objectives ({Kind}:{Key}) for character {CharacterId}",
+                kind, key, characterId);
         }
     }
 
@@ -1531,6 +1667,8 @@ public class GameHub : Hub
                 await Clients.Group(zoneGroup).SendAsync("LocationEntered", payload);
             else
                 await Clients.Caller.SendAsync("LocationEntered", payload);
+
+            await AdvanceQuestObjectivesAsync(characterId, "visit", result.LocationSlug);
 
             // Notify the caller about each passively discovered location.
             foreach (var discovery in result.PassiveDiscoveries)
@@ -1787,12 +1925,17 @@ public class GameHub : Hub
                 result.GoldEarned,
             });
 
-            if (result.EnemyDefeated && TryGetCurrentZoneGroup(out var zoneGroup))
+            if (result.EnemyDefeated)
             {
-                await Clients.OthersInGroup(zoneGroup).SendAsync("EnemyDefeated", new
+                await AdvanceQuestObjectivesAsync(characterId, "kill", result.EnemyName);
+
+                if (TryGetCurrentZoneGroup(out var zoneGroup))
                 {
-                    CharacterId = characterId,
-                });
+                    await Clients.OthersInGroup(zoneGroup).SendAsync("EnemyDefeated", new
+                    {
+                        CharacterId = characterId,
+                    });
+                }
             }
         }
         catch (Exception ex)
@@ -1930,12 +2073,17 @@ public class GameHub : Hub
                 result.GoldEarned,
             });
 
-            if (result.EnemyDefeated && TryGetCurrentZoneGroup(out var zoneGroup))
+            if (result.EnemyDefeated)
             {
-                await Clients.OthersInGroup(zoneGroup).SendAsync("EnemyDefeated", new
+                await AdvanceQuestObjectivesAsync(characterId, "kill", result.EnemyName);
+
+                if (TryGetCurrentZoneGroup(out var zoneGroup))
                 {
-                    CharacterId = characterId,
-                });
+                    await Clients.OthersInGroup(zoneGroup).SendAsync("EnemyDefeated", new
+                    {
+                        CharacterId = characterId,
+                    });
+                }
             }
         }
         catch (Exception ex)

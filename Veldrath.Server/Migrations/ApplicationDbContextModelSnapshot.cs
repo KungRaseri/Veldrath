@@ -291,6 +291,10 @@ namespace Veldrath.Server.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("QuestBlob")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<int>("SlotIndex")
                         .HasColumnType("integer");
 
