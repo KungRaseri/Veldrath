@@ -394,10 +394,10 @@ try
 
     // Auth, character, zone, content & admin endpoints
     app.MapAuthEndpoints();
-    // Temporary bridge for the desktop client's native Identity sign-in while Better Auth
-    // owns web credentials.
-    app.MapInternalAccountBridgeEndpoints();
-    // Transactional email for Better Auth password-reset and address-verification flows.
+    // Transactional email for Better Auth password-reset and address-verification flows. The
+    // .NET server owns the SMTP configuration, so the web app relays those messages through this
+    // endpoint instead of running its own mailer. (The account-mirroring bridge that used to sit
+    // next to it is gone: nothing signs in through Identity passwords any more.)
     app.MapInternalEmailEndpoints();
     app.MapPasswordResetEndpoints();
     app.MapEmailConfirmationEndpoints();

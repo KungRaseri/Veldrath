@@ -44,17 +44,6 @@
 	let profileError = $state('');
 	let savingProfile = $state(false);
 
-	async function syncGameIdentity(profile?: {
-		username?: string;
-		displayName?: string;
-	}): Promise<void> {
-		await fetch('/api/foundry-bridge/account', {
-			method: 'POST',
-			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify(profile ?? {})
-		}).catch(() => undefined);
-	}
-
 	async function saveProfile(event: SubmitEvent) {
 		event.preventDefault();
 		profileError = '';
@@ -75,7 +64,6 @@
 				return;
 			}
 
-			await syncGameIdentity({ username: handle, displayName: name });
 			profileMessage = 'Profile updated.';
 			await invalidateAll();
 		} finally {
@@ -206,7 +194,6 @@
 				return;
 			}
 
-			await syncGameIdentity();
 			providerMessage = `${label} unlinked.`;
 			await invalidateAll();
 		} finally {
@@ -296,13 +283,6 @@
 				passwordError = error.message ?? 'Could not change the password.';
 				return;
 			}
-
-			// Keep the temporary Identity login in sync with the new password.
-			await fetch('/api/foundry-bridge/register', {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ password: newPassword })
-			}).catch(() => undefined);
 
 			currentPassword = '';
 			newPassword = '';

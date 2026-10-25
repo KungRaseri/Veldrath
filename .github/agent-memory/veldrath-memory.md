@@ -1889,10 +1889,13 @@ Authoritative inventory — anything not listed is not read by code.
 - **Remaining .NET solutions:** `RealmEngine.slnx` (engine), `Veldrath.Server.slnx`,
   `Veldrath.Discord.slnx`, `Veldrath.Libraries.slnx` (assets/contracts/fonts/engine),
   `RealmForge.slnx`, `Realm.Full.slnx`. 7 test projects, 3,868 tests.
-- **Better Auth only.** Nothing signs in through ASP.NET Core Identity's `/api/auth/*` login
-  endpoints, so `/api/internal/accounts/sync` and `foundry-bridge.ts` are dead code — delete them when
-  convenient. `INTERNAL_BRIDGE_*` still matters for transactional email
-  ([`email.ts`](../../web/client/src/lib/server/email.ts)) until the web app owns SMTP.
+- **Better Auth only, but the server still owns email.** The account half of the bridge was deleted
+  (`InternalAccountBridgeEndpoints`, `foundry-bridge.ts`, `/api/foundry-bridge/*`, the sync calls in
+  `hooks.server.ts`, `/register`, `/account`). The **email half stays**: Better Auth relays
+  verification/reset messages to `InternalEmailEndpoints` via
+  [`email.ts`](../../web/client/src/lib/server/email.ts) so there is one SMTP configuration and one
+  set of templates, and `INTERNAL_BRIDGE_URL`/`INTERNAL_BRIDGE_TOKEN` remain in use. Do not move mail
+  into the web app without a reason — that was tried and reverted.
 - **Payload guard repointed at the wire.** `payload-contract.test.ts` now parses `GameHub.cs`
   directly (unioning multi-variant events like `CombatTurn`) instead of the deleted C# mirrors, and it
   caught two real mismatches during the deletion: `InventoryLoaded` and `ShopCatalog` were still

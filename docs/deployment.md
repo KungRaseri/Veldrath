@@ -44,7 +44,7 @@ than the browser bundle.
 | `Auth__CookieDomain` | server | `.veldrath.com` — cross-subdomain session cookie. **Required**: the server throws at startup when `ASPNETCORE_ENVIRONMENT=Production` and this is missing. |
 | `JWT_KEY` | server + web | Shared HMAC signing key, at least 32 chars. Must be **byte-identical** on both resources — the web mints game tokens with it and the server validates them, so any drift surfaces as `401` on `/api/characters` (see [the troubleshooting steps](coolify-deployment.md#troubleshooting-401-from-the-game-api)). |
 | `BETTER_AUTH_SECRET` | web | Better Auth session secret, at least 32 chars. |
-| `INTERNAL_BRIDGE_TOKEN` | server + web | Shared secret for the internal SvelteKit → Identity account bridge used by the desktop client's native sign-in. |
+| `INTERNAL_BRIDGE_TOKEN` | server + web | Shared secret for the internal SvelteKit → server transactional-email relay (the server owns SMTP). |
 | `DISCORD_TOKEN` | discord | Bot token. |
 | `EMAIL_SMTP_HOST` / `EMAIL_USER` / `EMAIL_PASSWORD` | server | Outbound email. |
 | `SEQ_ADMIN_PASSWORD` / `GF_ADMIN_PASSWORD` | seq / grafana | Admin passwords. |

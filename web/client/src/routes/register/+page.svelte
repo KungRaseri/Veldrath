@@ -36,15 +36,6 @@
 				return;
 			}
 
-			// Temporary desktop bridge: mirror the password hash into ASP.NET Identity.
-			// A failure here must not block registration; the next authenticated request
-			// performs an account-only sync through hooks.server.ts.
-			await fetch('/api/foundry-bridge/register', {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ password })
-			}).catch(() => undefined);
-
 			await goto(resolve('/game'));
 		} finally {
 			submitting = false;

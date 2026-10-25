@@ -42,8 +42,8 @@ Acceptance: `grep -ril "blazor\|mudblazor"` (excluding `node_modules`, `bin`, `o
 Identity (not Blazor) is what still ties the old world to the new one:
 
 - `PlayerAccount : IdentityUser<Guid>` is the game account row (characters, RBAC, moderation, bans).
-- `/api/auth/{register,login,refresh,renew-jwt,logout,exchange,external/*,session}` exists for the **desktop client's native sign-in**.
-- [`InternalAccountBridgeEndpoints`](../Veldrath.Server/Features/Auth/InternalAccountBridgeEndpoints.cs) + [`foundry-bridge.ts`](../web/client/src/lib/server/foundry-bridge.ts) + [`hooks.server.ts`](../web/client/src/hooks.server.ts) mirror Better Auth accounts into Identity (name/email/verification/password, provider links).
+- `/api/auth/{register,login,refresh,renew-jwt,logout,exchange,external/*,session}` existed for the desktop client's native sign-in — now unused and a candidate for removal.
+- `InternalAccountBridgeEndpoints` + `foundry-bridge.ts` + the `hooks.server.ts` sync mirrored Better Auth accounts into Identity; deleted with the client.
 
 | Option | What changes | Cost / risk | When it makes sense |
 |---|---|---|---|
@@ -185,10 +185,15 @@ Deleted:
 
 Consequences worth remembering:
 
-- **Better Auth is the single source of truth for authentication.** Nothing authenticates through
-  ASP.NET Core Identity's `/api/auth/*` login endpoints any more; the account-mirroring half of the
-  internal bridge (`/api/internal/accounts/sync`, `foundry-bridge.ts`) is now unused and can be deleted
-  in a follow-up. The email half still matters until the web app owns SMTP.
+- **Better Auth is the single source of truth for authentication**, and the account bridge is gone:
+  `InternalAccountBridgeEndpoints`, `foundry-bridge.ts`, both `/api/foundry-bridge/*` routes, and the
+  sync calls in `hooks.server.ts`, `/register`, and `/account` were deleted. Accounts are provisioned
+  just in time from Better Auth claims (`JwtClaimsEnrichment`), which is also where RBAC comes from.
+- **The email half of the bridge is kept deliberately.** The .NET server owns the SMTP configuration
+  and templates; [`email.ts`](../web/client/src/lib/server/email.ts) relays verification and
+  password-reset messages to `InternalEmailEndpoints`, so `INTERNAL_BRIDGE_URL` /
+  `INTERNAL_BRIDGE_TOKEN` remain. Moving mail into the web app was tried and reverted: it costs a
+  second SMTP config and a duplicate mailer for no functional gain.
 - **The payload guard now compares the wire, not a C# mirror.** `payload-contract.test.ts` parses
   `GameHub.cs` directly and unions the shapes of multi-variant events (`CombatTurn`), so it catches
   drift that the deleted `Veldrath.GameClient.Core` records used to hide.

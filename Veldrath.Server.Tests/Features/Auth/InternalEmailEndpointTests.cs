@@ -95,7 +95,7 @@ public class InternalEmailEndpointTests(WebAppFactory factory)
         };
 
         if (token is not null)
-            request.Headers.Add(InternalAccountBridgeEndpoints.BridgeTokenHeader, token);
+            request.Headers.Add("X-Internal-Bridge-Token", token);
 
         return request;
     }

@@ -29,7 +29,7 @@ on both** the `veldrath-server` and `veldrath-web` resources.
 | Game token signing key | `Jwt__Key` | `JWT_KEY` | The web mints the JWT, the server validates it. Any difference ⇒ `401` on `/api/characters` in ~1 ms. |
 | Token issuer | `Jwt__Issuer` (`Veldrath.Server`) | `JWT_ISSUER` | Validated exactly. |
 | Token audience | `Jwt__Audience` (`Veldrath.Client`) | `JWT_AUDIENCE` | Validated exactly. |
-| Identity bridge secret | `InternalBridge__Token` | `INTERNAL_BRIDGE_TOKEN` | Sent as `X-Internal-Bridge-Token`; the server answers `503` when unset and `401` when it differs. |
+| Internal bridge secret (email relay) | `InternalBridge__Token` | `INTERNAL_BRIDGE_TOKEN` | Sent as `X-Internal-Bridge-Token`; the server answers `503` when unset and `401` when it differs. Only the transactional-email relay uses it now. |
 | OAuth apps | `OAuth__{Discord,Google,Microsoft}__ClientId` / `ClientSecret` | `{DISCORD,GOOGLE,MICROSOFT}_CLIENT_ID` / `_SECRET` | Same provider apps; only the registered redirect URI differs (`/signin-{provider}` on the API vs `/api/auth/callback/{provider}` on the web). |
 | Microsoft tenant | — (not read by the server) | `MICROSOFT_TENANT_ID` | Web-only. |
 
@@ -73,7 +73,7 @@ Jwt__Key=your-base64-or-random-string-at-least-32-chars
 Jwt__Issuer=Veldrath.Server
 Jwt__Audience=Veldrath.Client
 
-# ── Internal SvelteKit → Identity account bridge (desktop sign-in compatibility) ──
+# ── Internal bridge secret (web → server transactional-email relay) ──
 # Must match INTERNAL_BRIDGE_TOKEN on the SvelteKit web container.
 InternalBridge__Token=your-shared-internal-bridge-secret
 
@@ -122,7 +122,7 @@ ASPNETCORE_ENVIRONMENT=Production
 | `Web__BaseUrl` | `Web:BaseUrl` | [`Program.cs`](../Veldrath.Server/Program.cs) | Public SvelteKit origin: OAuth return-URL fallback, email links, and default SignalR CORS origin. Must equal the web's `ORIGIN`. |
 | `Foundry__BaseUrl` | `Foundry:BaseUrl` | [`ExternalAuthEndpoints.cs`](../Veldrath.Server/Features/Auth/ExternalAuthEndpoints.cs) | Optional; Foundry now lives in the web app, so this normally equals `Web__BaseUrl`. |
 | `Cors__AllowedOrigins__0`, `Cors__AllowedOrigins__1`, … | `Cors:AllowedOrigins` | [`Program.cs:95`](../Veldrath.Server/Program.cs:95) | Optional extra browser origins for SignalR CORS. Defaults to local dev plus `Web:BaseUrl`. |
-| `InternalBridge__Token` | `InternalBridge:Token` | [`InternalAccountBridgeEndpoints.cs`](../Veldrath.Server/Features/Auth/InternalAccountBridgeEndpoints.cs) | Shared secret for the temporary SvelteKit → Identity account bridge. Unset disables the endpoint (503). |
+| `InternalBridge__Token` | `InternalBridge:Token` | [`InternalEmailEndpoints.cs`](../Veldrath.Server/Features/Auth/InternalEmailEndpoints.cs) | Shared secret for the web → server transactional-email relay. Unset disables the endpoint (503). |
 | `Email__SmtpHost` | `Email:SmtpHost` | [`Program.cs:308`](../Veldrath.Server/Program.cs:308) | SMTP relay hostname. If empty, uses `NullEmailSender` (no emails sent). |
 | `Email__SmtpPort` | `Email:SmtpPort` | [`appsettings.json:42`](../Veldrath.Server/appsettings.json:42) | SMTP port (default: 587). |
 | `Email__User` | `Email:User` | [`appsettings.json:44`](../Veldrath.Server/appsettings.json:44) | SMTP auth username. |
@@ -185,7 +185,7 @@ JWT_AUDIENCE=Veldrath.Client
 PUBLIC_API_URL=https://api.veldrath.com
 PUBLIC_HUB_URL=https://api.veldrath.com/hubs/game
 
-# ── Temporary SvelteKit → Identity account bridge (server-side only) ──
+# ── Server-side calls + the transactional-email relay (never exposed to browsers) ──
 # Use the server resource's fixed Container Name (veldrath-server) — "server" is
 # the docker-compose service name and does not resolve inside Coolify.
 INTERNAL_BRIDGE_URL=http://veldrath-server:8080
@@ -218,28 +218,29 @@ XFF_DEPTH=1
 | `JWT_KEY` / `JWT_ISSUER` / `JWT_AUDIENCE` | game token minting | Must match `Veldrath.Server` JWT validation. |
 | `PUBLIC_API_URL` | browser SSR/client | Public .NET API origin. |
 | `PUBLIC_HUB_URL` | browser SignalR | Public SignalR hub URL. |
-| `INTERNAL_BRIDGE_URL` | `game-request.ts`, `game-api.ts`, `editorial-api.ts`, `foundry-bridge.ts`, `email.ts` | Internal .NET base URL — `http://veldrath-server:8080` in Coolify, `http://server:8080` in docker compose. Falls back to `PUBLIC_API_URL` when unset, but the account bridge is then skipped (`[foundry-bridge] skipped`). Never exposed to the browser. |
-| `INTERNAL_BRIDGE_TOKEN` | `foundry-bridge.ts`, `email.ts` | Shared secret matching `InternalBridge__Token`. Unset ⇒ the bridge returns `503`. |
+| `INTERNAL_BRIDGE_URL` | `game-request.ts`, `game-api.ts`, `editorial-api.ts`, `email.ts` | Internal .NET base URL — `http://veldrath-server:8080` in Coolify, `http://server:8080` in docker compose. Falls back to `PUBLIC_API_URL` when unset. Never exposed to the browser. |
+| `INTERNAL_BRIDGE_TOKEN` | `email.ts` | Shared secret matching `InternalBridge__Token`. Unset ⇒ the email relay logs the link instead of sending (`[email:verification] bridge not configured`). |
 | `PROTOCOL_HEADER` / `HOST_HEADER` / `ADDRESS_HEADER` / `XFF_DEPTH` | adapter-node | Trust Traefik's forwarded headers. |
 
-### Internal bridge (transactional email)
+### Internal bridge (transactional email only)
 
-**Better Auth is the single source of truth for authentication.** The account-mirroring half of
-this bridge existed only so the retired Avalonia client could sign in through ASP.NET Core
-Identity ([`InternalAccountBridgeEndpoints`](../Veldrath.Server/Features/Auth/InternalAccountBridgeEndpoints.cs));
-with the desktop client gone, nothing calls `/api/internal/accounts/sync` any more.
+**Better Auth is the single source of truth for authentication**, and the .NET server owns the SMTP
+configuration. So the bridge keeps exactly one job: when Better Auth needs to send a verification or
+password-reset message, [`email.ts`](../web/client/src/lib/server/email.ts) posts it to
+[`InternalEmailEndpoints`](../Veldrath.Server/Features/Auth/InternalEmailEndpoints.cs) and the server
+delivers it with the same SMTP settings and templates the Identity endpoints use. Without the bridge
+those links are only logged to the web container console.
 
-What still uses `INTERNAL_BRIDGE_URL` / `INTERNAL_BRIDGE_TOKEN`:
+The **account-mirroring** half that used to live here (posting a password hash so ASP.NET Core
+Identity could sign the account in) was deleted with the desktop client — nothing signs in through
+`/api/auth/login` any more, and `POST /api/internal/accounts/sync` no longer exists. Accounts are
+provisioned just in time from Better Auth claims (`JwtClaimsEnrichment`), which is also where RBAC
+roles come from.
 
-- [`email.ts`](../web/client/src/lib/server/email.ts) forwards verification and password-reset mail to
-  the .NET server, which owns the SMTP configuration. Without the bridge those links are only logged.
-- `game-request.ts`, `game-api.ts`, and `editorial-api.ts` use `INTERNAL_BRIDGE_URL` as the internal
-  base URL (falling back to `PUBLIC_API_URL`); they do not send the token.
-
-The endpoints require the `X-Internal-Bridge-Token` header and answer `503` when
-`InternalBridge__Token` is not configured. Deleting the account-sync endpoint and
-[`foundry-bridge.ts`](../web/client/src/lib/server/foundry-bridge.ts) is safe now and is tracked as
-follow-up cleanup; moving mail into the web app would remove the bridge entirely.
+The remaining endpoint requires the `X-Internal-Bridge-Token` header and answers `503` when
+`InternalBridge__Token` is not configured. `INTERNAL_BRIDGE_URL` additionally serves as the internal
+base URL for `game-request.ts`, `game-api.ts`, and `editorial-api.ts` (falling back to
+`PUBLIC_API_URL`); those calls do not send the token.
 
 ### Troubleshooting: `401` from the game API
 
@@ -271,10 +272,9 @@ would have redirected to `/login` instead.
    `Unhandled exception for GET /api/account/profile`. Use the first stack trace, not the
    symptom. A `[game-request] … responded 500` line in the web log carries the .NET
    ProblemDetails body.
-5. **`[foundry-bridge] skipped`** means `INTERNAL_BRIDGE_URL` and/or
-   `INTERNAL_BRIDGE_TOKEN` are unset on the web resource, so web accounts are never mirrored
-   into Identity (desktop sign-in and the Identity-backed endpoints then rely on JIT
-   provisioning). See §2 for the correct internal hostname.
+5. **`[email:…] bridge not configured`** means `INTERNAL_BRIDGE_URL` and/or
+   `INTERNAL_BRIDGE_TOKEN` are unset on the web resource, so verification and password-reset
+   links are only logged instead of sent. See §2 for the correct internal hostname.
 6. **`BETTER_AUTH_SECRET appears low-entropy`** — regenerate with `openssl rand -base64 32`
    and redeploy. This invalidates existing web sessions.
 7. **`Failed to complete negotiation with the server: TypeError: NetworkError`** — the browser

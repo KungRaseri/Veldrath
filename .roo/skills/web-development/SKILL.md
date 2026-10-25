@@ -25,7 +25,7 @@ Build and change the SvelteKit web app ([`web/client`](../../../web/client)) tha
 
 - [`AGENTS.md`](../../../AGENTS.md) → **Web App (SvelteKit)**, “Hard Rules”, “Build & Test Commands”.
 - [`web/README.md`](../../../web/README.md) and [`web/client/README.md`](../../../web/client/README.md) — workspace layout, commands, account/character flows.
-- [`web/client/src/lib/server/`](../../../web/client/src/lib/server) — server-only code (`auth.ts`, `db/`, `game-api.ts`, `game-request.ts`, `email.ts`, `foundry-bridge.ts`).
+- [`web/client/src/lib/server/`](../../../web/client/src/lib/server) — server-only code (`auth.ts`, `db/`, `game-api.ts`, `game-request.ts`, `email.ts`).
 - [`web/client/src/hooks.server.ts`](../../../web/client/src/hooks.server.ts) — `handle` → `svelteKitHandler`, populates `event.locals.user` / `event.locals.session`, and runs the one-time account bridge.
 - [`web/client/src/app.d.ts`](../../../web/client/src/app.d.ts) — `App.Locals` / `AuthUser` types.
 - [`web/shared/src/db/schema.ts`](../../../web/shared/src/db/schema.ts) and [`web/shared/src/db/auth.schema.ts`](../../../web/shared/src/db/auth.schema.ts) — Drizzle schema (Better Auth tables included).

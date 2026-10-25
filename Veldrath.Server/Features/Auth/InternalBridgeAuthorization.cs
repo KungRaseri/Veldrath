@@ -4,12 +4,18 @@ using System.Text;
 namespace Veldrath.Server.Features.Auth;
 
 /// <summary>
-/// Shared authorization helper for the internal bridge endpoints called by the SvelteKit
-/// server. Requests must carry the secret configured in <c>InternalBridge:Token</c> in the
+/// Shared authorization helper for the internal bridge endpoints the SvelteKit server calls.
+/// Requests must carry the secret configured in <c>InternalBridge:Token</c> in the
 /// <c>X-Internal-Bridge-Token</c> header.
 /// </summary>
 internal static class InternalBridgeAuthorization
 {
+    /// <summary>Header carrying the shared internal bridge secret.</summary>
+    internal const string BridgeTokenHeader = "X-Internal-Bridge-Token";
+
+    /// <summary>Configuration key for the shared internal bridge secret.</summary>
+    internal const string BridgeTokenConfigurationKey = "InternalBridge:Token";
+
     /// <summary>
     /// Validates the internal bridge token on the current request.
     /// </summary>
@@ -21,14 +27,14 @@ internal static class InternalBridgeAuthorization
     /// </returns>
     internal static IResult? Validate(HttpContext context, IConfiguration config, string featureName)
     {
-        var expected = config[InternalAccountBridgeEndpoints.BridgeTokenConfigurationKey];
+        var expected = config[BridgeTokenConfigurationKey];
         if (string.IsNullOrWhiteSpace(expected))
         {
             return Results.Json(
                 new { error = $"Internal {featureName} bridge is not configured." }, statusCode: 503);
         }
 
-        var provided = context.Request.Headers[InternalAccountBridgeEndpoints.BridgeTokenHeader].ToString();
+        var provided = context.Request.Headers[BridgeTokenHeader].ToString();
         if (string.IsNullOrEmpty(provided))
             return Results.Json(new { error = "Invalid internal bridge token." }, statusCode: 401);
 
