@@ -18,9 +18,6 @@ internal static class CombatHelpers
         PropertyNameCaseInsensitive = true,
     };
 
-    /// <summary>How long a defeated enemy stays gone before its row is revived.</summary>
-    internal static readonly TimeSpan RespawnDelay = TimeSpan.FromSeconds(60);
-
     // Deserializes the character attributes blob; returns an empty dict on failure.
     internal static Dictionary<string, int> ParseAttrs(string? attrsJson, ILogger? logger = null)
     {

@@ -38,4 +38,12 @@ public interface ICombatSessionStore
     /// <param name="enemyId">Enemy instance id.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task<IReadOnlyList<Guid>> RemoveByEnemyIdAsync(Guid enemyId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes sessions whose owner disconnected longer than <paramref name="grace"/> ago, and returns the affected
+    /// character ids.
+    /// </summary>
+    /// <param name="grace">How long a disconnected session is allowed to survive.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<IReadOnlyList<Guid>> PruneExpiredAsync(TimeSpan grace, CancellationToken cancellationToken = default);
 }

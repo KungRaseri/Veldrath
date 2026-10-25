@@ -98,6 +98,28 @@ public class EfCoreCombatSessionStore : ICombatSessionStore
         return released;
     }
 
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<Guid>> PruneExpiredAsync(
+        TimeSpan grace,
+        CancellationToken cancellationToken = default)
+    {
+        var cutoff = DateTimeOffset.UtcNow - grace;
+
+        var expired = await _db.CombatSessions
+            .Where(s => s.DisconnectedAt != null && s.DisconnectedAt < cutoff)
+            .Select(s => s.CharacterId)
+            .ToListAsync(cancellationToken);
+
+        if (expired.Count > 0)
+        {
+            await _db.CombatSessions
+                .Where(s => expired.Contains(s.CharacterId))
+                .ExecuteDeleteAsync(cancellationToken);
+        }
+
+        return expired;
+    }
+
     private static ActiveCombatSession ToSession(CombatSession row) =>
         new(
             ZoneGroup: row.ZoneGroup,

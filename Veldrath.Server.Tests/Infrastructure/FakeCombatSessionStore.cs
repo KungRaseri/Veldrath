@@ -12,6 +12,7 @@ namespace Veldrath.Server.Tests.Infrastructure;
 internal sealed class FakeCombatSessionStore : ICombatSessionStore
 {
     private readonly Dictionary<Guid, ActiveCombatSession> _sessions = new();
+    private readonly HashSet<Guid> _prunable = new();
 
     /// <summary>Gets how many times a session has been written.</summary>
     public int SetCount { get; private set; }
@@ -75,4 +76,21 @@ internal sealed class FakeCombatSessionStore : ICombatSessionStore
 
         return Task.FromResult<IReadOnlyList<Guid>>(released);
     }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<Guid>> PruneExpiredAsync(TimeSpan grace, CancellationToken cancellationToken = default)
+    {
+        var pruned = _prunable.ToList();
+        foreach (var characterId in pruned)
+        {
+            _sessions.Remove(characterId);
+            _prunable.Remove(characterId);
+        }
+
+        return Task.FromResult<IReadOnlyList<Guid>>(pruned);
+    }
+
+    /// <summary>Arranges a session whose owner disconnected long enough to be pruned.</summary>
+    /// <param name="characterId">Character id.</param>
+    public void ArrangeExpired(Guid characterId) => _prunable.Add(characterId);
 }

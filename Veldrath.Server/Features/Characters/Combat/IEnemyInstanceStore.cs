@@ -45,16 +45,28 @@ public interface IEnemyInstanceStore
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Atomically flips a living enemy to dead and schedules its return. Exactly one caller can win, so rewards
-    /// are distributed once even when several players land the killing blow at the same moment.
+    /// Atomically flips a living enemy to dead and schedules its return using the configured respawn delay.
+    /// Exactly one caller can win, so rewards are distributed once even when several players land the killing blow
+    /// at the same moment.
     /// </summary>
     /// <param name="enemyId">Enemy instance id.</param>
-    /// <param name="respawnDelay">How long the enemy stays dead.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns><see langword="true"/> when this call performed the death transition.</returns>
-    Task<bool> TryMarkDeadAsync(
-        Guid enemyId,
-        TimeSpan respawnDelay,
+    Task<bool> TryMarkDeadAsync(Guid enemyId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Revives up to <paramref name="batchSize"/> dead enemies whose respawn time has passed, clearing their
+    /// participants, and returns what came back so the caller can broadcast it.
+    /// </summary>
+    /// <remarks>
+    /// On PostgreSQL the batch is claimed with <c>FOR UPDATE SKIP LOCKED</c> inside a transaction, so several
+    /// instances can sweep concurrently without reviving the same enemy twice.
+    /// </remarks>
+    /// <param name="batchSize">Maximum number of enemies to revive in this sweep.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The enemies that were brought back.</returns>
+    Task<IReadOnlyList<EnemyRespawnedEvent>> SweepExpiredRespawnsAsync(
+        int batchSize,
         CancellationToken cancellationToken = default);
 
     /// <summary>Deletes an enemy instance and its participants.</summary>

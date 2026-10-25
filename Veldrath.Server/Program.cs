@@ -160,6 +160,14 @@ try
     builder.Services.AddScoped<IZoneRepository, ZoneRepository>();
     builder.Services.AddScoped<IEnemyInstanceStore, EfCoreEnemyInstanceStore>();
     builder.Services.AddScoped<ICombatSessionStore, EfCoreCombatSessionStore>();
+
+    // World tuning is validated at startup: a missing or nonsensical value fails the host rather than silently
+    // falling back to a default.
+    builder.Services.AddOptions<EnemyWorldOptions>()
+        .Bind(builder.Configuration.GetSection(EnemyWorldOptions.SectionName))
+        .ValidateDataAnnotations()
+        .ValidateOnStart();
+    builder.Services.AddHostedService<EnemyRespawnService>();
     builder.Services.AddScoped<IPlayerSessionRepository, PlayerSessionRepository>();
     builder.Services.AddScoped<IGroundItemRepository, EfCoreGroundItemRepository>();
     builder.Services.AddScoped<IRegionRepository, RegionRepository>();
