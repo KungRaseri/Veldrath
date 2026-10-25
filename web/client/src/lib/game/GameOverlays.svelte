@@ -675,6 +675,29 @@
 	</Dialog.Portal>
 </Dialog.Root>
 
+{#if session.questTurnInToast}
+	<div class="pointer-events-none fixed top-16 right-4 z-50 w-80 max-w-[calc(100vw-2rem)]">
+		<div class="game-panel pointer-events-auto space-y-2 p-3" role="status">
+			<p class="text-sm">
+				Quest complete: <span class="font-semibold">{session.questTurnInToast.slug}</span>
+			</p>
+			<p class="text-xs text-surface-600-400">
+				+{session.questTurnInToast.gold} gold · +{session.questTurnInToast.xp} XP
+			</p>
+			<div class="flex justify-end">
+				<button
+					class="btn preset-tonal-surface px-2 py-1 text-xs"
+					type="button"
+					onclick={() => session.dismissQuestToast()}
+				>
+					<Check size={13} aria-hidden="true" />
+					Dismiss
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
 {#if session.partyInvites.length > 0}
 	<div
 		class="pointer-events-none fixed right-4 bottom-4 z-50 flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2"

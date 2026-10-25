@@ -18,6 +18,7 @@
 		Zap
 	} from '@lucide/svelte';
 	import ItemTooltip from './ItemTooltip.svelte';
+	import QuestTracker from './QuestTracker.svelte';
 	import { itemIcon, slotIcon, slotLabel } from './item-icons';
 	import { barPercent } from './reducers';
 	import {
@@ -346,6 +347,8 @@
 			</ul>
 		{/if}
 	</section>
+
+	<QuestTracker {session} />
 
 	<nav class="game-panel sheet-menu p-2" aria-label="Character menu">
 		<button class="sheet-menu-item" type="button" onclick={() => session.loadQuests()}>

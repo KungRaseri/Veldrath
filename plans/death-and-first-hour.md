@@ -61,8 +61,9 @@
 - **Failsafe:** no tutorial node authored → log `Error`, start at the normal entry node, tell the client.
 - Quest HUD tracker: a compact sidebar listing active quests with the nearest incomplete objective, derived
   client-side from `QuestLogReceived` (no new wire event), plus a completion toast on `QuestTurnedIn`.
-  Objective completion inside a quest is detected by diffing the progressing snapshot, which avoids inventing
-  a per-tick event.
+  Objective completion inside a quest is detected by diffing the progressing snapshot, which avoids inventing a
+  per-tick event. Shipped as `trackedQuests` + [`QuestTracker.svelte`](../web/client/src/lib/game/QuestTracker.svelte)
+  and a dismissable `questTurnInToast` (no timer — a testable state, dismissed by the player).
 
 ### 2.4 Objective kinds beyond kill/collect/visit
 
