@@ -247,6 +247,12 @@ public class GameHub : Hub
         if (staleRegionSession is not null)
             await _playerSessionRepo.RemoveAsync(staleRegionSession);
 
+        // Resume at the character's last known node instead of the region's arrival node.
+        var resumeNodeId = ResolveResumeNodeId(
+            regionGraph?.Nodes.Select(node => node.Id),
+            character.CurrentNodeId,
+            regionGraph?.EntryNodeId);
+
         // Create a region-map session (ZoneId = null means on the region map, not inside a zone)
         await _playerSessionRepo.AddAsync(new PlayerSession
         {
@@ -256,7 +262,7 @@ public class GameHub : Hub
             RegionId = regionId,
             ZoneId = null,
             CurrentMapId = regionGraph?.Id ?? character.CurrentMapId,
-            CurrentNodeId = regionGraph?.EntryNodeId ?? character.CurrentNodeId,
+            CurrentNodeId = resumeNodeId,
         });
 
         // Join the per-region broadcast group for RegionPlayerMoved broadcasts
@@ -314,7 +320,7 @@ public class GameHub : Hub
             character.CurrentZoneId,
             RegionId = regionId,
             CurrentMapId = regionGraph?.Id ?? character.CurrentMapId,
-            CurrentNodeId = regionGraph?.EntryNodeId ?? character.CurrentNodeId,
+            CurrentNodeId = resumeNodeId,
             CurrentHealth = initAttrs.GetValueOrDefault("CurrentHealth", initMaxHealth),
             MaxHealth = initMaxHealth,
             CurrentMana = initAttrs.GetValueOrDefault("CurrentMana", initMaxMana),
@@ -361,6 +367,19 @@ public class GameHub : Hub
         }
 
         var zoneGraph = await _mapRepo.GetMapForZoneAsync(zoneId);
+        var character = await _characterRepo.GetByIdAsync(characterId);
+
+        // Re-entering the zone the character is already in happens on every login, so resume the saved
+        // node and location instead of snapping back to the zone's arrival node.
+        var resumingHere = character is not null
+            && string.Equals(character.CurrentZoneId, zoneId, StringComparison.OrdinalIgnoreCase);
+
+        var resumeNodeId = ResolveResumeNodeId(
+            zoneGraph?.Nodes.Select(node => node.Id),
+            resumingHere ? character!.CurrentNodeId : null,
+            zoneGraph?.EntryNodeId);
+
+        var resumeLocationSlug = resumingHere ? character!.CurrentZoneLocationSlug : null;
 
         // Leave current zone first (if in one)
         await LeaveCurrentZoneAsync(Context.ConnectionId, notifyPeers: true);
@@ -381,19 +400,19 @@ public class GameHub : Hub
             RegionId = zone.RegionId,
             ZoneId = zoneId,
             CurrentMapId = zoneGraph?.Id,
-            CurrentNodeId = zoneGraph?.EntryNodeId,
+            CurrentNodeId = resumeNodeId,
         };
         await _playerSessionRepo.AddAsync(session);
 
         // Persist last-known zone and map position on the character row.
-        if (zoneGraph is not null && !string.IsNullOrWhiteSpace(zoneGraph.EntryNodeId))
+        if (zoneGraph is not null && !string.IsNullOrWhiteSpace(resumeNodeId))
         {
             await _characterRepo.UpdateMapPositionAsync(
                 characterId,
                 zoneGraph.Id,
-                zoneGraph.EntryNodeId,
+                resumeNodeId!,
                 zoneId,
-                locationSlug: null);
+                resumeLocationSlug);
         }
         else
         {
@@ -402,7 +421,7 @@ public class GameHub : Hub
 
         Context.Items["CurrentZoneId"] = zoneId;
         Context.Items["CurrentMapId"] = zoneGraph?.Id;
-        Context.Items["CurrentNodeId"] = zoneGraph?.EntryNodeId;
+        Context.Items["CurrentNodeId"] = resumeNodeId;
 
         // Compute and store the zone group name based on zone type and difficulty
         var difficultyMode = Context.Items.TryGetValue("DifficultyMode", out var dm) && dm is string d ? d : "normal";
@@ -431,7 +450,7 @@ public class GameHub : Hub
             zone.Description,
             ZoneType = zone.Type.ToString(),
             CurrentMapId = zoneGraph?.Id,
-            CurrentNodeId = zoneGraph?.EntryNodeId,
+            CurrentNodeId = resumeNodeId,
             Occupants = occupants,
             HasInn = zone.HasInn,
             HasMerchant = zone.HasMerchant,
@@ -3037,6 +3056,31 @@ public class GameHub : Hub
                 "Failed to build inventory snapshot after a transaction for character {CharacterId}",
                 characterId);
         }
+    }
+
+    /// <summary>
+    /// Chooses the node a character resumes at: their persisted node when it still exists on the graph
+    /// being sent, otherwise the graph's entry node.
+    /// </summary>
+    /// <param name="nodeIds">Node ids of the graph being sent, or <see langword="null"/> when unavailable.</param>
+    /// <param name="savedNodeId">The character's last known node.</param>
+    /// <param name="fallbackNodeId">The graph's entry node.</param>
+    /// <returns>The node the client should mark as current.</returns>
+    private static string? ResolveResumeNodeId(
+        IEnumerable<string>? nodeIds,
+        string? savedNodeId,
+        string? fallbackNodeId)
+    {
+        if (string.IsNullOrWhiteSpace(savedNodeId))
+            return fallbackNodeId;
+
+        // With no graph to validate against, trust the saved node — it is the character's real position.
+        if (nodeIds is null)
+            return savedNodeId;
+
+        return nodeIds.Contains(savedNodeId, StringComparer.OrdinalIgnoreCase)
+            ? savedNodeId
+            : fallbackNodeId;
     }
 
     private async Task SendInventorySnapshotAsync(
