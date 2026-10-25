@@ -46,4 +46,19 @@ public interface ICombatSessionStore
     /// <param name="grace">How long a disconnected session is allowed to survive.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task<IReadOnlyList<Guid>> PruneExpiredAsync(TimeSpan grace, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Marks the character's fight as suspended because they dropped, starting the reconnect grace window. The
+    /// session itself is kept so the same fight can be resumed.
+    /// </summary>
+    /// <param name="characterId">Character id.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns><see langword="true"/> when a session existed and was marked.</returns>
+    Task<bool> MarkDisconnectedAsync(Guid characterId, CancellationToken cancellationToken = default);
+
+    /// <summary>Clears the suspending mark when the owner reconnects, resuming the same fight.</summary>
+    /// <param name="characterId">Character id.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns><see langword="true"/> when a session existed and was resumed.</returns>
+    Task<bool> MarkConnectedAsync(Guid characterId, CancellationToken cancellationToken = default);
 }

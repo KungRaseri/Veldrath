@@ -13,6 +13,7 @@ internal sealed class FakeCombatSessionStore : ICombatSessionStore
 {
     private readonly Dictionary<Guid, ActiveCombatSession> _sessions = new();
     private readonly HashSet<Guid> _prunable = new();
+    private readonly HashSet<Guid> _disconnected = new();
 
     /// <summary>Gets how many times a session has been written.</summary>
     public int SetCount { get; private set; }
@@ -93,4 +94,24 @@ internal sealed class FakeCombatSessionStore : ICombatSessionStore
     /// <summary>Arranges a session whose owner disconnected long enough to be pruned.</summary>
     /// <param name="characterId">Character id.</param>
     public void ArrangeExpired(Guid characterId) => _prunable.Add(characterId);
+
+    /// <inheritdoc />
+    public Task<bool> MarkDisconnectedAsync(Guid characterId, CancellationToken cancellationToken = default)
+    {
+        if (!_sessions.ContainsKey(characterId))
+        {
+            return Task.FromResult(false);
+        }
+
+        _disconnected.Add(characterId);
+        return Task.FromResult(true);
+    }
+
+    /// <inheritdoc />
+    public Task<bool> MarkConnectedAsync(Guid characterId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(_disconnected.Remove(characterId));
+
+    /// <summary>Returns whether the character's fight is currently suspended.</summary>
+    /// <param name="characterId">Character id.</param>
+    public bool IsDisconnected(Guid characterId) => _disconnected.Contains(characterId);
 }

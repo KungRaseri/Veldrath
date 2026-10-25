@@ -6,6 +6,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
@@ -54,9 +55,9 @@ public class GameHub : Hub
     private readonly UserManager<PlayerAccount> _userManager;
     private readonly IOptions<ModerationOptions> _modOptions;
     private readonly ApplicationDbContext _db;
-
-    /// <summary>Tracks characters that are currently AFK. Key = characterId, value = optional AFK message.</summary>
-    private static readonly ConcurrentDictionary<Guid, string?> _afkCharacters = new();
+    private readonly IAfkTracker _afk;
+    private readonly ICombatSessionStore _sessions;
+    private readonly IEnemyInstanceStore _enemies;
 
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
@@ -73,7 +74,10 @@ public class GameHub : Hub
         IOptions<VersionCompatibilitySettings> versionOptions,
         UserManager<PlayerAccount> userManager,
         IOptions<ModerationOptions> modOptions,
-        ApplicationDbContext db)
+        ApplicationDbContext db,
+        IAfkTracker afk,
+        ICombatSessionStore sessions,
+        IEnemyInstanceStore enemies)
     {
         _logger = logger;
         _characterRepo = characterRepo;
@@ -87,6 +91,9 @@ public class GameHub : Hub
         _userManager = userManager;
         _modOptions = modOptions;
         _db = db;
+        _afk = afk;
+        _sessions = sessions;
+        _enemies = enemies;
     }
 
     public override async Task OnConnectedAsync()
@@ -135,6 +142,13 @@ public class GameHub : Hub
             // Release immediately — the user intended to leave.
             _activeCharacters.Release(Context.ConnectionId);
 
+            if (characterId.HasValue)
+            {
+                // A clean leave ends the fight immediately; only an unexpected drop gets the grace window.
+                await _sessions.RemoveAsync(characterId.Value);
+                _afk.TryClear(characterId.Value, out _);
+            }
+
             if (characterId.HasValue && Context.Items.TryGetValue("AccountId", out var aid) && aid is Guid accountId)
             {
                 await Clients.Group(AccountGroup(accountId)).SendAsync("CharacterStatusChanged", new
@@ -154,6 +168,12 @@ public class GameHub : Hub
             if (characterId.HasValue)
             {
                 _activeCharacters.MarkDisconnecting(characterId.Value);
+
+                // Suspend the fight instead of ending it: the row keeps its turn state until the grace window
+                // expires and the respawn sweeper prunes it. AFK is ephemeral, so it simply goes away.
+                await _sessions.MarkDisconnectedAsync(characterId.Value);
+                _afk.TryClear(characterId.Value, out _);
+
                 var capturedCharId = characterId.Value;
                 var capturedConnId = Context.ConnectionId;
 
@@ -218,6 +238,10 @@ public class GameHub : Hub
         Context.Items["CurrentZoneId"] = character.CurrentZoneId;
         Context.Items["DifficultyMode"] = character.DifficultyMode;
 
+        // Coming back from a disconnect clears the away flag and resumes any fight the grace window kept alive.
+        _afk.TryClear(character.Id, out _);
+        await _sessions.MarkConnectedAsync(character.Id, CancellationToken.None);
+
         // Start the character on the region map — derive region from last known zone, then fall back to the seeded starter region
         var zone = string.IsNullOrEmpty(character.CurrentZoneId) ? null : await _zoneRepo.GetByIdAsync(character.CurrentZoneId);
         var starterRegion = zone is null ? await _regionRepo.GetStarterAsync() : null;
@@ -254,16 +278,34 @@ public class GameHub : Hub
             regionGraph?.EntryNodeId);
 
         // Create a region-map session (ZoneId = null means on the region map, not inside a zone)
-        await _playerSessionRepo.AddAsync(new PlayerSession
+        try
         {
-            CharacterId = character.Id,
-            CharacterName = character.Name,
-            ConnectionId = Context.ConnectionId,
-            RegionId = regionId,
-            ZoneId = null,
-            CurrentMapId = regionGraph?.Id ?? character.CurrentMapId,
-            CurrentNodeId = resumeNodeId,
-        });
+            await _playerSessionRepo.AddAsync(new PlayerSession
+            {
+                CharacterId = character.Id,
+                CharacterName = character.Name,
+                ConnectionId = Context.ConnectionId,
+                RegionId = regionId,
+                ZoneId = null,
+                CurrentMapId = regionGraph?.Id ?? character.CurrentMapId,
+                CurrentNodeId = resumeNodeId,
+            });
+        }
+        catch (DbUpdateException ex)
+        {
+            // The unique index on PlayerSessions.CharacterId catches the case where a row for this character appeared
+            // between our stale-session sweep and this insert. Translate the constraint into the same refusal the
+            // tracker produces, instead of surfacing a 500. (Full multi-instance claim fencing — where a second
+            // instance must not sweep a live session it did not create — is backplane work, not D4's scope.)
+            _activeCharacters.Release(Context.ConnectionId);
+            _logger.LogWarning(
+                ex,
+                "Character {CharacterId} already has a live session; refusing the claim from {ConnectionId}",
+                character.Id,
+                Context.ConnectionId);
+            await Clients.Caller.SendAsync("CharacterAlreadyActive", character.Id);
+            return;
+        }
 
         // Join the per-region broadcast group for RegionPlayerMoved broadcasts
         await Groups.AddToGroupAsync(Context.ConnectionId, RegionGroup(regionId));
@@ -337,6 +379,51 @@ public class GameHub : Hub
             SelectedAt = DateTimeOffset.UtcNow,
             Equipment = equippedItems,
         });
+
+        // Re-send the fight snapshot when the grace window kept it alive, so the client re-renders from server state
+        // rather than assuming the encounter ended.
+        await ResumeCombatIfAnyAsync(character.Id);
+    }
+
+    /// <summary>
+    /// Re-sends the combat snapshot for a fight that survived a disconnect, or closes it when the grace window
+    /// expired (the respawn sweeper may also have pruned it) so the client is never left in a phantom fight.
+    /// </summary>
+    /// <param name="characterId">Character id.</param>
+    /// <returns>A task that completes when the client has been told.</returns>
+    private async Task ResumeCombatIfAnyAsync(Guid characterId)
+    {
+        var session = await _sessions.TryGetAsync(characterId);
+        if (session is null)
+        {
+            return;
+        }
+
+        var enemy = await _enemies.TryGetAsync(session.EnemyId);
+        if (enemy is null || !enemy.IsAlive)
+        {
+            await _sessions.RemoveAsync(characterId);
+            await Clients.Caller.SendAsync("SystemMessage", "Your fight ended while you were away.");
+            return;
+        }
+
+        var abilityNames = enemy.Template.Abilities
+            .Select(ability => string.IsNullOrWhiteSpace(ability.DisplayName) ? ability.Name : ability.DisplayName)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToList();
+
+        await Clients.Caller.SendAsync("CombatStarted", new
+        {
+            CharacterId = characterId,
+            EnemyId = enemy.Id,
+            EnemyName = enemy.Name,
+            EnemyLevel = enemy.Level,
+            EnemyCurrentHealth = enemy.CurrentHealth,
+            EnemyMaxHealth = enemy.MaxHealth,
+            EnemyAbilityNames = abilityNames,
+        });
+
+        await Clients.Caller.SendAsync("SystemMessage", $"Your fight with {enemy.Name} resumed.");
     }
 
     /// <summary>
@@ -2374,7 +2461,7 @@ public class GameHub : Hub
         }
 
         // Clear AFK status when sending a normal chat message.
-        if (_afkCharacters.TryRemove(characterId, out _))
+        if (_afk.TryClear(characterId, out _))
         {
             TryGetCharacterName(out var selfName);
             await Clients.Group(zoneGroup).SendAsync("ReceiveChatMessage",
@@ -2442,7 +2529,7 @@ public class GameHub : Hub
                     await Clients.Caller.SendAsync("OnWhisper",
                         new WhisperPayload(characterId, $"[To {targetName}]", whisperText));
                     // Auto-reply if target is AFK.
-                    if (_afkCharacters.TryGetValue(targetSession.CharacterId, out var afkMsg))
+                    if (_afk.TryGet(targetSession.CharacterId, out var afkMsg))
                     {
                         await Clients.Caller.SendAsync("OnWhisper",
                             new WhisperPayload(targetSession.CharacterId, targetName,
@@ -2482,7 +2569,7 @@ public class GameHub : Hub
                 {
                     TryGetCharacterName(out var afkName);
                     // Toggle: calling /afk while already AFK clears the status.
-                    if (_afkCharacters.TryRemove(characterId, out _))
+                    if (_afk.TryClear(characterId, out _))
                     {
                         await Clients.Caller.SendAsync("SystemMessage", "You are no longer AFK.");
                         await Clients.Group(zoneGroup).SendAsync("ReceiveChatMessage",
@@ -2490,7 +2577,7 @@ public class GameHub : Hub
                         return;
                     }
                     var reason = parts.Length >= 2 ? string.Join(' ', parts[1..]) : null;
-                    _afkCharacters[characterId] = reason;
+                    _afk.Set(characterId, reason);
                     var display = reason is not null ? $"AFK: {reason}" : "AFK";
                     await Clients.Caller.SendAsync("SystemMessage", $"You are now {display}.");
                     await Clients.Group(zoneGroup).SendAsync("ReceiveChatMessage",
