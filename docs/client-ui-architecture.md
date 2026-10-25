@@ -94,13 +94,18 @@ Everything below rides on the same `GameSession` runes store; no panel keeps its
 
 | Surface | Where | Wire |
 |---|---|---|
-| Bag actions | Character sheet rows | `EquipItem` (slot derived server-side), `UseItem`, `SellItem`, `DropItem` (destroy), `DropItemToGround` |
-| Item details | Centered dialog, opened from a bag row or an equipment slot | `InventoryLoaded` → `InventoryItemView` (damage, armour, durability, effect, requirements, bonuses) |
+| Bag actions | Character sheet rows — name line, status line, icon-only action line | `EquipItem` (slot derived server-side), `UseItem`, `SellItem`, `DropItem` (destroy), `DropItemToGround` |
+| Item details | Hover/focus card beside the row ([`ItemTooltip.svelte`](../web/client/src/lib/game/ItemTooltip.svelte)), plus a centered dialog on click | `InventoryLoaded` → `InventoryItemView` (damage, armour, durability, effect, requirements, bonuses) |
 | Attributes | Dialog behind the attribute strip in the sheet | `AllocateAttributePoints` → `AttributePointsAllocated` |
 | Abilities | Sheet menu → Abilities dialog | `UseAbility` (out of combat) |
 | Ground items | Center column, "On the ground" block | `GetGroundItems`, `DropItemToGround`, `PickUpGroundItem` → `GroundItemsChanged` |
 | Quest log | Sheet menu → Quest log dialog | `GetQuestLog`, `AcceptQuest`, `AbandonQuest`, `TurnInQuest` → `QuestLogReceived`, `QuestTurnedIn` |
 | Area search | Center column, "Discovered" block | `SearchArea` → `AreaSearched` |
+
+**Bag rows are three lines**: the name leads (rarity colour, the icon is a small muted glyph beside it),
+the status line carries the equipped badge and rarity/type/slot/durability, and the actions are icon-only
+on their own line. Hovering or focusing a row (bag or equipment slot) opens the tooltip card, which flips
+sides and clamps to the viewport so it stays readable from the narrow left column.
 
 **Quests** live in `Character.QuestBlob` (JSON journal of `CharacterQuestEntry`). Objective keys use a
 `kind:key` convention — `kill:<enemy name>`, `collect:<item ref>`, `visit:<location slug>` — and the
