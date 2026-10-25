@@ -56,6 +56,12 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<EnemyParticipant> EnemyParticipants => Set<EnemyParticipant>();
     /// <summary>Active fights by character, durable across restarts and short disconnects.</summary>
     public DbSet<CombatSession> CombatSessions => Set<CombatSession>();
+    /// <summary>Multiplayer parties.</summary>
+    public DbSet<Party> Parties => Set<Party>();
+    /// <summary>Party membership, one row per character.</summary>
+    public DbSet<PartyMemberEntity> PartyMembers => Set<PartyMemberEntity>();
+    /// <summary>Outstanding party invitations.</summary>
+    public DbSet<PartyInvite> PartyInvites => Set<PartyInvite>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -319,6 +325,51 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
             // The grace prune scans disconnected rows by timestamp; defeat releases every session on an enemy.
             e.HasIndex(s => s.DisconnectedAt);
             e.HasIndex(s => s.EnemyInstanceId);
+        });
+
+        builder.Entity<Party>(e =>
+        {
+            e.HasKey(p => p.Id);
+            e.Property(p => p.LootRule).HasMaxLength(32).IsRequired().HasDefaultValue(Party.LootRuleContribution);
+            e.HasOne(p => p.Leader)
+             .WithMany()
+             .HasForeignKey(p => p.LeaderCharacterId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<PartyMemberEntity>(e =>
+        {
+            e.HasKey(m => new { m.PartyId, m.CharacterId });
+            // A character is in at most one party — enforced by the database, not by convention.
+            e.HasIndex(m => m.CharacterId).IsUnique();
+            e.HasOne(m => m.Party)
+             .WithMany(p => p.Members)
+             .HasForeignKey(m => m.PartyId)
+             .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(m => m.Character)
+             .WithMany()
+             .HasForeignKey(m => m.CharacterId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<PartyInvite>(e =>
+        {
+            e.HasKey(i => i.Id);
+            // One live invite per character per party.
+            e.HasIndex(i => new { i.PartyId, i.InvitedCharacterId }).IsUnique();
+            e.HasIndex(i => i.ExpiresAt);
+            e.HasOne(i => i.Party)
+             .WithMany(p => p.Invites)
+             .HasForeignKey(i => i.PartyId)
+             .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(i => i.InvitedCharacter)
+             .WithMany()
+             .HasForeignKey(i => i.InvitedCharacterId)
+             .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(i => i.InvitedByCharacter)
+             .WithMany()
+             .HasForeignKey(i => i.InvitedByCharacterId)
+             .OnDelete(DeleteBehavior.Restrict);
         });
 
         // SQLite cannot translate ORDER BY on DateTimeOffset columns; store as ISO 8601 text

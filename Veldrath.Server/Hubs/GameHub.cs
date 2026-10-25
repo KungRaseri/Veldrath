@@ -21,6 +21,7 @@ using Veldrath.Server.Features.Characters;
 using Veldrath.Server.Features.Characters.Combat;
 using Veldrath.Server.Features.LevelUp;
 using Veldrath.Server.Features.Map;
+using Veldrath.Server.Features.Party;
 using Veldrath.Server.Features.Quest;
 using Veldrath.Server.Features.Shop;
 using Veldrath.Server.Features.Zones;
@@ -432,6 +433,153 @@ public class GameHub : Hub
     /// </summary>
     public Task<IEnumerable<Guid>> GetActiveCharacters() =>
         Task.FromResult(_activeCharacters.GetActiveCharacterIds().AsEnumerable());
+
+    // Party
+
+    /// <summary>
+    /// Creates a party led by the caller's active character and joins its broadcast group. Refuses when the character
+    /// is already grouped, with the same message the tracker and the database produce.
+    /// </summary>
+    public async Task CreateParty()
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before CreateParty");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new CreatePartyHubCommand(characterId));
+            if (!result.Success || result.Party is null)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to create party");
+                return;
+            }
+
+            await Groups.AddToGroupAsync(Context.ConnectionId, PartyGroup(result.Party.PartyId));
+            await Clients.Caller.SendAsync("PartyUpdated", result.Party);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in CreateParty for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to create party");
+        }
+    }
+
+    /// <summary>
+    /// Removes the caller from their party. The remaining members get a fresh snapshot; when the last member leaves,
+    /// they are told the party disbanded.
+    /// </summary>
+    public async Task LeaveParty()
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before LeaveParty");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new LeavePartyHubCommand(characterId));
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to leave party");
+                return;
+            }
+
+            if (result.PartyId is { } leftPartyId)
+            {
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, PartyGroup(leftPartyId));
+            }
+
+            if (result.PartyDisbanded)
+            {
+                if (result.PartyId is { } disbandedId)
+                {
+                    await Clients.Group(PartyGroup(disbandedId)).SendAsync("PartyDisbanded", new { PartyId = disbandedId });
+                }
+
+                await Clients.Caller.SendAsync("PartyUpdated", null);
+                return;
+            }
+
+            if (result.Party is not null)
+            {
+                await Clients.Group(PartyGroup(result.Party.PartyId)).SendAsync("PartyUpdated", result.Party);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in LeaveParty for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to leave party");
+        }
+    }
+
+    /// <summary>Removes another character from the caller's party. The leader is the only one allowed to do this.</summary>
+    /// <param name="targetCharacterId">Character to remove.</param>
+    public async Task KickPartyMember(Guid targetCharacterId)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before KickPartyMember");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new KickPartyMemberHubCommand(characterId, targetCharacterId));
+            if (!result.Success || result.Party is null)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to remove party member");
+                return;
+            }
+
+            await Clients.Group(PartyGroup(result.Party.PartyId)).SendAsync("PartyUpdated", result.Party);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in KickPartyMember for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to remove party member");
+        }
+    }
+
+    /// <summary>
+    /// Sends the caller their party snapshot, or <see langword="null"/> when they are solo. Called on login, so being
+    /// solo is a normal answer rather than an error.
+    /// </summary>
+    public async Task GetParty()
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetParty");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new GetPartyHubQuery(characterId));
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to read party");
+                return;
+            }
+
+            if (result.Party is not null)
+            {
+                await Groups.AddToGroupAsync(Context.ConnectionId, PartyGroup(result.Party.PartyId));
+            }
+
+            await Clients.Caller.SendAsync("PartyUpdated", result.Party);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in GetParty for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to read party");
+        }
+    }
+
+    private static string PartyGroup(Guid partyId) => $"party:{partyId}";
 
     // Zone management
     /// <summary>

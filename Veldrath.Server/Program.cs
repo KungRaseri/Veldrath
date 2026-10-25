@@ -29,6 +29,7 @@ using Veldrath.Server.Features.Content;
 using Veldrath.Server.Features.Dev;
 using Veldrath.Server.Features.Editorial;
 using Veldrath.Server.Features.Foundry;
+using Veldrath.Server.Features.Party;
 using Veldrath.Server.Features.Players;
 using Veldrath.Server.Features.Reports;
 using Veldrath.Server.Features.Zones;
@@ -163,6 +164,7 @@ try
 
     // AFK is ephemeral by design: in-memory for the process lifetime, cleared on any action or reconnect.
     builder.Services.AddSingleton<IAfkTracker, AfkTracker>();
+    builder.Services.AddScoped<PartyStore>();
 
     // World tuning is validated at startup: a missing or nonsensical value fails the host rather than silently
     // falling back to a default.
