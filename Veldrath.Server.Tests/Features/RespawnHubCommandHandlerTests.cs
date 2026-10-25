@@ -44,7 +44,7 @@ public class RespawnHubCommandHandlerTests : IDisposable
     private static ZoneLocationEntry Location(string slug, string displayName, bool safeRespawn = false) =>
         new(slug, displayName, "locations", "zone-1", 10, null, null, IsSafeRespawn: safeRespawn);
 
-    private static async Task<Character> SeedDeadCharacterAsync(ApplicationDbContext db, string? zoneId = "zone-1")
+    private static async Task<Character> SeedDeadCharacterAsync(ApplicationDbContext db, string zoneId = "zone-1")
     {
         var character = await SeedCharacterAsync(
             db, """{"CurrentHealth":0,"MaxHealth":100,"CurrentMana":0,"MaxMana":40}""");
