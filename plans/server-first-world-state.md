@@ -27,12 +27,14 @@ Consequences today:
 
 ## 2. Inventory of process-local state (verified)
 
-| # | State | Where | Lifetime today | Target |
+*Inventory as measured before D1 — items 1–4 were process-local then and are DB-backed now (D2–D4).*
+
+| # | State | Where it lived before D1 | Lifetime then | Where it lives now |
 |---|---|---|---|---|
-| 1 | Live enemy instances: id, archetype, HP, level, participants, damage contributions, last attacker | [`ZoneLocationEnemyStore`](../Veldrath.Server/Features/Characters/Combat/ZoneLocationEnemyStore.cs:9), static `ConcurrentDictionary<string, List<SpawnedEnemy>>` keyed `zoneGroup/locationSlug` | Process | Postgres rows + read-through cache |
-| 2 | Enemy respawn timers | [`CombatHelpers.ScheduleRespawn`](../Veldrath.Server/Features/Characters/Combat/CombatHelpers.cs:141), `Task.Run` → `Task.Delay(60s)` | Fire-and-forget task | `RespawnAt` column + hosted sweeper |
-| 3 | Active combat sessions: zone group, location, enemy id, turn number, defending flag | [`CombatSessionStore`](../Veldrath.Server/Features/Characters/Combat/CombatSessionStore.cs:6), static `ConcurrentDictionary<Guid, ActiveCombatSession>` | Process | Postgres rows with a short TTL |
-| 4 | AFK flags and messages | `GameHub._afkCharacters`, static `ConcurrentDictionary<Guid, string?>` | Process | Ephemeral by design: move out of `GameHub` into a small service in D4, cleared on any action or reconnect |
+| 1 | Live enemy instances: id, archetype, HP, level, participants, damage contributions, last attacker | `ZoneLocationEnemyStore`, static `ConcurrentDictionary<string, List<SpawnedEnemy>>` keyed `zoneGroup/locationSlug` | Process | [`EfCoreEnemyInstanceStore`](../Veldrath.Server/Features/Characters/Combat/EfCoreEnemyInstanceStore.cs:24) → `EnemyInstances` |
+| 2 | Enemy respawn timers | `CombatHelpers.ScheduleRespawn`, `Task.Run` → `Task.Delay(60s)` | Fire-and-forget task | `RespawnAt` column + [`EnemyRespawnService`](../Veldrath.Server/Features/Characters/Combat/EnemyRespawnService.cs:23) |
+| 3 | Active combat sessions: zone group, location, enemy id, turn number, defending flag | `CombatSessionStore`, static `ConcurrentDictionary<Guid, ActiveCombatSession>` | Process | [`EfCoreCombatSessionStore`](../Veldrath.Server/Features/Characters/Combat/EfCoreCombatSessionStore.cs:16) → `CombatSessions` |
+| 4 | AFK flags and messages | `GameHub._afkCharacters`, static `ConcurrentDictionary<Guid, string?>` | Process | [`AfkTracker`](../Veldrath.Server/Services/AfkTracker.cs:36) — still in memory, ephemeral by design, cleared on any action, reconnect or disconnect |
 | 5 | Character claims and the 30 s reconnect grace window | [`ActiveCharacterTracker`](../Veldrath.Server/Services/ActiveCharacterTracker.cs:53) | Process | Keep as a cache, back the invariant with a DB uniqueness constraint |
 | 6 | Player presence (which character is in which zone/region) | `PlayerSession` entity | **DB already** | Unchanged |
 | 7 | Dropped items | `GroundItem` entity | **DB already** | Unchanged, TTL decision in §7 |
