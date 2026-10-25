@@ -1,9 +1,9 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using RealmEngine.Core.Features.Crafting.Services;
 using RealmEngine.Core.Services;
 using RealmEngine.Data.Repositories;
 using RealmEngine.Shared.Models;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Crafting;
 
@@ -487,7 +487,7 @@ public class CraftingServiceTests
         // Arrange
         var character = CreateTestCharacter(blacksmithingLevel: 10);
         character.Inventory = [new Item { Id = "iron-ingot", Name = "Iron Ingot" }];
-        
+
         var recipe = CreateTestRecipe("iron-sword", "anvil", requiredLevel: 10, unlockMethod: RecipeUnlockMethod.SkillLevel);
         recipe.Materials = [new RecipeMaterial { ItemReference = "iron-ingot", Quantity = 1 }];
 
@@ -504,7 +504,7 @@ public class CraftingServiceTests
         // Arrange
         var character = CreateTestCharacter(blacksmithingLevel: 50);
         character.Inventory = [new Item { Id = "iron-ingot", Name = "Iron Ingot" }];
-        
+
         var recipe = CreateTestRecipe("master-sword", "anvil", requiredLevel: 10, unlockMethod: RecipeUnlockMethod.Trainer);
         recipe.Materials = [new RecipeMaterial { ItemReference = "iron-ingot", Quantity = 1 }];
 
@@ -527,7 +527,7 @@ public class CraftingServiceTests
         // Arrange
         var character = CreateTestCharacter(blacksmithingLevel: 30);
         character.Inventory = [new Item { Id = "iron-ingot", Name = "Iron Ingot" }];
-        
+
         var recipe = CreateTestRecipe("hero-sword", "anvil", requiredLevel: 20, unlockMethod: RecipeUnlockMethod.QuestReward);
         recipe.Materials = [new RecipeMaterial { ItemReference = "iron-ingot", Quantity = 1 }];
 
@@ -549,7 +549,7 @@ public class CraftingServiceTests
         // Arrange
         var character = CreateTestCharacter(alchemyLevel: 25);
         character.Inventory = [new Item { Id = "herb", Name = "Herb" }];
-        
+
         var recipe = CreateTestRecipe("mysterious-potion", "alchemytable", requiredLevel: 15, unlockMethod: RecipeUnlockMethod.Discovery);
         recipe.Materials = [new RecipeMaterial { ItemReference = "herb", Quantity = 1 }];
 

@@ -46,20 +46,20 @@ public class EfCoreLootTableRepository(ContentDbContext db, ILogger<EfCoreLootTa
 
     private static LootTableData MapToModel(Entities.LootTable e) => new()
     {
-        Slug         = e.Slug,
-        Name         = e.DisplayName ?? e.Slug,
-        Context      = e.TypeKey,
+        Slug = e.Slug,
+        Name = e.DisplayName ?? e.Slug,
+        Context = e.TypeKey,
         RarityWeight = e.RarityWeight,
-        IsBoss       = e.Traits.Boss == true,
-        IsChest      = e.Traits.IsChest == true,
+        IsBoss = e.Traits.Boss == true,
+        IsChest = e.Traits.IsChest == true,
         IsHarvesting = e.Traits.IsHarvesting == true,
-        Entries      = e.Entries.Select(entry => new LootTableEntryData
+        Entries = e.Entries.Select(entry => new LootTableEntryData
         {
-            ItemDomain   = entry.ItemDomain,
-            ItemSlug     = entry.ItemSlug,
-            DropWeight   = entry.DropWeight,
-            QuantityMin  = entry.QuantityMin,
-            QuantityMax  = entry.QuantityMax,
+            ItemDomain = entry.ItemDomain,
+            ItemSlug = entry.ItemSlug,
+            DropWeight = entry.DropWeight,
+            QuantityMin = entry.QuantityMin,
+            QuantityMax = entry.QuantityMax,
             IsGuaranteed = entry.IsGuaranteed,
         }).ToList(),
     };

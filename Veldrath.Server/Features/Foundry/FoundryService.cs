@@ -17,13 +17,13 @@ public class FoundryService(ApplicationDbContext db)
 
         var submission = new FoundrySubmission
         {
-            Id          = Guid.NewGuid(),
+            Id = Guid.NewGuid(),
             SubmitterId = submitterId,
             ContentType = contentType,
-            Title       = request.Title,
+            Title = request.Title,
             Description = request.Description,
-            Payload     = request.Payload,
-            Status      = FoundrySubmissionStatus.Pending,
+            Payload = request.Payload,
+            Status = FoundrySubmissionStatus.Pending,
         };
 
         db.FoundrySubmissions.Add(submission);
@@ -96,10 +96,10 @@ public class FoundryService(ApplicationDbContext db)
         {
             db.FoundryVotes.Add(new FoundryVote
             {
-                Id           = Guid.NewGuid(),
+                Id = Guid.NewGuid(),
                 SubmissionId = submissionId,
-                VoterId      = voterId,
-                Value        = value,
+                VoterId = voterId,
+                Value = value,
             });
         }
 
@@ -120,22 +120,22 @@ public class FoundryService(ApplicationDbContext db)
         if (submission is null)
             return (null, "Submission not found.");
 
-        submission.Status     = request.Approved
+        submission.Status = request.Approved
             ? FoundrySubmissionStatus.Approved
             : FoundrySubmissionStatus.Rejected;
-        submission.ReviewerId  = reviewerId;
+        submission.ReviewerId = reviewerId;
         submission.ReviewNotes = request.Notes;
-        submission.ReviewedAt  = DateTimeOffset.UtcNow;
-        submission.UpdatedAt   = DateTimeOffset.UtcNow;
+        submission.ReviewedAt = DateTimeOffset.UtcNow;
+        submission.UpdatedAt = DateTimeOffset.UtcNow;
 
         await db.SaveChangesAsync(ct);
 
         db.FoundryNotifications.Add(new FoundryNotification
         {
-            Id           = Guid.NewGuid(),
-            RecipientId  = submission.SubmitterId,
+            Id = Guid.NewGuid(),
+            RecipientId = submission.SubmitterId,
             SubmissionId = submissionId,
-            Message      = request.Approved
+            Message = request.Approved
                 ? $"Your submission \"{submission.Title}\" was approved!"
                 : $"Your submission \"{submission.Title}\" was rejected. {request.Notes}",
         });
@@ -169,7 +169,7 @@ public class FoundryService(ApplicationDbContext db)
         if (notification is null) return false;
 
         notification.IsRead = true;
-        notification.ReadAt  = DateTimeOffset.UtcNow;
+        notification.ReadAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(ct);
         return true;
     }

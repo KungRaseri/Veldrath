@@ -85,10 +85,10 @@ public class GetLocationSpawnInfoHandler : IRequestHandler<GetLocationSpawnInfoQ
             LocationType = location.Type,
             DangerRating = location.DangerRating,
             RecommendedLevel = recommendedLevel,
-            EnemyReferences = [..enemyReferences],
+            EnemyReferences = [.. enemyReferences],
             EnemySpawnWeights = spawnWeights,
-            LootReferences = [..lootReferences],
-            AvailableNPCs = [..availableNpcs],
+            LootReferences = [.. lootReferences],
+            AvailableNPCs = [.. availableNpcs],
             Metadata = location.Metadata ?? new Dictionary<string, object>()
         };
     }

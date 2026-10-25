@@ -14,13 +14,7 @@ public class CharacterEndpointTests(WebAppFactory factory)
     // Helper — register + login and return a bearer token.
     private async Task<string> GetTokenAsync(string username)
     {
-        var email = $"{username.ToLower()}@test.com";
-        await _client.PostAsJsonAsync("/api/auth/register",
-            new { Email = email, Username = username, Password = "TestP@ssword123" });
-        var login = await _client.PostAsJsonAsync("/api/auth/login",
-            new { Email = email, Password = "TestP@ssword123" });
-        var auth = await login.Content.ReadFromJsonAsync<AuthResponse>();
-        return auth!.AccessToken;
+        return (await factory.CreateAccountTokenAsync(username)).Token;
     }
 
     [Fact]
@@ -381,7 +375,7 @@ public class CharacterEndpointTests(WebAppFactory factory)
 
         // Create three characters
         var names = new[] { "MultiDel_A", "MultiDel_B", "MultiDel_C" };
-        var ids   = new List<Guid>();
+        var ids = new List<Guid>();
         foreach (var n in names)
         {
             var r = await _client.PostAsJsonAsync("/api/characters",

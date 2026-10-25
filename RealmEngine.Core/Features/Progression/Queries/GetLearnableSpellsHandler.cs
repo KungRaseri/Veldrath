@@ -1,5 +1,5 @@
-using RealmEngine.Core.Features.Progression.Services;
 using MediatR;
+using RealmEngine.Core.Features.Progression.Services;
 
 namespace RealmEngine.Core.Features.Progression.Queries;
 

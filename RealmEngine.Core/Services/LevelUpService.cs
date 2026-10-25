@@ -33,7 +33,7 @@ public class LevelUpService
     public int CalculateTotalExperienceForLevel(int level)
     {
         if (level < 1) return 0;
-        
+
         int total = 0;
         for (int i = 1; i < level; i++)
         {
@@ -179,11 +179,11 @@ public class LevelUpService
 
     private static SkillType MapCategory(string category) => category.ToLowerInvariant() switch
     {
-        "combat"      => SkillType.Combat,
-        "defense"     => SkillType.Defense,
-        "magic"       => SkillType.Magic,
-        "passive"     => SkillType.Passive,
-        _             => SkillType.Utility,
+        "combat" => SkillType.Combat,
+        "defense" => SkillType.Defense,
+        "magic" => SkillType.Magic,
+        "passive" => SkillType.Passive,
+        _ => SkillType.Utility,
     };
 
     /// <summary>
@@ -218,47 +218,47 @@ public class LevelUpPreview
     /// Gets or sets the character's current level.
     /// </summary>
     public int CurrentLevel { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the target level to preview.
     /// </summary>
     public int TargetLevel { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the total attribute points gained.
     /// </summary>
     public int AttributePointsGained { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the total skill points gained.
     /// </summary>
     public int SkillPointsGained { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the current maximum health.
     /// </summary>
     public int CurrentMaxHealth { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the new maximum health after leveling.
     /// </summary>
     public int NewMaxHealth { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the current maximum mana.
     /// </summary>
     public int CurrentMaxMana { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the new maximum mana after leveling.
     /// </summary>
     public int NewMaxMana { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the health gained from leveling.
     /// </summary>
     public int HealthGain { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the mana gained from leveling.
     /// </summary>

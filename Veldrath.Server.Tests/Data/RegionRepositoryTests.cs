@@ -14,7 +14,7 @@ public class RegionRepositoryTests : IDisposable
     public async Task GetAllAsync_Should_Return_All_Seeded_Regions()
     {
         await using var db = _factory.CreateContext();
-        var repo   = new RegionRepository(db);
+        var repo = new RegionRepository(db);
         var result = await repo.GetAllAsync();
 
         result.Should().HaveCount(4);
@@ -28,7 +28,7 @@ public class RegionRepositoryTests : IDisposable
     public async Task GetAllAsync_Should_Return_Regions_Ordered_By_MinLevel()
     {
         await using var db = _factory.CreateContext();
-        var repo   = new RegionRepository(db);
+        var repo = new RegionRepository(db);
         var result = await repo.GetAllAsync();
 
         result.Select(r => r.MinLevel).Should().BeInAscendingOrder();
@@ -39,7 +39,7 @@ public class RegionRepositoryTests : IDisposable
     public async Task GetByIdAsync_Should_Return_Region_When_Found()
     {
         await using var db = _factory.CreateContext();
-        var repo   = new RegionRepository(db);
+        var repo = new RegionRepository(db);
         var result = await repo.GetByIdAsync("greymoor");
 
         result.Should().NotBeNull();
@@ -52,7 +52,7 @@ public class RegionRepositoryTests : IDisposable
     public async Task GetByIdAsync_Should_Return_Null_When_Not_Found()
     {
         await using var db = _factory.CreateContext();
-        var repo   = new RegionRepository(db);
+        var repo = new RegionRepository(db);
         var result = await repo.GetByIdAsync("nonexistent");
 
         result.Should().BeNull();
@@ -63,7 +63,7 @@ public class RegionRepositoryTests : IDisposable
     {
         await using var db = _factory.CreateContext();
         // greymoor connects outward to varenmark, saltcliff, cinderplain
-        var repo   = new RegionRepository(db);
+        var repo = new RegionRepository(db);
         var result = await repo.GetConnectedAsync("greymoor");
 
         result.Should().HaveCount(3);
@@ -77,7 +77,7 @@ public class RegionRepositoryTests : IDisposable
     {
         await using var db = _factory.CreateContext();
         // varenmark only connects outward to greymoor
-        var repo   = new RegionRepository(db);
+        var repo = new RegionRepository(db);
         var result = await repo.GetConnectedAsync("varenmark");
 
         result.Should().ContainSingle(r => r.Id == "greymoor");
@@ -87,7 +87,7 @@ public class RegionRepositoryTests : IDisposable
     public async Task GetConnectedAsync_Should_Return_Empty_For_Unknown_Region()
     {
         await using var db = _factory.CreateContext();
-        var repo   = new RegionRepository(db);
+        var repo = new RegionRepository(db);
         var result = await repo.GetConnectedAsync("nonexistent");
 
         result.Should().BeEmpty();
@@ -97,7 +97,7 @@ public class RegionRepositoryTests : IDisposable
     public async Task GetAllAsync_Should_Include_Starter_Region()
     {
         await using var db = _factory.CreateContext();
-        var repo   = new RegionRepository(db);
+        var repo = new RegionRepository(db);
         var result = await repo.GetAllAsync();
 
         result.Should().ContainSingle(r => r.IsStarter);

@@ -32,15 +32,15 @@ public sealed class ContentLanguageEndpointsFixture : IAsyncLifetime
 
         db.Languages.Add(new Language
         {
-            Slug           = "typed-calethic",
-            TypeKey        = "imperial",
-            DisplayName    = "Typed Calethic",
-            IsActive       = true,
-            RarityWeight   = 60,
+            Slug = "typed-calethic",
+            TypeKey = "imperial",
+            DisplayName = "Typed Calethic",
+            IsActive = true,
+            RarityWeight = 60,
             TonalCharacter = "Hard + Formal",
-            Description    = "The official tongue of the Caleth Empire.",
-            Phonology      = new LanguagePhonology(),
-            Morphology     = new LanguageMorphology(),
+            Description = "The official tongue of the Caleth Empire.",
+            Phonology = new LanguagePhonology(),
+            Morphology = new LanguageMorphology(),
             RegisterSystem = new LanguageRegisters(),
         });
 

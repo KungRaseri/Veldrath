@@ -115,7 +115,7 @@ public class InMemoryNodeRepository : INodeRepository
         }
         _locationIndex[node.LocationId].Add(node.NodeId);
 
-        _logger.LogInformation("Spawned node {NodeId} ({NodeType}) at location {LocationId}", 
+        _logger.LogInformation("Spawned node {NodeId} ({NodeType}) at location {LocationId}",
             node.NodeId, node.NodeType, node.LocationId);
 
         return Task.FromResult(node);
@@ -147,7 +147,7 @@ public class InMemoryNodeRepository : INodeRepository
     {
         var now = DateTime.UtcNow;
         var readyNodes = _nodes.Values
-            .Where(n => n.CurrentHealth < n.MaxHealth && 
+            .Where(n => n.CurrentHealth < n.MaxHealth &&
                        (now - n.LastHarvestedAt).TotalSeconds >= 60) // Default 60 second delay
             .ToList();
 

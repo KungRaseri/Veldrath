@@ -37,25 +37,25 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
 
             return tableName switch
             {
-                "Powers"             => await db.Powers.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "Species"            => await db.Species.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "ActorClasses"       => await db.ActorClasses.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "ActorArchetypes"    => await db.ActorArchetypes.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "ActorInstances"     => await db.ActorInstances.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "Items"              => await db.Items.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "Materials"          => await db.Materials.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "Enchantments"       => await db.Enchantments.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "Skills"             => await db.Skills.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "Powers" => await db.Powers.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "Species" => await db.Species.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "ActorClasses" => await db.ActorClasses.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "ActorArchetypes" => await db.ActorArchetypes.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "ActorInstances" => await db.ActorInstances.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "Items" => await db.Items.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "Materials" => await db.Materials.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "Enchantments" => await db.Enchantments.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "Skills" => await db.Skills.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 // Powers merged Spells — no separate Spells table key needed
-                "Backgrounds"        => await db.Backgrounds.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "Quests"             => await db.Quests.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "Recipes"            => await db.Recipes.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "LootTables"         => await db.LootTables.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "Organizations"      => await db.Organizations.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "Backgrounds" => await db.Backgrounds.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "Quests" => await db.Quests.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "Recipes" => await db.Recipes.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "LootTables" => await db.LootTables.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "Organizations" => await db.Organizations.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
                 "MaterialProperties" => await db.MaterialProperties.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "ZoneLocations"     => await db.ZoneLocations.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                "Dialogues"          => await db.Dialogues.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
-                _                    => null
+                "ZoneLocations" => await db.ZoneLocations.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                "Dialogues" => await db.Dialogues.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entityId),
+                _ => null
             };
         }
         catch (Exception ex)
@@ -147,25 +147,25 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
 
             var removed = tableName switch
             {
-                "Powers"             => await RemoveFromSet<Power>(db, entityId),
-                "Species"            => await RemoveFromSet<Species>(db, entityId),
-                "ActorClasses"       => await RemoveFromSet<ActorClass>(db, entityId),
-                "ActorArchetypes"    => await RemoveFromSet<ActorArchetype>(db, entityId),
-                "ActorInstances"     => await RemoveFromSet<ActorInstance>(db, entityId),
-                "Items"              => await RemoveFromSet<Item>(db, entityId),
-                "Materials"          => await RemoveFromSet<Material>(db, entityId),
-                "Enchantments"       => await RemoveFromSet<Enchantment>(db, entityId),
-                "Skills"             => await RemoveFromSet<Skill>(db, entityId),
+                "Powers" => await RemoveFromSet<Power>(db, entityId),
+                "Species" => await RemoveFromSet<Species>(db, entityId),
+                "ActorClasses" => await RemoveFromSet<ActorClass>(db, entityId),
+                "ActorArchetypes" => await RemoveFromSet<ActorArchetype>(db, entityId),
+                "ActorInstances" => await RemoveFromSet<ActorInstance>(db, entityId),
+                "Items" => await RemoveFromSet<Item>(db, entityId),
+                "Materials" => await RemoveFromSet<Material>(db, entityId),
+                "Enchantments" => await RemoveFromSet<Enchantment>(db, entityId),
+                "Skills" => await RemoveFromSet<Skill>(db, entityId),
                 // Powers merged Spells — no separate Spells table key needed
-                "Backgrounds"        => await RemoveFromSet<Background>(db, entityId),
-                "Quests"             => await RemoveFromSet<Quest>(db, entityId),
-                "Recipes"            => await RemoveFromSet<Recipe>(db, entityId),
-                "LootTables"         => await RemoveFromSet<LootTable>(db, entityId),
-                "Organizations"      => await RemoveFromSet<Organization>(db, entityId),
+                "Backgrounds" => await RemoveFromSet<Background>(db, entityId),
+                "Quests" => await RemoveFromSet<Quest>(db, entityId),
+                "Recipes" => await RemoveFromSet<Recipe>(db, entityId),
+                "LootTables" => await RemoveFromSet<LootTable>(db, entityId),
+                "Organizations" => await RemoveFromSet<Organization>(db, entityId),
                 "MaterialProperties" => await RemoveFromSet<MaterialProperty>(db, entityId),
-                "ZoneLocations"     => await RemoveFromSet<ZoneLocation>(db, entityId),
-                "Dialogues"          => await RemoveFromSet<Dialogue>(db, entityId),
-                _                    => false
+                "ZoneLocations" => await RemoveFromSet<ZoneLocation>(db, entityId),
+                "Dialogues" => await RemoveFromSet<Dialogue>(db, entityId),
+                _ => false
             };
 
             if (removed)
@@ -200,49 +200,49 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
 
     private static ContentBase NewEntityInstance(string tableName) => tableName switch
     {
-        "Powers"             => new Power(),
-        "Species"            => new Species(),
-        "ActorClasses"       => new ActorClass(),
-        "ActorArchetypes"    => new ActorArchetype(),
-        "ActorInstances"     => new ActorInstance(),
-        "Items"              => new Item(),
-        "Materials"          => new Material(),
-        "Enchantments"       => new Enchantment(),
-        "Skills"             => new Skill(),
+        "Powers" => new Power(),
+        "Species" => new Species(),
+        "ActorClasses" => new ActorClass(),
+        "ActorArchetypes" => new ActorArchetype(),
+        "ActorInstances" => new ActorInstance(),
+        "Items" => new Item(),
+        "Materials" => new Material(),
+        "Enchantments" => new Enchantment(),
+        "Skills" => new Skill(),
         // "Spells" merged into Powers — use "Powers" table key
-        "Backgrounds"        => new Background(),
-        "Quests"             => new Quest(),
-        "Recipes"            => new Recipe(),
-        "LootTables"         => new LootTable(),
-        "Organizations"      => new Organization(),
+        "Backgrounds" => new Background(),
+        "Quests" => new Quest(),
+        "Recipes" => new Recipe(),
+        "LootTables" => new LootTable(),
+        "Organizations" => new Organization(),
         "MaterialProperties" => new MaterialProperty(),
-        "ZoneLocations"     => new ZoneLocation(),
-        "Dialogues"          => new Dialogue(),
-        _                    => throw new ArgumentException($"Unknown table: {tableName}")
+        "ZoneLocations" => new ZoneLocation(),
+        "Dialogues" => new Dialogue(),
+        _ => throw new ArgumentException($"Unknown table: {tableName}")
     };
 
     private static void AddToDbSet(ContentDbContext db, string tableName, ContentBase entity)
     {
         switch (tableName)
         {
-            case "Powers":             db.Powers.Add((Power)entity);                         break;
-            case "Species":            db.Species.Add((Species)entity);                         break;
-            case "ActorClasses":       db.ActorClasses.Add((ActorClass)entity);                 break;
-            case "ActorArchetypes":    db.ActorArchetypes.Add((ActorArchetype)entity);           break;
-            case "ActorInstances":     db.ActorInstances.Add((ActorInstance)entity);             break;
-            case "Items":              db.Items.Add((Item)entity);                              break;
-            case "Materials":          db.Materials.Add((Material)entity);                      break;
-            case "Enchantments":       db.Enchantments.Add((Enchantment)entity);                break;
-            case "Skills":             db.Skills.Add((Skill)entity);                            break;
+            case "Powers": db.Powers.Add((Power)entity); break;
+            case "Species": db.Species.Add((Species)entity); break;
+            case "ActorClasses": db.ActorClasses.Add((ActorClass)entity); break;
+            case "ActorArchetypes": db.ActorArchetypes.Add((ActorArchetype)entity); break;
+            case "ActorInstances": db.ActorInstances.Add((ActorInstance)entity); break;
+            case "Items": db.Items.Add((Item)entity); break;
+            case "Materials": db.Materials.Add((Material)entity); break;
+            case "Enchantments": db.Enchantments.Add((Enchantment)entity); break;
+            case "Skills": db.Skills.Add((Skill)entity); break;
             // case "Spells": merged into Powers
-            case "Backgrounds":        db.Backgrounds.Add((Background)entity);                  break;
-            case "Quests":             db.Quests.Add((Quest)entity);                            break;
-            case "Recipes":            db.Recipes.Add((Recipe)entity);                          break;
-            case "LootTables":         db.LootTables.Add((LootTable)entity);                    break;
-            case "Organizations":      db.Organizations.Add((Organization)entity);              break;
-            case "MaterialProperties": db.MaterialProperties.Add((MaterialProperty)entity);     break;
-            case "ZoneLocations":     db.ZoneLocations.Add((ZoneLocation)entity);            break;
-            case "Dialogues":          db.Dialogues.Add((Dialogue)entity);                      break;
+            case "Backgrounds": db.Backgrounds.Add((Background)entity); break;
+            case "Quests": db.Quests.Add((Quest)entity); break;
+            case "Recipes": db.Recipes.Add((Recipe)entity); break;
+            case "LootTables": db.LootTables.Add((LootTable)entity); break;
+            case "Organizations": db.Organizations.Add((Organization)entity); break;
+            case "MaterialProperties": db.MaterialProperties.Add((MaterialProperty)entity); break;
+            case "ZoneLocations": db.ZoneLocations.Add((ZoneLocation)entity); break;
+            case "Dialogues": db.Dialogues.Add((Dialogue)entity); break;
         }
     }
 
@@ -271,25 +271,25 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
 
             return tableName switch
             {
-                "Powers"             => await SelectRows(db.Powers, typeKey),
-                "Species"            => await SelectRows(db.Species, typeKey),
-                "ActorClasses"       => await SelectRows(db.ActorClasses, typeKey),
-                "ActorArchetypes"    => await SelectRows(db.ActorArchetypes, typeKey),
-                "ActorInstances"     => await SelectRows(db.ActorInstances, typeKey),
-                "Items"              => await SelectRows(db.Items, typeKey),
-                "Materials"          => await SelectRows(db.Materials, typeKey),
-                "Enchantments"       => await SelectRows(db.Enchantments, typeKey),
-                "Skills"             => await SelectRows(db.Skills, typeKey),
+                "Powers" => await SelectRows(db.Powers, typeKey),
+                "Species" => await SelectRows(db.Species, typeKey),
+                "ActorClasses" => await SelectRows(db.ActorClasses, typeKey),
+                "ActorArchetypes" => await SelectRows(db.ActorArchetypes, typeKey),
+                "ActorInstances" => await SelectRows(db.ActorInstances, typeKey),
+                "Items" => await SelectRows(db.Items, typeKey),
+                "Materials" => await SelectRows(db.Materials, typeKey),
+                "Enchantments" => await SelectRows(db.Enchantments, typeKey),
+                "Skills" => await SelectRows(db.Skills, typeKey),
                 // Powers merged Spells — no separate Spells table key needed
-                "Backgrounds"        => await SelectRows(db.Backgrounds, typeKey),
-                "Quests"             => await SelectRows(db.Quests, typeKey),
-                "Recipes"            => await SelectRows(db.Recipes, typeKey),
-                "LootTables"         => await SelectRows(db.LootTables, typeKey),
-                "Organizations"      => await SelectRows(db.Organizations, typeKey),
+                "Backgrounds" => await SelectRows(db.Backgrounds, typeKey),
+                "Quests" => await SelectRows(db.Quests, typeKey),
+                "Recipes" => await SelectRows(db.Recipes, typeKey),
+                "LootTables" => await SelectRows(db.LootTables, typeKey),
+                "Organizations" => await SelectRows(db.Organizations, typeKey),
                 "MaterialProperties" => await SelectRows(db.MaterialProperties, typeKey),
-                "ZoneLocations"     => await SelectRows(db.ZoneLocations, typeKey),
-                "Dialogues"          => await SelectRows(db.Dialogues, typeKey),
-                _                    => []
+                "ZoneLocations" => await SelectRows(db.ZoneLocations, typeKey),
+                "Dialogues" => await SelectRows(db.Dialogues, typeKey),
+                _ => []
             };
         }
         catch (Exception ex)
@@ -307,12 +307,12 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
             .OrderBy(e => e.Slug)
             .Select(e => new EntityListRowViewModel
             {
-                EntityId     = e.Id,
-                Slug         = e.Slug,
-                DisplayName  = e.DisplayName,
+                EntityId = e.Id,
+                Slug = e.Slug,
+                DisplayName = e.DisplayName,
                 RarityWeight = e.RarityWeight,
-                IsActive     = e.IsActive,
-                UpdatedAt    = e.UpdatedAt
+                IsActive = e.IsActive,
+                UpdatedAt = e.UpdatedAt
             })
             .ToListAsync();
     }
@@ -505,7 +505,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
                 var id = await FindAbilityIdAsync(db, slug);
                 if (id is not null)
                     db.ArchetypePowerPools.Add(new ArchetypePowerPool
-                        { ArchetypeId = archetypeId, PowerId = id.Value, UseChance = useChance });
+                    { ArchetypeId = archetypeId, PowerId = id.Value, UseChance = useChance });
             }
             await db.SaveChangesAsync();
             return true;
@@ -528,7 +528,7 @@ public class ContentEditorService(IServiceScopeFactory scopeFactory, ILogger<Con
                 var id = await FindAbilityIdAsync(db, slug);
                 if (id is not null)
                     db.ClassPowerUnlocks.Add(new ClassPowerUnlock
-                        { ClassId = classId, PowerId = id.Value, LevelRequired = level, Rank = rank });
+                    { ClassId = classId, PowerId = id.Value, LevelRequired = level, Rank = rank });
             }
             await db.SaveChangesAsync();
             return true;

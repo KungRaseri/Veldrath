@@ -49,18 +49,18 @@ public class EfCoreItemRepository(ContentDbContext db, ILogger<EfCoreItemReposit
 
     private static Item MapToModel(Entities.Item entity) => new()
     {
-        Slug        = entity.Slug,
-        Name        = entity.DisplayName ?? entity.Slug,
+        Slug = entity.Slug,
+        Name = entity.DisplayName ?? entity.Slug,
         Description = string.Empty,
-        Type        = MapItemType(entity),
-        TypeKey     = entity.TypeKey,
-        Weight      = entity.Stats.Weight ?? 0.0,
-        Price       = entity.Stats.Value ?? 0,
-        StackSize   = entity.Stats.StackSize ?? 1,
+        Type = MapItemType(entity),
+        TypeKey = entity.TypeKey,
+        Weight = entity.Stats.Weight ?? 0.0,
+        Price = entity.Stats.Value ?? 0,
+        StackSize = entity.Stats.StackSize ?? 1,
         IsStackable = entity.Traits.Stackable ?? false,
-        WeaponType  = entity.WeaponType,
-        ArmorType   = entity.ArmorType,
-        ArmorClass  = entity.ArmorType,
+        WeaponType = entity.WeaponType,
+        ArmorType = entity.ArmorType,
+        ArmorClass = entity.ArmorType,
     };
 
     /// <summary>
@@ -82,14 +82,14 @@ public class EfCoreItemRepository(ContentDbContext db, ILogger<EfCoreItemReposit
             return category switch
             {
                 "head" or "helmet" or "helm" => ItemType.Helmet,
-                "shoulders" or "shoulder"     => ItemType.Shoulders,
+                "shoulders" or "shoulder" => ItemType.Shoulders,
                 "chest" or "light" or "medium" or "heavy" => ItemType.Chest,
-                "bracers" or "wrist"          => ItemType.Bracers,
-                "gloves" or "hands"           => ItemType.Gloves,
-                "belt"                        => ItemType.Belt,
-                "legs"                        => ItemType.Legs,
-                "feet" or "boots"             => ItemType.Boots,
-                _                             => ItemType.Chest,
+                "bracers" or "wrist" => ItemType.Bracers,
+                "gloves" or "hands" => ItemType.Gloves,
+                "belt" => ItemType.Belt,
+                "legs" => ItemType.Legs,
+                "feet" or "boots" => ItemType.Boots,
+                _ => ItemType.Chest,
             };
         }
 

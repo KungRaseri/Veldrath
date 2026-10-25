@@ -28,73 +28,73 @@ public sealed class ContentTypedEndpointsFixture : IAsyncLifetime
 
         db.ActorClasses.Add(new ActorClass
         {
-            Slug        = "typed-warrior",
-            TypeKey     = "melee",
+            Slug = "typed-warrior",
+            TypeKey = "melee",
             DisplayName = "Typed Warrior",
-            IsActive    = true,
+            IsActive = true,
             PrimaryStat = "strength",
         });
 
         db.Species.Add(new Species
         {
-            Slug               = "typed-human",
-            TypeKey            = "humanoid",
-            DisplayName        = "Typed Human",
-            IsActive           = true,
+            Slug = "typed-human",
+            TypeKey = "humanoid",
+            DisplayName = "Typed Human",
+            IsActive = true,
             IsPlayerSelectable = true,
         });
 
         db.Backgrounds.Add(new Background
         {
-            Slug        = "typed-soldier",
-            TypeKey     = "combat",
+            Slug = "typed-soldier",
+            TypeKey = "combat",
             DisplayName = "Typed Soldier",
-            IsActive    = true,
+            IsActive = true,
         });
 
         db.Skills.Add(new Skill
         {
-            Slug        = "typed-mining",
-            TypeKey     = "gathering",
+            Slug = "typed-mining",
+            TypeKey = "gathering",
             DisplayName = "Typed Mining",
-            IsActive    = true,
+            IsActive = true,
         });
 
         // Two enchantments with different TargetSlot values to test slot filtering.
         db.Enchantments.Add(new Enchantment
         {
-            Slug        = "typed-flame",
-            TypeKey     = "elemental",
+            Slug = "typed-flame",
+            TypeKey = "elemental",
             DisplayName = "Flame Enchant",
-            IsActive    = true,
-            TargetSlot  = "weapon",
+            IsActive = true,
+            TargetSlot = "weapon",
         });
         db.Enchantments.Add(new Enchantment
         {
-            Slug        = "typed-frost",
-            TypeKey     = "elemental",
+            Slug = "typed-frost",
+            TypeKey = "elemental",
             DisplayName = "Frost Enchant",
-            IsActive    = true,
-            TargetSlot  = "armor",
+            IsActive = true,
+            TargetSlot = "armor",
         });
 
         db.Powers.Add(new Power
         {
-            Slug        = "typed-strike",
-            TypeKey     = "offensive",
+            Slug = "typed-strike",
+            TypeKey = "offensive",
             DisplayName = "Typed Strike",
-            IsActive    = true,
-            PowerType   = "active",
+            IsActive = true,
+            PowerType = "active",
         });
 
         // Item entity: TypeKey = category; ItemType = sub-type used for filtering.
         db.Items.Add(new Item
         {
-            Slug        = "typed-gem",
-            TypeKey     = "gems",
+            Slug = "typed-gem",
+            TypeKey = "gems",
             DisplayName = "Typed Gem",
-            IsActive    = true,
-            ItemType    = "gem",
+            IsActive = true,
+            ItemType = "gem",
         });
 
         await db.SaveChangesAsync();

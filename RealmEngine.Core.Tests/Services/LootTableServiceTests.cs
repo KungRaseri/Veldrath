@@ -1,10 +1,10 @@
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RealmEngine.Core.Services;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Repositories;
-using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 namespace RealmEngine.Core.Tests.Services;

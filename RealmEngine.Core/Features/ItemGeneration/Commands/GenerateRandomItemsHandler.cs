@@ -87,7 +87,7 @@ public class GenerateRandomItemsHandler : IRequestHandler<GenerateRandomItemsCom
 
             // Generate items
             var items = new List<Item>();
-            
+
             if (request.UseBudgetGeneration)
             {
                 // Budget-based generation (materials + enchantments)
@@ -140,23 +140,23 @@ public class GenerateRandomItemsHandler : IRequestHandler<GenerateRandomItemsCom
         if (!string.IsNullOrWhiteSpace(request.CategoryPattern))
         {
             categories = _categoryDiscovery.FindCategories("items", request.CategoryPattern).ToList();
-            
+
             if (categories.Any())
             {
-                _logger.LogDebug("Using CategoryPattern '{Pattern}': found {Count} categories", 
+                _logger.LogDebug("Using CategoryPattern '{Pattern}': found {Count} categories",
                     request.CategoryPattern, categories.Count);
                 return Task.FromResult(categories);
             }
-            
+
             _logger.LogWarning("CategoryPattern '{Pattern}' matched no categories", request.CategoryPattern);
             return Task.FromResult(categories);
         }
 
         // Priority 2: Category (legacy, exact match or "random")
         var categoryFilter = request.Category;
-        
+
         // If no filter or "random", get all available categories
-        if (string.IsNullOrWhiteSpace(categoryFilter) || 
+        if (string.IsNullOrWhiteSpace(categoryFilter) ||
             categoryFilter.Equals("random", StringComparison.OrdinalIgnoreCase))
         {
             categories = GetAllCategories();
@@ -179,7 +179,7 @@ public class GenerateRandomItemsHandler : IRequestHandler<GenerateRandomItemsCom
 
         // Try to find all leaf categories under this parent path
         categories = _categoryDiscovery.FindCategories("items", $"{categoryFilter}/*").ToList();
-        
+
         if (!categories.Any())
         {
             _logger.LogWarning("Category '{Category}' not found and has no subcategories", categoryFilter);
@@ -206,7 +206,7 @@ public class GenerateRandomItemsHandler : IRequestHandler<GenerateRandomItemsCom
             {
                 // Pick random category
                 var category = categories[_random.Next(categories.Count)];
-                
+
                 // Random budget in range
                 var budget = _random.Next(minBudget, maxBudget + 1);
 
@@ -219,7 +219,7 @@ public class GenerateRandomItemsHandler : IRequestHandler<GenerateRandomItemsCom
                 };
 
                 var item = await _itemGenerator.GenerateItemModelWithBudgetAsync(request);
-                
+
                 if (item != null)
                 {
                     items.Add(item);
@@ -253,7 +253,7 @@ public class GenerateRandomItemsHandler : IRequestHandler<GenerateRandomItemsCom
 
                 // Generate random item from category
                 var categoryItems = await _itemGenerator.GenerateItemsAsync(category, 1, hydrate);
-                
+
                 if (categoryItems != null && categoryItems.Count > 0)
                 {
                     items.Add(categoryItems[0]);

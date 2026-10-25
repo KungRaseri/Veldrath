@@ -22,10 +22,10 @@ public partial class FieldRowViewModel : ReactiveObject
 
     public FieldRowViewModel(PropertyInfo prop, object owner, ContentFieldDescriptor? descriptor = null)
     {
-        _prop       = prop;
-        _owner      = owner;
+        _prop = prop;
+        _owner = owner;
         _descriptor = descriptor;
-        Label       = descriptor?.Label ?? FormatLabel(prop.Name);
+        Label = descriptor?.Label ?? FormatLabel(prop.Name);
 
         var underlying = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
         IsNullable = Nullable.GetUnderlyingType(prop.PropertyType) != null
@@ -35,19 +35,19 @@ public partial class FieldRowViewModel : ReactiveObject
              : FieldKind.Number;
     }
 
-    public string  Label      { get; }
-    public FieldKind Kind     { get; }
-    public bool IsNullable    { get; }
+    public string Label { get; }
+    public FieldKind Kind { get; }
+    public bool IsNullable { get; }
 
     // Schema-driven metadata (falls back to safe defaults when no descriptor)
-    public decimal Min        => _descriptor?.Min is double lo ? (decimal)lo : decimal.MinValue;
-    public decimal Max        => _descriptor?.Max is double hi ? (decimal)hi : decimal.MaxValue;
-    public string? Hint       => _descriptor?.Hint;
-    public bool    IsRequired => _descriptor?.Required ?? false;
+    public decimal Min => _descriptor?.Min is double lo ? (decimal)lo : decimal.MinValue;
+    public decimal Max => _descriptor?.Max is double hi ? (decimal)hi : decimal.MaxValue;
+    public string? Hint => _descriptor?.Hint;
+    public bool IsRequired => _descriptor?.Required ?? false;
 
-    public bool IsText   => Kind == FieldKind.Text;
+    public bool IsText => Kind == FieldKind.Text;
     public bool IsNumber => Kind == FieldKind.Number;
-    public bool IsBool   => Kind == FieldKind.Bool;
+    public bool IsBool => Kind == FieldKind.Bool;
 
     // Typed accessors (one is active per Kind)
     public string? StringValue
@@ -69,10 +69,10 @@ public partial class FieldRowViewModel : ReactiveObject
             if (v is null) return null;
             return v switch
             {
-                int i    => (decimal)i,
-                float f  => (decimal)f,
+                int i => (decimal)i,
+                float f => (decimal)f,
                 double d => (decimal)d,
-                _        => null
+                _ => null
             };
         }
         set
@@ -80,8 +80,8 @@ public partial class FieldRowViewModel : ReactiveObject
             var under = Nullable.GetUnderlyingType(_prop.PropertyType) ?? _prop.PropertyType;
             object? converted = value is null
                 ? null
-                : under == typeof(int)    ? (int)value
-                : under == typeof(float)  ? (float)value
+                : under == typeof(int) ? (int)value
+                : under == typeof(float) ? (float)value
                 : under == typeof(double) ? (double)value
                 : (object)value;
             _prop.SetValue(_owner, converted);

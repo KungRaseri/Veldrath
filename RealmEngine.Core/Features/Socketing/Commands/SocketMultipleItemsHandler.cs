@@ -1,6 +1,6 @@
 using MediatR;
-using RealmEngine.Shared.Models;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Socketing.Commands;
 
@@ -65,7 +65,7 @@ public class SocketMultipleItemsHandler : IRequestHandler<SocketMultipleItemsCom
                 if (socketResult.Success)
                 {
                     result.SuccessCount++;
-                    
+
                     // Merge applied traits into total
                     foreach (var trait in socketResult.AppliedTraits)
                     {

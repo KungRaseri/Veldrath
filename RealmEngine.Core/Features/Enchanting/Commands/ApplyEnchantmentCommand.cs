@@ -14,12 +14,12 @@ public class ApplyEnchantmentCommand : IRequest<ApplyEnchantmentResult>
     /// The character applying the enchantment (for skill validation).
     /// </summary>
     public required Character Character { get; set; }
-    
+
     /// <summary>
     /// The item to enchant.
     /// </summary>
     public required Item Item { get; set; }
-    
+
     /// <summary>
     /// The enchantment scroll item to apply.
     /// Must have Type = Enchantment or similar.
@@ -36,22 +36,22 @@ public class ApplyEnchantmentResult
     /// Whether the enchantment was successfully applied.
     /// </summary>
     public bool Success { get; set; }
-    
+
     /// <summary>
     /// Result message describing what happened.
     /// </summary>
     public required string Message { get; set; }
-    
+
     /// <summary>
     /// The enchantment that was applied (null if failed).
     /// </summary>
     public Enchantment? AppliedEnchantment { get; set; }
-    
+
     /// <summary>
     /// The success rate used for the attempt (for UI display).
     /// </summary>
     public double SuccessRate { get; set; }
-    
+
     /// <summary>
     /// Whether the scroll was consumed (always true).
     /// </summary>

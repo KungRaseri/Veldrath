@@ -17,7 +17,7 @@ public static class CombatServiceExtensions
     {
         // Check main hand weapon first
         Item? equippedWeapon = player.EquippedMainHand;
-        
+
         // If no main hand weapon, check off hand (could be a weapon in dual wield)
         if (equippedWeapon == null || equippedWeapon.Type != ItemType.Weapon)
         {

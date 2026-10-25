@@ -49,8 +49,8 @@ public class GetQuestLogHubCommandHandler : IRequestHandler<GetQuestLogHubComman
         ILogger<GetQuestLogHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
-        _saveGameRepo  = saveGameRepo;
-        _logger        = logger;
+        _saveGameRepo = saveGameRepo;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the quest log.</summary>
@@ -63,7 +63,7 @@ public class GetQuestLogHubCommandHandler : IRequestHandler<GetQuestLogHubComman
         if (character is null)
             return new GetQuestLogHubResult { Success = false, ErrorMessage = $"Character {request.CharacterId} not found." };
 
-        var saves   = _saveGameRepo.GetByPlayerName(character.Name);
+        var saves = _saveGameRepo.GetByPlayerName(character.Name);
         var saveGame = saves.FirstOrDefault();
 
         if (saveGame is null)

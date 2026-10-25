@@ -1,8 +1,8 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using RealmEngine.Core.Services;
 using RealmEngine.Data.Services;
 using Xunit;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Services;
 

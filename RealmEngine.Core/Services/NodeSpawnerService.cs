@@ -88,13 +88,13 @@ public class NodeSpawnerService
     // Biome → material family mapping used to derive harvestable nodes from material catalog
     private static readonly Dictionary<string, string[]> BiomeMaterialFamilies = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["forest"]     = ["wood", "leather"],
-        ["mountains"]  = ["metal", "stone", "gem"],
-        ["plains"]     = ["leather", "bone"],
-        ["desert"]     = ["stone", "gem"],
-        ["swamp"]      = ["bone", "leather"],
-        ["tundra"]     = ["bone", "stone"],
-        ["dungeon"]    = ["metal", "gem"],
+        ["forest"] = ["wood", "leather"],
+        ["mountains"] = ["metal", "stone", "gem"],
+        ["plains"] = ["leather", "bone"],
+        ["desert"] = ["stone", "gem"],
+        ["swamp"] = ["bone", "leather"],
+        ["tundra"] = ["bone", "stone"],
+        ["dungeon"] = ["metal", "gem"],
     };
 
     /// <summary>
@@ -133,18 +133,18 @@ public class NodeSpawnerService
         >= 50 => "common",
         >= 20 => "uncommon",
         >= 10 => "rare",
-        >= 5  => "epic",
-        _     => "legendary",
+        >= 5 => "epic",
+        _ => "legendary",
     };
 
     private int GetSpawnCountForDensity(string density) => density.ToLowerInvariant() switch
     {
         "abundant" => _random.Next(5, 8),
-        "high"     => _random.Next(3, 5),
-        "medium"   => _random.Next(2, 4),
-        "low"      => _random.Next(1, 3),
-        "rare"     => _random.Next(0, 2),
-        _          => _random.Next(2, 4),
+        "high" => _random.Next(3, 5),
+        "medium" => _random.Next(2, 4),
+        "low" => _random.Next(1, 3),
+        "rare" => _random.Next(0, 2),
+        _ => _random.Next(2, 4),
     };
 
     private HarvestableNodeReference? SelectNodeByRarityWeight(List<HarvestableNodeReference> nodes)

@@ -21,20 +21,20 @@ public class RespawnHubCommandHandlerTests : IDisposable
 
     private static async Task<Character> SeedCharacterAsync(
         ApplicationDbContext db,
-        string?           attrsJson  = null,
-        DateTimeOffset?   deletedAt  = null)
+        string? attrsJson = null,
+        DateTimeOffset? deletedAt = null)
     {
         var account = new PlayerAccount { UserName = $"u_{Guid.NewGuid():N}" };
         account.NormalizedUserName = account.UserName.ToUpperInvariant();
         db.Users.Add(account);
         var character = new Character
         {
-            AccountId  = account.Id,
-            Name       = $"Char_{Guid.NewGuid():N}",
-            ClassName  = "Warrior",
-            SlotIndex  = 1,
+            AccountId = account.Id,
+            Name = $"Char_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
             Attributes = attrsJson ?? "{}",
-            DeletedAt  = deletedAt,
+            DeletedAt = deletedAt,
         };
         db.Characters.Add(character);
         await db.SaveChangesAsync();

@@ -64,7 +64,7 @@ public class AllocateAttributePointsHubCommandHandler
         ILogger<AllocateAttributePointsHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
-        _logger        = logger;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the allocation outcome.</summary>
@@ -125,10 +125,10 @@ public class AllocateAttributePointsHubCommandHandler
 
         return new AllocateAttributePointsHubResult
         {
-            Success          = true,
-            PointsSpent      = totalToSpend,
-            RemainingPoints  = existing["UnspentAttributePoints"],
-            NewAttributes    = existing,
+            Success = true,
+            PointsSpent = totalToSpend,
+            RemainingPoints = existing["UnspentAttributePoints"],
+            NewAttributes = existing,
         };
     }
 

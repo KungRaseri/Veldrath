@@ -46,7 +46,7 @@ public class RespawnHubCommandHandler
         ILogger<RespawnHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
-        _logger        = logger;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the respawn outcome.</summary>
@@ -71,14 +71,14 @@ public class RespawnHubCommandHandler
             return new RespawnHubResult { Success = false, ErrorMessage = "Character is not dead" };
 
         int maxHealth = attrs.TryGetValue("MaxHealth", out var mh) ? mh : entity.Level * 10;
-        int maxMana   = attrs.TryGetValue("MaxMana",   out var mm) ? mm : entity.Level * 5;
+        int maxMana = attrs.TryGetValue("MaxMana", out var mm) ? mm : entity.Level * 5;
 
         // Restore to 25% of max HP and full mana.
-        int respawnHp   = Math.Max(1, maxHealth / 4);
+        int respawnHp = Math.Max(1, maxHealth / 4);
         int respawnMana = maxMana;
 
         attrs["CurrentHealth"] = respawnHp;
-        attrs["CurrentMana"]   = respawnMana;
+        attrs["CurrentMana"] = respawnMana;
 
         entity.Attributes = CombatHelpers.SerializeAttrs(attrs);
         await _characterRepo.UpdateAsync(entity, cancellationToken);
@@ -91,9 +91,9 @@ public class RespawnHubCommandHandler
 
         return new RespawnHubResult
         {
-            Success       = true,
+            Success = true,
             CurrentHealth = respawnHp,
-            CurrentMana   = respawnMana,
+            CurrentMana = respawnMana,
         };
     }
 }

@@ -54,9 +54,9 @@ public static class ReportEndpoints
         db.PlayerReports.Add(new PlayerReport
         {
             ReporterName = reporterUsername,
-            TargetName   = target.UserName ?? request.TargetUsername,
-            Reason       = request.Reason,
-            SubmittedAt  = DateTimeOffset.UtcNow,
+            TargetName = target.UserName ?? request.TargetUsername,
+            Reason = request.Reason,
+            SubmittedAt = DateTimeOffset.UtcNow,
         });
         await db.SaveChangesAsync(ct);
 

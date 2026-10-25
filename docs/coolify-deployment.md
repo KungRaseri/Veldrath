@@ -30,7 +30,7 @@ on both** the `veldrath-server` and `veldrath-web` resources.
 | Token issuer | `Jwt__Issuer` (`Veldrath.Server`) | `JWT_ISSUER` | Validated exactly. |
 | Token audience | `Jwt__Audience` (`Veldrath.Client`) | `JWT_AUDIENCE` | Validated exactly. |
 | Internal bridge secret (email relay) | `InternalBridge__Token` | `INTERNAL_BRIDGE_TOKEN` | Sent as `X-Internal-Bridge-Token`; the server answers `503` when unset and `401` when it differs. Only the transactional-email relay uses it now. |
-| OAuth apps | `OAuth__{Discord,Google,Microsoft}__ClientId` / `ClientSecret` | `{DISCORD,GOOGLE,MICROSOFT}_CLIENT_ID` / `_SECRET` | Same provider apps; only the registered redirect URI differs (`/signin-{provider}` on the API vs `/api/auth/callback/{provider}` on the web). |
+| OAuth apps | — (not read by the server) | `{DISCORD,GOOGLE,MICROSOFT}_CLIENT_ID` / `_SECRET` | Better Auth owns every provider sign-in; the server never registers a social provider. |
 | Microsoft tenant | — (not read by the server) | `MICROSOFT_TENANT_ID` | Web-only. |
 
 Values that are **not** shared but must agree semantically:
@@ -41,8 +41,7 @@ Values that are **not** shared but must agree semantically:
 | API origin (browser) | `ASPNETCORE_URLS` / public host | `PUBLIC_API_URL`, `PUBLIC_HUB_URL` (SignalR: `<PUBLIC_API_URL>/hubs/game`) |
 | Postgres | `ConnectionStrings__DefaultConnection` (owner role) | `DATABASE_URL` (restricted `veldrath_auth` role, `auth` schema) |
 
-Server-only: `Auth__CookieDomain`, `Email__*`, `Seq__ServerUrl`, `DataProtection__KeysPath`,
-`Cors__AllowedOrigins`, `AllowedReturnUrlHosts`, `Foundry__BaseUrl`.
+Server-only: `Email__*`, `Seq__ServerUrl`, `DataProtection__KeysPath`, `Cors__AllowedOrigins`.
 Web-only: `BETTER_AUTH_SECRET`, `INTERNAL_BRIDGE_URL`, `PROTOCOL_HEADER`/`HOST_HEADER`/`ADDRESS_HEADER`/`XFF_DEPTH`.
 
 Verify a key mismatch with the fingerprints both services log at startup
@@ -57,14 +56,6 @@ Verify a key mismatch with the fingerprints both services log at startup
 ```ini
 # ── Database (use Coolify managed Postgres — injects ${POSTGRES_URL}) ──
 ConnectionStrings__DefaultConnection=${POSTGRES_URL}
-
-# ── OAuth Providers (set actual values directly) ──
-OAuth__Discord__ClientId=your_discord_client_id
-OAuth__Discord__ClientSecret=your_discord_client_secret
-OAuth__Google__ClientId=your_google_client_id
-OAuth__Google__ClientSecret=your_google_client_secret
-OAuth__Microsoft__ClientId=your_microsoft_client_id
-OAuth__Microsoft__ClientSecret=your_microsoft_client_secret
 
 # ── JWT (256-bit+ signing key) ──
 Jwt__Key=your-base64-or-random-string-at-least-32-chars
@@ -87,16 +78,9 @@ Email__SenderName=Veldrath
 # Email__EnableTls=true
 # Email__SenderAddress=noreply@veldrath.com
 
-# ── Auth (REQUIRED in production — server throws at startup if missing) ──
-Auth__CookieDomain=.veldrath.com
-
-# ── Public origins (OAuth return URLs + default CORS origin) ──
+# ── Public origin (default SignalR CORS origin + links inside email) ──
 # Must equal the web resource's ORIGIN / BETTER_AUTH_URL.
 Web__BaseUrl=https://veldrath.com
-# Optional — Foundry is served by the web app, so this normally equals Web__BaseUrl.
-# Foundry__BaseUrl=https://veldrath.com
-# Optional — extra hostnames accepted as OAuth return URLs (comma-separated).
-# AllowedReturnUrlHosts=
 
 # ── Cross-service URLs ──
 Seq__ServerUrl=http://veldrath-seq:5341
@@ -110,25 +94,17 @@ ASPNETCORE_ENVIRONMENT=Production
 
 | Env Var | Config Key | Read at | Purpose |
 |---|---|---|---|
-| `ConnectionStrings__DefaultConnection` | `ConnectionStrings:DefaultConnection` | [`Program.cs:101`](../Veldrath.Server/Program.cs:101) | Postgres connection string. **Required.** |
-| `OAuth__Discord__ClientId` | `OAuth:Discord:ClientId` | [`Program.cs:249`](../Veldrath.Server/Program.cs:249) | Discord OAuth app client ID. |
-| `OAuth__Discord__ClientSecret` | `OAuth:Discord:ClientSecret` | [`Program.cs:250`](../Veldrath.Server/Program.cs:250) | Discord OAuth app client secret. |
-| `OAuth__Google__ClientId` | `OAuth:Google:ClientId` | [`Program.cs:265`](../Veldrath.Server/Program.cs:265) | Google OAuth app client ID. |
-| `OAuth__Google__ClientSecret` | `OAuth:Google:ClientSecret` | [`Program.cs:266`](../Veldrath.Server/Program.cs:266) | Google OAuth app client secret. |
-| `OAuth__Microsoft__ClientId` | `OAuth:Microsoft:ClientId` | [`Program.cs:280`](../Veldrath.Server/Program.cs:280) | Microsoft OAuth app client ID. |
-| `OAuth__Microsoft__ClientSecret` | `OAuth:Microsoft:ClientSecret` | [`Program.cs:281`](../Veldrath.Server/Program.cs:281) | Microsoft OAuth app client secret. |
+| `ConnectionStrings__DefaultConnection` | `ConnectionStrings:DefaultConnection` | [`Program.cs:92`](../Veldrath.Server/Program.cs:92) | Postgres connection string. **Required.** |
 | `Jwt__Key` | `Jwt:Key` | [`Program.cs`](../Veldrath.Server/Program.cs) | HMAC-SHA JWT signing key. **Required.** Must match the web's `JWT_KEY`. |
 | `Jwt__Issuer` / `Jwt__Audience` | `Jwt:Issuer` / `Jwt:Audience` | [`Program.cs`](../Veldrath.Server/Program.cs) | Optional; default `Veldrath.Server` / `Veldrath.Client`. Must match the web's `JWT_ISSUER` / `JWT_AUDIENCE`. |
-| `Web__BaseUrl` | `Web:BaseUrl` | [`Program.cs`](../Veldrath.Server/Program.cs) | Public SvelteKit origin: OAuth return-URL fallback, email links, and default SignalR CORS origin. Must equal the web's `ORIGIN`. |
-| `Foundry__BaseUrl` | `Foundry:BaseUrl` | [`ExternalAuthEndpoints.cs`](../Veldrath.Server/Features/Auth/ExternalAuthEndpoints.cs) | Optional; Foundry now lives in the web app, so this normally equals `Web__BaseUrl`. |
-| `Cors__AllowedOrigins__0`, `Cors__AllowedOrigins__1`, … | `Cors:AllowedOrigins` | [`Program.cs:95`](../Veldrath.Server/Program.cs:95) | Optional extra browser origins for SignalR CORS. Defaults to local dev plus `Web:BaseUrl`. |
+| `Web__BaseUrl` | `Web:BaseUrl` | [`Program.cs`](../Veldrath.Server/Program.cs) | Public SvelteKit origin: email links and the default SignalR CORS origin. Must equal the web's `ORIGIN`. |
+| `Cors__AllowedOrigins__0`, `Cors__AllowedOrigins__1`, … | `Cors:AllowedOrigins` | [`CorsSetup.cs:33`](../Veldrath.Server/Infrastructure/CorsSetup.cs:33) | Optional extra browser origins for SignalR CORS. Defaults to local dev plus `Web:BaseUrl`. |
 | `InternalBridge__Token` | `InternalBridge:Token` | [`InternalEmailEndpoints.cs`](../Veldrath.Server/Features/Auth/InternalEmailEndpoints.cs) | Shared secret for the web → server transactional-email relay. Unset disables the endpoint (503). |
-| `Email__SmtpHost` | `Email:SmtpHost` | [`Program.cs:308`](../Veldrath.Server/Program.cs:308) | SMTP relay hostname. If empty, uses `NullEmailSender` (no emails sent). |
-| `Email__SmtpPort` | `Email:SmtpPort` | [`appsettings.json:42`](../Veldrath.Server/appsettings.json:42) | SMTP port (default: 587). |
-| `Email__User` | `Email:User` | [`appsettings.json:44`](../Veldrath.Server/appsettings.json:44) | SMTP auth username. |
-| `Email__Password` | `Email:Password` | [`appsettings.json:45`](../Veldrath.Server/appsettings.json:45) | SMTP auth password. |
-| `Auth__CookieDomain` | `Auth:CookieDomain` | [`Program.cs`](../Veldrath.Server/Program.cs) | Cookie domain for cross-subdomain session sharing (`.veldrath.com`). **Required when `ASPNETCORE_ENVIRONMENT=Production`** — the server throws at startup if missing. |
-| `Seq__ServerUrl` | `Seq:ServerUrl` | [`Program.cs:56`](../Veldrath.Server/Program.cs:56) | Seq server URL for structured log shipping. |
+| `Email__SmtpHost` | `Email:SmtpHost` | [`Program.cs:146`](../Veldrath.Server/Program.cs:146) | SMTP relay hostname. If empty, uses `NullEmailSender` (no emails sent). |
+| `Email__SmtpPort` | `Email:SmtpPort` | [`appsettings.json:32`](../Veldrath.Server/appsettings.json:32) | SMTP port (default: 587). |
+| `Email__User` | `Email:User` | [`appsettings.json:34`](../Veldrath.Server/appsettings.json:34) | SMTP auth username. |
+| `Email__Password` | `Email:Password` | [`appsettings.json:35`](../Veldrath.Server/appsettings.json:35) | SMTP auth password. |
+| `Seq__ServerUrl` | `Seq:ServerUrl` | [`Program.cs:50`](../Veldrath.Server/Program.cs:50) | Seq server URL for structured log shipping. |
 
 ### Persistent Volume
 
@@ -136,11 +112,11 @@ ASPNETCORE_ENVIRONMENT=Production
 |---|---|
 | `dataprotection_keys` | `/root/.aspnet/DataProtection-Keys` |
 
-Data Protection keys are persisted at [`Program.cs:402`](../Veldrath.Server/Program.cs:402) with application name `Veldrath.Server`. Required for OAuth correlation cookies to survive container restarts.
+Data Protection keys are persisted at [`Program.cs:237`](../Veldrath.Server/Program.cs:237) with application name `Veldrath.Server`. Required for antiforgery/Data Protection payloads to survive container restarts.
 
 ### Health Check
 
-Point Coolify's health check to `http://localhost:8080/health` (exposed at [`Program.cs:553`](../Veldrath.Server/Program.cs:553)).
+Point Coolify's health check to `http://localhost:8080/health` (exposed at [`Program.cs:399`](../Veldrath.Server/Program.cs:399)).
 
 ---
 

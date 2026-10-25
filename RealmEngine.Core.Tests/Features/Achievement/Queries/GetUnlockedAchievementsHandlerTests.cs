@@ -27,17 +27,17 @@ public class GetUnlockedAchievementsHandlerTests
         // Arrange
         var unlockedAchievements = new List<RealmEngine.Shared.Models.Achievement>
         {
-            new() 
-            { 
-                Id = "first-quest", 
-                Title = "First Quest", 
-                IsUnlocked = true 
+            new()
+            {
+                Id = "first-quest",
+                Title = "First Quest",
+                IsUnlocked = true
             },
-            new() 
-            { 
-                Id = "level-5", 
-                Title = "Reach Level 5", 
-                IsUnlocked = true 
+            new()
+            {
+                Id = "level-5",
+                Title = "Reach Level 5",
+                IsUnlocked = true
             }
         };
 
@@ -104,16 +104,16 @@ public class GetUnlockedAchievementsHandlerTests
 
         var achievements = new List<RealmEngine.Shared.Models.Achievement>
         {
-            new() 
-            { 
-                Id = "old-achievement", 
+            new()
+            {
+                Id = "old-achievement",
                 Title = "Old Achievement",
                 IsUnlocked = true,
                 UnlockedAt = unlockTime1
             },
-            new() 
-            { 
-                Id = "recent-achievement", 
+            new()
+            {
+                Id = "recent-achievement",
                 Title = "Recent Achievement",
                 IsUnlocked = true,
                 UnlockedAt = unlockTime2
@@ -142,23 +142,23 @@ public class GetUnlockedAchievementsHandlerTests
         // Arrange
         var achievements = new List<RealmEngine.Shared.Models.Achievement>
         {
-            new() 
-            { 
-                Id = "exploration-achievement", 
+            new()
+            {
+                Id = "exploration-achievement",
                 Title = "Explorer",
                 Category = AchievementCategory.Exploration,
                 IsUnlocked = true
             },
-            new() 
-            { 
-                Id = "combat-achievement", 
+            new()
+            {
+                Id = "combat-achievement",
                 Title = "Warrior",
                 Category = AchievementCategory.Combat,
                 IsUnlocked = true
             },
-            new() 
-            { 
-                Id = "progression-achievement", 
+            new()
+            {
+                Id = "progression-achievement",
                 Title = "Hero",
                 Category = AchievementCategory.Quests,
                 IsUnlocked = true
@@ -187,23 +187,23 @@ public class GetUnlockedAchievementsHandlerTests
         // Arrange
         var achievements = new List<RealmEngine.Shared.Models.Achievement>
         {
-            new() 
-            { 
-                Id = "achievement-1", 
+            new()
+            {
+                Id = "achievement-1",
                 Title = "Achievement 1",
                 Points = 10,
                 IsUnlocked = true
             },
-            new() 
-            { 
-                Id = "achievement-2", 
+            new()
+            {
+                Id = "achievement-2",
                 Title = "Achievement 2",
                 Points = 50,
                 IsUnlocked = true
             },
-            new() 
-            { 
-                Id = "achievement-3", 
+            new()
+            {
+                Id = "achievement-3",
                 Title = "Achievement 3",
                 Points = 100,
                 IsUnlocked = true

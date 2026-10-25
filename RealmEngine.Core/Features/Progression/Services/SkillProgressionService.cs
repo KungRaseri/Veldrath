@@ -1,6 +1,6 @@
-using RealmEngine.Shared.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Progression.Services;
 
@@ -19,7 +19,7 @@ public class SkillProgressionService
     /// <param name="catalogService">The skill catalog service.</param>
     /// <param name="logger">Optional logger instance.</param>
     public SkillProgressionService(
-        SkillDataService catalogService, 
+        SkillDataService catalogService,
         ILogger<SkillProgressionService>? logger = null)
     {
         _catalogService = catalogService ?? throw new ArgumentNullException(nameof(catalogService));
@@ -33,7 +33,7 @@ public class SkillProgressionService
     public void InitializeAllSkills(Character character)
     {
         var allSkills = _catalogService.GetAllSkills();
-        
+
         foreach (var (skillId, skillDef) in allSkills)
         {
             if (character.Skills.ContainsKey(skillId))
@@ -54,7 +54,7 @@ public class SkillProgressionService
             };
         }
 
-        _logger.LogInformation("Initialized {Count} skills for character {Name}", 
+        _logger.LogInformation("Initialized {Count} skills for character {Name}",
             allSkills.Count, character.Name);
     }
 
@@ -111,7 +111,7 @@ public class SkillProgressionService
 
             var message = $"{skill.Name} increased to rank {skill.CurrentRank}!";
             notifications.Add(message);
-            
+
             _logger.LogInformation("Character {Character}: {Message}", character.Name, message);
 
             // Check for milestone ranks
@@ -163,8 +163,8 @@ public class SkillProgressionService
             CurrentRank = skill.CurrentRank,
             CurrentXP = skill.CurrentXP,
             XPToNextRank = skill.XPToNextRank,
-            ProgressPercent = skill.XPToNextRank > 0 
-                ? (double)skill.CurrentXP / skill.XPToNextRank * 100 
+            ProgressPercent = skill.XPToNextRank > 0
+                ? (double)skill.CurrentXP / skill.XPToNextRank * 100
                 : 0,
             CurrentEffect = GetEffectDescription(skillId, skill.CurrentRank),
             NextRankEffect = GetEffectDescription(skillId, skill.CurrentRank + 1)
@@ -196,7 +196,7 @@ public class SkillProgressionService
         var skillDef = _catalogService.GetSkillDefinition(skillId);
         if (skillDef == null) return 0;
 
-        var effect = skillDef.Effects.FirstOrDefault(e => 
+        var effect = skillDef.Effects.FirstOrDefault(e =>
             e.EffectType.Equals(effectType, StringComparison.OrdinalIgnoreCase));
 
         if (effect == null) return 0;

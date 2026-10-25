@@ -62,7 +62,7 @@ public class MaterialPoolService
 
             // Support both old (Metals dictionary) and new (rarity tier) structures
             var materialRefs = new List<(string Ref, int Weight)>();
-            
+
             if (pool.Metals != null && pool.Metals.Any())
             {
                 // LEGACY: Old structure with Metals dictionary
@@ -110,9 +110,9 @@ public class MaterialPoolService
                     _logger.LogError("No materials found in pool {MaterialType}", materialType);
                     return null;
                 }
-                
+
                 var cheapest = allMaterials.OrderBy(m => m.Cost).First();
-                _logger.LogInformation("Budget {Budget} too low for {MaterialType}, using cheapest material {MaterialName} (cost={Cost})", 
+                _logger.LogInformation("Budget {Budget} too low for {MaterialType}, using cheapest material {MaterialName} (cost={Cost})",
                     availableBudget, materialType, cheapest.Material.DisplayName ?? cheapest.Material.Slug, cheapest.Cost);
                 return cheapest.Material;
             }
@@ -170,7 +170,7 @@ public class MaterialPoolService
         // Fallback to last item
         return items.Last();
     }
-    
+
     private static string ExtractSlug(string materialRef) =>
         materialRef.Contains(':') ? materialRef.Split(':')[^1] : materialRef;
 }

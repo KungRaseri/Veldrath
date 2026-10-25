@@ -1,5 +1,5 @@
-using RealmEngine.Shared.Models;
 using RealmEngine.Core.Features.Progression.Services;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Combat.Services;
 
@@ -43,7 +43,7 @@ public class EnemySpellCastingService
         // Get available spells (not on cooldown and within mana budget)
         var availableSpells = enemy.SpellIds
             .Select(id => _powerCatalogService.GetPower(id))
-            .Where(power => power != null && 
+            .Where(power => power != null &&
                            (!enemy.SpellCooldowns.ContainsKey(power.Id) || enemy.SpellCooldowns[power.Id] == 0) &&
                            power.ManaCost <= enemy.Mana)
             .ToList();
@@ -95,7 +95,7 @@ public class EnemySpellCastingService
                 priority = 45; // Medium priority
             }
             // Utility spells (summons, control) in favorable situations
-            else if (healthPercent > 60 && manaPercent > 50 && 
+            else if (healthPercent > 60 && manaPercent > 50 &&
                     (spell.EffectType == PowerEffectType.Summon || spell.EffectType == PowerEffectType.Control))
             {
                 priority = 40; // Medium priority
@@ -174,11 +174,11 @@ public class EnemySpellCastingService
     public int CalculateManaCost(Power spell, Enemy enemy)
     {
         int baseCost = spell.ManaCost;
-        
+
         // High Intelligence reduces mana costs
         double intelligenceReduction = Math.Max(0, (enemy.Intelligence - 10) * 0.01); // 1% per point above 10
         int finalCost = (int)(baseCost * (1.0 - intelligenceReduction));
-        
+
         return Math.Max(1, finalCost); // Minimum cost of 1 mana
     }
 }

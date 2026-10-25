@@ -1,6 +1,6 @@
 using MediatR;
-using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Features.Reputation.Services;
+using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Reputation.Queries;
@@ -133,8 +133,8 @@ public class GetReputationHandler : IRequestHandler<GetReputationQuery, GetReput
         return Task.FromResult(new GetReputationResult
         {
             Success = true,
-            Message = reputations.Count > 0 
-                ? $"Retrieved {reputations.Count} faction reputation(s)." 
+            Message = reputations.Count > 0
+                ? $"Retrieved {reputations.Count} faction reputation(s)."
                 : "No faction reputations found.",
             Reputations = reputations
         });

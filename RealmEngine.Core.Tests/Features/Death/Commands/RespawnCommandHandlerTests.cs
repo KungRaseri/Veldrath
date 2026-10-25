@@ -12,141 +12,141 @@ namespace RealmEngine.Core.Tests.Features.Death.Commands;
 
 public class RespawnCommandHandlerTests
 {
-  private sealed class FakeGameStateService : IGameStateService
-  {
-    public string CurrentLocation { get; set; } = "Hub Town";
-    public SaveGame CurrentSave => throw new InvalidOperationException("No active save game");
-    public Character Player => throw new InvalidOperationException("No active save game");
-    public string DifficultyLevel => "Normal";
-    public bool IsIronmanMode => false;
-    public void UpdateLocation(string location) => CurrentLocation = location;
-    public void RecordDeath(string killedBy) { }
-  }
-
-  private static RespawnCommandHandler CreateHandler(
-      ISaveGameService? saveGameService = null,
-      DeathService? deathService = null,
-      IGameStateService? gameState = null)
-  {
-    saveGameService ??= Mock.Of<ISaveGameService>();
-    deathService ??= new DeathService(NullLogger<DeathService>.Instance);
-    gameState ??= new FakeGameStateService();
-    return new RespawnCommandHandler(
-        gameState,
-        deathService,
-        saveGameService,
-        NullLogger<RespawnCommandHandler>.Instance);
-  }
-
-  [Fact]
-  public async Task Handle_ReturnsFailure_WhenPlayerIsNull()
-  {
-    var handler = CreateHandler();
-    var command = new RespawnCommand { Player = null! };
-
-    var result = await handler.Handle(command, default);
-
-    result.Success.Should().BeFalse();
-    result.ErrorMessage.Should().NotBeNullOrWhiteSpace();
-  }
-
-  [Fact]
-  public async Task Handle_RestoresFullHealthAndMana_OnSuccess()
-  {
-    var player = new Character
+    private sealed class FakeGameStateService : IGameStateService
     {
-      Name = "Hero",
-      Health = 1,
-      MaxHealth = 100,
-      Mana = 5,
-      MaxMana = 80
-    };
+        public string CurrentLocation { get; set; } = "Hub Town";
+        public SaveGame CurrentSave => throw new InvalidOperationException("No active save game");
+        public Character Player => throw new InvalidOperationException("No active save game");
+        public string DifficultyLevel => "Normal";
+        public bool IsIronmanMode => false;
+        public void UpdateLocation(string location) => CurrentLocation = location;
+        public void RecordDeath(string killedBy) { }
+    }
 
-    var mockSave = new Mock<ISaveGameService>();
-    mockSave.Setup(s => s.GetCurrentSave()).Returns((SaveGame?)null);
-    mockSave.Setup(s => s.GetDifficultySettings()).Returns(DifficultySettings.Normal);
+    private static RespawnCommandHandler CreateHandler(
+        ISaveGameService? saveGameService = null,
+        DeathService? deathService = null,
+        IGameStateService? gameState = null)
+    {
+        saveGameService ??= Mock.Of<ISaveGameService>();
+        deathService ??= new DeathService(NullLogger<DeathService>.Instance);
+        gameState ??= new FakeGameStateService();
+        return new RespawnCommandHandler(
+            gameState,
+            deathService,
+            saveGameService,
+            NullLogger<RespawnCommandHandler>.Instance);
+    }
 
-    var handler = CreateHandler(mockSave.Object);
-    var command = new RespawnCommand { Player = player };
+    [Fact]
+    public async Task Handle_ReturnsFailure_WhenPlayerIsNull()
+    {
+        var handler = CreateHandler();
+        var command = new RespawnCommand { Player = null! };
 
-    var result = await handler.Handle(command, default);
+        var result = await handler.Handle(command, default);
 
-    result.Success.Should().BeTrue();
-    result.Health.Should().Be(100);
-    result.Mana.Should().Be(80);
-  }
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().NotBeNullOrWhiteSpace();
+    }
 
-  [Fact]
-  public async Task Handle_UsesRequestedRespawnLocation_WhenProvided()
-  {
-    var player = new Character { Name = "Hero", MaxHealth = 50, MaxMana = 50 };
-    var mockSave = new Mock<ISaveGameService>();
-    mockSave.Setup(s => s.GetCurrentSave()).Returns((SaveGame?)null);
+    [Fact]
+    public async Task Handle_RestoresFullHealthAndMana_OnSuccess()
+    {
+        var player = new Character
+        {
+            Name = "Hero",
+            Health = 1,
+            MaxHealth = 100,
+            Mana = 5,
+            MaxMana = 80
+        };
 
-    var gameState = new FakeGameStateService();
-    var handler = CreateHandler(mockSave.Object, gameState: gameState);
-    var command = new RespawnCommand { Player = player, RespawnLocation = "Mystic Sanctuary" };
+        var mockSave = new Mock<ISaveGameService>();
+        mockSave.Setup(s => s.GetCurrentSave()).Returns((SaveGame?)null);
+        mockSave.Setup(s => s.GetDifficultySettings()).Returns(DifficultySettings.Normal);
 
-    var result = await handler.Handle(command, default);
+        var handler = CreateHandler(mockSave.Object);
+        var command = new RespawnCommand { Player = player };
 
-    result.Success.Should().BeTrue();
-    result.RespawnLocation.Should().Be("Mystic Sanctuary");
-  }
+        var result = await handler.Handle(command, default);
 
-  [Fact]
-  public async Task Handle_DefaultsToHubTown_WhenNoRespawnLocationSpecified()
-  {
-    var player = new Character { Name = "Hero", MaxHealth = 50, MaxMana = 50 };
-    var mockSave = new Mock<ISaveGameService>();
-    mockSave.Setup(s => s.GetCurrentSave()).Returns((SaveGame?)null);
+        result.Success.Should().BeTrue();
+        result.Health.Should().Be(100);
+        result.Mana.Should().Be(80);
+    }
 
-    var handler = CreateHandler(mockSave.Object);
-    var command = new RespawnCommand { Player = player };
+    [Fact]
+    public async Task Handle_UsesRequestedRespawnLocation_WhenProvided()
+    {
+        var player = new Character { Name = "Hero", MaxHealth = 50, MaxMana = 50 };
+        var mockSave = new Mock<ISaveGameService>();
+        mockSave.Setup(s => s.GetCurrentSave()).Returns((SaveGame?)null);
 
-    var result = await handler.Handle(command, default);
+        var gameState = new FakeGameStateService();
+        var handler = CreateHandler(mockSave.Object, gameState: gameState);
+        var command = new RespawnCommand { Player = player, RespawnLocation = "Mystic Sanctuary" };
 
-    result.Success.Should().BeTrue();
-    result.RespawnLocation.Should().Be("Hub Town");
-  }
+        var result = await handler.Handle(command, default);
 
-  [Fact]
-  public async Task Handle_SavesGame_WhenSaveExists()
-  {
-    var player = new Character { Name = "Hero", MaxHealth = 50, MaxMana = 50 };
-    var saveGame = new SaveGame { Character = player };
+        result.Success.Should().BeTrue();
+        result.RespawnLocation.Should().Be("Mystic Sanctuary");
+    }
 
-    var mockSave = new Mock<ISaveGameService>();
-    mockSave.Setup(s => s.GetCurrentSave()).Returns(saveGame);
-    mockSave.Setup(s => s.GetDifficultySettings()).Returns(DifficultySettings.Easy);
+    [Fact]
+    public async Task Handle_DefaultsToHubTown_WhenNoRespawnLocationSpecified()
+    {
+        var player = new Character { Name = "Hero", MaxHealth = 50, MaxMana = 50 };
+        var mockSave = new Mock<ISaveGameService>();
+        mockSave.Setup(s => s.GetCurrentSave()).Returns((SaveGame?)null);
 
-    var handler = CreateHandler(mockSave.Object);
-    var command = new RespawnCommand { Player = player };
+        var handler = CreateHandler(mockSave.Object);
+        var command = new RespawnCommand { Player = player };
 
-    await handler.Handle(command, default);
+        var result = await handler.Handle(command, default);
 
-    mockSave.Verify(s => s.SaveGame(It.IsAny<SaveGame>()), Times.Once);
-  }
+        result.Success.Should().BeTrue();
+        result.RespawnLocation.Should().Be("Hub Town");
+    }
 
-  [Fact]
-  public async Task Handle_DoesNotDropItemsDuringRespawn()
-  {
-    var item = new Item { Id = "gem1", Name = "Ruby", Price = 10 };
-    var player = new Character { Name = "Hero", MaxHealth = 50, MaxMana = 50 };
-    player.Inventory.Add(item);
+    [Fact]
+    public async Task Handle_SavesGame_WhenSaveExists()
+    {
+        var player = new Character { Name = "Hero", MaxHealth = 50, MaxMana = 50 };
+        var saveGame = new SaveGame { Character = player };
 
-    var saveGame = new SaveGame { Character = player, LastDeathLocation = "Dungeon" };
-    saveGame.DifficultyLevel = DifficultySettings.Hard.Name;
+        var mockSave = new Mock<ISaveGameService>();
+        mockSave.Setup(s => s.GetCurrentSave()).Returns(saveGame);
+        mockSave.Setup(s => s.GetDifficultySettings()).Returns(DifficultySettings.Easy);
 
-    var mockSave = new Mock<ISaveGameService>();
-    mockSave.Setup(s => s.GetCurrentSave()).Returns(saveGame);
-    mockSave.Setup(s => s.GetDifficultySettings()).Returns(DifficultySettings.Hard);
+        var handler = CreateHandler(mockSave.Object);
+        var command = new RespawnCommand { Player = player };
 
-    var handler = CreateHandler(mockSave.Object);
-    var command = new RespawnCommand { Player = player };
+        await handler.Handle(command, default);
 
-    var result = await handler.Handle(command, default);
+        mockSave.Verify(s => s.SaveGame(It.IsAny<SaveGame>()), Times.Once);
+    }
 
-    result.Success.Should().BeTrue();
-    player.Inventory.Should().HaveCount(1); // inventory untouched — item dropping belongs to HandlePlayerDeath, not Respawn
-  }
+    [Fact]
+    public async Task Handle_DoesNotDropItemsDuringRespawn()
+    {
+        var item = new Item { Id = "gem1", Name = "Ruby", Price = 10 };
+        var player = new Character { Name = "Hero", MaxHealth = 50, MaxMana = 50 };
+        player.Inventory.Add(item);
+
+        var saveGame = new SaveGame { Character = player, LastDeathLocation = "Dungeon" };
+        saveGame.DifficultyLevel = DifficultySettings.Hard.Name;
+
+        var mockSave = new Mock<ISaveGameService>();
+        mockSave.Setup(s => s.GetCurrentSave()).Returns(saveGame);
+        mockSave.Setup(s => s.GetDifficultySettings()).Returns(DifficultySettings.Hard);
+
+        var handler = CreateHandler(mockSave.Object);
+        var command = new RespawnCommand { Player = player };
+
+        var result = await handler.Handle(command, default);
+
+        result.Success.Should().BeTrue();
+        player.Inventory.Should().HaveCount(1); // inventory untouched — item dropping belongs to HandlePlayerDeath, not Respawn
+    }
 }

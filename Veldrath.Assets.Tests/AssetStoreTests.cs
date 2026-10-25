@@ -50,7 +50,7 @@ public sealed class AssetStoreTests : IDisposable
     [Fact]
     public async Task LoadImageAsync_ReturnsCachedResult_OnSubsequentCalls()
     {
-        var first  = await _sut.LoadImageAsync(EnemyAssets.Goblin1);
+        var first = await _sut.LoadImageAsync(EnemyAssets.Goblin1);
         var second = await _sut.LoadImageAsync(EnemyAssets.Goblin1);
 
         second.Should().BeSameAs(first, "the same array instance should be returned from cache");

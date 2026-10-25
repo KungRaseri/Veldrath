@@ -70,7 +70,7 @@ public class ApplyStatusEffectHandler : IRequestHandler<ApplyStatusEffectCommand
         var resistancePercentage = isBeneficial
             ? 0
             : CalculateResistance(request.Effect, traits, request.TargetCharacter, request.TargetEnemy);
-        
+
         // Roll for resistance (if resistance > 0, there's a chance to resist)
         if (!isBeneficial && resistancePercentage >= 100)
         {
@@ -100,7 +100,7 @@ public class ApplyStatusEffectHandler : IRequestHandler<ApplyStatusEffectCommand
 
         // Check if effect already exists
         var existingEffect = activeEffects.FirstOrDefault(e => e.Type == request.Effect.Type);
-        
+
         if (existingEffect != null)
         {
             // Handle stacking
@@ -108,10 +108,10 @@ public class ApplyStatusEffectHandler : IRequestHandler<ApplyStatusEffectCommand
             {
                 existingEffect.StackCount++;
                 existingEffect.RemainingDuration = request.Effect.OriginalDuration;
-                
-                _logger.LogInformation("{Target} stacked {EffectType} to {Stacks} stacks", 
+
+                _logger.LogInformation("{Target} stacked {EffectType} to {Stacks} stacks",
                     targetName, request.Effect.Type, existingEffect.StackCount);
-                
+
                 return Task.FromResult(new ApplyStatusEffectResult
                 {
                     Success = true,
@@ -131,14 +131,14 @@ public class ApplyStatusEffectHandler : IRequestHandler<ApplyStatusEffectCommand
                     Message = $"{request.Effect.Name} is already at max stacks on {targetName}."
                 });
             }
-            
+
             // Handle duration refresh
             if (request.RefreshDuration)
             {
                 existingEffect.RemainingDuration = request.Effect.OriginalDuration;
-                
+
                 _logger.LogInformation("{Target} refreshed {EffectType} duration", targetName, request.Effect.Type);
-                
+
                 return Task.FromResult(new ApplyStatusEffectResult
                 {
                     Success = true,
@@ -148,7 +148,7 @@ public class ApplyStatusEffectHandler : IRequestHandler<ApplyStatusEffectCommand
                     Message = $"{request.Effect.Name} duration refreshed on {targetName}!"
                 });
             }
-            
+
             // Effect already exists and not stacking/refreshing
             return Task.FromResult(new ApplyStatusEffectResult
             {
@@ -162,10 +162,10 @@ public class ApplyStatusEffectHandler : IRequestHandler<ApplyStatusEffectCommand
         request.Effect.RemainingDuration = request.Effect.OriginalDuration;
         request.Effect.StackCount = 1;
         activeEffects.Add(request.Effect);
-        
-        _logger.LogInformation("{Target} afflicted with {EffectType} for {Duration} turns", 
+
+        _logger.LogInformation("{Target} afflicted with {EffectType} for {Duration} turns",
             targetName, request.Effect.Type, request.Effect.OriginalDuration);
-        
+
         return Task.FromResult(new ApplyStatusEffectResult
         {
             Success = true,
@@ -202,7 +202,7 @@ public class ApplyStatusEffectHandler : IRequestHandler<ApplyStatusEffectCommand
             StatusEffectType.Confused when traits.ContainsKey("immuneToConfusion") => true,
             _ => false
         };
-        
+
         // Characters don't have immunity traits (could be added to equipment later)
         return isImmuneByTrait;
     }
@@ -220,7 +220,7 @@ public class ApplyStatusEffectHandler : IRequestHandler<ApplyStatusEffectCommand
         if (!string.IsNullOrEmpty(damageType) && damageType != "magic")
         {
             var resistanceKey = $"resist{char.ToUpper(damageType[0])}{damageType.Substring(1)}";
-            
+
             if (traits.TryGetValue(resistanceKey, out var resistTrait))
             {
                 resistance += resistTrait.AsInt();

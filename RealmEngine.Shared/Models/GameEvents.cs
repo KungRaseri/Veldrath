@@ -56,9 +56,9 @@ public record ItemAcquired(string PlayerName, string ItemName) : INotification;
 /// Event raised when a socketable item is added to an equipment socket.
 /// </summary>
 public record ItemSocketed(
-    string ItemId, 
-    string SocketableItemName, 
-    SocketType SocketType, 
+    string ItemId,
+    string SocketableItemName,
+    SocketType SocketType,
     int SocketIndex,
     Dictionary<string, TraitValue> AppliedTraits) : INotification;
 
@@ -66,9 +66,9 @@ public record ItemSocketed(
 /// Event raised when a socketable item is removed from an equipment socket.
 /// </summary>
 public record ItemUnsocketed(
-    string ItemId, 
-    string SocketableItemName, 
-    SocketType SocketType, 
+    string ItemId,
+    string SocketableItemName,
+    SocketType SocketType,
     int SocketIndex,
     int GoldCost) : INotification;
 
@@ -76,7 +76,7 @@ public record ItemUnsocketed(
 /// Event raised when linked sockets are filled and a combo bonus activates.
 /// </summary>
 public record SocketLinkActivated(
-    string ItemId, 
-    int LinkGroupId, 
-    int LinkSize, 
+    string ItemId,
+    int LinkGroupId,
+    int LinkSize,
     double BonusMultiplier) : INotification;

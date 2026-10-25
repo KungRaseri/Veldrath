@@ -26,13 +26,7 @@ public class EditorialEndpointTests(WebAppFactory factory)
     /// <summary>Registers a plain user and returns their access token.</summary>
     private async Task<string> GetTokenAsync(string username)
     {
-        var email = $"{username.ToLower()}@test.com";
-        await _client.PostAsJsonAsync("/api/auth/register",
-            new { Email = email, Username = username, Password = "TestP@ssword123" });
-        var login = await _client.PostAsJsonAsync("/api/auth/login",
-            new { Email = email, Password = "TestP@ssword123" });
-        var auth = await login.Content.ReadFromJsonAsync<AuthResponse>();
-        return auth!.AccessToken;
+        return (await factory.CreateAccountTokenAsync(username)).Token;
     }
 
     /// <summary>
@@ -41,24 +35,8 @@ public class EditorialEndpointTests(WebAppFactory factory)
     /// </summary>
     private async Task<string> GetContentEditorTokenAsync(string username)
     {
-        var email = $"{username.ToLower()}@test.com";
-        await _client.PostAsJsonAsync("/api/auth/register",
-            new { Email = email, Username = username, Password = "TestP@ssword123" });
-
-        using var scope = factory.Services.CreateScope();
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<PlayerAccount>>();
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
-
-        if (!await roleManager.RoleExistsAsync("ContentEditor"))
-            await roleManager.CreateAsync(new IdentityRole<Guid>("ContentEditor"));
-
-        var user = await userManager.FindByNameAsync(username);
-        await userManager.AddToRoleAsync(user!, "ContentEditor");
-
-        var login = await _client.PostAsJsonAsync("/api/auth/login",
-            new { Email = email, Password = "TestP@ssword123" });
-        var auth = await login.Content.ReadFromJsonAsync<AuthResponse>();
-        return auth!.AccessToken;
+        var (token, _) = await factory.CreateAccountTokenAsync(username, "ContentEditor");
+        return token;
     }
 
     // ── Authentication / authorisation guards ─────────────────────────────────────

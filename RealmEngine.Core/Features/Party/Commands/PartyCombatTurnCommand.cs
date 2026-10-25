@@ -1,9 +1,9 @@
 using MediatR;
-using RealmEngine.Shared.Models;
-using RealmEngine.Core.Features.SaveLoad;
+using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Features.Combat;
 using RealmEngine.Core.Features.Party.Services;
-using Microsoft.Extensions.Logging;
+using RealmEngine.Core.Features.SaveLoad;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Party.Commands;
 
@@ -166,7 +166,7 @@ public class PartyCombatTurnHandler : IRequestHandler<PartyCombatTurnCommand, Pa
         // --- PLAYER TURN ---
         var playerResult = await _combatService.ExecutePlayerAttack(player, enemy);
         enemy.Health = Math.Max(0, enemy.Health - playerResult.Damage);
-        
+
         combatLog.Add(playerResult.Message ?? $"Player dealt {playerResult.Damage} damage.");
 
         // Check if enemy defeated
@@ -293,12 +293,12 @@ public class PartyCombatTurnHandler : IRequestHandler<PartyCombatTurnCommand, Pa
             {
                 var targetAlly = party.AliveMembers[_random.Next(party.AliveMembers.Count)];
                 enemyTarget = targetAlly.Name;
-                
+
                 // Calculate enemy damage to ally (simplified)
                 int baseDamage = enemy.BasePhysicalDamage + enemy.Strength + (enemy.Level * 2);
                 enemyDamage = Math.Max(1, baseDamage - targetAlly.GetDefense());
                 targetAlly.TakeDamage(enemyDamage);
-                
+
                 enemyMessage = $"{enemy.Name} attacks {targetAlly.Name} for {enemyDamage} damage!";
             }
         }

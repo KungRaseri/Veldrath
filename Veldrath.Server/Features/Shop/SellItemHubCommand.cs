@@ -55,8 +55,8 @@ public class SellItemHubCommandHandler : IRequestHandler<SellItemHubCommand, Sel
         ILogger<SellItemHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
-        _mediator      = mediator;
-        _logger        = logger;
+        _mediator = mediator;
+        _logger = logger;
     }
 
     /// <summary>Handles the sale and returns the outcome.</summary>
@@ -110,8 +110,8 @@ public class SellItemHubCommandHandler : IRequestHandler<SellItemHubCommand, Sel
 
         return new SellItemHubResult
         {
-            Success      = true,
-            ItemRef      = request.ItemRef,
+            Success = true,
+            ItemRef = request.ItemRef,
             GoldReceived = sellPrice,
             NewGoldTotal = attrs["Gold"],
         };

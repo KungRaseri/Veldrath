@@ -20,7 +20,13 @@ resources and the token names in §8 of the design system.
 
 ---
 
-## OAuth Provider-Link Confirmation Flow (session-30, 2026-04-10)
+## OAuth Provider-Link Confirmation Flow (session-30, 2026-04-10) — DELETED in W12
+
+> ⚠️ **This whole flow is gone (2026-10-25).** `PendingLinkToken`, `PendingLinkEndpoints`,
+> `AccountLinkService`, `AuthService`, `ExternalAuthEndpoints`, and the `auth-attempts` rate-limit
+> policy were deleted with the Identity auth surface; the `PendingLinkTokens` table was dropped by
+> the `RemoveDesktopAuthTables` migration. Better Auth owns OAuth and account linking. Kept only as
+> history for "why the server stopped auto-linking".
 
 **Security fix**: `AuthService.ExternalLoginOrRegisterAsync` previously auto-linked a new OAuth provider to an existing account if the emails matched (step 2). This allowed a hostile provider to hijack an account. It now triggers an email-confirmation flow instead.
 
@@ -149,6 +155,12 @@ Hub methods that the client calls **must** use a single request DTO (record) as 
 - Client sends: `SendCommandAsync<object>("AwardSkillXp", new { SkillId = skillId, Amount = amount })`
 
 ## Test Counts
+
+> **Current (2026-10-25, post-W12):** 7 .NET test projects, **3,755 tests** total —
+> `RealmEngine.Core` 1,946, `RealmEngine.Shared` 803, `RealmEngine.Data` 265, `Veldrath.Server` 675,
+> `Veldrath.Discord` 29, `RealmForge` 27, `Veldrath.Assets` 10. There is no client test project any
+> more. The table below is the historical per-session log; its "Client Tests" column refers to the
+> deleted Avalonia client.
 
 | Session | Client Tests | Server Tests | Total |
 |---|---|---|---|
@@ -1908,3 +1920,28 @@ Authoritative inventory — anything not listed is not read by code.
   opaque `401`).
 - Web build is `adapter-node` only now; `build:desktop`, `adapter-static`, and `GameHubOptions` were
   removed with the shell.
+
+### Session-69 (2026-10-25) — Identity auth surface removed; RBAC stays on the server
+
+- **The `/api/auth/*` group is gone.** `AuthEndpoints`, `AuthService`, `AuthDtos`,
+  `AuthExchangeCodeService`, `ExternalAuthEndpoints`, `AccountLinkService`, `PendingLinkEndpoints`,
+  `PasswordResetEndpoints`, `EmailConfirmationEndpoints`, `SessionEndpoints`,
+  `PendingLinkCleanupService`, the `PendingLinkToken`/`RefreshToken` entities, and their repositories
+  were deleted. `GET /api/account/profile` is the only account route left — `/api/internal/email/*`
+  is the token-guarded email relay Better Auth calls.
+- **Identity stays, as the server-owned RBAC store.** `PlayerAccount : IdentityUser<Guid>`,
+  `AspNetUserRoles`, and `RolePermissionResolver` are still the source of roles/permissions;
+  `JwtClaimsEnrichment` provisions the row just in time from Better Auth claims. `AuthSetup` now
+  registers Identity + JWT + authorization only — `AddOAuthProviders` is deleted, so the server
+  registers **no** social providers and reads no `OAuth:*` config.
+- **Migration `20261025031857_RemoveDesktopAuthTables`** drops `PendingLinkTokens` and `RefreshTokens`.
+  Also removed: the `auth-attempts`/`jwt-renewal` rate-limit policies, the `Auth:CookieDomain`
+  production guard, and the `OAUTH_*` / `FOUNDRY_PUBLIC_URL` / `ALLOWED_RETURN_URL_HOSTS` `.env`
+  aliases. `Jwt:RefreshTokenExpiryDays` went with the entity.
+- **Tests authenticate without the deleted endpoints.** `WebAppFactory.CreateAccountTokenAsync(
+  username, params string[] roles)` creates the Identity row, ensures the roles exist and are
+  assigned, and mints a Better-Auth-shaped HMAC JWT (`Veldrath.Test` issuer/audience) so the
+  integration suite still exercises JIT provisioning + RBAC. Eight test files were rewired; the
+  endpoint tests for the deleted routes were deleted. Server suite: **675 tests green**.
+- **Wire-contract reminder:** the web only ever sees `GET /api/account/profile` of this area, and it
+  reads `{ accountId, username, displayName, email, roles, permissions }`.

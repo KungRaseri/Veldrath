@@ -1,9 +1,9 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Features.Exploration;
 using RealmEngine.Core.Features.Exploration.Queries;
-using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Services;
 using RealmEngine.Shared.Models;
 using Xunit;
@@ -23,7 +23,7 @@ public class GetLocationDetailHandlerTests
         _mockGameState = new Mock<IGameStateService>();
         _mockExplorationService = new Mock<ExplorationService>();
         _mockLogger = new Mock<ILogger<GetLocationDetailHandler>>();
-        
+
         _handler = new GetLocationDetailHandler(
             _mockGameState.Object,
             _mockExplorationService.Object,

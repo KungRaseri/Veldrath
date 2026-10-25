@@ -1,7 +1,7 @@
 using FluentAssertions;
-using RealmEngine.Shared.Models;
-using RealmEngine.Core.Features.Party.Services;
 using Microsoft.Extensions.Logging.Abstractions;
+using RealmEngine.Core.Features.Party.Services;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Tests.Features.Party;
 
@@ -167,7 +167,7 @@ public class PartyServiceTests
         var party = _partyService.CreateParty(leader);
         var npc = CreateTestNPC("Warrior", "Fighter");
         _partyService.RecruitNPC(party, npc, out _);
-        
+
         var member = party.Members[0];
         member.Health = 50; // Damaged
 
@@ -189,7 +189,7 @@ public class PartyServiceTests
         var party = _partyService.CreateParty(leader);
         var npc1 = CreateTestNPC("Warrior", "Fighter");
         var npc2 = CreateTestNPC("Mage", "Wizard");
-        
+
         _partyService.RecruitNPC(party, npc1, out _);
         _partyService.RecruitNPC(party, npc2, out _);
 
@@ -213,7 +213,7 @@ public class PartyServiceTests
         var party = _partyService.CreateParty(leader);
         var npc1 = CreateTestNPC("Warrior", "Fighter");
         var npc2 = CreateTestNPC("Mage", "Wizard");
-        
+
         _partyService.RecruitNPC(party, npc1, out _);
         _partyService.RecruitNPC(party, npc2, out _);
 
@@ -253,7 +253,7 @@ public class PartyServiceTests
         var npc1 = CreateTestNPC("Warrior", "Fighter");
         var npc2 = CreateTestNPC("Mage", "Wizard");
         var npc3 = CreateTestNPC("Rogue", "Thief");
-        
+
         _partyService.RecruitNPC(party, npc1, out _);
         _partyService.RecruitNPC(party, npc2, out _);
         _partyService.RecruitNPC(party, npc3, out _);
@@ -277,7 +277,7 @@ public class PartyServiceTests
         // Arrange
         var leader = CreateTestCharacter("Hero");
         leader.Health = 0;
-        
+
         var party = _partyService.CreateParty(leader);
         var npc = CreateTestNPC("Warrior", "Fighter");
         _partyService.RecruitNPC(party, npc, out _);
@@ -315,7 +315,7 @@ public class PartyServiceTests
         var party = _partyService.CreateParty(leader);
         var npc = CreateTestNPC("Warrior", "Fighter");
         _partyService.RecruitNPC(party, npc, out _);
-        
+
         var member = party.Members[0];
         var weapon = CreateTestWeapon("Iron Sword");
         member.Inventory.Add(weapon);

@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using RealmEngine.Data.Services;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Data.Services;
 
 namespace RealmEngine.Core.Services;
 
@@ -191,80 +191,80 @@ public class HarvestingConfig
     // Node Health
     /// <summary>Gets or sets base node health depletion per harvest.</summary>
     public int BaseDepletion { get; set; } = 20;
-    
+
     /// <summary>Gets or sets healthy node threshold (0.0-1.0).</summary>
     public double HealthyThreshold { get; set; } = 0.8;
-    
+
     /// <summary>Gets or sets depleted node threshold (0.0-1.0).</summary>
     public double DepletedThreshold { get; set; } = 0.4;
-    
+
     /// <summary>Gets or sets exhausted node threshold (0.0-1.0).</summary>
     public double ExhaustedThreshold { get; set; } = 0.1;
-    
+
     /// <summary>Gets or sets node respawn rate in minutes.</summary>
     public int RespawnRate { get; set; } = 1;
 
     // Yield Calculation
     /// <summary>Gets or sets skill scaling factor for yield.</summary>
     public double SkillScaling { get; set; } = 0.003;
-    
+
     /// <summary>Gets or sets tool bonus per tier.</summary>
     public double ToolBonusPerTier { get; set; } = 0.1;
-    
+
     /// <summary>Gets or sets maximum tool bonus.</summary>
     public double MaxToolBonus { get; set; } = 0.3;
-    
+
     /// <summary>Gets or sets critical harvest yield multiplier.</summary>
     public double CriticalMultiplier { get; set; } = 2.0;
-    
+
     /// <summary>Gets or sets yield penalty for exhausted nodes.</summary>
     public double ExhaustedPenalty { get; set; } = 0.5;
 
     // Critical Harvest
     /// <summary>Gets or sets base critical harvest chance.</summary>
     public double CriticalBaseChance { get; set; } = 0.05;
-    
+
     /// <summary>Gets or sets critical chance skill scaling.</summary>
     public double CriticalSkillScaling { get; set; } = 0.0005;
-    
+
     /// <summary>Gets or sets critical chance tool bonus per tier.</summary>
     public double CriticalToolBonusPerTier { get; set; } = 0.01;
-    
+
     /// <summary>Gets or sets critical chance bonus for rich nodes.</summary>
     public double RichNodeBonus { get; set; } = 0.05;
-    
+
     /// <summary>Gets or sets bonus material drop chance on critical.</summary>
     public double BonusMaterialChance { get; set; } = 0.25;
-    
+
     /// <summary>Gets or sets rare drop chance on critical.</summary>
     public double RareDropChance { get; set; } = 0.1;
-    
+
     /// <summary>Gets or sets durability loss reduction on critical.</summary>
     public double CriticalDurabilityReduction { get; set; } = 0.5;
-    
+
     /// <summary>Gets or sets XP bonus multiplier on critical.</summary>
     public double CriticalXPBonus { get; set; } = 1.5;
 
     // Tool Requirements
     /// <summary>Gets or sets whether to enforce minimum tool tier.</summary>
     public bool EnforceMinimumTool { get; set; } = true;
-    
+
     /// <summary>Gets or sets yield penalty for missing tool.</summary>
     public double NoToolPenalty { get; set; } = 0.5;
-    
+
     /// <summary>Gets or sets depletion multiplier for missing tool.</summary>
     public double NoToolDepletionMultiplier { get; set; } = 2.0;
-    
+
     /// <summary>Gets or sets whether common nodes allow no tool.</summary>
     public bool AllowNoToolForCommon { get; set; } = true;
 
     // Skill XP
     /// <summary>Gets or sets base XP per harvest.</summary>
     public int BaseXP { get; set; } = 10;
-    
+
     /// <summary>Gets or sets tool quality XP bonus per tier.</summary>
     public double ToolQualityBonus { get; set; } = 0.1;
-    
+
     /// <summary>Gets or sets XP multipliers by node tier.</summary>
     public Dictionary<string, double> TierXPMultipliers { get; set; } = new()
     {
@@ -278,7 +278,7 @@ public class HarvestingConfig
     // Durability Loss
     /// <summary>Gets or sets base durability loss per harvest.</summary>
     public int BaseDurabilityLoss { get; set; } = 1;
-    
+
     /// <summary>Gets or sets node resistance by tier.</summary>
     public Dictionary<string, double> NodeResistance { get; set; } = new()
     {
@@ -288,7 +288,7 @@ public class HarvestingConfig
         { "epic", 1.8 },
         { "legendary", 2.0 }
     };
-    
+
     /// <summary>Gets or sets tool hardness by tier.</summary>
     public Dictionary<string, double> ToolHardness { get; set; } = new()
     {

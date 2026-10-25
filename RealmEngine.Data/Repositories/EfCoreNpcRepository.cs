@@ -43,10 +43,10 @@ public class EfCoreNpcRepository(ContentDbContext db, ILogger<EfCoreNpcRepositor
 
     private static NPC MapToModel(Entities.ActorArchetype e) => new()
     {
-        Id          = e.Slug,
-        Slug        = e.Slug,
-        Name        = e.DisplayName ?? e.Slug,
+        Id = e.Slug,
+        Slug = e.Slug,
+        Name = e.DisplayName ?? e.Slug,
         DisplayName = e.DisplayName ?? e.Slug,
-        Occupation  = e.TypeKey,
+        Occupation = e.TypeKey,
     };
 }

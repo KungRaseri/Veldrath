@@ -84,12 +84,12 @@ public class EngageEnemyHubCommandHandler
         }
 
         var session = new ActiveCombatSession(
-            ZoneGroup:       request.ZoneGroup,
-            LocationSlug:    request.LocationSlug,
-            EnemyId:         enemy.Id,
+            ZoneGroup: request.ZoneGroup,
+            LocationSlug: request.LocationSlug,
+            EnemyId: enemy.Id,
             IsPlayerDefending: false,
-            TurnCount:       0,
-            StartedAt:       DateTimeOffset.UtcNow);
+            TurnCount: 0,
+            StartedAt: DateTimeOffset.UtcNow);
 
         CombatSessionStore.Set(request.CharacterId, session);
 
@@ -104,13 +104,13 @@ public class EngageEnemyHubCommandHandler
 
         return Task.FromResult(new EngageEnemyHubResult
         {
-            Success            = true,
-            EnemyId            = enemy.Id,
-            EnemyName          = enemy.Name,
-            EnemyLevel         = enemy.Level,
+            Success = true,
+            EnemyId = enemy.Id,
+            EnemyName = enemy.Name,
+            EnemyLevel = enemy.Level,
             EnemyCurrentHealth = enemy.CurrentHealth,
-            EnemyMaxHealth     = enemy.MaxHealth,
-            EnemyAbilityNames  = abilityNames,
+            EnemyMaxHealth = enemy.MaxHealth,
+            EnemyAbilityNames = abilityNames,
         });
     }
 }

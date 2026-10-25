@@ -19,7 +19,7 @@ public class SalvagingIntegrationTests
     {
         var services = new ServiceCollection();
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(SalvageItemHandler).Assembly));
-        
+
         var serviceProvider = services.BuildServiceProvider();
         _mediator = serviceProvider.GetRequiredService<IMediator>();
     }
@@ -123,7 +123,7 @@ public class SalvagingIntegrationTests
         // Assert
         var commonTotal = commonResult.ScrapMaterials.Values.Sum();
         var rareTotal = rareResult.ScrapMaterials.Values.Sum();
-        
+
         rareTotal.Should().BeGreaterThan(commonTotal);
     }
 
@@ -134,7 +134,7 @@ public class SalvagingIntegrationTests
         var character = CreateTestCharacter("Blacksmithing", 50);
         var baseItem = CreateTestWeapon(ItemRarity.Common);
         baseItem.UpgradeLevel = 0;
-        
+
         var upgradedItem = CreateTestWeapon(ItemRarity.Common);
         upgradedItem.UpgradeLevel = 5;
 
@@ -156,7 +156,7 @@ public class SalvagingIntegrationTests
         // Assert
         var baseTotal = baseResult.ScrapMaterials.Values.Sum();
         var upgradedTotal = upgradedResult.ScrapMaterials.Values.Sum();
-        
+
         upgradedTotal.Should().BeGreaterThan(baseTotal);
         // Upgrade bonus adds to base before yield calculation (55% rate)
         // Base: 3 * 0.55 = 2, Upgraded: (3+5) * 0.55 = 5
@@ -437,7 +437,7 @@ public class GetSalvagePreviewHandlerTests
         var item = new Item { Name = "Gold Ring", Type = ItemType.Ring, Rarity = ItemRarity.Rare };
 
         var preview = await _mediator.Send(new GetSalvagePreviewQuery { Character = character, Item = item });
-        var actual  = await _mediator.Send(new SalvageItemCommand { Character = character, Item = item, StationId = "jeweler" });
+        var actual = await _mediator.Send(new SalvageItemCommand { Character = character, Item = item, StationId = "jeweler" });
 
         preview.CanSalvage.Should().BeTrue();
         actual.Success.Should().BeTrue();
@@ -452,7 +452,7 @@ public class GetSalvagePreviewHandlerTests
         var character = CreateCharacterWithSkill("Blacksmithing", 0);
         var item = new Item { Name = "Rusty Axe", Type = ItemType.Weapon, Rarity = ItemRarity.Common };
 
-        var first  = await _mediator.Send(new GetSalvagePreviewQuery { Character = character, Item = item });
+        var first = await _mediator.Send(new GetSalvagePreviewQuery { Character = character, Item = item });
         var second = await _mediator.Send(new GetSalvagePreviewQuery { Character = character, Item = item });
 
         first.YieldRate.Should().Be(second.YieldRate);
@@ -461,16 +461,16 @@ public class GetSalvagePreviewHandlerTests
 
     private static Character CreateCharacterWithSkill(string skillName, int rank) => new()
     {
-        Name   = "Test Hero",
+        Name = "Test Hero",
         Skills = new Dictionary<string, CharacterSkill>
         {
             [skillName] = new CharacterSkill
             {
-                SkillId     = skillName.ToLower(),
-                Name        = skillName,
-                Category    = "Crafting",
+                SkillId = skillName.ToLower(),
+                Name = skillName,
+                Category = "Crafting",
                 CurrentRank = rank,
-                CurrentXP   = 0,
+                CurrentXP = 0,
                 XPToNextRank = 100
             }
         }

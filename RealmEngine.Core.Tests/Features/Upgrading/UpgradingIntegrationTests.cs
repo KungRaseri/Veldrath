@@ -18,7 +18,7 @@ public class UpgradingIntegrationTests
     {
         var services = new ServiceCollection();
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(UpgradeItemHandler).Assembly));
-        
+
         var serviceProvider = services.BuildServiceProvider();
         _mediator = serviceProvider.GetRequiredService<IMediator>();
     }
@@ -266,7 +266,7 @@ public class UpgradingIntegrationTests
         // Arrange
         var character = CreateTestCharacter();
         var item = CreateTestWeapon(ItemRarity.Epic);
-        
+
         // Test multiple levels - formula: base + (level * 2)
         var testCases = new Dictionary<int, double>
         {
@@ -280,13 +280,13 @@ public class UpgradingIntegrationTests
         {
             // Set level manually for testing
             item.UpgradeLevel = level;
-            
+
             // Calculate using GetTotalTraits (which applies the bonus)
             var baseDamage = 20.0;
             item.Traits["Damage"] = new TraitValue(baseDamage, TraitType.Number);
             var totalTraits = item.GetTotalTraits();
             var actualDamage = totalTraits["Damage"].AsDouble();
-            
+
             actualDamage.Should().BeApproximately(expectedDamage, 0.01);
         }
     }
@@ -296,7 +296,7 @@ public class UpgradingIntegrationTests
     {
         // Arrange
         var character = CreateTestCharacter();
-        
+
         // Test max levels for each rarity
         var testCases = new Dictionary<ItemRarity, int>
         {

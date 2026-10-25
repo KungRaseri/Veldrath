@@ -197,7 +197,11 @@ public class GetSkillProgressHandlerTests
         var character = new Character { Name = "Aria", Level = 5 };
         character.Skills["archery"] = new CharacterSkill
         {
-            SkillId = "archery", Name = "Archery", CurrentRank = 3, CurrentXP = 50, XPToNextRank = 150
+            SkillId = "archery",
+            Name = "Archery",
+            CurrentRank = 3,
+            CurrentXP = 50,
+            XPToNextRank = 150
         };
 
         var result = await handler.Handle(new GetSkillProgressQuery { Character = character, SkillId = "archery" }, default);

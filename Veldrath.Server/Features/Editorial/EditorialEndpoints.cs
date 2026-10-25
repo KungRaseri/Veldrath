@@ -36,11 +36,11 @@ public static class EditorialEndpoints
         // ── Public read endpoints ──────────────────────────────────────────────────
         var pub = app.MapGroup("/api/editorial").WithTags("Editorial");
 
-        pub.MapGet("/patch-notes",        ListPatchNotesAsync);
+        pub.MapGet("/patch-notes", ListPatchNotesAsync);
         pub.MapGet("/patch-notes/{slug}", GetPatchNoteBySlugAsync);
-        pub.MapGet("/lore",               ListLoreArticlesAsync);
-        pub.MapGet("/lore/{slug}",        GetLoreArticleBySlugAsync);
-        pub.MapGet("/announcements",      ListAnnouncementsAsync);
+        pub.MapGet("/lore", ListLoreArticlesAsync);
+        pub.MapGet("/lore/{slug}", GetLoreArticleBySlugAsync);
+        pub.MapGet("/announcements", ListAnnouncementsAsync);
 
         // ── Admin endpoints ────────────────────────────────────────────────────────
         var admin = app.MapGroup("/api/editorial/admin")
@@ -49,28 +49,28 @@ public static class EditorialEndpoints
             .RequireRateLimiting("foundry-writes");
 
         // Patch notes
-        admin.MapGet("/patch-notes",                  AdminListPatchNotesAsync);
-        admin.MapPost("/patch-notes",                 AdminCreatePatchNoteAsync);
-        admin.MapGet("/patch-notes/{id:guid}",        AdminGetPatchNoteAsync);
-        admin.MapPut("/patch-notes/{id:guid}",        AdminUpdatePatchNoteAsync);
-        admin.MapDelete("/patch-notes/{id:guid}",     AdminDeletePatchNoteAsync);
+        admin.MapGet("/patch-notes", AdminListPatchNotesAsync);
+        admin.MapPost("/patch-notes", AdminCreatePatchNoteAsync);
+        admin.MapGet("/patch-notes/{id:guid}", AdminGetPatchNoteAsync);
+        admin.MapPut("/patch-notes/{id:guid}", AdminUpdatePatchNoteAsync);
+        admin.MapDelete("/patch-notes/{id:guid}", AdminDeletePatchNoteAsync);
         admin.MapPost("/patch-notes/{id:guid}/publish", AdminTogglePatchNotePublishAsync);
 
         // Lore articles
-        admin.MapGet("/lore",                     AdminListLoreArticlesAsync);
-        admin.MapPost("/lore",                    AdminCreateLoreArticleAsync);
-        admin.MapGet("/lore/{id:guid}",           AdminGetLoreArticleAsync);
-        admin.MapPut("/lore/{id:guid}",           AdminUpdateLoreArticleAsync);
-        admin.MapDelete("/lore/{id:guid}",        AdminDeleteLoreArticleAsync);
-        admin.MapPost("/lore/{id:guid}/publish",  AdminToggleLoreArticlePublishAsync);
+        admin.MapGet("/lore", AdminListLoreArticlesAsync);
+        admin.MapPost("/lore", AdminCreateLoreArticleAsync);
+        admin.MapGet("/lore/{id:guid}", AdminGetLoreArticleAsync);
+        admin.MapPut("/lore/{id:guid}", AdminUpdateLoreArticleAsync);
+        admin.MapDelete("/lore/{id:guid}", AdminDeleteLoreArticleAsync);
+        admin.MapPost("/lore/{id:guid}/publish", AdminToggleLoreArticlePublishAsync);
 
         // Announcements
-        admin.MapGet("/announcements",                      AdminListAnnouncementsAsync);
-        admin.MapPost("/announcements",                     AdminCreateAnnouncementAsync);
-        admin.MapGet("/announcements/{id:guid}",            AdminGetAnnouncementAsync);
-        admin.MapPut("/announcements/{id:guid}",            AdminUpdateAnnouncementAsync);
-        admin.MapDelete("/announcements/{id:guid}",         AdminDeleteAnnouncementAsync);
-        admin.MapPost("/announcements/{id:guid}/publish",   AdminToggleAnnouncementPublishAsync);
+        admin.MapGet("/announcements", AdminListAnnouncementsAsync);
+        admin.MapPost("/announcements", AdminCreateAnnouncementAsync);
+        admin.MapGet("/announcements/{id:guid}", AdminGetAnnouncementAsync);
+        admin.MapPut("/announcements/{id:guid}", AdminUpdateAnnouncementAsync);
+        admin.MapDelete("/announcements/{id:guid}", AdminDeleteAnnouncementAsync);
+        admin.MapPost("/announcements/{id:guid}/publish", AdminToggleAnnouncementPublishAsync);
 
         return app;
     }
@@ -84,7 +84,7 @@ public static class EditorialEndpoints
         EditorialDbContext db,
         CancellationToken ct)
     {
-        var p    = Math.Max(1, page.GetValueOrDefault(1));
+        var p = Math.Max(1, page.GetValueOrDefault(1));
         var size = Math.Clamp(pageSize.GetValueOrDefault(20), 1, 100);
 
         var total = await db.PatchNotes
@@ -128,7 +128,7 @@ public static class EditorialEndpoints
         EditorialDbContext db,
         CancellationToken ct)
     {
-        var p    = Math.Max(1, page.GetValueOrDefault(1));
+        var p = Math.Max(1, page.GetValueOrDefault(1));
         var size = Math.Clamp(pageSize.GetValueOrDefault(20), 1, 100);
 
         var query = db.LoreArticles.Where(x => x.Status == EditorialStatus.Published);
@@ -172,7 +172,7 @@ public static class EditorialEndpoints
         EditorialDbContext db,
         CancellationToken ct)
     {
-        var p    = Math.Max(1, page.GetValueOrDefault(1));
+        var p = Math.Max(1, page.GetValueOrDefault(1));
         var size = Math.Clamp(pageSize.GetValueOrDefault(20), 1, 100);
 
         var total = await db.Announcements
@@ -200,7 +200,7 @@ public static class EditorialEndpoints
         EditorialDbContext db,
         CancellationToken ct)
     {
-        var p    = Math.Max(1, page.GetValueOrDefault(1));
+        var p = Math.Max(1, page.GetValueOrDefault(1));
         var size = Math.Clamp(pageSize.GetValueOrDefault(20), 1, 100);
 
         var total = await db.PatchNotes.CountAsync(ct);
@@ -232,11 +232,11 @@ public static class EditorialEndpoints
 
         var note = new PatchNote
         {
-            Slug            = request.Slug,
-            Title           = request.Title,
-            Content         = request.Content,
-            Summary         = request.Summary,
-            Version         = request.Version,
+            Slug = request.Slug,
+            Title = request.Title,
+            Content = request.Content,
+            Summary = request.Summary,
+            Version = request.Version,
             AuthorAccountId = GetAccountId(user),
         };
 
@@ -270,11 +270,11 @@ public static class EditorialEndpoints
         if (!Enum.TryParse<EditorialStatus>(request.Status, ignoreCase: true, out var status))
             return Results.BadRequest(new { error = "Invalid status. Use 'Draft' or 'Published'." });
 
-        note.Title     = request.Title;
-        note.Content   = request.Content;
-        note.Summary   = request.Summary;
-        note.Version   = request.Version;
-        note.Status    = status;
+        note.Title = request.Title;
+        note.Content = request.Content;
+        note.Summary = request.Summary;
+        note.Version = request.Version;
+        note.Status = status;
         note.UpdatedAt = DateTimeOffset.UtcNow;
 
         if (status == EditorialStatus.Published && note.PublishedAt is null)
@@ -309,7 +309,7 @@ public static class EditorialEndpoints
 
         if (note.Status == EditorialStatus.Draft)
         {
-            note.Status      = EditorialStatus.Published;
+            note.Status = EditorialStatus.Published;
             note.PublishedAt = DateTimeOffset.UtcNow;
         }
         else
@@ -331,7 +331,7 @@ public static class EditorialEndpoints
         EditorialDbContext db,
         CancellationToken ct)
     {
-        var p    = Math.Max(1, page.GetValueOrDefault(1));
+        var p = Math.Max(1, page.GetValueOrDefault(1));
         var size = Math.Clamp(pageSize.GetValueOrDefault(20), 1, 100);
 
         var total = await db.LoreArticles.CountAsync(ct);
@@ -363,11 +363,11 @@ public static class EditorialEndpoints
 
         var article = new LoreArticle
         {
-            Slug            = request.Slug,
-            Title           = request.Title,
-            Content         = request.Content,
-            Summary         = request.Summary,
-            Category        = request.Category,
+            Slug = request.Slug,
+            Title = request.Title,
+            Content = request.Content,
+            Summary = request.Summary,
+            Category = request.Category,
             AuthorAccountId = GetAccountId(user),
         };
 
@@ -401,11 +401,11 @@ public static class EditorialEndpoints
         if (!Enum.TryParse<EditorialStatus>(request.Status, ignoreCase: true, out var status))
             return Results.BadRequest(new { error = "Invalid status. Use 'Draft' or 'Published'." });
 
-        article.Title    = request.Title;
-        article.Content  = request.Content;
-        article.Summary  = request.Summary;
+        article.Title = request.Title;
+        article.Content = request.Content;
+        article.Summary = request.Summary;
         article.Category = request.Category;
-        article.Status   = status;
+        article.Status = status;
         article.UpdatedAt = DateTimeOffset.UtcNow;
 
         if (status == EditorialStatus.Published && article.PublishedAt is null)
@@ -440,7 +440,7 @@ public static class EditorialEndpoints
 
         if (article.Status == EditorialStatus.Draft)
         {
-            article.Status      = EditorialStatus.Published;
+            article.Status = EditorialStatus.Published;
             article.PublishedAt = DateTimeOffset.UtcNow;
         }
         else
@@ -462,7 +462,7 @@ public static class EditorialEndpoints
         EditorialDbContext db,
         CancellationToken ct)
     {
-        var p    = Math.Max(1, page.GetValueOrDefault(1));
+        var p = Math.Max(1, page.GetValueOrDefault(1));
         var size = Math.Clamp(pageSize.GetValueOrDefault(20), 1, 100);
 
         var total = await db.Announcements.CountAsync(ct);
@@ -486,12 +486,12 @@ public static class EditorialEndpoints
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Title)) return Results.BadRequest(new { error = "Title is required." });
-        if (string.IsNullOrWhiteSpace(request.Body))  return Results.BadRequest(new { error = "Body is required." });
+        if (string.IsNullOrWhiteSpace(request.Body)) return Results.BadRequest(new { error = "Body is required." });
 
         var announcement = new EditorialAnnouncement
         {
-            Title           = request.Title,
-            Body            = request.Body,
+            Title = request.Title,
+            Body = request.Body,
             AuthorAccountId = GetAccountId(user),
         };
 
@@ -525,9 +525,9 @@ public static class EditorialEndpoints
         if (!Enum.TryParse<EditorialStatus>(request.Status, ignoreCase: true, out var status))
             return Results.BadRequest(new { error = "Invalid status. Use 'Draft' or 'Published'." });
 
-        a.Title    = request.Title;
-        a.Body     = request.Body;
-        a.Status   = status;
+        a.Title = request.Title;
+        a.Body = request.Body;
+        a.Status = status;
         a.UpdatedAt = DateTimeOffset.UtcNow;
 
         if (status == EditorialStatus.Published && a.PublishedAt is null)
@@ -562,7 +562,7 @@ public static class EditorialEndpoints
 
         if (a.Status == EditorialStatus.Draft)
         {
-            a.Status      = EditorialStatus.Published;
+            a.Status = EditorialStatus.Published;
             a.PublishedAt = DateTimeOffset.UtcNow;
         }
         else

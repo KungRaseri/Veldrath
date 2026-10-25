@@ -1,9 +1,9 @@
-﻿using Discord;
+﻿using System.Reflection;
+using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Options;
 using Veldrath.Discord.Settings;
-using System.Reflection;
 
 namespace Veldrath.Discord.Services;
 
@@ -36,7 +36,7 @@ internal sealed class InteractionHandlingService(
             commandCount,
             string.Join(", ", interactions.SlashCommands.Select(c => c.Name)));
 
-        client.Ready              += RegisterCommandsAsync;
+        client.Ready += RegisterCommandsAsync;
         client.InteractionCreated += HandleInteractionAsync;
 
         interactions.Log += message =>
@@ -51,7 +51,7 @@ internal sealed class InteractionHandlingService(
             if (!result.IsSuccess)
             {
                 var name = (ctx?.Interaction as ISlashCommandInteraction)?.Data?.Name ?? "unknown";
-                var ex   = (result as ExecuteResult?)?.Exception;
+                var ex = (result as ExecuteResult?)?.Exception;
                 if (ex is not null)
                     logger.LogError(ex, "Interaction '{Name}' failed: [{Error}] {Reason}", name, result.Error, result.ErrorReason);
                 else

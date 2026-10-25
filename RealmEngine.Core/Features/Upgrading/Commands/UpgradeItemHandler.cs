@@ -17,7 +17,7 @@ public class UpgradeItemHandler : IRequestHandler<UpgradeItemCommand, UpgradeIte
         var item = request.Item;
         var essences = request.Essences;
         var oldLevel = item.UpgradeLevel;
-        
+
         // Validate item can be upgraded
         var maxLevel = item.GetMaxUpgradeLevel();
         if (item.UpgradeLevel >= maxLevel)
@@ -33,9 +33,9 @@ public class UpgradeItemHandler : IRequestHandler<UpgradeItemCommand, UpgradeIte
                 StatMultiplier = CalculateStatMultiplier(item.UpgradeLevel)
             });
         }
-        
+
         var targetLevel = item.UpgradeLevel + 1;
-        
+
         // Validate essence type matches item type
         var requiredEssenceType = GetRequiredEssenceType(item.Type);
         if (!essences.All(e => e.Name.Contains(requiredEssenceType)))
@@ -51,7 +51,7 @@ public class UpgradeItemHandler : IRequestHandler<UpgradeItemCommand, UpgradeIte
                 StatMultiplier = CalculateStatMultiplier(item.UpgradeLevel)
             });
         }
-        
+
         // Validate essence count matches requirement
         var requiredEssences = GetRequiredEssenceCount(targetLevel);
         if (essences.Count < requiredEssences.Count)
@@ -67,21 +67,21 @@ public class UpgradeItemHandler : IRequestHandler<UpgradeItemCommand, UpgradeIte
                 StatMultiplier = CalculateStatMultiplier(item.UpgradeLevel)
             });
         }
-        
+
         // Calculate success rate
         var successRate = CalculateSuccessRate(targetLevel);
-        
+
         // Attempt upgrade
         var random = new Random();
         var roll = random.NextDouble() * 100.0;
         var succeeded = roll <= successRate;
-        
+
         if (succeeded)
         {
             // Success: increment level
             item.UpgradeLevel = targetLevel;
             var newMultiplier = CalculateStatMultiplier(targetLevel);
-            
+
             return Task.FromResult(new UpgradeItemResult
             {
                 Success = true,
@@ -98,7 +98,7 @@ public class UpgradeItemHandler : IRequestHandler<UpgradeItemCommand, UpgradeIte
             // Failure: drop to previous level (or stay at 0)
             var newLevel = Math.Max(0, item.UpgradeLevel - 1);
             item.UpgradeLevel = newLevel;
-            
+
             return Task.FromResult(new UpgradeItemResult
             {
                 Success = false,
@@ -111,7 +111,7 @@ public class UpgradeItemHandler : IRequestHandler<UpgradeItemCommand, UpgradeIte
             });
         }
     }
-    
+
     /// <summary>
     /// Calculate success rate for upgrade based on target level.
     /// +1 to +5: 100% (safe)
@@ -127,7 +127,7 @@ public class UpgradeItemHandler : IRequestHandler<UpgradeItemCommand, UpgradeIte
         10 => 50.0,
         _ => 25.0  // Shouldn't happen
     };
-    
+
     /// <summary>
     /// Calculate stat multiplier for a given upgrade level.
     /// Formula: 1 + (level * 0.10) + (level² * 0.01)
@@ -137,7 +137,7 @@ public class UpgradeItemHandler : IRequestHandler<UpgradeItemCommand, UpgradeIte
     {
         return 1.0 + (level * 0.10) + (level * level * 0.01);
     }
-    
+
     /// <summary>
     /// Get required essence type based on item type.
     /// Weapons use Weapon Essence, Armor pieces use Armor Essence, Jewelry uses Accessory Essence.
@@ -159,7 +159,7 @@ public class UpgradeItemHandler : IRequestHandler<UpgradeItemCommand, UpgradeIte
         ItemType.Ring => "Accessory",
         _ => "Unknown"
     };
-    
+
     /// <summary>
     /// Get required essence count and tiers for each upgrade level.
     /// Returns list of essence tier names needed.

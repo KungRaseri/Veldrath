@@ -11,42 +11,42 @@ public class Character
     /// Gets or sets the character's name.
     /// </summary>
     public string Name { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the character's class name (e.g., "Warrior", "Mage", "Rogue").
     /// </summary>
     public string ClassName { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the character's current level.
     /// </summary>
     public int Level { get; set; } = 1;
-    
+
     /// <summary>
     /// Gets or sets the character's current experience points.
     /// </summary>
     public int Experience { get; set; } = 0;
-    
+
     /// <summary>
     /// Gets or sets the character's current health points.
     /// </summary>
     public int Health { get; set; } = 100;
-    
+
     /// <summary>
     /// Gets or sets the character's maximum health points.
     /// </summary>
     public int MaxHealth { get; set; } = 100;
-    
+
     /// <summary>
     /// Gets or sets the character's current mana points.
     /// </summary>
     public int Mana { get; set; } = 50;
-    
+
     /// <summary>
     /// Gets or sets the character's maximum mana points.
     /// </summary>
     public int MaxMana { get; set; } = 50;
-    
+
     /// <summary>
     /// Gets or sets the amount of gold the character possesses.
     /// </summary>
@@ -80,27 +80,27 @@ public class Character
     /// Gets or sets the Strength attribute. Affects melee damage and carry weight.
     /// </summary>
     public int Strength { get; set; } = 10;
-    
+
     /// <summary>
     /// Gets or sets the Dexterity attribute. Affects dodge, accuracy, and critical hit chance.
     /// </summary>
     public int Dexterity { get; set; } = 10;
-    
+
     /// <summary>
     /// Gets or sets the Constitution attribute. Affects max HP and physical defense.
     /// </summary>
     public int Constitution { get; set; } = 10;
-    
+
     /// <summary>
     /// Gets or sets the Intelligence attribute. Affects magic damage and crafting.
     /// </summary>
     public int Intelligence { get; set; } = 10;
-    
+
     /// <summary>
     /// Gets or sets the Wisdom attribute. Affects max mana and magic defense.
     /// </summary>
     public int Wisdom { get; set; } = 10;
-    
+
     /// <summary>
     /// Gets or sets the Charisma attribute. Affects shop prices and rare loot drops.
     /// </summary>
@@ -110,64 +110,64 @@ public class Character
     /// Gets or sets the number of unspent attribute points available for allocation.
     /// </summary>
     public int UnspentAttributePoints { get; set; } = 0;
-    
+
     /// <summary>
     /// Gets or sets the number of unspent skill points available for learning new abilities.
     /// </summary>
     public int UnspentSkillPoints { get; set; } = 0;
-    
+
     /// <summary>
     /// Gets or sets the collection of pending level-up bonuses to be applied.
     /// </summary>
     public List<LevelUpInfo> PendingLevelUps { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the character's skill proficiencies by skill ID.
     /// Dictionary key is skillId (e.g., "athletics", "light-blades", "arcane").
     /// Skills rank from 0-100 through practice-based XP gain.
     /// </summary>
     public Dictionary<string, CharacterSkill> Skills { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the learned abilities by ability ID.
     /// Dictionary key is abilityId (e.g., "active/offensive:charge").
     /// Tracks usage statistics and cooldown state.
     /// </summary>
     public Dictionary<string, CharacterAbility> LearnedAbilities { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets abilities granted by equipped items.
     /// Dictionary key is abilityId, value is the item ID that grants it.
     /// These abilities are active only while the item is equipped.
     /// </summary>
     public Dictionary<string, string> EquipmentGrantedAbilities { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the learned spells by spell ID.
     /// Dictionary key is spellId (e.g., "fireball", "heal").
     /// Tracks cast statistics and success rates.
     /// </summary>
     public Dictionary<string, CharacterSpell> LearnedSpells { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the active ability cooldowns (ability ID → turns remaining).
     /// Decrements each combat turn. When reaches 0, ability is ready.
     /// </summary>
     public Dictionary<string, int> AbilityCooldowns { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the active spell cooldowns (spell ID → turns remaining).
     /// Decrements each combat turn. When reaches 0, spell is ready.
     /// </summary>
     public Dictionary<string, int> SpellCooldowns { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the learned crafting recipes by recipe ID.
     /// Recipes with unlock method "SkillLevel" auto-unlock when skill is high enough.
     /// Recipes with "Recipe", "Quest", or "Discovery" must be explicitly learned.
     /// </summary>
     public HashSet<string> LearnedRecipes { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the active status effects currently applied to the character.
     /// Includes buffs, debuffs, and damage-over-time effects.
@@ -183,7 +183,7 @@ public class Character
     /// Gets or sets the weapon equipped in the main hand slot.
     /// </summary>
     public Item? EquippedMainHand { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the item equipped in the off-hand slot (weapon or shield).
     /// </summary>
@@ -193,37 +193,37 @@ public class Character
     /// Gets or sets the helmet equipped in the head armor slot.
     /// </summary>
     public Item? EquippedHelmet { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the shoulder armor equipped.
     /// </summary>
     public Item? EquippedShoulders { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the chest armor equipped.
     /// </summary>
     public Item? EquippedChest { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the bracer armor equipped on the wrists.
     /// </summary>
     public Item? EquippedBracers { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the glove armor equipped on the hands.
     /// </summary>
     public Item? EquippedGloves { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the belt equipped.
     /// </summary>
     public Item? EquippedBelt { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the leg armor equipped.
     /// </summary>
     public Item? EquippedLegs { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the boot armor equipped.
     /// </summary>
@@ -233,12 +233,12 @@ public class Character
     /// Gets or sets the necklace equipped in the jewelry slot.
     /// </summary>
     public Item? EquippedNecklace { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the first ring equipped.
     /// </summary>
     public Item? EquippedRing1 { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the second ring equipped.
     /// </summary>
@@ -405,8 +405,8 @@ public class Character
         int total = baseValue;
 
         // Sum all equipped items' trait bonuses
-        var equippedItems = new[] 
-        { 
+        var equippedItems = new[]
+        {
             EquippedMainHand, EquippedOffHand, EquippedHelmet, EquippedShoulders,
             EquippedChest, EquippedBracers, EquippedGloves, EquippedBelt,
             EquippedLegs, EquippedBoots, EquippedNecklace, EquippedRing1, EquippedRing2
@@ -433,37 +433,37 @@ public class Character
     /// <summary>
     /// Calculate total strength (base + equipment bonuses + set bonuses).
     /// </summary>
-    public int GetTotalStrength(List<EquipmentSet>? sets = null) 
+    public int GetTotalStrength(List<EquipmentSet>? sets = null)
         => GetTotalAttribute("Strength", Strength, sets);
 
     /// <summary>
     /// Calculate total dexterity (base + equipment bonuses + set bonuses).
     /// </summary>
-    public int GetTotalDexterity(List<EquipmentSet>? sets = null) 
+    public int GetTotalDexterity(List<EquipmentSet>? sets = null)
         => GetTotalAttribute("Dexterity", Dexterity, sets);
 
     /// <summary>
     /// Calculate total constitution (base + equipment bonuses + set bonuses).
     /// </summary>
-    public int GetTotalConstitution(List<EquipmentSet>? sets = null) 
+    public int GetTotalConstitution(List<EquipmentSet>? sets = null)
         => GetTotalAttribute("Constitution", Constitution, sets);
 
     /// <summary>
     /// Calculate total intelligence (base + equipment bonuses + set bonuses).
     /// </summary>
-    public int GetTotalIntelligence(List<EquipmentSet>? sets = null) 
+    public int GetTotalIntelligence(List<EquipmentSet>? sets = null)
         => GetTotalAttribute("Intelligence", Intelligence, sets);
 
     /// <summary>
     /// Calculate total wisdom (base + equipment bonuses + set bonuses).
     /// </summary>
-    public int GetTotalWisdom(List<EquipmentSet>? sets = null) 
+    public int GetTotalWisdom(List<EquipmentSet>? sets = null)
         => GetTotalAttribute("Wisdom", Wisdom, sets);
 
     /// <summary>
     /// Calculate total charisma (base + equipment bonuses + set bonuses).
     /// </summary>
-    public int GetTotalCharisma(List<EquipmentSet>? sets = null) 
+    public int GetTotalCharisma(List<EquipmentSet>? sets = null)
         => GetTotalAttribute("Charisma", Charisma, sets);
 
     /// <summary>
@@ -473,7 +473,7 @@ public class Character
     {
         return LearnedAbilities.ContainsKey(abilityId) || EquipmentGrantedAbilities.ContainsKey(abilityId);
     }
-    
+
     /// <summary>
     /// Gets all available ability IDs (both learned and equipment-granted).
     /// </summary>

@@ -1,8 +1,8 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using RealmEngine.Core.Services;
 using RealmEngine.Core.Features.Achievements.Commands;
 using RealmEngine.Core.Features.SaveLoad;
+using RealmEngine.Core.Services;
 using RealmEngine.Shared.Abstractions;
 
 namespace RealmEngine.Core.Features.LevelUp.Commands;
@@ -104,7 +104,7 @@ public class LevelUpHandler : IRequestHandler<LevelUpCommand, LevelUpResult>
             character.Health = character.MaxHealth;
             character.MaxMana = character.GetMaxMana();
             character.Mana = character.MaxMana;
-            
+
             var attributePointsGained = 3;
             var skillPointsGained = 1;
             if (character.Level % 5 == 0)

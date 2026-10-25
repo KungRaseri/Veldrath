@@ -55,7 +55,7 @@ public class DefendActionHubCommandHandler
         ILogger<DefendActionHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
-        _logger        = logger;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the defend-turn outcome.</summary>
@@ -87,7 +87,7 @@ public class DefendActionHubCommandHandler
         if (entity is null)
             return new DefendActionHubResult { Success = false, ErrorMessage = "Character not found" };
 
-        var attrs  = CombatHelpers.ParseAttrs(entity.Attributes, _logger);
+        var attrs = CombatHelpers.ParseAttrs(entity.Attributes, _logger);
         var player = CombatCharacterHydrator.Hydrate(entity, attrs);
 
         session = session.WithDefending(true).NextTurn();
@@ -114,12 +114,12 @@ public class DefendActionHubCommandHandler
 
         return new DefendActionHubResult
         {
-            Success               = true,
-            EnemyDamage           = enemyDamage,
-            EnemyAbilityUsed      = abilityName,
+            Success = true,
+            EnemyDamage = enemyDamage,
+            EnemyAbilityUsed = abilityName,
             PlayerRemainingHealth = player.Health,
-            PlayerDefeated        = isDead,
-            PlayerHardcoreDeath   = isHardcore,
+            PlayerDefeated = isDead,
+            PlayerHardcoreDeath = isHardcore,
         };
     }
 }

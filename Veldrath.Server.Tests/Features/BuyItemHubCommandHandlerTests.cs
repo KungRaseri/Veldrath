@@ -25,12 +25,12 @@ public class BuyItemHubCommandHandlerTests
         var attrs = JsonSerializer.Serialize(new Dictionary<string, int> { ["Gold"] = gold });
         return new Character
         {
-            Id            = id,
-            AccountId     = Guid.NewGuid(),
-            Name         = "TestHero",
-            ClassName    = "Warrior",
-            SlotIndex    = 1,
-            Attributes   = attrs,
+            Id = id,
+            AccountId = Guid.NewGuid(),
+            Name = "TestHero",
+            ClassName = "Warrior",
+            SlotIndex = 1,
+            Attributes = attrs,
             InventoryBlob = inventoryBlob,
         };
     }
@@ -67,7 +67,7 @@ public class BuyItemHubCommandHandlerTests
     [Fact]
     public async Task Handle_ReturnsError_WhenItemNotInCatalog()
     {
-        var charId   = Guid.NewGuid();
+        var charId = Guid.NewGuid();
         var charRepo = new Mock<ICharacterRepository>();
         charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(MakeCharacter(charId));
@@ -86,7 +86,7 @@ public class BuyItemHubCommandHandlerTests
     [Fact]
     public async Task Handle_ReturnsError_WhenNotEnoughGold()
     {
-        var charId   = Guid.NewGuid();
+        var charId = Guid.NewGuid();
         var charRepo = new Mock<ICharacterRepository>();
         charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(MakeCharacter(charId, gold: 10));  // only 10 gold
@@ -107,9 +107,9 @@ public class BuyItemHubCommandHandlerTests
     [Fact]
     public async Task Handle_DeductsGoldAndAddsItem_OnSuccess()
     {
-        var charId    = Guid.NewGuid();
+        var charId = Guid.NewGuid();
         var character = MakeCharacter(charId, gold: 200);
-        var charRepo  = new Mock<ICharacterRepository>();
+        var charRepo = new Mock<ICharacterRepository>();
         charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(character);
         charRepo.Setup(r => r.UpdateAsync(It.IsAny<Character>(), It.IsAny<CancellationToken>()))
@@ -161,7 +161,7 @@ public class BuyItemHubCommandHandlerTests
     [Fact]
     public async Task Handle_PersistsCharacter_OnSuccess()
     {
-        var charId   = Guid.NewGuid();
+        var charId = Guid.NewGuid();
         var charRepo = new Mock<ICharacterRepository>();
         charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(MakeCharacter(charId));

@@ -1,9 +1,9 @@
 using FluentAssertions;
+using MediatR;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using RealmEngine.Core.Features.Combat.Commands.UseCombatItem;
 using RealmEngine.Shared.Models;
-using MediatR;
-using Moq;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Combat.Commands;
 

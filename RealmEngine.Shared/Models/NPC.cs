@@ -9,103 +9,103 @@ public class NPC : ITraitable
     /// Gets or sets the unique identifier for this NPC.
     /// </summary>
     public string Id { get; set; } = Guid.NewGuid().ToString();
-    
+
     /// <summary>
     /// Gets or sets the URL-safe identifier for this NPC (kebab-case).
     /// Used for lookups, references, and catalog identification. Maps to "slug" in JSON.
     /// </summary>
     public string Slug { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the display name of the NPC.
     /// </summary>
     public string Name { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the display name shown to players (may differ from internal Name).
     /// Used in UI and dialogue. Maps to "displayName" in JSON.
     /// </summary>
     public string DisplayName { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the base name of the NPC without titles (e.g., "Garrick", "Elara").
     /// </summary>
     public string? BaseName { get; set; }
-    
+
     /// <summary>
     /// Ordered list of prefix components (title_prefix) that appear before the base name.
     /// Each component preserves its token identifier and display value.
     /// </summary>
     public List<NameComponent> Prefixes { get; set; } = new();
-    
+
     /// <summary>
     /// Ordered list of suffix components (title_suffix) that appear after the base name.
     /// Each component preserves its token identifier and display value.
     /// </summary>
     public List<NameComponent> Suffixes { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the age of the NPC in years.
     /// </summary>
     public int Age { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the NPC's profession or role (e.g., "Blacksmith", "Merchant", "Guard").
     /// </summary>
     public string Occupation { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the social class/tier of this NPC.
     /// Values: "common", "merchant", "craftsmen", "noble", "military", "religious", etc.
     /// </summary>
     public string SocialClass { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the list of skills this NPC has bonuses in.
     /// Examples: ["persuasion", "appraisal", "haggling"], ["smithing", "metalworking"]
     /// </summary>
     public List<string> SkillBonuses { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the base attribute bonuses from JSON catalog.
     /// Maps to attributes field in JSON (strength, dexterity, constitution, intelligence, wisdom, charisma).
     /// </summary>
     public Dictionary<string, int> Attributes { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the amount of gold this NPC possesses.
     /// </summary>
     public int Gold { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the base gold dice formula for this NPC type.
     /// Example: "5d10" means roll 5d10 for gold amount. Maps to "baseGold" in JSON.
     /// </summary>
     public string BaseGold { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the default dialogue text for this NPC.
     /// </summary>
     public string Dialogue { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets whether this NPC is friendly to the player.
     /// Hostile NPCs may initiate combat.
     /// </summary>
     public bool IsFriendly { get; set; } = true;
-    
+
     /// <summary>
     /// Gets or sets the type of shop this NPC operates (if any).
     /// Examples: "general_store", "blacksmith", "alchemist", "tavern"
     /// </summary>
     public string? ShopType { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the probability (0.0-1.0) that this NPC has a shop.
     /// 0.95 = 95% chance of having shop inventory.
     /// </summary>
     public double ShopChance { get; set; } = 0.0;
-    
+
     /// <summary>
     /// Gets or sets the shop inventory configuration.
     /// Contains core items, specialty items, and restock rules.
@@ -144,7 +144,7 @@ public class NPC : ITraitable
     /// Example IDs: ["greeting-friendly", "shop-browse", "quest-offer"]
     /// </example>
     public List<string> DialogueIds { get; set; } = new();
-    
+
     /// <summary>
     /// Collection of ability reference IDs (v4.1 format) this NPC can use if hostile or in combat.
     /// Each ID is a JSON reference like "@abilities/active/offensive:staff-strike".
@@ -191,7 +191,7 @@ public class NPC : ITraitable
     /// </code>
     /// </example>
     public List<string> AbilityIds { get; set; } = new();
-    
+
     /// <summary>
     /// Collection of inventory item reference IDs (v4.1 format) this NPC possesses.
     /// Used for merchant shops, trading, or NPC looting. Supports wildcard references.
@@ -307,7 +307,7 @@ public class NPC : ITraitable
     {
         return Prefixes.FirstOrDefault(p => p.Token == token)?.Value;
     }
-    
+
     /// <summary>
     /// Gets the value of a specific suffix component by token name.
     /// </summary>
@@ -317,7 +317,7 @@ public class NPC : ITraitable
     {
         return Suffixes.FirstOrDefault(s => s.Token == token)?.Value;
     }
-    
+
     /// <summary>
     /// Composes the NPC name from individual naming components.
     /// Useful for rebuilding names, localization, or debugging.
@@ -326,16 +326,16 @@ public class NPC : ITraitable
     public string ComposeNameFromComponents()
     {
         var parts = new List<string>();
-        
+
         // Add all prefixes in order
         parts.AddRange(Prefixes.Select(p => p.Value));
-        
+
         // Add base name
         if (!string.IsNullOrWhiteSpace(BaseName)) parts.Add(BaseName);
-        
+
         // Add all suffixes in order
         parts.AddRange(Suffixes.Select(s => s.Value));
-        
+
         return string.Join(" ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
     }
 }
@@ -350,7 +350,7 @@ public class NPCShopInventory
     /// Gets or sets the core items always available in the shop.
     /// </summary>
     public List<ShopInventoryItem> CoreItems { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the specialty items that may appear in the shop.
     /// </summary>
@@ -367,12 +367,12 @@ public class ShopInventoryItem
     /// Example: "@items/materials:*" for random material, "@items/weapons/swords:iron-longsword" for specific item.
     /// </summary>
     public string Item { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the base quantity of this item in stock.
     /// </summary>
     public int BaseQuantity { get; set; } = 1;
-    
+
     /// <summary>
     /// Gets or sets whether this item restocks daily.
     /// </summary>

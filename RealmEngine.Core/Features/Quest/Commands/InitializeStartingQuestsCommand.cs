@@ -40,7 +40,7 @@ public class InitializeStartingQuestsHandler : IRequestHandler<InitializeStartin
         await _initService.InitializeStartingQuests(request.SaveGame);
 
         return new InitializeStartingQuestsResult(
-            true, 
+            true,
             request.SaveGame.AvailableQuests.Count);
     }
 }

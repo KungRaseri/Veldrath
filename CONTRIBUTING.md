@@ -14,6 +14,7 @@ Contribution guidelines, code conventions, and the PR process are documented in 
 
 1. Fork the repo and create a feature branch off `main`
 2. `dotnet build Realm.Full.slnx` — make sure it builds
-3. `dotnet test Realm.Full.slnx` — all ~3,870 .NET tests must pass (plus `cd web && npm run test` for the web suites)
-4. Engine libraries (`RealmEngine.Core`, `.Shared`, `.Data`) must never take a UI framework dependency
-5. Open a pull request — the CI suite will run automatically
+3. `dotnet test Realm.Full.slnx` — all ~3,860 .NET tests must pass (plus `cd web && npm run test` for the web suites)
+4. `dotnet format Realm.Full.slnx` — the root [`.editorconfig`](.editorconfig) is enforced by CI
+5. Engine libraries (`RealmEngine.Core`, `.Shared`, `.Data`) must never take a UI framework dependency
+6. Open a pull request — the CI suite will run automatically

@@ -139,7 +139,7 @@ public class GetCombatStateHandlerTests
         var ability = new CharacterAbility { AbilityId = "test-ability" };
         player.LearnedAbilities.Add("test-ability", ability);
         player.AbilityCooldowns["test-ability"] = 0; // Not on cooldown
-        
+
         var enemy = new Enemy { Health = 50, MaxHealth = 100 };
         var query = new GetCombatStateQuery { Player = player, Enemy = enemy };
 
@@ -160,7 +160,7 @@ public class GetCombatStateHandlerTests
         var ability = new CharacterAbility { AbilityId = "test-ability" };
         player.LearnedAbilities.Add("test-ability", ability);
         player.AbilityCooldowns["test-ability"] = 2; // On cooldown
-        
+
         var enemy = new Enemy { Health = 50, MaxHealth = 100 };
         var query = new GetCombatStateQuery { Player = player, Enemy = enemy };
 
@@ -181,7 +181,7 @@ public class GetCombatStateHandlerTests
         var spell = new CharacterSpell { SpellId = "test-spell" };
         player.LearnedSpells.Add("test-spell", spell);
         player.SpellCooldowns["test-spell"] = 0; // Not on cooldown
-        
+
         var enemy = new Enemy { Health = 50, MaxHealth = 100 };
         var query = new GetCombatStateQuery { Player = player, Enemy = enemy };
 
@@ -202,7 +202,7 @@ public class GetCombatStateHandlerTests
         var spell = new CharacterSpell { SpellId = "test-spell" };
         player.LearnedSpells.Add("test-spell", spell);
         player.SpellCooldowns["test-spell"] = 3; // On cooldown
-        
+
         var enemy = new Enemy { Health = 50, MaxHealth = 100 };
         var query = new GetCombatStateQuery { Player = player, Enemy = enemy };
 
@@ -220,15 +220,15 @@ public class GetCombatStateHandlerTests
         // Arrange
         var handler = new GetCombatStateHandler();
         var player = new Character { Health = 50, MaxHealth = 100, Mana = 50, MaxMana = 100 };
-        
+
         var ability = new CharacterAbility { AbilityId = "test-ability" };
         player.LearnedAbilities.Add("test-ability", ability);
         player.AbilityCooldowns["test-ability"] = 0;
-        
+
         var spell = new CharacterSpell { SpellId = "test-spell" };
         player.LearnedSpells.Add("test-spell", spell);
         player.SpellCooldowns["test-spell"] = 0;
-        
+
         var enemy = new Enemy { Health = 50, MaxHealth = 100 };
         var query = new GetCombatStateQuery { Player = player, Enemy = enemy };
 
@@ -249,15 +249,15 @@ public class GetCombatStateHandlerTests
         // Arrange
         var handler = new GetCombatStateHandler();
         var player = new Character { Health = 50, MaxHealth = 100, Mana = 50, MaxMana = 100 };
-        
+
         var ability = new CharacterAbility { AbilityId = "test-ability" };
         player.LearnedAbilities.Add("test-ability", ability);
         player.AbilityCooldowns["test-ability"] = 0;
-        
+
         var spell = new CharacterSpell { SpellId = "test-spell" };
         player.LearnedSpells.Add("test-spell", spell);
         player.SpellCooldowns["test-spell"] = 0;
-        
+
         var enemy = new Enemy { Health = 50, MaxHealth = 100 };
         var query = new GetCombatStateQuery { Player = player, Enemy = enemy };
 

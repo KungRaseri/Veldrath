@@ -1,12 +1,11 @@
-using RealmEngine.Core.Abstractions;
-using RealmEngine.Shared.Models;
-using RealmEngine.Core.Features.SaveLoad;
-using RealmEngine.Core.Features.Death.Queries;
-using RealmEngine.Core.Generators.Modern;
 using MediatR;
-
-using RealmEngine.Core.Services;
+using RealmEngine.Core.Abstractions;
+using RealmEngine.Core.Features.Death.Queries;
+using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Generators;
+using RealmEngine.Core.Generators.Modern;
+using RealmEngine.Core.Services;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Exploration;
 
@@ -46,7 +45,7 @@ public class ExplorationService
         _locationGenerator = locationGenerator;
         _itemGenerator = itemGenerator;
     }
-    
+
     /// <summary>
     /// Initialize known locations by generating them from data.
     /// </summary>
@@ -56,17 +55,17 @@ public class ExplorationService
             return;
 
         _knownLocations.Clear();
-        
+
         // Generate initial locations (mix of towns, dungeons, wilderness)
         // Hydration enabled: Resolves NPC/Enemy/Loot references to full objects
         var towns = await _locationGenerator.GenerateLocationsAsync("towns", 2, hydrate: true);
         var dungeons = await _locationGenerator.GenerateLocationsAsync("dungeons", 3, hydrate: true);
         var wilderness = await _locationGenerator.GenerateLocationsAsync("wilderness", 3, hydrate: true);
-        
+
         _knownLocations.AddRange(towns);
         _knownLocations.AddRange(dungeons);
         _knownLocations.AddRange(wilderness);
-        
+
         _locationsInitialized = true;
     }
 
@@ -110,18 +109,18 @@ public class ExplorationService
         await _mediator.Publish(new GoldGained(player.Name, goldFound));
 
         Item? itemFound = null;
-        
+
         // Random chance to find an item (30% chance)
         if (Random.Shared.Next(100) < 30)
         {
             // Get current location object
             var currentLoc = _knownLocations.FirstOrDefault(l => l.Name == _gameState.CurrentLocation);
-            
+
             if (currentLoc != null && _itemGenerator != null)
             {
                 // Generate location-appropriate loot using ItemGenerator
                 var lootResult = _locationGenerator.GenerateLocationLoot(currentLoc);
-                
+
                 if (lootResult != null)
                 {
                     // Create budget request based on location danger
@@ -133,7 +132,7 @@ public class ExplorationService
                         IsElite = false,
                         ItemCategory = lootResult.ItemCategory ?? "materials"
                     };
-                    
+
                     var item = await _itemGenerator.GenerateItemModelWithBudgetAsync(request);
                     if (item != null)
                     {
@@ -165,7 +164,7 @@ public class ExplorationService
     public async Task<TravelResult> GetAvailableLocations()
     {
         await InitializeLocationsAsync();
-        
+
         var availableLocations = _knownLocations
             .Where(loc => loc.Name != _gameState.CurrentLocation)
             .ToList();
@@ -187,13 +186,13 @@ public class ExplorationService
     public async Task<TravelResult> TravelToLocation(string locationName)
     {
         await InitializeLocationsAsync();
-        
+
         var availableLocations = _knownLocations
             .Where(loc => loc.Name != _gameState.CurrentLocation)
             .ToList();
 
         var destination = availableLocations.FirstOrDefault(l => l.Name == locationName);
-        
+
         if (destination == null)
         {
             return new TravelResult

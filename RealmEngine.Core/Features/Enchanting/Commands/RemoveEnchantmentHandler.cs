@@ -16,7 +16,7 @@ public class RemoveEnchantmentHandler : IRequestHandler<RemoveEnchantmentCommand
     {
         var item = request.Item;
         var index = request.EnchantmentIndex;
-        
+
         // Validate item has player enchantments
         if (!item.PlayerEnchantments.Any())
         {
@@ -27,7 +27,7 @@ public class RemoveEnchantmentHandler : IRequestHandler<RemoveEnchantmentCommand
                 ScrollConsumed = false
             });
         }
-        
+
         // Validate index
         if (index < 0 || index >= item.PlayerEnchantments.Count)
         {
@@ -38,11 +38,11 @@ public class RemoveEnchantmentHandler : IRequestHandler<RemoveEnchantmentCommand
                 ScrollConsumed = false
             });
         }
-        
+
         // Remove the enchantment
         var removedEnchantment = item.PlayerEnchantments[index];
         item.PlayerEnchantments.RemoveAt(index);
-        
+
         return Task.FromResult(new RemoveEnchantmentResult
         {
             Success = true,

@@ -23,12 +23,12 @@ public class SellItemHubCommandHandlerTests
         var attrs = JsonSerializer.Serialize(new Dictionary<string, int> { ["Gold"] = gold });
         return new Character
         {
-            Id            = id,
-            AccountId     = Guid.NewGuid(),
-            Name          = "TestHero",
-            ClassName     = "Warrior",
-            SlotIndex     = 1,
-            Attributes    = attrs,
+            Id = id,
+            AccountId = Guid.NewGuid(),
+            Name = "TestHero",
+            ClassName = "Warrior",
+            SlotIndex = 1,
+            Attributes = attrs,
             InventoryBlob = inventoryBlob ?? "[]",
         };
     }
@@ -68,7 +68,7 @@ public class SellItemHubCommandHandlerTests
     [Fact]
     public async Task Handle_ReturnsError_WhenItemNotInInventory()
     {
-        var charId   = Guid.NewGuid();
+        var charId = Guid.NewGuid();
         var charRepo = new Mock<ICharacterRepository>();
         charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(MakeCharacter(charId));  // empty inventory
@@ -85,7 +85,7 @@ public class SellItemHubCommandHandlerTests
     [Fact]
     public async Task Handle_CreditsGoldAtHalfBuyPrice_AndRemovesSlot_WhenLastUnit()
     {
-        var charId   = Guid.NewGuid();
+        var charId = Guid.NewGuid();
         var charRepo = new Mock<ICharacterRepository>();
         charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(MakeCharacter(charId, gold: 0, inventoryBlob: InvWith("sword", qty: 1)));
@@ -108,9 +108,9 @@ public class SellItemHubCommandHandlerTests
     [Fact]
     public async Task Handle_DecrementsQuantity_WhenMoreThanOneUnit()
     {
-        var charId    = Guid.NewGuid();
+        var charId = Guid.NewGuid();
         Character? saved = null;
-        var charRepo  = new Mock<ICharacterRepository>();
+        var charRepo = new Mock<ICharacterRepository>();
         charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(MakeCharacter(charId, inventoryBlob: InvWith("potion", qty: 3)));
         charRepo.Setup(r => r.UpdateAsync(It.IsAny<Character>(), It.IsAny<CancellationToken>()))
@@ -132,7 +132,7 @@ public class SellItemHubCommandHandlerTests
     [Fact]
     public async Task Handle_ClampsSellPrice_ToMinimumOne_WhenItemNotInCatalog()
     {
-        var charId   = Guid.NewGuid();
+        var charId = Guid.NewGuid();
         var charRepo = new Mock<ICharacterRepository>();
         charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(MakeCharacter(charId, gold: 5, inventoryBlob: InvWith("misc", qty: 1)));
@@ -154,7 +154,7 @@ public class SellItemHubCommandHandlerTests
     [Fact]
     public async Task Handle_PersistsCharacter_OnSuccess()
     {
-        var charId   = Guid.NewGuid();
+        var charId = Guid.NewGuid();
         var charRepo = new Mock<ICharacterRepository>();
         charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(MakeCharacter(charId, inventoryBlob: InvWith("helm", qty: 1)));

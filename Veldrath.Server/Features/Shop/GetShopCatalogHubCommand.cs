@@ -45,7 +45,7 @@ public class GetShopCatalogHubCommandHandler
     public GetShopCatalogHubCommandHandler(ISender mediator, ILogger<GetShopCatalogHubCommandHandler> logger)
     {
         _mediator = mediator;
-        _logger   = logger;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the shop catalog.</summary>
@@ -64,10 +64,10 @@ public class GetShopCatalogHubCommandHandler
         var catalog = items
             .Where(i => i.Price > 0)
             .Select(i => new ShopItemDto(
-                ItemRef:     i.Slug,
+                ItemRef: i.Slug,
                 DisplayName: i.Name,
-                BuyPrice:    i.Price,
-                SellPrice:   Math.Max(1, i.Price / 2)))
+                BuyPrice: i.Price,
+                SellPrice: Math.Max(1, i.Price / 2)))
             .ToList();
 
         _logger.LogInformation(

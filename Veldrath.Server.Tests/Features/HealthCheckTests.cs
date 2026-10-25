@@ -10,8 +10,8 @@ public class HealthCheckTests
     [Fact]
     public async Task GameEngineHealthCheck_Should_Return_Healthy()
     {
-        var check  = new GameEngineHealthCheck(Mock.Of<ISender>());
-        var ctx    = new HealthCheckContext
+        var check = new GameEngineHealthCheck(Mock.Of<ISender>());
+        var ctx = new HealthCheckContext
         {
             Registration = new HealthCheckRegistration("game-engine", check, null, null)
         };
@@ -24,8 +24,8 @@ public class HealthCheckTests
     [Fact]
     public async Task GameEngineHealthCheck_Should_Include_Description()
     {
-        var check  = new GameEngineHealthCheck(Mock.Of<ISender>());
-        var ctx    = new HealthCheckContext
+        var check = new GameEngineHealthCheck(Mock.Of<ISender>());
+        var ctx = new HealthCheckContext
         {
             Registration = new HealthCheckRegistration("game-engine", check, null, null)
         };
@@ -56,7 +56,7 @@ public class HealthCheckTests
     public async Task WriteResponse_Should_Include_Status_In_Json_Body()
     {
         var httpContext = new DefaultHttpContext();
-        var body        = new MemoryStream();
+        var body = new MemoryStream();
         httpContext.Response.Body = body;
 
         var report = new HealthReport(
@@ -75,7 +75,7 @@ public class HealthCheckTests
     public async Task WriteResponse_Should_Include_Check_Entries()
     {
         var httpContext = new DefaultHttpContext();
-        var body        = new MemoryStream();
+        var body = new MemoryStream();
         httpContext.Response.Body = body;
 
         var entries = new Dictionary<string, HealthReportEntry>
@@ -95,10 +95,10 @@ public class HealthCheckTests
     public async Task WriteResponse_Should_Include_Exception_Message_When_Degraded()
     {
         var httpContext = new DefaultHttpContext();
-        var body        = new MemoryStream();
+        var body = new MemoryStream();
         httpContext.Response.Body = body;
 
-        var ex      = new InvalidOperationException("connection timeout");
+        var ex = new InvalidOperationException("connection timeout");
         var entries = new Dictionary<string, HealthReportEntry>
         {
             ["db"] = new HealthReportEntry(HealthStatus.Degraded, "Slow", TimeSpan.Zero, ex, null)

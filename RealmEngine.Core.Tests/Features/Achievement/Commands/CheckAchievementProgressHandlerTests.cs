@@ -27,17 +27,17 @@ public class CheckAchievementProgressHandlerTests
         // Arrange
         var newAchievements = new List<RealmEngine.Shared.Models.Achievement>
         {
-            new() 
-            { 
-                Id = "first-quest", 
-                Title = "First Quest Complete", 
-                IsUnlocked = true 
+            new()
+            {
+                Id = "first-quest",
+                Title = "First Quest Complete",
+                IsUnlocked = true
             },
-            new() 
-            { 
-                Id = "level-10", 
-                Title = "Reach Level 10", 
-                IsUnlocked = true 
+            new()
+            {
+                Id = "level-10",
+                Title = "Reach Level 10",
+                IsUnlocked = true
             }
         };
 
@@ -101,23 +101,23 @@ public class CheckAchievementProgressHandlerTests
         // Arrange
         var achievements = new List<RealmEngine.Shared.Models.Achievement>
         {
-            new() 
-            { 
-                Id = "quest-achievement", 
+            new()
+            {
+                Id = "quest-achievement",
                 Title = "Quest Master",
                 Criteria = new AchievementCriteria { Type = AchievementType.CompleteQuest },
                 IsUnlocked = true
             },
-            new() 
-            { 
-                Id = "combat-achievement", 
+            new()
+            {
+                Id = "combat-achievement",
                 Title = "Slayer",
                 Criteria = new AchievementCriteria { Type = AchievementType.DefeatEnemies },
                 IsUnlocked = true
             },
-            new() 
-            { 
-                Id = "level-achievement", 
+            new()
+            {
+                Id = "level-achievement",
                 Title = "Hero",
                 Criteria = new AchievementCriteria { Type = AchievementType.ReachLevel },
                 IsUnlocked = true

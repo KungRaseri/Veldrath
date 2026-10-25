@@ -2,7 +2,7 @@ namespace RealmForge.ViewModels;
 
 public class AboutViewModel
 {
-    public string AppName    => "RealmForge";
+    public string AppName => "RealmForge";
     public string AppVersion => "v4.0";
     public string AppDescription => "Database content editor for RealmEngine — create and manage game entities stored in PostgreSQL.";
 

@@ -1,5 +1,5 @@
-using RealmEngine.Shared.Models;
 using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Data.Repositories;
 
@@ -144,10 +144,10 @@ public class InMemoryEquipmentSetRepository : IEquipmentSetRepository
 
     /// <inheritdoc />
     public EquipmentSet? GetById(string id) => GetByName(id); // ID is the name for equipment sets
-    
+
     /// <inheritdoc />
     public EquipmentSet? GetByName(string name) => GetAllSets().FirstOrDefault(s => s.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-    
+
     /// <inheritdoc />
     public List<EquipmentSet> GetAll() => GetAllSets();
 }

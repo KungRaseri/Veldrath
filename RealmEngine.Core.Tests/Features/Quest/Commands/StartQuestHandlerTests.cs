@@ -1,10 +1,10 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RealmEngine.Core.Features.Quests.Commands;
 using RealmEngine.Core.Features.Quests.Services;
 using RealmEngine.Core.Features.SaveLoad;
 using QuestModel = RealmEngine.Shared.Models.Quest;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Quest.Commands;
 
@@ -22,7 +22,7 @@ public class StartQuestHandlerTests
         var mockSaveGameService = new Mock<ISaveGameService>();
         var mockMainQuestService = new Mock<MainQuestService>(true); // Use protected constructor for mocking
         var mockInitService = new Mock<QuestInitializationService>(mockMainQuestService.Object, NullLogger<QuestInitializationService>.Instance);
-        
+
         _mockQuestService = new Mock<QuestService>(MockBehavior.Strict,
             mockSaveGameService.Object,
             mockMainQuestService.Object,

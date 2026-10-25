@@ -1,10 +1,10 @@
-using RealmEngine.Shared.Models;
-using RealmEngine.Shared.Abstractions;
-using RealmEngine.Core.Features.SaveLoad;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Features.Achievements.Commands;
 using RealmEngine.Core.Features.Quests.Commands;
+using RealmEngine.Core.Features.SaveLoad;
+using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Combat.Commands.AttackEnemy;
 
@@ -55,9 +55,9 @@ public class AttackEnemyHandler : IRequestHandler<AttackEnemyCommand, AttackEnem
 
         // Apply damage to enemy (clamped to 0)
         enemy.Health = Math.Max(0, enemy.Health - damage);
-        
+
         // Log to combat log
-        combatLog?.AddEntry($"{player.Name} attacks for {damage} damage" + 
+        combatLog?.AddEntry($"{player.Name} attacks for {damage} damage" +
             (isCritical ? " (CRITICAL!)" : ""));
 
         // Publish attack event
@@ -73,7 +73,7 @@ public class AttackEnemyHandler : IRequestHandler<AttackEnemyCommand, AttackEnem
             // Award gold and experience with difficulty multiplier
             xpGained = (int)(enemy.XP * _combatSettings.GoldXPMultiplier);
             goldGained = (int)(enemy.GoldReward * _combatSettings.GoldXPMultiplier);
-            
+
             player.Experience += xpGained;
             player.Gold += goldGained;
 
@@ -141,15 +141,15 @@ public class AttackEnemyHandler : IRequestHandler<AttackEnemyCommand, AttackEnem
                 var enemyTypeMatch = $"defeat_{enemyType}";
                 var killTypeMatch = $"kill_{enemyType}";
 
-                if (objectiveId == enemyNameMatch || 
-                    objectiveId == enemyTypeMatch || 
+                if (objectiveId == enemyNameMatch ||
+                    objectiveId == enemyTypeMatch ||
                     objectiveId == killTypeMatch ||
                     objectiveId.EndsWith($"_{enemyType}") ||
                     objectiveId.Contains(enemyType))
                 {
                     // Update quest progress
                     var progressResult = await _mediator.Send(
-                        new UpdateQuestProgressCommand(quest.Id, objectiveId, 1), 
+                        new UpdateQuestProgressCommand(quest.Id, objectiveId, 1),
                         cancellationToken);
 
                     if (progressResult.ObjectiveCompleted)
@@ -180,7 +180,7 @@ public class AttackEnemyHandler : IRequestHandler<AttackEnemyCommand, AttackEnem
         // Find quests that have all objectives completed
         var readyQuests = saveGame.ActiveQuests
             .Where(q => q.Objectives.All(kvp =>
-                q.ObjectiveProgress.ContainsKey(kvp.Key) && 
+                q.ObjectiveProgress.ContainsKey(kvp.Key) &&
                 q.ObjectiveProgress[kvp.Key] >= kvp.Value))
             .ToList();
 
@@ -188,7 +188,7 @@ public class AttackEnemyHandler : IRequestHandler<AttackEnemyCommand, AttackEnem
         foreach (var quest in readyQuests)
         {
             var result = await _mediator.Send(
-                new CompleteQuestCommand(quest.Id), 
+                new CompleteQuestCommand(quest.Id),
                 cancellationToken);
 
             if (result.Success)

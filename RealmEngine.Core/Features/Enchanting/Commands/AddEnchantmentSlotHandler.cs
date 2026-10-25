@@ -17,13 +17,13 @@ public class AddEnchantmentSlotHandler : IRequestHandler<AddEnchantmentSlotComma
         var character = request.Character;
         var item = request.Item;
         var crystal = request.SocketCrystal;
-        
+
         // Get Enchanting skill level
         var enchantingSkill = character.Skills.TryGetValue("Enchanting", out var skill) ? skill.CurrentRank : 0;
-        
+
         // Calculate max slots for this rarity
         var maxSlotsForRarity = GetMaxSlotsForRarity(item.Rarity);
-        
+
         // Check if already at hard cap (3 slots) first
         if (item.MaxPlayerEnchantments >= 3)
         {
@@ -35,7 +35,7 @@ public class AddEnchantmentSlotHandler : IRequestHandler<AddEnchantmentSlotComma
                 CrystalConsumed = false
             });
         }
-        
+
         // Check if already at max slots for rarity
         if (item.MaxPlayerEnchantments >= maxSlotsForRarity)
         {
@@ -47,11 +47,11 @@ public class AddEnchantmentSlotHandler : IRequestHandler<AddEnchantmentSlotComma
                 CrystalConsumed = false
             });
         }
-        
+
         // Calculate required skill for next slot
         var nextSlotNumber = item.MaxPlayerEnchantments + 1;
         var requiredSkill = GetRequiredSkillForSlot(nextSlotNumber);
-        
+
         // Validate skill requirement
         if (enchantingSkill < requiredSkill)
         {
@@ -63,10 +63,10 @@ public class AddEnchantmentSlotHandler : IRequestHandler<AddEnchantmentSlotComma
                 CrystalConsumed = false
             });
         }
-        
+
         // Add the slot
         item.MaxPlayerEnchantments++;
-        
+
         return Task.FromResult(new AddEnchantmentSlotResult
         {
             Success = true,
@@ -75,7 +75,7 @@ public class AddEnchantmentSlotHandler : IRequestHandler<AddEnchantmentSlotComma
             CrystalConsumed = true
         });
     }
-    
+
     /// <summary>
     /// Get maximum enchantment slots allowed for a given rarity.
     /// Common=1, Rare=2, Legendary=3
@@ -89,7 +89,7 @@ public class AddEnchantmentSlotHandler : IRequestHandler<AddEnchantmentSlotComma
         ItemRarity.Legendary => 3,
         _ => 1
     };
-    
+
     /// <summary>
     /// Get required Enchanting skill level for a given slot number.
     /// Slot 1: 0 (base), Slot 2: 25, Slot 3: 50

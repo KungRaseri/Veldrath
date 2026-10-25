@@ -77,7 +77,7 @@ public class AllocateAttributePointsHandler : IRequestHandler<AllocateAttributeP
 
             // Calculate total points to spend
             var totalPointsToSpend = request.AttributeAllocations.Values.Sum();
-            
+
             // Validate non-negative allocations
             if (request.AttributeAllocations.Any(kvp => kvp.Value < 0))
             {

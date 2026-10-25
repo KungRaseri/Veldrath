@@ -26,12 +26,12 @@ public class HarvestingIntegrationTests
     private readonly InMemoryNodeRepository _nodeRepository;
     private readonly InMemoryInventoryService _inventoryService;
     private readonly HarvestingConfig _config;
-    
+
     public HarvestingIntegrationTests()
     {
         // Create logger factory
         var loggerFactory = LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Warning));
-        
+
         // Create default configuration
         _config = new HarvestingConfig
         {
@@ -108,7 +108,7 @@ public class HarvestingIntegrationTests
                 }
             }
         };
-        
+
         // Create in-memory repositories
         _nodeRepository = new InMemoryNodeRepository(
             loggerFactory.CreateLogger<InMemoryNodeRepository>()
@@ -117,7 +117,7 @@ public class HarvestingIntegrationTests
             loggerFactory.CreateLogger<InMemoryInventoryService>()
         );
     }
-    
+
     [Fact]
     public async Task HarvestNode_NonexistentNode_ShouldFailGracefully()
     {
@@ -129,18 +129,18 @@ public class HarvestingIntegrationTests
             EquippedToolRef = null,
             SkillRankOverride = 10
         };
-        
+
         // Act
         var handler = GetHandler();
         var result = await handler.Handle(command, CancellationToken.None);
-        
+
         // Assert
         result.Success.Should().BeFalse();
         result.FailureReason.Should().Contain("not found");
         result.MaterialsGained.Should().BeEmpty();
         result.SkillXPGained.Should().Be(0);
     }
-    
+
     [Fact]
     public async Task HarvestNode_MultipleHarvests_ShouldDepleteNode()
     {
@@ -160,11 +160,11 @@ public class HarvestingIntegrationTests
             BiomeType = "mountains",
             LocationId = "iron-peaks"
         };
-        
+
         await _nodeRepository.SpawnNodeAsync(node);
-        
+
         var handler = GetHandler();
-        
+
         // Act - Harvest multiple times
         var results = new List<HarvestResult>();
         for (int i = 0; i < 3; i++)
@@ -176,30 +176,30 @@ public class HarvestingIntegrationTests
                 EquippedToolRef = "@items/tools/pickaxes:iron-pickaxe",
                 SkillRankOverride = 20
             };
-            
+
             var result = await handler.Handle(command, CancellationToken.None);
             results.Add(result);
         }
-        
+
         // Assert
         results.Should().HaveCount(3);
-        
+
         // All harvests should succeed
         results[0].Success.Should().BeTrue($"Failure reason: {results[0].FailureReason}");
         results[1].Success.Should().BeTrue($"Failure reason: {results[1].FailureReason}");
         results[2].Success.Should().BeTrue($"Failure reason: {results[2].FailureReason}");
-        
+
         // Node should progressively deplete
         var finalNode = await _nodeRepository.GetNodeByIdAsync("test-copper-001");
         finalNode.Should().NotBeNull();
         finalNode!.CurrentHealth.Should().BeLessThan(150);
         finalNode.TimesHarvested.Should().BeGreaterThanOrEqualTo(3);
-        
+
         // Health should decrease with each harvest
         results[0].NodeHealthRemaining.Should().BeGreaterThan(results[1].NodeHealthRemaining);
         results[1].NodeHealthRemaining.Should().BeGreaterThan(results[2].NodeHealthRemaining);
     }
-    
+
     [Fact]
     public async Task HarvestNode_InsufficientToolTier_ShouldFail()
     {
@@ -219,9 +219,9 @@ public class HarvestingIntegrationTests
             BiomeType = "deep-mines",
             LocationId = "mithril-depths"
         };
-        
+
         await _nodeRepository.SpawnNodeAsync(node);
-        
+
         var command = new HarvestNodeCommand
         {
             CharacterName = "TestMiner",
@@ -229,22 +229,22 @@ public class HarvestingIntegrationTests
             EquippedToolRef = "@items/tools/pickaxes:iron-pickaxe", // Only tier 1
             SkillRankOverride = 50
         };
-        
+
         // Act
         var handler = GetHandler();
         var result = await handler.Handle(command, CancellationToken.None);
-        
+
         // Assert
         result.Success.Should().BeFalse();
         result.FailureReason.Should().Contain("tier");
         result.MaterialsGained.Should().BeEmpty();
-        
+
         // Node should not be modified
         var unchangedNode = await _nodeRepository.GetNodeByIdAsync("test-mithril-001");
         unchangedNode!.CurrentHealth.Should().Be(200);
         unchangedNode.TimesHarvested.Should().Be(0);
     }
-    
+
     [Fact]
     public async Task HarvestNode_NodeStateTransitions_ShouldReflectHealthPercentage()
     {
@@ -264,32 +264,32 @@ public class HarvestingIntegrationTests
             BiomeType = "mountains",
             LocationId = "silver-peaks"
         };
-        
+
         await _nodeRepository.SpawnNodeAsync(node);
         var handler = GetHandler();
-        
+
         // Act & Assert - Healthy (>= 80%)
         node.CurrentHealth = 85;
         await _nodeRepository.SaveNodeAsync(node);
         node.GetNodeState().Should().Be(NodeState.Healthy);
-        
+
         // Act & Assert - Depleted (40-79%)
         node.CurrentHealth = 60;
         await _nodeRepository.SaveNodeAsync(node);
         node.GetNodeState().Should().Be(NodeState.Depleted);
-        
+
         // Act & Assert - Exhausted (10-39%)
         node.CurrentHealth = 25;
         await _nodeRepository.SaveNodeAsync(node);
         node.GetNodeState().Should().Be(NodeState.Exhausted);
-        
+
         // Act & Assert - Empty (< 10%)
         node.CurrentHealth = 5;
         await _nodeRepository.SaveNodeAsync(node);
         node.GetNodeState().Should().Be(NodeState.Empty);
         node.CanHarvest().Should().BeFalse();
     }
-    
+
     [Fact]
     public async Task GetNodesByLocation_ShouldReturnAllNodesInLocation()
     {
@@ -339,67 +339,67 @@ public class HarvestingIntegrationTests
                 BiomeType = "mountains"
             }
         };
-        
+
         foreach (var node in nodes)
         {
             await _nodeRepository.SpawnNodeAsync(node);
         }
-        
+
         // Act
         var forestNodes = await _nodeRepository.GetNodesByLocationAsync("starting-forest");
         var mountainNodes = await _nodeRepository.GetNodesByLocationAsync("iron-peaks");
-        
+
         // Assert
         forestNodes.Should().HaveCount(2);
         forestNodes.Should().Contain(n => n.NodeId == "forest-oak-001");
         forestNodes.Should().Contain(n => n.NodeId == "forest-birch-001");
-        
+
         mountainNodes.Should().HaveCount(1);
         mountainNodes.Should().Contain(n => n.NodeId == "mountain-copper-001");
     }
-    
+
     /// <summary>
     /// Helper method to create a configured handler instance.
     /// </summary>
     private HarvestNodeCommandHandler GetHandler()
     {
         var localLoggerFactory = LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Warning));
-        
+
         var calculator = new HarvestCalculatorService(
             localLoggerFactory.CreateLogger<HarvestCalculatorService>(),
             _config
         );
-        
+
         var toolValidator = new ToolValidationService(
             localLoggerFactory.CreateLogger<ToolValidationService>(),
             _config
         );
-        
+
         var criticalService = new CriticalHarvestService(
             localLoggerFactory.CreateLogger<CriticalHarvestService>(),
             _config
         );
-        
+
         // Use InMemoryLootTableRepository + mocked DbContextFactory
         var lootTableRepo = new InMemoryLootTableRepository();
         var dbFactory = new Mock<IDbContextFactory<ContentDbContext>>();
-        
+
         var lootTableService = new RealmEngine.Core.Services.LootTableService(
             localLoggerFactory.CreateLogger<RealmEngine.Core.Services.LootTableService>(),
             lootTableRepo,
             dbFactory.Object
         );
-        
+
         var skillCatalogService = new SkillDataService(
             new InMemorySkillRepository(),
             localLoggerFactory.CreateLogger<SkillDataService>()
         );
-        
+
         var skillProgressionService = new SkillProgressionService(
             skillCatalogService,
             localLoggerFactory.CreateLogger<SkillProgressionService>()
         );
-        
+
         return new HarvestNodeCommandHandler(
             localLoggerFactory.CreateLogger<HarvestNodeCommandHandler>(),
             calculator,

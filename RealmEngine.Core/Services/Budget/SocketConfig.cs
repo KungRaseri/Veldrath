@@ -38,8 +38,8 @@ public class SocketCountConfig
 /// <summary>Socket type selection weights for a specific item type.</summary>
 public class SocketTypeWeightConfig
 {
-    [JsonPropertyName("Gem")]     public int Gem     { get; set; } = 25;
-    [JsonPropertyName("Rune")]    public int Rune    { get; set; } = 25;
+    [JsonPropertyName("Gem")] public int Gem { get; set; } = 25;
+    [JsonPropertyName("Rune")] public int Rune { get; set; } = 25;
     [JsonPropertyName("Crystal")] public int Crystal { get; set; } = 25;
-    [JsonPropertyName("Orb")]     public int Orb     { get; set; } = 25;
+    [JsonPropertyName("Orb")] public int Orb { get; set; } = 25;
 }

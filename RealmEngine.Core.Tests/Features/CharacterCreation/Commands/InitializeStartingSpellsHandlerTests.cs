@@ -1,11 +1,11 @@
 using FluentAssertions;
 using MediatR;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RealmEngine.Core.Features.CharacterCreation.Commands;
 using RealmEngine.Core.Features.Progression.Commands;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.CharacterCreation.Commands;
 
@@ -33,12 +33,12 @@ public class InitializeStartingPowersHandlerTests
     {
         // Arrange
         var mockMediator = new Mock<IMediator>();
-        
+
         // Mock successful spell learning
         mockMediator
             .Setup(m => m.Send(It.IsAny<LearnSpellCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new LearnSpellResult { Success = true, Message = "Learned" });
-        
+
         var spellIds = Enumerable.Range(1, expectedCount).Select(i => $"spell-{i}").ToList();
         var classRepo = BuildClassRepo(className, spellIds);
         var handler = new InitializeStartingPowersHandler(mockMediator.Object, classRepo.Object, NullLogger<InitializeStartingPowersHandler>.Instance);
@@ -57,10 +57,10 @@ public class InitializeStartingPowersHandlerTests
         result.Success.Should().BeTrue();
         result.PowersLearned.Should().Be(expectedCount);
         result.PowerIds.Should().HaveCount(expectedCount);
-        
+
         // Verify LearnSpellCommand was called the correct number of times
         mockMediator.Verify(
-            m => m.Send(It.IsAny<LearnSpellCommand>(), It.IsAny<CancellationToken>()), 
+            m => m.Send(It.IsAny<LearnSpellCommand>(), It.IsAny<CancellationToken>()),
             Times.Exactly(expectedCount));
     }
 
@@ -72,7 +72,7 @@ public class InitializeStartingPowersHandlerTests
         mockMediator
             .Setup(m => m.Send(It.IsAny<LearnSpellCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new LearnSpellResult { Success = true, Message = "Learned" });
-        
+
         var mageSpells = new List<string>
         {
             "@spells/arcane/offensive:magic-missile",

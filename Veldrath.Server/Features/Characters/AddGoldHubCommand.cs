@@ -67,7 +67,7 @@ public class AddGoldHubCommandHandler : IRequestHandler<AddGoldHubCommand, AddGo
         ILogger<AddGoldHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
-        _logger        = logger;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the gold transaction outcome.</summary>
@@ -107,14 +107,14 @@ public class AddGoldHubCommandHandler : IRequestHandler<AddGoldHubCommand, AddGo
         if (request.Amount < 0 && -request.Amount > currentGold)
             return new AddGoldHubResult
             {
-                Success      = false,
+                Success = false,
                 ErrorMessage = $"Not enough gold. Have {currentGold}, need {-request.Amount}.",
             };
 
         var newGold = currentGold + request.Amount;
         attrs[KeyGold] = newGold;
 
-        character.Attributes   = JsonSerializer.Serialize(attrs);
+        character.Attributes = JsonSerializer.Serialize(attrs);
         character.LastPlayedAt = DateTimeOffset.UtcNow;
 
         await _characterRepo.UpdateAsync(character, cancellationToken);
@@ -125,8 +125,8 @@ public class AddGoldHubCommandHandler : IRequestHandler<AddGoldHubCommand, AddGo
 
         return new AddGoldHubResult
         {
-            Success      = true,
-            GoldAdded    = request.Amount,
+            Success = true,
+            GoldAdded = request.Amount,
             NewGoldTotal = newGold,
         };
     }

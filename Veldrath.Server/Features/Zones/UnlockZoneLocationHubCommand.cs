@@ -57,9 +57,9 @@ public class UnlockZoneLocationHubCommandHandler
         ICharacterUnlockedLocationRepository unlockedRepo,
         ILogger<UnlockZoneLocationHubCommandHandler> logger)
     {
-        _locationRepo  = locationRepo;
-        _unlockedRepo  = unlockedRepo;
-        _logger        = logger;
+        _locationRepo = locationRepo;
+        _unlockedRepo = unlockedRepo;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the unlock outcome.</summary>
@@ -78,14 +78,14 @@ public class UnlockZoneLocationHubCommandHandler
         if (location is null)
             return new UnlockZoneLocationHubResult
             {
-                Success      = false,
+                Success = false,
                 ErrorMessage = $"Location '{request.LocationSlug}' does not exist",
             };
 
         if (!location.IsHidden)
             return new UnlockZoneLocationHubResult
             {
-                Success      = false,
+                Success = false,
                 ErrorMessage = $"Location '{request.LocationSlug}' is not a hidden location",
             };
 
@@ -104,11 +104,11 @@ public class UnlockZoneLocationHubCommandHandler
 
         return new UnlockZoneLocationHubResult
         {
-            Success             = true,
-            LocationSlug        = location.Slug,
+            Success = true,
+            LocationSlug = location.Slug,
             LocationDisplayName = location.DisplayName,
-            TypeKey             = location.TypeKey,
-            WasAlreadyUnlocked  = alreadyUnlocked,
+            TypeKey = location.TypeKey,
+            WasAlreadyUnlocked = alreadyUnlocked,
         };
     }
 }

@@ -1,9 +1,9 @@
-using RealmEngine.Core.Abstractions;
-using RealmEngine.Shared.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Core.Services;
+using RealmEngine.Shared.Models;
 namespace RealmEngine.Core.Features.Exploration.Commands;
 
 /// <summary>
@@ -105,7 +105,7 @@ public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationComm
 
         // Use location type to determine item category (default to consumables for exploration)
         var category = "consumables";
-        
+
         // Create budget request based on player level
         var request = new RealmEngine.Core.Services.Budget.BudgetItemRequest
         {

@@ -17,12 +17,12 @@ public class DropItemHubCommandHandlerTests
     {
         return new Character
         {
-            Id            = id,
-            AccountId     = Guid.NewGuid(),
-            Name          = "TestHero",
-            ClassName     = "Warrior",
-            SlotIndex     = 1,
-            Attributes    = "{}",
+            Id = id,
+            AccountId = Guid.NewGuid(),
+            Name = "TestHero",
+            ClassName = "Warrior",
+            SlotIndex = 1,
+            Attributes = "{}",
             InventoryBlob = inventoryBlob ?? "[]",
         };
     }
@@ -59,7 +59,7 @@ public class DropItemHubCommandHandlerTests
     [Fact]
     public async Task Handle_ReturnsError_WhenItemNotInInventory()
     {
-        var charId   = Guid.NewGuid();
+        var charId = Guid.NewGuid();
         var charRepo = new Mock<ICharacterRepository>();
         charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(MakeCharacter(charId));  // empty inventory
@@ -76,9 +76,9 @@ public class DropItemHubCommandHandlerTests
     [Fact]
     public async Task Handle_RemovesSlot_WhenLastUnitDropped()
     {
-        var charId    = Guid.NewGuid();
+        var charId = Guid.NewGuid();
         Character? saved = null;
-        var charRepo  = new Mock<ICharacterRepository>();
+        var charRepo = new Mock<ICharacterRepository>();
         charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(MakeCharacter(charId, inventoryBlob: InvWith("sword", qty: 1)));
         charRepo.Setup(r => r.UpdateAsync(It.IsAny<Character>(), It.IsAny<CancellationToken>()))
@@ -99,9 +99,9 @@ public class DropItemHubCommandHandlerTests
     [Fact]
     public async Task Handle_DecrementsQuantity_WhenMoreThanOneUnit()
     {
-        var charId    = Guid.NewGuid();
+        var charId = Guid.NewGuid();
         Character? saved = null;
-        var charRepo  = new Mock<ICharacterRepository>();
+        var charRepo = new Mock<ICharacterRepository>();
         charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(MakeCharacter(charId, inventoryBlob: InvWith("potion", qty: 3)));
         charRepo.Setup(r => r.UpdateAsync(It.IsAny<Character>(), It.IsAny<CancellationToken>()))
@@ -122,7 +122,7 @@ public class DropItemHubCommandHandlerTests
     [Fact]
     public async Task Handle_IsCaseInsensitive_OnItemRef()
     {
-        var charId   = Guid.NewGuid();
+        var charId = Guid.NewGuid();
         var charRepo = new Mock<ICharacterRepository>();
         charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(MakeCharacter(charId, inventoryBlob: InvWith("IronSword", qty: 1)));
@@ -138,7 +138,7 @@ public class DropItemHubCommandHandlerTests
     [Fact]
     public async Task Handle_PersistsCharacter_OnSuccess()
     {
-        var charId   = Guid.NewGuid();
+        var charId = Guid.NewGuid();
         var charRepo = new Mock<ICharacterRepository>();
         charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(MakeCharacter(charId, inventoryBlob: InvWith("helm", qty: 1)));

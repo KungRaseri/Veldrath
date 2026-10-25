@@ -1,9 +1,9 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Services.Harvesting;
-using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Data.Services;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
@@ -144,8 +144,8 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
             var xpGain = _calculator.CalculateSkillXP(node, toolTier, isCritical);
 
             // Calculate durability loss
-            var durabilityLoss = toolValidation.HasNoTool 
-                ? 0 
+            var durabilityLoss = toolValidation.HasNoTool
+                ? 0
                 : _calculator.CalculateDurabilityLoss(node, toolTier, isCritical);
 
             // Save node state to repository
@@ -192,7 +192,7 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
                 NodeHealthPercent = node.GetHealthPercent(),
                 NodeState = node.GetNodeState(),
                 ToolDurabilityLost = durabilityLoss,
-                Message = isCritical 
+                Message = isCritical
                     ? $"⭐ CRITICAL HARVEST! Gained {materials.Sum(m => m.Quantity)} materials from {node.DisplayName}!"
                     : $"Harvested {materials.Sum(m => m.Quantity)} materials from {node.DisplayName}."
             };
@@ -206,7 +206,7 @@ public class HarvestNodeCommandHandler : IRequestHandler<HarvestNodeCommand, Har
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error harvesting node {NodeId} for character {CharacterName}", 
+            _logger.LogError(ex, "Error harvesting node {NodeId} for character {CharacterName}",
                 request.NodeId, request.CharacterName);
 
             return new HarvestResult

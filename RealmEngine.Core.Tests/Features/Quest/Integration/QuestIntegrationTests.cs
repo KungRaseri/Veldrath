@@ -3,15 +3,15 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Features.Achievements.Services;
 using RealmEngine.Core.Features.Combat;
 using RealmEngine.Core.Features.Combat.Commands.AttackEnemy;
+using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Core.Features.Quests.Commands;
 using RealmEngine.Core.Features.Quests.Services;
 using RealmEngine.Core.Features.SaveLoad;
-using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Core.Services;
-using RealmEngine.Core.Abstractions;
 using RealmEngine.Data.Repositories;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
@@ -36,23 +36,24 @@ public class QuestIntegrationTests
         var services = new ServiceCollection();
 
         SaveGameService? saveGameService = null;
-        
+
         // Create mock timer that returns the value from the current save game
         // This prevents SaveGame() from overwriting quest reward bonuses
         var mockTimer = new Mock<IApocalypseTimer>();
-        mockTimer.Setup(t => t.GetBonusMinutes()).Returns(() => 
+        mockTimer.Setup(t => t.GetBonusMinutes()).Returns(() =>
             saveGameService?.GetCurrentSave()?.ApocalypseBonusMinutes ?? 0);
-        
+
         var mockRepository = new Mock<ISaveGameRepository>();
-        mockRepository.Setup(r => r.SaveGame(It.IsAny<SaveGame>())).Callback<SaveGame>(s => {
+        mockRepository.Setup(r => r.SaveGame(It.IsAny<SaveGame>())).Callback<SaveGame>(s =>
+        {
             // Do nothing for tests
         });
 
         // Mock SkillCatalogService to avoid database dependencies
         var mockSkillCatalog = new Mock<SkillDataService>(new InMemorySkillRepository(), null!);
         mockSkillCatalog.Setup(s => s.GetSkillDefinition(It.IsAny<string>()))
-            .Returns(new SkillDefinition 
-            { 
+            .Returns(new SkillDefinition
+            {
                 SkillId = "test_skill",
                 Name = "Test Skill",
                 DisplayName = "Test Skill",
@@ -96,7 +97,7 @@ public class QuestIntegrationTests
         _mediator = _serviceProvider.GetRequiredService<IMediator>();
         _saveGameService = _serviceProvider.GetRequiredService<SaveGameService>();
         _mainQuestService = _serviceProvider.GetRequiredService<MainQuestService>();
-        
+
         // Wire up the saveGameService reference for the timer mock
         saveGameService = _saveGameService;
 
@@ -126,10 +127,10 @@ public class QuestIntegrationTests
     public async Task Should_Complete_Quest_When_Enemy_Defeated_With_Matching_Objective()
     {
         // Arrange - Create character and start game
-        var character = new Character 
-        { 
-            Name = "TestHero", 
-            ClassName = "Warrior", 
+        var character = new Character
+        {
+            Name = "TestHero",
+            ClassName = "Warrior",
             Level = 5,
             Health = 100,
             MaxHealth = 100,
@@ -147,10 +148,10 @@ public class QuestIntegrationTests
         saveGame.ActiveQuests.Add(quest);
 
         // Create enemy matching the quest objective
-        var enemy = new Enemy 
-        { 
-            Name = "Shrine Guardian", 
-            Health = 50, 
+        var enemy = new Enemy
+        {
+            Name = "Shrine Guardian",
+            Health = 50,
             MaxHealth = 50,
             XP = 100,
             GoldReward = 50,
@@ -161,11 +162,11 @@ public class QuestIntegrationTests
         AttackEnemyResult? finalResult = null;
         while (enemy.Health > 0)
         {
-            finalResult = await _mediator.Send(new AttackEnemyCommand 
-            { 
-                Player = character, 
+            finalResult = await _mediator.Send(new AttackEnemyCommand
+            {
+                Player = character,
                 Enemy = enemy,
-                CombatLog = null 
+                CombatLog = null
             });
         }
 
@@ -188,10 +189,10 @@ public class QuestIntegrationTests
     public async Task Should_Update_Quest_Progress_For_Multiple_Enemy_Kills()
     {
         // Arrange
-        var character = new Character 
-        { 
-            Name = "TestHero", 
-            ClassName = "Warrior", 
+        var character = new Character
+        {
+            Name = "TestHero",
+            ClassName = "Warrior",
             Level = 10,
             Health = 150,
             MaxHealth = 150,
@@ -210,10 +211,10 @@ public class QuestIntegrationTests
         // Act - Kill 5 demons
         for (int i = 0; i < 5; i++)
         {
-            var demon = new Enemy 
-            { 
-                Name = $"Abyssal Demon {i+1}", 
-                Health = 30, 
+            var demon = new Enemy
+            {
+                Name = $"Abyssal Demon {i + 1}",
+                Health = 30,
                 MaxHealth = 30,
                 XP = 50,
                 GoldReward = 25,
@@ -222,11 +223,11 @@ public class QuestIntegrationTests
 
             while (demon.Health > 0)
             {
-                await _mediator.Send(new AttackEnemyCommand 
-                { 
-                    Player = character, 
-                    Enemy = demon, 
-                    CombatLog = null 
+                await _mediator.Send(new AttackEnemyCommand
+                {
+                    Player = character,
+                    Enemy = demon,
+                    CombatLog = null
                 });
             }
         }
@@ -241,10 +242,10 @@ public class QuestIntegrationTests
     public async Task Should_Not_Complete_Quest_Until_All_Objectives_Met()
     {
         // Arrange
-        var character = new Character 
-        { 
-            Name = "TestHero", 
-            ClassName = "Warrior", 
+        var character = new Character
+        {
+            Name = "TestHero",
+            ClassName = "Warrior",
             Level = 10,
             Health = 150,
             MaxHealth = 150,
@@ -263,10 +264,10 @@ public class QuestIntegrationTests
         // Act - Kill only 3 demons (not enough to complete)
         for (int i = 0; i < 3; i++)
         {
-            var demon = new Enemy 
-            { 
-                Name = "Abyssal Demon", 
-                Health = 30, 
+            var demon = new Enemy
+            {
+                Name = "Abyssal Demon",
+                Health = 30,
                 MaxHealth = 30,
                 XP = 50,
                 GoldReward = 25,
@@ -275,11 +276,11 @@ public class QuestIntegrationTests
 
             while (demon.Health > 0)
             {
-                await _mediator.Send(new AttackEnemyCommand 
-                { 
-                    Player = character, 
-                    Enemy = demon, 
-                    CombatLog = null 
+                await _mediator.Send(new AttackEnemyCommand
+                {
+                    Player = character,
+                    Enemy = demon,
+                    CombatLog = null
                 });
             }
         }
@@ -293,10 +294,10 @@ public class QuestIntegrationTests
     public async Task Should_Unlock_Next_Quest_After_Completing_Prerequisite()
     {
         // Arrange
-        var character = new Character 
-        { 
-            Name = "TestHero", 
-            ClassName = "Warrior", 
+        var character = new Character
+        {
+            Name = "TestHero",
+            ClassName = "Warrior",
             Level = 1,
             Health = 100,
             MaxHealth = 100
@@ -320,7 +321,7 @@ public class QuestIntegrationTests
         // Assert
         completeResult.Success.Should().BeTrue();
         saveGame.CompletedQuests.Should().ContainSingle(q => q.Id == "main_01_awakening");
-        
+
         // Second quest should now be available
         saveGame.AvailableQuests.Should().Contain(q => q.Id == "main_02_first_trial");
     }
@@ -329,13 +330,13 @@ public class QuestIntegrationTests
     public async Task Should_Award_Apocalypse_Bonus_Time_When_Quest_Completed_In_Apocalypse_Mode()
     {
         // Arrange
-        var character = new Character 
-        { 
-            Name = "TestHero", 
-            ClassName = "Warrior", 
+        var character = new Character
+        {
+            Name = "TestHero",
+            ClassName = "Warrior",
             Level = 1
         };
-        
+
         var apocalypseDifficulty = new DifficultySettings
         {
             Name = "Normal",
@@ -367,7 +368,7 @@ public class QuestIntegrationTests
 
         // Assert
         result.Success.Should().BeTrue();
-        
+
         // Get the current save game from the service (in case the reference changed)
         var currentSave = _saveGameService.GetCurrentSave();
         currentSave.Should().NotBeNull();
@@ -378,10 +379,10 @@ public class QuestIntegrationTests
     public async Task Should_Track_Enemies_Defeated_By_Type()
     {
         // Arrange
-        var character = new Character 
-        { 
-            Name = "TestHero", 
-            ClassName = "Warrior", 
+        var character = new Character
+        {
+            Name = "TestHero",
+            ClassName = "Warrior",
             Level = 5,
             Health = 100,
             MaxHealth = 100,
@@ -390,10 +391,10 @@ public class QuestIntegrationTests
         var saveGame = _saveGameService.CreateNewGame(character, DifficultySettings.Normal);
         _saveGameService.SetCurrentSave(saveGame);
 
-        var goblin = new Enemy 
-        { 
-            Name = "Goblin", 
-            Health = 20, 
+        var goblin = new Enemy
+        {
+            Name = "Goblin",
+            Health = 20,
             MaxHealth = 20,
             Type = EnemyType.Humanoid
         };
@@ -401,11 +402,11 @@ public class QuestIntegrationTests
         // Act
         while (goblin.Health > 0)
         {
-            await _mediator.Send(new AttackEnemyCommand 
-            { 
-                Player = character, 
-                Enemy = goblin, 
-                CombatLog = null 
+            await _mediator.Send(new AttackEnemyCommand
+            {
+                Player = character,
+                Enemy = goblin,
+                CombatLog = null
             });
         }
 
@@ -419,10 +420,10 @@ public class QuestIntegrationTests
     public async Task Should_Include_Quest_Progress_In_Combat_Outcome_When_Enemy_Defeated()
     {
         // Arrange - Create character and start game
-        var character = new Character 
-        { 
-            Name = "TestHero", 
-            ClassName = "Warrior", 
+        var character = new Character
+        {
+            Name = "TestHero",
+            ClassName = "Warrior",
             Level = 5,
             Health = 100,
             MaxHealth = 100,
@@ -440,10 +441,10 @@ public class QuestIntegrationTests
         saveGame.ActiveQuests.Add(quest);
 
         // Create enemy matching the quest objective
-        var enemy = new Enemy 
-        { 
+        var enemy = new Enemy
+        {
             Id = "shrine_guardian",
-            Name = "Shrine Guardian", 
+            Name = "Shrine Guardian",
             Health = 0, // Set to 0 to simulate defeated state
             MaxHealth = 50,
             XP = 100,

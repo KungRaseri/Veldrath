@@ -77,9 +77,9 @@ public class GetInventoryHubCommandHandler : IRequestHandler<GetInventoryHubComm
         IItemRepository itemRepository,
         ILogger<GetInventoryHubCommandHandler> logger)
     {
-        _characterRepo  = characterRepo;
+        _characterRepo = characterRepo;
         _itemRepository = itemRepository;
-        _logger         = logger;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the character's current inventory.</summary>
@@ -94,7 +94,7 @@ public class GetInventoryHubCommandHandler : IRequestHandler<GetInventoryHubComm
         if (character is null)
             return Fail($"Character {request.CharacterId} not found.");
 
-        var items     = ParseInventory(character.InventoryBlob);
+        var items = ParseInventory(character.InventoryBlob);
         var equipment = ParseEquipment(character.EquipmentBlob);
 
         var equippedRefs = equipment.Values
@@ -117,11 +117,11 @@ public class GetInventoryHubCommandHandler : IRequestHandler<GetInventoryHubComm
 
         return new GetInventoryHubResult
         {
-            Success      = true,
-            Items        = bagItems,
-            ItemDetails  = itemDetails,
+            Success = true,
+            Items = bagItems,
+            ItemDetails = itemDetails,
             EquippedRefs = equipment,
-            Equipped     = equippedItems,
+            Equipped = equippedItems,
         };
     }
 
@@ -192,13 +192,13 @@ public class GetInventoryHubCommandHandler : IRequestHandler<GetInventoryHubComm
         var isShield = IsShield(slug);
         return new Item
         {
-            Slug        = slug,
-            Name        = HumanizeSlug(slug),
-            Quantity    = quantity,
-            Type        = InferItemType(slug, slot),
-            TypeKey     = isShield ? "shield" : null,
-            ArmorType   = isShield ? "shield" : null,
-            StackSize   = 1,
+            Slug = slug,
+            Name = HumanizeSlug(slug),
+            Quantity = quantity,
+            Type = InferItemType(slug, slot),
+            TypeKey = isShield ? "shield" : null,
+            ArmorType = isShield ? "shield" : null,
+            StackSize = 1,
             IsStackable = false,
         };
     }
@@ -211,13 +211,13 @@ public class GetInventoryHubCommandHandler : IRequestHandler<GetInventoryHubComm
         return slot switch
         {
             "MainHand" => ItemType.Weapon,
-            "Head"     => ItemType.Helmet,
-            "Chest"    => ItemType.Chest,
-            "Legs"     => ItemType.Legs,
-            "Feet"     => ItemType.Boots,
-            "Ring"     => ItemType.Ring,
-            "Amulet"   => ItemType.Necklace,
-            _          => InferItemTypeFromSlug(slug),
+            "Head" => ItemType.Helmet,
+            "Chest" => ItemType.Chest,
+            "Legs" => ItemType.Legs,
+            "Feet" => ItemType.Boots,
+            "Ring" => ItemType.Ring,
+            "Amulet" => ItemType.Necklace,
+            _ => InferItemTypeFromSlug(slug),
         };
     }
 

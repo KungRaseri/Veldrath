@@ -1,5 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
+﻿using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
@@ -28,8 +28,8 @@ public class ServerSaveGameRepository : ISaveGameRepository
         else
         {
             existing.PlayerName = record.PlayerName;
-            existing.SaveDate   = record.SaveDate;
-            existing.DataJson   = record.DataJson;
+            existing.SaveDate = record.SaveDate;
+            existing.DataJson = record.DataJson;
         }
 
         _db.SaveChanges();
@@ -91,10 +91,10 @@ public class ServerSaveGameRepository : ISaveGameRepository
 
     private static SaveGameRecord ToRecord(SaveGame sg) => new()
     {
-        Id         = sg.Id,
+        Id = sg.Id,
         PlayerName = sg.PlayerName,
-        SaveDate   = sg.SaveDate,
-        DataJson   = JsonSerializer.Serialize(sg),
+        SaveDate = sg.SaveDate,
+        DataJson = JsonSerializer.Serialize(sg),
     };
 
     private static SaveGame FromRecord(SaveGameRecord r) =>

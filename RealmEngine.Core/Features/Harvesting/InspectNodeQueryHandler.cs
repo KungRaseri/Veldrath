@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using RealmEngine.Core.Services;
 using RealmEngine.Core.Features.SaveLoad;
+using RealmEngine.Core.Services;
 using RealmEngine.Shared.Abstractions;
 
 namespace RealmEngine.Core.Features.Harvesting;
@@ -71,7 +71,7 @@ public class InspectNodeQueryHandler : IRequestHandler<InspectNodeQuery, NodeIns
 
             // Calculate estimated yield based on skill
             var baseYield = node.BaseYield;
-            var estimatedYield = skillRank > 0 
+            var estimatedYield = skillRank > 0
                 ? baseYield + (int)(baseYield * skillRank * 0.01) // 1% bonus per skill rank
                 : baseYield;
 
@@ -146,4 +146,5 @@ public class InspectNodeQueryHandler : IRequestHandler<InspectNodeQuery, NodeIns
             "fish" or "fishing_spot" => "fishing",
             _ => "harvesting"
         };
-    }}
+    }
+}

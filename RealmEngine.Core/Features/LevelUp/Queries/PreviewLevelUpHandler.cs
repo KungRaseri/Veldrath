@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using RealmEngine.Core.Services;
 using RealmEngine.Core.Features.SaveLoad;
+using RealmEngine.Core.Services;
 using RealmEngine.Shared.Abstractions;
 
 namespace RealmEngine.Core.Features.LevelUp.Queries;
@@ -80,7 +80,7 @@ public class PreviewLevelUpHandler : IRequestHandler<PreviewLevelUpQuery, Previe
             // Calculate stat gains (10 HP, 5 mana per level)
             var healthGain = 10;
             var manaGain = 5;
-            
+
             var statGains = new Dictionary<string, int>
             {
                 ["MaxHealth"] = healthGain,

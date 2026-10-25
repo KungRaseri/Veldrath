@@ -1,5 +1,5 @@
-using RealmEngine.Shared.Models;
 using RealmEngine.Core.Features.Progression.Services;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Combat.Services;
 

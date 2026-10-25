@@ -1,5 +1,5 @@
-using RealmEngine.Shared.Models;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Death.Services;
 
@@ -67,8 +67,8 @@ public class RespawnService
             return false;
 
         // Must be a safe zone (town, village, sanctuary)
-        return location.Contains("Town") || 
-               location.Contains("Village") || 
+        return location.Contains("Town") ||
+               location.Contains("Village") ||
                location.Contains("Sanctuary");
     }
 

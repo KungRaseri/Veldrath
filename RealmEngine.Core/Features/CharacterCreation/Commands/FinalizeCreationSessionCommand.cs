@@ -53,23 +53,23 @@ public class FinalizeCreationSessionHandler(
 
         var command = new CreateCharacterCommand
         {
-            CharacterName        = resolvedName,
-            CharacterClass       = session.SelectedClass,
-            BackgroundId         = session.SelectedBackground?.GetBackgroundId(),
-            SpeciesSlug          = session.SelectedSpecies?.Slug,
+            CharacterName = resolvedName,
+            CharacterClass = session.SelectedClass,
+            BackgroundId = session.SelectedBackground?.GetBackgroundId(),
+            SpeciesSlug = session.SelectedSpecies?.Slug,
             AttributeAllocations = session.AttributeAllocations,
-            DifficultyLevel      = request.DifficultyLevel,
-            StartingLocationId   = session.SelectedLocationId,
-            PreferredArmorType   = session.PreferredArmorType,
-            PreferredWeaponType  = session.PreferredWeaponType,
-            IncludeShield        = session.IncludeShield,
+            DifficultyLevel = request.DifficultyLevel,
+            StartingLocationId = session.SelectedLocationId,
+            PreferredArmorType = session.PreferredArmorType,
+            PreferredWeaponType = session.PreferredWeaponType,
+            IncludeShield = session.IncludeShield,
         };
 
         var result = await mediator.Send(command, cancellationToken);
 
         if (result.Success)
         {
-            session.Status        = CreationSessionStatus.Finalized;
+            session.Status = CreationSessionStatus.Finalized;
             session.CharacterName = resolvedName;
             await sessionStore.UpdateSessionAsync(session);
             logger.LogInformation("Session {SessionId} finalized — character '{Name}' created", request.SessionId, resolvedName);

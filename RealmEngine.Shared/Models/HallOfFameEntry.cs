@@ -8,43 +8,43 @@ public class HallOfFameEntry
 {
     /// <summary>Gets or sets the unique identifier.</summary>
     public string Id { get; set; } = Guid.NewGuid().ToString();
-    
+
     /// <summary>Gets or sets the character name.</summary>
     public string CharacterName { get; set; } = string.Empty;
-    
+
     /// <summary>Gets or sets the class name.</summary>
     public string ClassName { get; set; } = string.Empty;
-    
+
     /// <summary>Gets or sets the level.</summary>
     public int Level { get; set; }
-    
+
     /// <summary>Gets or sets the play time in minutes.</summary>
     public int PlayTimeMinutes { get; set; }
-    
+
     /// <summary>Gets or sets the total enemies defeated.</summary>
     public int TotalEnemiesDefeated { get; set; }
-    
+
     /// <summary>Gets or sets the quests completed.</summary>
     public int QuestsCompleted { get; set; }
-    
+
     /// <summary>Gets or sets the death count.</summary>
     public int DeathCount { get; set; }
-    
+
     /// <summary>Gets or sets the death reason.</summary>
     public string DeathReason { get; set; } = "Unknown";
-    
+
     /// <summary>Gets or sets the death location.</summary>
     public string DeathLocation { get; set; } = "Unknown";
-    
+
     /// <summary>Gets or sets the death date.</summary>
     public DateTime DeathDate { get; set; } = DateTime.Now;
-    
+
     /// <summary>Gets or sets the achievements unlocked.</summary>
     public int AchievementsUnlocked { get; set; }
-    
+
     /// <summary>Gets or sets a value indicating whether this is a permadeath run.</summary>
     public bool IsPermadeath { get; set; }
-    
+
     /// <summary>Gets or sets the difficulty level.</summary>
     public string DifficultyLevel { get; set; } = "Normal";
 

@@ -201,7 +201,7 @@ public class GenerateItemsByCategoryHandler : IRequestHandler<GenerateItemsByCat
                 };
 
                 var item = await _itemGenerator.GenerateItemModelWithBudgetAsync(request);
-                
+
                 if (item != null)
                 {
                     items.Add(item);

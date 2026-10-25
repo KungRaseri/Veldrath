@@ -56,13 +56,13 @@ public class EfCoreNodeRepository(GameDbContext db, ILogger<EfCoreNodeRepository
         }
         else
         {
-            existing.CurrentHealth  = node.CurrentHealth;
-            existing.MaxHealth      = node.MaxHealth;
+            existing.CurrentHealth = node.CurrentHealth;
+            existing.MaxHealth = node.MaxHealth;
             existing.TimesHarvested = node.TimesHarvested;
             existing.LastHarvestedAt = node.LastHarvestedAt;
-            existing.LocationId     = node.LocationId;
-            existing.MaterialTier   = node.MaterialTier;
-            existing.IsRichNode     = node.IsRichNode;
+            existing.LocationId = node.LocationId;
+            existing.MaterialTier = node.MaterialTier;
+            existing.IsRichNode = node.IsRichNode;
         }
 
         var rows = await db.SaveChangesAsync();
@@ -123,37 +123,37 @@ public class EfCoreNodeRepository(GameDbContext db, ILogger<EfCoreNodeRepository
 
     private static HarvestableNode MapToModel(HarvestableNodeRecord r) => new()
     {
-        NodeId          = r.NodeId,
-        NodeType        = r.NodeType,
-        DisplayName     = r.DisplayName,
-        MaterialTier    = r.MaterialTier,
-        CurrentHealth   = r.CurrentHealth,
-        MaxHealth       = r.MaxHealth,
+        NodeId = r.NodeId,
+        NodeType = r.NodeType,
+        DisplayName = r.DisplayName,
+        MaterialTier = r.MaterialTier,
+        CurrentHealth = r.CurrentHealth,
+        MaxHealth = r.MaxHealth,
         LastHarvestedAt = r.LastHarvestedAt,
-        TimesHarvested  = r.TimesHarvested,
-        LocationId      = r.LocationId,
-        BiomeType       = r.BiomeType,
-        LootTableRef    = r.LootTableRef,
-        MinToolTier     = r.MinToolTier,
-        BaseYield       = r.BaseYield,
-        IsRichNode      = r.IsRichNode,
+        TimesHarvested = r.TimesHarvested,
+        LocationId = r.LocationId,
+        BiomeType = r.BiomeType,
+        LootTableRef = r.LootTableRef,
+        MinToolTier = r.MinToolTier,
+        BaseYield = r.BaseYield,
+        IsRichNode = r.IsRichNode,
     };
 
     private static HarvestableNodeRecord MapToRecord(HarvestableNode n) => new()
     {
-        NodeId          = n.NodeId,
-        NodeType        = n.NodeType,
-        DisplayName     = n.DisplayName,
-        MaterialTier    = n.MaterialTier,
-        CurrentHealth   = n.CurrentHealth,
-        MaxHealth       = n.MaxHealth,
+        NodeId = n.NodeId,
+        NodeType = n.NodeType,
+        DisplayName = n.DisplayName,
+        MaterialTier = n.MaterialTier,
+        CurrentHealth = n.CurrentHealth,
+        MaxHealth = n.MaxHealth,
         LastHarvestedAt = n.LastHarvestedAt,
-        TimesHarvested  = n.TimesHarvested,
-        LocationId      = n.LocationId,
-        BiomeType       = n.BiomeType,
-        LootTableRef    = n.LootTableRef,
-        MinToolTier     = n.MinToolTier,
-        BaseYield       = n.BaseYield,
-        IsRichNode      = n.IsRichNode,
+        TimesHarvested = n.TimesHarvested,
+        LocationId = n.LocationId,
+        BiomeType = n.BiomeType,
+        LootTableRef = n.LootTableRef,
+        MinToolTier = n.MinToolTier,
+        BaseYield = n.BaseYield,
+        IsRichNode = n.IsRichNode,
     };
 }

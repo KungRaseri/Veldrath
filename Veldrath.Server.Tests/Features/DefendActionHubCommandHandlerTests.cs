@@ -10,17 +10,17 @@ namespace Veldrath.Server.Tests.Features;
 /// <summary>Unit tests for <see cref="DefendActionHubCommandHandler"/>.</summary>
 public class DefendActionHubCommandHandlerTests : IDisposable
 {
-    private readonly TestDbContextFactory             _dbFactory      = new();
-    private readonly List<(string Key, Guid EnemyId)> _enemyCleanup   = [];
-    private readonly List<Guid>                       _sessionCleanup = [];
+    private readonly TestDbContextFactory _dbFactory = new();
+    private readonly List<(string Key, Guid EnemyId)> _enemyCleanup = [];
+    private readonly List<Guid> _sessionCleanup = [];
 
     private DefendActionHubCommandHandler MakeHandler(ApplicationDbContext db) =>
         new(new CharacterRepository(db), NullLogger<DefendActionHubCommandHandler>.Instance);
 
     public void Dispose()
     {
-        foreach (var (key, id) in _enemyCleanup)  ZoneLocationEnemyStore.RemoveEnemy(key, id);
-        foreach (var id        in _sessionCleanup) CombatSessionStore.Remove(id);
+        foreach (var (key, id) in _enemyCleanup) ZoneLocationEnemyStore.RemoveEnemy(key, id);
+        foreach (var id in _sessionCleanup) CombatSessionStore.Remove(id);
         _dbFactory.Dispose();
     }
 
@@ -33,10 +33,10 @@ public class DefendActionHubCommandHandlerTests : IDisposable
         db.Users.Add(account);
         var character = new Character
         {
-            AccountId  = account.Id,
-            Name       = $"Char_{Guid.NewGuid():N}",
-            ClassName  = "Warrior",
-            SlotIndex  = 1,
+            AccountId = account.Id,
+            Name = $"Char_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
             Attributes = attrsJson ?? "{}",
         };
         db.Characters.Add(character);
@@ -46,10 +46,10 @@ public class DefendActionHubCommandHandlerTests : IDisposable
 
     private (string ZoneGroup, string LocationSlug, SpawnedEnemy Enemy) AddEnemy(int hp = 100)
     {
-        var zoneGroup    = $"test/{Guid.NewGuid():N}";
+        var zoneGroup = $"test/{Guid.NewGuid():N}";
         const string loc = "forest";
-        var key          = ZoneLocationEnemyStore.MakeKey(zoneGroup, loc);
-        var enemy        = new SpawnedEnemy { Name = "Orc", Level = 1, CurrentHealth = hp, MaxHealth = hp };
+        var key = ZoneLocationEnemyStore.MakeKey(zoneGroup, loc);
+        var enemy = new SpawnedEnemy { Name = "Orc", Level = 1, CurrentHealth = hp, MaxHealth = hp };
         ZoneLocationEnemyStore.AddEnemy(key, enemy);
         _enemyCleanup.Add((key, enemy.Id));
         return (zoneGroup, loc, enemy);
@@ -79,7 +79,7 @@ public class DefendActionHubCommandHandlerTests : IDisposable
     {
         await using var db = _dbFactory.CreateContext();
         // Seed character with enough HP to survive a counter-attack.
-        var attrs     = """{"CurrentHealth":100,"MaxHealth":100,"Constitution":10}""";
+        var attrs = """{"CurrentHealth":100,"MaxHealth":100,"Constitution":10}""";
         var character = await SeedCharacterAsync(db, attrs);
         var (zg, loc, enemy) = AddEnemy();
         SetSession(character.Id, zg, loc, enemy.Id);

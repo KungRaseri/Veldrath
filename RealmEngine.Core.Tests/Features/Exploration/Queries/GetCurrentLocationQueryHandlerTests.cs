@@ -1,9 +1,9 @@
 using FluentAssertions;
-using Moq;
-using RealmEngine.Core.Features.Exploration.Queries;
-using RealmEngine.Core.Abstractions;
-using RealmEngine.Core.Services;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
+using RealmEngine.Core.Abstractions;
+using RealmEngine.Core.Features.Exploration.Queries;
+using RealmEngine.Core.Services;
 
 namespace RealmEngine.Core.Tests.Features.Exploration.Queries;
 

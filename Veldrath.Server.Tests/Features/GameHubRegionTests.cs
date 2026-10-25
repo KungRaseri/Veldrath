@@ -1,10 +1,12 @@
-﻿using System.Text.Json;
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text.Json;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
+using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Repositories;
@@ -12,13 +14,11 @@ using RealmEngine.Shared.Abstractions;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
-using RealmEngine.Core.Generators.Modern;
+using Veldrath.Server.Features.Characters;
 using Veldrath.Server.Features.Characters.Combat;
 using Veldrath.Server.Hubs;
 using Veldrath.Server.Services;
 using Veldrath.Server.Settings;
-using Microsoft.AspNetCore.Identity;
-using Veldrath.Server.Features.Characters;
 using Veldrath.Server.Tests.Infrastructure;
 
 namespace Veldrath.Server.Tests.Features;
@@ -38,7 +38,7 @@ public class GameHubRegionTests : IDisposable
 
     private static async Task<Guid> SeedAccountAsync(ApplicationDbContext db)
     {
-        var name    = $"User_{Guid.NewGuid():N}";
+        var name = $"User_{Guid.NewGuid():N}";
         var account = new PlayerAccount { UserName = name, NormalizedUserName = name.ToUpperInvariant() };
         db.Users.Add(account);
         await db.SaveChangesAsync();
@@ -50,7 +50,7 @@ public class GameHubRegionTests : IDisposable
         var c = new Character
         {
             AccountId = accountId,
-            Name      = $"Char_{Guid.NewGuid():N}",
+            Name = $"Char_{Guid.NewGuid():N}",
             ClassName = "Warrior",
             SlotIndex = 1,
         };
@@ -62,10 +62,10 @@ public class GameHubRegionTests : IDisposable
     private (GameHub Hub, FakeHubCallerClients Clients, FakeGroupManager Groups, FakeHubCallerContext Ctx)
         CreateHub(ApplicationDbContext db, Guid accountId, string connId = "conn-1", ISender? mediator = null)
     {
-        var options     = Options.Create(new VersionCompatibilitySettings());
-        var modOptions  = Options.Create(new ModerationOptions());
+        var options = Options.Create(new VersionCompatibilitySettings());
+        var modOptions = Options.Create(new ModerationOptions());
         var userManager = new Mock<UserManager<PlayerAccount>>(Mock.Of<IUserStore<PlayerAccount>>(), null!, null!, null!, null!, null!, null!, null!, null!).Object;
-        var hub         = new GameHub(
+        var hub = new GameHub(
             NullLogger<GameHub>.Instance,
             new CharacterRepository(db),
             new ZoneRepository(db),
@@ -80,11 +80,11 @@ public class GameHubRegionTests : IDisposable
             db);
 
         var clients = new FakeHubCallerClients();
-        var groups  = new FakeGroupManager();
-        var ctx     = new FakeHubCallerContext(connId, MakeUser(accountId));
+        var groups = new FakeGroupManager();
+        var ctx = new FakeHubCallerContext(connId, MakeUser(accountId));
 
         hub.Clients = clients;
-        hub.Groups  = groups;
+        hub.Groups = groups;
         hub.Context = ctx;
 
         return (hub, clients, groups, ctx);

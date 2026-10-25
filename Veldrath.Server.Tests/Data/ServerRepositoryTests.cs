@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Models;
+using Serilog;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Tests.Infrastructure;
-using Serilog;
 
 namespace Veldrath.Server.Tests.Data;
 
@@ -22,10 +22,10 @@ public class ServerHallOfFameRepositoryTests : IDisposable
     private static HallOfFameEntry MakeEntry(string name = "Hero", int level = 10) =>
         new()
         {
-            CharacterName       = name,
-            ClassName           = "Warrior",
-            Level               = level,
-            PlayTimeMinutes     = 120,
+            CharacterName = name,
+            ClassName = "Warrior",
+            Level = level,
+            PlayTimeMinutes = 120,
             TotalEnemiesDefeated = 50,
         };
 
@@ -33,8 +33,8 @@ public class ServerHallOfFameRepositoryTests : IDisposable
     [Fact]
     public void AddEntry_Should_Persist_Entry()
     {
-        using var db   = _factory.CreateContext();
-        var repo       = new ServerHallOfFameRepository(db);
+        using var db = _factory.CreateContext();
+        var repo = new ServerHallOfFameRepository(db);
         repo.AddEntry(MakeEntry("Thorin", level: 20));
 
         var entries = db.HallOfFameEntries.ToList();
@@ -45,8 +45,8 @@ public class ServerHallOfFameRepositoryTests : IDisposable
     public void AddEntry_Should_Calculate_Fame_Score()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerHallOfFameRepository(db);
-        var entry    = MakeEntry("Legolas", level: 30);
+        var repo = new ServerHallOfFameRepository(db);
+        var entry = MakeEntry("Legolas", level: 30);
         repo.AddEntry(entry);
 
         var saved = db.HallOfFameEntries.First(e => e.CharacterName == "Legolas");
@@ -58,8 +58,8 @@ public class ServerHallOfFameRepositoryTests : IDisposable
     public void GetAllEntries_Should_Return_Entries_Ordered_By_Fame_Score_Descending()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerHallOfFameRepository(db);
-        repo.AddEntry(MakeEntry("Low",  level: 1));
+        var repo = new ServerHallOfFameRepository(db);
+        repo.AddEntry(MakeEntry("Low", level: 1));
         repo.AddEntry(MakeEntry("High", level: 50));
 
         var entries = repo.GetAllEntries();
@@ -71,7 +71,7 @@ public class ServerHallOfFameRepositoryTests : IDisposable
     public void GetAllEntries_Should_Respect_Limit()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerHallOfFameRepository(db);
+        var repo = new ServerHallOfFameRepository(db);
         for (int i = 0; i < 5; i++)
             repo.AddEntry(MakeEntry($"Hero{i}", level: i + 1));
 
@@ -83,7 +83,7 @@ public class ServerHallOfFameRepositoryTests : IDisposable
     public void GetAllEntries_Should_Return_Empty_When_No_Entries()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerHallOfFameRepository(db);
+        var repo = new ServerHallOfFameRepository(db);
         repo.GetAllEntries().Should().BeEmpty();
     }
 
@@ -92,7 +92,7 @@ public class ServerHallOfFameRepositoryTests : IDisposable
     public void GetTopHeroes_Should_Return_Top_N_By_Fame_Score()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerHallOfFameRepository(db);
+        var repo = new ServerHallOfFameRepository(db);
         for (int i = 0; i < 15; i++)
             repo.AddEntry(MakeEntry($"Hero{i}", level: i + 1));
 
@@ -104,8 +104,8 @@ public class ServerHallOfFameRepositoryTests : IDisposable
     public void GetTopHeroes_Should_Return_First_Entry_With_Highest_Score()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerHallOfFameRepository(db);
-        repo.AddEntry(MakeEntry("Weak",  level: 1));
+        var repo = new ServerHallOfFameRepository(db);
+        repo.AddEntry(MakeEntry("Weak", level: 1));
         repo.AddEntry(MakeEntry("Elite", level: 99));
 
         var top = repo.GetTopHeroes(count: 1);
@@ -116,7 +116,7 @@ public class ServerHallOfFameRepositoryTests : IDisposable
     [Fact]
     public void AddEntry_Should_Swallow_Exception_When_Db_Fails()
     {
-        var db   = _factory.CreateContext();
+        var db = _factory.CreateContext();
         var repo = new ServerHallOfFameRepository(db);
         // Dispose the EF context so subsequent DB calls raise ObjectDisposedException
         db.Dispose();
@@ -131,8 +131,8 @@ public class ServerHallOfFameRepositoryTests : IDisposable
     public void Dispose_Should_Not_Throw()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerHallOfFameRepository(db);
-        var act      = () => repo.Dispose();
+        var repo = new ServerHallOfFameRepository(db);
+        var act = () => repo.Dispose();
         act.Should().NotThrow();
     }
 }
@@ -146,7 +146,7 @@ public class ServerSaveGameRepositoryTests : IDisposable
     private static SaveGame MakeSaveGame(string playerName = "Player", int slot = 1) =>
         new()
         {
-            Id         = Guid.NewGuid().ToString(),
+            Id = Guid.NewGuid().ToString(),
             PlayerName = playerName,
         };
 
@@ -158,10 +158,10 @@ public class ServerSaveGameRepositoryTests : IDisposable
         // We'll insert via the repo and update the record directly for slot tests.
         return new SaveGameRecord
         {
-            Id         = sg.Id,
+            Id = sg.Id,
             PlayerName = sg.PlayerName,
-            SlotIndex  = slot,
-            DataJson   = Newtonsoft.Json.JsonConvert.SerializeObject(sg),
+            SlotIndex = slot,
+            DataJson = Newtonsoft.Json.JsonConvert.SerializeObject(sg),
         };
     }
 
@@ -170,8 +170,8 @@ public class ServerSaveGameRepositoryTests : IDisposable
     public void Save_Should_Persist_New_SaveGame()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerSaveGameRepository(db);
-        var sg       = MakeSaveGame("Frodo");
+        var repo = new ServerSaveGameRepository(db);
+        var sg = MakeSaveGame("Frodo");
 
         repo.Save(sg);
 
@@ -182,8 +182,8 @@ public class ServerSaveGameRepositoryTests : IDisposable
     public void Save_Should_Update_Existing_SaveGame()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerSaveGameRepository(db);
-        var sg       = MakeSaveGame("Sam");
+        var repo = new ServerSaveGameRepository(db);
+        var sg = MakeSaveGame("Sam");
         repo.Save(sg);
 
         // Update and save again
@@ -199,8 +199,8 @@ public class ServerSaveGameRepositoryTests : IDisposable
     public void GetById_Should_Return_SaveGame_When_Found()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerSaveGameRepository(db);
-        var sg       = MakeSaveGame("Bilbo");
+        var repo = new ServerSaveGameRepository(db);
+        var sg = MakeSaveGame("Bilbo");
         repo.Save(sg);
 
         var result = repo.GetById(sg.Id);
@@ -211,7 +211,7 @@ public class ServerSaveGameRepositoryTests : IDisposable
     public void GetById_Should_Return_Null_When_Not_Found()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerSaveGameRepository(db);
+        var repo = new ServerSaveGameRepository(db);
         repo.GetById("nonexistent").Should().BeNull();
     }
 
@@ -220,20 +220,22 @@ public class ServerSaveGameRepositoryTests : IDisposable
     public void GetMostRecent_Should_Return_Latest_Save()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerSaveGameRepository(db);
-        var older    = MakeSaveGame("Old");
-        var newer    = MakeSaveGame("New");
+        var repo = new ServerSaveGameRepository(db);
+        var older = MakeSaveGame("Old");
+        var newer = MakeSaveGame("New");
 
         // Insert records manually with different SaveDate to control ordering
         db.SaveGames.Add(new SaveGameRecord
         {
-            Id = older.Id, PlayerName = "Old",
+            Id = older.Id,
+            PlayerName = "Old",
             SaveDate = DateTime.UtcNow.AddDays(-1),
             DataJson = Newtonsoft.Json.JsonConvert.SerializeObject(older)
         });
         db.SaveGames.Add(new SaveGameRecord
         {
-            Id = newer.Id, PlayerName = "New",
+            Id = newer.Id,
+            PlayerName = "New",
             SaveDate = DateTime.UtcNow,
             DataJson = Newtonsoft.Json.JsonConvert.SerializeObject(newer)
         });
@@ -248,7 +250,7 @@ public class ServerSaveGameRepositoryTests : IDisposable
     public void GetMostRecent_Should_Return_Null_When_No_Saves()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerSaveGameRepository(db);
+        var repo = new ServerSaveGameRepository(db);
         repo.GetMostRecent().Should().BeNull();
     }
 
@@ -257,7 +259,7 @@ public class ServerSaveGameRepositoryTests : IDisposable
     public void GetAll_Should_Return_All_Saves()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerSaveGameRepository(db);
+        var repo = new ServerSaveGameRepository(db);
         repo.Save(MakeSaveGame("A"));
         repo.Save(MakeSaveGame("B"));
         repo.GetAll().Should().HaveCount(2);
@@ -267,7 +269,7 @@ public class ServerSaveGameRepositoryTests : IDisposable
     public void GetAllSaves_Should_Alias_GetAll()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerSaveGameRepository(db);
+        var repo = new ServerSaveGameRepository(db);
         repo.Save(MakeSaveGame("X"));
         repo.GetAllSaves().Should().HaveCount(1);
     }
@@ -277,7 +279,7 @@ public class ServerSaveGameRepositoryTests : IDisposable
     public void GetByPlayerName_Should_Return_Saves_For_Player()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerSaveGameRepository(db);
+        var repo = new ServerSaveGameRepository(db);
         repo.Save(MakeSaveGame("Alice"));
         repo.Save(MakeSaveGame("Bob"));
 
@@ -289,7 +291,7 @@ public class ServerSaveGameRepositoryTests : IDisposable
     public void GetByPlayerName_Should_Return_Empty_When_No_Match()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerSaveGameRepository(db);
+        var repo = new ServerSaveGameRepository(db);
         repo.GetByPlayerName("Ghost").Should().BeEmpty();
     }
 
@@ -298,8 +300,8 @@ public class ServerSaveGameRepositoryTests : IDisposable
     public void Delete_Should_Return_True_And_Remove_Record()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerSaveGameRepository(db);
-        var sg       = MakeSaveGame("Del");
+        var repo = new ServerSaveGameRepository(db);
+        var sg = MakeSaveGame("Del");
         repo.Save(sg);
 
         var result = repo.Delete(sg.Id);
@@ -312,7 +314,7 @@ public class ServerSaveGameRepositoryTests : IDisposable
     public void Delete_Should_Return_False_When_Not_Found()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerSaveGameRepository(db);
+        var repo = new ServerSaveGameRepository(db);
         repo.Delete("nonexistent").Should().BeFalse();
     }
 
@@ -321,15 +323,15 @@ public class ServerSaveGameRepositoryTests : IDisposable
     public void LoadGame_Should_Return_Save_For_Slot()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerSaveGameRepository(db);
-        var sg       = MakeSaveGame("Slot1Player");
+        var repo = new ServerSaveGameRepository(db);
+        var sg = MakeSaveGame("Slot1Player");
 
         db.SaveGames.Add(new SaveGameRecord
         {
-            Id        = sg.Id,
+            Id = sg.Id,
             PlayerName = sg.PlayerName,
             SlotIndex = 2,
-            DataJson  = Newtonsoft.Json.JsonConvert.SerializeObject(sg),
+            DataJson = Newtonsoft.Json.JsonConvert.SerializeObject(sg),
         });
         db.SaveChanges();
 
@@ -341,7 +343,7 @@ public class ServerSaveGameRepositoryTests : IDisposable
     public void LoadGame_Should_Return_Null_When_Slot_Empty()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerSaveGameRepository(db);
+        var repo = new ServerSaveGameRepository(db);
         repo.LoadGame(99).Should().BeNull();
     }
 
@@ -349,7 +351,7 @@ public class ServerSaveGameRepositoryTests : IDisposable
     public void SaveGameMethod_Should_Alias_Save()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerSaveGameRepository(db);
+        var repo = new ServerSaveGameRepository(db);
         repo.SaveGame(MakeSaveGame("GameAlias"));
         db.SaveGames.Should().ContainSingle();
     }
@@ -358,12 +360,14 @@ public class ServerSaveGameRepositoryTests : IDisposable
     public void DeleteSave_Should_Return_True_And_Remove_Slot()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerSaveGameRepository(db);
-        var sg       = MakeSaveGame();
+        var repo = new ServerSaveGameRepository(db);
+        var sg = MakeSaveGame();
 
         db.SaveGames.Add(new SaveGameRecord
         {
-            Id = sg.Id, PlayerName = sg.PlayerName, SlotIndex = 3,
+            Id = sg.Id,
+            PlayerName = sg.PlayerName,
+            SlotIndex = 3,
             DataJson = Newtonsoft.Json.JsonConvert.SerializeObject(sg),
         });
         db.SaveChanges();
@@ -376,7 +380,7 @@ public class ServerSaveGameRepositoryTests : IDisposable
     public void DeleteSave_Should_Return_False_When_Slot_Not_Found()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerSaveGameRepository(db);
+        var repo = new ServerSaveGameRepository(db);
         repo.DeleteSave(99).Should().BeFalse();
     }
 
@@ -384,12 +388,14 @@ public class ServerSaveGameRepositoryTests : IDisposable
     public void SaveExists_Should_Return_True_When_Slot_Has_Save()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerSaveGameRepository(db);
-        var sg       = MakeSaveGame();
+        var repo = new ServerSaveGameRepository(db);
+        var sg = MakeSaveGame();
 
         db.SaveGames.Add(new SaveGameRecord
         {
-            Id = sg.Id, PlayerName = sg.PlayerName, SlotIndex = 1,
+            Id = sg.Id,
+            PlayerName = sg.PlayerName,
+            SlotIndex = 1,
             DataJson = Newtonsoft.Json.JsonConvert.SerializeObject(sg),
         });
         db.SaveChanges();
@@ -401,7 +407,7 @@ public class ServerSaveGameRepositoryTests : IDisposable
     public void SaveExists_Should_Return_False_When_Slot_Empty()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerSaveGameRepository(db);
+        var repo = new ServerSaveGameRepository(db);
         repo.SaveExists(99).Should().BeFalse();
     }
 
@@ -410,8 +416,8 @@ public class ServerSaveGameRepositoryTests : IDisposable
     public void Dispose_Should_Not_Throw()
     {
         using var db = _factory.CreateContext();
-        var repo     = new ServerSaveGameRepository(db);
-        var act      = () => repo.Dispose();
+        var repo = new ServerSaveGameRepository(db);
+        var act = () => repo.Dispose();
         act.Should().NotThrow();
     }
 }

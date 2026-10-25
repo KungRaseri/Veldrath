@@ -1,5 +1,9 @@
-﻿using Microsoft.AspNetCore.DataProtection;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -8,10 +12,12 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 using RealmEngine.Core;
 using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Data.Persistence;
 using Veldrath.Server.Data;
+using Veldrath.Server.Data.Entities;
 
 namespace Veldrath.Server.Tests.Infrastructure;
 
@@ -50,20 +56,18 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifeti
 
         // Provide a non-null connection string so Program.cs doesn't throw when
         // registering health checks. The real Postgres contexts are replaced below.
-        builder.UseSetting("ConnectionStrings:DefaultConnection",   ConnStr);
-        builder.UseSetting("Jwt:Key",                               "test-secret-key-for-integration-tests!!");
-        builder.UseSetting("Jwt:Issuer",                            "Veldrath.Test");
-        builder.UseSetting("Jwt:Audience",                          "Veldrath.Test");
-        builder.UseSetting("Jwt:AccessTokenExpiryMinutes",          "15");
-        builder.UseSetting("Jwt:RefreshTokenExpiryDays",            "30");
-        builder.UseSetting("RealmEngine:DataPath",                  "");
-        // Shared secret for the temporary SvelteKit → Identity account bridge.
-        builder.UseSetting("InternalBridge:Token",                   "test-internal-bridge-token");
+        builder.UseSetting("ConnectionStrings:DefaultConnection", ConnStr);
+        builder.UseSetting("Jwt:Key", "test-secret-key-for-integration-tests!!");
+        builder.UseSetting("Jwt:Issuer", "Veldrath.Test");
+        builder.UseSetting("Jwt:Audience", "Veldrath.Test");
+        builder.UseSetting("Jwt:AccessTokenExpiryMinutes", "15");
+        builder.UseSetting("RealmEngine:DataPath", "");
+        // Shared secret for the internal transactional-email relay Better Auth calls.
+        builder.UseSetting("InternalBridge:Token", "test-internal-bridge-token");
         // Rate limiting must not interfere with integration tests; set a very high permit limit.
-        builder.UseSetting("RateLimit:FoundryWritesPerMinute",  "100000");
-        builder.UseSetting("RateLimit:AdminActionsPerMinute",   "100000");
-        builder.UseSetting("RateLimit:AuthAttemptsPerMinute",   "100000");
-        builder.UseSetting("RateLimit:HubCommandsPerMinute",    "100000");
+        builder.UseSetting("RateLimit:FoundryWritesPerMinute", "100000");
+        builder.UseSetting("RateLimit:AdminActionsPerMinute", "100000");
+        builder.UseSetting("RateLimit:HubCommandsPerMinute", "100000");
 
         // Replace the production Postgres contexts with in-memory SQLite instances.
         // EF Core 8+ registers IDbContextOptionsConfiguration<T> (not DbContextOptions<T>),
@@ -116,6 +120,82 @@ public sealed class WebAppFactory : WebApplicationFactory<Program>, IAsyncLifeti
         sp.GetRequiredService<EditorialDbContext>().Database.GetService<IRelationalDatabaseCreator>().CreateTables();
 
         return host;
+    }
+
+    /// <summary>
+    /// Creates (or reuses) an Identity account — optionally in the given roles — and returns a signed
+    /// game token for it.
+    /// </summary>
+    /// <remarks>
+    /// Better Auth owns registration and login, so the server no longer exposes <c>/api/auth/*</c>.
+    /// Tests that need an authenticated caller mint the same kind of token the SvelteKit app mints:
+    /// a Better Auth style JWT whose <c>sub</c> is the account GUID. <c>JwtClaimsEnrichment</c> then
+    /// resolves roles and permissions from Identity, exactly as it does in production.
+    /// </remarks>
+    /// <param name="username">Username to create or reuse.</param>
+    /// <param name="roles">Identity roles to ensure the account has.</param>
+    /// <returns>The bearer token and the account identifier.</returns>
+    public async Task<(string Token, Guid AccountId)> CreateAccountTokenAsync(
+        string username, params string[] roles)
+    {
+        using var scope = Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<PlayerAccount>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+
+        var user = await userManager.FindByNameAsync(username);
+        if (user is null)
+        {
+            user = new PlayerAccount
+            {
+                Id = Guid.NewGuid(),
+                UserName = username,
+                Email = $"{username.ToLowerInvariant()}@test.com",
+                EmailConfirmed = true
+            };
+
+            var created = await userManager.CreateAsync(user);
+            if (!created.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    $"Could not create test account {username}: " +
+                    string.Join("; ", created.Errors.Select(e => e.Description)));
+            }
+        }
+
+        foreach (var role in roles)
+        {
+            if (!await roleManager.RoleExistsAsync(role))
+                await roleManager.CreateAsync(new IdentityRole<Guid>(role));
+
+            if (!await userManager.IsInRoleAsync(user, role))
+                await userManager.AddToRoleAsync(user, role);
+        }
+
+        return (MintGameToken(user), user.Id);
+    }
+
+    /// <summary>Mints a JWT signed with the same key/issuer/audience this factory configures.</summary>
+    /// <param name="user">Account to mint the token for.</param>
+    /// <returns>The serialized bearer token.</returns>
+    private static string MintGameToken(PlayerAccount user)
+    {
+        var key = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes("test-secret-key-for-integration-tests!!"));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: "Veldrath.Test",
+            audience: "Veldrath.Test",
+            claims:
+            [
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName!),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
+            ],
+            expires: DateTime.UtcNow.AddMinutes(15),
+            signingCredentials: credentials);
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
     /// <inheritdoc/>

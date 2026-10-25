@@ -37,7 +37,7 @@ public class LoadGameService
         try
         {
             var save = _saveGameService.LoadGame(saveId.ToString());
-            
+
             if (save == null)
             {
                 return new LoadGameResult
@@ -52,7 +52,7 @@ public class LoadGameService
             // Restore apocalypse timer if applicable
             bool timeExpired = false;
             int? remainingMinutes = null;
-            
+
             if (save.ApocalypseMode && save.ApocalypseStartTime.HasValue)
             {
                 _apocalypseTimer.StartFromSave(save.ApocalypseStartTime.Value, save.ApocalypseBonusMinutes);

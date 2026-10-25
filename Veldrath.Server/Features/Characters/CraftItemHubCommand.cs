@@ -60,7 +60,7 @@ public class CraftItemHubCommandHandler : IRequestHandler<CraftItemHubCommand, C
         ILogger<CraftItemHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
-        _logger        = logger;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the crafting outcome.</summary>
@@ -100,14 +100,14 @@ public class CraftItemHubCommandHandler : IRequestHandler<CraftItemHubCommand, C
         if (currentGold < DefaultCraftingCost)
             return new CraftItemHubResult
             {
-                Success      = false,
+                Success = false,
                 ErrorMessage = "Not enough gold to craft this item",
             };
 
         var newGold = currentGold - DefaultCraftingCost;
         attrs[KeyGold] = newGold;
 
-        character.Attributes   = JsonSerializer.Serialize(attrs);
+        character.Attributes = JsonSerializer.Serialize(attrs);
         character.LastPlayedAt = DateTimeOffset.UtcNow;
 
         await _characterRepo.UpdateAsync(character, cancellationToken);
@@ -118,9 +118,9 @@ public class CraftItemHubCommandHandler : IRequestHandler<CraftItemHubCommand, C
 
         return new CraftItemHubResult
         {
-            Success       = true,
-            ItemCrafted   = request.RecipeSlug,
-            GoldSpent     = DefaultCraftingCost,
+            Success = true,
+            ItemCrafted = request.RecipeSlug,
+            GoldSpent = DefaultCraftingCost,
             RemainingGold = newGold,
         };
     }

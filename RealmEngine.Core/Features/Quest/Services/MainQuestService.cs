@@ -1,4 +1,5 @@
 namespace RealmEngine.Core.Features.Quests.Services;
+
 using RealmEngine.Shared.Models;
 
 /// <summary>

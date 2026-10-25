@@ -1,9 +1,9 @@
 using MediatR;
-using RealmEngine.Core.Generators.Modern;
-using RealmEngine.Core.Abstractions;
-using RealmEngine.Core.Services;
-using RealmEngine.Core.Features.Exploration;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Core.Abstractions;
+using RealmEngine.Core.Features.Exploration;
+using RealmEngine.Core.Generators.Modern;
+using RealmEngine.Core.Services;
 
 namespace RealmEngine.Core.Features.Exploration.Commands;
 
@@ -46,7 +46,7 @@ public class GenerateEnemyForLocationHandler : IRequestHandler<GenerateEnemyForL
         try
         {
             var locationName = request.LocationId ?? _gameState.CurrentLocation;
-            
+
             if (string.IsNullOrEmpty(locationName))
             {
                 return new GenerateEnemyForLocationResult(false, ErrorMessage: "No current location set");
@@ -54,7 +54,7 @@ public class GenerateEnemyForLocationHandler : IRequestHandler<GenerateEnemyForL
 
             // Try to find the location in known locations
             var locations = await _explorationService.GetKnownLocationsAsync();
-            var currentLocation = locations.FirstOrDefault(l => 
+            var currentLocation = locations.FirstOrDefault(l =>
                 l.Name == locationName || l.Id == locationName);
 
             if (currentLocation == null)

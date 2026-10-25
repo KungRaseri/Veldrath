@@ -47,24 +47,24 @@ public class EfCoreBackgroundRepository(ContentDbContext db, ILogger<EfCoreBackg
 
     private static Background MapToModel(Entities.Background entity) => new()
     {
-        Slug             = entity.Slug,
-        Name             = entity.DisplayName ?? entity.Slug,
-        RarityWeight     = entity.RarityWeight,
-        Description      = entity.Description ?? string.Empty,
+        Slug = entity.Slug,
+        Name = entity.DisplayName ?? entity.Slug,
+        RarityWeight = entity.RarityWeight,
+        Description = entity.Description ?? string.Empty,
         PrimaryAttribute = entity.TypeKey,
-        PrimaryBonus     = DerivePrimaryBonus(entity),
+        PrimaryBonus = DerivePrimaryBonus(entity),
         SecondaryAttribute = string.Empty,
-        SecondaryBonus     = 0,
+        SecondaryBonus = 0,
         RecommendedLocationTypes = [],
     };
 
     private static int DerivePrimaryBonus(Entities.Background entity) =>
         entity.TypeKey.ToLowerInvariant() switch
         {
-            "strength"     => entity.Stats.BonusStrength     ?? 0,
-            "dexterity"    => entity.Stats.BonusDexterity    ?? 0,
+            "strength" => entity.Stats.BonusStrength ?? 0,
+            "dexterity" => entity.Stats.BonusDexterity ?? 0,
             "intelligence" => entity.Stats.BonusIntelligence ?? 0,
             "constitution" => entity.Stats.BonusConstitution ?? 0,
-            _              => 0,
+            _ => 0,
         };
 }

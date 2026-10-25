@@ -108,7 +108,7 @@ public static class InternalEmailEndpoints
     private static string BuildPasswordResetHtml(string? userName, string resetUrl)
     {
         var greeting = WebUtility.HtmlEncode(DisplayName(userName));
-        var href     = WebUtility.HtmlEncode(resetUrl);
+        var href = WebUtility.HtmlEncode(resetUrl);
 
         return $"""
             <div style="font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#1f2937;line-height:1.6">
@@ -130,7 +130,7 @@ public static class InternalEmailEndpoints
     private static string BuildVerificationHtml(string? userName, string verifyUrl)
     {
         var greeting = WebUtility.HtmlEncode(DisplayName(userName));
-        var href     = WebUtility.HtmlEncode(verifyUrl);
+        var href = WebUtility.HtmlEncode(verifyUrl);
 
         return $"""
             <div style="font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#1f2937;line-height:1.6">

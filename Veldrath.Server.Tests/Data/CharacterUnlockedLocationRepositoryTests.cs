@@ -14,7 +14,7 @@ public class CharacterUnlockedLocationRepositoryTests : IDisposable
 
     private static async Task<Guid> SeedAccountAsync(ApplicationDbContext db)
     {
-        var name    = $"Acct_{Guid.NewGuid():N}";
+        var name = $"Acct_{Guid.NewGuid():N}";
         var account = new PlayerAccount { UserName = name, NormalizedUserName = name.ToUpperInvariant() };
         db.Users.Add(account);
         await db.SaveChangesAsync();
@@ -34,10 +34,10 @@ public class CharacterUnlockedLocationRepositoryTests : IDisposable
     [Fact]
     public async Task GetUnlockedSlugsAsync_ReturnsEmpty_ForNewCharacter()
     {
-        await using var db  = _factory.CreateContext();
-        var accountId       = await SeedAccountAsync(db);
-        var characterId     = await SeedCharacterAsync(db, accountId);
-        var repo            = new CharacterUnlockedLocationRepository(db);
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var characterId = await SeedCharacterAsync(db, accountId);
+        var repo = new CharacterUnlockedLocationRepository(db);
 
         var result = await repo.GetUnlockedSlugsAsync(characterId);
 
@@ -47,12 +47,12 @@ public class CharacterUnlockedLocationRepositoryTests : IDisposable
     [Fact]
     public async Task GetUnlockedSlugsAsync_ReturnsAllUnlockedSlugs()
     {
-        await using var db  = _factory.CreateContext();
-        var accountId       = await SeedAccountAsync(db);
-        var characterId     = await SeedCharacterAsync(db, accountId);
-        var repo            = new CharacterUnlockedLocationRepository(db);
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var characterId = await SeedCharacterAsync(db, accountId);
+        var repo = new CharacterUnlockedLocationRepository(db);
 
-        await repo.AddUnlockAsync(characterId, "secret-cave",   "quest");
+        await repo.AddUnlockAsync(characterId, "secret-cave", "quest");
         await repo.AddUnlockAsync(characterId, "hidden-shrine", "item");
 
         var result = await repo.GetUnlockedSlugsAsync(characterId);
@@ -65,11 +65,11 @@ public class CharacterUnlockedLocationRepositoryTests : IDisposable
     [Fact]
     public async Task GetUnlockedSlugsAsync_IsScopedToCharacter()
     {
-        await using var db  = _factory.CreateContext();
-        var accountId       = await SeedAccountAsync(db);
-        var charA           = await SeedCharacterAsync(db, accountId);
-        var charB           = await SeedCharacterAsync(db, accountId);
-        var repo            = new CharacterUnlockedLocationRepository(db);
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var charA = await SeedCharacterAsync(db, accountId);
+        var charB = await SeedCharacterAsync(db, accountId);
+        var repo = new CharacterUnlockedLocationRepository(db);
 
         await repo.AddUnlockAsync(charA, "secret-cave", "quest");
 
@@ -84,10 +84,10 @@ public class CharacterUnlockedLocationRepositoryTests : IDisposable
     [Fact]
     public async Task IsUnlockedAsync_ReturnsFalse_WhenNotUnlocked()
     {
-        await using var db  = _factory.CreateContext();
-        var accountId       = await SeedAccountAsync(db);
-        var characterId     = await SeedCharacterAsync(db, accountId);
-        var repo            = new CharacterUnlockedLocationRepository(db);
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var characterId = await SeedCharacterAsync(db, accountId);
+        var repo = new CharacterUnlockedLocationRepository(db);
 
         var result = await repo.IsUnlockedAsync(characterId, "secret-cave");
 
@@ -97,10 +97,10 @@ public class CharacterUnlockedLocationRepositoryTests : IDisposable
     [Fact]
     public async Task IsUnlockedAsync_ReturnsTrue_AfterUnlock()
     {
-        await using var db  = _factory.CreateContext();
-        var accountId       = await SeedAccountAsync(db);
-        var characterId     = await SeedCharacterAsync(db, accountId);
-        var repo            = new CharacterUnlockedLocationRepository(db);
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var characterId = await SeedCharacterAsync(db, accountId);
+        var repo = new CharacterUnlockedLocationRepository(db);
 
         await repo.AddUnlockAsync(characterId, "secret-cave", "quest");
         var result = await repo.IsUnlockedAsync(characterId, "secret-cave");
@@ -112,10 +112,10 @@ public class CharacterUnlockedLocationRepositoryTests : IDisposable
     [Fact]
     public async Task AddUnlockAsync_PersistsUnlockRow()
     {
-        await using var db  = _factory.CreateContext();
-        var accountId       = await SeedAccountAsync(db);
-        var characterId     = await SeedCharacterAsync(db, accountId);
-        var repo            = new CharacterUnlockedLocationRepository(db);
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var characterId = await SeedCharacterAsync(db, accountId);
+        var repo = new CharacterUnlockedLocationRepository(db);
 
         await repo.AddUnlockAsync(characterId, "hidden-ruins", "manual");
 
@@ -128,10 +128,10 @@ public class CharacterUnlockedLocationRepositoryTests : IDisposable
     [Fact]
     public async Task AddUnlockAsync_IgnoresDuplicate_DoesNotThrow()
     {
-        await using var db  = _factory.CreateContext();
-        var accountId       = await SeedAccountAsync(db);
-        var characterId     = await SeedCharacterAsync(db, accountId);
-        var repo            = new CharacterUnlockedLocationRepository(db);
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var characterId = await SeedCharacterAsync(db, accountId);
+        var repo = new CharacterUnlockedLocationRepository(db);
 
         await repo.AddUnlockAsync(characterId, "secret-cave", "quest");
         var act = () => repo.AddUnlockAsync(characterId, "secret-cave", "quest");
@@ -145,11 +145,11 @@ public class CharacterUnlockedLocationRepositoryTests : IDisposable
     [Fact]
     public async Task AddUnlockAsync_SetsUnlockSourceAndTimestamp()
     {
-        await using var db  = _factory.CreateContext();
-        var accountId       = await SeedAccountAsync(db);
-        var characterId     = await SeedCharacterAsync(db, accountId);
-        var repo            = new CharacterUnlockedLocationRepository(db);
-        var before          = DateTimeOffset.UtcNow.AddSeconds(-1);
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var characterId = await SeedCharacterAsync(db, accountId);
+        var repo = new CharacterUnlockedLocationRepository(db);
+        var before = DateTimeOffset.UtcNow.AddSeconds(-1);
 
         await repo.AddUnlockAsync(characterId, "mystic-altar", "skill_check_active");
 

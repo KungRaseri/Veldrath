@@ -61,7 +61,7 @@ public class InMemoryCharacterCreationSessionStoreTests
     public async Task UpdateSessionAsync_SetsLastUpdatedAt()
     {
         var session = await _store.CreateSessionAsync();
-        var before  = DateTime.UtcNow;
+        var before = DateTime.UtcNow;
 
         await _store.UpdateSessionAsync(session);
 

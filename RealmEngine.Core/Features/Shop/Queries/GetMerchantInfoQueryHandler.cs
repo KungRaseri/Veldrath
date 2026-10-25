@@ -62,8 +62,8 @@ public class GetMerchantInfoQueryHandler : IRequestHandler<GetMerchantInfoQuery,
             var inventory = _shopService.GetOrCreateInventory(merchant);
 
             // Extract merchant traits
-            var shopType = merchant.Traits.ContainsKey("shopType") 
-                ? merchant.Traits["shopType"].AsString() 
+            var shopType = merchant.Traits.ContainsKey("shopType")
+                ? merchant.Traits["shopType"].AsString()
                 : "general";
 
             var shopInventoryType = merchant.Traits.ContainsKey("shopInventoryType")

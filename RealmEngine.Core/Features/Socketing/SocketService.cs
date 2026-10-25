@@ -1,5 +1,5 @@
-using RealmEngine.Shared.Models;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Socketing;
 
@@ -32,7 +32,7 @@ public class SocketService
                 ErrorMessage = "Socket is locked and cannot be modified"
             };
         }
-        
+
         // Check if socket is already filled
         if (socket.Content != null)
         {
@@ -42,7 +42,7 @@ public class SocketService
                 ErrorMessage = "Socket is already filled. Remove existing item first."
             };
         }
-        
+
         // Check socket type compatibility
         if (!socket.CanAccept(socketableItem))
         {
@@ -52,14 +52,14 @@ public class SocketService
                 ErrorMessage = $"Socket type mismatch: {socket.Type} socket cannot accept {socketableItem.SocketType} items"
             };
         }
-        
+
         return new SocketValidationResult
         {
             IsValid = true,
             ErrorMessage = string.Empty
         };
     }
-    
+
     /// <summary>
     /// Sockets an item into a socket slot.
     /// </summary>
@@ -77,17 +77,17 @@ public class SocketService
                 Message = validation.ErrorMessage
             };
         }
-        
+
         socket.Content = socketableItem;
         _logger.LogInformation("Socketed {ItemName} into {SocketType} socket", socketableItem.Name, socket.Type);
-        
+
         return new SocketOperationResult
         {
             Success = true,
             Message = $"Successfully socketed {socketableItem.Name}"
         };
     }
-    
+
     /// <summary>
     /// Removes a socketed item from a socket slot.
     /// </summary>
@@ -105,7 +105,7 @@ public class SocketService
                 RemovedItem = null
             };
         }
-        
+
         // Check if socket is empty
         if (socket.Content == null)
         {
@@ -116,11 +116,11 @@ public class SocketService
                 RemovedItem = null
             };
         }
-        
+
         var removedItem = socket.Content;
         socket.Content = null;
         _logger.LogInformation("Removed {ItemName} from {SocketType} socket", removedItem.Name, socket.Type);
-        
+
         return new SocketRemovalResult
         {
             Success = true,
@@ -128,7 +128,7 @@ public class SocketService
             RemovedItem = removedItem
         };
     }
-    
+
     /// <summary>
     /// Calculates the link bonus multiplier for linked sockets.
     /// </summary>
@@ -155,7 +155,7 @@ public class SocketValidationResult
 {
     /// <summary>Gets or sets a value indicating whether the socket operation is valid.</summary>
     public bool IsValid { get; set; }
-    
+
     /// <summary>Gets or sets the error message if validation failed.</summary>
     public string ErrorMessage { get; set; } = string.Empty;
 }
@@ -167,7 +167,7 @@ public class SocketOperationResult
 {
     /// <summary>Gets or sets a value indicating whether the operation succeeded.</summary>
     public bool Success { get; set; }
-    
+
     /// <summary>Gets or sets the result message.</summary>
     public string Message { get; set; } = string.Empty;
 }

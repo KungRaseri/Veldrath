@@ -1,12 +1,12 @@
-using RealmEngine.Core.Features.Progression.Services;
-using RealmEngine.Shared.Models;
-using RealmEngine.Shared.Utilities;
-using RealmEngine.Core.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using RealmEngine.Core.Features.Combat.Services;
 using RealmEngine.Core.Features.Combat.Commands;
+using RealmEngine.Core.Features.Combat.Services;
+using RealmEngine.Core.Features.Progression.Services;
+using RealmEngine.Core.Services;
+using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Utilities;
 
 namespace RealmEngine.Core.Features.Progression.Commands;
 
@@ -94,9 +94,9 @@ public class UsePowerHandler : IRequestHandler<UsePowerCommand, UsePowerResult>
         if (!string.IsNullOrEmpty(ability.BaseDamage))
         {
             damageDealt = DiceRoller.RollDiceString(ability.BaseDamage);
-            
+
             // Apply character's magic damage bonus if it's a magical ability
-            if (ability.Traits.ContainsKey("damageType") && 
+            if (ability.Traits.ContainsKey("damageType") &&
                 ability.Traits["damageType"]?.ToString()?.Contains("magic", StringComparison.OrdinalIgnoreCase) == true)
             {
                 damageDealt += request.User.GetMagicDamageBonus();
@@ -118,14 +118,14 @@ public class UsePowerHandler : IRequestHandler<UsePowerCommand, UsePowerResult>
         }
 
         // Check for healing abilities
-        if (ability.EffectType == PowerEffectType.Heal || 
-            (ability.Traits.ContainsKey("effect") && 
+        if (ability.EffectType == PowerEffectType.Heal ||
+            (ability.Traits.ContainsKey("effect") &&
              ability.Traits["effect"]?.ToString()?.Contains("heal", StringComparison.OrdinalIgnoreCase) == true))
         {
             if (!string.IsNullOrEmpty(ability.BaseDamage))
             {
                 healingDone = DiceRoller.RollDiceString(ability.BaseDamage);
-                
+
                 // Apply to target or self
                 var healTarget = request.TargetCharacter ?? request.User;
                 healTarget.Health = Math.Min(healTarget.MaxHealth, healTarget.Health + healingDone);
@@ -194,7 +194,7 @@ public class UsePowerHandler : IRequestHandler<UsePowerCommand, UsePowerResult>
         Enemy? targetEnemy = request.TargetEnemy;
 
         // If no target specified, apply to user (for buffs)
-        if (targetCharacter == null && targetEnemy == null && 
+        if (targetCharacter == null && targetEnemy == null &&
             (statusEffect.Category == StatusEffectCategory.Buff || statusEffect.Category == StatusEffectCategory.HealOverTime))
         {
             targetCharacter = request.User;
@@ -212,7 +212,7 @@ public class UsePowerHandler : IRequestHandler<UsePowerCommand, UsePowerResult>
             };
 
             var result = await _mediator.Send(applyCommand);
-            
+
             if (result.Success)
             {
                 _logger.LogInformation(

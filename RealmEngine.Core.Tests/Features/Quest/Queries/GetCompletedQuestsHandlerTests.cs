@@ -151,7 +151,7 @@ public class GetAvailableQuestsHandlerTests
         var save = new SaveGame
         {
             AvailableQuests = available,
-            ActiveQuests    = [MakeQuest("q-active")],
+            ActiveQuests = [MakeQuest("q-active")],
             CompletedQuests = [MakeQuest("q-done")],
         };
 

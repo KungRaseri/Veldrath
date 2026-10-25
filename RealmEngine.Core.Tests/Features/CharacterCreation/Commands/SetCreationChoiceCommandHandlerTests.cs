@@ -13,11 +13,11 @@ namespace RealmEngine.Core.Tests.Features.CharacterCreation.Commands;
 [Trait("Category", "Feature")]
 public class SetCreationChoiceCommandHandlerTests
 {
-    private readonly Mock<ICharacterCreationSessionStore> _sessionStoreMock      = new();
-    private readonly Mock<IMediator>                      _mediatorMock          = new();
-    private readonly Mock<ISpeciesRepository>             _speciesRepoMock       = new();
-    private readonly Mock<IBackgroundRepository>          _backgroundRepoMock    = new();
-    private readonly Mock<IZoneLocationRepository>        _zoneLocationRepoMock  = new();
+    private readonly Mock<ICharacterCreationSessionStore> _sessionStoreMock = new();
+    private readonly Mock<IMediator> _mediatorMock = new();
+    private readonly Mock<ISpeciesRepository> _speciesRepoMock = new();
+    private readonly Mock<IBackgroundRepository> _backgroundRepoMock = new();
+    private readonly Mock<IZoneLocationRepository> _zoneLocationRepoMock = new();
 
     private static CharacterCreationSession MakeSession() => new();
 
@@ -55,7 +55,7 @@ public class SetCreationChoiceCommandHandlerTests
     public async Task SetCreationClass_Valid_SetsClassAndReturnsSuccess()
     {
         var session = MakeSession();
-        var cls     = new CharacterClass { Name = "Warrior" };
+        var cls = new CharacterClass { Name = "Warrior" };
         _sessionStoreMock.Setup(s => s.GetSessionAsync(It.IsAny<Guid>())).ReturnsAsync(session);
         _sessionStoreMock.Setup(s => s.UpdateSessionAsync(session)).Returns(Task.CompletedTask);
         _mediatorMock
@@ -172,7 +172,7 @@ public class SetCreationChoiceCommandHandlerTests
     [Fact]
     public async Task SetCreationBackground_Valid_SetsBackgroundAndReturnsSuccess()
     {
-        var session    = MakeSession();
+        var session = MakeSession();
         var background = new Background { Name = "Soldier", PrimaryAttribute = "Strength", Slug = "soldier" };
         _sessionStoreMock.Setup(s => s.GetSessionAsync(It.IsAny<Guid>())).ReturnsAsync(session);
         _sessionStoreMock.Setup(s => s.UpdateSessionAsync(session)).Returns(Task.CompletedTask);

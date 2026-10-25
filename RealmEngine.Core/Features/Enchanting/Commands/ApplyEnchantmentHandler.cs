@@ -17,7 +17,7 @@ public class ApplyEnchantmentHandler : IRequestHandler<ApplyEnchantmentCommand, 
         var character = request.Character;
         var item = request.Item;
         var scroll = request.EnchantmentScroll;
-        
+
         // Validate item has available slots
         if (!item.CanAddPlayerEnchantment())
         {
@@ -29,7 +29,7 @@ public class ApplyEnchantmentHandler : IRequestHandler<ApplyEnchantmentCommand, 
                 SuccessRate = 0
             });
         }
-        
+
         // Extract enchantment from scroll
         // For now, assume scroll has an Enchantment in its Enchantments list
         var enchantment = scroll.Enchantments.FirstOrDefault();
@@ -43,16 +43,16 @@ public class ApplyEnchantmentHandler : IRequestHandler<ApplyEnchantmentCommand, 
                 SuccessRate = 0
             });
         }
-        
+
         // Calculate success rate based on slot count
         var currentSlotCount = item.PlayerEnchantments.Count;
         var successRate = CalculateSuccessRate(currentSlotCount, character);
-        
+
         // Roll for success
         var random = new Random();
         var roll = random.NextDouble() * 100.0; // 0-100
         var succeeded = roll <= successRate;
-        
+
         if (succeeded)
         {
             // Apply enchantment
@@ -68,9 +68,9 @@ public class ApplyEnchantmentHandler : IRequestHandler<ApplyEnchantmentCommand, 
                 SpecialEffect = enchantment.SpecialEffect,
                 Level = enchantment.Level
             };
-            
+
             item.PlayerEnchantments.Add(clonedEnchantment);
-            
+
             return Task.FromResult(new ApplyEnchantmentResult
             {
                 Success = true,
@@ -91,7 +91,7 @@ public class ApplyEnchantmentHandler : IRequestHandler<ApplyEnchantmentCommand, 
             });
         }
     }
-    
+
     /// <summary>
     /// Calculate success rate based on current enchantment count and Enchanting skill.
     /// Slot 1: 100% (guaranteed)
@@ -102,7 +102,7 @@ public class ApplyEnchantmentHandler : IRequestHandler<ApplyEnchantmentCommand, 
     {
         // Get Enchanting skill level
         var enchantingSkill = character.Skills.TryGetValue("Enchanting", out var skill) ? skill.CurrentRank : 0;
-        
+
         // Base rates by slot
         var baseRate = currentSlotCount switch
         {
@@ -111,11 +111,11 @@ public class ApplyEnchantmentHandler : IRequestHandler<ApplyEnchantmentCommand, 
             2 => 50.0,  // Third slot
             _ => 25.0   // Fourth slot (if somehow allowed)
         };
-        
+
         // Add skill bonus (0.3% per level)
         var skillBonus = enchantingSkill * 0.3;
         var successRate = baseRate + skillBonus;
-        
+
         // Cap at 100%
         return Math.Min(successRate, 100.0);
     }

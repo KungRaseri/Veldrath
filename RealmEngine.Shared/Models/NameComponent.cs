@@ -17,7 +17,7 @@ public class NameComponent
     /// This identifies the semantic category of this component.
     /// </summary>
     public string Token { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// The actual value selected from components (e.g., "Giant", "Frost", "Mithril").
     /// This is the text that appears in the composed name.

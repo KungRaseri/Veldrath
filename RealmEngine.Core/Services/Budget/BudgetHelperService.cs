@@ -36,7 +36,7 @@ public class BudgetHelperService
     {
         // Calculate base budget from level
         var baseBudget = _budgetCalculator.CalculateBaseBudget(level);
-        
+
         // Apply enemy type multiplier (would need MaterialPoolService to get actual multiplier)
         // For now, use simple logic: boss types get 1.5x, elite gets 1.3x
         var multiplier = enemyType.ToLowerInvariant() switch
@@ -45,9 +45,9 @@ public class BudgetHelperService
             var t when t.Contains("elite") || t.Contains("knight") => 1.3,
             _ => 1.0
         };
-        
+
         var budget = (int)(baseBudget * multiplier);
-        _logger.LogDebug("Enemy loot budget: {Budget} (type={Type}, level={Level})", 
+        _logger.LogDebug("Enemy loot budget: {Budget} (type={Type}, level={Level})",
             budget, enemyType, level);
         return budget;
     }
@@ -76,9 +76,9 @@ public class BudgetHelperService
         };
 
         var budget = (int)(levelBudget * rarityMultiplier);
-        _logger.LogDebug("Chest loot budget: {Budget} (rarity={Rarity}, location_level={Level})", 
+        _logger.LogDebug("Chest loot budget: {Budget} (rarity={Rarity}, location_level={Level})",
             budget, chestRarity, locationLevel);
-        
+
         return Math.Max(10, budget); // Minimum 10 budget
     }
 
@@ -102,9 +102,9 @@ public class BudgetHelperService
         };
 
         var budget = (int)(merchantWealth * tierMultiplier);
-        _logger.LogDebug("Shop item budget: {Budget} (wealth={Wealth}, tier={Tier})", 
+        _logger.LogDebug("Shop item budget: {Budget} (wealth={Wealth}, tier={Tier})",
             budget, merchantWealth, itemTier);
-        
+
         return Math.Max(20, budget); // Minimum 20 budget (shops don't sell trash)
     }
 
@@ -118,10 +118,10 @@ public class BudgetHelperService
     public int GetCraftingQualityBonus(int playerSkill, int recipeRequirement, bool criticalSuccess = false)
     {
         var skillDifference = playerSkill - recipeRequirement;
-        
+
         // Every 10 skill points above requirement = +1 quality tier
         var qualityBonus = skillDifference / 10;
-        
+
         // Critical success adds +1 tier
         if (criticalSuccess)
         {
@@ -131,10 +131,10 @@ public class BudgetHelperService
 
         // Cap at 3 tiers (Common → Rare)
         qualityBonus = Math.Clamp(qualityBonus, 0, 3);
-        
-        _logger.LogDebug("Crafting quality bonus: {Bonus} (skill={PlayerSkill}, req={Requirement}, crit={Critical})", 
+
+        _logger.LogDebug("Crafting quality bonus: {Bonus} (skill={PlayerSkill}, req={Requirement}, crit={Critical})",
             qualityBonus, playerSkill, recipeRequirement, criticalSuccess);
-        
+
         return qualityBonus;
     }
 
@@ -149,16 +149,16 @@ public class BudgetHelperService
         // Base success chance formula:
         // 50% + (playerSkill - recipeDifficulty) * 2%
         // Range: 0% to 100%
-        
+
         var baseChance = 50;
         var skillDifference = playerSkill - recipeDifficulty;
         var successChance = baseChance + (skillDifference * 2);
-        
+
         successChance = Math.Clamp(successChance, 5, 99); // Always 5-99% (never guaranteed/impossible)
-        
-        _logger.LogDebug("Crafting success chance: {Chance}% (skill={PlayerSkill}, difficulty={Difficulty})", 
+
+        _logger.LogDebug("Crafting success chance: {Chance}% (skill={PlayerSkill}, difficulty={Difficulty})",
             successChance, playerSkill, recipeDifficulty);
-        
+
         return successChance;
     }
 
@@ -174,12 +174,12 @@ public class BudgetHelperService
         // Base 5% + 1% per 10 skill points above difficulty
         var skillDifference = Math.Max(0, playerSkill - recipeDifficulty);
         var criticalChance = 5 + (skillDifference / 10);
-        
+
         criticalChance = Math.Clamp(criticalChance, 5, 20); // Max 20% critical
-        
-        _logger.LogDebug("Crafting critical chance: {Chance}% (skill={PlayerSkill}, difficulty={Difficulty})", 
+
+        _logger.LogDebug("Crafting critical chance: {Chance}% (skill={PlayerSkill}, difficulty={Difficulty})",
             criticalChance, playerSkill, recipeDifficulty);
-        
+
         return criticalChance;
     }
 
@@ -263,7 +263,7 @@ public class BudgetHelperService
         var minBudget = (int)(levelBudget * minMultiplier);
         var maxBudget = (int)(levelBudget * maxMultiplier);
 
-        _logger.LogDebug("Quest reward budget range: {Min}-{Max} (level={Level}, difficulty={Difficulty})", 
+        _logger.LogDebug("Quest reward budget range: {Min}-{Max} (level={Level}, difficulty={Difficulty})",
             minBudget, maxBudget, questLevel, difficulty);
 
         return (Math.Max(15, minBudget), Math.Max(30, maxBudget));
@@ -291,7 +291,7 @@ public class BudgetHelperService
         };
 
         var budget = (int)(levelBudget * eventMultiplier);
-        _logger.LogDebug("Event reward budget: {Budget} (type={Type}, level={Level})", 
+        _logger.LogDebug("Event reward budget: {Budget} (type={Type}, level={Level})",
             budget, eventType, participantLevel);
 
         return Math.Max(50, budget); // Events give minimum decent loot
@@ -315,7 +315,7 @@ public class BudgetHelperService
         };
 
         var additionalBudget = (int)(currentItemValue * upgradeMultiplier);
-        _logger.LogDebug("Item upgrade budget: +{Budget} (current={Current}, tier={Tier})", 
+        _logger.LogDebug("Item upgrade budget: +{Budget} (current={Current}, tier={Tier})",
             additionalBudget, currentItemValue, upgradeTier);
 
         return Math.Max(5, additionalBudget);

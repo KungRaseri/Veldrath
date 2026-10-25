@@ -907,7 +907,7 @@ public class Item : ITraitable
         var bonuses = new List<string>();
         foreach (var trait in traits)
         {
-            var value = trait.Value.Type == TraitType.Number 
+            var value = trait.Value.Type == TraitType.Number
                 ? trait.Value.AsDouble().ToString()
                 : trait.Value.AsString();
             bonuses.Add($"{trait.Key}: {value}");

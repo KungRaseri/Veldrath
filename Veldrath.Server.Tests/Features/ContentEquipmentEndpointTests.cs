@@ -35,39 +35,39 @@ public sealed class ContentEquipmentEndpointsFixture : IAsyncLifetime
         db.Items.AddRange(
             new Item
             {
-                Slug         = "equip-iron-sword",
-                TypeKey      = "heavy-blades",
-                ItemType     = "weapon",
-                DisplayName  = "Iron Sword",
-                IsActive     = true,
+                Slug = "equip-iron-sword",
+                TypeKey = "heavy-blades",
+                ItemType = "weapon",
+                DisplayName = "Iron Sword",
+                IsActive = true,
                 RarityWeight = 80,
-                WeaponType   = "sword",
-                DamageType   = "physical",
+                WeaponType = "sword",
+                DamageType = "physical",
                 HandsRequired = 1,
-                Stats        = new() { DamageMin = 5, DamageMax = 10, Value = 25 },
+                Stats = new() { DamageMin = 5, DamageMax = 10, Value = 25 },
             },
             new Item
             {
-                Slug         = "equip-leather-chest",
-                TypeKey      = "light",
-                ItemType     = "armor",
-                DisplayName  = "Leather Chest",
-                IsActive     = true,
+                Slug = "equip-leather-chest",
+                TypeKey = "light",
+                ItemType = "armor",
+                DisplayName = "Leather Chest",
+                IsActive = true,
                 RarityWeight = 80,
-                ArmorType    = "light",
-                EquipSlot    = "chest",
-                Stats        = new() { ArmorRating = 5, Value = 20 },
+                ArmorType = "light",
+                EquipSlot = "chest",
+                Stats = new() { ArmorRating = 5, Value = 20 },
             });
 
         db.Materials.Add(new Material
         {
-            Slug           = "equip-iron",
-            TypeKey        = "metals",
-            DisplayName    = "Iron",
-            IsActive       = true,
-            RarityWeight   = 90,
+            Slug = "equip-iron",
+            TypeKey = "metals",
+            DisplayName = "Iron",
+            IsActive = true,
+            RarityWeight = 90,
             MaterialFamily = "metal",
-            Stats          = new MaterialStats { Hardness = 7.5f },
+            Stats = new MaterialStats { Hardness = 7.5f },
         });
 
         await db.SaveChangesAsync();

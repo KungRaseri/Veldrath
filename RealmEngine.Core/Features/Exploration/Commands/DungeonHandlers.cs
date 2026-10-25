@@ -1,10 +1,10 @@
 using System.Collections.Concurrent;
 using MediatR;
-using RealmEngine.Core.Features.Exploration.Services;
+using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Abstractions;
+using RealmEngine.Core.Features.Exploration.Services;
 using RealmEngine.Core.Services;
 using RealmEngine.Shared.Models;
-using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Exploration.Commands;
 
@@ -78,7 +78,7 @@ public class EnterDungeonHandler : IRequestHandler<EnterDungeonCommand, EnterDun
 
             // Generate the dungeon
             var dungeon = await _dungeonGenerator.GenerateDungeonAsync(location, player.Level);
-            
+
             // Store the active dungeon instance
             _activeDungeons[dungeon.Id] = dungeon;
 
@@ -144,7 +144,7 @@ public class ProceedToNextRoomHandler : IRequestHandler<ProceedToNextRoomCommand
         try
         {
             var dungeon = EnterDungeonHandler.GetActiveDungeon(request.DungeonInstanceId);
-            
+
             if (dungeon == null)
             {
                 return Task.FromResult(new ProceedToNextRoomResult
@@ -169,9 +169,9 @@ public class ProceedToNextRoomHandler : IRequestHandler<ProceedToNextRoomCommand
             {
                 dungeon.IsCompleted = true;
                 EnterDungeonHandler.RemoveDungeon(dungeon.Id);
-                
+
                 _logger.LogInformation("Dungeon {DungeonName} completed!", dungeon.Name);
-                
+
                 return Task.FromResult(new ProceedToNextRoomResult
                 {
                     Success = true,
@@ -234,7 +234,7 @@ public class ClearDungeonRoomHandler : IRequestHandler<ClearDungeonRoomCommand, 
         try
         {
             var dungeon = EnterDungeonHandler.GetActiveDungeon(request.DungeonInstanceId);
-            
+
             if (dungeon == null)
             {
                 return Task.FromResult(new ClearDungeonRoomResult
@@ -245,7 +245,7 @@ public class ClearDungeonRoomHandler : IRequestHandler<ClearDungeonRoomCommand, 
             }
 
             var room = dungeon.Rooms.FirstOrDefault(r => r.RoomNumber == request.RoomNumber);
-            
+
             if (room == null)
             {
                 return Task.FromResult(new ClearDungeonRoomResult
@@ -280,7 +280,7 @@ public class ClearDungeonRoomHandler : IRequestHandler<ClearDungeonRoomCommand, 
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error clearing room {RoomNumber} in dungeon {DungeonId}", 
+            _logger.LogError(ex, "Error clearing room {RoomNumber} in dungeon {DungeonId}",
                 request.RoomNumber, request.DungeonInstanceId);
             return Task.FromResult(new ClearDungeonRoomResult
             {

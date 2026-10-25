@@ -1,5 +1,5 @@
-using RealmEngine.Core.Features.SaveLoad;
 using MediatR;
+using RealmEngine.Core.Features.SaveLoad;
 
 namespace RealmEngine.Core.Features.Death.Queries;
 

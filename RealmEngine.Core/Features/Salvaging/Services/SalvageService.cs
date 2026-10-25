@@ -12,20 +12,20 @@ public static class SalvageService
     /// <summary>Returns the crafting skill that governs salvage yield for the given item type.</summary>
     public static string GetSkillName(ItemType itemType) => itemType switch
     {
-        ItemType.Weapon    => "Blacksmithing",
-        ItemType.Shield    => "Blacksmithing",
-        ItemType.OffHand   => "Blacksmithing",
-        ItemType.Helmet    => "Blacksmithing",
+        ItemType.Weapon => "Blacksmithing",
+        ItemType.Shield => "Blacksmithing",
+        ItemType.OffHand => "Blacksmithing",
+        ItemType.Helmet => "Blacksmithing",
         ItemType.Shoulders => "Leatherworking",
-        ItemType.Chest     => "Blacksmithing",
-        ItemType.Bracers   => "Leatherworking",
-        ItemType.Gloves    => "Leatherworking",
-        ItemType.Belt      => "Leatherworking",
-        ItemType.Legs      => "Blacksmithing",
-        ItemType.Boots     => "Leatherworking",
-        ItemType.Necklace  => "Jewelcrafting",
-        ItemType.Ring      => "Jewelcrafting",
-        _                  => "Salvaging"
+        ItemType.Chest => "Blacksmithing",
+        ItemType.Bracers => "Leatherworking",
+        ItemType.Gloves => "Leatherworking",
+        ItemType.Belt => "Leatherworking",
+        ItemType.Legs => "Blacksmithing",
+        ItemType.Boots => "Leatherworking",
+        ItemType.Necklace => "Jewelcrafting",
+        ItemType.Ring => "Jewelcrafting",
+        _ => "Salvaging"
     };
 
     /// <summary>
@@ -34,7 +34,7 @@ public static class SalvageService
     /// </summary>
     public static double CalculateYieldRate(Character character, ItemType itemType)
     {
-        var skillName  = GetSkillName(itemType);
+        var skillName = GetSkillName(itemType);
         var skillLevel = character.Skills.TryGetValue(skillName, out var skill) ? skill.CurrentRank : 0;
         return Math.Min(40.0 + (skillLevel * 0.3), 100.0);
     }
@@ -50,12 +50,12 @@ public static class SalvageService
 
         var baseYield = item.Rarity switch
         {
-            ItemRarity.Common    => 3,
-            ItemRarity.Uncommon  => 4,
-            ItemRarity.Rare      => 5,
-            ItemRarity.Epic      => 7,
+            ItemRarity.Common => 3,
+            ItemRarity.Uncommon => 4,
+            ItemRarity.Rare => 5,
+            ItemRarity.Epic => 7,
             ItemRarity.Legendary => 10,
-            _                    => 3
+            _ => 3
         };
 
         var totalYield = (int)Math.Ceiling((baseYield + item.UpgradeLevel) * (yieldRate / 100.0));
@@ -64,7 +64,7 @@ public static class SalvageService
         if (totalYield < 1 && yieldRate >= 10)
             totalYield = 1;
 
-        var primaryAmount   = !string.IsNullOrEmpty(secondaryScrap)
+        var primaryAmount = !string.IsNullOrEmpty(secondaryScrap)
             ? Math.Max(1, (int)Math.Ceiling(totalYield * 0.7))
             : totalYield;
         var secondaryAmount = !string.IsNullOrEmpty(secondaryScrap)
@@ -83,19 +83,19 @@ public static class SalvageService
     /// <summary>Returns the primary and secondary scrap type names for an item.</summary>
     internal static (string primary, string secondary) GetScrapTypes(ItemType itemType) => itemType switch
     {
-        ItemType.Weapon    => ("Scrap Metal",       "Scrap Wood"),
-        ItemType.Shield    => ("Scrap Metal",       "Scrap Wood"),
-        ItemType.Helmet    => ("Scrap Metal",       ""),
-        ItemType.Chest     => ("Scrap Metal",       "Scrap Leather"),
-        ItemType.Legs      => ("Scrap Metal",       ""),
-        ItemType.Shoulders => ("Scrap Leather",     "Scrap Cloth"),
-        ItemType.Bracers   => ("Scrap Leather",     ""),
-        ItemType.Gloves    => ("Scrap Leather",     ""),
-        ItemType.Belt      => ("Scrap Leather",     ""),
-        ItemType.Boots     => ("Scrap Leather",     ""),
-        ItemType.Necklace  => ("Gemstone Fragments","Scrap Metal"),
-        ItemType.Ring      => ("Gemstone Fragments","Scrap Metal"),
-        ItemType.OffHand   => ("Scrap Wood",        "Scrap Cloth"),
-        _                  => ("Scrap Metal",       "")
+        ItemType.Weapon => ("Scrap Metal", "Scrap Wood"),
+        ItemType.Shield => ("Scrap Metal", "Scrap Wood"),
+        ItemType.Helmet => ("Scrap Metal", ""),
+        ItemType.Chest => ("Scrap Metal", "Scrap Leather"),
+        ItemType.Legs => ("Scrap Metal", ""),
+        ItemType.Shoulders => ("Scrap Leather", "Scrap Cloth"),
+        ItemType.Bracers => ("Scrap Leather", ""),
+        ItemType.Gloves => ("Scrap Leather", ""),
+        ItemType.Belt => ("Scrap Leather", ""),
+        ItemType.Boots => ("Scrap Leather", ""),
+        ItemType.Necklace => ("Gemstone Fragments", "Scrap Metal"),
+        ItemType.Ring => ("Gemstone Fragments", "Scrap Metal"),
+        ItemType.OffHand => ("Scrap Wood", "Scrap Cloth"),
+        _ => ("Scrap Metal", "")
     };
 }

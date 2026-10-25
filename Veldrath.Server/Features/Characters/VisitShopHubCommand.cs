@@ -46,7 +46,7 @@ public class VisitShopHubCommandHandler : IRequestHandler<VisitShopHubCommand, V
         ILogger<VisitShopHubCommandHandler> logger)
     {
         _zoneRepo = zoneRepo;
-        _logger   = logger;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the shop-visit outcome.</summary>
@@ -73,8 +73,8 @@ public class VisitShopHubCommandHandler : IRequestHandler<VisitShopHubCommand, V
 
         return new VisitShopHubResult
         {
-            Success  = true,
-            ZoneId   = zone.Id,
+            Success = true,
+            ZoneId = zone.Id,
             ZoneName = zone.Name,
         };
     }

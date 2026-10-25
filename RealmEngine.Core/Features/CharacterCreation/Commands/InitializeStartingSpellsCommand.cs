@@ -1,5 +1,5 @@
-using RealmEngine.Shared.Models;
 using MediatR;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.CharacterCreation.Commands;
 
@@ -37,7 +37,7 @@ public record InitializeStartingPowersResult
     /// Gets a value indicating whether the initialization was successful.
     /// </summary>
     public bool Success { get; init; }
-    
+
     /// <summary>
     /// Gets a message describing the result.
     /// </summary>

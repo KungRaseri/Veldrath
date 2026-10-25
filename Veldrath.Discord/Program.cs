@@ -2,13 +2,13 @@
 using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Options;
-using RealmEngine.Data;
 using RealmEngine.Core;
+using RealmEngine.Data;
+using Serilog;
+using Serilog.Events;
 using Veldrath.Discord;
 using Veldrath.Discord.Services;
 using Veldrath.Discord.Settings;
-using Serilog;
-using Serilog.Events;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
@@ -50,7 +50,7 @@ try
     builder.Services.AddSingleton(_ => new DiscordSocketClient(new DiscordSocketConfig
     {
         GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMessages,
-        LogLevel       = LogSeverity.Debug,
+        LogLevel = LogSeverity.Debug,
     }));
 
     builder.Services.AddSingleton(provider =>

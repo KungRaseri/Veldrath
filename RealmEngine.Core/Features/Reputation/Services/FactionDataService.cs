@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Models;
-using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Reputation.Services;
 

@@ -46,7 +46,7 @@ public class Party
     public bool AddMember(PartyMember member)
     {
         if (IsFull) return false;
-        
+
         Members.Add(member);
         return true;
     }
@@ -58,7 +58,7 @@ public class Party
     {
         var member = Members.FirstOrDefault(m => m.Id == memberId);
         if (member == null) return false;
-        
+
         Members.Remove(member);
         return true;
     }
@@ -66,6 +66,6 @@ public class Party
     /// <summary>
     /// Finds a party member by ID.
     /// </summary>
-    public PartyMember? FindMember(string memberId) => 
+    public PartyMember? FindMember(string memberId) =>
         Members.FirstOrDefault(m => m.Id == memberId);
 }

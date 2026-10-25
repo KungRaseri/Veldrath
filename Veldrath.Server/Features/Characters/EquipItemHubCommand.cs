@@ -71,7 +71,7 @@ public class EquipItemHubCommandHandler : IRequestHandler<EquipItemHubCommand, E
         ILogger<EquipItemHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
-        _logger        = logger;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the equip outcome.</summary>
@@ -126,9 +126,9 @@ public class EquipItemHubCommandHandler : IRequestHandler<EquipItemHubCommand, E
 
         return new EquipItemHubResult
         {
-            Success          = true,
-            Slot             = canonicalSlot,
-            ItemRef          = request.ItemRef,
+            Success = true,
+            Slot = canonicalSlot,
+            ItemRef = request.ItemRef,
             AllEquippedItems = new Dictionary<string, string>(equipment, StringComparer.OrdinalIgnoreCase),
         };
     }

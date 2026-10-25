@@ -19,9 +19,9 @@ public class GetQuestLogHubCommandHandlerTests
     private static Character MakeCharacter(Guid id, string name = "TestHero") =>
         new()
         {
-            Id        = id,
+            Id = id,
             AccountId = Guid.NewGuid(),
-            Name      = name,
+            Name = name,
             ClassName = "Warrior",
             SlotIndex = 1,
             Attributes = "{}",
@@ -34,10 +34,10 @@ public class GetQuestLogHubCommandHandlerTests
         IEnumerable<Quest>? failed = null) =>
         new()
         {
-            PlayerName     = playerName,
-            ActiveQuests    = (active    ?? []).ToList(),
+            PlayerName = playerName,
+            ActiveQuests = (active ?? []).ToList(),
             CompletedQuests = (completed ?? []).ToList(),
-            FailedQuests    = (failed    ?? []).ToList(),
+            FailedQuests = (failed ?? []).ToList(),
         };
 
     private static Quest MakeQuest(string slug, string title = "") =>
@@ -64,7 +64,7 @@ public class GetQuestLogHubCommandHandlerTests
     [Fact]
     public async Task Handle_ReturnsSuccess_WithEmptyQuests_WhenNoSaveGame()
     {
-        var charId   = Guid.NewGuid();
+        var charId = Guid.NewGuid();
         var charRepo = new Mock<ICharacterRepository>();
         charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(MakeCharacter(charId));
@@ -85,7 +85,7 @@ public class GetQuestLogHubCommandHandlerTests
     [Fact]
     public async Task Handle_ReturnsActiveQuests_WithActiveStatus()
     {
-        var charId   = Guid.NewGuid();
+        var charId = Guid.NewGuid();
         var charRepo = new Mock<ICharacterRepository>();
         charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(MakeCharacter(charId, "Hero"));
@@ -104,7 +104,7 @@ public class GetQuestLogHubCommandHandlerTests
     [Fact]
     public async Task Handle_ReturnsCompletedQuests_WithCompletedStatus()
     {
-        var charId   = Guid.NewGuid();
+        var charId = Guid.NewGuid();
         var charRepo = new Mock<ICharacterRepository>();
         charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(MakeCharacter(charId, "Hero"));
@@ -123,7 +123,7 @@ public class GetQuestLogHubCommandHandlerTests
     [Fact]
     public async Task Handle_ReturnsAllStatuses_WhenMixedQuests()
     {
-        var charId   = Guid.NewGuid();
+        var charId = Guid.NewGuid();
         var charRepo = new Mock<ICharacterRepository>();
         charRepo.Setup(r => r.GetByIdAsync(charId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(MakeCharacter(charId, "Hero"));

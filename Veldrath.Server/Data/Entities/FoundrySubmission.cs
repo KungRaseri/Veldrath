@@ -55,8 +55,8 @@ public class FoundrySubmission
     public Guid? ReviewerId { get; set; }
     public PlayerAccount? Reviewer { get; set; }
 
-    public DateTimeOffset CreatedAt  { get; set; } = DateTimeOffset.UtcNow;
-    public DateTimeOffset UpdatedAt  { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? ReviewedAt { get; set; }
 
     public ICollection<FoundryVote> Votes { get; set; } = [];

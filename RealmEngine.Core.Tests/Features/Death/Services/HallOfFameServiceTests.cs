@@ -1,8 +1,8 @@
 using FluentAssertions;
-using RealmEngine.Shared.Models;
+using Moq;
 using RealmEngine.Core.Abstractions;
 using RealmEngine.Data.Repositories;
-using Moq;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Tests.Features.Death.Services;
 

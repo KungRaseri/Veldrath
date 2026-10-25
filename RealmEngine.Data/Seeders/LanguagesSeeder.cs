@@ -31,16 +31,16 @@ public static class LanguagesSeeder
 
     private static Language Calethic(DateTimeOffset now) => new()
     {
-        Slug          = "calethic",
-        DisplayName   = "Calethic",
-        TypeKey       = "language",
+        Slug = "calethic",
+        DisplayName = "Calethic",
+        TypeKey = "language",
         TonalCharacter = "Hard + Formal — short architectural roots (K, R, TH, V, D) in functional vocabulary; drawn-out compound forms in titles and ceremonial speech.",
-        Description   = "The constructed language of the Caleth Empire. Calethic is an architectural, hard-sounding language built on a small set of CVC roots that compound freely. It operates in three registers—administrative, formal, and vaeld (ceremonial)—each with distinct word order and vowel quality. The language is notable for its junction-reduction rules at compound boundaries and its deliberate exclusion of sibilants from all non-ceremonial speech.",
-        SampleText    = "Aethori vel kaeld — Thorn-kael-Aethori naeldithorn Kaelorneth.",
-        RarityWeight  = 100,
-        IsActive      = true,
-        Version       = 1,
-        UpdatedAt     = now,
+        Description = "The constructed language of the Caleth Empire. Calethic is an architectural, hard-sounding language built on a small set of CVC roots that compound freely. It operates in three registers—administrative, formal, and vaeld (ceremonial)—each with distinct word order and vowel quality. The language is notable for its junction-reduction rules at compound boundaries and its deliberate exclusion of sibilants from all non-ceremonial speech.",
+        SampleText = "Aethori vel kaeld — Thorn-kael-Aethori naeldithorn Kaelorneth.",
+        RarityWeight = 100,
+        IsActive = true,
+        Version = 1,
+        UpdatedAt = now,
 
         Phonology = new LanguagePhonology
         {
@@ -73,9 +73,9 @@ public static class LanguagesSeeder
                 new LanguageVowel { Symbol = "ald", Sound = "/ɔːld/",              Register = "formal",     Notes = "Vowel-and-cluster unit — appears in place suffix -ald and roots like daeld" },
             ],
             AllowedSyllablePatterns = ["CVC", "CV", "CVCC"],
-            AllowedInitialClusters  = ["VR-", "KR-", "DR-", "THL-"],
-            ForbiddenClusters       = ["S-", "SH-", "three consecutive consonants", "word-initial affricate"],
-            AllowedFinalClusters    = ["-LD", "-LT", "-RN", "-TH", "-VN", "-RG", "-LN", "-ND"],
+            AllowedInitialClusters = ["VR-", "KR-", "DR-", "THL-"],
+            ForbiddenClusters = ["S-", "SH-", "three consecutive consonants", "word-initial affricate"],
+            AllowedFinalClusters = ["-LD", "-LT", "-RN", "-TH", "-VN", "-RG", "-LN", "-ND"],
             JunctionRules =
             [
                 new LanguageJunctionRule { Cluster = "-d + r-",   Rule = "D drops before R (D-drop)",                                                    FormalExample = "vaeld + raeth → vaelraeth",        AdministrativeExample = "same" },

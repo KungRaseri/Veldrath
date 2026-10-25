@@ -524,8 +524,8 @@ public class EfCoreSpeciesRepositoryTests
         await using var db = CreateDbContext();
         db.Species.AddRange(
             MakeSpecies("human", "humanoid"),
-            MakeSpecies("wolf",  "beast"),
-            MakeSpecies("elf",   "humanoid"));
+            MakeSpecies("wolf", "beast"),
+            MakeSpecies("elf", "humanoid"));
         await db.SaveChangesAsync();
         var repo = new EfCoreSpeciesRepository(db, NullLogger<EfCoreSpeciesRepository>.Instance);
 
@@ -586,10 +586,10 @@ public class EfCoreMaterialRepositoryTests
     {
         await using var db = CreateDbContext();
         db.Materials.AddRange(
-            MakeMaterial("iron",     "metal"),
-            MakeMaterial("oak",      "wood"),
-            MakeMaterial("steel",    "metal"),
-            MakeMaterial("leather",  "leather"));
+            MakeMaterial("iron", "metal"),
+            MakeMaterial("oak", "wood"),
+            MakeMaterial("steel", "metal"),
+            MakeMaterial("leather", "leather"));
         await db.SaveChangesAsync();
         var repo = new EfCoreMaterialRepository(db);
 
@@ -719,8 +719,8 @@ public class EfCoreNpcRepositoryTests
         await using var db = CreateDbContext();
         db.ActorArchetypes.AddRange(
             MakeArchetype("blacksmith", "merchant"),
-            MakeArchetype("guard",      "guard"),
-            MakeArchetype("alchemist",  "merchant"));
+            MakeArchetype("guard", "guard"),
+            MakeArchetype("alchemist", "merchant"));
         await db.SaveChangesAsync();
         var repo = new EfCoreNpcRepository(db, NullLogger<EfCoreNpcRepository>.Instance);
 
@@ -783,9 +783,9 @@ public class EfCoreEnemyRepositoryTests
     {
         await using var db = CreateDbContext();
         db.ActorArchetypes.AddRange(
-            MakeArchetype("wolf",   "beasts/wolf"),
+            MakeArchetype("wolf", "beasts/wolf"),
             MakeArchetype("bandit", "humanoids/bandit"),
-            MakeArchetype("bear",   "beasts/bear"));
+            MakeArchetype("bear", "beasts/bear"));
         await db.SaveChangesAsync();
         var repo = new EfCoreEnemyRepository(db, NullLogger<EfCoreEnemyRepository>.Instance);
 
@@ -848,8 +848,8 @@ public class EfCoreLootTableRepositoryTests
     {
         await using var db = CreateDbContext();
         db.LootTables.AddRange(
-            MakeLootTable("orc-drops",  "enemies"),
-            MakeLootTable("chest-a",    "chests"),
+            MakeLootTable("orc-drops", "enemies"),
+            MakeLootTable("chest-a", "chests"),
             MakeLootTable("wolf-drops", "enemies"));
         await db.SaveChangesAsync();
         var repo = new EfCoreLootTableRepository(db, NullLogger<EfCoreLootTableRepository>.Instance);
@@ -868,12 +868,12 @@ public class EfCoreLootTableRepositoryTests
         await db.SaveChangesAsync();
         db.LootTableEntries.Add(new LootTableEntry
         {
-            LootTableId  = table.Id,
-            ItemDomain   = "weapons",
-            ItemSlug     = "iron-sword",
-            DropWeight   = 50,
-            QuantityMin  = 1,
-            QuantityMax  = 1,
+            LootTableId = table.Id,
+            ItemDomain = "weapons",
+            ItemSlug = "iron-sword",
+            DropWeight = 50,
+            QuantityMin = 1,
+            QuantityMax = 1,
         });
         await db.SaveChangesAsync();
         var repo = new EfCoreLootTableRepository(db, NullLogger<EfCoreLootTableRepository>.Instance);

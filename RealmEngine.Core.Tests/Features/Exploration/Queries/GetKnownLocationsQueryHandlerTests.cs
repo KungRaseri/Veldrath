@@ -1,9 +1,9 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RealmEngine.Core.Features.Exploration;
 using RealmEngine.Core.Features.Exploration.Queries;
 using RealmEngine.Shared.Models;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Exploration.Queries;
 
@@ -119,12 +119,12 @@ public class GetKnownLocationsQueryHandlerTests
     {
         // Arrange
         var manyLocations = Enumerable.Range(1, 100)
-            .Select(i => new Location 
-            { 
+            .Select(i => new Location
+            {
                 Id = $"towns:location-{i}",
-                Name = $"Location {i}", 
+                Name = $"Location {i}",
                 Description = $"Test location {i}",
-                Type = "towns" 
+                Type = "towns"
             })
             .ToList();
         var query = new GetKnownLocationsQuery();
@@ -165,10 +165,10 @@ public class GetKnownLocationsQueryHandlerTests
     public async Task Handle_Should_Return_Readonly_List()
     {
         // Arrange
-        var locations = new List<Location> 
-        { 
-            new Location { Id = "towns:location-1", Name = "Location 1", Description = "First test location", Type = "towns" }, 
-            new Location { Id = "dungeons:location-2", Name = "Location 2", Description = "Second test location", Type = "dungeons" } 
+        var locations = new List<Location>
+        {
+            new Location { Id = "towns:location-1", Name = "Location 1", Description = "First test location", Type = "towns" },
+            new Location { Id = "dungeons:location-2", Name = "Location 2", Description = "Second test location", Type = "dungeons" }
         };
         var query = new GetKnownLocationsQuery();
 

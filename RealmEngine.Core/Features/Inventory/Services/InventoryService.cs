@@ -1,6 +1,6 @@
-using RealmEngine.Shared.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Inventory;
 
@@ -68,7 +68,7 @@ public class InventoryService
             {
                 existingStack.AddQuantity(item.Quantity);
                 await _mediator.Publish(new ItemAcquired(playerName, item.Name));
-                _logger.LogInformation("Item stacked in inventory: {ItemName} x{Quantity} (Total: {Total})", 
+                _logger.LogInformation("Item stacked in inventory: {ItemName} x{Quantity} (Total: {Total})",
                     item.Name, item.Quantity, existingStack.Quantity);
                 return true;
             }
@@ -77,7 +77,7 @@ public class InventoryService
         // Add as new item if not stackable or no existing stack found
         _inventory.Add(item);
         await _mediator.Publish(new ItemAcquired(playerName, item.Name));
-        _logger.LogInformation("Item added to inventory: {ItemName} ({ItemType}) x{Quantity}", 
+        _logger.LogInformation("Item added to inventory: {ItemName} ({ItemType}) x{Quantity}",
             item.Name, item.Type, item.Quantity);
         return true;
     }

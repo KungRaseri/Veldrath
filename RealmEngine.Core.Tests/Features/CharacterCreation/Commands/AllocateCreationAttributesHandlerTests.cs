@@ -20,8 +20,12 @@ public class AllocateCreationAttributesHandlerTests
         int intel = 10, int wis = 10, int cha = 10) =>
         new()
         {
-            ["Strength"] = str, ["Dexterity"] = dex, ["Constitution"] = con,
-            ["Intelligence"] = intel, ["Wisdom"] = wis, ["Charisma"] = cha,
+            ["Strength"] = str,
+            ["Dexterity"] = dex,
+            ["Constitution"] = con,
+            ["Intelligence"] = intel,
+            ["Wisdom"] = wis,
+            ["Charisma"] = cha,
         };
 
     [Fact]

@@ -27,12 +27,10 @@ services:
       - Email__Password=${EMAIL_PASSWORD}
       - Email__SenderAddress=${EMAIL_SENDER_ADDRESS:-noreply@veldrath.com}
       - Email__SenderName=Veldrath
-      # Public base URL for the main website (used for OAuth redirect validation)
+      # Public base URL for the main website — used to build email links
       - Web__BaseUrl=https://veldrath.com
-      # Shared secret for the temporary SvelteKit → Identity account bridge.
+      # Shared secret for the internal email relay called by Better Auth.
       - InternalBridge__Token=${INTERNAL_BRIDGE_TOKEN}
-      # Cross-subdomain rt cookie domain — covers veldrath.com and all subdomains
-      - Auth__CookieDomain=.veldrath.com
       # Seq log shipping — internal container reference (unchanged from base)
       - Seq__ServerUrl=http://seq
     restart: unless-stopped
@@ -53,7 +51,7 @@ services:
       - JWT_AUDIENCE=Veldrath.Client
       - PUBLIC_API_URL=https://api.veldrath.com
       - PUBLIC_HUB_URL=https://api.veldrath.com/hubs/game
-      # Internal container URL for the temporary Identity account bridge.
+      # Internal container URL for the email relay and server-side API calls.
       - INTERNAL_BRIDGE_URL=http://server:8080
       - INTERNAL_BRIDGE_TOKEN=${INTERNAL_BRIDGE_TOKEN}
       - DISCORD_CLIENT_ID=${OAUTH_DISCORD_CLIENT_ID}

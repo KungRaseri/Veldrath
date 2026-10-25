@@ -62,7 +62,7 @@ public class GainExperienceHubCommandHandler : IRequestHandler<GainExperienceHub
         ILogger<GainExperienceHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
-        _logger        = logger;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the experience-gain outcome.</summary>
@@ -84,16 +84,16 @@ public class GainExperienceHubCommandHandler : IRequestHandler<GainExperienceHub
 
         // Apply XP using the same rolling formula as RealmEngine.Shared.Models.Character.GainExperience():
         //   while (xp >= level * 100) { xp -= level * 100; level++; }
-        long xp    = character.Experience + request.Amount;
-        int  level = character.Level;
+        long xp = character.Experience + request.Amount;
+        int level = character.Level;
         while (xp >= (long)level * 100)
         {
             xp -= (long)level * 100;
             level++;
         }
 
-        character.Experience   = xp;
-        character.Level        = level;
+        character.Experience = xp;
+        character.Level = level;
         character.LastPlayedAt = DateTimeOffset.UtcNow;
 
         await _characterRepo.UpdateAsync(character, cancellationToken);
@@ -104,11 +104,11 @@ public class GainExperienceHubCommandHandler : IRequestHandler<GainExperienceHub
 
         return new GainExperienceHubResult
         {
-            Success       = true,
-            NewLevel      = level,
+            Success = true,
+            NewLevel = level,
             NewExperience = xp,
-            LeveledUp     = level > oldLevel,
-            LeveledUpTo   = level > oldLevel ? level : null,
+            LeveledUp = level > oldLevel,
+            LeveledUpTo = level > oldLevel ? level : null,
         };
     }
 }

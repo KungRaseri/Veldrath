@@ -65,7 +65,7 @@ public class AllocateCreationAttributesHandler(
         session.AttributeAllocations = new Dictionary<string, int>(request.Allocations);
         await sessionStore.UpdateSessionAsync(session);
 
-        int spent     = Config.CalculateTotalCost(request.Allocations);
+        int spent = Config.CalculateTotalCost(request.Allocations);
         int remaining = Config.TotalPoints - spent;
         logger.LogDebug("Session {SessionId}: attributes allocated, {Remaining} points remaining", request.SessionId, remaining);
         return new AllocateCreationAttributesResult { Success = true, Message = "Attributes allocated.", RemainingPoints = remaining };

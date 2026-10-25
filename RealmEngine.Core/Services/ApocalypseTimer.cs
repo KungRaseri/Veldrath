@@ -1,6 +1,5 @@
-using RealmEngine.Core.Abstractions;
-
 using Microsoft.Extensions.Logging;
+using RealmEngine.Core.Abstractions;
 
 namespace RealmEngine.Core.Services;
 
@@ -21,7 +20,7 @@ public class ApocalypseTimer : IApocalypseTimer
     private bool _hasShownThirtyMinWarning = false;
     private bool _hasShownTenMinWarning = false;
 
-private readonly ILogger<ApocalypseTimer> _logger;
+    private readonly ILogger<ApocalypseTimer> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ApocalypseTimer"/> class.

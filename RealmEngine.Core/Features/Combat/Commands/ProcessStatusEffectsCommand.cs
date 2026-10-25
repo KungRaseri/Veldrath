@@ -11,7 +11,7 @@ public record ProcessStatusEffectsCommand : IRequest<ProcessStatusEffectsResult>
 {
     /// <summary>Gets the target character (if processing player effects).</summary>
     public Character? TargetCharacter { get; init; }
-    
+
     /// <summary>Gets the target enemy (if processing enemy effects).</summary>
     public Enemy? TargetEnemy { get; init; }
 }
@@ -23,22 +23,22 @@ public record ProcessStatusEffectsResult
 {
     /// <summary>Total damage dealt by DoT effects this tick.</summary>
     public int TotalDamageTaken { get; init; }
-    
+
     /// <summary>Total healing from HoT effects this tick.</summary>
     public int TotalHealingReceived { get; init; }
-    
+
     /// <summary>Number of effects that expired this tick.</summary>
     public int EffectsExpired { get; init; }
-    
+
     /// <summary>List of effect types that expired.</summary>
     public List<StatusEffectType> ExpiredEffectTypes { get; init; } = new();
-    
+
     /// <summary>List of active effect types still ongoing.</summary>
     public List<StatusEffectType> ActiveEffectTypes { get; init; } = new();
-    
+
     /// <summary>Stat modifiers currently active from all effects.</summary>
     public Dictionary<string, int> TotalStatModifiers { get; init; } = new();
-    
+
     /// <summary>Messages describing what happened (for combat log).</summary>
     public List<string> Messages { get; init; } = new();
 }
@@ -69,8 +69,8 @@ public class ProcessStatusEffectsHandler : IRequestHandler<ProcessStatusEffectsC
     public Task<ProcessStatusEffectsResult> Handle(ProcessStatusEffectsCommand request, CancellationToken cancellationToken)
     {
         var targetName = request.TargetCharacter?.Name ?? request.TargetEnemy?.Name ?? "Unknown";
-        var activeEffects = request.TargetCharacter?.ActiveStatusEffects 
-            ?? request.TargetEnemy?.ActiveStatusEffects 
+        var activeEffects = request.TargetCharacter?.ActiveStatusEffects
+            ?? request.TargetEnemy?.ActiveStatusEffects
             ?? new List<StatusEffect>();
 
         if (!activeEffects.Any())
@@ -94,7 +94,7 @@ public class ProcessStatusEffectsHandler : IRequestHandler<ProcessStatusEffectsC
             {
                 var damage = effect.TickDamage * effect.StackCount;
                 totalDamage += damage;
-                
+
                 // Apply damage to target
                 if (request.TargetCharacter != null)
                 {
@@ -104,9 +104,9 @@ public class ProcessStatusEffectsHandler : IRequestHandler<ProcessStatusEffectsC
                 {
                     request.TargetEnemy.Health = Math.Max(0, request.TargetEnemy.Health - damage);
                 }
-                
+
                 messages.Add($"{targetName} takes {damage} {effect.DamageType} damage from {effect.Name}");
-                _logger.LogInformation("{Target} takes {Damage} {DamageType} damage from {Effect}", 
+                _logger.LogInformation("{Target} takes {Damage} {DamageType} damage from {Effect}",
                     targetName, damage, effect.DamageType, effect.Name);
             }
 
@@ -114,27 +114,27 @@ public class ProcessStatusEffectsHandler : IRequestHandler<ProcessStatusEffectsC
             if (effect.TickHealing > 0)
             {
                 var healing = effect.TickHealing * effect.StackCount;
-                
+
                 // Calculate actual healing applied (respect max health cap)
                 int actualHealing = 0;
                 if (request.TargetCharacter != null)
                 {
                     var healthBefore = request.TargetCharacter.Health;
-                    request.TargetCharacter.Health = Math.Min(request.TargetCharacter.MaxHealth, 
+                    request.TargetCharacter.Health = Math.Min(request.TargetCharacter.MaxHealth,
                         request.TargetCharacter.Health + healing);
                     actualHealing = request.TargetCharacter.Health - healthBefore;
                 }
                 else if (request.TargetEnemy != null)
                 {
                     var healthBefore = request.TargetEnemy.Health;
-                    request.TargetEnemy.Health = Math.Min(request.TargetEnemy.MaxHealth, 
+                    request.TargetEnemy.Health = Math.Min(request.TargetEnemy.MaxHealth,
                         request.TargetEnemy.Health + healing);
                     actualHealing = request.TargetEnemy.Health - healthBefore;
                 }
-                
+
                 totalHealing += actualHealing;
                 messages.Add($"{targetName} heals {actualHealing} HP from {effect.Name}");
-                _logger.LogInformation("{Target} heals {Healing} HP from {Effect}", 
+                _logger.LogInformation("{Target} heals {Healing} HP from {Effect}",
                     targetName, actualHealing, effect.Name);
             }
 

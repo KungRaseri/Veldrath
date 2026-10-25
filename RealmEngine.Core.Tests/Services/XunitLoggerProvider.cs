@@ -64,7 +64,7 @@ public class XunitLogger : ILogger
 
             var shortCategory = _categoryName.Split('.').Last();
             _output.WriteLine($"[{level}] {shortCategory}: {message}");
-            
+
             if (exception != null)
             {
                 _output.WriteLine($"      Exception: {exception.Message}");

@@ -29,8 +29,8 @@ public class EfCoreSaveGameRepository : ISaveGameRepository
         else
         {
             existing.PlayerName = record.PlayerName;
-            existing.SaveDate   = record.SaveDate;
-            existing.DataJson   = record.DataJson;
+            existing.SaveDate = record.SaveDate;
+            existing.DataJson = record.DataJson;
         }
 
         _db.SaveChanges();
@@ -97,10 +97,10 @@ public class EfCoreSaveGameRepository : ISaveGameRepository
 
     private static SaveGameRecord ToRecord(SaveGame sg) => new()
     {
-        Id         = sg.Id,
+        Id = sg.Id,
         PlayerName = sg.PlayerName,
-        SaveDate   = sg.SaveDate,
-        DataJson   = JsonSerializer.Serialize(sg),
+        SaveDate = sg.SaveDate,
+        DataJson = JsonSerializer.Serialize(sg),
     };
 
     private static SaveGame FromRecord(SaveGameRecord r) =>

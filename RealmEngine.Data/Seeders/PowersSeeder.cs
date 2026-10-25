@@ -207,11 +207,11 @@ public static class PowersSeeder
     private static async Task SeedClassPowerUnlocksAsync(ContentDbContext db)
     {
         var warrior = await db.ActorClasses.FirstOrDefaultAsync(c => c.Slug == "warrior");
-        var mage    = await db.ActorClasses.FirstOrDefaultAsync(c => c.Slug == "mage");
+        var mage = await db.ActorClasses.FirstOrDefaultAsync(c => c.Slug == "mage");
 
         var powerStrike = await db.Powers.FirstOrDefaultAsync(p => p.Slug == "power-strike");
-        var toughness   = await db.Powers.FirstOrDefaultAsync(p => p.Slug == "toughness");
-        var fireball    = await db.Powers.FirstOrDefaultAsync(p => p.Slug == "fireball");
+        var toughness = await db.Powers.FirstOrDefaultAsync(p => p.Slug == "toughness");
+        var fireball = await db.Powers.FirstOrDefaultAsync(p => p.Slug == "fireball");
         var arcaneFocus = await db.Powers.FirstOrDefaultAsync(p => p.Slug == "arcane-focus");
 
         if (warrior is null || mage is null || powerStrike is null ||

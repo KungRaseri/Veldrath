@@ -151,7 +151,7 @@ public static class GodotLogger
             var prefix = level switch
             {
                 LogLevel.Error => "❌",
-                LogLevel.Fatal => "💀", 
+                LogLevel.Fatal => "💀",
                 LogLevel.Warning => "⚠️",
                 LogLevel.Info => "ℹ️",
                 LogLevel.Debug => "🐛",

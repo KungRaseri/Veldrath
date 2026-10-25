@@ -26,9 +26,9 @@ public static class CharacterEndpoints
             .WithTags("Characters")
             .RequireAuthorization();
 
-        group.MapGet("/",            ListAsync);
-        group.MapGet("/slots",       GetSlotsAsync);
-        group.MapPost("/",           CreateAsync);
+        group.MapGet("/", ListAsync);
+        group.MapGet("/slots", GetSlotsAsync);
+        group.MapPost("/", CreateAsync);
         group.MapDelete("/{id:guid}", DeleteAsync);
         group.MapGet("/last-session", GetLastSessionAsync);
         group.MapDelete("/last-session", DeleteLastSessionAsync);

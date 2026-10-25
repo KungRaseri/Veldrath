@@ -81,9 +81,9 @@ public class AttackEnemyHubCommandHandler
         ILogger<AttackEnemyHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
-        _scopeFactory  = scopeFactory;
-        _hubContext    = hubContext;
-        _logger        = logger;
+        _scopeFactory = scopeFactory;
+        _hubContext = hubContext;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the combat turn outcome.</summary>
@@ -115,7 +115,7 @@ public class AttackEnemyHubCommandHandler
         if (entity is null)
             return new AttackEnemyHubResult { Success = false, ErrorMessage = "Character not found" };
 
-        var attrs  = CombatHelpers.ParseAttrs(entity.Attributes, _logger);
+        var attrs = CombatHelpers.ParseAttrs(entity.Attributes, _logger);
         var player = CombatCharacterHydrator.Hydrate(entity, attrs);
 
         // --- Player attacks enemy ---
@@ -136,7 +136,7 @@ public class AttackEnemyHubCommandHandler
         if (!enemy.IsAlive)
         {
             var rewardList = await CombatHelpers.DistributeRewardsAsync(enemy, storeKey, _characterRepo, cancellationToken);
-            var myReward   = rewardList.FirstOrDefault(r => r.CharacterId == request.CharacterId);
+            var myReward = rewardList.FirstOrDefault(r => r.CharacterId == request.CharacterId);
 
             CombatHelpers.ScheduleRespawn(
                 storeKey, session.ZoneGroup, enemy.ArchetypeSlug,
@@ -152,13 +152,13 @@ public class AttackEnemyHubCommandHandler
 
             return new AttackEnemyHubResult
             {
-                Success              = true,
-                PlayerDamage         = playerDamage,
+                Success = true,
+                PlayerDamage = playerDamage,
                 EnemyRemainingHealth = 0,
-                EnemyDefeated        = true,
+                EnemyDefeated = true,
                 PlayerRemainingHealth = player.Health,
-                XpEarned             = myReward.Xp,
-                GoldEarned           = myReward.Gold,
+                XpEarned = myReward.Xp,
+                GoldEarned = myReward.Gold,
             };
         }
 
@@ -183,15 +183,15 @@ public class AttackEnemyHubCommandHandler
 
         return new AttackEnemyHubResult
         {
-            Success               = true,
-            PlayerDamage          = playerDamage,
-            EnemyRemainingHealth  = enemyRemainingHealth,
-            EnemyDefeated         = false,
-            EnemyDamage           = enemyDamage,
-            EnemyAbilityUsed      = abilityName,
+            Success = true,
+            PlayerDamage = playerDamage,
+            EnemyRemainingHealth = enemyRemainingHealth,
+            EnemyDefeated = false,
+            EnemyDamage = enemyDamage,
+            EnemyAbilityUsed = abilityName,
             PlayerRemainingHealth = player.Health,
-            PlayerDefeated        = isDead,
-            PlayerHardcoreDeath   = isHardcore,
+            PlayerDefeated = isDead,
+            PlayerHardcoreDeath = isHardcore,
         };
     }
 }

@@ -16,13 +16,7 @@ public class DevEndpointTests(WebAppFactory factory)
     // Helper — register + login, return bearer token.
     private async Task<string> GetTokenAsync(string username)
     {
-        var email = $"{username.ToLower()}@test.com";
-        await _client.PostAsJsonAsync("/api/auth/register",
-            new { Email = email, Username = username, Password = "TestP@ssword123" });
-        var login = await _client.PostAsJsonAsync("/api/auth/login",
-            new { Email = email, Password = "TestP@ssword123" });
-        var auth = await login.Content.ReadFromJsonAsync<AuthResponse>();
-        return auth!.AccessToken;
+        return (await factory.CreateAccountTokenAsync(username)).Token;
     }
 
     // Helper — register, login, create a character, return (token, characterId).

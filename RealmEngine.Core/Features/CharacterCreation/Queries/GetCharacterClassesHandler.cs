@@ -1,5 +1,5 @@
-using RealmEngine.Shared.Abstractions;
 using MediatR;
+using RealmEngine.Shared.Abstractions;
 
 namespace RealmEngine.Core.Features.CharacterCreation.Queries;
 

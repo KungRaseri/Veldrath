@@ -1,8 +1,8 @@
-using RealmEngine.Shared.Models;
+using Microsoft.Extensions.Logging;
+using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Services.Budget;
-using RealmEngine.Core.Generators.Modern;
-using Microsoft.Extensions.Logging;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Crafting.Services;
 
@@ -54,7 +54,7 @@ public class CraftingService
         foreach (var recipe in allRecipes)
         {
             // Filter by station if specified (case-insensitive)
-            if (!string.IsNullOrEmpty(stationId) && 
+            if (!string.IsNullOrEmpty(stationId) &&
                 !recipe.RequiredStation.Equals(stationId, StringComparison.OrdinalIgnoreCase))
                 continue;
 
@@ -189,7 +189,7 @@ public class CraftingService
         // Roll for success
         var successRoll = _random.Next(1, 101);
         var criticalRoll = _random.Next(1, 101);
-        
+
         var isSuccess = successRoll <= successChance;
         var isCritical = isSuccess && criticalRoll <= criticalChance;
 
@@ -230,7 +230,7 @@ public class CraftingService
         if (!isSuccess)
         {
             qualityBonus = Math.Max(0, qualityBonus - qualityReduction);
-            
+
             var severityText = failureSeverity switch
             {
                 1 => "marginal failure",
@@ -238,14 +238,14 @@ public class CraftingService
                 3 => "critical failure",
                 _ => "failure"
             };
-            
-            _logger.LogInformation("Crafting {Severity} for {Character} (roll={Roll} vs {Chance}%), producing quality {Quality}", 
+
+            _logger.LogInformation("Crafting {Severity} for {Character} (roll={Roll} vs {Chance}%), producing quality {Quality}",
                 severityText, character.Name, successRoll, successChance, qualityBonus);
         }
 
         // Handle materials and refunds
         var refundedMaterials = new List<(string ItemReference, int Quantity)>();
-        
+
         if (consumeMaterials)
         {
             foreach (var material in recipe.Materials)
@@ -258,11 +258,11 @@ public class CraftingService
                 {
                     refundQuantity = (int)Math.Ceiling(material.Quantity * (materialRefundPercent / 100.0));
                     consumedQuantity = material.Quantity - refundQuantity;
-                    
+
                     if (refundQuantity > 0)
                     {
                         refundedMaterials.Add((material.ItemReference, refundQuantity));
-                        _logger.LogInformation("Critical failure: Refunded {Quantity}x {Material} ({Percent}%)", 
+                        _logger.LogInformation("Critical failure: Refunded {Quantity}x {Material} ({Percent}%)",
                             refundQuantity, material.ItemReference, materialRefundPercent);
                     }
                 }
@@ -281,7 +281,7 @@ public class CraftingService
             Item = craftedItem,
             WasCritical = isCritical,
             QualityBonus = qualityBonus,
-            ActualQuality = (ItemRarity)Math.Clamp((int)recipe.MinQuality + qualityBonus, 
+            ActualQuality = (ItemRarity)Math.Clamp((int)recipe.MinQuality + qualityBonus,
                 (int)recipe.MinQuality, (int)recipe.MaxQuality),
             FailureSeverity = failureSeverity,
             RefundedMaterials = refundedMaterials
@@ -480,7 +480,7 @@ public class CraftingService
             return 0;
 
         // Extract item name from reference (e.g., "@items/materials/ores:iron-ore" → "iron-ore")
-        var itemName = itemReference.Contains(':') 
+        var itemName = itemReference.Contains(':')
             ? itemReference.Split(':')[1].Split('?')[0]  // Handle optional "?" suffix
             : itemReference;
 
@@ -489,12 +489,12 @@ public class CraftingService
         if (itemName == "*")
         {
             // Match items that could be materials (simple heuristic)
-            return character.Inventory.Count(item => 
+            return character.Inventory.Count(item =>
                 !string.IsNullOrEmpty(item.Id) || !string.IsNullOrEmpty(item.Name));
         }
 
         return character.Inventory
-            .Count(item => item.Id == itemName || item.Name == itemName || 
+            .Count(item => item.Id == itemName || item.Name == itemName ||
                           item.Id == itemReference || item.Name == itemReference);
     }
 }

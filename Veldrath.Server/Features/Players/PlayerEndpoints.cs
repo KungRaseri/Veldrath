@@ -39,12 +39,12 @@ public static class PlayerEndpoints
             .FirstOrDefaultAsync();
 
         return Results.Ok(new PlayerProfileDto(
-            AccountId:      account.Id,
-            Username:       account.UserName ?? string.Empty,
-            Level:          topCharacter?.Level ?? 0,
+            AccountId: account.Id,
+            Username: account.UserName ?? string.Empty,
+            Level: topCharacter?.Level ?? 0,
             CharacterClass: topCharacter?.ClassName,
-            Species:        topCharacter?.SpeciesSlug,
-            CurrentZone:    topCharacter?.CurrentZoneId,
-            RegisteredAt:   account.CreatedAt));
+            Species: topCharacter?.SpeciesSlug,
+            CurrentZone: topCharacter?.CurrentZoneId,
+            RegisteredAt: account.CreatedAt));
     }
 }

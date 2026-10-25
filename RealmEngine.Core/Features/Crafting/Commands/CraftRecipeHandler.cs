@@ -1,7 +1,7 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Features.Crafting.Services;
 using RealmEngine.Shared.Models;
-using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.Crafting.Commands;
 
@@ -38,9 +38,9 @@ public class CraftRecipeHandler : IRequestHandler<CraftRecipeCommand, CraftRecip
             // Validate that the character can craft this recipe
             if (!_craftingService.CanCraftRecipe(request.Character, request.Recipe, out var failureReason))
             {
-                _logger.LogWarning("Crafting failed for {CharacterName}: {Reason}", 
+                _logger.LogWarning("Crafting failed for {CharacterName}: {Reason}",
                     request.Character.Name, failureReason);
-                
+
                 return new CraftRecipeResult
                 {
                     Success = false,
@@ -49,7 +49,7 @@ public class CraftRecipeHandler : IRequestHandler<CraftRecipeCommand, CraftRecip
             }
 
             // Validate station matches recipe requirements (case-insensitive)
-            if (!request.Station.Id.Equals(request.Recipe.RequiredStation, StringComparison.OrdinalIgnoreCase) && 
+            if (!request.Station.Id.Equals(request.Recipe.RequiredStation, StringComparison.OrdinalIgnoreCase) &&
                 !request.Station.Slug.Equals(request.Recipe.RequiredStation, StringComparison.OrdinalIgnoreCase) &&
                 !request.Station.Name.Equals(request.Recipe.RequiredStation, StringComparison.OrdinalIgnoreCase))
             {
@@ -62,8 +62,8 @@ public class CraftRecipeHandler : IRequestHandler<CraftRecipeCommand, CraftRecip
 
             // Calculate item quality
             var quality = _craftingService.CalculateQuality(request.Character, request.Recipe);
-            
-            _logger.LogInformation("Crafting {RecipeName} for {CharacterName} with quality {Quality}", 
+
+            _logger.LogInformation("Crafting {RecipeName} for {CharacterName} with quality {Quality}",
                 request.Recipe.Name, request.Character.Name, quality);
 
             // Consume materials
@@ -95,9 +95,9 @@ public class CraftRecipeHandler : IRequestHandler<CraftRecipeCommand, CraftRecip
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error crafting recipe {RecipeName} for {CharacterName}", 
+            _logger.LogError(ex, "Error crafting recipe {RecipeName} for {CharacterName}",
                 request.Recipe.Name, request.Character.Name);
-            
+
             return new CraftRecipeResult
             {
                 Success = false,
@@ -122,19 +122,19 @@ public class CraftRecipeHandler : IRequestHandler<CraftRecipeCommand, CraftRecip
         foreach (var material in allMaterials)
         {
             // Extract item name from reference (e.g., "@items/materials/ores:iron-ore" → "iron-ore")
-            var itemName = material.ItemReference.Contains(':') 
+            var itemName = material.ItemReference.Contains(':')
                 ? material.ItemReference.Split(':')[1].Split('?')[0]  // Handle optional "?" suffix
                 : material.ItemReference;
-            
+
             var remaining = material.Quantity;
-            
+
             // Find and remove materials from inventory
             for (int i = character.Inventory!.Count - 1; i >= 0 && remaining > 0; i--)
             {
                 var item = character.Inventory[i];
-                
+
                 // Match against extracted item name OR full reference OR wildcard
-                if (item.Id == itemName || item.Name == itemName || 
+                if (item.Id == itemName || item.Name == itemName ||
                     item.Id == material.ItemReference || item.Name == material.ItemReference ||
                     itemName == "*")  // Wildcard match
                 {
@@ -157,7 +157,7 @@ public class CraftRecipeHandler : IRequestHandler<CraftRecipeCommand, CraftRecip
         // Note: Recipe.OutputItemReference contains the item reference (e.g., @items/weapons/swords:iron-sword)
         // ItemGenerator.GenerateFromReference() can be used for full template loading
         // Current implementation creates basic items with recipe-defined properties
-        
+
         var item = new Item
         {
             Id = Guid.NewGuid().ToString(),
@@ -216,7 +216,7 @@ public class CraftRecipeHandler : IRequestHandler<CraftRecipeCommand, CraftRecip
     {
         // Quality affects base stats
         var qualityMultiplier = quality / 100.0;
-        
+
         // Add bonuses based on item type
         switch (item.Type)
         {
@@ -224,7 +224,7 @@ public class CraftRecipeHandler : IRequestHandler<CraftRecipeCommand, CraftRecip
                 item.Traits["Strength"] = new TraitValue((int)(5 * qualityMultiplier), TraitType.Number);
                 item.Traits["Dexterity"] = new TraitValue((int)(3 * qualityMultiplier), TraitType.Number);
                 break;
-            
+
             case ItemType.Material:
                 // Materials don't have stat bonuses
                 break;
@@ -254,7 +254,7 @@ public class CraftRecipeHandler : IRequestHandler<CraftRecipeCommand, CraftRecip
         // Check for level-ups (simplified: 100 XP per level)
         var xpPerLevel = 100;
         var levelUps = 0;
-        
+
         while (skill.CurrentXP >= xpPerLevel && skill.CurrentRank < 100)
         {
             skill.CurrentXP -= xpPerLevel;

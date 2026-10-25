@@ -9,19 +9,14 @@ namespace Veldrath.Server.Infrastructure;
 internal static class DotEnvConfiguration
 {
     // .env uses service-friendly names; ASP.NET configuration uses __ separators.
+    // Only settings the server itself still reads are aliased. OAuth provider credentials,
+    // Foundry:BaseUrl, AllowedReturnUrlHosts, and Auth:CookieDomain belonged to the retired
+    // desktop sign-in and were removed with it.
     private static readonly Dictionary<string, string> Aliases = new(StringComparer.Ordinal)
     {
         ["JWT_KEY"] = "Jwt__Key",
-        ["OAUTH_DISCORD_CLIENT_ID"] = "OAuth__Discord__ClientId",
-        ["OAUTH_DISCORD_CLIENT_SECRET"] = "OAuth__Discord__ClientSecret",
-        ["OAUTH_GOOGLE_CLIENT_ID"] = "OAuth__Google__ClientId",
-        ["OAUTH_GOOGLE_CLIENT_SECRET"] = "OAuth__Google__ClientSecret",
-        ["OAUTH_MICROSOFT_CLIENT_ID"] = "OAuth__Microsoft__ClientId",
-        ["OAUTH_MICROSOFT_CLIENT_SECRET"] = "OAuth__Microsoft__ClientSecret",
-        ["FOUNDRY_PUBLIC_URL"] = "Foundry__BaseUrl",
         ["WEB_PUBLIC_URL"] = "Web__BaseUrl",
         ["INTERNAL_BRIDGE_TOKEN"] = "InternalBridge__Token",
-        ["ALLOWED_RETURN_URL_HOSTS"] = "AllowedReturnUrlHosts",
         ["EMAIL_SMTP_HOST"] = "Email__SmtpHost",
         ["EMAIL_SMTP_PORT"] = "Email__SmtpPort",
         ["EMAIL_ENABLE_TLS"] = "Email__EnableTls",

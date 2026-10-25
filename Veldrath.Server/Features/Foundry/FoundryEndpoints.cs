@@ -20,13 +20,13 @@ public static class FoundryEndpoints
     {
         var group = app.MapGroup("/api/foundry").WithTags("Foundry");
 
-        group.MapPost("/submissions",                     CreateAsync).RequireAuthorization().RequireRateLimiting("foundry-writes");
-        group.MapGet("/submissions",                      ListAsync);
-        group.MapGet("/submissions/{id:guid}",            GetAsync);
-        group.MapPost("/submissions/{id:guid}/vote",      VoteAsync).RequireAuthorization().RequireRateLimiting("foundry-writes");
-        group.MapPost("/submissions/{id:guid}/review",    ReviewAsync).RequireAuthorization("Curator").RequireRateLimiting("foundry-writes");
-        group.MapGet("/notifications",                    GetNotificationsAsync).RequireAuthorization();
-        group.MapPost("/notifications/{id:guid}/read",    MarkNotificationReadAsync).RequireAuthorization();
+        group.MapPost("/submissions", CreateAsync).RequireAuthorization().RequireRateLimiting("foundry-writes");
+        group.MapGet("/submissions", ListAsync);
+        group.MapGet("/submissions/{id:guid}", GetAsync);
+        group.MapPost("/submissions/{id:guid}/vote", VoteAsync).RequireAuthorization().RequireRateLimiting("foundry-writes");
+        group.MapPost("/submissions/{id:guid}/review", ReviewAsync).RequireAuthorization("Curator").RequireRateLimiting("foundry-writes");
+        group.MapGet("/notifications", GetNotificationsAsync).RequireAuthorization();
+        group.MapPost("/notifications/{id:guid}/read", MarkNotificationReadAsync).RequireAuthorization();
 
         return app;
     }
@@ -57,7 +57,7 @@ public static class FoundryEndpoints
         FoundryService service,
         CancellationToken ct)
     {
-        var resolvedPage     = Math.Max(1, page.GetValueOrDefault(1));
+        var resolvedPage = Math.Max(1, page.GetValueOrDefault(1));
         var resolvedPageSize = Math.Clamp(pageSize.GetValueOrDefault(20), 1, 100);
         var results = await service.ListSubmissionsAsync(status, contentType, search, resolvedPage, resolvedPageSize, ct);
         return Results.Ok(results);

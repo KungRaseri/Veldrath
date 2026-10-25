@@ -1,5 +1,5 @@
-using RealmEngine.Shared.Models;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Party.Services;
 
@@ -141,7 +141,7 @@ public class PartyAIService
             Type = ActionType.Attack,
             Damage = finalDamage,
             IsCritical = isCritical,
-            Message = isCritical 
+            Message = isCritical
                 ? $"{member.Name} lands a CRITICAL HIT on {enemy.Name} for {finalDamage} damage!"
                 : $"{member.Name} attacks {enemy.Name} for {finalDamage} damage."
         };

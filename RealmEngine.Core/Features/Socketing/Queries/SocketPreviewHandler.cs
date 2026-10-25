@@ -1,6 +1,6 @@
 using MediatR;
-using RealmEngine.Shared.Models;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Socketing.Queries;
 
@@ -47,8 +47,8 @@ public class SocketPreviewHandler : IRequestHandler<SocketPreviewQuery, SocketPr
             // Validate the operation
             var validation = _socketService.ValidateSocketing(mockSocket, request.SocketableItem);
             result.CanSocket = validation.IsValid;
-            result.Message = validation.IsValid 
-                ? $"Can socket {request.SocketableItem.Name}" 
+            result.Message = validation.IsValid
+                ? $"Can socket {request.SocketableItem.Name}"
                 : validation.ErrorMessage;
 
             if (validation.IsValid)
@@ -59,18 +59,18 @@ public class SocketPreviewHandler : IRequestHandler<SocketPreviewQuery, SocketPr
                 // Convert traits to display format
                 foreach (var trait in request.SocketableItem.Traits)
                 {
-                    var value = trait.Value.Type == TraitType.Number 
-                        ? trait.Value.AsDouble() 
+                    var value = trait.Value.Type == TraitType.Number
+                        ? trait.Value.AsDouble()
                         : 0.0;
                     var isPercentage = value < 1.0 && value > 0; // Values < 1 are percentages
-                    
+
                     result.StatBonuses.Add(new StatBonusDto
                     {
                         StatName = trait.Key,
                         Value = value,
                         IsPercentage = isPercentage,
-                        DisplayText = isPercentage 
-                            ? $"+{value * 100:F1}% {trait.Key}" 
+                        DisplayText = isPercentage
+                            ? $"+{value * 100:F1}% {trait.Key}"
                             : $"+{value} {trait.Key}"
                     });
                 }

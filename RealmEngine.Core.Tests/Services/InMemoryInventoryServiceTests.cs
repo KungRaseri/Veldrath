@@ -219,7 +219,7 @@ public class InMemoryInventoryServiceTests
         // Assert
         var inventory1 = _service.GetInventory(character1);
         var inventory2 = _service.GetInventory(character2);
-        
+
         inventory1[itemRef].Should().Be(5);
         inventory2[itemRef].Should().Be(10);
     }

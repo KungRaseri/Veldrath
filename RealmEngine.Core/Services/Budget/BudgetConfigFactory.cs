@@ -14,15 +14,15 @@ public class BudgetConfigFactory(GameConfigService configService, ILogger<Budget
 
     /// <summary>Loads the core budget configuration.</summary>
     /// <returns>Loaded or default <see cref="BudgetConfig"/>.</returns>
-    public BudgetConfig        GetBudgetConfig()    => Load<BudgetConfig>("budget-config");
+    public BudgetConfig GetBudgetConfig() => Load<BudgetConfig>("budget-config");
 
     /// <summary>Loads the material pool definitions.</summary>
     /// <returns>Loaded or default <see cref="MaterialPools"/>.</returns>
-    public MaterialPools       GetMaterialPools()   => Load<MaterialPools>("material-pools");
+    public MaterialPools GetMaterialPools() => Load<MaterialPools>("material-pools");
 
     /// <summary>Loads the enemy type definitions used for loot budget scaling.</summary>
     /// <returns>Loaded or default <see cref="EnemyTypes"/>.</returns>
-    public EnemyTypes          GetEnemyTypes()      => Load<EnemyTypes>("enemy-types");
+    public EnemyTypes GetEnemyTypes() => Load<EnemyTypes>("enemy-types");
 
     /// <summary>Loads the material filter configuration.</summary>
     /// <returns>Loaded or default <see cref="MaterialFilterConfig"/>.</returns>
@@ -30,7 +30,7 @@ public class BudgetConfigFactory(GameConfigService configService, ILogger<Budget
 
     /// <summary>Loads the socket system configuration.</summary>
     /// <returns>Loaded or default <see cref="SocketConfig"/>.</returns>
-    public SocketConfig        GetSocketConfig()    => Load<SocketConfig>("socket-config");
+    public SocketConfig GetSocketConfig() => Load<SocketConfig>("socket-config");
 
     private T Load<T>(string key) where T : new()
     {

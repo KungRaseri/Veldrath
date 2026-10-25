@@ -14,12 +14,12 @@ public class AddEnchantmentSlotCommand : IRequest<AddEnchantmentSlotResult>
     /// The character adding the slot (for skill validation).
     /// </summary>
     public required Character Character { get; set; }
-    
+
     /// <summary>
     /// The item to add a slot to.
     /// </summary>
     public required Item Item { get; set; }
-    
+
     /// <summary>
     /// The socket crystal item to consume.
     /// </summary>
@@ -35,17 +35,17 @@ public class AddEnchantmentSlotResult
     /// Whether the slot was successfully added.
     /// </summary>
     public bool Success { get; set; }
-    
+
     /// <summary>
     /// Result message describing what happened.
     /// </summary>
     public required string Message { get; set; }
-    
+
     /// <summary>
     /// The new MaxPlayerEnchantments value after adding the slot.
     /// </summary>
     public int NewMaxSlots { get; set; }
-    
+
     /// <summary>
     /// Whether the crystal was consumed.
     /// </summary>

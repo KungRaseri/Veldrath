@@ -1,6 +1,6 @@
+using MediatR;
 using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Shared.Models;
-using MediatR;
 
 namespace RealmEngine.Core.Features.Progression.Commands;
 

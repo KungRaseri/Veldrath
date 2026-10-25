@@ -44,7 +44,7 @@ public class GenerateEnemyCommandHandler : IRequestHandler<GenerateEnemyCommand,
             }
 
             var enemies = await _enemyGenerator.GenerateEnemiesAsync(request.Category, 1, request.Hydrate);
-            
+
             if (enemies == null || enemies.Count == 0)
             {
                 return new GenerateEnemyResult
@@ -65,7 +65,7 @@ public class GenerateEnemyCommandHandler : IRequestHandler<GenerateEnemyCommand,
                 enemy.Health = enemy.MaxHealth;
             }
 
-            _logger.LogDebug("Generated enemy: {EnemyName} (Level {Level}) from category {Category}", 
+            _logger.LogDebug("Generated enemy: {EnemyName} (Level {Level}) from category {Category}",
                 enemy.Name, enemy.Level, request.Category);
 
             return new GenerateEnemyResult

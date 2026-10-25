@@ -1,9 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
-using AspNet.Security.OAuth.Discord;
-using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
@@ -14,27 +11,28 @@ using Veldrath.Server.Features.Auth;
 namespace Veldrath.Server.Infrastructure;
 
 /// <summary>
-/// Registers ASP.NET Core Identity, JWT bearer authentication, authorization policies, and the
-/// optional external OAuth providers used by the server API and SignalR hub.
+/// Registers ASP.NET Core Identity (kept for RBAC), JWT bearer validation of Better Auth tokens, and
+/// the authorization policies used by the server API and SignalR hub.
 /// </summary>
 /// <remarks>
-/// Extracted from <c>Program.cs</c> so the startup file only sequences the registrations. The
-/// behaviour is unchanged: Identity first, then JWT bearer (so it overrides Identity's cookie
-/// defaults), then authorization, then the OAuth providers that have credentials configured.
+/// Extracted from <c>Program.cs</c> so the startup file only sequences the registrations. Identity is
+/// still the user/role/permission store, but it is <em>not</em> an authentication provider: there are
+/// no password logins and no OAuth challenges on the server any more — Better Auth (the SvelteKit app)
+/// owns credentials, registration, login, and provider linking, and the server only validates the
+/// JWTs it mints.
 /// </remarks>
 public static class AuthSetup
 {
     /// <summary>
-    /// Adds Identity, JWT bearer authentication, the permission policies, and any OAuth providers
-    /// whose client ID and secret are configured.
+    /// Adds the Identity stores used for roles/permissions, JWT bearer authentication of Better Auth
+    /// tokens, and the permission policies.
     /// </summary>
     /// <param name="builder">The application builder whose configuration and services are used.</param>
-    /// <returns>The names of the OAuth providers that were registered, in registration order.</returns>
     /// <exception cref="InvalidOperationException">
     /// Thrown when <c>Jwt:Key</c>, <c>Jwt:Issuer</c>, or <c>Jwt:Audience</c> is missing or empty, so the
     /// process fails fast at startup instead of returning opaque 401s at runtime.
     /// </exception>
-    public static string[] AddVeldrathIdentityAndAuth(this WebApplicationBuilder builder)
+    public static void AddVeldrathIdentityAndAuth(this WebApplicationBuilder builder)
     {
         // AddIdentity must be registered before AddAuthentication so that the explicit
         // AddAuthentication call below can override Identity's default cookie schemes
@@ -55,15 +53,9 @@ public static class AuthSetup
         AddJwtBearer(builder);
         AddAuthorizationPolicies(builder);
 
-        var providers = AddOAuthProviders(builder);
-
         Log.Information(
-            "OAuth providers configured: {Providers}",
-            providers.Length == 0
-                ? "none (external login endpoints will return 503 until credentials are set)"
-                : string.Join(", ", providers));
-
-        return providers;
+            "Authentication: Better Auth tokens validated with issuer={Issuer}; Identity is used for RBAC only.",
+            builder.Configuration["Jwt:Issuer"]);
     }
 
     /// <summary>
@@ -155,91 +147,5 @@ public static class AuthSetup
             foreach (var permission in Permissions.All)
                 options.AddPolicy(permission, p => p.RequireClaim("permission", permission));
         });
-    }
-
-    /// <summary>
-    /// Registers the OAuth providers that have credentials, so the server starts cleanly when they
-    /// are absent (CI, local dev without OAuth app registrations).
-    /// </summary>
-    /// <param name="builder">The application builder whose configuration and services are used.</param>
-    /// <returns>The provider names that were registered.</returns>
-    /// <remarks>
-    /// <c>SignInScheme</c> must be explicitly set to <see cref="IdentityConstants.ExternalScheme"/>
-    /// so the OAuth middleware writes the external cookie that <c>GetExternalLoginInfoAsync</c>
-    /// reads, and the correlation cookie must not require Secure on plain HTTP (Docker dev).
-    /// </remarks>
-    private static string[] AddOAuthProviders(WebApplicationBuilder builder)
-    {
-        var providers = new List<string>();
-
-        // Compose maps OAUTH_* to OAuth__*; fall back to the .env names so a locally
-        // sourced .env (set -a; source .env; dotnet run) also works.
-        var discordId = builder.Configuration["OAuth:Discord:ClientId"]
-            ?? Environment.GetEnvironmentVariable("OAUTH_DISCORD_CLIENT_ID");
-        var discordSecret = builder.Configuration["OAuth:Discord:ClientSecret"]
-            ?? Environment.GetEnvironmentVariable("OAUTH_DISCORD_CLIENT_SECRET");
-        if (!string.IsNullOrEmpty(discordId) && !string.IsNullOrEmpty(discordSecret))
-        {
-            builder.Services.AddAuthentication()
-                .AddDiscord(o =>
-                {
-                    o.SignInScheme = IdentityConstants.ExternalScheme;
-                    o.ClientId = discordId;
-                    o.ClientSecret = discordSecret;
-                    o.Scope.Add("email");
-                    o.Events.OnTicketReceived = ExternalAuthEndpoints.HandleOAuthTicket;
-                    // Correlation cookie must not require Secure on plain HTTP (Docker dev).
-                    o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-                    o.CorrelationCookie.SameSite = SameSiteMode.Lax;
-                });
-            providers.Add("Discord");
-        }
-
-        var googleId = builder.Configuration["OAuth:Google:ClientId"]
-            ?? Environment.GetEnvironmentVariable("OAUTH_GOOGLE_CLIENT_ID");
-        var googleSecret = builder.Configuration["OAuth:Google:ClientSecret"]
-            ?? Environment.GetEnvironmentVariable("OAUTH_GOOGLE_CLIENT_SECRET");
-        if (!string.IsNullOrEmpty(googleId) && !string.IsNullOrEmpty(googleSecret))
-        {
-            builder.Services.AddAuthentication()
-                .AddGoogle(o =>
-                {
-                    o.SignInScheme = IdentityConstants.ExternalScheme;
-                    o.ClientId = googleId;
-                    o.ClientSecret = googleSecret;
-                    o.Events.OnTicketReceived = ExternalAuthEndpoints.HandleOAuthTicket;
-                    // Correlation cookie must not require Secure on plain HTTP (Docker dev).
-                    o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-                    o.CorrelationCookie.SameSite = SameSiteMode.Lax;
-                });
-            providers.Add("Google");
-        }
-
-        var microsoftId = builder.Configuration["OAuth:Microsoft:ClientId"]
-            ?? Environment.GetEnvironmentVariable("OAUTH_MICROSOFT_CLIENT_ID");
-        var microsoftSecret = builder.Configuration["OAuth:Microsoft:ClientSecret"]
-            ?? Environment.GetEnvironmentVariable("OAUTH_MICROSOFT_CLIENT_SECRET");
-        if (!string.IsNullOrEmpty(microsoftId) && !string.IsNullOrEmpty(microsoftSecret))
-        {
-            builder.Services.AddAuthentication()
-                .AddMicrosoftAccount(o =>
-                {
-                    o.SignInScheme = IdentityConstants.ExternalScheme;
-                    o.ClientId = microsoftId;
-                    o.ClientSecret = microsoftSecret;
-                    // /consumers/ targets personal Microsoft accounts (Xbox/Live/Outlook) only,
-                    // which avoids the userAudience mismatch that /common/ produces with a
-                    // single-tenant app registration.
-                    o.AuthorizationEndpoint = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize";
-                    o.TokenEndpoint = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";
-                    o.Events.OnTicketReceived = ExternalAuthEndpoints.HandleOAuthTicket;
-                    // Correlation cookie must not require Secure on plain HTTP (Docker dev).
-                    o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-                    o.CorrelationCookie.SameSite = SameSiteMode.Lax;
-                });
-            providers.Add("Microsoft");
-        }
-
-        return [.. providers];
     }
 }

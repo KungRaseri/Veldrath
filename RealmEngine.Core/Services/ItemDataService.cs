@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Models;
-using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Services;
 
@@ -57,7 +57,7 @@ public class ItemDataService
             var rarity = GetRarity(i.RarityWeight);
             if (rarityFilter.HasValue && rarity != rarityFilter.Value) continue;
             var subType = i.ItemType == "weapon" ? (i.WeaponType ?? i.ItemType)
-                        : i.ItemType == "armor"  ? (i.ArmorType  ?? i.ItemType)
+                        : i.ItemType == "armor" ? (i.ArmorType ?? i.ItemType)
                         : i.ItemType;
             results.Add(new ItemTemplate { Slug = i.Slug, Name = i.DisplayName ?? i.TypeKey, Category = category, Type = subType, RarityWeight = i.RarityWeight, BasePrice = i.Stats.Value ?? 0, Rarity = rarity });
         }

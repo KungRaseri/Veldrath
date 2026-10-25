@@ -22,10 +22,16 @@ public class GetCreationPreviewHandlerTests
         int startHp = 100, int startMana = 50) =>
         new()
         {
-            Name = "TestClass", Slug = "test-class",
-            BonusStrength = str, BonusDexterity = dex, BonusConstitution = con,
-            BonusIntelligence = intel, BonusWisdom = wis, BonusCharisma = cha,
-            StartingHealth = startHp, StartingMana = startMana,
+            Name = "TestClass",
+            Slug = "test-class",
+            BonusStrength = str,
+            BonusDexterity = dex,
+            BonusConstitution = con,
+            BonusIntelligence = intel,
+            BonusWisdom = wis,
+            BonusCharisma = cha,
+            StartingHealth = startHp,
+            StartingMana = startMana,
         };
 
     [Fact]
@@ -73,8 +79,12 @@ public class GetCreationPreviewHandlerTests
             SelectedClass = MakeClass(str: 3),
             AttributeAllocations = new Dictionary<string, int>
             {
-                ["Strength"] = 12, ["Dexterity"] = 10, ["Constitution"] = 10,
-                ["Intelligence"] = 10, ["Wisdom"] = 10, ["Charisma"] = 10,
+                ["Strength"] = 12,
+                ["Dexterity"] = 10,
+                ["Constitution"] = 10,
+                ["Intelligence"] = 10,
+                ["Wisdom"] = 10,
+                ["Charisma"] = 10,
             },
         };
         _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
@@ -104,7 +114,7 @@ public class GetCreationPreviewHandlerTests
         var species = new SpeciesModel { Slug = "elf", BonusDexterity = 2 };
         var session = new CharacterCreationSession
         {
-            SelectedClass   = MakeClass(),
+            SelectedClass = MakeClass(),
             SelectedSpecies = species,
         };
         _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
@@ -135,16 +145,16 @@ public class GetCreationPreviewHandlerTests
     {
         var background = new Background
         {
-            Slug               = "soldier",
-            Name               = "Soldier",
-            PrimaryAttribute   = "Strength",
-            PrimaryBonus       = 2,
+            Slug = "soldier",
+            Name = "Soldier",
+            PrimaryAttribute = "Strength",
+            PrimaryBonus = 2,
             SecondaryAttribute = "Constitution",
-            SecondaryBonus     = 1,
+            SecondaryBonus = 1,
         };
         var session = new CharacterCreationSession
         {
-            SelectedClass      = MakeClass(),
+            SelectedClass = MakeClass(),
             SelectedBackground = background,
         };
         _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);

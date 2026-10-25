@@ -61,10 +61,10 @@ public class EfCoreTraitDefinitionRepositoryTests
     {
         await using var db = CreateDbContext();
         db.TraitDefinitions.AddRange(
-            MakeTrait("global-trait",    appliesTo: "*"),
-            MakeTrait("enemy-specific",  appliesTo: "enemies"),
+            MakeTrait("global-trait", appliesTo: "*"),
+            MakeTrait("enemy-specific", appliesTo: "enemies"),
             MakeTrait("weapon-specific", appliesTo: "weapons"),
-            MakeTrait("multi-target",    appliesTo: "enemies,weapons"));
+            MakeTrait("multi-target", appliesTo: "enemies,weapons"));
         await db.SaveChangesAsync();
         var repo = new EfCoreTraitDefinitionRepository(db, NullLogger<EfCoreTraitDefinitionRepository>.Instance);
 

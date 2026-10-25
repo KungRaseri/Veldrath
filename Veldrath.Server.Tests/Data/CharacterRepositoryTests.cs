@@ -58,7 +58,7 @@ public class CharacterRepositoryTests : IDisposable
         var repo = new CharacterRepository(db);
         var accountId = await SeedAccountAsync(db);
 
-        var c1 = await repo.CreateAsync(MakeCharacter(accountId, "Char_Alive",   1));
+        var c1 = await repo.CreateAsync(MakeCharacter(accountId, "Char_Alive", 1));
         var c2 = await repo.CreateAsync(MakeCharacter(accountId, "Char_Deleted", 2));
         await repo.SoftDeleteAsync(c2.Id);
 
@@ -141,7 +141,7 @@ public class CharacterRepositoryTests : IDisposable
         var repo = new CharacterRepository(db);
         var accountId = await SeedAccountAsync(db);
 
-        await repo.CreateAsync(MakeCharacter(accountId, "OldChar",    1));
+        await repo.CreateAsync(MakeCharacter(accountId, "OldChar", 1));
         var recent = await repo.CreateAsync(MakeCharacter(accountId, "RecentChar", 2));
 
         // Bump LastPlayedAt on the "recent" character
@@ -308,7 +308,7 @@ public class CharacterRepositoryTests : IDisposable
     public async Task CreateAsync_AfterSoftDelete_SameNameSucceeds()
     {
         await using var db = _factory.CreateContext();
-        var repo      = new CharacterRepository(db);
+        var repo = new CharacterRepository(db);
         var accountId = await SeedAccountAsync(db);
 
         var original = await repo.CreateAsync(MakeCharacter(accountId, "Hero", 1));
@@ -323,7 +323,7 @@ public class CharacterRepositoryTests : IDisposable
     public async Task CreateAsync_AfterSoftDelete_NewCharacterIsActive()
     {
         await using var db = _factory.CreateContext();
-        var repo      = new CharacterRepository(db);
+        var repo = new CharacterRepository(db);
         var accountId = await SeedAccountAsync(db);
 
         var first = await repo.CreateAsync(MakeCharacter(accountId, "Hero", 1));
@@ -340,9 +340,9 @@ public class CharacterRepositoryTests : IDisposable
     public async Task CreateAsync_AfterSoftDelete_DifferentAccountClaimsName()
     {
         await using var db = _factory.CreateContext();
-        var repo      = new CharacterRepository(db);
-        var accountA  = await SeedAccountAsync(db, "Owner_A");
-        var accountB  = await SeedAccountAsync(db, "Owner_B");
+        var repo = new CharacterRepository(db);
+        var accountA = await SeedAccountAsync(db, "Owner_A");
+        var accountB = await SeedAccountAsync(db, "Owner_B");
 
         var original = await repo.CreateAsync(MakeCharacter(accountA, "SharedName", 1));
         await repo.SoftDeleteAsync(original.Id);
@@ -356,7 +356,7 @@ public class CharacterRepositoryTests : IDisposable
     public async Task SoftDeleteAsync_RenamesCharacter_In_Database()
     {
         await using var db = _factory.CreateContext();
-        var repo      = new CharacterRepository(db);
+        var repo = new CharacterRepository(db);
         var accountId = await SeedAccountAsync(db);
 
         var c = await repo.CreateAsync(MakeCharacter(accountId, "OriginalName", 1));
@@ -371,7 +371,7 @@ public class CharacterRepositoryTests : IDisposable
     public async Task SoftDeleteAsync_AssignsNegativeSlot_FreesSlotForNewCharacter()
     {
         await using var db = _factory.CreateContext();
-        var repo      = new CharacterRepository(db);
+        var repo = new CharacterRepository(db);
         var accountId = await SeedAccountAsync(db);
 
         var c = await repo.CreateAsync(MakeCharacter(accountId, "SlotHolder", 1));
@@ -386,7 +386,7 @@ public class CharacterRepositoryTests : IDisposable
     public async Task MultipleDeletes_OnSameAccount_DoNotViolateSlotConstraint()
     {
         await using var db = _factory.CreateContext();
-        var repo      = new CharacterRepository(db);
+        var repo = new CharacterRepository(db);
         var accountId = await SeedAccountAsync(db);
 
         var c1 = await repo.CreateAsync(MakeCharacter(accountId, "Multi_A", 1));
@@ -407,10 +407,10 @@ public class CharacterRepositoryTests : IDisposable
     public async Task GetLastPlayedAsync_Should_Exclude_Soft_Deleted_Characters()
     {
         await using var db = _factory.CreateContext();
-        var repo      = new CharacterRepository(db);
+        var repo = new CharacterRepository(db);
         var accountId = await SeedAccountAsync(db);
 
-        var alive   = await repo.CreateAsync(MakeCharacter(accountId, "Alive",   1));
+        var alive = await repo.CreateAsync(MakeCharacter(accountId, "Alive", 1));
         var deleted = await repo.CreateAsync(MakeCharacter(accountId, "Deleted", 2));
 
         // Make "Deleted" the most recently played, then delete it
@@ -426,13 +426,13 @@ public class CharacterRepositoryTests : IDisposable
     public async Task GetActiveCountAsync_Remains_Accurate_After_Multiple_Deletions()
     {
         await using var db = _factory.CreateContext();
-        var repo      = new CharacterRepository(db);
+        var repo = new CharacterRepository(db);
         var accountId = await SeedAccountAsync(db);
 
-        var c1 = await repo.CreateAsync(MakeCharacter(accountId, "Keep_A",  1));
-        var c2 = await repo.CreateAsync(MakeCharacter(accountId, "Keep_B",  2));
-        var c3 = await repo.CreateAsync(MakeCharacter(accountId, "Del_C",   3));
-        var c4 = await repo.CreateAsync(MakeCharacter(accountId, "Del_D",   4));
+        var c1 = await repo.CreateAsync(MakeCharacter(accountId, "Keep_A", 1));
+        var c2 = await repo.CreateAsync(MakeCharacter(accountId, "Keep_B", 2));
+        var c3 = await repo.CreateAsync(MakeCharacter(accountId, "Del_C", 3));
+        var c4 = await repo.CreateAsync(MakeCharacter(accountId, "Del_D", 4));
         _ = c1; _ = c2;
 
         await repo.SoftDeleteAsync(c3.Id);
@@ -445,7 +445,7 @@ public class CharacterRepositoryTests : IDisposable
     public async Task NameExistsAsync_Should_Return_True_After_Recreate()
     {
         await using var db = _factory.CreateContext();
-        var repo      = new CharacterRepository(db);
+        var repo = new CharacterRepository(db);
         var accountId = await SeedAccountAsync(db);
 
         var first = await repo.CreateAsync(MakeCharacter(accountId, "Recurring", 1));
@@ -460,7 +460,7 @@ public class CharacterRepositoryTests : IDisposable
     public async Task UpdateCurrentZoneLocationAsync_Should_Persist_LocationSlug()
     {
         await using var db = _factory.CreateContext();
-        var repo      = new CharacterRepository(db);
+        var repo = new CharacterRepository(db);
         var accountId = await SeedAccountAsync(db);
 
         var c = await repo.CreateAsync(MakeCharacter(accountId, "LocationMover", 1));
@@ -475,7 +475,7 @@ public class CharacterRepositoryTests : IDisposable
     public async Task UpdateCurrentZoneLocationAsync_Should_Allow_Null_To_Clear_Location()
     {
         await using var db = _factory.CreateContext();
-        var repo      = new CharacterRepository(db);
+        var repo = new CharacterRepository(db);
         var accountId = await SeedAccountAsync(db);
 
         var c = await repo.CreateAsync(MakeCharacter(accountId, "LocationClearer", 1));

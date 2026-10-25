@@ -13,9 +13,9 @@ namespace Veldrath.Discord.Features;
 [Group("generate", "Conjure content from the realm's engine — forged fresh from the data catalog")]
 public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<SocketInteractionContext>
 {
-    internal static readonly Color ItemColor    = new(0x7B2FBE);
-    internal static readonly Color EnemyColor   = new(0xAD1414);
-    internal static readonly Color NpcColor     = new(0xC47A00);
+    internal static readonly Color ItemColor = new(0x7B2FBE);
+    internal static readonly Color EnemyColor = new(0xAD1414);
+    internal static readonly Color NpcColor = new(0xC47A00);
     internal static readonly Color AbilityColor = new(0x1E5FA3);
 
     // /generate item
@@ -134,9 +134,9 @@ public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<S
         var parts = type.Split('/', 2);
         var result = await mediator.Send(new GeneratePowerCommand
         {
-            Category    = parts[0],
+            Category = parts[0],
             Subcategory = parts.Length > 1 ? parts[1] : string.Empty,
-            Count       = 1,
+            Count = 1,
         });
 
         if (!result.Success || result.Powers is null || result.Powers.Count == 0)
@@ -158,7 +158,7 @@ public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<S
     internal static Embed BuildItemEmbed(Item item, Color accent)
     {
         var title = item.Name;
-        var desc  = string.IsNullOrWhiteSpace(item.Description) ? null
+        var desc = string.IsNullOrWhiteSpace(item.Description) ? null
                   : item.Description.Length > 200 ? item.Description[..200] + "…"
                   : item.Description;
 
@@ -171,9 +171,9 @@ public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<S
             embed.WithDescription(desc);
 
         embed
-            .AddField("Type",   item.Type.ToString(),    inline: true)
-            .AddField("Rarity", item.Rarity.ToString(),  inline: true)
-            .AddField("Price",  $"{item.Price}g",         inline: true);
+            .AddField("Type", item.Type.ToString(), inline: true)
+            .AddField("Rarity", item.Rarity.ToString(), inline: true)
+            .AddField("Price", $"{item.Price}g", inline: true);
 
         if (!string.IsNullOrWhiteSpace(item.WeaponType))
             embed.AddField("Weapon Type", item.WeaponType, inline: true);
@@ -212,19 +212,19 @@ public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<S
             embed.WithDescription(desc);
 
         embed
-            .AddField("Level",      enemy.Level.ToString(),      inline: true)
-            .AddField("HP",         enemy.MaxHealth.ToString(),  inline: true)
-            .AddField("Type",       enemy.Type.ToString(),       inline: true)
+            .AddField("Level", enemy.Level.ToString(), inline: true)
+            .AddField("HP", enemy.MaxHealth.ToString(), inline: true)
+            .AddField("Type", enemy.Type.ToString(), inline: true)
             .AddField("Difficulty", enemy.Difficulty.ToString(), inline: true)
-            .AddField("XP",         enemy.XP.ToString(),         inline: true)
-            .AddField("Gold",       enemy.GoldReward.ToString(), inline: true)
-            .AddField("Phys. DMG",  enemy.BasePhysicalDamage.ToString(), inline: true)
-            .AddField("Magic DMG",  enemy.BaseMagicDamage.ToString(),    inline: true)
-            .AddField("\u200b",     "\u200b",                        inline: true) // padding
+            .AddField("XP", enemy.XP.ToString(), inline: true)
+            .AddField("Gold", enemy.GoldReward.ToString(), inline: true)
+            .AddField("Phys. DMG", enemy.BasePhysicalDamage.ToString(), inline: true)
+            .AddField("Magic DMG", enemy.BaseMagicDamage.ToString(), inline: true)
+            .AddField("\u200b", "\u200b", inline: true) // padding
             .AddField("STR / DEX / CON",
                 $"{enemy.Strength} / {enemy.Dexterity} / {enemy.Constitution}", inline: true)
             .AddField("INT / WIS / CHA",
-                $"{enemy.Intelligence} / {enemy.Wisdom} / {enemy.Charisma}",    inline: true);
+                $"{enemy.Intelligence} / {enemy.Wisdom} / {enemy.Charisma}", inline: true);
 
         return embed.Build();
     }
@@ -246,10 +246,10 @@ public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<S
         }
 
         if (!string.IsNullOrWhiteSpace(npc.Occupation))
-            embed.AddField("Occupation",    npc.Occupation,   inline: true);
+            embed.AddField("Occupation", npc.Occupation, inline: true);
 
         if (!string.IsNullOrWhiteSpace(npc.SocialClass))
-            embed.AddField("Social Class",  npc.SocialClass,  inline: true);
+            embed.AddField("Social Class", npc.SocialClass, inline: true);
 
         embed.AddField("Age", npc.Age.ToString(), inline: true);
 
@@ -262,8 +262,8 @@ public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<S
     /// <summary>Builds the embed for a generated ability.</summary>
     internal static Embed BuildAbilityEmbed(Power ability)
     {
-        var name    = string.IsNullOrWhiteSpace(ability.DisplayName) ? ability.Name : ability.DisplayName;
-        var desc    = string.IsNullOrWhiteSpace(ability.Description) ? null
+        var name = string.IsNullOrWhiteSpace(ability.DisplayName) ? ability.Name : ability.DisplayName;
+        var desc = string.IsNullOrWhiteSpace(ability.Description) ? null
                     : ability.Description.Length > 200 ? ability.Description[..200] + "…"
                     : ability.Description;
 
@@ -276,12 +276,12 @@ public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<S
             embed.WithDescription(desc);
 
         embed
-            .AddField("Type",         ability.Type.ToString(),                          inline: true)
-            .AddField("Tier",         ability.Tier.ToString(),                          inline: true)
-            .AddField("Passive",      ability.IsPassive ? "Yes" : "No",                 inline: true)
-            .AddField("Mana Cost",    ability.ManaCost.ToString(),                      inline: true)
-            .AddField("Cooldown",     ability.Cooldown == 0 ? "None" : $"{ability.Cooldown}t", inline: true)
-            .AddField("Req. Level",   ability.RequiredLevel.ToString(),                 inline: true);
+            .AddField("Type", ability.Type.ToString(), inline: true)
+            .AddField("Tier", ability.Tier.ToString(), inline: true)
+            .AddField("Passive", ability.IsPassive ? "Yes" : "No", inline: true)
+            .AddField("Mana Cost", ability.ManaCost.ToString(), inline: true)
+            .AddField("Cooldown", ability.Cooldown == 0 ? "None" : $"{ability.Cooldown}t", inline: true)
+            .AddField("Req. Level", ability.RequiredLevel.ToString(), inline: true);
 
         if (!string.IsNullOrWhiteSpace(ability.BaseDamage))
             embed.AddField("Damage", ability.BaseDamage, inline: true);
@@ -294,11 +294,11 @@ public sealed class GenerateModule(IMediator mediator) : InteractionModuleBase<S
     // Helper
     private static Color RarityColor(string rarity) => rarity switch
     {
-        "Common"    => new Color(0xAAAAAA),
-        "Uncommon"  => new Color(0x1EFF00),
-        "Rare"      => new Color(0x0070DD),
-        "Epic"      => new Color(0xA335EE),
+        "Common" => new Color(0xAAAAAA),
+        "Uncommon" => new Color(0x1EFF00),
+        "Rare" => new Color(0x0070DD),
+        "Epic" => new Color(0xA335EE),
         "Legendary" => new Color(0xFF8000),
-        _           => ItemColor,
+        _ => ItemColor,
     };
 }

@@ -194,9 +194,9 @@ public class SetCreationEquipmentPreferencesHandler(
         if (session.Status != CreationSessionStatus.Draft)
             return new SetCreationChoiceResult { Success = false, Message = $"Session is already {session.Status} and cannot be modified." };
 
-        session.PreferredArmorType  = request.PreferredArmorType;
+        session.PreferredArmorType = request.PreferredArmorType;
         session.PreferredWeaponType = request.PreferredWeaponType;
-        session.IncludeShield       = request.IncludeShield;
+        session.IncludeShield = request.IncludeShield;
         await sessionStore.UpdateSessionAsync(session);
         return new SetCreationChoiceResult { Success = true, Message = "Equipment preferences updated." };
     }

@@ -30,7 +30,7 @@ public class GetAvailableDifficultiesQueryHandler : IRequestHandler<GetAvailable
     public Task<GetAvailableDifficultiesResult> Handle(GetAvailableDifficultiesQuery request, CancellationToken cancellationToken)
     {
         var allDifficulties = DifficultySettings.GetAll();
-        
+
         // Get current difficulty if there's an active game
         var saveGame = _saveGameService.GetCurrentSave();
         var currentDifficulty = saveGame?.DifficultyLevel ?? "Normal";

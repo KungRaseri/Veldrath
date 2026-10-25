@@ -1,27 +1,27 @@
-﻿using System.Text.Json;
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Repositories;
+using RealmEngine.Shared.Abstractions;
 using Veldrath.Contracts.Connection;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
-using RealmEngine.Core.Generators.Modern;
-using RealmEngine.Shared.Abstractions;
 using Veldrath.Server.Features.Characters;
 using Veldrath.Server.Features.Characters.Combat;
 using Veldrath.Server.Features.Zones;
 using Veldrath.Server.Hubs;
 using Veldrath.Server.Services;
 using Veldrath.Server.Settings;
-using Microsoft.AspNetCore.Identity;
 using Veldrath.Server.Tests.Infrastructure;
 
 namespace Veldrath.Server.Tests.Features;
@@ -43,31 +43,31 @@ public class FakeHubCallerClients : IHubCallerClients
 {
     private readonly FakeClientProxy _noop = new();
 
-    public FakeClientProxy CallerProxy       { get; } = new();
-    public FakeClientProxy GroupProxy        { get; } = new();
-    public FakeClientProxy OtherGroupProxy   { get; } = new();
+    public FakeClientProxy CallerProxy { get; } = new();
+    public FakeClientProxy GroupProxy { get; } = new();
+    public FakeClientProxy OtherGroupProxy { get; } = new();
 
-    public IClientProxy Caller                                     => CallerProxy;
-    public IClientProxy Others                                     => _noop;
-    public IClientProxy All                                        => _noop;
-    public IClientProxy OthersInGroup(string groupName)            => OtherGroupProxy;
-    public IClientProxy Group(string groupName)                    => GroupProxy;
-    public IClientProxy AllExcept(IReadOnlyList<string> excluded)  => _noop;
-    public IClientProxy Client(string connectionId)                => _noop;
-    public IClientProxy Clients(IReadOnlyList<string> ids)         => _noop;
+    public IClientProxy Caller => CallerProxy;
+    public IClientProxy Others => _noop;
+    public IClientProxy All => _noop;
+    public IClientProxy OthersInGroup(string groupName) => OtherGroupProxy;
+    public IClientProxy Group(string groupName) => GroupProxy;
+    public IClientProxy AllExcept(IReadOnlyList<string> excluded) => _noop;
+    public IClientProxy Client(string connectionId) => _noop;
+    public IClientProxy Clients(IReadOnlyList<string> ids) => _noop;
     public IClientProxy GroupExcept(string g, IReadOnlyList<string> e) => _noop;
-    public IClientProxy Groups(IEnumerable<string> groups)         => _noop;
-    public IClientProxy Groups(IReadOnlyList<string> groups)       => _noop;
-    public IClientProxy User(string userId)                        => _noop;
-    public IClientProxy Users(IEnumerable<string> userIds)         => _noop;
-    public IClientProxy Users(IReadOnlyList<string> userIds)       => _noop;
+    public IClientProxy Groups(IEnumerable<string> groups) => _noop;
+    public IClientProxy Groups(IReadOnlyList<string> groups) => _noop;
+    public IClientProxy User(string userId) => _noop;
+    public IClientProxy Users(IEnumerable<string> userIds) => _noop;
+    public IClientProxy Users(IReadOnlyList<string> userIds) => _noop;
 }
 
 // Fake IGroupManager
 public class FakeGroupManager : IGroupManager
 {
-    public List<string> AddedGroups    { get; } = [];
-    public List<string> RemovedGroups  { get; } = [];
+    public List<string> AddedGroups { get; } = [];
+    public List<string> RemovedGroups { get; } = [];
 
     public Task AddToGroupAsync(string connectionId, string groupName, CancellationToken ct = default)
     {
@@ -87,11 +87,11 @@ public sealed class FakeHubCallerContext : HubCallerContext
 {
     private readonly Dictionary<object, object?> _items = new();
 
-    public override string ConnectionId       { get; }
-    public override string? UserIdentifier    => User?.FindFirstValue(ClaimTypes.NameIdentifier);
-    public override ClaimsPrincipal? User     { get; }
+    public override string ConnectionId { get; }
+    public override string? UserIdentifier => User?.FindFirstValue(ClaimTypes.NameIdentifier);
+    public override ClaimsPrincipal? User { get; }
     public override IDictionary<object, object?> Items => _items;
-    public override IFeatureCollection Features        { get; } = new FeatureCollection();
+    public override IFeatureCollection Features { get; } = new FeatureCollection();
     public override CancellationToken ConnectionAborted => CancellationToken.None;
 
     public FakeHubCallerContext(string connectionId = "test-conn", ClaimsPrincipal? user = null)
@@ -119,7 +119,7 @@ public class GameHubTests : IDisposable
 
     private static async Task<Guid> SeedAccountAsync(ApplicationDbContext db)
     {
-        var name    = $"User_{Guid.NewGuid():N}";
+        var name = $"User_{Guid.NewGuid():N}";
         var account = new PlayerAccount { UserName = name, NormalizedUserName = name.ToUpperInvariant() };
         db.Users.Add(account);
         await db.SaveChangesAsync();
@@ -131,7 +131,7 @@ public class GameHubTests : IDisposable
         var c = new Character
         {
             AccountId = accountId,
-            Name      = $"Char_{Guid.NewGuid():N}",
+            Name = $"Char_{Guid.NewGuid():N}",
             ClassName = "Warrior",
             SlotIndex = 1,
         };
@@ -144,10 +144,10 @@ public class GameHubTests : IDisposable
         CreateHub(ApplicationDbContext db, Guid accountId, string connId = "conn-1", ISender? mediator = null, IActiveCharacterTracker? tracker = null,
                   VersionCompatibilitySettings? versionSettings = null)
     {
-        var options     = Options.Create(versionSettings ?? new VersionCompatibilitySettings());
-        var modOptions  = Options.Create(new ModerationOptions());
+        var options = Options.Create(versionSettings ?? new VersionCompatibilitySettings());
+        var modOptions = Options.Create(new ModerationOptions());
         var userManager = new Mock<UserManager<PlayerAccount>>(Mock.Of<IUserStore<PlayerAccount>>(), null!, null!, null!, null!, null!, null!, null!, null!).Object;
-        var hub         = new GameHub(NullLogger<GameHub>.Instance,
+        var hub = new GameHub(NullLogger<GameHub>.Instance,
                                   new CharacterRepository(db),
                                   new ZoneRepository(db),
                                   new RegionRepository(db),
@@ -160,11 +160,11 @@ public class GameHubTests : IDisposable
                                   modOptions,
                                   db);
         var clients = new FakeHubCallerClients();
-        var groups  = new FakeGroupManager();
-        var ctx     = new FakeHubCallerContext(connId, MakeUser(accountId));
+        var groups = new FakeGroupManager();
+        var ctx = new FakeHubCallerContext(connId, MakeUser(accountId));
 
         hub.Clients = clients;
-        hub.Groups  = groups;
+        hub.Groups = groups;
         hub.Context = ctx;
 
         return (hub, clients, groups, ctx);
@@ -189,12 +189,12 @@ public class GameHubTests : IDisposable
     {
         await using var db = _factory.CreateContext();
         var accountId = await SeedAccountAsync(db);
-        var settings  = new VersionCompatibilitySettings { MinCompatibleClientVersion = "1.2" };
+        var settings = new VersionCompatibilitySettings { MinCompatibleClientVersion = "1.2" };
         var (hub, clients, _, _) = CreateHub(db, accountId, versionSettings: settings);
 
         await hub.OnConnectedAsync();
 
-        var msg     = clients.CallerProxy.SentMessages.Single(m => m.Method == "ServerInfo");
+        var msg = clients.CallerProxy.SentMessages.Single(m => m.Method == "ServerInfo");
         var payload = msg.Args[0].Should().BeOfType<ServerInfoPayload>().Subject;
         payload.ServerVersion.Should().NotBeNullOrEmpty();
         payload.MinCompatibleClientVersion.Should().Be("1.2");
@@ -223,11 +223,11 @@ public class GameHubTests : IDisposable
         // Add a zone session for this connection
         db.PlayerSessions.Add(new PlayerSession
         {
-            CharacterId   = character.Id,
+            CharacterId = character.Id,
             CharacterName = character.Name,
-            ConnectionId  = "conn-disc",
-            RegionId      = "varenmark",
-            ZoneId        = "crestfall",
+            ConnectionId = "conn-disc",
+            RegionId = "varenmark",
+            ZoneId = "crestfall",
         });
         await db.SaveChangesAsync();
 
@@ -259,7 +259,7 @@ public class GameHubTests : IDisposable
         await using var db = _factory.CreateContext();
         var ownerAccountId = await SeedAccountAsync(db);
         var otherAccountId = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, ownerAccountId);
+        var character = await SeedCharacterAsync(db, ownerAccountId);
 
         // Log in as a *different* account
         var (hub, clients, _, _) = CreateHub(db, otherAccountId);
@@ -302,14 +302,14 @@ public class GameHubTests : IDisposable
     public async Task SelectCharacter_Should_Include_Level_And_Experience_In_CharacterSelected_Payload()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
         var character = new Character
         {
-            AccountId  = accountId,
-            Name       = $"Char_{Guid.NewGuid():N}",
-            ClassName  = "Warrior",
-            SlotIndex  = 1,
-            Level      = 4,
+            AccountId = accountId,
+            Name = $"Char_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
+            Level = 4,
             Experience = 75L,
         };
         db.Characters.Add(character);
@@ -318,7 +318,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, _) = CreateHub(db, accountId);
         await hub.SelectCharacter(character.Id);
 
-        var msg  = clients.CallerProxy.SentMessages.Single(m => m.Method == "CharacterSelected");
+        var msg = clients.CallerProxy.SentMessages.Single(m => m.Method == "CharacterSelected");
         var json = JsonSerializer.Serialize(msg.Args[0]);
         using var doc = JsonDocument.Parse(json);
         doc.RootElement.GetProperty("Level").GetInt32().Should().Be(4);
@@ -330,21 +330,21 @@ public class GameHubTests : IDisposable
     public async Task SelectCharacter_Should_Include_Blob_Stats_In_CharacterSelected_Payload()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
         var attrs = new Dictionary<string, int>
         {
             ["CurrentHealth"] = 65,
-            ["MaxHealth"]     = 100,
-            ["Gold"]          = 300,
-            ["CurrentMana"]   = 20,
-            ["MaxMana"]       = 50,
+            ["MaxHealth"] = 100,
+            ["Gold"] = 300,
+            ["CurrentMana"] = 20,
+            ["MaxMana"] = 50,
         };
         var character = new Character
         {
-            AccountId  = accountId,
-            Name       = $"BlobChar_{Guid.NewGuid():N}",
-            ClassName  = "Warrior",
-            SlotIndex  = 1,
+            AccountId = accountId,
+            Name = $"BlobChar_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
             Attributes = JsonSerializer.Serialize(attrs),
         };
         db.Characters.Add(character);
@@ -353,7 +353,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, _) = CreateHub(db, accountId);
         await hub.SelectCharacter(character.Id);
 
-        var msg  = clients.CallerProxy.SentMessages.Single(m => m.Method == "CharacterSelected");
+        var msg = clients.CallerProxy.SentMessages.Single(m => m.Method == "CharacterSelected");
         var json = JsonSerializer.Serialize(msg.Args[0]);
         using var doc = JsonDocument.Parse(json);
         doc.RootElement.GetProperty("CurrentHealth").GetInt32().Should().Be(65);
@@ -367,14 +367,14 @@ public class GameHubTests : IDisposable
     public async Task SelectCharacter_Should_Default_Health_And_Mana_When_Blob_Empty()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
         var character = new Character
         {
-            AccountId  = accountId,
-            Name       = $"EmptyAttr_{Guid.NewGuid():N}",
-            ClassName  = "Warrior",
-            SlotIndex  = 1,
-            Level      = 3,
+            AccountId = accountId,
+            Name = $"EmptyAttr_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
+            Level = 3,
             // Attributes left as default "{}"
         };
         db.Characters.Add(character);
@@ -383,7 +383,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, _) = CreateHub(db, accountId);
         await hub.SelectCharacter(character.Id);
 
-        var msg  = clients.CallerProxy.SentMessages.Single(m => m.Method == "CharacterSelected");
+        var msg = clients.CallerProxy.SentMessages.Single(m => m.Method == "CharacterSelected");
         var json = JsonSerializer.Serialize(msg.Args[0]);
         using var doc = JsonDocument.Parse(json);
         doc.RootElement.GetProperty("MaxHealth").GetInt32().Should().Be(30);      // Level 3 * 10
@@ -415,7 +415,7 @@ public class GameHubTests : IDisposable
         var (hub, clients, _, ctx) = CreateHub(db, accountId);
 
         // Manually populate Context.Items as if SelectCharacter ran
-        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CharacterName"] = character.Name;
 
         await hub.EnterZone("nonexistent-zone");
@@ -432,7 +432,7 @@ public class GameHubTests : IDisposable
         var character = await SeedCharacterAsync(db, accountId);
         var (hub, clients, _, ctx) = CreateHub(db, accountId);
 
-        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CharacterName"] = character.Name;
 
         await hub.EnterZone("crestfall"); // seeded zone
@@ -449,7 +449,7 @@ public class GameHubTests : IDisposable
         var character = await SeedCharacterAsync(db, accountId);
         var (hub, _, groups, ctx) = CreateHub(db, accountId);
 
-        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CharacterName"] = character.Name;
 
         await hub.EnterZone("crestfall");
@@ -465,7 +465,7 @@ public class GameHubTests : IDisposable
         var character = await SeedCharacterAsync(db, accountId);
         var (hub, _, _, ctx) = CreateHub(db, accountId, "conn-enter");
 
-        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CharacterName"] = character.Name;
 
         await hub.EnterZone("crestfall");
@@ -496,11 +496,11 @@ public class GameHubTests : IDisposable
 
         db.PlayerSessions.Add(new PlayerSession
         {
-            CharacterId   = character.Id,
+            CharacterId = character.Id,
             CharacterName = character.Name,
-            ConnectionId  = "conn-leave",
-            RegionId      = "varenmark",
-            ZoneId        = "crestfall",
+            ConnectionId = "conn-leave",
+            RegionId = "varenmark",
+            ZoneId = "crestfall",
         });
         await db.SaveChangesAsync();
 
@@ -523,16 +523,16 @@ public class GameHubTests : IDisposable
         // Simulate a stale session from a previous connection
         db.PlayerSessions.Add(new PlayerSession
         {
-            CharacterId   = character.Id,
+            CharacterId = character.Id,
             CharacterName = character.Name,
-            ConnectionId  = "stale-conn",
-            RegionId      = "greymoor",
-            ZoneId        = "aldenmere",
+            ConnectionId = "stale-conn",
+            RegionId = "greymoor",
+            ZoneId = "aldenmere",
         });
         await db.SaveChangesAsync();
 
         var (hub, _, _, ctx) = CreateHub(db, accountId, "new-conn");
-        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CharacterName"] = character.Name;
 
         await hub.EnterZone("crestfall");
@@ -564,8 +564,8 @@ public class GameHubTests : IDisposable
     [Fact]
     public async Task GainExperience_Should_Send_Error_When_No_Character_Selected()
     {
-        await using var db  = _factory.CreateContext();
-        var accountId       = await SeedAccountAsync(db);
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
         // Skip SelectCharacter — no CharacterId in Context.Items
@@ -579,18 +579,18 @@ public class GameHubTests : IDisposable
     public async Task GainExperience_Should_Dispatch_Command_To_ISender()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
             .Setup(m => m.Send(It.IsAny<IRequest<Veldrath.Server.Features.LevelUp.GainExperienceHubResult>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Veldrath.Server.Features.LevelUp.GainExperienceHubResult
             {
-                Success       = true,
-                NewLevel      = 1,
+                Success = true,
+                NewLevel = 1,
                 NewExperience = 100,
-                LeveledUp     = false,
+                LeveledUp = false,
             });
 
         var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
@@ -609,23 +609,23 @@ public class GameHubTests : IDisposable
     public async Task GainExperience_Should_Broadcast_ExperienceGained_To_Zone_Group_When_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
             .Setup(m => m.Send(It.IsAny<IRequest<Veldrath.Server.Features.LevelUp.GainExperienceHubResult>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Veldrath.Server.Features.LevelUp.GainExperienceHubResult
             {
-                Success       = true,
-                NewLevel      = 2,
+                Success = true,
+                NewLevel = 2,
                 NewExperience = 50,
-                LeveledUp     = true,
-                LeveledUpTo   = 2,
+                LeveledUp = true,
+                LeveledUpTo = 2,
             });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
         ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
 
@@ -639,15 +639,15 @@ public class GameHubTests : IDisposable
     public async Task GainExperience_Should_Send_Error_On_Handler_Failure()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
             .Setup(m => m.Send(It.IsAny<IRequest<Veldrath.Server.Features.LevelUp.GainExperienceHubResult>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Veldrath.Server.Features.LevelUp.GainExperienceHubResult
             {
-                Success      = false,
+                Success = false,
                 ErrorMessage = "Character not found",
             });
 
@@ -664,8 +664,8 @@ public class GameHubTests : IDisposable
     public async Task GainExperience_Should_Send_ExperienceGained_To_Caller_When_Not_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -689,10 +689,10 @@ public class GameHubTests : IDisposable
         var attrs = new Dictionary<string, int>(extra ?? []) { ["UnspentAttributePoints"] = unspent };
         var c = new Character
         {
-            AccountId  = accountId,
-            Name       = $"AttrChar_{Guid.NewGuid():N}",
-            ClassName  = "Warrior",
-            SlotIndex  = 1,
+            AccountId = accountId,
+            Name = $"AttrChar_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
             Attributes = JsonSerializer.Serialize(attrs),
         };
         db.Characters.Add(c);
@@ -704,7 +704,7 @@ public class GameHubTests : IDisposable
     public async Task AllocateAttributePoints_Should_Send_Error_When_No_Character_Selected()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
         // Skip SelectCharacter — no CharacterId in Context.Items
@@ -718,8 +718,8 @@ public class GameHubTests : IDisposable
     public async Task AllocateAttributePoints_Should_Dispatch_Command_To_ISender()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithAttributePointsAsync(db, accountId, unspent: 5);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithAttributePointsAsync(db, accountId, unspent: 5);
 
         var allocations = new Dictionary<string, int> { ["Strength"] = 2, ["Dexterity"] = 1 };
 
@@ -730,10 +730,10 @@ public class GameHubTests : IDisposable
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Veldrath.Server.Features.Characters.AllocateAttributePointsHubResult
             {
-                Success         = true,
-                PointsSpent     = 3,
+                Success = true,
+                PointsSpent = 3,
                 RemainingPoints = 2,
-                NewAttributes   = new Dictionary<string, int> { ["Strength"] = 12, ["Dexterity"] = 8 },
+                NewAttributes = new Dictionary<string, int> { ["Strength"] = 12, ["Dexterity"] = 8 },
             });
 
         var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
@@ -753,8 +753,8 @@ public class GameHubTests : IDisposable
     public async Task AllocateAttributePoints_Should_Broadcast_To_Zone_Group_When_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithAttributePointsAsync(db, accountId, unspent: 3);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithAttributePointsAsync(db, accountId, unspent: 3);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -763,11 +763,14 @@ public class GameHubTests : IDisposable
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Veldrath.Server.Features.Characters.AllocateAttributePointsHubResult
             {
-                Success = true, PointsSpent = 1, RemainingPoints = 2, NewAttributes = [],
+                Success = true,
+                PointsSpent = 1,
+                RemainingPoints = 2,
+                NewAttributes = [],
             });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
         ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
 
@@ -781,8 +784,8 @@ public class GameHubTests : IDisposable
     public async Task AllocateAttributePoints_Should_Send_To_Caller_When_Not_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithAttributePointsAsync(db, accountId, unspent: 3);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithAttributePointsAsync(db, accountId, unspent: 3);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -791,7 +794,10 @@ public class GameHubTests : IDisposable
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Veldrath.Server.Features.Characters.AllocateAttributePointsHubResult
             {
-                Success = true, PointsSpent = 1, RemainingPoints = 2, NewAttributes = [],
+                Success = true,
+                PointsSpent = 1,
+                RemainingPoints = 2,
+                NewAttributes = [],
             });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
@@ -808,8 +814,8 @@ public class GameHubTests : IDisposable
     public async Task AllocateAttributePoints_Should_Send_Error_On_Handler_Failure()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithAttributePointsAsync(db, accountId, unspent: 0);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithAttributePointsAsync(db, accountId, unspent: 0);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -818,7 +824,7 @@ public class GameHubTests : IDisposable
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Veldrath.Server.Features.Characters.AllocateAttributePointsHubResult
             {
-                Success      = false,
+                Success = false,
                 ErrorMessage = "Not enough unspent attribute points. Have 0, need 1.",
             });
 
@@ -835,8 +841,8 @@ public class GameHubTests : IDisposable
     public async Task AllocateAttributePoints_Handler_Should_Apply_Increases_And_Persist()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithAttributePointsAsync(
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithAttributePointsAsync(
             db, accountId, unspent: 5,
             extra: new Dictionary<string, int> { ["Strength"] = 10, ["Dexterity"] = 8 });
 
@@ -862,8 +868,8 @@ public class GameHubTests : IDisposable
     public async Task AllocateAttributePoints_Handler_Should_Fail_When_Insufficient_Points()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithAttributePointsAsync(db, accountId, unspent: 1);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithAttributePointsAsync(db, accountId, unspent: 1);
 
         var handler = new Veldrath.Server.Features.Characters.AllocateAttributePointsHubCommandHandler(
             new CharacterRepository(db),
@@ -883,8 +889,8 @@ public class GameHubTests : IDisposable
     public async Task AllocateAttributePoints_Handler_Should_Fail_When_Empty_Allocations()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithAttributePointsAsync(db, accountId, unspent: 5);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithAttributePointsAsync(db, accountId, unspent: 5);
 
         var handler = new Veldrath.Server.Features.Characters.AllocateAttributePointsHubCommandHandler(
             new CharacterRepository(db),
@@ -904,7 +910,7 @@ public class GameHubTests : IDisposable
     public async Task AllocateAttributePoints_Handler_Should_Fail_When_Character_Not_Found()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
 
         var handler = new Veldrath.Server.Features.Characters.AllocateAttributePointsHubCommandHandler(
             new CharacterRepository(db),
@@ -926,19 +932,19 @@ public class GameHubTests : IDisposable
     {
         var attrs = new Dictionary<string, int>
         {
-            ["Gold"]          = gold,
-            ["MaxHealth"]     = level * 10,
+            ["Gold"] = gold,
+            ["MaxHealth"] = level * 10,
             ["CurrentHealth"] = 0,   // depleted
-            ["MaxMana"]       = level * 5,
-            ["CurrentMana"]   = 0,   // depleted
+            ["MaxMana"] = level * 5,
+            ["CurrentMana"] = 0,   // depleted
         };
         var c = new Character
         {
-            AccountId  = accountId,
-            Name       = $"RestChar_{Guid.NewGuid():N}",
-            ClassName  = "Warrior",
-            SlotIndex  = 1,
-            Level      = level,
+            AccountId = accountId,
+            Name = $"RestChar_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
+            Level = level,
             Attributes = JsonSerializer.Serialize(attrs),
         };
         db.Characters.Add(c);
@@ -950,7 +956,7 @@ public class GameHubTests : IDisposable
     public async Task RestAtLocation_Should_Send_Error_When_No_Character_Selected()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
         await hub.RestAtLocation(new RestAtLocationHubRequest("inn-millhaven"));
@@ -963,8 +969,8 @@ public class GameHubTests : IDisposable
     public async Task RestAtLocation_Should_Dispatch_Command_To_ISender()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithGoldAsync(db, accountId, gold: 50);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithGoldAsync(db, accountId, gold: 50);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -973,11 +979,11 @@ public class GameHubTests : IDisposable
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Veldrath.Server.Features.Characters.RestAtLocationHubResult
             {
-                Success       = true,
+                Success = true,
                 CurrentHealth = 10,
-                MaxHealth     = 10,
-                CurrentMana   = 5,
-                MaxMana       = 5,
+                MaxHealth = 10,
+                CurrentMana = 5,
+                MaxMana = 5,
                 GoldRemaining = 40,
             });
 
@@ -998,8 +1004,8 @@ public class GameHubTests : IDisposable
     public async Task RestAtLocation_Should_Broadcast_To_Zone_Group_When_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithGoldAsync(db, accountId, gold: 50);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithGoldAsync(db, accountId, gold: 50);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -1008,12 +1014,16 @@ public class GameHubTests : IDisposable
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Veldrath.Server.Features.Characters.RestAtLocationHubResult
             {
-                Success = true, CurrentHealth = 10, MaxHealth = 10,
-                CurrentMana = 5, MaxMana = 5, GoldRemaining = 40,
+                Success = true,
+                CurrentHealth = 10,
+                MaxHealth = 10,
+                CurrentMana = 5,
+                MaxMana = 5,
+                GoldRemaining = 40,
             });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
         ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
 
@@ -1027,8 +1037,8 @@ public class GameHubTests : IDisposable
     public async Task RestAtLocation_Should_Send_To_Caller_When_Not_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithGoldAsync(db, accountId, gold: 50);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithGoldAsync(db, accountId, gold: 50);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -1037,8 +1047,12 @@ public class GameHubTests : IDisposable
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Veldrath.Server.Features.Characters.RestAtLocationHubResult
             {
-                Success = true, CurrentHealth = 10, MaxHealth = 10,
-                CurrentMana = 5, MaxMana = 5, GoldRemaining = 40,
+                Success = true,
+                CurrentHealth = 10,
+                MaxHealth = 10,
+                CurrentMana = 5,
+                MaxMana = 5,
+                GoldRemaining = 40,
             });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
@@ -1055,8 +1069,8 @@ public class GameHubTests : IDisposable
     public async Task RestAtLocation_Should_Send_Error_On_Handler_Failure()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithGoldAsync(db, accountId, gold: 5);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithGoldAsync(db, accountId, gold: 5);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -1065,7 +1079,7 @@ public class GameHubTests : IDisposable
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Veldrath.Server.Features.Characters.RestAtLocationHubResult
             {
-                Success      = false,
+                Success = false,
                 ErrorMessage = "Not enough gold to rest. Have 5, need 10.",
             });
 
@@ -1082,8 +1096,8 @@ public class GameHubTests : IDisposable
     public async Task RestAtLocation_Handler_Should_Restore_Health_And_Mana_And_Deduct_Gold()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithGoldAsync(db, accountId, gold: 50, level: 3);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithGoldAsync(db, accountId, gold: 50, level: 3);
 
         var handler = new Veldrath.Server.Features.Characters.RestAtLocationHubCommandHandler(
             new CharacterRepository(db),
@@ -1092,8 +1106,8 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new Veldrath.Server.Features.Characters.RestAtLocationHubCommand
         {
             CharacterId = character.Id,
-            LocationId  = "inn-millhaven",
-            CostInGold  = 10,
+            LocationId = "inn-millhaven",
+            CostInGold = 10,
         }, CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -1108,8 +1122,8 @@ public class GameHubTests : IDisposable
     public async Task RestAtLocation_Handler_Should_Fail_When_Not_Enough_Gold()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithGoldAsync(db, accountId, gold: 5);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithGoldAsync(db, accountId, gold: 5);
 
         var handler = new Veldrath.Server.Features.Characters.RestAtLocationHubCommandHandler(
             new CharacterRepository(db),
@@ -1118,8 +1132,8 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new Veldrath.Server.Features.Characters.RestAtLocationHubCommand
         {
             CharacterId = character.Id,
-            LocationId  = "inn-millhaven",
-            CostInGold  = 10,
+            LocationId = "inn-millhaven",
+            CostInGold = 10,
         }, CancellationToken.None);
 
         result.Success.Should().BeFalse();
@@ -1139,7 +1153,7 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new Veldrath.Server.Features.Characters.RestAtLocationHubCommand
         {
             CharacterId = Guid.NewGuid(),
-            LocationId  = "inn-millhaven",
+            LocationId = "inn-millhaven",
         }, CancellationToken.None);
 
         result.Success.Should().BeFalse();
@@ -1149,17 +1163,17 @@ public class GameHubTests : IDisposable
     [Fact]
     public async Task RestAtLocation_Handler_Should_Default_Pools_From_Level_When_Not_In_Blob()
     {
-        await using var db  = _factory.CreateContext();
-        var accountId       = await SeedAccountAsync(db);
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
 
         // Character has only Gold in attrs — no MaxHealth/MaxMana
         var c = new Character
         {
-            AccountId  = accountId,
-            Name       = $"NoPool_{Guid.NewGuid():N}",
-            ClassName  = "Warrior",
-            SlotIndex  = 1,
-            Level      = 4,
+            AccountId = accountId,
+            Name = $"NoPool_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
+            Level = 4,
             Attributes = JsonSerializer.Serialize(new Dictionary<string, int> { ["Gold"] = 100 }),
         };
         db.Characters.Add(c);
@@ -1172,8 +1186,8 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new Veldrath.Server.Features.Characters.RestAtLocationHubCommand
         {
             CharacterId = c.Id,
-            LocationId  = "inn-millhaven",
-            CostInGold  = 0,
+            LocationId = "inn-millhaven",
+            CostInGold = 0,
         }, CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -1188,14 +1202,14 @@ public class GameHubTests : IDisposable
         var attrs = new Dictionary<string, int>(extra ?? [])
         {
             ["CurrentMana"] = currentMana,
-            ["MaxMana"]     = maxMana,
+            ["MaxMana"] = maxMana,
         };
         var c = new Character
         {
-            AccountId  = accountId,
-            Name       = $"AblChar_{Guid.NewGuid():N}",
-            ClassName  = "Warrior",
-            SlotIndex  = 1,
+            AccountId = accountId,
+            Name = $"AblChar_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
             Attributes = JsonSerializer.Serialize(attrs),
         };
         db.Characters.Add(c);
@@ -1207,7 +1221,7 @@ public class GameHubTests : IDisposable
     public async Task UseAbility_Should_Send_Error_When_No_Character_Selected()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
         // Skip SelectCharacter — no CharacterId in Context.Items
@@ -1221,17 +1235,17 @@ public class GameHubTests : IDisposable
     public async Task UseAbility_Should_Dispatch_Command_To_ISender()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
             .Setup(m => m.Send(It.IsAny<IRequest<Veldrath.Server.Features.Characters.UseAbilityHubResult>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Veldrath.Server.Features.Characters.UseAbilityHubResult
             {
-                Success       = true,
-                AbilityId     = "fireball",
-                ManaCost      = 10,
+                Success = true,
+                AbilityId = "fireball",
+                ManaCost = 10,
                 RemainingMana = 40,
             });
 
@@ -1251,19 +1265,22 @@ public class GameHubTests : IDisposable
     public async Task UseAbility_Should_Broadcast_AbilityUsed_To_Zone_Group_When_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
             .Setup(m => m.Send(It.IsAny<IRequest<Veldrath.Server.Features.Characters.UseAbilityHubResult>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Veldrath.Server.Features.Characters.UseAbilityHubResult
             {
-                Success = true, AbilityId = "fireball", ManaCost = 10, RemainingMana = 40,
+                Success = true,
+                AbilityId = "fireball",
+                ManaCost = 10,
+                RemainingMana = 40,
             });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
         ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
 
@@ -1277,15 +1294,18 @@ public class GameHubTests : IDisposable
     public async Task UseAbility_Should_Send_AbilityUsed_To_Caller_When_Not_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
             .Setup(m => m.Send(It.IsAny<IRequest<Veldrath.Server.Features.Characters.UseAbilityHubResult>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Veldrath.Server.Features.Characters.UseAbilityHubResult
             {
-                Success = true, AbilityId = "fireball", ManaCost = 10, RemainingMana = 40,
+                Success = true,
+                AbilityId = "fireball",
+                ManaCost = 10,
+                RemainingMana = 40,
             });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
@@ -1302,15 +1322,15 @@ public class GameHubTests : IDisposable
     public async Task UseAbility_Should_Send_Error_On_Handler_Failure()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
             .Setup(m => m.Send(It.IsAny<IRequest<Veldrath.Server.Features.Characters.UseAbilityHubResult>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Veldrath.Server.Features.Characters.UseAbilityHubResult
             {
-                Success      = false,
+                Success = false,
                 ErrorMessage = "Not enough mana.",
             });
 
@@ -1327,8 +1347,8 @@ public class GameHubTests : IDisposable
     public async Task UseAbility_Handler_Should_Deduct_Mana_And_Persist()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithManaAsync(db, accountId, currentMana: 50, maxMana: 50);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithManaAsync(db, accountId, currentMana: 50, maxMana: 50);
 
         var handler = new Veldrath.Server.Features.Characters.UseAbilityHubCommandHandler(
             new CharacterRepository(db),
@@ -1337,7 +1357,7 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new Veldrath.Server.Features.Characters.UseAbilityHubCommand
         {
             CharacterId = character.Id,
-            AbilityId   = "fireball",
+            AbilityId = "fireball",
         }, CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -1350,8 +1370,8 @@ public class GameHubTests : IDisposable
     public async Task UseAbility_Handler_Should_Restore_Health_For_Healing_Ability()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithManaAsync(db, accountId,
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithManaAsync(db, accountId,
             currentMana: 50, maxMana: 50,
             extra: new Dictionary<string, int> { ["CurrentHealth"] = 60, ["MaxHealth"] = 100 });
 
@@ -1362,7 +1382,7 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new Veldrath.Server.Features.Characters.UseAbilityHubCommand
         {
             CharacterId = character.Id,
-            AbilityId   = "minor_heal",
+            AbilityId = "minor_heal",
         }, CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -1374,8 +1394,8 @@ public class GameHubTests : IDisposable
     public async Task UseAbility_Handler_Should_Fail_When_Not_Enough_Mana()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithManaAsync(db, accountId, currentMana: 5, maxMana: 50);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithManaAsync(db, accountId, currentMana: 5, maxMana: 50);
 
         var handler = new Veldrath.Server.Features.Characters.UseAbilityHubCommandHandler(
             new CharacterRepository(db),
@@ -1384,7 +1404,7 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new Veldrath.Server.Features.Characters.UseAbilityHubCommand
         {
             CharacterId = character.Id,
-            AbilityId   = "fireball",
+            AbilityId = "fireball",
         }, CancellationToken.None);
 
         result.Success.Should().BeFalse();
@@ -1394,9 +1414,9 @@ public class GameHubTests : IDisposable
     [Fact]
     public async Task UseAbility_Handler_Should_Fail_When_Character_Not_Found()
     {
-        await using var db    = _factory.CreateContext();
-        var accountId         = await SeedAccountAsync(db);
-        var missingCharId     = Guid.NewGuid();
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var missingCharId = Guid.NewGuid();
 
         var handler = new Veldrath.Server.Features.Characters.UseAbilityHubCommandHandler(
             new CharacterRepository(db),
@@ -1405,7 +1425,7 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new Veldrath.Server.Features.Characters.UseAbilityHubCommand
         {
             CharacterId = missingCharId,
-            AbilityId   = "fireball",
+            AbilityId = "fireball",
         }, CancellationToken.None);
 
         result.Success.Should().BeFalse();
@@ -1416,8 +1436,8 @@ public class GameHubTests : IDisposable
     public async Task UseAbility_Handler_Should_Fail_When_AbilityId_Is_Empty()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithManaAsync(db, accountId, currentMana: 50, maxMana: 50);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithManaAsync(db, accountId, currentMana: 50, maxMana: 50);
 
         var handler = new Veldrath.Server.Features.Characters.UseAbilityHubCommandHandler(
             new CharacterRepository(db),
@@ -1426,7 +1446,7 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new Veldrath.Server.Features.Characters.UseAbilityHubCommand
         {
             CharacterId = character.Id,
-            AbilityId   = "   ",
+            AbilityId = "   ",
         }, CancellationToken.None);
 
         result.Success.Should().BeFalse();
@@ -1437,16 +1457,16 @@ public class GameHubTests : IDisposable
     public async Task UseAbility_Handler_Should_Default_Mana_From_Level_When_Not_In_Blob()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
 
         // Character has NO mana in attrs blob — should default from level
         var c = new Character
         {
-            AccountId  = accountId,
-            Name       = $"NoMana_{Guid.NewGuid():N}",
-            ClassName  = "Warrior",
-            SlotIndex  = 1,
-            Level      = 4, // MaxMana default = 4 * 5 = 20
+            AccountId = accountId,
+            Name = $"NoMana_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
+            Level = 4, // MaxMana default = 4 * 5 = 20
             Attributes = "{}",
         };
         db.Characters.Add(c);
@@ -1459,7 +1479,7 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new Veldrath.Server.Features.Characters.UseAbilityHubCommand
         {
             CharacterId = c.Id,
-            AbilityId   = "fireball",
+            AbilityId = "fireball",
         }, CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -1471,7 +1491,7 @@ public class GameHubTests : IDisposable
     public async Task GetActiveCharacters_Should_Return_Empty_When_No_Characters_Selected()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
         var (hub, _, _, _) = CreateHub(db, accountId);
 
         var result = await hub.GetActiveCharacters();
@@ -1483,8 +1503,8 @@ public class GameHubTests : IDisposable
     public async Task GetActiveCharacters_Should_Return_Id_After_SelectCharacter()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
         var (hub, _, _, ctx) = CreateHub(db, accountId);
 
         ctx.Items["CharacterId"] = character.Id;
@@ -1505,7 +1525,7 @@ public class GameHubTests : IDisposable
                                Options.Create(new ModerationOptions()),
                                db);
         hub2.Clients = hub.Clients;
-        hub2.Groups  = hub.Groups;
+        hub2.Groups = hub.Groups;
         hub2.Context = ctx;
 
         var result = await hub2.GetActiveCharacters();
@@ -1517,10 +1537,10 @@ public class GameHubTests : IDisposable
     public async Task GetActiveCharacters_Should_Return_Multiple_Active_Ids()
     {
         await using var db = _factory.CreateContext();
-        var accountId1     = await SeedAccountAsync(db);
-        var accountId2     = await SeedAccountAsync(db);
-        var charA          = await SeedCharacterAsync(db, accountId1);
-        var charB          = await SeedCharacterAsync(db, accountId2);
+        var accountId1 = await SeedAccountAsync(db);
+        var accountId2 = await SeedAccountAsync(db);
+        var charA = await SeedCharacterAsync(db, accountId1);
+        var charB = await SeedCharacterAsync(db, accountId2);
 
         var tracker = new ActiveCharacterTracker();
         tracker.TryClaim(charA.Id, "conn-A");
@@ -1540,7 +1560,7 @@ public class GameHubTests : IDisposable
                               Options.Create(new ModerationOptions()),
                               db);
         hub.Clients = new FakeHubCallerClients();
-        hub.Groups  = new FakeGroupManager();
+        hub.Groups = new FakeGroupManager();
         hub.Context = ctx;
 
         var result = await hub.GetActiveCharacters();
@@ -1553,7 +1573,7 @@ public class GameHubTests : IDisposable
     public async Task AwardSkillXp_Should_Send_Error_When_No_Character_Selected()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
         await hub.AwardSkillXp(new AwardSkillXpHubRequest("swordsmanship", 50));
@@ -1566,19 +1586,19 @@ public class GameHubTests : IDisposable
     public async Task AwardSkillXp_Should_Dispatch_Command_To_ISender()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
             .Setup(m => m.Send(It.IsAny<IRequest<AwardSkillXpHubResult>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AwardSkillXpHubResult
             {
-                Success     = true,
-                SkillId     = "swordsmanship",
-                TotalXp     = 50,
+                Success = true,
+                SkillId = "swordsmanship",
+                TotalXp = 50,
                 CurrentRank = 0,
-                RankedUp    = false,
+                RankedUp = false,
             });
 
         var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
@@ -1597,19 +1617,23 @@ public class GameHubTests : IDisposable
     public async Task AwardSkillXp_Should_Broadcast_SkillXpGained_To_Zone_Group_When_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
             .Setup(m => m.Send(It.IsAny<IRequest<AwardSkillXpHubResult>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AwardSkillXpHubResult
             {
-                Success = true, SkillId = "swordsmanship", TotalXp = 50, CurrentRank = 0, RankedUp = false,
+                Success = true,
+                SkillId = "swordsmanship",
+                TotalXp = 50,
+                CurrentRank = 0,
+                RankedUp = false,
             });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
         ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
 
@@ -1623,15 +1647,19 @@ public class GameHubTests : IDisposable
     public async Task AwardSkillXp_Should_Send_SkillXpGained_To_Caller_When_Not_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
             .Setup(m => m.Send(It.IsAny<IRequest<AwardSkillXpHubResult>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AwardSkillXpHubResult
             {
-                Success = true, SkillId = "swordsmanship", TotalXp = 50, CurrentRank = 0, RankedUp = false,
+                Success = true,
+                SkillId = "swordsmanship",
+                TotalXp = 50,
+                CurrentRank = 0,
+                RankedUp = false,
             });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
@@ -1648,15 +1676,15 @@ public class GameHubTests : IDisposable
     public async Task AwardSkillXp_Should_Send_Error_On_Handler_Failure()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
             .Setup(m => m.Send(It.IsAny<IRequest<AwardSkillXpHubResult>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AwardSkillXpHubResult
             {
-                Success      = false,
+                Success = false,
                 ErrorMessage = "Amount must be positive.",
             });
 
@@ -1673,8 +1701,8 @@ public class GameHubTests : IDisposable
     public async Task AwardSkillXp_Handler_Should_Accumulate_Xp_And_Persist()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var handler = new AwardSkillXpHubCommandHandler(
             new CharacterRepository(db),
@@ -1683,8 +1711,8 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new AwardSkillXpHubCommand
         {
             CharacterId = character.Id,
-            SkillId     = "herbalism",
-            Amount      = 40,
+            SkillId = "herbalism",
+            Amount = 40,
         }, CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -1697,8 +1725,8 @@ public class GameHubTests : IDisposable
     public async Task AwardSkillXp_Handler_Should_Trigger_RankUp_At_100_Xp()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var handler = new AwardSkillXpHubCommandHandler(
             new CharacterRepository(db),
@@ -1707,8 +1735,8 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new AwardSkillXpHubCommand
         {
             CharacterId = character.Id,
-            SkillId     = "swordsmanship",
-            Amount      = 100,
+            SkillId = "swordsmanship",
+            Amount = 100,
         }, CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -1721,8 +1749,8 @@ public class GameHubTests : IDisposable
     public async Task AwardSkillXp_Handler_Should_Not_RankUp_Below_Threshold()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var handler = new AwardSkillXpHubCommandHandler(
             new CharacterRepository(db),
@@ -1731,8 +1759,8 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new AwardSkillXpHubCommand
         {
             CharacterId = character.Id,
-            SkillId     = "swordsmanship",
-            Amount      = 99,
+            SkillId = "swordsmanship",
+            Amount = 99,
         }, CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -1744,8 +1772,8 @@ public class GameHubTests : IDisposable
     public async Task AwardSkillXp_Handler_Should_Fail_When_Character_Not_Found()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var missingCharId  = Guid.NewGuid();
+        var accountId = await SeedAccountAsync(db);
+        var missingCharId = Guid.NewGuid();
 
         var handler = new AwardSkillXpHubCommandHandler(
             new CharacterRepository(db),
@@ -1754,8 +1782,8 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new AwardSkillXpHubCommand
         {
             CharacterId = missingCharId,
-            SkillId     = "herbalism",
-            Amount      = 10,
+            SkillId = "herbalism",
+            Amount = 10,
         }, CancellationToken.None);
 
         result.Success.Should().BeFalse();
@@ -1766,8 +1794,8 @@ public class GameHubTests : IDisposable
     public async Task AwardSkillXp_Handler_Should_Fail_When_SkillId_Is_Empty()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var handler = new AwardSkillXpHubCommandHandler(
             new CharacterRepository(db),
@@ -1776,8 +1804,8 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new AwardSkillXpHubCommand
         {
             CharacterId = character.Id,
-            SkillId     = "   ",
-            Amount      = 10,
+            SkillId = "   ",
+            Amount = 10,
         }, CancellationToken.None);
 
         result.Success.Should().BeFalse();
@@ -1788,8 +1816,8 @@ public class GameHubTests : IDisposable
     public async Task AwardSkillXp_Handler_Should_Fail_When_Amount_Is_Zero()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var handler = new AwardSkillXpHubCommandHandler(
             new CharacterRepository(db),
@@ -1798,8 +1826,8 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new AwardSkillXpHubCommand
         {
             CharacterId = character.Id,
-            SkillId     = "herbalism",
-            Amount      = 0,
+            SkillId = "herbalism",
+            Amount = 0,
         }, CancellationToken.None);
 
         result.Success.Should().BeFalse();
@@ -1811,8 +1839,8 @@ public class GameHubTests : IDisposable
     public async Task SelectCharacter_Should_Send_CharacterAlreadyActive_When_Already_Claimed()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         // Seed tracker with a different connection already holding this character
         var tracker = new ActiveCharacterTracker();
@@ -1830,8 +1858,8 @@ public class GameHubTests : IDisposable
     public async Task SelectCharacter_Should_Broadcast_CharacterStatusChanged_Online_To_Account_Group()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
         await hub.SelectCharacter(character.Id);
@@ -1845,8 +1873,8 @@ public class GameHubTests : IDisposable
     public async Task OnDisconnectedAsync_Should_Broadcast_CharacterStatusChanged_Offline_When_Character_Was_Active()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         // Pre-seed tracker so GetCharacterForConnection returns the character
         var tracker = new ActiveCharacterTracker();
@@ -1867,8 +1895,8 @@ public class GameHubTests : IDisposable
     public async Task GainExperience_Should_Send_Error_When_Mediator_Throws()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -1888,8 +1916,8 @@ public class GameHubTests : IDisposable
     public async Task AllocateAttributePoints_Should_Send_Error_When_Mediator_Throws()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -1909,8 +1937,8 @@ public class GameHubTests : IDisposable
     public async Task RestAtLocation_Should_Send_Error_When_Mediator_Throws()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -1930,8 +1958,8 @@ public class GameHubTests : IDisposable
     public async Task UseAbility_Should_Send_Error_When_Mediator_Throws()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -1951,8 +1979,8 @@ public class GameHubTests : IDisposable
     public async Task AwardSkillXp_Should_Send_Error_When_Mediator_Throws()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -1973,7 +2001,7 @@ public class GameHubTests : IDisposable
     public async Task EquipItem_Should_Send_Error_When_No_Character_Selected()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
         await hub.EquipItem(new EquipItemHubRequest("MainHand", "iron_sword"));
@@ -1986,8 +2014,8 @@ public class GameHubTests : IDisposable
     public async Task EquipItem_Should_Dispatch_Command_To_ISender()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -1995,7 +2023,7 @@ public class GameHubTests : IDisposable
             .ReturnsAsync(new EquipItemHubResult
             {
                 Success = true,
-                Slot    = "MainHand",
+                Slot = "MainHand",
                 ItemRef = "iron_sword",
                 AllEquippedItems = new Dictionary<string, string> { ["MainHand"] = "iron_sword" },
             });
@@ -2016,8 +2044,8 @@ public class GameHubTests : IDisposable
     public async Task EquipItem_Should_Broadcast_ItemEquipped_To_Zone_Group_When_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -2025,7 +2053,7 @@ public class GameHubTests : IDisposable
             .ReturnsAsync(new EquipItemHubResult { Success = true, Slot = "MainHand", ItemRef = "iron_sword", AllEquippedItems = [] });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
         ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
 
@@ -2039,8 +2067,8 @@ public class GameHubTests : IDisposable
     public async Task EquipItem_Should_Send_ItemEquipped_To_Caller_When_Not_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -2061,8 +2089,8 @@ public class GameHubTests : IDisposable
     public async Task EquipItem_Should_Send_Error_On_Handler_Failure()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -2082,8 +2110,8 @@ public class GameHubTests : IDisposable
     public async Task EquipItem_Should_Send_Error_When_Mediator_Throws()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -2104,8 +2132,8 @@ public class GameHubTests : IDisposable
     public async Task EquipItem_Handler_Should_Equip_Item_In_Named_Slot()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var handler = new EquipItemHubCommandHandler(
             new CharacterRepository(db),
@@ -2114,8 +2142,8 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new EquipItemHubCommand
         {
             CharacterId = character.Id,
-            Slot        = "MainHand",
-            ItemRef     = "iron_sword",
+            Slot = "MainHand",
+            ItemRef = "iron_sword",
         }, CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -2129,15 +2157,15 @@ public class GameHubTests : IDisposable
     public async Task EquipItem_Handler_Should_Unequip_Item_When_ItemRef_Is_Null()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
 
         // Seed character with a pre-equipped item
         var c = new Character
         {
-            AccountId     = accountId,
-            Name          = $"Eq_{Guid.NewGuid():N}",
-            ClassName     = "Warrior",
-            SlotIndex     = 1,
+            AccountId = accountId,
+            Name = $"Eq_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
             EquipmentBlob = JsonSerializer.Serialize(new Dictionary<string, string> { ["MainHand"] = "iron_sword" }),
         };
         db.Characters.Add(c);
@@ -2150,8 +2178,8 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new EquipItemHubCommand
         {
             CharacterId = c.Id,
-            Slot        = "MainHand",
-            ItemRef     = null,
+            Slot = "MainHand",
+            ItemRef = null,
         }, CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -2163,15 +2191,15 @@ public class GameHubTests : IDisposable
     public async Task EquipItem_Handler_Should_Return_All_Equipped_Items_After_Equip()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
 
         // Seed character with one item already equipped
         var c = new Character
         {
-            AccountId     = accountId,
-            Name          = $"Eq_{Guid.NewGuid():N}",
-            ClassName     = "Warrior",
-            SlotIndex     = 1,
+            AccountId = accountId,
+            Name = $"Eq_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
             EquipmentBlob = JsonSerializer.Serialize(new Dictionary<string, string> { ["Head"] = "leather_helm" }),
         };
         db.Characters.Add(c);
@@ -2184,8 +2212,8 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new EquipItemHubCommand
         {
             CharacterId = c.Id,
-            Slot        = "Chest",
-            ItemRef     = "chain_shirt",
+            Slot = "Chest",
+            ItemRef = "chain_shirt",
         }, CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -2198,8 +2226,8 @@ public class GameHubTests : IDisposable
     public async Task EquipItem_Handler_Should_Fail_When_Slot_Is_Invalid()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var handler = new EquipItemHubCommandHandler(
             new CharacterRepository(db),
@@ -2208,8 +2236,8 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new EquipItemHubCommand
         {
             CharacterId = character.Id,
-            Slot        = "Torso",   // not a valid slot
-            ItemRef     = "iron_sword",
+            Slot = "Torso",   // not a valid slot
+            ItemRef = "iron_sword",
         }, CancellationToken.None);
 
         result.Success.Should().BeFalse();
@@ -2219,9 +2247,9 @@ public class GameHubTests : IDisposable
     [Fact]
     public async Task EquipItem_Handler_Should_Fail_When_Character_Not_Found()
     {
-        await using var db    = _factory.CreateContext();
-        var accountId         = await SeedAccountAsync(db);
-        var missingCharId     = Guid.NewGuid();
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var missingCharId = Guid.NewGuid();
 
         var handler = new EquipItemHubCommandHandler(
             new CharacterRepository(db),
@@ -2230,8 +2258,8 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new EquipItemHubCommand
         {
             CharacterId = missingCharId,
-            Slot        = "MainHand",
-            ItemRef     = "iron_sword",
+            Slot = "MainHand",
+            ItemRef = "iron_sword",
         }, CancellationToken.None);
 
         result.Success.Should().BeFalse();
@@ -2243,14 +2271,14 @@ public class GameHubTests : IDisposable
     public async Task GetInventory_Handler_Should_Exclude_Equipped_Items_From_Bag_And_Return_Equipment()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
 
         var c = new Character
         {
-            AccountId     = accountId,
-            Name          = $"Inv_{Guid.NewGuid():N}",
-            ClassName     = "Warrior",
-            SlotIndex     = 1,
+            AccountId = accountId,
+            Name = $"Inv_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
             InventoryBlob = JsonSerializer.Serialize(new[]
             {
                 new { ItemRef = "iron_sword",   Quantity = 1, Durability = (int?)80 },
@@ -2268,13 +2296,15 @@ public class GameHubTests : IDisposable
         itemRepo.Setup(r => r.GetBySlugAsync("iron_sword"))
             .ReturnsAsync(new RealmEngine.Shared.Models.Item
             {
-                Slug = "iron_sword", Name = "Iron Sword",
+                Slug = "iron_sword",
+                Name = "Iron Sword",
                 Type = RealmEngine.Shared.Models.ItemType.Weapon,
             });
         itemRepo.Setup(r => r.GetBySlugAsync("health_potion"))
             .ReturnsAsync(new RealmEngine.Shared.Models.Item
             {
-                Slug = "health_potion", Name = "Health Potion",
+                Slug = "health_potion",
+                Name = "Health Potion",
                 Type = RealmEngine.Shared.Models.ItemType.Consumable,
             });
 
@@ -2296,14 +2326,14 @@ public class GameHubTests : IDisposable
     public async Task GetInventory_Handler_Should_Build_Fallback_Details_When_Catalog_Misses_Item()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
 
         var c = new Character
         {
-            AccountId     = accountId,
-            Name          = $"Inv_{Guid.NewGuid():N}",
-            ClassName     = "Warrior",
-            SlotIndex     = 1,
+            AccountId = accountId,
+            Name = $"Inv_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
             InventoryBlob = JsonSerializer.Serialize(new[]
             {
                 new { ItemRef = "wooden-shield", Quantity = 1, Durability = (int?)null },
@@ -2337,10 +2367,10 @@ public class GameHubTests : IDisposable
         var attrs = new Dictionary<string, int> { ["Gold"] = gold };
         var c = new Character
         {
-            AccountId  = accountId,
-            Name       = $"GoldChar_{Guid.NewGuid():N}",
-            ClassName  = "Warrior",
-            SlotIndex  = 1,
+            AccountId = accountId,
+            Name = $"GoldChar_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
             Attributes = JsonSerializer.Serialize(attrs),
         };
         db.Characters.Add(c);
@@ -2353,7 +2383,7 @@ public class GameHubTests : IDisposable
     public async Task AddGold_Should_Send_Error_When_No_Character_Selected()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
         await hub.AddGold(new AddGoldHubRequest(100));
@@ -2366,8 +2396,8 @@ public class GameHubTests : IDisposable
     public async Task AddGold_Should_Dispatch_Command_To_ISender()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -2390,8 +2420,8 @@ public class GameHubTests : IDisposable
     public async Task AddGold_Should_Broadcast_GoldChanged_To_Zone_Group_When_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -2399,7 +2429,7 @@ public class GameHubTests : IDisposable
             .ReturnsAsync(new AddGoldHubResult { Success = true, GoldAdded = 100, NewGoldTotal = 100 });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
         ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
 
@@ -2413,8 +2443,8 @@ public class GameHubTests : IDisposable
     public async Task AddGold_Should_Send_GoldChanged_To_Caller_When_Not_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -2435,8 +2465,8 @@ public class GameHubTests : IDisposable
     public async Task AddGold_Should_Send_Error_On_Handler_Failure()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -2456,8 +2486,8 @@ public class GameHubTests : IDisposable
     public async Task AddGold_Should_Send_Error_When_Mediator_Throws()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -2478,8 +2508,8 @@ public class GameHubTests : IDisposable
     public async Task AddGold_Handler_Should_Add_Gold_To_Character()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithGoldAsync(db, accountId, gold: 100);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithGoldAsync(db, accountId, gold: 100);
 
         var handler = new AddGoldHubCommandHandler(
             new CharacterRepository(db),
@@ -2488,8 +2518,8 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new AddGoldHubCommand
         {
             CharacterId = character.Id,
-            Amount      = 50,
-            Source      = "Loot",
+            Amount = 50,
+            Source = "Loot",
         }, CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -2501,8 +2531,8 @@ public class GameHubTests : IDisposable
     public async Task AddGold_Handler_Should_Spend_Gold_When_Amount_Is_Negative()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithGoldAsync(db, accountId, gold: 100);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithGoldAsync(db, accountId, gold: 100);
 
         var handler = new AddGoldHubCommandHandler(
             new CharacterRepository(db),
@@ -2511,8 +2541,8 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new AddGoldHubCommand
         {
             CharacterId = character.Id,
-            Amount      = -30,
-            Source      = "Purchase",
+            Amount = -30,
+            Source = "Purchase",
         }, CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -2524,8 +2554,8 @@ public class GameHubTests : IDisposable
     public async Task AddGold_Handler_Should_Fail_When_Amount_Is_Zero()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var handler = new AddGoldHubCommandHandler(
             new CharacterRepository(db),
@@ -2534,7 +2564,7 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new AddGoldHubCommand
         {
             CharacterId = character.Id,
-            Amount      = 0,
+            Amount = 0,
         }, CancellationToken.None);
 
         result.Success.Should().BeFalse();
@@ -2545,8 +2575,8 @@ public class GameHubTests : IDisposable
     public async Task AddGold_Handler_Should_Fail_When_Not_Enough_Gold_To_Spend()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithGoldAsync(db, accountId, gold: 20);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithGoldAsync(db, accountId, gold: 20);
 
         var handler = new AddGoldHubCommandHandler(
             new CharacterRepository(db),
@@ -2555,7 +2585,7 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new AddGoldHubCommand
         {
             CharacterId = character.Id,
-            Amount      = -50,
+            Amount = -50,
         }, CancellationToken.None);
 
         result.Success.Should().BeFalse();
@@ -2575,7 +2605,7 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new AddGoldHubCommand
         {
             CharacterId = Guid.NewGuid(),
-            Amount      = 100,
+            Amount = 100,
         }, CancellationToken.None);
 
         result.Success.Should().BeFalse();
@@ -2586,8 +2616,8 @@ public class GameHubTests : IDisposable
     public async Task AddGold_Handler_Should_Default_To_Zero_When_Blob_Is_Empty()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId); // no gold blob
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId); // no gold blob
 
         var handler = new AddGoldHubCommandHandler(
             new CharacterRepository(db),
@@ -2596,7 +2626,7 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new AddGoldHubCommand
         {
             CharacterId = character.Id,
-            Amount      = 75,
+            Amount = 75,
         }, CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -2607,8 +2637,8 @@ public class GameHubTests : IDisposable
     public async Task AddGold_Handler_Should_Persist_Updated_Gold_To_Database()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithGoldAsync(db, accountId, gold: 200);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithGoldAsync(db, accountId, gold: 200);
 
         var handler = new AddGoldHubCommandHandler(
             new CharacterRepository(db),
@@ -2617,11 +2647,11 @@ public class GameHubTests : IDisposable
         await handler.Handle(new AddGoldHubCommand
         {
             CharacterId = character.Id,
-            Amount      = 100,
+            Amount = 100,
         }, CancellationToken.None);
 
         var updated = await db.Characters.FindAsync(character.Id);
-        var attrs   = JsonSerializer.Deserialize<Dictionary<string, int>>(updated!.Attributes)!;
+        var attrs = JsonSerializer.Deserialize<Dictionary<string, int>>(updated!.Attributes)!;
         attrs["Gold"].Should().Be(300);
     }
 
@@ -2632,14 +2662,14 @@ public class GameHubTests : IDisposable
         var attrs = new Dictionary<string, int>
         {
             ["CurrentHealth"] = currentHealth,
-            ["MaxHealth"]     = maxHealth,
+            ["MaxHealth"] = maxHealth,
         };
         var c = new Character
         {
-            AccountId  = accountId,
-            Name       = $"DmgChar_{Guid.NewGuid():N}",
-            ClassName  = "Warrior",
-            SlotIndex  = 1,
+            AccountId = accountId,
+            Name = $"DmgChar_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
             Attributes = JsonSerializer.Serialize(attrs),
         };
         db.Characters.Add(c);
@@ -2652,7 +2682,7 @@ public class GameHubTests : IDisposable
     public async Task TakeDamage_Should_Send_Error_When_No_Character_Selected()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
         await hub.TakeDamage(new TakeDamageHubRequest(25));
@@ -2665,8 +2695,8 @@ public class GameHubTests : IDisposable
     public async Task TakeDamage_Should_Dispatch_Command_To_ISender()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -2689,8 +2719,8 @@ public class GameHubTests : IDisposable
     public async Task TakeDamage_Should_Broadcast_DamageTaken_To_Zone_Group_When_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -2698,7 +2728,7 @@ public class GameHubTests : IDisposable
             .ReturnsAsync(new TakeDamageHubResult { Success = true, CurrentHealth = 75, MaxHealth = 100, IsDead = false });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
         ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
 
@@ -2712,8 +2742,8 @@ public class GameHubTests : IDisposable
     public async Task TakeDamage_Should_Send_DamageTaken_To_Caller_When_Not_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -2734,8 +2764,8 @@ public class GameHubTests : IDisposable
     public async Task TakeDamage_Should_Send_Error_On_Handler_Failure()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -2755,8 +2785,8 @@ public class GameHubTests : IDisposable
     public async Task TakeDamage_Should_Send_Error_When_Mediator_Throws()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -2777,8 +2807,8 @@ public class GameHubTests : IDisposable
     public async Task TakeDamage_Handler_Should_Reduce_CurrentHealth_By_DamageAmount()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithHealthAsync(db, accountId, currentHealth: 100, maxHealth: 100);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithHealthAsync(db, accountId, currentHealth: 100, maxHealth: 100);
 
         var handler = new TakeDamageHubCommandHandler(
             new CharacterRepository(db),
@@ -2786,9 +2816,9 @@ public class GameHubTests : IDisposable
 
         var result = await handler.Handle(new TakeDamageHubCommand
         {
-            CharacterId  = character.Id,
+            CharacterId = character.Id,
             DamageAmount = 30,
-            Source       = "Goblin",
+            Source = "Goblin",
         }, CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -2801,8 +2831,8 @@ public class GameHubTests : IDisposable
     public async Task TakeDamage_Handler_Should_Clamp_Health_To_Zero_Not_Negative()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithHealthAsync(db, accountId, currentHealth: 10, maxHealth: 100);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithHealthAsync(db, accountId, currentHealth: 10, maxHealth: 100);
 
         var handler = new TakeDamageHubCommandHandler(
             new CharacterRepository(db),
@@ -2810,7 +2840,7 @@ public class GameHubTests : IDisposable
 
         var result = await handler.Handle(new TakeDamageHubCommand
         {
-            CharacterId  = character.Id,
+            CharacterId = character.Id,
             DamageAmount = 50,
         }, CancellationToken.None);
 
@@ -2823,8 +2853,8 @@ public class GameHubTests : IDisposable
     public async Task TakeDamage_Handler_Should_Fail_When_DamageAmount_Is_Zero_Or_Negative()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var handler = new TakeDamageHubCommandHandler(
             new CharacterRepository(db),
@@ -2832,7 +2862,7 @@ public class GameHubTests : IDisposable
 
         var result = await handler.Handle(new TakeDamageHubCommand
         {
-            CharacterId  = character.Id,
+            CharacterId = character.Id,
             DamageAmount = 0,
         }, CancellationToken.None);
 
@@ -2852,7 +2882,7 @@ public class GameHubTests : IDisposable
 
         var result = await handler.Handle(new TakeDamageHubCommand
         {
-            CharacterId  = Guid.NewGuid(),
+            CharacterId = Guid.NewGuid(),
             DamageAmount = 25,
         }, CancellationToken.None);
 
@@ -2864,9 +2894,9 @@ public class GameHubTests : IDisposable
     public async Task TakeDamage_Handler_Should_Default_To_Level_Based_Max_When_Blob_Is_Empty()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
         // Character at level 1 → MaxHealth defaults to 10; no blob stored
-        var character      = await SeedCharacterAsync(db, accountId);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var handler = new TakeDamageHubCommandHandler(
             new CharacterRepository(db),
@@ -2874,7 +2904,7 @@ public class GameHubTests : IDisposable
 
         var result = await handler.Handle(new TakeDamageHubCommand
         {
-            CharacterId  = character.Id,
+            CharacterId = character.Id,
             DamageAmount = 4,
         }, CancellationToken.None);
 
@@ -2887,8 +2917,8 @@ public class GameHubTests : IDisposable
     public async Task TakeDamage_Handler_Should_Persist_Updated_Health_To_Database()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithHealthAsync(db, accountId, currentHealth: 80, maxHealth: 100);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithHealthAsync(db, accountId, currentHealth: 80, maxHealth: 100);
 
         var handler = new TakeDamageHubCommandHandler(
             new CharacterRepository(db),
@@ -2896,12 +2926,12 @@ public class GameHubTests : IDisposable
 
         await handler.Handle(new TakeDamageHubCommand
         {
-            CharacterId  = character.Id,
+            CharacterId = character.Id,
             DamageAmount = 20,
         }, CancellationToken.None);
 
         var updated = await db.Characters.FindAsync(character.Id);
-        var attrs   = JsonSerializer.Deserialize<Dictionary<string, int>>(updated!.Attributes)!;
+        var attrs = JsonSerializer.Deserialize<Dictionary<string, int>>(updated!.Attributes)!;
         attrs["CurrentHealth"].Should().Be(60);
     }
 
@@ -2912,10 +2942,10 @@ public class GameHubTests : IDisposable
         var attrs = new Dictionary<string, int> { ["Gold"] = gold };
         var c = new Character
         {
-            AccountId  = accountId,
-            Name       = $"CraftChar_{Guid.NewGuid():N}",
-            ClassName  = "Warrior",
-            SlotIndex  = 1,
+            AccountId = accountId,
+            Name = $"CraftChar_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
             Attributes = JsonSerializer.Serialize(attrs),
         };
         db.Characters.Add(c);
@@ -2928,7 +2958,7 @@ public class GameHubTests : IDisposable
     public async Task CraftItem_Should_Send_Error_When_No_Character_Selected()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
         await hub.CraftItem("iron-sword");
@@ -2941,8 +2971,8 @@ public class GameHubTests : IDisposable
     public async Task CraftItem_Should_Dispatch_Command_To_ISender()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -2965,8 +2995,8 @@ public class GameHubTests : IDisposable
     public async Task CraftItem_Should_Broadcast_ItemCrafted_To_Zone_Group_When_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -2974,7 +3004,7 @@ public class GameHubTests : IDisposable
             .ReturnsAsync(new CraftItemHubResult { Success = true, ItemCrafted = "iron-sword", GoldSpent = 50, RemainingGold = 50 });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
         ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
 
@@ -2988,8 +3018,8 @@ public class GameHubTests : IDisposable
     public async Task CraftItem_Should_Send_ItemCrafted_To_Caller_When_Not_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -3009,8 +3039,8 @@ public class GameHubTests : IDisposable
     public async Task CraftItem_Should_Send_Error_On_Handler_Failure()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -3030,8 +3060,8 @@ public class GameHubTests : IDisposable
     public async Task CraftItem_Should_Send_Error_When_Mediator_Throws()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -3052,8 +3082,8 @@ public class GameHubTests : IDisposable
     public async Task CraftItem_Handler_Should_Deduct_Gold_And_Return_Crafted_Item()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithCraftingGoldAsync(db, accountId, gold: 200);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithCraftingGoldAsync(db, accountId, gold: 200);
 
         var handler = new CraftItemHubCommandHandler(
             new CharacterRepository(db),
@@ -3073,8 +3103,8 @@ public class GameHubTests : IDisposable
     public async Task CraftItem_Handler_Should_Fail_When_Not_Enough_Gold()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithCraftingGoldAsync(db, accountId, gold: 10);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithCraftingGoldAsync(db, accountId, gold: 10);
 
         var handler = new CraftItemHubCommandHandler(
             new CharacterRepository(db),
@@ -3092,8 +3122,8 @@ public class GameHubTests : IDisposable
     public async Task CraftItem_Handler_Should_Fail_When_Recipe_Slug_Is_Empty()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithCraftingGoldAsync(db, accountId, gold: 200);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithCraftingGoldAsync(db, accountId, gold: 200);
 
         var handler = new CraftItemHubCommandHandler(
             new CharacterRepository(db),
@@ -3128,8 +3158,8 @@ public class GameHubTests : IDisposable
     public async Task CraftItem_Handler_Should_Persist_Updated_Gold_To_Database()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterWithCraftingGoldAsync(db, accountId, gold: 300);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterWithCraftingGoldAsync(db, accountId, gold: 300);
 
         var handler = new CraftItemHubCommandHandler(
             new CharacterRepository(db),
@@ -3140,7 +3170,7 @@ public class GameHubTests : IDisposable
             CancellationToken.None);
 
         var updated = await db.Characters.FindAsync(character.Id);
-        var attrs   = JsonSerializer.Deserialize<Dictionary<string, int>>(updated!.Attributes)!;
+        var attrs = JsonSerializer.Deserialize<Dictionary<string, int>>(updated!.Attributes)!;
         attrs["Gold"].Should().Be(250);
     }
 
@@ -3149,7 +3179,7 @@ public class GameHubTests : IDisposable
     public async Task EnterDungeon_Should_Send_Error_When_No_Character_Selected()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
         await hub.EnterDungeon("dungeon-grotto");
@@ -3162,8 +3192,8 @@ public class GameHubTests : IDisposable
     public async Task EnterDungeon_Should_Dispatch_Command_To_ISender()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -3186,8 +3216,8 @@ public class GameHubTests : IDisposable
     public async Task EnterDungeon_Should_Broadcast_DungeonEntered_To_Zone_Group_When_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -3195,7 +3225,7 @@ public class GameHubTests : IDisposable
             .ReturnsAsync(new EnterDungeonHubResult { Success = true, DungeonId = "dungeon-grotto" });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CurrentZoneId"] = "starting-zone";
         ctx.Items["CurrentZoneGroupName"] = "zone:starting-zone";
 
@@ -3209,8 +3239,8 @@ public class GameHubTests : IDisposable
     public async Task EnterDungeon_Should_Send_DungeonEntered_To_Caller_When_Not_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -3230,8 +3260,8 @@ public class GameHubTests : IDisposable
     public async Task EnterDungeon_Should_Send_Error_On_Handler_Failure()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -3251,8 +3281,8 @@ public class GameHubTests : IDisposable
     public async Task EnterDungeon_Should_Send_Error_When_Mediator_Throws()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -3273,7 +3303,7 @@ public class GameHubTests : IDisposable
     public async Task EnterDungeon_Handler_Should_Return_DungeonId_For_Valid_Dungeon()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
 
         var handler = new EnterDungeonHubCommandHandler(
             new ZoneRepository(db),
@@ -3291,7 +3321,7 @@ public class GameHubTests : IDisposable
     public async Task EnterDungeon_Handler_Should_Fail_When_Zone_Not_Found()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
 
         var handler = new EnterDungeonHubCommandHandler(
             new ZoneRepository(db),
@@ -3309,7 +3339,7 @@ public class GameHubTests : IDisposable
     public async Task EnterDungeon_Handler_Should_Fail_When_Zone_Is_Not_A_Dungeon()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
 
         var handler = new EnterDungeonHubCommandHandler(
             new ZoneRepository(db),
@@ -3327,7 +3357,7 @@ public class GameHubTests : IDisposable
     public async Task EnterDungeon_Handler_Should_Fail_When_Slug_Is_Empty()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
 
         var handler = new EnterDungeonHubCommandHandler(
             new ZoneRepository(db),
@@ -3346,7 +3376,7 @@ public class GameHubTests : IDisposable
     public async Task VisitShop_Should_Send_Error_When_No_Character_Selected()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
         await hub.VisitShop(new VisitShopHubRequest("crestfall"));
@@ -3359,8 +3389,8 @@ public class GameHubTests : IDisposable
     public async Task VisitShop_Should_Dispatch_Command_To_ISender()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -3383,8 +3413,8 @@ public class GameHubTests : IDisposable
     public async Task VisitShop_Should_Send_ShopVisited_To_Caller_On_Success()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -3404,8 +3434,8 @@ public class GameHubTests : IDisposable
     public async Task VisitShop_Should_Send_Error_On_Handler_Failure()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -3425,8 +3455,8 @@ public class GameHubTests : IDisposable
     public async Task VisitShop_Should_Send_Error_When_Mediator_Throws()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -3444,9 +3474,10 @@ public class GameHubTests : IDisposable
 
     // VisitShopHubCommandHandler
     [Fact]
-    public async Task VisitShop_Handler_Should_Return_Zone_Info_For_Merchant_Zone()    {
+    public async Task VisitShop_Handler_Should_Return_Zone_Info_For_Merchant_Zone()
+    {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
 
         var handler = new VisitShopHubCommandHandler(
             new ZoneRepository(db),
@@ -3465,7 +3496,7 @@ public class GameHubTests : IDisposable
     public async Task VisitShop_Handler_Should_Fail_When_Zone_Not_Found()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
 
         var handler = new VisitShopHubCommandHandler(
             new ZoneRepository(db),
@@ -3483,7 +3514,7 @@ public class GameHubTests : IDisposable
     public async Task VisitShop_Handler_Should_Fail_When_Zone_Has_No_Merchant()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
 
         var handler = new VisitShopHubCommandHandler(
             new ZoneRepository(db),
@@ -3501,7 +3532,7 @@ public class GameHubTests : IDisposable
     public async Task VisitShop_Handler_Should_Fail_When_Zone_Id_Is_Empty()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
 
         var handler = new VisitShopHubCommandHandler(
             new ZoneRepository(db),
@@ -3520,7 +3551,7 @@ public class GameHubTests : IDisposable
     public async Task NavigateToLocation_Should_Send_Error_When_No_Character_Selected()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
         await hub.NavigateToLocation(new NavigateToLocationHubRequest("fenwick-market"));
@@ -3533,8 +3564,8 @@ public class GameHubTests : IDisposable
     public async Task NavigateToLocation_Should_Dispatch_Command_To_ISender()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -3542,7 +3573,7 @@ public class GameHubTests : IDisposable
             .ReturnsAsync(new NavigateToLocationHubResult { Success = true, LocationSlug = "fenwick-market", LocationDisplayName = "Fenwick Market", TypeKey = "location" });
 
         var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"]  = character.Id;
+        ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CurrentZoneId"] = "fenwick-crossing";
         ctx.Items["CurrentZoneGroupName"] = "zone:fenwick-crossing";
 
@@ -3559,8 +3590,8 @@ public class GameHubTests : IDisposable
     public async Task NavigateToLocation_Should_Send_LocationEntered_On_Success()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -3568,7 +3599,7 @@ public class GameHubTests : IDisposable
             .ReturnsAsync(new NavigateToLocationHubResult { Success = true, LocationSlug = "fenwick-market", LocationDisplayName = "Fenwick Market", TypeKey = "location" });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"]  = character.Id;
+        ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CurrentZoneId"] = "fenwick-crossing";
         ctx.Items["CurrentZoneGroupName"] = "zone:fenwick-crossing";
 
@@ -3582,8 +3613,8 @@ public class GameHubTests : IDisposable
     public async Task NavigateToLocation_Should_Send_Error_On_Handler_Failure()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -3591,7 +3622,7 @@ public class GameHubTests : IDisposable
             .ReturnsAsync(new NavigateToLocationHubResult { Success = false, ErrorMessage = "Location not available in zone" });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"]  = character.Id;
+        ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CurrentZoneId"] = "fenwick-crossing";
         ctx.Items["CurrentZoneGroupName"] = "zone:fenwick-crossing";
 
@@ -3605,8 +3636,8 @@ public class GameHubTests : IDisposable
     public async Task NavigateToLocation_Should_Send_Error_When_Mediator_Throws()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -3614,7 +3645,7 @@ public class GameHubTests : IDisposable
             .ThrowsAsync(new InvalidOperationException("DB failure"));
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"]  = character.Id;
+        ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CurrentZoneId"] = "fenwick-crossing";
         ctx.Items["CurrentZoneGroupName"] = "zone:fenwick-crossing";
 
@@ -3636,10 +3667,10 @@ public class GameHubTests : IDisposable
     [Fact]
     public async Task NavigateToLocation_Handler_Should_Persist_Location_And_Return_Info()
     {
-        await using var contentDb  = CreateContentDbContext();
-        await using var db         = _factory.CreateContext();
-        var accountId              = await SeedAccountAsync(db);
-        var character              = await SeedCharacterAsync(db, accountId);
+        await using var contentDb = CreateContentDbContext();
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         contentDb.ZoneLocations.Add(MakeZoneLocation("fenwick-market", "fenwick-crossing"));
         await contentDb.SaveChangesAsync();
@@ -3666,10 +3697,10 @@ public class GameHubTests : IDisposable
     [Fact]
     public async Task NavigateToLocation_Handler_Should_Fail_When_Location_Not_In_Zone()
     {
-        await using var contentDb  = CreateContentDbContext();
-        await using var db         = _factory.CreateContext();
-        var accountId              = await SeedAccountAsync(db);
-        var character              = await SeedCharacterAsync(db, accountId);
+        await using var contentDb = CreateContentDbContext();
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         contentDb.ZoneLocations.Add(MakeZoneLocation("other-location", "different-zone"));
         await contentDb.SaveChangesAsync();
@@ -3692,9 +3723,9 @@ public class GameHubTests : IDisposable
     [Fact]
     public async Task NavigateToLocation_Handler_Should_Fail_When_Location_Slug_Is_Empty()
     {
-        await using var contentDb  = CreateContentDbContext();
-        await using var db         = _factory.CreateContext();
-        var accountId              = await SeedAccountAsync(db);
+        await using var contentDb = CreateContentDbContext();
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
 
         var handler = new NavigateToLocationHubCommandHandler(
             new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
@@ -3714,9 +3745,9 @@ public class GameHubTests : IDisposable
     [Fact]
     public async Task NavigateToLocation_Handler_Should_Fail_When_Zone_Id_Is_Empty()
     {
-        await using var contentDb  = CreateContentDbContext();
-        await using var db         = _factory.CreateContext();
-        var accountId              = await SeedAccountAsync(db);
+        await using var contentDb = CreateContentDbContext();
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
 
         var handler = new NavigateToLocationHubCommandHandler(
             new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
@@ -3736,16 +3767,16 @@ public class GameHubTests : IDisposable
     [Fact]
     public async Task NavigateToLocation_Handler_Should_PersistPassiveDiscovery_WhenLevelMeetsThreshold()
     {
-        await using var contentDb  = CreateContentDbContext();
-        await using var db         = _factory.CreateContext();
-        var accountId              = await SeedAccountAsync(db);
-        var character              = new Character
+        await using var contentDb = CreateContentDbContext();
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = new Character
         {
             AccountId = accountId,
-            Name      = $"Char_{Guid.NewGuid():N}",
+            Name = $"Char_{Guid.NewGuid():N}",
             ClassName = "Warrior",
             SlotIndex = 1,
-            Level     = 10,
+            Level = 10,
         };
         db.Characters.Add(character);
         await db.SaveChangesAsync();
@@ -3755,15 +3786,15 @@ public class GameHubTests : IDisposable
             MakeZoneLocation("fenwick-market", "fenwick-crossing"),
             new RealmEngine.Data.Entities.ZoneLocation
             {
-                Slug         = "hidden-grotto",
-                ZoneId       = "fenwick-crossing",
+                Slug = "hidden-grotto",
+                ZoneId = "fenwick-crossing",
                 TypeKey = "dungeon",
-                IsActive     = true,
-                DisplayName  = "Hidden Grotto",
-                Traits       = new RealmEngine.Data.Entities.ZoneLocationTraits
+                IsActive = true,
+                DisplayName = "Hidden Grotto",
+                Traits = new RealmEngine.Data.Entities.ZoneLocationTraits
                 {
-                    IsHidden          = true,
-                    UnlockType        = "skill_check_passive",
+                    IsHidden = true,
+                    UnlockType = "skill_check_passive",
                     DiscoverThreshold = 5,  // level 10 >= 5 → should trigger
                 },
             });
@@ -3791,7 +3822,7 @@ public class GameHubTests : IDisposable
     public async Task UnlockZoneLocation_Should_Send_Error_When_No_Character_Selected()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
         await hub.UnlockZoneLocation(new UnlockZoneLocationHubRequest("secret-cave", "quest"));
@@ -3804,19 +3835,19 @@ public class GameHubTests : IDisposable
     public async Task UnlockZoneLocation_Should_Dispatch_Command_And_Broadcast_ZoneLocationUnlocked()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
             .Setup(m => m.Send(It.IsAny<IRequest<UnlockZoneLocationHubResult>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UnlockZoneLocationHubResult
             {
-                Success             = true,
-                LocationSlug        = "secret-cave",
+                Success = true,
+                LocationSlug = "secret-cave",
                 LocationDisplayName = "Secret Cave",
                 TypeKey = "dungeon",
-                WasAlreadyUnlocked  = false,
+                WasAlreadyUnlocked = false,
             });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
@@ -3838,7 +3869,7 @@ public class GameHubTests : IDisposable
     public async Task SearchArea_Should_Send_Error_When_No_Character_Selected()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
+        var accountId = await SeedAccountAsync(db);
         var (hub, clients, _, _) = CreateHub(db, accountId);
 
         await hub.SearchArea();
@@ -3851,8 +3882,8 @@ public class GameHubTests : IDisposable
     public async Task SearchArea_Should_Send_Error_When_Not_In_Zone()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
         var (hub, clients, _, ctx) = CreateHub(db, accountId);
         ctx.Items["CharacterId"] = character.Id;
         // No "CurrentZoneId" in context items
@@ -3867,8 +3898,8 @@ public class GameHubTests : IDisposable
     public async Task SearchArea_Should_Dispatch_Command_And_Broadcast_AreaSearched()
     {
         await using var db = _factory.CreateContext();
-        var accountId      = await SeedAccountAsync(db);
-        var character      = await SeedCharacterAsync(db, accountId);
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var mediatorMock = new Mock<ISender>();
         mediatorMock
@@ -3876,7 +3907,7 @@ public class GameHubTests : IDisposable
             .ReturnsAsync(new SearchAreaHubResult { Success = true, RollValue = 7, AnyFound = false, Discovered = [] });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
-        ctx.Items["CharacterId"]   = character.Id;
+        ctx.Items["CharacterId"] = character.Id;
         ctx.Items["CurrentZoneId"] = "fenwick-crossing";
         ctx.Items["CurrentZoneGroupName"] = "zone:fenwick-crossing";
 
@@ -3896,18 +3927,18 @@ public class GameHubTests : IDisposable
     public async Task UnlockZoneLocation_Handler_Should_Unlock_And_Return_Info()
     {
         await using var contentDb = CreateContentDbContext();
-        await using var db        = _factory.CreateContext();
-        var accountId             = await SeedAccountAsync(db);
-        var character             = await SeedCharacterAsync(db, accountId);
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         contentDb.ZoneLocations.Add(new RealmEngine.Data.Entities.ZoneLocation
         {
-            Slug         = "secret-cave",
-            ZoneId       = "fenwick-crossing",
+            Slug = "secret-cave",
+            ZoneId = "fenwick-crossing",
             TypeKey = "dungeon",
-            IsActive     = true,
-            DisplayName  = "Secret Cave",
-            Traits       = new RealmEngine.Data.Entities.ZoneLocationTraits { IsHidden = true },
+            IsActive = true,
+            DisplayName = "Secret Cave",
+            Traits = new RealmEngine.Data.Entities.ZoneLocationTraits { IsHidden = true },
         });
         await contentDb.SaveChangesAsync();
 
@@ -3931,18 +3962,18 @@ public class GameHubTests : IDisposable
     public async Task UnlockZoneLocation_Handler_Should_Return_WasAlreadyUnlocked_When_Duplicate()
     {
         await using var contentDb = CreateContentDbContext();
-        await using var db        = _factory.CreateContext();
-        var accountId             = await SeedAccountAsync(db);
-        var character             = await SeedCharacterAsync(db, accountId);
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         contentDb.ZoneLocations.Add(new RealmEngine.Data.Entities.ZoneLocation
         {
-            Slug         = "secret-cave",
-            ZoneId       = "fenwick-crossing",
+            Slug = "secret-cave",
+            ZoneId = "fenwick-crossing",
             TypeKey = "dungeon",
-            IsActive     = true,
-            DisplayName  = "Secret Cave",
-            Traits       = new RealmEngine.Data.Entities.ZoneLocationTraits { IsHidden = true },
+            IsActive = true,
+            DisplayName = "Secret Cave",
+            Traits = new RealmEngine.Data.Entities.ZoneLocationTraits { IsHidden = true },
         });
         await contentDb.SaveChangesAsync();
 
@@ -3966,9 +3997,9 @@ public class GameHubTests : IDisposable
     public async Task UnlockZoneLocation_Handler_Should_Fail_For_NonHiddenLocation()
     {
         await using var contentDb = CreateContentDbContext();
-        await using var db        = _factory.CreateContext();
-        var accountId             = await SeedAccountAsync(db);
-        var character             = await SeedCharacterAsync(db, accountId);
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         contentDb.ZoneLocations.Add(MakeZoneLocation("visible-market", "fenwick-crossing"));
         await contentDb.SaveChangesAsync();
@@ -3991,7 +4022,7 @@ public class GameHubTests : IDisposable
     public async Task SearchArea_Handler_Should_Return_Error_When_Character_Not_Found()
     {
         await using var contentDb = CreateContentDbContext();
-        await using var db        = _factory.CreateContext();
+        await using var db = _factory.CreateContext();
 
         var handler = new SearchAreaHubCommandHandler(
             new EfCoreZoneLocationRepository(contentDb, NullLogger<EfCoreZoneLocationRepository>.Instance),
@@ -4011,30 +4042,30 @@ public class GameHubTests : IDisposable
     public async Task SearchArea_Handler_Should_Unlock_Active_Locations_When_Roll_Meets_Threshold()
     {
         await using var contentDb = CreateContentDbContext();
-        await using var db        = _factory.CreateContext();
-        var accountId             = await SeedAccountAsync(db);
-        var character             = new Character
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = new Character
         {
             AccountId = accountId,
-            Name      = $"Char_{Guid.NewGuid():N}",
+            Name = $"Char_{Guid.NewGuid():N}",
             ClassName = "Warrior",
             SlotIndex = 1,
-            Level     = 10,
+            Level = 10,
         };
         db.Characters.Add(character);
         await db.SaveChangesAsync();
 
         contentDb.ZoneLocations.Add(new RealmEngine.Data.Entities.ZoneLocation
         {
-            Slug         = "hidden-altar",
-            ZoneId       = "fenwick-crossing",
+            Slug = "hidden-altar",
+            ZoneId = "fenwick-crossing",
             TypeKey = "location",
-            IsActive     = true,
-            DisplayName  = "Hidden Altar",
-            Traits       = new RealmEngine.Data.Entities.ZoneLocationTraits
+            IsActive = true,
+            DisplayName = "Hidden Altar",
+            Traits = new RealmEngine.Data.Entities.ZoneLocationTraits
             {
-                IsHidden          = true,
-                UnlockType        = "skill_check_active",
+                IsHidden = true,
+                UnlockType = "skill_check_active",
                 DiscoverThreshold = 1,  // level 10 + even worst roll (-5) = 5 >= 1 → always found
             },
         });

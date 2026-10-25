@@ -13,17 +13,17 @@ public class RemoveEnchantmentCommand : IRequest<RemoveEnchantmentResult>
     /// The character removing the enchantment.
     /// </summary>
     public required Character Character { get; set; }
-    
+
     /// <summary>
     /// The item to remove an enchantment from.
     /// </summary>
     public required Item Item { get; set; }
-    
+
     /// <summary>
     /// The zero-based index of the enchantment to remove from PlayerEnchantments list.
     /// </summary>
     public int EnchantmentIndex { get; set; }
-    
+
     /// <summary>
     /// The removal scroll item to consume.
     /// </summary>
@@ -39,17 +39,17 @@ public class RemoveEnchantmentResult
     /// Whether the enchantment was successfully removed.
     /// </summary>
     public bool Success { get; set; }
-    
+
     /// <summary>
     /// Result message describing what happened.
     /// </summary>
     public required string Message { get; set; }
-    
+
     /// <summary>
     /// The enchantment that was removed (null if failed).
     /// </summary>
     public Enchantment? RemovedEnchantment { get; set; }
-    
+
     /// <summary>
     /// Whether the scroll was consumed (always true if validation passed).
     /// </summary>

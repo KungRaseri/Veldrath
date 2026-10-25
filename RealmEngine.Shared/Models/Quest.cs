@@ -10,87 +10,87 @@ public class Quest : ITraitable
     /// Gets or sets the unique identifier for this quest.
     /// </summary>
     public string Id { get; set; } = Guid.NewGuid().ToString();
-    
+
     /// <summary>
     /// Gets or sets the URL-safe identifier for this quest (kebab-case).
     /// Used for lookups, references, and catalog identification. Maps to "slug" in JSON.
     /// </summary>
     public string Slug { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the quest title displayed to the player.
     /// </summary>
     public string Title { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the display name shown in UI.
     /// May differ from internal Title. Maps to "displayName" in JSON.
     /// </summary>
     public string DisplayName { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the rarity weight for quest selection in procedural generation.
     /// Lower values = more rare/harder to get.
     /// </summary>
     public int RarityWeight { get; set; } = 50;
-    
+
     /// <summary>
     /// Gets or sets the descriptive text explaining the quest objectives.
     /// </summary>
     public string Description { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the quest type (e.g., "kill", "fetch", "escort", "investigate", "delivery").
     /// </summary>
     public string QuestType { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the difficulty rating (e.g., "easy", "medium", "hard").
     /// </summary>
     public string Difficulty { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the quest category ("main", "side", "legendary").
     /// </summary>
     public string Type { get; set; } = "side";
-    
+
     /// <summary>
     /// Gets or sets the types of NPCs that can give this quest.
     /// Examples: ["common", "service", "military"], ["merchants", "craftsmen"]
     /// </summary>
     public List<string> QuestGiverTypes { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets whether combat is optional for this quest.
     /// True = quest can be completed without fighting.
     /// </summary>
     public bool CombatOptional { get; set; } = false;
-    
+
     /// <summary>
     /// Gets or sets the minimum number of clues required (for investigation quests).
     /// </summary>
     public int MinClues { get; set; } = 0;
-    
+
     /// <summary>
     /// Gets or sets the maximum number of clues available (for investigation quests).
     /// </summary>
     public int MaxClues { get; set; } = 0;
-    
+
     /// <summary>
     /// Gets or sets the base gold reward for this quest template.
     /// </summary>
     public int BaseGoldReward { get; set; } = 0;
-    
+
     /// <summary>
     /// Gets or sets the base XP reward for this quest template.
     /// </summary>
     public int BaseXpReward { get; set; } = 0;
-    
+
     /// <summary>
     /// Gets or sets the unique identifier of the NPC who gives this quest.
     /// </summary>
     public string QuestGiverId { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the display name of the quest giver NPC.
     /// </summary>
@@ -100,17 +100,17 @@ public class Quest : ITraitable
     /// Gets or sets the type of target for the objective (e.g., "beast", "undead", "demon").
     /// </summary>
     public string TargetType { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the specific name of the target (e.g., "Ancient Red Dragon").
     /// </summary>
     public string TargetName { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the required quantity to complete the objective.
     /// </summary>
     public int Quantity { get; set; } = 1;
-    
+
     /// <summary>
     /// Gets or sets the location where the quest objective must be completed.
     /// </summary>
@@ -120,12 +120,12 @@ public class Quest : ITraitable
     /// Gets or sets the collection of prerequisite quest IDs that must be completed before this quest becomes available.
     /// </summary>
     public List<string> Prerequisites { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the dictionary mapping objective names to their required completion counts.
     /// </summary>
     public Dictionary<string, int> Objectives { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the dictionary tracking current progress towards each objective.
     /// </summary>
@@ -135,17 +135,17 @@ public class Quest : ITraitable
     /// Gets or sets the gold reward for completing this quest.
     /// </summary>
     public int GoldReward { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the experience points reward for completing this quest.
     /// </summary>
     public int XpReward { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the bonus time (in minutes) awarded in Apocalypse mode for completing this quest.
     /// </summary>
     public int ApocalypseBonusMinutes { get; set; } = 0;
-    
+
     /// <summary>
     /// Collection of item reward reference IDs (v4.1 format) given to player upon quest completion.
     /// Each ID is a JSON reference like "@items/weapons/swords:magic-longsword".
@@ -183,7 +183,7 @@ public class Quest : ITraitable
     /// </code>
     /// </example>
     public List<string> ItemRewardIds { get; set; } = new();
-    
+
     /// <summary>
     /// Collection of ability reward reference IDs (v4.1 format) granted to player upon quest completion.
     /// Each ID is a JSON reference like "@abilities/active/offensive:power-strike".
@@ -221,7 +221,7 @@ public class Quest : ITraitable
     /// </code>
     /// </example>
     public List<string> AbilityRewardIds { get; set; } = new();
-    
+
     /// <summary>
     /// Collection of location reference IDs (v4.1 format) where quest objectives must be completed.
     /// Each ID is a JSON reference like "@world/locations/dungeons:dark-cavern".
@@ -258,7 +258,7 @@ public class Quest : ITraitable
     /// </code>
     /// </example>
     public List<string> ObjectiveLocationIds { get; set; } = new();
-    
+
     /// <summary>
     /// Collection of NPC reference IDs (v4.1 format) involved in quest objectives.
     /// Each ID is a JSON reference like "@npcs/merchants:blacksmith".
@@ -296,7 +296,7 @@ public class Quest : ITraitable
     /// </code>
     /// </example>
     public List<string> ObjectiveNpcIds { get; set; } = new();
-    
+
     /// <summary>
     /// Collection of enemy reference IDs (v4.1 format) that must be defeated for quest objectives.
     /// Each ID is a JSON reference like "@enemies/goblinoids:goblin-warrior".
@@ -405,12 +405,12 @@ public class Quest : ITraitable
     /// Gets or sets whether this quest is currently active in the player's quest log.
     /// </summary>
     public bool IsActive { get; set; } = false;
-    
+
     /// <summary>
     /// Gets or sets whether this quest has been completed.
     /// </summary>
     public bool IsCompleted { get; set; } = false;
-    
+
     /// <summary>
     /// Gets or sets the current progress count towards the quest objective.
     /// </summary>
@@ -420,7 +420,7 @@ public class Quest : ITraitable
     /// Gets or sets the time limit for this quest in hours (0 = no time limit).
     /// </summary>
     public int TimeLimit { get; set; } = 0;
-    
+
     /// <summary>
     /// Gets or sets the timestamp when this quest was started.
     /// </summary>

@@ -239,7 +239,7 @@ public static class SkillEffectCalculator
             return null;
 
         // Check for skillReference trait (JSON reference format: @skills/weapon:light-blades)
-        if (item.Traits.TryGetValue("skillReference", out var skillRef) && 
+        if (item.Traits.TryGetValue("skillReference", out var skillRef) &&
             skillRef.Type == TraitType.String)
         {
             var reference = skillRef.AsString();
