@@ -218,7 +218,7 @@ describe('LeftSidebar (character sheet)', () => {
 		});
 		render(LeftSidebar, { props: { session } });
 
-		expect(await screen.findByText('Equipped')).toBeTruthy();
+		expect(await screen.findByLabelText('Equipped')).toBeTruthy();
 
 		const potionRow = screen.getByTitle('Inspect Health Potion').closest('li');
 		expect(potionRow?.querySelector('.bag-row-status')?.textContent).toContain('Common');

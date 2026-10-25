@@ -573,12 +573,18 @@
 .equip-slot {
 	display: flex;
 	flex-direction: column;
-	gap: 2px;
+	gap: 1px;
 	min-width: 0;
-	padding: 6px 8px;
+	padding: 5px 6px;
 	background: var(--vds-bg-2);
 	border: 1px solid var(--vds-border);
 	border-radius: var(--vds-radius-sm);
+}
+
+.equip-slot:hover,
+.equip-slot:focus-within {
+	background: var(--vds-bg-3);
+	border-color: var(--vds-border-strong);
 }
 
 .equip-slot-empty {
@@ -586,22 +592,43 @@
 	border-style: dashed;
 }
 
+/* Type icon and item name share one line; the slot name is the muted line below. */
 .equip-slot-head {
 	display: flex;
 	align-items: center;
 	gap: 4px;
+	min-width: 0;
 }
 
-.equip-slot-head svg {
+.equip-slot-icon {
+	flex: none;
 	color: var(--vds-gold);
+	opacity: 0.85;
 }
 
 .equip-slot-name {
+	flex: 1;
+	min-width: 0;
 	overflow: hidden;
 	font-size: var(--vds-text-xs);
 	font-weight: 600;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+	text-align: left;
+}
+
+.equip-slot-empty-label {
+	flex: 1;
+	font-size: var(--vds-text-xs);
+	color: var(--vds-text-subtle);
+}
+
+.equip-slot-slot {
+	padding-left: 16px;
+	font-size: var(--vds-text-xs);
+	color: var(--vds-text-subtle);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
 }
 
 .sheet-attributes {
@@ -708,12 +735,9 @@
 	letter-spacing: 0.03em;
 }
 
-.bag-row-badge {
-	padding: 0 5px;
-	background: var(--vds-seal);
-	border-radius: var(--vds-radius-sm);
-	color: var(--vds-bg-1);
-	font-weight: 600;
+.bag-row-equipped-mark {
+	flex: none;
+	color: var(--vds-gold);
 }
 
 .bag-row-actions {

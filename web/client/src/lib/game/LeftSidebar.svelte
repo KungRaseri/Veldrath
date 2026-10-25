@@ -2,6 +2,7 @@
 	import {
 		ArrowDownToLine,
 		Backpack,
+		Check,
 		Coins,
 		FlaskConical,
 		HeartPulse,
@@ -155,34 +156,34 @@
 					onfocusin={(event) => item && showTooltip(item, event.currentTarget)}
 					onfocusout={hideTooltip}
 				>
-					<span class="equip-slot-head">
-						<SlotIcon size={13} aria-hidden="true" />
-						<span class="text-xs tracking-wide text-surface-600-400 uppercase">
-							{slotLabel(slot.id)}
-						</span>
-					</span>
-					{#if item}
-						<button
-							class="equip-slot-name {rarityClass(item.rarity)}"
-							type="button"
-							title={`Inspect ${itemLabel(item)}`}
-							onclick={() => session.inspectItem(item)}
-						>
-							{itemLabel(item)}
-						</button>
-						<button
-							class="btn preset-tonal-surface px-1 py-0.5 text-xs"
-							type="button"
-							title={`Unequip ${itemLabel(item)}`}
-							aria-label={`Unequip ${itemLabel(item)}`}
-							onclick={() => session.unequip(slot.id)}
-						>
-							<Undo2 size={12} aria-hidden="true" />
-							<span class="sr-only">Unequip</span>
-						</button>
-					{:else}
-						<span class="text-xs text-surface-600-400">Empty</span>
-					{/if}
+					<div class="equip-slot-head">
+						{#if item}
+							{@const ItemIcon = itemIcon(item)}
+							<ItemIcon class="equip-slot-icon" size={12} aria-hidden="true" />
+							<button
+								class="equip-slot-name {rarityClass(item.rarity)}"
+								type="button"
+								title={`Inspect ${itemLabel(item)}`}
+								onclick={() => session.inspectItem(item)}
+							>
+								{itemLabel(item)}
+							</button>
+							<button
+								class="btn preset-tonal-surface px-1 py-0.5"
+								type="button"
+								title={`Unequip ${itemLabel(item)}`}
+								aria-label={`Unequip ${itemLabel(item)}`}
+								onclick={() => session.unequip(slot.id)}
+							>
+								<Undo2 size={11} aria-hidden="true" />
+								<span class="sr-only">Unequip</span>
+							</button>
+						{:else}
+							<SlotIcon class="equip-slot-icon" size={12} aria-hidden="true" />
+							<span class="equip-slot-empty-label">Empty</span>
+						{/if}
+					</div>
+					<p class="equip-slot-slot">{slotLabel(slot.id)}</p>
 				</li>
 			{/each}
 		</ul>
@@ -232,15 +233,15 @@
 							>
 								{itemLabel(item)}
 							</button>
+							{#if item.isEquipped}
+								<Check class="bag-row-equipped-mark" size={12} aria-label="Equipped" role="img" />
+							{/if}
 							{#if (item.quantity ?? 1) > 1}
 								<span class="bag-row-qty">×{item.quantity}</span>
 							{/if}
 						</div>
 
 						<p class="bag-row-status">
-							{#if item.isEquipped}
-								<span class="bag-row-badge">Equipped</span>
-							{/if}
 							<span>{item.rarity}</span>
 							<span aria-hidden="true">·</span>
 							<span>{item.type}</span>
