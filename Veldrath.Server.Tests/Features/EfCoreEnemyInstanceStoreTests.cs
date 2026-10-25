@@ -1,11 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Moq;
 using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Shared.Abstractions;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Features.Characters.Combat;
+using Veldrath.Server.Settings;
 using Veldrath.Server.Tests.Infrastructure;
 
 namespace Veldrath.Server.Tests.Features;
@@ -22,6 +24,7 @@ public class EfCoreEnemyInstanceStoreTests : IDisposable
         new(
             db,
             new ActorPoolResolver(new EnemyGenerator(Mock.Of<IEnemyRepository>(), NullLogger<EnemyGenerator>.Instance)),
+            Options.Create(new EnemyWorldOptions()),
             NullLogger<EfCoreEnemyInstanceStore>.Instance);
 
     public void Dispose() => _dbFactory.Dispose();
@@ -129,8 +132,8 @@ public class EfCoreEnemyInstanceStoreTests : IDisposable
         var store = CreateStore(db);
         var enemy = await SeedEnemyAsync(store, "zone:c", "square");
 
-        var firstWin = await store.TryMarkDeadAsync(enemy.Id, TimeSpan.FromMinutes(1), CancellationToken.None);
-        var secondWin = await store.TryMarkDeadAsync(enemy.Id, TimeSpan.FromMinutes(1), CancellationToken.None);
+        var firstWin = await store.TryMarkDeadAsync(enemy.Id, CancellationToken.None);
+        var secondWin = await store.TryMarkDeadAsync(enemy.Id, CancellationToken.None);
 
         firstWin.Should().BeTrue("the killing blow must be able to award rewards");
         secondWin.Should().BeFalse("a second caller must not award the same kill again");
@@ -149,7 +152,7 @@ public class EfCoreEnemyInstanceStoreTests : IDisposable
 
         enemy.Participants.Add(hero.Id);
         await store.SaveAsync(enemy, "zone:d", "square", CancellationToken.None);
-        await store.TryMarkDeadAsync(enemy.Id, TimeSpan.FromMinutes(5), CancellationToken.None);
+        await store.TryMarkDeadAsync(enemy.Id, CancellationToken.None);
 
         // Move the timer into the past, as a real elapsed respawn would.
         var row = await db.EnemyInstances.SingleAsync(e => e.Id == enemy.Id);

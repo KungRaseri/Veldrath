@@ -1,7 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Options;
 using RealmEngine.Shared.Models;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
+using Veldrath.Server.Settings;
 
 namespace Veldrath.Server.Features.Characters.Combat;
 
@@ -29,19 +32,23 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
 {
     private readonly ApplicationDbContext _db;
     private readonly ActorPoolResolver _archetypes;
+    private readonly EnemyWorldOptions _options;
     private readonly ILogger<EfCoreEnemyInstanceStore> _logger;
 
     /// <summary>Initializes a new instance of <see cref="EfCoreEnemyInstanceStore"/>.</summary>
     /// <param name="db">Server database context.</param>
     /// <param name="archetypes">Resolver used to rebuild an enemy's archetype template from content.</param>
+    /// <param name="options">World tuning (respawn delay and sweep sizing).</param>
     /// <param name="logger">Logger instance.</param>
     public EfCoreEnemyInstanceStore(
         ApplicationDbContext db,
         ActorPoolResolver archetypes,
+        IOptions<EnemyWorldOptions> options,
         ILogger<EfCoreEnemyInstanceStore> logger)
     {
         _db = db;
         _archetypes = archetypes;
+        _options = options.Value;
         _logger = logger;
     }
 
@@ -198,12 +205,9 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
     }
 
     /// <inheritdoc />
-    public async Task<bool> TryMarkDeadAsync(
-        Guid enemyId,
-        TimeSpan respawnDelay,
-        CancellationToken cancellationToken = default)
+    public async Task<bool> TryMarkDeadAsync(Guid enemyId, CancellationToken cancellationToken = default)
     {
-        var respawnAt = DateTimeOffset.UtcNow + respawnDelay;
+        var respawnAt = DateTimeOffset.UtcNow + _options.RespawnDelay;
 
         // Single conditional UPDATE: exactly one caller flips IsAlive, so rewards are distributed once.
         var affected = await _db.EnemyInstances
@@ -228,6 +232,92 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
             .Where(e => e.Id == enemyId)
             .ExecuteDeleteAsync(cancellationToken);
 
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<EnemyRespawnedEvent>> SweepExpiredRespawnsAsync(
+        int batchSize,
+        CancellationToken cancellationToken = default)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var isPostgres = _db.Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true;
+
+        // On PostgreSQL the batch is claimed with SKIP LOCKED inside a transaction, so several sweeper instances
+        // never revive the same row twice. SQLite (tests) has neither the clause nor the concurrency to guard.
+        IDbContextTransaction? transaction = null;
+        if (isPostgres)
+        {
+            transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
+        }
+
+        try
+        {
+            var due = isPostgres
+                ? await _db.EnemyInstances
+                    .FromSql($"""
+                        SELECT * FROM "EnemyInstances"
+                        WHERE "IsAlive" = false AND "RespawnAt" IS NOT NULL AND "RespawnAt" <= {now}
+                        ORDER BY "RespawnAt"
+                        LIMIT {batchSize}
+                        FOR UPDATE SKIP LOCKED
+                        """)
+                    .AsNoTracking()
+                    .ToListAsync(cancellationToken)
+                : await _db.EnemyInstances
+                    .AsNoTracking()
+                    .Where(e => !e.IsAlive && e.RespawnAt != null && e.RespawnAt <= now)
+                    .OrderBy(e => e.RespawnAt)
+                    .Take(batchSize)
+                    .ToListAsync(cancellationToken);
+
+            if (due.Count == 0)
+            {
+                return [];
+            }
+
+            var ids = due.Select(e => e.Id).ToList();
+
+            await _db.EnemyInstances
+                .Where(e => ids.Contains(e.Id))
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(e => e.IsAlive, true)
+                        .SetProperty(e => e.CurrentHealth, e => e.MaxHealth)
+                        .SetProperty(e => e.RespawnAt, (DateTimeOffset?)null)
+                        .SetProperty(e => e.Version, e => e.Version + 1),
+                    cancellationToken);
+
+            await _db.EnemyParticipants
+                .Where(p => ids.Contains(p.EnemyInstanceId))
+                .ExecuteDeleteAsync(cancellationToken);
+
+            DetachTracked(ids);
+
+            if (transaction is not null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
+
+            _logger.LogDebug("Respawn sweep revived {Count} enemy row(s)", due.Count);
+
+            return due
+                .Select(e => new EnemyRespawnedEvent(
+                    e.Id,
+                    e.ZoneGroup,
+                    e.LocationSlug,
+                    e.Name,
+                    e.Level,
+                    e.MaxHealth,
+                    e.MaxHealth))
+                .ToList();
+        }
+        finally
+        {
+            if (transaction is not null)
+            {
+                await transaction.DisposeAsync();
+            }
+        }
+    }
+
     /// <summary>
     /// Brings a location's rows back in line with the world: zero-health enemies that are still flagged alive are
     /// killed (a crash between saving health and the death transition), and enemies whose respawn time has passed
@@ -242,7 +332,7 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
         CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
-        var respawnDelay = TimeSpan.FromSeconds(60);
+        var respawnDelay = _options.RespawnDelay;
 
         var brokenRows = await _db.EnemyInstances
             .Where(e => e.ZoneGroup == zoneGroup && e.LocationSlug == locationSlug && e.IsAlive && e.CurrentHealth <= 0)

@@ -143,7 +143,7 @@ public class AttackEnemyHubCommandHandler
             (Guid CharacterId, int Xp, int Gold) myReward = default;
 
             // Only the caller that wins the death transition distributes rewards.
-            if (await _enemies.TryMarkDeadAsync(enemy.Id, CombatHelpers.RespawnDelay, cancellationToken))
+            if (await _enemies.TryMarkDeadAsync(enemy.Id, cancellationToken))
             {
                 var rewardList = await CombatHelpers.DistributeRewardsAsync(enemy, _characterRepo, _sessions, cancellationToken);
                 myReward = rewardList.FirstOrDefault(r => r.CharacterId == request.CharacterId);

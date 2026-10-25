@@ -3,7 +3,7 @@ using Veldrath.Server.Features.Characters.Combat;
 namespace Veldrath.Server.Tests.Infrastructure;
 
 /// <summary>
-/// In-memory <see cref="IEnemyInstanceStore"/> for handler tests.
+/// In-memory <see cref="IEnemyInstanceStore"/> for handler and service tests.
 /// </summary>
 /// <remarks>
 /// The sync helpers exist so tests can arrange and assert state without awaiting; the interface methods simply
@@ -16,6 +16,12 @@ internal sealed class FakeEnemyInstanceStore : IEnemyInstanceStore
 
     /// <summary>Gets how many times health or participation has been persisted.</summary>
     public int SaveCount { get; private set; }
+
+    /// <summary>Gets the respawns that the next sweep should report, which the sweep drains.</summary>
+    public Queue<EnemyRespawnedEvent> DueRespawns { get; } = new();
+
+    /// <summary>Gets how many sweeps have been performed.</summary>
+    public int SweepCount { get; private set; }
 
     /// <summary>Arranges an enemy at a location.</summary>
     /// <param name="zoneGroup">SignalR zone group.</param>
@@ -80,11 +86,26 @@ internal sealed class FakeEnemyInstanceStore : IEnemyInstanceStore
     }
 
     /// <inheritdoc />
-    public Task<bool> TryMarkDeadAsync(
-        Guid enemyId,
-        TimeSpan respawnDelay,
-        CancellationToken cancellationToken = default) =>
+    public Task<bool> TryMarkDeadAsync(Guid enemyId, CancellationToken cancellationToken = default) =>
         Task.FromResult(_rows.ContainsKey(enemyId) && _dead.Add(enemyId));
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<EnemyRespawnedEvent>> SweepExpiredRespawnsAsync(
+        int batchSize,
+        CancellationToken cancellationToken = default)
+    {
+        SweepCount++;
+
+        var revived = new List<EnemyRespawnedEvent>();
+        while (revived.Count < batchSize && DueRespawns.Count > 0)
+        {
+            var next = DueRespawns.Dequeue();
+            _dead.Remove(next.Id);
+            revived.Add(next);
+        }
+
+        return Task.FromResult<IReadOnlyList<EnemyRespawnedEvent>>(revived);
+    }
 
     /// <inheritdoc />
     public Task RemoveAsync(Guid enemyId, CancellationToken cancellationToken = default)
