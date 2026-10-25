@@ -1,3 +1,4 @@
+using System.Text.Json;
 using RealmEngine.Core.Features.Combat.Services;
 using RealmEngine.Shared.Models;
 
@@ -136,6 +137,23 @@ public class StatusEffectParserTests
 
         // Assert
         effect!.RemainingDuration.Should().Be(2);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-3)]
+    [InlineData("0")]
+    public void ParseStatusEffectFromAbility_Should_Ignore_Non_Positive_Duration(object duration)
+    {
+        // Arrange
+        var power = CreatePower(("statusEffect", "stunned"), ("statusDuration", duration));
+
+        // Act
+        var effect = StatusEffectParser.ParseStatusEffectFromAbility(power, "Fire Bolt");
+
+        // Assert
+        effect!.RemainingDuration.Should().Be(2, "a zero or negative duration would expire instantly");
+        effect.OriginalDuration.Should().Be(2);
     }
 
     [Theory]
@@ -326,6 +344,41 @@ public class StatusEffectParserTests
             ["defense"] = 0,
             ["speed"] = 4
         });
+    }
+
+    [Fact]
+    public void ParseStatusEffectFromAbility_Should_Merge_JsonElement_Stat_Modifiers()
+    {
+        // Arrange
+        using var document = JsonDocument.Parse("""{"defense": -4, "speed": "6", "luck": "lots"}""");
+        var power = CreatePower(("statusEffect", "cursed"), ("statModifiers", document.RootElement));
+
+        // Act
+        var effect = StatusEffectParser.ParseStatusEffectFromAbility(power, "Hex");
+
+        // Assert
+        effect!.StatModifiers.Should().BeEquivalentTo(new Dictionary<string, int>
+        {
+            ["attack"] = -3,
+            ["defense"] = -4,
+            ["speed"] = 6
+        });
+    }
+
+    [Fact]
+    public void ParseStatusEffectFromAbility_Should_Lower_Case_Custom_Stat_Modifier_Names()
+    {
+        // Arrange
+        var custom = new Dictionary<string, object> { ["Attack"] = 3, ["DEFENSE"] = -2 };
+        var power = CreatePower(("statusEffect", "blessed"), ("statModifiers", custom));
+
+        // Act
+        var effect = StatusEffectParser.ParseStatusEffectFromAbility(power, "Benediction");
+
+        // Assert
+        effect!.StatModifiers.Should().NotContainKeys("Attack", "DEFENSE");
+        effect.StatModifiers["attack"].Should().Be(3);
+        effect.StatModifiers["defense"].Should().Be(-2);
     }
 
     [Fact]
