@@ -1,22 +1,34 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Veldrath.Server.Infrastructure.Email;
 
 /// <summary>
-/// No-operation email sender used in development and test environments.
-/// Instead of transmitting the message over SMTP the full email body is
-/// written to the configured logger so developers can inspect the content
-/// (e.g. confirmation links) from the console or log file without an
-/// outgoing mail server.
+/// No-operation email sender used when no SMTP host is configured.
+/// <para>
+/// In development the full body is written to the logger so a developer can copy the
+/// confirmation or password-reset link out of the console instead of running a mail server.
+/// Outside development only the envelope is logged: the body carries single-use tokens, which
+/// must not end up in production logs (CodeQL cs/cleartext-storage).
+/// </para>
 /// </summary>
-public class NullEmailSender(ILogger<NullEmailSender> logger) : IEmailSender
+public class NullEmailSender(IHostEnvironment environment, ILogger<NullEmailSender> logger) : IEmailSender
 {
     /// <inheritdoc />
     public Task SendAsync(string to, string subject, string htmlBody, CancellationToken ct = default)
     {
-        logger.LogInformation(
-            "[NullEmailSender] To: {To} | Subject: {Subject}\n{Body}",
-            to, subject, htmlBody);
+        if (environment.IsDevelopment())
+        {
+            logger.LogInformation(
+                "[NullEmailSender] To: {To} | Subject: {Subject}\n{Body}",
+                to, subject, htmlBody);
+        }
+        else
+        {
+            logger.LogInformation(
+                "[NullEmailSender] To: {To} | Subject: {Subject} (body withheld outside development).",
+                to, subject);
+        }
 
         return Task.CompletedTask;
     }
