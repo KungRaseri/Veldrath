@@ -183,6 +183,8 @@ Concretely:
 
 Each phase is independently shippable and leaves the game playable.
 
+**Tracker:** epic #31, phases #32 (D1), #33 (D2), #34 (D3), #35 (D4), #36 (D5).
+
 ## 6. Acceptance criteria
 
 1. **Restart mid-fight:** kill the server while a player is fighting; on restart the enemy still has the
