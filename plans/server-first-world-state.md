@@ -156,8 +156,12 @@ WHERE "DisconnectedAt" IS NOT NULL AND "DisconnectedAt" < now() - interval '60 s
 ```
 
 Sixty seconds is the same order as the existing 30-second claim grace in
-[`ActiveCharacterTracker`](../Veldrath.Server/Services/ActiveCharacterTracker.cs:53); both windows should be
-configuration, not literals.
+[`ActiveCharacterTracker`](../Veldrath.Server/Services/ActiveCharacterTracker.cs:53).
+
+**D3 shipped with two refinements:** every value above is `EnemyWorldOptions` (bound from the `Enemies` section with
+`ValidateOnStart`, so a bad value fails the host instead of defaulting), and both behaviours live in the stores —
+`SweepExpiredRespawnsAsync` and `PruneExpiredAsync` — so the hosted service only orchestrates and broadcasts. The
+lazy `SettleLocationAsync` revive from D2 stays as a safety net for locations nobody is standing in.
 
 ### 3.4 Multi-instance safety
 
