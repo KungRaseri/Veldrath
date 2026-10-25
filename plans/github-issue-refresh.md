@@ -1,10 +1,13 @@
 # GitHub Issue Refresh — triage, roadmap, and the issue set to land
 
-> **Status:** Proposed — waiting for approval
+> **Status:** Approved plan of record — **milestone order is D → C → A → B** (chosen 2026-10-25).
+> Milestone D now has its own design doc: [`server-first-world-state.md`](server-first-world-state.md),
+> which supersedes the D bullet in §3 below. Issue bodies for C, A and B stay in this file.
 > **Date:** 2026-10-25
 > **Scope:** re-triage the five open issues (#3–#7), close what the codebase has outgrown, rewrite what is
 > still wanted for the web-first architecture, and add the backlog that the last three sessions surfaced.
-> **Related:** [`blazor-decommission-and-cleanup.md`](blazor-decommission-and-cleanup.md),
+> **Related:** [`server-first-world-state.md`](server-first-world-state.md),
+> [`blazor-decommission-and-cleanup.md`](blazor-decommission-and-cleanup.md),
 > [`../docs/client-ui-architecture.md`](../docs/client-ui-architecture.md),
 > [`../.github/agent-memory/veldrath-memory.md`](../.github/agent-memory/veldrath-memory.md)
 
@@ -43,34 +46,48 @@ Net effect: **2 closes, 3 rewrites, and a set of new issues so the backlog refle
 
 ---
 
-## 3. What to plan next
+## 3. The roadmap (agreed 2026-10-25)
 
-Ordered by "unblocks the most with the least risk". Milestone names are suggestions for labels, not
-GitHub milestones that exist today.
+**Execution order: D → C → A → B.** The letters match the four options presented to the user; D already
+has its own design doc, so the bullets here only stay as the short statement of intent.
 
-### Milestone A — Pipeline and hygiene (finish what is already in flight)
-1. Make the coverage gates honest: `@veldrath/shared` currently cannot pass its own `coverage` script.
-2. Decide the Codecov status policy (they are `informational: true` today, deliberately).
-3. Close the documentation drift that survived the desktop retirement (`build:desktop` references,
-   stale plan statuses).
+### D — Server-first world state → [`server-first-world-state.md`](server-first-world-state.md)
+Live enemies, respawn timers and combat sessions move out of process memory into Postgres, with
+`FOR UPDATE SKIP LOCKED` sweeps so a restart (or a rolling deploy) is lossless and two processes cannot
+fork the world. Party, death consequences and content validation all build on this, so it goes first.
 
-### Milestone B — First-hour experience
-4. First-login tutorial handoff (the Session-72 seam): a new character starts on the tutorial node, not
+### C — Play together (the three social epics, in dependency order)
+1. Party panel + invite flow — `Party`/`PartyMember` exist in `RealmEngine.Shared` with no hub or UI.
+   Party state persists through the D storage layer rather than a new static dictionary.
+2. Guilds (#4, rewritten).
+3. Trading (#6, rewritten).
+4. PvP (#5, rewritten; duels first).
+
+### A — Death consequences + first hour
+5. **Death cost tuning.** A cost already exists — [`HandleDeathIfNeededAsync`](../Veldrath.Server/Features/Characters/Combat/CombatHelpers.cs:185)
+   removes 10% of XP **and** 10% of gold at the moment of death. Agreed direction: make it **small and
+   gold-first** — take a small share of carried gold, and only when the character carries (almost) no
+   gold take a small share of XP instead, never both. Exact percentages are a decision for the issue.
+6. **Respawn consequence.** Respawn must return the character to a safe node (not whatever node they
+   died on) and apply a short *death sickness* status effect authored in the DB, using the existing
+   `StatusEffect` machinery. The deleted `RespawnService` had an unwired version of exactly this.
+7. First-login tutorial handoff (the Session-72 seam): a new character starts on the tutorial node, not
    the region entry node, with a guided first quest.
-5. Quest HUD tracker + completion toast (the journal exists; the *during play* surface does not).
-6. Quest objective types beyond `kill`/`collect`/`visit` (`talk`, `deliver`, `craft`, `reach_level`).
+8. Quest HUD tracker + completion toast (the journal exists; the *during play* surface does not).
+9. Quest objective types beyond `kill`/`collect`/`visit` (`talk`, `deliver`, `craft`, `reach_level`).
 
-### Milestone C — Play together (the three social epics, in dependency order)
-7. Party panel + invite flow — `Party`/`PartyMember` exist in `RealmEngine.Shared` with no hub or UI.
-8. Guilds (#4, rewritten).
-9. Trading (#6, rewritten).
-10. PvP (#5, rewritten; duels first).
+### B — Content pipeline and hygiene
+10. Foundry → DB → engine validation gates, plus the startup content validator and failsafe tests
+    described in [`server-first-world-state.md`](server-first-world-state.md) §4.
+11. Make the coverage gates honest: `@veldrath/shared` cannot pass its own `coverage` script today, and
+    the Codecov statuses are `informational: true` on purpose. Deferred until the systems above exist.
+12. A `CorsSetup` test that pins the dev defaults, including the preview origin.
+13. Dev mail catcher (Mailpit) so `NullEmailSender` no longer needs to log bodies at all.
 
-### Cross-cutting small work (can be picked up any time)
-- Delete or wire `RespawnService`, `CharacterInitializationService`, `EquipmentPowerService`.
-- `StatusEffectParser`: non-positive `statusDuration`, `JsonElement` `statModifiers`.
-- A `CorsSetup` test that pins the dev defaults, including the preview origin.
-- Dev mail catcher (Mailpit) so `NullEmailSender` no longer needs to log bodies at all.
+### Done in the cleanup pass (Session-73, `63688c19` / `f860bfa1` / `f6ef5deb`)
+- Deleted `RespawnService`, `CharacterInitializationService`, `EquipmentPowerService` and their dead tests.
+- `StatusEffectParser`: non-positive `statusDuration` rejected, `JsonElement` `statModifiers` accepted.
+- `build:desktop` / desktop-shell drift removed, decommission plan marked complete.
 
 ---
 

@@ -6,6 +6,8 @@ deleted (git history keeps it).
 
 | Plan | Status | Purpose |
 |---|---|---|
+| [`server-first-world-state.md`](server-first-world-state.md) | 🟢 Active — milestone D | Move live enemies, respawn timers and combat sessions out of process memory into Postgres so a restart is lossless. First of D → C → A → B. |
+| [`github-issue-refresh.md`](github-issue-refresh.md) | 🟢 Active — roadmap + issue bodies | Issue bodies for milestones C (party), A (death consequences + first hour) and B (content pipeline); the tracker itself stays empty until each milestone starts. |
 | [`blazor-decommission-and-cleanup.md`](blazor-decommission-and-cleanup.md) | ✅ Complete (W1–W12) | Blazor residue removed, desktop client retired, Identity auth surface removed (tables kept for RBAC). One open question left: whether internal `Veldrath.Contracts` DTOs move next to their feature slices. |
 | [`sveltekit-migration.md`](sveltekit-migration.md) | ✅ Complete (phases 0–6) | Canonical record of the Blazor → SvelteKit migration and the post-migration log. Its three unfinished items (authenticated game-loop coverage, WebView2 smoke, payload drift) now live in the decommission plan as W7–W9. |
 
