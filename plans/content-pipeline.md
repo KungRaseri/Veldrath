@@ -6,7 +6,8 @@
 > ships inside Milestone D as #36.
 > **Tracker:** epic #39 — B1 #50 (shared validators, one rule set), B2 #51 (Foundry write path + validation),
 > B3 #52 (CI content guard), B4 #53 (coverage honesty + changed-lines blocking), B5 #54 (Mailpit, no mail
-> bodies in logs, CORS defaults pinned).
+> bodies in logs, CORS defaults pinned). Epic #39 and all five issues were re-reviewed against the
+> post-removal tree on 2026-10-25 and rewritten where the deleted editor changed the work.
 >
 > **Scope shift (2026-10-25):** `RealmForge` — the Avalonia desktop content editor — has been deleted from the
 > repository along with `RealmForge.Tests`, `RealmUI.Fonts`, `RealmForge.slnx`, and `ci-tooling.yml`. Foundry
