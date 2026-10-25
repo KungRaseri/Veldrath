@@ -860,7 +860,7 @@ public class GameHub : Hub
                 result.AllEquippedItems,
                 Equipped = snapshotValid
                     ? snapshot!.Equipped
-                    : new Dictionary<string, RealmEngine.Shared.Models.Item>(),
+                    : new Dictionary<string, InventoryItemView>(StringComparer.OrdinalIgnoreCase),
             };
 
             if (TryGetCurrentZoneGroup(out var zoneGroup))
@@ -2752,13 +2752,13 @@ public class GameHub : Hub
         GetInventoryHubResult result,
         bool openOverlay = true)
     {
-        // The desktop client that bound the raw Items/Equipped ref lists is gone; the browser
-        // reads the resolved ItemDetails/EquippedItems projections only.
+        // Items carries every owned item (equipped ones flagged) and Equipped is the slot → item
+        // map the character sheet renders; both are flat, string-typed views.
         await Clients.Caller.SendAsync("InventoryLoaded", new
         {
             CharacterId = characterId,
-            ItemDetails = result.ItemDetails,
-            EquippedItems = result.Equipped,
+            Items = result.Items,
+            Equipped = result.Equipped,
             OpenOverlay = openOverlay,
         });
     }
@@ -2820,9 +2820,13 @@ public record RestAtLocationHubRequest(string LocationId, int CostInGold = 10);
 public record AwardSkillXpHubRequest(string SkillId, int Amount);
 
 /// <summary>Request DTO sent by the client when calling <see cref="GameHub.EquipItem"/>.</summary>
-/// <param name="Slot">Slot name (e.g. <c>"MainHand"</c>, <c>"Head"</c>). Must be a known slot.</param>
+/// <param name="Slot">
+/// Slot name (e.g. <c>"MainHand"</c>, <c>"Head"</c>). Optional: when omitted or empty the server
+/// derives the slot from the item's catalog type, which is what the bag's Equip action does.
+/// Required when <paramref name="ItemRef"/> is <see langword="null"/> (unequip).
+/// </param>
 /// <param name="ItemRef">Item-reference slug to equip, or <see langword="null"/> to clear the slot.</param>
-public record EquipItemHubRequest(string Slot, string? ItemRef);
+public record EquipItemHubRequest(string? Slot, string? ItemRef);
 
 /// <summary>Request DTO sent by the client when calling <see cref="GameHub.GainExperience"/>.</summary>
 /// <param name="Amount">Positive number of experience points to award.</param>

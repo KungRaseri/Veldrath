@@ -1,16 +1,19 @@
 <script lang="ts">
 	import {
+		BedDouble,
+		Bug,
 		Compass,
 		Footprints,
+		LogOut,
 		Map as MapIcon,
 		MapPin,
 		RefreshCw,
+		Search,
 		Store,
-		Users
+		Swords
 	} from '@lucide/svelte';
 	import CardinalMap from '#lib/game/CardinalMap.svelte';
 	import CombatPanel from '#lib/game/CombatPanel.svelte';
-	import GameFooter from '#lib/game/GameFooter.svelte';
 	import GameHeader from '#lib/game/GameHeader.svelte';
 	import GameOverlays from '#lib/game/GameOverlays.svelte';
 	import LeftSidebar from '#lib/game/LeftSidebar.svelte';
@@ -18,6 +21,11 @@
 	import type { GameSession } from '#lib/game/session.svelte';
 
 	let { session, onLeave }: { session: GameSession; onLeave: () => void } = $props();
+
+	const focusNode = $derived(session.selectedNode ?? session.currentNode);
+	const isSelectedNodeReachable = $derived(
+		Boolean(session.selectedNode && session.adjacentNodeIds.includes(session.selectedNode.id))
+	);
 </script>
 
 <svelte:head>
@@ -76,30 +84,23 @@
 								{session.map?.name ?? 'Map'}
 							</h2>
 							<p class="text-sm text-surface-600-400">
-								{session.map?.mapType ?? 'Loading'} · {session.map?.nodes.length ?? 0} nodes
+								{session.zoneLabel}
+								{#if session.location}
+									· {session.location.locationDisplayName}
+								{/if}
+								{#if session.map}
+									· {session.map.nodes.length} nodes
+								{/if}
 							</p>
 						</div>
-						<div class="flex gap-2">
-							<button
-								class="btn preset-tonal-surface"
-								type="button"
-								onclick={() => session.requestMapGraph(null)}
-							>
-								<RefreshCw size={15} aria-hidden="true" />
-								Refresh
-							</button>
-							{#if session.zone}
-								<button
-									class="btn preset-tonal-surface"
-									type="button"
-									onclick={() => session.visitShop()}
-									disabled={!session.canShop}
-								>
-									<Store size={15} aria-hidden="true" />
-									Merchant
-								</button>
-							{/if}
-						</div>
+						<button
+							class="btn preset-tonal-surface"
+							type="button"
+							onclick={() => session.requestMapGraph(null)}
+						>
+							<RefreshCw size={15} aria-hidden="true" />
+							Refresh
+						</button>
 					</div>
 
 					{#if session.loadingMap}
@@ -120,57 +121,143 @@
 				<section class="game-panel space-y-3 p-4">
 					<h2 class="game-panel-header">
 						<Compass size={18} aria-hidden="true" />
-						Node details
+						{session.selectedNode ? 'Selected node' : 'You are here'}
 					</h2>
 
-					{#if session.selectedNode}
+					{#if focusNode}
 						<div class="flex flex-wrap items-start justify-between gap-3">
 							<div class="space-y-1">
 								<p class="flex items-center gap-2 font-semibold">
 									<MapPin class="text-secondary-500" size={15} aria-hidden="true" />
-									{session.selectedNode.displayName}
-									<span class="text-surface-600-400">· {session.selectedNode.nodeType}</span>
+									{focusNode.displayName}
+									<span class="text-surface-600-400">· {focusNode.nodeType}</span>
 								</p>
 								<p class="text-lore text-sm text-surface-600-400">
-									{session.selectedNode.description}
+									{focusNode.description}
 								</p>
-								{#if session.selectedNode.refId}
-									<p class="text-mono text-xs">Reference: {session.selectedNode.refId}</p>
+								{#if focusNode.refId}
+									<p class="text-mono text-xs">Reference: {focusNode.refId}</p>
 								{/if}
 							</div>
 
-							<button
-								class="btn preset-filled-primary-500"
-								type="button"
-								disabled={!session.adjacentNodeIds.includes(session.selectedNode.id) ||
-									session.dead}
-								onclick={() => session.travel(session.selectedNode!.id)}
-							>
-								<Footprints size={15} aria-hidden="true" />
-								{session.adjacentNodeIds.includes(session.selectedNode.id)
-									? `Travel to ${session.selectedNode.displayName}`
-									: 'Not directly reachable'}
-							</button>
+							{#if session.selectedNode && session.selectedNode.id !== session.currentNodeId}
+								<button
+									class="btn preset-filled-primary-500"
+									type="button"
+									disabled={!isSelectedNodeReachable || session.dead}
+									onclick={() => session.travel(session.selectedNode!.id)}
+								>
+									<Footprints size={15} aria-hidden="true" />
+									{isSelectedNodeReachable
+										? `Travel to ${session.selectedNode.displayName}`
+										: 'Not directly reachable'}
+								</button>
+							{:else}
+								<span class="chip preset-tonal-surface text-xs">Current location</span>
+							{/if}
 						</div>
+
+						{#if session.adjacentNodeIds.length > 0}
+							<div class="flex flex-wrap items-center gap-2 border-t border-surface-800 pt-3">
+								<span class="text-xs tracking-wide text-surface-600-400 uppercase">Routes</span>
+								{#each session.adjacentNodeIds as nodeId (nodeId)}
+									{@const node = session.map?.nodes.find((candidate) => candidate.id === nodeId)}
+									{#if node}
+										<button
+											class="btn preset-tonal-surface px-2 py-1 text-xs"
+											type="button"
+											disabled={session.dead}
+											onclick={() => session.travel(node.id)}
+										>
+											<Footprints size={12} aria-hidden="true" />
+											{node.displayName}
+										</button>
+									{/if}
+								{/each}
+							</div>
+						{/if}
 					{:else}
-						<p class="text-sm text-surface-600-400">Select a node on the map.</p>
+						<p class="text-sm text-surface-600-400">
+							{session.map ? 'Select a node on the map.' : 'Waiting for the map…'}
+						</p>
+					{/if}
+				</section>
+
+				<section class="game-panel space-y-3 p-4">
+					<h2 class="game-panel-header">
+						<Bug size={18} aria-hidden="true" />
+						Local
+					</h2>
+
+					{#if session.enemies.length === 0}
+						<p class="text-sm text-surface-600-400">
+							{session.location
+								? 'Nothing hostile is lurking here right now.'
+								: 'Move to a location to see what is here.'}
+						</p>
+					{:else}
+						<ul class="space-y-2">
+							{#each session.enemies as enemy (enemy.id)}
+								<li class="flex items-center justify-between gap-2 text-sm">
+									<span>
+										{enemy.name}
+										<span class="text-surface-600-400">
+											· Lv {enemy.level} · {enemy.currentHealth}/{enemy.maxHealth}
+										</span>
+									</span>
+									<button
+										class="btn preset-filled-error-500 px-2 py-1 text-xs"
+										type="button"
+										onclick={() => session.engageEnemy(enemy.id)}
+										disabled={session.dead || session.combat.active}
+									>
+										<Swords size={13} aria-hidden="true" />
+										Engage
+									</button>
+								</li>
+							{/each}
+						</ul>
 					{/if}
 
-					{#if session.zone && session.occupants.length > 0}
-						<div class="space-y-1 border-t border-surface-800 pt-3">
-							<p
-								class="flex items-center gap-1 text-xs tracking-wide text-surface-600-400 uppercase"
+					<div class="flex flex-wrap gap-2 border-t border-surface-800 pt-3">
+						<button
+							class="btn preset-tonal-surface"
+							type="button"
+							onclick={() => session.searchArea()}
+							disabled={!session.zone || session.dead}
+						>
+							<Search size={15} aria-hidden="true" />
+							Search area
+						</button>
+						<button
+							class="btn preset-tonal-surface"
+							type="button"
+							onclick={() => session.rest()}
+							disabled={!session.canRest || session.dead}
+						>
+							<BedDouble size={15} aria-hidden="true" />
+							{session.canRest ? `Rest (${session.location?.locationDisplayName})` : 'Rest'}
+						</button>
+						{#if session.canShop}
+							<button
+								class="btn preset-tonal-surface"
+								type="button"
+								onclick={() => session.visitShop()}
 							>
-								<Users size={12} aria-hidden="true" />
-								Also here
-							</p>
-							<ul class="flex flex-wrap gap-2 text-sm">
-								{#each session.occupants as occupant (occupant.characterId)}
-									<li class="chip preset-tonal-surface text-xs">{occupant.characterName}</li>
-								{/each}
-							</ul>
-						</div>
-					{/if}
+								<Store size={15} aria-hidden="true" />
+								Merchant
+							</button>
+						{/if}
+						<button
+							class="ml-auto btn preset-tonal-surface"
+							type="button"
+							onclick={() => session.leaveZone()}
+							disabled={!session.zone}
+						>
+							<LogOut size={15} aria-hidden="true" />
+							Leave zone
+						</button>
+					</div>
 				</section>
 			{/if}
 		</main>
@@ -179,8 +266,6 @@
 			<RightSidebar {session} />
 		</div>
 	</div>
-
-	<GameFooter {session} />
 </div>
 
 <GameOverlays {session} />

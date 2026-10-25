@@ -2128,6 +2128,14 @@ public class GameHubTests : IDisposable
     }
 
     // EquipItemHubCommandHandler
+    private static EquipItemHubCommandHandler CreateEquipHandler(
+        ApplicationDbContext db,
+        IItemRepository? itemRepository = null) =>
+        new(
+            new CharacterRepository(db),
+            itemRepository ?? new Mock<IItemRepository>().Object,
+            NullLogger<EquipItemHubCommandHandler>.Instance);
+
     [Fact]
     public async Task EquipItem_Handler_Should_Equip_Item_In_Named_Slot()
     {
@@ -2135,9 +2143,7 @@ public class GameHubTests : IDisposable
         var accountId = await SeedAccountAsync(db);
         var character = await SeedCharacterAsync(db, accountId);
 
-        var handler = new EquipItemHubCommandHandler(
-            new CharacterRepository(db),
-            NullLogger<EquipItemHubCommandHandler>.Instance);
+        var handler = CreateEquipHandler(db);
 
         var result = await handler.Handle(new EquipItemHubCommand
         {
@@ -2171,9 +2177,7 @@ public class GameHubTests : IDisposable
         db.Characters.Add(c);
         await db.SaveChangesAsync();
 
-        var handler = new EquipItemHubCommandHandler(
-            new CharacterRepository(db),
-            NullLogger<EquipItemHubCommandHandler>.Instance);
+        var handler = CreateEquipHandler(db);
 
         var result = await handler.Handle(new EquipItemHubCommand
         {
@@ -2205,9 +2209,7 @@ public class GameHubTests : IDisposable
         db.Characters.Add(c);
         await db.SaveChangesAsync();
 
-        var handler = new EquipItemHubCommandHandler(
-            new CharacterRepository(db),
-            NullLogger<EquipItemHubCommandHandler>.Instance);
+        var handler = CreateEquipHandler(db);
 
         var result = await handler.Handle(new EquipItemHubCommand
         {
@@ -2229,9 +2231,7 @@ public class GameHubTests : IDisposable
         var accountId = await SeedAccountAsync(db);
         var character = await SeedCharacterAsync(db, accountId);
 
-        var handler = new EquipItemHubCommandHandler(
-            new CharacterRepository(db),
-            NullLogger<EquipItemHubCommandHandler>.Instance);
+        var handler = CreateEquipHandler(db);
 
         var result = await handler.Handle(new EquipItemHubCommand
         {
@@ -2251,9 +2251,7 @@ public class GameHubTests : IDisposable
         var accountId = await SeedAccountAsync(db);
         var missingCharId = Guid.NewGuid();
 
-        var handler = new EquipItemHubCommandHandler(
-            new CharacterRepository(db),
-            NullLogger<EquipItemHubCommandHandler>.Instance);
+        var handler = CreateEquipHandler(db);
 
         var result = await handler.Handle(new EquipItemHubCommand
         {
@@ -2264,6 +2262,63 @@ public class GameHubTests : IDisposable
 
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Contain("not found");
+    }
+
+    [Fact]
+    public async Task EquipItem_Handler_Should_Derive_Slot_From_Item_When_Slot_Is_Omitted()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetBySlugAsync("iron_sword"))
+            .ReturnsAsync(new RealmEngine.Shared.Models.Item
+            {
+                Slug = "iron_sword",
+                Name = "Iron Sword",
+                Type = RealmEngine.Shared.Models.ItemType.Weapon,
+            });
+
+        var handler = CreateEquipHandler(db, itemRepo.Object);
+
+        var result = await handler.Handle(new EquipItemHubCommand
+        {
+            CharacterId = character.Id,
+            ItemRef = "iron_sword",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.Slot.Should().Be("MainHand");
+        result.AllEquippedItems.Should().ContainKey("MainHand").WhoseValue.Should().Be("iron_sword");
+    }
+
+    [Fact]
+    public async Task EquipItem_Handler_Should_Fail_When_Item_Is_Not_Equippable()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetBySlugAsync("health_potion"))
+            .ReturnsAsync(new RealmEngine.Shared.Models.Item
+            {
+                Slug = "health_potion",
+                Name = "Health Potion",
+                Type = RealmEngine.Shared.Models.ItemType.Consumable,
+            });
+
+        var handler = CreateEquipHandler(db, itemRepo.Object);
+
+        var result = await handler.Handle(new EquipItemHubCommand
+        {
+            CharacterId = character.Id,
+            ItemRef = "health_potion",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("cannot be equipped");
     }
 
     // GetInventoryHubCommandHandler
@@ -2316,10 +2371,24 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new GetInventoryHubCommand(c.Id), CancellationToken.None);
 
         result.Success.Should().BeTrue();
-        result.Items.Should().ContainSingle(i => i.ItemRef == "health_potion");
-        result.ItemDetails.Should().ContainSingle(i => i.Slug == "health_potion" && i.Quantity == 3);
+
+        // Equipped items stay in the list, flagged, so the character sheet shows one inventory.
+        result.Items.Should().HaveCount(2);
+        result.Items.Should().ContainSingle(i => i.ItemRef == "health_potion" && !i.IsEquipped);
+
+        var sword = result.Items.Should().ContainSingle(i => i.ItemRef == "iron_sword").Subject;
+        sword.IsEquipped.Should().BeTrue();
+        sword.Slot.Should().Be("MainHand");
+        sword.Rarity.Should().Be("Common");
+        sword.Type.Should().Be("Weapon");
+        sword.Durability.Should().Be(80);
+
+        var potion = result.Items.Should().ContainSingle(i => i.ItemRef == "health_potion").Subject;
+        potion.Slot.Should().BeNull();
+        potion.Quantity.Should().Be(3);
+
         result.Equipped.Should().ContainKey("MainHand");
-        result.Equipped["MainHand"].Slug.Should().Be("iron_sword");
+        result.Equipped["MainHand"].ItemRef.Should().Be("iron_sword");
     }
 
     [Fact]
@@ -2354,10 +2423,12 @@ public class GameHubTests : IDisposable
         var result = await handler.Handle(new GetInventoryHubCommand(c.Id), CancellationToken.None);
 
         result.Success.Should().BeTrue();
-        var detail = result.ItemDetails.Should().ContainSingle().Subject;
-        detail.Slug.Should().Be("wooden-shield");
+        var detail = result.Items.Should().ContainSingle().Subject;
+        detail.ItemRef.Should().Be("wooden-shield");
         detail.Name.Should().Be("Wooden Shield");
-        detail.Type.Should().Be(RealmEngine.Shared.Models.ItemType.Shield);
+        detail.Type.Should().Be("Shield");
+        detail.Slot.Should().Be("OffHand");
+        detail.Rarity.Should().Be("Common");
     }
 
     // AddGold helpers

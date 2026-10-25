@@ -137,23 +137,30 @@ export interface NodeTraveledPayload {
 
 /** Subset of the engine `Item` model that the inventory overlay renders. */
 export interface InventoryItem {
-	id?: string;
-	itemRef?: string;
-	slug?: string;
-	name?: string;
-	displayName?: string;
-	description?: string;
-	quantity?: number;
-	rarity?: string;
-	itemType?: string;
-	type?: string;
-	isStackable?: boolean;
+	itemRef: string;
+	name: string;
+	description?: string | null;
+	rarity: string;
+	type: string;
+	typeKey?: string | null;
+	/** Canonical equipment slot (e.g. `"MainHand"`), or `null` when the item is not equippable. */
+	slot?: string | null;
+	quantity: number;
+	stackSize: number;
+	isStackable: boolean;
+	/** True when the entry is currently in the equipment blob; the sheet shows an equip badge. */
+	isEquipped: boolean;
+	price: number;
+	weight: number;
+	durability?: number | null;
 }
 
 export interface InventoryLoadedPayload {
 	characterId?: string;
-	itemDetails?: InventoryItem[] | null;
-	equippedItems?: Record<string, InventoryItem> | null;
+	/** Every owned item, equipped ones included and flagged through `isEquipped`. */
+	items?: InventoryItem[] | null;
+	/** Equipped items keyed by canonical slot name. */
+	equipped?: Record<string, InventoryItem> | null;
 	openOverlay?: boolean;
 }
 
@@ -298,11 +305,39 @@ export interface CombatState {
 	log: string[];
 }
 
+/** Canonical equipment slots, in the order the character sheet renders them. */
+export const EQUIPMENT_SLOTS = [
+	{ id: 'MainHand', label: 'Main hand' },
+	{ id: 'OffHand', label: 'Off hand' },
+	{ id: 'Head', label: 'Head' },
+	{ id: 'Chest', label: 'Chest' },
+	{ id: 'Legs', label: 'Legs' },
+	{ id: 'Feet', label: 'Feet' },
+	{ id: 'Ring', label: 'Ring' },
+	{ id: 'Amulet', label: 'Amulet' }
+] as const;
+
+const KNOWN_RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+
 export function itemLabel(item: InventoryItem): string {
-	return item.displayName ?? item.name ?? item.itemRef ?? item.slug ?? 'Unknown item';
+	return item.name || item.itemRef;
+}
+
+/** Maps a rarity name onto the `rarity-*` colour class defined in `brand.css`. */
+export function rarityClass(rarity: string | null | undefined): string {
+	const key = (rarity ?? '').toLowerCase();
+	return KNOWN_RARITIES.includes(key) ? `rarity-${key}` : 'rarity-common';
 }
 
 export function itemSubtitle(item: InventoryItem): string {
-	const parts = [item.rarity, item.itemType ?? item.type].filter(Boolean);
+	const parts: string[] = [];
+	if (item.rarity) parts.push(item.rarity);
+	if (item.type) parts.push(item.type);
+	if (item.durability != null) parts.push(`${item.durability}% durability`);
 	return parts.length > 0 ? parts.join(' · ') : 'Item';
+}
+
+/** True when the item can be equipped into a slot. */
+export function isEquippable(item: InventoryItem): boolean {
+	return Boolean(item.slot);
 }

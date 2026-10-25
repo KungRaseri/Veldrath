@@ -100,8 +100,11 @@ test.describe('authenticated game loop', () => {
 			targetLabel!.split('\n')[0]
 		);
 
-		// 6. Inventory opens and loads through the hub.
-		await page.getByRole('button', { name: /^inventory$/i }).click();
-		await expect(page.getByRole('region', { name: 'Inventory' })).toBeVisible();
+		// 6. The character sheet carries the bag, and refreshing pulls a fresh snapshot over the hub.
+		const sheet = page.getByRole('complementary', { name: 'Character sheet' });
+		await expect(sheet).toBeVisible();
+		await expect(sheet.getByRole('heading', { name: /Inventory/ })).toBeVisible();
+		await sheet.getByRole('button', { name: 'Refresh inventory' }).click();
+		await expect(sheet.getByRole('heading', { name: /Equipment/ })).toBeVisible();
 	});
 });

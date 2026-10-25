@@ -1,6 +1,7 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Shared.Abstractions;
 using Veldrath.Server.Data.Repositories;
 
 namespace Veldrath.Server.Features.Characters;
@@ -16,8 +17,12 @@ public record EquipItemHubCommand : IRequest<EquipItemHubResult>
     /// <summary>Gets the ID of the character equipping the item.</summary>
     public required Guid CharacterId { get; init; }
 
-    /// <summary>Gets the slot name (e.g. <c>"MainHand"</c>, <c>"Head"</c>). Must be a value in <see cref="EquipItemHubCommandHandler.ValidSlots"/>.</summary>
-    public required string Slot { get; init; }
+    /// <summary>
+    /// Gets the slot name (e.g. <c>"MainHand"</c>, <c>"Head"</c>), or <see langword="null"/> to let
+    /// the handler derive it from the item's catalog type. When set it must be a value in
+    /// <see cref="EquipItemHubCommandHandler.ValidSlots"/>.
+    /// </summary>
+    public string? Slot { get; init; }
 
     /// <summary>Gets the item-reference slug to place in the slot, or <see langword="null"/> to unequip.</summary>
     public string? ItemRef { get; init; }
@@ -61,16 +66,20 @@ public class EquipItemHubCommandHandler : IRequestHandler<EquipItemHubCommand, E
     };
 
     private readonly ICharacterRepository _characterRepo;
+    private readonly IItemRepository _itemRepository;
     private readonly ILogger<EquipItemHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="EquipItemHubCommandHandler"/>.</summary>
     /// <param name="characterRepo">Repository used to load and persist characters.</param>
+    /// <param name="itemRepository">Repository used to resolve the slot when the caller omits it.</param>
     /// <param name="logger">Logger instance.</param>
     public EquipItemHubCommandHandler(
         ICharacterRepository characterRepo,
+        IItemRepository itemRepository,
         ILogger<EquipItemHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
+        _itemRepository = itemRepository;
         _logger = logger;
     }
 
@@ -82,8 +91,24 @@ public class EquipItemHubCommandHandler : IRequestHandler<EquipItemHubCommand, E
         EquipItemHubCommand request,
         CancellationToken cancellationToken)
     {
-        if (!ValidSlots.Contains(request.Slot))
-            return Fail($"Invalid equipment slot '{request.Slot}'.");
+        string? canonicalSlot;
+        if (!string.IsNullOrWhiteSpace(request.Slot))
+        {
+            canonicalSlot = ValidSlots.FirstOrDefault(
+                slot => slot.Equals(request.Slot, StringComparison.OrdinalIgnoreCase));
+
+            if (canonicalSlot is null)
+                return Fail($"Invalid equipment slot '{request.Slot}'.");
+        }
+        else
+        {
+            if (request.ItemRef is null)
+                return Fail("A slot is required to unequip an item.");
+
+            canonicalSlot = await DeriveSlotFromItemAsync(request.ItemRef, cancellationToken);
+            if (canonicalSlot is null)
+                return Fail($"'{request.ItemRef}' cannot be equipped.");
+        }
 
         var character = await _characterRepo.GetByIdAsync(request.CharacterId, cancellationToken);
         if (character is null)
@@ -105,9 +130,6 @@ public class EquipItemHubCommandHandler : IRequestHandler<EquipItemHubCommand, E
                     character.Id);
             }
         }
-
-        // Normalize slot to canonical casing from ValidSlots
-        var canonicalSlot = ValidSlots.First(s => s.Equals(request.Slot, StringComparison.OrdinalIgnoreCase));
 
         if (request.ItemRef is null)
             equipment.Remove(canonicalSlot);
@@ -131,6 +153,31 @@ public class EquipItemHubCommandHandler : IRequestHandler<EquipItemHubCommand, E
             ItemRef = request.ItemRef,
             AllEquippedItems = new Dictionary<string, string>(equipment, StringComparer.OrdinalIgnoreCase),
         };
+    }
+
+    /// <summary>
+    /// Derives the canonical slot for an item from its catalog type.
+    /// </summary>
+    /// <param name="itemRef">Item-reference slug being equipped.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The canonical slot name, or <see langword="null"/> when the item is unknown or not equippable.</returns>
+    private async Task<string?> DeriveSlotFromItemAsync(
+        string itemRef,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var item = await _itemRepository.GetBySlugAsync(itemRef);
+            return item is null ? null : EquipmentSlots.ForItem(item);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(
+                ex,
+                "Failed to resolve the equipment slot for item '{ItemRef}'.",
+                itemRef);
+            return null;
+        }
     }
 
     private static EquipItemHubResult Fail(string message) =>

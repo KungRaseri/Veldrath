@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import CombatPanel from './CombatPanel.svelte';
 import GameHeader from './GameHeader.svelte';
 import GameOverlays from './GameOverlays.svelte';
+import LeftSidebar from './LeftSidebar.svelte';
 import type { CharacterStats, CombatState, InventoryItem } from './types';
 import type { GameSession } from './session.svelte';
 
@@ -14,7 +15,41 @@ const stats: CharacterStats = {
 	gold: 42,
 	level: 3,
 	experience: 250,
-	unspentAttributePoints: 0
+	unspentAttributePoints: 2
+};
+
+const ironSword: InventoryItem = {
+	itemRef: 'iron_sword',
+	name: 'Iron Sword',
+	description: 'A dependable blade.',
+	rarity: 'Rare',
+	type: 'Weapon',
+	typeKey: 'heavy-blades',
+	slot: 'MainHand',
+	quantity: 1,
+	stackSize: 1,
+	isStackable: false,
+	isEquipped: true,
+	price: 15,
+	weight: 3,
+	durability: 80
+};
+
+const healthPotion: InventoryItem = {
+	itemRef: 'health_potion',
+	name: 'Health Potion',
+	description: null,
+	rarity: 'Common',
+	type: 'Consumable',
+	typeKey: null,
+	slot: null,
+	quantity: 3,
+	stackSize: 20,
+	isStackable: true,
+	isEquipped: false,
+	price: 5,
+	weight: 0.5,
+	durability: null
 };
 
 function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
@@ -28,20 +63,33 @@ function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
 		},
 		stats,
 		zoneLabel: 'Aldenmere',
-		location: { slug: 'grey-cup', name: 'The Grey Cup', type: 'Inn' },
+		location: {
+			characterId: 'char-1',
+			locationSlug: 'grey-cup',
+			locationDisplayName: 'The Grey Cup',
+			typeKey: 'Inn'
+		},
 		occupants: [],
 		serverInfo: { connectionId: 'conn-1', serverVersion: '0.1', minCompatibleClientVersion: '0.1' },
 		phase: 'connected',
 		map: null,
 		currentNode: null,
+		selectedNode: null,
+		currentNodeId: null,
+		selectedNodeId: null,
+		adjacentNodeIds: [] as string[],
 		combat: { active: false, enemy: null, log: [] } satisfies CombatState,
 		equippedEntries: [],
-		inventory: [] as InventoryItem[],
+		equipped: {} as Record<string, InventoryItem>,
+		inventory: [ironSword, healthPotion],
+		bagItems: [healthPotion, ironSword],
+		carriedItemCount: 1,
 		quests: [],
 		shopCatalog: [],
 		shopZone: null,
 		canShop: false,
-		showInventory: false,
+		canRest: true,
+		zone: { id: 'zone-1', name: 'Aldenmere', hasInn: true, hasMerchant: true },
 		showShop: false,
 		showQuests: false,
 		showSettings: false,
@@ -53,9 +101,10 @@ function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
 		defend: vi.fn(),
 		flee: vi.fn(),
 		useCombatAbility: vi.fn(),
-		equip: vi.fn(),
+		equipItem: vi.fn(),
+		unequip: vi.fn(),
 		sell: vi.fn(),
-		drop: vi.fn(),
+		discard: vi.fn(),
 		buy: vi.fn()
 	};
 
@@ -63,16 +112,77 @@ function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
 }
 
 describe('GameHeader', () => {
-	it('renders character identity and vitals', async () => {
-		render(GameHeader, { props: { session: fakeSession(), onLeave: vi.fn() } });
+	it('renders identity, location breadcrumb and connection state', async () => {
+		const onLeave = vi.fn();
+		render(GameHeader, { props: { session: fakeSession(), onLeave } });
 
-		expect(await screen.findByText(/Thornwarden/)).toBeTruthy();
-		expect(screen.getByText('80 / 100')).toBeTruthy();
+		expect(await screen.findByRole('heading', { name: /Thornwarden/ })).toBeTruthy();
+		expect(screen.getByText(/Warrior · Lv 3/)).toBeTruthy();
+		expect(screen.getByText(/Aldenmere/)).toBeTruthy();
+		expect(screen.getByText('connected')).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Characters' })).toBeTruthy();
+	});
+});
+
+describe('LeftSidebar (character sheet)', () => {
+	it('renders vitals in the sheet instead of the header', async () => {
+		render(LeftSidebar, { props: { session: fakeSession() } });
+
+		expect(await screen.findByText('80 / 100')).toBeTruthy();
 		expect(screen.getByText('25 / 40')).toBeTruthy();
 		expect(screen.getByText('42')).toBeTruthy();
-		expect(screen.getAllByRole('button').map((button) => button.textContent?.trim())).toContain(
-			'Inventory'
-		);
+		expect(screen.getByText('250')).toBeTruthy();
+		expect(screen.getByText('2 points to spend')).toBeTruthy();
+	});
+
+	it('renders the equipment rack with empty and filled slots', async () => {
+		render(LeftSidebar, {
+			props: {
+				session: fakeSession({
+					equipped: { MainHand: ironSword },
+					equippedEntries: [['MainHand', ironSword]]
+				})
+			}
+		});
+
+		// The equipped item shows in the rack and (flagged) in the bag list.
+		expect((await screen.findAllByText('Iron Sword')).length).toBeGreaterThan(1);
+		expect(screen.getAllByText('Empty').length).toBeGreaterThan(0);
+		expect(screen.getAllByRole('button', { name: 'Unequip Iron Sword' }).length).toBeGreaterThan(0);
+	});
+
+	it('marks equipped bag entries and exposes equip, sell and discard actions', async () => {
+		const steelSword: InventoryItem = {
+			...ironSword,
+			itemRef: 'steel_sword',
+			name: 'Steel Sword',
+			rarity: 'Uncommon',
+			isEquipped: false
+		};
+		const session = fakeSession({
+			canShop: true,
+			bagItems: [healthPotion, steelSword, ironSword]
+		});
+		render(LeftSidebar, { props: { session } });
+
+		expect(await screen.findByText('Equipped')).toBeTruthy();
+		expect(screen.getByText('Common · Consumable')).toBeTruthy();
+
+		screen.getByRole('button', { name: 'Equip Steel Sword' }).click();
+		expect(session.equipItem).toHaveBeenCalledWith('steel_sword');
+
+		screen.getByRole('button', { name: 'Sell Steel Sword' }).click();
+		expect(session.sell).toHaveBeenCalledWith('steel_sword');
+
+		screen.getByRole('button', { name: 'Discard Health Potion' }).click();
+		expect(await screen.findByRole('button', { name: 'Discard' })).toBeTruthy();
+	});
+
+	it('offers the character menu', async () => {
+		render(LeftSidebar, { props: { session: fakeSession() } });
+
+		expect(await screen.findByRole('button', { name: /Quest log/ })).toBeTruthy();
+		expect(screen.getByRole('button', { name: /Settings/ })).toBeTruthy();
 	});
 });
 
@@ -104,12 +214,17 @@ describe('CombatPanel', () => {
 	});
 });
 
-describe('GameOverlays', () => {
-	it('renders the empty inventory state', async () => {
-		render(GameOverlays, { props: { session: fakeSession({ showInventory: true }) } });
+describe('GameOverlays (dialogs)', () => {
+	it('renders the quest log dialog when open', async () => {
+		const session = fakeSession({
+			showQuests: true,
+			quests: [{ slug: 'rats', title: 'Clear the cellar', status: 'Active' }]
+		});
 
-		expect(await screen.findByText('Bag')).toBeTruthy();
-		expect(screen.getByText('Your bag is empty.')).toBeTruthy();
+		render(GameOverlays, { props: { session } });
+
+		expect(await screen.findByText('Clear the cellar')).toBeTruthy();
+		expect(screen.getByText('Active')).toBeTruthy();
 	});
 
 	it('renders shop catalog entries with buy buttons', async () => {

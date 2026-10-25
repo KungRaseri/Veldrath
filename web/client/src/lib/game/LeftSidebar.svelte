@@ -1,149 +1,281 @@
 <script lang="ts">
 	import {
-		BedDouble,
-		Bug,
-		DoorOpen,
-		LogOut,
-		MapPin,
-		Route,
-		Search,
+		Backpack,
+		Coins,
+		HeartPulse,
+		RefreshCw,
+		ScrollText,
+		Settings,
+		Sparkles,
 		Store,
-		Swords,
+		Trash2,
+		Undo2,
 		Zap
 	} from '@lucide/svelte';
+	import { itemIcon, slotIcon, slotLabel } from './item-icons';
+	import { barPercent } from './reducers';
+	import {
+		EQUIPMENT_SLOTS,
+		itemLabel,
+		itemSubtitle,
+		isEquippable,
+		rarityClass,
+		type InventoryItem
+	} from './types';
 	import type { GameSession } from './session.svelte';
 
 	let { session }: { session: GameSession } = $props();
+
+	let pendingDiscard = $state<string | null>(null);
+
+	function confirmDiscard(itemRef: string) {
+		pendingDiscard = itemRef;
+	}
+
+	async function discard(itemRef: string) {
+		pendingDiscard = null;
+		await session.discard(itemRef);
+	}
+
+	function equippedFor(slot: string): InventoryItem | null {
+		return session.equipped[slot] ?? null;
+	}
 </script>
 
-<aside class="flex min-h-0 flex-col gap-3">
-	<section class="game-panel space-y-2 p-4">
-		<h2 class="game-panel-header">
-			<MapPin size={17} aria-hidden="true" />
-			Location
-		</h2>
-		{#if session.location}
-			<p class="font-semibold">{session.location.locationDisplayName}</p>
-			<p class="text-xs tracking-wide text-surface-600-400 uppercase">{session.location.typeKey}</p>
-		{:else if session.currentNode}
-			<p class="font-semibold">{session.currentNode.displayName}</p>
-			<p class="text-sm text-surface-600-400">{session.currentNode.description}</p>
-		{:else}
-			<p class="text-sm text-surface-600-400">Loading…</p>
-		{/if}
-	</section>
+<aside class="character-sheet" aria-label="Character sheet">
+	<section class="game-panel space-y-3 p-3">
+		<header class="space-y-1">
+			<p class="text-title text-base font-semibold">{session.character?.name ?? 'Entering…'}</p>
+			<p class="text-xs tracking-wide text-surface-600-400 uppercase">
+				{#if session.character}
+					{session.character.className} · Level {session.stats.level}
+				{:else}
+					Loading
+				{/if}
+			</p>
+		</header>
 
-	{#if session.enemies.length > 0}
-		<section class="game-panel space-y-2 p-4">
-			<h2 class="game-panel-header">
-				<Bug size={17} aria-hidden="true" />
-				Enemies
-			</h2>
-			<ul class="space-y-2">
-				{#each session.enemies as enemy (enemy.id)}
-					<li class="flex items-center justify-between gap-2 text-sm">
-						<span>
-							{enemy.name}
-							<span class="text-surface-600-400">· Lv {enemy.level}</span>
-						</span>
-						<button
-							class="btn preset-filled-error-500 px-2 py-1 text-xs"
-							type="button"
-							onclick={() => session.engageEnemy(enemy.id)}
-							disabled={session.dead || session.combat.active}
-						>
-							<Swords size={13} aria-hidden="true" />
-							Engage
-						</button>
-					</li>
-				{/each}
-			</ul>
-		</section>
-	{/if}
+		<div class="space-y-1">
+			<div class="flex items-center justify-between text-xs text-surface-600-400">
+				<span class="inline-flex items-center gap-1">
+					<HeartPulse size={12} aria-hidden="true" />
+					Health
+				</span>
+				<span>{session.stats.currentHealth} / {session.stats.maxHealth}</span>
+			</div>
+			<div class="h-2 overflow-hidden rounded bg-surface-800">
+				<div
+					class="h-full bg-error-500 transition-all"
+					style:width={`${barPercent(session.stats.currentHealth, session.stats.maxHealth)}%`}
+				></div>
+			</div>
+		</div>
 
-	<section class="game-panel space-y-2 p-4">
-		<h2 class="game-panel-header">
-			<Route size={17} aria-hidden="true" />
-			Routes
-		</h2>
-		{#if session.adjacentNodeIds.length === 0}
-			<p class="text-sm text-surface-600-400">No direct routes from here.</p>
-		{:else}
-			<ul class="space-y-1">
-				{#each session.adjacentNodeIds as nodeId (nodeId)}
-					{@const node = session.map?.nodes.find((candidate) => candidate.id === nodeId)}
-					{#if node}
-						<li class="flex items-center justify-between gap-2 text-sm">
-							<span class="inline-flex items-center gap-1 truncate">
-								<DoorOpen class="text-secondary-500" size={13} aria-hidden="true" />
-								{node.displayName}
-							</span>
-							<button
-								class="btn preset-tonal-surface px-2 py-1 text-xs"
-								type="button"
-								onclick={() => session.travel(node.id)}
-								disabled={session.dead}
-							>
-								Travel
-							</button>
-						</li>
-					{/if}
-				{/each}
-			</ul>
-		{/if}
-	</section>
+		<div class="space-y-1">
+			<div class="flex items-center justify-between text-xs text-surface-600-400">
+				<span class="inline-flex items-center gap-1">
+					<Sparkles size={12} aria-hidden="true" />
+					Mana
+				</span>
+				<span>{session.stats.currentMana} / {session.stats.maxMana}</span>
+			</div>
+			<div class="h-2 overflow-hidden rounded bg-surface-800">
+				<div
+					class="h-full bg-primary-500 transition-all"
+					style:width={`${barPercent(session.stats.currentMana, session.stats.maxMana)}%`}
+				></div>
+			</div>
+		</div>
 
-	<section class="game-panel space-y-2 p-4">
-		<h2 class="game-panel-header">
-			<Zap size={17} aria-hidden="true" />
-			Actions
-		</h2>
-		<div class="grid gap-2">
-			<button
-				class="btn preset-tonal-surface"
-				type="button"
-				onclick={() => session.searchArea()}
-				disabled={!session.zone || session.dead}
-			>
-				<Search size={15} aria-hidden="true" />
-				Search area
-			</button>
-			<button
-				class="btn preset-tonal-surface"
-				type="button"
-				onclick={() => session.rest()}
-				disabled={!session.canRest || session.dead}
-			>
-				<BedDouble size={15} aria-hidden="true" />
-				Rest at {session.location?.locationDisplayName ?? 'location'}
-			</button>
-			<button
-				class="btn preset-tonal-surface"
-				type="button"
-				onclick={() => session.visitShop()}
-				disabled={!session.canShop}
-			>
-				<Store size={15} aria-hidden="true" />
-				Visit merchant
-			</button>
-			<button
-				class="btn preset-tonal-surface"
-				type="button"
-				onclick={() => session.leaveZone()}
-				disabled={!session.zone}
-			>
-				<LogOut size={15} aria-hidden="true" />
-				Leave zone
-			</button>
-			{#if session.dead}
-				<button
-					class="btn preset-filled-primary-500"
-					type="button"
-					onclick={() => session.respawn()}
-				>
-					Respawn
-				</button>
+		<div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+			<span class="inline-flex items-center gap-1">
+				<Coins class="text-secondary-500" size={13} aria-hidden="true" />
+				<span class="text-surface-600-400">Gold</span>
+				<span class="text-mono">{session.stats.gold.toLocaleString()}</span>
+			</span>
+			<span class="inline-flex items-center gap-1">
+				<Zap class="text-primary-400" size={13} aria-hidden="true" />
+				<span class="text-surface-600-400">XP</span>
+				<span class="text-mono">{session.stats.experience.toLocaleString()}</span>
+			</span>
+			{#if session.stats.unspentAttributePoints > 0}
+				<span class="chip preset-filled-secondary-500 text-xs">
+					{session.stats.unspentAttributePoints} points to spend
+				</span>
 			{/if}
 		</div>
 	</section>
+
+	<section class="game-panel space-y-2 p-3">
+		<h2 class="game-panel-header">
+			<Zap size={15} aria-hidden="true" />
+			Equipment
+		</h2>
+
+		<ul class="equip-grid">
+			{#each EQUIPMENT_SLOTS as slot (slot.id)}
+				{@const item = equippedFor(slot.id)}
+				{@const SlotIcon = slotIcon(slot.id)}
+				<li class="equip-slot" class:equip-slot-empty={!item}>
+					<span class="equip-slot-head">
+						<SlotIcon size={13} aria-hidden="true" />
+						<span class="text-xs tracking-wide text-surface-600-400 uppercase">
+							{slotLabel(slot.id)}
+						</span>
+					</span>
+					{#if item}
+						<span class="equip-slot-name {rarityClass(item.rarity)}" title={item.description ?? ''}>
+							{itemLabel(item)}
+						</span>
+						<button
+							class="btn preset-tonal-surface px-1 py-0.5 text-xs"
+							type="button"
+							title={`Unequip ${itemLabel(item)}`}
+							aria-label={`Unequip ${itemLabel(item)}`}
+							onclick={() => session.unequip(slot.id)}
+						>
+							<Undo2 size={12} aria-hidden="true" />
+							<span class="sr-only">Unequip</span>
+						</button>
+					{:else}
+						<span class="text-xs text-surface-600-400">Empty</span>
+					{/if}
+				</li>
+			{/each}
+		</ul>
+	</section>
+
+	<section class="game-panel space-y-2 p-3">
+		<div class="flex items-center justify-between gap-2">
+			<h2 class="game-panel-header">
+				<Backpack size={15} aria-hidden="true" />
+				Inventory
+				<span class="text-surface-600-400">({session.carriedItemCount})</span>
+			</h2>
+			<button
+				class="btn preset-tonal-surface px-1.5 py-0.5 text-xs"
+				type="button"
+				title="Refresh inventory"
+				aria-label="Refresh inventory"
+				onclick={() => session.openInventory()}
+			>
+				<RefreshCw size={12} aria-hidden="true" />
+			</button>
+		</div>
+
+		{#if session.inventory.length === 0}
+			<p class="text-xs text-surface-600-400">Your bag is empty.</p>
+		{:else}
+			<ul class="bag-list">
+				{#each session.bagItems as item (item.itemRef)}
+					{@const ItemIcon = itemIcon(item)}
+					<li class="bag-row" class:bag-row-equipped={item.isEquipped}>
+						<span class="bag-icon">
+							<ItemIcon size={13} aria-hidden="true" />
+						</span>
+						<span class="min-w-0 flex-1">
+							<span class="flex items-center gap-1">
+								<span class="truncate text-xs font-semibold {rarityClass(item.rarity)}">
+									{itemLabel(item)}
+								</span>
+								{#if (item.quantity ?? 1) > 1}
+									<span class="text-xs text-surface-600-400">× {item.quantity}</span>
+								{/if}
+								{#if item.isEquipped}
+									<span class="chip preset-filled-primary-500 text-xs" title="Currently equipped">
+										Equipped
+									</span>
+								{/if}
+							</span>
+							<span class="block truncate text-xs text-surface-600-400">
+								{itemSubtitle(item)}
+							</span>
+						</span>
+
+						{#if pendingDiscard === item.itemRef}
+							<span class="bag-actions">
+								<button
+									class="btn preset-filled-error-500 px-1 py-0.5 text-xs"
+									type="button"
+									onclick={() => discard(item.itemRef)}
+								>
+									Discard
+								</button>
+								<button
+									class="btn preset-tonal-surface px-1 py-0.5 text-xs"
+									type="button"
+									onclick={() => (pendingDiscard = null)}
+								>
+									Keep
+								</button>
+							</span>
+						{:else}
+							<span class="bag-actions">
+								{#if item.isEquipped}
+									<button
+										class="btn preset-tonal-surface px-1 py-0.5"
+										type="button"
+										title={`Unequip ${itemLabel(item)}`}
+										aria-label={`Unequip ${itemLabel(item)}`}
+										onclick={() => session.unequip(item.slot ?? '')}
+									>
+										<Undo2 size={12} aria-hidden="true" />
+									</button>
+								{:else if isEquippable(item) && session.character}
+									<button
+										class="btn preset-tonal-surface px-1 py-0.5"
+										type="button"
+										title={`Equip ${itemLabel(item)}`}
+										aria-label={`Equip ${itemLabel(item)}`}
+										onclick={() => session.equipItem(item.itemRef)}
+									>
+										<ItemIcon size={12} aria-hidden="true" />
+									</button>
+								{/if}
+
+								{#if session.canShop}
+									<button
+										class="btn preset-tonal-surface px-1 py-0.5"
+										type="button"
+										title={`Sell ${itemLabel(item)}`}
+										aria-label={`Sell ${itemLabel(item)}`}
+										onclick={() => session.sell(item.itemRef)}
+									>
+										<Coins size={12} aria-hidden="true" />
+									</button>
+								{/if}
+
+								<button
+									class="btn preset-tonal-surface px-1 py-0.5"
+									type="button"
+									title={`Discard ${itemLabel(item)}`}
+									aria-label={`Discard ${itemLabel(item)}`}
+									onclick={() => confirmDiscard(item.itemRef)}
+								>
+									<Trash2 size={12} aria-hidden="true" />
+								</button>
+							</span>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		{/if}
+	</section>
+
+	<nav class="game-panel sheet-menu p-2" aria-label="Character menu">
+		<button class="sheet-menu-item" type="button" onclick={() => session.loadQuests()}>
+			<ScrollText size={14} aria-hidden="true" />
+			Quest log
+		</button>
+		{#if session.canShop}
+			<button class="sheet-menu-item" type="button" onclick={() => session.visitShop()}>
+				<Store size={14} aria-hidden="true" />
+				Merchant
+			</button>
+		{/if}
+		<button class="sheet-menu-item" type="button" onclick={() => (session.showSettings = true)}>
+			<Settings size={14} aria-hidden="true" />
+			Settings
+		</button>
+	</nav>
 </aside>

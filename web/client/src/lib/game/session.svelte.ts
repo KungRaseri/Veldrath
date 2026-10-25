@@ -37,6 +37,7 @@ import type {
 	SpawnedEnemy,
 	ZoneEnteredPayload
 } from './types';
+import { itemLabel } from './types';
 
 export type HubPhase =
 	'idle' | 'connecting' | 'connected' | 'reconnecting' | 'failed' | 'disconnected';
@@ -83,7 +84,6 @@ export class GameSession {
 	message = $state<string | null>(null);
 	error = $state<string | null>(null);
 	dead = $state(false);
-	showInventory = $state(false);
 	showShop = $state(false);
 	showQuests = $state(false);
 	showSettings = $state(false);
@@ -119,6 +119,24 @@ export class GameSession {
 
 	get equippedEntries(): [string, InventoryItem][] {
 		return Object.entries(this.equipped).filter(([, item]) => Boolean(item));
+	}
+
+	/** Every owned item, unequipped entries first and then alphabetically. */
+	get bagItems(): InventoryItem[] {
+		return [...this.inventory].sort((left, right) => {
+			if (left.isEquipped !== right.isEquipped) return left.isEquipped ? 1 : -1;
+			return itemLabel(left).localeCompare(itemLabel(right));
+		});
+	}
+
+	/** Items currently equipped, flagged for the sheet and the bag badges. */
+	get equippedItems(): InventoryItem[] {
+		return this.equippedEntries.map(([, item]) => item);
+	}
+
+	/** Count of bag entries that are not equipped. */
+	get carriedItemCount(): number {
+		return this.inventory.filter((item) => !item.isEquipped).length;
 	}
 
 	get canRest(): boolean {
@@ -258,16 +276,28 @@ export class GameSession {
 		await this.hub.invoke('SellItem', itemRef);
 	}
 
-	async drop(itemRef: string): Promise<void> {
+	/** Permanently discards one unit of an item (server-side `DropItem`). */
+	async discard(itemRef: string): Promise<void> {
 		if (!this.hub) return;
 		this.error = null;
 		await this.hub.invoke('DropItem', itemRef);
 	}
 
-	async equip(slot: string, itemRef: string | null): Promise<void> {
+	/**
+	 * Equips a bag item. The slot is omitted on purpose: the server derives it from the item's
+	 * catalog type, so the client never has to guess.
+	 */
+	async equipItem(itemRef: string): Promise<void> {
 		if (!this.hub) return;
 		this.error = null;
-		await this.hub.invoke('EquipItem', { slot, itemRef });
+		await this.hub.invoke('EquipItem', { itemRef });
+	}
+
+	/** Clears a named equipment slot. */
+	async unequip(slot: string): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('EquipItem', { slot, itemRef: null });
 	}
 
 	async engageEnemy(enemyId: string): Promise<void> {
@@ -509,9 +539,10 @@ export class GameSession {
 		);
 
 		hub.on('InventoryLoaded', (payload: InventoryLoadedPayload) => {
-			this.inventory = payload.itemDetails ?? [];
-			this.equipped = payload.equippedItems ?? {};
-			if (payload.openOverlay !== false) this.showInventory = true;
+			// The bag lives in the character sheet now, so `openOverlay` no longer opens anything —
+			// the snapshot just refreshes the sheet's item list and equipment rack.
+			this.inventory = payload.items ?? [];
+			this.equipped = payload.equipped ?? {};
 		});
 
 		hub.on('ShopVisited', (payload: { zoneId: string; zoneName: string }) => {
@@ -543,8 +574,8 @@ export class GameSession {
 		hub.on('ItemDropped', (payload: { itemRef: string; remainingQuantity: number }) => {
 			this.addSystemMessage(
 				payload.remainingQuantity > 0
-					? `Dropped ${payload.itemRef} (${payload.remainingQuantity} left).`
-					: `Dropped ${payload.itemRef}.`
+					? `Discarded ${payload.itemRef} (${payload.remainingQuantity} left).`
+					: `Discarded ${payload.itemRef}.`
 			);
 		});
 
