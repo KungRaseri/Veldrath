@@ -107,15 +107,29 @@ Notes that matter:
 
 Keep the call surface but move it behind interfaces, so the ~8 combat handlers change one line each:
 
-- `IEnemyInstanceStore` — `GetAliveAsync(zoneId, locationSlug)`, `TryGetAsync(enemyId)`,
-  `ApplyDamageAsync(enemyId, characterId, damage)`, `KillAsync(enemyId, respawnDelay)`,
-  `SpawnRosterAsync(...)`.
-- `ICombatSessionStore` — `TryGetAsync(characterId)`, `SetAsync(session)`, `RemoveAsync(characterId)`,
-  `RemoveByEnemyIdAsync(enemyId)`.
+- `IEnemyInstanceStore` — `GetAliveOrSpawnAsync(zoneGroup, locationSlug, spawnRoster)`, `TryGetAsync(enemyId)`,
+  `SaveAsync(enemy)`, `TryMarkDeadAsync(enemyId, respawnDelay)`, `RemoveAsync(enemyId)`.
+- `ICombatSessionStore` — `TryGetAsync(characterId)`, `IsInCombatAsync(characterId)`,
+  `SetAsync(characterId, session)`, `RemoveAsync(characterId)`, `RemoveByEnemyIdAsync(enemyId)`.
 
-The static classes are deleted, not kept as a wrapper, so no handler can accidentally take the in-memory
-path. A cache layer sits *inside* the implementation, keyed by enemy id, invalidated on write and
-versioned on read.
+The static classes are deleted, not kept as a wrapper, so no handler can accidentally take the in-memory path.
+
+**What D2 actually shipped (deviations from the sketch above, all deliberate):**
+
+- Folding the spawn decision into `GetAliveOrSpawnAsync` gives the three spawn sites (travel, navigation,
+  engagement) one code path instead of three copies of `HasRoster` + `TryAddRoster` + `GetAlive`.
+- **Death is a single conditional `UPDATE … WHERE IsAlive`** (`TryMarkDeadAsync`), and `SaveAsync` only syncs
+  health and participants. "One kill, one reward" therefore holds in the database rather than in an in-memory
+  `WasRewarded` flag — which per-request materialisation would have broken anyway.
+- **No cache yet.** Enemies are materialised per call from indexed lookups. A cache belongs *inside* the store if
+  measurements ever justify it, never as a wrapper a caller can bypass.
+- **Respawns are applied lazily on read.** `SettleLocationAsync` revives rows whose `RespawnAt` has passed (and
+  kills zero-health rows left behind by a crash between save and death transition), so D2 is playable with no
+  timer at all. D3 (#34) adds the proactive sweeper, the `EnemySpawned` broadcast and configuration for the delay.
+- `ExecuteUpdate`/`ExecuteDelete` bypass the change tracker, so the store detaches the affected rows and reads with
+  `AsNoTracking`. Without that, a stale tracked copy masked a death transition — the new store tests caught it.
+- `SpawnedEnemy` is materialised per call, so its `Template` is resolved from content each time. A missing archetype
+  logs `Error` and leaves the enemy fightable with no abilities, per the failsafe rule.
 
 ### 3.3 The respawn sweeper
 
