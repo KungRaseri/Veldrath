@@ -203,7 +203,10 @@ describe('hub payload contract', () => {
 			'AreaSearchedPayload',
 			'CharacterRestedPayload',
 			'AbilityUsedPayload',
-			'ShopCatalogPayload'
+			'ShopCatalogPayload',
+			'PartyDisbandedPayload',
+			'PartyInvitesChangedPayload',
+			'PartySnapshot'
 		];
 
 		expect(expected.filter((name) => !interfaces.has(name))).toEqual([]);

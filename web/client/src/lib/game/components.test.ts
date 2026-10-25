@@ -135,6 +135,18 @@ function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
 		showSettings: false,
 		showAbilities: false,
 		showAttributes: false,
+		showParty: false,
+		party: null as unknown,
+		partyInvites: [] as unknown[],
+		isPartyLeader: false,
+		openParty: vi.fn(),
+		requestParty: vi.fn(),
+		createParty: vi.fn(),
+		leaveParty: vi.fn(),
+		kickPartyMember: vi.fn(),
+		inviteToParty: vi.fn(),
+		acceptPartyInvite: vi.fn(),
+		declinePartyInvite: vi.fn(),
 		openInventory: vi.fn(),
 		loadQuests: vi.fn(),
 		visitShop: vi.fn(),
@@ -309,6 +321,74 @@ describe('GameOverlays (dialogs)', () => {
 		expect(await screen.findByText('Iron Sword')).toBeTruthy();
 		expect(screen.getByText('15 g')).toBeTruthy();
 		expect(screen.getByRole('button', { name: 'Buy' })).toBeTruthy();
+	});
+});
+
+describe('GameOverlays (party)', () => {
+	it('lists the members and lets the leader remove one', async () => {
+		const session = fakeSession({
+			showParty: true,
+			isPartyLeader: true,
+			party: {
+				partyId: 'party-1',
+				leaderCharacterId: 'char-1',
+				lootRule: 'FreeForAll',
+				members: [
+					{
+						characterId: 'char-1',
+						name: 'Thornwarden',
+						level: 3,
+						currentHealth: 80,
+						maxHealth: 100,
+						isLeader: true
+					},
+					{
+						characterId: 'char-2',
+						name: 'Aria',
+						level: 2,
+						currentHealth: 40,
+						maxHealth: 60,
+						isLeader: false
+					}
+				]
+			}
+		});
+
+		render(GameOverlays, { props: { session } });
+
+		expect(await screen.findByText('Aria')).toBeTruthy();
+		expect(screen.getByText('Level 2 · 40 / 60 health')).toBeTruthy();
+		expect(screen.getByText('Leader')).toBeTruthy();
+		screen.getByRole('button', { name: 'Remove' }).click();
+		expect(session.kickPartyMember).toHaveBeenCalledWith('char-2');
+	});
+
+	it('offers to create a party when solo', async () => {
+		const session = fakeSession({ showParty: true });
+		render(GameOverlays, { props: { session } });
+
+		(await screen.findByRole('button', { name: 'Create party' })).click();
+		expect(session.createParty).toHaveBeenCalled();
+	});
+
+	it('shows a pending invite with accept and decline', async () => {
+		const session = fakeSession({
+			partyInvites: [
+				{
+					partyId: 'party-2',
+					partyLeaderName: 'Aria',
+					invitedByName: 'Aria',
+					expiresAt: '2026-01-01T00:05:00Z'
+				}
+			]
+		});
+		render(GameOverlays, { props: { session } });
+
+		(await screen.findByRole('button', { name: 'Accept' })).click();
+		expect(session.acceptPartyInvite).toHaveBeenCalledWith('party-2');
+
+		screen.getByRole('button', { name: 'Decline' }).click();
+		expect(session.declinePartyInvite).toHaveBeenCalledWith('party-2');
 	});
 });
 

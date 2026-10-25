@@ -14,6 +14,7 @@
 		Swords,
 		Trash2,
 		Undo2,
+		Users,
 		Zap
 	} from '@lucide/svelte';
 	import ItemTooltip from './ItemTooltip.svelte';
@@ -350,6 +351,17 @@
 		<button class="sheet-menu-item" type="button" onclick={() => session.loadQuests()}>
 			<ScrollText size={14} aria-hidden="true" />
 			Quest log
+		</button>
+		<button class="sheet-menu-item" type="button" onclick={() => session.openParty()}>
+			<Users size={14} aria-hidden="true" />
+			Party
+			{#if session.partyInvites.length > 0}
+				<span class="chip preset-filled-secondary-500 text-xs">
+					{session.partyInvites.length}
+				</span>
+			{:else if session.party}
+				<span class="text-surface-600-400">({session.party.members.length})</span>
+			{/if}
 		</button>
 		<button class="sheet-menu-item" type="button" onclick={() => (session.showAbilities = true)}>
 			<Sparkles size={14} aria-hidden="true" />
