@@ -1,5 +1,6 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.Extensions.Logging;
+using Veldrath.Server.Features.Party;
 
 namespace Veldrath.Server.Features.Characters.Combat;
 
@@ -39,6 +40,9 @@ public record EngageEnemyHubResult
 
     /// <summary>Gets the display names of abilities the engaged enemy can use.</summary>
     public IReadOnlyList<string> EnemyAbilityNames { get; init; } = [];
+
+    /// <summary>Gets the party members who joined this fight because they were standing at the same location.</summary>
+    public IReadOnlyList<Guid> PartyMemberIds { get; init; } = [];
 }
 
 /// <summary>
@@ -51,19 +55,23 @@ public class EngageEnemyHubCommandHandler
 {
     private readonly IEnemyInstanceStore _enemies;
     private readonly ICombatSessionStore _sessions;
+    private readonly IPartyCombatQuery _party;
     private readonly ILogger<EngageEnemyHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="EngageEnemyHubCommandHandler"/>.</summary>
     /// <param name="enemies">Store for the live enemy instances.</param>
     /// <param name="sessions">Store for per-character combat sessions.</param>
+    /// <param name="party">Reads which party members are standing at the same location.</param>
     /// <param name="logger">Logger instance.</param>
     public EngageEnemyHubCommandHandler(
         IEnemyInstanceStore enemies,
         ICombatSessionStore sessions,
+        IPartyCombatQuery party,
         ILogger<EngageEnemyHubCommandHandler> logger)
     {
         _enemies = enemies;
         _sessions = sessions;
+        _party = party;
         _logger = logger;
     }
 
@@ -80,15 +88,27 @@ public class EngageEnemyHubCommandHandler
 
         var enemy = await _enemies.TryGetAsync(request.EnemyId, cancellationToken);
         if (enemy is null)
+        {
+            // Failsafe: a fight against a row that no longer exists is said out loud, never a silent no-op.
+            _logger.LogError(
+                "Character {CharacterIdPrefix} tried to engage enemy {EnemyId}, which no longer exists",
+                request.CharacterId.ToString()[..8], request.EnemyId);
             return new EngageEnemyHubResult { Success = false, ErrorMessage = "Enemy not found" };
+        }
 
         if (!enemy.IsAlive)
             return new EngageEnemyHubResult { Success = false, ErrorMessage = "Enemy is already dead" };
 
-        // Register this player as a participant and persist it, so the engagement survives a restart.
+        // Party members standing at this location join the same fight: the enemy row is shared, so their damage
+        // and their kill progress belong in one record. A member who never acts earns no XP or gold — only progress.
+        var partyMemberIds = await _party.GetOnlinePartyMembersAtLocationAsync(request.CharacterId, cancellationToken);
+
+        // Register the participants and persist them, so the engagement survives a restart.
         lock (enemy.SyncRoot)
         {
             enemy.Participants.Add(request.CharacterId);
+            foreach (var memberId in partyMemberIds)
+                enemy.Participants.Add(memberId);
         }
 
         await _enemies.SaveAsync(enemy, request.ZoneGroup, request.LocationSlug, cancellationToken);
@@ -121,6 +141,7 @@ public class EngageEnemyHubCommandHandler
             EnemyCurrentHealth = enemy.CurrentHealth,
             EnemyMaxHealth = enemy.MaxHealth,
             EnemyAbilityNames = abilityNames,
+            PartyMemberIds = partyMemberIds,
         };
     }
 }

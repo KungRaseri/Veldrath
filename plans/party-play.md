@@ -6,7 +6,7 @@
 > Guilds, trading and duels stay out of this milestone; they extend the same storage layer afterwards.
 > **Tracker:** epic #37 — C1 #43 (schema + hub commands, shipped in `c7133ac6` and closed), C2 #40 (invites,
 > snapshot fan-out, party panel — shipped server `99ebe3a4`/`07ac81b7`, client in the same session, and closed),
-> C3 #41 (shared combat + contribution rewards), C4 #42 (party chat).
+> C3 #41 (shared combat + contribution rewards, shipped), C4 #42 (party chat).
 
 ---
 
@@ -74,7 +74,9 @@ never assemble party state from deltas, which is what makes reconnects and the D
 ### 2.3 Shared combat and rewards
 
 - On `EngageEnemy`, if the engaging character is in a party, every online party member standing at the
-  same `(ZoneId, LocationSlug)` is added to the enemy's participants (D makes this a DB write).
+  same `(CurrentZoneId, CurrentZoneLocationSlug)` is added to the enemy's participants (D makes this a DB write).
+  "Standing there" is read from the `Characters` row plus an inner join on `PlayerSessions`, so an offline member
+  is never dragged into a fight.
 - A party member who walks away is removed from participation but keeps their recorded damage.
 - On kill: XP and gold are split by `DamageContributions` share (already tracked), rounded so the sum equals
   the total. Quest `kill:` progress is advanced for every participant, not just the killer.

@@ -91,4 +91,31 @@ public class FleeFromCombatHubCommandHandlerTests : IDisposable
             result.ErrorMessage.Should().BeNullOrEmpty();
         }
     }
+
+    [Fact]
+    public async Task Handle_Keeps_The_Damage_Already_Dealt_When_The_Player_Flees()
+    {
+        // The flee roll is 50/50, so retry until a flee actually succeeds; the recorded damage must survive.
+        var sawFlee = false;
+
+        for (var attempt = 0; attempt < 40 && !sawFlee; attempt++)
+        {
+            await using var db = _dbFactory.CreateContext();
+            var character = await SeedCharacterAsync(db);
+            var (zg, loc, enemy) = AddEnemy();
+            enemy.Participants.Add(character.Id);
+            enemy.DamageContributions[character.Id] = 17;
+            SetSession(character.Id, zg, loc, enemy.Id);
+
+            var result = await MakeHandler(db).Handle(new FleeFromCombatHubCommand(character.Id), CancellationToken.None);
+            if (!result.Fled) continue;
+
+            sawFlee = true;
+            enemy.Participants.Should().NotContain(character.Id, "a fleeing member stops being a target");
+            enemy.DamageContributions.Should().ContainKey(character.Id)
+                .WhoseValue.Should().Be(17, "damage already dealt is still theirs when the rest of the party finishes the kill");
+        }
+
+        sawFlee.Should().BeTrue("forty failed flee rolls in a row is not a realistic outcome");
+    }
 }

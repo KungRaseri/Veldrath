@@ -1968,21 +1968,31 @@ public class GameHub : Hub
     /// <param name="characterId">Character whose journal to advance.</param>
     /// <param name="kind">Objective kind (<c>kill</c>, <c>collect</c>, <c>visit</c>).</param>
     /// <param name="key">Enemy, item or location identifier.</param>
-    private async Task AdvanceQuestObjectivesAsync(Guid characterId, string kind, string? key)
+    private Task AdvanceQuestObjectivesAsync(Guid characterId, string kind, string? key) =>
+        AdvanceQuestObjectiveAsync(characterId, kind, key, Context.ConnectionId);
+
+    /// <summary>
+    /// Advances a quest objective for one character and pushes the refreshed journal to
+    /// <paramref name="connectionId"/> when that connection is known.
+    /// </summary>
+    /// <param name="characterId">Character whose journal to advance.</param>
+    /// <param name="kind">Objective kind (<c>kill</c>, <c>collect</c>, <c>visit</c>).</param>
+    /// <param name="key">Enemy, item or location identifier.</param>
+    /// <param name="connectionId">Connection to notify, or <see langword="null"/> to write the journal silently.</param>
+    private async Task AdvanceQuestObjectiveAsync(Guid characterId, string kind, string? key, string? connectionId)
     {
         if (string.IsNullOrWhiteSpace(key)) return;
 
         try
         {
             var result = await _mediator.Send(new AdvanceQuestObjectivesHubCommand(characterId, kind, key));
-            if (result.Success && result.QuestsChanged > 0)
+            if (!result.Success || result.QuestsChanged == 0 || string.IsNullOrEmpty(connectionId)) return;
+
+            await Clients.Client(connectionId).SendAsync("QuestLogReceived", new
             {
-                await Clients.Caller.SendAsync("QuestLogReceived", new
-                {
-                    CharacterId = characterId,
-                    result.Quests,
-                });
-            }
+                CharacterId = characterId,
+                result.Quests,
+            });
         }
         catch (Exception ex)
         {
@@ -1990,6 +2000,31 @@ public class GameHub : Hub
                 ex,
                 "Failed to advance quest objectives ({Kind}:{Key}) for character {CharacterId}",
                 kind, key, characterId);
+        }
+    }
+
+    /// <summary>
+    /// Advances the kill objective for every character credited with a kill — not only the one that landed the
+    /// killing blow — because a shared enemy is one fight. Both the archetype slug and the display name are
+    /// advanced: content objectives are authored with slugs, while older journals may hold names.
+    /// </summary>
+    /// <param name="result">The victory result carrying the participants and the enemy identity.</param>
+    /// <param name="killerId">Character whose connection definitely exists (the caller).</param>
+    private async Task AdvanceKillObjectivesAsync(AttackEnemyHubResult result, Guid killerId)
+    {
+        string?[] keys = [result.EnemyArchetypeSlug, result.EnemyName];
+
+        foreach (var participantId in result.ParticipantIds.Distinct())
+        {
+            string? connectionId = Context.ConnectionId;
+            if (participantId != killerId)
+            {
+                var session = await _playerSessionRepo.GetByCharacterIdAsync(participantId);
+                connectionId = session?.ConnectionId;
+            }
+
+            foreach (var key in keys.Where(key => !string.IsNullOrWhiteSpace(key)).Distinct())
+                await AdvanceQuestObjectiveAsync(participantId, "kill", key, connectionId);
         }
     }
 
@@ -2306,7 +2341,7 @@ public class GameHub : Hub
 
             if (result.EnemyDefeated)
             {
-                await AdvanceQuestObjectivesAsync(characterId, "kill", result.EnemyName);
+                await AdvanceKillObjectivesAsync(result, characterId);
 
                 if (TryGetCurrentZoneGroup(out var zoneGroup))
                 {

@@ -165,6 +165,7 @@ try
     // AFK is ephemeral by design: in-memory for the process lifetime, cleared on any action or reconnect.
     builder.Services.AddSingleton<IAfkTracker, AfkTracker>();
     builder.Services.AddScoped<PartyStore>();
+    builder.Services.AddScoped<IPartyCombatQuery>(provider => provider.GetRequiredService<PartyStore>());
 
     // World tuning is validated at startup: a missing or nonsensical value fails the host rather than silently
     // falling back to a default.
