@@ -4,7 +4,8 @@
 > C runs directly on top of Milestone D: a party is a group of characters fighting the *same* persistent
 > enemy instances, so enemy and combat state must already live in Postgres ([`server-first-world-state.md`](server-first-world-state.md)).
 > Guilds, trading and duels stay out of this milestone; they extend the same storage layer afterwards.
-> **Tracker:** epic #37 — phases C1–C4 become issues when the milestone starts.
+> **Tracker:** epic #37 — C1 #43 (schema + hub commands, shipped in `c7133ac6` and closed), C2 #40 (invites,
+> snapshot fan-out, party panel), C3 #41 (shared combat + contribution rewards), C4 #42 (party chat).
 
 ---
 
