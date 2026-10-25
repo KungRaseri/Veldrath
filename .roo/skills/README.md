@@ -15,11 +15,11 @@ Skills are grounded in:
 | --- | --- |
 | [`build-full`](build-full/SKILL.md) | Final verification: build every project in [`Realm.Full.slnx`](../../Realm.Full.slnx) |
 | [`run-all-tests`](run-all-tests/SKILL.md) | Run the complete .NET + web test suite with coverage |
-| [`run-tests-by-component`](run-tests-by-component/SKILL.md) | Test a single component (engine, server, client, forge, web, …) |
+| [`run-tests-by-component`](run-tests-by-component/SKILL.md) | Test a single component (engine, server, forge, discord, assets, libraries, web) |
 | [`create-new-feature`](create-new-feature/SKILL.md) | Add a MediatR vertical slice to `RealmEngine.Core` |
 | [`run-server`](run-server/SKILL.md) | Start `Veldrath.Server` (ASP.NET Core + SignalR) |
 | [`run-realmforge`](run-realmforge/SKILL.md) | Start the RealmForge content editor |
-| [`start-dev-stack`](start-dev-stack/SKILL.md) | Postgres + server + optional client/web |
+| [`start-dev-stack`](start-dev-stack/SKILL.md) | Postgres + server + the SvelteKit client |
 | [`web-development`](web-development/SKILL.md) | Build or change the SvelteKit app (`web/client`): routes, runes, load/actions, auth, Drizzle |
 | [`web-ui`](web-ui/SKILL.md) | Style the web app: Veldrath design tokens, Skeleton, Bits UI, Lucide, fonts, imagery |
 

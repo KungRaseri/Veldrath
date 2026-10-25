@@ -1,7 +1,8 @@
 # Veldrath Web
 
-SvelteKit frontend for Veldrath, using Better Auth and Drizzle for web
-authentication. The .NET game server remains the API and SignalR authority.
+The SvelteKit app for Veldrath — **the only game client** and the whole web frontend (public site,
+auth, game, Foundry, editorial, admin, moderation). Better Auth and Drizzle own authentication;
+`Veldrath.Server` remains the game API and SignalR authority.
 
 ## Workspaces
 
@@ -35,9 +36,10 @@ schema and database role setup.
 
 ## Architecture
 
-- Better Auth owns web credentials and sessions.
-- SvelteKit mints short-lived JWTs for `Veldrath.Server`.
-- `Veldrath.Server` remains the source of truth for game accounts, roles, and
-  permissions during the migration.
-- The full migration plan is in
-  [`plans/sveltekit-migration.md`](../plans/sveltekit-migration.md).
+- **Better Auth is the single source of truth** for credentials and sessions.
+- SvelteKit mints short-lived game JWTs; `Veldrath.Server` validates them, provisions the account
+  just in time, and adds RBAC claims from Identity roles/permissions.
+- Verification and password-reset mail is relayed to the .NET server's SMTP transport
+  ([`client/src/lib/server/email.ts`](client/src/lib/server/email.ts)).
+- Design decisions and history: [`docs/client-ui-architecture.md`](../docs/client-ui-architecture.md)
+  and [`plans/sveltekit-migration.md`](../plans/sveltekit-migration.md).

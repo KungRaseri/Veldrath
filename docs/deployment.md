@@ -134,8 +134,10 @@ A password change writes a Better Auth scrypt hash.
 
 The migration role must be able to read `public."AspNetUsers"` and write `auth.*`;
 the restricted `veldrath_auth` role cannot, which is why `MIGRATION_DATABASE_URL`
-uses the owner/admin connection. Keep `AspNetUsers` while the desktop client's
-native sign-in and the internal identity bridge still use ASP.NET Core Identity.
+uses the owner/admin connection. `AspNetUsers` must stay: the server still provisions an
+Identity row per Better Auth account to carry RBAC roles and permissions
+(`JwtClaimsEnrichment` → `RolePermissionResolver`), even though no client signs in with an
+Identity password any more.
 
 ## Deploying
 
@@ -177,5 +179,5 @@ also trusts forwarded headers through `UseForwardedHeaders`.
   as an overlay, with an external reverse proxy on the Docker network.
 - Coolify uses Dockerfile resources, not a compose file.
 
-The old Blazor `Veldrath.Web` and `RealmFoundry` containers and the Caddy
+The retired Blazor `Veldrath.Web` and `RealmFoundry` containers and the Caddy
 configuration are retired.

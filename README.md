@@ -10,8 +10,9 @@
 |-----------|-------|----------|
 | Engine Libraries | [![CI - Engine](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-engine.yml/badge.svg)](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-engine.yml) | [![codecov (engine)](https://codecov.io/gh/KungRaseri/RealmEngine/branch/main/graph/badge.svg?flag=engine)](https://codecov.io/gh/KungRaseri/RealmEngine?flag=engine) |
 | RealmForge Tooling | [![CI - Tooling](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-tooling.yml/badge.svg)](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-tooling.yml) | [![codecov (forge)](https://codecov.io/gh/KungRaseri/RealmEngine/branch/main/graph/badge.svg?flag=forge)](https://codecov.io/gh/KungRaseri/RealmEngine?flag=forge) |
-| Veldrath Client | [![CI - Client](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-client.yml/badge.svg)](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-client.yml) | [![codecov (client)](https://codecov.io/gh/KungRaseri/RealmEngine/branch/main/graph/badge.svg?flag=client)](https://codecov.io/gh/KungRaseri/RealmEngine?flag=client) |
 | Veldrath Server | [![CI - Server](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-server.yml/badge.svg)](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-server.yml) | [![codecov (server)](https://codecov.io/gh/KungRaseri/RealmEngine/branch/main/graph/badge.svg?flag=server)](https://codecov.io/gh/KungRaseri/RealmEngine?flag=server) |
+| Veldrath Web (client) | [![CI - Web](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-web.yml/badge.svg)](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-web.yml) | [![codecov (web)](https://codecov.io/gh/KungRaseri/RealmEngine/branch/main/graph/badge.svg?flag=web)](https://codecov.io/gh/KungRaseri/RealmEngine?flag=web) |
+| Discord Bot | [![CI - Discord](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-discord.yml/badge.svg)](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-discord.yml) | [![codecov (discord)](https://codecov.io/gh/KungRaseri/RealmEngine/branch/main/graph/badge.svg?flag=discord)](https://codecov.io/gh/KungRaseri/RealmEngine?flag=discord) |
 
 ## Latest Releases
 
@@ -19,10 +20,10 @@
 |-----------|--------|
 | Engine Libraries | [![Engine release](https://img.shields.io/github/v/release/KungRaseri/RealmEngine?filter=engine%2Fv*&label=engine&color=brightgreen)](https://github.com/KungRaseri/RealmEngine/releases?q=engine&expanded=true) |
 | RealmForge Tooling | [![Forge release](https://img.shields.io/github/v/release/KungRaseri/RealmEngine?filter=tooling%2Fv*&label=forge&color=brightgreen)](https://github.com/KungRaseri/RealmEngine/releases?q=tooling&expanded=true) |
-| Veldrath Client | [![Client release](https://img.shields.io/github/v/release/KungRaseri/RealmEngine?filter=client%2Fv*&label=client&color=brightgreen)](https://github.com/KungRaseri/RealmEngine/releases?q=client&expanded=true) |
 | Veldrath Server | [![Server release](https://img.shields.io/github/v/release/KungRaseri/RealmEngine?filter=server%2Fv*&label=server&color=brightgreen)](https://github.com/KungRaseri/RealmEngine/releases?q=server&expanded=true) |
+| Discord Bot | [![Discord release](https://img.shields.io/github/v/release/KungRaseri/RealmEngine?filter=discord%2Fv*&label=discord&color=brightgreen)](https://github.com/KungRaseri/RealmEngine/releases?q=discord&expanded=true) |
 
-RPG backend engine implementing CQRS with MediatR for clean command/query separation. Includes a multiplayer client/server (Veldrath) and a PostgreSQL content editor (RealmForge).
+RPG backend engine implementing CQRS with MediatR for clean command/query separation. It powers **Veldrath** — an ASP.NET Core game server plus a SvelteKit app that is the game's only client — and ships **RealmForge**, a PostgreSQL content editor.
 
 ## Architecture
 
@@ -64,17 +65,22 @@ All operations return structured DTOs and pass through FluentValidation and Seri
 # Build engine libraries only
 dotnet build RealmEngine.slnx
 
-# Build everything (22 .NET projects)
+# Build everything (17 .NET projects)
 dotnet build Realm.Full.slnx
 
 # Run all tests
-dotnet test Realm.Full.slnx --filter "Category!=UI"
+dotnet test Realm.Full.slnx
 
 # Run engine tests only
 dotnet test RealmEngine.slnx
 
-# VS Code debug — press F5
+# Run the game client (SvelteKit)
+cd web; npm install; npm run dev   # → http://localhost:5173
 ```
+
+The server expects Postgres on `localhost:5433` (`docker compose up postgres -d`) and the web app
+reads its configuration from `web/client/.env` — see [`web/README.md`](web/README.md) and
+[`docs/coolify-deployment.md`](docs/coolify-deployment.md).
 
 ## Core Systems
 
@@ -109,7 +115,7 @@ dotnet test RealmEngine.slnx
 
 ## Testing
 
-Comprehensive test suite across 9 .NET test projects plus the SvelteKit web suite:
+Comprehensive test suite across 7 .NET test projects plus the SvelteKit web suite:
 
 | Project | Scope |
 |---------|-------|
@@ -140,12 +146,13 @@ dotnet test Realm.Full.slnx --filter "Category!=UI" `
 - Serilog 4.4.x — Structured logging
 - Polly 8.7.x — Resilience patterns
 
-**Client / Server**
-- Avalonia 11.2.x+ — Cross-platform UI (Client, RealmForge)
-- ReactiveUI 20.1.x+ — MVVM framework
-- SvelteKit 3 / Svelte 5 — Web frontend (`web/`)
+**Server / Client**
 - ASP.NET Core — Server framework
 - SignalR — Real-time client/server communication
+- SvelteKit 3 / Svelte 5 — The game client and web frontend (`web/`)
+- Better Auth + Drizzle — Credentials, sessions, and the auth database schema
+- Avalonia 11.2.x+ — Cross-platform UI (RealmForge tooling only)
+- ReactiveUI 20.1.x+ — MVVM framework (RealmForge)
 
 **Testing**
 - xUnit 2.9.x+ — Test framework
@@ -166,7 +173,7 @@ RealmEngine/
 ├── Veldrath.Contracts/               # Shared DTOs and contracts
 ├── Veldrath.Assets/                  # Asset store and manifests
 ├── web/                              # SvelteKit app — the only game client
-└── [Project].Tests/                  # 8 .NET test projects (+ web Vitest/Playwright suites)
+└── [Project].Tests/                  # 7 .NET test projects (+ web Vitest/Playwright suites)
 ```
 
 ## Solution Files
@@ -204,4 +211,4 @@ Full documentation is deployed to **[GitHub Pages](https://kungraseri.github.io/
 
 ---
 
-**Platform**: .NET 10.0 | **Pattern**: CQRS with MediatR | **UI**: Avalonia | **Data**: PostgreSQL + JSON
+**Platform**: .NET 10.0 | **Pattern**: CQRS with MediatR | **Game client**: SvelteKit (web-first) | **Tooling UI**: Avalonia | **Data**: PostgreSQL

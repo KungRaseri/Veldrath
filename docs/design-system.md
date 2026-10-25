@@ -303,17 +303,19 @@ for reference:
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400&family=Cinzel:wght@400;600&family=Lora:ital,wght@0,400;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 ```
 
-### 4.6 Font loading — Avalonia (RealmForge)
+### 4.6 Font loading — Avalonia (RealmForge only)
 
 - **Inter:** `Avalonia.Fonts.Inter` NuGet package, already referenced. Registered via `UseInterFont()`.
-- **Cinzel / Cinzel Decorative / Lora / JetBrains Mono:** Embed `.ttf` files under `Assets/Fonts/` and declare in `App.axaml`:
+- **Cinzel / Cinzel Decorative / Lora / JetBrains Mono:** ship them as `AvaloniaResource`s from
+  [`RealmUI.Fonts`](../RealmUI.Fonts/) (the shared font project RealmForge references) and declare
+  the family keys in `App.axaml`:
 
 ```xml
 <Application.Resources>
-  <FontFamily x:Key="GameFontTitle">avares://Veldrath.Client/Assets/Fonts#Cinzel</FontFamily>
-  <FontFamily x:Key="GameFontDisplay">avares://Veldrath.Client/Assets/Fonts#Cinzel Decorative</FontFamily>
-  <FontFamily x:Key="GameFontReading">avares://Veldrath.Client/Assets/Fonts#Lora</FontFamily>
-  <FontFamily x:Key="GameFontMono">avares://Veldrath.Client/Assets/Fonts#JetBrains Mono</FontFamily>
+  <FontFamily x:Key="GameFontTitle">avares://RealmUI.Fonts/Assets/Fonts#Cinzel</FontFamily>
+  <FontFamily x:Key="GameFontDisplay">avares://RealmUI.Fonts/Assets/Fonts#Cinzel Decorative</FontFamily>
+  <FontFamily x:Key="GameFontReading">avares://RealmUI.Fonts/Assets/Fonts#Lora</FontFamily>
+  <FontFamily x:Key="GameFontMono">avares://RealmUI.Fonts/Assets/Fonts#JetBrains Mono</FontFamily>
 </Application.Resources>
 ```
 
@@ -708,7 +710,7 @@ The Avalonia token keys in `GameColors.axaml` map directly to VDS tokens:
 
 RealmForge currently has no design token system — colors are hardcoded inline in AXAML views. Migration steps:
 
-1. Add a `RealmForge/Assets/Themes/ForgeColors.axaml` ResourceDictionary that imports the VDS Avalonia token set (identical or near-identical to `Veldrath.Client/Assets/Themes/GameColors.axaml` once updated).
+1. Add a `RealmForge/Assets/Themes/ForgeColors.axaml` ResourceDictionary that imports the VDS Avalonia token set (mirroring the token names in §8.2).
 2. Add `ForgeTheme.axaml` with the same base control styles from `GameTheme.axaml` — minus game-specific UI (progress bars, etc. that RealmForge doesn't use).
 3. Replace hardcoded `#1e1e1e`, `#252526`, `#e0e0e0`, `#888`, `#6a4a20` etc. in view markup with `DynamicResource` bindings.
 
@@ -735,7 +737,7 @@ the SvelteKit app; its tokens live in
 | 2026-04-16 | **Marquee font: Cinzel Decorative** | Almendra (for marquee use) | Cinzel Decorative is Cinzel's natural companion for once-only hero moments; restricted to splash/logo use to prevent overuse. |
 | 2026-04-16 | **Reading font: Lora** | Almendra, DM Serif Display | Screen-optimized serif; comfortable at body sizes for long-form lore text and Foundry/Web article copy; pairs cleanly with Cinzel and Inter. |
 | 2026-04-16 | **Font pairing strategy: Option B** | A (Cinzel + Almendra + Lora — triple display), C (Cinzel + Inter only) | Option B (Cinzel headings + Lora reading) balances richness and maintainability; adds a meaningful typographic distinction between UI and content without the complexity of three competing display fonts. |
-| 2026-04-16 | **Background layer model: kept from Veldrath.Client** | Flatten to 3 layers, redesign from scratch | The 5-layer model is already well-calibrated against the dark canvas and is in active use in the most mature surface; standardising on it eliminates drift rather than introducing it. |
+| 2026-04-16 | **Background layer model: kept from the original desktop client** | Flatten to 3 layers, redesign from scratch | The 5-layer model is well-calibrated against the dark canvas and already implemented in the web app; standardising on it eliminates drift rather than introducing it. |
 | 2026-10-24 | **SvelteKit theme: Skeleton tokens mapped to VDS** | Keep Skeleton defaults; rebuild the theme ad hoc per page | A single `[data-theme='veldrath']` token block plus a brand layer restores the Crimson Seal / Emberfall / Gold palette, VDS type scale, and self-hosted fonts across public, auth, account, and game surfaces. |
 | 2026-10-24 | **Retire the Blazor/MudBlazor sections of this document** | Keep them as live rules next to Avalonia and SvelteKit guidance | `Veldrath.Web`, `RealmFoundry`, `Veldrath.Auth.Blazor`, and `Veldrath.GameClient.Components` are deleted; keeping MudBlazor rules as live guidance makes agents write Razor for a surface that no longer exists. |
 

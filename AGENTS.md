@@ -15,7 +15,7 @@
 | 1 | [`.github/agent-memory/engine-codebase.md`](.github/agent-memory/engine-codebase.md) | Key model facts, positional record constructors, known handler quirks, testing gotchas, known open P3/P4 items |
 | 2 | [`.github/agent-memory/json-migration-status.md`](.github/agent-memory/json-migration-status.md) | JSON → DB migration history and completed work log |
 | 3 | [`.github/agent-memory/forge-foundry-sync.md`](.github/agent-memory/forge-foundry-sync.md) | Forge ↔ Foundry content schema, Foundry endpoint notes, integration test gotchas |
-| 4 | [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) | Veldrath Server + Client hub architecture, blob schema, P3/P4 status, session log |
+| 4 | [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) | Veldrath Server + web client hub architecture, blob schema, auth/env matrix, session log |
 | 5 | [`.github/agent-memory/gap-analysis-process.md`](.github/agent-memory/gap-analysis-process.md) | Process template for gap analysis at session start |
 | 6 | [`.github/agent-memory/auth-and-character-creation-plan.md`](.github/agent-memory/auth-and-character-creation-plan.md) | Auth flow & character creation gap fix plan, implementation decisions |
 | 7 | [`.github/agent-memory/combat-loop-plan.md`](.github/agent-memory/combat-loop-plan.md) | Combat loop + multiplayer architecture plan (actual turn-based implementation supersedes original tick-based design) |
@@ -79,13 +79,13 @@ The SvelteKit app in [`web/`](web/) is verified with npm scripts rather than a `
 ├── Veldrath.Contracts/           # Shared API contracts and DTOs
 ├── Veldrath.Assets/              # Asset store/management
 ├── RealmUI.Fonts/                # Custom fonts
-├── web/                          # SvelteKit 3 / Svelte 5 web app (shared + client workspaces)
-├── [Project].Tests/              # One test project per .NET library/application (10 total)
+├── web/                          # SvelteKit 3 / Svelte 5 app — the only game client (shared + client workspaces)
+├── [Project].Tests/              # One test project per .NET library/application (7 total)
 ├── .github/
 │   ├── agent-memory/             # Canonical memory store (8 files, see Required Reading)
 │   ├── instructions/             # Detailed instruction files (7 files)
-│   └── workflows/                # CI/CD workflows (per-component + deploy + docs + release)
-├── .roo/skills/                  # Agent skills (build, test, run, web); catalog in .roo/skills/README.md
+│   └── workflows/                # CI/CD workflows (per-component + docs + hygiene + release)
+├── .roo/skills/                  # Agent skills (build, test, run server/tooling, web); catalog in .roo/skills/README.md
 ├── docs/                         # Documentation (DocFX → GitHub Pages)
 ├── wiki/                         # GitHub Wiki content (git submodule)
 ├── plans/                        # Live plans only; finished designs are folded into docs/
@@ -137,8 +137,9 @@ The game client is the SvelteKit app. [`web/client/src/lib/game/`](web/client/sr
 [`web/`](web/) is the single web frontend (public site, auth, game client, Foundry, editorial, admin, moderation). It is its own npm-workspaces monorepo (`shared`, `client`) with its own tooling — run all web commands **from `web/`**, never from `web/client/`.
 
 - **Workspaces:** [`web/shared`](web/shared) (`@veldrath/shared` — Better Auth Drizzle schema and generated contracts) and [`web/client`](web/client) (`@veldrath/web` — SvelteKit app).
-- **Stack:** SvelteKit 3, Svelte 5 runes, Vite 8, Tailwind CSS 4, Skeleton v5, Bits UI, Lucide, Better Auth, Drizzle ORM, adapter-node (web) plus adapter-static (desktop bundle).
-- **Auth:** Better Auth owns web credentials and sessions via [`web/client/src/lib/server/auth.ts`](web/client/src/lib/server/auth.ts) (lazy `getAuth()`) and [`web/client/src/hooks.server.ts`](web/client/src/hooks.server.ts). SvelteKit mints short-lived JWTs; `Veldrath.Server` remains the game authority.
+- **Stack:** SvelteKit 3, Svelte 5 runes, Vite 8, Tailwind CSS 4, Skeleton v5, Bits UI, Lucide, Better Auth, Drizzle ORM, adapter-node.
+- **Auth:** **Better Auth is the single source of truth** for credentials and sessions — [`web/client/src/lib/server/auth.ts`](web/client/src/lib/server/auth.ts) (lazy `getAuth()`) and [`web/client/src/hooks.server.ts`](web/client/src/hooks.server.ts). SvelteKit mints short-lived game JWTs; `Veldrath.Server` validates them, provisions the account just in time, and adds RBAC claims. Nothing signs in through ASP.NET Core Identity passwords any more.
+- **Email:** Better Auth relays verification/reset messages to the .NET server's SMTP transport through the internal bridge ([`email.ts`](web/client/src/lib/server/email.ts)), so there is one mail configuration.
 - **Database:** schema in [`web/shared/src/db/schema.ts`](web/shared/src/db/schema.ts); migrations under `web/shared/db/migrations/`.
 - **Theme/assets:** Veldrath Design System tokens in [`web/client/src/routes/theme.css`](web/client/src/routes/theme.css) and [`web/client/src/routes/brand.css`](web/client/src/routes/brand.css); self-hosted fonts in `web/client/static/fonts/`, imagery in `web/client/static/images/`.
 - **Reference corpus:** third-party `llms.txt` docs live in [`web/llms/`](web/llms/).
@@ -247,8 +248,10 @@ Coverage exclusions are configured in [`coverage.runsettings`](coverage.runsetti
 - **GitHub Pages (DocFX):** `https://kungraseri.github.io/RealmEngine/` — generated from XML doc comments across all projects, deployed by `docs.yml`
 - **GitHub Wiki** ([`wiki/`](wiki/) submodule): Getting Started, Contributing, FAQ, Roadmap Summary
 - **Key docs:**
-  - [`docs/deployment.md`](docs/deployment.md) — Deployment guide
+  - [`docs/deployment.md`](docs/deployment.md) — deployment overview
+  - [`docs/coolify-deployment.md`](docs/coolify-deployment.md) — the authoritative Coolify/env reference
   - [`docs/design-system.md`](docs/design-system.md) — UI design system reference
+  - [`docs/client-ui-architecture.md`](docs/client-ui-architecture.md) — panel-driven UI and the DB map graph
   - [`docs/lore/calethic-language.md`](docs/lore/calethic-language.md) — Calethic language reference
 
 ---
@@ -270,7 +273,7 @@ The directory [`.github/agent-memory/`](.github/agent-memory/) is the **canonica
 | [`.github/agent-memory/engine-codebase.md`](.github/agent-memory/engine-codebase.md) | Codebase notes: model facts, constructor patterns, handler quirks, testing gotchas, open items |
 | [`.github/agent-memory/json-migration-status.md`](.github/agent-memory/json-migration-status.md) | JSON → DB migration log, completed work, deleted files |
 | [`.github/agent-memory/forge-foundry-sync.md`](.github/agent-memory/forge-foundry-sync.md) | Forge ↔ Foundry content schema, endpoint notes, integration test gotchas |
-| [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) | Server + Client hub architecture, blob schema, OAuth flow, session log |
+| [`.github/agent-memory/veldrath-memory.md`](.github/agent-memory/veldrath-memory.md) | Server + web client hub architecture, blob schema, auth/env matrix, session log |
 | [`.github/agent-memory/gap-analysis-process.md`](.github/agent-memory/gap-analysis-process.md) | Process template for gap analysis at session start (prompt templates) |
 | [`.github/agent-memory/auth-and-character-creation-plan.md`](.github/agent-memory/auth-and-character-creation-plan.md) | Auth flow & character creation gap fix plan, decisions made, next steps |
 | [`.github/agent-memory/combat-loop-plan.md`](.github/agent-memory/combat-loop-plan.md) | Combat loop architecture plan (actual turn-based implementation supersedes original design) |
