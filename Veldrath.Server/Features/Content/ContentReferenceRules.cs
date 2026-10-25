@@ -1,3 +1,5 @@
+using Veldrath.Server.Features.Quest;
+
 namespace Veldrath.Server.Features.Content;
 
 /// <summary>
@@ -39,6 +41,9 @@ public static class ContentReferenceRules
 
     /// <summary>Rule id for a quest objective pointing at content that does not exist.</summary>
     public const string MissingQuestTarget = "missing-quest-target";
+
+    /// <summary>Rule id for a quest objective using a kind that no server call site implements.</summary>
+    public const string UnsupportedQuestKind = "unsupported-quest-kind";
 
     /// <summary>Rule id for a map edge pointing at a node that is not on its map.</summary>
     public const string MissingMapNode = "missing-map-node";
@@ -97,11 +102,37 @@ public static class ContentReferenceRules
                 continue;
             }
 
-            var (known, collection) = objective.Type?.ToLowerInvariant() switch
+            var type = objective.Type?.ToLowerInvariant() ?? string.Empty;
+
+            // A reserved kind would never progress, so it is reported rather than silently accepted.
+            if (type == QuestObjectiveKinds.Deliver)
             {
-                "kill" => (knownArchetypes, "actor archetypes"),
-                "collect" => (knownItems, "items"),
-                "reach" or "visit" => (knownLocations, "zone locations"),
+                issues.Add(new ContentIssue(
+                    UnsupportedQuestKind,
+                    $"Quest '{objective.QuestSlug}' objective '{objective.Type}:{objective.Target}' uses a reserved objective kind: hand-over is not implemented, so it would never progress."));
+                continue;
+            }
+
+            // A level objective names a number, not a slug, so it is validated as one.
+            if (type == QuestObjectiveKinds.ReachLevel)
+            {
+                if (!int.TryParse(objective.Target, out var level) || level <= 0)
+                {
+                    issues.Add(new ContentIssue(
+                        MissingQuestTarget,
+                        $"Quest '{objective.QuestSlug}' objective '{objective.Type}:{objective.Target}' needs a positive level number."));
+                }
+
+                continue;
+            }
+
+            var (known, collection) = type switch
+            {
+                QuestObjectiveKinds.Kill => (knownArchetypes, "actor archetypes"),
+                QuestObjectiveKinds.Collect => (knownItems, "items"),
+                QuestObjectiveKinds.Craft => (knownItems, "items"),
+                "reach" or QuestObjectiveKinds.Visit => (knownLocations, "zone locations"),
+                // `talk:` has no NPC catalog to validate against yet; add it when one exists.
                 _ => ((IReadOnlySet<string>?)null, string.Empty),
             };
 

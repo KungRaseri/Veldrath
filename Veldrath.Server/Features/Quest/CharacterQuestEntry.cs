@@ -43,6 +43,37 @@ public record CharacterQuestEntry(
 /// The blob is a plain JSON array of <see cref="CharacterQuestEntry"/> so quest state travels with the
 /// character row and needs no extra tables.
 /// </remarks>
+/// <summary>
+/// The objective kinds a quest may use. Every kind is written <c><kind>:<key></c> and matched by prefix, so a
+/// new kind needs exactly three things: a constant here, one server call site, and content-audit coverage.
+/// </summary>
+public static class QuestObjectiveKinds
+{
+    /// <summary>Kill an actor archetype — <c>kill:giant-rat</c>. Advanced for every combat participant.</summary>
+    public const string Kill = "kill";
+
+    /// <summary>Collect an item — <c>collect:glowcap-mushroom</c>. Advanced when the item is acquired.</summary>
+    public const string Collect = "collect";
+
+    /// <summary>Visit a zone location — <c>visit:grey-cup</c>. Advanced on arrival.</summary>
+    public const string Visit = "visit";
+
+    /// <summary>Craft an item — <c>craft:iron-sword</c>. Advanced when a craft succeeds.</summary>
+    public const string Craft = "craft";
+
+    /// <summary>Reach a character level — <c>reach_level:5</c>. Advanced on level-up.</summary>
+    public const string ReachLevel = "reach_level";
+
+    /// <summary>Speak to an NPC — <c>talk:innkeeper-halda</c>. Advanced by the hub's <c>TalkToNpc</c> call.</summary>
+    public const string Talk = "talk";
+
+    /// <summary>
+    /// Hand an item to an NPC — <c>deliver:iron-sword</c>. Reserved: there is no hand-over surface yet, so the content
+    /// audit reports this kind rather than letting authored content silently never progress.
+    /// </summary>
+    public const string Deliver = "deliver";
+}
+
 public static class QuestJournal
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -78,8 +109,8 @@ public static class QuestJournal
     /// Advances every active objective whose key matches <paramref name="kind"/> + <paramref name="key"/>.
     /// </summary>
     /// <param name="entries">Journal entries, updated in place.</param>
-    /// <param name="kind">Objective kind (<c>kill</c>, <c>collect</c>, <c>visit</c>).</param>
-    /// <param name="key">Enemy, item or location identifier.</param>
+    /// <param name="kind">One of <see cref="QuestObjectiveKinds"/>.</param>
+    /// <param name="key">The identifier the objective names (enemy, item, location, NPC or level).</param>
     /// <param name="amount">Progress to add.</param>
     /// <returns>The number of objectives that changed.</returns>
     public static int Advance(List<CharacterQuestEntry> entries, string kind, string key, int amount = 1)

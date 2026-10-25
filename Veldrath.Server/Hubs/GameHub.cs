@@ -963,6 +963,13 @@ public class GameHub : Hub
             else
                 await Clients.Caller.SendAsync("ExperienceGained", payload);
 
+            if (result.LeveledUp)
+            {
+                // Both level values are advanced so a reach_level objective completes whichever one content names.
+                await AdvanceQuestObjectivesAsync(characterId, QuestObjectiveKinds.ReachLevel, result.NewLevel.ToString());
+                await AdvanceQuestObjectivesAsync(characterId, QuestObjectiveKinds.ReachLevel, result.LeveledUpTo.ToString());
+            }
+
             _logger.LogInformation(
                 "Character {CharacterId} gained {Amount} XP from {Source}; now level {Level}",
                 characterId, request.Amount, request.Source ?? "Unknown", result.NewLevel);
@@ -1394,6 +1401,27 @@ public class GameHub : Hub
     }
 
     /// <summary>
+    /// Records that the active character spoke to an NPC, which advances <c>talk:<npcSlug></c> objectives.
+    /// </summary>
+    /// <param name="npcSlug">Slug of the NPC that was spoken to.</param>
+    public async Task TalkToNpc(string npcSlug)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before TalkToNpc");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(npcSlug))
+        {
+            await Clients.Caller.SendAsync("Error", "An NPC slug is required.");
+            return;
+        }
+
+        await AdvanceQuestObjectivesAsync(characterId, QuestObjectiveKinds.Talk, npcSlug.Trim());
+    }
+
+    /// <summary>
     /// Craft an item using the named recipe, deducting the crafting cost from the caller's
     /// active character's gold. Broadcasts <c>ItemCrafted</c> to the zone group (or back to
     /// the caller when not in a zone).
@@ -1416,6 +1444,9 @@ public class GameHub : Hub
                 await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to craft item");
                 return;
             }
+
+            if (!string.IsNullOrWhiteSpace(result.ItemCrafted))
+                await AdvanceQuestObjectivesAsync(characterId, QuestObjectiveKinds.Craft, result.ItemCrafted);
 
             var payload = new
             {
@@ -2047,7 +2078,15 @@ public class GameHub : Hub
             }
 
             foreach (var key in keys.Where(key => !string.IsNullOrWhiteSpace(key)).Distinct())
-                await AdvanceQuestObjectiveAsync(participantId, "kill", key, connectionId);
+            {
+                // A legacy journal naming the display name keeps progressing; say so once per kill at Debug level.
+                if (!string.Equals(key, result.EnemyArchetypeSlug, StringComparison.OrdinalIgnoreCase))
+                    _logger.LogDebug(
+                        "Advancing a legacy display-name kill objective '{Key}' for character {CharacterId}; content should use the archetype slug",
+                        key, participantId);
+
+                await AdvanceQuestObjectiveAsync(participantId, QuestObjectiveKinds.Kill, key, connectionId);
+            }
         }
     }
 

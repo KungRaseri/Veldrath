@@ -73,7 +73,10 @@ kill key so objectives match `ArchetypeSlug` — and accept the legacy display-n
 `Debug` log, so existing authored content keeps working during the transition.
 
 `Advance` stays a single prefix-matching function; the kind list becomes a documented constant rather than an
-implicit convention.
+implicit convention — shipped as `QuestObjectiveKinds`. `craft:` (craft success), `reach_level:` (level-up) and
+`talk:` (new `TalkToNpc` hub call) have live call sites; **`deliver:` is reserved** because no hand-over surface
+exists, and the content audit reports it as `unsupported-quest-kind` rather than letting authored content sit there
+never progressing.
 
 ### 2.5 Hardcore memorial and leaderboard
 
