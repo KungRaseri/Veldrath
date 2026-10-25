@@ -1,5 +1,6 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Veldrath.Server.Data;
@@ -132,5 +133,52 @@ public class AttackEnemyHubCommandHandlerTests : IDisposable
         result.EnemyDefeated.Should().BeTrue();
         result.EnemyRemainingHealth.Should().Be(0);
         _sessions.IsInCombat(character.Id).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Handle_Solo_Kill_Still_Pays_The_Whole_Reward()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var character = await SeedCharacterAsync(db);
+        var (zg, loc, enemy) = AddEnemy(1, character.Id);
+        SetSession(character.Id, zg, loc, enemy.Id);
+
+        var result = await MakeHandler(db).Handle(new AttackEnemyHubCommand(character.Id), CancellationToken.None);
+
+        result.XpEarned.Should().Be(10, "a solo player takes the enemy's whole XP");
+        result.GoldEarned.Should().Be(5, "a solo player takes the enemy's whole gold");
+        result.ParticipantIds.Should().Equal([character.Id]);
+        result.EnemyArchetypeSlug.Should().Be("goblin");
+
+        await using var read = _dbFactory.CreateContext();
+        var stored = await read.Characters.SingleAsync(c => c.Id == character.Id);
+        stored.Experience.Should().Be(10);
+        stored.Attributes.Should().Contain("\"Gold\":5",
+            "the gold must survive the cooldown write that follows the award");
+    }
+
+    [Fact]
+    public async Task Handle_Credits_Every_Participant_And_Splits_The_Reward_Exactly()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var killer = await SeedCharacterAsync(db);
+        var ally = await SeedCharacterAsync(db);
+        var (zg, loc, enemy) = AddEnemy(1, killer.Id);
+        enemy.Participants.Add(ally.Id);
+        enemy.DamageContributions[ally.Id] = 30;
+        enemy.DamageContributions[killer.Id] = 10;
+        SetSession(killer.Id, zg, loc, enemy.Id);
+
+        var result = await MakeHandler(db).Handle(new AttackEnemyHubCommand(killer.Id), CancellationToken.None);
+
+        result.EnemyDefeated.Should().BeTrue();
+        result.ParticipantIds.Should().BeEquivalentTo([killer.Id, ally.Id]);
+
+        await using var read = _dbFactory.CreateContext();
+        var killerXp = await read.Characters.Where(c => c.Id == killer.Id).Select(c => c.Experience).SingleAsync();
+        var allyXp = await read.Characters.Where(c => c.Id == ally.Id).Select(c => c.Experience).SingleAsync();
+
+        (killerXp + allyXp).Should().Be(10, "the split must not mint or lose experience");
+        allyXp.Should().BeGreaterThan(killerXp, "the ally dealt three times the damage");
     }
 }

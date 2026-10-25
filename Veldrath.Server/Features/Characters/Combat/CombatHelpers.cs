@@ -90,7 +90,8 @@ internal static class CombatHelpers
         return (damage, ability.Name);
     }
 
-    // Distributes proportional XP and gold to all contributors and releases their combat sessions.
+    // Splits the enemy's XP and gold across its contributors, awards each share and releases their combat
+    // sessions. The shares always add up to the enemy's configured rewards — see CombatRewards.Split.
     // Returns a list of (CharacterId, Xp, Gold) for broadcasting.
     internal static async Task<List<(Guid CharacterId, int Xp, int Gold)>> DistributeRewardsAsync(
         SpawnedEnemy enemy,
@@ -107,28 +108,33 @@ internal static class CombatHelpers
         }
         if (alreadyRewarded) return [];
 
-        int totalDamage = enemy.DamageContributions.Values.Sum();
-        if (totalDamage == 0) return [];
-
-        var rewards = new List<(Guid, int, int)>();
-
-        foreach (var (charId, damage) in enemy.DamageContributions)
+        List<(Guid CharacterId, int Damage)> contributions;
+        lock (enemy.SyncRoot)
         {
-            double share = (double)damage / totalDamage;
-            int xp = Math.Max(1, (int)(enemy.BaseXp * share));
-            int gold = Math.Max(0, (int)(enemy.GoldReward * share));
+            contributions = enemy.DamageContributions
+                .Select(entry => (entry.Key, entry.Value))
+                .ToList();
+        }
 
-            var character = await repo.GetByIdAsync(charId, ct);
+        // A participant who never landed a hit earns nothing; only the damaged set is paid.
+        if (contributions.Count == 0 || contributions.Sum(contribution => contribution.Damage) <= 0)
+            return [];
+
+        var rewards = new List<(Guid, int, int)>(contributions.Count);
+
+        foreach (var share in CombatRewards.Split(enemy.BaseXp, enemy.GoldReward, contributions))
+        {
+            var character = await repo.GetByIdAsync(share.CharacterId, ct);
             if (character is not null)
             {
                 var attrs = ParseAttrs(character.Attributes);
-                attrs["Gold"] = attrs.GetValueOrDefault("Gold") + gold;
-                character.Experience += xp;
+                attrs["Gold"] = attrs.GetValueOrDefault("Gold") + share.Gold;
+                character.Experience += share.Xp;
                 character.Attributes = SerializeAttrs(attrs);
                 await repo.UpdateAsync(character, ct);
             }
 
-            rewards.Add((charId, xp, gold));
+            rewards.Add((share.CharacterId, share.Xp, share.Gold));
         }
 
         // Release every engaged player; the enemy row stays behind as a dead row with a respawn time, so the

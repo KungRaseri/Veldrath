@@ -45,10 +45,27 @@ public sealed record PartyInviteView(
     DateTimeOffset ExpiresAt);
 
 /// <summary>
+/// The slice of party persistence combat needs: who is grouped with a character and physically standing next to them.
+/// Kept separate from <see cref="PartyStore"/> so combat handlers depend on one read instead of the whole store.
+/// </summary>
+public interface IPartyCombatQuery
+{
+    /// <summary>
+    /// Returns the other members of a character's party who are online and standing at the same zone location.
+    /// </summary>
+    /// <param name="characterId">Character whose party and position anchor the lookup.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The character ids that join a fight this character starts; empty when solo or nowhere in particular.</returns>
+    Task<IReadOnlyList<Guid>> GetOnlinePartyMembersAtLocationAsync(
+        Guid characterId,
+        CancellationToken cancellationToken = default);
+}
+
+/// <summary>
 /// Persistence helpers for multiplayer parties. Backed by the <c>Parties</c>/<c>PartyMembers</c>/<c>PartyInvites</c>
 /// tables, so a party survives a restart and a rolling deploy.
 /// </summary>
-public sealed class PartyStore
+public sealed class PartyStore : IPartyCombatQuery
 {
     private readonly ApplicationDbContext _db;
 
@@ -340,6 +357,62 @@ public sealed class PartyStore
             .ToList();
 
         return Task.FromResult(new PartySnapshot(party.Id, party.LeaderCharacterId, party.LootRule, members));
+    }
+
+    /// <summary>
+    /// Returns the other members of a character's party who are online and standing at the same zone location.
+    /// Location is read from <see cref="Character.CurrentZoneId"/> and
+    /// <see cref="Character.CurrentZoneLocationSlug"/>, which the travel and navigation paths keep current.
+    /// </summary>
+    /// <param name="characterId">Character whose party and position anchor the lookup.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The character ids that join a fight this character starts; empty when solo or nowhere in particular.</returns>
+    public async Task<IReadOnlyList<Guid>> GetOnlinePartyMembersAtLocationAsync(
+        Guid characterId,
+        CancellationToken cancellationToken = default)
+    {
+        var anchor = await _db.Characters
+            .AsNoTracking()
+            .Where(character => character.Id == characterId)
+            .Select(character => new { character.CurrentZoneId, character.CurrentZoneLocationSlug })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        // A character standing on the region map, or between locations, has nobody "next to" them.
+        if (anchor is null ||
+            string.IsNullOrWhiteSpace(anchor.CurrentZoneId) ||
+            string.IsNullOrWhiteSpace(anchor.CurrentZoneLocationSlug))
+        {
+            return [];
+        }
+
+        var partyId = await _db.PartyMembers
+            .AsNoTracking()
+            .Where(member => member.CharacterId == characterId)
+            .Select(member => (Guid?)member.PartyId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (partyId is null) return [];
+
+        // Online is an inner join on PlayerSessions: an offline member is not standing in the room.
+        return await _db.PartyMembers
+            .AsNoTracking()
+            .Where(member => member.PartyId == partyId.Value && member.CharacterId != characterId)
+            .Join(
+                _db.Characters
+                    .AsNoTracking()
+                    .Where(character =>
+                        character.DeletedAt == null &&
+                        character.CurrentZoneId == anchor.CurrentZoneId &&
+                        character.CurrentZoneLocationSlug == anchor.CurrentZoneLocationSlug),
+                member => member.CharacterId,
+                character => character.Id,
+                (_, character) => character.Id)
+            .Join(
+                _db.PlayerSessions.AsNoTracking(),
+                id => id,
+                session => session.CharacterId,
+                (id, _) => id)
+            .ToListAsync(cancellationToken);
     }
 
     /// <summary>

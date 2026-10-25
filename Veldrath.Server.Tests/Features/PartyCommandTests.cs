@@ -231,4 +231,41 @@ public class PartyCommandTests : IDisposable
         result.Party.Should().NotBeNull();
         result.Party!.LeaderCharacterId.Should().Be(character.Id);
     }
+
+    // ── Combat participation (C3) ──────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetOnlinePartyMembersAtLocation_Is_Empty_For_A_Solo_Character()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var character = await SeedCharacterAsync(db);
+
+        var peers = await new PartyStore(db).GetOnlinePartyMembersAtLocationAsync(character.Id);
+
+        peers.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetOnlinePartyMembersAtLocation_Ignores_Members_Who_Are_Not_Online_Here()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var leader = await SeedCharacterAsync(db);
+        var ally = await SeedCharacterAsync(db);
+        await CreateHandler(db).Handle(new CreatePartyHubCommand(leader.Id), CancellationToken.None);
+
+        var store = new PartyStore(db);
+        var partyId = await db.Parties.Select(party => party.Id).SingleAsync();
+        await store.AddMemberAsync(partyId, ally.Id);
+
+        // Both stand in the same place, but neither has a PlayerSession, so neither is actually there.
+        leader.CurrentZoneId = "zone-1";
+        leader.CurrentZoneLocationSlug = "forest";
+        ally.CurrentZoneId = "zone-1";
+        ally.CurrentZoneLocationSlug = "forest";
+        await db.SaveChangesAsync();
+
+        var peers = await store.GetOnlinePartyMembersAtLocationAsync(leader.Id);
+
+        peers.Should().BeEmpty("an offline member is not standing in the room");
+    }
 }

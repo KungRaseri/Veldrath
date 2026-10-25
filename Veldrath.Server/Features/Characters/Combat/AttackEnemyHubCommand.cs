@@ -57,6 +57,15 @@ public record AttackEnemyHubResult
 
     /// <summary>Gets the gold awarded to this player when the enemy was defeated.</summary>
     public int GoldEarned { get; init; }
+
+    /// <summary>Gets the archetype slug of the defeated enemy, used to advance kill objectives by slug.</summary>
+    public string? EnemyArchetypeSlug { get; init; }
+
+    /// <summary>
+    /// Gets every character credited with the kill, including party members who joined the fight but never landed a hit.
+    /// Only populated when <see cref="EnemyDefeated"/> is <see langword="true"/>.
+    /// </summary>
+    public IReadOnlyList<Guid> ParticipantIds { get; init; } = [];
 }
 
 /// <summary>
@@ -105,6 +114,10 @@ public class AttackEnemyHubCommandHandler
         if (enemy is null)
         {
             await _sessions.RemoveAsync(request.CharacterId, cancellationToken);
+            // Failsafe: a combat session pointing at a missing row is a content bug worth an Error, not a shrug.
+            _logger.LogError(
+                "Combat session for character {CharacterIdPrefix} pointed at enemy {EnemyId}, which no longer exists",
+                request.CharacterId.ToString()[..8], session.EnemyId);
             return new AttackEnemyHubResult { Success = false, ErrorMessage = "Enemy no longer exists" };
         }
 
@@ -141,6 +154,11 @@ public class AttackEnemyHubCommandHandler
         if (!enemy.IsAlive)
         {
             (Guid CharacterId, int Xp, int Gold) myReward = default;
+            IReadOnlyList<Guid> participants;
+            lock (enemy.SyncRoot)
+            {
+                participants = enemy.Participants.ToList();
+            }
 
             // Only the caller that wins the death transition distributes rewards.
             if (await _enemies.TryMarkDeadAsync(enemy.Id, cancellationToken))
@@ -150,12 +168,19 @@ public class AttackEnemyHubCommandHandler
             }
 
             _logger.LogInformation(
-                "Enemy {EnemyName} defeated by {CharacterIdPrefix}",
-                enemy.Name, request.CharacterId.ToString()[..8]);
+                "Enemy {EnemyName} defeated by {CharacterIdPrefix} with {ParticipantCount} participant(s)",
+                enemy.Name, request.CharacterId.ToString()[..8], participants.Count);
 
-            CombatHelpers.DecrementCooldowns(attrs);
-            entity.Attributes = CombatHelpers.SerializeAttrs(attrs);
-            await _characterRepo.UpdateAsync(entity, cancellationToken);
+            // Rewards were written straight to the character row, so re-read before writing the cooldowns back:
+            // saving the pre-reward attribute blob here would silently undo the gold that was just awarded.
+            var rewarded = await _characterRepo.GetByIdAsync(request.CharacterId, cancellationToken);
+            if (rewarded is not null)
+            {
+                var rewardedAttrs = CombatHelpers.ParseAttrs(rewarded.Attributes, _logger);
+                CombatHelpers.DecrementCooldowns(rewardedAttrs);
+                rewarded.Attributes = CombatHelpers.SerializeAttrs(rewardedAttrs);
+                await _characterRepo.UpdateAsync(rewarded, cancellationToken);
+            }
 
             return new AttackEnemyHubResult
             {
@@ -164,6 +189,8 @@ public class AttackEnemyHubCommandHandler
                 EnemyRemainingHealth = 0,
                 EnemyDefeated = true,
                 EnemyName = enemy.Name,
+                EnemyArchetypeSlug = enemy.ArchetypeSlug,
+                ParticipantIds = participants,
                 PlayerRemainingHealth = player.Health,
                 XpEarned = myReward.Xp,
                 GoldEarned = myReward.Gold,

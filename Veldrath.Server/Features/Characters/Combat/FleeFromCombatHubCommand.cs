@@ -85,7 +85,8 @@ public class FleeFromCombatHubCommandHandler
 
         var enemy = await _enemies.TryGetAsync(session.EnemyId, cancellationToken);
 
-        // Flee succeeds: remove from participation and end session.
+        // Flee succeeds: stop being a target and end the session. The damage already dealt stays recorded — it was
+        // earned, so a fleeing member still gets that share if the rest of the party finishes the kill.
         if (Random.Shared.Next(100) < FleeSuccessChance)
         {
             if (enemy is not null)
@@ -93,7 +94,8 @@ public class FleeFromCombatHubCommandHandler
                 lock (enemy.SyncRoot)
                 {
                     enemy.Participants.Remove(request.CharacterId);
-                    enemy.DamageContributions.Remove(request.CharacterId);
+                    if (enemy.LastAttackerId == request.CharacterId)
+                        enemy.LastAttackerId = enemy.Participants.FirstOrDefault();
                 }
 
                 await _enemies.SaveAsync(enemy, session.ZoneGroup, session.LocationSlug, cancellationToken);
