@@ -684,6 +684,18 @@ describe('GameSession party', () => {
 		expect(session.chat.at(-1)?.message).toBe('Your party disbanded.');
 	});
 
+	it('clears party chat and falls back to the zone channel when the party ends', async () => {
+		const session = await playing();
+		hub.emit('PartyUpdated', party());
+		session.chatChannel = 'Party';
+		hub.emit('ReceiveChatMessage', chat('Party', 'pull the wolf'));
+
+		hub.emit('PartyDisbanded', { partyId: 'party-1' });
+
+		expect(session.chatChannel).toBe('Zone');
+		expect(session.chat.some((entry) => entry.channel === 'Party')).toBe(false);
+	});
+
 	it('ignores a disband for another party', async () => {
 		const session = await playing();
 		hub.emit('PartyUpdated', party());

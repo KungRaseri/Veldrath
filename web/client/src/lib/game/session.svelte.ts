@@ -822,6 +822,7 @@ export class GameSession {
 
 			if (payload === null) {
 				this.partyInvites = [];
+				this.endPartyChat();
 				return;
 			}
 
@@ -845,6 +846,7 @@ export class GameSession {
 			if (this.party?.partyId !== payload.partyId) return;
 			this.party = null;
 			this.showParty = false;
+			this.endPartyChat();
 			this.addSystemMessage('Your party disbanded.');
 		});
 
@@ -940,6 +942,15 @@ export class GameSession {
 		this.enemies = payload.spawnedEnemies ?? [];
 
 		if (payload.mapChanged) await this.requestMapGraph(payload.mapId ?? null);
+	}
+
+	/**
+	 * Party chat is live-only: the moment membership ends the channel disappears and its history goes with it, so
+	 * nothing implies a backlog the server does not keep.
+	 */
+	private endPartyChat(): void {
+		this.chat = this.chat.filter((entry) => entry.channel.toLowerCase() !== 'party');
+		if (this.chatChannel === 'Party') this.chatChannel = 'Zone';
 	}
 
 	private addSystemMessage(message: string): void {
