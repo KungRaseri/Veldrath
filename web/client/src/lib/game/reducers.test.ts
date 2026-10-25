@@ -97,6 +97,7 @@ describe('stat reducers', () => {
 
 	it('applies rest results', () => {
 		const next = applyRestToStats(stats, {
+			locationId: 'the-gilded-flagon',
 			currentHealth: 100,
 			maxHealth: 100,
 			currentMana: 50,

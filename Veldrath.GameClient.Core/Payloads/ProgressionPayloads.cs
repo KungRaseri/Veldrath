@@ -35,20 +35,36 @@ public sealed record AttributePointsAllocatedPayload(int RemainingPoints, Dictio
 /// <summary>
 /// Hub event payload received when the character rests and recovers health and mana.
 /// </summary>
-/// <param name="HP">The character's health after resting.</param>
-/// <param name="MaxHP">The character's maximum health.</param>
-/// <param name="MP">The character's mana after resting.</param>
-/// <param name="MaxMP">The character's maximum mana.</param>
-/// <param name="Gold">The character's gold after resting (may be deducted for inn costs).</param>
-public sealed record CharacterRestedPayload(int HP, int MaxHP, int MP, int MaxMP, int Gold);
+/// <param name="CharacterId">The character that rested.</param>
+/// <param name="LocationId">The location the character rested at.</param>
+/// <param name="CurrentHealth">The character's health after resting.</param>
+/// <param name="MaxHealth">The character's maximum health.</param>
+/// <param name="CurrentMana">The character's mana after resting.</param>
+/// <param name="MaxMana">The character's maximum mana.</param>
+/// <param name="GoldRemaining">The character's gold after resting (may be deducted for inn costs).</param>
+public sealed record CharacterRestedPayload(
+    Guid CharacterId,
+    string LocationId,
+    int CurrentHealth,
+    int MaxHealth,
+    int CurrentMana,
+    int MaxMana,
+    int GoldRemaining);
 
 /// <summary>
 /// Hub event payload received when the character uses an ability.
 /// </summary>
+/// <param name="CharacterId">The character that used the ability.</param>
 /// <param name="AbilityId">The ability identifier slug.</param>
+/// <param name="ManaCost">The mana consumed by the ability.</param>
 /// <param name="RemainingMana">The character's mana after using the ability.</param>
-/// <param name="HPRestored">The amount of health restored by the ability, if any.</param>
-public sealed record AbilityUsedPayload(string AbilityId, int RemainingMana, int HPRestored);
+/// <param name="HealthRestored">The amount of health restored by the ability, if any.</param>
+public sealed record AbilityUsedPayload(
+    Guid CharacterId,
+    string AbilityId,
+    int ManaCost,
+    int RemainingMana,
+    int HealthRestored);
 
 /// <summary>
 /// Hub event payload received when the character gains skill experience.

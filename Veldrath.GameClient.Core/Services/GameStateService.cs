@@ -736,33 +736,33 @@ public sealed class GameStateService : IGameStateService
     /// <inheritdoc />
     public void ApplyLocationEntered(LocationEnteredPayload location)
     {
-        CurrentZoneLocationSlug = location.Slug;
-        CurrentLocationConnections = [.. location.Connections];
-        ZoneEnemies = location.Enemies.Select(e => new EnemyInfo(
-            Guid.Empty, e.Name, e.Level, 100, 100)).ToList();
+        CurrentZoneLocationSlug = location.LocationSlug;
+        ZoneEnemies = location.SpawnedEnemies
+            .Select(e => new EnemyInfo(e.Id, e.Name, e.Level, e.CurrentHealth, e.MaxHealth))
+            .ToList();
         CurrentZone = CurrentZone with
         {
-            Name = location.Name,
-            Type = location.Type,
+            Name = location.LocationDisplayName,
+            Type = location.TypeKey,
         };
-        CurrentLocationDescription = location.Description;
+        // The wire payload carries no prose description; connections arrive via ApplyConnectionTraversed.
+        CurrentLocationDescription = null;
         IsAtLocation = true;
 
         // Auto-discover this location for fast travel.
         var locRef = new IGameStateService.LocationReference(
-            location.Slug, location.Name, location.Type,
-            CurrentZoneId ?? "", location.TileX, location.TileY);
-        if (KnownLocations.All(l => l.Slug != location.Slug))
+            location.LocationSlug, location.LocationDisplayName, location.TypeKey,
+            CurrentZoneId ?? "", null, null);
+        if (KnownLocations.All(l => l.Slug != location.LocationSlug))
             KnownLocations.Add(locRef);
 
         RaisePropertyChanged(nameof(CurrentZoneLocationSlug));
-        RaisePropertyChanged(nameof(CurrentLocationConnections));
         RaisePropertyChanged(nameof(ZoneEnemies));
         RaisePropertyChanged(nameof(CurrentZone));
         RaisePropertyChanged(nameof(CurrentLocationDescription));
         RaisePropertyChanged(nameof(IsAtLocation));
         RaisePropertyChanged(nameof(KnownLocations));
-        ApplySystemMessage($"Entered {location.Name}.");
+        ApplySystemMessage($"Entered {location.LocationDisplayName}.");
     }
 
     /// <inheritdoc />

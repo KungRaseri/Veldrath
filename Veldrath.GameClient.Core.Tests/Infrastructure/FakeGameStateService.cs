@@ -471,9 +471,8 @@ public sealed class FakeGameStateService : IGameStateService
     /// <inheritdoc />
     public void ApplyLocationEntered(LocationEnteredPayload location)
     {
-        CurrentZoneLocationSlug = location.Slug;
-        CurrentLocationConnections = location.Connections;
-        CurrentZone = CurrentZone with { Name = location.Name, Type = location.Type };
+        CurrentZoneLocationSlug = location.LocationSlug;
+        CurrentZone = CurrentZone with { Name = location.LocationDisplayName, Type = location.TypeKey };
         AppliedCalls.Add((nameof(ApplyLocationEntered), location));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentZoneLocationSlug)));
     }

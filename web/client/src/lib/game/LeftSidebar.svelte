@@ -23,11 +23,8 @@
 			Location
 		</h2>
 		{#if session.location}
-			<p class="font-semibold">{session.location.name}</p>
-			<p class="text-xs tracking-wide text-surface-600-400 uppercase">{session.location.type}</p>
-			{#if session.location.description}
-				<p class="text-lore text-sm text-surface-600-400">{session.location.description}</p>
-			{/if}
+			<p class="font-semibold">{session.location.locationDisplayName}</p>
+			<p class="text-xs tracking-wide text-surface-600-400 uppercase">{session.location.typeKey}</p>
 		{:else if session.currentNode}
 			<p class="font-semibold">{session.currentNode.displayName}</p>
 			<p class="text-sm text-surface-600-400">{session.currentNode.description}</p>
@@ -118,7 +115,7 @@
 				disabled={!session.canRest || session.dead}
 			>
 				<BedDouble size={15} aria-hidden="true" />
-				Rest at {session.location?.name ?? 'location'}
+				Rest at {session.location?.locationDisplayName ?? 'location'}
 			</button>
 			<button
 				class="btn preset-tonal-surface"

@@ -235,7 +235,10 @@ export class GameSession {
 	async rest(cost = 10): Promise<void> {
 		if (!this.hub || !this.location) return;
 		this.error = null;
-		await this.hub.invoke('RestAtLocation', { locationId: this.location.slug, costInGold: cost });
+		await this.hub.invoke('RestAtLocation', {
+			locationId: this.location.locationSlug,
+			costInGold: cost
+		});
 	}
 
 	async leaveZone(): Promise<void> {
@@ -276,7 +279,7 @@ export class GameSession {
 		if (!this.hub || !this.location) return;
 		this.error = null;
 		await this.hub.invoke('EngageEnemy', {
-			locationSlug: this.location.slug,
+			locationSlug: this.location.locationSlug,
 			enemyId
 		});
 	}
@@ -399,7 +402,7 @@ export class GameSession {
 
 		hub.on('LocationEntered', (payload: LocationEnteredPayload) => {
 			this.location = payload;
-			this.enemies = payload.enemies ?? [];
+			this.enemies = payload.spawnedEnemies ?? [];
 		});
 
 		hub.on('CombatStarted', (payload: CombatStartedPayload) => {
@@ -613,11 +616,12 @@ export class GameSession {
 
 		this.location = payload.locationSlug
 			? {
-					slug: payload.locationSlug,
-					name:
+					locationSlug: payload.locationSlug,
+					locationDisplayName:
 						payload.message?.replace(/^Travelled to /, '').replace(/\.$/, '') ??
 						payload.locationSlug,
-					type: payload.nodeType ?? 'Location'
+					typeKey: payload.nodeType ?? 'Location',
+					spawnedEnemies: payload.spawnedEnemies ?? []
 				}
 			: null;
 		this.enemies = payload.spawnedEnemies ?? [];

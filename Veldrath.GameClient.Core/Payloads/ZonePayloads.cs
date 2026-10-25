@@ -90,12 +90,15 @@ public sealed record RegionExitTriggeredPayload(string ExitId, string TargetRegi
 public sealed record TileExitTriggeredPayload(string ToZoneId);
 
 /// <summary>
-/// A lightweight reference to an enemy that can appear at a zone location.
+/// An enemy spawned at the zone location the character just entered.
+/// Mirrors the <c>LocationEntered</c> hub event.
 /// </summary>
-/// <param name="Slug">The enemy identifier slug.</param>
+/// <param name="Id">The spawned enemy's runtime identifier.</param>
 /// <param name="Name">The enemy display name.</param>
 /// <param name="Level">The enemy's level.</param>
-public sealed record EnemyReference(string Slug, string Name, int Level);
+/// <param name="CurrentHealth">The enemy's current health.</param>
+/// <param name="MaxHealth">The enemy's maximum health.</param>
+public sealed record SpawnedEnemyReference(Guid Id, string Name, int Level, int CurrentHealth, int MaxHealth);
 
 /// <summary>
 /// A traversal connection from the current zone location to another zone or location.
@@ -107,21 +110,20 @@ public sealed record ZoneConnectionLink(string Slug, string TargetZoneId, bool I
 
 /// <summary>
 /// Hub event payload received when the player enters a named location within a zone.
+/// Matches the <c>LocationEntered</c> object the server broadcasts; traversal
+/// connections are delivered separately by <c>ConnectionTraversed</c>.
 /// </summary>
-/// <param name="Slug">The location identifier slug.</param>
-/// <param name="Name">The location display name.</param>
-/// <param name="Type">The location type (e.g. "cave", "ruins", "camp").</param>
-/// <param name="Enemies">The enemies present at this location.</param>
-/// <param name="Connections">The traversal connections from this location.</param>
+/// <param name="CharacterId">The character that entered the location.</param>
+/// <param name="LocationSlug">The location identifier slug.</param>
+/// <param name="LocationDisplayName">The location display name.</param>
+/// <param name="TypeKey">The location type key (e.g. "cave", "ruins", "camp").</param>
+/// <param name="SpawnedEnemies">The enemies currently spawned at this location.</param>
 public sealed record LocationEnteredPayload(
-    string Slug,
-    string Name,
-    string Type,
-    string? Description,
-    int? TileX,
-    int? TileY,
-    IReadOnlyList<EnemyReference> Enemies,
-    IReadOnlyList<ZoneConnectionLink> Connections);
+    Guid CharacterId,
+    string LocationSlug,
+    string LocationDisplayName,
+    string TypeKey,
+    IReadOnlyList<SpawnedEnemyReference> SpawnedEnemies);
 
 /// <summary>
 /// Hub event payload received when a new zone location is discovered or unlocked.
@@ -133,11 +135,25 @@ public sealed record LocationEnteredPayload(
 public sealed record ZoneLocationUnlockedPayload(string Slug, string Name, string Type, string Source);
 
 /// <summary>
+/// A location discovered while searching an area.
+/// </summary>
+/// <param name="Slug">The discovered location slug.</param>
+/// <param name="DisplayName">The discovered location display name.</param>
+/// <param name="TypeKey">The discovered location type key.</param>
+public sealed record DiscoveredLocationReference(string Slug, string DisplayName, string TypeKey);
+
+/// <summary>
 /// Hub event payload received when the player searches the current area.
 /// </summary>
-/// <param name="Roll">The search check result value.</param>
+/// <param name="CharacterId">The character that performed the search.</param>
+/// <param name="RollValue">The search check result value.</param>
 /// <param name="AnyFound">Whether anything was found.</param>
-public sealed record AreaSearchedPayload(int Roll, bool AnyFound);
+/// <param name="Discovered">The locations discovered by this search.</param>
+public sealed record AreaSearchedPayload(
+    Guid CharacterId,
+    int RollValue,
+    bool AnyFound,
+    IReadOnlyList<DiscoveredLocationReference> Discovered);
 
 /// <summary>
 /// Hub event payload received when the player traverses a connection between locations or zones.

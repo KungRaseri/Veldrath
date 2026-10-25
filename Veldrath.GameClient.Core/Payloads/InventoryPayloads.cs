@@ -28,6 +28,12 @@ public sealed record EquipmentChangedPayload(
 /// Hub event payload received when the merchant's shop catalog is available.
 /// Sent when the player opens a shop interface or when the catalog is refreshed.
 /// </summary>
+/// <param name="ZoneId">The zone whose merchant supplied the catalog.</param>
 /// <param name="Catalog">The items available for purchase from the current merchant.</param>
+/// <remarks>
+/// The server also sends an <c>Items</c> projection for the Avalonia client; the shared
+/// payload and the web client both consume <c>Catalog</c>.
+/// </remarks>
 public sealed record ShopCatalogPayload(
-    List<ShopItemEntry> Catalog);
+    string ZoneId,
+    IReadOnlyList<ShopItemEntry> Catalog);

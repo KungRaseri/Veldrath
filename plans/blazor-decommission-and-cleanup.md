@@ -110,21 +110,30 @@ roster → play → travel → chat → inventory path has nothing above reducer
 - Gate the spec behind `E2E_GAME=1` so plain `npm run test` stays server-free for local runs.
 - Exit criteria: the job fails if roster load, zone entry, node travel, or the inventory break.
 
-### W8 — Windows WebView2 runtime smoke
-Moved here from migration Phase 5. `ci-client.yml` already runs on `windows-latest`, which ships
-the WebView2 Evergreen runtime, so the manual pre-release check can become a gate.
+### W8 — Desktop bundle / WebView2 smoke
+Moved here from migration Phase 5. **Decision:** assert the bundle the WebView2 shell actually
+serves instead of driving the native control — the test host has no renderer, and a real render
+probe is flaky on the Windows runner.
 
-- After packaging, start `DesktopUiServer` with the bundled `SvelteApp/` and the game API stubbed,
-  then assert the served page loads (title/URL) over the loopback port.
-- Fallback if the WebView probe proves flaky: assert `/health`, the SPA index, and that
-  `SvelteApp/` is present in the published output.
+- `Veldrath.Client.Tests/HostedWeb/DesktopBundleSmokeTests.cs` (`[Trait("Category", "Bundle")]`)
+  starts `DesktopUiServer` against the real `web/client/build-desktop` and asserts the SPA shell, a
+  hashed `/_app/immutable/` asset, the `/desktop` SPA fallback, `/health`, and that
+  `WebView2Loader.dll` ships next to the executable.
+- `ci-client.yml` already runs `npm run build:desktop` before `dotnet test`, so this gate is live on
+  the Windows runner; locally the tests no-op when the bundle is absent.
+- **Open (optional):** an actual WebView2 render probe. The shell is only a host for the Svelte
+  bundle, so the bundle assertion covers the real regression risk.
 
 ### W9 — Payload contract drift
 `Veldrath.GameClient.Core/Payloads/*.cs` and `web/client/src/lib/game/types.ts` are hand-mirrored;
 a field rename can silently break the web client.
 
-- Add a Vitest/Node check that parses the C# payload records (type + property names) and asserts
-  each has a TypeScript counterpart with the same camelCase property set.
+- `web/client/src/lib/game/payload-contract.test.ts` parses every C# positional record (PascalCase)
+  and every TS interface (camelCase) and fails when a mirrored payload's property sets diverge. It
+  also asserts the payloads the game shell consumes have a TS counterpart.
+- **The wire is the source of truth,** not either mirror: the anonymous objects in
+  `Veldrath.Server/Hubs/GameHub.cs` are what actually reaches clients. When a mismatch turns up,
+  check GameHub first, then fix both mirrors in the same PR.
 - Full OpenAPI → TypeScript generation stays deferred; this is the cheap guard.
 
 ---
@@ -165,8 +174,8 @@ graph LR
 | W5 — config consolidation | 🟡 Workflows done: obsolete SSH deploy path removed (`deploy.yml` + the three `if: false` deploy jobs), `docs.yml` now watches `**/*.cs` instead of a hand-maintained project list, engine CI moved to `ubuntu-latest`, Dependabot gained a `/web` Dockerfile entry. Remaining: the compose-file decision below. | workflow cleanup commit |
 | W6 — repository hygiene | ✅ Done: `.gitignore` already covers `/scripts/dev/`, `.env*`, `build-desktop/`, and packaged asset zips; `.dockerignore` verified (bin/obj, secrets, TestResults, IDE dirs, `client/build-desktop`). Remaining judgement call is `web/llms/` size. | — |
 | W7 — authenticated game loop in CI (from migration Phase 2) | ✅ Done: `tests/game-loop.e2e.ts` covers register → roster → play → travel → inventory against a real server (verified locally, 34s, 1 passed); `ci-web.yml` gained an `e2e-game` job that boots `Veldrath.Server` on the Postgres service. The spec self-skips without `E2E_GAME=1`, so `npm run test` stays server-free (22 passed, 1 skipped). | W7 commit |
-| W8 — WebView2 runtime smoke on the Windows runner (from migration Phase 5) | ⏳ Not started | — |
-| W9 — payload contract drift check (from migration testing strategy) | ⏳ Not started | — |
+| W8 — desktop bundle smoke on the Windows runner (from migration Phase 5) | ✅ Done: 4 `Bundle`-trait tests serve the real `build-desktop` through `DesktopUiServer` (index + hashed asset + SPA fallback + health + `WebView2Loader.dll` presence). `ci-client.yml` already builds the bundle first, so they run on CI. A true WebView2 render probe is left optional. | W8/W9 commit |
+| W9 — payload contract drift check (from migration testing strategy) | ✅ Done: `payload-contract.test.ts` compares every mirrored C# record with its TS interface. It found 5 real drifts on day one — see below. | W8/W9 commit |
 
 W2 findings worth keeping: of the 130 types in `Veldrath.Contracts`, only
 `TravelToNodeResultDto` was genuinely dead (removed). `ContentTypeSchema`,
@@ -176,6 +185,16 @@ types of `ContentSchemaRegistry`, which RealmForge and `ContentEndpoints` use �
 decision below. The C# `Veldrath.GameClient.Core/Payloads/*` records and the TypeScript
 `web/client/src/lib/game/types.ts` stay duplicated by design (two runtimes); change both in the
 same PR rather than generating one from the other.
+
+W9 findings worth keeping: the guard found five drifted payloads immediately, and checking
+`GameHub.cs` showed both mirrors were wrong in places. `LocationEntered` broadcasts
+`{CharacterId, LocationSlug, LocationDisplayName, TypeKey, SpawnedEnemies}` — the web client read
+`payload.enemies` (always `undefined`, so the enemy list never refilled after a location change) and
+the location panel read `name`/`type`/`description`, none of which exist on the wire.
+`CharacterRested`, `AbilityUsed`, and `AreaSearched` had the right TS shape but stale C# records, and
+`ShopCatalog` was missing `ZoneId`. All five now match the wire on both sides, and
+`Veldrath.GameClient.Core` dropped the tile-era `EnemyReference` plus the `TileX`/`TileY`,
+`Description`, and `Connections` fields the server never sends.
 
 ## 7. Decisions locked
 

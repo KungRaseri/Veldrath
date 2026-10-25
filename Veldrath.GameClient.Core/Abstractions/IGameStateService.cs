@@ -435,7 +435,7 @@ public interface IGameStateService : INotifyPropertyChanged
     // ── Zone / Location Apply methods (G36-G47) ─────────────────────────────
 
     /// <summary>Updates state after entering a named location within a zone.</summary>
-    /// <param name="location">The location entered payload containing enemies and connections.</param>
+    /// <param name="location">The location entered payload containing the location and its spawned enemies.</param>
     void ApplyLocationEntered(LocationEnteredPayload location);
 
     /// <summary>Updates state when a new zone location is discovered or unlocked.</summary>

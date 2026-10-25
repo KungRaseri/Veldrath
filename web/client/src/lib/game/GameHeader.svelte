@@ -33,7 +33,7 @@
 		<p class="text-sm text-surface-600-400">
 			{session.zoneLabel}
 			{#if session.location}
-				· {session.location.name}
+				· {session.location.locationDisplayName}
 			{/if}
 		</p>
 	</div>

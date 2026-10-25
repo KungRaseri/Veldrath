@@ -195,21 +195,23 @@ export interface SpawnedEnemy {
 }
 
 export interface LocationEnteredPayload {
-	slug: string;
-	name: string;
-	type: string;
-	description?: string | null;
-	enemies?: SpawnedEnemy[] | null;
-	connections?: unknown[] | null;
+	characterId?: string;
+	locationSlug: string;
+	locationDisplayName: string;
+	typeKey: string;
+	spawnedEnemies?: SpawnedEnemy[] | null;
 }
 
 export interface AreaSearchedPayload {
-	rollValue?: number;
+	characterId?: string;
+	rollValue: number;
 	anyFound: boolean;
 	discovered?: { slug: string; displayName: string; typeKey: string }[];
 }
 
 export interface CharacterRestedPayload {
+	characterId?: string;
+	locationId: string;
 	currentHealth: number;
 	maxHealth: number;
 	currentMana: number;
@@ -218,6 +220,7 @@ export interface CharacterRestedPayload {
 }
 
 export interface AbilityUsedPayload {
+	characterId?: string;
 	abilityId: string;
 	manaCost: number;
 	remainingMana: number;
