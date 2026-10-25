@@ -1,7 +1,16 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { Gamepad2, MailWarning, Plus, RotateCcw, Shield, Trash2, Wifi } from '@lucide/svelte';
+	import {
+		Gamepad2,
+		MailWarning,
+		Plus,
+		RotateCcw,
+		Shield,
+		Skull,
+		Trash2,
+		Wifi
+	} from '@lucide/svelte';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -201,5 +210,32 @@
 				</li>
 			{/each}
 		</ul>
+	{/if}
+
+	{#if data.memorial.length > 0}
+		<section class="space-y-3" aria-label="Memorial">
+			<h2 class="text-title flex items-center gap-2 text-lg font-semibold">
+				<Skull size={18} aria-hidden="true" />
+				Memorial
+			</h2>
+			<p class="text-sm text-surface-600-400">
+				Hardcore is permanent. These characters are remembered here.
+			</p>
+			<ul class="space-y-2">
+				{#each data.memorial as fallen (fallen.characterId)}
+					<li class="game-panel flex items-center justify-between gap-3 p-3 text-sm">
+						<span>
+							<span class="font-semibold">{fallen.name}</span>
+							<span class="text-surface-600-400">
+								· {fallen.className} · Level {fallen.level}
+							</span>
+						</span>
+						<span class="text-xs text-surface-600-400">
+							Fell {new Date(fallen.diedAt).toLocaleDateString()}
+						</span>
+					</li>
+				{/each}
+			</ul>
+		</section>
 	{/if}
 </div>

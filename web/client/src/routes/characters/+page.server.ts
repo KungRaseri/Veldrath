@@ -1,7 +1,12 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { fetchCharactersForUser } from '#lib/server/game-api';
-import { deleteCharacter, fetchCharacterSlots, fetchLastSession } from '#lib/server/character-api';
+import {
+	deleteCharacter,
+	fetchCharacterSlots,
+	fetchLastSession,
+	fetchMemorial
+} from '#lib/server/character-api';
 import { stringField } from '#lib/server/form';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -9,10 +14,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 		redirect(303, '/login');
 	}
 
-	const [characters, slots, lastSession] = await Promise.all([
+	const [characters, slots, lastSession, memorial] = await Promise.all([
 		fetchCharactersForUser(locals.user),
 		fetchCharacterSlots(locals.user),
-		fetchLastSession(locals.user)
+		fetchLastSession(locals.user),
+		fetchMemorial(locals.user)
 	]);
 
 	return {
@@ -22,6 +28,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		slotsError: slots.error,
 		lastSession: lastSession.data,
 		lastSessionError: lastSession.error,
+		memorial: memorial.data ?? [],
+		memorialError: memorial.error,
 		emailVerified: locals.user.emailVerified
 	};
 };

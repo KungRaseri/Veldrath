@@ -238,6 +238,36 @@ export interface QuestLogEntry {
 	objectives: QuestObjective[];
 }
 
+/** One fallen hardcore character in the account memorial. */
+export interface MemorialEntry {
+	characterId: string;
+	name: string;
+	className: string;
+	level: number;
+	experience: number;
+	diedAt: string;
+	currentZoneId: string;
+}
+
+/** One row of the global hardcore board. */
+export interface HardcoreLeaderboardEntry {
+	characterId: string;
+	name: string;
+	className: string;
+	level: number;
+	experience: number;
+	diedAt: string | null;
+	isOwn: boolean;
+}
+
+/** One page of the global hardcore board. */
+export interface HardcoreLeaderboardPage {
+	page: number;
+	pageSize: number;
+	total: number;
+	items: HardcoreLeaderboardEntry[];
+}
+
 /** A quest line for the HUD tracker: the quest plus its nearest incomplete objective. */
 export interface TrackedQuest {
 	slug: string;

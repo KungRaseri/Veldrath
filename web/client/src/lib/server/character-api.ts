@@ -1,4 +1,4 @@
-import type { CharacterSummary } from '#lib/game/types';
+import type { CharacterSummary, HardcoreLeaderboardPage, MemorialEntry } from '#lib/game/types';
 import type {
 	AllocateCreationAttributesResponse,
 	BeginCreationSessionResponse,
@@ -42,6 +42,23 @@ export function deleteCharacter(user: AuthUser, characterId: string): Promise<Ga
 	return gameApiFetch<null>(toGameIdentity(user), `/api/characters/${characterId}`, {
 		method: 'DELETE'
 	});
+}
+
+/** Loads the account's fallen hardcore characters, newest death first. */
+export function fetchMemorial(user: AuthUser): Promise<GameApiResult<MemorialEntry[]>> {
+	return gameApiFetch<MemorialEntry[]>(toGameIdentity(user), '/api/characters/memorial');
+}
+
+/** Loads one page of the global hardcore board. */
+export function fetchHardcoreLeaderboard(
+	user: AuthUser,
+	page = 1,
+	pageSize = 25
+): Promise<GameApiResult<HardcoreLeaderboardPage>> {
+	return gameApiFetch<HardcoreLeaderboardPage>(
+		toGameIdentity(user),
+		`/api/leaderboard/hardcore?page=${page}&pageSize=${pageSize}`
+	);
 }
 
 /** Loads the most recently played character, or `null` when the account has no history. */

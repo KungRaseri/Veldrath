@@ -28,12 +28,86 @@ public static class CharacterEndpoints
 
         group.MapGet("/", ListAsync);
         group.MapGet("/slots", GetSlotsAsync);
+        group.MapGet("/memorial", GetMemorialAsync);
         group.MapPost("/", CreateAsync);
         group.MapDelete("/{id:guid}", DeleteAsync);
         group.MapGet("/last-session", GetLastSessionAsync);
         group.MapDelete("/last-session", DeleteLastSessionAsync);
 
+        // A6: the hardcore board is public to signed-in players; the memorial lives with the characters above.
+        app.MapGroup("/api/leaderboard")
+            .WithTags("Leaderboard")
+            .RequireAuthorization()
+            .MapGet("/hardcore", GetHardcoreLeaderboardAsync);
+
         return app;
+    }
+
+    /// <summary>
+    /// Returns the caller's fallen hardcore characters, newest death first. The memorial is where a permanently dead
+    /// character is remembered, since hardcore never respawns.
+    /// </summary>
+    /// <param name="user">Caller's principal.</param>
+    /// <param name="repo">Character repository.</param>
+    /// <param name="ct">Cancellation token.</param>
+    private static async Task<IResult> GetMemorialAsync(
+        ClaimsPrincipal user,
+        ICharacterRepository repo,
+        CancellationToken ct)
+    {
+        var accountId = GetAccountId(user);
+        var characters = await repo.GetMemorialAsync(accountId, ct);
+
+        return Results.Ok(characters.Select(character => new
+        {
+            CharacterId = character.Id,
+            character.Name,
+            character.ClassName,
+            character.Level,
+            character.Experience,
+            DiedAt = character.DeletedAt,
+            character.CurrentZoneId,
+        }));
+    }
+
+    /// <summary>
+    /// Returns one page of the global hardcore board, ordered by level then experience. Fallen characters stay on the
+    /// board with their death date, and the caller's own entries are marked.
+    /// </summary>
+    /// <param name="user">Caller's principal, used to mark their own entries.</param>
+    /// <param name="repo">Character repository.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <param name="page">1-based page number.</param>
+    /// <param name="pageSize">Rows per page (1–100).</param>
+    private static async Task<IResult> GetHardcoreLeaderboardAsync(
+        ClaimsPrincipal user,
+        ICharacterRepository repo,
+        CancellationToken ct,
+        int page = 1,
+        int pageSize = 25)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        var accountId = GetAccountId(user);
+        var (items, total) = await repo.GetHardcoreLeaderboardAsync((page - 1) * pageSize, pageSize, ct);
+
+        return Results.Ok(new
+        {
+            Page = page,
+            PageSize = pageSize,
+            Total = total,
+            Items = items.Select(character => new
+            {
+                CharacterId = character.Id,
+                character.Name,
+                character.ClassName,
+                character.Level,
+                character.Experience,
+                DiedAt = character.DeletedAt,
+                IsOwn = character.AccountId == accountId,
+            }),
+        });
     }
 
     private static async Task<IResult> ListAsync(
