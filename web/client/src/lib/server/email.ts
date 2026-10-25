@@ -1,5 +1,6 @@
-import { env } from '#lib/server/env';
+import { dev } from '$app/env';
 import { PUBLIC_API_URL } from '$app/env/public';
+import { env } from '#lib/server/env';
 
 /** Transactional messages that Better Auth can ask the game server to deliver. */
 export type TransactionalEmailKind = 'password-reset' | 'verification';
@@ -32,7 +33,14 @@ export async function sendTransactionalEmail(
 	const token = env.INTERNAL_BRIDGE_TOKEN;
 
 	if (!baseUrl || !token) {
-		console.info(`[email:${kind}] bridge not configured; link for ${email.to}: ${email.url}`);
+		// The link carries a single-use token, so it is only echoed while developing locally.
+		// Production containers must never persist it to their logs.
+		if (dev) {
+			console.info(`[email:${kind}] bridge not configured; link for ${email.to}: ${email.url}`);
+		} else {
+			console.warn(`[email:${kind}] internal bridge is not configured; the message was not sent.`);
+		}
+
 		return false;
 	}
 
