@@ -134,7 +134,10 @@ jobs:
         path: CoverageReport/SummaryGithub.md
 
     - name: Publish test results
-      uses: EnricoMi/publish-unit-test-result-action/windows@v2
+      # The `windows` variant of this action bootstraps a Python venv through PowerShell and
+      # cannot resolve $env:PYTHON_VENV on Linux, so the job failed after every successful
+      # test run. This job runs on ubuntu-latest, so use the default (Linux) action.
+      uses: EnricoMi/publish-unit-test-result-action@v2
       if: always()
       with:
         files: TestResults/*.trx
