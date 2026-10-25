@@ -42,6 +42,7 @@ public static class CorsSetup
                 : new[]
                 {
                     "http://localhost:5173",
+                    "http://localhost:4173",
                     "https://localhost:5173",
                     // SvelteKit web container (see web/client/Dockerfile).
                     "http://localhost:8081",
