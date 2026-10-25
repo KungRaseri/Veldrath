@@ -114,6 +114,13 @@ function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
 		equippedEntries: [],
 		equipped: {} as Record<string, InventoryItem>,
 		inventory: [ironSword, healthPotion],
+		groundItems: [] as {
+			id: string;
+			itemRef: string;
+			name: string;
+			rarity: string;
+			quantity: number;
+		}[],
 		bagItems: [healthPotion, ironSword],
 		carriedItemCount: 1,
 		quests: [],
@@ -141,6 +148,9 @@ function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
 		discard: vi.fn(),
 		buy: vi.fn(),
 		useItem: vi.fn(),
+		dropToGround: vi.fn(),
+		pickUpGroundItem: vi.fn(),
+		requestGroundItems: vi.fn(),
 		inspectItem: vi.fn(),
 		closeInspect: vi.fn(),
 		allocateAttributePoints: vi.fn(),
@@ -332,5 +342,15 @@ describe('LeftSidebar (item actions)', () => {
 
 		(await screen.findByTitle('Inspect Health Potion')).click();
 		expect(session.inspectItem).toHaveBeenCalledWith(healthPotion);
+	});
+});
+
+describe('LeftSidebar (ground items)', () => {
+	it('drops a bag item onto the ground', async () => {
+		const session = fakeSession();
+		render(LeftSidebar, { props: { session } });
+
+		(await screen.findByRole('button', { name: 'Drop Health Potion' })).click();
+		expect(session.dropToGround).toHaveBeenCalledWith('health_potion');
 	});
 });

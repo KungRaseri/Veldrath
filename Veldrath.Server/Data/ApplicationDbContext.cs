@@ -48,6 +48,8 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<AdminAuditEntry> AdminAuditEntries => Set<AdminAuditEntry>();
     /// <summary>Player-submitted reports about other players' behaviour.</summary>
     public DbSet<PlayerReport> PlayerReports => Set<PlayerReport>();
+    /// <summary>Item stacks lying on the ground at a zone location, dropped by players.</summary>
+    public DbSet<GroundItem> GroundItems => Set<GroundItem>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -252,6 +254,16 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
             e.HasIndex(r => r.IsResolved);
             e.HasIndex(r => r.SubmittedAt);
             e.HasIndex(r => r.TargetCharacterId);
+        });
+
+        builder.Entity<GroundItem>(e =>
+        {
+            e.HasKey(g => g.Id);
+            e.Property(g => g.ZoneId).HasMaxLength(64).IsRequired();
+            e.Property(g => g.LocationSlug).HasMaxLength(128).IsRequired();
+            e.Property(g => g.ItemRef).HasMaxLength(200).IsRequired();
+            // Ground pickups always query by (zone, location), so index that pair.
+            e.HasIndex(g => new { g.ZoneId, g.LocationSlug });
         });
 
         // SQLite cannot translate ORDER BY on DateTimeOffset columns; store as ISO 8601 text

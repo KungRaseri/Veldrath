@@ -185,6 +185,21 @@ export interface KickedPayload {
 	reason?: string | null;
 }
 
+/** An item lying on the ground at the character's current location. */
+export interface GroundItem {
+	id: string;
+	itemRef: string;
+	name: string;
+	rarity: string;
+	quantity: number;
+}
+
+export interface GroundItemsChangedPayload {
+	characterId?: string;
+	itemRef?: string;
+	items?: GroundItem[] | null;
+}
+
 export interface ChatMessage {
 	characterId?: string;
 	channel: string;

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import {
+		ArrowUpFromLine,
 		BedDouble,
 		Bug,
 		Compass,
@@ -19,6 +20,7 @@
 	import LeftSidebar from '#lib/game/LeftSidebar.svelte';
 	import RightSidebar from '#lib/game/RightSidebar.svelte';
 	import type { GameSession } from '#lib/game/session.svelte';
+	import { rarityClass } from '#lib/game/types';
 
 	let { session, onLeave }: { session: GameSession; onLeave: () => void } = $props();
 
@@ -217,6 +219,32 @@
 								</li>
 							{/each}
 						</ul>
+					{/if}
+
+					{#if session.groundItems.length > 0}
+						<div class="space-y-1 border-t border-surface-800 pt-3">
+							<p class="text-xs tracking-wide text-surface-600-400 uppercase">On the ground</p>
+							<ul class="space-y-1">
+								{#each session.groundItems as ground (ground.id)}
+									<li class="flex items-center justify-between gap-2 text-sm">
+										<span class={rarityClass(ground.rarity)}>
+											{ground.name}
+											{#if ground.quantity > 1}
+												<span class="text-surface-600-400">× {ground.quantity}</span>
+											{/if}
+										</span>
+										<button
+											class="btn preset-tonal-surface px-2 py-1 text-xs"
+											type="button"
+											onclick={() => session.pickUpGroundItem(ground.id)}
+										>
+											<ArrowUpFromLine size={12} aria-hidden="true" />
+											Pick up
+										</button>
+									</li>
+								{/each}
+							</ul>
+						</div>
 					{/if}
 
 					{#if session.lastSearch && session.lastSearch.discovered.length > 0}

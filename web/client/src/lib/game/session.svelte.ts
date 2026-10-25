@@ -24,6 +24,7 @@ import type {
 	InventoryItem,
 	InventoryLoadedPayload,
 	KickedPayload,
+	GroundItem,
 	LocationEnteredPayload,
 	MapGraph,
 	MapGraphReceivedPayload,
@@ -38,7 +39,7 @@ import type {
 	SpawnedEnemy,
 	ZoneEnteredPayload
 } from './types';
-import type { SearchFinding } from './types';
+import type { GroundItemsChangedPayload, SearchFinding } from './types';
 import { itemLabel } from './types';
 
 export type HubPhase =
@@ -85,6 +86,7 @@ export class GameSession {
 	location = $state<LocationEnteredPayload | null>(null);
 	enemies = $state<SpawnedEnemy[]>([]);
 	inventory = $state<InventoryItem[]>([]);
+	groundItems = $state<GroundItem[]>([]);
 	equipped = $state<Record<string, InventoryItem>>({});
 	quests = $state<QuestLogEntry[]>([]);
 	shopCatalog = $state<ShopCatalogItem[]>([]);
@@ -259,6 +261,26 @@ export class GameSession {
 	/** Closes the item detail dialog. */
 	closeInspect(): void {
 		this.inspectedItem = null;
+	}
+
+	/** Drops one unit of a bag item onto the ground at the current location. */
+	async dropToGround(itemRef: string): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('DropItemToGround', itemRef);
+	}
+
+	/** Picks up a ground item at the current location. */
+	async pickUpGroundItem(groundItemId: string): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('PickUpGroundItem', groundItemId);
+	}
+
+	/** Refreshes the list of items lying on the ground where the character is standing. */
+	async requestGroundItems(): Promise<void> {
+		if (!this.hub) return;
+		await this.hub.invoke('GetGroundItems');
 	}
 
 	/** Consumes one unit of a usable item (potion, elixir). */
@@ -477,6 +499,13 @@ export class GameSession {
 		hub.on('LocationEntered', (payload: LocationEnteredPayload) => {
 			this.location = payload;
 			this.enemies = payload.spawnedEnemies ?? [];
+			// Ground items belong to the location, so refresh them whenever the player moves.
+			void this.requestGroundItems();
+		});
+
+		hub.on('GroundItemsChanged', (payload: GroundItemsChangedPayload) => {
+			this.groundItems = payload.items ?? [];
+			if (payload.itemRef) this.addSystemMessage(`The ${payload.itemRef} is now on the ground.`);
 		});
 
 		hub.on('CombatStarted', (payload: CombatStartedPayload) => {

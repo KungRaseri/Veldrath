@@ -1,5 +1,6 @@
 <script lang="ts">
 	import {
+		ArrowDownToLine,
 		Backpack,
 		Coins,
 		FlaskConical,
@@ -272,6 +273,17 @@
 										<Swords size={12} aria-hidden="true" />
 									</button>
 								{/if}
+
+								<button
+									class="btn preset-tonal-surface px-1 py-0.5"
+									type="button"
+									title={`Drop ${itemLabel(item)} on the ground`}
+									aria-label={`Drop ${itemLabel(item)}`}
+									disabled={!session.location}
+									onclick={() => session.dropToGround(item.itemRef)}
+								>
+									<ArrowDownToLine size={12} aria-hidden="true" />
+								</button>
 
 								{#if session.canShop}
 									<button
