@@ -1308,6 +1308,97 @@ public class GameHub : Hub
     }
 
     /// <summary>
+    /// Sends the items lying on the ground at the caller's current location via <c>GroundItemsChanged</c>.
+    /// </summary>
+    public async Task GetGroundItems()
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetGroundItems");
+            return;
+        }
+
+        var result = await _mediator.Send(new GetGroundItemsHubCommand(characterId));
+        if (!result.Success)
+        {
+            await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to load ground items");
+            return;
+        }
+
+        await Clients.Caller.SendAsync("GroundItemsChanged", new { CharacterId = characterId, Items = result.Items });
+    }
+
+    /// <summary>
+    /// Drops one unit of a bag item onto the ground and broadcasts <c>GroundItemsChanged</c> to the zone.
+    /// </summary>
+    /// <param name="itemRef">Item-reference slug to drop.</param>
+    public async Task DropItemToGround(string itemRef)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before DropItemToGround");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new DropItemToGroundHubCommand(characterId, itemRef));
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to drop item");
+                return;
+            }
+
+            if (TryGetCurrentZoneGroup(out var zoneGroup))
+                await Clients.Group(zoneGroup).SendAsync("GroundItemsChanged", new { CharacterId = characterId, ItemRef = itemRef, Items = result.Items });
+            else
+                await Clients.Caller.SendAsync("GroundItemsChanged", new { CharacterId = characterId, ItemRef = itemRef, Items = result.Items });
+
+            await TrySendInventorySnapshotAsync(characterId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in DropItemToGround for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to drop item");
+        }
+    }
+
+    /// <summary>
+    /// Picks up a ground item at the caller's location and broadcasts the new ground state to the zone.
+    /// </summary>
+    /// <param name="groundItemId">Ground-item identifier.</param>
+    public async Task PickUpGroundItem(Guid groundItemId)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before PickUpGroundItem");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new PickUpGroundItemHubCommand(characterId, groundItemId));
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to pick up item");
+                return;
+            }
+
+            if (TryGetCurrentZoneGroup(out var zoneGroup))
+                await Clients.Group(zoneGroup).SendAsync("GroundItemsChanged", new { CharacterId = characterId, ItemRef = result.ItemRef, Items = result.Items });
+            else
+                await Clients.Caller.SendAsync("GroundItemsChanged", new { CharacterId = characterId, ItemRef = result.ItemRef, Items = result.Items });
+
+            await TrySendInventorySnapshotAsync(characterId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in PickUpGroundItem for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to pick up item");
+        }
+    }
+
+    /// <summary>
     /// Consumes one unit of a usable item (potion, elixir) and sends <c>ItemUsed</c> with the resulting
     /// health/mana values, followed by a caller-only inventory snapshot.
     /// </summary>

@@ -199,47 +199,47 @@ public class UseItemHubCommandHandler : IRequestHandler<UseItemHubCommand, UseIt
         switch (effect)
         {
             case EffectHeal:
-            {
-                if (power == 0)
                 {
-                    message = $"The {name} has no healing power.";
-                    return false;
-                }
+                    if (power == 0)
+                    {
+                        message = $"The {name} has no healing power.";
+                        return false;
+                    }
 
-                var before = health;
-                health = maxHealth > 0 ? Math.Min(maxHealth, health + power) : health + power;
-                message = $"You drink the {name} and recover {health - before} health.";
-                return true;
-            }
+                    var before = health;
+                    health = maxHealth > 0 ? Math.Min(maxHealth, health + power) : health + power;
+                    message = $"You drink the {name} and recover {health - before} health.";
+                    return true;
+                }
 
             case EffectHealOverTime:
-            {
-                if (power == 0)
                 {
-                    message = $"The {name} has no healing power.";
-                    return false;
-                }
+                    if (power == 0)
+                    {
+                        message = $"The {name} has no healing power.";
+                        return false;
+                    }
 
-                var restored = Math.Max(1, power / 2);
-                var before = health;
-                health = maxHealth > 0 ? Math.Min(maxHealth, health + restored) : health + restored;
-                message = $"The {name} mends you for {health - before} health and keeps working.";
-                return true;
-            }
+                    var restored = Math.Max(1, power / 2);
+                    var before = health;
+                    health = maxHealth > 0 ? Math.Min(maxHealth, health + restored) : health + restored;
+                    message = $"The {name} mends you for {health - before} health and keeps working.";
+                    return true;
+                }
 
             case EffectRestore:
-            {
-                if (power == 0)
                 {
-                    message = $"The {name} has no restorative power.";
-                    return false;
-                }
+                    if (power == 0)
+                    {
+                        message = $"The {name} has no restorative power.";
+                        return false;
+                    }
 
-                var before = mana;
-                mana = maxMana > 0 ? Math.Min(maxMana, mana + power) : mana + power;
-                message = $"You drink the {name} and recover {mana - before} mana.";
-                return true;
-            }
+                    var before = mana;
+                    mana = maxMana > 0 ? Math.Min(maxMana, mana + power) : mana + power;
+                    message = $"You drink the {name} and recover {mana - before} mana.";
+                    return true;
+                }
 
             case EffectCurePoison:
                 message = $"You use the {name}; the poison in your veins fades.";

@@ -158,6 +158,7 @@ try
     builder.Services.AddScoped<IHallOfFameRepository, ServerHallOfFameRepository>();
     builder.Services.AddScoped<IZoneRepository, ZoneRepository>();
     builder.Services.AddScoped<IPlayerSessionRepository, PlayerSessionRepository>();
+    builder.Services.AddScoped<IGroundItemRepository, EfCoreGroundItemRepository>();
     builder.Services.AddScoped<IRegionRepository, RegionRepository>();
     builder.Services.AddScoped<IWorldRepository, WorldRepository>();
     builder.Services.AddSingleton<IActiveCharacterTracker, ActiveCharacterTracker>();

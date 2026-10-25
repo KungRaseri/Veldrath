@@ -481,6 +481,46 @@ namespace Veldrath.Server.Migrations
                     b.ToTable("GlobalStats");
                 });
 
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.GroundItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("DroppedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DroppedByCharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("Durability")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ItemRef")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("LocationSlug")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ZoneId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ZoneId", "LocationSlug");
+
+                    b.ToTable("GroundItems");
+                });
+
             modelBuilder.Entity("Veldrath.Server.Data.Entities.PlayerAccount", b =>
                 {
                     b.Property<Guid>("Id")
