@@ -6,7 +6,7 @@ deleted (git history keeps it).
 
 | Plan | Status | Purpose |
 |---|---|---|
-| [`blazor-decommission-and-cleanup.md`](blazor-decommission-and-cleanup.md) | 🟢 Active | Finish the Blazor residue, decide the ASP.NET Core Identity question, run the W1–W6 cleanup sweep. |
+| [`blazor-decommission-and-cleanup.md`](blazor-decommission-and-cleanup.md) | ✅ Complete (W1–W12) | Blazor residue removed, desktop client retired, Identity auth surface removed (tables kept for RBAC). One open question left: whether internal `Veldrath.Contracts` DTOs move next to their feature slices. |
 | [`sveltekit-migration.md`](sveltekit-migration.md) | ✅ Complete (phases 0–6) | Canonical record of the Blazor → SvelteKit migration and the post-migration log. Its three unfinished items (authenticated game-loop coverage, WebView2 smoke, payload drift) now live in the decommission plan as W7–W9. |
 
 ## Where the deleted plans' knowledge went
