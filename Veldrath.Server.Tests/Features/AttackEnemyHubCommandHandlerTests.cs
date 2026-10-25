@@ -3,11 +3,13 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.Characters.Combat;
 using Veldrath.Server.Hubs;
+using Veldrath.Server.Settings;
 using Veldrath.Server.Tests.Infrastructure;
 
 namespace Veldrath.Server.Tests.Features;
@@ -24,6 +26,7 @@ public class AttackEnemyHubCommandHandlerTests : IDisposable
             new CharacterRepository(db),
             _enemies,
             _sessions,
+            Options.Create(new DeathPenaltyOptions()),
             NullLogger<AttackEnemyHubCommandHandler>.Instance);
 
     public void Dispose() => _dbFactory.Dispose();
@@ -180,5 +183,47 @@ public class AttackEnemyHubCommandHandlerTests : IDisposable
 
         (killerXp + allyXp).Should().Be(10, "the split must not mint or lose experience");
         allyXp.Should().BeGreaterThan(killerXp, "the ally dealt three times the damage");
+    }
+
+    [Fact]
+    public async Task Handle_Takes_Gold_First_When_The_Player_Dies_Carrying_Gold()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var character = await SeedCharacterAsync(
+            db, """{"CurrentHealth":1,"MaxHealth":100,"Gold":50,"Constitution":10}""");
+        var (zg, loc, enemy) = AddEnemy(100, character.Id);
+        SetSession(character.Id, zg, loc, enemy.Id);
+
+        var result = await MakeHandler(db).Handle(new AttackEnemyHubCommand(character.Id), CancellationToken.None);
+
+        result.PlayerDefeated.Should().BeTrue();
+        result.GoldLost.Should().Be(5, "10% of 50 gold");
+        result.XpLost.Should().Be(0, "gold is taken first and never both");
+
+        await using var read = _dbFactory.CreateContext();
+        var stored = await read.Characters.SingleAsync(c => c.Id == character.Id);
+        stored.Attributes.Should().Contain("\"Gold\":45", "the penalty must be persisted, not just reported");
+        stored.Experience.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Handle_Takes_Experience_When_The_Player_Dies_Broke()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var character = await SeedCharacterAsync(db, """{"CurrentHealth":1,"MaxHealth":100}""");
+        character.Experience = 200;
+        await db.SaveChangesAsync();
+        var (zg, loc, enemy) = AddEnemy(100, character.Id);
+        SetSession(character.Id, zg, loc, enemy.Id);
+
+        var result = await MakeHandler(db).Handle(new AttackEnemyHubCommand(character.Id), CancellationToken.None);
+
+        result.PlayerDefeated.Should().BeTrue();
+        result.GoldLost.Should().Be(0, "the character carries no gold");
+        result.XpLost.Should().Be(10, "5% of 200 experience");
+
+        await using var read = _dbFactory.CreateContext();
+        var stored = await read.Characters.SingleAsync(c => c.Id == character.Id);
+        stored.Experience.Should().Be(190);
     }
 }

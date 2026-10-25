@@ -329,6 +329,10 @@ export interface CombatTurnPayload {
 	playerRemainingHealth?: number;
 	playerDefeated?: boolean;
 	playerHardcoreDeath?: boolean;
+	/** Gold the death cost, reported so the client can name the exact loss. */
+	goldLost?: number;
+	/** Experience the death cost, reported so the client can name the exact loss. */
+	xpLost?: number;
 	xpEarned?: number;
 	goldEarned?: number;
 	abilityId?: string | null;

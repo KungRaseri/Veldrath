@@ -1,11 +1,13 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Hubs;
+using Veldrath.Server.Settings;
 
 namespace Veldrath.Server.Features.Characters.Combat;
 
@@ -66,6 +68,12 @@ public record UseAbilityInCombatHubResult
     /// <summary>Gets whether the player's character was permanently deleted (hardcore mode death).</summary>
     public bool PlayerHardcoreDeath { get; init; }
 
+    /// <summary>Gets the gold the death cost, or 0 when the player survived.</summary>
+    public int GoldLost { get; init; }
+
+    /// <summary>Gets the experience the death cost, or 0 when the player survived.</summary>
+    public int XpLost { get; init; }
+
     /// <summary>Gets the XP awarded to this player when the enemy was defeated.</summary>
     public int XpEarned { get; init; }
 
@@ -88,6 +96,7 @@ public class UseAbilityInCombatHubCommandHandler
     private readonly IPowerRepository _powerRepo;
     private readonly IEnemyInstanceStore _enemies;
     private readonly ICombatSessionStore _sessions;
+    private readonly IOptions<DeathPenaltyOptions> _penalty;
     private readonly ILogger<UseAbilityInCombatHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="UseAbilityInCombatHubCommandHandler"/>.</summary>
@@ -95,18 +104,21 @@ public class UseAbilityInCombatHubCommandHandler
     /// <param name="powerRepo">Repository for resolving ability costs and effects from the content database.</param>
     /// <param name="enemies">Store for the live enemy instances.</param>
     /// <param name="sessions">Store for per-character combat sessions.</param>
+    /// <param name="penalty">Configured death-penalty values.</param>
     /// <param name="logger">Logger instance.</param>
     public UseAbilityInCombatHubCommandHandler(
         ICharacterRepository characterRepo,
         IPowerRepository powerRepo,
         IEnemyInstanceStore enemies,
         ICombatSessionStore sessions,
+        IOptions<DeathPenaltyOptions> penalty,
         ILogger<UseAbilityInCombatHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
         _powerRepo = powerRepo;
         _enemies = enemies;
         _sessions = sessions;
+        _penalty = penalty;
         _logger = logger;
     }
 
@@ -264,8 +276,9 @@ public class UseAbilityInCombatHubCommandHandler
         entity.Attributes = CombatHelpers.SerializeAttrs(attrs);
         await _characterRepo.UpdateAsync(entity, cancellationToken);
 
-        var (isDead, isHardcore) = await CombatHelpers.HandleDeathIfNeededAsync(
-            player, entity, attrs, session, enemy, _characterRepo, _enemies, _sessions, cancellationToken);
+        var death = await CombatHelpers.HandleDeathIfNeededAsync(
+            player, entity, attrs, session, enemy, _characterRepo, _enemies, _sessions,
+            _penalty.Value, cancellationToken);
 
         _logger.LogInformation(
             "Character {CharacterIdPrefix} used ability {AbilityId} — dealt {Damage}, healed {Heal}",
@@ -285,8 +298,10 @@ public class UseAbilityInCombatHubCommandHandler
             EnemyDamage = enemyDamage,
             EnemyAbilityUsed = counterAbility,
             PlayerRemainingHealth = player.Health,
-            PlayerDefeated = isDead,
-            PlayerHardcoreDeath = isHardcore,
+            PlayerDefeated = death.IsDead,
+            PlayerHardcoreDeath = death.IsHardcore,
+            GoldLost = death.GoldLost,
+            XpLost = death.XpLost,
         };
     }
 }

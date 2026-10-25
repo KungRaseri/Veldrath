@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Moq;
 using RealmEngine.Shared.Abstractions;
 using Veldrath.Server.Data;
@@ -8,6 +9,7 @@ using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.Characters.Combat;
 using Veldrath.Server.Hubs;
+using Veldrath.Server.Settings;
 using Veldrath.Server.Tests.Infrastructure;
 
 namespace Veldrath.Server.Tests.Features;
@@ -25,6 +27,7 @@ public class UseAbilityInCombatHubCommandHandlerTests : IDisposable
             Mock.Of<IPowerRepository>(),
             _enemies,
             _sessions,
+            Options.Create(new DeathPenaltyOptions()),
             NullLogger<UseAbilityInCombatHubCommandHandler>.Instance);
 
     public void Dispose() => _dbFactory.Dispose();

@@ -2335,6 +2335,8 @@ public class GameHub : Hub
                 result.PlayerRemainingHealth,
                 result.PlayerDefeated,
                 result.PlayerHardcoreDeath,
+                result.GoldLost,
+                result.XpLost,
                 result.XpEarned,
                 result.GoldEarned,
             });
@@ -2389,6 +2391,8 @@ public class GameHub : Hub
                 result.PlayerRemainingHealth,
                 result.PlayerDefeated,
                 result.PlayerHardcoreDeath,
+                result.GoldLost,
+                result.XpLost,
             });
         }
         catch (Exception ex)
@@ -2435,6 +2439,8 @@ public class GameHub : Hub
                     result.PlayerRemainingHealth,
                     result.PlayerDefeated,
                     result.PlayerHardcoreDeath,
+                    result.GoldLost,
+                    result.XpLost,
                 });
             }
         }
@@ -2483,6 +2489,8 @@ public class GameHub : Hub
                 result.PlayerRemainingHealth,
                 result.PlayerDefeated,
                 result.PlayerHardcoreDeath,
+                result.GoldLost,
+                result.XpLost,
                 result.XpEarned,
                 result.GoldEarned,
             });

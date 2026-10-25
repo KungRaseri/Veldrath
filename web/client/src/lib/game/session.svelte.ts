@@ -637,7 +637,10 @@ export class GameSession {
 					log: [...this.combat.log, line].slice(-25)
 				};
 			}
-			if (payload.playerDefeated) this.dead = true;
+			if (payload.playerDefeated) {
+				this.dead = true;
+				this.applyDeathPenalty(payload.goldLost ?? 0, payload.xpLost ?? 0);
+			}
 			if (payload.enemyDefeated) {
 				this.combat = { ...this.combat, active: false };
 			}
@@ -942,6 +945,23 @@ export class GameSession {
 		this.enemies = payload.spawnedEnemies ?? [];
 
 		if (payload.mapChanged) await this.requestMapGraph(payload.mapId ?? null);
+	}
+
+	/**
+	 * The server says exactly what a death took, so the totals and the log are mirrored rather than guessed.
+	 */
+	private applyDeathPenalty(goldLost: number, xpLost: number): void {
+		if (goldLost <= 0 && xpLost <= 0) return;
+
+		this.stats = {
+			...this.stats,
+			gold: Math.max(0, this.stats.gold - goldLost),
+			experience: Math.max(0, this.stats.experience - xpLost)
+		};
+
+		this.addSystemMessage(
+			goldLost > 0 ? `You lost ${goldLost} gold.` : `You lost ${xpLost} experience.`
+		);
 	}
 
 	/**
