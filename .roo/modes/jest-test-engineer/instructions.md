@@ -24,16 +24,17 @@
 | Data.Tests | xUnit | InMemory |
 | Shared.Tests | xUnit | — |
 | Server.Tests | xUnit + Moq | SQLite |
-| Client.Tests | xUnit + Avalonia.Headless | — |
 | Forge.Tests | xUnit + Avalonia.Headless | — |
-| Foundry.Tests | xUnit + bunit | — |
+| Discord.Tests | xUnit + Moq | — |
+| Assets.Tests | xUnit | — |
+======= REPLACE
 
 ## Running Tests
 ```powershell
 dotnet test Realm.Full.slnx                              # All tests
 dotnet test RealmEngine.slnx                             # Engine only
 dotnet test Veldrath.Server.Tests                        # Server only
-dotnet test Veldrath.Client.Tests --filter "Category!=UI"  # Client (no UI)
+dotnet test RealmForge.Tests --filter "Category!=UI"     # Tooling (no UI)
 dotnet test Realm.Full.slnx --filter "FullyQualifiedName~AttackEnemy"  # Specific test
 dotnet test Realm.Full.slnx --collect "XPlat Code Coverage" --settings coverage.runsettings  # With coverage
 ```

@@ -1155,8 +1155,6 @@ public class GameHub : Hub
             await Clients.Caller.SendAsync("ShopCatalog", new
             {
                 ZoneId = zoneId,
-                // Avalonia binds Items (ShopItemDto); the RCL binds Catalog (ShopItemEntry).
-                Items = result.Items,
                 Catalog = result.Items.Select(item => new
                 {
                     Slug  = item.ItemRef,
@@ -2750,12 +2748,12 @@ public class GameHub : Hub
         GetInventoryHubResult result,
         bool openOverlay = true)
     {
+        // The desktop client that bound the raw Items/Equipped ref lists is gone; the browser
+        // reads the resolved ItemDetails/EquippedItems projections only.
         await Clients.Caller.SendAsync("InventoryLoaded", new
         {
             CharacterId = characterId,
-            Items       = result.Items,
             ItemDetails = result.ItemDetails,
-            Equipped    = result.EquippedRefs,
             EquippedItems = result.Equipped,
             OpenOverlay = openOverlay,
         });

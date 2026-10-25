@@ -61,7 +61,6 @@ jobs:
           | **RealmEngine.Shared** | Shared models, domain entities, interfaces |
           | **RealmEngine.Data** | EF Core persistence (Postgres), entity models, repositories |
           | **RealmForge** | Avalonia content editor for Postgres game data |
-          | **Veldrath.Client** | Avalonia desktop client with ReactiveUI |
           | **Veldrath.Server** | ASP.NET Core game server with SignalR |
           | **Veldrath.Discord** | Discord bot integration |
           EOF

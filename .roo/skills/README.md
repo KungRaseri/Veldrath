@@ -18,7 +18,6 @@ Skills are grounded in:
 | [`run-tests-by-component`](run-tests-by-component/SKILL.md) | Test a single component (engine, server, client, forge, web, …) |
 | [`create-new-feature`](create-new-feature/SKILL.md) | Add a MediatR vertical slice to `RealmEngine.Core` |
 | [`run-server`](run-server/SKILL.md) | Start `Veldrath.Server` (ASP.NET Core + SignalR) |
-| [`run-client`](run-client/SKILL.md) | Start the Avalonia desktop client |
 | [`run-realmforge`](run-realmforge/SKILL.md) | Start the RealmForge content editor |
 | [`start-dev-stack`](start-dev-stack/SKILL.md) | Postgres + server + optional client/web |
 | [`web-development`](web-development/SKILL.md) | Build or change the SvelteKit app (`web/client`): routes, runes, load/actions, auth, Drizzle |

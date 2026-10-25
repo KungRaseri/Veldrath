@@ -1,6 +1,6 @@
 # Hub Development (SignalR)
 
-Scope: [`Veldrath.Server`](../../Veldrath.Server/) — SignalR hub development. Also relevant to [`Veldrath.GameClient.Core`](../../Veldrath.GameClient.Core/) (the client-side hub connection service) and [`Veldrath.Contracts`](../../Veldrath.Contracts/) (shared DTOs).
+Scope: [`Veldrath.Server`](../../Veldrath.Server/) — SignalR hub development. Also relevant to the SvelteKit game client ([`web/client/src/lib/hub.ts`](../../web/client/src/lib/hub.ts), [`web/client/src/lib/game/types.ts`](../../web/client/src/lib/game/types.ts)) and [`Veldrath.Contracts`](../../Veldrath.Contracts/) (shared DTOs).
 
 ---
 
@@ -383,45 +383,24 @@ public async Task DoThing([FromServices] ILogger<GameHub> logger, DoThingRequest
 
 ## Client-Side Correspondence
 
-For every hub method, there must be corresponding client-side support in [`Veldrath.GameClient.Core/`](../../Veldrath.GameClient.Core/).
+The only client is the SvelteKit app, so every hub method needs a matching handler in
+[`web/client/src/lib/game/session.svelte.ts`](../../web/client/src/lib/game/session.svelte.ts).
 
-### Hub Connection Service
+### Hub Connection
 
-[`IGameHubConnectionService`](../../Veldrath.GameClient.Core/Abstractions/IGameHubConnectionService.cs) manages the SignalR connection lifecycle:
-
-```csharp
-// In Veldrath.GameClient.Core/Services/GameHubConnectionService.cs
-public sealed class GameHubConnectionService : IGameHubConnectionService, IAsyncDisposable
-{
-    private HubConnection? _connection;
-
-    public async Task ConnectAsync(string serverUrl, string accessToken, CancellationToken ct = default) { }
-
-    // Client calls hub methods via:
-    // await _connection.InvokeAsync<T>("MethodName", request);
-    // await _connection.InvokeAsync("MethodName");  // zero-arg methods
-
-    // Client receives broadcasts via:
-    // _connection.On<T>("EventName", handler);
-}
-```
+[`web/client/src/lib/hub.ts`](../../web/client/src/lib/hub.ts) builds the connection with
+`HubConnectionBuilder`, using `/api/game-token` as the `accessTokenFactory`; the session store owns its
+lifetime. Calls go out with `hub.invoke('MethodName', request)`; broadcasts arrive through
+`hub.on('EventName', handler)`.
 
 ### Payload Types
 
-Payloads for both directions (client→server and server→client) live in [`Veldrath.GameClient.Core/Payloads/`](../../Veldrath.GameClient.Core/Payloads/) organized by domain:
-
-| File | Domain |
-|---|---|
-| [`ChatPayloads.cs`](../../Veldrath.GameClient.Core/Payloads/ChatPayloads.cs) | Chat messages, commands |
-| [`CombatPayloads.cs`](../../Veldrath.GameClient.Core/Payloads/CombatPayloads.cs) | Combat events, damage, death |
-| [`DungeonPayloads.cs`](../../Veldrath.GameClient.Core/Payloads/DungeonPayloads.cs) | Dungeon enter/exit |
-| [`EconomyPayloads.cs`](../../Veldrath.GameClient.Core/Payloads/EconomyPayloads.cs) | Gold, currency |
-| [`EntityPayloads.cs`](../../Veldrath.GameClient.Core/Payloads/EntityPayloads.cs) | Entity spawn/despawn/move |
-| [`InventoryPayloads.cs`](../../Veldrath.GameClient.Core/Payloads/InventoryPayloads.cs) | Inventory updates |
-| [`ProgressionPayloads.cs`](../../Veldrath.GameClient.Core/Payloads/ProgressionPayloads.cs) | XP, level ups |
-| [`QuestPayloads.cs`](../../Veldrath.GameClient.Core/Payloads/QuestPayloads.cs) | Quest progress |
-| [`ShopPayloads.cs`](../../Veldrath.GameClient.Core/Payloads/ShopPayloads.cs) | Shop interactions |
-| [`ZonePayloads.cs`](../../Veldrath.GameClient.Core/Payloads/ZonePayloads.cs) | Zone enter/exit, movement |
+**The wire is the contract.** Every `SendAsync("Event", new { … })` in
+[`GameHub.cs`](../../Veldrath.Server/Hubs/GameHub.cs) is mirrored by an interface in
+[`web/client/src/lib/game/types.ts`](../../web/client/src/lib/game/types.ts), named `<Event>Payload`.
+[`payload-contract.test.ts`](../../web/client/src/lib/game/payload-contract.test.ts) parses the hub and
+fails when the property sets diverge — including when one event is broadcast with several shapes, such
+as `CombatTurn`. When you add or rename a field, change `GameHub.cs` and `types.ts` in the same PR.
 
 ### Calling Hub Methods from Client
 
@@ -582,7 +561,7 @@ These are things you must **never** do in hub code:
 - [`Veldrath.Server/Hubs/GameHub.cs`](../../Veldrath.Server/Hubs/GameHub.cs) — The full hub implementation (~3,300 lines, 30+ MediatR-backed methods)
 - [`Veldrath.Server/Features/`](../../Veldrath.Server/Features/) — Hub command handlers organized by domain (Characters, Zones, Shop, Combat, etc.)
 - [`Veldrath.Contracts/`](../../Veldrath.Contracts/) — Shared request/response DTOs
-- [`Veldrath.GameClient.Core/Services/GameHubConnectionService.cs`](../../Veldrath.GameClient.Core/Services/GameHubConnectionService.cs) — Client-side hub connection management
+- [`web/client/src/lib/game/session.svelte.ts`](../../web/client/src/lib/game/session.svelte.ts) — Client-side hub connection and state reduction
 - [`Veldrath.Server.Tests/Features/GameHubTests.cs`](../../Veldrath.Server.Tests/Features/GameHubTests.cs) — Hub test patterns and Fake infrastructure
 - [`.github/agent-memory/veldrath-memory.md`](../agent-memory/veldrath-memory.md) — Hub→MediatR bridge history, SignalR parameter binding fix log
 - [`AGENTS.md`](../../AGENTS.md) — Overall architecture and Hub→MediatR pattern overview

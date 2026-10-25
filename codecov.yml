@@ -37,9 +37,6 @@ flags:
   server:
     paths:
       - Veldrath.Server/
-  client:
-    paths:
-      - Veldrath.Client/
   forge:
     paths:
       - RealmForge/

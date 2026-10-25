@@ -151,6 +151,7 @@ export interface InventoryItem {
 }
 
 export interface InventoryLoadedPayload {
+	characterId?: string;
 	itemDetails?: InventoryItem[] | null;
 	equippedItems?: Record<string, InventoryItem> | null;
 	openOverlay?: boolean;

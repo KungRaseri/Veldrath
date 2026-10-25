@@ -1,6 +1,6 @@
 ---
 name: start-dev-stack
-description: Start the full Veldrath development environment including Postgres database via Docker, ASP.NET Core game server, and optionally the Avalonia client. Use when you need to spin up the entire local development stack.
+description: Start the full Veldrath development environment including the Postgres database via Docker, the ASP.NET Core game server, and the SvelteKit client. Use when you need to spin up the entire local development stack.
 ---
 
 # Skill: start-dev-stack
@@ -61,17 +61,7 @@ dotnet run --project Veldrath.Server -- --environment Development
 
 Wait until the console shows the server is listening (expected URLs: `https://localhost:5001`, `http://localhost:5000`).
 
-### 4. (Optional) Start a game client
-
-Open another **new terminal** and run:
-
-```powershell
-dotnet run --project Veldrath.Client
-```
-
-The client connects to the server and opens the game window.
-
-### 5. (Optional) Start the SvelteKit web app
+### 4. Start the game client (the SvelteKit app)
 
 Open another **new terminal** and run:
 
@@ -110,8 +100,8 @@ The web app starts at `http://localhost:5173`.
 
 - **OAuth credentials:** in Development, `Veldrath.Server` loads the repo-root `.env` automatically (mapped to `OAuth:*`, `Jwt:Key`, email, and public URL settings). Restart the server after editing `.env`. Unconfigured providers return **503** from `/api/auth/external/{provider}`.
 - **Order matters:** Postgres must be healthy before the server starts. The server will fail to connect if the database isn't ready.
-- The server and client run in **separate terminal windows** — use `Ctrl+Shift+5` in VS Code to split terminals.
-- For **hot reload** with auto-restart, use `dotnet watch run` instead of `dotnet run` in Steps 3–5.
+- The server and web client run in **separate terminal windows** — use `Ctrl+Shift+5` in VS Code to split terminals.
+- For **hot reload** with auto-restart, use `dotnet watch run` instead of `dotnet run` in Steps 3–4.
 - If you get port conflicts, check for other processes using ports 5432, 5000, 5001, or 5002.
 - The `docker compose up` command uses [`docker-compose.yml`](../../docker-compose.yml). For production, use `docker-compose.prod.yml` (see [`docs/deployment.md`](../../docs/deployment.md)).
 - Realm engine libraries (`RealmEngine.Core`, `RealmEngine.Shared`, `RealmEngine.Data`) are project-referenced — no NuGet packages needed.
@@ -119,7 +109,6 @@ The web app starts at `http://localhost:5173`.
 ## See Also
 
 - [run-server](../run-server/SKILL.md) — Start server only
-- [run-client](../run-client/SKILL.md) — Start client only
 - [run-realmforge](../run-realmforge/SKILL.md) — Start content editor
 - [web-development](../web-development/SKILL.md) — Web app routes, auth, Drizzle, and env access
 - [build-full](../build-full/SKILL.md) — Build the solution

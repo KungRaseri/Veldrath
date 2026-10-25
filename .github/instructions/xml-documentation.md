@@ -1,6 +1,6 @@
 # XML Documentation (CS1591)
 
-Scope: **ALL non-test .NET projects** in the solution. This applies to [`RealmEngine.Core`](../../RealmEngine.Core/), [`RealmEngine.Shared`](../../RealmEngine.Shared/), [`RealmEngine.Data`](../../RealmEngine.Data/), [`Veldrath.Server`](../../Veldrath.Server/), [`Veldrath.Client`](../../Veldrath.Client/), [`Veldrath.GameClient.Core`](../../Veldrath.GameClient.Core/), [`Veldrath.Auth`](../../Veldrath.Auth/), [`Veldrath.Contracts`](../../Veldrath.Contracts/), [`Veldrath.Discord`](../../Veldrath.Discord/), [`Veldrath.Assets`](../../Veldrath.Assets/), [`RealmForge`](../../RealmForge/), and [`RealmUI.Fonts`](../../RealmUI.Fonts/). The SvelteKit app is documented with XML-style JSDoc/TSDoc comments in `web/client`.
+Scope: **ALL non-test .NET projects** in the solution. This applies to [`RealmEngine.Core`](../../RealmEngine.Core/), [`RealmEngine.Shared`](../../RealmEngine.Shared/), [`RealmEngine.Data`](../../RealmEngine.Data/), [`Veldrath.Server`](../../Veldrath.Server/), [`Veldrath.Contracts`](../../Veldrath.Contracts/), [`Veldrath.Discord`](../../Veldrath.Discord/), [`Veldrath.Assets`](../../Veldrath.Assets/), [`RealmForge`](../../RealmForge/), and [`RealmUI.Fonts`](../../RealmUI.Fonts/). The SvelteKit app is documented with XML-style JSDoc/TSDoc comments in `web/client`.
 
 **Does NOT apply to** test projects (any project with `<IsTestProject>true</IsTestProject>` in its `.csproj`).
 
@@ -322,9 +322,6 @@ Test projects are **exempt** from CS1591 enforcement. They set `<IsTestProject>t
 Test project examples:
 - [`RealmEngine.Core.Tests`](../../RealmEngine.Core.Tests/)
 - [`Veldrath.Server.Tests`](../../Veldrath.Server.Tests/)
-- [`Veldrath.Client.Tests`](../../Veldrath.Client.Tests/)
-- [`Veldrath.GameClient.Core.Tests`](../../Veldrath.GameClient.Core.Tests/)
-- [`Veldrath.Auth.Tests`](../../Veldrath.Auth.Tests/)
 - [`Veldrath.Assets.Tests`](../../Veldrath.Assets.Tests/)
 - [`Veldrath.Discord.Tests`](../../Veldrath.Discord.Tests/)
 - [`RealmForge.Tests`](../../RealmForge.Tests/)

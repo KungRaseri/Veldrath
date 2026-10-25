@@ -222,21 +222,24 @@ XFF_DEPTH=1
 | `INTERNAL_BRIDGE_TOKEN` | `foundry-bridge.ts`, `email.ts` | Shared secret matching `InternalBridge__Token`. Unset ⇒ the bridge returns `503`. |
 | `PROTOCOL_HEADER` / `HOST_HEADER` / `ADDRESS_HEADER` / `XFF_DEPTH` | adapter-node | Trust Traefik's forwarded headers. |
 
-### Internal Identity bridge (desktop compatibility)
+### Internal bridge (transactional email)
 
-The Avalonia desktop client's native sign-in still authenticates through the .NET
-`/api/auth/*` endpoints, so SvelteKit mirrors web accounts into ASP.NET Core Identity:
+**Better Auth is the single source of truth for authentication.** The account-mirroring half of
+this bridge existed only so the retired Avalonia client could sign in through ASP.NET Core
+Identity ([`InternalAccountBridgeEndpoints`](../Veldrath.Server/Features/Auth/InternalAccountBridgeEndpoints.cs));
+with the desktop client gone, nothing calls `/api/internal/accounts/sync` any more.
 
-- Registration posts the plaintext password once to `/api/foundry-bridge/register`,
-  which calls the internal .NET endpoint and stores an Identity password hash.
-  SvelteKit never persists the password.
-- [`hooks.server.ts`](../web/client/src/hooks.server.ts) synchronizes the account whenever
-  the username, email, or verification state changes, and links Discord/Google/Microsoft
-  provider accounts. The sync mirrors username, email, verification, and display name onto
-  the existing Identity row.
-- The internal endpoint requires the `X-Internal-Bridge-Token` header and returns
-  `503` when `InternalBridge__Token` is not configured.
-- Keep the bridge while the desktop client relies on .NET Identity sign-in.
+What still uses `INTERNAL_BRIDGE_URL` / `INTERNAL_BRIDGE_TOKEN`:
+
+- [`email.ts`](../web/client/src/lib/server/email.ts) forwards verification and password-reset mail to
+  the .NET server, which owns the SMTP configuration. Without the bridge those links are only logged.
+- `game-request.ts`, `game-api.ts`, and `editorial-api.ts` use `INTERNAL_BRIDGE_URL` as the internal
+  base URL (falling back to `PUBLIC_API_URL`); they do not send the token.
+
+The endpoints require the `X-Internal-Bridge-Token` header and answer `503` when
+`InternalBridge__Token` is not configured. Deleting the account-sync endpoint and
+[`foundry-bridge.ts`](../web/client/src/lib/server/foundry-bridge.ts) is safe now and is tracked as
+follow-up cleanup; moving mail into the web app would remove the bridge entirely.
 
 ### Troubleshooting: `401` from the game API
 

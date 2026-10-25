@@ -6,10 +6,10 @@
         <Configuration>
           <Format>cobertura</Format>
           <Include>[RealmEngine.*]*,[RealmForge]*,[Veldrath.*]*</Include>
-          <Exclude>[*.Tests]*;[Veldrath.Client]Veldrath.Client.Services.HubConnectionFactory;[Veldrath.Client]Veldrath.Client.Services.HubConnectionWrapper</Exclude>
+          <Exclude>[*.Tests]*</Exclude>
           <ExcludeByAttribute>Obsolete,GeneratedCode,CompilerGenerated</ExcludeByAttribute>
-          <!-- Compiled XAML resources, XAML closures in views, app bootstrap, entry point, SignalR infrastructure -->
-          <ExcludeByFile>**/Program.cs,**/App.axaml,**/App.axaml.cs,**/Assets/Themes/*.axaml,**/Views/CharacterSelectView.axaml,**/Views/GameView.axaml,**/Services/HubConnectionFactory.cs,**/Services/IHubConnection.cs</ExcludeByFile>
+          <!-- App bootstrap and entry points -->
+          <ExcludeByFile>**/Program.cs,**/App.axaml,**/App.axaml.cs</ExcludeByFile>
         </Configuration>
       </DataCollector>
     </DataCollectors>

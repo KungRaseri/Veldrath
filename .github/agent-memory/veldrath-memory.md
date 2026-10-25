@@ -9,10 +9,10 @@
 **Before writing ANY CSS**, read [`docs/design-system.md`](../../docs/design-system.md) and, for the
 SvelteKit app, load the `web-ui` skill. The web app is SvelteKit + Tailwind + Skeleton v5 and must use
 the Veldrath design tokens in `web/client/src/routes/theme.css` and `brand.css` — no raw hex values, no
-ad-hoc component stylesheets. Avalonia surfaces (Veldrath.Client, RealmForge) use the `RealmUI.Fonts`
+ad-hoc component stylesheets. The remaining Avalonia surface (RealmForge) uses the `RealmUI.Fonts`
 resources and the token names in §8 of the design system.
 
-**Applies to**: [`web/client`](../../web/client), [`Veldrath.Client`](../../Veldrath.Client),
+**Applies to**: [`web/client`](../../web/client) — the only game client — and
 [`RealmForge`](../../RealmForge).
 
 ---
@@ -1878,3 +1878,27 @@ Authoritative inventory — anything not listed is not read by code.
   dead links after the plan prune — run it before touching docs.
 - Full verification after this session: `dotnet build Realm.Full.slnx` + `dotnet test Realm.Full.slnx`
   = 4,630 tests, 0 failures; web `typecheck`/`lint`/`test` (22 passed, 1 skipped) all green.
+
+### Session-68 (2026-10-25) — Desktop client deleted, Veldrath is web-first only
+
+- **There is no .NET client any more.** `Veldrath.Client`, `Veldrath.Client.Tests` (681 tests),
+  `Veldrath.GameClient.Core` + tests, and `Veldrath.Auth` + tests are gone, along with
+  `Veldrath.Client.slnx`, `Veldrath.slnx`, `versions/client.props`, `ci-client.yml`, and the `client`
+  Codecov flag. Do not look for `GameViewModel`, `DesktopUiServer`, `GameWebView`, or the `/desktop`
+  route: the SvelteKit app in `web/` is the only client.
+- **Remaining .NET solutions:** `RealmEngine.slnx` (engine), `Veldrath.Server.slnx`,
+  `Veldrath.Discord.slnx`, `Veldrath.Libraries.slnx` (assets/contracts/fonts/engine),
+  `RealmForge.slnx`, `Realm.Full.slnx`. 7 test projects, 3,868 tests.
+- **Better Auth only.** Nothing signs in through ASP.NET Core Identity's `/api/auth/*` login
+  endpoints, so `/api/internal/accounts/sync` and `foundry-bridge.ts` are dead code — delete them when
+  convenient. `INTERNAL_BRIDGE_*` still matters for transactional email
+  ([`email.ts`](../../web/client/src/lib/server/email.ts)) until the web app owns SMTP.
+- **Payload guard repointed at the wire.** `payload-contract.test.ts` now parses `GameHub.cs`
+  directly (unioning multi-variant events like `CombatTurn`) instead of the deleted C# mirrors, and it
+  caught two real mismatches during the deletion: `InventoryLoaded` and `ShopCatalog` were still
+  sending Avalonia-only `Items`/`Equipped` projections, which are now removed.
+- **JWT audience is still the string `Veldrath.Client`** in `appsettings*.json`, `docker-compose*.yml`,
+  and `ci-web.yml`. Rename only as a coordinated change to both Coolify resources (a mismatch is an
+  opaque `401`).
+- Web build is `adapter-node` only now; `build:desktop`, `adapter-static`, and `GameHubOptions` were
+  removed with the shell.

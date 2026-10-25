@@ -31,7 +31,8 @@ The canonical memory store with 8 files:
 ### Code Organization
 - Feature handlers: `RealmEngine.Core/Features/{FeatureName}/`
 - Server endpoints/hubs: `Veldrath.Server/`
-- Client VMs/views: `Veldrath.Client/ViewModels/`, `Veldrath.Client/Views/`
+- Game client: `web/client/src/lib/game/` (session store, panels, hub payload types)
+- Tooling UI: `RealmForge/ViewModels/`, `RealmForge/Views/`
 - Test files mirror source structure
 - Build config: `Directory.Build.props`, `Directory.Build.targets`
 

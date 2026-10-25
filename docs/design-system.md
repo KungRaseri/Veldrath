@@ -1,7 +1,7 @@
 # Veldrath Design System
 
 > **Status:** Living document — decisions recorded in [§ Decision Log](#9-decision-log).
-> **Surfaces covered:** Veldrath.Client (Avalonia desktop + WebView2), RealmForge (Avalonia editor), and the SvelteKit web app.
+> **Surfaces covered:** the SvelteKit web app (the only game client) and RealmForge (Avalonia editor). The `Veldrath.Client` Avalonia desktop client was retired — see [§10](#10-retired-surfaces-blazor--mudblazor).
 > **Last updated:** 2026-10-23
 >
 > **Migration note:** The Blazor `Veldrath.Web` and `RealmFoundry` projects were retired in favor of the SvelteKit app in [`web/`](../web/). MudBlazor-specific sections in this document are historical; Avalonia/RealmForge guidance still applies. Current web design tokens live in [`theme.css`](../web/client/src/routes/theme.css) and [`brand.css`](../web/client/src/routes/brand.css).
@@ -57,7 +57,7 @@ The Veldrath Design System (VDS) defines the shared visual language across every
 
 ### 3.1 Current-state audit
 
-Before the unified system, each surface grew its own colours. This table is the historical as-is audit kept for reference — the `RealmFoundry` and `Veldrath.Web` columns belong to retired Blazor surfaces (see [§10](#10-retired-surfaces-blazor--mudblazor)). Only `Veldrath.Client` and `RealmForge` are still live Avalonia surfaces.
+Before the unified system, each surface grew its own colours. This table is the historical as-is audit kept for reference — the `RealmFoundry` and `Veldrath.Web` columns belong to retired Blazor surfaces, and the `Veldrath.Client` column belongs to the retired Avalonia desktop client (see [§10](#10-retired-surfaces-blazor--mudblazor)). Only `RealmForge` remains a live Avalonia surface.
 
 | Token | Veldrath.Client | RealmForge | RealmFoundry | Veldrath.Web |
 |---|---|---|---|---|
@@ -303,7 +303,7 @@ for reference:
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400&family=Cinzel:wght@400;600&family=Lora:ital,wght@0,400;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 ```
 
-### 4.6 Font loading — Avalonia (Veldrath.Client, RealmForge)
+### 4.6 Font loading — Avalonia (RealmForge)
 
 - **Inter:** `Avalonia.Fonts.Inter` NuGet package, already referenced. Registered via `UseInterFont()`.
 - **Cinzel / Cinzel Decorative / Lora / JetBrains Mono:** Embed `.ttf` files under `Assets/Fonts/` and declare in `App.axaml`:
@@ -385,7 +385,7 @@ All spacing values are multiples of **4px**. Never use values that are not on th
 
 Spacing follows the scale in [§5.1](#51-base-unit) on every surface that is still live:
 
-- **Avalonia (`Veldrath.Client`, `RealmForge`):** numeric `Margin` / `Padding` / `Spacing` values derived from the scale.
+- **Avalonia (`RealmForge`):** numeric `Margin` / `Padding` / `Spacing` values derived from the scale.
 - **SvelteKit ([`web/`](../web/)):** Tailwind spacing utilities (`p-4`, `gap-2`, …). The web app does not use VDS custom properties for spacing.
 
 The previous rule — "delegate spacing to MudBlazor utilities in Razor markup" — was retired with the Blazor apps; see [§10](#10-retired-surfaces-blazor--mudblazor).
@@ -746,7 +746,7 @@ the SvelteKit app; its tokens live in
 `Veldrath.Web`, `RealmFoundry`, `Veldrath.Auth.Blazor`, and `Veldrath.GameClient.Components`
 were retired when the web moved to the SvelteKit app in [`web/`](../web/).
 
-- **Live surfaces:** `Veldrath.Client` (Avalonia), `RealmForge` (Avalonia), and the SvelteKit
+- **Live surfaces:** `RealmForge` (Avalonia) and the SvelteKit
   app ([`theme.css`](../web/client/src/routes/theme.css) + [`brand.css`](../web/client/src/routes/brand.css)).
 - **Historical only:** every MudBlazor rule (component mapping, `--mud-palette-*` usage,
   `.mud-button-filled` overrides, `#blazor-error-ui`, reconnect-modal CSS, MudBlazor spacing

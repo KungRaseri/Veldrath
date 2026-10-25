@@ -5,7 +5,7 @@ description: Use when building or restyling the SvelteKit UI — Veldrath design
 
 # Skill: web-ui
 
-Apply the Veldrath Design System (VDS) to the SvelteKit web app so it matches the Avalonia client and the former Blazor UI.
+Apply the Veldrath Design System (VDS) to the SvelteKit web app — the single game client and web frontend.
 
 ## When to use
 
@@ -17,7 +17,7 @@ Apply the Veldrath Design System (VDS) to the SvelteKit web app so it matches th
 ## When not to use
 
 - Route/load/action logic, runes state, auth, or build config — use [`web-development`](../web-development/SKILL.md).
-- Avalonia (`Veldrath.Client`, `RealmForge`) styling — those use the ResourceDictionary token map in [`docs/design-system.md`](../../../docs/design-system.md).
+- Avalonia (`RealmForge`) styling — that uses the ResourceDictionary token map in [`docs/design-system.md`](../../../docs/design-system.md).
 
 ## References
 
@@ -55,7 +55,7 @@ Typography: headings **Cinzel** (display: Cinzel Decorative), body **Lora**, UI 
 - **Bits UI** is headless — supply classes yourself; `onValueChange` emits the raw value, not an event.
 - **Icons:** `@lucide/svelte/icons/<kebab-name>` per-icon imports. Brand marks come from `brand-icons.ts` (do not import the whole `simple-icons` package — it blows up SSR transforms).
 - **Fonts:** unlayered `h1,h2,h3,.h1,.h2,.h3` rules in `brand.css` set the heading font and text colour. Skeleton utility classes reset `font-family`, so new headings need those classes or the rule.
-- **Game shell:** `/play/*` and `/desktop` suppress the public header/footer via `isFullScreen` in [`+layout.svelte`](../../../web/client/src/routes/+layout.svelte) and use `.game-shell` / `.game-panel*`.
+- **Game shell:** `/play/*` suppresses the public header/footer via `isFullScreen` in [`+layout.svelte`](../../../web/client/src/routes/+layout.svelte) and uses `.game-shell` / `.game-panel*`.
 - **Imagery:** logos, herald crests, and favicons live in `web/client/static/images/`; keep `static/images/favicon/site.webmanifest` in sync.
 
 ## Steps

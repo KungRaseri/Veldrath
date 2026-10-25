@@ -1,8 +1,9 @@
 # Blazor Decommission + Whole-Codebase Cleanup
 
-> **Status:** Plan / For Review
-> **Date:** 2026-10-24
-> **Scope:** finish the Blazor → SvelteKit transition and audit the repository for cleanup.
+> **Status:** Done — web-first, desktop client retired
+> **Date:** 2026-10-24 (updated 2026-10-25)
+> **Scope:** finish the Blazor → SvelteKit transition, audit the repository for cleanup, and retire the
+> Avalonia desktop client so the SvelteKit app is the only client.
 > **Related:** [`sveltekit-migration.md`](sveltekit-migration.md), [`../docs/client-ui-architecture.md`](../docs/client-ui-architecture.md)
 
 ---
@@ -12,7 +13,7 @@
 Phase 6 already deleted the Blazor applications. Verified in the current tree:
 
 - gone: `Veldrath.Web`, `RealmFoundry`, `Veldrath.Auth.Blazor`, `Veldrath.GameClient.Components` (and their test projects, `.slnx` files, CI workflow, MudBlazor/bunit packages);
-- the desktop host is now [`DesktopUiServer`](../Veldrath.Client/HostedWeb/DesktopUiServer.cs), which serves the static Svelte build and proxies `/api` + `/hubs` with an injected JWT;
+- the desktop host is now `DesktopUiServer`, which serves the static Svelte build and proxies `/api` + `/hubs` with an injected JWT;
 - the only surviving `Blazor`/`MudBlazor` code in the repo lives in an orphan folder: `scripts/dev/blazor/`.
 
 So the remaining work is **residue removal (no behaviour risk)** plus **one real architectural decision** (ASP.NET Core Identity), not a migration.
@@ -24,7 +25,7 @@ So the remaining work is **residue removal (no behaviour risk)** plus **one real
 | Artifact | Detail | Action |
 |---|---|---|
 | `scripts/dev/blazor/` | 19 orphan files: 18 `.razor` snapshots of deleted pages plus `VeldrathTheme.cs` (MudBlazor theme) and 5 CSS copies. Nothing references the folder. | Delete. Git history keeps it. |
-| [`Veldrath.Client.csproj:47`](../Veldrath.Client/Veldrath.Client.csproj:47) | Comment `Embedded WebView2 for Blazor game UI hosting` | Reword to "hosts the Svelte desktop build". |
+| `Veldrath.Client.csproj:47` | Comment `Embedded WebView2 for Blazor game UI hosting` | Reword to "hosts the Svelte desktop build". |
 | [`RealmForge/README.md`](../RealmForge/README.md) | Claims `.NET MAUI Blazor Hybrid` / "Why Blazor Hybrid?" — the app is Avalonia + ReactiveUI. | Rewrite (tech stack, run commands, what it edits). |
 | [`docs/design-system.md`](../docs/design-system.md) | MudBlazor-only content: §5.5 spacing delegation, MudBlazor token map in §8.2, RealmFoundry tables (§3.1, §7.8), §8.3, §8.4, §8.5 migration notes. | Move to a single appendix "Retired surfaces (Blazor/MudBlazor)" at the end; keep Avalonia + SvelteKit sections as the live reference. |
 | [`web/shared/db/README.md`](../web/shared/db/README.md:41) | Section "Why this is safe on the existing Blazor database" | Reword to "the existing Postgres database". |
@@ -162,7 +163,39 @@ a field rename can silently break the web client.
   check GameHub first, then fix both mirrors in the same PR.
 - Full OpenAPI → TypeScript generation stays deferred; this is the cheap guard.
 
-### W10 — Desktop release packaging (discovered 2026-10-24)
+### W11 — Retire the desktop client (2026-10-25)
+
+**Decision:** Veldrath is **web-first and only**. Cross-platform playability is satisfied by the
+browser; a second, native client would have to be rebuilt on a cross-platform webview (Tauri/Electron)
+or ported to Avalonia XAML, and neither is worth maintaining two UI implementations. Revisit only if a
+desktop-specific capability (offline play, native audio, Steam integration) becomes a requirement.
+
+Deleted:
+
+- `Veldrath.Client/` (Avalonia shell: `GameWebView`, `DesktopUiServer`, `GameViewModel`,
+  `NativeBridgeService`, LibVLC audio), `Veldrath.Client.Tests/` (681 tests).
+- `Veldrath.GameClient.Core/` + tests (desktop-only payload records and hub services).
+- `Veldrath.Auth/` + tests (a 2-file client auth wrapper with no other consumer).
+- `Veldrath.Client.slnx`, `Veldrath.slnx`, `versions/client.props`, `.github/workflows/ci-client.yml`,
+  the `client/v*` release path, the `client` Codecov flag, and the `run-client` skill.
+- Web: the `/desktop` route, `#lib/desktop/api.ts`, the `build:desktop` scripts, `adapter-static`, and
+  `GameHubOptions` (the hub is always `PUBLIC_HUB_URL` with `/api/game-token`).
+- Server: the Avalonia-only `Items`/`Equipped` projections on `InventoryLoaded` and `Items` on
+  `ShopCatalog`.
+
+Consequences worth remembering:
+
+- **Better Auth is the single source of truth for authentication.** Nothing authenticates through
+  ASP.NET Core Identity's `/api/auth/*` login endpoints any more; the account-mirroring half of the
+  internal bridge (`/api/internal/accounts/sync`, `foundry-bridge.ts`) is now unused and can be deleted
+  in a follow-up. The email half still matters until the web app owns SMTP.
+- **The payload guard now compares the wire, not a C# mirror.** `payload-contract.test.ts` parses
+  `GameHub.cs` directly and unions the shapes of multi-variant events (`CombatTurn`), so it catches
+  drift that the deleted `Veldrath.GameClient.Core` records used to hide.
+- JWT audience is still the legacy string `Veldrath.Client` across server/web/compose. Rename it to
+  something meaningful only as a coordinated change to both Coolify resources.
+
+### W10 — Desktop release packaging (superseded by W11)
 The published desktop clients shipped **without the Svelte UI**: `Veldrath.Client.csproj` only bundles
 `web/client/build-desktop/**` when `index.html` already exists, and the `publish` job in
 `ci-client.yml` is a separate job from the one that runs `npm run build:desktop` — fresh checkout, no
@@ -201,7 +234,7 @@ graph LR
 
 **Acceptance for the whole effort**
 1. `rg -i blazor` outside `plans/`, `web/llms/`, and the design-system appendix finds nothing.
-2. `dotnet build Realm.Full.slnx`, the 10 .NET test projects, and `cd web && npm run typecheck && npm run lint && npm run test && npm run build` all pass after every PR.
+2. `dotnet build Realm.Full.slnx`, the 7 .NET test projects, and `cd web && npm run typecheck && npm run lint && npm run test && npm run build` all pass after every PR.
 3. `plans/` contains only live plans plus a short `README.md`; no document references a deleted project or plan.
 4. No documentation tells a reader to run a command that no longer exists.
 
@@ -221,7 +254,8 @@ graph LR
 | W7 — authenticated game loop in CI (from migration Phase 2) | ✅ Done: `tests/game-loop.e2e.ts` covers register → roster → play → travel → inventory against a real server (verified locally, 34s, 1 passed); `ci-web.yml` gained an `e2e-game` job that boots `Veldrath.Server` on the Postgres service. The spec self-skips without `E2E_GAME=1`, so `npm run test` stays server-free (22 passed, 1 skipped). | W7 commit |
 | W8 — desktop bundle smoke on the Windows runner (from migration Phase 5) | ✅ Done: 4 `Bundle`-trait tests serve the real `build-desktop` through `DesktopUiServer` (index + hashed asset + SPA fallback + health + `WebView2Loader.dll` presence). `ci-client.yml` already builds the bundle first, so they run on CI. A true WebView2 render probe is left optional. | W8/W9 commit |
 | W9 — payload contract drift check (from migration testing strategy) | ✅ Done: `payload-contract.test.ts` compares every mirrored C# record with its TS interface. It found 5 real drifts on day one — see below. | W8/W9 commit |
-| W10 — desktop release packaging (found while answering "how do I finalize the desktop") | ✅ Done: release zips now carry `SvelteApp/` (Node + `build:desktop` in the publish job, verified per folder), and `dotnet publish` fails with `VD0001` without the bundle. Verified locally: publish output contains `SvelteApp/index.html` (129 files) + `WebView2Loader.dll`; 4/4 `Bundle` tests pass against it. | W10 commit |
+| W10 — desktop release packaging | ✅ Done, then superseded: release zips carried `SvelteApp/` and `dotnet publish` failed with `VD0001` without the bundle — all removed with the client in W11. | W10 commit |
+| W11 — retire the desktop client (Veldrath is web-first) | ✅ Done: six projects deleted (`Veldrath.Client`, `Veldrath.Client.Tests`, `Veldrath.GameClient.Core`, `Veldrath.GameClient.Core.Tests`, `Veldrath.Auth`, `Veldrath.Auth.Tests`), three solutions pruned plus `Veldrath.slnx`/`Veldrath.Client.slnx` removed, `ci-client.yml` deleted, and every doc/skill/memory/compose reference updated. Web dropped `/desktop`, `#lib/desktop`, `build:desktop`, `adapter-static`, and `GameHubOptions`; the payload guard was repointed at `GameHub.cs`. | W11 commit |
 
 **Final verification (2026-10-24):** `dotnet build Realm.Full.slnx` clean and
 `dotnet test Realm.Full.slnx` = **4,630 tests, 0 failures** across the 10 .NET projects; web

@@ -27,7 +27,7 @@ This keeps engine UI-agnostic. Any consumer (Avalonia, Godot, Unity, console, AS
 | `Realm.Full.slnx` | Everything (.NET) |
 
 ## Project Structure Key Points
-- 12 .NET source projects + 10 test projects = 22 total, plus the SvelteKit `web/` app
+- 10 .NET source projects + 7 test projects = 17 total, plus the SvelteKit `web/` app (the only client)
 - Version metadata in `versions/*.props` (one per component)
 - Test files mirror source structure path-for-path
 - All NuGet versions centrally managed in `Directory.Packages.props`

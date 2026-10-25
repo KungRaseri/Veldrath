@@ -11,12 +11,11 @@
    - **2+ directories** → Go to step 3
 
 2. Which directory?
-   - `RealmEngine.Core/`, `RealmEngine.Shared/`, `RealmEngine.Data/`, `RealmEngine.*.Tests/`, `Veldrath.GameClient.Core/` → Build `RealmEngine.slnx`
+   - `RealmEngine.Core/`, `RealmEngine.Shared/`, `RealmEngine.Data/`, `RealmEngine.*.Tests/` → Build `RealmEngine.slnx`
    - `RealmForge/`, `RealmForge.Tests/` → Build `RealmForge.slnx`
-   - `Veldrath.Client/`, `Veldrath.Client.Tests/` → Build `Veldrath.Client.slnx`
    - `Veldrath.Server/`, `Veldrath.Server.Tests/` → Build `Veldrath.Server.slnx`
    - `Veldrath.Discord/`, `Veldrath.Discord.Tests/` → Build `Veldrath.Discord.slnx`
-   - `Veldrath.Auth/`, `Veldrath.Auth.Tests/`, `Veldrath.Assets/`, `Veldrath.Assets.Tests/`, `Veldrath.Contracts/` → Build `Veldrath.Libraries.slnx`
+   - `Veldrath.Assets/`, `Veldrath.Assets.Tests/`, `Veldrath.Contracts/` → Build `Veldrath.Libraries.slnx`
    - `web/` → Run `npm run typecheck && npm run lint && npm run test && npm run build` in `web/client`
    - `RealmUI.Fonts/` → Build `RealmForge.slnx` (smallest solution containing it)
 
@@ -50,10 +49,9 @@
 | `RealmEngine.*/**` | `dotnet build RealmEngine.slnx` |
 | `RealmForge/**` or `RealmForge.Tests/**` | `dotnet build RealmForge.slnx` |
 | `web/**` | npm scripts in `web/client` (`typecheck`, `lint`, `test`, `build`) |
-| `Veldrath.Client/**` or `Veldrath.Client.Tests/**` | `dotnet build Veldrath.Client.slnx` |
 | `Veldrath.Server/**` or `Veldrath.Server.Tests/**` | `dotnet build Veldrath.Server.slnx` |
 | `Veldrath.Discord/**` or `Veldrath.Discord.Tests/**` | `dotnet build Veldrath.Discord.slnx` |
-| `Veldrath.Auth/**`, `Veldrath.Assets/**`, `Veldrath.Contracts/**` | `dotnet build Veldrath.Libraries.slnx` |
+| `Veldrath.Assets/**`, `Veldrath.Contracts/**` | `dotnet build Veldrath.Libraries.slnx` |
 | `RealmUI.Fonts/**` | `dotnet build RealmForge.slnx` |
 | Cross-component changes | `dotnet build Realm.Full.slnx` |
 | `Directory.Build.*` / `Directory.Packages.props` | `dotnet build Realm.Full.slnx` |

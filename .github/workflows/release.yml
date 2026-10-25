@@ -17,7 +17,6 @@ on:
       - 'engine/v*'
       - 'tooling/v*'
       - 'server/v*'
-      - 'client/v*'
       - 'discord/v*'
   workflow_dispatch:
     inputs:
@@ -64,11 +63,6 @@ jobs:
           WORKFLOW="ci-server.yml"
           ARTIFACT_NAME="server-release-artifacts"
           VERSION="${TAG#server/v}"
-        elif [[ "$TAG" == client/v* ]]; then
-          COMPONENT="client"
-          WORKFLOW="ci-client.yml"
-          ARTIFACT_NAME="client-release-artifacts"
-          VERSION="${TAG#client/v}"
         elif [[ "$TAG" == discord/v* ]]; then
           COMPONENT="discord"
           WORKFLOW="ci-discord.yml"
@@ -214,23 +208,6 @@ jobs:
               echo ""
               echo "### Packages"
               echo "- \`Veldrath-Server-$VERSION.zip\` — ASP.NET Core server publish output (framework-dependent)"
-              echo ""
-              echo "### Changes"
-              printf '%s\n' "$CHANGELOG"
-            } > release-body.md
-            ;;
-          client)
-            NAME="Veldrath Client $VERSION"
-            {
-              echo "## Veldrath Client $VERSION"
-              echo ""
-              echo "Avalonia desktop client for Veldrath."
-              echo ""
-              echo "### Packages"
-              echo "- \`Veldrath-Client-Windows-$VERSION.zip\` — Windows desktop app (win-x64, self-contained)"
-              echo "- \`Veldrath-Client-Linux-$VERSION.zip\` — Linux desktop app (linux-x64, self-contained)"
-              echo "- \`Veldrath-Client-macOS-x64-$VERSION.zip\` — macOS desktop app (osx-x64, Intel, self-contained)"
-              echo "- \`Veldrath-Client-macOS-arm64-$VERSION.zip\` — macOS desktop app (osx-arm64, Apple Silicon, self-contained)"
               echo ""
               echo "### Changes"
               printf '%s\n' "$CHANGELOG"

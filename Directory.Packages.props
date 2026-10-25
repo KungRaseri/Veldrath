@@ -70,16 +70,7 @@
     <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageVersion Include="Serilog.Sinks.Seq" Version="9.1.0" />
   </ItemGroup>
-  <!-- ── Audio ─────────────────────────────────────────────────────────────────── -->
-  <ItemGroup>
-    <PackageVersion Include="LibVLCSharp" Version="3.10.2" />
-    <PackageVersion Include="VideoLAN.LibVLC.Windows" Version="3.0.24" />
-  </ItemGroup>
-  <!-- ── WebView2 ────────────────────────────────────────────────────────── -->
-  <ItemGroup>
-    <PackageVersion Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
-  </ItemGroup>
-  <!-- ── Avalonia ─────────────────────────────────────────────────────────── -->
+  <!-- ── Avalonia (RealmForge only) ───────────────────────────────────────── -->
   <ItemGroup>
     <PackageVersion Include="Avalonia" Version="11.3.22" />
     <PackageVersion Include="Avalonia.AvaloniaEdit" Version="11.2.0" />

@@ -385,19 +385,6 @@
       "group": "build"
     },
     {
-      "label": "build-veldrath-client",
-      "type": "shell",
-      "command": "dotnet",
-      "args": [
-        "build",
-        "${workspaceFolder}/Veldrath.Client/Veldrath.Client.csproj",
-        "/property:GenerateFullPaths=true",
-        "/consoleloggerparameters:NoSummary"
-      ],
-      "problemMatcher": "$msCompile",
-      "group": "build"
-    },
-    {
       "label": "run-veldrath-server",
       "type": "shell",
       "command": "dotnet",
@@ -431,60 +418,12 @@
       }
     },
     {
-      "label": "run-veldrath-client",
-      "type": "shell",
-      "command": "dotnet",
-      "args": [
-        "run",
-        "--project",
-        "${workspaceFolder}/Veldrath.Client/Veldrath.Client.csproj",
-        "--no-build"
-      ],
-      "dependsOn": "build-veldrath-client",
-      "problemMatcher": "$msCompile",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": true,
-        "panel": "dedicated",
-        "clear": true
-      }
-    },
-    {
       "label": "test-veldrath-server",
       "type": "shell",
       "command": "dotnet",
       "args": [
         "test",
         "${workspaceFolder}/Veldrath.Server.Tests/Veldrath.Server.Tests.csproj",
-        "--verbosity",
-        "normal",
-        "--collect",
-        "XPlat Code Coverage",
-        "--settings",
-        "coverage.runsettings",
-        "--results-directory",
-        "${workspaceFolder}/coverage-results"
-      ],
-      "problemMatcher": "$msCompile",
-      "group": "test",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "clear": true
-      }
-    },
-    {
-      "label": "test-veldrath-client",
-      "type": "shell",
-      "command": "dotnet",
-      "args": [
-        "test",
-        "${workspaceFolder}/Veldrath.Client.Tests/Veldrath.Client.Tests.csproj",
-        "--filter",
-        "Category!=UI",
         "--verbosity",
         "normal",
         "--collect",
@@ -695,51 +634,6 @@
       "group": "test"
     },
     // ── Multi-client / Debug ─────────────────────────────────────────────────
-    {
-      "label": "run-two-veldrath-clients",
-      "type": "shell",
-      "command": "powershell",
-      "args": [
-        "-Command",
-        "Start-Process dotnet -ArgumentList 'run --project ${workspaceFolder}/Veldrath.Client/Veldrath.Client.csproj --no-build'; Start-Process dotnet -ArgumentList 'run --project ${workspaceFolder}/Veldrath.Client/Veldrath.Client.csproj --no-build'"
-      ],
-      "dependsOn": "build-veldrath-client",
-      "problemMatcher": [],
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "dedicated",
-        "clear": true
-      }
-    },
-    {
-      "label": "run-veldrath-client-debug",
-      "type": "shell",
-      "command": "dotnet",
-      "args": [
-        "run",
-        "--project",
-        "${workspaceFolder}/Veldrath.Client/Veldrath.Client.csproj",
-        "--configuration",
-        "Debug"
-      ],
-      "dependsOn": "build-veldrath-client",
-      "problemMatcher": "$msCompile",
-      "options": {
-        "env": {
-          "DOTNET_ENVIRONMENT": "Development",
-          "AVALONIA_DIAGNOSTICS": "1"
-        }
-      },
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": true,
-        "panel": "dedicated",
-        "clear": true
-      }
-    },
     // ── Docker ───────────────────────────────────────────────────────────────
     {
       "label": "docker-compose-up",

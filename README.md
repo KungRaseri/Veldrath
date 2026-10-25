@@ -35,9 +35,7 @@ RPG backend engine implementing CQRS with MediatR for clean command/query separa
 
 ### Applications
 - **Veldrath.Server** — ASP.NET Core game server with SignalR hub
-- **web/** — SvelteKit 3 app: public site, auth, game client, Foundry, editorial, admin, and moderation
-- **Veldrath.Client** — Avalonia UI desktop client with ReactiveUI (hosts the Svelte game UI via WebView2)
-- **Veldrath.GameClient.Core** — shared client-side connection state, payloads, and hub services
+- **web/** — SvelteKit 3 app and the **only game client**: public site, auth, game, Foundry, editorial, admin, and moderation (web-first since the Avalonia desktop client was retired)
 - **RealmForge** — Avalonia UI tool for editing game content stored in PostgreSQL
 
 Code is organized by business feature (Features/Combat, Features/Inventory, etc.) with automatic validation and logging via MediatR pipeline behaviors.
@@ -119,12 +117,9 @@ Comprehensive test suite across 9 .NET test projects plus the SvelteKit web suit
 | `RealmEngine.Data.Tests` | Repository/persistence and content validation |
 | `RealmEngine.Shared.Tests` | Models, utilities, services |
 | `RealmForge.Tests` | RealmForge UI and service logic |
-| `Veldrath.Client.Tests` | Client ViewModels, services, navigation, DesktopUiServer |
 | `Veldrath.Server.Tests` | Server endpoints, game hub, services |
 | `Veldrath.Discord.Tests` | Discord bot modules and embeds |
-| `Veldrath.Auth.Tests` | Shared auth libraries |
 | `Veldrath.Assets.Tests` | Asset store and manifests |
-| `Veldrath.GameClient.Core.Tests` | Shared client core services |
 
 The SvelteKit app is tested separately with Vitest and Playwright in `web/client`.
 
@@ -166,15 +161,12 @@ RealmEngine/
 ├── RealmEngine.Data/                 # EF Core persistence and content repositories
 ├── RealmEngine.Shared/               # Shared models and utilities
 ├── Veldrath.Server/                  # ASP.NET Core game server
-├── Veldrath.Client/                  # Avalonia desktop client (WebView2 Svelte shell)
 ├── RealmForge/                       # PostgreSQL content editor (Avalonia)
 ├── Veldrath.Discord/                 # Discord bot
-├── Veldrath.Auth/                    # Shared auth libraries
 ├── Veldrath.Contracts/               # Shared DTOs and contracts
 ├── Veldrath.Assets/                  # Asset store and manifests
-├── Veldrath.GameClient.Core/         # Shared client-side game logic
-├── web/                              # SvelteKit web app
-└── [Project].Tests/                  # 10 .NET test projects (+ web Vitest/Playwright suites)
+├── web/                              # SvelteKit app — the only game client
+└── [Project].Tests/                  # 8 .NET test projects (+ web Vitest/Playwright suites)
 ```
 
 ## Solution Files
@@ -183,10 +175,8 @@ RealmEngine/
 |----------|-------------------|---------|
 | `RealmEngine.slnx` | Core libraries + tests | Engine development, CI |
 | `Veldrath.Server.slnx` | Server + engine + contracts + tests | Server development |
-| `Veldrath.Client.slnx` | Client + engine + auth + assets + tests | Desktop client development |
-| `Veldrath.Libraries.slnx` | Auth + Assets + Contracts + GameClient + engine + tests | Shared library development |
+| `Veldrath.Libraries.slnx` | Assets + Contracts + engine + tests | Shared library development |
 | `Veldrath.Discord.slnx` | Discord bot + engine + contracts + tests | Bot development |
-| `Veldrath.slnx` | Client + Server + GameClient + tests | Multiplayer development |
 | `RealmForge.slnx` | RealmForge + tests | Tooling development |
 | `Realm.Full.slnx` | Everything | Local full-stack development |
 
@@ -199,7 +189,7 @@ Latest releases are published automatically on each merge to `main` and are avai
 | **Engine Libraries** | `engine/v*` | `RealmEngine-Libraries-{version}.zip` |
 | **RealmForge** | `tooling/v*` | `RealmForge-Windows-{version}.zip` |
 | **Veldrath Server** | `server/v*` | `Veldrath-Server-{version}.zip` |
-| **Veldrath Client** | `client/v*` | `Veldrath-Client-Windows-{version}.zip` · `Veldrath-Client-Linux-{version}.zip` · `Veldrath-Client-macOS-x64-{version}.zip` · `Veldrath-Client-macOS-arm64-{version}.zip` |
+| **Veldrath Discord Bot** | `discord/v*` | `Veldrath-Discord-{version}.zip` |
 
 ## Documentation
 

@@ -1,6 +1,6 @@
 # Testing Conventions
 
-Scope: **ALL 9 .NET test projects** in the solution — [`RealmEngine.Core.Tests`](../../RealmEngine.Core.Tests/), [`RealmEngine.Shared.Tests`](../../RealmEngine.Shared.Tests/), [`RealmEngine.Data.Tests`](../../RealmEngine.Data.Tests/), [`Veldrath.Server.Tests`](../../Veldrath.Server.Tests/), [`Veldrath.Client.Tests`](../../Veldrath.Client.Tests/), [`Veldrath.GameClient.Core.Tests`](../../Veldrath.GameClient.Core.Tests/), [`Veldrath.Auth.Tests`](../../Veldrath.Auth.Tests/), [`Veldrath.Assets.Tests`](../../Veldrath.Assets.Tests/), [`Veldrath.Discord.Tests`](../../Veldrath.Discord.Tests/), and [`RealmForge.Tests`](../../RealmForge.Tests/). The SvelteKit app is tested with Vitest + Playwright in `web/client`.
+Scope: **ALL 8 .NET test projects** in the solution — [`RealmEngine.Core.Tests`](../../RealmEngine.Core.Tests/), [`RealmEngine.Shared.Tests`](../../RealmEngine.Shared.Tests/), [`RealmEngine.Data.Tests`](../../RealmEngine.Data.Tests/), [`Veldrath.Server.Tests`](../../Veldrath.Server.Tests/), [`Veldrath.Assets.Tests`](../../Veldrath.Assets.Tests/), [`Veldrath.Discord.Tests`](../../Veldrath.Discord.Tests/), and [`RealmForge.Tests`](../../RealmForge.Tests/). The SvelteKit app is tested with Vitest + Playwright in `web/client`.
 
 This file covers every test surface type in the solution: EF Core data tests, MediatR handler tests, Avalonia UI tests, SignalR hub integration tests, and code coverage configuration.
 
@@ -224,7 +224,7 @@ public async Task AttackEnemyValidator_WithDeadPlayer_ReturnsError()
 
 ## Avalonia / UI Testing
 
-Applies to: [`Veldrath.Client.Tests`](../../Veldrath.Client.Tests/), [`RealmForge.Tests`](../../RealmForge.Tests/).
+Applies to: [`RealmForge.Tests`](../../RealmForge.Tests/).
 
 ### Thread Affinity (Critical)
 
@@ -351,7 +351,7 @@ Apply `[ExcludeFromCodeCoverage]` to:
 - **Entry points** — `Program` classes (minimal API / ASP.NET Core startup)
 - **App bootstrappers** — Avalonia `App` classes
 - **Compiled XAML resources** — `.axaml` / `.xaml` code-behind files
-- **Thin infrastructure wrappers** — `HubConnectionFactory`, `HubConnectionWrapper` in [`Veldrath.Client`](../../Veldrath.Client/)
+- **Thin infrastructure wrappers** — trivial pass-through services around framework types
 
 ### Test Project Assemblies
 

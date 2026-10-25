@@ -1,11 +1,11 @@
 ---
 name: run-all-tests
-description: Run the complete RealmEngine/Veldrath test suite (~4,850 .NET tests across 10 test projects, plus the web Vitest/Playwright suites) with XPlat Code Coverage collection. Use when you need to verify all tests pass before committing or merging.
+description: Run the complete RealmEngine/Veldrath test suite (~3,870 .NET tests across 7 test projects, plus the web Vitest/Playwright suites) with XPlat Code Coverage collection. Use when you need to verify all tests pass before committing or merging.
 ---
 
 # Skill: run-all-tests
 
-Run all tests across the entire RealmEngine/Veldrath monorepo (~4,850 .NET tests in 10 test projects) with code coverage collection, then the web suites.
+Run all tests across the entire RealmEngine/Veldrath monorepo (~3,870 .NET tests in 7 test projects) with code coverage collection, then the web suites.
 
 ## Usage
 
@@ -34,11 +34,11 @@ Invoke this skill when you need to:
    dotnet test Realm.Full.slnx --collect "XPlat Code Coverage" --settings coverage.runsettings
    ```
 
-   This runs tests from all 10 .NET test projects and collects coverage data per component.
+   This runs tests from all 7 .NET test projects and collects coverage data per component.
 
 3. **Review results:**
    - Test results stream to the console in real time.
-   - A summary line in each project shows: `Passed! - Failed: 0, Passed: <n>, Skipped: 0, Total: <n>`; the suite total is ~4,850.
+   - A summary line in each project shows: `Passed! - Failed: 0, Passed: <n>, Skipped: 0, Total: <n>`; the suite total is ~3,870.
    - Coverage results are written to `TestResults/` directories under each test project. The `coverage.runsettings` file controls which assemblies and methods are included/excluded.
 
 ## Test Project Breakdown
@@ -49,12 +49,10 @@ Invoke this skill when you need to:
 | `RealmEngine.Shared.Tests` | Shared model/utility tests | `engine` |
 | `RealmEngine.Data.Tests` | Repository/persistence tests | `engine` |
 | `Veldrath.Server.Tests` | Server integration tests | `server` |
-| `Veldrath.Client.Tests` | Client UI + DesktopUiServer tests (Avalonia headless) | `client` |
 | `RealmForge.Tests` | Forge editor tests | `forge` |
 | `Veldrath.Discord.Tests` | Discord bot tests | `discord` |
 | `Veldrath.Auth.Tests` | Auth library tests | — |
 | `Veldrath.Assets.Tests` | Asset management tests | — |
-| `Veldrath.GameClient.Core.Tests` | Shared client core tests | `client` |
 
 The SvelteKit web suite runs with `npm run test` from `web/` (Vitest + Playwright, `web` coverage flag).
 

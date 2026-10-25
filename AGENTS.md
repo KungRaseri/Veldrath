@@ -40,16 +40,14 @@
 
 **RealmEngine** is a **framework-agnostic .NET 10 RPG game logic library**. It exposes all game operations as MediatR commands and queries — any .NET application (Avalonia, Godot via GDNative, Unity, ASP.NET Core, console, etc.) can consume it by calling `mediator.Send(command)`.
 
-This repository also contains the **official game built on top of that engine**: **Veldrath**, a multiplayer RPG with an Avalonia desktop client, an ASP.NET Core server, and a SvelteKit web app. Additional tooling and portals include:
+This repository also contains the **official game built on top of that engine**: **Veldrath**, a multiplayer RPG with an ASP.NET Core server and a SvelteKit web app. **Veldrath is web-first: the SvelteKit app is the only game client** (the Avalonia desktop shell was retired — see [`plans/blazor-decommission-and-cleanup.md`](plans/blazor-decommission-and-cleanup.md)). Additional tooling and portals include:
 
 - **RealmForge** — Avalonia DB content editor for managing game entities in Postgres
-- **SvelteKit web app** (`web/`) — the single web frontend: public site, auth, game client, Foundry, editorial, admin, and moderation
-- **Veldrath.GameClient.Core** — Shared client-side game logic library (connection state, payloads, hub services)
+- **SvelteKit web app** (`web/`) — the single client and web frontend: public site, auth, game, Foundry, editorial, admin, and moderation
 - **Veldrath.Discord** — Discord bot integration
-- **Veldrath.Auth** — Shared authentication libraries (OAuth, JWT)
 - **Veldrath.Contracts** — Shared API contracts and DTOs
 - **Veldrath.Assets** — Asset store and management
-- **RealmUI.Fonts** — Custom font resources
+- **RealmUI.Fonts** — Custom font resources (RealmForge only)
 
 ---
 
@@ -59,12 +57,10 @@ This repository also contains the **official game built on top of that engine**:
 
 | Solution | Contains | Use For |
 |----------|----------|---------|
-| [`RealmEngine.slnx`](RealmEngine.slnx) | Core + Data + Shared + GameClient.Core + tests | Engine-only development, CI |
-| [`Veldrath.Client.slnx`](Veldrath.Client.slnx) | Client + engine + auth + assets + GameClient + fonts + tests | Desktop client development |
+| [`RealmEngine.slnx`](RealmEngine.slnx) | Core + Data + Shared + tests | Engine-only development, CI |
 | [`Veldrath.Server.slnx`](Veldrath.Server.slnx) | Server + engine + assets + contracts + tests | Game server development |
 | [`Veldrath.Discord.slnx`](Veldrath.Discord.slnx) | Discord + engine + contracts + tests | Discord bot development |
-| [`Veldrath.Libraries.slnx`](Veldrath.Libraries.slnx) | Auth + Assets + Contracts + GameClient + fonts + engine + tests | Shared library development |
-| [`Veldrath.slnx`](Veldrath.slnx) | Client + Server + GameClient.Core + tests | Multiplayer development |
+| [`Veldrath.Libraries.slnx`](Veldrath.Libraries.slnx) | Assets + Contracts + fonts + engine + tests | Shared library development |
 | [`RealmForge.slnx`](RealmForge.slnx) | RealmForge + tests | Tooling development |
 | [`Realm.Full.slnx`](Realm.Full.slnx) | Everything (.NET) | Full .NET local development |
 
@@ -78,11 +74,8 @@ The SvelteKit app in [`web/`](web/) is verified with npm scripts rather than a `
 ├── RealmEngine.Shared/           # Models, interfaces, abstractions (zero UI dependencies)
 ├── RealmEngine.Data/             # EF Core persistence, repositories (zero UI dependencies)
 ├── Veldrath.Server/              # ASP.NET Core game server with SignalR hub
-├── Veldrath.Client/              # Avalonia cross-platform desktop client (ReactiveUI + WebView2 Svelte shell)
-├── Veldrath.GameClient.Core/     # Shared client-side logic: connection state, payloads, hub services
 ├── RealmForge/                   # Avalonia DB content editor (ReactiveUI)
 ├── Veldrath.Discord/             # Discord bot
-├── Veldrath.Auth/                # Auth libraries (OAuth, JWT)
 ├── Veldrath.Contracts/           # Shared API contracts and DTOs
 ├── Veldrath.Assets/              # Asset store/management
 ├── RealmUI.Fonts/                # Custom fonts
@@ -112,7 +105,6 @@ Version metadata lives in [`versions/`](versions/):
 | [`versions/engine.props`](versions/engine.props) | RealmEngine.Core, Shared, Data |
 | [`versions/tooling.props`](versions/tooling.props) | RealmForge |
 | [`versions/server.props`](versions/server.props) | Veldrath.Server |
-| [`versions/client.props`](versions/client.props) | Veldrath.Client |
 | [`versions/discord.props`](versions/discord.props) | Veldrath.Discord |
 | [`versions/assets.props`](versions/assets.props) | Veldrath.Assets |
 
@@ -136,10 +128,9 @@ SignalR hubs in [`Veldrath.Server`](Veldrath.Server/) are thin adapters: `Signal
 
 The engine is UI-agnostic by design: any .NET consumer calls `await mediator.Send(new SomeGameCommand { ... })` and receives a typed DTO with the outcome.
 
-### Shared Client Architecture
+### Client Architecture
 
-- [`Veldrath.GameClient.Core/`](Veldrath.GameClient.Core/) — Framework-agnostic .NET client logic: `IGameHubConnectionService`, `IGameStateService`, connection state model, and typed payloads
-- [`web/client/src/lib/game/`](web/client/src/lib/game/) — Svelte game shell, `GameSession` runes store, `CardinalGraphLayout` port, and hub payload types
+The game client is the SvelteKit app. [`web/client/src/lib/game/`](web/client/src/lib/game/) holds the game shell, the `GameSession` runes store, the `CardinalGraphLayout` port, and the hub payload types. [`payload-contract.test.ts`](web/client/src/lib/game/payload-contract.test.ts) parses the payloads `Veldrath.Server/Hubs/GameHub.cs` broadcasts and fails when `types.ts` drifts.
 
 ### Web App (SvelteKit)
 
@@ -183,8 +174,8 @@ All package versions are centrally managed in [`Directory.Packages.props`](Direc
 | MediatR | 12.5.0 | CQRS command/query dispatch |
 | FluentValidation | 12.1.1 | Input validation pipeline behavior |
 | Serilog | 4.4.0 | Structured logging pipeline behavior |
-| Avalonia | 11.2.3 | UI framework (Veldrath.Client, RealmForge) |
-| ReactiveUI | 20.1.1 | MVVM for Avalonia projects |
+| Avalonia | 11.2.3 | UI framework (RealmForge only) |
+| ReactiveUI | 20.1.1 | MVVM for RealmForge |
 | SvelteKit / Svelte | 3.x / 5 | Web app framework with runes (`web/`, Vite 8) |
 | Tailwind CSS + Skeleton | 4.x / 5 | Styling and UI utilities (`web/`) |
 | ASP.NET Core + SignalR | .NET 10 | Veldrath.Server API and hub |
@@ -206,11 +197,10 @@ Build only what changed. The rule is simple: **build the `.slnx` file matching t
 |---|---|
 | `RealmEngine.*/**` | `dotnet build RealmEngine.slnx` |
 | `RealmForge/**` | `dotnet build RealmForge.slnx` |
-| `Veldrath.Client/**` | `dotnet build Veldrath.Client.slnx` (run `cd web && npm run build:desktop` first to bundle the Svelte UI) |
 | `Veldrath.Server/**` | `dotnet build Veldrath.Server.slnx` |
 | `Veldrath.Discord/**` | `dotnet build Veldrath.Discord.slnx` |
-| `Veldrath.Auth/**`, `Veldrath.Assets/**`, `Veldrath.Contracts/**` | `dotnet build Veldrath.Libraries.slnx` |
-| `web/**` | `cd web && npm run typecheck && npm run lint && npm run test && npm run build` (add `npm run build:desktop` for the desktop WebView shell) |
+| `Veldrath.Assets/**`, `Veldrath.Contracts/**` | `dotnet build Veldrath.Libraries.slnx` |
+| `web/**` | `cd web && npm run typecheck && npm run lint && npm run test && npm run build` |
 | Cross-component / `Directory.Build.*` | `dotnet build Realm.Full.slnx` |
 
 > **When NOT to build:** The Vite dev server hot-reloads Svelte and CSS changes. Skip full rebuilds for `.css`, `.js`, `.md`, and non-embedded `.json` changes.
@@ -219,14 +209,13 @@ Build only what changed. The rule is simple: **build the `.slnx` file matching t
 
 ```powershell
 dotnet build Realm.Full.slnx    # Full build (all .NET projects)
-dotnet test Realm.Full.slnx     # All tests across the 10 .NET test projects (with coverage)
+dotnet test Realm.Full.slnx     # All tests across the 8 .NET test projects (with coverage)
 ```
 
 ### Running Projects
 
 ```powershell
 dotnet run --project Veldrath.Server
-dotnet run --project Veldrath.Client
 dotnet run --project RealmForge
 cd web && npm run dev            # SvelteKit web app → http://localhost:5173
 ```
@@ -240,12 +229,12 @@ CI workflows live in [`.github/workflows/`](.github/workflows/). Coverage is upl
 | Workflow | Component | Coverage Flag |
 |---|---|---|
 | [`ci-engine.yml`](.github/workflows/ci-engine.yml) | Core + Shared + Data | `engine` |
-| [`ci-client.yml`](.github/workflows/ci-client.yml) | Veldrath.Client | `client` |
 | [`ci-server.yml`](.github/workflows/ci-server.yml) | Veldrath.Server | `server` |
 | [`ci-tooling.yml`](.github/workflows/ci-tooling.yml) | RealmForge | `forge` |
 | [`ci-discord.yml`](.github/workflows/ci-discord.yml) | Veldrath.Discord | `discord` |
 | [`ci-web.yml`](.github/workflows/ci-web.yml) | SvelteKit web | `web` |
 | [`docs.yml`](.github/workflows/docs.yml) | DocFX documentation build & deploy | — |
+| [`repo-hygiene.yml`](.github/workflows/repo-hygiene.yml) | Markdown relative-link check | — |
 | [`release.yml`](.github/workflows/release.yml) | Release tagging and publishing | — |
 | [`sonarcloud.yml`](.github/workflows/sonarcloud.yml) | SonarCloud static analysis | — |
 
@@ -317,11 +306,11 @@ Do **not** create new memory files unless the existing 8 files are insufficient.
 | CQRS | MediatR `IRequest<TResponse>` records |
 | Validation | FluentValidation pipeline behavior |
 | Logging | Serilog pipeline behavior |
-| Desktop UI | Avalonia + ReactiveUI (MVVM), WebView2 hosts the Svelte desktop build |
+| Tooling UI | Avalonia + ReactiveUI (RealmForge) |
 | Web UI | SvelteKit 3 + Svelte 5 runes + Tailwind/Skeleton (Veldrath tokens only) |
-| Web auth/DB | Better Auth + Drizzle (schema in `web/shared`, migrations committed) |
-| Client Core | Veldrath.GameClient.Core (framework-agnostic .NET payloads and services) |
-| Testing | xUnit + FluentAssertions (server/desktop); Vitest + Playwright (web, run from `web/`) |
+| Web auth/DB | Better Auth owns credentials/sessions; Drizzle schema in `web/shared`, migrations committed |
+| Game client | The SvelteKit app only (web-first) |
+| Testing | xUnit + FluentAssertions (.NET); Vitest + Playwright (web, run from `web/`) |
 | Mocks | Prefer `FakeXxx` stubs; Moq/NSubstitute as fallback |
 | Database | EF Core (Postgres production, SQLite/InMemory for tests) |
 | Documentation | XML doc comments (CS1591 = error), DocFX → GitHub Pages |

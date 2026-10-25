@@ -33,15 +33,13 @@ Build the matching solution first, then run the tests. See [`.github/instruction
 
 | Component | Build Command | Test Command | Notes |
 |-----------|--------------|-------------|-------|
-| `engine` | `dotnet build RealmEngine.slnx` | `dotnet test RealmEngine.slnx` | Core + Shared + Data + GameClient.Core tests; 4 test projects |
+| `engine` | `dotnet build RealmEngine.slnx` | `dotnet test RealmEngine.slnx` | Core + Shared + Data tests |
 | `server` | `dotnet build Veldrath.Server.slnx` | `dotnet test Veldrath.Server.slnx` | Server + engine + assets tests |
-| `client` | `dotnet build Veldrath.Client.slnx` | `dotnet test Veldrath.Client.slnx --filter "Category!=UI"` | Client + engine + auth + assets + GameClient tests; skips UI tests needing a display |
 | `forge` | `dotnet build RealmForge.slnx` | `dotnet test RealmForge.slnx --filter "Category!=UI"` | Forge editor tests; skips UI tests needing a display |
 | `discord` | `dotnet build Veldrath.Discord.slnx` | `dotnet test Veldrath.Discord.slnx` | Discord bot + engine tests |
-| `web` | — | `npm run test` in `web/client` | SvelteKit Vitest + Playwright tests |
-| `auth` | `dotnet build Veldrath.Libraries.slnx` | `dotnet test Veldrath.Libraries.slnx --filter "FullyQualifiedName~Veldrath.Auth"` | Auth library tests only |
+| `web` | — | `npm run test` in `web/` | SvelteKit Vitest + Playwright tests (the game client) |
 | `assets` | `dotnet build Veldrath.Libraries.slnx` | `dotnet test Veldrath.Libraries.slnx --filter "FullyQualifiedName~Veldrath.Assets"` | Asset management tests only |
-| `libraries` | `dotnet build Veldrath.Libraries.slnx` | `dotnet test Veldrath.Libraries.slnx` | Auth + Assets + GameClient.Core + engine tests |
+| `libraries` | `dotnet build Veldrath.Libraries.slnx` | `dotnet test Veldrath.Libraries.slnx` | Assets + engine tests |
 
 ## Steps
 
