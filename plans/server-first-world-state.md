@@ -206,6 +206,15 @@ Concretely:
 - No new `??` content defaults in the server. The existing "no content" paths get a test that asserts the
   error is logged.
 
+**D5 shipped this as three pieces.** `ContentReferenceRules` holds the pure checks (spawn pools, quest objectives,
+map edges) so they are unit-testable and Milestone B can reuse them;
+[`ContentAuditService`](../Veldrath.Server/Features/Content/ContentAuditService.cs) runs them once at startup against
+`ContentDbContext` and logs one summary plus one `Error` per finding, and can never block the host. On the play path,
+`ActorPoolResolver` no longer falls back to a `"common"` archetype — a location with no pool spawns nothing (that is
+authored content), while a pool naming an unknown slug logs `Error` and spawns nothing for it. Both location-entry
+paths now return `ContentWarnings`, which the hub forwards as `SystemMessage`, so the player is told rather than left
+with a silently empty map.
+
 ## 5. Phases
 
 | Phase | Work | Done when |
