@@ -22,6 +22,11 @@ on:
 env:
   IMAGE_NAME: veldrath-web
 
+# Least privilege for the whole workflow: the build/test jobs only read the repository.
+# The `package` job raises this to `packages: write` for its own GHCR push.
+permissions:
+  contents: read
+
 jobs:
   build-test:
     name: Build and Test SvelteKit Web
