@@ -220,10 +220,45 @@ export interface ShopCatalogPayload {
 	catalog: ShopCatalogItem[];
 }
 
+export interface QuestObjective {
+	key: string;
+	current: number;
+	required: number;
+	complete: boolean;
+}
+
 export interface QuestLogEntry {
 	slug: string;
 	title: string;
+	description: string;
 	status: string;
+	goldReward: number;
+	xpReward: number;
+	canTurnIn: boolean;
+	objectives: QuestObjective[];
+}
+
+export interface AvailableQuest {
+	slug: string;
+	title: string;
+	description: string;
+	goldReward: number;
+	xpReward: number;
+	objectives: string[];
+}
+
+export interface QuestLogReceivedPayload {
+	characterId?: string;
+	quests?: QuestLogEntry[] | null;
+	available?: AvailableQuest[] | null;
+}
+
+export interface QuestTurnedInPayload {
+	characterId?: string;
+	slug: string;
+	goldReward: number;
+	xpReward: number;
+	quests?: QuestLogEntry[] | null;
 }
 
 export interface SpawnedEnemy {

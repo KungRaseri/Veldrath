@@ -12,6 +12,7 @@ import {
 import type {
 	AbilityUsedPayload,
 	AreaSearchedPayload,
+	AvailableQuest,
 	CharacterRestedPayload,
 	CharacterAttributes,
 	CharacterSelectedPayload,
@@ -33,6 +34,8 @@ import type {
 	PlayerEnteredPayload,
 	PlayerLeftPayload,
 	QuestLogEntry,
+	QuestLogReceivedPayload,
+	QuestTurnedInPayload,
 	ServerInfoPayload,
 	ShopCatalogItem,
 	ShopCatalogPayload,
@@ -89,6 +92,7 @@ export class GameSession {
 	groundItems = $state<GroundItem[]>([]);
 	equipped = $state<Record<string, InventoryItem>>({});
 	quests = $state<QuestLogEntry[]>([]);
+	availableQuests = $state<AvailableQuest[]>([]);
 	shopCatalog = $state<ShopCatalogItem[]>([]);
 	shopZone = $state<string | null>(null);
 	chat = $state<ChatMessage[]>([]);
@@ -302,6 +306,27 @@ export class GameSession {
 		if (!this.hub) return;
 		this.error = null;
 		await this.hub.invoke('UseAbility', abilityId);
+	}
+
+	/** Accepts a catalog quest into the journal. */
+	async acceptQuest(slug: string): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('AcceptQuest', slug);
+	}
+
+	/** Abandons an active quest. */
+	async abandonQuest(slug: string): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('AbandonQuest', slug);
+	}
+
+	/** Turns in a quest whose objectives are complete. */
+	async turnInQuest(slug: string): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('TurnInQuest', slug);
 	}
 
 	async loadQuests(): Promise<void> {
@@ -691,8 +716,21 @@ export class GameSession {
 			);
 		});
 
-		hub.on('QuestLogReceived', (payload: QuestLogEntry[] | { quests?: QuestLogEntry[] }) => {
-			this.quests = Array.isArray(payload) ? payload : (payload.quests ?? []);
+		hub.on('QuestLogReceived', (payload: QuestLogReceivedPayload | QuestLogEntry[]) => {
+			if (Array.isArray(payload)) {
+				this.quests = payload;
+				return;
+			}
+
+			this.quests = payload.quests ?? this.quests;
+			if (payload.available) this.availableQuests = payload.available;
+		});
+
+		hub.on('QuestTurnedIn', (payload: QuestTurnedInPayload) => {
+			this.quests = payload.quests ?? this.quests;
+			this.addSystemMessage(
+				`Quest complete: ${payload.slug} (+${payload.goldReward} gold, +${payload.xpReward} XP).`
+			);
 		});
 
 		hub.on('AreaSearched', (payload: AreaSearchedPayload) => {

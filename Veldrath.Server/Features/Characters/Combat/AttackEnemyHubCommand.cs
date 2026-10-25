@@ -34,6 +34,9 @@ public record AttackEnemyHubResult
     /// <summary>Gets whether the enemy was defeated this turn.</summary>
     public bool EnemyDefeated { get; init; }
 
+    /// <summary>Gets the defeated enemy's display name, used to advance kill objectives.</summary>
+    public string? EnemyName { get; init; }
+
     /// <summary>Gets the damage dealt by the enemy counter-attack (0 if enemy was defeated).</summary>
     public int EnemyDamage { get; init; }
 
@@ -156,6 +159,7 @@ public class AttackEnemyHubCommandHandler
                 PlayerDamage = playerDamage,
                 EnemyRemainingHealth = 0,
                 EnemyDefeated = true,
+                EnemyName = enemy.Name,
                 PlayerRemainingHealth = player.Health,
                 XpEarned = myReward.Xp,
                 GoldEarned = myReward.Gold,
@@ -187,6 +191,7 @@ public class AttackEnemyHubCommandHandler
             PlayerDamage = playerDamage,
             EnemyRemainingHealth = enemyRemainingHealth,
             EnemyDefeated = false,
+            EnemyName = enemy.Name,
             EnemyDamage = enemyDamage,
             EnemyAbilityUsed = abilityName,
             PlayerRemainingHealth = player.Health,

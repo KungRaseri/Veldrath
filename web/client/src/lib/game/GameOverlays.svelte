@@ -106,22 +106,86 @@
 				</Dialog.Close>
 			</header>
 			<Dialog.Description class="text-xs text-surface-600-400">
-				Active and completed quests tracked by the server.
+				Turn a completed quest in for its reward, or take on something new.
 			</Dialog.Description>
 
 			{#if session.quests.length === 0}
 				<p class="mt-3 text-sm text-surface-600-400">No quests yet.</p>
 			{:else}
-				<ul class="mt-3 space-y-1">
+				<ul class="mt-3 space-y-2">
 					{#each session.quests as quest (quest.slug)}
-						<li
-							class="flex items-center justify-between gap-2 rounded border border-surface-800 p-2 text-sm"
-						>
-							<span>{quest.title}</span>
-							<span class="chip preset-tonal-surface text-xs">{quest.status}</span>
+						<li class="space-y-1 rounded border border-surface-800 p-2 text-sm">
+							<div class="flex items-center justify-between gap-2">
+								<span class="font-semibold">{quest.title}</span>
+								<span class="chip preset-tonal-surface text-xs">{quest.status}</span>
+							</div>
+							{#if quest.description}
+								<p class="text-xs text-surface-600-400">{quest.description}</p>
+							{/if}
+							<ul class="space-y-0.5">
+								{#each quest.objectives as objective (objective.key)}
+									<li class="flex items-center justify-between gap-2 text-xs">
+										<span class={objective.complete ? 'text-success-500' : 'text-surface-600-400'}>
+											{objective.key.replaceAll(':', ' · ').replaceAll('-', ' ')}
+										</span>
+										<span class="text-mono">{objective.current}/{objective.required}</span>
+									</li>
+								{/each}
+							</ul>
+							<div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+								<span class="text-xs text-surface-600-400">
+									Reward: {quest.goldReward} g · {quest.xpReward} XP
+								</span>
+								<span class="flex gap-1">
+									{#if quest.status === 'Active'}
+										<button
+											class="btn preset-tonal-surface px-2 py-1 text-xs"
+											type="button"
+											onclick={() => session.abandonQuest(quest.slug)}
+										>
+											Abandon
+										</button>
+										<button
+											class="btn preset-filled-primary-500 px-2 py-1 text-xs"
+											type="button"
+											disabled={!quest.canTurnIn}
+											onclick={() => session.turnInQuest(quest.slug)}
+										>
+											Turn in
+										</button>
+									{/if}
+								</span>
+							</div>
 						</li>
 					{/each}
 				</ul>
+			{/if}
+
+			{#if session.availableQuests.length > 0}
+				<div class="mt-4 space-y-2 border-t border-surface-800 pt-3">
+					<h3 class="text-xs tracking-wide text-surface-600-400 uppercase">Available</h3>
+					<ul class="space-y-1">
+						{#each session.availableQuests as quest (quest.slug)}
+							<li
+								class="flex items-center justify-between gap-2 rounded border border-surface-800 p-2 text-sm"
+							>
+								<span class="min-w-0">
+									<span class="block truncate font-semibold">{quest.title}</span>
+									<span class="block text-xs text-surface-600-400">
+										{quest.goldReward} g · {quest.xpReward} XP
+									</span>
+								</span>
+								<button
+									class="btn preset-tonal-surface px-2 py-1 text-xs"
+									type="button"
+									onclick={() => session.acceptQuest(quest.slug)}
+								>
+									Accept
+								</button>
+							</li>
+						{/each}
+					</ul>
+				</div>
 			{/if}
 		</Dialog.Content>
 	</Dialog.Portal>
