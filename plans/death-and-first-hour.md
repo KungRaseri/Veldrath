@@ -3,8 +3,9 @@
 > **Position in the roadmap:** D → C → **A** → B.
 > Death consequences ride on D (respawn location and combat end state are world state) and C (a party wiping
 > together is a different experience from a solo death).
-> **Tracker:** epic #38 — A1 #44 (gold-first death cost), A2 #45 (safe respawn + sickness), A3 #46 (tutorial),
-> A4 #47 (quest HUD), A5 #48 (objective kinds), A6 #49 (hardcore memorial + leaderboard).
+> **Tracker:** epic #38 — **all six phases shipped and closed**: A1 #44 (gold-first death cost, `b9d74bb5`),
+> A2 #45 (safe respawn + sickness, `629a19c9`), A3 #46 (tutorial, `903fe40e`), A4 #47 (quest HUD, `1e25e000`),
+> A5 #48 (objective kinds, `1d13d505`), A6 #49 (hardcore memorial + leaderboard, `36848c72`).
 
 ---
 
