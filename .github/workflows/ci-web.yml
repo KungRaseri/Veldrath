@@ -147,7 +147,8 @@ jobs:
     env:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://127.0.0.1:9000
-      DOTNET_VERSION: '10.0.x'
+      # Pinned SDK: '10.0.x' resolved to 10.0.403, which dotnet-install could not find.
+      DOTNET_VERSION: '10.0.402'
       CI: 'true'
       # SvelteKit (SSR + Better Auth)
       DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/veldrath

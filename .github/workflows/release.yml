@@ -24,9 +24,6 @@ on:
         description: 'Release tag to publish (e.g. engine/v1.2.3)'
         required: true
 
-env:
-  DOTNET_VERSION: '10.0.x'
-
 jobs:
   release:
     name: Create Release
