@@ -55,7 +55,7 @@ Each context has its own migration directory:
 | [`ApplicationDbContext`](../../Veldrath.Server/Data/ApplicationDbContext.cs) | [`Veldrath.Server/Migrations/`](../../Veldrath.Server/Migrations/) | [`ApplicationDbContextFactory`](../../Veldrath.Server/Data/ApplicationDbContextFactory.cs) |
 | [`GameDbContext`](../../RealmEngine.Data/Persistence/GameDbContext.cs) | [`RealmEngine.Data/Migrations/GameDb/`](../../RealmEngine.Data/Migrations/GameDb/) | [`GameDbContextFactory`](../../RealmEngine.Data/GameDbContextFactory.cs) |
 | [`ContentDbContext`](../../RealmEngine.Data/Persistence/ContentDbContext.cs) | [`RealmEngine.Data/Migrations/`](../../RealmEngine.Data/Migrations/) | [`ContentDbContextFactory`](../../RealmEngine.Data/ContentDbContextFactory.cs) |
-| [`EditorialDbContext`](../../Veldrath.Server/Data/EditorialDbContext.cs) | [`Veldrath.Server/Migrations/Editorial/`](../../Veldrath.Server/Migrations/Editorial/) | *Shares ApplicationDbContextFactory pattern* |
+| [`EditorialDbContext`](../../Veldrath.Server/Data/EditorialDbContext.cs) | [`Veldrath.Server/Migrations/`](../../Veldrath.Server/Migrations/) (separate history table) | *Shares ApplicationDbContextFactory pattern* |
 
 ### Creating a Migration
 
@@ -266,7 +266,7 @@ public static class QuestsSeeder
 2. **Use Bogus** for procedural generation where appropriate (names, descriptions, randomized stats).
 3. **Seeding order matters** — entities with foreign key dependencies must be seeded before their dependents. Content seeders are called in dependency order during startup.
 4. **One seeder per entity type** — don't mix Item and Quest seeding in the same file.
-5. **Seeders are called during server startup** via [`CatalogInitializationService`](../../Veldrath.Server/Services/CatalogInitializationService.cs).
+5. **Seeders are called during server startup** via [`CatalogInitializationService`](../../RealmEngine.Core/Features/Progression/Services/CatalogInitializationService.cs).
 
 ---
 

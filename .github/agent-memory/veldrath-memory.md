@@ -4,11 +4,16 @@
 
 ---
 
-## CRITICAL — CSS/Styling Rule for Veldrath Web/Client
+## CRITICAL — CSS/Styling Rule for the web and desktop surfaces
 
-**Before writing ANY CSS** (custom properties, modifying `.css` files, or adding CSS classes to Razor markup), **ALWAYS first read** [`.github/instructions/styling-and-css.md`](../instructions/styling-and-css.md). MudBlazor CSS utility classes (`d-flex`, `flex-column`, `flex-1`, `overflow-hidden`, `gap-*`, `pa-*`, etc.) MUST be used instead of equivalent raw CSS properties. Only use custom CSS for VDS-specific properties (colors, fonts, borders, animations, shadows) that have no MudBlazor utility equivalent.
+**Before writing ANY CSS**, read [`docs/design-system.md`](../../docs/design-system.md) and, for the
+SvelteKit app, load the `web-ui` skill. The web app is SvelteKit + Tailwind + Skeleton v5 and must use
+the Veldrath design tokens in `web/client/src/routes/theme.css` and `brand.css` — no raw hex values, no
+ad-hoc component stylesheets. Avalonia surfaces (Veldrath.Client, RealmForge) use the `RealmUI.Fonts`
+resources and the token names in §8 of the design system.
 
-**Applies to**: [`Veldrath.Web`](../../Veldrath.Web/), [`Veldrath.GameClient.Components`](../../Veldrath.GameClient.Components/), [`RealmFoundry`](../../RealmFoundry/). Does **NOT apply to** Avalonia projects ([`Veldrath.Client`](../../Veldrath.Client/), [`RealmForge`](../../RealmForge/)).
+**Applies to**: [`web/client`](../../web/client), [`Veldrath.Client`](../../Veldrath.Client),
+[`RealmForge`](../../RealmForge).
 
 ---
 
@@ -772,7 +777,7 @@ Replaces `ZoneSessionRepository`. Implements all 12 interface methods.
   `obj/<project>.csproj.nuget.dgspec.json`). `docker-compose.dev.yml` **bind-mounts the host project dirs**
   (lines 78–91) — and bind mounts bypass `.dockerignore` (which *does* already exclude `**/obj/` / `**/bin/`) —
   so the Linux container consumed the Windows-generated `obj/` and tried to resolve the non-existent Windows folder.
-- **Fix**: Added repo-root [`NuGet.config`](NuGet.config) containing `<fallbackPackageFolders><clear /></fallbackPackageFolders>`.
+- **Fix**: Added repo-root [`NuGet.config`](../../NuGet.config) containing `<fallbackPackageFolders><clear /></fallbackPackageFolders>`.
   This stops the Windows-only VS fallback folder from being inherited/recorded on any OS, so the `obj/`
   artifacts that leak into the container are portable. **Do not remove the `<clear />`.**
 - **Verified**: `dotnet restore Veldrath.Server/Veldrath.Server.csproj` regenerates `obj/*.nuget.g.props` and

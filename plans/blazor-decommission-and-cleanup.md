@@ -3,7 +3,7 @@
 > **Status:** Plan / For Review
 > **Date:** 2026-10-24
 > **Scope:** finish the Blazor → SvelteKit transition and audit the repository for cleanup.
-> **Related:** [`sveltekit-migration.md`](sveltekit-migration.md), [`game-client-unification-plan.md`](game-client-unification-plan.md), [`web-client-architecture.md`](web-client-architecture.md)
+> **Related:** [`sveltekit-migration.md`](sveltekit-migration.md), [`../docs/client-ui-architecture.md`](../docs/client-ui-architecture.md)
 
 ---
 
@@ -85,10 +85,22 @@ Ordered by risk/return. Each item is a single reviewable PR.
   `startingSpellIds` are ignored on deserialize.
 
 ### W4 — Testing and CI
-- Consolidate `FakeXxx` stubs; delete stubs with no consumers.
-- Add a coverage floor per component in CI (engine/server/client/web) so regressions are visible.
-- Add a markdown link check and `dotnet format --verify-no-changes` to CI.
-- Web: extend Playwright to cover the authenticated `/characters` → `/play` path with a seeded account (currently only guards are covered).
+- ✅ `FakeXxx` stub audit — every stub class (`FakeAuthService`, `FakeHttpHandler`, `FakeGameStateService`,
+  `FakeHubConnection`, …) is consumed by its own project's tests; nothing was dead, so no consolidation
+  was needed. New tests still follow the `FakeXxx` convention instead of a mocking framework.
+- ✅ Coverage visibility: [`codecov.yml`](../codecov.yml) now declares one flag per component
+  (`engine`, `server`, `client`, `forge`, `discord`, `web`) plus project/patch statuses. They are
+  `informational: true` on purpose — flip them to blocking once the numbers have been stable.
+- ✅ Markdown link check: [`scripts/check-markdown-links.mjs`](../scripts/check-markdown-links.mjs) +
+  [`.github/workflows/repo-hygiene.yml`](../.github/workflows/repo-hygiene.yml). Offline by design (no
+  external URL checks), understands the repository's `path:line` link form, and skips `web/llms/` and
+  the `wiki/` submodule. It found **18** broken relative links on the first run — dead Blazor paths in
+  the memory files, `docs/API_SPECIFICATION.md`, `theme.css`/`layout.css`, and two deleted plans — all
+  fixed.
+- ⏸ `dotnet format --verify-no-changes` **deferred**: 458 files currently deviate (whitespace only).
+  Gate needs a standalone repo-wide `dotnet format` pass first so the reformat is its own reviewable
+  commit instead of noise inside a feature PR.
+- ✅ Web: Playwright covers the authenticated `/characters` → `/play` path via W7's `game-loop.e2e.ts`.
 
 ### W5 — Configuration and deploy consolidation
 - One source of truth for public URLs/ports: `docker-compose*.yml`, `.env.example`, `web/client/.env.example`, and the two deploy docs (now consistent after the env audit — verify with a scripted cross-check).
@@ -184,7 +196,7 @@ graph LR
 | W1 — documentation truth pass (AGENTS/README/CONTRIBUTING, dangling skill + instruction links) | ✅ Done | `ebc70430` |
 | W2 — dead code (contracts audit, `editorial-api` → `gameApiFetch`) | ✅ Done | `5684f0d9` |
 | W3 — engine/server hygiene | 🟡 Mostly done: CORS extracted to `Infrastructure/CorsSetup.cs`, Identity/JWT/authorization/OAuth extracted to `Infrastructure/AuthSetup.cs` (`Program.cs` 703 → 520 lines, 788 server tests green), and the unused `[Obsolete] StartingSpellIds` deleted. Remaining: the P4 XML doc gaps, and optionally the rate limiter + health-check blocks. | `456ad367` + tail commit |
-| W4 — testing/CI (stub consolidation, coverage floors) | ⏳ Not started. The authenticated Playwright path moved to W7. | — |
+| W4 — testing/CI (stub consolidation, coverage floors) | ✅ Done: stub audit found no dead fakes; `codecov.yml` adds per-component flags with informational statuses; `scripts/check-markdown-links.mjs` + `repo-hygiene.yml` gate documentation links (18 broken links fixed). `dotnet format --verify-no-changes` deferred until a standalone reformat pass lands. | W4 commit |
 | W5 — config consolidation | ✅ Done: obsolete SSH deploy path removed (`deploy.yml` + the three `if: false` deploy jobs), `docs.yml` now watches `**/*.cs` instead of a hand-maintained project list, engine CI moved to `ubuntu-latest`, Dependabot gained a `/web` Dockerfile entry, and the two redundant compose files were deleted. The env-var documentation cross-check script is the one optional leftover. | `9b890ef8` + tail commit |
 | W6 — repository hygiene | ✅ Done: `.gitignore` already covers `/scripts/dev/`, `.env*`, `build-desktop/`, and packaged asset zips; `.dockerignore` verified (bin/obj, secrets, TestResults, IDE dirs, `client/build-desktop`); `web/llms/` kept in-repo by decision. | — |
 | W7 — authenticated game loop in CI (from migration Phase 2) | ✅ Done: `tests/game-loop.e2e.ts` covers register → roster → play → travel → inventory against a real server (verified locally, 34s, 1 passed); `ci-web.yml` gained an `e2e-game` job that boots `Veldrath.Server` on the Postgres service. The spec self-skips without `E2E_GAME=1`, so `npm run test` stays server-free (22 passed, 1 skipped). | W7 commit |

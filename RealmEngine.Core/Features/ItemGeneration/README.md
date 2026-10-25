@@ -568,5 +568,5 @@ var items = result.Items;
 
 ---
 
-**Questions or Issues?**  
-See [API_SPECIFICATION.md](../../../docs/API_SPECIFICATION.md) for complete API documentation.
+**Questions or Issues?**
+See the generated API reference at <https://kungraseri.github.io/RealmEngine/> for complete API documentation.

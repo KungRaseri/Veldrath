@@ -335,37 +335,13 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - **Roo skills are project-specific** — defined in `.roo/skills/` (catalog in `.roo/skills/README.md`); the former nested `web/.roo/` skills were merged into `web-development` and `web-ui`. They are NOT auto-loaded; must be explicitly invoked
 - **Three DbContext separation expanded** — now 4: `ApplicationDbContext` (server auth/ops), `GameDbContext` (game state), `ContentDbContext` (catalog), `EditorialDbContext` (editorial content)
 
-### RCL Unification — Map & Hotbar (Session-42, 2026-07-01)
+### RCL unification — Map & Hotbar (Session-42, 2026-07-01) — historical
 
-**Gap 4: Map (Region View)** — ❌→✅ Parity
-
-Created [`Veldrath.GameClient.Components/Components/Pages/GameMap.razor`](Veldrath.GameClient.Components/Components/Pages/GameMap.razor) + [`.razor.cs`](Veldrath.GameClient.Components/Components/Pages/GameMap.razor.cs):
-- Simplified region map page showing zones as interactive card buttons in a CSS grid
-- Current zone highlighted with "You are here" badge and `zone-card-current` styling
-- Clicking an available zone sends `MoveOnRegion` hub command
-- Map data fetched via `Hub.SendAsync("GetRegionMap")` + `Hub.On<RegionMapDto>("RegionMap", ...)`
-- Fallback to GameState data when hub returns empty zone list
-- Legend showing current/available/undiscovered zone color coding
-- [`ZoneNode`](Veldrath.GameClient.Components/Models/ZoneNode.cs) model: Id, Name, Type, MinLevel, IsCurrent, IsDiscovered
-- Map button enabled in [`GameSidebar.razor`](Veldrath.GameClient.Components/Components/Pages/GameSidebar.razor) (removed `disabled="true"`)
-
-**Gap 5: Action Bar Hotbar** — 🟡→✅ Parity
-
-Enhanced [`ActionBar.razor`](Veldrath.GameClient.Components/Components/Shared/ActionBar.razor):
-- Added hotbar row above existing action buttons with 10 ability quick-slot buttons
-- Each slot shows keybind label (1-0), ability icon/name, cooldown overlay
-- CSS classes: `hotbar-slot-empty`, `hotbar-slot-ready`, `hotbar-slot-cooldown`
-- [`HotbarAbility`](Veldrath.GameClient.Components/Models/HotbarAbility.cs) model: SlotNumber, KeyBind, AbilityId, Name, IconClass, CooldownRemaining, IsAvailable
-- `OnUseAbility` callback parameter for wiring to `UseAbility` hub command
-- `ShowHotbar` parameter to control visibility
-
-**CSS added** to [`game.css`](Veldrath.GameClient.Components/wwwroot/css/game.css):
-- `.game-map-page`, `.game-map-zones`, `.game-map-zone-card` — zone card grid layout
-- `.hotbar`, `.hotbar-slot` — hotbar ability quick-slot styles
-- Zone type badges (town/wilderness/dungeon) with color-coded backgrounds
-- Map legend with dot indicators
-
-**Tests:** 14 new tests (6 GameMap + 8 ActionBar hotbar), all 51 tests passing
+The `Veldrath.GameClient.Components` Razor class library (region-map page, game sidebar, action-bar
+hotbar, `wwwroot/css/game.css`) and its 14 tests were **deleted** with the Blazor decommission. The
+equivalent UI now lives in the SvelteKit app under `web/client/src/lib/game/` (map panel, left
+sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewModel`. There are no
+`.razor` files left in the tree — do not look for them.
 
 ### Open Items (re-audited Session-47, 2026-10-22)
 

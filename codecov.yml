@@ -1,0 +1,56 @@
+# Codecov reporting configuration.
+#
+# Each component workflow uploads with its own flag (engine, server, client, forge, discord, web),
+# so a regression can be attributed to one component instead of the whole solution total.
+#
+# The statuses are informational: they surface the per-component delta on the PR without failing it.
+# A change usually touches one component, which moves the solution-wide number for reasons unrelated
+# to the change itself, and a hard floor set before the current coverage is measured would block the
+# very PRs that improve it. Flip `informational` to false once the numbers have been stable for a
+# few weeks.
+
+codecov:
+  require_ci_to_pass: false
+
+coverage:
+  precision: 2
+  round: down
+  range: 60..90
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+        informational: true
+    patch:
+      default:
+        target: auto
+        threshold: 5%
+        informational: true
+
+flags:
+  engine:
+    paths:
+      - RealmEngine.Core/
+      - RealmEngine.Shared/
+      - RealmEngine.Data/
+  server:
+    paths:
+      - Veldrath.Server/
+  client:
+    paths:
+      - Veldrath.Client/
+  forge:
+    paths:
+      - RealmForge/
+  discord:
+    paths:
+      - Veldrath.Discord/
+  web:
+    paths:
+      - web/client/src/
+
+comment:
+  layout: 'reach,diff,flags,tree'
+  behavior: default
+  require_changes: false

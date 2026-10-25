@@ -1,0 +1,44 @@
+name: Repository Hygiene
+
+concurrency:
+  group: repo-hygiene-${{ github.ref }}
+  cancel-in-progress: true
+
+# Documentation rots faster than code: after the Blazor decommission and the plans prune, several
+# docs pointed at projects and plans that no longer exist. This workflow keeps the relative links
+# honest. It is offline on purpose (no external URL checking), so it cannot flake on third-party
+# availability or rate limits.
+on:
+  push:
+    branches: [ main, development ]
+    paths:
+      - '**/*.md'
+      - 'scripts/check-markdown-links.mjs'
+      - '.github/workflows/repo-hygiene.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '**/*.md'
+      - 'scripts/check-markdown-links.mjs'
+      - '.github/workflows/repo-hygiene.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  markdown-links:
+    name: Markdown relative links
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Check relative links
+        run: node scripts/check-markdown-links.mjs
