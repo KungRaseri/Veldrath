@@ -564,6 +564,16 @@ describe('GameSession chat', () => {
 		expect(hub.lastCall('SendWhisper')).toEqual([{ targetCharacterName: 'Mira', message: 'psst' }]);
 	});
 
+	it('sends trimmed party messages on the party channel', async () => {
+		const session = await connected();
+		session.chatChannel = 'Party';
+
+		await session.sendChat('  hold the line  ');
+
+		expect(hub.methods()).toEqual(['SendPartyMessage']);
+		expect(hub.lastCall('SendPartyMessage')).toEqual([{ message: 'hold the line' }]);
+	});
+
 	it('filters messages for the active channel, case-insensitively', async () => {
 		const session = await connected();
 		for (const entry of [

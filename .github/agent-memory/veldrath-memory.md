@@ -2371,3 +2371,26 @@ Server 754 → **767**, full solution **3,912**, format clean.
 **Known gap:** no DB-backed test seeds a `PlayerSession` for a second member (needs World/Region FK chains), so the
 "online member at the same location" path is only covered up to the join; the peer-add path is covered with
 `FakePartyCombatQuery`. Also no hub-level test yet for per-participant `QuestLogReceived` fan-out.
+
+---
+
+### Session-83 (2026-10-25) — C4: party chat, and Milestone C closed
+
+**Server.** `GameHub.SendPartyMessage(SendZoneChatMessageHubRequest)` reuses the zone-chat request record, reads the
+party id through the existing `GetPartyHubQuery` (so the hub needed no new store dependency and **no ctor change** —
+which is why no other hub test needed touching), and sends `ReceiveChatMessage` with `Channel = "Party"` to
+`party:{partyId}` only. A character with no party gets `Error` "You are not in a party." instead of a message into
+the void. Because it reuses the `ReceiveChatMessage` event, logging/moderation tooling sees party traffic like any
+other channel.
+
+**Client.** `ChatChannel` gained `'Party'`; `sendChat` routes it to `SendPartyMessage`; `RightSidebar` shows the
+Party button between Zone and Global.
+
+**Tests:** 2 hub tests (solo refusal asserts the exact error and that no group send happened; in-party asserts a
+single `ReceiveChatMessage` with the trimmed message and nothing sent to the caller) + 1 Vitest for the routing.
+Server **769**, full solution **3,914**, web typecheck/lint clean, Vitest 176, Playwright 22 passed.
+
+**Milestone C wrap-up.** All of #43/#40/#41/#42 are closed, so epic #37 is complete. Party state is in Postgres,
+snapshots are the only wire shape, invites are re-read rather than pushed, combat is shared through the existing
+enemy rows, and the reward split cannot lose a coin. The two honest gaps to remember: no DB-backed test for the
+"online party member at the same location" filter, and no hub-level test for the per-participant quest fan-out.

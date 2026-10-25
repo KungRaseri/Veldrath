@@ -8,7 +8,7 @@
 	let draft = $state('');
 	let messagesElement = $state<HTMLDivElement | null>(null);
 
-	const channels: ChatChannel[] = ['Zone', 'Global', 'Whisper'];
+	const channels: ChatChannel[] = ['Zone', 'Party', 'Global', 'Whisper'];
 
 	function messageClass(channel: string): string {
 		switch (channel.toLowerCase()) {

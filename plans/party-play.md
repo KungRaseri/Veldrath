@@ -4,9 +4,9 @@
 > C runs directly on top of Milestone D: a party is a group of characters fighting the *same* persistent
 > enemy instances, so enemy and combat state must already live in Postgres ([`server-first-world-state.md`](server-first-world-state.md)).
 > Guilds, trading and duels stay out of this milestone; they extend the same storage layer afterwards.
-> **Tracker:** epic #37 — C1 #43 (schema + hub commands, shipped in `c7133ac6` and closed), C2 #40 (invites,
-> snapshot fan-out, party panel — shipped server `99ebe3a4`/`07ac81b7`, client in the same session, and closed),
-> C3 #41 (shared combat + contribution rewards, shipped), C4 #42 (party chat).
+> **Tracker:** epic #37 — **all four phases shipped and closed**: C1 #43 (schema + hub commands, `c7133ac6`),
+> C2 #40 (invites, snapshot fan-out, party panel — server `99ebe3a4`/`07ac81b7`, client `a3714f45`),
+> C3 #41 (shared combat + contribution rewards, `94d4c13f`), C4 #42 (party chat).
 
 ---
 
@@ -90,6 +90,9 @@ never assemble party state from deltas, which is what makes reconnects and the D
 `sendChat` gains a `party` channel. The server routes to the party's SignalR group; a character with no
 party gets a client-visible error rather than a message into the void. Moderation keeps working: party
 messages are logged like zone messages.
+
+Shipped as `SendPartyMessage(SendZoneChatMessageHubRequest)` — the zone-chat request record is reused, and the
+party id comes from the existing `GetPartyHubQuery` so no second store dependency was needed in the hub.
 
 ## 3. Phases
 

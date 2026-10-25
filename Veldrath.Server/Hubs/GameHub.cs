@@ -2622,6 +2622,40 @@ public class GameHub : Hub
     }
 
     /// <summary>
+    /// Sends a chat message to the caller's party and nobody else. A character with no party is told so, rather
+    /// than having the message disappear into a group that does not exist.
+    /// </summary>
+    /// <param name="request">The message payload.</param>
+    public async Task SendPartyMessage(SendZoneChatMessageHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId) || !TryGetCharacterName(out var characterName))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before SendPartyMessage");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Message))
+            return;
+
+        // The party's id is the only thing needed here; GetParty already owns that read (and purges dead invites).
+        var result = await _mediator.Send(new GetPartyHubQuery(characterId));
+        if (!result.Success || result.Party is null)
+        {
+            await Clients.Caller.SendAsync("Error", "You are not in a party.");
+            return;
+        }
+
+        var dto = new ChatMessageHubDto(
+            CharacterId: characterId,
+            Channel: "Party",
+            Sender: characterName,
+            Message: request.Message.Trim(),
+            Timestamp: DateTimeOffset.UtcNow);
+
+        await Clients.Group(PartyGroup(result.Party.PartyId)).SendAsync("ReceiveChatMessage", dto);
+    }
+
+    /// <summary>
     /// Broadcasts a chat message to all connected players across all zones.
     /// </summary>
     /// <param name="request">The message payload.</param>
