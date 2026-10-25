@@ -2701,6 +2701,96 @@ public class GameHubTests : IDisposable
             .Should().Contain(m => m.Method == "ItemUsed");
     }
 
+    // Resume-at-last-known-location
+    [Fact]
+    public async Task SelectCharacter_Should_Resume_At_Last_Known_Node()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+
+        var character = new Character
+        {
+            AccountId = accountId,
+            Name = $"Resume_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
+            CurrentZoneId = "crestfall",
+            CurrentNodeId = "node-market-square",
+            CurrentZoneLocationSlug = "grey-cup",
+        };
+        db.Characters.Add(character);
+        await db.SaveChangesAsync();
+
+        var (hub, clients, _, _) = CreateHub(db, accountId);
+        await hub.SelectCharacter(character.Id);
+
+        var msg = clients.CallerProxy.SentMessages.Single(m => m.Method == "CharacterSelected");
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(msg.Args[0]));
+        doc.RootElement.GetProperty("CurrentNodeId").GetString().Should().Be("node-market-square");
+    }
+
+    [Fact]
+    public async Task EnterZone_Should_Keep_The_Saved_Node_When_Reentering_The_Same_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+
+        var character = new Character
+        {
+            AccountId = accountId,
+            Name = $"Resume_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
+            CurrentZoneId = "crestfall",
+            CurrentNodeId = "node-tavern",
+            CurrentZoneLocationSlug = "grey-cup",
+        };
+        db.Characters.Add(character);
+        await db.SaveChangesAsync();
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId);
+        ctx.Items["CharacterId"] = character.Id;
+        ctx.Items["CharacterName"] = character.Name;
+
+        await hub.EnterZone("crestfall");
+
+        var msg = clients.CallerProxy.SentMessages.Single(m => m.Method == "ZoneEntered");
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(msg.Args[0]));
+        doc.RootElement.GetProperty("CurrentNodeId").GetString().Should().Be("node-tavern");
+
+        var persisted = await db.Characters.FindAsync(character.Id);
+        persisted!.CurrentNodeId.Should().Be("node-tavern");
+    }
+
+    [Fact]
+    public async Task EnterZone_Should_Use_The_Arrival_Node_For_A_New_Zone()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+
+        var character = new Character
+        {
+            AccountId = accountId,
+            Name = $"Resume_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
+            CurrentZoneId = "somewhere-else",
+            CurrentNodeId = "node-tavern",
+        };
+        db.Characters.Add(character);
+        await db.SaveChangesAsync();
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId);
+        ctx.Items["CharacterId"] = character.Id;
+        ctx.Items["CharacterName"] = character.Name;
+
+        await hub.EnterZone("crestfall");
+
+        var msg = clients.CallerProxy.SentMessages.Single(m => m.Method == "ZoneEntered");
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(msg.Args[0]));
+        doc.RootElement.GetProperty("CurrentNodeId").ValueKind.Should().Be(JsonValueKind.Null);
+    }
+
     // AddGold helpers
     private static async Task<Character> SeedCharacterWithGoldAsync(
         ApplicationDbContext db, Guid accountId, int gold)
