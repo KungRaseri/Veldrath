@@ -32,7 +32,7 @@ Consequences today:
 | 1 | Live enemy instances: id, archetype, HP, level, participants, damage contributions, last attacker | [`ZoneLocationEnemyStore`](../Veldrath.Server/Features/Characters/Combat/ZoneLocationEnemyStore.cs:9), static `ConcurrentDictionary<string, List<SpawnedEnemy>>` keyed `zoneGroup/locationSlug` | Process | Postgres rows + read-through cache |
 | 2 | Enemy respawn timers | [`CombatHelpers.ScheduleRespawn`](../Veldrath.Server/Features/Characters/Combat/CombatHelpers.cs:141), `Task.Run` → `Task.Delay(60s)` | Fire-and-forget task | `RespawnAt` column + hosted sweeper |
 | 3 | Active combat sessions: zone group, location, enemy id, turn number, defending flag | [`CombatSessionStore`](../Veldrath.Server/Features/Characters/Combat/CombatSessionStore.cs:6), static `ConcurrentDictionary<Guid, ActiveCombatSession>` | Process | Postgres rows with a short TTL |
-| 4 | AFK flags and messages | `GameHub._afkCharacters`, static `ConcurrentDictionary<Guid, string?>` | Process | Decide in D4 (see §7) |
+| 4 | AFK flags and messages | `GameHub._afkCharacters`, static `ConcurrentDictionary<Guid, string?>` | Process | Ephemeral by design: move out of `GameHub` into a small service in D4, cleared on any action or reconnect |
 | 5 | Character claims and the 30 s reconnect grace window | [`ActiveCharacterTracker`](../Veldrath.Server/Services/ActiveCharacterTracker.cs:53) | Process | Keep as a cache, back the invariant with a DB uniqueness constraint |
 | 6 | Player presence (which character is in which zone/region) | `PlayerSession` entity | **DB already** | Unchanged |
 | 7 | Dropped items | `GroundItem` entity | **DB already** | Unchanged, TTL decision in §7 |
@@ -80,6 +80,7 @@ CombatSessions
   PlayerDefending   bool
   StartedAt         timestamptz
   UpdatedAt         timestamptz
+  DisconnectedAt    timestamptz NULL   -- set when the owner drops; cleared on reconnect
 ```
 
 Notes that matter:
@@ -88,6 +89,9 @@ Notes that matter:
   `RespawnAt`; the sweeper flips it back, so a restart mid-timer simply continues the countdown.
 - `CombatSessions` keyed by `CharacterId` keeps the current "one fight per character" invariant as a
   primary key instead of an implicit dictionary behaviour.
+- `DisconnectedAt` is what makes the reconnect grace period possible: a disconnected session keeps its
+  turn state until `DisconnectedAt + grace` passes, and the sweeper prunes only the expired ones. A
+  reconnect clears the column and resumes the same fight.
 - `Version` exists so a second instance can detect that its cache entry is stale instead of serving
   enemy HP from five seconds ago.
 
@@ -121,6 +125,17 @@ FOR UPDATE SKIP LOCKED
 For each row: re-apply the archetype's spawn template, reset HP, clear participants, set `RespawnAt = NULL`,
 commit, then broadcast `EnemySpawned` to the zone group. Because the broadcast happens after commit and a
 reconnect re-reads the roster, a missed broadcast is a cosmetic delay, not a lost enemy.
+
+The same hosted service prunes abandoned combat sessions:
+
+```sql
+DELETE FROM "CombatSessions"
+WHERE "DisconnectedAt" IS NOT NULL AND "DisconnectedAt" < now() - interval '60 seconds';
+```
+
+Sixty seconds is the same order as the existing 30-second claim grace in
+[`ActiveCharacterTracker`](../Veldrath.Server/Services/ActiveCharacterTracker.cs:53); both windows should be
+configuration, not literals.
 
 ### 3.4 Multi-instance safety
 
@@ -163,7 +178,7 @@ Concretely:
 | **D1** | Schema, EF entities, migration for the three tables and their indexes | Migration applies to a fresh DB and to the current schema; `dotnet build Realm.Full.slnx` clean |
 | **D2** | `IEnemyInstanceStore` / `ICombatSessionStore` + implementations; move every combat handler onto them; delete the static classes | No `static ConcurrentDictionary` left in `Features/Characters/Combat`; all combat tests pass |
 | **D3** | `EnemyRespawnService` sweeper replaces `CombatHelpers.ScheduleRespawn`; delete the timer | Killing an enemy leaves a row with `RespawnAt`; the enemy returns after a restart |
-| **D4** | Claim uniqueness in the DB; cache invalidation on write; AFK decision; boot-time pruning of stale sessions | Two hosts against one DB: same enemy HP, one respawn, a second claim of the same character is refused |
+| **D4** | Claim uniqueness in the DB; cache invalidation on write; AFK moved out of `GameHub` into an ephemeral service; reconnect grace for combat sessions plus the client resume path; boot-time pruning | Two hosts against one DB: same enemy HP, one respawn, a second claim of the same character is refused; a reconnect inside the grace window continues the same fight |
 | **D5** | Startup content validator + failsafe tests; boot recovery test | Deleting an actor row produces a logged error and a user-visible message, never a placeholder |
 
 Each phase is independently shippable and leaves the game playable.
@@ -181,23 +196,34 @@ Each phase is independently shippable and leaves the game playable.
    only the claim tracker and the provisioning cache (both documented caches).
 5. **Failsafe proof:** a test deletes an `ActorArchetype` referenced by a zone's spawn pool and asserts an
    `Error` log entry plus a client message.
+6. **Reconnect grace:** drop a client mid-fight, reconnect inside the window and continue the same turn
+   against the same enemy HP; reconnect after the window and the fight is gone, with a system message
+   rather than a silent empty state.
 
-## 7. Open decisions for the user
+## 7. Decisions locked (2026-10-25)
 
-1. **Combat across a reconnect** — should a dropped player rejoin the fight (session survives) or should
-   the fight end for them (current behaviour, session deleted)? Rejoining is nicer and the schema above
-   supports it, but it needs a client-side resume path.
-2. **Ground item lifetime** — items on the ground currently live forever. Keep that, or expire them
-   (e.g. 24 h) so the table does not grow without bound?
-3. **AFK state** — persist it (visible across instances) or keep it ephemeral per connection and drop the
-   static dictionary in D4?
-4. **Hardcore death** — hardcore characters are soft-deleted on death. Is that final, or should a hardcore
-   death instead move the character to a memorial roster the player can still see?
+1. **Combat across a reconnect — grace period, then end.** A dropped player keeps their fight for a
+   configurable grace window (`DisconnectedAt` + grace, default 60 s, aligned with the 30 s claim grace).
+   Reconnecting inside the window resumes the same turn state; after it, the session is pruned and the
+   encounter is over. Requires a client-side resume path, which is why it lands in D4 rather than D2.
+2. **Ground items stay permanent.** No TTL in D. The future feature is *deterioration* — items losing
+   condition while they lie on the ground — which needs a condition column, not just an expiry, so it
+   stays a deliberate later design rather than a quick `WHERE created_at >`. The table growing unbounded
+   is accepted for now.
+3. **AFK is ephemeral by design.** It exists only while the player is away and is cleared the moment they
+   act or reconnect. D4 moves it out of the `GameHub` static into a small service beside the claim
+   tracker; it is never persisted, and this is documented as an allowed exception to the source-of-truth
+   rule (losing it costs nothing).
+4. **Hardcore death keeps the soft delete and gains two surfaces:** a per-account *memorial roster* (the
+   deleted hardcore characters a player can still see) and a *global hardcore leaderboard*. `DeletedAt`
+   already carries the data; this is a query + UI feature and belongs to Milestone A, not D.
 
 ## 8. Deliberately out of scope
 
 - Party, trade, duel (Milestone C — they will *use* this storage layer).
-- Death penalty tuning (Milestone A — the penalty exists today, 10% XP and 10% gold).
-- Content authoring and validation UX in Foundry (Milestone B).
+- Death penalty tuning and the hardcore memorial/leaderboard (**Milestone A** — the penalty exists today
+  at 10% XP and 10% gold and is being retuned to gold-first).
+- Content authoring and validation UX in Foundry (**Milestone B**).
+- Ground-item deterioration/TTL (decided above as a later feature).
 - SignalR backplane / horizontal scale beyond restart safety.
 - Coverage gates, Codecov policy, label/tracker hygiene (explicitly deferred).
