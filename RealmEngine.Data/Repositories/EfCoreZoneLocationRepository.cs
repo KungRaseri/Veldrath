@@ -91,5 +91,6 @@ public class EfCoreZoneLocationRepository(ContentDbContext db, ILogger<EfCoreZon
             w.ActorPool.Select(e => new ActorPoolEntry(e.ArchetypeSlug, e.Weight)).ToList(),
             w.DominantLanguageSlug,
             w.TileX, w.TileY,
-            w.Traits.SafeRespawn ?? false);
+            w.Traits.SafeRespawn ?? false,
+            w.Traits.IsTutorialStart ?? false);
 }

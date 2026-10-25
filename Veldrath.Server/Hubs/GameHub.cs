@@ -267,6 +267,29 @@ public class GameHub : Hub
                 locationSlug: null);
         }
 
+        // A3: a character who has not finished the tutorial is placed on the authored tutorial start location with
+        // the tutorial quest already accepted, so the first screen has a goal instead of an empty journal.
+        var tutorial = await _mediator.Send(new PrepareTutorialHubCommand(character.Id));
+        if (tutorial is null)
+        {
+            // A missing handoff result must never block a login — but it is loud, not silent.
+            _logger.LogError(
+                "Tutorial handoff returned no result for character {CharacterId}; continuing without onboarding",
+                character.Id);
+        }
+        else
+        {
+            if (tutorial.Placed)
+            {
+                character.CurrentZoneId = tutorial.ZoneId ?? character.CurrentZoneId;
+                character.CurrentZoneLocationSlug = tutorial.LocationSlug;
+                Context.Items["CurrentZoneId"] = character.CurrentZoneId;
+            }
+
+            if (!string.IsNullOrWhiteSpace(tutorial.Warning))
+                await Clients.Caller.SendAsync("SystemMessage", tutorial.Warning);
+        }
+
         // Remove any stale session left by an earlier disconnect that did not clean up
         var staleRegionSession = await _playerSessionRepo.GetByCharacterIdAsync(character.Id);
         if (staleRegionSession is not null)

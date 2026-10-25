@@ -54,9 +54,10 @@
 
 ### 2.3 Tutorial handoff and the quest HUD
 
-- Zone content gains a `IsTutorialStart` marker (plus a tutorial quest with `IsTutorial`); a character who has
-  not completed the tutorial spawns at that node with the tutorial quest auto-accepted, and
-  `TutorialCompleted` lives in the attributes blob.
+- Zone content gains an `IsTutorialStart` marker (`ZoneLocationTraits.IsTutorialStart`); the tutorial quest slug is
+  configured in `Tutorial:TutorialQuestSlug`. A character who has not completed the tutorial spawns at that node with
+  the quest auto-accepted; `TutorialStarted` in the attributes blob marks the handoff as done, and **completion is
+  read from the journal** (the tutorial quest reaching `Completed`) rather than duplicated into `TutorialCompleted`.
 - **Failsafe:** no tutorial node authored → log `Error`, start at the normal entry node, tell the client.
 - Quest HUD tracker: a compact sidebar listing active quests with the nearest incomplete objective, derived
   client-side from `QuestLogReceived` (no new wire event), plus a completion toast on `QuestTurnedIn`.

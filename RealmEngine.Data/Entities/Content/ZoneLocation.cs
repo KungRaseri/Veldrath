@@ -77,6 +77,11 @@ public class ZoneLocationTraits
     /// flagged the server logs an <c>Error</c> and falls back to the zone's first location.
     /// </summary>
     public bool? SafeRespawn { get; set; }
+    /// <summary>
+    /// True if new characters begin the tutorial here. Exactly one location should carry the flag; when none does the
+    /// server logs an <c>Error</c> and leaves the character at the normal starting point.
+    /// </summary>
+    public bool? IsTutorialStart { get; set; }
 }
 
 /// <summary>A weighted entry in an actor pool for a zone location.</summary>
