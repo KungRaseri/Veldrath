@@ -21,23 +21,6 @@ npm run build     # adapter-node output in build/
 npm run preview
 ```
 
-## Building the desktop bundle
-
-The Avalonia desktop client embeds a static Svelte SPA in its WebView2 shell. Build it
-before building/publishing `Veldrath.Client`:
-
-```sh
-npm run build:desktop   # adapter-static SPA output in build-desktop/
-```
-
-`Veldrath.Client.csproj` copies `build-desktop/` into the output as `SvelteApp/` when it
-exists. During development the client's `DesktopUiServer` can also read
-`web/client/build-desktop` directly. Set `VELDRATH_DESKTOP_UI` to override the location.
-
-The desktop host serves the SPA from a loopback port and proxies `/api` and `/hubs` to the
-game server, injecting the desktop client's JWT server-side. The WebView never holds a
-token. The native Avalonia UI remains the fallback when WebView2 is unavailable.
-
 ## Account and character flows
 
 - `/register`, `/login` (email **or** username), `/forgot-password`, `/reset-password`, and

@@ -29,7 +29,6 @@ yarn-error.log*
 .pnpm-debug.log*
 web/client/.svelte-kit/
 web/client/build/
-web/client/build-desktop/
 web/client/.output/
 web/client/coverage/
 web/client/test-results/

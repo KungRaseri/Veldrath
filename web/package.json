@@ -21,7 +21,6 @@
     "format:check": "prettier --check .",
     "dev": "npm run dev --workspace client",
     "dev:client": "npm run dev --workspace client",
-    "build:desktop": "npm run build:desktop --workspace client",
     "db:generate": "npm run db:generate --workspace shared",
     "db:migrate": "npm run db:migrate --workspace shared",
     "db:push": "npm run db:push --workspace shared",

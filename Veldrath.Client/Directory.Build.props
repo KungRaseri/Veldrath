@@ -1,6 +1,0 @@
-﻿<Project>
-  <!-- Chain to root Directory.Build.props for shared settings -->
-  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
-  <!-- Client version (Veldrath.Client Avalonia desktop app) -->
-  <Import Project="$(MSBuildThisFileDirectory)../versions/client.props" />
-</Project>

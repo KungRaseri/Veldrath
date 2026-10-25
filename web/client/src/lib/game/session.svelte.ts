@@ -1,6 +1,6 @@
 import type { HubConnection } from '@microsoft/signalr';
 import { SvelteDate } from 'svelte/reactivity';
-import { createGameHub, type GameHubOptions } from '#lib/hub';
+import { createGameHub } from '#lib/hub';
 import {
 	appendChat,
 	applyAbilityToStats,
@@ -91,11 +91,6 @@ export class GameSession {
 
 	private hub: HubConnection | null = null;
 	private characterId: string | null = null;
-	private readonly hubOptions: GameHubOptions;
-
-	constructor(hubOptions: GameHubOptions = {}) {
-		this.hubOptions = hubOptions;
-	}
 
 	get selectedNode() {
 		return this.map?.nodes.find((node) => node.id === this.selectedNodeId) ?? null;
@@ -155,7 +150,7 @@ export class GameSession {
 		this.error = null;
 
 		try {
-			this.hub = createGameHub(this.hubOptions);
+			this.hub = createGameHub();
 			this.registerHandlers();
 
 			this.hub.onreconnecting(() => {

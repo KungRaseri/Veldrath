@@ -2,14 +2,12 @@ import { mdsvex } from 'mdsvex';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vitest/config';
 import nodeAdapter from '@sveltejs/adapter-node';
-import staticAdapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
 
-export default defineConfig(({ mode }) => {
-	// `vite build --mode desktop` produces a static SPA hosted by the Avalonia
-	// desktop client's local DesktopUiServer. The default build remains adapter-node.
-	const desktop = mode === 'desktop';
-
+// Veldrath is served by adapter-node only: the SvelteKit app is the single client
+// (browser), and the Avalonia desktop shell that needed an adapter-static SPA build
+// was retired.
+export default defineConfig(() => {
 	return {
 		plugins: [
 			tailwindcss(),
@@ -19,11 +17,7 @@ export default defineConfig(({ mode }) => {
 					runes: ({ filename }) =>
 						filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 				},
-				adapter: desktop
-					? // Pure SPA fallback: every route is resolved client-side by the desktop
-						// WebView, so no server-side prerender pass is required.
-						staticAdapter({ pages: 'build-desktop', fallback: 'index.html' })
-					: nodeAdapter(),
+				adapter: nodeAdapter(),
 				preprocess: [mdsvex({ extensions: ['.svx', '.md'] })],
 				extensions: ['.svelte', '.svx', '.md']
 			})
