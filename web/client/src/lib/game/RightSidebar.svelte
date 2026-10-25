@@ -8,7 +8,10 @@
 	let draft = $state('');
 	let messagesElement = $state<HTMLDivElement | null>(null);
 
-	const channels: ChatChannel[] = ['Zone', 'Party', 'Global', 'Whisper'];
+	// Party chat only exists while the character is grouped, so the tab appears and disappears with membership.
+	const channels = $derived<ChatChannel[]>(
+		session.party ? ['Zone', 'Party', 'Global', 'Whisper'] : ['Zone', 'Global', 'Whisper']
+	);
 
 	function messageClass(channel: string): string {
 		switch (channel.toLowerCase()) {
