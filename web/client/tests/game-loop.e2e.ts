@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 
 /**
@@ -14,7 +15,9 @@ import { expect, test } from '@playwright/test';
  */
 const gameEnabled = process.env.E2E_GAME === '1';
 
-const stamp = `${Date.now().toString(36)}${Math.floor(Math.random() * 1e4).toString(36)}`;
+// `crypto.randomUUID` instead of `Math.random`: the suffix ends up in account identifiers that
+// must not collide across parallel runs (CodeQL js/insecure-randomness).
+const stamp = `${Date.now().toString(36)}${randomUUID().replaceAll('-', '').slice(0, 8)}`;
 const account = {
 	username: `e2e${stamp}`.slice(0, 30),
 	email: `e2e+${stamp}@example.test`,
