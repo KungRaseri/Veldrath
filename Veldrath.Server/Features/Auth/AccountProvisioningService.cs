@@ -173,9 +173,12 @@ public sealed class AccountProvisioningService(
         if (!result.Succeeded &&
             result.Errors.Any(e => e.Code is "DuplicateEmail" or "DuplicateUserName"))
         {
+            // Log the Identity error codes only: the descriptions repeat the e-mail address and
+            // username the caller supplied, which must not be written to the log
+            // (CodeQL cs/cleartext-storage).
             logger.LogWarning(
-                "JIT provisioning for account {AccountId}: email/username collision ({Errors}); retrying with a placeholder email.",
-                accountId, string.Join("; ", result.Errors.Select(e => e.Description)));
+                "JIT provisioning hit an email/username collision ({Codes}); retrying with a placeholder email.",
+                string.Join("; ", result.Errors.Select(e => e.Code)));
 
             user.Email = $"{accountId:N}@{ExternalEmailDomain}";
             user.NormalizedEmail = null;
@@ -185,9 +188,7 @@ public sealed class AccountProvisioningService(
 
         if (result.Succeeded)
         {
-            logger.LogInformation(
-                "JIT provisioned game account {AccountId} as '{Username}' from external identity provider.",
-                accountId, user.UserName);
+            logger.LogInformation("JIT provisioned a game account from an external identity provider.");
             return user;
         }
 
@@ -197,8 +198,8 @@ public sealed class AccountProvisioningService(
             return existing;
 
         logger.LogError(
-            "JIT provisioning failed for account {AccountId}: {Errors}",
-            accountId, string.Join("; ", result.Errors.Select(e => e.Description)));
+            "JIT provisioning failed: {Codes}",
+            string.Join("; ", result.Errors.Select(e => e.Code)));
         return null;
     }
 

@@ -64,10 +64,12 @@ public static class JwtClaimsEnrichment
         {
             // Never let provisioning turn an authenticated request into an opaque 500: log the
             // cause (the client only sees a rejected token) and reject the token explicitly.
+            // The token subject is deliberately kept out of the message: it is user data, and
+            // the request log already correlates the failure with the caller (CodeQL cs/cleartext-storage).
             context.HttpContext.RequestServices
                 .GetRequiredService<ILoggerFactory>()
                 .CreateLogger(typeof(JwtClaimsEnrichment))
-                .LogError(ex, "Account provisioning threw for {AccountId}.", accountId);
+                .LogError(ex, "Account provisioning threw while enriching an authenticated token.");
             context.Fail("The account for this token could not be provisioned.");
             return;
         }
@@ -77,7 +79,7 @@ public static class JwtClaimsEnrichment
             context.HttpContext.RequestServices
                 .GetRequiredService<ILoggerFactory>()
                 .CreateLogger(typeof(JwtClaimsEnrichment))
-                .LogWarning("Account provisioning returned no snapshot for {AccountId}.", accountId);
+                .LogWarning("Account provisioning returned no snapshot for an authenticated token.");
             context.Fail("The account for this token could not be provisioned.");
             return;
         }
