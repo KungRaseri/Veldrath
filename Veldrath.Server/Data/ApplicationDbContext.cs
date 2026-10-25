@@ -50,6 +50,12 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<PlayerReport> PlayerReports => Set<PlayerReport>();
     /// <summary>Item stacks lying on the ground at a zone location, dropped by players.</summary>
     public DbSet<GroundItem> GroundItems => Set<GroundItem>();
+    /// <summary>Live enemy instances standing at zone locations, shared by every character present.</summary>
+    public DbSet<EnemyInstance> EnemyInstances => Set<EnemyInstance>();
+    /// <summary>Characters taking part in a fight against a specific enemy instance, with their damage totals.</summary>
+    public DbSet<EnemyParticipant> EnemyParticipants => Set<EnemyParticipant>();
+    /// <summary>Active fights by character, durable across restarts and short disconnects.</summary>
+    public DbSet<CombatSession> CombatSessions => Set<CombatSession>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -264,6 +270,55 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
             e.Property(g => g.ItemRef).HasMaxLength(200).IsRequired();
             // Ground pickups always query by (zone, location), so index that pair.
             e.HasIndex(g => new { g.ZoneId, g.LocationSlug });
+        });
+
+        builder.Entity<EnemyInstance>(e =>
+        {
+            e.HasKey(i => i.Id);
+            // The SignalR zone group already encodes zone + difficulty mode, so it is stored verbatim and
+            // is not a foreign key to Zones.
+            e.Property(i => i.ZoneGroup).HasMaxLength(200).IsRequired();
+            e.Property(i => i.LocationSlug).HasMaxLength(128).IsRequired();
+            e.Property(i => i.ArchetypeSlug).HasMaxLength(200).IsRequired();
+            e.Property(i => i.Name).HasMaxLength(200).IsRequired();
+            // One living archetype instance per location per spawn instant.
+            e.HasIndex(i => new { i.ZoneGroup, i.LocationSlug, i.ArchetypeSlug, i.SpawnedAt }).IsUnique();
+            // The respawn sweeper scans dead rows whose timer has elapsed.
+            e.HasIndex(i => new { i.IsAlive, i.RespawnAt });
+            // Incremented by the store layer on every write; a stale writer is rejected.
+            e.Property(i => i.Version).IsConcurrencyToken();
+        });
+
+        builder.Entity<EnemyParticipant>(e =>
+        {
+            e.HasKey(p => new { p.EnemyInstanceId, p.CharacterId });
+            e.HasOne(p => p.Enemy)
+             .WithMany(i => i.Participants)
+             .HasForeignKey(p => p.EnemyInstanceId)
+             .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(p => p.Character)
+             .WithMany()
+             .HasForeignKey(p => p.CharacterId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<CombatSession>(e =>
+        {
+            // One fight per character, enforced by the database rather than by a dictionary.
+            e.HasKey(s => s.CharacterId);
+            e.Property(s => s.ZoneGroup).HasMaxLength(200).IsRequired();
+            e.Property(s => s.LocationSlug).HasMaxLength(128).IsRequired();
+            e.HasOne(s => s.Enemy)
+             .WithMany(i => i.CombatSessions)
+             .HasForeignKey(s => s.EnemyInstanceId)
+             .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(s => s.Character)
+             .WithMany()
+             .HasForeignKey(s => s.CharacterId)
+             .OnDelete(DeleteBehavior.Cascade);
+            // The grace prune scans disconnected rows by timestamp; defeat releases every session on an enemy.
+            e.HasIndex(s => s.DisconnectedAt);
+            e.HasIndex(s => s.EnemyInstanceId);
         });
 
         // SQLite cannot translate ORDER BY on DateTimeOffset columns; store as ISO 8601 text

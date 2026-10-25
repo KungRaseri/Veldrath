@@ -51,7 +51,7 @@ dropped at any instant without losing information.**
 ```text
 EnemyInstances
   Id                uuid    PK
-  ZoneId            text    -- FK Zones
+  ZoneGroup         text    -- SignalR group, e.g. "zone:dark-forest_hardcore" (encodes zone + mode)
   LocationSlug      text
   ArchetypeSlug     text    -- references actor content; validated at spawn
   Name              text    -- snapshot, so a content rename does not rename a live enemy
@@ -62,7 +62,15 @@ EnemyInstances
   SpawnedAt         timestamptz
   RespawnAt         timestamptz NULL   -- set when killed; swept when <= now()
   Version           bigint             -- optimistic concurrency
-  UNIQUE (ZoneId, LocationSlug, ArchetypeSlug, SpawnedAt)
+  UNIQUE (ZoneGroup, LocationSlug, ArchetypeSlug, SpawnedAt)
+```
+
+> **Amended during D1 (#32):** the location key is the SignalR `ZoneGroup` rather than `ZoneId`. The group name
+> is what every spawn and broadcast path already uses, it also carries the difficulty mode, and splitting it
+> back into a `ZoneId` would be a fragile parse. It is therefore not a foreign key to `Zones` — the same choice
+> `GroundItem` already makes.
+
+```text
 
 EnemyParticipants
   EnemyInstanceId   uuid    FK EnemyInstances ON DELETE CASCADE

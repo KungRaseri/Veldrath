@@ -348,6 +348,133 @@ namespace Veldrath.Server.Migrations
                     b.ToTable("CharacterUnlockedLocations");
                 });
 
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.CombatSession", b =>
+                {
+                    b.Property<Guid>("CharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("DisconnectedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("EnemyInstanceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LocationSlug")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<bool>("PlayerDefending")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("TurnCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ZoneGroup")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("CharacterId");
+
+                    b.HasIndex("DisconnectedAt");
+
+                    b.HasIndex("EnemyInstanceId");
+
+                    b.ToTable("CombatSessions");
+                });
+
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.EnemyInstance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ArchetypeSlug")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("BaseXp")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CurrentHealth")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("GoldReward")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsAlive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LocationSlug")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("MaxHealth")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("RespawnAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("SpawnedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ZoneGroup")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsAlive", "RespawnAt");
+
+                    b.HasIndex("ZoneGroup", "LocationSlug", "ArchetypeSlug", "SpawnedAt")
+                        .IsUnique();
+
+                    b.ToTable("EnemyInstances");
+                });
+
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.EnemyParticipant", b =>
+                {
+                    b.Property<Guid>("EnemyInstanceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Damage")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("LastAttackedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("EnemyInstanceId", "CharacterId");
+
+                    b.HasIndex("CharacterId");
+
+                    b.ToTable("EnemyParticipants");
+                });
+
             modelBuilder.Entity("Veldrath.Server.Data.Entities.FoundryNotification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -955,6 +1082,44 @@ namespace Veldrath.Server.Migrations
                     b.Navigation("Character");
                 });
 
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.CombatSession", b =>
+                {
+                    b.HasOne("Veldrath.Server.Data.Entities.Character", "Character")
+                        .WithMany()
+                        .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Veldrath.Server.Data.Entities.EnemyInstance", "Enemy")
+                        .WithMany("CombatSessions")
+                        .HasForeignKey("EnemyInstanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Character");
+
+                    b.Navigation("Enemy");
+                });
+
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.EnemyParticipant", b =>
+                {
+                    b.HasOne("Veldrath.Server.Data.Entities.Character", "Character")
+                        .WithMany()
+                        .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Veldrath.Server.Data.Entities.EnemyInstance", "Enemy")
+                        .WithMany("Participants")
+                        .HasForeignKey("EnemyInstanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Character");
+
+                    b.Navigation("Enemy");
+                });
+
             modelBuilder.Entity("Veldrath.Server.Data.Entities.FoundryNotification", b =>
                 {
                     b.HasOne("Veldrath.Server.Data.Entities.PlayerAccount", "Recipient")
@@ -1085,6 +1250,13 @@ namespace Veldrath.Server.Migrations
                         .IsRequired();
 
                     b.Navigation("Region");
+                });
+
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.EnemyInstance", b =>
+                {
+                    b.Navigation("CombatSessions");
+
+                    b.Navigation("Participants");
                 });
 
             modelBuilder.Entity("Veldrath.Server.Data.Entities.FoundrySubmission", b =>
