@@ -32,7 +32,18 @@ const ironSword: InventoryItem = {
 	isEquipped: true,
 	price: 15,
 	weight: 3,
-	durability: 80
+	durability: 80,
+	effect: null,
+	effectPower: 0,
+	isTwoHanded: false,
+	armorClass: null,
+	armorType: null,
+	weaponType: 'swords',
+	damageMin: 3,
+	damageMax: 8,
+	requirementsLevel: 1,
+	requirements: {},
+	bonuses: { strength: 1 }
 };
 
 const healthPotion: InventoryItem = {
@@ -49,7 +60,18 @@ const healthPotion: InventoryItem = {
 	isEquipped: false,
 	price: 5,
 	weight: 0.5,
-	durability: null
+	durability: null,
+	effect: 'heal',
+	effectPower: 25,
+	isTwoHanded: false,
+	armorClass: null,
+	armorType: null,
+	weaponType: null,
+	damageMin: null,
+	damageMax: null,
+	requirementsLevel: 1,
+	requirements: {},
+	bonuses: {}
 };
 
 function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
@@ -79,6 +101,16 @@ function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
 		selectedNodeId: null,
 		adjacentNodeIds: [] as string[],
 		combat: { active: false, enemy: null, log: [] } satisfies CombatState,
+		attributes: {
+			strength: 12,
+			dexterity: 11,
+			constitution: 10,
+			intelligence: 9,
+			wisdom: 8,
+			charisma: 7
+		},
+		inspectedItem: null as InventoryItem | null,
+		lastSearch: null,
 		equippedEntries: [],
 		equipped: {} as Record<string, InventoryItem>,
 		inventory: [ironSword, healthPotion],
@@ -93,6 +125,8 @@ function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
 		showShop: false,
 		showQuests: false,
 		showSettings: false,
+		showAbilities: false,
+		showAttributes: false,
 		openInventory: vi.fn(),
 		loadQuests: vi.fn(),
 		visitShop: vi.fn(),
@@ -105,7 +139,12 @@ function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
 		unequip: vi.fn(),
 		sell: vi.fn(),
 		discard: vi.fn(),
-		buy: vi.fn()
+		buy: vi.fn(),
+		useItem: vi.fn(),
+		inspectItem: vi.fn(),
+		closeInspect: vi.fn(),
+		allocateAttributePoints: vi.fn(),
+		useAbility: vi.fn()
 	};
 
 	return { ...base, ...overrides } as unknown as GameSession;
@@ -132,7 +171,7 @@ describe('LeftSidebar (character sheet)', () => {
 		expect(screen.getByText('25 / 40')).toBeTruthy();
 		expect(screen.getByText('42')).toBeTruthy();
 		expect(screen.getByText('250')).toBeTruthy();
-		expect(screen.getByText('2 points to spend')).toBeTruthy();
+		expect(screen.getByText('+2')).toBeTruthy();
 	});
 
 	it('renders the equipment rack with empty and filled slots', async () => {
@@ -240,5 +279,58 @@ describe('GameOverlays (dialogs)', () => {
 		expect(await screen.findByText('Iron Sword')).toBeTruthy();
 		expect(screen.getByText('15 g')).toBeTruthy();
 		expect(screen.getByRole('button', { name: 'Buy' })).toBeTruthy();
+	});
+});
+
+describe('GameOverlays (item details)', () => {
+	it('describes a consumable and offers its use', async () => {
+		const session = fakeSession({ inspectedItem: healthPotion });
+		render(GameOverlays, { props: { session } });
+
+		expect(await screen.findByText('Restores 25 health')).toBeTruthy();
+		expect(screen.getByText('Common · Consumable')).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Use' })).toBeTruthy();
+	});
+
+	it('shows weapon damage, bonuses and an equip action', async () => {
+		const spare = { ...ironSword, isEquipped: false };
+		const session = fakeSession({ inspectedItem: spare, bagItems: [healthPotion, spare] });
+		render(GameOverlays, { props: { session } });
+
+		expect(await screen.findByText('3–8 damage')).toBeTruthy();
+		expect(screen.getByText('strength +1')).toBeTruthy();
+		expect(screen.getByText(/Main hand/)).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Equip' })).toBeTruthy();
+	});
+});
+
+describe('GameOverlays (attributes)', () => {
+	it('accumulates points locally and submits capitalised allocations', async () => {
+		const session = fakeSession({ showAttributes: true });
+		render(GameOverlays, { props: { session } });
+
+		(await screen.findByRole('button', { name: 'Increase Strength' })).click();
+		const spend = await screen.findByRole('button', { name: 'Spend 1 point' });
+		spend.click();
+
+		expect(session.allocateAttributePoints).toHaveBeenCalledWith({ Strength: 1 });
+	});
+});
+
+describe('LeftSidebar (item actions)', () => {
+	it('uses consumables from the bag', async () => {
+		const session = fakeSession();
+		render(LeftSidebar, { props: { session } });
+
+		(await screen.findByRole('button', { name: 'Use Health Potion' })).click();
+		expect(session.useItem).toHaveBeenCalledWith('health_potion');
+	});
+
+	it('opens the detail dialog when a bag row is clicked', async () => {
+		const session = fakeSession();
+		render(LeftSidebar, { props: { session } });
+
+		(await screen.findByTitle('Inspect Health Potion')).click();
+		expect(session.inspectItem).toHaveBeenCalledWith(healthPotion);
 	});
 });

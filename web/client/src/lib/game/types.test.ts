@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
 	EQUIPMENT_SLOTS,
+	armorLabel,
+	damageLabel,
+	effectLabel,
+	EQUIPMENT_SLOTS as SLOTS,
 	isEquippable,
+	isUsable,
 	itemLabel,
 	itemSubtitle,
 	rarityClass,
@@ -22,7 +27,18 @@ const sword: InventoryItem = {
 	isEquipped: false,
 	price: 15,
 	weight: 3,
-	durability: 72
+	durability: 72,
+	effect: null,
+	effectPower: 0,
+	isTwoHanded: false,
+	armorClass: null,
+	armorType: null,
+	weaponType: 'swords',
+	damageMin: 3,
+	damageMax: 8,
+	requirementsLevel: 1,
+	requirements: {},
+	bonuses: { strength: 1 }
 };
 
 const potion: InventoryItem = {
@@ -33,7 +49,12 @@ const potion: InventoryItem = {
 	type: 'Consumable',
 	slot: null,
 	quantity: 4,
-	durability: null
+	durability: null,
+	effect: 'restore',
+	effectPower: 12,
+	weaponType: null,
+	damageMin: null,
+	damageMax: null
 };
 
 describe('rarityClass', () => {
@@ -66,16 +87,44 @@ describe('item helpers', () => {
 });
 
 describe('EQUIPMENT_SLOTS', () => {
-	it('lists the eight canonical slots the server validates', () => {
-		expect(EQUIPMENT_SLOTS.map((slot) => slot.id)).toEqual([
+	it('lists the twelve canonical slots the server validates', () => {
+		expect(SLOTS.map((slot) => slot.id)).toEqual([
 			'MainHand',
 			'OffHand',
 			'Head',
+			'Shoulders',
 			'Chest',
+			'Bracers',
+			'Gloves',
+			'Belt',
 			'Legs',
 			'Feet',
 			'Ring',
 			'Amulet'
 		]);
+		expect(EQUIPMENT_SLOTS.length).toBe(12);
+	});
+});
+
+describe('consumable and combat labels', () => {
+	it('only treats items with an effect as usable', () => {
+		expect(isUsable(potion)).toBe(true);
+		expect(isUsable(sword)).toBe(false);
+	});
+
+	it('describes each supported effect', () => {
+		expect(effectLabel(potion)).toBe('Restores 12 mana');
+		expect(effectLabel({ ...potion, effect: 'heal', effectPower: 25 })).toBe('Restores 25 health');
+		expect(effectLabel({ ...potion, effect: 'cure_poison' })).toBe('Cures poison');
+		expect(effectLabel(sword)).toBe('No usable effect');
+	});
+
+	it('formats weapon damage and armour summaries', () => {
+		expect(damageLabel(sword)).toBe('3–8 damage');
+		expect(damageLabel(potion)).toBeNull();
+		expect(armorLabel({ ...sword, armorClass: 'heavy', armorType: 'heavy' })).toBe(
+			'heavy · heavy armour'
+		);
+		expect(armorLabel(sword)).toBeNull();
 	});
 });

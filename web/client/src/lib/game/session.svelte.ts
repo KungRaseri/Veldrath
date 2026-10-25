@@ -13,6 +13,7 @@ import type {
 	AbilityUsedPayload,
 	AreaSearchedPayload,
 	CharacterRestedPayload,
+	CharacterAttributes,
 	CharacterSelectedPayload,
 	CharacterStats,
 	ChatMessage,
@@ -37,6 +38,7 @@ import type {
 	SpawnedEnemy,
 	ZoneEnteredPayload
 } from './types';
+import type { SearchFinding } from './types';
 import { itemLabel } from './types';
 
 export type HubPhase =
@@ -54,6 +56,15 @@ const EMPTY_STATS: CharacterStats = {
 	unspentAttributePoints: 0
 };
 
+const EMPTY_ATTRIBUTES: CharacterAttributes = {
+	strength: 0,
+	dexterity: 0,
+	constitution: 0,
+	intelligence: 0,
+	wisdom: 0,
+	charisma: 0
+};
+
 /**
  * Reactive game session for the SvelteKit game client.
  *
@@ -65,6 +76,7 @@ export class GameSession {
 	serverInfo = $state<ServerInfoPayload | null>(null);
 	character = $state<CharacterSelectedPayload | null>(null);
 	stats = $state<CharacterStats>({ ...EMPTY_STATS });
+	attributes = $state<CharacterAttributes>({ ...EMPTY_ATTRIBUTES });
 	zone = $state<ZoneEnteredPayload | null>(null);
 	occupants = $state<OccupantEntry[]>([]);
 	map = $state<MapGraph | null>(null);
@@ -87,7 +99,13 @@ export class GameSession {
 	showShop = $state(false);
 	showQuests = $state(false);
 	showSettings = $state(false);
+	showAbilities = $state(false);
+	showAttributes = $state(false);
 	loadingMap = $state(false);
+	/** Item shown in the detail dialog, or `null` when it is closed. */
+	inspectedItem = $state<InventoryItem | null>(null);
+	/** Result of the last area search, shown in the Local panel. */
+	lastSearch = $state<{ rollValue: number; discovered: SearchFinding[] } | null>(null);
 
 	private hub: HubConnection | null = null;
 	private characterId: string | null = null;
@@ -231,6 +249,37 @@ export class GameSession {
 		if (!this.hub) return;
 		this.error = null;
 		await this.hub.invoke('GetInventory');
+	}
+
+	/** Opens the item detail dialog for a bag or equipment entry. */
+	inspectItem(item: InventoryItem): void {
+		this.inspectedItem = item;
+	}
+
+	/** Closes the item detail dialog. */
+	closeInspect(): void {
+		this.inspectedItem = null;
+	}
+
+	/** Consumes one unit of a usable item (potion, elixir). */
+	async useItem(itemRef: string): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('UseItem', itemRef);
+	}
+
+	/** Spends unallocated attribute points. Keys are capitalised attribute names. */
+	async allocateAttributePoints(allocations: Record<string, number>): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('AllocateAttributePoints', allocations);
+	}
+
+	/** Casts a learned ability outside combat. */
+	async useAbility(abilityId: string): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('UseAbility', abilityId);
 	}
 
 	async loadQuests(): Promise<void> {
@@ -521,6 +570,14 @@ export class GameSession {
 			'AttributePointsAllocated',
 			(payload: { remainingPoints: number; attrs: Record<string, number> }) => {
 				this.stats = { ...this.stats, unspentAttributePoints: payload.remainingPoints };
+				this.attributes = {
+					strength: payload.attrs.Strength ?? this.attributes.strength,
+					dexterity: payload.attrs.Dexterity ?? this.attributes.dexterity,
+					constitution: payload.attrs.Constitution ?? this.attributes.constitution,
+					intelligence: payload.attrs.Intelligence ?? this.attributes.intelligence,
+					wisdom: payload.attrs.Wisdom ?? this.attributes.wisdom,
+					charisma: payload.attrs.Charisma ?? this.attributes.charisma
+				};
 			}
 		);
 
@@ -530,11 +587,37 @@ export class GameSession {
 				equipped?: Record<string, InventoryItem> | null;
 				itemRef?: string | null;
 				slot: string;
+				clearedSlots?: string[] | null;
 			}) => {
 				if (payload.equipped) this.equipped = payload.equipped;
 				this.addSystemMessage(
 					payload.itemRef ? `Equipped ${payload.itemRef}.` : `Unequipped ${payload.slot}.`
 				);
+				for (const cleared of payload.clearedSlots ?? []) {
+					this.addSystemMessage(`${cleared} freed (two-handed weapon).`);
+				}
+			}
+		);
+
+		hub.on(
+			'ItemUsed',
+			(payload: {
+				itemRef: string;
+				remainingQuantity: number;
+				currentHealth: number;
+				maxHealth: number;
+				currentMana: number;
+				maxMana: number;
+				message: string;
+			}) => {
+				this.stats = {
+					...this.stats,
+					currentHealth: payload.currentHealth,
+					maxHealth: payload.maxHealth,
+					currentMana: payload.currentMana,
+					maxMana: payload.maxMana
+				};
+				this.addSystemMessage(payload.message || `Used ${payload.itemRef}.`);
 			}
 		);
 
@@ -584,9 +667,10 @@ export class GameSession {
 		});
 
 		hub.on('AreaSearched', (payload: AreaSearchedPayload) => {
-			const found = payload.discovered?.length ?? 0;
+			const discovered = payload.discovered ?? [];
+			this.lastSearch = { rollValue: payload.rollValue ?? 0, discovered };
 			this.addSystemMessage(
-				`Search roll ${payload.rollValue ?? '?'}: ${found > 0 ? `discovered ${found} location(s).` : 'nothing found.'}`
+				`Search roll ${payload.rollValue ?? '?'}: ${discovered.length > 0 ? `discovered ${discovered.length} location(s).` : 'nothing found.'}`
 			);
 		});
 
@@ -621,6 +705,18 @@ export class GameSession {
 			unspentAttributePoints: payload.unspentAttributePoints
 		};
 		this.currentNodeId = payload.currentNodeId ?? null;
+		this.attributes = {
+			strength: payload.strength,
+			dexterity: payload.dexterity,
+			constitution: payload.constitution,
+			intelligence: payload.intelligence,
+			wisdom: payload.wisdom,
+			charisma: payload.charisma
+		};
+
+		// The character sheet renders the bag and the equipment rack, so pull the snapshot as soon
+		// as the character is selected instead of waiting for a manual refresh.
+		await this.openInventory();
 
 		if (payload.currentZoneId) await this.enterZone(payload.currentZoneId);
 		await this.requestMapGraph(null);

@@ -604,6 +604,32 @@
 	white-space: nowrap;
 }
 
+.sheet-attributes {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	width: 100%;
+	padding: 4px 6px;
+	background: var(--vds-bg-2);
+	border: 1px solid var(--vds-border);
+	border-radius: var(--vds-radius-sm);
+	font-size: var(--vds-text-xs);
+	text-align: left;
+	transition: border-color 120ms ease;
+}
+
+.sheet-attributes:hover {
+	border-color: var(--vds-border-strong);
+}
+
+.sheet-attribute {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	text-transform: uppercase;
+}
+
 .bag-list {
 	display: flex;
 	flex-direction: column;

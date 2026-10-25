@@ -2431,6 +2431,276 @@ public class GameHubTests : IDisposable
         detail.Rarity.Should().Be("Common");
     }
 
+    // Two-handed weapons and the extended armour slots
+    [Fact]
+    public async Task EquipItem_Handler_Should_Clear_OffHand_When_Equipping_TwoHanded_Weapon()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+
+        var c = new Character
+        {
+            AccountId = accountId,
+            Name = $"TwoHand_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
+            EquipmentBlob = JsonSerializer.Serialize(
+                new Dictionary<string, string> { ["OffHand"] = "wooden_shield" }),
+        };
+        db.Characters.Add(c);
+        await db.SaveChangesAsync();
+
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetBySlugAsync("great_sword"))
+            .ReturnsAsync(new RealmEngine.Shared.Models.Item
+            {
+                Slug = "great_sword",
+                Name = "Great Sword",
+                Type = RealmEngine.Shared.Models.ItemType.Weapon,
+                IsTwoHanded = true,
+            });
+
+        var handler = CreateEquipHandler(db, itemRepo.Object);
+
+        var result = await handler.Handle(new EquipItemHubCommand
+        {
+            CharacterId = c.Id,
+            ItemRef = "great_sword",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.Slot.Should().Be("MainHand");
+        result.AllEquippedItems.Should().ContainKey("MainHand");
+        result.AllEquippedItems.Should().NotContainKey("OffHand");
+        result.ClearedSlots.Should().ContainSingle().Which.Should().Be("OffHand");
+    }
+
+    [Fact]
+    public async Task EquipItem_Handler_Should_Reject_OffHand_When_MainHand_Is_TwoHanded()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+
+        var c = new Character
+        {
+            AccountId = accountId,
+            Name = $"TwoHand_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
+            EquipmentBlob = JsonSerializer.Serialize(
+                new Dictionary<string, string> { ["MainHand"] = "great_sword" }),
+        };
+        db.Characters.Add(c);
+        await db.SaveChangesAsync();
+
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetBySlugAsync("great_sword"))
+            .ReturnsAsync(new RealmEngine.Shared.Models.Item
+            {
+                Slug = "great_sword",
+                Name = "Great Sword",
+                Type = RealmEngine.Shared.Models.ItemType.Weapon,
+                IsTwoHanded = true,
+            });
+        itemRepo.Setup(r => r.GetBySlugAsync("wooden_shield"))
+            .ReturnsAsync(new RealmEngine.Shared.Models.Item
+            {
+                Slug = "wooden_shield",
+                Name = "Wooden Shield",
+                Type = RealmEngine.Shared.Models.ItemType.Shield,
+            });
+
+        var handler = CreateEquipHandler(db, itemRepo.Object);
+
+        var result = await handler.Handle(new EquipItemHubCommand
+        {
+            CharacterId = c.Id,
+            ItemRef = "wooden_shield",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("both hands");
+    }
+
+    [Theory]
+    [InlineData("Shoulders", "shoulder_guards")]
+    [InlineData("Bracers", "leather_bracers")]
+    [InlineData("Gloves", "work_gloves")]
+    [InlineData("Belt", "wide_belt")]
+    public async Task EquipItem_Handler_Should_Accept_Extended_Armour_Slots(string slot, string itemRef)
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+
+        var handler = CreateEquipHandler(db);
+
+        var result = await handler.Handle(new EquipItemHubCommand
+        {
+            CharacterId = character.Id,
+            Slot = slot,
+            ItemRef = itemRef,
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.Slot.Should().Be(slot);
+        result.AllEquippedItems.Should().ContainKey(slot).WhoseValue.Should().Be(itemRef);
+    }
+
+    // UseItemHubCommandHandler
+    private static Character SeedCharacterWithItem(
+        ApplicationDbContext db,
+        Guid accountId,
+        string itemRef,
+        int quantity)
+    {
+        var c = new Character
+        {
+            AccountId = accountId,
+            Name = $"Use_{Guid.NewGuid():N}",
+            ClassName = "Warrior",
+            SlotIndex = 1,
+            Attributes = JsonSerializer.Serialize(new Dictionary<string, int>
+            {
+                ["CurrentHealth"] = 10,
+                ["MaxHealth"] = 40,
+                ["CurrentMana"] = 5,
+                ["MaxMana"] = 20,
+            }),
+            InventoryBlob = JsonSerializer.Serialize(new[]
+            {
+                new { ItemRef = itemRef, Quantity = quantity, Durability = (int?)null },
+            }),
+        };
+        db.Characters.Add(c);
+        db.SaveChanges();
+        return c;
+    }
+
+    [Fact]
+    public async Task UseItem_Handler_Should_Heal_And_Consume_One_Unit()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = SeedCharacterWithItem(db, accountId, "health_potion", 2);
+
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetBySlugAsync("health_potion"))
+            .ReturnsAsync(new RealmEngine.Shared.Models.Item
+            {
+                Slug = "health_potion",
+                Name = "Health Potion",
+                Type = RealmEngine.Shared.Models.ItemType.Consumable,
+                Effect = "heal",
+                Power = 25,
+            });
+
+        var handler = new UseItemHubCommandHandler(
+            new CharacterRepository(db),
+            itemRepo.Object,
+            NullLogger<UseItemHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new UseItemHubCommand
+        {
+            CharacterId = character.Id,
+            ItemRef = "health_potion",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.CurrentHealth.Should().Be(35);
+        result.MaxHealth.Should().Be(40);
+        result.RemainingQuantity.Should().Be(1);
+        result.Message.Should().Contain("recover 25 health");
+
+        var persisted = await db.Characters.FindAsync(character.Id);
+        persisted!.InventoryBlob.Should().Contain("\"Quantity\":1");
+        persisted.Attributes.Should().Contain("\"CurrentHealth\":35");
+    }
+
+    [Fact]
+    public async Task UseItem_Handler_Should_Fail_When_Item_Is_Not_In_The_Bag()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = SeedCharacterWithItem(db, accountId, "mana_potion", 1);
+
+        var handler = new UseItemHubCommandHandler(
+            new CharacterRepository(db),
+            new Mock<IItemRepository>().Object,
+            NullLogger<UseItemHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new UseItemHubCommand
+        {
+            CharacterId = character.Id,
+            ItemRef = "health_potion",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("do not have");
+    }
+
+    [Fact]
+    public async Task UseItem_Handler_Should_Fail_When_Item_Has_No_Usable_Effect()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = SeedCharacterWithItem(db, accountId, "iron_sword", 1);
+
+        var itemRepo = new Mock<IItemRepository>();
+        itemRepo.Setup(r => r.GetBySlugAsync("iron_sword"))
+            .ReturnsAsync(new RealmEngine.Shared.Models.Item
+            {
+                Slug = "iron_sword",
+                Name = "Iron Sword",
+                Type = RealmEngine.Shared.Models.ItemType.Weapon,
+            });
+
+        var handler = new UseItemHubCommandHandler(
+            new CharacterRepository(db),
+            itemRepo.Object,
+            NullLogger<UseItemHubCommandHandler>.Instance);
+
+        var result = await handler.Handle(new UseItemHubCommand
+        {
+            CharacterId = character.Id,
+            ItemRef = "iron_sword",
+        }, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("cannot be used");
+    }
+
+    [Fact]
+    public async Task UseItem_Should_Send_ItemUsed_To_Caller()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(It.IsAny<IRequest<UseItemHubResult>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UseItemHubResult
+            {
+                Success = true,
+                ItemRef = "health_potion",
+                RemainingQuantity = 1,
+                CurrentHealth = 35,
+                MaxHealth = 40,
+                CurrentMana = 5,
+                MaxMana = 20,
+                Message = "You drink the Health Potion and recover 25 health.",
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.UseItem("health_potion");
+
+        clients.CallerProxy.SentMessages
+            .Should().Contain(m => m.Method == "ItemUsed");
+    }
+
     // AddGold helpers
     private static async Task<Character> SeedCharacterWithGoldAsync(
         ApplicationDbContext db, Guid accountId, int gold)

@@ -153,6 +153,23 @@ export interface InventoryItem {
 	price: number;
 	weight: number;
 	durability?: number | null;
+	/** Consumable effect key (`heal`, `restore`, `heal_overtime`, `cure_poison`), if any. */
+	effect?: string | null;
+	/** Magnitude of `effect` (0 when the item has no effect). */
+	effectPower: number;
+	/** Whether the weapon occupies both hands. */
+	isTwoHanded: boolean;
+	armorClass?: string | null;
+	armorType?: string | null;
+	weaponType?: string | null;
+	damageMin?: number | null;
+	damageMax?: number | null;
+	/** Minimum character level required to equip or use the item. */
+	requirementsLevel: number;
+	/** Minimum attribute values required, keyed by attribute name. */
+	requirements: Record<string, number>;
+	/** Attribute bonuses granted while equipped, keyed by attribute name. */
+	bonuses: Record<string, number>;
 }
 
 export interface InventoryLoadedPayload {
@@ -210,11 +227,18 @@ export interface LocationEnteredPayload {
 	spawnedEnemies?: SpawnedEnemy[] | null;
 }
 
+/** A location revealed by a successful area search. */
+export interface SearchFinding {
+	slug: string;
+	displayName: string;
+	typeKey: string;
+}
+
 export interface AreaSearchedPayload {
 	characterId?: string;
 	rollValue: number;
 	anyFound: boolean;
-	discovered?: { slug: string; displayName: string; typeKey: string }[];
+	discovered?: SearchFinding[];
 }
 
 export interface CharacterRestedPayload {
@@ -292,6 +316,26 @@ export interface CharacterStats {
 	unspentAttributePoints: number;
 }
 
+/** Primary attributes, mirrored from the character's `Attributes` blob. */
+export interface CharacterAttributes {
+	strength: number;
+	dexterity: number;
+	constitution: number;
+	intelligence: number;
+	wisdom: number;
+	charisma: number;
+}
+
+/** Display order and labels for the primary attributes. */
+export const ATTRIBUTE_ORDER: { key: keyof CharacterAttributes; label: string }[] = [
+	{ key: 'strength', label: 'Strength' },
+	{ key: 'dexterity', label: 'Dexterity' },
+	{ key: 'constitution', label: 'Constitution' },
+	{ key: 'intelligence', label: 'Intelligence' },
+	{ key: 'wisdom', label: 'Wisdom' },
+	{ key: 'charisma', label: 'Charisma' }
+];
+
 export interface CombatState {
 	active: boolean;
 	enemy: {
@@ -310,7 +354,11 @@ export const EQUIPMENT_SLOTS = [
 	{ id: 'MainHand', label: 'Main hand' },
 	{ id: 'OffHand', label: 'Off hand' },
 	{ id: 'Head', label: 'Head' },
+	{ id: 'Shoulders', label: 'Shoulders' },
 	{ id: 'Chest', label: 'Chest' },
+	{ id: 'Bracers', label: 'Bracers' },
+	{ id: 'Gloves', label: 'Gloves' },
+	{ id: 'Belt', label: 'Belt' },
 	{ id: 'Legs', label: 'Legs' },
 	{ id: 'Feet', label: 'Feet' },
 	{ id: 'Ring', label: 'Ring' },
@@ -340,4 +388,39 @@ export function itemSubtitle(item: InventoryItem): string {
 /** True when the item can be equipped into a slot. */
 export function isEquippable(item: InventoryItem): boolean {
 	return Boolean(item.slot);
+}
+
+/** True when the item is a consumable with a recognised effect. */
+export function isUsable(item: InventoryItem): boolean {
+	return Boolean(item.effect) && item.effect !== '';
+}
+
+/** One-line description of what a consumable does, for the Use action and the detail dialog. */
+export function effectLabel(item: InventoryItem): string {
+	switch (item.effect?.toLowerCase()) {
+		case 'heal':
+			return `Restores ${item.effectPower} health`;
+		case 'heal_overtime':
+			return `Restores about ${Math.max(1, Math.floor(item.effectPower / 2))} health over time`;
+		case 'restore':
+			return `Restores ${item.effectPower} mana`;
+		case 'cure_poison':
+			return 'Cures poison';
+		default:
+			return 'No usable effect';
+	}
+}
+
+/** Weapon damage range, or `null` when the item is not a weapon. */
+export function damageLabel(item: InventoryItem): string | null {
+	if (item.damageMin == null || item.damageMax == null) return null;
+	return `${item.damageMin}–${item.damageMax} damage${item.isTwoHanded ? ' · two-handed' : ''}`;
+}
+
+/** Armor class / proficiency summary, or `null` when the item is not armour. */
+export function armorLabel(item: InventoryItem): string | null {
+	const parts = [item.armorClass, item.armorType].filter(
+		(part): part is string => Boolean(part) && part !== 'shield'
+	);
+	return parts.length > 0 ? `${parts.join(' · ')} armour` : null;
 }

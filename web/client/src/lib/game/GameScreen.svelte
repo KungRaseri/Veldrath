@@ -219,6 +219,39 @@
 						</ul>
 					{/if}
 
+					{#if session.lastSearch && session.lastSearch.discovered.length > 0}
+						<div class="space-y-1 border-t border-surface-800 pt-3">
+							<p class="text-xs tracking-wide text-surface-600-400 uppercase">
+								Discovered · search roll {session.lastSearch.rollValue}
+							</p>
+							<ul class="flex flex-wrap gap-2">
+								{#each session.lastSearch.discovered as finding (finding.slug)}
+									{@const node = session.map?.nodes.find(
+										(candidate) => candidate.refId === finding.slug || candidate.id === finding.slug
+									)}
+									<li>
+										{#if node && session.adjacentNodeIds.includes(node.id) && !session.dead}
+											<button
+												class="btn preset-tonal-surface px-2 py-1 text-xs"
+												type="button"
+												title={`Travel to ${finding.displayName}`}
+												onclick={() => session.travel(node.id)}
+											>
+												<Footprints size={12} aria-hidden="true" />
+												{finding.displayName}
+											</button>
+										{:else}
+											<span class="chip preset-tonal-surface text-xs">
+												{finding.displayName}
+												<span class="text-surface-600-400">· {finding.typeKey}</span>
+											</span>
+										{/if}
+									</li>
+								{/each}
+							</ul>
+						</div>
+					{/if}
+
 					<div class="flex flex-wrap gap-2 border-t border-surface-800 pt-3">
 						<button
 							class="btn preset-tonal-surface"
