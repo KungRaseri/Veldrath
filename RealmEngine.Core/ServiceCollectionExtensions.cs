@@ -8,12 +8,10 @@ using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Behaviors;
 using RealmEngine.Core.Features.Achievements.Services;
-using RealmEngine.Core.Features.CharacterCreation.Services;
 using RealmEngine.Core.Features.Combat;
 using RealmEngine.Core.Features.Combat.Services;
 using RealmEngine.Core.Features.Crafting.Services;
 using RealmEngine.Core.Features.Death;
-using RealmEngine.Core.Features.Death.Services;
 using RealmEngine.Core.Features.Difficulty.Services;
 using RealmEngine.Core.Features.Enchanting;
 using RealmEngine.Core.Features.Exploration;
@@ -234,7 +232,6 @@ public static class ServiceCollectionExtensions
             sp.GetService<ItemGenerator>()));
         services.AddScoped<CraftingService>();
         services.AddScoped<ExplorationService>();
-        services.AddScoped<CharacterInitializationService>();
         services.AddScoped<QuestService>();
         services.AddScoped<QuestProgressService>();
         services.AddScoped<QuestRewardService>();
@@ -246,7 +243,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<PartyAIService>();
         services.AddScoped<DifficultyService>();
         services.AddScoped<DeathService>();
-        services.AddScoped<RespawnService>();
         services.AddScoped<VictoryService>();
         services.AddScoped<NewGamePlusService>();
         services.AddScoped<SpellCastingService>();

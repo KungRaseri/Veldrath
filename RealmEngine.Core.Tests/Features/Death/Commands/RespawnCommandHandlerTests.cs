@@ -4,7 +4,6 @@ using Moq;
 using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Features.Death;
 using RealmEngine.Core.Features.Death.Commands;
-using RealmEngine.Core.Features.Death.Services;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Shared.Models;
 
