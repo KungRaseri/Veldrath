@@ -238,6 +238,13 @@ export interface QuestLogEntry {
 	objectives: QuestObjective[];
 }
 
+/** A quest line for the HUD tracker: the quest plus its nearest incomplete objective. */
+export interface TrackedQuest {
+	slug: string;
+	title: string;
+	objective: QuestObjective | null;
+}
+
 export interface AvailableQuest {
 	slug: string;
 	title: string;

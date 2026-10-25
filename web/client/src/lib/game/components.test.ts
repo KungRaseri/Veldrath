@@ -4,6 +4,7 @@ import CombatPanel from './CombatPanel.svelte';
 import GameHeader from './GameHeader.svelte';
 import GameOverlays from './GameOverlays.svelte';
 import LeftSidebar from './LeftSidebar.svelte';
+import QuestTracker from './QuestTracker.svelte';
 import type { CharacterStats, CombatState, InventoryItem } from './types';
 import type { GameSession } from './session.svelte';
 
@@ -137,6 +138,9 @@ function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
 		showAttributes: false,
 		showParty: false,
 		party: null as unknown,
+		trackedQuests: [] as unknown[],
+		questTurnInToast: null as unknown,
+		dismissQuestToast: vi.fn(),
 		partyInvites: [] as unknown[],
 		isPartyLeader: false,
 		openParty: vi.fn(),
@@ -424,6 +428,43 @@ describe('GameOverlays (attributes)', () => {
 		spend.click();
 
 		expect(session.allocateAttributePoints).toHaveBeenCalledWith({ Strength: 1 });
+	});
+});
+
+describe('QuestTracker', () => {
+	it('lists active quests with their nearest incomplete objective', async () => {
+		const session = fakeSession({
+			trackedQuests: [
+				{
+					slug: 'rats',
+					title: 'Clear the cellar',
+					objective: { key: 'kill:giant-rat', current: 2, required: 3, complete: false }
+				}
+			]
+		});
+		render(QuestTracker, { props: { session } });
+
+		expect(await screen.findByText('Clear the cellar')).toBeTruthy();
+		expect(screen.getByText('kill:giant-rat · 2/3')).toBeTruthy();
+	});
+
+	it('renders nothing when no quest is active', () => {
+		const session = fakeSession();
+		const { container } = render(QuestTracker, { props: { session } });
+
+		expect(container.textContent?.trim()).toBe('');
+	});
+});
+
+describe('GameOverlays (quest turn-in toast)', () => {
+	it('shows the turn-in toast and dismisses it', async () => {
+		const session = fakeSession({ questTurnInToast: { slug: 'rats', gold: 10, xp: 20 } });
+		render(GameOverlays, { props: { session } });
+
+		expect(await screen.findByText(/Quest complete/)).toBeTruthy();
+		expect(screen.getByText('+10 gold · +20 XP')).toBeTruthy();
+		screen.getByRole('button', { name: 'Dismiss' }).click();
+		expect(session.dismissQuestToast).toHaveBeenCalled();
 	});
 });
 

@@ -45,6 +45,7 @@ import type {
 	ShopCatalogItem,
 	ShopCatalogPayload,
 	SpawnedEnemy,
+	TrackedQuest,
 	ZoneEnteredPayload
 } from './types';
 import type { GroundItemsChangedPayload, SearchFinding } from './types';
@@ -100,6 +101,8 @@ export class GameSession {
 	equipped = $state<Record<string, InventoryItem>>({});
 	quests = $state<QuestLogEntry[]>([]);
 	availableQuests = $state<AvailableQuest[]>([]);
+	/** Turn-in announcement shown as a toast, or `null` when there is nothing to announce. */
+	questTurnInToast = $state<{ slug: string; gold: number; xp: number } | null>(null);
 	shopCatalog = $state<ShopCatalogItem[]>([]);
 	shopZone = $state<string | null>(null);
 	chat = $state<ChatMessage[]>([]);
@@ -123,6 +126,8 @@ export class GameSession {
 
 	private hub: HubConnection | null = null;
 	private characterId: string | null = null;
+	/** Previous journal snapshot, kept so objective completions can be announced without a per-tick event. */
+	private previousQuests: QuestLogEntry[] = [];
 
 	get selectedNode() {
 		return this.map?.nodes.find((node) => node.id === this.selectedNodeId) ?? null;
@@ -160,6 +165,20 @@ export class GameSession {
 	}
 
 	/** Every owned item, unequipped entries first and then alphabetically. */
+	/**
+	 * Active quests with their nearest incomplete objective, for the HUD tracker. Pure derivation: the journal is
+	 * authoritative and the tracker is only a view of it.
+	 */
+	get trackedQuests(): TrackedQuest[] {
+		return this.quests
+			.filter((quest) => quest.status.toLowerCase() === 'active')
+			.map((quest) => ({
+				slug: quest.slug,
+				title: quest.title,
+				objective: quest.objectives.find((objective) => !objective.complete) ?? null
+			}));
+	}
+
 	get bagItems(): InventoryItem[] {
 		return [...this.inventory].sort((left, right) => {
 			if (left.isEquipped !== right.isEquipped) return left.isEquipped ? 1 : -1;
@@ -817,15 +836,23 @@ export class GameSession {
 		hub.on('QuestLogReceived', (payload: QuestLogReceivedPayload | QuestLogEntry[]) => {
 			if (Array.isArray(payload)) {
 				this.quests = payload;
+				this.announceQuestProgress(payload);
 				return;
 			}
 
 			this.quests = payload.quests ?? this.quests;
 			if (payload.available) this.availableQuests = payload.available;
+			this.announceQuestProgress(this.quests);
 		});
 
 		hub.on('QuestTurnedIn', (payload: QuestTurnedInPayload) => {
 			this.quests = payload.quests ?? this.quests;
+			this.announceQuestProgress(this.quests);
+			this.questTurnInToast = {
+				slug: payload.slug,
+				gold: payload.goldReward,
+				xp: payload.xpReward
+			};
 			this.addSystemMessage(
 				`Quest complete: ${payload.slug} (+${payload.goldReward} gold, +${payload.xpReward} XP).`
 			);
@@ -965,6 +992,34 @@ export class GameSession {
 		this.enemies = payload.spawnedEnemies ?? [];
 
 		if (payload.mapChanged) await this.requestMapGraph(payload.mapId ?? null);
+	}
+
+	/** Clears the turn-in toast once the player has seen it. */
+	dismissQuestToast(): void {
+		this.questTurnInToast = null;
+	}
+
+	/**
+	 * Announces objectives that just became complete by diffing the new journal against the previous snapshot — the
+	 * only way to surface progress without inventing a per-tick event. The first snapshot produces nothing: there is
+	 * nothing to compare against and a reload must not spam the log.
+	 */
+	private announceQuestProgress(next: QuestLogEntry[]): void {
+		const previous = this.previousQuests;
+		this.previousQuests = next;
+		if (previous.length === 0) return;
+
+		for (const quest of next) {
+			const before = previous.find((entry) => entry.slug === quest.slug);
+			if (!before) continue;
+
+			for (const objective of quest.objectives) {
+				const was = before.objectives.find((entry) => entry.key === objective.key);
+				if (!was?.complete && objective.complete) {
+					this.addSystemMessage(`Objective complete: ${objective.key} (${quest.title}).`);
+				}
+			}
+		}
 	}
 
 	/**

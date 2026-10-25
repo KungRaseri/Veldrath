@@ -1461,6 +1461,80 @@ describe('GameSession progression and economy', () => {
 		expect(session.availableQuests).toEqual([available]);
 	});
 
+	it('announces an objective completion once, from the snapshot diff', async () => {
+		const session = await connected();
+		const quest = (complete: boolean) => ({
+			slug: 'rats',
+			title: 'Clear the cellar',
+			description: '',
+			status: 'Active',
+			goldReward: 10,
+			xpReward: 20,
+			canTurnIn: complete,
+			objectives: [{ key: 'kill:giant-rat', current: complete ? 3 : 2, required: 3, complete }]
+		});
+
+		hub.emit('QuestLogReceived', [quest(false)]);
+		expect(session.chat.some((entry) => entry.message.startsWith('Objective complete'))).toBe(
+			false
+		);
+
+		hub.emit('QuestLogReceived', [quest(true)]);
+		expect(
+			session.chat.filter((entry) => entry.message.startsWith('Objective complete'))
+		).toHaveLength(1);
+
+		// The same snapshot again must not repeat the announcement.
+		hub.emit('QuestLogReceived', [quest(true)]);
+		expect(
+			session.chat.filter((entry) => entry.message.startsWith('Objective complete'))
+		).toHaveLength(1);
+	});
+
+	it('tracks active quests with their nearest incomplete objective', async () => {
+		const session = await connected();
+		hub.emit('QuestLogReceived', {
+			quests: [
+				{
+					slug: 'rats',
+					title: 'Clear the cellar',
+					description: '',
+					status: 'Active',
+					goldReward: 10,
+					xpReward: 20,
+					canTurnIn: false,
+					objectives: [
+						{ key: 'kill:giant-rat', current: 3, required: 3, complete: true },
+						{ key: 'collect:tail', current: 1, required: 2, complete: false }
+					]
+				},
+				{
+					slug: 'done',
+					title: 'Finished',
+					description: '',
+					status: 'Completed',
+					goldReward: 0,
+					xpReward: 0,
+					canTurnIn: false,
+					objectives: []
+				}
+			]
+		});
+
+		expect(session.trackedQuests).toHaveLength(1);
+		expect(session.trackedQuests[0].objective?.key).toBe('collect:tail');
+	});
+
+	it('shows a turn-in toast the player can dismiss', async () => {
+		const session = await connected();
+
+		hub.emit('QuestTurnedIn', { slug: 'rats', goldReward: 10, xpReward: 20, quests: [] });
+
+		expect(session.questTurnInToast).toEqual({ slug: 'rats', gold: 10, xp: 20 });
+		session.dismissQuestToast();
+		expect(session.questTurnInToast).toBeNull();
+	});
+
 	it('records a turned-in quest and announces the rewards', async () => {
 		const session = await connected();
 
