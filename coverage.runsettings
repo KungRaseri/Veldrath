@@ -8,8 +8,8 @@
           <Include>[RealmEngine.*]*,[RealmForge]*,[Veldrath.*]*</Include>
           <Exclude>[*.Tests]*</Exclude>
           <ExcludeByAttribute>Obsolete,GeneratedCode,CompilerGenerated</ExcludeByAttribute>
-          <!-- App bootstrap and entry points -->
-          <ExcludeByFile>**/Program.cs,**/App.axaml,**/App.axaml.cs</ExcludeByFile>
+          <!-- EF Core migrations (generated), app bootstrap and entry points -->
+          <ExcludeByFile>**/Migrations/**/*.cs,**/Program.cs,**/App.axaml,**/App.axaml.cs</ExcludeByFile>
         </Configuration>
       </DataCollector>
     </DataCollectors>

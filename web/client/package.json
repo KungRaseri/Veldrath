@@ -16,6 +16,7 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"test:unit": "vitest",
+		"coverage": "vitest run --coverage",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright install && playwright test",
 		"test:e2e:game": "playwright test tests/game-loop.e2e.ts",

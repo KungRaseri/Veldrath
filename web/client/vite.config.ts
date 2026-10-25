@@ -27,7 +27,13 @@ export default defineConfig(() => {
 			environment: 'jsdom',
 			passWithNoTests: true,
 			include: ['src/**/*.{test,spec}.{js,ts}'],
-			setupFiles: ['./src/test-setup.ts']
+			setupFiles: ['./src/test-setup.ts'],
+			coverage: {
+				provider: 'v8' as const,
+				reporter: ['text-summary', 'lcov'],
+				include: ['src/**/*.{ts,svelte}'],
+				exclude: ['src/**/*.{test,spec}.{js,ts}', 'src/**/*.d.ts', 'src/test-setup.ts']
+			}
 		}
 	};
 });
