@@ -4,7 +4,9 @@
 > B is last on purpose. It is the milestone that protects everything the other three build, and its shape only
 > becomes obvious once party and death content exists. The one exception is the runtime reference check, which
 > ships inside Milestone D as #36.
-> **Tracker:** epic #39 — phases B1–B5 become issues when the milestone starts.
+> **Tracker:** epic #39 — B1 #50 (shared validators, one rule set), B2 #51 (write-path validation + Foundry
+> validate endpoint), B3 #52 (CI content guard), B4 #53 (coverage honesty + changed-lines blocking), B5 #54
+> (Mailpit, no mail bodies in logs, CORS defaults pinned).
 
 ---
 
