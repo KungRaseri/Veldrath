@@ -49,16 +49,13 @@ Invoke this skill when you need to:
 | `RealmEngine.Shared.Tests` | Shared model/utility tests | `engine` |
 | `RealmEngine.Data.Tests` | Repository/persistence tests | `engine` |
 | `Veldrath.Server.Tests` | Server integration tests | `server` |
-| `RealmForge.Tests` | Forge editor tests | `forge` |
 | `Veldrath.Discord.Tests` | Discord bot tests | `discord` |
-| `Veldrath.Auth.Tests` | Auth library tests | — |
 | `Veldrath.Assets.Tests` | Asset management tests | — |
 
 The SvelteKit web suite runs with `npm run test` from `web/` (Vitest + Playwright, `web` coverage flag).
 
 ## Notes
 
-- **Client and Forge UI tests** marked with `Category=UI` require a real display and are skipped in headless CI. This is configured per-project in `.csproj` files.
 - **`ExcludeFromCodeCoverage`** is applied at the assembly level in each test project's `Properties/AssemblyInfo.cs` — test projects themselves are excluded from coverage.
 - **Coverage runsettings** are configured in [`coverage.runsettings`](../../coverage.runsettings) — modify this file to adjust exclusion rules or threshold requirements.
 - **EF Core test projects** use the `InMemory` provider by default. `Veldrath.Server.Tests` uses SQLite for integration tests where SQL semantics matter.

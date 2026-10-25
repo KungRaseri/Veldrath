@@ -26,7 +26,7 @@ public class NameComponent
     /// </summary>
     public double BudgetModifier { get; set; } = 0.0;
 
-    /// <summary>Display order within the component pool in RealmForge.</summary>
+    /// <summary>Display order within the component pool in Foundry.</summary>
     public int SortOrder { get; set; }
 
     /// <summary>Navigation property for the owning pattern set.</summary>

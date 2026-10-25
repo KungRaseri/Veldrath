@@ -15,7 +15,6 @@ on:
   push:
     tags:
       - 'engine/v*'
-      - 'tooling/v*'
       - 'server/v*'
       - 'discord/v*'
   workflow_dispatch:
@@ -50,11 +49,6 @@ jobs:
           WORKFLOW="ci-engine.yml"
           ARTIFACT_NAME="engine-release-artifacts"
           VERSION="${TAG#engine/v}"
-        elif [[ "$TAG" == tooling/v* ]]; then
-          COMPONENT="tooling"
-          WORKFLOW="ci-tooling.yml"
-          ARTIFACT_NAME="tooling-release-artifacts"
-          VERSION="${TAG#tooling/v}"
         elif [[ "$TAG" == server/v* ]]; then
           COMPONENT="server"
           WORKFLOW="ci-server.yml"
@@ -172,20 +166,6 @@ jobs:
               echo ""
               echo "### Packages"
               echo "- \`RealmEngine-Libraries-$VERSION.zip\` — Core, Shared, and Data assemblies"
-              echo ""
-              echo "### Changes"
-              printf '%s\n' "$CHANGELOG"
-            } > release-body.md
-            ;;
-          tooling)
-            NAME="RealmForge $VERSION"
-            {
-              echo "## RealmForge $VERSION"
-              echo ""
-              echo "Avalonia desktop content editor for managing RealmEngine game data in Postgres."
-              echo ""
-              echo "### Packages"
-              echo "- \`RealmForge-Windows-$VERSION.zip\` — Windows desktop application (win-x64, self-contained)"
               echo ""
               echo "### Changes"
               printf '%s\n' "$CHANGELOG"

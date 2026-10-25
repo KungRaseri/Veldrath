@@ -26,8 +26,6 @@ coverage/
 .gitignore
 
 ## Other engine projects (not needed in the server image)
-RealmForge/
-RealmForge.Tests/
 Veldrath.Client/
 Veldrath.Server.Tests/
 RealmEngine.*.Tests/

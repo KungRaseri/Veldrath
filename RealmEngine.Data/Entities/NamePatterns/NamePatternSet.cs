@@ -12,7 +12,7 @@ public class NamePatternSet
     /// <summary>Entity path this set names — e.g. "enemies/wolves". Unique across all sets.</summary>
     public string EntityPath { get; set; } = string.Empty;
 
-    /// <summary>Optional human-readable label shown in RealmForge.</summary>
+    /// <summary>Optional human-readable label shown in Foundry.</summary>
     public string? DisplayName { get; set; }
     /// <summary>True if patterns in this set support trait-conditional substitution.</summary>
     public bool SupportsTraits { get; set; }

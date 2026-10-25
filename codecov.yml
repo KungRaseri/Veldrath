@@ -1,6 +1,6 @@
 # Codecov reporting configuration.
 #
-# Each component workflow uploads with its own flag (engine, server, client, forge, discord, web),
+# Each component workflow uploads with its own flag (engine, server, discord, web),
 # so a regression can be attributed to one component instead of the whole solution total.
 #
 # The statuses are informational: they surface the per-component delta on the PR without failing it.
@@ -37,9 +37,6 @@ flags:
   server:
     paths:
       - Veldrath.Server/
-  forge:
-    paths:
-      - RealmForge/
   discord:
     paths:
       - Veldrath.Discord/

@@ -12,7 +12,6 @@
 - Two organizational styles:
   - **Simple features**: flat layout — `Commands/{ActionName}Command.cs`, `Handlers/{ActionName}Handler.cs`
   - **Complex features**: sub-namespace per action — `Commands/{ActionName}/{ActionName}Command.cs`, `Commands/{ActionName}/{ActionName}Handler.cs`
-- Avalonia ViewModels: `RaiseAndSetIfChanged` for bindable properties, `ReactiveCommand.CreateFromTask` for async, `WhenAnyValue` for derived state
 - Only comment the *why*, not the *what*
 
 ## DI Registration Pattern

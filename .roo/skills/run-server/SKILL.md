@@ -88,7 +88,6 @@ docker compose down
 
 ## See Also
 
-- [run-client](../run-client/SKILL.md) — Start the Avalonia game client
-- [start-dev-stack](../start-dev-stack/SKILL.md) — Start full environment (DB + server + clients)
+- [start-dev-stack](../start-dev-stack/SKILL.md) — Start full environment (DB + server + web client)
 - [`docker-compose.yml`](../../docker-compose.yml) — Docker Compose configuration
-- [`.github/agent-memory/unbound-memory.md`](../../.github/agent-memory/unbound-memory.md) — Server hub architecture and session notes
+- [`.github/agent-memory/veldrath-memory.md`](../../.github/agent-memory/veldrath-memory.md) — Server hub architecture and session notes

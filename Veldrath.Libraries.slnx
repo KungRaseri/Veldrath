@@ -2,7 +2,6 @@
   <Project Path="Veldrath.Assets/Veldrath.Assets.csproj" />
   <Project Path="Veldrath.Assets.Tests/Veldrath.Assets.Tests.csproj" />
   <Project Path="Veldrath.Contracts/Veldrath.Contracts.csproj" />
-  <Project Path="RealmUI.Fonts/RealmUI.Fonts.csproj" />
   <Project Path="RealmEngine.Core/RealmEngine.Core.csproj" />
   <Project Path="RealmEngine.Core.Tests/RealmEngine.Core.Tests.csproj" />
   <Project Path="RealmEngine.Shared/RealmEngine.Shared.csproj" />

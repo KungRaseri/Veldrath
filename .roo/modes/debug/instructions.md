@@ -10,12 +10,11 @@
 ### Test Failures
 - Tests use `FluentAssertions` (`result.Should().Be()`) not `Assert.Equal()`
 - Server tests use `WebApplicationFactory<Program>` with SQLite in-memory — check `WebAppFactory.cs`
-- Client UI tests need `--filter "Category!=UI"` to exclude headless tests requiring display
 - Integration tests use `[Collection("Integration")]` — ensure test class has this attribute
 
 ### Runtime Debugging
 - Server: ASP.NET Core + SignalR on default ports (check `launchSettings.json`)
-- Client: Avalonia desktop app, connects to server via SignalR hub
+- Client: SvelteKit app in `web/`, connects to the server via the SignalR hub
 - Debug SignalR hub calls by checking the Hub → MediatR bridge pattern
 - Check `unbound-memory.md` for known handler quirks and blob schema details
 

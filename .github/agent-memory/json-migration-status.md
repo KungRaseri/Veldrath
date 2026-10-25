@@ -17,7 +17,7 @@ All Newtonsoft migration done as of 2026-03-16:
 - `EfCoreSaveGameRepository.cs` migrated to System.Text.Json with `PropertyNameCaseInsensitive = true`
 - `background.cs` `[JsonProperty]` attributes removed
 - Newtonsoft removed from: `RealmEngine.Core.csproj`, `RealmEngine.Shared.csproj`, `RealmEngine.Data.csproj`
-- Newtonsoft remains in: `Veldrath.Server` (ServerSaveGameRepository), `RealmForge`, `Veldrath.Server.Tests` (test data fixtures)
+- Newtonsoft remains in: `Veldrath.Server` (ServerSaveGameRepository), `Veldrath.Server.Tests` (test data fixtures). `RealmForge` no longer exists — it was deleted in Milestone B.
 
 ## Session History
 

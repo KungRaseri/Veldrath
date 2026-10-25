@@ -109,7 +109,6 @@ The web app starts at `http://localhost:5173`.
 ## See Also
 
 - [run-server](../run-server/SKILL.md) — Start server only
-- [run-realmforge](../run-realmforge/SKILL.md) — Start content editor
 - [web-development](../web-development/SKILL.md) — Web app routes, auth, Drizzle, and env access
 - [build-full](../build-full/SKILL.md) — Build the solution
 - [`docker-compose.yml`](../../docker-compose.yml) — Docker Compose configuration

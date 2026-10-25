@@ -70,25 +70,6 @@
     <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageVersion Include="Serilog.Sinks.Seq" Version="9.1.0" />
   </ItemGroup>
-  <!-- ── Avalonia (RealmForge only) ───────────────────────────────────────── -->
-  <ItemGroup>
-    <PackageVersion Include="Avalonia" Version="11.3.22" />
-    <PackageVersion Include="Avalonia.AvaloniaEdit" Version="11.2.0" />
-    <PackageVersion Include="Avalonia.Desktop" Version="11.3.22" />
-    <PackageVersion Include="Tmds.DBus.Protocol" Version="0.95.1" />
-    <PackageVersion Include="Avalonia.Fonts.Inter" Version="11.3.22" />
-    <PackageVersion Include="Avalonia.Headless.XUnit" Version="11.3.22" />
-    <PackageVersion Include="Avalonia.ReactiveUI" Version="11.3.8" />
-    <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.3.22" />
-    <PackageVersion Include="FluentAvaloniaUI" Version="2.5.1" />
-  </ItemGroup>
-  <!-- ── ReactiveUI ───────────────────────────────────────────────────────── -->
-  <ItemGroup>
-    <!-- ReactiveUI 26 replaces System.Reactive.Unit with ReactiveUI.Primitives.RxVoid and
-         Avalonia.ReactiveUI has no matching 12.x release; migrate together with Avalonia 12. -->
-    <PackageVersion Include="Microsoft.Reactive.Testing" Version="6.1.0" />
-    <PackageVersion Include="ReactiveUI" Version="20.4.1" />
-  </ItemGroup>
   <!-- ── Testing ──────────────────────────────────────────────────────────── -->
   <ItemGroup>
     <PackageVersion Include="coverlet.collector" Version="10.1.0" />

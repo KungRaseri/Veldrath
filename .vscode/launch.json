@@ -5,17 +5,6 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "RealmForge (Debug)",
-      "type": "coreclr",
-      "request": "launch",
-      "preLaunchTask": "build-realmforge",
-      "program": "${workspaceFolder}/RealmForge/bin/Debug/net10.0/RealmForge.dll",
-      "args": [],
-      "cwd": "${workspaceFolder}/RealmForge",
-      "console": "internalConsole",
-      "stopAtEntry": false
-    },
-    {
       "name": "Test: RealmEngine.Shared.Tests",
       "type": "coreclr",
       "request": "launch",

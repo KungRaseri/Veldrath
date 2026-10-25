@@ -5,7 +5,6 @@
 
       Component versions are set in versions/*.props:
         - versions/engine.props   → RealmEngine.Core, RealmEngine.Shared, RealmEngine.Data
-        - versions/tooling.props  → RealmForge
         - versions/server.props   → Veldrath.Server
         - versions/assets.props   → Veldrath.Assets
         - versions/discord.props  → Veldrath.Discord

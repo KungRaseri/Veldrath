@@ -1,8 +1,9 @@
 # Client UI architecture — decisions
 
 > Durable record of the two UI decisions that shape the SvelteKit game client. The original design
-> documents were deleted after their still-useful content was folded into this file; the Avalonia
-> desktop client that once shared these decisions was retired (Veldrath is web-first).
+> documents were deleted after their still-useful content was folded into this file. Every non-web
+> surface has been retired — the Avalonia desktop client and the `RealmForge` editor included
+> (Veldrath is web-first, and Foundry in the SvelteKit app is the content editing surface).
 
 ---
 
@@ -29,7 +30,7 @@ lists — not a rendered tilemap or sprite scene.
 ## 2. One DB-backed map graph for world navigation
 
 **Decision:** world navigation is a single graph stored in Postgres (`Map`, `MapNode`, `MapEdge`),
-read by the game client and authored in RealmForge.
+read by the game client and authored through the server's content endpoints.
 
 - **Nodes** carry zone/location identity, position hints, and discovery state; **edges** carry the
   connection type. Server endpoints and hub events deliver the graph as `MapGraphReceived` /
@@ -38,12 +39,13 @@ read by the game client and authored in RealmForge.
   in [`web/client/src/lib/game/cardinal-layout.ts`](../web/client/src/lib/game/cardinal-layout.ts).
 - **Validation** lives with the data: `RealmEngine.Data/Validation/MapGraphValidator` rejects
   graphs with dangling edges, duplicate node ids, or unreachable nodes.
-- **Authoring** happens in RealmForge (`MapGraphEditorService`), not by hand-editing JSON.
+- **Authoring** happens through the server write path (validated before it is stored), not by
+  hand-editing JSON.
 - Tilemap/TMX authoring was removed; do not add tile coordinates back to the map model.
 
 **Consequences**
 
-- Adding a location means adding a node plus edges in RealmForge — never a client code change.
+- Adding a location means adding a node plus edges as data — never a client code change.
 - Any layout change must keep the `cardinal-layout` unit tests green
   ([`cardinal-layout.test.ts`](../web/client/src/lib/game/cardinal-layout.test.ts)).
 

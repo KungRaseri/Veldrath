@@ -4,9 +4,8 @@ import { defineConfig } from 'vitest/config';
 import nodeAdapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
 
-// Veldrath is served by adapter-node only: the SvelteKit app is the single client
-// (browser), and the Avalonia desktop shell that needed an adapter-static SPA build
-// was retired.
+// Veldrath is served by adapter-node only: the SvelteKit app is the single client,
+// so no adapter-static SPA build is needed.
 export default defineConfig(() => {
 	return {
 		plugins: [

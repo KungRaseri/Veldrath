@@ -7,16 +7,17 @@
 
 ---
 
-## CRITICAL — CSS/Styling Rule for the web and desktop surfaces
+## CRITICAL — CSS/Styling Rule
 
-**Before writing ANY CSS**, read [`docs/design-system.md`](../../docs/design-system.md) and, for the
-SvelteKit app, load the `web-ui` skill. The web app is SvelteKit + Tailwind + Skeleton v5 and must use
-the Veldrath design tokens in `web/client/src/routes/theme.css` and `brand.css` — no raw hex values, no
-ad-hoc component stylesheets. The remaining Avalonia surface (RealmForge) uses the `RealmUI.Fonts`
-resources and the token names in §8 of the design system.
+**Before writing ANY CSS**, read [`docs/design-system.md`](../../docs/design-system.md) and load the
+`web-ui` skill. The web app is SvelteKit + Tailwind + Skeleton v5 and must use the Veldrath design
+tokens in `web/client/src/routes/theme.css` and `brand.css` — no raw hex values, no ad-hoc component
+stylesheets. There is no desktop surface any more: `RealmForge` and the Avalonia client are deleted,
+so the `RealmUI.Fonts` resources and the Avalonia token keys in §8 are history only.
 
-**Applies to**: [`web/client`](../../web/client) — the only game client — and
-[`RealmForge`](../../RealmForge).
+**Applies to**: [`web/client`](../../web/client) — the only client and the only UI surface (the
+Avalonia `RealmForge` editor was deleted in Milestone B, so the rules that referred to it no longer
+apply anywhere).
 
 ---
 
@@ -156,11 +157,11 @@ Hub methods that the client calls **must** use a single request DTO (record) as 
 
 ## Test Counts
 
-> **Current (2026-10-25, post-W12):** 7 .NET test projects, **3,755 tests** total —
-> `RealmEngine.Core` 1,946, `RealmEngine.Shared` 803, `RealmEngine.Data` 265, `Veldrath.Server` 675,
-> `Veldrath.Discord` 29, `RealmForge` 27, `Veldrath.Assets` 10. There is no client test project any
-> more. The table below is the historical per-session log; its "Client Tests" column refers to the
-> deleted Avalonia client.
+> **Current (2026-10-25, after Milestone B removed RealmForge):** 6 .NET test projects,
+> **3,925 tests** total — `RealmEngine.Core` 2,021, `RealmEngine.Shared` 793, `RealmEngine.Data` 265,
+> `Veldrath.Server` 807, `Veldrath.Discord` 29, `Veldrath.Assets` 10. There is no client or tooling
+> test project any more — the web app is covered by Vitest + Playwright from `web/`. The table below
+> is the historical per-session log; its "Client Tests" column refers to the deleted Avalonia client.
 
 | Session | Client Tests | Server Tests | Total |
 |---|---|---|---|
@@ -2521,7 +2522,7 @@ snapshot announces nothing because the objective is already complete in the prev
 
 **Tracker.** `trackedQuests` is a pure getter: active quests mapped to `{ slug, title, objective }` where `objective`
 is the nearest incomplete `QuestObjective` (or null ⇒ "Ready to turn in"). New `TrackedQuest` type in `types.ts`, new
-[`QuestTracker.svelte`](../web/client/src/lib/game/QuestTracker.svelte) rendered from `LeftSidebar` above the character
+[`QuestTracker.svelte`](../../web/client/src/lib/game/QuestTracker.svelte) rendered from `LeftSidebar` above the character
 menu, and it renders nothing when no quest is active.
 
 **Turn-in toast.** `questTurnInToast` state + `dismissQuestToast()`, rendered in `GameOverlays` at the top right
@@ -2593,3 +2594,40 @@ deleted characters not loadable). Server 803 → **807**, full solution **3,952*
 and `dotnet format` clean.
 
 **Milestone A is complete:** A1–A6 all closed; epic #38 can be closed.
+
+### Session-90 (2026-10-25) — Milestone B scope shift: RealmForge removed, Foundry is the editor
+
+**Decision (user):** "pull RealmForge out of the project entirely. Focus on Foundry (in svelte app)."
+RealmForge was the last remaining Avalonia surface, so this also finishes the web-first pivot.
+
+**Deleted:** `RealmForge/`, `RealmForge.Tests/` (27 tests), `RealmUI.Fonts/`, `RealmForge.slnx`,
+`versions/tooling.props`, `.github/workflows/ci-tooling.yml`, `.roo/skills/run-realmforge/`,
+`THIRD-PARTY-NOTICES.md` (its only content was the RealmForge game-icons attribution).
+
+**Config cleaned:** `Realm.Full.slnx` (13 projects left) and **`Veldrath.Libraries.slnx`, which still
+listed `RealmUI.Fonts/RealmUI.Fonts.csproj` and would no longer build**; `Directory.Packages.props`
+(Avalonia + ReactiveUI ItemGroups); `Directory.Build.props`; `codecov.yml` (`forge` flag);
+`coverage.runsettings`; `.dockerignore`; `.github/dependabot.yml` (Avalonia/ReactiveUI ignore rules);
+`.github/workflows/release.yml` (`tooling/v*` trigger, tooling tag branch, `tooling)` release body);
+`.vscode/tasks.json` + `launch.json` (6 dead tasks/configs); `scripts/generate-version.ps1`;
+`scripts/README.md`.
+
+**Docs updated:** `AGENTS.md`, `README.md`, `SECURITY.md`, `docs/design-system.md` (all Avalonia/AXAML
+guidance is now explicitly historical, matching the earlier Blazor treatment), `docs/client-ui-architecture.md`,
+`.github/instructions/{build-strategy,testing,xml-documentation,ef-core-patterns}.md`, `.roo/skills/*`,
+`.roo/modes/*/instructions.md`, `web/client/README.md`, `web/client/vite.config.ts`, the Foundry
+content page copy.
+
+**Memory:** `forge-foundry-sync.md` → `foundry-content-schema.md` (the name referenced a deleted app).
+
+**Milestone B re-scoped:** Foundry was read-only, so B2 is no longer "validate saves in a desktop app" —
+it now owns the server write path: `GET /api/content/{type}/{slug}/validate`,
+`POST /api/content/{type}`, `PUT /api/content/{type}/{slug}`, `DELETE /api/content/{type}/{slug}`,
+RBAC-gated while reads stay anonymous, an `UpdatedAt` precondition for concurrency, and a
+schema-driven edit form in Foundry. See `plans/content-pipeline.md` §2.2.
+
+**Verification:** `dotnet build Realm.Full.slnx` + `Veldrath.Libraries.slnx` 0 warnings 0 errors,
+`dotnet format --verify-no-changes` clean, **3,925 tests** across 6 projects all green
+(Core 2,021 / Shared 793 / Data 265 / Server 807 / Discord 29 / Assets 10), web typecheck 0 errors,
+lint clean (`prettier --check` needs the Foundry page reformatted after edits), Vitest 10 files,
+Playwright 22 passed + 1 skipped, production build OK.

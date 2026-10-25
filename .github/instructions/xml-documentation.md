@@ -1,6 +1,6 @@
 # XML Documentation (CS1591)
 
-Scope: **ALL non-test .NET projects** in the solution. This applies to [`RealmEngine.Core`](../../RealmEngine.Core/), [`RealmEngine.Shared`](../../RealmEngine.Shared/), [`RealmEngine.Data`](../../RealmEngine.Data/), [`Veldrath.Server`](../../Veldrath.Server/), [`Veldrath.Contracts`](../../Veldrath.Contracts/), [`Veldrath.Discord`](../../Veldrath.Discord/), [`Veldrath.Assets`](../../Veldrath.Assets/), [`RealmForge`](../../RealmForge/), and [`RealmUI.Fonts`](../../RealmUI.Fonts/). The SvelteKit app is documented with XML-style JSDoc/TSDoc comments in `web/client`.
+Scope: **ALL non-test .NET projects** in the solution. This applies to [`RealmEngine.Core`](../../RealmEngine.Core/), [`RealmEngine.Shared`](../../RealmEngine.Shared/), [`RealmEngine.Data`](../../RealmEngine.Data/), [`Veldrath.Server`](../../Veldrath.Server/), [`Veldrath.Contracts`](../../Veldrath.Contracts/), [`Veldrath.Discord`](../../Veldrath.Discord/), [`Veldrath.Assets`](../../Veldrath.Assets/). The SvelteKit app is documented with XML-style JSDoc/TSDoc comments in `web/client`.
 
 **Does NOT apply to** test projects (any project with `<IsTestProject>true</IsTestProject>` in its `.csproj`).
 
@@ -324,7 +324,6 @@ Test project examples:
 - [`Veldrath.Server.Tests`](../../Veldrath.Server.Tests/)
 - [`Veldrath.Assets.Tests`](../../Veldrath.Assets.Tests/)
 - [`Veldrath.Discord.Tests`](../../Veldrath.Discord.Tests/)
-- [`RealmForge.Tests`](../../RealmForge.Tests/)
 - [`RealmEngine.Data.Tests`](../../RealmEngine.Data.Tests/)
 - [`RealmEngine.Shared.Tests`](../../RealmEngine.Shared.Tests/)
 

@@ -108,8 +108,7 @@ python scripts/format-json-files.py path/to/data
 4. Validates Godot project (checks for project.godot)
 5. Copies Libraries/ to Godot project
 6. Copies Data/ to Godot project
-7. Optionally copies RealmForge
-8. Creates deployment info file
+7. Creates deployment info file
 
 **Automatic Changelog Features**:
 - Detects new, removed, and modified XML documentation
