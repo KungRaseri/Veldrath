@@ -174,6 +174,11 @@ try
         .ValidateOnStart();
     builder.Services.AddHostedService<EnemyRespawnService>();
     builder.Services.AddHostedService<ContentAuditService>();
+
+    builder.Services.AddOptions<PartyOptions>()
+        .Bind(builder.Configuration.GetSection(PartyOptions.SectionName))
+        .ValidateDataAnnotations()
+        .ValidateOnStart();
     builder.Services.AddScoped<IPlayerSessionRepository, PlayerSessionRepository>();
     builder.Services.AddScoped<IGroundItemRepository, EfCoreGroundItemRepository>();
     builder.Services.AddScoped<IRegionRepository, RegionRepository>();

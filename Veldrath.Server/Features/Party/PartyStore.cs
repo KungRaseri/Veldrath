@@ -33,6 +33,17 @@ public sealed record PartySnapshot(
     string LootRule,
     IReadOnlyList<PartyMemberView> Members);
 
+/// <summary>A pending invitation the client shows as a toast.</summary>
+/// <param name="PartyId">Party being offered.</param>
+/// <param name="PartyLeaderName">Name of the party's leader.</param>
+/// <param name="InvitedByName">Name of the character who sent the invite.</param>
+/// <param name="ExpiresAt">When the invite stops being valid (UTC).</param>
+public sealed record PartyInviteView(
+    Guid PartyId,
+    string PartyLeaderName,
+    string InvitedByName,
+    DateTimeOffset ExpiresAt);
+
 /// <summary>
 /// Persistence helpers for multiplayer parties. Backed by the <c>Parties</c>/<c>PartyMembers</c>/<c>PartyInvites</c>
 /// tables, so a party survives a restart and a rolling deploy.
@@ -46,6 +57,164 @@ public sealed class PartyStore
     public PartyStore(ApplicationDbContext db)
     {
         _db = db;
+    }
+
+    /// <summary>Returns how many characters belong to a party.</summary>
+    /// <param name="partyId">Party id.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public Task<int> GetMemberCountAsync(Guid partyId, CancellationToken cancellationToken = default) =>
+        _db.PartyMembers.CountAsync(member => member.PartyId == partyId, cancellationToken);
+
+    /// <summary>Adds a character to a party.</summary>
+    /// <param name="partyId">Party id.</param>
+    /// <param name="characterId">Character joining.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns><see langword="false"/> when the character was already in a party.</returns>
+    public async Task<bool> AddMemberAsync(
+        Guid partyId,
+        Guid characterId,
+        CancellationToken cancellationToken = default)
+    {
+        _db.PartyMembers.Add(new PartyMemberEntity
+        {
+            PartyId = partyId,
+            CharacterId = characterId,
+            JoinedAt = DateTimeOffset.UtcNow,
+        });
+
+        try
+        {
+            await _db.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateException)
+        {
+            // The unique index on CharacterId is the authority: they are already in some party.
+            _db.ChangeTracker.Clear();
+            return false;
+        }
+    }
+
+    /// <summary>Creates or refreshes an invite for a character.</summary>
+    /// <param name="partyId">Party being offered.</param>
+    /// <param name="invitedCharacterId">Character being invited.</param>
+    /// <param name="invitedByCharacterId">Character sending the invite.</param>
+    /// <param name="expiresAt">When the invite stops being valid.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task CreateOrRefreshInviteAsync(
+        Guid partyId,
+        Guid invitedCharacterId,
+        Guid invitedByCharacterId,
+        DateTimeOffset expiresAt,
+        CancellationToken cancellationToken = default)
+    {
+        var invite = await _db.PartyInvites.FirstOrDefaultAsync(
+            pending => pending.PartyId == partyId && pending.InvitedCharacterId == invitedCharacterId,
+            cancellationToken);
+
+        if (invite is null)
+        {
+            _db.PartyInvites.Add(new PartyInvite
+            {
+                PartyId = partyId,
+                InvitedCharacterId = invitedCharacterId,
+                InvitedByCharacterId = invitedByCharacterId,
+                ExpiresAt = expiresAt,
+            });
+        }
+        else
+        {
+            invite.InvitedByCharacterId = invitedByCharacterId;
+            invite.ExpiresAt = expiresAt;
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+        _db.ChangeTracker.Clear();
+    }
+
+    /// <summary>Returns a still-valid invite for a character, or <see langword="null"/>.</summary>
+    /// <param name="partyId">Party that offered it.</param>
+    /// <param name="characterId">Invited character.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public Task<PartyInvite?> GetValidInviteAsync(
+        Guid partyId,
+        Guid characterId,
+        CancellationToken cancellationToken = default)
+    {
+        // Capture the clock in a local: DateTimeOffset.UtcNow is not translatable once the DateTimeOffset columns are
+        // mapped through the SQLite string converter.
+        var now = DateTimeOffset.UtcNow;
+
+        return _db.PartyInvites
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                invite => invite.PartyId == partyId &&
+                          invite.InvitedCharacterId == characterId &&
+                          invite.ExpiresAt > now,
+                cancellationToken);
+    }
+
+    /// <summary>Returns the still-valid invites a character has received, newest expiry last.</summary>
+    /// <param name="characterId">Invited character.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public Task<List<PartyInviteView>> GetPendingInvitesAsync(
+        Guid characterId,
+        CancellationToken cancellationToken = default)
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        return _db.PartyInvites
+            .AsNoTracking()
+            .Where(invite => invite.InvitedCharacterId == characterId && invite.ExpiresAt > now)
+            .OrderBy(invite => invite.ExpiresAt)
+            .Select(invite => new PartyInviteView(
+                invite.PartyId,
+                invite.Party!.Leader!.Name,
+                invite.InvitedByCharacter!.Name,
+                invite.ExpiresAt))
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <summary>Deletes a single invite, used when the invitee declines that specific party.</summary>
+    /// <param name="partyId">Party that offered it.</param>
+    /// <param name="characterId">Invited character.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task DeleteInviteAsync(
+        Guid partyId,
+        Guid characterId,
+        CancellationToken cancellationToken = default)
+    {
+        await _db.PartyInvites
+            .Where(invite => invite.PartyId == partyId && invite.InvitedCharacterId == characterId)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        _db.ChangeTracker.Clear();
+    }
+
+    /// <summary>Deletes every invite a character has received, used when they join or decline.</summary>
+    /// <param name="characterId">Invited character.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task DeleteInvitesForCharacterAsync(
+        Guid characterId,
+        CancellationToken cancellationToken = default)
+    {
+        await _db.PartyInvites
+            .Where(invite => invite.InvitedCharacterId == characterId)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        _db.ChangeTracker.Clear();
+    }
+
+    /// <summary>Deletes invites that have expired, keeping the table from growing without bound.</summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task PurgeExpiredInvitesAsync(CancellationToken cancellationToken = default)
+    {
+        var now = DateTimeOffset.UtcNow;
+        await _db.PartyInvites
+            .Where(invite => invite.ExpiresAt <= now)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        _db.ChangeTracker.Clear();
     }
 
     /// <summary>Returns the party a character belongs to, or <see langword="null"/> when they are solo.</summary>

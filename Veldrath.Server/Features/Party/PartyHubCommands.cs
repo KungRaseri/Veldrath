@@ -22,6 +22,18 @@ public sealed record PartyCommandResult
     /// </summary>
     public Guid? PartyId { get; init; }
 
+    /// <summary>
+    /// Gets the invites the caller still has outstanding. Returned by <see cref="GetPartyHubQuery"/> so an invite sent
+    /// while the player was offline still reaches them on login.
+    /// </summary>
+    public IReadOnlyList<PartyInviteView> PendingInvites { get; init; } = [];
+
+    /// <summary>
+    /// Gets the character an invite was sent to, so the hub can nudge that specific connection to refresh its
+    /// invite list. Only set by <see cref="InviteToPartyHubCommand"/>.
+    /// </summary>
+    public Guid? InvitedCharacterId { get; init; }
+
     /// <summary>Gets a value indicating whether the party ceased to exist because its last member left.</summary>
     public bool PartyDisbanded { get; init; }
 }
@@ -239,16 +251,20 @@ public class GetPartyHubQueryHandler : IRequestHandler<GetPartyHubQuery, PartyCo
     /// <inheritdoc />
     public async Task<PartyCommandResult> Handle(GetPartyHubQuery request, CancellationToken cancellationToken)
     {
+        await _parties.PurgeExpiredInvitesAsync(cancellationToken);
+        var invites = await _parties.GetPendingInvitesAsync(request.CharacterId, cancellationToken);
+
         var party = await _parties.GetPartyForCharacterAsync(request.CharacterId, cancellationToken);
         if (party is null)
         {
-            return new PartyCommandResult { Success = true };
+            return new PartyCommandResult { Success = true, PendingInvites = invites };
         }
 
         return new PartyCommandResult
         {
             Success = true,
             Party = await _parties.ToSnapshotAsync(party, cancellationToken),
+            PendingInvites = invites,
         };
     }
 }
