@@ -56,6 +56,9 @@ Live enemies, respawn timers and combat sessions move out of process memory into
 `FOR UPDATE SKIP LOCKED` sweeps so a restart (or a rolling deploy) is lossless and two processes cannot
 fork the world. Party, death consequences and content validation all build on this, so it goes first.
 
+**Filed:** epic #31 — D1 #32 (schema), D2 #33 (DB-backed stores), D3 #34 (respawn sweeper),
+D4 #35 (multi-instance safety, reconnect grace, AFK service), D5 #36 (content validator + failsafes).
+
 ### C — Play together (the three social epics, in dependency order)
 1. Party panel + invite flow — `Party`/`PartyMember` exist in `RealmEngine.Shared` with no hub or UI.
    Party state persists through the D storage layer rather than a new static dictionary.
