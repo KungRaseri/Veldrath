@@ -1,8 +1,9 @@
 # Veldrath web client (SvelteKit)
 
-The single web frontend for Veldrath: public site, auth, game client, Foundry,
-editorial, admin, and moderation. The .NET server remains the API and SignalR hub;
-SvelteKit mints short-lived game JWTs and Better Auth owns web sessions.
+**The Veldrath game client and the whole web frontend** — public site, auth, game, Foundry,
+editorial, admin, and moderation (the Avalonia desktop client was retired; web-first is the
+product decision). The .NET server remains the API and SignalR hub; SvelteKit mints short-lived
+game JWTs and Better Auth owns credentials and sessions.
 
 ## Development
 
@@ -24,7 +25,8 @@ npm run preview
 ## Account and character flows
 
 - `/register`, `/login` (email **or** username), `/forgot-password`, `/reset-password`, and
-  `/verify-email` cover the full credential lifecycle.
+  `/verify-email` cover the full credential lifecycle. Better Auth is the only authentication
+  path — there is no ASP.NET Core Identity login to keep in sync.
 - `/account` edits the display name and username, changes the email (confirmation required),
   resends verification, links/unlinks Discord/Google/Microsoft, lists active sessions with
   revoke actions, changes the password, and signs out.

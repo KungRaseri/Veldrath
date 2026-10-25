@@ -1,6 +1,9 @@
-# Veldrath Server + Client — Memory Notes
+# Veldrath Server + Web Client — Memory Notes
 
-> **Status**: Updated through Session-41 (2026-06-30).
+> **Status**: Updated through Session-68 (2026-10-25). The Avalonia desktop client is gone —
+> Veldrath is web-first, and the SvelteKit app in `web/` is the only client. Entries below that
+> mention `Veldrath.Client`, `GameClient.Core`, `Razor`/`MudBlazor`, or `/api/foundry-bridge/*` are
+> historical session logs, not current guidance.
 
 ---
 

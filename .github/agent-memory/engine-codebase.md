@@ -1,23 +1,24 @@
 # RealmEngine Codebase Notes
 
-> **Status**: Updated through Session-41 (2026-06-30).
+> **Status**: Updated through Session-68 (2026-10-25).
 
 ## Test Counts
 
+Seven test projects remain; the desktop client, `Veldrath.GameClient.Core`, and `Veldrath.Auth`
+were deleted with its retirement.
+
 | Project | Tests |
 |---------|-------|
-| `RealmEngine.Core.Tests` | 1,912 (183 test files) |
-| `RealmEngine.Shared.Tests` | 803 (34 test files) |
-| `RealmEngine.Data.Tests` | 237 (21 test files) |
-| `Veldrath.Server.Tests` | 731 (63 test files) |
-| `Veldrath.Client.Tests` | 713 (40 test files) |
-| `RealmForge.Tests` | 8 (6 test files) |
-| `RealmFoundry.Tests` | 51 (8 test files) |
-| `Veldrath.Auth.Tests` | ~new~ (6 test files) |
-| `Veldrath.Web.Tests` | 31 (6 test files) |
-| `Veldrath.Discord.Tests` | ~ (4 test files) |
-| `Veldrath.Assets.Tests` | 10 (5 test files) |
-| **Total (last verified baseline)** | **4,739 (376 test files)** |
+| `RealmEngine.Core.Tests` | 1,946 |
+| `RealmEngine.Shared.Tests` | 803 |
+| `RealmEngine.Data.Tests` | 265 |
+| `Veldrath.Server.Tests` | 782 |
+| `Veldrath.Discord.Tests` | 29 |
+| `Veldrath.Assets.Tests` | 10 |
+| `RealmForge.Tests` | 27 |
+| **Total (verified 2026-10-25)** | **3,862** |
+
+The SvelteKit app adds Vitest + Playwright suites under `web/`.
 
 ## Key Model Facts
 - `Location` has 4 required properties: `Id`, `Name`, `Description`, `Type`
@@ -375,13 +376,11 @@ sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewMod
   filters currently-equipped refs out of the bag list (and resolves full `Item` details for the
   bag and equipment maps), so clients do not show the same item twice. Unequipping restores
   the item because the inventory blob still holds it.
-- **InventoryLoaded wire shape** — `{ CharacterId, Items, ItemDetails, Equipped, EquippedItems }`.
-  `Items` is the Avalonia `InventoryItemDto` list; `Equipped` is the slot→ref string map
-  (Avalonia); `ItemDetails` and `EquippedItems` are full `RealmEngine.Shared.Models.Item`
-  objects used by the RCL. `InventoryLoadedPayload` in `Veldrath.GameClient.Core` binds
-  `ItemDetails`/`EquippedItems` and ignores `Items`/`Equipped`. Do not put full item objects
-  under `Equipped`: the Avalonia record binds that name as `string`, and deserialization
-  failure prevents the inventory overlay from opening.
+- **InventoryLoaded wire shape** — `{ CharacterId, ItemDetails, EquippedItems, OpenOverlay }`.
+  `ItemDetails` is the bag as full `RealmEngine.Shared.Models.Item` objects and `EquippedItems`
+  is the slot→`Item` map; the Avalonia-only `Items`/`Equipped` ref projections were removed with
+  the desktop client. `web/client/src/lib/game/types.ts` mirrors exactly these fields, and
+  `payload-contract.test.ts` fails if they drift.
 - **ItemEquipped wire shape** — includes both `AllEquippedItems` (slot→ref, Avalonia) and
   `Equipped` (slot→`Item`, RCL). `GameHub.EquipItem` follows the event with a caller-only
   `InventoryLoaded` snapshot so bag/equipment state refreshes atomically.
