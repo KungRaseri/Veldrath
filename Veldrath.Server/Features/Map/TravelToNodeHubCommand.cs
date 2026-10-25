@@ -80,6 +80,7 @@ public class TravelToNodeHubCommandHandler
     private readonly IZoneRepository _zoneRepo;
     private readonly IZoneLocationRepository _locationRepo;
     private readonly ActorPoolResolver _actorPoolResolver;
+    private readonly IEnemyInstanceStore _enemyStore;
     private readonly ILogger<TravelToNodeHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="TravelToNodeHubCommandHandler"/>.</summary>
@@ -90,6 +91,7 @@ public class TravelToNodeHubCommandHandler
     /// <param name="zoneRepo">Zone catalog repository used to resolve the destination region.</param>
     /// <param name="locationRepo">Zone-location repository used for discovery and rosters.</param>
     /// <param name="actorPoolResolver">Resolver that spawns the destination enemy roster.</param>
+    /// <param name="enemyStore">Store for the live enemy instances at the destination.</param>
     /// <param name="logger">Logger for diagnostic output.</param>
     public TravelToNodeHubCommandHandler(
         IMapGraphRepository mapRepo,
@@ -99,6 +101,7 @@ public class TravelToNodeHubCommandHandler
         IZoneRepository zoneRepo,
         IZoneLocationRepository locationRepo,
         ActorPoolResolver actorPoolResolver,
+        IEnemyInstanceStore enemyStore,
         ILogger<TravelToNodeHubCommandHandler> logger)
     {
         _mapRepo = mapRepo;
@@ -108,6 +111,7 @@ public class TravelToNodeHubCommandHandler
         _zoneRepo = zoneRepo;
         _locationRepo = locationRepo;
         _actorPoolResolver = actorPoolResolver;
+        _enemyStore = enemyStore;
         _logger = logger;
     }
 
@@ -309,24 +313,27 @@ public class TravelToNodeHubCommandHandler
             ? $"zone:{zoneId}"
             : zoneGroup;
 
-        var storeKey = ZoneLocationEnemyStore.MakeKey(effectiveZoneGroup, destinationNode.RefId);
-
-        if (!ZoneLocationEnemyStore.HasRoster(storeKey))
-        {
-            var location = await _locationRepo.GetBySlugAsync(destinationNode.RefId);
-            if (location is not null)
+        // Reads the stored roster, spawning it on first arrival. Dead rows with an elapsed respawn time are
+        // revived by the store, so this is also where a wiped world comes back.
+        var alive = await _enemyStore.GetAliveOrSpawnAsync(
+            effectiveZoneGroup,
+            destinationNode.RefId,
+            async ct =>
             {
-                var roster = await _actorPoolResolver.SpawnRosterAsync(location.ActorPool);
-                ZoneLocationEnemyStore.TryAddRoster(storeKey, roster);
+                var location = await _locationRepo.GetBySlugAsync(destinationNode.RefId);
+                return location is null
+                    ? []
+                    : await _actorPoolResolver.SpawnRosterAsync(location.ActorPool);
+            },
+            CancellationToken.None);
 
-                _logger.LogInformation(
-                    "Spawned {Count} enemies at {StoreKey}",
-                    roster.Count,
-                    storeKey);
-            }
-        }
+        _logger.LogInformation(
+            "{Count} enemies present at {ZoneGroup}/{LocationSlug}",
+            alive.Count,
+            effectiveZoneGroup,
+            destinationNode.RefId);
 
-        return ZoneLocationEnemyStore.GetAlive(storeKey)
+        return alive
             .Select(enemy => new SpawnedEnemySummary(
                 enemy.Id,
                 enemy.Name,

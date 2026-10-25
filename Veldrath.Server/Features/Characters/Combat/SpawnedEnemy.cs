@@ -8,8 +8,8 @@ namespace Veldrath.Server.Features.Characters.Combat;
 /// </summary>
 public class SpawnedEnemy
 {
-    /// <summary>Gets the unique instance ID used for targeting this specific enemy.</summary>
-    public Guid Id { get; } = Guid.NewGuid();
+    /// <summary>Gets or sets the unique instance ID used for targeting this specific enemy.</summary>
+    public Guid Id { get; init; } = Guid.NewGuid();
 
     /// <summary>Gets the archetype slug this enemy was generated from (used to re-spawn on death).</summary>
     public string ArchetypeSlug { get; init; } = string.Empty;

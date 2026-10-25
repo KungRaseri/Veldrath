@@ -11,9 +11,10 @@ namespace Veldrath.Server.Tests.Features;
 public class RespawnHubCommandHandlerTests : IDisposable
 {
     private readonly TestDbContextFactory _dbFactory = new();
+    private readonly FakeCombatSessionStore _sessions = new();
 
     private RespawnHubCommandHandler MakeHandler(ApplicationDbContext db) =>
-        new(new CharacterRepository(db), NullLogger<RespawnHubCommandHandler>.Instance);
+        new(new CharacterRepository(db), _sessions, NullLogger<RespawnHubCommandHandler>.Instance);
 
     public void Dispose() => _dbFactory.Dispose();
 
@@ -101,12 +102,12 @@ public class RespawnHubCommandHandlerTests : IDisposable
         await using var db = _dbFactory.CreateContext();
         var character = await SeedCharacterAsync(db);
         // Fake an active combat session for this character.
-        CombatSessionStore.Set(
+        _sessions.Set(
             character.Id,
             new ActiveCombatSession("zone", "loc", Guid.NewGuid(), false, 0, DateTimeOffset.UtcNow));
 
         await MakeHandler(db).Handle(new RespawnHubCommand(character.Id), CancellationToken.None);
 
-        CombatSessionStore.IsInCombat(character.Id).Should().BeFalse();
+        _sessions.IsInCombat(character.Id).Should().BeFalse();
     }
 }

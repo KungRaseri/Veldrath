@@ -36,16 +36,20 @@ public class RespawnHubCommandHandler
     : IRequestHandler<RespawnHubCommand, RespawnHubResult>
 {
     private readonly ICharacterRepository _characterRepo;
+    private readonly ICombatSessionStore _sessions;
     private readonly ILogger<RespawnHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="RespawnHubCommandHandler"/>.</summary>
     /// <param name="characterRepo">Repository for loading and persisting character state.</param>
+    /// <param name="sessions">Store for per-character combat sessions.</param>
     /// <param name="logger">Logger instance.</param>
     public RespawnHubCommandHandler(
         ICharacterRepository characterRepo,
+        ICombatSessionStore sessions,
         ILogger<RespawnHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
+        _sessions = sessions;
         _logger = logger;
     }
 
@@ -83,7 +87,7 @@ public class RespawnHubCommandHandler
         entity.Attributes = CombatHelpers.SerializeAttrs(attrs);
         await _characterRepo.UpdateAsync(entity, cancellationToken);
 
-        CombatSessionStore.Remove(request.CharacterId);
+        await _sessions.RemoveAsync(request.CharacterId, cancellationToken);
 
         _logger.LogInformation(
             "Character {CharacterIdPrefix} respawned with {Hp}/{MaxHp} HP",

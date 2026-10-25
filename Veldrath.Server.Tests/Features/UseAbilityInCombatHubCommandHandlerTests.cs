@@ -16,23 +16,18 @@ namespace Veldrath.Server.Tests.Features;
 public class UseAbilityInCombatHubCommandHandlerTests : IDisposable
 {
     private readonly TestDbContextFactory _dbFactory = new();
-    private readonly List<(string Key, Guid EnemyId)> _enemyCleanup = [];
-    private readonly List<Guid> _sessionCleanup = [];
+    private readonly FakeEnemyInstanceStore _enemies = new();
+    private readonly FakeCombatSessionStore _sessions = new();
 
     private UseAbilityInCombatHubCommandHandler MakeHandler(ApplicationDbContext db) =>
         new(
             new CharacterRepository(db),
             Mock.Of<IPowerRepository>(),
-            Mock.Of<IServiceScopeFactory>(),
-            Mock.Of<IHubContext<GameHub>>(),
+            _enemies,
+            _sessions,
             NullLogger<UseAbilityInCombatHubCommandHandler>.Instance);
 
-    public void Dispose()
-    {
-        foreach (var (key, id) in _enemyCleanup) ZoneLocationEnemyStore.RemoveEnemy(key, id);
-        foreach (var id in _sessionCleanup) CombatSessionStore.Remove(id);
-        _dbFactory.Dispose();
-    }
+    public void Dispose() => _dbFactory.Dispose();
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -59,17 +54,14 @@ public class UseAbilityInCombatHubCommandHandlerTests : IDisposable
     {
         var zoneGroup = $"test/{Guid.NewGuid():N}";
         const string loc = "dungeon";
-        var key = ZoneLocationEnemyStore.MakeKey(zoneGroup, loc);
         var enemy = new SpawnedEnemy { Name = "Golem", Level = 1, CurrentHealth = hp, MaxHealth = hp };
-        ZoneLocationEnemyStore.AddEnemy(key, enemy);
-        _enemyCleanup.Add((key, enemy.Id));
+        _enemies.Add(zoneGroup, loc, enemy);
         return (zoneGroup, loc, enemy);
     }
 
     private void SetSession(Guid charId, string zoneGroup, string loc, Guid enemyId)
     {
-        CombatSessionStore.Set(charId, new ActiveCombatSession(zoneGroup, loc, enemyId, false, 0, DateTimeOffset.UtcNow));
-        _sessionCleanup.Add(charId);
+        _sessions.Set(charId, new ActiveCombatSession(zoneGroup, loc, enemyId, false, 0, DateTimeOffset.UtcNow));
     }
 
     // ── Tests ──────────────────────────────────────────────────────────────────

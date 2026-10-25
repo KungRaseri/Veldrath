@@ -1,0 +1,41 @@
+namespace Veldrath.Server.Features.Characters.Combat;
+
+/// <summary>
+/// Durable store for per-character combat sessions.
+/// </summary>
+/// <remarks>
+/// Replaces the in-process <c>CombatSessionStore</c>. A session is keyed by character id, which the database
+/// enforces as the primary key of <c>CombatSessions</c>, so "one fight per character" is a constraint rather
+/// than a convention. Sessions survive a restart, which is what makes the reconnect grace window in D4 possible.
+/// </remarks>
+public interface ICombatSessionStore
+{
+    /// <summary>Returns the character's active session, or <see langword="null"/> when they are not fighting.</summary>
+    /// <param name="characterId">Character id.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<ActiveCombatSession?> TryGetAsync(Guid characterId, CancellationToken cancellationToken = default);
+
+    /// <summary>Returns whether the character is currently in a fight.</summary>
+    /// <param name="characterId">Character id.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<bool> IsInCombatAsync(Guid characterId, CancellationToken cancellationToken = default);
+
+    /// <summary>Creates or replaces the character's session.</summary>
+    /// <param name="characterId">Character id.</param>
+    /// <param name="session">The session state to persist.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task SetAsync(Guid characterId, ActiveCombatSession session, CancellationToken cancellationToken = default);
+
+    /// <summary>Ends the character's session, if any.</summary>
+    /// <param name="characterId">Character id.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task RemoveAsync(Guid characterId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Ends every session targeting the given enemy and returns the released character ids, so each of them can
+    /// be told the fight is over.
+    /// </summary>
+    /// <param name="enemyId">Enemy instance id.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<IReadOnlyList<Guid>> RemoveByEnemyIdAsync(Guid enemyId, CancellationToken cancellationToken = default);
+}

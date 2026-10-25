@@ -63,7 +63,7 @@ public record SpawnedEnemySummary(Guid Id, string Name, int Level, int CurrentHe
 /// character's current zone via <see cref="IZoneLocationRepository"/>, persisting the new current
 /// location via <see cref="ICharacterRepository"/>, loading available connections from the arrived
 /// location, running a passive discovery sweep for hidden locations in the zone, and ensuring the
-/// location's enemy roster is spawned in <see cref="ZoneLocationEnemyStore"/>.
+/// location's enemy roster is loaded from <see cref="IEnemyInstanceStore"/>.
 /// </summary>
 public class NavigateToLocationHubCommandHandler
     : IRequestHandler<NavigateToLocationHubCommand, NavigateToLocationHubResult>
@@ -74,6 +74,7 @@ public class NavigateToLocationHubCommandHandler
     private readonly ICharacterRepository _characterRepo;
     private readonly ICharacterUnlockedLocationRepository _unlockedRepo;
     private readonly ActorPoolResolver _actorPoolResolver;
+    private readonly IEnemyInstanceStore _enemyStore;
     private readonly ILogger<NavigateToLocationHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="NavigateToLocationHubCommandHandler"/>.</summary>
@@ -81,18 +82,21 @@ public class NavigateToLocationHubCommandHandler
     /// <param name="characterRepo">Repository used to persist the character's current location.</param>
     /// <param name="unlockedRepo">Repository used to persist passive discovery unlock records.</param>
     /// <param name="actorPoolResolver">Resolver used to spawn the initial enemy roster for a location.</param>
+    /// <param name="enemyStore">Store for the live enemy instances at the location.</param>
     /// <param name="logger">Logger instance.</param>
     public NavigateToLocationHubCommandHandler(
         IZoneLocationRepository locationRepo,
         ICharacterRepository characterRepo,
         ICharacterUnlockedLocationRepository unlockedRepo,
         ActorPoolResolver actorPoolResolver,
+        IEnemyInstanceStore enemyStore,
         ILogger<NavigateToLocationHubCommandHandler> logger)
     {
         _locationRepo = locationRepo;
         _characterRepo = characterRepo;
         _unlockedRepo = unlockedRepo;
         _actorPoolResolver = actorPoolResolver;
+        _enemyStore = enemyStore;
         _logger = logger;
     }
 
@@ -134,23 +138,25 @@ public class NavigateToLocationHubCommandHandler
         var passiveDiscoveries = await RunPassiveDiscoveryAsync(
             request.CharacterId, request.ZoneId, unlockedSlugs, cancellationToken);
 
-        // Ensure the enemy roster for this location is spawned; reuse existing if already present.
-        var storeKey = ZoneLocationEnemyStore.MakeKey(request.ZoneGroup, location.Slug);
-        if (!string.IsNullOrEmpty(request.ZoneGroup) && !ZoneLocationEnemyStore.HasRoster(storeKey))
+        // Load the roster, spawning it on first arrival. The store revives dead rows whose respawn time has
+        // elapsed, so arriving here is also how a wiped world comes back.
+        var spawnedEnemies = new List<SpawnedEnemySummary>();
+        if (!string.IsNullOrEmpty(request.ZoneGroup))
         {
-            var roster = await _actorPoolResolver.SpawnRosterAsync(location.ActorPool);
-            ZoneLocationEnemyStore.TryAddRoster(storeKey, roster);
+            var alive = await _enemyStore.GetAliveOrSpawnAsync(
+                request.ZoneGroup,
+                location.Slug,
+                _ => _actorPoolResolver.SpawnRosterAsync(location.ActorPool),
+                cancellationToken);
 
-            _logger.LogInformation(
-                "Spawned {Count} enemies at {StoreKey}",
-                roster.Count, storeKey);
-        }
-
-        var spawnedEnemies = string.IsNullOrEmpty(request.ZoneGroup)
-            ? []
-            : ZoneLocationEnemyStore.GetAlive(storeKey)
+            spawnedEnemies = alive
                 .Select(e => new SpawnedEnemySummary(e.Id, e.Name, e.Level, e.CurrentHealth, e.MaxHealth))
                 .ToList();
+
+            _logger.LogInformation(
+                "{Count} enemies present at {ZoneGroup}/{LocationSlug}",
+                spawnedEnemies.Count, request.ZoneGroup, location.Slug);
+        }
 
         return new NavigateToLocationHubResult
         {
