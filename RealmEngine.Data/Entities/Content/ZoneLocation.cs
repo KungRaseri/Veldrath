@@ -72,6 +72,11 @@ public class ZoneLocationTraits
     public string? UnlockKey { get; set; }
     /// <summary>Character level threshold required for passive skill-check discovery (and target DC for active search rolls).</summary>
     public int? DiscoverThreshold { get; set; }
+    /// <summary>
+    /// True if a dead character in this zone respawns here. A zone should flag exactly one location; when none is
+    /// flagged the server logs an <c>Error</c> and falls back to the zone's first location.
+    /// </summary>
+    public bool? SafeRespawn { get; set; }
 }
 
 /// <summary>A weighted entry in an actor pool for a zone location.</summary>

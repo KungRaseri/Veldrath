@@ -52,14 +52,16 @@ internal static class CombatHelpers
         }
     }
 
-    // Calculates player attack damage from attrs. Returns at least 1.
+    // Calculates player attack damage from attrs. Returns at least 1. Death sickness saps it while it lasts.
     internal static int CalculatePlayerDamage(Dictionary<string, int> attrs, int level)
     {
         attrs.TryGetValue("Strength", out int str);
         if (str == 0) str = 10;
         int strMod = (str - 10) / 2;
         int lvlMod = level / 2;
-        return Math.Max(1, strMod + lvlMod + 5);
+        int damage = Math.Max(1, strMod + lvlMod + 5);
+
+        return DeathPenalties.ApplySicknessToDamage(damage, attrs, DateTimeOffset.UtcNow);
     }
 
     // Calculates enemy attack damage against the player. Halved when defending.

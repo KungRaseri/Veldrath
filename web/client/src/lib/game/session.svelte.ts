@@ -15,6 +15,7 @@ import type {
 	AvailableQuest,
 	CharacterRestedPayload,
 	CharacterAttributes,
+	CharacterRespawnedPayload,
 	CharacterSelectedPayload,
 	CharacterStats,
 	ChatMessage,
@@ -659,9 +660,28 @@ export class GameSession {
 			this.addSystemMessage('Enemy defeated.');
 		});
 
-		hub.on('CharacterRespawned', () => {
+		hub.on('CharacterRespawned', (payload?: CharacterRespawnedPayload) => {
 			this.dead = false;
-			this.addSystemMessage('You have respawned.');
+
+			// A2: death moves the character to the zone's safe location, so the view has to follow them.
+			if (payload?.locationSlug) {
+				this.location = {
+					locationSlug: payload.locationSlug,
+					locationDisplayName: payload.locationDisplayName ?? payload.locationSlug,
+					typeKey: 'Location',
+					spawnedEnemies: []
+				};
+				void this.requestGroundItems();
+			}
+
+			const sickness = payload?.sicknessExpiresAt
+				? ` You feel weakened until ${new SvelteDate(payload.sicknessExpiresAt).toLocaleTimeString()}.`
+				: '';
+			this.addSystemMessage(
+				payload?.locationDisplayName
+					? `You have respawned at ${payload.locationDisplayName}.${sickness}`
+					: `You have respawned.${sickness}`
+			);
 		});
 
 		hub.on(

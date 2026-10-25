@@ -359,6 +359,18 @@ export interface PlayerLeftPayload {
 	zoneId: string;
 }
 
+/** Sent to the caller when they respawn after a normal-mode death. */
+export interface CharacterRespawnedPayload {
+	characterId: string;
+	currentHealth: number;
+	currentMana: number;
+	/** Location the character woke up at, or null when death left them where they fell. */
+	locationSlug?: string | null;
+	locationDisplayName?: string | null;
+	/** When death sickness wears off, or null when none was applied. */
+	sicknessExpiresAt?: string | null;
+}
+
 /** One member of the player's party, as the server broadcasts it. */
 export interface PartyMemberView {
 	characterId: string;
