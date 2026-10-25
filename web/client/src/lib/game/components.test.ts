@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/svelte';
+import { fireEvent, render, screen } from '@testing-library/svelte';
 import { describe, expect, it, vi } from 'vitest';
 import CombatPanel from './CombatPanel.svelte';
 import GameHeader from './GameHeader.svelte';
@@ -219,7 +219,10 @@ describe('LeftSidebar (character sheet)', () => {
 		render(LeftSidebar, { props: { session } });
 
 		expect(await screen.findByText('Equipped')).toBeTruthy();
-		expect(screen.getByText('Common · Consumable')).toBeTruthy();
+
+		const potionRow = screen.getByTitle('Inspect Health Potion').closest('li');
+		expect(potionRow?.querySelector('.bag-row-status')?.textContent).toContain('Common');
+		expect(potionRow?.querySelector('.bag-row-status')?.textContent).toContain('Consumable');
 
 		screen.getByRole('button', { name: 'Equip Steel Sword' }).click();
 		expect(session.equipItem).toHaveBeenCalledWith('steel_sword');
@@ -392,5 +395,52 @@ describe('GameOverlays (available quests)', () => {
 
 		(await screen.findByRole('button', { name: 'Accept' })).click();
 		expect(session.acceptQuest).toHaveBeenCalledWith('wolves');
+	});
+});
+
+describe('LeftSidebar (item tooltip)', () => {
+	it('shows the full item card on hover', async () => {
+		render(LeftSidebar, { props: { session: fakeSession() } });
+
+		const row = (await screen.findByTitle('Inspect Iron Sword')).closest('li');
+		expect(row).not.toBeNull();
+		await fireEvent.mouseEnter(row!);
+
+		const tooltip = await screen.findByRole('tooltip');
+		expect(tooltip.textContent).toContain('Iron Sword');
+		expect(tooltip.textContent).toContain('Rare');
+		expect(tooltip.textContent).toContain('3–8 damage');
+		expect(tooltip.textContent).toContain('Strength +1');
+		expect(tooltip.textContent).toContain('Durability');
+	});
+
+	it('judges attribute requirements against the character', async () => {
+		const demanding = {
+			...ironSword,
+			itemRef: 'great_sword',
+			name: 'Great Sword',
+			requirements: { strength: 30 }
+		};
+		render(LeftSidebar, {
+			props: { session: fakeSession({ bagItems: [demanding], inventory: [demanding] }) }
+		});
+
+		const row = (await screen.findByTitle('Inspect Great Sword')).closest('li');
+		await fireEvent.mouseEnter(row!);
+
+		const tooltip = await screen.findByRole('tooltip');
+		expect(tooltip.querySelector('.item-tooltip-unmet')?.textContent).toContain('Strength 30');
+	});
+
+	it('hides the card when the pointer leaves', async () => {
+		render(LeftSidebar, { props: { session: fakeSession() } });
+
+		const row = (await screen.findByTitle('Inspect Iron Sword')).closest('li');
+		await fireEvent.mouseEnter(row!);
+		expect(await screen.findByRole('tooltip')).toBeTruthy();
+
+		await fireEvent.mouseLeave(row!);
+		await Promise.resolve();
+		expect(screen.queryByRole('tooltip')).toBeNull();
 	});
 });

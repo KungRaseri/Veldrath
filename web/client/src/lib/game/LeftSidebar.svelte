@@ -15,13 +15,13 @@
 		Undo2,
 		Zap
 	} from '@lucide/svelte';
+	import ItemTooltip from './ItemTooltip.svelte';
 	import { itemIcon, slotIcon, slotLabel } from './item-icons';
 	import { barPercent } from './reducers';
 	import {
 		ATTRIBUTE_ORDER,
 		EQUIPMENT_SLOTS,
 		itemLabel,
-		itemSubtitle,
 		isEquippable,
 		isUsable,
 		rarityClass,
@@ -32,6 +32,18 @@
 	let { session }: { session: GameSession } = $props();
 
 	let pendingDiscard = $state<string | null>(null);
+
+	/** Item currently hovered/focused, with the anchor rect used to place its tooltip. */
+	let hovered = $state<{ item: InventoryItem; anchor: DOMRect } | null>(null);
+
+	function showTooltip(item: InventoryItem, element: EventTarget | null) {
+		if (!(element instanceof HTMLElement)) return;
+		hovered = { item, anchor: element.getBoundingClientRect() };
+	}
+
+	function hideTooltip() {
+		hovered = null;
+	}
 
 	function confirmDiscard(itemRef: string) {
 		pendingDiscard = itemRef;
@@ -135,7 +147,14 @@
 			{#each EQUIPMENT_SLOTS as slot (slot.id)}
 				{@const item = equippedFor(slot.id)}
 				{@const SlotIcon = slotIcon(slot.id)}
-				<li class="equip-slot" class:equip-slot-empty={!item}>
+				<li
+					class="equip-slot"
+					class:equip-slot-empty={!item}
+					onmouseenter={(event) => item && showTooltip(item, event.currentTarget)}
+					onmouseleave={hideTooltip}
+					onfocusin={(event) => item && showTooltip(item, event.currentTarget)}
+					onfocusout={hideTooltip}
+				>
 					<span class="equip-slot-head">
 						<SlotIcon size={13} aria-hidden="true" />
 						<span class="text-xs tracking-wide text-surface-600-400 uppercase">
@@ -193,53 +212,65 @@
 			<ul class="bag-list">
 				{#each session.bagItems as item (item.itemRef)}
 					{@const ItemIcon = itemIcon(item)}
-					<li class="bag-row" class:bag-row-equipped={item.isEquipped}>
-						<span class="bag-icon">
-							<ItemIcon size={13} aria-hidden="true" />
-						</span>
-						<button
-							class="min-w-0 flex-1 text-left"
-							type="button"
-							title={`Inspect ${itemLabel(item)}`}
-							onclick={() => session.inspectItem(item)}
-						>
-							<span class="flex items-center gap-1">
-								<span class="truncate text-xs font-semibold {rarityClass(item.rarity)}">
-									{itemLabel(item)}
-								</span>
-								{#if (item.quantity ?? 1) > 1}
-									<span class="text-xs text-surface-600-400">× {item.quantity}</span>
-								{/if}
-								{#if item.isEquipped}
-									<span class="chip preset-filled-primary-500 text-xs" title="Currently equipped">
-										Equipped
-									</span>
-								{/if}
+					<li
+						class="bag-row"
+						class:bag-row-equipped={item.isEquipped}
+						onmouseenter={(event) => showTooltip(item, event.currentTarget)}
+						onmouseleave={hideTooltip}
+						onfocusin={(event) => showTooltip(item, event.currentTarget)}
+						onfocusout={hideTooltip}
+					>
+						<div class="bag-row-head">
+							<span class="bag-icon">
+								<ItemIcon size={12} aria-hidden="true" />
 							</span>
-							<span class="block truncate text-xs text-surface-600-400">
-								{itemSubtitle(item)}
-							</span>
-						</button>
+							<button
+								class="bag-row-name {rarityClass(item.rarity)}"
+								type="button"
+								title={`Inspect ${itemLabel(item)}`}
+								onclick={() => session.inspectItem(item)}
+							>
+								{itemLabel(item)}
+							</button>
+							{#if (item.quantity ?? 1) > 1}
+								<span class="bag-row-qty">×{item.quantity}</span>
+							{/if}
+						</div>
 
-						{#if pendingDiscard === item.itemRef}
-							<span class="bag-actions">
+						<p class="bag-row-status">
+							{#if item.isEquipped}
+								<span class="bag-row-badge">Equipped</span>
+							{/if}
+							<span>{item.rarity}</span>
+							<span aria-hidden="true">·</span>
+							<span>{item.type}</span>
+							{#if item.slot}
+								<span aria-hidden="true">·</span>
+								<span>{slotLabel(item.slot)}</span>
+							{/if}
+							{#if item.durability != null}
+								<span aria-hidden="true">·</span>
+								<span>{item.durability}%</span>
+							{/if}
+						</p>
+
+						<div class="bag-row-actions">
+							{#if pendingDiscard === item.itemRef}
 								<button
-									class="btn preset-filled-error-500 px-1 py-0.5 text-xs"
+									class="btn preset-filled-error-500 px-1.5 py-0.5 text-xs"
 									type="button"
 									onclick={() => discard(item.itemRef)}
 								>
 									Discard
 								</button>
 								<button
-									class="btn preset-tonal-surface px-1 py-0.5 text-xs"
+									class="btn preset-tonal-surface px-1.5 py-0.5 text-xs"
 									type="button"
 									onclick={() => (pendingDiscard = null)}
 								>
 									Keep
 								</button>
-							</span>
-						{:else}
-							<span class="bag-actions">
+							{:else}
 								{#if isUsable(item) && !session.combat.active}
 									<button
 										class="btn preset-tonal-surface px-1 py-0.5"
@@ -306,8 +337,8 @@
 								>
 									<Trash2 size={12} aria-hidden="true" />
 								</button>
-							</span>
-						{/if}
+							{/if}
+						</div>
 					</li>
 				{/each}
 			</ul>
@@ -335,3 +366,12 @@
 		</button>
 	</nav>
 </aside>
+
+{#if hovered}
+	<ItemTooltip
+		item={hovered.item}
+		anchor={hovered.anchor}
+		level={session.stats.level}
+		attributes={session.attributes}
+	/>
+{/if}
