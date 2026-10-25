@@ -3,6 +3,7 @@ import type {
 	CharacterSelectedPayload,
 	ChatMessage,
 	CombatStartedPayload,
+	InventoryItem,
 	MapEdge,
 	MapGraph,
 	MapNode,
@@ -176,6 +177,28 @@ function selected(overrides: Partial<CharacterSelectedPayload> = {}): CharacterS
 
 function enemy(id: string, overrides: Partial<SpawnedEnemy> = {}): SpawnedEnemy {
 	return { id, name: `Enemy ${id}`, level: 1, currentHealth: 20, maxHealth: 20, ...overrides };
+}
+
+/** A complete bag entry, so tests only spell out the fields they actually care about. */
+function item(itemRef: string, overrides: Partial<InventoryItem> = {}): InventoryItem {
+	return {
+		itemRef,
+		name: itemRef,
+		rarity: 'Common',
+		type: 'Misc',
+		quantity: 1,
+		stackSize: 1,
+		isStackable: false,
+		isEquipped: false,
+		price: 1,
+		weight: 1,
+		effectPower: 0,
+		isTwoHanded: false,
+		requirementsLevel: 1,
+		requirements: {},
+		bonuses: {},
+		...overrides
+	};
 }
 
 function combatStarted(overrides: Partial<CombatStartedPayload> = {}): CombatStartedPayload {
@@ -399,8 +422,9 @@ describe('GameSession commands', () => {
 
 		await session.buy('potion');
 		await session.sell('dagger');
-		await session.drop('rock');
-		await session.equip('MainHand', null);
+		await session.discard('rock');
+		await session.equipItem('sword');
+		await session.unequip('MainHand');
 		await session.defend();
 		await session.flee();
 		await session.useCombatAbility('cleave');
@@ -413,6 +437,7 @@ describe('GameSession commands', () => {
 			{ method: 'BuyItem', args: ['potion'] },
 			{ method: 'SellItem', args: ['dagger'] },
 			{ method: 'DropItem', args: ['rock'] },
+			{ method: 'EquipItem', args: [{ itemRef: 'sword' }] },
 			{ method: 'EquipItem', args: [{ slot: 'MainHand', itemRef: null }] },
 			{ method: 'DefendAction', args: [] },
 			{ method: 'FleeFromCombat', args: [] },
@@ -421,6 +446,32 @@ describe('GameSession commands', () => {
 			{ method: 'SearchArea', args: [] },
 			{ method: 'LeaveZone', args: [] },
 			{ method: 'EnterZone', args: ['zone-2'] }
+		]);
+	});
+
+	it('maps ground-item, item-use, ability and quest commands to hub methods', async () => {
+		const session = await connected();
+
+		await session.dropToGround('rock');
+		await session.pickUpGroundItem('ground-1');
+		await session.requestGroundItems();
+		await session.useItem('potion');
+		await session.allocateAttributePoints({ Strength: 1 });
+		await session.useAbility('heal');
+		await session.acceptQuest('rats');
+		await session.abandonQuest('rats');
+		await session.turnInQuest('rats');
+
+		expect(hub.invocations).toEqual([
+			{ method: 'DropItemToGround', args: ['rock'] },
+			{ method: 'PickUpGroundItem', args: ['ground-1'] },
+			{ method: 'GetGroundItems', args: [] },
+			{ method: 'UseItem', args: ['potion'] },
+			{ method: 'AllocateAttributePoints', args: [{ Strength: 1 }] },
+			{ method: 'UseAbility', args: ['heal'] },
+			{ method: 'AcceptQuest', args: ['rats'] },
+			{ method: 'AbandonQuest', args: ['rats'] },
+			{ method: 'TurnInQuest', args: ['rats'] }
 		]);
 	});
 });
@@ -532,6 +583,7 @@ describe('GameSession character and world events', () => {
 		});
 		expect(session.currentNodeId).toBe('market');
 		expect(hub.invocations).toEqual([
+			{ method: 'GetInventory', args: [] },
 			{ method: 'EnterZone', args: ['zone-1'] },
 			{ method: 'GetMapGraph', args: [null] }
 		]);
@@ -544,7 +596,7 @@ describe('GameSession character and world events', () => {
 		await flush();
 
 		expect(session.currentNodeId).toBeNull();
-		expect(hub.methods()).toEqual(['GetMapGraph']);
+		expect(hub.methods()).toEqual(['GetInventory', 'GetMapGraph']);
 	});
 
 	it('reports a character that is active elsewhere', async () => {
@@ -928,10 +980,17 @@ describe('GameSession progression and economy', () => {
 		expect(session.chat.at(-1)?.message).toBe('Sold dagger for 12 gold.');
 	});
 
-	it('updates unspent attribute points', async () => {
+	it('updates unspent attribute points and mirrors the allocated attributes', async () => {
 		const session = await connected();
-		hub.emit('AttributePointsAllocated', { remainingPoints: 0, attrs: { strength: 12 } });
+
+		hub.emit('AttributePointsAllocated', {
+			remainingPoints: 0,
+			attrs: { Strength: 12, Dexterity: 11 }
+		});
+
 		expect(session.stats.unspentAttributePoints).toBe(0);
+		expect(session.attributes).toMatchObject({ strength: 12, dexterity: 11 });
+		expect(session.attributes.constitution).toBe(0);
 	});
 
 	it('restores stats after resting', async () => {
@@ -950,25 +1009,46 @@ describe('GameSession progression and economy', () => {
 		expect(session.chat.at(-1)?.message).toBe('You feel rested.');
 	});
 
-	it('loads the inventory and opens the overlay unless told not to', async () => {
+	it('stores the inventory snapshot without touching overlays', async () => {
 		const session = await connected();
-		const sword = { itemRef: 'sword', name: 'Sword' };
+		const sword = item('sword', { name: 'Sword', isEquipped: true });
 
-		hub.emit('InventoryLoaded', { itemDetails: [sword], equippedItems: { MainHand: sword } });
+		hub.emit('InventoryLoaded', { items: [sword], equipped: { MainHand: sword } });
 		expect(session.inventory).toEqual([sword]);
 		expect(session.equippedEntries).toEqual([['MainHand', sword]]);
-		expect(session.showInventory).toBe(true);
+		expect(session.equippedItems).toEqual([sword]);
 
-		session.showInventory = false;
-		hub.emit('InventoryLoaded', { itemDetails: null, equippedItems: null, openOverlay: false });
+		hub.emit('InventoryLoaded', { items: null, equipped: null });
 		expect(session.inventory).toEqual([]);
 		expect(session.equipped).toEqual({});
-		expect(session.showInventory).toBe(false);
 	});
 
-	it('updates equipment and announces equips and unequips', async () => {
+	it('sorts the bag and counts only the carried items', async () => {
 		const session = await connected();
-		const sword = { itemRef: 'sword' };
+		const sword = item('sword', { name: 'Sword', isEquipped: true });
+		const arrow = item('arrow', { name: 'Arrow', quantity: 20, isStackable: true });
+		const potion = item('potion', { name: 'Potion' });
+
+		session.inventory = [sword, potion, arrow];
+
+		expect(session.bagItems.map((entry) => entry.name)).toEqual(['Arrow', 'Potion', 'Sword']);
+		expect(session.carriedItemCount).toBe(2);
+	});
+
+	it('opens and closes the item inspector', async () => {
+		const session = await connected();
+		const sword = item('sword');
+
+		expect(session.inspectedItem).toBeNull();
+		session.inspectItem(sword);
+		expect(session.inspectedItem).toEqual(sword);
+		session.closeInspect();
+		expect(session.inspectedItem).toBeNull();
+	});
+
+	it('updates equipment and announces equips, unequips and cleared slots', async () => {
+		const session = await connected();
+		const sword = item('sword');
 
 		hub.emit('ItemEquipped', { slot: 'MainHand', itemRef: 'sword', equipped: { MainHand: sword } });
 		expect(session.equipped).toEqual({ MainHand: sword });
@@ -977,16 +1057,48 @@ describe('GameSession progression and economy', () => {
 		hub.emit('ItemEquipped', { slot: 'MainHand', itemRef: null });
 		expect(session.equipped).toEqual({ MainHand: sword });
 		expect(session.chat.at(-1)?.message).toBe('Unequipped MainHand.');
+
+		hub.emit('ItemEquipped', { slot: 'MainHand', itemRef: 'axe', clearedSlots: ['OffHand'] });
+		expect(session.chat.at(-1)?.message).toBe('OffHand freed (two-handed weapon).');
+	});
+
+	it('applies a used item to the vitals', async () => {
+		const session = await connected();
+
+		hub.emit('ItemUsed', {
+			itemRef: 'potion',
+			remainingQuantity: 2,
+			currentHealth: 90,
+			maxHealth: 100,
+			currentMana: 30,
+			maxMana: 40,
+			message: ''
+		});
+
+		expect(session.stats).toMatchObject({ currentHealth: 90, currentMana: 30, maxMana: 40 });
+		expect(session.chat.at(-1)?.message).toBe('Used potion.');
+	});
+
+	it('tracks the items lying on the ground', async () => {
+		const session = await connected();
+		const rock = { id: 'ground-1', itemRef: 'rock', name: 'Rock', rarity: 'Common', quantity: 1 };
+
+		hub.emit('GroundItemsChanged', { items: [rock] });
+		expect(session.groundItems).toEqual([rock]);
+
+		hub.emit('GroundItemsChanged', { items: [], itemRef: 'rock' });
+		expect(session.groundItems).toEqual([]);
+		expect(session.chat.at(-1)?.message).toBe('The rock is now on the ground.');
 	});
 
 	it('announces dropped items with the remaining quantity', async () => {
 		const session = await connected();
 
 		hub.emit('ItemDropped', { itemRef: 'arrow', remainingQuantity: 9 });
-		expect(session.chat.at(-1)?.message).toBe('Dropped arrow (9 left).');
+		expect(session.chat.at(-1)?.message).toBe('Discarded arrow (9 left).');
 
 		hub.emit('ItemDropped', { itemRef: 'rock', remainingQuantity: 0 });
-		expect(session.chat.at(-1)?.message).toBe('Dropped rock.');
+		expect(session.chat.at(-1)?.message).toBe('Discarded rock.');
 	});
 
 	it('opens the shop and requests its catalog', async () => {
@@ -1013,14 +1125,31 @@ describe('GameSession progression and economy', () => {
 	it('accepts the quest log as an array or a wrapped object', async () => {
 		const session = await connected();
 		const quest = { slug: 'rats', title: 'Rat Problem' };
+		const available = { slug: 'bats', title: 'Bat Problem' };
 
 		hub.emit('QuestLogReceived', [quest]);
 		expect(session.quests).toEqual([quest]);
 
-		hub.emit('QuestLogReceived', { quests: [] });
+		hub.emit('QuestLogReceived', { quests: [], available: [available] });
 		expect(session.quests).toEqual([]);
+		expect(session.availableQuests).toEqual([available]);
 
 		hub.emit('QuestLogReceived', {});
 		expect(session.quests).toEqual([]);
+		expect(session.availableQuests).toEqual([available]);
+	});
+
+	it('records a turned-in quest and announces the rewards', async () => {
+		const session = await connected();
+
+		hub.emit('QuestTurnedIn', {
+			slug: 'rats',
+			goldReward: 25,
+			xpReward: 150,
+			quests: []
+		});
+
+		expect(session.quests).toEqual([]);
+		expect(session.chat.at(-1)?.message).toBe('Quest complete: rats (+25 gold, +150 XP).');
 	});
 });
