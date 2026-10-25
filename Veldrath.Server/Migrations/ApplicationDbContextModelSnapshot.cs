@@ -652,6 +652,83 @@ namespace Veldrath.Server.Migrations
                     b.ToTable("GroundItems");
                 });
 
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.Party", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("LeaderCharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LootRule")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasDefaultValue("contribution");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeaderCharacterId");
+
+                    b.ToTable("Parties");
+                });
+
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.PartyInvite", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("InvitedByCharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("InvitedCharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PartyId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("InvitedByCharacterId");
+
+                    b.HasIndex("InvitedCharacterId");
+
+                    b.HasIndex("PartyId", "InvitedCharacterId")
+                        .IsUnique();
+
+                    b.ToTable("PartyInvites");
+                });
+
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.PartyMemberEntity", b =>
+                {
+                    b.Property<Guid>("PartyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("JoinedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("PartyId", "CharacterId");
+
+                    b.HasIndex("CharacterId")
+                        .IsUnique();
+
+                    b.ToTable("PartyMembers");
+                });
+
             modelBuilder.Entity("Veldrath.Server.Data.Entities.PlayerAccount", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1176,6 +1253,63 @@ namespace Veldrath.Server.Migrations
                     b.Navigation("Voter");
                 });
 
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.Party", b =>
+                {
+                    b.HasOne("Veldrath.Server.Data.Entities.Character", "Leader")
+                        .WithMany()
+                        .HasForeignKey("LeaderCharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Leader");
+                });
+
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.PartyInvite", b =>
+                {
+                    b.HasOne("Veldrath.Server.Data.Entities.Character", "InvitedByCharacter")
+                        .WithMany()
+                        .HasForeignKey("InvitedByCharacterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Veldrath.Server.Data.Entities.Character", "InvitedCharacter")
+                        .WithMany()
+                        .HasForeignKey("InvitedCharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Veldrath.Server.Data.Entities.Party", "Party")
+                        .WithMany("Invites")
+                        .HasForeignKey("PartyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("InvitedByCharacter");
+
+                    b.Navigation("InvitedCharacter");
+
+                    b.Navigation("Party");
+                });
+
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.PartyMemberEntity", b =>
+                {
+                    b.HasOne("Veldrath.Server.Data.Entities.Character", "Character")
+                        .WithMany()
+                        .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Veldrath.Server.Data.Entities.Party", "Party")
+                        .WithMany("Members")
+                        .HasForeignKey("PartyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Character");
+
+                    b.Navigation("Party");
+                });
+
             modelBuilder.Entity("Veldrath.Server.Data.Entities.PlayerSession", b =>
                 {
                     b.HasOne("Veldrath.Server.Data.Entities.Character", "Character")
@@ -1262,6 +1396,13 @@ namespace Veldrath.Server.Migrations
             modelBuilder.Entity("Veldrath.Server.Data.Entities.FoundrySubmission", b =>
                 {
                     b.Navigation("Votes");
+                });
+
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.Party", b =>
+                {
+                    b.Navigation("Invites");
+
+                    b.Navigation("Members");
                 });
 
             modelBuilder.Entity("Veldrath.Server.Data.Entities.Region", b =>
