@@ -88,6 +88,30 @@ projects items into flat
   the client never guesses a slot, and `EquipItem` accepts a request **without** `Slot` so the bag can
   equip in one click.
 
+## 4. Gameplay surfaces the HUD exposes
+
+Everything below rides on the same `GameSession` runes store; no panel keeps its own copy of state.
+
+| Surface | Where | Wire |
+|---|---|---|
+| Bag actions | Character sheet rows | `EquipItem` (slot derived server-side), `UseItem`, `SellItem`, `DropItem` (destroy), `DropItemToGround` |
+| Item details | Centered dialog, opened from a bag row or an equipment slot | `InventoryLoaded` → `InventoryItemView` (damage, armour, durability, effect, requirements, bonuses) |
+| Attributes | Dialog behind the attribute strip in the sheet | `AllocateAttributePoints` → `AttributePointsAllocated` |
+| Abilities | Sheet menu → Abilities dialog | `UseAbility` (out of combat) |
+| Ground items | Center column, "On the ground" block | `GetGroundItems`, `DropItemToGround`, `PickUpGroundItem` → `GroundItemsChanged` |
+| Quest log | Sheet menu → Quest log dialog | `GetQuestLog`, `AcceptQuest`, `AbandonQuest`, `TurnInQuest` → `QuestLogReceived`, `QuestTurnedIn` |
+| Area search | Center column, "Discovered" block | `SearchArea` → `AreaSearched` |
+
+**Quests** live in `Character.QuestBlob` (JSON journal of `CharacterQuestEntry`). Objective keys use a
+`kind:key` convention — `kill:<enemy name>`, `collect:<item ref>`, `visit:<location slug>` — and the
+hub advances them from the events it already handles (enemy defeats, buys/pickups, navigation). Turn-in
+requires every objective and grants gold/experience through the existing `AddGold` / `GainExperience`
+commands, so levelling logic is not duplicated.
+
+**Ground items** live in the `GroundItems` table keyed by `(ZoneId, LocationSlug)`. `DropItem` remains a
+permanent destroy; `DropItemToGround` is the "leave it on the floor" path, and pickups are validated
+against the character's current location.
+
 ---
 
 ## Related
