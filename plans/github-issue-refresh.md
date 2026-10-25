@@ -75,14 +75,17 @@ fork the world. Party, death consequences and content validation all build on th
    the region entry node, with a guided first quest.
 8. Quest HUD tracker + completion toast (the journal exists; the *during play* surface does not).
 9. Quest objective types beyond `kill`/`collect`/`visit` (`talk`, `deliver`, `craft`, `reach_level`).
+10. **Hardcore memorial roster + global leaderboard.** A hardcore death keeps the soft delete
+    (`DeletedAt`), and the player gets a per-account *memorial roster* of their fallen characters while
+    the world gets a *global hardcore leaderboard*. Data already exists; this is a query + UI feature.
 
 ### B — Content pipeline and hygiene
-10. Foundry → DB → engine validation gates, plus the startup content validator and failsafe tests
+11. Foundry → DB → engine validation gates, plus the startup content validator and failsafe tests
     described in [`server-first-world-state.md`](server-first-world-state.md) §4.
-11. Make the coverage gates honest: `@veldrath/shared` cannot pass its own `coverage` script today, and
+12. Make the coverage gates honest: `@veldrath/shared` cannot pass its own `coverage` script today, and
     the Codecov statuses are `informational: true` on purpose. Deferred until the systems above exist.
-12. A `CorsSetup` test that pins the dev defaults, including the preview origin.
-13. Dev mail catcher (Mailpit) so `NullEmailSender` no longer needs to log bodies at all.
+13. A `CorsSetup` test that pins the dev defaults, including the preview origin.
+14. Dev mail catcher (Mailpit) so `NullEmailSender` no longer needs to log bodies at all.
 
 ### Done in the cleanup pass (Session-73, `63688c19` / `f860bfa1` / `f6ef5deb`)
 - Deleted `RespawnService`, `CharacterInitializationService`, `EquipmentPowerService` and their dead tests.
