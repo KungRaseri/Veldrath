@@ -18,6 +18,9 @@ internal static class CombatHelpers
         PropertyNameCaseInsensitive = true,
     };
 
+    /// <summary>How long a defeated enemy stays gone before its row is revived.</summary>
+    internal static readonly TimeSpan RespawnDelay = TimeSpan.FromSeconds(60);
+
     // Deserializes the character attributes blob; returns an empty dict on failure.
     internal static Dictionary<string, int> ParseAttrs(string? attrsJson, ILogger? logger = null)
     {
@@ -90,12 +93,12 @@ internal static class CombatHelpers
         return (damage, ability.Name);
     }
 
-    // Distributes proportional XP and gold to all contributors and clears the combat session.
+    // Distributes proportional XP and gold to all contributors and releases their combat sessions.
     // Returns a list of (CharacterId, Xp, Gold) for broadcasting.
     internal static async Task<List<(Guid CharacterId, int Xp, int Gold)>> DistributeRewardsAsync(
         SpawnedEnemy enemy,
-        string storeKey,
         ICharacterRepository repo,
+        ICombatSessionStore sessions,
         CancellationToken ct)
     {
         // Atomic guard: only distribute once even under concurrent kills.
@@ -131,53 +134,11 @@ internal static class CombatHelpers
             rewards.Add((charId, xp, gold));
         }
 
-        CombatSessionStore.RemoveByEnemyId(enemy.Id);
-        ZoneLocationEnemyStore.RemoveEnemy(storeKey, enemy.Id);
+        // Release every engaged player; the enemy row stays behind as a dead row with a respawn time, so the
+        // world remembers it owes a respawn (D3's sweeper revives it).
+        await sessions.RemoveByEnemyIdAsync(enemy.Id, ct);
 
         return rewards;
-    }
-
-    // Fires a delayed task that respawns a single enemy at the given location after the timer expires.
-    internal static void ScheduleRespawn(
-        string storeKey,
-        string zoneGroup,
-        string archetypeSlug,
-        IServiceScopeFactory scopeFactory,
-        IHubContext<GameHub> hubContext,
-        ILogger logger,
-        int delaySeconds = 60)
-    {
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
-
-                using var scope = scopeFactory.CreateScope();
-                var resolver = scope.ServiceProvider.GetRequiredService<ActorPoolResolver>();
-                var pool = new List<ActorPoolEntry> { new(archetypeSlug, 1) };
-                var roster = await resolver.SpawnRosterAsync(pool);
-
-                if (roster.Count > 0)
-                {
-                    var enemy = roster[0];
-                    ZoneLocationEnemyStore.AddEnemy(storeKey, enemy);
-
-                    await hubContext.Clients.Group(zoneGroup).SendAsync("EnemySpawned", new
-                    {
-                        enemy.Id,
-                        enemy.Name,
-                        enemy.Level,
-                        enemy.CurrentHealth,
-                        enemy.MaxHealth,
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error during enemy respawn for {StoreKey}", storeKey);
-            }
-        });
     }
 
     // Handles player death: HC → soft-delete; normal → experience/gold penalty and death state.
@@ -189,11 +150,13 @@ internal static class CombatHelpers
         ActiveCombatSession session,
         SpawnedEnemy? enemy,
         ICharacterRepository repo,
+        IEnemyInstanceStore enemies,
+        ICombatSessionStore sessions,
         CancellationToken ct)
     {
         if (player.Health > 0) return (false, false);
 
-        // Remove from enemy participation
+        // Remove from enemy participation, and persist it so a dead player is not still counted as a contributor.
         if (enemy is not null)
         {
             lock (enemy.SyncRoot)
@@ -203,9 +166,11 @@ internal static class CombatHelpers
                 if (enemy.LastAttackerId == entity.Id)
                     enemy.LastAttackerId = enemy.Participants.FirstOrDefault();
             }
+
+            await enemies.SaveAsync(enemy, session.ZoneGroup, session.LocationSlug, ct);
         }
 
-        CombatSessionStore.Remove(entity.Id);
+        await sessions.RemoveAsync(entity.Id, ct);
 
         bool isHardcore = string.Equals(entity.DifficultyMode, "hardcore", StringComparison.OrdinalIgnoreCase);
 

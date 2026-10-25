@@ -42,19 +42,28 @@ public record EngageEnemyHubResult
 }
 
 /// <summary>
-/// Handles <see cref="EngageEnemyHubCommand"/> by locating the live enemy in
-/// <see cref="ZoneLocationEnemyStore"/>, registering the player as a participant,
-/// and recording an <see cref="ActiveCombatSession"/> in <see cref="CombatSessionStore"/>.
+/// Handles <see cref="EngageEnemyHubCommand"/> by loading the live enemy from
+/// <see cref="IEnemyInstanceStore"/>, registering the player as a participant,
+/// and recording an <see cref="ActiveCombatSession"/> in <see cref="ICombatSessionStore"/>.
 /// </summary>
 public class EngageEnemyHubCommandHandler
     : IRequestHandler<EngageEnemyHubCommand, EngageEnemyHubResult>
 {
+    private readonly IEnemyInstanceStore _enemies;
+    private readonly ICombatSessionStore _sessions;
     private readonly ILogger<EngageEnemyHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="EngageEnemyHubCommandHandler"/>.</summary>
+    /// <param name="enemies">Store for the live enemy instances.</param>
+    /// <param name="sessions">Store for per-character combat sessions.</param>
     /// <param name="logger">Logger instance.</param>
-    public EngageEnemyHubCommandHandler(ILogger<EngageEnemyHubCommandHandler> logger)
+    public EngageEnemyHubCommandHandler(
+        IEnemyInstanceStore enemies,
+        ICombatSessionStore sessions,
+        ILogger<EngageEnemyHubCommandHandler> logger)
     {
+        _enemies = enemies;
+        _sessions = sessions;
         _logger = logger;
     }
 
@@ -62,26 +71,27 @@ public class EngageEnemyHubCommandHandler
     /// <param name="request">The command containing character, zone, location, and enemy identifiers.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>An <see cref="EngageEnemyHubResult"/> describing the outcome.</returns>
-    public Task<EngageEnemyHubResult> Handle(
+    public async Task<EngageEnemyHubResult> Handle(
         EngageEnemyHubCommand request,
         CancellationToken cancellationToken)
     {
-        if (CombatSessionStore.IsInCombat(request.CharacterId))
-            return Task.FromResult(new EngageEnemyHubResult { Success = false, ErrorMessage = "Already in combat" });
+        if (await _sessions.IsInCombatAsync(request.CharacterId, cancellationToken))
+            return new EngageEnemyHubResult { Success = false, ErrorMessage = "Already in combat" };
 
-        var storeKey = ZoneLocationEnemyStore.MakeKey(request.ZoneGroup, request.LocationSlug);
-        var enemy = ZoneLocationEnemyStore.TryGetEnemy(storeKey, request.EnemyId);
+        var enemy = await _enemies.TryGetAsync(request.EnemyId, cancellationToken);
         if (enemy is null)
-            return Task.FromResult(new EngageEnemyHubResult { Success = false, ErrorMessage = "Enemy not found" });
+            return new EngageEnemyHubResult { Success = false, ErrorMessage = "Enemy not found" };
 
         if (!enemy.IsAlive)
-            return Task.FromResult(new EngageEnemyHubResult { Success = false, ErrorMessage = "Enemy is already dead" });
+            return new EngageEnemyHubResult { Success = false, ErrorMessage = "Enemy is already dead" };
 
-        // Register this player as a participant.
+        // Register this player as a participant and persist it, so the engagement survives a restart.
         lock (enemy.SyncRoot)
         {
             enemy.Participants.Add(request.CharacterId);
         }
+
+        await _enemies.SaveAsync(enemy, request.ZoneGroup, request.LocationSlug, cancellationToken);
 
         var session = new ActiveCombatSession(
             ZoneGroup: request.ZoneGroup,
@@ -91,18 +101,18 @@ public class EngageEnemyHubCommandHandler
             TurnCount: 0,
             StartedAt: DateTimeOffset.UtcNow);
 
-        CombatSessionStore.Set(request.CharacterId, session);
+        await _sessions.SetAsync(request.CharacterId, session, cancellationToken);
 
         _logger.LogInformation(
-            "Character {CharacterIdPrefix} engaged enemy {EnemyName} ({EnemyId}) at {StoreKey}",
-            request.CharacterId.ToString()[..8], enemy.Name, enemy.Id, storeKey);
+            "Character {CharacterIdPrefix} engaged enemy {EnemyName} ({EnemyId}) at {ZoneGroup}/{LocationSlug}",
+            request.CharacterId.ToString()[..8], enemy.Name, enemy.Id, request.ZoneGroup, request.LocationSlug);
 
         var abilityNames = enemy.Template.Abilities
             .Select(a => string.IsNullOrWhiteSpace(a.DisplayName) ? a.Name : a.DisplayName)
             .Where(n => !string.IsNullOrWhiteSpace(n))
             .ToList();
 
-        return Task.FromResult(new EngageEnemyHubResult
+        return new EngageEnemyHubResult
         {
             Success = true,
             EnemyId = enemy.Id,
@@ -111,6 +121,6 @@ public class EngageEnemyHubCommandHandler
             EnemyCurrentHealth = enemy.CurrentHealth,
             EnemyMaxHealth = enemy.MaxHealth,
             EnemyAbilityNames = abilityNames,
-        });
+        };
     }
 }

@@ -45,16 +45,24 @@ public class DefendActionHubCommandHandler
     : IRequestHandler<DefendActionHubCommand, DefendActionHubResult>
 {
     private readonly ICharacterRepository _characterRepo;
+    private readonly IEnemyInstanceStore _enemies;
+    private readonly ICombatSessionStore _sessions;
     private readonly ILogger<DefendActionHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="DefendActionHubCommandHandler"/>.</summary>
     /// <param name="characterRepo">Repository for loading and persisting character state.</param>
+    /// <param name="enemies">Store for the live enemy instances.</param>
+    /// <param name="sessions">Store for per-character combat sessions.</param>
     /// <param name="logger">Logger instance.</param>
     public DefendActionHubCommandHandler(
         ICharacterRepository characterRepo,
+        IEnemyInstanceStore enemies,
+        ICombatSessionStore sessions,
         ILogger<DefendActionHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
+        _enemies = enemies;
+        _sessions = sessions;
         _logger = logger;
     }
 
@@ -66,20 +74,20 @@ public class DefendActionHubCommandHandler
         DefendActionHubCommand request,
         CancellationToken cancellationToken)
     {
-        if (!CombatSessionStore.TryGet(request.CharacterId, out var session))
+        var session = await _sessions.TryGetAsync(request.CharacterId, cancellationToken);
+        if (session is null)
             return new DefendActionHubResult { Success = false, ErrorMessage = "Not in combat" };
 
-        var storeKey = ZoneLocationEnemyStore.MakeKey(session.ZoneGroup, session.LocationSlug);
-        var enemy = ZoneLocationEnemyStore.TryGetEnemy(storeKey, session.EnemyId);
+        var enemy = await _enemies.TryGetAsync(session.EnemyId, cancellationToken);
         if (enemy is null)
         {
-            CombatSessionStore.Remove(request.CharacterId);
+            await _sessions.RemoveAsync(request.CharacterId, cancellationToken);
             return new DefendActionHubResult { Success = false, ErrorMessage = "Enemy no longer exists" };
         }
 
         if (!enemy.IsAlive)
         {
-            CombatSessionStore.Remove(request.CharacterId);
+            await _sessions.RemoveAsync(request.CharacterId, cancellationToken);
             return new DefendActionHubResult { Success = false, ErrorMessage = "Enemy is already dead" };
         }
 
@@ -91,7 +99,7 @@ public class DefendActionHubCommandHandler
         var player = CombatCharacterHydrator.Hydrate(entity, attrs);
 
         session = session.WithDefending(true).NextTurn();
-        CombatSessionStore.Set(request.CharacterId, session);
+        await _sessions.SetAsync(request.CharacterId, session, cancellationToken);
 
         var (abilityDamage, abilityName) = CombatHelpers.RollEnemyAbility(enemy, player);
         int enemyDamage = abilityDamage > 0
@@ -106,7 +114,7 @@ public class DefendActionHubCommandHandler
         await _characterRepo.UpdateAsync(entity, cancellationToken);
 
         var (isDead, isHardcore) = await CombatHelpers.HandleDeathIfNeededAsync(
-            player, entity, attrs, session, enemy, _characterRepo, cancellationToken);
+            player, entity, attrs, session, enemy, _characterRepo, _enemies, _sessions, cancellationToken);
 
         _logger.LogInformation(
             "Character {CharacterIdPrefix} defended — enemy dealt {Damage} damage",

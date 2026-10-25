@@ -50,16 +50,24 @@ public class FleeFromCombatHubCommandHandler
     private const int FleeSuccessChance = 50; // percent
 
     private readonly ICharacterRepository _characterRepo;
+    private readonly IEnemyInstanceStore _enemies;
+    private readonly ICombatSessionStore _sessions;
     private readonly ILogger<FleeFromCombatHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="FleeFromCombatHubCommandHandler"/>.</summary>
     /// <param name="characterRepo">Repository for loading and persisting character state.</param>
+    /// <param name="enemies">Store for the live enemy instances.</param>
+    /// <param name="sessions">Store for per-character combat sessions.</param>
     /// <param name="logger">Logger instance.</param>
     public FleeFromCombatHubCommandHandler(
         ICharacterRepository characterRepo,
+        IEnemyInstanceStore enemies,
+        ICombatSessionStore sessions,
         ILogger<FleeFromCombatHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
+        _enemies = enemies;
+        _sessions = sessions;
         _logger = logger;
     }
 
@@ -71,11 +79,11 @@ public class FleeFromCombatHubCommandHandler
         FleeFromCombatHubCommand request,
         CancellationToken cancellationToken)
     {
-        if (!CombatSessionStore.TryGet(request.CharacterId, out var session))
+        var session = await _sessions.TryGetAsync(request.CharacterId, cancellationToken);
+        if (session is null)
             return new FleeFromCombatHubResult { Success = false, ErrorMessage = "Not in combat" };
 
-        var storeKey = ZoneLocationEnemyStore.MakeKey(session.ZoneGroup, session.LocationSlug);
-        var enemy = ZoneLocationEnemyStore.TryGetEnemy(storeKey, session.EnemyId);
+        var enemy = await _enemies.TryGetAsync(session.EnemyId, cancellationToken);
 
         // Flee succeeds: remove from participation and end session.
         if (Random.Shared.Next(100) < FleeSuccessChance)
@@ -87,9 +95,11 @@ public class FleeFromCombatHubCommandHandler
                     enemy.Participants.Remove(request.CharacterId);
                     enemy.DamageContributions.Remove(request.CharacterId);
                 }
+
+                await _enemies.SaveAsync(enemy, session.ZoneGroup, session.LocationSlug, cancellationToken);
             }
 
-            CombatSessionStore.Remove(request.CharacterId);
+            await _sessions.RemoveAsync(request.CharacterId, cancellationToken);
 
             _logger.LogInformation(
                 "Character {CharacterIdPrefix} fled combat successfully",
@@ -101,7 +111,7 @@ public class FleeFromCombatHubCommandHandler
         // Flee failed — enemy gets a free attack.
         if (enemy is null || !enemy.IsAlive)
         {
-            CombatSessionStore.Remove(request.CharacterId);
+            await _sessions.RemoveAsync(request.CharacterId, cancellationToken);
             return new FleeFromCombatHubResult { Success = true, Fled = true };
         }
 
@@ -113,7 +123,7 @@ public class FleeFromCombatHubCommandHandler
         var player = CombatCharacterHydrator.Hydrate(entity, attrs);
 
         session = session.NextTurn();
-        CombatSessionStore.Set(request.CharacterId, session);
+        await _sessions.SetAsync(request.CharacterId, session, cancellationToken);
 
         var (abilityDamage, abilityName) = CombatHelpers.RollEnemyAbility(enemy, player);
         int enemyDamage = abilityDamage > 0
@@ -128,7 +138,7 @@ public class FleeFromCombatHubCommandHandler
         await _characterRepo.UpdateAsync(entity, cancellationToken);
 
         var (isDead, isHardcore) = await CombatHelpers.HandleDeathIfNeededAsync(
-            player, entity, attrs, session, enemy, _characterRepo, cancellationToken);
+            player, entity, attrs, session, enemy, _characterRepo, _enemies, _sessions, cancellationToken);
 
         _logger.LogInformation(
             "Character {CharacterIdPrefix} flee failed — enemy dealt {Damage} damage",

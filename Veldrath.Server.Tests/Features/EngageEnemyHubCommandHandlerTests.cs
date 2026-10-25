@@ -1,21 +1,24 @@
-﻿using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Veldrath.Server.Features.Characters.Combat;
+using Veldrath.Server.Tests.Infrastructure;
 
 namespace Veldrath.Server.Tests.Features;
 
 /// <summary>Unit tests for <see cref="EngageEnemyHubCommandHandler"/>.</summary>
 public class EngageEnemyHubCommandHandlerTests : IDisposable
 {
-    private readonly EngageEnemyHubCommandHandler _handler =
-        new(NullLogger<EngageEnemyHubCommandHandler>.Instance);
+    private readonly FakeEnemyInstanceStore _enemies = new();
+    private readonly FakeCombatSessionStore _sessions = new();
+    private readonly EngageEnemyHubCommandHandler _handler;
 
-    private readonly List<(string Key, Guid EnemyId)> _enemyCleanup = [];
-    private readonly List<Guid> _sessionCleanup = [];
+    public EngageEnemyHubCommandHandlerTests()
+    {
+        _handler = new(_enemies, _sessions, NullLogger<EngageEnemyHubCommandHandler>.Instance);
+    }
 
     public void Dispose()
     {
-        foreach (var (key, id) in _enemyCleanup) ZoneLocationEnemyStore.RemoveEnemy(key, id);
-        foreach (var id in _sessionCleanup) CombatSessionStore.Remove(id);
+        // The fakes are per-test instances, so there is nothing to clean up.
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
@@ -24,10 +27,8 @@ public class EngageEnemyHubCommandHandlerTests : IDisposable
     {
         var zoneGroup = $"test/{Guid.NewGuid():N}";
         const string loc = "test-path";
-        var key = ZoneLocationEnemyStore.MakeKey(zoneGroup, loc);
         var enemy = new SpawnedEnemy { Name = "Goblin", Level = 1, CurrentHealth = hp, MaxHealth = 100 };
-        ZoneLocationEnemyStore.AddEnemy(key, enemy);
-        _enemyCleanup.Add((key, enemy.Id));
+        _enemies.Add(zoneGroup, loc, enemy);
         return (zoneGroup, loc, enemy);
     }
 
@@ -37,8 +38,7 @@ public class EngageEnemyHubCommandHandlerTests : IDisposable
     public async Task Handle_Returns_Error_When_Already_In_Combat()
     {
         var charId = Guid.NewGuid();
-        CombatSessionStore.Set(charId, new ActiveCombatSession("z", "l", Guid.NewGuid(), false, 0, DateTimeOffset.UtcNow));
-        _sessionCleanup.Add(charId);
+        _sessions.Set(charId, new ActiveCombatSession("z", "l", Guid.NewGuid(), false, 0, DateTimeOffset.UtcNow));
 
         var result = await _handler.Handle(
             new EngageEnemyHubCommand(charId, "z", "l", Guid.NewGuid()),
@@ -80,7 +80,6 @@ public class EngageEnemyHubCommandHandlerTests : IDisposable
     {
         var (zoneGroup, loc, enemy) = AddEnemy();
         var charId = Guid.NewGuid();
-        _sessionCleanup.Add(charId);
 
         var result = await _handler.Handle(
             new EngageEnemyHubCommand(charId, zoneGroup, loc, enemy.Id),
@@ -90,7 +89,7 @@ public class EngageEnemyHubCommandHandlerTests : IDisposable
         result.EnemyId.Should().Be(enemy.Id);
         result.EnemyName.Should().Be("Goblin");
         result.EnemyCurrentHealth.Should().Be(100);
-        CombatSessionStore.IsInCombat(charId).Should().BeTrue();
+        _sessions.IsInCombat(charId).Should().BeTrue();
         enemy.Participants.Should().Contain(charId);
     }
 }

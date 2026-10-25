@@ -24,6 +24,7 @@ using Veldrath.Server.Features.Admin;
 using Veldrath.Server.Features.Announcements;
 using Veldrath.Server.Features.Auth;
 using Veldrath.Server.Features.Characters;
+using Veldrath.Server.Features.Characters.Combat;
 using Veldrath.Server.Features.Content;
 using Veldrath.Server.Features.Dev;
 using Veldrath.Server.Features.Editorial;
@@ -157,6 +158,8 @@ try
     builder.Services.AddScoped<ISaveGameRepository, ServerSaveGameRepository>();
     builder.Services.AddScoped<IHallOfFameRepository, ServerHallOfFameRepository>();
     builder.Services.AddScoped<IZoneRepository, ZoneRepository>();
+    builder.Services.AddScoped<IEnemyInstanceStore, EfCoreEnemyInstanceStore>();
+    builder.Services.AddScoped<ICombatSessionStore, EfCoreCombatSessionStore>();
     builder.Services.AddScoped<IPlayerSessionRepository, PlayerSessionRepository>();
     builder.Services.AddScoped<IGroundItemRepository, EfCoreGroundItemRepository>();
     builder.Services.AddScoped<IRegionRepository, RegionRepository>();

@@ -11,18 +11,17 @@ namespace Veldrath.Server.Tests.Features;
 public class DefendActionHubCommandHandlerTests : IDisposable
 {
     private readonly TestDbContextFactory _dbFactory = new();
-    private readonly List<(string Key, Guid EnemyId)> _enemyCleanup = [];
-    private readonly List<Guid> _sessionCleanup = [];
+    private readonly FakeEnemyInstanceStore _enemies = new();
+    private readonly FakeCombatSessionStore _sessions = new();
 
     private DefendActionHubCommandHandler MakeHandler(ApplicationDbContext db) =>
-        new(new CharacterRepository(db), NullLogger<DefendActionHubCommandHandler>.Instance);
+        new(
+            new CharacterRepository(db),
+            _enemies,
+            _sessions,
+            NullLogger<DefendActionHubCommandHandler>.Instance);
 
-    public void Dispose()
-    {
-        foreach (var (key, id) in _enemyCleanup) ZoneLocationEnemyStore.RemoveEnemy(key, id);
-        foreach (var id in _sessionCleanup) CombatSessionStore.Remove(id);
-        _dbFactory.Dispose();
-    }
+    public void Dispose() => _dbFactory.Dispose();
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -48,17 +47,14 @@ public class DefendActionHubCommandHandlerTests : IDisposable
     {
         var zoneGroup = $"test/{Guid.NewGuid():N}";
         const string loc = "forest";
-        var key = ZoneLocationEnemyStore.MakeKey(zoneGroup, loc);
         var enemy = new SpawnedEnemy { Name = "Orc", Level = 1, CurrentHealth = hp, MaxHealth = hp };
-        ZoneLocationEnemyStore.AddEnemy(key, enemy);
-        _enemyCleanup.Add((key, enemy.Id));
+        _enemies.Add(zoneGroup, loc, enemy);
         return (zoneGroup, loc, enemy);
     }
 
     private void SetSession(Guid charId, string zoneGroup, string loc, Guid enemyId)
     {
-        CombatSessionStore.Set(charId, new ActiveCombatSession(zoneGroup, loc, enemyId, false, 0, DateTimeOffset.UtcNow));
-        _sessionCleanup.Add(charId);
+        _sessions.Set(charId, new ActiveCombatSession(zoneGroup, loc, enemyId, false, 0, DateTimeOffset.UtcNow));
     }
 
     // ── Tests ──────────────────────────────────────────────────────────────────
@@ -101,8 +97,7 @@ public class DefendActionHubCommandHandlerTests : IDisposable
         // Defend turn
         var charDef = await SeedCharacterAsync(db, attrs);
         var (zg1, loc1, enemy1) = AddEnemy();
-        CombatSessionStore.Set(charDef.Id, new ActiveCombatSession(zg1, loc1, enemy1.Id, true, 0, DateTimeOffset.UtcNow));
-        _sessionCleanup.Add(charDef.Id);
+        _sessions.Set(charDef.Id, new ActiveCombatSession(zg1, loc1, enemy1.Id, true, 0, DateTimeOffset.UtcNow));
         var defResult = await MakeHandler(db).Handle(new DefendActionHubCommand(charDef.Id), CancellationToken.None);
 
         // Non-defending turn

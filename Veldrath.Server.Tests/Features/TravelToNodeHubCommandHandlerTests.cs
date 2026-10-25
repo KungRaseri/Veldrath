@@ -375,6 +375,7 @@ public class TravelToNodeHubCommandHandlerTests
             zoneRepo.Object,
             locationRepo.Object,
             actorPoolResolver,
+            new Veldrath.Server.Tests.Infrastructure.FakeEnemyInstanceStore(),
             NullLogger<TravelToNodeHubCommandHandler>.Instance);
 
         return (handler, mapRepo, characterRepo, unlockedRepo, sessionRepo, zoneRepo, locationRepo, enemyRepo);

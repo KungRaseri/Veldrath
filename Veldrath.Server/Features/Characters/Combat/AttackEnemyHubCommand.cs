@@ -68,24 +68,24 @@ public class AttackEnemyHubCommandHandler
     : IRequestHandler<AttackEnemyHubCommand, AttackEnemyHubResult>
 {
     private readonly ICharacterRepository _characterRepo;
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly IHubContext<GameHub> _hubContext;
+    private readonly IEnemyInstanceStore _enemies;
+    private readonly ICombatSessionStore _sessions;
     private readonly ILogger<AttackEnemyHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="AttackEnemyHubCommandHandler"/>.</summary>
     /// <param name="characterRepo">Repository for loading and persisting character state.</param>
-    /// <param name="scopeFactory">Factory for creating scopes used in fire-and-forget respawn tasks.</param>
-    /// <param name="hubContext">Hub context used to broadcast respawn notifications.</param>
+    /// <param name="enemies">Store for the live enemy instances.</param>
+    /// <param name="sessions">Store for per-character combat sessions.</param>
     /// <param name="logger">Logger instance.</param>
     public AttackEnemyHubCommandHandler(
         ICharacterRepository characterRepo,
-        IServiceScopeFactory scopeFactory,
-        IHubContext<GameHub> hubContext,
+        IEnemyInstanceStore enemies,
+        ICombatSessionStore sessions,
         ILogger<AttackEnemyHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
-        _scopeFactory = scopeFactory;
-        _hubContext = hubContext;
+        _enemies = enemies;
+        _sessions = sessions;
         _logger = logger;
     }
 
@@ -97,20 +97,20 @@ public class AttackEnemyHubCommandHandler
         AttackEnemyHubCommand request,
         CancellationToken cancellationToken)
     {
-        if (!CombatSessionStore.TryGet(request.CharacterId, out var session))
+        var session = await _sessions.TryGetAsync(request.CharacterId, cancellationToken);
+        if (session is null)
             return new AttackEnemyHubResult { Success = false, ErrorMessage = "Not in combat" };
 
-        var storeKey = ZoneLocationEnemyStore.MakeKey(session.ZoneGroup, session.LocationSlug);
-        var enemy = ZoneLocationEnemyStore.TryGetEnemy(storeKey, session.EnemyId);
+        var enemy = await _enemies.TryGetAsync(session.EnemyId, cancellationToken);
         if (enemy is null)
         {
-            CombatSessionStore.Remove(request.CharacterId);
+            await _sessions.RemoveAsync(request.CharacterId, cancellationToken);
             return new AttackEnemyHubResult { Success = false, ErrorMessage = "Enemy no longer exists" };
         }
 
         if (!enemy.IsAlive)
         {
-            CombatSessionStore.Remove(request.CharacterId);
+            await _sessions.RemoveAsync(request.CharacterId, cancellationToken);
             return new AttackEnemyHubResult { Success = false, ErrorMessage = "Enemy is already dead" };
         }
 
@@ -135,15 +135,19 @@ public class AttackEnemyHubCommandHandler
             enemyRemainingHealth = enemy.CurrentHealth;
         }
 
+        await _enemies.SaveAsync(enemy, session.ZoneGroup, session.LocationSlug, cancellationToken);
+
         // --- Enemy defeated ---
         if (!enemy.IsAlive)
         {
-            var rewardList = await CombatHelpers.DistributeRewardsAsync(enemy, storeKey, _characterRepo, cancellationToken);
-            var myReward = rewardList.FirstOrDefault(r => r.CharacterId == request.CharacterId);
+            (Guid CharacterId, int Xp, int Gold) myReward = default;
 
-            CombatHelpers.ScheduleRespawn(
-                storeKey, session.ZoneGroup, enemy.ArchetypeSlug,
-                _scopeFactory, _hubContext, _logger);
+            // Only the caller that wins the death transition distributes rewards.
+            if (await _enemies.TryMarkDeadAsync(enemy.Id, CombatHelpers.RespawnDelay, cancellationToken))
+            {
+                var rewardList = await CombatHelpers.DistributeRewardsAsync(enemy, _characterRepo, _sessions, cancellationToken);
+                myReward = rewardList.FirstOrDefault(r => r.CharacterId == request.CharacterId);
+            }
 
             _logger.LogInformation(
                 "Enemy {EnemyName} defeated by {CharacterIdPrefix}",
@@ -168,7 +172,7 @@ public class AttackEnemyHubCommandHandler
 
         // --- Enemy counter-attacks ---
         session = session.NextTurn();
-        CombatSessionStore.Set(request.CharacterId, session);
+        await _sessions.SetAsync(request.CharacterId, session, cancellationToken);
 
         var (abilityDamage, abilityName) = CombatHelpers.RollEnemyAbility(enemy, player);
         int enemyDamage = abilityDamage > 0
@@ -183,7 +187,7 @@ public class AttackEnemyHubCommandHandler
         await _characterRepo.UpdateAsync(entity, cancellationToken);
 
         var (isDead, isHardcore) = await CombatHelpers.HandleDeathIfNeededAsync(
-            player, entity, attrs, session, enemy, _characterRepo, cancellationToken);
+            player, entity, attrs, session, enemy, _characterRepo, _enemies, _sessions, cancellationToken);
 
         return new AttackEnemyHubResult
         {

@@ -86,27 +86,27 @@ public class UseAbilityInCombatHubCommandHandler
 
     private readonly ICharacterRepository _characterRepo;
     private readonly IPowerRepository _powerRepo;
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly IHubContext<GameHub> _hubContext;
+    private readonly IEnemyInstanceStore _enemies;
+    private readonly ICombatSessionStore _sessions;
     private readonly ILogger<UseAbilityInCombatHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="UseAbilityInCombatHubCommandHandler"/>.</summary>
     /// <param name="characterRepo">Repository for loading and persisting character state.</param>
     /// <param name="powerRepo">Repository for resolving ability costs and effects from the content database.</param>
-    /// <param name="scopeFactory">Factory for creating scopes used in fire-and-forget respawn tasks.</param>
-    /// <param name="hubContext">Hub context used to broadcast respawn notifications.</param>
+    /// <param name="enemies">Store for the live enemy instances.</param>
+    /// <param name="sessions">Store for per-character combat sessions.</param>
     /// <param name="logger">Logger instance.</param>
     public UseAbilityInCombatHubCommandHandler(
         ICharacterRepository characterRepo,
         IPowerRepository powerRepo,
-        IServiceScopeFactory scopeFactory,
-        IHubContext<GameHub> hubContext,
+        IEnemyInstanceStore enemies,
+        ICombatSessionStore sessions,
         ILogger<UseAbilityInCombatHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
         _powerRepo = powerRepo;
-        _scopeFactory = scopeFactory;
-        _hubContext = hubContext;
+        _enemies = enemies;
+        _sessions = sessions;
         _logger = logger;
     }
 
@@ -121,20 +121,20 @@ public class UseAbilityInCombatHubCommandHandler
         if (string.IsNullOrWhiteSpace(request.AbilityId))
             return new UseAbilityInCombatHubResult { Success = false, ErrorMessage = "Ability ID cannot be empty" };
 
-        if (!CombatSessionStore.TryGet(request.CharacterId, out var session))
+        var session = await _sessions.TryGetAsync(request.CharacterId, cancellationToken);
+        if (session is null)
             return new UseAbilityInCombatHubResult { Success = false, ErrorMessage = "Not in combat" };
 
-        var storeKey = ZoneLocationEnemyStore.MakeKey(session.ZoneGroup, session.LocationSlug);
-        var enemy = ZoneLocationEnemyStore.TryGetEnemy(storeKey, session.EnemyId);
+        var enemy = await _enemies.TryGetAsync(session.EnemyId, cancellationToken);
         if (enemy is null)
         {
-            CombatSessionStore.Remove(request.CharacterId);
+            await _sessions.RemoveAsync(request.CharacterId, cancellationToken);
             return new UseAbilityInCombatHubResult { Success = false, ErrorMessage = "Enemy no longer exists" };
         }
 
         if (!enemy.IsAlive)
         {
-            CombatSessionStore.Remove(request.CharacterId);
+            await _sessions.RemoveAsync(request.CharacterId, cancellationToken);
             return new UseAbilityInCombatHubResult { Success = false, ErrorMessage = "Enemy is already dead" };
         }
 
@@ -214,15 +214,19 @@ public class UseAbilityInCombatHubCommandHandler
             }
         }
 
+        await _enemies.SaveAsync(enemy, session.ZoneGroup, session.LocationSlug, cancellationToken);
+
         // --- Enemy defeated ---
         if (!isHeal && !enemy.IsAlive)
         {
-            var rewardList = await CombatHelpers.DistributeRewardsAsync(enemy, storeKey, _characterRepo, cancellationToken);
-            var myReward = rewardList.FirstOrDefault(r => r.CharacterId == request.CharacterId);
+            (Guid CharacterId, int Xp, int Gold) myReward = default;
 
-            CombatHelpers.ScheduleRespawn(
-                storeKey, session.ZoneGroup, enemy.ArchetypeSlug,
-                _scopeFactory, _hubContext, _logger);
+            // Only the caller that wins the death transition distributes rewards.
+            if (await _enemies.TryMarkDeadAsync(enemy.Id, CombatHelpers.RespawnDelay, cancellationToken))
+            {
+                var rewardList = await CombatHelpers.DistributeRewardsAsync(enemy, _characterRepo, _sessions, cancellationToken);
+                myReward = rewardList.FirstOrDefault(r => r.CharacterId == request.CharacterId);
+            }
 
             CombatHelpers.DecrementCooldowns(attrs);
             entity.Attributes = CombatHelpers.SerializeAttrs(attrs);
@@ -246,7 +250,7 @@ public class UseAbilityInCombatHubCommandHandler
 
         // --- Enemy counter-attacks ---
         session = session.NextTurn();
-        CombatSessionStore.Set(request.CharacterId, session);
+        await _sessions.SetAsync(request.CharacterId, session, cancellationToken);
 
         var (counterDamage, counterAbility) = CombatHelpers.RollEnemyAbility(enemy, player);
         int enemyDamage = counterDamage > 0
@@ -261,7 +265,7 @@ public class UseAbilityInCombatHubCommandHandler
         await _characterRepo.UpdateAsync(entity, cancellationToken);
 
         var (isDead, isHardcore) = await CombatHelpers.HandleDeathIfNeededAsync(
-            player, entity, attrs, session, enemy, _characterRepo, cancellationToken);
+            player, entity, attrs, session, enemy, _characterRepo, _enemies, _sessions, cancellationToken);
 
         _logger.LogInformation(
             "Character {CharacterIdPrefix} used ability {AbilityId} — dealt {Damage}, healed {Heal}",

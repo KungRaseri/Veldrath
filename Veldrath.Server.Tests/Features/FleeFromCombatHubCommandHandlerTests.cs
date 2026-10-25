@@ -11,18 +11,17 @@ namespace Veldrath.Server.Tests.Features;
 public class FleeFromCombatHubCommandHandlerTests : IDisposable
 {
     private readonly TestDbContextFactory _dbFactory = new();
-    private readonly List<(string Key, Guid EnemyId)> _enemyCleanup = [];
-    private readonly List<Guid> _sessionCleanup = [];
+    private readonly FakeEnemyInstanceStore _enemies = new();
+    private readonly FakeCombatSessionStore _sessions = new();
 
     private FleeFromCombatHubCommandHandler MakeHandler(ApplicationDbContext db) =>
-        new(new CharacterRepository(db), NullLogger<FleeFromCombatHubCommandHandler>.Instance);
+        new(
+            new CharacterRepository(db),
+            _enemies,
+            _sessions,
+            NullLogger<FleeFromCombatHubCommandHandler>.Instance);
 
-    public void Dispose()
-    {
-        foreach (var (key, id) in _enemyCleanup) ZoneLocationEnemyStore.RemoveEnemy(key, id);
-        foreach (var id in _sessionCleanup) CombatSessionStore.Remove(id);
-        _dbFactory.Dispose();
-    }
+    public void Dispose() => _dbFactory.Dispose();
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -48,17 +47,14 @@ public class FleeFromCombatHubCommandHandlerTests : IDisposable
     {
         var zoneGroup = $"test/{Guid.NewGuid():N}";
         const string loc = "forest";
-        var key = ZoneLocationEnemyStore.MakeKey(zoneGroup, loc);
         var enemy = new SpawnedEnemy { Name = "Orc", Level = 1, CurrentHealth = 100, MaxHealth = 100 };
-        ZoneLocationEnemyStore.AddEnemy(key, enemy);
-        _enemyCleanup.Add((key, enemy.Id));
+        _enemies.Add(zoneGroup, loc, enemy);
         return (zoneGroup, loc, enemy);
     }
 
     private void SetSession(Guid charId, string zoneGroup, string loc, Guid enemyId)
     {
-        CombatSessionStore.Set(charId, new ActiveCombatSession(zoneGroup, loc, enemyId, false, 0, DateTimeOffset.UtcNow));
-        _sessionCleanup.Add(charId);
+        _sessions.Set(charId, new ActiveCombatSession(zoneGroup, loc, enemyId, false, 0, DateTimeOffset.UtcNow));
     }
 
     // ── Tests ──────────────────────────────────────────────────────────────────
@@ -88,7 +84,7 @@ public class FleeFromCombatHubCommandHandlerTests : IDisposable
         result.Success.Should().BeTrue();
         if (result.Fled)
         {
-            CombatSessionStore.IsInCombat(character.Id).Should().BeFalse();
+            _sessions.IsInCombat(character.Id).Should().BeFalse();
         }
         else
         {

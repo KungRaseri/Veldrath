@@ -52,6 +52,15 @@ public class ActorPoolResolver
         return spawned;
     }
 
+    /// <summary>
+    /// Resolves a single archetype by slug without spawning it. Used to rebuild the template of an enemy whose
+    /// health and position already exist in the database.
+    /// </summary>
+    /// <param name="archetypeSlug">Actor archetype slug.</param>
+    /// <returns>The archetype, or <see langword="null"/> when the content no longer exists.</returns>
+    public Task<Enemy?> ResolveArchetypeAsync(string archetypeSlug) =>
+        _enemyGenerator.GenerateEnemyByNameAsync(string.Empty, archetypeSlug);
+
     private static SpawnedEnemy ToSpawnedEnemy(Enemy enemy) =>
         new()
         {
