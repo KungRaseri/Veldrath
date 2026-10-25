@@ -4,6 +4,7 @@
 > B is last on purpose. It is the milestone that protects everything the other three build, and its shape only
 > becomes obvious once party and death content exists. The one exception is the runtime reference check, which
 > ships inside Milestone D as #36.
+> **Tracker:** epic #39 — phases B1–B5 become issues when the milestone starts.
 
 ---
 
