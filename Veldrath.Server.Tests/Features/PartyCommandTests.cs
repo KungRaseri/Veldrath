@@ -268,4 +268,63 @@ public class PartyCommandTests : IDisposable
 
         peers.Should().BeEmpty("an offline member is not standing in the room");
     }
+
+    [Fact]
+    public async Task GetOnlinePartyMembersAtLocation_Returns_Only_Members_Online_At_That_Location()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var leader = await SeedCharacterAsync(db);
+        var ally = await SeedCharacterAsync(db);
+        var elsewhere = await SeedCharacterAsync(db);
+
+        await CreateHandler(db).Handle(new CreatePartyHubCommand(leader.Id), CancellationToken.None);
+        var store = new PartyStore(db);
+        var partyId = await db.Parties.Select(party => party.Id).SingleAsync();
+        await store.AddMemberAsync(partyId, ally.Id);
+        await store.AddMemberAsync(partyId, elsewhere.Id);
+
+        // Positions live on the Characters row, which the travel and navigation paths keep current. ExecuteUpdate
+        // writes them straight to the database, so the store's own AsNoTracking reads see the truth.
+        await db.Characters
+            .Where(character => character.Id == leader.Id || character.Id == ally.Id)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(character => character.CurrentZoneId, "zone-1")
+                .SetProperty(character => character.CurrentZoneLocationSlug, "forest"));
+        await db.Characters
+            .Where(character => character.Id == elsewhere.Id)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(character => character.CurrentZoneId, "zone-1")
+                .SetProperty(character => character.CurrentZoneLocationSlug, "market"));
+
+        // Online is a live PlayerSession row; all three are online, but only two are at the same location.
+        db.Worlds.Add(new World { Id = "world-1", Name = "Test world" });
+        db.Regions.Add(new Region { Id = "region-1", Name = "Test region", WorldId = "world-1" });
+        db.PlayerSessions.AddRange(
+            new PlayerSession
+            {
+                CharacterId = leader.Id,
+                CharacterName = leader.Name,
+                ConnectionId = "conn-leader",
+                RegionId = "region-1",
+            },
+            new PlayerSession
+            {
+                CharacterId = ally.Id,
+                CharacterName = ally.Name,
+                ConnectionId = "conn-ally",
+                RegionId = "region-1",
+            },
+            new PlayerSession
+            {
+                CharacterId = elsewhere.Id,
+                CharacterName = elsewhere.Name,
+                ConnectionId = "conn-elsewhere",
+                RegionId = "region-1",
+            });
+        await db.SaveChangesAsync();
+
+        var peers = await store.GetOnlinePartyMembersAtLocationAsync(leader.Id);
+
+        peers.Should().Equal([ally.Id], "only the member online at the same location joins the fight");
+    }
 }

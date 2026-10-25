@@ -393,25 +393,18 @@ public sealed class PartyStore : IPartyCombatQuery
 
         if (partyId is null) return [];
 
-        // Online is an inner join on PlayerSessions: an offline member is not standing in the room.
+        // Two EXISTS filters read better than a pair of joins and translate the same on Postgres and SQLite:
+        // the member must be standing at the anchor's location, and must be online (a live PlayerSession).
         return await _db.PartyMembers
             .AsNoTracking()
             .Where(member => member.PartyId == partyId.Value && member.CharacterId != characterId)
-            .Join(
-                _db.Characters
-                    .AsNoTracking()
-                    .Where(character =>
-                        character.DeletedAt == null &&
-                        character.CurrentZoneId == anchor.CurrentZoneId &&
-                        character.CurrentZoneLocationSlug == anchor.CurrentZoneLocationSlug),
-                member => member.CharacterId,
-                character => character.Id,
-                (_, character) => character.Id)
-            .Join(
-                _db.PlayerSessions.AsNoTracking(),
-                id => id,
-                session => session.CharacterId,
-                (id, _) => id)
+            .Where(member => _db.Characters.Any(character =>
+                character.Id == member.CharacterId &&
+                character.DeletedAt == null &&
+                character.CurrentZoneId == anchor.CurrentZoneId &&
+                character.CurrentZoneLocationSlug == anchor.CurrentZoneLocationSlug))
+            .Where(member => _db.PlayerSessions.Any(session => session.CharacterId == member.CharacterId))
+            .Select(member => member.CharacterId)
             .ToListAsync(cancellationToken);
     }
 
