@@ -62,6 +62,30 @@ The following are generally **out of scope**:
 - Vulnerabilities in third-party dependencies — please report those directly to the dependency maintainer.
 - Issues in documentation, tooling scripts, or the RealmForge data editor that do not affect a networked or multi-user deployment.
 
+## Sensitive Data in Logs
+
+The server writes to the console **and** a rolling file sink (`logs/veldrath-server-*.txt`, seven
+days of retention), so anything logged is persisted in clear text. CodeQL enforces this with
+`cs/cleartext-storage` / `js/cleartext-storage`; treat new alerts as bugs rather than noise.
+
+Never log:
+
+- Passwords, password hashes, API keys, bridge tokens, JWT signing keys or WS ticket secrets.
+- One-time links or tokens — password-reset and e-mail-verification URLs grant account access.
+- Full e-mail addresses; use `EmailAddressMask.Mask(...)` in the .NET server and log only the
+  message kind in the SvelteKit app.
+
+Acceptable to log:
+
+- Internal identifiers (account/character GUIDs, zone ids) needed to correlate a request with a
+  database row.
+- Character display names and game actions — they are player-visible game state, not credentials.
+- Exception objects, provided the message does not embed the values above.
+
+Development conveniences (echoing a reset link in `NullEmailSender`, or the
+`[email:*] bridge not configured` line in `web/client/src/lib/server/email.ts`) must stay behind an
+environment check so production containers never persist them.
+
 ## Responsible Disclosure
 
 We ask that you:

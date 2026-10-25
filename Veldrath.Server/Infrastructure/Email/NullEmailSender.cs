@@ -27,7 +27,7 @@ public class NullEmailSender(IHostEnvironment environment, ILogger<NullEmailSend
         {
             logger.LogInformation(
                 "[NullEmailSender] To: {To} | Subject: {Subject} (body withheld outside development).",
-                to, subject);
+                EmailAddressMask.Mask(to), subject);
         }
 
         return Task.CompletedTask;

@@ -26,7 +26,9 @@ public class SmtpEmailSender(IConfiguration config, ILogger<SmtpEmailSender> log
         var host = config["Email:SmtpHost"];
         if (string.IsNullOrWhiteSpace(host))
         {
-            logger.LogWarning("SmtpEmailSender: Email:SmtpHost is not configured — message to {To} dropped.", to);
+            logger.LogWarning(
+                "SmtpEmailSender: Email:SmtpHost is not configured — message to {To} dropped.",
+                EmailAddressMask.Mask(to));
             return;
         }
 
@@ -53,11 +55,16 @@ public class SmtpEmailSender(IConfiguration config, ILogger<SmtpEmailSender> log
         try
         {
             await client.SendMailAsync(message, ct);
-            logger.LogInformation("SmtpEmailSender: sent '{Subject}' to {To}.", subject, to);
+            logger.LogInformation(
+                "SmtpEmailSender: sent '{Subject}' to {To}.",
+                subject, EmailAddressMask.Mask(to));
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "SmtpEmailSender: failed to send '{Subject}' to {To}.", subject, to);
+            logger.LogError(
+                ex,
+                "SmtpEmailSender: failed to send '{Subject}' to {To}.",
+                subject, EmailAddressMask.Mask(to));
             throw;
         }
     }
