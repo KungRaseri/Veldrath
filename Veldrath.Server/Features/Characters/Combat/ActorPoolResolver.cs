@@ -1,4 +1,5 @@
-﻿using RealmEngine.Core.Generators.Modern;
+using Microsoft.Extensions.Logging.Abstractions;
+using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Shared.Models;
 
 namespace Veldrath.Server.Features.Characters.Combat;
@@ -13,13 +14,16 @@ public class ActorPoolResolver
     private const int MaxCount = 4;
 
     private readonly EnemyGenerator _enemyGenerator;
+    private readonly ILogger<ActorPoolResolver> _logger;
     private readonly Random _random = new();
 
     /// <summary>Initializes a new instance of <see cref="ActorPoolResolver"/>.</summary>
     /// <param name="enemyGenerator">Generator used to look up enemy archetypes by slug.</param>
-    public ActorPoolResolver(EnemyGenerator enemyGenerator)
+    /// <param name="logger">Logger for missing-content reports; defaults to a null logger in tests.</param>
+    public ActorPoolResolver(EnemyGenerator enemyGenerator, ILogger<ActorPoolResolver>? logger = null)
     {
         _enemyGenerator = enemyGenerator;
+        _logger = logger ?? NullLogger<ActorPoolResolver>.Instance;
     }
 
     /// <summary>
@@ -31,22 +35,31 @@ public class ActorPoolResolver
     public async Task<List<SpawnedEnemy>> SpawnRosterAsync(IReadOnlyList<ActorPoolEntry>? pool)
     {
         var spawned = new List<SpawnedEnemy>();
-        int count = _random.Next(MinCount, MaxCount + 1);
 
         if (pool is null || pool.Count == 0)
         {
-            var fallback = await _enemyGenerator.GenerateEnemiesAsync("common", 1);
-            foreach (var e in fallback)
-                spawned.Add(ToSpawnedEnemy(e));
+            // No pool means "nothing spawns here" — a safe town, for example. That is authored content, not an error, so
+            // the roster is simply empty. Substituting a default archetype would be the silent fallback this milestone
+            // forbids, so the old "common" fallback is gone.
             return spawned;
         }
+
+        int count = _random.Next(MinCount, MaxCount + 1);
 
         for (int i = 0; i < count; i++)
         {
             var entry = SelectWeighted(pool);
             var enemy = await _enemyGenerator.GenerateEnemyByNameAsync(string.Empty, entry.ArchetypeSlug);
-            if (enemy is not null)
-                spawned.Add(ToSpawnedEnemy(enemy));
+            if (enemy is null)
+            {
+                // Failsafe, not fallback: name the missing slug loudly and spawn nothing for it.
+                _logger.LogError(
+                    "Spawn pool references unknown actor archetype '{ArchetypeSlug}'; no enemy spawned for it",
+                    entry.ArchetypeSlug);
+                continue;
+            }
+
+            spawned.Add(ToSpawnedEnemy(enemy));
         }
 
         return spawned;
