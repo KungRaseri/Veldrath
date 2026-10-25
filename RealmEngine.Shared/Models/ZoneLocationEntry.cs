@@ -16,7 +16,8 @@ public record ZoneLocationEntry(
     IReadOnlyList<ActorPoolEntry>? ActorPool = null,
     string? DominantLanguageSlug = null,
     int? TileX = null,
-    int? TileY = null);
+    int? TileY = null,
+    bool IsSafeRespawn = false);
 
 /// <summary>A weighted entry in a zone location actor pool.</summary>
 /// <param name="ArchetypeSlug">Slug of the archetype that can spawn at this location.</param>

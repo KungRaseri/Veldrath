@@ -2542,7 +2542,14 @@ public class GameHub : Hub
                 CharacterId = characterId,
                 result.CurrentHealth,
                 result.CurrentMana,
+                result.LocationSlug,
+                result.LocationDisplayName,
+                result.SicknessExpiresAt,
             });
+
+            // Degraded respawns are said out loud: the player is somewhere for a reason they can read.
+            if (!string.IsNullOrWhiteSpace(result.Warning))
+                await Clients.Caller.SendAsync("SystemMessage", result.Warning);
         }
         catch (Exception ex)
         {

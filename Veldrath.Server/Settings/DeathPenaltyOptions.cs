@@ -31,4 +31,12 @@ public sealed class DeathPenaltyOptions
     /// <summary>Gets or sets the share of total experience lost when the character is below the gold floor, in percent.</summary>
     [Range(0, 100)]
     public int XpLossPercent { get; set; } = 5;
+
+    /// <summary>Gets or sets how long death sickness lasts after respawning, in minutes. Zero disables it.</summary>
+    [Range(0, 1440)]
+    public int DeathSicknessMinutes { get; set; } = 5;
+
+    /// <summary>Gets or sets the damage reduction death sickness applies, in percent. Zero disables it.</summary>
+    [Range(0, 90)]
+    public int DeathSicknessDamagePenaltyPercent { get; set; } = 25;
 }

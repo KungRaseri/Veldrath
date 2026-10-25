@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
+	CharacterRespawnedPayload,
 	CharacterSelectedPayload,
 	ChatMessage,
 	CombatStartedPayload,
@@ -1221,6 +1222,25 @@ describe('GameSession combat', () => {
 		expect(session.stats.gold).toBe(45);
 		expect(session.stats.experience).toBe(200);
 		expect(session.chat.at(-1)?.message).toBe('You lost 5 gold.');
+	});
+
+	it('moves the character to the respawn location the server reports', async () => {
+		const session = await playing();
+		session.dead = true;
+
+		hub.emit('CharacterRespawned', {
+			characterId: 'char-1',
+			currentHealth: 25,
+			currentMana: 40,
+			locationSlug: 'inn',
+			locationDisplayName: 'The Grey Cup',
+			sicknessExpiresAt: '2026-01-01T00:05:00Z'
+		} as CharacterRespawnedPayload);
+
+		expect(session.dead).toBe(false);
+		expect(session.location?.locationSlug).toBe('inn');
+		expect(session.chat.at(-1)?.message).toContain('respawned at The Grey Cup');
+		expect(session.chat.at(-1)?.message).toContain('weakened');
 	});
 
 	it('closes combat with the reason', async () => {

@@ -39,13 +39,16 @@
 
 ### 2.2 Respawn location and death sickness
 
-- Zones gain a designated safe respawn: `MapNodes.IsSafeRespawn` (or `Zones.RespawnNodeId`). Respawn moves the
-  character there instead of leaving them where they fell.
+- Zones gain a designated safe respawn: `ZoneLocationTraits.SafeRespawn` on a content zone location (the traits
+  block is a JSON column, so no content migration is needed). Respawn moves the character there instead of leaving
+  them where they fell.
 - **Failsafe:** a zone with no safe node logs `Error` naming the zone and falls back to the zone's entry node,
   with a client message. Degraded behaviour is allowed only when it is loud.
-- Death sickness: a DB-authored power with a `statusEffect` trait applied on respawn for its authored
-  `statusDuration`. If that power is missing from content, log `Error`, apply nothing (player-favourable
-  degradation) and tell the client. The engine machinery already exists — this is content plus one call.
+- Death sickness: **shipped as a timed damage penalty** (`Death:DeathSicknessMinutes`,
+  `Death:DeathSicknessDamagePenaltyPercent`, stored as `DeathSicknessUntil` / `DeathSicknessPenalty` in the attribute
+  blob). The original "DB-authored power with a `statusEffect` trait" is deferred: the server never hydrates or ticks
+  status effects (`CombatCharacterHydrator` sets `ActiveStatusEffects = []`), so wiring a power would have been
+  cosmetic. A working, visible penalty beats a decorative one.
 - Leaving a corpse in a high-level location is the real cost; sickness only needs to discourage instant
   re-engagement.
 

@@ -33,6 +33,43 @@ public sealed record DeathOutcome(bool IsDead, bool IsHardcore, DeathPenalty Pen
 /// </summary>
 public static class DeathPenalties
 {
+    /// <summary>Attributes-blob key holding the unix-minute stamp at which death sickness wears off.</summary>
+    public const string SicknessUntilKey = "DeathSicknessUntil";
+
+    /// <summary>Attributes-blob key holding the damage penalty death sickness applies, in percent.</summary>
+    public const string SicknessPenaltyKey = "DeathSicknessPenalty";
+
+    /// <summary>Stores an expiry as whole unix minutes, which fits the integer attribute blob past 2038.</summary>
+    /// <param name="until">Moment the sickness wears off.</param>
+    /// <returns>The stamp to persist.</returns>
+    public static int ToSicknessStamp(DateTimeOffset until) => (int)(until.ToUnixTimeSeconds() / 60);
+
+    /// <summary>Reads whether death sickness is still active for a character.</summary>
+    /// <param name="attrs">Character attributes blob.</param>
+    /// <param name="now">Current UTC time.</param>
+    /// <returns><see langword="true"/> while the sickness window is open.</returns>
+    public static bool IsSicknessActive(IReadOnlyDictionary<string, int> attrs, DateTimeOffset now)
+    {
+        if (!attrs.TryGetValue(SicknessUntilKey, out var until)) return false;
+        return until > ToSicknessStamp(now);
+    }
+
+    /// <summary>
+    /// Applies death sickness to an outgoing damage figure. Kept pure so the combat helper has nothing to decide.
+    /// </summary>
+    /// <param name="damage">Damage the character would deal while healthy.</param>
+    /// <param name="attrs">Character attributes blob.</param>
+    /// <param name="now">Current UTC time.</param>
+    /// <returns>The reduced damage, never below 1.</returns>
+    public static int ApplySicknessToDamage(int damage, IReadOnlyDictionary<string, int> attrs, DateTimeOffset now)
+    {
+        if (!IsSicknessActive(attrs, now)) return damage;
+        if (!attrs.TryGetValue(SicknessPenaltyKey, out var penaltyPercent) || penaltyPercent <= 0) return damage;
+
+        var clamped = Math.Min(90, penaltyPercent);
+        return Math.Max(1, damage * (100 - clamped) / 100);
+    }
+
     /// <summary>Calculates what a death costs, without touching any stored state.</summary>
     /// <param name="carriedGold">Gold the character is carrying.</param>
     /// <param name="experience">Total experience the character has (stored as a <see cref="long"/>).</param>

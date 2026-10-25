@@ -48,4 +48,33 @@ public class DeathPenaltiesTests
     {
         DeathPenalties.Calculate(10, 0, Defaults).GoldLost.Should().Be(1, "10% of 10 rounds up to 1");
     }
+
+    [Fact]
+    public void Sickness_Reduces_Damage_Only_While_Its_Window_Is_Open()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var attrs = new Dictionary<string, int>
+        {
+            [DeathPenalties.SicknessUntilKey] = DeathPenalties.ToSicknessStamp(now.AddMinutes(5)),
+            [DeathPenalties.SicknessPenaltyKey] = 25,
+        };
+
+        DeathPenalties.IsSicknessActive(attrs, now).Should().BeTrue();
+        DeathPenalties.ApplySicknessToDamage(100, attrs, now).Should().Be(75);
+        DeathPenalties.IsSicknessActive(attrs, now.AddMinutes(6)).Should().BeFalse("the window has closed");
+        DeathPenalties.ApplySicknessToDamage(100, attrs, now.AddMinutes(6)).Should().Be(100);
+    }
+
+    [Fact]
+    public void Sickness_Never_Removes_The_Last_Point_Of_Damage()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var attrs = new Dictionary<string, int>
+        {
+            [DeathPenalties.SicknessUntilKey] = DeathPenalties.ToSicknessStamp(now.AddMinutes(5)),
+            [DeathPenalties.SicknessPenaltyKey] = 90,
+        };
+
+        DeathPenalties.ApplySicknessToDamage(4, attrs, now).Should().Be(1, "a weakened character must still be able to fight");
+    }
 }
