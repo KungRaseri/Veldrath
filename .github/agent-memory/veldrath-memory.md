@@ -2395,5 +2395,19 @@ Server **769**, full solution **3,914**, web typecheck/lint clean, Vitest 176, P
 
 **Milestone C wrap-up.** All of #43/#40/#41/#42 are closed, so epic #37 is complete. Party state is in Postgres,
 snapshots are the only wire shape, invites are re-read rather than pushed, combat is shared through the existing
-enemy rows, and the reward split cannot lose a coin. The two honest gaps to remember: no DB-backed test for the
-"online party member at the same location" filter, and no hub-level test for the per-participant quest fan-out.
+enemy rows, and the reward split cannot lose a coin.
+
+**Gap closure.** Both gaps named at wrap-up were then closed in the same session:
+1. `PartyCommandTests.GetOnlinePartyMembersAtLocation_Returns_Only_Members_Online_At_That_Location` seeds a real
+   World → Region → `PlayerSession` chain and proves the filter: three online members, only the one at the same zone
+   **and** location slug comes back. Writing it exposed a test-harness trap — the `Character` instances returned by
+   `SeedCharacterAsync` are detached by the time `PartyStore` has attached its own tracked copies, so `UpdateRange`
+   throws *"another instance with the same key value for {'Id'} is already being tracked"* and in-memory mutations are
+   silently never saved. Use `ExecuteUpdateAsync` to move the row, then read it back: the store reads with
+   `AsNoTracking`, so the database is the only source of truth that matters.
+2. `GameHubTests.AttackEnemy_Advances_The_Kill_Objective_For_Every_Participant_By_Slug_And_Name` mocks `ISender`, so it
+   asserts the commands themselves — four `AdvanceQuestObjectivesHubCommand`s (slug and name for each participant).
+   Note `FakeHubCallerClients.Client(id)` returns a **no-op** proxy, so outbound per-connection sends cannot be observed
+   from `GameHubTests`; assert the command fan-out (or extend the fake) rather than reading `SentMessages`.
+
+Server **771**, full solution **3,916**, format clean.

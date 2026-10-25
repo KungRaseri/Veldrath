@@ -19,6 +19,7 @@ using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.Characters;
 using Veldrath.Server.Features.Characters.Combat;
 using Veldrath.Server.Features.Party;
+using Veldrath.Server.Features.Quest;
 using Veldrath.Server.Features.Zones;
 using Veldrath.Server.Hubs;
 using Veldrath.Server.Services;
@@ -235,6 +236,65 @@ public class GameHubTests : IDisposable
         dto.Sender.Should().Be(character.Name);
         dto.Message.Should().Be("hold the line");
         clients.CallerProxy.SentMessages.Should().BeEmpty("the party group already includes the sender");
+    }
+
+    // Shared combat (C3)
+
+    [Fact]
+    public async Task AttackEnemy_Advances_The_Kill_Objective_For_Every_Participant_By_Slug_And_Name()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+
+        var allyAccountId = await SeedAccountAsync(db);
+        var ally = await SeedCharacterAsync(db, allyAccountId);
+
+        // The ally has to be online for the hub to resolve the connection it reports the journal to.
+        db.Worlds.Add(new World { Id = "world-1", Name = "Test world" });
+        db.Regions.Add(new Region { Id = "region-1", Name = "Test region", WorldId = "world-1" });
+        db.PlayerSessions.Add(new PlayerSession
+        {
+            CharacterId = ally.Id,
+            CharacterName = ally.Name,
+            ConnectionId = "conn-ally",
+            RegionId = "region-1",
+        });
+        await db.SaveChangesAsync();
+
+        var mediator = new Mock<ISender>();
+        mediator
+            .Setup(sender => sender.Send(It.IsAny<AttackEnemyHubCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AttackEnemyHubResult
+            {
+                Success = true,
+                EnemyDefeated = true,
+                EnemyName = "Goblin",
+                EnemyArchetypeSlug = "goblin",
+                ParticipantIds = [character.Id, ally.Id],
+            });
+        mediator
+            .Setup(sender => sender.Send(It.IsAny<AdvanceQuestObjectivesHubCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AdvanceQuestObjectivesHubResult { Success = true, QuestsChanged = 1, Quests = [] });
+
+        var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediator.Object);
+        ctx.Items["CharacterId"] = character.Id;
+
+        await hub.AttackEnemy();
+
+        var advances = mediator.Invocations
+            .Where(invocation => invocation.Method.Name == nameof(ISender.Send))
+            .Select(invocation => invocation.Arguments[0])
+            .OfType<AdvanceQuestObjectivesHubCommand>()
+            .Select(command => (command.CharacterId, command.Key))
+            .ToList();
+
+        advances.Should().BeEquivalentTo([
+            (character.Id, "goblin"),
+            (character.Id, "Goblin"),
+            (ally.Id, "goblin"),
+            (ally.Id, "Goblin"),
+        ]);
     }
 
     // OnConnectedAsync
