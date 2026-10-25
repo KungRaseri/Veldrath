@@ -136,13 +136,6 @@ public class Character
     public Dictionary<string, CharacterAbility> LearnedAbilities { get; set; } = new();
 
     /// <summary>
-    /// Gets or sets abilities granted by equipped items.
-    /// Dictionary key is abilityId, value is the item ID that grants it.
-    /// These abilities are active only while the item is equipped.
-    /// </summary>
-    public Dictionary<string, string> EquipmentGrantedAbilities { get; set; } = new();
-
-    /// <summary>
     /// Gets or sets the learned spells by spell ID.
     /// Dictionary key is spellId (e.g., "fireball", "heal").
     /// Tracks cast statistics and success rates.
@@ -465,22 +458,6 @@ public class Character
     /// </summary>
     public int GetTotalCharisma(List<EquipmentSet>? sets = null)
         => GetTotalAttribute("Charisma", Charisma, sets);
-
-    /// <summary>
-    /// Checks if character has access to an ability (either learned or granted by equipment).
-    /// </summary>
-    public bool HasAbility(string abilityId)
-    {
-        return LearnedAbilities.ContainsKey(abilityId) || EquipmentGrantedAbilities.ContainsKey(abilityId);
-    }
-
-    /// <summary>
-    /// Gets all available ability IDs (both learned and equipment-granted).
-    /// </summary>
-    public IEnumerable<string> GetAvailableAbilityIds()
-    {
-        return LearnedAbilities.Keys.Concat(EquipmentGrantedAbilities.Keys).Distinct();
-    }
 
     /// <summary>
     /// Get all currently equipped items.
