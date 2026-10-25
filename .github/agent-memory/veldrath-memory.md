@@ -2383,8 +2383,11 @@ which is why no other hub test needed touching), and sends `ReceiveChatMessage` 
 the void. Because it reuses the `ReceiveChatMessage` event, logging/moderation tooling sees party traffic like any
 other channel.
 
-**Client.** `ChatChannel` gained `'Party'`; `sendChat` routes it to `SendPartyMessage`; `RightSidebar` shows the
-Party button between Zone and Global.
+**Client.** `ChatChannel` gained `'Party'`; `sendChat` routes it to `SendPartyMessage`; `RightSidebar` derives its
+channel list from `session.party`, so the Party tab only exists while the character is grouped, and
+`GameSession.endPartyChat()` drops every `Party` message and falls back to `Zone` when the party becomes null or
+disbands. Party chat is **live-only** — the UI must never imply a backlog the server does not keep. The tab/history
+half landed in the follow-up commit `95b3cd37` (Vitest 177).
 
 **Tests:** 2 hub tests (solo refusal asserts the exact error and that no group send happened; in-party asserts a
 single `ReceiveChatMessage` with the trimmed message and nothing sent to the caller) + 1 Vitest for the routing.
