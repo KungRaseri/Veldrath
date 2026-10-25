@@ -3,6 +3,7 @@ import type {
 	CharacterSelectedPayload,
 	ChatMessage,
 	CombatStartedPayload,
+	CombatTurnPayload,
 	InventoryItem,
 	MapEdge,
 	MapGraph,
@@ -1202,6 +1203,24 @@ describe('GameSession combat', () => {
 		hub.emit('CombatTurn', { action: 'attack', playerRemainingHealth: 0, playerDefeated: true });
 
 		expect(session.dead).toBe(true);
+	});
+
+	it('mirrors the death penalty the server reports', async () => {
+		const session = await playing();
+		session.stats = { ...session.stats, gold: 50, experience: 200 };
+
+		hub.emit('CombatTurn', {
+			action: 'attack',
+			playerDamage: 3,
+			playerDefeated: true,
+			goldLost: 5,
+			xpLost: 0
+		} as CombatTurnPayload);
+
+		expect(session.dead).toBe(true);
+		expect(session.stats.gold).toBe(45);
+		expect(session.stats.experience).toBe(200);
+		expect(session.chat.at(-1)?.message).toBe('You lost 5 gold.');
 	});
 
 	it('closes combat with the reason', async () => {

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Models;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Hubs;
+using Veldrath.Server.Settings;
 using ServerCharacter = Veldrath.Server.Data.Entities.Character;
 
 namespace Veldrath.Server.Features.Characters.Combat;
@@ -144,9 +145,9 @@ internal static class CombatHelpers
         return rewards;
     }
 
-    // Handles player death: HC → soft-delete; normal → experience/gold penalty and death state.
-    // Returns (isDead, isHardcore) for broadcast.
-    internal static async Task<(bool isDead, bool isHardcore)> HandleDeathIfNeededAsync(
+    // Handles player death: HC → soft-delete; normal → the configured gold-or-XP penalty plus the death state.
+    // Returns a DeathOutcome carrying whether the character died and what the death cost.
+    internal static async Task<DeathOutcome> HandleDeathIfNeededAsync(
         Character player,
         ServerCharacter entity,
         Dictionary<string, int> attrs,
@@ -155,9 +156,10 @@ internal static class CombatHelpers
         ICharacterRepository repo,
         IEnemyInstanceStore enemies,
         ICombatSessionStore sessions,
+        DeathPenaltyOptions penaltyOptions,
         CancellationToken ct)
     {
-        if (player.Health > 0) return (false, false);
+        if (player.Health > 0) return DeathOutcome.Alive;
 
         // Remove from enemy participation, and persist it so a dead player is not still counted as a contributor.
         if (enemy is not null)
@@ -179,26 +181,26 @@ internal static class CombatHelpers
 
         if (isHardcore)
         {
+            // Hardcore is permanent; there is nothing left to punish, so no penalty is applied or reported.
             entity.DeletedAt = DateTimeOffset.UtcNow;
             await repo.UpdateAsync(entity, ct);
-        }
-        else
-        {
-            // Standard death: apply XP and gold penalty (10% each, floor 0).
-            long xpPenalty = entity.Experience / 10;
-            entity.Experience = Math.Max(0, entity.Experience - xpPenalty);
-
-            attrs.TryGetValue("Gold", out int gold);
-            int goldPenalty = gold / 10;
-            attrs["Gold"] = Math.Max(0, gold - goldPenalty);
-
-            // Restore 1 HP so the character isn't permanently dead
-            attrs["CurrentHealth"] = 1;
-
-            entity.Attributes = SerializeAttrs(attrs);
-            await repo.UpdateAsync(entity, ct);
+            return new DeathOutcome(true, true, new DeathPenalty(0, 0));
         }
 
-        return (true, isHardcore);
+        // Gold first, experience only when the character is essentially broke — never both. The applied amounts are
+        // returned so the client can name them instead of leaving the player to notice the difference.
+        attrs.TryGetValue("Gold", out int gold);
+        var applied = DeathPenalties.Calculate(gold, entity.Experience, penaltyOptions);
+
+        attrs["Gold"] = Math.Max(0, gold - applied.GoldLost);
+        entity.Experience = Math.Max(0, entity.Experience - applied.XpLost);
+
+        // Restore 1 HP so the character isn't permanently dead
+        attrs["CurrentHealth"] = 1;
+
+        entity.Attributes = SerializeAttrs(attrs);
+        await repo.UpdateAsync(entity, ct);
+
+        return new DeathOutcome(true, false, applied);
     }
 }

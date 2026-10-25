@@ -1,6 +1,8 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Settings;
 
 namespace Veldrath.Server.Features.Characters.Combat;
 
@@ -35,6 +37,12 @@ public record DefendActionHubResult
 
     /// <summary>Gets whether the player's character was permanently deleted (hardcore mode death).</summary>
     public bool PlayerHardcoreDeath { get; init; }
+
+    /// <summary>Gets the gold the death cost, or 0 when the player survived.</summary>
+    public int GoldLost { get; init; }
+
+    /// <summary>Gets the experience the death cost, or 0 when the player survived.</summary>
+    public int XpLost { get; init; }
 }
 
 /// <summary>
@@ -47,22 +55,26 @@ public class DefendActionHubCommandHandler
     private readonly ICharacterRepository _characterRepo;
     private readonly IEnemyInstanceStore _enemies;
     private readonly ICombatSessionStore _sessions;
+    private readonly IOptions<DeathPenaltyOptions> _penalty;
     private readonly ILogger<DefendActionHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="DefendActionHubCommandHandler"/>.</summary>
     /// <param name="characterRepo">Repository for loading and persisting character state.</param>
     /// <param name="enemies">Store for the live enemy instances.</param>
     /// <param name="sessions">Store for per-character combat sessions.</param>
+    /// <param name="penalty">Configured death-penalty values.</param>
     /// <param name="logger">Logger instance.</param>
     public DefendActionHubCommandHandler(
         ICharacterRepository characterRepo,
         IEnemyInstanceStore enemies,
         ICombatSessionStore sessions,
+        IOptions<DeathPenaltyOptions> penalty,
         ILogger<DefendActionHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
         _enemies = enemies;
         _sessions = sessions;
+        _penalty = penalty;
         _logger = logger;
     }
 
@@ -113,8 +125,9 @@ public class DefendActionHubCommandHandler
         entity.Attributes = CombatHelpers.SerializeAttrs(attrs);
         await _characterRepo.UpdateAsync(entity, cancellationToken);
 
-        var (isDead, isHardcore) = await CombatHelpers.HandleDeathIfNeededAsync(
-            player, entity, attrs, session, enemy, _characterRepo, _enemies, _sessions, cancellationToken);
+        var death = await CombatHelpers.HandleDeathIfNeededAsync(
+            player, entity, attrs, session, enemy, _characterRepo, _enemies, _sessions,
+            _penalty.Value, cancellationToken);
 
         _logger.LogInformation(
             "Character {CharacterIdPrefix} defended — enemy dealt {Damage} damage",
@@ -126,8 +139,10 @@ public class DefendActionHubCommandHandler
             EnemyDamage = enemyDamage,
             EnemyAbilityUsed = abilityName,
             PlayerRemainingHealth = player.Health,
-            PlayerDefeated = isDead,
-            PlayerHardcoreDeath = isHardcore,
+            PlayerDefeated = death.IsDead,
+            PlayerHardcoreDeath = death.IsHardcore,
+            GoldLost = death.GoldLost,
+            XpLost = death.XpLost,
         };
     }
 }
