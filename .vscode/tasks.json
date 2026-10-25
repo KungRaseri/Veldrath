@@ -616,15 +616,6 @@
       "group": "build"
     },
     {
-      "label": "web:desktop",
-      "type": "shell",
-      "command": "npm",
-      "args": ["run", "build:desktop"],
-      "options": { "cwd": "${workspaceFolder}/web/client" },
-      "problemMatcher": "$msCompile",
-      "group": "build"
-    },
-    {
       "label": "web:test",
       "type": "shell",
       "command": "npm",

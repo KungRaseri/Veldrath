@@ -45,7 +45,7 @@ Build and change the SvelteKit web app ([`web/client`](../../../web/client)) tha
 - **Auth:** Better Auth owns web credentials/sessions. Keep `getAuth()` and the Postgres client lazy so `vite build` never touches the database.
 - **Game tokens:** SvelteKit mints short-lived JWTs for `Veldrath.Server`; all game API calls go through `gameApiFetch` in `src/lib/server/game-request.ts`.
 - **Email:** transactional mail is sent through the .NET server's SMTP service via the internal bridge (`src/lib/server/email.ts`); without `INTERNAL_BRIDGE_URL`/`INTERNAL_BRIDGE_TOKEN` links are logged locally.
-- **Adapters:** `adapter-node` for the deployed web app; `adapter-static` SPA output for the Avalonia WebView2 shell (`npm run build:desktop`).
+- **Adapters:** `adapter-node` only — the web app is the single game client and there is no desktop shell to build for.
 
 ## Steps
 
@@ -61,7 +61,6 @@ Build and change the SvelteKit web app ([`web/client`](../../../web/client)) tha
    npm run test
    npm run build
    ```
-   Add `npm run build:desktop` when the change affects what the desktop WebView shell renders.
 
 ## Rules
 
