@@ -52,4 +52,22 @@ public interface ICharacterRepository
 
     /// <summary>Clears the last-played timestamp for all non-deleted characters of the account.</summary>
     Task ClearLastPlayedAsync(Guid accountId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Returns the account's soft-deleted hardcore characters, most recent death first. This is the memorial: the
+    /// characters the game keeps after a permanent death.
+    /// </summary>
+    Task<IReadOnlyList<Character>> GetMemorialAsync(Guid accountId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Returns a page of hardcore characters (living and fallen) ordered by level then experience, plus the total
+    /// count so the caller can paginate without a second query.
+    /// </summary>
+    /// <param name="skip">Rows to skip.</param>
+    /// <param name="take">Rows to return.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task<(IReadOnlyList<Character> Items, int Total)> GetHardcoreLeaderboardAsync(
+        int skip,
+        int take,
+        CancellationToken ct = default);
 }

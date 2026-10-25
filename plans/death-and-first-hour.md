@@ -83,7 +83,8 @@ never progressing.
 - Keep the soft delete. Add `GET /api/characters/memorial` (the account's soft-deleted hardcore characters)
   and `GET /api/leaderboard/hardcore` (global, ordered by level then XP, with the death date).
 - Web: a memorial section on the roster/account page and a leaderboard page. No new tables — `DeletedAt` and
-  `DifficultyMode` already carry the data.
+  `DifficultyMode` already carry the data. Shipped as `GET /api/characters/memorial` + a paged
+  `GET /api/leaderboard/hardcore`, the roster page's memorial section, and the `routes/leaderboard/hardcore` page.
 - Hardcore characters never respawn; the memorial is where they are remembered.
 
 ## 3. Phases

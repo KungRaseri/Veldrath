@@ -39,6 +39,38 @@ public class CharacterRepository : ICharacterRepository
     public Task<int> GetActiveCountAsync(Guid accountId, CancellationToken ct = default) =>
         _db.Characters.CountAsync(c => c.AccountId == accountId && c.DeletedAt == null, ct);
 
+    public async Task<IReadOnlyList<Character>> GetMemorialAsync(Guid accountId, CancellationToken ct = default)
+    {
+        var list = await _db.Characters
+            .AsNoTracking()
+            .Where(c => c.AccountId == accountId && c.DeletedAt != null && c.DifficultyMode == "hardcore")
+            .ToListAsync(ct);
+
+        // Sort client-side: DateTimeOffset ORDER BY is not supported by the SQLite provider.
+        return list.OrderByDescending(c => c.DeletedAt).ToList();
+    }
+
+    public async Task<(IReadOnlyList<Character> Items, int Total)> GetHardcoreLeaderboardAsync(
+        int skip,
+        int take,
+        CancellationToken ct = default)
+    {
+        var query = _db.Characters
+            .AsNoTracking()
+            .Where(c => c.DifficultyMode == "hardcore");
+
+        var total = await query.CountAsync(ct);
+        var items = await query
+            .OrderByDescending(c => c.Level)
+            .ThenByDescending(c => c.Experience)
+            .ThenBy(c => c.Name)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(ct);
+
+        return (items, total);
+    }
+
     public async Task<Character> CreateAsync(Character character, CancellationToken ct = default)
     {
         _db.Characters.Add(character);
