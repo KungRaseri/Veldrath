@@ -773,9 +773,9 @@ public class CharacterTests
                 Traits = new Dictionary<string, TraitValue> { { "Strength", new TraitValue(5, TraitType.Number) } },
                 Enchantments = new List<Enchantment>
                 {
-                    new Enchantment 
-                    { 
-                        Name = "Strength I", 
+                    new Enchantment
+                    {
+                        Name = "Strength I",
                         Traits = new Dictionary<string, TraitValue> { { "Strength", new TraitValue(3, TraitType.Number) } }
                     }
                 }

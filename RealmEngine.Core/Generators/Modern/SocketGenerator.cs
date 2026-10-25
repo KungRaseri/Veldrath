@@ -67,18 +67,20 @@ public class SocketGenerator(SocketConfig socketConfig, ILogger<SocketGenerator>
         {
             return new Dictionary<SocketType, int>
             {
-                [SocketType.Gem]     = w.Gem,
-                [SocketType.Rune]    = w.Rune,
+                [SocketType.Gem] = w.Gem,
+                [SocketType.Rune] = w.Rune,
                 [SocketType.Crystal] = w.Crystal,
-                [SocketType.Orb]     = w.Orb,
+                [SocketType.Orb] = w.Orb,
             };
         }
 
         // Type-default fallback: equal distribution across all socket types
         return new Dictionary<SocketType, int>
         {
-            [SocketType.Gem] = 25, [SocketType.Rune] = 25,
-            [SocketType.Crystal] = 25, [SocketType.Orb] = 25,
+            [SocketType.Gem] = 25,
+            [SocketType.Rune] = 25,
+            [SocketType.Crystal] = 25,
+            [SocketType.Orb] = 25,
         };
     }
 

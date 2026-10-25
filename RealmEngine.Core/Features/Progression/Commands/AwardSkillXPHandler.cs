@@ -1,7 +1,7 @@
-using RealmEngine.Shared.Models;
-using RealmEngine.Core.Features.Progression.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Core.Features.Progression.Services;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Progression.Commands;
 

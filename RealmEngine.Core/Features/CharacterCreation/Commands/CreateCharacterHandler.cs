@@ -1,10 +1,10 @@
 using MediatR;
-using RealmEngine.Shared.Models;
-using RealmEngine.Shared.Abstractions;
+using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Features.Equipment.Queries;
 using RealmEngine.Core.Features.Exploration.Queries;
 using RealmEngine.Core.Features.Progression.Services;
-using Microsoft.Extensions.Logging;
+using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.CharacterCreation.Commands;
 
@@ -34,11 +34,11 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
         SkillProgressionService skillProgressionService,
         ILogger<CreateCharacterHandler> logger)
     {
-        _mediator                = mediator ?? throw new ArgumentNullException(nameof(mediator));
-        _backgroundRepository    = backgroundRepository ?? throw new ArgumentNullException(nameof(backgroundRepository));
-        _speciesRepository       = speciesRepository ?? throw new ArgumentNullException(nameof(speciesRepository));
+        _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+        _backgroundRepository = backgroundRepository ?? throw new ArgumentNullException(nameof(backgroundRepository));
+        _speciesRepository = speciesRepository ?? throw new ArgumentNullException(nameof(speciesRepository));
         _skillProgressionService = skillProgressionService ?? throw new ArgumentNullException(nameof(skillProgressionService));
-        _logger                  = logger;
+        _logger = logger;
     }
 
     /// <summary>
@@ -53,8 +53,8 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
         {
             // Create the character with base stats from class
             var character = CreateCharacterFromClass(request.CharacterName, request.CharacterClass, request.AttributeAllocations);
-            
-            _logger.LogInformation("Created new character: {CharacterName} ({ClassName})", 
+
+            _logger.LogInformation("Created new character: {CharacterName} ({ClassName})",
                 request.CharacterName, request.CharacterClass.Name);
 
             // Apply background bonuses if provided
@@ -76,9 +76,9 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
                 Character = character,
                 ClassName = request.CharacterClass.Name
             };
-            
+
             var abilitiesResult = await _mediator.Send(abilitiesCommand, cancellationToken);
-            
+
             if (!abilitiesResult.Success)
             {
                 _logger.LogWarning("Failed to initialize starting abilities for {CharacterName}: {Message}",
@@ -91,9 +91,9 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
                 Character = character,
                 ClassName = request.CharacterClass.Name
             };
-            
+
             var spellsResult = await _mediator.Send(spellsCommand, cancellationToken);
-            
+
             if (!spellsResult.Success)
             {
                 _logger.LogWarning("Failed to initialize starting spells for {CharacterName}: {Message}",
@@ -102,7 +102,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
 
             // Select and equip starting equipment
             var equipment = await SelectStartingEquipment(
-                character, 
+                character,
                 request.CharacterClass.Slug,
                 request.PreferredArmorType,
                 request.PreferredWeaponType,
@@ -161,25 +161,25 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
             Experience = 0,
 
             // Point-buy base (8) + player allocations; class does not modify stats
-            Strength     = Base("Strength"),
-            Dexterity    = Base("Dexterity"),
+            Strength = Base("Strength"),
+            Dexterity = Base("Dexterity"),
             Constitution = Base("Constitution"),
             Intelligence = Base("Intelligence"),
-            Wisdom       = Base("Wisdom"),
-            Charisma     = Base("Charisma"),
+            Wisdom = Base("Wisdom"),
+            Charisma = Base("Charisma"),
 
             // Set starting resources from class
-            Health    = characterClass.StartingHealth,
+            Health = characterClass.StartingHealth,
             MaxHealth = characterClass.StartingHealth,
-            Mana      = characterClass.StartingMana,
-            MaxMana   = characterClass.StartingMana,
+            Mana = characterClass.StartingMana,
+            MaxMana = characterClass.StartingMana,
 
             // Initialize collections
-            Inventory        = new List<Item>(),
+            Inventory = new List<Item>(),
             LearnedAbilities = new Dictionary<string, CharacterAbility>(),
-            LearnedSpells    = new Dictionary<string, CharacterSpell>(),
-            Skills           = new Dictionary<string, CharacterSkill>(),
-            PendingLevelUps  = new List<LevelUpInfo>()
+            LearnedSpells = new Dictionary<string, CharacterSpell>(),
+            Skills = new Dictionary<string, CharacterSkill>(),
+            PendingLevelUps = new List<LevelUpInfo>()
         };
 
         return character;
@@ -226,9 +226,9 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
 
             background.ApplyBonuses(character);
             character.BackgroundId = background.GetBackgroundId();
-            
+
             _logger.LogInformation("Applied background {BackgroundName} to {CharacterName} ({PrimaryAttr}+{PrimaryBonus}, {SecondaryAttr}+{SecondaryBonus})",
-                background.Name, character.Name, 
+                background.Name, character.Name,
                 background.PrimaryAttribute, background.PrimaryBonus,
                 background.SecondaryAttribute, background.SecondaryBonus);
 
@@ -359,7 +359,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
             var locations = await _mediator.Send(locationsQuery, cancellationToken);
 
             // Find the requested location
-            var location = locations.FirstOrDefault(l => 
+            var location = locations.FirstOrDefault(l =>
                 l.Id?.Equals(locationId, StringComparison.OrdinalIgnoreCase) == true ||
                 l.Name?.Equals(locationId, StringComparison.OrdinalIgnoreCase) == true);
 
@@ -371,15 +371,15 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
 
             character.CurrentLocationId = location.Id;
             character.CurrentZone = location.Name;
-            
-            _logger.LogInformation("Assigned starting location to {CharacterName}: {LocationName}", 
+
+            _logger.LogInformation("Assigned starting location to {CharacterName}: {LocationName}",
                 character.Name, location.Name);
 
             return location;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error assigning starting location {LocationId} to {CharacterName}", 
+            _logger.LogError(ex, "Error assigning starting location {LocationId} to {CharacterName}",
                 locationId, character.Name);
             return null;
         }
@@ -400,17 +400,17 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
     /// </summary>
     private static Item CreateFallbackShield() => new()
     {
-        Slug        = "wooden-shield",
-        Name        = "Wooden Shield",
+        Slug = "wooden-shield",
+        Name = "Wooden Shield",
         Description = "A simple wooden shield issued to new adventurers.",
-        Type        = ItemType.Shield,
-        TypeKey     = "shield",
-        ArmorType   = "shield",
-        ArmorClass  = "light",
-        Price       = 10,
-        Weight      = 6.0,
-        Rarity      = ItemRarity.Common,
-        StackSize   = 1,
+        Type = ItemType.Shield,
+        TypeKey = "shield",
+        ArmorType = "shield",
+        ArmorClass = "light",
+        Price = 10,
+        Weight = 6.0,
+        Rarity = ItemRarity.Common,
+        StackSize = 1,
         IsStackable = false,
     };
 
@@ -451,7 +451,7 @@ public class CreateCharacterHandler : IRequestHandler<CreateCharacterCommand, Cr
         // Map common class names to their IDs
         // This is a simplified approach - in production you'd query the class catalog
         var classNameLower = className.ToLowerInvariant();
-        
+
         return classNameLower switch
         {
             "fighter" => "warriors:fighter",

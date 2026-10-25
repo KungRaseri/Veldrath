@@ -15,8 +15,8 @@ public class FileTreeNodeViewModel : ReactiveObject
     public string? TableName { get; init; }
 
     // Populated only on typeKey-level directory nodes
-    public string? Domain      { get; init; }
-    public string? TypeKey     { get; init; }
+    public string? Domain { get; init; }
+    public string? TypeKey { get; init; }
     public string? DomainLabel { get; init; }  // Human-readable domain for breadcrumbs
     public string? ActivityKey { get; init; }  // Which activity bar section this node belongs to
 
@@ -32,7 +32,7 @@ public class FileTreeNodeViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isExpanded, value);
     }
 
-    public string  Icon     => IsDirectory ? "▶" : "·";
+    public string Icon => IsDirectory ? "▶" : "·";
     public string? IconPath { get; init; }
-    public int EntityCount  => Children.Sum(c => c.Children.Count);
+    public int EntityCount => Children.Sum(c => c.Children.Count);
 }

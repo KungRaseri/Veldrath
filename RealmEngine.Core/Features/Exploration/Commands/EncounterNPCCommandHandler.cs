@@ -45,7 +45,7 @@ public class EncounterNPCCommandHandler : IRequestHandler<EncounterNPCCommand, E
 
             // Find NPC in known NPCs (already encountered) or generate new encounter
             var npc = saveGame.KnownNPCs.FirstOrDefault(n => n.Id == request.NpcId);
-            
+
             if (npc == null)
             {
                 _logger.LogWarning("NPC {NpcId} not found in KnownNPCs", request.NpcId);

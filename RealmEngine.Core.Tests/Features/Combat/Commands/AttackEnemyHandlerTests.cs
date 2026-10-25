@@ -1,12 +1,12 @@
 using FluentAssertions;
+using MediatR;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using RealmEngine.Shared.Models;
-using RealmEngine.Shared.Abstractions;
 using RealmEngine.Core.Features.Combat;
 using RealmEngine.Core.Features.Combat.Commands.AttackEnemy;
 using RealmEngine.Core.Features.SaveLoad;
-using MediatR;
-using Microsoft.Extensions.Logging.Abstractions;
+using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Tests.Features.Combat.Commands;
 
@@ -162,7 +162,7 @@ public class AttackEnemyHandlerTests
         _mockMediator.Verify(m => m.Publish(
             It.Is<EnemyDefeated>(e => e.PlayerName == "Hero" && e.EnemyName == "Rat"),
             It.IsAny<CancellationToken>()), Times.Once);
-        
+
         _mockMediator.Verify(m => m.Publish(
             It.Is<GoldGained>(e => e.PlayerName == "Hero" && e.Amount == 2),
             It.IsAny<CancellationToken>()), Times.Once);
@@ -216,13 +216,13 @@ public class AttackEnemyHandlerTests
     {
         // Arrange
         var player = new Character { Name = "Hero", Strength = 10, Experience = 0, Gold = 0 };
-        var enemy = new Enemy 
-        { 
-            Name = "TestEnemy", 
-            Health = initialHealth, 
-            MaxHealth = 100, 
-            XP = 10, 
-            GoldReward = 5 
+        var enemy = new Enemy
+        {
+            Name = "TestEnemy",
+            Health = initialHealth,
+            MaxHealth = 100,
+            XP = 10,
+            GoldReward = 5
         };
         var combatResult = new CombatResult { Damage = damage, IsCritical = false };
 

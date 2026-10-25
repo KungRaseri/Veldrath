@@ -77,7 +77,7 @@ public record UseAbilityInCombatHubResult
 public class UseAbilityInCombatHubCommandHandler
     : IRequestHandler<UseAbilityInCombatHubCommand, UseAbilityInCombatHubResult>
 {
-    private const int FallbackManaCost      = 10;
+    private const int FallbackManaCost = 10;
     private const int FallbackCooldownTurns = 3;
     private const int FallbackHealingAmount = 20;
 
@@ -101,10 +101,10 @@ public class UseAbilityInCombatHubCommandHandler
         ILogger<UseAbilityInCombatHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
-        _powerRepo     = powerRepo;
-        _scopeFactory  = scopeFactory;
-        _hubContext    = hubContext;
-        _logger        = logger;
+        _powerRepo = powerRepo;
+        _scopeFactory = scopeFactory;
+        _hubContext = hubContext;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the ability-use combat turn outcome.</summary>
@@ -146,10 +146,10 @@ public class UseAbilityInCombatHubCommandHandler
 
         // Load the power definition from the content DB.
         var power = await _powerRepo.GetBySlugAsync(request.AbilityId);
-        int manaCost      = power?.ManaCost   ?? FallbackManaCost;
-        int cooldownTurns = power?.Cooldown   ?? FallbackCooldownTurns;
+        int manaCost = power?.ManaCost ?? FallbackManaCost;
+        int cooldownTurns = power?.Cooldown ?? FallbackCooldownTurns;
 
-        var attrs  = CombatHelpers.ParseAttrs(entity.Attributes, _logger);
+        var attrs = CombatHelpers.ParseAttrs(entity.Attributes, _logger);
         var player = CombatCharacterHydrator.Hydrate(entity, attrs);
 
         // Check cooldown.
@@ -157,7 +157,7 @@ public class UseAbilityInCombatHubCommandHandler
         if (attrs.TryGetValue(cooldownKey, out int remaining) && remaining > 0)
             return new UseAbilityInCombatHubResult
             {
-                Success      = false,
+                Success = false,
                 ErrorMessage = $"Ability '{request.AbilityId}' is on cooldown for {remaining} more turn(s)",
             };
 
@@ -165,20 +165,20 @@ public class UseAbilityInCombatHubCommandHandler
         if (player.Mana < manaCost)
             return new UseAbilityInCombatHubResult
             {
-                Success      = false,
+                Success = false,
                 ErrorMessage = "Not enough mana",
             };
 
         // Deduct mana and apply cooldown.
         player.Mana -= manaCost;
         attrs["CurrentMana"] = player.Mana;
-        attrs[cooldownKey]   = cooldownTurns;
+        attrs[cooldownKey] = cooldownTurns;
 
         bool isHeal = power?.EffectType == PowerEffectType.Heal
             || request.AbilityId.Contains("heal", StringComparison.OrdinalIgnoreCase);
 
-        int abilityDamage   = 0;
-        int healthRestored  = 0;
+        int abilityDamage = 0;
+        int healthRestored = 0;
         int enemyRemainingHealth;
 
         if (isHeal)
@@ -189,8 +189,8 @@ public class UseAbilityInCombatHubCommandHandler
             int healed = Math.Min(healingAmount, player.MaxHealth - player.Health);
             player.Health += healed;
             attrs["CurrentHealth"] = player.Health;
-            healthRestored         = healed;
-            enemyRemainingHealth   = enemy.CurrentHealth;
+            healthRestored = healed;
+            enemyRemainingHealth = enemy.CurrentHealth;
         }
         else
         {
@@ -215,7 +215,7 @@ public class UseAbilityInCombatHubCommandHandler
         if (!isHeal && !enemy.IsAlive)
         {
             var rewardList = await CombatHelpers.DistributeRewardsAsync(enemy, storeKey, _characterRepo, cancellationToken);
-            var myReward   = rewardList.FirstOrDefault(r => r.CharacterId == request.CharacterId);
+            var myReward = rewardList.FirstOrDefault(r => r.CharacterId == request.CharacterId);
 
             CombatHelpers.ScheduleRespawn(
                 storeKey, session.ZoneGroup, enemy.ArchetypeSlug,
@@ -227,16 +227,16 @@ public class UseAbilityInCombatHubCommandHandler
 
             return new UseAbilityInCombatHubResult
             {
-                Success               = true,
-                AbilityId             = request.AbilityId,
-                AbilityDamage         = abilityDamage,
-                ManaCost              = manaCost,
-                PlayerRemainingMana   = player.Mana,
-                EnemyRemainingHealth  = 0,
-                EnemyDefeated         = true,
+                Success = true,
+                AbilityId = request.AbilityId,
+                AbilityDamage = abilityDamage,
+                ManaCost = manaCost,
+                PlayerRemainingMana = player.Mana,
+                EnemyRemainingHealth = 0,
+                EnemyDefeated = true,
                 PlayerRemainingHealth = player.Health,
-                XpEarned              = myReward.Xp,
-                GoldEarned            = myReward.Gold,
+                XpEarned = myReward.Xp,
+                GoldEarned = myReward.Gold,
             };
         }
 
@@ -265,19 +265,19 @@ public class UseAbilityInCombatHubCommandHandler
 
         return new UseAbilityInCombatHubResult
         {
-            Success               = true,
-            AbilityId             = request.AbilityId,
-            AbilityDamage         = abilityDamage,
-            HealthRestored        = healthRestored,
-            ManaCost              = manaCost,
-            PlayerRemainingMana   = player.Mana,
-            EnemyRemainingHealth  = enemyRemainingHealth,
-            EnemyDefeated         = false,
-            EnemyDamage           = enemyDamage,
-            EnemyAbilityUsed      = counterAbility,
+            Success = true,
+            AbilityId = request.AbilityId,
+            AbilityDamage = abilityDamage,
+            HealthRestored = healthRestored,
+            ManaCost = manaCost,
+            PlayerRemainingMana = player.Mana,
+            EnemyRemainingHealth = enemyRemainingHealth,
+            EnemyDefeated = false,
+            EnemyDamage = enemyDamage,
+            EnemyAbilityUsed = counterAbility,
             PlayerRemainingHealth = player.Health,
-            PlayerDefeated        = isDead,
-            PlayerHardcoreDeath   = isHardcore,
+            PlayerDefeated = isDead,
+            PlayerHardcoreDeath = isHardcore,
         };
     }
 }

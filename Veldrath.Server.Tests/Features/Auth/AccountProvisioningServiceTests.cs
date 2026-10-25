@@ -39,11 +39,11 @@ public class AccountProvisioningServiceTests : IDisposable
         services
             .AddIdentityCore<PlayerAccount>(o =>
             {
-                o.Password.RequireDigit          = false;
-                o.Password.RequiredLength        = 1;
+                o.Password.RequireDigit = false;
+                o.Password.RequiredLength = 1;
                 o.Password.RequireNonAlphanumeric = false;
-                o.Password.RequireUppercase      = false;
-                o.User.RequireUniqueEmail        = true;
+                o.Password.RequireUppercase = false;
+                o.User.RequireUniqueEmail = true;
             })
             .AddRoles<IdentityRole<Guid>>()
             .AddEntityFrameworkStores<ApplicationDbContext>();
@@ -54,10 +54,10 @@ public class AccountProvisioningServiceTests : IDisposable
             _db,
             Mock.Of<ILogger<AccountProvisioningService>>()));
 
-        _provider    = services.BuildServiceProvider();
+        _provider = services.BuildServiceProvider();
         _userManager = _provider.GetRequiredService<UserManager<PlayerAccount>>();
         _roleManager = _provider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
-        _service     = _provider.GetRequiredService<AccountProvisioningService>();
+        _service = _provider.GetRequiredService<AccountProvisioningService>();
 
         AccountProvisioningService.ClearCache();
     }
@@ -197,7 +197,7 @@ public class AccountProvisioningServiceTests : IDisposable
         AccountProvisioningService.ClearCache();
 
         var principal = BuildPrincipal(accountId, "moderator_user");
-        var context   = BuildTokenContext(principal);
+        var context = BuildTokenContext(principal);
 
         await JwtClaimsEnrichment.EnrichAsync(context);
 

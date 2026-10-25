@@ -11,22 +11,29 @@ public class SpeciesTests
         int intel = 0, int wis = 0, int cha = 0) =>
         new()
         {
-            Slug         = "test-species",
-            DisplayName  = "Test Species",
-            BonusStrength     = str,
-            BonusDexterity    = dex,
+            Slug = "test-species",
+            DisplayName = "Test Species",
+            BonusStrength = str,
+            BonusDexterity = dex,
             BonusConstitution = con,
             BonusIntelligence = intel,
-            BonusWisdom       = wis,
-            BonusCharisma     = cha,
+            BonusWisdom = wis,
+            BonusCharisma = cha,
         };
 
     [Fact]
     public void ApplyBonuses_AllZero_DoesNotChangeStats()
     {
-        var species   = MakeSpecies();
-        var character = new Character { Strength = 10, Dexterity = 10, Constitution = 10,
-                                        Intelligence = 10, Wisdom = 10, Charisma = 10 };
+        var species = MakeSpecies();
+        var character = new Character
+        {
+            Strength = 10,
+            Dexterity = 10,
+            Constitution = 10,
+            Intelligence = 10,
+            Wisdom = 10,
+            Charisma = 10
+        };
 
         species.ApplyBonuses(character);
 
@@ -41,9 +48,16 @@ public class SpeciesTests
     [Fact]
     public void ApplyBonuses_NonZeroBonuses_AddsToAllStats()
     {
-        var species   = MakeSpecies(str: 2, dex: 1, con: 0, intel: 0, wis: 1, cha: 0);
-        var character = new Character { Strength = 10, Dexterity = 12, Constitution = 8,
-                                        Intelligence = 14, Wisdom = 10, Charisma = 11 };
+        var species = MakeSpecies(str: 2, dex: 1, con: 0, intel: 0, wis: 1, cha: 0);
+        var character = new Character
+        {
+            Strength = 10,
+            Dexterity = 12,
+            Constitution = 8,
+            Intelligence = 14,
+            Wisdom = 10,
+            Charisma = 11
+        };
 
         species.ApplyBonuses(character);
 
@@ -58,7 +72,7 @@ public class SpeciesTests
     [Fact]
     public void ApplyBonuses_AppliedTwice_StacksAdditively()
     {
-        var species   = MakeSpecies(str: 2);
+        var species = MakeSpecies(str: 2);
         var character = new Character { Strength = 10 };
 
         species.ApplyBonuses(character);
@@ -70,11 +84,15 @@ public class SpeciesTests
     [Fact]
     public void ApplyBonuses_AllSixBonuses_AllApplied()
     {
-        var species   = MakeSpecies(str: 1, dex: 2, con: 3, intel: 4, wis: 5, cha: 6);
+        var species = MakeSpecies(str: 1, dex: 2, con: 3, intel: 4, wis: 5, cha: 6);
         var character = new Character
         {
-            Strength = 8, Dexterity = 8, Constitution = 8,
-            Intelligence = 8, Wisdom = 8, Charisma = 8,
+            Strength = 8,
+            Dexterity = 8,
+            Constitution = 8,
+            Intelligence = 8,
+            Wisdom = 8,
+            Charisma = 8,
         };
 
         species.ApplyBonuses(character);

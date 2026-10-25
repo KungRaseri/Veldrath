@@ -57,7 +57,7 @@ public class ShopQueryAPITests : IDisposable
         services.AddSingleton(mockRepository.Object);
         services.AddSingleton<SaveGameService>();
         services.AddSingleton<ISaveGameService>(sp => sp.GetRequiredService<SaveGameService>());
-        
+
         // Register ItemCatalogLoader with mocked DbContextFactory
         var dbFactory = new Mock<IDbContextFactory<ContentDbContext>>();
         services.AddSingleton(dbFactory.Object);
@@ -117,7 +117,7 @@ public class ShopQueryAPITests : IDisposable
         // Arrange
         var shopService = _serviceProvider.GetRequiredService<ShopEconomyService>();
         var inventory = shopService.GetOrCreateInventory(_testMerchant);
-        
+
         var testItem = new Item
         {
             Id = "test-item-1",
@@ -143,7 +143,7 @@ public class ShopQueryAPITests : IDisposable
         // Arrange
         var shopService = _serviceProvider.GetRequiredService<ShopEconomyService>();
         var inventory = shopService.GetOrCreateInventory(_testMerchant);
-        
+
         var expensiveItem = new Item
         {
             Id = "expensive-item",
@@ -168,7 +168,7 @@ public class ShopQueryAPITests : IDisposable
         // Arrange
         var shopService = _serviceProvider.GetRequiredService<ShopEconomyService>();
         var inventory = shopService.GetOrCreateInventory(_testMerchant);
-        
+
         inventory.CoreItems.Add(new Item { Id = "item1", Name = "Item 1", Price = 50 });
         inventory.CoreItems.Add(new Item { Id = "item2", Name = "Item 2", Price = 75 });
         inventory.DynamicItems.Add(new Item { Id = "item3", Name = "Item 3", Price = 100 });
@@ -254,9 +254,9 @@ public class GetShopItemsQueryTests : IDisposable
         services.AddSingleton<ShopEconomyService>();
 
         _serviceProvider = services.BuildServiceProvider();
-        _mediator        = _serviceProvider.GetRequiredService<IMediator>();
+        _mediator = _serviceProvider.GetRequiredService<IMediator>();
         _saveGameService = _serviceProvider.GetRequiredService<SaveGameService>();
-        _shopService     = _serviceProvider.GetRequiredService<ShopEconomyService>();
+        _shopService = _serviceProvider.GetRequiredService<ShopEconomyService>();
 
         _testMerchant = CreateTestMerchant();
         _testSaveGame = _saveGameService.CreateNewGame(
@@ -332,7 +332,7 @@ public class GetShopItemsQueryTests : IDisposable
         var inventory = _shopService.GetOrCreateInventory(_testMerchant);
         inventory.CoreItems.Add(new Item { Id = "shield-1", Name = "Wooden Shield", Price = 60, Type = ItemType.Shield });
 
-        var queryResult   = await _mediator.Send(new GetShopItemsQuery(_testMerchant.Id));
+        var queryResult = await _mediator.Send(new GetShopItemsQuery(_testMerchant.Id));
         var commandResult = await _mediator.Send(new BrowseShopCommand(_testMerchant.Id));
 
         queryResult.Success.Should().BeTrue();
@@ -345,7 +345,7 @@ public class GetShopItemsQueryTests : IDisposable
     public async Task GetShopItems_IsUnlimited_TrueForCoreItems_FalseForDynamic()
     {
         var inventory = _shopService.GetOrCreateInventory(_testMerchant);
-        inventory.CoreItems.Add(new Item   { Id = "core-1",    Name = "Core Item",    Price = 50 });
+        inventory.CoreItems.Add(new Item { Id = "core-1", Name = "Core Item", Price = 50 });
         inventory.DynamicItems.Add(new Item { Id = "dynamic-1", Name = "Dynamic Item", Price = 50 });
 
         var result = await _mediator.Send(new GetShopItemsQuery(_testMerchant.Id));
@@ -356,15 +356,15 @@ public class GetShopItemsQueryTests : IDisposable
 
     private static NPC CreateTestMerchant() => new()
     {
-        Id   = $"merchant-{Guid.NewGuid()}",
+        Id = $"merchant-{Guid.NewGuid()}",
         Name = "Item Shop Owner",
         Occupation = "GeneralMerchant",
         Gold = 3000,
         Traits = new Dictionary<string, TraitValue>
         {
-            ["isMerchant"]        = new TraitValue(true,      TraitType.Boolean),
-            ["shopType"]          = new TraitValue("general", TraitType.String),
-            ["shopInventoryType"] = new TraitValue("hybrid",  TraitType.String)
+            ["isMerchant"] = new TraitValue(true, TraitType.Boolean),
+            ["shopType"] = new TraitValue("general", TraitType.String),
+            ["shopInventoryType"] = new TraitValue("hybrid", TraitType.String)
         }
     };
 

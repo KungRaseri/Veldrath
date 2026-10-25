@@ -39,15 +39,15 @@ public static class ClassAssets
     /// <param name="className">Display name of the class (case-sensitive, e.g. <c>"Warrior"</c>).</param>
     public static string? GetPath(string? className) => className switch
     {
-        nameof(Warrior)     => Warrior,
-        nameof(Mage)        => Mage,
-        nameof(Rogue)       => Rogue,
-        nameof(Assassin)    => Assassin,
-        nameof(Barbarian)   => Barbarian,
-        nameof(Hunter)      => Hunter,
-        nameof(Paladin)     => Paladin,
-        nameof(Priest)      => Priest,
+        nameof(Warrior) => Warrior,
+        nameof(Mage) => Mage,
+        nameof(Rogue) => Rogue,
+        nameof(Assassin) => Assassin,
+        nameof(Barbarian) => Barbarian,
+        nameof(Hunter) => Hunter,
+        nameof(Paladin) => Paladin,
+        nameof(Priest) => Priest,
         nameof(Necromancer) => Necromancer,
-        _                   => null,
+        _ => null,
     };
 }

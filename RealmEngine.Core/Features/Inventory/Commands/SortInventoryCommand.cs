@@ -1,5 +1,5 @@
-using RealmEngine.Shared.Models;
 using MediatR;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Inventory.Commands;
 
@@ -12,7 +12,7 @@ public record SortInventoryCommand : IRequest<SortInventoryResult>
     /// Gets the player character whose inventory to sort.
     /// </summary>
     public required Character Player { get; init; }
-    
+
     /// <summary>
     /// Gets the criteria to sort by.
     /// </summary>
@@ -28,7 +28,7 @@ public record SortInventoryResult
     /// Gets a value indicating whether the sort was successful.
     /// </summary>
     public required bool Success { get; init; }
-    
+
     /// <summary>
     /// Gets a message describing the sort result.
     /// </summary>
@@ -44,17 +44,17 @@ public enum SortCriteria
     /// Sort by item name.
     /// </summary>
     Name,
-    
+
     /// <summary>
     /// Sort by item type.
     /// </summary>
     Type,
-    
+
     /// <summary>
     /// Sort by item rarity.
     /// </summary>
     Rarity,
-    
+
     /// <summary>
     /// Sort by item value.
     /// </summary>

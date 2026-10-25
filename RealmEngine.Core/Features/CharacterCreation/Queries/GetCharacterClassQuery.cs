@@ -1,5 +1,5 @@
-using RealmEngine.Shared.Models;
 using MediatR;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.CharacterCreation.Queries;
 
@@ -23,7 +23,7 @@ public record GetCharacterClassResult
     /// Gets a value indicating whether the character class was found.
     /// </summary>
     public required bool Found { get; init; }
-    
+
     /// <summary>
     /// Gets the character class, or null if not found.
     /// </summary>

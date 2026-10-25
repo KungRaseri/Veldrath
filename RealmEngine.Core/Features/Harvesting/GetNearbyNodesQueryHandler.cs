@@ -54,7 +54,7 @@ public class GetNearbyNodesQueryHandler : IRequestHandler<GetNearbyNodesQuery, N
                         Nodes = new List<NearbyNodeInfo>()
                     };
                 }
-                
+
                 // Use last visited location or default to "starting-area"
                 locationId = currentSave.VisitedLocations.LastOrDefault() ?? "starting-area";
             }
@@ -66,7 +66,7 @@ public class GetNearbyNodesQueryHandler : IRequestHandler<GetNearbyNodesQuery, N
 
             // Query nodes from repository
             var nodes = await _nodeRepository.GetNodesByLocationAsync(locationId);
-            
+
             // Map nodes to DTOs
             var nodeInfos = new List<NearbyNodeInfo>();
             foreach (var node in nodes)

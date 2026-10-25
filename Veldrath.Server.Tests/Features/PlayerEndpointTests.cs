@@ -13,13 +13,8 @@ public class PlayerEndpointTests(WebAppFactory factory)
 
     private async Task<(string Token, Guid AccountId)> RegisterAndLoginAsync(string username)
     {
-        var email = $"{username.ToLower()}@test.com";
-        await _client.PostAsJsonAsync("/api/auth/register",
-            new { Email = email, Username = username, Password = "TestP@ssword123" });
-        var login = await _client.PostAsJsonAsync("/api/auth/login",
-            new { Email = email, Password = "TestP@ssword123" });
-        var auth = await login.Content.ReadFromJsonAsync<AuthResponse>();
-        return (auth!.AccessToken, auth.AccountId);
+        var account = await factory.CreateAccountTokenAsync(username);
+        return (account.Token, account.AccountId);
     }
 
     [Fact]

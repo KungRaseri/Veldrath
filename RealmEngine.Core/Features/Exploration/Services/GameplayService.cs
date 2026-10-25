@@ -1,7 +1,7 @@
-using RealmEngine.Core.Abstractions;
-using RealmEngine.Shared.Models;
-using RealmEngine.Core.Features.SaveLoad;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Core.Abstractions;
+using RealmEngine.Core.Features.SaveLoad;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Exploration;
 
@@ -72,7 +72,7 @@ public class GameplayService
         {
             _saveGameService.SaveGame(player, inventory, currentSaveId);
             _logger.LogInformation("Game saved for player {PlayerName}", player.Name);
-            
+
             return new SaveResult { Success = true };
         }
         catch (Exception ex)
@@ -90,13 +90,13 @@ public class RestResult
 {
     /// <summary>Gets or sets a value indicating whether the operation succeeded.</summary>
     public bool Success { get; set; }
-    
+
     /// <summary>Gets or sets the amount of health recovered.</summary>
     public int HealthRecovered { get; set; }
-    
+
     /// <summary>Gets or sets the amount of mana recovered.</summary>
     public int ManaRecovered { get; set; }
-    
+
     /// <summary>Gets or sets the error message if failed.</summary>
     public string? ErrorMessage { get; set; }
 }
@@ -108,7 +108,7 @@ public class SaveResult
 {
     /// <summary>Gets or sets a value indicating whether the operation succeeded.</summary>
     public bool Success { get; set; }
-    
+
     /// <summary>Gets or sets the error message if failed.</summary>
     public string? ErrorMessage { get; set; }
 }

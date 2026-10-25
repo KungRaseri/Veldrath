@@ -7,13 +7,13 @@ public class LevelUpInfo
 {
     /// <summary>Gets or sets the new level.</summary>
     public int NewLevel { get; set; }
-    
+
     /// <summary>Gets or sets the attribute points gained.</summary>
     public int AttributePointsGained { get; set; }
-    
+
     /// <summary>Gets or sets the skill points gained.</summary>
     public int SkillPointsGained { get; set; }
-    
+
     /// <summary>Gets or sets a value indicating whether this level-up has been processed.</summary>
     public bool IsProcessed { get; set; }
 }
@@ -25,19 +25,19 @@ public class AttributePointAllocation
 {
     /// <summary>Gets or sets the strength points.</summary>
     public int StrengthPoints { get; set; }
-    
+
     /// <summary>Gets or sets the dexterity points.</summary>
     public int DexterityPoints { get; set; }
-    
+
     /// <summary>Gets or sets the constitution points.</summary>
     public int ConstitutionPoints { get; set; }
-    
+
     /// <summary>Gets or sets the intelligence points.</summary>
     public int IntelligencePoints { get; set; }
-    
+
     /// <summary>Gets or sets the wisdom points.</summary>
     public int WisdomPoints { get; set; }
-    
+
     /// <summary>Gets or sets the charisma points.</summary>
     public int CharismaPoints { get; set; }
 
@@ -67,22 +67,22 @@ public class Skill
 {
     /// <summary>Gets or sets the name.</summary>
     public string Name { get; set; } = string.Empty;
-    
+
     /// <summary>Gets or sets the description.</summary>
     public string Description { get; set; } = string.Empty;
-    
+
     /// <summary>Gets or sets the required level.</summary>
     public int RequiredLevel { get; set; }
-    
+
     /// <summary>Gets or sets the maximum rank.</summary>
     public int MaxRank { get; set; } = 5;
-    
+
     /// <summary>Gets or sets the current rank.</summary>
     public int CurrentRank { get; set; }
-    
+
     /// <summary>Gets or sets the skill type.</summary>
     public SkillType Type { get; set; }
-    
+
     /// <summary>Gets or sets the effect description.</summary>
     public string Effect { get; set; } = string.Empty;
 }

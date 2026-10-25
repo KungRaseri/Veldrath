@@ -84,14 +84,14 @@ public class GetItemDetailsHandlerTests
     {
         // Arrange
         var handler = new GetItemDetailsHandler();
-        var enchantment1 = new Enchantment 
-        { 
-            Name = "Strength Boost", 
+        var enchantment1 = new Enchantment
+        {
+            Name = "Strength Boost",
             Traits = new Dictionary<string, TraitValue> { { "Strength", new TraitValue(10, TraitType.Number) } }
         };
-        var enchantment2 = new Enchantment 
-        { 
-            Name = "Dexterity Boost", 
+        var enchantment2 = new Enchantment
+        {
+            Name = "Dexterity Boost",
             Traits = new Dictionary<string, TraitValue> { { "Dexterity", new TraitValue(5, TraitType.Number) } }
         };
         var item = new Item

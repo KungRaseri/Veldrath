@@ -26,30 +26,30 @@ public class SalvageItemHandler : IRequestHandler<SalvageItemCommand, SalvageIte
     public Task<SalvageItemResult> Handle(SalvageItemCommand request, CancellationToken cancellationToken)
     {
         var character = request.Character;
-        var item      = request.Item;
+        var item = request.Item;
 
         if (!SalvageService.CanBeSalvaged(item.Type))
         {
             return Task.FromResult(new SalvageItemResult
             {
-                Success       = false,
-                Message       = $"Cannot salvage {item.Type} items.",
-                YieldRate     = 0,
+                Success = false,
+                Message = $"Cannot salvage {item.Type} items.",
+                YieldRate = 0,
                 ItemDestroyed = false
             });
         }
 
-        var skillName      = SalvageService.GetSkillName(item.Type);
-        var yieldRate      = SalvageService.CalculateYieldRate(character, item.Type);
+        var skillName = SalvageService.GetSkillName(item.Type);
+        var yieldRate = SalvageService.CalculateYieldRate(character, item.Type);
         var scrapMaterials = SalvageService.GetExpectedScrap(item, yieldRate);
 
         return Task.FromResult(new SalvageItemResult
         {
-            Success       = true,
-            Message       = $"Salvaged {item.Name} at {yieldRate:F1}% yield rate. Recovered {string.Join(", ", scrapMaterials.Select(kvp => $"{kvp.Value}x {kvp.Key}"))}.",
+            Success = true,
+            Message = $"Salvaged {item.Name} at {yieldRate:F1}% yield rate. Recovered {string.Join(", ", scrapMaterials.Select(kvp => $"{kvp.Value}x {kvp.Key}"))}.",
             ScrapMaterials = scrapMaterials,
-            SkillUsed     = skillName,
-            YieldRate     = yieldRate,
+            SkillUsed = skillName,
+            YieldRate = yieldRate,
             ItemDestroyed = true
         });
     }

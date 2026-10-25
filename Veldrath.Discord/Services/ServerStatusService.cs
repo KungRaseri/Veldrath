@@ -1,5 +1,5 @@
-﻿using Veldrath.Contracts.Zones;
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
+using Veldrath.Contracts.Zones;
 
 namespace Veldrath.Discord.Services;
 

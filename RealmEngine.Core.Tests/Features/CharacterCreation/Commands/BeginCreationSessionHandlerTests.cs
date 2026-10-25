@@ -15,9 +15,9 @@ namespace RealmEngine.Core.Tests.Features.CharacterCreation.Commands;
 public class BeginCreationSessionHandlerTests
 {
     private readonly Mock<ICharacterCreationSessionStore> _sessionStoreMock = new();
-    private readonly Mock<ISpeciesRepository>             _speciesRepoMock  = new();
-    private readonly Mock<IBackgroundRepository>          _backgroundRepoMock = new();
-    private readonly Mock<IMediator>                      _mediatorMock     = new();
+    private readonly Mock<ISpeciesRepository> _speciesRepoMock = new();
+    private readonly Mock<IBackgroundRepository> _backgroundRepoMock = new();
+    private readonly Mock<IMediator> _mediatorMock = new();
 
     private BeginCreationSessionHandler CreateHandler() =>
         new(_sessionStoreMock.Object, _speciesRepoMock.Object, _backgroundRepoMock.Object,

@@ -1,6 +1,6 @@
-using RealmEngine.Shared.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Progression.Services;
 
@@ -176,12 +176,12 @@ public class SpellCastingService
 
         // Success check (based on skill vs requirement)
         var castCheck = CheckCastSuccess(magicSkill, power);
-        
+
         if (!castCheck.Success)
         {
             // Fizzle - spell fails but mana already spent
             learnedSpell.TimesFizzled++;
-            
+
             _logger.LogInformation("Character {Character} fizzled {Spell} (success rate: {Rate:P0})",
                 caster.Name, power.DisplayName, castCheck.SuccessRate);
 
@@ -303,7 +303,7 @@ public class SpellCastingService
             int skillBonus = magicSkill.CurrentRank / 5;
             return (baseValue + skillBonus).ToString();
         }
-        
+
         // If it's dice notation, return as-is for now (will be rolled in ApplySpellEffect)
         return baseEffectValue;
     }
@@ -318,7 +318,7 @@ public class SpellCastingService
         {
             return numValue;
         }
-        
+
         // If it's dice notation, roll it (using same logic as CombatService)
         try
         {
@@ -339,7 +339,7 @@ public class SpellCastingService
         {
             // If parsing fails, return a default value
         }
-        
+
         return 10; // Default fallback
     }
 

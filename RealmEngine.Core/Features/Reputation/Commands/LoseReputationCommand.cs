@@ -1,8 +1,8 @@
 using MediatR;
-using RealmEngine.Core.Features.SaveLoad;
-using RealmEngine.Core.Features.Reputation.Services;
-using RealmEngine.Shared.Models;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Core.Features.Reputation.Services;
+using RealmEngine.Core.Features.SaveLoad;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Reputation.Commands;
 

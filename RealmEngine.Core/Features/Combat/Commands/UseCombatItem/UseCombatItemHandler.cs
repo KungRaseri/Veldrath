@@ -1,6 +1,6 @@
-using RealmEngine.Shared.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Combat.Commands.UseCombatItem;
 
@@ -63,7 +63,7 @@ public class UseCombatItemHandler : IRequestHandler<UseCombatItemCommand, UseCom
         player.Inventory.Remove(item);
 
         combatLog?.AddEntry($"{player.Name} used {item.Name} and restored {actualHealing} health!");
-        
+
         // Publish item used event
         await _mediator.Publish(new ItemAcquired(player.Name, item.Name), cancellationToken);
 

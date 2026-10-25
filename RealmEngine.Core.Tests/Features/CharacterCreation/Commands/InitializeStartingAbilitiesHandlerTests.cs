@@ -1,11 +1,11 @@
 using FluentAssertions;
 using MediatR;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RealmEngine.Core.Features.CharacterCreation.Commands;
 using RealmEngine.Core.Features.Progression.Commands;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.CharacterCreation.Commands;
 
@@ -34,12 +34,12 @@ public class InitializeStartingAbilitiesHandlerTests
     {
         // Arrange
         var mockMediator = new Mock<IMediator>();
-        
+
         // Mock successful ability learning
         mockMediator
             .Setup(m => m.Send(It.IsAny<LearnPowerCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new LearnPowerResult { Success = true, Message = "Learned" });
-        
+
         var abilityIds = Enumerable.Range(1, expectedCount).Select(i => $"ability-{i}").ToList();
         var classRepo = BuildClassRepo(className, abilityIds);
         var handler = new InitializeStartingAbilitiesHandler(mockMediator.Object, classRepo.Object, NullLogger<InitializeStartingAbilitiesHandler>.Instance);
@@ -58,10 +58,10 @@ public class InitializeStartingAbilitiesHandlerTests
         result.Success.Should().BeTrue();
         result.AbilitiesLearned.Should().Be(expectedCount);
         result.AbilityIds.Should().HaveCount(expectedCount);
-        
+
         // Verify LearnPowerCommand was called the correct number of times
         mockMediator.Verify(
-            m => m.Send(It.IsAny<LearnPowerCommand>(), It.IsAny<CancellationToken>()), 
+            m => m.Send(It.IsAny<LearnPowerCommand>(), It.IsAny<CancellationToken>()),
             Times.Exactly(expectedCount));
     }
 
@@ -98,7 +98,7 @@ public class InitializeStartingAbilitiesHandlerTests
         mockMediator
             .Setup(m => m.Send(It.IsAny<LearnPowerCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new LearnPowerResult { Success = true, Message = "Learned" });
-        
+
         var warriorAbilities = new List<string>
         {
             "active/offensive:shield-bash",
@@ -129,20 +129,20 @@ public class InitializeStartingAbilitiesHandlerTests
         // Arrange
         var mockMediator = new Mock<IMediator>();
         int callCount = 0;
-        
+
         mockMediator
             .Setup(m => m.Send(It.IsAny<LearnPowerCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() =>
             {
                 callCount++;
                 // First call fails, others succeed
-                return new LearnPowerResult 
-                { 
-                    Success = callCount > 1, 
-                    Message = callCount > 1 ? "Learned" : "Failed" 
+                return new LearnPowerResult
+                {
+                    Success = callCount > 1,
+                    Message = callCount > 1 ? "Learned" : "Failed"
                 };
             });
-        
+
         var classRepo = BuildClassRepo("Warrior", ["ability-1", "ability-2", "ability-3"]);
         var handler = new InitializeStartingAbilitiesHandler(mockMediator.Object, classRepo.Object, NullLogger<InitializeStartingAbilitiesHandler>.Instance);
         var character = new Character { Name = "TestHero", ClassName = "Warrior" };
@@ -159,7 +159,7 @@ public class InitializeStartingAbilitiesHandlerTests
         result.Success.Should().BeTrue();
         result.AbilitiesLearned.Should().Be(2); // Only 2 succeeded
         mockMediator.Verify(
-            m => m.Send(It.IsAny<LearnPowerCommand>(), It.IsAny<CancellationToken>()), 
+            m => m.Send(It.IsAny<LearnPowerCommand>(), It.IsAny<CancellationToken>()),
             Times.Exactly(3)); // All 3 were attempted
     }
 }

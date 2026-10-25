@@ -33,7 +33,7 @@ public class GameHubChatCommandTests : IDisposable
         CreateHub(Guid accountId, params string[] permissions)
     {
         var db = _factory.CreateContext();
-        var options    = Options.Create(new VersionCompatibilitySettings());
+        var options = Options.Create(new VersionCompatibilitySettings());
         var modOptions = Options.Create(new ModerationOptions());
         var userManager = new Mock<UserManager<Veldrath.Server.Data.Entities.PlayerAccount>>(
             Mock.Of<IUserStore<Veldrath.Server.Data.Entities.PlayerAccount>>(), null!, null!, null!, null!, null!, null!, null!, null!).Object;
@@ -53,10 +53,10 @@ public class GameHubChatCommandTests : IDisposable
             db);
 
         var clients = new FakeHubCallerClients();
-        var ctx     = new FakeHubCallerContext("conn-chat", MakeUser(accountId, permissions));
+        var ctx = new FakeHubCallerContext("conn-chat", MakeUser(accountId, permissions));
 
         hub.Clients = clients;
-        hub.Groups  = new FakeGroupManager();
+        hub.Groups = new FakeGroupManager();
         hub.Context = ctx;
 
         return (hub, ctx);

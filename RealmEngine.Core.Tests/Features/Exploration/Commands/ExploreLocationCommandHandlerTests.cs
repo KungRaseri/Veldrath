@@ -1,7 +1,7 @@
 using FluentAssertions;
+using MediatR;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using MediatR;
 using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Features.Exploration.Commands;
 using RealmEngine.Core.Services;

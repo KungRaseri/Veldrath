@@ -44,7 +44,7 @@ internal static class CombatHelpers
         foreach (var key in attrs.Keys.ToList())
         {
             if (key.StartsWith("AbilityCooldown_", StringComparison.OrdinalIgnoreCase) ||
-                key.StartsWith("SpellCooldown_",   StringComparison.OrdinalIgnoreCase))
+                key.StartsWith("SpellCooldown_", StringComparison.OrdinalIgnoreCase))
             {
                 attrs[key] = Math.Max(0, attrs[key] - 1);
             }
@@ -56,8 +56,8 @@ internal static class CombatHelpers
     {
         attrs.TryGetValue("Strength", out int str);
         if (str == 0) str = 10;
-        int strMod  = (str - 10) / 2;
-        int lvlMod  = level / 2;
+        int strMod = (str - 10) / 2;
+        int lvlMod = level / 2;
         return Math.Max(1, strMod + lvlMod + 5);
     }
 
@@ -79,7 +79,7 @@ internal static class CombatHelpers
             return (0, null);
 
         var ability = enemy.Template.Abilities[Random.Shared.Next(enemy.Template.Abilities.Count)];
-        int damage  = 0;
+        int damage = 0;
 
         if (ability.EffectType == RealmEngine.Shared.Models.PowerEffectType.Damage)
         {
@@ -115,7 +115,7 @@ internal static class CombatHelpers
         foreach (var (charId, damage) in enemy.DamageContributions)
         {
             double share = (double)damage / totalDamage;
-            int xp   = Math.Max(1, (int)(enemy.BaseXp    * share));
+            int xp = Math.Max(1, (int)(enemy.BaseXp * share));
             int gold = Math.Max(0, (int)(enemy.GoldReward * share));
 
             var character = await repo.GetByIdAsync(charId, ct);
@@ -124,7 +124,7 @@ internal static class CombatHelpers
                 var attrs = ParseAttrs(character.Attributes);
                 attrs["Gold"] = attrs.GetValueOrDefault("Gold") + gold;
                 character.Experience += xp;
-                character.Attributes  = SerializeAttrs(attrs);
+                character.Attributes = SerializeAttrs(attrs);
                 await repo.UpdateAsync(character, ct);
             }
 
@@ -153,10 +153,10 @@ internal static class CombatHelpers
             {
                 await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
 
-                using var scope   = scopeFactory.CreateScope();
-                var resolver      = scope.ServiceProvider.GetRequiredService<ActorPoolResolver>();
-                var pool          = new List<ActorPoolEntry> { new(archetypeSlug, 1) };
-                var roster        = await resolver.SpawnRosterAsync(pool);
+                using var scope = scopeFactory.CreateScope();
+                var resolver = scope.ServiceProvider.GetRequiredService<ActorPoolResolver>();
+                var pool = new List<ActorPoolEntry> { new(archetypeSlug, 1) };
+                var roster = await resolver.SpawnRosterAsync(pool);
 
                 if (roster.Count > 0)
                 {

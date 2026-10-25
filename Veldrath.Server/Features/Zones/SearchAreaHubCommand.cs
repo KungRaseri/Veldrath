@@ -66,10 +66,10 @@ public class SearchAreaHubCommandHandler
         ICharacterUnlockedLocationRepository unlockedRepo,
         ILogger<SearchAreaHubCommandHandler> logger)
     {
-        _locationRepo  = locationRepo;
+        _locationRepo = locationRepo;
         _characterRepo = characterRepo;
-        _unlockedRepo  = unlockedRepo;
-        _logger        = logger;
+        _unlockedRepo = unlockedRepo;
+        _logger = logger;
     }
 
     /// <summary>Handles the search command, rolling for each active-check hidden location.</summary>
@@ -118,9 +118,9 @@ public class SearchAreaHubCommandHandler
 
         return new SearchAreaHubResult
         {
-            Success   = true,
+            Success = true,
             RollValue = roll,
-            AnyFound  = discovered.Count > 0,
+            AnyFound = discovered.Count > 0,
             Discovered = discovered,
         };
     }

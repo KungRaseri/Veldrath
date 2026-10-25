@@ -1,9 +1,9 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Features.Progression.Commands;
 using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
-using Microsoft.Extensions.Logging;
 
 namespace RealmEngine.Core.Features.CharacterCreation.Services;
 

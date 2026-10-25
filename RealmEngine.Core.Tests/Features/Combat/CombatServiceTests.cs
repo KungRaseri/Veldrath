@@ -1,11 +1,11 @@
 using FluentAssertions;
-using Moq;
-using RealmEngine.Shared.Models;
-using RealmEngine.Core.Features.Combat;
+using MediatR;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
+using RealmEngine.Core.Features.Combat;
 using RealmEngine.Core.Features.Combat.Commands;
 using RealmEngine.Core.Features.SaveLoad;
-using MediatR;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Tests.Features.Combat;
 
@@ -30,7 +30,7 @@ public class CombatServiceTests
                 GoldXPMultiplier = 1.0
             });
         _mockMediator = new Mock<IMediator>();
-        
+
         // Setup mediator to return empty ProcessStatusEffectsResult for all status effect commands
         _mockMediator.Setup(m => m.Send(It.IsAny<ProcessStatusEffectsCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProcessStatusEffectsResult
@@ -103,11 +103,11 @@ public class CombatServiceTests
     {
         // Arrange
         var service = new CombatService(_mockSaveGameService.Object, _mockMediator.Object, null!, NullLogger<CombatService>.Instance, NullLoggerFactory.Instance);
-        
+
         // Set up multiple attack scenarios to handle RNG variance (dodge/block/damage rolls)
         // Test with multiple characters to ensure we get at least one hit for comparison
         var attacks = new List<(Character player, Enemy enemy, bool isDefending, CombatResult result)>();
-        
+
         // Run multiple attempts to get reliable data despite RNG
         for (int i = 0; i < 10; i++)
         {
@@ -115,10 +115,10 @@ public class CombatServiceTests
             var defendingPlayer = new Character { Name = $"Defender{i}", Health = 100, MaxHealth = 100, Constitution = 10, Dexterity = 5 };
             var enemy1 = new Enemy { Name = $"Attacker{i}A", BasePhysicalDamage = 20 };
             var enemy2 = new Enemy { Name = $"Attacker{i}B", BasePhysicalDamage = 20 };
-            
+
             var normalResult = await service.ExecuteEnemyAttack(enemy1, normalPlayer, isDefending: false);
             var defendingResult = await service.ExecuteEnemyAttack(enemy2, defendingPlayer, isDefending: true);
-            
+
             attacks.Add((normalPlayer, enemy1, false, normalResult));
             attacks.Add((defendingPlayer, enemy2, true, defendingResult));
         }
@@ -127,16 +127,16 @@ public class CombatServiceTests
         var normalHits = attacks.Where(a => !a.isDefending && a.result.Damage > 0).ToList();
         // Get all non-blocked defending attacks (defending can reduce to 0 legitimately)
         var defendingHits = attacks.Where(a => a.isDefending && !a.result.IsBlocked).ToList();
-        
+
         // Assert - with 10 attempts, we should get at least some hits
         normalHits.Should().NotBeEmpty("at least some normal attacks should land");
-        
+
         // Average damage comparison
         var avgNormalDamage = normalHits.Average(a => a.result.Damage);
         var avgDefendingDamage = defendingHits.Average(a => a.result.Damage);
-        
+
         avgNormalDamage.Should().BeGreaterThan(0, "normal attacks should deal damage on average");
-        avgDefendingDamage.Should().BeLessThanOrEqualTo(avgNormalDamage, 
+        avgDefendingDamage.Should().BeLessThanOrEqualTo(avgNormalDamage,
             "defending should reduce average damage taken");
     }
 
@@ -186,12 +186,12 @@ public class CombatServiceTests
         // Act - Multiple attempts (RNG) - Increased sample size for better statistical reliability
         int weakEnemySuccesses = 0;
         int strongEnemySuccesses = 0;
-        
+
         for (int i = 0; i < 100; i++)
         {
             var result1 = service.AttemptFlee(player, weakEnemy);
             if (result1.Success) weakEnemySuccesses++;
-            
+
             var result2 = service.AttemptFlee(player, strongEnemy);
             if (result2.Success) strongEnemySuccesses++;
         }

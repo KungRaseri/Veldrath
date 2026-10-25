@@ -14,8 +14,8 @@ namespace Veldrath.Server.Tests.Features.Auth;
 public class InternalEmailEndpointTests(WebAppFactory factory)
 {
     private const string BridgeToken = "test-internal-bridge-token";
-    private const string ResetUrl    = "https://veldrath.test/reset-password?token=reset-token";
-    private const string VerifyUrl   = "https://veldrath.test/verify-email?token=verify-token";
+    private const string ResetUrl = "https://veldrath.test/reset-password?token=reset-token";
+    private const string VerifyUrl = "https://veldrath.test/verify-email?token=verify-token";
 
     private readonly HttpClient _client = factory.CreateClient();
 

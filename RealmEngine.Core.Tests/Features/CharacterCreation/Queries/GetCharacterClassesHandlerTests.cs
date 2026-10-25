@@ -13,11 +13,11 @@ public class GetCharacterClassesHandlerTests
         string name, bool isSubclass = false, string? parentClassId = null) =>
         new()
         {
-            Id          = $"warrior:{name}",
-            Name        = name,
+            Id = $"warrior:{name}",
+            Name = name,
             DisplayName = name,
             Description = $"The {name} class",
-            IsSubclass  = isSubclass,
+            IsSubclass = isSubclass,
             ParentClassId = parentClassId,
         };
 

@@ -46,7 +46,7 @@ public class DropItemHubCommandHandler : IRequestHandler<DropItemHubCommand, Dro
         ILogger<DropItemHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
-        _logger        = logger;
+        _logger = logger;
     }
 
     /// <summary>Handles the drop and returns the outcome.</summary>
@@ -91,8 +91,8 @@ public class DropItemHubCommandHandler : IRequestHandler<DropItemHubCommand, Dro
 
         return new DropItemHubResult
         {
-            Success           = true,
-            ItemRef           = request.ItemRef,
+            Success = true,
+            ItemRef = request.ItemRef,
             RemainingQuantity = remaining,
         };
     }

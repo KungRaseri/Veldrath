@@ -47,7 +47,7 @@ public class GenerateItemCommandHandler : IRequestHandler<GenerateItemCommand, G
             if (request.BudgetRequest != null)
             {
                 var item = await _itemGenerator.GenerateItemModelWithBudgetAsync(request.BudgetRequest);
-                
+
                 if (item == null)
                 {
                     return new GenerateItemResult
@@ -57,7 +57,7 @@ public class GenerateItemCommandHandler : IRequestHandler<GenerateItemCommand, G
                     };
                 }
 
-                _logger.LogDebug("Generated budget item: {ItemName} (Budget: {Budget})", 
+                _logger.LogDebug("Generated budget item: {ItemName} (Budget: {Budget})",
                     item.Name, request.BudgetRequest.ItemCategory);
 
                 return new GenerateItemResult
@@ -69,7 +69,7 @@ public class GenerateItemCommandHandler : IRequestHandler<GenerateItemCommand, G
 
             // Standard category-based generation
             var items = await _itemGenerator.GenerateItemsAsync(request.Category, 1, request.Hydrate);
-            
+
             if (items == null || items.Count == 0)
             {
                 return new GenerateItemResult
@@ -80,8 +80,8 @@ public class GenerateItemCommandHandler : IRequestHandler<GenerateItemCommand, G
             }
 
             var generatedItem = items[0];
-            
-            _logger.LogDebug("Generated item: {ItemName} from category {Category}", 
+
+            _logger.LogDebug("Generated item: {ItemName} from category {Category}",
                 generatedItem.Name, request.Category);
 
             return new GenerateItemResult

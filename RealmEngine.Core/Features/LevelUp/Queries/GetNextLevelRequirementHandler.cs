@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using RealmEngine.Core.Services;
 using RealmEngine.Core.Features.SaveLoad;
+using RealmEngine.Core.Services;
 
 namespace RealmEngine.Core.Features.LevelUp.Queries;
 
@@ -75,8 +75,8 @@ public class GetNextLevelRequirementHandler : IRequestHandler<GetNextLevelRequir
             var nextLevel = character.Level + 1;
             var requiredXP = character.Level * 100;
             var remaining = Math.Max(0, requiredXP - character.Experience);
-            var progress = requiredXP > 0 
-                ? ((double)character.Experience / requiredXP) * 100.0 
+            var progress = requiredXP > 0
+                ? ((double)character.Experience / requiredXP) * 100.0
                 : 100.0;
 
             _logger.LogDebug(

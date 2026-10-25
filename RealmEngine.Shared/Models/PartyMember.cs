@@ -131,13 +131,13 @@ public class PartyMember
     public int GetAttack()
     {
         int attack = Strength + (Level * 2);
-        
+
         // Add weapon attack from traits
         if (EquippedWeapon != null && EquippedWeapon.Traits.TryGetValue("attack", out var attackTrait))
         {
             attack += attackTrait.AsInt();
         }
-        
+
         return attack;
     }
 
@@ -147,13 +147,13 @@ public class PartyMember
     public int GetDefense()
     {
         int defense = Constitution + (Level * 2);
-        
+
         // Add armor defense from traits
         if (EquippedArmor != null && EquippedArmor.Traits.TryGetValue("defense", out var defenseTrait))
         {
             defense += defenseTrait.AsInt();
         }
-        
+
         return defense;
     }
 
@@ -198,7 +198,7 @@ public class PartyMember
     {
         Experience += amount;
         int xpNeeded = Level * 100;
-        
+
         if (Experience >= xpNeeded)
         {
             Experience -= xpNeeded;
@@ -206,7 +206,7 @@ public class PartyMember
             LevelUp();
             return true;
         }
-        
+
         return false;
     }
 
@@ -220,7 +220,7 @@ public class PartyMember
         MaxMana += 5 + Wisdom;
         Health = MaxHealth;
         Mana = MaxMana;
-        
+
         // Role-based stat increases
         switch (Role)
         {

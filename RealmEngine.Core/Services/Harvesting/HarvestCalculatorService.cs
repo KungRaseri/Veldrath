@@ -46,8 +46,8 @@ public class HarvestCalculatorService
         var critMultiplier = isCritical ? _config.YieldCalculation.CriticalMultiplier : 1.0;
 
         // Exhausted penalty: -50% yield if node is exhausted
-        var exhaustedPenalty = node.GetNodeState() == NodeState.Exhausted 
-            ? _config.YieldCalculation.ExhaustedPenalty 
+        var exhaustedPenalty = node.GetNodeState() == NodeState.Exhausted
+            ? _config.YieldCalculation.ExhaustedPenalty
             : 1.0;
 
         // Calculate final yield
@@ -182,27 +182,27 @@ public class HarvestingConfig
     /// Node health and depletion configuration.
     /// </summary>
     public NodeHealthConfig NodeHealth { get; set; } = new();
-    
+
     /// <summary>
     /// Yield calculation configuration.
     /// </summary>
     public YieldCalculationConfig YieldCalculation { get; set; } = new();
-    
+
     /// <summary>
     /// Critical harvest configuration.
     /// </summary>
     public CriticalHarvestConfig CriticalHarvest { get; set; } = new();
-    
+
     /// <summary>
     /// Tool requirements configuration.
     /// </summary>
     public ToolRequirementsConfig ToolRequirements { get; set; } = new();
-    
+
     /// <summary>
     /// Skill XP configuration.
     /// </summary>
     public SkillXPConfig SkillXP { get; set; } = new();
-    
+
     /// <summary>
     /// Durability loss configuration.
     /// </summary>
@@ -218,17 +218,17 @@ public class NodeHealthConfig
     /// Base health depletion per harvest action.
     /// </summary>
     public int BaseDepletion { get; set; } = 20;
-    
+
     /// <summary>
     /// Health percentage thresholds for node states.
     /// </summary>
     public Dictionary<string, double> HealthThresholds { get; set; } = new();
-    
+
     /// <summary>
     /// Node respawn rate.
     /// </summary>
     public int RespawnRate { get; set; } = 1;
-    
+
     /// <summary>
     /// Time unit for respawn rate (e.g., "minutes", "hours").
     /// </summary>
@@ -244,22 +244,22 @@ public class YieldCalculationConfig
     /// Skill scaling factor per skill rank.
     /// </summary>
     public double SkillScaling { get; set; } = 0.003;
-    
+
     /// <summary>
     /// Bonus percentage per tool tier.
     /// </summary>
     public double ToolBonusPerTier { get; set; } = 0.10;
-    
+
     /// <summary>
     /// Maximum tool bonus percentage.
     /// </summary>
     public double MaxToolBonus { get; set; } = 0.30;
-    
+
     /// <summary>
     /// Critical harvest yield multiplier.
     /// </summary>
     public double CriticalMultiplier { get; set; } = 2.0;
-    
+
     /// <summary>
     /// Yield penalty for exhausted nodes.
     /// </summary>
@@ -275,37 +275,37 @@ public class CriticalHarvestConfig
     /// Base critical harvest chance.
     /// </summary>
     public double BaseChance { get; set; } = 0.05;
-    
+
     /// <summary>
     /// Critical chance increase per skill rank.
     /// </summary>
     public double SkillScaling { get; set; } = 0.0005;
-    
+
     /// <summary>
     /// Critical chance increase per tool tier.
     /// </summary>
     public double ToolBonusPerTier { get; set; } = 0.01;
-    
+
     /// <summary>
     /// Bonus critical chance for rich nodes.
     /// </summary>
     public double RichNodeBonus { get; set; } = 0.05;
-    
+
     /// <summary>
     /// Chance to get bonus materials on critical harvest.
     /// </summary>
     public double BonusMaterialChance { get; set; } = 0.25;
-    
+
     /// <summary>
     /// Chance to get rare drops on critical harvest.
     /// </summary>
     public double RareDropChance { get; set; } = 0.10;
-    
+
     /// <summary>
     /// Durability loss reduction on critical harvest.
     /// </summary>
     public double DurabilityReduction { get; set; } = 0.5;
-    
+
     /// <summary>
     /// XP bonus multiplier for critical harvest.
     /// </summary>
@@ -321,17 +321,17 @@ public class ToolRequirementsConfig
     /// Whether to enforce minimum tool tier requirements.
     /// </summary>
     public bool EnforceMinimum { get; set; } = true;
-    
+
     /// <summary>
     /// Yield penalty when harvesting without proper tool.
     /// </summary>
     public double NoToolPenalty { get; set; } = 0.5;
-    
+
     /// <summary>
     /// Node depletion multiplier when harvesting without tool.
     /// </summary>
     public double NoToolDepletionMultiplier { get; set; } = 2.0;
-    
+
     /// <summary>
     /// Whether common materials can be harvested without tools.
     /// </summary>
@@ -347,17 +347,17 @@ public class SkillXPConfig
     /// Base XP reward per harvest action.
     /// </summary>
     public int BaseXP { get; set; } = 10;
-    
+
     /// <summary>
     /// XP multipliers by material tier.
     /// </summary>
     public TierMultipliers TierMultipliers { get; set; } = new();
-    
+
     /// <summary>
     /// Bonus XP percentage per tool tier.
     /// </summary>
     public double ToolQualityBonus { get; set; } = 0.1;
-    
+
     /// <summary>
     /// XP multiplier for critical harvests.
     /// </summary>
@@ -373,22 +373,22 @@ public class TierMultipliers
     /// XP multiplier for common materials.
     /// </summary>
     public double Common { get; set; } = 1.0;
-    
+
     /// <summary>
     /// XP multiplier for uncommon materials.
     /// </summary>
     public double Uncommon { get; set; } = 2.0;
-    
+
     /// <summary>
     /// XP multiplier for rare materials.
     /// </summary>
     public double Rare { get; set; } = 3.0;
-    
+
     /// <summary>
     /// XP multiplier for epic materials.
     /// </summary>
     public double Epic { get; set; } = 4.0;
-    
+
     /// <summary>
     /// XP multiplier for legendary materials.
     /// </summary>
@@ -404,12 +404,12 @@ public class DurabilityLossConfig
     /// Base durability loss per harvest action.
     /// </summary>
     public int BaseLoss { get; set; } = 1;
-    
+
     /// <summary>
     /// Node resistance values by material tier.
     /// </summary>
     public NodeResistanceConfig NodeResistance { get; set; } = new();
-    
+
     /// <summary>
     /// Tool hardness values by tool tier.
     /// </summary>
@@ -425,22 +425,22 @@ public class NodeResistanceConfig
     /// Resistance multiplier for common nodes.
     /// </summary>
     public double Common { get; set; } = 1.0;
-    
+
     /// <summary>
     /// Resistance multiplier for uncommon nodes.
     /// </summary>
     public double Uncommon { get; set; } = 1.2;
-    
+
     /// <summary>
     /// Resistance multiplier for rare nodes.
     /// </summary>
     public double Rare { get; set; } = 1.5;
-    
+
     /// <summary>
     /// Resistance multiplier for epic nodes.
     /// </summary>
     public double Epic { get; set; } = 1.8;
-    
+
     /// <summary>
     /// Resistance multiplier for legendary nodes.
     /// </summary>
@@ -456,22 +456,22 @@ public class ToolHardnessConfig
     /// Hardness factor for tier 1 tools.
     /// </summary>
     public double Tier1 { get; set; } = 0.5;
-    
+
     /// <summary>
     /// Hardness factor for tier 2 tools.
     /// </summary>
     public double Tier2 { get; set; } = 0.7;
-    
+
     /// <summary>
     /// Hardness factor for tier 3 tools.
     /// </summary>
     public double Tier3 { get; set; } = 1.0;
-    
+
     /// <summary>
     /// Hardness factor for tier 4 tools.
     /// </summary>
     public double Tier4 { get; set; } = 1.5;
-    
+
     /// <summary>
     /// Hardness factor for tier 5 tools.
     /// </summary>

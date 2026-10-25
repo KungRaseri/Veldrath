@@ -1,6 +1,6 @@
 # RealmEngine Codebase Notes
 
-> **Status**: Updated through Session-68 (2026-10-25).
+> **Status**: Updated through Session-69 (2026-10-25).
 
 ## Test Counts
 
@@ -12,11 +12,14 @@ were deleted with its retirement.
 | `RealmEngine.Core.Tests` | 1,946 |
 | `RealmEngine.Shared.Tests` | 803 |
 | `RealmEngine.Data.Tests` | 265 |
-| `Veldrath.Server.Tests` | 782 |
+| `Veldrath.Server.Tests` | 675 |
 | `Veldrath.Discord.Tests` | 29 |
 | `Veldrath.Assets.Tests` | 10 |
 | `RealmForge.Tests` | 27 |
-| **Total (verified 2026-10-25)** | **3,862** |
+| **Total (verified 2026-10-25, after the Identity auth-surface removal)** | **3,755** |
+
+`Veldrath.Server.Tests` lost ~107 tests with the deleted `/api/auth/*` endpoint suites; the
+integration tests now authenticate through `WebAppFactory.CreateAccountTokenAsync`.
 
 The SvelteKit app adds Vitest + Playwright suites under `web/`.
 
@@ -350,7 +353,7 @@ sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewMod
 
 ### Open Items (re-audited Session-47, 2026-10-22)
 
-- **`PurgeExpiredAsync` is scheduled** — `PendingLinkCleanupService` runs every 30 minutes and is registered in `Program.cs`. The previous "not scheduled" note was stale.
+- **`PendingLinkCleanupService` no longer exists** — the pending-link tables, `AccountLinkService`, and the whole Identity auth surface were deleted in W12 (2026-10-25). Better Auth owns OAuth linking now.
 - **Wiki implementation status tracker** — refreshed Session-47 (`wiki/Engine-Implementation-Status.md`); zone/region wiki pages now reference map graph ids instead of TMX files.
 - **Tile-era hub tests are obsolete** — `GetRegionMap`, `MoveOnRegion`, `ExitZone`, and `ChangeRegion` were removed with the tile layer; do not add success-path tests for them.
 - **Web character creation is session-based** — the RCL `CreateCharacter` wizard already calls `/api/character-creation/sessions/*` for class, species, background, name, attributes, equipment, and finalize. The older "web uses a minimal 3-step flow" plan is superseded.

@@ -40,8 +40,8 @@ public class GameHubModerationCommandTests : IDisposable
     private (GameHub Hub, FakeHubCallerClients Clients, FakeHubCallerContext Ctx)
         CreateHub(Guid accountId, params string[] permissions)
     {
-        var db         = _factory.CreateContext();
-        var options    = Options.Create(new VersionCompatibilitySettings());
+        var db = _factory.CreateContext();
+        var options = Options.Create(new VersionCompatibilitySettings());
         var modOptions = Options.Create(new ModerationOptions());
         var userManager = new Mock<UserManager<Veldrath.Server.Data.Entities.PlayerAccount>>(
             Mock.Of<IUserStore<Veldrath.Server.Data.Entities.PlayerAccount>>(),
@@ -62,16 +62,16 @@ public class GameHubModerationCommandTests : IDisposable
             db);
 
         var clients = new FakeHubCallerClients();
-        var ctx     = new FakeHubCallerContext("conn-mod", MakeUser(accountId, permissions));
+        var ctx = new FakeHubCallerContext("conn-mod", MakeUser(accountId, permissions));
 
         // Put the hub in a state where SendChatMessage won't short-circuit
         // before reaching HandleChatCommandAsync.
-        ctx.Items["CharacterId"]           = Guid.NewGuid();
-        ctx.Items["CharacterName"]         = "TestCharacter";
-        ctx.Items["CurrentZoneGroupName"]  = "zone:test-zone";
+        ctx.Items["CharacterId"] = Guid.NewGuid();
+        ctx.Items["CharacterName"] = "TestCharacter";
+        ctx.Items["CurrentZoneGroupName"] = "zone:test-zone";
 
         hub.Clients = clients;
-        hub.Groups  = new FakeGroupManager();
+        hub.Groups = new FakeGroupManager();
         hub.Context = ctx;
 
         return (hub, clients, ctx);

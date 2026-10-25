@@ -501,7 +501,9 @@ public class CombatStatusEffectIntegrationTests
                 Id = "strength2",
                 Type = StatusEffectType.Strengthened,
                 Category = StatusEffectCategory.Buff,
-                Name = "Strengthened",                OriginalDuration = 5,                RemainingDuration = 5,
+                Name = "Strengthened",
+                OriginalDuration = 5,
+                RemainingDuration = 5,
                 StatModifiers = new Dictionary<string, int> { { "attack", 10 } }
             },
             RefreshDuration = true

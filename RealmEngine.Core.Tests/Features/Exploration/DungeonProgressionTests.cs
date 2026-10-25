@@ -181,11 +181,11 @@ public class DungeonProgressionTests
             IsCleared = false,
             Enemies = new List<Enemy>
             {
-                new() 
-                { 
-                    Name = "Shadow Lord", 
-                    Level = 10, 
-                    Health = 200, 
+                new()
+                {
+                    Name = "Shadow Lord",
+                    Level = 10,
+                    Health = 200,
                     GoldReward = 100,
                     XP = 200
                 }

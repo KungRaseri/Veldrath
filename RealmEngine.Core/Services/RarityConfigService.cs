@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using RealmEngine.Data.Services;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Data.Services;
 
 namespace RealmEngine.Core.Services;
 
@@ -46,10 +46,10 @@ public class RarityConfigService
             var doc = JsonSerializer.Deserialize<RarityConfigDoc>(rawJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             var tiers = doc?.Tiers?.Select(t => new RarityTierDefinition
             {
-                Name       = t.Name,
-                MinWeight  = t.RarityWeightRange?.Min ?? 0,
-                MaxWeight  = t.RarityWeightRange?.Max ?? 100,
-                Color      = t.Color,
+                Name = t.Name,
+                MinWeight = t.RarityWeightRange?.Min ?? 0,
+                MaxWeight = t.RarityWeightRange?.Max ?? 100,
+                Color = t.Color,
                 DropChance = t.DropChance
             }).ToList() ?? [];
 
@@ -70,7 +70,7 @@ public class RarityConfigService
     public RarityTierDefinition GetTierForWeight(int rarityWeight)
     {
         var config = LoadConfig();
-        
+
         foreach (var tier in config.Tiers)
         {
             if (rarityWeight >= tier.MinWeight && rarityWeight <= tier.MaxWeight)
@@ -141,16 +141,16 @@ public class RarityTierDefinition
 {
     /// <summary>Gets or sets the tier name.</summary>
     public string Name { get; set; } = string.Empty;
-    
+
     /// <summary>Gets or sets the minimum rarityWeight.</summary>
     public int MinWeight { get; set; }
-    
+
     /// <summary>Gets or sets the maximum rarityWeight.</summary>
     public int MaxWeight { get; set; }
-    
+
     /// <summary>Gets or sets the display color (hex).</summary>
     public string Color { get; set; } = "#FFFFFF";
-    
+
     /// <summary>Gets or sets the drop chance probability.</summary>
     public double DropChance { get; set; }
 }

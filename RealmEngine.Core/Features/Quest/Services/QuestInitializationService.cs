@@ -1,5 +1,5 @@
-using RealmEngine.Shared.Models;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Quests.Services;
 
@@ -29,12 +29,12 @@ public class QuestInitializationService
     {
         // Get the first main quest in the chain
         var firstQuest = await _mainQuestService.GetQuestByIdAsync("main_01_awakening");
-        
+
         if (firstQuest != null)
         {
             // Add to available quests (player can accept it when ready)
             saveGame.AvailableQuests.Add(firstQuest);
-            
+
             _logger.LogInformation("Initialized starting quest: {QuestTitle}", firstQuest.Title);
         }
         else

@@ -32,10 +32,10 @@ public class CharacterUnlockedLocationRepository(ApplicationDbContext db) : ICha
 
         db.CharacterUnlockedLocations.Add(new CharacterUnlockedLocation
         {
-            CharacterId  = characterId,
+            CharacterId = characterId,
             LocationSlug = locationSlug,
             UnlockSource = unlockSource,
-            UnlockedAt   = DateTimeOffset.UtcNow,
+            UnlockedAt = DateTimeOffset.UtcNow,
         });
 
         await db.SaveChangesAsync(ct);

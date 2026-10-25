@@ -81,7 +81,7 @@ public class CharacterGrowthService
     public double CalculateDerivedStat(string statName, double baseValue, double primaryStat, int level, double classGrowthValue)
     {
         var config = LoadConfig();
-        
+
         if (!config.DerivedStats.TryGetValue(statName.ToLowerInvariant(), out var derivedStat))
         {
             _logger.LogWarning("Unknown derived stat: {StatName}", statName);
@@ -335,19 +335,19 @@ public class GrowthStatsConfig
 {
     /// <summary>Configuration version</summary>
     public required string Version { get; set; }
-    
+
     /// <summary>Derived stat formulas</summary>
     public required Dictionary<string, DerivedStat> DerivedStats { get; set; }
-    
+
     /// <summary>Stat caps configuration</summary>
     public required StatCaps StatCaps { get; set; }
-    
+
     /// <summary>Class growth multipliers (uses JSON references to @classes)</summary>
     public required List<ClassGrowthMultiplier> ClassGrowthMultipliers { get; set; }
-    
+
     /// <summary>Stat point allocation per level</summary>
     public required StatPointAllocation StatPointAllocation { get; set; }
-    
+
     /// <summary>Respec system configuration</summary>
     public required RespecSystem RespecSystem { get; set; }
 }
@@ -357,7 +357,7 @@ public class DerivedStat
 {
     /// <summary>Calculation formula</summary>
     public required string Formula { get; set; }
-    
+
     /// <summary>Description</summary>
     public required string Description { get; set; }
 }
@@ -367,7 +367,7 @@ public class StatCaps
 {
     /// <summary>Soft caps with diminishing returns</summary>
     public required CapTier SoftCaps { get; set; }
-    
+
     /// <summary>Hard caps (absolute maximum)</summary>
     public required CapTier HardCaps { get; set; }
 }
@@ -377,10 +377,10 @@ public class CapTier
 {
     /// <summary>Description</summary>
     public required string Description { get; set; }
-    
+
     /// <summary>Stat limits by name</summary>
     public required Dictionary<string, int> StatLimits { get; set; }
-    
+
     /// <summary>Diminishing factor for soft caps</summary>
     public required double DiminishingFactor { get; set; }
 }
@@ -390,7 +390,7 @@ public class ClassGrowthMultiplier
 {
     /// <summary>Class reference (e.g., "@classes/warrior:Fighter")</summary>
     public required string ClassRef { get; set; }
-    
+
     /// <summary>Growth multipliers by stat name</summary>
     public required Dictionary<string, double> Multipliers { get; set; }
 }
@@ -400,13 +400,13 @@ public class StatPointAllocation
 {
     /// <summary>Points granted per level</summary>
     public required int PointsPerLevel { get; set; }
-    
+
     /// <summary>Description</summary>
     public string? Description { get; set; }
-    
+
     /// <summary>Minimum points per stat</summary>
     public required int MinimumPerStat { get; set; }
-    
+
     /// <summary>Maximum points per stat</summary>
     public required int MaximumPerStat { get; set; }
 }
@@ -416,10 +416,10 @@ public class RespecSystem
 {
     /// <summary>Whether respec is enabled</summary>
     public required bool Enabled { get; set; }
-    
+
     /// <summary>Cost formula</summary>
     public required string CostFormula { get; set; }
-    
+
     /// <summary>Description</summary>
     public string? Description { get; set; }
 }

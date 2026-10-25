@@ -57,7 +57,7 @@ public class DiscoverRecipeHandler : IRequestHandler<DiscoverRecipeCommand, Disc
             // Award small XP for trying
             var noRecipeXp = 1;
             characterSkill.CurrentXP += noRecipeXp;
-            
+
             return Task.FromResult(new DiscoverRecipeResult
             {
                 Success = false,

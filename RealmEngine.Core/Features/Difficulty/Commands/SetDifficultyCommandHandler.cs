@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Abstractions;
+using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Difficulty.Commands;
@@ -54,7 +54,7 @@ public class SetDifficultyCommandHandler : IRequestHandler<SetDifficultyCommand,
 
             // Get difficulty settings by name
             var difficulty = DifficultySettings.GetByName(request.DifficultyName);
-            
+
             if (difficulty.Name != request.DifficultyName && request.DifficultyName != "Normal")
             {
                 // GetByName returns Normal as default, check if that was intentional
@@ -72,11 +72,11 @@ public class SetDifficultyCommandHandler : IRequestHandler<SetDifficultyCommand,
             if (difficulty.IsApocalypse && _apocalypseTimer != null)
             {
                 _apocalypseTimer.Start();
-                _logger.LogInformation("Apocalypse mode started with {Minutes} minute time limit", 
+                _logger.LogInformation("Apocalypse mode started with {Minutes} minute time limit",
                     difficulty.ApocalypseTimeLimitMinutes);
             }
 
-            _logger.LogInformation("Difficulty set to {Difficulty} for player {Player}", 
+            _logger.LogInformation("Difficulty set to {Difficulty} for player {Player}",
                 difficulty.Name, saveGame.PlayerName);
 
             return Task.FromResult(new SetDifficultyResult
@@ -84,8 +84,8 @@ public class SetDifficultyCommandHandler : IRequestHandler<SetDifficultyCommand,
                 Success = true,
                 DifficultyName = difficulty.Name,
                 ApocalypseModeEnabled = difficulty.IsApocalypse,
-                ApocalypseTimeLimitMinutes = difficulty.IsApocalypse 
-                    ? difficulty.ApocalypseTimeLimitMinutes 
+                ApocalypseTimeLimitMinutes = difficulty.IsApocalypse
+                    ? difficulty.ApocalypseTimeLimitMinutes
                     : null
             });
         }

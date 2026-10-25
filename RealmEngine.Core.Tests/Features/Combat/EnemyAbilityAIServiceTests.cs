@@ -1,8 +1,8 @@
-using Xunit;
+using System.Collections.Generic;
 using FluentAssertions;
 using RealmEngine.Core.Features.Combat.Services;
 using RealmEngine.Shared.Models;
-using System.Collections.Generic;
+using Xunit;
 
 namespace RealmEngine.Core.Tests.Features.Combat;
 
@@ -231,11 +231,11 @@ public class EnemyPowerAIServiceTests
             MaxHealth = 100,
             Abilities = new List<Power> { debuffAbility }
         };
-        var player = new Character 
-        { 
-            Name = "Hero", 
+        var player = new Character
+        {
+            Name = "Hero",
             Health = 90,  // Strong player (>70%)
-            MaxHealth = 100 
+            MaxHealth = 100
         };
         var abilityStates = new Dictionary<string, int>();
 

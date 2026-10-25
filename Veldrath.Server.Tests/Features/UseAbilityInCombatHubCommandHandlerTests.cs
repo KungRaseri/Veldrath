@@ -15,9 +15,9 @@ namespace Veldrath.Server.Tests.Features;
 /// <summary>Unit tests for <see cref="UseAbilityInCombatHubCommandHandler"/>.</summary>
 public class UseAbilityInCombatHubCommandHandlerTests : IDisposable
 {
-    private readonly TestDbContextFactory              _dbFactory      = new();
-    private readonly List<(string Key, Guid EnemyId)> _enemyCleanup   = [];
-    private readonly List<Guid>                        _sessionCleanup = [];
+    private readonly TestDbContextFactory _dbFactory = new();
+    private readonly List<(string Key, Guid EnemyId)> _enemyCleanup = [];
+    private readonly List<Guid> _sessionCleanup = [];
 
     private UseAbilityInCombatHubCommandHandler MakeHandler(ApplicationDbContext db) =>
         new(
@@ -29,8 +29,8 @@ public class UseAbilityInCombatHubCommandHandlerTests : IDisposable
 
     public void Dispose()
     {
-        foreach (var (key, id) in _enemyCleanup)  ZoneLocationEnemyStore.RemoveEnemy(key, id);
-        foreach (var id        in _sessionCleanup) CombatSessionStore.Remove(id);
+        foreach (var (key, id) in _enemyCleanup) ZoneLocationEnemyStore.RemoveEnemy(key, id);
+        foreach (var id in _sessionCleanup) CombatSessionStore.Remove(id);
         _dbFactory.Dispose();
     }
 
@@ -43,11 +43,11 @@ public class UseAbilityInCombatHubCommandHandlerTests : IDisposable
         db.Users.Add(account);
         var character = new Character
         {
-            AccountId    = account.Id,
-            Name         = $"Char_{Guid.NewGuid():N}",
-            ClassName    = "Mage",
-            SlotIndex    = 1,
-            Attributes   = attrsJson ?? "{}",
+            AccountId = account.Id,
+            Name = $"Char_{Guid.NewGuid():N}",
+            ClassName = "Mage",
+            SlotIndex = 1,
+            Attributes = attrsJson ?? "{}",
             AbilitiesBlob = "[\"fireball\",\"heal\"]",
         };
         db.Characters.Add(character);
@@ -57,10 +57,10 @@ public class UseAbilityInCombatHubCommandHandlerTests : IDisposable
 
     private (string ZoneGroup, string LocationSlug, SpawnedEnemy Enemy) AddEnemy(int hp = 100)
     {
-        var zoneGroup    = $"test/{Guid.NewGuid():N}";
+        var zoneGroup = $"test/{Guid.NewGuid():N}";
         const string loc = "dungeon";
-        var key          = ZoneLocationEnemyStore.MakeKey(zoneGroup, loc);
-        var enemy        = new SpawnedEnemy { Name = "Golem", Level = 1, CurrentHealth = hp, MaxHealth = hp };
+        var key = ZoneLocationEnemyStore.MakeKey(zoneGroup, loc);
+        var enemy = new SpawnedEnemy { Name = "Golem", Level = 1, CurrentHealth = hp, MaxHealth = hp };
         ZoneLocationEnemyStore.AddEnemy(key, enemy);
         _enemyCleanup.Add((key, enemy.Id));
         return (zoneGroup, loc, enemy);

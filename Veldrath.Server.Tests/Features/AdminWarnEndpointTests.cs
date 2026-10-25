@@ -18,33 +18,13 @@ public class AdminWarnEndpointTests(WebAppFactory factory)
     // Register a plain user and return their token.
     private async Task<string> RegisterAndGetTokenAsync(string username)
     {
-        var email = $"{username.ToLower()}@test.com";
-        await _client.PostAsJsonAsync("/api/auth/register",
-            new { Email = email, Username = username, Password = "TestP@ssword123" });
-        var login = await _client.PostAsJsonAsync("/api/auth/login",
-            new { Email = email, Password = "TestP@ssword123" });
-        var auth = await login.Content.ReadFromJsonAsync<AuthResponse>();
-        return auth!.AccessToken;
+        return (await factory.CreateAccountTokenAsync(username)).Token;
     }
 
-    // Register a user, assign the Moderator role, then re-login so the JWT carries
-    // the warn_players permission claim (IssueTokenPairAsync resolves role claims at login time).
-    private async Task<(string Token, Guid AccountId)> RegisterModeratorAsync(string username)
-    {
-        var email = $"{username.ToLower()}@test.com";
-        await _client.PostAsJsonAsync("/api/auth/register",
-            new { Email = email, Username = username, Password = "TestP@ssword123" });
-
-        using var scope = factory.Services.CreateScope();
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<PlayerAccount>>();
-        var user = await userManager.FindByNameAsync(username);
-        await userManager.AddToRoleAsync(user!, "Moderator");
-
-        var login = await _client.PostAsJsonAsync("/api/auth/login",
-            new { Email = email, Password = "TestP@ssword123" });
-        var auth = await login.Content.ReadFromJsonAsync<AuthResponse>();
-        return (auth!.AccessToken, user!.Id);
-    }
+    // Create the account in the Moderator role; JwtClaimsEnrichment resolves the
+    // warn_players permission from Identity when the token is presented.
+    private async Task<(string Token, Guid AccountId)> RegisterModeratorAsync(string username) =>
+        await factory.CreateAccountTokenAsync(username, "Moderator");
 
     // Look up an account's current WarnCount directly via UserManager (bypasses EF cache).
     private async Task<int> GetWarnCountAsync(string username)

@@ -79,8 +79,8 @@ public class EfCoreZoneLocationRepositoryTests
         await using var db = CreateDbContext();
         db.ZoneLocations.AddRange(
             new ZoneLocation { Slug = "fenwick-market", ZoneId = "fenwick-crossing", IsActive = true, DisplayName = "Fenwick Market" },
-            new ZoneLocation { Slug = "fenwick-cave",   ZoneId = "fenwick-crossing", IsActive = true, DisplayName = "Fenwick Cave" },
-            new ZoneLocation { Slug = "other-place",    ZoneId = "greenveil-paths", IsActive = true, DisplayName = "Other Place" });
+            new ZoneLocation { Slug = "fenwick-cave", ZoneId = "fenwick-crossing", IsActive = true, DisplayName = "Fenwick Cave" },
+            new ZoneLocation { Slug = "other-place", ZoneId = "greenveil-paths", IsActive = true, DisplayName = "Other Place" });
         await db.SaveChangesAsync();
         var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
 
@@ -94,7 +94,7 @@ public class EfCoreZoneLocationRepositoryTests
     {
         await using var db = CreateDbContext();
         db.ZoneLocations.AddRange(
-            new ZoneLocation { Slug = "active-loc",   ZoneId = "fenwick-crossing", IsActive = true,  DisplayName = "Active" },
+            new ZoneLocation { Slug = "active-loc", ZoneId = "fenwick-crossing", IsActive = true, DisplayName = "Active" },
             new ZoneLocation { Slug = "inactive-loc", ZoneId = "fenwick-crossing", IsActive = false, DisplayName = "Inactive" });
         await db.SaveChangesAsync();
         var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
@@ -121,8 +121,14 @@ public class EfCoreZoneLocationRepositoryTests
         await using var db = CreateDbContext();
         db.ZoneLocations.AddRange(
             new ZoneLocation { Slug = "visible-loc", ZoneId = "fenwick-crossing", IsActive = true, DisplayName = "Visible" },
-            new ZoneLocation { Slug = "hidden-loc",  ZoneId = "fenwick-crossing", IsActive = true, DisplayName = "Hidden",
-                Traits = new ZoneLocationTraits { IsHidden = true } });
+            new ZoneLocation
+            {
+                Slug = "hidden-loc",
+                ZoneId = "fenwick-crossing",
+                IsActive = true,
+                DisplayName = "Hidden",
+                Traits = new ZoneLocationTraits { IsHidden = true }
+            });
         await db.SaveChangesAsync();
         var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
 
@@ -137,11 +143,23 @@ public class EfCoreZoneLocationRepositoryTests
     {
         await using var db = CreateDbContext();
         db.ZoneLocations.AddRange(
-            new ZoneLocation { Slug = "visible-loc",      ZoneId = "fenwick-crossing", IsActive = true, DisplayName = "Visible" },
-            new ZoneLocation { Slug = "hidden-unlocked",  ZoneId = "fenwick-crossing", IsActive = true, DisplayName = "Secret Lair",
-                Traits = new ZoneLocationTraits { IsHidden = true } },
-            new ZoneLocation { Slug = "hidden-locked",    ZoneId = "fenwick-crossing", IsActive = true, DisplayName = "Still Hidden",
-                Traits = new ZoneLocationTraits { IsHidden = true } });
+            new ZoneLocation { Slug = "visible-loc", ZoneId = "fenwick-crossing", IsActive = true, DisplayName = "Visible" },
+            new ZoneLocation
+            {
+                Slug = "hidden-unlocked",
+                ZoneId = "fenwick-crossing",
+                IsActive = true,
+                DisplayName = "Secret Lair",
+                Traits = new ZoneLocationTraits { IsHidden = true }
+            },
+            new ZoneLocation
+            {
+                Slug = "hidden-locked",
+                ZoneId = "fenwick-crossing",
+                IsActive = true,
+                DisplayName = "Still Hidden",
+                Traits = new ZoneLocationTraits { IsHidden = true }
+            });
         await db.SaveChangesAsync();
         var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
 
@@ -159,8 +177,14 @@ public class EfCoreZoneLocationRepositoryTests
         await using var db = CreateDbContext();
         db.ZoneLocations.AddRange(
             new ZoneLocation { Slug = "visible-loc", ZoneId = "fenwick-crossing", IsActive = true, DisplayName = "Visible" },
-            new ZoneLocation { Slug = "hidden-loc",  ZoneId = "fenwick-crossing", IsActive = true, DisplayName = "Secret Passage",
-                Traits = new ZoneLocationTraits { IsHidden = true, UnlockType = "skill_check_passive", DiscoverThreshold = 5 } });
+            new ZoneLocation
+            {
+                Slug = "hidden-loc",
+                ZoneId = "fenwick-crossing",
+                IsActive = true,
+                DisplayName = "Secret Passage",
+                Traits = new ZoneLocationTraits { IsHidden = true, UnlockType = "skill_check_passive", DiscoverThreshold = 5 }
+            });
         await db.SaveChangesAsync();
         var repo = new EfCoreZoneLocationRepository(db, NullLogger<EfCoreZoneLocationRepository>.Instance);
 
@@ -193,7 +217,10 @@ public class EfCoreZoneLocationRepositoryTests
         await using var db = CreateDbContext();
         db.ZoneLocations.Add(new ZoneLocation
         {
-            Slug = "darkwood-forest", ZoneId = "fenwick-crossing", IsActive = true, DisplayName = "Darkwood",
+            Slug = "darkwood-forest",
+            ZoneId = "fenwick-crossing",
+            IsActive = true,
+            DisplayName = "Darkwood",
             ActorPool = [new ActorPoolEntry { ArchetypeSlug = "wolf", Weight = 3 }, new ActorPoolEntry { ArchetypeSlug = "bandit", Weight = 1 }]
         });
         await db.SaveChangesAsync();
@@ -226,7 +253,10 @@ public class EfCoreZoneLocationRepositoryTests
         await using var db = CreateDbContext();
         db.ZoneLocations.Add(new ZoneLocation
         {
-            Slug = "iron-keep", ZoneId = "fenwick-crossing", IsActive = true, DisplayName = "Iron Keep",
+            Slug = "iron-keep",
+            ZoneId = "fenwick-crossing",
+            IsActive = true,
+            DisplayName = "Iron Keep",
             ActorPool = [new ActorPoolEntry { ArchetypeSlug = "skeleton", Weight = 5 }]
         });
         await db.SaveChangesAsync();

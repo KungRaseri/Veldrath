@@ -1,6 +1,6 @@
 using MediatR;
-using RealmEngine.Core.Services;
 using RealmEngine.Core.Features.Crafting.Services;
+using RealmEngine.Core.Services;
 using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Crafting.Queries;
@@ -31,8 +31,9 @@ public class GetKnownRecipesHandler : IRequestHandler<GetKnownRecipesQuery, GetK
         // Add auto-unlock recipes (SkillLevel unlock method)
         var autoUnlockRecipes = _recipeCatalogLoader.LoadAllRecipes()
             .Where(r => r.UnlockMethod == RecipeUnlockMethod.SkillLevel)
-            .Where(r => {
-                return request.Character.Skills.TryGetValue(r.RequiredSkill!, out var characterSkill) && 
+            .Where(r =>
+            {
+                return request.Character.Skills.TryGetValue(r.RequiredSkill!, out var characterSkill) &&
                        characterSkill.CurrentRank >= r.RequiredSkillLevel;
             })
             .ToList();
@@ -77,7 +78,7 @@ public class GetKnownRecipesHandler : IRequestHandler<GetKnownRecipesQuery, GetK
             }
 
             // Check skill level
-            var meetsSkillRequirement = request.Character.Skills.TryGetValue(recipe.RequiredSkill!, out var characterSkill) && 
+            var meetsSkillRequirement = request.Character.Skills.TryGetValue(recipe.RequiredSkill!, out var characterSkill) &&
                                          characterSkill.CurrentRank >= recipe.RequiredSkillLevel;
 
             var recipeInfo = new RecipeInfo

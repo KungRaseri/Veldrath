@@ -1,12 +1,12 @@
 using FluentAssertions;
 using MediatR;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RealmEngine.Core.Features.CharacterCreation.Commands;
 using RealmEngine.Core.Features.Equipment.Queries;
 using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.CharacterCreation.Commands;
 
@@ -190,8 +190,8 @@ public class CreateCharacterHandlerTests
 
         // Assert
         _mediatorMock.Verify(m => m.Send(
-            It.Is<InitializeStartingAbilitiesCommand>(c => 
-                c.Character.Name == "TestChar" && 
+            It.Is<InitializeStartingAbilitiesCommand>(c =>
+                c.Character.Name == "TestChar" &&
                 c.ClassName == "Warrior"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -217,8 +217,8 @@ public class CreateCharacterHandlerTests
 
         // Assert
         _mediatorMock.Verify(m => m.Send(
-            It.Is<InitializeStartingPowersCommand>(c => 
-                c.Character.Name == "TestMage" && 
+            It.Is<InitializeStartingPowersCommand>(c =>
+                c.Character.Name == "TestMage" &&
                 c.ClassName == "Mage"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -234,9 +234,9 @@ public class CreateCharacterHandlerTests
         };
 
         _mediatorMock.Setup(m => m.Send(It.IsAny<InitializeStartingAbilitiesCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new InitializeStartingAbilitiesResult 
-            { 
-                Success = false, 
+            .ReturnsAsync(new InitializeStartingAbilitiesResult
+            {
+                Success = false,
                 AbilitiesLearned = 0,
                 Message = "Failed to initialize abilities"
             });
@@ -305,13 +305,19 @@ public class CreateCharacterHandlerTests
         warriorClass.Slug = "warrior";
         var sword = new Item
         {
-            Slug = "iron-sword", Name = "Iron Sword", Type = ItemType.Weapon,
-            TypeKey = "heavy-blades", WeaponType = "swords",
+            Slug = "iron-sword",
+            Name = "Iron Sword",
+            Type = ItemType.Weapon,
+            TypeKey = "heavy-blades",
+            WeaponType = "swords",
         };
         var armor = new Item
         {
-            Slug = "heavy-armor", Name = "Heavy Armor", Type = ItemType.Chest,
-            TypeKey = "heavy", ArmorType = "heavy",
+            Slug = "heavy-armor",
+            Name = "Heavy Armor",
+            Type = ItemType.Chest,
+            TypeKey = "heavy",
+            ArmorType = "heavy",
         };
 
         _mediatorMock.Setup(m => m.Send(It.IsAny<GetEquipmentForClassQuery>(), It.IsAny<CancellationToken>()))
@@ -355,8 +361,11 @@ public class CreateCharacterHandlerTests
         warriorClass.Slug = "warrior";
         var catalogShield = new Item
         {
-            Slug = "tower-shield", Name = "Tower Shield", Type = ItemType.Shield,
-            TypeKey = "shield", ArmorType = "shield",
+            Slug = "tower-shield",
+            Name = "Tower Shield",
+            Type = ItemType.Shield,
+            TypeKey = "shield",
+            ArmorType = "shield",
         };
 
         _mediatorMock.Setup(m => m.Send(It.IsAny<GetEquipmentForClassQuery>(), It.IsAny<CancellationToken>()))

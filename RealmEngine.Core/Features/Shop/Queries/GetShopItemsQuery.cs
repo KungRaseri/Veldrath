@@ -54,9 +54,9 @@ public class GetShopItemsHandler : IRequestHandler<GetShopItemsQuery, GetShopIte
         ISaveGameService saveGameService,
         ILogger<GetShopItemsHandler> logger)
     {
-        _shopService      = shopService      ?? throw new ArgumentNullException(nameof(shopService));
-        _saveGameService  = saveGameService  ?? throw new ArgumentNullException(nameof(saveGameService));
-        _logger           = logger           ?? throw new ArgumentNullException(nameof(logger));
+        _shopService = shopService ?? throw new ArgumentNullException(nameof(shopService));
+        _saveGameService = saveGameService ?? throw new ArgumentNullException(nameof(saveGameService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>Returns the shop's current inventory without side effects.</summary>
@@ -79,26 +79,26 @@ public class GetShopItemsHandler : IRequestHandler<GetShopItemsQuery, GetShopIte
 
             var coreItems = inventory.CoreItems.Select(item => new ShopItem
             {
-                Item       = item,
-                BuyPrice   = _shopService.CalculateSellPrice(item, merchant),
-                SellPrice  = _shopService.CalculateBuyPrice(item, merchant),
+                Item = item,
+                BuyPrice = _shopService.CalculateSellPrice(item, merchant),
+                SellPrice = _shopService.CalculateBuyPrice(item, merchant),
                 IsUnlimited = true
             }).ToList();
 
             var dynamicItems = inventory.DynamicItems.Select(item => new ShopItem
             {
-                Item       = item,
-                BuyPrice   = _shopService.CalculateSellPrice(item, merchant),
-                SellPrice  = _shopService.CalculateBuyPrice(item, merchant),
+                Item = item,
+                BuyPrice = _shopService.CalculateSellPrice(item, merchant),
+                SellPrice = _shopService.CalculateBuyPrice(item, merchant),
                 IsUnlimited = false
             }).ToList();
 
             var playerSoldItems = inventory.PlayerSoldItems.Select(pi => new ShopItem
             {
-                Item         = pi.Item,
-                BuyPrice     = pi.ResellPrice,
-                SellPrice    = _shopService.CalculateBuyPrice(pi.Item, merchant),
-                IsUnlimited  = false,
+                Item = pi.Item,
+                BuyPrice = pi.ResellPrice,
+                SellPrice = _shopService.CalculateBuyPrice(pi.Item, merchant),
+                IsUnlimited = false,
                 DaysRemaining = pi.DaysRemaining
             }).ToList();
 
@@ -107,10 +107,10 @@ public class GetShopItemsHandler : IRequestHandler<GetShopItemsQuery, GetShopIte
 
             return Task.FromResult(new GetShopItemsResult
             {
-                Success         = true,
-                MerchantName    = merchant.Name,
-                CoreItems       = coreItems,
-                DynamicItems    = dynamicItems,
+                Success = true,
+                MerchantName = merchant.Name,
+                CoreItems = coreItems,
+                DynamicItems = dynamicItems,
                 PlayerSoldItems = playerSoldItems
             });
         }

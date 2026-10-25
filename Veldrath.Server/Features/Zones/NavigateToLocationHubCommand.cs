@@ -89,11 +89,11 @@ public class NavigateToLocationHubCommandHandler
         ActorPoolResolver actorPoolResolver,
         ILogger<NavigateToLocationHubCommandHandler> logger)
     {
-        _locationRepo      = locationRepo;
-        _characterRepo     = characterRepo;
-        _unlockedRepo      = unlockedRepo;
+        _locationRepo = locationRepo;
+        _characterRepo = characterRepo;
+        _unlockedRepo = unlockedRepo;
         _actorPoolResolver = actorPoolResolver;
-        _logger            = logger;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the navigation outcome.</summary>
@@ -120,7 +120,7 @@ public class NavigateToLocationHubCommandHandler
         if (location is null)
             return new NavigateToLocationHubResult
             {
-                Success      = false,
+                Success = false,
                 ErrorMessage = $"Location '{request.LocationSlug}' is not available in zone '{request.ZoneId}'",
             };
 
@@ -154,14 +154,14 @@ public class NavigateToLocationHubCommandHandler
 
         return new NavigateToLocationHubResult
         {
-            Success              = true,
-            LocationSlug         = location.Slug,
-            LocationDisplayName  = location.DisplayName,
-            TypeKey              = location.TypeKey,
-            PassiveDiscoveries   = passiveDiscoveries,
-            SpawnedEnemies       = spawnedEnemies,
-            TileX                = location.TileX,
-            TileY                = location.TileY,
+            Success = true,
+            LocationSlug = location.Slug,
+            LocationDisplayName = location.DisplayName,
+            TypeKey = location.TypeKey,
+            PassiveDiscoveries = passiveDiscoveries,
+            SpawnedEnemies = spawnedEnemies,
+            TileX = location.TileX,
+            TileY = location.TileY,
         };
     }
 

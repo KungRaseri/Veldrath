@@ -56,10 +56,10 @@ public class UseAbilityHubCommandHandler
     : IRequestHandler<UseAbilityHubCommand, UseAbilityHubResult>
 {
     // Keys within the character Attributes JSON blob
-    internal const string KeyCurrentMana   = "CurrentMana";
-    internal const string KeyMaxMana       = "MaxMana";
+    internal const string KeyCurrentMana = "CurrentMana";
+    internal const string KeyMaxMana = "MaxMana";
     internal const string KeyCurrentHealth = "CurrentHealth";
-    internal const string KeyMaxHealth     = "MaxHealth";
+    internal const string KeyMaxHealth = "MaxHealth";
 
     /// <summary>Mana point cost applied for every ability use.</summary>
     internal const int DefaultManaCost = 10;
@@ -86,7 +86,7 @@ public class UseAbilityHubCommandHandler
         ILogger<UseAbilityHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
-        _logger        = logger;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the ability-use outcome.</summary>
@@ -123,25 +123,25 @@ public class UseAbilityHubCommandHandler
         }
 
         // Derive mana pool from level when not explicitly stored (5 MP per level)
-        var maxMana     = attrs.TryGetValue(KeyMaxMana,     out var mm) ? mm : character.Level * 5;
+        var maxMana = attrs.TryGetValue(KeyMaxMana, out var mm) ? mm : character.Level * 5;
         var currentMana = attrs.TryGetValue(KeyCurrentMana, out var cm) ? cm : maxMana;
 
         if (currentMana < DefaultManaCost)
             return Fail($"Not enough mana. Have {currentMana}, need {DefaultManaCost}.");
 
-        currentMana          -= DefaultManaCost;
+        currentMana -= DefaultManaCost;
         attrs[KeyCurrentMana] = currentMana;
-        attrs[KeyMaxMana]     = maxMana;
+        attrs[KeyMaxMana] = maxMana;
 
         // Healing abilities restore HP (capped at MaxHealth)
         var healthRestored = 0;
         if (request.AbilityId.Contains("heal", StringComparison.OrdinalIgnoreCase))
         {
-            var maxHealth     = attrs.TryGetValue(KeyMaxHealth,     out var mh) ? mh : character.Level * 10;
+            var maxHealth = attrs.TryGetValue(KeyMaxHealth, out var mh) ? mh : character.Level * 10;
             var currentHealth = attrs.TryGetValue(KeyCurrentHealth, out var ch) ? ch : maxHealth;
-            healthRestored          = Math.Min(HealingAmount, maxHealth - currentHealth);
+            healthRestored = Math.Min(HealingAmount, maxHealth - currentHealth);
             attrs[KeyCurrentHealth] = currentHealth + healthRestored;
-            attrs[KeyMaxHealth]     = maxHealth;
+            attrs[KeyMaxHealth] = maxHealth;
         }
 
         character.Attributes = JsonSerializer.Serialize(attrs);
@@ -153,10 +153,10 @@ public class UseAbilityHubCommandHandler
 
         return new UseAbilityHubResult
         {
-            Success        = true,
-            AbilityId      = request.AbilityId,
-            ManaCost       = DefaultManaCost,
-            RemainingMana  = currentMana,
+            Success = true,
+            AbilityId = request.AbilityId,
+            ManaCost = DefaultManaCost,
+            RemainingMana = currentMana,
             HealthRestored = healthRestored,
         };
     }

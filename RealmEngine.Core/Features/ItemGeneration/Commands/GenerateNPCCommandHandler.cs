@@ -44,7 +44,7 @@ public class GenerateNPCCommandHandler : IRequestHandler<GenerateNPCCommand, Gen
             }
 
             var npcs = await _npcGenerator.GenerateNpcsAsync(request.Category, 1, request.Hydrate);
-            
+
             if (npcs == null || npcs.Count == 0)
             {
                 return new GenerateNPCResult
@@ -56,7 +56,7 @@ public class GenerateNPCCommandHandler : IRequestHandler<GenerateNPCCommand, Gen
 
             var npc = npcs[0];
 
-            _logger.LogDebug("Generated NPC: {NPCName} from category {Category}", 
+            _logger.LogDebug("Generated NPC: {NPCName} from category {Category}",
                 npc.Name, request.Category);
 
             return new GenerateNPCResult

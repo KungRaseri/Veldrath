@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using RealmEngine.Core.Features.Exploration;
 using RealmEngine.Core.Abstractions;
+using RealmEngine.Core.Features.Exploration;
 using RealmEngine.Core.Services;
 
 namespace RealmEngine.Core.Features.Exploration.Queries;
@@ -44,7 +44,7 @@ public class GetLocationDetailHandler : IRequestHandler<GetLocationDetailQuery, 
         {
             // Determine which location to query
             string locationName = request.LocationName ?? _gameState.CurrentLocation;
-            
+
             if (string.IsNullOrEmpty(locationName))
             {
                 return new LocationDetailDto
@@ -56,7 +56,7 @@ public class GetLocationDetailHandler : IRequestHandler<GetLocationDetailQuery, 
 
             // Get the location from ExplorationService
             var knownLocations = await _explorationService.GetKnownLocationsAsync();
-            var location = knownLocations.FirstOrDefault(l => 
+            var location = knownLocations.FirstOrDefault(l =>
                 l.Name.Equals(locationName, StringComparison.OrdinalIgnoreCase));
 
             if (location == null)
@@ -81,7 +81,7 @@ public class GetLocationDetailHandler : IRequestHandler<GetLocationDetailQuery, 
                     var refPart = enemyRef.Substring(9); // Remove "@enemies/"
                     var colonIndex = refPart.IndexOf(':');
                     var category = colonIndex > 0 ? refPart.Substring(0, colonIndex) : refPart;
-                    
+
                     // Each reference adds 10 weight to its category
                     enemySpawnWeights[category] = enemySpawnWeights.GetValueOrDefault(category, 0) + 10;
                 }
@@ -97,7 +97,7 @@ public class GetLocationDetailHandler : IRequestHandler<GetLocationDetailQuery, 
                     var refPart = lootRef.Substring(7); // Remove "@items/"
                     var colonIndex = refPart.IndexOf(':');
                     var category = colonIndex > 0 ? refPart.Substring(0, colonIndex) : refPart;
-                    
+
                     // Each reference adds 10 weight to its category
                     lootSpawnWeights[category] = lootSpawnWeights.GetValueOrDefault(category, 0) + 10;
                 }

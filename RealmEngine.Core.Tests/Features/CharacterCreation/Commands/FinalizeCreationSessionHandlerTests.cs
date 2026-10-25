@@ -13,7 +13,7 @@ namespace RealmEngine.Core.Tests.Features.CharacterCreation.Commands;
 public class FinalizeCreationSessionHandlerTests
 {
     private readonly Mock<ICharacterCreationSessionStore> _sessionStoreMock = new();
-    private readonly Mock<IMediator>                      _mediatorMock     = new();
+    private readonly Mock<IMediator> _mediatorMock = new();
 
     private FinalizeCreationSessionHandler CreateHandler() =>
         new(_sessionStoreMock.Object, _mediatorMock.Object,
@@ -21,8 +21,11 @@ public class FinalizeCreationSessionHandlerTests
 
     private static CharacterClass WarriorClass => new()
     {
-        Name = "Warrior", Slug = "warrior",
-        BonusStrength = 3, StartingHealth = 120, StartingMana = 20,
+        Name = "Warrior",
+        Slug = "warrior",
+        BonusStrength = 3,
+        StartingHealth = 120,
+        StartingMana = 20,
     };
 
     private static SpeciesModel HumanSpecies => new() { Slug = "human", DisplayName = "Human" };
@@ -115,7 +118,8 @@ public class FinalizeCreationSessionHandlerTests
                 capturedCommand = (CreateCharacterCommand)cmd)
             .ReturnsAsync(new CreateCharacterResult
             {
-                Success = true, Character = new Character { Name = "Hero" }
+                Success = true,
+                Character = new Character { Name = "Hero" }
             });
 
         await CreateHandler().Handle(
@@ -144,7 +148,8 @@ public class FinalizeCreationSessionHandlerTests
                 capturedCommand = (CreateCharacterCommand)cmd)
             .ReturnsAsync(new CreateCharacterResult
             {
-                Success = true, Character = new Character { Name = "SessionHero" }
+                Success = true,
+                Character = new Character { Name = "SessionHero" }
             });
 
         await CreateHandler().Handle(
@@ -168,7 +173,8 @@ public class FinalizeCreationSessionHandlerTests
             .Setup(m => m.Send(It.IsAny<CreateCharacterCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CreateCharacterResult
             {
-                Success = true, Character = new Character { Name = "Hero" }
+                Success = true,
+                Character = new Character { Name = "Hero" }
             });
 
         await CreateHandler().Handle(

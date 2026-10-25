@@ -1,16 +1,16 @@
-using RealmEngine.Core.Features.Exploration;
-using RealmEngine.Core.Abstractions;
-using RealmEngine.Core.Services;
-using RealmEngine.Core.Features.SaveLoad;
-using RealmEngine.Core.Features.Death.Queries;
-using RealmEngine.Core.Generators.Modern;
-using RealmEngine.Core.Generators;
-using RealmEngine.Shared.Models;
-using MediatR;
-using Moq;
 using FluentAssertions;
-using Xunit;
+using MediatR;
 using Microsoft.Extensions.Logging;
+using Moq;
+using RealmEngine.Core.Abstractions;
+using RealmEngine.Core.Features.Death.Queries;
+using RealmEngine.Core.Features.Exploration;
+using RealmEngine.Core.Features.SaveLoad;
+using RealmEngine.Core.Generators;
+using RealmEngine.Core.Generators.Modern;
+using RealmEngine.Core.Services;
+using RealmEngine.Shared.Models;
+using Xunit;
 
 namespace RealmEngine.Core.Tests.Services;
 
@@ -22,11 +22,11 @@ public class ExplorationServiceTests
     private readonly Mock<SaveGameService> _mockSaveGameService;
     private readonly StubLocationGenerator _locationGenerator;
     private readonly ExplorationService _service;
-    
+
     private class StubLocationGenerator : LocationGenerator
     {
         private readonly List<Location> _testLocations;
-        
+
         public StubLocationGenerator() : base()
         {
             _testLocations = new List<Location>
@@ -35,7 +35,7 @@ public class ExplorationServiceTests
                 new Location { Id = "dungeons:test-dungeon", Name = "Test Dungeon", Description = "A test dungeon location", Type = "dungeons" }
             };
         }
-        
+
         public override Task<List<Location>> GenerateLocationsAsync(string locationType, int count = 5, bool hydrate = true)
         {
             return Task.FromResult(_testLocations);

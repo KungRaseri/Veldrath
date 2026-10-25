@@ -43,11 +43,11 @@ public class EfCoreQuestRepository(ContentDbContext db, ILogger<EfCoreQuestRepos
 
     private static Quest MapToModel(Entities.Quest e) => new()
     {
-        Id           = e.Slug,
-        Slug         = e.Slug,
-        Title        = e.DisplayName ?? e.Slug,
-        DisplayName  = e.DisplayName ?? e.Slug,
+        Id = e.Slug,
+        Slug = e.Slug,
+        Title = e.DisplayName ?? e.Slug,
+        DisplayName = e.DisplayName ?? e.Slug,
         RarityWeight = e.RarityWeight,
-        Type         = e.Traits.MainStory == true ? "main" : "side",
+        Type = e.Traits.MainStory == true ? "main" : "side",
     };
 }

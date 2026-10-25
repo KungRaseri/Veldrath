@@ -30,12 +30,12 @@ public class SmtpEmailSender(IConfiguration config, ILogger<SmtpEmailSender> log
             return;
         }
 
-        var port           = int.TryParse(config["Email:SmtpPort"], out var p) ? p : 587;
-        var enableTls      = !string.Equals(config["Email:EnableTls"], "false", StringComparison.OrdinalIgnoreCase);
-        var user           = config["Email:User"];
-        var password       = config["Email:Password"];
-        var senderAddress  = config["Email:SenderAddress"] ?? "noreply@veldrath.com";
-        var senderName     = config["Email:SenderName"]    ?? "Veldrath";
+        var port = int.TryParse(config["Email:SmtpPort"], out var p) ? p : 587;
+        var enableTls = !string.Equals(config["Email:EnableTls"], "false", StringComparison.OrdinalIgnoreCase);
+        var user = config["Email:User"];
+        var password = config["Email:Password"];
+        var senderAddress = config["Email:SenderAddress"] ?? "noreply@veldrath.com";
+        var senderName = config["Email:SenderName"] ?? "Veldrath";
 
         using var client = new SmtpClient(host, port) { EnableSsl = enableTls };
         if (!string.IsNullOrWhiteSpace(user) && !string.IsNullOrWhiteSpace(password))
@@ -43,9 +43,9 @@ public class SmtpEmailSender(IConfiguration config, ILogger<SmtpEmailSender> log
 
         using var message = new MailMessage
         {
-            From       = new MailAddress(senderAddress, senderName),
-            Subject    = subject,
-            Body       = htmlBody,
+            From = new MailAddress(senderAddress, senderName),
+            Subject = subject,
+            Body = htmlBody,
             IsBodyHtml = true,
         };
         message.To.Add(to);

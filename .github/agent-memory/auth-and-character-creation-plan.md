@@ -37,6 +37,7 @@ File: `RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs`
 - Auth tests and character creation tests complete (lockout, preview, PATCH, Finalize, cross-session, double-finalize, StepError paths)
 - Auth Hardening Pass 2 complete (Sessions 35-37, 2026-04-16 to 2026-04-18): forgot password flow, account profile management, session persistence, LinkedAt timestamp, shared auth libraries (`Veldrath.Auth`, `Veldrath.Auth.Blazor`, `Veldrath.Auth.Tests`), enhanced auth infrastructure (OAuth renewal, logout revocation, JWT renewal, refresh token rotation)
 - Items excluded from Pass 2 — **re-audited Session-47**: `AccountLinkService.RequestLinkAsync` idempotency is implemented (reuses the pending row and refreshes the token/expiry), and `PendingLinkEndpoints` is protected by the `auth-attempts` rate limiter. Remaining test-only items: OAuth link-mode integration tests and `LoginViewModel` external OAuth flow tests.
+  - ⚠️ **Obsolete as of W12 (2026-10-25):** `AccountLinkService`, `PendingLinkEndpoints`, the `auth-attempts` policy, and the `PendingLinkTokens` table were deleted with the rest of the Identity auth surface. Better Auth owns account linking now; this note is historical only.
 
 ---
 

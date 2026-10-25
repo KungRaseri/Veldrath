@@ -30,22 +30,22 @@ public class EntityListViewModel : ReactiveObject
         Action onNew,
         Action<Guid> onDeleted)
     {
-        DomainLabel   = domainLabel;
-        TypeKeyLabel  = typeKeyLabel;
-        TableName     = tableName;
-        Domain        = domain;
-        TypeKey       = typeKey;
-        _service      = service;
-        _onOpen       = onOpen;
-        _onNew        = onNew;
-        _onDeleted    = onDeleted;
+        DomainLabel = domainLabel;
+        TypeKeyLabel = typeKeyLabel;
+        TableName = tableName;
+        Domain = domain;
+        TypeKey = typeKey;
+        _service = service;
+        _onOpen = onOpen;
+        _onNew = onNew;
+        _onDeleted = onDeleted;
 
         NewEntityCommand = ReactiveCommand.Create(_onNew);
         CancelDeleteCommand = ReactiveCommand.Create(() => { PendingDelete = null; });
 
         var canConfirm = this.WhenAnyValue(x => x.PendingDelete).Select(p => p is not null);
         ConfirmDeleteCommand = ReactiveCommand.CreateFromTask(ConfirmDeleteAsync, canConfirm);
-        RefreshCommand       = ReactiveCommand.CreateFromTask(LoadAsync);
+        RefreshCommand = ReactiveCommand.CreateFromTask(LoadAsync);
 
         RefreshCommand.ThrownExceptions.Subscribe(ex =>
             Log.Error(ex, "Failed to load entity list for {TableName}/{TypeKey}", tableName, typeKey));
@@ -55,11 +55,11 @@ public class EntityListViewModel : ReactiveObject
         _ = LoadAsync();
     }
 
-    public string DomainLabel  { get; }
+    public string DomainLabel { get; }
     public string TypeKeyLabel { get; }
-    public string TableName    { get; }
-    public string Domain       { get; }
-    public string TypeKey      { get; }
+    public string TableName { get; }
+    public string Domain { get; }
+    public string TypeKey { get; }
 
     public bool IsLoading
     {
@@ -87,10 +87,10 @@ public class EntityListViewModel : ReactiveObject
 
     public ObservableCollection<EntityListRowViewModel> Items { get; } = new();
 
-    public ReactiveCommand<Unit, Unit> NewEntityCommand     { get; }
+    public ReactiveCommand<Unit, Unit> NewEntityCommand { get; }
     public ReactiveCommand<Unit, Unit> ConfirmDeleteCommand { get; }
-    public ReactiveCommand<Unit, Unit> CancelDeleteCommand  { get; }
-    public ReactiveCommand<Unit, Unit> RefreshCommand       { get; }
+    public ReactiveCommand<Unit, Unit> CancelDeleteCommand { get; }
+    public ReactiveCommand<Unit, Unit> RefreshCommand { get; }
 
     private async Task LoadAsync()
     {
@@ -106,15 +106,15 @@ public class EntityListViewModel : ReactiveObject
                 EntityListRowViewModel? row = null;
                 row = new EntityListRowViewModel
                 {
-                    EntityId     = dto.EntityId,
-                    Slug         = dto.Slug,
-                    DisplayName  = dto.DisplayName,
+                    EntityId = dto.EntityId,
+                    Slug = dto.Slug,
+                    DisplayName = dto.DisplayName,
                     RarityWeight = dto.RarityWeight,
-                    IsActive     = dto.IsActive,
-                    UpdatedAt    = dto.UpdatedAt,
-                    TableName    = TableName
+                    IsActive = dto.IsActive,
+                    UpdatedAt = dto.UpdatedAt,
+                    TableName = TableName
                 };
-                row.OpenCommand          = ReactiveCommand.Create(() => _onOpen(row!));
+                row.OpenCommand = ReactiveCommand.Create(() => _onOpen(row!));
                 row.RequestDeleteCommand = ReactiveCommand.Create(() => { PendingDelete = row!; });
                 _allRows.Add(row);
             }
@@ -142,7 +142,7 @@ public class EntityListViewModel : ReactiveObject
     private async Task ConfirmDeleteAsync()
     {
         if (PendingDelete is null) return;
-        var toDelete  = PendingDelete;
+        var toDelete = PendingDelete;
         PendingDelete = null;
 
         var ok = await _service.DeleteEntityAsync(toDelete.EntityId, TableName);

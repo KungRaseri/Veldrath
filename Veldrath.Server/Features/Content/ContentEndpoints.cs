@@ -6,11 +6,11 @@ using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using Veldrath.Contracts.Content;
 using Veldrath.Contracts.Foundry;
-using SharedLanguage    = RealmEngine.Shared.Models.Language;
-using SharedPower       = RealmEngine.Shared.Models.Power;
-using SharedQuest       = RealmEngine.Shared.Models.Quest;
-using SharedRecipe      = RealmEngine.Shared.Models.Recipe;
-using DataItem          = RealmEngine.Data.Entities.Item;
+using DataItem = RealmEngine.Data.Entities.Item;
+using SharedLanguage = RealmEngine.Shared.Models.Language;
+using SharedPower = RealmEngine.Shared.Models.Power;
+using SharedQuest = RealmEngine.Shared.Models.Quest;
+using SharedRecipe = RealmEngine.Shared.Models.Recipe;
 
 namespace Veldrath.Server.Features.Content;
 
@@ -61,91 +61,91 @@ public static class ContentEndpoints
             .AllowAnonymous();
 
         // Public schema + browse (no auth, no player session required)
-        group.MapGet("/schema",                   GetSchemaAsync);
-        group.MapGet("/browse",                   BrowseAsync);
-        group.MapGet("/browse/{type}/{slug}",     BrowseDetailAsync);
+        group.MapGet("/schema", GetSchemaAsync);
+        group.MapGet("/browse", BrowseAsync);
+        group.MapGet("/browse/{type}/{slug}", BrowseDetailAsync);
 
         // Powers
-        group.MapGet("/powers",        GetPowersAsync);
+        group.MapGet("/powers", GetPowersAsync);
         group.MapGet("/powers/{slug}", GetPowerBySlugAsync);
 
         // Enemies
-        group.MapGet("/enemies",          GetEnemiesAsync);
-        group.MapGet("/enemies/{slug}",   GetEnemyBySlugAsync);
+        group.MapGet("/enemies", GetEnemiesAsync);
+        group.MapGet("/enemies/{slug}", GetEnemyBySlugAsync);
 
         // NPCs
-        group.MapGet("/npcs",             GetNpcsAsync);
-        group.MapGet("/npcs/{slug}",      GetNpcBySlugAsync);
+        group.MapGet("/npcs", GetNpcsAsync);
+        group.MapGet("/npcs/{slug}", GetNpcBySlugAsync);
 
         // Quests
-        group.MapGet("/quests",           GetQuestsAsync);
-        group.MapGet("/quests/{slug}",    GetQuestBySlugAsync);
+        group.MapGet("/quests", GetQuestsAsync);
+        group.MapGet("/quests/{slug}", GetQuestBySlugAsync);
 
         // Recipes
-        group.MapGet("/recipes",          GetRecipesAsync);
-        group.MapGet("/recipes/{slug}",   GetRecipeBySlugAsync);
+        group.MapGet("/recipes", GetRecipesAsync);
+        group.MapGet("/recipes/{slug}", GetRecipeBySlugAsync);
 
         // Loot tables
-        group.MapGet("/loot-tables",           GetLootTablesAsync);
-        group.MapGet("/loot-tables/{slug}",    GetLootTableBySlugAsync);
+        group.MapGet("/loot-tables", GetLootTablesAsync);
+        group.MapGet("/loot-tables/{slug}", GetLootTableBySlugAsync);
 
         // Powers replace the former /spells and /abilities endpoints
 
         // Actor classes
-        group.MapGet("/classes",          GetClassesAsync);
-        group.MapGet("/classes/{slug}",   GetClassBySlugAsync);
+        group.MapGet("/classes", GetClassesAsync);
+        group.MapGet("/classes/{slug}", GetClassBySlugAsync);
 
         // Species
-        group.MapGet("/species",          GetSpeciesAsync);
-        group.MapGet("/species/{slug}",   GetSpeciesBySlugAsync);
+        group.MapGet("/species", GetSpeciesAsync);
+        group.MapGet("/species/{slug}", GetSpeciesBySlugAsync);
 
         // Backgrounds
-        group.MapGet("/backgrounds",          GetBackgroundsAsync);
-        group.MapGet("/backgrounds/{slug}",   GetBackgroundBySlugAsync);
+        group.MapGet("/backgrounds", GetBackgroundsAsync);
+        group.MapGet("/backgrounds/{slug}", GetBackgroundBySlugAsync);
 
         // Skills
-        group.MapGet("/skills",           GetSkillsAsync);
-        group.MapGet("/skills/{slug}",    GetSkillBySlugAsync);
+        group.MapGet("/skills", GetSkillsAsync);
+        group.MapGet("/skills/{slug}", GetSkillBySlugAsync);
 
         // Items
-        group.MapGet("/items",            GetItemsAsync);
-        group.MapGet("/items/{slug}",     GetItemBySlugAsync);
+        group.MapGet("/items", GetItemsAsync);
+        group.MapGet("/items/{slug}", GetItemBySlugAsync);
 
         // Enchantments
-        group.MapGet("/enchantments",         GetEnchantmentsAsync);
-        group.MapGet("/enchantments/{slug}",  GetEnchantmentBySlugAsync);
+        group.MapGet("/enchantments", GetEnchantmentsAsync);
+        group.MapGet("/enchantments/{slug}", GetEnchantmentBySlugAsync);
 
         // Materials
-        group.MapGet("/materials",        GetMaterialsAsync);
+        group.MapGet("/materials", GetMaterialsAsync);
         group.MapGet("/materials/{slug}", GetMaterialBySlugAsync);
 
         // Organizations
-        group.MapGet("/organizations",          GetOrganizationsAsync);
-        group.MapGet("/organizations/{slug}",   GetOrganizationBySlugAsync);
+        group.MapGet("/organizations", GetOrganizationsAsync);
+        group.MapGet("/organizations/{slug}", GetOrganizationBySlugAsync);
 
         // World Locations
-        group.MapGet("/zone-locations",          GetZoneLocationsAsync);
-        group.MapGet("/zone-locations/{slug}",   GetZoneLocationBySlugAsync);
+        group.MapGet("/zone-locations", GetZoneLocationsAsync);
+        group.MapGet("/zone-locations/{slug}", GetZoneLocationBySlugAsync);
 
         // Dialogues
-        group.MapGet("/dialogues",          GetDialoguesAsync);
-        group.MapGet("/dialogues/{slug}",   GetDialogueBySlugAsync);
+        group.MapGet("/dialogues", GetDialoguesAsync);
+        group.MapGet("/dialogues/{slug}", GetDialogueBySlugAsync);
 
         // Actor Instances
-        group.MapGet("/actor-instances",          GetActorInstancesAsync);
-        group.MapGet("/actor-instances/{slug}",   GetActorInstanceBySlugAsync);
+        group.MapGet("/actor-instances", GetActorInstancesAsync);
+        group.MapGet("/actor-instances/{slug}", GetActorInstanceBySlugAsync);
 
         // Material Properties
-        group.MapGet("/material-properties",          GetMaterialPropertiesAsync);
-        group.MapGet("/material-properties/{slug}",   GetMaterialPropertyBySlugAsync);
+        group.MapGet("/material-properties", GetMaterialPropertiesAsync);
+        group.MapGet("/material-properties/{slug}", GetMaterialPropertyBySlugAsync);
 
         // Trait Definitions
-        group.MapGet("/traits",         GetTraitsAsync);
-        group.MapGet("/traits/{key}",   GetTraitByKeyAsync);
+        group.MapGet("/traits", GetTraitsAsync);
+        group.MapGet("/traits/{key}", GetTraitByKeyAsync);
 
         // Languages
-        group.MapGet("/languages",          GetLanguagesAsync);
-        group.MapGet("/languages/{slug}",   GetLanguageBySlugAsync);
+        group.MapGet("/languages", GetLanguagesAsync);
+        group.MapGet("/languages/{slug}", GetLanguageBySlugAsync);
 
         return app;
     }
@@ -164,32 +164,32 @@ public static class ContentEndpoints
         ContentDbContext db,
         CancellationToken ct)
     {
-        var resolvedPage     = Math.Max(1, page ?? 1);
+        var resolvedPage = Math.Max(1, page ?? 1);
         var resolvedPageSize = Math.Clamp(pageSize ?? 20, 1, 100);
 
         var result = type.ToLowerInvariant() switch
         {
-            "power"            => await BrowseSet(db.Powers,             type, search, resolvedPage, resolvedPageSize, ct),
-            "ability"          => await BrowseSet(db.Powers,             type, search, resolvedPage, resolvedPageSize, ct),
-            "species"          => await BrowseSet(db.Species,            type, search, resolvedPage, resolvedPageSize, ct),
-            "class"            => await BrowseSet(db.ActorClasses,       type, search, resolvedPage, resolvedPageSize, ct),
-            "archetype"        => await BrowseSet(db.ActorArchetypes,    type, search, resolvedPage, resolvedPageSize, ct),
-            "instance"         => await BrowseSet(db.ActorInstances,     type, search, resolvedPage, resolvedPageSize, ct),
-            "background"       => await BrowseSet(db.Backgrounds,        type, search, resolvedPage, resolvedPageSize, ct),
-            "skill"            => await BrowseSet(db.Skills,             type, search, resolvedPage, resolvedPageSize, ct),
-            "item"             => await BrowseSet(db.Items,              type, search, resolvedPage, resolvedPageSize, ct),
-            "material"         => await BrowseSet(db.Materials,          type, search, resolvedPage, resolvedPageSize, ct),
+            "power" => await BrowseSet(db.Powers, type, search, resolvedPage, resolvedPageSize, ct),
+            "ability" => await BrowseSet(db.Powers, type, search, resolvedPage, resolvedPageSize, ct),
+            "species" => await BrowseSet(db.Species, type, search, resolvedPage, resolvedPageSize, ct),
+            "class" => await BrowseSet(db.ActorClasses, type, search, resolvedPage, resolvedPageSize, ct),
+            "archetype" => await BrowseSet(db.ActorArchetypes, type, search, resolvedPage, resolvedPageSize, ct),
+            "instance" => await BrowseSet(db.ActorInstances, type, search, resolvedPage, resolvedPageSize, ct),
+            "background" => await BrowseSet(db.Backgrounds, type, search, resolvedPage, resolvedPageSize, ct),
+            "skill" => await BrowseSet(db.Skills, type, search, resolvedPage, resolvedPageSize, ct),
+            "item" => await BrowseSet(db.Items, type, search, resolvedPage, resolvedPageSize, ct),
+            "material" => await BrowseSet(db.Materials, type, search, resolvedPage, resolvedPageSize, ct),
             "materialproperty" => await BrowseSet(db.MaterialProperties, type, search, resolvedPage, resolvedPageSize, ct),
-            "enchantment"      => await BrowseSet(db.Enchantments,       type, search, resolvedPage, resolvedPageSize, ct),
-            "spell"            => await BrowseSet(db.Powers,             type, search, resolvedPage, resolvedPageSize, ct),
-            "quest"            => await BrowseSet(db.Quests,             type, search, resolvedPage, resolvedPageSize, ct),
-            "recipe"           => await BrowseSet(db.Recipes,            type, search, resolvedPage, resolvedPageSize, ct),
-            "loottable"        => await BrowseSet(db.LootTables,         type, search, resolvedPage, resolvedPageSize, ct),
-            "organization"     => await BrowseSet(db.Organizations,      type, search, resolvedPage, resolvedPageSize, ct),
-            "zonelocation"    => await BrowseSet(db.ZoneLocations,     type, search, resolvedPage, resolvedPageSize, ct),
-            "dialogue"         => await BrowseSet(db.Dialogues,          type, search, resolvedPage, resolvedPageSize, ct),
-            "language"         => await BrowseSet(db.Languages,          type, search, resolvedPage, resolvedPageSize, ct),
-            _                  => null,
+            "enchantment" => await BrowseSet(db.Enchantments, type, search, resolvedPage, resolvedPageSize, ct),
+            "spell" => await BrowseSet(db.Powers, type, search, resolvedPage, resolvedPageSize, ct),
+            "quest" => await BrowseSet(db.Quests, type, search, resolvedPage, resolvedPageSize, ct),
+            "recipe" => await BrowseSet(db.Recipes, type, search, resolvedPage, resolvedPageSize, ct),
+            "loottable" => await BrowseSet(db.LootTables, type, search, resolvedPage, resolvedPageSize, ct),
+            "organization" => await BrowseSet(db.Organizations, type, search, resolvedPage, resolvedPageSize, ct),
+            "zonelocation" => await BrowseSet(db.ZoneLocations, type, search, resolvedPage, resolvedPageSize, ct),
+            "dialogue" => await BrowseSet(db.Dialogues, type, search, resolvedPage, resolvedPageSize, ct),
+            "language" => await BrowseSet(db.Languages, type, search, resolvedPage, resolvedPageSize, ct),
+            _ => null,
         };
 
         return result is null
@@ -234,27 +234,27 @@ public static class ContentEndpoints
 
         ContentBase? entity = type.ToLowerInvariant() switch
         {
-            "power"            => await db.Powers.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "ability"          => await db.Powers.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "species"          => await db.Species.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "class"            => await db.ActorClasses.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "archetype"        => await db.ActorArchetypes.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "instance"         => await db.ActorInstances.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "background"       => await db.Backgrounds.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "skill"            => await db.Skills.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "item"             => await db.Items.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "material"         => await db.Materials.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "power" => await db.Powers.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "ability" => await db.Powers.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "species" => await db.Species.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "class" => await db.ActorClasses.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "archetype" => await db.ActorArchetypes.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "instance" => await db.ActorInstances.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "background" => await db.Backgrounds.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "skill" => await db.Skills.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "item" => await db.Items.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "material" => await db.Materials.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "materialproperty" => await db.MaterialProperties.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "enchantment"      => await db.Enchantments.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "spell"            => await db.Powers.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "quest"            => await db.Quests.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "recipe"           => await db.Recipes.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "loottable"        => await db.LootTables.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "organization"     => await db.Organizations.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "zonelocation"    => await db.ZoneLocations.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "dialogue"         => await db.Dialogues.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "language"         => await db.Languages.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            _                  => null,
+            "enchantment" => await db.Enchantments.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "spell" => await db.Powers.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "quest" => await db.Quests.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "recipe" => await db.Recipes.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "loottable" => await db.LootTables.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "organization" => await db.Organizations.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "zonelocation" => await db.ZoneLocations.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "dialogue" => await db.Dialogues.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "language" => await db.Languages.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            _ => null,
         };
 
         if (entity is null) return Results.NotFound();
@@ -344,61 +344,61 @@ public static class ContentEndpoints
     // Spells section removed — merged into /powers
     // Mapping helpers
     private static PowerDto ToDto(SharedPower p) => new(
-        Slug:          p.Slug,
-        DisplayName:   p.DisplayName,
-        PowerType:     p.Type.ToString(),
-        School:        p.School,
-        Description:   p.Description,
-        ManaCost:      p.ManaCost,
-        Cooldown:      p.Cooldown,
-        Range:         p.Range ?? 0,
-        RarityWeight:  p.RarityWeight,
-        IsPassive:     p.IsPassive,
+        Slug: p.Slug,
+        DisplayName: p.DisplayName,
+        PowerType: p.Type.ToString(),
+        School: p.School,
+        Description: p.Description,
+        ManaCost: p.ManaCost,
+        Cooldown: p.Cooldown,
+        Range: p.Range ?? 0,
+        RarityWeight: p.RarityWeight,
+        IsPassive: p.IsPassive,
         RequiredLevel: p.RequiredLevel,
-        Rank:          p.Rank,
-        EffectType:    p.EffectType.ToString());
+        Rank: p.Rank,
+        EffectType: p.EffectType.ToString());
 
     private static EnemyDto ToDto(Enemy e) => new(
-        Slug:       e.Slug,
-        Name:       e.Name,
-        Health:     e.Health,
-        Level:      e.Level,
-        Family:     e.BaseName,
+        Slug: e.Slug,
+        Name: e.Name,
+        Health: e.Health,
+        Level: e.Level,
+        Family: e.BaseName,
         Attributes: e.Attributes);
 
     private static NpcDto ToDto(NPC n) => new(
-        Slug:        n.Slug,
-        Name:        n.Name,
+        Slug: n.Slug,
+        Name: n.Name,
         DisplayName: n.DisplayName,
-        Category:    n.Occupation);
+        Category: n.Occupation);
 
     private static QuestDto ToDto(SharedQuest q) => new(
-        Slug:         q.Slug,
-        Title:        q.Title,
-        DisplayName:  q.DisplayName,
-        QuestType:    q.QuestType,
-        Difficulty:   q.Difficulty,
+        Slug: q.Slug,
+        Title: q.Title,
+        DisplayName: q.DisplayName,
+        QuestType: q.QuestType,
+        Difficulty: q.Difficulty,
         RarityWeight: q.RarityWeight,
-        Description:  q.Description);
+        Description: q.Description);
 
     private static RecipeDto ToDto(SharedRecipe r) => new(
-        Slug:                r.Slug,
-        Name:                r.Name,
-        Category:            r.Category,
-        RequiredLevel:       r.RequiredLevel,
-        RequiredStation:     r.RequiredStation,
-        Materials:           r.Materials.Select(m => new RecipeMaterialDto(m.ItemReference, m.Quantity)).ToList(),
+        Slug: r.Slug,
+        Name: r.Name,
+        Category: r.Category,
+        RequiredLevel: r.RequiredLevel,
+        RequiredStation: r.RequiredStation,
+        Materials: r.Materials.Select(m => new RecipeMaterialDto(m.ItemReference, m.Quantity)).ToList(),
         OutputItemReference: r.OutputItemReference,
-        OutputQuantity:      r.OutputQuantity);
+        OutputQuantity: r.OutputQuantity);
 
     private static LootTableDto ToDto(LootTableData t) => new(
-        Slug:         t.Slug,
-        Name:         t.Name,
-        Context:      t.Context,
-        IsBoss:       t.IsBoss,
-        IsChest:      t.IsChest,
+        Slug: t.Slug,
+        Name: t.Name,
+        Context: t.Context,
+        IsBoss: t.IsBoss,
+        IsChest: t.IsChest,
         IsHarvesting: t.IsHarvesting,
-        Entries:      t.Entries.Select(e => new LootTableEntryDto(
+        Entries: t.Entries.Select(e => new LootTableEntryDto(
             e.ItemDomain, e.ItemSlug, e.DropWeight, e.QuantityMin, e.QuantityMax, e.IsGuaranteed)).ToList());
 
     // Actor Classes
@@ -479,49 +479,49 @@ public static class ContentEndpoints
 
     // Mapping helpers (new content types)
     private static ActorClassDto ToDto(RealmEngine.Data.Entities.ActorClass c) => new(
-        Slug:              c.Slug,
-        DisplayName:       c.DisplayName ?? c.Slug,
-        TypeKey:           c.TypeKey,
-        HitDie:            c.HitDie,
-        PrimaryStat:       c.PrimaryStat,
-        RarityWeight:      c.RarityWeight,
-        BaseHealth:        c.Stats.BaseHealth,
-        BaseMana:          c.Stats.BaseMana,
-        HealthGrowth:      c.Stats.HealthGrowth,
-        ManaGrowth:        c.Stats.ManaGrowth,
-        StrengthGrowth:    c.Stats.StrengthGrowth,
-        DexterityGrowth:   c.Stats.DexterityGrowth,
+        Slug: c.Slug,
+        DisplayName: c.DisplayName ?? c.Slug,
+        TypeKey: c.TypeKey,
+        HitDie: c.HitDie,
+        PrimaryStat: c.PrimaryStat,
+        RarityWeight: c.RarityWeight,
+        BaseHealth: c.Stats.BaseHealth,
+        BaseMana: c.Stats.BaseMana,
+        HealthGrowth: c.Stats.HealthGrowth,
+        ManaGrowth: c.Stats.ManaGrowth,
+        StrengthGrowth: c.Stats.StrengthGrowth,
+        DexterityGrowth: c.Stats.DexterityGrowth,
         IntelligenceGrowth: c.Stats.IntelligenceGrowth,
         ConstitutionGrowth: c.Stats.ConstitutionGrowth,
-        IsSpellcaster:     c.Traits.Spellcaster == true,
-        IsMelee:           c.Traits.Melee == true,
-        IsRanged:          c.Traits.Ranged == true,
-        IsStealth:         c.Traits.Stealth == true,
-        CanDualWield:      c.Traits.CanDualWield == true,
-        CanWearHeavy:      c.Traits.CanWearHeavy == true,
-        CanWearShield:     c.Traits.CanWearShield == true);
+        IsSpellcaster: c.Traits.Spellcaster == true,
+        IsMelee: c.Traits.Melee == true,
+        IsRanged: c.Traits.Ranged == true,
+        IsStealth: c.Traits.Stealth == true,
+        CanDualWield: c.Traits.CanDualWield == true,
+        CanWearHeavy: c.Traits.CanWearHeavy == true,
+        CanWearShield: c.Traits.CanWearShield == true);
 
     private static SpeciesDto ToDto(RealmEngine.Data.Entities.Species s) => new(
-        Slug:        s.Slug,
+        Slug: s.Slug,
         DisplayName: s.DisplayName ?? s.Slug,
-        TypeKey:     s.TypeKey,
+        TypeKey: s.TypeKey,
         RarityWeight: s.RarityWeight,
         Description: s.Description ?? string.Empty);
 
     private static BackgroundDto ToDto(RealmEngine.Data.Entities.Background b) => new(
-        Slug:        b.Slug,
+        Slug: b.Slug,
         DisplayName: b.DisplayName ?? b.Slug,
-        TypeKey:     b.TypeKey,
+        TypeKey: b.TypeKey,
         RarityWeight: b.RarityWeight,
         Description: b.Description ?? string.Empty);
 
     private static SkillDto ToDto(RealmEngine.Data.Entities.Skill s) => new(
-        Slug:               s.Slug,
-        DisplayName:        s.DisplayName ?? s.Slug,
-        TypeKey:            s.TypeKey,
-        MaxRank:            s.MaxRank,
+        Slug: s.Slug,
+        DisplayName: s.DisplayName ?? s.Slug,
+        TypeKey: s.TypeKey,
+        MaxRank: s.MaxRank,
         GoverningAttribute: s.GoverningAttribute,
-        RarityWeight:       s.RarityWeight);
+        RarityWeight: s.RarityWeight);
 
     // Items
     private static async Task<IResult> GetItemsAsync(string? type, ContentDbContext db, CancellationToken ct)
@@ -562,18 +562,18 @@ public static class ContentEndpoints
     }
 
     private static ItemDto ToItemDto(DataItem i) => new(
-        Slug:        i.Slug,
+        Slug: i.Slug,
         DisplayName: i.DisplayName ?? i.Slug,
-        TypeKey:     i.TypeKey,
+        TypeKey: i.TypeKey,
         RarityWeight: i.RarityWeight,
-        ItemType:    i.ItemType,
-        WeaponType:  i.WeaponType,
-        ArmorType:   i.ArmorType);
+        ItemType: i.ItemType,
+        WeaponType: i.WeaponType,
+        ArmorType: i.ArmorType);
 
     private static EnchantmentDto ToEnchantmentDto(RealmEngine.Data.Entities.Enchantment e) => new(
-        Slug:         e.Slug,
-        DisplayName:  e.DisplayName ?? e.Slug,
-        TypeKey:      e.TypeKey,
+        Slug: e.Slug,
+        DisplayName: e.DisplayName ?? e.Slug,
+        TypeKey: e.TypeKey,
         RarityWeight: e.RarityWeight);
 
     // Materials
@@ -590,10 +590,10 @@ public static class ContentEndpoints
     }
 
     private static MaterialDto ToMaterialDto(MaterialEntry m) => new(
-        Slug:           m.Slug,
-        DisplayName:    m.DisplayName,
+        Slug: m.Slug,
+        DisplayName: m.DisplayName,
         MaterialFamily: m.MaterialFamily,
-        RarityWeight:   (int)m.RarityWeight);
+        RarityWeight: (int)m.RarityWeight);
 
     // Organizations
     private static async Task<IResult> GetOrganizationsAsync(IOrganizationRepository repo, string? orgType = null)

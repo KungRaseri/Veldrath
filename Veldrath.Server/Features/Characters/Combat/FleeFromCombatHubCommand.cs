@@ -60,7 +60,7 @@ public class FleeFromCombatHubCommandHandler
         ILogger<FleeFromCombatHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
-        _logger        = logger;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the flee attempt outcome.</summary>
@@ -109,7 +109,7 @@ public class FleeFromCombatHubCommandHandler
         if (entity is null)
             return new FleeFromCombatHubResult { Success = false, ErrorMessage = "Character not found" };
 
-        var attrs  = CombatHelpers.ParseAttrs(entity.Attributes, _logger);
+        var attrs = CombatHelpers.ParseAttrs(entity.Attributes, _logger);
         var player = CombatCharacterHydrator.Hydrate(entity, attrs);
 
         session = session.NextTurn();
@@ -136,13 +136,13 @@ public class FleeFromCombatHubCommandHandler
 
         return new FleeFromCombatHubResult
         {
-            Success               = true,
-            Fled                  = false,
-            EnemyDamage           = enemyDamage,
-            EnemyAbilityUsed      = abilityName,
+            Success = true,
+            Fled = false,
+            EnemyDamage = enemyDamage,
+            EnemyAbilityUsed = abilityName,
             PlayerRemainingHealth = player.Health,
-            PlayerDefeated        = isDead,
-            PlayerHardcoreDeath   = isHardcore,
+            PlayerDefeated = isDead,
+            PlayerHardcoreDeath = isHardcore,
         };
     }
 }

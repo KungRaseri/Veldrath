@@ -73,19 +73,12 @@ services:
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=veldrath;Username=veldrath;Password=veldrath_dev
       - Jwt__Key=${JWT_KEY}
       - InternalBridge__Token=${INTERNAL_BRIDGE_TOKEN:-}
-      - OAuth__Discord__ClientId=${OAUTH_DISCORD_CLIENT_ID}
-      - OAuth__Discord__ClientSecret=${OAUTH_DISCORD_CLIENT_SECRET}
-      - OAuth__Google__ClientId=${OAUTH_GOOGLE_CLIENT_ID}
-      - OAuth__Google__ClientSecret=${OAUTH_GOOGLE_CLIENT_SECRET}
-      - OAuth__Microsoft__ClientId=${OAUTH_MICROSOFT_CLIENT_ID}
-      - OAuth__Microsoft__ClientSecret=${OAUTH_MICROSOFT_CLIENT_SECRET}
       - Email__SmtpHost=${EMAIL_SMTP_HOST:-}
       - Email__SmtpPort=25
       - Email__EnableTls=false
       - Email__SenderAddress=noreply@veldrath.local
       - Email__SenderName=Veldrath Dev
       - Web__BaseUrl=${WEB_PUBLIC_URL:-http://localhost:8081}
-      - AllowedReturnUrlHosts=${ALLOWED_RETURN_URL_HOSTS:-}
       - Seq__ServerUrl=http://seq
       # Container-local NuGet cache (matches the nuget_cache volume mount)
       - NUGET_PACKAGES=/root/.nuget/packages

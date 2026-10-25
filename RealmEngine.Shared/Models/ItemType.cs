@@ -39,10 +39,10 @@ public enum ItemType
 
     /// <summary>Quest item.</summary>
     QuestItem,
-    
+
     /// <summary>Enchantment scroll (consumable that applies permanent enchantment to equipment).</summary>
     EnchantmentScroll,
-    
+
     /// <summary>Crafting material.</summary>
     Material
 }

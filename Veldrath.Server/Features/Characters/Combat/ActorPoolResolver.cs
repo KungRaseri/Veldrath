@@ -31,7 +31,7 @@ public class ActorPoolResolver
     public async Task<List<SpawnedEnemy>> SpawnRosterAsync(IReadOnlyList<ActorPoolEntry>? pool)
     {
         var spawned = new List<SpawnedEnemy>();
-        int count   = _random.Next(MinCount, MaxCount + 1);
+        int count = _random.Next(MinCount, MaxCount + 1);
 
         if (pool is null || pool.Count == 0)
         {
@@ -56,20 +56,20 @@ public class ActorPoolResolver
         new()
         {
             ArchetypeSlug = enemy.Slug,
-            Name          = string.IsNullOrWhiteSpace(enemy.Name) ? enemy.Slug : enemy.Name,
-            Level         = Math.Max(1, enemy.Level),
+            Name = string.IsNullOrWhiteSpace(enemy.Name) ? enemy.Slug : enemy.Name,
+            Level = Math.Max(1, enemy.Level),
             CurrentHealth = Math.Max(1, enemy.MaxHealth),
-            MaxHealth     = Math.Max(1, enemy.MaxHealth),
-            BaseXp        = Math.Max(1, enemy.XP),
-            GoldReward    = Math.Max(0, enemy.GoldReward),
-            Template      = enemy,
+            MaxHealth = Math.Max(1, enemy.MaxHealth),
+            BaseXp = Math.Max(1, enemy.XP),
+            GoldReward = Math.Max(0, enemy.GoldReward),
+            Template = enemy,
         };
 
     private ActorPoolEntry SelectWeighted(IReadOnlyList<ActorPoolEntry> pool)
     {
         int total = pool.Sum(e => e.Weight > 0 ? e.Weight : 1);
-        int roll  = _random.Next(total);
-        int cum   = 0;
+        int roll = _random.Next(total);
+        int cum = 0;
         foreach (var entry in pool)
         {
             cum += entry.Weight > 0 ? entry.Weight : 1;

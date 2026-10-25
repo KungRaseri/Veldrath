@@ -210,8 +210,13 @@ Build only what changed. The rule is simple: **build the `.slnx` file matching t
 
 ```powershell
 dotnet build Realm.Full.slnx    # Full build (all .NET projects)
-dotnet test Realm.Full.slnx     # All tests across the 8 .NET test projects (with coverage)
+dotnet test Realm.Full.slnx     # All tests across the 7 .NET test projects (with coverage)
+dotnet format Realm.Full.slnx   # Apply the .editorconfig formatting rules
 ```
+
+> **Formatting is enforced.** [`format.yml`](.github/workflows/format.yml) runs
+> `dotnet format Realm.Full.slnx --verify-no-changes` on every `.cs` change. Run the format command
+> above (or enable format-on-save) before committing, otherwise the gate fails.
 
 ### Running Projects
 
@@ -235,6 +240,7 @@ CI workflows live in [`.github/workflows/`](.github/workflows/). Coverage is upl
 | [`ci-discord.yml`](.github/workflows/ci-discord.yml) | Veldrath.Discord | `discord` |
 | [`ci-web.yml`](.github/workflows/ci-web.yml) | SvelteKit web | `web` |
 | [`docs.yml`](.github/workflows/docs.yml) | DocFX documentation build & deploy | — |
+| [`format.yml`](.github/workflows/format.yml) | `dotnet format --verify-no-changes` (repo-wide) | — |
 | [`repo-hygiene.yml`](.github/workflows/repo-hygiene.yml) | Markdown relative-link check | — |
 | [`release.yml`](.github/workflows/release.yml) | Release tagging and publishing | — |
 | [`sonarcloud.yml`](.github/workflows/sonarcloud.yml) | SonarCloud static analysis | — |

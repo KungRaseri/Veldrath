@@ -46,18 +46,18 @@ public class EfCoreRecipeRepository(ContentDbContext db, ILogger<EfCoreRecipeRep
 
     private static Recipe MapToModel(Entities.Recipe e) => new()
     {
-        Id                  = e.Slug,
-        Name                = e.DisplayName ?? e.Slug,
-        Slug                = e.Slug,
-        Category            = e.TypeKey,
-        RequiredSkill       = e.CraftingSkill,
-        RequiredSkillLevel  = e.CraftingLevel,
+        Id = e.Slug,
+        Name = e.DisplayName ?? e.Slug,
+        Slug = e.Slug,
+        Category = e.TypeKey,
+        RequiredSkill = e.CraftingSkill,
+        RequiredSkillLevel = e.CraftingLevel,
         OutputItemReference = $"@{e.OutputItemDomain}:{e.OutputItemSlug}",
-        OutputQuantity      = e.OutputQuantity,
-        Materials           = e.Ingredients.Select(i => new RecipeMaterial
+        OutputQuantity = e.OutputQuantity,
+        Materials = e.Ingredients.Select(i => new RecipeMaterial
         {
             ItemReference = $"@{i.ItemDomain}:{i.ItemSlug}",
-            Quantity      = i.Quantity,
+            Quantity = i.Quantity,
         }).ToList(),
     };
 }

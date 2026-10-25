@@ -20,8 +20,8 @@ public class PointBuyConfig
 
     private static readonly IReadOnlyDictionary<int, int> CostTable = new Dictionary<int, int>
     {
-        [8]  = 0,
-        [9]  = 1,
+        [8] = 0,
+        [9] = 1,
         [10] = 2,
         [11] = 3,
         [12] = 4,

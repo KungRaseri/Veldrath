@@ -29,16 +29,16 @@ public class GetRespawnLocationQueryHandler : IRequestHandler<GetRespawnLocation
     public Task<GetRespawnLocationResult> Handle(GetRespawnLocationQuery request, CancellationToken cancellationToken)
     {
         var saveGame = _saveGameService.GetCurrentSave();
-        
+
         var availableLocations = new List<string> { "Hub Town" };
-        
+
         // Add discovered towns/safe zones as respawn points
         if (saveGame != null)
         {
             var safeTowns = saveGame.DiscoveredLocations
                 .Where(loc => loc.Contains("Town") || loc.Contains("Village") || loc.Contains("Sanctuary"))
                 .ToList();
-            
+
             availableLocations.AddRange(safeTowns);
         }
 

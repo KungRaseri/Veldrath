@@ -82,19 +82,19 @@ public enum FactionType
 {
     /// <summary>Kingdom or government faction.</summary>
     Kingdom,
-    
+
     /// <summary>Guild or trade organization.</summary>
     Guild,
-    
+
     /// <summary>Religious order.</summary>
     Religious,
-    
+
     /// <summary>Criminal organization.</summary>
     Criminal,
-    
+
     /// <summary>Monster or enemy faction.</summary>
     Monster,
-    
+
     /// <summary>Neutral faction.</summary>
     Neutral
 }
@@ -106,22 +106,22 @@ public enum ReputationLevel
 {
     /// <summary>-6000 to -3000: Will attack on sight.</summary>
     Hostile = -6000,
-    
+
     /// <summary>-3000 to -500: Distrustful, limited services.</summary>
     Unfriendly = -3000,
-    
+
     /// <summary>-500 to 500: Starting level, basic services.</summary>
     Neutral = 0,
-    
+
     /// <summary>500 to 3000: Helpful, discounts available.</summary>
     Friendly = 500,
-    
+
     /// <summary>3000 to 6000: Respected, special quests.</summary>
     Honored = 3000,
-    
+
     /// <summary>6000 to 12000: Highly respected, rare rewards.</summary>
     Revered = 6000,
-    
+
     /// <summary>12000+: Maximum reputation, unique content.</summary>
     Exalted = 12000
 }

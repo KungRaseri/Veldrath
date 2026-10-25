@@ -35,17 +35,17 @@ public sealed class AnnouncementsFixture : IAsyncLifetime
 
         db.Announcements.AddRange(
             // Active — must appear in results.
-            new Announcement { Title = "Welcome!",   Body = "Server is live.",   Category = "News",   IsActive = true,  PublishedAt = DateTimeOffset.UtcNow.AddMinutes(-5) },
+            new Announcement { Title = "Welcome!", Body = "Server is live.", Category = "News", IsActive = true, PublishedAt = DateTimeOffset.UtcNow.AddMinutes(-5) },
             // Inactive — must be excluded.
-            new Announcement { Title = "Hidden",     Body = "Should not appear.",                    IsActive = false },
+            new Announcement { Title = "Hidden", Body = "Should not appear.", IsActive = false },
             // Expired — must be excluded.
-            new Announcement { Title = "Old News",   Body = "Expired.",                             IsActive = true,  ExpiresAt   = DateTimeOffset.UtcNow.AddMinutes(-1) },
+            new Announcement { Title = "Old News", Body = "Expired.", IsActive = true, ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(-1) },
             // Ordering: unpinned entry (comes after all pinned entries).
-            new Announcement { Title = "Regular",    Body = "Body",                                 IsActive = true,  IsPinned    = false, PublishedAt = DateTimeOffset.UtcNow.AddMinutes(-2) },
+            new Announcement { Title = "Regular", Body = "Body", IsActive = true, IsPinned = false, PublishedAt = DateTimeOffset.UtcNow.AddMinutes(-2) },
             // Ordering: most-recent pinned entry — must be first in results.
-            new Announcement { Title = "Pinned",     Body = "Body",                                 IsActive = true,  IsPinned    = true,  PublishedAt = DateTimeOffset.UtcNow.AddMinutes(-10) },
+            new Announcement { Title = "Pinned", Body = "Body", IsActive = true, IsPinned = true, PublishedAt = DateTimeOffset.UtcNow.AddMinutes(-10) },
             // Field-shape: older pinned entry used to verify DTO mapping.
-            new Announcement { Title = "Field Test", Body = "Body text here.",   Category = "Update", IsActive = true,  IsPinned    = true,  PublishedAt = DateTimeOffset.UtcNow.AddHours(-1) }
+            new Announcement { Title = "Field Test", Body = "Body text here.", Category = "Update", IsActive = true, IsPinned = true, PublishedAt = DateTimeOffset.UtcNow.AddHours(-1) }
         );
 
         await db.SaveChangesAsync();
@@ -140,7 +140,7 @@ public sealed class AnnouncementEmptyEndpointTests : IAsyncLifetime
     public Task InitializeAsync()
     {
         _factory = new WebAppFactory();
-        _client  = _factory.CreateClient();
+        _client = _factory.CreateClient();
         return Task.CompletedTask;
     }
 

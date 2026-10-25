@@ -6,8 +6,8 @@ public class ActivitySectionViewModel(string key, string label, string iconPath)
 {
     private bool _isActive;
 
-    public string Key      { get; } = key;
-    public string Label    { get; } = label;
+    public string Key { get; } = key;
+    public string Label { get; } = label;
     public string IconPath { get; } = iconPath;
 
     public bool IsActive

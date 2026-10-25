@@ -1,8 +1,8 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using RealmEngine.Core.Features.Reputation.Services;
 using RealmEngine.Shared.Models;
 using Xunit;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Reputation;
 
@@ -42,10 +42,10 @@ public class ReputationServiceTests
         // Arrange
         var saveGame = new SaveGame { PlayerName = "TestHero" };
         var factionId = "merchants-guild";
-        var existingStanding = new ReputationStanding 
-        { 
-            FactionId = factionId, 
-            ReputationPoints = 1000 
+        var existingStanding = new ReputationStanding
+        {
+            FactionId = factionId,
+            ReputationPoints = 1000
         };
         saveGame.FactionReputations[factionId] = existingStanding;
 
@@ -341,7 +341,7 @@ public class ReputationServiceTests
         // Arrange
         var saveGame = new SaveGame { PlayerName = "TestHero" };
         var factionId = "merchants-guild";
-        
+
         // Set reputation to appropriate level
         int points = level switch
         {
@@ -351,7 +351,7 @@ public class ReputationServiceTests
             ReputationLevel.Exalted => 12000,
             _ => 0
         };
-        
+
         if (points > 0)
         {
             _service.GainReputation(saveGame, factionId, points);

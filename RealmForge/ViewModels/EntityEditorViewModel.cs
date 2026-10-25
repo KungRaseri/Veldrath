@@ -5,8 +5,8 @@ using System.Reflection;
 using ReactiveUI;
 using RealmEngine.Data.Entities;
 using RealmForge.Services;
-using Veldrath.Contracts.Content;
 using Serilog;
+using Veldrath.Contracts.Content;
 
 namespace RealmForge.ViewModels;
 
@@ -53,7 +53,7 @@ public class EntityEditorViewModel : ReactiveObject
             x => x.IsDirty, x => x.IsSaving,
             (dirty, saving) => dirty && !saving);
 
-        SaveCommand    = ReactiveCommand.CreateFromTask(SaveAsync, canSave);
+        SaveCommand = ReactiveCommand.CreateFromTask(SaveAsync, canSave);
         DiscardCommand = ReactiveCommand.CreateFromTask(DiscardAsync,
             this.WhenAnyValue(x => x.IsDirty));
 
@@ -251,24 +251,24 @@ public class EntityEditorViewModel : ReactiveObject
     // Entity type → ContentSchemaRegistry key map
     private static readonly Dictionary<Type, string> _entityTypeToSchemaKey = new()
     {
-        [typeof(Power)]             = "power",
-        [typeof(Species)]         = "species",
-        [typeof(ActorClass)]      = "class",
-        [typeof(ActorArchetype)]  = "archetype",
-        [typeof(ActorInstance)]   = "instance",
-        [typeof(Background)]      = "background",
-        [typeof(Skill)]           = "skill",
-        [typeof(Item)]            = "item",
-        [typeof(Material)]        = "material",
-        [typeof(MaterialProperty)]= "materialproperty",
-        [typeof(Enchantment)]     = "enchantment",
+        [typeof(Power)] = "power",
+        [typeof(Species)] = "species",
+        [typeof(ActorClass)] = "class",
+        [typeof(ActorArchetype)] = "archetype",
+        [typeof(ActorInstance)] = "instance",
+        [typeof(Background)] = "background",
+        [typeof(Skill)] = "skill",
+        [typeof(Item)] = "item",
+        [typeof(Material)] = "material",
+        [typeof(MaterialProperty)] = "materialproperty",
+        [typeof(Enchantment)] = "enchantment",
         // Power combines former ability and spell schema keys
-        [typeof(Quest)]           = "quest",
-        [typeof(Recipe)]          = "recipe",
-        [typeof(LootTable)]       = "loottable",
-        [typeof(Organization)]    = "organization",
-        [typeof(ZoneLocation)]   = "zonelocation",
-        [typeof(Dialogue)]        = "dialogue",
+        [typeof(Quest)] = "quest",
+        [typeof(Recipe)] = "recipe",
+        [typeof(LootTable)] = "loottable",
+        [typeof(Organization)] = "organization",
+        [typeof(ZoneLocation)] = "zonelocation",
+        [typeof(Dialogue)] = "dialogue",
     };
 
     // Junction editor infrastructure
@@ -277,17 +277,17 @@ public class EntityEditorViewModel : ReactiveObject
         var editors = new List<JunctionEditorViewModel>();
 
         if (entity is LootTable)
-            editors.Add(new JunctionEditorViewModel(JunctionEditorType.LootEntry,       "Loot Entries",       entity.Id));
+            editors.Add(new JunctionEditorViewModel(JunctionEditorType.LootEntry, "Loot Entries", entity.Id));
         if (entity is Recipe)
-            editors.Add(new JunctionEditorViewModel(JunctionEditorType.RecipeIngredient, "Ingredients",        entity.Id));
+            editors.Add(new JunctionEditorViewModel(JunctionEditorType.RecipeIngredient, "Ingredients", entity.Id));
         if (entity is Species)
-            editors.Add(new JunctionEditorViewModel(JunctionEditorType.AbilityPool,      "Innate Abilities",   entity.Id));
+            editors.Add(new JunctionEditorViewModel(JunctionEditorType.AbilityPool, "Innate Abilities", entity.Id));
         if (entity is ActorArchetype)
-            editors.Add(new JunctionEditorViewModel(JunctionEditorType.ArchetypePool,    "Ability Pool",       entity.Id));
+            editors.Add(new JunctionEditorViewModel(JunctionEditorType.ArchetypePool, "Ability Pool", entity.Id));
         if (entity is ActorClass)
-            editors.Add(new JunctionEditorViewModel(JunctionEditorType.ClassUnlock,      "Ability Unlocks",    entity.Id));
+            editors.Add(new JunctionEditorViewModel(JunctionEditorType.ClassUnlock, "Ability Unlocks", entity.Id));
         if (entity is ActorInstance)
-            editors.Add(new JunctionEditorViewModel(JunctionEditorType.AbilityPool,      "Additional Abilities", entity.Id));
+            editors.Add(new JunctionEditorViewModel(JunctionEditorType.AbilityPool, "Additional Abilities", entity.Id));
 
         if (editors.Count == 0) return null;
 
@@ -302,7 +302,7 @@ public class EntityEditorViewModel : ReactiveObject
         if (JunctionEditors is null) return;
         foreach (var editor in JunctionEditors)
         {
-            try   { await LoadJunctionDataAsync(editor); }
+            try { await LoadJunctionDataAsync(editor); }
             catch (Exception ex) { Log.Error(ex, "Failed to load junction data for {Type}", editor.EditorType); }
         }
     }
@@ -312,71 +312,71 @@ public class EntityEditorViewModel : ReactiveObject
         switch (editor.EditorType)
         {
             case JunctionEditorType.LootEntry:
-            {
-                var entries = await _service.LoadLootTableEntriesAsync(editor.OwnerId);
-                editor.LoadRows(entries.Select(e => new JunctionRowViewModel(JunctionEditorType.LootEntry)
                 {
-                    ItemDomain   = e.ItemDomain,
-                    ItemSlug     = e.ItemSlug,
-                    DropWeight   = e.DropWeight,
-                    QuantityMin  = e.QuantityMin,
-                    QuantityMax  = e.QuantityMax,
-                    IsGuaranteed = e.IsGuaranteed,
-                }));
-                break;
-            }
+                    var entries = await _service.LoadLootTableEntriesAsync(editor.OwnerId);
+                    editor.LoadRows(entries.Select(e => new JunctionRowViewModel(JunctionEditorType.LootEntry)
+                    {
+                        ItemDomain = e.ItemDomain,
+                        ItemSlug = e.ItemSlug,
+                        DropWeight = e.DropWeight,
+                        QuantityMin = e.QuantityMin,
+                        QuantityMax = e.QuantityMax,
+                        IsGuaranteed = e.IsGuaranteed,
+                    }));
+                    break;
+                }
             case JunctionEditorType.RecipeIngredient:
-            {
-                var rows = await _service.LoadRecipeIngredientsAsync(editor.OwnerId);
-                editor.LoadRows(rows.Select(i => new JunctionRowViewModel(JunctionEditorType.RecipeIngredient)
                 {
-                    ItemDomain = i.ItemDomain,
-                    ItemSlug   = i.ItemSlug,
-                    Quantity   = i.Quantity,
-                    IsOptional = i.IsOptional,
-                }));
-                break;
-            }
+                    var rows = await _service.LoadRecipeIngredientsAsync(editor.OwnerId);
+                    editor.LoadRows(rows.Select(i => new JunctionRowViewModel(JunctionEditorType.RecipeIngredient)
+                    {
+                        ItemDomain = i.ItemDomain,
+                        ItemSlug = i.ItemSlug,
+                        Quantity = i.Quantity,
+                        IsOptional = i.IsOptional,
+                    }));
+                    break;
+                }
             case JunctionEditorType.AbilityPool:
-            {
-                IReadOnlyList<Guid> ids;
-                if (_entity is Species)
-                    ids = [.. (await _service.LoadSpeciesAbilityPoolAsync(editor.OwnerId)).Select(p => p.PowerId)];
-                else
-                    ids = [.. (await _service.LoadInstanceAbilityPoolAsync(editor.OwnerId)).Select(p => p.PowerId)];
+                {
+                    IReadOnlyList<Guid> ids;
+                    if (_entity is Species)
+                        ids = [.. (await _service.LoadSpeciesAbilityPoolAsync(editor.OwnerId)).Select(p => p.PowerId)];
+                    else
+                        ids = [.. (await _service.LoadInstanceAbilityPoolAsync(editor.OwnerId)).Select(p => p.PowerId)];
 
-                var slugs = await _service.GetAbilitySlugsAsync(ids);
-                editor.LoadRows(ids.Select(id => new JunctionRowViewModel(JunctionEditorType.AbilityPool)
-                {
-                    AbilitySlug = slugs.GetValueOrDefault(id, id.ToString()),
-                }));
-                break;
-            }
+                    var slugs = await _service.GetAbilitySlugsAsync(ids);
+                    editor.LoadRows(ids.Select(id => new JunctionRowViewModel(JunctionEditorType.AbilityPool)
+                    {
+                        AbilitySlug = slugs.GetValueOrDefault(id, id.ToString()),
+                    }));
+                    break;
+                }
             case JunctionEditorType.ArchetypePool:
-            {
-                var pools = await _service.LoadArchetypeAbilityPoolAsync(editor.OwnerId);
-                var ids   = pools.Select(p => p.PowerId).Distinct().ToList();
-                var slugs = await _service.GetAbilitySlugsAsync(ids);
-                editor.LoadRows(pools.Select(p => new JunctionRowViewModel(JunctionEditorType.ArchetypePool)
                 {
-                    AbilitySlug = slugs.GetValueOrDefault(p.PowerId, p.PowerId.ToString()),
-                    UseChance   = (decimal)p.UseChance,
-                }));
-                break;
-            }
+                    var pools = await _service.LoadArchetypeAbilityPoolAsync(editor.OwnerId);
+                    var ids = pools.Select(p => p.PowerId).Distinct().ToList();
+                    var slugs = await _service.GetAbilitySlugsAsync(ids);
+                    editor.LoadRows(pools.Select(p => new JunctionRowViewModel(JunctionEditorType.ArchetypePool)
+                    {
+                        AbilitySlug = slugs.GetValueOrDefault(p.PowerId, p.PowerId.ToString()),
+                        UseChance = (decimal)p.UseChance,
+                    }));
+                    break;
+                }
             case JunctionEditorType.ClassUnlock:
-            {
-                var unlocks = await _service.LoadClassAbilityUnlocksAsync(editor.OwnerId);
-                var ids     = unlocks.Select(u => u.PowerId).Distinct().ToList();
-                var slugs   = await _service.GetAbilitySlugsAsync(ids);
-                editor.LoadRows(unlocks.Select(u => new JunctionRowViewModel(JunctionEditorType.ClassUnlock)
                 {
-                    AbilitySlug   = slugs.GetValueOrDefault(u.PowerId, u.PowerId.ToString()),
-                    LevelRequired = u.LevelRequired,
-                    Rank          = u.Rank,
-                }));
-                break;
-            }
+                    var unlocks = await _service.LoadClassAbilityUnlocksAsync(editor.OwnerId);
+                    var ids = unlocks.Select(u => u.PowerId).Distinct().ToList();
+                    var slugs = await _service.GetAbilitySlugsAsync(ids);
+                    editor.LoadRows(unlocks.Select(u => new JunctionRowViewModel(JunctionEditorType.ClassUnlock)
+                    {
+                        AbilitySlug = slugs.GetValueOrDefault(u.PowerId, u.PowerId.ToString()),
+                        LevelRequired = u.LevelRequired,
+                        Rank = u.Rank,
+                    }));
+                    break;
+                }
         }
     }
 
@@ -415,14 +415,14 @@ public class EntityEditorViewModel : ReactiveObject
                 break;
 
             case JunctionEditorType.AbilityPool:
-            {
-                List<string> slugs = [.. editor.Rows.Select(r => r.AbilitySlug.Trim()).Where(s => s.Length > 0)];
-                if (_entity is Species)
-                    await _service.SaveSpeciesAbilityPoolAsync(editor.OwnerId, slugs);
-                else
-                    await _service.SaveInstanceAbilityPoolAsync(editor.OwnerId, slugs);
-                break;
-            }
+                {
+                    List<string> slugs = [.. editor.Rows.Select(r => r.AbilitySlug.Trim()).Where(s => s.Length > 0)];
+                    if (_entity is Species)
+                        await _service.SaveSpeciesAbilityPoolAsync(editor.OwnerId, slugs);
+                    else
+                        await _service.SaveInstanceAbilityPoolAsync(editor.OwnerId, slugs);
+                    break;
+                }
             case JunctionEditorType.ArchetypePool:
                 await _service.SaveArchetypeAbilityPoolAsync(editor.OwnerId,
                     [.. editor.Rows

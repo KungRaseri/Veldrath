@@ -1,3 +1,4 @@
+using System.Reflection;
 using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,11 +29,10 @@ using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Services.Budget;
 using RealmEngine.Data;
-using RealmEngine.Data.Services;
 using RealmEngine.Data.Repositories;
+using RealmEngine.Data.Services;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
-using System.Reflection;
 using Xunit;
 
 namespace RealmEngine.Core.Tests;
@@ -49,14 +49,14 @@ public class ServiceRegistrationTests
     public ServiceRegistrationTests()
     {
         _services = new ServiceCollection();
-        
+
         // Register logging (basic logging without console sink)
         _services.AddLogging();
-        
+
         // Register RealmEngine services FIRST (before MediatR)
         // This ensures all handler dependencies are available when MediatR scans
         _services.AddRealmEngineCore();
-        
+
         // Override SaveGameRepository to use in-memory implementation for test isolation
         // This must be done AFTER AddRealmEngineCore() which registers the default implementation
         var descriptor = _services.FirstOrDefault(d => d.ServiceType == typeof(ISaveGameRepository));
@@ -65,11 +65,11 @@ public class ServiceRegistrationTests
             _services.Remove(descriptor);
         }
         _services.AddScoped<ISaveGameRepository, InMemorySaveGameRepository>();
-        
+
         // Register MediatR with behaviors and validators LAST
         // This ensures all dependencies (services, validators) are registered before handlers
         _services.AddRealmEngineMediatR();
-        
+
         _serviceProvider = _services.BuildServiceProvider();
     }
 
@@ -82,10 +82,10 @@ public class ServiceRegistrationTests
         // Test via IMediator to verify they work end-to-end
         using var scope = _serviceProvider.CreateScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-        
+
         // This should not throw - it proves GetKnownRecipesHandler is registered and resolvable
         mediator.Should().NotBeNull("IMediator should be registered");
-        
+
         // Verify handler can be resolved via IRequestHandler interface
         var handler = scope.ServiceProvider.GetService<IRequestHandler<GetKnownRecipesQuery, GetKnownRecipesResult>>();
         handler.Should().NotBeNull("GetKnownRecipesHandler should be resolvable via IRequestHandler interface");
@@ -95,7 +95,7 @@ public class ServiceRegistrationTests
     public void MediatR_Can_Resolve_Shop_Handlers()
     {
         using var scope = _serviceProvider.CreateScope();
-        
+
         // Test BrowseShopHandler resolution
         var handler = scope.ServiceProvider.GetService<IRequestHandler<BrowseShopCommand, BrowseShopResult>>();
         handler.Should().NotBeNull("BrowseShopHandler should be resolvable via IRequestHandler interface");
@@ -105,7 +105,7 @@ public class ServiceRegistrationTests
     public void MediatR_Can_Resolve_SaveLoad_Handlers()
     {
         using var scope = _serviceProvider.CreateScope();
-        
+
         // Test SaveGameHandler resolution  
         var handler = scope.ServiceProvider.GetService<IRequestHandler<SaveGameCommand, SaveGameResult>>();
         handler.Should().NotBeNull("SaveGameHandler should be resolvable via IRequestHandler interface");
@@ -440,8 +440,8 @@ public class ServiceRegistrationTests
         var characterClass = new CharacterClass { Name = "Fighter" };
 
         // Act
-        var action = () => mediator.Send(new CreateCharacterCommand 
-        { 
+        var action = () => mediator.Send(new CreateCharacterCommand
+        {
             CharacterName = "TestHero",
             CharacterClass = characterClass
         });
@@ -458,8 +458,8 @@ public class ServiceRegistrationTests
         var player = new Character { Name = "TestHero", ClassName = "Fighter" };
 
         // Act
-        var action = () => mediator.Send(new SaveGameCommand 
-        { 
+        var action = () => mediator.Send(new SaveGameCommand
+        {
             Player = player,
             Inventory = new List<Item>()
         });
@@ -475,8 +475,8 @@ public class ServiceRegistrationTests
         var mediator = _serviceProvider.GetRequiredService<IMediator>();
 
         // Act
-        var action = () => mediator.Send(new GetAvailableAbilitiesQuery 
-        { 
+        var action = () => mediator.Send(new GetAvailableAbilitiesQuery
+        {
             ClassName = "Fighter"
         });
 
@@ -504,8 +504,8 @@ public class ServiceRegistrationTests
         var mediator = _serviceProvider.GetRequiredService<IMediator>();
 
         // Act
-        var action = () => mediator.Send(new GenerateItemCommand 
-        { 
+        var action = () => mediator.Send(new GenerateItemCommand
+        {
             Category = "items/weapons/swords"
         });
 
@@ -516,7 +516,7 @@ public class ServiceRegistrationTests
     #endregion
 
     #region Specific Handler Type Tests - OBSOLETE
-    
+
     // NOTE: The old tests here tried to resolve handlers by concrete type, which doesn't work.
     // MediatR registers handlers as IRequestHandler<TRequest, TResponse>, not by concrete type.
     // See "Debug Tests" section above for correct handler resolution tests.
@@ -549,7 +549,7 @@ public class ServiceRegistrationTests
             try
             {
                 var generator = _serviceProvider.GetService(generatorType);
-                
+
                 if (generator == null)
                 {
                     failures.Add($"{generatorType.Name}: Not registered in DI container");
@@ -588,7 +588,7 @@ public class ServiceRegistrationTests
             try
             {
                 var service = _serviceProvider.GetService(serviceType);
-                
+
                 if (service == null)
                 {
                     failures.Add($"{serviceType.Name}: Not registered in DI container");

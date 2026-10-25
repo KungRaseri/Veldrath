@@ -52,12 +52,6 @@ services:
       - ConnectionStrings__DefaultConnection=Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SSL Mode=Require;
       - Jwt__Key=${JWT_KEY}
       - InternalBridge__Token=${INTERNAL_BRIDGE_TOKEN}
-      - OAuth__Discord__ClientId=${OAUTH_DISCORD_CLIENT_ID}
-      - OAuth__Discord__ClientSecret=${OAUTH_DISCORD_CLIENT_SECRET}
-      - OAuth__Google__ClientId=${OAUTH_GOOGLE_CLIENT_ID}
-      - OAuth__Google__ClientSecret=${OAUTH_GOOGLE_CLIENT_SECRET}
-      - OAuth__Microsoft__ClientId=${OAUTH_MICROSOFT_CLIENT_ID}
-      - OAuth__Microsoft__ClientSecret=${OAUTH_MICROSOFT_CLIENT_SECRET}
       - Email__SmtpHost=${EMAIL_SMTP_HOST}
       - Email__SmtpPort=${EMAIL_SMTP_PORT:-587}
       - Email__EnableTls=${EMAIL_ENABLE_TLS:-true}
@@ -66,7 +60,6 @@ services:
       - Email__SenderAddress=${EMAIL_SENDER_ADDRESS:-noreply@veldrath.com}
       - Email__SenderName=Veldrath
       - Web__BaseUrl=https://veldrath.com
-      - Auth__CookieDomain=.veldrath.com
       - Seq__ServerUrl=http://veldrath-seq
     labels:
       - "traefik.enable=true"

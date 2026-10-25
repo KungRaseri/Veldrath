@@ -92,9 +92,9 @@ public class RefreshMerchantInventoryHandlerTests
             Occupation = "Merchant",
             Traits = new Dictionary<string, TraitValue>
             {
-                ["isMerchant"]         = new TraitValue(true,        TraitType.Boolean),
-                ["shopInventoryType"]  = new TraitValue(shopType,    TraitType.String),
-                ["shopDynamicCount"]   = new TraitValue(3,           TraitType.Number)
+                ["isMerchant"] = new TraitValue(true, TraitType.Boolean),
+                ["shopInventoryType"] = new TraitValue(shopType, TraitType.String),
+                ["shopDynamicCount"] = new TraitValue(3, TraitType.Number)
             }
         };
 
@@ -109,11 +109,11 @@ public class RefreshMerchantInventoryHandlerTests
     [Fact]
     public async Task Handle_ReturnsSuccess_AndReportsCorrectCounts_ForHybridShop()
     {
-        var merchant  = MakeMerchant();
+        var merchant = MakeMerchant();
         var inventory = new ShopInventory
         {
-            MerchantId   = merchant.Id,
-            DynamicItems = [ new Item { Id = "existing-1", Name = "Old Sword" } ]
+            MerchantId = merchant.Id,
+            DynamicItems = [new Item { Id = "existing-1", Name = "Old Sword" }]
         };
 
         var saveSvc = new Mock<ISaveGameService>();
@@ -140,11 +140,11 @@ public class RefreshMerchantInventoryHandlerTests
     [Fact]
     public async Task Handle_ReturnsZeroCounts_ForStaticShopType()
     {
-        var merchant  = MakeMerchant(shopType: "static-only");
+        var merchant = MakeMerchant(shopType: "static-only");
         var inventory = new ShopInventory
         {
-            MerchantId   = merchant.Id,
-            DynamicItems = [ new Item { Id = "existing-1", Name = "Sword" } ]
+            MerchantId = merchant.Id,
+            DynamicItems = [new Item { Id = "existing-1", Name = "Sword" }]
         };
 
         var saveSvc = new Mock<ISaveGameService>();
@@ -167,12 +167,12 @@ public class RefreshMerchantInventoryHandlerTests
     public async Task Handle_RemovesExpiredPlayerItems_AndReportsCorrectExpiredCount()
     {
         var merchant = MakeMerchant();
-        var expired  = new PlayerSoldItem { Item = new Item { Id = "old-1", Name = "Rusty Sword" }, DaysRemaining = 0  };
-        var valid    = new PlayerSoldItem { Item = new Item { Id = "ok-1",  Name = "Fine Bow"    }, DaysRemaining = 3  };
+        var expired = new PlayerSoldItem { Item = new Item { Id = "old-1", Name = "Rusty Sword" }, DaysRemaining = 0 };
+        var valid = new PlayerSoldItem { Item = new Item { Id = "ok-1", Name = "Fine Bow" }, DaysRemaining = 3 };
         var inventory = new ShopInventory
         {
-            MerchantId      = merchant.Id,
-            DynamicItems    = [],
+            MerchantId = merchant.Id,
+            DynamicItems = [],
             PlayerSoldItems = [expired, valid]
         };
 

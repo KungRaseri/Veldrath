@@ -10,8 +10,8 @@ public class PointBuyConfigTests
 
     // GetCost
     [Theory]
-    [InlineData(8,  0)]
-    [InlineData(9,  1)]
+    [InlineData(8, 0)]
+    [InlineData(9, 1)]
     [InlineData(10, 2)]
     [InlineData(11, 3)]
     [InlineData(12, 4)]
@@ -54,12 +54,12 @@ public class PointBuyConfigTests
         // 15(9) + 14(7) + 13(5) + 10(2) + 8(0) + 8(0) = 23
         var allocs = new Dictionary<string, int>
         {
-            ["Strength"]     = 15,
-            ["Dexterity"]    = 14,
+            ["Strength"] = 15,
+            ["Dexterity"] = 14,
             ["Constitution"] = 13,
             ["Intelligence"] = 10,
-            ["Wisdom"]       = 8,
-            ["Charisma"]     = 8,
+            ["Wisdom"] = 8,
+            ["Charisma"] = 8,
         };
         _config.CalculateTotalCost(allocs).Should().Be(23);
     }
@@ -78,12 +78,12 @@ public class PointBuyConfigTests
         // 15(9) + 14(7) + 11(3) + 10(2) + 10(2) + 10(2) = 25  ≤ 27
         var allocs = new Dictionary<string, int>
         {
-            ["Strength"]     = 15,
-            ["Dexterity"]    = 14,
+            ["Strength"] = 15,
+            ["Dexterity"] = 14,
             ["Constitution"] = 11,
             ["Intelligence"] = 10,
-            ["Wisdom"]       = 10,
-            ["Charisma"]     = 10,
+            ["Wisdom"] = 10,
+            ["Charisma"] = 10,
         };
         _config.IsValid(allocs).Should().BeTrue();
     }
@@ -115,11 +115,11 @@ public class PointBuyConfigTests
     private static Dictionary<string, int> StatDict(int str, int dex, int con, int intel, int wis, int cha) =>
         new()
         {
-            ["Strength"]     = str,
-            ["Dexterity"]    = dex,
+            ["Strength"] = str,
+            ["Dexterity"] = dex,
             ["Constitution"] = con,
             ["Intelligence"] = intel,
-            ["Wisdom"]       = wis,
-            ["Charisma"]     = cha,
+            ["Wisdom"] = wis,
+            ["Charisma"] = cha,
         };
 }

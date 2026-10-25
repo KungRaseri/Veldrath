@@ -7,19 +7,19 @@ public class SaveGame
 {
     /// <summary>Gets or sets the unique identifier.</summary>
     public string Id { get; set; } = Guid.NewGuid().ToString();
-    
+
     /// <summary>Gets or sets the player name.</summary>
     public string PlayerName { get; set; } = string.Empty;
-    
+
     /// <summary>Gets or sets the save date.</summary>
     public DateTime SaveDate { get; set; } = DateTime.Now;
-    
+
     /// <summary>Gets or sets the creation date.</summary>
     public DateTime CreationDate { get; set; } = DateTime.Now;
-    
+
     /// <summary>Gets or sets the play time in minutes.</summary>
     public int PlayTimeMinutes { get; set; }
-    
+
     /// <summary>Gets or sets the game version.</summary>
     public string GameVersion { get; set; } = "1.0.0";
 
@@ -37,13 +37,13 @@ public class SaveGame
 
     /// <summary>Gets or sets the active quests.</summary>
     public List<Quest> ActiveQuests { get; set; } = new();
-    
+
     /// <summary>Gets or sets the completed quests.</summary>
     public List<Quest> CompletedQuests { get; set; } = new();
-    
+
     /// <summary>Gets or sets the failed quests.</summary>
     public List<Quest> FailedQuests { get; set; } = new();
-    
+
     /// <summary>Gets or sets the available quests (offered but not yet accepted).</summary>
     public List<Quest> AvailableQuests { get; set; } = new();
 
@@ -59,61 +59,61 @@ public class SaveGame
 
     /// <summary>Gets or sets the total enemies defeated.</summary>
     public int TotalEnemiesDefeated { get; set; }
-    
+
     /// <summary>Gets or sets the enemies defeated by type.</summary>
     public Dictionary<string, int> EnemiesDefeatedByType { get; set; } = new();
-    
+
     /// <summary>Gets or sets the legendary enemies defeated.</summary>
     public List<Enemy> LegendaryEnemiesDefeated { get; set; } = new();
 
     /// <summary>Gets or sets the total gold earned.</summary>
     public int TotalGoldEarned { get; set; }
-    
+
     /// <summary>Gets or sets the total gold spent.</summary>
     public int TotalGoldSpent { get; set; }
-    
+
     /// <summary>Gets or sets the quests completed.</summary>
     public int QuestsCompleted { get; set; }
-    
+
     /// <summary>Gets or sets the quests failed.</summary>
     public int QuestsFailed { get; set; }
-    
+
     /// <summary>Gets or sets the items crafted.</summary>
     public int ItemsCrafted { get; set; }
-    
+
     /// <summary>Gets or sets the items sold.</summary>
     public int ItemsSold { get; set; }
-    
+
     /// <summary>Gets or sets the death count.</summary>
     public int DeathCount { get; set; }
-    
+
     /// <summary>Gets or sets the last death location.</summary>
     public string LastDeathLocation { get; set; } = string.Empty;
-    
+
     /// <summary>Gets or sets the last death date.</summary>
     public DateTime? LastDeathDate { get; set; }
 
     /// <summary>Gets or sets the unlocked achievements.</summary>
     public List<string> UnlockedAchievements { get; set; } = new();
-    
+
     /// <summary>Gets or sets the game flags (story flags, events, etc.).</summary>
     public Dictionary<string, bool> GameFlags { get; set; } = new();
 
     /// <summary>Gets or sets the difficulty level.</summary>
     public string DifficultyLevel { get; set; } = "Normal";
-    
+
     /// <summary>Gets or sets a value indicating whether ironman mode is enabled (no reload, single save file).</summary>
     public bool IronmanMode { get; set; } = false;
 
     /// <summary>Gets or sets a value indicating whether permadeath mode is enabled.</summary>
     public bool PermadeathMode { get; set; } = false;
-    
+
     /// <summary>Gets or sets a value indicating whether apocalypse mode is enabled.</summary>
     public bool ApocalypseMode { get; set; } = false;
-    
+
     /// <summary>Gets or sets the apocalypse start time.</summary>
     public DateTime? ApocalypseStartTime { get; set; }
-    
+
     /// <summary>Gets or sets the apocalypse bonus minutes.</summary>
     public int ApocalypseBonusMinutes { get; set; } = 0;
 

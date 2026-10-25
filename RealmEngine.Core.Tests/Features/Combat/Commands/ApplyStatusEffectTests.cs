@@ -54,10 +54,10 @@ public class ApplyStatusEffectTests
     public async Task Should_Apply_Status_Effect_To_Enemy()
     {
         // Arrange
-        var enemy = new Enemy 
-        { 
-            Name = "Goblin", 
-            Health = 30, 
+        var enemy = new Enemy
+        {
+            Name = "Goblin",
+            Health = 30,
             MaxHealth = 30,
             Traits = new Dictionary<string, TraitValue>()
         };
@@ -245,10 +245,10 @@ public class ApplyStatusEffectTests
     public async Task Should_Resist_Effect_With_100_Percent_Resistance()
     {
         // Arrange
-        var enemy = new Enemy 
-        { 
-            Name = "Fire Elemental", 
-            Health = 50, 
+        var enemy = new Enemy
+        {
+            Name = "Fire Elemental",
+            Health = 50,
             MaxHealth = 50,
             Traits = new Dictionary<string, TraitValue>
             {
@@ -283,10 +283,10 @@ public class ApplyStatusEffectTests
     public async Task Should_Be_Immune_To_Poison()
     {
         // Arrange
-        var enemy = new Enemy 
-        { 
-            Name = "Undead", 
-            Health = 40, 
+        var enemy = new Enemy
+        {
+            Name = "Undead",
+            Health = 40,
             MaxHealth = 40,
             Traits = new Dictionary<string, TraitValue>
             {
@@ -321,10 +321,10 @@ public class ApplyStatusEffectTests
     public async Task Should_Calculate_Character_Resistance_From_Wisdom()
     {
         // Arrange
-        var character = new Character 
-        { 
-            Name = "Hero", 
-            Health = 100, 
+        var character = new Character
+        {
+            Name = "Hero",
+            Health = 100,
             MaxHealth = 100,
             Wisdom = 50 // 50 Wisdom = 5% resistance
         };
@@ -353,10 +353,10 @@ public class ApplyStatusEffectTests
     public async Task Should_Apply_Magic_Resistance_To_Status_Effects()
     {
         // Arrange
-        var enemy = new Enemy 
-        { 
-            Name = "Mage", 
-            Health = 60, 
+        var enemy = new Enemy
+        {
+            Name = "Mage",
+            Health = 60,
             MaxHealth = 60,
             Traits = new Dictionary<string, TraitValue>
             {
@@ -388,11 +388,11 @@ public class ApplyStatusEffectTests
     // ── Specific immunity-trait tests ────────────────────────────────────────
 
     [Theory]
-    [InlineData(StatusEffectType.Burning,  "immuneToFire")]
-    [InlineData(StatusEffectType.Frozen,   "immuneToIce")]
+    [InlineData(StatusEffectType.Burning, "immuneToFire")]
+    [InlineData(StatusEffectType.Frozen, "immuneToIce")]
     [InlineData(StatusEffectType.Bleeding, "immuneToBleeding")]
-    [InlineData(StatusEffectType.Stunned,  "immuneToStun")]
-    [InlineData(StatusEffectType.Feared,   "immuneToFear")]
+    [InlineData(StatusEffectType.Stunned, "immuneToStun")]
+    [InlineData(StatusEffectType.Feared, "immuneToFear")]
     [InlineData(StatusEffectType.Confused, "immuneToConfusion")]
     public async Task Should_Be_Immune_Via_SpecificTrait(StatusEffectType effectType, string traitKey)
     {

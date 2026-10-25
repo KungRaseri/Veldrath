@@ -48,11 +48,11 @@ public class EfCoreEnchantmentRepository(ContentDbContext db, ILogger<EfCoreEnch
 
     private static Enchantment MapToModel(Entities.Enchantment entity) => new()
     {
-        Slug        = entity.Slug,
-        Name        = entity.DisplayName ?? entity.Slug,
+        Slug = entity.Slug,
+        Name = entity.DisplayName ?? entity.Slug,
         DisplayName = entity.DisplayName ?? entity.Slug,
         Description = string.Empty,
-        Value       = entity.Stats.Value ?? 0,
+        Value = entity.Stats.Value ?? 0,
         RarityWeight = entity.RarityWeight,
     };
 }

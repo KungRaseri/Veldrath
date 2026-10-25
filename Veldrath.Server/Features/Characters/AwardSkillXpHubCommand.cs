@@ -56,9 +56,9 @@ public class AwardSkillXpHubCommandHandler
     /// <summary>Amount of total XP required to advance one rank.</summary>
     internal const int XpPerRank = 100;
 
-    private const string KeyPrefix   = "Skill_";
-    private const string XpSuffix    = "_XP";
-    private const string RankSuffix  = "_Rank";
+    private const string KeyPrefix = "Skill_";
+    private const string XpSuffix = "_XP";
+    private const string RankSuffix = "_Rank";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -76,7 +76,7 @@ public class AwardSkillXpHubCommandHandler
         ILogger<AwardSkillXpHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
-        _logger        = logger;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the skill XP outcome.</summary>
@@ -115,17 +115,17 @@ public class AwardSkillXpHubCommandHandler
             }
         }
 
-        var xpKey   = $"{KeyPrefix}{request.SkillId}{XpSuffix}";
+        var xpKey = $"{KeyPrefix}{request.SkillId}{XpSuffix}";
         var rankKey = $"{KeyPrefix}{request.SkillId}{RankSuffix}";
 
-        var previousXp   = attrs.TryGetValue(xpKey,   out var px) ? px : 0;
-        var previousRank = attrs.TryGetValue(rankKey,  out var pr) ? pr : 0;
+        var previousXp = attrs.TryGetValue(xpKey, out var px) ? px : 0;
+        var previousRank = attrs.TryGetValue(rankKey, out var pr) ? pr : 0;
 
-        var newXp   = previousXp + request.Amount;
+        var newXp = previousXp + request.Amount;
         var newRank = newXp / XpPerRank;
         var rankedUp = newRank > previousRank;
 
-        attrs[xpKey]   = newXp;
+        attrs[xpKey] = newXp;
         attrs[rankKey] = newRank;
 
         character.Attributes = JsonSerializer.Serialize(attrs);
@@ -138,11 +138,11 @@ public class AwardSkillXpHubCommandHandler
 
         return new AwardSkillXpHubResult
         {
-            Success     = true,
-            SkillId     = request.SkillId,
-            TotalXp     = newXp,
+            Success = true,
+            SkillId = request.SkillId,
+            TotalXp = newXp,
             CurrentRank = newRank,
-            RankedUp    = rankedUp,
+            RankedUp = rankedUp,
         };
     }
 

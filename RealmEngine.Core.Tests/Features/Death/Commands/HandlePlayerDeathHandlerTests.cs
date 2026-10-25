@@ -1,5 +1,6 @@
 using FluentAssertions;
 using MediatR;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Features.Death;
@@ -8,7 +9,6 @@ using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using Xunit;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Death.Commands;
 
@@ -21,7 +21,7 @@ public class HandlePlayerDeathHandlerTests
         var mockDeathService = new Mock<DeathService>(NullLogger<DeathService>.Instance);
         var mockSaveGameService = new Mock<ISaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
-                var player = new Character
+        var player = new Character
         {
             Name = "Hero",
             Level = 5,
@@ -76,7 +76,7 @@ public class HandlePlayerDeathHandlerTests
         var mockDeathService = new Mock<DeathService>(NullLogger<DeathService>.Instance);
         var mockSaveGameService = new Mock<ISaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
-                var player = new Character
+        var player = new Character
         {
             Name = "Hero",
             Level = 5,
@@ -107,7 +107,7 @@ public class HandlePlayerDeathHandlerTests
         mockSaveGameService.Setup(x => x.GetCurrentSave()).Returns(saveGame);
         mockSaveGameService.Setup(x => x.GetDifficultySettings()).Returns(difficulty);
         mockSaveGameService.Setup(x => x.SaveGame(It.IsAny<SaveGame>()));
-        
+
         mockDeathService.Setup(x => x.HandleItemDropping(player, saveGame, "Dark Cave", difficulty))
             .Returns(new List<Item> { new() { Name = "Health Potion", Type = ItemType.Consumable } });
 
@@ -141,7 +141,7 @@ public class HandlePlayerDeathHandlerTests
         var mockDeathService = new Mock<DeathService>(NullLogger<DeathService>.Instance);
         var mockSaveGameService = new Mock<ISaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
-                var player = new Character
+        var player = new Character
         {
             Name = "Hero",
             Level = 5,
@@ -167,7 +167,7 @@ public class HandlePlayerDeathHandlerTests
         mockSaveGameService.Setup(x => x.GetCurrentSave()).Returns(saveGame);
         mockSaveGameService.Setup(x => x.GetDifficultySettings()).Returns(difficulty);
         mockSaveGameService.Setup(x => x.SaveGame(It.IsAny<SaveGame>()));
-        
+
         mockDeathService.Setup(x => x.HandleItemDropping(It.IsAny<Character>(), It.IsAny<SaveGame>(), It.IsAny<string>(), It.IsAny<DifficultySettings>()))
             .Returns(new List<Item>());
 
@@ -200,7 +200,7 @@ public class HandlePlayerDeathHandlerTests
         var mockDeathService = new Mock<DeathService>(NullLogger<DeathService>.Instance);
         var mockSaveGameService = new Mock<ISaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
-                var player = new Character
+        var player = new Character
         {
             Name = "Hero",
             Level = 5,
@@ -226,7 +226,7 @@ public class HandlePlayerDeathHandlerTests
         mockSaveGameService.Setup(x => x.GetCurrentSave()).Returns(saveGame);
         mockSaveGameService.Setup(x => x.GetDifficultySettings()).Returns(difficulty);
         mockSaveGameService.Setup(x => x.SaveGame(It.IsAny<SaveGame>()));
-        
+
         mockDeathService.Setup(x => x.HandleItemDropping(It.IsAny<Character>(), It.IsAny<SaveGame>(), It.IsAny<string>(), It.IsAny<DifficultySettings>()))
             .Returns(new List<Item>());
 
@@ -259,7 +259,7 @@ public class HandlePlayerDeathHandlerTests
         var mockDeathService = new Mock<DeathService>(NullLogger<DeathService>.Instance);
         var mockSaveGameService = new Mock<ISaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
-                mockSaveGameService.Setup(x => x.GetCurrentSave()).Returns((SaveGame?)null);
+        mockSaveGameService.Setup(x => x.GetCurrentSave()).Returns((SaveGame?)null);
 
         var handler = new HandlePlayerDeathHandler(
             mockDeathService.Object,
@@ -292,7 +292,7 @@ public class HandlePlayerDeathHandlerTests
         var mockDeathService = new Mock<DeathService>(NullLogger<DeathService>.Instance);
         var mockSaveGameService = new Mock<ISaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
-                var player = new Character
+        var player = new Character
         {
             Name = "Hero",
             Level = 5,
@@ -315,7 +315,7 @@ public class HandlePlayerDeathHandlerTests
         mockSaveGameService.Setup(x => x.GetCurrentSave()).Returns(saveGame);
         mockSaveGameService.Setup(x => x.GetDifficultySettings()).Returns(difficulty);
         mockSaveGameService.Setup(x => x.SaveGame(It.IsAny<SaveGame>()));
-        
+
         mockDeathService.Setup(x => x.HandleItemDropping(It.IsAny<Character>(), It.IsAny<SaveGame>(), It.IsAny<string>(), It.IsAny<DifficultySettings>()))
             .Returns(new List<Item>());
 
@@ -347,7 +347,7 @@ public class HandlePlayerDeathHandlerTests
         var mockDeathService = new Mock<DeathService>(NullLogger<DeathService>.Instance);
         var mockSaveGameService = new Mock<ISaveGameService>();
         var mockHallOfFame = new Mock<IHallOfFameRepository>();
-                var player = new Character
+        var player = new Character
         {
             Name = "Legendary Hero",
             Level = 20,

@@ -70,8 +70,12 @@ public class EfCoreItemRepositoryTests
         await using var db = CreateDbContext();
         db.Items.Add(new Item
         {
-            Slug = "iron-sword", ItemType = "weapon", TypeKey = "heavy-blades",
-            WeaponType = "swords", IsActive = true, DisplayName = "Iron Sword",
+            Slug = "iron-sword",
+            ItemType = "weapon",
+            TypeKey = "heavy-blades",
+            WeaponType = "swords",
+            IsActive = true,
+            DisplayName = "Iron Sword",
         });
         await db.SaveChangesAsync();
         var repo = new EfCoreItemRepository(db, NullLogger<EfCoreItemRepository>.Instance);
@@ -88,8 +92,12 @@ public class EfCoreItemRepositoryTests
         await using var db = CreateDbContext();
         db.Items.Add(new Item
         {
-            Slug = "tower-shield", ItemType = "armor", TypeKey = "shield",
-            ArmorType = "shield", IsActive = true, DisplayName = "Tower Shield",
+            Slug = "tower-shield",
+            ItemType = "armor",
+            TypeKey = "shield",
+            ArmorType = "shield",
+            IsActive = true,
+            DisplayName = "Tower Shield",
         });
         await db.SaveChangesAsync();
         var repo = new EfCoreItemRepository(db, NullLogger<EfCoreItemRepository>.Instance);
@@ -106,8 +114,8 @@ public class EfCoreItemRepositoryTests
         await using var db = CreateDbContext();
         db.Items.AddRange(
             MakeItem("health-potion", "consumable"),
-            MakeItem("ruby",          "gem"),
-            MakeItem("mana-potion",   "consumable"));
+            MakeItem("ruby", "gem"),
+            MakeItem("mana-potion", "consumable"));
         await db.SaveChangesAsync();
         var repo = new EfCoreItemRepository(db, NullLogger<EfCoreItemRepository>.Instance);
 
@@ -167,9 +175,9 @@ public class EfCoreEnchantmentRepositoryTests
     {
         await using var db = CreateDbContext();
         db.Enchantments.AddRange(
-            MakeEnchantment("sharpness",  "weapon"),
+            MakeEnchantment("sharpness", "weapon"),
             MakeEnchantment("protection", "armor"),
-            MakeEnchantment("flame",      "weapon"));
+            MakeEnchantment("flame", "weapon"));
         await db.SaveChangesAsync();
         var repo = new EfCoreEnchantmentRepository(db, NullLogger<EfCoreEnchantmentRepository>.Instance);
 
@@ -201,13 +209,13 @@ public class EfCoreNodeRepositoryTests
     private static HarvestableNode MakeNode(string nodeId, string locationId = "zone-1", int maxHealth = 100) =>
         new()
         {
-            NodeId      = nodeId,
-            NodeType    = "copper_vein",
+            NodeId = nodeId,
+            NodeType = "copper_vein",
             DisplayName = "Copper Vein",
-            LocationId  = locationId,
-            MaxHealth   = maxHealth,
+            LocationId = locationId,
+            MaxHealth = maxHealth,
             CurrentHealth = maxHealth,
-            BiomeType   = "mountains",
+            BiomeType = "mountains",
             LootTableRef = "loot-copper",
         };
 
@@ -310,7 +318,7 @@ public class EfCoreNodeRepositoryTests
     {
         await using var db = CreateGameDbContext();
         var repo = new EfCoreNodeRepository(db, NullLogger<EfCoreNodeRepository>.Instance);
-        var fullNode     = MakeNode("node-full",     maxHealth: 100);
+        var fullNode = MakeNode("node-full", maxHealth: 100);
         var depletedNode = MakeNode("node-depleted", maxHealth: 100);
         await repo.SpawnNodeAsync(fullNode);
         await repo.SpawnNodeAsync(depletedNode);
@@ -365,9 +373,9 @@ public class EfCoreHallOfFameRepositoryTests
         new()
         {
             CharacterName = name,
-            ClassName     = className,
-            Level         = level,
-            DeathReason   = "Slain by a goblin",
+            ClassName = className,
+            Level = level,
+            DeathReason = "Slain by a goblin",
             DeathLocation = "Thornwood",
         };
 
@@ -375,7 +383,7 @@ public class EfCoreHallOfFameRepositoryTests
     public void AddEntry_PersistsEntryAndCalculatesFameScore()
     {
         using var db = CreateGameDbContext();
-        var repo  = new EfCoreHallOfFameRepository(db, NullLogger<EfCoreHallOfFameRepository>.Instance);
+        var repo = new EfCoreHallOfFameRepository(db, NullLogger<EfCoreHallOfFameRepository>.Instance);
         var entry = MakeEntry("Aldric");
 
         repo.AddEntry(entry);
@@ -389,7 +397,7 @@ public class EfCoreHallOfFameRepositoryTests
     {
         using var db = CreateGameDbContext();
         var repo = new EfCoreHallOfFameRepository(db, NullLogger<EfCoreHallOfFameRepository>.Instance);
-        repo.AddEntry(MakeEntry("LowHero",  level: 1));
+        repo.AddEntry(MakeEntry("LowHero", level: 1));
         repo.AddEntry(MakeEntry("HighHero", level: 50));
 
         var result = repo.GetAllEntries();

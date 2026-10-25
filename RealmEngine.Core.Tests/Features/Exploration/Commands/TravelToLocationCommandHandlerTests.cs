@@ -1,10 +1,10 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Features.Exploration.Commands;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Services;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Exploration.Commands;
 
@@ -23,7 +23,7 @@ public class TravelToLocationCommandHandlerTests
         _mockGameState = new Mock<IGameStateService>();
         _mockGameState.SetupAllProperties();  // Enable automatic property tracking
         _mockGameState.Object.CurrentLocation = "Starting Village";
-        
+
         // Mock UpdateLocation to properly update the property
         _mockGameState.Setup(s => s.UpdateLocation(It.IsAny<string>()))
             .Callback<string>(location => _mockGameState.Object.CurrentLocation = location);

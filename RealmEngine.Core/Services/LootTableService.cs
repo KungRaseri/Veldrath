@@ -218,12 +218,12 @@ public class LootTableService
             return "Unknown Material";
 
         var itemId = materialRef.Substring(colonIndex + 1);
-        
+
         // Convert kebab-case to Title Case
         var words = itemId.Split('-');
-        var titleCase = string.Join(" ", words.Select(w => 
+        var titleCase = string.Join(" ", words.Select(w =>
             char.ToUpper(w[0]) + w.Substring(1).ToLower()));
-        
+
         return titleCase;
     }
 
@@ -301,7 +301,7 @@ public class EnemyLootResult
     /// Gold amount dropped.
     /// </summary>
     public int Gold { get; set; }
-    
+
     /// <summary>
     /// List of item drops with quantities.
     /// </summary>
@@ -317,7 +317,7 @@ public class ChestLootResult
     /// Gold amount in chest.
     /// </summary>
     public int Gold { get; set; }
-    
+
     /// <summary>
     /// List of item drops with quantities.
     /// </summary>

@@ -51,11 +51,11 @@ public class Species
     /// <param name="character">The character to apply bonuses to.</param>
     public void ApplyBonuses(Character character)
     {
-        character.Strength     += BonusStrength;
-        character.Dexterity    += BonusDexterity;
+        character.Strength += BonusStrength;
+        character.Dexterity += BonusDexterity;
         character.Constitution += BonusConstitution;
         character.Intelligence += BonusIntelligence;
-        character.Wisdom       += BonusWisdom;
-        character.Charisma     += BonusCharisma;
+        character.Wisdom += BonusWisdom;
+        character.Charisma += BonusCharisma;
     }
 }

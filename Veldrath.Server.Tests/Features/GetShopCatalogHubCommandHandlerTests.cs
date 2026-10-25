@@ -22,7 +22,7 @@ public class GetShopCatalogHubCommandHandlerTests
     public async Task Handle_ReturnsError_WhenZoneIdIsEmpty()
     {
         var mediator = Mock.Of<ISender>();
-        var handler  = MakeHandler(mediator);
+        var handler = MakeHandler(mediator);
 
         var result = await handler.Handle(new GetShopCatalogHubCommand(""), CancellationToken.None);
 
@@ -36,7 +36,7 @@ public class GetShopCatalogHubCommandHandlerTests
     public async Task Handle_ReturnsError_WhenZoneIdIsWhitespace(string zoneId)
     {
         var mediator = Mock.Of<ISender>();
-        var handler  = MakeHandler(mediator);
+        var handler = MakeHandler(mediator);
 
         var result = await handler.Handle(new GetShopCatalogHubCommand(zoneId), CancellationToken.None);
 
@@ -85,7 +85,7 @@ public class GetShopCatalogHubCommandHandlerTests
         mediator.Setup(m => m.Send(It.IsAny<GetItemCatalogQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CatalogWith(
                     ("sellable", "Sellable Item", 50),
-                    ("quest",    "Quest Item",     0)));
+                    ("quest", "Quest Item", 0)));
 
         var result = await MakeHandler(mediator.Object).Handle(
             new GetShopCatalogHubCommand("fenwick-crossing"), CancellationToken.None);

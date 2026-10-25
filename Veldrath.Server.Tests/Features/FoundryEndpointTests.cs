@@ -17,37 +17,15 @@ public class FoundryEndpointTests(WebAppFactory factory)
     // Helpers
     private async Task<string> GetTokenAsync(string username)
     {
-        var email = $"{username.ToLower()}@test.com";
-        await _client.PostAsJsonAsync("/api/auth/register",
-            new { Email = email, Username = username, Password = "TestP@ssword123" });
-        var login = await _client.PostAsJsonAsync("/api/auth/login",
-            new { Email = email, Password = "TestP@ssword123" });
-        var auth = await login.Content.ReadFromJsonAsync<AuthResponse>();
-        return auth!.AccessToken;
+        return (await factory.CreateAccountTokenAsync(username)).Token;
     }
 
     // Register the user, assign "Curator" via UserManager, then re-login so the JWT
     // carries the role claim (IssueTokenPairAsync calls IsInRoleAsync at login time).
     private async Task<string> GetCuratorTokenAsync(string username)
     {
-        var email = $"{username.ToLower()}@test.com";
-        await _client.PostAsJsonAsync("/api/auth/register",
-            new { Email = email, Username = username, Password = "TestP@ssword123" });
-
-        using var scope = factory.Services.CreateScope();
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<PlayerAccount>>();
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
-
-        if (!await roleManager.RoleExistsAsync("Curator"))
-            await roleManager.CreateAsync(new IdentityRole<Guid>("Curator"));
-
-        var user = await userManager.FindByNameAsync(username);
-        await userManager.AddToRoleAsync(user!, "Curator");
-
-        var login = await _client.PostAsJsonAsync("/api/auth/login",
-            new { Email = email, Password = "TestP@ssword123" });
-        var auth = await login.Content.ReadFromJsonAsync<AuthResponse>();
-        return auth!.AccessToken;
+        var (token, _) = await factory.CreateAccountTokenAsync(username, "Curator");
+        return token;
     }
 
     private async Task<FoundrySubmissionDto> CreateSubmissionAsync(

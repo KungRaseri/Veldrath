@@ -43,14 +43,14 @@ public class EfCoreEnemyRepository(ContentDbContext db, ILogger<EfCoreEnemyRepos
 
     private static Enemy MapToModel(Entities.ActorArchetype e) => new()
     {
-        Id          = e.Slug,
-        Slug        = e.Slug,
-        Name        = e.DisplayName ?? e.Slug,
-        BaseName    = e.DisplayName ?? e.Slug,
-        Health      = e.Stats.Health ?? 50,
-        Level       = e.MinLevel,
+        Id = e.Slug,
+        Slug = e.Slug,
+        Name = e.DisplayName ?? e.Slug,
+        BaseName = e.DisplayName ?? e.Slug,
+        Health = e.Stats.Health ?? 50,
+        Level = e.MinLevel,
         RarityWeight = e.RarityWeight,
-        Attributes  =
+        Attributes =
         {
             ["strength"]     = e.Stats.Strength     ?? 10,
             ["dexterity"]    = e.Stats.Agility       ?? 10,

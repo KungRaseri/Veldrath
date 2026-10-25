@@ -1,5 +1,5 @@
-using RealmEngine.Shared.Models;
 using MediatR;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Inventory.Commands;
 
@@ -12,7 +12,7 @@ public record EquipItemCommand : IRequest<EquipItemResult>
     /// Gets the player character equipping the item.
     /// </summary>
     public required Character Player { get; init; }
-    
+
     /// <summary>
     /// Gets the item to equip.
     /// </summary>
@@ -28,12 +28,12 @@ public record EquipItemResult
     /// Gets a value indicating whether the equip was successful.
     /// </summary>
     public bool Success { get; init; }
-    
+
     /// <summary>
     /// Gets a message describing the equip result.
     /// </summary>
     public string Message { get; init; } = string.Empty;
-    
+
     /// <summary>
     /// Gets the item that was unequipped from the slot, if any.
     /// </summary>

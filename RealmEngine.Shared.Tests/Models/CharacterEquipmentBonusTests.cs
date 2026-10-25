@@ -57,9 +57,9 @@ public class CharacterEquipmentBonusTests
             Name = "Enchanted Helm",
             Enchantments = new List<Enchantment>
             {
-                new Enchantment 
-                { 
-                    Name = "Strength +2", 
+                new Enchantment
+                {
+                    Name = "Strength +2",
                     Traits = new Dictionary<string, TraitValue> { { "Strength", new TraitValue(2, TraitType.Number) } }
                 }
             }

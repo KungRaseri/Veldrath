@@ -1,5 +1,5 @@
-using RealmEngine.Shared.Models;
 using MediatR;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Combat.Queries.GetCombatState;
 
@@ -24,7 +24,8 @@ public class GetCombatStateHandler : IRequestHandler<GetCombatStateQuery, Combat
 
         // Get available abilities (not on cooldown and have mana)
         var availableAbilities = player.LearnedAbilities.Values
-            .Where(a => {
+            .Where(a =>
+            {
                 var cooldownRemaining = player.AbilityCooldowns.GetValueOrDefault(a.AbilityId, 0);
                 return cooldownRemaining == 0;
             })
@@ -33,7 +34,8 @@ public class GetCombatStateHandler : IRequestHandler<GetCombatStateQuery, Combat
 
         // Get available spells (not on cooldown and have mana)
         var availableSpells = player.LearnedSpells.Values
-            .Where(s => {
+            .Where(s =>
+            {
                 var cooldownRemaining = player.SpellCooldowns.GetValueOrDefault(s.SpellId, 0);
                 return cooldownRemaining == 0;
             })

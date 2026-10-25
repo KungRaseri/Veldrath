@@ -9,40 +9,40 @@ public class Enemy : ITraitable
     /// Gets or sets the unique identifier for this enemy.
     /// </summary>
     public string Id { get; set; } = Guid.NewGuid().ToString();
-    
+
     /// <summary>
     /// Gets or sets the URL-safe identifier for this enemy (kebab-case).
     /// Used for lookups, references, and catalog identification.
     /// </summary>
     public string Slug { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the display name of the enemy.
     /// </summary>
     public string Name { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the base name of the enemy without modifiers (e.g., "Wolf", "Dragon").
     /// </summary>
     public string BaseName { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Ordered list of prefix components (size, type, descriptive) that appear before the base name.
     /// Each component preserves its token identifier and display value.
     /// </summary>
     public List<NameComponent> Prefixes { get; set; } = new();
-    
+
     /// <summary>
     /// Ordered list of suffix components (titles) that appear after the base name.
     /// Each component preserves its token identifier and display value.
     /// </summary>
     public List<NameComponent> Suffixes { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the descriptive text for the enemy.
     /// </summary>
     public string Description { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the base attribute bonuses from JSON catalog.
     /// Maps to attributes field in JSON (strength, dexterity, constitution, intelligence, wisdom, charisma).
@@ -54,7 +54,7 @@ public class Enemy : ITraitable
     /// Implements ITraitable interface.
     /// </summary>
     public Dictionary<string, TraitValue> Traits { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the formula-based combat stats for this enemy.
     /// Contains attack, defense, speed, and health formulas from JSON.
@@ -62,7 +62,7 @@ public class Enemy : ITraitable
     /// Example: "attack": "strength_mod + level + 8"
     /// </summary>
     public Dictionary<string, string> Stats { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the combat configuration for this enemy.
     /// Contains ability references and level-based unlock data.
@@ -73,12 +73,12 @@ public class Enemy : ITraitable
     /// Gets or sets the enemy's current level.
     /// </summary>
     public int Level { get; set; } = 1;
-    
+
     /// <summary>
     /// Gets or sets the enemy's current health points.
     /// </summary>
     public int Health { get; set; } = 50;
-    
+
     /// <summary>
     /// Gets or sets the enemy's maximum health points.
     /// </summary>
@@ -88,7 +88,7 @@ public class Enemy : ITraitable
     /// Gets or sets the enemy's current mana points (for spellcasting enemies).
     /// </summary>
     public int Mana { get; set; } = 0;
-    
+
     /// <summary>
     /// Gets or sets the enemy's maximum mana points.
     /// </summary>
@@ -98,27 +98,27 @@ public class Enemy : ITraitable
     /// Gets or sets the Strength attribute. Affects melee damage and carry weight.
     /// </summary>
     public int Strength { get; set; } = 10;
-    
+
     /// <summary>
     /// Gets or sets the Dexterity attribute. Affects dodge, accuracy, and critical hit chance.
     /// </summary>
     public int Dexterity { get; set; } = 10;
-    
+
     /// <summary>
     /// Gets or sets the Constitution attribute. Affects max HP and physical defense.
     /// </summary>
     public int Constitution { get; set; } = 10;
-    
+
     /// <summary>
     /// Gets or sets the Intelligence attribute. Affects magic damage and crafting.
     /// </summary>
     public int Intelligence { get; set; } = 10;
-    
+
     /// <summary>
     /// Gets or sets the Wisdom attribute. Affects max mana and magic defense.
     /// </summary>
     public int Wisdom { get; set; } = 10;
-    
+
     /// <summary>
     /// Gets or sets the Charisma attribute. Affects NPC interactions and rare loot drops.
     /// </summary>
@@ -128,18 +128,18 @@ public class Enemy : ITraitable
     /// Gets or sets the base physical damage dealt by this enemy.
     /// </summary>
     public int BasePhysicalDamage { get; set; } = 5;
-    
+
     /// <summary>
     /// Gets or sets the base magic damage dealt by this enemy.
     /// </summary>
     public int BaseMagicDamage { get; set; } = 0;
-    
+
     /// <summary>
     /// Gets or sets the experience points rewarded when this enemy is defeated.
     /// Maps to "xp" field in JSON catalogs.
     /// </summary>
     public int XP { get; set; } = 25;
-    
+
     /// <summary>
     /// Gets or sets the gold rewarded when this enemy is defeated.
     /// </summary>
@@ -154,7 +154,7 @@ public class Enemy : ITraitable
     /// Gets or sets the classification type of this enemy (Common, Elite, Boss, etc.).
     /// </summary>
     public EnemyType Type { get; set; } = EnemyType.Common;
-    
+
     /// <summary>
     /// Gets or sets the difficulty rating of this enemy (Easy, Medium, Hard, etc.).
     /// </summary>
@@ -222,12 +222,12 @@ public class Enemy : ITraitable
     /// </code>
     /// </example>
     public List<string> SpellIds { get; set; } = new();
-    
+
     /// <summary>
     /// Tracks spell cooldowns for this enemy (spellId -> turns remaining).
     /// </summary>
     public Dictionary<string, int> SpellCooldowns { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the active status effects currently applied to the enemy.
     /// Includes buffs, debuffs, and damage-over-time effects.
@@ -377,7 +377,7 @@ public class Enemy : ITraitable
     {
         return Prefixes.FirstOrDefault(p => p.Token == token)?.Value;
     }
-    
+
     /// <summary>
     /// Gets the value of a specific suffix component by token name.
     /// </summary>
@@ -387,7 +387,7 @@ public class Enemy : ITraitable
     {
         return Suffixes.FirstOrDefault(s => s.Token == token)?.Value;
     }
-    
+
     /// <summary>
     /// Composes the enemy name from individual naming components.
     /// Useful for rebuilding names, localization, or debugging.
@@ -396,16 +396,16 @@ public class Enemy : ITraitable
     public string ComposeNameFromComponents()
     {
         var parts = new List<string>();
-        
+
         // Add all prefixes in order
         parts.AddRange(Prefixes.Select(p => p.Value));
-        
+
         // Add base name
         if (!string.IsNullOrWhiteSpace(BaseName)) parts.Add(BaseName);
-        
+
         // Add all suffixes in order
         parts.AddRange(Suffixes.Select(s => s.Value));
-        
+
         return string.Join(" ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
     }
 }
@@ -461,7 +461,7 @@ public class EnemyCombat
     /// Each ID is a JSON reference like "@abilities/active/offensive:fireball".
     /// </summary>
     public List<string> Abilities { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the level-based ability unlock map.
     /// Key = level (int), Value = array of ability reference IDs unlocked at that level.

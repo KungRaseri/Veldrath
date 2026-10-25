@@ -87,8 +87,8 @@ public class ItemTests
     [Fact]
     public void GetTotalTrait_Should_Return_Base_Value_When_No_Enchantments_Or_Upgrades()
     {
-        var item = new Item 
-        { 
+        var item = new Item
+        {
             Traits = new Dictionary<string, TraitValue>
             {
                 { "Strength", new TraitValue(5, TraitType.Number) }
@@ -100,13 +100,13 @@ public class ItemTests
     [Fact]
     public void GetTotalTrait_Should_Include_Upgrade_Level_Bonus()
     {
-        var item = new Item 
-        { 
+        var item = new Item
+        {
             Traits = new Dictionary<string, TraitValue>
             {
                 { "Strength", new TraitValue(3, TraitType.Number) }
             },
-            UpgradeLevel = 2 
+            UpgradeLevel = 2
         };
         item.GetTotalTrait("Strength").Should().Be(7); // 3 + (2*2)
     }
@@ -122,15 +122,15 @@ public class ItemTests
             },
             Enchantments = new List<Enchantment>
             {
-                new Enchantment 
-                { 
+                new Enchantment
+                {
                     Traits = new Dictionary<string, TraitValue>
                     {
                         { "Strength", new TraitValue(3, TraitType.Number) }
                     }
                 },
-                new Enchantment 
-                { 
+                new Enchantment
+                {
                     Traits = new Dictionary<string, TraitValue>
                     {
                         { "Strength", new TraitValue(5, TraitType.Number) }
@@ -153,15 +153,15 @@ public class ItemTests
             UpgradeLevel = 3,
             Enchantments = new List<Enchantment>
             {
-                new Enchantment 
-                { 
+                new Enchantment
+                {
                     Traits = new Dictionary<string, TraitValue>
                     {
                         { "Strength", new TraitValue(4, TraitType.Number) }
                     }
                 },
-                new Enchantment 
-                { 
+                new Enchantment
+                {
                     Traits = new Dictionary<string, TraitValue>
                     {
                         { "Strength", new TraitValue(2, TraitType.Number) }
@@ -179,12 +179,12 @@ public class ItemTests
         {
             Traits = new Dictionary<string, TraitValue> { { "Dexterity", new TraitValue(3, TraitType.Number) } },
             UpgradeLevel = 2,
-            Enchantments = new List<Enchantment> 
-            { 
-                new Enchantment 
-                { 
+            Enchantments = new List<Enchantment>
+            {
+                new Enchantment
+                {
                     Traits = new Dictionary<string, TraitValue> { { "Dexterity", new TraitValue(5, TraitType.Number) } }
-                } 
+                }
             }
         };
         item.GetTotalTrait("Dexterity").Should().Be(12); // 3 + 4 + 5
@@ -199,12 +199,12 @@ public class ItemTests
             UpgradeLevel = 1,
             Enchantments = new List<Enchantment>
             {
-                new Enchantment 
-                { 
+                new Enchantment
+                {
                     Traits = new Dictionary<string, TraitValue> { { "Constitution", new TraitValue(3, TraitType.Number) } }
                 },
-                new Enchantment 
-                { 
+                new Enchantment
+                {
                     Traits = new Dictionary<string, TraitValue> { { "Constitution", new TraitValue(1, TraitType.Number) } }
                 }
             }
@@ -219,12 +219,12 @@ public class ItemTests
         {
             Traits = new Dictionary<string, TraitValue> { { "Intelligence", new TraitValue(4, TraitType.Number) } },
             UpgradeLevel = 5,
-            Enchantments = new List<Enchantment> 
-            { 
-                new Enchantment 
-                { 
+            Enchantments = new List<Enchantment>
+            {
+                new Enchantment
+                {
                     Traits = new Dictionary<string, TraitValue> { { "Intelligence", new TraitValue(7, TraitType.Number) } }
-                } 
+                }
             }
         };
         item.GetTotalTrait("Intelligence").Should().Be(21); // 4 + 10 + 7
@@ -239,12 +239,12 @@ public class ItemTests
             UpgradeLevel = 3,
             Enchantments = new List<Enchantment>
             {
-                new Enchantment 
-                { 
+                new Enchantment
+                {
                     Traits = new Dictionary<string, TraitValue> { { "Wisdom", new TraitValue(2, TraitType.Number) } }
                 },
-                new Enchantment 
-                { 
+                new Enchantment
+                {
                     Traits = new Dictionary<string, TraitValue> { { "Wisdom", new TraitValue(4, TraitType.Number) } }
                 }
             }
@@ -259,12 +259,12 @@ public class ItemTests
         {
             Traits = new Dictionary<string, TraitValue> { { "Charisma", new TraitValue(3, TraitType.Number) } },
             UpgradeLevel = 4,
-            Enchantments = new List<Enchantment> 
-            { 
-                new Enchantment 
-                { 
+            Enchantments = new List<Enchantment>
+            {
+                new Enchantment
+                {
                     Traits = new Dictionary<string, TraitValue> { { "Charisma", new TraitValue(6, TraitType.Number) } }
-                } 
+                }
             }
         };
         item.GetTotalTrait("Charisma").Should().Be(17); // 3 + 8 + 6
@@ -325,8 +325,8 @@ public class ItemTests
     {
         var item = new Item
         {
-            Traits = new Dictionary<string, TraitValue> 
-            { 
+            Traits = new Dictionary<string, TraitValue>
+            {
                 { "Strength", new TraitValue(5, TraitType.Number) },
                 { "Dexterity", new TraitValue(3, TraitType.Number) }
             },

@@ -24,10 +24,10 @@ public class BudgetHelperServiceTests
     }
 
     [Theory]
-    [InlineData("dungeon boss",    10, 75)]  // contains "boss"   → 1.5 × 50
-    [InlineData("fire dragon",     10, 75)]  // contains "dragon" → 1.5 × 50
-    [InlineData("elite knight",    10, 65)]  // contains "elite"  → 1.3 × 50
-    [InlineData("veteran knight",  10, 65)]  // contains "knight" → 1.3 × 50
+    [InlineData("dungeon boss", 10, 75)]  // contains "boss"   → 1.5 × 50
+    [InlineData("fire dragon", 10, 75)]  // contains "dragon" → 1.5 × 50
+    [InlineData("elite knight", 10, 65)]  // contains "elite"  → 1.3 × 50
+    [InlineData("veteran knight", 10, 65)]  // contains "knight" → 1.3 × 50
     public void GetBudgetForEnemyLoot_AppliesTypeMultiplier(string enemyType, int level, int expected)
     {
         CreateService().GetBudgetForEnemyLoot(enemyType, level).Should().Be(expected);
@@ -35,10 +35,10 @@ public class BudgetHelperServiceTests
 
     // GetBudgetForChest
     [Theory]
-    [InlineData(RarityTier.Common,    10, 40)]   // 10*5 * 0.8 = 40
-    [InlineData(RarityTier.Uncommon,  10, 60)]   // 10*5 * 1.2 = 60
-    [InlineData(RarityTier.Rare,      10, 90)]   // 10*5 * 1.8 = 90
-    [InlineData(RarityTier.Epic,      10, 125)]  // 10*5 * 2.5 = 125
+    [InlineData(RarityTier.Common, 10, 40)]   // 10*5 * 0.8 = 40
+    [InlineData(RarityTier.Uncommon, 10, 60)]   // 10*5 * 1.2 = 60
+    [InlineData(RarityTier.Rare, 10, 90)]   // 10*5 * 1.8 = 90
+    [InlineData(RarityTier.Epic, 10, 125)]  // 10*5 * 2.5 = 125
     [InlineData(RarityTier.Legendary, 10, 200)]  // 10*5 * 4.0 = 200
     public void GetBudgetForChest_AppliesRarityMultiplier(RarityTier rarity, int locationLevel, int expected)
     {
@@ -186,10 +186,10 @@ public class BudgetHelperServiceTests
 
     // GetBudgetRangeForQuestReward
     [Theory]
-    [InlineData("easy",      10, 40,  60)]  // 50 * [0.8, 1.2]
-    [InlineData("normal",    10, 50,  75)]  // 50 * [1.0, 1.5]
-    [InlineData("hard",      10, 75, 125)]  // 50 * [1.5, 2.5]
-    [InlineData("legendary", 10,150, 250)]  // 50 * [3.0, 5.0]
+    [InlineData("easy", 10, 40, 60)]  // 50 * [0.8, 1.2]
+    [InlineData("normal", 10, 50, 75)]  // 50 * [1.0, 1.5]
+    [InlineData("hard", 10, 75, 125)]  // 50 * [1.5, 2.5]
+    [InlineData("legendary", 10, 150, 250)]  // 50 * [3.0, 5.0]
     public void GetBudgetRangeForQuestReward_AppliesDifficultyMultipliers(
         string difficulty, int questLevel, int expectedMin, int expectedMax)
     {
@@ -209,9 +209,9 @@ public class BudgetHelperServiceTests
 
     // GetBudgetForEventReward
     [Theory]
-    [InlineData("world_boss",        10, 320)]   // 10*8 * 4.0
+    [InlineData("world_boss", 10, 320)]   // 10*8 * 4.0
     [InlineData("dungeon_completion", 10, 200)]  // 10*8 * 2.5
-    [InlineData("pvp_tournament",    10, 240)]   // 10*8 * 3.0
+    [InlineData("pvp_tournament", 10, 240)]   // 10*8 * 3.0
     public void GetBudgetForEventReward_AppliesEventMultiplier(string eventType, int level, int expected)
     {
         CreateService().GetBudgetForEventReward(eventType, level).Should().Be(expected);

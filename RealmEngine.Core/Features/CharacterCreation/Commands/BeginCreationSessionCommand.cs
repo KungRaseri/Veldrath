@@ -67,10 +67,10 @@ public class BeginCreationSessionHandler(
         List<Background> backgrounds;
         try
         {
-            classesResult   = await mediator.Send(new GetAvailableClassesQuery(), cancellationToken);
+            classesResult = await mediator.Send(new GetAvailableClassesQuery(), cancellationToken);
             locationsResult = await mediator.Send(new GetStartingLocationsQuery(BackgroundId: null, FilterByRecommended: false), cancellationToken);
-            species         = await speciesRepository.GetAllSpeciesAsync();
-            backgrounds     = await backgroundRepository.GetAllBackgroundsAsync();
+            species = await speciesRepository.GetAllSpeciesAsync();
+            backgrounds = await backgroundRepository.GetAllBackgroundsAsync();
         }
         catch (Exception ex)
         {
@@ -86,13 +86,13 @@ public class BeginCreationSessionHandler(
 
         return new BeginCreationSessionResult
         {
-            SessionId            = session.SessionId,
-            Success              = true,
-            PointBuyConfig       = new PointBuyConfig(),
-            AvailableClasses     = classesResult.Classes,
-            AvailableSpecies     = species,
+            SessionId = session.SessionId,
+            Success = true,
+            PointBuyConfig = new PointBuyConfig(),
+            AvailableClasses = classesResult.Classes,
+            AvailableSpecies = species,
             AvailableBackgrounds = backgrounds,
-            AvailableLocations   = locationsResult,
+            AvailableLocations = locationsResult,
         };
     }
 }

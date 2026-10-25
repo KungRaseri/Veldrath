@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using RealmEngine.Data.Services;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Data.Services;
 
 namespace RealmEngine.Core.Services;
 
@@ -35,12 +35,12 @@ public class DescriptiveTextService
     public string GetAdjective(string category = "positive")
     {
         EnsureAdjectivesLoaded();
-        
+
         if (_adjectives != null && _adjectives.TryGetValue(category, out var list) && list.Count > 0)
         {
             return list[_random.Next(list.Count)];
         }
-        
+
         return "strange";
     }
 
@@ -51,20 +51,20 @@ public class DescriptiveTextService
     public string GetColor(bool includeModifier = false)
     {
         EnsureColorsLoaded();
-        
+
         if (_colors == null || !_colors.TryGetValue("base_color", out var baseColors))
         {
             return "grey";
         }
 
         var color = baseColors[_random.Next(baseColors.Count)];
-        
+
         if (includeModifier && _colors.TryGetValue("modifier", out var modifiers))
         {
             var modifier = modifiers[_random.Next(modifiers.Count)];
             return $"{modifier} {color}";
         }
-        
+
         return color;
     }
 
@@ -74,12 +74,12 @@ public class DescriptiveTextService
     public string GetSmell()
     {
         EnsureSmellsLoaded();
-        
+
         if (_smells != null && _smells.Count > 0)
         {
             return _smells[_random.Next(_smells.Count)];
         }
-        
+
         return "musty air";
     }
 
@@ -89,12 +89,12 @@ public class DescriptiveTextService
     public string GetSound()
     {
         EnsureSoundsLoaded();
-        
+
         if (_sounds != null && _sounds.Count > 0)
         {
             return _sounds[_random.Next(_sounds.Count)];
         }
-        
+
         return "distant echoes";
     }
 
@@ -104,12 +104,12 @@ public class DescriptiveTextService
     public string GetTexture()
     {
         EnsureTexturesLoaded();
-        
+
         if (_textures != null && _textures.Count > 0)
         {
             return _textures[_random.Next(_textures.Count)];
         }
-        
+
         return "smooth";
     }
 
@@ -119,12 +119,12 @@ public class DescriptiveTextService
     public string GetVerb()
     {
         EnsureVerbsLoaded();
-        
+
         if (_verbs != null && _verbs.Count > 0)
         {
             return _verbs[_random.Next(_verbs.Count)];
         }
-        
+
         return "strikes";
     }
 
@@ -135,12 +135,12 @@ public class DescriptiveTextService
     public string GetWeather(string category = "clear")
     {
         EnsureWeatherLoaded();
-        
+
         if (_weather != null && _weather.TryGetValue(category, out var list) && list.Count > 0)
         {
             return list[_random.Next(list.Count)];
         }
-        
+
         return "pleasant weather";
     }
 
@@ -151,12 +151,12 @@ public class DescriptiveTextService
     public string GetTimeOfDay(string period = "noon")
     {
         EnsureTimeOfDayLoaded();
-        
+
         if (_timeOfDay != null && _timeOfDay.TryGetValue(period, out var list) && list.Count > 0)
         {
             return list[_random.Next(list.Count)];
         }
-        
+
         return "midday sun";
     }
 
@@ -166,31 +166,31 @@ public class DescriptiveTextService
     public string GenerateAtmosphere(bool includeWeather = true, bool includeTime = true, bool includeSound = true, bool includeSmell = true)
     {
         var parts = new List<string>();
-        
+
         if (includeTime)
         {
             var periods = new[] { "dawn", "morning", "noon", "afternoon", "dusk", "evening", "night" };
             var period = periods[_random.Next(periods.Length)];
             parts.Add(GetTimeOfDay(period));
         }
-        
+
         if (includeWeather)
         {
             var categories = new[] { "clear", "rain", "fog", "wind" };
             var category = categories[_random.Next(categories.Length)];
             parts.Add(GetWeather(category));
         }
-        
+
         if (includeSound)
         {
             parts.Add($"You hear {GetSound()}");
         }
-        
+
         if (includeSmell)
         {
             parts.Add($"The air smells of {GetSmell()}");
         }
-        
+
         return string.Join(". ", parts) + ".";
     }
 
@@ -200,20 +200,20 @@ public class DescriptiveTextService
     public string GenerateItemDescription(string itemName, bool includeCondition = true, bool includeTexture = true)
     {
         var parts = new List<string>();
-        
+
         if (includeCondition)
         {
             parts.Add(GetAdjective("condition"));
         }
-        
+
         parts.Add(GetColor());
         parts.Add(itemName);
-        
+
         if (includeTexture)
         {
             return $"A {string.Join(" ", parts)} with a {GetTexture()} finish";
         }
-        
+
         return $"A {string.Join(" ", parts)}";
     }
 

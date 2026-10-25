@@ -76,20 +76,20 @@ public class GetEquipmentForClassHandler : IRequestHandler<GetEquipmentForClassQ
     {
         ["heavy-blades"] = ["swords", "greatswords", "all"],
         ["light-blades"] = ["swords", "daggers", "rapiers", "shortswords", "all"],
-        ["axes"]         = ["axes", "all"],
-        ["bludgeons"]    = ["maces", "warhammers", "simple", "all"],
-        ["polearms"]     = ["polearms", "all"],
-        ["bows"]         = ["bows", "all"],
-        ["crossbows"]    = ["crossbows", "all"],
-        ["staves"]       = ["staves", "simple", "all"],
-        ["wands"]        = ["wands", "all"],
+        ["axes"] = ["axes", "all"],
+        ["bludgeons"] = ["maces", "warhammers", "simple", "all"],
+        ["polearms"] = ["polearms", "all"],
+        ["bows"] = ["bows", "all"],
+        ["crossbows"] = ["crossbows", "all"],
+        ["staves"] = ["staves", "simple", "all"],
+        ["wands"] = ["wands", "all"],
     };
 
     private static readonly Dictionary<string, string[]> ArmorCategoryToProficiencies = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["light"]  = ["light", "all"],
+        ["light"] = ["light", "all"],
         ["medium"] = ["medium", "all"],
-        ["heavy"]  = ["heavy", "all"],
+        ["heavy"] = ["heavy", "all"],
         ["shield"] = ["shields", "all"],
     };
 

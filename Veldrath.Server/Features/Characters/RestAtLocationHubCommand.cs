@@ -58,11 +58,11 @@ public class RestAtLocationHubCommandHandler
     : IRequestHandler<RestAtLocationHubCommand, RestAtLocationHubResult>
 {
     // Keys within the character Attributes JSON blob
-    internal const string KeyGold          = "Gold";
+    internal const string KeyGold = "Gold";
     internal const string KeyCurrentHealth = "CurrentHealth";
-    internal const string KeyMaxHealth     = "MaxHealth";
-    internal const string KeyCurrentMana   = "CurrentMana";
-    internal const string KeyMaxMana       = "MaxMana";
+    internal const string KeyMaxHealth = "MaxHealth";
+    internal const string KeyCurrentMana = "CurrentMana";
+    internal const string KeyMaxMana = "MaxMana";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -80,7 +80,7 @@ public class RestAtLocationHubCommandHandler
         ILogger<RestAtLocationHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
-        _logger        = logger;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the rest outcome.</summary>
@@ -118,18 +118,18 @@ public class RestAtLocationHubCommandHandler
 
         // Derive max pools from level when not explicitly stored (10 HP and 5 MP per level)
         var maxHealth = attrs.TryGetValue(KeyMaxHealth, out var mh) ? mh : character.Level * 10;
-        var maxMana   = attrs.TryGetValue(KeyMaxMana,   out var mm) ? mm : character.Level * 5;
-        var gold      = attrs.TryGetValue(KeyGold,      out var g)  ? g  : 0;
+        var maxMana = attrs.TryGetValue(KeyMaxMana, out var mm) ? mm : character.Level * 5;
+        var gold = attrs.TryGetValue(KeyGold, out var g) ? g : 0;
 
         if (gold < request.CostInGold)
             return Fail($"Not enough gold to rest. Have {gold}, need {request.CostInGold}.");
 
         // Restore and deduct
         attrs[KeyCurrentHealth] = maxHealth;
-        attrs[KeyCurrentMana]   = maxMana;
-        attrs[KeyMaxHealth]     = maxHealth;
-        attrs[KeyMaxMana]       = maxMana;
-        attrs[KeyGold]          = gold - request.CostInGold;
+        attrs[KeyCurrentMana] = maxMana;
+        attrs[KeyMaxHealth] = maxHealth;
+        attrs[KeyMaxMana] = maxMana;
+        attrs[KeyGold] = gold - request.CostInGold;
 
         character.Attributes = JsonSerializer.Serialize(attrs);
         await _characterRepo.UpdateAsync(character, cancellationToken);
@@ -141,11 +141,11 @@ public class RestAtLocationHubCommandHandler
 
         return new RestAtLocationHubResult
         {
-            Success       = true,
+            Success = true,
             CurrentHealth = maxHealth,
-            MaxHealth     = maxHealth,
-            CurrentMana   = maxMana,
-            MaxMana       = maxMana,
+            MaxHealth = maxHealth,
+            CurrentMana = maxMana,
+            MaxMana = maxMana,
             GoldRemaining = attrs[KeyGold],
         };
     }

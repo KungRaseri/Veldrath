@@ -48,7 +48,7 @@ public class GetInventoryValueQueryHandler : IRequestHandler<GetInventoryValueQu
 
             var character = saveGame.Character;
             var equippedIds = GetEquippedItemIds(character);
-            
+
             int equippedValue = 0;
             int unequippedValue = 0;
             int mostValuablePrice = 0;
@@ -57,7 +57,7 @@ public class GetInventoryValueQueryHandler : IRequestHandler<GetInventoryValueQu
             foreach (var item in character.Inventory)
             {
                 int itemValue = item.Price;
-                
+
                 if (equippedIds.Contains(item.Id))
                 {
                     equippedValue += itemValue;
@@ -74,8 +74,8 @@ public class GetInventoryValueQueryHandler : IRequestHandler<GetInventoryValueQu
                 }
             }
 
-            int totalValue = request.IncludeEquipped 
-                ? equippedValue + unequippedValue 
+            int totalValue = request.IncludeEquipped
+                ? equippedValue + unequippedValue
                 : unequippedValue;
 
             var wealthCategory = DetermineWealthCategory(totalValue);
@@ -111,7 +111,7 @@ public class GetInventoryValueQueryHandler : IRequestHandler<GetInventoryValueQu
     private static HashSet<string> GetEquippedItemIds(Character character)
     {
         var equipped = new HashSet<string>();
-        
+
         if (character.EquippedMainHand != null) equipped.Add(character.EquippedMainHand.Id);
         if (character.EquippedOffHand != null) equipped.Add(character.EquippedOffHand.Id);
         if (character.EquippedHelmet != null) equipped.Add(character.EquippedHelmet.Id);

@@ -27,7 +27,7 @@ public class GetBackgroundsHandlerTests
         repo.Setup(r => r.GetAllBackgroundsAsync()).ReturnsAsync(expected);
 
         var handler = new GetBackgroundsHandler(repo.Object, NullLogger<GetBackgroundsHandler>.Instance);
-        var result  = await handler.Handle(new GetBackgroundsQuery(), CancellationToken.None);
+        var result = await handler.Handle(new GetBackgroundsQuery(), CancellationToken.None);
 
         result.Should().BeEquivalentTo(expected);
         repo.Verify(r => r.GetAllBackgroundsAsync(), Times.Once);
@@ -43,7 +43,7 @@ public class GetBackgroundsHandlerTests
         repo.Setup(r => r.GetBackgroundsByAttributeAsync("strength")).ReturnsAsync(expected);
 
         var handler = new GetBackgroundsHandler(repo.Object, NullLogger<GetBackgroundsHandler>.Instance);
-        var result  = await handler.Handle(new GetBackgroundsQuery("strength"), CancellationToken.None);
+        var result = await handler.Handle(new GetBackgroundsQuery("strength"), CancellationToken.None);
 
         result.Should().BeEquivalentTo(expected);
         repo.Verify(r => r.GetBackgroundsByAttributeAsync("strength"), Times.Once);
@@ -57,7 +57,7 @@ public class GetBackgroundsHandlerTests
         repo.Setup(r => r.GetAllBackgroundsAsync()).ReturnsAsync([]);
 
         var handler = new GetBackgroundsHandler(repo.Object, NullLogger<GetBackgroundsHandler>.Instance);
-        var result  = await handler.Handle(new GetBackgroundsQuery(), CancellationToken.None);
+        var result = await handler.Handle(new GetBackgroundsQuery(), CancellationToken.None);
 
         result.Should().BeEmpty();
     }

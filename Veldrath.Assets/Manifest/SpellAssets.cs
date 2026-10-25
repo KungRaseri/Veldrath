@@ -54,6 +54,6 @@ public static class SpellAssets
         "Divine" => "yellow",
         "Primal" => "green",
         "Occult" => "red",
-        _        => "blue",
+        _ => "blue",
     };
 }

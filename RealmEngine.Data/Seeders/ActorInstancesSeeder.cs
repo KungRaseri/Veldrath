@@ -14,7 +14,7 @@ public static class ActorInstancesSeeder
     /// <summary>Seeds all actor instance rows (idempotent).</summary>
     public static async Task SeedAsync(ContentDbContext db)
     {
-        var goblinScout   = await db.ActorArchetypes.FirstOrDefaultAsync(a => a.Slug == "goblin-scout");
+        var goblinScout = await db.ActorArchetypes.FirstOrDefaultAsync(a => a.Slug == "goblin-scout");
         var banditRuffian = await db.ActorArchetypes.FirstOrDefaultAsync(a => a.Slug == "bandit-ruffian");
 
         // Skip seeding if archetypes have not been seeded yet.

@@ -1,10 +1,10 @@
-using FluentAssertions;
-using Moq;
-using RealmEngine.Shared.Models;
-using RealmEngine.Core.Features.Inventory;
-using Microsoft.Extensions.Logging.Abstractions;
-using MediatR;
 using System.Threading.Tasks;
+using FluentAssertions;
+using MediatR;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
+using RealmEngine.Core.Features.Inventory;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Tests.Features.Inventory;
 

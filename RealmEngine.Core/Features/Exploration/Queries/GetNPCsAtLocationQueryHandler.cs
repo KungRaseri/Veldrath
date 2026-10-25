@@ -57,8 +57,8 @@ public class GetNPCsAtLocationQueryHandler : IRequestHandler<GetNPCsAtLocationQu
                     IsQuestGiver: npc.Traits.ContainsKey("isQuestGiver") && npc.Traits["isQuestGiver"].AsBool(),
                     IsTrainer: npc.Traits.ContainsKey("isTrainer") && npc.Traits["isTrainer"].AsBool(),
                     Dialogue: npc.Dialogue,
-                    RelationshipValue: saveGame.NPCRelationships.TryGetValue(npc.Id, out var relationship) 
-                        ? relationship 
+                    RelationshipValue: saveGame.NPCRelationships.TryGetValue(npc.Id, out var relationship)
+                        ? relationship
                         : null
                 ))
                 .ToList();

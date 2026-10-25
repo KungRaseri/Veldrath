@@ -32,31 +32,31 @@ public sealed class CharacterCreationFixture : IAsyncLifetime
         if (!await db.ActorClasses.AnyAsync(c => c.Slug == "warrior"))
             db.ActorClasses.Add(new ActorClass
             {
-                Slug        = "warrior",
-                TypeKey     = "melee",
+                Slug = "warrior",
+                TypeKey = "melee",
                 DisplayName = "Warrior",
-                IsActive    = true,
+                IsActive = true,
                 PrimaryStat = "strength",
-                Stats       = new ActorClassStats { BaseHealth = 120, BaseMana = 20 },
+                Stats = new ActorClassStats { BaseHealth = 120, BaseMana = 20 },
             });
 
         if (!await db.Species.AnyAsync(s => s.Slug == "human"))
             db.Species.Add(new Species
             {
-                Slug               = "human",
-                TypeKey            = "humanoid",
-                DisplayName        = "Human",
-                IsActive           = true,
+                Slug = "human",
+                TypeKey = "humanoid",
+                DisplayName = "Human",
+                IsActive = true,
                 IsPlayerSelectable = true,
             });
 
         if (!await db.Backgrounds.AnyAsync(b => b.Slug == "soldier"))
             db.Backgrounds.Add(new Background
             {
-                Slug        = "soldier",
-                TypeKey     = "combat",
+                Slug = "soldier",
+                TypeKey = "combat",
                 DisplayName = "Soldier",
-                IsActive    = true,
+                IsActive = true,
             });
 
         await db.SaveChangesAsync();
@@ -75,17 +75,11 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
     : IClassFixture<CharacterCreationFixture>
 {
     private readonly WebAppFactory _factory = fixture.Factory;
-    private readonly HttpClient    _client  = fixture.Client;
+    private readonly HttpClient _client = fixture.Client;
 
     private async Task<string> GetTokenAsync(string username)
     {
-        var email = $"{username.ToLower()}@cctest.com";
-        await _client.PostAsJsonAsync("/api/auth/register",
-            new { Email = email, Username = username, Password = "TestP@ssword123" });
-        var login = await _client.PostAsJsonAsync("/api/auth/login",
-            new { Email = email, Password = "TestP@ssword123" });
-        var auth = await login.Content.ReadFromJsonAsync<AuthResponse>();
-        return auth!.AccessToken;
+        return (await _factory.CreateAccountTokenAsync(username)).Token;
     }
 
     // ── Auth guard ──────────────────────────────────────────────────────────
@@ -135,7 +129,7 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
             new AuthenticationHeaderValue("Bearer", await GetTokenAsync("CcGetSession_User"));
 
         var beginResp = await _client.PostAsJsonAsync("/api/character-creation/sessions", new { });
-        var begin     = await beginResp.Content.ReadFromJsonAsync<BeginSessionResponse>();
+        var begin = await beginResp.Content.ReadFromJsonAsync<BeginSessionResponse>();
 
         var response = await _client.GetAsync($"/api/character-creation/sessions/{begin!.SessionId}");
 
@@ -378,12 +372,12 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
         {
             Allocations = new Dictionary<string, int>
             {
-                ["Strength"]     = 14,
-                ["Dexterity"]    = 12,
+                ["Strength"] = 14,
+                ["Dexterity"] = 12,
                 ["Constitution"] = 13,
                 ["Intelligence"] = 8,
-                ["Wisdom"]       = 10,
-                ["Charisma"]     = 8,
+                ["Wisdom"] = 10,
+                ["Charisma"] = 8,
             }
         };
         var response = await _client.PatchAsJsonAsync(
@@ -641,7 +635,7 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
 
         // First character with this name succeeds
         var beginA = await BeginSessionWithClientAsync(clientA);
-        await clientA.PatchAsJsonAsync($"/api/character-creation/sessions/{beginA.SessionId}/name",  new { CharacterName = "Fernwick" });
+        await clientA.PatchAsJsonAsync($"/api/character-creation/sessions/{beginA.SessionId}/name", new { CharacterName = "Fernwick" });
         await clientA.PatchAsJsonAsync($"/api/character-creation/sessions/{beginA.SessionId}/class", new { ClassName = "warrior" });
         await clientA.PatchAsJsonAsync($"/api/character-creation/sessions/{beginA.SessionId}/species", new { SpeciesSlug = "human" });
         await clientA.PatchAsJsonAsync($"/api/character-creation/sessions/{beginA.SessionId}/background", new { BackgroundId = "soldier" });
@@ -698,7 +692,7 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
         ownerClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ownerToken);
         var begin = await BeginSessionWithClientAsync(ownerClient);
 
-        await ownerClient.PatchAsJsonAsync($"/api/character-creation/sessions/{begin.SessionId}/name",  new { CharacterName = "Grimnir" });
+        await ownerClient.PatchAsJsonAsync($"/api/character-creation/sessions/{begin.SessionId}/name", new { CharacterName = "Grimnir" });
         await ownerClient.PatchAsJsonAsync($"/api/character-creation/sessions/{begin.SessionId}/class", new { ClassName = "warrior" });
 
         otherClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", otherToken);
@@ -719,7 +713,7 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
             new AuthenticationHeaderValue("Bearer", await GetTokenForNewClient(client, "CcDoubleFinalize_User"));
         var begin = await BeginSessionWithClientAsync(client);
 
-        await client.PatchAsJsonAsync($"/api/character-creation/sessions/{begin.SessionId}/name",  new { CharacterName = "Halvard" });
+        await client.PatchAsJsonAsync($"/api/character-creation/sessions/{begin.SessionId}/name", new { CharacterName = "Halvard" });
         await client.PatchAsJsonAsync($"/api/character-creation/sessions/{begin.SessionId}/class", new { ClassName = "warrior" });
         await client.PatchAsJsonAsync($"/api/character-creation/sessions/{begin.SessionId}/species", new { SpeciesSlug = "human" });
         await client.PatchAsJsonAsync($"/api/character-creation/sessions/{begin.SessionId}/background", new { BackgroundId = "soldier" });
@@ -751,7 +745,7 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
         var beginResp = await client.PostAsJsonAsync("/api/character-creation/sessions", new { });
         beginResp.StatusCode.Should().Be(HttpStatusCode.Created);
         var begin = await beginResp.Content.ReadFromJsonAsync<BeginSessionResponse>();
-        var sid   = begin!.SessionId;
+        var sid = begin!.SessionId;
 
         // Set name
         var nameResp = await client.PatchAsJsonAsync(
@@ -806,13 +800,7 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
 
     private async Task<string> GetTokenForNewClient(HttpClient client, string username)
     {
-        var email = $"{username.ToLower()}@cctest.com";
-        await client.PostAsJsonAsync("/api/auth/register",
-            new { Email = email, Username = username, Password = "TestP@ssword123" });
-        var login = await client.PostAsJsonAsync("/api/auth/login",
-            new { Email = email, Password = "TestP@ssword123" });
-        var auth = await login.Content.ReadFromJsonAsync<AuthResponse>();
-        return auth!.AccessToken;
+        return (await _factory.CreateAccountTokenAsync(username)).Token;
     }
 
     // Local response projection types (avoid depending on internal server DTOs)

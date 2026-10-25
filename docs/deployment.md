@@ -40,8 +40,7 @@ than the browser bundle.
 |---|---|---|
 | `POSTGRES_HOST` / `POSTGRES_PORT` / `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | server | Builds the .NET connection string. |
 | `DATABASE_URL` | web | Better Auth/Drizzle connection. Must be able to create the `auth` schema on first boot. |
-| `Web__BaseUrl` | server | Public site origin (`https://veldrath.com`); OAuth return URLs, email links, default SignalR CORS origin. Must equal the web's `ORIGIN` / `BETTER_AUTH_URL`. |
-| `Auth__CookieDomain` | server | `.veldrath.com` — cross-subdomain session cookie. **Required**: the server throws at startup when `ASPNETCORE_ENVIRONMENT=Production` and this is missing. |
+| `Web__BaseUrl` | server | Public site origin (`https://veldrath.com`); email links and the default SignalR CORS origin. Must equal the web's `ORIGIN` / `BETTER_AUTH_URL`. |
 | `JWT_KEY` | server + web | Shared HMAC signing key, at least 32 chars. Must be **byte-identical** on both resources — the web mints game tokens with it and the server validates them, so any drift surfaces as `401` on `/api/characters` (see [the troubleshooting steps](coolify-deployment.md#troubleshooting-401-from-the-game-api)). |
 | `BETTER_AUTH_SECRET` | web | Better Auth session secret, at least 32 chars. |
 | `INTERNAL_BRIDGE_TOKEN` | server + web | Shared secret for the internal SvelteKit → server transactional-email relay (the server owns SMTP). |
@@ -49,7 +48,8 @@ than the browser bundle.
 | `EMAIL_SMTP_HOST` / `EMAIL_USER` / `EMAIL_PASSWORD` | server | Outbound email. |
 | `SEQ_ADMIN_PASSWORD` / `GF_ADMIN_PASSWORD` | seq / grafana | Admin passwords. |
 
-Optional OAuth provider credentials, shared by the .NET server and Better Auth:
+Optional OAuth provider credentials — read by **Better Auth on the web resource only** (the .NET
+server registers no social providers):
 
 ```ini
 OAUTH_DISCORD_CLIENT_ID

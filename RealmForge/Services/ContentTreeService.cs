@@ -37,16 +37,16 @@ public class ContentTreeService(IServiceScopeFactory scopeFactory, ILogger<Conte
         foreach (var domainGroup in ContentDomainCatalog.All.GroupBy(e => e.DomainGroup))
         {
             var domainEntry = domainGroup.First();
-            var rawLabel    = domainEntry.DomainLabel;
-            var sepIdx      = rawLabel.IndexOf(" › ", StringComparison.Ordinal);
-            var shortName   = sepIdx >= 0 ? rawLabel[(sepIdx + 3)..] : rawLabel;
+            var rawLabel = domainEntry.DomainLabel;
+            var sepIdx = rawLabel.IndexOf(" › ", StringComparison.Ordinal);
+            var shortName = sepIdx >= 0 ? rawLabel[(sepIdx + 3)..] : rawLabel;
 
             var domainNode = new FileTreeNodeViewModel
             {
-                Name        = shortName,
-                FullPath    = domainGroup.Key,
+                Name = shortName,
+                FullPath = domainGroup.Key,
                 IsDirectory = true,
-                IconPath    = ContentDomainCatalog.GetDomainIconPath(domainGroup.Key),
+                IconPath = ContentDomainCatalog.GetDomainIconPath(domainGroup.Key),
                 ActivityKey = ContentDomainCatalog.GetActivityKey(domainGroup.Key),
             };
 
@@ -54,12 +54,12 @@ public class ContentTreeService(IServiceScopeFactory scopeFactory, ILogger<Conte
             {
                 var typeNode = new FileTreeNodeViewModel
                 {
-                    Name        = entry.TypeKeyLabel,
-                    FullPath    = $"{entry.Domain}/{entry.TypeKey}",
+                    Name = entry.TypeKeyLabel,
+                    FullPath = $"{entry.Domain}/{entry.TypeKey}",
                     IsDirectory = true,
-                    TableName   = entry.TableName,
-                    Domain      = entry.Domain,
-                    TypeKey     = entry.TypeKey,
+                    TableName = entry.TableName,
+                    Domain = entry.Domain,
+                    TypeKey = entry.TypeKey,
                     DomainLabel = entry.DomainLabel,
                 };
 
@@ -69,10 +69,10 @@ public class ContentTreeService(IServiceScopeFactory scopeFactory, ILogger<Conte
                     {
                         typeNode.Children.Add(new FileTreeNodeViewModel
                         {
-                            Name        = reg.Slug,
-                            FullPath    = $"{entry.TableName}/{reg.EntityId}",
-                            EntityId    = reg.EntityId,
-                            TableName   = entry.TableName,
+                            Name = reg.Slug,
+                            FullPath = $"{entry.TableName}/{reg.EntityId}",
+                            EntityId = reg.EntityId,
+                            TableName = entry.TableName,
                             IsDirectory = false,
                         });
                     }

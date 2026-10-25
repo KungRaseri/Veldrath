@@ -79,7 +79,7 @@ public class BudgetCalculator
         {
             return cost;
         }
-        
+
         // Default to 0 for unknown patterns
         return 0;
     }

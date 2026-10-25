@@ -43,18 +43,18 @@ public class EfCoreSkillRepository(ContentDbContext db, ILogger<EfCoreSkillRepos
 
     private static SkillDefinition MapToModel(Entities.Skill e) => new()
     {
-        SkillId          = e.Slug,
-        Name             = e.Slug,
-        DisplayName      = e.DisplayName ?? e.Slug,
-        Description      = string.Empty,
-        Category         = e.TypeKey,
-        BaseXPCost       = e.Stats.XpPerRank ?? 100,
-        CostMultiplier   = 0.5,
-        MaxRank          = e.MaxRank,
-        GoverningAttribute = e.Traits.Combat == true      ? "strength"     :
-                             e.Traits.Crafting == true    ? "intelligence" :
-                             e.Traits.Social == true      ? "charisma"     :
-                             e.Traits.Exploration == true ? "dexterity"    :
+        SkillId = e.Slug,
+        Name = e.Slug,
+        DisplayName = e.DisplayName ?? e.Slug,
+        Description = string.Empty,
+        Category = e.TypeKey,
+        BaseXPCost = e.Stats.XpPerRank ?? 100,
+        CostMultiplier = 0.5,
+        MaxRank = e.MaxRank,
+        GoverningAttribute = e.Traits.Combat == true ? "strength" :
+                             e.Traits.Crafting == true ? "intelligence" :
+                             e.Traits.Social == true ? "charisma" :
+                             e.Traits.Exploration == true ? "dexterity" :
                              "none",
     };
 }

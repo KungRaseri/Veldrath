@@ -32,9 +32,9 @@ public class EnemySpellCastingServiceTests
     {
         // Arrange
         var service = new EnemySpellCastingService();
-        var enemy = new Enemy 
-        { 
-            Name = "Mage", 
+        var enemy = new Enemy
+        {
+            Name = "Mage",
             SpellIds = new List<string> { "fireball" },
             Mana = 0,
             MaxMana = 100
@@ -53,9 +53,9 @@ public class EnemySpellCastingServiceTests
     {
         // Arrange
         var service = new EnemySpellCastingService(); // No catalog means no spells available
-        var enemy = new Enemy 
-        { 
-            Name = "Mage", 
+        var enemy = new Enemy
+        {
+            Name = "Mage",
             SpellIds = new List<string> { "fireball" },
             Mana = 50,
             MaxMana = 100,

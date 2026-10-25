@@ -45,10 +45,10 @@ public class MainWindowViewModel : ReactiveObject
         ];
         ActivitySections[0].IsActive = true;
 
-        TogglePaneCommand   = ReactiveCommand.Create(() => { IsPaneOpen = !IsPaneOpen; });
-        ToggleThemeCommand  = ReactiveCommand.Create(() => { IsDarkMode = !IsDarkMode; });
-        RefreshTreeCommand  = ReactiveCommand.CreateFromTask(LoadTreeAsync);
-        ShowAboutCommand    = ReactiveCommand.CreateFromTask(ShowAboutAsync);
+        TogglePaneCommand = ReactiveCommand.Create(() => { IsPaneOpen = !IsPaneOpen; });
+        ToggleThemeCommand = ReactiveCommand.Create(() => { IsDarkMode = !IsDarkMode; });
+        RefreshTreeCommand = ReactiveCommand.CreateFromTask(LoadTreeAsync);
+        ShowAboutCommand = ReactiveCommand.CreateFromTask(ShowAboutAsync);
         OpenMapGraphEditorCommand = ReactiveCommand.Create(OpenMapGraphEditor);
         SelectActivityCommand = ReactiveCommand.Create<string>(key =>
         {
@@ -256,14 +256,14 @@ public class MainWindowViewModel : ReactiveObject
     private void OpenEntityList(FileTreeNodeViewModel typeKeyNode)
     {
         CurrentPage = new EntityListViewModel(
-            domainLabel:  typeKeyNode.DomainLabel ?? typeKeyNode.Domain ?? "",
+            domainLabel: typeKeyNode.DomainLabel ?? typeKeyNode.Domain ?? "",
             typeKeyLabel: typeKeyNode.Name,
-            tableName:    typeKeyNode.TableName!,
-            domain:       typeKeyNode.Domain!,
-            typeKey:      typeKeyNode.TypeKey!,
-            service:      _contentEditorService,
-            onOpen:    row => _ = OpenEntityByIdAsync(row.EntityId, row.TableName),
-            onNew:     () => _ = StartNewEntityAsync(typeKeyNode),
+            tableName: typeKeyNode.TableName!,
+            domain: typeKeyNode.Domain!,
+            typeKey: typeKeyNode.TypeKey!,
+            service: _contentEditorService,
+            onOpen: row => _ = OpenEntityByIdAsync(row.EntityId, row.TableName),
+            onNew: () => _ = StartNewEntityAsync(typeKeyNode),
             onDeleted: deletedId =>
             {
                 if (CurrentPage is EntityEditorViewModel vm && vm.EntityId == deletedId)
@@ -307,13 +307,13 @@ public class MainWindowViewModel : ReactiveObject
     {
         var dialog = new Window
         {
-            Title             = "About RealmForge",
-            Width             = 560,
-            SizeToContent     = SizeToContent.Height,
-            CanResize         = false,
+            Title = "About RealmForge",
+            Width = 560,
+            SizeToContent = SizeToContent.Height,
+            CanResize = false,
             SystemDecorations = Avalonia.Controls.SystemDecorations.Full,
-            Background        = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#1e1e1e")),
-            Content           = new AboutView { DataContext = new AboutViewModel() },
+            Background = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#1e1e1e")),
+            Content = new AboutView { DataContext = new AboutViewModel() },
         };
 
         if (_ownerWindow is not null)

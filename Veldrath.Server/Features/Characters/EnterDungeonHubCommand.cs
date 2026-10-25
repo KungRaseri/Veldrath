@@ -45,7 +45,7 @@ public class EnterDungeonHubCommandHandler : IRequestHandler<EnterDungeonHubComm
         ILogger<EnterDungeonHubCommandHandler> logger)
     {
         _zoneRepo = zoneRepo;
-        _logger   = logger;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the dungeon entry outcome.</summary>
@@ -72,7 +72,7 @@ public class EnterDungeonHubCommandHandler : IRequestHandler<EnterDungeonHubComm
 
         return new EnterDungeonHubResult
         {
-            Success   = true,
+            Success = true,
             DungeonId = zone.Id,
         };
     }

@@ -1,42 +1,42 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
-using FluentValidation;
+﻿using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Behaviors;
-using RealmEngine.Core.Generators.Modern;
-using RealmEngine.Core.Services;
-using RealmEngine.Core.Services.Harvesting;
-using RealmEngine.Core.Services.Budget;
-// Alias to disambiguate from RealmEngine.Core.Services.HarvestingConfig (in HarvestingConfigService.cs)
-using HarvestingConfigData = RealmEngine.Core.Services.Harvesting.HarvestingConfig;
+using RealmEngine.Core.Features.Achievements.Services;
+using RealmEngine.Core.Features.CharacterCreation.Services;
 using RealmEngine.Core.Features.Combat;
 using RealmEngine.Core.Features.Combat.Services;
-using RealmEngine.Core.Features.Exploration;
-using RealmEngine.Core.Features.Exploration.Services;
-using RealmEngine.Core.Features.SaveLoad;
-using RealmEngine.Core.Features.CharacterCreation.Services;
-using RealmEngine.Core.Features.Quests.Services;
-using RealmEngine.Core.Features.Reputation.Services;
-using RealmEngine.Core.Features.Party.Services;
-using RealmEngine.Core.Features.Difficulty.Services;
+using RealmEngine.Core.Features.Crafting.Services;
 using RealmEngine.Core.Features.Death;
 using RealmEngine.Core.Features.Death.Services;
-using RealmEngine.Core.Features.Victory.Services;
-using RealmEngine.Core.Features.Progression.Services;
-using RealmEngine.Core.Features.Crafting.Services;
-using RealmEngine.Core.Features.Socketing;
+using RealmEngine.Core.Features.Difficulty.Services;
 using RealmEngine.Core.Features.Enchanting;
+using RealmEngine.Core.Features.Exploration;
+using RealmEngine.Core.Features.Exploration.Services;
+using RealmEngine.Core.Features.Party.Services;
+using RealmEngine.Core.Features.Progression.Services;
+using RealmEngine.Core.Features.Quests.Services;
+using RealmEngine.Core.Features.Reputation.Services;
+using RealmEngine.Core.Features.SaveLoad;
+using RealmEngine.Core.Features.Socketing;
 using RealmEngine.Core.Features.Upgrading;
-using RealmEngine.Core.Features.Achievements.Services;
+using RealmEngine.Core.Features.Victory.Services;
+using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Core.Repositories;
+using RealmEngine.Core.Services;
+using RealmEngine.Core.Services.Budget;
+using RealmEngine.Core.Services.Harvesting;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Repositories;
 using RealmEngine.Data.Services;
 using RealmEngine.Shared.Abstractions;
+// Alias to disambiguate from RealmEngine.Core.Services.HarvestingConfig (in HarvestingConfigService.cs)
+using HarvestingConfigData = RealmEngine.Core.Services.Harvesting.HarvestingConfig;
 
 namespace RealmEngine.Core;
 
@@ -66,7 +66,7 @@ public static class ServiceCollectionExtensions
 
         // Register category discovery service (singleton for caching)
         services.AddSingleton<CategoryDiscoveryService>();
-        
+
         // Register generators (all available)
         services.AddScoped<ItemGenerator>();
         services.AddScoped<EnemyGenerator>();
@@ -84,14 +84,14 @@ public static class ServiceCollectionExtensions
         services.AddScoped<RuneGenerator>();
         services.AddScoped<OrbGenerator>();
         services.AddScoped<CrystalGenerator>();
-        
+
         // Register game logic services
         services.AddScoped<LootTableService>();
         services.AddScoped<CharacterGrowthService>();
         services.AddScoped<ShopEconomyService>();
         services.AddScoped<LevelUpService>();
         services.AddScoped<IGameStateService, GameStateService>();
-        
+
         // Register harvesting services
         // HarvestingConfigData alias = RealmEngine.Core.Services.Harvesting.HarvestingConfig (all defaults)
         services.AddSingleton(new HarvestingConfigData());
@@ -102,7 +102,7 @@ public static class ServiceCollectionExtensions
 
         // Register budget configuration factory and services
         services.AddSingleton<BudgetConfigFactory>();
-        services.AddSingleton<BudgetConfig>(sp => 
+        services.AddSingleton<BudgetConfig>(sp =>
         {
             var factory = sp.GetRequiredService<BudgetConfigFactory>();
             return factory.GetBudgetConfig();
@@ -119,18 +119,18 @@ public static class ServiceCollectionExtensions
         services.AddScoped<BudgetItemGenerationService>();
         services.AddScoped<MaterialPoolService>();
         services.AddScoped<BudgetHelperService>();
-        
+
         // Register catalog loaders
         services.AddScoped<RecipeDataService>();
         services.AddScoped<ItemDataService>();
-        
+
         // Register config/utility services
         services.AddScoped<RarityConfigService>();
         services.AddScoped<DescriptiveTextService>();
         services.AddScoped<NodeSpawnerService>();
         services.AddScoped<ReactivePowerService>();
         services.AddScoped<PassiveBonusCalculator>();
-        
+
         // Register catalog services (singletons for shared catalogs)
         // NOTE: These catalog services require InitializeAsync() to be called after DI container is built
         // Example: await serviceProvider.GetRequiredService<PowerDataService>().InitializeAsync();
@@ -139,13 +139,13 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(sp => new PowerDataService(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetService<ILogger<PowerDataService>>()));
         services.AddSingleton(sp => new SkillDataService(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetService<ILogger<SkillDataService>>()));
         services.AddSingleton(sp => new NamePatternService(sp.GetRequiredService<IServiceScopeFactory>(), sp.GetService<ILogger<NamePatternService>>()));
-        
+
         // Register interfaces to implementations
         services.AddScoped<IApocalypseTimer, ApocalypseTimer>();
         services.AddScoped<ISaveGameService, SaveGameService>();
         services.AddScoped<ICombatSettings>(sp => sp.GetRequiredService<ISaveGameService>().GetDifficultySettings());
         services.AddScoped<IPassiveBonusCalculator, PassiveBonusCalculator>();
-        
+
         // Register repositories (interfaces defined in Shared, implementations in Data)
         // Mode is controlled by the persistence options passed to AddRealmEngineCore().
         if (persistenceOptions.IsNpgsql)
@@ -218,7 +218,7 @@ public static class ServiceCollectionExtensions
         // External: host is responsible for registering ALL repo interfaces.
         services.AddSingleton<ISaveGameContext, SaveGameContext>();
         services.AddScoped<INodeRepository, InMemoryNodeRepository>();
-        
+
         // Register feature services (concrete implementations)
         services.AddScoped<SaveGameService>();
         services.AddScoped<LoadGameService>();
@@ -255,15 +255,15 @@ public static class ServiceCollectionExtensions
         services.AddScoped<SocketService>();
         services.AddScoped<EnchantingService>();
         services.AddScoped<UpgradeService>();
-        
+
         // Register combat AI services
         services.AddScoped<EnemySpellCastingService>();
         services.AddScoped<EnemyPowerAIService>();
-        
+
         // Register additional feature services
         services.AddScoped<DungeonGeneratorService>();
         services.AddScoped<AchievementService>();
-        
+
         // NOTE: Catalog initialization is NOT registered automatically because the startup
         // order varies by host type:
         //   • Generic Host consumers (ASP.NET Core, Blazor, Avalonia with IHost) —
@@ -271,7 +271,7 @@ public static class ServiceCollectionExtensions
         //     AddRealmEngineCore(), so the host starts it after EF schema is ready.
         //   • Non-hosted consumers (console apps, test fixtures) —
         //     call await services.InitializeCatalogsAsync() on the built IServiceProvider.
-        
+
         return services;
     }
 
@@ -291,7 +291,7 @@ public static class ServiceCollectionExtensions
         await services.GetRequiredService<PowerDataService>().InitializeAsync();
         await services.GetRequiredService<SkillDataService>().InitializeAsync();
     }
-    
+
     /// <summary>
     /// Registers MediatR with all handlers, pipeline behaviors, and FluentValidation validators.
     /// Call this after registering Data and Core services so all handler dependencies are available.
@@ -304,16 +304,16 @@ public static class ServiceCollectionExtensions
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(typeof(ServiceCollectionExtensions).Assembly);
-            
+
             // Register pipeline behaviors in order (validation -> logging -> performance)
             cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
             cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
             cfg.AddOpenBehavior(typeof(PerformanceBehavior<,>));
         });
-        
+
         // Register all FluentValidation validators from the Core assembly
         services.AddValidatorsFromAssembly(typeof(ServiceCollectionExtensions).Assembly);
-        
+
         return services;
     }
 

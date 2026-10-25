@@ -1,5 +1,6 @@
 using FluentAssertions;
 using MediatR;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RealmEngine.Core.Features.Quests.Commands;
 using RealmEngine.Core.Features.Quests.Services;
@@ -7,7 +8,6 @@ using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Shared.Models;
 using QuestModel = RealmEngine.Shared.Models.Quest;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Quest.Commands;
 
@@ -51,7 +51,7 @@ public class CompleteQuestHandlerTests
         _mockQuestService
             .Setup(s => s.CompleteQuestAsync(questId))
             .ReturnsAsync((true, quest, string.Empty));
-        
+
         _mockSaveGameService
             .Setup(s => s.GetCurrentSave())
             .Returns(saveGame);

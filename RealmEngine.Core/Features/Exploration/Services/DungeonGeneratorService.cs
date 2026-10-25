@@ -1,6 +1,6 @@
-using RealmEngine.Shared.Models;
-using RealmEngine.Core.Generators.Modern;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Core.Generators.Modern;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Exploration.Services;
 
@@ -154,13 +154,13 @@ public class DungeonGeneratorService
     {
         // Generate 1-3 enemies based on room difficulty
         var enemyCount = _random.Next(1, 4);
-        
+
         // Get appropriate enemy category for this dungeon
         var enemyCategory = GetDungeonEnemyCategory(location);
-        
+
         // Generate enemies
         var enemies = await _enemyGenerator.GenerateEnemiesAsync(enemyCategory, enemyCount, hydrate: true);
-        
+
         // Filter to appropriate level (within ±2 levels of character)
         room.Enemies = enemies
             .Where(e => Math.Abs(e.Level - characterLevel) <= 2)
@@ -178,13 +178,13 @@ public class DungeonGeneratorService
     private void PopulateTreasureRoom(DungeonRoom room, int dungeonLevel)
     {
         room.Description = "A treasure chamber! Chests and valuables glitter in the torchlight.";
-        
+
         // Generous gold reward
         room.GoldReward = _random.Next(50, 150) * dungeonLevel;
-        
+
         // Small XP for finding treasure
         room.ExperienceReward = 20 * dungeonLevel;
-        
+
         // Treasure room auto-clears (no combat)
         room.IsCleared = false; // Player must "claim" the treasure
     }
@@ -195,10 +195,10 @@ public class DungeonGeneratorService
     private async Task PopulateBossRoomAsync(DungeonRoom room, Location location, int characterLevel)
     {
         var enemyCategory = GetDungeonEnemyCategory(location);
-        
+
         // Generate boss enemies (higher level, stronger)
         var enemies = await _enemyGenerator.GenerateEnemiesAsync(enemyCategory, 5, hydrate: true);
-        
+
         // Pick the strongest enemy as the boss
         var boss = enemies
             .Where(e => e.Level >= characterLevel)
@@ -212,7 +212,7 @@ public class DungeonGeneratorService
             boss.Health = boss.MaxHealth;
             boss.GoldReward = (int)(boss.GoldReward * 2);
             boss.XP = (int)(boss.XP * 2);
-            
+
             room.Enemies = new List<Enemy> { boss };
         }
 
@@ -227,7 +227,7 @@ public class DungeonGeneratorService
     {
         // Check location features for hints
         var features = location.Features.Select(f => f.ToLower()).ToList();
-        
+
         if (features.Any(f => f.Contains("undead") || f.Contains("crypt") || f.Contains("tomb")))
             return "undead";
         if (features.Any(f => f.Contains("demon") || f.Contains("infernal")))
@@ -236,7 +236,7 @@ public class DungeonGeneratorService
             return "elementals";
         if (features.Any(f => f.Contains("construct") || f.Contains("mechanical")))
             return "constructs";
-        
+
         // Default to humanoids (bandits, cultists, etc.)
         return "humanoids";
     }

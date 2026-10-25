@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RealmEngine.Core.Features.Harvesting;
@@ -8,7 +9,6 @@ using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using RealmEngine.Shared.Models.Harvesting;
-using Microsoft.EntityFrameworkCore;
 
 namespace RealmEngine.Core.Tests.Features.Harvesting;
 

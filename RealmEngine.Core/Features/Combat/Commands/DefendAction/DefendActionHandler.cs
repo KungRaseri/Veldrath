@@ -30,8 +30,8 @@ public class DefendActionHandler : IRequestHandler<DefendActionCommand, DefendAc
         var defenseBonus = player.Constitution / 2;
 
         combatLog?.AddEntry($"{player.Name} takes a defensive stance! (Defense +{defenseBonus})");
-        
-        _logger.LogInformation("Player {PlayerName} defended (bonus: {DefenseBonus})", 
+
+        _logger.LogInformation("Player {PlayerName} defended (bonus: {DefenseBonus})",
             player.Name, defenseBonus);
 
         return Task.FromResult(new DefendActionResult

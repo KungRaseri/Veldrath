@@ -51,20 +51,20 @@ public sealed class ContentExtendedEndpointsFixture : IAsyncLifetime
         // ActorArchetype — appears in both /enemies AND /npcs (no hostile filter).
         db.ActorArchetypes.Add(new ActorArchetype
         {
-            Slug        = "typed-bandit",
-            TypeKey     = "humanoids/bandits",
+            Slug = "typed-bandit",
+            TypeKey = "humanoids/bandits",
             DisplayName = "Bandit",
-            IsActive    = true,
-            MinLevel    = 5,
-            MaxLevel    = 10,
-            Stats       = new ArchetypeStats
+            IsActive = true,
+            MinLevel = 5,
+            MaxLevel = 10,
+            Stats = new ArchetypeStats
             {
-                Health        = 80,
-                Strength      = 12,
-                Agility       = 10,
-                Intelligence  = 5,
-                Constitution  = 10,
-                Damage        = 8,
+                Health = 80,
+                Strength = 12,
+                Agility = 10,
+                Intelligence = 5,
+                Constitution = 10,
+                Damage = 8,
                 ExperienceReward = 50,
                 GoldRewardMin = 5,
                 GoldRewardMax = 15,
@@ -73,27 +73,27 @@ public sealed class ContentExtendedEndpointsFixture : IAsyncLifetime
 
         db.Quests.Add(new Quest
         {
-            Slug         = "typed-clear-the-camp",
-            TypeKey      = "combat",
-            DisplayName  = "Clear the Camp",
-            IsActive     = true,
+            Slug = "typed-clear-the-camp",
+            TypeKey = "combat",
+            DisplayName = "Clear the Camp",
+            IsActive = true,
             RarityWeight = 60,
-            MinLevel     = 5,
+            MinLevel = 5,
         });
 
         // Recipe with a relational ingredient — EF resolves RecipeId FK on save.
         db.Recipes.Add(new Recipe
         {
-            Slug             = "typed-iron-sword",
-            TypeKey          = "weapons",
-            DisplayName      = "Iron Sword Recipe",
-            IsActive         = true,
+            Slug = "typed-iron-sword",
+            TypeKey = "weapons",
+            DisplayName = "Iron Sword Recipe",
+            IsActive = true,
             OutputItemDomain = "weapons",
-            OutputItemSlug   = "iron-sword",
-            OutputQuantity   = 1,
-            CraftingSkill    = "blacksmithing",
-            CraftingLevel    = 5,
-            Ingredients      =
+            OutputItemSlug = "iron-sword",
+            OutputQuantity = 1,
+            CraftingSkill = "blacksmithing",
+            CraftingLevel = 5,
+            Ingredients =
             [
                 new RecipeIngredient { ItemDomain = "materials", ItemSlug = "iron", Quantity = 2 },
             ],
@@ -102,13 +102,13 @@ public sealed class ContentExtendedEndpointsFixture : IAsyncLifetime
         // LootTable with a relational entry row.
         db.LootTables.Add(new LootTable
         {
-            Slug        = "typed-wolf-drops",
-            TypeKey     = "enemies",
+            Slug = "typed-wolf-drops",
+            TypeKey = "enemies",
             DisplayName = "Wolf Drops",
-            IsActive    = true,
+            IsActive = true,
             RarityWeight = 60,
-            Traits      = new LootTableTraits { Common = true },
-            Entries     =
+            Traits = new LootTableTraits { Common = true },
+            Entries =
             [
                 new LootTableEntry
                 {
@@ -124,13 +124,13 @@ public sealed class ContentExtendedEndpointsFixture : IAsyncLifetime
         // Power — School "fire" maps to MagicalTradition.Primal → PowerDto.School = "Primal".
         db.Powers.Add(new Power
         {
-            Slug        = "typed-fireball",
-            TypeKey     = "fire",
+            Slug = "typed-fireball",
+            TypeKey = "fire",
             DisplayName = "Fireball",
-            IsActive    = true,
-            School      = "fire",
+            IsActive = true,
+            School = "fire",
             RarityWeight = 50,
-            Stats       = new PowerStats { ManaCost = 25, CastTime = 1.5f, Range = 20 },
+            Stats = new PowerStats { ManaCost = 25, CastTime = 1.5f, Range = 20 },
         });
 
         await db.SaveChangesAsync();

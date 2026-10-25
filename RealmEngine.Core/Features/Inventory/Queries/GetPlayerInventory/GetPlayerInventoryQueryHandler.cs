@@ -87,7 +87,7 @@ public class GetPlayerInventoryQueryHandler : IRequestHandler<GetPlayerInventory
     private static HashSet<string> GetEquippedItemIds(Character character)
     {
         var equipped = new HashSet<string>();
-        
+
         if (character.EquippedMainHand != null) equipped.Add(character.EquippedMainHand.Id);
         if (character.EquippedOffHand != null) equipped.Add(character.EquippedOffHand.Id);
         if (character.EquippedHelmet != null) equipped.Add(character.EquippedHelmet.Id);

@@ -10,17 +10,17 @@ public enum SocketType
     /// Physical gems providing attribute bonuses (Ruby: +STR, Sapphire: +INT, etc.).
     /// </summary>
     Gem,
-    
+
     /// <summary>
     /// Inscribed runes providing proc effects (Fury Rune: chance to enrage, etc.).
     /// </summary>
     Rune,
-    
+
     /// <summary>
     /// Energy crystals providing resource effects (Life Crystal: +max HP, +regen, etc.).
     /// </summary>
     Crystal,
-    
+
     /// <summary>
     /// Skill orbs providing ability enhancements (Strike Orb: +skill damage, -cooldown, etc.).
     /// </summary>

@@ -27,7 +27,7 @@ public class CheckAffordabilityQueryHandlerTests
 
     private static CheckAffordabilityQueryHandler CreateHandler(
         Mock<ISaveGameService>? saveSvc = null,
-        ShopEconomyService?     shopSvc = null) =>
+        ShopEconomyService? shopSvc = null) =>
         new(
             (saveSvc ?? new Mock<ISaveGameService>()).Object,
             shopSvc ?? FakeShopService(),

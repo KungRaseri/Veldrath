@@ -51,29 +51,29 @@ public class GetSalvagePreviewHandler : IRequestHandler<GetSalvagePreviewQuery, 
     /// <summary>Returns a read-only preview of the expected salvage yield without consuming the item.</summary>
     public Task<SalvagePreviewResult> Handle(GetSalvagePreviewQuery request, CancellationToken cancellationToken)
     {
-        var item      = request.Item;
+        var item = request.Item;
         var character = request.Character;
 
         if (!SalvageService.CanBeSalvaged(item.Type))
         {
             return Task.FromResult(new SalvagePreviewResult
             {
-                CanSalvage    = false,
+                CanSalvage = false,
                 BlockedReason = $"{item.Type} items cannot be salvaged."
             });
         }
 
-        var skillName  = SalvageService.GetSkillName(item.Type);
+        var skillName = SalvageService.GetSkillName(item.Type);
         var skillLevel = character.Skills.TryGetValue(skillName, out var skill) ? skill.CurrentRank : 0;
-        var yieldRate  = SalvageService.CalculateYieldRate(character, item.Type);
-        var scrap      = SalvageService.GetExpectedScrap(item, yieldRate);
+        var yieldRate = SalvageService.CalculateYieldRate(character, item.Type);
+        var scrap = SalvageService.GetExpectedScrap(item, yieldRate);
 
         return Task.FromResult(new SalvagePreviewResult
         {
-            CanSalvage    = true,
-            SkillName     = skillName,
-            SkillLevel    = skillLevel,
-            YieldRate     = yieldRate,
+            CanSalvage = true,
+            SkillName = skillName,
+            SkillLevel = skillLevel,
+            YieldRate = yieldRate,
             ExpectedScrap = scrap
         });
     }

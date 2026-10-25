@@ -30,17 +30,17 @@ public sealed class ContentBrowseFixture : IAsyncLifetime
 
         db.Skills.Add(new Skill
         {
-            Slug        = "browse-test-skill",
-            TypeKey     = "active",
+            Slug = "browse-test-skill",
+            TypeKey = "active",
             DisplayName = "Browse Test Skill",
-            IsActive    = true,
+            IsActive = true,
         });
         db.Skills.Add(new Skill
         {
-            Slug        = "browse-inactive-skill",
-            TypeKey     = "passive",
+            Slug = "browse-inactive-skill",
+            TypeKey = "passive",
             DisplayName = "Inactive Skill",
-            IsActive    = false,
+            IsActive = false,
         });
 
         await db.SaveChangesAsync();
@@ -84,8 +84,8 @@ public class ContentBrowseEndpointTests(ContentBrowseFixture fixture) : IClassFi
     public async Task GetSchema_Contains_Expected_Type_Keys()
     {
         var response = await _client.GetAsync("/api/content/schema");
-        var types    = await response.Content.ReadFromJsonAsync<List<ContentTypeInfoDto>>();
-        var keys     = types!.Select(t => t.ContentType).ToHashSet();
+        var types = await response.Content.ReadFromJsonAsync<List<ContentTypeInfoDto>>();
+        var keys = types!.Select(t => t.ContentType).ToHashSet();
 
         foreach (var expected in new[] { "ability", "skill", "weapon", "spell", "quest", "recipe", "loottable" })
             keys.Should().Contain(expected);
@@ -95,7 +95,7 @@ public class ContentBrowseEndpointTests(ContentBrowseFixture fixture) : IClassFi
     public async Task GetSchema_Type_Entries_Have_Non_Empty_Labels()
     {
         var response = await _client.GetAsync("/api/content/schema");
-        var types    = await response.Content.ReadFromJsonAsync<List<ContentTypeInfoDto>>();
+        var types = await response.Content.ReadFromJsonAsync<List<ContentTypeInfoDto>>();
 
         types!.Should().AllSatisfy(t =>
         {
@@ -160,7 +160,7 @@ public class ContentBrowseEndpointTests(ContentBrowseFixture fixture) : IClassFi
     public async Task Browse_Respects_Custom_PageSize()
     {
         var response = await _client.GetAsync("/api/content/browse?type=skill&page=1&pageSize=5");
-        var result   = await response.Content.ReadFromJsonAsync<PagedResult<ContentSummaryDto>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<ContentSummaryDto>>();
 
         result!.PageSize.Should().Be(5);
     }
@@ -235,7 +235,7 @@ public class ContentBrowseEndpointTests(ContentBrowseFixture fixture) : IClassFi
     public async Task BrowseDetail_Payload_Is_A_Json_Object()
     {
         var response = await _client.GetAsync("/api/content/browse/skill/browse-test-skill");
-        var detail   = await response.Content.ReadFromJsonAsync<ContentDetailDto>();
+        var detail = await response.Content.ReadFromJsonAsync<ContentDetailDto>();
 
         detail!.Payload.ValueKind.Should().Be(JsonValueKind.Object);
     }
@@ -252,7 +252,7 @@ public class ContentBrowseEndpointTests(ContentBrowseFixture fixture) : IClassFi
     public async Task BrowseDetail_Payload_Is_CamelCase()
     {
         var response = await _client.GetAsync("/api/content/browse/skill/browse-test-skill");
-        var detail   = await response.Content.ReadFromJsonAsync<ContentDetailDto>();
+        var detail = await response.Content.ReadFromJsonAsync<ContentDetailDto>();
 
         // Spot-check that the known root field is camelCase
         detail!.Payload.TryGetProperty("slug", out _).Should().BeTrue();
@@ -263,8 +263,8 @@ public class ContentBrowseEndpointTests(ContentBrowseFixture fixture) : IClassFi
     public async Task GetSchema_Contains_Language_Type()
     {
         var response = await _client.GetAsync("/api/content/schema");
-        var types    = await response.Content.ReadFromJsonAsync<List<ContentTypeInfoDto>>();
-        var keys     = types!.Select(t => t.ContentType).ToHashSet();
+        var types = await response.Content.ReadFromJsonAsync<List<ContentTypeInfoDto>>();
+        var keys = types!.Select(t => t.ContentType).ToHashSet();
 
         keys.Should().Contain("language");
     }
@@ -282,7 +282,7 @@ public class ContentBrowseEndpointTests(ContentBrowseFixture fixture) : IClassFi
     public async Task Browse_Language_Returns_Empty_Paged_Result_When_No_Languages_Seeded()
     {
         var response = await _client.GetAsync("/api/content/browse?type=language");
-        var result   = await response.Content.ReadFromJsonAsync<PagedResult<ContentSummaryDto>>();
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<ContentSummaryDto>>();
 
         result.Should().NotBeNull();
         result!.Page.Should().Be(1);

@@ -1,11 +1,11 @@
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
-using System.Threading.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Serilog;
-using Serilog.Events;
+using Prometheus;
+using Prometheus.DotNetRuntime;
 using RealmEngine.Core;
 using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Features.Progression.Services;
@@ -13,30 +13,30 @@ using RealmEngine.Core.Repositories;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Repositories;
 using RealmEngine.Data.Services;
+using RealmEngine.Shared.Abstractions;
+using Serilog;
+using Serilog.Events;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
-using Veldrath.Server.Features.Admin;
 using Veldrath.Server.Features.Account;
-using Veldrath.Server.Features.Auth;
+using Veldrath.Server.Features.Admin;
 using Veldrath.Server.Features.Announcements;
+using Veldrath.Server.Features.Auth;
 using Veldrath.Server.Features.Characters;
-using Veldrath.Server.Features.Editorial;
 using Veldrath.Server.Features.Content;
-using Veldrath.Server.Features.Foundry;
-using Veldrath.Server.Features.Reports;
-using Veldrath.Server.Features.Players;
-using Veldrath.Server.Features.Zones;
 using Veldrath.Server.Features.Dev;
-using Veldrath.Server.Infrastructure.Email;
-using Veldrath.Server.Services;
+using Veldrath.Server.Features.Editorial;
+using Veldrath.Server.Features.Foundry;
+using Veldrath.Server.Features.Players;
+using Veldrath.Server.Features.Reports;
+using Veldrath.Server.Features.Zones;
 using Veldrath.Server.Health;
 using Veldrath.Server.Hubs;
 using Veldrath.Server.Infrastructure;
+using Veldrath.Server.Infrastructure.Email;
+using Veldrath.Server.Services;
 using Veldrath.Server.Settings;
-using RealmEngine.Shared.Abstractions;
-using Prometheus;
-using Prometheus.DotNetRuntime;
 
 // Read Seq URL early so it can be wired into the bootstrap logger before the host is built.
 var bootstrapConfig = new ConfigurationBuilder()
@@ -105,20 +105,16 @@ try
         options.UseNpgsql(connectionString));
 
     // ASP.NET Core Identity + JWT bearer authentication + authorization policies + the optional
-    // OAuth providers. Registered before the rate limiter; details in Infrastructure/AuthSetup.cs.
+    // Identity (for RBAC) + JWT validation of Better Auth tokens. No OAuth providers, no password
+    // login: Better Auth owns credentials. Details in Infrastructure/AuthSetup.cs.
     builder.AddVeldrathIdentityAndAuth();
 
     builder.Services.Configure<Veldrath.Server.Settings.ModerationOptions>(
         builder.Configuration.GetSection("Moderation"));
 
-    // AuthExchangeCodeService uses an internal ConcurrentDictionary — no IMemoryCache dependency.
-    builder.Services.AddSingleton<AuthExchangeCodeService>();
-
-    var foundryWriteLimit  = builder.Configuration.GetValue<int>("RateLimit:FoundryWritesPerMinute",  5);
-    var adminActionsLimit  = builder.Configuration.GetValue<int>("RateLimit:AdminActionsPerMinute",   20);
-    var authAttemptsLimit  = builder.Configuration.GetValue<int>("RateLimit:AuthAttemptsPerMinute",   10);
-    var jwtRenewalsLimit   = builder.Configuration.GetValue<int>("RateLimit:JwtRenewalsPerMinute",    60);
-    var hubCommandsLimit   = builder.Configuration.GetValue<int>("RateLimit:HubCommandsPerMinute",    120);
+    var foundryWriteLimit = builder.Configuration.GetValue<int>("RateLimit:FoundryWritesPerMinute", 5);
+    var adminActionsLimit = builder.Configuration.GetValue<int>("RateLimit:AdminActionsPerMinute", 20);
+    var hubCommandsLimit = builder.Configuration.GetValue<int>("RateLimit:HubCommandsPerMinute", 120);
     builder.Services.AddRateLimiter(opts =>
     {
         opts.AddFixedWindowLimiter("foundry-writes", o =>
@@ -131,27 +127,6 @@ try
             o.Window = TimeSpan.FromMinutes(1);
             o.PermitLimit = adminActionsLimit;
         });
-        // Protects login, register, refresh, and logout from brute-force and credential stuffing.
-        // Partitioned per remote IP so one client cannot exhaust the limit for all users.
-        opts.AddPolicy("auth-attempts", ctx =>
-            RateLimitPartition.GetFixedWindowLimiter(
-                partitionKey: ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                factory: _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
-                {
-                    Window      = TimeSpan.FromMinutes(1),
-                    PermitLimit = authAttemptsLimit,
-                }));
-        // renew-jwt is called by clients that hold a long-lived session (the desktop app) — it
-        // is not a brute-force surface (it requires a valid refresh token) but benefits from a
-        // generous per-IP cap to prevent runaway clients.
-        opts.AddPolicy("jwt-renewal", ctx =>
-            RateLimitPartition.GetFixedWindowLimiter(
-                partitionKey: ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                factory: _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
-                {
-                    Window      = TimeSpan.FromMinutes(1),
-                    PermitLimit = jwtRenewalsLimit,
-                }));
         // Throttles authenticated SignalR hub commands to prevent spam from modded clients.
         opts.AddFixedWindowLimiter("hub-commands", o =>
         {
@@ -161,12 +136,10 @@ try
         opts.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     });
 
-    builder.Services.AddScoped<AuthService>();
     builder.Services.AddScoped<AccountService>();
-    // Provisions Identity rows for external (Better Auth) identities on first token use.
+    // Provisions the Identity row (roles/permissions) for a Better Auth account on first token use.
     builder.Services.AddScoped<AccountProvisioningService>();
     builder.Services.AddScoped<FoundryService>();
-    builder.Services.AddScoped<AccountLinkService>();
 
     // IEmailSender: use NullEmailSender when SmtpHost is not configured (dev / CI).
     // Switch to SmtpEmailSender by setting Email:SmtpHost in the environment or user-secrets.
@@ -179,9 +152,7 @@ try
     // Repositories
     builder.Services.AddScoped<IPlayerAccountRepository, PlayerAccountRepository>();
     builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
-    builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
     builder.Services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
-    builder.Services.AddScoped<IPendingLinkRepository, EfCorePendingLinkRepository>();
     // Engine interfaces backed by the server's own ApplicationDbContext:
     builder.Services.AddScoped<ISaveGameRepository, ServerSaveGameRepository>();
     builder.Services.AddScoped<IHallOfFameRepository, ServerHallOfFameRepository>();
@@ -202,7 +173,6 @@ try
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
     builder.Services.AddHostedService<CatalogInitializationService>();
     builder.Services.AddHostedService<SessionCleanupService>();
-    builder.Services.AddHostedService<PendingLinkCleanupService>();
 
     // Content catalog repos — backed by ContentDbContext sharing the same Postgres schema.
     builder.Services.AddDbContextFactory<ContentDbContext>(options => options.UseNpgsql(connectionString));
@@ -323,9 +293,9 @@ try
     app.Use(async (ctx, next) =>
     {
         ctx.Response.Headers["X-Content-Type-Options"] = "nosniff";
-        ctx.Response.Headers["Referrer-Policy"]        = "strict-origin-when-cross-origin";
-        ctx.Response.Headers["X-Frame-Options"]        = "DENY";
-        ctx.Response.Headers["Permissions-Policy"]     = "camera=(), microphone=(), geolocation=()";
+        ctx.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        ctx.Response.Headers["X-Frame-Options"] = "DENY";
+        ctx.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
         // API-only server: no content to render, so a strict CSP is safe.
         ctx.Response.Headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'";
         await next(ctx);
@@ -392,18 +362,21 @@ try
             await DatabaseSeeder.SeedRolesAsync(scope.ServiceProvider);
     }
 
-    // Auth, character, zone, content & admin endpoints
-    app.MapAuthEndpoints();
+    // Character, zone, content & admin endpoints. The /api/auth/* group (register/login/refresh/
+    // renew-jwt/logout/exchange/create-exchange-code, external OAuth challenge+callback, link
+    // confirmation, password reset, email confirmation, and /api/auth/session) was the Avalonia
+    // client's native Identity sign-in; Better Auth owns all of that now, so the group is gone and
+    // only the RBAC-facing endpoints below remain.
+    //
     // Transactional email for Better Auth password-reset and address-verification flows. The
     // .NET server owns the SMTP configuration, so the web app relays those messages through this
     // endpoint instead of running its own mailer. (The account-mirroring bridge that used to sit
     // next to it is gone: nothing signs in through Identity passwords any more.)
     app.MapInternalEmailEndpoints();
-    app.MapPasswordResetEndpoints();
-    app.MapEmailConfirmationEndpoints();
-    app.MapExternalAuthEndpoints();
-    app.MapPendingLinkEndpoints();
-    app.MapSessionEndpoints();
+    // The /api/auth/* group (register/login/refresh/renew-jwt/logout/exchange/create-exchange-code,
+    // external OAuth challenge+callback, link confirmation, password reset, email confirmation, and
+    // /api/auth/session) was the Avalonia client's native Identity sign-in. Better Auth owns all of
+    // that now, so the group is gone; only the RBAC-facing endpoints below remain.
     app.MapAccountEndpoints();
     app.MapAnnouncementEndpoints();
     app.MapFoundryEndpoints();
@@ -449,17 +422,6 @@ try
     app.MapMetrics();
 
     Log.Information("Veldrath.Server running at {Urls}", string.Join(", ", app.Urls));
-
-    // Guard: Auth:CookieDomain must be configured in non-Development environments.
-    // Without it, the rt cookie is not cross-subdomain and the web app's session
-    // cannot share the session established by /api/auth/session.
-    if (app.Environment.IsProduction()
-        && string.IsNullOrWhiteSpace(app.Configuration["Auth:CookieDomain"]))
-    {
-        throw new InvalidOperationException(
-            "Auth:CookieDomain must be configured in production for cross-subdomain session sharing. " +
-            "Set Auth__CookieDomain in your environment (e.g. .veldrath.com).");
-    }
 
     await app.RunAsync();
 }

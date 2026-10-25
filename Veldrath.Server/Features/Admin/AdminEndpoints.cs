@@ -52,15 +52,15 @@ public static class AdminEndpoints
             .WithTags("Admin")
             .RequireAuthorization(Auth.Permissions.ManageUsers);
 
-        adminGroup.MapGet("/users",                                       ListUsersAsync);
-        adminGroup.MapGet("/users/{id:guid}",                             GetUserAsync);
-        adminGroup.MapPost("/users/{id:guid}/roles",                      AssignRoleAsync);
-        adminGroup.MapDelete("/users/{id:guid}/roles/{role}",             RevokeRoleAsync);
-        adminGroup.MapPost("/users/{id:guid}/permissions",                GrantPermissionAsync);
+        adminGroup.MapGet("/users", ListUsersAsync);
+        adminGroup.MapGet("/users/{id:guid}", GetUserAsync);
+        adminGroup.MapPost("/users/{id:guid}/roles", AssignRoleAsync);
+        adminGroup.MapDelete("/users/{id:guid}/roles/{role}", RevokeRoleAsync);
+        adminGroup.MapPost("/users/{id:guid}/permissions", GrantPermissionAsync);
         adminGroup.MapDelete("/users/{id:guid}/permissions/{permission}", RevokePermissionAsync);
-        adminGroup.MapGet("/audit",                                       GetAuditLogAsync);
-        adminGroup.MapGet("/sessions",                                    GetSessionsAsync);
-        adminGroup.MapGet("/status",                                      GetServerStatusAsync);
+        adminGroup.MapGet("/audit", GetAuditLogAsync);
+        adminGroup.MapGet("/sessions", GetSessionsAsync);
+        adminGroup.MapGet("/status", GetServerStatusAsync);
 
         // ── Group 2: per-permission moderation actions ────────────────────────────
         // No group-level permission requirement — each endpoint enforces its own claim.
@@ -70,28 +70,28 @@ public static class AdminEndpoints
             .WithTags("Admin")
             .RequireAuthorization();
 
-        modGroup.MapPost("/players/kick",   KickPlayerAsync)
+        modGroup.MapPost("/players/kick", KickPlayerAsync)
             .RequireAuthorization(Auth.Permissions.KickPlayers)
             .RequireRateLimiting("admin-actions");
-        modGroup.MapPost("/players/ban",    BanPlayerAsync)
+        modGroup.MapPost("/players/ban", BanPlayerAsync)
             .RequireAuthorization(Auth.Permissions.BanPlayers)
             .RequireRateLimiting("admin-actions");
-        modGroup.MapPost("/players/unban",  UnbanPlayerAsync)
+        modGroup.MapPost("/players/unban", UnbanPlayerAsync)
             .RequireAuthorization(Auth.Permissions.BanPlayers)
             .RequireRateLimiting("admin-actions");
-        modGroup.MapPost("/players/warn",   WarnPlayerAsync)
+        modGroup.MapPost("/players/warn", WarnPlayerAsync)
             .RequireAuthorization(Auth.Permissions.WarnPlayers)
             .RequireRateLimiting("admin-actions");
-        modGroup.MapPost("/players/mute",   MutePlayerAsync)
+        modGroup.MapPost("/players/mute", MutePlayerAsync)
             .RequireAuthorization(Auth.Permissions.KickPlayers)
             .RequireRateLimiting("admin-actions");
         modGroup.MapPost("/players/unmute", UnmutePlayerAsync)
             .RequireAuthorization(Auth.Permissions.KickPlayers)
             .RequireRateLimiting("admin-actions");
-        modGroup.MapPost("/broadcast",      BroadcastAsync)
+        modGroup.MapPost("/broadcast", BroadcastAsync)
             .RequireAuthorization(Auth.Permissions.SendAnnouncements)
             .RequireRateLimiting("admin-actions");
-        modGroup.MapGet("/reports",         GetReportsAsync)
+        modGroup.MapGet("/reports", GetReportsAsync)
             .RequireAuthorization(Auth.Permissions.ViewPlayers);
         modGroup.MapPut("/reports/{id:guid}/resolve", ResolveReportAsync)
             .RequireAuthorization(Auth.Permissions.ViewPlayers)
@@ -104,9 +104,9 @@ public static class AdminEndpoints
             .WithTags("Moderation")
             .RequireAuthorization(Auth.Permissions.ViewPlayers);
 
-        modReadGroup.MapGet("/users",              ListUsersAsync);
-        modReadGroup.MapGet("/users/{id:guid}",    GetUserAsync);
-        modReadGroup.MapGet("/reports",            GetReportsAsync);
+        modReadGroup.MapGet("/users", ListUsersAsync);
+        modReadGroup.MapGet("/users/{id:guid}", GetUserAsync);
+        modReadGroup.MapGet("/reports", GetReportsAsync);
         modReadGroup.MapPut("/reports/{id:guid}/resolve", ResolveReportAsync);
 
         return app;
@@ -117,12 +117,12 @@ public static class AdminEndpoints
     private static async Task<IResult> ListUsersAsync(
         ClaimsPrincipal actor,
         [FromServices] UserManager<PlayerAccount> userManager,
-        [FromQuery] string? search   = null,
-        [FromQuery] string? role     = null,
-        [FromQuery] string? status   = null,  // "active" | "banned" | "muted"
-        [FromQuery] string? sort     = null,  // "username" (default) | "lastseen" | "warncount"
-        [FromQuery] int     page     = 1,
-        [FromQuery] int     pageSize = 25)
+        [FromQuery] string? search = null,
+        [FromQuery] string? role = null,
+        [FromQuery] string? status = null,  // "active" | "banned" | "muted"
+        [FromQuery] string? sort = null,  // "username" (default) | "lastseen" | "warncount"
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
     {
         pageSize = Math.Clamp(pageSize, 1, 100);
 
@@ -136,35 +136,35 @@ public static class AdminEndpoints
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(u =>
                 (u.UserName != null && u.UserName.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
-                (u.Email    != null && u.Email.Contains(search, StringComparison.OrdinalIgnoreCase)));
+                (u.Email != null && u.Email.Contains(search, StringComparison.OrdinalIgnoreCase)));
 
         var now = DateTimeOffset.UtcNow;
         query = status?.ToLowerInvariant() switch
         {
             "banned" => query.Where(u => u.IsBanned && (u.BannedUntil == null || u.BannedUntil > now)),
-            "muted"  => query.Where(u => u.IsMuted  && (u.MutedUntil  == null || u.MutedUntil  > now)),
+            "muted" => query.Where(u => u.IsMuted && (u.MutedUntil == null || u.MutedUntil > now)),
             "active" => query.Where(u =>
                 !(u.IsBanned && (u.BannedUntil == null || u.BannedUntil > now))),
-            _        => query
+            _ => query
         };
 
         var sorted = sort?.ToLowerInvariant() switch
         {
-            "lastseen"  => query.OrderByDescending(u => u.LastSeenAt),
+            "lastseen" => query.OrderByDescending(u => u.LastSeenAt),
             "warncount" => query.OrderByDescending(u => u.WarnCount),
-            _           => query.OrderBy(u => u.UserName)
+            _ => query.OrderBy(u => u.UserName)
         };
 
         var total = sorted.Count();
-        var skip  = (Math.Max(1, page) - 1) * pageSize;
+        var skip = (Math.Max(1, page) - 1) * pageSize;
         var users = sorted.Skip(skip).Take(pageSize).ToList();
 
         var items = new List<PlayerSummaryDto>(users.Count);
         foreach (var u in users)
         {
-            var roles   = await userManager.GetRolesAsync(u);
-            var banned  = u.IsBanned && (u.BannedUntil == null || u.BannedUntil > now);
-            var muted   = u.IsMuted  && (u.MutedUntil  == null || u.MutedUntil  > now);
+            var roles = await userManager.GetRolesAsync(u);
+            var banned = u.IsBanned && (u.BannedUntil == null || u.BannedUntil > now);
+            var muted = u.IsMuted && (u.MutedUntil == null || u.MutedUntil > now);
             items.Add(new PlayerSummaryDto(u.Id, u.UserName!, u.Email, [.. roles],
                 banned, u.BannedUntil, u.WarnCount, muted, u.CreatedAt, u.LastSeenAt));
         }
@@ -180,9 +180,9 @@ public static class AdminEndpoints
         var user = await userManager.FindByIdAsync(id.ToString());
         if (user is null) return Results.NotFound();
 
-        var roles      = (await userManager.GetRolesAsync(user)).ToList();
+        var roles = (await userManager.GetRolesAsync(user)).ToList();
         var userClaims = await userManager.GetClaimsAsync(user);
-        var userPerms  = userClaims.Where(c => c.Type == "permission").Select(c => c.Value).ToList();
+        var userPerms = userClaims.Where(c => c.Type == "permission").Select(c => c.Value).ToList();
 
         var allPerms = new HashSet<string>(userPerms, StringComparer.Ordinal);
         foreach (var roleName in roles)
@@ -193,10 +193,10 @@ public static class AdminEndpoints
                 allPerms.Add(c.Value);
         }
 
-        var now    = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow;
         var banned = user.IsBanned && (user.BannedUntil == null || user.BannedUntil > now);
-        var muted  = user.IsMuted  && (user.MutedUntil  == null || user.MutedUntil  > now);
-        var dto    = new PlayerDetailDto(
+        var muted = user.IsMuted && (user.MutedUntil == null || user.MutedUntil > now);
+        var dto = new PlayerDetailDto(
             user.Id, user.UserName!, user.Email,
             roles, [.. allPerms], userPerms,
             banned, user.BannedUntil, user.BanReason,
@@ -287,7 +287,7 @@ public static class AdminEndpoints
         if (user is null) return Results.NotFound();
 
         var existing = await userManager.GetClaimsAsync(user);
-        var claim    = existing.FirstOrDefault(c => c.Type == "permission" && c.Value == permission);
+        var claim = existing.FirstOrDefault(c => c.Type == "permission" && c.Value == permission);
         if (claim is null)
             return Results.Ok(new AdminActionResponse(true, "Permission not found on account."));
 
@@ -329,8 +329,8 @@ public static class AdminEndpoints
         var user = await userManager.FindByIdAsync(request.AccountId.ToString());
         if (user is null) return Results.NotFound();
 
-        user.IsBanned    = true;
-        user.BanReason   = request.Reason;
+        user.IsBanned = true;
+        user.BanReason = request.Reason;
         user.BannedUntil = request.DurationMinutes.HasValue
             ? DateTimeOffset.UtcNow.AddMinutes(request.DurationMinutes.Value)
             : null;
@@ -355,9 +355,9 @@ public static class AdminEndpoints
         var user = await userManager.FindByIdAsync(request.AccountId.ToString());
         if (user is null) return Results.NotFound();
 
-        user.IsBanned    = false;
+        user.IsBanned = false;
         user.BannedUntil = null;
-        user.BanReason   = null;
+        user.BanReason = null;
         await userManager.UpdateAsync(user);
         await WriteAuditAsync(db, actor, user.Id, user.UserName, "unban", null);
 
@@ -384,12 +384,12 @@ public static class AdminEndpoints
         // Re-fetch the post-increment state from the DB (EF change-tracker holds the stale value).
         await db.Entry(user).ReloadAsync();
 
-        var threshold  = options.Value.AutoBanWarnThreshold;
+        var threshold = options.Value.AutoBanWarnThreshold;
         var autoBanned = false;
 
         if (threshold > 0 && user.WarnCount >= threshold && !user.IsBanned)
         {
-            user.IsBanned  = true;
+            user.IsBanned = true;
             user.BanReason = $"Automatic ban: {user.WarnCount} warnings accumulated.";
             await userManager.UpdateAsync(user);
             autoBanned = true;
@@ -425,7 +425,7 @@ public static class AdminEndpoints
         var user = await userManager.FindByIdAsync(request.AccountId.ToString());
         if (user is null) return Results.NotFound();
 
-        user.IsMuted   = true;
+        user.IsMuted = true;
         user.MuteReason = request.Reason;
         user.MutedUntil = request.DurationMinutes.HasValue
             ? DateTimeOffset.UtcNow.AddMinutes(request.DurationMinutes.Value)
@@ -449,7 +449,7 @@ public static class AdminEndpoints
         var user = await userManager.FindByIdAsync(request.AccountId.ToString());
         if (user is null) return Results.NotFound();
 
-        user.IsMuted    = false;
+        user.IsMuted = false;
         user.MutedUntil = null;
         user.MuteReason = null;
         await userManager.UpdateAsync(user);
@@ -472,18 +472,18 @@ public static class AdminEndpoints
 
     private static async Task<IResult> GetAuditLogAsync(
         [FromServices] ApplicationDbContext db,
-        [FromQuery] Guid?   targetId = null,
-        [FromQuery] int     page     = 1,
-        [FromQuery] int     pageSize = 50)
+        [FromQuery] Guid? targetId = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
     {
         pageSize = Math.Clamp(pageSize, 1, 200);
-        var skip  = (Math.Max(1, page) - 1) * pageSize;
+        var skip = (Math.Max(1, page) - 1) * pageSize;
 
         var query = db.AdminAuditEntries.AsNoTracking().AsQueryable();
         if (targetId.HasValue)
             query = query.Where(e => e.TargetAccountId == targetId.Value);
 
-        var total   = await query.CountAsync();
+        var total = await query.CountAsync();
         var entries = await query.OrderByDescending(e => e.OccurredAt).Skip(skip).Take(pageSize).ToListAsync();
 
         var items = entries.Select(e => new AuditEntryDto(
@@ -496,7 +496,7 @@ public static class AdminEndpoints
     private static async Task<IResult> GetSessionsAsync(
         [FromServices] ApplicationDbContext db,
         [FromQuery] string? regionId = null,
-        [FromQuery] string? zoneId   = null)
+        [FromQuery] string? zoneId = null)
     {
         var query = db.PlayerSessions
             .AsNoTracking()
@@ -505,7 +505,7 @@ public static class AdminEndpoints
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(regionId)) query = query.Where(s => s.RegionId == regionId);
-        if (!string.IsNullOrWhiteSpace(zoneId))   query = query.Where(s => s.ZoneId   == zoneId);
+        if (!string.IsNullOrWhiteSpace(zoneId)) query = query.Where(s => s.ZoneId == zoneId);
 
         var sessions = await query.OrderBy(s => s.CharacterName).ToListAsync();
 
@@ -523,17 +523,17 @@ public static class AdminEndpoints
 
     private static async Task<IResult> GetReportsAsync(
         [FromServices] ApplicationDbContext db,
-        [FromQuery] bool?   resolved = null,
-        [FromQuery] int     page     = 1,
-        [FromQuery] int     pageSize = 50)
+        [FromQuery] bool? resolved = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
     {
         pageSize = Math.Clamp(pageSize, 1, 200);
-        var skip  = (Math.Max(1, page) - 1) * pageSize;
+        var skip = (Math.Max(1, page) - 1) * pageSize;
 
         var query = db.PlayerReports.AsNoTracking().AsQueryable();
         if (resolved.HasValue) query = query.Where(r => r.IsResolved == resolved.Value);
 
-        var total   = await query.CountAsync();
+        var total = await query.CountAsync();
         var reports = await query
             .OrderBy(r => r.IsResolved)
             .ThenByDescending(r => r.SubmittedAt)
@@ -556,8 +556,8 @@ public static class AdminEndpoints
         if (report.IsResolved) return Results.Ok(new AdminActionResponse(true, "Already resolved."));
 
         var (actorId, _) = GetActor(actor);
-        report.IsResolved          = true;
-        report.ResolvedAt          = DateTimeOffset.UtcNow;
+        report.IsResolved = true;
+        report.ResolvedAt = DateTimeOffset.UtcNow;
         report.ResolvedByAccountId = actorId;
         await db.SaveChangesAsync();
 
@@ -596,7 +596,7 @@ public static class AdminEndpoints
 
     private static (Guid Id, string Username) GetActor(ClaimsPrincipal user)
     {
-        var idStr    = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? Guid.Empty.ToString();
+        var idStr = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? Guid.Empty.ToString();
         var username = user.FindFirstValue(ClaimTypes.Name) ?? "unknown";
         return (Guid.TryParse(idStr, out var id) ? id : Guid.Empty, username);
     }
@@ -612,13 +612,13 @@ public static class AdminEndpoints
         var (actorId, actorUsername) = GetActor(actor);
         db.AdminAuditEntries.Add(new AdminAuditEntry
         {
-            ActorAccountId  = actorId,
-            ActorUsername   = actorUsername,
+            ActorAccountId = actorId,
+            ActorUsername = actorUsername,
             TargetAccountId = targetAccountId,
-            TargetUsername  = targetUsername,
-            Action          = action,
-            Details         = details,
-            OccurredAt      = DateTimeOffset.UtcNow,
+            TargetUsername = targetUsername,
+            Action = action,
+            Details = details,
+            OccurredAt = DateTimeOffset.UtcNow,
         });
         await db.SaveChangesAsync();
     }

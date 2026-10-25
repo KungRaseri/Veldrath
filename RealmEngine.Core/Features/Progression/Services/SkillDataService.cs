@@ -1,8 +1,8 @@
-﻿using RealmEngine.Shared.Abstractions;
-using RealmEngine.Shared.Models;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Progression.Services;
 

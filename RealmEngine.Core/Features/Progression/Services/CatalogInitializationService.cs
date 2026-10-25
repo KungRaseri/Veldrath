@@ -32,8 +32,8 @@ public sealed class CatalogInitializationService : IHostedService
         ILogger<CatalogInitializationService>? logger = null)
     {
         _powers = powers;
-        _skills    = skills;
-        _logger    = logger ?? NullLogger<CatalogInitializationService>.Instance;
+        _skills = skills;
+        _logger = logger ?? NullLogger<CatalogInitializationService>.Instance;
     }
 
     /// <inheritdoc />

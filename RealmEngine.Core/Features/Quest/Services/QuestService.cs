@@ -1,6 +1,5 @@
-using RealmEngine.Core.Features.SaveLoad;
 using Microsoft.Extensions.Logging;
-
+using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Shared.Models;
 namespace RealmEngine.Core.Features.Quests.Services;
 
@@ -22,7 +21,7 @@ public class QuestService
     /// <param name="initService">The quest initialization service.</param>
     /// <param name="logger">The logger.</param>
     public QuestService(
-        ISaveGameService saveGameService, 
+        ISaveGameService saveGameService,
         MainQuestService mainQuestService,
         QuestInitializationService initService,
         ILogger<QuestService> logger)

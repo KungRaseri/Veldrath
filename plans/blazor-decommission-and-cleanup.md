@@ -39,10 +39,17 @@ Acceptance: `grep -ril "blazor\|mudblazor"` (excluding `node_modules`, `bin`, `o
 
 ## 3. Part 2 — The one real decision: ASP.NET Core Identity
 
+> **Resolved (2026-10-25): Option 2.** With the desktop client gone, the Identity *auth surface* was
+> deleted and the Identity *tables* were kept as the server-owned RBAC store. Better Auth owns
+> registration, sign-in, OAuth, password reset, and email confirmation; the server validates the game
+> JWTs it mints, provisions the `AspNetUsers` row just in time (`JwtClaimsEnrichment` →
+> `AccountProvisioningService`), and answers RBAC claims from `AspNetUserRoles` /
+> `RolePermissionResolver`. Option 3 (removing Identity entirely) remains a separate future project.
+
 Identity (not Blazor) is what still ties the old world to the new one:
 
 - `PlayerAccount : IdentityUser<Guid>` is the game account row (characters, RBAC, moderation, bans).
-- `/api/auth/{register,login,refresh,renew-jwt,logout,exchange,external/*,session}` existed for the desktop client's native sign-in — now unused and a candidate for removal.
+- `/api/auth/{register,login,refresh,renew-jwt,logout,exchange,external/*,session}` existed for the desktop client's native sign-in — **deleted** with W12.
 - `InternalAccountBridgeEndpoints` + `foundry-bridge.ts` + the `hooks.server.ts` sync mirrored Better Auth accounts into Identity; deleted with the client.
 
 | Option | What changes | Cost / risk | When it makes sense |
@@ -98,9 +105,9 @@ Ordered by risk/return. Each item is a single reviewable PR.
   the `wiki/` submodule. It found **18** broken relative links on the first run — dead Blazor paths in
   the memory files, `docs/API_SPECIFICATION.md`, `theme.css`/`layout.css`, and two deleted plans — all
   fixed.
-- ⏸ `dotnet format --verify-no-changes` **deferred**: 458 files currently deviate (whitespace only).
-  Gate needs a standalone repo-wide `dotnet format` pass first so the reformat is its own reviewable
-  commit instead of noise inside a feature PR.
+- ✅ `dotnet format --verify-no-changes` **now gated** (see W13): the repo-wide pass landed as its own
+  commit, the rules are pinned in the root [`.editorconfig`](../.editorconfig), and
+  [`format.yml`](../.github/workflows/format.yml) enforces them.
 - ✅ Web: Playwright covers the authenticated `/characters` → `/play` path via W7's `game-loop.e2e.ts`.
 
 ### W5 — Configuration and deploy consolidation
@@ -253,14 +260,16 @@ graph LR
 | W1 — documentation truth pass (AGENTS/README/CONTRIBUTING, dangling skill + instruction links) | ✅ Done | `ebc70430` |
 | W2 — dead code (contracts audit, `editorial-api` → `gameApiFetch`) | ✅ Done | `5684f0d9` |
 | W3 — engine/server hygiene | ✅ Done: CORS extracted to `Infrastructure/CorsSetup.cs`, Identity/JWT/authorization/OAuth extracted to `Infrastructure/AuthSetup.cs` (`Program.cs` 703 → 520 lines, 788 server tests green), the unused `[Obsolete] StartingSpellIds` deleted, and the P4 XML-doc list closed (already fully documented; CS1591 enforces it). Optional leftover: the rate limiter and health-check blocks. | `456ad367` + tail commits |
-| W4 — testing/CI (stub consolidation, coverage floors) | ✅ Done: stub audit found no dead fakes; `codecov.yml` adds per-component flags with informational statuses; `scripts/check-markdown-links.mjs` + `repo-hygiene.yml` gate documentation links (18 broken links fixed). `dotnet format --verify-no-changes` deferred until a standalone reformat pass lands. | W4 commit |
+| W4 — testing/CI (stub consolidation, coverage floors) | ✅ Done: stub audit found no dead fakes; `codecov.yml` adds per-component flags with informational statuses; `scripts/check-markdown-links.mjs` + `repo-hygiene.yml` gate documentation links (18 broken links fixed). The `dotnet format` gate was deferred here and landed in W13. | W4 commit |
 | W5 — config consolidation | ✅ Done: obsolete SSH deploy path removed (`deploy.yml` + the three `if: false` deploy jobs), `docs.yml` now watches `**/*.cs` instead of a hand-maintained project list, engine CI moved to `ubuntu-latest`, Dependabot gained a `/web` Dockerfile entry, and the two redundant compose files were deleted. The env-var documentation cross-check script is the one optional leftover. | `9b890ef8` + tail commit |
 | W6 — repository hygiene | ✅ Done: `.gitignore` already covers `/scripts/dev/`, `.env*`, `build-desktop/`, and packaged asset zips; `.dockerignore` verified (bin/obj, secrets, TestResults, IDE dirs, `client/build-desktop`); `web/llms/` kept in-repo by decision. | — |
 | W7 — authenticated game loop in CI (from migration Phase 2) | ✅ Done: `tests/game-loop.e2e.ts` covers register → roster → play → travel → inventory against a real server (verified locally, 34s, 1 passed); `ci-web.yml` gained an `e2e-game` job that boots `Veldrath.Server` on the Postgres service. The spec self-skips without `E2E_GAME=1`, so `npm run test` stays server-free (22 passed, 1 skipped). | W7 commit |
 | W8 — desktop bundle smoke on the Windows runner (from migration Phase 5) | ✅ Done: 4 `Bundle`-trait tests serve the real `build-desktop` through `DesktopUiServer` (index + hashed asset + SPA fallback + health + `WebView2Loader.dll` presence). `ci-client.yml` already builds the bundle first, so they run on CI. A true WebView2 render probe is left optional. | W8/W9 commit |
 | W9 — payload contract drift check (from migration testing strategy) | ✅ Done: `payload-contract.test.ts` compares every mirrored C# record with its TS interface. It found 5 real drifts on day one — see below. | W8/W9 commit |
+| W13 — repo-wide formatting pass + CI gate | ✅ Done: added the root [`.editorconfig`](../.editorconfig) (LF, 4-space C#, 2-space JSON/YAML/MD, tabs for `web/` so Prettier keeps owning it) and ran `dotnet format Realm.Full.slnx` across all .NET projects (377 files reformatted, whitespace only). [`format.yml`](../.github/workflows/format.yml) now runs `dotnet format Realm.Full.slnx --verify-no-changes` on every `.cs` / `.editorconfig` / `Directory.Build.*` change. | W13 commit |
 | W10 — desktop release packaging | ✅ Done, then superseded: release zips carried `SvelteApp/` and `dotnet publish` failed with `VD0001` without the bundle — all removed with the client in W11. | W10 commit |
 | W11 — retire the desktop client (Veldrath is web-first) | ✅ Done: six projects deleted (`Veldrath.Client`, `Veldrath.Client.Tests`, `Veldrath.GameClient.Core`, `Veldrath.GameClient.Core.Tests`, `Veldrath.Auth`, `Veldrath.Auth.Tests`), three solutions pruned plus `Veldrath.slnx`/`Veldrath.Client.slnx` removed, `ci-client.yml` deleted, and every doc/skill/memory/compose reference updated. Web dropped `/desktop`, `#lib/desktop`, `build:desktop`, `adapter-static`, and `GameHubOptions`; the payload guard was repointed at `GameHub.cs`. | W11 commit |
+| W12 — remove Identity's desktop auth surface (Identity Option 2) | ✅ Done: `AuthEndpoints`, `AuthService`, `AuthDtos`, `AuthExchangeCodeService`, `ExternalAuthEndpoints`, `AccountLinkService`, `PendingLinkEndpoints`, `PasswordResetEndpoints`, `EmailConfirmationEndpoints`, `SessionEndpoints`, `PendingLinkCleanupService`, `PendingLinkToken`, `RefreshToken`, and their repositories deleted; `AccountEndpoints` reduced to `GET /api/account/profile`; `AuthSetup` registers Identity + JWT + RBAC only (no `AddOAuthProviders`); migration `RemoveDesktopAuthTables` drops `PendingLinkTokens`/`RefreshTokens`; `auth-attempts`/`jwt-renewal` rate-limit policies, the `Auth:CookieDomain` guard, and the dead `.env` aliases (`OAUTH_*`, `FOUNDRY_PUBLIC_URL`, `ALLOWED_RETURN_URL_HOSTS`) removed. Tests authenticate through `WebAppFactory.CreateAccountTokenAsync`, which mints a Better-Auth-shaped JWT and exercises JIT provisioning + RBAC end to end. | W12 commit |
 
 **Final verification (2026-10-24):** `dotnet build Realm.Full.slnx` clean and
 `dotnet test Realm.Full.slnx` = **4,630 tests, 0 failures** across the 10 .NET projects; web
@@ -295,8 +304,9 @@ the location panel read `name`/`type`/`description`, none of which exist on the 
    `sveltekit-migration.md`, and a short `README.md`. Durable decisions were extracted first into
    [`docs/client-ui-architecture.md`](../docs/client-ui-architecture.md) (the only unique knowledge
    in the deleted set: panel-driven UI and the DB map graph).
-3. **Identity** — Option 1 (keep ASP.NET Core Identity) until the desktop shell decision; Option 2 is
-   revisited together with desktop finalization, Option 3 only after that.
+3. **Identity** — Option 2 was taken once the desktop client was retired: the Identity **auth surface**
+   is gone (Better Auth is the only sign-in), while the Identity **tables** stay as the server-owned
+   RBAC store. Option 3 (removing Identity entirely) stays a separate future project.
 4. **Scope** — full W1–W6 sweep, executed in order, Part 1 as its own commit.
 5. **Compose files** — `docker-compose.api.yml` and `docker-compose.debugging.yml` deleted;
    `docker-compose.dev.yml` is the only local dev stack.

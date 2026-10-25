@@ -1,9 +1,9 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RealmEngine.Core.Features.Victory.Commands;
 using RealmEngine.Core.Features.Victory.Services;
 using Xunit;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RealmEngine.Core.Tests.Features.Victory.Commands;
 

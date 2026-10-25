@@ -75,18 +75,18 @@ public class GameHub : Hub
         IOptions<ModerationOptions> modOptions,
         ApplicationDbContext db)
     {
-        _logger            = logger;
-        _characterRepo     = characterRepo;
-        _zoneRepo          = zoneRepo;
-        _regionRepo        = regionRepo;
+        _logger = logger;
+        _characterRepo = characterRepo;
+        _zoneRepo = zoneRepo;
+        _regionRepo = regionRepo;
         _playerSessionRepo = playerSessionRepo;
-        _activeCharacters  = activeCharacters;
-        _mediator          = mediator;
-        _mapRepo           = mapRepo;
-        _versionOptions    = versionOptions;
-        _userManager       = userManager;
-        _modOptions        = modOptions;
-        _db                = db;
+        _activeCharacters = activeCharacters;
+        _mediator = mediator;
+        _mapRepo = mapRepo;
+        _versionOptions = versionOptions;
+        _userManager = userManager;
+        _modOptions = modOptions;
+        _db = db;
     }
 
     public override async Task OnConnectedAsync()
@@ -213,13 +213,13 @@ public class GameHub : Hub
             return;
         }
 
-        Context.Items["CharacterId"]   = character.Id;
+        Context.Items["CharacterId"] = character.Id;
         Context.Items["CharacterName"] = character.Name;
         Context.Items["CurrentZoneId"] = character.CurrentZoneId;
         Context.Items["DifficultyMode"] = character.DifficultyMode;
 
         // Start the character on the region map — derive region from last known zone, then fall back to the seeded starter region
-        var zone     = string.IsNullOrEmpty(character.CurrentZoneId) ? null : await _zoneRepo.GetByIdAsync(character.CurrentZoneId);
+        var zone = string.IsNullOrEmpty(character.CurrentZoneId) ? null : await _zoneRepo.GetByIdAsync(character.CurrentZoneId);
         var starterRegion = zone is null ? await _regionRepo.GetStarterAsync() : null;
         if (zone is null && starterRegion is null)
         {
@@ -250,12 +250,12 @@ public class GameHub : Hub
         // Create a region-map session (ZoneId = null means on the region map, not inside a zone)
         await _playerSessionRepo.AddAsync(new PlayerSession
         {
-            CharacterId   = character.Id,
+            CharacterId = character.Id,
             CharacterName = character.Name,
-            ConnectionId  = Context.ConnectionId,
-            RegionId      = regionId,
-            ZoneId        = null,
-            CurrentMapId  = regionGraph?.Id ?? character.CurrentMapId,
+            ConnectionId = Context.ConnectionId,
+            RegionId = regionId,
+            ZoneId = null,
+            CurrentMapId = regionGraph?.Id ?? character.CurrentMapId,
             CurrentNodeId = regionGraph?.EntryNodeId ?? character.CurrentNodeId,
         });
 
@@ -274,11 +274,11 @@ public class GameHub : Hub
         });
 
         // Deserialise the attributes blob so the client can seed the HUD immediately
-        var initAttrs     = JsonSerializer.Deserialize<Dictionary<string, int>>(
+        var initAttrs = JsonSerializer.Deserialize<Dictionary<string, int>>(
             string.IsNullOrWhiteSpace(character.Attributes) ? "{}" : character.Attributes)
             ?? new Dictionary<string, int>();
         var initMaxHealth = initAttrs.GetValueOrDefault("MaxHealth", character.Level * 10);
-        var initMaxMana   = initAttrs.GetValueOrDefault("MaxMana",   character.Level * 5);
+        var initMaxMana = initAttrs.GetValueOrDefault("MaxMana", character.Level * 5);
 
         // Deserialise learned ability slugs so the client can render ability buttons immediately.
         var learnedAbilities = JsonSerializer.Deserialize<List<string>>(
@@ -312,24 +312,24 @@ public class GameHub : Hub
             character.Level,
             character.Experience,
             character.CurrentZoneId,
-            RegionId               = regionId,
-            CurrentMapId           = regionGraph?.Id ?? character.CurrentMapId,
-            CurrentNodeId          = regionGraph?.EntryNodeId ?? character.CurrentNodeId,
-            CurrentHealth          = initAttrs.GetValueOrDefault("CurrentHealth", initMaxHealth),
-            MaxHealth              = initMaxHealth,
-            CurrentMana            = initAttrs.GetValueOrDefault("CurrentMana", initMaxMana),
-            MaxMana                = initMaxMana,
-            Gold                   = initAttrs.GetValueOrDefault("Gold", 0),
+            RegionId = regionId,
+            CurrentMapId = regionGraph?.Id ?? character.CurrentMapId,
+            CurrentNodeId = regionGraph?.EntryNodeId ?? character.CurrentNodeId,
+            CurrentHealth = initAttrs.GetValueOrDefault("CurrentHealth", initMaxHealth),
+            MaxHealth = initMaxHealth,
+            CurrentMana = initAttrs.GetValueOrDefault("CurrentMana", initMaxMana),
+            MaxMana = initMaxMana,
+            Gold = initAttrs.GetValueOrDefault("Gold", 0),
             UnspentAttributePoints = initAttrs.GetValueOrDefault("UnspentAttributePoints", 0),
-            Strength               = initAttrs.GetValueOrDefault("Strength", 10),
-            Dexterity              = initAttrs.GetValueOrDefault("Dexterity", 10),
-            Constitution           = initAttrs.GetValueOrDefault("Constitution", 10),
-            Intelligence           = initAttrs.GetValueOrDefault("Intelligence", 10),
-            Wisdom                 = initAttrs.GetValueOrDefault("Wisdom", 10),
-            Charisma               = initAttrs.GetValueOrDefault("Charisma", 10),
-            LearnedAbilities       = learnedAbilities,
-            SelectedAt             = DateTimeOffset.UtcNow,
-            Equipment              = equippedItems,
+            Strength = initAttrs.GetValueOrDefault("Strength", 10),
+            Dexterity = initAttrs.GetValueOrDefault("Dexterity", 10),
+            Constitution = initAttrs.GetValueOrDefault("Constitution", 10),
+            Intelligence = initAttrs.GetValueOrDefault("Intelligence", 10),
+            Wisdom = initAttrs.GetValueOrDefault("Wisdom", 10),
+            Charisma = initAttrs.GetValueOrDefault("Charisma", 10),
+            LearnedAbilities = learnedAbilities,
+            SelectedAt = DateTimeOffset.UtcNow,
+            Equipment = equippedItems,
         });
     }
 
@@ -375,12 +375,12 @@ public class GameHub : Hub
         // Create new session
         var session = new PlayerSession
         {
-            CharacterId   = characterId,
+            CharacterId = characterId,
             CharacterName = characterName,
-            ConnectionId  = Context.ConnectionId,
-            RegionId      = zone.RegionId,
-            ZoneId        = zoneId,
-            CurrentMapId  = zoneGraph?.Id,
+            ConnectionId = Context.ConnectionId,
+            RegionId = zone.RegionId,
+            ZoneId = zoneId,
+            CurrentMapId = zoneGraph?.Id,
             CurrentNodeId = zoneGraph?.EntryNodeId,
         };
         await _playerSessionRepo.AddAsync(session);
@@ -415,9 +415,9 @@ public class GameHub : Hub
         // Announce arrival to other players already in zone
         await Clients.OthersInGroup(zoneGroup).SendAsync("PlayerEntered", new
         {
-            CharacterId   = characterId,
+            CharacterId = characterId,
             CharacterName = characterName,
-            ZoneId        = zoneId,
+            ZoneId = zoneId,
         });
 
         // Send current zone occupants back to caller
@@ -542,8 +542,8 @@ public class GameHub : Hub
             var result = await _mediator.Send(new GainExperienceHubCommand
             {
                 CharacterId = characterId,
-                Amount      = request.Amount,
-                Source      = request.Source,
+                Amount = request.Amount,
+                Source = request.Source,
             });
 
             if (!result.Success)
@@ -554,12 +554,12 @@ public class GameHub : Hub
 
             var payload = new
             {
-                CharacterId   = characterId,
+                CharacterId = characterId,
                 result.NewLevel,
                 result.NewExperience,
                 result.LeveledUp,
                 result.LeveledUpTo,
-                Source        = request.Source,
+                Source = request.Source,
             };
 
             if (TryGetCurrentZoneGroup(out var zoneGroup))
@@ -613,7 +613,7 @@ public class GameHub : Hub
 
             var payload = new
             {
-                CharacterId     = characterId,
+                CharacterId = characterId,
                 result.PointsSpent,
                 result.RemainingPoints,
                 result.NewAttributes,
@@ -656,8 +656,8 @@ public class GameHub : Hub
             var result = await _mediator.Send(new RestAtLocationHubCommand
             {
                 CharacterId = characterId,
-                LocationId  = request.LocationId,
-                CostInGold  = request.CostInGold,
+                LocationId = request.LocationId,
+                CostInGold = request.CostInGold,
             });
 
             if (!result.Success)
@@ -668,8 +668,8 @@ public class GameHub : Hub
 
             var payload = new
             {
-                CharacterId    = characterId,
-                LocationId     = request.LocationId,
+                CharacterId = characterId,
+                LocationId = request.LocationId,
                 result.CurrentHealth,
                 result.MaxHealth,
                 result.CurrentMana,
@@ -718,7 +718,7 @@ public class GameHub : Hub
             var result = await _mediator.Send(new UseAbilityHubCommand
             {
                 CharacterId = characterId,
-                AbilityId   = abilityId,
+                AbilityId = abilityId,
             });
 
             if (!result.Success)
@@ -729,7 +729,7 @@ public class GameHub : Hub
 
             var payload = new
             {
-                CharacterId    = characterId,
+                CharacterId = characterId,
                 result.AbilityId,
                 result.ManaCost,
                 result.RemainingMana,
@@ -770,8 +770,8 @@ public class GameHub : Hub
             var result = await _mediator.Send(new AwardSkillXpHubCommand
             {
                 CharacterId = characterId,
-                SkillId     = request.SkillId,
-                Amount      = request.Amount,
+                SkillId = request.SkillId,
+                Amount = request.Amount,
             });
 
             if (!result.Success)
@@ -782,7 +782,7 @@ public class GameHub : Hub
 
             var payload = new
             {
-                CharacterId  = characterId,
+                CharacterId = characterId,
                 result.SkillId,
                 result.TotalXp,
                 result.CurrentRank,
@@ -824,8 +824,8 @@ public class GameHub : Hub
             var result = await _mediator.Send(new EquipItemHubCommand
             {
                 CharacterId = characterId,
-                Slot        = request.Slot,
-                ItemRef     = request.ItemRef,
+                Slot = request.Slot,
+                ItemRef = request.ItemRef,
             });
 
             if (!result.Success)
@@ -854,11 +854,11 @@ public class GameHub : Hub
 
             var payload = new
             {
-                CharacterId      = characterId,
+                CharacterId = characterId,
                 result.Slot,
                 result.ItemRef,
                 result.AllEquippedItems,
-                Equipped         = snapshotValid
+                Equipped = snapshotValid
                     ? snapshot!.Equipped
                     : new Dictionary<string, RealmEngine.Shared.Models.Item>(),
             };
@@ -907,8 +907,8 @@ public class GameHub : Hub
             var result = await _mediator.Send(new AddGoldHubCommand
             {
                 CharacterId = characterId,
-                Amount      = request.Amount,
-                Source      = request.Source,
+                Amount = request.Amount,
+                Source = request.Source,
             });
 
             if (!result.Success)
@@ -919,10 +919,10 @@ public class GameHub : Hub
 
             var payload = new
             {
-                CharacterId  = characterId,
+                CharacterId = characterId,
                 result.GoldAdded,
                 result.NewGoldTotal,
-                Source       = request.Source,
+                Source = request.Source,
             };
 
             if (TryGetCurrentZoneGroup(out var zoneGroup))
@@ -959,9 +959,9 @@ public class GameHub : Hub
         {
             var result = await _mediator.Send(new TakeDamageHubCommand
             {
-                CharacterId  = characterId,
+                CharacterId = characterId,
                 DamageAmount = request.DamageAmount,
-                Source       = request.Source,
+                Source = request.Source,
             });
 
             if (!result.Success)
@@ -972,12 +972,12 @@ public class GameHub : Hub
 
             var payload = new
             {
-                CharacterId   = characterId,
-                DamageAmount  = request.DamageAmount,
+                CharacterId = characterId,
+                DamageAmount = request.DamageAmount,
                 result.CurrentHealth,
                 result.MaxHealth,
                 result.IsDead,
-                Source        = request.Source,
+                Source = request.Source,
             };
 
             if (TryGetCurrentZoneGroup(out var zoneGroup))
@@ -1022,8 +1022,8 @@ public class GameHub : Hub
 
             var payload = new
             {
-                CharacterId   = characterId,
-                RecipeSlug    = recipeSlug,
+                CharacterId = characterId,
+                RecipeSlug = recipeSlug,
                 result.GoldSpent,
                 result.RemainingGold,
             };
@@ -1070,7 +1070,7 @@ public class GameHub : Hub
             var payload = new
             {
                 CharacterId = characterId,
-                DungeonId   = result.DungeonId,
+                DungeonId = result.DungeonId,
                 DungeonSlug = dungeonSlug,
             };
 
@@ -1113,8 +1113,8 @@ public class GameHub : Hub
             await Clients.Caller.SendAsync("ShopVisited", new
             {
                 CharacterId = characterId,
-                ZoneId      = result.ZoneId,
-                ZoneName    = result.ZoneName,
+                ZoneId = result.ZoneId,
+                ZoneName = result.ZoneName,
             });
 
             _logger.LogInformation(
@@ -1157,8 +1157,8 @@ public class GameHub : Hub
                 ZoneId = zoneId,
                 Catalog = result.Items.Select(item => new
                 {
-                    Slug  = item.ItemRef,
-                    Name  = item.DisplayName,
+                    Slug = item.ItemRef,
+                    Name = item.DisplayName,
                     Rarity = RealmEngine.Shared.Models.ItemRarity.Common,
                     Price = item.BuyPrice,
                 }),
@@ -1198,7 +1198,7 @@ public class GameHub : Hub
 
             await Clients.Caller.SendAsync("ItemPurchased", new
             {
-                CharacterId   = characterId,
+                CharacterId = characterId,
                 result.ItemRef,
                 result.GoldSpent,
                 result.RemainingGold,
@@ -1244,7 +1244,7 @@ public class GameHub : Hub
 
             await Clients.Caller.SendAsync("ItemSold", new
             {
-                CharacterId  = characterId,
+                CharacterId = characterId,
                 result.ItemRef,
                 result.GoldReceived,
                 result.NewGoldTotal,
@@ -1288,7 +1288,7 @@ public class GameHub : Hub
 
             await Clients.Caller.SendAsync("ItemDropped", new
             {
-                CharacterId       = characterId,
+                CharacterId = characterId,
                 result.ItemRef,
                 result.RemainingQuantity,
             });
@@ -1369,13 +1369,17 @@ public class GameHub : Hub
 
             var payload = new
             {
-                CharacterId          = characterId,
-                LocationSlug         = result.LocationSlug,
-                LocationDisplayName  = result.LocationDisplayName,
-                TypeKey              = result.TypeKey,
+                CharacterId = characterId,
+                LocationSlug = result.LocationSlug,
+                LocationDisplayName = result.LocationDisplayName,
+                TypeKey = result.TypeKey,
                 SpawnedEnemies = result.SpawnedEnemies.Select(e => new
                 {
-                    e.Id, e.Name, e.Level, e.CurrentHealth, e.MaxHealth,
+                    e.Id,
+                    e.Name,
+                    e.Level,
+                    e.CurrentHealth,
+                    e.MaxHealth,
                 }),
             };
 
@@ -1389,11 +1393,11 @@ public class GameHub : Hub
             {
                 await Clients.Caller.SendAsync("ZoneLocationUnlocked", new
                 {
-                    CharacterId         = characterId,
-                    LocationSlug        = discovery.Slug,
+                    CharacterId = characterId,
+                    LocationSlug = discovery.Slug,
                     LocationDisplayName = discovery.DisplayName,
-                    TypeKey             = discovery.TypeKey,
-                    UnlockSource        = "skill_check_passive",
+                    TypeKey = discovery.TypeKey,
+                    UnlockSource = "skill_check_passive",
                 });
             }
 
@@ -1435,11 +1439,11 @@ public class GameHub : Hub
             {
                 await Clients.Caller.SendAsync("ZoneLocationUnlocked", new
                 {
-                    CharacterId         = characterId,
-                    LocationSlug        = result.LocationSlug,
+                    CharacterId = characterId,
+                    LocationSlug = result.LocationSlug,
                     LocationDisplayName = result.LocationDisplayName,
-                    TypeKey             = result.TypeKey,
-                    UnlockSource        = request.UnlockSource,
+                    TypeKey = result.TypeKey,
+                    UnlockSource = request.UnlockSource,
                 });
             }
 
@@ -1491,18 +1495,18 @@ public class GameHub : Hub
                 CharacterId = characterId,
                 result.RollValue,
                 result.AnyFound,
-                Discovered  = result.Discovered.Select(d => new { d.Slug, d.DisplayName, d.TypeKey }),
+                Discovered = result.Discovered.Select(d => new { d.Slug, d.DisplayName, d.TypeKey }),
             });
 
             foreach (var discovery in result.Discovered)
             {
                 await Clients.Caller.SendAsync("ZoneLocationUnlocked", new
                 {
-                    CharacterId         = characterId,
-                    LocationSlug        = discovery.Slug,
+                    CharacterId = characterId,
+                    LocationSlug = discovery.Slug,
                     LocationDisplayName = discovery.DisplayName,
-                    TypeKey             = discovery.TypeKey,
-                    UnlockSource        = "skill_check_active",
+                    TypeKey = discovery.TypeKey,
+                    UnlockSource = "skill_check_active",
                 });
             }
 
@@ -1560,7 +1564,7 @@ public class GameHub : Hub
             return;
         }
 
-        var zoneGroup    = TryGetCurrentZoneGroup(out var zg) ? zg : string.Empty;
+        var zoneGroup = TryGetCurrentZoneGroup(out var zg) ? zg : string.Empty;
         var locationSlug = Context.Items.TryGetValue("CurrentLocationSlug", out var ls) && ls is string lss ? lss : request.LocationSlug;
 
         try
@@ -1576,7 +1580,7 @@ public class GameHub : Hub
 
             await Clients.Caller.SendAsync("CombatStarted", new
             {
-                CharacterId  = characterId,
+                CharacterId = characterId,
                 result.EnemyId,
                 result.EnemyName,
                 result.EnemyLevel,
@@ -1626,7 +1630,7 @@ public class GameHub : Hub
 
             await Clients.Caller.SendAsync("CombatTurn", new
             {
-                Action               = "attack",
+                Action = "attack",
                 result.PlayerDamage,
                 result.EnemyRemainingHealth,
                 result.EnemyDefeated,
@@ -1678,7 +1682,7 @@ public class GameHub : Hub
 
             await Clients.Caller.SendAsync("CombatTurn", new
             {
-                Action               = "defend",
+                Action = "defend",
                 result.EnemyDamage,
                 result.EnemyAbilityUsed,
                 result.PlayerRemainingHealth,
@@ -1724,7 +1728,7 @@ public class GameHub : Hub
             {
                 await Clients.Caller.SendAsync("CombatTurn", new
                 {
-                    Action               = "flee_failed",
+                    Action = "flee_failed",
                     result.EnemyDamage,
                     result.EnemyAbilityUsed,
                     result.PlayerRemainingHealth,
@@ -1765,7 +1769,7 @@ public class GameHub : Hub
 
             await Clients.Caller.SendAsync("CombatTurn", new
             {
-                Action               = "ability",
+                Action = "ability",
                 result.AbilityId,
                 result.AbilityDamage,
                 result.HealthRestored,
@@ -1821,7 +1825,7 @@ public class GameHub : Hub
 
             await Clients.Caller.SendAsync("CharacterRespawned", new
             {
-                CharacterId   = characterId,
+                CharacterId = characterId,
                 result.CurrentHealth,
                 result.CurrentMana,
             });
@@ -1839,8 +1843,8 @@ public class GameHub : Hub
         var session = await _playerSessionRepo.GetByConnectionIdAsync(connectionId);
         if (session is null) return;
 
-        var zoneId        = session.ZoneId;
-        var characterId   = session.CharacterId;
+        var zoneId = session.ZoneId;
+        var characterId = session.CharacterId;
         var characterName = session.CharacterName;
 
         await _playerSessionRepo.RemoveAsync(session);
@@ -1863,9 +1867,9 @@ public class GameHub : Hub
         {
             await Clients.Group(groupName).SendAsync("PlayerLeft", new
             {
-                CharacterId   = characterId,
+                CharacterId = characterId,
                 CharacterName = characterName,
-                ZoneId        = zoneId,
+                ZoneId = zoneId,
             });
         }
 
@@ -2083,560 +2087,560 @@ public class GameHub : Hub
         {
             // ── Universal ──────────────────────────────────────────────────
             case "help":
-            {
-                var callerPermissions = Context.User?.Claims
-                    .Where(c => c.Type == "permission")
-                    .Select(c => c.Value)
-                    ?? [];
-                await Clients.Caller.SendAsync("SystemMessage", BuildHelpText(callerPermissions));
-                return;
-            }
+                {
+                    var callerPermissions = Context.User?.Claims
+                        .Where(c => c.Type == "permission")
+                        .Select(c => c.Value)
+                        ?? [];
+                    await Clients.Caller.SendAsync("SystemMessage", BuildHelpText(callerPermissions));
+                    return;
+                }
 
             // ── Player utilities ───────────────────────────────────────────
             case "who":
-            {
-                var zoneIdForWho = Context.Items.TryGetValue("CurrentZoneId", out var zObj) && zObj is string z ? z : null;
-                if (zoneIdForWho is null) { await Clients.Caller.SendAsync("SystemMessage", "You are not in a zone."); return; }
-                var sessions = await _playerSessionRepo.GetByZoneIdAsync(zoneIdForWho);
-                var names = sessions.Count == 0
-                    ? "No players in this zone."
-                    : string.Join(", ", sessions.Select(s => s.CharacterName));
-                await Clients.Caller.SendAsync("SystemMessage", $"Players here: {names}");
-                return;
-            }
+                {
+                    var zoneIdForWho = Context.Items.TryGetValue("CurrentZoneId", out var zObj) && zObj is string z ? z : null;
+                    if (zoneIdForWho is null) { await Clients.Caller.SendAsync("SystemMessage", "You are not in a zone."); return; }
+                    var sessions = await _playerSessionRepo.GetByZoneIdAsync(zoneIdForWho);
+                    var names = sessions.Count == 0
+                        ? "No players in this zone."
+                        : string.Join(", ", sessions.Select(s => s.CharacterName));
+                    await Clients.Caller.SendAsync("SystemMessage", $"Players here: {names}");
+                    return;
+                }
 
             case "w":
             case "whisper":
-            {
-                if (parts.Length < 3)
                 {
-                    await Clients.Caller.SendAsync("SystemMessage", "Usage: /whisper <characterName> <message>");
-                    return;
-                }
-                var targetName = parts[1];
-                var whisperText = string.Join(' ', parts[2..]);
-                var targetSession = await _playerSessionRepo.GetByCharacterNameAsync(targetName);
-                if (targetSession is null)
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", $"'{targetName}' is not online.");
-                    return;
-                }
-                TryGetCharacterName(out var whisperSenderName);
-                var whisperPayload = new WhisperPayload(characterId, whisperSenderName, whisperText);
-                await Clients.Client(targetSession.ConnectionId).SendAsync("OnWhisper", whisperPayload);
-                await Clients.Caller.SendAsync("OnWhisper",
-                    new WhisperPayload(characterId, $"[To {targetName}]", whisperText));
-                // Auto-reply if target is AFK.
-                if (_afkCharacters.TryGetValue(targetSession.CharacterId, out var afkMsg))
-                {
+                    if (parts.Length < 3)
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Usage: /whisper <characterName> <message>");
+                        return;
+                    }
+                    var targetName = parts[1];
+                    var whisperText = string.Join(' ', parts[2..]);
+                    var targetSession = await _playerSessionRepo.GetByCharacterNameAsync(targetName);
+                    if (targetSession is null)
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", $"'{targetName}' is not online.");
+                        return;
+                    }
+                    TryGetCharacterName(out var whisperSenderName);
+                    var whisperPayload = new WhisperPayload(characterId, whisperSenderName, whisperText);
+                    await Clients.Client(targetSession.ConnectionId).SendAsync("OnWhisper", whisperPayload);
                     await Clients.Caller.SendAsync("OnWhisper",
-                        new WhisperPayload(targetSession.CharacterId, targetName,
-                            $"[AFK] {afkMsg ?? "I am AFK."}"));
+                        new WhisperPayload(characterId, $"[To {targetName}]", whisperText));
+                    // Auto-reply if target is AFK.
+                    if (_afkCharacters.TryGetValue(targetSession.CharacterId, out var afkMsg))
+                    {
+                        await Clients.Caller.SendAsync("OnWhisper",
+                            new WhisperPayload(targetSession.CharacterId, targetName,
+                                $"[AFK] {afkMsg ?? "I am AFK."}"));
+                    }
+                    return;
                 }
-                return;
-            }
 
             case "emote":
-            {
-                if (parts.Length < 2)
                 {
-                    await Clients.Caller.SendAsync("SystemMessage", "Usage: /emote <action>");
+                    if (parts.Length < 2)
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Usage: /emote <action>");
+                        return;
+                    }
+                    TryGetCharacterName(out var emoteName);
+                    var action = string.Join(' ', parts[1..]);
+                    await Clients.Group(zoneGroup).SendAsync("OnEmote",
+                        new EmotePayload(characterId, emoteName, action));
                     return;
                 }
-                TryGetCharacterName(out var emoteName);
-                var action = string.Join(' ', parts[1..]);
-                await Clients.Group(zoneGroup).SendAsync("OnEmote",
-                    new EmotePayload(characterId, emoteName, action));
-                return;
-            }
 
             case "roll":
-            {
-                var max = 100;
-                if (parts.Length >= 2 && int.TryParse(parts[1], out var parsed) && parsed > 1)
-                    max = parsed;
-                TryGetCharacterName(out var rollerName);
-                var result = Random.Shared.Next(1, max + 1);
-                await Clients.Group(zoneGroup).SendAsync("ReceiveChatMessage",
-                    new ChatMessageHubDto(characterId, "Zone", rollerName,
-                        $"* rolled {result} (1-{max}) *", DateTimeOffset.UtcNow));
-                return;
-            }
+                {
+                    var max = 100;
+                    if (parts.Length >= 2 && int.TryParse(parts[1], out var parsed) && parsed > 1)
+                        max = parsed;
+                    TryGetCharacterName(out var rollerName);
+                    var result = Random.Shared.Next(1, max + 1);
+                    await Clients.Group(zoneGroup).SendAsync("ReceiveChatMessage",
+                        new ChatMessageHubDto(characterId, "Zone", rollerName,
+                            $"* rolled {result} (1-{max}) *", DateTimeOffset.UtcNow));
+                    return;
+                }
 
             case "afk":
-            {
-                TryGetCharacterName(out var afkName);
-                // Toggle: calling /afk while already AFK clears the status.
-                if (_afkCharacters.TryRemove(characterId, out _))
                 {
-                    await Clients.Caller.SendAsync("SystemMessage", "You are no longer AFK.");
+                    TryGetCharacterName(out var afkName);
+                    // Toggle: calling /afk while already AFK clears the status.
+                    if (_afkCharacters.TryRemove(characterId, out _))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "You are no longer AFK.");
+                        await Clients.Group(zoneGroup).SendAsync("ReceiveChatMessage",
+                            new ChatMessageHubDto(characterId, "Zone", afkName, "* is no longer AFK *", DateTimeOffset.UtcNow));
+                        return;
+                    }
+                    var reason = parts.Length >= 2 ? string.Join(' ', parts[1..]) : null;
+                    _afkCharacters[characterId] = reason;
+                    var display = reason is not null ? $"AFK: {reason}" : "AFK";
+                    await Clients.Caller.SendAsync("SystemMessage", $"You are now {display}.");
                     await Clients.Group(zoneGroup).SendAsync("ReceiveChatMessage",
-                        new ChatMessageHubDto(characterId, "Zone", afkName, "* is no longer AFK *", DateTimeOffset.UtcNow));
+                        new ChatMessageHubDto(characterId, "Zone", afkName,
+                            $"* is now {display} *", DateTimeOffset.UtcNow));
                     return;
                 }
-                var reason = parts.Length >= 2 ? string.Join(' ', parts[1..]) : null;
-                _afkCharacters[characterId] = reason;
-                var display = reason is not null ? $"AFK: {reason}" : "AFK";
-                await Clients.Caller.SendAsync("SystemMessage", $"You are now {display}.");
-                await Clients.Group(zoneGroup).SendAsync("ReceiveChatMessage",
-                    new ChatMessageHubDto(characterId, "Zone", afkName,
-                        $"* is now {display} *", DateTimeOffset.UtcNow));
-                return;
-            }
 
             case "ignore":
-            {
-                if (parts.Length < 2)
                 {
-                    await Clients.Caller.SendAsync("SystemMessage", "Usage: /ignore <characterName>");
+                    if (parts.Length < 2)
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Usage: /ignore <characterName>");
+                        return;
+                    }
+                    // Look up by online session first, then fall back to DB for offline characters.
+                    var ignoreSession = await _playerSessionRepo.GetByCharacterNameAsync(parts[1]);
+                    Guid ignoreCharId;
+                    string ignoreCharName;
+                    if (ignoreSession is not null)
+                    {
+                        ignoreCharId = ignoreSession.CharacterId;
+                        ignoreCharName = ignoreSession.CharacterName;
+                    }
+                    else
+                    {
+                        var ignoreChar = await _characterRepo.GetByNameAsync(parts[1]);
+                        if (ignoreChar is null)
+                        {
+                            await Clients.Caller.SendAsync("SystemMessage", $"Character '{parts[1]}' not found.");
+                            return;
+                        }
+                        ignoreCharId = ignoreChar.Id;
+                        ignoreCharName = ignoreChar.Name;
+                    }
+                    // Send the payload so the client can toggle ignore locally.
+                    await Clients.Caller.SendAsync("CharacterIgnored",
+                        new CharacterIgnoredPayload(ignoreCharId, ignoreCharName));
                     return;
                 }
-                // Look up by online session first, then fall back to DB for offline characters.
-                var ignoreSession = await _playerSessionRepo.GetByCharacterNameAsync(parts[1]);
-                Guid ignoreCharId;
-                string ignoreCharName;
-                if (ignoreSession is not null)
+
+            case "report":
                 {
-                    ignoreCharId   = ignoreSession.CharacterId;
-                    ignoreCharName = ignoreSession.CharacterName;
+                    if (parts.Length < 3)
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Usage: /report <characterName> <reason>");
+                        return;
+                    }
+                    var reportTargetName = parts[1];
+                    var reportReason = string.Join(' ', parts[2..]);
+                    var reportTargetSession = await _playerSessionRepo.GetByCharacterNameAsync(reportTargetName);
+                    if (reportTargetSession is null)
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", $"'{reportTargetName}' is not online.");
+                        return;
+                    }
+                    TryGetCharacterName(out var reporterName);
+                    _db.PlayerReports.Add(new PlayerReport
+                    {
+                        ReporterCharacterId = characterId,
+                        ReporterName = reporterName,
+                        TargetCharacterId = reportTargetSession.CharacterId,
+                        TargetName = reportTargetName,
+                        Reason = reportReason,
+                        SubmittedAt = DateTimeOffset.UtcNow,
+                    });
+                    await _db.SaveChangesAsync();
+                    await Clients.Caller.SendAsync("SystemMessage",
+                        $"Report submitted against '{reportTargetName}'. Thank you.");
+                    return;
                 }
-                else
+
+            // ── Admin commands ─────────────────────────────────────────────
+            case "announce":
                 {
-                    var ignoreChar = await _characterRepo.GetByNameAsync(parts[1]);
-                    if (ignoreChar is null)
+                    if (!CallerHasPermission(Permissions.SendAnnouncements))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to send announcements.");
+                        return;
+                    }
+                    var announcement = string.Join(' ', parts[1..]);
+                    if (string.IsNullOrWhiteSpace(announcement))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Usage: /announce <message>");
+                        return;
+                    }
+                    await Clients.All.SendAsync("OnAnnouncement", new AnnouncementPayload(announcement, "info"));
+                    return;
+                }
+
+            case "kick":
+                {
+                    if (!CallerHasPermission(Permissions.KickPlayers))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to kick players.");
+                        return;
+                    }
+                    if (parts.Length < 2 || !Guid.TryParse(parts[1], out var kickCharId))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Usage: /kick <characterId>");
+                        return;
+                    }
+                    var kickSession = await _playerSessionRepo.GetByCharacterIdAsync(kickCharId);
+                    if (kickSession is null)
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Character not found or not online.");
+                        return;
+                    }
+                    await Clients.Client(kickSession.ConnectionId).SendAsync("OnKicked",
+                        new KickedPayload("You have been kicked by a moderator."));
+                    await Clients.Caller.SendAsync("SystemMessage", $"Kick sent to character {kickCharId}.");
+                    return;
+                }
+
+            case "warn":
+                {
+                    if (!CallerHasPermission(Permissions.WarnPlayers))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to warn players.");
+                        return;
+                    }
+                    if (parts.Length < 2 || !Guid.TryParse(parts[1], out var warnCharId))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Usage: /warn <characterId> [reason]");
+                        return;
+                    }
+                    var warnSession = await _playerSessionRepo.GetByCharacterIdAsync(warnCharId);
+                    if (warnSession is null)
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Character not found or not online.");
+                        return;
+                    }
+                    var warnReason = parts.Length >= 3 ? string.Join(' ', parts[2..]) : "Warned by moderator.";
+                    var warnChar = await _characterRepo.GetByIdAsync(warnCharId);
+                    if (warnChar is null)
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Character not found.");
+                        return;
+                    }
+                    var warnAccount = await _userManager.FindByIdAsync(warnChar.AccountId.ToString());
+                    if (warnAccount is null)
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Account not found.");
+                        return;
+                    }
+                    warnAccount.WarnCount++;
+                    var threshold = _modOptions.Value.AutoBanWarnThreshold;
+                    if (warnAccount.WarnCount >= threshold)
+                    {
+                        warnAccount.IsBanned = true;
+                        warnAccount.BannedUntil = null;
+                        warnAccount.BanReason = $"Auto-banned after {warnAccount.WarnCount} warnings.";
+                    }
+                    await _userManager.UpdateAsync(warnAccount);
+                    await Clients.Client(warnSession.ConnectionId).SendAsync("OnWarned",
+                        new WarnedPayload(warnReason, warnAccount.WarnCount));
+                    if (warnAccount.IsBanned)
+                    {
+                        await Clients.Client(warnSession.ConnectionId).SendAsync("OnKicked",
+                            new KickedPayload(warnAccount.BanReason!));
+                    }
+                    await Clients.Caller.SendAsync("SystemMessage",
+                        $"Warning {warnAccount.WarnCount}/{threshold} issued to {warnSession.CharacterName}." +
+                        (warnAccount.IsBanned ? " Player auto-banned." : string.Empty));
+                    return;
+                }
+
+            case "mute":
+                {
+                    if (!CallerHasPermission(Permissions.MutePlayers))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to mute players.");
+                        return;
+                    }
+                    if (parts.Length < 2 || !Guid.TryParse(parts[1], out var muteCharId))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Usage: /mute <characterId> [minutes] [reason]");
+                        return;
+                    }
+                    var muteSession = await _playerSessionRepo.GetByCharacterIdAsync(muteCharId);
+                    if (muteSession is null)
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Character not found or not online.");
+                        return;
+                    }
+                    int? muteDuration = null;
+                    var muteReasonStart = 2;
+                    if (parts.Length >= 3 && int.TryParse(parts[2], out var muteMinutes))
+                    {
+                        muteDuration = muteMinutes;
+                        muteReasonStart = 3;
+                    }
+                    var muteReason = parts.Length > muteReasonStart
+                        ? string.Join(' ', parts[muteReasonStart..])
+                        : "Muted by moderator.";
+                    var muteChar = await _characterRepo.GetByIdAsync(muteCharId);
+                    if (muteChar is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found."); return; }
+                    var muteAccount = await _userManager.FindByIdAsync(muteChar.AccountId.ToString());
+                    if (muteAccount is null) { await Clients.Caller.SendAsync("SystemMessage", "Account not found."); return; }
+                    muteAccount.IsMuted = true;
+                    muteAccount.MuteReason = muteReason;
+                    muteAccount.MutedUntil = muteDuration.HasValue
+                        ? DateTimeOffset.UtcNow.AddMinutes(muteDuration.Value)
+                        : null;
+                    await _userManager.UpdateAsync(muteAccount);
+                    await Clients.Client(muteSession.ConnectionId).SendAsync("OnMuted",
+                        new MutedPayload(muteReason, muteAccount.MutedUntil));
+                    await Clients.Caller.SendAsync("SystemMessage",
+                        $"{muteSession.CharacterName} has been muted." +
+                        (muteDuration.HasValue ? $" ({muteDuration}m)" : " (permanent)"));
+                    return;
+                }
+
+            case "tp":
+                {
+                    if (!CallerHasPermission(Permissions.TeleportPlayers))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to teleport players.");
+                        return;
+                    }
+                    if (parts.Length < 3 || !Guid.TryParse(parts[1], out var tpCharId))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Usage: /tp <characterId> <zoneId>");
+                        return;
+                    }
+                    var tpZoneId = parts[2];
+                    var tpSession = await _playerSessionRepo.GetByCharacterIdAsync(tpCharId);
+                    if (tpSession is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found or not online."); return; }
+                    var tpZone = await _zoneRepo.GetByIdAsync(tpZoneId);
+                    if (tpZone is null) { await Clients.Caller.SendAsync("SystemMessage", $"Zone '{tpZoneId}' not found."); return; }
+                    await Clients.Client(tpSession.ConnectionId).SendAsync("OnTeleported",
+                        new TeleportedPayload(tpZoneId, tpZone.Name));
+                    await Clients.Caller.SendAsync("SystemMessage",
+                        $"Teleported {tpSession.CharacterName} to {tpZone.Name}.");
+                    return;
+                }
+
+            case "summon":
+                {
+                    if (!CallerHasPermission(Permissions.TeleportPlayers))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to summon players.");
+                        return;
+                    }
+                    if (parts.Length < 2 || !Guid.TryParse(parts[1], out var summonCharId))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Usage: /summon <characterId>");
+                        return;
+                    }
+                    var summonSession = await _playerSessionRepo.GetByCharacterIdAsync(summonCharId);
+                    if (summonSession is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found or not online."); return; }
+                    TryGetCharacterName(out var summonerName);
+                    if (!Context.Items.TryGetValue("CurrentZoneId", out var currentZoneObj) || currentZoneObj is not string currentZoneId)
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "You must be in a zone to summon.");
+                        return;
+                    }
+                    await Clients.Client(summonSession.ConnectionId).SendAsync("OnSummoned",
+                        new SummonedPayload(summonerName, currentZoneId));
+                    await Clients.Caller.SendAsync("SystemMessage",
+                        $"Summoned {summonSession.CharacterName} to your location.");
+                    return;
+                }
+
+            case "give":
+                {
+                    if (!CallerHasPermission(Permissions.GiveItems))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to give items.");
+                        return;
+                    }
+                    if (parts.Length < 3 || !Guid.TryParse(parts[1], out var giveCharId))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Usage: /give <characterId> <itemSlug> [quantity]");
+                        return;
+                    }
+                    var giveSlug = parts[2];
+                    var giveQty = parts.Length >= 4 && int.TryParse(parts[3], out var q) && q > 0 ? q : 1;
+                    var giveSession = await _playerSessionRepo.GetByCharacterIdAsync(giveCharId);
+                    if (giveSession is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found or not online."); return; }
+                    var giveChar = await _characterRepo.GetByIdAsync(giveCharId);
+                    if (giveChar is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found."); return; }
+
+                    var inventory = ParseInventory(giveChar.InventoryBlob);
+                    var existing = inventory.FirstOrDefault(i =>
+                        string.Equals(i.ItemRef, giveSlug, StringComparison.OrdinalIgnoreCase) && i.Durability is null);
+                    if (existing is not null)
+                    {
+                        var idx = inventory.IndexOf(existing);
+                        inventory[idx] = existing with { Quantity = existing.Quantity + giveQty };
+                    }
+                    else
+                    {
+                        inventory.Add(new InventoryItemDto(giveSlug, giveQty, null));
+                    }
+                    giveChar.InventoryBlob = JsonSerializer.Serialize(inventory);
+                    await _characterRepo.UpdateAsync(giveChar);
+
+                    TryGetCharacterName(out var giverUsername);
+                    await Clients.Client(giveSession.ConnectionId).SendAsync("OnItemReceived",
+                        new ItemReceivedPayload(giveSlug, giveQty, giverUsername));
+                    await Clients.Caller.SendAsync("SystemMessage",
+                        $"Gave {giveQty}x '{giveSlug}' to {giveSession.CharacterName}.");
+                    return;
+                }
+
+            case "setgold":
+                {
+                    if (!CallerHasPermission(Permissions.GiveItems))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to set gold.");
+                        return;
+                    }
+                    if (parts.Length < 3 || !Guid.TryParse(parts[1], out var goldCharId) || !int.TryParse(parts[2], out var goldAmount) || goldAmount < 0)
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Usage: /setgold <characterId> <amount>");
+                        return;
+                    }
+                    var goldSession = await _playerSessionRepo.GetByCharacterIdAsync(goldCharId);
+                    if (goldSession is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found or not online."); return; }
+                    var goldChar = await _characterRepo.GetByIdAsync(goldCharId);
+                    if (goldChar is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found."); return; }
+
+                    var goldAttrs = ParseAttrs(goldChar.Attributes);
+                    goldAttrs["Gold"] = goldAmount;
+                    goldChar.Attributes = JsonSerializer.Serialize(goldAttrs);
+                    await _characterRepo.UpdateAsync(goldChar);
+
+                    await Clients.Client(goldSession.ConnectionId).SendAsync("GoldChanged",
+                        new { CharacterId = goldCharId, Gold = goldAmount, Source = "Admin" });
+                    await Clients.Caller.SendAsync("SystemMessage",
+                        $"Set gold to {goldAmount} for {goldSession.CharacterName}.");
+                    return;
+                }
+
+            case "sethealth":
+                {
+                    if (!CallerHasPermission(Permissions.GiveItems))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to set health.");
+                        return;
+                    }
+                    if (parts.Length < 3 || !Guid.TryParse(parts[1], out var hpCharId) || !int.TryParse(parts[2], out var hpAmount) || hpAmount < 0)
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Usage: /sethealth <characterId> <amount>");
+                        return;
+                    }
+                    var hpSession = await _playerSessionRepo.GetByCharacterIdAsync(hpCharId);
+                    if (hpSession is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found or not online."); return; }
+                    var hpChar = await _characterRepo.GetByIdAsync(hpCharId);
+                    if (hpChar is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found."); return; }
+
+                    var hpAttrs = ParseAttrs(hpChar.Attributes);
+                    var maxHealth = hpAttrs.GetValueOrDefault("MaxHealth", hpChar.Level * 10);
+                    var clamped = Math.Clamp(hpAmount, 0, maxHealth);
+                    hpAttrs["CurrentHealth"] = clamped;
+                    hpChar.Attributes = JsonSerializer.Serialize(hpAttrs);
+                    await _characterRepo.UpdateAsync(hpChar);
+
+                    await Clients.Client(hpSession.ConnectionId).SendAsync("DamageTaken",
+                        new { CharacterId = hpCharId, DamageAmount = 0, CurrentHealth = clamped, MaxHealth = maxHealth, IsDead = clamped == 0, Source = "Admin" });
+                    await Clients.Caller.SendAsync("SystemMessage",
+                        $"Set health to {clamped}/{maxHealth} for {hpSession.CharacterName}.");
+                    return;
+                }
+
+            case "ban":
+                {
+                    if (!CallerHasPermission(Permissions.BanPlayers))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to ban players.");
+                        return;
+                    }
+                    if (parts.Length < 2 || !Guid.TryParse(parts[1], out var banCharId))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Usage: /ban <characterId> [reason]");
+                        return;
+                    }
+                    var banReason = parts.Length >= 3 ? string.Join(' ', parts[2..]) : "Banned by an administrator.";
+                    var banChar = await _characterRepo.GetByIdAsync(banCharId);
+                    if (banChar is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found."); return; }
+                    var banAccount = await _userManager.FindByIdAsync(banChar.AccountId.ToString());
+                    if (banAccount is null) { await Clients.Caller.SendAsync("SystemMessage", "Account not found."); return; }
+                    banAccount.IsBanned = true;
+                    banAccount.BannedUntil = null;
+                    banAccount.BanReason = banReason;
+                    await _userManager.UpdateAsync(banAccount);
+                    var banSession = await _playerSessionRepo.GetByCharacterIdAsync(banCharId);
+                    if (banSession is not null)
+                        await Clients.Client(banSession.ConnectionId).SendAsync("OnKicked", new KickedPayload(banReason));
+                    await Clients.Caller.SendAsync("SystemMessage", $"{banChar.Name} has been permanently banned.");
+                    return;
+                }
+
+            case "suspend":
+                {
+                    if (!CallerHasPermission(Permissions.SuspendPlayers))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to suspend players.");
+                        return;
+                    }
+                    if (parts.Length < 3 || !Guid.TryParse(parts[1], out var suspCharId) || !int.TryParse(parts[2], out var suspHours) || suspHours < 1)
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Usage: /suspend <characterId> <hours> [reason]");
+                        return;
+                    }
+                    var suspReason = parts.Length >= 4 ? string.Join(' ', parts[3..]) : "Suspended by an administrator.";
+                    var suspChar = await _characterRepo.GetByIdAsync(suspCharId);
+                    if (suspChar is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found."); return; }
+                    var suspAccount = await _userManager.FindByIdAsync(suspChar.AccountId.ToString());
+                    if (suspAccount is null) { await Clients.Caller.SendAsync("SystemMessage", "Account not found."); return; }
+                    suspAccount.IsBanned = true;
+                    suspAccount.BannedUntil = DateTimeOffset.UtcNow.AddHours(suspHours);
+                    suspAccount.BanReason = suspReason;
+                    await _userManager.UpdateAsync(suspAccount);
+                    var suspSession = await _playerSessionRepo.GetByCharacterIdAsync(suspCharId);
+                    if (suspSession is not null)
+                        await Clients.Client(suspSession.ConnectionId).SendAsync("OnKicked", new KickedPayload(suspReason));
+                    await Clients.Caller.SendAsync("SystemMessage",
+                        $"{suspChar.Name} suspended for {suspHours}h. Expires: {suspAccount.BannedUntil:u}");
+                    return;
+                }
+
+            case "lookup":
+                {
+                    if (!CallerHasPermission(Permissions.ViewPlayers))
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to look up players.");
+                        return;
+                    }
+                    if (parts.Length < 2)
+                    {
+                        await Clients.Caller.SendAsync("SystemMessage", "Usage: /lookup <characterName>");
+                        return;
+                    }
+                    var lookupChar = await _characterRepo.GetByNameAsync(parts[1]);
+                    if (lookupChar is null)
                     {
                         await Clients.Caller.SendAsync("SystemMessage", $"Character '{parts[1]}' not found.");
                         return;
                     }
-                    ignoreCharId   = ignoreChar.Id;
-                    ignoreCharName = ignoreChar.Name;
-                }
-                // Send the payload so the client can toggle ignore locally.
-                await Clients.Caller.SendAsync("CharacterIgnored",
-                    new CharacterIgnoredPayload(ignoreCharId, ignoreCharName));
-                return;
-            }
-
-            case "report":
-            {
-                if (parts.Length < 3)
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "Usage: /report <characterName> <reason>");
+                    var lookupAccount = await _userManager.FindByIdAsync(lookupChar.AccountId.ToString());
+                    if (lookupAccount is null) { await Clients.Caller.SendAsync("SystemMessage", "Account not found."); return; }
+                    var lookupSession = await _playerSessionRepo.GetByCharacterIdAsync(lookupChar.Id);
+                    var onlineStatus = lookupSession is not null ? $"Online (zone: {lookupSession.ZoneId ?? "region map"})" : "Offline";
+                    var banStatus = lookupAccount.IsBanned
+                        ? (lookupAccount.BannedUntil.HasValue ? $"Suspended until {lookupAccount.BannedUntil:u}" : "Permanently banned")
+                        : "Not banned";
+                    var muteStatus = lookupAccount.IsMuted
+                        ? (lookupAccount.MutedUntil.HasValue ? $"Muted until {lookupAccount.MutedUntil:u}" : "Permanently muted")
+                        : "Not muted";
+                    var info =
+                        $"Character: {lookupChar.Name} (ID: {lookupChar.Id})\n" +
+                        $"Account:   {lookupAccount.UserName} (ID: {lookupAccount.Id})\n" +
+                        $"Status:    {onlineStatus}\n" +
+                        $"Warnings:  {lookupAccount.WarnCount}\n" +
+                        $"Ban:       {banStatus}\n" +
+                        $"Mute:      {muteStatus}";
+                    await Clients.Caller.SendAsync("SystemMessage", info);
                     return;
                 }
-                var reportTargetName = parts[1];
-                var reportReason = string.Join(' ', parts[2..]);
-                var reportTargetSession = await _playerSessionRepo.GetByCharacterNameAsync(reportTargetName);
-                if (reportTargetSession is null)
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", $"'{reportTargetName}' is not online.");
-                    return;
-                }
-                TryGetCharacterName(out var reporterName);
-                _db.PlayerReports.Add(new PlayerReport
-                {
-                    ReporterCharacterId = characterId,
-                    ReporterName        = reporterName,
-                    TargetCharacterId   = reportTargetSession.CharacterId,
-                    TargetName          = reportTargetName,
-                    Reason              = reportReason,
-                    SubmittedAt         = DateTimeOffset.UtcNow,
-                });
-                await _db.SaveChangesAsync();
-                await Clients.Caller.SendAsync("SystemMessage",
-                    $"Report submitted against '{reportTargetName}'. Thank you.");
-                return;
-            }
-
-            // ── Admin commands ─────────────────────────────────────────────
-            case "announce":
-            {
-                if (!CallerHasPermission(Permissions.SendAnnouncements))
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to send announcements.");
-                    return;
-                }
-                var announcement = string.Join(' ', parts[1..]);
-                if (string.IsNullOrWhiteSpace(announcement))
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "Usage: /announce <message>");
-                    return;
-                }
-                await Clients.All.SendAsync("OnAnnouncement", new AnnouncementPayload(announcement, "info"));
-                return;
-            }
-
-            case "kick":
-            {
-                if (!CallerHasPermission(Permissions.KickPlayers))
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to kick players.");
-                    return;
-                }
-                if (parts.Length < 2 || !Guid.TryParse(parts[1], out var kickCharId))
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "Usage: /kick <characterId>");
-                    return;
-                }
-                var kickSession = await _playerSessionRepo.GetByCharacterIdAsync(kickCharId);
-                if (kickSession is null)
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "Character not found or not online.");
-                    return;
-                }
-                await Clients.Client(kickSession.ConnectionId).SendAsync("OnKicked",
-                    new KickedPayload("You have been kicked by a moderator."));
-                await Clients.Caller.SendAsync("SystemMessage", $"Kick sent to character {kickCharId}.");
-                return;
-            }
-
-            case "warn":
-            {
-                if (!CallerHasPermission(Permissions.WarnPlayers))
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to warn players.");
-                    return;
-                }
-                if (parts.Length < 2 || !Guid.TryParse(parts[1], out var warnCharId))
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "Usage: /warn <characterId> [reason]");
-                    return;
-                }
-                var warnSession = await _playerSessionRepo.GetByCharacterIdAsync(warnCharId);
-                if (warnSession is null)
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "Character not found or not online.");
-                    return;
-                }
-                var warnReason = parts.Length >= 3 ? string.Join(' ', parts[2..]) : "Warned by moderator.";
-                var warnChar = await _characterRepo.GetByIdAsync(warnCharId);
-                if (warnChar is null)
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "Character not found.");
-                    return;
-                }
-                var warnAccount = await _userManager.FindByIdAsync(warnChar.AccountId.ToString());
-                if (warnAccount is null)
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "Account not found.");
-                    return;
-                }
-                warnAccount.WarnCount++;
-                var threshold = _modOptions.Value.AutoBanWarnThreshold;
-                if (warnAccount.WarnCount >= threshold)
-                {
-                    warnAccount.IsBanned    = true;
-                    warnAccount.BannedUntil = null;
-                    warnAccount.BanReason   = $"Auto-banned after {warnAccount.WarnCount} warnings.";
-                }
-                await _userManager.UpdateAsync(warnAccount);
-                await Clients.Client(warnSession.ConnectionId).SendAsync("OnWarned",
-                    new WarnedPayload(warnReason, warnAccount.WarnCount));
-                if (warnAccount.IsBanned)
-                {
-                    await Clients.Client(warnSession.ConnectionId).SendAsync("OnKicked",
-                        new KickedPayload(warnAccount.BanReason!));
-                }
-                await Clients.Caller.SendAsync("SystemMessage",
-                    $"Warning {warnAccount.WarnCount}/{threshold} issued to {warnSession.CharacterName}." +
-                    (warnAccount.IsBanned ? " Player auto-banned." : string.Empty));
-                return;
-            }
-
-            case "mute":
-            {
-                if (!CallerHasPermission(Permissions.MutePlayers))
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to mute players.");
-                    return;
-                }
-                if (parts.Length < 2 || !Guid.TryParse(parts[1], out var muteCharId))
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "Usage: /mute <characterId> [minutes] [reason]");
-                    return;
-                }
-                var muteSession = await _playerSessionRepo.GetByCharacterIdAsync(muteCharId);
-                if (muteSession is null)
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "Character not found or not online.");
-                    return;
-                }
-                int? muteDuration = null;
-                var muteReasonStart = 2;
-                if (parts.Length >= 3 && int.TryParse(parts[2], out var muteMinutes))
-                {
-                    muteDuration   = muteMinutes;
-                    muteReasonStart = 3;
-                }
-                var muteReason = parts.Length > muteReasonStart
-                    ? string.Join(' ', parts[muteReasonStart..])
-                    : "Muted by moderator.";
-                var muteChar = await _characterRepo.GetByIdAsync(muteCharId);
-                if (muteChar is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found."); return; }
-                var muteAccount = await _userManager.FindByIdAsync(muteChar.AccountId.ToString());
-                if (muteAccount is null) { await Clients.Caller.SendAsync("SystemMessage", "Account not found."); return; }
-                muteAccount.IsMuted    = true;
-                muteAccount.MuteReason = muteReason;
-                muteAccount.MutedUntil = muteDuration.HasValue
-                    ? DateTimeOffset.UtcNow.AddMinutes(muteDuration.Value)
-                    : null;
-                await _userManager.UpdateAsync(muteAccount);
-                await Clients.Client(muteSession.ConnectionId).SendAsync("OnMuted",
-                    new MutedPayload(muteReason, muteAccount.MutedUntil));
-                await Clients.Caller.SendAsync("SystemMessage",
-                    $"{muteSession.CharacterName} has been muted." +
-                    (muteDuration.HasValue ? $" ({muteDuration}m)" : " (permanent)"));
-                return;
-            }
-
-            case "tp":
-            {
-                if (!CallerHasPermission(Permissions.TeleportPlayers))
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to teleport players.");
-                    return;
-                }
-                if (parts.Length < 3 || !Guid.TryParse(parts[1], out var tpCharId))
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "Usage: /tp <characterId> <zoneId>");
-                    return;
-                }
-                var tpZoneId = parts[2];
-                var tpSession = await _playerSessionRepo.GetByCharacterIdAsync(tpCharId);
-                if (tpSession is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found or not online."); return; }
-                var tpZone = await _zoneRepo.GetByIdAsync(tpZoneId);
-                if (tpZone is null) { await Clients.Caller.SendAsync("SystemMessage", $"Zone '{tpZoneId}' not found."); return; }
-                await Clients.Client(tpSession.ConnectionId).SendAsync("OnTeleported",
-                    new TeleportedPayload(tpZoneId, tpZone.Name));
-                await Clients.Caller.SendAsync("SystemMessage",
-                    $"Teleported {tpSession.CharacterName} to {tpZone.Name}.");
-                return;
-            }
-
-            case "summon":
-            {
-                if (!CallerHasPermission(Permissions.TeleportPlayers))
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to summon players.");
-                    return;
-                }
-                if (parts.Length < 2 || !Guid.TryParse(parts[1], out var summonCharId))
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "Usage: /summon <characterId>");
-                    return;
-                }
-                var summonSession = await _playerSessionRepo.GetByCharacterIdAsync(summonCharId);
-                if (summonSession is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found or not online."); return; }
-                TryGetCharacterName(out var summonerName);
-                if (!Context.Items.TryGetValue("CurrentZoneId", out var currentZoneObj) || currentZoneObj is not string currentZoneId)
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "You must be in a zone to summon.");
-                    return;
-                }
-                await Clients.Client(summonSession.ConnectionId).SendAsync("OnSummoned",
-                    new SummonedPayload(summonerName, currentZoneId));
-                await Clients.Caller.SendAsync("SystemMessage",
-                    $"Summoned {summonSession.CharacterName} to your location.");
-                return;
-            }
-
-            case "give":
-            {
-                if (!CallerHasPermission(Permissions.GiveItems))
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to give items.");
-                    return;
-                }
-                if (parts.Length < 3 || !Guid.TryParse(parts[1], out var giveCharId))
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "Usage: /give <characterId> <itemSlug> [quantity]");
-                    return;
-                }
-                var giveSlug = parts[2];
-                var giveQty  = parts.Length >= 4 && int.TryParse(parts[3], out var q) && q > 0 ? q : 1;
-                var giveSession = await _playerSessionRepo.GetByCharacterIdAsync(giveCharId);
-                if (giveSession is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found or not online."); return; }
-                var giveChar = await _characterRepo.GetByIdAsync(giveCharId);
-                if (giveChar is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found."); return; }
-
-                var inventory = ParseInventory(giveChar.InventoryBlob);
-                var existing  = inventory.FirstOrDefault(i =>
-                    string.Equals(i.ItemRef, giveSlug, StringComparison.OrdinalIgnoreCase) && i.Durability is null);
-                if (existing is not null)
-                {
-                    var idx = inventory.IndexOf(existing);
-                    inventory[idx] = existing with { Quantity = existing.Quantity + giveQty };
-                }
-                else
-                {
-                    inventory.Add(new InventoryItemDto(giveSlug, giveQty, null));
-                }
-                giveChar.InventoryBlob = JsonSerializer.Serialize(inventory);
-                await _characterRepo.UpdateAsync(giveChar);
-
-                TryGetCharacterName(out var giverUsername);
-                await Clients.Client(giveSession.ConnectionId).SendAsync("OnItemReceived",
-                    new ItemReceivedPayload(giveSlug, giveQty, giverUsername));
-                await Clients.Caller.SendAsync("SystemMessage",
-                    $"Gave {giveQty}x '{giveSlug}' to {giveSession.CharacterName}.");
-                return;
-            }
-
-            case "setgold":
-            {
-                if (!CallerHasPermission(Permissions.GiveItems))
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to set gold.");
-                    return;
-                }
-                if (parts.Length < 3 || !Guid.TryParse(parts[1], out var goldCharId) || !int.TryParse(parts[2], out var goldAmount) || goldAmount < 0)
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "Usage: /setgold <characterId> <amount>");
-                    return;
-                }
-                var goldSession = await _playerSessionRepo.GetByCharacterIdAsync(goldCharId);
-                if (goldSession is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found or not online."); return; }
-                var goldChar = await _characterRepo.GetByIdAsync(goldCharId);
-                if (goldChar is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found."); return; }
-
-                var goldAttrs = ParseAttrs(goldChar.Attributes);
-                goldAttrs["Gold"] = goldAmount;
-                goldChar.Attributes = JsonSerializer.Serialize(goldAttrs);
-                await _characterRepo.UpdateAsync(goldChar);
-
-                await Clients.Client(goldSession.ConnectionId).SendAsync("GoldChanged",
-                    new { CharacterId = goldCharId, Gold = goldAmount, Source = "Admin" });
-                await Clients.Caller.SendAsync("SystemMessage",
-                    $"Set gold to {goldAmount} for {goldSession.CharacterName}.");
-                return;
-            }
-
-            case "sethealth":
-            {
-                if (!CallerHasPermission(Permissions.GiveItems))
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to set health.");
-                    return;
-                }
-                if (parts.Length < 3 || !Guid.TryParse(parts[1], out var hpCharId) || !int.TryParse(parts[2], out var hpAmount) || hpAmount < 0)
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "Usage: /sethealth <characterId> <amount>");
-                    return;
-                }
-                var hpSession = await _playerSessionRepo.GetByCharacterIdAsync(hpCharId);
-                if (hpSession is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found or not online."); return; }
-                var hpChar = await _characterRepo.GetByIdAsync(hpCharId);
-                if (hpChar is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found."); return; }
-
-                var hpAttrs   = ParseAttrs(hpChar.Attributes);
-                var maxHealth = hpAttrs.GetValueOrDefault("MaxHealth", hpChar.Level * 10);
-                var clamped   = Math.Clamp(hpAmount, 0, maxHealth);
-                hpAttrs["CurrentHealth"] = clamped;
-                hpChar.Attributes = JsonSerializer.Serialize(hpAttrs);
-                await _characterRepo.UpdateAsync(hpChar);
-
-                await Clients.Client(hpSession.ConnectionId).SendAsync("DamageTaken",
-                    new { CharacterId = hpCharId, DamageAmount = 0, CurrentHealth = clamped, MaxHealth = maxHealth, IsDead = clamped == 0, Source = "Admin" });
-                await Clients.Caller.SendAsync("SystemMessage",
-                    $"Set health to {clamped}/{maxHealth} for {hpSession.CharacterName}.");
-                return;
-            }
-
-            case "ban":
-            {
-                if (!CallerHasPermission(Permissions.BanPlayers))
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to ban players.");
-                    return;
-                }
-                if (parts.Length < 2 || !Guid.TryParse(parts[1], out var banCharId))
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "Usage: /ban <characterId> [reason]");
-                    return;
-                }
-                var banReason = parts.Length >= 3 ? string.Join(' ', parts[2..]) : "Banned by an administrator.";
-                var banChar = await _characterRepo.GetByIdAsync(banCharId);
-                if (banChar is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found."); return; }
-                var banAccount = await _userManager.FindByIdAsync(banChar.AccountId.ToString());
-                if (banAccount is null) { await Clients.Caller.SendAsync("SystemMessage", "Account not found."); return; }
-                banAccount.IsBanned    = true;
-                banAccount.BannedUntil = null;
-                banAccount.BanReason   = banReason;
-                await _userManager.UpdateAsync(banAccount);
-                var banSession = await _playerSessionRepo.GetByCharacterIdAsync(banCharId);
-                if (banSession is not null)
-                    await Clients.Client(banSession.ConnectionId).SendAsync("OnKicked", new KickedPayload(banReason));
-                await Clients.Caller.SendAsync("SystemMessage", $"{banChar.Name} has been permanently banned.");
-                return;
-            }
-
-            case "suspend":
-            {
-                if (!CallerHasPermission(Permissions.SuspendPlayers))
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to suspend players.");
-                    return;
-                }
-                if (parts.Length < 3 || !Guid.TryParse(parts[1], out var suspCharId) || !int.TryParse(parts[2], out var suspHours) || suspHours < 1)
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "Usage: /suspend <characterId> <hours> [reason]");
-                    return;
-                }
-                var suspReason = parts.Length >= 4 ? string.Join(' ', parts[3..]) : "Suspended by an administrator.";
-                var suspChar = await _characterRepo.GetByIdAsync(suspCharId);
-                if (suspChar is null) { await Clients.Caller.SendAsync("SystemMessage", "Character not found."); return; }
-                var suspAccount = await _userManager.FindByIdAsync(suspChar.AccountId.ToString());
-                if (suspAccount is null) { await Clients.Caller.SendAsync("SystemMessage", "Account not found."); return; }
-                suspAccount.IsBanned    = true;
-                suspAccount.BannedUntil = DateTimeOffset.UtcNow.AddHours(suspHours);
-                suspAccount.BanReason   = suspReason;
-                await _userManager.UpdateAsync(suspAccount);
-                var suspSession = await _playerSessionRepo.GetByCharacterIdAsync(suspCharId);
-                if (suspSession is not null)
-                    await Clients.Client(suspSession.ConnectionId).SendAsync("OnKicked", new KickedPayload(suspReason));
-                await Clients.Caller.SendAsync("SystemMessage",
-                    $"{suspChar.Name} suspended for {suspHours}h. Expires: {suspAccount.BannedUntil:u}");
-                return;
-            }
-
-            case "lookup":
-            {
-                if (!CallerHasPermission(Permissions.ViewPlayers))
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "You do not have permission to look up players.");
-                    return;
-                }
-                if (parts.Length < 2)
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", "Usage: /lookup <characterName>");
-                    return;
-                }
-                var lookupChar = await _characterRepo.GetByNameAsync(parts[1]);
-                if (lookupChar is null)
-                {
-                    await Clients.Caller.SendAsync("SystemMessage", $"Character '{parts[1]}' not found.");
-                    return;
-                }
-                var lookupAccount = await _userManager.FindByIdAsync(lookupChar.AccountId.ToString());
-                if (lookupAccount is null) { await Clients.Caller.SendAsync("SystemMessage", "Account not found."); return; }
-                var lookupSession = await _playerSessionRepo.GetByCharacterIdAsync(lookupChar.Id);
-                var onlineStatus = lookupSession is not null ? $"Online (zone: {lookupSession.ZoneId ?? "region map"})" : "Offline";
-                var banStatus = lookupAccount.IsBanned
-                    ? (lookupAccount.BannedUntil.HasValue ? $"Suspended until {lookupAccount.BannedUntil:u}" : "Permanently banned")
-                    : "Not banned";
-                var muteStatus = lookupAccount.IsMuted
-                    ? (lookupAccount.MutedUntil.HasValue ? $"Muted until {lookupAccount.MutedUntil:u}" : "Permanently muted")
-                    : "Not muted";
-                var info =
-                    $"Character: {lookupChar.Name} (ID: {lookupChar.Id})\n" +
-                    $"Account:   {lookupAccount.UserName} (ID: {lookupAccount.Id})\n" +
-                    $"Status:    {onlineStatus}\n" +
-                    $"Warnings:  {lookupAccount.WarnCount}\n" +
-                    $"Ban:       {banStatus}\n" +
-                    $"Mute:      {muteStatus}";
-                await Clients.Caller.SendAsync("SystemMessage", info);
-                return;
-            }
 
             case "event":
                 if (!CallerHasPermission(Permissions.RunEvents))

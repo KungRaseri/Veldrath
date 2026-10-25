@@ -1,5 +1,5 @@
-using RealmEngine.Shared.Models;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Party.Services;
 
@@ -50,10 +50,10 @@ public class PartyService
 
         // Convert NPC to PartyMember
         var member = ConvertNPCToPartyMember(npc);
-        
+
         // Add to party
         party.AddMember(member);
-        
+
         _logger.LogInformation("NPC {Name} recruited to party (Role: {Role})", npc.Name, member.Role);
         return true;
     }
@@ -189,16 +189,16 @@ public class PartyService
     private PartyRole DetermineRole(string occupation)
     {
         var lower = occupation.ToLower();
-        
+
         if (lower.Contains("tank") || lower.Contains("guard") || lower.Contains("knight") || lower.Contains("paladin"))
             return PartyRole.Tank;
-        
+
         if (lower.Contains("heal") || lower.Contains("cleric") || lower.Contains("priest"))
             return PartyRole.Healer;
-        
+
         if (lower.Contains("mage") || lower.Contains("support") || lower.Contains("bard"))
             return PartyRole.Support;
-        
+
         // Default to DPS (rogue, warrior, ranger)
         return PartyRole.DPS;
     }
@@ -248,7 +248,7 @@ public class PartyService
             _logger.LogInformation("Party member {Name} equipped weapon {Item}", member.Name, item.Name);
             return true;
         }
-        else if (item.Type == ItemType.Chest || item.Type == ItemType.Helmet || 
+        else if (item.Type == ItemType.Chest || item.Type == ItemType.Helmet ||
                  item.Type == ItemType.Legs || item.Type == ItemType.Boots ||
                  item.Type == ItemType.Shoulders || item.Type == ItemType.Bracers ||
                  item.Type == ItemType.Gloves || item.Type == ItemType.Belt)

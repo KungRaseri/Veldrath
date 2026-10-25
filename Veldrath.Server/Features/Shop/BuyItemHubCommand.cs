@@ -56,8 +56,8 @@ public class BuyItemHubCommandHandler : IRequestHandler<BuyItemHubCommand, BuyIt
         ILogger<BuyItemHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
-        _mediator      = mediator;
-        _logger        = logger;
+        _mediator = mediator;
+        _logger = logger;
     }
 
     /// <summary>Handles the purchase and returns the outcome.</summary>
@@ -115,9 +115,9 @@ public class BuyItemHubCommandHandler : IRequestHandler<BuyItemHubCommand, BuyIt
 
         return new BuyItemHubResult
         {
-            Success       = true,
-            ItemRef       = request.ItemRef,
-            GoldSpent     = item.Price,
+            Success = true,
+            ItemRef = request.ItemRef,
+            GoldSpent = item.Price,
             RemainingGold = attrs["Gold"],
         };
     }

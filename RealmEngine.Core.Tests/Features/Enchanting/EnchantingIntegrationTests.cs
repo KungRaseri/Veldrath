@@ -18,7 +18,7 @@ public class EnchantingIntegrationTests
     {
         var services = new ServiceCollection();
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(ApplyEnchantmentHandler).Assembly));
-        
+
         var serviceProvider = services.BuildServiceProvider();
         _mediator = serviceProvider.GetRequiredService<IMediator>();
     }
@@ -58,10 +58,10 @@ public class EnchantingIntegrationTests
         var character = CreateTestCharacter(enchantingSkill: 0);
         var item = CreateTestItem(ItemRarity.Rare);
         item.MaxPlayerEnchantments = 2;
-        
+
         // Apply first enchantment manually
         item.PlayerEnchantments.Add(CreateEnchantment("Frost Damage", 3));
-        
+
         var scroll = CreateEnchantmentScroll("Fire Damage", 5);
 
         var command = new ApplyEnchantmentCommand
@@ -88,7 +88,7 @@ public class EnchantingIntegrationTests
         var item = CreateTestItem(ItemRarity.Rare);
         item.MaxPlayerEnchantments = 2;
         item.PlayerEnchantments.Add(CreateEnchantment("Frost Damage", 3));
-        
+
         var scroll = CreateEnchantmentScroll("Fire Damage", 5);
 
         var command = new ApplyEnchantmentCommand
@@ -116,7 +116,7 @@ public class EnchantingIntegrationTests
         item.MaxPlayerEnchantments = 3;
         item.PlayerEnchantments.Add(CreateEnchantment("Frost Damage", 3));
         item.PlayerEnchantments.Add(CreateEnchantment("Lightning Damage", 4));
-        
+
         var scroll = CreateEnchantmentScroll("Fire Damage", 5);
 
         var command = new ApplyEnchantmentCommand
@@ -143,7 +143,7 @@ public class EnchantingIntegrationTests
         item.MaxPlayerEnchantments = 3;
         item.PlayerEnchantments.Add(CreateEnchantment("Frost Damage", 3));
         item.PlayerEnchantments.Add(CreateEnchantment("Lightning Damage", 4));
-        
+
         var scroll = CreateEnchantmentScroll("Fire Damage", 5);
 
         var command = new ApplyEnchantmentCommand
@@ -171,7 +171,7 @@ public class EnchantingIntegrationTests
         var item = CreateTestItem(ItemRarity.Common);
         item.MaxPlayerEnchantments = 1;
         item.PlayerEnchantments.Add(CreateEnchantment("Existing Enchantment", 5));
-        
+
         var scroll = CreateEnchantmentScroll("Fire Damage", 5);
 
         var command = new ApplyEnchantmentCommand
@@ -197,7 +197,7 @@ public class EnchantingIntegrationTests
         var character = CreateTestCharacter(enchantingSkill: 50);
         var item = CreateTestItem(ItemRarity.Common);
         item.MaxPlayerEnchantments = 1;
-        
+
         var scroll = new Item { Name = "Empty Scroll" }; // No enchantment
 
         var command = new ApplyEnchantmentCommand
@@ -223,7 +223,7 @@ public class EnchantingIntegrationTests
         var character = CreateTestCharacter(enchantingSkill: 50);
         var item = CreateTestItem(ItemRarity.Common);
         item.MaxPlayerEnchantments = 1;
-        
+
         var crystal = new Item { Name = "Socket Crystal" };
 
         var command = new AddEnchantmentSlotCommand
@@ -250,7 +250,7 @@ public class EnchantingIntegrationTests
         var character = CreateTestCharacter(enchantingSkill: 50);
         var item = CreateTestItem(ItemRarity.Rare);
         item.MaxPlayerEnchantments = 1;
-        
+
         var crystal = new Item { Name = "Socket Crystal" };
 
         var command = new AddEnchantmentSlotCommand
@@ -278,7 +278,7 @@ public class EnchantingIntegrationTests
         var character = CreateTestCharacter(enchantingSkill: 10);
         var item = CreateTestItem(ItemRarity.Rare);
         item.MaxPlayerEnchantments = 1;
-        
+
         var crystal = new Item { Name = "Socket Crystal" };
 
         var command = new AddEnchantmentSlotCommand
@@ -305,7 +305,7 @@ public class EnchantingIntegrationTests
         var character = CreateTestCharacter(enchantingSkill: 50);
         var item = CreateTestItem(ItemRarity.Legendary);
         item.MaxPlayerEnchantments = 2;
-        
+
         var crystal = new Item { Name = "Socket Crystal" };
 
         var command = new AddEnchantmentSlotCommand
@@ -332,7 +332,7 @@ public class EnchantingIntegrationTests
         var character = CreateTestCharacter(enchantingSkill: 100);
         var item = CreateTestItem(ItemRarity.Legendary);
         item.MaxPlayerEnchantments = 3; // Already at max
-        
+
         var crystal = new Item { Name = "Socket Crystal" };
 
         var command = new AddEnchantmentSlotCommand
@@ -360,7 +360,7 @@ public class EnchantingIntegrationTests
         item.MaxPlayerEnchantments = 2;
         item.PlayerEnchantments.Add(CreateEnchantment("Fire Damage", 5));
         item.PlayerEnchantments.Add(CreateEnchantment("Frost Damage", 3));
-        
+
         var removalScroll = new Item { Name = "Enchantment Removal Scroll" };
 
         var command = new RemoveEnchantmentCommand
@@ -390,7 +390,7 @@ public class EnchantingIntegrationTests
         var character = CreateTestCharacter(enchantingSkill: 0);
         var item = CreateTestItem(ItemRarity.Common);
         item.MaxPlayerEnchantments = 1;
-        
+
         var removalScroll = new Item { Name = "Enchantment Removal Scroll" };
 
         var command = new RemoveEnchantmentCommand
@@ -418,7 +418,7 @@ public class EnchantingIntegrationTests
         var item = CreateTestItem(ItemRarity.Common);
         item.MaxPlayerEnchantments = 1;
         item.PlayerEnchantments.Add(CreateEnchantment("Fire Damage", 5));
-        
+
         var removalScroll = new Item { Name = "Enchantment Removal Scroll" };
 
         var command = new RemoveEnchantmentCommand
@@ -533,7 +533,7 @@ public class EnchantingIntegrationTests
     private Item CreateEnchantmentScroll(string enchantmentName, int damageBonus)
     {
         var enchantment = CreateEnchantment(enchantmentName, damageBonus);
-        
+
         return new Item
         {
             Name = $"{enchantmentName} Scroll",

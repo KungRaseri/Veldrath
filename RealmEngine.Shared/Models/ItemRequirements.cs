@@ -10,13 +10,13 @@ public class ItemRequirements
     /// Minimum character level required to use this item.
     /// </summary>
     public int Level { get; set; } = 1;
-    
+
     /// <summary>
     /// Minimum attribute values required (sparse dictionary - only required attributes included).
     /// Keys: "strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"
     /// </summary>
     public Dictionary<string, int> Attributes { get; set; } = new();
-    
+
     /// <summary>
     /// Optional skill requirement for this item.
     /// </summary>
@@ -33,7 +33,7 @@ public class SkillRequirement
     /// Example: "@skills/weapon:heavy-blades"
     /// </summary>
     public string Reference { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Minimum skill rank required.
     /// </summary>

@@ -37,7 +37,7 @@ public class NearbyNodesResult
     /// Whether the query was successful.
     /// </summary>
     public bool Success { get; set; }
-    
+
     /// <summary>
     /// Error message if the query failed.
     /// </summary>
@@ -47,12 +47,12 @@ public class NearbyNodesResult
     /// The location ID where nodes were queried.
     /// </summary>
     public string LocationId { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Display name of the location.
     /// </summary>
     public string LocationName { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Biome type of the location.
     /// </summary>
@@ -62,17 +62,17 @@ public class NearbyNodesResult
     /// List of nearby harvestable nodes.
     /// </summary>
     public List<NearbyNodeInfo> Nodes { get; set; } = new();
-    
+
     /// <summary>
     /// Total number of nodes found.
     /// </summary>
     public int TotalNodes { get; set; }
-    
+
     /// <summary>
     /// Number of nodes that can be harvested.
     /// </summary>
     public int HarvestablNodes { get; set; }
-    
+
     /// <summary>
     /// Number of depleted nodes.
     /// </summary>
@@ -88,37 +88,37 @@ public class NearbyNodeInfo
     /// Unique identifier for the node.
     /// </summary>
     public string NodeId { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Display name of the node.
     /// </summary>
     public string DisplayName { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Type of the node (e.g., copper_vein, oak_tree).
     /// </summary>
     public string NodeType { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Material tier of the node.
     /// </summary>
     public string MaterialTier { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Health percentage (0-100).
     /// </summary>
     public int HealthPercent { get; set; }
-    
+
     /// <summary>
     /// Whether the node can be harvested.
     /// </summary>
     public bool CanHarvest { get; set; }
-    
+
     /// <summary>
     /// Description of the node's current state.
     /// </summary>
     public string StateDescription { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Whether this is a rich node with bonus drops.
     /// </summary>

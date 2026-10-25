@@ -32,7 +32,8 @@ public class LearnSpellHandlerTests
     private static Power MakeSpell(string id, MagicalTradition tradition = MagicalTradition.Arcane, int minSkillRank = 0, int manaCost = 10) =>
         new()
         {
-        Id = id, Slug = id,
+            Id = id,
+            Slug = id,
             Name = id,
             DisplayName = id,
             Description = id,

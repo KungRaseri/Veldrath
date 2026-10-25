@@ -50,7 +50,7 @@ public record TakeDamageHubResult
 public class TakeDamageHubCommandHandler : IRequestHandler<TakeDamageHubCommand, TakeDamageHubResult>
 {
     internal const string KeyCurrentHealth = "CurrentHealth";
-    internal const string KeyMaxHealth     = "MaxHealth";
+    internal const string KeyMaxHealth = "MaxHealth";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -68,7 +68,7 @@ public class TakeDamageHubCommandHandler : IRequestHandler<TakeDamageHubCommand,
         ILogger<TakeDamageHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
-        _logger        = logger;
+        _logger = logger;
     }
 
     /// <summary>Handles the command and returns the damage outcome.</summary>
@@ -104,15 +104,15 @@ public class TakeDamageHubCommandHandler : IRequestHandler<TakeDamageHubCommand,
         }
 
         // Derive max health from level when not explicitly stored (10 HP per level)
-        var maxHealth     = attrs.TryGetValue(KeyMaxHealth, out var mh) ? mh : character.Level * 10;
+        var maxHealth = attrs.TryGetValue(KeyMaxHealth, out var mh) ? mh : character.Level * 10;
         var currentHealth = attrs.TryGetValue(KeyCurrentHealth, out var ch) ? ch : maxHealth;
 
         var newHealth = Math.Max(0, currentHealth - request.DamageAmount);
 
         attrs[KeyCurrentHealth] = newHealth;
-        attrs[KeyMaxHealth]     = maxHealth;
+        attrs[KeyMaxHealth] = maxHealth;
 
-        character.Attributes   = JsonSerializer.Serialize(attrs);
+        character.Attributes = JsonSerializer.Serialize(attrs);
         character.LastPlayedAt = DateTimeOffset.UtcNow;
 
         await _characterRepo.UpdateAsync(character, cancellationToken);
@@ -124,10 +124,10 @@ public class TakeDamageHubCommandHandler : IRequestHandler<TakeDamageHubCommand,
 
         return new TakeDamageHubResult
         {
-            Success       = true,
+            Success = true,
             CurrentHealth = newHealth,
-            MaxHealth     = maxHealth,
-            IsDead        = newHealth == 0,
+            MaxHealth = maxHealth,
+            IsDead = newHealth == 0,
         };
     }
 }

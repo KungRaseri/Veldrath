@@ -32,7 +32,7 @@ public class InventoryQueryAPITests
         // Mock repository and apocalypse timer
         var mockRepository = new Mock<ISaveGameRepository>();
         mockRepository.Setup(r => r.SaveGame(It.IsAny<SaveGame>())).Callback<SaveGame>(s => { });
-        
+
         var mockApocalypseTimer = new Mock<IApocalypseTimer>();
         mockApocalypseTimer.Setup(t => t.GetBonusMinutes()).Returns(0);
 
@@ -70,7 +70,7 @@ public class InventoryQueryAPITests
         var legendary = new Item { Id = "legendary1", Name = "Excalibur", Type = ItemType.Weapon, Rarity = ItemRarity.Legendary, Price = 5000 };
 
         character.Inventory.AddRange(new[] { sword, helm, potion, ring, legendary });
-        
+
         // Equip some items
         character.EquippedMainHand = sword;
         character.EquippedHelmet = helm;
@@ -175,10 +175,10 @@ public class InventoryQueryAPITests
         // Assert
         result.Success.Should().BeTrue();
         result.Items.Should().NotBeNull();
-        
+
         var sword = result.Items!.First(i => i.Name == "Iron Sword");
         sword.IsEquipped.Should().BeTrue();
-        
+
         var potion = result.Items!.First(i => i.Name == "Health Potion");
         potion.IsEquipped.Should().BeFalse();
     }

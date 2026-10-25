@@ -9,23 +9,23 @@ public class EngageEnemyHubCommandHandlerTests : IDisposable
     private readonly EngageEnemyHubCommandHandler _handler =
         new(NullLogger<EngageEnemyHubCommandHandler>.Instance);
 
-    private readonly List<(string Key, Guid EnemyId)> _enemyCleanup  = [];
-    private readonly List<Guid>                        _sessionCleanup = [];
+    private readonly List<(string Key, Guid EnemyId)> _enemyCleanup = [];
+    private readonly List<Guid> _sessionCleanup = [];
 
     public void Dispose()
     {
-        foreach (var (key, id) in _enemyCleanup)  ZoneLocationEnemyStore.RemoveEnemy(key, id);
-        foreach (var id        in _sessionCleanup) CombatSessionStore.Remove(id);
+        foreach (var (key, id) in _enemyCleanup) ZoneLocationEnemyStore.RemoveEnemy(key, id);
+        foreach (var id in _sessionCleanup) CombatSessionStore.Remove(id);
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 
     private (string ZoneGroup, string LocationSlug, SpawnedEnemy Enemy) AddEnemy(int hp = 100)
     {
-        var zoneGroup    = $"test/{Guid.NewGuid():N}";
+        var zoneGroup = $"test/{Guid.NewGuid():N}";
         const string loc = "test-path";
-        var key          = ZoneLocationEnemyStore.MakeKey(zoneGroup, loc);
-        var enemy        = new SpawnedEnemy { Name = "Goblin", Level = 1, CurrentHealth = hp, MaxHealth = 100 };
+        var key = ZoneLocationEnemyStore.MakeKey(zoneGroup, loc);
+        var enemy = new SpawnedEnemy { Name = "Goblin", Level = 1, CurrentHealth = hp, MaxHealth = 100 };
         ZoneLocationEnemyStore.AddEnemy(key, enemy);
         _enemyCleanup.Add((key, enemy.Id));
         return (zoneGroup, loc, enemy);

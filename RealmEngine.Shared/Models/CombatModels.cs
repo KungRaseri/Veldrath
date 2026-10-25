@@ -7,19 +7,19 @@ public class CombatAction
 {
     /// <summary>Gets or sets the type of action.</summary>
     public CombatActionType Type { get; set; }
-    
+
     /// <summary>Gets or sets the actor's name.</summary>
     public string ActorName { get; set; } = string.Empty;
-    
+
     /// <summary>Gets or sets the target's name.</summary>
     public string? TargetName { get; set; }
-    
+
     /// <summary>Gets or sets the item used.</summary>
     public Item? ItemUsed { get; set; }
-    
+
     /// <summary>Gets or sets the ability ID.</summary>
     public string? AbilityId { get; set; }
-    
+
     /// <summary>Gets or sets the spell ID.</summary>
     public string? SpellId { get; set; }
 }
@@ -50,40 +50,40 @@ public class CombatResult
 {
     /// <summary>Gets or sets a value indicating whether the action succeeded.</summary>
     public bool Success { get; set; }
-    
+
     /// <summary>Gets or sets the result message.</summary>
     public string Message { get; set; } = string.Empty;
-    
+
     /// <summary>Gets or sets the damage dealt.</summary>
     public int Damage { get; set; } = 0;
-    
+
     /// <summary>Gets or sets the healing amount.</summary>
     public int Healing { get; set; } = 0;
-    
+
     /// <summary>Gets or sets a value indicating whether this was a critical hit.</summary>
     public bool IsCritical { get; set; } = false;
-    
+
     /// <summary>Gets or sets a value indicating whether the attack was dodged.</summary>
     public bool IsDodged { get; set; } = false;
-    
+
     /// <summary>Gets or sets a value indicating whether the attack was blocked.</summary>
     public bool IsBlocked { get; set; } = false;
-    
+
     /// <summary>Gets or sets the combat effect applied.</summary>
     public CombatEffect Effect { get; set; } = CombatEffect.None;
-    
+
     /// <summary>Gets or sets the status effects applied by this action.</summary>
     public List<StatusEffect> StatusEffectsApplied { get; set; } = new();
-    
+
     /// <summary>Gets or sets the status effects that expired this turn.</summary>
     public List<StatusEffectType> StatusEffectsExpired { get; set; } = new();
-    
+
     /// <summary>Gets or sets the active status effects on the target after this action.</summary>
     public List<StatusEffect> ActiveStatusEffects { get; set; } = new();
-    
+
     /// <summary>Gets or sets the damage dealt by DoT effects this turn.</summary>
     public int DotDamage { get; set; } = 0;
-    
+
     /// <summary>Gets or sets the healing from HoT effects this turn.</summary>
     public int HotHealing { get; set; } = 0;
 }
@@ -114,16 +114,16 @@ public class CombatOutcome
 {
     /// <summary>Gets or sets a value indicating whether the player won.</summary>
     public bool PlayerVictory { get; set; }
-    
+
     /// <summary>Gets or sets the XP gained.</summary>
     public int XPGained { get; set; }
-    
+
     /// <summary>Gets or sets the gold gained.</summary>
     public int GoldGained { get; set; }
-    
+
     /// <summary>Gets or sets the loot dropped.</summary>
     public List<Item> LootDropped { get; set; } = new();
-    
+
     /// <summary>Gets or sets the summary message.</summary>
     public string Summary { get; set; } = string.Empty;
 

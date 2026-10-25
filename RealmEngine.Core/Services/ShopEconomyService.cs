@@ -1,8 +1,8 @@
-using RealmEngine.Shared.Models;
-using RealmEngine.Data.Services;
-using RealmEngine.Core.Services.Budget;
-using RealmEngine.Core.Generators.Modern;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Core.Generators.Modern;
+using RealmEngine.Core.Services.Budget;
+using RealmEngine.Data.Services;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Services;
 
@@ -271,9 +271,9 @@ public class ShopEconomyService
         // Load core items from catalog based on shop type
         var shopType = GetShopType(npc);
         var coreItemCount = GetCoreItemCount(npc);
-        
+
         inventory.CoreItems = GenerateCoreInventory(shopType, coreItemCount);
-        
+
         _logger.LogInformation("Created initial inventory for {MerchantName} ({ShopType}) with {CoreCount} core items",
             npc.Name, shopType, inventory.CoreItems.Count);
 
@@ -291,11 +291,11 @@ public class ShopEconomyService
         // Generate new dynamic items
         var shopType = GetShopType(merchant);
         var dynamicCount = GetDynamicItemCount(merchant);
-        
+
         inventory.DynamicItems = GenerateDynamicInventory(shopType, dynamicCount);
 
         inventory.LastRefresh = DateTime.UtcNow.Date;
-        
+
         _logger.LogInformation("Refreshed dynamic inventory for {MerchantName} with {DynamicCount} items",
             merchant.Name, inventory.DynamicItems.Count);
     }
@@ -451,7 +451,7 @@ public class ShopEconomyService
     {
         var categories = GetCategoriesForShopType(shopType);
         var items = _catalogLoader.LoadMultipleCategories(categories, ItemRarity.Common);
-        
+
         return SelectItemsByWeight(items, count);
     }
 
@@ -463,15 +463,15 @@ public class ShopEconomyService
     {
         var categories = GetCategoriesForShopType(shopType);
         var items = _catalogLoader.LoadMultipleCategories(categories);
-        
+
         // Weight towards uncommon/rare for dynamic inventory
         var filtered = items.Where(i => i.Rarity >= ItemRarity.Uncommon).ToList();
-        
+
         if (filtered.Count == 0)
         {
             filtered = items; // Fallback to all if no uncommon+ items
         }
-        
+
         return SelectItemsByWeight(filtered, count);
     }
 
@@ -498,7 +498,7 @@ public class ShopEconomyService
     private List<Item> SelectItemsByWeight(List<ItemTemplate> templates, int count)
     {
         var selectedItems = new List<Item>();
-        
+
         if (templates.Count == 0)
         {
             _logger.LogWarning("No item templates available for selection");
@@ -507,15 +507,15 @@ public class ShopEconomyService
 
         // Calculate total weight
         int totalWeight = templates.Sum(t => t.RarityWeight);
-        
+
         for (int i = 0; i < count && templates.Count > 0; i++)
         {
             // Weighted random selection
             int roll = _random.Next(totalWeight);
             int cumulative = 0;
-            
+
             ItemTemplate? selected = null;
-            
+
             foreach (var template in templates)
             {
                 cumulative += template.RarityWeight;
@@ -569,12 +569,12 @@ public class ShopInventory
     /// Gets or sets the unique identifier of the merchant who owns this shop.
     /// </summary>
     public string MerchantId { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the display name of the merchant.
     /// </summary>
     public string MerchantName { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the timestamp of the last inventory refresh.
     /// </summary>
@@ -606,17 +606,17 @@ public class PlayerSoldItem
     /// Gets or sets the item that was sold by the player.
     /// </summary>
     public Item Item { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the date when the merchant purchased this item from the player.
     /// </summary>
     public DateTime PurchaseDate { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the number of days remaining before this item is removed from inventory.
     /// </summary>
     public int DaysRemaining { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the resale price the merchant is asking for this item.
     /// </summary>

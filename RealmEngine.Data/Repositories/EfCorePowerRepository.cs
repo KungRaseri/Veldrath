@@ -53,36 +53,36 @@ public class EfCorePowerRepository(ContentDbContext db, ILogger<EfCorePowerRepos
 
     private static Power MapToModel(Entities.Power e) => new()
     {
-        Id           = e.Slug,
-        Slug         = e.Slug,
-        Name         = e.Slug,
-        DisplayName  = e.DisplayName ?? e.Slug,
+        Id = e.Slug,
+        Slug = e.Slug,
+        Name = e.Slug,
+        DisplayName = e.DisplayName ?? e.Slug,
         RarityWeight = e.RarityWeight,
-        Rank         = e.RarityWeight, // RarityWeight repurposed as Rank for spell-rank queries
-        Cooldown     = (int)(e.Stats.Cooldown ?? 0),
-        ManaCost     = e.Stats.ManaCost ?? 0,
-        Range        = e.Stats.Range.HasValue ? (int)e.Stats.Range.Value : null,
-        Duration     = e.Stats.Duration.HasValue ? (int)e.Stats.Duration.Value : null,
-        Radius       = e.Stats.Radius,
-        MaxTargets   = e.Stats.MaxTargets,
-        School       = e.School,
-        Tradition    = e.School is null ? null : ParseTradition(e.School),
-        Type         = ParsePowerType(e.PowerType),
-        IsPassive    = e.PowerType == "passive" || (e.Traits.IsPassive ?? false),
-        EffectType   = PowerEffectType.None,
+        Rank = e.RarityWeight, // RarityWeight repurposed as Rank for spell-rank queries
+        Cooldown = (int)(e.Stats.Cooldown ?? 0),
+        ManaCost = e.Stats.ManaCost ?? 0,
+        Range = e.Stats.Range.HasValue ? (int)e.Stats.Range.Value : null,
+        Duration = e.Stats.Duration.HasValue ? (int)e.Stats.Duration.Value : null,
+        Radius = e.Stats.Radius,
+        MaxTargets = e.Stats.MaxTargets,
+        School = e.School,
+        Tradition = e.School is null ? null : ParseTradition(e.School),
+        Type = ParsePowerType(e.PowerType),
+        IsPassive = e.PowerType == "passive" || (e.Traits.IsPassive ?? false),
+        EffectType = PowerEffectType.None,
     };
 
     private static PowerType ParsePowerType(string powerType) =>
         powerType.ToLowerInvariant() switch
         {
-            "innate"   => PowerType.Innate,
-            "talent"   => PowerType.Talent,
-            "spell"    => PowerType.Spell,
-            "cantrip"  => PowerType.Cantrip,
+            "innate" => PowerType.Innate,
+            "talent" => PowerType.Talent,
+            "spell" => PowerType.Spell,
+            "cantrip" => PowerType.Cantrip,
             "ultimate" => PowerType.Ultimate,
-            "passive"  => PowerType.Passive,
+            "passive" => PowerType.Passive,
             "reaction" => PowerType.Reaction,
-            _          => PowerType.Talent
+            _ => PowerType.Talent
         };
 
     // Entity stores granular schools ("fire", "frost", etc.); map to the four broad traditions.

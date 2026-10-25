@@ -16,14 +16,14 @@ public static class EquipmentPowerService
     {
         // Clear existing equipment-granted abilities
         character.EquipmentGrantedAbilities.Clear();
-        
+
         // Scan all equipped items for grantedAbilities trait
         foreach (var item in character.GetEquippedItems())
         {
             GrantPowersFromItem(character, item);
         }
     }
-    
+
     /// <summary>
     /// Grants powers from a specific item to the character.
     /// </summary>
@@ -31,27 +31,27 @@ public static class EquipmentPowerService
     {
         if (item == null)
             return;
-            
+
         // Check for grantedAbilities trait (should be StringArray)
         if (!item.Traits.TryGetValue("grantedAbilities", out var trait))
             return;
-            
+
         if (trait.Type != TraitType.StringArray)
             return;
-            
+
         var abilityReferences = trait.AsStringList();
         if (abilityReferences == null || abilityReferences.Count == 0)
             return;
-            
+
         // Add each ability reference to equipment-granted abilities
         foreach (var abilityRef in abilityReferences)
         {
             if (string.IsNullOrWhiteSpace(abilityRef))
                 continue;
-                
+
             // Extract ability ID from reference (@powers/category:power-attack -> category:power-attack)
             var abilityId = ExtractAbilityIdFromReference(abilityRef);
-            
+
             // Don't override already-learned abilities
             if (!character.LearnedAbilities.ContainsKey(abilityId))
             {
@@ -59,7 +59,7 @@ public static class EquipmentPowerService
             }
         }
     }
-    
+
     /// <summary>
     /// Removes powers granted by a specific item.
     /// Call this before unequipping an item.
@@ -68,19 +68,19 @@ public static class EquipmentPowerService
     {
         if (item == null)
             return;
-            
+
         // Find and remove all abilities granted by this item
         var abilitiesToRemove = character.EquipmentGrantedAbilities
             .Where(kvp => kvp.Value == item.Id)
             .Select(kvp => kvp.Key)
             .ToList();
-            
+
         foreach (var abilityId in abilitiesToRemove)
         {
             character.EquipmentGrantedAbilities.Remove(abilityId);
         }
     }
-    
+
     /// <summary>
     /// Extracts power ID from a JSON reference.
     /// Example: @powers/active/offensive:power-attack -> active/offensive:power-attack
@@ -89,7 +89,7 @@ public static class EquipmentPowerService
     {
         if (string.IsNullOrWhiteSpace(reference))
             return string.Empty;
-            
+
         // Remove @powers/ prefix if present
         if (reference.StartsWith("@powers/"))
             return reference.Substring(8); // Skip "@powers/"
@@ -97,26 +97,26 @@ public static class EquipmentPowerService
         // Also handle legacy @abilities/ prefix
         if (reference.StartsWith("@abilities/"))
             return reference.Substring(11);
-        
+
         // If no @ prefix, assume it's already a clean ability ID
         return reference;
     }
-    
+
     /// <summary>
     /// Gets all powers available to a character (learned + equipment-granted).
     /// </summary>
     public static List<string> GetAllAvailablePowers(Character character)
     {
         var allPowers = new HashSet<string>(character.LearnedAbilities.Keys);
-        
+
         foreach (var abilityId in character.EquipmentGrantedAbilities.Keys)
         {
             allPowers.Add(abilityId);
         }
-        
+
         return allPowers.ToList();
     }
-    
+
     /// <summary>
     /// Gets the source of a power (learned, or equipment item name).
     /// </summary>
@@ -124,13 +124,13 @@ public static class EquipmentPowerService
     {
         if (character.LearnedAbilities.ContainsKey(powerId))
             return "Learned";
-            
+
         if (character.EquipmentGrantedAbilities.TryGetValue(powerId, out var itemId))
         {
             var item = character.GetEquippedItems().FirstOrDefault(i => i.Id == itemId);
             return item != null ? item.Name : "Equipment";
         }
-        
+
         return "Unknown";
     }
 }

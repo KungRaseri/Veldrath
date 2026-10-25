@@ -1,6 +1,6 @@
-using RealmEngine.Shared.Models;
-using RealmEngine.Core.Features.Progression.Services;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Core.Features.Progression.Services;
+using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Services;
 
@@ -43,7 +43,7 @@ public class ReactivePowerService
             var ability = _powerCatalogService.GetPower(learnedAbility.AbilityId);
             if (ability == null)
                 continue;
-            
+
             // Skip non-reactive abilities
             if (!IsReactiveAbility(ability))
                 continue;
@@ -85,7 +85,7 @@ public class ReactivePowerService
         if (classObj is string classStr)
             return classStr == "reactive";
 
-        if (classObj is Dictionary<string, object> classDict && 
+        if (classObj is Dictionary<string, object> classDict &&
             classDict.TryGetValue("value", out var value))
         {
             return value?.ToString() == "reactive";
@@ -106,7 +106,7 @@ public class ReactivePowerService
         if (triggerObj is string triggerStr)
             return triggerStr;
 
-        if (triggerObj is Dictionary<string, object> triggerDict && 
+        if (triggerObj is Dictionary<string, object> triggerDict &&
             triggerDict.TryGetValue("value", out var value))
         {
             return value?.ToString();

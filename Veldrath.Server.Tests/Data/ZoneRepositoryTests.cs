@@ -16,15 +16,15 @@ public class ZoneRepositoryTests : IDisposable
     private static Zone MakeZone(string id, string name, bool isStarter = false) =>
         new()
         {
-            Id        = id,
-            Name      = name,
+            Id = id,
+            Name = name,
             IsStarter = isStarter,
-            Type      = ZoneType.Wilderness,
+            Type = ZoneType.Wilderness,
         };
 
     private static async Task<Guid> SeedAccountAsync(ApplicationDbContext db)
     {
-        var name    = $"Acct_{Guid.NewGuid():N}";
+        var name = $"Acct_{Guid.NewGuid():N}";
         var account = new PlayerAccount { UserName = name, NormalizedUserName = name.ToUpperInvariant() };
         db.Users.Add(account);
         await db.SaveChangesAsync();
@@ -36,7 +36,7 @@ public class ZoneRepositoryTests : IDisposable
         var character = new Character
         {
             AccountId = accountId,
-            Name      = $"Char_{Guid.NewGuid():N}",
+            Name = $"Char_{Guid.NewGuid():N}",
             ClassName = "Warrior",
             SlotIndex = slotIndex,
         };
@@ -51,7 +51,7 @@ public class ZoneRepositoryTests : IDisposable
     {
         await using var db = _factory.CreateContext();
         // DB is pre-seeded with 18 zones; verify all are returned
-        var repo   = new ZoneRepository(db);
+        var repo = new ZoneRepository(db);
         var result = await repo.GetAllAsync();
 
         result.Should().HaveCount(18);
@@ -63,7 +63,7 @@ public class ZoneRepositoryTests : IDisposable
     {
         await using var db = _factory.CreateContext();
         // Seeded data has "crestfall" as the only starter zone
-        var repo   = new ZoneRepository(db);
+        var repo = new ZoneRepository(db);
         var result = await repo.GetAllAsync();
 
         result.Should().NotBeEmpty();
@@ -78,7 +78,7 @@ public class ZoneRepositoryTests : IDisposable
         db.Zones.RemoveRange(db.Zones);
         await db.SaveChangesAsync();
 
-        var repo   = new ZoneRepository(db);
+        var repo = new ZoneRepository(db);
         var result = await repo.GetAllAsync();
         result.Should().BeEmpty();
     }
@@ -88,7 +88,7 @@ public class ZoneRepositoryTests : IDisposable
     {
         await using var db = _factory.CreateContext();
         // "crestfall" is pre-seeded; verify lookup by Id
-        var repo   = new ZoneRepository(db);
+        var repo = new ZoneRepository(db);
         var result = await repo.GetByIdAsync("crestfall");
 
         result.Should().NotBeNull();
@@ -99,7 +99,7 @@ public class ZoneRepositoryTests : IDisposable
     public async Task GetByIdAsync_Should_Return_Null_When_Not_Found()
     {
         await using var db = _factory.CreateContext();
-        var repo   = new ZoneRepository(db);
+        var repo = new ZoneRepository(db);
         var result = await repo.GetByIdAsync("nonexistent");
         result.Should().BeNull();
     }
@@ -109,7 +109,7 @@ public class ZoneRepositoryTests : IDisposable
     {
         await using var db = _factory.CreateContext();
         // "varenmark" has 6 seeded zones: crestfall, the-droveway, ashlen-wood, grevenmire, the-halrow, drowning-pits
-        var repo   = new ZoneRepository(db);
+        var repo = new ZoneRepository(db);
         var result = await repo.GetByRegionIdAsync("varenmark");
 
         result.Should().HaveCount(6);
@@ -122,7 +122,7 @@ public class ZoneRepositoryTests : IDisposable
     public async Task GetByRegionIdAsync_Should_Return_Empty_For_Unknown_Region()
     {
         await using var db = _factory.CreateContext();
-        var repo   = new ZoneRepository(db);
+        var repo = new ZoneRepository(db);
         var result = await repo.GetByRegionIdAsync("nonexistent-region");
         result.Should().BeEmpty();
     }
@@ -132,7 +132,7 @@ public class ZoneRepositoryTests : IDisposable
     {
         await using var db = _factory.CreateContext();
         // greymoor zones: aldenmere (L5), pale-moor (L7), soddenfen (L9), barrow-deeps (L11)
-        var repo   = new ZoneRepository(db);
+        var repo = new ZoneRepository(db);
         var result = await repo.GetByRegionIdAsync("greymoor");
 
         result.Should().HaveCount(4);
@@ -152,11 +152,11 @@ public class ZoneRepositoryTests : IDisposable
 
         var session = new PlayerSession
         {
-            CharacterId    = character.Id,
-            CharacterName  = character.Name,
-            ConnectionId   = "conn-1",
-            RegionId       = "varenmark",
-            ZoneId         = "crestfall",
+            CharacterId = character.Id,
+            CharacterName = character.Name,
+            ConnectionId = "conn-1",
+            RegionId = "varenmark",
+            ZoneId = "crestfall",
         };
 
         var repo = new PlayerSessionRepository(db);
@@ -172,15 +172,15 @@ public class ZoneRepositoryTests : IDisposable
         await using var db = _factory.CreateContext();
         // Reuse pre-seeded zones (crestfall and aldenmere)
         var accountId = await SeedAccountAsync(db);
-        var char1     = await SeedCharacterAsync(db, accountId, slotIndex: 1);
-        var char2     = await SeedCharacterAsync(db, accountId, slotIndex: 2);
+        var char1 = await SeedCharacterAsync(db, accountId, slotIndex: 1);
+        var char2 = await SeedCharacterAsync(db, accountId, slotIndex: 2);
 
         db.PlayerSessions.AddRange(
             new PlayerSession { CharacterId = char1.Id, CharacterName = char1.Name, ConnectionId = "c1", RegionId = "varenmark", ZoneId = "crestfall" },
             new PlayerSession { CharacterId = char2.Id, CharacterName = char2.Name, ConnectionId = "c2", RegionId = "greymoor", ZoneId = "aldenmere" });
         await db.SaveChangesAsync();
 
-        var repo   = new PlayerSessionRepository(db);
+        var repo = new PlayerSessionRepository(db);
         var result = await repo.GetByZoneIdAsync("crestfall");
 
         result.Should().ContainSingle(s => s.ConnectionId == "c1");
@@ -196,15 +196,15 @@ public class ZoneRepositoryTests : IDisposable
 
         db.PlayerSessions.Add(new PlayerSession
         {
-            CharacterId   = character.Id,
+            CharacterId = character.Id,
             CharacterName = character.Name,
-            ConnectionId  = "conn-abc",
-            RegionId      = "varenmark",
-            ZoneId        = "crestfall",
+            ConnectionId = "conn-abc",
+            RegionId = "varenmark",
+            ZoneId = "crestfall",
         });
         await db.SaveChangesAsync();
 
-        var repo   = new PlayerSessionRepository(db);
+        var repo = new PlayerSessionRepository(db);
         var result = await repo.GetByConnectionIdAsync("conn-abc");
 
         result.Should().NotBeNull();
@@ -214,7 +214,7 @@ public class ZoneRepositoryTests : IDisposable
     public async Task GetByConnectionIdAsync_Should_Return_Null_When_Not_Found()
     {
         await using var db = _factory.CreateContext();
-        var repo   = new PlayerSessionRepository(db);
+        var repo = new PlayerSessionRepository(db);
         var result = await repo.GetByConnectionIdAsync("nonexistent");
         result.Should().BeNull();
     }
@@ -229,15 +229,15 @@ public class ZoneRepositoryTests : IDisposable
 
         db.PlayerSessions.Add(new PlayerSession
         {
-            CharacterId   = character.Id,
+            CharacterId = character.Id,
             CharacterName = character.Name,
-            ConnectionId  = "conn-xyz",
-            RegionId      = "varenmark",
-            ZoneId        = "crestfall",
+            ConnectionId = "conn-xyz",
+            RegionId = "varenmark",
+            ZoneId = "crestfall",
         });
         await db.SaveChangesAsync();
 
-        var repo   = new PlayerSessionRepository(db);
+        var repo = new PlayerSessionRepository(db);
         var result = await repo.GetByCharacterIdAsync(character.Id);
 
         result.Should().NotBeNull();
@@ -248,7 +248,7 @@ public class ZoneRepositoryTests : IDisposable
     public async Task GetByCharacterIdAsync_Should_Return_Null_When_Not_Found()
     {
         await using var db = _factory.CreateContext();
-        var repo   = new PlayerSessionRepository(db);
+        var repo = new PlayerSessionRepository(db);
         var result = await repo.GetByCharacterIdAsync(Guid.NewGuid());
         result.Should().BeNull();
     }
@@ -263,11 +263,11 @@ public class ZoneRepositoryTests : IDisposable
 
         var session = new PlayerSession
         {
-            CharacterId   = character.Id,
+            CharacterId = character.Id,
             CharacterName = character.Name,
-            ConnectionId  = "conn-del",
-            RegionId      = "varenmark",
-            ZoneId        = "crestfall",
+            ConnectionId = "conn-del",
+            RegionId = "varenmark",
+            ZoneId = "crestfall",
         };
         db.PlayerSessions.Add(session);
         await db.SaveChangesAsync();
@@ -289,11 +289,11 @@ public class ZoneRepositoryTests : IDisposable
 
         db.PlayerSessions.Add(new PlayerSession
         {
-            CharacterId   = character.Id,
+            CharacterId = character.Id,
             CharacterName = character.Name,
-            ConnectionId  = "conn-rem",
-            RegionId      = "varenmark",
-            ZoneId        = "crestfall",
+            ConnectionId = "conn-rem",
+            RegionId = "varenmark",
+            ZoneId = "crestfall",
         });
         await db.SaveChangesAsync();
 
@@ -309,7 +309,7 @@ public class ZoneRepositoryTests : IDisposable
     {
         await using var db = _factory.CreateContext();
         var repo = new PlayerSessionRepository(db);
-        var act  = () => repo.RemoveByConnectionIdAsync("nonexistent");
+        var act = () => repo.RemoveByConnectionIdAsync("nonexistent");
         await act.Should().NotThrowAsync();
     }
 }

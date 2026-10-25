@@ -17,12 +17,12 @@ public class EfCoreLanguageRepositoryTests
     private static Language MakeLanguage(string slug, string typeKey = "imperial", bool active = true) =>
         new()
         {
-            Slug        = slug,
+            Slug = slug,
             DisplayName = slug,
-            TypeKey     = typeKey,
-            IsActive    = active,
-            Phonology   = new LanguagePhonology(),
-            Morphology  = new LanguageMorphology(),
+            TypeKey = typeKey,
+            IsActive = active,
+            Phonology = new LanguagePhonology(),
+            Morphology = new LanguageMorphology(),
             RegisterSystem = new LanguageRegisters(),
         };
 
@@ -31,7 +31,7 @@ public class EfCoreLanguageRepositoryTests
     {
         await using var db = CreateDbContext();
         db.Languages.AddRange(
-            MakeLanguage("calethic",  active: true),
+            MakeLanguage("calethic", active: true),
             MakeLanguage("dead-tongue", active: false));
         await db.SaveChangesAsync();
         var repo = new EfCoreLanguageRepository(db, NullLogger<EfCoreLanguageRepository>.Instance);
@@ -71,8 +71,8 @@ public class EfCoreLanguageRepositoryTests
     {
         await using var db = CreateDbContext();
         db.Languages.AddRange(
-            MakeLanguage("calethic",   "imperial"),
-            MakeLanguage("silvari",    "elven"),
+            MakeLanguage("calethic", "imperial"),
+            MakeLanguage("silvari", "elven"),
             MakeLanguage("high-caleth", "imperial"));
         await db.SaveChangesAsync();
         var repo = new EfCoreLanguageRepository(db, NullLogger<EfCoreLanguageRepository>.Instance);

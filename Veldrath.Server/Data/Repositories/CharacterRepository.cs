@@ -79,8 +79,8 @@ public class CharacterRepository : ICharacterRepository
     {
         var character = await _db.Characters.FindAsync([id], ct);
         if (character is null) return;
-        character.CurrentZoneId  = zoneId;
-        character.LastPlayedAt   = DateTimeOffset.UtcNow;
+        character.CurrentZoneId = zoneId;
+        character.LastPlayedAt = DateTimeOffset.UtcNow;
         await _db.SaveChangesAsync(ct);
     }
 
@@ -90,7 +90,7 @@ public class CharacterRepository : ICharacterRepository
         var character = await _db.Characters.FindAsync([id], ct);
         if (character is null) return;
         character.CurrentZoneLocationSlug = locationSlug;
-        character.LastPlayedAt            = DateTimeOffset.UtcNow;
+        character.LastPlayedAt = DateTimeOffset.UtcNow;
         await _db.SaveChangesAsync(ct);
     }
 

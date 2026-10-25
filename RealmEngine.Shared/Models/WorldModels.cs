@@ -7,43 +7,43 @@ public class Location
 {
     /// <summary>Gets or sets the unique identifier.</summary>
     public required string Id { get; set; }
-    
+
     /// <summary>Gets or sets the name.</summary>
     public required string Name { get; set; }
-    
+
     /// <summary>Gets or sets the description.</summary>
     public required string Description { get; set; }
-    
+
     /// <summary>Gets or sets the type (town, dungeon, wilderness, environment, region).</summary>
     public required string Type { get; set; }
-    
+
     /// <summary>Gets or sets the parent region.</summary>
     public string? ParentRegion { get; set; }
-    
+
     /// <summary>Gets or sets the level.</summary>
     public int Level { get; set; }
-    
+
     /// <summary>Gets or sets the danger rating.</summary>
     public int DangerRating { get; set; }
-    
+
     /// <summary>Gets or sets whether this location has a shop.</summary>
     public bool HasShop { get; set; }
-    
+
     /// <summary>Gets or sets whether this location has an inn for resting.</summary>
     public bool HasInn { get; set; }
-    
+
     /// <summary>Gets or sets whether this location is a safe zone (no random combat).</summary>
     public bool IsSafeZone { get; set; }
-    
+
     /// <summary>Gets or sets whether this location can be selected as a starting zone for new characters.</summary>
     public bool IsStartingZone { get; set; }
-    
+
     /// <summary>Gets or sets the location type (settlement, wilderness, dungeon).</summary>
     public string? LocationType { get; set; }
-    
+
     /// <summary>Gets or sets the danger level (Low, Medium, High, Extreme).</summary>
     public string? Danger { get; set; }
-    
+
     /// <summary>Gets or sets the difficulty level (Easy, Medium, Hard, Deadly).</summary>
     public string? Difficulty { get; set; }
 
@@ -52,7 +52,7 @@ public class Location
 
     /// <summary>Gets or sets the tile row on the zone's tilemap where this location sits. Null if off-grid.</summary>
     public int? TileY { get; set; }
-    
+
     /// <summary>Gets or sets the features.</summary>
     public List<string> Features { get; set; } = new();
     /// <summary>Gets or sets the NPC IDs present at this location.</summary>
