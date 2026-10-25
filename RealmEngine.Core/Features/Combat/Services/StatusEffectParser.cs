@@ -1,3 +1,4 @@
+using System.Text.Json;
 using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Features.Combat.Services;
@@ -48,9 +49,11 @@ public static class StatusEffectParser
             _ => 2
         };
 
-        // Check for duration trait override
+        // Check for duration trait override. A zero or negative override would expire the effect the
+        // instant it lands, so the category default wins instead of trusting the content.
         if (ability.Traits.TryGetValue("statusDuration", out var durationValue) &&
-            int.TryParse(durationValue?.ToString(), out int parsedDuration))
+            int.TryParse(durationValue?.ToString(), out int parsedDuration) &&
+            parsedDuration > 0)
         {
             duration = parsedDuration;
         }
@@ -305,12 +308,11 @@ public static class StatusEffectParser
         }
 
         // Check for custom stat modifiers in ability traits
-        if (ability.Traits.TryGetValue("statModifiers", out var modifiersValue) &&
-            modifiersValue is Dictionary<string, object> customModifiers)
+        if (ability.Traits.TryGetValue("statModifiers", out var modifiersValue))
         {
-            foreach (var (stat, value) in customModifiers)
+            foreach (var (stat, value) in EnumerateStatModifiers(modifiersValue))
             {
-                if (int.TryParse(value?.ToString(), out int modifier))
+                if (int.TryParse(value, out int modifier))
                 {
                     modifiers[stat] = modifier;
                 }
@@ -318,5 +320,41 @@ public static class StatusEffectParser
         }
 
         return modifiers;
+    }
+
+    /// <summary>
+    /// Enumerates the stat modifier pairs of a <c>statModifiers</c> trait value.
+    /// Content loaded from JSON arrives as a <see cref="JsonElement"/>; content built in code arrives
+    /// as a dictionary. Both shapes are supported, and stat names are normalised to lower case because
+    /// the combat pipeline looks up <c>attack</c> and <c>defense</c>.
+    /// </summary>
+    private static IEnumerable<(string Stat, string? Value)> EnumerateStatModifiers(object? modifiersValue)
+    {
+        switch (modifiersValue)
+        {
+            case JsonElement { ValueKind: JsonValueKind.Object } element:
+                foreach (var property in element.EnumerateObject())
+                {
+                    yield return (property.Name.ToLowerInvariant(), property.Value.ToString());
+                }
+
+                break;
+
+            case IDictionary<string, object> dictionary:
+                foreach (var (stat, value) in dictionary)
+                {
+                    yield return (stat.ToLowerInvariant(), value?.ToString());
+                }
+
+                break;
+
+            case IDictionary<string, string> stringDictionary:
+                foreach (var (stat, value) in stringDictionary)
+                {
+                    yield return (stat.ToLowerInvariant(), value);
+                }
+
+                break;
+        }
     }
 }
