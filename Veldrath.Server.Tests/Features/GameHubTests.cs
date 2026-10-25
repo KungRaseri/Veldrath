@@ -18,6 +18,7 @@ using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.Characters;
 using Veldrath.Server.Features.Characters.Combat;
+using Veldrath.Server.Features.Party;
 using Veldrath.Server.Features.Zones;
 using Veldrath.Server.Hubs;
 using Veldrath.Server.Services;
@@ -172,6 +173,68 @@ public class GameHubTests : IDisposable
         hub.Context = ctx;
 
         return (hub, clients, groups, ctx);
+    }
+
+    // Party chat (C4)
+
+    [Fact]
+    public async Task SendPartyMessage_Tells_A_Solo_Character_They_Have_No_Party()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+
+        var mediator = new Mock<ISender>();
+        mediator
+            .Setup(sender => sender.Send(It.IsAny<GetPartyHubQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PartyCommandResult { Success = true, Party = null });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediator.Object);
+        ctx.Items["CharacterId"] = character.Id;
+        ctx.Items["CharacterName"] = character.Name;
+
+        await hub.SendPartyMessage(new SendZoneChatMessageHubRequest("hello"));
+
+        clients.CallerProxy.SentMessages.Should().ContainSingle(m => m.Method == "Error");
+        clients.CallerProxy.SentMessages.Single(m => m.Method == "Error").Args[0]
+            .Should().Be("You are not in a party.");
+        clients.GroupProxy.SentMessages.Should().BeEmpty("a solo character's message must not reach anyone");
+    }
+
+    [Fact]
+    public async Task SendPartyMessage_Reaches_Only_The_Party_Group()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+
+        var partyId = Guid.NewGuid();
+        var mediator = new Mock<ISender>();
+        mediator
+            .Setup(sender => sender.Send(It.IsAny<GetPartyHubQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PartyCommandResult
+            {
+                Success = true,
+                Party = new PartySnapshot(
+                    partyId,
+                    character.Id,
+                    "contribution",
+                    [new PartyMemberView(character.Id, character.Name, character.Level, 10, 10, true)]),
+            });
+
+        var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediator.Object);
+        ctx.Items["CharacterId"] = character.Id;
+        ctx.Items["CharacterName"] = character.Name;
+
+        await hub.SendPartyMessage(new SendZoneChatMessageHubRequest("  hold the line  "));
+
+        clients.GroupProxy.SentMessages.Should().ContainSingle(m => m.Method == "ReceiveChatMessage");
+        var message = clients.GroupProxy.SentMessages.Single(m => m.Method == "ReceiveChatMessage");
+        var dto = message.Args[0].Should().BeOfType<ChatMessageHubDto>().Subject;
+        dto.Channel.Should().Be("Party");
+        dto.Sender.Should().Be(character.Name);
+        dto.Message.Should().Be("hold the line");
+        clients.CallerProxy.SentMessages.Should().BeEmpty("the party group already includes the sender");
     }
 
     // OnConnectedAsync

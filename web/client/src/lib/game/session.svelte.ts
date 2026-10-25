@@ -51,7 +51,7 @@ import { itemLabel } from './types';
 
 export type HubPhase =
 	'idle' | 'connecting' | 'connected' | 'reconnecting' | 'failed' | 'disconnected';
-export type ChatChannel = 'Zone' | 'Global' | 'Whisper';
+export type ChatChannel = 'Zone' | 'Party' | 'Global' | 'Whisper';
 
 const EMPTY_STATS: CharacterStats = {
 	currentHealth: 0,
@@ -514,6 +514,11 @@ export class GameSession {
 				return;
 			}
 			await this.hub.invoke('SendWhisper', { targetCharacterName: target, message: trimmed });
+			return;
+		}
+
+		if (this.chatChannel === 'Party') {
+			await this.hub.invoke('SendPartyMessage', { message: trimmed });
 			return;
 		}
 
