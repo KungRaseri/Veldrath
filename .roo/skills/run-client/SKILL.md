@@ -18,8 +18,9 @@ Invoke this skill when you need to:
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) installed
 - **The game server should be running first** (see [run-server](../run-server/SKILL.md))
+- Node 22 + npm (only to build the Svelte UI bundle)
 - PowerShell terminal
-- Working directory: `g:/code/Veldrath`
+- Working directory: the repository root
 - A display (desktop environment) is required — the client is a GUI application
 
 ## Steps
@@ -31,7 +32,20 @@ Invoke this skill when you need to:
    dotnet run --project Veldrath.Server
    ```
 
-2. **Start the client** (in a new terminal):
+2. **Build the Svelte desktop bundle** (once, and again after any `web/client` change):
+
+   ```powershell
+   cd web
+   npm run build:desktop   # writes web/client/build-desktop
+   cd ..
+   ```
+
+   The game screen is a WebView2 control that `DesktopUiServer` serves out of
+   `web/client/build-desktop` (dev) or `SvelteApp/` next to the executable (published).
+   Without the bundle the client still starts but the centre panel falls back to the native
+   text map, so build it to see the real UI.
+
+3. **Start the client** (in a new terminal):
 
    ```powershell
    dotnet run --project Veldrath.Client

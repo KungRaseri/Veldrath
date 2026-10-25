@@ -83,6 +83,10 @@ jobs:
       shell: pwsh
 
     - name: Test - Veldrath.Client.Tests
+      # Point the Bundle smoke tests at the bundle built above so they assert real content
+      # instead of silently skipping (they no-op when no bundle is found).
+      env:
+        VELDRATH_DESKTOP_UI: web/client/build-desktop
       run: |
         dotnet test Veldrath.Client.Tests/Veldrath.Client.Tests.csproj `
           --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal `
@@ -153,6 +157,22 @@ jobs:
       uses: actions/setup-dotnet@v6
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    # This job has its own checkout, so the bundle built by the build-and-test job is not here.
+    # Without it Veldrath.Client.csproj skips the SvelteApp content item and the published
+    # desktop shell would have no UI (DesktopUiServer.ResolveUiPath returns null).
+    - name: Setup Node
+      uses: actions/setup-node@v7
+      with:
+        node-version: 22
+        cache: npm
+        cache-dependency-path: web/package-lock.json
+
+    - name: Build Svelte desktop bundle
+      working-directory: web
+      run: |
+        npm ci --allow-git=all
+        npm run build:desktop
 
     # Game asset binaries are stored as a GitHub Release in the private
     # KungRaseri/RealmEngine-Assets repo (not committed here due to size/licensing).
@@ -232,6 +252,33 @@ jobs:
         Compress-Archive -Path "./publish/Veldrath-Client-macOS-arm64/*" `
           -DestinationPath "Veldrath-Client-macOS-arm64-$version.zip" -Force
         Write-Output "Created Veldrath-Client-macOS-arm64-$version.zip"
+      shell: pwsh
+
+    # Fail the release instead of shipping a desktop shell that cannot render the Svelte UI.
+    - name: Verify every published client ships the UI bundle
+      run: |
+        $targets = @(
+          "publish/Veldrath-Client-Windows",
+          "publish/Veldrath-Client-Linux",
+          "publish/Veldrath-Client-macOS-x64",
+          "publish/Veldrath-Client-macOS-arm64"
+        )
+        $failed = $false
+        foreach ($target in $targets) {
+          $index = Join-Path $target "SvelteApp/index.html"
+          if (-not (Test-Path $index)) {
+            Write-Output "::error::Missing $index - the desktop shell would have no UI."
+            $failed = $true
+          }
+          $loader = Get-ChildItem -Path $target -Filter "WebView2Loader.dll" -Recurse -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+          if (-not $loader) {
+            Write-Output "::error::Missing WebView2Loader.dll under $target."
+            $failed = $true
+          }
+        }
+        if ($failed) { exit 1 }
+        Write-Output "All published clients contain SvelteApp/index.html and WebView2Loader.dll."
       shell: pwsh
 
     - name: Upload artifacts

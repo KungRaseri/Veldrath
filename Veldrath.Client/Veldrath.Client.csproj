@@ -85,4 +85,19 @@
              CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!--
+    A publish without the bundle produces a desktop shell with no UI: DesktopUiServer.ResolveUiPath
+    finds neither SvelteApp nor the development fallback and the WebView panel stays empty. Fail the
+    publish instead of shipping that. Build the bundle first ("npm run build:desktop" in web/), or
+    pass -p:SkipDesktopUiBundleCheck=true when the omission is deliberate.
+    Normal builds and tests are unaffected — this only runs for the Publish target.
+  -->
+  <Target Name="EnsureDesktopUiBundle"
+          BeforeTargets="Publish"
+          Condition="'$(SkipDesktopUiBundleCheck)' != 'true'">
+    <Error Code="VD0001"
+           Condition="!Exists('..\web\client\build-desktop\index.html')"
+           Text="The Svelte desktop bundle is missing. Run 'npm run build:desktop' in web/ before publishing Veldrath.Client, or pass -p:SkipDesktopUiBundleCheck=true to publish without the embedded UI." />
+  </Target>
+
 </Project>

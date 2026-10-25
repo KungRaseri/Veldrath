@@ -162,6 +162,25 @@ a field rename can silently break the web client.
   check GameHub first, then fix both mirrors in the same PR.
 - Full OpenAPI → TypeScript generation stays deferred; this is the cheap guard.
 
+### W10 — Desktop release packaging (discovered 2026-10-24)
+The published desktop clients shipped **without the Svelte UI**: `Veldrath.Client.csproj` only bundles
+`web/client/build-desktop/**` when `index.html` already exists, and the `publish` job in
+`ci-client.yml` is a separate job from the one that runs `npm run build:desktop` — fresh checkout, no
+Node. `DesktopUiServer.ResolveUiPath()` then found nothing and the WebView panel stayed empty.
+
+- ✅ `ci-client.yml` publish job now sets up Node, runs `npm ci --allow-git=all` +
+  `npm run build:desktop`, and has a `Verify every published client ships the UI bundle` step that
+  fails the release when `SvelteApp/index.html` or `WebView2Loader.dll` is missing from any of the four
+  published folders.
+- ✅ `Veldrath.Client.csproj` gained an `EnsureDesktopUiBundle` target: `dotnet publish` fails with
+  `VD0001` when the bundle is absent, instead of silently producing a UI-less app.
+  `-p:SkipDesktopUiBundleCheck=true` is the deliberate escape hatch. Builds and tests are unaffected.
+- ✅ `run-client` skill documents the `npm run build:desktop` step.
+- Still open (product decisions, not code): macOS/Linux builds only get the native text-map fallback
+  because `GameWebView` is WebView2/Windows-only; the WebView2 Evergreen runtime needs
+  detection/bootstrapping on clean Windows machines; `appsettings.json` still defaults to
+  `localhost:9000`/`localhost:8081` for `ServerBaseUrl`/`FoundryBaseUrl`.
+
 ---
 
 ## 5. Sequencing
@@ -202,6 +221,7 @@ graph LR
 | W7 — authenticated game loop in CI (from migration Phase 2) | ✅ Done: `tests/game-loop.e2e.ts` covers register → roster → play → travel → inventory against a real server (verified locally, 34s, 1 passed); `ci-web.yml` gained an `e2e-game` job that boots `Veldrath.Server` on the Postgres service. The spec self-skips without `E2E_GAME=1`, so `npm run test` stays server-free (22 passed, 1 skipped). | W7 commit |
 | W8 — desktop bundle smoke on the Windows runner (from migration Phase 5) | ✅ Done: 4 `Bundle`-trait tests serve the real `build-desktop` through `DesktopUiServer` (index + hashed asset + SPA fallback + health + `WebView2Loader.dll` presence). `ci-client.yml` already builds the bundle first, so they run on CI. A true WebView2 render probe is left optional. | W8/W9 commit |
 | W9 — payload contract drift check (from migration testing strategy) | ✅ Done: `payload-contract.test.ts` compares every mirrored C# record with its TS interface. It found 5 real drifts on day one — see below. | W8/W9 commit |
+| W10 — desktop release packaging (found while answering "how do I finalize the desktop") | ✅ Done: release zips now carry `SvelteApp/` (Node + `build:desktop` in the publish job, verified per folder), and `dotnet publish` fails with `VD0001` without the bundle. Verified locally: publish output contains `SvelteApp/index.html` (129 files) + `WebView2Loader.dll`; 4/4 `Bundle` tests pass against it. | W10 commit |
 
 **Final verification (2026-10-24):** `dotnet build Realm.Full.slnx` clean and
 `dotnet test Realm.Full.slnx` = **4,630 tests, 0 failures** across the 10 .NET projects; web
