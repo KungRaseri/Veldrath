@@ -353,6 +353,12 @@ Apply `[ExcludeFromCodeCoverage]` to:
 - **Compiled XAML resources** — `.axaml` / `.xaml` code-behind files
 - **Thin infrastructure wrappers** — trivial pass-through services around framework types
 
+EF Core migrations (`**/Migrations/**/*.cs`, including `*.Designer.cs` and model snapshots) are generated code and are excluded by file in [`coverage.runsettings`](../../coverage.runsettings) — no attribute needed.
+
+### Web Coverage
+
+`npm run coverage --workspace client` (from `web/`) runs Vitest with V8 coverage over `web/client/src` and writes `web/client/coverage/lcov.info`, which `ci-web.yml` uploads under the `web` Codecov flag. Only unit tests count; Playwright e2e runs are not instrumented.
+
 ### Test Project Assemblies
 
 Every test project has `Properties/AssemblyInfo.cs` with:
