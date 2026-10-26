@@ -1,3 +1,4 @@
+using RealmEngine.Shared.Models;
 using Veldrath.Server.Features.Quest;
 
 namespace Veldrath.Server.Tests.Features;
