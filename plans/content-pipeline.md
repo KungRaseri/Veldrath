@@ -103,10 +103,10 @@ Rules:
 | Phase | Work | Done when |
 |---|---|---|
 | **B1** ✅ | Shared validator library + one validator per content family, with unit tests over good/bad fixtures | Every family has a validator with `Error`/`Warning` output and tests; #36's startup check calls it |
-| **B2** | Foundry write path: `validate` / `POST` / `PUT` / `DELETE` on `/api/content`, RBAC-gated, plus the schema-driven Foundry edit form | An invalid entity cannot be saved from Foundry, the reason is shown next to the field, and a valid save round-trips |
+| **B2** done | Foundry write path: `validate` / `POST` / `PUT` / `DELETE` on `/api/content`, RBAC-gated, plus the schema-driven Foundry edit form | An invalid entity cannot be saved from Foundry, the reason is shown next to the field, and a valid save round-trips |
 | **B3** ✅ | CI content-guard job over the content snapshot | A PR that introduces an invalid entity fails the job and names the entity and field |
-| **B4** | Coverage honesty (`@veldrath/shared`), Codecov policy flip for changed lines | `npm run coverage` in `web/shared` passes; Codecov reports a blocking changed-lines status |
-| **B5** | Mailpit in the dev stack; `CorsSetup` defaults test; `NullEmailSender` logs no bodies | Local dev shows mail in Mailpit; the CORS preview origin is pinned by a test |
+| **B4** done | Coverage honesty (`@veldrath/shared`), Codecov policy flip for changed lines | `npm run coverage` in `web/shared` passes; Codecov reports a blocking changed-lines status |
+| **B5** done | Mailpit in the dev stack; `CorsSetup` defaults test; `NullEmailSender` logs no bodies | Local dev shows mail in Mailpit; the CORS preview origin is pinned by a test |
 
 ## 4. Acceptance criteria
 
