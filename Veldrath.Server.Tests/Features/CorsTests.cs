@@ -54,3 +54,69 @@ public class CorsTests(WebAppFactory factory)
         response.Headers.Contains("Access-Control-Allow-Origin").Should().BeFalse();
     }
 }
+
+/// <summary>
+/// Pins the CORS defaults the browser needs. These are the ones that would otherwise only break in a browser:
+/// the Vite dev origin, the preview origin the Playwright game-loop spec runs against, and the write verbs the
+/// Foundry content editor uses.
+/// </summary>
+[Collection("Integration")]
+[Trait("Category", "Integration")]
+public class CorsDefaultTests(WebAppFactory factory)
+{
+    private readonly HttpClient _client = factory.CreateClient();
+
+    private async Task<HttpResponseMessage> PreflightAsync(string path, string origin, string method)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Options, path);
+        request.Headers.Add("Origin", origin);
+        request.Headers.Add("Access-Control-Request-Method", method);
+        request.Headers.Add("Access-Control-Request-Headers", "authorization,content-type");
+        return await _client.SendAsync(request);
+    }
+
+    [Theory]
+    [InlineData("http://localhost:5173")]
+    [InlineData("http://localhost:4173")]
+    [InlineData("https://localhost:5173")]
+    [InlineData("http://localhost:8081")]
+    public async Task The_default_dev_and_preview_origins_are_allowed(string origin)
+    {
+        var response = await PreflightAsync("/api/content/item", origin, "GET");
+
+        response.Headers.GetValues("Access-Control-Allow-Origin").Should().Contain(origin);
+    }
+
+    [Theory]
+    [InlineData("PUT")]
+    [InlineData("DELETE")]
+    [InlineData("POST")]
+    public async Task The_write_verbs_the_content_editor_uses_survive_a_preflight(string method)
+    {
+        // Foundry edits content from the browser, so PUT and DELETE are now preflighted requests. Dropping them from
+        // the policy would fail the save with an opaque CORS error, not a 4xx the editor could explain.
+        var response = await PreflightAsync("/api/content/item", "http://localhost:5173", method);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        response.Headers.GetValues("Access-Control-Allow-Methods")
+            .SelectMany(value => value.Split(',', StringSplitOptions.TrimEntries))
+            .Should().Contain(method);
+    }
+
+    [Fact]
+    public async Task The_policy_does_not_allow_every_method()
+    {
+        // An explicit allow-list keeps TRACE and CONNECT out; AllowAnyMethod would quietly let them back in. The
+        // middleware still echoes the origin, so the methods header is what has to be asserted.
+        var response = await PreflightAsync("/api/content/item", "http://localhost:5173", "TRACE");
+
+        var allowedMethods = response.Headers
+            .GetValues("Access-Control-Allow-Methods")
+            .SelectMany(value => value.Split(',', StringSplitOptions.TrimEntries))
+            .ToList();
+
+        allowedMethods.Should().NotContain("TRACE");
+        allowedMethods.Should().NotContain("CONNECT");
+        allowedMethods.Should().Contain(["GET", "POST", "PUT", "DELETE"]);
+    }
+}
