@@ -204,9 +204,10 @@ dotnet test Realm.Full.slnx     # All tests across the 6 .NET test projects (wit
 dotnet format Realm.Full.slnx   # Apply the .editorconfig formatting rules
 ```
 
-> **Formatting is enforced.** [`format.yml`](.github/workflows/format.yml) runs
-> `dotnet format Realm.Full.slnx --verify-no-changes` on every `.cs` change. Run the format command
-> above (or enable format-on-save) before committing, otherwise the gate fails.
+> **Formatting is enforced.** Each .NET component workflow has a `Verify formatting` step running
+> `dotnet format <slnx> --verify-no-changes` ([`ci-engine.yml`](.github/workflows/ci-engine.yml),
+> [`ci-server.yml`](.github/workflows/ci-server.yml), [`ci-discord.yml`](.github/workflows/ci-discord.yml)).
+> Run the format command above (or enable format-on-save) before committing, otherwise the gate fails.
 
 ### Running Projects
 
@@ -227,12 +228,17 @@ CI workflows live in [`.github/workflows/`](.github/workflows/). Coverage is upl
 | [`ci-server.yml`](.github/workflows/ci-server.yml) | Veldrath.Server | `server` |
 | [`ci-discord.yml`](.github/workflows/ci-discord.yml) | Veldrath.Discord | `discord` |
 | [`ci-web.yml`](.github/workflows/ci-web.yml) | SvelteKit web | `web` |
-| [`docs.yml`](.github/workflows/docs.yml) | DocFX documentation build & deploy | — |
-| [`format.yml`](.github/workflows/format.yml) | `dotnet format --verify-no-changes` (repo-wide) | — |
-| [`repo-hygiene.yml`](.github/workflows/repo-hygiene.yml) | Markdown relative-link check | — |
-| [`content-guard.yml`](.github/workflows/content-guard.yml) | Runs every content validator over the seeded catalog | — |
+| [`docs.yml`](.github/workflows/docs.yml) | DocFX build & deploy + markdown relative-link check (build also runs on PRs; deploy is main-only) | — |
 | [`release.yml`](.github/workflows/release.yml) | Release tagging and publishing | — |
 | [`sonarcloud.yml`](.github/workflows/sonarcloud.yml) | SonarCloud static analysis | — |
+
+That is the whole list, deliberately. Three checks live inside those workflows instead of having a file each:
+
+| Check | Lives in | Was |
+|---|---|---|
+| `dotnet format --verify-no-changes` | the `Verify formatting` step of each .NET component workflow | `format.yml` (deleted) |
+| Markdown relative-link check | a step in `docs.yml` | `repo-hygiene.yml` (deleted) |
+| Content validation over the seeded catalog | `SeededContentValidationTests`, already run by `ci-server.yml` | a planned `content-guard.yml` (never kept) |
 
 Coverage exclusions are configured in [`coverage.runsettings`](coverage.runsettings).
 

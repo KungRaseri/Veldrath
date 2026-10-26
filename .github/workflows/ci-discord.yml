@@ -67,6 +67,12 @@ jobs:
     - name: Build
       run: dotnet build Veldrath.Discord.Tests/Veldrath.Discord.Tests.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
 
+    # Formatting gate. It used to be its own repo-wide workflow (format.yml); it lives here instead so a
+    # component PR fails on the formatting of the code it actually changed, and so there is one fewer
+    # workflow to maintain. `dotnet format` is cheap once the project is restored and built.
+    - name: Verify formatting
+      run: dotnet format Veldrath.Discord.slnx --verify-no-changes --no-restore
+
     - name: Test - Veldrath.Discord.Tests
       run: |
         dotnet test Veldrath.Discord.Tests/Veldrath.Discord.Tests.csproj \

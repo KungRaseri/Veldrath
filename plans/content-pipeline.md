@@ -131,9 +131,11 @@ so a typo produced an objective that could never progress and nothing said so. U
 `unsupported-quest-kind` alongside the reserved `deliver:` kind, and `talk:` is explicitly recognised as
 implemented-but-unverifiable (there is no NPC catalog yet).
 
-The CI job is [`content-guard.yml`](../.github/workflows/content-guard.yml): it builds the server test project and
-runs that one test class, with a `paths` filter on seeders, entities, validators and the content feature, so it only
-runs when content or a rule can actually change.
+There is no dedicated workflow for this, and there should not be: a `content-guard.yml` was written first and then
+deleted as redundant. [`ci-server.yml`](../.github/workflows/ci-server.yml) already runs **all** of
+`Veldrath.Server.Tests` whenever `RealmEngine.Data/**` or `Veldrath.Server/**` changes, which is exactly when content
+or a rule can change, and `SeededContentValidationTests` is part of that suite. A second workflow running one test
+class behind a narrower `paths` filter added latency and no coverage.
 
 ### B1 outcome (2026-10-26)
 
