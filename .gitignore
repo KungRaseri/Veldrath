@@ -30,7 +30,6 @@ yarn-error.log*
 web/client/.svelte-kit/
 web/client/build/
 web/client/.output/
-web/client/coverage/
 web/client/test-results/
 web/client/playwright-report/
 web/ci-results/
@@ -66,6 +65,7 @@ __pycache__/
 *.db
 
 coverage-results/
+coverage/
 
 # DocFX static site output
 /_site/

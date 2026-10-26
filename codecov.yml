@@ -3,11 +3,16 @@
 # Each component workflow uploads with its own flag (engine, server, discord, web),
 # so a regression can be attributed to one component instead of the whole solution total.
 #
-# The statuses are informational: they surface the per-component delta on the PR without failing it.
-# A change usually touches one component, which moves the solution-wide number for reasons unrelated
-# to the change itself, and a hard floor set before the current coverage is measured would block the
-# very PRs that improve it. Flip `informational` to false once the numbers have been stable for a
-# few weeks.
+# Policy (Milestone B4):
+#   - project status stays INFORMATIONAL. A change usually touches one component, which moves the
+#     solution-wide number for reasons unrelated to the change itself, and a hard floor set before the
+#     current coverage is measured would block the very PRs that improve it.
+#   - patch status BLOCKS. Changed lines are the only number that describes the change under review, so
+#     a PR that adds untested code now fails instead of quietly lowering the total. Threshold 5% keeps a
+#     small unavoidable dip (a branch that needs a database, say) from failing the build.
+#
+# `web/shared` does not upload coverage: it contains only Drizzle declarations and has no executable
+# logic to measure. Its contract tests still run under the `web` workflow (`npm run test`).
 
 codecov:
   require_ci_to_pass: false
@@ -26,7 +31,7 @@ coverage:
       default:
         target: auto
         threshold: 5%
-        informational: true
+        informational: false
 
 flags:
   engine:
