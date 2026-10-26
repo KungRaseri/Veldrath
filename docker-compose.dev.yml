@@ -59,6 +59,22 @@ services:
       timeout: 5s
       retries: 5
 
+  # ── Mail ────────────────────────────────────────────────────────────────
+  # Mailpit catches everything the server sends, so verification and password-reset mail is inspectable
+  # locally instead of being read out of the console (the server no longer logs message bodies at all).
+  #   UI:   http://localhost:8025
+  #   SMTP: mailpit:1025 (inside the compose network)
+  # Not used in production: production SMTP is configured through Email__SmtpHost on the deployed server.
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    environment:
+      - MP_MAX_MESSAGES=500
+      - MP_SMTP_AUTH_ACCEPT_ANY=1
+      - MP_SMTP_AUTH_ALLOW_INSECURE=1
+
   # ── Application services (hot-reload via dotnet watch) ───────────────────
 
   server:
@@ -73,8 +89,10 @@ services:
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=veldrath;Username=veldrath;Password=veldrath_dev
       - Jwt__Key=${JWT_KEY}
       - InternalBridge__Token=${INTERNAL_BRIDGE_TOKEN:-}
-      - Email__SmtpHost=${EMAIL_SMTP_HOST:-}
-      - Email__SmtpPort=25
+      # Mailpit by default so local mail is readable at http://localhost:8025; override EMAIL_SMTP_HOST to use a
+      # real relay instead.
+      - Email__SmtpHost=${EMAIL_SMTP_HOST:-mailpit}
+      - Email__SmtpPort=${EMAIL_SMTP_PORT:-1025}
       - Email__EnableTls=false
       - Email__SenderAddress=noreply@veldrath.local
       - Email__SenderName=Veldrath Dev
@@ -91,6 +109,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     volumes:
       # Source code — mounted for dotnet watch to detect changes.
       # Each project also gets anonymous volumes over obj/ + bin/ so the Linux
