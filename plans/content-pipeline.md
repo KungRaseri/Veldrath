@@ -25,7 +25,7 @@
 | Read API | [`ContentEndpoints`](../Veldrath.Server/Features/Content/ContentEndpoints.cs:53) — `GET` only (plus `/schema`, `/browse`, `/browse/{type}/{slug}`), anonymous |
 | Write API | **None.** Every content change today is a SQL statement, a seeder run, or a migration |
 | Schema description | [`ContentSchemaRegistry`](../Veldrath.Contracts/Content/ContentSchema.cs:60) — field names/types per entity, powers `/api/content/schema` and the Foundry browse UI |
-| Validation | [`MapGraphValidator`](../RealmEngine.Data/Validation/MapGraphValidator.cs:41) only — map graphs, used by the seeder. [`ContentReferenceRules`](../Veldrath.Server/Features/Content/ContentReferenceRules.cs:37) audits references at startup (#36) |
+| Validation | [`MapGraphValidator`](../RealmEngine.Data/Validation/MapGraphValidator.cs:41) only — map graphs, used by the seeder. [`ContentReferenceRules`](../RealmEngine.Data/Validation/Content/ContentReferenceRules.cs) audits references at startup (#36) |
 | Everything else | Unvalidated on the way in. A typo'd slug, a negative damage value or a quest pointing at a deleted item lands in the DB and is discovered at play time |
 
 **Two different checks, deliberately separate:**
@@ -102,7 +102,7 @@ Rules:
 
 | Phase | Work | Done when |
 |---|---|---|
-| **B1** | Shared validator library + one validator per content family, with unit tests over good/bad fixtures | Every family has a validator with `Error`/`Warning` output and tests; #36's startup check calls it |
+| **B1** ✅ | Shared validator library + one validator per content family, with unit tests over good/bad fixtures | Every family has a validator with `Error`/`Warning` output and tests; #36's startup check calls it |
 | **B2** | Foundry write path: `validate` / `POST` / `PUT` / `DELETE` on `/api/content`, RBAC-gated, plus the schema-driven Foundry edit form | An invalid entity cannot be saved from Foundry, the reason is shown next to the field, and a valid save round-trips |
 | **B3** | CI content-guard job over the content snapshot | A PR that introduces an invalid entity fails the job and names the entity and field |
 | **B4** | Coverage honesty (`@veldrath/shared`), Codecov policy flip for changed lines | `npm run coverage` in `web/shared` passes; Codecov reports a blocking changed-lines status |
@@ -118,6 +118,19 @@ Rules:
 4. **Coverage:** `web/shared` reports real coverage and its gate passes; the Codecov changed-lines status is
    blocking.
 5. **Mail:** the dev stack delivers to Mailpit, and server logs contain no message bodies.
+
+### B1 outcome (2026-10-26)
+
+`RealmEngine.Data/Validation/Content/` ships `ContentIssue`/`ContentValidationResult`, `ContentRules` (stable
+rule ids), `ContentReferenceCatalog`, `IContentValidator` + `ContentValidator<T>`, one validator per family and
+`ContentValidatorRegistry` keyed by the same type keys `ContentSchemaRegistry` advertises. `ContentReferenceRules`
+and `QuestObjectiveKinds` moved into shared code, so the startup audit, the B2 write path and the B3 guard all
+call one implementation.
+
+Running the validators over the real seeded catalog found **three** content defects, now asserted by name in
+`SeededContentValidationTests` so they cannot be forgotten: the two dangling quest objectives
+(`the-lost-shipment` → `collect:lost-cargo`, `gather-mushrooms` → `collect:glowcap-mushroom`) and
+`arcane-focus` carrying a negative mana cost. B3 fixes all three and then the allow-list shrinks to nothing.
 
 ## 5. Explicitly deferred
 

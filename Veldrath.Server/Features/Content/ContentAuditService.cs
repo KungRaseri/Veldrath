@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RealmEngine.Data.Persistence;
+using RealmEngine.Data.Validation.Content;
 
 namespace Veldrath.Server.Features.Content;
 
@@ -14,8 +15,9 @@ namespace Veldrath.Server.Features.Content;
 /// </para>
 /// <para>
 /// It reads <see cref="ContentDbContext"/> (the content catalog lives in its own context), while the gameplay
-/// contexts stay untouched. Milestone B's authoring-time validators are the other half of the rule: they stop the
-/// dangling reference from being written at all, using the same <see cref="ContentReferenceRules"/>.
+/// contexts stay untouched. The authoring-time validators are the other half of the rule: they stop the dangling
+/// reference from being written at all, using the same <see cref="ContentReferenceRules"/> from
+/// <c>RealmEngine.Data.Validation.Content</c> — one rule set, three callers (this audit, the write path, CI).
 /// </para>
 /// </remarks>
 public sealed class ContentAuditService : BackgroundService

@@ -1,13 +1,6 @@
-using Veldrath.Server.Features.Quest;
+using RealmEngine.Shared.Models;
 
-namespace Veldrath.Server.Features.Content;
-
-/// <summary>
-/// One finding from the content reference audit: which rule failed and what it was looking at.
-/// </summary>
-/// <param name="Rule">Stable rule identifier, e.g. <c>missing-spawn-archetype</c>.</param>
-/// <param name="Message">Human-readable description naming both sides of the dangling reference.</param>
-public sealed record ContentIssue(string Rule, string Message);
+namespace RealmEngine.Data.Validation.Content;
 
 /// <summary>A zone location and the archetype slugs its spawn pool references.</summary>
 /// <param name="LocationSlug">Zone-location slug.</param>
@@ -27,26 +20,27 @@ public sealed record QuestObjectiveReference(string QuestSlug, string Type, stri
 public sealed record MapEdgeReference(string MapId, string FromNodeId, string ToNodeId);
 
 /// <summary>
-/// Pure reference rules behind the startup content audit.
+/// Pure reference rules: the single implementation shared by the startup audit (#36), the <c>/api/content</c> write
+/// path and the CI content guard.
 /// </summary>
 /// <remarks>
-/// These are deliberately separate from the database query so they can be unit-tested with plain data, and so
-/// Milestone B's authoring-time validators can reuse them. Every rule returns findings instead of throwing: the
-/// audit must never be able to keep the host from booting.
+/// These are deliberately separate from the database query so they can be unit-tested with plain data. Every rule
+/// returns findings instead of throwing: the startup audit must never be able to keep the host from booting, and a
+/// broken rule must surface as a reported issue rather than an exception on the write path.
 /// </remarks>
 public static class ContentReferenceRules
 {
     /// <summary>Rule id for a spawn pool pointing at an actor archetype that does not exist.</summary>
-    public const string MissingSpawnArchetype = "missing-spawn-archetype";
+    public const string MissingSpawnArchetype = ContentRules.MissingSpawnArchetype;
 
     /// <summary>Rule id for a quest objective pointing at content that does not exist.</summary>
-    public const string MissingQuestTarget = "missing-quest-target";
+    public const string MissingQuestTarget = ContentRules.MissingQuestTarget;
 
     /// <summary>Rule id for a quest objective using a kind that no server call site implements.</summary>
-    public const string UnsupportedQuestKind = "unsupported-quest-kind";
+    public const string UnsupportedQuestKind = ContentRules.UnsupportedQuestKind;
 
     /// <summary>Rule id for a map edge pointing at a node that is not on its map.</summary>
-    public const string MissingMapNode = "missing-map-node";
+    public const string MissingMapNode = ContentRules.MissingMapNode;
 
     /// <summary>
     /// Checks every spawn pool against the set of actor archetype slugs that actually exist.
@@ -58,6 +52,9 @@ public static class ContentReferenceRules
         IEnumerable<SpawnPoolReference> pools,
         IReadOnlySet<string> knownArchetypes)
     {
+        ArgumentNullException.ThrowIfNull(pools);
+        ArgumentNullException.ThrowIfNull(knownArchetypes);
+
         var issues = new List<ContentIssue>();
 
         foreach (var pool in pools)
@@ -71,7 +68,10 @@ public static class ContentReferenceRules
 
                 issues.Add(new ContentIssue(
                     MissingSpawnArchetype,
-                    $"Zone location '{pool.LocationSlug}' spawns unknown actor archetype '{slug}'."));
+                    $"Zone location '{pool.LocationSlug}' spawns unknown actor archetype '{slug}'.",
+                    ContentIssueSeverity.Error,
+                    "actorPool",
+                    pool.LocationSlug));
             }
         }
 
@@ -79,8 +79,9 @@ public static class ContentReferenceRules
     }
 
     /// <summary>
-    /// Checks quest objectives against content: <c>kill</c> → actor archetypes, <c>collect</c> → items,
-    /// <c>reach</c>/<c>visit</c> → zone locations. Other objective types carry no content reference and are skipped.
+    /// Checks quest objectives against content: <c>kill</c> → actor archetypes, <c>collect</c>/<c>craft</c> → items,
+    /// <c>reach</c>/<c>visit</c> → zone locations. <c>reach_level</c> is checked as a number, <c>deliver</c> is
+    /// reported as reserved, and <c>talk</c> is skipped because there is no NPC catalog to check against yet.
     /// </summary>
     /// <param name="objectives">Objectives to check.</param>
     /// <param name="knownArchetypes">Archetype slugs present in content.</param>
@@ -93,6 +94,11 @@ public static class ContentReferenceRules
         IReadOnlySet<string> knownItems,
         IReadOnlySet<string> knownLocations)
     {
+        ArgumentNullException.ThrowIfNull(objectives);
+        ArgumentNullException.ThrowIfNull(knownArchetypes);
+        ArgumentNullException.ThrowIfNull(knownItems);
+        ArgumentNullException.ThrowIfNull(knownLocations);
+
         var issues = new List<ContentIssue>();
 
         foreach (var objective in objectives)
@@ -103,13 +109,17 @@ public static class ContentReferenceRules
             }
 
             var type = objective.Type?.ToLowerInvariant() ?? string.Empty;
+            var field = $"objectives[{type}:{objective.Target}]";
 
             // A reserved kind would never progress, so it is reported rather than silently accepted.
             if (type == QuestObjectiveKinds.Deliver)
             {
                 issues.Add(new ContentIssue(
                     UnsupportedQuestKind,
-                    $"Quest '{objective.QuestSlug}' objective '{objective.Type}:{objective.Target}' uses a reserved objective kind: hand-over is not implemented, so it would never progress."));
+                    $"Quest '{objective.QuestSlug}' objective '{objective.Type}:{objective.Target}' uses a reserved objective kind: hand-over is not implemented, so it would never progress.",
+                    ContentIssueSeverity.Error,
+                    field,
+                    objective.QuestSlug));
                 continue;
             }
 
@@ -120,7 +130,10 @@ public static class ContentReferenceRules
                 {
                     issues.Add(new ContentIssue(
                         MissingQuestTarget,
-                        $"Quest '{objective.QuestSlug}' objective '{objective.Type}:{objective.Target}' needs a positive level number."));
+                        $"Quest '{objective.QuestSlug}' objective '{objective.Type}:{objective.Target}' needs a positive level number.",
+                        ContentIssueSeverity.Error,
+                        field,
+                        objective.QuestSlug));
                 }
 
                 continue;
@@ -143,7 +156,10 @@ public static class ContentReferenceRules
 
             issues.Add(new ContentIssue(
                 MissingQuestTarget,
-                $"Quest '{objective.QuestSlug}' objective '{objective.Type}:{objective.Target}' points at unknown {collection}."));
+                $"Quest '{objective.QuestSlug}' objective '{objective.Type}:{objective.Target}' points at unknown {collection}.",
+                ContentIssueSeverity.Error,
+                field,
+                objective.QuestSlug));
         }
 
         return issues;
@@ -159,6 +175,9 @@ public static class ContentReferenceRules
         IEnumerable<MapEdgeReference> edges,
         IReadOnlyDictionary<string, IReadOnlySet<string>> nodeIdsByMap)
     {
+        ArgumentNullException.ThrowIfNull(edges);
+        ArgumentNullException.ThrowIfNull(nodeIdsByMap);
+
         var issues = new List<ContentIssue>();
 
         foreach (var edge in edges)
@@ -174,7 +193,10 @@ public static class ContentReferenceRules
 
                 issues.Add(new ContentIssue(
                     MissingMapNode,
-                    $"Map '{edge.MapId}' edge {label} node '{nodeId}' does not exist on that map."));
+                    $"Map '{edge.MapId}' edge {label} node '{nodeId}' does not exist on that map.",
+                    ContentIssueSeverity.Error,
+                    $"{label}NodeId",
+                    edge.MapId));
             }
         }
 

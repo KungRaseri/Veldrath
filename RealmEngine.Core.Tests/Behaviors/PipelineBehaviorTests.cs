@@ -111,7 +111,7 @@ public class LoggingBehaviorTests
             x => x.Log(
                 level,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains(containsText)),
+                It.Is<It.IsAnyType>((v, _) => LogMatchers.MessageContains(v, containsText)),
                 It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             times);
@@ -193,7 +193,7 @@ public class PerformanceBehaviorTests
             x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("Slow request")),
+                It.Is<It.IsAnyType>((v, _) => LogMatchers.MessageContains(v, "Slow request")),
                 It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             times);
@@ -244,4 +244,18 @@ public class PerformanceBehaviorTests
 
         VerifyWarningLog(mockLogger, Times.Once());
     }
+}
+
+/// <summary>
+/// Matchers shared by the behavior tests. Moq's <c>It.Is</c> takes an expression tree, which cannot contain
+/// null-propagating operators, so the null-safe comparison lives in a method instead.
+/// </summary>
+internal static class LogMatchers
+{
+    /// <summary>Determines whether a captured log state renders to a message containing <paramref name="fragment"/>.</summary>
+    /// <param name="state">The captured log state object.</param>
+    /// <param name="fragment">Text the rendered message must contain.</param>
+    /// <returns>True when the message contains the fragment.</returns>
+    internal static bool MessageContains(object? state, string fragment) =>
+        state?.ToString()?.Contains(fragment, StringComparison.Ordinal) == true;
 }
