@@ -52,7 +52,10 @@ public class QuestObjectives
 /// <summary>A single objective step within a Quest.</summary>
 public class QuestObjective
 {
-    /// <summary>"kill" | "collect" | "escort" | "reach" | "interact"</summary>
+    /// <summary>
+    /// Objective kind; see <see cref="RealmEngine.Shared.Models.QuestObjectiveKinds"/> for the implemented set.
+    /// Validation rejects any kind outside it, because an unimplemented kind would never progress.
+    /// </summary>
     public string Type { get; set; } = string.Empty;
     /// <summary>Slug of the target entity (enemy, item, location, etc.).</summary>
     public string Target { get; set; } = string.Empty;

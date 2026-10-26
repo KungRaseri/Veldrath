@@ -104,7 +104,7 @@ Rules:
 |---|---|---|
 | **B1** ✅ | Shared validator library + one validator per content family, with unit tests over good/bad fixtures | Every family has a validator with `Error`/`Warning` output and tests; #36's startup check calls it |
 | **B2** | Foundry write path: `validate` / `POST` / `PUT` / `DELETE` on `/api/content`, RBAC-gated, plus the schema-driven Foundry edit form | An invalid entity cannot be saved from Foundry, the reason is shown next to the field, and a valid save round-trips |
-| **B3** | CI content-guard job over the content snapshot | A PR that introduces an invalid entity fails the job and names the entity and field |
+| **B3** ✅ | CI content-guard job over the content snapshot | A PR that introduces an invalid entity fails the job and names the entity and field |
 | **B4** | Coverage honesty (`@veldrath/shared`), Codecov policy flip for changed lines | `npm run coverage` in `web/shared` passes; Codecov reports a blocking changed-lines status |
 | **B5** | Mailpit in the dev stack; `CorsSetup` defaults test; `NullEmailSender` logs no bodies | Local dev shows mail in Mailpit; the CORS preview origin is pinned by a test |
 
@@ -118,6 +118,22 @@ Rules:
 4. **Coverage:** `web/shared` reports real coverage and its gate passes; the Codecov changed-lines status is
    blocking.
 5. **Mail:** the dev stack delivers to Mailpit, and server logs contain no message bodies.
+
+### B3 outcome (2026-10-26)
+
+`SeededContentValidationTests` now demands **zero** errors over the real seeder — the three defects B1 found were
+fixed in content, not tolerated: `glowcap-mushroom` and `lost-cargo` are real quest items now, `the-lost-shipment`
+uses the implemented `talk:` kind instead of an invented `interact:`, and `arcane-focus` carries `ManaCost = 0`
+instead of a negative cost that would have refunded mana if the passive were ever cast.
+
+That last one exposed the hole that let `interact:` through: the audit skipped objective kinds it did not recognise,
+so a typo produced an objective that could never progress and nothing said so. Unknown kinds are now reported as
+`unsupported-quest-kind` alongside the reserved `deliver:` kind, and `talk:` is explicitly recognised as
+implemented-but-unverifiable (there is no NPC catalog yet).
+
+The CI job is [`content-guard.yml`](../.github/workflows/content-guard.yml): it builds the server test project and
+runs that one test class, with a `paths` filter on seeders, entities, validators and the content feature, so it only
+runs when content or a rule can actually change.
 
 ### B1 outcome (2026-10-26)
 

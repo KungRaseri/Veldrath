@@ -162,7 +162,7 @@ public static class QuestsSeeder
                         },
                         new QuestObjective
                         {
-                            Type        = "interact",
+                            Type        = "talk",
                             Target      = "village-blacksmith",
                             Quantity    = 1,
                             Description = "Return the cargo to the Village Blacksmith.",

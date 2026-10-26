@@ -149,7 +149,10 @@ public static class PowersSeeder
                 UpdatedAt    = now,
                 Stats = new PowerStats
                 {
-                    ManaCost = -5, // represents the flat mana reduction granted
+                    // A passive is never cast, so a negative cost only creates a landmine: if it ever were cast, the
+                    // cost subtraction would refund mana. The mana reduction this passive is meant to grant is not
+                    // implemented anywhere; when it is, it belongs in a typed effect field, not in ManaCost.
+                    ManaCost = 0,
                 },
                 Effects = new PowerEffects(),
                 Traits = new PowerTraits

@@ -146,8 +146,21 @@ public static class ContentReferenceRules
                 QuestObjectiveKinds.Craft => (knownItems, "items"),
                 "reach" or QuestObjectiveKinds.Visit => (knownLocations, "zone locations"),
                 // `talk:` has no NPC catalog to validate against yet; add it when one exists.
-                _ => ((IReadOnlySet<string>?)null, string.Empty),
+                QuestObjectiveKinds.Talk => ((IReadOnlySet<string>?)null, string.Empty),
+                _ => (null, string.Empty),
             };
+
+            // A kind outside the implemented set has no call site, so no progress event can ever advance it.
+            if (known is null && type != QuestObjectiveKinds.Talk)
+            {
+                issues.Add(new ContentIssue(
+                    UnsupportedQuestKind,
+                    $"Quest '{objective.QuestSlug}' objective '{objective.Type}:{objective.Target}' uses unknown objective kind '{objective.Type}'. Known kinds: {string.Join(", ", QuestObjectiveKinds.Implemented)}.",
+                    ContentIssueSeverity.Error,
+                    field,
+                    objective.QuestSlug));
+                continue;
+            }
 
             if (known is null || known.Contains(objective.Target))
             {
