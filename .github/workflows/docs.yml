@@ -6,6 +6,9 @@ concurrency:
 
 # docfx.json builds the API reference from Realm.Full.slnx, so any C# change can alter the
 # published docs. Watch the whole solution rather than a hand-maintained project list.
+#
+# Pull requests run the build too, because this workflow owns the markdown relative-link check. Only
+# the deploy job is gated on a push to main, so a PR can never publish.
 on:
   push:
     branches: [ main ]
@@ -16,6 +19,15 @@ on:
       - 'versions/**'
       - 'Directory.Build.props'
       - '**/*.cs'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'docfx.json'
+      - '.github/workflows/docs.yml'
+      - 'docs/**'
+      - 'plans/**'
+      - '**/*.md'
+      - 'scripts/check-markdown-links.mjs'
   workflow_dispatch:
 
 permissions:
@@ -64,6 +76,17 @@ jobs:
           | **Veldrath.Discord** | Discord bot integration |
           EOF
 
+      # Relative-link check. It used to be its own workflow (repo-hygiene.yml); it belongs with the
+      # documentation job because that is what it protects. Offline on purpose: no external URL checks, so it
+      # cannot flake on third-party availability or rate limits.
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Check documentation links
+        run: node scripts/check-markdown-links.mjs
+
       - name: Build documentation
         run: docfx build docfx.json
 
@@ -75,6 +98,8 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     needs: build
+    # A pull request runs the build (and the relative-link check) but must never publish.
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
