@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Validation.Content;
 using Veldrath.Server.Data;
@@ -11,20 +12,12 @@ namespace Veldrath.Server.Tests.Features;
 /// the shipped content must not trip the rules that will shortly block Foundry writes.
 /// </summary>
 /// <remarks>
-/// Two dangling quest objectives are known content debt (<c>the-lost-shipment</c> and <c>gather-mushrooms</c>) and are
-/// asserted by name rather than ignored. B3 fixes them in content; when that lands, the allow-list below shrinks to
-/// nothing and this test starts demanding zero errors.
+/// There is deliberately no allow-list: the shipped content must validate clean, full stop. The three defects this
+/// suite originally found were fixed in content in B3, so a regression now fails the build instead of being tolerated.
 /// </remarks>
 [Trait("Category", "Validation")]
 public class SeededContentValidationTests
 {
-    private static readonly (string Rule, string Identifier, string Needle)[] KnownContentDebt =
-    [
-        (ContentReferenceRules.MissingQuestTarget, "the-lost-shipment", "lost-cargo"),
-        (ContentReferenceRules.MissingQuestTarget, "gather-mushrooms", "glowcap-mushroom"),
-        (ContentRules.ValueOutOfRange, "arcane-focus", "negative mana cost"),
-    ];
-
     [Fact]
     public async Task The_seeded_catalog_has_no_unexpected_errors()
     {
@@ -135,18 +128,16 @@ public class SeededContentValidationTests
             Validate("language", language);
         }
 
-        var unexpected = issues
+        var errors = issues
             .Where(issue => issue.Severity == ContentIssueSeverity.Error)
-            .Where(issue => !IsKnownContentDebt(issue))
             .Select(issue => $"{issue.Rule} [{issue.Identifier}] {issue.Message}")
             .ToList();
 
-        unexpected.Should().BeEmpty(
-            "the shipped content must be clean apart from the two documented dangling quest objectives");
+        errors.Should().BeEmpty("the shipped content must validate clean");
     }
 
     [Fact]
-    public async Task The_only_dangling_quest_objectives_are_the_two_known_ones()
+    public async Task No_quest_objective_points_at_missing_content()
     {
         await using var probe = new SeededContentProbe();
         await using var content = await probe.CreateContextAsync();
@@ -160,10 +151,38 @@ public class SeededContentValidationTests
             .Select(issue => issue.Identifier)
             .ToList();
 
-        reported.Should().BeEquivalentTo(
-            KnownContentDebt
-                .Where(debt => debt.Rule == ContentReferenceRules.MissingQuestTarget)
-                .Select(debt => debt.Identifier));
+        reported.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task An_injected_defect_fails_the_guard_and_names_the_quest_and_target()
+    {
+        // This is the failure mode the CI job relies on: a bad row must produce a message that names the entity and
+        // the missing target, otherwise the job tells an author nothing.
+        await using var probe = new SeededContentProbe();
+        await using var content = await probe.CreateContextAsync();
+
+        var catalog = await ContentReferenceCatalog.LoadAsync(content);
+        var broken = new Quest
+        {
+            Slug = "injected-defect",
+            TypeKey = "side",
+            DisplayName = "Injected Defect",
+            MinLevel = 1,
+        };
+        broken.Objectives.Items.Add(new QuestObjective
+        {
+            Type = RealmEngine.Shared.Models.QuestObjectiveKinds.Collect,
+            Target = "no-such-item",
+            Quantity = 1,
+        });
+
+        var errors = new QuestValidator().Validate(broken, catalog).Errors;
+
+        errors.Should().Contain(issue =>
+            issue.Rule == ContentReferenceRules.MissingQuestTarget
+            && issue.Identifier == "injected-defect"
+            && issue.Message.Contains("no-such-item"));
     }
 
     [Fact]
@@ -191,12 +210,6 @@ public class SeededContentValidationTests
 
         await act.Should().NotThrowAsync();
     }
-
-    private static bool IsKnownContentDebt(ContentIssue issue) =>
-        KnownContentDebt.Any(debt =>
-            issue.Rule == debt.Rule
-            && issue.Identifier == debt.Identifier
-            && issue.Message.Contains(debt.Needle, StringComparison.OrdinalIgnoreCase));
 }
 
 /// <summary>

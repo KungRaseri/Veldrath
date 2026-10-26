@@ -75,6 +75,10 @@ public static class ItemsSeeder
             // Crafting components — refined from raw materials
             new() { Slug = "iron-ingot", TypeKey = "crafting-components", ItemType = "component", DisplayName = "Iron Ingot", RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now, Stats = ISt(1.0f, 50, 5, null, null), Traits = ITr(true, false, false, false, false, false) },
 
+            // Quest items — gathered or recovered for a specific quest; QuestItem keeps them out of shops
+            new() { Slug = "glowcap-mushroom", TypeKey = "reagents", ItemType = "component", DisplayName = "Glowcap Mushroom", RarityWeight = 90, IsActive = true, Version = 1, UpdatedAt = now, Stats = ISt(0.05f, 20, 2, null, null), Traits = ITr(true, true, false, false, false, false) },
+            new() { Slug = "lost-cargo",       TypeKey = "quest-items", ItemType = "component", DisplayName = "Lost Cargo", RarityWeight = 1, IsActive = true, Version = 1, UpdatedAt = now, Stats = ISt(5.0f, 1, 0, null, null), Traits = ITr(false, true, true, false, false, false) },
+
             // Weapons — ItemType="weapon", TypeKey matches WeaponCategoryToProficiencies keys
             new()
             {

@@ -69,9 +69,24 @@ public class ContentReferenceAuditTests
     }
 
     [Fact]
-    public void AuditQuestObjectives_Ignores_Objective_Types_Without_A_Content_Reference()
+    public void AuditQuestObjectives_Reports_An_Unknown_Objective_Kind()
     {
+        // `interact` looked harmless because it carried no content reference, but no call site advances it, so the
+        // objective could never progress. Unknown kinds are now errors rather than silently skipped — which is how the
+        // shipped `the-lost-shipment` quest was caught.
         var objectives = new[] { new QuestObjectiveReference("rest-well", "interact", "not-a-slug") };
+
+        var issues = ContentReferenceRules.AuditQuestObjectives(objectives, Set(), Set(), Set());
+
+        issues.Should().ContainSingle();
+        issues[0].Rule.Should().Be(ContentReferenceRules.UnsupportedQuestKind);
+        issues[0].Message.Should().Contain("interact").And.Contain("rest-well");
+    }
+
+    [Fact]
+    public void AuditQuestObjectives_Still_Accepts_Talk_Which_Has_No_Catalog_To_Check()
+    {
+        var objectives = new[] { new QuestObjectiveReference("greet-the-smith", "talk", "village-blacksmith") };
 
         var issues = ContentReferenceRules.AuditQuestObjectives(objectives, Set(), Set(), Set());
 

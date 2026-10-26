@@ -230,6 +230,7 @@ CI workflows live in [`.github/workflows/`](.github/workflows/). Coverage is upl
 | [`docs.yml`](.github/workflows/docs.yml) | DocFX documentation build & deploy | — |
 | [`format.yml`](.github/workflows/format.yml) | `dotnet format --verify-no-changes` (repo-wide) | — |
 | [`repo-hygiene.yml`](.github/workflows/repo-hygiene.yml) | Markdown relative-link check | — |
+| [`content-guard.yml`](.github/workflows/content-guard.yml) | Runs every content validator over the seeded catalog | — |
 | [`release.yml`](.github/workflows/release.yml) | Release tagging and publishing | — |
 | [`sonarcloud.yml`](.github/workflows/sonarcloud.yml) | SonarCloud static analysis | — |
 

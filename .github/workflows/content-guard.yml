@@ -1,0 +1,80 @@
+name: Content Guard
+
+# Runs every content validator over the real seeded catalog and fails on any Error-level issue.
+# This is the second line of defence behind the write path: SQL statements, migrations and seeder
+# edits never pass through /api/content, but they all go through this job.
+#
+# The rules themselves live in RealmEngine.Data/Validation/Content and are shared with the startup
+# audit and the write endpoints — nothing is re-implemented here.
+
+concurrency:
+  group: content-guard-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [ main, development ]
+    paths:
+      - 'RealmEngine.Data/Seeders/**'
+      - 'RealmEngine.Data/Entities/**'
+      - 'RealmEngine.Data/Validation/**'
+      - 'Veldrath.Server/Features/Content/**'
+      - 'Veldrath.Server.Tests/Features/SeededContentValidationTests.cs'
+      - 'RealmEngine.Shared/Models/QuestObjectiveKinds.cs'
+      - 'Directory.Build.props'
+      - 'Directory.Packages.props'
+      - '.github/workflows/content-guard.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'RealmEngine.Data/Seeders/**'
+      - 'RealmEngine.Data/Entities/**'
+      - 'RealmEngine.Data/Validation/**'
+      - 'Veldrath.Server/Features/Content/**'
+      - 'Veldrath.Server.Tests/Features/SeededContentValidationTests.cs'
+      - 'RealmEngine.Shared/Models/QuestObjectiveKinds.cs'
+      - 'Directory.Build.props'
+      - 'Directory.Packages.props'
+      - '.github/workflows/content-guard.yml'
+  workflow_dispatch:
+
+env:
+  # Pinned SDK, matching ci-server.yml: '10.0.x' resolves to a build dotnet-install cannot find.
+  DOTNET_VERSION: '10.0.402'
+  CONFIGURATION: 'Release'
+
+jobs:
+  guard:
+    name: Validate seeded content
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore
+      run: dotnet restore Veldrath.Server.Tests/Veldrath.Server.Tests.csproj
+
+    - name: Build
+      run: >
+        dotnet build Veldrath.Server.Tests/Veldrath.Server.Tests.csproj
+        --configuration ${{ env.CONFIGURATION }}
+        --no-restore
+
+    # The test seeds the catalog with the real DatabaseSeeder and runs every validator over it. A failure prints the
+    # rule id, the entity slug and the message for each offending row, which is exactly what a content author needs.
+    - name: Validate every content family
+      run: >
+        dotnet test Veldrath.Server.Tests/Veldrath.Server.Tests.csproj
+        --configuration ${{ env.CONFIGURATION }}
+        --no-build
+        --filter "FullyQualifiedName~SeededContentValidationTests"
+        --logger "console;verbosity=normal"
