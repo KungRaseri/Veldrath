@@ -40,7 +40,9 @@ public static class ContentWriteEndpoints
             .RequireAuthorization(Permissions.ManageContent);
 
         group.MapGet("/{type}/{slug}/validate", ValidateAsync)
-            .WithSummary("Dry-run validation for one content entity.");
+            .WithSummary("Dry-run validation for the stored content entity.");
+        group.MapPost("/{type}/{slug}/validate", ValidatePayloadAsync)
+            .WithSummary("Dry-run validation for an edited payload that has not been saved.");
         group.MapPost("/{type}", CreateAsync)
             .WithSummary("Create a content entity after validating it.");
         group.MapPut("/{type}/{slug}", UpdateAsync)
@@ -75,6 +77,36 @@ public static class ContentWriteEndpoints
         var catalog = await ContentReferenceCatalog.LoadAsync(db, ct);
         var result = ContentEntityTypes.Registry.Validate(resolver.ContentType, entity, catalog);
         return Results.Ok(ValidationResponse.For(entity, result));
+    }
+
+    /// <summary>
+    /// Validates a payload the editor has not saved yet, so <em>Validate</em> can check unsaved edits instead of only
+    /// re-reporting whatever is already stored.
+    /// </summary>
+    private static async Task<IResult> ValidatePayloadAsync(
+        string type,
+        string slug,
+        JsonElement payload,
+        ContentDbContext db,
+        CancellationToken ct)
+    {
+        if (!ContentEntityTypes.TryResolve(type, out var resolver))
+        {
+            return UnknownType(type);
+        }
+
+        var incoming = ContentEntityTypes.Deserialize(resolver, payload);
+        if (incoming is null)
+        {
+            return Results.BadRequest(new { error = "The request body is not a valid content payload." });
+        }
+
+        // The route owns the slug: validating a rename would report issues for an entity that cannot exist.
+        incoming.Slug = slug;
+
+        var catalog = await ContentReferenceCatalog.LoadAsync(db, ct);
+        var result = ContentEntityTypes.Registry.Validate(resolver.ContentType, incoming, catalog);
+        return Results.Ok(ValidationResponse.For(incoming, result));
     }
 
     /// <summary>Creates an entity of <paramref name="type"/>, rejecting any request that has error-level issues.</summary>

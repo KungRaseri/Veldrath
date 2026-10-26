@@ -62,6 +62,7 @@ public static class ContentEndpoints
 
         // Public schema + browse (no auth, no player session required)
         group.MapGet("/schema", GetSchemaAsync);
+        group.MapGet("/{type}/schema", GetTypeSchemaAsync);
         group.MapGet("/browse", BrowseAsync);
         group.MapGet("/browse/{type}/{slug}", BrowseDetailAsync);
 
@@ -151,6 +152,19 @@ public static class ContentEndpoints
     }
 
     // Schema
+    /// <summary>
+    /// Returns the field schema for one content type — the metadata the Foundry edit form renders from.
+    /// </summary>
+    /// <param name="type">Content-type key, e.g. <c>item</c> or <c>quest</c>.</param>
+    /// <returns>The schema, or 404 for an unknown type.</returns>
+    private static IResult GetTypeSchemaAsync(string type)
+    {
+        var schema = ContentSchemaRegistry.Get(type);
+        return schema is null
+            ? Results.NotFound(new { error = $"Unknown content type: {type}" })
+            : Results.Ok(schema);
+    }
+
     private static IResult GetSchemaAsync() =>
         Results.Ok(ContentSchemaRegistry.All.Values.Select(s =>
             new ContentTypeInfoDto(s.ContentType, s.DisplayLabel, s.Description)));

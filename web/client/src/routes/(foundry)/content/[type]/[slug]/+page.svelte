@@ -27,6 +27,15 @@
 		</p>
 	</header>
 
+	{#if data.canEdit}
+		<a
+			class="btn self-start preset-filled-primary-500 btn-sm"
+			href={`/content/${data.contentType}/${data.slug}/edit`}
+		>
+			Edit this entity
+		</a>
+	{/if}
+
 	<section class="space-y-2 card p-4">
 		<h2 class="h3">Entity payload</h2>
 		<pre class="overflow-auto text-xs">{prettyPayload}</pre>
