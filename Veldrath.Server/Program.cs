@@ -419,6 +419,7 @@ try
     app.MapCharacterCreationSessionEndpoints();
     app.MapZoneEndpoints();
     app.MapContentEndpoints();
+    app.MapContentWriteEndpoints();
     app.MapAdminEndpoints();
     app.MapPlayerEndpoints();
     app.MapEditorialEndpoints();
