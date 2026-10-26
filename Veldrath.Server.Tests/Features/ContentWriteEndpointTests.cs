@@ -258,3 +258,83 @@ public class ContentWriteEndpointTests(WebAppFactory factory)
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 }
+
+/// <summary>
+/// The per-type schema endpoint and the unsaved-payload dry run — the two things the Foundry edit form calls.
+/// </summary>
+[Collection("Integration")]
+[Trait("Category", "Integration")]
+public class ContentEditorEndpointTests(WebAppFactory factory)
+{
+    private static StringContent Json(object payload) =>
+        new(JsonSerializer.Serialize(payload), System.Text.Encoding.UTF8, "application/json");
+
+    private async Task<HttpClient> ClientAsAsync(params string[] roles)
+    {
+        var (token, _) = await factory.CreateAccountTokenAsync($"content-editor-{Guid.NewGuid():N}", roles);
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
+
+    [Fact]
+    public async Task The_per_type_schema_is_public_and_lists_rendereable_fields()
+    {
+        using var anonymous = factory.CreateClient();
+
+        var response = await anonymous.GetAsync("/api/content/item/schema");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("contentType").GetString().Should().Be("item");
+        body.GetProperty("groups").EnumerateArray()
+            .SelectMany(group => group.GetProperty("fields").EnumerateArray())
+            .Select(field => field.GetProperty("name").GetString())
+            .Should().Contain(["slug", "displayName", "rarityWeight"]);
+    }
+
+    [Fact]
+    public async Task An_unknown_type_has_no_schema()
+    {
+        using var anonymous = factory.CreateClient();
+
+        var response = await anonymous.GetAsync("/api/content/spaceship/schema");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Validating_an_unsaved_payload_reports_issues_without_writing()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+
+        var response = await client.PostAsync("/api/content/quest/the-lost-shipment/validate", Json(new
+        {
+            slug = "the-lost-shipment",
+            typeKey = "side",
+            displayName = "The Lost Shipment",
+            minLevel = 1,
+            objectives = new
+            {
+                items = new[] { new { type = "collect", target = "still-missing", quantity = 1 } },
+            },
+        }));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("isValid").GetBoolean().Should().BeFalse();
+        body.GetProperty("errors").EnumerateArray()
+            .Select(issue => issue.GetProperty("rule").GetString())
+            .Should().Contain("missing-quest-target");
+    }
+
+    [Fact]
+    public async Task An_unsaved_payload_dry_run_needs_the_write_permission()
+    {
+        using var anonymous = factory.CreateClient();
+
+        var response = await anonymous.PostAsync("/api/content/quest/the-lost-shipment/validate", Json(new { slug = "x" }));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+}
