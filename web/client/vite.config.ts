@@ -1,8 +1,21 @@
+import { fileURLToPath } from 'node:url';
 import { mdsvex } from 'mdsvex';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vitest/config';
 import nodeAdapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
+
+/**
+ * SvelteKit's `$app/*` modules are virtual: their runtime reads `globalThis.__sveltekit_dev`, which
+ * only exists inside a running SvelteKit server or browser session. Under Vitest that global is
+ * undefined, so importing any component that touches `page` or `goto` throws before the test can
+ * render anything. Aliasing the two modules a rendered page actually uses to plain test doubles
+ * (in `src/lib/testing/`) keeps those components testable without stubbing each one per suite.
+ */
+const testAppModules = {
+	'$app/state': fileURLToPath(new URL('./src/lib/testing/app-state.ts', import.meta.url)),
+	'$app/navigation': fileURLToPath(new URL('./src/lib/testing/app-navigation.ts', import.meta.url))
+};
 
 // Veldrath is served by adapter-node only: the SvelteKit app is the single client,
 // so no adapter-static SPA build is needed.
@@ -27,6 +40,7 @@ export default defineConfig(() => {
 			passWithNoTests: true,
 			include: ['src/**/*.{test,spec}.{js,ts}'],
 			setupFiles: ['./src/test-setup.ts'],
+			alias: testAppModules,
 			/**
 			 * Coverage gate: 90% global, with per-glob floors.
 			 *

@@ -3017,6 +3017,98 @@ player profile, and the hardcore board. Global 41.13% -> **44.87%** lines (470 t
 - `{@html}` content is asserted through `container.querySelector('.markdown h1')` rather than
   `getByText`, because the injected markup is the thing under test.
 
-Next harness work before the remaining pages: stub `$app/state` (`page`) and `$app/navigation`
-(`goto`, `invalidateAll`) in the Vitest config so `+layout.svelte`, `+error.svelte`, `/login`,
-`/reset-password`, `/account`, `/characters`, and the wizard can be rendered.
+**PR 7 - the auth pages render, and the `$app/*` harness landed.** Global 44.87% -> **56.24%** lines
+(2666/4740), 51.67% statements, 46.94% branches, 58.72% functions; web suite **532 tests in 43
+files**. `.svelte` lines 37.31% -> **49.58%**.
+
+The stubbing, which every page-level test now depends on:
+- `web/client/vite.config.ts` has a `test.alias` (not a build alias) mapping `$app/state` ->
+  `src/lib/testing/app-state.ts` and `$app/navigation` -> `src/lib/testing/app-navigation.ts`. Both
+  live under `src/lib/testing/**`, which is excluded from coverage.
+- `app-state.ts` exports a mutable `page` and `setPage(overrides)`. **Call `setPage` before render**:
+  `$state(page.url.searchParams.get('token') ?? '')` runs when the instance is created, so a later
+  call changes nothing.
+- `app-navigation.ts` exports spies. Declare them as `vi.fn<(args) => result>(async () => {})` - the
+  generic carries the caller-visible signature and the empty body avoids ESLint's `no-unused-vars`,
+  which rejects `_`-prefixed parameters in this repo. `resetNavigation()` clears them all through a
+  `{ mockClear(): void }[]` so the differing mock types do not fight.
+- `$app/paths` needs no stub; `resolve()` works under Vitest as-is.
+
+Suites: `src/routes/pages-auth.test.ts` (29 tests - login, register, verify-email, forgot-password,
+reset-password) and `src/routes/pages-account.test.ts` (33 tests). `SocialLoginButtons` is covered
+through the login page instead of in isolation.
+
+Test-writing details that cost time:
+- `getByText('Unknown IP')` fails when the string is an interpolation sharing a paragraph with other
+  text nodes; use `/Unknown IP/`. testing-library's `getNodeText` only concatenates *direct* text
+  children, which is also why the same call succeeds for a plain `<span>`.
+- jsdom does not implement `window.confirm`, so the unlink prompt is `vi.spyOn(window, 'confirm')`.
+- jsdom only allows same-document navigation, so the "follow the returned provider URL" case feeds a
+  `#linked` fragment and asserts `window.location.hash`; the `href` assignment under test is real.
+- `reset-password` schedules `goto` with `setTimeout(..., 1500)`; assert the message first, then
+  `await vi.advanceTimersByTimeAsync(1500)` under `vi.useFakeTimers()` (restored in `afterEach`).
+- The account page renders three forms in order (profile, email, password) and has no form ids, so
+  `forms(container)[n]` is the selector; the password form's three inputs are ordered
+  current/new/confirm.
+- The login "username path" test must not assert `goto` was not called - it navigates to `/characters`
+  on success. Assert `signInEmail` was not called instead.
+
+**PR 8 - the `api/**` route handlers.** One suite (`src/routes/api-handlers.test.ts`, 25 tests) covers
+`api/game-token`, `api/characters/creation`, `creation/[id]`, `creation/check-name`,
+`creation/[id]/[step]`, and `auth/[...all]`. Global 56.24% -> **57.74%** lines; web suite **557 tests
+in 44 files**; `src/routes/**/*.ts` 17.57% -> **29.69%** lines.
+
+- Call the exported `GET`/`POST`/`PATCH`/`DELETE` directly with `makeServerEvent`. Only
+  `#lib/server/character-api`, `#lib/server/game-token`, and `#lib/server/auth` are mocked;
+  `gameResultResponse` and `requireUser` run for real, so the status mapping and the guard are
+  covered by the same assertions.
+- `requireUser` throws inside an `async` handler, so an anonymous case is
+  `await expect(call(GET, event)).rejects.toThrow()` - never `expect(fn).toThrow()`, which would pass
+  for the wrong reason or miss a rejection entirely.
+- `makeServerEvent({ params, body, method: 'PATCH' })` already sets `content-type: application/json`
+  for a body, so `request.json()` works; an array body is what exercises the `readJson` rejection
+  branch (the route rejects non-objects).
+- The `[step]` route is worth one case per arm: each choice step has its own field name and its own
+  `400` message, and `attributes` filters non-integer values before calling the API, so a
+  `{ strength: 2, luck: 'lots', fate: 1.5 }` body must arrive as `{ strength: 2 }`.
+
+**PR 9 - the character creation wizard.** One suite (`src/routes/pages-creation.test.ts`, 21 tests)
+drives `characters/new/+page.svelte` (638 lines, the largest component in the app). Global 57.74% ->
+**63.18%** lines; web suite **578 tests in 45 files**; `.svelte` 49.58% -> **58.05%**.
+
+- Stub `fetch` with `installFetch` and answer by `` `${method} ${pathname}` ``; make the handler
+  **throw** on an unknown route so a page calling something unexpected fails loudly instead of
+  returning a confusing parse error.
+- The step header (`Step 1 of 7 · Name`) renders even while the session is still starting, so waiting
+  for it proves nothing and the form is not there yet. Wait for the **Cancel** button, which only
+  exists inside the started branch. This cost a full round of 16 false failures.
+- There is a 350 ms debounce before the name availability check. Keep real timers and use
+  `findByText` (1 s default) rather than fake timers: `waitFor`/`findBy` both need real timers, and
+  the whole suite still runs in about a second.
+- `getByText('9')` is ambiguous on the attributes step because the remaining-points counter also
+  reads 9 after one increase; assert the allocation from the PATCH body instead.
+- `aria-pressed` is an attribute, not a property: use `.getAttribute('aria-pressed')`, not
+  `toHaveProperty`.
+- `validateCharacterName` returns the full sentence ("Name may only contain letters and spaces."),
+  so match the real string rather than a fragment.
+
+**PR 10 - the staff group guards and the moderation pages.** One suite
+(`src/routes/staff-loaders.test.ts`, 23 tests) covers the four group layouts (admin, editorial,
+mod, foundry) and the four moderation route modules. Global 63.18% -> **64.49%** lines; web suite
+**601 tests in 46 files**; `src/routes/**/*.ts` 29.69% -> **40.27%**.
+
+- `error(...)` has an **empty** `message` - the text is in `body.message` - so `toThrow('...')` cannot
+  assert a 403/404 message. A small `thrownMessage()` helper that reads `body.message` is needed, and
+  `expect.requireAssertions` means the helper must throw if nothing was thrown at all.
+- A layout that is **not `async`** (`(foundry)/+layout.server.ts`) throws synchronously, so it needs
+  `expect(() => ...).toThrow()`; every other layout rejects. Same rule already known from `/game`.
+- The layouts read `access` from `parent()`, so the fake event's `parent` is replaced per test:
+  `event.parent = async () => ({ access })`. `requirePermission` and `hasPermission` run for real, so
+  `roles: ['Admin']` works with an empty permission list while a plain account is refused.
+- Declare the access fixtures with an explicit interface. `{ permissions: [] }` infers `never[]`, and
+  spreading a `['content.manage']` variant into it fails typecheck.
+
+Still red, biggest first: `src/routes/**/*.ts` 40.27% lines (the admin, editorial, and Foundry page
+modules), `src/**/*.svelte` 58.05% (staff pages, layout chrome, site components), and
+`src/lib/game/**/*.ts` branches 82.74 - that last one is real `session.svelte.ts` guard branches, not
+a glob problem, and belongs with the `GameOverlays` work.

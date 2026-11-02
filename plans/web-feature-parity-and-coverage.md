@@ -384,8 +384,132 @@ Six page components covered in one suite, [`pages-public.test.ts`](web/client/sr
 Practical note: these pages only take `data` as a prop and use `resolve()` from `$app/paths`, both
 of which work under Vitest unchanged. The `data` fixture is cast once at the render call because
 `PageData` is generated per route — the loaders are where those shapes are actually enforced.
-Pages that read `$app/state` (`+layout`, `+error`, `login`, `reset-password`) or `$app/navigation`
-still need a stub before they can be rendered; that is the next piece of harness work.
+
+### PR 7 — app-module stubs and the auth page components
+
+`$app/state` and `$app/navigation` are now aliased in [`vite.config.ts`](../../web/client/vite.config.ts:24)
+to [`app-state.ts`](../../web/client/src/lib/testing/app-state.ts:1) and
+[`app-navigation.ts`](../../web/client/src/lib/testing/app-navigation.ts:1). Both are `test.alias`
+entries only, so the real modules are untouched in the build. The navigation stubs are typed
+`vi.fn<(args) => result>(async () => {})`: the generic carries the caller-visible signature and the
+empty body avoids the unused-parameter rule. `app-state.ts` exports a mutable `page` object and
+`setPage(overrides)`, which must be called **before** render because `$state(page.url...)`
+initializers read it when the component instance is created.
+
+[`pages-auth.test.ts`](../../web/client/src/routes/pages-auth.test.ts:1) — 29 tests:
+
+| Page | Covered |
+|---|---|
+| `login/+page.svelte` | all four `?error=` codes, email vs username `signIn` branch with trimming, rejected credentials with and without a message, three provider buttons, provider error with and without a message, thrown `Error` and thrown non-error |
+| `register/+page.svelte` | password mismatch (no `signUp` call), success into `/game` with the exact payload, failure with and without a message |
+| `verify-email/+page.svelte` | `verified` (resend form hidden), `missing`, `invalid`, resend success with its deliberately non-committal copy, resend failure with and without a message |
+| `forgot-password/+page.svelte` | `redirectTo` pointed at the reset page, success copy, failure with and without a message |
+| `reset-password/+page.svelte` | no token (form not rendered), mismatched passwords, success then the delayed `goto('/login')` under fake timers, failure with and without a message |
+
+`SocialLoginButtons` is covered through the login page rather than in isolation, which is why its
+error paths are asserted there.
+
+[`pages-account.test.ts`](../../web/client/src/routes/pages-account.test.ts:1) — 33 tests, because
+every control there is either destructive or identity-changing and each one is asserted on both
+outcomes (including whether `invalidateAll` runs, since the page renders server data that would
+otherwise go stale):
+
+| Section | Covered |
+|---|---|
+| Profile | identity, `Verified`/`Unverified`, resend verification success plus failure, empty-name guard, trimmed save with `invalidateAll`, save failure |
+| Email | empty guard, trimmed change with the field cleared afterwards, failure with and without a message |
+| Linked providers | empty list, credential row has no Unlink, unknown provider id shown verbatim, cancel prompt, unlink success and failure, link button hidden for a linked provider, link success following the returned URL, link failure, all three `data.oauthError` codes |
+| Sessions | empty list, `This device`, `Unknown device`, `Unknown IP`, user-agent truncation at 90 characters, revoke one and revoke all, both failures, bulk button hidden with a single session |
+| Password | mismatch guard, exact `changePassword` payload with `revokeOtherSessions: false` and cleared fields, failure with and without a message, sign out to `/` |
+
+Two jsdom constraints are worth knowing. `window.confirm` is not implemented, so the unlink prompt is
+stubbed with `vi.spyOn`; and jsdom only performs same-document navigation, so the link test feeds the
+component a `#linked` fragment — the `window.location.href = result.url` assignment is the same one.
+
+Measured after this PR: **56.24% lines** (2666/4740), 51.67% statements, 46.94% branches, 58.72%
+functions; **532 tests in 43 files**. Layer figures: `src/lib/server` 94.03, `src/lib/game` 92.16,
+`src/lib/foundry` 100, `src/lib` root 66.66, `.svelte` 49.58 lines (from 37.31).
+
+### PR 8 — the `api/**` route handlers
+
+[`api-handlers.test.ts`](../../web/client/src/routes/api-handlers.test.ts:1) — 25 tests over the six
+proxies the browser actually talks to: `api/game-token`, `api/characters/creation`,
+`api/characters/creation/[id]`, `api/characters/creation/check-name`,
+`api/characters/creation/[id]/[step]`, and `api/auth/[...all]`.
+
+The handlers are called directly with the fake event rather than through a server, and
+`gameResultResponse` plus `requireUser` run for real so a status-mapping or guard regression fails
+here as well as in their own suites. What is pinned:
+
+| Handler | Covered |
+|---|---|
+| `game-token` | minted with id/username/email/verified, `username` falling back to `name`, `cache-control: no-store`, anonymous redirect |
+| `creation` (POST) | session payload, upstream 409 passed through with its message |
+| `creation/[id]` (DELETE) | the path id reaches the API, 204 stays bodyless |
+| `check-name` | `?name=` passed through, missing parameter becomes `''` |
+| `[id]/[step]` (PATCH) | unknown step 404, missing/non-object body 400, one case per choice step including its own field error, attribute allocations filtered to integers, empty allocation rejected, equipment normalised (`''` to `null`, `includeShield` strict `true`), upstream 422 preserved |
+| `[id]/[step]` (GET/POST) | `preview` and `finalize` only, blank name 400, name trimmed, `difficultyMode: 'hardcore'` maps to `hardcore` and anything else to `normal` |
+| `auth/[...all]` | all five verbs forwarded to `getAuth().handler(request)` |
+
+Measured after this PR: **57.74% lines**, 52.67% statements, 48.82% branches, 59.58% functions;
+**557 tests in 44 files**. `src/routes/**/*.ts` went 17.57% -> **29.69%** lines. Every
+`src/lib/server` client (`admin-api`, `character-api`, `content-api`, `editorial-api`,
+`foundry-api`, `game-api`, `game-token`) is at 100%.
+
+### PR 9 — the character creation wizard
+
+[`pages-creation.test.ts`](../../web/client/src/routes/pages-creation.test.ts:1) — 21 tests that drive
+[`characters/new/+page.svelte`](../../web/client/src/routes/characters/new/+page.svelte:1) the way a
+player does: type a name, wait for the debounced availability check, then press Continue once per
+step and assert the JSON that was sent. `fetch` is stubbed with `installFetch` from the harness,
+answering by `METHOD path` and throwing on any route the page is not expected to call.
+
+| Area | Covered |
+|---|---|
+| Start | "Preparing your creation session…" while pending, the upstream error with a retry that works, a non-JSON failure body, an unreachable server, a catalog error that does not block the form |
+| Name | local validation refusing `K1!` without a request, `checking` → `available` gating Continue, a taken name, a failed check, and the trimmed value reaching the PATCH |
+| Selections | class/species/background defaults sent as `className`, `speciesSlug`, `backgroundId`, `aria-pressed` on the picked class, a rejected save keeping the player on the step, the generic `The server rejected that choice.`, and Back clearing the error |
+| Attributes | `Increase Strength` producing `{ Strength: 9, ... }` in the allocations payload |
+| Equipment | `select` change and shield checkbox producing `{ preferredArmorType: 'light', preferredWeaponType: 'sword', includeShield: true }` |
+| Review | preview rendering, the hardcore warning appearing on selection, `finalize` sending `difficultyMode: 'hardcore'` and `goto('/play/char-1')`, a failed preview, a 409 that keeps the player on Review |
+| Cancel | DELETE of the session then `goto('/characters')`, including when the DELETE itself fails |
+
+Two traps worth writing down. The step header (`Step 1 of 7 · Name`) renders **before** the session
+starts, so waiting for it proves nothing — wait for the Cancel button, which only exists inside the
+started branch. And `getByText('9')` is ambiguous on the attributes step because the remaining-points
+counter also drops to 9, so that assertion belongs in the PATCH body instead.
+
+Measured after this PR: **63.18% lines**, 58.08% statements, 53.7% branches, 63.38% functions;
+**578 tests in 45 files**. `.svelte` lines 49.58% -> **58.05%**.
+
+### PR 10 — the staff group guards and the moderation pages
+
+[`staff-loaders.test.ts`](../../web/client/src/routes/staff-loaders.test.ts:1) — 23 tests over the
+four group layouts and the four moderation route modules. `#lib/server/admin-api` is mocked;
+`requireUser` and `requirePermission` run for real, because they are the only thing standing between
+a player and a moderation action.
+
+| Area | Covered |
+|---|---|
+| `(admin)`, `(editorial)`, `(mod)` layouts | anonymous redirect, 403 with each layout's own message when the permission is missing, `access` returned for an Admin, and entry for a holder of the specific permission without the Admin role |
+| `(foundry)` layout | session required, no permission check, `user` returned |
+| `mod/+page.server` | user and open-report counts, plus the zero fallback that collects both API errors |
+| `mod/users` | `search`/`status`/`sort` passed through, `page=0` clamped to 1, fallbacks when the API fails |
+| `mod/users/[id]` | 404 on a missing account, the player returned, kick with and without a reason, kick failure as a 400, warn refusing a blank reason, warn with the trimmed reason, mute with a duration, unmute, unmute failure as a 400 |
+| `mod/reports` | `?resolved=true|false` → `true|false|null`, page passthrough, defaults on failure, resolve success and a 400 on failure |
+
+Two traps. A SvelteKit `error(...)` has an **empty** `message`: the text is in `body.message`, so
+`toThrow('…')` cannot assert a 403/404 message — use a helper that reads `body.message`. And a
+non-`async` layout (`(foundry)`) throws synchronously, so it needs `expect(() => …).toThrow()`, not
+`rejects`.
+
+Measured after this PR: **64.49% lines**, 58.97% statements, 55.2% branches, 64.29% functions;
+**601 tests in 46 files**. `src/routes/**/*.ts` 29.69% -> **40.27%**.
+
+Still red, in order of size: `src/routes/**/*.ts` at 40.27% (the admin, editorial, and Foundry page
+modules), `src/**/*.svelte` at 58.05% (staff pages, layout chrome, site components), and
+`src/lib/game/**/*.ts` branches at 82.74 — that last one is `session.svelte.ts` guard branches, not
+a glob problem, and is tracked with the `GameOverlays` work.
 
 ## Traps
 
