@@ -197,14 +197,7 @@ jobs:
 
       # Replaces actions/setup-dotnet, which is not mirrored on data.forgejo.org.
       - name: Install the .NET SDK
-        run: |
-          set -eu
-          curl -fsSL https://dot.net/v1/dotnet-install.sh -o "${RUNNER_TEMP}/dotnet-install.sh"
-          bash "${RUNNER_TEMP}/dotnet-install.sh" --version "${DOTNET_VERSION}" --install-dir "${HOME}/.dotnet"
-          echo "${HOME}/.dotnet" >> "${GITHUB_PATH}"
-          echo "DOTNET_ROOT=${HOME}/.dotnet" >> "${GITHUB_ENV}"
-          export PATH="${HOME}/.dotnet:${PATH}"
-          dotnet --version
+        run: bash scripts/ci-toolchain.sh
 
       - name: Setup Node
         uses: actions/setup-node@v7

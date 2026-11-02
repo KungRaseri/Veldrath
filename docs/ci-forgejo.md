@@ -51,7 +51,7 @@ curl -s -o /dev/null -w '%{http_code}\n' \
 
 | Removed | Replacement |
 |---|---|
-| `actions/setup-dotnet` | `dotnet-install.sh` shell step (inline in each .NET job) |
+| `actions/setup-dotnet` | [`scripts/ci-toolchain.sh`](../scripts/ci-toolchain.sh) — installs the SDK into `/usr/local/share/dotnet` and links it into `/usr/local/bin` (see section 2) |
 | `codecov/codecov-action` | `reportgenerator` output uploaded with `actions/upload-artifact` |
 | `marocchino/sticky-pull-request-comment` | [`scripts/forgejo-pr-comment.sh`](../scripts/forgejo-pr-comment.sh) |
 | `EnricoMi/publish-unit-test-result-action` | `TestResults/*.trx` uploaded as an artifact |

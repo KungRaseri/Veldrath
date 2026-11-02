@@ -68,14 +68,7 @@ jobs:
 
     # Replaces actions/setup-dotnet, which is not mirrored on data.forgejo.org.
     - name: Install the .NET SDK
-      run: |
-        set -eu
-        curl -fsSL https://dot.net/v1/dotnet-install.sh -o "${RUNNER_TEMP}/dotnet-install.sh"
-        bash "${RUNNER_TEMP}/dotnet-install.sh" --version "${DOTNET_VERSION}" --install-dir "${HOME}/.dotnet"
-        echo "${HOME}/.dotnet" >> "${GITHUB_PATH}"
-        echo "DOTNET_ROOT=${HOME}/.dotnet" >> "${GITHUB_ENV}"
-        export PATH="${HOME}/.dotnet:${PATH}"
-        dotnet --version
+      run: bash scripts/ci-toolchain.sh
 
     - name: Restore dependencies
       run: dotnet restore Veldrath.Server.Tests/Veldrath.Server.Tests.csproj
@@ -98,7 +91,7 @@ jobs:
           --results-directory ./TestResults
 
     - name: Install ReportGenerator
-      run: dotnet tool install --global dotnet-reportgenerator-globaltool
+      run: bash scripts/ci-toolchain.sh --reportgenerator
 
     - name: Generate coverage report
       run: reportgenerator "-reports:./TestResults/*/coverage.cobertura.xml" "-targetdir:./CoverageReport" "-reporttypes:Html;Cobertura;MarkdownSummaryGithub"
@@ -152,14 +145,7 @@ jobs:
         submodules: false
 
     - name: Install the .NET SDK
-      run: |
-        set -eu
-        curl -fsSL https://dot.net/v1/dotnet-install.sh -o "${RUNNER_TEMP}/dotnet-install.sh"
-        bash "${RUNNER_TEMP}/dotnet-install.sh" --version "${DOTNET_VERSION}" --install-dir "${HOME}/.dotnet"
-        echo "${HOME}/.dotnet" >> "${GITHUB_PATH}"
-        echo "DOTNET_ROOT=${HOME}/.dotnet" >> "${GITHUB_ENV}"
-        export PATH="${HOME}/.dotnet:${PATH}"
-        dotnet --version
+      run: bash scripts/ci-toolchain.sh
 
     - name: Generate version
       id: version

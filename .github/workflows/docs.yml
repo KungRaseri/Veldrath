@@ -50,14 +50,7 @@ jobs:
 
       # Replaces actions/setup-dotnet, which is not mirrored on data.forgejo.org.
       - name: Set up .NET
-        run: |
-          set -eu
-          curl -fsSL https://dot.net/v1/dotnet-install.sh -o "${RUNNER_TEMP}/dotnet-install.sh"
-          bash "${RUNNER_TEMP}/dotnet-install.sh" --version '10.0.402' --install-dir "${HOME}/.dotnet"
-          echo "${HOME}/.dotnet" >> "${GITHUB_PATH}"
-          echo "DOTNET_ROOT=${HOME}/.dotnet" >> "${GITHUB_ENV}"
-          export PATH="${HOME}/.dotnet:${PATH}"
-          dotnet --version
+        run: bash scripts/ci-toolchain.sh
 
       - name: Restore NuGet packages
         run: dotnet restore Realm.Full.slnx
