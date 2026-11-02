@@ -2938,3 +2938,46 @@ non-string branches.
 Next blocker for the global gate: `src/lib/game` sits at 76.3% because the shell components
 (`GameScreen` 0%, `CardinalMap` 0%, `RightSidebar` 0%) have no render tests, then every route
 file at 0% and the ~55 page components.
+
+**PR 3 - the game shell is covered, `src/lib/game` 76.3% -> 92.16% lines.** One new suite
+(`src/lib/game/shell.test.ts`, 20 tests) covers `GameScreen`, `CardinalMap`, and `RightSidebar`;
+`src/lib/game` tests now number 210 and the whole web suite 410. Global lines 33.29% -> **38.75%**.
+
+Two things that made it work:
+- **Drive the real `GameSession`, not a fake.** The shell reads ~20 derived getters
+  (`zoneLabel`, `canRest`, `canShop`, `adjacentNodeIds`, `messagesForChannel`), so a fake would be
+  a parallel model. `new GameSession()` + direct state assignment reproduces the browser, and
+  `vi.spyOn(session, 'travel')` still asserts the command. This also avoids extending the 170-line
+  `fakeSession` in `components.test.ts`.
+- **Mock `#lib/hub` in any component test that imports the session class.** `hub.ts` imports
+  `$app/env/public`, whose client runtime does `const { env } = globalThis.__sveltekit_dev` and
+  throws under Vitest. `vi.mock('#lib/hub', () => ({ createGameHub: () => null }))` is enough
+  because the session only creates a hub inside `connect()`.
+
+**Gate correction worth remembering:** the `src/lib/game/**` glob included the `.svelte` shell, so
+its 92 *branch* floor was counting v8 branches from compiled templates (`{#if}` chains, snippets)
+and was unreachable by design. The glob is now `src/lib/game/**/*.ts`; components are governed by
+the `src/**/*.svelte` floor. Same rule as before: fix the glob, never lower the number.
+
+Remaining: `GameOverlays` dialog branches, `hub.ts`/`auth-client`, every route file at 0%, and the
+~55 page components.
+
+**PR 4 - the route layer has started (public loaders + roster/play guards).** 25 tests in
+`src/routes/public-loaders.test.ts` and `src/routes/game-loaders.test.ts`; web suite 435 tests.
+`src/routes` 0% -> **3.33%** lines, global 38.75% -> **40.16%**.
+
+Two harness additions the rest of the route tests need:
+- **`makeServerEvent({ form })` builds a urlencoded body, not `FormData`.** Node's `Request` and
+  jsdom's `FormData` are different realms, so the multipart body does not survive and
+  `request.formData()` rejects with "Content-Type was not one of multipart/form-data". Tests that
+  exercise a form action must use `form: { id }`.
+- **`callLoad(load, event)`** is the one place the route-specific `ServerLoadEvent` cast lives.
+  Every generated load expects a literal `route.id` and a required `params.id`, so a shared fake
+  event never typechecks on its own. Do not add per-route aliases; call `callLoad`.
+
+Two behaviours worth remembering: guards in non-async loads (`/game`) throw synchronously, so they
+are asserted with `expect(fn).toThrow()` and not `.rejects`; async guards (`/play/[id]`,
+`/characters`) reject, and a `fail(...)` result is a value, not a rejection.
+
+Still zero coverage: the creation wizard (`/characters/new`), the `api/**/+server.ts` handlers,
+auth/account actions, the four staff route groups, and the ~55 page components.

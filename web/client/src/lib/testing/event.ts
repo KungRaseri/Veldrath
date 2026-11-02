@@ -52,6 +52,8 @@ export interface FakeEventInit {
 	method?: string;
 	/** JSON body. When present the request becomes a POST with a JSON content type. */
 	body?: unknown;
+	/** Form fields, for a `+page.server.ts` action that reads `request.formData()`. */
+	form?: Record<string, string>;
 	params?: Record<string, string>;
 	/** Signed-in user, or `null`/`undefined` for an anonymous visitor. */
 	user?: AuthUser | null;
@@ -62,25 +64,56 @@ export interface FakeEventInit {
 }
 
 /**
+ * A `RequestEvent` plus the parts of `ServerLoadEvent` that route loads may touch.
+ *
+ * SvelteKit's generated `PageServerLoad` types expect `parent`, `depends`, and `untrack` on the
+ * argument, so a plain `RequestEvent` does not typecheck when passed to a typed load.
+ */
+export interface FakeServerEvent extends RequestEvent {
+	/**
+	 * Layered layout data. Typed as `never` because every route's generated load expects its own
+	 * parent shape; a load that actually reads `parent()` must be given its own event, not this
+	 * default.
+	 */
+	parent: () => Promise<never>;
+	depends: (...keys: string[]) => void;
+	untrack: <T>(fn: () => T) => T;
+}
+
+/**
  * Builds a `RequestEvent` for a load or form action.
  *
  * The default is an anonymous visitor on `/`, which is what the redirect-guard tests need.
  * Pass `user` to sign in, `params` for dynamic segments, and `body` for a form action.
  */
-export function makeServerEvent(init: FakeEventInit = {}): RequestEvent {
+export function makeServerEvent(init: FakeEventInit = {}): FakeServerEvent {
 	const url = new URL(init.url ?? '/', 'http://localhost:5173');
 	const headers = new Headers(init.headers ?? { 'user-agent': 'vitest' });
-	const method = init.method ?? (init.body === undefined ? 'GET' : 'POST');
+	const method =
+		init.method ?? (init.body === undefined && init.form === undefined ? 'GET' : 'POST');
 	const canHaveBody = method !== 'GET' && method !== 'HEAD';
 
-	if (init.body !== undefined && canHaveBody && !headers.has('content-type')) {
+	// URL-encoded rather than `FormData`: Node's `Request` and jsdom's `FormData` are different
+	// realms, and the multipart body does not survive the trip (`request.formData()` rejects with
+	// "Content-Type was not one of multipart/form-data"). A urlencoded body parses correctly.
+	const form = init.form ? new URLSearchParams(init.form) : null;
+
+	if (form && canHaveBody && !headers.has('content-type')) {
+		headers.set('content-type', 'application/x-www-form-urlencoded');
+	} else if (init.body !== undefined && canHaveBody && !headers.has('content-type')) {
 		headers.set('content-type', 'application/json');
 	}
 
 	const request = new Request(url, {
 		method,
 		headers,
-		body: init.body !== undefined && canHaveBody ? JSON.stringify(init.body) : undefined
+		body: !canHaveBody
+			? undefined
+			: form
+				? form
+				: init.body !== undefined
+					? JSON.stringify(init.body)
+					: undefined
 	});
 
 	const user = init.user ?? null;
@@ -116,10 +149,24 @@ export function makeServerEvent(init: FakeEventInit = {}): RequestEvent {
 		isDataRequest: false,
 		isSubRequest: false,
 		getClientAddress: () => '127.0.0.1',
-		platform: undefined
+		platform: undefined,
+		parent: async () => ({}) as never,
+		depends: () => {},
+		untrack: <T>(fn: () => T) => fn()
 	};
 
-	return event as unknown as RequestEvent;
+	return event as unknown as FakeServerEvent;
+}
+
+/**
+ * Invokes a SvelteKit load or action with a fake event.
+ *
+ * Every generated `PageServerLoad`/`Actions` expects its own route-specific event type (a literal
+ * `route.id`, a required `params.id`), which one shared fake cannot satisfy. The cast lives here so
+ * each test can pass the real load function and keep its return type instead of casting per call.
+ */
+export function callLoad<R>(load: (event: never) => R, event: FakeServerEvent): R {
+	return (load as unknown as (event: FakeServerEvent) => R)(event);
 }
 
 /**
