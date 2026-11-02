@@ -1,7 +1,8 @@
 name: CI - Web (SvelteKit)
 
 # Forgejo-native. See the header of ci-engine.yml and docs/ci-forgejo.md before
-# adding an action: anything not mirrored on data.forgejo.org aborts the job.
+# adding an action: it must resolve from DEFAULT_ACTIONS_URL and must not need the
+# GitHub API. Artifact actions must stay on v3.
 #
 # The web image is published to the Forgejo container registry on this instance,
 # not ghcr.io.
@@ -116,7 +117,7 @@ jobs:
       # Replaces codecov/codecov-action, which cannot run against Forgejo: the
       # lcov report is a build artifact instead of an external upload.
       - name: Upload coverage
-        uses: forgejo/upload-artifact@v3
+        uses: actions/upload-artifact@v3
         if: always()
         with:
           name: coverage-web
@@ -126,7 +127,7 @@ jobs:
 
       - name: Upload web build
         if: always()
-        uses: forgejo/upload-artifact@v3
+        uses: actions/upload-artifact@v3
         with:
           name: web-build
           path: web/client/build
@@ -135,7 +136,7 @@ jobs:
 
       - name: Upload Playwright report
         if: always()
-        uses: forgejo/upload-artifact@v3
+        uses: actions/upload-artifact@v3
         with:
           name: web-playwright-report
           path: |
@@ -195,7 +196,7 @@ jobs:
         with:
           submodules: false
 
-      # Replaces actions/setup-dotnet, which is not mirrored on data.forgejo.org.
+      # Replaces actions/setup-dotnet; see docs/ci-forgejo.md for the toolchain rules.
       - name: Install the .NET SDK
         run: bash scripts/ci-toolchain.sh
 
@@ -252,7 +253,7 @@ jobs:
 
       - name: Upload Playwright report
         if: always()
-        uses: forgejo/upload-artifact@v3
+        uses: actions/upload-artifact@v3
         with:
           name: web-game-e2e-report
           path: |

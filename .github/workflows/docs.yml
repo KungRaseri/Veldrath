@@ -48,7 +48,7 @@ jobs:
           # docfx.json builds from Realm.Full.slnx; the wiki is not part of it.
           submodules: false
 
-      # Replaces actions/setup-dotnet, which is not mirrored on data.forgejo.org.
+      # Replaces actions/setup-dotnet; see docs/ci-forgejo.md for the toolchain rules.
       - name: Set up .NET
         run: bash scripts/ci-toolchain.sh
 
@@ -94,7 +94,7 @@ jobs:
       # Replaces actions/upload-pages-artifact + actions/deploy-pages. The site is
       # downloadable from the run; serving it is up to the host.
       - name: Upload the generated site
-        uses: forgejo/upload-artifact@v3
+        uses: actions/upload-artifact@v3
         with:
           name: docs-site
           path: _site/

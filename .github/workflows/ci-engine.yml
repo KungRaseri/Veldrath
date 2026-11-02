@@ -1,10 +1,9 @@
 name: CI - Engine Libraries
 
-# Forgejo-native. Every third-party action here is mirrored on data.forgejo.org so
-# the workflow resolves on a stock Forgejo runner. Do not add actions from
-# github.com that are not mirrored (codecov, softprops, EnricoMi, marocchino,
-# actions/setup-dotnet, actions/*-pages); they abort the job before the first step
-# because the action cannot be downloaded. See docs/ci-forgejo.md.
+# Forgejo-native. Actions resolve from this instance's DEFAULT_ACTIONS_URL
+# (github.com here), so a name must exist there, and it must not need the GitHub
+# API. Artifact actions must be v3. Read docs/ci-forgejo.md before changing any
+# 'uses:' line - two of the failure modes cost under a second and log nothing.
 
 concurrency:
   group: ci-engine-${{ github.ref }}
@@ -62,7 +61,7 @@ jobs:
         # The wiki lives in a separate repository; none of the jobs here need it.
         submodules: false
 
-    # Replaces actions/setup-dotnet, which is not mirrored on data.forgejo.org.
+    # Replaces actions/setup-dotnet; see docs/ci-forgejo.md for the toolchain rules.
     - name: Install the .NET SDK
       run: bash scripts/ci-toolchain.sh
 
@@ -118,7 +117,7 @@ jobs:
     # Replaces codecov/codecov-action. Codecov is GitHub/GitLab/Bitbucket-only, so
     # the report is published as a build artifact and summarised on the PR instead.
     - name: Upload coverage report
-      uses: forgejo/upload-artifact@v3
+      uses: actions/upload-artifact@v3
       if: always()
       with:
         name: coverage-engine
@@ -126,7 +125,7 @@ jobs:
         retention-days: 14
 
     - name: Upload test results
-      uses: forgejo/upload-artifact@v3
+      uses: actions/upload-artifact@v3
       if: always()
       with:
         name: test-results-engine
@@ -192,7 +191,7 @@ jobs:
         echo "Created RealmEngine-Libraries-${VERSION}.zip"
 
     - name: Upload artifacts
-      uses: forgejo/upload-artifact@v3
+      uses: actions/upload-artifact@v3
       with:
         name: engine-release-artifacts
         path: RealmEngine-Libraries-*.zip
