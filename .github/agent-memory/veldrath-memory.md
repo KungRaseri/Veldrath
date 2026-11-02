@@ -2981,3 +2981,23 @@ are asserted with `expect(fn).toThrow()` and not `.rejects`; async guards (`/pla
 
 Still zero coverage: the creation wizard (`/characters/new`), the `api/**/+server.ts` handlers,
 auth/account actions, the four staff route groups, and the ~55 page components.
+
+**PR 5 - browser libs and the auth route loads.** `src/lib` root 0% -> **66.66%** lines, global
+40.16% -> **41.13%**, web suite **455 tests** in 40 files.
+
+- `hub.test.ts` pins the two connection misconfigurations (missing `PUBLIC_HUB_URL`, `http://` hub
+  on an `https://` page) plus a real `HubConnection` build. It mocks `$app/env/public` with a
+  getter-backed object so each case can change the URL.
+- `auth-client.test.ts` asserts `signIn.username` exists — the username plugin's own availability
+  helper must NOT be read in a test: reading it fires a network request (the first attempt produced
+  `ECONNREFUSED 127.0.0.1:3000` as an unhandled error).
+- `brand-icons.test.ts` guards the vendored SVG paths against truncation.
+- `auth-pages.test.ts` covers `/login` and `/register` (signed-in redirect, anonymous allowed),
+  `/verify-email` (missing token short-circuits before Better Auth; verified; invalid logs and
+  returns a status instead of throwing), and `/account` (provider/session mapping, all three OAuth
+  providers linkable, and the degraded path where both lookups fail).
+- `forgot-password` and `reset-password` have no `+page.server.ts`; they are client-side
+  `authClient` calls, so they belong to the component tests.
+
+Harness change: `session: null` now means "signed in with no session row" — previously `??` treated
+null as absent and injected a synthetic session, which hid the account page's null-session path.

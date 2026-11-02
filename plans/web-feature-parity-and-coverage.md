@@ -342,6 +342,31 @@ Harness additions that the rest of the route tests depend on:
 creation wizard, the api route handlers, auth/account actions, the staff route groups, and the page
 components.
 
+## Progress: browser libs and the auth pages
+
+`src/lib` root is now **66.66% lines** (hub, auth client, brand glyphs) and global is **41.13%**
+with **455 tests**.
+
+- [`hub.test.ts`](web/client/src/lib/hub.test.ts:1) — the two misconfigurations that look identical
+  in the browser: a missing `PUBLIC_HUB_URL` and an `http://` hub on an `https://` page. Both throw
+  a named error, and a configured hub builds a real `HubConnection`.
+- [`auth-client.test.ts`](web/client/src/lib/auth-client.test.ts:1) — pins that the username plugin
+  is registered (`signIn.username` exists) without touching its availability helper, which issues a
+  network request the moment it is read.
+- [`brand-icons.test.ts`](web/client/src/lib/brand-icons.test.ts:1) — the vendored SVG paths are
+  long single lines that render a blank button when truncated. `src/lib/index.ts` is an empty
+  placeholder and stays untested by design.
+- [`auth-pages.test.ts`](web/client/src/routes/auth-pages.test.ts:1) — signed-in visitors are sent
+  away from `/login` and `/register`; `/verify-email` reports `missing`, `verified`, and `invalid`
+  instead of throwing at the player; the account page maps providers and sessions, and still renders
+  with empty lists when Better Auth fails.
+
+`forgot-password` and `reset-password` have no server module — they call `authClient` directly — so
+they are component-test targets, not loader targets.
+
+Harness refinement: `session: null` now means "signed in, but no session row" (the account page has
+to survive it); only an omitted `session` falls back to a synthetic one.
+
 ## Traps
 
 - `$app/*` imports must resolve in Vitest before any route test can run.

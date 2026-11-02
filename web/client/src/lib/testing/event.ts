@@ -117,7 +117,10 @@ export function makeServerEvent(init: FakeEventInit = {}): FakeServerEvent {
 	});
 
 	const user = init.user ?? null;
-	const session = init.session ?? (init.user ? fakeSession(init.user) : null);
+	// `session: null` explicitly means "signed in but no session row", which the account page has to
+	// survive; only an omitted session falls back to a synthetic one.
+	const session =
+		init.session !== undefined ? init.session : init.user ? fakeSession(init.user) : null;
 
 	/** Minimal cookie jar: enough for a load that reads or writes a cookie. */
 	const jar = new Map<string, string>();
