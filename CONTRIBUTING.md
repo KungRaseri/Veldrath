@@ -1,11 +1,11 @@
 # Contributing to RealmEngine
 
-Contribution guidelines, code conventions, and the PR process are documented in the **[Contributing wiki page](https://github.com/KungRaseri/RealmEngine/wiki/Contributing)**.
+Contribution guidelines, code conventions, and the PR process are documented in the **[Contributing wiki page](https://git.kungraseri.cloud/Veldrath/Veldrath/wiki/Contributing)**.
 
 ## Quick Links
 
-- **[Getting Started](https://github.com/KungRaseri/RealmEngine/wiki/Getting-Started)** — clone, build, and run the tests
-- **[FAQ](https://github.com/KungRaseri/RealmEngine/wiki/FAQ)** — architecture decisions and common questions
+- **[Getting Started](https://git.kungraseri.cloud/Veldrath/Veldrath/wiki/Getting-Started)** — clone, build, and run the tests
+- **[FAQ](https://git.kungraseri.cloud/Veldrath/Veldrath/wiki/FAQ)** — architecture decisions and common questions
 - **[Open Issues](https://github.com/KungRaseri/RealmEngine/issues)** — good first issues are tagged `good first issue`
 - **[Discussions](https://github.com/KungRaseri/RealmEngine/discussions)** — design questions, ideas, and feedback
 - **[Full Documentation](https://kungraseri.github.io/RealmEngine/)** — MkDocs reference docs
