@@ -2,7 +2,17 @@
 
 This repository is hosted at `https://git.kungraseri.cloud/Veldrath/Veldrath` and its
 pipeline runs on **Forgejo Actions**. Nothing in CI depends on GitHub any more: no
-Codecov, no SonarCloud, no GitHub Pages, no GHCR.
+Codecov, no SonarCloud, no GitHub Pages, no GHCR, and no call to `api.github.com`.
+
+That is true of *hosting and API*. It is not true of *mechanism*, and the difference has
+bitten this pipeline before: action names keep their GitHub namespaces and resolve from
+copies on this instance (§1), `$GITHUB_PATH` is not honoured and is worked around in
+[`scripts/ci-toolchain.sh`](../scripts/ci-toolchain.sh) and `docs.yml`, `::warning::`
+annotations are plain log lines on this runner, and `.github/dependabot.yml` was inert
+because this instance runs no Dependabot. The trigger scope, the dependency-update
+cadence and the publish-proof decision are recorded in
+[`plans/ci-forgejo-decisions.md`](../plans/ci-forgejo-decisions.md) until they fold back
+into this file.
 
 Read this before editing a workflow. The failure modes are not obvious, and two of them
 make a job die in about a second with no useful output.
@@ -74,6 +84,33 @@ Everything else is a repository script, so it needs no action at all:
 | `actions/upload-pages-artifact` + `actions/deploy-pages` | `_site/` uploaded as the `docs-site` artifact |
 | `gh workflow run` dispatch | not needed: the package job creates its own tag and release |
 | `ghcr.io` | the Forgejo container registry (section 4) |
+
+### Dependency and action updates (there is no bot)
+
+Nothing on this instance reads `.github/dependabot.yml`, so the file is gone and a written
+cadence replaces it. **NuGet** ([`Directory.Packages.props`](../Directory.Packages.props))
+and **npm** ([`web/`](../web/)) are reviewed together on the **first Monday of the month**,
+as one grouped update. The holds that lived in the deleted config carry over verbatim:
+
+- **MediatR stays below 13.** 13+ is commercially licensed; the bump needs a licensing
+  decision first, not a version bump.
+- **`@sveltejs/kit`, `@sveltejs/adapter-node`, `@sveltejs/adapter-static`,
+  `@sveltejs/vite-plugin-svelte`, `vite` and `typescript` majors are one deliberate
+  migration**, never piecemeal — SvelteKit, the adapters and Vite move as a set, and the
+  TypeScript major waits on `typescript-eslint`/`svelte-check` support.
+
+**Docker base images** ([`Veldrath.Server/Dockerfile`](../Veldrath.Server/Dockerfile),
+[`Veldrath.Discord/Dockerfile`](../Veldrath.Discord/Dockerfile),
+[`web/client/Dockerfile`](../web/client/Dockerfile)) get the same monthly pass.
+
+**Action tags are never swept.** A tag changes only by importing the new action copy onto
+this instance, confirming `upload-artifact` stays `v3` (see above), and then editing the
+workflow — in that order, because step two is what catches the trap. The tags are
+instance-local copies, not upstream releases, so there is no version a bot could compute
+anyway.
+
+If a dependency bot is ever wanted here it is self-hosted Renovate with `renovate.json`,
+not a resurrected `dependabot.yml`.
 
 ## 2. Server-side settings that matter
 
