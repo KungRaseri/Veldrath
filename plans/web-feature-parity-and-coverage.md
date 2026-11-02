@@ -539,10 +539,36 @@ clean, but it carried two defects that had to be repaired here:
 Verification after the merge: web typecheck 0/0, lint clean, **632 tests in 47 files**, markdown link
 gate green.
 
-Still red, in order of size: `src/routes/**/*.ts` (the Foundry page modules), `src/**/*.svelte` at
-58.05% (staff pages, layout chrome, site components), and `src/lib/game/**/*.ts` branches at 82.74 —
-that last one is `session.svelte.ts` guard branches, not a glob problem, and is tracked with the
-`GameOverlays` work.
+### PR 12 — the Foundry page modules
+
+[`foundry-loaders.test.ts`](../web/client/src/routes/foundry-loaders.test.ts:1) — 30 tests over the
+eight Foundry page modules. `content-api` and `foundry-api` are mocked; `buildPayload`, `hasPermission`
+and `toGameIdentity` run for real, so the editor's coercion and the `canEdit` / `canReview`
+derivations are what is asserted.
+
+| Area | Covered |
+|---|---|
+| Content index + type browse | type list with an empty fallback, `search`/page passthrough (`page=0` clamped), browse fallbacks |
+| Content detail | `canEdit` true with `content.manage` and false without, 404 message |
+| Content editor load | 404 for a missing entry **and** a distinct 404 for a missing schema, then schema/summary/payload |
+| Validate action | unsaved form values coerced and sent, issues returned, upstream `422` passed through |
+| Save action | the row version travels as the fifth argument, clean save returns `{ action: 'save', saved: true }`, `isValid: false` becomes a `400` with the issues, failed save keeps its status |
+| Deactivate | redirect to `/content/{type}`, failure status preserved |
+| Language fork | browse uses the `language` type, empty create form, display-name/slug guards, slug charset guard, the submitted payload's `phonology` lists, rejected submission as `400` |
+| Notifications | inbox list and error, mark-read refusing a missing id, success `{ ok: true }`, failure as `400` |
+| Submission queue | filters with `pageSize: 20`, fallbacks, create mode, `canReview` from the Curator role, view mode with its error, create/vote/review actions including the `+1`/`-1` guard and the `approved: 'yes'` mapping |
+
+The form-to-payload rename is worth knowing: the language form field is `initialClusters`, but the
+payload key is `allowedInitialClusters` (likewise `syllablePatterns` →
+`allowedSyllablePatterns`). Assert the payload key, not the input name.
+
+Measured after this PR: **71.35% lines**, 63.37% statements, 62.39% branches, 68.15% functions;
+**662 tests in 48 files**. `src/routes/**/*.ts` now clears lines, functions, and statements — its
+**branch** coverage is the last red item at 76.33%.
+
+Still red: the `src/**/*.svelte` floor (58.05% lines — staff pages, layout chrome, site components),
+`src/routes/**/*.ts` branches at 76.33%, and `src/lib/game/**/*.ts` branches at 82.74 (`session.svelte.ts`
+guards, tracked with the `GameOverlays` work).
 
 ## Traps
 

@@ -3136,7 +3136,25 @@ had two defects that had to be repaired:
    was failing on all of them. It now prints *Checked 43 Markdown files: no broken relative links.*
    Run that script after touching any Markdown that links into the tree.
 
-Still red, biggest first: `src/routes/**/*.ts` (the Foundry page modules),
-`src/**/*.svelte` 58.05% (staff pages, layout chrome, site components), and
-`src/lib/game/**/*.ts` branches 82.74 - that last one is real `session.svelte.ts` guard branches, not
-a glob problem, and belongs with the `GameOverlays` work.
+**PR 12 - the Foundry page modules.** One suite (`src/routes/foundry-loaders.test.ts`, 30 tests)
+covers the content browser, the editor (validate/save/deactivate), the language fork, the
+notification inbox, and the submission queue. Global 64.49% -> **71.35%** lines; web suite **662
+tests in 48 files**.
+
+- Mock `#lib/server/access` with `importOriginal` and override only `loadAccountAccess`: the routes
+  need the real `Permissions`, `hasPermission`, `requireUser`, and `toGameIdentity`, and the
+  important assertion is that `canEdit` follows `content.manage`.
+- The editor passes `detail.data.summary.updatedAt` as the fifth argument to `updateContent`. That is
+  optimistic-concurrency plumbing; a test that only checks four arguments would not notice it going
+  missing.
+- Form field names and payload keys differ in the language fork: `initialClusters` ->
+  `allowedInitialClusters`, `syllablePatterns` -> `allowedSyllablePatterns`. Assert the payload key.
+- `listSubmissions` uses `totalCount` (Foundry API) while the admin API uses `total`. Both appear in
+  this codebase; check which shape a loader reads before writing the fixture.
+- `vi.mock` is hoisted above imports, so static imports of the route modules are enough - no
+  top-level `await import(...)` dance needed.
+
+`src/routes/**/*.ts` now clears its lines/functions/statements floor; only its **branch** coverage
+is red at 76.33%. Still red: `src/**/*.svelte` 58.05% lines (staff pages, layout chrome, site
+components) and `src/lib/game/**/*.ts` branches 82.74 (real `session.svelte.ts` guard branches, not a
+glob problem; belongs with the `GameOverlays` work).
