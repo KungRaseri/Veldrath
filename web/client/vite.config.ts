@@ -66,8 +66,12 @@ export default defineConfig(() => {
 						branches: 92,
 						statements: 92
 					},
-					// The runes store, reducers, and pure game helpers.
-					'src/lib/game/**': {
+					// The runes store, reducers, and pure game helpers. TypeScript only: the shell
+					// components beside them are markup, and v8's branch bookkeeping for compiled
+					// Svelte templates measures `{#if}` chains rather than logic. They are held to
+					// the `.svelte` floor below instead of being swept into a logic floor they can
+					// never meet.
+					'src/lib/game/**/*.ts': {
 						lines: 92,
 						functions: 92,
 						branches: 92,
