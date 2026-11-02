@@ -196,11 +196,24 @@ with "Cannot connect to the Docker daemon" before it runs a single layer.
 
 ## 5. Documentation hosting
 
-Forgejo has no Pages server, so [`docs.yml`](../.github/workflows/docs.yml) builds the
-DocFX site, tars it to `docs-site.tar.gz` and uploads that as the `docs-site` artifact
-(the tar matters: ~2400 loose files cost 10+ minutes through the artifact API). The same workflow runs the markdown
-relative-link check on pull requests. Serving the site is a separate decision: a Coolify
-static site pointed at `_site/`, or any static host.
+Forgejo has no Pages server. The published site is a **Coolify application** at
+<https://docs.veldrath.com>, built from [`docs/Dockerfile`](../docs/Dockerfile): a multi-stage
+build runs `docfx metadata` + `docfx build` and copies `_site/` into nginx. Coolify clones this
+repository itself (public source, so no registry credential), and the image never travels
+through the Forgejo registry.
+
+[`docs.yml`](../.github/workflows/docs.yml) keeps the CI work — the markdown relative-link
+check on pull requests, the docfx build, and a tarball uploaded as the `docs-site` artifact
+(the tar matters: ~2400 loose files cost 10+ minutes through the artifact API) — and on `main`
+it queues the Coolify deployment with `POST /api/v1/deploy?uuid=…`
+(`secrets.COOLIFY_DOCS_DEPLOY_URL` + `secrets.COOLIFY_TOKEN`). Without those secrets the step
+warns and skips, so forks and PRs stay green.
+
+Traefik path for the host: `docs.veldrath.com` already resolves to the public IP through the
+existing wildcard record, hub's Traefik matches `Host(*.veldrath.com)` and proxies to
+kung-lab-2, where Coolify's labels route it to the container. Hub issues the certificate with
+its production `letsencrypt` resolver (Porkbun DNS-01), so the browser gets a valid certificate
+even though lab-2's own resolver is the staging one.
 
 ## 6. Troubleshooting
 
