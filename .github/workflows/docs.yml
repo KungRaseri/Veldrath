@@ -16,7 +16,7 @@ concurrency:
 # upload on main only.
 on:
   push:
-    branches: [ main ]
+    branches: [ main, development ]
     paths:
       - 'docfx.json'
       - '.github/workflows/docs.yml'
@@ -25,7 +25,7 @@ on:
       - 'Directory.Build.props'
       - '**/*.cs'
   pull_request:
-    branches: [ main ]
+    branches: [ main, development ]
     paths:
       - 'docfx.json'
       - '.github/workflows/docs.yml'

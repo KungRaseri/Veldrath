@@ -25,7 +25,7 @@ on:
       - 'scripts/forgejo-pr-comment.sh'
       - '.github/workflows/ci-engine.yml'
   pull_request:
-    branches: [ main ]
+    branches: [ main, development ]
     paths:
       - 'RealmEngine.Core/**'
       - 'RealmEngine.Shared/**'

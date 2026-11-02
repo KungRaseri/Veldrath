@@ -29,7 +29,7 @@ on:
       - 'scripts/forgejo-release.sh'
       - '.github/workflows/ci-discord.yml'
   pull_request:
-    branches: [ main ]
+    branches: [ main, development ]
     paths:
       - 'Veldrath.Discord/**'
       - 'Veldrath.Discord.Tests/**'
