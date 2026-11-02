@@ -2,7 +2,17 @@
 
 This repository is hosted at `https://git.kungraseri.cloud/Veldrath/Veldrath` and its
 pipeline runs on **Forgejo Actions**. Nothing in CI depends on GitHub any more: no
-Codecov, no SonarCloud, no GitHub Pages, no GHCR.
+Codecov, no SonarCloud, no GitHub Pages, no GHCR, and no call to `api.github.com`.
+
+That is true of *hosting and API*. It is not true of *mechanism*, and the difference has
+bitten this pipeline before: action names keep their GitHub namespaces and resolve from
+copies on this instance (§1), `$GITHUB_PATH` is not honoured and is worked around in
+[`scripts/ci-toolchain.sh`](../scripts/ci-toolchain.sh) and `docs.yml`, `::warning::`
+annotations are plain log lines on this runner, and `.github/dependabot.yml` was inert
+because this instance runs no Dependabot. The trigger scope, the dependency-update
+cadence and the publish-proof decision are recorded in
+[`plans/ci-forgejo-decisions.md`](../plans/ci-forgejo-decisions.md) until they fold back
+into this file.
 
 Read this before editing a workflow. The failure modes are not obvious, and two of them
 make a job die in about a second with no useful output.
