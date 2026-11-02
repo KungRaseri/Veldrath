@@ -247,6 +247,15 @@ curl -s "https://git.kungraseri.cloud/Veldrath/Veldrath/actions/runs/<run_number
 emoji markers rather than `##[error]`: look for `❌`, `Failure - `, `⚙️ [runner]` and
 `🏁 Job failed`.
 
+## 7. Issues and the kanban board
+
+Open issues on this repository are mirrored onto the Hermes kanban board `dev` by the
+`forgejo-sync` Hermes plugin. Each open issue becomes a card with the local clone as its
+workspace and a `wt/issue-<n>-<slug>` branch, created under the idempotency key
+`forgejo:Veldrath/Veldrath#<n>`, so repeated sync passes never duplicate a card. When the card
+reaches `done`, its result is posted back as a comment on the issue and the issue is closed;
+a `blocked` card comments its blocker and leaves the issue open.
+
 ## See also
 
 - [Forgejo Actions reference](https://forgejo.org/docs/latest/user/actions/reference/)
