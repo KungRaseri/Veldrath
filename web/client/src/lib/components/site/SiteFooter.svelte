@@ -49,7 +49,7 @@
 					<li>
 						<a
 							class="footer-link"
-							href="https://github.com/kungraseri/RealmEngine/wiki"
+							href="https://git.kungraseri.cloud/Veldrath/Veldrath/wiki"
 							target="_blank"
 							rel="noreferrer">Wiki</a
 						>
