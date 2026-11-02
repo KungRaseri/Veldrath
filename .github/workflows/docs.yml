@@ -109,4 +109,24 @@ jobs:
         with:
           name: docs-site
           path: docs-site.tar.gz
+
+      # Publishing. Forgejo has no Pages server: Coolify builds docs/Dockerfile from this
+      # repository and Traefik serves the result at docs.veldrath.com. Queued here so a docs
+      # change goes live with the merge; skipped when the secrets are absent (forks, PRs).
+      - name: Queue the docs deployment
+        if: github.ref == 'refs/heads/main'
+        env:
+          DEPLOY_URL: ${{ secrets.COOLIFY_DOCS_DEPLOY_URL }}
+          DEPLOY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DEPLOY_URL:-}" ] || [ -z "${DEPLOY_TOKEN:-}" ]; then
+            echo "::warning::COOLIFY_DOCS_DEPLOY_URL / COOLIFY_TOKEN are not set — skipping"
+            exit 0
+          fi
+          code=$(curl -sS -o /tmp/deploy.json -w '%{http_code}' -X POST "$DEPLOY_URL" \
+            -H "Authorization: Bearer $DEPLOY_TOKEN")
+          echo "coolify deploy: HTTP $code"
+          cat /tmp/deploy.json 2>/dev/null || true
+          [ "$code" -lt 300 ]
           retention-days: 30
