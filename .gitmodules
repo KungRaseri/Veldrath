@@ -1,3 +1,4 @@
 [submodule "wiki"]
 	path = wiki
-	url = https://github.com/KungRaseri/RealmEngine.wiki.git
+	url = https://git.kungraseri.cloud/Veldrath/Veldrath.wiki.git
+	branch = main
