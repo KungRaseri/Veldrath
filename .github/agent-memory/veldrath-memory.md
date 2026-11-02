@@ -1711,7 +1711,8 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
 
 **Workflow/config fixes**
 - `.github/dependabot.yml` had an empty `package-ecosystem` (invalid); now configures nuget,
-  npm (`/web`), github-actions, and docker with grouped weekly updates.
+  npm (`/web`), github-actions, and docker with grouped weekly updates. *(File deleted — Forgejo
+  runs no bot; the cadence now lives in [`docs/ci-forgejo.md`](../../docs/ci-forgejo.md).)*
 - `.github/workflows/sonarcloud.yml` was missing a checkout and used the deprecated
   `sonarcloud-github-action`; now checks out with `fetch-depth: 0` and uses
   `SonarSource/sonarqube-scan-action@v5`.
@@ -1782,7 +1783,8 @@ The web app now runs SvelteKit **3.1.0**, Vite **8.3.5**, `@sveltejs/vite-plugin
   `playwright.config.ts` — quoted values like `ORIGIN="http://…"` break `new URL()`.
 - Remaining blocked majors are ignored in `.github/dependabot.yml`: Avalonia 12,
   FluentAvaloniaUI 3, ReactiveUI 26 / Microsoft.Reactive.Testing 7 (RxVoid), MediatR 14
-  (commercial licence), TypeScript 7 (native port; tooling not ready).
+  (commercial licence), TypeScript 7 (native port; tooling not ready). *(File deleted — the holds
+  now live in [`docs/ci-forgejo.md`](../../docs/ci-forgejo.md); MediatR's current hold is below 13.)*
 
 ### Diagnosing `401` from the game API (Session-65)
 
@@ -3158,3 +3160,17 @@ tests in 48 files**.
 is red at 76.33%. Still red: `src/**/*.svelte` 58.05% lines (staff pages, layout chrome, site
 components) and `src/lib/game/**/*.ts` branches 82.74 (real `session.svelte.ts` guard branches, not a
 glob problem; belongs with the `GameOverlays` work).
+
+### Session-91 (2026-11-02) — No dependency bot: `.github/dependabot.yml` deleted
+
+Forgejo runs no Dependabot service, so `.github/dependabot.yml` was inert; it is deleted (PR #9,
+which moved its content into docs). The update cadence and every major-version hold now live in
+[`docs/ci-forgejo.md`](../../docs/ci-forgejo.md), section "Dependency and action updates (there is
+no bot)": a first-Monday-of-the-month grouped NuGet (`Directory.Packages.props`) + npm (`web/`)
+review, MediatR kept **below 13**, the coupled SvelteKit / Vite / TypeScript majors moved as one
+migration, and action tags never swept.
+
+Earlier session entries that describe the file as configuring nuget / npm / github-actions / docker
+are historical — do not go looking for `.github/dependabot.yml`, and do not re-create it. If a bot
+is ever wanted here it is self-hosted Renovate with `renovate.json`, not a resurrected Dependabot
+config.
