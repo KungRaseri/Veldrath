@@ -2840,3 +2840,101 @@ game-loop e2e job failed only on a transient DNS failure fetching an action
 ("Could not resolve host: github.com"), which is why setting
 DEFAULT_ACTIONS_URL = https://data.forgejo.org is recommended in docs/ci-forgejo.md -
 all six actions used here exist there with the exact tags.
+
+### Session-90 (2026-11-02) - web parity matrix + coverage gate (PR 1 of the web pass)
+
+**Goal.** The user asked for a full feature-parity and coverage pass on the SvelteKit app:
+90% unit coverage ("well above 85"), plus parity validation. Crafting, NPC dialogue, dungeons,
+the skills UI, and every engine-only system (harvesting, enchanting, salvaging, socketing,
+upgrading, reputation, achievements listing, NG+) are **deferred** with their own plans.
+Plan: `plans/web-feature-parity-and-coverage.md`.
+
+**Baseline measured before anything changed** (`npm run coverage --workspace client`, 11 files /
+204 tests): statements 24.28%, branches 23.35%, functions 28.10%, lines 27.12% (1262/4652).
+`src/lib/foundry` 100%, `src/lib/game` 75.9%, `src/lib/server` 8.3%, every route 0%.
+4652 executable lines is the whole denominator — there is no path to 90 that skips the ~55 page
+components, because `account/+page.svelte` (290 lines) and `characters/new/+page.svelte`
+(280 lines) are the two largest untested files.
+
+**Gate.** `web/client/vite.config.ts` coverage thresholds: 90 global (lines/statements/functions/
+branches) plus glob floors — 92 for `src/lib/server/**`, `src/lib/game/**`, `src/lib/foundry/**`;
+90 for `src/routes/**/*.ts`; 85/85/80/85 for `src/**/*.svelte`. Reporters now include
+`text` + `json-summary`. Verify glob thresholds work: Vitest 5 supports them and glob files still
+count toward the global aggregate, so floors raise the bar without exempting anything.
+`web/shared` stays out of coverage on purpose (declaration-only; documented in its vitest config).
+
+**Parity suites** (`web/client/src/lib/parity/`, 27 tests): hub methods (52 vs 41 invokes),
+hub events (55 vs 39 subscriptions), REST routes (141 vs 67 client paths), content vocabulary
+(21 registry keys vs browse/detail/write switches), route breadth (47 pages + 6 handlers vs
+Playwright specs). Each has an allow-list of `Record<name, reason>`; stale or shadowed entries
+fail the test, which is what stops the lists rotting.
+
+**Two real defects the matrix found, both fixed:**
+1. `ContentSchemaRegistry` advertises `weapon` and `armor`, but `BrowseAsync` and
+   `BrowseDetailAsync` had no switch arms for them — the Foundry browser 404'd on both catalogs.
+   Fixed with `db.Items.Where(x => x.ItemType == "weapon" | "armor")` (NOTE: the discriminator is
+   `Item.ItemType`, not `TypeKey`).
+2. 16 hub broadcasts had no subscriber. Nine are now handled in `session.svelte.ts`
+   (`OnWarned`, `OnMuted`, `OnEmote`, `OnAnnouncement`, `OnTeleported`, `OnSummoned`,
+   `OnItemReceived`, `CharacterIgnored`, `ZoneLeft`); seven stay documented (three deferred
+   features, plus `EnemyEngaged`, `CharacterStatusChanged`, `ZoneLocationUnlocked`, `OnWhisper`).
+
+**Also fixed in the same PR:** chat never called `SendChatMessage`, so every slash command was
+unreachable. `/…` now routes through `SendChatMessage` and `GetChatCommands` feeds a command list
+in `RightSidebar`. Added a root `+error.svelte` (there was none, so 404s and thrown loads fell
+through to SvelteKit's unstyled page).
+
+**Recorded, not fixed:** `GET /api/announcements` has zero consumers (superseded by
+`/api/editorial/announcements`) — removal candidate, and the route-parity rule names it.
+`NavigateToLocation`/`UnlockZoneLocation` have no web caller by design: the map graph is the
+navigation surface and unlocks happen server-side.
+
+**Test harness** (`web/client/src/lib/testing/`, `#lib/testing/*`, excluded from coverage):
+`makeServerEvent`/`fakeUser`/`fakeSession`, a recording `installFetch` + response factories,
+`withEnv` (works because `#lib/server/env` exports `process.env` itself), and `walkFiles`/
+`readRepoFile`/`stripComments`/`extractBracedBlock` for source-reading tests.
+
+**Traps found:** `walkFiles` needs `Dirent.parentPath` (Node ≥20.12); scanning client paths must
+stop only at quotes/backticks or `${encodeURIComponent(x)}` gets truncated; normalize `${x}`
+**before** `{x}` or a stray `$` survives; `session.test.ts`'s `FakeHub.invoke` now returns
+`results.get(method)` so `GetChatCommands` can be exercised; `connect()` records `GetChatCommands`,
+so the connect-lifecycle assertion expects two invocations.
+
+**Verification:** web typecheck 0/0, lint clean, **249 Vitest tests** (was 204), production build
+OK, `dotnet build Veldrath.Server.slnx` 0 warnings / 0 errors, 129 content server tests green.
+The coverage step is deliberately red until the coverage pass lands; total 27.12% is the number
+PR 2 starts from.
+
+**PR 2 - the whole `src/lib/server` layer is now covered (90 -> 94%).** 13 new test files, 390
+Vitest tests total. `src/lib/server`: lines 8.27% -> **94.03%**, statements **94.26%**, functions
+**95.90%**, branches **93.79%** — the 92 floor passes on every metric. Global: 27.12% -> **33.29%**
+lines.
+
+How the layer is tested, because the patterns repeat:
+- `vi.hoisted` + `vi.mock('#lib/server/game-request')` turns `character-api`, `content-api`,
+  `editorial-api`, `foundry-api`, `admin-api`, `game-api`, and `access` into path/verb/query
+  assertions. One case per helper; the expectations are the contract with
+  `Veldrath.Server/Features/**`.
+- `game-request` is tested against a real `fetch` stub (`installFetch`) so the JSON parsing, 204,
+  invalid-JSON, 400/409/422 bodies, 401 challenge logging, 5xx body logging, and transport failure
+  paths all execute. `vi.mock('#lib/server/game-token')` is mandatory there; otherwise the real
+  minting runs and `jose` throws "Key for HS256 must be ... Received an instance of Uint8Array"
+  under jsdom (cross-realm `Uint8Array`).
+- `// @vitest-environment node` is required for `game-token`, `email`, `env`, `db`, and `auth`
+  for the same reason. `email.test.ts` also mocks `$app/env` with `dev: false` to cover the
+  production branch that must not log reset links.
+- `getAuth()` is coverable without a database: `postgres()` and `betterAuth()` are lazy, so a
+  fake `DATABASE_URL` is enough to execute the whole config (including all three OAuth provider
+  branches).
+- `env.ts` is covered by writing a temp `.env`, `process.chdir`, `vi.resetModules()`, then a
+  dynamic import. That pins the precedence rule: a process value is never overridden by the file.
+
+Traps worth remembering: `gameApiFetch(identity, path)` records only two args, so a mock-call
+assertion must pad to three or compare `slice(0, 2)`; `listLoreArticles` takes `category` first,
+not `page`; `CreationEquipmentPreferences` is `preferredWeaponType` / `preferredArmorType` /
+`includeShield`; `form.Field` values need `new File([...], 'x')` in `FormData` to reach the
+non-string branches.
+
+Next blocker for the global gate: `src/lib/game` sits at 76.3% because the shell components
+(`GameScreen` 0%, `CardinalMap` 0%, `RightSidebar` 0%) have no render tests, then every route
+file at 0% and the ~55 page components.

@@ -87,7 +87,7 @@
 				bind:value={draft}
 				placeholder={session.chatChannel === 'Whisper'
 					? 'Whisper message…'
-					: `Message ${session.chatChannel.toLowerCase()}…`}
+					: `Message ${session.chatChannel.toLowerCase()}… (/help for commands)`}
 				maxlength="500"
 				autocomplete="off"
 			/>
@@ -95,6 +95,22 @@
 				<Send size={15} aria-hidden="true" />
 			</button>
 		</form>
+
+		{#if session.chatCommands.length > 0}
+			<details class="mt-2 text-xs text-surface-600-400">
+				<summary class="cursor-pointer">
+					Slash commands ({session.chatCommands.length})
+				</summary>
+				<ul class="mt-1 space-y-0.5">
+					{#each session.chatCommands as command (command.command)}
+						<li>
+							<span class="text-mono">{command.usage}</span>
+							— {command.description}
+						</li>
+					{/each}
+				</ul>
+			</details>
+		{/if}
 	</section>
 
 	<section class="game-panel space-y-2 p-3">

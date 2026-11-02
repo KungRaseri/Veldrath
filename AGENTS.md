@@ -196,6 +196,14 @@ Build only what changed. The rule is simple: **build the `.slnx` file matching t
 
 > **When NOT to build:** The Vite dev server hot-reloads Svelte and CSS changes. Skip full rebuilds for `.css`, `.js`, `.md`, and non-embedded `.json` changes.
 
+### Web parity and coverage gates
+
+- [`web/client/src/lib/parity/`](web/client/src/lib/parity/) holds five source-reading suites (hub methods, hub events, REST routes, content types, route breadth). They fail when a server capability has no web consumer or a page route has no Playwright reference — add the entry to the suite's allow-list **with a reason**, never delete the assertion.
+- `cd web && npm run coverage --workspace client` enforces **90% global** with per-glob floors (92 for `src/lib/server`, `src/lib/game`, `src/lib/foundry`; 90 for `src/routes/**/*.ts`; 85/80 for `.svelte`). The gate is expected to be red until the coverage pass lands — do not lower it to make CI green.
+- Unit-test helpers live in [`web/client/src/lib/testing/`](web/client/src/lib/testing/) (imported as `#lib/testing/*`) and are excluded from coverage; Playwright helpers belong in `web/client/tests/`.
+- `web/shared` is intentionally excluded from coverage: it is declaration-only.
+- Plan, baseline numbers, and deferred gaps: [`plans/web-feature-parity-and-coverage.md`](plans/web-feature-parity-and-coverage.md).
+
 ### Full Build (Final Verification)
 
 ```powershell

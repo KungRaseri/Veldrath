@@ -112,7 +112,10 @@ jobs:
         working-directory: web
         run: npm run test
 
-      - name: Unit test coverage
+      # The unit run also executes the five parity suites in src/lib/parity, which fail when a
+      # hub method, broadcast event, REST route, content type, or page route is added without a
+      # web consumer or a documented exemption.
+      - name: Coverage gate (90% global, per-glob floors)
         working-directory: web
         run: npm run coverage --workspace client
 
@@ -123,7 +126,9 @@ jobs:
         if: always()
         with:
           name: coverage-web
-          path: web/client/coverage/
+          # lcov for external viewers, json-summary for the sticky PR comment script.
+          path: |
+            web/client/coverage/
           if-no-files-found: ignore
           retention-days: 14
 

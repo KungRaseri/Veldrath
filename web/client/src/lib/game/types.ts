@@ -185,6 +185,67 @@ export interface KickedPayload {
 	reason?: string | null;
 }
 
+/**
+ * A slash command the caller is allowed to run, as returned by the hub's `GetChatCommands`.
+ * The server filters the list by the caller's permissions, so the client never has to.
+ */
+export interface ChatCommandInfo {
+	command: string;
+	usage: string;
+	description: string;
+	requiredPermission?: string | null;
+}
+
+/** A moderator issued a warning against this account. */
+export interface WarnedPayload {
+	reason?: string | null;
+	newWarnCount?: number;
+}
+
+/** This account was muted, permanently when `until` is null. */
+export interface MutedPayload {
+	reason?: string | null;
+	until?: string | null;
+}
+
+/** Another character performed an emote visible to the zone. */
+export interface EmotePayload {
+	characterId?: string;
+	characterName?: string;
+	action?: string;
+}
+
+/** A server-wide announcement broadcast by staff. */
+export interface AnnouncementPayload {
+	message?: string;
+	severity?: string;
+}
+
+/** Staff moved this character to another zone. */
+export interface TeleportedPayload {
+	zoneId?: string;
+	zoneName?: string;
+}
+
+/** Staff summoned this character to another player's zone. */
+export interface SummonedPayload {
+	byCharacterName?: string;
+	zoneId?: string;
+}
+
+/** Staff granted this character an item. */
+export interface ItemReceivedPayload {
+	itemSlug?: string;
+	quantity?: number;
+	givenByUsername?: string;
+}
+
+/** Confirmation that an `/ignore` toggle was applied server-side. */
+export interface CharacterIgnoredPayload {
+	characterId?: string;
+	characterName?: string;
+}
+
 /** An item lying on the ground at the character's current location. */
 export interface GroundItem {
 	id: string;
