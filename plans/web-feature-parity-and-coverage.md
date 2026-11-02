@@ -367,6 +367,26 @@ they are component-test targets, not loader targets.
 Harness refinement: `session: null` now means "signed in, but no session row" (the account page has
 to survive it); only an omitted `session` falls back to a synthetic one.
 
+## Progress: the public pages render
+
+Six page components covered in one suite, [`pages-public.test.ts`](web/client/src/routes/pages-public.test.ts:1),
+15 tests. `src/routes` jumped **3.33% → 63.33% lines** and global **41.13% → 44.87%** (470 tests).
+
+| Page | Cases |
+|---|---|
+| `+page.svelte` (home) | hero and three feature cards, announcement section hidden when empty, both empty states, and announcements/lore/patch notes when present |
+| `lore/+page.svelte` | category chips, article cards, error notice, empty state |
+| `lore/[slug]/+page.svelte` | header, published date, injected sanitized HTML, draft with no date |
+| `patch-notes/+page.svelte` | version chip, summary, date, empty state |
+| `players/[id]/+page.svelte` | level/class/species line, zone, account id, `Unknown` fallback |
+| `leaderboard/hardcore/+page.svelte` | living and fallen rows, `You` chip, skull, fell date, pagination both ways, load error, empty state |
+
+Practical note: these pages only take `data` as a prop and use `resolve()` from `$app/paths`, both
+of which work under Vitest unchanged. The `data` fixture is cast once at the render call because
+`PageData` is generated per route — the loaders are where those shapes are actually enforced.
+Pages that read `$app/state` (`+layout`, `+error`, `login`, `reset-password`) or `$app/navigation`
+still need a stub before they can be rendered; that is the next piece of harness work.
+
 ## Traps
 
 - `$app/*` imports must resolve in Vitest before any route test can run.

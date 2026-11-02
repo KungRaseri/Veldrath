@@ -3001,3 +3001,22 @@ auth/account actions, the four staff route groups, and the ~55 page components.
 
 Harness change: `session: null` now means "signed in with no session row" — previously `??` treated
 null as absent and injected a synthetic session, which hid the account page's null-session path.
+
+**PR 6 - the public pages render, and `src/routes` went from 3.33% to 63.33% lines.** One suite
+(`src/routes/pages-public.test.ts`, 15 tests) renders home, lore index/detail, patch-notes index,
+player profile, and the hardcore board. Global 41.13% -> **44.87%** lines (470 tests, 41 files).
+
+- These pages take only `data` and import `resolve()` from `$app/paths`; both work under Vitest with
+  no stubbing. That is why they came before the auth pages, which read `$app/state` and
+  `$app/navigation`.
+- Cast the fixture once at the render call (`props: { data: fixture as never }`). Each route has its
+  own generated `PageData`; importing six of them into one test is noise, and the loaders already
+  enforce the shapes.
+- Cover the empty states deliberately — a page with no rows is where these ship broken, and each
+  one has its own copy branch.
+- `{@html}` content is asserted through `container.querySelector('.markdown h1')` rather than
+  `getByText`, because the injected markup is the thing under test.
+
+Next harness work before the remaining pages: stub `$app/state` (`page`) and `$app/navigation`
+(`goto`, `invalidateAll`) in the Vitest config so `+layout.svelte`, `+error.svelte`, `/login`,
+`/reset-password`, `/account`, `/characters`, and the wizard can be rendered.
