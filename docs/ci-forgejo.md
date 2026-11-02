@@ -23,8 +23,8 @@ Verified as available:
 | `actions/checkout` | v7 present |
 | `actions/cache` | present |
 | `actions/setup-node` | v7.1.0 |
-| `actions/upload-artifact` | v7.0.2 |
-| `actions/download-artifact` | v8.0.2 |
+| `forgejo/upload-artifact` | **@v3 only** — v4+ needs the GitHub artifact API, see below |
+| `forgejo/download-artifact` | **@v3 only**, same reason |
 | `docker/setup-buildx-action` | present |
 | `docker/login-action` | present |
 | `docker/build-push-action` | present |
@@ -46,6 +46,17 @@ curl -s -o /dev/null -w '%{http_code}\n' \
 ```
 
 `200` means it resolves. `404` means the job will abort.
+
+**Artifact actions must be v3.** `actions/upload-artifact@v4` and later embed
+`@actions/artifact` v2, which talks to the GitHub v4 artifact API. The Forgejo runner
+implements the v3 API, so a v4+ upload fails at the end of an otherwise green job with:
+
+```
+::error::@actions/artifact v2.0.0+, upload-artifact@v4+ and download-artifact@v4+ are not currently supported on GHES.
+```
+
+Use `forgejo/upload-artifact@v3` / `forgejo/download-artifact@v3`, which are Forgejo's
+forks of the v3 actions.
 
 ### What replaced the missing ones
 
@@ -186,6 +197,7 @@ Coolify static site pointed at `_site/`, or any static host.
 | `401` on `docker push` | Registry login used the wrong owner case, or the token lacks package write. |
 | Coolify pulls an old image | Coolify is still pointed at `ghcr.io/…`; see section 4. |
 | Release created but no asset | The zip glob did not match; check the `Upload artifacts` step output. |
+| Job goes green, then fails at the end with `GHESNotSupportedError` | An artifact action is v4 or later. Use `forgejo/upload-artifact@v3`. |
 | PR comment duplicated | A different `--marker` was used; markers must be stable per component. |
 
 ## See also

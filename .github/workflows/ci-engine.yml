@@ -118,7 +118,7 @@ jobs:
     # Replaces codecov/codecov-action. Codecov is GitHub/GitLab/Bitbucket-only, so
     # the report is published as a build artifact and summarised on the PR instead.
     - name: Upload coverage report
-      uses: actions/upload-artifact@v7
+      uses: forgejo/upload-artifact@v3
       if: always()
       with:
         name: coverage-engine
@@ -126,7 +126,7 @@ jobs:
         retention-days: 14
 
     - name: Upload test results
-      uses: actions/upload-artifact@v7
+      uses: forgejo/upload-artifact@v3
       if: always()
       with:
         name: test-results-engine
@@ -192,7 +192,7 @@ jobs:
         echo "Created RealmEngine-Libraries-${VERSION}.zip"
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v7
+      uses: forgejo/upload-artifact@v3
       with:
         name: engine-release-artifacts
         path: RealmEngine-Libraries-*.zip

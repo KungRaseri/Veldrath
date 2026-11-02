@@ -116,7 +116,7 @@ jobs:
       # Replaces codecov/codecov-action, which cannot run against Forgejo: the
       # lcov report is a build artifact instead of an external upload.
       - name: Upload coverage
-        uses: actions/upload-artifact@v7
+        uses: forgejo/upload-artifact@v3
         if: always()
         with:
           name: coverage-web
@@ -126,7 +126,7 @@ jobs:
 
       - name: Upload web build
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: forgejo/upload-artifact@v3
         with:
           name: web-build
           path: web/client/build
@@ -135,7 +135,7 @@ jobs:
 
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: forgejo/upload-artifact@v3
         with:
           name: web-playwright-report
           path: |
@@ -252,7 +252,7 @@ jobs:
 
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: forgejo/upload-artifact@v3
         with:
           name: web-game-e2e-report
           path: |

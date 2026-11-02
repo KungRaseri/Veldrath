@@ -98,7 +98,7 @@ jobs:
 
     # Replaces codecov/codecov-action, which cannot run against Forgejo.
     - name: Upload coverage report
-      uses: actions/upload-artifact@v7
+      uses: forgejo/upload-artifact@v3
       if: always()
       with:
         name: coverage-server
@@ -106,7 +106,7 @@ jobs:
         retention-days: 14
 
     - name: Upload test results
-      uses: actions/upload-artifact@v7
+      uses: forgejo/upload-artifact@v3
       if: always()
       with:
         name: test-results-server
@@ -200,7 +200,7 @@ jobs:
           org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v7
+      uses: forgejo/upload-artifact@v3
       with:
         name: server-release-artifacts
         path: Veldrath-Server-*.zip

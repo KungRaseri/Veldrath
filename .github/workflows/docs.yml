@@ -94,7 +94,7 @@ jobs:
       # Replaces actions/upload-pages-artifact + actions/deploy-pages. The site is
       # downloadable from the run; serving it is up to the host.
       - name: Upload the generated site
-        uses: actions/upload-artifact@v7
+        uses: forgejo/upload-artifact@v3
         with:
           name: docs-site
           path: _site/
