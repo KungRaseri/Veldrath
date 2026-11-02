@@ -13,7 +13,6 @@ deleted (git history keeps it).
 | [`github-issue-refresh.md`](github-issue-refresh.md) | ✅ Complete — roadmap + issue bodies | Issue bodies for milestones C, A and B, plus the roadmap refresh. Superseded: every phase it described has shipped. |
 | [`blazor-decommission-and-cleanup.md`](blazor-decommission-and-cleanup.md) | ✅ Complete (W1–W12) | Blazor residue removed, desktop client retired, Identity auth surface removed (tables kept for RBAC). One open question left: whether internal `Veldrath.Contracts` DTOs move next to their feature slices. |
 | [`sveltekit-migration.md`](sveltekit-migration.md) | ✅ Complete (phases 0–6) | Canonical record of the Blazor → SvelteKit migration and the post-migration log. Its three unfinished items (authenticated game-loop coverage, WebView2 smoke, payload drift) now live in the decommission plan as W7–W9. |
-| [`ci-forgejo-decisions.md`](ci-forgejo-decisions.md) | 🟡 Decided — implementation in flight | Sets the PR trigger contract, retires the inert Dependabot config, and defines how the never-yet-run Forgejo publish path gets proven before a release depends on it. Folds into [`docs/ci-forgejo.md`](../docs/ci-forgejo.md) when the last implementation card lands. |
 
 > **All four roadmap milestones (D → C → A → B) are closed**, and `plans/` is now older than the repository
 > around it: these five plans are complete but still present. The convention at the top of this file says a
