@@ -27,5 +27,7 @@ coverage/
 
 ## Other engine projects (not needed in the server image)
 Veldrath.Client/
-Veldrath.Server.Tests/
-RealmEngine.*.Tests/
+# The test projects stay out of the app images but must remain in the build context: the docs
+# image restores Realm.Full.slnx, which references them, and a missing project is MSB3202.
+!Veldrath.Server.Tests/
+!RealmEngine.*.Tests/
