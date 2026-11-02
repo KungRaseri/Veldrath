@@ -214,6 +214,7 @@ All four of these have actually happened in this repository.
 | Job green through build/tests, then `GHESNotSupportedError` at the end | An artifact action is v4+. Use `actions/upload-artifact@v3`. |
 | Action clones, then fails at runtime with an API error | The action needs the GitHub API (codecov, gh-release, sticky-comment, check-runs). Replace it with a script. |
 | Job stuck `waiting`/`blocked`, never starts | No runner matches the `runs-on` label. |
+| `failed to bind host port 0.0.0.0:5432: address already in use` | A `services:` block still publishes a host port; drop `ports:` and use the service name. Two jobs on one runner collide on any published port. |
 | `401 Unauthorized: reqPackageAccess` on `docker push`/login | The login used `secrets.GITEA_TOKEN`. Use `secrets.REGISTRY_TOKEN` (section 2). |
 | `Cannot connect to the Docker daemon` in a package job | Missing `container.volumes` with `/var/run/docker.sock` (section 4). |
 | Job looks hung at ~0% CPU, one open TLS connection, artifact step | `upload-artifact` is walking thousands of files one request each. Tar the tree first (section 5). |

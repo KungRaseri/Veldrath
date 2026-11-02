@@ -57,8 +57,9 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: veldrath
-        ports:
-          - 5432:5432
+        # No host port: services are reachable by name on the job network, and a
+        # published 5432 makes a second concurrent job fail to start
+        # ('failed to bind host port 0.0.0.0:5432: address already in use').
         options: >-
           --health-cmd "pg_isready -U postgres -d veldrath"
           --health-interval 10s
@@ -191,8 +192,9 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: veldrath
-        ports:
-          - 5432:5432
+        # No host port: services are reachable by name on the job network, and a
+        # published 5432 makes a second concurrent job fail to start
+        # ('failed to bind host port 0.0.0.0:5432: address already in use').
         options: >-
           --health-cmd "pg_isready -U postgres -d veldrath"
           --health-interval 10s

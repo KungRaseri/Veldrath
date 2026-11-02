@@ -56,7 +56,12 @@ jobs:
         run: dotnet restore Realm.Full.slnx
 
       - name: Install DocFX
-        run: dotnet tool install --global docfx
+        run: |
+          dotnet tool install --global docfx || dotnet tool update --global docfx
+          # A global tool lands in ~/.dotnet/tools, which is not on PATH here; the runner
+          # does not honour $GITHUB_PATH either. /usr/local/bin always is.
+          ln -sf "$HOME/.dotnet/tools/docfx" /usr/local/bin/docfx
+          docfx --version
 
       - name: Generate API metadata
         run: docfx metadata docfx.json
