@@ -87,6 +87,35 @@ DEFAULT_ACTIONS_URL = https://github.com
 ; DEFAULT_ACTIONS_URL = https://data.forgejo.org
 ```
 
+### Recommended: resolve from `https://data.forgejo.org`
+
+The runner has repeatedly failed with
+
+```
+could not fetch remote 'origin': fatal: unable to access 'https://github.com/actions/checkout/':
+Could not resolve host: github.com (Timeout while contacting DNS servers)
+```
+
+which kills the job before its first step. Jobs whose actions are already in the
+runner's `/data/.cache/act` cache pass, so the failure looks random and job-specific
+rather than infrastructural.
+
+Every action this repository uses exists on the Forgejo mirror with the exact tag, so
+switching removes the dependency on github.com:
+
+| Action | Tag | Present on data.forgejo.org |
+|---|---|---|
+| `actions/checkout` | v7 | yes |
+| `actions/setup-node` | v7 | yes |
+| `actions/upload-artifact` | v3 | yes |
+| `docker/setup-buildx-action` | v4 | yes |
+| `docker/login-action` | v3 | yes |
+| `docker/build-push-action` | v7 | yes |
+
+The workflows need no edit for that switch: `actions/*` names are used, and they resolve
+under either setting. Only the `forgejo/*` names depend on `data.forgejo.org`.
+
+
 ### Runner labels
 
 `runs-on: ubuntu-latest` has to exist. This instance runs the runner with label
@@ -162,6 +191,8 @@ All four of these have actually happened in this repository.
 | Symptom | Cause |
 |---|---|
 | Job fails in < 1 s, or `unable to clone 'https://github.com/…'` | The action does not exist at `DEFAULT_ACTIONS_URL`. Check the `git clone`/`git fetch` line in the job log. |
+| Job fails in ~13 s with `Could not resolve host: github.com (Timeout while contacting DNS servers)` | Transient DNS failure fetching an action. Set `DEFAULT_ACTIONS_URL = https://data.forgejo.org` (section 2) so CI never depends on github.com. |
+| Job green, but a *sibling* job on the same push failed instantly | Only one job needed a fresh action fetch; the others hit the cache. Same DNS cause. |
 | Job green through build/tests, then `GHESNotSupportedError` at the end | An artifact action is v4+. Use `actions/upload-artifact@v3`. |
 | Action clones, then fails at runtime with an API error | The action needs the GitHub API (codecov, gh-release, sticky-comment, check-runs). Replace it with a script. |
 | Job stuck `waiting`/`blocked`, never starts | No runner matches the `runs-on` label. |
