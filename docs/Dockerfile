@@ -17,11 +17,15 @@ COPY . .
 
 # Mirrors the steps in .github/workflows/docs.yml: API metadata from the solution, a landing
 # page for the generated API tree, then the site build (docfx.json writes to _site/).
+# docfx.json expects a root index.md (the site's landing page) and an api/index.md (the
+# landing page for the generated member pages). The repository ships neither, so generate
+# them here — without an index.html nginx would answer / with its default welcome page.
 RUN dotnet restore Realm.Full.slnx \
  && docfx metadata docfx.json \
  && printf '# API Reference\n\nBrowse the RealmEngine API documentation using the navigation on the left.\n' > api/index.md \
+ && if [ ! -f index.md ]; then printf '# RealmEngine\n\nAPI reference for the RealmEngine libraries, the Veldrath server and the Discord bot.\n\n- [API Reference](api/)\n' > index.md; fi \
  && docfx build docfx.json \
- && test -d _site
+ && test -f _site/index.html
 
 FROM nginx:alpine
 COPY --from=build /src/_site /usr/share/nginx/html
