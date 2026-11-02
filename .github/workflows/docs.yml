@@ -93,9 +93,15 @@ jobs:
 
       # Replaces actions/upload-pages-artifact + actions/deploy-pages. The site is
       # downloadable from the run; serving it is up to the host.
+      #
+      # Tar it first: Forgejo's artifact API takes one request per file, and the site is
+      # ~2400 files — a flat upload of `_site/` ran for 10+ minutes per run.
+      - name: Package the generated site
+        run: tar -czf docs-site.tar.gz -C _site .
+
       - name: Upload the generated site
         uses: actions/upload-artifact@v3
         with:
           name: docs-site
-          path: _site/
+          path: docs-site.tar.gz
           retention-days: 30

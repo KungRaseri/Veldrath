@@ -276,7 +276,11 @@ jobs:
     needs: build-test
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-
+    # A job container has no docker socket unless it declares one; without this
+    # the buildx step fails with 'Cannot connect to the Docker daemon'.
+    container:
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -298,10 +302,13 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITEA_TOKEN }}
+          # A PAT with write:package: the automatic GITEA_TOKEN is refused by the
+          # registry (401 Unauthorized: reqPackageAccess).
+          password: ${{ secrets.REGISTRY_TOKEN }}
 
-      # No buildx cache: `type=gha` is GitHub-only, and registry cache manifests are
-      # not reliably supported by the Forgejo registry. Correct beats cached.
+      # Registry-backed buildx cache. `type=gha` is GitHub-only and the `dir`
+      # cache type cannot leave the job container, but Forgejo's registry does store
+      # the cache manifest at `<image>:buildcache` (verified: a warm build logs CACHED).
       - name: Build and push the image
         uses: docker/build-push-action@v7
         with:
@@ -315,6 +322,8 @@ jobs:
             PUBLIC_API_URL=${{ vars.PUBLIC_API_URL || 'https://api.veldrath.com' }}
             PUBLIC_HUB_URL=${{ vars.PUBLIC_HUB_URL || 'https://api.veldrath.com/hubs/game' }}
           push: true
+          cache-from: type=registry,ref=${{ steps.image.outputs.path }}:buildcache
+          cache-to: type=registry,ref=${{ steps.image.outputs.path }}:buildcache,mode=max
           tags: |
             ${{ steps.image.outputs.path }}:latest
             ${{ steps.image.outputs.path }}:${{ github.sha }}

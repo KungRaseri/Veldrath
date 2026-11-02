@@ -15,21 +15,24 @@ Per the [Forgejo Actions reference](https://forgejo.org/docs/latest/user/actions
 `uses: actions/checkout@v7` is shorthand for
 `uses: https://<DEFAULT_ACTIONS_URL>/actions/checkout@v7`.
 
-**This instance resolves from `https://github.com`.** Proof is in every job log:
+**This instance resolves from itself:** `DEFAULT_ACTIONS_URL = https://git.kungraseri.cloud`
+(set 2026-11-02, as the Coolify env `FORGEJO__actions__DEFAULT_ACTIONS_URL`). Every action
+the pipeline names is a one-shot copy on this instance under the same owner, and job logs
+show it:
 
 ```
-☁️  git fetch 'https://github.com/actions/checkout' # ref=v7
+☁️  git fetch 'https://git.kungraseri.cloud/actions/checkout' # ref=v7
 ```
 
 That has two consequences, and getting either wrong breaks the job:
 
-1. **The action must exist at the configured host.** `forgejo/upload-artifact` exists
-   only on `data.forgejo.org`, so on this instance it fails to clone:
-   ```
-   unable to clone 'https://github.com/forgejo/upload-artifact': fatal: could not read Username for 'https://github.com'
-   ```
-   Use `actions/upload-artifact` instead. If you ever switch `DEFAULT_ACTIONS_URL` to
-   `https://data.forgejo.org`, the `forgejo/*` names become the correct ones.
+1. **The action must exist on this instance, under the owner the workflow names.** The
+   copies live in the orgs `actions` (checkout, upload-artifact, setup-node,
+   github-script), `docker`, `codecov` and `SonarSource` — created with
+   `POST /repos/migrate` (`"mirror": false, "service": "git"`), so nothing is fetched from
+   GitHub at build time and no tag is kept in sync automatically. A `uses:` naming an
+   action that was never imported fails at "prepare workflow" with `repository not found`,
+   before the first step. Import it first, or drop the action.
 2. **The action must not need the GitHub API.** An action can clone fine and then fail
    at runtime because it tries to call `api.github.com` — there is no GitHub token and no
    GitHub behind this repository. This is why Codecov, `softprops/action-gh-release`,
@@ -54,7 +57,7 @@ it is easy to reintroduce with a "bump the action" sweep.
 
 | Action | Why |
 |---|---|
-| `actions/checkout@v7` | resolves from github.com |
+| `actions/checkout@v7` | resolves from this instance |
 | `actions/setup-node@v7` | that is all the web and docs jobs need |
 | `actions/upload-artifact@v3` | v3 API only — see above |
 | `docker/setup-buildx-action@v4`, `docker/login-action@v3`, `docker/build-push-action@v7` | image builds for server, discord and web |
@@ -78,18 +81,16 @@ Everything else is a repository script, so it needs no action at all:
 
 ```ini
 [actions]
-; This instance's effective value. Actions are cloned from github.com, so plain
-; `actions/*` names work and `forgejo/*` names do not.
-DEFAULT_ACTIONS_URL = https://github.com
-
-; Stock Forgejo default. Flip to this and the `forgejo/*` action names become valid,
-; at the cost of not seeing actions that only exist on github.com.
-; DEFAULT_ACTIONS_URL = https://data.forgejo.org
+; This instance's effective value. Actions are copied onto this instance under their
+; upstream owners, so CI never reaches github.com. Set through Coolify as the env var
+; FORGEJO__actions__DEFAULT_ACTIONS_URL — a hand edit to app.ini is regenerated away.
+DEFAULT_ACTIONS_URL = https://git.kungraseri.cloud
 ```
 
-### Recommended: resolve from `https://data.forgejo.org`
+### History: why this used to resolve from github.com
 
-The runner has repeatedly failed with
+Before 2026-11-02 `DEFAULT_ACTIONS_URL` was left at `https://github.com`, and the runner
+repeatedly failed with
 
 ```
 could not fetch remote 'origin': fatal: unable to access 'https://github.com/actions/checkout/':
@@ -100,10 +101,10 @@ which kills the job before its first step. Jobs whose actions are already in the
 runner's `/data/.cache/act` cache pass, so the failure looks random and job-specific
 rather than infrastructural.
 
-Every action this repository uses exists on the Forgejo mirror with the exact tag, so
-switching removes the dependency on github.com:
+That failure mode is why the actions are now copied onto this instance. The copies carry
+the exact tags the workflows pin:
 
-| Action | Tag | Present on data.forgejo.org |
+| Action | Tag | Copied onto this instance |
 |---|---|---|
 | `actions/checkout` | v7 | yes |
 | `actions/setup-node` | v7 | yes |
@@ -112,8 +113,9 @@ switching removes the dependency on github.com:
 | `docker/login-action` | v3 | yes |
 | `docker/build-push-action` | v7 | yes |
 
-The workflows need no edit for that switch: `actions/*` names are used, and they resolve
-under either setting. Only the `forgejo/*` names depend on `data.forgejo.org`.
+The workflows needed no edit for that switch: they name `actions/*`, `docker/*` and
+`SonarSource/*`, which now resolve under the same paths on this host. Anything new must be
+imported (see section 1) — there is no upstream fallback any more.
 
 
 ### Runner labels
@@ -135,9 +137,11 @@ vendor an action. A pre-baked image is the most useful of the three.
 
 ### Secrets
 
-Forgejo mints a per-job token, exposed as `secrets.GITEA_TOKEN`. The workflows use it for
-three things: pushing images, creating tags, and creating releases. No manual secret is
-needed for any of those.
+Forgejo mints a per-job token, exposed as `secrets.GITEA_TOKEN`. It creates tags and
+releases and comments on PRs, but it **cannot push packages** — the registry answers
+`401 Unauthorized: reqPackageAccess`. Image pushes therefore use `secrets.REGISTRY_TOKEN`,
+a PAT with `write:package`. That is the only manually configured secret; if it is rotated,
+update it under Settings → Actions → Secrets.
 
 ## 3. Releases
 
@@ -169,18 +173,32 @@ git.kungraseri.cloud/veldrath/veldrath-web
 
 The owner segment is lowercased (`Veldrath` → `veldrath`) because registry paths must be
 lowercase. CI logs in with `docker/login-action` using the repository owner and
-`secrets.GITEA_TOKEN`.
+`secrets.REGISTRY_TOKEN` — not `GITEA_TOKEN`, which the registry refuses (see section 2).
 
 `docker-compose.coolify.yml` pulls from these paths, so Coolify needs registry credentials
 for `git.kungraseri.cloud`, or the pull 401s.
 
-There is deliberately **no buildx cache**: `type=gha` is GitHub-only and registry cache
-manifests are not reliably supported by the Forgejo registry.
+The build uses a **registry-backed buildx cache**: `cache-from`/`cache-to`
+`type=registry,ref=<image>:buildcache`. `type=gha` is GitHub-only, and the `dir` cache type
+cannot leave the job container, but the Forgejo registry does store the cache manifest and
+a warm build logs `CACHED` for unchanged layers.
+
+The package job also declares
+
+```yaml
+container:
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+```
+
+A job container has **no** docker socket by default — without that block `buildx` fails
+with "Cannot connect to the Docker daemon" before it runs a single layer.
 
 ## 5. Documentation hosting
 
 Forgejo has no Pages server, so [`docs.yml`](../.github/workflows/docs.yml) builds the
-DocFX site and uploads it as the `docs-site` artifact. The same workflow runs the markdown
+DocFX site, tars it to `docs-site.tar.gz` and uploads that as the `docs-site` artifact
+(the tar matters: ~2400 loose files cost 10+ minutes through the artifact API). The same workflow runs the markdown
 relative-link check on pull requests. Serving the site is a separate decision: a Coolify
 static site pointed at `_site/`, or any static host.
 
@@ -196,7 +214,9 @@ All four of these have actually happened in this repository.
 | Job green through build/tests, then `GHESNotSupportedError` at the end | An artifact action is v4+. Use `actions/upload-artifact@v3`. |
 | Action clones, then fails at runtime with an API error | The action needs the GitHub API (codecov, gh-release, sticky-comment, check-runs). Replace it with a script. |
 | Job stuck `waiting`/`blocked`, never starts | No runner matches the `runs-on` label. |
-| `401` on `docker push` | Wrong owner case in the image path, or the token lacks package write. |
+| `401 Unauthorized: reqPackageAccess` on `docker push`/login | The login used `secrets.GITEA_TOKEN`. Use `secrets.REGISTRY_TOKEN` (section 2). |
+| `Cannot connect to the Docker daemon` in a package job | Missing `container.volumes` with `/var/run/docker.sock` (section 4). |
+| Job looks hung at ~0% CPU, one open TLS connection, artifact step | `upload-artifact` is walking thousands of files one request each. Tar the tree first (section 5). |
 | Coolify pulls an old image | Coolify is still pointed at `ghcr.io/…`; see section 4. |
 | Release created but no asset | The zip glob did not match; check the `Upload artifacts` step output. |
 | PR comment duplicated | A different `--marker` was used; markers must be stable per component. |
