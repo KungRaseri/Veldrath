@@ -3108,7 +3108,35 @@ mod, foundry) and the four moderation route modules. Global 63.18% -> **64.49%**
 - Declare the access fixtures with an explicit interface. `{ permissions: [] }` infers `never[]`, and
   spreading a `['content.manage']` variant into it fails typecheck.
 
-Still red, biggest first: `src/routes/**/*.ts` 40.27% lines (the admin, editorial, and Foundry page
-modules), `src/**/*.svelte` 58.05% (staff pages, layout chrome, site components), and
+**PR 11 - the admin and editorial page modules, and the `docs/coolify-site` merge.** One suite
+(`src/routes/staff-admin-editorial.test.ts`, 31 tests) covers the eight admin page modules and the
+seven editorial ones. Web suite **632 tests in 47 files**; typecheck 0/0, lint clean.
+
+- The admin user detail page has ten form actions; they all follow the same shape (`stringField` ->
+  API -> `fail(400, { error })` or `back()`), so a table of assertions per action is enough and the
+  two validation guards (warn and ban require a reason) are the only branches worth their own cases.
+- The role catalogue page is static data. Assert that the Admin row's permissions **equal**
+  `allPermissions`: if someone adds a permission and forgets the Admin row, that is a real bug.
+- Editorial `publish`/`delete` mocks must be seeded in `beforeEach` like the others. A missing mock
+  returns `undefined`, and `result.error` then throws a `TypeError` that reads like an assertion
+  failure.
+
+**Merge fixes (five incoming commits, `docs/coolify-site`).** The merge was clean; the incoming work
+had two defects that had to be repaired:
+
+1. **A workflow step swallowed `retention-days`.** The new `Queue the docs deployment` step was
+   inserted between `path:` and `retention-days: 30` of the `Upload the generated site` step. The
+   artifact lost its retention, and `retention-days: 30` became a line of the deploy step's `run:`
+   script. Fixed by moving it back under the upload step's `with:`; verify workflow edits by parsing
+   the YAML (`python3 -c "import yaml; yaml.safe_load(...)"`) and printing each step's keys, not by
+   eyeballing indentation.
+2. **36 broken relative links in `plans/web-feature-parity-and-coverage.md`.** From `plans/` the
+   correct prefix is a single `../`; the file had `../../web/...` (resolves above the repo root) and
+   root-relative `web/...`. `node scripts/check-markdown-links.mjs` is a gate inside `docs.yml` and
+   was failing on all of them. It now prints *Checked 43 Markdown files: no broken relative links.*
+   Run that script after touching any Markdown that links into the tree.
+
+Still red, biggest first: `src/routes/**/*.ts` (the Foundry page modules),
+`src/**/*.svelte` 58.05% (staff pages, layout chrome, site components), and
 `src/lib/game/**/*.ts` branches 82.74 - that last one is real `session.svelte.ts` guard branches, not
 a glob problem, and belongs with the `GameOverlays` work.

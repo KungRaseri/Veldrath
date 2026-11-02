@@ -40,7 +40,7 @@ features with design work, not test work, so they get their own plans after the 
 | Skills UI | `AwardSkillXp` / `SkillXpGained` exist; needs a skill sheet and rank display |
 | Harvesting, enchanting, salvaging, socketing, upgrading | Engine-only. No server endpoint, no hub method |
 | Reputation, achievement listing, New Game Plus | Engine-only. Achievements are evaluated but never surfaced |
-| Persisted game settings, responsive game shell | Product/UI pass. [`GameOverlays.svelte`](../../web/client/src/lib/game/GameOverlays.svelte:613) is diagnostics-only; [`GameScreen.svelte`](../../web/client/src/lib/game/GameScreen.svelte:1) has no breakpoints |
+| Persisted game settings, responsive game shell | Product/UI pass. [`GameOverlays.svelte`](../web/client/src/lib/game/GameOverlays.svelte:613) is diagnostics-only; [`GameScreen.svelte`](../web/client/src/lib/game/GameScreen.svelte:1) has no breakpoints |
 
 ## In scope for PR 1: baseline, harness, gates, matrix
 
@@ -54,11 +54,11 @@ That keeps the coverage number meaningful as a baseline.
    Record the per-directory baseline in the matrix section below. Do not set thresholds
    before this number exists.
 2. `web/shared` stays without a coverage gate, by design. It is declaration-only (the Drizzle
-   auth schema plus a types placeholder), and [`vitest.config.ts`](../../web/shared/vitest.config.ts:4)
+   auth schema plus a types placeholder), and [`vitest.config.ts`](../web/shared/vitest.config.ts:4)
    already documents that a coverage number there would be meaningless. Root
    `npm run coverage` therefore measures the client only, which is correct. Do not add the
    script back until that package owns real logic.
-3. Configure coverage in [`vite.config.ts`](../../web/client/vite.config.ts:30):
+3. Configure coverage in [`vite.config.ts`](../web/client/vite.config.ts:30):
    - reporters `text`, `lcov`, `json-summary` (the summary enables sticky PR comments later)
    - global thresholds 90 for lines, statements, functions, branches
    - per-glob floors:
@@ -96,22 +96,22 @@ it is test-only code that never ships):
 
 Constraints to respect:
 
-- `requireAssertions: true` is set in [`vite.config.ts`](../../web/client/vite.config.ts:25).
+- `requireAssertions: true` is set in [`vite.config.ts`](../web/client/vite.config.ts:25).
   Every test needs an assertion, including guard tests that only assert a redirect.
 - Server-only modules stay lazy. A module-scope client makes the whole route file untestable.
-- [`src/test-setup.ts`](../../web/client/src/test-setup.ts:1) already stubs `ResizeObserver`,
+- [`src/test-setup.ts`](../web/client/src/test-setup.ts:1) already stubs `ResizeObserver`,
   registers Testing Library cleanup, and flushes the Bits UI body-scroll-lock timer. Add to
   it rather than creating a second setup file.
 
 ### Phase 1 — The parity matrix
 
-Five checks, all parsing-based. [`payload-contract.test.ts`](../../web/client/src/lib/game/payload-contract.test.ts:99)
+Five checks, all parsing-based. [`payload-contract.test.ts`](../web/client/src/lib/game/payload-contract.test.ts:99)
 proves the technique already works for one of them.
 
 | Check | Source of truth | Compared against | Allow-list rule |
 |---|---|---|---|
-| Hub methods | `public` methods in [`GameHub.cs`](../../Veldrath.Server/Hubs/GameHub.cs:210) | `hub.invoke('…')` calls in `web/client/src` | Server-only methods listed with a reason (for example `GainExperience`, `AddGold`, `TakeDamage`, `AwardSkillXp`, `GetActiveCharacters`) |
-| Hub events | `SendAsync("<Event>"` in `GameHub.cs` | `hub.on('<Event>'` in [`session.svelte.ts`](../../web/client/src/lib/game/session.svelte.ts:560) | Each ignored event listed with a reason. An entry with no reason fails the test |
+| Hub methods | `public` methods in [`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:210) | `hub.invoke('…')` calls in `web/client/src` | Server-only methods listed with a reason (for example `GainExperience`, `AddGold`, `TakeDamage`, `AwardSkillXp`, `GetActiveCharacters`) |
+| Hub events | `SendAsync("<Event>"` in `GameHub.cs` | `hub.on('<Event>'` in [`session.svelte.ts`](../web/client/src/lib/game/session.svelte.ts:560) | Each ignored event listed with a reason. An entry with no reason fails the test |
 | REST routes | `group.MapGet/Post/Put/Delete` in `Veldrath.Server/Features/**/*Endpoints.cs` | Functions in `web/client/src/lib/server/*-api.ts` | Dev, internal bridge, Foundry, and Discord-only endpoints listed with a reason |
 | Content schema | Keys in `ContentSchemaRegistry` | Foundry editor type list and `web/shared` contracts | Every key must appear in both, or the test names the missing side |
 | Routes | `web/client/src/routes/**` tree | Playwright `tests/*.e2e.ts` | Exemptions listed in-file with a reason; a route with neither fails |
@@ -124,10 +124,10 @@ without pretending a journey test measures lines.
 These are dead server paths that the matrix will flag, and fixing them keeps the coverage
 pass from having to explain unreachable code:
 
-1. Route chat through [`GameHub.SendChatMessage`](../../Veldrath.Server/Hubs/GameHub.cs:2846)
+1. Route chat through [`GameHub.SendChatMessage`](../Veldrath.Server/Hubs/GameHub.cs:2846)
    so slash commands work, and expose `GetChatCommands` for a help affordance.
 2. Subscribe the events the client drops today in
-   [`session.svelte.ts`](../../web/client/src/lib/game/session.svelte.ts:560):
+   [`session.svelte.ts`](../web/client/src/lib/game/session.svelte.ts:560):
    `OnWarned`, `OnMuted`, `OnEmote`, `OnAnnouncement`, `OnTeleported`, `OnSummoned`,
    `OnItemReceived`, `CharacterIgnored`, `ZoneLeft`. Each needs a visible treatment, not a
    silent log.
@@ -136,13 +136,13 @@ pass from having to explain unreachable code:
 
 ### Phase 1.75 — CI
 
-Extend [`ci-web.yml`](../../.github/workflows/ci-web.yml:115):
+Extend [`ci-web.yml`](../.github/workflows/ci-web.yml:115):
 
 - the existing `Unit test coverage` step fails automatically once thresholds exist
 - upload `coverage/lcov.info` and `coverage/coverage-summary.json`
 - keep artifact actions on v3 and use no action outside the allow-list in
-  [`docs/ci-forgejo.md`](../../docs/ci-forgejo.md)
-- optional sticky PR comment through [`scripts/forgejo-pr-comment.sh`](../../scripts/forgejo-pr-comment.sh)
+  [`docs/ci-forgejo.md`](../docs/ci-forgejo.md)
+- optional sticky PR comment through [`scripts/forgejo-pr-comment.sh`](../scripts/forgejo-pr-comment.sh)
 
 ## Pre-matrix gap inventory
 
@@ -152,12 +152,12 @@ Gathered by inspection on 2026-11-02. PR 1 replaces this with measured results.
 
 | Capability | Evidence | Bucket |
 |---|---|---|
-| Slash commands, `/help`, `/who`, moderation commands | [`SendChatMessage`](../../Veldrath.Server/Hubs/GameHub.cs:2846), `GetChatCommands` | Close in PR 1 |
+| Slash commands, `/help`, `/who`, moderation commands | [`SendChatMessage`](../Veldrath.Server/Hubs/GameHub.cs:2846), `GetChatCommands` | Close in PR 1 |
 | Moderation and item events to the player | `OnWarned`, `OnMuted`, `OnEmote`, `OnAnnouncement`, `OnTeleported`, `OnSummoned`, `OnItemReceived`, `CharacterIgnored`, `ZoneLeft` broadcasts | Close in PR 1 |
-| Crafting | [`CraftItem`](../../Veldrath.Server/Hubs/GameHub.cs:1430), `ItemCrafted`, `GET /api/content/recipes` | Deferred |
-| NPC dialogue | [`TalkToNpc`](../../Veldrath.Server/Hubs/GameHub.cs:1407), `GET /api/content/dialogues` | Deferred |
-| Dungeons | [`EnterDungeon`](../../Veldrath.Server/Hubs/GameHub.cs:1480), `DungeonEntered` | Deferred |
-| Skills | [`AwardSkillXp`](../../Veldrath.Server/Hubs/GameHub.cs:1163), `SkillXpGained` | Deferred |
+| Crafting | [`CraftItem`](../Veldrath.Server/Hubs/GameHub.cs:1430), `ItemCrafted`, `GET /api/content/recipes` | Deferred |
+| NPC dialogue | [`TalkToNpc`](../Veldrath.Server/Hubs/GameHub.cs:1407), `GET /api/content/dialogues` | Deferred |
+| Dungeons | [`EnterDungeon`](../Veldrath.Server/Hubs/GameHub.cs:1480), `DungeonEntered` | Deferred |
+| Skills | [`AwardSkillXp`](../Veldrath.Server/Hubs/GameHub.cs:1163), `SkillXpGained` | Deferred |
 | Harvesting, enchanting, salvaging, socketing, upgrading, reputation, achievements, NG+ | `RealmEngine.Core/Features/` only; no folder under `Veldrath.Server/Features/` | Deferred |
 | Unused client-facing calls | `GetActiveCharacters` | Deferred, evaluate when multi-character is designed |
 
@@ -322,11 +322,11 @@ Global after this step: **38.75% lines** (34.67% statements, 43.60% functions, 3
 
 Two suites, 25 tests, covering the public surface and the first authenticated flow:
 
-- [`public-loaders.test.ts`](web/client/src/routes/public-loaders.test.ts:1) — home (two newest
+- [`public-loaders.test.ts`](../web/client/src/routes/public-loaders.test.ts:1) — home (two newest
   announcements, three of each article type), lore index and detail, patch notes index and detail,
   community health probe, player profile (malformed id 404s before the API call, missing profile vs
   upstream 502), and the hardcore board (redirect, page clamping, page passthrough).
-- [`game-loaders.test.ts`](web/client/src/routes/game-loaders.test.ts:1) — the `/game` redirect, the
+- [`game-loaders.test.ts`](../web/client/src/routes/game-loaders.test.ts:1) — the `/game` redirect, the
   `/play/[id]` guards (anonymous → login, malformed id → roster), the roster load merging four API
   results and surviving each failing independently, and the delete action (anonymous redirect, empty
   id, 4xx passthrough, transport failure → 400, success redirect).
@@ -347,16 +347,16 @@ components.
 `src/lib` root is now **66.66% lines** (hub, auth client, brand glyphs) and global is **41.13%**
 with **455 tests**.
 
-- [`hub.test.ts`](web/client/src/lib/hub.test.ts:1) — the two misconfigurations that look identical
+- [`hub.test.ts`](../web/client/src/lib/hub.test.ts:1) — the two misconfigurations that look identical
   in the browser: a missing `PUBLIC_HUB_URL` and an `http://` hub on an `https://` page. Both throw
   a named error, and a configured hub builds a real `HubConnection`.
-- [`auth-client.test.ts`](web/client/src/lib/auth-client.test.ts:1) — pins that the username plugin
+- [`auth-client.test.ts`](../web/client/src/lib/auth-client.test.ts:1) — pins that the username plugin
   is registered (`signIn.username` exists) without touching its availability helper, which issues a
   network request the moment it is read.
-- [`brand-icons.test.ts`](web/client/src/lib/brand-icons.test.ts:1) — the vendored SVG paths are
+- [`brand-icons.test.ts`](../web/client/src/lib/brand-icons.test.ts:1) — the vendored SVG paths are
   long single lines that render a blank button when truncated. `src/lib/index.ts` is an empty
   placeholder and stays untested by design.
-- [`auth-pages.test.ts`](web/client/src/routes/auth-pages.test.ts:1) — signed-in visitors are sent
+- [`auth-pages.test.ts`](../web/client/src/routes/auth-pages.test.ts:1) — signed-in visitors are sent
   away from `/login` and `/register`; `/verify-email` reports `missing`, `verified`, and `invalid`
   instead of throwing at the player; the account page maps providers and sessions, and still renders
   with empty lists when Better Auth fails.
@@ -369,7 +369,7 @@ to survive it); only an omitted `session` falls back to a synthetic one.
 
 ## Progress: the public pages render
 
-Six page components covered in one suite, [`pages-public.test.ts`](web/client/src/routes/pages-public.test.ts:1),
+Six page components covered in one suite, [`pages-public.test.ts`](../web/client/src/routes/pages-public.test.ts:1),
 15 tests. `src/routes` jumped **3.33% → 63.33% lines** and global **41.13% → 44.87%** (470 tests).
 
 | Page | Cases |
@@ -387,16 +387,16 @@ of which work under Vitest unchanged. The `data` fixture is cast once at the ren
 
 ### PR 7 — app-module stubs and the auth page components
 
-`$app/state` and `$app/navigation` are now aliased in [`vite.config.ts`](../../web/client/vite.config.ts:24)
-to [`app-state.ts`](../../web/client/src/lib/testing/app-state.ts:1) and
-[`app-navigation.ts`](../../web/client/src/lib/testing/app-navigation.ts:1). Both are `test.alias`
+`$app/state` and `$app/navigation` are now aliased in [`vite.config.ts`](../web/client/vite.config.ts:24)
+to [`app-state.ts`](../web/client/src/lib/testing/app-state.ts:1) and
+[`app-navigation.ts`](../web/client/src/lib/testing/app-navigation.ts:1). Both are `test.alias`
 entries only, so the real modules are untouched in the build. The navigation stubs are typed
 `vi.fn<(args) => result>(async () => {})`: the generic carries the caller-visible signature and the
 empty body avoids the unused-parameter rule. `app-state.ts` exports a mutable `page` object and
 `setPage(overrides)`, which must be called **before** render because `$state(page.url...)`
 initializers read it when the component instance is created.
 
-[`pages-auth.test.ts`](../../web/client/src/routes/pages-auth.test.ts:1) — 29 tests:
+[`pages-auth.test.ts`](../web/client/src/routes/pages-auth.test.ts:1) — 29 tests:
 
 | Page | Covered |
 |---|---|
@@ -409,7 +409,7 @@ initializers read it when the component instance is created.
 `SocialLoginButtons` is covered through the login page rather than in isolation, which is why its
 error paths are asserted there.
 
-[`pages-account.test.ts`](../../web/client/src/routes/pages-account.test.ts:1) — 33 tests, because
+[`pages-account.test.ts`](../web/client/src/routes/pages-account.test.ts:1) — 33 tests, because
 every control there is either destructive or identity-changing and each one is asserted on both
 outcomes (including whether `invalidateAll` runs, since the page renders server data that would
 otherwise go stale):
@@ -432,7 +432,7 @@ functions; **532 tests in 43 files**. Layer figures: `src/lib/server` 94.03, `sr
 
 ### PR 8 — the `api/**` route handlers
 
-[`api-handlers.test.ts`](../../web/client/src/routes/api-handlers.test.ts:1) — 25 tests over the six
+[`api-handlers.test.ts`](../web/client/src/routes/api-handlers.test.ts:1) — 25 tests over the six
 proxies the browser actually talks to: `api/game-token`, `api/characters/creation`,
 `api/characters/creation/[id]`, `api/characters/creation/check-name`,
 `api/characters/creation/[id]/[step]`, and `api/auth/[...all]`.
@@ -458,8 +458,8 @@ Measured after this PR: **57.74% lines**, 52.67% statements, 48.82% branches, 59
 
 ### PR 9 — the character creation wizard
 
-[`pages-creation.test.ts`](../../web/client/src/routes/pages-creation.test.ts:1) — 21 tests that drive
-[`characters/new/+page.svelte`](../../web/client/src/routes/characters/new/+page.svelte:1) the way a
+[`pages-creation.test.ts`](../web/client/src/routes/pages-creation.test.ts:1) — 21 tests that drive
+[`characters/new/+page.svelte`](../web/client/src/routes/characters/new/+page.svelte:1) the way a
 player does: type a name, wait for the debounced availability check, then press Continue once per
 step and assert the JSON that was sent. `fetch` is stubbed with `installFetch` from the harness,
 answering by `METHOD path` and throwing on any route the page is not expected to call.
@@ -484,7 +484,7 @@ Measured after this PR: **63.18% lines**, 58.08% statements, 53.7% branches, 63.
 
 ### PR 10 — the staff group guards and the moderation pages
 
-[`staff-loaders.test.ts`](../../web/client/src/routes/staff-loaders.test.ts:1) — 23 tests over the
+[`staff-loaders.test.ts`](../web/client/src/routes/staff-loaders.test.ts:1) — 23 tests over the
 four group layouts and the four moderation route modules. `#lib/server/admin-api` is mocked;
 `requireUser` and `requirePermission` run for real, because they are the only thing standing between
 a player and a moderation action.
@@ -506,15 +506,48 @@ non-`async` layout (`(foundry)`) throws synchronously, so it needs `expect(() =>
 Measured after this PR: **64.49% lines**, 58.97% statements, 55.2% branches, 64.29% functions;
 **601 tests in 46 files**. `src/routes/**/*.ts` 29.69% -> **40.27%**.
 
-Still red, in order of size: `src/routes/**/*.ts` at 40.27% (the admin, editorial, and Foundry page
-modules), `src/**/*.svelte` at 58.05% (staff pages, layout chrome, site components), and
-`src/lib/game/**/*.ts` branches at 82.74 — that last one is `session.svelte.ts` guard branches, not
-a glob problem, and is tracked with the `GameOverlays` work.
+### PR 11 — the admin and editorial page modules, plus the `docs/coolify-site` merge
+
+[`staff-admin-editorial.test.ts`](../web/client/src/routes/staff-admin-editorial.test.ts:1) — 31 tests
+over the eight admin page modules and the seven editorial ones, with `admin-api` / `editorial-api`
+mocked and the real `requireUser`, `toGameIdentity`, and form helpers:
+
+| Area | Covered |
+|---|---|
+| Admin dashboard + status | the status row and its error, on both pages that load it |
+| Admin users list | `search`/`role`/`status`/`sort` passthrough, `page=0` clamped, fallbacks on failure |
+| Admin user detail | 404 for a missing account, the player plus both catalogues |
+| Admin user actions | assign/revoke role, grant/revoke permission, kick (with and without a reason), mute with a duration, unmute, ban only with a reason, unban, blank warning refused, and an upstream rejection turned into a `400` carrying its message |
+| Admin audit / reports / roles / sessions / broadcast | page clamp and `targetId`, `?resolved=` mapping and resolve, the static role catalogue (Admin grants every permission, asserted against `allPermissions`), region/zone passthrough, broadcast refusing an empty message |
+| Editorial overview + three lists | one `totalCount` per kind with the errors collected, page clamps |
+| Lore / patch notes / announcements editors | `new` opens create mode, 404 messages, the mandatory-field guard per kind (patch notes also require `version`), create → redirect to the new id, missing slug refused, edit → `{ ok, message }`, publish and delete redirects, upstream failure as a `400` |
+
+**Merge fixes.** `origin/development` brought five commits (`docs/coolify-site`: `docs/Dockerfile`,
+the artifact retention tweak, the Coolify deploy step, and `docs/ci-forgejo.md`). The merge itself was
+clean, but it carried two defects that had to be repaired here:
+
+1. **The new deploy step swallowed `retention-days`.** It was inserted between `path:` and
+   `retention-days: 30` of the `Upload the generated site` step, so the artifact lost its retention
+   and the value became a line of the deploy step's `run:` script — the job would have died on
+   `retention-days: command not found` on the one branch where it runs. Moved back under the upload
+   step's `with:`; verified by parsing the file (12 steps, upload step keeping `name`/`path`/
+   `retention-days`).
+2. **36 broken relative links in this file.** Every link written as `../../web/…` or root-relative
+   `web/…` is wrong from `plans/`, which needs a single `../`. `node scripts/check-markdown-links.mjs`
+   — a gate inside `docs.yml` — now reports *Checked 43 Markdown files: no broken relative links.*
+
+Verification after the merge: web typecheck 0/0, lint clean, **632 tests in 47 files**, markdown link
+gate green.
+
+Still red, in order of size: `src/routes/**/*.ts` (the Foundry page modules), `src/**/*.svelte` at
+58.05% (staff pages, layout chrome, site components), and `src/lib/game/**/*.ts` branches at 82.74 —
+that last one is `session.svelte.ts` guard branches, not a glob problem, and is tracked with the
+`GameOverlays` work.
 
 ## Traps
 
 - `$app/*` imports must resolve in Vitest before any route test can run.
-  [`hub.ts`](../../web/client/src/lib/hub.ts:2) already imports `$app/env/public`.
+  [`hub.ts`](../web/client/src/lib/hub.ts:2) already imports `$app/env/public`.
 - Threshold keys are per glob, but files are weighted by size. Verify the arithmetic against
   the baseline; if 90 global and the floors conflict, raise a floor, never lower the gate.
 - Route modules that import `#lib/server/db` at module scope are untestable. Fix the module,

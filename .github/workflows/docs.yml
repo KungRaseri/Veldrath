@@ -109,6 +109,7 @@ jobs:
         with:
           name: docs-site
           path: docs-site.tar.gz
+          retention-days: 30
 
       # Publishing. Forgejo has no Pages server: Coolify builds docs/Dockerfile from this
       # repository and Traefik serves the result at docs.veldrath.com. Queued here so a docs
@@ -129,4 +130,3 @@ jobs:
           echo "coolify deploy: HTTP $code"
           cat /tmp/deploy.json 2>/dev/null || true
           [ "$code" -lt 300 ]
-          retention-days: 30
