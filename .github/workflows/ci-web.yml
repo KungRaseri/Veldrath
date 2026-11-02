@@ -1,5 +1,11 @@
 name: CI - Web (SvelteKit)
 
+# Forgejo-native. See the header of ci-engine.yml and docs/ci-forgejo.md before
+# adding an action: anything not mirrored on data.forgejo.org aborts the job.
+#
+# The web image is published to the Forgejo container registry on this instance,
+# not ghcr.io.
+
 concurrency:
   group: ci-web-${{ github.ref }}
   cancel-in-progress: true
@@ -10,22 +16,20 @@ on:
     paths:
       - 'web/**'
       - 'config/postgres/**'
+      - 'scripts/forgejo-pr-comment.sh'
       - '.github/workflows/ci-web.yml'
   pull_request:
     branches: [main]
     paths:
       - 'web/**'
       - 'config/postgres/**'
+      - 'scripts/forgejo-pr-comment.sh'
       - '.github/workflows/ci-web.yml'
   workflow_dispatch:
 
 env:
+  REGISTRY: git.kungraseri.cloud
   IMAGE_NAME: veldrath-web
-
-# Least privilege for the whole workflow: the build/test jobs only read the repository.
-# The `package` job raises this to `packages: write` for its own GHCR push.
-permissions:
-  contents: read
 
 jobs:
   build-test:
@@ -61,6 +65,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          submodules: false
 
       - name: Setup Node
         uses: actions/setup-node@v7
@@ -107,14 +113,16 @@ jobs:
         working-directory: web
         run: npm run coverage --workspace client
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v7
+      # Replaces codecov/codecov-action, which cannot run against Forgejo: the
+      # lcov report is a build artifact instead of an external upload.
+      - name: Upload coverage
+        uses: actions/upload-artifact@v7
+        if: always()
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./web/client/coverage/lcov.info
-          flags: web
-          name: web-coverage
-          fail_ci_if_error: false
+          name: coverage-web
+          path: web/client/coverage/
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Upload web build
         if: always()
@@ -136,9 +144,9 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  # W7 in plans/blazor-decommission-and-cleanup.md: the authenticated game loop needs the real
-  # .NET API (SSR calls /api/characters server-side) and a live SignalR hub, so this job boots
-  # Veldrath.Server against the Postgres service instead of mocking anything.
+  # The authenticated game loop needs the real .NET API (SSR calls /api/characters
+  # server-side) and a live SignalR hub, so this job boots Veldrath.Server against
+  # the Postgres service instead of mocking anything.
   e2e-game:
     name: Game loop e2e (real server)
     needs: build-test
@@ -184,11 +192,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          submodules: false
+
+      # Replaces actions/setup-dotnet, which is not mirrored on data.forgejo.org.
+      - name: Install the .NET SDK
+        run: |
+          set -eu
+          curl -fsSL https://dot.net/v1/dotnet-install.sh -o "${RUNNER_TEMP}/dotnet-install.sh"
+          bash "${RUNNER_TEMP}/dotnet-install.sh" --version "${DOTNET_VERSION}" --install-dir "${HOME}/.dotnet"
+          echo "${HOME}/.dotnet" >> "${GITHUB_PATH}"
+          echo "DOTNET_ROOT=${HOME}/.dotnet" >> "${GITHUB_ENV}"
+          export PATH="${HOME}/.dotnet:${PATH}"
+          dotnet --version
 
       - name: Setup Node
         uses: actions/setup-node@v7
@@ -258,31 +274,32 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
-      packages: write
-
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          submodules: false
+
+      - name: Compute the image path
+        id: image
+        run: |
+          OWNER_LC="$(printf '%s' "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
+          echo "path=${REGISTRY}/${OWNER_LC}/${IMAGE_NAME}" >> "${GITHUB_OUTPUT}"
+          echo "Image: ${REGISTRY}/${OWNER_LC}/${IMAGE_NAME}"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      - name: Log in to GitHub Container Registry
+      - name: Log in to the Forgejo container registry
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITEA_TOKEN }}
 
-      - name: Set lowercase image registry path
-        id: image
-        run: |
-          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          echo "registry=ghcr.io/$OWNER/${{ env.IMAGE_NAME }}" >> $GITHUB_OUTPUT
-
-      - name: Build and push Docker image
+      # No buildx cache: `type=gha` is GitHub-only, and registry cache manifests are
+      # not reliably supported by the Forgejo registry. Correct beats cached.
+      - name: Build and push the image
         uses: docker/build-push-action@v7
         with:
           context: ./web
@@ -296,10 +313,8 @@ jobs:
             PUBLIC_HUB_URL=${{ vars.PUBLIC_HUB_URL || 'https://api.veldrath.com/hubs/game' }}
           push: true
           tags: |
-            ${{ steps.image.outputs.registry }}:latest
-            ${{ steps.image.outputs.registry }}:${{ github.sha }}
+            ${{ steps.image.outputs.path }}:latest
+            ${{ steps.image.outputs.path }}:${{ github.sha }}
           labels: |
             org.opencontainers.image.revision=${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}

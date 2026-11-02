@@ -1,5 +1,11 @@
 name: CI - Engine Libraries
 
+# Forgejo-native. Every third-party action here is mirrored on data.forgejo.org so
+# the workflow resolves on a stock Forgejo runner. Do not add actions from
+# github.com that are not mirrored (codecov, softprops, EnricoMi, marocchino,
+# actions/setup-dotnet, actions/*-pages); they abort the job before the first step
+# because the action cannot be downloaded. See docs/ci-forgejo.md.
+
 concurrency:
   group: ci-engine-${{ github.ref }}
   cancel-in-progress: true
@@ -16,6 +22,8 @@ on:
       - 'RealmEngine.Data.Tests/**'
       - 'versions/engine.props'
       - 'Directory.Build.props'
+      - 'scripts/generate-version.sh'
+      - 'scripts/forgejo-pr-comment.sh'
       - '.github/workflows/ci-engine.yml'
   pull_request:
     branches: [ main ]
@@ -28,6 +36,8 @@ on:
       - 'RealmEngine.Data.Tests/**'
       - 'versions/engine.props'
       - 'Directory.Build.props'
+      - 'scripts/generate-version.sh'
+      - 'scripts/forgejo-pr-comment.sh'
       - '.github/workflows/ci-engine.yml'
   workflow_dispatch:
 
@@ -40,42 +50,41 @@ env:
 jobs:
   build-and-test:
     name: Build and Test Engine Libraries
-    # The engine libraries and their tests are platform-neutral; Linux is cheaper and matches
-    # the server/web runners. Only the desktop client (WebView2/native) needs Windows.
+    # The engine libraries and their tests are platform-neutral, so Linux keeps
+    # them on the same runner label as the server and web jobs.
     runs-on: ubuntu-latest
-
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-
-    permissions:
-      checks: write
-      contents: read
-      pull-requests: write
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v7
       with:
         fetch-depth: 0
+        # The wiki lives in a separate repository; none of the jobs here need it.
+        submodules: false
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v6
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
+    # Replaces actions/setup-dotnet, which is not mirrored on data.forgejo.org.
+    - name: Install the .NET SDK
+      run: |
+        set -eu
+        curl -fsSL https://dot.net/v1/dotnet-install.sh -o "${RUNNER_TEMP}/dotnet-install.sh"
+        bash "${RUNNER_TEMP}/dotnet-install.sh" --version "${DOTNET_VERSION}" --install-dir "${HOME}/.dotnet"
+        echo "${HOME}/.dotnet" >> "${GITHUB_PATH}"
+        echo "DOTNET_ROOT=${HOME}/.dotnet" >> "${GITHUB_ENV}"
+        export PATH="${HOME}/.dotnet:${PATH}"
+        dotnet --version
 
     - name: Generate version
       id: version
       run: |
-        $version = .\scripts\generate-version.ps1 -OutputFormat "string" -PropsFile "${{ env.PROPS_FILE }}"
-        Write-Output "version=$version" >> $env:GITHUB_OUTPUT
-        Write-Output "Generated engine version: $version"
-      shell: pwsh
+        VERSION="$(bash scripts/generate-version.sh --output-format string --props-file "${PROPS_FILE}")"
+        echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+        echo "Generated engine version: ${VERSION}"
 
     - name: Restore dependencies
       run: dotnet restore RealmEngine.slnx
 
     - name: Build
-      run: dotnet build RealmEngine.slnx --configuration ${{ env.CONFIGURATION }} --no-restore
+      run: dotnet build RealmEngine.slnx --configuration "${CONFIGURATION}" --no-restore
 
     # Formatting gate. It used to be its own repo-wide workflow (format.yml); it lives here instead so a
     # component PR fails on the formatting of the code it actually changed, and so there is one fewer
@@ -85,30 +94,27 @@ jobs:
 
     - name: Test - RealmEngine.Shared.Tests
       run: |
-        dotnet test RealmEngine.Shared.Tests/RealmEngine.Shared.Tests.csproj `
-          --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal `
-          --collect "XPlat Code Coverage" --settings coverage.runsettings `
-          --logger "trx;LogFileName=shared-tests.trx" `
+        dotnet test RealmEngine.Shared.Tests/RealmEngine.Shared.Tests.csproj \
+          --configuration "${CONFIGURATION}" --no-build --verbosity normal \
+          --collect "XPlat Code Coverage" --settings coverage.runsettings \
+          --logger "trx;LogFileName=shared-tests.trx" \
           --results-directory ./TestResults
-      shell: pwsh
 
     - name: Test - RealmEngine.Core.Tests
       run: |
-        dotnet test RealmEngine.Core.Tests/RealmEngine.Core.Tests.csproj `
-          --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal `
-          --collect "XPlat Code Coverage" --settings coverage.runsettings `
-          --logger "trx;LogFileName=core-tests.trx" `
+        dotnet test RealmEngine.Core.Tests/RealmEngine.Core.Tests.csproj \
+          --configuration "${CONFIGURATION}" --no-build --verbosity normal \
+          --collect "XPlat Code Coverage" --settings coverage.runsettings \
+          --logger "trx;LogFileName=core-tests.trx" \
           --results-directory ./TestResults
-      shell: pwsh
 
     - name: Test - RealmEngine.Data.Tests
       run: |
-        dotnet test RealmEngine.Data.Tests/RealmEngine.Data.Tests.csproj `
-          --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal `
-          --collect "XPlat Code Coverage" --settings coverage.runsettings `
-          --logger "trx;LogFileName=data-tests.trx" `
+        dotnet test RealmEngine.Data.Tests/RealmEngine.Data.Tests.csproj \
+          --configuration "${CONFIGURATION}" --no-build --verbosity normal \
+          --collect "XPlat Code Coverage" --settings coverage.runsettings \
+          --logger "trx;LogFileName=data-tests.trx" \
           --results-directory ./TestResults
-      shell: pwsh
 
     - name: Install ReportGenerator
       run: dotnet tool install --global dotnet-reportgenerator-globaltool
@@ -116,15 +122,8 @@ jobs:
     - name: Generate coverage report
       run: reportgenerator "-reports:./TestResults/*/coverage.cobertura.xml" "-targetdir:./CoverageReport" "-reporttypes:Html;Cobertura;MarkdownSummaryGithub"
 
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v7
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: ./CoverageReport/Cobertura.xml
-        flags: engine
-        name: engine-coverage
-        fail_ci_if_error: false
-
+    # Replaces codecov/codecov-action. Codecov is GitHub/GitLab/Bitbucket-only, so
+    # the report is published as a build artifact and summarised on the PR instead.
     - name: Upload coverage report
       uses: actions/upload-artifact@v7
       if: always()
@@ -133,22 +132,27 @@ jobs:
         path: CoverageReport/
         retention-days: 14
 
-    - name: Add coverage summary to PR
-      uses: marocchino/sticky-pull-request-comment@v3
-      if: github.event_name == 'pull_request'
-      with:
-        recreate: true
-        path: CoverageReport/SummaryGithub.md
-
-    - name: Publish test results
-      # The `windows` variant of this action bootstraps a Python venv through PowerShell and
-      # cannot resolve $env:PYTHON_VENV on Linux, so the job failed after every successful
-      # test run. This job runs on ubuntu-latest, so use the default (Linux) action.
-      uses: EnricoMi/publish-unit-test-result-action@v2
+    - name: Upload test results
+      uses: actions/upload-artifact@v7
       if: always()
       with:
-        files: TestResults/*.trx
-        check_name: Engine Test Results
+        name: test-results-engine
+        path: TestResults/
+        retention-days: 14
+
+    # Replaces marocchino/sticky-pull-request-comment: same behaviours (one comment
+    # per PR, edited in place) through the Forgejo API.
+    - name: Comment the coverage summary on the pull request
+      if: github.event_name == 'pull_request'
+      env:
+        FORGEJO_TOKEN: ${{ secrets.GITEA_TOKEN }}
+        FORGEJO_REPOSITORY: ${{ github.repository }}
+        FORGEJO_SERVER_URL: ${{ github.server_url }}
+      run: |
+        bash scripts/forgejo-pr-comment.sh \
+          --pr "${{ github.event.pull_request.number }}" \
+          --body-file CoverageReport/SummaryGithub.md \
+          --marker '<!-- ci-coverage-engine -->'
 
   package:
     name: Package Engine Artifacts
@@ -156,75 +160,108 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-
-    permissions:
-      contents: write  # needed to create the release tag
-      actions: write   # needed to dispatch the release workflow
+    env:
+      FORGEJO_TOKEN: ${{ secrets.GITEA_TOKEN }}
+      FORGEJO_REPOSITORY: ${{ github.repository }}
+      FORGEJO_SERVER_URL: ${{ github.server_url }}
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v7
       with:
         fetch-depth: 0
+        submodules: false
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v6
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
+    - name: Install the .NET SDK
+      run: |
+        set -eu
+        curl -fsSL https://dot.net/v1/dotnet-install.sh -o "${RUNNER_TEMP}/dotnet-install.sh"
+        bash "${RUNNER_TEMP}/dotnet-install.sh" --version "${DOTNET_VERSION}" --install-dir "${HOME}/.dotnet"
+        echo "${HOME}/.dotnet" >> "${GITHUB_PATH}"
+        echo "DOTNET_ROOT=${HOME}/.dotnet" >> "${GITHUB_ENV}"
+        export PATH="${HOME}/.dotnet:${PATH}"
+        dotnet --version
 
     - name: Generate version
       id: version
       run: |
-        $version = .\scripts\generate-version.ps1 -OutputFormat "string" -PropsFile "${{ env.PROPS_FILE }}"
-        $versionNoHash = $version -replace '-[^-]+$', ''
-        Write-Output "version=$version" >> $env:GITHUB_OUTPUT
-        Write-Output "version-no-hash=$versionNoHash" >> $env:GITHUB_OUTPUT
-        Write-Output "Engine version: $version"
-      shell: pwsh
+        VERSION="$(bash scripts/generate-version.sh --output-format string --props-file "${PROPS_FILE}")"
+        VERSION_NO_HASH="${VERSION%-*}"
+        echo "version=${VERSION_NO_HASH}" >> "${GITHUB_OUTPUT}"
+        echo "Engine version: ${VERSION_NO_HASH}"
 
     - name: Restore and build
       run: |
         dotnet restore RealmEngine.slnx
-        dotnet build RealmEngine.slnx --configuration ${{ env.CONFIGURATION }} --no-restore
-      shell: pwsh
+        dotnet build RealmEngine.slnx --configuration "${CONFIGURATION}" --no-restore
 
     - name: Package - Libraries
       run: |
-        $version = "${{ steps.version.outputs.version-no-hash }}"
-        New-Item -ItemType Directory -Force -Path package/Libraries
-        Copy-Item -Path "RealmEngine.Shared/bin/${{ env.CONFIGURATION }}/net10.0/*" -Destination "package/Libraries/" -Recurse -Force
-        Copy-Item -Path "RealmEngine.Core/bin/${{ env.CONFIGURATION }}/net10.0/*" -Destination "package/Libraries/" -Recurse -Force
-        Copy-Item -Path "RealmEngine.Data/bin/${{ env.CONFIGURATION }}/net10.0/*" -Destination "package/Libraries/" -Recurse -Force
-        Compress-Archive -Path "package/*" -DestinationPath "RealmEngine-Libraries-$version.zip" -Force
-        Write-Output "Created RealmEngine-Libraries-$version.zip"
-      shell: pwsh
+        VERSION="${{ steps.version.outputs.version }}"
+        mkdir -p package/Libraries
+        cp -R RealmEngine.Shared/bin/"${CONFIGURATION}"/net10.0/* package/Libraries/
+        cp -R RealmEngine.Core/bin/"${CONFIGURATION}"/net10.0/* package/Libraries/
+        cp -R RealmEngine.Data/bin/"${CONFIGURATION}"/net10.0/* package/Libraries/
+        (cd package && zip -r "../RealmEngine-Libraries-${VERSION}.zip" .)
+        echo "Created RealmEngine-Libraries-${VERSION}.zip"
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v7
       with:
         name: engine-release-artifacts
-        path: |
-          RealmEngine-Libraries-*.zip
+        path: RealmEngine-Libraries-*.zip
         retention-days: 7
 
-    - name: Create release tag
+    # The tag is created through the API rather than `git push`: it needs no git
+    # credentials in the runner, and creating it twice is a no-op.
+    - name: Create the release tag
       run: |
-        $version = "${{ steps.version.outputs.version-no-hash }}"
-        $tag = "engine/v$version"
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git tag $tag ${{ github.sha }}
-        git push origin $tag
-        Write-Output "Created tag: $tag"
-      shell: pwsh
+        set -eu
+        TAG="engine/v${{ steps.version.outputs.version }}"
+        CODE="$(curl -sS -o "${RUNNER_TEMP}/tag.json" -w '%{http_code}' -X POST \
+          -H "Authorization: token ${FORGEJO_TOKEN}" -H 'Content-Type: application/json' \
+          -d "{\"tag_name\":\"${TAG}\",\"target\":\"${GITHUB_SHA}\"}" \
+          "${FORGEJO_SERVER_URL}/api/v1/repos/${FORGEJO_REPOSITORY}/tags")"
+        case "${CODE}" in
+          201|200) echo "Created tag ${TAG}" ;;
+          409|422) echo "Tag ${TAG} already exists" ;;
+          *) echo "error: creating tag ${TAG} failed with HTTP ${CODE}" >&2
+             cat "${RUNNER_TEMP}/tag.json" >&2
+             exit 1 ;;
+        esac
 
-    - name: Trigger release workflow
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build release notes
       run: |
-        $tag = "engine/v${{ steps.version.outputs.version-no-hash }}"
-        gh workflow run release.yml --ref main --field tag=$tag
-        Write-Output "Triggered release workflow for $tag"
-      shell: pwsh
+        set -eu
+        VERSION="${{ steps.version.outputs.version }}"
+        TAG="engine/v${VERSION}"
+        PREV_TAG="$(git tag --sort=-version:refname | grep '^engine/v' | grep -v "^${TAG}$" | head -1 || true)"
+        if [ -n "${PREV_TAG}" ]; then
+          echo "Changelog from ${PREV_TAG} to ${TAG}"
+          CHANGELOG="$(git log "${PREV_TAG}..HEAD" --pretty=format:'- %s (%h)' --no-merges)"
+        else
+          echo "First engine release - using the last 20 commits"
+          CHANGELOG="$(git log --pretty=format:'- %s (%h)' --no-merges --max-count=20)"
+        fi
+        [ -n "${CHANGELOG}" ] || CHANGELOG="- Initial release"
+        {
+          echo "## RealmEngine Libraries ${VERSION}"
+          echo ""
+          echo "Core, Shared, and Data assemblies for consumption by any .NET application."
+          echo ""
+          echo "### Packages"
+          echo "- \`RealmEngine-Libraries-${VERSION}.zip\` - Core, Shared, and Data assemblies"
+          echo ""
+          echo "### Changes"
+          printf '%s\n' "${CHANGELOG}"
+        } > release-body.md
+        cat release-body.md
+
+    # Replaces softprops/action-gh-release.
+    - name: Publish the release
+      run: |
+        bash scripts/forgejo-release.sh \
+          --tag "engine/v${{ steps.version.outputs.version }}" \
+          --name "RealmEngine Libraries ${{ steps.version.outputs.version }}" \
+          --body-file release-body.md \
+          --asset "RealmEngine-Libraries-${{ steps.version.outputs.version }}.zip"

@@ -41,7 +41,7 @@
 					<li>
 						<a
 							class="footer-link"
-							href="https://kungraseri.github.io/RealmEngine/"
+							href="https://git.kungraseri.cloud/Veldrath/Veldrath/wiki/Getting-Started"
 							target="_blank"
 							rel="noreferrer">Documentation</a
 						>
@@ -64,7 +64,7 @@
 					<li>
 						<a
 							class="footer-link"
-							href="https://github.com/kungraseri/RealmEngine"
+							href="https://git.kungraseri.cloud/Veldrath/Veldrath"
 							target="_blank"
 							rel="noreferrer"
 						>
@@ -77,7 +77,7 @@
 							>
 								<path d={brandGithubPath} />
 							</svg>
-							<span>GitHub</span>
+							<span>Source</span>
 						</a>
 					</li>
 					<li>

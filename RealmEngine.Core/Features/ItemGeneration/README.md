@@ -569,4 +569,6 @@ var items = result.Items;
 ---
 
 **Questions or Issues?**
-See the generated API reference at <https://kungraseri.github.io/RealmEngine/> for complete API documentation.
+
+The API reference is generated from the XML doc comments by `docs.yml` and published as the `docs-site`
+workflow artifact on Forgejo. For conventions and build commands see [`AGENTS.md`](../../../AGENTS.md).

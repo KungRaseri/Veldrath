@@ -291,7 +291,7 @@ EF Core migrations (`**/Migrations/**/*.cs`, including `*.Designer.cs` and model
 
 ### Web Coverage
 
-`npm run coverage --workspace client` (from `web/`) runs Vitest with V8 coverage over `web/client/src` and writes `web/client/coverage/lcov.info`, which `ci-web.yml` uploads under the `web` Codecov flag. Only unit tests count; Playwright e2e runs are not instrumented.
+`npm run coverage --workspace client` (from `web/`) runs Vitest with V8 coverage over `web/client/src` and writes `web/client/coverage/lcov.info`, which `ci-web.yml` uploads as the `coverage-web` artifact. There is no Codecov upload on Forgejo — see [`docs/ci-forgejo.md`](../../docs/ci-forgejo.md). Only unit tests count; Playwright e2e runs are not instrumented.
 
 ### Test Project Assemblies
 
