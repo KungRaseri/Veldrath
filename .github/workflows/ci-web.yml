@@ -38,7 +38,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/veldrath
+      # Service containers are reached by service name on the job network. The
+      # port mapping does not publish to the job container's 127.0.0.1.
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/veldrath
       BETTER_AUTH_SECRET: test-better-auth-secret-change-me-0123456789abcdef
       ORIGIN: http://localhost:4173
       JWT_KEY: test-jwt-signing-key-change-me-0123456789abcdef
@@ -160,7 +162,9 @@ jobs:
       DOTNET_VERSION: '10.0.402'
       CI: 'true'
       # SvelteKit (SSR + Better Auth)
-      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/veldrath
+      # Service containers are reached by service name on the job network. The
+      # port mapping does not publish to the job container's 127.0.0.1.
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/veldrath
       BETTER_AUTH_SECRET: test-better-auth-secret-change-me-0123456789abcdef
       ORIGIN: http://localhost:4173
       BETTER_AUTH_URL: http://localhost:4173
@@ -220,7 +224,7 @@ jobs:
       - name: Start Veldrath.Server
         working-directory: Veldrath.Server
         run: |
-          ConnectionStrings__DefaultConnection="Host=127.0.0.1;Port=5432;Database=veldrath;Username=postgres;Password=postgres" \
+          ConnectionStrings__DefaultConnection="Host=postgres;Port=5432;Database=veldrath;Username=postgres;Password=postgres" \
           Jwt__Key="$JWT_KEY" \
           Jwt__Issuer="$JWT_ISSUER" \
           Jwt__Audience="$JWT_AUDIENCE" \
