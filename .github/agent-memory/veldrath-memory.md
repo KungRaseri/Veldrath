@@ -3219,7 +3219,11 @@ things measured then, worth keeping: `apply_to_admins: false` does **not** lift 
 (the pre-receive hook refuses the administrator too, so the whitelist is a second switch), and
 `development` still refuses every push. `scripts/apply-branch-protection.sh` and the doc table
 encode the current shape, so a rule reporting `apply_to_admins: true`, or `enable_push: false` on
-`main`, is now drift rather than a repair.
+`main`, is now drift rather than a repair. Both rules also pin `push_whitelist_teams: []` and
+`push_whitelist_deploy_keys: false` in the payload and in the read-back — the bypass is one named
+account, never a team or a deploy key; the API validates a team name and round-trips the deploy-key
+switch (measured). `scripts/tests/apply-branch-protection.test.sh` covers those drift cases offline
+(stubbed API, no token) and runs in the docs workflow.
 
 ### Session-93 (2026-11-03) — Web coverage gate green: branch tail closed
 

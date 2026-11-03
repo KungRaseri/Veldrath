@@ -20,6 +20,13 @@
 #     the push whitelist is the only break-glass path for a broken deploy.
 #     `development` still refuses every push.
 #
+# Because both rules carry an exception, both pin `push_whitelist_teams: []`
+# and `push_whitelist_deploy_keys: false` in the payload *and* in the read-back:
+# `main`'s bypass is the one named account, never a team or a deploy key.
+#
+# Offline regression tests: scripts/tests/apply-branch-protection.test.sh (no
+# token, no network - the API call is stubbed). The docs workflow runs them.
+#
 # Required environment:
 #   FORGEJO_TOKEN       A token with repository administration scope.
 #
@@ -56,7 +63,6 @@ BRANCHES="${BRANCHES:-development main}"
 STATUS_CONTEXTS="${STATUS_CONTEXTS:-}"
 [ -n "${STATUS_CONTEXTS}" ] || STATUS_CONTEXTS='["*"]'
 PUSH_BYPASS_USERS="${PUSH_BYPASS_USERS-kungraseri}"
-CHECK_ONLY=0
 
 # PUSH_BYPASS_JSON is the JSON array the rule stores, e.g. ["kungraseri"].
 PUSH_BYPASS_JSON='[]'
@@ -65,21 +71,19 @@ if [ -n "${PUSH_BYPASS_USERS}" ]; then
         | awk 'NF { gsub(/^[[:space:]]+|[[:space:]]+$/, ""); printf "%s\"%s\"", (n++ ? "," : ""), $0 }')]"
 fi
 
+# usage -> the header comment block, from line 3 to the line before
+# `set -euo pipefail`. The end is located rather than hard-coded so adding a
+# line to the header cannot truncate --help.
 usage() {
-    sed -n '3,47p' "$0" | sed 's/^# \{0,1\}//'
+    local last
+    last="$(awk '/^set -euo pipefail$/ { print NR - 1; exit }' "$0")"
+    sed -n "3,${last}p" "$0" | sed 's/^# \{0,1\}//'
     exit "${1:-1}"
 }
 
-while [ $# -gt 0 ]; do
-    case "$1" in
-        --check)  CHECK_ONLY=1 ;;
-        --help|-h) usage 0 ;;
-        *)        echo "error: unknown argument: $1" >&2; usage 2 ;;
-    esac
-    shift
-done
-
-forgejo_init --require-repository
+# Argument parsing, applying and verifying live in main() at the bottom of the
+# file: scripts/tests/apply-branch-protection.test.sh sources this file for the
+# policy functions and must not touch the API.
 
 # push_policy BRANCH -> "open" when the branch accepts direct pushes, else "closed".
 # Only `main` can be open: it is the branch every deployment builds from, so a
@@ -97,11 +101,15 @@ rule_body() {
     local branch="$1"
     local push_fields='  "enable_push": false,
   "enable_push_whitelist": false,
-  "push_whitelist_usernames": [],'
+  "push_whitelist_usernames": [],
+  "push_whitelist_teams": [],
+  "push_whitelist_deploy_keys": false,'
     if [ "$(push_policy "${branch}")" = "open" ]; then
         push_fields="  \"enable_push\": true,
   \"enable_push_whitelist\": true,
-  \"push_whitelist_usernames\": ${PUSH_BYPASS_JSON},"
+  \"push_whitelist_usernames\": ${PUSH_BYPASS_JSON},
+  \"push_whitelist_teams\": [],
+  \"push_whitelist_deploy_keys\": false,"
     fi
     cat <<JSON
 {
@@ -139,6 +147,8 @@ expected_substrings() {
 "status_check_contexts":$(printf '%s' "${STATUS_CONTEXTS}" | tr -d ' \n\r\t')
 "required_approvals":0
 "apply_to_admins":false
+"push_whitelist_teams":[]
+"push_whitelist_deploy_keys":false
 FIELDS
 
     if [ "$(push_policy "${branch}")" = "open" ]; then
@@ -147,6 +157,8 @@ FIELDS
         printf '%s\n' "\"push_whitelist_usernames\":${PUSH_BYPASS_JSON}"
     else
         printf '%s\n' '"enable_push":false'
+        printf '%s\n' '"enable_push_whitelist":false'
+        printf '%s\n' '"push_whitelist_usernames":[]'
     fi
 }
 
@@ -174,37 +186,57 @@ verify_rule() {
     return "${missing}"
 }
 
-rc=0
-for branch in ${BRANCHES}; do
-    echo "== ${FORGEJO_REPOSITORY}: ${branch} =="
+main() {
+    local check_only=0
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --check)   check_only=1 ;;
+            --help|-h) usage 0 ;;
+            *)         echo "error: unknown argument: $1" >&2; usage 2 ;;
+        esac
+        shift
+    done
 
-    if [ "${CHECK_ONLY}" = "1" ]; then
-        if ! rule_exists "${branch}"; then
-            echo "  no rule named '${branch}'" >&2
-            rc=1
-            continue
+    forgejo_init --require-repository
+
+    local rc=0 branch out code
+    for branch in ${BRANCHES}; do
+        echo "== ${FORGEJO_REPOSITORY}: ${branch} =="
+
+        if [ "${check_only}" = "1" ]; then
+            if ! rule_exists "${branch}"; then
+                echo "  no rule named '${branch}'" >&2
+                rc=1
+                continue
+            fi
+        elif rule_exists "${branch}"; then
+            out="$(mktemp)"
+            # The edit endpoint is PATCH; PUT answers 405 on this Forgejo version.
+            code="$(forgejo_send PATCH "/repos/${FORGEJO_REPOSITORY}/branch_protections/${branch}" "$(rule_body "${branch}")" "${out}")"
+            [ "${code}" = "200" ] || { echo "  PATCH -> ${code}" >&2; cat "${out}" >&2; rm -f "${out}"; rc=1; continue; }
+            echo "  updated (PATCH 200)"
+            rm -f "${out}"
+        else
+            out="$(mktemp)"
+            code="$(forgejo_send POST "/repos/${FORGEJO_REPOSITORY}/branch_protections" "$(rule_body "${branch}")" "${out}")"
+            [ "${code}" = "201" ] || { echo "  POST -> ${code}" >&2; cat "${out}" >&2; rm -f "${out}"; rc=1; continue; }
+            echo "  created (POST 201)"
+            rm -f "${out}"
         fi
-    elif rule_exists "${branch}"; then
-        out="$(mktemp)"
-        # The edit endpoint is PATCH; PUT answers 405 on this Forgejo version.
-        code="$(forgejo_send PATCH "/repos/${FORGEJO_REPOSITORY}/branch_protections/${branch}" "$(rule_body "${branch}")" "${out}")"
-        [ "${code}" = "200" ] || { echo "  PATCH -> ${code}" >&2; cat "${out}" >&2; rm -f "${out}"; rc=1; continue; }
-        echo "  updated (PATCH 200)"
-        rm -f "${out}"
-    else
-        out="$(mktemp)"
-        code="$(forgejo_send POST "/repos/${FORGEJO_REPOSITORY}/branch_protections" "$(rule_body "${branch}")" "${out}")"
-        [ "${code}" = "201" ] || { echo "  POST -> ${code}" >&2; cat "${out}" >&2; rm -f "${out}"; rc=1; continue; }
-        echo "  created (POST 201)"
-        rm -f "${out}"
-    fi
 
-    if verify_rule "${branch}"; then
-        echo "  verified: status checks required on ${STATUS_CONTEXTS}, $(push_summary "${branch}"), no admin exemption"
-    else
-        echo "  the stored rule does not match the requested one" >&2
-        rc=1
-    fi
-done
+        if verify_rule "${branch}"; then
+            echo "  verified: status checks required on ${STATUS_CONTEXTS}; $(push_summary "${branch}"); push whitelist account-only (no teams, no deploy keys); administrators exempt (apply_to_admins:false)"
+        else
+            echo "  the stored rule does not match the requested one" >&2
+            rc=1
+        fi
+    done
 
-[ "${rc}" = "0" ] || { echo "branch protection is NOT in the intended state" >&2; exit 1; }
+    [ "${rc}" = "0" ] || { echo "branch protection is NOT in the intended state" >&2; exit 1; }
+}
+
+# Sourced by the tests: define the functions, do not touch the API. Executed
+# directly: apply and verify.
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+    main "$@"
+fi

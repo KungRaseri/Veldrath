@@ -230,7 +230,6 @@ update it under Settings → Actions → Secrets.
 file the repository can diff, so it is recorded here and applied by
 [`scripts/apply-branch-protection.sh`](../scripts/apply-branch-protection.sh):
 
-
 | Field | `development` | `main` | Why |
 |---|---|---|---|
 | `rule_name` | `development` | `main` | The release PR is `development` → `main`; a red merge into either branch is the same bug |
@@ -238,6 +237,9 @@ file the repository can diff, so it is recorded here and applied by
 | `status_check_contexts` | `["*"]` | `["*"]` | "Every check that reported must be green" — see below |
 | `enable_push` | `false` | `true` | `main` carries the operator's deploy repair path; `development` takes pull requests only |
 | `enable_push_whitelist` | `false` | `true` | With `push_whitelist_usernames: ["kungraseri"]` — see below |
+| `push_whitelist_usernames` | `[]` | `["kungraseri"]` | The bypass is one named account — see below |
+| `push_whitelist_teams` | `[]` | `[]` | Account-only: no team inherits the push path |
+| `push_whitelist_deploy_keys` | `false` | `false` | A deploy key is not a second break-glass path |
 | `required_approvals` | `0` | `0` | The instance has one account, and an author cannot approve their own PR |
 | `apply_to_admins` | `false` | `false` | The administrator exemption was removed on request — see below |
 | `block_on_outdated_branch` | `false` | `false` | `zoo-pr` rebases before opening; requiring up-to-date would re-run the matrix on every unrelated merge |
@@ -266,8 +268,10 @@ What each exception costs, stated plainly:
 - `main` accepts pushes from exactly one account, `kungraseri`. Every other identity, and
   every push to `development`, is still refused by the pre-receive hook. A direct push to
   `main` skips the status checks, so it is for repairing a broken deployment, never for
-  landing a change.
-
+  landing a change. The whitelist is account-only: `push_whitelist_teams` is `[]` and
+  `push_whitelist_deploy_keys` is `false` on both rules, and
+  [`scripts/apply-branch-protection.sh`](../scripts/apply-branch-protection.sh) asserts both
+  in its read-back, so neither a team nor a deploy key can quietly become a second bypass.
 
 #### Why one glob instead of the component job names
 
@@ -488,10 +492,13 @@ set -a; . ~/.config/zoo-agent/forgejo.env; set +a
 export FORGEJO_SERVER_URL="$FORGEJO_URL"
 scripts/apply-branch-protection.sh            # create or edit, then read back and verify
 scripts/apply-branch-protection.sh --check    # verify only; exits 1 on drift
+scripts/tests/apply-branch-protection.test.sh # offline regression tests: no token, no network
 ```
 
 The script is idempotent and fails when the stored rule is not the requested one, so
-`--check` is the drift test.
+`--check` is the drift test. The offline tests stub the API response and assert the failures
+the live server must not have — an extra account, a push team, a deploy-key bypass, pushes on
+`development` — and run in the [docs workflow](../.github/workflows/docs.yml).
 
 #### Proof, both directions
 
