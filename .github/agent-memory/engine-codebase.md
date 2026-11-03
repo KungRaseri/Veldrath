@@ -78,6 +78,13 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
   convention (`CombatServiceTests`, `ExploreLocationCommandHandlerTests`,
   `FleeFromCombatHubCommandHandlerTests`, `FleeFromCombatHandlerTests`, `DungeonGeneratorServiceTests`,
   `ApplyStatusEffectTests`, `UsePowerHandlerTests`, `CastSpellHandlerTests`).
+- `QuestIntegrationTests` (`Features/Quest/Integration/`) drives real `AttackEnemyCommand` loops, so it
+  registers `FakeRandomSource.Seeded(20260101)` and passes that instance to its manually constructed
+  `CombatService` (`randomSource:`); without it the loops resolved `SystemRandomSource.Shared` and the
+  round count — and therefore coverage — moved between runs. Its loops are bounded by
+  `MaxAttackRounds` (200) and assert the enemy reached 0 HP, so a combat-maths regression fails instead
+  of hanging. Seeding is enough there because no test asserts a named crit/dodge arm; a test that needs
+  one should pass a scripted `FakeRandomSource` instead.
 - `SpellCastingService.CastSpell` makes exactly one `NextDouble()` draw per attempt, in
   `CheckCastSuccess`: `rate = clamp(0.90 + 0.005 * (rank - MinimumSkillRank), 0.60, 0.99)` and the
   cast succeeds when `roll < rate` (a numeric `BaseEffectValue` never rolls dice). Script a margin
