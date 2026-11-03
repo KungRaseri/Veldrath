@@ -6,6 +6,8 @@ deleted (git history keeps it).
 
 | Plan | Status | Purpose |
 |---|---|---|
+| [`dotnet-coverage-gate.md`](dotnet-coverage-gate.md) | 🔧 **Live** — decided 2026-11-03, implementation carded | The .NET half of the 90% coverage goal: which assemblies are gated, the enforcement mechanism (a script over ReportGenerator's merged Cobertura, in a new `ci-coverage.yml`), and the per-assembly floors measured on 10.0.402. Target 90% line; floors are a no-regression ratchet at today's measured baseline. |
+| [`web-feature-parity-and-coverage.md`](web-feature-parity-and-coverage.md) | 🔧 **Live** | Web feature parity matrix plus the 90% Vitest gate with per-glob floors. |
 | [`server-first-world-state.md`](server-first-world-state.md) | ✅ Complete — milestone D (epic #32) | Move live enemies, respawn timers and combat sessions out of process memory into Postgres so a restart is lossless. First of D → C → A → B. |
 | [`party-play.md`](party-play.md) | ✅ Complete — milestone C (epic #37) | Multiplayer party: persisted parties and invites, shared combat with contribution-based rewards, party chat. Builds directly on D. |
 | [`death-and-first-hour.md`](death-and-first-hour.md) | ✅ Complete — milestone A (epic #38) | Gold-first death cost, safe respawn plus death sickness, tutorial handoff, quest HUD tracker, new objective kinds, hardcore memorial and leaderboard. |
