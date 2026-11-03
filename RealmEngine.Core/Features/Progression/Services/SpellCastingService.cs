@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Services;
 
 namespace RealmEngine.Core.Features.Progression.Services;
 
@@ -13,6 +15,7 @@ public class SpellCastingService
     private readonly PowerDataService _powerCatalog;
     private readonly SkillProgressionService _skillProgression;
     private readonly ILogger<SpellCastingService> _logger;
+    private readonly IRandomSource _random;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SpellCastingService"/> class.
@@ -20,14 +23,17 @@ public class SpellCastingService
     /// <param name="powerCatalog">The power catalog service.</param>
     /// <param name="skillProgression">The skill progression service.</param>
     /// <param name="logger">Optional logger instance.</param>
+    /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
     public SpellCastingService(
         PowerDataService powerCatalog,
         SkillProgressionService skillProgression,
-        ILogger<SpellCastingService>? logger = null)
+        ILogger<SpellCastingService>? logger = null,
+        IRandomSource? randomSource = null)
     {
         _powerCatalog = powerCatalog ?? throw new ArgumentNullException(nameof(powerCatalog));
         _skillProgression = skillProgression ?? throw new ArgumentNullException(nameof(skillProgression));
         _logger = logger ?? NullLogger<SpellCastingService>.Instance;
+        _random = randomSource ?? SystemRandomSource.Shared;
     }
 
     /// <summary>
@@ -280,7 +286,7 @@ public class SpellCastingService
         var successRate = baseSuccessRate + (rankDifference * 0.005); // +0.5% per rank above requirement
         successRate = Math.Clamp(successRate, 0.60, 0.99);
 
-        var roll = Random.Shared.NextDouble();
+        var roll = _random.NextDouble();
         var succeeded = roll < successRate;
 
         return new CastSuccessResult
@@ -330,7 +336,7 @@ public class SpellCastingService
                 int total = 0;
                 for (int i = 0; i < count; i++)
                 {
-                    total += Random.Shared.Next(1, sides + 1);
+                    total += _random.Next(1, sides + 1);
                 }
                 return total;
             }

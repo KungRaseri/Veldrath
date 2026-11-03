@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Services;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Settings;
 
@@ -57,6 +59,7 @@ public class DefendActionHubCommandHandler
     private readonly ICombatSessionStore _sessions;
     private readonly IOptions<DeathPenaltyOptions> _penalty;
     private readonly ILogger<DefendActionHubCommandHandler> _logger;
+    private readonly IRandomSource _random;
 
     /// <summary>Initializes a new instance of <see cref="DefendActionHubCommandHandler"/>.</summary>
     /// <param name="characterRepo">Repository for loading and persisting character state.</param>
@@ -64,18 +67,21 @@ public class DefendActionHubCommandHandler
     /// <param name="sessions">Store for per-character combat sessions.</param>
     /// <param name="penalty">Configured death-penalty values.</param>
     /// <param name="logger">Logger instance.</param>
+    /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
     public DefendActionHubCommandHandler(
         ICharacterRepository characterRepo,
         IEnemyInstanceStore enemies,
         ICombatSessionStore sessions,
         IOptions<DeathPenaltyOptions> penalty,
-        ILogger<DefendActionHubCommandHandler> logger)
+        ILogger<DefendActionHubCommandHandler> logger,
+        IRandomSource? randomSource = null)
     {
         _characterRepo = characterRepo;
         _enemies = enemies;
         _sessions = sessions;
         _penalty = penalty;
         _logger = logger;
+        _random = randomSource ?? SystemRandomSource.Shared;
     }
 
     /// <summary>Handles the command and returns the defend-turn outcome.</summary>
@@ -113,7 +119,7 @@ public class DefendActionHubCommandHandler
         session = session.WithDefending(true).NextTurn();
         await _sessions.SetAsync(request.CharacterId, session, cancellationToken);
 
-        var (abilityDamage, abilityName) = CombatHelpers.RollEnemyAbility(enemy, player);
+        var (abilityDamage, abilityName) = CombatHelpers.RollEnemyAbility(enemy, player, _random);
         int enemyDamage = abilityDamage > 0
             ? Math.Max(1, abilityDamage / 2) // halve ability damage when defending
             : CombatHelpers.CalculateEnemyDamage(enemy, attrs, isDefending: true);

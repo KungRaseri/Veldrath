@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Services;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Hubs;
 using Veldrath.Server.Settings;
@@ -98,6 +99,7 @@ public class UseAbilityInCombatHubCommandHandler
     private readonly ICombatSessionStore _sessions;
     private readonly IOptions<DeathPenaltyOptions> _penalty;
     private readonly ILogger<UseAbilityInCombatHubCommandHandler> _logger;
+    private readonly IRandomSource _random;
 
     /// <summary>Initializes a new instance of <see cref="UseAbilityInCombatHubCommandHandler"/>.</summary>
     /// <param name="characterRepo">Repository for loading and persisting character state.</param>
@@ -106,13 +108,15 @@ public class UseAbilityInCombatHubCommandHandler
     /// <param name="sessions">Store for per-character combat sessions.</param>
     /// <param name="penalty">Configured death-penalty values.</param>
     /// <param name="logger">Logger instance.</param>
+    /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
     public UseAbilityInCombatHubCommandHandler(
         ICharacterRepository characterRepo,
         IPowerRepository powerRepo,
         IEnemyInstanceStore enemies,
         ICombatSessionStore sessions,
         IOptions<DeathPenaltyOptions> penalty,
-        ILogger<UseAbilityInCombatHubCommandHandler> logger)
+        ILogger<UseAbilityInCombatHubCommandHandler> logger,
+        IRandomSource? randomSource = null)
     {
         _characterRepo = characterRepo;
         _powerRepo = powerRepo;
@@ -120,6 +124,7 @@ public class UseAbilityInCombatHubCommandHandler
         _sessions = sessions;
         _penalty = penalty;
         _logger = logger;
+        _random = randomSource ?? SystemRandomSource.Shared;
     }
 
     /// <summary>Handles the command and returns the ability-use combat turn outcome.</summary>
@@ -264,7 +269,7 @@ public class UseAbilityInCombatHubCommandHandler
         session = session.NextTurn();
         await _sessions.SetAsync(request.CharacterId, session, cancellationToken);
 
-        var (counterDamage, counterAbility) = CombatHelpers.RollEnemyAbility(enemy, player);
+        var (counterDamage, counterAbility) = CombatHelpers.RollEnemyAbility(enemy, player, _random);
         int enemyDamage = counterDamage > 0
             ? counterDamage
             : CombatHelpers.CalculateEnemyDamage(enemy, attrs, session.IsPlayerDefending);

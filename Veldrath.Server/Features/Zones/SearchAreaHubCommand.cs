@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Services;
 using Veldrath.Server.Data.Repositories;
 
 namespace Veldrath.Server.Features.Zones;
@@ -54,22 +55,26 @@ public class SearchAreaHubCommandHandler
     private readonly ICharacterRepository _characterRepo;
     private readonly ICharacterUnlockedLocationRepository _unlockedRepo;
     private readonly ILogger<SearchAreaHubCommandHandler> _logger;
+    private readonly IRandomSource _random;
 
     /// <summary>Initializes a new instance of <see cref="SearchAreaHubCommandHandler"/>.</summary>
     /// <param name="locationRepo">Repository for zone location catalog data.</param>
     /// <param name="characterRepo">Repository for character data (level used as base roll).</param>
     /// <param name="unlockedRepo">Repository for persisting unlock records.</param>
     /// <param name="logger">Logger instance.</param>
+    /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
     public SearchAreaHubCommandHandler(
         IZoneLocationRepository locationRepo,
         ICharacterRepository characterRepo,
         ICharacterUnlockedLocationRepository unlockedRepo,
-        ILogger<SearchAreaHubCommandHandler> logger)
+        ILogger<SearchAreaHubCommandHandler> logger,
+        IRandomSource? randomSource = null)
     {
         _locationRepo = locationRepo;
         _characterRepo = characterRepo;
         _unlockedRepo = unlockedRepo;
         _logger = logger;
+        _random = randomSource ?? SystemRandomSource.Shared;
     }
 
     /// <summary>Handles the search command, rolling for each active-check hidden location.</summary>
@@ -88,7 +93,7 @@ public class SearchAreaHubCommandHandler
             return new SearchAreaHubResult { Success = false, ErrorMessage = "Character not found" };
 
         // Roll: character level + random bonus/penalty, range [-5, +9].
-        var roll = character.Level + Random.Shared.Next(-5, 10);
+        var roll = character.Level + _random.Next(-5, 10);
 
         var hiddenLocations = await _locationRepo.GetHiddenByZoneIdAsync(request.ZoneId);
         var candidates = hiddenLocations

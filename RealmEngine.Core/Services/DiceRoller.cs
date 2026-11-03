@@ -1,10 +1,17 @@
 using System.Text.RegularExpressions;
+using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Services;
 
 namespace RealmEngine.Core.Services;
 
 /// <summary>
 /// Utility for rolling dice using DnD-style notation (e.g., "2d6", "1d8+3", "4d10-2").
 /// </summary>
+/// <remarks>
+/// The parameterless overloads are kept for compatibility and roll against <see cref="SystemRandomSource.Shared"/>.
+/// Any caller that needs deterministic rolls (tests, reproducible simulations) should pass an
+/// <see cref="IRandomSource"/> explicitly.
+/// </remarks>
 public static class DiceRoller
 {
     private static readonly Regex DicePattern = new(@"^(\d+)d(\d+)([\+\-]\d+)?$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -14,8 +21,19 @@ public static class DiceRoller
     /// </summary>
     /// <param name="diceString">Dice notation string</param>
     /// <returns>Total result of the dice roll</returns>
-    public static int RollDiceString(string diceString)
+    public static int RollDiceString(string diceString) =>
+        RollDiceString(diceString, SystemRandomSource.Shared);
+
+    /// <summary>
+    /// Rolls dice based on a dice string using the supplied random source.
+    /// </summary>
+    /// <param name="diceString">Dice notation string</param>
+    /// <param name="randomSource">The random source used for each die.</param>
+    /// <returns>Total result of the dice roll</returns>
+    public static int RollDiceString(string diceString, IRandomSource randomSource)
     {
+        ArgumentNullException.ThrowIfNull(randomSource);
+
         if (string.IsNullOrWhiteSpace(diceString))
             return 0;
 
@@ -30,7 +48,7 @@ public static class DiceRoller
         int total = 0;
         for (int i = 0; i < count; i++)
         {
-            total += Random.Shared.Next(1, sides + 1);
+            total += randomSource.Next(1, sides + 1);
         }
 
         return Math.Max(0, total + modifier);
@@ -41,9 +59,18 @@ public static class DiceRoller
     /// </summary>
     /// <param name="sides">The number of sides on the die.</param>
     /// <returns>The result of the die roll.</returns>
-    public static int Roll(int sides)
+    public static int Roll(int sides) => Roll(sides, SystemRandomSource.Shared);
+
+    /// <summary>
+    /// Rolls a single die with the specified number of sides using the supplied random source.
+    /// </summary>
+    /// <param name="sides">The number of sides on the die.</param>
+    /// <param name="randomSource">The random source used for the roll.</param>
+    /// <returns>The result of the die roll.</returns>
+    public static int Roll(int sides, IRandomSource randomSource)
     {
-        return Random.Shared.Next(1, sides + 1);
+        ArgumentNullException.ThrowIfNull(randomSource);
+        return randomSource.Next(1, sides + 1);
     }
 
     /// <summary>
@@ -52,13 +79,25 @@ public static class DiceRoller
     /// <param name="count">The number of dice to roll.</param>
     /// <param name="sides">The number of sides on each die.</param>
     /// <returns>The total of all dice rolls.</returns>
-    public static int Roll(int count, int sides)
+    public static int Roll(int count, int sides) => Roll(count, sides, SystemRandomSource.Shared);
+
+    /// <summary>
+    /// Rolls multiple dice using the supplied random source and returns the total.
+    /// </summary>
+    /// <param name="count">The number of dice to roll.</param>
+    /// <param name="sides">The number of sides on each die.</param>
+    /// <param name="randomSource">The random source used for each die.</param>
+    /// <returns>The total of all dice rolls.</returns>
+    public static int Roll(int count, int sides, IRandomSource randomSource)
     {
+        ArgumentNullException.ThrowIfNull(randomSource);
+
         int total = 0;
         for (int i = 0; i < count; i++)
         {
-            total += Random.Shared.Next(1, sides + 1);
+            total += randomSource.Next(1, sides + 1);
         }
         return total;
     }
 }
+
