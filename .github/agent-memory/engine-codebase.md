@@ -91,9 +91,13 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
   `EnemyAbilityAIService`, `NameComposer`, `LootTableService`, item generation and
   `NodeSpawnerService` keep their own `new Random()`.
 - Coverage is deterministic now: three consecutive full runs report identical per-package line and
-  branch rates (Core 71.1197/56.2239, Server 72.8320/53.0269, total 75.3806/55.5100 over 32,121 lines
-  / 10,490 branches). Those are the values `scripts/coverage-floors.json` should record when the gate
-  (PR #15 / re-landed as PR #21) reaches `development`; floors may only rise.
+  branch rates (Core 71.1197/56.2239, Server 72.8320/53.0269, total 75.3806/55.5100 — 24,213 covered
+  of 32,121 lines and 5,823 of 10,490 branches). The gate is live as of 2026-11-03 (PR #21), and
+  `scripts/coverage-floors.json` deliberately records the *six-run lowest* observation per assembly
+  with the floor one point below it (Core floor 69 against a 70.49 low) — never the three-run values
+  above, which sit above the lowest observation and would fail intermittently. Floors rise only when a
+  change lifts an assembly 3+ points above its floor (D5 rule 2; `--suggest` names the stale ones).
+  Re-measured on the merged base, the largest lift was +2.22 pp, so no floor moved.
 
 ## Testing Gotchas
 
