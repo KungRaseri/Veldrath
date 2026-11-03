@@ -3342,7 +3342,7 @@ inference: probe PR #32 (branch `probe-x`, head `b59e841d`, only `.gitignore` ch
 `{"state":"","total_count":0}` and `[]` for statuses, `mergeable: true` for the pull request, and
 `405 not allowed to merge [reason: Not all required status checks successful]` for
 `POST /pulls/32/merge {"force_merge": false}`. The PR was closed and the branch deleted. The
-workflow and script landed in card `t_48d8d3c1` (PR #37).
+workflow and script landed in card `t_48d8d3c1` (PR #38).
 
 One correction to the force_merge reasoning recorded above: the token every worker runs with is the
 instance administrator (`GET /user` → `kungraseri`, `is_admin: true`), so `force_merge` **is**
@@ -3353,12 +3353,12 @@ satisfy `["*"]`, because either one lets a worker certify its own merge. The API
 the latest row per context (`GetLatestCommitStatus`, `services/pull/commit_status.go:128`) — a stale
 `pending` row beside a `success` is not a red gate.
 
-**Landed (2026-11-03, card `t_48d8d3c1`, PR #37).** `.github/workflows/merge-gate.yml` and
+**Landed (2026-11-03, card `t_48d8d3c1`, PR #38).** `.github/workflows/merge-gate.yml` and
 `scripts/ci-merge-gate.sh` exist, so the context
 `CI - Merge gate / Merge gate reports on every pull request (pull_request)` now reports on every pull
-request into `development` or `main` and `["*"]` always has a status to evaluate. Measured on PR #37
-head `3ea0176f`: run 1349 `success` in **5 s** (`duration` on `GET /actions/runs/1349`; `pending` row
-19:25:44Z → `success` row 19:25:50Z), combined commit status `{"state":"success","total_count":2}`
+request into `development` or `main` and `["*"]` always has a status to evaluate. Measured on PR #38
+head `cf0c3cc6`: run 1357 `success` in **5 s** (`duration` on `GET /actions/runs/1357`; `pending` row
+19:31:44Z → `success` row 19:31:50Z), combined commit status `{"state":"success","total_count":2}`
 next to `Deploy Documentation / Build Docs (pull_request)`. The job is one depth-1 checkout plus the
 lint; it must stay offline and dependency-free. `--uncovered` is the follow-up inventory — it
 reproduces the runner's `PatternToRegex` translation (`**/` → `(.+/)?`, so `**/*.md` matches a root

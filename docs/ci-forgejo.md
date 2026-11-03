@@ -395,8 +395,8 @@ repository has actually broken CI, plus the invariant that keeps this remedy ali
 
 Cost: one job — one `actions/checkout@v7` and one `bash scripts/ci-merge-gate.sh --lint`, with no
 SDK, npm, docker or service container. **Measured on 2026-11-03: 5 s** for the whole job (`duration`
-on `GET /actions/runs/1349`, run 1349, head `3ea0176f`, PR #37; the `pending` row was written at
-19:25:44Z and the `success` row at 19:25:50Z). For scale, the six build gates that reported on
+on `GET /actions/runs/1357`, run 1357, head `cf0c3cc6`, PR #38; the `pending` row was written at
+19:31:44Z and the `success` row at 19:31:50Z). For scale, the six build gates that reported on
 `0efb7c7c` recorded between 93 s and 485 s each (`duration` on `GET /actions/runs/{id}`; the cheapest
 was `Build Docs` at 93 s, run 1325), and this job only checks out a depth-1 tree and greps it. It
 runs on every pull request into `development` or `main`, which is the point.
