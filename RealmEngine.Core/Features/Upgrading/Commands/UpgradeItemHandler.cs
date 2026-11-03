@@ -1,5 +1,7 @@
 using MediatR;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Services;
 
 namespace RealmEngine.Core.Features.Upgrading.Commands;
 
@@ -9,6 +11,17 @@ namespace RealmEngine.Core.Features.Upgrading.Commands;
 /// </summary>
 public class UpgradeItemHandler : IRequestHandler<UpgradeItemCommand, UpgradeItemResult>
 {
+    private readonly IRandomSource _random;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UpgradeItemHandler"/> class.
+    /// </summary>
+    /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
+    public UpgradeItemHandler(IRandomSource? randomSource = null)
+    {
+        _random = randomSource ?? SystemRandomSource.Shared;
+    }
+
     /// <summary>
     /// Handles the upgrade item request.
     /// </summary>
@@ -72,8 +85,7 @@ public class UpgradeItemHandler : IRequestHandler<UpgradeItemCommand, UpgradeIte
         var successRate = CalculateSuccessRate(targetLevel);
 
         // Attempt upgrade
-        var random = new Random();
-        var roll = random.NextDouble() * 100.0;
+        var roll = _random.NextDouble() * 100.0;
         var succeeded = roll <= successRate;
 
         if (succeeded)

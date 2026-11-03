@@ -1,13 +1,18 @@
 namespace RealmEngine.Shared.Utilities;
 
+using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Services;
+
 /// <summary>
 /// Utility for selecting items based on rarity weights.
 /// Uses the formula: probability = 100 / rarityWeight
 /// </summary>
+/// <remarks>
+/// The selection overload without an <see cref="IRandomSource"/> rolls against
+/// <see cref="SystemRandomSource.Shared"/>; pass one explicitly for deterministic selection.
+/// </remarks>
 public static class WeightedSelector
 {
-    private static readonly Random _random = Random.Shared;
-
     /// <summary>
     /// Select a random item from a collection based on rarity weights.
     /// Higher rarity weights = lower selection probability.
@@ -17,8 +22,23 @@ public static class WeightedSelector
     /// <param name="items">Collection of items to select from</param>
     /// <returns>Selected item</returns>
     /// <exception cref="ArgumentException">If collection is empty</exception>
-    public static T SelectByRarityWeight<T>(IEnumerable<T> items) where T : class
+    public static T SelectByRarityWeight<T>(IEnumerable<T> items) where T : class =>
+        SelectByRarityWeight(items, SystemRandomSource.Shared);
+
+    /// <summary>
+    /// Select a random item from a collection based on rarity weights using the supplied random source.
+    /// Higher rarity weights = lower selection probability.
+    /// Formula: probability = 100 / rarityWeight
+    /// </summary>
+    /// <typeparam name="T">Type that has a RarityWeight property</typeparam>
+    /// <param name="items">Collection of items to select from</param>
+    /// <param name="randomSource">The random source used for the selection roll.</param>
+    /// <returns>Selected item</returns>
+    /// <exception cref="ArgumentException">If collection is empty</exception>
+    public static T SelectByRarityWeight<T>(IEnumerable<T> items, IRandomSource randomSource) where T : class
     {
+        ArgumentNullException.ThrowIfNull(randomSource);
+
         var itemList = items.ToList();
         if (itemList.Count == 0)
         {
@@ -46,7 +66,7 @@ public static class WeightedSelector
         }
 
         // Generate random value
-        var randomValue = _random.NextDouble() * totalWeight;
+        var randomValue = randomSource.NextDouble() * totalWeight;
 
         // Select item based on cumulative weight
         double cumulativeWeight = 0;

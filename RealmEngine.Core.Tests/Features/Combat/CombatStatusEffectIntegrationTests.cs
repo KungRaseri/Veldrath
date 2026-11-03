@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using RealmEngine.Core.Features.Combat.Commands;
+using RealmEngine.Core.Tests.Infrastructure;
 using RealmEngine.Shared.Models;
 using Xunit;
 
@@ -26,7 +27,7 @@ public class CombatStatusEffectIntegrationTests
         _mockApplyLogger = new Mock<ILogger<ApplyStatusEffectHandler>>();
 
         _processHandler = new ProcessStatusEffectsHandler(_mockStatusLogger.Object);
-        _applyHandler = new ApplyStatusEffectHandler(_mockApplyLogger.Object);
+        _applyHandler = new ApplyStatusEffectHandler(_mockApplyLogger.Object, FakeRandomSource.Seeded(20260101));
     }
 
     [Fact]

@@ -5,7 +5,9 @@ using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Generators;
 using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Core.Services;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Services;
 
 namespace RealmEngine.Core.Features.Exploration;
 
@@ -20,6 +22,7 @@ public class ExplorationService
     private readonly SaveGameService _saveGameService;
     private readonly LocationGenerator _locationGenerator;
     private readonly ItemGenerator? _itemGenerator;
+    private readonly IRandomSource _random;
 
     private readonly List<Location> _knownLocations = new();
     private bool _locationsInitialized = false;
@@ -27,7 +30,14 @@ public class ExplorationService
     /// <summary>
     /// Initializes a new instance of the <see cref="ExplorationService"/> class for mocking.
     /// </summary>
-    protected ExplorationService() { _mediator = null!; _gameState = null!; _saveGameService = null!; _locationGenerator = null!; }
+    protected ExplorationService()
+    {
+        _mediator = null!;
+        _gameState = null!;
+        _saveGameService = null!;
+        _locationGenerator = null!;
+        _random = SystemRandomSource.Shared;
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExplorationService"/> class.
@@ -37,13 +47,15 @@ public class ExplorationService
     /// <param name="saveGameService">The save game service.</param>
     /// <param name="locationGenerator">The location generator.</param>
     /// <param name="itemGenerator">The item generator (optional).</param>
-    public ExplorationService(IMediator mediator, IGameStateService gameState, SaveGameService saveGameService, LocationGenerator locationGenerator, ItemGenerator? itemGenerator = null)
+    /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
+    public ExplorationService(IMediator mediator, IGameStateService gameState, SaveGameService saveGameService, LocationGenerator locationGenerator, ItemGenerator? itemGenerator = null, IRandomSource? randomSource = null)
     {
         _mediator = mediator;
         _gameState = gameState;
         _saveGameService = saveGameService;
         _locationGenerator = locationGenerator;
         _itemGenerator = itemGenerator;
+        _random = randomSource ?? SystemRandomSource.Shared;
     }
 
     /// <summary>
@@ -79,7 +91,7 @@ public class ExplorationService
         var player = _gameState.Player;
 
         // 60% chance of combat encounter, 40% chance of peaceful exploration
-        var encounterRoll = Random.Shared.Next(100);
+        var encounterRoll = _random.Next(100);
         bool combatEncounter = encounterRoll < 60;
 
         if (combatEncounter)
@@ -93,7 +105,7 @@ public class ExplorationService
         }
 
         // Peaceful exploration - gain some XP
-        var xpGained = Random.Shared.Next(10, 30);
+        var xpGained = _random.Next(10, 30);
         var oldLevel = player.Level;
         player.GainExperience(xpGained);
         bool leveledUp = player.Level > oldLevel;
@@ -104,14 +116,14 @@ public class ExplorationService
         }
 
         // Find gold
-        var goldFound = Random.Shared.Next(5, 25);
+        var goldFound = _random.Next(5, 25);
         player.Gold += goldFound;
         await _mediator.Publish(new GoldGained(player.Name, goldFound));
 
         Item? itemFound = null;
 
         // Random chance to find an item (30% chance)
-        if (Random.Shared.Next(100) < 30)
+        if (_random.Next(100) < 30)
         {
             // Get current location object
             var currentLoc = _knownLocations.FirstOrDefault(l => l.Name == _gameState.CurrentLocation);

@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RealmEngine.Core.Features.Exploration.Services;
 using RealmEngine.Core.Generators.Modern;
+using RealmEngine.Core.Tests.Infrastructure;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 
@@ -15,11 +16,12 @@ namespace RealmEngine.Core.Tests.Features.Exploration;
 [Trait("Category", "Feature")]
 public class DungeonGeneratorServiceTests
 {
-    private static DungeonGeneratorService CreateService() =>
+    private static DungeonGeneratorService CreateService(IRandomSource? randomSource = null) =>
         new(new EnemyGenerator(
                 Mock.Of<IEnemyRepository>(),
                 NullLogger<EnemyGenerator>.Instance),
-            NullLogger<DungeonGeneratorService>.Instance);
+            NullLogger<DungeonGeneratorService>.Instance,
+            randomSource ?? FakeRandomSource.Seeded(20260101));
 
     private static Location MakeDungeon(int dangerRating = 3, List<string>? features = null) =>
         new()
@@ -113,6 +115,24 @@ public class DungeonGeneratorServiceTests
         var dungeon = await service.GenerateDungeonAsync(MakeDungeon(dangerRating: 3), 5);
 
         dungeon.Rooms.First().Type.Should().NotBe("boss");
+    }
+
+    [Fact]
+    public async Task GenerateDungeonAsync_Should_Produce_The_Room_Types_The_Rolls_Select()
+    {
+        // Arrange — a 5-room easy dungeon. Rolls in order:
+        // 5 rooms; room 1 combat (descr 0, 1 enemy); room 2 rest (0); room 3 treasure (0, 50 gold);
+        // room 4 combat (99, descr 0, 1 enemy); room 5 is always the boss.
+        var random = FakeRandomSource.Returning(5, 0, 1, 0, 0, 0, 0, 50, 99, 0, 1);
+        var service = CreateService(random);
+
+        // Act
+        var dungeon = await service.GenerateDungeonAsync(MakeDungeon(dangerRating: 1), 5);
+
+        // Assert
+        dungeon.TotalRooms.Should().Be(5);
+        dungeon.Rooms.Select(r => r.Type).Should().Equal("combat", "rest", "treasure", "combat", "boss");
+        dungeon.Rooms[2].GoldReward.Should().Be(50 * dungeon.Level);
     }
 
     // ------------------------------------------------------------------

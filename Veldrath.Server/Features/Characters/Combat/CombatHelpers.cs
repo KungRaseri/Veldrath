@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Hubs;
@@ -76,12 +77,14 @@ internal static class CombatHelpers
     }
 
     // Picks a random enemy ability (30% chance when abilities exist), returns display name or null.
-    internal static (int damage, string? abilityName) RollEnemyAbility(SpawnedEnemy enemy, Character player)
+    internal static (int damage, string? abilityName) RollEnemyAbility(SpawnedEnemy enemy, Character player, IRandomSource randomSource)
     {
-        if (enemy.Template.Abilities.Count == 0 || Random.Shared.Next(100) >= 30)
+        ArgumentNullException.ThrowIfNull(randomSource);
+
+        if (enemy.Template.Abilities.Count == 0 || randomSource.Next(100) >= 30)
             return (0, null);
 
-        var ability = enemy.Template.Abilities[Random.Shared.Next(enemy.Template.Abilities.Count)];
+        var ability = enemy.Template.Abilities[randomSource.Next(enemy.Template.Abilities.Count)];
         int damage = 0;
 
         if (ability.EffectType == RealmEngine.Shared.Models.PowerEffectType.Damage)

@@ -7,6 +7,7 @@ using RealmEngine.Core.Features.Harvesting;
 using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Services.Harvesting;
+using RealmEngine.Core.Tests.Infrastructure;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Repositories;
@@ -358,10 +359,86 @@ public class HarvestingIntegrationTests
         mountainNodes.Should().Contain(n => n.NodeId == "mountain-copper-001");
     }
 
+    [Fact]
+    public async Task HarvestNode_Should_Report_Critical_When_The_Critical_Roll_Succeeds()
+    {
+        // Arrange — a 0.0 roll is below any configured critical chance.
+        var node = new HarvestableNode
+        {
+            NodeId = "test-critical-001",
+            NodeType = "copper_vein",
+            DisplayName = "Copper Vein",
+            MaterialTier = "common",
+            CurrentHealth = 150,
+            MaxHealth = 150,
+            MinToolTier = 1,
+            BaseYield = 5,
+            LootTableRef = "@loot-tables/harvesting/ores:common-ores",
+            IsRichNode = false,
+            BiomeType = "mountains",
+            LocationId = "iron-peaks"
+        };
+        await _nodeRepository.SpawnNodeAsync(node);
+
+        var handler = GetHandler(FakeRandomSource.ReturningDoubles(0.0));
+
+        // Act
+        var result = await handler.Handle(new HarvestNodeCommand
+        {
+            CharacterName = "TestMiner",
+            NodeId = "test-critical-001",
+            EquippedToolRef = "@items/tools/pickaxes:iron-pickaxe",
+            SkillRankOverride = 20
+        }, CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeTrue($"Failure reason: {result.FailureReason}");
+        result.WasCritical.Should().BeTrue();
+        result.Message.Should().Contain("CRITICAL HARVEST");
+    }
+
+    [Fact]
+    public async Task HarvestNode_Should_Not_Report_Critical_When_The_Critical_Roll_Fails()
+    {
+        // Arrange — a 0.99 roll is above any configured critical chance.
+        var node = new HarvestableNode
+        {
+            NodeId = "test-ordinary-001",
+            NodeType = "copper_vein",
+            DisplayName = "Copper Vein",
+            MaterialTier = "common",
+            CurrentHealth = 150,
+            MaxHealth = 150,
+            MinToolTier = 1,
+            BaseYield = 5,
+            LootTableRef = "@loot-tables/harvesting/ores:common-ores",
+            IsRichNode = false,
+            BiomeType = "mountains",
+            LocationId = "iron-peaks"
+        };
+        await _nodeRepository.SpawnNodeAsync(node);
+
+        var handler = GetHandler(FakeRandomSource.ReturningDoubles(0.99));
+
+        // Act
+        var result = await handler.Handle(new HarvestNodeCommand
+        {
+            CharacterName = "TestMiner",
+            NodeId = "test-ordinary-001",
+            EquippedToolRef = "@items/tools/pickaxes:iron-pickaxe",
+            SkillRankOverride = 20
+        }, CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeTrue($"Failure reason: {result.FailureReason}");
+        result.WasCritical.Should().BeFalse();
+        result.Message.Should().NotContain("CRITICAL HARVEST");
+    }
+
     /// <summary>
     /// Helper method to create a configured handler instance.
     /// </summary>
-    private HarvestNodeCommandHandler GetHandler()
+    private HarvestNodeCommandHandler GetHandler(IRandomSource? randomSource = null)
     {
         var localLoggerFactory = LoggerFactory.Create(builder => builder.SetMinimumLevel(LogLevel.Warning));
 
@@ -377,7 +454,8 @@ public class HarvestingIntegrationTests
 
         var criticalService = new CriticalHarvestService(
             localLoggerFactory.CreateLogger<CriticalHarvestService>(),
-            _config
+            _config,
+            randomSource ?? FakeRandomSource.Seeded(20260101)
         );
 
         // Use InMemoryLootTableRepository + mocked DbContextFactory

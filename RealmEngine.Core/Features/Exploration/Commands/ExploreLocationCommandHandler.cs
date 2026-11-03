@@ -3,7 +3,9 @@ using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Core.Services;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Services;
 namespace RealmEngine.Core.Features.Exploration.Commands;
 
 /// <summary>
@@ -15,6 +17,7 @@ public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationComm
     private readonly IGameStateService _gameState;
     private readonly ILogger<ExploreLocationCommandHandler> _logger;
     private readonly ItemGenerator? _itemGenerator;
+    private readonly IRandomSource _random;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExploreLocationCommandHandler"/> class.
@@ -23,12 +26,14 @@ public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationComm
         IMediator mediator,
         IGameStateService gameState,
         ILogger<ExploreLocationCommandHandler> logger,
-        ItemGenerator? itemGenerator = null)
+        ItemGenerator? itemGenerator = null,
+        IRandomSource? randomSource = null)
     {
         _mediator = mediator;
         _gameState = gameState;
         _logger = logger;
         _itemGenerator = itemGenerator;
+        _random = randomSource ?? SystemRandomSource.Shared;
     }
 
     /// <summary>
@@ -44,7 +49,7 @@ public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationComm
             var player = _gameState.Player;
 
             // 60% chance of combat encounter, 40% chance of peaceful exploration
-            var encounterRoll = Random.Shared.Next(100);
+            var encounterRoll = _random.Next(100);
 
             if (encounterRoll < 60)
             {
@@ -52,7 +57,7 @@ public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationComm
             }
 
             // Peaceful exploration - gain some XP
-            var xpGained = Random.Shared.Next(10, 30);
+            var xpGained = _random.Next(10, 30);
             var oldLevel = player.Level;
             player.GainExperience(xpGained);
 
@@ -63,14 +68,14 @@ public class ExploreLocationCommandHandler : IRequestHandler<ExploreLocationComm
             }
 
             // Find gold
-            var goldFound = Random.Shared.Next(5, 25);
+            var goldFound = _random.Next(5, 25);
             player.Gold += goldFound;
             await _mediator.Publish(new GoldGained(player.Name, goldFound), cancellationToken);
 
             string? itemFound = null;
 
             // Random chance to find an item (30% chance)
-            if (Random.Shared.Next(100) < 30 && _itemGenerator != null)
+            if (_random.Next(100) < 30 && _itemGenerator != null)
             {
                 var item = await GenerateLocationItem(player.Level);
                 if (item != null)

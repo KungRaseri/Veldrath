@@ -4,6 +4,8 @@ using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Features.Exploration;
 using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Core.Services;
+using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Services;
 
 namespace RealmEngine.Core.Features.Exploration.Commands;
 
@@ -18,6 +20,7 @@ public class GenerateEnemyForLocationHandler : IRequestHandler<GenerateEnemyForL
     private readonly LocationGenerator _locationGenerator;
     private readonly EnemyGenerator _enemyGenerator;
     private readonly ILogger<GenerateEnemyForLocationHandler> _logger;
+    private readonly IRandomSource _random;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GenerateEnemyForLocationHandler"/> class.
@@ -27,13 +30,15 @@ public class GenerateEnemyForLocationHandler : IRequestHandler<GenerateEnemyForL
         ExplorationService explorationService,
         LocationGenerator locationGenerator,
         EnemyGenerator enemyGenerator,
-        ILogger<GenerateEnemyForLocationHandler> logger)
+        ILogger<GenerateEnemyForLocationHandler> logger,
+        IRandomSource? randomSource = null)
     {
         _gameState = gameState;
         _explorationService = explorationService;
         _locationGenerator = locationGenerator;
         _enemyGenerator = enemyGenerator;
         _logger = logger;
+        _random = randomSource ?? SystemRandomSource.Shared;
     }
 
     /// <summary>
@@ -115,7 +120,7 @@ public class GenerateEnemyForLocationHandler : IRequestHandler<GenerateEnemyForL
                 .ToList();
 
             return appropriateEnemies.Any()
-                ? appropriateEnemies[Random.Shared.Next(appropriateEnemies.Count)]
+                ? appropriateEnemies[_random.Next(appropriateEnemies.Count)]
                 : enemies.FirstOrDefault();
         }
         catch (Exception ex)
