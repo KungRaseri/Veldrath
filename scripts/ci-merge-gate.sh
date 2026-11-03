@@ -120,6 +120,19 @@ BEGIN { in_on = 0; sect = ""; key = ""; anch = ""; pr = 0 }
       nameval = unquote(trim(substr(raw, 6)))
     }
     in_on = (raw == "on:" || raw ~ /^on:[ \t]*$/)
+    # YAML also allows the events inline: `on: [push, pull_request]`. An inline list
+    # cannot carry branches/paths filters, so it is a pull_request trigger with none —
+    # counting it keeps L3/L4 from silently ignoring such a workflow.
+    if (raw ~ /^on:[ \t]*\[/) {
+      evlist = raw
+      sub(/^on:[ \t]*\[/, "", evlist)
+      sub(/\].*$/, "", evlist)
+      nev = split(evlist, evs, ",")
+      for (i = 1; i <= nev; i++) {
+        e = unquote(trim(evs[i]))
+        if (e == "pull_request") { pr = 1; prln = NR }
+      }
+    }
     sect = ""; key = ""; anch = ""
     next
   }
@@ -391,7 +404,7 @@ run_lint() {
   fi
 
   if [ "$fail" -ne 0 ]; then
-    printf '\nci-merge-gate: FAILED — see the ✗ lines above\n' >&2
+    printf '\nci-merge-gate: FAILED — see the ✗ lines above\n'
     exit 1
   fi
 
@@ -425,7 +438,7 @@ run_uncovered() {
   scan_workflows
   load_pr_patterns
 
-  local badalias idx ln name
+  local idx ln name
   for idx in "${!SCANS[@]}"; do
     while IFS=$'\t' read -r ln name; do
       [ -n "$name" ] || continue
