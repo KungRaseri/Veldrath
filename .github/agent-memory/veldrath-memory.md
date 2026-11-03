@@ -227,7 +227,6 @@ Server.Tests: 468 passing (unchanged — schema picked up automatically via `Ens
 - `ServerStatusServiceTests` uses event-based (`TaskCompletionSource`) assertions, not wall-clock timeouts, to avoid flakiness under parallel test runs
 
 
-
 **Problem fixed**: When server was offline at client launch, SplashViewModel ignored RefreshAsync failure, leaving stale tokens in memory. This caused a redirect loop (always landing on CharacterSelect) and logout not clearing auth buttons properly.
 
 **New components**:
@@ -391,7 +390,6 @@ When deleting all zones in tests: delete `ZoneConnections` first (FK Restrict on
 > **See [`.github/instructions/ef-core-patterns.md`](../../.github/instructions/ef-core-patterns.md) for the canonical DbContext separation rules, migration workflow, entity placement conventions, and now four DbContexts (Application, Game, Content, Editorial).**
 
 Historical note: DbContext separation was established in session-6 when `GameDbContext` was extracted from `ApplicationDbContext` to fix Docker startup failures. `EditorialDbContext` was added in session-35 for patch notes, lore articles, and editorial announcements. Server operational entities (`ServerSaveGameRepository`, `ServerHallOfFameRepository`) inject `GameDbContext`, not `ApplicationDbContext`.
-
 
 
 ### ActorClassDto (breaking change, session-3)
@@ -1079,7 +1077,6 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
 **Remaining**: Phase 9 optional RealmForge map graph editor and JSON import/export.
 
 ---
-
 
 
 ---
@@ -3328,7 +3325,7 @@ inference: probe PR #32 (branch `probe-x`, head `b59e841d`, only `.gitignore` ch
 `{"state":"","total_count":0}` and `[]` for statuses, `mergeable: true` for the pull request, and
 `405 not allowed to merge [reason: Not all required status checks successful]` for
 `POST /pulls/32/merge {"force_merge": false}`. The PR was closed and the branch deleted. The
-workflow and script land in card `t_48d8d3c1`.
+workflow and script landed in card `t_48d8d3c1` (PR #37).
 
 One correction to the force_merge reasoning recorded above: the token every worker runs with is the
 instance administrator (`GET /user` → `kungraseri`, `is_admin: true`), so `force_merge` **is**
@@ -3338,6 +3335,20 @@ satisfy `["*"]`, because either one lets a worker certify its own merge. The API
 `GET .../commits/{sha}/statuses` also lists every state transition of a context, while the gate reads
 the latest row per context (`GetLatestCommitStatus`, `services/pull/commit_status.go:128`) — a stale
 `pending` row beside a `success` is not a red gate.
+
+**Landed (2026-11-03, card `t_48d8d3c1`, PR #37).** `.github/workflows/merge-gate.yml` and
+`scripts/ci-merge-gate.sh` exist, so the context
+`CI - Merge gate / Merge gate reports on every pull request (pull_request)` now reports on every pull
+request into `development` or `main` and `["*"]` always has a status to evaluate. Measured on PR #37
+head `3ea0176f`: run 1349 `success` in **5 s** (`duration` on `GET /actions/runs/1349`; `pending` row
+19:25:44Z → `success` row 19:25:50Z), combined commit status `{"state":"success","total_count":2}`
+next to `Deploy Documentation / Build Docs (pull_request)`. The job is one depth-1 checkout plus the
+lint; it must stay offline and dependency-free. `--uncovered` is the follow-up inventory — it
+reproduces the runner's `PatternToRegex` translation (`**/` → `(.+/)?`, so `**/*.md` matches a root
+`AGENTS.md`; the naive `**` → `.*` would over-report), and it now reports **41 paths** because the
+gate and its script are themselves tracked and named by no `paths` list (`merge-gate.yml` declares no
+paths at all). A change confined to one of those 41 still merges on the merge-gate status alone, with
+no component build.
 
 ### Session-96 (2026-11-03) — The .NET coverage gate landed, and settling it moved no floor
 

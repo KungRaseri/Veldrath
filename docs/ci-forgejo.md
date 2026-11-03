@@ -274,7 +274,7 @@ nothing; the later upstream change that emits a `skipped` status for filtered wo
 (go-gitea/gitea#38237) is **not** in 15.0.11.
 
 Measured, not assumed: PR #14 (head `95ecfecc`, a `plans/*.md` change) carries exactly one
-status, `Deploy Documentation / Build Docs (pull_request)`. Four of those five names would
+status, `Deploy Documentation / Build Docs (pull_request)`. Five of those six names would
 never report on it, so with the list every documentation and `plans/` pull request this
 repository opens would deadlock.
 
@@ -343,22 +343,17 @@ head commit carried zero statuses, and it became mergeable only when `97d20257` 
 git-level only and never predicts this.
 
 **Decision (2026-11-03): `["*"]` stays, and one workflow reports on every pull request.**
-`.github/workflows/merge-gate.yml` triggers on `pull_request` for `main` and
+[`merge-gate.yml`](../.github/workflows/merge-gate.yml) triggers on `pull_request` for `main` and
 `development` and declares **no `paths` filter**. With no `paths` key there is no paths condition to
 satisfy: `matchPullRequestEvent` in `modules/actions/workflows.go` (v15.0.11) iterates only the acts
 the workflow declares and returns `activityTypeMatched && matchTimes == len(evt.Acts())`, so
 `branches` narrows the run and nothing else does.
 
-> **Implementation status (2026-11-03).** This subsection records the decision;
-> `.github/workflows/merge-gate.yml` and `scripts/ci-merge-gate.sh` land in their own pull request
-> (card `t_48d8d3c1`). Until it merges, a root-config-only pull request still carries zero statuses
-> and `force_merge` remains the only unblock.
-
 The alternatives were measured against the tree instead of argued:
 
 | Alternative | Why not |
 |---|---|
-| Add root-config paths to an existing list | The set is not three files: 39 tracked paths in six classes match no list today (table below), and every new root file reopens the deadlock silently. It is also conceptually false — no component's output depends on `.gitignore` |
+| Add root-config paths to an existing list | The set is not three files: 41 tracked paths in seven classes match no list today (table below), and every new root file reopens the deadlock silently. It is also conceptually false — no component's output depends on `.gitignore` |
 | Keep `["*"]` and document `force_merge` for this class | It works, and that is the objection: the token every worker here authenticates with belongs to the instance administrator (`GET /user` → `kungraseri`, `is_admin: true`), and `CheckPullMergeable` clears the protection error for an admin. Documenting it would make "any worker certifies its own merge" the routine path — the same reason posting a status by hand is forbidden. It stays break-glass |
 | Switch to named contexts | Already rejected above, and this does not change it: a path-filtered workflow still never reports |
 
@@ -378,10 +373,12 @@ repository has actually broken CI, plus the invariant that keeps this remedy ali
   deadlock returns, so the lint fails the pull request that does it.
 
 Cost: one job — one `actions/checkout@v7` and one `bash scripts/ci-merge-gate.sh --lint`, with no
-SDK, npm, docker or service container. For scale, the six build gates that reported on `0efb7c7c`
-recorded between 93 s and 485 s each (`duration` on `GET /actions/runs/{id}`; the cheapest was
-`Build Docs` at 93 s, run 1325), and this job only checks out a depth-1 tree and greps it. It runs on
-every pull request into `development` or `main`, which is the point.
+SDK, npm, docker or service container. **Measured on 2026-11-03: 5 s** for the whole job (`duration`
+on `GET /actions/runs/1349`, run 1349, head `3ea0176f`, PR #37; the `pending` row was written at
+19:25:44Z and the `success` row at 19:25:50Z). For scale, the six build gates that reported on
+`0efb7c7c` recorded between 93 s and 485 s each (`duration` on `GET /actions/runs/{id}`; the cheapest
+was `Build Docs` at 93 s, run 1325), and this job only checks out a depth-1 tree and greps it. It
+runs on every pull request into `development` or `main`, which is the point.
 
 **Unblocking without bypassing.** If the status is missing because the branch head predates this
 workflow, the certain fix is a new commit: any push to the branch re-triggers `pull_request`, and the
@@ -422,10 +419,10 @@ posting a status by hand stays forbidden: a status any agent can mint certifies 
 
 #### Files that no component workflow builds
 
-Measured against the tree on 2026-11-03 (`git ls-files`, 3468 paths): **39 paths match no
-`on.pull_request.paths` pattern.** Before the merge gate they produced zero statuses and deadlocked
-the gate; once it lands they produce exactly one — the merge gate — and merge with **no build and no
-test**. Regenerate the list with `bash scripts/ci-merge-gate.sh --uncovered`.
+Measured against the tree on 2026-11-03 (`git ls-files`, 3470 paths, the merge gate and its script
+included): **41 paths match no `on.pull_request.paths` pattern.** Before the merge gate they produced
+zero statuses and deadlocked the gate; now they produce exactly one — the merge gate — and merge with
+**no build and no test**. Regenerate the list with `bash scripts/ci-merge-gate.sh --uncovered`.
 
 | Class | Count | Paths |
 |---|---|---|
@@ -433,8 +430,9 @@ test**. Regenerate the list with `bash scripts/ci-merge-gate.sh --uncovered`.
 | Root build metadata | 3 | `NuGet.config`, `dotnet-tools.json`, `toc.yml` |
 | Solution files | 4 | `RealmEngine.slnx`, `Veldrath.Discord.slnx`, `Veldrath.Libraries.slnx`, `Veldrath.Server.slnx` |
 | Observability and deploy config | 10 | `config/grafana/dashboards/{10915,19194,23178,23179}.json`, `config/grafana/provisioning/dashboards/dashboards.yml`, `config/grafana/provisioning/datasources/prometheus.yml`, `config/prometheus/prometheus.yml`, `docker-compose.coolify.yml`, `docker-compose.dev.yml`, `docker-compose.prod.yml` |
-| Scripts no workflow names | 11 | `scripts/apply-branch-protection.sh`, `scripts/lib/forgejo-api.sh`, `scripts/format-json-files.py`, `scripts/create-release-tag.ps1`, `scripts/download-assets.ps1`, `scripts/generate-coverage-report.ps1`, `scripts/generate-version.ps1`, `scripts/package-assets.ps1`, `scripts/sync-assets.ps1`, `scripts/onebit_labeled.png`, `scripts/roguelike_base_labeled.png` |
+| Scripts no workflow names | 12 | `scripts/apply-branch-protection.sh`, `scripts/ci-merge-gate.sh`, `scripts/lib/forgejo-api.sh`, `scripts/format-json-files.py`, `scripts/create-release-tag.ps1`, `scripts/download-assets.ps1`, `scripts/generate-coverage-report.ps1`, `scripts/generate-version.ps1`, `scripts/package-assets.ps1`, `scripts/sync-assets.ps1`, `scripts/onebit_labeled.png`, `scripts/roguelike_base_labeled.png` |
 | Submodule pin | 1 | `wiki` |
+| The always-on check itself | 1 | `.github/workflows/merge-gate.yml` (it declares no `paths` at all, so no list can name it) |
 
 Two of those classes deserve an explicit warning, because "merges without a build" is not the same
 as "cannot break the build":
