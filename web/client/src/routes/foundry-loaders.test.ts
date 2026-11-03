@@ -625,3 +625,110 @@ function staffEventWithParent(roles: string[], id: string): FakeServerEvent {
 	event.parent = (async () => ({ access: { roles, permissions: [] } })) as never;
 	return event;
 }
+
+/**
+ * Fallback copy and status codes.
+ *
+ * Every server client returns `{ status, data, error }`, and every caller has a `?? '…'` or
+ * `status || 502` for the case where the API answered without a message (a transport failure, or a
+ * 204 body-less response). Those are the branches a happy-path test never reaches, and they are
+ * what the player actually reads when the server is unreachable, so they are asserted directly.
+ */
+describe('fallbacks when the API answers without a message', () => {
+	const params = { type: 'power', slug: 'fireball' };
+	const values = { displayName: 'Firebolt', 'stats.cooldown': '5' };
+	const silent = (status = 0) => ({ status, data: null, error: null });
+
+	it('404s with the default text when the detail call has no message', async () => {
+		contentApi.getContentDetail.mockResolvedValue(silent(404));
+
+		expect(await thrownMessage(() => callLoad(contentDetail, signedIn({ params })))).toBe(
+			'Content entry not found.'
+		);
+	});
+
+	it('names the content type when no schema is registered and no message came back', async () => {
+		contentApi.getContentTypeSchema.mockResolvedValue(silent(404));
+
+		expect(await thrownMessage(() => callLoad(editPage, signedIn({ params })))).toBe(
+			"No schema is registered for content type 'power'."
+		);
+	});
+
+	it('falls back to 502 and the action-specific copy for a silent failure', async () => {
+		contentApi.validateContentPayload.mockResolvedValue(silent());
+
+		const validate = (await action(editActions.validate, values, { params })) as {
+			status: number;
+			data: { message: string };
+		};
+		expect(validate.status).toBe(502);
+		expect(validate.data.message).toBe('Validation failed.');
+
+		contentApi.updateContent.mockResolvedValue(silent());
+		const save = (await action(editActions.save, values, { params })) as {
+			status: number;
+			data: { message: string };
+		};
+		expect(save.status).toBe(502);
+		expect(save.data.message).toBe('The save failed.');
+
+		contentApi.deactivateContent.mockResolvedValue(silent());
+		const deactivate = (await action(editActions.deactivate, {}, { params })) as {
+			status: number;
+			data: { message: string };
+		};
+		expect(deactivate.status).toBe(502);
+		expect(deactivate.data.message).toBe('The deactivation failed.');
+	});
+
+	it('accepts a non-Error status and redirects after a deactivation', async () => {
+		contentApi.deactivateContent.mockResolvedValue({ status: 409, data: null, error: 'Locked' });
+
+		const blocked = (await action(editActions.deactivate, {}, { params })) as {
+			status: number;
+			data: { message: string };
+		};
+		expect(blocked.status).toBe(409);
+		expect(blocked.data).toEqual({ message: 'Locked' });
+
+		contentApi.deactivateContent.mockResolvedValue(ok({ slug: 'fireball' }));
+		expect(await redirectTo(() => action(editActions.deactivate, {}, { params }))).toBe(
+			'/content/power'
+		);
+	});
+
+	it('coerces boolean form fields and skips ones the form did not send', async () => {
+		// A Boolean-typed field is the only place the 'true'/'false' string coercion matters.
+		contentApi.getContentTypeSchema.mockResolvedValue(
+			ok({
+				...schema,
+				groups: [
+					{ label: 'Flags', fields: [field('isActive', 'Boolean'), field('isHidden', 'Boolean')] }
+				]
+			})
+		);
+		contentApi.updateContent.mockResolvedValue(ok({ isValid: true, errors: [], warnings: [] }));
+
+		await action(editActions.save, { isActive: 'false' }, { params });
+
+		expect(contentApi.updateContent).toHaveBeenCalledWith(
+			expect.anything(),
+			'power',
+			'fireball',
+			expect.objectContaining({ isActive: false }),
+			detail.summary.updatedAt
+		);
+	});
+
+	it('uses the fallback copy for the language, notification, and submission actions', async () => {
+		foundryApi.createSubmission.mockResolvedValue(silent());
+		const create = (await action(
+			submissionActions.create,
+			{ contentType: 'Item', title: 'Ember', payload: '{}' },
+			{}
+		)) as { status: number; data: { error: string } };
+		expect(create.status).toBe(400);
+		expect(create.data.error).toBe('Could not create the submission.');
+	});
+});

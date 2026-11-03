@@ -570,6 +570,116 @@ Still red: the `src/**/*.svelte` floor (58.05% lines — staff pages, layout chr
 `src/routes/**/*.ts` branches at 76.33%, and `src/lib/game/**/*.ts` branches at 82.74 (`session.svelte.ts`
 guards, tracked with the `GameOverlays` work).
 
+### PR 13 — the staff surfaces, the overlays, and the branch tail
+
+Six new suites plus two for the request hook, 153 tests — the first commit of this PR. Starting from
+PR 12's **71.35% lines / 63.37% statements / 68.15% functions / 62.39% branches** it reaches **96.85 /
+96.85 / 96.44 / 81.71** (815 tests in 56 files). Lines, statements and functions now clear the 90 gate
+and every per-glob line/statement/function floor. **Branch coverage was the remaining red gate** at
+that point, and it was the only thing standing between this pass and the 90% the user chose — the
+second commit below closes it.
+
+| Suite | Covers | Tests |
+|---|---|---|
+| `src/routes/pages-staff.test.ts` | the nine admin pages and the four moderation pages | 28 |
+| `src/routes/pages-editorial.test.ts` | the editorial overview, three lists, three editors | 19 |
+| `src/routes/pages-foundry.test.ts` | content index/browse/detail/editor, languages, notifications, submissions | 25 |
+| `src/routes/pages-site.test.ts` | root layout, header, footer, pager, `+error`, community, roster, patch-note article | 33 |
+| `src/lib/game/overlays.test.ts` | quest log, shop, abilities, attributes, item details, party, settings, toasts | 23 |
+| `src/lib/game/widgets.test.ts` | item tooltip, game header, combat panel, quest tracker | 14 |
+| `src/hooks.server.test.ts` + `src/hooks.server.build.test.ts` | session copy onto `locals`, prerender bypass, `handleError` | 5 |
+| `src/routes/foundry-loaders.test.ts` (extended) | the `?? '…'` / `status \|\| 502` fallbacks | +6 |
+
+Traps worth recording:
+
+- **A bits-ui dialog is named by its title, not its `aria-label`.** `getByRole('dialog', { name:
+  'Item details' })` fails; the accessible name is the `Dialog.Title` content, so it is
+  `{ name: 'Ember blade' }` there and `{ name: /Shop/ }` for a titled shop.
+- **`anchor` is a testing-library mount option**, so passing it as a plain prop makes `render()`
+  throw `UnknownSvelteOptionsError`. Pass `{ props: { …, anchor } }` instead.
+- **Every repeated string needs counting, not matching.** Staff pages put the same word in a filter
+  `<option>` and a status chip (`Open`, `Banned`, `Published`), so `getByText` throws
+  "found multiple"; the assertions use `getAllByText(…).toHaveLength(2)` and say why.
+- **Identity lines are concatenated nodes**, so an email assertion goes through
+  `document.body.textContent` rather than `getByText`.
+- **`$app/env` has to be mocked twice.** `building` is a compile-time flag; a single file cannot see
+  both sides of it, hence `hooks.server.build.test.ts` beside `hooks.server.test.ts` — branch
+  coverage merges across files, a mock does not merge across imports.
+- **The roster's `lastSession` lookup is a two-step guard**: `data.lastSession` truthy and a
+  matching character in the list. Covering only the matched case leaves the `?? null` side dark.
+- Local runs need `web/client/.env` (gitignored) mirroring the `ci-web.yml` job env; without
+  `PUBLIC_API_URL` / `PUBLIC_HUB_URL` SvelteKit refuses to start under Vitest with `env_invalid`.
+
+#### Branch coverage closed (second commit of PR 13)
+
+The gate is green. 24 branch-focused suites, 281 tests, moving the measured figures from the
+staff-surface commit's 96.85 / 96.85 / 96.44 / 81.71 to:
+
+| Metric | Before (first commit) | After (branch-tail commit) |
+|---|---|---|
+| Lines | 96.85% | **99.19%** (4702/4740) |
+| Statements | 96.85% | **99.24%** (7596/7654) |
+| Functions | 96.44% | **98.83%** (1614/1633) |
+| Branches | 81.71% | **95.54%** (2937/3074) |
+
+Every floor now clears, not just the global gate:
+
+| Glob | Floor | Measured (lines / statements / branches / functions) |
+|---|---|---|
+| global | 90 | 99.19 / 99.24 / 95.54 / 98.83 |
+| `src/lib/server/**` | 92 | 99.67 / 99.68 / 100 / 100 |
+| `src/lib/game/**/*.ts` | 92 | 99.73 / 99.54 / 99.47 / 100 |
+| `src/lib/foundry/**` | 92 | 100 / 100 / 98.08 / 100 |
+| `src/routes/**/*.ts` | 90 | 99.49 / 99.53 / 97.83 / 100 |
+| `src/**/*.svelte` | 85 / 85 / 80 / 85 | 98.95 / 99.13 / 92.66 / 98.38 |
+
+Each row is measured over exactly the files its glob selects. Vitest resolves these threshold globs
+with `pm(glob)` against root-relative paths, so `src/lib/game/**/*.ts` and `src/routes/**/*.ts` never
+match the `.svelte` files beside them; the whole-directory aggregates that do include those components
+are lower (99.88 / 99.49 / 95.68 / 99.08 and 98.70 / 99.04 / 94.77 / 98.34) and are not the floored
+numbers.
+
+`cd web && npm run coverage --workspace client` — **80 files, 1096 tests, all passing, exit 0**, so
+the thresholds are enforced rather than merely reported.
+
+The suites are companions, not replacements: each one targets only the arms its predecessor left
+dark, which keeps a failure pointing at a specific behaviour instead of at "a branch". The shape is
+consistent enough to reuse:
+
+| Group | Suites | What they add |
+|---|---|---|
+| Game shell and overlays | `game-screen-arms`, `game-overlays-arms`, `left-sidebar-branches`, `shell-branches`, `widgets-branches`, `item-icons-branches` | the sparse-value side of every interpolated label, the untaken `switch` default, pending-discard and tooltip state |
+| Pure game logic | `session-events`, `reducers-branches`, `cardinal-layout-branches`, `point-buy-branches`, `types-branches` | optional-field event arms, name-check race guards, the direction switches in the map layout, unpriced cost entries |
+| Routes | `pages-creation-branches`, `pages-staff-branches`, `pages-foundry-branches`, `pages-editorial-branches`, `pages-public-branches`, `pages-roster`, `pages-account-branches` | a deliberately sparse payload per page (null counters, absent display names, missing dates) and the `{#if record}` fallback in edit mode |
+| Server modules | `staff-server-branches`, `public-server-branches`, `auth-branches`, `hooks.server-branch` | every upstream rejection as `fail(400)` carrying the API message, list fallbacks, and the lazy Better Auth singleton's half-configured providers |
+| Shared chrome | `hub-branches`, `component-branches` | the non-2xx game-token fetch, and each of the four OAuth click outcomes |
+
+What made the tail tractable:
+
+- **Svelte compiles `{expr}` to `expr ?? ''`.** Nearly every missing branch in a template is that
+  fallback, so one render with a nullish field covers it — no new harness, and the assertion stays
+  on the rendered text, which proves the arm actually ran.
+- **`<select value={…}>` compiles to `if (select_value !== (select_value = …))`.** The false side
+  and the inner `?? ''` cannot execute during a static render, so they are not reachable from a
+  test at all. That is the bulk of the 137 branches still uncovered below.
+- **Shared state needs a fresh render per case.** The overlays, the character sheet, and the wizard
+  each own pending state, so a shared `beforeEach` render leaks it between assertions; `getByRole`
+  also starts matching a neighbouring panel if two are mounted.
+
+Residual uncovered branches: **137 of 3074**, none of them a gate. 46 files hold at least one; the
+largest are `characters/new/+page.svelte` (17), `GameOverlays.svelte` (14),
+`(foundry)/…/edit/+page.server.ts` (10), `LeftSidebar.svelte` (8), and `GameScreen.svelte` (6).
+They are compiled-guard artefacts and defensive arms for states the API cannot currently produce,
+so they are recorded rather than chased — a branch number is not worth a test that asserts nothing.
+
+There is a small residual on lines too, so 99.19% should not be read as full coverage:
+`src/routes/game/+page.svelte` (the client-side redirect fallback, 5 lines) and
+`src/routes/play/[id]/+page.svelte` (mounts `GameScreen` and calls `session.connect`/`disconnect`,
+8 lines) report **0%** and account for **13 of the 38** uncovered lines app-wide. Neither body runs
+without a live server, hub and character: the e2e suite (`tests/game-auth.e2e.ts`) only asserts their
+unauthenticated redirects, so today they are covered by nothing. That is 13 lines of wiring rather
+than a gate, but it is why the line number is 99.19% and not 100%.
+
 ## Traps
 
 - `$app/*` imports must resolve in Vitest before any route test can run.
