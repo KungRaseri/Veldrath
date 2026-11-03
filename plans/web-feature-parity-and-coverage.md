@@ -570,6 +570,74 @@ Still red: the `src/**/*.svelte` floor (58.05% lines — staff pages, layout chr
 `src/routes/**/*.ts` branches at 76.33%, and `src/lib/game/**/*.ts` branches at 82.74 (`session.svelte.ts`
 guards, tracked with the `GameOverlays` work).
 
+### PR 13 — the staff surfaces, the overlays, and the branch tail
+
+Six new suites plus two for the request hook, 153 tests, taking the measured figures from PR 12's
+**71.35% lines / 63.37% statements / 68.15% functions / 62.39% branches** to **96.85 / 96.85 /
+96.44 / 81.71** (815 tests in 56 files). Lines, statements and functions now clear the 90 gate and
+every per-glob line/statement/function floor. **Branch coverage is the remaining red gate**, and it
+is the only thing standing between this pass and the 90% the user chose.
+
+| Suite | Covers | Tests |
+|---|---|---|
+| `src/routes/pages-staff.test.ts` | the nine admin pages and the four moderation pages | 28 |
+| `src/routes/pages-editorial.test.ts` | the editorial overview, three lists, three editors | 19 |
+| `src/routes/pages-foundry.test.ts` | content index/browse/detail/editor, languages, notifications, submissions | 25 |
+| `src/routes/pages-site.test.ts` | root layout, header, footer, pager, `+error`, community, roster, patch-note article | 33 |
+| `src/lib/game/overlays.test.ts` | quest log, shop, abilities, attributes, item details, party, settings, toasts | 23 |
+| `src/lib/game/widgets.test.ts` | item tooltip, game header, combat panel, quest tracker | 14 |
+| `src/hooks.server.test.ts` + `src/hooks.server.build.test.ts` | session copy onto `locals`, prerender bypass, `handleError` | 5 |
+| `src/routes/foundry-loaders.test.ts` (extended) | the `?? '…'` / `status \|\| 502` fallbacks | +6 |
+
+Traps worth recording:
+
+- **A bits-ui dialog is named by its title, not its `aria-label`.** `getByRole('dialog', { name:
+  'Item details' })` fails; the accessible name is the `Dialog.Title` content, so it is
+  `{ name: 'Ember blade' }` there and `{ name: /Shop/ }` for a titled shop.
+- **`anchor` is a testing-library mount option**, so passing it as a plain prop makes `render()`
+  throw `UnknownSvelteOptionsError`. Pass `{ props: { …, anchor } }` instead.
+- **Every repeated string needs counting, not matching.** Staff pages put the same word in a filter
+  `<option>` and a status chip (`Open`, `Banned`, `Published`), so `getByText` throws
+  "found multiple"; the assertions use `getAllByText(…).toHaveLength(2)` and say why.
+- **Identity lines are concatenated nodes**, so an email assertion goes through
+  `document.body.textContent` rather than `getByText`.
+- **`$app/env` has to be mocked twice.** `building` is a compile-time flag; a single file cannot see
+  both sides of it, hence `hooks.server.build.test.ts` beside `hooks.server.test.ts` — branch
+  coverage merges across files, a mock does not merge across imports.
+- **The roster's `lastSession` lookup is a two-step guard**: `data.lastSession` truthy and a
+  matching character in the list. Covering only the matched case leaves the `?? null` side dark.
+- Local runs need `web/client/.env` (gitignored) mirroring the `ci-web.yml` job env; without
+  `PUBLIC_API_URL` / `PUBLIC_HUB_URL` SvelteKit refuses to start under Vitest with `env_invalid`.
+
+#### Remaining work: branch coverage
+
+Measured after this PR, every remaining red is a branch floor:
+
+| Gate | Value | Needs |
+|---|---|---|
+| global branches | 81.71% (2512/3074) | 90 → **+255 branches** |
+| `src/lib/game/**/*.ts` branches | 85.23% | 92 |
+| `src/routes/**/*.ts` branches | 79.48% | 90 |
+| `src/**/*.svelte` branches | 78.76% | 80 (≈21 branches) |
+
+Uncovered branches are 353 in `.svelte` files and 209 in TypeScript. The largest holes are the
+character-creation wizard (`characters/new/+page.svelte`, 66), the session store
+(`session.svelte.ts`, 45), and `GameOverlays.svelte` (42). The next unit of work is one PR per
+file group, adding a case per uncovered template conditional — the same shape as the suites above,
+not a new harness. The `.svelte` floor is ~21 branches away and should close first; global 90 is a
+multi-PR effort and the gate stays as it is (never lowered to match).
+
+Two structural points that make the tail cheaper than it looks:
+
+- v8 counts `typeof window === 'undefined' ? … : …` and `?? ''` fallbacks inside compiled templates
+  as branches, and several are unreachable under jsdom. Those need either an honest exclusion with
+  a comment (allowed by Phase 0.4 for code that cannot execute in a test process) or a deliberate
+  test that asserts the fallback value.
+- Nearly every row of a staff table is a conditional (`{item.publishedAt ? date : '—'}`,
+  `{report.isResolved ? … : …}`). A second render case per page with the opposite values covers
+  several branches at once, which is why the page suites above were written in pairs.
+
+
 ## Traps
 
 - `$app/*` imports must resolve in Vitest before any route test can run.
