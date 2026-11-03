@@ -230,27 +230,44 @@ update it under Settings → Actions → Secrets.
 file the repository can diff, so it is recorded here and applied by
 [`scripts/apply-branch-protection.sh`](../scripts/apply-branch-protection.sh):
 
-| Field | Value | Why |
-|---|---|---|
-| `rule_name` | `development`, `main` | The release PR is `development` → `main`; a red merge into either branch is the same bug |
-| `enable_status_check` | `true` | This is the gate |
-| `status_check_contexts` | `["*"]` | "At least one check must report, and every check that reports must be green" — see below |
-| `enable_push` | `false`, whitelist off | A protected branch changes only through a pull request |
-| `required_approvals` | `0` | The instance has one account, and an author cannot approve their own PR |
-| `apply_to_admins` | `true` | A repository admin does not get the "merge anyway" button |
-| `block_on_outdated_branch` | `false` | `zoo-pr` rebases before opening; requiring up-to-date would re-run the matrix on every unrelated merge |
-| `require_signed_commits` | `false` | Commits here are not signed |
 
-> **Read-back on 2026-11-03 (both rules last written 18:56 UTC) does not match this table.**
-> `GET /api/v1/repos/Veldrath/Veldrath/branch_protections` returns `apply_to_admins: false` on both
-> rules, and on `main` `enable_push: true` with `push_whitelist_usernames: ["kungraseri"]`;
-> `scripts/apply-branch-protection.sh --check` exits 1. The table is the *intended* rule — what the
-> script writes and verifies — not a claim about live state. Two consequences while the drift stands:
-> with `apply_to_admins` false a *repository* admin also passes `force_merge`
-> ([`services/pull/check.go`](https://codeberg.org/forgejo/forgejo/src/tag/v15.0.11/services/pull/check.go),
-> the `adminSkipProtectionCheck` branch), and direct pushes to `main` are accepted from that one
-> account, so `main`'s gate is advisory for it. Card `t_7dd9fed0` reconciles the two; the argument
-> for `["*"]` below does not depend on the drift being closed.
+| Field | `development` | `main` | Why |
+|---|---|---|---|
+| `rule_name` | `development` | `main` | The release PR is `development` → `main`; a red merge into either branch is the same bug |
+| `enable_status_check` | `true` | `true` | This is the gate |
+| `status_check_contexts` | `["*"]` | `["*"]` | "Every check that reported must be green" — see below |
+| `enable_push` | `false` | `true` | `main` carries the operator's deploy repair path; `development` takes pull requests only |
+| `enable_push_whitelist` | `false` | `true` | With `push_whitelist_usernames: ["kungraseri"]` — see below |
+| `required_approvals` | `0` | `0` | The instance has one account, and an author cannot approve their own PR |
+| `apply_to_admins` | `false` | `false` | The administrator exemption was removed on request — see below |
+| `block_on_outdated_branch` | `false` | `false` | `zoo-pr` rebases before opening; requiring up-to-date would re-run the matrix on every unrelated merge |
+| `require_signed_commits` | `false` | `false` | Commits here are not signed |
+
+#### Why the admin exemption and the one push account
+
+Both rules were created with `apply_to_admins: true` and no push whitelist. They were
+changed on 2026-11-03 at 18:56 UTC, deliberately and at the operator's request, while all
+four Coolify deployments were failing: `main` pinned the `wiki` submodule at a commit the
+wiki repository never had, so every `git clone --recurse-submodules` died before the build
+started. The fix had to land on `main` — the branch all four apps build from — and the pull
+request carrying it (#31) could not merge while its statuses were pending.
+
+Measured on the way, and the reason the rule has two exceptions rather than one:
+`apply_to_admins: false` does **not** lift `enable_push: false`. The pre-receive hook
+refuses the push for the administrator as well (`Forgejo: Not allowed to push to protected
+branch main`); enabling push for one account is a separate switch.
+
+What each exception costs, stated plainly:
+
+- `apply_to_admins: false` hands *repository* admins the `force_merge` override that
+  `CheckPullMergeable` already gives an instance admin. The instance has one account, so
+  today this changes nothing for the person operating it; it matters the day a second admin
+  exists.
+- `main` accepts pushes from exactly one account, `kungraseri`. Every other identity, and
+  every push to `development`, is still refused by the pre-receive hook. A direct push to
+  `main` skips the status checks, so it is for repairing a broken deployment, never for
+  landing a change.
+
 
 #### Why one glob instead of the component job names
 
@@ -405,20 +422,24 @@ posting a status by hand stays forbidden: a status any agent can mint certifies 
   (`GET /admin/users` returns only `kungraseri`) and Forgejo does not let an author approve
   their own pull request, so any non-zero value would block every merge instead of adding a
   reviewer. Raise it the day a second account exists.
-- **The instance administrator.** `CheckPullMergeable` (`services/pull/check.go`) clears the
-  protection error when `force_merge` is set and the doer is an instance admin;
-  `apply_to_admins` only withholds that override from *repository* admins. That is the
+- **The administrator.** `CheckPullMergeable` (`services/pull/check.go`) clears the
+  protection error when `force_merge` is set and the doer is an instance admin, and because
+  `apply_to_admins` is now `false` a *repository* admin gets the same override. That is the
   break-glass path — a stuck `pending` status must never lock the only operator out — and
   it is why this rule is a review contract, not a lock. Every worker here authenticates as that
   account, so the override is available to an agent, not only to the human at the keyboard: the
   gate is enforced by discipline, and a worker that runs `force_merge` is self-certifying. Use it
   to unblock, never to land a red change.
-- **Direct pushes.** `enable_push: false` with an empty whitelist is what the script writes and what
-  `development` still reports, but `main` currently reports `enable_push: true` with
-  `push_whitelist_usernames: ["kungraseri"]` — see the read-back note above. The refused push was
-  never exercised either way: raw `git push` is denied for these agents, and the sanctioned publish
-  path (`zoo-pr`) refuses to publish an integration branch by name. Treat push protection as
-  configured and read back, not as demonstrated by a rejected push.
+- **Direct pushes to `main`.** Exactly one account, `kungraseri`, may push there; `development`
+  refuses every push, and that refusal was exercised: `git push` to it answers
+  `Forgejo: Not allowed to push to protected branch development` from the pre-receive hook. The
+  hook ignores `apply_to_admins`, so the administrator is not exempt from it either. The bypass is
+  account-only — `push_whitelist_teams: []` and `push_whitelist_deploy_keys: false` are pinned and
+  asserted by the script — so no team and no deploy key inherits it. A push to `main` past the gate
+  is a deploy repair, not a merge path. It was not exercised by an agent: raw `git push` is denied
+  for these agents, and the sanctioned publish path (`zoo-pr`) refuses to publish an integration
+  branch by name, so treat push protection as configured and read back, not as demonstrated by a
+  rejected push.
 
 #### Files that no component workflow builds
 

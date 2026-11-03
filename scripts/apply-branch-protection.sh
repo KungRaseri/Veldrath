@@ -7,6 +7,19 @@
 # when it is missing, edits it when it exists, then reads it back and fails when
 # the stored rule is not what was asked for.
 #
+# Two exceptions to "no direct pushes, by anyone", both deliberate and both
+# recorded in that section of the doc:
+#
+#   * apply_to_admins is false. At the operator's request (2026-11-03) the rule
+#     no longer applies to administrators, so a repository admin also gets the
+#     force_merge override that CheckPullMergeable already gives an instance
+#     admin.
+#   * `main` accepts pushes from PUSH_BYPASS_USERS, the operator's own account.
+#     Measured on this Forgejo version: apply_to_admins:false does NOT lift
+#     enable_push:false - the pre-receive hook refuses the administrator too - so
+#     the push whitelist is the only break-glass path for a broken deploy.
+#     `development` still refuses every push.
+#
 # Required environment:
 #   FORGEJO_TOKEN       A token with repository administration scope.
 #
@@ -15,6 +28,8 @@
 #   FORGEJO_REPOSITORY  owner/repo, defaults to Veldrath/Veldrath
 #   BRANCHES            Space-separated rule names, defaults to "development main"
 #   STATUS_CONTEXTS     JSON array of check patterns, defaults to ["*"]
+#   PUSH_BYPASS_USERS   Comma-separated accounts allowed to push to `main`,
+#                       defaults to "kungraseri"; set it empty to refuse every push
 #
 # Usage:
 #   FORGEJO_TOKEN=... scripts/apply-branch-protection.sh            # apply and verify
@@ -40,10 +55,18 @@ FORGEJO_REPOSITORY="${FORGEJO_REPOSITORY:-Veldrath/Veldrath}"
 BRANCHES="${BRANCHES:-development main}"
 STATUS_CONTEXTS="${STATUS_CONTEXTS:-}"
 [ -n "${STATUS_CONTEXTS}" ] || STATUS_CONTEXTS='["*"]'
+PUSH_BYPASS_USERS="${PUSH_BYPASS_USERS-kungraseri}"
 CHECK_ONLY=0
 
+# PUSH_BYPASS_JSON is the JSON array the rule stores, e.g. ["kungraseri"].
+PUSH_BYPASS_JSON='[]'
+if [ -n "${PUSH_BYPASS_USERS}" ]; then
+    PUSH_BYPASS_JSON="[$(printf '%s' "${PUSH_BYPASS_USERS}" | tr ',' '\n' \
+        | awk 'NF { gsub(/^[[:space:]]+|[[:space:]]+$/, ""); printf "%s\"%s\"", (n++ ? "," : ""), $0 }')]"
+fi
+
 usage() {
-    sed -n '3,33p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '3,47p' "$0" | sed 's/^# \{0,1\}//'
     exit "${1:-1}"
 }
 
@@ -58,18 +81,37 @@ done
 
 forgejo_init --require-repository
 
+# push_policy BRANCH -> "open" when the branch accepts direct pushes, else "closed".
+# Only `main` can be open: it is the branch every deployment builds from, so a
+# broken pin or a deploy-blocking file has to be fixable without waiting on a
+# status check. `development` is pull-request-only, always.
+push_policy() {
+    case "$1" in
+        main) if [ -n "${PUSH_BYPASS_USERS}" ]; then printf 'open'; else printf 'closed'; fi ;;
+        *)    printf 'closed' ;;
+    esac
+}
+
 # rule_body BRANCH -> the Create/EditBranchProtectionOption payload
 rule_body() {
+    local branch="$1"
+    local push_fields='  "enable_push": false,
+  "enable_push_whitelist": false,
+  "push_whitelist_usernames": [],'
+    if [ "$(push_policy "${branch}")" = "open" ]; then
+        push_fields="  \"enable_push\": true,
+  \"enable_push_whitelist\": true,
+  \"push_whitelist_usernames\": ${PUSH_BYPASS_JSON},"
+    fi
     cat <<JSON
 {
-  "rule_name": "$1",
-  "branch_name": "$1",
-  "enable_push": false,
-  "enable_push_whitelist": false,
+  "rule_name": "${branch}",
+  "branch_name": "${branch}",
+${push_fields}
   "enable_status_check": true,
   "status_check_contexts": ${STATUS_CONTEXTS},
   "required_approvals": 0,
-  "apply_to_admins": true,
+  "apply_to_admins": false,
   "block_on_outdated_branch": false,
   "block_on_rejected_reviews": false,
   "block_on_official_review_requests": false,
@@ -90,13 +132,31 @@ rule_exists() {
 # the server returns. The response is compacted first so formatting cannot make
 # a correct rule look wrong.
 expected_substrings() {
+    local branch="$1"
     cat <<FIELDS
-"rule_name":"$1"
+"rule_name":"${branch}"
 "enable_status_check":true
 "status_check_contexts":$(printf '%s' "${STATUS_CONTEXTS}" | tr -d ' \n\r\t')
 "required_approvals":0
-"apply_to_admins":true
+"apply_to_admins":false
 FIELDS
+
+    if [ "$(push_policy "${branch}")" = "open" ]; then
+        printf '%s\n' '"enable_push":true'
+        printf '%s\n' '"enable_push_whitelist":true'
+        printf '%s\n' "\"push_whitelist_usernames\":${PUSH_BYPASS_JSON}"
+    else
+        printf '%s\n' '"enable_push":false'
+    fi
+}
+
+# push_summary BRANCH -> a human-readable description of the push policy
+push_summary() {
+    if [ "$(push_policy "$1")" = "open" ]; then
+        printf 'direct pushes allowed only for %s' "${PUSH_BYPASS_USERS}"
+    else
+        printf 'all direct pushes refused'
+    fi
 }
 
 verify_rule() {
@@ -110,13 +170,6 @@ verify_rule() {
             missing=1
         fi
     done <<< "$(expected_substrings "${branch}")"
-
-    # enable_push/push-whitelist are only meaningful as a pair: direct pushes to
-    # the branch must be refused, otherwise the gate is bypassable with git push.
-    if printf '%s' "${body}" | grep -Fq '"enable_push":true'; then
-        echo "  MISSING \"enable_push\":false" >&2
-        missing=1
-    fi
 
     return "${missing}"
 }
@@ -147,7 +200,7 @@ for branch in ${BRANCHES}; do
     fi
 
     if verify_rule "${branch}"; then
-        echo "  verified: status checks required on ${STATUS_CONTEXTS}, pushes refused, applies to admins"
+        echo "  verified: status checks required on ${STATUS_CONTEXTS}, $(push_summary "${branch}"), no admin exemption"
     else
         echo "  the stored rule does not match the requested one" >&2
         rc=1

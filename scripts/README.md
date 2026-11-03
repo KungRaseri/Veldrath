@@ -70,8 +70,11 @@ python scripts/format-json-files.py path/to/data
 
 ## `apply-branch-protection.sh`
 
-Applies the merge gate for `development` and `main`: status checks required, direct pushes refused,
-reviews off. It is the executable copy of the decision in
+Applies the merge gate for `development` and `main`: status checks required, reviews off, and
+no administrator exemption. `development` takes pull requests only; `main` additionally accepts
+a direct push from the operator's account (`PUSH_BYPASS_USERS`, default `kungraseri`) so a
+deploy-blocking commit can be repaired without waiting on the checks. It is the executable copy
+of the decision in
 [`docs/ci-forgejo.md`](../docs/ci-forgejo.md#branch-protection-what-can-block-a-merge) — read that
 section before changing any of the values.
 
@@ -82,8 +85,8 @@ scripts/apply-branch-protection.sh             # create or edit, then read the r
 scripts/apply-branch-protection.sh --check     # verify only; exits 1 when the stored rule has drifted
 ```
 
-Idempotent, and it fails rather than leaving a rule that differs from the one requested. `BRANCHES`
-and `STATUS_CONTEXTS` override the defaults.
+Idempotent, and it fails rather than leaving a rule that differs from the one requested. `BRANCHES`,
+`STATUS_CONTEXTS` and `PUSH_BYPASS_USERS` override the defaults.
 
 ---
 
