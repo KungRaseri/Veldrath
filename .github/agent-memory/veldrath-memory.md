@@ -3328,3 +3328,12 @@ inference: probe PR #32 (branch `probe-x`, head `b59e841d`, only `.gitignore` ch
 `POST /pulls/32/merge {"force_merge": false}`. The PR was closed and the branch deleted. The
 workflow and script land in card `t_48d8d3c1`.
 
+One correction to the force_merge reasoning recorded above: the token every worker runs with is the
+instance administrator (`GET /user` → `kungraseri`, `is_admin: true`), so `force_merge` **is**
+available to an agent — `CheckPullMergeable` clears the protection error for an admin. The gate is
+therefore enforced by discipline, not capability: never use `force_merge` or a hand-posted status to
+satisfy `["*"]`, because either one lets a worker certify its own merge. The API's
+`GET .../commits/{sha}/statuses` also lists every state transition of a context, while the gate reads
+the latest row per context (`GetLatestCommitStatus`, `services/pull/commit_status.go:128`) — a stale
+`pending` row beside a `success` is not a red gate.
+

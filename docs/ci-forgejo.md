@@ -359,7 +359,7 @@ The alternatives were measured against the tree instead of argued:
 | Alternative | Why not |
 |---|---|
 | Add root-config paths to an existing list | The set is not three files: 39 tracked paths in six classes match no list today (table below), and every new root file reopens the deadlock silently. It is also conceptually false — no component's output depends on `.gitignore` |
-| Keep `["*"]` and document `force_merge` for this class | `force_merge` requires an instance admin (`CheckPullMergeable`), so an agent cannot unblock its own pull request: every root-config change becomes an operator interrupt, and habit turns break-glass into policy |
+| Keep `["*"]` and document `force_merge` for this class | It works, and that is the objection: the token every worker here authenticates with belongs to the instance administrator (`GET /user` → `kungraseri`, `is_admin: true`), and `CheckPullMergeable` clears the protection error for an admin. Documenting it would make "any worker certifies its own merge" the routine path — the same reason posting a status by hand is forbidden. It stays break-glass |
 | Switch to named contexts | Already rejected above, and this does not change it: a path-filtered workflow still never reports |
 
 The job lints the workflow definitions; it builds nothing. Its rules are the two ways this
@@ -409,8 +409,10 @@ posting a status by hand stays forbidden: a status any agent can mint certifies 
   protection error when `force_merge` is set and the doer is an instance admin;
   `apply_to_admins` only withholds that override from *repository* admins. That is the
   break-glass path — a stuck `pending` status must never lock the only operator out — and
-  it is why this rule is a review contract, not a lock. Use it to unblock, never to land a
-  red change.
+  it is why this rule is a review contract, not a lock. Every worker here authenticates as that
+  account, so the override is available to an agent, not only to the human at the keyboard: the
+  gate is enforced by discipline, and a worker that runs `force_merge` is self-certifying. Use it
+  to unblock, never to land a red change.
 - **Direct pushes.** `enable_push: false` with an empty whitelist is what the script writes and what
   `development` still reports, but `main` currently reports `enable_push: true` with
   `push_whitelist_usernames: ["kungraseri"]` — see the read-back note above. The refused push was
