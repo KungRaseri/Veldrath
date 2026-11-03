@@ -5,6 +5,8 @@ using Moq;
 using RealmEngine.Core.Abstractions;
 using RealmEngine.Core.Features.Exploration.Commands;
 using RealmEngine.Core.Services;
+using RealmEngine.Core.Tests.Infrastructure;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Tests.Features.Exploration.Commands;
@@ -29,149 +31,106 @@ public class ExploreLocationCommandHandlerTests
         _mockGameState.SetupGet(s => s.Player).Returns(_player);
         _mockGameState.SetupGet(s => s.CurrentLocation).Returns("Forest");
 
-        _handler = new ExploreLocationCommandHandler(_mockMediator.Object, _mockGameState.Object, NullLogger<ExploreLocationCommandHandler>.Instance);
+        // Scripted peaceful exploration by default: every roll is deterministic.
+        _handler = CreateHandler(PeacefulExploration());
     }
 
+    private ExploreLocationCommandHandler CreateHandler(IRandomSource? randomSource = null) =>
+        new(
+            _mockMediator.Object,
+            _mockGameState.Object,
+            NullLogger<ExploreLocationCommandHandler>.Instance,
+            randomSource: randomSource ?? FakeRandomSource.Seeded(20260101));
+
+    /// <summary>
+    /// The handler rolls, in order: encounter (0-99), XP (10-29), gold (5-24), item (0-99).
+    /// </summary>
+    private static FakeRandomSource PeacefulExploration(int xp = 20, int gold = 10) =>
+        FakeRandomSource.Returning(70, xp, gold, 50);
+
     [Fact]
-    public async Task Handle_Should_Trigger_Combat_Encounter()
+    public async Task Handle_Should_Trigger_Combat_Encounter_When_The_Encounter_Roll_Is_Low()
     {
-        // Arrange
-        var command = new ExploreLocationCommand();
+        // Arrange — 0 is below the 60% combat threshold.
+        var handler = CreateHandler(FakeRandomSource.Returning(0));
 
         // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
+        var result = await handler.Handle(new ExploreLocationCommand(), CancellationToken.None);
 
-        // Assert - Result could be combat or peaceful, just verify it succeeds
+        // Assert
         result.Success.Should().BeTrue();
+        result.CombatTriggered.Should().BeTrue();
+        result.ExperienceGained.Should().BeNull();
+        result.GoldGained.Should().BeNull();
     }
 
     [Fact]
     public async Task Handle_Should_Award_Experience_On_Peaceful_Exploration()
     {
-        // Arrange
-        var command = new ExploreLocationCommand();
-        var initialExperience = _player.Experience;
-
-        // Act - Run multiple times to ensure we get at least one peaceful result
-        ExploreLocationResult? peacefulResult = null;
-        for (int i = 0; i < 50; i++) // Try multiple times to get peaceful exploration
-        {
-            var result = await _handler.Handle(command, CancellationToken.None);
-            if (result.Success && !result.CombatTriggered)
-            {
-                peacefulResult = result;
-                break;
-            }
-        }
+        // Act
+        var result = await _handler.Handle(new ExploreLocationCommand(), CancellationToken.None);
 
         // Assert
-        peacefulResult.Should().NotBeNull("expected a peaceful exploration result within 50 tries");
-        peacefulResult!.ExperienceGained.Should().BeGreaterThan(0);
-        peacefulResult.ExperienceGained.Should().BeInRange(10, 30);
+        result.CombatTriggered.Should().BeFalse();
+        result.ExperienceGained.Should().BeGreaterThan(0);
+        result.ExperienceGained.Should().BeInRange(10, 30);
+        _player.Experience.Should().Be(result.ExperienceGained);
     }
 
     [Fact]
     public async Task Handle_Should_Award_Gold_On_Peaceful_Exploration()
     {
-        // Arrange
-        var command = new ExploreLocationCommand();
-
-        // Act - Run multiple times to ensure we get at least one peaceful result
-        ExploreLocationResult? peacefulResult = null;
-        for (int i = 0; i < 50; i++)
-        {
-            var result = await _handler.Handle(command, CancellationToken.None);
-            if (result.Success && !result.CombatTriggered)
-            {
-                peacefulResult = result;
-                break;
-            }
-        }
+        // Act
+        var result = await _handler.Handle(new ExploreLocationCommand(), CancellationToken.None);
 
         // Assert
-        peacefulResult.Should().NotBeNull("expected a peaceful exploration result within 50 tries");
-        peacefulResult!.GoldGained.Should().BeGreaterThan(0);
-        peacefulResult.GoldGained.Should().BeInRange(5, 25);
+        result.GoldGained.Should().BeGreaterThan(0);
+        result.GoldGained.Should().BeInRange(5, 25);
+        _player.Gold.Should().Be(result.GoldGained);
     }
 
     [Fact]
-    public async Task Handle_Should_Return_Either_Combat_Or_Peaceful_Result()
+    public async Task Handle_Should_Treat_Roll_59_As_Combat_And_Roll_60_As_Peaceful()
     {
-        // Arrange
-        var command = new ExploreLocationCommand();
+        // Arrange — the encounter threshold is exactly 60.
+        var combatHandler = CreateHandler(FakeRandomSource.Returning(59));
+        var peacefulHandler = CreateHandler(PeacefulExploration());
 
         // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
+        var combat = await combatHandler.Handle(new ExploreLocationCommand(), CancellationToken.None);
+        var peaceful = await peacefulHandler.Handle(new ExploreLocationCommand(), CancellationToken.None);
 
         // Assert
-        result.Success.Should().BeTrue();
-        // Either combat is triggered, or XP/Gold are awarded
-        if (result.CombatTriggered)
-        {
-            result.ExperienceGained.Should().BeNull();
-            result.GoldGained.Should().BeNull();
-        }
-        else
-        {
-            result.ExperienceGained.Should().BeGreaterThan(0);
-            result.GoldGained.Should().BeGreaterThan(0);
-        }
-    }
-
-    [Fact]
-    public async Task Handle_Should_Display_Exploration_Messages()
-    {
-        // Arrange
-        var command = new ExploreLocationCommand();
-
-        // Assert — smoke: handler ran without throwing and returned a valid result
-        var smokeResult = await _handler.Handle(command, CancellationToken.None);
-        smokeResult.Should().NotBeNull();
-        smokeResult.Success.Should().BeTrue();
+        combat.CombatTriggered.Should().BeTrue();
+        peaceful.CombatTriggered.Should().BeFalse();
     }
 
     [Fact]
     public async Task Handle_Should_Publish_Level_Up_Event_When_Player_Levels()
     {
-        // Arrange
-        _player.Experience = 95; // Close to level up (needs 100 XP to level)
-        var command = new ExploreLocationCommand();
+        // Arrange — 95 XP + 20 from a peaceful exploration crosses the 100 XP threshold.
+        _player.Experience = 95;
+        var handler = CreateHandler(PeacefulExploration(xp: 20));
 
-        // Act - Run multiple times to trigger level up
-        for (int i = 0; i < 50; i++)
-        {
-            var result = await _handler.Handle(command, CancellationToken.None);
-            if (!result.CombatTriggered && _player.Level > 1)
-            {
-                break;
-            }
-        }
+        // Act
+        await handler.Handle(new ExploreLocationCommand(), CancellationToken.None);
 
-        // Assert — player must have levelled (95 XP + any peaceful ≥10 XP crosses the 100 threshold)
+        // Assert
         _player.Level.Should().BeGreaterThan(1, "peaceful exploration always triggers a level-up from 95 XP");
         _mockMediator.Verify(m => m.Publish(
             It.IsAny<INotification>(),
             It.IsAny<CancellationToken>()),
-            Times.AtLeast(1));
+            Times.AtLeastOnce);
     }
 
     [Fact]
     public async Task Handle_Should_Publish_Gold_Gained_Event()
     {
-        // Arrange
-        var command = new ExploreLocationCommand();
-
-        // Act - Run multiple times to ensure peaceful exploration
-        for (int i = 0; i < 50; i++)
-        {
-            var result = await _handler.Handle(command, CancellationToken.None);
-            if (!result.CombatTriggered)
-            {
-                break;
-            }
-        }
+        // Act
+        var result = await _handler.Handle(new ExploreLocationCommand(), CancellationToken.None);
 
         // Assert - GoldGained event should be published on peaceful exploration
+        result.CombatTriggered.Should().BeFalse();
         _mockMediator.Verify(m => m.Publish(
             It.IsAny<INotification>(),
             It.IsAny<CancellationToken>()),
@@ -182,44 +141,13 @@ public class ExploreLocationCommandHandlerTests
     public async Task Handle_Should_Handle_Exception_Gracefully()
     {
         // Arrange
-        var command = new ExploreLocationCommand();
         _mockGameState.SetupGet(s => s.Player).Throws(new InvalidOperationException("Player not found"));
 
         // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
+        var result = await _handler.Handle(new ExploreLocationCommand(), CancellationToken.None);
 
         // Assert
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().NotBeNullOrEmpty();
-    }
-
-    [Fact]
-    public async Task Handle_Should_Use_Random_Outcomes()
-    {
-        // Arrange
-        var command = new ExploreLocationCommand();
-        var combatCount = 0;
-        var peacefulCount = 0;
-        var iterations = 100;
-
-        // Act - Run multiple times to verify randomness
-        for (int i = 0; i < iterations; i++)
-        {
-            var result = await _handler.Handle(command, CancellationToken.None);
-            if (result.Success)
-            {
-                if (result.CombatTriggered)
-                    combatCount++;
-                else
-                    peacefulCount++;
-            }
-        }
-
-        // Assert - Should have both combat and peaceful results (not deterministic)
-        combatCount.Should().BeGreaterThan(0);
-        peacefulCount.Should().BeGreaterThan(0);
-        // Roughly 60% combat, 40% peaceful based on handler logic
-        combatCount.Should().BeInRange(40, 80); // Allow variance
-        peacefulCount.Should().BeInRange(20, 60);
     }
 }

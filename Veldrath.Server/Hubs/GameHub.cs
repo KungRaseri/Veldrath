@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Services;
 using Veldrath.Contracts.Chat;
 using Veldrath.Contracts.Connection;
 using Veldrath.Contracts.Map;
@@ -59,6 +60,7 @@ public class GameHub : Hub
     private readonly IAfkTracker _afk;
     private readonly ICombatSessionStore _sessions;
     private readonly IEnemyInstanceStore _enemies;
+    private readonly IRandomSource _random;
 
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
@@ -78,7 +80,8 @@ public class GameHub : Hub
         ApplicationDbContext db,
         IAfkTracker afk,
         ICombatSessionStore sessions,
-        IEnemyInstanceStore enemies)
+        IEnemyInstanceStore enemies,
+        IRandomSource? randomSource = null)
     {
         _logger = logger;
         _characterRepo = characterRepo;
@@ -95,6 +98,7 @@ public class GameHub : Hub
         _afk = afk;
         _sessions = sessions;
         _enemies = enemies;
+        _random = randomSource ?? SystemRandomSource.Shared;
     }
 
     public override async Task OnConnectedAsync()
@@ -2977,7 +2981,7 @@ public class GameHub : Hub
                     if (parts.Length >= 2 && int.TryParse(parts[1], out var parsed) && parsed > 1)
                         max = parsed;
                     TryGetCharacterName(out var rollerName);
-                    var result = Random.Shared.Next(1, max + 1);
+                    var result = _random.Next(1, max + 1);
                     await Clients.Group(zoneGroup).SendAsync("ReceiveChatMessage",
                         new ChatMessageHubDto(characterId, "Zone", rollerName,
                             $"* rolled {result} (1-{max}) *", DateTimeOffset.UtcNow));

@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models.Harvesting;
+using RealmEngine.Shared.Services;
 
 namespace RealmEngine.Core.Services.Harvesting;
 
@@ -10,20 +12,22 @@ public class CriticalHarvestService
 {
     private readonly ILogger<CriticalHarvestService> _logger;
     private readonly HarvestingConfig _config;
-    private readonly Random _random;
+    private readonly IRandomSource _random;
 
     /// <summary>
     /// Initializes a new instance of the CriticalHarvestService class.
     /// </summary>
     /// <param name="logger">Logger instance.</param>
     /// <param name="config">Harvesting configuration.</param>
+    /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
     public CriticalHarvestService(
         ILogger<CriticalHarvestService> logger,
-        HarvestingConfig config)
+        HarvestingConfig config,
+        IRandomSource? randomSource = null)
     {
         _logger = logger;
         _config = config;
-        _random = new Random();
+        _random = randomSource ?? SystemRandomSource.Shared;
     }
 
     /// <summary>

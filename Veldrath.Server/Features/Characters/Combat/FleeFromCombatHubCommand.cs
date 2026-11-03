@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Services;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Settings;
 
@@ -62,6 +64,7 @@ public class FleeFromCombatHubCommandHandler
     private readonly ICombatSessionStore _sessions;
     private readonly IOptions<DeathPenaltyOptions> _penalty;
     private readonly ILogger<FleeFromCombatHubCommandHandler> _logger;
+    private readonly IRandomSource _random;
 
     /// <summary>Initializes a new instance of <see cref="FleeFromCombatHubCommandHandler"/>.</summary>
     /// <param name="characterRepo">Repository for loading and persisting character state.</param>
@@ -69,18 +72,21 @@ public class FleeFromCombatHubCommandHandler
     /// <param name="sessions">Store for per-character combat sessions.</param>
     /// <param name="penalty">Configured death-penalty values.</param>
     /// <param name="logger">Logger instance.</param>
+    /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
     public FleeFromCombatHubCommandHandler(
         ICharacterRepository characterRepo,
         IEnemyInstanceStore enemies,
         ICombatSessionStore sessions,
         IOptions<DeathPenaltyOptions> penalty,
-        ILogger<FleeFromCombatHubCommandHandler> logger)
+        ILogger<FleeFromCombatHubCommandHandler> logger,
+        IRandomSource? randomSource = null)
     {
         _characterRepo = characterRepo;
         _enemies = enemies;
         _sessions = sessions;
         _penalty = penalty;
         _logger = logger;
+        _random = randomSource ?? SystemRandomSource.Shared;
     }
 
     /// <summary>Handles the command and returns the flee attempt outcome.</summary>
@@ -99,7 +105,7 @@ public class FleeFromCombatHubCommandHandler
 
         // Flee succeeds: stop being a target and end the session. The damage already dealt stays recorded — it was
         // earned, so a fleeing member still gets that share if the rest of the party finishes the kill.
-        if (Random.Shared.Next(100) < FleeSuccessChance)
+        if (_random.Next(100) < FleeSuccessChance)
         {
             if (enemy is not null)
             {
@@ -139,7 +145,7 @@ public class FleeFromCombatHubCommandHandler
         session = session.NextTurn();
         await _sessions.SetAsync(request.CharacterId, session, cancellationToken);
 
-        var (abilityDamage, abilityName) = CombatHelpers.RollEnemyAbility(enemy, player);
+        var (abilityDamage, abilityName) = CombatHelpers.RollEnemyAbility(enemy, player, _random);
         int enemyDamage = abilityDamage > 0
             ? abilityDamage
             : CombatHelpers.CalculateEnemyDamage(enemy, attrs, isDefending: false);

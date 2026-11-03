@@ -1,5 +1,7 @@
 using MediatR;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Services;
 
 namespace RealmEngine.Core.Features.Enchanting.Commands;
 
@@ -9,6 +11,17 @@ namespace RealmEngine.Core.Features.Enchanting.Commands;
 /// </summary>
 public class ApplyEnchantmentHandler : IRequestHandler<ApplyEnchantmentCommand, ApplyEnchantmentResult>
 {
+    private readonly IRandomSource _random;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ApplyEnchantmentHandler"/> class.
+    /// </summary>
+    /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
+    public ApplyEnchantmentHandler(IRandomSource? randomSource = null)
+    {
+        _random = randomSource ?? SystemRandomSource.Shared;
+    }
+
     /// <summary>
     /// Handles the enchantment application request.
     /// </summary>
@@ -49,8 +62,7 @@ public class ApplyEnchantmentHandler : IRequestHandler<ApplyEnchantmentCommand, 
         var successRate = CalculateSuccessRate(currentSlotCount, character);
 
         // Roll for success
-        var random = new Random();
-        var roll = random.NextDouble() * 100.0; // 0-100
+        var roll = _random.NextDouble() * 100.0; // 0-100
         var succeeded = roll <= successRate;
 
         if (succeeded)

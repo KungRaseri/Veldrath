@@ -2,6 +2,8 @@ using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using RealmEngine.Core.Features.Enchanting.Commands;
+using RealmEngine.Core.Tests.Infrastructure;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Tests.Features.Enchanting;
@@ -14,13 +16,17 @@ public class EnchantingIntegrationTests
 {
     private readonly IMediator _mediator;
 
-    public EnchantingIntegrationTests()
+    public EnchantingIntegrationTests() => _mediator = CreateMediator();
+
+    private static IMediator CreateMediator(IRandomSource? randomSource = null)
     {
         var services = new ServiceCollection();
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(ApplyEnchantmentHandler).Assembly));
+        // Deterministic rolls: the seeded source keeps the whole fixture reproducible, and a
+        // scripted source lets an individual test force the success or the failure arm.
+        services.AddSingleton(randomSource ?? FakeRandomSource.Seeded(20260101));
 
-        var serviceProvider = services.BuildServiceProvider();
-        _mediator = serviceProvider.GetRequiredService<IMediator>();
+        return services.BuildServiceProvider().GetRequiredService<IMediator>();
     }
 
     [Fact]
@@ -78,6 +84,58 @@ public class EnchantingIntegrationTests
         result.SuccessRate.Should().Be(75.0);
         result.ScrollConsumed.Should().BeTrue();
         // Success/failure depends on RNG, but scroll is always consumed
+    }
+
+    [Fact]
+    public async Task ApplyEnchantment_SecondSlot_Succeeds_When_The_Roll_Is_Within_The_Rate()
+    {
+        // Arrange — 75% rate, scripted roll 10.
+        var mediator = CreateMediator(FakeRandomSource.ReturningDoubles(0.10));
+        var character = CreateTestCharacter(enchantingSkill: 0);
+        var item = CreateTestItem(ItemRarity.Rare);
+        item.MaxPlayerEnchantments = 2;
+        item.PlayerEnchantments.Add(CreateEnchantment("Frost Damage", 3));
+
+        var command = new ApplyEnchantmentCommand
+        {
+            Character = character,
+            Item = item,
+            EnchantmentScroll = CreateEnchantmentScroll("Fire Damage", 5)
+        };
+
+        // Act
+        var result = await mediator.Send(command);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.SuccessRate.Should().Be(75.0);
+        item.PlayerEnchantments.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task ApplyEnchantment_SecondSlot_Fails_When_The_Roll_Is_Outside_The_Rate()
+    {
+        // Arrange — 75% rate, scripted roll 90.
+        var mediator = CreateMediator(FakeRandomSource.ReturningDoubles(0.90));
+        var character = CreateTestCharacter(enchantingSkill: 0);
+        var item = CreateTestItem(ItemRarity.Rare);
+        item.MaxPlayerEnchantments = 2;
+        item.PlayerEnchantments.Add(CreateEnchantment("Frost Damage", 3));
+
+        var command = new ApplyEnchantmentCommand
+        {
+            Character = character,
+            Item = item,
+            EnchantmentScroll = CreateEnchantmentScroll("Fire Damage", 5)
+        };
+
+        // Act
+        var result = await mediator.Send(command);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.ScrollConsumed.Should().BeTrue();
+        item.PlayerEnchantments.Should().HaveCount(1);
     }
 
     [Fact]

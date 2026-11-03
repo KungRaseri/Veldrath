@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using RealmEngine.Core.Features.Combat.Commands;
+using RealmEngine.Core.Tests.Infrastructure;
 using RealmEngine.Shared.Models;
 using Xunit;
 
@@ -16,7 +17,8 @@ public class ApplyStatusEffectTests
     public ApplyStatusEffectTests()
     {
         _mockLogger = new Mock<ILogger<ApplyStatusEffectHandler>>();
-        _handler = new ApplyStatusEffectHandler(_mockLogger.Object);
+        // Seeded: the resistance roll is real but deterministic, so this suite never jitters.
+        _handler = new ApplyStatusEffectHandler(_mockLogger.Object, FakeRandomSource.Seeded(20260101));
     }
 
     [Fact]
@@ -543,5 +545,64 @@ public class ApplyStatusEffectTests
         result.Success.Should().BeFalse();
         result.Message.Should().Contain("already affected");
         character.ActiveStatusEffects.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task Should_Resist_Effect_When_The_Resistance_Roll_Succeeds()
+    {
+        // Arrange — 5% resistance, scripted roll of 0 lands inside it.
+        var handler = new ApplyStatusEffectHandler(_mockLogger.Object, FakeRandomSource.Returning(0));
+        var character = new Character { Name = "Hero", Health = 100, MaxHealth = 100, Wisdom = 50 };
+
+        var command = new ApplyStatusEffectCommand
+        {
+            TargetCharacter = character,
+            Effect = new StatusEffect
+            {
+                Id = "curse1",
+                Type = StatusEffectType.Cursed,
+                Category = StatusEffectCategory.Debuff,
+                Name = "Curse",
+                RemainingDuration = 3
+            }
+        };
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Resisted.Should().BeTrue();
+        result.ResistancePercentage.Should().Be(5);
+        character.ActiveStatusEffects.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Should_Apply_Effect_When_The_Resistance_Roll_Fails()
+    {
+        // Arrange — 5% resistance, scripted roll of 99 is outside it.
+        var handler = new ApplyStatusEffectHandler(_mockLogger.Object, FakeRandomSource.Returning(99));
+        var character = new Character { Name = "Hero", Health = 100, MaxHealth = 100, Wisdom = 50 };
+
+        var command = new ApplyStatusEffectCommand
+        {
+            TargetCharacter = character,
+            Effect = new StatusEffect
+            {
+                Id = "curse1",
+                Type = StatusEffectType.Cursed,
+                Category = StatusEffectCategory.Debuff,
+                Name = "Curse",
+                RemainingDuration = 3
+            }
+        };
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Resisted.Should().BeFalse();
+        character.ActiveStatusEffects.Should().ContainSingle(e => e.Type == StatusEffectType.Cursed);
     }
 }

@@ -33,6 +33,7 @@ using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Repositories;
 using RealmEngine.Data.Services;
 using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Services;
 // Alias to disambiguate from RealmEngine.Core.Services.HarvestingConfig (in HarvestingConfigService.cs)
 using HarvestingConfigData = RealmEngine.Core.Services.Harvesting.HarvestingConfig;
 
@@ -61,6 +62,10 @@ public static class ServiceCollectionExtensions
         // Apply persistence options before registering any services.
         var persistenceOptions = new PersistenceOptions();
         configurePersistence?.Invoke(persistenceOptions);
+
+        // Register the random source. The shared instance is stateless over Random.Shared, so a
+        // singleton matches its lifetime; hosts and tests may replace it with their own binding.
+        services.AddSingleton<IRandomSource>(SystemRandomSource.Shared);
 
         // Register category discovery service (singleton for caching)
         services.AddSingleton<CategoryDiscoveryService>();
@@ -229,7 +234,8 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<PowerDataService>(),
             sp.GetRequiredService<ILogger<CombatService>>(),
             sp.GetRequiredService<ILoggerFactory>(),
-            sp.GetService<ItemGenerator>()));
+            sp.GetService<ItemGenerator>(),
+            sp.GetRequiredService<IRandomSource>()));
         services.AddScoped<CraftingService>();
         services.AddScoped<ExplorationService>();
         services.AddScoped<QuestService>();

@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Services;
 
 namespace RealmEngine.Core.Features.Combat.Commands.FleeFromCombat;
 
@@ -10,14 +12,17 @@ namespace RealmEngine.Core.Features.Combat.Commands.FleeFromCombat;
 public class FleeFromCombatHandler : IRequestHandler<FleeFromCombatCommand, FleeFromCombatResult>
 {
     private readonly ILogger<FleeFromCombatHandler> _logger;
+    private readonly IRandomSource _random;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FleeFromCombatHandler"/> class.
     /// </summary>
     /// <param name="logger">The logger.</param>
-    public FleeFromCombatHandler(ILogger<FleeFromCombatHandler> logger)
+    /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
+    public FleeFromCombatHandler(ILogger<FleeFromCombatHandler> logger, IRandomSource? randomSource = null)
     {
         _logger = logger;
+        _random = randomSource ?? SystemRandomSource.Shared;
     }
 
     /// <summary>
@@ -33,7 +38,7 @@ public class FleeFromCombatHandler : IRequestHandler<FleeFromCombatCommand, Flee
 
         // Base flee chance: 30% + 2% per point of Dexterity, capped at 90%
         double fleeChance = Math.Min(0.90, 0.30 + (player.Dexterity * 0.02));
-        bool fled = Random.Shared.NextDouble() < fleeChance;
+        bool fled = _random.NextDouble() < fleeChance;
 
         if (fled)
         {

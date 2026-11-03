@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
+using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Services;
 
 namespace RealmEngine.Core.Services.Budget;
 
@@ -15,7 +17,7 @@ public class MaterialPoolService
     private readonly MaterialPools _materialPools;
     private readonly EnemyTypes _enemyTypes;
     private readonly ILogger<MaterialPoolService> _logger;
-    private readonly Random _random;
+    private readonly IRandomSource _random;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MaterialPoolService"/> class.
@@ -25,19 +27,21 @@ public class MaterialPoolService
     /// <param name="materialPools">The material pools configuration.</param>
     /// <param name="enemyTypes">The enemy types configuration.</param>
     /// <param name="logger">The logger instance.</param>
+    /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
     public MaterialPoolService(
         IDbContextFactory<ContentDbContext> dbFactory,
         BudgetCalculator budgetCalculator,
         MaterialPools materialPools,
         EnemyTypes enemyTypes,
-        ILogger<MaterialPoolService> logger)
+        ILogger<MaterialPoolService> logger,
+        IRandomSource? randomSource = null)
     {
         _dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
         _budgetCalculator = budgetCalculator ?? throw new ArgumentNullException(nameof(budgetCalculator));
         _materialPools = materialPools ?? throw new ArgumentNullException(nameof(materialPools));
         _enemyTypes = enemyTypes ?? throw new ArgumentNullException(nameof(enemyTypes));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _random = new Random();
+        _random = randomSource ?? SystemRandomSource.Shared;
     }
 
     /// <summary>
@@ -152,10 +156,10 @@ public class MaterialPoolService
         return 1.0;
     }
 
-    private static (Material Material, int Cost, int Weight) SelectWeightedRandom(List<(Material Material, int Cost, int Weight)> items)
+    private (Material Material, int Cost, int Weight) SelectWeightedRandom(List<(Material Material, int Cost, int Weight)> items)
     {
         var totalWeight = items.Sum(i => i.Weight);
-        var randomValue = Random.Shared.Next(totalWeight);
+        var randomValue = _random.Next(totalWeight);
         var cumulative = 0;
 
         foreach (var item in items)

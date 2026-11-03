@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Services;
 
 namespace RealmEngine.Core.Features.Combat.Commands;
 
@@ -11,14 +13,17 @@ namespace RealmEngine.Core.Features.Combat.Commands;
 public class ApplyStatusEffectHandler : IRequestHandler<ApplyStatusEffectCommand, ApplyStatusEffectResult>
 {
     private readonly ILogger<ApplyStatusEffectHandler> _logger;
+    private readonly IRandomSource _random;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ApplyStatusEffectHandler"/> class.
     /// </summary>
     /// <param name="logger">The logger.</param>
-    public ApplyStatusEffectHandler(ILogger<ApplyStatusEffectHandler> logger)
+    /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
+    public ApplyStatusEffectHandler(ILogger<ApplyStatusEffectHandler> logger, IRandomSource? randomSource = null)
     {
         _logger = logger;
+        _random = randomSource ?? SystemRandomSource.Shared;
     }
 
     /// <summary>
@@ -85,7 +90,7 @@ public class ApplyStatusEffectHandler : IRequestHandler<ApplyStatusEffectCommand
         }
 
         // Random resistance check (resistancePercentage is chance to resist)
-        if (!isBeneficial && resistancePercentage > 0 && Random.Shared.Next(100) < resistancePercentage)
+        if (!isBeneficial && resistancePercentage > 0 && _random.Next(100) < resistancePercentage)
         {
             _logger.LogInformation("{Target} resisted {EffectType} ({Resistance}% chance)",
                 targetName, request.Effect.Type, resistancePercentage);

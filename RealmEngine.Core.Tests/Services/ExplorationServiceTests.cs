@@ -9,6 +9,7 @@ using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Generators;
 using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Core.Services;
+using RealmEngine.Core.Tests.Infrastructure;
 using RealmEngine.Shared.Models;
 using Xunit;
 
@@ -75,7 +76,8 @@ public class ExplorationServiceTests
             _mockGameState.Object,
             _mockSaveGameService.Object,
             _locationGenerator,
-            itemGenerator: null);
+            itemGenerator: null,
+            randomSource: FakeRandomSource.Seeded(20260101));
     }
 
     [Fact]

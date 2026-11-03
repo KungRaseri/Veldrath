@@ -11,6 +11,7 @@ using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Core.Services;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Services;
 using RealmEngine.Shared.Utilities;
 
 namespace RealmEngine.Core.Features.Combat;
@@ -20,7 +21,7 @@ namespace RealmEngine.Core.Features.Combat;
 /// </summary>
 public class CombatService
 {
-    private readonly Random _random = new();
+    private readonly IRandomSource _random;
     private readonly ISaveGameService _saveGameService;
     private readonly ICombatSettings _combatSettings;
     private readonly IMediator _mediator;
@@ -40,10 +41,12 @@ public class CombatService
         PowerDataService powerCatalogService,
         ILogger<CombatService> logger,
         ILoggerFactory loggerFactory,
-        ItemGenerator? itemGenerator = null)
+        ItemGenerator? itemGenerator = null,
+        IRandomSource? randomSource = null)
     {
         _saveGameService = null!;
         _combatSettings = combatSettings;
+        _random = randomSource ?? SystemRandomSource.Shared;
         _mediator = mediator;
         _logger = logger;
         _reactivePowerService = new ReactivePowerService(loggerFactory.CreateLogger<ReactivePowerService>(), powerCatalogService);
@@ -63,10 +66,12 @@ public class CombatService
         PowerDataService powerCatalogService,
         ILogger<CombatService> logger,
         ILoggerFactory loggerFactory,
-        ItemGenerator? itemGenerator = null)
+        ItemGenerator? itemGenerator = null,
+        IRandomSource? randomSource = null)
     {
         _saveGameService = saveGameService;
         _combatSettings = saveGameService.GetDifficultySettings();
+        _random = randomSource ?? SystemRandomSource.Shared;
         _mediator = mediator;
         _logger = logger;
         _reactivePowerService = new ReactivePowerService(loggerFactory.CreateLogger<ReactivePowerService>(), powerCatalogService);
@@ -87,6 +92,7 @@ public class CombatService
         _reactivePowerService = new ReactivePowerService(NullLogger<ReactivePowerService>.Instance);
         _enemyPowerAI = new EnemyPowerAIService();
         _enemySpellCastingAI = new EnemySpellCastingService();
+        _random = SystemRandomSource.Shared;
     }
 
     /// <summary>

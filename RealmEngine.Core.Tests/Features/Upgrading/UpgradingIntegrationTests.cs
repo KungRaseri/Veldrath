@@ -2,6 +2,8 @@ using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using RealmEngine.Core.Features.Upgrading.Commands;
+using RealmEngine.Core.Tests.Infrastructure;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Tests.Features.Upgrading;
@@ -14,13 +16,16 @@ public class UpgradingIntegrationTests
 {
     private readonly IMediator _mediator;
 
-    public UpgradingIntegrationTests()
+    public UpgradingIntegrationTests() => _mediator = CreateMediator();
+
+    private static IMediator CreateMediator(IRandomSource? randomSource = null)
     {
         var services = new ServiceCollection();
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(UpgradeItemHandler).Assembly));
+        // Deterministic rolls: seeded by default, scripted when a test needs a specific arm.
+        services.AddSingleton(randomSource ?? FakeRandomSource.Seeded(20260101));
 
-        var serviceProvider = services.BuildServiceProvider();
-        _mediator = serviceProvider.GetRequiredService<IMediator>();
+        return services.BuildServiceProvider().GetRequiredService<IMediator>();
     }
 
     [Fact]
@@ -102,6 +107,54 @@ public class UpgradingIntegrationTests
         result.SuccessRate.Should().Be(95.0);
         result.EssencesConsumed.Should().BeTrue();
         // Success depends on RNG, but rate should be 95%
+    }
+
+    [Fact]
+    public async Task UpgradeItem_Level5To6_Succeeds_When_The_Roll_Is_Within_The_Rate()
+    {
+        // Arrange — 95% rate, scripted roll 10.
+        var mediator = CreateMediator(FakeRandomSource.ReturningDoubles(0.10));
+        var item = CreateTestWeapon(ItemRarity.Rare);
+        item.UpgradeLevel = 5;
+
+        var command = new UpgradeItemCommand
+        {
+            Character = CreateTestCharacter(),
+            Item = item,
+            Essences = CreateEssences("Weapon", "Greater", 3)
+        };
+
+        // Act
+        var result = await mediator.Send(command);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.NewUpgradeLevel.Should().Be(6);
+        item.UpgradeLevel.Should().Be(6);
+    }
+
+    [Fact]
+    public async Task UpgradeItem_Level5To6_Fails_And_Drops_A_Level_When_The_Roll_Is_Outside_The_Rate()
+    {
+        // Arrange — 95% rate, scripted roll 99.
+        var mediator = CreateMediator(FakeRandomSource.ReturningDoubles(0.99));
+        var item = CreateTestWeapon(ItemRarity.Rare);
+        item.UpgradeLevel = 5;
+
+        var command = new UpgradeItemCommand
+        {
+            Character = CreateTestCharacter(),
+            Item = item,
+            Essences = CreateEssences("Weapon", "Greater", 3)
+        };
+
+        // Act
+        var result = await mediator.Send(command);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.NewUpgradeLevel.Should().Be(4);
+        item.UpgradeLevel.Should().Be(4);
     }
 
     [Fact]
