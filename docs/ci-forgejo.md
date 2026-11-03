@@ -97,7 +97,7 @@ pull request:
 | `workflow_dispatch` | build + test only |
 | `workflow_dispatch` with `publish: true` | build + test, **and** the publish/deploy jobs |
 
-Two details of that contract are not what a GitHub habit would predict, and both were
+Three details of that contract are not what a GitHub habit would predict, and all three were
 measured on this instance rather than assumed:
 
 - **`pull_request.branches` filters on the base branch** — the branch the PR merges into,
@@ -105,10 +105,27 @@ measured on this instance rather than assumed:
   `development` is listed; listing `wt/some-fix` would match nothing.
 - **`pull_request.paths` filters on the pull request's changed files** — the whole diff,
   not the tip commit.
+- **A merge commit inside a pull request inflates that diff.** Merging `development` into a PR
+  branch to resolve a conflict puts every file the merge brought in into the PR's change set, so
+  a one-file memory note starts the whole matrix: PR #18 edited only
+  [`.github/agent-memory/veldrath-memory.md`](../.github/agent-memory/veldrath-memory.md) and still
+  ran the web build, the game-loop e2e and the image package. Rebase the PR branch while it is
+  still open; merge into it only when rebasing would rewrite a branch someone else has already
+  pulled.
+
+Each workflow keeps its `push` and `pull_request` path lists **identical**, and lists
+`.github/agent-memory/**` by name even though `**/*.md` already matches it — the memory file is the
+one Markdown file every session touches, and a silent skip there is invisible until a stale entry
+ships.
 
 So the filters are not decorative: before this was fixed every workflow listed only `main`,
 which meant the release PR (`development` → `main`) was the only PR ever tested and the
 work that actually lands in `development` had no CI at all.
+
+**A workflow whose `paths` do not match produces no run and no status.** That is why the branch
+protection rule in section 2 requires the `*` status glob rather than the five job names: a required
+context that never reports stays `pending`, and a `plans/`-only pull request would block on four
+checks that will never exist.
 
 ### Dependency and action updates (there is no bot)
 
