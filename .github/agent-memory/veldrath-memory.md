@@ -3282,7 +3282,7 @@ when the trees match — give it a real change (this note) or loosen the rule de
 Session-92 recorded the `["*"]` rule as "every check that reported must be green". The other half of
 that sentence — *at least one status must exist* — is a real deadlock for a change that no workflow
 watches, and it is not hypothetical: PR #27 (`wt/t_7db54bc9`, `4e8a2311`) touches only `.gitignore`,
-which appears in none of the five `on.pull_request.paths` lists, so all five workflows are filtered
+which appears in none of the six `on.pull_request.paths` lists, so every workflow is filtered
 out, no run is created, and the head commit carries zero statuses.
 
 Read from the source rather than inferred (`services/pull/commit_status.go`, tag `v15.0.11`, the
@@ -3306,9 +3306,38 @@ What that means in practice:
 - Posting a commit status by hand to satisfy the gate is not an acceptable unblock: it would let any
   agent self-certify a merge.
 
-**Open decision:** which workflow should always report for a root-config-only pull request (a
-lightweight always-on check, or adding these paths to an existing list) belongs to whoever owns the
-merge gate — do not decide it inside a one-line change.
+**Decided (2026-11-03, card `t_a6502114`): `["*"]` stays and one workflow reports on every pull
+request.** `.github/workflows/merge-gate.yml` triggers on `pull_request` for `main` and `development`
+with **no `paths` filter**, and runs `scripts/ci-merge-gate.sh --lint` — L1 every workflow has a
+`name:`, L2 every `uses:` is one of the six actions mirrored on this instance, L3 every
+`pull_request` workflow triggers on both `main` and `development`, L4 at least one `pull_request`
+workflow has no `paths`/`paths-ignore` (the invariant that keeps the zero-status case impossible).
+The decision, the rejected alternatives and the inventory are in `docs/ci-forgejo.md` under
+"Branch protection: what can block a merge".
+
+Why not the `paths`-list alternative: measured on the tree, **39 tracked paths in six classes** match
+no list — root dotfiles and editor config (10, `LICENSE` included), `NuGet.config` + `dotnet-tools.json`
++ `toc.yml` (3), the four root `.slnx` (4), `config/grafana/**` + `config/prometheus/**` +
+`docker-compose.{coolify,dev,prod}.yml` (10), scripts no workflow names (11), the `wiki` submodule pin
+(1). Adding three names would leave 36 deadlocked and reopen on the next root file. Those paths now
+merge on the merge gate alone — no build, no test — which is written down there so nobody mistakes
+"green" for "built".
+
+The deadlock itself was reproduced end to end before deciding, rather than taken from the Session-95
+inference: probe PR #32 (branch `probe-x`, head `b59e841d`, only `.gitignore` changed) answered
+`{"state":"","total_count":0}` and `[]` for statuses, `mergeable: true` for the pull request, and
+`405 not allowed to merge [reason: Not all required status checks successful]` for
+`POST /pulls/32/merge {"force_merge": false}`. The PR was closed and the branch deleted. The
+workflow and script land in card `t_48d8d3c1`.
+
+One correction to the force_merge reasoning recorded above: the token every worker runs with is the
+instance administrator (`GET /user` → `kungraseri`, `is_admin: true`), so `force_merge` **is**
+available to an agent — `CheckPullMergeable` clears the protection error for an admin. The gate is
+therefore enforced by discipline, not capability: never use `force_merge` or a hand-posted status to
+satisfy `["*"]`, because either one lets a worker certify its own merge. The API's
+`GET .../commits/{sha}/statuses` also lists every state transition of a context, while the gate reads
+the latest row per context (`GetLatestCommitStatus`, `services/pull/commit_status.go:128`) — a stale
+`pending` row beside a `success` is not a red gate.
 
 ### Session-96 (2026-11-03) — The .NET coverage gate landed, and settling it moved no floor
 
