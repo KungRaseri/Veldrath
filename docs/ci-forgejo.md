@@ -374,7 +374,7 @@ The alternatives were measured against the tree instead of argued:
 
 | Alternative | Why not |
 |---|---|
-| Add root-config paths to an existing list | The set is not three files: 41 tracked paths in seven classes match no list today (table below), and every new root file reopens the deadlock silently. It is also conceptually false — no component's output depends on `.gitignore` |
+| Add root-config paths to an existing list | The set is not three files: 39 tracked paths in seven classes match no list today (table below), and every new root file reopens the deadlock silently. It is also conceptually false — no component's output depends on `.gitignore` |
 | Keep `["*"]` and document `force_merge` for this class | It works, and that is the objection: the token every worker here authenticates with belongs to the instance administrator (`GET /user` → `kungraseri`, `is_admin: true`), and `CheckPullMergeable` clears the protection error for an admin. Documenting it would make "any worker certifies its own merge" the routine path — the same reason posting a status by hand is forbidden. It stays break-glass |
 | Switch to named contexts | Already rejected above, and this does not change it: a path-filtered workflow still never reports |
 
@@ -395,8 +395,8 @@ repository has actually broken CI, plus the invariant that keeps this remedy ali
 
 Cost: one job — one `actions/checkout@v7` and one `bash scripts/ci-merge-gate.sh --lint`, with no
 SDK, npm, docker or service container. **Measured on 2026-11-03: 5 s** for the whole job (`duration`
-on `GET /actions/runs/1349`, run 1349, head `3ea0176f`, PR #37; the `pending` row was written at
-19:25:44Z and the `success` row at 19:25:50Z). For scale, the six build gates that reported on
+on `GET /actions/runs/1357`, run 1357, head `cf0c3cc6`, PR #38; the `pending` row was written at
+19:31:44Z and the `success` row at 19:31:50Z). For scale, the six build gates that reported on
 `0efb7c7c` recorded between 93 s and 485 s each (`duration` on `GET /actions/runs/{id}`; the cheapest
 was `Build Docs` at 93 s, run 1325), and this job only checks out a depth-1 tree and greps it. It
 runs on every pull request into `development` or `main`, which is the point.
@@ -444,8 +444,8 @@ posting a status by hand stays forbidden: a status any agent can mint certifies 
 
 #### Files that no component workflow builds
 
-Measured against the tree on 2026-11-03 (`git ls-files`, 3470 paths, the merge gate and its script
-included): **41 paths match no `on.pull_request.paths` pattern.** Before the merge gate they produced
+Measured against the tree on 2026-11-03 (`git ls-files`, 3472 paths, the merge gate and its script
+included): **39 paths match no `on.pull_request.paths` pattern.** Before the merge gate they produced
 zero statuses and deadlocked the gate; now they produce exactly one — the merge gate — and merge with
 **no build and no test**. Regenerate the list with `bash scripts/ci-merge-gate.sh --uncovered`.
 
@@ -455,7 +455,7 @@ zero statuses and deadlocked the gate; now they produce exactly one — the merg
 | Root build metadata | 3 | `NuGet.config`, `dotnet-tools.json`, `toc.yml` |
 | Solution files | 4 | `RealmEngine.slnx`, `Veldrath.Discord.slnx`, `Veldrath.Libraries.slnx`, `Veldrath.Server.slnx` |
 | Observability and deploy config | 10 | `config/grafana/dashboards/{10915,19194,23178,23179}.json`, `config/grafana/provisioning/dashboards/dashboards.yml`, `config/grafana/provisioning/datasources/prometheus.yml`, `config/prometheus/prometheus.yml`, `docker-compose.coolify.yml`, `docker-compose.dev.yml`, `docker-compose.prod.yml` |
-| Scripts no workflow names | 12 | `scripts/apply-branch-protection.sh`, `scripts/ci-merge-gate.sh`, `scripts/lib/forgejo-api.sh`, `scripts/format-json-files.py`, `scripts/create-release-tag.ps1`, `scripts/download-assets.ps1`, `scripts/generate-coverage-report.ps1`, `scripts/generate-version.ps1`, `scripts/package-assets.ps1`, `scripts/sync-assets.ps1`, `scripts/onebit_labeled.png`, `scripts/roguelike_base_labeled.png` |
+| Scripts no workflow names | 10 | `scripts/ci-merge-gate.sh`, `scripts/format-json-files.py`, `scripts/create-release-tag.ps1`, `scripts/download-assets.ps1`, `scripts/generate-coverage-report.ps1`, `scripts/generate-version.ps1`, `scripts/package-assets.ps1`, `scripts/sync-assets.ps1`, `scripts/onebit_labeled.png`, `scripts/roguelike_base_labeled.png` |
 | Submodule pin | 1 | `wiki` |
 | The always-on check itself | 1 | `.github/workflows/merge-gate.yml` (it declares no `paths` at all, so no list can name it) |
 
