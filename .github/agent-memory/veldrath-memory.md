@@ -3174,3 +3174,40 @@ Earlier session entries that describe the file as configuring nuget / npm / gith
 are historical — do not go looking for `.github/dependabot.yml`, and do not re-create it. If a bot
 is ever wanted here it is self-hosted Renovate with `renovate.json`, not a resurrected Dependabot
 config.
+
+### Session-92 (2026-11-03) — Web coverage gate green: branch tail closed
+
+`npm run coverage --workspace client` now **passes** (exit 0), which is the first time the gate the
+user chose has held:
+
+| Metric | Value |
+|---|---|
+| Lines | 99.19% (4702/4740) |
+| Statements | 99.24% (7596/7654) |
+| Functions | 98.83% (1614/1633) |
+| Branches | 95.54% (2937/3074) |
+
+80 test files, 1096 tests. Per-glob floors also clear: `src/lib/server` 99.67 lines / 100 branches,
+`src/lib/game/**/*.ts` 99.88 / 95.68, `src/lib/foundry` 100 / 98.08, `src/routes/**/*.ts` 98.70 /
+94.77, `src/**/*.svelte` 98.95 / 92.66. PR #13. The path there (PRs 1–13 of the coverage pass) is
+recorded in [`plans/web-feature-parity-and-coverage.md`](../../plans/web-feature-parity-and-coverage.md),
+which is the live document for this work — the earlier "still red at 76.33% / 58.05%" notes in this
+file are historical.
+
+What future coverage work on this app needs to know:
+
+- **Svelte compiles `{expr}` to `expr ?? ''`.** Most "missing branches" in a `.svelte` file are that
+  fallback, not logic: render the same page with the field nullish and it is covered.
+- **`<select value={…}>` compiles to `if (select_value !== (select_value = …))`**, whose false side
+  cannot run in a static render. Those branches are not reachable from a test; do not chase them and
+  do not exclude the whole file to hide them.
+- **Stateful components need a fresh render per case.** The overlays, the character sheet, and the
+  creation wizard keep pending state; a shared `beforeEach` render leaks it, and two mounted panels
+  make `getByRole` ambiguous.
+
+**.NET still has no coverage gate.** [`coverage.runsettings`](../../coverage.runsettings) collects
+cobertura and every .NET workflow uploads a `CoverageReport/` artifact, but nothing compares it to a
+floor, so `dotnet test` stays green at any coverage level. `dotnet` is not installed on
+kung-lab-hermes, so the first number has to come from CI or a host with the SDK. Tracked as its own
+card (gate contract: which projects, which floors, cobertura-parse script vs
+`coverlet.msbuild` threshold) — do not describe the 90% goal as met for .NET until that lands.
