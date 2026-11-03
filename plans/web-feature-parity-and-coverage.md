@@ -609,33 +609,62 @@ Traps worth recording:
 - Local runs need `web/client/.env` (gitignored) mirroring the `ci-web.yml` job env; without
   `PUBLIC_API_URL` / `PUBLIC_HUB_URL` SvelteKit refuses to start under Vitest with `env_invalid`.
 
-#### Remaining work: branch coverage
+#### Branch coverage closed (PR 14)
 
-Measured after this PR, every remaining red is a branch floor:
+The gate is green. 24 branch-focused suites, 281 tests, moving the measured figures from PR 13's
+96.85 / 96.85 / 96.44 / 81.71 to:
 
-| Gate | Value | Needs |
+| Metric | Before (PR 13) | After (PR 14) |
 |---|---|---|
-| global branches | 81.71% (2512/3074) | 90 → **+255 branches** |
-| `src/lib/game/**/*.ts` branches | 85.23% | 92 |
-| `src/routes/**/*.ts` branches | 79.48% | 90 |
-| `src/**/*.svelte` branches | 78.76% | 80 (≈21 branches) |
+| Lines | 96.85% | **99.19%** (4702/4740) |
+| Statements | 96.85% | **99.24%** (7596/7654) |
+| Functions | 96.44% | **98.83%** (1614/1633) |
+| Branches | 81.71% | **95.54%** (2937/3074) |
 
-Uncovered branches are 353 in `.svelte` files and 209 in TypeScript. The largest holes are the
-character-creation wizard (`characters/new/+page.svelte`, 66), the session store
-(`session.svelte.ts`, 45), and `GameOverlays.svelte` (42). The next unit of work is one PR per
-file group, adding a case per uncovered template conditional — the same shape as the suites above,
-not a new harness. The `.svelte` floor is ~21 branches away and should close first; global 90 is a
-multi-PR effort and the gate stays as it is (never lowered to match).
+Every floor now clears, not just the global gate:
 
-Two structural points that make the tail cheaper than it looks:
+| Glob | Floor | Measured (lines / statements / branches / functions) |
+|---|---|---|
+| global | 90 | 99.19 / 99.24 / 95.54 / 98.83 |
+| `src/lib/server/**` | 92 | 99.67 / 99.68 / 100 / 100 |
+| `src/lib/game/**/*.ts` | 92 | 99.88 / 99.49 / 95.68 / 99.08 |
+| `src/lib/foundry/**` | 92 | 100 / 100 / 98.08 / 100 |
+| `src/routes/**/*.ts` | 90 | 98.70 / 99.04 / 94.77 / 98.34 |
+| `src/**/*.svelte` | 85 / 85 / 80 / 85 | 98.95 / 99.13 / 92.66 / 98.38 |
 
-- v8 counts `typeof window === 'undefined' ? … : …` and `?? ''` fallbacks inside compiled templates
-  as branches, and several are unreachable under jsdom. Those need either an honest exclusion with
-  a comment (allowed by Phase 0.4 for code that cannot execute in a test process) or a deliberate
-  test that asserts the fallback value.
-- Nearly every row of a staff table is a conditional (`{item.publishedAt ? date : '—'}`,
-  `{report.isResolved ? … : …}`). A second render case per page with the opposite values covers
-  several branches at once, which is why the page suites above were written in pairs.
+`cd web && npm run coverage --workspace client` — **80 files, 1096 tests, all passing, exit 0**, so
+the thresholds are enforced rather than merely reported.
+
+The suites are companions, not replacements: each one targets only the arms its predecessor left
+dark, which keeps a failure pointing at a specific behaviour instead of at "a branch". The shape is
+consistent enough to reuse:
+
+| Group | Suites | What they add |
+|---|---|---|
+| Game shell and overlays | `game-screen-arms`, `game-overlays-arms`, `left-sidebar-branches`, `shell-branches`, `widgets-branches`, `item-icons-branches` | the sparse-value side of every interpolated label, the untaken `switch` default, pending-discard and tooltip state |
+| Pure game logic | `session-events`, `reducers-branches`, `cardinal-layout-branches`, `point-buy-branches`, `types-branches` | optional-field event arms, name-check race guards, the direction switches in the map layout, unpriced cost entries |
+| Routes | `pages-creation-branches`, `pages-staff-branches`, `pages-foundry-branches`, `pages-editorial-branches`, `pages-public-branches`, `pages-roster`, `pages-account-branches` | a deliberately sparse payload per page (null counters, absent display names, missing dates) and the `{#if record}` fallback in edit mode |
+| Server modules | `staff-server-branches`, `public-server-branches`, `auth-branches`, `hooks.server-branch` | every upstream rejection as `fail(400)` carrying the API message, list fallbacks, and the lazy Better Auth singleton's half-configured providers |
+| Shared chrome | `hub-branches`, `component-branches` | the non-2xx game-token fetch, and each of the four OAuth click outcomes |
+
+What made the tail tractable:
+
+- **Svelte compiles `{expr}` to `expr ?? ''`.** Nearly every missing branch in a template is that
+  fallback, so one render with a nullish field covers it — no new harness, and the assertion stays
+  on the rendered text, which proves the arm actually ran.
+- **`<select value={…}>` compiles to `if (select_value !== (select_value = …))`.** The false side
+  and the inner `?? ''` cannot execute during a static render, so they are not reachable from a
+  test at all. That is the bulk of the 137 branches still uncovered below.
+- **Shared state needs a fresh render per case.** The overlays, the character sheet, and the wizard
+  each own pending state, so a shared `beforeEach` render leaks it between assertions; `getByRole`
+  also starts matching a neighbouring panel if two are mounted.
+
+Residual uncovered branches: **137 of 3074**, none of them a gate. 46 files hold at least one; the
+largest are `characters/new/+page.svelte` (17), `GameOverlays.svelte` (14),
+`(foundry)/…/edit/+page.server.ts` (10), `LeftSidebar.svelte` (8), and `GameScreen.svelte` (6).
+They are compiled-guard artefacts and defensive arms for states the API cannot currently produce,
+so they are recorded rather than chased — a branch number is not worth a test that asserts nothing.
+
 
 
 ## Traps
