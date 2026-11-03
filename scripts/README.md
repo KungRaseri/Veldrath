@@ -66,6 +66,24 @@ Re-formats all JSON files in a given directory to consistent 2-space indentation
 python scripts/format-json-files.py path/to/data
 ```
 
+---
+
+## `apply-branch-protection.sh`
+
+Applies the merge gate for `development` and `main`: status checks required, direct pushes refused,
+reviews off. It is the executable copy of the decision in
+[`docs/ci-forgejo.md`](../docs/ci-forgejo.md#branch-protection-what-can-block-a-merge) — read that
+section before changing any of the values.
+
+```bash
+set -a; . ~/.config/zoo-agent/forgejo.env; set +a
+export FORGEJO_SERVER_URL="$FORGEJO_URL"       # FORGEJO_TOKEN comes from the env file
+scripts/apply-branch-protection.sh             # create or edit, then read the rule back and verify
+scripts/apply-branch-protection.sh --check     # verify only; exits 1 when the stored rule has drifted
+```
+
+Idempotent, and it fails rather than leaving a rule that differs from the one requested. `BRANCHES`
+and `STATUS_CONTEXTS` override the defaults.
 
 ## Available Scripts
 
