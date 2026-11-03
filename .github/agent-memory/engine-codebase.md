@@ -94,8 +94,21 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
   the `BaseDamage` dice roll and the status-effect chance roll; that was the last production caller of
   `DiceRoller.RollDiceString(string)`, so the parameterless compatibility overload now has no
   production caller (it stays public API).
+- `EnemyPowerAIService` (`Features/Combat/Services/EnemyAbilityAIService.cs` — the file keeps its old
+  name, the class is `EnemyPowerAIService`) injects `IRandomSource? randomSource = null`;
+  `CombatService` passes its own source through, so a scripted `CombatService` fake also controls
+  enemy ability selection. Each `DecideAbilityUsage` call rolls `Next(100)` once per candidate in
+  descending priority order (70 defensive below 30% health, 50 buff above 80% health, 45 debuff
+  while the player is above 70%, 40 offensive above 50% health, 20 fallback), then a 20%
+  `Next(100)` fallback roll plus `Next(availableAbilities.Count)` when every priority roll fails.
+  Its tests (`EnemyPowerAIServiceTests.cs`) script those draws and assert the chosen ability and
+  `FakeRandomSource.IntCallCount` instead of a statistical threshold.
+- Known classification overlap in `EnemyPowerAIService`: `IsOffensiveAbility` matches the words
+  "attack"/"damage" anywhere in the description, so a buff power whose description mentions them is
+  classified offensive and takes the 40 priority before the 50 buff branch. The buff test avoids
+  those words deliberately; the ordering itself is unchanged (not part of the de-flake).
 - Still nondeterministic, deliberately out of scope for that pass: `EnemySpellCastingService`,
-  `EnemyAbilityAIService`, `NameComposer`, `LootTableService`, item generation and
+  `NameComposer`, `LootTableService`, item generation and
   `NodeSpawnerService` keep their own `new Random()`.
 - Coverage branch counts are **not** fully deterministic. Three consecutive full runs on the merged
   base agreed (24,213/32,121 lines, 5,823/10,490 branches), but the review of PR #35 measured 5,833,
@@ -107,7 +120,7 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
   — reproduced once in 30 filtered runs of that class. `SkillProgressionServiceTests` now awards the
   same source twice directly, so the arm is covered on every run; three consecutive merged runs
   afterwards agreed exactly on 24,213/32,121 lines and 5,824/10,490 branches. Do not restate this as
-  whole-suite determinism: `EnemySpellCastingService`, `EnemyAbilityAIService`, `NameComposer`,
+  whole-suite determinism: `EnemySpellCastingService`, `NameComposer`,
   `LootTableService`, item generation and `NodeSpawnerService` still keep their own `new Random()`.
 - The gate is live as of 2026-11-03 (PR #21), and `scripts/coverage-floors.json` deliberately records
   the *six-run lowest* observation per assembly with the floor one point below it (Core floor 69
