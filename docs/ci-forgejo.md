@@ -9,10 +9,9 @@ bitten this pipeline before: action names keep their GitHub namespaces and resol
 copies on this instance (§1), `$GITHUB_PATH` is not honoured and is worked around in
 [`scripts/ci-toolchain.sh`](../scripts/ci-toolchain.sh) and `docs.yml`, `::warning::`
 annotations are plain log lines on this runner, and `.github/dependabot.yml` was inert
-because this instance runs no Dependabot. The trigger scope, the dependency-update
-cadence and the publish-proof decision are recorded in
-[`plans/ci-forgejo-decisions.md`](../plans/ci-forgejo-decisions.md) until they fold back
-into this file.
+because this instance runs no Dependabot. What each trigger actually runs is in
+[§1](#what-runs-where), and how the publish path was proven before it was trusted is in
+[§3](#3-releases).
 
 Read this before editing a workflow. The failure modes are not obvious, and two of them
 make a job die in about a second with no useful output.
@@ -84,6 +83,32 @@ Everything else is a repository script, so it needs no action at all:
 | `actions/upload-pages-artifact` + `actions/deploy-pages` | `_site/` uploaded as the `docs-site` artifact |
 | `gh workflow run` dispatch | not needed: the package job creates its own tag and release |
 | `ghcr.io` | the Forgejo container registry (section 4) |
+
+### What runs where
+
+Every workflow watches the same two integration branches, and none of them publishes from a
+pull request:
+
+| Trigger | What runs |
+|---|---|
+| push to `main` | build + test, **and** the publish/deploy jobs |
+| push to `development` | build + test; publish jobs are skipped |
+| pull request whose **base** is `main` or `development` | build + test only |
+| `workflow_dispatch` | build + test only |
+| `workflow_dispatch` with `publish: true` | build + test, **and** the publish/deploy jobs |
+
+Two details of that contract are not what a GitHub habit would predict, and both were
+measured on this instance rather than assumed:
+
+- **`pull_request.branches` filters on the base branch** — the branch the PR merges into,
+  not the head branch. A PR from `wt/some-fix` into `development` runs only because
+  `development` is listed; listing `wt/some-fix` would match nothing.
+- **`pull_request.paths` filters on the pull request's changed files** — the whole diff,
+  not the tip commit.
+
+So the filters are not decorative: before this was fixed every workflow listed only `main`,
+which meant the release PR (`development` → `main`) was the only PR ever tested and the
+work that actually lands in `development` had no CI at all.
 
 ### Dependency and action updates (there is no bot)
 
@@ -198,6 +223,58 @@ built the zip removes that entirely.
 
 Tag prefixes: `engine/v*`, `server/v*`, `discord/v*`.
 
+### The publish gate
+
+Publishing — tag, release, image push, docs deploy — is a job in four workflows and a single
+step in [`docs.yml`](../.github/workflows/docs.yml), and every one of them carries the same
+expression:
+
+```yaml
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish for real (tag, release, image push, docs deploy). Off = build only.'
+        type: boolean
+        default: false
+
+jobs:
+  package:
+    if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+```
+
+Two parts of that are load-bearing and easy to break on the next edit:
+
+- **`type: boolean`.** Without it the input arrives as the string `"false"`, which is
+  **truthy** in the expression language — a dispatch that asked for a dry run would publish.
+- **`github.event_name`.** On its own, `github.ref == 'refs/heads/main'` is also satisfied by
+  a `workflow_dispatch` whose `ref` is `main`, so before this gate a manual dispatch was a
+  release. The event check is what makes dispatch build-only by default.
+
+A push to `main` behaves exactly as it did before: the second half of the expression is the
+old guard, unchanged.
+
+### How the publish path was proven
+
+The path had never run here: `/releases` was empty and every publish-job task ever recorded
+was `skipped`. It was therefore rehearsed in a throwaway private repository,
+`Veldrath/_ci-publish-rehearsal`, on 2026-11-02, rather than discovered by merging into
+`main`. The rehearsal took this tree and changed exactly one thing — `IMAGE_NAME` to
+`veldrath-server-rehearsal`, `veldrath-discord-rehearsal` and `veldrath-web-rehearsal` — so
+the run could not write `:latest` on the image paths production and Coolify pull from. Only
+`REGISTRY_TOKEN` was copied into it; `COOLIFY_*` was deliberately left unset.
+
+One push to the rehearsal repository's `main` produced, from the API rather than from a job
+badge: three releases — `engine/v0.1.1629`, `server/v0.1.1629` and `discord/v0.1.1629` — each
+carrying its `.zip` asset, and two images in the registry,
+`veldrath-server-rehearsal` and `veldrath-discord-rehearsal`, each tagged `:latest` and
+`:0.1.1629`. `docs.yml` logged `COOLIFY_DOCS_DEPLOY_URL / COOLIFY_TOKEN are not set —
+skipping` and stayed green, which is the skip path referenced in section 5. `ci-web` published
+nothing because its `build-test` job is red on the coverage gate (section 1), so the web image
+remains the one component the first real release will not produce.
+
+The repository and its images were deleted afterwards; nothing production-visible moved.
+
 ## 4. Container registry
 
 Images are published to the Forgejo registry on this instance:
@@ -270,6 +347,7 @@ All four of these have actually happened in this repository.
 | Job looks hung at ~0% CPU, one open TLS connection, artifact step | `upload-artifact` is walking thousands of files one request each. Tar the tree first (section 5). |
 | Coolify pulls an old image | Coolify is still pointed at `ghcr.io/…`; see section 4. |
 | Release created but no asset | The zip glob did not match; check the `Upload artifacts` step output. |
+| Publish job skipped on a dispatch | The dispatch left `publish` at `false`, which is the default: a dispatch is build-only by design. Re-dispatch with `publish: true` if you meant to publish. |
 | PR comment duplicated | A different `--marker` was used; markers must be stable per component. |
 
 ### Reading a job log
