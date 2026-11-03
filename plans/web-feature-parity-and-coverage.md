@@ -572,11 +572,12 @@ guards, tracked with the `GameOverlays` work).
 
 ### PR 13 — the staff surfaces, the overlays, and the branch tail
 
-Six new suites plus two for the request hook, 153 tests, taking the measured figures from PR 12's
+Six new suites plus two for the request hook, 153 tests — the first commit of this PR. It takes the measured figures from PR 12's
 **71.35% lines / 63.37% statements / 68.15% functions / 62.39% branches** to **96.85 / 96.85 /
 96.44 / 81.71** (815 tests in 56 files). Lines, statements and functions now clear the 90 gate and
-every per-glob line/statement/function floor. **Branch coverage is the remaining red gate**, and it
-is the only thing standing between this pass and the 90% the user chose.
+every per-glob line/statement/function floor. **Branch coverage is the remaining red gate** at this
+point, and it is the only thing standing between this pass and the 90% the user chose — the second
+commit below closes it.
 
 | Suite | Covers | Tests |
 |---|---|---|
@@ -609,12 +610,12 @@ Traps worth recording:
 - Local runs need `web/client/.env` (gitignored) mirroring the `ci-web.yml` job env; without
   `PUBLIC_API_URL` / `PUBLIC_HUB_URL` SvelteKit refuses to start under Vitest with `env_invalid`.
 
-#### Branch coverage closed (PR 14)
+#### Branch coverage closed (second commit of PR 13)
 
-The gate is green. 24 branch-focused suites, 281 tests, moving the measured figures from PR 13's
-96.85 / 96.85 / 96.44 / 81.71 to:
+The gate is green. 24 branch-focused suites, 281 tests, moving the measured figures from the
+staff-surface commit's 96.85 / 96.85 / 96.44 / 81.71 to:
 
-| Metric | Before (PR 13) | After (PR 14) |
+| Metric | Before (first commit) | After (branch-tail commit) |
 |---|---|---|
 | Lines | 96.85% | **99.19%** (4702/4740) |
 | Statements | 96.85% | **99.24%** (7596/7654) |
@@ -665,7 +666,12 @@ largest are `characters/new/+page.svelte` (17), `GameOverlays.svelte` (14),
 They are compiled-guard artefacts and defensive arms for states the API cannot currently produce,
 so they are recorded rather than chased — a branch number is not worth a test that asserts nothing.
 
-
+There is a small residual on lines too, so 99.19% should not be read as full coverage:
+`src/routes/game/+page.svelte` (the redirect stub, 5 lines) and `src/routes/play/[id]/+page.svelte`
+(the route that mounts `GameScreen` and calls `session.connect`/`disconnect`, 8 lines) report **0%**
+and account for **13 of the 38** uncovered lines app-wide. Both are exercised by
+`tests/game-auth.e2e.ts` in the Playwright job; Vitest cannot mount them without a real session, so
+that wiring stays outside the unit-coverage figure.
 
 ## Traps
 

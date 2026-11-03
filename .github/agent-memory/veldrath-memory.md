@@ -3207,7 +3207,8 @@ What future coverage work on this app needs to know:
 
 **.NET still has no coverage gate.** [`coverage.runsettings`](../../coverage.runsettings) collects
 cobertura and every .NET workflow uploads a `CoverageReport/` artifact, but nothing compares it to a
-floor, so `dotnet test` stays green at any coverage level. `dotnet` is not installed on
-kung-lab-hermes, so the first number has to come from CI or a host with the SDK. Tracked as its own
+floor, so `dotnet test` stays green at any coverage level. The SDK is present on kung-lab-hermes —
+`~/.dotnet/dotnet`, version 10.0.403 — it is only missing from `PATH`, so
+`export PATH="$HOME/.dotnet:$PATH"` gives a local number without waiting for CI. Tracked as its own
 card (gate contract: which projects, which floors, cobertura-parse script vs
 `coverlet.msbuild` threshold) — do not describe the 90% goal as met for .NET until that lands.
