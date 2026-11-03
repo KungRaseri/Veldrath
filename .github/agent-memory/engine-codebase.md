@@ -77,7 +77,12 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - Do not write "roll until the branch lands" loops in combat tests any more — scripted fakes are the
   convention (`CombatServiceTests`, `ExploreLocationCommandHandlerTests`,
   `FleeFromCombatHubCommandHandlerTests`, `FleeFromCombatHandlerTests`, `DungeonGeneratorServiceTests`,
-  `ApplyStatusEffectTests`, `UsePowerHandlerTests`).
+  `ApplyStatusEffectTests`, `UsePowerHandlerTests`, `CastSpellHandlerTests`).
+- `SpellCastingService.CastSpell` makes exactly one `NextDouble()` draw per attempt, in
+  `CheckCastSuccess`: `rate = clamp(0.90 + 0.005 * (rank - MinimumSkillRank), 0.60, 0.99)` and the
+  cast succeeds when `roll < rate` (a numeric `BaseEffectValue` never rolls dice). Script a margin
+  away from the boundary: the computed floor rate is `0.6000000000000001`, so scripting exactly
+  `0.60` succeeds rather than fizzling.
 - `UsePowerHandler` (`Features/Progression/Commands/UseAbilityHandler.cs`) injects the source for both
   the `BaseDamage` dice roll and the status-effect chance roll; that was the last production caller of
   `DiceRoller.RollDiceString(string)`, so the parameterless compatibility overload now has no
