@@ -3188,8 +3188,11 @@ user chose has held:
 | Branches | 95.54% (2937/3074) |
 
 80 test files, 1096 tests. Per-glob floors also clear: `src/lib/server` 99.67 lines / 100 branches,
-`src/lib/game/**/*.ts` 99.88 / 95.68, `src/lib/foundry` 100 / 98.08, `src/routes/**/*.ts` 98.70 /
-94.77, `src/**/*.svelte` 98.95 / 92.66. PR #13. The path there (PRs 1–13 of the coverage pass) is
+`src/lib/game/**/*.ts` 99.73 / 99.47, `src/lib/foundry` 100 / 98.08, `src/routes/**/*.ts` 99.49 /
+97.83, `src/**/*.svelte` 98.95 / 92.66. The `src/lib/game/**/*.ts` and `src/routes/**/*.ts` rows are
+the globs the thresholds actually match; the directory totals that also include the `.svelte` files
+beside them are lower (99.88 / 95.68 and 98.70 / 94.77) and are not the floored numbers. PR #13. The
+path there (PRs 1–13 of the coverage pass) is
 recorded in [`plans/web-feature-parity-and-coverage.md`](../../plans/web-feature-parity-and-coverage.md),
 which is the live document for this work — the earlier "still red at 76.33% / 58.05%" notes in this
 file are historical.

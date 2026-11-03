@@ -628,10 +628,16 @@ Every floor now clears, not just the global gate:
 |---|---|---|
 | global | 90 | 99.19 / 99.24 / 95.54 / 98.83 |
 | `src/lib/server/**` | 92 | 99.67 / 99.68 / 100 / 100 |
-| `src/lib/game/**/*.ts` | 92 | 99.88 / 99.49 / 95.68 / 99.08 |
+| `src/lib/game/**/*.ts` | 92 | 99.73 / 99.54 / 99.47 / 100 |
 | `src/lib/foundry/**` | 92 | 100 / 100 / 98.08 / 100 |
-| `src/routes/**/*.ts` | 90 | 98.70 / 99.04 / 94.77 / 98.34 |
+| `src/routes/**/*.ts` | 90 | 99.49 / 99.53 / 97.83 / 100 |
 | `src/**/*.svelte` | 85 / 85 / 80 / 85 | 98.95 / 99.13 / 92.66 / 98.38 |
+
+Each row is measured over exactly the files its glob selects. Vitest resolves these threshold globs
+with `pm(glob)` against root-relative paths, so `src/lib/game/**/*.ts` and `src/routes/**/*.ts` never
+match the `.svelte` files beside them; the whole-directory aggregates that do include those components
+are lower (99.88 / 99.49 / 95.68 / 99.08 and 98.70 / 99.04 / 94.77 / 98.34) and are not the floored
+numbers.
 
 `cd web && npm run coverage --workspace client` — **80 files, 1096 tests, all passing, exit 0**, so
 the thresholds are enforced rather than merely reported.
