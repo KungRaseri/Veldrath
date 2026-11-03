@@ -23,6 +23,13 @@ describe('gameResultResponse', () => {
 		await expect(response.json()).resolves.toEqual({ error: 'Server unavailable' });
 	});
 
+	it('defaults a missing upstream status to 200', async () => {
+		const response = gameResultResponse({ status: 0, data: { ok: true }, error: null });
+
+		expect(response.status).toBe(200);
+		await expect(response.json()).resolves.toEqual({ ok: true });
+	});
+
 	it('returns a bodyless 204 for successful deletes', () => {
 		const response = gameResultResponse({ status: 204, data: null, error: null });
 

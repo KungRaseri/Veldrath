@@ -2,24 +2,23 @@
 
 [![.NET Version](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://kungraseri.github.io/RealmEngine/)
+[![CI guide](https://img.shields.io/badge/docs-ci--forgejo-blue)](docs/ci-forgejo.md)
 
 ## CI Status
 
-| Component | Build | Coverage |
-|-----------|-------|----------|
-| Engine Libraries | [![CI - Engine](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-engine.yml/badge.svg)](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-engine.yml) | [![codecov (engine)](https://codecov.io/gh/KungRaseri/RealmEngine/branch/main/graph/badge.svg?flag=engine)](https://codecov.io/gh/KungRaseri/RealmEngine?flag=engine) |
-| Veldrath Server | [![CI - Server](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-server.yml/badge.svg)](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-server.yml) | [![codecov (server)](https://codecov.io/gh/KungRaseri/RealmEngine/branch/main/graph/badge.svg?flag=server)](https://codecov.io/gh/KungRaseri/RealmEngine?flag=server) |
-| Veldrath Web (client) | [![CI - Web](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-web.yml/badge.svg)](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-web.yml) | [![codecov (web)](https://codecov.io/gh/KungRaseri/RealmEngine/branch/main/graph/badge.svg?flag=web)](https://codecov.io/gh/KungRaseri/RealmEngine?flag=web) |
-| Discord Bot | [![CI - Discord](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-discord.yml/badge.svg)](https://github.com/KungRaseri/RealmEngine/actions/workflows/ci-discord.yml) | [![codecov (discord)](https://codecov.io/gh/KungRaseri/RealmEngine/branch/main/graph/badge.svg?flag=discord)](https://codecov.io/gh/KungRaseri/RealmEngine?flag=discord) |
+CI runs on Forgejo Actions. There is no Codecov: coverage is a workflow artifact on each run.
+
+| Component | Build |
+|-----------|-------|
+| Engine Libraries | [![CI - Engine](https://git.kungraseri.cloud/Veldrath/Veldrath/badges/workflows/ci-engine.yml/badge.svg)](https://git.kungraseri.cloud/Veldrath/Veldrath/actions?workflow=ci-engine.yml) |
+| Veldrath Server | [![CI - Server](https://git.kungraseri.cloud/Veldrath/Veldrath/badges/workflows/ci-server.yml/badge.svg)](https://git.kungraseri.cloud/Veldrath/Veldrath/actions?workflow=ci-server.yml) |
+| Veldrath Web (client) | [![CI - Web](https://git.kungraseri.cloud/Veldrath/Veldrath/badges/workflows/ci-web.yml/badge.svg)](https://git.kungraseri.cloud/Veldrath/Veldrath/actions?workflow=ci-web.yml) |
+| Discord Bot | [![CI - Discord](https://git.kungraseri.cloud/Veldrath/Veldrath/badges/workflows/ci-discord.yml/badge.svg)](https://git.kungraseri.cloud/Veldrath/Veldrath/actions?workflow=ci-discord.yml) |
+| Documentation | [![Docs](https://git.kungraseri.cloud/Veldrath/Veldrath/badges/workflows/docs.yml/badge.svg)](https://git.kungraseri.cloud/Veldrath/Veldrath/actions?workflow=docs.yml) |
 
 ## Latest Releases
 
-| Component | Latest |
-|-----------|--------|
-| Engine Libraries | [![Engine release](https://img.shields.io/github/v/release/KungRaseri/RealmEngine?filter=engine%2Fv*&label=engine&color=brightgreen)](https://github.com/KungRaseri/RealmEngine/releases?q=engine&expanded=true) |
-| Veldrath Server | [![Server release](https://img.shields.io/github/v/release/KungRaseri/RealmEngine?filter=server%2Fv*&label=server&color=brightgreen)](https://github.com/KungRaseri/RealmEngine/releases?q=server&expanded=true) |
-| Discord Bot | [![Discord release](https://img.shields.io/github/v/release/KungRaseri/RealmEngine?filter=discord%2Fv*&label=discord&color=brightgreen)](https://github.com/KungRaseri/RealmEngine/releases?q=discord&expanded=true) |
+Published by each component's package job; see the [releases page](https://git.kungraseri.cloud/Veldrath/Veldrath/releases) for the current versions.
 
 RPG backend engine implementing CQRS with MediatR for clean command/query separation. It powers **Veldrath** — an ASP.NET Core game server plus a SvelteKit app that is the game's only client and its content editor (**Foundry**).
 
@@ -181,7 +180,7 @@ RealmEngine/
 
 ## Downloads
 
-Latest releases are published automatically on each merge to `main` and are available on the [GitHub Releases page](https://github.com/KungRaseri/RealmEngine/releases).
+Latest releases are published automatically on each merge to `main` and are available on the [Forgejo releases page](https://git.kungraseri.cloud/Veldrath/Veldrath/releases). Container images live in the registry on the same instance, under `git.kungraseri.cloud/veldrath/`.
 
 | Component | Tag Prefix | Artifacts |
 |-----------|------------|-----------|
@@ -191,14 +190,14 @@ Latest releases are published automatically on each merge to `main` and are avai
 
 ## Documentation
 
-Full documentation is deployed to **[GitHub Pages](https://kungraseri.github.io/RealmEngine/)** via the `docs.yml` workflow on every push to `main`.
+Reference documentation is generated from XML doc comments by the `docs.yml` workflow on every push to `main` and published as the `docs-site` workflow artifact. Forgejo has no Pages server, so serving it is a hosting decision — see [`docs/ci-forgejo.md`](docs/ci-forgejo.md).
 
-- [Game Design Document](https://kungraseri.github.io/RealmEngine/GDD-Main/) — Complete game specification
-- [Commands and Queries Index](https://kungraseri.github.io/RealmEngine/COMMANDS_AND_QUERIES_INDEX/) — All MediatR commands/queries
-- [API Specification](https://kungraseri.github.io/RealmEngine/API_SPECIFICATION/) — Server and engine API reference
-- [JSON Standards](https://kungraseri.github.io/RealmEngine/standards/json/) — JSON data file standards
-- [Implementation Status](https://kungraseri.github.io/RealmEngine/IMPLEMENTATION_STATUS/) — Feature completion tracking
-- [Roadmap](https://kungraseri.github.io/RealmEngine/ROADMAP/) — Planned features and milestones
+Design and process documentation lives in the repository:
+
+- [`AGENTS.md`](AGENTS.md) — architecture, conventions, build and test commands
+- [`docs/deployment.md`](docs/deployment.md) — deployment overview
+- [`docs/ci-forgejo.md`](docs/ci-forgejo.md) — CI, registry and release mechanics
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — contribution guidelines
 
 ---
 

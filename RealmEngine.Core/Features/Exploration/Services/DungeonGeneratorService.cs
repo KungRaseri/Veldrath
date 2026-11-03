@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Generators.Modern;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Services;
 
 namespace RealmEngine.Core.Features.Exploration.Services;
 
@@ -11,17 +13,22 @@ public class DungeonGeneratorService
 {
     private readonly EnemyGenerator _enemyGenerator;
     private readonly ILogger<DungeonGeneratorService> _logger;
-    private readonly Random _random = new();
+    private readonly IRandomSource _random;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DungeonGeneratorService"/> class.
     /// </summary>
+    /// <param name="enemyGenerator">Generator used to populate combat rooms.</param>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
     public DungeonGeneratorService(
         EnemyGenerator enemyGenerator,
-        ILogger<DungeonGeneratorService> logger)
+        ILogger<DungeonGeneratorService> logger,
+        IRandomSource? randomSource = null)
     {
         _enemyGenerator = enemyGenerator;
         _logger = logger;
+        _random = randomSource ?? SystemRandomSource.Shared;
     }
 
     /// <summary>

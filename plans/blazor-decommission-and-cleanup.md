@@ -96,9 +96,11 @@ Ordered by risk/return. Each item is a single reviewable PR.
 - ✅ `FakeXxx` stub audit — every stub class (`FakeAuthService`, `FakeHttpHandler`, `FakeGameStateService`,
   `FakeHubConnection`, …) is consumed by its own project's tests; nothing was dead, so no consolidation
   was needed. New tests still follow the `FakeXxx` convention instead of a mocking framework.
-- ✅ Coverage visibility: [`codecov.yml`](../codecov.yml) now declares one flag per component
-  (`engine`, `server`, `client`, `forge`, `discord`, `web`) plus project/patch statuses. They are
-  `informational: true` on purpose — flip them to blocking once the numbers have been stable.
+- ✅ Coverage visibility: `codecov.yml` declared one flag per component
+  (`engine`, `server`, `client`, `forge`, `discord`, `web`) plus project/patch statuses. They were
+  `informational: true` on purpose. **Superseded:** Codecov was dropped when the pipeline moved to
+  Forgejo and `codecov.yml` was deleted; coverage is now a `CoverageReport/` artifact plus a sticky PR
+  comment (see [`docs/ci-forgejo.md`](../docs/ci-forgejo.md)).
 - ✅ Markdown link check: [`scripts/check-markdown-links.mjs`](../scripts/check-markdown-links.mjs) +
   the markdown link check (now a step in [`docs.yml`](../.github/workflows/docs.yml)). Offline by design (no
   external URL checks), understands the repository's `path:line` link form, and skips `web/llms/` and

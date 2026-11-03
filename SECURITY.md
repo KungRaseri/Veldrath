@@ -13,16 +13,15 @@ Security fixes are applied to the **latest release** of each component. Older re
 
 ## Reporting a Vulnerability
 
-**Please do not open a public GitHub issue for security vulnerabilities.**
+**Please do not open a public issue for security vulnerabilities.**
 
-Use GitHub's private **[Security Advisory](https://github.com/KungRaseri/RealmEngine/security/advisories/new)** feature to report vulnerabilities confidentially:
+This project is hosted on Forgejo, which has no built-in security advisory workflow, so reports are handled privately:
 
-1. Go to the [Security Advisories page](https://github.com/KungRaseri/RealmEngine/security/advisories/new).
-2. Click **"New draft security advisory"**.
-3. Fill in the affected component(s), severity, and a clear description of the issue and its potential impact.
-4. Submit the draft — only repository maintainers can see it.
+1. Contact the maintainer through the [KungRaseri account on the instance](https://git.kungraseri.cloud/kungraseri).
+2. Include the affected component(s), severity, and a clear description of the issue and its potential impact.
+3. Keep exploit detail out of any public place — send it privately, not in an issue, PR or discussion.
 
-If you are unable to use GitHub's advisory system, you may contact the maintainer directly via the email address listed on the [KungRaseri GitHub profile](https://github.com/KungRaseri).
+The report is acknowledged within the timeline below, and a fix and disclosure plan is agreed before anything becomes public.
 
 ## What to Include in Your Report
 

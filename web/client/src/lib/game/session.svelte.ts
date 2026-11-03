@@ -11,25 +11,31 @@ import {
 } from './reducers';
 import type {
 	AbilityUsedPayload,
+	AnnouncementPayload,
 	AreaSearchedPayload,
 	AvailableQuest,
-	CharacterRestedPayload,
 	CharacterAttributes,
+	CharacterIgnoredPayload,
+	CharacterRestedPayload,
 	CharacterRespawnedPayload,
 	CharacterSelectedPayload,
 	CharacterStats,
+	ChatCommandInfo,
 	ChatMessage,
 	CombatEndedPayload,
 	CombatStartedPayload,
 	CombatState,
 	CombatTurnPayload,
+	EmotePayload,
+	GroundItem,
 	InventoryItem,
 	InventoryLoadedPayload,
+	ItemReceivedPayload,
 	KickedPayload,
-	GroundItem,
 	LocationEnteredPayload,
 	MapGraph,
 	MapGraphReceivedPayload,
+	MutedPayload,
 	NodeTraveledPayload,
 	OccupantEntry,
 	PartyDisbandedPayload,
@@ -45,7 +51,10 @@ import type {
 	ShopCatalogItem,
 	ShopCatalogPayload,
 	SpawnedEnemy,
+	SummonedPayload,
+	TeleportedPayload,
 	TrackedQuest,
+	WarnedPayload,
 	ZoneEnteredPayload
 } from './types';
 import type { GroundItemsChangedPayload, SearchFinding } from './types';
@@ -123,6 +132,10 @@ export class GameSession {
 	inspectedItem = $state<InventoryItem | null>(null);
 	/** Result of the last area search, shown in the Local panel. */
 	lastSearch = $state<{ rollValue: number; discovered: SearchFinding[] } | null>(null);
+	/** Slash commands the caller may run, already filtered by permission server-side. */
+	chatCommands = $state<ChatCommandInfo[]>([]);
+	/** Characters muted locally with `/ignore`; their chat is hidden in every channel. */
+	ignoredCharacterIds = $state<string[]>([]);
 
 	private hub: HubConnection | null = null;
 	private characterId: string | null = null;
@@ -244,6 +257,8 @@ export class GameSession {
 			await this.hub.start();
 			this.phase = 'connected';
 			await this.selectCharacter();
+			// Commands are permission-filtered per character, so load them after selection.
+			void this.loadChatCommands();
 		} catch (error) {
 			this.phase = 'failed';
 			this.error = error instanceof Error ? error.message : 'Failed to connect to the game server.';
@@ -522,10 +537,34 @@ export class GameSession {
 		await this.hub.invoke('DeclinePartyInvite', partyId);
 	}
 
+	/**
+	 * Loads the slash commands the caller may run.
+	 *
+	 * The hub filters by permission, so the list is authoritative: a Moderator sees `/mute`,
+	 * a regular player does not.
+	 */
+	async loadChatCommands(): Promise<void> {
+		if (!this.hub) return;
+
+		try {
+			this.chatCommands = (await this.hub.invoke<ChatCommandInfo[]>('GetChatCommands')) ?? [];
+		} catch {
+			// A hub that cannot list commands must not break chat; the player can still talk.
+			this.chatCommands = [];
+		}
+	}
+
 	async sendChat(text: string): Promise<void> {
 		if (!this.hub) return;
 		const trimmed = text.trim();
 		if (!trimmed) return;
+
+		// Slash commands are parsed server-side by SendChatMessage, which also handles mute checks
+		// and permission gating. Plain messages keep their channel-specific paths below.
+		if (trimmed.startsWith('/')) {
+			await this.hub.invoke('SendChatMessage', { message: trimmed });
+			return;
+		}
 
 		if (this.chatChannel === 'Whisper') {
 			const target = this.whisperTarget.trim();
@@ -914,6 +953,9 @@ export class GameSession {
 		});
 
 		hub.on('ReceiveChatMessage', (payload: ChatMessage) => {
+			// `/ignore` is a client-side filter by design: the server still delivers the message so
+			// the ignore list can be changed without a round trip.
+			if (payload.characterId && this.ignoredCharacterIds.includes(payload.characterId)) return;
 			this.chat = appendChat(this.chat, payload);
 		});
 
@@ -928,6 +970,87 @@ export class GameSession {
 		hub.on('OnKicked', (payload: KickedPayload) => {
 			this.error = payload.reason ?? 'You were disconnected by a moderator.';
 			this.phase = 'disconnected';
+		});
+
+		// Moderation outcomes: these were broadcast by the hub but never subscribed, so a warned,
+		// muted or moved player used to see nothing at all.
+		hub.on('OnWarned', (payload: WarnedPayload) => {
+			const reason = payload.reason ? `: ${payload.reason}` : '';
+			const count = payload.newWarnCount ? ` (${payload.newWarnCount} total)` : '';
+			this.error = `A moderator warned you${reason}${count}.`;
+			this.addSystemMessage(`Warning received${reason}${count}.`);
+		});
+
+		hub.on('OnMuted', (payload: MutedPayload) => {
+			const until = payload.until
+				? ` until ${new SvelteDate(payload.until).toLocaleString()}`
+				: ' permanently';
+			const reason = payload.reason ? ` Reason: ${payload.reason}` : '';
+			this.addSystemMessage(`You have been muted${until}.${reason}`);
+		});
+
+		// Social broadcasts. Emotes and announcements render as chat so they land where the player
+		// is already reading instead of in a modal nobody opens.
+		hub.on('OnEmote', (payload: EmotePayload) => {
+			this.chat = appendChat(this.chat, {
+				channel: 'Zone',
+				sender: payload.characterName ?? 'Someone',
+				message: `* ${payload.action ?? 'gestures'} *`,
+				timestamp: new SvelteDate().toISOString()
+			});
+		});
+
+		hub.on('OnAnnouncement', (payload: AnnouncementPayload) => {
+			if (!payload.message) return;
+			this.addSystemMessage(`[${payload.severity ?? 'info'}] ${payload.message}`);
+		});
+
+		// Staff movement and grants change server-side state without the client asking, so the shell
+		// has to resync rather than keep showing the old zone or bag.
+		hub.on('OnTeleported', (payload: TeleportedPayload) => {
+			if (!payload.zoneId) return;
+			this.addSystemMessage(`You were moved to ${payload.zoneName ?? payload.zoneId}.`);
+			void this.enterZone(payload.zoneId);
+		});
+
+		hub.on('OnSummoned', (payload: SummonedPayload) => {
+			if (!payload.zoneId) return;
+			const by = payload.byCharacterName ? ` by ${payload.byCharacterName}` : '';
+			this.addSystemMessage(`You were summoned${by}.`);
+			void this.enterZone(payload.zoneId);
+		});
+
+		hub.on('OnItemReceived', (payload: ItemReceivedPayload) => {
+			const quantity = payload.quantity ?? 1;
+			const from = payload.givenByUsername ? ` from ${payload.givenByUsername}` : '';
+			this.addSystemMessage(`Received ${quantity}x ${payload.itemSlug ?? 'an item'}${from}.`);
+			void this.openInventory();
+		});
+
+		hub.on('CharacterIgnored', (payload: CharacterIgnoredPayload) => {
+			if (!payload.characterId) return;
+			const name = payload.characterName ?? 'That player';
+
+			if (this.ignoredCharacterIds.includes(payload.characterId)) {
+				this.ignoredCharacterIds = this.ignoredCharacterIds.filter(
+					(id) => id !== payload.characterId
+				);
+				this.addSystemMessage(`${name} is no longer ignored.`);
+				return;
+			}
+
+			this.ignoredCharacterIds = [...this.ignoredCharacterIds, payload.characterId];
+			this.addSystemMessage(`${name} is now ignored.`);
+		});
+
+		hub.on('ZoneLeft', () => {
+			this.zone = null;
+			this.location = null;
+			this.occupants = [];
+			this.enemies = [];
+			this.map = null;
+			this.currentNodeId = null;
+			this.addSystemMessage('You left the zone.');
 		});
 	}
 

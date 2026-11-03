@@ -6,9 +6,9 @@ Contribution guidelines, code conventions, and the PR process are documented in 
 
 - **[Getting Started](https://git.kungraseri.cloud/Veldrath/Veldrath/wiki/Getting-Started)** — clone, build, and run the tests
 - **[FAQ](https://git.kungraseri.cloud/Veldrath/Veldrath/wiki/FAQ)** — architecture decisions and common questions
-- **[Open Issues](https://github.com/KungRaseri/RealmEngine/issues)** — good first issues are tagged `good first issue`
-- **[Discussions](https://github.com/KungRaseri/RealmEngine/discussions)** — design questions, ideas, and feedback
-- **[Full Documentation](https://kungraseri.github.io/RealmEngine/)** — MkDocs reference docs
+- **[Open Issues](https://git.kungraseri.cloud/Veldrath/Veldrath/issues)** — good first issues are tagged `good first issue`
+- **[Releases](https://git.kungraseri.cloud/Veldrath/Veldrath/releases)** — component artifacts and docker image tags
+- **[CI guide](docs/ci-forgejo.md)** — how the pipeline runs and which actions are allowed
 
 ## The Short Version
 

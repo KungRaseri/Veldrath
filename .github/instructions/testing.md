@@ -291,7 +291,7 @@ EF Core migrations (`**/Migrations/**/*.cs`, including `*.Designer.cs` and model
 
 ### Web Coverage
 
-`npm run coverage --workspace client` (from `web/`) runs Vitest with V8 coverage over `web/client/src` and writes `web/client/coverage/lcov.info`, which `ci-web.yml` uploads under the `web` Codecov flag. Only unit tests count; Playwright e2e runs are not instrumented.
+`npm run coverage --workspace client` (from `web/`) runs Vitest with V8 coverage over `web/client/src` and writes `web/client/coverage/lcov.info`, which `ci-web.yml` uploads as the `coverage-web` artifact. There is no Codecov upload on Forgejo — see [`docs/ci-forgejo.md`](../../docs/ci-forgejo.md). Only unit tests count; Playwright e2e runs are not instrumented.
 
 ### Test Project Assemblies
 
@@ -345,9 +345,13 @@ ValidationBehavior runs validators via `Task.WhenAll` but passes the **same** `V
 
 `Location` has four `required` members: `Id`, `Name`, `Description`, `Type`. `DungeonRoom` requires `Id` and `Type`. `DungeonInstance` requires `Id`, `LocationId`, and `Name`. All `required` members must be set in object initializers or tests will not compile (CS9035).
 
-### Random.Shared in Handlers
+### Randomness — inject `IRandomSource`, never `Random.Shared`
 
-`ExploreLocationCommandHandler` uses `Random.Shared.Next(100)` — non-deterministic. Seed or mock randomness for reproducible tests. If a handler uses `Random.Shared` directly, the test must account for non-determinism or inject a seed.
+Game logic takes an optional `IRandomSource` (`RealmEngine.Shared/Abstractions/IRandomSource.cs`) that
+defaults to `SystemRandomSource.Shared`. Tests must pass a `FakeRandomSource` — scripted
+(`FakeRandomSource.Returning(...)`) to force a specific arm, or `FakeRandomSource.Seeded(n)` when only
+run-to-run stability is needed. Do not write retry loops that wait for a random branch to land, and do
+not call `Random.Shared` from new production code.
 
 ### Static State in Services
 
@@ -372,7 +376,7 @@ When writing a new test, verify:
 - [ ] **Edge case** — Empty input? Zero values? Boundary conditions?
 - [ ] **Validation** — Does the validator reject invalid input?
 - [ ] **Null inputs** — Does the handler handle null required fields?
-- [ ] **Non-determinism** — Is `Random.Shared` usage accounted for?
+- [ ] **Non-determinism** — Does the test inject a `FakeRandomSource` instead of relying on `Random.Shared`?
 - [ ] **Fixture isolation** — Could this test interfere with other tests via static state?
 
 ---

@@ -1,4 +1,5 @@
 using FluentAssertions;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 using RealmEngine.Shared.Utilities;
 using Xunit;
@@ -16,6 +17,20 @@ file class SelectableItem
 file class ItemWithoutWeight
 {
     public required string Name { get; set; }
+}
+
+// Deterministic IRandomSource for the weighted-selection arm tests
+file class FixedRandomSource : IRandomSource
+{
+    private readonly double _value;
+
+    public FixedRandomSource(double value) => _value = value;
+
+    public int Next(int maxValue) => 0;
+
+    public int Next(int minValue, int maxValue) => minValue;
+
+    public double NextDouble() => _value;
 }
 
 // Minimal ITraitable implementation for TraitApplicator tests
@@ -68,6 +83,36 @@ public class WeightedSelectorTests
         var result = WeightedSelector.SelectByRarityWeight(items);
 
         items.Should().Contain(result);
+    }
+
+    [Fact]
+    public void SelectByRarityWeight_WithZeroRoll_ReturnsTheFirstItem()
+    {
+        var items = new[]
+        {
+            new SelectableItem { Name = "Common", RarityWeight = 50 },
+            new SelectableItem { Name = "Rare", RarityWeight = 10 },
+            new SelectableItem { Name = "Legendary", RarityWeight = 1 },
+        };
+
+        var result = WeightedSelector.SelectByRarityWeight(items, new FixedRandomSource(0.0));
+
+        result.Name.Should().Be("Common");
+    }
+
+    [Fact]
+    public void SelectByRarityWeight_WithHighRoll_ReturnsTheLastItemInTheCumulativeRange()
+    {
+        var items = new[]
+        {
+            new SelectableItem { Name = "Common", RarityWeight = 50 },
+            new SelectableItem { Name = "Rare", RarityWeight = 10 },
+            new SelectableItem { Name = "Legendary", RarityWeight = 1 },
+        };
+
+        var result = WeightedSelector.SelectByRarityWeight(items, new FixedRandomSource(0.999));
+
+        result.Name.Should().Be("Legendary");
     }
 
     [Fact]

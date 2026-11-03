@@ -23,6 +23,8 @@ import type {
 class FakeHub {
 	readonly handlers = new Map<string, (...args: unknown[]) => void>();
 	readonly invocations: { method: string; args: unknown[] }[] = [];
+	/** Results returned by `invoke`, for the hub methods whose return value the session stores. */
+	readonly results = new Map<string, unknown>();
 	startError: unknown = null;
 	stopError: unknown = null;
 	stopped = false;
@@ -55,8 +57,9 @@ class FakeHub {
 		if (this.stopError) throw this.stopError;
 	}
 
-	async invoke(method: string, ...args: unknown[]): Promise<void> {
+	async invoke(method: string, ...args: unknown[]): Promise<unknown> {
 		this.invocations.push({ method, args });
+		return this.results.get(method);
 	}
 
 	emit(event: string, ...args: unknown[]): void {
@@ -291,7 +294,11 @@ describe('GameSession connection lifecycle', () => {
 
 		expect(session.phase).toBe('connected');
 		expect(session.error).toBeNull();
-		expect(hub.invocations).toEqual([{ method: 'SelectCharacter', args: ['char-1'] }]);
+		// Selection first, then the permission-filtered slash-command list.
+		expect(hub.invocations).toEqual([
+			{ method: 'SelectCharacter', args: ['char-1'] },
+			{ method: 'GetChatCommands', args: [] }
+		]);
 	});
 
 	it('reports a failed start with the error message', async () => {
@@ -1547,5 +1554,148 @@ describe('GameSession progression and economy', () => {
 
 		expect(session.quests).toEqual([]);
 		expect(session.chat.at(-1)?.message).toBe('Quest complete: rats (+25 gold, +150 XP).');
+	});
+});
+
+/**
+ * Slash commands and the moderation/staff broadcasts.
+ *
+ * These paths existed on the server but had no client surface before the parity pass: chat went
+ * straight to the channel-specific methods, and nine `SendAsync` events had no subscriber.
+ */
+describe('GameSession chat commands', () => {
+	it('routes slash commands through SendChatMessage regardless of the active channel', async () => {
+		const session = await connected();
+		session.chatChannel = 'Global';
+
+		await session.sendChat('  /who  ');
+
+		expect(hub.invocations).toEqual([{ method: 'SendChatMessage', args: [{ message: '/who' }] }]);
+	});
+
+	it('keeps plain messages on their channel-specific path', async () => {
+		const session = await connected();
+		session.chatChannel = 'Global';
+
+		await session.sendChat('hello world');
+
+		expect(hub.invocations).toEqual([
+			{ method: 'SendGlobalMessage', args: [{ message: 'hello world' }] }
+		]);
+	});
+
+	it('stores the permission-filtered command list returned by the hub', async () => {
+		hub.results.set('GetChatCommands', [
+			{ command: 'who', usage: '/who', description: 'List players', requiredPermission: null }
+		]);
+
+		const session = await connected();
+
+		expect(session.chatCommands).toEqual([
+			{ command: 'who', usage: '/who', description: 'List players', requiredPermission: null }
+		]);
+	});
+
+	it('leaves the command list empty when the hub cannot provide it', async () => {
+		const session = await connected();
+
+		expect(session.chatCommands).toEqual([]);
+	});
+});
+
+describe('GameSession moderation and staff broadcasts', () => {
+	it('surfaces a warning as an error and a system line', async () => {
+		const session = await connected();
+
+		hub.emit('OnWarned', { reason: 'spamming', newWarnCount: 2 });
+
+		expect(session.error).toBe('A moderator warned you: spamming (2 total).');
+		expect(session.chat.at(-1)?.message).toBe('Warning received: spamming (2 total).');
+	});
+
+	it('announces a mute that never expires', async () => {
+		const session = await connected();
+
+		hub.emit('OnMuted', { reason: null, until: null });
+
+		expect(session.chat.at(-1)?.message).toBe('You have been muted permanently.');
+	});
+
+	it('renders an emote into the zone chat log', async () => {
+		const session = await connected();
+
+		hub.emit('OnEmote', { characterId: 'c2', characterName: 'Aria', action: 'waves hello' });
+
+		expect(session.chat.at(-1)).toMatchObject({
+			channel: 'Zone',
+			sender: 'Aria',
+			message: '* waves hello *'
+		});
+	});
+
+	it('renders an announcement as a system line', async () => {
+		const session = await connected();
+
+		hub.emit('OnAnnouncement', { message: 'Server restart in 5 minutes', severity: 'warning' });
+
+		expect(session.chat.at(-1)?.message).toBe('[warning] Server restart in 5 minutes');
+	});
+
+	it('re-enters the zone it was teleported to', async () => {
+		const session = await connected();
+
+		hub.emit('OnTeleported', { zoneId: 'zone-2', zoneName: 'Emberfall' });
+
+		expect(hub.lastCall('EnterZone')).toEqual(['zone-2']);
+		expect(session.chat.at(-1)?.message).toBe('You were moved to Emberfall.');
+	});
+
+	it('re-enters the zone it was summoned to', async () => {
+		const session = await connected();
+
+		hub.emit('OnSummoned', { byCharacterName: 'Aria', zoneId: 'zone-3' });
+
+		expect(hub.lastCall('EnterZone')).toEqual(['zone-3']);
+		expect(session.chat.at(-1)?.message).toBe('You were summoned by Aria.');
+	});
+
+	it('refreshes the inventory when staff grant an item', async () => {
+		const session = await connected();
+
+		hub.emit('OnItemReceived', { itemSlug: 'iron-sword', quantity: 2, givenByUsername: 'gm' });
+
+		expect(hub.lastCall('GetInventory')).toEqual([]);
+		expect(session.chat.at(-1)?.message).toBe('Received 2x iron-sword from gm.');
+	});
+
+	it('toggles ignore and hides the ignored character chat', async () => {
+		const session = await connected();
+
+		hub.emit('CharacterIgnored', { characterId: 'c9', characterName: 'Troll' });
+		expect(session.ignoredCharacterIds).toEqual(['c9']);
+
+		hub.emit('ReceiveChatMessage', {
+			characterId: 'c9',
+			channel: 'Zone',
+			sender: 'Troll',
+			message: 'you stink',
+			timestamp: '2026-01-01T00:00:00Z'
+		});
+		expect(session.chat.some((entry) => entry.message === 'you stink')).toBe(false);
+
+		hub.emit('CharacterIgnored', { characterId: 'c9', characterName: 'Troll' });
+		expect(session.ignoredCharacterIds).toEqual([]);
+	});
+
+	it('clears zone state when the character leaves the zone', async () => {
+		const session = await connected();
+		session.zone = zone();
+		session.occupants = [{ characterId: 'c2', characterName: 'Aria', enteredAt: '2026-01-01' }];
+
+		hub.emit('ZoneLeft');
+
+		expect(session.zone).toBeNull();
+		expect(session.occupants).toEqual([]);
+		expect(session.chat.at(-1)?.message).toBe('You left the zone.');
 	});
 });

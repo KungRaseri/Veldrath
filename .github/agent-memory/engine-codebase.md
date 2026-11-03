@@ -9,13 +9,16 @@ were deleted with its retirement.
 
 | Project | Tests |
 |---------|-------|
-| `RealmEngine.Core.Tests` | 2,021 |
-| `RealmEngine.Shared.Tests` | 793 |
-| `RealmEngine.Data.Tests` | 265 |
-| `Veldrath.Server.Tests` | 807 |
+| `RealmEngine.Core.Tests` | 2,038 |
+| `RealmEngine.Shared.Tests` | 795 |
+| `RealmEngine.Data.Tests` | 301 |
+| `Veldrath.Server.Tests` | 846 |
 | `Veldrath.Discord.Tests` | 29 |
 | `Veldrath.Assets.Tests` | 10 |
-| **Total (verified 2026-10-25, after the RealmForge removal)** | **3,925** |
+| **Total (verified 2026-11-03 with `dotnet test Realm.Full.slnx -c Release --no-build`)** | **4,019** |
+
+The count is per-project `Passed:` totals from that command, not a hand tally — re-run it instead of
+adjusting the table by hand.
 
 `RealmForge.Tests` (27 tests) was deleted with the rest of the Avalonia tooling in Milestone B.
 `Veldrath.Server.Tests` lost ~107 tests with the deleted `/api/auth/*` endpoint suites; the
@@ -46,8 +49,51 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 
 ## Handler Behaviors
 - `EncounterBossCommandHandler.GenerateBossTitle`: uses `Prefixes.Select(p => p.Value)` for title (bug was fixed — was using `string.Join(" ", boss.Prefixes)` which called ToString())
-- `ExploreLocationCommandHandler`: uses `Random.Shared.Next(100)` for 60% combat / 40% peaceful; not injectable
+- `ExploreLocationCommandHandler`: injects `IRandomSource` (optional ctor parameter) for the 60% combat / 40% peaceful roll; tests script a `FakeRandomSource`
 - `HarvestNodeCommandHandler`: calls `_inventoryService.ReduceItemDurabilityAsync` after calculating `durabilityLoss`
+
+### Randomness — `IRandomSource` (2026-11-03)
+
+- `IRandomSource` (`RealmEngine.Shared/Abstractions/IRandomSource.cs`) exposes `Next(int)`,
+  `Next(int, int)` and `NextDouble()`. `SystemRandomSource`
+  (`RealmEngine.Shared/Services/SystemRandomSource.cs`) wraps `Random.Shared` and exposes a
+  process-wide `Shared` instance.
+- `AddRealmEngineCore` registers `IRandomSource` as a singleton, so every DI-constructed handler and
+  service (including `Veldrath.Server` hub command handlers and `GameHub`) resolves the same binding.
+- Every former direct `Random.Shared` call site in combat/exploration/progression now takes an
+  optional `IRandomSource? randomSource = null` constructor parameter that defaults to
+  `SystemRandomSource.Shared`. Optional parameters keep existing direct-construction tests compiling
+  and are honoured by `Microsoft.Extensions.DependencyInjection`; a test host can register its own
+  binding instead.
+- The static utilities keep their old signatures and add overloads: `DiceRoller.Roll*` /
+  `DiceRoller.RollDiceString` and `WeightedSelector.SelectByRarityWeight` accept an
+  `IRandomSource`. `CombatHelpers.RollEnemyAbility` (internal) now *requires* one — the four combat
+  hub handlers inject it.
+- Test fakes live in `RealmEngine.Core.Tests/Infrastructure/FakeRandomSource.cs` and
+  `Veldrath.Server.Tests/Infrastructure/FakeRandomSource.cs`. Scripted mode
+  (`FakeRandomSource.Returning(0, 99, ...)`) returns values in call order and throws when the script
+  runs out, so a forgotten roll fails the test instead of silently going random; `Seeded(n)` wraps
+  `Random(n)` when only run-to-run stability matters.
+- Do not write "roll until the branch lands" loops in combat tests any more — scripted fakes are the
+  convention (`CombatServiceTests`, `ExploreLocationCommandHandlerTests`,
+  `FleeFromCombatHubCommandHandlerTests`, `FleeFromCombatHandlerTests`, `DungeonGeneratorServiceTests`,
+  `ApplyStatusEffectTests`, `UsePowerHandlerTests`, `CastSpellHandlerTests`).
+- `SpellCastingService.CastSpell` makes exactly one `NextDouble()` draw per attempt, in
+  `CheckCastSuccess`: `rate = clamp(0.90 + 0.005 * (rank - MinimumSkillRank), 0.60, 0.99)` and the
+  cast succeeds when `roll < rate` (a numeric `BaseEffectValue` never rolls dice). Script a margin
+  away from the boundary: the computed floor rate is `0.6000000000000001`, so scripting exactly
+  `0.60` succeeds rather than fizzling.
+- `UsePowerHandler` (`Features/Progression/Commands/UseAbilityHandler.cs`) injects the source for both
+  the `BaseDamage` dice roll and the status-effect chance roll; that was the last production caller of
+  `DiceRoller.RollDiceString(string)`, so the parameterless compatibility overload now has no
+  production caller (it stays public API).
+- Still nondeterministic, deliberately out of scope for that pass: `EnemySpellCastingService`,
+  `EnemyAbilityAIService`, `NameComposer`, `LootTableService`, item generation and
+  `NodeSpawnerService` keep their own `new Random()`.
+- Coverage is deterministic now: three consecutive full runs report identical per-package line and
+  branch rates (Core 71.1197/56.2239, Server 72.8320/53.0269, total 75.3806/55.5100 over 32,121 lines
+  / 10,490 branches). Those are the values `scripts/coverage-floors.json` should record when the gate
+  (PR #15 / re-landed as PR #21) reaches `development`; floors may only rise.
 
 ## Testing Gotchas
 

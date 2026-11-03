@@ -25,15 +25,12 @@
       "_enableSearch": true,
       "_memberLayout": "separatePages",
       "_gitContribute": {
-        "repo": "https://github.com/KungRaseri/RealmEngine",
+        "repo": "https://git.kungraseri.cloud/Veldrath/Veldrath",
         "branch": "main"
       }
     },
     "xref": [
       "https://learn.microsoft.com/en-us/dotnet/.xrefmap.json"
-    ],
-    "sitemap": {
-      "baseUrl": "https://kungraseri.github.io/RealmEngine"
-    }
+    ]
   }
 }

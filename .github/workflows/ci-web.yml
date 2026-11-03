@@ -1,5 +1,12 @@
 name: CI - Web (SvelteKit)
 
+# Forgejo-native. See the header of ci-engine.yml and docs/ci-forgejo.md before
+# adding an action: it must resolve from DEFAULT_ACTIONS_URL and must not need the
+# GitHub API. Artifact actions must stay on v3.
+#
+# The web image is published to the Forgejo container registry on this instance,
+# not ghcr.io.
+
 concurrency:
   group: ci-web-${{ github.ref }}
   cancel-in-progress: true
@@ -10,22 +17,25 @@ on:
     paths:
       - 'web/**'
       - 'config/postgres/**'
+      - 'scripts/forgejo-pr-comment.sh'
       - '.github/workflows/ci-web.yml'
   pull_request:
-    branches: [main]
+    branches: [main, development]
     paths:
       - 'web/**'
       - 'config/postgres/**'
+      - 'scripts/forgejo-pr-comment.sh'
       - '.github/workflows/ci-web.yml'
   workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish for real (tag, release, image push, docs deploy). Off = build only.'
+        type: boolean
+        default: false
 
 env:
+  REGISTRY: git.kungraseri.cloud
   IMAGE_NAME: veldrath-web
-
-# Least privilege for the whole workflow: the build/test jobs only read the repository.
-# The `package` job raises this to `packages: write` for its own GHCR push.
-permissions:
-  contents: read
 
 jobs:
   build-test:
@@ -33,7 +43,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/veldrath
+      # Service containers are reached by service name on the job network. The
+      # port mapping does not publish to the job container's 127.0.0.1.
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/veldrath
       BETTER_AUTH_SECRET: test-better-auth-secret-change-me-0123456789abcdef
       ORIGIN: http://localhost:4173
       JWT_KEY: test-jwt-signing-key-change-me-0123456789abcdef
@@ -50,8 +62,9 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: veldrath
-        ports:
-          - 5432:5432
+        # No host port: services are reachable by name on the job network, and a
+        # published 5432 makes a second concurrent job fail to start
+        # ('failed to bind host port 0.0.0.0:5432: address already in use').
         options: >-
           --health-cmd "pg_isready -U postgres -d veldrath"
           --health-interval 10s
@@ -61,6 +74,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          submodules: false
 
       - name: Setup Node
         uses: actions/setup-node@v7
@@ -103,22 +118,29 @@ jobs:
         working-directory: web
         run: npm run test
 
-      - name: Unit test coverage
+      # The unit run also executes the five parity suites in src/lib/parity, which fail when a
+      # hub method, broadcast event, REST route, content type, or page route is added without a
+      # web consumer or a documented exemption.
+      - name: Coverage gate (90% global, per-glob floors)
         working-directory: web
         run: npm run coverage --workspace client
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v7
+      # Replaces codecov/codecov-action, which cannot run against Forgejo: the
+      # lcov report is a build artifact instead of an external upload.
+      - name: Upload coverage
+        uses: actions/upload-artifact@v3
+        if: always()
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./web/client/coverage/lcov.info
-          flags: web
-          name: web-coverage
-          fail_ci_if_error: false
+          name: coverage-web
+          # lcov for external viewers, json-summary for the sticky PR comment script.
+          path: |
+            web/client/coverage/
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Upload web build
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v3
         with:
           name: web-build
           path: web/client/build
@@ -127,7 +149,7 @@ jobs:
 
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v3
         with:
           name: web-playwright-report
           path: |
@@ -136,9 +158,9 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  # W7 in plans/blazor-decommission-and-cleanup.md: the authenticated game loop needs the real
-  # .NET API (SSR calls /api/characters server-side) and a live SignalR hub, so this job boots
-  # Veldrath.Server against the Postgres service instead of mocking anything.
+  # The authenticated game loop needs the real .NET API (SSR calls /api/characters
+  # server-side) and a live SignalR hub, so this job boots Veldrath.Server against
+  # the Postgres service instead of mocking anything.
   e2e-game:
     name: Game loop e2e (real server)
     needs: build-test
@@ -151,7 +173,9 @@ jobs:
       DOTNET_VERSION: '10.0.402'
       CI: 'true'
       # SvelteKit (SSR + Better Auth)
-      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/veldrath
+      # Service containers are reached by service name on the job network. The
+      # port mapping does not publish to the job container's 127.0.0.1.
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/veldrath
       BETTER_AUTH_SECRET: test-better-auth-secret-change-me-0123456789abcdef
       ORIGIN: http://localhost:4173
       BETTER_AUTH_URL: http://localhost:4173
@@ -173,8 +197,9 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: veldrath
-        ports:
-          - 5432:5432
+        # No host port: services are reachable by name on the job network, and a
+        # published 5432 makes a second concurrent job fail to start
+        # ('failed to bind host port 0.0.0.0:5432: address already in use').
         options: >-
           --health-cmd "pg_isready -U postgres -d veldrath"
           --health-interval 10s
@@ -184,11 +209,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          submodules: false
+
+      # Replaces actions/setup-dotnet; see docs/ci-forgejo.md for the toolchain rules.
+      - name: Install the .NET SDK
+        run: bash scripts/ci-toolchain.sh
 
       - name: Setup Node
         uses: actions/setup-node@v7
@@ -210,7 +236,7 @@ jobs:
       - name: Start Veldrath.Server
         working-directory: Veldrath.Server
         run: |
-          ConnectionStrings__DefaultConnection="Host=127.0.0.1;Port=5432;Database=veldrath;Username=postgres;Password=postgres" \
+          ConnectionStrings__DefaultConnection="Host=postgres;Port=5432;Database=veldrath;Username=postgres;Password=postgres" \
           Jwt__Key="$JWT_KEY" \
           Jwt__Issuer="$JWT_ISSUER" \
           Jwt__Audience="$JWT_AUDIENCE" \
@@ -243,7 +269,7 @@ jobs:
 
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v3
         with:
           name: web-game-e2e-report
           path: |
@@ -255,34 +281,42 @@ jobs:
   package:
     name: Package Web Image
     needs: build-test
-    if: github.ref == 'refs/heads/main'
+    if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: write
-
+    # A job container has no docker socket unless it declares one; without this
+    # the buildx step fails with 'Cannot connect to the Docker daemon'.
+    container:
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          submodules: false
+
+      - name: Compute the image path
+        id: image
+        run: |
+          OWNER_LC="$(printf '%s' "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
+          echo "path=${REGISTRY}/${OWNER_LC}/${IMAGE_NAME}" >> "${GITHUB_OUTPUT}"
+          echo "Image: ${REGISTRY}/${OWNER_LC}/${IMAGE_NAME}"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      - name: Log in to GitHub Container Registry
+      - name: Log in to the Forgejo container registry
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.repository_owner }}
+          # A PAT with write:package: the automatic GITEA_TOKEN is refused by the
+          # registry (401 Unauthorized: reqPackageAccess).
+          password: ${{ secrets.REGISTRY_TOKEN }}
 
-      - name: Set lowercase image registry path
-        id: image
-        run: |
-          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          echo "registry=ghcr.io/$OWNER/${{ env.IMAGE_NAME }}" >> $GITHUB_OUTPUT
-
-      - name: Build and push Docker image
+      # Registry-backed buildx cache. `type=gha` is GitHub-only and the `dir`
+      # cache type cannot leave the job container, but Forgejo's registry does store
+      # the cache manifest at `<image>:buildcache` (verified: a warm build logs CACHED).
+      - name: Build and push the image
         uses: docker/build-push-action@v7
         with:
           context: ./web
@@ -295,11 +329,11 @@ jobs:
             PUBLIC_API_URL=${{ vars.PUBLIC_API_URL || 'https://api.veldrath.com' }}
             PUBLIC_HUB_URL=${{ vars.PUBLIC_HUB_URL || 'https://api.veldrath.com/hubs/game' }}
           push: true
+          cache-from: type=registry,ref=${{ steps.image.outputs.path }}:buildcache
+          cache-to: type=registry,ref=${{ steps.image.outputs.path }}:buildcache,mode=max
           tags: |
-            ${{ steps.image.outputs.registry }}:latest
-            ${{ steps.image.outputs.registry }}:${{ github.sha }}
+            ${{ steps.image.outputs.path }}:latest
+            ${{ steps.image.outputs.path }}:${{ github.sha }}
           labels: |
             org.opencontainers.image.revision=${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}

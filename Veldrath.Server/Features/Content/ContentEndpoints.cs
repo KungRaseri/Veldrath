@@ -192,6 +192,10 @@ public static class ContentEndpoints
             "background" => await BrowseSet(db.Backgrounds, type, search, resolvedPage, resolvedPageSize, ct),
             "skill" => await BrowseSet(db.Skills, type, search, resolvedPage, resolvedPageSize, ct),
             "item" => await BrowseSet(db.Items, type, search, resolvedPage, resolvedPageSize, ct),
+            // Weapon and armor are separate schema types that share the Items table; without these
+            // two arms the Foundry browser listed both catalogs and every request 404'd.
+            "weapon" => await BrowseSet(db.Items.Where(x => x.ItemType == "weapon"), type, search, resolvedPage, resolvedPageSize, ct),
+            "armor" => await BrowseSet(db.Items.Where(x => x.ItemType == "armor"), type, search, resolvedPage, resolvedPageSize, ct),
             "material" => await BrowseSet(db.Materials, type, search, resolvedPage, resolvedPageSize, ct),
             "materialproperty" => await BrowseSet(db.MaterialProperties, type, search, resolvedPage, resolvedPageSize, ct),
             "enchantment" => await BrowseSet(db.Enchantments, type, search, resolvedPage, resolvedPageSize, ct),
@@ -257,6 +261,8 @@ public static class ContentEndpoints
             "background" => await db.Backgrounds.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "skill" => await db.Skills.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "item" => await db.Items.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "weapon" => await db.Items.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.ItemType == "weapon" && x.Slug == slug, ct),
+            "armor" => await db.Items.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.ItemType == "armor" && x.Slug == slug, ct),
             "material" => await db.Materials.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "materialproperty" => await db.MaterialProperties.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
             "enchantment" => await db.Enchantments.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),

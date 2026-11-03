@@ -81,7 +81,7 @@ The SvelteKit app in [`web/`](web/) is verified with npm scripts rather than a `
 │   ├── instructions/             # Detailed instruction files (7 files)
 │   └── workflows/                # CI/CD workflows (per-component + docs + hygiene + release)
 ├── .roo/skills/                  # Agent skills (build, test, run server, web); catalog in .roo/skills/README.md
-├── docs/                         # Documentation (DocFX → GitHub Pages)
+├── docs/                         # Documentation (DocFX → docs-site artifact)
 ├── wiki/                         # GitHub Wiki content (git submodule)
 ├── plans/                        # Live plans only; finished designs are folded into docs/
 ├── versions/                     # Component version props files
@@ -196,6 +196,14 @@ Build only what changed. The rule is simple: **build the `.slnx` file matching t
 
 > **When NOT to build:** The Vite dev server hot-reloads Svelte and CSS changes. Skip full rebuilds for `.css`, `.js`, `.md`, and non-embedded `.json` changes.
 
+### Web parity and coverage gates
+
+- [`web/client/src/lib/parity/`](web/client/src/lib/parity/) holds five source-reading suites (hub methods, hub events, REST routes, content types, route breadth). They fail when a server capability has no web consumer or a page route has no Playwright reference — add the entry to the suite's allow-list **with a reason**, never delete the assertion.
+- `cd web && npm run coverage --workspace client` enforces **90% global** with per-glob floors (92 for `src/lib/server`, `src/lib/game`, `src/lib/foundry`; 90 for `src/routes/**/*.ts`; 85/80 for `.svelte`). The gate is expected to be red until the coverage pass lands — do not lower it to make CI green.
+- Unit-test helpers live in [`web/client/src/lib/testing/`](web/client/src/lib/testing/) (imported as `#lib/testing/*`) and are excluded from coverage; Playwright helpers belong in `web/client/tests/`.
+- `web/shared` is intentionally excluded from coverage: it is declaration-only.
+- Plan, baseline numbers, and deferred gaps: [`plans/web-feature-parity-and-coverage.md`](plans/web-feature-parity-and-coverage.md).
+
 ### Full Build (Final Verification)
 
 ```powershell
@@ -218,19 +226,21 @@ cd web && npm run dev            # SvelteKit web app → http://localhost:5173
 
 ---
 
-## CI / Coverage
+## CI / Releases (Forgejo)
 
-CI workflows live in [`.github/workflows/`](.github/workflows/). Coverage is uploaded to Codecov with per-component flags. Each component workflow also builds and pushes its GHCR image (server/web/discord) or release artifact; **deployment is not done by Actions** — Coolify pulls the published images.
+CI runs on **Forgejo Actions** at `https://git.kungraseri.cloud/Veldrath/Veldrath`. There is no Codecov, SonarCloud, GitHub Pages or GHCR dependency: coverage and docs are workflow artifacts, and images and releases are published through the Forgejo API. **Deployment is not done by Actions** — Coolify pulls the published images.
 
-| Workflow | Component | Coverage Flag |
+> **Read [`docs/ci-forgejo.md`](docs/ci-forgejo.md) before adding an action.** The runner only resolves actions mirrored on `data.forgejo.org`; anything else makes the job die in under a second with no useful log. That file carries the verified allow-list and the replacement for every action that is not available.
+
+| Workflow | Component | Publishes |
 |---|---|---|
-| [`ci-engine.yml`](.github/workflows/ci-engine.yml) | Core + Shared + Data | `engine` |
-| [`ci-server.yml`](.github/workflows/ci-server.yml) | Veldrath.Server | `server` |
-| [`ci-discord.yml`](.github/workflows/ci-discord.yml) | Veldrath.Discord | `discord` |
-| [`ci-web.yml`](.github/workflows/ci-web.yml) | SvelteKit web | `web` |
-| [`docs.yml`](.github/workflows/docs.yml) | DocFX build & deploy + markdown relative-link check (build also runs on PRs; deploy is main-only) | — |
-| [`release.yml`](.github/workflows/release.yml) | Release tagging and publishing | — |
-| [`sonarcloud.yml`](.github/workflows/sonarcloud.yml) | SonarCloud static analysis | — |
+| [`ci-engine.yml`](.github/workflows/ci-engine.yml) | Core + Shared + Data | `engine/v*` release + libraries zip |
+| [`ci-server.yml`](.github/workflows/ci-server.yml) | Veldrath.Server | `server/v*` release + zip + `veldrath-server` image |
+| [`ci-discord.yml`](.github/workflows/ci-discord.yml) | Veldrath.Discord | `discord/v*` release + zip + `veldrath-discord` image |
+| [`ci-web.yml`](.github/workflows/ci-web.yml) | SvelteKit web | `veldrath-web` image + coverage/Playwright artifacts |
+| [`docs.yml`](.github/workflows/docs.yml) | DocFX build + markdown relative-link check | `docs-site` artifact |
+
+Releases are created inside the package job by [`scripts/forgejo-release.sh`](scripts/forgejo-release.sh); there is no separate release workflow, because fetching an artifact cross-run is a GitHub-API dependency. Images go to `git.kungraseri.cloud/veldrath/*`, which is what [`docker-compose.coolify.yml`](docker-compose.coolify.yml) pulls.
 
 That is the whole list, deliberately. Three checks live inside those workflows instead of having a file each:
 
@@ -240,15 +250,16 @@ That is the whole list, deliberately. Three checks live inside those workflows i
 | Markdown relative-link check | a step in `docs.yml` | `repo-hygiene.yml` (deleted) |
 | Content validation over the seeded catalog | `SeededContentValidationTests`, already run by `ci-server.yml` | a planned `content-guard.yml` (never kept) |
 
-Coverage exclusions are configured in [`coverage.runsettings`](coverage.runsettings).
+Coverage exclusions are configured in [`coverage.runsettings`](coverage.runsettings). Each .NET job uploads a `CoverageReport/` artifact and posts the summary as a sticky PR comment via [`scripts/forgejo-pr-comment.sh`](scripts/forgejo-pr-comment.sh).
 
 ---
 
 ## Documentation
 
-- **GitHub Pages (DocFX):** `https://kungraseri.github.io/RealmEngine/` — generated from XML doc comments across all projects, deployed by `docs.yml`
-- **GitHub Wiki** ([`wiki/`](wiki/) submodule): Getting Started, Contributing, FAQ, Roadmap Summary
+- **DocFX reference docs:** generated from XML doc comments across all projects by `docs.yml` and published as the `docs-site` artifact (Forgejo has no Pages server; serving it is a hosting decision)
+- **Wiki** ([`wiki/`](wiki/) submodule): Getting Started, Contributing, FAQ, Roadmap Summary
 - **Key docs:**
+  - [`docs/ci-forgejo.md`](docs/ci-forgejo.md) — Forgejo Actions allow-list, runner setup, registry and releases
   - [`docs/deployment.md`](docs/deployment.md) — deployment overview
   - [`docs/coolify-deployment.md`](docs/coolify-deployment.md) — the authoritative Coolify/env reference
   - [`docs/design-system.md`](docs/design-system.md) — UI design system reference
@@ -317,5 +328,6 @@ Do **not** create new memory files unless the existing 8 files are insufficient.
 | Testing | xUnit + FluentAssertions (.NET); Vitest + Playwright (web, run from `web/`) |
 | Mocks | Prefer `FakeXxx` stubs; Moq/NSubstitute as fallback |
 | Database | EF Core (Postgres production, SQLite/InMemory for tests) |
-| Documentation | XML doc comments (CS1591 = error), DocFX → GitHub Pages |
+| Documentation | XML doc comments (CS1591 = error), DocFX → `docs-site` CI artifact |
+| CI | Forgejo Actions, mirrored actions only (see [`docs/ci-forgejo.md`](docs/ci-forgejo.md)) |
 | Agent Skills | [`.roo/skills/`](.roo/skills/) for common dev workflows |

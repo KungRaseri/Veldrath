@@ -45,7 +45,10 @@ services:
 
   server:
     container_name: veldrath-server
-    image: ghcr.io/kungraseri/veldrath-server:latest
+    # Published by ci-server.yml to the Forgejo container registry on the same
+    # instance that hosts the repository. The owner segment is lowercase because
+    # registry paths must be.
+    image: git.kungraseri.cloud/veldrath/veldrath-server:latest
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
@@ -92,7 +95,7 @@ services:
           cpus: "1.0"
 
   discord:
-    image: ghcr.io/kungraseri/veldrath-discord:latest
+    image: git.kungraseri.cloud/veldrath/veldrath-discord:latest
     environment:
       - DOTNET_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8083
@@ -124,7 +127,7 @@ services:
 
   web:
     container_name: veldrath-web
-    image: ghcr.io/kungraseri/veldrath-web:latest
+    image: git.kungraseri.cloud/veldrath/veldrath-web:latest
     environment:
       - NODE_ENV=production
       - ORIGIN=https://veldrath.com

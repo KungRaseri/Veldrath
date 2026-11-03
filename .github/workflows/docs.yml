@@ -1,5 +1,9 @@
 name: Deploy Documentation
 
+# Forgejo-native. GitHub Pages does not exist here, so the built site is published
+# as a workflow artifact instead of being deployed by actions/deploy-pages.
+# Serving it is a hosting decision (a Coolify static site can serve _site/).
+
 concurrency:
   group: docs-${{ github.ref }}
   cancel-in-progress: true
@@ -7,33 +11,38 @@ concurrency:
 # docfx.json builds the API reference from Realm.Full.slnx, so any C# change can alter the
 # published docs. Watch the whole solution rather than a hand-maintained project list.
 #
-# Pull requests run the build too, because this workflow owns the markdown relative-link check. Only
-# the deploy job is gated on a push to main, so a PR can never publish.
+# Pull requests run the same build, because this workflow also owns the markdown
+# relative-link check. Nothing is published from a PR: publishing is an artifact
+# upload on main only (the deploy step is gated on refs/heads/main).
+#
+# `push` and `pull_request` share one anchored path list on purpose. Two hand-maintained copies
+# drift into "this workflow never ran for that change", which is indistinguishable from a passing
+# check in the run list. The list names `.github/agent-memory/**` explicitly even though `**/*.md`
+# already matches it: the memory file is edited by every session, and a stale entry there is exactly
+# what the link check exists to catch.
 on:
   push:
-    branches: [ main ]
-    paths:
-      - 'docfx.json'
-      - '.github/workflows/docs.yml'
-      - 'docs/**'
-      - 'versions/**'
-      - 'Directory.Build.props'
-      - '**/*.cs'
-  pull_request:
-    branches: [ main ]
-    paths:
+    branches: [ main, development ]
+    paths: &docs-paths
       - 'docfx.json'
       - '.github/workflows/docs.yml'
       - 'docs/**'
       - 'plans/**'
+      - '.github/agent-memory/**'
       - '**/*.md'
+      - 'versions/**'
+      - 'Directory.Build.props'
+      - '**/*.cs'
       - 'scripts/check-markdown-links.mjs'
+  pull_request:
+    branches: [ main, development ]
+    paths: *docs-paths
   workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+    inputs:
+      publish:
+        description: 'Publish for real (tag, release, image push, docs deploy). Off = build only.'
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -45,17 +54,23 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          # docfx.json builds from Realm.Full.slnx; the wiki is not part of it.
+          submodules: false
 
+      # Replaces actions/setup-dotnet; see docs/ci-forgejo.md for the toolchain rules.
       - name: Set up .NET
-        uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: '10.0.402'
+        run: bash scripts/ci-toolchain.sh
 
       - name: Restore NuGet packages
         run: dotnet restore Realm.Full.slnx
 
       - name: Install DocFX
-        run: dotnet tool install --global docfx
+        run: |
+          dotnet tool install --global docfx || dotnet tool update --global docfx
+          # A global tool lands in ~/.dotnet/tools, which is not on PATH here; the runner
+          # does not honour $GITHUB_PATH either. /usr/local/bin always is.
+          ln -sf "$HOME/.dotnet/tools/docfx" /usr/local/bin/docfx
+          docfx --version
 
       - name: Generate API metadata
         run: docfx metadata docfx.json
@@ -90,22 +105,37 @@ jobs:
       - name: Build documentation
         run: docfx build docfx.json
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v5
+      # Replaces actions/upload-pages-artifact + actions/deploy-pages. The site is
+      # downloadable from the run; serving it is up to the host.
+      #
+      # Tar it first: Forgejo's artifact API takes one request per file, and the site is
+      # ~2400 files — a flat upload of `_site/` ran for 10+ minutes per run.
+      - name: Package the generated site
+        run: tar -czf docs-site.tar.gz -C _site .
+
+      - name: Upload the generated site
+        uses: actions/upload-artifact@v3
         with:
-          path: _site/
+          name: docs-site
+          path: docs-site.tar.gz
+          retention-days: 30
 
-  deploy:
-    name: Deploy to GitHub Pages
-    needs: build
-    # A pull request runs the build (and the relative-link check) but must never publish.
-    if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+      # Publishing. Forgejo has no Pages server: Coolify builds docs/Dockerfile from this
+      # repository and Traefik serves the result at docs.veldrath.com. Queued here so a docs
+      # change goes live with the merge; skipped when the secrets are absent (forks, PRs).
+      - name: Queue the docs deployment
+        if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        env:
+          DEPLOY_URL: ${{ secrets.COOLIFY_DOCS_DEPLOY_URL }}
+          DEPLOY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DEPLOY_URL:-}" ] || [ -z "${DEPLOY_TOKEN:-}" ]; then
+            echo "::warning::COOLIFY_DOCS_DEPLOY_URL / COOLIFY_TOKEN are not set — skipping"
+            exit 0
+          fi
+          code=$(curl -sS -o /tmp/deploy.json -w '%{http_code}' -X POST "$DEPLOY_URL" \
+            -H "Authorization: Bearer $DEPLOY_TOKEN")
+          echo "coolify deploy: HTTP $code"
+          cat /tmp/deploy.json 2>/dev/null || true
+          [ "$code" -lt 300 ]
