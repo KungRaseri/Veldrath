@@ -13,26 +13,30 @@ concurrency:
 #
 # Pull requests run the same build, because this workflow also owns the markdown
 # relative-link check. Nothing is published from a PR: publishing is an artifact
-# upload on main only.
+# upload on main only (the deploy step is gated on refs/heads/main).
+#
+# `push` and `pull_request` share one anchored path list on purpose. Two hand-maintained copies
+# drift into "this workflow never ran for that change", which is indistinguishable from a passing
+# check in the run list. The list names `.github/agent-memory/**` explicitly even though `**/*.md`
+# already matches it: the memory file is edited by every session, and a stale entry there is exactly
+# what the link check exists to catch.
 on:
   push:
     branches: [ main, development ]
-    paths:
-      - 'docfx.json'
-      - '.github/workflows/docs.yml'
-      - 'docs/**'
-      - 'versions/**'
-      - 'Directory.Build.props'
-      - '**/*.cs'
-  pull_request:
-    branches: [ main, development ]
-    paths:
+    paths: &docs-paths
       - 'docfx.json'
       - '.github/workflows/docs.yml'
       - 'docs/**'
       - 'plans/**'
+      - '.github/agent-memory/**'
       - '**/*.md'
+      - 'versions/**'
+      - 'Directory.Build.props'
+      - '**/*.cs'
       - 'scripts/check-markdown-links.mjs'
+  pull_request:
+    branches: [ main, development ]
+    paths: *docs-paths
   workflow_dispatch:
     inputs:
       publish:

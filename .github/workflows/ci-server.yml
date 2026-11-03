@@ -39,6 +39,7 @@ on:
       - 'versions/server.props'
       - 'versions/engine.props'
       - 'Directory.Build.props'
+      - 'docker-compose.yml'
       - 'scripts/generate-version.sh'
       - 'scripts/forgejo-pr-comment.sh'
       - 'scripts/forgejo-release.sh'
