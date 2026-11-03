@@ -1,0 +1,161 @@
+name: CI - .NET Coverage Gate
+
+# Forgejo-native. See the header of ci-engine.yml and docs/ci-forgejo.md before changing any
+# 'uses:' line. No action here is outside the mirrored allow-list (checkout v7, setup-node v7,
+# upload-artifact v3), so this workflow needs no import on the instance.
+#
+# This job exists because coverage is a property of an assembly, not of the job that ran a test
+# against it: the engine workflow's own report shows RealmEngine.Data at 46.48% and the server
+# workflow's shows RealmEngine.Core at 6.06%, while the merged number is 92.56% and 70.90%.
+# Only a job that runs all six test projects can assert the real floors. It is also the only
+# .NET workflow that runs Veldrath.Assets.Tests at all.
+#
+# pull_request targets development and main, matching the sibling workflows: f1b70eb3 aligned them
+# all on [main, development], so this gate runs on the same pull requests as the checks it
+# complements. A coverage gate is worthless after the merge it should have blocked.
+
+concurrency:
+  group: ci-coverage-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [ main, development ]
+    paths:
+      - 'RealmEngine.Core/**'
+      - 'RealmEngine.Shared/**'
+      - 'RealmEngine.Data/**'
+      - 'RealmEngine.Core.Tests/**'
+      - 'RealmEngine.Shared.Tests/**'
+      - 'RealmEngine.Data.Tests/**'
+      - 'Veldrath.Server/**'
+      - 'Veldrath.Server.Tests/**'
+      - 'Veldrath.Contracts/**'
+      - 'Veldrath.Assets/**'
+      - 'Veldrath.Assets.Tests/**'
+      - 'Veldrath.Discord/**'
+      - 'Veldrath.Discord.Tests/**'
+      - 'Realm.Full.slnx'
+      - 'global.json'
+      - 'Directory.Build.props'
+      - 'Directory.Build.targets'
+      - 'Directory.Packages.props'
+      - 'coverage.runsettings'
+      - 'scripts/ci-toolchain.sh'
+      - 'scripts/check-dotnet-coverage.mjs'
+      - 'scripts/coverage-floors.json'
+      - 'scripts/forgejo-pr-comment.sh'
+      - '.github/workflows/ci-coverage.yml'
+  pull_request:
+    branches: [ main, development ]
+    paths:
+      - 'RealmEngine.Core/**'
+      - 'RealmEngine.Shared/**'
+      - 'RealmEngine.Data/**'
+      - 'RealmEngine.Core.Tests/**'
+      - 'RealmEngine.Shared.Tests/**'
+      - 'RealmEngine.Data.Tests/**'
+      - 'Veldrath.Server/**'
+      - 'Veldrath.Server.Tests/**'
+      - 'Veldrath.Contracts/**'
+      - 'Veldrath.Assets/**'
+      - 'Veldrath.Assets.Tests/**'
+      - 'Veldrath.Discord/**'
+      - 'Veldrath.Discord.Tests/**'
+      - 'Realm.Full.slnx'
+      - 'global.json'
+      - 'Directory.Build.props'
+      - 'Directory.Build.targets'
+      - 'Directory.Packages.props'
+      - 'coverage.runsettings'
+      - 'scripts/ci-toolchain.sh'
+      - 'scripts/check-dotnet-coverage.mjs'
+      - 'scripts/coverage-floors.json'
+      - 'scripts/forgejo-pr-comment.sh'
+      - '.github/workflows/ci-coverage.yml'
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '10.0.402'
+  CONFIGURATION: 'Release'
+
+jobs:
+  coverage-gate:
+    name: Enforce .NET Coverage Floors
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+        submodules: false
+
+    - name: Install the .NET SDK
+      run: bash scripts/ci-toolchain.sh
+
+    - name: Restore dependencies
+      run: dotnet restore Realm.Full.slnx
+
+    - name: Build
+      run: dotnet build Realm.Full.slnx --configuration "${CONFIGURATION}" --no-restore
+
+    # One invocation, all six test projects: the merged report is the gate's input. Verified at
+    # 3,999 tests / 25 s on this solution.
+    - name: Test with coverage
+      run: |
+        dotnet test Realm.Full.slnx \
+          --configuration "${CONFIGURATION}" --no-build --verbosity normal \
+          --collect "XPlat Code Coverage" --settings coverage.runsettings \
+          --results-directory ./TestResults
+
+    - name: Install ReportGenerator
+      run: bash scripts/ci-toolchain.sh --reportgenerator
+
+    - name: Generate coverage report
+      run: |
+        reportgenerator "-reports:./TestResults/*/coverage.cobertura.xml" \
+          "-targetdir:./CoverageReport" "-reporttypes:Html;Cobertura;MarkdownSummaryGithub"
+
+    # Node is not guaranteed on the runner image; docs.yml provisions it the same way.
+    - name: Setup Node
+      uses: actions/setup-node@v7
+      with:
+        node-version: 22
+
+    # The gate. Fails on a per-assembly or global regression, on an assembly missing from the
+    # report (a dead test project), and on an assembly with no floor (a new project).
+    - name: Enforce the coverage contract
+      run: |
+        node scripts/check-dotnet-coverage.mjs \
+          --report ./CoverageReport/Cobertura.xml \
+          --floors scripts/coverage-floors.json \
+          --suggest
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: coverage-dotnet-gate
+        path: CoverageReport/
+        retention-days: 14
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-dotnet-gate
+        path: TestResults/
+        retention-days: 14
+
+    - name: Comment the coverage summary on the pull request
+      if: github.event_name == 'pull_request'
+      env:
+        FORGEJO_TOKEN: ${{ secrets.GITEA_TOKEN }}
+        FORGEJO_REPOSITORY: ${{ github.repository }}
+        FORGEJO_SERVER_URL: ${{ github.server_url }}
+      run: |
+        bash scripts/forgejo-pr-comment.sh \
+          --pr "${{ github.event.pull_request.number }}" \
+          --body-file CoverageReport/SummaryGithub.md \
+          --marker '<!-- ci-coverage-gate -->'
