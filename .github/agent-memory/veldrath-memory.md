@@ -3329,13 +3329,14 @@ workflow has no `paths`/`paths-ignore` (the invariant that keeps the zero-status
 The decision, the rejected alternatives and the inventory are in `docs/ci-forgejo.md` under
 "Branch protection: what can block a merge".
 
-Why not the `paths`-list alternative: measured on the tree, **39 tracked paths in six classes** match
+Why not the `paths`-list alternative: measured on the tree, **39 tracked paths in seven classes** match
 no list — root dotfiles and editor config (10, `LICENSE` included), `NuGet.config` + `dotnet-tools.json`
 + `toc.yml` (3), the four root `.slnx` (4), `config/grafana/**` + `config/prometheus/**` +
-`docker-compose.{coolify,dev,prod}.yml` (10), scripts no workflow names (11), the `wiki` submodule pin
-(1). Adding three names would leave 36 deadlocked and reopen on the next root file. Those paths now
-merge on the merge gate alone — no build, no test — which is written down there so nobody mistakes
-"green" for "built".
+`docker-compose.{coolify,dev,prod}.yml` (10), scripts no workflow names (10, after `docs.yml` claimed
+`scripts/apply-branch-protection.sh` and `scripts/lib/forgejo-api.sh`), the `wiki` submodule pin (1),
+and the merge gate's own workflow (1). Adding three names would leave 36 deadlocked and reopen on the
+next root file. Those paths now merge on the merge gate alone — no build, no test — which is written
+down there so nobody mistakes "green" for "built".
 
 The deadlock itself was reproduced end to end before deciding, rather than taken from the Session-95
 inference: probe PR #32 (branch `probe-x`, head `b59e841d`, only `.gitignore` changed) answered
@@ -3362,9 +3363,9 @@ head `cf0c3cc6`: run 1357 `success` in **5 s** (`duration` on `GET /actions/runs
 next to `Deploy Documentation / Build Docs (pull_request)`. The job is one depth-1 checkout plus the
 lint; it must stay offline and dependency-free. `--uncovered` is the follow-up inventory — it
 reproduces the runner's `PatternToRegex` translation (`**/` → `(.+/)?`, so `**/*.md` matches a root
-`AGENTS.md`; the naive `**` → `.*` would over-report), and it now reports **41 paths** because the
+`AGENTS.md`; the naive `**` → `.*` would over-report), and it now reports **39 paths** because the
 gate and its script are themselves tracked and named by no `paths` list (`merge-gate.yml` declares no
-paths at all). A change confined to one of those 41 still merges on the merge-gate status alone, with
+paths at all). A change confined to one of those 39 still merges on the merge-gate status alone, with
 no component build.
 
 ### Session-96 (2026-11-03) — The .NET coverage gate landed, and settling it moved no floor
