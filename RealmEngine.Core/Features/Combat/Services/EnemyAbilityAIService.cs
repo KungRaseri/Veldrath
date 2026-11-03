@@ -1,5 +1,7 @@
 using RealmEngine.Core.Features.Progression.Services;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Services;
 
 namespace RealmEngine.Core.Features.Combat.Services;
 
@@ -9,16 +11,17 @@ namespace RealmEngine.Core.Features.Combat.Services;
 public class EnemyPowerAIService
 {
     private readonly PowerDataService? _powerCatalogService;
-    private readonly Random _random;
+    private readonly IRandomSource _random;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EnemyPowerAIService"/> class.
     /// </summary>
     /// <param name="powerCatalogService">The power catalog service.</param>
-    public EnemyPowerAIService(PowerDataService? powerCatalogService = null)
+    /// <param name="randomSource">Optional random source for the priority rolls; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
+    public EnemyPowerAIService(PowerDataService? powerCatalogService = null, IRandomSource? randomSource = null)
     {
         _powerCatalogService = powerCatalogService;
-        _random = new Random();
+        _random = randomSource ?? SystemRandomSource.Shared;
     }
 
     /// <summary>
