@@ -319,6 +319,13 @@ at v15.0.11) compiles each required context and, when a pattern matches no statu
 empty status list cannot be rescued: `IsPullCommitStatusPass` returns false and the merge is
 refused.
 
+The statuses evaluated are `GetLatestCommitStatus` — the newest row **per context**
+([`commit_status.go:128`](https://codeberg.org/forgejo/forgejo/src/tag/v15.0.11/services/pull/commit_status.go)).
+`GET /api/v1/repos/{owner}/{repo}/commits/{sha}/statuses` is a different, chronological list: it
+returns every state transition for a context, so a finished run still leaves the earlier `pending`
+rows beside its `success`. Do not read a historical `pending` row as a red gate; the combined
+`GET .../commits/{sha}/status` (`total_count` = one per context) is what the gate computes.
+
 That is a deadlock, not a gap, and it is measured rather than inferred. A throwaway pull request
 (#32, branch `probe-x`, head `b59e841d`, `.gitignore` the only changed file, 2026-11-03):
 
