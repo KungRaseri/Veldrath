@@ -3274,3 +3274,37 @@ clean the content is — Forgejo compares histories, not just trees.
 from Session-92 sets `enable_push: false` with no whitelist *and* `apply_to_admins: true`, so a sync
 like this cannot be pushed directly. Forgejo also calls the resulting pull request an "empty commit"
 when the trees match — give it a real change (this note) or loosen the rule deliberately.
+
+### Session-95 (2026-11-03) — A root-config pull request reports no status, and `["*"]` then blocks it
+
+Session-92 recorded the `["*"]` rule as "every check that reported must be green". The other half of
+that sentence — *at least one status must exist* — is a real deadlock for a change that no workflow
+watches, and it is not hypothetical: PR #27 (`wt/t_7db54bc9`, `4e8a2311`) touches only `.gitignore`,
+which appears in none of the five `on.pull_request.paths` lists, so all five workflows are filtered
+out, no run is created, and the head commit carries zero statuses.
+
+Read from the source rather than inferred (`services/pull/commit_status.go`, tag `v15.0.11`, the
+version this instance reports): in `MergeRequiredContextsCommitStatus`, when a required pattern
+matches no status the loop sets `returnedStatus = Pending` on `targetStatus == ""` and `break`s; the
+`matchedCount == 0` fallback on line 65 only runs while `returnedStatus` is still `Success`, so with
+an empty status list the state stays `Pending`, `IsPullCommitStatusPass` returns false, and the merge
+is refused. `mergeable: true` on the pull request does not predict this — it is git-level only.
+
+What that means in practice:
+
+- The pre-protection pull requests (#1, #2, #5, #7, #9) did merge with zero statuses, so "it merged
+  before" is not evidence; the rule has only existed since Session-92.
+- A pull request reports if it touches **anything** in a list already: `web/**`, `**/*.cs`,
+  `**/*.md`, `.github/agent-memory/**`, `docs/**`, `plans/**`, the engine/server/discord trees, or
+  the coverage lists. Anything outside all of them — `.gitignore`, `.editorconfig`, `LICENSE` —
+  reports nothing and waits.
+- Forgejo 15.0.11 has **no workflow-dispatch API** (`GET .../actions/workflows` is 404), so a run
+  cannot be started from a worker; only the web UI or a matching path triggers one. The operator's
+  `force_merge` is break-glass, not a routine unblock.
+- Posting a commit status by hand to satisfy the gate is not an acceptable unblock: it would let any
+  agent self-certify a merge.
+
+**Open decision:** which workflow should always report for a root-config-only pull request (a
+lightweight always-on check, or adding these paths to an existing list) belongs to whoever owns the
+merge gate — do not decide it inside a one-line change.
+
