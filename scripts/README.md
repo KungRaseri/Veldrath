@@ -124,6 +124,31 @@ floors currently hold the measured baseline and climb towards that target as tes
 
 ---
 
+## `ci-merge-gate.sh`
+
+The whole body of [`merge-gate.yml`](../.github/workflows/merge-gate.yml), the one `pull_request`
+workflow that declares **no `paths` filter**. Branch protection requires
+`status_check_contexts: ["*"]`, and an empty status list reads as `pending`, so a pull request that
+matches no component workflow's paths (a root dotfile, a `.slnx`, `docker-compose.dev.yml`) has to be
+given at least one status. The measurement and the decision are in
+[`docs/ci-forgejo.md`](../docs/ci-forgejo.md), "The always-on check that keeps `*` satisfiable".
+
+It lints the workflow definitions and builds nothing, so it must stay offline and dependency-free:
+`bash`, `git` and `awk`/`sed`/`grep` only.
+
+```bash
+bash scripts/ci-merge-gate.sh --lint         # exit 0 clean, 1 violation, 2 usage error
+bash scripts/ci-merge-gate.sh --uncovered    # tracked paths no pull_request.paths pattern matches
+```
+
+`--lint` enforces L1–L4 from the docs: every workflow declares a top-level `name:`, every real
+`uses:` names one of the six actions mirrored on this instance, every `pull_request` workflow
+triggers on both `main` and `development`, and at least one declares neither `paths` nor
+`paths-ignore`. `--uncovered` regenerates the "Files that no component workflow builds" table in
+`docs/ci-forgejo.md`, using the runner's own glob semantics.
+
+---
+
 ## Available Scripts
 
 ### `build-game-package.ps1`
