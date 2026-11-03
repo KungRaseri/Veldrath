@@ -9,13 +9,16 @@ were deleted with its retirement.
 
 | Project | Tests |
 |---------|-------|
-| `RealmEngine.Core.Tests` | 2,026 |
-| `RealmEngine.Shared.Tests` | 793 |
+| `RealmEngine.Core.Tests` | 2,038 |
+| `RealmEngine.Shared.Tests` | 795 |
 | `RealmEngine.Data.Tests` | 301 |
 | `Veldrath.Server.Tests` | 846 |
 | `Veldrath.Discord.Tests` | 29 |
 | `Veldrath.Assets.Tests` | 10 |
-| **Total (verified 2026-11-03, after the IRandomSource injection)** | **4,005** |
+| **Total (verified 2026-11-03 with `dotnet test Realm.Full.slnx -c Release --no-build`)** | **4,019** |
+
+The count is per-project `Passed:` totals from that command, not a hand tally — re-run it instead of
+adjusting the table by hand.
 
 `RealmForge.Tests` (27 tests) was deleted with the rest of the Avalonia tooling in Milestone B.
 `Veldrath.Server.Tests` lost ~107 tests with the deleted `/api/auth/*` endpoint suites; the
@@ -73,10 +76,19 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
   `Random(n)` when only run-to-run stability matters.
 - Do not write "roll until the branch lands" loops in combat tests any more — scripted fakes are the
   convention (`CombatServiceTests`, `ExploreLocationCommandHandlerTests`,
-  `FleeFromCombatHubCommandHandlerTests`, `DungeonGeneratorServiceTests`, `ApplyStatusEffectTests`).
+  `FleeFromCombatHubCommandHandlerTests`, `FleeFromCombatHandlerTests`, `DungeonGeneratorServiceTests`,
+  `ApplyStatusEffectTests`, `UsePowerHandlerTests`).
+- `UsePowerHandler` (`Features/Progression/Commands/UseAbilityHandler.cs`) injects the source for both
+  the `BaseDamage` dice roll and the status-effect chance roll; that was the last production caller of
+  `DiceRoller.RollDiceString(string)`, so the parameterless compatibility overload now has no
+  production caller (it stays public API).
 - Still nondeterministic, deliberately out of scope for that pass: `EnemySpellCastingService`,
-  `EnemyAbilityAIService`, `NameComposer`, `LootTableService`, item generation, enchanting,
-  upgrading, harvesting and `NodeSpawnerService` keep their own `new Random()`.
+  `EnemyAbilityAIService`, `NameComposer`, `LootTableService`, item generation and
+  `NodeSpawnerService` keep their own `new Random()`.
+- Coverage is deterministic now: three consecutive full runs report identical per-package line and
+  branch rates (Core 71.1197/56.2239, Server 72.8320/53.0269, total 75.3806/55.5100 over 32,121 lines
+  / 10,490 branches). Those are the values `scripts/coverage-floors.json` should record when the gate
+  (PR #15 / re-landed as PR #21) reaches `development`; floors may only rise.
 
 ## Testing Gotchas
 
