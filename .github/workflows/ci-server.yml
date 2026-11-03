@@ -29,7 +29,7 @@ on:
       - 'scripts/forgejo-release.sh'
       - '.github/workflows/ci-server.yml'
   pull_request:
-    branches: [ main ]
+    branches: [ main, development ]
     paths:
       - 'Veldrath.Server/**'
       - 'Veldrath.Server.Tests/**'
@@ -44,6 +44,11 @@ on:
       - 'scripts/forgejo-release.sh'
       - '.github/workflows/ci-server.yml'
   workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish for real (tag, release, image push, docs deploy). Off = build only.'
+        type: boolean
+        default: false
 
 env:
   # Pinned SDK: '10.0.x' resolved to 10.0.403, which dotnet-install could not find.
@@ -129,7 +134,7 @@ jobs:
   package:
     name: Package Server Artifacts
     needs: build-and-test
-    if: github.ref == 'refs/heads/main'
+    if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     # A job container has no docker socket unless it declares one; without this
     # the buildx step fails with 'Cannot connect to the Docker daemon'.

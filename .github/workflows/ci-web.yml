@@ -20,13 +20,18 @@ on:
       - 'scripts/forgejo-pr-comment.sh'
       - '.github/workflows/ci-web.yml'
   pull_request:
-    branches: [main]
+    branches: [main, development]
     paths:
       - 'web/**'
       - 'config/postgres/**'
       - 'scripts/forgejo-pr-comment.sh'
       - '.github/workflows/ci-web.yml'
   workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish for real (tag, release, image push, docs deploy). Off = build only.'
+        type: boolean
+        default: false
 
 env:
   REGISTRY: git.kungraseri.cloud
@@ -276,7 +281,7 @@ jobs:
   package:
     name: Package Web Image
     needs: build-test
-    if: github.ref == 'refs/heads/main'
+    if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     # A job container has no docker socket unless it declares one; without this
     # the buildx step fails with 'Cannot connect to the Docker daemon'.

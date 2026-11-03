@@ -25,7 +25,7 @@ on:
       - 'scripts/forgejo-pr-comment.sh'
       - '.github/workflows/ci-engine.yml'
   pull_request:
-    branches: [ main ]
+    branches: [ main, development ]
     paths:
       - 'RealmEngine.Core/**'
       - 'RealmEngine.Shared/**'
@@ -39,6 +39,11 @@ on:
       - 'scripts/forgejo-pr-comment.sh'
       - '.github/workflows/ci-engine.yml'
   workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish for real (tag, release, image push, docs deploy). Off = build only.'
+        type: boolean
+        default: false
 
 env:
   # Pinned SDK: '10.0.x' resolved to 10.0.403, which dotnet-install could not find.
@@ -149,7 +154,7 @@ jobs:
   package:
     name: Package Engine Artifacts
     needs: build-and-test
-    if: github.ref == 'refs/heads/main'
+    if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
 
     env:
