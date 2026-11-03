@@ -34,6 +34,9 @@ on:
       - 'Directory.Build.props'
       - '**/*.cs'
       - 'scripts/check-markdown-links.mjs'
+      - 'scripts/apply-branch-protection.sh'
+      - 'scripts/lib/forgejo-api.sh'
+      - 'scripts/tests/**'
   pull_request:
     branches: [ main, development ]
     paths: *docs-paths
@@ -101,6 +104,14 @@ jobs:
 
       - name: Check documentation links
         run: node scripts/check-markdown-links.mjs
+
+      # Offline regression tests for the branch-protection policy that makes a merge
+      # here wait for CI. No token and no network: the API response is stubbed, so the
+      # failures asserted here — an extra account, a push team, a deploy-key bypass, any
+      # push to `development` — can be exercised without touching the live rules. The
+      # script under test is the executable copy of docs/ci-forgejo.md.
+      - name: Test branch-protection policy
+        run: bash scripts/tests/apply-branch-protection.test.sh
 
       - name: Build documentation
         run: docfx build docfx.json

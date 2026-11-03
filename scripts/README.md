@@ -70,8 +70,12 @@ python scripts/format-json-files.py path/to/data
 
 ## `apply-branch-protection.sh`
 
-Applies the merge gate for `development` and `main`: status checks required, direct pushes refused,
-reviews off. It is the executable copy of the decision in
+Applies the merge gate for `development` and `main`: status checks required, reviews off, and
+`apply_to_admins: false` — the operator, an administrator, keeps the break-glass override, and
+the doc states what that costs. `development` takes pull requests only; `main` additionally
+accepts a direct push from exactly one account (`PUSH_BYPASS_USERS`, default `kungraseri`), with
+no team and no deploy key allowed to inherit the bypass, so a deploy-blocking commit can be
+repaired without waiting on the checks. It is the executable copy of the decision in
 [`docs/ci-forgejo.md`](../docs/ci-forgejo.md#branch-protection-what-can-block-a-merge) — read that
 section before changing any of the values.
 
@@ -80,10 +84,12 @@ set -a; . ~/.config/zoo-agent/forgejo.env; set +a
 export FORGEJO_SERVER_URL="$FORGEJO_URL"       # FORGEJO_TOKEN comes from the env file
 scripts/apply-branch-protection.sh             # create or edit, then read the rule back and verify
 scripts/apply-branch-protection.sh --check     # verify only; exits 1 when the stored rule has drifted
+scripts/tests/apply-branch-protection.test.sh  # offline regression tests: no token, no network
 ```
 
-Idempotent, and it fails rather than leaving a rule that differs from the one requested. `BRANCHES`
-and `STATUS_CONTEXTS` override the defaults.
+Idempotent, and it fails rather than leaving a rule that differs from the one requested. `BRANCHES`,
+`STATUS_CONTEXTS` and `PUSH_BYPASS_USERS` override the defaults. The offline tests stub the API
+response and run in the [docs workflow](../.github/workflows/docs.yml).
 
 ---
 

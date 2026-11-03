@@ -3206,6 +3206,22 @@ a status for path-filtered workflows; raise `required_approvals` when a second a
 `kungraseri` is the only account and an author cannot approve their own pull request, so any
 non-zero value blocks every merge.
 
+**Update, 2026-11-03 18:56Z — the stored rules no longer match the bullets above.** At the
+operator's request the rules were PATCHed to `apply_to_admins: false` on both branches, and `main`
+alone was given `enable_push: true` with `push_whitelist_usernames: ["kungraseri"]`. Reason: `main`
+pinned the `wiki` submodule at a commit `Veldrath.wiki` never had, so all four Coolify deploys died
+at `git clone --recurse-submodules`, and the pull request that fixed it (#31, closed) could not
+merge while its statuses were pending — the pin was pushed straight to `main` as `d7c19f6`. Two
+things measured then, worth keeping: `apply_to_admins: false` does **not** lift `enable_push: false`
+(the pre-receive hook refuses the administrator too, so the whitelist is a second switch), and
+`development` still refuses every push. `scripts/apply-branch-protection.sh` and the doc table
+encode the current shape, so a rule reporting `apply_to_admins: true`, or `enable_push: false` on
+`main`, is now drift rather than a repair. Both rules also pin `push_whitelist_teams: []` and
+`push_whitelist_deploy_keys: false` in the payload and in the read-back — the bypass is one named
+account, never a team or a deploy key; the API validates a team name and round-trips the deploy-key
+switch (measured). `scripts/tests/apply-branch-protection.test.sh` covers those drift cases offline
+(stubbed API, no token) and runs in the docs workflow.
+
 ### Session-93 (2026-11-03) — Web coverage gate green: branch tail closed
 
 `npm run coverage --workspace client` now **passes** (exit 0), which is the first time the gate the
@@ -3270,8 +3286,9 @@ clean the content is — Forgejo compares histories, not just trees.
 
 **Direct pushes to `development` are refused for everyone**, including the only admin:
 `Forgejo: Not allowed to push to protected branch development` from the pre-receive hook. The rule
-from Session-92 sets `enable_push: false` with no whitelist *and* `apply_to_admins: true`, so a sync
-like this cannot be pushed directly. Forgejo also calls the resulting pull request an "empty commit"
+from Session-92 sets `enable_push: false` with no whitelist (and, since the 2026-11-03 18:56Z update
+recorded under Session-92, no admin exemption either), so a sync like this cannot be pushed
+directly. Forgejo also calls the resulting pull request an "empty commit"
 when the trees match — give it a real change (this note) or loosen the rule deliberately.
 
 ### Session-95 (2026-11-03) — A root-config pull request reports no status, and `["*"]` then blocks it
