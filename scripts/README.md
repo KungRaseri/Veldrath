@@ -85,6 +85,45 @@ scripts/apply-branch-protection.sh --check     # verify only; exits 1 when the s
 Idempotent, and it fails rather than leaving a rule that differs from the one requested. `BRANCHES`
 and `STATUS_CONTEXTS` override the defaults.
 
+---
+
+## `check-dotnet-coverage.mjs` + `coverage-floors.json`
+
+Enforces the .NET coverage contract from the **merged** Cobertura report. Coverage is a property
+of an assembly, not of the workflow that happened to run a test against it, so the input is
+ReportGenerator's merge of all six test projects' cobertura output — not any single component
+workflow's `CoverageReport/`. Run by [`.github/workflows/ci-coverage.yml`](../.github/workflows/ci-coverage.yml)
+on every PR and push that touches .NET code.
+
+It fails, with a non-zero exit, on:
+
+- an assembly whose line or branch rate is below its floor in `coverage-floors.json`;
+- the repo-wide total below the global floor;
+- an assembly named in the floors file that is **missing** from the report — a test project that
+  stopped running, so the assembly was not measured at all;
+- an assembly **in** the report that has no floor — a new shipped project has to get a floor in
+  the same change that adds it.
+
+```bash
+node scripts/check-dotnet-coverage.mjs \
+  --report ./CoverageReport/Cobertura.xml \
+  --floors scripts/coverage-floors.json \
+  --suggest
+```
+
+`--floors` defaults to `scripts/coverage-floors.json` next to the script. Branch coverage is gated
+only where an assembly has at least `branchFloorMinSites` branch sites, so assemblies with a
+handful of branches do not get a meaningless percentage floor.
+
+**The floors are a ratchet: they may only rise.** Never lower one to make the gate pass — a lower
+floor is either a real coverage regression (fix it with tests) or a deliberate scope change, which
+needs a reviewed note alongside the new number. `--suggest` names every floor that has gone stale
+(the measured value is 3+ points above the floor) with the value to raise it to, so the nudge
+appears in the log of the PR that caused it. The recorded target is 90% line per assembly; the
+floors currently hold the measured baseline and climb towards that target as tests land.
+
+---
+
 ## Available Scripts
 
 ### `build-game-package.ps1`
