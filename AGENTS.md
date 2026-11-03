@@ -235,10 +235,12 @@ CI runs on **Forgejo Actions** at `https://git.kungraseri.cloud/Veldrath/Veldrat
 | Workflow | Component | Publishes |
 |---|---|---|
 | [`ci-engine.yml`](.github/workflows/ci-engine.yml) | Core + Shared + Data | `engine/v*` release + libraries zip |
+| [`ci-coverage.yml`](.github/workflows/ci-coverage.yml) | .NET coverage floors across all six test projects | nothing (status only) |
 | [`ci-server.yml`](.github/workflows/ci-server.yml) | Veldrath.Server | `server/v*` release + zip + `veldrath-server` image |
 | [`ci-discord.yml`](.github/workflows/ci-discord.yml) | Veldrath.Discord | `discord/v*` release + zip + `veldrath-discord` image |
 | [`ci-web.yml`](.github/workflows/ci-web.yml) | SvelteKit web | `veldrath-web` image + coverage/Playwright artifacts |
 | [`docs.yml`](.github/workflows/docs.yml) | DocFX build + markdown relative-link check | `docs-site` artifact |
+| [`merge-gate.yml`](.github/workflows/merge-gate.yml) | PR gate: workflow lint, runs on every pull request | nothing (status only) |
 
 Releases are created inside the package job by [`scripts/forgejo-release.sh`](scripts/forgejo-release.sh); there is no separate release workflow, because fetching an artifact cross-run is a GitHub-API dependency. Images go to `git.kungraseri.cloud/veldrath/*`, which is what [`docker-compose.coolify.yml`](docker-compose.coolify.yml) pulls.
 
