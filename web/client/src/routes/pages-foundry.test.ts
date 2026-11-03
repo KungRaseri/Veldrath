@@ -1,0 +1,581 @@
+import { render, screen } from '@testing-library/svelte';
+import { describe, expect, it } from 'vitest';
+import ContentIndex from './(foundry)/content/+page.svelte';
+import ContentBrowse from './(foundry)/content/[type]/+page.svelte';
+import ContentDetail from './(foundry)/content/[type]/[slug]/+page.svelte';
+import ContentEditor from './(foundry)/content/[type]/[slug]/edit/+page.svelte';
+import Languages from './(foundry)/languages/+page.svelte';
+import NewLanguage from './(foundry)/languages/new/+page.svelte';
+import Notifications from './(foundry)/notifications/+page.svelte';
+import Submissions from './(foundry)/submissions/+page.svelte';
+import SubmissionDetail from './(foundry)/submissions/[id]/+page.svelte';
+
+/**
+ * Foundry page components.
+ *
+ * The content editor is the one page here with real logic in the markup: it renders an input per
+ * field type, blocks Save when the server returned a blocking issue, and distinguishes a saved
+ * action from a validate action in its status banner. The rest are browse surfaces, asserted on
+ * rows and on their empty states.
+ *
+ * Loaders and form actions are covered in `foundry-loaders.test.ts`.
+ */
+
+/** Props for a route page; `form` is `null` on a plain GET. */
+function page(data: Record<string, unknown>, form: Record<string, unknown> | null = null) {
+	return { data, form } as never;
+}
+
+const field = (overrides: Record<string, unknown>) => ({
+	default: null,
+	min: null,
+	max: null,
+	enumValues: null,
+	hint: null,
+	required: false,
+	...overrides
+});
+
+const schema = {
+	contentType: 'item',
+	displayLabel: 'Item',
+	description: 'Everything a player can hold.',
+	groups: [
+		{
+			label: 'Identity',
+			fields: [
+				field({
+					name: 'displayName',
+					label: 'Display name',
+					fieldType: 'Text',
+					required: true,
+					hint: 'Shown in game'
+				}),
+				field({ name: 'slug', label: 'Slug', fieldType: 'Slug', required: true }),
+				field({ name: 'isActive', label: 'Active', fieldType: 'Boolean' }),
+				field({
+					name: 'rarity',
+					label: 'Rarity',
+					fieldType: 'EnumString',
+					enumValues: ['Common', 'Rare']
+				}),
+				field({ name: 'description', label: 'Description', fieldType: 'LongText' }),
+				field({ name: 'weight', label: 'Weight', fieldType: 'Decimal', min: 0, max: 100 })
+			]
+		}
+	]
+};
+
+const payload = {
+	displayName: 'Ember blade',
+	slug: 'ember-blade',
+	isActive: true,
+	rarity: 'Rare',
+	description: 'A blade of banked fire.',
+	weight: 1.5
+};
+
+const summary = {
+	contentType: 'item',
+	typeKey: 'Weapon',
+	slug: 'ember-blade',
+	displayName: 'Ember blade',
+	rarityWeight: 12,
+	isActive: true
+};
+
+const editorData = {
+	canEdit: true,
+	contentType: 'item',
+	slug: 'ember-blade',
+	summary,
+	schema,
+	payload
+};
+
+describe('content type index', () => {
+	it('lists each registered schema with a browse link', () => {
+		render(
+			ContentIndex,
+			page({
+				types: [
+					{ contentType: 'item', displayLabel: 'Items', description: 'Weapons and armour' },
+					{ contentType: 'npc', displayLabel: 'NPCs', description: 'People and creatures' }
+				]
+			})
+		);
+
+		expect(screen.getByRole('heading', { level: 1, name: 'Base content' })).toBeTruthy();
+		expect(screen.getByRole('heading', { level: 2, name: 'Items' })).toBeTruthy();
+		expect(screen.getAllByRole('link', { name: 'Browse' })[0].getAttribute('href')).toBe(
+			'/content/item'
+		);
+	});
+
+	it('renders the empty state and an error', () => {
+		render(ContentIndex, page({ types: [], error: 'Schema registry unreachable' }));
+
+		expect(screen.getByText('Schema registry unreachable')).toBeTruthy();
+		expect(screen.getByText('No content schemas are registered.')).toBeTruthy();
+	});
+});
+
+describe('content browse', () => {
+	const entries = [
+		{
+			id: 'item-1',
+			contentType: 'item',
+			slug: 'ember-blade',
+			displayName: 'Ember blade',
+			typeKey: 'Weapon',
+			rarityWeight: 12,
+			updatedAt: '2026-02-01T00:00:00.000Z'
+		},
+		{
+			id: 'item-2',
+			contentType: 'item',
+			slug: 'iron-helm',
+			displayName: null,
+			typeKey: 'Armor',
+			rarityWeight: 3,
+			updatedAt: '2026-02-02T00:00:00.000Z'
+		}
+	];
+
+	it('lists entries, mapping a missing display name to a dash', () => {
+		render(
+			ContentBrowse,
+			page({
+				contentType: 'item',
+				total: 2,
+				search: 'ember',
+				entries,
+				page: 1,
+				pageSize: 20
+			})
+		);
+
+		expect(screen.getByText('2 published entries.')).toBeTruthy();
+		expect(screen.getByRole('link', { name: 'ember-blade' }).getAttribute('href')).toBe(
+			'/content/item/ember-blade'
+		);
+		expect(screen.getByText('Ember blade')).toBeTruthy();
+		expect(screen.getByText('—')).toBeTruthy();
+		expect((screen.getByRole('searchbox') as HTMLInputElement).value).toBe('ember');
+	});
+
+	it('renders the empty state and an error', () => {
+		render(
+			ContentBrowse,
+			page({
+				contentType: 'item',
+				total: 0,
+				error: 'Content API unavailable',
+				search: '',
+				entries: [],
+				page: 1,
+				pageSize: 20
+			})
+		);
+
+		expect(screen.getByText('Content API unavailable')).toBeTruthy();
+		expect(screen.getByText('No entries found.')).toBeTruthy();
+	});
+});
+
+describe('content detail', () => {
+	it('renders the summary, the pretty-printed payload and the edit link for an editor', () => {
+		render(
+			ContentDetail,
+			page({
+				contentType: 'item',
+				slug: 'ember-blade',
+				summary,
+				payload,
+				canEdit: true
+			})
+		);
+
+		expect(screen.getByRole('heading', { level: 1, name: 'Ember blade' })).toBeTruthy();
+		expect(screen.getByText(/item · Weapon/)).toBeTruthy();
+		expect(screen.getByText(/rarity\s+12 · active/)).toBeTruthy();
+		expect(screen.getByRole('link', { name: 'Edit this entity' }).getAttribute('href')).toBe(
+			'/content/item/ember-blade/edit'
+		);
+		expect(screen.getByText(/"displayName": "Ember blade"/)).toBeTruthy();
+	});
+
+	it('hides the edit link and marks an inactive entity', () => {
+		render(
+			ContentDetail,
+			page({
+				contentType: 'item',
+				slug: 'ember-blade',
+				summary: { ...summary, displayName: null, isActive: false },
+				payload,
+				canEdit: false
+			})
+		);
+
+		expect(screen.getByRole('heading', { level: 1, name: 'ember-blade' })).toBeTruthy();
+		expect(screen.queryByRole('link', { name: 'Edit this entity' })).toBeNull();
+		expect(screen.getByText(/inactive/)).toBeTruthy();
+	});
+});
+
+describe('content editor', () => {
+	it('renders one control per field type with the payload preloaded', () => {
+		render(ContentEditor, page(editorData));
+
+		expect(screen.getByRole('heading', { level: 1, name: 'Edit Ember blade' })).toBeTruthy();
+		expect(screen.getByRole('heading', { level: 2, name: 'Identity' })).toBeTruthy();
+		expect((screen.getByLabelText(/Display name/) as HTMLInputElement).value).toBe('Ember blade');
+		expect((screen.getByLabelText('Active') as HTMLInputElement).checked).toBe(true);
+		expect((screen.getByLabelText('Rarity') as HTMLSelectElement).value).toBe('Rare');
+		expect((screen.getByLabelText('Description') as HTMLTextAreaElement).value).toBe(
+			'A blade of banked fire.'
+		);
+		expect((screen.getByLabelText('Weight') as HTMLInputElement).value).toBe('1.5');
+		expect(screen.getByText('Shown in game')).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Validate' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Deactivate' })).toBeTruthy();
+	});
+
+	it('explains that a reader cannot edit instead of rendering the form', () => {
+		render(ContentEditor, page({ ...editorData, canEdit: false }));
+
+		expect(screen.getByText(/editing requires the content-editor permission/)).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+	});
+
+	it('reports a saved action', () => {
+		render(ContentEditor, page(editorData, { action: 'save', saved: true }));
+
+		expect(screen.getByText('Saved.')).toBeTruthy();
+	});
+
+	it('reports a clean validate and lists the issues of a failing one', () => {
+		const { unmount } = render(ContentEditor, page(editorData, { action: 'validate', issues: [] }));
+		expect(screen.getByText('Validation passed with no issues.')).toBeTruthy();
+		unmount();
+
+		render(
+			ContentEditor,
+			page(editorData, {
+				action: 'validate',
+				issues: [
+					{
+						rule: 'Required',
+						message: 'Display name is required',
+						severity: 'Error',
+						field: 'displayName',
+						identifier: null
+					},
+					{
+						rule: 'Range',
+						message: 'Weight is unusually high',
+						severity: 'Warning',
+						field: 'weight',
+						identifier: null
+					},
+					{
+						rule: 'Slug',
+						message: 'Slug must be lowercase',
+						severity: 'Warning',
+						field: null,
+						identifier: null
+					}
+				]
+			})
+		);
+
+		expect(screen.getByText('3 issue(s) found.')).toBeTruthy();
+		expect(screen.getByText('Display name is required')).toBeTruthy();
+		expect(screen.getByText('Weight is unusually high')).toBeTruthy();
+		// An issue with no field renders rule and message inside one list item.
+		expect(screen.getByText(/Slug must be lowercase/)).toBeTruthy();
+		expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(true);
+	});
+
+	it('shows an action message and keeps Save enabled for warnings alone', () => {
+		render(
+			ContentEditor,
+			page(editorData, {
+				message: 'Row version conflict — reload and retry',
+				issues: [
+					{
+						rule: 'Range',
+						message: 'Weight is unusually high',
+						severity: 'Warning',
+						field: 'weight',
+						identifier: null
+					}
+				]
+			})
+		);
+
+		expect(screen.getByText('Row version conflict — reload and retry')).toBeTruthy();
+		expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(
+			false
+		);
+	});
+
+	it('says so when a content type exposes no fields', () => {
+		render(
+			ContentEditor,
+			page({
+				...editorData,
+				schema: { ...schema, groups: [] }
+			})
+		);
+
+		expect(screen.getByText('This content type exposes no editable fields yet.')).toBeTruthy();
+	});
+});
+
+describe('foundry languages', () => {
+	it('lists languages and links each to its content detail page', () => {
+		render(
+			Languages,
+			page({
+				total: 1,
+				search: 'cale',
+				languages: [
+					{ id: 'lang-1', slug: 'calethic', displayName: 'Calethic', typeKey: 'imperial' },
+					{ id: 'lang-2', slug: 'old-tongue', displayName: null, typeKey: 'dead' }
+				],
+				page: 1,
+				pageSize: 20
+			})
+		);
+
+		expect(screen.getByRole('heading', { level: 2, name: 'Calethic' })).toBeTruthy();
+		// A language with no display name falls back to its slug in the heading.
+		expect(screen.getByRole('heading', { level: 2, name: 'old-tongue' })).toBeTruthy();
+		expect(screen.getByText('imperial')).toBeTruthy();
+		expect((screen.getByRole('searchbox') as HTMLInputElement).value).toBe('cale');
+	});
+
+	it('renders the empty state and an error', () => {
+		render(
+			Languages,
+			page({
+				total: 0,
+				error: 'Language catalogue unavailable',
+				search: '',
+				languages: [],
+				page: 1,
+				pageSize: 20
+			})
+		);
+
+		expect(screen.getByText('Language catalogue unavailable')).toBeTruthy();
+		expect(
+			screen.getByText('No languages have been submitted yet. Be the first to build one.')
+		).toBeTruthy();
+	});
+});
+
+describe('new language form', () => {
+	it('renders every field and a submit button', () => {
+		render(NewLanguage, page({}));
+
+		expect(screen.getByRole('heading', { level: 1, name: 'Build a language' })).toBeTruthy();
+		expect((screen.getByLabelText(/Display name/) as HTMLInputElement).required).toBe(true);
+		expect(screen.getByLabelText(/Sample text/)).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Submit for review' })).toBeTruthy();
+	});
+
+	it('renders a rejected submission', () => {
+		render(NewLanguage, page({}, { error: 'That slug is already taken' }));
+
+		expect(screen.getByText('That slug is already taken')).toBeTruthy();
+	});
+});
+
+describe('foundry notifications', () => {
+	const notifications = [
+		{
+			id: 'n1',
+			submissionId: 's1',
+			submissionTitle: 'Ember blade',
+			message: 'Approved by the curators',
+			createdAt: '2026-02-01T00:00:00.000Z',
+			isRead: false
+		},
+		{
+			id: 'n2',
+			submissionId: 's2',
+			submissionTitle: 'Frost ward',
+			message: 'Rejected: balance',
+			createdAt: '2026-02-02T00:00:00.000Z',
+			isRead: true
+		}
+	];
+
+	it('offers Mark read only on unread notifications', () => {
+		render(Notifications, page({ notifications }));
+
+		expect(screen.getByRole('link', { name: 'Ember blade' }).getAttribute('href')).toBe(
+			'/submissions/s1'
+		);
+		expect(screen.getAllByRole('button', { name: 'Mark read' })).toHaveLength(1);
+		expect(screen.getByText('Read')).toBeTruthy();
+	});
+
+	it('renders the empty state and prefers the action error', () => {
+		render(
+			Notifications,
+			page({ notifications: [], error: 'Inbox unavailable' }, { error: 'Notification not found' })
+		);
+
+		expect(screen.getByText('Notification not found')).toBeTruthy();
+		expect(screen.queryByText('Inbox unavailable')).toBeNull();
+		expect(screen.getByText('No notifications yet.')).toBeTruthy();
+	});
+});
+
+describe('submission queue', () => {
+	const submissions = [
+		{
+			id: 's1',
+			title: 'Ember blade',
+			contentType: 'Item',
+			status: 'Pending',
+			submitterName: 'kaleth',
+			voteScore: 4,
+			createdAt: '2026-02-01T00:00:00.000Z'
+		},
+		{
+			id: 's2',
+			title: 'Frost ward',
+			contentType: 'Spell',
+			status: 'Rejected',
+			submitterName: 'sable',
+			voteScore: -1,
+			createdAt: '2026-02-02T00:00:00.000Z'
+		}
+	];
+
+	it('lists submissions with status, submitter and score', () => {
+		render(
+			Submissions,
+			page({
+				total: 2,
+				filters: { search: 'ember', status: 'Pending', contentType: 'Item' },
+				submissions,
+				page: 1,
+				pageSize: 20
+			})
+		);
+
+		expect(screen.getByRole('heading', { level: 1, name: 'Community submissions' })).toBeTruthy();
+		expect(screen.getByRole('link', { name: 'Ember blade' }).getAttribute('href')).toBe(
+			'/submissions/s1'
+		);
+		expect(screen.getByText('kaleth')).toBeTruthy();
+		expect(screen.getAllByText('Pending')).toHaveLength(2);
+		expect(screen.getByText('-1')).toBeTruthy();
+	});
+
+	it('renders the empty state and an error', () => {
+		render(
+			Submissions,
+			page({
+				total: 0,
+				error: 'Submission queue unavailable',
+				filters: {},
+				submissions: [],
+				page: 1,
+				pageSize: 20
+			})
+		);
+
+		expect(screen.getByText('Submission queue unavailable')).toBeTruthy();
+		expect(screen.getByText('No submissions match these filters.')).toBeTruthy();
+	});
+});
+
+describe('submission detail', () => {
+	const submission = {
+		id: 's1',
+		title: 'Ember blade',
+		contentType: 'Item',
+		status: 'Pending',
+		submitterName: 'kaleth',
+		voteScore: 4,
+		description: 'A blade of banked fire.',
+		payload: '{"slug":"ember-blade","damage":12}',
+		reviewerName: null,
+		reviewedAt: null,
+		reviewNotes: null
+	};
+
+	it('renders the create form with a JSON skeleton', () => {
+		render(SubmissionDetail, page({ mode: 'create' }));
+
+		expect(screen.getByRole('heading', { level: 1, name: 'New submission' })).toBeTruthy();
+		expect(screen.getByDisplayValue(/"slug": ""/)).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Submit for review' })).toBeTruthy();
+	});
+
+	it('renders the payload pretty-printed and the vote controls', () => {
+		render(SubmissionDetail, page({ mode: 'view', submission, canReview: false }));
+
+		expect(screen.getByRole('heading', { level: 1, name: 'Ember blade' })).toBeTruthy();
+		expect(screen.getByText('A blade of banked fire.')).toBeTruthy();
+		expect(screen.getByText(/"damage": 12/)).toBeTruthy();
+		expect(screen.getByRole('button', { name: /Upvote/ })).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
+	});
+
+	it('shows a curator decision only for a pending submission the viewer can review', () => {
+		render(SubmissionDetail, page({ mode: 'view', submission, canReview: true }));
+
+		expect(screen.getByRole('heading', { level: 2, name: 'Curator decision' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Approve' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Reject' })).toBeTruthy();
+	});
+
+	it('renders the review outcome and keeps an unparseable payload verbatim', () => {
+		render(
+			SubmissionDetail,
+			page({
+				mode: 'view',
+				canReview: true,
+				submission: {
+					...submission,
+					status: 'Approved',
+					payload: 'not json',
+					reviewerName: 'sable',
+					reviewedAt: '2026-02-03T00:00:00.000Z',
+					reviewNotes: 'Great flavour'
+				}
+			})
+		);
+
+		expect(screen.getByRole('heading', { level: 2, name: 'Review' })).toBeTruthy();
+		expect(screen.getByText('Great flavour')).toBeTruthy();
+		expect(screen.getByText('not json')).toBeTruthy();
+		// A decided submission no longer offers the decision form.
+		expect(screen.queryByRole('heading', { name: 'Curator decision' })).toBeNull();
+	});
+
+	it('renders the entry error and skips the optional sections', () => {
+		render(
+			SubmissionDetail,
+			page(
+				{
+					mode: 'view',
+					canReview: false,
+					submission: { ...submission, description: null }
+				},
+				{ error: 'Submission not found' }
+			)
+		);
+
+		expect(screen.getByText('Submission not found')).toBeTruthy();
+		expect(screen.queryByRole('heading', { name: 'Review' })).toBeNull();
+	});
+});
