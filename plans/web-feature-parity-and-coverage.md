@@ -572,12 +572,12 @@ guards, tracked with the `GameOverlays` work).
 
 ### PR 13 — the staff surfaces, the overlays, and the branch tail
 
-Six new suites plus two for the request hook, 153 tests — the first commit of this PR. It takes the measured figures from PR 12's
-**71.35% lines / 63.37% statements / 68.15% functions / 62.39% branches** to **96.85 / 96.85 /
-96.44 / 81.71** (815 tests in 56 files). Lines, statements and functions now clear the 90 gate and
-every per-glob line/statement/function floor. **Branch coverage is the remaining red gate** at this
-point, and it is the only thing standing between this pass and the 90% the user chose — the second
-commit below closes it.
+Six new suites plus two for the request hook, 153 tests — the first commit of this PR. Starting from
+PR 12's **71.35% lines / 63.37% statements / 68.15% functions / 62.39% branches** it reaches **96.85 /
+96.85 / 96.44 / 81.71** (815 tests in 56 files). Lines, statements and functions now clear the 90 gate
+and every per-glob line/statement/function floor. **Branch coverage was the remaining red gate** at
+that point, and it was the only thing standing between this pass and the 90% the user chose — the
+second commit below closes it.
 
 | Suite | Covers | Tests |
 |---|---|---|
@@ -667,11 +667,12 @@ They are compiled-guard artefacts and defensive arms for states the API cannot c
 so they are recorded rather than chased — a branch number is not worth a test that asserts nothing.
 
 There is a small residual on lines too, so 99.19% should not be read as full coverage:
-`src/routes/game/+page.svelte` (the redirect stub, 5 lines) and `src/routes/play/[id]/+page.svelte`
-(the route that mounts `GameScreen` and calls `session.connect`/`disconnect`, 8 lines) report **0%**
-and account for **13 of the 38** uncovered lines app-wide. Both are exercised by
-`tests/game-auth.e2e.ts` in the Playwright job; Vitest cannot mount them without a real session, so
-that wiring stays outside the unit-coverage figure.
+`src/routes/game/+page.svelte` (the client-side redirect fallback, 5 lines) and
+`src/routes/play/[id]/+page.svelte` (mounts `GameScreen` and calls `session.connect`/`disconnect`,
+8 lines) report **0%** and account for **13 of the 38** uncovered lines app-wide. Neither body runs
+without a live server, hub and character: the e2e suite (`tests/game-auth.e2e.ts`) only asserts their
+unauthenticated redirects, so today they are covered by nothing. That is 13 lines of wiring rather
+than a gate, but it is why the line number is 99.19% and not 100%.
 
 ## Traps
 
