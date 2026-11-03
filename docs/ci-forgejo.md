@@ -123,9 +123,11 @@ which meant the release PR (`development` → `main`) was the only PR ever teste
 work that actually lands in `development` had no CI at all.
 
 **A workflow whose `paths` do not match produces no run and no status.** That is why the branch
-protection rule in section 2 requires the `*` status glob rather than the five job names: a required
-context that never reports stays `pending`, and a `plans/`-only pull request would block on four
-checks that will never exist.
+protection rule in section 2 requires the `*` status glob rather than the named job contexts: a
+required context that never reports stays `pending`, and a `plans/`-only pull request would block on
+checks that will never exist. The complement of that sentence is just as load-bearing — a pull
+request that reports **nothing at all** is also `pending`, and that deadlocks the merge. The
+always-on merge gate in section 2 exists to make that case impossible.
 
 ### Dependency and action updates (there is no bot)
 
@@ -228,25 +230,58 @@ update it under Settings → Actions → Secrets.
 file the repository can diff, so it is recorded here and applied by
 [`scripts/apply-branch-protection.sh`](../scripts/apply-branch-protection.sh):
 
-| Field | Value | Why |
-|---|---|---|
-| `rule_name` | `development`, `main` | The release PR is `development` → `main`; a red merge into either branch is the same bug |
-| `enable_status_check` | `true` | This is the gate |
-| `status_check_contexts` | `["*"]` | "Every check that reported must be green" — see below |
-| `enable_push` | `false`, whitelist off | A protected branch changes only through a pull request |
-| `required_approvals` | `0` | The instance has one account, and an author cannot approve their own PR |
-| `apply_to_admins` | `true` | A repository admin does not get the "merge anyway" button |
-| `block_on_outdated_branch` | `false` | `zoo-pr` rebases before opening; requiring up-to-date would re-run the matrix on every unrelated merge |
-| `require_signed_commits` | `false` | Commits here are not signed |
+| Field | `development` | `main` | Why |
+|---|---|---|---|
+| `rule_name` | `development` | `main` | The release PR is `development` → `main`; a red merge into either branch is the same bug |
+| `enable_status_check` | `true` | `true` | This is the gate |
+| `status_check_contexts` | `["*"]` | `["*"]` | "Every check that reported must be green" — see below |
+| `enable_push` | `false` | `true` | `main` carries the operator's deploy repair path; `development` takes pull requests only |
+| `enable_push_whitelist` | `false` | `true` | With `push_whitelist_usernames: ["kungraseri"]` — see below |
+| `push_whitelist_usernames` | `[]` | `["kungraseri"]` | The bypass is one named account — see below |
+| `push_whitelist_teams` | `[]` | `[]` | Account-only: no team inherits the push path |
+| `push_whitelist_deploy_keys` | `false` | `false` | A deploy key is not a second break-glass path |
+| `required_approvals` | `0` | `0` | The instance has one account, and an author cannot approve their own PR |
+| `apply_to_admins` | `false` | `false` | The administrator exemption was removed on request — see below |
+| `block_on_outdated_branch` | `false` | `false` | `zoo-pr` rebases before opening; requiring up-to-date would re-run the matrix on every unrelated merge |
+| `require_signed_commits` | `false` | `false` | Commits here are not signed |
 
-#### Why one glob instead of the five job names
+#### Why the admin exemption and the one push account
 
-The obvious list is the five checks that report on a pull request today:
+Both rules were created with `apply_to_admins: true` and no push whitelist. They were
+changed on 2026-11-03 at 18:56 UTC, deliberately and at the operator's request, while all
+four Coolify deployments were failing: `main` pinned the `wiki` submodule at a commit the
+wiki repository never had, so every `git clone --recurse-submodules` died before the build
+started. The fix had to land on `main` — the branch all four apps build from — and the pull
+request carrying it (#31) could not merge while its statuses were pending.
+
+Measured on the way, and the reason the rule has two exceptions rather than one:
+`apply_to_admins: false` does **not** lift `enable_push: false`. The pre-receive hook
+refuses the push for the administrator as well (`Forgejo: Not allowed to push to protected
+branch main`); enabling push for one account is a separate switch.
+
+What each exception costs, stated plainly:
+
+- `apply_to_admins: false` hands *repository* admins the `force_merge` override that
+  `CheckPullMergeable` already gives an instance admin. The instance has one account, so
+  today this changes nothing for the person operating it; it matters the day a second admin
+  exists.
+- `main` accepts pushes from exactly one account, `kungraseri`. Every other identity, and
+  every push to `development`, is still refused by the pre-receive hook. A direct push to
+  `main` skips the status checks, so it is for repairing a broken deployment, never for
+  landing a change. The whitelist is account-only: `push_whitelist_teams` is `[]` and
+  `push_whitelist_deploy_keys` is `false` on both rules, and
+  [`scripts/apply-branch-protection.sh`](../scripts/apply-branch-protection.sh) asserts both
+  in its read-back, so neither a team nor a deploy key can quietly become a second bypass.
+
+#### Why one glob instead of the component job names
+
+The obvious list is the build gates that report on a pull request today:
 
 - `CI - Engine Libraries / Build and Test Engine Libraries (pull_request)`
 - `CI - Server (Veldrath.Server) / Build and Test Server (pull_request)`
 - `CI - Discord (Veldrath.Discord) / Build and Test Discord Bot (pull_request)`
 - `CI - Web (SvelteKit) / Build and Test SvelteKit Web (pull_request)`
+- `CI - .NET Coverage Gate / Enforce .NET Coverage Floors (pull_request)`
 - `Deploy Documentation / Build Docs (pull_request)`
 
 It cannot be that list. Every workflow is filtered by `on.pull_request.paths`
@@ -260,7 +295,7 @@ nothing; the later upstream change that emits a `skipped` status for filtered wo
 (go-gitea/gitea#38237) is **not** in 15.0.11.
 
 Measured, not assumed: PR #14 (head `95ecfecc`, a `plans/*.md` change) carries exactly one
-status, `Deploy Documentation / Build Docs (pull_request)`. Four of those five names would
+status, `Deploy Documentation / Build Docs (pull_request)`. Five of those six names would
 never report on it, so with the list every documentation and `plans/` pull request this
 repository opens would deadlock.
 
@@ -283,7 +318,9 @@ What follows from that, all of it deliberate:
   group, keep the merge waiting.
 - A workflow filtered out by `paths` neither helps nor blocks: it is simply not part of the
   set. The `paths` lists stay the single source of truth for *which* components a change
-  touches, and no second copy of them has to be maintained here.
+  touches, and no second copy of them has to be maintained here. That holds only while
+  something else reports — a change matching **no** list leaves the set empty, and an empty
+  set is `pending`, not "nothing required". See the next subsection.
 - Renaming a workflow or a job cannot silently disarm the gate. With named contexts it can.
 - The `Package *` jobs and `Game loop e2e (real server)` count too. They already run on pull
   requests with publishing gated off; a failure there is a broken build, so blocking on it
@@ -292,35 +329,159 @@ What follows from that, all of it deliberate:
   from 16 as `skipped`; both are green. Reported behaviour, not measured here — no job in
   these workflows is skipped by an `if:`.
 
+#### The always-on check that keeps `*` satisfiable
+
+The rule above has a second half: **at least one status must exist**. Zero statuses is `pending`,
+not "nothing required". `MergeRequiredContextsCommitStatus`
+([`services/pull/commit_status.go`](https://codeberg.org/forgejo/forgejo/src/tag/v15.0.11/services/pull/commit_status.go)
+at v15.0.11) compiles each required context and, when a pattern matches no status at all, sets
+`targetStatus == ""`, sets `returnedStatus = Pending` and breaks (lines 52-57). The
+`matchedCount == 0` fallback on line 65 only runs while `returnedStatus` is still `Success`, so an
+empty status list cannot be rescued: `IsPullCommitStatusPass` returns false and the merge is
+refused.
+
+The statuses evaluated are `GetLatestCommitStatus` — the newest row **per context**
+([`commit_status.go:128`](https://codeberg.org/forgejo/forgejo/src/tag/v15.0.11/services/pull/commit_status.go)).
+`GET /api/v1/repos/{owner}/{repo}/commits/{sha}/statuses` is a different, chronological list: it
+returns every state transition for a context, so a finished run still leaves the earlier `pending`
+rows beside its `success`. Do not read a historical `pending` row as a red gate; the combined
+`GET .../commits/{sha}/status` (`total_count` = one per context) is what the gate computes.
+
+That is a deadlock, not a gap, and it is measured rather than inferred. A throwaway pull request
+(#32, branch `probe-x`, head `b59e841d`, `.gitignore` the only changed file, 2026-11-03):
+
+```bash
+GET  /api/v1/repos/Veldrath/Veldrath/commits/b59e841d/statuses  -> []
+GET  /api/v1/repos/Veldrath/Veldrath/commits/b59e841d/status    -> {"state":"","total_count":0}
+GET  /api/v1/repos/Veldrath/Veldrath/pulls/32                   -> "mergeable": true
+POST /api/v1/repos/Veldrath/Veldrath/pulls/32/merge {"force_merge": false}
+    -> 405 not allowed to merge [reason: Not all required status checks successful]
+```
+
+PR #27 is the same shape and is the motivating case: `4e8a2311` changed `.gitignore` only, so the
+head commit carried zero statuses, and it became mergeable only when `97d20257` touched
+`.github/agent-memory/**` and therefore matched `docs.yml`. `mergeable: true` on the pull request is
+git-level only and never predicts this.
+
+**Decision (2026-11-03): `["*"]` stays, and one workflow reports on every pull request.**
+[`merge-gate.yml`](../.github/workflows/merge-gate.yml) triggers on `pull_request` for `main` and
+`development` and declares **no `paths` filter**. With no `paths` key there is no paths condition to
+satisfy: `matchPullRequestEvent` in `modules/actions/workflows.go` (v15.0.11) iterates only the acts
+the workflow declares and returns `activityTypeMatched && matchTimes == len(evt.Acts())`, so
+`branches` narrows the run and nothing else does.
+
+The alternatives were measured against the tree instead of argued:
+
+| Alternative | Why not |
+|---|---|
+| Add root-config paths to an existing list | The set is not three files: 41 tracked paths in seven classes match no list today (table below), and every new root file reopens the deadlock silently. It is also conceptually false — no component's output depends on `.gitignore` |
+| Keep `["*"]` and document `force_merge` for this class | It works, and that is the objection: the token every worker here authenticates with belongs to the instance administrator (`GET /user` → `kungraseri`, `is_admin: true`), and `CheckPullMergeable` clears the protection error for an admin. Documenting it would make "any worker certifies its own merge" the routine path — the same reason posting a status by hand is forbidden. It stays break-glass |
+| Switch to named contexts | Already rejected above, and this does not change it: a path-filtered workflow still never reports |
+
+The job lints the workflow definitions; it builds nothing. Its rules are the two ways this
+repository has actually broken CI, plus the invariant that keeps this remedy alive:
+
+- **L1** every workflow file declares a top-level `name:` — that string is the status context.
+- **L2** every `uses:` names one of the six actions mirrored on this instance (section 1). That
+  failure mode is documented above as "fails in under a second, logs nothing"; the rule turns it into
+  a message that names the file, the action and the fix (import it with `POST /repos/migrate`, then
+  add it to the allow-list and to the table in section 1).
+- **L3** every `pull_request` workflow triggers on both `main` and `development`. Session-92 fixed
+  exactly this drift: every workflow said `branches: [ main ]` while pull requests targeted
+  `development`, so a change landing there ran no CI at all.
+- **L4** at least one `pull_request` workflow declares neither `paths` nor `paths-ignore`. That is
+  the invariant behind the remedy: give `merge-gate.yml` a `paths` filter and the zero-status
+  deadlock returns, so the lint fails the pull request that does it.
+
+Cost: one job — one `actions/checkout@v7` and one `bash scripts/ci-merge-gate.sh --lint`, with no
+SDK, npm, docker or service container. **Measured on 2026-11-03: 5 s** for the whole job (`duration`
+on `GET /actions/runs/1349`, run 1349, head `3ea0176f`, PR #37; the `pending` row was written at
+19:25:44Z and the `success` row at 19:25:50Z). For scale, the six build gates that reported on
+`0efb7c7c` recorded between 93 s and 485 s each (`duration` on `GET /actions/runs/{id}`; the cheapest
+was `Build Docs` at 93 s, run 1325), and this job only checks out a depth-1 tree and greps it. It
+runs on every pull request into `development` or `main`, which is the point.
+
+**Unblocking without bypassing.** If the status is missing because the branch head predates this
+workflow, the certain fix is a new commit: any push to the branch re-triggers `pull_request`, and the
+gate now reports on the new head. The alternative is to dispatch the check itself:
+
+```
+Actions -> CI - Merge gate -> Run workflow -> branch: <the pull request's head branch>
+```
+
+That should report on the branch tip — the pull-request head commit — under the context
+`CI - Merge gate / Merge gate reports on every pull request (workflow_dispatch)`; it has not been
+exercised here, and the `(workflow_dispatch)` suffix is one more reason `["*"]` is the right rule,
+because a named context would not match it. There is no workflow-dispatch API on this version
+(`GET .../actions/workflows` is 404 and `POST .../actions/workflows/{id}/dispatches` is 404, both
+measured), so it is a web-UI step. `force_merge` stays break-glass for the instance admin, and
+posting a status by hand stays forbidden: a status any agent can mint certifies nothing.
+
 #### What it deliberately does not protect
 
 - **Reviews.** `required_approvals` is `0` because the instance has exactly one account
   (`GET /admin/users` returns only `kungraseri`) and Forgejo does not let an author approve
   their own pull request, so any non-zero value would block every merge instead of adding a
   reviewer. Raise it the day a second account exists.
-- **The instance administrator.** `CheckPullMergeable` (`services/pull/check.go`) clears the
-  protection error when `force_merge` is set and the doer is an instance admin;
-  `apply_to_admins` only withholds that override from *repository* admins. That is the
+- **The administrator.** `CheckPullMergeable` (`services/pull/check.go`) clears the
+  protection error when `force_merge` is set and the doer is an instance admin, and because
+  `apply_to_admins` is now `false` a *repository* admin gets the same override. That is the
   break-glass path — a stuck `pending` status must never lock the only operator out — and
-  it is why this rule is a review contract, not a lock. Use it to unblock, never to land a
-  red change.
-- **Direct pushes, proven live? No.** `enable_push: false` with an empty whitelist is the
-  state on both branches and the apply script reads it back, but the refused push was not
-  exercised: raw `git push` is denied for these agents, and the sanctioned publish path
-  (`zoo-pr`) refuses to publish an integration branch by name. Treat push protection as
-  configured and read back, not as demonstrated by a rejected push.
+  it is why this rule is a review contract, not a lock. Every worker here authenticates as that
+  account, so the override is available to an agent, not only to the human at the keyboard: the
+  gate is enforced by discipline, and a worker that runs `force_merge` is self-certifying. Use it
+  to unblock, never to land a red change.
+- **Direct pushes to `main`.** Exactly one account, `kungraseri`, may push there; `development`
+  refuses every push, and that refusal was exercised: `git push` to it answers
+  `Forgejo: Not allowed to push to protected branch development` from the pre-receive hook. The
+  hook ignores `apply_to_admins`, so the administrator is not exempt from it either. The bypass is
+  account-only — `push_whitelist_teams: []` and `push_whitelist_deploy_keys: false` are pinned and
+  asserted by the script — so no team and no deploy key inherits it. A push to `main` past the gate
+  is a deploy repair, not a merge path. It was not exercised by an agent: raw `git push` is denied
+  for these agents, and the sanctioned publish path (`zoo-pr`) refuses to publish an integration
+  branch by name, so treat push protection as configured and read back, not as demonstrated by a
+  rejected push.
+
+#### Files that no component workflow builds
+
+Measured against the tree on 2026-11-03 (`git ls-files`, 3470 paths, the merge gate and its script
+included): **41 paths match no `on.pull_request.paths` pattern.** Before the merge gate they produced
+zero statuses and deadlocked the gate; now they produce exactly one — the merge gate — and merge with
+**no build and no test**. Regenerate the list with `bash scripts/ci-merge-gate.sh --uncovered`.
+
+| Class | Count | Paths |
+|---|---|---|
+| Root dotfiles and editor config | 10 | `.dockerignore`, `.editorconfig`, `.env.example`, `.gitignore`, `.gitmodules`, `.hermes/skills`, `.roomodes`, `.vscode/launch.json`, `.vscode/tasks.json`, `LICENSE` |
+| Root build metadata | 3 | `NuGet.config`, `dotnet-tools.json`, `toc.yml` |
+| Solution files | 4 | `RealmEngine.slnx`, `Veldrath.Discord.slnx`, `Veldrath.Libraries.slnx`, `Veldrath.Server.slnx` |
+| Observability and deploy config | 10 | `config/grafana/dashboards/{10915,19194,23178,23179}.json`, `config/grafana/provisioning/dashboards/dashboards.yml`, `config/grafana/provisioning/datasources/prometheus.yml`, `config/prometheus/prometheus.yml`, `docker-compose.coolify.yml`, `docker-compose.dev.yml`, `docker-compose.prod.yml` |
+| Scripts no workflow names | 12 | `scripts/apply-branch-protection.sh`, `scripts/ci-merge-gate.sh`, `scripts/lib/forgejo-api.sh`, `scripts/format-json-files.py`, `scripts/create-release-tag.ps1`, `scripts/download-assets.ps1`, `scripts/generate-coverage-report.ps1`, `scripts/generate-version.ps1`, `scripts/package-assets.ps1`, `scripts/sync-assets.ps1`, `scripts/onebit_labeled.png`, `scripts/roguelike_base_labeled.png` |
+| Submodule pin | 1 | `wiki` |
+| The always-on check itself | 1 | `.github/workflows/merge-gate.yml` (it declares no `paths` at all, so no list can name it) |
+
+Two of those classes deserve an explicit warning, because "merges without a build" is not the same
+as "cannot break the build":
+
+- **`NuGet.config` and `dotnet-tools.json`** decide how every .NET job restores and which tools it
+  runs. Add them to `ci-coverage.yml`'s `paths` when that matters; until then a change to package
+  sources merges on the merge gate alone.
+- **The four component `.slnx` files** decide which projects each solution builds. `Realm.Full.slnx`
+  is covered by `ci-coverage.yml`; `RealmEngine.slnx` and the three `Veldrath.*.slnx` are not, so
+  adding a project to `Veldrath.Server.slnx` alone reports the merge gate and no build.
 
 #### When to switch back to named contexts
 
-Replace `["*"]` with the five names above when either becomes true:
+Not while the component workflows are `paths`-filtered. A named context has to exist on the head
+commit, and a workflow excluded by `paths` creates no run, so its name is unsatisfiable and the pull
+request deadlocks — the same mechanism as above, with a clearer error message. The always-on merge
+gate does not change that: it satisfies `*` on its own and would be the only satisfiable name in a
+list.
 
-- one always-running `pull_request` workflow becomes the only source of the merge gate, so
-  its context always exists; or
-- Forgejo starts reporting a `skipped`/`success` status for workflows excluded by `paths`
-  (the upstream fix above), which makes a named context satisfiable on every pull request.
-
-The gain is real — a named context also fails when its workflow was renamed, disabled or
-deleted, which `*` cannot detect.
+Replace `["*"]` with names when Forgejo starts reporting a `skipped`/`success` status for workflows
+excluded by `paths` (the upstream change that is **not** in 15.0.11). The gain is real: a named
+context also fails when its workflow was renamed, disabled or deleted, which `*` cannot detect.
+Until then, the always-on check plus `*` is the only arrangement that both blocks a red check and
+never deadlocks a green one.
 
 #### Applying and verifying
 
@@ -329,10 +490,13 @@ set -a; . ~/.config/zoo-agent/forgejo.env; set +a
 export FORGEJO_SERVER_URL="$FORGEJO_URL"
 scripts/apply-branch-protection.sh            # create or edit, then read back and verify
 scripts/apply-branch-protection.sh --check    # verify only; exits 1 on drift
+scripts/tests/apply-branch-protection.test.sh # offline regression tests: no token, no network
 ```
 
 The script is idempotent and fails when the stored rule is not the requested one, so
-`--check` is the drift test.
+`--check` is the drift test. The offline tests stub the API response and assert the failures
+the live server must not have — an extra account, a push team, a deploy-key bypass, pushes on
+`development` — and run in the [docs workflow](../.github/workflows/docs.yml).
 
 #### Proof, both directions
 

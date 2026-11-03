@@ -78,6 +78,13 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
   convention (`CombatServiceTests`, `ExploreLocationCommandHandlerTests`,
   `FleeFromCombatHubCommandHandlerTests`, `FleeFromCombatHandlerTests`, `DungeonGeneratorServiceTests`,
   `ApplyStatusEffectTests`, `UsePowerHandlerTests`, `CastSpellHandlerTests`).
+- `QuestIntegrationTests` (`Features/Quest/Integration/`) drives real `AttackEnemyCommand` loops, so it
+  registers `FakeRandomSource.Seeded(20260101)` and passes that instance to its manually constructed
+  `CombatService` (`randomSource:`); without it the loops resolved `SystemRandomSource.Shared` and the
+  round count — and therefore coverage — moved between runs. Its loops are bounded by
+  `MaxAttackRounds` (200) and assert the enemy reached 0 HP, so a combat-maths regression fails instead
+  of hanging. Seeding is enough there because no test asserts a named crit/dodge arm; a test that needs
+  one should pass a scripted `FakeRandomSource` instead.
 - `SpellCastingService.CastSpell` makes exactly one `NextDouble()` draw per attempt, in
   `CheckCastSuccess`: `rate = clamp(0.90 + 0.005 * (rank - MinimumSkillRank), 0.60, 0.99)` and the
   cast succeeds when `roll < rate` (a numeric `BaseEffectValue` never rolls dice). Script a margin
@@ -101,12 +108,26 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
   classified offensive and takes the 40 priority before the 50 buff branch. The buff test avoids
   those words deliberately; the ordering itself is unchanged (not part of the de-flake).
 - Still nondeterministic, deliberately out of scope for that pass: `EnemySpellCastingService`,
-  `NameComposer`, `LootTableService`, item generation and `NodeSpawnerService` keep their own
-  `new Random()`.
-- Coverage is deterministic now: three consecutive full runs report identical per-package line and
-  branch rates (Core 71.1271/56.3851, Server 72.8320/53.0269, total 75.3837/55.5947 over 32,121 lines
-  / 10,492 branches). Those are the values `scripts/coverage-floors.json` should record when the gate
-  (PR #15 / re-landed as PR #21) reaches `development`; floors may only rise.
+  `NameComposer`, `LootTableService`, item generation and
+  `NodeSpawnerService` keep their own `new Random()`.
+- Coverage branch counts are **not** fully deterministic. Three consecutive full runs on the merged
+  base agreed (24,213/32,121 lines, 5,823/10,490 branches), but the review of PR #35 measured 5,833,
+  5,833 and 5,834 covered of 10,492 branches with identical line counts. The single varying branch was
+  `SkillProgressionService.AwardSkillXP` line 92
+  (`if (!skill.XPSources.ContainsKey(actionSource))`, the "source already recorded" arm): the only
+  test that could reach it was the unseeded combat loops in `QuestIntegrationTests`, and only when
+  two critical hits landed on one character (`precision` / `critical_hit` XP on the same character)
+  — reproduced once in 30 filtered runs of that class. `SkillProgressionServiceTests` now awards the
+  same source twice directly, so the arm is covered on every run; three consecutive merged runs
+  afterwards agreed exactly on 24,213/32,121 lines and 5,824/10,490 branches. Do not restate this as
+  whole-suite determinism: `EnemySpellCastingService`, `NameComposer`,
+  `LootTableService`, item generation and `NodeSpawnerService` still keep their own `new Random()`.
+- The gate is live as of 2026-11-03 (PR #21), and `scripts/coverage-floors.json` deliberately records
+  the *six-run lowest* observation per assembly with the floor one point below it (Core floor 69
+  against a 70.49 low) — never the three-run values above, which sit above the lowest observation and
+  would fail intermittently. Floors rise only when a change lifts an assembly 3+ points above its
+  floor (D5 rule 2; `--suggest` names the stale ones). Re-measured on the merged base, the largest lift
+  was +2.22 pp, so no floor moved.
 
 ## Testing Gotchas
 

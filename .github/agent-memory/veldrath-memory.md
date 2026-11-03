@@ -227,7 +227,6 @@ Server.Tests: 468 passing (unchanged — schema picked up automatically via `Ens
 - `ServerStatusServiceTests` uses event-based (`TaskCompletionSource`) assertions, not wall-clock timeouts, to avoid flakiness under parallel test runs
 
 
-
 **Problem fixed**: When server was offline at client launch, SplashViewModel ignored RefreshAsync failure, leaving stale tokens in memory. This caused a redirect loop (always landing on CharacterSelect) and logout not clearing auth buttons properly.
 
 **New components**:
@@ -391,7 +390,6 @@ When deleting all zones in tests: delete `ZoneConnections` first (FK Restrict on
 > **See [`.github/instructions/ef-core-patterns.md`](../../.github/instructions/ef-core-patterns.md) for the canonical DbContext separation rules, migration workflow, entity placement conventions, and now four DbContexts (Application, Game, Content, Editorial).**
 
 Historical note: DbContext separation was established in session-6 when `GameDbContext` was extracted from `ApplicationDbContext` to fix Docker startup failures. `EditorialDbContext` was added in session-35 for patch notes, lore articles, and editorial announcements. Server operational entities (`ServerSaveGameRepository`, `ServerHallOfFameRepository`) inject `GameDbContext`, not `ApplicationDbContext`.
-
 
 
 ### ActorClassDto (breaking change, session-3)
@@ -1079,7 +1077,6 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
 **Remaining**: Phase 9 optional RealmForge map graph editor and JSON import/export.
 
 ---
-
 
 
 ---
@@ -3209,6 +3206,22 @@ a status for path-filtered workflows; raise `required_approvals` when a second a
 `kungraseri` is the only account and an author cannot approve their own pull request, so any
 non-zero value blocks every merge.
 
+**Update, 2026-11-03 18:56Z — the stored rules no longer match the bullets above.** At the
+operator's request the rules were PATCHed to `apply_to_admins: false` on both branches, and `main`
+alone was given `enable_push: true` with `push_whitelist_usernames: ["kungraseri"]`. Reason: `main`
+pinned the `wiki` submodule at a commit `Veldrath.wiki` never had, so all four Coolify deploys died
+at `git clone --recurse-submodules`, and the pull request that fixed it (#31, closed) could not
+merge while its statuses were pending — the pin was pushed straight to `main` as `d7c19f6`. Two
+things measured then, worth keeping: `apply_to_admins: false` does **not** lift `enable_push: false`
+(the pre-receive hook refuses the administrator too, so the whitelist is a second switch), and
+`development` still refuses every push. `scripts/apply-branch-protection.sh` and the doc table
+encode the current shape, so a rule reporting `apply_to_admins: true`, or `enable_push: false` on
+`main`, is now drift rather than a repair. Both rules also pin `push_whitelist_teams: []` and
+`push_whitelist_deploy_keys: false` in the payload and in the read-back — the bypass is one named
+account, never a team or a deploy key; the API validates a team name and round-trips the deploy-key
+switch (measured). `scripts/tests/apply-branch-protection.test.sh` covers those drift cases offline
+(stubbed API, no token) and runs in the docs workflow.
+
 ### Session-93 (2026-11-03) — Web coverage gate green: branch tail closed
 
 `npm run coverage --workspace client` now **passes** (exit 0), which is the first time the gate the
@@ -3242,7 +3255,9 @@ What future coverage work on this app needs to know:
   creation wizard keep pending state; a shared `beforeEach` render leaks it, and two mounted panels
   make `getByRole` ambiguous.
 
-**.NET still has no coverage gate.** [`coverage.runsettings`](../../coverage.runsettings) collects
+**.NET still has no coverage gate.** (*Superseded on 2026-11-03: PR #21 landed the gate — see
+Session-96 for the enforcing step, the merged floors and the settlement measurement.*)
+[`coverage.runsettings`](../../coverage.runsettings) collects
 cobertura and every .NET workflow uploads a `CoverageReport/` artifact, but nothing compares it to a
 floor, so `dotnet test` stays green at any coverage level. The SDK is present on kung-lab-hermes —
 `~/.dotnet/dotnet`, version 10.0.403 — it is only missing from `PATH`, so
@@ -3271,8 +3286,9 @@ clean the content is — Forgejo compares histories, not just trees.
 
 **Direct pushes to `development` are refused for everyone**, including the only admin:
 `Forgejo: Not allowed to push to protected branch development` from the pre-receive hook. The rule
-from Session-92 sets `enable_push: false` with no whitelist *and* `apply_to_admins: true`, so a sync
-like this cannot be pushed directly. Forgejo also calls the resulting pull request an "empty commit"
+from Session-92 sets `enable_push: false` with no whitelist (and, since the 2026-11-03 18:56Z update
+recorded under Session-92, no admin exemption either), so a sync like this cannot be pushed
+directly. Forgejo also calls the resulting pull request an "empty commit"
 when the trees match — give it a real change (this note) or loosen the rule deliberately.
 
 ### Session-95 (2026-11-03) — A root-config pull request reports no status, and `["*"]` then blocks it
@@ -3280,7 +3296,7 @@ when the trees match — give it a real change (this note) or loosen the rule de
 Session-92 recorded the `["*"]` rule as "every check that reported must be green". The other half of
 that sentence — *at least one status must exist* — is a real deadlock for a change that no workflow
 watches, and it is not hypothetical: PR #27 (`wt/t_7db54bc9`, `4e8a2311`) touches only `.gitignore`,
-which appears in none of the five `on.pull_request.paths` lists, so all five workflows are filtered
+which appears in none of the six `on.pull_request.paths` lists, so every workflow is filtered
 out, no run is created, and the head commit carries zero statuses.
 
 Read from the source rather than inferred (`services/pull/commit_status.go`, tag `v15.0.11`, the
@@ -3304,7 +3320,91 @@ What that means in practice:
 - Posting a commit status by hand to satisfy the gate is not an acceptable unblock: it would let any
   agent self-certify a merge.
 
-**Open decision:** which workflow should always report for a root-config-only pull request (a
-lightweight always-on check, or adding these paths to an existing list) belongs to whoever owns the
-merge gate — do not decide it inside a one-line change.
+**Decided (2026-11-03, card `t_a6502114`): `["*"]` stays and one workflow reports on every pull
+request.** `.github/workflows/merge-gate.yml` triggers on `pull_request` for `main` and `development`
+with **no `paths` filter**, and runs `scripts/ci-merge-gate.sh --lint` — L1 every workflow has a
+`name:`, L2 every `uses:` is one of the six actions mirrored on this instance, L3 every
+`pull_request` workflow triggers on both `main` and `development`, L4 at least one `pull_request`
+workflow has no `paths`/`paths-ignore` (the invariant that keeps the zero-status case impossible).
+The decision, the rejected alternatives and the inventory are in `docs/ci-forgejo.md` under
+"Branch protection: what can block a merge".
 
+Why not the `paths`-list alternative: measured on the tree, **39 tracked paths in six classes** match
+no list — root dotfiles and editor config (10, `LICENSE` included), `NuGet.config` + `dotnet-tools.json`
++ `toc.yml` (3), the four root `.slnx` (4), `config/grafana/**` + `config/prometheus/**` +
+`docker-compose.{coolify,dev,prod}.yml` (10), scripts no workflow names (11), the `wiki` submodule pin
+(1). Adding three names would leave 36 deadlocked and reopen on the next root file. Those paths now
+merge on the merge gate alone — no build, no test — which is written down there so nobody mistakes
+"green" for "built".
+
+The deadlock itself was reproduced end to end before deciding, rather than taken from the Session-95
+inference: probe PR #32 (branch `probe-x`, head `b59e841d`, only `.gitignore` changed) answered
+`{"state":"","total_count":0}` and `[]` for statuses, `mergeable: true` for the pull request, and
+`405 not allowed to merge [reason: Not all required status checks successful]` for
+`POST /pulls/32/merge {"force_merge": false}`. The PR was closed and the branch deleted. The
+workflow and script landed in card `t_48d8d3c1` (PR #37).
+
+One correction to the force_merge reasoning recorded above: the token every worker runs with is the
+instance administrator (`GET /user` → `kungraseri`, `is_admin: true`), so `force_merge` **is**
+available to an agent — `CheckPullMergeable` clears the protection error for an admin. The gate is
+therefore enforced by discipline, not capability: never use `force_merge` or a hand-posted status to
+satisfy `["*"]`, because either one lets a worker certify its own merge. The API's
+`GET .../commits/{sha}/statuses` also lists every state transition of a context, while the gate reads
+the latest row per context (`GetLatestCommitStatus`, `services/pull/commit_status.go:128`) — a stale
+`pending` row beside a `success` is not a red gate.
+
+**Landed (2026-11-03, card `t_48d8d3c1`, PR #37).** `.github/workflows/merge-gate.yml` and
+`scripts/ci-merge-gate.sh` exist, so the context
+`CI - Merge gate / Merge gate reports on every pull request (pull_request)` now reports on every pull
+request into `development` or `main` and `["*"]` always has a status to evaluate. Measured on PR #37
+head `3ea0176f`: run 1349 `success` in **5 s** (`duration` on `GET /actions/runs/1349`; `pending` row
+19:25:44Z → `success` row 19:25:50Z), combined commit status `{"state":"success","total_count":2}`
+next to `Deploy Documentation / Build Docs (pull_request)`. The job is one depth-1 checkout plus the
+lint; it must stay offline and dependency-free. `--uncovered` is the follow-up inventory — it
+reproduces the runner's `PatternToRegex` translation (`**/` → `(.+/)?`, so `**/*.md` matches a root
+`AGENTS.md`; the naive `**` → `.*` would over-report), and it now reports **41 paths** because the
+gate and its script are themselves tracked and named by no `paths` list (`merge-gate.yml` declares no
+paths at all). A change confined to one of those 41 still merges on the merge-gate status alone, with
+no component build.
+
+### Session-96 (2026-11-03) — The .NET coverage gate landed, and settling it moved no floor
+
+PR #21 landed `scripts/coverage-floors.json`, `scripts/check-dotnet-coverage.mjs` and
+`ci-coverage.yml` on `development` (merge `ab5dfe72`, after #20 `7d81b2ae` and #22 `4e713b08`). The
+"no coverage gate" note in Session-93 is therefore superseded — but the enforcer is **not**
+`dotnet test`. Plain `dotnet test`, even with `--collect "XPlat Code Coverage"`, only produces the
+Cobertura report and stays green at any coverage level. The comparison is a separate step:
+`ci-coverage.yml`'s `coverage-gate` job ("Enforce .NET Coverage Floors") runs `Test with coverage`,
+then `Generate coverage report` (ReportGenerator merge), and only then `Enforce the coverage
+contract`, which is
+
+```bash
+node scripts/check-dotnet-coverage.mjs \
+  --report ./CoverageReport/Cobertura.xml \
+  --floors scripts/coverage-floors.json \
+  --suggest
+```
+
+That node script is what fails on a per-assembly or global regression, on an assembly missing from
+the merged report, and on a shipping assembly carrying no floor. Reproduce the gate locally as
+those three steps in that order — not by reading the exit code of `dotnet test`.
+
+**Settling the floors on the merged base was a no-op, by the contract's own arithmetic.** Three full
+runs on `0efb7c7c` with the CI-pinned SDK 10.0.402, each merged with ReportGenerator, are identical at
+every package on line *and* branch: total 75.3806% / 55.5100% — **24,213 of 32,121 covered lines and
+5,823 of 10,490 covered branches** — with 4,019 tests passing in every run.
+`check-dotnet-coverage.mjs --suggest` names nothing on any of the three reports, because the largest
+lift over a floor is +2.22 pp (Core branch) against D5 rule 2's 3-point trigger. (The "24,183 covered
+lines" written in PR #22's body was a prose slip; ReportGenerator's summary says 24213 of 32121.)
+
+**Two traps for whoever touches this next:**
+
+- Do **not** "fix" the floors to the deterministic three-run rates. `measured` in
+  `coverage-floors.json` is the six-run *lowest* observation that produced each floor (D4: floor =
+  `trunc(lowest) − 1`), which is why Core's floor is 69 against a 70.49 low. Setting Core to 71
+  because three clean runs said 71.12 puts the floor above the lowest observation and makes the gate
+  fail intermittently — the exact failure the one-point subtraction exists to prevent.
+- The `measured` block is the baseline, not a live field: no D5 rule refreshes it, so leave it alone
+  when no floor moves. Live counts have drifted with the code since the baseline (+52 coverable lines:
+  Core 13,459, Shared 1,488, Server 9,029), which makes its `lines` values read slightly low —
+  informational, never a gate input.
