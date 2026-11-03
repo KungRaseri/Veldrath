@@ -5,7 +5,9 @@ using RealmEngine.Core.Features.Combat.Commands;
 using RealmEngine.Core.Features.Combat.Services;
 using RealmEngine.Core.Features.Progression.Services;
 using RealmEngine.Core.Services;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Services;
 using RealmEngine.Shared.Utilities;
 
 namespace RealmEngine.Core.Features.Progression.Commands;
@@ -18,7 +20,7 @@ public class UsePowerHandler : IRequestHandler<UsePowerCommand, UsePowerResult>
     private readonly PowerDataService _powerCatalog;
     private readonly ILogger<UsePowerHandler> _logger;
     private readonly IMediator? _mediator;
-    private readonly Random _random = new();
+    private readonly IRandomSource _random;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UsePowerHandler"/> class.
@@ -26,14 +28,17 @@ public class UsePowerHandler : IRequestHandler<UsePowerCommand, UsePowerResult>
     /// <param name="powerCatalog">The power catalog service.</param>
     /// <param name="logger">The logger.</param>
     /// <param name="mediator">The mediator for sending commands (optional for testing).</param>
+    /// <param name="randomSource">Optional random source for damage/healing dice and the status-effect roll; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
     public UsePowerHandler(
         PowerDataService powerCatalog,
         ILogger<UsePowerHandler>? logger = null,
-        IMediator? mediator = null)
+        IMediator? mediator = null,
+        IRandomSource? randomSource = null)
     {
         _powerCatalog = powerCatalog ?? throw new ArgumentNullException(nameof(powerCatalog));
         _logger = logger ?? NullLogger<UsePowerHandler>.Instance;
         _mediator = mediator;
+        _random = randomSource ?? SystemRandomSource.Shared;
     }
 
     /// <summary>
@@ -93,7 +98,7 @@ public class UsePowerHandler : IRequestHandler<UsePowerCommand, UsePowerResult>
 
         if (!string.IsNullOrEmpty(ability.BaseDamage))
         {
-            damageDealt = DiceRoller.RollDiceString(ability.BaseDamage);
+            damageDealt = DiceRoller.RollDiceString(ability.BaseDamage, _random);
 
             // Apply character's magic damage bonus if it's a magical ability
             if (ability.Traits.ContainsKey("damageType") &&
@@ -124,7 +129,7 @@ public class UsePowerHandler : IRequestHandler<UsePowerCommand, UsePowerResult>
         {
             if (!string.IsNullOrEmpty(ability.BaseDamage))
             {
-                healingDone = DiceRoller.RollDiceString(ability.BaseDamage);
+                healingDone = DiceRoller.RollDiceString(ability.BaseDamage, _random);
 
                 // Apply to target or self
                 var healTarget = request.TargetCharacter ?? request.User;

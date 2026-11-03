@@ -1,7 +1,10 @@
+using MediatR;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using RealmEngine.Core.Features.Combat.Commands;
 using RealmEngine.Core.Features.Progression.Commands;
 using RealmEngine.Core.Features.Progression.Services;
+using RealmEngine.Core.Tests.Infrastructure;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 
@@ -13,13 +16,16 @@ namespace RealmEngine.Core.Tests.Features.Progression.Commands;
 /// </summary>
 public class UsePowerHandlerTests
 {
-    private static async Task<(UsePowerHandler handler, PowerDataService service)> CreateHandlerAsync(IEnumerable<Power>? abilities = null)
+    private static async Task<(UsePowerHandler handler, PowerDataService service)> CreateHandlerAsync(
+        IEnumerable<Power>? abilities = null,
+        IRandomSource? randomSource = null,
+        IMediator? mediator = null)
     {
         var mockRepo = new Mock<IPowerRepository>();
         mockRepo.Setup(r => r.GetAllAsync()).ReturnsAsync((abilities ?? []).ToList());
         var abilitySvc = new PowerDataService(mockRepo.Object);
         await abilitySvc.InitializeAsync();
-        return (new UsePowerHandler(abilitySvc, NullLogger<UsePowerHandler>.Instance), abilitySvc);
+        return (new UsePowerHandler(abilitySvc, NullLogger<UsePowerHandler>.Instance, mediator, randomSource), abilitySvc);
     }
 
     private static Power MakeAbility(string id, int manaCost = 10, int cooldown = 0, string? baseDamage = null) =>
@@ -204,6 +210,118 @@ public class UsePowerHandlerTests
         result.Success.Should().BeTrue();
         result.DamageDealt.Should().BeGreaterThan(0);
         enemy.Health.Should().BeLessThan(50, "enemy should have taken damage");
+    }
+
+    [Fact]
+    public async Task Rolls_Dice_Damage_From_Injected_Random_Source()
+    {
+        // Arrange - "2d6" with a scripted 3 + 4; the default character has Strength 0,
+        // so the physical damage bonus adds nothing and the total is exactly the scripted sum.
+        var random = FakeRandomSource.Returning(3, 4);
+        var ability = MakeAbility("burning-strike", manaCost: 10, baseDamage: "2d6");
+        var (handler, _) = await CreateHandlerAsync([ability], random);
+        var character = CreateCharacterWithAbility("burning-strike");
+        character.Strength = 0;      // no physical damage bonus on top of the dice
+        character.Intelligence = 0;  // and no magic bonus either
+        var enemy = new Enemy { Name = "Goblin", Health = 50, MaxHealth = 50 };
+        var command = new UsePowerCommand { User = character, PowerId = "burning-strike", TargetEnemy = enemy };
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        random.IntCallCount.Should().Be(2, "one draw per die in 2d6");
+        random.RemainingInts.Should().Be(0, "the handler must consume the injected source, not a static one");
+        result.DamageDealt.Should().Be(7);
+        enemy.Health.Should().Be(43, "the scripted damage must reach the target");
+    }
+
+    [Fact]
+    public async Task Rolls_Healing_From_Injected_Random_Source_And_Clamps_At_MaxHealth()
+    {
+        // Arrange - a heal power still rolls its damage dice first (no target, so nothing is hurt),
+        // then rolls the healing dice. Script: 2 damage, 5 healing.
+        var random = FakeRandomSource.Returning(2, 5);
+        var ability = MakeAbility("mend", manaCost: 5, baseDamage: "1d6");
+        ability.EffectType = PowerEffectType.Heal;
+        var (handler, _) = await CreateHandlerAsync([ability], random);
+        var character = CreateCharacterWithAbility("mend");
+        character.Health = 95;
+        character.MaxHealth = 100;
+        var command = new UsePowerCommand { User = character, PowerId = "mend" };
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        random.IntCallCount.Should().Be(2);
+        result.HealingDone.Should().Be(5);
+        result.Message.Should().Contain("Healed 5 HP");
+        character.Health.Should().Be(100, "healing must not exceed MaxHealth");
+    }
+
+    [Fact]
+    public async Task Applies_Status_Effect_When_Injected_Roll_Is_Below_Chance()
+    {
+        // Arrange - 50% status chance, scripted roll 49, so the effect lands.
+        var random = FakeRandomSource.Returning(49);
+        var ability = MakeAbility("venom-bite", manaCost: 5);
+        ability.Traits["statusEffect"] = "poisoned";
+        ability.Traits["statusChance"] = 50;
+
+        var mediator = new Mock<IMediator>();
+        mediator
+            .Setup(m => m.Send(It.IsAny<ApplyStatusEffectCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ApplyStatusEffectResult { Success = true, Message = "applied" });
+
+        var (handler, _) = await CreateHandlerAsync([ability], random, mediator.Object);
+        var character = CreateCharacterWithAbility("venom-bite");
+        var enemy = new Enemy { Name = "Goblin", Health = 50, MaxHealth = 50 };
+
+        // Act
+        await handler.Handle(
+            new UsePowerCommand { User = character, PowerId = "venom-bite", TargetEnemy = enemy },
+            CancellationToken.None);
+
+        // Assert
+        random.IntCallCount.Should().Be(1, "the status chance roll must come from the injected source");
+        mediator.Verify(
+            m => m.Send(
+                It.Is<ApplyStatusEffectCommand>(command =>
+                    command.TargetEnemy == enemy && command.Effect.Type == StatusEffectType.Poisoned),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Skips_Status_Effect_When_Injected_Roll_Reaches_Chance()
+    {
+        // Arrange - 50% status chance, scripted roll 50, so the effect is not applied.
+        var random = FakeRandomSource.Returning(50);
+        var ability = MakeAbility("venom-bite", manaCost: 5);
+        ability.Traits["statusEffect"] = "poisoned";
+        ability.Traits["statusChance"] = 50;
+
+        var mediator = new Mock<IMediator>();
+        mediator
+            .Setup(m => m.Send(It.IsAny<ApplyStatusEffectCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ApplyStatusEffectResult { Success = true, Message = "applied" });
+
+        var (handler, _) = await CreateHandlerAsync([ability], random, mediator.Object);
+        var character = CreateCharacterWithAbility("venom-bite");
+        var enemy = new Enemy { Name = "Goblin", Health = 50, MaxHealth = 50 };
+
+        // Act
+        await handler.Handle(
+            new UsePowerCommand { User = character, PowerId = "venom-bite", TargetEnemy = enemy },
+            CancellationToken.None);
+
+        // Assert
+        random.IntCallCount.Should().Be(1);
+        mediator.Verify(
+            m => m.Send(It.IsAny<ApplyStatusEffectCommand>(), It.IsAny<CancellationToken>()),
+            Times.Never,
+            "a roll at or above the chance must skip the effect");
     }
 }
 
