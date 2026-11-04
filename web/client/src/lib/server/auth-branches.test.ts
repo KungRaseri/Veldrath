@@ -44,17 +44,17 @@ const databaseUrl = 'postgres://user:***@127.0.0.1:5432/test';
 async function freshAuth(environment: Record<string, string | undefined>) {
 	restores.push(
 		withEnv({
-			BETTER_AUTH_SECRET: undefined,
+			BETTER_AUTH_SECRET: '',
 			BETTER_AUTH_URL: '',
 			ORIGIN: '',
 			DATABASE_URL: databaseUrl,
-			DISCORD_CLIENT_ID: undefined,
-			DISCORD_CLIENT_SECRET: undefined,
-			GOOGLE_CLIENT_ID: undefined,
-			GOOGLE_CLIENT_SECRET: undefined,
-			MICROSOFT_CLIENT_ID: undefined,
-			MICROSOFT_CLIENT_SECRET: undefined,
-			MICROSOFT_TENANT_ID: undefined,
+			DISCORD_CLIENT_ID: '',
+			DISCORD_CLIENT_SECRET: '',
+			GOOGLE_CLIENT_ID: '',
+			GOOGLE_CLIENT_SECRET: '',
+			MICROSOFT_CLIENT_ID: '',
+			MICROSOFT_CLIENT_SECRET: '',
+			MICROSOFT_TENANT_ID: '',
 			INTERNAL_BRIDGE_URL: '',
 			INTERNAL_BRIDGE_TOKEN: '',
 			...environment
