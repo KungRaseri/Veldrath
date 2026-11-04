@@ -4,8 +4,9 @@
 
 ## Test Counts
 
-Seven test projects remain; the desktop client, `Veldrath.GameClient.Core`, and `Veldrath.Auth`
-were deleted with its retirement.
+Five test projects remain; the desktop client, `Veldrath.GameClient.Core`, and `Veldrath.Auth`
+were deleted with its retirement, and `Veldrath.Assets` / `Veldrath.Assets.Tests` went on
+2026-11-04.
 
 | Project | Tests |
 |---------|-------|
@@ -18,6 +19,26 @@ were deleted with its retirement.
 
 The count is per-project `Passed:` totals from that command, not a hand tally — re-run it instead of
 adjusting the table by hand.
+
+### Coverage must be measured in `Release`, not `Debug`
+
+`dotnet test` in the default `Debug` configuration reports **five to six thousand more coverable
+lines** than CI does and lands about **1.5 points lower on the global total** — measured 2026-11-04:
+Debug 27,827/37,632 = 73.95%, Release 24,155/31,995 = 75.50% on the same tree. The floors live in
+[`scripts/coverage-floors.json`](../../scripts/coverage-floors.json:1) and were measured in Release
+(`ci-coverage.yml` sets `CONFIGURATION: Release`), so a Debug run makes a green tree look red:
+`RealmEngine.Shared` reads 54.98% in Debug against its floor of 55 and 56.38% in Release. Reproduce
+the gate exactly as the workflow does:
+
+```bash
+dotnet build Realm.Full.slnx --configuration Release
+dotnet test Realm.Full.slnx --configuration Release --no-build \
+  --collect "XPlat Code Coverage" --settings coverage.runsettings --results-directory ./TestResults
+reportgenerator "-reports:./TestResults/*/coverage.cobertura.xml" \
+  "-targetdir:./CoverageReport" "-reporttypes:Cobertura;TextSummary"
+node scripts/check-dotnet-coverage.mjs --report ./CoverageReport/Cobertura.xml \
+  --floors scripts/coverage-floors.json --suggest
+```
 
 `RealmForge.Tests` (27 tests) was deleted with the rest of the Avalonia tooling in Milestone B.
 `Veldrath.Server.Tests` lost ~107 tests with the deleted `/api/auth/*` endpoint suites; the
