@@ -3,9 +3,9 @@
  * Enforce the .NET coverage contract from a merged Cobertura report.
  *
  * Coverage is a property of an assembly, not of the job that happened to run a test
- * against it, so the only honest number is the merged one: ReportGenerator over the six
- * test projects' cobertura output (`-reporttypes:Cobertura`). This script compares that
- * with `coverage-floors.json` and exits non-zero on a regression.
+ * against it, so the only honest number is the merged one: `scripts/coverage-report.sh`
+ * (codecov/codecov-report) over the six test projects' Cobertura output. This script compares
+ * that with `coverage-floors.json` and exits non-zero on a regression.
  *
  * Two integrity checks beyond the floors, both there to stop the gate passing by
  * measuring nothing:
