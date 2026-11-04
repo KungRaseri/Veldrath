@@ -18,6 +18,7 @@ on:
       - 'web/**'
       - 'config/postgres/**'
       - 'scripts/forgejo-pr-comment.sh'
+      - 'scripts/lib/**'
       - 'scripts/coverage-report.sh'
       - '.github/workflows/ci-web.yml'
   pull_request:
@@ -26,6 +27,7 @@ on:
       - 'web/**'
       - 'config/postgres/**'
       - 'scripts/forgejo-pr-comment.sh'
+      - 'scripts/lib/**'
       - 'scripts/coverage-report.sh'
       - '.github/workflows/ci-web.yml'
   workflow_dispatch:
@@ -166,8 +168,8 @@ jobs:
         run: |
           bash scripts/forgejo-pr-comment.sh \
             --pr "${{ github.event.pull_request.number }}" \
-            --body-file CoverageReport/SummaryGithub.md \
-            --marker '<!-- ci-coverage-web -->'
+            --section web --title 'Web (SvelteKit)' \
+            --body-file CoverageReport/SummaryGithub.md
 
       - name: Upload web build
         if: always()

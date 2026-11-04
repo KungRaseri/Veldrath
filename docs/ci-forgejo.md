@@ -112,10 +112,13 @@ Cobertura export (`web/client/coverage/cobertura-coverage.xml`) goes through the
 so the client gets a comment and artifact with line, branch, function and full-function numbers;
 its 90% gate stays vitest's own thresholds.
 
-Both use `scripts/forgejo-pr-comment.sh` with their own marker, so each is one sticky comment,
-and both upload `CoverageReport/` with the merged XML, per-method statistics, per-assembly
-rollups, complexity-based risk hotspots and an offline HTML report with annotated source.
-`-minimumcoverage:` exists on the tool for a future gate, but the floors in
+Both write into **one shared coverage comment** (`scripts/forgejo-pr-comment.sh --section …`): the
+.NET job owns the `dotnet` section, the web job the `web` section, so a PR shows a single summary
+with both. The script replaces only its own section, deletes the superseded one-comment-per-job
+coverage comments, and re-reads the comment after writing so two jobs finishing at once cannot drop
+each other's numbers. Both upload `CoverageReport/` with the merged XML, per-method statistics,
+per-assembly rollups, complexity-based risk hotspots and an offline HTML report with annotated
+source. `-minimumcoverage:` exists on the tool for a future gate, but the floors in
 `scripts/coverage-floors.json` remain the contract.
 
 ### What runs where
