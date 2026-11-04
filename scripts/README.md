@@ -32,13 +32,29 @@ Creates and pushes a release tag for a specific component. Use this to manually 
 
 ## `generate-coverage-report.ps1`
 
-Merges coverage XML outputs from `coverage-results/` and generates an HTML report under `coverage-report/`. Requires `reportgenerator` to be installed (`dotnet tool install -g dotnet-reportgenerator-globaltool`).
+Merges coverage XML outputs from `coverage-results/` and generates an HTML report under `coverage-report/`. It runs the [coverage reporter](https://git.kungraseri.cloud/codecov/codecov-report) pinned by `scripts/coverage-report.sh`; no global tool or license is required, only the .NET SDK.
 
 ```powershell
 .\scripts\generate-coverage-report.ps1
 ```
 
 Also wired to the **test-coverage** VS Code task (`Ctrl+Shift+B` → test-coverage).
+
+---
+
+## `coverage-report.sh`
+
+Runs the coverage reporter without keeping a copy in this repository. It clones the pinned
+`codecov/codecov-report` tag into `.coverage-report/<ref>/` (gitignored) and runs it with
+the .NET SDK; `COVERAGE_REPORT_REPO`, `COVERAGE_REPORT_REF` and `COVERAGE_REPORT_DIR`
+override the defaults. Arguments are ReportGenerator's, plus `-minimumcoverage:` for a gate.
+
+```bash
+bash scripts/coverage-report.sh \
+  "-reports:./TestResults/*/coverage.cobertura.xml" \
+  "-targetdir:./CoverageReport" \
+  "-reporttypes:Html;Cobertura;MarkdownSummaryGithub;TextSummary"
+```
 
 ---
 
@@ -250,7 +266,7 @@ Deployment #1 - 2026-01-03 17:30:00
 ```
 
 **Requirements**:
-- ReportGenerator tool (`dotnet tool install -g dotnet-reportgenerator-globaltool`)
+- .NET SDK (nothing else — the reporter is fetched from its own repository)
 
 **Output**: Creates `coverage-report/` with HTML coverage reports.
 

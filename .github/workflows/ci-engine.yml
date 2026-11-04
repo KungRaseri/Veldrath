@@ -23,6 +23,7 @@ on:
       - 'Directory.Build.props'
       - 'scripts/generate-version.sh'
       - 'scripts/forgejo-pr-comment.sh'
+      - 'scripts/coverage-report.sh'
       - '.github/workflows/ci-engine.yml'
   pull_request:
     branches: [ main, development ]
@@ -37,6 +38,7 @@ on:
       - 'Directory.Build.props'
       - 'scripts/generate-version.sh'
       - 'scripts/forgejo-pr-comment.sh'
+      - 'scripts/coverage-report.sh'
       - '.github/workflows/ci-engine.yml'
   workflow_dispatch:
     inputs:
@@ -113,11 +115,14 @@ jobs:
           --logger "trx;LogFileName=data-tests.trx" \
           --results-directory ./TestResults
 
-    - name: Install ReportGenerator
-      run: bash scripts/ci-toolchain.sh --reportgenerator
-
+    # Replaces dotnet-reportgenerator-globaltool: scripts/coverage-report.sh fetches the
+    # pinned codecov/codecov-report tool and computes method statistics without a license.
     - name: Generate coverage report
-      run: reportgenerator "-reports:./TestResults/*/coverage.cobertura.xml" "-targetdir:./CoverageReport" "-reporttypes:Html;Cobertura;MarkdownSummaryGithub"
+      run: |
+        bash scripts/coverage-report.sh \
+          "-reports:./TestResults/*/coverage.cobertura.xml" \
+          "-targetdir:./CoverageReport" \
+          "-reporttypes:Html;Cobertura;MarkdownSummaryGithub;TextSummary"
 
     # Replaces codecov/codecov-action. Codecov is GitHub/GitLab/Bitbucket-only, so
     # the report is published as a build artifact and summarised on the PR instead.

@@ -76,13 +76,38 @@ Everything else is a repository script, so it needs no action at all:
 | Removed | Replacement |
 |---|---|
 | `actions/setup-dotnet` | [`scripts/ci-toolchain.sh`](../scripts/ci-toolchain.sh) |
-| `codecov/codecov-action` | `reportgenerator` output uploaded as an artifact |
+| `codecov/codecov-action` | [`codecov/codecov-report`](https://git.kungraseri.cloud/codecov/codecov-report) output uploaded as an artifact |
 | `marocchino/sticky-pull-request-comment` | [`scripts/forgejo-pr-comment.sh`](../scripts/forgejo-pr-comment.sh) |
 | `EnricoMi/publish-unit-test-result-action` | `TestResults/*.trx` uploaded as an artifact |
 | `softprops/action-gh-release` | [`scripts/forgejo-release.sh`](../scripts/forgejo-release.sh) |
 | `actions/upload-pages-artifact` + `actions/deploy-pages` | `_site/` uploaded as the `docs-site` artifact |
 | `gh workflow run` dispatch | not needed: the package job creates its own tag and release |
 | `ghcr.io` | the Forgejo container registry (section 4) |
+
+### Coverage reports
+
+`dotnet-reportgenerator-globaltool` is gone. Its free build reports line and branch
+coverage but gates **method coverage**, **full method coverage**, summary metrics and raw
+mode behind a PRO license. The collector's Cobertura XML already carries per-method lines
+and complexity, so the reporter lives in its own repository,
+[`codecov/codecov-report`](https://git.kungraseri.cloud/codecov/codecov-report), pinned to
+a release tag and cloned on demand by `scripts/coverage-report.sh` (no NuGet dependencies;
+it builds with the SDK every job installs anyway).
+
+```bash
+bash scripts/coverage-report.sh \
+  "-reports:./TestResults/*/coverage.cobertura.xml" \
+  "-targetdir:./CoverageReport" \
+  "-reporttypes:Html;Cobertura;MarkdownSummaryGithub;TextSummary"
+```
+
+`ci-coverage.yml` still feeds its merged `CoverageReport/Cobertura.xml` to
+`scripts/check-dotnet-coverage.mjs`, and every job still posts `SummaryGithub.md` through
+`scripts/forgejo-pr-comment.sh` and uploads `CoverageReport/` as its artifact. The
+difference is the content: per-method and full-method statistics, per-assembly rollups,
+complexity-based risk hotspots, and an offline HTML report with annotated source.
+`-minimumcoverage:` exists on the tool for a future gate, but the floors in
+`scripts/coverage-floors.json` remain the contract.
 
 ### What runs where
 

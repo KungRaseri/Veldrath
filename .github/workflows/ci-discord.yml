@@ -26,6 +26,7 @@ on:
       - 'Directory.Build.props'
       - 'scripts/generate-version.sh'
       - 'scripts/forgejo-pr-comment.sh'
+      - 'scripts/coverage-report.sh'
       - 'scripts/forgejo-release.sh'
       - '.github/workflows/ci-discord.yml'
   pull_request:
@@ -42,6 +43,7 @@ on:
       - 'Directory.Build.props'
       - 'scripts/generate-version.sh'
       - 'scripts/forgejo-pr-comment.sh'
+      - 'scripts/coverage-report.sh'
       - 'scripts/forgejo-release.sh'
       - '.github/workflows/ci-discord.yml'
   workflow_dispatch:
@@ -94,11 +96,14 @@ jobs:
           --logger "trx;LogFileName=discord-tests.trx" \
           --results-directory ./TestResults
 
-    - name: Install ReportGenerator
-      run: bash scripts/ci-toolchain.sh --reportgenerator
-
+    # Replaces dotnet-reportgenerator-globaltool: scripts/coverage-report.sh fetches the
+    # pinned codecov/codecov-report tool and computes method statistics without a license.
     - name: Generate coverage report
-      run: reportgenerator "-reports:./TestResults/*/coverage.cobertura.xml" "-targetdir:./CoverageReport" "-reporttypes:Html;Cobertura;MarkdownSummaryGithub"
+      run: |
+        bash scripts/coverage-report.sh \
+          "-reports:./TestResults/*/coverage.cobertura.xml" \
+          "-targetdir:./CoverageReport" \
+          "-reporttypes:Html;Cobertura;MarkdownSummaryGithub;TextSummary"
 
     # Replaces codecov/codecov-action, which cannot run against Forgejo.
     - name: Upload coverage report

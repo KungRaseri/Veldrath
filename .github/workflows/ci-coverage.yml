@@ -42,6 +42,7 @@ on:
       - 'scripts/check-dotnet-coverage.mjs'
       - 'scripts/coverage-floors.json'
       - 'scripts/forgejo-pr-comment.sh'
+      - 'scripts/coverage-report.sh'
       - '.github/workflows/ci-coverage.yml'
   pull_request:
     branches: [ main, development ]
@@ -67,6 +68,7 @@ on:
       - 'scripts/check-dotnet-coverage.mjs'
       - 'scripts/coverage-floors.json'
       - 'scripts/forgejo-pr-comment.sh'
+      - 'scripts/coverage-report.sh'
       - '.github/workflows/ci-coverage.yml'
   workflow_dispatch:
 
@@ -104,13 +106,14 @@ jobs:
           --collect "XPlat Code Coverage" --settings coverage.runsettings \
           --results-directory ./TestResults
 
-    - name: Install ReportGenerator
-      run: bash scripts/ci-toolchain.sh --reportgenerator
-
+    # Replaces dotnet-reportgenerator-globaltool: scripts/coverage-report.sh fetches the
+    # pinned codecov/codecov-report tool and computes method statistics without a license.
     - name: Generate coverage report
       run: |
-        reportgenerator "-reports:./TestResults/*/coverage.cobertura.xml" \
-          "-targetdir:./CoverageReport" "-reporttypes:Html;Cobertura;MarkdownSummaryGithub"
+        bash scripts/coverage-report.sh \
+          "-reports:./TestResults/*/coverage.cobertura.xml" \
+          "-targetdir:./CoverageReport" \
+          "-reporttypes:Html;Cobertura;MarkdownSummaryGithub;TextSummary"
 
     # Node is not guaranteed on the runner image; docs.yml provisions it the same way.
     - name: Setup Node
