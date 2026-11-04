@@ -48,6 +48,8 @@ Runs the coverage reporter without keeping a copy in this repository. It clones 
 `codecov/codecov-report` tag into `.coverage-report/<ref>/` (gitignored) and runs it with
 the .NET SDK; `COVERAGE_REPORT_REPO`, `COVERAGE_REPORT_REF` and `COVERAGE_REPORT_DIR`
 override the defaults. Arguments are ReportGenerator's, plus `-minimumcoverage:` for a gate.
+It reads coverlet and vitest/istanbul Cobertura alike; the web job points it at
+`web/client/coverage/cobertura-coverage.xml`.
 
 ```bash
 bash scripts/coverage-report.sh \
