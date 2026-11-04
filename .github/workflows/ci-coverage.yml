@@ -7,8 +7,7 @@ name: CI - .NET Coverage Gate
 # This job exists because coverage is a property of an assembly, not of the job that ran a test
 # against it: the engine workflow's own report shows RealmEngine.Data at 46.48% and the server
 # workflow's shows RealmEngine.Core at 6.06%, while the merged number is 92.56% and 70.90%.
-# Only a job that runs all six test projects can assert the real floors. It is also the only
-# .NET workflow that runs Veldrath.Assets.Tests at all.
+# Only a job that runs all five test projects can assert the real floors.
 #
 # pull_request targets development and main, matching the sibling workflows: f1b70eb3 aligned them
 # all on [main, development], so this gate runs on the same pull requests as the checks it
@@ -31,8 +30,6 @@ on:
       - 'Veldrath.Server/**'
       - 'Veldrath.Server.Tests/**'
       - 'Veldrath.Contracts/**'
-      - 'Veldrath.Assets/**'
-      - 'Veldrath.Assets.Tests/**'
       - 'Veldrath.Discord/**'
       - 'Veldrath.Discord.Tests/**'
       - 'Realm.Full.slnx'
@@ -58,8 +55,6 @@ on:
       - 'Veldrath.Server/**'
       - 'Veldrath.Server.Tests/**'
       - 'Veldrath.Contracts/**'
-      - 'Veldrath.Assets/**'
-      - 'Veldrath.Assets.Tests/**'
       - 'Veldrath.Discord/**'
       - 'Veldrath.Discord.Tests/**'
       - 'Realm.Full.slnx'

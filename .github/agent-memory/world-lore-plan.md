@@ -179,7 +179,9 @@ Update sub-location descriptions within zone pages. **✅ COMPLETE (2026-04-14)*
 
 ## Technical Notes (do not change without author review)
 
-- Zone wiki pages reference TMX files in `Veldrath.Assets/GameAssets/tilemaps/maps/`
+- Zone wiki pages reference TMX files in `Veldrath.Assets/GameAssets/tilemaps/maps/` — **removed
+  2026-11-04** with the `Veldrath.Assets` project; the TMX maps now exist only in git history
+  (`git log --diff-filter=D -- Veldrath.Assets/GameAssets/tilemaps`)
 - Zone TMX files were resized last session: all `infinite="0"`, per-zone dimensions, empty `<data encoding="csv"/>`
 - Exit objects with no `toZoneId` property return to the region map — all zone exits currently use this pattern
 - `wiki/_Sidebar.md` has Regions & Zones section and `World Lore` link

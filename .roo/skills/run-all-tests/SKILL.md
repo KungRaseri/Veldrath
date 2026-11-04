@@ -50,7 +50,6 @@ Invoke this skill when you need to:
 | `RealmEngine.Data.Tests` | Repository/persistence tests | `engine` |
 | `Veldrath.Server.Tests` | Server integration tests | `server` |
 | `Veldrath.Discord.Tests` | Discord bot tests | `discord` |
-| `Veldrath.Assets.Tests` | Asset management tests | — |
 
 The SvelteKit web suite runs with `npm run test` from `web/` (Vitest + Playwright, `web` coverage flag).
 

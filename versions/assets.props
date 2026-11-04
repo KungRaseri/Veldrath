@@ -1,7 +1,0 @@
-﻿<Project>
-  <!-- Veldrath.Assets: game asset library -->
-  <PropertyGroup>
-    <VersionMajor>0</VersionMajor>
-    <VersionMinor>1</VersionMinor>
-  </PropertyGroup>
-</Project>

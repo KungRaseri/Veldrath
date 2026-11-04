@@ -111,7 +111,7 @@ reads its configuration from `web/client/.env` — see [`web/README.md`](web/REA
 
 ## Testing
 
-Comprehensive test suite across 6 .NET test projects plus the SvelteKit web suite:
+Comprehensive test suite across 5 .NET test projects plus the SvelteKit web suite:
 
 | Project | Scope |
 |---------|-------|
@@ -120,7 +120,6 @@ Comprehensive test suite across 6 .NET test projects plus the SvelteKit web suit
 | `RealmEngine.Shared.Tests` | Models, utilities, services |
 | `Veldrath.Server.Tests` | Server endpoints, game hub, services |
 | `Veldrath.Discord.Tests` | Discord bot modules and embeds |
-| `Veldrath.Assets.Tests` | Asset store and manifests |
 
 The SvelteKit app is tested separately with Vitest and Playwright from `web/`.
 
@@ -163,9 +162,8 @@ RealmEngine/
 ├── Veldrath.Server/                  # ASP.NET Core game server
 ├── Veldrath.Discord/                 # Discord bot
 ├── Veldrath.Contracts/               # Shared DTOs and contracts
-├── Veldrath.Assets/                  # Asset store and manifests
 ├── web/                              # SvelteKit app — the only client, plus the Foundry editor
-└── [Project].Tests/                  # 6 .NET test projects (+ web Vitest/Playwright suites)
+└── [Project].Tests/                  # 5 .NET test projects (+ web Vitest/Playwright suites)
 ```
 
 ## Solution Files

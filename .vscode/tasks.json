@@ -197,19 +197,6 @@
         "clear": true
       }
     },
-    {
-      "label": "download-assets",
-      "type": "shell",
-      "command": "powershell",
-      "args": ["-File", "${workspaceFolder}/scripts/download-assets.ps1"],
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": true,
-        "panel": "shared",
-        "clear": true
-      }
-    },
     // ── Veldrath ─────────────────────────────────────────────────────────
     {
       "label": "build-veldrath-server",
@@ -364,45 +351,6 @@
       "args": [
         "test",
         "${workspaceFolder}/Veldrath.Discord.Tests/Veldrath.Discord.Tests.csproj",
-        "--verbosity",
-        "normal",
-        "--collect",
-        "XPlat Code Coverage",
-        "--settings",
-        "coverage.runsettings",
-        "--results-directory",
-        "${workspaceFolder}/coverage-results"
-      ],
-      "problemMatcher": "$msCompile",
-      "group": "test",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "clear": true
-      }
-    },
-    {
-      "label": "build-veldrath-assets",
-      "type": "shell",
-      "command": "dotnet",
-      "args": [
-        "build",
-        "${workspaceFolder}/Veldrath.Assets/Veldrath.Assets.csproj",
-        "/property:GenerateFullPaths=true",
-        "/consoleloggerparameters:NoSummary"
-      ],
-      "problemMatcher": "$msCompile",
-      "group": "build"
-    },
-    {
-      "label": "test-veldrath-assets",
-      "type": "shell",
-      "command": "dotnet",
-      "args": [
-        "test",
-        "${workspaceFolder}/Veldrath.Assets.Tests/Veldrath.Assets.Tests.csproj",
         "--verbosity",
         "normal",
         "--collect",
