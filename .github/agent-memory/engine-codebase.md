@@ -34,8 +34,9 @@ the gate exactly as the workflow does:
 dotnet build Realm.Full.slnx --configuration Release
 dotnet test Realm.Full.slnx --configuration Release --no-build \
   --collect "XPlat Code Coverage" --settings coverage.runsettings --results-directory ./TestResults
-reportgenerator "-reports:./TestResults/*/coverage.cobertura.xml" \
+bash scripts/coverage-report.sh "-reports:./TestResults/*/coverage.cobertura.xml" \
   "-targetdir:./CoverageReport" "-reporttypes:Cobertura;TextSummary"
+
 node scripts/check-dotnet-coverage.mjs --report ./CoverageReport/Cobertura.xml \
   --floors scripts/coverage-floors.json --suggest
 ```

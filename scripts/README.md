@@ -97,8 +97,8 @@ response and run in the [docs workflow](../.github/workflows/docs.yml).
 
 Enforces the .NET coverage contract from the **merged** Cobertura report. Coverage is a property
 of an assembly, not of the workflow that happened to run a test against it, so the input is
-ReportGenerator's merge of all six test projects' cobertura output — not any single component
-workflow's `CoverageReport/`. Run by [`.github/workflows/ci-coverage.yml`](../.github/workflows/ci-coverage.yml)
+the merge of all six test projects' Cobertura output produced by `scripts/coverage-report.sh`
+(`codecov/codecov-report`) — not any single component workflow's `CoverageReport/`. Run by [`.github/workflows/ci-coverage.yml`](../.github/workflows/ci-coverage.yml)
 on every PR and push that touches .NET code.
 
 It fails, with a non-zero exit, on:
