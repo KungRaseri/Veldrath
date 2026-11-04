@@ -34,11 +34,19 @@ the gate exactly as the workflow does:
 dotnet build Realm.Full.slnx --configuration Release
 dotnet test Realm.Full.slnx --configuration Release --no-build \
   --collect "XPlat Code Coverage" --settings coverage.runsettings --results-directory ./TestResults
-reportgenerator "-reports:./TestResults/*/coverage.cobertura.xml" \
-  "-targetdir:./CoverageReport" "-reporttypes:Cobertura;TextSummary"
+bash scripts/coverage-report.sh "-reports:./TestResults/*/coverage.cobertura.xml" \
+  "-targetdir:./CoverageReport" "-reporttypes:Html;Cobertura;MarkdownSummaryGithub;TextSummary"
 node scripts/check-dotnet-coverage.mjs --report ./CoverageReport/Cobertura.xml \
   --floors scripts/coverage-floors.json --suggest
 ```
+
+The reporter is [`scripts/coverage-report.sh`](../../scripts/coverage-report.sh:1) — it clones the
+`codecov/codecov-report` tool into `.coverage-report/<ref>` on first use and needs no global tool or
+license (PR #46; it replaced `dotnet-reportgenerator-globaltool`). Its class and method counts are
+**not** ReportGenerator's: on the 2026-11-04 report it printed 684 classes / 2,058 methods where
+ReportGenerator printed 677 / 2,711, so method coverage (79.4%) and full-method coverage (68.0%) are
+only comparable between runs of the same tool. Line and branch numbers are identical either way —
+75.5% / 55.8% from both — which is what the floors gate on.
 
 `RealmForge.Tests` (27 tests) was deleted with the rest of the Avalonia tooling in Milestone B.
 `Veldrath.Server.Tests` lost ~107 tests with the deleted `/api/auth/*` endpoint suites; the
