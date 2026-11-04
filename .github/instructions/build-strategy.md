@@ -14,7 +14,7 @@
    - `RealmEngine.Core/`, `RealmEngine.Shared/`, `RealmEngine.Data/`, `RealmEngine.*.Tests/` → Build `RealmEngine.slnx`
    - `Veldrath.Server/`, `Veldrath.Server.Tests/` → Build `Veldrath.Server.slnx`
    - `Veldrath.Discord/`, `Veldrath.Discord.Tests/` → Build `Veldrath.Discord.slnx`
-   - `Veldrath.Assets/`, `Veldrath.Assets.Tests/`, `Veldrath.Contracts/` → Build `Veldrath.Libraries.slnx`
+   - `Veldrath.Contracts/` → Build `Veldrath.Libraries.slnx`
    - `web/` → Run `npm run typecheck && npm run lint && npm run test && npm run build` in `web`
 
 3. Are all changed directories covered by a SINGLE existing sub-solution?
@@ -48,7 +48,7 @@
 | `web/**` | npm scripts in `web` (`typecheck`, `lint`, `test`, `build`) |
 | `Veldrath.Server/**` or `Veldrath.Server.Tests/**` | `dotnet build Veldrath.Server.slnx` |
 | `Veldrath.Discord/**` or `Veldrath.Discord.Tests/**` | `dotnet build Veldrath.Discord.slnx` |
-| `Veldrath.Assets/**`, `Veldrath.Contracts/**` | `dotnet build Veldrath.Libraries.slnx` |
+| `Veldrath.Contracts/**` | `dotnet build Veldrath.Libraries.slnx` |
 | Cross-component changes | `dotnet build Realm.Full.slnx` |
 | `Directory.Build.*` / `Directory.Packages.props` | `dotnet build Realm.Full.slnx` |
 

@@ -37,7 +37,6 @@ Build the matching solution first, then run the tests. See [`.github/instruction
 | `server` | `dotnet build Veldrath.Server.slnx` | `dotnet test Veldrath.Server.slnx` | Server + engine + assets tests |
 | `discord` | `dotnet build Veldrath.Discord.slnx` | `dotnet test Veldrath.Discord.slnx` | Discord bot + engine tests |
 | `web` | — | `npm run test` in `web/` | SvelteKit Vitest + Playwright tests (the game client) |
-| `assets` | `dotnet build Veldrath.Libraries.slnx` | `dotnet test Veldrath.Libraries.slnx --filter "FullyQualifiedName~Veldrath.Assets"` | Asset management tests only |
 | `libraries` | `dotnet build Veldrath.Libraries.slnx` | `dotnet test Veldrath.Libraries.slnx` | Assets + engine tests |
 
 ## Steps

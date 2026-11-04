@@ -9,13 +9,12 @@ were deleted with its retirement.
 
 | Project | Tests |
 |---------|-------|
-| `RealmEngine.Core.Tests` | 2,038 |
+| `RealmEngine.Core.Tests` | 2,040 |
 | `RealmEngine.Shared.Tests` | 795 |
 | `RealmEngine.Data.Tests` | 301 |
 | `Veldrath.Server.Tests` | 846 |
 | `Veldrath.Discord.Tests` | 29 |
-| `Veldrath.Assets.Tests` | 10 |
-| **Total (verified 2026-11-03 with `dotnet test Realm.Full.slnx -c Release --no-build`)** | **4,019** |
+| **Total (verified 2026-11-04 with `dotnet test Realm.Full.slnx --no-build`, after `Veldrath.Assets` was deleted)** | **4,011** |
 
 The count is per-project `Passed:` totals from that command, not a hand tally — re-run it instead of
 adjusting the table by hand.

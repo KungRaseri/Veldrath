@@ -18,7 +18,6 @@
     "RealmEngine.Shared":   { "line": 55, "branch": 52, "measured": { "line": 56.33, "branch": 53.61, "lines": 1484 } },
     "Veldrath.Server":      { "line": 71, "branch": 51, "measured": { "line": 72.42, "branch": 52.88, "lines": 9016 } },
     "Veldrath.Contracts":   { "line": 89, "branch": null, "measured": { "line": 90.83, "branch": 100.0, "lines": 1145 } },
-    "Veldrath.Assets":      { "line": 45, "branch": null, "measured": { "line": 46.83, "branch": 21.74, "lines": 126 } },
     "Veldrath.Discord":     { "line": 31, "branch": 39, "measured": { "line": 32.74, "branch": 40.79, "lines": 394 } }
   }
 }

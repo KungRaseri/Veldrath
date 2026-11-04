@@ -444,10 +444,13 @@ posting a status by hand stays forbidden: a status any agent can mint certifies 
 
 #### Files that no component workflow builds
 
-Measured against the tree on 2026-11-03 (`git ls-files`, 3472 paths, the merge gate and its script
-included): **39 paths match no `on.pull_request.paths` pattern.** Before the merge gate they produced
+Measured against the tree on 2026-11-04 (`git ls-files`, 1618 paths, the merge gate and its script
+included): **36 paths match no `on.pull_request.paths` pattern.** Before the merge gate they produced
 zero statuses and deadlocked the gate; now they produce exactly one — the merge gate — and merge with
 **no build and no test**. Regenerate the list with `bash scripts/ci-merge-gate.sh --uncovered`.
+
+The path count halved when `Veldrath.Assets` and its 1,837 art files were deleted (2026-11-04); the
+uncovered *set* barely moved, which is the point — the art never matched a workflow's `paths` either.
 
 | Class | Count | Paths |
 |---|---|---|
@@ -455,7 +458,7 @@ zero statuses and deadlocked the gate; now they produce exactly one — the merg
 | Root build metadata | 3 | `NuGet.config`, `dotnet-tools.json`, `toc.yml` |
 | Solution files | 4 | `RealmEngine.slnx`, `Veldrath.Discord.slnx`, `Veldrath.Libraries.slnx`, `Veldrath.Server.slnx` |
 | Observability and deploy config | 10 | `config/grafana/dashboards/{10915,19194,23178,23179}.json`, `config/grafana/provisioning/dashboards/dashboards.yml`, `config/grafana/provisioning/datasources/prometheus.yml`, `config/prometheus/prometheus.yml`, `docker-compose.coolify.yml`, `docker-compose.dev.yml`, `docker-compose.prod.yml` |
-| Scripts no workflow names | 10 | `scripts/ci-merge-gate.sh`, `scripts/format-json-files.py`, `scripts/create-release-tag.ps1`, `scripts/download-assets.ps1`, `scripts/generate-coverage-report.ps1`, `scripts/generate-version.ps1`, `scripts/package-assets.ps1`, `scripts/sync-assets.ps1`, `scripts/onebit_labeled.png`, `scripts/roguelike_base_labeled.png` |
+| Scripts no workflow names | 7 | `scripts/ci-merge-gate.sh`, `scripts/format-json-files.py`, `scripts/create-release-tag.ps1`, `scripts/generate-coverage-report.ps1`, `scripts/generate-version.ps1`, `scripts/onebit_labeled.png`, `scripts/roguelike_base_labeled.png` |
 | Submodule pin | 1 | `wiki` |
 | The always-on check itself | 1 | `.github/workflows/merge-gate.yml` (it declares no `paths` at all, so no list can name it) |
 

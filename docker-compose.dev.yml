@@ -121,9 +121,6 @@ services:
       - ./Veldrath.Contracts:/src/Veldrath.Contracts
       - /src/Veldrath.Contracts/obj
       - /src/Veldrath.Contracts/bin
-      - ./Veldrath.Assets:/src/Veldrath.Assets
-      - /src/Veldrath.Assets/obj
-      - /src/Veldrath.Assets/bin
       - ./RealmEngine.Core:/src/RealmEngine.Core
       - /src/RealmEngine.Core/obj
       - /src/RealmEngine.Core/bin
