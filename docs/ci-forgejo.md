@@ -102,7 +102,10 @@ bash scripts/coverage-report.sh \
 ```
 
 `ci-coverage.yml` still feeds its merged `CoverageReport/Cobertura.xml` to
-`scripts/check-dotnet-coverage.mjs`, and every job still posts `SummaryGithub.md` through
+`scripts/check-dotnet-coverage.mjs`. The web job uses the same reporter for vitest's Cobertura
+export (`web/client/coverage/cobertura-coverage.xml`), so the SvelteKit client's line, branch,
+function and full-function numbers land in the same kind of comment and artifact; its 90% gate stays
+vitest's own thresholds. Every job still posts `SummaryGithub.md` through
 `scripts/forgejo-pr-comment.sh` and uploads `CoverageReport/` as its artifact. The
 difference is the content: per-method and full-method statistics, per-assembly rollups,
 complexity-based risk hotspots, and an offline HTML report with annotated source.

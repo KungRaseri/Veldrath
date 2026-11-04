@@ -56,7 +56,10 @@ export default defineConfig(() => {
 			 */
 			coverage: {
 				provider: 'v8' as const,
-				reporter: ['text', 'text-summary', 'lcov', 'json-summary'],
+				// cobertura feeds the repository's coverage reporter (scripts/coverage-report.sh),
+				// which is what renders the HTML report and the PR comment; lcov stays for
+				// external viewers and json-summary for tooling that wants per-file numbers.
+				reporter: ['text', 'text-summary', 'lcov', 'json-summary', 'cobertura'],
 				include: ['src/**/*.{ts,svelte}'],
 				exclude: [
 					'src/**/*.{test,spec}.{js,ts}',
