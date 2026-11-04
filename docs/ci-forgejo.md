@@ -101,14 +101,20 @@ bash scripts/coverage-report.sh \
   "-reporttypes:Html;Cobertura;MarkdownSummaryGithub;TextSummary"
 ```
 
-`ci-coverage.yml` still feeds its merged `CoverageReport/Cobertura.xml` to
-`scripts/check-dotnet-coverage.mjs`. The web job uses the same reporter for vitest's Cobertura
-export (`web/client/coverage/cobertura-coverage.xml`), so the SvelteKit client's line, branch,
-function and full-function numbers land in the same kind of comment and artifact; its 90% gate stays
-vitest's own thresholds. Every job still posts `SummaryGithub.md` through
-`scripts/forgejo-pr-comment.sh` and uploads `CoverageReport/` as its artifact. The
-difference is the content: per-method and full-method statistics, per-assembly rollups,
-complexity-based risk hotspots, and an offline HTML report with annotated source.
+Only one job publishes a .NET report: `ci-coverage.yml`. It runs every test project, so its
+merge is the honest per-assembly number; it feeds `CoverageReport/Cobertura.xml` to
+`scripts/check-dotnet-coverage.mjs` and posts the single .NET summary comment. The per-component
+workflows (`ci-engine`, `ci-server`, `ci-discord`) upload `TestResults/` only — a report built
+from their own subset shows the other assemblies at ~0%, because their tests never ran there.
+
+The web job publishes its own report, because nothing else runs the SvelteKit suite: vitest's
+Cobertura export (`web/client/coverage/cobertura-coverage.xml`) goes through the same reporter,
+so the client gets a comment and artifact with line, branch, function and full-function numbers;
+its 90% gate stays vitest's own thresholds.
+
+Both use `scripts/forgejo-pr-comment.sh` with their own marker, so each is one sticky comment,
+and both upload `CoverageReport/` with the merged XML, per-method statistics, per-assembly
+rollups, complexity-based risk hotspots and an offline HTML report with annotated source.
 `-minimumcoverage:` exists on the tool for a future gate, but the floors in
 `scripts/coverage-floors.json` remain the contract.
 

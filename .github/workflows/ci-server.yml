@@ -26,7 +26,6 @@ on:
       - 'docker-compose.yml'
       - 'scripts/generate-version.sh'
       - 'scripts/forgejo-pr-comment.sh'
-      - 'scripts/coverage-report.sh'
       - 'scripts/forgejo-release.sh'
       - '.github/workflows/ci-server.yml'
   pull_request:
@@ -43,7 +42,6 @@ on:
       - 'docker-compose.yml'
       - 'scripts/generate-version.sh'
       - 'scripts/forgejo-pr-comment.sh'
-      - 'scripts/coverage-report.sh'
       - 'scripts/forgejo-release.sh'
       - '.github/workflows/ci-server.yml'
   workflow_dispatch:
@@ -98,24 +96,10 @@ jobs:
           --logger "trx;LogFileName=server-tests.trx" \
           --results-directory ./TestResults
 
-    # Replaces dotnet-reportgenerator-globaltool: scripts/coverage-report.sh fetches the
-    # pinned codecov/codecov-report tool and computes method statistics without a license.
-    - name: Generate coverage report
-      run: |
-        bash scripts/coverage-report.sh \
-          "-reports:./TestResults/*/coverage.cobertura.xml" \
-          "-targetdir:./CoverageReport" \
-          "-reporttypes:Html;Cobertura;MarkdownSummaryGithub;TextSummary"
-
-    # Replaces codecov/codecov-action, which cannot run against Forgejo.
-    - name: Upload coverage report
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: coverage-server
-        path: CoverageReport/
-        retention-days: 14
-
+    # Coverage is reported once for the whole solution by ci-coverage.yml, which runs every
+    # test project and merges the results: a per-component report shows the other assemblies at
+    # ~0% only because their tests did not run in this job. TestResults/ still carries this
+    # project's raw coverage below.
     - name: Upload test results
       uses: actions/upload-artifact@v3
       if: always()
@@ -124,18 +108,6 @@ jobs:
         path: TestResults/
         retention-days: 14
 
-    # Replaces marocchino/sticky-pull-request-comment.
-    - name: Comment the coverage summary on the pull request
-      if: github.event_name == 'pull_request'
-      env:
-        FORGEJO_TOKEN: ${{ secrets.GITEA_TOKEN }}
-        FORGEJO_REPOSITORY: ${{ github.repository }}
-        FORGEJO_SERVER_URL: ${{ github.server_url }}
-      run: |
-        bash scripts/forgejo-pr-comment.sh \
-          --pr "${{ github.event.pull_request.number }}" \
-          --body-file CoverageReport/SummaryGithub.md \
-          --marker '<!-- ci-coverage-server -->'
 
   package:
     name: Package Server Artifacts
