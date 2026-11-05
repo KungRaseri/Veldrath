@@ -121,6 +121,15 @@ per-assembly rollups, complexity-based risk hotspots and an offline HTML report 
 source. `-minimumcoverage:` exists on the tool for a future gate, but the floors in
 `scripts/coverage-floors.json` remain the contract.
 
+The helper's lookup contract is **one integer id**: a coverage comment mid-list, followed by a
+review comment, must still yield a single `746`, not `746` twice. That was a real failure — awk's
+`END` rule ran after `find_comment`'s `exit()`, printed the id again, and the PATCH URL became
+`…/issues/comments/746<newline>746`, which curl rejects as `(3) bad/illegal URL`. It is pinned by
+`scripts/tests/forgejo-pr-comment.test.sh`, which runs the real script against a fake `curl` on
+PATH (no token, no network, no pull request) and asserts the method, URL and payload of every
+request for the shared path, the legacy `--marker` path, the match-at-end-of-list case, the
+no-match create case and the duplicate-comment cleanup.
+
 ### What runs where
 
 Every workflow watches the same two integration branches, and none of them publishes from a
@@ -695,6 +704,7 @@ All four of these have actually happened in this repository.
 | Release created but no asset | The zip glob did not match; check the `Upload artifacts` step output. |
 | Publish job skipped on a dispatch | The dispatch left `publish` at `false`, which is the default: a dispatch is build-only by design. Re-dispatch with `publish: true` if you meant to publish. |
 | PR comment duplicated | A different `--marker` was used; markers must be stable per component. |
+| Last step of the coverage job fails with `curl: (3) bad/illegal URL`, and the log shows the id twice — `Updating the shared coverage comment 746` then `746 (section: dotnet)` | `find_comment` printed the id twice when another comment followed the match, so `COMMENT_ID` held `746\n746` and the PATCH URL carried a newline. Fixed by the `found` guard in `scripts/forgejo-pr-comment.sh`; pinned by `scripts/tests/forgejo-pr-comment.test.sh`. |
 
 ### Reading a job log
 

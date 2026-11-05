@@ -93,10 +93,16 @@ fetch_comments() {
 # find_comment FILE OUT_BODY -> prints the id of the comment holding $MARKER, body to OUT_BODY
 find_comment() {
     awk -v marker="${MARKER}" '
+        # The match calls exit(), which still runs END — and END calls flush() again.
+        # Without the guard the id was printed twice, so COMMENT_ID held "746\n746"
+        # and the PATCH URL became `.../comments/746<newline>746`, which curl rejects
+        # as `(3) bad/illegal URL`. The body was appended to OUT_BODY twice as well.
         function flush() {
+            if (found) { return }
             if (id != "" && index(body, marker) > 0) {
                 print id > "/dev/stdout"
                 printf "%s", body > out
+                found = 1
                 exit
             }
         }
@@ -104,6 +110,20 @@ find_comment() {
         { body = body $0 "\n" }
         END { flush() }
     ' out="$2" "$1"
+}
+
+# validate_comment_id ID -> 0 when ID is empty (no comment carries the marker) or a single
+# integer. Anything else is a decoder bug, not a server condition: it used to travel into
+# the PATCH URL and fail there as an opaque `curl (3) bad/illegal URL`.
+validate_comment_id() {
+    local id="$1"
+    [ -n "${id}" ] || return 0
+    case "${id}" in
+        *[!0-9]*)
+            echo "error: comment lookup returned a malformed id: $(printf '%s' "${id}" | tr '\n' ' ')" >&2
+            return 1
+            ;;
+    esac
 }
 
 # ids_of_comments_containing FILE STRING -> ids whose body contains STRING
@@ -124,6 +144,7 @@ if [ "${MARKER}" = "${SHARED_MARKER}" ]; then
         fetch_comments "${WORK}/comments.txt"
         rm -f "${WORK}/existing.md"
         COMMENT_ID="$(find_comment "${WORK}/comments.txt" "${WORK}/existing.md")"
+        validate_comment_id "${COMMENT_ID}" || exit 1
 
         # Drop the old one-comment-per-job coverage comments (and duplicate copies of
         # the shared comment) so the PR ends up with a single coverage comment.
@@ -209,6 +230,7 @@ echo "Looking for an existing comment carrying the marker ..."
 fetch_comments "${WORK}/comments.txt"
 rm -f "${WORK}/existing.md"
 COMMENT_ID="$(find_comment "${WORK}/comments.txt" "${WORK}/existing.md")"
+validate_comment_id "${COMMENT_ID}" || exit 1
 
 if [ -n "${COMMENT_ID}" ]; then
     echo "Updating comment ${COMMENT_ID} ..."
