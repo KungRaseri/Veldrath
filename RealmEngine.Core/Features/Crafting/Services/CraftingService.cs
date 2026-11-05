@@ -2,7 +2,9 @@ using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Services.Budget;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Services;
 
 namespace RealmEngine.Core.Features.Crafting.Services;
 
@@ -15,7 +17,7 @@ public class CraftingService
     private readonly RecipeDataService _recipeCatalogLoader;
     private readonly BudgetHelperService? _budgetHelper;
     private readonly ItemGenerator? _itemGenerator;
-    private readonly Random _random = new();
+    private readonly IRandomSource _random;
     private readonly ILogger<CraftingService> _logger;
 
     /// <summary>
@@ -25,16 +27,19 @@ public class CraftingService
     /// <param name="logger">The logger.</param>
     /// <param name="budgetHelper">Optional budget helper for quality calculations.</param>
     /// <param name="itemGenerator">Optional item generator for procedural crafted items.</param>
+    /// <param name="randomSource">Optional random source for the success, critical and rarity rolls; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
     public CraftingService(
         RecipeDataService recipeCatalogLoader,
         ILogger<CraftingService> logger,
         BudgetHelperService? budgetHelper = null,
-        ItemGenerator? itemGenerator = null)
+        ItemGenerator? itemGenerator = null,
+        IRandomSource? randomSource = null)
     {
         _recipeCatalogLoader = recipeCatalogLoader ?? throw new ArgumentNullException(nameof(recipeCatalogLoader));
         _logger = logger;
         _budgetHelper = budgetHelper;
         _itemGenerator = itemGenerator;
+        _random = randomSource ?? SystemRandomSource.Shared;
     }
 
     /// <summary>

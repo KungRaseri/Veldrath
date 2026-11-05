@@ -8,7 +8,6 @@
 #   --props-file versions/engine.props   -> RealmEngine libraries
 #   --props-file versions/server.props   -> Veldrath.Server
 #   --props-file versions/discord.props  -> Veldrath.Discord
-#   --props-file versions/assets.props   -> Veldrath.Assets
 #
 # If --props-file is not given, reads VersionMajor/VersionMinor from the root
 # Directory.Build.props (used by test projects and local dev where a specific

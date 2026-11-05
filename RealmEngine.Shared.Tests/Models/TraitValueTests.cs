@@ -1,5 +1,6 @@
 using FluentAssertions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Tests.Infrastructure;
 
 namespace RealmEngine.Shared.Tests.Models;
 
@@ -171,6 +172,7 @@ public class TraitValueTests
     }
 
     [Fact]
+    [UseCulture("en-US")]
     public void AsDouble_Should_Convert_String_Number_To_Double()
     {
         // Arrange
@@ -240,6 +242,7 @@ public class TraitValueTests
     }
 
     [Fact]
+    [UseCulture("en-US")]
     public void AsString_Should_Convert_Double_To_String()
     {
         // Arrange

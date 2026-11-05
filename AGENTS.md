@@ -45,7 +45,6 @@ This repository also contains the **official game built on top of that engine**:
 - **SvelteKit web app** (`web/`) — the single client and web frontend: public site, auth, game, **Foundry** (the content editor), editorial, admin, and moderation
 - **Veldrath.Discord** — Discord bot integration
 - **Veldrath.Contracts** — Shared API contracts and DTOs
-- **Veldrath.Assets** — Asset store and management
 
 ---
 
@@ -73,9 +72,8 @@ The SvelteKit app in [`web/`](web/) is verified with npm scripts rather than a `
 ├── Veldrath.Server/              # ASP.NET Core game server with SignalR hub
 ├── Veldrath.Discord/             # Discord bot
 ├── Veldrath.Contracts/           # Shared API contracts and DTOs
-├── Veldrath.Assets/              # Asset store/management
 ├── web/                          # SvelteKit 3 / Svelte 5 app — the only client, plus Foundry (shared + client workspaces)
-├── [Project].Tests/              # One test project per .NET library/application (6 total)
+├── [Project].Tests/              # One test project per .NET library/application (5 total)
 ├── .github/
 │   ├── agent-memory/             # Canonical memory store (8 files, see Required Reading)
 │   ├── instructions/             # Detailed instruction files (7 files)
@@ -99,7 +97,6 @@ Version metadata lives in [`versions/`](versions/):
 | [`versions/engine.props`](versions/engine.props) | RealmEngine.Core, Shared, Data |
 | [`versions/server.props`](versions/server.props) | Veldrath.Server |
 | [`versions/discord.props`](versions/discord.props) | Veldrath.Discord |
-| [`versions/assets.props`](versions/assets.props) | Veldrath.Assets |
 
 ---
 
@@ -190,7 +187,7 @@ Build only what changed. The rule is simple: **build the `.slnx` file matching t
 | `RealmEngine.*/**` | `dotnet build RealmEngine.slnx` |
 | `Veldrath.Server/**` | `dotnet build Veldrath.Server.slnx` |
 | `Veldrath.Discord/**` | `dotnet build Veldrath.Discord.slnx` |
-| `Veldrath.Assets/**`, `Veldrath.Contracts/**` | `dotnet build Veldrath.Libraries.slnx` |
+| `Veldrath.Contracts/**` | `dotnet build Veldrath.Libraries.slnx` |
 | `web/**` | `cd web && npm run typecheck && npm run lint && npm run test && npm run build` |
 | Cross-component / `Directory.Build.*` | `dotnet build Realm.Full.slnx` |
 
@@ -208,7 +205,7 @@ Build only what changed. The rule is simple: **build the `.slnx` file matching t
 
 ```powershell
 dotnet build Realm.Full.slnx    # Full build (all .NET projects)
-dotnet test Realm.Full.slnx     # All tests across the 6 .NET test projects (with coverage)
+dotnet test Realm.Full.slnx     # All tests across the 5 .NET test projects (with coverage)
 dotnet format Realm.Full.slnx   # Apply the .editorconfig formatting rules
 ```
 
@@ -235,10 +232,12 @@ CI runs on **Forgejo Actions** at `https://git.kungraseri.cloud/Veldrath/Veldrat
 | Workflow | Component | Publishes |
 |---|---|---|
 | [`ci-engine.yml`](.github/workflows/ci-engine.yml) | Core + Shared + Data | `engine/v*` release + libraries zip |
+| [`ci-coverage.yml`](.github/workflows/ci-coverage.yml) | .NET coverage floors across all five test projects | nothing (status only) |
 | [`ci-server.yml`](.github/workflows/ci-server.yml) | Veldrath.Server | `server/v*` release + zip + `veldrath-server` image |
 | [`ci-discord.yml`](.github/workflows/ci-discord.yml) | Veldrath.Discord | `discord/v*` release + zip + `veldrath-discord` image |
 | [`ci-web.yml`](.github/workflows/ci-web.yml) | SvelteKit web | `veldrath-web` image + coverage/Playwright artifacts |
 | [`docs.yml`](.github/workflows/docs.yml) | DocFX build + markdown relative-link check | `docs-site` artifact |
+| [`merge-gate.yml`](.github/workflows/merge-gate.yml) | PR gate: workflow lint, runs on every pull request | nothing (status only) |
 
 Releases are created inside the package job by [`scripts/forgejo-release.sh`](scripts/forgejo-release.sh); there is no separate release workflow, because fetching an artifact cross-run is a GitHub-API dependency. Images go to `git.kungraseri.cloud/veldrath/*`, which is what [`docker-compose.coolify.yml`](docker-compose.coolify.yml) pulls.
 

@@ -7,8 +7,7 @@ name: CI - .NET Coverage Gate
 # This job exists because coverage is a property of an assembly, not of the job that ran a test
 # against it: the engine workflow's own report shows RealmEngine.Data at 46.48% and the server
 # workflow's shows RealmEngine.Core at 6.06%, while the merged number is 92.56% and 70.90%.
-# Only a job that runs all six test projects can assert the real floors. It is also the only
-# .NET workflow that runs Veldrath.Assets.Tests at all.
+# Only a job that runs all five test projects can assert the real floors.
 #
 # pull_request targets development and main, matching the sibling workflows: f1b70eb3 aligned them
 # all on [main, development], so this gate runs on the same pull requests as the checks it
@@ -31,8 +30,6 @@ on:
       - 'Veldrath.Server/**'
       - 'Veldrath.Server.Tests/**'
       - 'Veldrath.Contracts/**'
-      - 'Veldrath.Assets/**'
-      - 'Veldrath.Assets.Tests/**'
       - 'Veldrath.Discord/**'
       - 'Veldrath.Discord.Tests/**'
       - 'Realm.Full.slnx'
@@ -45,6 +42,8 @@ on:
       - 'scripts/check-dotnet-coverage.mjs'
       - 'scripts/coverage-floors.json'
       - 'scripts/forgejo-pr-comment.sh'
+      - 'scripts/lib/**'
+      - 'scripts/coverage-report.sh'
       - '.github/workflows/ci-coverage.yml'
   pull_request:
     branches: [ main, development ]
@@ -58,8 +57,6 @@ on:
       - 'Veldrath.Server/**'
       - 'Veldrath.Server.Tests/**'
       - 'Veldrath.Contracts/**'
-      - 'Veldrath.Assets/**'
-      - 'Veldrath.Assets.Tests/**'
       - 'Veldrath.Discord/**'
       - 'Veldrath.Discord.Tests/**'
       - 'Realm.Full.slnx'
@@ -72,6 +69,8 @@ on:
       - 'scripts/check-dotnet-coverage.mjs'
       - 'scripts/coverage-floors.json'
       - 'scripts/forgejo-pr-comment.sh'
+      - 'scripts/lib/**'
+      - 'scripts/coverage-report.sh'
       - '.github/workflows/ci-coverage.yml'
   workflow_dispatch:
 
@@ -109,13 +108,22 @@ jobs:
           --collect "XPlat Code Coverage" --settings coverage.runsettings \
           --results-directory ./TestResults
 
-    - name: Install ReportGenerator
-      run: bash scripts/ci-toolchain.sh --reportgenerator
-
+    # The only .NET coverage report in the pipeline. This job runs every test project, so its
+    # merge is the honest per-assembly number; the per-component workflows deliberately publish
+    # no report (their subset would show the other assemblies at ~0%). Still runs when the gate
+    # is about to fail, so the comment explains why.
     - name: Generate coverage report
+      if: always()
       run: |
-        reportgenerator "-reports:./TestResults/*/coverage.cobertura.xml" \
-          "-targetdir:./CoverageReport" "-reporttypes:Html;Cobertura;MarkdownSummaryGithub"
+        if ! ls TestResults/*/coverage.cobertura.xml >/dev/null 2>&1; then
+          echo "no coverage files were written; skipping the report"
+          exit 0
+        fi
+        bash scripts/coverage-report.sh \
+          "-reports:./TestResults/*/coverage.cobertura.xml" \
+          "-targetdir:./CoverageReport" \
+          "-reporttypes:Html;Cobertura;MarkdownSummaryGithub;TextSummary" \
+          "-title:Veldrath .NET coverage (all test projects)"
 
     # Node is not guaranteed on the runner image; docs.yml provisions it the same way.
     - name: Setup Node
@@ -148,8 +156,9 @@ jobs:
         path: TestResults/
         retention-days: 14
 
+    # Posts even when the gate fails: that is exactly when the numbers matter.
     - name: Comment the coverage summary on the pull request
-      if: github.event_name == 'pull_request'
+      if: always() && github.event_name == 'pull_request'
       env:
         FORGEJO_TOKEN: ${{ secrets.GITEA_TOKEN }}
         FORGEJO_REPOSITORY: ${{ github.repository }}
@@ -157,5 +166,5 @@ jobs:
       run: |
         bash scripts/forgejo-pr-comment.sh \
           --pr "${{ github.event.pull_request.number }}" \
-          --body-file CoverageReport/SummaryGithub.md \
-          --marker '<!-- ci-coverage-gate -->'
+          --section dotnet --title '.NET (all test projects)' \
+          --body-file CoverageReport/SummaryGithub.md

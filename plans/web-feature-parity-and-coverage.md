@@ -570,6 +570,11 @@ Still red: the `src/**/*.svelte` floor (58.05% lines — staff pages, layout chr
 `src/routes/**/*.ts` branches at 76.33%, and `src/lib/game/**/*.ts` branches at 82.74 (`session.svelte.ts`
 guards, tracked with the `GameOverlays` work).
 
+> **Closed by PR 13** (see below). Kept as the record of where this PR left the gate. The final web
+> measurement is **99.19% lines / 99.24% statements / 98.83% functions / 95.54% branches** with
+> **1,096 tests in 80 files** and every floor green — re-measured 2026-11-04 with
+> `cd web && npm run coverage --workspace client`.
+
 ### PR 13 — the staff surfaces, the overlays, and the branch tail
 
 Six new suites plus two for the request hook, 153 tests — the first commit of this PR. Starting from

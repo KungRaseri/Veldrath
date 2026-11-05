@@ -37,8 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Game engine: catalog data (JSON), core logic, shared models -->
-    <ProjectReference Include="..\Veldrath.Assets\Veldrath.Assets.csproj" />
+    <!-- Game engine: core logic, data access, shared models -->
     <ProjectReference Include="..\Veldrath.Contracts\Veldrath.Contracts.csproj" />
     <ProjectReference Include="..\RealmEngine.Data\RealmEngine.Data.csproj" />
     <ProjectReference Include="..\RealmEngine.Core\RealmEngine.Core.csproj" />

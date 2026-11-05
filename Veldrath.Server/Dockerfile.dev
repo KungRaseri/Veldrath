@@ -20,8 +20,6 @@ COPY versions/                                              versions/
 COPY Veldrath.Server/Veldrath.Server.csproj                 Veldrath.Server/
 COPY Veldrath.Server/Directory.Build.props                  Veldrath.Server/
 COPY Veldrath.Contracts/Veldrath.Contracts.csproj           Veldrath.Contracts/
-COPY Veldrath.Assets/Veldrath.Assets.csproj                 Veldrath.Assets/
-COPY Veldrath.Assets/Directory.Build.props                  Veldrath.Assets/
 COPY RealmEngine.Core/RealmEngine.Core.csproj               RealmEngine.Core/
 COPY RealmEngine.Core/Directory.Build.props                 RealmEngine.Core/
 COPY RealmEngine.Data/RealmEngine.Data.csproj               RealmEngine.Data/

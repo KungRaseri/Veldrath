@@ -12,6 +12,7 @@ using RealmEngine.Core.Features.Quests.Commands;
 using RealmEngine.Core.Features.Quests.Services;
 using RealmEngine.Core.Features.SaveLoad;
 using RealmEngine.Core.Services;
+using RealmEngine.Core.Tests.Infrastructure;
 using RealmEngine.Data.Repositories;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
@@ -23,8 +24,29 @@ namespace RealmEngine.Core.Tests.Features.Quest.Integration;
 /// Integration tests for the complete quest system workflow.
 /// Tests: Quest initialization → Start quest → Kill enemies → Auto-complete → Rewards.
 /// </summary>
+/// <remarks>
+/// These tests drive real <c>AttackEnemyCommand</c> loops, so every roll behind the combat maths
+/// (dodge, critical, elemental, loot) decides how many rounds a kill takes. The fixture therefore
+/// registers a seeded <see cref="IRandomSource"/> instead of letting <c>CombatService</c> fall back to
+/// <c>SystemRandomSource.Shared</c>: the same seed produces the same rolls, the same round counts and
+/// the same coverage on every run. No test here asserts a specific crit or dodge, so seeding is enough;
+/// a test that needed a named arm would pass a scripted <see cref="FakeRandomSource"/> instead.
+/// </remarks>
 public class QuestIntegrationTests
 {
+    /// <summary>
+    /// Seed shared with the other integration fixtures in this project, so the whole suite draws from
+    /// one reproducible sequence.
+    /// </summary>
+    private const int RandomSeed = 20260101;
+
+    /// <summary>
+    /// Maximum number of attack rounds a single enemy may absorb before the test fails.
+    /// With a seeded source the loop length is fixed, so hitting this cap means the combat maths
+    /// stopped dealing damage — not that the dice were unlucky.
+    /// </summary>
+    private const int MaxAttackRounds = 200;
+
     private readonly ServiceProvider _serviceProvider;
     private readonly IMediator _mediator;
     private readonly SaveGameService _saveGameService;
@@ -65,6 +87,10 @@ public class QuestIntegrationTests
         // Register logging for handlers
         services.AddLogging();
 
+        // Deterministic rolls: every AttackEnemyCommand below resolves CombatService, and any handler
+        // that takes an IRandomSource, from this provider. Seeded here so the kill loops are reproducible.
+        services.AddSingleton<IRandomSource>(FakeRandomSource.Seeded(RandomSeed));
+
         // Register all required services
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(StartQuestCommand).Assembly));
         services.AddSingleton(mockTimer.Object);
@@ -90,7 +116,8 @@ public class QuestIntegrationTests
             sp.GetRequiredService<IMediator>(),
             sp.GetRequiredService<PowerDataService>(),
             sp.GetRequiredService<ILogger<CombatService>>(),
-            sp.GetRequiredService<ILoggerFactory>()));
+            sp.GetRequiredService<ILoggerFactory>(),
+            randomSource: sp.GetRequiredService<IRandomSource>()));
         services.AddSingleton<AchievementService>();
 
         _serviceProvider = services.BuildServiceProvider();
@@ -159,20 +186,11 @@ public class QuestIntegrationTests
         };
 
         // Act - Attack enemy until defeated
-        AttackEnemyResult? finalResult = null;
-        while (enemy.Health > 0)
-        {
-            finalResult = await _mediator.Send(new AttackEnemyCommand
-            {
-                Player = character,
-                Enemy = enemy,
-                CombatLog = null
-            });
-        }
+        var finalResult = await AttackUntilDefeatedAsync(character, enemy);
 
         // Assert
         finalResult.Should().NotBeNull();
-        finalResult!.IsEnemyDefeated.Should().BeTrue();
+        finalResult.IsEnemyDefeated.Should().BeTrue();
 
         // Quest should be auto-completed
         saveGame.ActiveQuests.Should().BeEmpty();
@@ -221,15 +239,7 @@ public class QuestIntegrationTests
                 Type = EnemyType.Demon
             };
 
-            while (demon.Health > 0)
-            {
-                await _mediator.Send(new AttackEnemyCommand
-                {
-                    Player = character,
-                    Enemy = demon,
-                    CombatLog = null
-                });
-            }
+            await AttackUntilDefeatedAsync(character, demon);
         }
 
         // Assert
@@ -274,15 +284,7 @@ public class QuestIntegrationTests
                 Type = EnemyType.Demon
             };
 
-            while (demon.Health > 0)
-            {
-                await _mediator.Send(new AttackEnemyCommand
-                {
-                    Player = character,
-                    Enemy = demon,
-                    CombatLog = null
-                });
-            }
+            await AttackUntilDefeatedAsync(character, demon);
         }
 
         // Assert - Quest should still be active (not enough kills)
@@ -400,15 +402,7 @@ public class QuestIntegrationTests
         };
 
         // Act
-        while (goblin.Health > 0)
-        {
-            await _mediator.Send(new AttackEnemyCommand
-            {
-                Player = character,
-                Enemy = goblin,
-                CombatLog = null
-            });
-        }
+        await AttackUntilDefeatedAsync(character, goblin);
 
         // Assert
         saveGame.TotalEnemiesDefeated.Should().Be(1);
@@ -466,6 +460,38 @@ public class QuestIntegrationTests
         outcome.QuestObjectivesCompleted.Should().Contain(msg => msg.Contains("The First Trial"));
         outcome.QuestsCompleted.Should().NotBeEmpty();
         outcome.QuestsCompleted.Should().Contain("The First Trial");
+    }
+
+    /// <summary>
+    /// Attacks <paramref name="enemy"/> until it is defeated, using the fixture's seeded
+    /// <see cref="IRandomSource"/> so the number of rounds is fixed.
+    /// </summary>
+    /// <param name="player">The attacking character.</param>
+    /// <param name="enemy">The enemy to defeat; its health is mutated by the handler.</param>
+    /// <returns>The result of the final attack.</returns>
+    /// <remarks>
+    /// The loop is bounded on purpose: with a deterministic source the kill takes a fixed number of
+    /// rounds, so a run that reaches <see cref="MaxAttackRounds"/> has found a combat-maths regression.
+    /// The assertion reports that as a failure instead of hanging the test run.
+    /// </remarks>
+    private async Task<AttackEnemyResult> AttackUntilDefeatedAsync(Character player, Enemy enemy)
+    {
+        AttackEnemyResult? lastResult = null;
+
+        for (var round = 0; round < MaxAttackRounds && enemy.Health > 0; round++)
+        {
+            lastResult = await _mediator.Send(new AttackEnemyCommand
+            {
+                Player = player,
+                Enemy = enemy,
+                CombatLog = null
+            });
+        }
+
+        enemy.Health.Should().BeLessThanOrEqualTo(0,
+            "the deterministic attack loop must defeat {0} within {1} rounds", enemy.Name, MaxAttackRounds);
+
+        return lastResult!;
     }
 }
 

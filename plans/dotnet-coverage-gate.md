@@ -2,6 +2,18 @@
 
 ## Status
 
+> **Historical note (2026-11-04):** the `Veldrath.Assets` project and `Veldrath.Assets.Tests` were
+> deleted, along with the `Veldrath.Assets` floor in [`scripts/coverage-floors.json`](../scripts/coverage-floors.json:1).
+> Its rows below (measured 46.83% line / 21.74% branch, floor 45) and the "3,999 tests" figure are
+> the numbers the decision was made on, kept as the record of the arithmetic. The live tree has five
+> test projects; the gate itself is unchanged.
+>
+> **Merge step replaced (2026-11-04):** the `reportgenerator` invocations below are the record of
+> the original decision. The merge is now done by `scripts/coverage-report.sh`
+> ([`codecov/codecov-report`](https://git.kungraseri.cloud/codecov/codecov-report), pinned tag) in
+> all four workflows; it produces the same `CoverageReport/Cobertura.xml`, and the floors were
+> re-verified against it unchanged.
+
 **Decided 2026-11-03, measured on `kung-lab-hermes`, not yet implemented.** This file holds
 the decisions only; the implementing cards are listed at the end. It exists because the .NET
 half of the 90% coverage goal has **no gate at all**: [`coverage.runsettings`](../coverage.runsettings:1)

@@ -18,6 +18,8 @@ on:
       - 'web/**'
       - 'config/postgres/**'
       - 'scripts/forgejo-pr-comment.sh'
+      - 'scripts/lib/**'
+      - 'scripts/coverage-report.sh'
       - '.github/workflows/ci-web.yml'
   pull_request:
     branches: [main, development]
@@ -25,6 +27,8 @@ on:
       - 'web/**'
       - 'config/postgres/**'
       - 'scripts/forgejo-pr-comment.sh'
+      - 'scripts/lib/**'
+      - 'scripts/coverage-report.sh'
       - '.github/workflows/ci-web.yml'
   workflow_dispatch:
     inputs:
@@ -125,18 +129,47 @@ jobs:
         working-directory: web
         run: npm run coverage --workspace client
 
-      # Replaces codecov/codecov-action, which cannot run against Forgejo: the
-      # lcov report is a build artifact instead of an external upload.
+      # vitest writes web/client/coverage/cobertura-coverage.xml (vite.config.ts); the same
+      # reporter the .NET jobs use renders it, so the PR comment and the HTML artifact cover
+      # the web app too. Skipped cleanly when the gate failed before coverage was written.
+      - name: Generate coverage report
+        if: always()
+        run: |
+          if [ ! -f web/client/coverage/cobertura-coverage.xml ]; then
+            echo "no web coverage file was written; skipping the report"
+            exit 0
+          fi
+          bash scripts/coverage-report.sh \
+            "-reports:web/client/coverage/cobertura-coverage.xml" \
+            "-targetdir:./CoverageReport" \
+            "-reporttypes:Html;Cobertura;MarkdownSummaryGithub;TextSummary" \
+            "-title:Veldrath web coverage"
+
+      # Replaces codecov/codecov-action, which cannot run against Forgejo: the collector's
+      # own lcov plus the rendered report are build artifacts instead of an external upload.
       - name: Upload coverage
         uses: actions/upload-artifact@v3
         if: always()
         with:
           name: coverage-web
-          # lcov for external viewers, json-summary for the sticky PR comment script.
+          # lcov and json-summary for external viewers, CoverageReport/ for the HTML report.
           path: |
             web/client/coverage/
+            CoverageReport/
           if-no-files-found: ignore
           retention-days: 14
+
+      - name: Comment the coverage summary on the pull request
+        if: github.event_name == 'pull_request'
+        env:
+          FORGEJO_TOKEN: ${{ secrets.GITEA_TOKEN }}
+          FORGEJO_REPOSITORY: ${{ github.repository }}
+          FORGEJO_SERVER_URL: ${{ github.server_url }}
+        run: |
+          bash scripts/forgejo-pr-comment.sh \
+            --pr "${{ github.event.pull_request.number }}" \
+            --section web --title 'Web (SvelteKit)' \
+            --body-file CoverageReport/SummaryGithub.md
 
       - name: Upload web build
         if: always()

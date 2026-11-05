@@ -15,8 +15,6 @@ COPY RealmEngine.Data/RealmEngine.Data.csproj              RealmEngine.Data/
 COPY RealmEngine.Data/Directory.Build.props                RealmEngine.Data/
 COPY RealmEngine.Shared/RealmEngine.Shared.csproj          RealmEngine.Shared/
 COPY RealmEngine.Shared/Directory.Build.props              RealmEngine.Shared/
-COPY Veldrath.Assets/Veldrath.Assets.csproj        Veldrath.Assets/
-COPY Veldrath.Assets/Directory.Build.props             Veldrath.Assets/
 
 RUN dotnet restore Veldrath.Server/Veldrath.Server.csproj
 
@@ -26,7 +24,6 @@ COPY Veldrath.Contracts/  Veldrath.Contracts/
 COPY RealmEngine.Core/        RealmEngine.Core/
 COPY RealmEngine.Data/        RealmEngine.Data/
 COPY RealmEngine.Shared/      RealmEngine.Shared/
-COPY Veldrath.Assets/     Veldrath.Assets/
 
 WORKDIR /src/Veldrath.Server
 RUN dotnet publish Veldrath.Server.csproj -c Release -o /app/publish --no-restore

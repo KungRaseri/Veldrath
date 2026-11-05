@@ -10,21 +10,18 @@
 # in every step without help.
 #
 # Usage:
-#   scripts/ci-toolchain.sh [dotnet-version] [--reportgenerator]
+#   scripts/ci-toolchain.sh [dotnet-version]
 #
 #   dotnet-version        defaults to $DOTNET_VERSION, then 10.0.402
-#   --reportgenerator     also install dotnet-reportgenerator-globaltool and link it
 #
 # `zip` is provisioned when missing because every package job builds a zip archive
 # and the base image is not guaranteed to carry it.
 set -euo pipefail
 
 DOTNET_VERSION="${DOTNET_VERSION:-10.0.402}"
-WANT_REPORTGENERATOR=0
 
 for arg in "$@"; do
     case "$arg" in
-        --reportgenerator) WANT_REPORTGENERATOR=1 ;;
         --help|-h)
             sed -n '3,20p' "$0" | sed 's/^# \{0,1\}//'
             exit 0
@@ -69,19 +66,6 @@ if [ -n "${GITHUB_ENV:-}" ]; then
 fi
 
 echo "dotnet: $(command -v dotnet) ($(dotnet --version))"
-
-if [ "${WANT_REPORTGENERATOR}" = "1" ]; then
-    if ! command -v reportgenerator >/dev/null 2>&1; then
-        dotnet tool install --global dotnet-reportgenerator-globaltool
-    fi
-    REPORTGENERATOR_BIN="${HOME}/.dotnet/tools/reportgenerator"
-    if [ -x "${REPORTGENERATOR_BIN}" ]; then
-        if ! ln -sfn "${REPORTGENERATOR_BIN}" /usr/local/bin/reportgenerator 2>/dev/null; then
-            run_privileged ln -sfn "${REPORTGENERATOR_BIN}" /usr/local/bin/reportgenerator
-        fi
-    fi
-    echo "reportgenerator: $(command -v reportgenerator || echo missing)"
-fi
 
 if ! command -v zip >/dev/null 2>&1; then
     echo "Installing zip ..."

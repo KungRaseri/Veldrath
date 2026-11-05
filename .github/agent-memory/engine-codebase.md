@@ -4,21 +4,50 @@
 
 ## Test Counts
 
-Seven test projects remain; the desktop client, `Veldrath.GameClient.Core`, and `Veldrath.Auth`
-were deleted with its retirement.
+Five test projects remain; the desktop client, `Veldrath.GameClient.Core`, and `Veldrath.Auth`
+were deleted with its retirement, and `Veldrath.Assets` / `Veldrath.Assets.Tests` went on
+2026-11-04.
 
 | Project | Tests |
 |---------|-------|
-| `RealmEngine.Core.Tests` | 2,038 |
+| `RealmEngine.Core.Tests` | 2,040 |
 | `RealmEngine.Shared.Tests` | 795 |
 | `RealmEngine.Data.Tests` | 301 |
 | `Veldrath.Server.Tests` | 846 |
 | `Veldrath.Discord.Tests` | 29 |
-| `Veldrath.Assets.Tests` | 10 |
-| **Total (verified 2026-11-03 with `dotnet test Realm.Full.slnx -c Release --no-build`)** | **4,019** |
+| **Total (verified 2026-11-04 with `dotnet test Realm.Full.slnx --no-build`, after `Veldrath.Assets` was deleted)** | **4,011** |
 
 The count is per-project `Passed:` totals from that command, not a hand tally — re-run it instead of
 adjusting the table by hand.
+
+### Coverage must be measured in `Release`, not `Debug`
+
+`dotnet test` in the default `Debug` configuration reports **five to six thousand more coverable
+lines** than CI does and lands about **1.5 points lower on the global total** — measured 2026-11-04:
+Debug 27,827/37,632 = 73.95%, Release 24,155/31,995 = 75.50% on the same tree. The floors live in
+[`scripts/coverage-floors.json`](../../scripts/coverage-floors.json:1) and were measured in Release
+(`ci-coverage.yml` sets `CONFIGURATION: Release`), so a Debug run makes a green tree look red:
+`RealmEngine.Shared` reads 54.98% in Debug against its floor of 55 and 56.38% in Release. Reproduce
+the gate exactly as the workflow does:
+
+```bash
+dotnet build Realm.Full.slnx --configuration Release
+dotnet test Realm.Full.slnx --configuration Release --no-build \
+  --collect "XPlat Code Coverage" --settings coverage.runsettings --results-directory ./TestResults
+bash scripts/coverage-report.sh "-reports:./TestResults/*/coverage.cobertura.xml" \
+  "-targetdir:./CoverageReport" "-reporttypes:Html;Cobertura;MarkdownSummaryGithub;TextSummary"
+node scripts/check-dotnet-coverage.mjs --report ./CoverageReport/Cobertura.xml \
+  --floors scripts/coverage-floors.json --suggest
+```
+
+The reporter is [`scripts/coverage-report.sh`](../../scripts/coverage-report.sh:1) — it clones the
+`codecov/codecov-report` tool into `.coverage-report/<ref>` on first use and needs no global tool or
+licence (PR #46; it replaced `dotnet-reportgenerator-globaltool`). Its class and method counts are
+**not** ReportGenerator's: on the 2026-11-04 report it printed 684 classes / 2,058 methods where
+ReportGenerator printed 677 / 2,711, so method coverage (79.4%) and full-method coverage (68.0%) are
+only comparable between runs of the same tool. Line and branch are identical either way — 75.5% /
+55.8% from both — which is what the floors gate on. The `-reporttypes` list above is the workflow's
+own, so the local report contains the same files CI uploads.
 
 `RealmForge.Tests` (27 tests) was deleted with the rest of the Avalonia tooling in Milestone B.
 `Veldrath.Server.Tests` lost ~107 tests with the deleted `/api/auth/*` endpoint suites; the
@@ -51,6 +80,10 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - `EncounterBossCommandHandler.GenerateBossTitle`: uses `Prefixes.Select(p => p.Value)` for title (bug was fixed — was using `string.Join(" ", boss.Prefixes)` which called ToString())
 - `ExploreLocationCommandHandler`: injects `IRandomSource` (optional ctor parameter) for the 60% combat / 40% peaceful roll; tests script a `FakeRandomSource`
 - `HarvestNodeCommandHandler`: calls `_inventoryService.ReduceItemDurabilityAsync` after calculating `durabilityLoss`
+- `PartyCombatTurnHandler`: `CombatService.ExecuteEnemyAttack` already applies its `finalDamage` to
+  `Character.Health`, so the handler must only read `enemyResult.Damage` for the result and the log. Both
+  enemy branches (party → leader, and no-party) used to subtract it a second time and dealt double damage;
+  fixed 2026-11-05 and pinned by exact-HP assertions in `PartyCombatTurnHandlerPartyTests`.
 
 ### Randomness — `IRandomSource` (2026-11-03)
 
@@ -78,6 +111,13 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
   convention (`CombatServiceTests`, `ExploreLocationCommandHandlerTests`,
   `FleeFromCombatHubCommandHandlerTests`, `FleeFromCombatHandlerTests`, `DungeonGeneratorServiceTests`,
   `ApplyStatusEffectTests`, `UsePowerHandlerTests`, `CastSpellHandlerTests`).
+- `QuestIntegrationTests` (`Features/Quest/Integration/`) drives real `AttackEnemyCommand` loops, so it
+  registers `FakeRandomSource.Seeded(20260101)` and passes that instance to its manually constructed
+  `CombatService` (`randomSource:`); without it the loops resolved `SystemRandomSource.Shared` and the
+  round count — and therefore coverage — moved between runs. Its loops are bounded by
+  `MaxAttackRounds` (200) and assert the enemy reached 0 HP, so a combat-maths regression fails instead
+  of hanging. Seeding is enough there because no test asserts a named crit/dodge arm; a test that needs
+  one should pass a scripted `FakeRandomSource` instead.
 - `SpellCastingService.CastSpell` makes exactly one `NextDouble()` draw per attempt, in
   `CheckCastSuccess`: `rate = clamp(0.90 + 0.005 * (rank - MinimumSkillRank), 0.60, 0.99)` and the
   cast succeeds when `roll < rate` (a numeric `BaseEffectValue` never rolls dice). Script a margin
@@ -87,13 +127,45 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
   the `BaseDamage` dice roll and the status-effect chance roll; that was the last production caller of
   `DiceRoller.RollDiceString(string)`, so the parameterless compatibility overload now has no
   production caller (it stays public API).
-- Still nondeterministic, deliberately out of scope for that pass: `EnemySpellCastingService`,
-  `EnemyAbilityAIService`, `NameComposer`, `LootTableService`, item generation and
-  `NodeSpawnerService` keep their own `new Random()`.
-- Coverage is deterministic now: three consecutive full runs report identical per-package line and
-  branch rates (Core 71.1197/56.2239, Server 72.8320/53.0269, total 75.3806/55.5100 over 32,121 lines
-  / 10,490 branches). Those are the values `scripts/coverage-floors.json` should record when the gate
-  (PR #15 / re-landed as PR #21) reaches `development`; floors may only rise.
+- `EnemyPowerAIService` (`Features/Combat/Services/EnemyAbilityAIService.cs` — the file keeps its old
+  name, the class is `EnemyPowerAIService`) injects `IRandomSource? randomSource = null`;
+  `CombatService` passes its own source through, so a scripted `CombatService` fake also controls
+  enemy ability selection. Each `DecideAbilityUsage` call rolls `Next(100)` once per candidate in
+  descending priority order (70 defensive below 30% health, 50 buff above 80% health, 45 debuff
+  while the player is above 70%, 40 offensive above 50% health, 20 fallback), then a 20%
+  `Next(100)` fallback roll plus `Next(availableAbilities.Count)` when every priority roll fails.
+  Its tests (`EnemyPowerAIServiceTests.cs`) script those draws and assert the chosen ability and
+  `FakeRandomSource.IntCallCount` instead of a statistical threshold.
+- Known classification overlap in `EnemyPowerAIService`: `IsOffensiveAbility` matches the words
+  "attack"/"damage" anywhere in the description, so a buff power whose description mentions them is
+  classified offensive and takes the 40 priority before the 50 buff branch. The buff test avoids
+  those words deliberately; the ordering itself is unchanged (not part of the de-flake).
+- `EnemySpellCastingService` now takes `IRandomSource? randomSource = null` as well, and `CombatService`
+  passes its own source through, so enemy spell selection and the damage/heal dice are scripted too
+  (the 95% coverage round needed that to assert specific spell outcomes instead of sampling).
+- Still nondeterministic, deliberately out of scope for that pass: `NameComposer`, `LootTableService`,
+  item generation and `NodeSpawnerService` keep their own `new Random()`.
+- Coverage branch counts are **not** fully deterministic. Three consecutive full runs on the merged
+  base agreed (24,213/32,121 lines, 5,823/10,490 branches), but the review of PR #35 measured 5,833,
+  5,833 and 5,834 covered of 10,492 branches with identical line counts. The single varying branch was
+  `SkillProgressionService.AwardSkillXP` line 92
+  (`if (!skill.XPSources.ContainsKey(actionSource))`, the "source already recorded" arm): the only
+  test that could reach it was the unseeded combat loops in `QuestIntegrationTests`, and only when
+  two critical hits landed on one character (`precision` / `critical_hit` XP on the same character)
+  — reproduced once in 30 filtered runs of that class. `SkillProgressionServiceTests` now awards the
+  same source twice directly, so the arm is covered on every run; three consecutive merged runs
+  afterwards agreed exactly on 24,213/32,121 lines and 5,824/10,490 branches. Do not restate this as
+  whole-suite determinism: `NameComposer`, `LootTableService`, item generation and
+  `NodeSpawnerService` still keep their own `new Random()`. The 95% round moved every RNG-driven test
+  onto seeded/scripted `IRandomSource` values: four full runs of PR #53's head spanned at most 0.02
+  points per assembly, and three post-review-correction runs repeated that exactly.
+- The gate is live as of 2026-11-03 (PR #21). `scripts/coverage-floors.json` records, per assembly, the
+  *lowest* observed full-run rate minus one point (headroom is measured, not hoped for), and its
+  `measured` blocks keep the baseline that produced the floor. Floors rise only when a change lifts an
+  assembly 3+ points above its floor (D5 rule 2; `--suggest` names the stale ones); the 95% round
+  lifted every assembly by more than that, so the 2026-11-04 ratchet is global 94/81 with Core 90/79,
+  Server 94/82, Data 98/83, Shared 97/94, Contracts 99/— and Discord 88/91. CI merges the five reports
+  with `scripts/coverage-report.sh` (the pinned codecov-report tool), not ReportGenerator.
 
 ## Testing Gotchas
 
@@ -500,3 +572,17 @@ sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewMod
 - **Map/detail layout** — the game shell is exactly three columns (left sidebar / center / right
   chat). `.map-layout` stacks the map above `MapDetailPanel` inside the center column; do not
   add another grid column there.
+
+### Test seams and the coverage contract (Session-99, 2026-11-04)
+
+- **Coverage floors are high now** — global 94% line / 81% branch, Core 90/79, Server 94/82,
+  Data 98/83, Shared 97/94, Contracts 99/—, Discord 88/91. New product code has to ship with
+  tests in the same PR or the gate fails; there is no slack left to absorb untested classes.
+- **Discord.Net command modules are testable offline** — `Veldrath.Discord.Tests/Infrastructure/
+  DiscordInteractionHarness.cs` emits an internal-access `SocketInteraction` subclass and assigns
+  it to `InteractionModuleBase<T>.Context` through the private setter. Use it (do not add a
+  production seam) and assert the recorded embed/reply, not just "no throw".
+- **Handler catch arms are reachable** with `RealmEngine.Core.Tests/Infrastructure/
+  ThrowingInformationLogger.cs` instead of an interface extraction.
+- **Prefer seeded `IRandomSource` over retries** — assertions on unseeded `Random.Shared` draws
+  are what produced the old 0.41-point coverage oscillation and the `EnemyPowerAIService` flake.

@@ -157,11 +157,12 @@ Hub methods that the client calls **must** use a single request DTO (record) as 
 
 ## Test Counts
 
-> **Current (2026-10-25, after Milestone B removed RealmForge):** 6 .NET test projects,
-> **3,925 tests** total — `RealmEngine.Core` 2,021, `RealmEngine.Shared` 793, `RealmEngine.Data` 265,
-> `Veldrath.Server` 807, `Veldrath.Discord` 29, `Veldrath.Assets` 10. There is no client or tooling
-> test project any more — the web app is covered by Vitest + Playwright from `web/`. The table below
-> is the historical per-session log; its "Client Tests" column refers to the deleted Avalonia client.
+> **Current (2026-11-04, after `Veldrath.Assets` was deleted in Session-97):** **5 .NET test
+> projects, 4,011 tests** — `RealmEngine.Core` 2,040, `RealmEngine.Shared` 795, `RealmEngine.Data`
+> 301, `Veldrath.Server` 846, `Veldrath.Discord` 29, which is exactly the 4,011 that
+> `dotnet test Realm.Full.slnx --no-build` reported passing. There is no client or tooling test
+> project any more — the web app is covered by Vitest + Playwright from `web/`. The table below is the
+> historical per-session log; its "Client Tests" column refers to the deleted Avalonia client.
 
 | Session | Client Tests | Server Tests | Total |
 |---|---|---|---|
@@ -225,7 +226,6 @@ Server.Tests: 468 passing (unchanged — schema picked up automatically via `Ens
 - Both intervals are `internal` fields on `ServerStatusService` for test override (set to 10 ms in tests)
 - `FakeServerStatusService` has a no-op `StartPollingAsync` implementation
 - `ServerStatusServiceTests` uses event-based (`TaskCompletionSource`) assertions, not wall-clock timeouts, to avoid flakiness under parallel test runs
-
 
 
 **Problem fixed**: When server was offline at client launch, SplashViewModel ignored RefreshAsync failure, leaving stale tokens in memory. This caused a redirect loop (always landing on CharacterSelect) and logout not clearing auth buttons properly.
@@ -391,7 +391,6 @@ When deleting all zones in tests: delete `ZoneConnections` first (FK Restrict on
 > **See [`.github/instructions/ef-core-patterns.md`](../../.github/instructions/ef-core-patterns.md) for the canonical DbContext separation rules, migration workflow, entity placement conventions, and now four DbContexts (Application, Game, Content, Editorial).**
 
 Historical note: DbContext separation was established in session-6 when `GameDbContext` was extracted from `ApplicationDbContext` to fix Docker startup failures. `EditorialDbContext` was added in session-35 for patch notes, lore articles, and editorial announcements. Server operational entities (`ServerSaveGameRepository`, `ServerHallOfFameRepository`) inject `GameDbContext`, not `ApplicationDbContext`.
-
 
 
 ### ActorClassDto (breaking change, session-3)
@@ -1079,7 +1078,6 @@ then Phases 4–6 UI, then Phase 7 TMX removal.
 **Remaining**: Phase 9 optional RealmForge map graph editor and JSON import/export.
 
 ---
-
 
 
 ---
@@ -3209,6 +3207,22 @@ a status for path-filtered workflows; raise `required_approvals` when a second a
 `kungraseri` is the only account and an author cannot approve their own pull request, so any
 non-zero value blocks every merge.
 
+**Update, 2026-11-03 18:56Z — the stored rules no longer match the bullets above.** At the
+operator's request the rules were PATCHed to `apply_to_admins: false` on both branches, and `main`
+alone was given `enable_push: true` with `push_whitelist_usernames: ["kungraseri"]`. Reason: `main`
+pinned the `wiki` submodule at a commit `Veldrath.wiki` never had, so all four Coolify deploys died
+at `git clone --recurse-submodules`, and the pull request that fixed it (#31, closed) could not
+merge while its statuses were pending — the pin was pushed straight to `main` as `d7c19f6`. Two
+things measured then, worth keeping: `apply_to_admins: false` does **not** lift `enable_push: false`
+(the pre-receive hook refuses the administrator too, so the whitelist is a second switch), and
+`development` still refuses every push. `scripts/apply-branch-protection.sh` and the doc table
+encode the current shape, so a rule reporting `apply_to_admins: true`, or `enable_push: false` on
+`main`, is now drift rather than a repair. Both rules also pin `push_whitelist_teams: []` and
+`push_whitelist_deploy_keys: false` in the payload and in the read-back — the bypass is one named
+account, never a team or a deploy key; the API validates a team name and round-trips the deploy-key
+switch (measured). `scripts/tests/apply-branch-protection.test.sh` covers those drift cases offline
+(stubbed API, no token) and runs in the docs workflow.
+
 ### Session-93 (2026-11-03) — Web coverage gate green: branch tail closed
 
 `npm run coverage --workspace client` now **passes** (exit 0), which is the first time the gate the
@@ -3242,7 +3256,9 @@ What future coverage work on this app needs to know:
   creation wizard keep pending state; a shared `beforeEach` render leaks it, and two mounted panels
   make `getByRole` ambiguous.
 
-**.NET still has no coverage gate.** [`coverage.runsettings`](../../coverage.runsettings) collects
+**.NET still has no coverage gate.** (*Superseded on 2026-11-03: PR #21 landed the gate — see
+Session-96 for the enforcing step, the merged floors and the settlement measurement.*)
+[`coverage.runsettings`](../../coverage.runsettings) collects
 cobertura and every .NET workflow uploads a `CoverageReport/` artifact, but nothing compares it to a
 floor, so `dotnet test` stays green at any coverage level. The SDK is present on kung-lab-hermes —
 `~/.dotnet/dotnet`, version 10.0.403 — it is only missing from `PATH`, so
@@ -3271,6 +3287,310 @@ clean the content is — Forgejo compares histories, not just trees.
 
 **Direct pushes to `development` are refused for everyone**, including the only admin:
 `Forgejo: Not allowed to push to protected branch development` from the pre-receive hook. The rule
-from Session-92 sets `enable_push: false` with no whitelist *and* `apply_to_admins: true`, so a sync
-like this cannot be pushed directly. Forgejo also calls the resulting pull request an "empty commit"
+from Session-92 sets `enable_push: false` with no whitelist (and, since the 2026-11-03 18:56Z update
+recorded under Session-92, no admin exemption either), so a sync like this cannot be pushed
+directly. Forgejo also calls the resulting pull request an "empty commit"
 when the trees match — give it a real change (this note) or loosen the rule deliberately.
+
+### Session-95 (2026-11-03) — A root-config pull request reports no status, and `["*"]` then blocks it
+
+Session-92 recorded the `["*"]` rule as "every check that reported must be green". The other half of
+that sentence — *at least one status must exist* — is a real deadlock for a change that no workflow
+watches, and it is not hypothetical: PR #27 (`wt/t_7db54bc9`, `4e8a2311`) touches only `.gitignore`,
+which appears in none of the six `on.pull_request.paths` lists, so every workflow is filtered
+out, no run is created, and the head commit carries zero statuses.
+
+Read from the source rather than inferred (`services/pull/commit_status.go`, tag `v15.0.11`, the
+version this instance reports): in `MergeRequiredContextsCommitStatus`, when a required pattern
+matches no status the loop sets `returnedStatus = Pending` on `targetStatus == ""` and `break`s; the
+`matchedCount == 0` fallback on line 65 only runs while `returnedStatus` is still `Success`, so with
+an empty status list the state stays `Pending`, `IsPullCommitStatusPass` returns false, and the merge
+is refused. `mergeable: true` on the pull request does not predict this — it is git-level only.
+
+What that means in practice:
+
+- The pre-protection pull requests (#1, #2, #5, #7, #9) did merge with zero statuses, so "it merged
+  before" is not evidence; the rule has only existed since Session-92.
+- A pull request reports if it touches **anything** in a list already: `web/**`, `**/*.cs`,
+  `**/*.md`, `.github/agent-memory/**`, `docs/**`, `plans/**`, the engine/server/discord trees, or
+  the coverage lists. Anything outside all of them — `.gitignore`, `.editorconfig`, `LICENSE` —
+  reports nothing and waits.
+- Forgejo 15.0.11 has **no workflow-dispatch API** (`GET .../actions/workflows` is 404), so a run
+  cannot be started from a worker; only the web UI or a matching path triggers one. The operator's
+  `force_merge` is break-glass, not a routine unblock.
+- Posting a commit status by hand to satisfy the gate is not an acceptable unblock: it would let any
+  agent self-certify a merge.
+
+**Decided (2026-11-03, card `t_a6502114`): `["*"]` stays and one workflow reports on every pull
+request.** `.github/workflows/merge-gate.yml` triggers on `pull_request` for `main` and `development`
+with **no `paths` filter**, and runs `scripts/ci-merge-gate.sh --lint` — L1 every workflow has a
+`name:`, L2 every `uses:` is one of the six actions mirrored on this instance, L3 every
+`pull_request` workflow triggers on both `main` and `development`, L4 at least one `pull_request`
+workflow has no `paths`/`paths-ignore` (the invariant that keeps the zero-status case impossible).
+The decision, the rejected alternatives and the inventory are in `docs/ci-forgejo.md` under
+"Branch protection: what can block a merge".
+
+Why not the `paths`-list alternative: measured on the tree, **39 tracked paths in seven classes** match
+no list — root dotfiles and editor config (10, `LICENSE` included), `NuGet.config` + `dotnet-tools.json`
++ `toc.yml` (3), the four root `.slnx` (4), `config/grafana/**` + `config/prometheus/**` +
+`docker-compose.{coolify,dev,prod}.yml` (10), scripts no workflow names (10, after `docs.yml` claimed
+`scripts/apply-branch-protection.sh` and `scripts/lib/forgejo-api.sh`), the `wiki` submodule pin (1),
+and the merge gate's own workflow (1). Adding three names would leave 36 deadlocked and reopen on the
+next root file. Those paths now merge on the merge gate alone — no build, no test — which is written
+down there so nobody mistakes "green" for "built".
+
+The deadlock itself was reproduced end to end before deciding, rather than taken from the Session-95
+inference: probe PR #32 (branch `probe-x`, head `b59e841d`, only `.gitignore` changed) answered
+`{"state":"","total_count":0}` and `[]` for statuses, `mergeable: true` for the pull request, and
+`405 not allowed to merge [reason: Not all required status checks successful]` for
+`POST /pulls/32/merge {"force_merge": false}`. The PR was closed and the branch deleted. The
+workflow and script landed in card `t_48d8d3c1` (PR #38).
+
+One correction to the force_merge reasoning recorded above: the token every worker runs with is the
+instance administrator (`GET /user` → `kungraseri`, `is_admin: true`), so `force_merge` **is**
+available to an agent — `CheckPullMergeable` clears the protection error for an admin. The gate is
+therefore enforced by discipline, not capability: never use `force_merge` or a hand-posted status to
+satisfy `["*"]`, because either one lets a worker certify its own merge. The API's
+`GET .../commits/{sha}/statuses` also lists every state transition of a context, while the gate reads
+the latest row per context (`GetLatestCommitStatus`, `services/pull/commit_status.go:128`) — a stale
+`pending` row beside a `success` is not a red gate.
+
+**Landed (2026-11-03, card `t_48d8d3c1`, PR #38).** `.github/workflows/merge-gate.yml` and
+`scripts/ci-merge-gate.sh` exist, so the context
+`CI - Merge gate / Merge gate reports on every pull request (pull_request)` now reports on every pull
+request into `development` or `main` and `["*"]` always has a status to evaluate. Measured on PR #38
+head `cf0c3cc6`: run 1357 `success` in **5 s** (`duration` on `GET /actions/runs/1357`; `pending` row
+19:31:44Z → `success` row 19:31:50Z), combined commit status `{"state":"success","total_count":2}`
+next to `Deploy Documentation / Build Docs (pull_request)`. The job is one depth-1 checkout plus the
+lint; it must stay offline and dependency-free. `--uncovered` is the follow-up inventory — it
+reproduces the runner's `PatternToRegex` translation (`**/` → `(.+/)?`, so `**/*.md` matches a root
+`AGENTS.md`; the naive `**` → `.*` would over-report), and it now reports **39 paths** because the
+gate and its script are themselves tracked and named by no `paths` list (`merge-gate.yml` declares no
+paths at all). A change confined to one of those 39 still merges on the merge-gate status alone, with
+no component build.
+
+### Session-96 (2026-11-03) — The .NET coverage gate landed, and settling it moved no floor
+
+PR #21 landed `scripts/coverage-floors.json`, `scripts/check-dotnet-coverage.mjs` and
+`ci-coverage.yml` on `development` (merge `ab5dfe72`, after #20 `7d81b2ae` and #22 `4e713b08`). The
+"no coverage gate" note in Session-93 is therefore superseded — but the enforcer is **not**
+`dotnet test`. Plain `dotnet test`, even with `--collect "XPlat Code Coverage"`, only produces the
+Cobertura report and stays green at any coverage level. The comparison is a separate step:
+`ci-coverage.yml`'s `coverage-gate` job ("Enforce .NET Coverage Floors") runs `Test with coverage`,
+then `Generate coverage report` (ReportGenerator merge), and only then `Enforce the coverage
+contract`, which is
+
+```bash
+node scripts/check-dotnet-coverage.mjs \
+  --report ./CoverageReport/Cobertura.xml \
+  --floors scripts/coverage-floors.json \
+  --suggest
+```
+
+That node script is what fails on a per-assembly or global regression, on an assembly missing from
+the merged report, and on a shipping assembly carrying no floor. Reproduce the gate locally as
+those three steps in that order — not by reading the exit code of `dotnet test`.
+
+**Settling the floors on the merged base was a no-op, by the contract's own arithmetic.** Three full
+runs on `0efb7c7c` with the CI-pinned SDK 10.0.402, each merged with ReportGenerator, are identical at
+every package on line *and* branch: total 75.3806% / 55.5100% — **24,213 of 32,121 covered lines and
+5,823 of 10,490 covered branches** — with 4,019 tests passing in every run.
+`check-dotnet-coverage.mjs --suggest` names nothing on any of the three reports, because the largest
+lift over a floor is +2.22 pp (Core branch) against D5 rule 2's 3-point trigger. (The "24,183 covered
+lines" written in PR #22's body was a prose slip; ReportGenerator's summary says 24213 of 32121.)
+
+**Two traps for whoever touches this next:**
+
+- Do **not** "fix" the floors to the deterministic three-run rates. `measured` in
+  `coverage-floors.json` is the six-run *lowest* observation that produced each floor (D4: floor =
+  `trunc(lowest) − 1`), which is why Core's floor is 69 against a 70.49 low. Setting Core to 71
+  because three clean runs said 71.12 puts the floor above the lowest observation and makes the gate
+  fail intermittently — the exact failure the one-point subtraction exists to prevent.
+- The `measured` block is the baseline, not a live field: no D5 rule refreshes it, so leave it alone
+  when no floor moves. Live counts have drifted with the code since the baseline (+52 coverable lines:
+  Core 13,459, Shared 1,488, Server 9,029), which makes its `lines` values read slightly low —
+  informational, never a gate input.
+
+### Session-97 (2026-11-04) — `Veldrath.Assets` deleted, and the tracker shrinks by half
+
+The project and its test project are gone. It was **dead, not merely unused**: no static files were
+ever served from it, and the directory held 1,837 art files (98 MB) that no code path read.
+
+What actually proved it dead, in order of strength:
+
+- `Veldrath.Server.csproj` carried a `<ProjectReference>` to it, but **no** `.cs` file under
+  `Veldrath.Server/` referenced any type from the `Veldrath.Assets` namespace — a reference with no
+  importer compiles and does nothing.
+- `AddAssetStore` (the DI extension) was never called from any composition root, so `AssetStore` was
+  never constructed at runtime.
+- No `UseStaticFiles`/`MapStaticAssets` mount pointed at `GameAssets/`, so the tree was not reachable
+  over HTTP either.
+- No CI workflow referenced it, so nothing was even compiling it in the gate `Realm.Full.slnx` covered.
+
+The nuance worth keeping: `AssetStore` was a generic content-addressed store, and the **desktop client
+never used it either**. It was not killed by the web-first pivot — it was never wired up. Do not read
+the deletion as "the pivot removed an asset pipeline"; there was no pipeline.
+
+**Removed:** `Veldrath.Assets/` (1,837 files, 98 MB) and `Veldrath.Assets.Tests/`;
+`versions/assets.props`; `scripts/download-assets.ps1`, `scripts/sync-assets.ps1`,
+`scripts/package-assets.ps1`.
+
+**References swept** (the first pass missed several; a wide `grep -ri` is mandatory for a project
+removal): the three `.slnx` files that listed it (`Realm.Full`, `Veldrath.Libraries`,
+`Veldrath.Server`), `Veldrath.Server/Veldrath.Server.csproj`, `Directory.Build.props`,
+`Veldrath.Server/Dockerfile` and `Dockerfile.dev`, `docker-compose.dev.yml` (the source mount),
+`scripts/coverage-floors.json` (its floor was line 45), the `GameAssets` binary-ignore block in
+`.gitignore`, three tasks in `.vscode/tasks.json` (`build-veldrath-assets`, `test-veldrath-assets`,
+`download-assets`), `.github/instructions/{testing,xml-documentation,build-strategy}.md`,
+`.roo/skills/{run-all-tests,run-tests-by-component}/SKILL.md`, `scripts/generate-version.{sh,ps1}`,
+`AGENTS.md`, `README.md`, and both path lists in `ci-coverage.yml`.
+
+**Verification:** `dotnet build Realm.Full.slnx` → 0 warnings, 0 errors.
+`dotnet test Realm.Full.slnx --no-build` → **4,011 passed, 0 failed** across five projects:
+Core 2,040, Shared 795, Data 301, Server 846, Discord 29. The test-project count everywhere reads
+**five**, not six.
+
+**Inventory after the deletion** (`bash scripts/ci-merge-gate.sh --uncovered` on this tree): tracked
+files **1,618** (was 3,472) and uncovered paths **36** (was 39); the "scripts no workflow names" class
+fell 10 → 7 because the three asset scripts left with the project. `docs/ci-forgejo.md` records the new
+numbers with the date, so anyone re-running `--uncovered` sees the same counts or knows the tree moved.
+
+**Recovery:** the art tree still exists in history — `git log --diff-filter=D -- Veldrath.Assets/`
+finds the deletion commit, and `git checkout <parent> -- Veldrath.Assets/GameAssets` restores any
+subtree. Nothing needs re-downloading; the old download script pointed at third-party packs, not a
+canonical source. `world-lore-plan.md` marks the TMX maps the same way.
+
+### Session-98 (2026-11-04) — The wiki pin conflicts a second time, and why git cannot resolve it
+
+Two pull requests were blocked on the same afternoon, both on the `wiki` gitlink and neither on code.
+
+**PR #48 (`docs/memory-coverage-reporter`) conflicted with a change that did the same thing.**
+PR #47 (`docs(coverage): drop the last ReportGenerator instructions`, `75a19a07`) landed the
+`reportgenerator` → `scripts/coverage-report.sh` swap while the branch carrying the same swap was
+still open, so the two edits met on one line. Resolved by taking development's text as the base and
+keeping three things from the branch: the workflow's own `-reporttypes` list, the blank line removed
+from inside the code block, and the paragraph recording that the new tool's class/method counts
+differ from ReportGenerator's. Merge commit `846c082b`.
+
+**PR #29 (`development` → `main`) reported `mergeable: false` again, for the same reason as
+Session-94 and by a different mechanism.** The facts, all verified against the tree:
+
+- merge base of `main` and `development` is `0efb7c7c` (PR #26)
+- `main` holds exactly two commits `development` does not: `f3661a34` (PR #3's merge, which lives
+  only on `main` because merges flow one way) and `d7c19f67` (wiki pin → `725950f`)
+- `development` pins `3f41462` ("Coverage: document the repository's coverage reporter"), and
+  `git -C wiki merge-base --is-ancestor 725950f 3f41462` succeeds — development's pin **contains**
+  main's
+
+So the answer is obvious to a human and impossible for git: the merge base's own wiki pin is
+`d8d1edf`, the dangling commit that Session-94 fixed on `main`. `git merge-tree` prints "commits
+don't follow merge-base" and refuses, because it cannot compute a submodule merge base from an
+object that is not in the submodule repository. **A dangling pin poisons every later merge, long
+after it was fixed** — the fix has to travel backwards as a sync merge or the conflict recurs.
+
+Resolution, which is Session-94's recipe exactly: branch off `development`, `git merge origin/main`,
+and set the gitlink with
+`git update-index --cacheinfo 160000,3f414629274dfeffe39436871e302d5786114574,wiki`. After that the
+superproject tree is **identical** to `development`'s — `git diff --cached --stat origin/development`
+is empty — which is the point of a sync merge: it carries no content, only the ancestry that makes
+`main` an ancestor so PR #29 stops reporting a conflict.
+
+**The trap this sets, recorded so it is not rediscovered:** Forgejo will describe that pull request as
+an empty commit, and a PR with no diff has nothing to review or merge. This note is the change that
+rides along, which is why it exists in a session log rather than only in the merge message.
+
+**Operational note:** Forgejo's read API is open on this instance — `GET .../pulls?state=open`
+returns `number`, `head.ref`, `base.ref` and `mergeable` without a token, which is how PR numbers were
+identified here instead of guessed from branch dates. Only writes (`POST .../pulls`, merges) answer
+`401 {"message":"token is required"}`.
+
+### Session-99 (2026-11-04) — .NET coverage 75.4% → 95.1%, and the floors move with it
+
+**PR #53 (open, head 50646481) raises .NET coverage to 95.1% line / 82.7% branch** (30,443 / 31,995
+lines), up from 75.4% / 55.8% measured on `development`. Six assemblies: Core 92.0%, Server 95.6%,
+Data 99.8%, Shared 98.8%, Contracts 100.0%, Discord 89.6%. `scripts/coverage-floors.json` is ratcheted
+in the same PR: global 94/81, Core 90/79, Server 94/82, Data 98/83, Shared 97/94, Contracts 99/—,
+Discord 88/91. The delivered-on-`development` figure only becomes "merged" once the PR lands.
+
+- **The 0.41-point oscillation is gone in practice.** Four consecutive full runs of the final
+  tree spanned at most **0.02 points** on any assembly (Core 91.968 ±0.00, Server 95.57–95.59),
+  because the RNG-dependent paths are now driven through seeded `IRandomSource` values or
+  range/invariant assertions instead of retry loops. Floors are still `trunc(lowest run) − 1`,
+  never `trunc(measured)`, and were derived from those four runs.
+- **`--suggest` proposes `floor(measured)`, not `floor(measured) − 1`.** The gate note says
+  "raise it to 91" for a 91.97% measurement; the policy in the skill/plan is one point of
+  headroom below the truncated minimum. Do not copy the suggestion verbatim or the ratchet
+  will sit inside the noise band.
+- **Test-only seams added.** `Veldrath.Discord.Tests/Infrastructure/
+  DiscordInteractionHarness.cs` emits a `SocketInteraction` subclass in a dynamic assembly
+  (`IgnoresAccessChecksToAttribute`) and assigns it through `InteractionModuleBase<T>.Context`'s
+  private setter, so the slash-command bodies actually run offline and their embeds are asserted;
+  `RealmEngine.Core.Tests/Infrastructure/ThrowingInformationLogger.cs` reaches handler catch arms.
+  Both live in test projects and are excluded from the report by `coverage.runsettings`. Session-100
+  then added four deliberate production seams (`IRandomSource` parameters on `EnemySpellCastingService`,
+  `CraftingService`, `PartyCombatTurnHandler` and `EnemyGenerator`, `InMemoryInventoryService
+  .GetDurability`, `SmtpEmailSender.ResolvePort`) plus one real reward-persistence fix, all listed in
+  the PR body.
+- **A persisted-state assertion exposed a product bug.** `UseAbilityInCombatHubCommandHandler` awarded
+  XP/gold by writing the character row and then overwrote its attribute blob with the pre-reward copy,
+  silently dropping the gold. The handler now re-reads the row before writing the decremented cooldowns
+  (as `AttackEnemyHubCommandHandler` already did); the test asserts the persisted `Gold`, not just the
+  returned `GoldEarned`.
+- **What is still uncovered, and why** (1,552 lines): Discord 41 (`BotWorker`,
+  `InteractionHandlingService` need a live gateway/REST event), Server 398 (Postgres-only
+  `ILike`/`APPLY`/`SKIP LOCKED` arms, `internal` `DotEnvConfiguration` without
+  `InternalsVisibleTo`, sealed `AccountProvisioningService`), Core ~1,081 (defensive switch
+  default arms over closed enums, dead private members such as
+  `CreateCharacterHandler.GetClassIdFromName`, `GameHub`'s ban-on-connect path), Data 14.
+- **Test count**: 4,011 → 6,004 across the five test projects.
+
+### Session-100 (2026-11-04) — Review corrections on PR #53: determinism, culture, real assertions
+
+Round-1 review (`REQUEST_CHANGES`, comment #748) blocked on six test-quality points; all six are fixed on
+the same branch (6,004 → 6,011 tests, still no test touches a boundary it does not assert).
+
+- **Scripted, not sampled.** `EnemySpellCastingService`, `CraftingService`, `PartyCombatTurnHandler` and
+  `EnemyGenerator` now take `IRandomSource? randomSource = null` (defaulting to `SystemRandomSource
+  .Shared`) so `CombatService`, crafting and party-turn tests script the exact rolls and assert exact
+  damage/heal/quality/target outcomes. That deleted every retry loop the review named; the location
+  test's ten-enemy candidate sample is scripted too (0 failures in 30 repeats, where the old test failed
+  at repeat 44).
+- **Culture-pinned formatting tests.** `RealmEngine.Shared.Tests/Infrastructure/UseCultureAttribute.cs`
+  (a `BeforeAfterTestAttribute`) pins `en-US` for the tests that hard-code dot decimals. The whole
+  Shared suite now passes under `LANG=de_DE.UTF-8 LC_ALL=de_DE.UTF-8` (1,158/1,158); the review had
+  reproduced 9 failures there.
+- **Assertions that can fail for the right reason.** Durability is observed through the new
+  `InMemoryInventoryService.GetDurability` (null → 100 start, accumulation, zero floor, per-character
+  isolation); the SMTP default port is asserted through the new protected `SmtpEmailSender.ResolvePort`
+  instead of dialling an ambient `localhost:587`; eviction tests set `LastUpdatedAt` explicitly rather
+  than assuming `TimeSpan.Zero` expires a fresh session; the ability-reward test seeds nonzero XP/gold
+  and asserts the persisted row (which is what exposed the overwritten-gold bug above).
+- **Verified:** Release build 0 warnings / 0 errors on SDK 10.0.402 (the review's CS8602 is gone);
+  6,011 tests pass in three consecutive full runs; three merged reports all print "Coverage contract
+  satisfied" with no `--suggest` output; per-assembly spread ≤0.02 points (Core 91.95, Server
+  95.57–95.59, Data 99.78, Shared 98.79, Contracts 100.00, Discord 89.59); `dotnet format
+  --verify-no-changes` and `git diff --check` clean. Floors unchanged — nothing is 3+ points stale.
+
+### Session-101 (2026-11-04) — Kill rewards and the killing cast both persist (PR #53 round 3)
+
+Round-2 review (REQUEST_CHANGES, comment #754) proved the Session-100 "re-read the rewarded row" fix was
+itself a regression: `UseAbilityInCombatHubCommandHandler` kept the current cast (mana spent and the
+`AbilityCooldown_<ability>` this cast started) only in memory, then `DistributeRewardsAsync` re-read the
+stored row, so the write-back preserved the reward but dropped the cast — a killing fireball persisted
+mana 50 with no cooldown instead of mana 40 / cooldown 2.
+
+- **Order is the fix, not another re-read.** Persist the cast (including the per-turn `DecrementCooldowns`
+  tick) *before* the death transition runs. `DistributeRewardsAsync` then re-reads a row that already has
+  the cast and adds XP/gold on top of it. `AttackEnemyHubCommand` needs no change: it never mutates mana
+  or a new cooldown before the kill branch.
+- **The test now pins all four persisted values** through a fresh `DbContext`: XP, gold, `CurrentMana`,
+  the new cooldown (2 = 3 − the cast turn's tick) and an unrelated existing cooldown (2 → 1), plus a
+  second test that wins no death transition (`TryMarkDeadAsync` already claimed) and still keeps the
+  mana/cooldown it spent while awarding nothing.
+- **Final counts:** 6,012 tests (4,011 on `development`); 95.1% line (30,444–30,446 of 32,000),
+  82.7% branch (8,628–8,629 of 10,435) across three merged runs whose 4-decimal per-assembly rates are
+  identical except a ≤0.004-point blip in Core branch / Server line. Floors unchanged (global 94/81)
+  because nothing measures 3+ points above them.
+- **CI delivery:** the exact-head `.NET Coverage` job failed only in the sticky-comment step (duplicate
+  comment id from `scripts/forgejo-pr-comment.sh`), tracked separately as t_2814041b (dev-debugger).
+  PR #53's next push must be rebased onto `development` after that fix lands so the workflow runs it.

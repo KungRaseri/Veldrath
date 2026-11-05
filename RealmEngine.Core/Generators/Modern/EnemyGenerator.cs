@@ -1,13 +1,17 @@
 using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Services;
 
 namespace RealmEngine.Core.Generators.Modern;
 
 /// <summary>Generates Enemy instances from the enemy catalog in the database.</summary>
-public class EnemyGenerator(IEnemyRepository repository, ILogger<EnemyGenerator> logger)
+/// <param name="repository">The enemy catalog repository.</param>
+/// <param name="logger">The logger.</param>
+/// <param name="randomSource">Optional random source for weighted selection; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
+public class EnemyGenerator(IEnemyRepository repository, ILogger<EnemyGenerator> logger, IRandomSource? randomSource = null)
 {
-    private readonly Random _random = new();
+    private readonly IRandomSource _random = randomSource ?? SystemRandomSource.Shared;
 
     /// <summary>Generates a list of random enemies from a specific family/category.</summary>
     public async Task<List<Enemy>> GenerateEnemiesAsync(string category, int count = 5, bool hydrate = true)

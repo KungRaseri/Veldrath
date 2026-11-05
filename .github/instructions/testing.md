@@ -1,6 +1,6 @@
 # Testing Conventions
 
-Scope: **ALL 6 .NET test projects** in the solution — [`RealmEngine.Core.Tests`](../../RealmEngine.Core.Tests/), [`RealmEngine.Shared.Tests`](../../RealmEngine.Shared.Tests/), [`RealmEngine.Data.Tests`](../../RealmEngine.Data.Tests/), [`Veldrath.Server.Tests`](../../Veldrath.Server.Tests/), [`Veldrath.Assets.Tests`](../../Veldrath.Assets.Tests/), [`Veldrath.Discord.Tests`](../../Veldrath.Discord.Tests/). The SvelteKit app is tested with Vitest + Playwright from `web/`.
+Scope: **ALL 5 .NET test projects** in the solution — [`RealmEngine.Core.Tests`](../../RealmEngine.Core.Tests/), [`RealmEngine.Shared.Tests`](../../RealmEngine.Shared.Tests/), [`RealmEngine.Data.Tests`](../../RealmEngine.Data.Tests/), [`Veldrath.Server.Tests`](../../Veldrath.Server.Tests/), [`Veldrath.Discord.Tests`](../../Veldrath.Discord.Tests/). The SvelteKit app is tested with Vitest + Playwright from `web/`.
 
 This file covers every test surface type in the solution: EF Core data tests, MediatR handler tests, SignalR hub integration tests, web (Vitest/Playwright) tests, and code coverage configuration.
 
