@@ -65,18 +65,18 @@ public class CraftingServiceCraftingTests
         RecipeUnlockMethod unlockMethod = RecipeUnlockMethod.Default,
         int minQuality = 0,
         int maxQuality = 2) => new()
-    {
-        Id = RecipeId,
-        Name = "Iron Sword",
-        Category = category,
-        RequiredStation = station,
-        RequiredSkillLevel = requiredLevel,
-        UnlockMethod = unlockMethod,
-        Materials = [new RecipeMaterial { ItemReference = materialReference, Quantity = materialQuantity }],
-        OutputItemReference = output,
-        MinQuality = (ItemRarity)minQuality,
-        MaxQuality = (ItemRarity)maxQuality
-    };
+        {
+            Id = RecipeId,
+            Name = "Iron Sword",
+            Category = category,
+            RequiredStation = station,
+            RequiredSkillLevel = requiredLevel,
+            UnlockMethod = unlockMethod,
+            Materials = [new RecipeMaterial { ItemReference = materialReference, Quantity = materialQuantity }],
+            OutputItemReference = output,
+            MinQuality = (ItemRarity)minQuality,
+            MaxQuality = (ItemRarity)maxQuality
+        };
 
     // ── Guard branches ─────────────────────────────────────────────────────────
 

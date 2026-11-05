@@ -56,14 +56,14 @@ public class LootTableServiceBranchTests
         int quantityMax = 1,
         bool guaranteed = false,
         string domain = "items/materials/ores") => new()
-    {
-        ItemDomain = domain,
-        ItemSlug = slug,
-        DropWeight = dropWeight,
-        QuantityMin = quantityMin,
-        QuantityMax = quantityMax,
-        IsGuaranteed = guaranteed
-    };
+        {
+            ItemDomain = domain,
+            ItemSlug = slug,
+            DropWeight = dropWeight,
+            QuantityMin = quantityMin,
+            QuantityMax = quantityMax,
+            IsGuaranteed = guaranteed
+        };
 
     private void AddTable(string slug, params LootTableEntryData[] entries) =>
         _repository.Tables[slug] = new LootTableData

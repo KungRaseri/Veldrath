@@ -1,23 +1,24 @@
 {
   "$comment": [
-    "The .NET coverage contract. Floors are a no-regression ratchet, measured 2026-11-03 with",
-    "the CI-pinned SDK 10.0.402, merged from all six test projects by codecov/codecov-report.",
-    "Coverage is not deterministic: 13 files call Random.Shared directly, so four combat files",
-    "oscillate. Six runs (three solution-level, three per-project) spanned 0.41 points on",
-    "RealmEngine.Core and 0.38 on Veldrath.Server. A floor is therefore trunc(lowest observed)",
-    "minus 1 point, not trunc(measured): a floor with sub-1-point headroom fails intermittently.",
-    "Never lower a floor. Raise it in the PR that lifts the measured value 3+ points above it",
-    "(scripts/check-dotnet-coverage.mjs --suggest names them). Target is 90% line everywhere;",
-    "branch coverage carries no separate target and is gated only against regression."
+    "The .NET coverage contract. Floors are a no-regression ratchet, measured 2026-11-04 with",
+    "the CI-pinned SDK 10.0.402, merged from the five test projects by reportgenerator.",
+    "Coverage used to oscillate by 0.41 points (13 files called Random.Shared directly); after",
+    "the IRandomSource injection series and the seeded tests, four consecutive full runs spanned",
+    "at most 0.02 points on any assembly, so the headroom below is measured rather than hoped for.",
+    "A floor is trunc(lowest observed run) minus 1 point, not trunc(measured): a floor with sub-1",
+    "point headroom fails intermittently. Never lower a floor. Raise it in the PR that lifts the",
+    "measured value 3+ points above it (scripts/check-dotnet-coverage.mjs --suggest names them).",
+    "Target is 90% line everywhere; branch coverage carries no separate target and is gated only",
+    "against regression."
   ],
   "branchFloorMinSites": 100,
-  "global": { "line": 74, "branch": 54 },
+  "global": { "line": 94, "branch": 81 },
   "assemblies": {
-    "RealmEngine.Core":     { "line": 69, "branch": 54, "measured": { "line": 70.49, "branch": 55.51, "lines": 13424 } },
-    "RealmEngine.Data":     { "line": 91, "branch": 66, "measured": { "line": 92.56, "branch": 67.10, "lines": 6480 } },
-    "RealmEngine.Shared":   { "line": 55, "branch": 52, "measured": { "line": 56.33, "branch": 53.61, "lines": 1484 } },
-    "Veldrath.Server":      { "line": 71, "branch": 51, "measured": { "line": 72.42, "branch": 52.88, "lines": 9016 } },
-    "Veldrath.Contracts":   { "line": 89, "branch": null, "measured": { "line": 90.83, "branch": 100.0, "lines": 1145 } },
-    "Veldrath.Discord":     { "line": 31, "branch": 39, "measured": { "line": 32.74, "branch": 40.79, "lines": 394 } }
+    "RealmEngine.Core":     { "line": 90, "branch": 79, "measured": { "line": 91.97, "branch": 80.15, "lines": 13459 } },
+    "RealmEngine.Data":     { "line": 98, "branch": 83, "measured": { "line": 99.78, "branch": 84.55, "lines": 6480 } },
+    "RealmEngine.Shared":   { "line": 97, "branch": 94, "measured": { "line": 98.79, "branch": 95.66, "lines": 1488 } },
+    "Veldrath.Server":      { "line": 94, "branch": 82, "measured": { "line": 95.57, "branch": 83.01, "lines": 9029 } },
+    "Veldrath.Contracts":   { "line": 99, "branch": null, "measured": { "line": 100.0, "branch": 100.0, "lines": 1145 } },
+    "Veldrath.Discord":     { "line": 88, "branch": 91, "measured": { "line": 89.59, "branch": 92.76, "lines": 394 } }
   }
 }

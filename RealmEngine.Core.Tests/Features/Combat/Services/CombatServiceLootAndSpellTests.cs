@@ -338,17 +338,17 @@ public class CombatServiceLootAndSpellTests
         string? baseEffectValue = null,
         int manaCost = 5,
         int cooldown = 3) => new()
-    {
-        Id = $"spell-{effectType.ToString().ToLowerInvariant()}",
-        Slug = $"spell-{effectType.ToString().ToLowerInvariant()}",
-        Name = $"{effectType} Spell",
-        DisplayName = "Sunfire",
-        EffectType = effectType,
-        BaseEffectValue = baseEffectValue,
-        ManaCost = manaCost,
-        Cooldown = cooldown,
-        Rank = 3
-    };
+        {
+            Id = $"spell-{effectType.ToString().ToLowerInvariant()}",
+            Slug = $"spell-{effectType.ToString().ToLowerInvariant()}",
+            Name = $"{effectType} Spell",
+            DisplayName = "Sunfire",
+            EffectType = effectType,
+            BaseEffectValue = baseEffectValue,
+            ManaCost = manaCost,
+            Cooldown = cooldown,
+            Rank = 3
+        };
 
     private static Enemy CreateCaster(string spellId, int health = 100, int mana = 100) => new()
     {

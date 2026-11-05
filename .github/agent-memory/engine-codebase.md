@@ -563,3 +563,17 @@ sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewMod
 - **Map/detail layout** — the game shell is exactly three columns (left sidebar / center / right
   chat). `.map-layout` stacks the map above `MapDetailPanel` inside the center column; do not
   add another grid column there.
+
+### Test seams and the coverage contract (Session-99, 2026-11-04)
+
+- **Coverage floors are high now** — global 94% line / 81% branch, Core 90/79, Server 94/82,
+  Data 98/83, Shared 97/94, Contracts 99/—, Discord 88/91. New product code has to ship with
+  tests in the same PR or the gate fails; there is no slack left to absorb untested classes.
+- **Discord.Net command modules are testable offline** — `Veldrath.Discord.Tests/Infrastructure/
+  DiscordInteractionHarness.cs` emits an internal-access `SocketInteraction` subclass and assigns
+  it to `InteractionModuleBase<T>.Context` through the private setter. Use it (do not add a
+  production seam) and assert the recorded embed/reply, not just "no throw".
+- **Handler catch arms are reachable** with `RealmEngine.Core.Tests/Infrastructure/
+  ThrowingInformationLogger.cs` instead of an interface extraction.
+- **Prefer seeded `IRandomSource` over retries** — assertions on unseeded `Random.Shared` draws
+  are what produced the old 0.41-point coverage oscillation and the `EnemyPowerAIService` flake.
