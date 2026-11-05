@@ -1,3 +1,5 @@
+using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -54,9 +56,17 @@ public class UseAbilityInCombatEdgeCaseTests : IDisposable
         return character;
     }
 
-    private SpawnedEnemy AddEnemy(int hp)
+    private SpawnedEnemy AddEnemy(int hp, int baseXp = 0, int goldReward = 0)
     {
-        var enemy = new SpawnedEnemy { Name = "Golem", Level = 1, CurrentHealth = hp, MaxHealth = Math.Max(1, hp) };
+        var enemy = new SpawnedEnemy
+        {
+            Name = "Golem",
+            Level = 1,
+            CurrentHealth = hp,
+            MaxHealth = Math.Max(1, hp),
+            BaseXp = baseXp,
+            GoldReward = goldReward
+        };
         _enemies.Add("test/zone", "dungeon", enemy);
         return enemy;
     }
@@ -149,8 +159,9 @@ public class UseAbilityInCombatEdgeCaseTests : IDisposable
     public async Task Handle_AwardsRewards_WhenTheAbilityKillsTheEnemy()
     {
         await using var db = _dbFactory.CreateContext();
-        var character = await SeedCharacterAsync(db, attrsJson: """{"CurrentMana":50,"MaxMana":50,"Intelligence":16}""");
-        var enemy = AddEnemy(hp: 1);
+        var character = await SeedCharacterAsync(
+            db, attrsJson: """{"CurrentMana":50,"MaxMana":50,"Intelligence":16,"Gold":7}""");
+        var enemy = AddEnemy(hp: 1, baseXp: 40, goldReward: 25);
         SetSession(character.Id, enemy.Id);
 
         var result = await MakeHandler(db).Handle(
@@ -162,9 +173,17 @@ public class UseAbilityInCombatEdgeCaseTests : IDisposable
         result.EnemyRemainingHealth.Should().Be(0);
         result.EnemyName.Should().Be("Golem");
         result.EnemyDamage.Should().Be(0, "a defeated enemy does not counter-attack");
-        result.XpEarned.Should().BeGreaterThanOrEqualTo(0);
-        result.GoldEarned.Should().BeGreaterThanOrEqualTo(0);
+        result.XpEarned.Should().Be(40, "a single contributor receives the enemy's whole XP pool");
+        result.GoldEarned.Should().Be(25, "a single contributor receives the enemy's whole gold pool");
         enemy.CurrentHealth.Should().Be(0);
         _enemies.IsMarkedDead(enemy.Id).Should().BeTrue();
+        _sessions.IsInCombat(character.Id).Should().BeFalse("the kill releases every engaged session");
+
+        // The award is persisted, not only reported: re-read both the XP column and the banked gold.
+        await using var verify = _dbFactory.CreateContext();
+        var persisted = await verify.Characters.SingleAsync(c => c.Id == character.Id);
+        persisted.Experience.Should().Be(40);
+        var attributes = JsonSerializer.Deserialize<Dictionary<string, int>>(persisted.Attributes)!;
+        attributes["Gold"].Should().Be(32, "the 7 gold the character already had plus the 25 gold reward");
     }
 }

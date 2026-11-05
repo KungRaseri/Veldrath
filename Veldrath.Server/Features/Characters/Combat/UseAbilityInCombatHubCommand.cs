@@ -245,9 +245,17 @@ public class UseAbilityInCombatHubCommandHandler
                 myReward = rewardList.FirstOrDefault(r => r.CharacterId == request.CharacterId);
             }
 
-            CombatHelpers.DecrementCooldowns(attrs);
-            entity.Attributes = CombatHelpers.SerializeAttrs(attrs);
-            await _characterRepo.UpdateAsync(entity, cancellationToken);
+            // Rewards were written straight to the character row, so re-read before writing the cooldowns
+            // back: saving the pre-reward attribute blob here silently undoes the gold just awarded.
+            // (AttackEnemyHubCommand already re-reads for the same reason.)
+            var rewarded = await _characterRepo.GetByIdAsync(request.CharacterId, cancellationToken);
+            if (rewarded is not null)
+            {
+                var rewardedAttrs = CombatHelpers.ParseAttrs(rewarded.Attributes, _logger);
+                CombatHelpers.DecrementCooldowns(rewardedAttrs);
+                rewarded.Attributes = CombatHelpers.SerializeAttrs(rewardedAttrs);
+                await _characterRepo.UpdateAsync(rewarded, cancellationToken);
+            }
 
             return new UseAbilityInCombatHubResult
             {
