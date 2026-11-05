@@ -80,6 +80,10 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - `EncounterBossCommandHandler.GenerateBossTitle`: uses `Prefixes.Select(p => p.Value)` for title (bug was fixed — was using `string.Join(" ", boss.Prefixes)` which called ToString())
 - `ExploreLocationCommandHandler`: injects `IRandomSource` (optional ctor parameter) for the 60% combat / 40% peaceful roll; tests script a `FakeRandomSource`
 - `HarvestNodeCommandHandler`: calls `_inventoryService.ReduceItemDurabilityAsync` after calculating `durabilityLoss`
+- `PartyCombatTurnHandler`: `CombatService.ExecuteEnemyAttack` already applies its `finalDamage` to
+  `Character.Health`, so the handler must only read `enemyResult.Damage` for the result and the log. Both
+  enemy branches (party → leader, and no-party) used to subtract it a second time and dealt double damage;
+  fixed 2026-11-05 and pinned by exact-HP assertions in `PartyCombatTurnHandlerPartyTests`.
 
 ### Randomness — `IRandomSource` (2026-11-03)
 

@@ -289,7 +289,7 @@ public class PartyCombatTurnHandler : IRequestHandler<PartyCombatTurnCommand, Pa
             {
                 enemyTarget = player.Name;
                 var enemyResult = await _combatService.ExecuteEnemyAttack(enemy, player);
-                player.Health = Math.Max(0, player.Health - enemyResult.Damage);
+                // ExecuteEnemyAttack already applies its damage to the player; do not subtract again.
                 enemyDamage = enemyResult.Damage;
                 enemyMessage = enemyResult.Message ?? $"{enemy.Name} dealt {enemyDamage} damage to {player.Name}.";
             }
@@ -311,7 +311,7 @@ public class PartyCombatTurnHandler : IRequestHandler<PartyCombatTurnCommand, Pa
             // No party, attack player
             enemyTarget = player.Name;
             var enemyResult = await _combatService.ExecuteEnemyAttack(enemy, player);
-            player.Health = Math.Max(0, player.Health - enemyResult.Damage);
+            // ExecuteEnemyAttack already applies its damage to the player; do not subtract again.
             enemyDamage = enemyResult.Damage;
             enemyMessage = enemyResult.Message ?? $"{enemy.Name} dealt {enemyDamage} damage to {player.Name}.";
         }
