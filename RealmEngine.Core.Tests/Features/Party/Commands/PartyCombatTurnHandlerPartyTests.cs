@@ -207,9 +207,7 @@ public class PartyCombatTurnHandlerPartyTests
 
         result.EnemyTarget.Should().Be("Hero");
         result.EnemyDamage.Should().Be(1);
-        // ExecuteEnemyAttack already applies its damage to the player and the handler subtracts the same
-        // result again, so the exact remaining HP is not asserted here (tracked as a follow-up defect).
-        player.Health.Should().BeLessThan(10_000, "the player is the target and takes the hit");
+        player.Health.Should().Be(9_999, "ExecuteEnemyAttack applies its damage exactly once; the handler must not subtract it again");
         ally.Health.Should().Be(10_000, "the ally is untouched on the player-target arm");
         result.CombatContinues.Should().BeTrue();
     }
@@ -226,9 +224,9 @@ public class PartyCombatTurnHandlerPartyTests
             new PartyCombatTurnCommand { Enemy = MakeEnemy(health: 10_000, basePhysicalDamage: 5) }, default);
 
         result.EnemyTarget.Should().Be("Hero");
-        result.EnemyDamage.Should().BeGreaterThan(0);
+        result.EnemyDamage.Should().Be(1);
         result.EnemyMessage.Should().Contain("Goblin");
-        player.Health.Should().BeLessThan(10_000);
+        player.Health.Should().Be(9_999, "the no-party arm also lets ExecuteEnemyAttack apply the damage once");
         result.PartyDefeated.Should().BeFalse();
         result.CombatContinues.Should().BeTrue();
     }
