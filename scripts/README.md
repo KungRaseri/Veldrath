@@ -95,6 +95,34 @@ response and run in the [docs workflow](../.github/workflows/docs.yml).
 
 ---
 
+## `forgejo-pr-comment.sh`
+
+Posts or updates the sticky comment on a pull request — the replacement for
+`marocchino/sticky-pull-request-comment`, which only speaks the GitHub API. Two modes:
+
+- `--section <name> --title <heading>` (what CI uses): one shared coverage comment holding
+  named sections. Each job replaces only its own section, deletes the superseded
+  one-comment-per-job comments, and re-reads the result so two jobs finishing together cannot
+  drop each other's numbers.
+- `--marker '<html comment>'`: one comment per marker, replaced in place.
+
+```bash
+export FORGEJO_TOKEN=… FORGEJO_REPOSITORY=Veldrath/Veldrath
+bash scripts/forgejo-pr-comment.sh --pr 42 --section dotnet \
+  --title '.NET (all test projects)' --body-file CoverageReport/SummaryGithub.md
+bash scripts/tests/forgejo-pr-comment.test.sh  # offline regression tests: no token, no network
+```
+
+The comment lookup must return **one integer id**. It used to print the id twice when another
+comment followed the match — `awk` ran its `END` rule after `exit()` — which put a newline in
+`COMMENT_ID` and made the PATCH URL `…/comments/746<newline>746`; curl answered
+`(3) bad/illegal URL` and the coverage job failed on its last step. The offline tests (run in the
+[docs workflow](../.github/workflows/docs.yml)) drive the real script against a fake `curl` on
+PATH, so the lookup, both marker paths, the create-on-miss path and the malformed-id guard are
+covered without touching Forgejo.
+
+---
+
 ## `check-dotnet-coverage.mjs` + `coverage-floors.json`
 
 Enforces the .NET coverage contract from the **merged** Cobertura report. Coverage is a property
