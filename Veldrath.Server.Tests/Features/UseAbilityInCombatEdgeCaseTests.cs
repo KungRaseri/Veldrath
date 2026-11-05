@@ -160,7 +160,7 @@ public class UseAbilityInCombatEdgeCaseTests : IDisposable
     {
         await using var db = _dbFactory.CreateContext();
         var character = await SeedCharacterAsync(
-            db, attrsJson: """{"CurrentMana":50,"MaxMana":50,"Intelligence":16,"Gold":7}""");
+            db, attrsJson: """{"CurrentMana":50,"MaxMana":50,"Intelligence":16,"Gold":7,"AbilityCooldown_heal":2}""");
         var enemy = AddEnemy(hp: 1, baseXp: 40, goldReward: 25);
         SetSession(character.Id, enemy.Id);
 
@@ -175,15 +175,50 @@ public class UseAbilityInCombatEdgeCaseTests : IDisposable
         result.EnemyDamage.Should().Be(0, "a defeated enemy does not counter-attack");
         result.XpEarned.Should().Be(40, "a single contributor receives the enemy's whole XP pool");
         result.GoldEarned.Should().Be(25, "a single contributor receives the enemy's whole gold pool");
+        result.PlayerRemainingMana.Should().Be(40, "fireball cost 10 of the character's 50 mana");
         enemy.CurrentHealth.Should().Be(0);
         _enemies.IsMarkedDead(enemy.Id).Should().BeTrue();
         _sessions.IsInCombat(character.Id).Should().BeFalse("the kill releases every engaged session");
 
-        // The award is persisted, not only reported: re-read both the XP column and the banked gold.
+        // Re-read through a fresh context: the reward and the cast mutations must both be persisted.
         await using var verify = _dbFactory.CreateContext();
         var persisted = await verify.Characters.SingleAsync(c => c.Id == character.Id);
         persisted.Experience.Should().Be(40);
         var attributes = JsonSerializer.Deserialize<Dictionary<string, int>>(persisted.Attributes)!;
         attributes["Gold"].Should().Be(32, "the 7 gold the character already had plus the 25 gold reward");
+        attributes["CurrentMana"].Should().Be(40, "the 10-mana fireball cost was deducted when it was cast");
+        attributes["AbilityCooldown_fireball"].Should().Be(2,
+            "the fresh three-turn cooldown ticks down one turn on the turn it was cast");
+        attributes["AbilityCooldown_heal"].Should().Be(1, "an unrelated cooldown still ticks down");
+    }
+
+    [Fact]
+    public async Task Handle_PersistsTheCast_WhenAnotherRequestWinsTheDeathTransition()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var character = await SeedCharacterAsync(
+            db, attrsJson: """{"CurrentMana":50,"MaxMana":50,"Intelligence":16,"Gold":7}""");
+        var enemy = AddEnemy(hp: 1, baseXp: 40, goldReward: 25);
+        SetSession(character.Id, enemy.Id);
+        // A racing request already claimed the death transition for this enemy.
+        (await _enemies.TryMarkDeadAsync(enemy.Id, CancellationToken.None))
+            .Should().BeTrue("arranging the lost-transition precondition");
+
+        var result = await MakeHandler(db).Handle(
+            new UseAbilityInCombatHubCommand(character.Id, "fireball"), CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.EnemyDefeated.Should().BeTrue();
+        result.XpEarned.Should().Be(0, "the request that lost the transition distributes no reward");
+        result.GoldEarned.Should().Be(0, "the request that lost the transition distributes no reward");
+
+        // Losing the reward claim must not lose the cast: mana and cooldown were already spent.
+        await using var verify = _dbFactory.CreateContext();
+        var persisted = await verify.Characters.SingleAsync(c => c.Id == character.Id);
+        persisted.Experience.Should().Be(0, "no XP was awarded to this request");
+        var attributes = JsonSerializer.Deserialize<Dictionary<string, int>>(persisted.Attributes)!;
+        attributes["Gold"].Should().Be(7, "no reward was distributed by this request");
+        attributes["CurrentMana"].Should().Be(40, "the cast still cost its mana");
+        attributes["AbilityCooldown_fireball"].Should().Be(2, "the cast still started its cooldown");
     }
 }
