@@ -311,16 +311,26 @@ assert_payload_occurrences() { # LABEL METHOD NEEDLE WANT
     assert_occurrences "$1" "${file}" "$3" "$4"
 }
 
-# Every recorded URL must be one line of the expected shape. A newline inside the id —
-# the reported failure — fails this even when the method and the first line look right.
+# Every recorded URL must be one line of the expected shape. grep -E matches each input
+# line independently, so the shape regex alone does NOT reject the reported failure: a
+# recorded URL of `.../issues/comments/746<newline>746` matches on its first line and
+# exits 0, which made this helper a no-op for the very case it was written to pin. The
+# newline is therefore rejected explicitly before the shape check.
 assert_scalar_urls() {
     local i url
     for ((i = 1; i <= $(req_count); i++)); do
         url="$(req_field "${i}" url)"
         check
-        printf '%s' "${url}" \
-            | grep -Eq '^http://stub\.invalid/api/v1/repos/Veldrath/Veldrath/(issues/[0-9]+/comments(\?limit=100)?|issues/comments/[0-9]+)$' \
-            || fail "$1: request ${i} is not a scalar URL [${url//$'\n'/\\n}]"
+        case "${url}" in
+            *$'\n'*)
+                fail "$1: request ${i} split over lines, not a scalar URL [${url//$'\n'/\\n}]"
+                ;;
+            *)
+                printf '%s' "${url}" \
+                    | grep -Eq '^http://stub\.invalid/api/v1/repos/Veldrath/Veldrath/(issues/[0-9]+/comments(\?limit=100)?|issues/comments/[0-9]+)$' \
+                    || fail "$1: request ${i} is not a scalar URL [${url//$'\n'/\\n}]"
+                ;;
+        esac
     done
 }
 
