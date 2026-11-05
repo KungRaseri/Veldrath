@@ -3,7 +3,9 @@ using Microsoft.Extensions.Logging;
 using RealmEngine.Core.Features.Combat;
 using RealmEngine.Core.Features.Party.Services;
 using RealmEngine.Core.Features.SaveLoad;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Services;
 
 namespace RealmEngine.Core.Features.Party.Commands;
 
@@ -125,7 +127,7 @@ public class PartyCombatTurnHandler : IRequestHandler<PartyCombatTurnCommand, Pa
     private readonly PartyService _partyService;
     private readonly PartyAIService _partyAI;
     private readonly ILogger<PartyCombatTurnHandler> _logger;
-    private readonly Random _random = new();
+    private readonly IRandomSource _random;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PartyCombatTurnHandler"/> class.
@@ -135,13 +137,15 @@ public class PartyCombatTurnHandler : IRequestHandler<PartyCombatTurnCommand, Pa
     /// <param name="partyService">The party service.</param>
     /// <param name="partyAI">The party AI service.</param>
     /// <param name="logger">The logger.</param>
-    public PartyCombatTurnHandler(ISaveGameService saveGameService, CombatService combatService, PartyService partyService, PartyAIService partyAI, ILogger<PartyCombatTurnHandler> logger)
+    /// <param name="randomSource">Optional random source for the enemy's target choice; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
+    public PartyCombatTurnHandler(ISaveGameService saveGameService, CombatService combatService, PartyService partyService, PartyAIService partyAI, ILogger<PartyCombatTurnHandler> logger, IRandomSource? randomSource = null)
     {
         _saveGameService = saveGameService;
         _combatService = combatService;
         _partyService = partyService;
         _partyAI = partyAI;
         _logger = logger;
+        _random = randomSource ?? SystemRandomSource.Shared;
     }
 
     /// <summary>

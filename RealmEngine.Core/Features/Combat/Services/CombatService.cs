@@ -51,7 +51,7 @@ public class CombatService
         _logger = logger;
         _reactivePowerService = new ReactivePowerService(loggerFactory.CreateLogger<ReactivePowerService>(), powerCatalogService);
         _enemyPowerAI = new EnemyPowerAIService(powerCatalogService, _random);
-        _enemySpellCastingAI = new EnemySpellCastingService(powerCatalogService);
+        _enemySpellCastingAI = new EnemySpellCastingService(powerCatalogService, _random);
         _itemGenerator = itemGenerator;
     }
 
@@ -76,7 +76,7 @@ public class CombatService
         _logger = logger;
         _reactivePowerService = new ReactivePowerService(loggerFactory.CreateLogger<ReactivePowerService>(), powerCatalogService);
         _enemyPowerAI = new EnemyPowerAIService(powerCatalogService, _random);
-        _enemySpellCastingAI = new EnemySpellCastingService(powerCatalogService);
+        _enemySpellCastingAI = new EnemySpellCastingService(powerCatalogService, _random);
         _itemGenerator = itemGenerator;
     }
 

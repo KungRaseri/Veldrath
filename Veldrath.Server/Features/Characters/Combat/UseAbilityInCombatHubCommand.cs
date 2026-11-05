@@ -236,6 +236,14 @@ public class UseAbilityInCombatHubCommandHandler
         // --- Enemy defeated ---
         if (!isHeal && !enemy.IsAlive)
         {
+            // Persist the cast before the death transition: the mana spent and the cooldown this ability
+            // started only exist in the in-memory blob, while DistributeRewardsAsync re-reads the stored
+            // row to add XP and gold. Saving the cast afterwards used to overwrite the reward with the
+            // pre-cast blob; re-reading afterwards lost the cast. Persisting first keeps both.
+            CombatHelpers.DecrementCooldowns(attrs);
+            entity.Attributes = CombatHelpers.SerializeAttrs(attrs);
+            await _characterRepo.UpdateAsync(entity, cancellationToken);
+
             (Guid CharacterId, int Xp, int Gold) myReward = default;
 
             // Only the caller that wins the death transition distributes rewards.
@@ -244,10 +252,6 @@ public class UseAbilityInCombatHubCommandHandler
                 var rewardList = await CombatHelpers.DistributeRewardsAsync(enemy, _characterRepo, _sessions, cancellationToken);
                 myReward = rewardList.FirstOrDefault(r => r.CharacterId == request.CharacterId);
             }
-
-            CombatHelpers.DecrementCooldowns(attrs);
-            entity.Attributes = CombatHelpers.SerializeAttrs(attrs);
-            await _characterRepo.UpdateAsync(entity, cancellationToken);
 
             return new UseAbilityInCombatHubResult
             {

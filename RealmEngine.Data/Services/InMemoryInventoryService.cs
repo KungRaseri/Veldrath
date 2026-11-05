@@ -137,6 +137,19 @@ public class InMemoryInventoryService : IInventoryService
     /// <summary>Returns all items in a character's inventory. Useful for assertions in tests.</summary>
     public Dictionary<string, int> GetInventory(string characterName) => GetOrCreate(characterName);
 
+    /// <summary>
+    /// Returns the tracked durability of an item, or <c>null</c> when no reduction has been recorded.
+    /// Items that were never damaged start from 100, so a null result means "untouched".
+    /// Useful for asserting the durability transitions in tests.
+    /// </summary>
+    /// <param name="characterName">The character whose durability is inspected.</param>
+    /// <param name="itemRef">The item reference.</param>
+    /// <returns>The stored durability, or <c>null</c> when the item has never been reduced.</returns>
+    public int? GetDurability(string characterName, string itemRef) =>
+        _durabilities.TryGetValue(characterName, out var items) && items.TryGetValue(itemRef, out var durability)
+            ? durability
+            : null;
+
     /// <summary>Clears all in-memory inventory state.</summary>
     public void Clear() => _inventories.Clear();
 }

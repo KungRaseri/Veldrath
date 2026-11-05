@@ -1,5 +1,7 @@
 using RealmEngine.Core.Features.Progression.Services;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Services;
 
 namespace RealmEngine.Core.Features.Combat.Services;
 
@@ -9,16 +11,17 @@ namespace RealmEngine.Core.Features.Combat.Services;
 public class EnemySpellCastingService
 {
     private readonly PowerDataService? _powerCatalogService;
-    private readonly Random _random;
+    private readonly IRandomSource _random;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EnemySpellCastingService"/> class.
     /// </summary>
     /// <param name="powerCatalogService">The power catalog service.</param>
-    public EnemySpellCastingService(PowerDataService? powerCatalogService = null)
+    /// <param name="randomSource">Optional random source for the cast and selection rolls; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
+    public EnemySpellCastingService(PowerDataService? powerCatalogService = null, IRandomSource? randomSource = null)
     {
         _powerCatalogService = powerCatalogService;
-        _random = new Random();
+        _random = randomSource ?? SystemRandomSource.Shared;
     }
 
     /// <summary>
