@@ -210,8 +210,12 @@ run_script() {
     mkdir -p "${STUB}"
     cp "${fixture}" "${STUB}/comments.json"
 
+    # Pin BOTH base URLs: forgejo-api.sh prefers an already-set FORGEJO_API_URL over
+    # FORGEJO_SERVER_URL, and the CI runner exports a FORGEJO_API_URL of its own, which
+    # would otherwise send the script at the real server past the stub (and past PATH).
     PATH="${BIN}:${PATH}" \
     FORGEJO_SERVER_URL='http://stub.invalid' \
+    FORGEJO_API_URL='http://stub.invalid/api/v1' \
     FORGEJO_REPOSITORY="${REPO}" \
     FORGEJO_TOKEN='offline-test-token' \
     STUB_DIR="${STUB}" \
