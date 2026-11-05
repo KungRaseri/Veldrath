@@ -190,31 +190,48 @@ public class OrganizationGeneratorTests
     // ── GenerateShopAsync ─────────────────────────────────────────────────────
 
     [Fact]
-    public async Task GenerateShopAsync_Selects_From_Shop_Types_And_Shop_Traits()
+    public async Task GenerateShopAsync_Selects_An_Organization_Whose_Type_Is_Shop()
     {
-        // Arrange — one explicit "shop" org type and one guild flagged with the shop trait.
+        // Arrange — only the explicit "shop" row is eligible; the guild without the shop trait is not.
         var databaseName = Seed(db => db.Organizations.AddRange(
             MakeOrganization("general-store", orgType: "shop", displayName: "General Store", wealth: 500),
+            MakeOrganization("mages-guild", orgType: "guilds", displayName: "Mages Guild")));
+
+        using var db = CreateDb(databaseName);
+        var generator = CreateGenerator(db);
+
+        // Act — repeated calls must always resolve to the single eligible vendor.
+        for (var i = 0; i < 5; i++)
+        {
+            var shop = await generator.GenerateShopAsync("general");
+
+            shop.Should().NotBeNull();
+            shop!.Id.Should().Be("general-store");
+            shop.Name.Should().Be("General Store");
+            shop.Wealth.Should().Be(500);
+        }
+    }
+
+    [Fact]
+    public async Task GenerateShopAsync_Selects_A_Guild_Flagged_With_The_Shop_Trait()
+    {
+        // Arrange — the guild earns eligibility from the trait, not from its type.
+        var databaseName = Seed(db => db.Organizations.AddRange(
             MakeOrganization("guild-store", orgType: "guilds", displayName: "Guild Store", hasShop: true),
             MakeOrganization("mages-guild", orgType: "guilds", displayName: "Mages Guild")));
 
         using var db = CreateDb(databaseName);
         var generator = CreateGenerator(db);
 
-        // Act — repeat to prove both eligibilities can be selected.
-        var seen = new HashSet<string>();
-        for (var i = 0; i < 30; i++)
+        // Act — repeated calls must always resolve to the trait-flagged vendor.
+        for (var i = 0; i < 5; i++)
         {
             var shop = await generator.GenerateShopAsync("general");
 
             shop.Should().NotBeNull();
-            shop!.Name.Should().BeOneOf("General Store", "Guild Store",
-                "organizations without the shop trait are not vendors");
-            seen.Add(shop.Id);
+            shop!.Id.Should().Be("guild-store");
+            shop.Name.Should().Be("Guild Store");
         }
-
-        // Assert
-        seen.Should().BeEquivalentTo(["general-store", "guild-store"]);
     }
 
     [Fact]

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using RealmEngine.Core.Generators.Modern;
+using RealmEngine.Core.Tests.Infrastructure;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Abstractions;
@@ -308,18 +309,21 @@ public class LocationGeneratorTests
     ];
 
     private static (EnemyGenerator Generator, Mock<IEnemyRepository> Repository) CreateEnemyGenerator(
-        IReadOnlyList<Enemy> enemies)
+        IReadOnlyList<Enemy> enemies,
+        IRandomSource? randomSource = null)
     {
         var repository = new Mock<IEnemyRepository>();
         repository.Setup(r => r.GetByFamilyAsync(It.IsAny<string>()))
                   .ReturnsAsync(enemies.ToList());
-        return (new EnemyGenerator(repository.Object, NullLogger<EnemyGenerator>.Instance), repository);
+        return (new EnemyGenerator(repository.Object, NullLogger<EnemyGenerator>.Instance, randomSource), repository);
     }
 
     [Fact]
     public async Task GenerateLocationAppropriateEnemyAsync_Prefers_Enemies_Within_Three_Levels()
     {
         // Arrange — location level 2: the skeleton (5) is the only enemy within ±3 levels.
+        // The generator's weighted sampler is scripted so all ten candidates are the skeleton;
+        // an unseeded sampler could legitimately draw only the out-of-range lich and fall back.
         var databaseName = Seed(db => { });
         using var db = CreateDb(databaseName);
         var location = new Location
@@ -332,7 +336,7 @@ public class LocationGeneratorTests
             DangerRating = 5,
             LocationType = "dungeon"
         };
-        var (enemyGenerator, repository) = CreateEnemyGenerator(MixedLevelEnemies);
+        var (enemyGenerator, repository) = CreateEnemyGenerator(MixedLevelEnemies, FakeRandomSource.Returning(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 
         // Act
         var enemy = await CreateGenerator(db).GenerateLocationAppropriateEnemyAsync(location, enemyGenerator);

@@ -25,9 +25,9 @@ namespace RealmEngine.Core.Tests.Features.Party.Commands;
 /// the protected test constructor leaves null (mediator, difficulty settings and the random source).
 /// </para>
 /// <para>
-/// The handler picks the enemy's target with its own private <see cref="Random"/> (60% player,
-/// 40% ally). The ally-target test therefore repeats the turn with a high-health actor until that
-/// 40% arm is taken; missing it 80 times in a row has probability 0.6^80.
+/// The handler picks the enemy's target with its own <see cref="IRandomSource"/> (60% player,
+/// 40% ally); the ally-target test scripts the NextDouble and Next calls rather than repeating the
+/// turn until the 40% arm happens to be taken.
 /// </para>
 /// </remarks>
 [Trait("Category", "Feature")]
@@ -65,13 +65,17 @@ public class PartyCombatTurnHandlerPartyTests
         return mock;
     }
 
-    private static PartyCombatTurnHandler CreateHandler(Mock<ISaveGameService> saveSvc, Mock<CombatService> combatSvc) =>
+    private static PartyCombatTurnHandler CreateHandler(
+        Mock<ISaveGameService> saveSvc,
+        Mock<CombatService> combatSvc,
+        IRandomSource? randomSource = null) =>
         new(
             saveSvc.Object,
             combatSvc.Object,
             new PartyService(NullLogger<PartyService>.Instance),
             new PartyAIService(NullLogger<PartyAIService>.Instance),
-            NullLogger<PartyCombatTurnHandler>.Instance);
+            NullLogger<PartyCombatTurnHandler>.Instance,
+            randomSource);
 
     private static Mock<ISaveGameService> CreateSaveService(SaveGame save)
     {
@@ -163,34 +167,51 @@ public class PartyCombatTurnHandlerPartyTests
     [Fact]
     public async Task Handle_EnemyTargetsAlly_TakesTheAllyBranchAndDamagesThatAlly()
     {
-        PartyCombatTurnResult? allyTargetedResult = null;
-        PartyMember? targetedAlly = null;
+        var player = new Character { Name = "Hero", Health = 10_000, MaxHealth = 10_000 };
+        var ally = MakeMember("Scout", health: 10_000, maxHealth: 10_000, constitution: 10);
+        var party = new RealmEngine.Shared.Models.Party { Leader = player, Members = [ally] };
+        var save = new SaveGame { PlayerName = "Hero", Character = player, Party = party };
+        var saveSvc = CreateSaveService(save);
+        var combatSvc = CreateMockCombatService(playerDamage: 1);
 
-        for (var attempt = 0; attempt < 80 && allyTargetedResult is null; attempt++)
-        {
-            var player = new Character { Name = "Hero", Health = 10_000, MaxHealth = 10_000 };
-            var ally = MakeMember("Scout", health: 10_000, maxHealth: 10_000, constitution: 10);
-            var party = new RealmEngine.Shared.Models.Party { Leader = player, Members = [ally] };
-            var save = new SaveGame { PlayerName = "Hero", Character = player, Party = party };
-            var saveSvc = CreateSaveService(save);
-            var combatSvc = CreateMockCombatService(playerDamage: 1);
+        // 0.9 clears the 60% player-target roll, then index 0 selects the only ally.
+        var handler = CreateHandler(saveSvc, combatSvc, FakeRandomSource.ReturningDoubles(0.9).Enqueue(0));
 
-            var result = await CreateHandler(saveSvc, combatSvc).Handle(
-                new PartyCombatTurnCommand { Enemy = MakeEnemy(health: 10_000) }, default);
+        var result = await handler.Handle(
+            new PartyCombatTurnCommand { Enemy = MakeEnemy(health: 10_000) }, default);
 
-            if (result.EnemyTarget == "Scout")
-            {
-                allyTargetedResult = result;
-                targetedAlly = ally;
-                targetedAlly.Health.Should().BeLessThan(10_000);
-            }
-        }
+        result.EnemyTarget.Should().Be("Scout", "a NextDouble of 0.9 takes the 40% ally-target arm");
+        result.EnemyDamage.Should().Be(1, "max(1, enemy base damage - ally defence)");
+        result.EnemyMessage.Should().Contain("Scout");
+        result.PlayerMessage.Should().NotBeNullOrEmpty();
+        ally.Health.Should().Be(9_999);
+        player.Health.Should().Be(10_000, "the player is not the target of this turn");
+        result.PartyDefeated.Should().BeFalse();
+    }
 
-        allyTargetedResult.Should().NotBeNull("the 40% ally-target arm must be reachable");
-        allyTargetedResult!.EnemyDamage.Should().Be(1, "max(1, enemy base damage - ally defence)");
-        allyTargetedResult.EnemyMessage.Should().Contain("Scout");
-        allyTargetedResult.PlayerMessage.Should().NotBeNullOrEmpty();
-        targetedAlly!.Health.Should().Be(9_999);
+    [Fact]
+    public async Task Handle_EnemyTargetsPlayer_WhenThePlayerTargetRollIsTaken()
+    {
+        var player = new Character { Name = "Hero", Health = 10_000, MaxHealth = 10_000 };
+        var ally = MakeMember("Scout", health: 10_000, maxHealth: 10_000, constitution: 10);
+        var party = new RealmEngine.Shared.Models.Party { Leader = player, Members = [ally] };
+        var save = new SaveGame { PlayerName = "Hero", Character = player, Party = party };
+        var saveSvc = CreateSaveService(save);
+        var combatSvc = CreateMockCombatService(playerDamage: 1);
+
+        // 0.59 is below the 60% threshold, so the enemy goes for the leader.
+        var handler = CreateHandler(saveSvc, combatSvc, FakeRandomSource.ReturningDoubles(0.59));
+
+        var result = await handler.Handle(
+            new PartyCombatTurnCommand { Enemy = MakeEnemy(health: 10_000) }, default);
+
+        result.EnemyTarget.Should().Be("Hero");
+        result.EnemyDamage.Should().Be(1);
+        // ExecuteEnemyAttack already applies its damage to the player and the handler subtracts the same
+        // result again, so the exact remaining HP is not asserted here (tracked as a follow-up defect).
+        player.Health.Should().BeLessThan(10_000, "the player is the target and takes the hit");
+        ally.Health.Should().Be(10_000, "the ally is untouched on the player-target arm");
+        result.CombatContinues.Should().BeTrue();
     }
 
     [Fact]

@@ -186,12 +186,14 @@ public class InMemoryInventoryServiceTests
         // Arrange
         var service = NewService();
         await service.AddItemAsync(Hero, "sword", 1);
+        service.GetDurability(Hero, "sword").Should().BeNull("an undamaged item has no tracked durability yet");
 
         // Act
         var reduced = await service.ReduceItemDurabilityAsync(Hero, "sword", 30);
 
         // Assert
         reduced.Should().BeTrue();
+        service.GetDurability(Hero, "sword").Should().Be(70, "the implicit 100 is the starting point");
     }
 
     [Fact]
@@ -200,13 +202,38 @@ public class InMemoryInventoryServiceTests
         // Arrange
         var service = NewService();
         await service.AddItemAsync(Hero, "sword", 1);
-        await service.ReduceItemDurabilityAsync(Hero, "sword", 30);
+
+        // Act / Assert — each call reduces the stored value, so the result accumulates rather than
+        // resetting from 100 every time.
+        (await service.ReduceItemDurabilityAsync(Hero, "sword", 30)).Should().BeTrue();
+        service.GetDurability(Hero, "sword").Should().Be(70);
+
+        (await service.ReduceItemDurabilityAsync(Hero, "sword", 20)).Should().BeTrue();
+        service.GetDurability(Hero, "sword").Should().Be(50, "durability carries over between calls");
 
         // Act
         var reduced = await service.ReduceItemDurabilityAsync(Hero, "sword", 500);
 
         // Assert
         reduced.Should().BeTrue();
+        service.GetDurability(Hero, "sword").Should().Be(0, "durability clamps at zero, never negative");
+        service.GetInventory(Hero).Should().ContainKey("sword", "a broken item stays in the inventory");
+    }
+
+    [Fact]
+    public async Task ReduceDurability_IsTrackedPerCharacter()
+    {
+        // Arrange
+        var service = NewService();
+        await service.AddItemAsync(Hero, "sword", 1);
+        await service.AddItemAsync("Rival", "sword", 1);
+
+        // Act
+        (await service.ReduceItemDurabilityAsync(Hero, "sword", 40)).Should().BeTrue();
+
+        // Assert
+        service.GetDurability(Hero, "sword").Should().Be(60);
+        service.GetDurability("Rival", "sword").Should().BeNull("untouched items of other characters do not share state");
     }
 
     [Fact]

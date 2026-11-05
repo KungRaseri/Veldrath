@@ -1,7 +1,9 @@
 {
   "$comment": [
     "The .NET coverage contract. Floors are a no-regression ratchet, measured 2026-11-04 with",
-    "the CI-pinned SDK 10.0.402, merged from the five test projects by reportgenerator.",
+    "the CI-pinned SDK 10.0.402, merged from the five test projects by scripts/coverage-report.sh",
+    "(the pinned codecov-report tool), the same reporter the gate job uses. Three further full",
+    "runs after the PR #53 review corrections agreed to within 0.02 points.",
     "Coverage used to oscillate by 0.41 points (13 files called Random.Shared directly); after",
     "the IRandomSource injection series and the seeded tests, four consecutive full runs spanned",
     "at most 0.02 points on any assembly, so the headroom below is measured rather than hoped for.",

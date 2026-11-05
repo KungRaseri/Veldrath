@@ -3506,10 +3506,11 @@ identified here instead of guessed from branch dates. Only writes (`POST .../pul
 
 ### Session-99 (2026-11-04) — .NET coverage 75.4% → 95.1%, and the floors move with it
 
-**Merged .NET coverage is now 95.1% line / 82.7% branch** (30,443 / 31,995 lines), up from
-75.4% / 55.8%. Six assemblies: Core 92.0%, Server 95.6%, Data 99.8%, Shared 98.8%, Contracts
-100.0%, Discord 89.6%. `scripts/coverage-floors.json` was ratcheted in the same PR: global
-94/81, Core 90/79, Server 94/82, Data 98/83, Shared 97/94, Contracts 99/—, Discord 88/91.
+**PR #53 (open, head 50646481) raises .NET coverage to 95.1% line / 82.7% branch** (30,443 / 31,995
+lines), up from 75.4% / 55.8% measured on `development`. Six assemblies: Core 92.0%, Server 95.6%,
+Data 99.8%, Shared 98.8%, Contracts 100.0%, Discord 89.6%. `scripts/coverage-floors.json` is ratcheted
+in the same PR: global 94/81, Core 90/79, Server 94/82, Data 98/83, Shared 97/94, Contracts 99/—,
+Discord 88/91. The delivered-on-`development` figure only becomes "merged" once the PR lands.
 
 - **The 0.41-point oscillation is gone in practice.** Four consecutive full runs of the final
   tree spanned at most **0.02 points** on any assembly (Core 91.968 ±0.00, Server 95.57–95.59),
@@ -3520,12 +3521,21 @@ identified here instead of guessed from branch dates. Only writes (`POST .../pul
   "raise it to 91" for a 91.97% measurement; the policy in the skill/plan is one point of
   headroom below the truncated minimum. Do not copy the suggestion verbatim or the ratchet
   will sit inside the noise band.
-- **Test-only seams added, no production change.** `Veldrath.Discord.Tests/Infrastructure/
+- **Test-only seams added.** `Veldrath.Discord.Tests/Infrastructure/
   DiscordInteractionHarness.cs` emits a `SocketInteraction` subclass in a dynamic assembly
   (`IgnoresAccessChecksToAttribute`) and assigns it through `InteractionModuleBase<T>.Context`'s
   private setter, so the slash-command bodies actually run offline and their embeds are asserted;
   `RealmEngine.Core.Tests/Infrastructure/ThrowingInformationLogger.cs` reaches handler catch arms.
-  Both live in test projects and are excluded from the report by `coverage.runsettings`.
+  Both live in test projects and are excluded from the report by `coverage.runsettings`. Session-100
+  then added four deliberate production seams (`IRandomSource` parameters on `EnemySpellCastingService`,
+  `CraftingService`, `PartyCombatTurnHandler` and `EnemyGenerator`, `InMemoryInventoryService
+  .GetDurability`, `SmtpEmailSender.ResolvePort`) plus one real reward-persistence fix, all listed in
+  the PR body.
+- **A persisted-state assertion exposed a product bug.** `UseAbilityInCombatHubCommandHandler` awarded
+  XP/gold by writing the character row and then overwrote its attribute blob with the pre-reward copy,
+  silently dropping the gold. The handler now re-reads the row before writing the decremented cooldowns
+  (as `AttackEnemyHubCommandHandler` already did); the test asserts the persisted `Gold`, not just the
+  returned `GoldEarned`.
 - **What is still uncovered, and why** (1,552 lines): Discord 41 (`BotWorker`,
   `InteractionHandlingService` need a live gateway/REST event), Server 398 (Postgres-only
   `ILike`/`APPLY`/`SKIP LOCKED` arms, `internal` `DotEnvConfiguration` without
@@ -3533,3 +3543,30 @@ identified here instead of guessed from branch dates. Only writes (`POST .../pul
   default arms over closed enums, dead private members such as
   `CreateCharacterHandler.GetClassIdFromName`, `GameHub`'s ban-on-connect path), Data 14.
 - **Test count**: 4,011 → 6,004 across the five test projects.
+
+### Session-100 (2026-11-04) — Review corrections on PR #53: determinism, culture, real assertions
+
+Round-1 review (`REQUEST_CHANGES`, comment #748) blocked on six test-quality points; all six are fixed on
+the same branch (6,004 → 6,011 tests, still no test touches a boundary it does not assert).
+
+- **Scripted, not sampled.** `EnemySpellCastingService`, `CraftingService`, `PartyCombatTurnHandler` and
+  `EnemyGenerator` now take `IRandomSource? randomSource = null` (defaulting to `SystemRandomSource
+  .Shared`) so `CombatService`, crafting and party-turn tests script the exact rolls and assert exact
+  damage/heal/quality/target outcomes. That deleted every retry loop the review named; the location
+  test's ten-enemy candidate sample is scripted too (0 failures in 30 repeats, where the old test failed
+  at repeat 44).
+- **Culture-pinned formatting tests.** `RealmEngine.Shared.Tests/Infrastructure/UseCultureAttribute.cs`
+  (a `BeforeAfterTestAttribute`) pins `en-US` for the tests that hard-code dot decimals. The whole
+  Shared suite now passes under `LANG=de_DE.UTF-8 LC_ALL=de_DE.UTF-8` (1,158/1,158); the review had
+  reproduced 9 failures there.
+- **Assertions that can fail for the right reason.** Durability is observed through the new
+  `InMemoryInventoryService.GetDurability` (null → 100 start, accumulation, zero floor, per-character
+  isolation); the SMTP default port is asserted through the new protected `SmtpEmailSender.ResolvePort`
+  instead of dialling an ambient `localhost:587`; eviction tests set `LastUpdatedAt` explicitly rather
+  than assuming `TimeSpan.Zero` expires a fresh session; the ability-reward test seeds nonzero XP/gold
+  and asserts the persisted row (which is what exposed the overwritten-gold bug above).
+- **Verified:** Release build 0 warnings / 0 errors on SDK 10.0.402 (the review's CS8602 is gone);
+  6,011 tests pass in three consecutive full runs; three merged reports all print "Coverage contract
+  satisfied" with no `--suggest` output; per-assembly spread ≤0.02 points (Core 91.95, Server
+  95.57–95.59, Data 99.78, Shared 98.79, Contracts 100.00, Discord 89.59); `dotnet format
+  --verify-no-changes` and `git diff --check` clean. Floors unchanged — nothing is 3+ points stale.

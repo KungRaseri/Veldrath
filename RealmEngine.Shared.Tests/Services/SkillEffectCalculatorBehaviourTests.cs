@@ -1,5 +1,6 @@
 using FluentAssertions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Tests.Infrastructure;
 using RealmEngine.Shared.Utilities;
 using Xunit;
 
@@ -305,6 +306,7 @@ public class SkillEffectCalculatorBehaviourTests
     }
 
     [Theory]
+    [UseCulture("en-US")]
     [InlineData(1.25, false, "1.25x")]
     [InlineData(1.0, false, "1.00x")]
     [InlineData(1.25, true, "+25.0%")]

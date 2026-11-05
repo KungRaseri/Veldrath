@@ -109,6 +109,13 @@ public class SmtpEmailSenderTests
         new(new ConfigurationBuilder().AddInMemoryCollection(settings).Build(),
             NullLogger<SmtpEmailSender>.Instance);
 
+    /// <summary>Exposes the protected port resolution so the documented default can be asserted.</summary>
+    private sealed class PortProbingSender(IConfiguration configuration)
+        : SmtpEmailSender(configuration, NullLogger<SmtpEmailSender>.Instance)
+    {
+        public int ResolvedPort() => ResolvePort();
+    }
+
     [Fact]
     public async Task SendAsync_WithoutSmtpHost_DropsTheMessageWithoutThrowing()
     {
@@ -177,20 +184,32 @@ public class SmtpEmailSenderTests
     }
 
     [Fact]
-    public async Task SendAsync_UnparseablePort_FallsBackToTheDefaultAndFailsToConnect()
+    public void ResolvePort_UnparseableValue_FallsBackToTheDocumentedRelayPort()
     {
-        // Nothing listens on the default relay port of this loopback address, so the send must fail loudly
-        // rather than pretend the mail went out.
-        var sender = Sender(new()
-        {
-            ["Email:SmtpHost"] = "127.0.0.1",
-            ["Email:SmtpPort"] = "not-a-port",
-            ["Email:EnableTls"] = "false",
-        });
+        // The port fallback is asserted through the sender's own resolution instead of dialling
+        // localhost:587: a real relay on this machine must not be able to change the outcome.
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Email:SmtpHost"] = "127.0.0.1",
+                ["Email:SmtpPort"] = "not-a-port",
+                ["Email:EnableTls"] = "false",
+            })
+            .Build();
+        var sender = new PortProbingSender(configuration);
 
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
-        var act = () => sender.SendAsync("player@example.com", "No relay", "<p>body</p>", timeout.Token);
+        sender.ResolvedPort().Should().Be(587);
+        SmtpEmailSender.DefaultSmtpPort.Should().Be(587, "the documented default is part of the contract");
+    }
 
-        await act.Should().ThrowAsync<Exception>();
+    [Fact]
+    public void ResolvePort_ParsesAConfiguredPort()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Email:SmtpPort"] = "2525" })
+            .Build();
+        var sender = new PortProbingSender(configuration);
+
+        sender.ResolvedPort().Should().Be(2525);
     }
 }

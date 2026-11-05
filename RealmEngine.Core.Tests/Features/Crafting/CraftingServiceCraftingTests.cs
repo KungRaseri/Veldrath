@@ -5,18 +5,18 @@ using RealmEngine.Core.Features.Crafting.Services;
 using RealmEngine.Core.Generators.Modern;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Services.Budget;
+using RealmEngine.Core.Tests.Infrastructure;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Repositories;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
 
 namespace RealmEngine.Core.Tests.Features.Crafting;
 
 /// <summary>
 /// Tests for the crafting execution path (<see cref="CraftingService.CraftItemAsync"/>),
-/// item construction and material bookkeeping. <see cref="CraftingService"/> owns its own
-/// <see cref="Random"/>, so outcome-dependent assertions are made over a batch of crafts
-/// (the chance of a batch missing a reachable arm is astronomically small) while
-/// outcome-independent behaviour is asserted per call.
+/// item construction and material bookkeeping. The success, critical and failure rolls all come from
+/// the injected <see cref="IRandomSource"/>, so each outcome arm is scripted instead of sampled.
 /// </summary>
 [Trait("Category", "Service")]
 public class CraftingServiceCraftingTests
@@ -26,12 +26,14 @@ public class CraftingServiceCraftingTests
 
     private static CraftingService CreateService(
         BudgetHelperService? budgetHelper = null,
-        ItemGenerator? itemGenerator = null) =>
+        ItemGenerator? itemGenerator = null,
+        IRandomSource? randomSource = null) =>
         new(
             new RecipeDataService(new InMemoryRecipeRepository(), NullLogger<RecipeDataService>.Instance),
             NullLogger<CraftingService>.Instance,
             budgetHelper,
-            itemGenerator);
+            itemGenerator,
+            randomSource);
 
     private static BudgetHelperService CreateBudgetHelper() =>
         new(
@@ -199,114 +201,114 @@ public class CraftingServiceCraftingTests
     [Fact]
     public async Task CraftItemAsync_Should_Clamp_Quality_To_The_Recipe_Range()
     {
-        // Arrange
-        var service = CreateService();
+        // Arrange — skill 150 vs requirement 10 caps both rolls; a critical success would earn
+        // +14 tiers, so only the recipe's own ceiling keeps the result at Epic.
+        var service = CreateService(randomSource: FakeRandomSource.Returning(1, 1));
         var recipe = CreateRecipe(minQuality: 2, maxQuality: 3);
 
-        // Act / Assert
-        for (var i = 0; i < 20; i++)
-        {
-            var character = CreateCharacter(skillLevel: 150);
-            var result = await service.CraftItemAsync(character, recipe);
-
-            ((int)result.ActualQuality).Should().BeGreaterThanOrEqualTo((int)ItemRarity.Rare);
-            ((int)result.ActualQuality).Should().BeLessThanOrEqualTo((int)ItemRarity.Epic);
-            ((int)result.Item!.Rarity).Should().Be((int)result.ActualQuality);
-        }
-    }
-
-    // ── Outcome distribution (own Random inside the service) ───────────────────
-
-    [Fact]
-    public async Task CraftItemAsync_Should_Reach_Both_The_Success_And_Failure_Outcomes()
-    {
-        // Arrange — matching the requirement exactly gives a 50% success chance.
-        var service = CreateService();
-        var results = new List<CraftingResult>();
-
         // Act
-        for (var i = 0; i < 200; i++)
-        {
-            results.Add(await service.CraftItemAsync(CreateCharacter(skillLevel: 10), CreateRecipe(requiredLevel: 10)));
-        }
-
-        // Assert — a 50/50 arm landed both ways across 200 crafts.
-        results.Should().OnlyContain(r => r.Success, "a failed roll degrades quality instead of destroying the craft");
-        results.Should().OnlyContain(r => r.Item != null);
-        results.Should().Contain(r => r.FailureSeverity == 0);
-        results.Should().Contain(r => r.FailureSeverity > 0);
-        results.Where(r => r.FailureSeverity == 0).Should().OnlyContain(r => r.RefundedMaterials.Count == 0);
-        results.Should().OnlyContain(r => r.FailureSeverity >= 0 && r.FailureSeverity <= 3);
-    }
-
-    [Fact]
-    public async Task CraftItemAsync_Should_Refund_Half_The_Materials_On_A_Critical_Failure()
-    {
-        // Arrange
-        var service = CreateService();
-        var criticalFailures = new List<(CraftingResult Result, Character Character)>();
-
-        // Act
-        for (var i = 0; i < 200; i++)
-        {
-            var character = CreateCharacter(skillLevel: 10);
-            var result = await service.CraftItemAsync(character, CreateRecipe(requiredLevel: 10, materialQuantity: 2));
-            if (result.FailureSeverity == 3)
-            {
-                criticalFailures.Add((result, character));
-            }
-        }
+        var result = await service.CraftItemAsync(CreateCharacter(skillLevel: 150), recipe);
 
         // Assert
-        criticalFailures.Should().NotBeEmpty("a 50% failure chance over 200 crafts must produce critical failures");
-        foreach (var (result, character) in criticalFailures)
-        {
-            result.RefundedMaterials.Should().ContainSingle()
-                .Which.Should().Be((MaterialRef, 1));
-            character.Inventory.Should().HaveCount(1, "only the consumed half of the stack is removed");
-        }
+        result.WasCritical.Should().BeTrue();
+        result.QualityBonus.Should().Be(3, "the bonus is capped at three tiers before the range clamp");
+        result.ActualQuality.Should().Be(ItemRarity.Epic, "min quality 2 + 3 tiers clamps to max quality 3");
+        ((int)result.Item!.Rarity).Should().Be((int)result.ActualQuality);
+    }
+
+    // ── Outcome arms (scripted through the injected random source) ──────────────
+
+    [Fact]
+    public async Task CraftItemAsync_Critical_Success_Adds_The_Extra_Tier_And_Consumes_Materials()
+    {
+        // Arrange — equal skill and requirement: 50% success and 5% critical. Both rolls land.
+        var random = FakeRandomSource.Returning(1, 5);
+        var service = CreateService(randomSource: random);
+        var character = CreateCharacter(skillLevel: 10);
+
+        // Act
+        var result = await service.CraftItemAsync(character, CreateRecipe(requiredLevel: 10));
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.WasCritical.Should().BeTrue();
+        result.FailureSeverity.Should().Be(0);
+        result.QualityBonus.Should().Be(1, "no skill margin, plus one tier for the critical");
+        result.ActualQuality.Should().Be(ItemRarity.Uncommon);
+        result.RefundedMaterials.Should().BeEmpty();
+        character.Inventory.Should().BeEmpty("a successful craft consumes both ingots");
+        random.RemainingInts.Should().Be(0, "success and critical are the only rolls this path makes");
+    }
+
+    [Theory]
+    [InlineData(60, 1, 1, "marginal: 10 points past a 50% chance")]
+    [InlineData(75, 1, 2, "moderate: 25 points past a 50% chance")]
+    public async Task CraftItemAsync_Failed_Roll_Degrades_Quality_Without_Refunding(
+        int successRoll,
+        int criticalRoll,
+        int expectedSeverity,
+        string reason)
+    {
+        // Arrange — equal skill and requirement: 50% success, so 60 and 75 both fail.
+        var service = CreateService(randomSource: FakeRandomSource.Returning(successRoll, criticalRoll));
+        var character = CreateCharacter(skillLevel: 10);
+
+        // Act
+        var result = await service.CraftItemAsync(character, CreateRecipe(requiredLevel: 10));
+
+        // Assert — the craft still produces an item, but at the bottom of the recipe's range.
+        result.Success.Should().BeTrue("a failed roll never destroys the craft");
+        result.WasCritical.Should().BeFalse();
+        result.FailureSeverity.Should().Be(expectedSeverity, reason);
+        result.QualityBonus.Should().Be(0, "the zero skill margin is already the floor");
+        result.ActualQuality.Should().Be(ItemRarity.Common);
+        result.RefundedMaterials.Should().BeEmpty();
+        character.Inventory.Should().BeEmpty("severity 1 and 2 consume every material");
     }
 
     [Fact]
-    public async Task CraftItemAsync_Should_Award_Critical_Successes_Over_A_Batch()
+    public async Task CraftItemAsync_Critical_Failure_Refunds_Half_The_Materials()
     {
-        // Arrange — 100 skill above the requirement caps success at 99% and critical at 15%.
-        var service = CreateService();
+        // Arrange — 41 points past the 50% chance is severity 3, which refunds 50% of each material.
+        var service = CreateService(randomSource: FakeRandomSource.Returning(91, 1));
+        var character = CreateCharacter(skillLevel: 10);
 
         // Act
-        var results = new List<CraftingResult>();
-        for (var i = 0; i < 200; i++)
-        {
-            results.Add(await service.CraftItemAsync(CreateCharacter(skillLevel: 110), CreateRecipe(requiredLevel: 10)));
-        }
+        var result = await service.CraftItemAsync(
+            character, CreateRecipe(requiredLevel: 10, materialQuantity: 2));
 
-        // Assert
-        results.Should().Contain(r => r.WasCritical);
-        results.Should().OnlyContain(r => r.Success);
-        results.Should().OnlyContain(r => r.QualityBonus >= 0 && r.QualityBonus <= 3);
-        results.Where(r => r.WasCritical).Should().OnlyContain(r => r.QualityBonus >= 1);
+        // Assert — two ingots consumed as one, one refunded.
+        result.Success.Should().BeTrue();
+        result.FailureSeverity.Should().Be(3);
+        result.RefundedMaterials.Should().ContainSingle().Which.Should().Be((MaterialRef, 1));
+        character.Inventory.Should().ContainSingle()
+            .Which.Id.Should().Be(MaterialRef, "only the consumed half of the stack is removed");
     }
 
     [Fact]
     public async Task CraftItemAsync_With_A_Budget_Helper_Should_Use_Its_Chance_And_Failure_Tables()
     {
-        // Arrange — 15 skill over the requirement: 80% success, 6% critical.
-        var service = CreateService(CreateBudgetHelper());
-        var results = new List<CraftingResult>();
+        // Arrange — 15 skill over the requirement: 80% success, 6% critical, 1 tier of quality.
+        // Rolls: 50/5 is a critical success, 90/1 is a marginal failure (10 points past 80%).
+        var service = CreateService(
+            CreateBudgetHelper(),
+            randomSource: FakeRandomSource.Returning(50, 5, 90, 1));
+        var recipe = CreateRecipe(requiredLevel: 10);
 
         // Act
-        for (var i = 0; i < 400; i++)
-        {
-            results.Add(await service.CraftItemAsync(CreateCharacter(skillLevel: 25), CreateRecipe(requiredLevel: 10)));
-        }
+        var critical = await service.CraftItemAsync(CreateCharacter(skillLevel: 25), recipe);
+        var failed = await service.CraftItemAsync(CreateCharacter(skillLevel: 25), recipe);
 
         // Assert
-        results.Should().OnlyContain(r => r.Success);
-        results.Should().Contain(r => r.FailureSeverity == 0);
-        results.Should().Contain(r => r.FailureSeverity > 0);
-        results.Should().Contain(r => r.WasCritical);
-        // Quality bonus for +25 skill is 2; a severity-3 failure strips all three tiers back to 0.
-        results.Should().OnlyContain(r => r.QualityBonus >= 0 && r.QualityBonus <= 3);
+        critical.Success.Should().BeTrue();
+        critical.WasCritical.Should().BeTrue();
+        critical.QualityBonus.Should().Be(2, "one tier for the skill margin plus one for the critical");
+        critical.ActualQuality.Should().Be(ItemRarity.Rare);
+
+        failed.FailureSeverity.Should().Be(1);
+        failed.WasCritical.Should().BeFalse();
+        failed.QualityBonus.Should().Be(0, "the marginal failure strips the single skill tier");
+        failed.ActualQuality.Should().Be(ItemRarity.Common);
     }
 
     // ── Item generator integration ─────────────────────────────────────────────

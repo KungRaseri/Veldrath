@@ -1,5 +1,6 @@
 using FluentAssertions;
 using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Tests.Infrastructure;
 using RealmEngine.Shared.Utilities;
 using Xunit;
 
@@ -216,6 +217,7 @@ public class WeightedSelectorProbabilityTests
     // ── Display strings ─────────────────────────────────────────────────────
 
     [Fact]
+    [UseCulture("en-US")]
     public void GetProbabilityDisplay_RendersOneDecimalPlace()
     {
         // Act — (100/10)/100 * 100 = 10.0
@@ -226,6 +228,7 @@ public class WeightedSelectorProbabilityTests
     }
 
     [Fact]
+    [UseCulture("en-US")]
     public void GetProbabilityDisplay_WithNoPool_ReturnsZeroPercent()
     {
         // Act & Assert

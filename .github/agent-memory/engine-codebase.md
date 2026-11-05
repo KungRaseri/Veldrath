@@ -136,9 +136,11 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
   "attack"/"damage" anywhere in the description, so a buff power whose description mentions them is
   classified offensive and takes the 40 priority before the 50 buff branch. The buff test avoids
   those words deliberately; the ordering itself is unchanged (not part of the de-flake).
-- Still nondeterministic, deliberately out of scope for that pass: `EnemySpellCastingService`,
-  `NameComposer`, `LootTableService`, item generation and
-  `NodeSpawnerService` keep their own `new Random()`.
+- `EnemySpellCastingService` now takes `IRandomSource? randomSource = null` as well, and `CombatService`
+  passes its own source through, so enemy spell selection and the damage/heal dice are scripted too
+  (the 95% coverage round needed that to assert specific spell outcomes instead of sampling).
+- Still nondeterministic, deliberately out of scope for that pass: `NameComposer`, `LootTableService`,
+  item generation and `NodeSpawnerService` keep their own `new Random()`.
 - Coverage branch counts are **not** fully deterministic. Three consecutive full runs on the merged
   base agreed (24,213/32,121 lines, 5,823/10,490 branches), but the review of PR #35 measured 5,833,
   5,833 and 5,834 covered of 10,492 branches with identical line counts. The single varying branch was
@@ -149,14 +151,17 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
   — reproduced once in 30 filtered runs of that class. `SkillProgressionServiceTests` now awards the
   same source twice directly, so the arm is covered on every run; three consecutive merged runs
   afterwards agreed exactly on 24,213/32,121 lines and 5,824/10,490 branches. Do not restate this as
-  whole-suite determinism: `EnemySpellCastingService`, `NameComposer`,
-  `LootTableService`, item generation and `NodeSpawnerService` still keep their own `new Random()`.
-- The gate is live as of 2026-11-03 (PR #21), and `scripts/coverage-floors.json` deliberately records
-  the *six-run lowest* observation per assembly with the floor one point below it (Core floor 69
-  against a 70.49 low) — never the three-run values above, which sit above the lowest observation and
-  would fail intermittently. Floors rise only when a change lifts an assembly 3+ points above its
-  floor (D5 rule 2; `--suggest` names the stale ones). Re-measured on the merged base, the largest lift
-  was +2.22 pp, so no floor moved.
+  whole-suite determinism: `NameComposer`, `LootTableService`, item generation and
+  `NodeSpawnerService` still keep their own `new Random()`. The 95% round moved every RNG-driven test
+  onto seeded/scripted `IRandomSource` values: four full runs of PR #53's head spanned at most 0.02
+  points per assembly, and three post-review-correction runs repeated that exactly.
+- The gate is live as of 2026-11-03 (PR #21). `scripts/coverage-floors.json` records, per assembly, the
+  *lowest* observed full-run rate minus one point (headroom is measured, not hoped for), and its
+  `measured` blocks keep the baseline that produced the floor. Floors rise only when a change lifts an
+  assembly 3+ points above its floor (D5 rule 2; `--suggest` names the stale ones); the 95% round
+  lifted every assembly by more than that, so the 2026-11-04 ratchet is global 94/81 with Core 90/79,
+  Server 94/82, Data 98/83, Shared 97/94, Contracts 99/— and Discord 88/91. CI merges the five reports
+  with `scripts/coverage-report.sh` (the pinned codecov-report tool), not ReportGenerator.
 
 ## Testing Gotchas
 

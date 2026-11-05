@@ -1,5 +1,6 @@
 using FluentAssertions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Tests.Infrastructure;
 using RealmEngine.Shared.Utilities;
 using Xunit;
 
@@ -217,6 +218,7 @@ public class TraitApplicatorBehaviourTests
     }
 
     [Fact]
+    [UseCulture("en-US")]
     public void DebugTraits_FormatsEachTraitTypeDistinctly()
     {
         // Arrange
@@ -360,6 +362,7 @@ public class TraitApplicatorBehaviourTests
     }
 
     [Fact]
+    [UseCulture("en-US")]
     public void FormatTraitDifferences_OrdersByMagnitudeAndSignsValues()
     {
         // Arrange
@@ -378,6 +381,7 @@ public class TraitApplicatorBehaviourTests
     }
 
     [Fact]
+    [UseCulture("en-US")]
     public void FormatTraitDifferencesBBCode_ColoursGainsAndLosses()
     {
         // Arrange

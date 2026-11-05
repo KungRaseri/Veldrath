@@ -21,9 +21,9 @@ namespace RealmEngine.Core.Tests.Features.Combat.Services;
 
 /// <summary>
 /// Covers the two remaining pieces of <see cref="CombatService"/>: the budget-driven victory loot
-/// roll and enemy spell casting (ability/spell selection inside
-/// <c>EnemySpellCastingService</c> owns a non-injectable <see cref="Random"/>, so those outcomes are
-/// sampled over a batch and validated per result).
+/// roll and enemy spell casting. Both the casting AI's priority rolls and the damage/healing dice are
+/// driven through the same injected <see cref="IRandomSource"/>, so every outcome below is scripted
+/// rather than sampled.
 /// </summary>
 [Trait("Category", "Service")]
 public class CombatServiceLootAndSpellTests
@@ -350,12 +350,12 @@ public class CombatServiceLootAndSpellTests
             Rank = 3
         };
 
-    private static Enemy CreateCaster(string spellId, int health = 100, int mana = 100) => new()
+    private static Enemy CreateCaster(string spellId, int health = 100, int maxHealth = 100, int mana = 100) => new()
     {
         Id = "caster",
         Name = "Cinder Mage",
         Health = health,
-        MaxHealth = 100,
+        MaxHealth = maxHealth,
         Mana = mana,
         MaxMana = 100,
         Intelligence = 10,
@@ -366,88 +366,88 @@ public class CombatServiceLootAndSpellTests
     [Fact]
     public async Task ExecuteEnemySpell_Damage_Should_Hurt_The_Player_And_Start_The_Cooldown()
     {
-        // Arrange — a healthy caster prefers its rank-3 damage spell (50% per attempt).
+        // Arrange — a healthy caster prefers its rank-3 damage spell (50% priority roll), the two d6
+        // land on 3 and 4, and the ±15% variance roll is neutral.
         var spell = CreateSpell(PowerEffectType.Damage, baseEffectValue: "2d6", manaCost: 20, cooldown: 4);
         var catalog = await CreateCatalogAsync(spell);
-        var service = CreateService(FakeRandomSource.Seeded(1), catalog);
+        var service = CreateService(FakeRandomSource.Returning(49, 3, 4, 100), catalog);
+        var enemy = CreateCaster(spell.Id);
+        var player = new Character { Name = "Hero", Health = 100, MaxHealth = 100 };
 
-        var cast = 0;
-        for (var attempt = 0; attempt < 300; attempt++)
-        {
-            var enemy = CreateCaster(spell.Id);
-            var player = new Character { Name = "Hero", Health = 100, MaxHealth = 100 };
+        // Act
+        var result = service.ExecuteEnemySpell(enemy, player, catalog);
 
-            var result = service.ExecuteEnemySpell(enemy, player, catalog);
-            if (result is null) continue;
-
-            // Assert (per observed cast)
-            cast++;
-            result.Success.Should().BeTrue();
-            result.SpellCast.Should().BeSameAs(spell);
-            result.ManaCostPaid.Should().Be(20);
-            enemy.Mana.Should().Be(80);
-            enemy.SpellCooldowns[spell.Id].Should().Be(4);
-
-            var damage = int.Parse(result.EffectValue);
-            damage.Should().BeGreaterThan(0);
-            player.Health.Should().Be(Math.Max(0, 100 - damage));
-            result.Message.Should().Be($"Cinder Mage cast Sunfire and dealt {damage} damage!");
-        }
-
-        cast.Should().BeGreaterThan(0, "a 50% per-attempt cast rate must land within 300 attempts");
+        // Assert — 2d6 (7) + intelligence (10) = 17 damage at neutral variance.
+        result.Should().NotBeNull();
+        result!.Success.Should().BeTrue();
+        result.SpellCast.Should().BeSameAs(spell);
+        result.ManaCostPaid.Should().Be(20);
+        result.EffectValue.Should().Be("17");
+        result.Message.Should().Be("Cinder Mage cast Sunfire and dealt 17 damage!");
+        enemy.Mana.Should().Be(80);
+        enemy.SpellCooldowns[spell.Id].Should().Be(4);
+        player.Health.Should().Be(83);
     }
 
     [Fact]
     public async Task ExecuteEnemySpell_Damage_Without_Dice_Notation_Should_Use_The_Fifteen_Point_Base()
     {
-        // Arrange — no BaseEffectValue means the flat 15 base, scaled by ±15%.
+        // Arrange — no BaseEffectValue means the flat 15 base plus the intelligence bonus.
         var spell = CreateSpell(PowerEffectType.Damage, baseEffectValue: null);
         var catalog = await CreateCatalogAsync(spell);
-        var service = CreateService(FakeRandomSource.Seeded(2), catalog);
+        var service = CreateService(FakeRandomSource.Returning(49, 100), catalog);
+        var enemy = CreateCaster(spell.Id);
+        var player = new Character { Name = "Hero", Health = 100, MaxHealth = 100 };
 
-        var observed = false;
-        for (var attempt = 0; attempt < 300 && !observed; attempt++)
-        {
-            var enemy = CreateCaster(spell.Id);
-            var player = new Character { Name = "Hero", Health = 100, MaxHealth = 100 };
-            var result = service.ExecuteEnemySpell(enemy, player, catalog);
-            if (result is null) continue;
+        // Act
+        var result = service.ExecuteEnemySpell(enemy, player, catalog);
 
-            observed = true;
-            var damage = int.Parse(result.EffectValue);
-            // 15 base + 10 Intelligence, scaled by [0.85, 1.15).
-            damage.Should().BeInRange(21, 28);
-        }
-
-        observed.Should().BeTrue();
+        // Assert — (15 base + 10 intelligence) scaled by a neutral variance roll.
+        result.Should().NotBeNull();
+        result!.EffectValue.Should().Be("25");
+        player.Health.Should().Be(75);
     }
 
     [Fact]
     public async Task ExecuteEnemySpell_Heal_Should_Restore_Health_Capped_At_Max()
     {
-        // Arrange — a wounded caster prioritises its heal (80% per attempt).
+        // Arrange — 8 of 30 HP is the wounded band that prioritises a heal (80% priority roll).
         var spell = CreateSpell(PowerEffectType.Heal, baseEffectValue: "3d6");
         var catalog = await CreateCatalogAsync(spell);
-        var service = CreateService(FakeRandomSource.Seeded(3), catalog);
+        var service = CreateService(FakeRandomSource.Returning(10, 3, 4, 5, 100), catalog);
+        var enemy = CreateCaster(spell.Id, health: 8, maxHealth: 30);
+        var player = new Character { Name = "Hero", Health = 100, MaxHealth = 100 };
 
-        var cast = 0;
-        for (var attempt = 0; attempt < 100; attempt++)
-        {
-            var enemy = CreateCaster(spell.Id, health: 20); // 20% health -> heal priority
-            var player = new Character { Name = "Hero", Health = 100, MaxHealth = 100 };
+        // Act
+        var result = service.ExecuteEnemySpell(enemy, player, catalog);
 
-            var result = service.ExecuteEnemySpell(enemy, player, catalog);
-            if (result is null) continue;
+        // Assert — 3d6 (12) + intelligence/2 (5) = 17 healed, clamped to the 30 HP ceiling.
+        result.Should().NotBeNull();
+        result!.EffectValue.Should().Be("17");
+        result.Message.Should().Be("Cinder Mage cast Sunfire and restored 17 health!");
+        enemy.Health.Should().Be(25, "8 + 17 is clamped to MaxHealth");
+        player.Health.Should().Be(100, "a self-heal never touches the player");
+        enemy.Mana.Should().Be(95);
+    }
 
-            cast++;
-            var healed = int.Parse(result.EffectValue);
-            healed.Should().BeGreaterThan(0);
-            enemy.Health.Should().Be(Math.Min(100, 20 + healed));
-            result.Message.Should().Be($"Cinder Mage cast Sunfire and restored {healed} health!");
-            player.Health.Should().Be(100);
-        }
+    [Fact]
+    public async Task ExecuteEnemySpell_Returns_Null_When_The_AI_Declines_Both_The_Priority_And_Fallback_Rolls()
+    {
+        // Arrange — the fallback priority is 20%, and the 15% random-spell fallback also misses.
+        var spell = CreateSpell(PowerEffectType.Buff);
+        var catalog = await CreateCatalogAsync(spell);
+        var service = CreateService(FakeRandomSource.Returning(99, 99), catalog);
+        var enemy = CreateCaster(spell.Id);
+        var player = new Character { Name = "Hero", Health = 100, MaxHealth = 100 };
 
-        cast.Should().BeGreaterThan(0);
+        // Act
+        var result = service.ExecuteEnemySpell(enemy, player, catalog);
+
+        // Assert — no cast, no mana spent, no cooldown started.
+        result.Should().BeNull();
+        enemy.Mana.Should().Be(100);
+        enemy.SpellCooldowns.Should().BeEmpty();
+        player.Health.Should().Be(100);
     }
 
     [Theory]
@@ -461,28 +461,24 @@ public class CombatServiceLootAndSpellTests
         PowerEffectType effectType,
         string expectedMessage)
     {
-        // Arrange — fallback priority is 20%, so sample a batch and check every observed cast.
+        // Arrange — the low-priority fallback arm (20%) is taken by a roll of 10.
         var spell = CreateSpell(effectType);
         var catalog = await CreateCatalogAsync(spell);
-        var service = CreateService(FakeRandomSource.Seeded(4), catalog);
+        var service = CreateService(FakeRandomSource.Returning(10), catalog);
+        var enemy = CreateCaster(spell.Id);
+        var player = new Character { Name = "Hero", Health = 100, MaxHealth = 100 };
 
-        var cast = 0;
-        for (var attempt = 0; attempt < 400; attempt++)
-        {
-            var enemy = CreateCaster(spell.Id);
-            var player = new Character { Name = "Hero", Health = 100, MaxHealth = 100 };
+        // Act
+        var result = service.ExecuteEnemySpell(enemy, player, catalog);
 
-            var result = service.ExecuteEnemySpell(enemy, player, catalog);
-            if (result is null) continue;
-
-            cast++;
-            result.Message.Should().Be(expectedMessage);
-            result.EffectValue.Should().BeEmpty();
-            player.Health.Should().Be(100);
-            enemy.Health.Should().Be(100);
-            enemy.SpellCooldowns.Should().ContainKey(spell.Id);
-        }
-
-        cast.Should().BeGreaterThan(0);
+        // Assert — a message and the bookkeeping, with no effect on either combatant.
+        result.Should().NotBeNull();
+        result!.Message.Should().Be(expectedMessage);
+        result.EffectValue.Should().BeEmpty();
+        result.ManaCostPaid.Should().Be(5);
+        enemy.Mana.Should().Be(95);
+        enemy.SpellCooldowns.Should().ContainKey(spell.Id).WhoseValue.Should().Be(3);
+        player.Health.Should().Be(100);
+        enemy.Health.Should().Be(100);
     }
 }

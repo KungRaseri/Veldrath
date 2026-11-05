@@ -20,6 +20,18 @@ namespace Veldrath.Server.Infrastructure.Email;
 /// </summary>
 public class SmtpEmailSender(IConfiguration config, ILogger<SmtpEmailSender> logger) : IEmailSender
 {
+    /// <summary>The relay port used when <c>Email:SmtpPort</c> is absent or not a number.</summary>
+    public const int DefaultSmtpPort = 587;
+
+    /// <summary>
+    /// Resolves the relay port from <c>Email:SmtpPort</c>, falling back to <see cref="DefaultSmtpPort"/>
+    /// when the value is missing or cannot be parsed. Exposed for tests so the documented default can be
+    /// asserted without probing whatever happens to listen on this machine.
+    /// </summary>
+    /// <returns>The SMTP port to connect to.</returns>
+    protected virtual int ResolvePort() =>
+        int.TryParse(config["Email:SmtpPort"], out var p) ? p : DefaultSmtpPort;
+
     /// <inheritdoc />
     public async Task SendAsync(string to, string subject, string htmlBody, CancellationToken ct = default)
     {
@@ -32,7 +44,7 @@ public class SmtpEmailSender(IConfiguration config, ILogger<SmtpEmailSender> log
             return;
         }
 
-        var port = int.TryParse(config["Email:SmtpPort"], out var p) ? p : 587;
+        var port = ResolvePort();
         var enableTls = !string.Equals(config["Email:EnableTls"], "false", StringComparison.OrdinalIgnoreCase);
         var user = config["Email:User"];
         var password = config["Email:Password"];

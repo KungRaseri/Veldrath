@@ -234,8 +234,9 @@ public class ServiceCollectionExtensionsCoverageTests
         services.Should().Contain(d => d.ServiceType == typeof(IDbContextFactory<ContentDbContext>));
 
         var efCoreRepositoryCount = services.Count(d =>
-            d.ImplementationType?.Namespace == typeof(EfCoreSaveGameRepository).Namespace &&
-            d.ImplementationType.Name.StartsWith("EfCore", StringComparison.Ordinal));
+            d.ImplementationType is { } implementationType &&
+            implementationType.Namespace == typeof(EfCoreSaveGameRepository).Namespace &&
+            implementationType.Name.StartsWith("EfCore", StringComparison.Ordinal));
         efCoreRepositoryCount.Should().BeGreaterThanOrEqualTo(20, "Npgsql mode binds the whole repository surface to EF");
 
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
