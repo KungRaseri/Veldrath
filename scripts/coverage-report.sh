@@ -17,13 +17,13 @@
 #
 # Environment overrides:
 #   COVERAGE_REPORT_REPO  default https://git.kungraseri.cloud/codecov/codecov-report.git
-#   COVERAGE_REPORT_REF   default v1.0.2
+#   COVERAGE_REPORT_REF   default v1.0.3
 #   COVERAGE_REPORT_DIR   default <repo>/.coverage-report/<ref>
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TOOL_REPO="${COVERAGE_REPORT_REPO:-https://git.kungraseri.cloud/codecov/codecov-report.git}"
-TOOL_REF="${COVERAGE_REPORT_REF:-v1.0.2}"
+TOOL_REF="${COVERAGE_REPORT_REF:-v1.0.3}"
 TOOL_DIR="${COVERAGE_REPORT_DIR:-${REPO_ROOT}/.coverage-report/${TOOL_REF}}"
 PROJECT="${TOOL_DIR}/src/CoverageReport/CoverageReport.csproj"
 
