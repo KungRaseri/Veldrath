@@ -2,7 +2,10 @@
   "metadata": [
     {
       "src": [
-        { "files": ["Realm.Full.slnx"] }
+        {
+          "files": ["**/*.csproj"],
+          "exclude": ["**/*.Tests.csproj", "**/bin/**", "**/obj/**"]
+        }
       ],
       "dest": "api",
       "allowCompilationErrors": true,
@@ -15,15 +18,37 @@
   "build": {
     "content": [
       { "files": ["api/**.yml", "api/index.md"] },
-      { "files": ["toc.yml", "index.md"] }
+      { "files": ["index.md", "toc.yml"] },
+      { "files": ["docs/**/*.md", "docs/**/toc.yml"] }
+    ],
+    "resource": [
+      {
+        "src": "web/client/static/fonts",
+        "files": ["*.ttf"],
+        "dest": "public/client/fonts"
+      },
+      {
+        "src": "web/client/src/routes",
+        "files": ["theme.css"],
+        "dest": "public/client"
+      },
+      {
+        "src": "web/client/static/images/favicon",
+        "files": ["favicon-32x32.png", "android-chrome-192x192.png"],
+        "dest": "images"
+      }
     ],
     "output": "_site",
-    "template": ["default", "modern"],
+    "template": ["default", "modern", "templates/veldrath"],
     "globalMetadata": {
-      "_appName": "RealmEngine",
-      "_appTitle": "RealmEngine",
+      "_appName": "Veldrath",
+      "_appTitle": "Veldrath",
       "_enableSearch": true,
+      "_lang": "en",
       "_memberLayout": "separatePages",
+      "_appLogoPath": "images/android-chrome-192x192.png",
+      "_appFaviconPath": "images/favicon-32x32.png",
+      "_appFooter": "<span>Veldrath documentation · <a href=\"https://veldrath.com\">veldrath.com</a> · <a href=\"https://git.kungraseri.cloud/Veldrath/Veldrath\">source on KungGit</a></span>",
       "_gitContribute": {
         "repo": "https://git.kungraseri.cloud/Veldrath/Veldrath",
         "branch": "main"

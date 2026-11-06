@@ -11,9 +11,9 @@ compose files in this repository are for local development only.
 
 | Service | Base dir / Dockerfile | Container Port | Coolify Resource Name | Persistent Volume |
 |---|---|---|---|---|
-| **Veldrath.Server** | `/` / [`Veldrath.Server/Dockerfile`](../Veldrath.Server/Dockerfile) | 8080 | `veldrath-server` | `dataprotection_keys` |
-| **SvelteKit web app** | `/web` / [`web/client/Dockerfile`](../web/client/Dockerfile) | 8081 | `veldrath-web` | None needed |
-| **Veldrath.Discord** | `/` / [`Veldrath.Discord/Dockerfile`](../Veldrath.Discord/Dockerfile) | 8083 | `veldrath-discord` | None needed |
+| **Veldrath.Server** | `/` / [`Veldrath.Server/Dockerfile`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/Dockerfile) | 8080 | `veldrath-server` | `dataprotection_keys` |
+| **SvelteKit web app** | `/web` / [`web/client/Dockerfile`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/Dockerfile) | 8081 | `veldrath-web` | None needed |
+| **Veldrath.Discord** | `/` / [`Veldrath.Discord/Dockerfile`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Discord/Dockerfile) | 8083 | `veldrath-discord` | None needed |
 
 > **Important:** In Coolify's standalone Dockerfile mode, container names are auto-generated UUIDs. For inter-service DNS to work, set a fixed **Container Name** in Coolify Advanced settings for each resource matching the names above. Containers can then resolve each other by that name on Coolify's internal Docker network.
 
@@ -94,17 +94,17 @@ ASPNETCORE_ENVIRONMENT=Production
 
 | Env Var | Config Key | Read at | Purpose |
 |---|---|---|---|
-| `ConnectionStrings__DefaultConnection` | `ConnectionStrings:DefaultConnection` | [`Program.cs:92`](../Veldrath.Server/Program.cs:92) | Postgres connection string. **Required.** |
-| `Jwt__Key` | `Jwt:Key` | [`Program.cs`](../Veldrath.Server/Program.cs) | HMAC-SHA JWT signing key. **Required.** Must match the web's `JWT_KEY`. |
-| `Jwt__Issuer` / `Jwt__Audience` | `Jwt:Issuer` / `Jwt:Audience` | [`Program.cs`](../Veldrath.Server/Program.cs) | Optional; default `Veldrath.Server` / `Veldrath.Client`. Must match the web's `JWT_ISSUER` / `JWT_AUDIENCE`. |
-| `Web__BaseUrl` | `Web:BaseUrl` | [`Program.cs`](../Veldrath.Server/Program.cs) | Public SvelteKit origin: email links and the default SignalR CORS origin. Must equal the web's `ORIGIN`. |
-| `Cors__AllowedOrigins__0`, `Cors__AllowedOrigins__1`, … | `Cors:AllowedOrigins` | [`CorsSetup.cs:33`](../Veldrath.Server/Infrastructure/CorsSetup.cs:33) | Optional extra browser origins for SignalR CORS. Defaults to local dev plus `Web:BaseUrl`. |
-| `InternalBridge__Token` | `InternalBridge:Token` | [`InternalEmailEndpoints.cs`](../Veldrath.Server/Features/Auth/InternalEmailEndpoints.cs) | Shared secret for the web → server transactional-email relay. Unset disables the endpoint (503). |
-| `Email__SmtpHost` | `Email:SmtpHost` | [`Program.cs:146`](../Veldrath.Server/Program.cs:146) | SMTP relay hostname. If empty, uses `NullEmailSender` (no emails sent). |
-| `Email__SmtpPort` | `Email:SmtpPort` | [`appsettings.json:32`](../Veldrath.Server/appsettings.json:32) | SMTP port (default: 587). |
-| `Email__User` | `Email:User` | [`appsettings.json:34`](../Veldrath.Server/appsettings.json:34) | SMTP auth username. |
-| `Email__Password` | `Email:Password` | [`appsettings.json:35`](../Veldrath.Server/appsettings.json:35) | SMTP auth password. |
-| `Seq__ServerUrl` | `Seq:ServerUrl` | [`Program.cs:50`](../Veldrath.Server/Program.cs:50) | Seq server URL for structured log shipping. |
+| `ConnectionStrings__DefaultConnection` | `ConnectionStrings:DefaultConnection` | [`Program.cs:92`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/Program.cs:92) | Postgres connection string. **Required.** |
+| `Jwt__Key` | `Jwt:Key` | [`Program.cs`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/Program.cs) | HMAC-SHA JWT signing key. **Required.** Must match the web's `JWT_KEY`. |
+| `Jwt__Issuer` / `Jwt__Audience` | `Jwt:Issuer` / `Jwt:Audience` | [`Program.cs`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/Program.cs) | Optional; default `Veldrath.Server` / `Veldrath.Client`. Must match the web's `JWT_ISSUER` / `JWT_AUDIENCE`. |
+| `Web__BaseUrl` | `Web:BaseUrl` | [`Program.cs`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/Program.cs) | Public SvelteKit origin: email links and the default SignalR CORS origin. Must equal the web's `ORIGIN`. |
+| `Cors__AllowedOrigins__0`, `Cors__AllowedOrigins__1`, … | `Cors:AllowedOrigins` | [`CorsSetup.cs:33`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/Infrastructure/CorsSetup.cs:33) | Optional extra browser origins for SignalR CORS. Defaults to local dev plus `Web:BaseUrl`. |
+| `InternalBridge__Token` | `InternalBridge:Token` | [`InternalEmailEndpoints.cs`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/Features/Auth/InternalEmailEndpoints.cs) | Shared secret for the web → server transactional-email relay. Unset disables the endpoint (503). |
+| `Email__SmtpHost` | `Email:SmtpHost` | [`Program.cs:146`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/Program.cs:146) | SMTP relay hostname. If empty, uses `NullEmailSender` (no emails sent). |
+| `Email__SmtpPort` | `Email:SmtpPort` | [`appsettings.json:32`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/appsettings.json:32) | SMTP port (default: 587). |
+| `Email__User` | `Email:User` | [`appsettings.json:34`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/appsettings.json:34) | SMTP auth username. |
+| `Email__Password` | `Email:Password` | [`appsettings.json:35`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/appsettings.json:35) | SMTP auth password. |
+| `Seq__ServerUrl` | `Seq:ServerUrl` | [`Program.cs:50`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/Program.cs:50) | Seq server URL for structured log shipping. |
 
 ### Persistent Volume
 
@@ -112,11 +112,11 @@ ASPNETCORE_ENVIRONMENT=Production
 |---|---|
 | `dataprotection_keys` | `/root/.aspnet/DataProtection-Keys` |
 
-Data Protection keys are persisted at [`Program.cs:237`](../Veldrath.Server/Program.cs:237) with application name `Veldrath.Server`. Required for antiforgery/Data Protection payloads to survive container restarts.
+Data Protection keys are persisted at [`Program.cs:237`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/Program.cs:237) with application name `Veldrath.Server`. Required for antiforgery/Data Protection payloads to survive container restarts.
 
 ### Health Check
 
-Point Coolify's health check to `http://localhost:8080/health` (exposed at [`Program.cs:399`](../Veldrath.Server/Program.cs:399)).
+Point Coolify's health check to `http://localhost:8080/health` (exposed at [`Program.cs:399`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/Program.cs:399)).
 
 ---
 
@@ -202,8 +202,8 @@ XFF_DEPTH=1
 
 **Better Auth is the single source of truth for authentication**, and the .NET server owns the SMTP
 configuration. So the bridge keeps exactly one job: when Better Auth needs to send a verification or
-password-reset message, [`email.ts`](../web/client/src/lib/server/email.ts) posts it to
-[`InternalEmailEndpoints`](../Veldrath.Server/Features/Auth/InternalEmailEndpoints.cs) and the server
+password-reset message, [`email.ts`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/src/lib/server/email.ts) posts it to
+[`InternalEmailEndpoints`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/Features/Auth/InternalEmailEndpoints.cs) and the server
 delivers it with the same SMTP settings and templates the Identity endpoints use. Without the bridge
 those links are only logged to the web container console.
 
@@ -244,7 +244,7 @@ would have redirected to `/login` instead.
    hundred milliseconds the first time (just-in-time Identity account provisioning).
 4. **A `500` "Internal Error" page** (for example on `/api/auth/callback/{provider}`) is now
    logged with its stack trace by `handleError` in
-   [`hooks.server.ts`](../web/client/src/hooks.server.ts); a failing .NET endpoint logs
+   [`hooks.server.ts`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/src/hooks.server.ts); a failing .NET endpoint logs
    `Unhandled exception for GET /api/account/profile`. Use the first stack trace, not the
    symptom. A `[game-request] … responded 500` line in the web log carries the .NET
    ProblemDetails body.
@@ -277,7 +277,7 @@ server's `IEmailSender` (SMTP in production, `NullEmailSender` locally) through
 
 The container entrypoint waits for Postgres, creates the `auth` schema if it
 does not exist, applies Drizzle migrations from
-[`web/shared/db/migrations`](../web/shared/db/migrations), then starts
+[`web/shared/db/migrations`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/shared/db/migrations), then starts
 adapter-node. Drizzle and Better Auth tables are schema-qualified, so the
 connection does not need a special `search_path`.
 
@@ -321,17 +321,17 @@ DOTNET_ENVIRONMENT=Production
 
 | Env Var | Config Key | Read at | Purpose |
 |---|---|---|---|
-| `Discord__Token` | `Discord:Token` | [`DiscordSettings.cs:9`](../Veldrath.Discord/Settings/DiscordSettings.cs:9) | Discord bot token from Developer Portal. **Required.** |
-| `Discord__DevGuildId` | `Discord:DevGuildId` | [`DiscordSettings.cs:17`](../Veldrath.Discord/Settings/DiscordSettings.cs:17) | Guild ID for instant slash-command registration. `0` = global. |
-| `Discord__ServerBaseUrl` | `Discord:ServerBaseUrl` | [`Program.cs:46`](../Veldrath.Discord/Program.cs:46) | Base URL of the game server API. |
-| `ConnectionStrings__DefaultConnection` | `ConnectionStrings:DefaultConnection` | [`Program.cs:37-38`](../Veldrath.Discord/Program.cs:37) | Postgres connection string. **Required** — throws if missing. |
-| `ASPNETCORE_URLS` | — | Kestrel | Binds to `http://+:8083` ([`Dockerfile:36`](../Veldrath.Discord/Dockerfile:36)). |
+| `Discord__Token` | `Discord:Token` | [`DiscordSettings.cs:9`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Discord/Settings/DiscordSettings.cs:9) | Discord bot token from Developer Portal. **Required.** |
+| `Discord__DevGuildId` | `Discord:DevGuildId` | [`DiscordSettings.cs:17`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Discord/Settings/DiscordSettings.cs:17) | Guild ID for instant slash-command registration. `0` = global. |
+| `Discord__ServerBaseUrl` | `Discord:ServerBaseUrl` | [`Program.cs:46`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Discord/Program.cs:46) | Base URL of the game server API. |
+| `ConnectionStrings__DefaultConnection` | `ConnectionStrings:DefaultConnection` | [`Program.cs:37-38`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Discord/Program.cs:37) | Postgres connection string. **Required** — throws if missing. |
+| `ASPNETCORE_URLS` | — | Kestrel | Binds to `http://+:8083` ([`Dockerfile:36`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Discord/Dockerfile:36)). |
 | `DOTNET_ENVIRONMENT` | — | ASP.NET Core | Hardcoded to `Production` in Dockerfile (line 42). |
 
 ### Notes
 
 - **No Data Protection volume needed** — The Discord bot doesn't issue cookies or antiforgery tokens.
-- **Health check** at `http://localhost:8083/health` ([`Program.cs:69`](../Veldrath.Discord/Program.cs:69)). Curl is already installed in the Dockerfile (line 33).
+- **Health check** at `http://localhost:8083/health` ([`Program.cs:69`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Discord/Program.cs:69)). Curl is already installed in the Dockerfile (line 33).
 
 ---
 
@@ -408,7 +408,7 @@ SEQ_FIRSTRUN_ADMINPASSWORD=${SEQ_ADMIN_PASSWORD}
 
 **Config file:**
 
-The Prometheus scrape config is at [`config/prometheus/prometheus.yml`](../config/prometheus/prometheus.yml). In Coolify standalone mode, use one of these approaches to get it into the container:
+The Prometheus scrape config is at [`config/prometheus/prometheus.yml`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/config/prometheus/prometheus.yml). In Coolify standalone mode, use one of these approaches to get it into the container:
 
 **Option A — Fork the image:**
 Create `Dockerfile.prometheus`:
@@ -429,7 +429,7 @@ scrape_configs:
 ```
 
 **Notes:**
-- The server exposes `/metrics` at [`Program.cs:576`](../Veldrath.Server/Program.cs:576) via the Prometheus .NET client library (`prometheus-net` and `prometheus-net.DotNetRuntime`).
+- The server exposes `/metrics` at [`Program.cs:576`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/Program.cs:576) via the Prometheus .NET client library (`prometheus-net` and `prometheus-net.DotNetRuntime`).
 - Grafana needs Prometheus as a data source — configure it with `http://veldrath-prometheus:9090`.
 
 ---
@@ -442,18 +442,18 @@ If you want auto-provisioned dashboards and datasources, mount these from the re
 
 | Host file/dir | Container path |
 |---|---|
-| [`config/grafana/provisioning/datasources/`](../config/grafana/provisioning/datasources/) | `/etc/grafana/provisioning/datasources/` |
-| [`config/grafana/provisioning/dashboards/`](../config/grafana/provisioning/dashboards/) | `/etc/grafana/provisioning/dashboards/` |
-| [`config/grafana/dashboards/`](../config/grafana/dashboards/) | `/var/lib/grafana/dashboards/` |
+| [`config/grafana/provisioning/datasources/`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/config/grafana/provisioning/datasources/) | `/etc/grafana/provisioning/datasources/` |
+| [`config/grafana/provisioning/dashboards/`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/config/grafana/provisioning/dashboards/) | `/etc/grafana/provisioning/dashboards/` |
+| [`config/grafana/dashboards/`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/config/grafana/dashboards/) | `/var/lib/grafana/dashboards/` |
 
 ### Available Dashboards
 
 | File | Description |
 |---|---|
-| [`10915.json`](../config/grafana/dashboards/10915.json) | ASP.NET Core metrics |
-| [`19194.json`](../config/grafana/dashboards/19194.json) | .NET runtime (GC, JIT, thread pool) |
-| [`23178.json`](../config/grafana/dashboards/23178.json) | Prometheus metrics |
-| [`23179.json`](../config/grafana/dashboards/23179.json) | Node exporter (if running) |
+| [`10915.json`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/config/grafana/dashboards/10915.json) | ASP.NET Core metrics |
+| [`19194.json`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/config/grafana/dashboards/19194.json) | .NET runtime (GC, JIT, thread pool) |
+| [`23178.json`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/config/grafana/dashboards/23178.json) | Prometheus metrics |
+| [`23179.json`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/config/grafana/dashboards/23179.json) | Node exporter (if running) |
 
 ---
 
