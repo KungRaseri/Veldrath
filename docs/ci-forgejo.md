@@ -7,7 +7,7 @@ Codecov, no SonarCloud, no GitHub Pages, no GHCR, and no call to `api.github.com
 That is true of *hosting and API*. It is not true of *mechanism*, and the difference has
 bitten this pipeline before: action names keep their GitHub namespaces and resolve from
 copies on this instance (§1), `$GITHUB_PATH` is not honoured and is worked around in
-[`scripts/ci-toolchain.sh`](../scripts/ci-toolchain.sh) and `docs.yml`, `::warning::`
+[`scripts/ci-toolchain.sh`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/scripts/ci-toolchain.sh) and `docs.yml`, `::warning::`
 annotations are plain log lines on this runner, and `.github/dependabot.yml` was inert
 because this instance runs no Dependabot. What each trigger actually runs is in
 [§1](#what-runs-where), and how the publish path was proven before it was trusted is in
@@ -75,11 +75,11 @@ Everything else is a repository script, so it needs no action at all:
 
 | Removed | Replacement |
 |---|---|
-| `actions/setup-dotnet` | [`scripts/ci-toolchain.sh`](../scripts/ci-toolchain.sh) |
+| `actions/setup-dotnet` | [`scripts/ci-toolchain.sh`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/scripts/ci-toolchain.sh) |
 | `codecov/codecov-action` | [`codecov/codecov-report`](https://git.kungraseri.cloud/codecov/codecov-report) output uploaded as an artifact |
-| `marocchino/sticky-pull-request-comment` | [`scripts/forgejo-pr-comment.sh`](../scripts/forgejo-pr-comment.sh) |
+| `marocchino/sticky-pull-request-comment` | [`scripts/forgejo-pr-comment.sh`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/scripts/forgejo-pr-comment.sh) |
 | `EnricoMi/publish-unit-test-result-action` | `TestResults/*.trx` uploaded as an artifact |
-| `softprops/action-gh-release` | [`scripts/forgejo-release.sh`](../scripts/forgejo-release.sh) |
+| `softprops/action-gh-release` | [`scripts/forgejo-release.sh`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/scripts/forgejo-release.sh) |
 | `actions/upload-pages-artifact` + `actions/deploy-pages` | `_site/` uploaded as the `docs-site` artifact |
 | `gh workflow run` dispatch | not needed: the package job creates its own tag and release |
 | `ghcr.io` | the Forgejo container registry (section 4) |
@@ -154,7 +154,7 @@ measured on this instance rather than assumed:
 - **A merge commit inside a pull request inflates that diff.** Merging `development` into a PR
   branch to resolve a conflict puts every file the merge brought in into the PR's change set, so
   a one-file memory note starts the whole matrix: PR #18 edited only
-  [`.github/agent-memory/veldrath-memory.md`](../.github/agent-memory/veldrath-memory.md) and still
+  [`.github/agent-memory/veldrath-memory.md`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/.github/agent-memory/veldrath-memory.md) and still
   ran the web build, the game-loop e2e and the image package. Rebase the PR branch while it is
   still open; merge into it only when rebasing would rewrite a branch someone else has already
   pulled.
@@ -178,8 +178,8 @@ always-on merge gate in section 2 exists to make that case impossible.
 ### Dependency and action updates (there is no bot)
 
 Nothing on this instance reads `.github/dependabot.yml`, so the file is gone and a written
-cadence replaces it. **NuGet** ([`Directory.Packages.props`](../Directory.Packages.props))
-and **npm** ([`web/`](../web/)) are reviewed together on the **first Monday of the month**,
+cadence replaces it. **NuGet** ([`Directory.Packages.props`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Directory.Packages.props))
+and **npm** ([`web/`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/)) are reviewed together on the **first Monday of the month**,
 as one grouped update. The holds that lived in the deleted config carry over verbatim:
 
 - **MediatR stays below 13.** 13+ is commercially licensed; the bump needs a licensing
@@ -189,9 +189,9 @@ as one grouped update. The holds that lived in the deleted config carry over ver
   migration**, never piecemeal — SvelteKit, the adapters and Vite move as a set, and the
   TypeScript major waits on `typescript-eslint`/`svelte-check` support.
 
-**Docker base images** ([`Veldrath.Server/Dockerfile`](../Veldrath.Server/Dockerfile),
-[`Veldrath.Discord/Dockerfile`](../Veldrath.Discord/Dockerfile),
-[`web/client/Dockerfile`](../web/client/Dockerfile)) get the same monthly pass.
+**Docker base images** ([`Veldrath.Server/Dockerfile`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/Dockerfile),
+[`Veldrath.Discord/Dockerfile`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Discord/Dockerfile),
+[`web/client/Dockerfile`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/Dockerfile)) get the same monthly pass.
 
 **Action tags are never swept.** A tag changes only by importing the new action copy onto
 this instance, confirming `upload-artifact` stays `v3` (see above), and then editing the
@@ -274,7 +274,7 @@ update it under Settings → Actions → Secrets.
 
 `development` and `main` each carry one protection rule. It lives in the server, not in a
 file the repository can diff, so it is recorded here and applied by
-[`scripts/apply-branch-protection.sh`](../scripts/apply-branch-protection.sh):
+[`scripts/apply-branch-protection.sh`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/scripts/apply-branch-protection.sh):
 
 | Field | `development` | `main` | Why |
 |---|---|---|---|
@@ -316,7 +316,7 @@ What each exception costs, stated plainly:
   `main` skips the status checks, so it is for repairing a broken deployment, never for
   landing a change. The whitelist is account-only: `push_whitelist_teams` is `[]` and
   `push_whitelist_deploy_keys` is `false` on both rules, and
-  [`scripts/apply-branch-protection.sh`](../scripts/apply-branch-protection.sh) asserts both
+  [`scripts/apply-branch-protection.sh`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/scripts/apply-branch-protection.sh) asserts both
   in its read-back, so neither a team nor a deploy key can quietly become a second bypass.
 
 #### Why one glob instead of the component job names
@@ -331,7 +331,7 @@ The obvious list is the build gates that report on a pull request today:
 - `Deploy Documentation / Build Docs (pull_request)`
 
 It cannot be that list. Every workflow is filtered by `on.pull_request.paths`
-([`ci-engine.yml:28`](../.github/workflows/ci-engine.yml)), and a required pattern that
+([`ci-engine.yml:28`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/.github/workflows/ci-engine.yml)), and a required pattern that
 matches no status is `pending`, not skipped: in `MergeRequiredContextsCommitStatus`
 (`services/pull/commit_status.go` at v15.0.11) the loop breaks with
 `CommitStatusPending` as soon as one pattern matched nothing, and a pull request holding
@@ -410,7 +410,7 @@ head commit carried zero statuses, and it became mergeable only when `97d20257` 
 git-level only and never predicts this.
 
 **Decision (2026-11-03): `["*"]` stays, and one workflow reports on every pull request.**
-[`merge-gate.yml`](../.github/workflows/merge-gate.yml) triggers on `pull_request` for `main` and
+[`merge-gate.yml`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/.github/workflows/merge-gate.yml) triggers on `pull_request` for `main` and
 `development` and declares **no `paths` filter**. With no `paths` key there is no paths condition to
 satisfy: `matchPullRequestEvent` in `modules/actions/workflows.go` (v15.0.11) iterates only the acts
 the workflow declares and returns `activityTypeMatched && matchTimes == len(evt.Acts())`, so
@@ -545,7 +545,7 @@ scripts/tests/apply-branch-protection.test.sh # offline regression tests: no tok
 The script is idempotent and fails when the stored rule is not the requested one, so
 `--check` is the drift test. The offline tests stub the API response and assert the failures
 the live server must not have — an extra account, a push team, a deploy-key bypass, pushes on
-`development` — and run in the [docs workflow](../.github/workflows/docs.yml).
+`development` — and run in the [docs workflow](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/.github/workflows/docs.yml).
 
 #### Proof, both directions
 
@@ -563,7 +563,7 @@ Exercised on 2026-11-03 immediately after the rules were created:
 ## 3. Releases
 
 Releases are created **inside the package job** by
-[`scripts/forgejo-release.sh`](../scripts/forgejo-release.sh), which calls:
+[`scripts/forgejo-release.sh`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/scripts/forgejo-release.sh), which calls:
 
 - `POST /api/v1/repos/{owner}/{repo}/tags` — create the component tag
 - `POST /api/v1/repos/{owner}/{repo}/releases` — create the release
@@ -581,7 +581,7 @@ Tag prefixes: `engine/v*`, `server/v*`, `discord/v*`.
 ### The publish gate
 
 Publishing — tag, release, image push, docs deploy — is a job in four workflows and a single
-step in [`docs.yml`](../.github/workflows/docs.yml), and every one of them carries the same
+step in [`docs.yml`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/.github/workflows/docs.yml), and every one of them carries the same
 expression:
 
 ```yaml
@@ -666,14 +666,22 @@ with "Cannot connect to the Docker daemon" before it runs a single layer.
 ## 5. Documentation hosting
 
 Forgejo has no Pages server. The published site is a **Coolify application** at
-<https://docs.veldrath.com>, built from [`docs/Dockerfile`](../docs/Dockerfile): a multi-stage
-build runs `docfx metadata` + `docfx build` and copies `_site/` into nginx. Coolify clones this
+<https://docs.veldrath.com>, built from [`docs/Dockerfile`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/docs/Dockerfile): a multi-stage
+build runs `docfx metadata` + `docfx build` and copies `_site/` into nginx, configured by
+[`docs/nginx.conf`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/docs/nginx.conf)
+(gzip plus cache headers — the search index alone is ~4 MB uncompressed). Coolify clones this
 repository itself (public source, so no registry credential), and the image never travels
 through the Forgejo registry.
 
-[`docs.yml`](../.github/workflows/docs.yml) keeps the CI work — the markdown relative-link
+The site is themed from the client rather than from a separate palette: `docfx.json` copies
+`web/client/src/routes/theme.css` and the client's `static/fonts/*.ttf` into `_site/public/client/`,
+and [`templates/veldrath/`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/templates/veldrath)
+maps those tokens onto the modern template. That is why `docs.yml` also triggers on `theme.css`,
+`templates/**` and the font/favicon directories — a client theme change must rebuild the docs.
+
+[`docs.yml`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/.github/workflows/docs.yml) keeps the CI work — the markdown relative-link
 check on pull requests, the docfx build, and a tarball uploaded as the `docs-site` artifact
-(the tar matters: ~2400 loose files cost 10+ minutes through the artifact API) — and on `main`
+(the tar matters: ~1700 loose files cost 10+ minutes through the artifact API) — and on `main`
 it queues the Coolify deployment with `POST /api/v1/deploy?uuid=…`
 (`secrets.COOLIFY_DOCS_DEPLOY_URL` + `secrets.COOLIFY_TOKEN`). Without those secrets the step
 warns and skips, so forks and PRs stay green.
@@ -730,6 +738,6 @@ a `blocked` card comments its blocker and leaves the issue open.
 ## See also
 
 - [Forgejo Actions reference](https://forgejo.org/docs/latest/user/actions/reference/)
-- [`build-strategy.md`](../.github/instructions/build-strategy.md) — which solution to build
-- [`testing.md`](../.github/instructions/testing.md) — test conventions and coverage
+- [`build-strategy.md`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/.github/instructions/build-strategy.md) — which solution to build
+- [`testing.md`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/.github/instructions/testing.md) — test conventions and coverage
 - [`deployment.md`](deployment.md) — deployment overview

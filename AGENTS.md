@@ -79,9 +79,10 @@ The SvelteKit app in [`web/`](web/) is verified with npm scripts rather than a `
 │   ├── instructions/             # Detailed instruction files (7 files)
 │   └── workflows/                # CI/CD workflows (per-component + docs + hygiene + release)
 ├── .roo/skills/                  # Agent skills (build, test, run server, web); catalog in .roo/skills/README.md
-├── docs/                         # Documentation (DocFX → docs-site artifact)
+├── docs/                         # Documentation (published by DocFX as pages of docs.veldrath.com)
 ├── wiki/                         # GitHub Wiki content (git submodule)
 ├── plans/                        # Live plans only; finished designs are folded into docs/
+├── templates/veldrath/           # DocFX template override: site theme, fonts, brand assets
 ├── versions/                     # Component version props files
 ├── config/                       # Grafana dashboards, Prometheus config, etc.
 ├── scripts/                      # Build, asset, and release scripts
@@ -236,7 +237,7 @@ CI runs on **Forgejo Actions** at `https://git.kungraseri.cloud/Veldrath/Veldrat
 | [`ci-server.yml`](.github/workflows/ci-server.yml) | Veldrath.Server | `server/v*` release + zip + `veldrath-server` image |
 | [`ci-discord.yml`](.github/workflows/ci-discord.yml) | Veldrath.Discord | `discord/v*` release + zip + `veldrath-discord` image |
 | [`ci-web.yml`](.github/workflows/ci-web.yml) | SvelteKit web | `veldrath-web` image + coverage/Playwright artifacts |
-| [`docs.yml`](.github/workflows/docs.yml) | DocFX build + markdown relative-link check | `docs-site` artifact |
+| [`docs.yml`](.github/workflows/docs.yml) | DocFX build + markdown relative-link check | `docs-site` artifact; Coolify deploy from `main` |
 | [`merge-gate.yml`](.github/workflows/merge-gate.yml) | PR gate: workflow lint, runs on every pull request | nothing (status only) |
 
 Releases are created inside the package job by [`scripts/forgejo-release.sh`](scripts/forgejo-release.sh); there is no separate release workflow, because fetching an artifact cross-run is a GitHub-API dependency. Images go to `git.kungraseri.cloud/veldrath/*`, which is what [`docker-compose.coolify.yml`](docker-compose.coolify.yml) pulls.
@@ -255,7 +256,19 @@ Coverage exclusions are configured in [`coverage.runsettings`](coverage.runsetti
 
 ## Documentation
 
-- **DocFX reference docs:** generated from XML doc comments across all projects by `docs.yml` and published as the `docs-site` artifact (Forgejo has no Pages server; serving it is a hosting decision)
+- **DocFX reference docs:** generated from XML doc comments across all projects by `docs.yml`;
+  test projects are excluded from the reference on purpose. Published at
+  <https://docs.veldrath.com> (Coolify builds [`docs/Dockerfile`](docs/Dockerfile) from `main`;
+  the workflow also uploads a `docs-site` artifact).
+- **Site theme:** [`templates/veldrath/`](templates/veldrath/) — a docfx custom template that maps
+  the client design system onto the modern template. `public/veldrath.css` imports the client's
+  `theme.css` (copied verbatim by `docfx.json`'s `resource` section) and the client's self-hosted
+  fonts, so palette and type cannot drift from the game. `layout/_master.tmpl` is a copy of docfx
+  2.81.0's modern master with exactly two changes: an extra `<link>` and a dark default theme —
+  bump the pinned `DOCFX_VERSION` in `docs.yml` and `docs/Dockerfile` together, and re-sync it.
+- **Adding a docs page:** write `docs/<name>.md`, add it to [`docs/toc.yml`](docs/toc.yml) (sidebar)
+  and, if it deserves a top-level tab, [`toc.yml`](toc.yml). Links to files outside `docs/` must be
+  absolute `https://git.kungraseri.cloud/...` URLs, or they 404 on the published site.
 - **Wiki** ([`wiki/`](wiki/) submodule): Getting Started, Contributing, FAQ, Roadmap Summary
 - **Key docs:**
   - [`docs/ci-forgejo.md`](docs/ci-forgejo.md) — Forgejo Actions allow-list, runner setup, registry and releases
@@ -327,6 +340,6 @@ Do **not** create new memory files unless the existing 8 files are insufficient.
 | Testing | xUnit + FluentAssertions (.NET); Vitest + Playwright (web, run from `web/`) |
 | Mocks | Prefer `FakeXxx` stubs; Moq/NSubstitute as fallback |
 | Database | EF Core (Postgres production, SQLite/InMemory for tests) |
-| Documentation | XML doc comments (CS1591 = error), DocFX → `docs-site` CI artifact |
+| Documentation | XML doc comments (CS1591 = error), DocFX → docs.veldrath.com |
 | CI | Forgejo Actions, mirrored actions only (see [`docs/ci-forgejo.md`](docs/ci-forgejo.md)) |
 | Agent Skills | [`.roo/skills/`](.roo/skills/) for common dev workflows |

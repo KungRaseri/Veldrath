@@ -1,0 +1,540 @@
+/* ============================================================================
+   Veldrath documentation theme
+   ----------------------------------------------------------------------------
+   Maps the Veldrath client design system onto docfx's modern template, which is
+   Bootstrap 5.3. Everything here is either a `--bs-*` variable override (the
+   template reads those everywhere) or a rule for a class the modern template
+   actually emits (.navbar, .toc, article, pre, .alert, footer).
+
+   Sources of truth — do not hardcode a colour that already exists upstream:
+     * `public/client/theme.css` is a verbatim copy of
+       web/client/src/routes/theme.css, emitted by docfx.json's `resource`
+       section. Every `--vds-*` token below comes from there.
+     * `public/client/fonts/*` are the same font files the client serves.
+     * The light palette is the only place with literal hex values: the client
+       design system is dark-only, so there is no upstream light palette to
+       import (values are the warm-surface steps from theme.css).
+   ========================================================================= */
+
+@import url("client/theme.css");
+
+/* ---- Fonts (same files the client ships) --------------------------------- */
+
+@font-face {
+	font-family: "Cinzel";
+	src: url("client/fonts/Cinzel-VariableFont_wght.ttf") format("truetype");
+	font-weight: 400 900;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Cinzel Decorative";
+	src: url("client/fonts/CinzelDecorative-Regular.ttf") format("truetype");
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Lora";
+	src: url("client/fonts/Lora-VariableFont_wght.ttf") format("truetype");
+	font-weight: 400 700;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Lora";
+	src: url("client/fonts/Lora-Italic-VariableFont_wght.ttf") format("truetype");
+	font-weight: 400 700;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "JetBrains Mono";
+	src: url("client/fonts/JetBrainsMono-VariableFont_wght.ttf") format("truetype");
+	font-weight: 100 800;
+	font-style: normal;
+	font-display: swap;
+}
+
+/* The client loads Inter from Google Fonts; the docs site self-hosts the latin
+   subset so the published site has no third-party request. */
+@font-face {
+	font-family: "Inter";
+	src: url("client/fonts/Inter-Variable.woff2") format("woff2");
+	font-weight: 100 900;
+	font-style: normal;
+	font-display: swap;
+}
+
+/* ---- Typography ---------------------------------------------------------- */
+
+:root {
+	--bs-font-sans-serif: var(--vds-font-body);
+	--bs-font-monospace: var(--vds-font-mono);
+	--bs-body-font-family: var(--vds-font-body);
+	--bs-body-font-size: 0.9375rem;
+	--bs-body-line-height: 1.65;
+	--bs-border-radius: var(--vds-radius-md);
+	--bs-border-radius-sm: var(--vds-radius-sm);
+	--bs-border-radius-lg: var(--vds-radius-lg);
+}
+
+body {
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+
+/* Client hierarchy: Cinzel for h1–h3, body face for h4–h6 (brand.css). */
+h1,
+h2,
+h3,
+.h1,
+.h2,
+.h3 {
+	font-family: var(--vds-font-heading);
+	font-weight: 600;
+	letter-spacing: 0.01em;
+	color: var(--bs-heading-color);
+}
+
+h4,
+h5,
+h6,
+.h4,
+.h5,
+.h6 {
+	font-family: var(--vds-font-body);
+	font-weight: 600;
+	letter-spacing: 0;
+	color: var(--bs-heading-color);
+}
+
+h1 {
+	font-size: 2rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	padding-bottom: 0.35rem;
+	border-bottom: 1px solid var(--bs-border-color);
+}
+
+h3 {
+	font-size: 1.25rem;
+}
+
+p,
+li {
+	max-width: 78ch;
+}
+
+/* ---- Dark theme (the client's palette) ----------------------------------- */
+
+[data-bs-theme="dark"] {
+	--bs-body-bg: var(--vds-bg-0);
+	--bs-body-color: var(--vds-text);
+	--bs-emphasis-color: #ffffff;
+	--bs-heading-color: var(--vds-text);
+	--bs-secondary-color: var(--vds-text-muted);
+	--bs-tertiary-color: var(--vds-text-subtle);
+	--bs-secondary-bg: var(--vds-bg-1);
+	--bs-tertiary-bg: var(--vds-bg-2);
+	--bs-border-color: var(--vds-border);
+	--bs-border-color-translucent: rgba(61, 63, 88, 0.4);
+
+	/* Gold reads at ~8:1 on the charcoal background; Crimson Seal only
+	   reaches ~3.4:1, so seal is used for accents and gold for text links. */
+	--bs-link-color: var(--vds-gold);
+	--bs-link-color-rgb: 201, 168, 76;
+	--bs-link-hover-color: var(--vds-gold-light);
+	--bs-link-hover-color-rgb: 212, 185, 106;
+	--bs-code-color: var(--vds-gold-light);
+	--bs-highlight-bg: var(--vds-seal-muted);
+
+	/* Docs-only surfaces, so components never bake a dark token into the light theme. */
+	--docs-surface: var(--vds-bg-1);
+	--docs-code-bg: var(--vds-bg-deeper);
+	--docs-inline-code-bg: var(--vds-bg-2);
+	--docs-hover: var(--vds-hover);
+}
+
+/* ---- Light theme (warm parchment; no upstream light palette exists) ------ */
+
+[data-bs-theme="light"] {
+	--bs-body-bg: #f5f2ed;
+	--bs-body-color: #1c1d2b;
+	--bs-emphasis-color: #0c0d13;
+	--bs-heading-color: #1c1d2b;
+	--bs-secondary-color: #4a4540;
+	--bs-tertiary-color: #6e6860;
+	--bs-secondary-bg: #ffffff;
+	--bs-tertiary-bg: #ece7df;
+	--bs-border-color: #d6d0c7;
+	--bs-border-color-translucent: rgba(110, 104, 96, 0.25);
+	--bs-link-color: #8c2018;
+	--bs-link-color-rgb: 140, 32, 24;
+	--bs-link-hover-color: #c0392b;
+	--bs-link-hover-color-rgb: 192, 57, 43;
+	--bs-code-color: #8c2018;
+	--bs-highlight-bg: #f6d7d2;
+
+	--docs-surface: #ffffff;
+	--docs-code-bg: #ffffff;
+	--docs-inline-code-bg: #ece7df;
+	--docs-hover: #ece7df;
+}
+
+a {
+	text-underline-offset: 0.18em;
+}
+
+a:hover {
+	text-decoration-color: currentColor;
+}
+
+::selection {
+	background: var(--vds-seal-muted);
+	color: var(--vds-text);
+}
+
+:focus-visible {
+	outline: 2px solid var(--vds-gold);
+	outline-offset: 2px;
+}
+
+hr {
+	border-color: var(--bs-border-color);
+	opacity: 1;
+}
+
+/* ---- Navbar -------------------------------------------------------------- */
+
+.navbar.bg-body {
+	background-color: var(--vds-bg-1) !important;
+	padding-block: 0.5rem;
+}
+
+[data-bs-theme="dark"] .navbar.bg-body {
+	border-bottom: 1px solid var(--vds-border) !important;
+	box-shadow: inset 0 -2px 0 -1px rgba(201, 168, 76, 0.35);
+}
+
+.navbar-brand {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.55rem;
+	font-family: var(--vds-font-heading);
+	font-size: 1rem;
+	font-weight: 600;
+	letter-spacing: 0.16em;
+	text-transform: uppercase;
+}
+
+[data-bs-theme="dark"] .navbar-brand {
+	color: var(--vds-gold-light) !important;
+}
+
+[data-bs-theme="light"] .navbar-brand {
+	color: var(--vds-seal-dark) !important;
+}
+
+.navbar-brand:hover {
+	color: var(--vds-gold) !important;
+}
+
+/* The crest is dark-on-dark by design; a thin gold ring makes it read as a badge
+   instead of a smudge at 32px. */
+#logo {
+	height: 32px;
+	width: auto;
+	border-radius: var(--vds-radius-sm);
+	background-color: var(--vds-bg-deeper);
+	box-shadow: 0 0 0 1px var(--vds-gold-dark), 0 0 10px rgba(201, 168, 76, 0.15);
+}
+
+[data-bs-theme="light"] #logo {
+	box-shadow: 0 0 0 1px var(--vds-gold-dark);
+}
+
+/* Search box */
+
+#search .form-control {
+	background-color: var(--vds-bg-2);
+	border: 1px solid var(--vds-border);
+	border-radius: var(--vds-radius-md);
+	color: var(--vds-text);
+}
+
+[data-bs-theme="light"] #search .form-control {
+	background-color: #ffffff;
+	border-color: #d6d0c7;
+	color: #1c1d2b;
+}
+
+#search .form-control::placeholder {
+	color: var(--bs-tertiary-color);
+}
+
+#search .form-control:focus {
+	background-color: var(--docs-surface);
+	border-color: var(--vds-gold);
+	box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.18);
+}
+
+#search .bi-search {
+	color: var(--vds-gold);
+}
+
+/* ---- Sidebar / table of contents ---------------------------------------- */
+
+.sidetoc,
+.sidefilter {
+	background-color: transparent;
+}
+
+.toc a,
+.sidetoc a {
+	color: var(--bs-secondary-color);
+	text-decoration: none;
+}
+
+.toc a:hover,
+.sidetoc a:hover {
+	color: var(--bs-link-hover-color);
+}
+
+.toc a.active,
+.sidetoc a.active,
+.toc a[aria-current="page"],
+.sidetoc a[aria-current="page"] {
+	color: var(--bs-link-color);
+	font-weight: 600;
+}
+
+.toc .nav.level1 > li > a {
+	font-family: var(--vds-font-heading);
+	letter-spacing: 0.04em;
+}
+
+.toc-filter input,
+#toc_filter_input {
+	background-color: var(--docs-surface);
+	border: 1px solid var(--vds-border);
+	border-radius: var(--vds-radius-sm);
+	color: var(--bs-body-color);
+}
+
+/* Right rail ("In this article") */
+
+#affix a {
+	color: var(--bs-secondary-color);
+	text-decoration: none;
+}
+
+#affix a:hover {
+	color: var(--bs-link-hover-color);
+}
+
+/* ---- Article ------------------------------------------------------------- */
+
+article {
+	max-width: 82ch;
+}
+
+article > h1:first-child {
+	margin-bottom: 1rem;
+}
+
+article blockquote {
+	margin: 1.25rem 0;
+	padding: 0.35rem 0 0.35rem 1rem;
+	border-left: 2px solid var(--vds-gold);
+	color: var(--bs-secondary-color);
+	font-family: var(--vds-font-reading);
+	font-size: 0.9375rem;
+}
+
+/* "Edit this page" / contribution links */
+
+.contribution a,
+.edit-link {
+	color: var(--bs-secondary-color);
+	font-size: 0.8125rem;
+}
+
+.contribution a:hover,
+.edit-link:hover {
+	color: var(--bs-link-hover-color);
+}
+
+/* ---- Code ---------------------------------------------------------------- */
+
+code {
+	font-family: var(--vds-font-mono);
+	font-size: 0.875em;
+}
+
+:not(pre) > code {
+	padding: 0.1em 0.35em;
+	border: 1px solid var(--bs-border-color);
+	border-radius: var(--vds-radius-sm);
+	background-color: var(--docs-inline-code-bg);
+	color: var(--bs-code-color);
+}
+
+pre {
+	padding: 0.9rem 1rem;
+	border: 1px solid var(--bs-border-color);
+	border-left: 2px solid var(--vds-seal);
+	border-radius: var(--vds-radius-md);
+	background-color: var(--docs-code-bg) !important;
+}
+
+pre code {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--bs-body-color);
+}
+
+/* ---- Tables -------------------------------------------------------------- */
+
+.table {
+	--bs-table-bg: transparent;
+	--bs-table-color: var(--bs-body-color);
+	--bs-table-border-color: var(--bs-border-color);
+	--bs-table-striped-bg: var(--docs-surface);
+	--bs-table-hover-bg: var(--docs-hover);
+}
+
+thead th {
+	font-family: var(--vds-font-body);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--bs-secondary-color);
+}
+
+/* ---- Alerts (docfx renders > [!NOTE] as .alert) -------------------------- */
+
+.alert {
+	border: 1px solid var(--bs-border-color);
+	border-radius: var(--vds-radius-md);
+	background-color: var(--docs-surface);
+	color: var(--bs-body-color);
+}
+
+.alert-heading {
+	color: var(--bs-heading-color);
+	font-family: var(--vds-font-body);
+	font-weight: 600;
+}
+
+[data-bs-theme="light"] .alert-info {
+	border-color: var(--vds-info);
+	background-color: #e8f1fa;
+}
+
+[data-bs-theme="light"] .alert-warning,
+[data-bs-theme="light"] .alert-caution {
+	border-color: var(--vds-warning);
+	background-color: #fbf3e7;
+}
+
+[data-bs-theme="light"] .alert-danger {
+	border-color: var(--vds-danger);
+	background-color: #fbebeb;
+}
+
+[data-bs-theme="light"] .alert-success,
+[data-bs-theme="light"] .alert-tip {
+	border-color: var(--vds-success);
+	background-color: #edf7f1;
+}
+
+[data-bs-theme="light"] .alert-important {
+	border-color: var(--vds-seal);
+	background-color: #fbedea;
+}
+
+[data-bs-theme="dark"] .alert-info {
+	border-color: var(--vds-info);
+	background-color: var(--vds-info-muted);
+}
+
+[data-bs-theme="dark"] .alert-warning,
+[data-bs-theme="dark"] .alert-caution {
+	border-color: var(--vds-warning);
+	background-color: var(--vds-warning-muted);
+}
+
+[data-bs-theme="dark"] .alert-danger {
+	border-color: var(--vds-danger);
+	background-color: var(--vds-danger-muted);
+}
+
+[data-bs-theme="dark"] .alert-success,
+[data-bs-theme="dark"] .alert-tip {
+	border-color: var(--vds-success);
+	background-color: var(--vds-success-muted);
+}
+
+[data-bs-theme="dark"] .alert-important {
+	border-color: var(--vds-seal);
+	background-color: var(--vds-seal-muted);
+}
+
+/* ---- Landing page -------------------------------------------------------- */
+
+body[data-layout="landing"] .content {
+	max-width: 62rem;
+	margin-inline: auto;
+}
+
+body[data-layout="landing"] h1 {
+	font-family: var(--vds-font-display);
+	font-size: clamp(2.25rem, 6vw, 3.25rem);
+	font-weight: 400;
+	letter-spacing: 0.06em;
+	line-height: 1.15;
+	margin-bottom: 1.25rem;
+}
+
+[data-bs-theme="dark"] body[data-layout="landing"] h1 {
+	background: linear-gradient(100deg, var(--vds-gold-light), var(--vds-gold), var(--vds-seal-light));
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+
+body[data-layout="landing"] .lead,
+body[data-layout="landing"] article > p:first-of-type {
+	font-family: var(--vds-font-reading);
+	font-size: 1.0625rem;
+	color: var(--bs-secondary-color);
+}
+
+/* ---- Footer -------------------------------------------------------------- */
+
+footer.border-top {
+	background-color: var(--vds-bg-1);
+	border-color: var(--bs-border-color) !important;
+	font-size: 0.8125rem;
+}
+
+[data-bs-theme="light"] footer.border-top {
+	background-color: #ece7df;
+}
+
+footer a {
+	color: var(--bs-secondary-color);
+}
+
+footer a:hover {
+	color: var(--bs-link-hover-color);
+}

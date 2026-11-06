@@ -11,9 +11,9 @@ from this repository. Compose files are for local development only.
 
 | Service | Coolify base / Dockerfile | Internal port | Public host |
 |---|---|---|---|
-| `server` | `/` / [`Veldrath.Server/Dockerfile`](../Veldrath.Server/Dockerfile) | 8080 | `api.veldrath.com` |
-| `web` | `/web` / [`web/client/Dockerfile`](../web/client/Dockerfile) | 8081 | `veldrath.com` |
-| `discord` | `/` / [`Veldrath.Discord/Dockerfile`](../Veldrath.Discord/Dockerfile) | 8083 | none |
+| `server` | `/` / [`Veldrath.Server/Dockerfile`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/Dockerfile) | 8080 | `api.veldrath.com` |
+| `web` | `/web` / [`web/client/Dockerfile`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/Dockerfile) | 8081 | `veldrath.com` |
+| `discord` | `/` / [`Veldrath.Discord/Dockerfile`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Discord/Dockerfile) | 8083 | none |
 | `postgres` | Coolify-managed Postgres | 5432 | none |
 
 For the web resource set the Coolify fields to:
@@ -27,7 +27,7 @@ For the web resource set the Coolify fields to:
 
 SvelteKit resolves public env vars in two places: it inlines them into the browser
 bundle at build time, and it validates them from `process.env` when `node build`
-starts. [`web/client/Dockerfile`](../web/client/Dockerfile) handles both — the
+starts. [`web/client/Dockerfile`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/Dockerfile) handles both — the
 runtime stage re-declares the build args as `ENV` defaults, so passing only the
 build args above is enough to boot. If you also set `PUBLIC_API_URL` /
 `PUBLIC_HUB_URL` as runtime environment variables (optional), they must match the
@@ -79,10 +79,10 @@ The two applications own different schemas:
   startup.
 - **The SvelteKit web app** runs Drizzle auth migrations before adapter-node starts.
 
-The web entrypoint in [`web/client/docker-entrypoint.sh`](../web/client/docker-entrypoint.sh):
+The web entrypoint in [`web/client/docker-entrypoint.sh`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/docker-entrypoint.sh):
 
 1. Waits for the auth database to accept connections.
-2. Runs [`web/migrate.mjs`](../web/migrate.mjs), which creates the `auth` schema
+2. Runs [`web/migrate.mjs`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/migrate.mjs), which creates the `auth` schema
    if needed and applies every pending Drizzle migration.
 3. Starts the SvelteKit server.
 
@@ -104,7 +104,7 @@ ALTER ROLE veldrath_auth SET search_path = auth;
 ```
 
 The local compose stack automates this with
-[`config/postgres/init-auth-schema.sh`](../config/postgres/init-auth-schema.sh),
+[`config/postgres/init-auth-schema.sh`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/config/postgres/init-auth-schema.sh),
 which Postgres runs on a fresh volume. Existing volumes need the SQL run once.
 
 ## Migrating existing accounts
@@ -129,7 +129,7 @@ The script:
 
 Existing Identity PBKDF2 password hashes keep working because Better Auth uses the
 dual-format verifier in
-[`web/client/src/lib/server/auth-password.ts`](../web/client/src/lib/server/auth-password.ts).
+[`web/client/src/lib/server/auth-password.ts`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/src/lib/server/auth-password.ts).
 A password change writes a Better Auth scrypt hash.
 
 The migration role must be able to read `public."AspNetUsers"` and write `auth.*`;
@@ -171,11 +171,11 @@ also trusts forwarded headers through `UseForwardedHeaders`.
 
 ## Local deployment
 
-- Local development: [`docker-compose.yml`](../docker-compose.yml) with
+- Local development: [`docker-compose.yml`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/docker-compose.yml) with
   `docker compose up -d --build` (web on `http://localhost:8081`).
 - Hot-reload web development: `docker compose -f docker-compose.dev.yml up web`
   (Vite on `http://localhost:8081`) or `cd web && npm run dev` (port 5173).
-- Production-like local: [`docker-compose.prod.yml`](../docker-compose.prod.yml)
+- Production-like local: [`docker-compose.prod.yml`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/docker-compose.prod.yml)
   as an overlay, with an external reverse proxy on the Docker network.
 - Coolify uses Dockerfile resources, not a compose file.
 

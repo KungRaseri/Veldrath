@@ -72,8 +72,11 @@ coverage/
 # DocFX static site output
 /_site/
 
-# DocFX generated API YAML metadata (produced during docs build — do not commit)
-/api/
+# DocFX generated API YAML metadata (produced during docs build — do not commit).
+# The landing page at api/index.md IS committed: docfx.json lists it as content so /api/ resolves
+# to a real page instead of 404ing, and the Dockerfile no longer has to fabricate one.
+/api/*
+!/api/index.md
 
 # Local smoke scripts and runtime artifacts (never committed)
 /scripts/dev/
