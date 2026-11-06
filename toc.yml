@@ -1,2 +1,31 @@
+- name: Overview
+  href: index.md
+
+- name: Client
+  items:
+    - name: Client overview
+      href: docs/client-overview.md
+    - name: Design system
+      href: docs/design-system.md
+    - name: UI architecture
+      href: docs/client-ui-architecture.md
+
+- name: Server
+  items:
+    - name: Deployment
+      href: docs/deployment.md
+    - name: Coolify reference
+      href: docs/coolify-deployment.md
+
+- name: Contributing
+  items:
+    - name: CI and releases on Forgejo
+      href: docs/ci-forgejo.md
+
+- name: Lore
+  items:
+    - name: Calethic language
+      href: docs/lore/calethic-language.md
+
 - name: API Reference
-  href: api/
+  href: api/index.md

@@ -1,8 +1,8 @@
 name: Deploy Documentation
 
-# Forgejo-native. GitHub Pages does not exist here, so the built site is published
-# as a workflow artifact instead of being deployed by actions/deploy-pages.
-# Serving it is a hosting decision (a Coolify static site can serve _site/).
+# Forgejo-native. GitHub Pages does not exist here, so the built site is published as a
+# workflow artifact and — from `main` only — queued as a Coolify deployment that builds
+# docs/Dockerfile into the site Traefik serves at docs.veldrath.com.
 
 concurrency:
   group: docs-${{ github.ref }}
@@ -30,9 +30,16 @@ on:
       - 'plans/**'
       - '.github/agent-memory/**'
       - '**/*.md'
+      - 'toc.yml'
       - 'versions/**'
       - 'Directory.Build.props'
       - '**/*.cs'
+      # The site is themed from the client's own assets: docfx.json copies the design tokens,
+      # the font files and the favicons out of web/client, so a change there changes the docs.
+      - 'templates/**'
+      - 'web/client/src/routes/theme.css'
+      - 'web/client/static/fonts/**'
+      - 'web/client/static/images/favicon/**'
       - 'scripts/check-markdown-links.mjs'
       - 'scripts/apply-branch-protection.sh'
       - 'scripts/forgejo-pr-comment.sh'
@@ -71,8 +78,13 @@ jobs:
         run: dotnet restore Realm.Full.slnx
 
       - name: Install DocFX
+        env:
+          # Pinned: templates/veldrath/layout/_master.tmpl is a copy of this version's modern
+          # template master. Bump together with docs/Dockerfile and re-sync that file.
+          DOCFX_VERSION: 2.81.0
         run: |
-          dotnet tool install --global docfx || dotnet tool update --global docfx
+          dotnet tool install --global docfx --version "$DOCFX_VERSION" \
+            || dotnet tool update --global docfx --version "$DOCFX_VERSION"
           # A global tool lands in ~/.dotnet/tools, which is not on PATH here; the runner
           # does not honour $GITHUB_PATH either. /usr/local/bin always is.
           ln -sf "$HOME/.dotnet/tools/docfx" /usr/local/bin/docfx
@@ -80,22 +92,6 @@ jobs:
 
       - name: Generate API metadata
         run: docfx metadata docfx.json
-
-      - name: Create API landing page
-        run: |
-          cat > api/index.md << 'EOF'
-          # API Reference
-
-          Browse the RealmEngine API documentation using the navigation on the left.
-
-          | Project | Description |
-          |---------|-------------|
-          | **RealmEngine.Core** | Game logic — combat, crafting, inventory, quests, spells |
-          | **RealmEngine.Shared** | Shared models, domain entities, interfaces |
-          | **RealmEngine.Data** | EF Core persistence (Postgres), entity models, repositories |
-          | **Veldrath.Server** | ASP.NET Core game server with SignalR |
-          | **Veldrath.Discord** | Discord bot integration |
-          EOF
 
       # Relative-link check. It used to be its own workflow (repo-hygiene.yml); it belongs with the
       # documentation job because that is what it protects. Offline on purpose: no external URL checks, so it
