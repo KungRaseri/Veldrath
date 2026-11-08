@@ -266,9 +266,17 @@ Coverage exclusions are configured in [`coverage.runsettings`](coverage.runsetti
   fonts, so palette and type cannot drift from the game. `layout/_master.tmpl` is a copy of docfx
   2.81.0's modern master with exactly two changes: an extra `<link>` and a dark default theme —
   bump the pinned `DOCFX_VERSION` in `docs.yml` and `docs/Dockerfile` together, and re-sync it.
-- **Adding a docs page:** write `docs/<name>.md`, add it to [`docs/toc.yml`](docs/toc.yml) (sidebar)
-  and, if it deserves a top-level tab, [`toc.yml`](toc.yml). Links to files outside `docs/` must be
-  absolute `https://git.kungraseri.cloud/...` URLs, or they 404 on the published site.
+- **The published site is an allowlist, not `docs/`.** `docfx.json` publishes only
+  [`docs/client-overview.md`](docs/client-overview.md) and [`docs/lore/`](docs/lore/) — material for
+  players and for people consuming the engine/API. Everything else in `docs/`
+  (`design-system.md`, `client-ui-architecture.md`, `deployment.md`, `coolify-deployment.md`,
+  `ci-forgejo.md`) is repo-only: operational runbooks, design decisions and migration history are
+  read in the repo and do not belong on a site read by players and API consumers.
+- **Adding a published page:** write it, add it to [`docs/toc.yml`](docs/toc.yml) (sidebar) and, if
+  it deserves a top-level tab, [`toc.yml`](toc.yml), then add its path to the `content` allowlist in
+  `docfx.json` — a file outside the allowlist builds in the repo but never appears on the site.
+  Links to anything outside the published set must be absolute
+  `https://git.kungraseri.cloud/...` URLs, or they 404.
 - **Wiki** ([`wiki/`](wiki/) submodule): Getting Started, Contributing, FAQ, Roadmap Summary
 - **Key docs:**
   - [`docs/ci-forgejo.md`](docs/ci-forgejo.md) — Forgejo Actions allow-list, runner setup, registry and releases

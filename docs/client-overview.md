@@ -81,10 +81,9 @@ The client is themed by two files, both of which this documentation site reuses:
 Typography is Cinzel and Cinzel Decorative for display and headings, Lora for long-form reading,
 JetBrains Mono for code, and Inter for UI text. Fonts are self-hosted from `static/fonts/`.
 
-The full specification — palette, type scale, spacing, component contracts, and the decision log —
-is [the design system](design-system.md). UI-level decisions (panel-driven UI over 2D map
-rendering, and the DB-backed map graph) are recorded in
-[client UI architecture](client-ui-architecture.md).
+The full specification — palette, type scale, spacing, and component contracts — lives in
+[`docs/design-system.md`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/docs/design-system.md)
+in the repository.
 
 ## Where to start reading
 
