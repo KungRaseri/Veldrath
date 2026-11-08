@@ -1,25 +1,9 @@
-- name: Client
+- name: Players
   items:
-    - name: Client overview
-      href: client-overview.md
-    - name: Design system
-      href: design-system.md
-    - name: UI architecture
-      href: client-ui-architecture.md
-
-- name: Server and deployment
-  items:
-    - name: Deployment
-      href: deployment.md
-    - name: Coolify reference
-      href: coolify-deployment.md
-
-- name: Contributing
-  items:
-    - name: CI and releases on Forgejo
-      href: ci-forgejo.md
-
-- name: Lore
-  items:
-    - name: Calethic language
+    - name: Lore and the Calethic language
       href: lore/calethic-language.md
+
+- name: Developers
+  items:
+    - name: Web client
+      href: client-overview.md

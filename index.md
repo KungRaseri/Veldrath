@@ -6,8 +6,7 @@ title: Documentation
 # Veldrath
 
 Veldrath is a web-first fantasy roleplaying platform: a SvelteKit client, an ASP.NET Core game
-server with SignalR, and a .NET world engine behind them. There is no desktop client — the
-browser is the game.
+server with SignalR, and a .NET world engine behind them.
 
 ```mermaid
 flowchart LR
@@ -23,18 +22,14 @@ flowchart LR
     discord --> engine
 ```
 
-## Start here
+## Players
 
-| Area | Where to go |
-| --- | --- |
-| **The client** | [Client overview](docs/client-overview.md) — workspaces, routes, auth, and the game shell |
-| **Design system** | [Design system](docs/design-system.md) — Crimson Seal / Emberfall / Gold tokens, typography, components |
-| **UI decisions** | [Client UI architecture](docs/client-ui-architecture.md) — panel-driven UI and the DB map graph |
-| **Deployment** | [Deployment](docs/deployment.md) and the [Coolify reference](docs/coolify-deployment.md) |
-| **Contributing** | [CI and releases on Forgejo](docs/ci-forgejo.md) |
-| **API reference** | [Generated reference](api/index.md) from the XML doc comments |
+- [Lore and the Calethic language](docs/lore/calethic-language.md) — the language of the world:
+  phonology, naming conventions, and the vocabulary used across its regions and factions.
 
-> [!NOTE]
-> This site uses the same design tokens and self-hosted fonts as the game client, so the palette
-> here is the palette in game. It opens in dark mode; the theme picker in the header switches to
-> light (auto follows your system).
+## Building on Veldrath
+
+- [Web client](docs/client-overview.md) — how the SvelteKit client is structured, how accounts and
+  game tokens work, and how it talks to the server.
+- [API reference](api/index.md) — the engine, the game server and the Discord bot, generated from
+  their XML doc comments.

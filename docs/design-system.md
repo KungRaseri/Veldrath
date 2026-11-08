@@ -1,7 +1,7 @@
 # Veldrath Design System
 
 > **Status:** Living document — decisions recorded in [§ Decision Log](#9-decision-log).
-> **Surfaces covered:** the SvelteKit web app only ([`web/`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/)) — the game client, the Foundry content editor, and every staff portal. There is no desktop surface.
+> **Surfaces covered:** the SvelteKit web app only ([`web/`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/)) — the game client, the Foundry content editor, and every staff portal.
 > **Last updated:** 2026-10-25
 >
 > **Migration note:** Every non-web surface has been retired — the Blazor `Veldrath.Web` / `RealmFoundry` apps, the `Veldrath.Client` Avalonia desktop client, and the `RealmForge` Avalonia content editor. MudBlazor **and** Avalonia guidance in this document is historical: the `Avalonia key` columns, AXAML snippets, `GameColors.axaml`, `ForgeTheme.axaml`, and `RealmUI.Fonts` references are kept only as a record of how the tokens were mapped. Live tokens are [`theme.css`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/src/routes/theme.css) and [`brand.css`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/src/routes/brand.css).
