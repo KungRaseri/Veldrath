@@ -1,9 +1,9 @@
 # Client overview
 
-The SvelteKit app under [`web/`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/) is **the only Veldrath client** — public site, accounts,
-characters, the game itself, the Foundry content editor, editorial, admin, and moderation. There is
-no desktop or native client; the browser is the product. `Veldrath.Server` stays the game API and
-SignalR authority, and Better Auth owns credentials and sessions.
+The SvelteKit app under [`web/`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/) is the Veldrath client — public site, accounts,
+characters, the game itself, the Foundry content editor, editorial, admin, and moderation.
+`Veldrath.Server` stays the game API and SignalR authority, and Better Auth owns credentials and
+sessions.
 
 ## Workspaces
 
