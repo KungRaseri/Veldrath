@@ -19,7 +19,13 @@
     "content": [
       { "files": ["api/**.yml", "api/index.md"] },
       { "files": ["index.md", "toc.yml"] },
-      { "files": ["docs/**/*.md", "docs/**/toc.yml"] }
+      {
+        "files": [
+          "docs/client-overview.md",
+          "docs/lore/**/*.md",
+          "docs/toc.yml"
+        ]
+      }
     ],
     "resource": [
       {
