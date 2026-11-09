@@ -41,6 +41,7 @@ on:
       - 'web/client/static/fonts/**'
       - 'web/client/static/images/favicon/**'
       - 'scripts/check-markdown-links.mjs'
+      - 'scripts/docfx-namespace-toc.pl'
       - 'scripts/apply-branch-protection.sh'
       - 'scripts/forgejo-pr-comment.sh'
       - 'scripts/lib/forgejo-api.sh'
@@ -92,6 +93,11 @@ jobs:
 
       - name: Generate API metadata
         run: docfx metadata docfx.json
+
+      # docfx emits one flat list of 167 namespaces. Group it by namespace before the build so
+      # the sidebar is a tree (RealmEngine.Core -> Features -> Combat) instead of a flat column.
+      - name: Group the API table of contents by namespace
+        run: perl scripts/docfx-namespace-toc.pl
 
       # Relative-link check. It used to be its own workflow (repo-hygiene.yml); it belongs with the
       # documentation job because that is what it protects. Offline on purpose: no external URL checks, so it
