@@ -1,12 +1,4 @@
-# Calethic Language — Design Reference
-
-> **Status:** Complete (2026-04-15). This is the canonical design reference. The player-facing document is `wiki/Calethic-Language.md`.
->
-> **Tonal character:** Hard + Formal — short architectural roots (K, R, TH, V, D) in functional vocabulary; drawn-out compound forms in titles and ceremonial speech.
->
-> **Scope:** Sketched conlang — phonology, morphology, basic syntax, root dictionary (~75 entries), full named-entity pass.
-
----
+# Calethic Language
 
 ## 1. Phonology
 
