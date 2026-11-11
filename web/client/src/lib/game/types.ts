@@ -49,6 +49,38 @@ export interface LearnedPower {
 	requiredLevel: number;
 }
 
+/**
+ * One practised skill, resolved against the skill catalog by the server.
+ *
+ * `resolved` is false when the character has practised a skill key the catalog has no entry for.
+ * Progress is expressed as `xpIntoRank` over `xpToNextRank` because the server owns that rule; the
+ * client never divides by a constant of its own.
+ */
+export interface SkillView {
+	skillId: string;
+	resolved: boolean;
+	name?: string | null;
+	description?: string | null;
+	category?: string | null;
+	governingAttribute?: string | null;
+	rank: number;
+	totalXp: number;
+	xpIntoRank: number;
+	xpToNextRank: number;
+	maxRank: number;
+}
+
+/** A skill XP award, broadcast after the server has persisted the new total. */
+export interface SkillXpGainedPayload {
+	characterId: string;
+	skillId: string;
+	totalXp: number;
+	currentRank: number;
+	rankedUp: boolean;
+	xpIntoRank: number;
+	xpToNextRank: number;
+}
+
 export interface CharacterSelectedPayload {
 	id: string;
 	name: string;
@@ -74,6 +106,8 @@ export interface CharacterSelectedPayload {
 	learnedAbilities: string[];
 	/** Learned powers with their catalog details; empty when the server could not resolve them. */
 	learnedPowers?: LearnedPower[] | null;
+	/** Practised skills with their rank and progress; empty when nothing has been practised. */
+	skills?: SkillView[] | null;
 	selectedAt: string;
 	equipment?: Record<string, string> | null;
 }

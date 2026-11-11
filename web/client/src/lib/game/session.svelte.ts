@@ -10,6 +10,7 @@ import {
 	describeCombatTurn
 } from './reducers';
 import { resolvePowers, type PowerContext } from './powers';
+import { applySkillProgress, resolveSkills, skillLabel } from './skills';
 import type {
 	AbilityUsedPayload,
 	AnnouncementPayload,
@@ -52,6 +53,8 @@ import type {
 	ServerInfoPayload,
 	ShopCatalogItem,
 	ShopCatalogPayload,
+	SkillView,
+	SkillXpGainedPayload,
 	SpawnedEnemy,
 	SummonedPayload,
 	TeleportedPayload,
@@ -114,6 +117,10 @@ export class GameSession {
 	availableQuests = $state<AvailableQuest[]>([]);
 	/** Turn-in announcement shown as a toast, or `null` when there is nothing to announce. */
 	questTurnInToast = $state<{ slug: string; gold: number; xp: number } | null>(null);
+	/** Practised skills, seeded from the character snapshot and kept current by `SkillXpGained`. */
+	skills = $state<SkillView[]>([]);
+	/** Rank-up announcement shown as a toast, or `null` when there is nothing to announce. */
+	skillRankUpToast = $state<{ name: string; rank: number } | null>(null);
 	shopCatalog = $state<ShopCatalogItem[]>([]);
 	shopZone = $state<string | null>(null);
 	chat = $state<ChatMessage[]>([]);
@@ -127,6 +134,7 @@ export class GameSession {
 	showQuests = $state(false);
 	showSettings = $state(false);
 	showAbilities = $state(false);
+	showSkills = $state(false);
 	showAttributes = $state(false);
 	showParty = $state(false);
 	loadingMap = $state(false);
@@ -860,6 +868,8 @@ export class GameSession {
 			this.equipped = payload.equipped ?? {};
 		});
 
+		hub.on('SkillXpGained', (payload: SkillXpGainedPayload) => this.applySkillXp(payload));
+
 		hub.on('ShopVisited', (payload: { zoneId: string; zoneName: string }) => {
 			this.shopZone = payload.zoneName;
 			this.showShop = true;
@@ -1078,6 +1088,7 @@ export class GameSession {
 
 	private async handleCharacterSelected(payload: CharacterSelectedPayload): Promise<void> {
 		this.character = payload;
+		this.skills = resolveSkills(payload.skills);
 		this.stats = {
 			currentHealth: payload.currentHealth,
 			maxHealth: payload.maxHealth,
@@ -1142,6 +1153,30 @@ export class GameSession {
 	/** Clears the turn-in toast once the player has seen it. */
 	dismissQuestToast(): void {
 		this.questTurnInToast = null;
+	}
+
+	/** Clears the rank-up toast once the player has seen it. */
+	dismissSkillToast(): void {
+		this.skillRankUpToast = null;
+	}
+
+	/**
+	 * Folds a skill XP award into the sheet.
+	 *
+	 * The award carries the server's own progress figures, so the bar is redrawn from them rather
+	 * than from arithmetic here. An award for a skill the snapshot never resolved is appended as an
+	 * unresolved entry: practising it is real even when the catalog row is missing.
+	 */
+	private applySkillXp(payload: SkillXpGainedPayload): void {
+		const index = this.skills.findIndex((skill) => skill.skillId === payload.skillId);
+		const updated = applySkillProgress(index >= 0 ? this.skills[index] : null, payload);
+
+		if (index >= 0) this.skills[index] = updated;
+		else this.skills = [...this.skills, updated];
+
+		if (payload.rankedUp) {
+			this.skillRankUpToast = { name: skillLabel(updated), rank: payload.currentRank };
+		}
 	}
 
 	/**

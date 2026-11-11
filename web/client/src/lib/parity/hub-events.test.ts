@@ -45,7 +45,6 @@ function subscriptions(): string[] {
  */
 const NO_SUBSCRIBER: Record<string, string> = {
 	// Deferred features: the server broadcasts, the UI that would consume it does not exist.
-	SkillXpGained: 'Deferred: the skill sheet does not exist yet.',
 	ItemCrafted: 'Deferred: crafting UI does not exist yet.',
 	DungeonEntered: 'Deferred: dungeon UI does not exist yet.',
 

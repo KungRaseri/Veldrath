@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { InventoryItem, PartyMemberView, PartySnapshot, QuestLogEntry } from './types';
+import type {
+	InventoryItem,
+	PartyMemberView,
+	PartySnapshot,
+	QuestLogEntry,
+	SkillView,
+	SkillXpGainedPayload
+} from './types';
 
 /**
  * Second-generation session suite. `session.test.ts` covers the documented happy paths;
@@ -588,5 +595,91 @@ describe('GameSession moderation and social events', () => {
 
 		expect(session.ignoredCharacterIds).toEqual(['char-2']);
 		expect(session.chat.at(-1)?.message).toBe('That player is now ignored.');
+	});
+});
+
+describe('skill progression', () => {
+	function skill(overrides: Partial<SkillView> = {}): SkillView {
+		return {
+			skillId: 'swordsmanship',
+			resolved: true,
+			name: 'Swordsmanship',
+			description: 'Skill with a blade.',
+			category: 'combat',
+			governingAttribute: 'strength',
+			rank: 2,
+			totalXp: 250,
+			xpIntoRank: 50,
+			xpToNextRank: 100,
+			maxRank: 50,
+			...overrides
+		};
+	}
+
+	function award(overrides: Partial<SkillXpGainedPayload> = {}): SkillXpGainedPayload {
+		return {
+			characterId: 'char-1',
+			skillId: 'swordsmanship',
+			totalXp: 260,
+			currentRank: 2,
+			rankedUp: false,
+			xpIntoRank: 60,
+			xpToNextRank: 100,
+			...overrides
+		};
+	}
+
+	it('seeds the sheet from the character snapshot', async () => {
+		const session = await connected();
+
+		hub.emit('CharacterSelected', { id: 'char-1', skills: [skill(), { slug: 'ignored' }] });
+		await flush();
+
+		expect(session.skills).toHaveLength(1);
+		expect(session.skills[0].name).toBe('Swordsmanship');
+	});
+
+	it('updates a known skill in place from an award', async () => {
+		const session = await connected();
+		session.skills = [skill()];
+
+		hub.emit('SkillXpGained', award());
+
+		expect(session.skills).toHaveLength(1);
+		expect(session.skills[0]).toMatchObject({
+			skillId: 'swordsmanship',
+			name: 'Swordsmanship',
+			totalXp: 260,
+			xpIntoRank: 60
+		});
+		expect(session.skillRankUpToast).toBeNull();
+	});
+
+	it('announces a rank-up and keeps the catalog copy', async () => {
+		const session = await connected();
+		session.skills = [skill()];
+
+		hub.emit(
+			'SkillXpGained',
+			award({ totalXp: 310, currentRank: 3, rankedUp: true, xpIntoRank: 10 })
+		);
+
+		expect(session.skillRankUpToast).toEqual({ name: 'Swordsmanship', rank: 3 });
+		expect(session.skills[0].category).toBe('combat');
+
+		session.dismissSkillToast();
+		expect(session.skillRankUpToast).toBeNull();
+	});
+
+	it('appends an award for a skill the sheet has never seen', async () => {
+		const session = await connected();
+		session.skills = [];
+
+		hub.emit('SkillXpGained', award({ skillId: 'herbalism', totalXp: 40, currentRank: 0 }));
+
+		expect(session.skills).toHaveLength(1);
+		expect(session.skills[0].resolved).toBe(false);
+		expect(session.skills[0].skillId).toBe('herbalism');
+		expect(session.skillRankUpToast).toBeNull();
 	});
 });
