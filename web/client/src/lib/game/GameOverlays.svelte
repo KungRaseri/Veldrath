@@ -33,6 +33,7 @@
 		type InventoryItem
 	} from './types';
 	import PowersOverlay from './PowersOverlay.svelte';
+	import SkillsOverlay from './SkillsOverlay.svelte';
 	import type { GameSession } from './session.svelte';
 
 	let { session }: { session: GameSession } = $props();
@@ -259,6 +260,8 @@
 </Dialog.Root>
 
 <PowersOverlay {session} />
+
+<SkillsOverlay {session} />
 
 <Dialog.Root open={session.showAttributes} onOpenChange={(open) => (session.showAttributes = open)}>
 	<Dialog.Portal>
@@ -645,6 +648,29 @@
 					class="btn preset-tonal-surface px-2 py-1 text-xs"
 					type="button"
 					onclick={() => session.dismissQuestToast()}
+				>
+					<Check size={13} aria-hidden="true" />
+					Dismiss
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+{#if session.skillRankUpToast}
+	<div class="pointer-events-none fixed top-16 right-4 z-50 w-80 max-w-[calc(100vw-2rem)]">
+		<div class="game-panel pointer-events-auto space-y-2 p-3" role="status">
+			<p class="text-sm">
+				Rank up: <span class="font-semibold">{session.skillRankUpToast.name}</span>
+			</p>
+			<p class="text-xs text-surface-600-400">
+				Now rank {session.skillRankUpToast.rank}
+			</p>
+			<div class="flex justify-end">
+				<button
+					class="btn preset-tonal-surface px-2 py-1 text-xs"
+					type="button"
+					onclick={() => session.dismissSkillToast()}
 				>
 					<Check size={13} aria-hidden="true" />
 					Dismiss

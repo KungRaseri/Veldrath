@@ -2,7 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/svelte';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import GameOverlays from './GameOverlays.svelte';
 import { GameSession } from './session.svelte';
-import type { InventoryItem, QuestLogEntry, ZoneEnteredPayload } from './types';
+import type { InventoryItem, QuestLogEntry, SkillView, ZoneEnteredPayload } from './types';
 
 // `#lib/hub` imports `$app/env/public`, whose runtime needs a SvelteKit dev global that does not
 // exist under Vitest. Every session method guards on `this.hub`, so a null factory keeps the
@@ -648,5 +648,87 @@ describe('toasts', () => {
 
 		expect(accept).toHaveBeenCalledWith('p1');
 		expect(decline).toHaveBeenCalledWith('p1');
+	});
+});
+
+describe('skills', () => {
+	function skill(overrides: Partial<SkillView> = {}): SkillView {
+		return {
+			skillId: 'swordsmanship',
+			resolved: true,
+			name: 'Swordsmanship',
+			description: 'Skill with a blade.',
+			category: 'combat',
+			governingAttribute: 'strength',
+			rank: 2,
+			totalXp: 250,
+			xpIntoRank: 50,
+			xpToNextRank: 100,
+			maxRank: 50,
+			...overrides
+		};
+	}
+
+	it('shows the empty state before anything is practised', () => {
+		const game = session();
+		game.showSkills = true;
+		render(GameOverlays, { session: game });
+
+		const dialog = screen.getByRole('dialog', { name: 'Skills' });
+		expect(within(dialog).getByText('No skills practised yet.')).toBeTruthy();
+	});
+
+	it('groups the sheet by category and shows rank and progress', () => {
+		const game = session();
+		game.showSkills = true;
+		game.skills = [
+			skill(),
+			skill({
+				skillId: 'herbalism',
+				name: 'Herbalism',
+				category: 'profession',
+				governingAttribute: 'wisdom',
+				rank: 0,
+				totalXp: 40,
+				xpIntoRank: 40,
+				maxRank: 30
+			})
+		];
+		render(GameOverlays, { session: game });
+
+		const dialog = screen.getByRole('dialog', { name: 'Skills' });
+		expect(within(dialog).getByRole('heading', { name: 'Combat' })).toBeTruthy();
+		expect(within(dialog).getByRole('heading', { name: 'Profession' })).toBeTruthy();
+		expect(within(dialog).getByText('Swordsmanship')).toBeTruthy();
+		expect(within(dialog).getByText('Rank 2 / 50')).toBeTruthy();
+		expect(within(dialog).getByText('50 / 100 XP to the next rank · 250 total')).toBeTruthy();
+		expect(within(dialog).getByText('Rank 0 / 30')).toBeTruthy();
+		expect(within(dialog).getByText('40 / 100 XP to the next rank · 40 total')).toBeTruthy();
+		expect(within(dialog).getByText('Governed by strength')).toBeTruthy();
+		expect(within(dialog).getByText('Governed by wisdom')).toBeTruthy();
+	});
+
+	it('names a skill the catalog could not resolve and still shows its XP', () => {
+		const game = session();
+		game.showSkills = true;
+		game.skills = [skill({ resolved: false, name: null, category: null })];
+		render(GameOverlays, { session: game });
+
+		const dialog = screen.getByRole('dialog', { name: 'Skills' });
+		expect(within(dialog).getByText('Unknown skill (swordsmanship)')).toBeTruthy();
+		expect(within(dialog).getByText('The catalog has no entry for this skill.')).toBeTruthy();
+		expect(within(dialog).getByText('250 XP recorded')).toBeTruthy();
+	});
+
+	it('announces a rank-up and dismisses it', async () => {
+		const game = session();
+		game.skillRankUpToast = { name: 'Swordsmanship', rank: 3 };
+		render(GameOverlays, { session: game });
+
+		expect(screen.getByText('Now rank 3')).toBeTruthy();
+
+		await fireEvent.click(screen.getByRole('button', { name: /Dismiss/ }));
+
+		expect(game.skillRankUpToast).toBeNull();
 	});
 });

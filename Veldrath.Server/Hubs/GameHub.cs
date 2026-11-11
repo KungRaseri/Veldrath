@@ -378,6 +378,21 @@ public class GameHub : Hub
                 character.Id);
         }
 
+        // Skill progress lives in the attributes blob as Skill_{id}_XP keys. Resolve the catalog
+        // names so the sheet renders skills rather than storage keys.
+        IReadOnlyList<CharacterSkillDto> skills = [];
+        try
+        {
+            skills = await _mediator.Send(new GetCharacterSkillsQuery(character.Attributes));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to resolve skills for character {CharacterId}; selecting without skill progress.",
+                character.Id);
+        }
+
         // Deserialise the equipment blob so starter gear renders in the equipment panel
         // immediately, without waiting for the player to open the inventory overlay.
         var equippedItems = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -422,6 +437,7 @@ public class GameHub : Hub
             Charisma = initAttrs.GetValueOrDefault("Charisma", 10),
             LearnedAbilities = learnedAbilities,
             LearnedPowers = learnedPowers,
+            Skills = skills,
             SelectedAt = DateTimeOffset.UtcNow,
             Equipment = equippedItems,
         });
@@ -1212,6 +1228,10 @@ public class GameHub : Hub
                 result.TotalXp,
                 result.CurrentRank,
                 result.RankedUp,
+                // The progression rule belongs to the server, so the progress figures travel with
+                // the award instead of the client dividing by a constant it guessed.
+                XpIntoRank = result.TotalXp % AwardSkillXpHubCommandHandler.XpPerRank,
+                XpToNextRank = AwardSkillXpHubCommandHandler.XpPerRank,
             };
 
             if (TryGetCurrentZoneGroup(out var zoneGroup))

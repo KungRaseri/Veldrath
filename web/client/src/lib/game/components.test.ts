@@ -124,6 +124,8 @@ function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
 		}[],
 		bagItems: [healthPotion, ironSword],
 		carriedItemCount: 1,
+		skills: [],
+		skillRankUpToast: null,
 		powers: [
 			{
 				slug: 'heal',
