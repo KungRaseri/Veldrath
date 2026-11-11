@@ -20,6 +20,7 @@ using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.Auth;
 using Veldrath.Server.Features.Characters;
 using Veldrath.Server.Features.Characters.Combat;
+using Veldrath.Server.Features.Characters.Queries;
 using Veldrath.Server.Features.LevelUp;
 using Veldrath.Server.Features.Map;
 using Veldrath.Server.Features.Party;
@@ -361,6 +362,22 @@ public class GameHub : Hub
             string.IsNullOrWhiteSpace(character.AbilitiesBlob) ? "[]" : character.AbilitiesBlob)
             ?? [];
 
+        // Resolve those slugs against the power catalog so the client renders names, costs and effects
+        // instead of identifiers. A catalog failure must not cost the player their selection: the
+        // powers come back empty and the client falls back to naming the slugs it knows.
+        IReadOnlyList<LearnedPowerDto> learnedPowers = [];
+        try
+        {
+            learnedPowers = await _mediator.Send(new GetLearnedPowersQuery(learnedAbilities));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to resolve learned powers for character {CharacterId}; selecting without power details.",
+                character.Id);
+        }
+
         // Deserialise the equipment blob so starter gear renders in the equipment panel
         // immediately, without waiting for the player to open the inventory overlay.
         var equippedItems = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -404,6 +421,7 @@ public class GameHub : Hub
             Wisdom = initAttrs.GetValueOrDefault("Wisdom", 10),
             Charisma = initAttrs.GetValueOrDefault("Charisma", 10),
             LearnedAbilities = learnedAbilities,
+            LearnedPowers = learnedPowers,
             SelectedAt = DateTimeOffset.UtcNow,
             Equipment = equippedItems,
         });

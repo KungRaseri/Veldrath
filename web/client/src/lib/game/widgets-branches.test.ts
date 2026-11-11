@@ -130,15 +130,20 @@ describe('combat panel fallbacks', () => {
 		expect(screen.getByText('/')).toBeTruthy();
 	});
 
-	it('renders a placeholder ability button for an unknown ability name', () => {
+	it('names an ability the catalog could not resolve instead of printing its slug as a name', () => {
 		const game = new GameSession();
 		game.character = { learnedAbilities: [null, 'heal'] } as never;
 
 		render(CombatPanel, { session: game });
 
-		// Attack, Defend, Flee plus one button per learned ability.
-		expect(screen.getAllByRole('button')).toHaveLength(5);
-		expect(screen.getByRole('button', { name: 'heal' })).toBeTruthy();
+		// Attack, Defend, Flee plus one button for the one usable slug; the null entry is dropped.
+		expect(screen.getAllByRole('button')).toHaveLength(4);
+		expect(screen.getByText('Unknown ability (heal)')).toBeTruthy();
+		expect(screen.getByText('The catalog has no entry for this ability.')).toBeTruthy();
+		expect(
+			(screen.getByRole('button', { name: 'Use Unknown ability (heal)' }) as HTMLButtonElement)
+				.disabled
+		).toBe(true);
 	});
 });
 
