@@ -9,6 +9,7 @@ import {
 	applyRestToStats,
 	describeCombatTurn
 } from './reducers';
+import { resolvePowers, type PowerContext } from './powers';
 import type {
 	AbilityUsedPayload,
 	AnnouncementPayload,
@@ -32,6 +33,7 @@ import type {
 	InventoryLoadedPayload,
 	ItemReceivedPayload,
 	KickedPayload,
+	LearnedPower,
 	LocationEnteredPayload,
 	MapGraph,
 	MapGraphReceivedPayload,
@@ -207,6 +209,26 @@ export class GameSession {
 	/** Count of bag entries that are not equipped. */
 	get carriedItemCount(): number {
 		return this.inventory.filter((item) => !item.isEquipped).length;
+	}
+
+	/**
+	 * Learned powers with their catalog details, ready for the ability panels.
+	 *
+	 * Falls back to placeholders built from the raw slug list when the snapshot carries no resolved
+	 * powers, so the panels still list what the character knows instead of showing an empty state.
+	 */
+	get powers(): LearnedPower[] {
+		return resolvePowers(this.character);
+	}
+
+	/** The character state the power availability rules read. */
+	get powerContext(): PowerContext {
+		return {
+			mana: this.stats.currentMana,
+			level: this.stats.level,
+			inCombat: this.combat.active,
+			dead: this.dead
+		};
 	}
 
 	get canRest(): boolean {

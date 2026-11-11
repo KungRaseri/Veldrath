@@ -124,6 +124,33 @@ function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
 		}[],
 		bagItems: [healthPotion, ironSword],
 		carriedItemCount: 1,
+		powers: [
+			{
+				slug: 'heal',
+				resolved: true,
+				displayName: 'Heal',
+				description: 'Restores a little health.',
+				powerType: 'Spell',
+				effectType: 'Heal',
+				manaCost: 5,
+				cooldown: 0,
+				tier: 1,
+				requiredLevel: 1
+			},
+			{
+				slug: 'cleave',
+				resolved: true,
+				displayName: 'Cleave',
+				description: 'Sweeps through two foes.',
+				powerType: 'Talent',
+				effectType: 'Damage',
+				manaCost: 0,
+				cooldown: 2,
+				tier: 2,
+				requiredLevel: 1
+			}
+		],
+		powerContext: { mana: 20, level: 3, inCombat: false, dead: false },
 		quests: [] as unknown[],
 		availableQuests: [] as unknown[],
 		shopCatalog: [],
@@ -280,7 +307,7 @@ describe('CombatPanel', () => {
 		expect(await screen.findByRole('heading', { name: /Barrow Wolf/ })).toBeTruthy();
 		expect(screen.getByText('12 / 30')).toBeTruthy();
 		expect(screen.getByText('Combat started: Barrow Wolf (level 2).')).toBeTruthy();
-		for (const label of ['Attack', 'Defend', 'Flee', 'heal', 'cleave']) {
+		for (const label of ['Attack', 'Defend', 'Flee', 'Use Heal', 'Use Cleave']) {
 			expect(screen.getByRole('button', { name: label })).toBeTruthy();
 		}
 	});

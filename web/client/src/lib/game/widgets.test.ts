@@ -209,7 +209,39 @@ describe('game header', () => {
 describe('combat panel', () => {
 	function session(): GameSession {
 		const game = new GameSession();
-		game.character = { learnedAbilities: ['arcane_bolt', 'heal'] } as never;
+		game.stats = { ...game.stats, currentMana: 20, maxMana: 20 };
+		game.character = {
+			learnedAbilities: ['arcane_bolt', 'heal'],
+			learnedPowers: [
+				{
+					slug: 'arcane_bolt',
+					resolved: true,
+					displayName: 'Arcane bolt',
+					description: 'A bolt of force.',
+					school: 'arcane',
+					powerType: 'Spell',
+					effectType: 'Damage',
+					manaCost: 5,
+					cooldown: 2,
+					baseDamage: '2d6',
+					damageType: 'arcane',
+					tier: 1,
+					requiredLevel: 1
+				},
+				{
+					slug: 'heal',
+					resolved: true,
+					displayName: 'Heal',
+					description: 'Mends a wound.',
+					powerType: 'Spell',
+					effectType: 'Heal',
+					manaCost: 8,
+					cooldown: 3,
+					tier: 1,
+					requiredLevel: 1
+				}
+			]
+		} as never;
 		return game;
 	}
 
@@ -220,7 +252,9 @@ describe('combat panel', () => {
 		expect((screen.getByRole('button', { name: /Attack/ }) as HTMLButtonElement).disabled).toBe(
 			true
 		);
-		expect(screen.getByRole('button', { name: /arcane_bolt/ })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Use Arcane bolt' })).toBeTruthy();
+		expect(screen.getByText('Arcane bolt')).toBeTruthy();
+		expect(screen.getByText('5 mana · 2 turn cooldown')).toBeTruthy();
 	});
 
 	it('renders the enemy, its health bar, the log and enabled actions', async () => {
@@ -244,7 +278,7 @@ describe('combat panel', () => {
 		await fireEvent.click(screen.getByRole('button', { name: /Attack/ }));
 		await fireEvent.click(screen.getByRole('button', { name: /Defend/ }));
 		await fireEvent.click(screen.getByRole('button', { name: /Flee/ }));
-		await fireEvent.click(screen.getByRole('button', { name: /arcane_bolt/ }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Use Arcane bolt' }));
 
 		expect(attack).toHaveBeenCalled();
 		expect(defend).toHaveBeenCalled();

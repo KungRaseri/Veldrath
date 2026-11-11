@@ -23,6 +23,32 @@ export interface ServerInfoPayload {
 	minCompatibleClientVersion: string;
 }
 
+/**
+ * One learned power, resolved against the power catalog by the server.
+ *
+ * `resolved` is false when the character knows a slug the catalog has no entry for; the UI names
+ * that case explicitly instead of printing the identifier as if it were a name.
+ */
+export interface LearnedPower {
+	slug: string;
+	resolved: boolean;
+	displayName?: string | null;
+	description?: string | null;
+	school?: string | null;
+	powerType: string;
+	effectType: string;
+	manaCost: number;
+	cooldown: number;
+	baseDamage?: string | null;
+	baseEffectValue?: string | null;
+	damageType?: string | null;
+	range?: number | null;
+	duration?: number | null;
+	maxTargets?: number | null;
+	tier: number;
+	requiredLevel: number;
+}
+
 export interface CharacterSelectedPayload {
 	id: string;
 	name: string;
@@ -46,6 +72,8 @@ export interface CharacterSelectedPayload {
 	wisdom: number;
 	charisma: number;
 	learnedAbilities: string[];
+	/** Learned powers with their catalog details; empty when the server could not resolve them. */
+	learnedPowers?: LearnedPower[] | null;
 	selectedAt: string;
 	equipment?: Record<string, string> | null;
 }

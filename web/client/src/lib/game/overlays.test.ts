@@ -201,6 +201,25 @@ describe('shop', () => {
 	});
 });
 
+/** A resolved power, as the server sends it once the catalog lookup succeeds. */
+function arcaneBolt() {
+	return {
+		slug: 'arcane_bolt',
+		resolved: true,
+		displayName: 'Arcane bolt',
+		description: 'Hurls a shard of force.',
+		school: 'arcane',
+		powerType: 'Spell',
+		effectType: 'Damage',
+		manaCost: 5,
+		cooldown: 2,
+		baseDamage: '2d6',
+		damageType: 'arcane',
+		tier: 1,
+		requiredLevel: 1
+	};
+}
+
 describe('abilities', () => {
 	it('shows the empty state before a character is selected', () => {
 		const game = session();
@@ -211,40 +230,74 @@ describe('abilities', () => {
 		expect(within(dialog).getByText('No abilities learned yet.')).toBeTruthy();
 	});
 
-	it('uses an ability outside combat', async () => {
+	it('names the ability, lists what it costs and uses it outside combat', async () => {
 		const game = session();
 		game.showAbilities = true;
-		game.character = { learnedAbilities: ['arcane_bolt'] } as never;
+		game.stats = { ...game.stats, currentMana: 20, maxMana: 20, level: 5 };
+		game.character = { learnedAbilities: ['arcane_bolt'], learnedPowers: [arcaneBolt()] } as never;
 		const use = vi.spyOn(game, 'useAbility');
 		render(GameOverlays, { session: game });
 
 		const dialog = screen.getByRole('dialog', { name: 'Abilities' });
-		expect(within(dialog).getByText('arcane bolt')).toBeTruthy();
-		const button = within(dialog).getByRole('button', { name: /Use/ }) as HTMLButtonElement;
+		expect(within(dialog).getByText('Arcane bolt')).toBeTruthy();
+		expect(within(dialog).getByText('Hurls a shard of force.')).toBeTruthy();
+		expect(within(dialog).getByText('5')).toBeTruthy();
+		expect(within(dialog).getByText('2 turns')).toBeTruthy();
+		expect(within(dialog).getByText('2d6 arcane')).toBeTruthy();
+
+		const button = within(dialog).getByRole('button', {
+			name: 'Use Arcane bolt'
+		}) as HTMLButtonElement;
 		expect(button.disabled).toBe(false);
 
 		await fireEvent.click(button);
 		expect(use).toHaveBeenCalledWith('arcane_bolt');
 	});
 
-	it('disables the action during combat and while dead', async () => {
+	it('explains why the ability cannot be used during combat or while dead', async () => {
 		const game = session();
 		game.showAbilities = true;
-		game.character = { learnedAbilities: ['arcane_bolt'] } as never;
+		game.stats = { ...game.stats, currentMana: 20, maxMana: 20 };
+		game.character = { learnedAbilities: ['arcane_bolt'], learnedPowers: [arcaneBolt()] } as never;
 		game.combat = { ...game.combat, active: true };
 		const { unmount } = render(GameOverlays, { session: game });
 
-		expect((screen.getByRole('button', { name: /Use/ }) as HTMLButtonElement).disabled).toBe(true);
+		expect(
+			(screen.getByRole('button', { name: 'Use Arcane bolt' }) as HTMLButtonElement).disabled
+		).toBe(true);
+		expect(screen.getByText('Finish the fight first — use it from the combat panel.')).toBeTruthy();
 		unmount();
 
 		document.body.innerHTML = '';
 		const dead = session();
 		dead.showAbilities = true;
-		dead.character = { learnedAbilities: ['arcane_bolt'] } as never;
+		dead.stats = { ...dead.stats, currentMana: 20, maxMana: 20 };
+		dead.character = { learnedAbilities: ['arcane_bolt'], learnedPowers: [arcaneBolt()] } as never;
 		dead.dead = true;
 		render(GameOverlays, { session: dead });
 
-		expect((screen.getByRole('button', { name: /Use/ }) as HTMLButtonElement).disabled).toBe(true);
+		expect(
+			(screen.getByRole('button', { name: 'Use Arcane bolt' }) as HTMLButtonElement).disabled
+		).toBe(true);
+		expect(screen.getByText('You cannot use abilities while dead.')).toBeTruthy();
+	});
+
+	it('names an ability the catalog could not resolve and refuses it', () => {
+		const game = session();
+		game.showAbilities = true;
+		game.character = { learnedAbilities: ['ghost_power'] } as never;
+		render(GameOverlays, { session: game });
+
+		const dialog = screen.getByRole('dialog', { name: 'Abilities' });
+		expect(within(dialog).getByText('Unknown ability (ghost_power)')).toBeTruthy();
+		expect(within(dialog).getByText('The catalog has no entry for this ability.')).toBeTruthy();
+		expect(
+			(
+				within(dialog).getByRole('button', {
+					name: 'Use Unknown ability (ghost_power)'
+				}) as HTMLButtonElement
+			).disabled
+		).toBe(true);
 	});
 });
 
