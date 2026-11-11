@@ -26,6 +26,7 @@ COPY . .
 # fallbacks here anymore — if either is missing, the docfx build says so.
 RUN dotnet restore Realm.Full.slnx \
  && docfx metadata docfx.json \
+ && perl scripts/docfx-namespace-toc.pl \
  && docfx build docfx.json \
  && test -f _site/index.html \
  && test -f _site/api/index.html
