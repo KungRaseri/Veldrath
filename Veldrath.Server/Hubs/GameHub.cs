@@ -2788,6 +2788,10 @@ public class GameHub : Hub
                 return;
             }
 
+            // A run that was purged while the character was dead cannot receive them: they wake in the shared
+            // zone and are told why, rather than being left in a group nobody else can join.
+            await LeaveExpiredInstanceAsync(characterId);
+
             await Clients.Caller.SendAsync("CharacterRespawned", new
             {
                 CharacterId = characterId,
@@ -3023,6 +3027,36 @@ public class GameHub : Hub
         }
         groupName = null;
         return false;
+    }
+
+    /// <summary>
+    /// Clears the character's run when it no longer exists or is being purged, so a resurrection lands in the
+    /// shared zone instead of a group nothing else will ever join.
+    /// </summary>
+    /// <param name="characterId">Character being resurrected.</param>
+    private async Task LeaveExpiredInstanceAsync(Guid characterId)
+    {
+        if (_zoneInstances is null ||
+            Context.Items.TryGetValue("CurrentZoneInstanceId", out var value) is false ||
+            value is not Guid instanceId)
+        {
+            return;
+        }
+
+        var run = await _zoneInstances.GetAsync(instanceId);
+        if (run is { State: Veldrath.Server.Data.Entities.ZoneInstanceState.Open })
+            return;
+
+        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var zone) && zone is string id ? id : null;
+        await ApplyArrivalGroupAsync(
+            string.IsNullOrWhiteSpace(zoneId)
+                ? null
+                : Veldrath.Server.Features.Zones.ZoneGroupName.ForZone(zoneId).Value,
+            null);
+
+        await Clients.Caller.SendAsync(
+            "SystemMessage",
+            "The instance you were in has closed. You wake in the shared zone.");
     }
 
     /// <summary>

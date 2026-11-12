@@ -57,6 +57,7 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
         string zoneGroup,
         string locationSlug,
         Func<CancellationToken, Task<List<SpawnedEnemy>>> spawnRoster,
+        Guid? zoneInstanceId = null,
         CancellationToken cancellationToken = default)
     {
         await SettleLocationAsync(zoneGroup, locationSlug, cancellationToken);
@@ -74,7 +75,7 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
 
             foreach (var enemy in spawned)
             {
-                _db.EnemyInstances.Add(ToEntity(enemy, zoneGroup, locationSlug));
+                _db.EnemyInstances.Add(ToEntity(enemy, zoneGroup, locationSlug, zoneInstanceId));
             }
 
             try
@@ -480,11 +481,16 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
         return result;
     }
 
-    private static EnemyInstance ToEntity(SpawnedEnemy enemy, string zoneGroup, string locationSlug) =>
+    private static EnemyInstance ToEntity(
+        SpawnedEnemy enemy,
+        string zoneGroup,
+        string locationSlug,
+        Guid? zoneInstanceId) =>
         new()
         {
             Id = enemy.Id,
             ZoneGroup = zoneGroup,
+            ZoneInstanceId = zoneInstanceId,
             LocationSlug = locationSlug,
             ArchetypeSlug = enemy.ArchetypeSlug,
             Name = enemy.Name,

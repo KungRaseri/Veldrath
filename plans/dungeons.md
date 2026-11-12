@@ -490,6 +490,18 @@ which already logs and adopts the winner.
 | 5 | Instance-scoped respawn | death inside a run resurrects in its lobby; death in a purged run falls back to the zone |
 | 6 | Operator endpoint: list and purge | authenticated, audit-logged, refuses a non-staff caller |
 
+**Shipped status.** Steps 1–6 are in. Two details settled while implementing them:
+
+- **Ground items need the scope as a required argument**, not a defaulted one. `GetAtLocationAsync` now takes
+  `Guid? zoneInstanceId` in the same position as the run it reads, so a caller cannot accidentally ask for a
+  location without saying whose loot it means. The pickup path answers "you are not standing where that item
+  was dropped" for another run as well as another zone — the client must not learn that a run it is not in
+  exists.
+- **Respawn falls back deliberately.** A death inside a run revives in that run's lobby because the session's
+  group still points there. If the run was purged while the character was dead, the hub clears the pointer,
+  moves the connection back to the shared zone group and says so — waking up in a group nobody else can join
+  would be worse than the fallback.
+
 ### F3 — progress, reset and unlocks
 
 - Cleared/boss state per scope, the longer respawn window for a cleared public dungeon, quest unlock

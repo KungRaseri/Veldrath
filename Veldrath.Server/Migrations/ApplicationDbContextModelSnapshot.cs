@@ -444,9 +444,14 @@ namespace Veldrath.Server.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<Guid?>("ZoneInstanceId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("IsAlive", "RespawnAt");
+
+                    b.HasIndex("ZoneInstanceId", "LocationSlug");
 
                     b.HasIndex("ZoneGroup", "LocationSlug", "ArchetypeSlug", "SpawnedAt")
                         .IsUnique();
@@ -645,9 +650,14 @@ namespace Veldrath.Server.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<Guid?>("ZoneInstanceId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ZoneId", "LocationSlug");
+
+                    b.HasIndex("ZoneInstanceId", "LocationSlug");
 
                     b.ToTable("GroundItems");
                 });
@@ -1254,6 +1264,14 @@ namespace Veldrath.Server.Migrations
                     b.Navigation("Enemy");
                 });
 
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.EnemyInstance", b =>
+                {
+                    b.HasOne("Veldrath.Server.Data.Entities.ZoneInstance", null)
+                        .WithMany()
+                        .HasForeignKey("ZoneInstanceId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
             modelBuilder.Entity("Veldrath.Server.Data.Entities.EnemyParticipant", b =>
                 {
                     b.HasOne("Veldrath.Server.Data.Entities.Character", "Character")
@@ -1327,6 +1345,14 @@ namespace Veldrath.Server.Migrations
                     b.Navigation("Submission");
 
                     b.Navigation("Voter");
+                });
+
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.GroundItem", b =>
+                {
+                    b.HasOne("Veldrath.Server.Data.Entities.ZoneInstance", null)
+                        .WithMany()
+                        .HasForeignKey("ZoneInstanceId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Veldrath.Server.Data.Entities.Party", b =>

@@ -354,7 +354,8 @@ public class TravelToNodeHubCommandHandler
             destinationMap,
             destinationNode,
             zoneId,
-            location);
+            location,
+            instanceId);
 
         _logger.LogInformation(
             "Character {CharacterIdPrefix} travelled to {MapId}/{NodeId} (map changed: {MapChanged})",
@@ -398,7 +399,8 @@ public class TravelToNodeHubCommandHandler
         MapGraph destinationMap,
         MapNodeEntry destinationNode,
         string? zoneId,
-        ZoneLocationEntry? location)
+        ZoneLocationEntry? location,
+        Guid? zoneInstanceId)
     {
         if (destinationMap.MapType != MapType.Zone ||
             destinationNode.NodeType != MapNodeType.Location ||
@@ -431,6 +433,7 @@ public class TravelToNodeHubCommandHandler
             effectiveZoneGroup,
             destinationNode.RefId,
             _ => _actorPoolResolver.SpawnRosterAsync(pool),
+            zoneInstanceId,
             CancellationToken.None);
 
         _logger.LogInformation(

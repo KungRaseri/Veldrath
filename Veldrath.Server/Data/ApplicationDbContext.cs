@@ -280,6 +280,12 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
             e.Property(g => g.ItemRef).HasMaxLength(200).IsRequired();
             // Ground pickups always query by (zone, location), so index that pair.
             e.HasIndex(g => new { g.ZoneId, g.LocationSlug });
+            // Instance-scoped reads query the run and the room; a purged run takes its floor with it.
+            e.HasIndex(g => new { g.ZoneInstanceId, g.LocationSlug });
+            e.HasOne<ZoneInstance>()
+             .WithMany()
+             .HasForeignKey(g => g.ZoneInstanceId)
+             .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<EnemyInstance>(e =>
@@ -297,6 +303,12 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
             e.HasIndex(i => new { i.IsAlive, i.RespawnAt });
             // Incremented by the store layer on every write; a stale writer is rejected.
             e.Property(i => i.Version).IsConcurrencyToken();
+            // Instance-scoped queries read the run and the room; a purged run takes its roster with it.
+            e.HasIndex(i => new { i.ZoneInstanceId, i.LocationSlug });
+            e.HasOne<ZoneInstance>()
+             .WithMany()
+             .HasForeignKey(i => i.ZoneInstanceId)
+             .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<EnemyParticipant>(e =>

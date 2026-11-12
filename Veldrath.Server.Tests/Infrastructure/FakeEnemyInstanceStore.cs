@@ -48,6 +48,7 @@ internal sealed class FakeEnemyInstanceStore : IEnemyInstanceStore
         string zoneGroup,
         string locationSlug,
         Func<CancellationToken, Task<List<SpawnedEnemy>>> spawnRoster,
+        Guid? zoneInstanceId = null,
         CancellationToken cancellationToken = default)
     {
         var existing = _rows.Values

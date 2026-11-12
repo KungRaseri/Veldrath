@@ -17,12 +17,18 @@ public interface IEnemyInstanceStore
     /// <param name="zoneGroup">SignalR zone group, e.g. <c>"zone:dark-forest_hardcore"</c>.</param>
     /// <param name="locationSlug">Zone-location slug.</param>
     /// <param name="spawnRoster">Invoked only when no roster exists for the location.</param>
+    /// <param name="zoneInstanceId">
+    /// Instance run the roster belongs to, or <see langword="null"/> for the shared zone. The group already
+    /// isolates runs, so this is recorded on new rows rather than used to filter; it is what the operator view
+    /// queries and what cascades the roster away when the run is purged.
+    /// </param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The living enemies at the location.</returns>
     Task<IReadOnlyList<SpawnedEnemy>> GetAliveOrSpawnAsync(
         string zoneGroup,
         string locationSlug,
         Func<CancellationToken, Task<List<SpawnedEnemy>>> spawnRoster,
+        Guid? zoneInstanceId = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>Returns one enemy instance by id, or <see langword="null"/> when it no longer exists.</summary>
