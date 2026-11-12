@@ -7,7 +7,8 @@ import {
 	applyCombatTurnToStats,
 	applyDamageToStats,
 	applyRestToStats,
-	describeCombatTurn
+	describeCombatTurn,
+	outcomeFrom
 } from './reducers';
 import { resolvePowers, type PowerContext } from './powers';
 import { applySkillProgress, resolveSkills, skillLabel } from './skills';
@@ -25,6 +26,7 @@ import type {
 	ChatCommandInfo,
 	ChatMessage,
 	CombatEndedPayload,
+	CombatParticipantsPayload,
 	CombatStartedPayload,
 	CombatState,
 	CombatTurnPayload,
@@ -708,24 +710,46 @@ export class GameSession {
 					maxHealth: payload.enemyMaxHealth,
 					abilities: payload.enemyAbilityNames ?? []
 				},
-				log: [`Combat started: ${payload.enemyName} (level ${payload.enemyLevel}).`]
+				log: [`Combat started: ${payload.enemyName} (level ${payload.enemyLevel}).`],
+				participants: [],
+				outcome: null
 			};
 			this.enemies = this.enemies.filter((enemy) => enemy.id !== payload.enemyId);
+		});
+
+		hub.on('CombatParticipants', (payload: CombatParticipantsPayload) => {
+			// The shared snapshot is authoritative for the enemy's health and for who is fighting:
+			// a party member's turn changes the enemy too, and this is how everyone learns it.
+			this.combat = {
+				...this.combat,
+				enemy: {
+					id: payload.enemyId,
+					name: payload.enemyName,
+					level: payload.enemyLevel,
+					currentHealth: payload.enemyCurrentHealth,
+					maxHealth: payload.enemyMaxHealth,
+					abilities: payload.enemyAbilityNames ?? []
+				},
+				participants: payload.participants ?? []
+			};
 		});
 
 		hub.on('CombatTurn', (payload: CombatTurnPayload) => {
 			this.stats = applyCombatTurnToStats(this.stats, payload);
 			const line = describeCombatTurn(payload);
-			if (this.combat.enemy) {
-				this.combat = {
-					...this.combat,
-					enemy: {
-						...this.combat.enemy,
-						currentHealth: payload.enemyRemainingHealth ?? this.combat.enemy.currentHealth
-					},
-					log: [...this.combat.log, line].slice(-25)
-				};
-			}
+
+			this.combat = {
+				...this.combat,
+				enemy: this.combat.enemy
+					? {
+							...this.combat.enemy,
+							currentHealth: payload.enemyRemainingHealth ?? this.combat.enemy.currentHealth
+						}
+					: this.combat.enemy,
+				log: [...this.combat.log, line].slice(-200),
+				outcome: this.combat.outcome ?? outcomeFrom(payload)
+			};
+
 			if (payload.playerDefeated) {
 				this.dead = true;
 				this.applyDeathPenalty(payload.goldLost ?? 0, payload.xpLost ?? 0);
@@ -737,9 +761,17 @@ export class GameSession {
 
 		hub.on('CombatEnded', (payload: CombatEndedPayload) => {
 			this.combat = {
+				...this.combat,
 				active: false,
-				enemy: null,
-				log: [...this.combat.log, `Combat ended: ${payload.reason}.`].slice(-25)
+				log: [...this.combat.log, `Combat ended: ${payload.reason}.`].slice(-200),
+				outcome: this.combat.outcome ?? {
+					kind: payload.reason.toLowerCase() === 'fled' ? 'fled' : 'defeat',
+					xpEarned: 0,
+					goldEarned: 0,
+					xpLost: 0,
+					goldLost: 0,
+					hardcore: false
+				}
 			};
 			this.addSystemMessage(`Combat ended: ${payload.reason}.`);
 		});

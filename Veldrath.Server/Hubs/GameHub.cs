@@ -485,7 +485,44 @@ public class GameHub : Hub
             EnemyAbilityNames = abilityNames,
         });
 
+        await BroadcastCombatSnapshotAsync(characterId);
+
         await Clients.Caller.SendAsync("SystemMessage", $"Your fight with {enemy.Name} resumed.");
+    }
+
+    /// <summary>
+    /// Broadcasts the shared state of the caller's fight — the enemy and everyone who has hit it —
+    /// to the zone group, or back to the caller when they are not in a zone.
+    /// </summary>
+    /// <remarks>
+    /// This is the only combat event the whole location receives, and it deliberately carries no
+    /// rewards: per-character XP and gold stay on the caller-only <c>CombatTurn</c>. A missing
+    /// session or enemy is a normal end-of-fight race, so it stays silent.
+    /// </remarks>
+    /// <param name="characterId">The character whose fight to snapshot.</param>
+    private async Task BroadcastCombatSnapshotAsync(Guid characterId)
+    {
+        try
+        {
+            var session = await _sessions.TryGetAsync(characterId);
+            if (session is null)
+                return;
+
+            var snapshot = await _mediator.Send(new GetCombatSnapshotQuery(session.EnemyId));
+            if (snapshot is null)
+                return;
+
+            if (TryGetCurrentZoneGroup(out var zoneGroup))
+                await Clients.Group(zoneGroup).SendAsync("CombatParticipants", snapshot);
+            else
+                await Clients.Caller.SendAsync("CombatParticipants", snapshot);
+        }
+        catch (Exception ex)
+        {
+            // A snapshot is a view of the fight, never the fight itself: failing to build one must
+            // not roll back a turn that has already resolved.
+            _logger.LogError(ex, "Failed to broadcast the combat snapshot for {CharacterId}.", characterId);
+        }
     }
 
     /// <summary>
@@ -2389,6 +2426,8 @@ public class GameHub : Hub
                 result.EnemyAbilityNames,
             });
 
+            await BroadcastCombatSnapshotAsync(characterId);
+
             if (!string.IsNullOrEmpty(zoneGroup))
             {
                 await Clients.OthersInGroup(zoneGroup).SendAsync("EnemyEngaged", new
@@ -2445,6 +2484,8 @@ public class GameHub : Hub
                 result.GoldEarned,
             });
 
+            await BroadcastCombatSnapshotAsync(characterId);
+
             if (result.EnemyDefeated)
             {
                 await AdvanceKillObjectivesAsync(result, characterId);
@@ -2498,6 +2539,8 @@ public class GameHub : Hub
                 result.GoldLost,
                 result.XpLost,
             });
+
+            await BroadcastCombatSnapshotAsync(characterId);
         }
         catch (Exception ex)
         {
@@ -2546,6 +2589,8 @@ public class GameHub : Hub
                     result.GoldLost,
                     result.XpLost,
                 });
+
+                await BroadcastCombatSnapshotAsync(characterId);
             }
         }
         catch (Exception ex)
@@ -2598,6 +2643,8 @@ public class GameHub : Hub
                 result.XpEarned,
                 result.GoldEarned,
             });
+
+            await BroadcastCombatSnapshotAsync(characterId);
 
             if (result.EnemyDefeated)
             {

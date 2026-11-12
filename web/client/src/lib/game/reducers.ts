@@ -3,6 +3,7 @@ import type {
 	CharacterRestedPayload,
 	CharacterStats,
 	ChatMessage,
+	CombatOutcome,
 	CombatTurnPayload
 } from './types';
 
@@ -20,6 +21,38 @@ export function appendChat(
 }
 
 /** Builds the human-readable log line for a resolved combat turn. */
+/**
+ * Derives how a fight ended from the caller's own turn payload, or `null` while it is still running.
+ *
+ * Only the caller knows these numbers, which is why the summary is built here and not from the
+ * shared snapshot broadcast to the location.
+ */
+export function outcomeFrom(turn: CombatTurnPayload): CombatOutcome | null {
+	if (turn.enemyDefeated) {
+		return {
+			kind: 'victory',
+			xpEarned: turn.xpEarned ?? 0,
+			goldEarned: turn.goldEarned ?? 0,
+			xpLost: 0,
+			goldLost: 0,
+			hardcore: false
+		};
+	}
+
+	if (turn.playerDefeated) {
+		return {
+			kind: 'defeat',
+			xpEarned: 0,
+			goldEarned: 0,
+			xpLost: turn.xpLost ?? 0,
+			goldLost: turn.goldLost ?? 0,
+			hardcore: turn.playerHardcoreDeath ?? false
+		};
+	}
+
+	return null;
+}
+
 export function describeCombatTurn(turn: CombatTurnPayload): string {
 	const parts: string[] = [];
 
