@@ -683,3 +683,65 @@ describe('skill progression', () => {
 		expect(session.skillRankUpToast).toBeNull();
 	});
 });
+
+describe('crafting', () => {
+	it('stores the recipe list the server sends, dropping entries without a slug', async () => {
+		const session = await connected();
+
+		hub.emit('CraftableRecipes', {
+			recipes: [
+				{
+					slug: 'iron-longsword',
+					name: 'Iron longsword',
+					available: true,
+					materials: [],
+					outputItemRef: '@items/weapons/swords:iron-longsword',
+					outputQuantity: 1
+				},
+				{ slug: '' }
+			]
+		});
+
+		expect(session.craftableRecipes).toHaveLength(1);
+		expect(session.craftableRecipes[0].slug).toBe('iron-longsword');
+	});
+
+	it('asks the server for the list when the panel opens', async () => {
+		const session = await connected();
+
+		await session.openCrafting();
+
+		expect(session.showCrafting).toBe(true);
+		expect(hub.methods()).toContain('GetCraftableRecipes');
+	});
+
+	it('announces a completed craft and refreshes the bag', async () => {
+		const session = await connected();
+
+		hub.emit('ItemCrafted', {
+			characterId: 'char-1',
+			recipeSlug: 'iron-longsword',
+			recipeName: 'Iron longsword',
+			itemRef: '@items/weapons/swords:iron-longsword',
+			outputQuantity: 1,
+			consumedMaterials: [{ itemRef: '@items/materials/ingots:iron-ingot', quantity: 2 }],
+			skillId: 'blacksmithing',
+			skillXp: 15
+		});
+		await flush();
+
+		expect(session.chat.at(-1)?.message).toContain(
+			'Crafted 1 × @items/weapons/swords:iron-longsword'
+		);
+		expect(hub.methods()).toContain('GetInventory');
+	});
+
+	it('does nothing for a craft before a connection exists', async () => {
+		const session = new GameSession();
+
+		await session.craft('iron-longsword');
+		await session.loadCraftableRecipes();
+
+		expect(hub.invocations).toEqual([]);
+	});
+});

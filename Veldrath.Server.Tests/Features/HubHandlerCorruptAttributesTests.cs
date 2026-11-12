@@ -1,9 +1,11 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using RealmEngine.Shared.Abstractions;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.Characters;
 using Character = Veldrath.Server.Data.Entities.Character;
+using Recipe = RealmEngine.Shared.Models.Recipe;
 
 namespace Veldrath.Server.Tests.Features;
 
@@ -123,18 +125,26 @@ public class HubHandlerCorruptAttributesTests
     }
 
     [Fact]
-    public async Task CraftItem_TreatsACorruptAttributesBlobAsNoGold()
+    public async Task CraftItem_ToleratesACorruptAttributesBlob_AndFailsOnAMissingRecipe()
     {
+        // E5 replaced the flat-gold stub: crafting now reads the recipe catalog, so a corrupt blob
+        // must be survivable rather than the reason for the failure.
         var (repo, character) = Arrange();
+        var recipes = new Mock<IRecipeRepository>();
+        recipes.Setup(r => r.GetBySlugAsync(It.IsAny<string>())).ReturnsAsync((Recipe?)null);
+
         var handler = new CraftItemHubCommandHandler(
-            repo.Object, NullLogger<CraftItemHubCommandHandler>.Instance);
+            repo.Object,
+            recipes.Object,
+            Mock.Of<IInventoryService>(),
+            NullLogger<CraftItemHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
             new CraftItemHubCommand(character.Id, "iron-sword"),
             CancellationToken.None);
 
         result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().NotBeNullOrWhiteSpace();
+        result.ErrorMessage.Should().Contain("No recipe");
         repo.Verify(r => r.UpdateAsync(It.IsAny<Character>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
