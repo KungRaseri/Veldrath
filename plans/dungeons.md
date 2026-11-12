@@ -316,6 +316,28 @@ and the exit control are F4.
 - **Done when:** two parties can clear the same instanced dungeon without seeing each other's
   enemies, and an empty instance disappears.
 
+**Implementation note (after F1 shipped).** The world is already keyed by the SignalR **zone group**:
+enemies, ground items, combat broadcasts, chat and the respawn sweeper all scope on that one string. So
+the cheapest correct instance is a *distinct group name*, not a new column on every table:
+
+```
+public  →  zone:{zoneId}
+instanced, in a party  →  zone:{zoneId}#party:{partyId}
+instanced, solo        →  zone:{zoneId}#solo:{characterId}
+```
+
+That key is **derived, not allocated**, which removes the whole lifecycle from the server: there is no
+registry to create, no first-entry race to lose, no id to persist beyond the session row, and a late
+joiner computes their party's key by definition. Enemies and ground items stay exactly as they are —
+they simply live under a group name nobody else can compute. Cleanup becomes "the group has no
+sessions", which the existing respawn sweeper already knows how to observe, and an empty instance's
+rows are swept like any other dead location. `PlayerSession.InstanceId` (nullable) records the key for
+reconnect; the party roster is the only other place it needs to be derivable from.
+
+What that still requires in code: the arrival result must carry the effective group, the hub must move
+the connection between groups when it changes, and `ResolveRespawnLocationAsync` must resurrect inside
+the instance rather than the public zone.
+
 ### F3 — progress, reset and unlocks
 
 - Cleared/boss state per scope, the longer respawn window for a cleared public dungeon, quest unlock
