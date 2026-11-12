@@ -1,6 +1,7 @@
 # Dungeons, instances and the map model
 
-> **Status: decisions taken 2026-11-12, implementation not started.**
+> **Status: F1 shipped in [PR #70](https://git.kungraseri.cloud/Veldrath/Veldrath/pulls/70);
+> F2's instance shape is decided in §F2.1–§F2.3 and not yet implemented.**
 > This file is the record of the model decisions and the phase outline. The Foundry map editor
 > (§8) is an **outline only** and needs its own planning session before code.
 >
@@ -19,7 +20,7 @@ Maps are explicit graph data, not tilemaps:
 
 | Piece | Where | Fact |
 |---|---|---|
-| [`MapType`](../RealmEngine.Shared/Models/MapGraphModels.cs:7) | shared models | `World \| Region \| Zone` |
+| [`MapType`](../RealmEngine.Shared/Models/MapGraphModels.cs:7) | shared models | `World \| Region \| Zone \| Interior` (Interior added in F1) |
 | [`MapNodeType`](../RealmEngine.Shared/Models/MapGraphModels.cs:21) | shared models | `EntryPoint, Zone, Location, ZoneExit, RegionExit, Portal, Stair, Landmark` |
 | [`MapDirection`](../RealmEngine.Shared/Models/MapGraphModels.cs:50) | shared models | includes `Up`, `Down`, `In`, `Out` |
 | [`MapEdgeType`](../RealmEngine.Shared/Models/MapGraphModels.cs:79) | shared models | `Walk, ExitToZone, ExitToRegion, Portal, Door` |
@@ -146,9 +147,9 @@ system and one leaderboard:
   is unaffected by scope.
 - No per-instance quest state, no "instanced variant" of a quest, no lockout.
 
-**Still open (F2 detail, not blocking F1):** whether an instance survives an empty gap (all members
-disconnected inside the grace window) or is closed immediately; and whether `MaxPlayers` should cap an
-instance as well as a public location.
+**Settled in §F2.4:** an instance survives the disconnect grace — it only becomes *empty* once no
+session points at it, so a relog rejoins the run rather than finding a fresh one. `MaxPlayers` caps
+public locations only; an instance is exactly its party, so a cap would be a second, confusing limit.
 
 ### 3.4 Progress, reset and party rules
 
@@ -174,8 +175,8 @@ D3 and D5 in one command:
 EnterLocation(zoneId, locationSlug)      ← the only entry point
   ├─ resolve the location and, if it opens, its Interior map
   ├─ D8 soft level gate: build a warning, never a refusal
-  ├─ D2 public: join the shared state | instanced: find or create the party's instance
-  ├─ move the session: ZoneId, CurrentMapId, CurrentNodeId, InstanceId
+  ├─ D2 public: join the shared state | instanced: find or create the run
+  ├─ move the session: ZoneId, CurrentMapId, CurrentNodeId, ZoneInstanceId
   └─ broadcast LocationEntered / DungeonEntered to the right audience
 ```
 
@@ -311,32 +312,183 @@ and the exit control are F4.
 
 ### F2 — instance lifecycle
 
-- `InstanceId` on sessions, enemy rows, ground items and combat sessions; null means public.
-- Party-scoped creation and cleanup; late joiners routed into their party's instance.
-- **Done when:** two parties can clear the same instanced dungeon without seeing each other's
-  enemies, and an empty instance disappears.
+A run of a dungeon is a **row**, not a derived string: `ZoneInstance` is the aggregate root that
+enemies, ground items, members and room progress point at. Identity is allocated once and stored; the
+SignalR group name is computed *from* the row and is never parsed to recover identity.
 
-**Implementation note (after F1 shipped).** The world is already keyed by the SignalR **zone group**:
-enemies, ground items, combat broadcasts, chat and the respawn sweeper all scope on that one string. So
-the cheapest correct instance is a *distinct group name*, not a new column on every table:
+**Done when:** two parties can clear the same instanced dungeon without seeing each other's enemies,
+and an empty run disappears.
+
+#### F2.1 The granularity decision: one run per zone, or one row per room
+
+The five dungeons are **zone maps whose rooms are locations**, and the lobby is an ordinary shared
+location. So a delve is "lobby, then three instanced rooms". Two shapes are possible:
 
 ```
-public  →  zone:{zoneId}
-instanced, in a party  →  zone:{zoneId}#party:{partyId}
-instanced, solo        →  zone:{zoneId}#solo:{characterId}
+A — zone-level run
+    ZoneInstance  Id=R, ZoneId=the-halrow, OwnerPartyId=P
+        EnemyInstance              R, rootbound-cellars, ...
+        EnemyInstance              R, collapsed-vault, ...
+        ZoneInstanceLocationState  R, rootbound-cellars, cleared
+        ZoneInstanceLocationState  R, collapsed-vault, cleared
+
+B — one row per instanced room
+    ZoneInstance  Id=R1, ZoneId=the-halrow, LocationSlug=rootbound-cellars, Party=P
+    ZoneInstance  Id=R2, ZoneId=the-halrow, LocationSlug=collapsed-vault,   Party=P
+        EnemyInstance R1, ...
+        EnemyInstance R2, ...
 ```
 
-That key is **derived, not allocated**, which removes the whole lifecycle from the server: there is no
-registry to create, no first-entry race to lose, no id to persist beyond the session row, and a late
-joiner computes their party's key by definition. Enemies and ground items stay exactly as they are —
-they simply live under a group name nobody else can compute. Cleanup becomes "the group has no
-sessions", which the existing respawn sweeper already knows how to observe, and an empty instance's
-rows are swept like any other dead location. `PlayerSession.InstanceId` (nullable) records the key for
-reconnect; the party roster is the only other place it needs to be derivable from.
+| Criterion | A — one run per zone | B — one row per room |
+|---|---|---|
+| What "this attempt" means | one object; a wipe, a reset and a first-clear all refer to it | nothing — an attempt is a set of unrelated rows |
+| Boss stays dead while the party backtracks | automatic | only within that room; walk out and back and the room is a new run unless you keep its row open |
+| Party split across two rooms | one group, one chat channel, one occupant list | two groups; party chat, occupants and `PlayerEntered`/`PlayerLeft` fragment per room |
+| Late joiner | joins the run, lands wherever the party is | must be routed to the room the party occupies, and re-routed as they move |
+| Respawn inside the instance | the run's lobby, then walk back | needs a rule for which room row to resurrect into |
+| Quest credit and rewards | participants at run level; "cleared the dungeon" is a field | per room; "cleared the dungeon" is a union rebuilt every time |
+| Cleanup | one row to mark empty, cascade deletes everything | N rows; a party that leaves one room but not another leaves half a run alive |
+| Open-row invariant | `unique (ZoneId, OwnerPartyId) where State = Open` says exactly what is wanted | a party may legitimately hold four open rows at once, so no constraint can express "one run per party" |
+| Rows per delve | 1 plus room-state rows | 1 per room, plus the same room-state questions anyway |
+| F3 progress and reset | progress is a child table of the run | progress is the run row, but there is no run to hang lockout or first-clear state on |
+| Code surface | group computed once per run and stored on it | group recomputed per room from two ids, and the session's group changes as you walk |
 
-What that still requires in code: the arrival result must carry the effective group, the hub must move
-the connection between groups when it changes, and `ResolveRespawnLocationAsync` must resurrect inside
-the instance rather than the public zone.
+**Choice: A, with B's information modelled as children.** The run is zone-level; the *room* remains the
+granularity of state through `ZoneInstanceLocationState`. B buys nothing A cannot express, and it loses
+the three properties F3 and F4 depend on: a stable SignalR scope for the whole delve, one object that
+means "this attempt", and a single row whose emptiness can be swept. The room-level detail that makes B
+attractive lives on as child rows, not as the identity.
+
+#### F2.2 Why not the derived string
+
+`zone:{zoneId}#party:{partyId}` and `#solo:{characterId}` were the first proposal. They are cheap and
+need no migration, and they are rejected for three reasons that only show up later:
+
+1. **They conflate who with which run.** That key is one scope forever, so "reset the dungeon" and "the
+   party is mid-run" become the same rows; F3 needs them distinguishable.
+2. **Ghost scopes fail silently.** A mis-composed suffix spawns a private copy of the dungeon that
+   nothing will ever clean up. A row plus a unique index turns that into a constraint violation.
+3. **Party lifecycle rekeys live state.** Disband, leave or kick inside a room changes the key mid-run,
+   so enemy rows, ground items and combat sessions all have to be re-keyed or the character silently
+   changes instance.
+
+What survives from that proposal is the useful part: the group name is still a single string, still
+cheap to scope by, and still what SignalR joins. It is simply *allocated on the row* rather than
+assembled at every call site — `zone:{zoneId}_{difficultyMode}#i1:{runId}`, composed in one place.
+
+#### F2.3 The tables, beside the ones they replace
+
+Current, for reference — the three tables that carry live world state today:
+
+| `EnemyInstance` | `GroundItem` | `CombatSession` |
+|---|---|---|
+| `Id` | `Id` | `CharacterId` (PK) |
+| `ZoneGroup` | `ZoneId` | `EnemyInstanceId` |
+| `LocationSlug` | `LocationSlug` | `ZoneGroup` |
+| `ArchetypeSlug` | `ItemRef` | `LocationSlug` |
+| `Name`, `Level` | `Quantity`, `Durability` | `TurnCount`, `PlayerDefending` |
+| `CurrentHealth`, `MaxHealth` | `DroppedByCharacterId` | `StartedAt`, `UpdatedAt` |
+| `BaseXp`, `GoldReward` | `DroppedAt` | `DisconnectedAt` |
+| `IsAlive`, `SpawnedAt`, `RespawnAt`, `Version` | — | — |
+| participants, combat sessions | — | enemy, character |
+
+The world is scoped three different ways today: `ZoneGroup` + `LocationSlug` on enemies and combat,
+`ZoneId` + `LocationSlug` on ground items, and nothing at all on sessions. That is the inconsistency
+instancing exposes, and it is why ground items cannot currently be instanced without a key change.
+
+Proposed. Only the columns in **bold** change on existing rows:
+
+| `ZoneInstance` (new) | `EnemyInstance` | `GroundItem` | `CombatSession` | `PlayerSession` |
+|---|---|---|---|---|
+| `Id` (Guid, PK) | `Id` | `Id` | `CharacterId` (PK) | `Id` |
+| `ZoneId` | `ZoneGroup` kept as transport | `ZoneId` kept | `EnemyInstanceId` | `CharacterId` |
+| `OwnerPartyId` null for solo | **`ZoneInstanceId` (Guid?)** | **`ZoneInstanceId` (Guid?)** | `ZoneGroup` kept | `ConnectionId` |
+| `CreatedByCharacterId` | `LocationSlug` | `LocationSlug` | `LocationSlug` | `RegionId`, `ZoneId` |
+| `ZoneGroup` allocated once | `ArchetypeSlug`, `Name`, `Level` | `ItemRef`, `Quantity`, `Durability` | `TurnCount`, `PlayerDefending` | `CurrentMapId`, `CurrentNodeId` |
+| `State`: Open, Empty, Purging | `CurrentHealth`, `MaxHealth` | `DroppedByCharacterId`, `DroppedAt` | `StartedAt`, `UpdatedAt` | **`ZoneInstanceId` (Guid?)** |
+| `CreatedAt`, `LastOccupiedAt` | `BaseXp`, `GoldReward` | — | `DisconnectedAt` | `EnteredAt` |
+| `RowVersion` | `IsAlive`, `SpawnedAt`, `RespawnAt`, `Version` | — | — | — |
+
+Three deliberate non-changes:
+
+- **`ZoneGroup` stays on enemies and combat.** It is the broadcast address, it is already indexed, and
+  removing it would churn every spawn and attack path for no gain.
+- **`CombatSession` gets no `ZoneInstanceId`.** It already has `EnemyInstanceId`, so the run is one join
+  away; a second column would be a second answer to the same question on the hottest write path.
+- **`GroundItem` keeps `ZoneId`.** It is still the cheapest way to answer "what is on the floor in this
+  zone" for the public case, where `ZoneInstanceId` is null.
+
+Two new children of the run:
+
+| `ZoneInstanceParticipant` | `ZoneInstanceLocationState` (F3) |
+|---|---|
+| `ZoneInstanceId` | `ZoneInstanceId` |
+| `CharacterId` | `LocationSlug` |
+| `JoinedAt` | `IsCleared`, `ClearedAt` |
+| `LeftAt` null while inside | `FirstClearedByCharacterId`, `FirstClearedAt` |
+| PK `ZoneInstanceId, CharacterId` | PK `ZoneInstanceId, LocationSlug` |
+
+Participants exist so credit survives a disconnect or an early exit. The existing `EnemyParticipant`
+answers "who damaged this mob", not "who was on this run".
+
+Indexes, and the one race:
+
+```sql
+-- one open run per party, per zone
+create unique index ix_zone_instance_open_party
+    on "ZoneInstances" ("ZoneId", "OwnerPartyId")
+    where "OwnerPartyId" is not null and "State" = 0;
+
+-- one open run per solo character, per zone
+create unique index ix_zone_instance_open_solo
+    on "ZoneInstances" ("ZoneId", "CreatedByCharacterId")
+    where "OwnerPartyId" is null and "State" = 0;
+
+create index ix_enemy_instance_run on "EnemyInstances" ("ZoneInstanceId", "LocationSlug");
+create index ix_ground_item_run on "GroundItems" ("ZoneInstanceId", "LocationSlug");
+```
+
+Two members entering the same room at the same instant: one insert wins the partial index, the loser
+catches `DbUpdateException`, re-reads and joins. This is the same shape as the existing spawn race in
+[`GetAliveOrSpawnAsync`](../Veldrath.Server/Features/Characters/Combat/EfCoreEnemyInstanceStore.cs:84),
+which already logs and adopts the winner.
+
+#### F2.4 The lifecycle, in rules
+
+| Moment | Behaviour |
+|---|---|
+| Enter a **public** location | no row; the group stays `zone:{zoneId}`; everything works as today |
+| Enter an **instanced** location | find an open run for the zone and party; else one for the zone and solo character; else insert. Then join its group |
+| Solo player | `OwnerPartyId` null, run keyed by character — still a real run, so a retry after emptying gets a new id |
+| Late joiner | the same lookup, so a party member always lands in the party's run; nobody is ever told an instance id |
+| Leave the last instanced room | the run stays Open while any `PlayerSession` points at it, including from the lobby, so backtracking keeps the attempt |
+| The run empties | State Empty and `LastOccupiedAt` now; after a configurable grace, Purging then delete, cascading enemies, ground items, participants and room state |
+| Party disbands inside | `OwnerPartyId` is provenance, not a live foreign key; the run survives until empty |
+| Death | respawn at the run's lobby if the run is still open, otherwise the public zone lobby |
+| Disconnect and reconnect | `PlayerSession.ZoneInstanceId` restores the run; the group is recomputed from the row |
+
+#### F2.5 Hardening rules
+
+1. One formatter and one parser for the group name, unit-tested; nothing else concatenates.
+2. Never recover identity by parsing a group name; business logic carries `ZoneInstanceId`.
+3. Never accept an instance id or group name from a client — not chat commands, not summon effects, not
+   Foundry tooling. The server joins groups.
+4. Version the suffix (`#i1:`) so a format change is detected rather than silently reinterpreted.
+5. Fix the composition order with the existing modifier: `zone:{zoneId}_{difficultyMode}#i1:{runId}`.
+6. Emptiness respects the disconnect grace, so a relog rejoins the run instead of finding a fresh one.
+7. Never show a run id to a player. "Attempt 3" at most.
+8. Ship an operator lever: list open runs and purge one, so a stuck run is fixable without SQL.
+
+#### F2.6 Order of work
+
+| Step | Ships | Tests |
+|---|---|---|
+| 1 | `ZoneInstance` entity, `ZoneInstanceState`, `ZoneGroupName` value object, migration | formatter and parser round-trip, including a wilderness hardcore instance |
+| 2 | `IZoneInstanceService` with find-or-create, unique-index retry, emptiness and purge | party join, solo join, concurrent join, disband, empty then purge |
+| 3 | `PlayerSession.ZoneInstanceId`, arrival carries the effective group, hub moves the connection between groups | group switch on entry, group restored on reconnect, public path unchanged |
+| 4 | `EnemyInstance.ZoneInstanceId` and `GroundItem.ZoneInstanceId`; reads key on the run when it is set | two parties clearing the same rooms see different enemies and different floor loot |
+| 5 | Instance-scoped respawn | death inside a run resurrects in its lobby; death in a purged run falls back to the zone |
+| 6 | Operator endpoint: list and purge | authenticated, audit-logged, refuses a non-staff caller |
 
 ### F3 — progress, reset and unlocks
 
