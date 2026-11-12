@@ -23,6 +23,61 @@ export interface ServerInfoPayload {
 	minCompatibleClientVersion: string;
 }
 
+/** One material a recipe needs, with how many the character already holds. */
+export interface CraftMaterial {
+	itemRef: string;
+	required: number;
+	owned: number;
+}
+
+/**
+ * A catalog recipe as the crafting panel needs it.
+ *
+ * `requiredStation` is informational: nothing in the world model places a station in a location, so
+ * the server cannot refuse a craft for it and neither does the panel.
+ */
+export interface CraftableRecipe {
+	slug: string;
+	name: string;
+	description: string;
+	category: string;
+	requiredLevel: number;
+	requiredSkill?: string | null;
+	requiredSkillLevel: number;
+	skillRank: number;
+	requiredStation?: string | null;
+	requiredStationTier: number;
+	materials: CraftMaterial[];
+	outputItemRef: string;
+	outputQuantity: number;
+	experienceGained: number;
+	available: boolean;
+	unavailableReason?: string | null;
+}
+
+/** The caller's craftable recipes, sent in answer to `GetCraftableRecipes`. */
+export interface CraftableRecipesPayload {
+	recipes: CraftableRecipe[];
+}
+
+/** One material a completed craft consumed. */
+export interface ConsumedMaterial {
+	itemRef: string;
+	quantity: number;
+}
+
+/** A craft that succeeded, broadcast to the zone. */
+export interface ItemCraftedPayload {
+	characterId?: string;
+	recipeSlug: string;
+	recipeName?: string | null;
+	itemRef?: string | null;
+	outputQuantity: number;
+	consumedMaterials?: ConsumedMaterial[] | null;
+	skillId?: string | null;
+	skillXp: number;
+}
+
 /**
  * One learned power, resolved against the power catalog by the server.
  *

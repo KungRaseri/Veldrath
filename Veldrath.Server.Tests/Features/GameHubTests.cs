@@ -3596,7 +3596,7 @@ public class GameHubTests : IDisposable
         var mediatorMock = new Mock<ISender>();
         mediatorMock
             .Setup(m => m.Send(It.IsAny<IRequest<CraftItemHubResult>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new CraftItemHubResult { Success = true, ItemCrafted = "iron-sword", GoldSpent = 50, RemainingGold = 50 });
+            .ReturnsAsync(new CraftItemHubResult { Success = true, RecipeSlug = "iron-sword", RecipeName = "Iron sword", ItemRef = "@items/weapons/swords:iron-sword", OutputQuantity = 1 });
 
         var (hub, _, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"] = character.Id;
@@ -3620,7 +3620,7 @@ public class GameHubTests : IDisposable
         var mediatorMock = new Mock<ISender>();
         mediatorMock
             .Setup(m => m.Send(It.IsAny<IRequest<CraftItemHubResult>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new CraftItemHubResult { Success = true, ItemCrafted = "iron-sword", GoldSpent = 50, RemainingGold = 50 });
+            .ReturnsAsync(new CraftItemHubResult { Success = true, RecipeSlug = "iron-sword", RecipeName = "Iron sword", ItemRef = "@items/weapons/swords:iron-sword", OutputQuantity = 1 });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"] = character.Id;
@@ -3643,7 +3643,7 @@ public class GameHubTests : IDisposable
         var mediatorMock = new Mock<ISender>();
         mediatorMock
             .Setup(m => m.Send(It.IsAny<IRequest<CraftItemHubResult>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new CraftItemHubResult { Success = true, ItemCrafted = "iron-sword", GoldSpent = 50, RemainingGold = 50 });
+            .ReturnsAsync(new CraftItemHubResult { Success = true, RecipeSlug = "iron-sword", RecipeName = "Iron sword", ItemRef = "@items/weapons/swords:iron-sword", OutputQuantity = 1 });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"] = character.Id;
@@ -3694,103 +3694,6 @@ public class GameHubTests : IDisposable
 
         clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "Error");
-    }
-
-    // CraftItemHubCommandHandler
-    [Fact]
-    public async Task CraftItem_Handler_Should_Deduct_Gold_And_Return_Crafted_Item()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-        var character = await SeedCharacterWithCraftingGoldAsync(db, accountId, gold: 200);
-
-        var handler = new CraftItemHubCommandHandler(
-            new CharacterRepository(db),
-            NullLogger<CraftItemHubCommandHandler>.Instance);
-
-        var result = await handler.Handle(
-            new CraftItemHubCommand(character.Id, "iron-sword"),
-            CancellationToken.None);
-
-        result.Success.Should().BeTrue();
-        result.ItemCrafted.Should().Be("iron-sword");
-        result.GoldSpent.Should().Be(50);
-        result.RemainingGold.Should().Be(150);
-    }
-
-    [Fact]
-    public async Task CraftItem_Handler_Should_Fail_When_Not_Enough_Gold()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-        var character = await SeedCharacterWithCraftingGoldAsync(db, accountId, gold: 10);
-
-        var handler = new CraftItemHubCommandHandler(
-            new CharacterRepository(db),
-            NullLogger<CraftItemHubCommandHandler>.Instance);
-
-        var result = await handler.Handle(
-            new CraftItemHubCommand(character.Id, "iron-sword"),
-            CancellationToken.None);
-
-        result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("gold");
-    }
-
-    [Fact]
-    public async Task CraftItem_Handler_Should_Fail_When_Recipe_Slug_Is_Empty()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-        var character = await SeedCharacterWithCraftingGoldAsync(db, accountId, gold: 200);
-
-        var handler = new CraftItemHubCommandHandler(
-            new CharacterRepository(db),
-            NullLogger<CraftItemHubCommandHandler>.Instance);
-
-        var result = await handler.Handle(
-            new CraftItemHubCommand(character.Id, ""),
-            CancellationToken.None);
-
-        result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("empty");
-    }
-
-    [Fact]
-    public async Task CraftItem_Handler_Should_Fail_When_Character_Not_Found()
-    {
-        await using var db = _factory.CreateContext();
-
-        var handler = new CraftItemHubCommandHandler(
-            new CharacterRepository(db),
-            NullLogger<CraftItemHubCommandHandler>.Instance);
-
-        var result = await handler.Handle(
-            new CraftItemHubCommand(Guid.NewGuid(), "iron-sword"),
-            CancellationToken.None);
-
-        result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("not found");
-    }
-
-    [Fact]
-    public async Task CraftItem_Handler_Should_Persist_Updated_Gold_To_Database()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-        var character = await SeedCharacterWithCraftingGoldAsync(db, accountId, gold: 300);
-
-        var handler = new CraftItemHubCommandHandler(
-            new CharacterRepository(db),
-            NullLogger<CraftItemHubCommandHandler>.Instance);
-
-        await handler.Handle(
-            new CraftItemHubCommand(character.Id, "magic-staff"),
-            CancellationToken.None);
-
-        var updated = await db.Characters.FindAsync(character.Id);
-        var attrs = JsonSerializer.Deserialize<Dictionary<string, int>>(updated!.Attributes)!;
-        attrs["Gold"].Should().Be(250);
     }
 
     // EnterDungeon hub method

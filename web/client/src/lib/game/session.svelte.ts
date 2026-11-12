@@ -10,6 +10,7 @@ import {
 	describeCombatTurn,
 	outcomeFrom
 } from './reducers';
+import { craftedSummary } from './crafting';
 import { resolvePowers, type PowerContext } from './powers';
 import { applySkillProgress, resolveSkills, skillLabel } from './skills';
 import type {
@@ -30,10 +31,13 @@ import type {
 	CombatStartedPayload,
 	CombatState,
 	CombatTurnPayload,
+	CraftableRecipe,
+	CraftableRecipesPayload,
 	EmotePayload,
 	GroundItem,
 	InventoryItem,
 	InventoryLoadedPayload,
+	ItemCraftedPayload,
 	ItemReceivedPayload,
 	KickedPayload,
 	LearnedPower,
@@ -123,6 +127,8 @@ export class GameSession {
 	skills = $state<SkillView[]>([]);
 	/** Rank-up announcement shown as a toast, or `null` when there is nothing to announce. */
 	skillRankUpToast = $state<{ name: string; rank: number } | null>(null);
+	/** Recipes the character could craft, as the server last described them. */
+	craftableRecipes = $state<CraftableRecipe[]>([]);
 	shopCatalog = $state<ShopCatalogItem[]>([]);
 	shopZone = $state<string | null>(null);
 	chat = $state<ChatMessage[]>([]);
@@ -137,6 +143,7 @@ export class GameSession {
 	showSettings = $state(false);
 	showAbilities = $state(false);
 	showSkills = $state(false);
+	showCrafting = $state(false);
 	showAttributes = $state(false);
 	showParty = $state(false);
 	loadingMap = $state(false);
@@ -902,6 +909,17 @@ export class GameSession {
 
 		hub.on('SkillXpGained', (payload: SkillXpGainedPayload) => this.applySkillXp(payload));
 
+		hub.on('CraftableRecipes', (payload: CraftableRecipesPayload) => {
+			this.craftableRecipes = (payload.recipes ?? []).filter((recipe) => Boolean(recipe?.slug));
+		});
+
+		hub.on('ItemCrafted', (payload: ItemCraftedPayload) => {
+			// The server has already applied the craft; this is the announcement plus a bag refresh,
+			// so the sheet never shows materials that have been consumed.
+			this.addSystemMessage(craftedSummary(payload));
+			void this.openInventory();
+		});
+
 		hub.on('ShopVisited', (payload: { zoneId: string; zoneName: string }) => {
 			this.shopZone = payload.zoneName;
 			this.showShop = true;
@@ -1190,6 +1208,28 @@ export class GameSession {
 	/** Clears the rank-up toast once the player has seen it. */
 	dismissSkillToast(): void {
 		this.skillRankUpToast = null;
+	}
+
+	/** Opens the crafting panel and asks the server what can be made right now. */
+	async openCrafting(): Promise<void> {
+		this.showCrafting = true;
+		await this.loadCraftableRecipes();
+	}
+
+	/** Re-reads the craftable recipe list from the server. */
+	async loadCraftableRecipes(): Promise<void> {
+		if (!this.hub) return;
+		await this.hub.invoke('GetCraftableRecipes');
+	}
+
+	/**
+	 * Crafts one recipe. Every check belongs to the server — level, skill rank and materials — and
+	 * the outcome arrives as an `ItemCrafted` broadcast, so nothing is optimistically applied here.
+	 */
+	async craft(recipeSlug: string): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('CraftItem', recipeSlug);
 	}
 
 	/**

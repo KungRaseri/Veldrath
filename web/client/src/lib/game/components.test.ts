@@ -126,6 +126,8 @@ function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
 		carriedItemCount: 1,
 		skills: [],
 		skillRankUpToast: null,
+		craftableRecipes: [],
+		showCrafting: false,
 		powers: [
 			{
 				slug: 'heal',

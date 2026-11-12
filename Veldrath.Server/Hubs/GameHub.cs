@@ -1501,11 +1501,11 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Craft an item using the named recipe, deducting the crafting cost from the caller's
-    /// active character's gold. Broadcasts <c>ItemCrafted</c> to the zone group (or back to
-    /// the caller when not in a zone).
+    /// Crafts an item from a catalog recipe: the materials are consumed, the output is added to the
+    /// bag and the recipe's skill experience is awarded. Broadcasts <c>ItemCrafted</c> to the zone
+    /// group (or back to the caller when not in a zone).
     /// </summary>
-    /// <param name="recipeSlug">The slug of the recipe to craft (e.g. <c>"iron-sword"</c>).</param>
+    /// <param name="recipeSlug">The slug of the recipe to craft (e.g. <c>"iron-longsword"</c>).</param>
     public async Task CraftItem(string recipeSlug)
     {
         if (!TryGetCharacterId(out var characterId))
@@ -1524,15 +1524,19 @@ public class GameHub : Hub
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(result.ItemCrafted))
-                await AdvanceQuestObjectivesAsync(characterId, QuestObjectiveKinds.Craft, result.ItemCrafted);
+            if (!string.IsNullOrWhiteSpace(result.ItemRef))
+                await AdvanceQuestObjectivesAsync(characterId, QuestObjectiveKinds.Craft, result.RecipeSlug);
 
             var payload = new
             {
                 CharacterId = characterId,
-                RecipeSlug = recipeSlug,
-                result.GoldSpent,
-                result.RemainingGold,
+                result.RecipeSlug,
+                result.RecipeName,
+                result.ItemRef,
+                result.OutputQuantity,
+                result.ConsumedMaterials,
+                result.SkillId,
+                result.SkillXp,
             };
 
             if (TryGetCurrentZoneGroup(out var zoneGroup))
@@ -1540,15 +1544,51 @@ public class GameHub : Hub
             else
                 await Clients.Caller.SendAsync("ItemCrafted", payload);
 
+            // The bag and the recipe list both changed, so the caller re-reads what it can now make.
+            await SendCraftableRecipesAsync(characterId);
+
             _logger.LogInformation(
-                "Character {CharacterId} crafted '{RecipeSlug}'; remaining gold {Gold}",
-                characterId, recipeSlug, result.RemainingGold);
+                "Character {CharacterId} crafted {Quantity}x '{ItemRef}' from '{RecipeSlug}'.",
+                characterId, result.OutputQuantity, result.ItemRef, result.RecipeSlug);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error in CraftItem for character {CharacterId}", characterId);
             await Clients.Caller.SendAsync("Error", "Failed to craft item");
         }
+    }
+
+    /// <summary>
+    /// Sends the caller the recipes their character could craft, with material availability and the
+    /// reason each unavailable recipe is unavailable.
+    /// </summary>
+    public async Task GetCraftableRecipes()
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetCraftableRecipes");
+            return;
+        }
+
+        await SendCraftableRecipesAsync(characterId);
+    }
+
+    /// <summary>Sends <c>CraftableRecipes</c> to the caller, or an empty list when the read fails.</summary>
+    /// <param name="characterId">The character whose bag and skill ranks to read.</param>
+    private async Task SendCraftableRecipesAsync(Guid characterId)
+    {
+        IReadOnlyList<CraftableRecipeDto> recipes;
+        try
+        {
+            recipes = await _mediator.Send(new GetCraftableRecipesQuery(characterId));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to build the craft list for {CharacterId}.", characterId);
+            recipes = [];
+        }
+
+        await Clients.Caller.SendAsync("CraftableRecipes", new { Recipes = recipes });
     }
 
     /// <summary>
