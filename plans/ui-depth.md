@@ -6,6 +6,22 @@
 > arrive. E is the milestone that makes them legible.
 > **Tracker:** no epic yet — this file is the specification; cards get created per phase after review.
 
+## Status (2026-11-12)
+
+| Phase | State |
+|---|---|
+| E1 powers and abilities | **shipped** — PR #65 |
+| E2 skill sheet, `SkillXpGained` subscriber | **shipped** — PR #66 |
+| E3 combat depth, shared fight snapshot | **shipped** — PR #67 |
+| E4 NPC dialogue | **blocked by the content schema** — see §3.4a |
+| E5 crafting on the real engine | sized in §3.5a; not started |
+| E6 dungeons | not started; still needs the zone-vs-instance decision |
+
+E1–E3 each turned out to need a server bridge as well as a panel: abilities shipped slugs instead of
+content, `SkillXpGained` had no listener, and combat was broadcast to the caller alone. The pattern
+that worked, twice, is worth stating: **resolve the content on the server into the snapshot, keep
+the display rules in one pure client module, and delete the parity allow-list entry as the proof.**
+
 ---
 
 ## 1. The problem, stated precisely
@@ -190,18 +206,33 @@ the panel reads (a payload test, not a UI test, for the wire shape).
 
 ---
 
-### E4 — NPC dialogue
+### E4 — NPC dialogue → **moved out of E** (content schema first)
 
 **Goal.** Talking to an NPC shows authored prose and real options, and choosing one has a consequence.
 
 **What exists today.** `TalkToNpc` advances a `talk:<npcSlug>` quest objective and returns nothing
-([`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:1411)). There is no dialogue text on the wire at all.
-The engine does have [`DialogueCatalog`](../RealmEngine.Core/Features/DialogueCatalog/),
-[`IDialogueRepository`](../RealmEngine.Shared/Abstractions/IDialogueRepository.cs), the `DialogueEntry`
-model and [`NpcCatalog`](../RealmEngine.Core/Features/NpcCatalog/), and Foundry already edits dialogue
-content.
+([`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:1411)). Two gaps closed the phase before it opened:
 
-**Work.**
+1. **Dialogue is a line pool, not a node graph.** [`Dialogue`](../RealmEngine.Data/Entities/Content/Dialogue.cs:9)
+   is a `ContentBase` whose payload is `Stats.Lines` — a `List<string>` — plus trait flags (`Greeting`,
+   `Farewell`, `Merchant`, `QuestRelated`, `Hostile`, `Friendly`) and optional `Tone`/`Formality` indices.
+   There are **no nodes, no options, no requirements and no consequences** in the model, so
+   `ChooseDialogueOption` would have nothing to choose from.
+2. **NPCs are not placed anywhere.** [`ActorInstance`](../RealmEngine.Data/Entities/Content/ActorInstance.cs:10)
+   is a per-actor stat *override* of an `ActorArchetype`, with no zone or location field, and
+   `LocationEntered` carries only `spawnedEnemies` ([`GameHub.cs`](../Veldrath.Server/Hubs/GameHub.cs:2216)).
+   The client has no NPC to click: `TalkToNpc(npcSlug)` is callable, but nothing ever produces the slug.
+
+**Consequence.** E4 is a content-schema phase with a panel at the end, not a UI phase:
+
+- a placement model — NPCs attached to a zone location, exposed on `LocationEntered`, editable in Foundry;
+- a dialogue structure — nodes with prose, options, a requirement per option and a consequence per option;
+- then the panel described below, which is cheap once those two exist.
+
+Deferred to the content milestone that follows E. Shipping a dialogue panel against a line pool would
+produce a surface with no decisions in it — the exact failure mode this milestone exists to prevent.
+
+**Work (when the two prerequisites land).**
 
 1. Server: a real `TalkToNpc` that resolves the NPC and returns its opening node — speaker display name,
    portrait or icon reference, prose, and options with their requirements and consequences. A new
@@ -387,3 +418,39 @@ end with that deferral deleted from the allow-list — that, and not a screensho
 | Payload growth | `CharacterSelected` gets bigger with powers and skills | One query per selection, a compact DTO per entity, and a payload-contract test that fails on drift |
 | Two monoliths get worse | Every overlay added to `GameOverlays` makes the next one harder | D5: the touched overlay moves out in the same PR |
 | Coverage erosion on the server | New hub bridges are long methods with many branches | Handler tests per rejection path; the .NET gate is a no-regression ratchet, not a target |
+
+---
+
+## 8. Findings after E1–E3 (2026-11-12)
+
+Recorded as they were discovered, because each one changed what a phase actually is.
+
+**E1 and E2 both needed a server bridge, not just a panel.** Abilities reached the client as a slug
+array; skills were a storage-key convention nobody read back and a broadcast nobody listened to.
+Both shipped as *resolve on the server into the snapshot, decide in one pure client module, delete the
+allow-list entry*, and that is now the pattern to copy.
+
+**E3 was mostly a server phase.** Combat turns, rewards and enemy health all went to `Clients.Caller`,
+so two players in one fight could not see each other at all. The fix was a shared snapshot broadcast to
+the zone (`CombatParticipants`) with no rewards in it, and a panel drawn from it. The lesson: when a
+panel looks thin, check who the server is talking to before rewriting the markup.
+
+**E4 is not a UI phase.** `Dialogue` is a *line pool* — `Stats.Lines` plus trait flags — with no nodes,
+options, requirements or consequences, and nothing places an NPC in a location (`ActorInstance` is a
+stat override with no zone field, and `LocationEntered` carries only enemies). A dialogue panel built on
+that would have no decisions in it. E4 therefore moves to the content milestone, behind two schema
+items: NPC placement exposed on `LocationEntered`, and dialogue nodes with per-option requirements and
+consequences. The panel becomes cheap afterwards.
+
+**E5 is a design decision, not a swap.** `CraftRecipeCommand` does not take ids: it takes a hydrated
+engine `Character`, a `Recipe` and a `CraftingStation`, and its `CraftingService` depends on
+`RecipeDataService` — a catalog loader — while the server is DB-first. So the bridge needs
+(a) hydrating an engine `Character` from the entity, attributes and inventory, (b) loading the `Recipe`
+and station from content, (c) persisting the results: ingredients removed, item added, skill XP awarded,
+gold spent. Each of those is a decision worth writing down before code, and the stub being replaced
+(`DefaultCraftingCost = 50`, no ingredient check, no item produced) makes the temptation to keep it
+cheap quite strong.
+
+**E6 still needs its decision made in writing** before anything else: dungeon as a small map reached
+through the graph, or an instanced lifecycle with its own reset semantics. The recommendation stands —
+ship the map-graph version first.
