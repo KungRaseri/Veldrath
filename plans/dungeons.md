@@ -1,0 +1,377 @@
+# Dungeons, instances and the map model
+
+> **Status: decisions taken 2026-11-12, implementation not started.**
+> This file is the record of the model decisions and the phase outline. The Foundry map editor
+> (§8) is an **outline only** and needs its own planning session before code.
+>
+> Supersedes the open question in [`ui-depth.md`](ui-depth.md) §3.6 — E6 becomes the client
+> slice of this plan, and the model itself lives here.
+
+---
+
+## 1. What the world already is
+
+The hierarchy is `World → Region → Zone → ZoneLocation`, and "where a character is" already has four
+coordinates: [`PlayerSession`](../Veldrath.Server/Data/Entities/Zone.cs:56) holds `RegionId`, `ZoneId`,
+`CurrentMapId` and `CurrentNodeId`.
+
+Maps are explicit graph data, not tilemaps:
+
+| Piece | Where | Fact |
+|---|---|---|
+| [`MapType`](../RealmEngine.Shared/Models/MapGraphModels.cs:7) | shared models | `World \| Region \| Zone` |
+| [`MapNodeType`](../RealmEngine.Shared/Models/MapGraphModels.cs:21) | shared models | `EntryPoint, Zone, Location, ZoneExit, RegionExit, Portal, Stair, Landmark` |
+| [`MapDirection`](../RealmEngine.Shared/Models/MapGraphModels.cs:50) | shared models | includes `Up`, `Down`, `In`, `Out` |
+| [`MapEdgeType`](../RealmEngine.Shared/Models/MapGraphModels.cs:79) | shared models | `Walk, ExitToZone, ExitToRegion, Portal, Door` |
+| `MapNode.TargetMapId/TargetNodeId` | shared models | **already** expresses "this node leads into another map" |
+| [`Zone.Type`](../Veldrath.Server/Data/Entities/Zone.cs:59) | server | `Town \| Wilderness \| Dungeon` |
+| [`ZoneLocation`](../RealmEngine.Data/Entities/Content/ZoneLocation.cs:7) | content | `TypeKey`, plus `Stats` (size, danger, min/max level, population) and `Traits` (`IsDungeon`, `IsIndoor`, `IsHidden`, `UnlockType/Key`, `IsDiscoverable`), plus an `ActorPool` of what spawns there |
+
+**All five dungeons are already authored as zones with interior maps.** [`MapGraphSeeder`](../RealmEngine.Data/Seeders/MapGraphSeeder.cs:275)
+gives each one a `MapType.Zone` map with an entry node, three named locations, one hidden
+quest-locked deep room and edges; [`ZoneLocationsSeeder`](../RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs:146)
+seeds the matching locations; [`ApplicationDataSeeder`](../Veldrath.Server/Data/Seeders/ApplicationDataSeeder.cs:81)
+seeds the zones themselves with a level floor and a parent region.
+
+So the question was never "how do we model dungeons". It was "what do we do with the five we have,
+and do we ever need a second model".
+
+## 2. The decisions (2026-11-12)
+
+| # | Decision | Choice |
+|---|---|---|
+| **D1** | Model | **A + B.** Keep authored zone maps *and* let a `ZoneLocation` contain rooms of its own, so a dungeon can be either a flat set of room-nodes or a location that opens into an interior graph. |
+| **D2** | Instancing | **Per location, both kinds.** A `ZoneLocation` (or its interior) is either **public** — shared world state, everyone in it shares the enemies — or **instanced** — one copy per party. Some dungeons are one, some the other. |
+| **D3** | Entry | **Both routes, one code path.** Travelling to the entrance on the map and the party-menu "enter dungeon" action must land in the same server command; neither may grow its own validation. |
+| **D4** | Progress and reset | **Per-zone shared state with party rules** — and per instance for instanced locations. |
+| **D5** | Death and escape | A **safe room (lobby)** in each dungeon, flagged per location, and an exit that always exists. |
+| **D6** | Rooms | **Locations are the rooms.** No new room record type; `ZoneLocation` + its traits + its actor pool already carry what a room needs. |
+| **D7** | Authoring | A **map editor in Foundry** (map graph, nodes, and what is in each location). Outline in §8; needs its own planning session. |
+| **D8** | Level gating | **Soft gate.** `MinLevel` produces a warning, never a refusal: the player is told what the area expects and may walk in anyway. |
+
+The engine's [`DungeonInstance`/`DungeonRoom`](../RealmEngine.Shared/Models/DungeonModels.cs:42) and
+[`DungeonGeneratorService`](../RealmEngine.Core/Features/Exploration/Services/DungeonGeneratorService.cs:12)
+are **not** adopted. They embed `Enemy` and `Item` objects inside rooms, which would resurrect the
+save-game model that milestones D and C replaced with Postgres state. They stay as engine code for
+non-server consumers and are not a roadmap.
+
+## 3. The target model
+
+### 3.1 Three map scopes, not two
+
+`MapGraph` already has `OwnerId` and `TargetMapId`. It needs one more scope, and no new entity:
+
+| `MapType` | `OwnerId` points at | Nodes are |
+|---|---|---|
+| `World` | world id | regions (reserved) |
+| `Region` | region id | zone nodes and region exits |
+| `Zone` | zone id | **locations** — and for a flat dungeon, those locations *are* the rooms |
+| `Interior` *(new)* | **a `ZoneLocation` slug** | the rooms inside that location |
+
+A zone's map can therefore hold a location node whose `TargetMapId` points at an `Interior` map
+owned by that location. The traversal mechanism is not new: `TargetMapId`/`TargetNodeId` already
+carries region ↔ zone transitions, and `TravelToNode` already follows it.
+
+This is what D1's "A + B" buys, with one enum value:
+
+- **Flat dungeon** (what the seeder already produces): the zone map's `Location` nodes are the rooms.
+  No interior map, nothing to migrate.
+- **Deep dungeon** (when a room needs its own space): a location opens into an `Interior` map whose
+  nodes are rooms. A vault inside a barrow, a wing inside an estate.
+
+### 3.2 Rooms are locations
+
+D6 means a room is a `ZoneLocation` plus:
+
+- `Traits.IsDungeon` / `IsIndoor` for framing,
+- `Traits.IsHidden` + `UnlockType`/`UnlockKey` for the deep room,
+- `Stats.DangerLevel` / `MinLevel` for the soft gate,
+- `ActorPool` for "what is in this room" — already authored in Foundry,
+- **`Traits.IsSafeRespawn`** (new use of an existing flag) for the lobby,
+- **`Traits.IsInstanced`** (new flag) for D2.
+
+Two flags on an owned JSON traits object is a migration plus a Foundry schema entry, not a new table.
+
+### 3.3 Public and instanced locations
+
+D2 asks for both, decided per location:
+
+| | Public | Instanced |
+|---|---|---|
+| Enemy rows | one set per `(zone, location)`, shared — what the D3 sweeper already manages | one set per **instance** |
+| Who is there | everyone in the zone at that node | one party |
+| Reset | the respawn window on shared state | discarded when the instance empties |
+| Party rule | the C3 rule stands: a party fights together because they are at the same location | the instance *is* the party boundary |
+
+An instance needs an identity that reaches the state it scopes, and nothing else:
+
+- `PlayerSession.InstanceId` (`Guid?`, null = public),
+- `SpawnedEnemy.InstanceId` (`Guid?`), and the same on ground items and combat sessions,
+- lookups keyed by `(location, instance)` instead of `(location)`.
+
+That is a **schema change with a data rule**, not a rewrite: null keeps every existing row behaving
+exactly as today, which is what makes this reversible.
+
+#### The instance lifecycle (settled 2026-11-12)
+
+**Who creates it: the server, on first entry.** No "open instance" command and no leader action —
+entering *is* the creation, which is what keeps D3's single entry path single. The instance is keyed by
+**`(partyId, zoneId, locationSlug)`**, so the party is the unit and a **solo player is a party of one**.
+That removes the special case entirely: "instanced" means "not shared with strangers", which is what a
+player expects, and it means the party aggregate from [`party-play.md`](party-play.md) is the only thing
+that needs to know about instances.
+
+**Late joiners:** a party member who travels to the entrance is looked up against their party's live
+instance of that location and joins it. If the party has no live instance (nobody left, or it was swept)
+entering creates a fresh one. A character with no party never joins someone else's — there is no
+matchmaking, and the entrance says so in words rather than silently putting them in a public copy.
+
+**Cleanup:** an instance ends when its **last member leaves** — an exit, a disconnect past the reconnect
+grace, or a party disbanding. The sweep rides the respawn sweeper's existing tick rather than adding a
+second timer, and it deletes the instance's enemy rows, ground items and cleared state. An instanced
+dungeon is therefore fresh per run by construction, which is the point of instancing it.
+
+**Reconnect:** the character's `InstanceId` travels on the session. On resume, if the instance is still
+alive the character lands back in it; if it was swept, they wake in the dungeon's lobby with a message.
+Entering a *different* dungeon leaves the previous instance, which then cleans up normally.
+
+**Shared-quest credit: instancing changes which enemies you fought, nothing else.** There is one quest
+system and one leaderboard:
+
+- `kill:` objectives advance for the **participants of that enemy instance** — the C3 contribution rule,
+  scoped by instance instead of by location.
+- Two parties clearing their own copies of the same boss both complete "slay the Barrow King". Both did
+  the deed; a public dungeon is where competition lives.
+- The hardcore leaderboard records a **character** fact (who died, where, when), not a world fact, so it
+  is unaffected by scope.
+- No per-instance quest state, no "instanced variant" of a quest, no lockout.
+
+**Still open (F2 detail, not blocking F1):** whether an instance survives an empty gap (all members
+disconnected inside the grace window) or is closed immediately; and whether `MaxPlayers` should cap an
+instance as well as a public location.
+
+### 3.4 Progress, reset and party rules
+
+D4, with the instancing split above:
+
+- **Cleared state** belongs to the scope: per zone for public locations, per instance for instanced
+  ones. A record carrying `(zone, location, clearedAt, clearedByParty, bossDefeatedAt)` is enough —
+  no per-character table.
+- **Deep rooms unlock on quest**: today every hidden room has `UnlockType = "quest"` and
+  `UnlockKey = null`, so nothing can ever unlock one. The key has to be authored, and the check must
+  read the character's quest blob (the same keys the quest journal already uses).
+- **Per-character first-clear** is recorded on the character's quest/achievement blob so a player can
+  tell "I have done this" from "someone in my party has".
+- **Public dungeons** repopulate on the existing respawn window; **instanced** ones are fresh per run.
+  The wiki promise that "clearing a dungeon reduces enemy respawns" becomes: a cleared public dungeon
+  gets a longer window, not a permanent empty state.
+
+### 3.5 Entry, exit and the lobby
+
+D3 and D5 in one command:
+
+```
+EnterLocation(zoneId, locationSlug)      ← the only entry point
+  ├─ resolve the location and, if it opens, its Interior map
+  ├─ D8 soft level gate: build a warning, never a refusal
+  ├─ D2 public: join the shared state | instanced: find or create the party's instance
+  ├─ move the session: ZoneId, CurrentMapId, CurrentNodeId, InstanceId
+  └─ broadcast LocationEntered / DungeonEntered to the right audience
+```
+
+- `TravelToNode` calls it when the target node is a location; the party-menu action calls it with the
+  same arguments. **`EnterDungeon` becomes a thin alias** of that command rather than its own
+  validator, and its current behaviour — validate the zone type, then do nothing — goes away.
+- Every dungeon needs an **exit**: a `RegionExit` node and an `ExitToRegion` edge, so leaving is a
+  walk, not a death.
+- Every dungeon needs a **lobby**: one location flagged `IsSafeRespawn`, which is where A2's respawn
+  puts you. Instanced dungeons resurrect inside their own instance.
+
+### 3.6 The soft gate
+
+`Zone.MinLevel` and `ZoneLocation.Stats.MinLevel` are both seeded and neither is enforced. D8 makes
+them advisory: the entry response carries `recommendedLevel` and `yourLevel`, and the client shows a
+banner — "This place expects level 11; you are 3" — with the warning repeated in the location panel.
+A player who ignores it is allowed to.
+
+## 4. Known content defects to fix while we are here
+
+These are bugs in the seeded world, not new features. Fixing them is part of phase F1.
+
+| Defect | Evidence | Effect today |
+|---|---|---|
+| Three dungeons have no way out | `barrow-deeps`, `sunken-name`, `kaldrek-maw` have no `RegionExit` node and no `ExitToRegion` edge | A character can only leave by dying |
+| The Halrow's map is disconnected | edges connect `entry ↔ halrow-threshold` and `rootbound-cellars ↔ collapsed-vault`, but nothing joins the two halves | Two rooms are unreachable |
+| No deep room can unlock | every hidden room is `UnlockType = "quest"` with `UnlockKey = null` | Boss rooms are permanently invisible |
+| No zone has a safe respawn | no `ZoneLocation` is flagged `IsSafeRespawn`, so [`ResolveRespawnLocationAsync`](../Veldrath.Server/Features/Characters/Combat/RespawnHubCommand.cs:162) always falls through to the fallback | Every death logs an `Error` and tells the player their zone has no safe point |
+| `MinLevel` never checked | seeded and exposed in DTOs, enforced nowhere | A level 1 character can enter Kaldrek's Maw |
+
+The first two are the ones a map validator would have caught; that validator is part of F1 and the
+editor in §8.
+
+## 5. Phases
+
+Each phase is independently shippable, and each ends with the parity allow-list one entry shorter.
+
+### F1 — the model and the one entry path (detailed)
+
+Everything here is public-location behaviour; instancing is F2 and changes none of it. Two findings
+shrink the phase: `IsSafeRespawn` **already exists** on the shared
+[`ZoneLocationEntry`](../RealmEngine.Shared/Models/ZoneLocationEntry.cs:20) record (the content entity
+has no matching trait and the seeder never sets it), and a
+[`MapGraphValidator`](../RealmEngine.Data/Validation/MapGraphValidator.cs:41) already exists with stable
+issue codes — so this phase **extends** both rather than inventing them.
+
+**1.1 — data and content model**
+
+| Change | Where | Note |
+|---|---|---|
+| `MapType.Interior` | [`MapGraphModels.cs`](../RealmEngine.Shared/Models/MapGraphModels.cs:7) | serialised as a string, so no column migration |
+| `Traits.IsSafeRespawn` | [`ZoneLocation.cs`](../RealmEngine.Data/Entities/Content/ZoneLocation.cs:55) `ZoneLocationTraits` | owned JSON → migration + content schema entry |
+| `Traits.IsInstanced` | same | consumed by F2, authored in F1 |
+| Map both traits onto `ZoneLocationEntry` | `EfCoreZoneLocationRepository` (entity → entry projection) | today `IsSafeRespawn` cannot be authored at all |
+| Accept `Interior` in the validator's scope rules | [`MapGraphValidator.cs`](../RealmEngine.Data/Validation/MapGraphValidator.cs:49) | an `Interior` map's owner must be a known **location** slug |
+
+**1.2 — seed the world** (the §4 defect list, plus the data the model now needs)
+
+- Exits for **barrow-deeps**, **sunken-name** and **kaldrek-maw**: a `RegionExit` node and an
+  `ExitToRegion` edge back to their region map.
+- **The Halrow**: join `halrow-threshold` (or `entry`) to `rootbound-cellars` so both cellar rooms are
+  reachable from the entrance.
+- **Lobbies**: one location per dungeon flagged `IsSafeRespawn`, plus the town locations — nothing
+  anywhere is flagged today, which is why every death logs an `Error`.
+- **Unlock keys**: give each hidden deep room a real `UnlockKey` (quest slug) instead of `null`.
+- No `Interior` maps are authored in F1 unless a dungeon needs one; the capability lands before the
+  first use, and a validator rule proves the shape.
+
+**1.3 — one entry command**
+
+- A single command (`EnterZoneLocation` / `EnterLocation` — name to be fixed in code review) that
+  resolves the zone and location, builds the D8 soft-gate figures (`recommendedLevel`, `yourLevel`),
+  moves the session's `ZoneId`/`CurrentMapId`/`CurrentNodeId`, and broadcasts to the right audience.
+- `TravelToNode` calls it when the target node is a `Location`; `EnterDungeon` becomes a two-line alias
+  that resolves a zone's entry location and calls the same command. Its current body — validate the
+  zone type, broadcast, move nobody — is deleted rather than extended.
+- The party action calls the same command with the location the party is standing at; if the character
+  is not at the entrance it fails with a message naming the entrance, never silently teleports.
+- `EnterDungeon`'s broadcast goes to the **caller** (and the zone group when the location is public),
+  not the zone group alone as today.
+
+**1.4 — the validator and the seeded-world test**
+
+New issue codes, in the existing `code` + `message` + severity style:
+
+| Code | Severity | Rule |
+|---|---|---|
+| `node_unreachable` | Error | a non-entry node is not reachable from `EntryNodeId` over traversable edges |
+| `map_without_exit` | Error for `Zone` maps whose owner is a dungeon zone, Warning otherwise | no `ZoneExit`/`RegionExit` node |
+| `unlock_key_missing` | Error | `IsHidden` or `UnlockType` set with no `UnlockKey` |
+| `target_map_unknown` | Error | `TargetMapId` names a map that is not in the known set |
+| `interior_owner_unknown` | Error | an `Interior` map's owner is not a known location slug |
+
+Wire it into the existing seeded-content test (`SeededContentValidationTests`) so the failure mode is
+"the seed does not load", which is how the Halrow's stranded rooms should have been caught.
+
+**1.5 — client (thin)**
+
+Entering already works through the map; what F1 adds is that `LocationEntered` carries the location's
+type and the soft-gate figures, and the shell shows the warning banner. Dungeon framing, the room list
+and the exit control are F4.
+
+**Definition of done for F1**
+
+- Walking to The Halrow threshold and using the party action from the entrance arrive at the same
+  location on the same map, through the same command.
+- All five dungeons can be entered *and left* without dying; the Halrow's cellar rooms are reachable.
+- A death in any zone no longer logs an `Error` and no longer says the zone has no safe point.
+- The seeded world fails to load if a map has a stranded node, no exit, or an unlockable-by-nothing
+  hidden room.
+- A player entering Kaldrek's Maw at level 3 sees the warning and is not blocked.
+
+**Tests for F1**
+
+- Server: the entry command (happy path, not-at-entrance, unknown location, soft gate figures); the
+  alias (`EnterDungeon` reaches the same result); validator cases for each new code, positive and
+  negative; seeded-world validation green.
+- Web: the warning banner renders from the payload and does not block entry.
+
+### F2 — instance lifecycle
+
+- `InstanceId` on sessions, enemy rows, ground items and combat sessions; null means public.
+- Party-scoped creation and cleanup; late joiners routed into their party's instance.
+- **Done when:** two parties can clear the same instanced dungeon without seeing each other's
+  enemies, and an empty instance disappears.
+
+### F3 — progress, reset and unlocks
+
+- Cleared/boss state per scope, the longer respawn window for a cleared public dungeon, quest unlock
+  keys for the deep rooms, per-character first-clear.
+- **Done when:** the deep room opens for a character on the right quest, the boss stays dead for the
+  window, and a cleared dungeon says so.
+
+### F4 — the client
+
+- Dungeon framing (you are underground, not in a field), the room list from the map graph with the
+  current room marked, progress, an always-available exit control, and the D8 warning banner.
+- **Done when:** a player can see where they are in a dungeon, what is left, and how to leave.
+
+### F5 — Foundry map editor
+
+Outline in §8. Its own milestone.
+
+## 6. What this deliberately does not do
+
+- **No room records.** D6: a room is a location.
+- **No engine `DungeonInstance`.** Rejected in §2.
+- **No procedural generation.** The engine generator stays unused until someone wants it; the world
+  is authored.
+- **No lockouts or daily resets.** A cleared public dungeon is a longer respawn window, not a
+  schedule.
+- **No matchmaking.** An instance belongs to a party; there is nothing to match.
+- **No PvP in dungeons.** `Zone.IsPvpEnabled` exists and stays off.
+
+## 7. Order and dependencies
+
+```mermaid
+flowchart LR
+    F1[F1 model and entry] --> F2[F2 instances]
+    F1 --> F3[F3 progress and unlocks]
+    F2 --> F3
+    F3 --> F4[F4 client]
+    F1 --> F5[F5 Foundry editor]
+```
+
+F1 before everything: nothing else can be tested while entry does not move a character and three
+dungeons have no exit. F2 before F3 because cleared state has to know which scope it belongs to.
+F4 last because it renders what F1–F3 settle. F5 can start once F1's data shape is stable.
+
+## 8. Foundry map editor — outline only
+
+Needs its own planning session. What it has to cover, so that session starts informed:
+
+1. **Route and RBAC.** A `(foundry)/maps` area behind the existing content permission, listing the
+   three scopes and their owners.
+2. **The canvas.** Nodes placed by `LayoutX`/`LayoutY` (the data the client's `CardinalMap` already
+   reads), draggable, with edges that follow `MapDirection`; the cardinal layout logic in
+   `web/client/src/lib/game/cardinal-layout.ts` is reusable for a read-only preview today.
+3. **Node inspector.** Type, `RefId`, display name and description, `IsHidden`, `UnlockType` and
+   `UnlockKey`, `DiscoverThreshold`, and for a location: the actor pool, `IsSafeRespawn`,
+   `IsInstanced`, and the `TargetMapId` that opens its interior.
+4. **Write path.** Map graphs are currently seeded from JSON only. The editor needs endpoints next to
+   the existing Foundry write path, validation before save (the F1 validator), and row versions for
+   concurrent edits.
+5. **The thing this fixes.** The Halrow's stranded rooms and the three missing exits are exactly what
+   a human looking at the graph would have seen; the editor is worth building for that alone.
+
+---
+
+## See also
+
+- [`ui-depth.md`](ui-depth.md) — milestone E; E6 is this plan's client slice.
+- [`server-first-world-state.md`](server-first-world-state.md) — the enemy and combat state that F2
+  has to scope by instance.
+- [`party-play.md`](party-play.md) — the party aggregate an instance is built for.
+- [`docs/client-ui-architecture.md`](../docs/client-ui-architecture.md) — the panel-driven client and
+  the DB map graph.
+- [`wiki/Veldrath-World.md`](../wiki/Veldrath-World.md), [`wiki/Region-Varenmark.md`](../wiki/Region-Varenmark.md)
+  — the authored world and its dungeon zones.
