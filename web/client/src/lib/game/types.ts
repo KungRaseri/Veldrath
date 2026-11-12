@@ -601,6 +601,42 @@ export const ATTRIBUTE_ORDER: { key: keyof CharacterAttributes; label: string }[
 	{ key: 'charisma', label: 'Charisma' }
 ];
 
+/** One character in a shared fight, as everyone at the location hears about them. */
+export interface CombatParticipantView {
+	characterId: string;
+	name?: string | null;
+	currentHealth: number;
+	maxHealth: number;
+	damageDealt: number;
+	contributionPercent: number;
+}
+
+/**
+ * The shared state of a fight, broadcast to the whole location.
+ *
+ * It carries no rewards on purpose: XP and gold are per-character and stay on the caller-only
+ * `CombatTurn`.
+ */
+export interface CombatParticipantsPayload {
+	enemyId: string;
+	enemyName: string;
+	enemyLevel: number;
+	enemyCurrentHealth: number;
+	enemyMaxHealth: number;
+	enemyAbilityNames: string[];
+	participants: CombatParticipantView[];
+}
+
+/** How a fight ended, using the caller's own numbers. */
+export interface CombatOutcome {
+	kind: 'victory' | 'defeat' | 'fled';
+	xpEarned: number;
+	goldEarned: number;
+	xpLost: number;
+	goldLost: number;
+	hardcore: boolean;
+}
+
 export interface CombatState {
 	active: boolean;
 	enemy: {
@@ -612,6 +648,10 @@ export interface CombatState {
 		abilities: string[];
 	} | null;
 	log: string[];
+	/** Everyone fighting the same enemy, highest contributor first. */
+	participants?: CombatParticipantView[];
+	/** Set once the fight resolves, so the panel can summarise it. */
+	outcome?: CombatOutcome | null;
 }
 
 /** Canonical equipment slots, in the order the character sheet renders them. */
