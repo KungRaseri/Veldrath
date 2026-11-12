@@ -301,6 +301,9 @@ internal static class HubHarness
             afkTracker,
             sessions ?? new FakeCombatSessionStore(),
             enemies ?? new FakeEnemyInstanceStore(),
+            new Veldrath.Server.Features.Zones.EfCoreZoneInstanceService(
+                db,
+                NullLogger<Veldrath.Server.Features.Zones.EfCoreZoneInstanceService>.Instance),
             random);
 
         var clients = new RecordingHubClients();

@@ -3833,6 +3833,44 @@ public class GameHubTests : IDisposable
             .Should().ContainSingle(m => m.Method == "Error");
     }
 
+    [Fact]
+    public async Task TravelToNode_MovesTheConnectionIntoAnInstanceGroup()
+    {
+        await using var db = _factory.CreateContext();
+        var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+
+        var instanceId = Guid.NewGuid();
+        var instanceGroup = $"zone:the-halrow#i1:{instanceId:D}";
+
+        var mediatorMock = new Mock<ISender>();
+        mediatorMock
+            .Setup(m => m.Send(
+                It.IsAny<Veldrath.Server.Features.Map.TravelToNodeHubCommand>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Veldrath.Server.Features.Map.TravelToNodeHubResult
+            {
+                Success = true,
+                MapId = "zone:the-halrow",
+                NodeId = "zone:the-halrow:location:rootbound-cellars",
+                ZoneGroup = instanceGroup,
+                ZoneInstanceId = instanceId,
+            });
+
+        var (hub, _, groups, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
+        ctx.Items["CharacterId"] = character.Id;
+        ctx.Items["CurrentZoneGroupName"] = "zone:the-halrow";
+
+        await hub.TravelToNode(new Veldrath.Contracts.Map.TravelToNodeHubRequest(
+            "zone:the-halrow",
+            "zone:the-halrow:location:rootbound-cellars"));
+
+        groups.RemovedGroups.Should().Contain("zone:the-halrow");
+        groups.AddedGroups.Should().Contain(instanceGroup);
+        ctx.Items["CurrentZoneGroupName"].Should().Be(instanceGroup);
+        ctx.Items["CurrentZoneInstanceId"].Should().Be(instanceId);
+    }
+
     // The handler-level dungeon tests live in EnterDungeonHubCommandHandlerTests; the command is now
     // a thin alias of EnterZoneLocationHubCommand and needs fakes rather than the application database.
 

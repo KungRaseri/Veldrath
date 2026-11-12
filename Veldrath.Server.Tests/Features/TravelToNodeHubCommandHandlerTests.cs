@@ -281,7 +281,9 @@ public class TravelToNodeHubCommandHandlerTests
         result.LevelWarning.Should().Contain("expects level 12");
         result.LocationTypeKey.Should().Be("dungeons");
         result.IsDungeonLocation.Should().BeTrue();
-        result.IsInstanced.Should().BeTrue();
+        result.IsInstanced.Should().BeTrue("the location is flagged instanced");
+        result.ZoneInstanceId.Should().NotBeNull("an instanced arrival belongs to a run");
+        result.ZoneGroup.Should().StartWith("zone:crestfall#i1:");
     }
 
     [Fact]
@@ -421,6 +423,19 @@ public class TravelToNodeHubCommandHandlerTests
         var actorPoolResolver = new ActorPoolResolver(
             new EnemyGenerator(enemyRepo.Object, NullLogger<EnemyGenerator>.Instance));
 
+        var instanceService = new Mock<Veldrath.Server.Features.Zones.IZoneInstanceService>();
+        instanceService
+            .Setup(service => service.FindOrCreateAsync(
+                It.IsAny<string>(),
+                It.IsAny<Guid>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ZoneInstance
+            {
+                ZoneId = "crestfall",
+                ZoneGroup = $"zone:crestfall#i1:{Guid.NewGuid():D}",
+            });
+
         var handler = new TravelToNodeHubCommandHandler(
             mapRepo.Object,
             characterRepo.Object,
@@ -430,6 +445,7 @@ public class TravelToNodeHubCommandHandlerTests
             locationRepo.Object,
             actorPoolResolver,
             new Veldrath.Server.Tests.Infrastructure.FakeEnemyInstanceStore(),
+            instanceService.Object,
             NullLogger<TravelToNodeHubCommandHandler>.Instance);
 
         return (handler, mapRepo, characterRepo, unlockedRepo, sessionRepo, zoneRepo, locationRepo, enemyRepo);

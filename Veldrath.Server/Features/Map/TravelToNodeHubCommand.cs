@@ -58,6 +58,18 @@ public record TravelToNodeHubResult
     /// <summary>Gets the location slug when the destination is a <c>Location</c> node.</summary>
     public string? LocationSlug { get; init; }
 
+    /// <summary>
+    /// Gets the SignalR group the character is now scoped to. It equals the shared zone scope for a public
+    /// location, and the run's own scope when the location is instanced, so the hub knows whether to move
+    /// the connection between groups.
+    /// </summary>
+    public string? ZoneGroup { get; init; }
+
+    /// <summary>
+    /// Gets the instance run the character is now inside, or <see langword="null"/> for the shared zone.
+    /// </summary>
+    public Guid? ZoneInstanceId { get; init; }
+
     /// <summary>Gets the location's content type key, such as <c>locations</c> or <c>dungeons</c>.</summary>
     public string? LocationTypeKey { get; init; }
 
@@ -113,6 +125,7 @@ public class TravelToNodeHubCommandHandler
     private readonly IZoneLocationRepository _locationRepo;
     private readonly ActorPoolResolver _actorPoolResolver;
     private readonly IEnemyInstanceStore _enemyStore;
+    private readonly IZoneInstanceService _instances;
     private readonly ILogger<TravelToNodeHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="TravelToNodeHubCommandHandler"/>.</summary>
@@ -124,6 +137,7 @@ public class TravelToNodeHubCommandHandler
     /// <param name="locationRepo">Zone-location repository used for discovery and rosters.</param>
     /// <param name="actorPoolResolver">Resolver that spawns the destination enemy roster.</param>
     /// <param name="enemyStore">Store for the live enemy instances at the destination.</param>
+    /// <param name="instances">Instance-run service, used when the destination location is instanced.</param>
     /// <param name="logger">Logger for diagnostic output.</param>
     public TravelToNodeHubCommandHandler(
         IMapGraphRepository mapRepo,
@@ -134,6 +148,7 @@ public class TravelToNodeHubCommandHandler
         IZoneLocationRepository locationRepo,
         ActorPoolResolver actorPoolResolver,
         IEnemyInstanceStore enemyStore,
+        IZoneInstanceService instances,
         ILogger<TravelToNodeHubCommandHandler> logger)
     {
         _mapRepo = mapRepo;
@@ -144,6 +159,7 @@ public class TravelToNodeHubCommandHandler
         _locationRepo = locationRepo;
         _actorPoolResolver = actorPoolResolver;
         _enemyStore = enemyStore;
+        _instances = instances;
         _logger = logger;
     }
 
@@ -207,6 +223,12 @@ public class TravelToNodeHubCommandHandler
                 ? null
                 : await _locationRepo.GetBySlugAsync(hereLocationSlug);
             var (hereRecommended, hereWarning) = EvaluateGate(character.Level, hereLocation, hereZone);
+            var (hereInstanceId, hereGroup) = await ResolveScopeAsync(
+                hereZoneId,
+                hereLocation,
+                request.ZoneGroup,
+                request.CharacterId,
+                cancellationToken);
 
             return new TravelToNodeHubResult
             {
@@ -218,6 +240,8 @@ public class TravelToNodeHubCommandHandler
                 Message = $"Already at {selectedNode.DisplayName}.",
                 ZoneId = hereZoneId,
                 LocationSlug = hereLocationSlug,
+                ZoneGroup = hereGroup,
+                ZoneInstanceId = hereInstanceId,
                 LocationTypeKey = hereLocation?.TypeKey,
                 IsDungeonLocation = string.Equals(hereLocation?.TypeKey, "dungeons", StringComparison.OrdinalIgnoreCase),
                 IsInstanced = hereLocation?.IsInstanced ?? false,
@@ -293,6 +317,12 @@ public class TravelToNodeHubCommandHandler
             : await _locationRepo.GetBySlugAsync(locationSlug);
 
         var (recommendedLevel, levelWarning) = EvaluateGate(character.Level, location, zone);
+        var (instanceId, effectiveGroup) = await ResolveScopeAsync(
+            zoneId,
+            location,
+            request.ZoneGroup,
+            request.CharacterId,
+            cancellationToken);
 
         await _characterRepo.UpdateMapPositionAsync(
             request.CharacterId,
@@ -320,7 +350,7 @@ public class TravelToNodeHubCommandHandler
             : [];
 
         var (spawnedEnemies, contentWarnings) = await EnsureRosterAsync(
-            request.ZoneGroup,
+            effectiveGroup ?? string.Empty,
             destinationMap,
             destinationNode,
             zoneId,
@@ -348,6 +378,8 @@ public class TravelToNodeHubCommandHandler
             ZoneId = zoneId,
             RegionId = regionId,
             LocationSlug = locationSlug,
+            ZoneGroup = effectiveGroup,
+            ZoneInstanceId = instanceId,
             LocationTypeKey = location?.TypeKey,
             IsDungeonLocation = string.Equals(location?.TypeKey, "dungeons", StringComparison.OrdinalIgnoreCase),
             IsInstanced = location?.IsInstanced ?? false,
@@ -488,6 +520,31 @@ public class TravelToNodeHubCommandHandler
         }
 
         return node.RefId is not null && unlockedSlugs.Contains(node.RefId);
+    }
+
+    /// <summary>
+    /// Resolves which SignalR scope the arrival belongs to. A public location keeps the caller's shared
+    /// zone scope; an instanced one finds or opens the character's run and returns that run's scope, which
+    /// is how two parties end up in the same dungeon without sharing enemies or chat.
+    /// </summary>
+    private async Task<(Guid? InstanceId, string? Group)> ResolveScopeAsync(
+        string? zoneId,
+        ZoneLocationEntry? location,
+        string requestedGroup,
+        Guid characterId,
+        CancellationToken cancellationToken)
+    {
+        if (location?.IsInstanced == true && !string.IsNullOrWhiteSpace(zoneId))
+        {
+            var run = await _instances.FindOrCreateAsync(zoneId, characterId, cancellationToken: cancellationToken);
+            return (run.Id, run.ZoneGroup);
+        }
+
+        return (
+            null,
+            string.IsNullOrWhiteSpace(requestedGroup)
+                ? string.IsNullOrWhiteSpace(zoneId) ? null : ZoneGroupName.ForZone(zoneId).Value
+                : requestedGroup);
     }
 
     /// <summary>

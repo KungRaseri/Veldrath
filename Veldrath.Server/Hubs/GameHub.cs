@@ -61,6 +61,7 @@ public class GameHub : Hub
     private readonly IAfkTracker _afk;
     private readonly ICombatSessionStore _sessions;
     private readonly IEnemyInstanceStore _enemies;
+    private readonly Veldrath.Server.Features.Zones.IZoneInstanceService? _zoneInstances;
     private readonly IRandomSource _random;
 
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
@@ -82,6 +83,7 @@ public class GameHub : Hub
         IAfkTracker afk,
         ICombatSessionStore sessions,
         IEnemyInstanceStore enemies,
+        Veldrath.Server.Features.Zones.IZoneInstanceService? zoneInstances = null,
         IRandomSource? randomSource = null)
     {
         _logger = logger;
@@ -99,6 +101,7 @@ public class GameHub : Hub
         _afk = afk;
         _sessions = sessions;
         _enemies = enemies;
+        _zoneInstances = zoneInstances;
         _random = randomSource ?? SystemRandomSource.Shared;
     }
 
@@ -977,6 +980,10 @@ public class GameHub : Hub
                 return;
             }
 
+            // An instanced destination moves the connection into the run's own group, which is what keeps
+            // two parties' enemies, loot and chat apart while they clear the same dungeon.
+            await ApplyArrivalGroupAsync(result.ZoneGroup, result.ZoneInstanceId);
+
             await Clients.Caller.SendAsync("NodeTraveled", result);
 
             // Failsafe reporting: content debt the player just walked into is said out loud, not silently swallowed.
@@ -1023,6 +1030,8 @@ public class GameHub : Hub
                 await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to enter location");
                 return;
             }
+
+            await ApplyArrivalGroupAsync(result.Arrival.ZoneGroup, result.Arrival.ZoneInstanceId);
 
             await Clients.Caller.SendAsync("NodeTraveled", result.Arrival);
 
@@ -2809,8 +2818,14 @@ public class GameHub : Hub
         var zoneId = session.ZoneId;
         var characterId = session.CharacterId;
         var characterName = session.CharacterName;
+        var instanceId = session.ZoneInstanceId;
 
         await _playerSessionRepo.RemoveAsync(session);
+
+        // The run stays open — the rest of the party may still be inside — but this character's
+        // participation is closed so credit and the emptiness check both see the departure.
+        if (instanceId is not null && _zoneInstances is not null)
+            await _zoneInstances.LeaveAsync(instanceId.Value, characterId);
 
         // Player is on the region map — only leave the region group, no zone cleanup needed
         if (zoneId is null)
@@ -3008,6 +3023,37 @@ public class GameHub : Hub
         }
         groupName = null;
         return false;
+    }
+
+    /// <summary>
+    /// Moves the connection into the group the arrival belongs to when that differs from where it was, and
+    /// records the run on the session so a reconnect resumes inside it. A public arrival keeps the shared
+    /// zone scope and simply clears any run pointer.
+    /// </summary>
+    /// <param name="zoneGroup">Scope the arrival belongs to, or <see langword="null"/> when unchanged.</param>
+    /// <param name="instanceId">Run the character is now inside, or <see langword="null"/> for the shared zone.</param>
+    private async Task ApplyArrivalGroupAsync(string? zoneGroup, Guid? instanceId)
+    {
+        if (!string.IsNullOrWhiteSpace(zoneGroup))
+        {
+            var current = Context.Items.TryGetValue("CurrentZoneGroupName", out var value) && value is string existing
+                ? existing
+                : null;
+
+            if (!string.Equals(current, zoneGroup, StringComparison.Ordinal))
+            {
+                if (!string.IsNullOrWhiteSpace(current))
+                    await Groups.RemoveFromGroupAsync(Context.ConnectionId, current!);
+
+                await Groups.AddToGroupAsync(Context.ConnectionId, zoneGroup!);
+                Context.Items["CurrentZoneGroupName"] = zoneGroup;
+            }
+        }
+
+        Context.Items["CurrentZoneInstanceId"] = instanceId;
+
+        if (TryGetCharacterId(out var characterId))
+            await _playerSessionRepo.SetZoneInstanceAsync(characterId, instanceId);
     }
 
     private static string AccountGroup(Guid accountId) => $"account:{accountId}";

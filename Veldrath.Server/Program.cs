@@ -161,6 +161,8 @@ try
     builder.Services.AddScoped<IZoneRepository, ZoneRepository>();
     builder.Services.AddScoped<IEnemyInstanceStore, EfCoreEnemyInstanceStore>();
     builder.Services.AddScoped<ICombatSessionStore, EfCoreCombatSessionStore>();
+    builder.Services.AddScoped<Veldrath.Server.Features.Zones.IZoneInstanceService,
+        Veldrath.Server.Features.Zones.EfCoreZoneInstanceService>();
 
     // AFK is ephemeral by design: in-memory for the process lifetime, cleared on any action or reconnect.
     builder.Services.AddSingleton<IAfkTracker, AfkTracker>();
