@@ -39,7 +39,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "crestfall",          TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 1, Population = 50, MinLevel = 0 },
-                Traits = new() { IsTown = true },
+                Traits = new() { SafeRespawn = true, IsTown = true },
             },
             new ZoneLocation
             {
@@ -81,7 +81,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "the-droveway",       TypeKey = "locations",
                 RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 1, DangerLevel = 2, Population = 5, MinLevel = 1, MaxLevel = 4 },
-                Traits = new() { IsIndoor = false },
+                Traits = new() { SafeRespawn = true, IsIndoor = false },
             },
             new ZoneLocation
             {
@@ -115,7 +115,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "ashlen-wood",        TypeKey = "locations",
                 RarityWeight = 30, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 1, DangerLevel = 4, MinLevel = 2, MaxLevel = 5 },
-                Traits = new() { IsHidden = true, UnlockType = "skill_check_passive", DiscoverThreshold = 5 },
+                Traits = new() { SafeRespawn = true, IsHidden = true, UnlockType = "skill_check_passive", DiscoverThreshold = 5 },
             },
 
             // grevenmire (Wilderness, L3) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -133,7 +133,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "grevenmire",         TypeKey = "locations",
                 RarityWeight = 70, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 5, Population = 10, MinLevel = 3, MaxLevel = 6 },
-                Traits = new() { IsIndoor = false },
+                Traits = new() { SafeRespawn = true, IsIndoor = false },
             },
             new ZoneLocation
             {
@@ -151,7 +151,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "the-halrow",         TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 2, DangerLevel = 3, Population = 5, MinLevel = 4, MaxLevel = 6 },
-                Traits = new() { IsDungeon = false },
+                Traits = new() { SafeRespawn = true, IsDungeon = false },
             },
             new ZoneLocation
             {
@@ -167,7 +167,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "the-halrow",         TypeKey = "dungeons",
                 RarityWeight = 40, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 5, Population = 15, MinLevel = 5, MaxLevel = 6 },
-                Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest" },
+                Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest", UnlockKey = "collapsed-vault" },
             },
 
             // drowning-pits (Dungeon, L4) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -177,7 +177,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "drowning-pits",      TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 2, DangerLevel = 4, Population = 5, MinLevel = 4, MaxLevel = 6 },
-                Traits = new() { IsDungeon = false },
+                Traits = new() { SafeRespawn = true, IsDungeon = false },
             },
             new ZoneLocation
             {
@@ -193,7 +193,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "drowning-pits",      TypeKey = "dungeons",
                 RarityWeight = 30, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 6, Population = 10, MinLevel = 5, MaxLevel = 6 },
-                Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest" },
+                Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest", UnlockKey = "deepest-chamber" },
             },
 
             // â”€â”€ Greymoor region â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -205,7 +205,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "aldenmere",          TypeKey = "locations",
                 RarityWeight = 60, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 5, DangerLevel = 4, Population = 80, MinLevel = 5, MaxLevel = 12 },
-                Traits = new() { IsTown = true, HasMerchant = true },
+                Traits = new() { SafeRespawn = true, IsTown = true, HasMerchant = true },
             },
             new ZoneLocation
             {
@@ -239,7 +239,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "pale-moor",          TypeKey = "locations",
                 RarityWeight = 70, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 2, DangerLevel = 4, Population = 10, MinLevel = 7, MaxLevel = 12 },
-                Traits = new() { IsDiscoverable = true },
+                Traits = new() { SafeRespawn = true, IsDiscoverable = true },
             },
             new ZoneLocation
             {
@@ -275,7 +275,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "barrow-deeps",       TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 2, DangerLevel = 6, Population = 5, MinLevel = 11, MaxLevel = 14 },
-                Traits = new() { IsDungeon = false },
+                Traits = new() { SafeRespawn = true, IsDungeon = false },
             },
             new ZoneLocation
             {
@@ -291,7 +291,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "barrow-deeps",       TypeKey = "dungeons",
                 RarityWeight = 30, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 8, Population = 20, MinLevel = 12, MaxLevel = 14 },
-                Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest" },
+                Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest", UnlockKey = "relic-chamber" },
             },
 
             // â”€â”€ Saltcliff region â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -303,7 +303,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "tolvaren",           TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 4, DangerLevel = 2, Population = 100, MinLevel = 10 },
-                Traits = new() { IsTown = true },
+                Traits = new() { SafeRespawn = true, IsTown = true },
             },
             new ZoneLocation
             {
@@ -355,7 +355,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "saltcliff-heights",  TypeKey = "locations",
                 RarityWeight = 80, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 6, Population = 20, MinLevel = 14, MaxLevel = 20 },
-                Traits = new() { IsDiscoverable = true },
+                Traits = new() { SafeRespawn = true, IsDiscoverable = true },
             },
             new ZoneLocation
             {
@@ -371,7 +371,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "saltcliff-heights",  TypeKey = "locations",
                 RarityWeight = 30, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 1, DangerLevel = 8, MinLevel = 16, MaxLevel = 20 },
-                Traits = new() { IsHidden = true, UnlockType = "achievement" },
+                Traits = new() { IsHidden = true, UnlockType = "achievement", UnlockKey = "storm-watch-peak" },
             },
 
             // sunken-name (Dungeon, L16) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -381,7 +381,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "sunken-name",        TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 2, DangerLevel = 7, Population = 5, MinLevel = 16, MaxLevel = 20 },
-                Traits = new() { IsDungeon = false },
+                Traits = new() { SafeRespawn = true, IsDungeon = false },
             },
             new ZoneLocation
             {
@@ -397,7 +397,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "sunken-name",        TypeKey = "dungeons",
                 RarityWeight = 30, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 10, Population = 20, MinLevel = 17, MaxLevel = 20 },
-                Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest" },
+                Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest", UnlockKey = "tidelocked-vault" },
             },
 
             // â”€â”€ Cinderplain region â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -409,7 +409,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "skarhold",           TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 4, DangerLevel = 3, Population = 80, MinLevel = 18 },
-                Traits = new() { IsTown = true, HasMerchant = true },
+                Traits = new() { SafeRespawn = true, IsTown = true, HasMerchant = true },
             },
             new ZoneLocation
             {
@@ -443,7 +443,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "ashfields",          TypeKey = "locations",
                 RarityWeight = 70, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 8, DangerLevel = 9, Population = 70, MinLevel = 21, MaxLevel = 25 },
-                Traits = new() { IsIndoor = false },
+                Traits = new() { SafeRespawn = true, IsIndoor = false },
             },
             new ZoneLocation
             {
@@ -451,7 +451,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "ashfields",          TypeKey = "locations",
                 RarityWeight = 25, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 1, DangerLevel = 7, MinLevel = 20, MaxLevel = 25 },
-                Traits = new() { IsHidden = true, UnlockType = "quest" },
+                Traits = new() { IsHidden = true, UnlockType = "quest", UnlockKey = "ash-shrine" },
             },
 
             // smoldering-reach (Wilderness, L23) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -477,7 +477,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "smoldering-reach",   TypeKey = "locations",
                 RarityWeight = 30, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 1, DangerLevel = 10, MinLevel = 24, MaxLevel = 26 },
-                Traits = new() { IsHidden = true, UnlockType = "skill_check_active", DiscoverThreshold = 18 },
+                Traits = new() { SafeRespawn = true, IsHidden = true, UnlockType = "skill_check_active", DiscoverThreshold = 18 },
             },
 
             // kaldrek-maw (Dungeon, L26) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -487,7 +487,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "kaldrek-maw",        TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 2, DangerLevel = 10, Population = 5, MinLevel = 26, MaxLevel = 30 },
-                Traits = new() { IsDungeon = false },
+                Traits = new() { SafeRespawn = true, IsDungeon = false },
             },
             new ZoneLocation
             {
@@ -503,7 +503,7 @@ public static class ZoneLocationsSeeder
                 ZoneId = "kaldrek-maw",        TypeKey = "dungeons",
                 RarityWeight = 20, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 4, DangerLevel = 10, Population = 10, MinLevel = 28, MaxLevel = 30 },
-                Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest" },
+                Traits = new() { IsIndoor = true, IsDungeon = true, IsHidden = true, UnlockType = "quest", UnlockKey = "kaldreks-heart" },
             },
 
             // ── Dev playground (IsDevOnly zone) ────────────────────────────────

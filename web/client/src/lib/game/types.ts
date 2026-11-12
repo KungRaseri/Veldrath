@@ -248,6 +248,16 @@ export interface NodeTraveledPayload {
 	zoneId?: string | null;
 	regionId?: string | null;
 	locationSlug?: string | null;
+	locationTypeKey?: string | null;
+	isDungeonLocation?: boolean;
+	isInstanced?: boolean;
+	isSafeRespawn?: boolean;
+	/** Level this place expects, or `null` when it sets no expectation. */
+	recommendedLevel?: number | null;
+	/** The arriving character's level, so the warning can be read at a glance. */
+	yourLevel?: number;
+	/** Advisory wording for an under-levelled arrival. It never blocks entry. */
+	levelWarning?: string | null;
 	passiveDiscoveries?: unknown[] | null;
 	spawnedEnemies?: SpawnedEnemy[] | null;
 }

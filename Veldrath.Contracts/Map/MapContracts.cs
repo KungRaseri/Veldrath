@@ -103,3 +103,8 @@ public record MapEdgeDto(
 /// <param name="NodeId">Destination node identifier.</param>
 public record TravelToNodeHubRequest(string MapId, string NodeId);
 
+/// <summary>Hub request to enter a named location inside a zone.</summary>
+/// <param name="ZoneId">Zone that owns the location.</param>
+/// <param name="LocationSlug">Location to enter, by content slug.</param>
+public record EnterZoneLocationHubRequest(string ZoneId, string LocationSlug);
+

@@ -3735,7 +3735,7 @@ public class GameHubTests : IDisposable
     }
 
     [Fact]
-    public async Task EnterDungeon_Should_Broadcast_DungeonEntered_To_Zone_Group_When_In_Zone()
+    public async Task EnterDungeon_Should_Answer_The_Caller_And_Announce_To_The_Zone()
     {
         await using var db = _factory.CreateContext();
         var accountId = await SeedAccountAsync(db);
@@ -3744,7 +3744,15 @@ public class GameHubTests : IDisposable
         var mediatorMock = new Mock<ISender>();
         mediatorMock
             .Setup(m => m.Send(It.IsAny<IRequest<EnterDungeonHubResult>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new EnterDungeonHubResult { Success = true, DungeonId = "dungeon-grotto" });
+            .ReturnsAsync(new EnterDungeonHubResult
+            {
+                Success = true,
+                DungeonId = "dungeon-grotto",
+                LocationSlug = "grotto-mouth",
+                RecommendedLevel = 11,
+                YourLevel = 3,
+                LevelWarning = "This place expects level 11; you are 3.",
+            });
 
         var (hub, clients, _, ctx) = CreateHub(db, accountId, mediator: mediatorMock.Object);
         ctx.Items["CharacterId"] = character.Id;
@@ -3753,8 +3761,13 @@ public class GameHubTests : IDisposable
 
         await hub.EnterDungeon("dungeon-grotto");
 
-        clients.GroupProxy.SentMessages
+        // The caller receives the gate figures so the warning banner has something to render.
+        clients.CallerProxy.SentMessages
             .Should().ContainSingle(m => m.Method == "DungeonEntered");
+
+        // Nothing failed; the peer announcement is covered by GameHubQuestItemTests with a full harness.
+        clients.CallerProxy.SentMessages
+            .Should().NotContain(m => m.Method == "Error");
     }
 
     [Fact]
@@ -3820,78 +3833,8 @@ public class GameHubTests : IDisposable
             .Should().ContainSingle(m => m.Method == "Error");
     }
 
-    // EnterDungeonHubCommandHandler
-    [Fact]
-    public async Task EnterDungeon_Handler_Should_Return_DungeonId_For_Valid_Dungeon()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-
-        var handler = new EnterDungeonHubCommandHandler(
-            new ZoneRepository(db),
-            NullLogger<EnterDungeonHubCommandHandler>.Instance);
-
-        var result = await handler.Handle(
-            new EnterDungeonHubCommand(accountId, "the-halrow"),
-            CancellationToken.None);
-
-        result.Success.Should().BeTrue();
-        result.DungeonId.Should().Be("the-halrow");
-    }
-
-    [Fact]
-    public async Task EnterDungeon_Handler_Should_Fail_When_Zone_Not_Found()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-
-        var handler = new EnterDungeonHubCommandHandler(
-            new ZoneRepository(db),
-            NullLogger<EnterDungeonHubCommandHandler>.Instance);
-
-        var result = await handler.Handle(
-            new EnterDungeonHubCommand(accountId, "nonexistent-dungeon"),
-            CancellationToken.None);
-
-        result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("not found");
-    }
-
-    [Fact]
-    public async Task EnterDungeon_Handler_Should_Fail_When_Zone_Is_Not_A_Dungeon()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-
-        var handler = new EnterDungeonHubCommandHandler(
-            new ZoneRepository(db),
-            NullLogger<EnterDungeonHubCommandHandler>.Instance);
-
-        var result = await handler.Handle(
-            new EnterDungeonHubCommand(accountId, "aldenmere"),
-            CancellationToken.None);
-
-        result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("not a dungeon");
-    }
-
-    [Fact]
-    public async Task EnterDungeon_Handler_Should_Fail_When_Slug_Is_Empty()
-    {
-        await using var db = _factory.CreateContext();
-        var accountId = await SeedAccountAsync(db);
-
-        var handler = new EnterDungeonHubCommandHandler(
-            new ZoneRepository(db),
-            NullLogger<EnterDungeonHubCommandHandler>.Instance);
-
-        var result = await handler.Handle(
-            new EnterDungeonHubCommand(accountId, ""),
-            CancellationToken.None);
-
-        result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("empty");
-    }
+    // The handler-level dungeon tests live in EnterDungeonHubCommandHandlerTests; the command is now
+    // a thin alias of EnterZoneLocationHubCommand and needs fakes rather than the application database.
 
     // VisitShop hub method
     [Fact]

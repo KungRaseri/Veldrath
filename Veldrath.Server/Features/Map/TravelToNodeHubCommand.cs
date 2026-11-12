@@ -2,9 +2,11 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.Characters.Combat;
 using Veldrath.Server.Features.Zones;
+using ZoneEntity = Veldrath.Server.Data.Entities.Zone;
 
 namespace Veldrath.Server.Features.Map;
 
@@ -55,6 +57,30 @@ public record TravelToNodeHubResult
 
     /// <summary>Gets the location slug when the destination is a <c>Location</c> node.</summary>
     public string? LocationSlug { get; init; }
+
+    /// <summary>Gets the location's content type key, such as <c>locations</c> or <c>dungeons</c>.</summary>
+    public string? LocationTypeKey { get; init; }
+
+    /// <summary>Gets a value indicating whether the arrived location is a dungeon room.</summary>
+    public bool IsDungeonLocation { get; init; }
+
+    /// <summary>Gets a value indicating whether entering the location should create a private copy for the party.</summary>
+    public bool IsInstanced { get; init; }
+
+    /// <summary>Gets a value indicating whether a dead character in this zone resurrects at this location.</summary>
+    public bool IsSafeRespawn { get; init; }
+
+    /// <summary>Gets the level this place expects, or <see langword="null"/> when it sets no expectation.</summary>
+    public int? RecommendedLevel { get; init; }
+
+    /// <summary>Gets the arriving character's level, so the client can render the comparison.</summary>
+    public int YourLevel { get; init; }
+
+    /// <summary>
+    /// Gets the advisory wording for a character below <see cref="RecommendedLevel"/>, or <see langword="null"/>.
+    /// It is a warning, never a refusal: the character has already arrived.
+    /// </summary>
+    public string? LevelWarning { get; init; }
 
     /// <summary>Gets hidden locations newly discovered by the passive skill-check sweep.</summary>
     public IReadOnlyList<ZoneLocationEntry> PassiveDiscoveries { get; init; } = [];
@@ -172,6 +198,16 @@ public class TravelToNodeHubCommandHandler
         if (string.IsNullOrWhiteSpace(selectedNode.TargetMapId) &&
             string.Equals(selectedNode.Id, currentNode.Id, StringComparison.OrdinalIgnoreCase))
         {
+            // Re-entering where you already stand is a real case — the party action does it — so this
+            // branch reports the same facts as an arrival rather than a bare acknowledgement.
+            var hereZoneId = map.MapType == MapType.Zone ? map.OwnerId : null;
+            var hereZone = string.IsNullOrWhiteSpace(hereZoneId) ? null : await _zoneRepo.GetByIdAsync(hereZoneId);
+            var hereLocationSlug = selectedNode.NodeType == MapNodeType.Location ? selectedNode.RefId : null;
+            var hereLocation = string.IsNullOrWhiteSpace(hereLocationSlug)
+                ? null
+                : await _locationRepo.GetBySlugAsync(hereLocationSlug);
+            var (hereRecommended, hereWarning) = EvaluateGate(character.Level, hereLocation, hereZone);
+
             return new TravelToNodeHubResult
             {
                 Success = true,
@@ -180,10 +216,15 @@ public class TravelToNodeHubCommandHandler
                 NodeType = selectedNode.NodeType.ToString(),
                 MapChanged = false,
                 Message = $"Already at {selectedNode.DisplayName}.",
-                ZoneId = map.MapType == MapType.Zone ? map.OwnerId : null,
-                LocationSlug = selectedNode.NodeType == MapNodeType.Location
-                    ? selectedNode.RefId
-                    : null,
+                ZoneId = hereZoneId,
+                LocationSlug = hereLocationSlug,
+                LocationTypeKey = hereLocation?.TypeKey,
+                IsDungeonLocation = string.Equals(hereLocation?.TypeKey, "dungeons", StringComparison.OrdinalIgnoreCase),
+                IsInstanced = hereLocation?.IsInstanced ?? false,
+                IsSafeRespawn = hereLocation?.IsSafeRespawn ?? false,
+                RecommendedLevel = hereRecommended,
+                YourLevel = character.Level,
+                LevelWarning = hereWarning,
             };
         }
 
@@ -235,13 +276,23 @@ public class TravelToNodeHubCommandHandler
             ? destinationMap.OwnerId
             : null;
 
+        var zone = string.IsNullOrWhiteSpace(zoneId) ? null : await _zoneRepo.GetByIdAsync(zoneId);
+
         var regionId = destinationMap.MapType == MapType.Region
             ? destinationMap.OwnerId
-            : (await _zoneRepo.GetByIdAsync(zoneId ?? string.Empty))?.RegionId;
+            : zone?.RegionId;
 
         var locationSlug = destinationNode.NodeType == MapNodeType.Location
             ? destinationNode.RefId
             : null;
+
+        // Read once here so the arrival payload and the roster share a single lookup, and so a dangling
+        // node reference is reported in one place instead of two.
+        var location = string.IsNullOrWhiteSpace(locationSlug)
+            ? null
+            : await _locationRepo.GetBySlugAsync(locationSlug);
+
+        var (recommendedLevel, levelWarning) = EvaluateGate(character.Level, location, zone);
 
         await _characterRepo.UpdateMapPositionAsync(
             request.CharacterId,
@@ -272,7 +323,8 @@ public class TravelToNodeHubCommandHandler
             request.ZoneGroup,
             destinationMap,
             destinationNode,
-            zoneId);
+            zoneId,
+            location);
 
         _logger.LogInformation(
             "Character {CharacterIdPrefix} travelled to {MapId}/{NodeId} (map changed: {MapChanged})",
@@ -296,6 +348,13 @@ public class TravelToNodeHubCommandHandler
             ZoneId = zoneId,
             RegionId = regionId,
             LocationSlug = locationSlug,
+            LocationTypeKey = location?.TypeKey,
+            IsDungeonLocation = string.Equals(location?.TypeKey, "dungeons", StringComparison.OrdinalIgnoreCase),
+            IsInstanced = location?.IsInstanced ?? false,
+            IsSafeRespawn = location?.IsSafeRespawn ?? false,
+            RecommendedLevel = recommendedLevel,
+            YourLevel = character.Level,
+            LevelWarning = levelWarning,
             PassiveDiscoveries = discoveries,
             SpawnedEnemies = spawnedEnemies,
             ContentWarnings = contentWarnings,
@@ -306,7 +365,8 @@ public class TravelToNodeHubCommandHandler
         string zoneGroup,
         MapGraph destinationMap,
         MapNodeEntry destinationNode,
-        string? zoneId)
+        string? zoneId,
+        ZoneLocationEntry? location)
     {
         if (destinationMap.MapType != MapType.Zone ||
             destinationNode.NodeType != MapNodeType.Location ||
@@ -321,7 +381,6 @@ public class TravelToNodeHubCommandHandler
             : zoneGroup;
 
         // The node's RefId must resolve to a real location; a dangling one is content debt, not a normal state.
-        var location = await _locationRepo.GetBySlugAsync(destinationNode.RefId);
         if (location is null)
         {
             _logger.LogError(
@@ -429,6 +488,26 @@ public class TravelToNodeHubCommandHandler
         }
 
         return node.RefId is not null && unlockedSlugs.Contains(node.RefId);
+    }
+
+    /// <summary>
+    /// D8: the level gates are advisory. The location's own minimum wins over the zone's, and nothing
+    /// downstream refuses entry — the wording here is all a client has to show.
+    /// </summary>
+    private static (int? Recommended, string? Warning) EvaluateGate(
+        int characterLevel,
+        ZoneLocationEntry? location,
+        ZoneEntity? zone)
+    {
+        int? recommended = location?.MinLevel;
+        if (recommended is null or 0)
+            recommended = zone?.MinLevel is > 0 ? zone.MinLevel : null;
+
+        var warning = recommended is int level && characterLevel < level
+            ? $"This place expects level {level}; you are {characterLevel}."
+            : null;
+
+        return (recommended, warning);
     }
 
     private static TravelToNodeHubResult Fail(string message) =>

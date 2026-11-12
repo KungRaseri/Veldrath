@@ -341,6 +341,43 @@ describe('GameSession map and location events', () => {
 		expect(session.groundItems).toEqual([]);
 	});
 
+	it('keeps the level gate the server worded and clears it on the next arrival', async () => {
+		const session = await connected();
+
+		hub.emit('NodeTraveled', {
+			success: true,
+			mapChanged: false,
+			locationSlug: 'maw-descent',
+			recommendedLevel: 26,
+			yourLevel: 3,
+			levelWarning: 'This place expects level 26; you are 3.'
+		});
+
+		expect(session.levelWarning).toBe('This place expects level 26; you are 3.');
+
+		hub.emit('NodeTraveled', {
+			success: true,
+			mapChanged: false,
+			locationSlug: 'crestfall-square'
+		});
+
+		expect(session.levelWarning).toBeNull();
+	});
+
+	it('drops the level gate only on a successful arrival', async () => {
+		const session = await connected();
+		session.levelWarning = 'This place expects level 26; you are 3.';
+
+		hub.emit('NodeTraveled', {
+			success: false,
+			mapChanged: false,
+			errorMessage: 'No direct path.'
+		});
+
+		expect(session.levelWarning).toBe('This place expects level 26; you are 3.');
+		expect(session.error).toBe('No direct path.');
+	});
+
 	it('starts a fight even when the enemy has no ability list', async () => {
 		const session = await connected();
 

@@ -993,6 +993,52 @@ public class GameHub : Hub
     }
 
     /// <summary>
+    /// Enters a named location inside the caller's zone through the shared location-entry command.
+    /// Sends <c>NodeTraveled</c> with the arrival so the client moves exactly as it does when walking,
+    /// and reports content problems the arrival uncovered.
+    /// </summary>
+    /// <param name="request">Zone and location to enter.</param>
+    public async Task EnterLocation(EnterZoneLocationHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before EnterLocation");
+            return;
+        }
+
+        var zoneGroup = Context.Items.TryGetValue("CurrentZoneGroupName", out var group) && group is string value
+            ? value
+            : string.Empty;
+
+        try
+        {
+            var result = await _mediator.Send(new EnterZoneLocationHubCommand(
+                characterId,
+                request.ZoneId,
+                request.LocationSlug,
+                zoneGroup));
+
+            if (!result.Success || result.Arrival is null)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to enter location");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("NodeTraveled", result.Arrival);
+
+            foreach (var warning in result.Arrival.ContentWarnings)
+            {
+                await Clients.Caller.SendAsync("SystemMessage", warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in EnterLocation for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to enter location");
+        }
+    }
+
+    /// <summary>
     /// Award experience points to the caller's active character.
     /// Validates character ownership via <see cref="IActiveCharacterTracker"/> before dispatching
     /// the command to the MediatR pipeline. Broadcasts the outcome to the character's current
@@ -1619,12 +1665,17 @@ public class GameHub : Hub
                 CharacterId = characterId,
                 DungeonId = result.DungeonId,
                 DungeonSlug = dungeonSlug,
+                result.LocationSlug,
+                result.RecommendedLevel,
+                result.YourLevel,
+                result.LevelWarning,
             };
 
+            // The caller always learns the gate figures. Peers only hear about the arrival, never the gate.
+            await Clients.Caller.SendAsync("DungeonEntered", payload);
+
             if (TryGetCurrentZoneGroup(out var zoneGroup))
-                await Clients.Group(zoneGroup).SendAsync("DungeonEntered", payload);
-            else
-                await Clients.Caller.SendAsync("DungeonEntered", payload);
+                await Clients.OthersInGroup(zoneGroup).SendAsync("PlayerEntered", payload);
 
             _logger.LogInformation(
                 "Character {CharacterId} entered dungeon {DungeonId}",

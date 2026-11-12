@@ -202,7 +202,8 @@ These are bugs in the seeded world, not new features. Fixing them is part of pha
 |---|---|---|
 | Three dungeons have no way out | `barrow-deeps`, `sunken-name`, `kaldrek-maw` have no `RegionExit` node and no `ExitToRegion` edge | A character can only leave by dying |
 | The Halrow's map is disconnected | edges connect `entry ↔ halrow-threshold` and `rootbound-cellars ↔ collapsed-vault`, but nothing joins the two halves | Two rooms are unreachable |
-| No deep room can unlock | every hidden room is `UnlockType = "quest"` with `UnlockKey = null` | Boss rooms are permanently invisible |
+| The Drowning Pits' workings are sealed | `deepest-chamber ↔ flooded-workings` is an island; only `pit-descent ↔ entry` connects to the entrance | The two deepest rooms are unreachable |
+| No deep room can unlock | every hidden room is `UnlockType = "quest"` with `UnlockKey = null` (and the map nodes carried the same null) | Boss rooms are permanently invisible |
 | No zone has a safe respawn | no `ZoneLocation` is flagged `IsSafeRespawn`, so [`ResolveRespawnLocationAsync`](../Veldrath.Server/Features/Characters/Combat/RespawnHubCommand.cs:162) always falls through to the fallback | Every death logs an `Error` and tells the player their zone has no safe point |
 | `MinLevel` never checked | seeded and exposed in DTOs, enforced nowhere | A level 1 character can enter Kaldrek's Maw |
 
@@ -227,9 +228,9 @@ issue codes — so this phase **extends** both rather than inventing them.
 | Change | Where | Note |
 |---|---|---|
 | `MapType.Interior` | [`MapGraphModels.cs`](../RealmEngine.Shared/Models/MapGraphModels.cs:7) | serialised as a string, so no column migration |
-| `Traits.IsSafeRespawn` | [`ZoneLocation.cs`](../RealmEngine.Data/Entities/Content/ZoneLocation.cs:55) `ZoneLocationTraits` | owned JSON → migration + content schema entry |
-| `Traits.IsInstanced` | same | consumed by F2, authored in F1 |
-| Map both traits onto `ZoneLocationEntry` | `EfCoreZoneLocationRepository` (entity → entry projection) | today `IsSafeRespawn` cannot be authored at all |
+| `Traits.IsSafeRespawn` | [`ZoneLocation.cs`](../RealmEngine.Data/Entities/Content/ZoneLocation.cs:55) `ZoneLocationTraits` | already existed; the seeder simply never set it. Owned JSON, so no schema migration |
+| `Traits.IsInstanced` | same | consumed by F2, authored in F1. Also owned JSON: no schema migration (`SafeRespawn` set the precedent) |
+| Map both traits onto `ZoneLocationEntry` | `EfCoreZoneLocationRepository` (entity → entry projection) | `IsSafeRespawn` was projected but unset; `IsInstanced` is new on the entry record |
 | Accept `Interior` in the validator's scope rules | [`MapGraphValidator.cs`](../RealmEngine.Data/Validation/MapGraphValidator.cs:49) | an `Interior` map's owner must be a known **location** slug |
 
 **1.2 — seed the world** (the §4 defect list, plus the data the model now needs)
@@ -238,24 +239,32 @@ issue codes — so this phase **extends** both rather than inventing them.
   `ExitToRegion` edge back to their region map.
 - **The Halrow**: join `halrow-threshold` (or `entry`) to `rootbound-cellars` so both cellar rooms are
   reachable from the entrance.
-- **Lobbies**: one location per dungeon flagged `IsSafeRespawn`, plus the town locations — nothing
-  anywhere is flagged today, which is why every death logs an `Error`.
-- **Unlock keys**: give each hidden deep room a real `UnlockKey` (quest slug) instead of `null`.
+- **The Drowning Pits**: join `pit-descent` to `flooded-workings` so both deepest rooms are reachable.
+- **Lobbies**: one location per dungeon flagged `IsSafeRespawn`, plus one per non-dev zone — nothing
+  anywhere was flagged, which is why every death logged an `Error`.
+- **Unlock keys**: give each hidden deep room a real `UnlockKey` (its own slug) instead of `null`, in
+  `ZoneLocationsSeeder` **and** in the `MapGraphSeeder` node that mirrors it.
+  `storm-watch-peak` (an `achievement` gate) had the same hole and got the same treatment.
 - No `Interior` maps are authored in F1 unless a dungeon needs one; the capability lands before the
   first use, and a validator rule proves the shape.
 
-**1.3 — one entry command**
+**1.3 — one entry command** (shipped)
 
-- A single command (`EnterZoneLocation` / `EnterLocation` — name to be fixed in code review) that
-  resolves the zone and location, builds the D8 soft-gate figures (`recommendedLevel`, `yourLevel`),
-  moves the session's `ZoneId`/`CurrentMapId`/`CurrentNodeId`, and broadcasts to the right audience.
-- `TravelToNode` calls it when the target node is a `Location`; `EnterDungeon` becomes a two-line alias
-  that resolves a zone's entry location and calls the same command. Its current body — validate the
-  zone type, broadcast, move nobody — is deleted rather than extended.
-- The party action calls the same command with the location the party is standing at; if the character
-  is not at the entrance it fails with a message naming the entrance, never silently teleports.
-- `EnterDungeon`'s broadcast goes to the **caller** (and the zone group when the location is public),
-  not the zone group alone as today.
+- `EnterZoneLocationHubCommand` resolves the zone, the location and the location's node on the zone
+  map, then **delegates the move to `TravelToNodeHubCommand`**. There is still exactly one mover, so
+  visibility, adjacency, the passive discovery sweep, the roster and persistence cannot drift apart.
+- The D8 gate is built inside `TravelToNode` and travels on its result
+  (`recommendedLevel`, `yourLevel`, `levelWarning`, plus `locationTypeKey`, `isInstanced`,
+  `isSafeRespawn`), so a plain walk and the party action carry the same figures. Re-entering the node
+  you already stand on reports them too — that branch is a real case, not an optimisation.
+- `EnterDungeon(zoneSlug)` is now a thin alias: it resolves the dungeon's **lobby**
+  (the `SafeRespawn` location, falling back to the first non-dungeon room) and calls
+  `EnterZoneLocationHubCommand`. Its old body — validate the zone type, broadcast, move nobody — is gone.
+- A character who is not standing in the zone is refused with the zone and the way in named, never
+  moved: `"Travel to The Halrow first; The Halrow Threshold is the way in."`
+- `EnterDungeon` answers the **caller** with the gate figures and announces the arrival to
+  `OthersInGroup`; `EnterLocation` sends the arrival as `NodeTraveled` so the shell moves as it does
+  when walking.
 
 **1.4 — the validator and the seeded-world test**
 
@@ -263,11 +272,16 @@ New issue codes, in the existing `code` + `message` + severity style:
 
 | Code | Severity | Rule |
 |---|---|---|
-| `node_unreachable` | Error | a non-entry node is not reachable from `EntryNodeId` over traversable edges |
-| `map_without_exit` | Error for `Zone` maps whose owner is a dungeon zone, Warning otherwise | no `ZoneExit`/`RegionExit` node |
-| `unlock_key_missing` | Error | `IsHidden` or `UnlockType` set with no `UnlockKey` |
-| `target_map_unknown` | Error | `TargetMapId` names a map that is not in the known set |
+| `node_unreachable` | Warning per map, **Error when the map belongs to a dungeon zone** | a non-entry node is not reachable from `EntryNodeId` |
+| `map_without_exit` | Warning per map, **Error when the map belongs to a dungeon zone** | no `ZoneExit`/`RegionExit` node |
+| `unlock_key_missing` | Error | `UnlockType` is `quest`, `item` or `achievement` but `UnlockKey` is empty. Skill-check unlocks gate on `DiscoverThreshold`, so they need no key |
+| `target_map_unknown` | Error | `TargetMapId` names a map that is not in the known set (world scope) |
 | `interior_owner_unknown` | Error | an `Interior` map's owner is not a known location slug |
+
+The dungeon-only promotion matters: several non-dungeon zone maps ship without a `RegionExit` and with
+rooms reachable only from an inbound zone exit. That is untidy, not fatal — a player can still walk out
+through the zone exit — so it stays a warning. Inside a dungeon it is fatal, and it is exactly how the
+Halrow's stranded cellars and the Drowning Pits' sealed workings shipped.
 
 Wire it into the existing seeded-content test (`SeededContentValidationTests`) so the failure mode is
 "the seed does not load", which is how the Halrow's stranded rooms should have been caught.

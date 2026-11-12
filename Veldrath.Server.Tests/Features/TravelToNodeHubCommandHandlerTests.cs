@@ -255,6 +255,60 @@ public class TravelToNodeHubCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_Reports_The_Soft_Gate_Without_Refusing_Entry()
+    {
+        var (handler, _, _, _, _, _, locationRepo, _) = MakeHandler(character => character.Level = 3);
+        locationRepo.Setup(r => r.GetBySlugAsync("crestfall-square"))
+            .ReturnsAsync(new ZoneLocationEntry(
+                "crestfall-square",
+                "The Crestfall Square",
+                "dungeons",
+                "crestfall",
+                100,
+                12,
+                20,
+                IsInstanced: true));
+
+        var result = await handler.Handle(
+            new TravelToNodeHubCommand(CharacterId, ZoneMapId, SquareNodeId),
+            CancellationToken.None);
+
+        // Standing in the square already: the gate still has to be reported, because the party action
+        // enters the location you are standing in.
+        result.Success.Should().BeTrue("a level gate is advice, never a refusal");
+        result.RecommendedLevel.Should().Be(12);
+        result.YourLevel.Should().Be(3);
+        result.LevelWarning.Should().Contain("expects level 12");
+        result.LocationTypeKey.Should().Be("dungeons");
+        result.IsDungeonLocation.Should().BeTrue();
+        result.IsInstanced.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Handle_Reports_No_Gate_When_Neither_Location_Nor_Zone_Sets_A_Level()
+    {
+        var (handler, _, _, _, _, _, locationRepo, _) = MakeHandler();
+
+        locationRepo.Setup(r => r.GetBySlugAsync("crestfall-square"))
+            .ReturnsAsync(new ZoneLocationEntry(
+                "crestfall-square",
+                "The Crestfall Square",
+                "locations",
+                "crestfall",
+                100,
+                null,
+                null));
+
+        var result = await handler.Handle(
+            new TravelToNodeHubCommand(CharacterId, ZoneMapId, SquareNodeId),
+            CancellationToken.None);
+
+        result.RecommendedLevel.Should().BeNull();
+        result.LevelWarning.Should().BeNull();
+        result.IsDungeonLocation.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Handle_ReturnsSuccess_WhenAlreadyAtNode()
     {
         var (handler, mapRepo, characterRepo, _, _, _, _, _) = MakeHandler();

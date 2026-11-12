@@ -127,6 +127,11 @@ export class GameSession {
 	skills = $state<SkillView[]>([]);
 	/** Rank-up announcement shown as a toast, or `null` when there is nothing to announce. */
 	skillRankUpToast = $state<{ name: string; rank: number } | null>(null);
+	/**
+	 * Advisory level-gate wording for the location just entered, or `null` when the arrival set no
+	 * expectation. The server words it; the client only shows and dismisses it.
+	 */
+	levelWarning = $state<string | null>(null);
 	/** Recipes the character could craft, as the server last described them. */
 	craftableRecipes = $state<CraftableRecipe[]>([]);
 	shopCatalog = $state<ShopCatalogItem[]>([]);
@@ -336,6 +341,16 @@ export class GameSession {
 	async enterZone(zoneId: string): Promise<void> {
 		if (!this.hub) return;
 		await this.hub.invoke('EnterZone', zoneId);
+	}
+
+	/**
+	 * Enters a named location through the server's one entry path. The refusal (for example "travel
+	 * to the zone first") comes back as an `Error` broadcast, so nothing is moved optimistically.
+	 */
+	async enterLocation(zoneId: string, locationSlug: string): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('EnterLocation', { zoneId, locationSlug });
 	}
 
 	async openInventory(): Promise<void> {
@@ -1180,6 +1195,9 @@ export class GameSession {
 		this.message = payload.message ?? null;
 		if (payload.message) this.addSystemMessage(payload.message);
 
+		// An advisory level gate, worded by the server. Arriving somewhere that sets none clears the banner.
+		this.levelWarning = payload.levelWarning ?? null;
+
 		if (payload.nodeId) {
 			this.currentNodeId = payload.nodeId;
 			this.selectedNodeId = payload.nodeId;
@@ -1208,6 +1226,11 @@ export class GameSession {
 	/** Clears the rank-up toast once the player has seen it. */
 	dismissSkillToast(): void {
 		this.skillRankUpToast = null;
+	}
+
+	/** Clears the level-gate banner once the player has acknowledged it. */
+	dismissLevelWarning(): void {
+		this.levelWarning = null;
 	}
 
 	/** Opens the crafting panel and asks the server what can be made right now. */

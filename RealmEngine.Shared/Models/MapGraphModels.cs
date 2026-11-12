@@ -13,7 +13,14 @@ public enum MapType
     Region,
 
     /// <summary>Zone map whose nodes are locations and zone/region exits.</summary>
-    Zone
+    Zone,
+
+    /// <summary>
+    /// Interior map whose nodes are rooms inside one location. The <c>OwnerId</c> is a
+    /// <c>ZoneLocation</c> slug, and a location node reaches it through its
+    /// <c>TargetMapId</c> — the same mechanism that carries region and zone transitions.
+    /// </summary>
+    Interior
 }
 
 /// <summary>Role a node plays within a map graph.</summary>

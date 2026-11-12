@@ -82,6 +82,12 @@ public class ZoneLocationTraits
     /// server logs an <c>Error</c> and leaves the character at the normal starting point.
     /// </summary>
     public bool? IsTutorialStart { get; set; }
+    /// <summary>
+    /// True if entering this location creates a private copy for the party instead of joining shared world
+    /// state. False or null means the location is public — everyone in the zone shares its enemies, which is
+    /// what the respawn sweeper has always managed.
+    /// </summary>
+    public bool? IsInstanced { get; set; }
 }
 
 /// <summary>A weighted entry in an actor pool for a zone location.</summary>

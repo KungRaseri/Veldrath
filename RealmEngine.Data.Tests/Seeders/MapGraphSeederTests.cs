@@ -28,8 +28,8 @@ public class MapGraphSeederTests
             .ToListAsync();
 
         maps.Should().HaveCount(23);
-        maps.SelectMany(m => m.Nodes).Should().HaveCount(130);
-        maps.SelectMany(m => m.Edges).Should().HaveCount(196);
+        maps.SelectMany(m => m.Nodes).Should().HaveCount(133);
+        maps.SelectMany(m => m.Edges).Should().HaveCount(206);
 
         foreach (var map in maps)
         {
@@ -54,8 +54,8 @@ public class MapGraphSeederTests
         await MapGraphSeeder.SeedAsync(db);
 
         (await db.Maps.CountAsync()).Should().Be(23);
-        (await db.MapNodes.CountAsync()).Should().Be(130);
-        (await db.MapEdges.CountAsync()).Should().Be(196);
+        (await db.MapNodes.CountAsync()).Should().Be(133);
+        (await db.MapEdges.CountAsync()).Should().Be(206);
     }
 
     [Fact]

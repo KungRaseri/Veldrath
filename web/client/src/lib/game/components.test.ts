@@ -172,6 +172,8 @@ function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
 		trackedQuests: [] as unknown[],
 		questTurnInToast: null as unknown,
 		dismissQuestToast: vi.fn(),
+		levelWarning: null as unknown,
+		dismissLevelWarning: vi.fn(),
 		partyInvites: [] as unknown[],
 		isPartyLeader: false,
 		openParty: vi.fn(),
@@ -484,6 +486,26 @@ describe('QuestTracker', () => {
 		const { container } = render(QuestTracker, { props: { session } });
 
 		expect(container.textContent?.trim()).toBe('');
+	});
+});
+
+describe('GameOverlays (level warning)', () => {
+	it('shows the gate the server worded and lets the player dismiss it', async () => {
+		const session = fakeSession({ levelWarning: 'This place expects level 26; you are 3.' });
+		render(GameOverlays, { props: { session } });
+
+		expect(await screen.findByTestId('level-warning')).toBeTruthy();
+		expect(screen.getByText('This place expects level 26; you are 3.')).toBeTruthy();
+
+		screen.getByRole('button', { name: 'Dismiss' }).click();
+		expect(session.dismissLevelWarning).toHaveBeenCalled();
+	});
+
+	it('renders nothing when the arrival set no expectation', async () => {
+		const session = fakeSession();
+		render(GameOverlays, { props: { session } });
+
+		expect(screen.queryByTestId('level-warning')).toBeNull();
 	});
 });
 
