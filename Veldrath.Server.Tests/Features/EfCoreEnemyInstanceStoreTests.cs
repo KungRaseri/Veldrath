@@ -82,6 +82,34 @@ public class EfCoreEnemyInstanceStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task ExtendClearedRespawnsAsync_PushesTheDeadRowsToTheClearedWindow()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var store = CreateStore(db);
+
+        var roster = await store.GetAliveOrSpawnAsync(
+            "zone:clear",
+            "square",
+            _ => Task.FromResult(new List<SpawnedEnemy> { Enemy("a") }));
+
+        await store.TryMarkDeadAsync(roster[0].Id);
+
+        var before = (await db.EnemyInstances.SingleAsync()).RespawnAt;
+        before.Should().NotBeNull();
+
+        (await store.ExtendClearedRespawnsAsync("zone:clear", "square")).Should().Be(1);
+
+        var after = (await db.EnemyInstances.SingleAsync()).RespawnAt;
+        after.Should().NotBeNull();
+        after!.Value.Should().BeAfter(before!.Value);
+        // The default window is 60 s × 3, so a cleared room is guaranteed quiet well past a single kill.
+        after.Value.Should().BeAfter(DateTimeOffset.UtcNow.AddSeconds(120));
+
+        // A location with no dead rows is a no-op rather than an error.
+        (await store.ExtendClearedRespawnsAsync("zone:clear", "nowhere")).Should().Be(0);
+    }
+
+    [Fact]
     public async Task GetAliveOrSpawnAsync_Spawns_Once_And_Reuses_The_Roster()
     {
         await using var db = _dbFactory.CreateContext();

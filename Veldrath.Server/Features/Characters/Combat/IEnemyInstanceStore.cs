@@ -92,4 +92,21 @@ public interface IEnemyInstanceStore
     /// <param name="enemyId">Enemy instance id.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task RemoveAsync(Guid enemyId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Pushes back the pending respawn of every enemy that died at a location, which is what makes a
+    /// <em>cleared</em> room stay quiet longer than a single kill does.
+    /// </summary>
+    /// <remarks>
+    /// The extra time comes from the world options, not from the caller: respawn timing belongs to the store,
+    /// and a caller passing a duration is how two places end up disagreeing about it.
+    /// </remarks>
+    /// <param name="zoneGroup">SignalR zone group the location belongs to.</param>
+    /// <param name="locationSlug">Zone-location slug that was cleared.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>How many dead enemies were pushed back.</returns>
+    Task<int> ExtendClearedRespawnsAsync(
+        string zoneGroup,
+        string locationSlug,
+        CancellationToken cancellationToken = default);
 }

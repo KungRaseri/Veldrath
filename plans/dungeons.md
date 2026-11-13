@@ -524,9 +524,11 @@ What shipped:
   reveal and the location becomes visible through the existing discovery filter.
 - `LocationCleared` carries the outcome to the whole run, so a party sees progress without polling.
 
-Deliberately deferred: the "longer respawn window for a cleared public dungeon" is a tuning rule with no
-measurement behind it yet, and a public clear has no instance row to hang it on. It belongs with the
-balance pass, not with the lifecycle.
+- **A cleared room really is quieter.** §6 promises "a longer respawn window, not a schedule", and that is now
+  what happens: when a location's last enemy dies, every dead row there is pushed to the cleared-room window
+  (`ClearedRoomRespawnMultiplier`, default 3× the normal delay). It applies to a public dungeon and to a run
+  alike, because the promise was never about instancing. The multiplier is a single configured number, which
+  is honest: it is a starting point for the balance pass, not a measurement.
 
 ### F4 — the client (shipped)
 
@@ -576,9 +578,37 @@ F1 before everything: nothing else can be tested while entry does not move a cha
 dungeons have no exit. F2 before F3 because cleared state has to know which scope it belongs to.
 F4 last because it renders what F1–F3 settle. F5 can start once F1's data shape is stable.
 
-## 8. Foundry map editor — outline only
+## 8. Foundry map editor (shipped: read, inspect, save)
 
-Needs its own planning session. What it has to cover, so that session starts informed:
+The write path and the editor page are in. What shipped:
+
+- **Server.** `MapEditorService` behind `GET /api/content/maps` (list with versions), `GET
+  /api/content/maps/{id}` (the whole graph) and `PUT /api/content/maps/{id}` (save), all under the existing
+  `content.manage` permission. A save replaces this map's candidate inside the whole world and runs
+  `MapGraphValidator.ValidateWorld`, so it cannot strand a room, leave a dungeon without an exit, or point an
+  exit at a map that does not exist. It is refused rather than half-applied, and the refusal carries the issue
+  codes the validator already emits. Saves are optimistic: the caller sends the version it started from and a
+  mismatch is a `409` conflict.
+- **Web.** [`/foundry/maps`](../web/client/src/routes/(foundry)/maps/+page.server.ts) lists graphs with their
+  size and version; [`/foundry/maps/[mapId]`](../web/client/src/routes/(foundry)/maps/[mapId]/+page.svelte)
+  shows every node with its label, hidden flag, unlock key and exit target editable, and its edge counts
+  read-only. Rules live in [`map-editor.ts`](../web/client/src/lib/foundry/map-editor.ts) so they are unit
+  tested, and `applyNodeEdits` touches only the fields the inspector owns — edges and the version survive by
+  construction.
+- **Why it matters.** The Halrow's stranded rooms and the three missing exits were exactly what a human
+  looking at the graph would have seen.
+
+Still needs its own session:
+
+- **The canvas.** Nodes are edited in a table today. Dragging them on `LayoutX`/`LayoutY` (the data the
+  client's `CardinalMap` already reads) and drawing edges with `MapDirection` is the next step;
+  `cardinal-layout.ts` is reusable for the read-only preview that goes with it.
+- **Create and delete.** The editor edits existing graphs; adding a map, or deleting one, is a separate
+  decision with its own cascade.
+- **Actor pools and location traits.** Those live on `ZoneLocation`, not on the graph, so they belong with
+  the location editor rather than here.
+
+What the original outline asked for, for reference:
 
 1. **Route and RBAC.** A `(foundry)/maps` area behind the existing content permission, listing the
    three scopes and their owners.

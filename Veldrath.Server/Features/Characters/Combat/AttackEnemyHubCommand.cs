@@ -219,17 +219,26 @@ public class AttackEnemyHubCommandHandler
                 await _characterRepo.UpdateAsync(rewarded, cancellationToken);
             }
 
-            // Clearing the last enemy in a run's room is a run fact, not a combat fact: ask the store how many
-            // are still standing rather than trusting this one death.
+            // Clearing the floor is a location fact, not a combat fact: ask the store how many are still
+            // standing rather than trusting this one death.
             Veldrath.Server.Features.Zones.LocationClearOutcome? cleared = null;
-            if (enemy.ZoneInstanceId is Guid runId &&
-                await _enemies.CountAliveAsync(enemy.ZoneGroup, enemy.LocationSlug, cancellationToken) == 0)
+            if (await _enemies.CountAliveAsync(enemy.ZoneGroup, enemy.LocationSlug, cancellationToken) == 0)
             {
-                cleared = await _instances.RecordClearAsync(
-                    runId,
+                // A cleared room stays quiet for the cleared-room window, in a public dungeon as much as in a
+                // run: the promise in plans/dungeons.md §6 is "longer respawn", not no respawn.
+                await _enemies.ExtendClearedRespawnsAsync(
+                    enemy.ZoneGroup,
                     enemy.LocationSlug,
-                    request.CharacterId,
                     cancellationToken);
+
+                if (enemy.ZoneInstanceId is Guid runId)
+                {
+                    cleared = await _instances.RecordClearAsync(
+                        runId,
+                        enemy.LocationSlug,
+                        request.CharacterId,
+                        cancellationToken);
+                }
             }
 
             return new AttackEnemyHubResult

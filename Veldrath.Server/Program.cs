@@ -205,6 +205,7 @@ try
     builder.Services.AddRealmEngineMediatR();
     builder.Services.AddRealmEngineCore(p => p.UseExternal());
     builder.Services.AddScoped<Veldrath.Server.Features.Characters.Combat.ActorPoolResolver>();
+    builder.Services.AddScoped<Veldrath.Server.Features.Content.MapEditorService>();
     // Register server-local MediatR handlers (hub commands such as GainExperienceHubCommand).
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
     builder.Services.AddHostedService<CatalogInitializationService>();
@@ -421,6 +422,7 @@ try
     app.MapCharacterCreationSessionEndpoints();
     app.MapZoneEndpoints();
     app.MapContentEndpoints();
+    app.MapMapEditorEndpoints();
     app.MapContentWriteEndpoints();
     app.MapAdminEndpoints();
     app.MapPlayerEndpoints();

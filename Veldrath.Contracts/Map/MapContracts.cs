@@ -17,7 +17,8 @@ public record MapSummaryDto(
     string Description,
     string? EntryNodeId,
     int NodeCount,
-    int EdgeCount);
+    int EdgeCount,
+    int Version = 1);
 
 /// <summary>A complete region or zone map graph.</summary>
 /// <param name="Id">Stable map identifier.</param>
@@ -36,7 +37,8 @@ public record MapGraphDto(
     string Description,
     string? EntryNodeId,
     IReadOnlyList<MapNodeDto> Nodes,
-    IReadOnlyList<MapEdgeDto> Edges);
+    IReadOnlyList<MapEdgeDto> Edges,
+    int Version = 1);
 
 /// <summary>A node within a map graph.</summary>
 /// <param name="Id">Stable node identifier.</param>
@@ -97,6 +99,35 @@ public record MapEdgeDto(
     string? Label,
     bool IsTraversable,
     bool IsHidden);
+
+/// <summary>Payload for saving an authored map graph.</summary>
+/// <param name="Map">The complete graph to persist. Its id must match the route.</param>
+/// <param name="ExpectedVersion">
+/// The version the author started from. A mismatch is a conflict rather than a silent overwrite, which is what
+/// stops two editors from erasing each other's work.
+/// </param>
+public record MapGraphWriteRequest(MapGraphDto Map, int ExpectedVersion);
+
+/// <summary>One validation issue reported by a map save.</summary>
+/// <param name="Code">Stable machine-readable issue code, such as <c>node_unreachable</c>.</param>
+/// <param name="Message">Human-readable description.</param>
+/// <param name="Severity"><c>Error</c> or <c>Warning</c>.</param>
+/// <param name="MapId">Map the issue belongs to, when applicable.</param>
+/// <param name="NodeId">Node the issue belongs to, when applicable.</param>
+public record MapGraphIssueDto(string Code, string Message, string Severity, string? MapId, string? NodeId);
+
+/// <summary>Outcome of a map save attempt.</summary>
+/// <param name="Success">Whether the graph was persisted.</param>
+/// <param name="Status"><c>ok</c>, <c>conflict</c>, <c>invalid</c>, or <c>not_found</c>.</param>
+/// <param name="Version">The stored version after the attempt: the new one on success, the current one otherwise.</param>
+/// <param name="Issues">Validation issues, populated when the graph was refused.</param>
+/// <param name="Message">Optional human-readable summary.</param>
+public record MapGraphSaveResponse(
+    bool Success,
+    string Status,
+    int Version,
+    IReadOnlyList<MapGraphIssueDto> Issues,
+    string? Message = null);
 
 /// <summary>Hub request to travel to a map node.</summary>
 /// <param name="MapId">Map containing the selected node.</param>

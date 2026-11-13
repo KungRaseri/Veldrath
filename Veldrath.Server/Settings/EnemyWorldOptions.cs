@@ -32,9 +32,20 @@ public sealed class EnemyWorldOptions
     [Range(1, 86_400)]
     public int SessionGraceSeconds { get; set; } = 60;
 
+    /// <summary>
+    /// Gets or sets how many respawn windows a room stays quiet once every enemy in it has been defeated.
+    /// A cleared dungeon should feel cleared; one kill should not repopulate the room around the party.
+    /// </summary>
+    [Range(1, 100)]
+    public int ClearedRoomRespawnMultiplier { get; set; } = 3;
+
     /// <summary>Gets the respawn delay as a duration.</summary>
     public TimeSpan RespawnDelay => TimeSpan.FromSeconds(RespawnDelaySeconds);
 
     /// <summary>Gets the session grace window as a duration.</summary>
     public TimeSpan SessionGrace => TimeSpan.FromSeconds(SessionGraceSeconds);
+
+    /// <summary>Gets how long a cleared room stays quiet as a duration, counted from the normal window.</summary>
+    public TimeSpan ClearedRoomRespawnDelay => TimeSpan.FromSeconds(
+        (long)RespawnDelaySeconds * Math.Max(1, ClearedRoomRespawnMultiplier));
 }

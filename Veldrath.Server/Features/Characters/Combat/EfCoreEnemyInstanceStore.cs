@@ -100,6 +100,36 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
     }
 
     /// <inheritdoc />
+    public async Task<int> ExtendClearedRespawnsAsync(
+        string zoneGroup,
+        string locationSlug,
+        CancellationToken cancellationToken = default)
+    {
+        var dead = await _db.EnemyInstances
+            .Where(enemy =>
+                enemy.ZoneGroup == zoneGroup &&
+                enemy.LocationSlug == locationSlug &&
+                !enemy.IsAlive)
+            .ToListAsync(cancellationToken);
+
+        if (dead.Count == 0)
+            return 0;
+
+        var quietUntil = DateTimeOffset.UtcNow + _options.ClearedRoomRespawnDelay;
+
+        foreach (var enemy in dead)
+        {
+            // A floor, not an addition: never pull a later timer backwards, and never leave the room quieter
+            // for less than the cleared-room window.
+            if (enemy.RespawnAt is null || enemy.RespawnAt < quietUntil)
+                enemy.RespawnAt = quietUntil;
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+        return dead.Count;
+    }
+
+    /// <inheritdoc />
     public Task<int> CountAliveAsync(
         string zoneGroup,
         string locationSlug,
