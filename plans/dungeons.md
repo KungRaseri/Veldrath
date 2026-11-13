@@ -1,8 +1,9 @@
 # Dungeons, instances and the map model
 
-> **Status: F1–F4 shipped in [PR #70](https://git.kungraseri.cloud/Veldrath/Veldrath/pulls/70).**
-> This file is the record of the model decisions and the phase outline. The Foundry map editor
-> (§8) is an **outline only** and needs its own planning session before code.
+> **Status: F1–F5 shipped in [PR #70](https://git.kungraseri.cloud/Veldrath/Veldrath/pulls/70).**
+> This file is the record of the model decisions and the phase outline. The Foundry map editor (§8)
+> shipped its **read, inspect and save** path; the canvas, map create/delete and the location-side
+> fields are still an outline and need their own planning session before code.
 >
 > Supersedes the open question in [`ui-depth.md`](ui-depth.md) §3.6 — E6 becomes the client
 > slice of this plan, and the model itself lives here.
@@ -589,8 +590,8 @@ The write path and the editor page are in. What shipped:
   exit at a map that does not exist. It is refused rather than half-applied, and the refusal carries the issue
   codes the validator already emits. Saves are optimistic: the caller sends the version it started from and a
   mismatch is a `409` conflict.
-- **Web.** [`/foundry/maps`](../web/client/src/routes/(foundry)/maps/+page.server.ts) lists graphs with their
-  size and version; [`/foundry/maps/[mapId]`](../web/client/src/routes/(foundry)/maps/[mapId]/+page.svelte)
+- **Web.** [`/foundry/maps`](../web/client/src/routes/%28foundry%29/maps/+page.server.ts) lists graphs with their
+  size and version; [`/foundry/maps/[mapId]`](../web/client/src/routes/%28foundry%29/maps/[mapId]/+page.svelte)
   shows every node with its label, hidden flag, unlock key and exit target editable, and its edge counts
   read-only. Rules live in [`map-editor.ts`](../web/client/src/lib/foundry/map-editor.ts) so they are unit
   tested, and `applyNodeEdits` touches only the fields the inspector owns — edges and the version survive by
@@ -623,6 +624,74 @@ What the original outline asked for, for reference:
    concurrent edits.
 5. **The thing this fixes.** The Halrow's stranded rooms and the three missing exits are exactly what
    a human looking at the graph would have seen; the editor is worth building for that alone.
+
+## 9. Tunables: configuration, not constants
+
+**The rule.** Every number a designer can argue about is either **content** — an authored row in the
+content database, editable in Foundry — or **configuration** — a host setting. Neither is a compile-time
+constant. If a value can change the feel of the game, it may not be baked into a handler, and a change to
+it may never require a rebuild and redeploy.
+
+Today the tunables live in three places, and none of them is a `const`:
+
+| Value | Lives in | Today | Notes |
+|---|---|---|---|
+| Actor pools, room size, danger, min/max level, traits | `ZoneLocation` rows (`Stats`, `Traits`, `ActorPool`) | content DB, seeded | already editable in Foundry (§8) |
+| Zone level floor | `Zone.MinLevel` | content DB, seeded | drives the D8 **soft gate** warning only |
+| Room level floor | `ZoneLocation.Stats.MinLevel` | content DB, seeded | same gate, more specific |
+| `Enemies:RespawnDelaySeconds` (60) | [`EnemyWorldOptions`](../Veldrath.Server/Settings/EnemyWorldOptions.cs:14) | appsettings / env, validated on start | how long a kill stays dead |
+| `Enemies:SweepIntervalSeconds` (5) | same | same | sweeper tick |
+| `Enemies:RespawnBatchSize` (50) | same | same | rows revived per sweep |
+| `Enemies:SessionGraceSeconds` (60) | same | same | combat reconnect grace **and** instance empty grace |
+| `Enemies:ClearedRoomRespawnMultiplier` (3) | same | same | how many respawn windows a cleared room stays quiet |
+
+The values are bound once in [`Program.cs:174`](../Veldrath.Server/Program.cs:174) with
+`ValidateDataAnnotations().ValidateOnStart()`, so a nonsensical value fails the host instead of silently
+defaulting. Both [`EfCoreEnemyInstanceStore`](../Veldrath.Server/Features/Characters/Combat/EfCoreEnemyInstanceStore.cs:46)
+and [`EnemyRespawnService`](../Veldrath.Server/Features/Characters/Combat/EnemyRespawnService.cs:38) take
+`IOptions<EnemyWorldOptions>`, which is deliberate: the *source* of the numbers can change without touching
+a single call site.
+
+### 9.1 The intended destination: `GameConfig`, edited in Foundry
+
+[`GameConfig`](../RealmEngine.Data/Entities/Config/GameConfig.cs:8) already exists in the content database —
+`ConfigKey` (`experience`, `rarity`, `budget`, `growth-stats`, `socket-config`, …), a JSONB `Data` payload,
+`Version` and `UpdatedAt`, one row per config file, seeded by migration. **Nothing reads it at runtime yet.**
+It is the right home for the tunables above, because it is content, it is versioned, and Foundry can edit it
+behind the same `content.manage` permission as everything else.
+
+The design rules for when that pass happens:
+
+1. **The options class stays.** `EnemyWorldOptions` keeps its shape, its `[Range]` attributes and its
+   defaults; it becomes the *typed, validated view* of a config row rather than of an appsettings section.
+   Call sites do not change.
+2. **The database wins, appsettings is the fallback.** A missing or unreadable row must still boot the
+   server on the class defaults, so a fresh database is never a broken server.
+3. **One reader.** A single `ITunableSource`-style abstraction loads the row and merges it over the defaults.
+   No handler resolves configuration itself, and nothing reads a value per attack in a loop — read once per
+   request or cache by `Version`.
+4. **Validate on write as well as on start.** A save with an out-of-range number is refused with the same
+   message shape `ValidateOnStart` produces. The failsafe rule from §2 applies to configuration as much as
+   to content.
+5. **Foundry is the editing surface.** Not a database console, not an env var change on a running container.
+6. **Defaults stay in code.** The numbers must remain discoverable in one file; the row holds the override,
+   never the only copy.
+
+### 9.2 What should move, specifically
+
+- **A single global cleared-room multiplier is a placeholder.** "A cleared room stays quiet" should
+  eventually be authored per zone — or per difficulty — rather than multiplied globally for every dungeon
+  in the world.
+- **Instance grace should stop sharing `SessionGraceSeconds`.** A party run expiring and a combat session
+  surviving a dropped connection are different questions with different right answers; they currently share
+  one number because one number was cheaper.
+- **Level gates stay content** (`Zone.MinLevel`, `ZoneLocation.Stats.MinLevel`) and must never become
+  appsettings: they describe the world, not the host.
+- **Anything still `const` in a handler is a candidate.** A compile-time constant that a designer would want
+  to change is a defect of the same kind the F1 validator exists to catch.
+
+Non-goals: no in-game admin sliders, no per-character overrides, and no requirement for hot reload — a
+restart is acceptable while the world is small. A **rebuild** is not: that is the line these rules draw.
 
 ---
 

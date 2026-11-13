@@ -3594,3 +3594,28 @@ mana 50 with no cooldown instead of mana 40 / cooldown 2.
 - **CI delivery:** the exact-head `.NET Coverage` job failed only in the sticky-comment step (duplicate
   comment id from `scripts/forgejo-pr-comment.sh`), tracked separately as t_2814041b (dev-debugger).
   PR #53's next push must be rebased onto `development` after that fix lands so the workflow runs it.
+
+### Standing rule — tunables are configuration, not constants (2026-11-13)
+
+Written down in [`plans/dungeons.md` §9](../../plans/dungeons.md) and
+[`docs/coolify-deployment.md`](../../docs/coolify-deployment.md) (server env reference). Short version:
+
+- A number a designer can argue about is either **content** (a row in the content DB, edited in Foundry)
+  or **configuration** (a host option). Never a `const` in a handler, never a value that needs a rebuild
+  to change.
+- `EnemyWorldOptions` (`Settings/`, section `Enemies`) is the current host surface: `RespawnDelaySeconds`
+  60, `SweepIntervalSeconds` 5, `RespawnBatchSize` 50, `SessionGraceSeconds` 60,
+  `ClearedRoomRespawnMultiplier` 3. `[Range]` + `ValidateDataAnnotations().ValidateOnStart()` at
+  [`Program.cs:174`](../../Veldrath.Server/Program.cs). No `Enemies` section exists in
+  `appsettings.json`, so the class defaults are what actually runs — a bad env var stops the host rather
+  than being overridden.
+- **`GameConfig` (`RealmEngine.Data/Entities/Config/GameConfig.cs`) is the intended runtime home** —
+  `ConfigKey` + JSONB `Data` + `Version` + `UpdatedAt`, one row per config file, already seeded by
+  migration — but **nothing reads it at runtime today**; a grep only finds migrations and snapshots.
+- When that pass happens: options class keeps its shape and validation (it becomes the typed view of the
+  row), the DB row overrides appsettings and appsettings stays the fallback so an empty DB still boots,
+  one `ITunableSource` reads it (never per-attack), and Foundry is the editing surface, not a DB console.
+- Known placeholders to fix in that pass: the cleared-room rule is one global multiplier (should be
+  per-zone or per-difficulty) and instance expiry reuses `SessionGraceSeconds` (should be its own key).
+  Level gates (`Zone.MinLevel`, `ZoneLocation.Stats.MinLevel`) stay content and must never become
+  appsettings.
