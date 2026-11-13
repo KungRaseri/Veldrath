@@ -60,6 +60,28 @@ public class EfCoreEnemyInstanceStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task CountAliveAsync_ReflectsDeath_WithoutSpawning()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var store = CreateStore(db);
+
+        var roster = await store.GetAliveOrSpawnAsync(
+            "zone:count",
+            "square",
+            _ => Task.FromResult(new List<SpawnedEnemy> { Enemy("a"), Enemy("b") }));
+
+        roster.Should().HaveCount(2);
+
+        await store.TryMarkDeadAsync(roster[0].Id);
+
+        (await store.CountAliveAsync("zone:count", "square")).Should().Be(1);
+
+        // Counting a location nobody spawned must read zero, not spawn a roster to answer the question.
+        (await store.CountAliveAsync("zone:count", "nowhere")).Should().Be(0);
+        (await db.EnemyInstances.CountAsync()).Should().Be(2);
+    }
+
+    [Fact]
     public async Task GetAliveOrSpawnAsync_Spawns_Once_And_Reuses_The_Roster()
     {
         await using var db = _dbFactory.CreateContext();

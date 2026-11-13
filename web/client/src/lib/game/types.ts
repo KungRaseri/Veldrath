@@ -248,6 +248,12 @@ export interface NodeTraveledPayload {
 	zoneId?: string | null;
 	regionId?: string | null;
 	locationSlug?: string | null;
+	/** The scope the character is now in: the shared zone, or a run's own group. */
+	zoneGroup?: string | null;
+	/** The instance run the character is inside, or `null` in the shared zone. */
+	zoneInstanceId?: string | null;
+	/** Rooms this run has already cleared, so the dungeon panel needs no second call. */
+	clearedLocations?: string[] | null;
 	locationTypeKey?: string | null;
 	isDungeonLocation?: boolean;
 	isInstanced?: boolean;
@@ -532,6 +538,16 @@ export interface AbilityUsedPayload {
 	manaCost: number;
 	remainingMana: number;
 	healthRestored: number;
+}
+
+/** Broadcast when a room in an instance run has been cleared. */
+export interface LocationClearedPayload {
+	characterId: string;
+	instanceId?: string | null;
+	locationSlug: string;
+	firstClearOfRun: boolean;
+	firstClearForCharacter: boolean;
+	unlockedLocationSlugs?: string[] | null;
 }
 
 export interface CombatStartedPayload {

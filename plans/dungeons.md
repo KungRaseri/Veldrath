@@ -1,7 +1,6 @@
 # Dungeons, instances and the map model
 
-> **Status: F1 shipped in [PR #70](https://git.kungraseri.cloud/Veldrath/Veldrath/pulls/70);
-> F2's instance shape is decided in §F2.1–§F2.3 and not yet implemented.**
+> **Status: F1–F4 shipped in [PR #70](https://git.kungraseri.cloud/Veldrath/Veldrath/pulls/70).**
 > This file is the record of the model decisions and the phase outline. The Foundry map editor
 > (§8) is an **outline only** and needs its own planning session before code.
 >
@@ -502,18 +501,50 @@ which already logs and adopts the winner.
   moves the connection back to the shared zone group and says so — waking up in a group nobody else can join
   would be worse than the fallback.
 
-### F3 — progress, reset and unlocks
+### F3 — progress, reset and unlocks (shipped)
 
 - Cleared/boss state per scope, the longer respawn window for a cleared public dungeon, quest unlock
   keys for the deep rooms, per-character first-clear.
 - **Done when:** the deep room opens for a character on the right quest, the boss stays dead for the
   window, and a cleared dungeon says so.
 
-### F4 — the client
+What shipped:
+
+- `ZoneInstanceLocationState` holds the run's cleared rooms, with `FirstClearedByCharacterId` as the
+  party-facing credit. `GetClearedLocationsAsync` feeds the arrival payload and `RecordClearAsync` is the
+  one writer.
+- **A room clears when its last enemy dies**, not when a specific one does:
+  `IEnemyInstanceStore.CountAliveAsync` answers without spawning (a read that spawned would answer "no"
+  forever), and `AttackEnemyHubCommandHandler` records the clear only when it reads zero.
+- **First-clear is per character and persistent**, stored as `FirstClear_{slug}` on the character attributes
+  blob — the same mechanism the skill sheet uses — so "I have done this" survives the run that proved it.
+  The run's own first-clear is separate, so a late joiner who kills nothing is not credited with the room.
+- **Quest credit is the authored unlock key.** Clearing a room grants the character every hidden location
+  whose `UnlockKey` names that room, which is the link the seed data now carries. The hub announces the
+  reveal and the location becomes visible through the existing discovery filter.
+- `LocationCleared` carries the outcome to the whole run, so a party sees progress without polling.
+
+Deliberately deferred: the "longer respawn window for a cleared public dungeon" is a tuning rule with no
+measurement behind it yet, and a public clear has no instance row to hang it on. It belongs with the
+balance pass, not with the lifecycle.
+
+### F4 — the client (shipped)
 
 - Dungeon framing (you are underground, not in a field), the room list from the map graph with the
   current room marked, progress, an always-available exit control, and the D8 warning banner.
 - **Done when:** a player can see where they are in a dungeon, what is left, and how to leave.
+
+What shipped: [`dungeon.ts`](../web/client/src/lib/game/dungeon.ts) holds the rules — a dungeon is a zone
+whose type says so, rooms are the visible location nodes in authored order, and the exit prefers a region
+exit and falls back to a zone exit — and
+[`DungeonPanel.svelte`](../web/client/src/lib/game/DungeonPanel.svelte) renders them above the map whenever
+the zone is a dungeon: the rooms with the current one marked and the cleared ones ticked, `n/m rooms
+cleared`, an always-available "Leave the dungeon", "Walk here" for adjacent rooms, and "Enter room" for the
+room the character is standing in, which is the party action calling the same entry command as walking.
+`LocationCleared` and the arrival payload keep it current, so nothing polls.
+
+Deferred: a visually distinct underground framing (the panel is the surface, not new art) and any per-room
+artwork.
 
 ### F5 — Foundry map editor
 

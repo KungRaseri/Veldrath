@@ -2597,6 +2597,27 @@ public class GameHub : Hub
                         CharacterId = characterId,
                     });
                 }
+
+                // A cleared room is a run-wide fact: everyone inside needs the progress, not just the killer.
+                if (result.ClearedLocationSlug is not null && TryGetCurrentZoneGroup(out var clearGroup))
+                {
+                    await Clients.Group(clearGroup).SendAsync("LocationCleared", new
+                    {
+                        CharacterId = characterId,
+                        InstanceId = result.ClearedInstanceId,
+                        LocationSlug = result.ClearedLocationSlug,
+                        FirstClearOfRun = result.FirstClearOfRun,
+                        FirstClearForCharacter = result.FirstClearForCharacter,
+                        UnlockedLocationSlugs = result.UnlockedLocationSlugs,
+                    });
+
+                    foreach (var unlocked in result.UnlockedLocationSlugs)
+                    {
+                        await Clients.Caller.SendAsync(
+                            "SystemMessage",
+                            $"Clearing the way has revealed something: {unlocked}.");
+                    }
+                }
             }
         }
         catch (Exception ex)

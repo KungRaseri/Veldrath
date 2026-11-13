@@ -31,6 +31,19 @@ public interface IEnemyInstanceStore
         Guid? zoneInstanceId = null,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Counts the living enemies at a location in a scope without spawning anything. Used to decide whether a
+    /// room is cleared; a read that spawned a roster would answer "no" forever.
+    /// </summary>
+    /// <param name="zoneGroup">SignalR zone group, e.g. <c>"zone:the-halrow#i1:…"</c>.</param>
+    /// <param name="locationSlug">Zone-location slug.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>How many enemies at that location are still alive.</returns>
+    Task<int> CountAliveAsync(
+        string zoneGroup,
+        string locationSlug,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Returns one enemy instance by id, or <see langword="null"/> when it no longer exists.</summary>
     /// <param name="enemyId">Enemy instance id.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

@@ -113,3 +113,33 @@ public class ZoneInstanceParticipant
     /// <summary>Gets the participating character.</summary>
     public Character? Character { get; set; }
 }
+
+/// <summary>
+/// What one run has cleared in one of its rooms.
+/// </summary>
+/// <remarks>
+/// The run is zone-level, so this is where the room-level granularity lives: a boss that stays dead while the
+/// party backtracks, and a reset that is a new run rather than a deletion of somebody's live progress.
+/// <see cref="FirstClearedByCharacterId"/> records who opened the room for the party; the character's own
+/// first-clear is a separate, persistent fact and does not live here.
+/// </remarks>
+public class ZoneInstanceLocationState
+{
+    /// <summary>Gets or sets the run this state belongs to.</summary>
+    public Guid ZoneInstanceId { get; set; }
+
+    /// <summary>Gets or sets the zone-location slug the state describes.</summary>
+    public string LocationSlug { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets a value indicating whether every enemy at the room has been defeated in this run.</summary>
+    public bool IsCleared { get; set; }
+
+    /// <summary>Gets or sets when the room was cleared (UTC), or <see langword="null"/> while it is still occupied.</summary>
+    public DateTimeOffset? ClearedAt { get; set; }
+
+    /// <summary>Gets or sets the character whose kill cleared the room, or <see langword="null"/> while it is uncleared.</summary>
+    public Guid? FirstClearedByCharacterId { get; set; }
+
+    /// <summary>Gets the run.</summary>
+    public ZoneInstance? Instance { get; set; }
+}

@@ -41,6 +41,7 @@ import type {
 	ItemReceivedPayload,
 	KickedPayload,
 	LearnedPower,
+	LocationClearedPayload,
 	LocationEnteredPayload,
 	MapGraph,
 	MapGraphReceivedPayload,
@@ -132,6 +133,10 @@ export class GameSession {
 	 * expectation. The server words it; the client only shows and dismisses it.
 	 */
 	levelWarning = $state<string | null>(null);
+	/** The instance run the character is inside, or `null` in the shared zone. */
+	instanceId = $state<string | null>(null);
+	/** Rooms this run has already cleared, as the server last described them. */
+	clearedLocations = $state<string[]>([]);
 	/** Recipes the character could craft, as the server last described them. */
 	craftableRecipes = $state<CraftableRecipe[]>([]);
 	shopCatalog = $state<ShopCatalogItem[]>([]);
@@ -1036,6 +1041,20 @@ export class GameSession {
 			this.addSystemMessage('Your party disbanded.');
 		});
 
+		hub.on('LocationCleared', (payload: LocationClearedPayload) => {
+			if (!this.clearedLocations.includes(payload.locationSlug)) {
+				this.clearedLocations = [...this.clearedLocations, payload.locationSlug];
+			}
+
+			if (payload.firstClearOfRun) {
+				this.addSystemMessage(
+					payload.firstClearForCharacter
+						? `Room cleared for the first time: ${payload.locationSlug}.`
+						: `Room cleared: ${payload.locationSlug}.`
+				);
+			}
+		});
+
 		hub.on('PartyInvitesChanged', (payload: PartyInvitesChangedPayload) => {
 			if (payload.partyId) {
 				this.partyInvites = this.partyInvites.filter(
@@ -1197,6 +1216,8 @@ export class GameSession {
 
 		// An advisory level gate, worded by the server. Arriving somewhere that sets none clears the banner.
 		this.levelWarning = payload.levelWarning ?? null;
+		this.instanceId = payload.zoneInstanceId ?? null;
+		this.clearedLocations = [...(payload.clearedLocations ?? [])];
 
 		if (payload.nodeId) {
 			this.currentNodeId = payload.nodeId;

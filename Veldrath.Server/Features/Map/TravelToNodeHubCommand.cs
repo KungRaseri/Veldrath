@@ -70,6 +70,12 @@ public record TravelToNodeHubResult
     /// </summary>
     public Guid? ZoneInstanceId { get; init; }
 
+    /// <summary>
+    /// Gets the rooms this run has already cleared. Empty for a public arrival, so the client can render
+    /// "what is left here" without a second call.
+    /// </summary>
+    public IReadOnlyList<string> ClearedLocations { get; init; } = [];
+
     /// <summary>Gets the location's content type key, such as <c>locations</c> or <c>dungeons</c>.</summary>
     public string? LocationTypeKey { get; init; }
 
@@ -357,6 +363,10 @@ public class TravelToNodeHubCommandHandler
             location,
             instanceId);
 
+        var clearedLocations = instanceId is Guid run
+            ? await _instances.GetClearedLocationsAsync(run, cancellationToken)
+            : [];
+
         _logger.LogInformation(
             "Character {CharacterIdPrefix} travelled to {MapId}/{NodeId} (map changed: {MapChanged})",
             request.CharacterId.ToString()[..8],
@@ -381,6 +391,7 @@ public class TravelToNodeHubCommandHandler
             LocationSlug = locationSlug,
             ZoneGroup = effectiveGroup,
             ZoneInstanceId = instanceId,
+            ClearedLocations = clearedLocations,
             LocationTypeKey = location?.TypeKey,
             IsDungeonLocation = string.Equals(location?.TypeKey, "dungeons", StringComparison.OrdinalIgnoreCase),
             IsInstanced = location?.IsInstanced ?? false,

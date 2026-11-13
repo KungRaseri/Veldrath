@@ -303,6 +303,9 @@ internal static class HubHarness
             enemies ?? new FakeEnemyInstanceStore(),
             new Veldrath.Server.Features.Zones.EfCoreZoneInstanceService(
                 db,
+                new CharacterRepository(db),
+                new CharacterUnlockedLocationRepository(db),
+                new Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository>().Object,
                 NullLogger<Veldrath.Server.Features.Zones.EfCoreZoneInstanceService>.Instance),
             random);
 

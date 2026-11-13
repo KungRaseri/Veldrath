@@ -301,7 +301,7 @@ disabled reasons, and the post-craft refresh.
 
 ---
 
-### E6 — Dungeons → **moved to [`dungeons.md`](dungeons.md)**
+### E6 — Dungeons → **shipped as F4 of [`dungeons.md`](dungeons.md)**
 
 **Goal.** Entering a dungeon is a place you go, with visible progress and a way out.
 

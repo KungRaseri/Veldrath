@@ -44,6 +44,14 @@ internal sealed class FakeEnemyInstanceStore : IEnemyInstanceStore
     public bool IsMarkedDead(Guid enemyId) => _dead.Contains(enemyId);
 
     /// <inheritdoc />
+    public Task<int> CountAliveAsync(
+        string zoneGroup,
+        string locationSlug,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(_rows.Values.Count(row =>
+            row.ZoneGroup == zoneGroup && row.LocationSlug == locationSlug && !_dead.Contains(row.Enemy.Id)));
+
+    /// <inheritdoc />
     public async Task<IReadOnlyList<SpawnedEnemy>> GetAliveOrSpawnAsync(
         string zoneGroup,
         string locationSlug,

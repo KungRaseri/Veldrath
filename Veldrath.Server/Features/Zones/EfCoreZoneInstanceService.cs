@@ -1,6 +1,9 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using RealmEngine.Shared.Abstractions;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
+using Veldrath.Server.Data.Repositories;
 
 namespace Veldrath.Server.Features.Zones;
 
@@ -23,14 +26,28 @@ namespace Veldrath.Server.Features.Zones;
 public class EfCoreZoneInstanceService : IZoneInstanceService
 {
     private readonly ApplicationDbContext _db;
+    private readonly ICharacterRepository _characters;
+    private readonly ICharacterUnlockedLocationRepository _unlocked;
+    private readonly IZoneLocationRepository _locations;
     private readonly ILogger<EfCoreZoneInstanceService> _logger;
 
     /// <summary>Initializes a new instance of <see cref="EfCoreZoneInstanceService"/>.</summary>
     /// <param name="db">Server database context.</param>
+    /// <param name="characters">Character repository, used for the persistent first-clear mark.</param>
+    /// <param name="unlocked">Discovery repository, used to grant the unlocks a clear earns.</param>
+    /// <param name="locations">Zone-location catalog, used to find what a room unlocks.</param>
     /// <param name="logger">Logger for the entry race and for sweeps.</param>
-    public EfCoreZoneInstanceService(ApplicationDbContext db, ILogger<EfCoreZoneInstanceService> logger)
+    public EfCoreZoneInstanceService(
+        ApplicationDbContext db,
+        ICharacterRepository characters,
+        ICharacterUnlockedLocationRepository unlocked,
+        IZoneLocationRepository locations,
+        ILogger<EfCoreZoneInstanceService> logger)
     {
         _db = db;
+        _characters = characters;
+        _unlocked = unlocked;
+        _locations = locations;
         _logger = logger;
     }
 
@@ -179,6 +196,114 @@ public class EfCoreZoneInstanceService : IZoneInstanceService
             _logger.LogInformation("Purged {Count} empty zone instances", purgeable.Count);
 
         return purgeable.Count;
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<string>> GetClearedLocationsAsync(
+        Guid instanceId,
+        CancellationToken cancellationToken = default) =>
+        await _db.ZoneInstanceLocationStates
+            .Where(state => state.ZoneInstanceId == instanceId && state.IsCleared)
+            .OrderBy(state => state.ClearedAt)
+            .Select(state => state.LocationSlug)
+            .ToListAsync(cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<LocationClearOutcome> RecordClearAsync(
+        Guid instanceId,
+        string locationSlug,
+        Guid characterId,
+        CancellationToken cancellationToken = default)
+    {
+        if (instanceId == Guid.Empty || string.IsNullOrWhiteSpace(locationSlug))
+            return new LocationClearOutcome(false, false, false, []);
+
+        var run = await _db.ZoneInstances
+            .AsNoTracking()
+            .FirstOrDefaultAsync(instance => instance.Id == instanceId, cancellationToken);
+
+        if (run is null)
+            return new LocationClearOutcome(false, false, false, []);
+
+        var state = await _db.ZoneInstanceLocationStates.FirstOrDefaultAsync(
+            row => row.ZoneInstanceId == instanceId && row.LocationSlug == locationSlug,
+            cancellationToken);
+
+        var firstClearOfRun = state is null || !state.IsCleared;
+
+        if (firstClearOfRun)
+        {
+            if (state is null)
+            {
+                state = new ZoneInstanceLocationState
+                {
+                    ZoneInstanceId = instanceId,
+                    LocationSlug = locationSlug,
+                };
+                _db.ZoneInstanceLocationStates.Add(state);
+            }
+
+            state.IsCleared = true;
+            state.ClearedAt = DateTimeOffset.UtcNow;
+            state.FirstClearedByCharacterId = characterId;
+            await _db.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Instance {InstanceId} cleared {LocationSlug} for the first time in this run",
+                instanceId,
+                locationSlug);
+        }
+
+        var character = await _characters.GetByIdAsync(characterId, cancellationToken);
+        var firstClearForCharacter = false;
+
+        if (character is not null)
+        {
+            var attributes = ParseAttributes(character.Attributes);
+            var key = $"FirstClear_{locationSlug}";
+
+            if (!attributes.ContainsKey(key))
+            {
+                attributes[key] = 1;
+                firstClearForCharacter = true;
+                character.Attributes = JsonSerializer.Serialize(attributes);
+                await _characters.UpdateAsync(character, cancellationToken);
+            }
+        }
+
+        var unlocked = new List<string>();
+        if (firstClearOfRun)
+        {
+            // The authored unlock key names what opens the way: a hidden room whose key is this room's slug
+            // becomes visible to the character who cleared it. That is the quest credit F3 promises.
+            var hidden = await _locations.GetHiddenByZoneIdAsync(run.ZoneId);
+
+            foreach (var location in hidden)
+            {
+                if (!string.Equals(location.UnlockKey, locationSlug, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                await _unlocked.AddUnlockAsync(characterId, location.Slug, "quest", cancellationToken);
+                unlocked.Add(location.Slug);
+            }
+        }
+
+        return new LocationClearOutcome(true, firstClearOfRun, firstClearForCharacter, unlocked);
+    }
+
+    private static Dictionary<string, int> ParseAttributes(string? blob)
+    {
+        if (string.IsNullOrWhiteSpace(blob))
+            return [];
+
+        try
+        {
+            return JsonSerializer.Deserialize<Dictionary<string, int>>(blob) ?? [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
     }
 
     private async Task<ZoneInstance?> FindOpenAsync(

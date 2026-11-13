@@ -66,6 +66,8 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<ZoneInstance> ZoneInstances => Set<ZoneInstance>();
     /// <summary>Characters who have taken part in an instance run.</summary>
     public DbSet<ZoneInstanceParticipant> ZoneInstanceParticipants => Set<ZoneInstanceParticipant>();
+    /// <summary>Room-level cleared state within an instance run.</summary>
+    public DbSet<ZoneInstanceLocationState> ZoneInstanceLocationStates => Set<ZoneInstanceLocationState>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -432,6 +434,18 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
         {
             // Runs derive their occupants from sessions, so this is the lookup the emptiness check makes.
             e.HasIndex(s => s.ZoneInstanceId);
+        });
+
+        builder.Entity<ZoneInstanceLocationState>(e =>
+        {
+            e.HasKey(s => new { s.ZoneInstanceId, s.LocationSlug });
+            e.Property(s => s.LocationSlug).HasMaxLength(128).IsRequired();
+            e.HasOne(s => s.Instance)
+             .WithMany()
+             .HasForeignKey(s => s.ZoneInstanceId)
+             .OnDelete(DeleteBehavior.Cascade);
+            // "What is left in this run" reads by run and cleared flag.
+            e.HasIndex(s => new { s.ZoneInstanceId, s.IsCleared });
         });
 
         // SQLite cannot translate ORDER BY on DateTimeOffset columns; store as ISO 8601 text

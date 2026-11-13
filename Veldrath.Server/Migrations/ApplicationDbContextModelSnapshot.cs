@@ -1160,6 +1160,31 @@ namespace Veldrath.Server.Migrations
                     b.ToTable("ZoneInstances");
                 });
 
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.ZoneInstanceLocationState", b =>
+                {
+                    b.Property<Guid>("ZoneInstanceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LocationSlug")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset?>("ClearedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("FirstClearedByCharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsCleared")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("ZoneInstanceId", "LocationSlug");
+
+                    b.HasIndex("ZoneInstanceId", "IsCleared");
+
+                    b.ToTable("ZoneInstanceLocationStates");
+                });
+
             modelBuilder.Entity("Veldrath.Server.Data.Entities.ZoneInstanceParticipant", b =>
                 {
                     b.Property<Guid>("ZoneInstanceId")
@@ -1497,6 +1522,17 @@ namespace Veldrath.Server.Migrations
                         .IsRequired();
 
                     b.Navigation("Zone");
+                });
+
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.ZoneInstanceLocationState", b =>
+                {
+                    b.HasOne("Veldrath.Server.Data.Entities.ZoneInstance", "Instance")
+                        .WithMany()
+                        .HasForeignKey("ZoneInstanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Instance");
                 });
 
             modelBuilder.Entity("Veldrath.Server.Data.Entities.ZoneInstanceParticipant", b =>

@@ -1,8 +1,10 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
+using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.Zones;
 using Veldrath.Server.Tests.Infrastructure;
 
@@ -52,8 +54,35 @@ public class ZoneInstanceServiceTests
         return party;
     }
 
-    private static EfCoreZoneInstanceService Service(ApplicationDbContext db) =>
-        new(db, NullLogger<EfCoreZoneInstanceService>.Instance);
+    private static EfCoreZoneInstanceService Service(
+        ApplicationDbContext db,
+        IReadOnlyList<RealmEngine.Shared.Models.ZoneLocationEntry>? hidden = null)
+    {
+        var locations = new Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository>();
+        locations
+            .Setup(repo => repo.GetHiddenByZoneIdAsync(It.IsAny<string>()))
+            .ReturnsAsync((hidden ?? []).ToList());
+
+        return new(
+            db,
+            new CharacterRepository(db),
+            new CharacterUnlockedLocationRepository(db),
+            locations.Object,
+            NullLogger<EfCoreZoneInstanceService>.Instance);
+    }
+
+    private static RealmEngine.Shared.Models.ZoneLocationEntry HiddenRoom(string slug, string unlockKey) =>
+        new(
+            slug,
+            slug,
+            "dungeons",
+            ZoneId,
+            30,
+            11,
+            14,
+            IsHidden: true,
+            UnlockType: "quest",
+            UnlockKey: unlockKey);
 
     [Fact]
     public async Task FindOrCreate_GivesEveryPartyMemberTheSameRun()
@@ -212,5 +241,80 @@ public class ZoneInstanceServiceTests
         await service.SweepAsync(TimeSpan.FromMinutes(5));
 
         (await db.ZoneInstances.AnyAsync(row => row.Id == fresh.Id)).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RecordClear_MarksTheRunAndCreditsTheCharacterOnce()
+    {
+        using var factory = new TestDbContextFactory();
+        await using var db = factory.CreateContext();
+        var solo = await SeedCharacterAsync(db, await SeedAccountAsync(db), "Lonewalker");
+
+        var service = Service(db);
+        var run = await service.FindOrCreateAsync(ZoneId, solo.Id);
+
+        var first = await service.RecordClearAsync(run.Id, "ancestor-vault", solo.Id);
+        first.Cleared.Should().BeTrue();
+        first.FirstClearOfRun.Should().BeTrue();
+        first.FirstClearForCharacter.Should().BeTrue();
+
+        var again = await service.RecordClearAsync(run.Id, "ancestor-vault", solo.Id);
+        again.Cleared.Should().BeTrue();
+        again.FirstClearOfRun.Should().BeFalse();
+        again.FirstClearForCharacter.Should().BeFalse();
+
+        (await service.GetClearedLocationsAsync(run.Id)).Should().Equal("ancestor-vault");
+
+        // The character carries the first-clear permanently, so F4 can tell "done" from "someone did it".
+        var character = await db.Characters.SingleAsync(row => row.Id == solo.Id);
+        character.Attributes.Should().Contain("FirstClear_ancestor-vault");
+    }
+
+    [Fact]
+    public async Task GetClearedLocations_ListsTheRoomsInClearOrder()
+    {
+        using var factory = new TestDbContextFactory();
+        await using var db = factory.CreateContext();
+        var solo = await SeedCharacterAsync(db, await SeedAccountAsync(db), "Lonewalker");
+
+        var service = Service(db);
+        var run = await service.FindOrCreateAsync(ZoneId, solo.Id);
+
+        await service.RecordClearAsync(run.Id, "deeps-entrance", solo.Id);
+        await service.RecordClearAsync(run.Id, "ancestor-vault", solo.Id);
+
+        (await service.GetClearedLocationsAsync(run.Id))
+            .Should().Equal("deeps-entrance", "ancestor-vault");
+    }
+
+    [Fact]
+    public async Task RecordClear_GrantsTheHiddenRoomThatNamesItAsItsKey()
+    {
+        using var factory = new TestDbContextFactory();
+        await using var db = factory.CreateContext();
+        var solo = await SeedCharacterAsync(db, await SeedAccountAsync(db), "Lonewalker");
+
+        var service = Service(db, [HiddenRoom("relic-chamber", "ancestor-vault")]);
+        var run = await service.FindOrCreateAsync(ZoneId, solo.Id);
+
+        var outcome = await service.RecordClearAsync(run.Id, "ancestor-vault", solo.Id);
+
+        outcome.UnlockedLocationSlugs.Should().ContainSingle().Which.Should().Be("relic-chamber");
+        (await db.CharacterUnlockedLocations
+            .AnyAsync(row => row.CharacterId == solo.Id && row.LocationSlug == "relic-chamber"))
+            .Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RecordClear_ForAnUnknownRun_ReportsNothing()
+    {
+        using var factory = new TestDbContextFactory();
+        await using var db = factory.CreateContext();
+        var solo = await SeedCharacterAsync(db, await SeedAccountAsync(db), "Lonewalker");
+
+        var outcome = await Service(db).RecordClearAsync(Guid.NewGuid(), "ancestor-vault", solo.Id);
+
+        outcome.Cleared.Should().BeFalse();
+        outcome.UnlockedLocationSlugs.Should().BeEmpty();
     }
 }

@@ -100,6 +100,18 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
     }
 
     /// <inheritdoc />
+    public Task<int> CountAliveAsync(
+        string zoneGroup,
+        string locationSlug,
+        CancellationToken cancellationToken = default) =>
+        _db.EnemyInstances.CountAsync(
+            enemy =>
+                enemy.ZoneGroup == zoneGroup &&
+                enemy.LocationSlug == locationSlug &&
+                enemy.IsAlive,
+            cancellationToken);
+
+    /// <inheritdoc />
     public async Task<SpawnedEnemy?> TryGetAsync(Guid enemyId, CancellationToken cancellationToken = default)
     {
         var row = await _db.EnemyInstances
@@ -456,6 +468,9 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
             var enemy = new SpawnedEnemy
             {
                 Id = row.Id,
+                ZoneGroup = row.ZoneGroup,
+                LocationSlug = row.LocationSlug,
+                ZoneInstanceId = row.ZoneInstanceId,
                 ArchetypeSlug = row.ArchetypeSlug,
                 Name = row.Name,
                 Level = row.Level,
