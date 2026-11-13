@@ -690,7 +690,7 @@ public class GameHubQuestItemTests : IDisposable
     }
 
     [Fact]
-    public async Task EnterDungeon_Broadcasts_The_Dungeon_To_The_Zone()
+    public async Task EnterDungeon_Tells_The_Caller_And_Announces_To_The_Zone()
     {
         await using var db = _factory.CreateContext();
         var account = await HubHarness.SeedAccountAsync(db);
@@ -701,13 +701,20 @@ public class GameHubQuestItemTests : IDisposable
 
         await hub.EnterDungeon("the-halrow");
 
-        var payload = clients.GroupNamed("zone:crestfall").SentMessages
+        var payload = clients.Caller.SentMessages
             .Single(m => m.Method == "DungeonEntered").Args[0];
         payload.Should().BeEquivalentTo(new
         {
             CharacterId = characterId,
             DungeonId = "the-halrow",
             DungeonSlug = "the-halrow",
+            LocationSlug = (string?)null,
+            RecommendedLevel = (int?)null,
+            YourLevel = 0,
+            LevelWarning = (string?)null,
         });
+
+        clients.OthersInGroupNamed("zone:crestfall").SentMessages
+            .Should().ContainSingle(m => m.Method == "PlayerEntered");
     }
 }

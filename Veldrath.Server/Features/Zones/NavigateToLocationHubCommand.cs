@@ -153,10 +153,13 @@ public class NavigateToLocationHubCommandHandler
         {
             var pool = location.ActorPool ?? [];
 
+            // Legacy path: this command is superseded by EnterZoneLocationHubCommand, which is where a run is
+            // resolved. It never opens an instance, so the roster it spawns belongs to the shared zone.
             var alive = await _enemyStore.GetAliveOrSpawnAsync(
                 request.ZoneGroup,
                 location.Slug,
                 _ => _actorPoolResolver.SpawnRosterAsync(pool),
+                null,
                 cancellationToken);
 
             spawnedEnemies = alive

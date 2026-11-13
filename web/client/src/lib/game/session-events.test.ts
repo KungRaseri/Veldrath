@@ -341,6 +341,74 @@ describe('GameSession map and location events', () => {
 		expect(session.groundItems).toEqual([]);
 	});
 
+	it('keeps the level gate the server worded and clears it on the next arrival', async () => {
+		const session = await connected();
+
+		hub.emit('NodeTraveled', {
+			success: true,
+			mapChanged: false,
+			locationSlug: 'maw-descent',
+			recommendedLevel: 26,
+			yourLevel: 3,
+			levelWarning: 'This place expects level 26; you are 3.'
+		});
+
+		expect(session.levelWarning).toBe('This place expects level 26; you are 3.');
+
+		hub.emit('NodeTraveled', {
+			success: true,
+			mapChanged: false,
+			locationSlug: 'crestfall-square'
+		});
+
+		expect(session.levelWarning).toBeNull();
+	});
+
+	it('remembers the run and the rooms it had already cleared', async () => {
+		const session = await connected();
+
+		hub.emit('NodeTraveled', {
+			success: true,
+			mapChanged: false,
+			locationSlug: 'rootbound-cellars',
+			zoneInstanceId: 'run-1',
+			clearedLocations: ['halrow-threshold']
+		});
+
+		expect(session.instanceId).toBe('run-1');
+		expect(session.clearedLocations).toEqual(['halrow-threshold']);
+	});
+
+	it('appends a room to the cleared list when the server announces one', async () => {
+		const session = await connected();
+		session.clearedLocations = ['halrow-threshold'];
+
+		hub.emit('LocationCleared', {
+			characterId: 'char-1',
+			instanceId: 'run-1',
+			locationSlug: 'collapsed-vault',
+			firstClearOfRun: true,
+			firstClearForCharacter: true
+		});
+
+		expect(session.clearedLocations).toEqual(['halrow-threshold', 'collapsed-vault']);
+		expect(session.chat.some((message) => message.message.includes('collapsed-vault'))).toBe(true);
+	});
+
+	it('drops the level gate only on a successful arrival', async () => {
+		const session = await connected();
+		session.levelWarning = 'This place expects level 26; you are 3.';
+
+		hub.emit('NodeTraveled', {
+			success: false,
+			mapChanged: false,
+			errorMessage: 'No direct path.'
+		});
+
+		expect(session.levelWarning).toBe('This place expects level 26; you are 3.');
+		expect(session.error).toBe('No direct path.');
+	});
+
 	it('starts a fight even when the enemy has no ability list', async () => {
 		const session = await connected();
 

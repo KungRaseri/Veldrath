@@ -76,6 +76,21 @@ public record AttackEnemyHubResult
     /// Only populated when <see cref="EnemyDefeated"/> is <see langword="true"/>.
     /// </summary>
     public IReadOnlyList<Guid> ParticipantIds { get; init; } = [];
+
+    /// <summary>Gets the run whose room this kill cleared, or <see langword="null"/> when it cleared nothing.</summary>
+    public Guid? ClearedInstanceId { get; init; }
+
+    /// <summary>Gets the room slug that was cleared, or <see langword="null"/>.</summary>
+    public string? ClearedLocationSlug { get; init; }
+
+    /// <summary>Gets whether this kill is what cleared the room in this run.</summary>
+    public bool FirstClearOfRun { get; init; }
+
+    /// <summary>Gets whether this is the first time this character has ever cleared the room.</summary>
+    public bool FirstClearForCharacter { get; init; }
+
+    /// <summary>Gets the hidden locations this clear unlocked for the character.</summary>
+    public IReadOnlyList<string> UnlockedLocationSlugs { get; init; } = [];
 }
 
 /// <summary>
@@ -89,6 +104,7 @@ public class AttackEnemyHubCommandHandler
     private readonly ICharacterRepository _characterRepo;
     private readonly IEnemyInstanceStore _enemies;
     private readonly ICombatSessionStore _sessions;
+    private readonly Veldrath.Server.Features.Zones.IZoneInstanceService _instances;
     private readonly IOptions<DeathPenaltyOptions> _penalty;
     private readonly ILogger<AttackEnemyHubCommandHandler> _logger;
     private readonly IRandomSource _random;
@@ -97,6 +113,7 @@ public class AttackEnemyHubCommandHandler
     /// <param name="characterRepo">Repository for loading and persisting character state.</param>
     /// <param name="enemies">Store for the live enemy instances.</param>
     /// <param name="sessions">Store for per-character combat sessions.</param>
+    /// <param name="instances">Instance-run service, used to record a cleared room.</param>
     /// <param name="penalty">Configured death-penalty values.</param>
     /// <param name="logger">Logger instance.</param>
     /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
@@ -104,6 +121,7 @@ public class AttackEnemyHubCommandHandler
         ICharacterRepository characterRepo,
         IEnemyInstanceStore enemies,
         ICombatSessionStore sessions,
+        Veldrath.Server.Features.Zones.IZoneInstanceService instances,
         IOptions<DeathPenaltyOptions> penalty,
         ILogger<AttackEnemyHubCommandHandler> logger,
         IRandomSource? randomSource = null)
@@ -111,6 +129,7 @@ public class AttackEnemyHubCommandHandler
         _characterRepo = characterRepo;
         _enemies = enemies;
         _sessions = sessions;
+        _instances = instances;
         _penalty = penalty;
         _logger = logger;
         _random = randomSource ?? SystemRandomSource.Shared;
@@ -200,6 +219,28 @@ public class AttackEnemyHubCommandHandler
                 await _characterRepo.UpdateAsync(rewarded, cancellationToken);
             }
 
+            // Clearing the floor is a location fact, not a combat fact: ask the store how many are still
+            // standing rather than trusting this one death.
+            Veldrath.Server.Features.Zones.LocationClearOutcome? cleared = null;
+            if (await _enemies.CountAliveAsync(enemy.ZoneGroup, enemy.LocationSlug, cancellationToken) == 0)
+            {
+                // A cleared room stays quiet for the cleared-room window, in a public dungeon as much as in a
+                // run: the promise in plans/dungeons.md §6 is "longer respawn", not no respawn.
+                await _enemies.ExtendClearedRespawnsAsync(
+                    enemy.ZoneGroup,
+                    enemy.LocationSlug,
+                    cancellationToken);
+
+                if (enemy.ZoneInstanceId is Guid runId)
+                {
+                    cleared = await _instances.RecordClearAsync(
+                        runId,
+                        enemy.LocationSlug,
+                        request.CharacterId,
+                        cancellationToken);
+                }
+            }
+
             return new AttackEnemyHubResult
             {
                 Success = true,
@@ -212,6 +253,11 @@ public class AttackEnemyHubCommandHandler
                 PlayerRemainingHealth = player.Health,
                 XpEarned = myReward.Xp,
                 GoldEarned = myReward.Gold,
+                ClearedInstanceId = cleared is { Cleared: true } ? enemy.ZoneInstanceId : null,
+                ClearedLocationSlug = cleared is { Cleared: true } ? enemy.LocationSlug : null,
+                FirstClearOfRun = cleared?.FirstClearOfRun ?? false,
+                FirstClearForCharacter = cleared?.FirstClearForCharacter ?? false,
+                UnlockedLocationSlugs = cleared?.UnlockedLocationSlugs ?? [],
             };
         }
 

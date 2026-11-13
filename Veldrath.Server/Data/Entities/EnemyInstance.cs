@@ -22,6 +22,13 @@ public class EnemyInstance
     /// <summary>Gets or sets the SignalR zone group the enemy is visible in.</summary>
     public string ZoneGroup { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Gets or sets the instance run this enemy belongs to, or <see langword="null"/> when it stands in the
+    /// shared zone. <see cref="ZoneGroup"/> already isolates runs at the transport layer; this is the queryable
+    /// record of the same fact, and what cascades the enemy away when the run is purged.
+    /// </summary>
+    public Guid? ZoneInstanceId { get; set; }
+
     /// <summary>Gets or sets the zone-location slug the enemy stands at.</summary>
     public string LocationSlug { get; set; } = string.Empty;
 

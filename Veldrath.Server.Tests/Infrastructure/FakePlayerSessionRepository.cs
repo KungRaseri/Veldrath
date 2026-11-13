@@ -60,4 +60,8 @@ internal sealed class FakePlayerSessionRepository : IPlayerSessionRepository
         string? zoneId,
         string? regionId) =>
         throw new NotSupportedException("Presence fake used in a test that writes sessions");
+
+    /// <inheritdoc />
+    public Task SetZoneInstanceAsync(Guid characterId, Guid? instanceId) =>
+        throw new NotSupportedException("Presence fake used in a test that writes sessions");
 }

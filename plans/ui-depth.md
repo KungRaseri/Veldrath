@@ -15,7 +15,7 @@
 | E3 combat depth, shared fight snapshot | **shipped** — PR #67 |
 | E4 NPC dialogue | **blocked by the content schema** — see §3.4a |
 | E5 crafting on the real engine | sized in §3.5a; not started |
-| E6 dungeons | not started; still needs the zone-vs-instance decision |
+| E6 dungeons | **moved to [`dungeons.md`](dungeons.md)** — the model decided there; E6 is its client slice (F4) |
 
 E1–E3 each turned out to need a server bridge as well as a panel: abilities shipped slugs instead of
 content, `SkillXpGained` had no listener, and combat was broadcast to the caller alone. The pattern
@@ -301,7 +301,7 @@ disabled reasons, and the post-craft refresh.
 
 ---
 
-### E6 — Dungeons
+### E6 — Dungeons → **shipped as F4 of [`dungeons.md`](dungeons.md)**
 
 **Goal.** Entering a dungeon is a place you go, with visible progress and a way out.
 
@@ -309,30 +309,18 @@ disabled reasons, and the post-craft refresh.
 its id, and does nothing else ([`EnterDungeonHubCommand.cs`](../Veldrath.Server/Features/Characters/EnterDungeonHubCommand.cs:55)).
 The `DungeonInstance` model exists but nothing creates one.
 
-**Work.**
+**Why it moved.** The decision this phase was blocked on turned out to be much larger than a UI question,
+and the investigation found that **five dungeons are already authored as zones with interior maps** — plus
+four content defects that make three of them inescapable and one of them half-unreachable. The model
+decisions were taken on 2026-11-12 and recorded in [`dungeons.md`](dungeons.md): dungeons stay authored
+zone maps, a `ZoneLocation` may open into an interior map of rooms, and locations may be **public or
+instanced per location** with progress scoped to match.
 
-1. **Design decision first, and it blocks everything else:** is a dungeon a separate zone reached through
-   the map graph (cheap, reuses D's world state) or an instance lifecycle with its own room progression and
-   reset timer (expensive, needs new persistence)? Write the answer into this plan before any code. The
-   recommendation is the map-graph route first — the map graph, node traversal and enemy spawning already
-   exist and a dungeon that is a small map is shippable, whereas an instanced lifecycle is a milestone of
-   its own.
-2. Entry and exit: entering changes the location shown; leaving is always possible and never strands a
-   character.
-3. Progress: rooms or nodes cleared, current depth, and the objective that ends the run.
-4. Rewards: the boss/last room drops through the same path E5's crafting consumes.
-5. Client: a dungeon entry surface on the map, a progress indicator, and the exit control.
-6. Remove `EnterDungeon` from the hub-methods allow-list (D4).
-
-**Definition of done.**
-
-- Entering a dungeon visibly changes where the player is, and the map agrees.
-- Progress is server state, restored on reconnect.
-- Death inside follows Milestone A's respawn rules with no special case.
-- Leaving is always possible.
-
-**Tests.** Server: entry validation, progress persistence, exit from every state. Web: the entry surface,
-the progress display, and the exit path.
+E6 is therefore the **client slice** of that plan (phase F4 there): dungeon framing, the room list from
+the map graph with the current room marked, progress, an always-available exit, and the soft level
+warning. Everything before it — the entry path, the instance lifecycle, cleared state and unlock keys —
+is server and content work that this phase cannot skip, which is why it now lives in its own plan rather
+than as a bullet here.
 
 ---
 

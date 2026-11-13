@@ -11,6 +11,15 @@ public class SpawnedEnemy
     /// <summary>Gets or sets the unique instance ID used for targeting this specific enemy.</summary>
     public Guid Id { get; init; } = Guid.NewGuid();
 
+    /// <summary>Gets the SignalR zone group the enemy is visible in, carried from the stored row.</summary>
+    public string ZoneGroup { get; init; } = string.Empty;
+
+    /// <summary>Gets the zone-location slug the enemy stands at, carried from the stored row.</summary>
+    public string LocationSlug { get; init; } = string.Empty;
+
+    /// <summary>Gets the instance run the enemy belongs to, or <see langword="null"/> for the shared zone.</summary>
+    public Guid? ZoneInstanceId { get; init; }
+
     /// <summary>Gets the archetype slug this enemy was generated from (used to re-spawn on death).</summary>
     public string ArchetypeSlug { get; init; } = string.Empty;
 

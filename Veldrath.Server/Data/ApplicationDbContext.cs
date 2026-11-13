@@ -62,6 +62,12 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<PartyMemberEntity> PartyMembers => Set<PartyMemberEntity>();
     /// <summary>Outstanding party invitations.</summary>
     public DbSet<PartyInvite> PartyInvites => Set<PartyInvite>();
+    /// <summary>Live runs of instanced zones, the aggregate root a delve's state points at.</summary>
+    public DbSet<ZoneInstance> ZoneInstances => Set<ZoneInstance>();
+    /// <summary>Characters who have taken part in an instance run.</summary>
+    public DbSet<ZoneInstanceParticipant> ZoneInstanceParticipants => Set<ZoneInstanceParticipant>();
+    /// <summary>Room-level cleared state within an instance run.</summary>
+    public DbSet<ZoneInstanceLocationState> ZoneInstanceLocationStates => Set<ZoneInstanceLocationState>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -276,6 +282,12 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
             e.Property(g => g.ItemRef).HasMaxLength(200).IsRequired();
             // Ground pickups always query by (zone, location), so index that pair.
             e.HasIndex(g => new { g.ZoneId, g.LocationSlug });
+            // Instance-scoped reads query the run and the room; a purged run takes its floor with it.
+            e.HasIndex(g => new { g.ZoneInstanceId, g.LocationSlug });
+            e.HasOne<ZoneInstance>()
+             .WithMany()
+             .HasForeignKey(g => g.ZoneInstanceId)
+             .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<EnemyInstance>(e =>
@@ -293,6 +305,12 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
             e.HasIndex(i => new { i.IsAlive, i.RespawnAt });
             // Incremented by the store layer on every write; a stale writer is rejected.
             e.Property(i => i.Version).IsConcurrencyToken();
+            // Instance-scoped queries read the run and the room; a purged run takes its roster with it.
+            e.HasIndex(i => new { i.ZoneInstanceId, i.LocationSlug });
+            e.HasOne<ZoneInstance>()
+             .WithMany()
+             .HasForeignKey(i => i.ZoneInstanceId)
+             .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<EnemyParticipant>(e =>
@@ -370,6 +388,64 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
              .WithMany()
              .HasForeignKey(i => i.InvitedByCharacterId)
              .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<ZoneInstance>(e =>
+        {
+            e.HasKey(i => i.Id);
+            e.Property(i => i.ZoneId).HasMaxLength(64).IsRequired();
+            e.Property(i => i.ZoneGroup).HasMaxLength(200).IsRequired();
+            e.Property(i => i.Version).IsConcurrencyToken();
+
+            // One open run per party, per zone. The partial index is what makes the entry race safe: a
+            // second member inserting at the same instant loses here instead of opening a second dungeon.
+            e.HasIndex(i => new { i.ZoneId, i.OwnerPartyId })
+             .IsUnique()
+             .HasFilter("\"OwnerPartyId\" IS NOT NULL AND \"State\" = 0");
+
+            // The same invariant for a solo run, keyed by whoever opened it.
+            e.HasIndex(i => new { i.ZoneId, i.CreatedByCharacterId })
+             .IsUnique()
+             .HasFilter("\"OwnerPartyId\" IS NULL AND \"State\" = 0");
+
+            // The purge scans empty runs by the last time anyone was seen inside them.
+            e.HasIndex(i => new { i.State, i.LastOccupiedAt });
+
+            e.HasOne(i => i.Zone)
+             .WithMany()
+             .HasForeignKey(i => i.ZoneId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<ZoneInstanceParticipant>(e =>
+        {
+            e.HasKey(p => new { p.ZoneInstanceId, p.CharacterId });
+            e.HasOne(p => p.Instance)
+             .WithMany(i => i.Participants)
+             .HasForeignKey(p => p.ZoneInstanceId)
+             .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(p => p.Character)
+             .WithMany()
+             .HasForeignKey(p => p.CharacterId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<PlayerSession>(e =>
+        {
+            // Runs derive their occupants from sessions, so this is the lookup the emptiness check makes.
+            e.HasIndex(s => s.ZoneInstanceId);
+        });
+
+        builder.Entity<ZoneInstanceLocationState>(e =>
+        {
+            e.HasKey(s => new { s.ZoneInstanceId, s.LocationSlug });
+            e.Property(s => s.LocationSlug).HasMaxLength(128).IsRequired();
+            e.HasOne(s => s.Instance)
+             .WithMany()
+             .HasForeignKey(s => s.ZoneInstanceId)
+             .OnDelete(DeleteBehavior.Cascade);
+            // "What is left in this run" reads by run and cleared flag.
+            e.HasIndex(s => new { s.ZoneInstanceId, s.IsCleared });
         });
 
         // SQLite cannot translate ORDER BY on DateTimeOffset columns; store as ISO 8601 text

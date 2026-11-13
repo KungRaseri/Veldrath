@@ -12,6 +12,7 @@
 		Settings,
 		Store,
 		Swords,
+		TriangleAlert,
 		Undo2,
 		UserMinus,
 		UserPlus,
@@ -636,6 +637,28 @@
 		</Dialog.Content>
 	</Dialog.Portal>
 </Dialog.Root>
+
+{#if session.levelWarning}
+	<div
+		class="pointer-events-none fixed top-4 left-1/2 z-50 w-96 max-w-[calc(100vw-2rem)] -translate-x-1/2"
+	>
+		<div
+			class="game-panel pointer-events-auto flex items-start gap-2 p-3 text-sm"
+			role="alert"
+			data-testid="level-warning"
+		>
+			<TriangleAlert class="mt-0.5 shrink-0 text-warning-500" size={16} aria-hidden="true" />
+			<p class="flex-1">{session.levelWarning}</p>
+			<button
+				class="btn preset-tonal-surface px-2 py-1 text-xs"
+				type="button"
+				onclick={() => session.dismissLevelWarning()}
+			>
+				Dismiss
+			</button>
+		</div>
+	</div>
+{/if}
 
 {#if session.questTurnInToast}
 	<div class="pointer-events-none fixed top-16 right-4 z-50 w-80 max-w-[calc(100vw-2rem)]">

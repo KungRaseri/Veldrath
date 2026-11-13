@@ -92,5 +92,6 @@ public class EfCoreZoneLocationRepository(ContentDbContext db, ILogger<EfCoreZon
             w.DominantLanguageSlug,
             w.TileX, w.TileY,
             w.Traits.SafeRespawn ?? false,
-            w.Traits.IsTutorialStart ?? false);
+            w.Traits.IsTutorialStart ?? false,
+            w.Traits.IsInstanced ?? false);
 }

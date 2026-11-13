@@ -116,5 +116,14 @@ public sealed class EnemyRespawnService : BackgroundService
                 pruned.Count,
                 _options.SessionGraceSeconds);
         }
+
+        // Instance runs ride the same tick rather than adding a timer of their own: a run nobody is inside is
+        // marked empty on one sweep and purged on a later one, so a relog inside the grace window still finds
+        // it. Resolved optionally because harnesses build this service without the full container.
+        var instances = scope.ServiceProvider
+            .GetService<Veldrath.Server.Features.Zones.IZoneInstanceService>();
+
+        if (instances is not null)
+            await instances.SweepAsync(_options.SessionGrace, cancellationToken);
     }
 }

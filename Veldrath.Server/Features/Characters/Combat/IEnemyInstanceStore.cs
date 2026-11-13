@@ -17,12 +17,31 @@ public interface IEnemyInstanceStore
     /// <param name="zoneGroup">SignalR zone group, e.g. <c>"zone:dark-forest_hardcore"</c>.</param>
     /// <param name="locationSlug">Zone-location slug.</param>
     /// <param name="spawnRoster">Invoked only when no roster exists for the location.</param>
+    /// <param name="zoneInstanceId">
+    /// Instance run the roster belongs to, or <see langword="null"/> for the shared zone. The group already
+    /// isolates runs, so this is recorded on new rows rather than used to filter; it is what the operator view
+    /// queries and what cascades the roster away when the run is purged.
+    /// </param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The living enemies at the location.</returns>
     Task<IReadOnlyList<SpawnedEnemy>> GetAliveOrSpawnAsync(
         string zoneGroup,
         string locationSlug,
         Func<CancellationToken, Task<List<SpawnedEnemy>>> spawnRoster,
+        Guid? zoneInstanceId = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Counts the living enemies at a location in a scope without spawning anything. Used to decide whether a
+    /// room is cleared; a read that spawned a roster would answer "no" forever.
+    /// </summary>
+    /// <param name="zoneGroup">SignalR zone group, e.g. <c>"zone:the-halrow#i1:…"</c>.</param>
+    /// <param name="locationSlug">Zone-location slug.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>How many enemies at that location are still alive.</returns>
+    Task<int> CountAliveAsync(
+        string zoneGroup,
+        string locationSlug,
         CancellationToken cancellationToken = default);
 
     /// <summary>Returns one enemy instance by id, or <see langword="null"/> when it no longer exists.</summary>
@@ -73,4 +92,21 @@ public interface IEnemyInstanceStore
     /// <param name="enemyId">Enemy instance id.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task RemoveAsync(Guid enemyId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Pushes back the pending respawn of every enemy that died at a location, which is what makes a
+    /// <em>cleared</em> room stay quiet longer than a single kill does.
+    /// </summary>
+    /// <remarks>
+    /// The extra time comes from the world options, not from the caller: respawn timing belongs to the store,
+    /// and a caller passing a duration is how two places end up disagreeing about it.
+    /// </remarks>
+    /// <param name="zoneGroup">SignalR zone group the location belongs to.</param>
+    /// <param name="locationSlug">Zone-location slug that was cleared.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>How many dead enemies were pushed back.</returns>
+    Task<int> ExtendClearedRespawnsAsync(
+        string zoneGroup,
+        string locationSlug,
+        CancellationToken cancellationToken = default);
 }

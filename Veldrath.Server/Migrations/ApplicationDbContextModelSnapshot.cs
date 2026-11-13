@@ -444,9 +444,14 @@ namespace Veldrath.Server.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<Guid?>("ZoneInstanceId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("IsAlive", "RespawnAt");
+
+                    b.HasIndex("ZoneInstanceId", "LocationSlug");
 
                     b.HasIndex("ZoneGroup", "LocationSlug", "ArchetypeSlug", "SpawnedAt")
                         .IsUnique();
@@ -645,9 +650,14 @@ namespace Veldrath.Server.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<Guid?>("ZoneInstanceId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ZoneId", "LocationSlug");
+
+                    b.HasIndex("ZoneInstanceId", "LocationSlug");
 
                     b.ToTable("GroundItems");
                 });
@@ -917,6 +927,9 @@ namespace Veldrath.Server.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<Guid?>("ZoneInstanceId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CharacterId")
@@ -928,6 +941,8 @@ namespace Veldrath.Server.Migrations
                     b.HasIndex("RegionId");
 
                     b.HasIndex("ZoneId");
+
+                    b.HasIndex("ZoneInstanceId");
 
                     b.ToTable("PlayerSessions");
                 });
@@ -1095,6 +1110,102 @@ namespace Veldrath.Server.Migrations
                     b.ToTable("Zones");
                 });
 
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.ZoneInstance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByCharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("LastOccupiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OwnerPartyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ZoneGroup")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("ZoneId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("State", "LastOccupiedAt");
+
+                    b.HasIndex("ZoneId", "CreatedByCharacterId")
+                        .IsUnique()
+                        .HasFilter("\"OwnerPartyId\" IS NULL AND \"State\" = 0");
+
+                    b.HasIndex("ZoneId", "OwnerPartyId")
+                        .IsUnique()
+                        .HasFilter("\"OwnerPartyId\" IS NOT NULL AND \"State\" = 0");
+
+                    b.ToTable("ZoneInstances");
+                });
+
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.ZoneInstanceLocationState", b =>
+                {
+                    b.Property<Guid>("ZoneInstanceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LocationSlug")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset?>("ClearedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("FirstClearedByCharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsCleared")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("ZoneInstanceId", "LocationSlug");
+
+                    b.HasIndex("ZoneInstanceId", "IsCleared");
+
+                    b.ToTable("ZoneInstanceLocationStates");
+                });
+
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.ZoneInstanceParticipant", b =>
+                {
+                    b.Property<Guid>("ZoneInstanceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("JoinedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("LeftAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("ZoneInstanceId", "CharacterId");
+
+                    b.HasIndex("CharacterId");
+
+                    b.ToTable("ZoneInstanceParticipants");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
@@ -1178,6 +1289,14 @@ namespace Veldrath.Server.Migrations
                     b.Navigation("Enemy");
                 });
 
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.EnemyInstance", b =>
+                {
+                    b.HasOne("Veldrath.Server.Data.Entities.ZoneInstance", null)
+                        .WithMany()
+                        .HasForeignKey("ZoneInstanceId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
             modelBuilder.Entity("Veldrath.Server.Data.Entities.EnemyParticipant", b =>
                 {
                     b.HasOne("Veldrath.Server.Data.Entities.Character", "Character")
@@ -1251,6 +1370,14 @@ namespace Veldrath.Server.Migrations
                     b.Navigation("Submission");
 
                     b.Navigation("Voter");
+                });
+
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.GroundItem", b =>
+                {
+                    b.HasOne("Veldrath.Server.Data.Entities.ZoneInstance", null)
+                        .WithMany()
+                        .HasForeignKey("ZoneInstanceId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Veldrath.Server.Data.Entities.Party", b =>
@@ -1386,6 +1513,47 @@ namespace Veldrath.Server.Migrations
                     b.Navigation("Region");
                 });
 
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.ZoneInstance", b =>
+                {
+                    b.HasOne("Veldrath.Server.Data.Entities.Zone", "Zone")
+                        .WithMany()
+                        .HasForeignKey("ZoneId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Zone");
+                });
+
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.ZoneInstanceLocationState", b =>
+                {
+                    b.HasOne("Veldrath.Server.Data.Entities.ZoneInstance", "Instance")
+                        .WithMany()
+                        .HasForeignKey("ZoneInstanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Instance");
+                });
+
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.ZoneInstanceParticipant", b =>
+                {
+                    b.HasOne("Veldrath.Server.Data.Entities.Character", "Character")
+                        .WithMany()
+                        .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Veldrath.Server.Data.Entities.ZoneInstance", "Instance")
+                        .WithMany("Participants")
+                        .HasForeignKey("ZoneInstanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Character");
+
+                    b.Navigation("Instance");
+                });
+
             modelBuilder.Entity("Veldrath.Server.Data.Entities.EnemyInstance", b =>
                 {
                     b.Navigation("CombatSessions");
@@ -1420,6 +1588,11 @@ namespace Veldrath.Server.Migrations
             modelBuilder.Entity("Veldrath.Server.Data.Entities.Zone", b =>
                 {
                     b.Navigation("Sessions");
+                });
+
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.ZoneInstance", b =>
+                {
+                    b.Navigation("Participants");
                 });
 #pragma warning restore 612, 618
         }

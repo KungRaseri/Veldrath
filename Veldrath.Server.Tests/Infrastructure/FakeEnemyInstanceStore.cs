@@ -43,11 +43,34 @@ internal sealed class FakeEnemyInstanceStore : IEnemyInstanceStore
     /// <param name="enemyId">Enemy instance id.</param>
     public bool IsMarkedDead(Guid enemyId) => _dead.Contains(enemyId);
 
+    /// <summary>Gets how many times a location's cleared-room respawn window was applied.</summary>
+    public Dictionary<string, int> ClearedWindowApplications { get; } = new(StringComparer.Ordinal);
+
+    /// <inheritdoc />
+    public Task<int> ExtendClearedRespawnsAsync(
+        string zoneGroup,
+        string locationSlug,
+        CancellationToken cancellationToken = default)
+    {
+        var key = $"{zoneGroup}/{locationSlug}";
+        ClearedWindowApplications[key] = ClearedWindowApplications.GetValueOrDefault(key) + 1;
+        return Task.FromResult(0);
+    }
+
+    /// <inheritdoc />
+    public Task<int> CountAliveAsync(
+        string zoneGroup,
+        string locationSlug,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(_rows.Values.Count(row =>
+            row.ZoneGroup == zoneGroup && row.LocationSlug == locationSlug && !_dead.Contains(row.Enemy.Id)));
+
     /// <inheritdoc />
     public async Task<IReadOnlyList<SpawnedEnemy>> GetAliveOrSpawnAsync(
         string zoneGroup,
         string locationSlug,
         Func<CancellationToken, Task<List<SpawnedEnemy>>> spawnRoster,
+        Guid? zoneInstanceId = null,
         CancellationToken cancellationToken = default)
     {
         var existing = _rows.Values

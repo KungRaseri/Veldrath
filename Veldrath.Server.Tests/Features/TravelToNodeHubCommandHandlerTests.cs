@@ -255,6 +255,62 @@ public class TravelToNodeHubCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_Reports_The_Soft_Gate_Without_Refusing_Entry()
+    {
+        var (handler, _, _, _, _, _, locationRepo, _) = MakeHandler(character => character.Level = 3);
+        locationRepo.Setup(r => r.GetBySlugAsync("crestfall-square"))
+            .ReturnsAsync(new ZoneLocationEntry(
+                "crestfall-square",
+                "The Crestfall Square",
+                "dungeons",
+                "crestfall",
+                100,
+                12,
+                20,
+                IsInstanced: true));
+
+        var result = await handler.Handle(
+            new TravelToNodeHubCommand(CharacterId, ZoneMapId, SquareNodeId),
+            CancellationToken.None);
+
+        // Standing in the square already: the gate still has to be reported, because the party action
+        // enters the location you are standing in.
+        result.Success.Should().BeTrue("a level gate is advice, never a refusal");
+        result.RecommendedLevel.Should().Be(12);
+        result.YourLevel.Should().Be(3);
+        result.LevelWarning.Should().Contain("expects level 12");
+        result.LocationTypeKey.Should().Be("dungeons");
+        result.IsDungeonLocation.Should().BeTrue();
+        result.IsInstanced.Should().BeTrue("the location is flagged instanced");
+        result.ZoneInstanceId.Should().NotBeNull("an instanced arrival belongs to a run");
+        result.ZoneGroup.Should().StartWith("zone:crestfall#i1:");
+    }
+
+    [Fact]
+    public async Task Handle_Reports_No_Gate_When_Neither_Location_Nor_Zone_Sets_A_Level()
+    {
+        var (handler, _, _, _, _, _, locationRepo, _) = MakeHandler();
+
+        locationRepo.Setup(r => r.GetBySlugAsync("crestfall-square"))
+            .ReturnsAsync(new ZoneLocationEntry(
+                "crestfall-square",
+                "The Crestfall Square",
+                "locations",
+                "crestfall",
+                100,
+                null,
+                null));
+
+        var result = await handler.Handle(
+            new TravelToNodeHubCommand(CharacterId, ZoneMapId, SquareNodeId),
+            CancellationToken.None);
+
+        result.RecommendedLevel.Should().BeNull();
+        result.LevelWarning.Should().BeNull();
+        result.IsDungeonLocation.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Handle_ReturnsSuccess_WhenAlreadyAtNode()
     {
         var (handler, mapRepo, characterRepo, _, _, _, _, _) = MakeHandler();
@@ -367,6 +423,19 @@ public class TravelToNodeHubCommandHandlerTests
         var actorPoolResolver = new ActorPoolResolver(
             new EnemyGenerator(enemyRepo.Object, NullLogger<EnemyGenerator>.Instance));
 
+        var instanceService = new Mock<Veldrath.Server.Features.Zones.IZoneInstanceService>();
+        instanceService
+            .Setup(service => service.FindOrCreateAsync(
+                It.IsAny<string>(),
+                It.IsAny<Guid>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ZoneInstance
+            {
+                ZoneId = "crestfall",
+                ZoneGroup = $"zone:crestfall#i1:{Guid.NewGuid():D}",
+            });
+
         var handler = new TravelToNodeHubCommandHandler(
             mapRepo.Object,
             characterRepo.Object,
@@ -376,6 +445,7 @@ public class TravelToNodeHubCommandHandlerTests
             locationRepo.Object,
             actorPoolResolver,
             new Veldrath.Server.Tests.Infrastructure.FakeEnemyInstanceStore(),
+            instanceService.Object,
             NullLogger<TravelToNodeHubCommandHandler>.Instance);
 
         return (handler, mapRepo, characterRepo, unlockedRepo, sessionRepo, zoneRepo, locationRepo, enemyRepo);

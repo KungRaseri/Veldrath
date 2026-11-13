@@ -58,4 +58,12 @@ public interface IPlayerSessionRepository
         string nodeId,
         string? zoneId,
         string? regionId);
+
+    /// <summary>
+    /// Records the instance run the character is inside, or clears it when they are in the shared zone.
+    /// The run derives its occupants from this pointer, so it is also what a reconnect resumes into.
+    /// </summary>
+    /// <param name="characterId">Character whose session to update.</param>
+    /// <param name="instanceId">Run id, or <see langword="null"/> to leave the shared zone in place.</param>
+    Task SetZoneInstanceAsync(Guid characterId, Guid? instanceId);
 }

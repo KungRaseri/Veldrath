@@ -15,6 +15,7 @@
 	} from '@lucide/svelte';
 	import CardinalMap from '#lib/game/CardinalMap.svelte';
 	import CombatPanel from '#lib/game/CombatPanel.svelte';
+	import DungeonPanel from '#lib/game/DungeonPanel.svelte';
 	import GameHeader from '#lib/game/GameHeader.svelte';
 	import GameOverlays from '#lib/game/GameOverlays.svelte';
 	import LeftSidebar from '#lib/game/LeftSidebar.svelte';
@@ -78,6 +79,7 @@
 			{#if session.combat.active}
 				<CombatPanel {session} />
 			{:else}
+				<DungeonPanel {session} />
 				<section class="game-panel p-4">
 					<div class="mb-3 flex flex-wrap items-center justify-between gap-3">
 						<div>

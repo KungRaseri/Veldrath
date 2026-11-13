@@ -61,6 +61,7 @@ public class GameHub : Hub
     private readonly IAfkTracker _afk;
     private readonly ICombatSessionStore _sessions;
     private readonly IEnemyInstanceStore _enemies;
+    private readonly Veldrath.Server.Features.Zones.IZoneInstanceService? _zoneInstances;
     private readonly IRandomSource _random;
 
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
@@ -82,6 +83,7 @@ public class GameHub : Hub
         IAfkTracker afk,
         ICombatSessionStore sessions,
         IEnemyInstanceStore enemies,
+        Veldrath.Server.Features.Zones.IZoneInstanceService? zoneInstances = null,
         IRandomSource? randomSource = null)
     {
         _logger = logger;
@@ -99,6 +101,7 @@ public class GameHub : Hub
         _afk = afk;
         _sessions = sessions;
         _enemies = enemies;
+        _zoneInstances = zoneInstances;
         _random = randomSource ?? SystemRandomSource.Shared;
     }
 
@@ -977,6 +980,10 @@ public class GameHub : Hub
                 return;
             }
 
+            // An instanced destination moves the connection into the run's own group, which is what keeps
+            // two parties' enemies, loot and chat apart while they clear the same dungeon.
+            await ApplyArrivalGroupAsync(result.ZoneGroup, result.ZoneInstanceId);
+
             await Clients.Caller.SendAsync("NodeTraveled", result);
 
             // Failsafe reporting: content debt the player just walked into is said out loud, not silently swallowed.
@@ -989,6 +996,54 @@ public class GameHub : Hub
         {
             _logger.LogError(ex, "Error in TravelToNode for character {CharacterId}", characterId);
             await Clients.Caller.SendAsync("Error", "Failed to travel to node");
+        }
+    }
+
+    /// <summary>
+    /// Enters a named location inside the caller's zone through the shared location-entry command.
+    /// Sends <c>NodeTraveled</c> with the arrival so the client moves exactly as it does when walking,
+    /// and reports content problems the arrival uncovered.
+    /// </summary>
+    /// <param name="request">Zone and location to enter.</param>
+    public async Task EnterLocation(EnterZoneLocationHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before EnterLocation");
+            return;
+        }
+
+        var zoneGroup = Context.Items.TryGetValue("CurrentZoneGroupName", out var group) && group is string value
+            ? value
+            : string.Empty;
+
+        try
+        {
+            var result = await _mediator.Send(new EnterZoneLocationHubCommand(
+                characterId,
+                request.ZoneId,
+                request.LocationSlug,
+                zoneGroup));
+
+            if (!result.Success || result.Arrival is null)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to enter location");
+                return;
+            }
+
+            await ApplyArrivalGroupAsync(result.Arrival.ZoneGroup, result.Arrival.ZoneInstanceId);
+
+            await Clients.Caller.SendAsync("NodeTraveled", result.Arrival);
+
+            foreach (var warning in result.Arrival.ContentWarnings)
+            {
+                await Clients.Caller.SendAsync("SystemMessage", warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in EnterLocation for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to enter location");
         }
     }
 
@@ -1619,12 +1674,17 @@ public class GameHub : Hub
                 CharacterId = characterId,
                 DungeonId = result.DungeonId,
                 DungeonSlug = dungeonSlug,
+                result.LocationSlug,
+                result.RecommendedLevel,
+                result.YourLevel,
+                result.LevelWarning,
             };
 
+            // The caller always learns the gate figures. Peers only hear about the arrival, never the gate.
+            await Clients.Caller.SendAsync("DungeonEntered", payload);
+
             if (TryGetCurrentZoneGroup(out var zoneGroup))
-                await Clients.Group(zoneGroup).SendAsync("DungeonEntered", payload);
-            else
-                await Clients.Caller.SendAsync("DungeonEntered", payload);
+                await Clients.OthersInGroup(zoneGroup).SendAsync("PlayerEntered", payload);
 
             _logger.LogInformation(
                 "Character {CharacterId} entered dungeon {DungeonId}",
@@ -2537,6 +2597,27 @@ public class GameHub : Hub
                         CharacterId = characterId,
                     });
                 }
+
+                // A cleared room is a run-wide fact: everyone inside needs the progress, not just the killer.
+                if (result.ClearedLocationSlug is not null && TryGetCurrentZoneGroup(out var clearGroup))
+                {
+                    await Clients.Group(clearGroup).SendAsync("LocationCleared", new
+                    {
+                        CharacterId = characterId,
+                        InstanceId = result.ClearedInstanceId,
+                        LocationSlug = result.ClearedLocationSlug,
+                        FirstClearOfRun = result.FirstClearOfRun,
+                        FirstClearForCharacter = result.FirstClearForCharacter,
+                        UnlockedLocationSlugs = result.UnlockedLocationSlugs,
+                    });
+
+                    foreach (var unlocked in result.UnlockedLocationSlugs)
+                    {
+                        await Clients.Caller.SendAsync(
+                            "SystemMessage",
+                            $"Clearing the way has revealed something: {unlocked}.");
+                    }
+                }
             }
         }
         catch (Exception ex)
@@ -2728,6 +2809,10 @@ public class GameHub : Hub
                 return;
             }
 
+            // A run that was purged while the character was dead cannot receive them: they wake in the shared
+            // zone and are told why, rather than being left in a group nobody else can join.
+            await LeaveExpiredInstanceAsync(characterId);
+
             await Clients.Caller.SendAsync("CharacterRespawned", new
             {
                 CharacterId = characterId,
@@ -2758,8 +2843,14 @@ public class GameHub : Hub
         var zoneId = session.ZoneId;
         var characterId = session.CharacterId;
         var characterName = session.CharacterName;
+        var instanceId = session.ZoneInstanceId;
 
         await _playerSessionRepo.RemoveAsync(session);
+
+        // The run stays open — the rest of the party may still be inside — but this character's
+        // participation is closed so credit and the emptiness check both see the departure.
+        if (instanceId is not null && _zoneInstances is not null)
+            await _zoneInstances.LeaveAsync(instanceId.Value, characterId);
 
         // Player is on the region map — only leave the region group, no zone cleanup needed
         if (zoneId is null)
@@ -2957,6 +3048,67 @@ public class GameHub : Hub
         }
         groupName = null;
         return false;
+    }
+
+    /// <summary>
+    /// Clears the character's run when it no longer exists or is being purged, so a resurrection lands in the
+    /// shared zone instead of a group nothing else will ever join.
+    /// </summary>
+    /// <param name="characterId">Character being resurrected.</param>
+    private async Task LeaveExpiredInstanceAsync(Guid characterId)
+    {
+        if (_zoneInstances is null ||
+            Context.Items.TryGetValue("CurrentZoneInstanceId", out var value) is false ||
+            value is not Guid instanceId)
+        {
+            return;
+        }
+
+        var run = await _zoneInstances.GetAsync(instanceId);
+        if (run is { State: Veldrath.Server.Data.Entities.ZoneInstanceState.Open })
+            return;
+
+        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var zone) && zone is string id ? id : null;
+        await ApplyArrivalGroupAsync(
+            string.IsNullOrWhiteSpace(zoneId)
+                ? null
+                : Veldrath.Server.Features.Zones.ZoneGroupName.ForZone(zoneId).Value,
+            null);
+
+        await Clients.Caller.SendAsync(
+            "SystemMessage",
+            "The instance you were in has closed. You wake in the shared zone.");
+    }
+
+    /// <summary>
+    /// Moves the connection into the group the arrival belongs to when that differs from where it was, and
+    /// records the run on the session so a reconnect resumes inside it. A public arrival keeps the shared
+    /// zone scope and simply clears any run pointer.
+    /// </summary>
+    /// <param name="zoneGroup">Scope the arrival belongs to, or <see langword="null"/> when unchanged.</param>
+    /// <param name="instanceId">Run the character is now inside, or <see langword="null"/> for the shared zone.</param>
+    private async Task ApplyArrivalGroupAsync(string? zoneGroup, Guid? instanceId)
+    {
+        if (!string.IsNullOrWhiteSpace(zoneGroup))
+        {
+            var current = Context.Items.TryGetValue("CurrentZoneGroupName", out var value) && value is string existing
+                ? existing
+                : null;
+
+            if (!string.Equals(current, zoneGroup, StringComparison.Ordinal))
+            {
+                if (!string.IsNullOrWhiteSpace(current))
+                    await Groups.RemoveFromGroupAsync(Context.ConnectionId, current!);
+
+                await Groups.AddToGroupAsync(Context.ConnectionId, zoneGroup!);
+                Context.Items["CurrentZoneGroupName"] = zoneGroup;
+            }
+        }
+
+        Context.Items["CurrentZoneInstanceId"] = instanceId;
+
+        if (TryGetCharacterId(out var characterId))
+            await _playerSessionRepo.SetZoneInstanceAsync(characterId, instanceId);
     }
 
     private static string AccountGroup(Guid accountId) => $"account:{accountId}";
