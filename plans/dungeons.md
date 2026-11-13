@@ -2,8 +2,8 @@
 
 > **Status: F1–F5 shipped in [PR #70](https://git.kungraseri.cloud/Veldrath/Veldrath/pulls/70).**
 > This file is the record of the model decisions and the phase outline. The Foundry map editor (§8)
-> shipped its **read, inspect and save** path; the canvas, map create/delete and the location-side
-> fields are still an outline and need their own planning session before code.
+> shipped its **read, inspect and save** path; the canvas, node and edge editing, map create/delete
+> and the location-side fields are planned in [`foundry-map-editor.md`](foundry-map-editor.md).
 >
 > Supersedes the open question in [`ui-depth.md`](ui-depth.md) §3.6 — E6 becomes the client
 > slice of this plan, and the model itself lives here.
@@ -551,7 +551,8 @@ artwork.
 
 ### F5 — Foundry map editor
 
-Outline in §8. Its own milestone.
+Shipped at the read, inspect and save level; §8 records what is in. The remaining authoring surface
+is milestone G in [`foundry-map-editor.md`](foundry-map-editor.md).
 
 ## 6. What this deliberately does not do
 
@@ -581,7 +582,8 @@ F4 last because it renders what F1–F3 settle. F5 can start once F1's data shap
 
 ## 8. Foundry map editor (shipped: read, inspect, save)
 
-The write path and the editor page are in. What shipped:
+The write path and the editor page are in. The canvas and the rest of the authoring surface are
+milestone G in [`foundry-map-editor.md`](foundry-map-editor.md). What shipped:
 
 - **Server.** `MapEditorService` behind `GET /api/content/maps` (list with versions), `GET
   /api/content/maps/{id}` (the whole graph) and `PUT /api/content/maps/{id}` (save), all under the existing
