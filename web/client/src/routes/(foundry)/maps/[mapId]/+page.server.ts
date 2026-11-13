@@ -1,27 +1,29 @@
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import {
-	hasPermission,
-	loadAccountAccess,
-	Permissions,
-	requireUser,
-	toGameIdentity
-} from '#lib/server/access';
+import { requireUser, toGameIdentity } from '#lib/server/access';
 import { getMap, saveMap } from '#lib/server/maps-api';
 import { applyNodeEdits, nodeRows, readNodeEdit, type NodeEdit } from '#lib/foundry/map-editor';
 
-/** Loads one graph, its node rows, and whether this account may save it. */
-export const load: PageServerLoad = async ({ locals, params }) => {
+/**
+ * Loads one graph, its node rows, and whether this account may save it.
+ *
+ * Reading requires `content.view`; saving requires `content.manage`. The page is not the guard for the
+ * write — the API enforces it — but `canEdit` decides whether the controls render at all.
+ */
+export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	const user = requireUser(locals);
-	const access = await loadAccountAccess(user);
-	const canEdit = hasPermission(access, Permissions.ManageContent);
+	const { canViewContent, canManageContent } = await parent();
+
+	if (!canViewContent) {
+		error(403, 'Reading a map graph requires content read access.');
+	}
 
 	const result = await getMap(toGameIdentity(user), params.mapId);
 	if (!result.data) {
 		error(result.status === 404 ? 404 : result.status || 502, result.error ?? 'Map not found.');
 	}
 
-	return { canEdit, graph: result.data, rows: nodeRows(result.data) };
+	return { canEdit: canManageContent, graph: result.data, rows: nodeRows(result.data) };
 };
 
 export const actions: Actions = {

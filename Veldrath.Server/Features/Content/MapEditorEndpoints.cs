@@ -4,9 +4,10 @@ using Veldrath.Contracts.Map;
 namespace Veldrath.Server.Features.Content;
 
 /// <summary>
-/// The Foundry map editor's write path. Reads are open to anyone with the content permission; the save is
-/// validated by the same world validator the seed has to pass and is refused rather than half-applied when
-/// the graph is wrong or the author is working from a stale copy.
+/// The Foundry map editor's read and write path. Reads require <c>content.view</c> — the graph carries
+/// hidden nodes and unlock keys, so it is never anonymous — and writes require <c>content.manage</c>. A
+/// save is validated by the same world validator the seed has to pass and is refused rather than
+/// half-applied when the graph is wrong or the author is working from a stale copy.
 /// </summary>
 public static class MapEditorEndpoints
 {
@@ -15,13 +16,13 @@ public static class MapEditorEndpoints
     /// <returns>The same route builder, for chaining.</returns>
     public static IEndpointRouteBuilder MapMapEditorEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/content/maps")
-            .WithTags("Content")
-            .RequireAuthorization(Auth.Permissions.ManageContent);
+        var group = app.MapGroup("/api/content/maps").WithTags("Content");
 
-        group.MapGet("", ListMapsAsync);
-        group.MapGet("/{mapId}", GetMapAsync);
-        group.MapPut("/{mapId}", SaveMapAsync);
+        // Per endpoint rather than group-wide: the group used to require ManageContent for everything,
+        // which made the read-only Foundry view unreachable for a Reviewer.
+        group.MapGet("", ListMapsAsync).RequireAuthorization(Auth.Permissions.ViewContent);
+        group.MapGet("/{mapId}", GetMapAsync).RequireAuthorization(Auth.Permissions.ViewContent);
+        group.MapPut("/{mapId}", SaveMapAsync).RequireAuthorization(Auth.Permissions.ManageContent);
 
         return app;
     }

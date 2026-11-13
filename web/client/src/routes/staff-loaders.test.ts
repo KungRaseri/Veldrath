@@ -138,15 +138,22 @@ describe('group layouts', () => {
 		});
 	});
 
-	it('only requires a session for the Foundry group', async () => {
-		// This layout is not `async`, so its redirect throws synchronously rather than rejecting.
-		expect(() => callLoad(foundryLayout, makeServerEvent())).toThrow();
+	it('only requires a session for the Foundry group and derives its nav capabilities', async () => {
+		await expect(callLoad(foundryLayout, makeServerEvent())).rejects.toThrow();
 
 		const result = (await callLoad(foundryLayout, makeServerEvent({ user: fakeUser() }))) as {
 			user: unknown;
+			canViewContent: boolean;
+			canManageContent: boolean;
+			canReviewSubmissions: boolean;
 		};
 
 		expect(result.user).toEqual(fakeUser());
+		// No RBAC snapshot in this event, so every capability is denied rather than assumed.
+		expect(result.canViewContent).toBe(false);
+		expect(result.canManageContent).toBe(false);
+		expect(result.canReviewSubmissions).toBe(false);
+		// The layout hands out flags, not the whole access object.
 		expect(result).not.toHaveProperty('access');
 	});
 });

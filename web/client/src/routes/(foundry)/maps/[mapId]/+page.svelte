@@ -38,7 +38,7 @@
 				{data.graph.nodes.length} nodes · {data.graph.edges.length} edges
 			</p>
 		</div>
-		<a class="btn preset-tonal-surface" href="/foundry/maps">
+		<a class="btn preset-tonal-surface" href="/maps">
 			<ArrowLeft size={15} aria-hidden="true" />
 			All maps
 		</a>

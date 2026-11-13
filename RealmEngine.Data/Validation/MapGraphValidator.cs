@@ -183,7 +183,8 @@ public static class MapGraphValidator
 
     /// <summary>
     /// Validates a whole world: every map on its own, plus the rules that need more than one map —
-    /// destination maps must exist, and a dungeon zone must be escapable and fully reachable.
+    /// destination maps and destination nodes must exist, and a dungeon zone must be escapable and
+    /// fully reachable.
     /// </summary>
     /// <param name="maps">Every map in the world.</param>
     /// <param name="knownRegionSlugs">Optional set of valid region slugs for cross-context checks.</param>
@@ -204,6 +205,16 @@ public static class MapGraphValidator
         var issues = new List<MapGraphValidationIssue>();
         var knownMapIds = maps.Select(m => m.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
+        // Built with TryAdd rather than ToDictionary: this is public API, and a caller that hands us the
+        // same map twice should get a reported issue, not an exception from the validator itself.
+        var nodeIdsByMap = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var map in maps)
+        {
+            nodeIdsByMap.TryAdd(
+                map.Id,
+                map.Nodes.Select(node => node.Id).ToHashSet(StringComparer.OrdinalIgnoreCase));
+        }
+
         foreach (var map in maps)
         {
             var isDungeonZone = map.MapType == MapType.Zone &&
@@ -220,16 +231,33 @@ public static class MapGraphValidator
 
             foreach (var node in map.Nodes)
             {
-                if (string.IsNullOrWhiteSpace(node.TargetMapId) ||
-                    knownMapIds.Contains(node.TargetMapId))
+                if (string.IsNullOrWhiteSpace(node.TargetMapId))
+                    continue;
+
+                if (!knownMapIds.Contains(node.TargetMapId))
+                {
+                    AddError(
+                        issues,
+                        "target_map_unknown",
+                        $"Node '{node.Id}' exits to unknown map '{node.TargetMapId}'.",
+                        map.Id,
+                        node.Id);
+                    continue;
+                }
+
+                // A blank TargetNodeId is already an error from exit_target_missing; this rule is about a
+                // name that looks plausible and points at nothing, which is what a typo in the editor is.
+                if (string.IsNullOrWhiteSpace(node.TargetNodeId) ||
+                    !nodeIdsByMap.TryGetValue(node.TargetMapId, out var targetNodes) ||
+                    targetNodes.Contains(node.TargetNodeId))
                 {
                     continue;
                 }
 
                 AddError(
                     issues,
-                    "target_map_unknown",
-                    $"Node '{node.Id}' exits to unknown map '{node.TargetMapId}'.",
+                    "target_node_unknown",
+                    $"Node '{node.Id}' exits to node '{node.TargetNodeId}', which does not exist on map '{node.TargetMapId}'.",
                     map.Id,
                     node.Id);
             }

@@ -20,7 +20,7 @@
 				The authored world graph. A save is validated against the whole world before it is stored.
 			</p>
 		</div>
-		<a class="btn preset-tonal-surface" href="/foundry/content">Back to content</a>
+		<a class="btn preset-tonal-surface" href="/content">Back to content</a>
 	</header>
 
 	{#if !data.canEdit}
@@ -45,7 +45,7 @@
 				{#each data.maps as map (map.id)}
 					<tr>
 						<td>
-							<a class="link" href={`/foundry/maps/${encodeURIComponent(map.id)}`}>
+							<a class="link" href={`/maps/${encodeURIComponent(map.id)}`}>
 								{map.name}
 							</a>
 							<p class="text-xs text-surface-600-400">{map.id}</p>

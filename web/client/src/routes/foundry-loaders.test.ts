@@ -12,6 +12,8 @@ import {
 	actions as newLanguageActions,
 	load as newLanguagePage
 } from './(foundry)/languages/new/+page.server';
+import { load as mapsPage } from './(foundry)/maps/+page.server';
+import { load as mapPage } from './(foundry)/maps/[mapId]/+page.server';
 import {
 	actions as notificationActions,
 	load as notificationsPage
@@ -51,10 +53,17 @@ const foundryApi = vi.hoisted(() => ({
 	reviewSubmission: vi.fn()
 }));
 
+const mapsApi = vi.hoisted(() => ({
+	listMaps: vi.fn(),
+	getMap: vi.fn(),
+	saveMap: vi.fn()
+}));
+
 const access = vi.hoisted(() => ({ loadAccountAccess: vi.fn() }));
 
 vi.mock('#lib/server/content-api', () => contentApi);
 vi.mock('#lib/server/foundry-api', () => foundryApi);
+vi.mock('#lib/server/maps-api', () => mapsApi);
 vi.mock('#lib/server/access', async (importOriginal) => ({
 	...(await importOriginal<typeof import('#lib/server/access')>()),
 	loadAccountAccess: access.loadAccountAccess
@@ -164,6 +173,68 @@ beforeEach(() => {
 	foundryApi.createSubmission.mockResolvedValue(ok({ id: 'sub-9' }));
 	foundryApi.voteSubmission.mockResolvedValue(ok(null));
 	foundryApi.reviewSubmission.mockResolvedValue(ok(null));
+	mapsApi.listMaps.mockResolvedValue(ok([{ id: 'zone:fenwick', name: 'Fenwick' }]));
+	mapsApi.getMap.mockResolvedValue(ok({ id: 'zone:fenwick', nodes: [], edges: [], version: 3 }));
+});
+
+describe('map editor', () => {
+	const params = { mapId: 'zone:fenwick' };
+
+	it('lists the graphs for a reader without switching the write controls on', async () => {
+		const result = (await callLoad(
+			mapsPage,
+			signedIn({ parentData: { canViewContent: true, canManageContent: false } })
+		)) as { canEdit: boolean; maps: unknown[] };
+
+		expect(result.canEdit).toBe(false);
+		expect(result.maps).toEqual([{ id: 'zone:fenwick', name: 'Fenwick' }]);
+	});
+
+	it('refuses the list when the account cannot read content', async () => {
+		expect(
+			await thrownMessage(() =>
+				callLoad(mapsPage, signedIn({ parentData: { canViewContent: false } }))
+			)
+		).toBe('Reading the map graphs requires content read access.');
+	});
+
+	it('reports the API failure rather than an empty list', async () => {
+		mapsApi.listMaps.mockResolvedValue(failed('the graph store is down', 502));
+
+		expect(
+			await thrownMessage(() =>
+				callLoad(mapsPage, signedIn({ parentData: { canViewContent: true } }))
+			)
+		).toBe('the graph store is down');
+	});
+
+	it('loads one graph with its rows and the write flag', async () => {
+		const result = (await callLoad(
+			mapPage,
+			signedIn({ params, parentData: { canViewContent: true, canManageContent: true } })
+		)) as { canEdit: boolean; rows: unknown[] };
+
+		expect(result.canEdit).toBe(true);
+		expect(result.rows).toEqual([]);
+	});
+
+	it('maps a missing graph to a 404 message', async () => {
+		mapsApi.getMap.mockResolvedValue(failed('Map not found.', 404));
+
+		expect(
+			await thrownMessage(() =>
+				callLoad(mapPage, signedIn({ params, parentData: { canViewContent: true } }))
+			)
+		).toBe('Map not found.');
+	});
+
+	it('refuses one graph when the account cannot read content', async () => {
+		expect(
+			await thrownMessage(() =>
+				callLoad(mapPage, signedIn({ params, parentData: { canViewContent: false } }))
+			)
+		).toBe('Reading a map graph requires content read access.');
+	});
 });
 
 describe('content browser', () => {
