@@ -159,6 +159,56 @@ public class MapEditorServiceTests
     }
 
     [Fact]
+    public async Task ValidateAsync_ReportsTheIssuesASaveWouldRefuseOnWithoutWriting()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var graph = (await editor.GetAsync(HalrowMapId))!;
+        var exitNode = graph.Nodes.Single(node => node.Id.EndsWith("exit:region:varenmark", StringComparison.Ordinal));
+        var broken = WithNode(graph, exitNode.Id, node => node with { TargetNodeId = "ghost" });
+
+        var result = await editor.ValidateAsync(HalrowMapId, broken);
+
+        result.IsValid.Should().BeFalse();
+        result.Issues.Should().Contain(issue => issue.Code == "target_node_unknown");
+
+        var stored = await editor.GetAsync(HalrowMapId);
+        stored!.Version.Should().Be(graph.Version);
+    }
+
+    [Fact]
+    public async Task ValidateAsync_AcceptsAValidGraphWithoutBumpingTheVersion()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var graph = (await editor.GetAsync(HalrowMapId))!;
+
+        var result = await editor.ValidateAsync(HalrowMapId, graph);
+
+        result.IsValid.Should().BeTrue();
+        result.Issues.Should().NotContain(issue => issue.Severity == "Error");
+
+        var stored = await editor.GetAsync(HalrowMapId);
+        stored!.Version.Should().Be(graph.Version);
+    }
+
+    [Fact]
+    public async Task ValidateAsync_ReportsAMismatchedIdAsARequestProblem()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var graph = (await editor.GetAsync(HalrowMapId))!;
+
+        var result = await editor.ValidateAsync(HalrowMapId, graph with { Id = "zone:crestfall" });
+
+        result.IsValid.Should().BeFalse();
+        result.Issues.Should().ContainSingle(issue => issue.Code == "request_invalid");
+    }
+
+    [Fact]
     public async Task SaveAsync_ReturnsNotFoundForAnUnknownMap()
     {
         var (db, editor) = await SeededAsync();

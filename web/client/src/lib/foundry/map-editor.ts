@@ -144,6 +144,45 @@ export function applyNodeEdits(
 	};
 }
 
+/** The outcome of a validate-only pass, mirroring `Veldrath.Contracts.Map.MapGraphValidationResponse`. */
+export interface MapGraphValidationResult {
+	isValid: boolean;
+	issues: MapGraphIssue[];
+}
+
+/** The issues a validate pass reported, split by what they are about. */
+export interface GroupedIssues {
+	/** Issues attributed to a node, keyed by node id. */
+	nodes: Record<string, MapGraphIssue[]>;
+	/** Issues about the graph itself, which have no node to sit beside. */
+	map: MapGraphIssue[];
+}
+
+/**
+ * Splits issues into the ones a node row can show and the ones the page has to summarise.
+ *
+ * Exported and unit tested because this decides where a badge appears: an issue with no `nodeId` can
+ * only be reported at the top of the page, and dropping it there would hide the reason a save fails.
+ *
+ * @param issues Issues from the server, in any order.
+ * @returns The issues grouped by node id, plus the map-level ones.
+ */
+export function issuesByNode(issues: readonly MapGraphIssue[]): GroupedIssues {
+	const nodes: Record<string, MapGraphIssue[]> = {};
+	const map: MapGraphIssue[] = [];
+
+	for (const issue of issues) {
+		if (!issue.nodeId) {
+			map.push(issue);
+			continue;
+		}
+
+		(nodes[issue.nodeId] ??= []).push(issue);
+	}
+
+	return { nodes, map };
+}
+
 /** A one-line description of an issue, with the node it belongs to when the server names one. */
 export function issueLabel(issue: MapGraphIssue): string {
 	const where = issue.nodeId ?? issue.mapId;

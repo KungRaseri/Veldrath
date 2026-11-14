@@ -1,7 +1,7 @@
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { requireUser, toGameIdentity } from '#lib/server/access';
-import { getMap, saveMap } from '#lib/server/maps-api';
+import { getMap, saveMap, validateMap } from '#lib/server/maps-api';
 import { applyNodeEdits, nodeRows, readNodeEdit, type NodeEdit } from '#lib/foundry/map-editor';
 
 /**
@@ -69,5 +69,36 @@ export const actions: Actions = {
 		}
 
 		return { saved: true, version: result.data.version, issues: result.data.issues };
+	},
+
+	/**
+	 * Runs the world validator without writing, so an author can iterate on a graph.
+	 *
+	 * It reads the candidate the same way the save does — the stored graph plus the form's node edits — so
+	 * what the author sees here is exactly what a save would refuse on.
+	 */
+	validate: async ({ locals, params, request }) => {
+		const user = requireUser(locals);
+		const identity = toGameIdentity(user);
+
+		const current = await getMap(identity, params.mapId);
+		if (!current.data) {
+			return fail(404, { message: current.error ?? 'Map not found.' });
+		}
+
+		const form = await request.formData();
+		const edits: Record<string, NodeEdit> = {};
+		for (const node of current.data.nodes) {
+			edits[node.id] = readNodeEdit(node, form);
+		}
+
+		const result = await validateMap(identity, params.mapId, applyNodeEdits(current.data, edits));
+		if (!result.data) {
+			return fail(result.status || 502, {
+				message: result.error ?? 'The graph could not be validated.'
+			});
+		}
+
+		return { validated: true, isValid: result.data.isValid, issues: result.data.issues };
 	}
 };

@@ -22,6 +22,8 @@ public static class MapEditorEndpoints
         // which made the read-only Foundry view unreachable for a Reviewer.
         group.MapGet("", ListMapsAsync).RequireAuthorization(Auth.Permissions.ViewContent);
         group.MapGet("/{mapId}", GetMapAsync).RequireAuthorization(Auth.Permissions.ViewContent);
+        group.MapPost("/{mapId}/validate", ValidateMapAsync)
+            .RequireAuthorization(Auth.Permissions.ManageContent);
         group.MapPut("/{mapId}", SaveMapAsync).RequireAuthorization(Auth.Permissions.ManageContent);
 
         return app;
@@ -39,6 +41,16 @@ public static class MapEditorEndpoints
     {
         var map = await editor.GetAsync(mapId, cancellationToken);
         return map is null ? Results.NotFound() : Results.Ok(map);
+    }
+
+    private static async Task<IResult> ValidateMapAsync(
+        string mapId,
+        [FromBody] MapGraphValidationRequest request,
+        [FromServices] MapEditorService editor,
+        CancellationToken cancellationToken)
+    {
+        var result = await editor.ValidateAsync(mapId, request.Map, cancellationToken);
+        return Results.Ok(result);
     }
 
     private static async Task<IResult> SaveMapAsync(

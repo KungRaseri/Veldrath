@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { ArrowLeft, Check, TriangleAlert } from '@lucide/svelte';
-	import { issueLabel } from '#lib/foundry/map-editor';
+	import { ArrowLeft, Check, ShieldCheck, TriangleAlert } from '@lucide/svelte';
+	import { issueLabel, issuesByNode } from '#lib/foundry/map-editor';
 	import type { PageData } from './$types';
 
 	let {
@@ -10,6 +10,8 @@
 		data: PageData;
 		form: {
 			saved?: boolean;
+			validated?: boolean;
+			isValid?: boolean;
 			version?: number;
 			message?: string;
 			issues?: {
@@ -23,6 +25,7 @@
 	} = $props();
 
 	const issues = $derived(form?.issues ?? []);
+	const grouped = $derived(issuesByNode(issues));
 </script>
 
 <svelte:head>
@@ -44,7 +47,32 @@
 		</a>
 	</header>
 
-	{#if form?.saved}
+	{#if form?.validated}
+		<div
+			class="game-panel space-y-2 p-3 text-sm"
+			class:text-success-500={form.isValid}
+			class:text-warning-500={!form.isValid}
+			role="status"
+		>
+			<p class="flex items-center gap-2">
+				{#if form.isValid}
+					<ShieldCheck size={15} aria-hidden="true" />
+					No errors — a save would accept this graph.
+				{:else}
+					<TriangleAlert size={15} aria-hidden="true" />
+					This graph would be refused: {issues.filter((issue) => issue.severity === 'Error').length} error(s),
+					{issues.filter((issue) => issue.severity === 'Warning').length} warning(s).
+				{/if}
+			</p>
+			{#if grouped.map.length > 0}
+				<ul class="list-inside list-disc text-xs text-surface-600-400">
+					{#each grouped.map as issue (issue.code + issue.message)}
+						<li>{issueLabel(issue)}</li>
+					{/each}
+				</ul>
+			{/if}
+		</div>
+	{:else if form?.saved}
 		<p class="game-panel p-3 text-sm text-success-500" role="status">
 			<Check size={15} aria-hidden="true" class="inline" />
 			Saved. The map is now at version {form.version ?? data.graph.version}.
@@ -88,11 +116,20 @@
 				</thead>
 				<tbody>
 					{#each data.rows as node (node.id)}
+						{@const rowIssues = grouped.nodes[node.id] ?? []}
 						<tr>
 							<td>
 								<span class="font-mono text-xs">{node.id}</span>
 								{#if node.isEntryPoint}
 									<span class="ml-1 badge preset-tonal-primary text-xs">entry</span>
+								{/if}
+								{#if rowIssues.length > 0}
+									<span
+										class="ml-1 badge preset-tonal-surface text-xs text-error-500"
+										title={rowIssues.map(issueLabel).join('\n')}
+									>
+										{rowIssues.length} issue{rowIssues.length === 1 ? '' : 's'}
+									</span>
 								{/if}
 							</td>
 							<td>{node.nodeType}</td>
@@ -141,7 +178,10 @@
 		</div>
 
 		{#if data.canEdit}
-			<div class="flex justify-end">
+			<div class="flex justify-end gap-2">
+				<button class="btn preset-tonal-surface" type="submit" formaction="?/validate">
+					Validate
+				</button>
 				<button class="btn preset-filled-primary-500" type="submit">Validate and save</button>
 			</div>
 		{/if}

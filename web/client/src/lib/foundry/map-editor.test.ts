@@ -2,11 +2,49 @@ import { describe, expect, it } from 'vitest';
 import {
 	applyNodeEdits,
 	issueLabel,
+	issuesByNode,
 	nodeRows,
 	readNodeEdit,
 	type MapGraphDto,
+	type MapGraphIssue,
 	type MapNodeDto
 } from './map-editor';
+
+describe('issuesByNode', () => {
+	const issue = (nodeId: string | null, code: string): MapGraphIssue => ({
+		code,
+		message: code,
+		severity: 'Error',
+		mapId: 'zone:the-halrow',
+		nodeId
+	});
+
+	it('files a node issue beside that node', () => {
+		const grouped = issuesByNode([issue('vault', 'unlock_key_missing')]);
+
+		expect(grouped.nodes.vault).toHaveLength(1);
+		expect(grouped.map).toEqual([]);
+	});
+
+	it('keeps a map-level issue in the summary instead of dropping it', () => {
+		// Dropping it would hide the reason a save is refused, since no row can render it.
+		const grouped = issuesByNode([issue(null, 'map_without_exit')]);
+
+		expect(grouped.map.map((entry) => entry.code)).toEqual(['map_without_exit']);
+		expect(grouped.nodes).toEqual({});
+	});
+
+	it('collects several issues on one node and leaves the rest untouched', () => {
+		const grouped = issuesByNode([
+			issue('vault', 'unlock_key_missing'),
+			issue('vault', 'node_unreachable'),
+			issue('threshold', 'node_name_missing')
+		]);
+
+		expect(grouped.nodes.vault).toHaveLength(2);
+		expect(grouped.nodes.threshold).toHaveLength(1);
+	});
+});
 
 function node(overrides: Partial<MapNodeDto> & Pick<MapNodeDto, 'id'>): MapNodeDto {
 	return {

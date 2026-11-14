@@ -129,6 +129,18 @@ public record MapGraphSaveResponse(
     IReadOnlyList<MapGraphIssueDto> Issues,
     string? Message = null);
 
+/// <summary>Payload for validating an authored map graph without saving it.</summary>
+/// <param name="Map">The candidate graph. Its id must match the route.</param>
+public record MapGraphValidationRequest(MapGraphDto Map);
+
+/// <summary>Outcome of a validate-only pass over the whole world.</summary>
+/// <param name="IsValid">Whether a save would accept the graph: no issue has <c>Error</c> severity.</param>
+/// <param name="Issues">
+/// Every issue attributed to this map, plus any exit that points at a map that does not exist. A
+/// pre-existing defect in a sibling map is not listed, so an edit here is never blocked by someone else's.
+/// </param>
+public record MapGraphValidationResponse(bool IsValid, IReadOnlyList<MapGraphIssueDto> Issues);
+
 /// <summary>Hub request to travel to a map node.</summary>
 /// <param name="MapId">Map containing the selected node.</param>
 /// <param name="NodeId">Destination node identifier.</param>

@@ -13,7 +13,7 @@ import {
 	load as newLanguagePage
 } from './(foundry)/languages/new/+page.server';
 import { load as mapsPage } from './(foundry)/maps/+page.server';
-import { load as mapPage } from './(foundry)/maps/[mapId]/+page.server';
+import { actions as mapActions, load as mapPage } from './(foundry)/maps/[mapId]/+page.server';
 import {
 	actions as notificationActions,
 	load as notificationsPage
@@ -56,7 +56,8 @@ const foundryApi = vi.hoisted(() => ({
 const mapsApi = vi.hoisted(() => ({
 	listMaps: vi.fn(),
 	getMap: vi.fn(),
-	saveMap: vi.fn()
+	saveMap: vi.fn(),
+	validateMap: vi.fn()
 }));
 
 const access = vi.hoisted(() => ({ loadAccountAccess: vi.fn() }));
@@ -175,6 +176,7 @@ beforeEach(() => {
 	foundryApi.reviewSubmission.mockResolvedValue(ok(null));
 	mapsApi.listMaps.mockResolvedValue(ok([{ id: 'zone:fenwick', name: 'Fenwick' }]));
 	mapsApi.getMap.mockResolvedValue(ok({ id: 'zone:fenwick', nodes: [], edges: [], version: 3 }));
+	mapsApi.validateMap.mockResolvedValue(ok({ isValid: true, issues: [] }));
 });
 
 describe('map editor', () => {
@@ -234,6 +236,48 @@ describe('map editor', () => {
 				callLoad(mapPage, signedIn({ params, parentData: { canViewContent: false } }))
 			)
 		).toBe('Reading a map graph requires content read access.');
+	});
+
+	it('validates without saving and reports the issues the save would refuse on', async () => {
+		mapsApi.validateMap.mockResolvedValue(
+			ok({
+				isValid: false,
+				issues: [
+					{
+						code: 'target_node_unknown',
+						message: 'exit names a node that does not exist',
+						severity: 'Error',
+						mapId: 'zone:fenwick',
+						nodeId: 'exit'
+					}
+				]
+			})
+		);
+
+		const result = (await action(
+			mapActions.validate,
+			{},
+			{ params, parentData: { canViewContent: true, canManageContent: true } }
+		)) as { validated: boolean; isValid: boolean; issues: unknown[] };
+
+		expect(result.validated).toBe(true);
+		expect(result.isValid).toBe(false);
+		expect(result.issues).toHaveLength(1);
+		expect(mapsApi.saveMap).not.toHaveBeenCalled();
+	});
+
+	it('reports a validate failure with the API message', async () => {
+		mapsApi.validateMap.mockResolvedValue(failed('the validator is unavailable', 502));
+
+		// `fail()` returns an ActionFailure rather than throwing, so the status and message are asserted.
+		const result = (await action(
+			mapActions.validate,
+			{},
+			{ params, parentData: { canViewContent: true, canManageContent: true } }
+		)) as { status: number; data: { message: string } };
+
+		expect(result.status).toBe(502);
+		expect(result.data.message).toBe('the validator is unavailable');
 	});
 });
 

@@ -104,7 +104,7 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
                 $"Map '{mapId}' is at version {map.Version}; reload before saving.");
         }
 
-        var issues = await ValidateAsync(mapId, candidate, cancellationToken);
+        var issues = await ValidateWorldAsync(mapId, candidate, cancellationToken);
         var errors = issues.Where(issue => issue.Severity == "Error").ToList();
 
         if (errors.Count > 0)
@@ -129,10 +129,49 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
     }
 
     /// <summary>
+    /// Runs the same world validation a save runs, without persisting anything.
+    /// </summary>
+    /// <param name="mapId">Map identifier from the route.</param>
+    /// <param name="candidate">The graph to validate.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Whether a save would accept the graph, and every issue the author needs to see.</returns>
+    public async Task<MapGraphValidationResponse> ValidateAsync(
+        string mapId,
+        MapGraphDto candidate,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(mapId))
+        {
+            return new MapGraphValidationResponse(
+                false,
+                [new MapGraphIssueDto("request_invalid", "A map id is required.", "Error", null, null)]);
+        }
+
+        if (!string.Equals(candidate.Id, mapId, StringComparison.OrdinalIgnoreCase))
+        {
+            return new MapGraphValidationResponse(
+                false,
+                [
+                    new MapGraphIssueDto(
+                        "request_invalid",
+                        $"The graph id '{candidate.Id}' does not match the map being validated ('{mapId}').",
+                        "Error",
+                        mapId,
+                        null),
+                ]);
+        }
+
+        var issues = await ValidateWorldAsync(mapId, candidate, cancellationToken);
+        var isValid = issues.All(issue => !string.Equals(issue.Severity, "Error", StringComparison.OrdinalIgnoreCase));
+
+        return new MapGraphValidationResponse(isValid, issues);
+    }
+
+    /// <summary>
     /// Validates the candidate as part of the whole world, so a save cannot strand a room or point an exit at a
     /// map that does not exist.
     /// </summary>
-    internal async Task<IReadOnlyList<MapGraphIssueDto>> ValidateAsync(
+    internal async Task<IReadOnlyList<MapGraphIssueDto>> ValidateWorldAsync(
         string mapId,
         MapGraphDto candidate,
         CancellationToken cancellationToken = default)
@@ -148,6 +187,11 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
                 ? ToSharedGraph(candidate)
                 : ToSharedGraph(map))
             .ToList();
+
+        // A candidate whose map is not stored yet still has to be validated in its own right: otherwise a
+        // validate-before-create would report the graph as clean because nothing in the world matched its id.
+        if (!maps.Any(map => string.Equals(map.Id, mapId, StringComparison.OrdinalIgnoreCase)))
+            graphs.Add(ToSharedGraph(candidate));
 
         // Content is small enough to load whole, and doing so keeps the JSON-owned traits out of the SQL
         // translation: the dungeon set is a pure function of the catalog, derived exactly like the seeded-world
