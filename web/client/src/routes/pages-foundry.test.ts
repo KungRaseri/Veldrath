@@ -6,6 +6,8 @@ import ContentDetail from './(foundry)/content/[type]/[slug]/+page.svelte';
 import ContentEditor from './(foundry)/content/[type]/[slug]/edit/+page.svelte';
 import Languages from './(foundry)/languages/+page.svelte';
 import NewLanguage from './(foundry)/languages/new/+page.svelte';
+import MapDetail from './(foundry)/maps/[mapId]/+page.svelte';
+import Maps from './(foundry)/maps/+page.svelte';
 import Notifications from './(foundry)/notifications/+page.svelte';
 import Submissions from './(foundry)/submissions/+page.svelte';
 import SubmissionDetail from './(foundry)/submissions/[id]/+page.svelte';
@@ -92,6 +94,121 @@ const editorData = {
 	schema,
 	payload
 };
+
+const mapSummary = {
+	id: 'zone:the-halrow',
+	mapType: 'Zone',
+	ownerId: 'the-halrow',
+	name: 'The Halrow',
+	description: '',
+	entryNodeId: 'zone:the-halrow:entry',
+	nodeCount: 2,
+	edgeCount: 1,
+	version: 3
+};
+
+const mapGraph = {
+	id: 'zone:the-halrow',
+	mapType: 'Zone',
+	ownerId: 'the-halrow',
+	name: 'The Halrow',
+	description: '',
+	entryNodeId: 'zone:the-halrow:entry',
+	nodes: [],
+	edges: [],
+	version: 3
+};
+
+const mapRow = {
+	id: 'zone:the-halrow:entry',
+	mapId: 'zone:the-halrow',
+	nodeType: 'EntryPoint',
+	refId: null,
+	displayName: 'Arrival',
+	description: '',
+	iconKey: null,
+	layoutX: 1,
+	layoutY: 1,
+	isEntryPoint: true,
+	isExitPoint: false,
+	targetMapId: null,
+	targetNodeId: null,
+	isHidden: false,
+	unlockType: null,
+	unlockKey: null,
+	discoverThreshold: null,
+	sortOrder: 0,
+	outgoing: 1,
+	incoming: 0
+};
+
+describe('map editor pages', () => {
+	it('links a graph at the route group path, not /foundry', () => {
+		render(Maps, page({ canEdit: true, maps: [mapSummary] }));
+
+		expect(screen.getByRole('heading', { level: 1, name: 'Maps' })).toBeTruthy();
+		expect(screen.getByRole('link', { name: 'The Halrow' }).getAttribute('href')).toBe(
+			'/maps/zone%3Athe-halrow'
+		);
+		expect(screen.queryByText(/lacks the content permission/)).toBeNull();
+	});
+
+	it('tells a reader that the write controls are off', () => {
+		render(Maps, page({ canEdit: false, maps: [mapSummary] }));
+
+		expect(screen.getByText(/lacks the content permission/)).toBeTruthy();
+	});
+
+	it('shows the validate result with a badge on the node it names', () => {
+		render(
+			MapDetail,
+			page(
+				{ canEdit: true, graph: mapGraph, rows: [mapRow] },
+				{
+					validated: true,
+					isValid: false,
+					issues: [
+						{
+							code: 'node_name_missing',
+							message: 'Needs a name',
+							severity: 'Error',
+							mapId: 'zone:the-halrow',
+							nodeId: 'zone:the-halrow:entry'
+						}
+					]
+				}
+			)
+		);
+
+		expect(screen.getByRole('button', { name: 'Validate' })).toBeTruthy();
+		expect(screen.getByText(/would be refused/)).toBeTruthy();
+		expect(screen.getByText('1 issue')).toBeTruthy();
+	});
+
+	it('summarises a map-level issue that no node row can carry', () => {
+		render(
+			MapDetail,
+			page(
+				{ canEdit: true, graph: mapGraph, rows: [mapRow] },
+				{
+					validated: true,
+					isValid: false,
+					issues: [
+						{
+							code: 'map_without_exit',
+							message: 'Zone map has no exit',
+							severity: 'Error',
+							mapId: 'zone:the-halrow',
+							nodeId: null
+						}
+					]
+				}
+			)
+		);
+
+		expect(screen.getByText(/map_without_exit/)).toBeTruthy();
+	});
+});
 
 describe('content type index', () => {
 	it('lists each registered schema with a browse link', () => {
