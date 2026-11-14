@@ -1,15 +1,18 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { ArrowLeft, Check, Redo2, ShieldCheck, TriangleAlert, Undo2 } from '@lucide/svelte';
+	import EdgeList from '#lib/foundry/EdgeList.svelte';
 	import MapCanvas from '#lib/foundry/MapCanvas.svelte';
 	import NodeInspector from '#lib/foundry/NodeInspector.svelte';
 	import { moveNode as moveNodeTo, tidyLayout, type CanvasCell } from '#lib/foundry/map-canvas';
+	import { connectNodes, deleteEdge, patchEdge, reciprocalOf } from '#lib/foundry/map-edges';
 	import { addNode, deleteBlockedReason, deleteNode, NODE_TYPES } from '#lib/foundry/map-nodes';
 	import {
 		issueLabel,
 		issuesByNode,
 		nodeRows,
 		normalizeDraft,
+		type MapEdgeDto,
 		type MapGraphDto,
 		type MapNodeDto
 	} from '#lib/foundry/map-editor';
@@ -48,6 +51,7 @@
 	let notice = $state<string | null>(null);
 	let newNodeType = $state<string>('Location');
 	let newNodeName = $state<string>('');
+	let connectFrom = $state<string | null>(null);
 
 	const rows = $derived(nodeRows(draft));
 	const issues = $derived(form?.issues ?? []);
@@ -104,6 +108,76 @@
 
 		remember(deleteNode(draft, selectedNode.id));
 		selectedId = null;
+		notice = null;
+	}
+
+	/** The canvas selection is either an inspector target or the second half of a connect gesture. */
+	function selectNode(nodeId: string): void {
+		if (!connectFrom) {
+			selectedId = nodeId;
+			return;
+		}
+
+		if (connectFrom === nodeId) {
+			connectFrom = null;
+			return;
+		}
+
+		const result = connectNodes(draft, connectFrom, nodeId, { reciprocal: true });
+		connectFrom = null;
+
+		if (!result.ok) {
+			notice = result.reason;
+			return;
+		}
+
+		notice = null;
+		remember(result.graph);
+		selectedId = nodeId;
+	}
+
+	function startConnect(): void {
+		if (connectFrom) {
+			connectFrom = null;
+			return;
+		}
+
+		if (!selectedId) {
+			notice = 'Select the node the edge should start from first.';
+			return;
+		}
+
+		connectFrom = selectedId;
+		notice = null;
+	}
+
+	/** A hand-edited direction must not create the duplicate the validator refuses. */
+	function patchEdgeField(edgeId: string, patch: Partial<MapEdgeDto>): void {
+		const edge = draft.edges.find((candidate) => candidate.id === edgeId);
+		if (!edge) return;
+
+		if (patch.direction) {
+			const clash = draft.edges.some(
+				(candidate) =>
+					candidate.id !== edgeId &&
+					candidate.fromNodeId === edge.fromNodeId &&
+					candidate.direction === patch.direction
+			);
+
+			if (clash) {
+				notice = `That node already has an edge going ${patch.direction}.`;
+				return;
+			}
+		}
+
+		notice = null;
+		remember(patchEdge(draft, edgeId, patch));
+	}
+
+	/** A connection that runs both ways is removed both ways: a stranded one-way edge is a trap. */
+	function removeEdge(edgeId: string): void {
+		const edge = draft.edges.find((candidate) => candidate.id === edgeId);
+		remember(deleteEdge(draft, edgeId, edge ? reciprocalOf(draft, edge) !== null : false));
 		notice = null;
 	}
 
@@ -215,7 +289,7 @@
 		graph={draft}
 		canEdit={data.canEdit}
 		{selectedId}
-		onSelect={(nodeId) => (selectedId = nodeId)}
+		onSelect={selectNode}
 		onMove={move}
 		onTidy={tidy}
 	/>
@@ -237,6 +311,14 @@
 			<button class="btn preset-tonal-surface btn-sm" type="button" onclick={createNode}>
 				Add
 			</button>
+			<button
+				class="btn preset-tonal-surface btn-sm"
+				class:preset-filled-primary-500={connectFrom !== null}
+				type="button"
+				onclick={startConnect}
+			>
+				{connectFrom ? 'Pick the destination…' : 'Connect from selection'}
+			</button>
 		</div>
 	{/if}
 
@@ -246,10 +328,15 @@
 			targets={data.targets}
 			canEdit={data.canEdit}
 			{blockedReason}
+			connections={draft.edges.filter(
+				(edge) => edge.fromNodeId === selectedNode.id || edge.toNodeId === selectedNode.id
+			).length}
 			onPatch={(patch) => patchNode(selectedNode.id, patch)}
 			onDelete={removeSelected}
 		/>
 	{/if}
+
+	<EdgeList graph={draft} canEdit={data.canEdit} onPatch={patchEdgeField} onDelete={removeEdge} />
 
 	<form method="POST" action="?/save" class="game-panel space-y-3 p-4">
 		<input type="hidden" name="version" value={data.graph.version} />

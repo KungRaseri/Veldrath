@@ -15,6 +15,7 @@
 		targets,
 		canEdit,
 		blockedReason = null,
+		connections = 0,
 		onPatch,
 		onDelete
 	}: {
@@ -22,6 +23,7 @@
 		targets: MapTargets;
 		canEdit: boolean;
 		blockedReason?: string | null;
+		connections?: number;
 		onPatch: (patch: Partial<MapNodeDto>) => void;
 		onDelete: () => void;
 	} = $props();
@@ -207,8 +209,13 @@
 
 	<div class="flex flex-wrap items-center justify-between gap-2">
 		<p class="text-xs text-surface-600-400">
-			{blockedReason ??
-				'The node id and kind are fixed after creation; changing either moves meaning.'}
+			{#if blockedReason}
+				{blockedReason}
+			{:else if connections > 0}
+				Deleting this node also removes {connections} connection{connections === 1 ? '' : 's'}.
+			{:else}
+				The node id and kind are fixed after creation; changing either moves meaning.
+			{/if}
 		</p>
 		<button
 			class="btn preset-tonal-surface btn-sm"
