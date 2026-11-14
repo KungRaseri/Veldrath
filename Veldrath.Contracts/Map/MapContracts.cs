@@ -134,6 +134,13 @@ public record MapGraphSaveResponse(
 /// <param name="Label">Human-readable name for the option.</param>
 public record MapTargetOptionDto(string Id, string Label);
 
+/// <summary>One node of an authored map, for the destination picker on an exit.</summary>
+/// <param name="Id">The node identifier.</param>
+/// <param name="MapId">The map that owns the node.</param>
+/// <param name="Label">Human-readable node label.</param>
+/// <param name="IsEntryPoint">Whether the node is its map's entry point, so a picker can default to it.</param>
+public record MapNodeOptionDto(string Id, string MapId, string Label, bool IsEntryPoint);
+
 /// <summary>
 /// The references a node may point at.
 /// </summary>
@@ -141,6 +148,7 @@ public record MapTargetOptionDto(string Id, string Label);
 /// <param name="Zones">Owners of the zone and interior maps, for a node whose type is <c>Zone</c>.</param>
 /// <param name="Locations">Every zone location, for a room node's <c>RefId</c>.</param>
 /// <param name="Regions">Owners of the region maps, for a region exit's <c>RefId</c>.</param>
+/// <param name="Nodes">Every node of every map, so an exit's destination node is chosen rather than typed.</param>
 /// <remarks>
 /// Served so the editor can render pickers instead of free text: a mistyped reference is the defect the
 /// world validator has to catch, and a picker cannot produce one.
@@ -149,7 +157,8 @@ public record MapTargetsDto(
     IReadOnlyList<MapTargetOptionDto> Maps,
     IReadOnlyList<MapTargetOptionDto> Zones,
     IReadOnlyList<MapTargetOptionDto> Locations,
-    IReadOnlyList<MapTargetOptionDto> Regions);
+    IReadOnlyList<MapTargetOptionDto> Regions,
+    IReadOnlyList<MapNodeOptionDto> Nodes);
 
 /// <summary>Payload for validating an authored map graph without saving it.</summary>
 /// <param name="Map">The candidate graph. Its id must match the route.</param>

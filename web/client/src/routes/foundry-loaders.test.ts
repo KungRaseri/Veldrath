@@ -183,7 +183,10 @@ beforeEach(() => {
 			maps: [{ id: 'region:varenmark', label: 'Varenmark' }],
 			zones: [{ id: 'the-halrow', label: 'The Halrow' }],
 			locations: [{ id: 'halrow-threshold', label: 'The Threshold' }],
-			regions: [{ id: 'varenmark', label: 'Varenmark' }]
+			regions: [{ id: 'varenmark', label: 'Varenmark' }],
+			nodes: [
+				{ id: 'zone:fenwick:entry', mapId: 'zone:fenwick', label: 'Arrival', isEntryPoint: true }
+			]
 		})
 	);
 });

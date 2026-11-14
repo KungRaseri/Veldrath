@@ -3,6 +3,7 @@
 	import { ArrowLeft, Check, Redo2, ShieldCheck, TriangleAlert, Undo2 } from '@lucide/svelte';
 	import EdgeList from '#lib/foundry/EdgeList.svelte';
 	import MapCanvas from '#lib/foundry/MapCanvas.svelte';
+	import MapHeader from '#lib/foundry/MapHeader.svelte';
 	import NodeInspector from '#lib/foundry/NodeInspector.svelte';
 	import { moveNode as moveNodeTo, tidyLayout, type CanvasCell } from '#lib/foundry/map-canvas';
 	import { connectNodes, deleteEdge, patchEdge, reciprocalOf } from '#lib/foundry/map-edges';
@@ -83,6 +84,11 @@
 	function tidy(): void {
 		remember(tidyLayout(draft));
 		notice = null;
+	}
+
+	/** Map-level fields are structural too: a new entry node changes what arrival means. */
+	function patchGraph(patch: Partial<MapGraphDto>): void {
+		remember({ ...draft, ...patch });
 	}
 
 	function patchNode(id: string, patch: Partial<MapNodeDto>): void {
@@ -284,6 +290,8 @@
 	{#if notice}
 		<p class="game-panel p-3 text-sm text-warning-500" role="status">{notice}</p>
 	{/if}
+
+	<MapHeader graph={draft} canEdit={data.canEdit} onPatch={patchGraph} />
 
 	<MapCanvas
 		graph={draft}

@@ -7,7 +7,22 @@ const targets: MapTargets = {
 	maps: [{ id: 'region:varenmark', label: 'Varenmark' }],
 	zones: [{ id: 'the-halrow', label: 'The Halrow' }],
 	locations: [{ id: 'halrow-threshold', label: 'The Threshold' }],
-	regions: [{ id: 'varenmark', label: 'Varenmark' }]
+	regions: [{ id: 'varenmark', label: 'Varenmark' }],
+	nodes: [
+		{
+			id: 'region:varenmark:entry',
+			mapId: 'region:varenmark',
+			label: 'Arrival',
+			isEntryPoint: true
+		},
+		{
+			id: 'region:varenmark:fenwick',
+			mapId: 'region:varenmark',
+			label: 'Fenwick',
+			isEntryPoint: false
+		},
+		{ id: 'zone:the-halrow:entry', mapId: 'zone:the-halrow', label: 'Arrival', isEntryPoint: true }
+	]
 };
 
 function node(overrides: Partial<MapNodeDto> = {}): MapNodeDto {
@@ -93,6 +108,27 @@ describe('NodeInspector', () => {
 			onDelete: noop
 		});
 		expect(screen.getByLabelText('Target map')).toBeTruthy();
+	});
+
+	it('chooses the target map entry node when the destination map changes', async () => {
+		const onPatch = vi.fn();
+		render(NodeInspector, {
+			node: node({ nodeType: 'RegionExit', isExitPoint: true }),
+			targets,
+			canEdit: true,
+			onPatch,
+			onDelete: noop
+		});
+
+		await fireEvent.change(screen.getByLabelText('Target map'), {
+			target: { value: 'region:varenmark' }
+		});
+
+		// Leaving the old node id behind would point the exit at a node that map does not have.
+		expect(onPatch).toHaveBeenCalledWith({
+			targetMapId: 'region:varenmark',
+			targetNodeId: 'region:varenmark:entry'
+		});
 	});
 
 	it('disables delete and shows why when the node may not go', () => {

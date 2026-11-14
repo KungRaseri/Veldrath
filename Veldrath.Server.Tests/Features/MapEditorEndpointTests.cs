@@ -94,6 +94,7 @@ public class MapEditorEndpointTests(WebAppFactory factory)
         targets.Zones.Should().NotBeEmpty();
         targets.Locations.Should().NotBeEmpty();
         targets.Regions.Should().NotBeEmpty();
+        targets.Nodes.Should().NotBeEmpty();
     }
 
     [Fact]

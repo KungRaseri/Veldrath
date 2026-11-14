@@ -31,6 +31,18 @@
 	const refOptions = $derived(refOptionsFor(node.nodeType, targets));
 	const isExit = $derived(isExitNodeType(node.nodeType));
 	const needsKey = $derived(['quest', 'item', 'achievement'].includes(node.unlockType ?? ''));
+	const targetNodes = $derived(
+		node.targetMapId ? targets.nodes.filter((option) => option.mapId === node.targetMapId) : []
+	);
+
+	/**
+	 * Choosing a destination map also chooses its entry node: leaving the old node id behind would point
+	 * the exit at a node the new map does not have, which is exactly what `target_node_unknown` reports.
+	 */
+	function changeTargetMap(mapId: string): void {
+		const entry = targets.nodes.find((option) => option.mapId === mapId && option.isEntryPoint);
+		onPatch({ targetMapId: mapId === '' ? null : mapId, targetNodeId: entry?.id ?? null });
+	}
 </script>
 
 <section class="game-panel space-y-3 p-4" aria-label="Node inspector">
@@ -179,10 +191,7 @@
 					class="select w-full"
 					value={node.targetMapId ?? ''}
 					disabled={!canEdit}
-					onchange={(event) =>
-						onPatch({
-							targetMapId: event.currentTarget.value === '' ? null : event.currentTarget.value
-						})}
+					onchange={(event) => changeTargetMap(event.currentTarget.value)}
 				>
 					<option value="">— none —</option>
 					{#each targets.maps as option (option.id)}
@@ -193,16 +202,20 @@
 
 			<label class="space-y-1 text-sm">
 				<span class="text-surface-600-400">Target node</span>
-				<input
-					class="input w-full"
+				<select
+					class="select w-full"
 					value={node.targetNodeId ?? ''}
-					placeholder="node id on the target map"
-					disabled={!canEdit}
-					oninput={(event) =>
+					disabled={!canEdit || !node.targetMapId}
+					onchange={(event) =>
 						onPatch({
 							targetNodeId: event.currentTarget.value === '' ? null : event.currentTarget.value
 						})}
-				/>
+				>
+					<option value="">— none —</option>
+					{#each targetNodes as option (option.id)}
+						<option value={option.id}>{option.label} · {option.id}</option>
+					{/each}
+				</select>
 			</label>
 		{/if}
 	</div>

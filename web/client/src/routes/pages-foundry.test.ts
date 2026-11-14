@@ -144,7 +144,15 @@ const mapTargets = {
 	maps: [{ id: 'region:varenmark', label: 'Varenmark' }],
 	zones: [{ id: 'the-halrow', label: 'The Halrow' }],
 	locations: [{ id: 'halrow-threshold', label: 'The Threshold' }],
-	regions: [{ id: 'varenmark', label: 'Varenmark' }]
+	regions: [{ id: 'varenmark', label: 'Varenmark' }],
+	nodes: [
+		{
+			id: 'region:varenmark:entry',
+			mapId: 'region:varenmark',
+			label: 'Arrival',
+			isEntryPoint: true
+		}
+	]
 };
 
 describe('map editor pages', () => {

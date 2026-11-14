@@ -54,6 +54,14 @@ export interface MapTargetOption {
 	label: string;
 }
 
+/** One node of an authored map, mirroring `Veldrath.Contracts.Map.MapNodeOptionDto`. */
+export interface MapNodeOption extends MapTargetOption {
+	/** The map that owns the node. */
+	mapId: string;
+	/** Whether the node is its map's entry point. */
+	isEntryPoint: boolean;
+}
+
 /** The references node pickers offer, mirroring `Veldrath.Contracts.Map.MapTargetsDto`. */
 export interface MapTargets {
 	/** Every authored map, for exit destinations. */
@@ -64,6 +72,8 @@ export interface MapTargets {
 	locations: MapTargetOption[];
 	/** Owners of region maps. */
 	regions: MapTargetOption[];
+	/** Every node of every map, so an exit's destination is chosen rather than typed. */
+	nodes: MapNodeOption[];
 }
 
 /** A map list row, mirroring `Veldrath.Contracts.Map.MapSummaryDto`. */

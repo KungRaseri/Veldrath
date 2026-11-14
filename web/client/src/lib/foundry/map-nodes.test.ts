@@ -85,7 +85,10 @@ const targets: MapTargets = {
 	],
 	zones: [{ id: 'the-halrow', label: 'The Halrow' }],
 	locations: [{ id: 'halrow-threshold', label: 'The Threshold' }],
-	regions: [{ id: 'varenmark', label: 'Varenmark' }]
+	regions: [{ id: 'varenmark', label: 'Varenmark' }],
+	nodes: [
+		{ id: 'zone:the-halrow:entry', mapId: 'zone:the-halrow', label: 'Arrival', isEntryPoint: true }
+	]
 };
 
 describe('refOptionsFor', () => {

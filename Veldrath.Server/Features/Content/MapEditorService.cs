@@ -84,13 +84,23 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
             .Select(location => new MapTargetOptionDto(location.Slug, location.DisplayName ?? location.Slug))
             .ToListAsync(cancellationToken);
 
+        // Every node of every map: an exit's destination is a picker, and the whole set is small enough
+        // (a few hundred rows) that a round trip per target map would be the slower design.
+        var nodes = await db.MapNodes
+            .AsNoTracking()
+            .OrderBy(node => node.MapId)
+            .ThenBy(node => node.SortOrder)
+            .Select(node => new MapNodeOptionDto(node.Id, node.MapId, node.DisplayName, node.IsEntryPoint))
+            .ToListAsync(cancellationToken);
+
         return new MapTargetsDto(
             maps.Select(map => new MapTargetOptionDto(map.Id, map.Name))
                 .OrderBy(option => option.Id, StringComparer.OrdinalIgnoreCase)
                 .ToList(),
             zones,
             locations,
-            regions);
+            regions,
+            nodes);
     }
 
     /// <summary>Reads one map graph in full.</summary>

@@ -51,6 +51,7 @@ public class MapEditorServiceTests
         targets.Zones.Should().Contain(option => option.Id == "the-halrow");
         targets.Regions.Should().Contain(option => option.Id == "varenmark");
         targets.Locations.Should().Contain(option => option.Id == "halrow-threshold");
+        targets.Nodes.Should().Contain(option => option.Id == "zone:the-halrow:entry" && option.IsEntryPoint);
     }
 
     [Fact]
