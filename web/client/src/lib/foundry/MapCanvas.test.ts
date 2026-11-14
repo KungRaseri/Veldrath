@@ -77,6 +77,27 @@ describe('MapCanvas', () => {
 		expect(onMove).toHaveBeenCalledWith('hall', { x: 1, y: 1 });
 	});
 
+	it('converts a pointer drag into whole cells', async () => {
+		const onMove = vi.fn();
+		render(MapCanvas, { graph: graph(), canEdit: true, onMove });
+
+		const hall = screen.getByRole('button', { name: /The Hall/ });
+		await fireEvent.pointerDown(hall, { clientX: 0, clientY: 0 });
+		await fireEvent.pointerUp(hall, { clientX: 96 * 2, clientY: 96 });
+
+		expect(onMove).toHaveBeenCalledWith('hall', { x: 2, y: 2 });
+	});
+
+	it('ignores a drag too small to be a cell, and any drag when read-only', async () => {
+		const onMove = vi.fn();
+		render(MapCanvas, { graph: graph(), canEdit: true, onMove });
+
+		const hall = screen.getByRole('button', { name: /The Hall/ });
+		await fireEvent.pointerDown(hall, { clientX: 0, clientY: 0 });
+		await fireEvent.pointerUp(hall, { clientX: 12, clientY: 4 });
+		expect(onMove).not.toHaveBeenCalled();
+	});
+
 	it('reports the selection', async () => {
 		const onSelect = vi.fn();
 		render(MapCanvas, { graph: graph(), canEdit: true, onSelect });

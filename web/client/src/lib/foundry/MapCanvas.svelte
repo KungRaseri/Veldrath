@@ -1,6 +1,11 @@
 <script lang="ts">
 	import { Move } from '@lucide/svelte';
-	import { CELL, layoutCanvas, type CanvasCell } from '#lib/foundry/map-canvas';
+	import {
+		CELL,
+		layoutCanvas,
+		type CanvasCell,
+		type CanvasPlacement
+	} from '#lib/foundry/map-canvas';
 	import type { MapGraphDto } from '#lib/foundry/map-editor';
 
 	/**
@@ -61,6 +66,28 @@
 		event.preventDefault();
 		onMove?.(nodeId, { x: cell.x + delta.x, y: cell.y + delta.y });
 	}
+
+	/** Where a pointer drag started, so the drop can be converted into whole cells. */
+	let drag = $state<{ id: string; clientX: number; clientY: number } | null>(null);
+
+	function startDrag(event: PointerEvent, placement: CanvasPlacement): void {
+		if (!canEdit) return;
+
+		drag = { id: placement.id, clientX: event.clientX, clientY: event.clientY };
+		(event.currentTarget as HTMLElement | null)?.setPointerCapture?.(event.pointerId);
+	}
+
+	function endDrag(event: PointerEvent, placement: CanvasPlacement): void {
+		if (!drag || drag.id !== placement.id) return;
+
+		// Whole cells or nothing: a two-pixel wobble must not nudge the map.
+		const dx = Math.round((event.clientX - drag.clientX) / CELL);
+		const dy = Math.round((event.clientY - drag.clientY) / CELL);
+		drag = null;
+
+		if (dx === 0 && dy === 0) return;
+		onMove?.(placement.id, { x: placement.x + dx, y: placement.y + dy });
+	}
 </script>
 
 <section class="space-y-2" aria-label="Map canvas">
@@ -112,6 +139,8 @@
 					aria-pressed={selectedId === placement.id}
 					onclick={() => onSelect?.(placement.id)}
 					onkeydown={(event) => nudge(event, placement.id, placement)}
+					onpointerdown={(event) => startDrag(event, placement)}
+					onpointerup={(event) => endDrag(event, placement)}
 				>
 					<span class="line-clamp-2 text-center">{placement.label}</span>
 					{#if placement.isEntryPoint}
