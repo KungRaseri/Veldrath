@@ -2,7 +2,7 @@ import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { requireUser, toGameIdentity } from '#lib/server/access';
 import { getMap, saveMap, validateMap } from '#lib/server/maps-api';
-import { applyNodeEdits, nodeRows, readNodeEdit, type NodeEdit } from '#lib/foundry/map-editor';
+import { nodeRows, parseDraftGraph, type MapGraphDto } from '#lib/foundry/map-editor';
 
 /**
  * Loads one graph, its node rows, and whether this account may save it.
@@ -26,13 +26,19 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	return { canEdit: canManageContent, graph: result.data, rows: nodeRows(result.data) };
 };
 
+/**
+ * Reads the draft the editor posted.
+ *
+ * The canvas and the table both mutate one local draft, so the save and the dry run post that draft as a
+ * whole rather than a field per input. Anything unparseable falls back to the stored graph, which makes the
+ * request a no-op instead of a partial write.
+ */
+function readDraft(form: FormData, stored: MapGraphDto): MapGraphDto {
+	return parseDraftGraph(form.get('graph'), stored, stored.id);
+}
+
 export const actions: Actions = {
-	/**
-	 * Validates and saves the edited graph.
-	 *
-	 * The version travels with the form, so a second author who started from the same graph gets a conflict
-	 * instead of silently overwriting this one.
-	 */
+	/** Validates and saves the posted draft. */
 	save: async ({ locals, params, request }) => {
 		const user = requireUser(locals);
 		const identity = toGameIdentity(user);
@@ -43,13 +49,9 @@ export const actions: Actions = {
 		}
 
 		const form = await request.formData();
-		const edits: Record<string, NodeEdit> = {};
-		for (const node of current.data.nodes) {
-			edits[node.id] = readNodeEdit(node, form);
-		}
-
-		const candidate = applyNodeEdits(current.data, edits);
+		const candidate = readDraft(form, current.data);
 		const expected = Number(form.get('version') ?? current.data.version);
+
 		const result = await saveMap(
 			identity,
 			params.mapId,
@@ -71,12 +73,7 @@ export const actions: Actions = {
 		return { saved: true, version: result.data.version, issues: result.data.issues };
 	},
 
-	/**
-	 * Runs the world validator without writing, so an author can iterate on a graph.
-	 *
-	 * It reads the candidate the same way the save does — the stored graph plus the form's node edits — so
-	 * what the author sees here is exactly what a save would refuse on.
-	 */
+	/** Runs the world validator over the posted draft without writing. */
 	validate: async ({ locals, params, request }) => {
 		const user = requireUser(locals);
 		const identity = toGameIdentity(user);
@@ -87,12 +84,8 @@ export const actions: Actions = {
 		}
 
 		const form = await request.formData();
-		const edits: Record<string, NodeEdit> = {};
-		for (const node of current.data.nodes) {
-			edits[node.id] = readNodeEdit(node, form);
-		}
+		const result = await validateMap(identity, params.mapId, readDraft(form, current.data));
 
-		const result = await validateMap(identity, params.mapId, applyNodeEdits(current.data, edits));
 		if (!result.data) {
 			return fail(result.status || 502, {
 				message: result.error ?? 'The graph could not be validated.'

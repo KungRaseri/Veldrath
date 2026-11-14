@@ -1,31 +1,120 @@
 <script lang="ts">
-	import { ArrowLeft, Check, ShieldCheck, TriangleAlert } from '@lucide/svelte';
-	import { issueLabel, issuesByNode } from '#lib/foundry/map-editor';
+	import { untrack } from 'svelte';
+	import { ArrowLeft, Check, Redo2, ShieldCheck, TriangleAlert, Undo2 } from '@lucide/svelte';
+	import MapCanvas from '#lib/foundry/MapCanvas.svelte';
+	import { moveNode as moveNodeTo, tidyLayout, type CanvasCell } from '#lib/foundry/map-canvas';
+	import {
+		issueLabel,
+		issuesByNode,
+		nodeRows,
+		normalizeDraft,
+		type MapGraphDto,
+		type MapNodeDto
+	} from '#lib/foundry/map-editor';
 	import type { PageData } from './$types';
 
-	let {
-		data,
-		form
-	}: {
-		data: PageData;
-		form: {
-			saved?: boolean;
-			validated?: boolean;
-			isValid?: boolean;
-			version?: number;
-			message?: string;
-			issues?: {
-				code: string;
-				message: string;
-				severity: string;
-				mapId: string | null;
-				nodeId: string | null;
-			}[];
-		} | null;
-	} = $props();
+	interface MapForm {
+		saved?: boolean;
+		validated?: boolean;
+		isValid?: boolean;
+		version?: number;
+		message?: string;
+		issues?: {
+			code: string;
+			message: string;
+			severity: string;
+			mapId: string | null;
+			nodeId: string | null;
+		}[];
+	}
 
+	let { data, form }: { data: PageData; form: MapForm | null } = $props();
+
+	/**
+	 * One draft, one writer.
+	 *
+	 * The canvas and the table both mutate this object; the actions post it whole. Nothing reconstructs a
+	 * graph from individual fields on the way out, so a canvas gesture cannot be silently dropped.
+	 */
+	// `untrack` is deliberate: the draft is seeded once and then owned by the editor. A new map resets it
+	// (below); a save does not, because the draft is what was just saved.
+	let draft = $state<MapGraphDto>(untrack(() => data.graph));
+	let loadedMapId = untrack(() => data.graph.id);
+	let past = $state<MapGraphDto[]>([]);
+	let future = $state<MapGraphDto[]>([]);
+	let selectedId = $state<string | null>(null);
+	let notice = $state<string | null>(null);
+
+	const rows = $derived(nodeRows(draft));
 	const issues = $derived(form?.issues ?? []);
 	const grouped = $derived(issuesByNode(issues));
+	const posted = $derived(JSON.stringify(normalizeDraft(draft)));
+	const isDirty = $derived(posted !== JSON.stringify(normalizeDraft(data.graph)));
+
+	/** Records a structural change so it can be undone. Text edits deliberately do not push history. */
+	function remember(next: MapGraphDto): void {
+		past = [...past, draft];
+		future = [];
+		draft = next;
+	}
+
+	function move(id: string, cell: CanvasCell): void {
+		const next = moveNodeTo(draft, id, cell);
+
+		if (next === draft) {
+			notice = 'That cell is already taken. Move the other node first.';
+			return;
+		}
+
+		notice = null;
+		remember(next);
+	}
+
+	function tidy(): void {
+		remember(tidyLayout(draft));
+		notice = null;
+	}
+
+	function patchNode(id: string, patch: Partial<MapNodeDto>): void {
+		draft = {
+			...draft,
+			nodes: draft.nodes.map((node) => (node.id === id ? { ...node, ...patch } : node))
+		};
+	}
+
+	function undo(): void {
+		if (past.length === 0) return;
+		future = [draft, ...future];
+		draft = past[past.length - 1];
+		past = past.slice(0, -1);
+	}
+
+	function redo(): void {
+		if (future.length === 0) return;
+		past = [...past, draft];
+		draft = future[0];
+		future = future.slice(1);
+	}
+
+	// Navigating to another graph reuses this component, so the draft has to be re-seeded for a new map.
+	$effect(() => {
+		if (data.graph.id === loadedMapId) return;
+
+		loadedMapId = data.graph.id;
+		draft = data.graph;
+		past = [];
+		future = [];
+		selectedId = null;
+	});
+
+	// A draft that would be lost by leaving is worth one browser-level confirmation.
+	$effect(() => {
+		if (!isDirty) return;
+
+		const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+		window.addEventListener('beforeunload', warn);
+		return () => window.removeEventListener('beforeunload', warn);
+	});
 </script>
 
 <svelte:head>
@@ -38,7 +127,7 @@
 			<h1 class="game-panel-header">{data.graph.name}</h1>
 			<p class="text-sm text-surface-600-400">
 				{data.graph.id} · {data.graph.mapType} · owner {data.graph.ownerId} · v{data.graph.version} ·
-				{data.graph.nodes.length} nodes · {data.graph.edges.length} edges
+				{draft.nodes.length} nodes · {draft.edges.length} edges
 			</p>
 		</div>
 		<a class="btn preset-tonal-surface" href="/maps">
@@ -93,13 +182,52 @@
 		</div>
 	{/if}
 
+	{#if notice}
+		<p class="game-panel p-3 text-sm text-warning-500" role="status">{notice}</p>
+	{/if}
+
+	<MapCanvas
+		graph={draft}
+		canEdit={data.canEdit}
+		{selectedId}
+		onSelect={(nodeId) => (selectedId = nodeId)}
+		onMove={move}
+		onTidy={tidy}
+	/>
+
 	<form method="POST" action="?/save" class="game-panel space-y-3 p-4">
 		<input type="hidden" name="version" value={data.graph.version} />
+		<input type="hidden" name="graph" value={posted} />
 
-		<p class="text-sm text-surface-600-400">
-			Node labels, hidden flags, unlock keys and exit targets are editable here. Positions and edges
-			are authored on the canvas and are shown read-only.
-		</p>
+		<div class="flex flex-wrap items-center justify-between gap-2">
+			<p class="text-sm text-surface-600-400">
+				Labels, hidden flags, unlock keys and exit targets are edited here. Positions are authored
+				on the canvas above.
+			</p>
+			<div class="flex items-center gap-2">
+				{#if isDirty}
+					<span class="badge preset-tonal-warning text-xs">unsaved changes</span>
+				{/if}
+				<button
+					class="btn preset-tonal-surface btn-sm"
+					type="button"
+					onclick={undo}
+					disabled={past.length === 0}
+				>
+					<Undo2 size={14} aria-hidden="true" />
+					Undo
+				</button>
+				<button
+					class="btn preset-tonal-surface btn-sm"
+					type="button"
+					onclick={redo}
+					disabled={future.length === 0}
+				>
+					<Redo2 size={14} aria-hidden="true" />
+					Redo
+				</button>
+			</div>
+		</div>
 
 		<div class="overflow-x-auto">
 			<table class="table w-full text-sm">
@@ -115,7 +243,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each data.rows as node (node.id)}
+					{#each rows as node (node.id)}
 						{@const rowIssues = grouped.nodes[node.id] ?? []}
 						<tr>
 							<td>
@@ -139,6 +267,8 @@
 									name={`node:${node.id}:displayName`}
 									value={node.displayName}
 									disabled={!data.canEdit}
+									oninput={(event) =>
+										patchNode(node.id, { displayName: event.currentTarget.value })}
 								/>
 							</td>
 							<td>
@@ -147,6 +277,8 @@
 									name={`node:${node.id}:isHidden`}
 									value={String(node.isHidden)}
 									disabled={!data.canEdit}
+									onchange={(event) =>
+										patchNode(node.id, { isHidden: event.currentTarget.value === 'true' })}
 								>
 									<option value="false">visible</option>
 									<option value="true">hidden</option>
@@ -159,6 +291,7 @@
 									value={node.unlockKey ?? ''}
 									placeholder="—"
 									disabled={!data.canEdit}
+									oninput={(event) => patchNode(node.id, { unlockKey: event.currentTarget.value })}
 								/>
 							</td>
 							<td>
@@ -168,6 +301,8 @@
 									value={node.targetMapId ?? ''}
 									placeholder="—"
 									disabled={!data.canEdit}
+									oninput={(event) =>
+										patchNode(node.id, { targetMapId: event.currentTarget.value })}
 								/>
 							</td>
 							<td class="text-xs text-surface-600-400">{node.outgoing} out · {node.incoming} in</td>

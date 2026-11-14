@@ -77,14 +77,6 @@ export interface MapGraphSaveResult {
 	message: string | null;
 }
 
-/** The fields the inspector can change. Everything else is authored elsewhere or derived. */
-export interface NodeEdit {
-	displayName: string;
-	isHidden: boolean;
-	unlockKey: string;
-	targetMapId: string;
-}
-
 /** A node row as the editor lists it, with the edge count that explains its role at a glance. */
 export interface MapNodeRow extends MapNodeDto {
 	outgoing: number;
@@ -102,46 +94,33 @@ export function nodeRows(graph: MapGraphDto): MapNodeRow[] {
 		}));
 }
 
-/** Reads the inspector's values for one node into the shape the edit map expects. */
-export function readNodeEdit(node: MapNodeDto, form: FormData): NodeEdit {
-	const value = (name: string, fallback: string) => {
-		const raw = form.get(`node:${node.id}:${name}`);
-		return raw === null ? fallback : String(raw);
-	};
-
-	return {
-		displayName: value('displayName', node.displayName),
-		isHidden: value('isHidden', String(node.isHidden)) === 'true',
-		unlockKey: value('unlockKey', node.unlockKey ?? ''),
-		targetMapId: value('targetMapId', node.targetMapId ?? '')
-	};
-}
-
 /**
- * Applies inspector edits to a graph, leaving edges and every untouched field exactly as they were.
+ * Reads the draft a page posted, refusing anything that is not this map's graph.
  *
- * Edges are deliberately not editable here: moving a room is a graph change that needs the canvas and the
- * validator's ear, not a text field.
+ * There is exactly one writer — the draft the canvas holds — so the save action never reconstructs a graph
+ * from individual form fields. A malformed or mismatched payload falls back to the stored graph, which
+ * makes the save a no-op rather than a partial write of something nobody authored.
+ *
+ * @param raw The `graph` form field, as posted.
+ * @param fallback The graph as stored, used when the payload cannot be trusted.
+ * @param mapId The map the route names.
+ * @returns The draft to save, or the stored graph.
  */
-export function applyNodeEdits(
-	graph: MapGraphDto,
-	edits: Readonly<Record<string, NodeEdit>>
-): MapGraphDto {
-	return {
-		...graph,
-		nodes: graph.nodes.map((node) => {
-			const edit = edits[node.id];
-			if (!edit) return node;
+export function parseDraftGraph(raw: unknown, fallback: MapGraphDto, mapId: string): MapGraphDto {
+	if (typeof raw !== 'string' || raw.trim() === '') return fallback;
 
-			return {
-				...node,
-				displayName: edit.displayName,
-				isHidden: edit.isHidden,
-				unlockKey: edit.unlockKey.trim() === '' ? null : edit.unlockKey.trim(),
-				targetMapId: edit.targetMapId.trim() === '' ? null : edit.targetMapId.trim()
-			};
-		})
-	};
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (!parsed || typeof parsed !== 'object') return fallback;
+
+		const candidate = parsed as Partial<MapGraphDto>;
+		if (candidate.id !== mapId) return fallback;
+		if (!Array.isArray(candidate.nodes) || !Array.isArray(candidate.edges)) return fallback;
+
+		return candidate as MapGraphDto;
+	} catch {
+		return fallback;
+	}
 }
 
 /** The outcome of a validate-only pass, mirroring `Veldrath.Contracts.Map.MapGraphValidationResponse`. */
@@ -181,6 +160,32 @@ export function issuesByNode(issues: readonly MapGraphIssue[]): GroupedIssues {
 	}
 
 	return { nodes, map };
+}
+
+/**
+ * Trims the two nullable text fields so a blank input means "no value" rather than an empty string.
+ *
+ * The editor keeps the raw text while the author types — trimming on each keystroke would make a space
+ * untypable in the middle of a key — and normalises once, when the draft is posted.
+ *
+ * @param graph The draft as edited.
+ * @returns The same draft with blank unlock keys and exit targets set to `null`.
+ */
+export function normalizeDraft(graph: MapGraphDto): MapGraphDto {
+	return {
+		...graph,
+		nodes: graph.nodes.map((node) => ({
+			...node,
+			unlockKey: blankToNull(node.unlockKey),
+			targetMapId: blankToNull(node.targetMapId)
+		}))
+	};
+}
+
+function blankToNull(value: string | null): string | null {
+	if (value === null) return null;
+	const trimmed = value.trim();
+	return trimmed === '' ? null : trimmed;
 }
 
 /** A one-line description of an issue, with the node it belongs to when the server names one. */

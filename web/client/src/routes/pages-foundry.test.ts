@@ -107,19 +107,7 @@ const mapSummary = {
 	version: 3
 };
 
-const mapGraph = {
-	id: 'zone:the-halrow',
-	mapType: 'Zone',
-	ownerId: 'the-halrow',
-	name: 'The Halrow',
-	description: '',
-	entryNodeId: 'zone:the-halrow:entry',
-	nodes: [],
-	edges: [],
-	version: 3
-};
-
-const mapRow = {
+const mapNode = {
 	id: 'zone:the-halrow:entry',
 	mapId: 'zone:the-halrow',
 	nodeType: 'EntryPoint',
@@ -137,9 +125,19 @@ const mapRow = {
 	unlockType: null,
 	unlockKey: null,
 	discoverThreshold: null,
-	sortOrder: 0,
-	outgoing: 1,
-	incoming: 0
+	sortOrder: 0
+};
+
+const mapGraph = {
+	id: 'zone:the-halrow',
+	mapType: 'Zone',
+	ownerId: 'the-halrow',
+	name: 'The Halrow',
+	description: '',
+	entryNodeId: 'zone:the-halrow:entry',
+	nodes: [mapNode],
+	edges: [],
+	version: 3
 };
 
 describe('map editor pages', () => {
@@ -163,7 +161,7 @@ describe('map editor pages', () => {
 		render(
 			MapDetail,
 			page(
-				{ canEdit: true, graph: mapGraph, rows: [mapRow] },
+				{ canEdit: true, graph: mapGraph },
 				{
 					validated: true,
 					isValid: false,
@@ -189,7 +187,7 @@ describe('map editor pages', () => {
 		render(
 			MapDetail,
 			page(
-				{ canEdit: true, graph: mapGraph, rows: [mapRow] },
+				{ canEdit: true, graph: mapGraph },
 				{
 					validated: true,
 					isValid: false,
