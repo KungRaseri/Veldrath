@@ -2,7 +2,9 @@
 	import { untrack } from 'svelte';
 	import { ArrowLeft, Check, Redo2, ShieldCheck, TriangleAlert, Undo2 } from '@lucide/svelte';
 	import MapCanvas from '#lib/foundry/MapCanvas.svelte';
+	import NodeInspector from '#lib/foundry/NodeInspector.svelte';
 	import { moveNode as moveNodeTo, tidyLayout, type CanvasCell } from '#lib/foundry/map-canvas';
+	import { addNode, deleteBlockedReason, deleteNode, NODE_TYPES } from '#lib/foundry/map-nodes';
 	import {
 		issueLabel,
 		issuesByNode,
@@ -44,12 +46,16 @@
 	let future = $state<MapGraphDto[]>([]);
 	let selectedId = $state<string | null>(null);
 	let notice = $state<string | null>(null);
+	let newNodeType = $state<string>('Location');
+	let newNodeName = $state<string>('');
 
 	const rows = $derived(nodeRows(draft));
 	const issues = $derived(form?.issues ?? []);
 	const grouped = $derived(issuesByNode(issues));
 	const posted = $derived(JSON.stringify(normalizeDraft(draft)));
 	const isDirty = $derived(posted !== JSON.stringify(normalizeDraft(data.graph)));
+	const selectedNode = $derived(draft.nodes.find((node) => node.id === selectedId) ?? null);
+	const blockedReason = $derived(selectedNode ? deleteBlockedReason(draft, selectedNode.id) : null);
 
 	/** Records a structural change so it can be undone. Text edits deliberately do not push history. */
 	function remember(next: MapGraphDto): void {
@@ -80,6 +86,25 @@
 			...draft,
 			nodes: draft.nodes.map((node) => (node.id === id ? { ...node, ...patch } : node))
 		};
+	}
+
+	/** Adds a node of the chosen kind and selects it, so the inspector is where the author lands. */
+	function createNode(): void {
+		const next = addNode(draft, { nodeType: newNodeType, displayName: newNodeName });
+		const added = next.nodes[next.nodes.length - 1];
+
+		notice = null;
+		remember(next);
+		selectedId = added.id;
+		newNodeName = '';
+	}
+
+	function removeSelected(): void {
+		if (!selectedNode || blockedReason !== null) return;
+
+		remember(deleteNode(draft, selectedNode.id));
+		selectedId = null;
+		notice = null;
 	}
 
 	function undo(): void {
@@ -194,6 +219,37 @@
 		onMove={move}
 		onTidy={tidy}
 	/>
+
+	{#if data.canEdit}
+		<div class="game-panel flex flex-wrap items-end gap-2 p-3">
+			<label class="space-y-1 text-sm">
+				<span class="text-surface-600-400">Add a node</span>
+				<select class="select" bind:value={newNodeType}>
+					{#each NODE_TYPES as nodeType (nodeType)}
+						<option value={nodeType}>{nodeType}</option>
+					{/each}
+				</select>
+			</label>
+			<label class="space-y-1 text-sm">
+				<span class="text-surface-600-400">Label</span>
+				<input class="input" bind:value={newNodeName} placeholder="New node" />
+			</label>
+			<button class="btn preset-tonal-surface btn-sm" type="button" onclick={createNode}>
+				Add
+			</button>
+		</div>
+	{/if}
+
+	{#if selectedNode}
+		<NodeInspector
+			node={selectedNode}
+			targets={data.targets}
+			canEdit={data.canEdit}
+			{blockedReason}
+			onPatch={(patch) => patchNode(selectedNode.id, patch)}
+			onDelete={removeSelected}
+		/>
+	{/if}
 
 	<form method="POST" action="?/save" class="game-panel space-y-3 p-4">
 		<input type="hidden" name="version" value={data.graph.version} />

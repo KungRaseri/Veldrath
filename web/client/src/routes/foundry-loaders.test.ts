@@ -56,6 +56,7 @@ const foundryApi = vi.hoisted(() => ({
 const mapsApi = vi.hoisted(() => ({
 	listMaps: vi.fn(),
 	getMap: vi.fn(),
+	getMapTargets: vi.fn(),
 	saveMap: vi.fn(),
 	validateMap: vi.fn()
 }));
@@ -177,6 +178,14 @@ beforeEach(() => {
 	mapsApi.listMaps.mockResolvedValue(ok([{ id: 'zone:fenwick', name: 'Fenwick' }]));
 	mapsApi.getMap.mockResolvedValue(ok({ id: 'zone:fenwick', nodes: [], edges: [], version: 3 }));
 	mapsApi.validateMap.mockResolvedValue(ok({ isValid: true, issues: [] }));
+	mapsApi.getMapTargets.mockResolvedValue(
+		ok({
+			maps: [{ id: 'region:varenmark', label: 'Varenmark' }],
+			zones: [{ id: 'the-halrow', label: 'The Halrow' }],
+			locations: [{ id: 'halrow-threshold', label: 'The Threshold' }],
+			regions: [{ id: 'varenmark', label: 'Varenmark' }]
+		})
+	);
 });
 
 describe('map editor', () => {

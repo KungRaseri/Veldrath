@@ -4,7 +4,8 @@ import type {
 	MapGraphDto,
 	MapGraphSaveResult,
 	MapGraphValidationResult,
-	MapSummaryDto
+	MapSummaryDto,
+	MapTargets
 } from '#lib/foundry/map-editor';
 
 /** Lists every authored map with its version. Requires `content.view`. */
@@ -15,6 +16,16 @@ export function listMaps(identity: GameIdentity) {
 /** Reads one map graph in full. Requires `content.view`. */
 export function getMap(identity: GameIdentity, mapId: string) {
 	return gameApiFetch<MapGraphDto>(identity, `/api/content/maps/${encodeURIComponent(mapId)}`);
+}
+
+/**
+ * Lists the references node pickers offer. Requires `content.view`.
+ *
+ * A picker cannot produce the typo the world validator exists to catch, which is why the editor asks for
+ * this instead of letting an author type a slug.
+ */
+export function getMapTargets(identity: GameIdentity) {
+	return gameApiFetch<MapTargets>(identity, '/api/content/maps/targets');
 }
 
 /**

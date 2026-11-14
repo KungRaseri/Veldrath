@@ -129,6 +129,28 @@ public record MapGraphSaveResponse(
     IReadOnlyList<MapGraphIssueDto> Issues,
     string? Message = null);
 
+/// <summary>One option in a reference picker: a slug or identifier, and the label to show.</summary>
+/// <param name="Id">The value stored on the node — a slug, a map id, or an owner slug.</param>
+/// <param name="Label">Human-readable name for the option.</param>
+public record MapTargetOptionDto(string Id, string Label);
+
+/// <summary>
+/// The references a node may point at.
+/// </summary>
+/// <param name="Maps">Every authored map, for exit destinations.</param>
+/// <param name="Zones">Owners of the zone and interior maps, for a node whose type is <c>Zone</c>.</param>
+/// <param name="Locations">Every zone location, for a room node's <c>RefId</c>.</param>
+/// <param name="Regions">Owners of the region maps, for a region exit's <c>RefId</c>.</param>
+/// <remarks>
+/// Served so the editor can render pickers instead of free text: a mistyped reference is the defect the
+/// world validator has to catch, and a picker cannot produce one.
+/// </remarks>
+public record MapTargetsDto(
+    IReadOnlyList<MapTargetOptionDto> Maps,
+    IReadOnlyList<MapTargetOptionDto> Zones,
+    IReadOnlyList<MapTargetOptionDto> Locations,
+    IReadOnlyList<MapTargetOptionDto> Regions);
+
 /// <summary>Payload for validating an authored map graph without saving it.</summary>
 /// <param name="Map">The candidate graph. Its id must match the route.</param>
 public record MapGraphValidationRequest(MapGraphDto Map);

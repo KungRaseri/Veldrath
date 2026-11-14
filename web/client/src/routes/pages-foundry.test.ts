@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/svelte';
+import { fireEvent, render, screen } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
 import ContentIndex from './(foundry)/content/+page.svelte';
 import ContentBrowse from './(foundry)/content/[type]/+page.svelte';
@@ -140,6 +140,13 @@ const mapGraph = {
 	version: 3
 };
 
+const mapTargets = {
+	maps: [{ id: 'region:varenmark', label: 'Varenmark' }],
+	zones: [{ id: 'the-halrow', label: 'The Halrow' }],
+	locations: [{ id: 'halrow-threshold', label: 'The Threshold' }],
+	regions: [{ id: 'varenmark', label: 'Varenmark' }]
+};
+
 describe('map editor pages', () => {
 	it('links a graph at the route group path, not /foundry', () => {
 		render(Maps, page({ canEdit: true, maps: [mapSummary] }));
@@ -181,6 +188,15 @@ describe('map editor pages', () => {
 		expect(screen.getByRole('button', { name: 'Validate' })).toBeTruthy();
 		expect(screen.getByText(/would be refused/)).toBeTruthy();
 		expect(screen.getByText('1 issue')).toBeTruthy();
+	});
+
+	it('opens the inspector for the node selected on the canvas', async () => {
+		render(MapDetail, page({ canEdit: true, graph: mapGraph, targets: mapTargets }));
+
+		await fireEvent.click(screen.getByRole('button', { name: /Arrival/ }));
+
+		expect(screen.getByRole('region', { name: 'Node inspector' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: /Delete node/ })).toBeTruthy();
 	});
 
 	it('summarises a map-level issue that no node row can carry', () => {

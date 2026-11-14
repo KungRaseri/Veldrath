@@ -1,7 +1,7 @@
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { requireUser, toGameIdentity } from '#lib/server/access';
-import { getMap, saveMap, validateMap } from '#lib/server/maps-api';
+import { getMap, getMapTargets, saveMap, validateMap } from '#lib/server/maps-api';
 import { nodeRows, parseDraftGraph, type MapGraphDto } from '#lib/foundry/map-editor';
 
 /**
@@ -18,12 +18,26 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 		error(403, 'Reading a map graph requires content read access.');
 	}
 
-	const result = await getMap(toGameIdentity(user), params.mapId);
+	const identity = toGameIdentity(user);
+	const [result, targets] = await Promise.all([
+		getMap(identity, params.mapId),
+		getMapTargets(identity)
+	]);
+
 	if (!result.data) {
 		error(result.status === 404 ? 404 : result.status || 502, result.error ?? 'Map not found.');
 	}
 
-	return { canEdit: canManageContent, graph: result.data, rows: nodeRows(result.data) };
+	if (!targets.data) {
+		error(targets.status || 502, targets.error ?? 'Could not load the reference catalog.');
+	}
+
+	return {
+		canEdit: canManageContent,
+		graph: result.data,
+		rows: nodeRows(result.data),
+		targets: targets.data
+	};
 };
 
 /**

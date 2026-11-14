@@ -46,6 +46,26 @@ export interface MapGraphDto {
 	version: number;
 }
 
+/** One option in a reference picker, mirroring `Veldrath.Contracts.Map.MapTargetOptionDto`. */
+export interface MapTargetOption {
+	/** Value stored on the node — a slug, an owner slug, or a map id. */
+	id: string;
+	/** Human-readable label for the option. */
+	label: string;
+}
+
+/** The references node pickers offer, mirroring `Veldrath.Contracts.Map.MapTargetsDto`. */
+export interface MapTargets {
+	/** Every authored map, for exit destinations. */
+	maps: MapTargetOption[];
+	/** Owners of zone and interior maps. */
+	zones: MapTargetOption[];
+	/** Every zone location. */
+	locations: MapTargetOption[];
+	/** Owners of region maps. */
+	regions: MapTargetOption[];
+}
+
 /** A map list row, mirroring `Veldrath.Contracts.Map.MapSummaryDto`. */
 export interface MapSummaryDto {
 	id: string;

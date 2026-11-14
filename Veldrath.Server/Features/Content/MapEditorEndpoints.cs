@@ -21,6 +21,7 @@ public static class MapEditorEndpoints
         // Per endpoint rather than group-wide: the group used to require ManageContent for everything,
         // which made the read-only Foundry view unreachable for a Reviewer.
         group.MapGet("", ListMapsAsync).RequireAuthorization(Auth.Permissions.ViewContent);
+        group.MapGet("/targets", GetTargetsAsync).RequireAuthorization(Auth.Permissions.ViewContent);
         group.MapGet("/{mapId}", GetMapAsync).RequireAuthorization(Auth.Permissions.ViewContent);
         group.MapPost("/{mapId}/validate", ValidateMapAsync)
             .RequireAuthorization(Auth.Permissions.ManageContent);
@@ -33,6 +34,11 @@ public static class MapEditorEndpoints
         [FromServices] MapEditorService editor,
         CancellationToken cancellationToken) =>
         Results.Ok(await editor.ListAsync(cancellationToken));
+
+    private static async Task<IResult> GetTargetsAsync(
+        [FromServices] MapEditorService editor,
+        CancellationToken cancellationToken) =>
+        Results.Ok(await editor.GetTargetsAsync(cancellationToken));
 
     private static async Task<IResult> GetMapAsync(
         string mapId,

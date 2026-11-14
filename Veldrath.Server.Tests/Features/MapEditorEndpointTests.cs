@@ -79,6 +79,24 @@ public class MapEditorEndpointTests(WebAppFactory factory)
     }
 
     [Fact]
+    public async Task Targets_RequireReadAccessAndListTheSeededReferences()
+    {
+        await EnsureAMapAsync();
+
+        using var plain = await AuthedClientAsync("MapPlainTargets");
+        (await plain.GetAsync("/api/content/maps/targets")).StatusCode.Should()
+            .Be(HttpStatusCode.Forbidden);
+
+        using var client = await AuthedClientAsync("MapTargetReader", "Curator");
+        var targets = await client.GetFromJsonAsync<MapTargetsDto>("/api/content/maps/targets", Json);
+
+        targets!.Maps.Should().NotBeEmpty();
+        targets.Zones.Should().NotBeEmpty();
+        targets.Locations.Should().NotBeEmpty();
+        targets.Regions.Should().NotBeEmpty();
+    }
+
+    [Fact]
     public async Task Get_ReturnsNotFoundForAnUnknownMap()
     {
         using var client = await AuthedClientAsync("MapEditorReader", "ContentEditor");

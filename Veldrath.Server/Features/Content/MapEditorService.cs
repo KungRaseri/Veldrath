@@ -52,6 +52,47 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
                 map.Version))
             .ToListAsync(cancellationToken);
 
+    /// <summary>
+    /// Lists the references a node may point at, so the editor can offer pickers instead of free text.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Maps, zone owners, locations and region owners, each ordered by id.</returns>
+    public async Task<MapTargetsDto> GetTargetsAsync(CancellationToken cancellationToken = default)
+    {
+        var maps = await db.Maps
+            .AsNoTracking()
+            .Select(map => new { map.Id, map.MapType, map.OwnerId, map.Name })
+            .ToListAsync(cancellationToken);
+
+        var zones = maps
+            .Where(map => map.MapType is MapType.Zone or MapType.Interior)
+            .Select(map => new MapTargetOptionDto(map.OwnerId, map.Name))
+            .DistinctBy(option => option.Id, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(option => option.Id, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var regions = maps
+            .Where(map => map.MapType == MapType.Region)
+            .Select(map => new MapTargetOptionDto(map.OwnerId, map.Name))
+            .DistinctBy(option => option.Id, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(option => option.Id, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var locations = await db.ZoneLocations
+            .AsNoTracking()
+            .OrderBy(location => location.Slug)
+            .Select(location => new MapTargetOptionDto(location.Slug, location.DisplayName ?? location.Slug))
+            .ToListAsync(cancellationToken);
+
+        return new MapTargetsDto(
+            maps.Select(map => new MapTargetOptionDto(map.Id, map.Name))
+                .OrderBy(option => option.Id, StringComparer.OrdinalIgnoreCase)
+                .ToList(),
+            zones,
+            locations,
+            regions);
+    }
+
     /// <summary>Reads one map graph in full.</summary>
     /// <param name="mapId">Map identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

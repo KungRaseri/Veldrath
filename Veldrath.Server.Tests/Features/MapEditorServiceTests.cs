@@ -40,6 +40,20 @@ public class MapEditorServiceTests
         };
 
     [Fact]
+    public async Task GetTargetsAsync_ListsEveryReferenceAPickerNeeds()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var targets = await editor.GetTargetsAsync();
+
+        targets.Maps.Should().Contain(option => option.Id == HalrowMapId);
+        targets.Zones.Should().Contain(option => option.Id == "the-halrow");
+        targets.Regions.Should().Contain(option => option.Id == "varenmark");
+        targets.Locations.Should().Contain(option => option.Id == "halrow-threshold");
+    }
+
+    [Fact]
     public async Task ListAsync_ReturnsEverySeededMapWithItsVersion()
     {
         var (db, editor) = await SeededAsync();
