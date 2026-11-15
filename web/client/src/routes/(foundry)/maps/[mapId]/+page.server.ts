@@ -1,8 +1,22 @@
-import { error, fail } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { requireUser, toGameIdentity } from '#lib/server/access';
-import { getMap, getMapTargets, saveMap, validateMap } from '#lib/server/maps-api';
-import { nodeRows, parseDraftGraph, type MapGraphDto } from '#lib/foundry/map-editor';
+import {
+	deactivateMap,
+	deleteMap,
+	getMap,
+	getMapTargets,
+	reviewMap,
+	saveMap,
+	submitMap,
+	validateMap
+} from '#lib/server/maps-api';
+import {
+	nodeRows,
+	parseDraftGraph,
+	type MapGraphDto,
+	type MapLifecycleResult
+} from '#lib/foundry/map-editor';
 
 /**
  * Loads one graph, its node rows, and whether this account may save it.
@@ -12,7 +26,7 @@ import { nodeRows, parseDraftGraph, type MapGraphDto } from '#lib/foundry/map-ed
  */
 export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	const user = requireUser(locals);
-	const { canViewContent, canManageContent } = await parent();
+	const { canViewContent, canManageContent, canReviewSubmissions } = await parent();
 
 	if (!canViewContent) {
 		error(403, 'Reading a map graph requires content read access.');
@@ -34,11 +48,36 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 
 	return {
 		canEdit: canManageContent,
+		canReview: canReviewSubmissions,
 		graph: result.data,
 		rows: nodeRows(result.data),
 		targets: targets.data
 	};
 };
+
+/**
+ * Turns a lifecycle outcome into the banner the page shows.
+ *
+ * A refusal keeps the message the server worded, because it names the reason — "other maps still exit here"
+ * is actionable in a way a generic failure is not.
+ */
+function lifecycle(
+	result: { status: number; data: MapLifecycleResult | null; error: string | null },
+	fallback: string
+) {
+	if (!result.data) {
+		return fail(result.status || 502, { message: result.error ?? fallback });
+	}
+
+	if (!result.data.success) {
+		return fail(result.data.status === 'conflict' ? 409 : 400, {
+			message: result.data.message ?? fallback,
+			issues: result.data.issues
+		});
+	}
+
+	return { done: true, message: result.data.message ?? fallback, issues: result.data.issues };
+}
 
 /**
  * Reads the draft the editor posted.
@@ -107,5 +146,42 @@ export const actions: Actions = {
 		}
 
 		return { validated: true, isValid: result.data.isValid, issues: result.data.issues };
+	},
+
+	/** Puts the draft forward for review. */
+	submit: async ({ locals, params }) => {
+		const user = requireUser(locals);
+		const result = await submitMap(toGameIdentity(user), params.mapId);
+		return lifecycle(result, 'Submitted for review.');
+	},
+
+	/** A reviewer's decision — the only path that makes a map live. */
+	review: async ({ locals, params, request }) => {
+		const user = requireUser(locals);
+		const form = await request.formData();
+		const approved = String(form.get('approved') ?? '') === 'true';
+		const notes = form.get('notes') === null ? null : String(form.get('notes'));
+
+		const result = await reviewMap(toGameIdentity(user), params.mapId, { approved, notes });
+		return lifecycle(result, approved ? 'Approved; the map is live.' : 'Rejected.');
+	},
+
+	/** Retires a live map. */
+	deactivate: async ({ locals, params }) => {
+		const user = requireUser(locals);
+		const result = await deactivateMap(toGameIdentity(user), params.mapId);
+		return lifecycle(result, 'Deactivated.');
+	},
+
+	/** Removes a draft. A live map is retired instead. */
+	delete: async ({ locals, params }) => {
+		const user = requireUser(locals);
+		const result = await deleteMap(toGameIdentity(user), params.mapId);
+
+		if (result.data?.success) {
+			redirect(303, '/maps');
+		}
+
+		return lifecycle(result, 'The draft could not be deleted.');
 	}
 };

@@ -11,6 +11,7 @@
 	import {
 		issueLabel,
 		issuesByNode,
+		mapState,
 		nodeRows,
 		normalizeDraft,
 		type MapEdgeDto,
@@ -20,6 +21,7 @@
 	import type { PageData } from './$types';
 
 	interface MapForm {
+		done?: boolean;
 		saved?: boolean;
 		validated?: boolean;
 		isValid?: boolean;
@@ -58,6 +60,7 @@
 	const issues = $derived(form?.issues ?? []);
 	const grouped = $derived(issuesByNode(issues));
 	const posted = $derived(JSON.stringify(normalizeDraft(draft)));
+	const mapStatus = $derived(mapState(draft));
 	const isDirty = $derived(posted !== JSON.stringify(normalizeDraft(data.graph)));
 	const selectedNode = $derived(draft.nodes.find((node) => node.id === selectedId) ?? null);
 	const blockedReason = $derived(selectedNode ? deleteBlockedReason(draft, selectedNode.id) : null);
@@ -241,7 +244,9 @@
 		</a>
 	</header>
 
-	{#if form?.validated}
+	{#if form?.done}
+		<p class="game-panel p-3 text-sm text-success-500" role="status">{form.message}</p>
+	{:else if form?.validated}
 		<div
 			class="game-panel space-y-2 p-3 text-sm"
 			class:text-success-500={form.isValid}
@@ -291,7 +296,44 @@
 		<p class="game-panel p-3 text-sm text-warning-500" role="status">{notice}</p>
 	{/if}
 
-	<MapHeader graph={draft} canEdit={data.canEdit} onPatch={patchGraph} />
+	<div class="game-panel flex flex-wrap items-center gap-2 p-3">
+		<p class="text-sm text-surface-600-400">
+			State: <strong class="text-surface-900-100">{mapStatus}</strong>
+		</p>
+
+		{#if data.canEdit && mapStatus === 'Draft'}
+			<form method="POST" action="?/submit">
+				<button class="btn preset-filled-primary-500 btn-sm" type="submit">Submit for review</button
+				>
+			</form>
+			<form method="POST" action="?/delete">
+				<button class="btn preset-tonal-surface btn-sm" type="submit">Delete draft</button>
+			</form>
+		{/if}
+
+		{#if data.canReview && mapStatus === 'In review'}
+			<form method="POST" action="?/review" class="flex items-center gap-2">
+				<input class="input-sm input" name="notes" placeholder="Review notes" />
+				<button
+					class="btn preset-filled-primary-500 btn-sm"
+					type="submit"
+					name="approved"
+					value="true">Approve</button
+				>
+				<button class="btn preset-tonal-surface btn-sm" type="submit" name="approved" value="false"
+					>Reject</button
+				>
+			</form>
+		{/if}
+
+		{#if data.canReview && (mapStatus === 'Live' || mapStatus === 'Changed since approval')}
+			<form method="POST" action="?/deactivate">
+				<button class="btn preset-tonal-surface btn-sm" type="submit">Deactivate</button>
+			</form>
+		{/if}
+	</div>
+
+	<MapHeader graph={draft} canEdit={data.canEdit} status={mapStatus} onPatch={patchGraph} />
 
 	<MapCanvas
 		graph={draft}

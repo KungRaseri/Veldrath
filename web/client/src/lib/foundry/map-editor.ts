@@ -44,6 +44,17 @@ export interface MapGraphDto {
 	nodes: MapNodeDto[];
 	edges: MapEdgeDto[];
 	version: number;
+	/**
+	 * Whether the map is in the game. Optional because a partial payload (and a test fixture) predates the
+	 * review gate; the contract defaults it to `true`, which is what {@link mapState} assumes.
+	 */
+	isActive?: boolean;
+	/** The version a reviewer signed off; `0` when it has never been approved. */
+	approvedVersion?: number;
+	/** When the map was put forward for review. */
+	submittedAt?: string | null;
+	/** When a reviewer approved it. */
+	approvedAt?: string | null;
 }
 
 /** One option in a reference picker, mirroring `Veldrath.Contracts.Map.MapTargetOptionDto`. */
@@ -87,6 +98,12 @@ export interface MapSummaryDto {
 	nodeCount: number;
 	edgeCount: number;
 	version: number;
+	/** Whether the map is in the game; see {@link MapGraphDto.isActive}. */
+	isActive?: boolean;
+	/** The version a reviewer signed off. */
+	approvedVersion?: number;
+	/** When the map was put forward for review. */
+	submittedAt?: string | null;
 }
 
 /** One validation issue reported by a save, mirroring `Veldrath.Contracts.Map.MapGraphIssueDto`. */
@@ -153,6 +170,14 @@ export function parseDraftGraph(raw: unknown, fallback: MapGraphDto, mapId: stri
 	}
 }
 
+/** The outcome of a lifecycle action, mirroring `Veldrath.Contracts.Map.MapLifecycleResponse`. */
+export interface MapLifecycleResult {
+	success: boolean;
+	status: 'ok' | 'invalid' | 'not_found' | 'conflict';
+	message: string | null;
+	issues: MapGraphIssue[];
+}
+
 /** The outcome of a validate-only pass, mirroring `Veldrath.Contracts.Map.MapGraphValidationResponse`. */
 export interface MapGraphValidationResult {
 	isValid: boolean;
@@ -190,6 +215,31 @@ export function issuesByNode(issues: readonly MapGraphIssue[]): GroupedIssues {
 	}
 
 	return { nodes, map };
+}
+
+/** The four states a map can be in, named the way the editor shows them. */
+export type MapState = 'Draft' | 'In review' | 'Live' | 'Changed since approval';
+
+/**
+ * Which lifecycle state a map is in.
+ *
+ * Derived rather than stored: `ApprovedVersion < Version` is the whole of "changed since approval", so the
+ * badge cannot disagree with the numbers it comes from.
+ *
+ * @param map The graph or summary to read.
+ * @returns The state to show.
+ */
+export function mapState(map: {
+	isActive?: boolean;
+	approvedVersion?: number;
+	version: number;
+	submittedAt?: string | null;
+}): MapState {
+	if (map.isActive === false) {
+		return map.submittedAt ? 'In review' : 'Draft';
+	}
+
+	return (map.approvedVersion ?? 0) < map.version ? 'Changed since approval' : 'Live';
 }
 
 /**

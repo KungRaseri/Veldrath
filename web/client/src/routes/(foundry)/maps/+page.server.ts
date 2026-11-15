@@ -1,7 +1,7 @@
-import { error } from '@sveltejs/kit';
-import type { PageServerLoad } from './$types';
+import { error, fail, redirect } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
 import { requireUser, toGameIdentity } from '#lib/server/access';
-import { listMaps } from '#lib/server/maps-api';
+import { createMap, listMaps } from '#lib/server/maps-api';
 
 /**
  * Lists the authored map graphs.
@@ -23,4 +23,31 @@ export const load: PageServerLoad = async ({ locals, parent }) => {
 	}
 
 	return { canEdit: canManageContent, maps: result.data };
+};
+
+export const actions: Actions = {
+	/**
+	 * Creates an inactive draft and opens it.
+	 *
+	 * The draft is invisible to the game until a reviewer approves it, so creating one cannot put content in
+	 * front of a player.
+	 */
+	create: async ({ locals, request }) => {
+		const user = requireUser(locals);
+		const form = await request.formData();
+
+		const result = await createMap(toGameIdentity(user), {
+			mapType: String(form.get('mapType') ?? 'Zone'),
+			ownerId: String(form.get('ownerId') ?? '').trim(),
+			name: String(form.get('name') ?? '').trim()
+		});
+
+		if (!result.data) {
+			return fail(result.status || 502, {
+				message: result.error ?? 'The map could not be created.'
+			});
+		}
+
+		redirect(303, `/maps/${encodeURIComponent(result.data.id)}`);
+	}
 };

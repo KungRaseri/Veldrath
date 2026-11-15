@@ -12,7 +12,7 @@ import {
 	actions as newLanguageActions,
 	load as newLanguagePage
 } from './(foundry)/languages/new/+page.server';
-import { load as mapsPage } from './(foundry)/maps/+page.server';
+import { actions as mapsActions, load as mapsPage } from './(foundry)/maps/+page.server';
 import { actions as mapActions, load as mapPage } from './(foundry)/maps/[mapId]/+page.server';
 import {
 	actions as notificationActions,
@@ -58,7 +58,12 @@ const mapsApi = vi.hoisted(() => ({
 	getMap: vi.fn(),
 	getMapTargets: vi.fn(),
 	saveMap: vi.fn(),
-	validateMap: vi.fn()
+	validateMap: vi.fn(),
+	createMap: vi.fn(),
+	submitMap: vi.fn(),
+	reviewMap: vi.fn(),
+	deactivateMap: vi.fn(),
+	deleteMap: vi.fn()
 }));
 
 const access = vi.hoisted(() => ({ loadAccountAccess: vi.fn() }));
@@ -178,6 +183,10 @@ beforeEach(() => {
 	mapsApi.listMaps.mockResolvedValue(ok([{ id: 'zone:fenwick', name: 'Fenwick' }]));
 	mapsApi.getMap.mockResolvedValue(ok({ id: 'zone:fenwick', nodes: [], edges: [], version: 3 }));
 	mapsApi.validateMap.mockResolvedValue(ok({ isValid: true, issues: [] }));
+	mapsApi.createMap.mockResolvedValue(ok({ id: 'zone:draft-zone', name: 'Draft Zone' }));
+	mapsApi.submitMap.mockResolvedValue(
+		ok({ success: true, status: 'ok', message: 'Submitted for review.', issues: [] })
+	);
 	mapsApi.getMapTargets.mockResolvedValue(
 		ok({
 			maps: [{ id: 'region:varenmark', label: 'Varenmark' }],
@@ -276,6 +285,47 @@ describe('map editor', () => {
 		expect(result.isValid).toBe(false);
 		expect(result.issues).toHaveLength(1);
 		expect(mapsApi.saveMap).not.toHaveBeenCalled();
+	});
+
+	it('creates a draft and opens it', async () => {
+		expect(
+			await redirectTo(() =>
+				action(mapsActions.create, { mapType: 'Zone', ownerId: 'draft-zone', name: 'Draft Zone' })
+			)
+		).toBe('/maps/zone%3Adraft-zone');
+	});
+
+	it('reports why a draft could not be created', async () => {
+		mapsApi.createMap.mockResolvedValue(failed("'draft-zone' already owns a Zone map.", 400));
+
+		const result = (await action(mapsActions.create, {
+			mapType: 'Zone',
+			ownerId: 'draft-zone',
+			name: 'Draft Zone'
+		})) as { status: number; data: { message: string } };
+
+		expect(result.status).toBe(400);
+		expect(result.data.message).toContain('already owns');
+	});
+
+	it('submits a draft, and reports a conflict with the reason the server worded', async () => {
+		const submitted = (await action(mapActions.submit, {}, { params })) as {
+			done: boolean;
+			message: string;
+		};
+		expect(submitted.done).toBe(true);
+		expect(submitted.message).toBe('Submitted for review.');
+
+		mapsApi.submitMap.mockResolvedValue(
+			ok({ success: false, status: 'conflict', message: 'Map is already live.', issues: [] })
+		);
+
+		const refused = (await action(mapActions.submit, {}, { params })) as {
+			status: number;
+			data: { message: string };
+		};
+		expect(refused.status).toBe(409);
+		expect(refused.data.message).toBe('Map is already live.');
 	});
 
 	it('reports a validate failure with the API message', async () => {

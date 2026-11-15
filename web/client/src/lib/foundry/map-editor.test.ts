@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	issueLabel,
 	issuesByNode,
+	mapState,
 	nodeRows,
 	normalizeDraft,
 	parseDraftGraph,
@@ -157,6 +158,19 @@ describe('foundry map editor rules', () => {
 			targetMapId: null
 		});
 		expect(normalized.nodes.find((candidate) => candidate.id === 'vault')?.unlockKey).toBeNull();
+	});
+
+	it('names the lifecycle state from the two numbers that define it', () => {
+		expect(mapState({ isActive: false, version: 3, submittedAt: null })).toBe('Draft');
+		expect(mapState({ isActive: false, version: 3, submittedAt: '2026-01-02T00:00:00Z' })).toBe(
+			'In review'
+		);
+		expect(mapState({ isActive: true, version: 3, approvedVersion: 3 })).toBe('Live');
+		expect(mapState({ isActive: true, version: 4, approvedVersion: 3 })).toBe(
+			'Changed since approval'
+		);
+		// A payload from before the review gate carries no state, and the contract's default is live.
+		expect(mapState({ version: 1 })).toBe('Changed since approval');
 	});
 
 	it('labels an issue with the node it belongs to', () => {

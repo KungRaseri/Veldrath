@@ -11,10 +11,12 @@
 	let {
 		graph,
 		canEdit,
+		status = null,
 		onPatch
 	}: {
 		graph: MapGraphDto;
 		canEdit: boolean;
+		status?: string | null;
 		onPatch: (patch: Partial<MapGraphDto>) => void;
 	} = $props();
 </script>
@@ -67,4 +69,11 @@
 		<span class="text-surface-600-400">Owner</span>
 		<p class="font-mono text-xs">{graph.ownerId}</p>
 	</div>
+
+	{#if status}
+		<div class="space-y-1 text-sm">
+			<span class="text-surface-600-400">State</span>
+			<p class="text-xs">{status}</p>
+		</div>
+	{/if}
 </section>
