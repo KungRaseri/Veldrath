@@ -121,6 +121,59 @@ against the character's current location.
 
 ---
 
+## 5. The Foundry map editor and the review gate
+
+The map graph is authored in Foundry, not in a desktop tool and not in the seeder. Since milestone G the
+editor is a canvas plus an inspector, and — the part that matters more — nothing an author does can put a
+map in front of a player.
+
+**One draft, one writer.** `/maps/[mapId]` holds a single `MapGraphDto` in component state. The canvas,
+the metadata form and the inspector all mutate that object, and the save and validate actions post it
+whole in a hidden field. `parseDraftGraph` refuses anything that is not this map's graph and falls back to
+the stored copy, so a mangled payload is a no-op rather than a partial write. The write-through form
+action that used to reconstruct a graph from individual inputs is gone; keeping both would have discarded
+every canvas gesture without an error.
+
+**The rules live in TypeScript modules, not in markup.** `map-canvas.ts` (positions, the unplaced lane,
+collision, tidy layout), `map-edges.ts` (direction inference, self-reference and duplicate-direction
+refusals, reciprocal edges) and `map-nodes.ts` (suggested ids, node defaults, delete refusals) are pure and
+unit tested. The components render and dispatch. Two rules are worth knowing:
+
+- A node with no authored `layoutX`/`layoutY` is **never** given one silently. It sits in an "unplaced"
+  lane, because the difference between "the author put it there" and "the layout did" is the difference
+  between data and a guess.
+- Blocks are *prevented* in the gesture that would create them — a diagonal pair has no inferable
+  direction, a second edge in the same direction is refused while drawing, deleting a two-way connection
+  removes both directions — because each of those is a validator error that is far cheaper to prevent than
+  to read after a save.
+
+**References are pickers.** `GET /api/content/maps/targets` serves every map, the zone and interior owners,
+every zone location, the region owners, and every node of every map. A picker cannot produce the typo the
+world validator exists to catch, so `target_node_unknown` is a backstop rather than a workflow step.
+
+**The lifecycle is the gate.** A map is `Draft` → `In review` → `Live`, with `Changed since approval`
+derived from `ApprovedVersion < Version`:
+
+| State | `IsActive` | Set by | Visible to players |
+|---|---|---|---|
+| Draft | `false` | `POST /api/content/maps` | no |
+| In review | `false` | `POST /{id}/submit` | no |
+| Live | `true` | `POST /{id}/review` (`Curator`) | yes |
+| Changed since approval | `true` | an edit after approval | yes, while an edit awaits re-review |
+
+`Apply` deliberately does not write `IsActive`: only review and deactivate change it, so a crafted save
+payload cannot activate a draft. Approval requires a submission and a clean world validate; rejection
+clears the submission and leaves the draft editable, keeping the notes on the map (`LastReviewNotes`) so
+the reason is readable where the work is. Live maps are retired by deactivating — refused while another
+map's node still exits there — and only drafts can be deleted.
+
+**Access follows the author/reviewer split.** Reads need `content.view` (the graph carries hidden nodes and
+unlock keys, so it is never anonymous), authoring needs `content.manage`, and review and deactivation need
+the `Curator` role. Both decisions are audited, and the author is told in the inbox they already use for
+submission decisions.
+
+---
+
 ## Related
 
 - [`docs/design-system.md`](design-system.md) — tokens, typography, and the retired Blazor appendix.

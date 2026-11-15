@@ -1,10 +1,11 @@
 # Foundry map editor (Milestone G)
 
-> **Status: G0 shipped, G1 in progress** on `feat/milestone-g-foundry-map-editor`
+> **Status: G0–G7 shipped** on `feat/milestone-g-foundry-map-editor`
 > ([PR #71](https://git.kungraseri.cloud/Veldrath/Veldrath/pulls/71)). The read, inspect and save path
-> shipped earlier in F5 (PR #70, merged); this plan is the remaining authoring surface: the canvas,
-> node and edge editing, the review gate that lets a map into the game, and the validation loop that
-> makes a graph safe to change.
+> shipped earlier in F5 (PR #70, merged); this plan delivered the rest: the canvas, node and edge
+> editing, the review gate that lets a map into the game, and the validation loop that makes a graph safe
+> to change. [`docs/client-ui-architecture.md`](../docs/client-ui-architecture.md) §5 is the durable
+> description of what shipped.
 >
 > Supersedes the outline in [`dungeons.md`](dungeons.md) §8, which remains the record of the dungeon
 > model. Location-side authoring (traits, actor pools, interiors) is deliberately a separate plan;

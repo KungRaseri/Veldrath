@@ -73,6 +73,22 @@ describe('EdgeList', () => {
 		expect(onPatch).toHaveBeenCalledWith('a', { label: null });
 	});
 
+	it('reports a type, hidden and walkable change', async () => {
+		const onPatch = vi.fn();
+		render(EdgeList, { graph: graph([edge()]), canEdit: true, onPatch, onDelete: noop });
+
+		const [direction, edgeType, hidden, walkable] = screen.getAllByRole('combobox');
+		expect(direction).toBeTruthy();
+
+		await fireEvent.change(edgeType, { target: { value: 'Portal' } });
+		await fireEvent.change(hidden, { target: { value: 'true' } });
+		await fireEvent.change(walkable, { target: { value: 'false' } });
+
+		expect(onPatch).toHaveBeenCalledWith('a', { edgeType: 'Portal' });
+		expect(onPatch).toHaveBeenCalledWith('a', { isHidden: true });
+		expect(onPatch).toHaveBeenCalledWith('a', { isTraversable: false });
+	});
+
 	it('deletes through the row button', async () => {
 		const onDelete = vi.fn();
 		render(EdgeList, { graph: graph([edge()]), canEdit: true, onPatch: noop, onDelete });

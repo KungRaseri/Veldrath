@@ -141,6 +141,7 @@ describe('foundry map editor rules', () => {
 		expect(parseDraftGraph(JSON.stringify({ id: original.id }), original, original.id)).toBe(
 			original
 		);
+		expect(parseDraftGraph('5', original, original.id)).toBe(original);
 		expect(parseDraftGraph(null, original, original.id)).toBe(original);
 	});
 

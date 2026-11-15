@@ -198,6 +198,72 @@ describe('map editor pages', () => {
 		expect(screen.getByText('1 issue')).toBeTruthy();
 	});
 
+	it('offers only the draft verbs while a map is a draft', () => {
+		render(
+			MapDetail,
+			page({
+				canEdit: true,
+				canReview: true,
+				graph: { ...mapGraph, isActive: false, approvedVersion: 0, submittedAt: null },
+				targets: mapTargets
+			})
+		);
+
+		expect(screen.getByRole('button', { name: 'Submit for review' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Delete draft' })).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Deactivate' })).toBeNull();
+	});
+
+	it('offers approve and reject while a map is in review', () => {
+		render(
+			MapDetail,
+			page({
+				canEdit: true,
+				canReview: true,
+				graph: { ...mapGraph, isActive: false, submittedAt: '2026-02-01T00:00:00.000Z' },
+				targets: mapTargets
+			})
+		);
+
+		expect(screen.getByRole('button', { name: 'Approve' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Reject' })).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Submit for review' })).toBeNull();
+	});
+
+	it('offers deactivate, not delete, for a live map', () => {
+		render(
+			MapDetail,
+			page({
+				canEdit: true,
+				canReview: true,
+				graph: { ...mapGraph, isActive: true, approvedVersion: 3 },
+				targets: mapTargets
+			})
+		);
+
+		expect(screen.getByRole('button', { name: 'Deactivate' })).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Delete draft' })).toBeNull();
+	});
+
+	it('shows no lifecycle verb to a reader, and no create form on the list', () => {
+		render(
+			MapDetail,
+			page({ canEdit: false, canReview: false, graph: mapGraph, targets: mapTargets })
+		);
+
+		expect(screen.queryByRole('button', { name: 'Submit for review' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Deactivate' })).toBeNull();
+
+		render(
+			Maps,
+			page({ canEdit: false, maps: [{ ...mapSummary, isActive: false, approvedVersion: 0 }] })
+		);
+
+		expect(screen.queryByRole('button', { name: 'Create draft' })).toBeNull();
+		expect(screen.getByText('Draft')).toBeTruthy();
+	});
+
 	it('opens the inspector for the node selected on the canvas', async () => {
 		render(MapDetail, page({ canEdit: true, graph: mapGraph, targets: mapTargets }));
 

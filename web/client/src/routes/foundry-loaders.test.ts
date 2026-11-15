@@ -328,6 +328,93 @@ describe('map editor', () => {
 		expect(refused.data.message).toBe('Map is already live.');
 	});
 
+	it('reviews a submitted map, and reports the refusal when it cannot be approved', async () => {
+		const editor = { params, parentData: { canViewContent: true, canManageContent: true } };
+		mapsApi.reviewMap.mockResolvedValue(
+			ok({ success: true, status: 'ok', message: 'Approved; the map is live.', issues: [] })
+		);
+
+		const approved = (await action(
+			mapActions.review,
+			{ approved: 'true', notes: 'Looks good' },
+			editor
+		)) as {
+			done: boolean;
+			message: string;
+		};
+
+		expect(approved.done).toBe(true);
+		expect(approved.message).toBe('Approved; the map is live.');
+		expect(mapsApi.reviewMap).toHaveBeenCalledWith(expect.anything(), 'zone:fenwick', {
+			approved: true,
+			notes: 'Looks good'
+		});
+
+		mapsApi.reviewMap.mockResolvedValue(
+			ok({ success: false, status: 'invalid', message: 'The graph has errors.', issues: [] })
+		);
+
+		const refused = (await action(mapActions.review, { approved: 'false' }, editor)) as {
+			status: number;
+			data: { message: string };
+		};
+
+		expect(refused.status).toBe(400);
+		expect(refused.data.message).toBe('The graph has errors.');
+	});
+
+	it('deactivates a live map and deletes a draft, refusing to delete a live one', async () => {
+		const editor = { params, parentData: { canViewContent: true, canManageContent: true } };
+
+		mapsApi.deactivateMap.mockResolvedValue(
+			ok({ success: true, status: 'ok', message: 'Deactivated.', issues: [] })
+		);
+		const deactivated = (await action(mapActions.deactivate, {}, editor)) as { done: boolean };
+		expect(deactivated.done).toBe(true);
+
+		mapsApi.deleteMap.mockResolvedValue(
+			ok({ success: true, status: 'ok', message: 'Draft deleted.', issues: [] })
+		);
+		expect(await redirectTo(() => action(mapActions.delete, {}, editor))).toBe('/maps');
+
+		mapsApi.deleteMap.mockResolvedValue(
+			ok({
+				success: false,
+				status: 'conflict',
+				message: 'A live map is retired by deactivating, never deleted.',
+				issues: []
+			})
+		);
+		const refused = (await action(mapActions.delete, {}, editor)) as {
+			status: number;
+			data: { message: string };
+		};
+
+		expect(refused.status).toBe(409);
+		expect(refused.data.message).toContain('never deleted');
+	});
+
+	it('reports a save conflict with the message the server worded', async () => {
+		mapsApi.saveMap.mockResolvedValue(
+			ok({
+				success: false,
+				status: 'conflict',
+				version: 4,
+				issues: [],
+				message: 'Map is at version 4; reload before saving.'
+			})
+		);
+
+		const result = (await action(
+			mapActions.save,
+			{ version: '3' },
+			{ params, parentData: { canViewContent: true, canManageContent: true } }
+		)) as { status: number; data: { message: string } };
+
+		expect(result.status).toBe(409);
+		expect(result.data.message).toContain('reload before saving');
+	});
+
 	it('reports a validate failure with the API message', async () => {
 		mapsApi.validateMap.mockResolvedValue(failed('the validator is unavailable', 502));
 

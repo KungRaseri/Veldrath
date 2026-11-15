@@ -107,6 +107,22 @@ describe('MapCanvas', () => {
 		expect(onSelect).toHaveBeenCalledWith('vault');
 	});
 
+	it('marks an exit node and lists its unplaced neighbours for a reader', () => {
+		const map = graph();
+		map.nodes[1] = {
+			...map.nodes[1],
+			isExitPoint: true,
+			targetMapId: 'region:varenmark',
+			targetNodeId: 'region:varenmark:entry'
+		};
+
+		render(MapCanvas, { graph: map, canEdit: false });
+
+		expect(screen.getByText('exit')).toBeTruthy();
+		expect(screen.getByText('The Vault')).toBeTruthy();
+		expect(screen.queryByRole('button', { name: /Tidy layout/ })).toBeNull();
+	});
+
 	it('offers tidy only to an editor, and ignores arrows without the permission', async () => {
 		const onMove = vi.fn();
 		render(MapCanvas, { graph: graph(), canEdit: false, onMove, onTidy: () => {} });

@@ -74,6 +74,22 @@ describe('MapHeader', () => {
 		expect(onPatch).toHaveBeenCalledWith({ entryNodeId: null });
 	});
 
+	it('shows the state and the last review notes the server recorded', () => {
+		render(MapHeader, {
+			graph: {
+				...graph(),
+				lastReviewNotes: 'Room 3 has no exit.',
+				lastReviewedAt: '2026-02-01T00:00:00.000Z'
+			},
+			canEdit: true,
+			status: 'Draft',
+			onPatch: () => {}
+		});
+
+		expect(screen.getByText('Draft')).toBeTruthy();
+		expect(screen.getByText('Room 3 has no exit.')).toBeTruthy();
+	});
+
 	it('locks every field for a reader', () => {
 		render(MapHeader, { graph: graph(), canEdit: false, onPatch: () => {} });
 

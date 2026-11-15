@@ -140,6 +140,16 @@ describe('connectNodes', () => {
 		if (!result.ok) expect(result.reason).toMatch(/return edge already exists/);
 	});
 
+	it('refuses a reciprocal when the return direction is already taken', () => {
+		// vault already leaves West, so the return edge would duplicate its direction.
+		const result = connectNodes(graph([edge('vault', 'entry', 'West')]), 'hall', 'vault', {
+			reciprocal: true
+		});
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) expect(result.reason).toMatch(/already has an edge going West/);
+	});
+
 	it('refuses a reciprocal for a direction with no cardinal opposite', () => {
 		const result = connectNodes(graph(), 'hall', 'vault', {
 			direction: 'In',
@@ -176,6 +186,14 @@ describe('deleteEdge', () => {
 		const twoWay = graph([edge('hall', 'vault', 'East', 'a'), edge('vault', 'hall', 'West', 'b')]);
 
 		const next = deleteEdge(twoWay, 'a', true);
+
+		expect(next.edges).toEqual([]);
+	});
+
+	it('keeps a one-way edge when no return edge exists to remove', () => {
+		const oneWay = graph([edge('hall', 'vault', 'East', 'a')]);
+
+		const next = deleteEdge(oneWay, 'a', true);
 
 		expect(next.edges).toEqual([]);
 	});
