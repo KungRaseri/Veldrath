@@ -49,7 +49,10 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
                 map.EntryNodeId,
                 map.Nodes.Count,
                 map.Edges.Count,
-                map.Version))
+                map.Version,
+                map.IsActive,
+                map.ApprovedVersion,
+                map.SubmittedAt))
             .ToListAsync(cancellationToken);
 
     /// <summary>
@@ -428,7 +431,281 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
                     edge.IsTraversable,
                     edge.IsHidden))
                 .ToList(),
-            map.Version);
+            map.Version,
+            map.IsActive,
+            map.ApprovedVersion,
+            map.SubmittedAt,
+            map.ApprovedAt);
+
+    /// <summary>
+    /// Creates an inactive draft with a single entry node.
+    /// </summary>
+    /// <remarks>
+    /// Nothing is fabricated beyond the entry node: an exit would need a destination, and inventing one is how a
+    /// map ends up pointing at content the author never chose. A dungeon draft is therefore not approvable until
+    /// its author adds the way out, which is where <c>map_without_exit</c> belongs.
+    /// </remarks>
+    /// <param name="request">Kind, owner and name of the map to create.</param>
+    /// <param name="createdByAccountId">Account creating the map.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The created graph, or the reason it could not be created.</returns>
+    public async Task<(MapGraphDto? Map, string? Error)> CreateDraftAsync(
+        MapCreateRequest request,
+        Guid createdByAccountId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Enum.TryParse<MapType>(request.MapType, ignoreCase: true, out var mapType) ||
+            mapType is MapType.World)
+        {
+            return (null, $"'{request.MapType}' is not a map kind that can be created.");
+        }
+
+        var ownerId = request.OwnerId?.Trim() ?? string.Empty;
+        if (ownerId.Length == 0)
+            return (null, "An owner slug is required.");
+        if (string.IsNullOrWhiteSpace(request.Name))
+            return (null, "A name is required.");
+
+        var mapId = mapType switch
+        {
+            MapType.Region => $"region:{ownerId}",
+            MapType.Interior => $"interior:{ownerId}",
+            _ => $"zone:{ownerId}",
+        };
+
+        if (await db.Maps.AnyAsync(map => map.Id == mapId, cancellationToken))
+            return (null, $"Map '{mapId}' already exists.");
+
+        if (await db.Maps.AnyAsync(
+                map => map.MapType == mapType && map.OwnerId == ownerId,
+                cancellationToken))
+        {
+            return (null, $"'{ownerId}' already owns a {mapType} map.");
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var entryNodeId = $"{mapId}:entry";
+        var map = new MapEntity
+        {
+            Id = mapId,
+            MapType = mapType,
+            OwnerId = ownerId,
+            Name = request.Name.Trim(),
+            Description = string.Empty,
+            EntryNodeId = entryNodeId,
+            IsActive = false,
+            Version = 1,
+            UpdatedAt = now,
+            CreatedByAccountId = createdByAccountId,
+            Nodes =
+            [
+                new MapNodeEntity
+                {
+                    Id = entryNodeId,
+                    MapId = mapId,
+                    NodeType = MapNodeType.EntryPoint,
+                    DisplayName = "Arrival",
+                    Description = string.Empty,
+                    IsEntryPoint = true,
+                    LayoutX = 0,
+                    LayoutY = 0,
+                    SortOrder = 0,
+                },
+            ],
+        };
+
+        db.Maps.Add(map);
+        await db.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Created draft map {MapId}", mapId);
+        return (ToDto(map), null);
+    }
+
+    /// <summary>Puts a draft forward for review, refusing a graph the world validator rejects.</summary>
+    /// <param name="mapId">Map identifier.</param>
+    /// <param name="accountId">Account submitting the map.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Whether the map is now queued, and the issues that blocked it when not.</returns>
+    public async Task<MapLifecycleResponse> SubmitAsync(
+        string mapId,
+        Guid accountId,
+        CancellationToken cancellationToken = default)
+    {
+        var map = await LoadAsync(mapId, tracking: true, cancellationToken);
+        if (map is null)
+            return Missing(mapId);
+
+        if (map.IsActive)
+            return new MapLifecycleResponse(false, StatusConflict, $"Map '{mapId}' is already live.", []);
+
+        var issues = await ValidateWorldAsync(mapId, ToDto(map), cancellationToken);
+        if (HasErrors(issues))
+        {
+            return new MapLifecycleResponse(
+                false,
+                StatusInvalid,
+                "The graph has errors; fix them before submitting.",
+                issues);
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        map.SubmittedAt = now;
+        map.SubmittedByAccountId = accountId;
+        map.UpdatedAt = now;
+        await db.SaveChangesAsync(cancellationToken);
+
+        return new MapLifecycleResponse(true, StatusOk, "Submitted for review.", issues);
+    }
+
+    /// <summary>
+    /// Records a reviewer's decision. Approval is what makes a map live.
+    /// </summary>
+    /// <param name="mapId">Map identifier.</param>
+    /// <param name="reviewerAccountId">Account reviewing the map.</param>
+    /// <param name="request">The decision and optional notes.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Whether the decision was applied, and why not when it was refused.</returns>
+    public async Task<MapLifecycleResponse> ReviewAsync(
+        string mapId,
+        Guid reviewerAccountId,
+        MapReviewRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var map = await LoadAsync(mapId, tracking: true, cancellationToken);
+        if (map is null)
+            return Missing(mapId);
+
+        if (!request.Approved)
+        {
+            map.SubmittedAt = null;
+            map.SubmittedByAccountId = null;
+            map.UpdatedAt = DateTimeOffset.UtcNow;
+            await db.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation("Rejected map {MapId}: {Notes}", mapId, request.Notes);
+            return new MapLifecycleResponse(
+                true,
+                StatusOk,
+                request.Notes ?? "Rejected; the draft is editable again.",
+                []);
+        }
+
+        if (map.SubmittedAt is null)
+        {
+            return new MapLifecycleResponse(
+                false,
+                StatusConflict,
+                "The map has not been submitted for review.",
+                []);
+        }
+
+        var issues = await ValidateWorldAsync(mapId, ToDto(map), cancellationToken);
+        if (HasErrors(issues))
+        {
+            return new MapLifecycleResponse(
+                false,
+                StatusInvalid,
+                "The graph has errors; it cannot be approved.",
+                issues);
+        }
+
+        map.IsActive = true;
+        map.ApprovedVersion = map.Version;
+        map.ApprovedAt = DateTimeOffset.UtcNow;
+        map.ApprovedByAccountId = reviewerAccountId;
+        await db.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Approved map {MapId} at version {Version}", mapId, map.Version);
+        return new MapLifecycleResponse(true, StatusOk, "Approved; the map is live.", issues);
+    }
+
+    /// <summary>Retires a live map. Refused while any node still points at it.</summary>
+    /// <param name="mapId">Map identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Whether the map is now inactive, and which exits blocked it when not.</returns>
+    public async Task<MapLifecycleResponse> DeactivateAsync(
+        string mapId,
+        CancellationToken cancellationToken = default)
+    {
+        var map = await LoadAsync(mapId, tracking: true, cancellationToken);
+        if (map is null)
+            return Missing(mapId);
+
+        if (!map.IsActive)
+            return new MapLifecycleResponse(true, StatusOk, "The map is already inactive.", []);
+
+        var referring = await ReferringNodesAsync(mapId, cancellationToken);
+        if (referring.Count > 0)
+        {
+            return new MapLifecycleResponse(
+                false,
+                StatusConflict,
+                $"Other maps still exit here: {string.Join(", ", referring)}.",
+                []);
+        }
+
+        map.IsActive = false;
+        map.UpdatedAt = DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Deactivated map {MapId}", mapId);
+        return new MapLifecycleResponse(true, StatusOk, "Deactivated; the map is no longer in the game.", []);
+    }
+
+    /// <summary>Deletes a draft. A live map is retired by deactivating instead.</summary>
+    /// <param name="mapId">Map identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Whether the draft was removed, and why not when it was refused.</returns>
+    public async Task<MapLifecycleResponse> DeleteDraftAsync(
+        string mapId,
+        CancellationToken cancellationToken = default)
+    {
+        var map = await LoadAsync(mapId, tracking: true, cancellationToken);
+        if (map is null)
+            return Missing(mapId);
+
+        if (map.IsActive)
+        {
+            return new MapLifecycleResponse(
+                false,
+                StatusConflict,
+                "A live map is retired by deactivating, never deleted.",
+                []);
+        }
+
+        var referring = await ReferringNodesAsync(mapId, cancellationToken);
+        if (referring.Count > 0)
+        {
+            return new MapLifecycleResponse(
+                false,
+                StatusConflict,
+                $"Other maps still exit here: {string.Join(", ", referring)}.",
+                []);
+        }
+
+        db.Maps.Remove(map);
+        await db.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Deleted draft map {MapId}", mapId);
+        return new MapLifecycleResponse(true, StatusOk, "Draft deleted.", []);
+    }
+
+    private static bool HasErrors(IEnumerable<MapGraphIssueDto> issues) =>
+        issues.Any(issue => string.Equals(issue.Severity, "Error", StringComparison.OrdinalIgnoreCase));
+
+    private async Task<IReadOnlyList<string>> ReferringNodesAsync(
+        string mapId,
+        CancellationToken cancellationToken) =>
+        await db.MapNodes
+            .AsNoTracking()
+            .Where(node => node.TargetMapId == mapId)
+            .OrderBy(node => node.Id)
+            .Select(node => node.Id)
+            .Take(5)
+            .ToListAsync(cancellationToken);
+
+    private static MapLifecycleResponse Missing(string mapId) =>
+        new(false, StatusNotFound, $"Map '{mapId}' was not found.", []);
 
     private static MapGraph ToSharedGraph(MapEntity map) =>
         ToSharedGraph(ToDto(map));

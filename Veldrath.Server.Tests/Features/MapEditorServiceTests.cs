@@ -40,6 +40,114 @@ public class MapEditorServiceTests
         };
 
     [Fact]
+    public async Task CreateDraftAsync_MakesAnInactiveMapWithOneEntryNode()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var (map, error) = await editor.CreateDraftAsync(
+            new MapCreateRequest("Zone", "draft-zone", "Draft Zone"),
+            Guid.NewGuid());
+
+        error.Should().BeNull();
+        map!.Id.Should().Be("zone:draft-zone");
+        map.IsActive.Should().BeFalse("a new map is a draft until a reviewer approves it");
+        map.Nodes.Should().ContainSingle(node => node.IsEntryPoint);
+        map.EntryNodeId.Should().Be("zone:draft-zone:entry");
+    }
+
+    [Fact]
+    public async Task CreateDraftAsync_RefusesAnOwnerThatAlreadyHasAMap()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var (map, error) = await editor.CreateDraftAsync(
+            new MapCreateRequest("Zone", "the-halrow", "Another Halrow"),
+            Guid.NewGuid());
+
+        map.Should().BeNull();
+        error.Should().Contain("already");
+    }
+
+    [Fact]
+    public async Task SubmitAsync_RefusesAGraphWithErrors()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        await editor.CreateDraftAsync(new MapCreateRequest("Zone", "draft-zone", "Draft Zone"), Guid.NewGuid());
+        var map = await db.Maps.SingleAsync(candidate => candidate.Id == "zone:draft-zone");
+        map.EntryNodeId = "zone:draft-zone:ghost";
+        await db.SaveChangesAsync();
+
+        var result = await editor.SubmitAsync("zone:draft-zone", Guid.NewGuid());
+
+        result.Success.Should().BeFalse();
+        result.Status.Should().Be("invalid");
+        result.Issues.Should().Contain(issue => issue.Code == "entry_not_found");
+    }
+
+    [Fact]
+    public async Task ReviewAsync_ApprovesASubmittedMapAndRecordsTheApprovedVersion()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var reviewer = Guid.NewGuid();
+        await editor.CreateDraftAsync(new MapCreateRequest("Zone", "draft-zone", "Draft Zone"), Guid.NewGuid());
+        (await editor.SubmitAsync("zone:draft-zone", Guid.NewGuid())).Success.Should().BeTrue();
+
+        var result = await editor.ReviewAsync("zone:draft-zone", reviewer, new MapReviewRequest(true));
+
+        result.Success.Should().BeTrue();
+        var map = await db.Maps.SingleAsync(candidate => candidate.Id == "zone:draft-zone");
+        map.IsActive.Should().BeTrue();
+        map.ApprovedVersion.Should().Be(map.Version);
+        map.ApprovedByAccountId.Should().Be(reviewer);
+    }
+
+    [Fact]
+    public async Task ReviewAsync_RefusesAMapThatWasNeverSubmitted()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        await editor.CreateDraftAsync(new MapCreateRequest("Zone", "draft-zone", "Draft Zone"), Guid.NewGuid());
+
+        var result = await editor.ReviewAsync("zone:draft-zone", Guid.NewGuid(), new MapReviewRequest(true));
+
+        result.Success.Should().BeFalse();
+        result.Status.Should().Be("conflict");
+        result.Message.Should().Contain("submitted");
+    }
+
+    [Fact]
+    public async Task DeactivateAsync_RefusesAMapOtherNodesStillExitTo()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var result = await editor.DeactivateAsync("region:varenmark");
+
+        result.Success.Should().BeFalse();
+        result.Status.Should().Be("conflict");
+        result.Message.Should().Contain("still exit here");
+    }
+
+    [Fact]
+    public async Task DeleteDraftAsync_RefusesALiveMap()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var result = await editor.DeleteDraftAsync(HalrowMapId);
+
+        result.Success.Should().BeFalse();
+        result.Status.Should().Be("conflict");
+    }
+
+    [Fact]
     public async Task GetTargetsAsync_ListsEveryReferenceAPickerNeeds()
     {
         var (db, editor) = await SeededAsync();

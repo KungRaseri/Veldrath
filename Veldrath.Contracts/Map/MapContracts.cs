@@ -18,7 +18,36 @@ public record MapSummaryDto(
     string? EntryNodeId,
     int NodeCount,
     int EdgeCount,
-    int Version = 1);
+    int Version = 1,
+    bool IsActive = true,
+    int ApprovedVersion = 0,
+    DateTimeOffset? SubmittedAt = null)
+{
+    /// <summary>Whether the map is live but has been edited since a reviewer approved it.</summary>
+    public bool ChangedSinceApproval => IsActive && ApprovedVersion < Version;
+}
+
+/// <summary>Request to create an empty draft map.</summary>
+/// <param name="MapType">Map kind: <c>Region</c>, <c>Zone</c>, or <c>Interior</c>.</param>
+/// <param name="OwnerId">Region, zone or location slug that will own the map.</param>
+/// <param name="Name">Human-readable map name.</param>
+public record MapCreateRequest(string MapType, string OwnerId, string Name);
+
+/// <summary>A reviewer's decision on a submitted map.</summary>
+/// <param name="Approved">Whether the map should enter the game.</param>
+/// <param name="Notes">Optional review notes, recorded on the rejection path.</param>
+public record MapReviewRequest(bool Approved, string? Notes = null);
+
+/// <summary>Outcome of a lifecycle action — submit, review, deactivate or delete.</summary>
+/// <param name="Success">Whether the action changed anything.</param>
+/// <param name="Status"><c>ok</c>, <c>invalid</c>, <c>not_found</c> or <c>conflict</c>.</param>
+/// <param name="Message">Human-readable explanation, including the reason a refusal happened.</param>
+/// <param name="Issues">Validation issues, populated when a graph is not ready for the action.</param>
+public record MapLifecycleResponse(
+    bool Success,
+    string Status,
+    string? Message,
+    IReadOnlyList<MapGraphIssueDto> Issues);
 
 /// <summary>A complete region or zone map graph.</summary>
 /// <param name="Id">Stable map identifier.</param>
@@ -38,7 +67,18 @@ public record MapGraphDto(
     string? EntryNodeId,
     IReadOnlyList<MapNodeDto> Nodes,
     IReadOnlyList<MapEdgeDto> Edges,
-    int Version = 1);
+    int Version = 1,
+    bool IsActive = true,
+    int ApprovedVersion = 0,
+    DateTimeOffset? SubmittedAt = null,
+    DateTimeOffset? ApprovedAt = null)
+{
+    /// <summary>
+    /// Whether the map has been edited since a reviewer approved it. Derived rather than stored, so it cannot
+    /// disagree with the two numbers it comes from.
+    /// </summary>
+    public bool ChangedSinceApproval => IsActive && ApprovedVersion < Version;
+}
 
 /// <summary>A node within a map graph.</summary>
 /// <param name="Id">Stable node identifier.</param>

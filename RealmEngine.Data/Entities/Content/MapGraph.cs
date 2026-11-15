@@ -26,7 +26,10 @@ public class Map
     /// <summary>Default arrival node identifier, or <see langword="null"/> when unset.</summary>
     public string? EntryNodeId { get; set; }
 
-    /// <summary>Whether the map is active content.</summary>
+    /// <summary>
+    /// Whether the map is in the game. Only a reviewer's approval sets this: the game read path filters on it,
+    /// so a draft is invisible to players and an edit cannot flip it.
+    /// </summary>
     public bool IsActive { get; set; } = true;
 
     /// <summary>Content version, incremented by authoring tools.</summary>
@@ -34,6 +37,27 @@ public class Map
 
     /// <summary>UTC timestamp of the last content update.</summary>
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    /// <summary>Account that created the map, or <see langword="null"/> for seeded content.</summary>
+    public Guid? CreatedByAccountId { get; set; }
+
+    /// <summary>When the map was put forward for review, or <see langword="null"/> while it is an unsubmitted draft.</summary>
+    public DateTimeOffset? SubmittedAt { get; set; }
+
+    /// <summary>Account that submitted the map for review.</summary>
+    public Guid? SubmittedByAccountId { get; set; }
+
+    /// <summary>When a reviewer last approved the map.</summary>
+    public DateTimeOffset? ApprovedAt { get; set; }
+
+    /// <summary>Account that approved the map.</summary>
+    public Guid? ApprovedByAccountId { get; set; }
+
+    /// <summary>
+    /// The map version a reviewer signed off. Zero means never approved; a value below <see cref="Version"/> means
+    /// the map is live but has changed since it was reviewed.
+    /// </summary>
+    public int ApprovedVersion { get; set; }
 
     /// <summary>Nodes belonging to this map.</summary>
     public ICollection<MapNode> Nodes { get; set; } = [];

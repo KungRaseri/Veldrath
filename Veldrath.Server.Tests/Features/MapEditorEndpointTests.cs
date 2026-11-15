@@ -167,4 +167,81 @@ public class MapEditorEndpointTests(WebAppFactory factory)
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
+
+    [Fact]
+    public async Task Create_RequiresTheWritePermission()
+    {
+        using var plain = await AuthedClientAsync("MapPlainCreator");
+        (await plain.PostAsJsonAsync(
+                "/api/content/maps",
+                new MapCreateRequest("Zone", "plain-zone", "Nope"),
+                Json))
+            .StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        // A Curator reviews; it does not author.
+        using var curator = await AuthedClientAsync("MapCuratorCreator", "Curator");
+        (await curator.PostAsJsonAsync(
+                "/api/content/maps",
+                new MapCreateRequest("Zone", "curator-zone", "Nope"),
+                Json))
+            .StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        using var editor = await AuthedClientAsync("MapEditorCreator", "ContentEditor");
+        (await editor.PostAsJsonAsync(
+                "/api/content/maps",
+                new MapCreateRequest("Zone", "editor-zone", "Yes"),
+                Json))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
+    [Fact]
+    public async Task Review_RequiresTheCuratorRole()
+    {
+        var mapId = await EnsureAMapAsync();
+        using var editor = await AuthedClientAsync("MapEditorReviewer", "ContentEditor");
+
+        var response = await editor.PostAsJsonAsync(
+            $"/api/content/maps/{Uri.EscapeDataString(mapId)}/review",
+            new MapReviewRequest(true),
+            Json);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task TheGate_HoldsFromDraftToApproval()
+    {
+        using var client = await AuthedClientAsync("MapGateReviewer", "Admin", "Curator");
+
+        var created = await client.PostAsJsonAsync(
+            "/api/content/maps",
+            new MapCreateRequest("Zone", "gate-zone", "Gate Zone"),
+            Json);
+        created.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var draft = await created.Content.ReadFromJsonAsync<MapGraphDto>(Json);
+        draft!.IsActive.Should().BeFalse("a new map is a draft");
+
+        var early = await client.PostAsJsonAsync(
+            $"/api/content/maps/{Uri.EscapeDataString(draft.Id)}/review",
+            new MapReviewRequest(true),
+            Json);
+        early.StatusCode.Should().Be(HttpStatusCode.Conflict, "nothing was submitted");
+
+        var submitted = await client.PostAsJsonAsync(
+            $"/api/content/maps/{Uri.EscapeDataString(draft.Id)}/submit",
+            new { },
+            Json);
+        submitted.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var approved = await client.PostAsJsonAsync(
+            $"/api/content/maps/{Uri.EscapeDataString(draft.Id)}/review",
+            new MapReviewRequest(true),
+            Json);
+        approved.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var stored = await ReadMapAsync(client, draft.Id);
+        stored!.IsActive.Should().BeTrue();
+        stored.ApprovedVersion.Should().Be(stored.Version);
+    }
 }

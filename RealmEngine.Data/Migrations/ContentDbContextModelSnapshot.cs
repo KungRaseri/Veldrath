@@ -17,7 +17,7 @@ namespace RealmEngine.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.9")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -691,6 +691,18 @@ namespace RealmEngine.Data.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
+                    b.Property<DateTimeOffset?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ApprovedByAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ApprovedVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("CreatedByAccountId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(4000)
@@ -717,6 +729,12 @@ namespace RealmEngine.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset?>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("SubmittedByAccountId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -3305,7 +3323,13 @@ namespace RealmEngine.Data.Migrations
 
                             b1.Property<bool?>("IsIndoor");
 
+                            b1.Property<bool?>("IsInstanced");
+
                             b1.Property<bool?>("IsTown");
+
+                            b1.Property<bool?>("IsTutorialStart");
+
+                            b1.Property<bool?>("SafeRespawn");
 
                             b1.Property<string>("UnlockKey");
 
