@@ -11,7 +11,7 @@
 <div class="mx-auto max-w-3xl space-y-4 p-6">
 	<header class="space-y-1">
 		<h1 class="h1">Notifications</h1>
-		<p class="text-surface-600-400">Review outcomes for your community submissions.</p>
+		<p class="text-surface-600-400">Review outcomes for your submissions and your maps.</p>
 	</header>
 
 	{#if form?.error || data.error}
@@ -26,9 +26,17 @@
 				<li class="flex flex-wrap items-start justify-between gap-3 card p-4">
 					<div class="space-y-1">
 						<p class="text-sm font-medium">
-							<a class="anchor" href={`/submissions/${notification.submissionId}`}>
-								{notification.submissionTitle}
-							</a>
+							{#if notification.kind === 'MapReview' && notification.mapId}
+								<a class="anchor" href={`/maps/${encodeURIComponent(notification.mapId)}`}>
+									{notification.title}
+								</a>
+							{:else if notification.submissionId}
+								<a class="anchor" href={`/submissions/${notification.submissionId}`}>
+									{notification.title}
+								</a>
+							{:else}
+								{notification.title}
+							{/if}
 						</p>
 						<p class="text-sm text-surface-600-400">{notification.message}</p>
 						<p class="text-xs text-surface-600-400">

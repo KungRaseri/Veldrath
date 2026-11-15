@@ -31,10 +31,21 @@ public record FoundrySubmissionSummaryDto(
 /// <summary>Paged wrapper returned by the submission list endpoint.</summary>
 public record PagedResult<T>(IReadOnlyList<T> Items, int TotalCount, int Page, int PageSize);
 
+/// <summary>An in-app notification about a review outcome.</summary>
+/// <param name="Id">Notification identifier.</param>
+/// <param name="Kind"><c>Submission</c> or <c>MapReview</c>.</param>
+/// <param name="SubmissionId">The submission, when the notification is about one.</param>
+/// <param name="MapId">The map, when the notification is about a map review.</param>
+/// <param name="Title">Snapshot of the submission title or map name.</param>
+/// <param name="Message">Human-readable outcome, including any review notes.</param>
+/// <param name="IsRead">Whether the recipient has read it.</param>
+/// <param name="CreatedAt">When it was created.</param>
 public record FoundryNotificationDto(
     Guid Id,
-    Guid SubmissionId,
-    string SubmissionTitle,
+    string Kind,
+    Guid? SubmissionId,
+    string? MapId,
+    string Title,
     string Message,
     bool IsRead,
     DateTimeOffset CreatedAt);

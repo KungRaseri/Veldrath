@@ -44,6 +44,51 @@ export interface MapGraphDto {
 	nodes: MapNodeDto[];
 	edges: MapEdgeDto[];
 	version: number;
+	/**
+	 * Whether the map is in the game. Optional because a partial payload (and a test fixture) predates the
+	 * review gate; the contract defaults it to `true`, which is what {@link mapState} assumes.
+	 */
+	isActive?: boolean;
+	/** The version a reviewer signed off; `0` when it has never been approved. */
+	approvedVersion?: number;
+	/** When the map was put forward for review. */
+	submittedAt?: string | null;
+	/** When a reviewer approved it. */
+	approvedAt?: string | null;
+	/** Notes from the last review decision, so a rejection reason is readable on the map itself. */
+	lastReviewNotes?: string | null;
+	/** When the last review decision was made. */
+	lastReviewedAt?: string | null;
+}
+
+/** One option in a reference picker, mirroring `Veldrath.Contracts.Map.MapTargetOptionDto`. */
+export interface MapTargetOption {
+	/** Value stored on the node — a slug, an owner slug, or a map id. */
+	id: string;
+	/** Human-readable label for the option. */
+	label: string;
+}
+
+/** One node of an authored map, mirroring `Veldrath.Contracts.Map.MapNodeOptionDto`. */
+export interface MapNodeOption extends MapTargetOption {
+	/** The map that owns the node. */
+	mapId: string;
+	/** Whether the node is its map's entry point. */
+	isEntryPoint: boolean;
+}
+
+/** The references node pickers offer, mirroring `Veldrath.Contracts.Map.MapTargetsDto`. */
+export interface MapTargets {
+	/** Every authored map, for exit destinations. */
+	maps: MapTargetOption[];
+	/** Owners of zone and interior maps. */
+	zones: MapTargetOption[];
+	/** Every zone location. */
+	locations: MapTargetOption[];
+	/** Owners of region maps. */
+	regions: MapTargetOption[];
+	/** Every node of every map, so an exit's destination is chosen rather than typed. */
+	nodes: MapNodeOption[];
 }
 
 /** A map list row, mirroring `Veldrath.Contracts.Map.MapSummaryDto`. */
@@ -57,6 +102,12 @@ export interface MapSummaryDto {
 	nodeCount: number;
 	edgeCount: number;
 	version: number;
+	/** Whether the map is in the game; see {@link MapGraphDto.isActive}. */
+	isActive?: boolean;
+	/** The version a reviewer signed off. */
+	approvedVersion?: number;
+	/** When the map was put forward for review. */
+	submittedAt?: string | null;
 }
 
 /** One validation issue reported by a save, mirroring `Veldrath.Contracts.Map.MapGraphIssueDto`. */
@@ -77,14 +128,6 @@ export interface MapGraphSaveResult {
 	message: string | null;
 }
 
-/** The fields the inspector can change. Everything else is authored elsewhere or derived. */
-export interface NodeEdit {
-	displayName: string;
-	isHidden: boolean;
-	unlockKey: string;
-	targetMapId: string;
-}
-
 /** A node row as the editor lists it, with the edge count that explains its role at a glance. */
 export interface MapNodeRow extends MapNodeDto {
 	outgoing: number;
@@ -102,46 +145,131 @@ export function nodeRows(graph: MapGraphDto): MapNodeRow[] {
 		}));
 }
 
-/** Reads the inspector's values for one node into the shape the edit map expects. */
-export function readNodeEdit(node: MapNodeDto, form: FormData): NodeEdit {
-	const value = (name: string, fallback: string) => {
-		const raw = form.get(`node:${node.id}:${name}`);
-		return raw === null ? fallback : String(raw);
-	};
+/**
+ * Reads the draft a page posted, refusing anything that is not this map's graph.
+ *
+ * There is exactly one writer — the draft the canvas holds — so the save action never reconstructs a graph
+ * from individual form fields. A malformed or mismatched payload falls back to the stored graph, which
+ * makes the save a no-op rather than a partial write of something nobody authored.
+ *
+ * @param raw The `graph` form field, as posted.
+ * @param fallback The graph as stored, used when the payload cannot be trusted.
+ * @param mapId The map the route names.
+ * @returns The draft to save, or the stored graph.
+ */
+export function parseDraftGraph(raw: unknown, fallback: MapGraphDto, mapId: string): MapGraphDto {
+	if (typeof raw !== 'string' || raw.trim() === '') return fallback;
 
-	return {
-		displayName: value('displayName', node.displayName),
-		isHidden: value('isHidden', String(node.isHidden)) === 'true',
-		unlockKey: value('unlockKey', node.unlockKey ?? ''),
-		targetMapId: value('targetMapId', node.targetMapId ?? '')
-	};
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (!parsed || typeof parsed !== 'object') return fallback;
+
+		const candidate = parsed as Partial<MapGraphDto>;
+		if (candidate.id !== mapId) return fallback;
+		if (!Array.isArray(candidate.nodes) || !Array.isArray(candidate.edges)) return fallback;
+
+		return candidate as MapGraphDto;
+	} catch {
+		return fallback;
+	}
+}
+
+/** The outcome of a lifecycle action, mirroring `Veldrath.Contracts.Map.MapLifecycleResponse`. */
+export interface MapLifecycleResult {
+	success: boolean;
+	status: 'ok' | 'invalid' | 'not_found' | 'conflict';
+	message: string | null;
+	issues: MapGraphIssue[];
+}
+
+/** The outcome of a validate-only pass, mirroring `Veldrath.Contracts.Map.MapGraphValidationResponse`. */
+export interface MapGraphValidationResult {
+	isValid: boolean;
+	issues: MapGraphIssue[];
+}
+
+/** The issues a validate pass reported, split by what they are about. */
+export interface GroupedIssues {
+	/** Issues attributed to a node, keyed by node id. */
+	nodes: Record<string, MapGraphIssue[]>;
+	/** Issues about the graph itself, which have no node to sit beside. */
+	map: MapGraphIssue[];
 }
 
 /**
- * Applies inspector edits to a graph, leaving edges and every untouched field exactly as they were.
+ * Splits issues into the ones a node row can show and the ones the page has to summarise.
  *
- * Edges are deliberately not editable here: moving a room is a graph change that needs the canvas and the
- * validator's ear, not a text field.
+ * Exported and unit tested because this decides where a badge appears: an issue with no `nodeId` can
+ * only be reported at the top of the page, and dropping it there would hide the reason a save fails.
+ *
+ * @param issues Issues from the server, in any order.
+ * @returns The issues grouped by node id, plus the map-level ones.
  */
-export function applyNodeEdits(
-	graph: MapGraphDto,
-	edits: Readonly<Record<string, NodeEdit>>
-): MapGraphDto {
+export function issuesByNode(issues: readonly MapGraphIssue[]): GroupedIssues {
+	const nodes: Record<string, MapGraphIssue[]> = {};
+	const map: MapGraphIssue[] = [];
+
+	for (const issue of issues) {
+		if (!issue.nodeId) {
+			map.push(issue);
+			continue;
+		}
+
+		(nodes[issue.nodeId] ??= []).push(issue);
+	}
+
+	return { nodes, map };
+}
+
+/** The four states a map can be in, named the way the editor shows them. */
+export type MapState = 'Draft' | 'In review' | 'Live' | 'Changed since approval';
+
+/**
+ * Which lifecycle state a map is in.
+ *
+ * Derived rather than stored: `ApprovedVersion < Version` is the whole of "changed since approval", so the
+ * badge cannot disagree with the numbers it comes from.
+ *
+ * @param map The graph or summary to read.
+ * @returns The state to show.
+ */
+export function mapState(map: {
+	isActive?: boolean;
+	approvedVersion?: number;
+	version: number;
+	submittedAt?: string | null;
+}): MapState {
+	if (map.isActive === false) {
+		return map.submittedAt ? 'In review' : 'Draft';
+	}
+
+	return (map.approvedVersion ?? 0) < map.version ? 'Changed since approval' : 'Live';
+}
+
+/**
+ * Trims the two nullable text fields so a blank input means "no value" rather than an empty string.
+ *
+ * The editor keeps the raw text while the author types — trimming on each keystroke would make a space
+ * untypable in the middle of a key — and normalises once, when the draft is posted.
+ *
+ * @param graph The draft as edited.
+ * @returns The same draft with blank unlock keys and exit targets set to `null`.
+ */
+export function normalizeDraft(graph: MapGraphDto): MapGraphDto {
 	return {
 		...graph,
-		nodes: graph.nodes.map((node) => {
-			const edit = edits[node.id];
-			if (!edit) return node;
-
-			return {
-				...node,
-				displayName: edit.displayName,
-				isHidden: edit.isHidden,
-				unlockKey: edit.unlockKey.trim() === '' ? null : edit.unlockKey.trim(),
-				targetMapId: edit.targetMapId.trim() === '' ? null : edit.targetMapId.trim()
-			};
-		})
+		nodes: graph.nodes.map((node) => ({
+			...node,
+			unlockKey: blankToNull(node.unlockKey),
+			targetMapId: blankToNull(node.targetMapId)
+		}))
 	};
+}
+
+function blankToNull(value: string | null): string | null {
+	if (value === null) return null;
+	const trimmed = value.trim();
+	return trimmed === '' ? null : trimmed;
 }
 
 /** A one-line description of an issue, with the node it belongs to when the server names one. */

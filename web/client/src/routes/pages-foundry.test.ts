@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/svelte';
+import { fireEvent, render, screen } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
 import ContentIndex from './(foundry)/content/+page.svelte';
 import ContentBrowse from './(foundry)/content/[type]/+page.svelte';
@@ -6,6 +6,8 @@ import ContentDetail from './(foundry)/content/[type]/[slug]/+page.svelte';
 import ContentEditor from './(foundry)/content/[type]/[slug]/edit/+page.svelte';
 import Languages from './(foundry)/languages/+page.svelte';
 import NewLanguage from './(foundry)/languages/new/+page.svelte';
+import MapDetail from './(foundry)/maps/[mapId]/+page.svelte';
+import Maps from './(foundry)/maps/+page.svelte';
 import Notifications from './(foundry)/notifications/+page.svelte';
 import Submissions from './(foundry)/submissions/+page.svelte';
 import SubmissionDetail from './(foundry)/submissions/[id]/+page.svelte';
@@ -92,6 +94,209 @@ const editorData = {
 	schema,
 	payload
 };
+
+const mapSummary = {
+	id: 'zone:the-halrow',
+	mapType: 'Zone',
+	ownerId: 'the-halrow',
+	name: 'The Halrow',
+	description: '',
+	entryNodeId: 'zone:the-halrow:entry',
+	nodeCount: 2,
+	edgeCount: 1,
+	version: 3
+};
+
+const mapNode = {
+	id: 'zone:the-halrow:entry',
+	mapId: 'zone:the-halrow',
+	nodeType: 'EntryPoint',
+	refId: null,
+	displayName: 'Arrival',
+	description: '',
+	iconKey: null,
+	layoutX: 1,
+	layoutY: 1,
+	isEntryPoint: true,
+	isExitPoint: false,
+	targetMapId: null,
+	targetNodeId: null,
+	isHidden: false,
+	unlockType: null,
+	unlockKey: null,
+	discoverThreshold: null,
+	sortOrder: 0
+};
+
+const mapGraph = {
+	id: 'zone:the-halrow',
+	mapType: 'Zone',
+	ownerId: 'the-halrow',
+	name: 'The Halrow',
+	description: '',
+	entryNodeId: 'zone:the-halrow:entry',
+	nodes: [mapNode],
+	edges: [],
+	version: 3
+};
+
+const mapTargets = {
+	maps: [{ id: 'region:varenmark', label: 'Varenmark' }],
+	zones: [{ id: 'the-halrow', label: 'The Halrow' }],
+	locations: [{ id: 'halrow-threshold', label: 'The Threshold' }],
+	regions: [{ id: 'varenmark', label: 'Varenmark' }],
+	nodes: [
+		{
+			id: 'region:varenmark:entry',
+			mapId: 'region:varenmark',
+			label: 'Arrival',
+			isEntryPoint: true
+		}
+	]
+};
+
+describe('map editor pages', () => {
+	it('links a graph at the route group path, not /foundry', () => {
+		render(Maps, page({ canEdit: true, maps: [mapSummary] }));
+
+		expect(screen.getByRole('heading', { level: 1, name: 'Maps' })).toBeTruthy();
+		expect(screen.getByRole('link', { name: 'The Halrow' }).getAttribute('href')).toBe(
+			'/maps/zone%3Athe-halrow'
+		);
+		expect(screen.queryByText(/lacks the content permission/)).toBeNull();
+	});
+
+	it('tells a reader that the write controls are off', () => {
+		render(Maps, page({ canEdit: false, maps: [mapSummary] }));
+
+		expect(screen.getByText(/lacks the content permission/)).toBeTruthy();
+	});
+
+	it('shows the validate result with a badge on the node it names', () => {
+		render(
+			MapDetail,
+			page(
+				{ canEdit: true, graph: mapGraph },
+				{
+					validated: true,
+					isValid: false,
+					issues: [
+						{
+							code: 'node_name_missing',
+							message: 'Needs a name',
+							severity: 'Error',
+							mapId: 'zone:the-halrow',
+							nodeId: 'zone:the-halrow:entry'
+						}
+					]
+				}
+			)
+		);
+
+		expect(screen.getByRole('button', { name: 'Validate' })).toBeTruthy();
+		expect(screen.getByText(/would be refused/)).toBeTruthy();
+		expect(screen.getByText('1 issue')).toBeTruthy();
+	});
+
+	it('offers only the draft verbs while a map is a draft', () => {
+		render(
+			MapDetail,
+			page({
+				canEdit: true,
+				canReview: true,
+				graph: { ...mapGraph, isActive: false, approvedVersion: 0, submittedAt: null },
+				targets: mapTargets
+			})
+		);
+
+		expect(screen.getByRole('button', { name: 'Submit for review' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Delete draft' })).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Deactivate' })).toBeNull();
+	});
+
+	it('offers approve and reject while a map is in review', () => {
+		render(
+			MapDetail,
+			page({
+				canEdit: true,
+				canReview: true,
+				graph: { ...mapGraph, isActive: false, submittedAt: '2026-02-01T00:00:00.000Z' },
+				targets: mapTargets
+			})
+		);
+
+		expect(screen.getByRole('button', { name: 'Approve' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Reject' })).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Submit for review' })).toBeNull();
+	});
+
+	it('offers deactivate, not delete, for a live map', () => {
+		render(
+			MapDetail,
+			page({
+				canEdit: true,
+				canReview: true,
+				graph: { ...mapGraph, isActive: true, approvedVersion: 3 },
+				targets: mapTargets
+			})
+		);
+
+		expect(screen.getByRole('button', { name: 'Deactivate' })).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Delete draft' })).toBeNull();
+	});
+
+	it('shows no lifecycle verb to a reader, and no create form on the list', () => {
+		render(
+			MapDetail,
+			page({ canEdit: false, canReview: false, graph: mapGraph, targets: mapTargets })
+		);
+
+		expect(screen.queryByRole('button', { name: 'Submit for review' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Deactivate' })).toBeNull();
+
+		render(
+			Maps,
+			page({ canEdit: false, maps: [{ ...mapSummary, isActive: false, approvedVersion: 0 }] })
+		);
+
+		expect(screen.queryByRole('button', { name: 'Create draft' })).toBeNull();
+		expect(screen.getByText('Draft')).toBeTruthy();
+	});
+
+	it('opens the inspector for the node selected on the canvas', async () => {
+		render(MapDetail, page({ canEdit: true, graph: mapGraph, targets: mapTargets }));
+
+		await fireEvent.click(screen.getByRole('button', { name: /Arrival/ }));
+
+		expect(screen.getByRole('region', { name: 'Node inspector' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: /Delete node/ })).toBeTruthy();
+	});
+
+	it('summarises a map-level issue that no node row can carry', () => {
+		render(
+			MapDetail,
+			page(
+				{ canEdit: true, graph: mapGraph },
+				{
+					validated: true,
+					isValid: false,
+					issues: [
+						{
+							code: 'map_without_exit',
+							message: 'Zone map has no exit',
+							severity: 'Error',
+							mapId: 'zone:the-halrow',
+							nodeId: null
+						}
+					]
+				}
+			)
+		);
+
+		expect(screen.getByText(/map_without_exit/)).toBeTruthy();
+	});
+});
 
 describe('content type index', () => {
 	it('lists each registered schema with a browse link', () => {
@@ -398,16 +603,20 @@ describe('foundry notifications', () => {
 	const notifications = [
 		{
 			id: 'n1',
+			kind: 'Submission',
 			submissionId: 's1',
-			submissionTitle: 'Ember blade',
+			mapId: null,
+			title: 'Ember blade',
 			message: 'Approved by the curators',
 			createdAt: '2026-02-01T00:00:00.000Z',
 			isRead: false
 		},
 		{
 			id: 'n2',
+			kind: 'Submission',
 			submissionId: 's2',
-			submissionTitle: 'Frost ward',
+			mapId: null,
+			title: 'Frost ward',
 			message: 'Rejected: balance',
 			createdAt: '2026-02-02T00:00:00.000Z',
 			isRead: true
@@ -422,6 +631,30 @@ describe('foundry notifications', () => {
 		);
 		expect(screen.getAllByRole('button', { name: 'Mark read' })).toHaveLength(1);
 		expect(screen.getByText('Read')).toBeTruthy();
+	});
+
+	it('links a map notification to the map, not to a submission', () => {
+		render(
+			Notifications,
+			page({
+				notifications: [
+					{
+						id: 'n3',
+						kind: 'MapReview',
+						submissionId: null,
+						mapId: 'zone:the-halrow',
+						title: 'The Halrow',
+						message: 'Your map "The Halrow" was approved and is now live.',
+						createdAt: '2026-02-03T00:00:00.000Z',
+						isRead: true
+					}
+				]
+			})
+		);
+
+		expect(screen.getByRole('link', { name: 'The Halrow' }).getAttribute('href')).toBe(
+			'/maps/zone%3Athe-halrow'
+		);
 	});
 
 	it('renders the empty state and prefers the action error', () => {

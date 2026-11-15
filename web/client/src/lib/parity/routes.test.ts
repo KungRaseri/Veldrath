@@ -87,11 +87,6 @@ const EXEMPTIONS: { pattern: RegExp; reason: string }[] = [
 			'Foundry pages: guarded by the (foundry) layout and the schema-driven editor is unit-tested; e2e happy paths land with the route-tests item.'
 	},
 	{
-		pattern: /^\/maps(\/|$)/,
-		reason:
-			'Foundry map editor: guarded by the (foundry) layout, and the graph rules (applyNodeEdits, nodeRows) are unit-tested. Its save is validated server-side by MapGraphValidator, which the seeded-world test also runs; e2e happy paths land with the route-tests item.'
-	},
-	{
 		pattern: /^\/(lore|patch-notes)\/.+$/,
 		reason:
 			'Public detail pages render seeded server content; they get loader tests and an e2e mention with the public route-tests item.'

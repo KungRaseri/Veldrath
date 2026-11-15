@@ -1,9 +1,10 @@
 # Dungeons, instances and the map model
 
-> **Status: F1–F5 shipped in [PR #70](https://git.kungraseri.cloud/Veldrath/Veldrath/pulls/70).**
-> This file is the record of the model decisions and the phase outline. The Foundry map editor (§8)
-> shipped its **read, inspect and save** path; the canvas, map create/delete and the location-side
-> fields are still an outline and need their own planning session before code.
+> **Status: F1–F5 shipped in [PR #70](https://git.kungraseri.cloud/Veldrath/Veldrath/pulls/70); the map
+> editor completed in milestone G ([`foundry-map-editor.md`](foundry-map-editor.md), PR #71).**
+> This file is the record of the model decisions and the phase outline. §8 shipped its read, inspect and
+> save path in F5 and the canvas, node and edge authoring, map lifecycle and review gate in G; the
+> location-side fields (traits, actor pools) remain a separate plan.
 >
 > Supersedes the open question in [`ui-depth.md`](ui-depth.md) §3.6 — E6 becomes the client
 > slice of this plan, and the model itself lives here.
@@ -551,7 +552,8 @@ artwork.
 
 ### F5 — Foundry map editor
 
-Outline in §8. Its own milestone.
+Shipped at the read, inspect and save level; §8 records what is in. The remaining authoring surface
+is milestone G in [`foundry-map-editor.md`](foundry-map-editor.md).
 
 ## 6. What this deliberately does not do
 
@@ -579,9 +581,10 @@ F1 before everything: nothing else can be tested while entry does not move a cha
 dungeons have no exit. F2 before F3 because cleared state has to know which scope it belongs to.
 F4 last because it renders what F1–F3 settle. F5 can start once F1's data shape is stable.
 
-## 8. Foundry map editor (shipped: read, inspect, save)
+## 8. Foundry map editor (shipped: F5 read/inspect/save, G authoring and the review gate)
 
-The write path and the editor page are in. What shipped:
+The write path and the editor page are in. The canvas and the rest of the authoring surface are
+milestone G in [`foundry-map-editor.md`](foundry-map-editor.md). What shipped:
 
 - **Server.** `MapEditorService` behind `GET /api/content/maps` (list with versions), `GET
   /api/content/maps/{id}` (the whole graph) and `PUT /api/content/maps/{id}` (save), all under the existing
@@ -599,13 +602,14 @@ The write path and the editor page are in. What shipped:
 - **Why it matters.** The Halrow's stranded rooms and the three missing exits were exactly what a human
   looking at the graph would have seen.
 
+Milestone G added the canvas (drag, keyboard nudge, tidy layout, an unplaced lane), node and edge CRUD
+with the validator's refusals moved into the gesture, reference pickers fed by
+`GET /api/content/maps/targets`, map create/delete, and the review gate that is the only way a map enters
+the game. [`foundry-map-editor.md`](foundry-map-editor.md) is the record; its §2.1 has the state table and
+the access matrix.
+
 Still needs its own session:
 
-- **The canvas.** Nodes are edited in a table today. Dragging them on `LayoutX`/`LayoutY` (the data the
-  client's `CardinalMap` already reads) and drawing edges with `MapDirection` is the next step;
-  `cardinal-layout.ts` is reusable for the read-only preview that goes with it.
-- **Create and delete.** The editor edits existing graphs; adding a map, or deleting one, is a separate
-  decision with its own cascade.
 - **Actor pools and location traits.** Those live on `ZoneLocation`, not on the graph, so they belong with
   the location editor rather than here.
 

@@ -492,6 +492,13 @@ namespace Veldrath.Server.Migrations
                     b.Property<bool>("IsRead")
                         .HasColumnType("boolean");
 
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MapId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -503,8 +510,13 @@ namespace Veldrath.Server.Migrations
                     b.Property<Guid>("RecipientId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("SubmissionId")
+                    b.Property<Guid?>("SubmissionId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.HasKey("Id");
 
@@ -1327,8 +1339,7 @@ namespace Veldrath.Server.Migrations
                     b.HasOne("Veldrath.Server.Data.Entities.FoundrySubmission", "Submission")
                         .WithMany()
                         .HasForeignKey("SubmissionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Recipient");
 

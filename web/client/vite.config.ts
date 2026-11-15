@@ -94,8 +94,11 @@ export default defineConfig(() => {
 						branches: 92,
 						statements: 92
 					},
-					// Schema-driven Foundry form logic.
-					'src/lib/foundry/**': {
+					// Schema-driven Foundry form, canvas and edge logic. TypeScript only, for the same
+					// reason as `src/lib/game`: v8's branch bookkeeping for compiled Svelte templates
+					// measures `{#if}` chains rather than logic, so the components beside these modules
+					// are held to the `.svelte` floor below instead of a bar they can never meet.
+					'src/lib/foundry/**/*.ts': {
 						lines: 92,
 						functions: 92,
 						branches: 92,

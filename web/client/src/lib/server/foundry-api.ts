@@ -31,11 +31,17 @@ export interface FoundrySubmission extends FoundrySubmissionSummary {
 	reviewedAt: string | null;
 }
 
-/** Notification delivered to a submitter. */
+/** An in-app notification about a review outcome: a submission decision, or a map decision. */
 export interface FoundryNotification {
 	id: string;
-	submissionId: string;
-	submissionTitle: string;
+	/** `Submission` or `MapReview`; decides which reference is set and where the link goes. */
+	kind: string;
+	/** Snapshot of the submission title or map name. */
+	title: string;
+	/** The map, when the notification is about a map review. */
+	mapId: string | null;
+	/** The submission, when the notification is about one. */
+	submissionId: string | null;
 	message: string;
 	isRead: boolean;
 	createdAt: string;

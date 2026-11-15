@@ -40,6 +40,153 @@ public class MapEditorServiceTests
         };
 
     [Fact]
+    public async Task CreateDraftAsync_MakesAnInactiveMapWithOneEntryNode()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var (map, error) = await editor.CreateDraftAsync(
+            new MapCreateRequest("Zone", "draft-zone", "Draft Zone"),
+            Guid.NewGuid());
+
+        error.Should().BeNull();
+        map!.Id.Should().Be("zone:draft-zone");
+        map.IsActive.Should().BeFalse("a new map is a draft until a reviewer approves it");
+        map.Nodes.Should().ContainSingle(node => node.IsEntryPoint);
+        map.EntryNodeId.Should().Be("zone:draft-zone:entry");
+    }
+
+    [Fact]
+    public async Task CreateDraftAsync_RefusesAnOwnerThatAlreadyHasAMap()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var (map, error) = await editor.CreateDraftAsync(
+            new MapCreateRequest("Zone", "the-halrow", "Another Halrow"),
+            Guid.NewGuid());
+
+        map.Should().BeNull();
+        error.Should().Contain("already");
+    }
+
+    [Fact]
+    public async Task SubmitAsync_RefusesAGraphWithErrors()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        await editor.CreateDraftAsync(new MapCreateRequest("Zone", "draft-zone", "Draft Zone"), Guid.NewGuid());
+        var map = await db.Maps.SingleAsync(candidate => candidate.Id == "zone:draft-zone");
+        map.EntryNodeId = "zone:draft-zone:ghost";
+        await db.SaveChangesAsync();
+
+        var result = await editor.SubmitAsync("zone:draft-zone", Guid.NewGuid());
+
+        result.Success.Should().BeFalse();
+        result.Status.Should().Be("invalid");
+        result.Issues.Should().Contain(issue => issue.Code == "entry_not_found");
+    }
+
+    [Fact]
+    public async Task ReviewAsync_ApprovesASubmittedMapAndRecordsTheApprovedVersion()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var reviewer = Guid.NewGuid();
+        await editor.CreateDraftAsync(new MapCreateRequest("Zone", "draft-zone", "Draft Zone"), Guid.NewGuid());
+        (await editor.SubmitAsync("zone:draft-zone", Guid.NewGuid())).Success.Should().BeTrue();
+
+        var result = await editor.ReviewAsync("zone:draft-zone", reviewer, new MapReviewRequest(true));
+
+        result.Response.Success.Should().BeTrue();
+        var map = await db.Maps.SingleAsync(candidate => candidate.Id == "zone:draft-zone");
+        map.IsActive.Should().BeTrue();
+        map.ApprovedVersion.Should().Be(map.Version);
+        map.ApprovedByAccountId.Should().Be(reviewer);
+    }
+
+    [Fact]
+    public async Task ReviewAsync_RefusesAMapThatWasNeverSubmitted()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        await editor.CreateDraftAsync(new MapCreateRequest("Zone", "draft-zone", "Draft Zone"), Guid.NewGuid());
+
+        var result = (await editor.ReviewAsync("zone:draft-zone", Guid.NewGuid(), new MapReviewRequest(true)))
+            .Response;
+
+        result.Success.Should().BeFalse();
+        result.Status.Should().Be("conflict");
+        result.Message.Should().Contain("submitted");
+    }
+
+    [Fact]
+    public async Task ReviewAsync_RejectionKeepsTheNotesOnTheMapAndClearsTheSubmission()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        await editor.CreateDraftAsync(new MapCreateRequest("Zone", "draft-zone", "Draft Zone"), Guid.NewGuid());
+        await editor.SubmitAsync("zone:draft-zone", Guid.NewGuid());
+
+        var outcome = await editor.ReviewAsync(
+            "zone:draft-zone",
+            Guid.NewGuid(),
+            new MapReviewRequest(false, "Room 3 has no exit."));
+
+        outcome.Response.Success.Should().BeTrue();
+
+        var map = await db.Maps.SingleAsync(candidate => candidate.Id == "zone:draft-zone");
+        map.IsActive.Should().BeFalse();
+        map.SubmittedAt.Should().BeNull("a rejected map is a draft again");
+        map.LastReviewNotes.Should().Be("Room 3 has no exit.");
+        map.LastReviewedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task DeactivateAsync_RefusesAMapOtherNodesStillExitTo()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var result = await editor.DeactivateAsync("region:varenmark");
+
+        result.Success.Should().BeFalse();
+        result.Status.Should().Be("conflict");
+        result.Message.Should().Contain("still exit here");
+    }
+
+    [Fact]
+    public async Task DeleteDraftAsync_RefusesALiveMap()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var result = await editor.DeleteDraftAsync(HalrowMapId);
+
+        result.Success.Should().BeFalse();
+        result.Status.Should().Be("conflict");
+    }
+
+    [Fact]
+    public async Task GetTargetsAsync_ListsEveryReferenceAPickerNeeds()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var targets = await editor.GetTargetsAsync();
+
+        targets.Maps.Should().Contain(option => option.Id == HalrowMapId);
+        targets.Zones.Should().Contain(option => option.Id == "the-halrow");
+        targets.Regions.Should().Contain(option => option.Id == "varenmark");
+        targets.Locations.Should().Contain(option => option.Id == "halrow-threshold");
+        targets.Nodes.Should().Contain(option => option.Id == "zone:the-halrow:entry" && option.IsEntryPoint);
+    }
+
+    [Fact]
     public async Task ListAsync_ReturnsEverySeededMapWithItsVersion()
     {
         var (db, editor) = await SeededAsync();
@@ -156,6 +303,56 @@ public class MapEditorServiceTests
         result.Success.Should().BeFalse();
         result.Status.Should().Be("invalid");
         result.Issues.Should().Contain(issue => issue.Code == "request_invalid");
+    }
+
+    [Fact]
+    public async Task ValidateAsync_ReportsTheIssuesASaveWouldRefuseOnWithoutWriting()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var graph = (await editor.GetAsync(HalrowMapId))!;
+        var exitNode = graph.Nodes.Single(node => node.Id.EndsWith("exit:region:varenmark", StringComparison.Ordinal));
+        var broken = WithNode(graph, exitNode.Id, node => node with { TargetNodeId = "ghost" });
+
+        var result = await editor.ValidateAsync(HalrowMapId, broken);
+
+        result.IsValid.Should().BeFalse();
+        result.Issues.Should().Contain(issue => issue.Code == "target_node_unknown");
+
+        var stored = await editor.GetAsync(HalrowMapId);
+        stored!.Version.Should().Be(graph.Version);
+    }
+
+    [Fact]
+    public async Task ValidateAsync_AcceptsAValidGraphWithoutBumpingTheVersion()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var graph = (await editor.GetAsync(HalrowMapId))!;
+
+        var result = await editor.ValidateAsync(HalrowMapId, graph);
+
+        result.IsValid.Should().BeTrue();
+        result.Issues.Should().NotContain(issue => issue.Severity == "Error");
+
+        var stored = await editor.GetAsync(HalrowMapId);
+        stored!.Version.Should().Be(graph.Version);
+    }
+
+    [Fact]
+    public async Task ValidateAsync_ReportsAMismatchedIdAsARequestProblem()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var graph = (await editor.GetAsync(HalrowMapId))!;
+
+        var result = await editor.ValidateAsync(HalrowMapId, graph with { Id = "zone:crestfall" });
+
+        result.IsValid.Should().BeFalse();
+        result.Issues.Should().ContainSingle(issue => issue.Code == "request_invalid");
     }
 
     [Fact]

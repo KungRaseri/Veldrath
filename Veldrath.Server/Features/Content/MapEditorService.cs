@@ -49,8 +49,64 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
                 map.EntryNodeId,
                 map.Nodes.Count,
                 map.Edges.Count,
-                map.Version))
+                map.Version,
+                map.IsActive,
+                map.ApprovedVersion,
+                map.SubmittedAt,
+                map.LastReviewNotes,
+                map.LastReviewedAt))
             .ToListAsync(cancellationToken);
+
+    /// <summary>
+    /// Lists the references a node may point at, so the editor can offer pickers instead of free text.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Maps, zone owners, locations and region owners, each ordered by id.</returns>
+    public async Task<MapTargetsDto> GetTargetsAsync(CancellationToken cancellationToken = default)
+    {
+        var maps = await db.Maps
+            .AsNoTracking()
+            .Select(map => new { map.Id, map.MapType, map.OwnerId, map.Name })
+            .ToListAsync(cancellationToken);
+
+        var zones = maps
+            .Where(map => map.MapType is MapType.Zone or MapType.Interior)
+            .Select(map => new MapTargetOptionDto(map.OwnerId, map.Name))
+            .DistinctBy(option => option.Id, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(option => option.Id, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var regions = maps
+            .Where(map => map.MapType == MapType.Region)
+            .Select(map => new MapTargetOptionDto(map.OwnerId, map.Name))
+            .DistinctBy(option => option.Id, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(option => option.Id, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var locations = await db.ZoneLocations
+            .AsNoTracking()
+            .OrderBy(location => location.Slug)
+            .Select(location => new MapTargetOptionDto(location.Slug, location.DisplayName ?? location.Slug))
+            .ToListAsync(cancellationToken);
+
+        // Every node of every map: an exit's destination is a picker, and the whole set is small enough
+        // (a few hundred rows) that a round trip per target map would be the slower design.
+        var nodes = await db.MapNodes
+            .AsNoTracking()
+            .OrderBy(node => node.MapId)
+            .ThenBy(node => node.SortOrder)
+            .Select(node => new MapNodeOptionDto(node.Id, node.MapId, node.DisplayName, node.IsEntryPoint))
+            .ToListAsync(cancellationToken);
+
+        return new MapTargetsDto(
+            maps.Select(map => new MapTargetOptionDto(map.Id, map.Name))
+                .OrderBy(option => option.Id, StringComparer.OrdinalIgnoreCase)
+                .ToList(),
+            zones,
+            locations,
+            regions,
+            nodes);
+    }
 
     /// <summary>Reads one map graph in full.</summary>
     /// <param name="mapId">Map identifier.</param>
@@ -104,7 +160,7 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
                 $"Map '{mapId}' is at version {map.Version}; reload before saving.");
         }
 
-        var issues = await ValidateAsync(mapId, candidate, cancellationToken);
+        var issues = await ValidateWorldAsync(mapId, candidate, cancellationToken);
         var errors = issues.Where(issue => issue.Severity == "Error").ToList();
 
         if (errors.Count > 0)
@@ -129,10 +185,49 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
     }
 
     /// <summary>
+    /// Runs the same world validation a save runs, without persisting anything.
+    /// </summary>
+    /// <param name="mapId">Map identifier from the route.</param>
+    /// <param name="candidate">The graph to validate.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Whether a save would accept the graph, and every issue the author needs to see.</returns>
+    public async Task<MapGraphValidationResponse> ValidateAsync(
+        string mapId,
+        MapGraphDto candidate,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(mapId))
+        {
+            return new MapGraphValidationResponse(
+                false,
+                [new MapGraphIssueDto("request_invalid", "A map id is required.", "Error", null, null)]);
+        }
+
+        if (!string.Equals(candidate.Id, mapId, StringComparison.OrdinalIgnoreCase))
+        {
+            return new MapGraphValidationResponse(
+                false,
+                [
+                    new MapGraphIssueDto(
+                        "request_invalid",
+                        $"The graph id '{candidate.Id}' does not match the map being validated ('{mapId}').",
+                        "Error",
+                        mapId,
+                        null),
+                ]);
+        }
+
+        var issues = await ValidateWorldAsync(mapId, candidate, cancellationToken);
+        var isValid = issues.All(issue => !string.Equals(issue.Severity, "Error", StringComparison.OrdinalIgnoreCase));
+
+        return new MapGraphValidationResponse(isValid, issues);
+    }
+
+    /// <summary>
     /// Validates the candidate as part of the whole world, so a save cannot strand a room or point an exit at a
     /// map that does not exist.
     /// </summary>
-    internal async Task<IReadOnlyList<MapGraphIssueDto>> ValidateAsync(
+    internal async Task<IReadOnlyList<MapGraphIssueDto>> ValidateWorldAsync(
         string mapId,
         MapGraphDto candidate,
         CancellationToken cancellationToken = default)
@@ -148,6 +243,11 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
                 ? ToSharedGraph(candidate)
                 : ToSharedGraph(map))
             .ToList();
+
+        // A candidate whose map is not stored yet still has to be validated in its own right: otherwise a
+        // validate-before-create would report the graph as clean because nothing in the world matched its id.
+        if (!maps.Any(map => string.Equals(map.Id, mapId, StringComparison.OrdinalIgnoreCase)))
+            graphs.Add(ToSharedGraph(candidate));
 
         // Content is small enough to load whole, and doing so keeps the JSON-owned traits out of the SQL
         // translation: the dungeon set is a pure function of the catalog, derived exactly like the seeded-world
@@ -333,7 +433,301 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
                     edge.IsTraversable,
                     edge.IsHidden))
                 .ToList(),
-            map.Version);
+            map.Version,
+            map.IsActive,
+            map.ApprovedVersion,
+            map.SubmittedAt,
+            map.ApprovedAt,
+            map.LastReviewNotes,
+            map.LastReviewedAt);
+
+    /// <summary>
+    /// Creates an inactive draft with a single entry node.
+    /// </summary>
+    /// <remarks>
+    /// Nothing is fabricated beyond the entry node: an exit would need a destination, and inventing one is how a
+    /// map ends up pointing at content the author never chose. A dungeon draft is therefore not approvable until
+    /// its author adds the way out, which is where <c>map_without_exit</c> belongs.
+    /// </remarks>
+    /// <param name="request">Kind, owner and name of the map to create.</param>
+    /// <param name="createdByAccountId">Account creating the map.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The created graph, or the reason it could not be created.</returns>
+    public async Task<(MapGraphDto? Map, string? Error)> CreateDraftAsync(
+        MapCreateRequest request,
+        Guid createdByAccountId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Enum.TryParse<MapType>(request.MapType, ignoreCase: true, out var mapType) ||
+            mapType is MapType.World)
+        {
+            return (null, $"'{request.MapType}' is not a map kind that can be created.");
+        }
+
+        var ownerId = request.OwnerId?.Trim() ?? string.Empty;
+        if (ownerId.Length == 0)
+            return (null, "An owner slug is required.");
+        if (string.IsNullOrWhiteSpace(request.Name))
+            return (null, "A name is required.");
+
+        var mapId = mapType switch
+        {
+            MapType.Region => $"region:{ownerId}",
+            MapType.Interior => $"interior:{ownerId}",
+            _ => $"zone:{ownerId}",
+        };
+
+        if (await db.Maps.AnyAsync(map => map.Id == mapId, cancellationToken))
+            return (null, $"Map '{mapId}' already exists.");
+
+        if (await db.Maps.AnyAsync(
+                map => map.MapType == mapType && map.OwnerId == ownerId,
+                cancellationToken))
+        {
+            return (null, $"'{ownerId}' already owns a {mapType} map.");
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var entryNodeId = $"{mapId}:entry";
+        var map = new MapEntity
+        {
+            Id = mapId,
+            MapType = mapType,
+            OwnerId = ownerId,
+            Name = request.Name.Trim(),
+            Description = string.Empty,
+            EntryNodeId = entryNodeId,
+            IsActive = false,
+            Version = 1,
+            UpdatedAt = now,
+            CreatedByAccountId = createdByAccountId,
+            Nodes =
+            [
+                new MapNodeEntity
+                {
+                    Id = entryNodeId,
+                    MapId = mapId,
+                    NodeType = MapNodeType.EntryPoint,
+                    DisplayName = "Arrival",
+                    Description = string.Empty,
+                    IsEntryPoint = true,
+                    LayoutX = 0,
+                    LayoutY = 0,
+                    SortOrder = 0,
+                },
+            ],
+        };
+
+        db.Maps.Add(map);
+        await db.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Created draft map {MapId}", mapId);
+        return (ToDto(map), null);
+    }
+
+    /// <summary>Puts a draft forward for review, refusing a graph the world validator rejects.</summary>
+    /// <param name="mapId">Map identifier.</param>
+    /// <param name="accountId">Account submitting the map.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Whether the map is now queued, and the issues that blocked it when not.</returns>
+    public async Task<MapLifecycleResponse> SubmitAsync(
+        string mapId,
+        Guid accountId,
+        CancellationToken cancellationToken = default)
+    {
+        var map = await LoadAsync(mapId, tracking: true, cancellationToken);
+        if (map is null)
+            return Missing(mapId);
+
+        if (map.IsActive)
+            return new MapLifecycleResponse(false, StatusConflict, $"Map '{mapId}' is already live.", []);
+
+        var issues = await ValidateWorldAsync(mapId, ToDto(map), cancellationToken);
+        if (HasErrors(issues))
+        {
+            return new MapLifecycleResponse(
+                false,
+                StatusInvalid,
+                "The graph has errors; fix them before submitting.",
+                issues);
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        map.SubmittedAt = now;
+        map.SubmittedByAccountId = accountId;
+        map.UpdatedAt = now;
+        await db.SaveChangesAsync(cancellationToken);
+
+        return new MapLifecycleResponse(true, StatusOk, "Submitted for review.", issues);
+    }
+
+    /// <summary>
+    /// Records a reviewer's decision. Approval is what makes a map live.
+    /// </summary>
+    /// <param name="mapId">Map identifier.</param>
+    /// <param name="reviewerAccountId">Account reviewing the map.</param>
+    /// <param name="request">The decision and optional notes.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Whether the decision was applied, and why not when it was refused.</returns>
+    public async Task<MapReviewOutcome> ReviewAsync(
+        string mapId,
+        Guid reviewerAccountId,
+        MapReviewRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var map = await LoadAsync(mapId, tracking: true, cancellationToken);
+        if (map is null)
+            return new MapReviewOutcome(Missing(mapId), null, mapId);
+
+        var author = map.SubmittedByAccountId ?? map.CreatedByAccountId;
+
+        if (!request.Approved)
+        {
+            map.SubmittedAt = null;
+            map.SubmittedByAccountId = null;
+            map.LastReviewNotes = request.Notes;
+            map.LastReviewedAt = DateTimeOffset.UtcNow;
+            map.UpdatedAt = DateTimeOffset.UtcNow;
+            await db.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation("Rejected map {MapId}: {Notes}", mapId, request.Notes);
+            return new MapReviewOutcome(
+                new MapLifecycleResponse(
+                    true,
+                    StatusOk,
+                    request.Notes ?? "Rejected; the draft is editable again.",
+                    []),
+                author,
+                map.Name);
+        }
+
+        if (map.SubmittedAt is null)
+        {
+            return new MapReviewOutcome(
+                new MapLifecycleResponse(
+                    false,
+                    StatusConflict,
+                    "The map has not been submitted for review.",
+                    []),
+                author,
+                map.Name);
+        }
+
+        var issues = await ValidateWorldAsync(mapId, ToDto(map), cancellationToken);
+        if (HasErrors(issues))
+        {
+            return new MapReviewOutcome(
+                new MapLifecycleResponse(
+                    false,
+                    StatusInvalid,
+                    "The graph has errors; it cannot be approved.",
+                    issues),
+                author,
+                map.Name);
+        }
+
+        map.IsActive = true;
+        map.ApprovedVersion = map.Version;
+        map.ApprovedAt = DateTimeOffset.UtcNow;
+        map.ApprovedByAccountId = reviewerAccountId;
+        map.LastReviewNotes = request.Notes;
+        map.LastReviewedAt = map.ApprovedAt;
+        await db.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Approved map {MapId} at version {Version}", mapId, map.Version);
+        return new MapReviewOutcome(
+            new MapLifecycleResponse(true, StatusOk, "Approved; the map is live.", issues),
+            author,
+            map.Name);
+    }
+
+    /// <summary>Retires a live map. Refused while any node still points at it.</summary>
+    /// <param name="mapId">Map identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Whether the map is now inactive, and which exits blocked it when not.</returns>
+    public async Task<MapLifecycleResponse> DeactivateAsync(
+        string mapId,
+        CancellationToken cancellationToken = default)
+    {
+        var map = await LoadAsync(mapId, tracking: true, cancellationToken);
+        if (map is null)
+            return Missing(mapId);
+
+        if (!map.IsActive)
+            return new MapLifecycleResponse(true, StatusOk, "The map is already inactive.", []);
+
+        var referring = await ReferringNodesAsync(mapId, cancellationToken);
+        if (referring.Count > 0)
+        {
+            return new MapLifecycleResponse(
+                false,
+                StatusConflict,
+                $"Other maps still exit here: {string.Join(", ", referring)}.",
+                []);
+        }
+
+        map.IsActive = false;
+        map.UpdatedAt = DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Deactivated map {MapId}", mapId);
+        return new MapLifecycleResponse(true, StatusOk, "Deactivated; the map is no longer in the game.", []);
+    }
+
+    /// <summary>Deletes a draft. A live map is retired by deactivating instead.</summary>
+    /// <param name="mapId">Map identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Whether the draft was removed, and why not when it was refused.</returns>
+    public async Task<MapLifecycleResponse> DeleteDraftAsync(
+        string mapId,
+        CancellationToken cancellationToken = default)
+    {
+        var map = await LoadAsync(mapId, tracking: true, cancellationToken);
+        if (map is null)
+            return Missing(mapId);
+
+        if (map.IsActive)
+        {
+            return new MapLifecycleResponse(
+                false,
+                StatusConflict,
+                "A live map is retired by deactivating, never deleted.",
+                []);
+        }
+
+        var referring = await ReferringNodesAsync(mapId, cancellationToken);
+        if (referring.Count > 0)
+        {
+            return new MapLifecycleResponse(
+                false,
+                StatusConflict,
+                $"Other maps still exit here: {string.Join(", ", referring)}.",
+                []);
+        }
+
+        db.Maps.Remove(map);
+        await db.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Deleted draft map {MapId}", mapId);
+        return new MapLifecycleResponse(true, StatusOk, "Draft deleted.", []);
+    }
+
+    private static bool HasErrors(IEnumerable<MapGraphIssueDto> issues) =>
+        issues.Any(issue => string.Equals(issue.Severity, "Error", StringComparison.OrdinalIgnoreCase));
+
+    private async Task<IReadOnlyList<string>> ReferringNodesAsync(
+        string mapId,
+        CancellationToken cancellationToken) =>
+        await db.MapNodes
+            .AsNoTracking()
+            .Where(node => node.TargetMapId == mapId)
+            .OrderBy(node => node.Id)
+            .Select(node => node.Id)
+            .Take(5)
+            .ToListAsync(cancellationToken);
+
+    private static MapLifecycleResponse Missing(string mapId) =>
+        new(false, StatusNotFound, $"Map '{mapId}' was not found.", []);
 
     private static MapGraph ToSharedGraph(MapEntity map) =>
         ToSharedGraph(ToDto(map));

@@ -3619,3 +3619,62 @@ Written down in [`plans/dungeons.md` §9](../../plans/dungeons.md) and
   per-zone or per-difficulty) and instance expiry reuses `SessionGraceSeconds` (should be its own key).
   Level gates (`Zone.MinLevel`, `ZoneLocation.Stats.MinLevel`) stay content and must never become
   appsettings.
+
+### Milestone G — the Foundry map editor (2026-11-11/12, PR #71)
+
+Plan: [`plans/foundry-map-editor.md`](../../plans/foundry-map-editor.md). Durable description:
+[`docs/client-ui-architecture.md` §5](../../docs/client-ui-architecture.md). Branch
+`feat/milestone-g-foundry-map-editor`; commits `7bd1a220` … `6e8565c6`.
+
+**What it is.** `/maps` lists graphs with a state badge and a create form; `/maps/[mapId]` is a canvas,
+a metadata panel, a node inspector and an edge list. The route group strips from the URL, so links are
+`/maps`, `/content`, `/submissions` — **never** `/foundry/...` (three of those were 404s until G0).
+
+**The rules live in TypeScript, not markup** (`web/client/src/lib/foundry/`):
+`map-canvas.ts` (positions, unplaced lane, collision, tidy), `map-edges.ts` (direction inference,
+self-reference/duplicate-direction refusals, reciprocal edges), `map-nodes.ts` (suggested ids, defaults,
+delete refusals), `map-editor.ts` (`issuesByNode`, `mapState`, `parseDraftGraph`, `normalizeDraft`).
+Components render and dispatch.
+
+**One draft, one writer.** The page holds a `MapGraphDto` in state; the hidden `graph` field posts it
+whole. The old write-through `save` action, `applyNodeEdits`, `readNodeEdit` and `NodeEdit` are **deleted** —
+two writers silently discard canvas gestures.
+
+**Lifecycle (the gate).** `IsActive` + `ApprovedVersion` on `Map` (content DB; migrations
+`AddMapReviewState`, `AddMapReviewOutcome`). `CreateDraftAsync` → inactive, one entry node, no fabricated
+exit; `SubmitAsync` → refuses a graph with errors; `ReviewAsync` (`Curator` policy) → approval needs a
+submission **and** a clean validate, sets `IsActive` + `ApprovedVersion`; rejection clears the submission
+and keeps `LastReviewNotes`. `DeactivateAsync`/`DeleteDraftAsync` refuse while another map's node still
+targets the map; a live map is retired, never deleted. **`Apply` never writes `IsActive`** — a crafted save
+payload must not activate a draft. Every lifecycle change writes an `AdminAuditEntry`.
+
+**Access matrix.** GET `/api/content/maps*` → `content.view` (the graph leaks hidden nodes and unlock
+keys); PUT/POST authoring → `content.manage`; review/deactivate → the `Curator` **role** (a permission is
+not enough). The endpoints used to require `ManageContent` group-wide, which made read-only unreachable.
+
+**Notifications.** `FoundryNotification` gained `Kind` (`Submission`/`MapReview`), an optional
+`SubmissionId`, a `MapId` (plain string — maps are in the content DB, so no cross-context FK) and a
+`Title` snapshot. `FoundryNotificationWriter` is the only place a row is built. Storing the title removed a
+**required** join that was silently hiding rows. Migration `AllowMapReviewNotifications`.
+
+**Validator.** `MapGraphValidator.ValidateWorld` gained `target_node_unknown` (an exit must name a node the
+target map has). The entry rules (`entry_missing`, `entry_not_found`, `entry_flag_mismatch`) already
+existed — do not "add" them again.
+
+**Gotchas worth remembering:**
+- A local variable named `state` in a `.svelte` that uses `$state` breaks rune lexing with ~24 confusing
+  errors ("`$state` used before its declaration"). The `MapHeader` prop is therefore `status`.
+- `WebAppFactory` content DB starts empty: seed with `MapGraphSeeder`/`ZoneLocationsSeeder` before an HTTP
+  test that needs a graph (`MapEditorEndpointTests.EnsureAMapAsync`).
+- `MapEditorService` only has `ContentDbContext`; audit and notifications need `ApplicationDbContext`, so
+  the **endpoint** writes them. `ReviewAsync` returns `MapReviewOutcome` (response + author + map name)
+  for exactly that reason.
+- Client DTOs keep the review fields **optional** (`isActive?`, `approvedVersion?`) because fixtures
+  predate the gate; `mapState` treats `undefined` as live.
+- Coverage: `vite.config.ts` now gates `src/lib/foundry/**/*.ts` (rules) at 92 and leaves the `.svelte`
+  components to the 85/80 `.svelte` floor — the same reasoning already applied to `src/lib/game/**/*.ts`.
+  Global branches sit at exactly 90 after G; adding component branches will push it under again.
+- The Foundry authoring e2e (`tests/foundry-maps.e2e.ts`) is opt-in (`E2E_FOUNDRY=1` + staff credentials):
+  a test cannot grant itself `content.manage` or `Curator`.
+
+**Counts at the end of G:** 6,058 .NET tests, 1,303 web unit tests, coverage green globally (90 branches).

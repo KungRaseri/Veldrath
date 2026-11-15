@@ -80,7 +80,7 @@ public class EnterZoneLocationHubCommandHandlerTests
     private static ZoneLocationEntry Location(string slug, bool isSafeRespawn = false) =>
         new(slug, $"The {slug}", "locations", "the-halrow", 100, 11, 14, IsSafeRespawn: isSafeRespawn);
 
-    private static ServerCharacter Character(string? currentZoneId, string? currentMapId) => new()
+    private static ServerCharacter Character(string currentZoneId, string currentMapId) => new()
     {
         Id = CharacterId,
         Name = "Tester",

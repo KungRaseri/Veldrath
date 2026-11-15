@@ -1,12 +1,51 @@
 import { describe, expect, it } from 'vitest';
 import {
-	applyNodeEdits,
 	issueLabel,
+	issuesByNode,
+	mapState,
 	nodeRows,
-	readNodeEdit,
+	normalizeDraft,
+	parseDraftGraph,
 	type MapGraphDto,
+	type MapGraphIssue,
 	type MapNodeDto
 } from './map-editor';
+
+describe('issuesByNode', () => {
+	const issue = (nodeId: string | null, code: string): MapGraphIssue => ({
+		code,
+		message: code,
+		severity: 'Error',
+		mapId: 'zone:the-halrow',
+		nodeId
+	});
+
+	it('files a node issue beside that node', () => {
+		const grouped = issuesByNode([issue('vault', 'unlock_key_missing')]);
+
+		expect(grouped.nodes.vault).toHaveLength(1);
+		expect(grouped.map).toEqual([]);
+	});
+
+	it('keeps a map-level issue in the summary instead of dropping it', () => {
+		// Dropping it would hide the reason a save is refused, since no row can render it.
+		const grouped = issuesByNode([issue(null, 'map_without_exit')]);
+
+		expect(grouped.map.map((entry) => entry.code)).toEqual(['map_without_exit']);
+		expect(grouped.nodes).toEqual({});
+	});
+
+	it('collects several issues on one node and leaves the rest untouched', () => {
+		const grouped = issuesByNode([
+			issue('vault', 'unlock_key_missing'),
+			issue('vault', 'node_unreachable'),
+			issue('threshold', 'node_name_missing')
+		]);
+
+		expect(grouped.nodes.vault).toHaveLength(2);
+		expect(grouped.nodes.threshold).toHaveLength(1);
+	});
+});
 
 function node(overrides: Partial<MapNodeDto> & Pick<MapNodeDto, 'id'>): MapNodeDto {
 	return {
@@ -70,70 +109,69 @@ describe('foundry map editor rules', () => {
 		expect(rows[1]).toMatchObject({ outgoing: 0, incoming: 1 });
 	});
 
-	it('reads the inspector values for one node out of the form', () => {
-		const form = new FormData();
-		form.set('node:threshold:displayName', 'The Threshold of Roots');
-		form.set('node:threshold:isHidden', 'true');
-		form.set('node:threshold:unlockKey', 'relic-chamber');
-		form.set('node:threshold:targetMapId', 'region:varenmark');
+	it('reads the draft a page posted', () => {
+		const original = graph();
+		const posted = {
+			...original,
+			nodes: original.nodes.map((candidate) =>
+				candidate.id === 'threshold' ? { ...candidate, layoutX: 4, layoutY: 5 } : candidate
+			)
+		};
 
-		const edit = readNodeEdit(node({ id: 'threshold', displayName: 'The Threshold' }), form);
+		const parsed = parseDraftGraph(JSON.stringify(posted), original, original.id);
 
-		expect(edit).toEqual({
-			displayName: 'The Threshold of Roots',
-			isHidden: true,
-			unlockKey: 'relic-chamber',
-			targetMapId: 'region:varenmark'
+		expect(parsed.nodes.find((candidate) => candidate.id === 'threshold')).toMatchObject({
+			layoutX: 4,
+			layoutY: 5
 		});
 	});
 
-	it('falls back to the stored values when the form omits a field', () => {
-		const edit = readNodeEdit(
-			node({ id: 'threshold', displayName: 'The Threshold', unlockKey: 'keep-me' }),
-			new FormData()
-		);
-
-		expect(edit.displayName).toBe('The Threshold');
-		expect(edit.isHidden).toBe(false);
-		expect(edit.unlockKey).toBe('keep-me');
-	});
-
-	it('applies only the edited fields and leaves edges and the version alone', () => {
+	it('ignores a draft for a different map', () => {
 		const original = graph();
 
-		const edited = applyNodeEdits(original, {
-			threshold: {
-				displayName: 'The Threshold of Roots',
-				isHidden: true,
-				unlockKey: '  relic-chamber  ',
-				targetMapId: ''
-			}
+		expect(
+			parseDraftGraph(JSON.stringify({ ...original, id: 'zone:crestfall' }), original, original.id)
+		).toBe(original);
+	});
+
+	it('ignores a malformed draft rather than writing something nobody authored', () => {
+		const original = graph();
+
+		expect(parseDraftGraph('not json', original, original.id)).toBe(original);
+		expect(parseDraftGraph(JSON.stringify({ id: original.id }), original, original.id)).toBe(
+			original
+		);
+		expect(parseDraftGraph('5', original, original.id)).toBe(original);
+		expect(parseDraftGraph(null, original, original.id)).toBe(original);
+	});
+
+	it('normalises a blank unlock key or exit target to null when the draft is posted', () => {
+		const normalized = normalizeDraft({
+			...graph(),
+			nodes: [
+				node({ id: 'threshold', unlockKey: '  relic-chamber  ', targetMapId: '   ' }),
+				node({ id: 'vault', unlockKey: null })
+			]
 		});
 
-		const threshold = edited.nodes.find((candidate) => candidate.id === 'threshold');
-		expect(threshold).toMatchObject({
-			displayName: 'The Threshold of Roots',
-			isHidden: true,
+		expect(normalized.nodes.find((candidate) => candidate.id === 'threshold')).toMatchObject({
 			unlockKey: 'relic-chamber',
 			targetMapId: null
 		});
-
-		// The untouched node and every edge survive intact, and the version is the server's business.
-		expect(edited.nodes.find((candidate) => candidate.id === 'vault')?.displayName).toBe(
-			'The Vault'
-		);
-		expect(edited.edges).toEqual(original.edges);
-		expect(edited.version).toBe(original.version);
+		expect(normalized.nodes.find((candidate) => candidate.id === 'vault')?.unlockKey).toBeNull();
 	});
 
-	it('treats a blank unlock key or target as the absence of one', () => {
-		const edited = applyNodeEdits(graph(), {
-			threshold: { displayName: 'x', isHidden: false, unlockKey: '   ', targetMapId: '  ' }
-		});
-
-		const threshold = edited.nodes.find((candidate) => candidate.id === 'threshold');
-		expect(threshold?.unlockKey).toBeNull();
-		expect(threshold?.targetMapId).toBeNull();
+	it('names the lifecycle state from the two numbers that define it', () => {
+		expect(mapState({ isActive: false, version: 3, submittedAt: null })).toBe('Draft');
+		expect(mapState({ isActive: false, version: 3, submittedAt: '2026-01-02T00:00:00Z' })).toBe(
+			'In review'
+		);
+		expect(mapState({ isActive: true, version: 3, approvedVersion: 3 })).toBe('Live');
+		expect(mapState({ isActive: true, version: 4, approvedVersion: 3 })).toBe(
+			'Changed since approval'
+		);
+		// A payload from before the review gate carries no state, and the contract's default is live.
+		expect(mapState({ version: 1 })).toBe('Changed since approval');
 	});
 
 	it('labels an issue with the node it belongs to', () => {

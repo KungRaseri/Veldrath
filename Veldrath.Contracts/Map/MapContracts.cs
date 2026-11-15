@@ -18,7 +18,38 @@ public record MapSummaryDto(
     string? EntryNodeId,
     int NodeCount,
     int EdgeCount,
-    int Version = 1);
+    int Version = 1,
+    bool IsActive = true,
+    int ApprovedVersion = 0,
+    DateTimeOffset? SubmittedAt = null,
+    string? LastReviewNotes = null,
+    DateTimeOffset? LastReviewedAt = null)
+{
+    /// <summary>Whether the map is live but has been edited since a reviewer approved it.</summary>
+    public bool ChangedSinceApproval => IsActive && ApprovedVersion < Version;
+}
+
+/// <summary>Request to create an empty draft map.</summary>
+/// <param name="MapType">Map kind: <c>Region</c>, <c>Zone</c>, or <c>Interior</c>.</param>
+/// <param name="OwnerId">Region, zone or location slug that will own the map.</param>
+/// <param name="Name">Human-readable map name.</param>
+public record MapCreateRequest(string MapType, string OwnerId, string Name);
+
+/// <summary>A reviewer's decision on a submitted map.</summary>
+/// <param name="Approved">Whether the map should enter the game.</param>
+/// <param name="Notes">Optional review notes, recorded on the rejection path.</param>
+public record MapReviewRequest(bool Approved, string? Notes = null);
+
+/// <summary>Outcome of a lifecycle action — submit, review, deactivate or delete.</summary>
+/// <param name="Success">Whether the action changed anything.</param>
+/// <param name="Status"><c>ok</c>, <c>invalid</c>, <c>not_found</c> or <c>conflict</c>.</param>
+/// <param name="Message">Human-readable explanation, including the reason a refusal happened.</param>
+/// <param name="Issues">Validation issues, populated when a graph is not ready for the action.</param>
+public record MapLifecycleResponse(
+    bool Success,
+    string Status,
+    string? Message,
+    IReadOnlyList<MapGraphIssueDto> Issues);
 
 /// <summary>A complete region or zone map graph.</summary>
 /// <param name="Id">Stable map identifier.</param>
@@ -38,7 +69,20 @@ public record MapGraphDto(
     string? EntryNodeId,
     IReadOnlyList<MapNodeDto> Nodes,
     IReadOnlyList<MapEdgeDto> Edges,
-    int Version = 1);
+    int Version = 1,
+    bool IsActive = true,
+    int ApprovedVersion = 0,
+    DateTimeOffset? SubmittedAt = null,
+    DateTimeOffset? ApprovedAt = null,
+    string? LastReviewNotes = null,
+    DateTimeOffset? LastReviewedAt = null)
+{
+    /// <summary>
+    /// Whether the map has been edited since a reviewer approved it. Derived rather than stored, so it cannot
+    /// disagree with the two numbers it comes from.
+    /// </summary>
+    public bool ChangedSinceApproval => IsActive && ApprovedVersion < Version;
+}
 
 /// <summary>A node within a map graph.</summary>
 /// <param name="Id">Stable node identifier.</param>
@@ -128,6 +172,49 @@ public record MapGraphSaveResponse(
     int Version,
     IReadOnlyList<MapGraphIssueDto> Issues,
     string? Message = null);
+
+/// <summary>One option in a reference picker: a slug or identifier, and the label to show.</summary>
+/// <param name="Id">The value stored on the node — a slug, a map id, or an owner slug.</param>
+/// <param name="Label">Human-readable name for the option.</param>
+public record MapTargetOptionDto(string Id, string Label);
+
+/// <summary>One node of an authored map, for the destination picker on an exit.</summary>
+/// <param name="Id">The node identifier.</param>
+/// <param name="MapId">The map that owns the node.</param>
+/// <param name="Label">Human-readable node label.</param>
+/// <param name="IsEntryPoint">Whether the node is its map's entry point, so a picker can default to it.</param>
+public record MapNodeOptionDto(string Id, string MapId, string Label, bool IsEntryPoint);
+
+/// <summary>
+/// The references a node may point at.
+/// </summary>
+/// <param name="Maps">Every authored map, for exit destinations.</param>
+/// <param name="Zones">Owners of the zone and interior maps, for a node whose type is <c>Zone</c>.</param>
+/// <param name="Locations">Every zone location, for a room node's <c>RefId</c>.</param>
+/// <param name="Regions">Owners of the region maps, for a region exit's <c>RefId</c>.</param>
+/// <param name="Nodes">Every node of every map, so an exit's destination node is chosen rather than typed.</param>
+/// <remarks>
+/// Served so the editor can render pickers instead of free text: a mistyped reference is the defect the
+/// world validator has to catch, and a picker cannot produce one.
+/// </remarks>
+public record MapTargetsDto(
+    IReadOnlyList<MapTargetOptionDto> Maps,
+    IReadOnlyList<MapTargetOptionDto> Zones,
+    IReadOnlyList<MapTargetOptionDto> Locations,
+    IReadOnlyList<MapTargetOptionDto> Regions,
+    IReadOnlyList<MapNodeOptionDto> Nodes);
+
+/// <summary>Payload for validating an authored map graph without saving it.</summary>
+/// <param name="Map">The candidate graph. Its id must match the route.</param>
+public record MapGraphValidationRequest(MapGraphDto Map);
+
+/// <summary>Outcome of a validate-only pass over the whole world.</summary>
+/// <param name="IsValid">Whether a save would accept the graph: no issue has <c>Error</c> severity.</param>
+/// <param name="Issues">
+/// Every issue attributed to this map, plus any exit that points at a map that does not exist. A
+/// pre-existing defect in a sibling map is not listed, so an edit here is never blocked by someone else's.
+/// </param>
+public record MapGraphValidationResponse(bool IsValid, IReadOnlyList<MapGraphIssueDto> Issues);
 
 /// <summary>Hub request to travel to a map node.</summary>
 /// <param name="MapId">Map containing the selected node.</param>

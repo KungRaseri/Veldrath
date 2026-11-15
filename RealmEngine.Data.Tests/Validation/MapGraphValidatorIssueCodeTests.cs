@@ -591,6 +591,54 @@ public class MapGraphValidatorIssueCodeTests
     }
 
     [Fact]
+    public void ValidateWorld_ReportsAnExitToANodeTheTargetMapDoesNotHave()
+    {
+        // Arrange — the map exists, so this is the typo case: a plausible name that resolves to nothing.
+        var nodes = new List<MapNodeEntry>
+        {
+            Node("entry", MapNodeType.EntryPoint, isEntry: true),
+            Node(
+                "exit",
+                MapNodeType.ZoneExit,
+                isExit: true,
+                targetMapId: "zone:other",
+                targetNodeId: "ghost"),
+        };
+
+        // Act
+        var result = MapGraphValidator.ValidateWorld(
+        [
+            Graph(nodes, MinimalEdges()),
+            Graph([Node("entry", MapNodeType.EntryPoint, isEntry: true, mapId: "zone:other")], id: "zone:other", ownerId: "other"),
+        ]);
+
+        // Assert
+        Codes(result).Should().Contain("target_node_unknown");
+        result.IsValid.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ValidateWorld_DoesNotReportABlankTargetNodeTwice()
+    {
+        // Arrange — a blank TargetNodeId is exit_target_missing's job, not target_node_unknown's.
+        var nodes = new List<MapNodeEntry>
+        {
+            Node("entry", MapNodeType.EntryPoint, isEntry: true),
+            Node("exit", MapNodeType.ZoneExit, isExit: true, targetMapId: "zone:other"),
+        };
+
+        // Act
+        var result = MapGraphValidator.ValidateWorld(
+        [
+            Graph(nodes, MinimalEdges()),
+            Graph([Node("entry", MapNodeType.EntryPoint, isEntry: true, mapId: "zone:other")], id: "zone:other", ownerId: "other"),
+        ]);
+
+        // Assert
+        Codes(result).Should().Contain("exit_target_missing").And.NotContain("target_node_unknown");
+    }
+
+    [Fact]
     public void ValidateWorld_PromotesAStrandedRoomToAnErrorInsideADungeon()
     {
         // Arrange — "island" has no edge either way, which is how the Halrow's cellars shipped.
