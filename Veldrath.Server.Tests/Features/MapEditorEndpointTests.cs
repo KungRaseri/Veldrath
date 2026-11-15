@@ -8,6 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Seeders;
 using Veldrath.Contracts.Map;
+using Veldrath.Server.Data;
+using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Tests.Infrastructure;
 
 namespace Veldrath.Server.Tests.Features;
@@ -211,7 +213,9 @@ public class MapEditorEndpointTests(WebAppFactory factory)
     [Fact]
     public async Task TheGate_HoldsFromDraftToApproval()
     {
-        using var client = await AuthedClientAsync("MapGateReviewer", "Admin", "Curator");
+        var (token, authorAccountId) = await factory.CreateAccountTokenAsync("MapGateReviewer", "Admin", "Curator");
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var created = await client.PostAsJsonAsync(
             "/api/content/maps",
@@ -243,5 +247,14 @@ public class MapEditorEndpointTests(WebAppFactory factory)
         var stored = await ReadMapAsync(client, draft.Id);
         stored!.IsActive.Should().BeTrue();
         stored.ApprovedVersion.Should().Be(stored.Version);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        (await db.FoundryNotifications.AnyAsync(notification =>
+            notification.Kind == FoundryNotificationKind.MapReview &&
+            notification.MapId == draft.Id &&
+            notification.RecipientId == authorAccountId))
+            .Should()
+            .BeTrue("the author is told in the inbox they already use for submission decisions");
     }
 }

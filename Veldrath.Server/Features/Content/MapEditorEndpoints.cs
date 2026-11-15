@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Veldrath.Contracts.Map;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
+using Veldrath.Server.Features.Foundry;
 
 namespace Veldrath.Server.Features.Content;
 
@@ -132,6 +133,7 @@ public static class MapEditorEndpoints
         [FromBody] MapReviewRequest request,
         [FromServices] MapEditorService editor,
         [FromServices] ApplicationDbContext db,
+        [FromServices] FoundryNotificationWriter notifications,
         ClaimsPrincipal user,
         CancellationToken cancellationToken)
     {
@@ -139,11 +141,27 @@ public static class MapEditorEndpoints
         if (reviewerId is null)
             return Results.Unauthorized();
 
-        var result = await editor.ReviewAsync(mapId, reviewerId.Value, request, cancellationToken);
+        var outcome = await editor.ReviewAsync(mapId, reviewerId.Value, request, cancellationToken);
+
+        // The author is told in the inbox they already use for submission decisions. Nothing to notify for
+        // seeded content: it has neither a creator nor a submitter.
+        if (outcome.Response.Success && outcome.AuthorAccountId is { } author)
+        {
+            await notifications.NotifyAsync(
+                author,
+                FoundryNotificationKind.MapReview,
+                outcome.MapName,
+                request.Approved
+                    ? $"Your map \"{outcome.MapName}\" was approved and is now live."
+                    : $"Your map \"{outcome.MapName}\" was rejected. {request.Notes}",
+                mapId: mapId,
+                cancellationToken: cancellationToken);
+        }
+
         return await LifecycleAsync(
             db,
             user,
-            result,
+            outcome.Response,
             request.Approved ? "approve_map" : "reject_map",
             mapId,
             request.Notes);

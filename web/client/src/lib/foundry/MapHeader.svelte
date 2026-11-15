@@ -76,4 +76,11 @@
 			<p class="text-xs">{status}</p>
 		</div>
 	{/if}
+
+	{#if graph.lastReviewNotes}
+		<div class="space-y-1 text-sm sm:col-span-2">
+			<span class="text-surface-600-400">Last review notes</span>
+			<p class="text-xs text-warning-500">{graph.lastReviewNotes}</p>
+		</div>
+	{/if}
 </section>

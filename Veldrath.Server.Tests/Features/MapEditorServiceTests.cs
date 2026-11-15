@@ -100,7 +100,7 @@ public class MapEditorServiceTests
 
         var result = await editor.ReviewAsync("zone:draft-zone", reviewer, new MapReviewRequest(true));
 
-        result.Success.Should().BeTrue();
+        result.Response.Success.Should().BeTrue();
         var map = await db.Maps.SingleAsync(candidate => candidate.Id == "zone:draft-zone");
         map.IsActive.Should().BeTrue();
         map.ApprovedVersion.Should().Be(map.Version);
@@ -115,11 +115,35 @@ public class MapEditorServiceTests
 
         await editor.CreateDraftAsync(new MapCreateRequest("Zone", "draft-zone", "Draft Zone"), Guid.NewGuid());
 
-        var result = await editor.ReviewAsync("zone:draft-zone", Guid.NewGuid(), new MapReviewRequest(true));
+        var result = (await editor.ReviewAsync("zone:draft-zone", Guid.NewGuid(), new MapReviewRequest(true)))
+            .Response;
 
         result.Success.Should().BeFalse();
         result.Status.Should().Be("conflict");
         result.Message.Should().Contain("submitted");
+    }
+
+    [Fact]
+    public async Task ReviewAsync_RejectionKeepsTheNotesOnTheMapAndClearsTheSubmission()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        await editor.CreateDraftAsync(new MapCreateRequest("Zone", "draft-zone", "Draft Zone"), Guid.NewGuid());
+        await editor.SubmitAsync("zone:draft-zone", Guid.NewGuid());
+
+        var outcome = await editor.ReviewAsync(
+            "zone:draft-zone",
+            Guid.NewGuid(),
+            new MapReviewRequest(false, "Room 3 has no exit."));
+
+        outcome.Response.Success.Should().BeTrue();
+
+        var map = await db.Maps.SingleAsync(candidate => candidate.Id == "zone:draft-zone");
+        map.IsActive.Should().BeFalse();
+        map.SubmittedAt.Should().BeNull("a rejected map is a draft again");
+        map.LastReviewNotes.Should().Be("Room 3 has no exit.");
+        map.LastReviewedAt.Should().NotBeNull();
     }
 
     [Fact]

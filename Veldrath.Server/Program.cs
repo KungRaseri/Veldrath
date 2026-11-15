@@ -142,6 +142,7 @@ try
     // Provisions the Identity row (roles/permissions) for a Better Auth account on first token use.
     builder.Services.AddScoped<AccountProvisioningService>();
     builder.Services.AddScoped<FoundryService>();
+    builder.Services.AddScoped<FoundryNotificationWriter>();
 
     // IEmailSender: use NullEmailSender when SmtpHost is not configured (dev / CI).
     // Switch to SmtpEmailSender by setting Email:SmtpHost in the environment or user-secrets.

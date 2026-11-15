@@ -55,6 +55,10 @@ export interface MapGraphDto {
 	submittedAt?: string | null;
 	/** When a reviewer approved it. */
 	approvedAt?: string | null;
+	/** Notes from the last review decision, so a rejection reason is readable on the map itself. */
+	lastReviewNotes?: string | null;
+	/** When the last review decision was made. */
+	lastReviewedAt?: string | null;
 }
 
 /** One option in a reference picker, mirroring `Veldrath.Contracts.Map.MapTargetOptionDto`. */

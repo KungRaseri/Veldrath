@@ -537,16 +537,20 @@ describe('foundry notifications', () => {
 	const notifications = [
 		{
 			id: 'n1',
+			kind: 'Submission',
 			submissionId: 's1',
-			submissionTitle: 'Ember blade',
+			mapId: null,
+			title: 'Ember blade',
 			message: 'Approved by the curators',
 			createdAt: '2026-02-01T00:00:00.000Z',
 			isRead: false
 		},
 		{
 			id: 'n2',
+			kind: 'Submission',
 			submissionId: 's2',
-			submissionTitle: 'Frost ward',
+			mapId: null,
+			title: 'Frost ward',
 			message: 'Rejected: balance',
 			createdAt: '2026-02-02T00:00:00.000Z',
 			isRead: true
@@ -561,6 +565,30 @@ describe('foundry notifications', () => {
 		);
 		expect(screen.getAllByRole('button', { name: 'Mark read' })).toHaveLength(1);
 		expect(screen.getByText('Read')).toBeTruthy();
+	});
+
+	it('links a map notification to the map, not to a submission', () => {
+		render(
+			Notifications,
+			page({
+				notifications: [
+					{
+						id: 'n3',
+						kind: 'MapReview',
+						submissionId: null,
+						mapId: 'zone:the-halrow',
+						title: 'The Halrow',
+						message: 'Your map "The Halrow" was approved and is now live.',
+						createdAt: '2026-02-03T00:00:00.000Z',
+						isRead: true
+					}
+				]
+			})
+		);
+
+		expect(screen.getByRole('link', { name: 'The Halrow' }).getAttribute('href')).toBe(
+			'/maps/zone%3Athe-halrow'
+		);
 	});
 
 	it('renders the empty state and prefers the action error', () => {

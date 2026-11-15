@@ -6,7 +6,7 @@ using Veldrath.Server.Data.Entities;
 
 namespace Veldrath.Server.Features.Foundry;
 
-public class FoundryService(ApplicationDbContext db)
+public class FoundryService(ApplicationDbContext db, FoundryNotificationWriter notifications)
 {
     // Submissions
     public async Task<(FoundrySubmissionDto? Dto, string? Error)> CreateSubmissionAsync(
@@ -130,16 +130,15 @@ public class FoundryService(ApplicationDbContext db)
 
         await db.SaveChangesAsync(ct);
 
-        db.FoundryNotifications.Add(new FoundryNotification
-        {
-            Id = Guid.NewGuid(),
-            RecipientId = submission.SubmitterId,
-            SubmissionId = submissionId,
-            Message = request.Approved
+        await notifications.NotifyAsync(
+            submission.SubmitterId,
+            FoundryNotificationKind.Submission,
+            submission.Title,
+            request.Approved
                 ? $"Your submission \"{submission.Title}\" was approved!"
                 : $"Your submission \"{submission.Title}\" was rejected. {request.Notes}",
-        });
-        await db.SaveChangesAsync(ct);
+            submissionId: submissionId,
+            cancellationToken: ct);
 
         await db.Entry(submission).Reference(s => s.Reviewer).LoadAsync(ct);
         return (MapToDto(submission), null);
@@ -148,14 +147,15 @@ public class FoundryService(ApplicationDbContext db)
     // Notifications
     public async Task<IReadOnlyList<FoundryNotificationDto>> GetNotificationsAsync(Guid accountId, CancellationToken ct) =>
         await db.FoundryNotifications
-            .Include(n => n.Submission)
             .AsNoTracking()
             .Where(n => n.RecipientId == accountId)
             .OrderByDescending(n => n.CreatedAt)
             .Select(n => new FoundryNotificationDto(
                 n.Id,
+                n.Kind.ToString(),
                 n.SubmissionId,
-                n.Submission!.Title,
+                n.MapId,
+                n.Title,
                 n.Message,
                 n.IsRead,
                 n.CreatedAt))

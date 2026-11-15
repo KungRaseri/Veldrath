@@ -52,7 +52,9 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
                 map.Version,
                 map.IsActive,
                 map.ApprovedVersion,
-                map.SubmittedAt))
+                map.SubmittedAt,
+                map.LastReviewNotes,
+                map.LastReviewedAt))
             .ToListAsync(cancellationToken);
 
     /// <summary>
@@ -435,7 +437,9 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
             map.IsActive,
             map.ApprovedVersion,
             map.SubmittedAt,
-            map.ApprovedAt);
+            map.ApprovedAt,
+            map.LastReviewNotes,
+            map.LastReviewedAt);
 
     /// <summary>
     /// Creates an inactive draft with a single entry node.
@@ -565,7 +569,7 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
     /// <param name="request">The decision and optional notes.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Whether the decision was applied, and why not when it was refused.</returns>
-    public async Task<MapLifecycleResponse> ReviewAsync(
+    public async Task<MapReviewOutcome> ReviewAsync(
         string mapId,
         Guid reviewerAccountId,
         MapReviewRequest request,
@@ -573,50 +577,68 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
     {
         var map = await LoadAsync(mapId, tracking: true, cancellationToken);
         if (map is null)
-            return Missing(mapId);
+            return new MapReviewOutcome(Missing(mapId), null, mapId);
+
+        var author = map.SubmittedByAccountId ?? map.CreatedByAccountId;
 
         if (!request.Approved)
         {
             map.SubmittedAt = null;
             map.SubmittedByAccountId = null;
+            map.LastReviewNotes = request.Notes;
+            map.LastReviewedAt = DateTimeOffset.UtcNow;
             map.UpdatedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Rejected map {MapId}: {Notes}", mapId, request.Notes);
-            return new MapLifecycleResponse(
-                true,
-                StatusOk,
-                request.Notes ?? "Rejected; the draft is editable again.",
-                []);
+            return new MapReviewOutcome(
+                new MapLifecycleResponse(
+                    true,
+                    StatusOk,
+                    request.Notes ?? "Rejected; the draft is editable again.",
+                    []),
+                author,
+                map.Name);
         }
 
         if (map.SubmittedAt is null)
         {
-            return new MapLifecycleResponse(
-                false,
-                StatusConflict,
-                "The map has not been submitted for review.",
-                []);
+            return new MapReviewOutcome(
+                new MapLifecycleResponse(
+                    false,
+                    StatusConflict,
+                    "The map has not been submitted for review.",
+                    []),
+                author,
+                map.Name);
         }
 
         var issues = await ValidateWorldAsync(mapId, ToDto(map), cancellationToken);
         if (HasErrors(issues))
         {
-            return new MapLifecycleResponse(
-                false,
-                StatusInvalid,
-                "The graph has errors; it cannot be approved.",
-                issues);
+            return new MapReviewOutcome(
+                new MapLifecycleResponse(
+                    false,
+                    StatusInvalid,
+                    "The graph has errors; it cannot be approved.",
+                    issues),
+                author,
+                map.Name);
         }
 
         map.IsActive = true;
         map.ApprovedVersion = map.Version;
         map.ApprovedAt = DateTimeOffset.UtcNow;
         map.ApprovedByAccountId = reviewerAccountId;
+        map.LastReviewNotes = request.Notes;
+        map.LastReviewedAt = map.ApprovedAt;
         await db.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Approved map {MapId} at version {Version}", mapId, map.Version);
-        return new MapLifecycleResponse(true, StatusOk, "Approved; the map is live.", issues);
+        return new MapReviewOutcome(
+            new MapLifecycleResponse(true, StatusOk, "Approved; the map is live.", issues),
+            author,
+            map.Name);
     }
 
     /// <summary>Retires a live map. Refused while any node still points at it.</summary>

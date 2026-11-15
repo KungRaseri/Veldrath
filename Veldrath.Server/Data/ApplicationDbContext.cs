@@ -215,9 +215,13 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
              .WithMany()
              .HasForeignKey(n => n.RecipientId)
              .OnDelete(DeleteBehavior.Cascade);
+            e.Property(n => n.Title).HasMaxLength(200);
+            e.Property(n => n.MapId).HasMaxLength(200);
+            // Optional: a map notification has no submission, only a map id from the content database.
             e.HasOne(n => n.Submission)
              .WithMany()
              .HasForeignKey(n => n.SubmissionId)
+             .IsRequired(false)
              .OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(n => new { n.RecipientId, n.IsRead });
         });

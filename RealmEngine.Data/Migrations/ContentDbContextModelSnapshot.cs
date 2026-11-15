@@ -715,6 +715,12 @@ namespace RealmEngine.Data.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("LastReviewNotes")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("LastReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("MapType")
                         .IsRequired()
                         .HasMaxLength(16)

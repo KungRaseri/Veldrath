@@ -59,6 +59,15 @@ public class Map
     /// </summary>
     public int ApprovedVersion { get; set; }
 
+    /// <summary>
+    /// Notes from the last review decision, kept on the map so an author does not have to find an inbox row to
+    /// learn why a draft came back.
+    /// </summary>
+    public string? LastReviewNotes { get; set; }
+
+    /// <summary>When the last review decision was made, or <see langword="null"/> while unsubmitted.</summary>
+    public DateTimeOffset? LastReviewedAt { get; set; }
+
     /// <summary>Nodes belonging to this map.</summary>
     public ICollection<MapNode> Nodes { get; set; } = [];
 
