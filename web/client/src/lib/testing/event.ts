@@ -61,6 +61,11 @@ export interface FakeEventInit {
 	headers?: Record<string, string>;
 	/** Extra `locals` entries layered on top of `user` and `session`. */
 	locals?: Partial<App.Locals>;
+	/**
+	 * Layered layout data returned by `parent()`. Defaults to `{}` so a load that destructures it does
+	 * not throw; a load that reads a specific field passes it here.
+	 */
+	parentData?: unknown;
 }
 
 /**
@@ -153,7 +158,7 @@ export function makeServerEvent(init: FakeEventInit = {}): FakeServerEvent {
 		isSubRequest: false,
 		getClientAddress: () => '127.0.0.1',
 		platform: undefined,
-		parent: async () => ({}) as never,
+		parent: async () => (init.parentData ?? {}) as never,
 		depends: () => {},
 		untrack: <T>(fn: () => T) => fn()
 	};

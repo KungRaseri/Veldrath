@@ -5,6 +5,8 @@
 		Check,
 		Coins,
 		FlaskConical,
+		GraduationCap,
+		Hammer,
 		HeartPulse,
 		RefreshCw,
 		ScrollText,
@@ -369,6 +371,14 @@
 		<button class="sheet-menu-item" type="button" onclick={() => (session.showAbilities = true)}>
 			<Sparkles size={14} aria-hidden="true" />
 			Abilities
+		</button>
+		<button class="sheet-menu-item" type="button" onclick={() => (session.showSkills = true)}>
+			<GraduationCap size={14} aria-hidden="true" />
+			Skills
+		</button>
+		<button class="sheet-menu-item" type="button" onclick={() => session.openCrafting()}>
+			<Hammer size={14} aria-hidden="true" />
+			Crafting
 		</button>
 		{#if session.canShop}
 			<button class="sheet-menu-item" type="button" onclick={() => session.visitShop()}>

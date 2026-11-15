@@ -69,7 +69,7 @@ public class EfCoreGroundItemRepositoryTests : IDisposable
         await repo.AddAsync(Item("crestfall", "market", "apple"));
         await repo.AddAsync(Item("aldenmere", "square", "apple"));
 
-        var atSquare = await repo.GetAtLocationAsync("crestfall", "square");
+        var atSquare = await repo.GetAtLocationAsync("crestfall", "square", null);
 
         atSquare.Should().HaveCount(2);
         atSquare.Select(i => i.Id).Should().ContainInOrder(old.Id, recent.Id);
@@ -78,12 +78,67 @@ public class EfCoreGroundItemRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task GetAtLocationAsync_KeepsInstanceRunsApart_AndPurgesTheirFloorWithThem()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var repo = new EfCoreGroundItemRepository(db);
+
+        var first = new ZoneInstance
+        {
+            ZoneId = "crestfall",
+            CreatedByCharacterId = Guid.NewGuid(),
+            ZoneGroup = "zone:crestfall#i1:first",
+        };
+        var second = new ZoneInstance
+        {
+            ZoneId = "crestfall",
+            CreatedByCharacterId = Guid.NewGuid(),
+            ZoneGroup = "zone:crestfall#i1:second",
+        };
+        db.ZoneInstances.AddRange(first, second);
+        await db.SaveChangesAsync();
+
+        await repo.AddAsync(Item("crestfall", "square", "shared-loot"));
+        await repo.AddAsync(new GroundItem
+        {
+            ZoneId = "crestfall",
+            LocationSlug = "square",
+            ItemRef = "first-loot",
+            ZoneInstanceId = first.Id,
+        });
+        await repo.AddAsync(new GroundItem
+        {
+            ZoneId = "crestfall",
+            LocationSlug = "square",
+            ItemRef = "second-loot",
+            ZoneInstanceId = second.Id,
+        });
+
+        var shared = await repo.GetAtLocationAsync("crestfall", "square", null);
+        shared.Should().ContainSingle().Which.ItemRef.Should().Be("shared-loot");
+
+        var mine = await repo.GetAtLocationAsync("crestfall", "square", first.Id);
+        mine.Should().ContainSingle().Which.ItemRef.Should().Be("first-loot");
+
+        var theirs = await repo.GetAtLocationAsync("crestfall", "square", second.Id);
+        theirs.Should().ContainSingle().Which.ItemRef.Should().Be("second-loot");
+
+        // Purging the run takes its floor with it, and leaves the shared pile alone.
+        db.ZoneInstances.Remove(first);
+        await db.SaveChangesAsync();
+
+        (await repo.GetAtLocationAsync("crestfall", "square", first.Id)).Should().BeEmpty();
+        (await repo.GetAtLocationAsync("crestfall", "square", null)).Should().ContainSingle();
+        (await repo.GetAtLocationAsync("crestfall", "square", second.Id)).Should().ContainSingle();
+    }
+
+    [Fact]
     public async Task GetAtLocationAsync_EmptyLocation_ReturnsEmptyList()
     {
         await using var db = _dbFactory.CreateContext();
         var repo = new EfCoreGroundItemRepository(db);
 
-        var atSquare = await repo.GetAtLocationAsync("crestfall", "nowhere");
+        var atSquare = await repo.GetAtLocationAsync("crestfall", "nowhere", null);
 
         atSquare.Should().BeEmpty();
     }
@@ -99,7 +154,7 @@ public class EfCoreGroundItemRepositoryTests : IDisposable
         await repo.RemoveAsync(item);
 
         (await repo.GetByIdAsync(item.Id)).Should().BeNull();
-        (await repo.GetAtLocationAsync("crestfall", "square")).Should().BeEmpty();
+        (await repo.GetAtLocationAsync("crestfall", "square", null)).Should().BeEmpty();
     }
 
     [Fact]
@@ -114,7 +169,7 @@ public class EfCoreGroundItemRepositoryTests : IDisposable
 
         await repo.RemoveAsync(doomed);
 
-        var remaining = await repo.GetAtLocationAsync("crestfall", "square");
+        var remaining = await repo.GetAtLocationAsync("crestfall", "square", null);
         remaining.Should().ContainSingle().Which.Id.Should().Be(survivor.Id);
     }
 }

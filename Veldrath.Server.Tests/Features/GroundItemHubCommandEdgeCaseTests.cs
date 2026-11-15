@@ -70,7 +70,7 @@ public class GroundItemHubCommandEdgeCaseTests
     private static Mock<IGroundItemRepository> GroundRepo(params GroundItem[] items)
     {
         var repo = new Mock<IGroundItemRepository>();
-        repo.Setup(r => r.GetAtLocationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        repo.Setup(r => r.GetAtLocationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(items);
         repo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((GroundItem?)null);
@@ -79,23 +79,29 @@ public class GroundItemHubCommandEdgeCaseTests
         return repo;
     }
 
+    private static IPlayerSessionRepository NoSession() =>
+        new Mock<IPlayerSessionRepository>().Object;
+
     private static GetGroundItemsHubCommandHandler GetHandler(
         Mock<ICharacterRepository> chars,
         Mock<IGroundItemRepository> ground,
         Mock<IItemRepository> items) =>
-        new(chars.Object, ground.Object, items.Object, NullLogger<GetGroundItemsHubCommandHandler>.Instance);
+        new(chars.Object, NoSession(), ground.Object, items.Object,
+            NullLogger<GetGroundItemsHubCommandHandler>.Instance);
 
     private static DropItemToGroundHubCommandHandler DropHandler(
         Mock<ICharacterRepository> chars,
         Mock<IGroundItemRepository> ground,
         Mock<IItemRepository> items) =>
-        new(chars.Object, ground.Object, items.Object, NullLogger<DropItemToGroundHubCommandHandler>.Instance);
+        new(chars.Object, NoSession(), ground.Object, items.Object,
+            NullLogger<DropItemToGroundHubCommandHandler>.Instance);
 
     private static PickUpGroundItemHubCommandHandler PickUpHandler(
         Mock<ICharacterRepository> chars,
         Mock<IGroundItemRepository> ground,
         Mock<IItemRepository> items) =>
-        new(chars.Object, ground.Object, items.Object, NullLogger<PickUpGroundItemHubCommandHandler>.Instance);
+        new(chars.Object, NoSession(), ground.Object, items.Object,
+            NullLogger<PickUpGroundItemHubCommandHandler>.Instance);
 
     [Fact]
     public async Task GetGroundItems_ReturnsAnError_WhenTheCharacterIsMissing()

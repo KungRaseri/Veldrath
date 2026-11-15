@@ -60,18 +60,21 @@ public class GroundItemHubCommandTests
         return repo;
     }
 
+    private static IPlayerSessionRepository NoSession() =>
+        new Mock<IPlayerSessionRepository>().Object;
+
     private static DropItemToGroundHubCommandHandler DropHandler(
         Mock<ICharacterRepository> charRepo,
         Mock<IGroundItemRepository> groundRepo,
         Mock<IItemRepository> itemRepo) =>
-        new(charRepo.Object, groundRepo.Object, itemRepo.Object,
+        new(charRepo.Object, NoSession(), groundRepo.Object, itemRepo.Object,
             NullLogger<DropItemToGroundHubCommandHandler>.Instance);
 
     private static PickUpGroundItemHubCommandHandler PickUpHandler(
         Mock<ICharacterRepository> charRepo,
         Mock<IGroundItemRepository> groundRepo,
         Mock<IItemRepository> itemRepo) =>
-        new(charRepo.Object, groundRepo.Object, itemRepo.Object,
+        new(charRepo.Object, NoSession(), groundRepo.Object, itemRepo.Object,
             NullLogger<PickUpGroundItemHubCommandHandler>.Instance);
 
     [Fact]
@@ -86,7 +89,7 @@ public class GroundItemHubCommandTests
             .Callback<GroundItem, CancellationToken>((item, _) => added = item)
             .Returns(Task.CompletedTask);
         groundRepo
-            .Setup(r => r.GetAtLocationAsync(Zone, Location, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetAtLocationAsync(Zone, Location, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([new GroundItem
             {
                 ZoneId = Zone,
@@ -150,7 +153,7 @@ public class GroundItemHubCommandTests
             .ReturnsAsync(groundItem);
         groundRepo.Setup(r => r.RemoveAsync(groundItem, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        groundRepo.Setup(r => r.GetAtLocationAsync(Zone, Location, It.IsAny<CancellationToken>()))
+        groundRepo.Setup(r => r.GetAtLocationAsync(Zone, Location, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
         var result = await PickUpHandler(charRepo, groundRepo, ItemRepo())
@@ -190,7 +193,7 @@ public class GroundItemHubCommandTests
     {
         var character = MakeCharacter();
         var groundRepo = new Mock<IGroundItemRepository>();
-        groundRepo.Setup(r => r.GetAtLocationAsync(Zone, Location, It.IsAny<CancellationToken>()))
+        groundRepo.Setup(r => r.GetAtLocationAsync(Zone, Location, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([new GroundItem
             {
                 ZoneId = Zone,
@@ -201,6 +204,7 @@ public class GroundItemHubCommandTests
 
         var handler = new GetGroundItemsHubCommandHandler(
             CharacterRepo(character).Object,
+            NoSession(),
             groundRepo.Object,
             ItemRepo().Object,
             NullLogger<GetGroundItemsHubCommandHandler>.Instance);
@@ -223,6 +227,7 @@ public class GroundItemHubCommandTests
 
         var handler = new GetGroundItemsHubCommandHandler(
             CharacterRepo(character).Object,
+            NoSession(),
             new Mock<IGroundItemRepository>().Object,
             ItemRepo().Object,
             NullLogger<GetGroundItemsHubCommandHandler>.Instance);

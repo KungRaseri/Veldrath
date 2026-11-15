@@ -20,6 +20,7 @@ using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.Auth;
 using Veldrath.Server.Features.Characters;
 using Veldrath.Server.Features.Characters.Combat;
+using Veldrath.Server.Features.Characters.Queries;
 using Veldrath.Server.Features.LevelUp;
 using Veldrath.Server.Features.Map;
 using Veldrath.Server.Features.Party;
@@ -60,6 +61,7 @@ public class GameHub : Hub
     private readonly IAfkTracker _afk;
     private readonly ICombatSessionStore _sessions;
     private readonly IEnemyInstanceStore _enemies;
+    private readonly Veldrath.Server.Features.Zones.IZoneInstanceService? _zoneInstances;
     private readonly IRandomSource _random;
 
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
@@ -81,6 +83,7 @@ public class GameHub : Hub
         IAfkTracker afk,
         ICombatSessionStore sessions,
         IEnemyInstanceStore enemies,
+        Veldrath.Server.Features.Zones.IZoneInstanceService? zoneInstances = null,
         IRandomSource? randomSource = null)
     {
         _logger = logger;
@@ -98,6 +101,7 @@ public class GameHub : Hub
         _afk = afk;
         _sessions = sessions;
         _enemies = enemies;
+        _zoneInstances = zoneInstances;
         _random = randomSource ?? SystemRandomSource.Shared;
     }
 
@@ -361,6 +365,37 @@ public class GameHub : Hub
             string.IsNullOrWhiteSpace(character.AbilitiesBlob) ? "[]" : character.AbilitiesBlob)
             ?? [];
 
+        // Resolve those slugs against the power catalog so the client renders names, costs and effects
+        // instead of identifiers. A catalog failure must not cost the player their selection: the
+        // powers come back empty and the client falls back to naming the slugs it knows.
+        IReadOnlyList<LearnedPowerDto> learnedPowers = [];
+        try
+        {
+            learnedPowers = await _mediator.Send(new GetLearnedPowersQuery(learnedAbilities));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to resolve learned powers for character {CharacterId}; selecting without power details.",
+                character.Id);
+        }
+
+        // Skill progress lives in the attributes blob as Skill_{id}_XP keys. Resolve the catalog
+        // names so the sheet renders skills rather than storage keys.
+        IReadOnlyList<CharacterSkillDto> skills = [];
+        try
+        {
+            skills = await _mediator.Send(new GetCharacterSkillsQuery(character.Attributes));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to resolve skills for character {CharacterId}; selecting without skill progress.",
+                character.Id);
+        }
+
         // Deserialise the equipment blob so starter gear renders in the equipment panel
         // immediately, without waiting for the player to open the inventory overlay.
         var equippedItems = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -404,6 +439,8 @@ public class GameHub : Hub
             Wisdom = initAttrs.GetValueOrDefault("Wisdom", 10),
             Charisma = initAttrs.GetValueOrDefault("Charisma", 10),
             LearnedAbilities = learnedAbilities,
+            LearnedPowers = learnedPowers,
+            Skills = skills,
             SelectedAt = DateTimeOffset.UtcNow,
             Equipment = equippedItems,
         });
@@ -451,7 +488,44 @@ public class GameHub : Hub
             EnemyAbilityNames = abilityNames,
         });
 
+        await BroadcastCombatSnapshotAsync(characterId);
+
         await Clients.Caller.SendAsync("SystemMessage", $"Your fight with {enemy.Name} resumed.");
+    }
+
+    /// <summary>
+    /// Broadcasts the shared state of the caller's fight — the enemy and everyone who has hit it —
+    /// to the zone group, or back to the caller when they are not in a zone.
+    /// </summary>
+    /// <remarks>
+    /// This is the only combat event the whole location receives, and it deliberately carries no
+    /// rewards: per-character XP and gold stay on the caller-only <c>CombatTurn</c>. A missing
+    /// session or enemy is a normal end-of-fight race, so it stays silent.
+    /// </remarks>
+    /// <param name="characterId">The character whose fight to snapshot.</param>
+    private async Task BroadcastCombatSnapshotAsync(Guid characterId)
+    {
+        try
+        {
+            var session = await _sessions.TryGetAsync(characterId);
+            if (session is null)
+                return;
+
+            var snapshot = await _mediator.Send(new GetCombatSnapshotQuery(session.EnemyId));
+            if (snapshot is null)
+                return;
+
+            if (TryGetCurrentZoneGroup(out var zoneGroup))
+                await Clients.Group(zoneGroup).SendAsync("CombatParticipants", snapshot);
+            else
+                await Clients.Caller.SendAsync("CombatParticipants", snapshot);
+        }
+        catch (Exception ex)
+        {
+            // A snapshot is a view of the fight, never the fight itself: failing to build one must
+            // not roll back a turn that has already resolved.
+            _logger.LogError(ex, "Failed to broadcast the combat snapshot for {CharacterId}.", characterId);
+        }
     }
 
     /// <summary>
@@ -906,6 +980,10 @@ public class GameHub : Hub
                 return;
             }
 
+            // An instanced destination moves the connection into the run's own group, which is what keeps
+            // two parties' enemies, loot and chat apart while they clear the same dungeon.
+            await ApplyArrivalGroupAsync(result.ZoneGroup, result.ZoneInstanceId);
+
             await Clients.Caller.SendAsync("NodeTraveled", result);
 
             // Failsafe reporting: content debt the player just walked into is said out loud, not silently swallowed.
@@ -918,6 +996,54 @@ public class GameHub : Hub
         {
             _logger.LogError(ex, "Error in TravelToNode for character {CharacterId}", characterId);
             await Clients.Caller.SendAsync("Error", "Failed to travel to node");
+        }
+    }
+
+    /// <summary>
+    /// Enters a named location inside the caller's zone through the shared location-entry command.
+    /// Sends <c>NodeTraveled</c> with the arrival so the client moves exactly as it does when walking,
+    /// and reports content problems the arrival uncovered.
+    /// </summary>
+    /// <param name="request">Zone and location to enter.</param>
+    public async Task EnterLocation(EnterZoneLocationHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before EnterLocation");
+            return;
+        }
+
+        var zoneGroup = Context.Items.TryGetValue("CurrentZoneGroupName", out var group) && group is string value
+            ? value
+            : string.Empty;
+
+        try
+        {
+            var result = await _mediator.Send(new EnterZoneLocationHubCommand(
+                characterId,
+                request.ZoneId,
+                request.LocationSlug,
+                zoneGroup));
+
+            if (!result.Success || result.Arrival is null)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Failed to enter location");
+                return;
+            }
+
+            await ApplyArrivalGroupAsync(result.Arrival.ZoneGroup, result.Arrival.ZoneInstanceId);
+
+            await Clients.Caller.SendAsync("NodeTraveled", result.Arrival);
+
+            foreach (var warning in result.Arrival.ContentWarnings)
+            {
+                await Clients.Caller.SendAsync("SystemMessage", warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in EnterLocation for character {CharacterId}", characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to enter location");
         }
     }
 
@@ -1194,6 +1320,10 @@ public class GameHub : Hub
                 result.TotalXp,
                 result.CurrentRank,
                 result.RankedUp,
+                // The progression rule belongs to the server, so the progress figures travel with
+                // the award instead of the client dividing by a constant it guessed.
+                XpIntoRank = result.TotalXp % AwardSkillXpHubCommandHandler.XpPerRank,
+                XpToNextRank = AwardSkillXpHubCommandHandler.XpPerRank,
             };
 
             if (TryGetCurrentZoneGroup(out var zoneGroup))
@@ -1426,11 +1556,11 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Craft an item using the named recipe, deducting the crafting cost from the caller's
-    /// active character's gold. Broadcasts <c>ItemCrafted</c> to the zone group (or back to
-    /// the caller when not in a zone).
+    /// Crafts an item from a catalog recipe: the materials are consumed, the output is added to the
+    /// bag and the recipe's skill experience is awarded. Broadcasts <c>ItemCrafted</c> to the zone
+    /// group (or back to the caller when not in a zone).
     /// </summary>
-    /// <param name="recipeSlug">The slug of the recipe to craft (e.g. <c>"iron-sword"</c>).</param>
+    /// <param name="recipeSlug">The slug of the recipe to craft (e.g. <c>"iron-longsword"</c>).</param>
     public async Task CraftItem(string recipeSlug)
     {
         if (!TryGetCharacterId(out var characterId))
@@ -1449,15 +1579,19 @@ public class GameHub : Hub
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(result.ItemCrafted))
-                await AdvanceQuestObjectivesAsync(characterId, QuestObjectiveKinds.Craft, result.ItemCrafted);
+            if (!string.IsNullOrWhiteSpace(result.ItemRef))
+                await AdvanceQuestObjectivesAsync(characterId, QuestObjectiveKinds.Craft, result.RecipeSlug);
 
             var payload = new
             {
                 CharacterId = characterId,
-                RecipeSlug = recipeSlug,
-                result.GoldSpent,
-                result.RemainingGold,
+                result.RecipeSlug,
+                result.RecipeName,
+                result.ItemRef,
+                result.OutputQuantity,
+                result.ConsumedMaterials,
+                result.SkillId,
+                result.SkillXp,
             };
 
             if (TryGetCurrentZoneGroup(out var zoneGroup))
@@ -1465,15 +1599,51 @@ public class GameHub : Hub
             else
                 await Clients.Caller.SendAsync("ItemCrafted", payload);
 
+            // The bag and the recipe list both changed, so the caller re-reads what it can now make.
+            await SendCraftableRecipesAsync(characterId);
+
             _logger.LogInformation(
-                "Character {CharacterId} crafted '{RecipeSlug}'; remaining gold {Gold}",
-                characterId, recipeSlug, result.RemainingGold);
+                "Character {CharacterId} crafted {Quantity}x '{ItemRef}' from '{RecipeSlug}'.",
+                characterId, result.OutputQuantity, result.ItemRef, result.RecipeSlug);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error in CraftItem for character {CharacterId}", characterId);
             await Clients.Caller.SendAsync("Error", "Failed to craft item");
         }
+    }
+
+    /// <summary>
+    /// Sends the caller the recipes their character could craft, with material availability and the
+    /// reason each unavailable recipe is unavailable.
+    /// </summary>
+    public async Task GetCraftableRecipes()
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetCraftableRecipes");
+            return;
+        }
+
+        await SendCraftableRecipesAsync(characterId);
+    }
+
+    /// <summary>Sends <c>CraftableRecipes</c> to the caller, or an empty list when the read fails.</summary>
+    /// <param name="characterId">The character whose bag and skill ranks to read.</param>
+    private async Task SendCraftableRecipesAsync(Guid characterId)
+    {
+        IReadOnlyList<CraftableRecipeDto> recipes;
+        try
+        {
+            recipes = await _mediator.Send(new GetCraftableRecipesQuery(characterId));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to build the craft list for {CharacterId}.", characterId);
+            recipes = [];
+        }
+
+        await Clients.Caller.SendAsync("CraftableRecipes", new { Recipes = recipes });
     }
 
     /// <summary>
@@ -1504,12 +1674,17 @@ public class GameHub : Hub
                 CharacterId = characterId,
                 DungeonId = result.DungeonId,
                 DungeonSlug = dungeonSlug,
+                result.LocationSlug,
+                result.RecommendedLevel,
+                result.YourLevel,
+                result.LevelWarning,
             };
 
+            // The caller always learns the gate figures. Peers only hear about the arrival, never the gate.
+            await Clients.Caller.SendAsync("DungeonEntered", payload);
+
             if (TryGetCurrentZoneGroup(out var zoneGroup))
-                await Clients.Group(zoneGroup).SendAsync("DungeonEntered", payload);
-            else
-                await Clients.Caller.SendAsync("DungeonEntered", payload);
+                await Clients.OthersInGroup(zoneGroup).SendAsync("PlayerEntered", payload);
 
             _logger.LogInformation(
                 "Character {CharacterId} entered dungeon {DungeonId}",
@@ -2351,6 +2526,8 @@ public class GameHub : Hub
                 result.EnemyAbilityNames,
             });
 
+            await BroadcastCombatSnapshotAsync(characterId);
+
             if (!string.IsNullOrEmpty(zoneGroup))
             {
                 await Clients.OthersInGroup(zoneGroup).SendAsync("EnemyEngaged", new
@@ -2407,6 +2584,8 @@ public class GameHub : Hub
                 result.GoldEarned,
             });
 
+            await BroadcastCombatSnapshotAsync(characterId);
+
             if (result.EnemyDefeated)
             {
                 await AdvanceKillObjectivesAsync(result, characterId);
@@ -2417,6 +2596,27 @@ public class GameHub : Hub
                     {
                         CharacterId = characterId,
                     });
+                }
+
+                // A cleared room is a run-wide fact: everyone inside needs the progress, not just the killer.
+                if (result.ClearedLocationSlug is not null && TryGetCurrentZoneGroup(out var clearGroup))
+                {
+                    await Clients.Group(clearGroup).SendAsync("LocationCleared", new
+                    {
+                        CharacterId = characterId,
+                        InstanceId = result.ClearedInstanceId,
+                        LocationSlug = result.ClearedLocationSlug,
+                        FirstClearOfRun = result.FirstClearOfRun,
+                        FirstClearForCharacter = result.FirstClearForCharacter,
+                        UnlockedLocationSlugs = result.UnlockedLocationSlugs,
+                    });
+
+                    foreach (var unlocked in result.UnlockedLocationSlugs)
+                    {
+                        await Clients.Caller.SendAsync(
+                            "SystemMessage",
+                            $"Clearing the way has revealed something: {unlocked}.");
+                    }
                 }
             }
         }
@@ -2460,6 +2660,8 @@ public class GameHub : Hub
                 result.GoldLost,
                 result.XpLost,
             });
+
+            await BroadcastCombatSnapshotAsync(characterId);
         }
         catch (Exception ex)
         {
@@ -2508,6 +2710,8 @@ public class GameHub : Hub
                     result.GoldLost,
                     result.XpLost,
                 });
+
+                await BroadcastCombatSnapshotAsync(characterId);
             }
         }
         catch (Exception ex)
@@ -2561,6 +2765,8 @@ public class GameHub : Hub
                 result.GoldEarned,
             });
 
+            await BroadcastCombatSnapshotAsync(characterId);
+
             if (result.EnemyDefeated)
             {
                 await AdvanceQuestObjectivesAsync(characterId, "kill", result.EnemyName);
@@ -2603,6 +2809,10 @@ public class GameHub : Hub
                 return;
             }
 
+            // A run that was purged while the character was dead cannot receive them: they wake in the shared
+            // zone and are told why, rather than being left in a group nobody else can join.
+            await LeaveExpiredInstanceAsync(characterId);
+
             await Clients.Caller.SendAsync("CharacterRespawned", new
             {
                 CharacterId = characterId,
@@ -2633,8 +2843,14 @@ public class GameHub : Hub
         var zoneId = session.ZoneId;
         var characterId = session.CharacterId;
         var characterName = session.CharacterName;
+        var instanceId = session.ZoneInstanceId;
 
         await _playerSessionRepo.RemoveAsync(session);
+
+        // The run stays open — the rest of the party may still be inside — but this character's
+        // participation is closed so credit and the emptiness check both see the departure.
+        if (instanceId is not null && _zoneInstances is not null)
+            await _zoneInstances.LeaveAsync(instanceId.Value, characterId);
 
         // Player is on the region map — only leave the region group, no zone cleanup needed
         if (zoneId is null)
@@ -2832,6 +3048,67 @@ public class GameHub : Hub
         }
         groupName = null;
         return false;
+    }
+
+    /// <summary>
+    /// Clears the character's run when it no longer exists or is being purged, so a resurrection lands in the
+    /// shared zone instead of a group nothing else will ever join.
+    /// </summary>
+    /// <param name="characterId">Character being resurrected.</param>
+    private async Task LeaveExpiredInstanceAsync(Guid characterId)
+    {
+        if (_zoneInstances is null ||
+            Context.Items.TryGetValue("CurrentZoneInstanceId", out var value) is false ||
+            value is not Guid instanceId)
+        {
+            return;
+        }
+
+        var run = await _zoneInstances.GetAsync(instanceId);
+        if (run is { State: Veldrath.Server.Data.Entities.ZoneInstanceState.Open })
+            return;
+
+        var zoneId = Context.Items.TryGetValue("CurrentZoneId", out var zone) && zone is string id ? id : null;
+        await ApplyArrivalGroupAsync(
+            string.IsNullOrWhiteSpace(zoneId)
+                ? null
+                : Veldrath.Server.Features.Zones.ZoneGroupName.ForZone(zoneId).Value,
+            null);
+
+        await Clients.Caller.SendAsync(
+            "SystemMessage",
+            "The instance you were in has closed. You wake in the shared zone.");
+    }
+
+    /// <summary>
+    /// Moves the connection into the group the arrival belongs to when that differs from where it was, and
+    /// records the run on the session so a reconnect resumes inside it. A public arrival keeps the shared
+    /// zone scope and simply clears any run pointer.
+    /// </summary>
+    /// <param name="zoneGroup">Scope the arrival belongs to, or <see langword="null"/> when unchanged.</param>
+    /// <param name="instanceId">Run the character is now inside, or <see langword="null"/> for the shared zone.</param>
+    private async Task ApplyArrivalGroupAsync(string? zoneGroup, Guid? instanceId)
+    {
+        if (!string.IsNullOrWhiteSpace(zoneGroup))
+        {
+            var current = Context.Items.TryGetValue("CurrentZoneGroupName", out var value) && value is string existing
+                ? existing
+                : null;
+
+            if (!string.Equals(current, zoneGroup, StringComparison.Ordinal))
+            {
+                if (!string.IsNullOrWhiteSpace(current))
+                    await Groups.RemoveFromGroupAsync(Context.ConnectionId, current!);
+
+                await Groups.AddToGroupAsync(Context.ConnectionId, zoneGroup!);
+                Context.Items["CurrentZoneGroupName"] = zoneGroup;
+            }
+        }
+
+        Context.Items["CurrentZoneInstanceId"] = instanceId;
+
+        if (TryGetCharacterId(out var characterId))
+            await _playerSessionRepo.SetZoneInstanceAsync(characterId, instanceId);
     }
 
     private static string AccountGroup(Guid accountId) => $"account:{accountId}";

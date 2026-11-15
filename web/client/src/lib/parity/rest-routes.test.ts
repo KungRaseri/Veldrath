@@ -122,6 +122,11 @@ const UNCONSUMED: { pattern: RegExp; reason: string }[] = [
 		reason: 'Developer-only endpoints, exercised from curl and docs, never from the browser.'
 	},
 	{
+		pattern: /^\/api\/admin\/instances\b/,
+		reason:
+			'Operator lever for instance runs: list open runs and purge a stuck one. It is deliberately not a player surface, and the web admin has no instance screen yet — the operator reads it from the Forgejo/Coolify console with a staff token. Recorded in plans/dungeons.md §F2.6.'
+	},
+	{
 		pattern: /^\/api\/announcements$/,
 		reason:
 			'Legacy announcement feed superseded by /api/editorial/announcements, which carries status and publish state. Nothing in this repo calls it: removal candidate recorded in plans/web-feature-parity-and-coverage.md.'

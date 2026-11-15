@@ -152,6 +152,7 @@ internal static class GroundItemHelpers
 /// </summary>
 public class GetGroundItemsHubCommandHandler(
     ICharacterRepository characterRepo,
+    IPlayerSessionRepository sessionRepo,
     IGroundItemRepository groundItemRepo,
     IItemRepository itemRepository,
     ILogger<GetGroundItemsHubCommandHandler> logger)
@@ -173,9 +174,11 @@ public class GetGroundItemsHubCommandHandler(
         if (string.IsNullOrWhiteSpace(character.CurrentZoneLocationSlug))
             return new GetGroundItemsHubResult { Success = true, Items = [] };
 
+        var session = await sessionRepo.GetByCharacterIdAsync(request.CharacterId);
         var rows = await groundItemRepo.GetAtLocationAsync(
             character.CurrentZoneId,
             character.CurrentZoneLocationSlug,
+            session?.ZoneInstanceId,
             cancellationToken);
 
         logger.LogDebug(
@@ -198,6 +201,7 @@ public class GetGroundItemsHubCommandHandler(
 /// </summary>
 public class DropItemToGroundHubCommandHandler(
     ICharacterRepository characterRepo,
+    IPlayerSessionRepository sessionRepo,
     IGroundItemRepository groundItemRepo,
     IItemRepository itemRepository,
     ILogger<DropItemToGroundHubCommandHandler> logger)
@@ -245,10 +249,13 @@ public class DropItemToGroundHubCommandHandler(
         character.InventoryBlob = JsonSerializer.Serialize(inventory);
         await characterRepo.UpdateAsync(character, cancellationToken);
 
+        var session = await sessionRepo.GetByCharacterIdAsync(request.CharacterId);
+
         await groundItemRepo.AddAsync(
             new GroundItem
             {
                 ZoneId = character.CurrentZoneId,
+                ZoneInstanceId = session?.ZoneInstanceId,
                 LocationSlug = locationSlug,
                 ItemRef = entry.ItemRef,
                 Quantity = 1,
@@ -260,6 +267,7 @@ public class DropItemToGroundHubCommandHandler(
         var rows = await groundItemRepo.GetAtLocationAsync(
             character.CurrentZoneId,
             locationSlug,
+            session?.ZoneInstanceId,
             cancellationToken);
 
         logger.LogInformation(
@@ -284,6 +292,7 @@ public class DropItemToGroundHubCommandHandler(
 /// </summary>
 public class PickUpGroundItemHubCommandHandler(
     ICharacterRepository characterRepo,
+    IPlayerSessionRepository sessionRepo,
     IGroundItemRepository groundItemRepo,
     IItemRepository itemRepository,
     ILogger<PickUpGroundItemHubCommandHandler> logger)
@@ -311,11 +320,16 @@ public class PickUpGroundItemHubCommandHandler(
                 ErrorMessage = "That item is no longer on the ground.",
             };
 
+        var session = await sessionRepo.GetByCharacterIdAsync(request.CharacterId);
+
+        // Same answer for "another zone" and "another run": the client must not learn that a run it is not
+        // in exists, and an id guessed from a broadcast must not be reachable from outside it.
         if (!string.Equals(groundItem.ZoneId, character.CurrentZoneId, StringComparison.OrdinalIgnoreCase)
             || !string.Equals(
                 groundItem.LocationSlug,
                 locationSlug,
-                StringComparison.OrdinalIgnoreCase))
+                StringComparison.OrdinalIgnoreCase)
+            || groundItem.ZoneInstanceId != session?.ZoneInstanceId)
         {
             return new PickUpGroundItemHubResult
             {
@@ -357,6 +371,7 @@ public class PickUpGroundItemHubCommandHandler(
         var rows = await groundItemRepo.GetAtLocationAsync(
             character.CurrentZoneId,
             locationSlug ?? string.Empty,
+            session?.ZoneInstanceId,
             cancellationToken);
 
         logger.LogInformation(

@@ -61,6 +61,8 @@ public static class AdminEndpoints
         adminGroup.MapGet("/audit", GetAuditLogAsync);
         adminGroup.MapGet("/sessions", GetSessionsAsync);
         adminGroup.MapGet("/status", GetServerStatusAsync);
+        adminGroup.MapGet("/instances", ListInstancesAsync);
+        adminGroup.MapDelete("/instances/{id:guid}", PurgeInstanceAsync);
 
         // ── Group 2: per-permission moderation actions ────────────────────────────
         // No group-level permission requirement — each endpoint enforces its own claim.
@@ -599,6 +601,86 @@ public static class AdminEndpoints
         var idStr = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? Guid.Empty.ToString();
         var username = user.FindFirstValue(ClaimTypes.Name) ?? "unknown";
         return (Guid.TryParse(idStr, out var id) ? id : Guid.Empty, username);
+    }
+
+    /// <summary>
+    /// Lists instance runs, open ones by default, with the live occupant count. An operator needs this to
+    /// answer "is a run stuck?" without SQL.
+    /// </summary>
+    private static async Task<IResult> ListInstancesAsync(
+        [FromServices] ApplicationDbContext db,
+        CancellationToken cancellationToken,
+        [FromQuery] string? zoneId = null,
+        [FromQuery] bool includeClosed = false)
+    {
+        var query = db.ZoneInstances.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(zoneId))
+            query = query.Where(instance => instance.ZoneId == zoneId);
+
+        if (!includeClosed)
+            query = query.Where(instance => instance.State == ZoneInstanceState.Open);
+
+        var rows = await query
+            .OrderByDescending(instance => instance.LastOccupiedAt)
+            .Take(200)
+            .Select(instance => new
+            {
+                instance.Id,
+                instance.ZoneId,
+                instance.ZoneGroup,
+                State = instance.State.ToString(),
+                instance.OwnerPartyId,
+                instance.CreatedByCharacterId,
+                instance.CreatedAt,
+                instance.LastOccupiedAt,
+                Occupants = db.PlayerSessions.Count(session => session.ZoneInstanceId == instance.Id),
+            })
+            .ToListAsync(cancellationToken);
+
+        return Results.Ok(rows);
+    }
+
+    /// <summary>
+    /// Deletes one instance run, cascading its enemies, floor loot and participation, and releases anyone
+    /// still inside. Audit-logged, because it destroys live world state.
+    /// </summary>
+    private static async Task<IResult> PurgeInstanceAsync(
+        Guid id,
+        ClaimsPrincipal actor,
+        [FromServices] ApplicationDbContext db,
+        [FromServices] IHubContext<GameHub> hub,
+        CancellationToken cancellationToken)
+    {
+        var run = await db.ZoneInstances.FirstOrDefaultAsync(instance => instance.Id == id, cancellationToken);
+        if (run is null) return Results.NotFound();
+
+        var occupants = await db.PlayerSessions
+            .Where(session => session.ZoneInstanceId == id)
+            .ToListAsync(cancellationToken);
+
+        foreach (var session in occupants)
+            session.ZoneInstanceId = null;
+
+        db.ZoneInstances.Remove(run);
+        await db.SaveChangesAsync(cancellationToken);
+
+        await hub.Clients.Group(run.ZoneGroup).SendAsync(
+            "SystemMessage",
+            "This instance has been closed by an operator.",
+            cancellationToken);
+
+        await WriteAuditAsync(
+            db,
+            actor,
+            null,
+            null,
+            "purge_instance",
+            $"{run.ZoneId} {run.Id} ({occupants.Count} inside)");
+
+        return Results.Ok(new AdminActionResponse(
+            true,
+            $"Purged instance {id} for {run.ZoneId}; {occupants.Count} player(s) released."));
     }
 
     private static async Task WriteAuditAsync(

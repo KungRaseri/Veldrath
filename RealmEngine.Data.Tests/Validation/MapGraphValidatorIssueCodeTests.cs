@@ -20,7 +20,10 @@ public class MapGraphValidatorIssueCodeTests
         string mapId = "zone:test",
         string? targetMapId = null,
         string? targetNodeId = null,
-        string? refId = null) =>
+        string? refId = null,
+        bool isHidden = false,
+        string? unlockType = null,
+        string? unlockKey = null) =>
         new(
             id,
             mapId,
@@ -35,9 +38,9 @@ public class MapGraphValidatorIssueCodeTests
             isExit,
             targetMapId,
             targetNodeId,
-            false,
-            null,
-            null,
+            isHidden,
+            unlockType,
+            unlockKey,
             null,
             0);
 
@@ -55,17 +58,24 @@ public class MapGraphValidatorIssueCodeTests
         string id = "zone:test",
         string ownerId = "test",
         string name = "Test Map",
-        string entryNodeId = "entry") =>
-        new(id, MapType.Zone, ownerId, name, "description", entryNodeId, nodes, edges ?? []);
+        string entryNodeId = "entry",
+        MapType mapType = MapType.Zone) =>
+        new(id, mapType, ownerId, name, "description", entryNodeId, nodes, edges ?? []);
 
-    private static IReadOnlyList<MapNodeEntry> MinimalGraph() =>
+    private static IReadOnlyList<MapNodeEntry> MinimalGraph(string mapId = "zone:test") =>
     [
-        Node("entry", MapNodeType.EntryPoint, isEntry: true),
-        Node("exit", MapNodeType.ZoneExit, isExit: true, targetMapId: "zone:other", targetNodeId: "entry"),
+        Node("entry", MapNodeType.EntryPoint, isEntry: true, mapId: mapId),
+        Node(
+            "exit",
+            MapNodeType.ZoneExit,
+            isExit: true,
+            targetMapId: "zone:other",
+            targetNodeId: "entry",
+            mapId: mapId),
     ];
 
-    private static IReadOnlyList<MapEdgeEntry> MinimalEdges() =>
-        [Edge("entry", "exit", MapDirection.North)];
+    private static IReadOnlyList<MapEdgeEntry> MinimalEdges(string mapId = "zone:test") =>
+        [Edge("entry", "exit", MapDirection.North, mapId)];
 
     private static string[] Codes(MapGraphValidationResult result) =>
         [.. result.Issues.Select(issue => issue.Code)];
@@ -408,5 +418,331 @@ public class MapGraphValidatorIssueCodeTests
 
         // Assert
         Codes(result).Should().NotContain("node_reference_unknown");
+    }
+
+    // ── Unlock keys ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Validate_ReportsAQuestGatedNodeWithNoKey()
+    {
+        // Arrange
+        var nodes = new List<MapNodeEntry>
+        {
+            Node("entry", MapNodeType.EntryPoint, isEntry: true),
+            Node("vault", MapNodeType.Location, isHidden: true, unlockType: "quest"),
+        };
+
+        // Act
+        var result = MapGraphValidator.Validate(Graph(nodes, [Edge("entry", "vault", MapDirection.North)]));
+
+        // Assert
+        Codes(result).Should().Contain("unlock_key_missing");
+        result.IsValid.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("skill_check_passive")]
+    [InlineData("skill_check_active")]
+    [InlineData("manual")]
+    public void Validate_AcceptsAnUnlockTypeThatCarriesNoKey(string unlockType)
+    {
+        // Arrange — a skill check gates on the roll and DiscoverThreshold, not on a named quest or item.
+        var nodes = new List<MapNodeEntry>
+        {
+            Node("entry", MapNodeType.EntryPoint, isEntry: true),
+            Node("shrine", MapNodeType.Location, isHidden: true, unlockType: unlockType),
+        };
+
+        // Act
+        var result = MapGraphValidator.Validate(Graph(nodes, [Edge("entry", "shrine", MapDirection.North)]));
+
+        // Assert
+        Codes(result).Should().NotContain("unlock_key_missing");
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Validate_AcceptsAQuestGatedNodeThatNamesItsKey()
+    {
+        // Arrange
+        var nodes = new List<MapNodeEntry>
+        {
+            Node("entry", MapNodeType.EntryPoint, isEntry: true),
+            Node("vault", MapNodeType.Location, isHidden: true, unlockType: "quest", unlockKey: "the-vault"),
+        };
+
+        // Act
+        var result = MapGraphValidator.Validate(Graph(nodes, [Edge("entry", "vault", MapDirection.North)]));
+
+        // Assert
+        Codes(result).Should().NotContain("unlock_key_missing");
+    }
+
+    // ── Ways out ────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Validate_WarnsAboutAZoneWithNoWayOut()
+    {
+        // Arrange
+        var nodes = new List<MapNodeEntry>
+        {
+            Node("entry", MapNodeType.EntryPoint, isEntry: true),
+            Node("room", MapNodeType.Location),
+        };
+        var edges = new List<MapEdgeEntry>
+        {
+            Edge("entry", "room", MapDirection.North),
+            Edge("room", "entry", MapDirection.South),
+        };
+
+        // Act
+        var result = MapGraphValidator.Validate(Graph(nodes, edges));
+
+        // Assert
+        result.Issues.Should().ContainSingle(issue =>
+            issue.Code == "map_without_exit" && issue.Severity == MapGraphValidationSeverity.Warning);
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Validate_DoesNotAskAnInteriorMapForAWayOut()
+    {
+        // Arrange
+        var nodes = new List<MapNodeEntry>
+        {
+            Node("entry", MapNodeType.EntryPoint, isEntry: true),
+            Node("room", MapNodeType.Location),
+        };
+
+        // Act
+        var result = MapGraphValidator.Validate(
+            Graph(nodes, [Edge("entry", "room", MapDirection.North)], mapType: MapType.Interior));
+
+        // Assert
+        Codes(result).Should().NotContain("map_without_exit");
+    }
+
+    // ── Interior ownership ──────────────────────────────────────────────────
+
+    [Fact]
+    public void Validate_ReportsAnInteriorMapOwnedByAnUnknownLocation()
+    {
+        // Act
+        var result = MapGraphValidator.Validate(
+            Graph(MinimalGraph(), MinimalEdges(), ownerId: "ghost-cellar", mapType: MapType.Interior),
+            knownLocationSlugs: new HashSet<string> { "real-cellar" });
+
+        // Assert
+        Codes(result).Should().Contain("interior_owner_unknown");
+        result.IsValid.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Validate_AcceptsAnInteriorMapOwnedByAKnownLocation()
+    {
+        // Act
+        var result = MapGraphValidator.Validate(
+            Graph(MinimalGraph(), MinimalEdges(), ownerId: "real-cellar", mapType: MapType.Interior),
+            knownLocationSlugs: new HashSet<string> { "real-cellar" });
+
+        // Assert
+        Codes(result).Should().NotContain("interior_owner_unknown");
+    }
+
+    // ── World-level rules ───────────────────────────────────────────────────
+
+    [Fact]
+    public void ValidateWorld_AcceptsAWorldWhoseExitsAllPointAtRealMaps()
+    {
+        // Act
+        var result = MapGraphValidator.ValidateWorld(
+        [
+            Graph(MinimalGraph(), MinimalEdges()),
+            Graph(
+                [
+                    Node("entry", MapNodeType.EntryPoint, isEntry: true, mapId: "zone:other"),
+                    Node(
+                        "gate",
+                        MapNodeType.ZoneExit,
+                        isExit: true,
+                        targetMapId: "zone:test",
+                        targetNodeId: "entry",
+                        mapId: "zone:other"),
+                ],
+                [Edge("entry", "gate", MapDirection.North, "zone:other")],
+                id: "zone:other",
+                ownerId: "other"),
+        ]);
+
+        // Assert
+        Codes(result).Should().NotContain("target_map_unknown");
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ValidateWorld_ReportsAnExitToAMapThatDoesNotExist()
+    {
+        // Act
+        var result = MapGraphValidator.ValidateWorld([Graph(MinimalGraph(), MinimalEdges())]);
+
+        // Assert
+        Codes(result).Should().Contain("target_map_unknown");
+        result.IsValid.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ValidateWorld_ReportsAnExitToANodeTheTargetMapDoesNotHave()
+    {
+        // Arrange — the map exists, so this is the typo case: a plausible name that resolves to nothing.
+        var nodes = new List<MapNodeEntry>
+        {
+            Node("entry", MapNodeType.EntryPoint, isEntry: true),
+            Node(
+                "exit",
+                MapNodeType.ZoneExit,
+                isExit: true,
+                targetMapId: "zone:other",
+                targetNodeId: "ghost"),
+        };
+
+        // Act
+        var result = MapGraphValidator.ValidateWorld(
+        [
+            Graph(nodes, MinimalEdges()),
+            Graph([Node("entry", MapNodeType.EntryPoint, isEntry: true, mapId: "zone:other")], id: "zone:other", ownerId: "other"),
+        ]);
+
+        // Assert
+        Codes(result).Should().Contain("target_node_unknown");
+        result.IsValid.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ValidateWorld_DoesNotReportABlankTargetNodeTwice()
+    {
+        // Arrange — a blank TargetNodeId is exit_target_missing's job, not target_node_unknown's.
+        var nodes = new List<MapNodeEntry>
+        {
+            Node("entry", MapNodeType.EntryPoint, isEntry: true),
+            Node("exit", MapNodeType.ZoneExit, isExit: true, targetMapId: "zone:other"),
+        };
+
+        // Act
+        var result = MapGraphValidator.ValidateWorld(
+        [
+            Graph(nodes, MinimalEdges()),
+            Graph([Node("entry", MapNodeType.EntryPoint, isEntry: true, mapId: "zone:other")], id: "zone:other", ownerId: "other"),
+        ]);
+
+        // Assert
+        Codes(result).Should().Contain("exit_target_missing").And.NotContain("target_node_unknown");
+    }
+
+    [Fact]
+    public void ValidateWorld_PromotesAStrandedRoomToAnErrorInsideADungeon()
+    {
+        // Arrange — "island" has no edge either way, which is how the Halrow's cellars shipped.
+        var nodes = new List<MapNodeEntry>
+        {
+            Node("entry", MapNodeType.EntryPoint, isEntry: true),
+            Node("island", MapNodeType.Location),
+            Node("exit", MapNodeType.RegionExit, isExit: true, targetMapId: "region:test", targetNodeId: "entry"),
+        };
+        var edges = new List<MapEdgeEntry> { Edge("entry", "exit", MapDirection.North) };
+        var world = new List<MapGraph>
+        {
+            Graph(nodes, edges),
+            Graph(
+                [
+                    Node("entry", MapNodeType.EntryPoint, isEntry: true, mapId: "region:test"),
+                    Node(
+                        "gate",
+                        MapNodeType.RegionExit,
+                        isExit: true,
+                        targetMapId: "zone:test",
+                        targetNodeId: "entry",
+                        mapId: "region:test"),
+                ],
+                [Edge("entry", "gate", MapDirection.North, "region:test")],
+                id: "region:test",
+                ownerId: "test",
+                mapType: MapType.Region),
+        };
+
+        // Act
+        var result = MapGraphValidator.ValidateWorld(world, dungeonZoneSlugs: new HashSet<string> { "test" });
+
+        // Assert
+        result.Issues.Should().Contain(issue =>
+            issue.Code == "node_unreachable" &&
+            issue.NodeId == "island" &&
+            issue.Severity == MapGraphValidationSeverity.Error);
+        result.IsValid.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ValidateWorld_LeavesAStrandedRoomAWarningOutsideADungeon()
+    {
+        // Arrange — the same graph, but no dungeon owns it.
+        var nodes = new List<MapNodeEntry>
+        {
+            Node("entry", MapNodeType.EntryPoint, isEntry: true),
+            Node("island", MapNodeType.Location),
+            Node("exit", MapNodeType.RegionExit, isExit: true, targetMapId: "region:test", targetNodeId: "entry"),
+        };
+        var edges = new List<MapEdgeEntry> { Edge("entry", "exit", MapDirection.North) };
+        var world = new List<MapGraph>
+        {
+            Graph(nodes, edges),
+            Graph(
+                [
+                    Node("entry", MapNodeType.EntryPoint, isEntry: true, mapId: "region:test"),
+                    Node(
+                        "gate",
+                        MapNodeType.RegionExit,
+                        isExit: true,
+                        targetMapId: "zone:test",
+                        targetNodeId: "entry",
+                        mapId: "region:test"),
+                ],
+                [Edge("entry", "gate", MapDirection.North, "region:test")],
+                id: "region:test",
+                ownerId: "test",
+                mapType: MapType.Region),
+        };
+
+        // Act
+        var result = MapGraphValidator.ValidateWorld(world);
+
+        // Assert
+        result.Issues.Should().Contain(issue =>
+            issue.Code == "node_unreachable" && issue.Severity == MapGraphValidationSeverity.Warning);
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ValidateWorld_ReportsAMissingWayOutAsAnErrorInsideADungeon()
+    {
+        // Arrange
+        var nodes = new List<MapNodeEntry>
+        {
+            Node("entry", MapNodeType.EntryPoint, isEntry: true),
+            Node("room", MapNodeType.Location),
+        };
+        var edges = new List<MapEdgeEntry>
+        {
+            Edge("entry", "room", MapDirection.North),
+            Edge("room", "entry", MapDirection.South),
+        };
+
+        // Act
+        var result = MapGraphValidator.ValidateWorld(
+            [Graph(nodes, edges)],
+            dungeonZoneSlugs: new HashSet<string> { "test" });
+
+        // Assert
+        result.Issues.Should().Contain(issue =>
+            issue.Code == "map_without_exit" && issue.Severity == MapGraphValidationSeverity.Error);
+        result.IsValid.Should().BeFalse();
     }
 }

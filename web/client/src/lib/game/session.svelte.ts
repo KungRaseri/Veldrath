@@ -7,8 +7,12 @@ import {
 	applyCombatTurnToStats,
 	applyDamageToStats,
 	applyRestToStats,
-	describeCombatTurn
+	describeCombatTurn,
+	outcomeFrom
 } from './reducers';
+import { craftedSummary } from './crafting';
+import { resolvePowers, type PowerContext } from './powers';
+import { applySkillProgress, resolveSkills, skillLabel } from './skills';
 import type {
 	AbilityUsedPayload,
 	AnnouncementPayload,
@@ -23,15 +27,21 @@ import type {
 	ChatCommandInfo,
 	ChatMessage,
 	CombatEndedPayload,
+	CombatParticipantsPayload,
 	CombatStartedPayload,
 	CombatState,
 	CombatTurnPayload,
+	CraftableRecipe,
+	CraftableRecipesPayload,
 	EmotePayload,
 	GroundItem,
 	InventoryItem,
 	InventoryLoadedPayload,
+	ItemCraftedPayload,
 	ItemReceivedPayload,
 	KickedPayload,
+	LearnedPower,
+	LocationClearedPayload,
 	LocationEnteredPayload,
 	MapGraph,
 	MapGraphReceivedPayload,
@@ -50,6 +60,8 @@ import type {
 	ServerInfoPayload,
 	ShopCatalogItem,
 	ShopCatalogPayload,
+	SkillView,
+	SkillXpGainedPayload,
 	SpawnedEnemy,
 	SummonedPayload,
 	TeleportedPayload,
@@ -112,6 +124,21 @@ export class GameSession {
 	availableQuests = $state<AvailableQuest[]>([]);
 	/** Turn-in announcement shown as a toast, or `null` when there is nothing to announce. */
 	questTurnInToast = $state<{ slug: string; gold: number; xp: number } | null>(null);
+	/** Practised skills, seeded from the character snapshot and kept current by `SkillXpGained`. */
+	skills = $state<SkillView[]>([]);
+	/** Rank-up announcement shown as a toast, or `null` when there is nothing to announce. */
+	skillRankUpToast = $state<{ name: string; rank: number } | null>(null);
+	/**
+	 * Advisory level-gate wording for the location just entered, or `null` when the arrival set no
+	 * expectation. The server words it; the client only shows and dismisses it.
+	 */
+	levelWarning = $state<string | null>(null);
+	/** The instance run the character is inside, or `null` in the shared zone. */
+	instanceId = $state<string | null>(null);
+	/** Rooms this run has already cleared, as the server last described them. */
+	clearedLocations = $state<string[]>([]);
+	/** Recipes the character could craft, as the server last described them. */
+	craftableRecipes = $state<CraftableRecipe[]>([]);
 	shopCatalog = $state<ShopCatalogItem[]>([]);
 	shopZone = $state<string | null>(null);
 	chat = $state<ChatMessage[]>([]);
@@ -125,6 +152,8 @@ export class GameSession {
 	showQuests = $state(false);
 	showSettings = $state(false);
 	showAbilities = $state(false);
+	showSkills = $state(false);
+	showCrafting = $state(false);
 	showAttributes = $state(false);
 	showParty = $state(false);
 	loadingMap = $state(false);
@@ -207,6 +236,26 @@ export class GameSession {
 	/** Count of bag entries that are not equipped. */
 	get carriedItemCount(): number {
 		return this.inventory.filter((item) => !item.isEquipped).length;
+	}
+
+	/**
+	 * Learned powers with their catalog details, ready for the ability panels.
+	 *
+	 * Falls back to placeholders built from the raw slug list when the snapshot carries no resolved
+	 * powers, so the panels still list what the character knows instead of showing an empty state.
+	 */
+	get powers(): LearnedPower[] {
+		return resolvePowers(this.character);
+	}
+
+	/** The character state the power availability rules read. */
+	get powerContext(): PowerContext {
+		return {
+			mana: this.stats.currentMana,
+			level: this.stats.level,
+			inCombat: this.combat.active,
+			dead: this.dead
+		};
 	}
 
 	get canRest(): boolean {
@@ -297,6 +346,16 @@ export class GameSession {
 	async enterZone(zoneId: string): Promise<void> {
 		if (!this.hub) return;
 		await this.hub.invoke('EnterZone', zoneId);
+	}
+
+	/**
+	 * Enters a named location through the server's one entry path. The refusal (for example "travel
+	 * to the zone first") comes back as an `Error` broadcast, so nothing is moved optimistically.
+	 */
+	async enterLocation(zoneId: string, locationSlug: string): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('EnterLocation', { zoneId, locationSlug });
 	}
 
 	async openInventory(): Promise<void> {
@@ -678,24 +737,46 @@ export class GameSession {
 					maxHealth: payload.enemyMaxHealth,
 					abilities: payload.enemyAbilityNames ?? []
 				},
-				log: [`Combat started: ${payload.enemyName} (level ${payload.enemyLevel}).`]
+				log: [`Combat started: ${payload.enemyName} (level ${payload.enemyLevel}).`],
+				participants: [],
+				outcome: null
 			};
 			this.enemies = this.enemies.filter((enemy) => enemy.id !== payload.enemyId);
+		});
+
+		hub.on('CombatParticipants', (payload: CombatParticipantsPayload) => {
+			// The shared snapshot is authoritative for the enemy's health and for who is fighting:
+			// a party member's turn changes the enemy too, and this is how everyone learns it.
+			this.combat = {
+				...this.combat,
+				enemy: {
+					id: payload.enemyId,
+					name: payload.enemyName,
+					level: payload.enemyLevel,
+					currentHealth: payload.enemyCurrentHealth,
+					maxHealth: payload.enemyMaxHealth,
+					abilities: payload.enemyAbilityNames ?? []
+				},
+				participants: payload.participants ?? []
+			};
 		});
 
 		hub.on('CombatTurn', (payload: CombatTurnPayload) => {
 			this.stats = applyCombatTurnToStats(this.stats, payload);
 			const line = describeCombatTurn(payload);
-			if (this.combat.enemy) {
-				this.combat = {
-					...this.combat,
-					enemy: {
-						...this.combat.enemy,
-						currentHealth: payload.enemyRemainingHealth ?? this.combat.enemy.currentHealth
-					},
-					log: [...this.combat.log, line].slice(-25)
-				};
-			}
+
+			this.combat = {
+				...this.combat,
+				enemy: this.combat.enemy
+					? {
+							...this.combat.enemy,
+							currentHealth: payload.enemyRemainingHealth ?? this.combat.enemy.currentHealth
+						}
+					: this.combat.enemy,
+				log: [...this.combat.log, line].slice(-200),
+				outcome: this.combat.outcome ?? outcomeFrom(payload)
+			};
+
 			if (payload.playerDefeated) {
 				this.dead = true;
 				this.applyDeathPenalty(payload.goldLost ?? 0, payload.xpLost ?? 0);
@@ -707,9 +788,17 @@ export class GameSession {
 
 		hub.on('CombatEnded', (payload: CombatEndedPayload) => {
 			this.combat = {
+				...this.combat,
 				active: false,
-				enemy: null,
-				log: [...this.combat.log, `Combat ended: ${payload.reason}.`].slice(-25)
+				log: [...this.combat.log, `Combat ended: ${payload.reason}.`].slice(-200),
+				outcome: this.combat.outcome ?? {
+					kind: payload.reason.toLowerCase() === 'fled' ? 'fled' : 'defeat',
+					xpEarned: 0,
+					goldEarned: 0,
+					xpLost: 0,
+					goldLost: 0,
+					hardcore: false
+				}
 			};
 			this.addSystemMessage(`Combat ended: ${payload.reason}.`);
 		});
@@ -838,6 +927,19 @@ export class GameSession {
 			this.equipped = payload.equipped ?? {};
 		});
 
+		hub.on('SkillXpGained', (payload: SkillXpGainedPayload) => this.applySkillXp(payload));
+
+		hub.on('CraftableRecipes', (payload: CraftableRecipesPayload) => {
+			this.craftableRecipes = (payload.recipes ?? []).filter((recipe) => Boolean(recipe?.slug));
+		});
+
+		hub.on('ItemCrafted', (payload: ItemCraftedPayload) => {
+			// The server has already applied the craft; this is the announcement plus a bag refresh,
+			// so the sheet never shows materials that have been consumed.
+			this.addSystemMessage(craftedSummary(payload));
+			void this.openInventory();
+		});
+
 		hub.on('ShopVisited', (payload: { zoneId: string; zoneName: string }) => {
 			this.shopZone = payload.zoneName;
 			this.showShop = true;
@@ -937,6 +1039,20 @@ export class GameSession {
 			this.showParty = false;
 			this.endPartyChat();
 			this.addSystemMessage('Your party disbanded.');
+		});
+
+		hub.on('LocationCleared', (payload: LocationClearedPayload) => {
+			if (!this.clearedLocations.includes(payload.locationSlug)) {
+				this.clearedLocations = [...this.clearedLocations, payload.locationSlug];
+			}
+
+			if (payload.firstClearOfRun) {
+				this.addSystemMessage(
+					payload.firstClearForCharacter
+						? `Room cleared for the first time: ${payload.locationSlug}.`
+						: `Room cleared: ${payload.locationSlug}.`
+				);
+			}
 		});
 
 		hub.on('PartyInvitesChanged', (payload: PartyInvitesChangedPayload) => {
@@ -1056,6 +1172,7 @@ export class GameSession {
 
 	private async handleCharacterSelected(payload: CharacterSelectedPayload): Promise<void> {
 		this.character = payload;
+		this.skills = resolveSkills(payload.skills);
 		this.stats = {
 			currentHealth: payload.currentHealth,
 			maxHealth: payload.maxHealth,
@@ -1097,6 +1214,11 @@ export class GameSession {
 		this.message = payload.message ?? null;
 		if (payload.message) this.addSystemMessage(payload.message);
 
+		// An advisory level gate, worded by the server. Arriving somewhere that sets none clears the banner.
+		this.levelWarning = payload.levelWarning ?? null;
+		this.instanceId = payload.zoneInstanceId ?? null;
+		this.clearedLocations = [...(payload.clearedLocations ?? [])];
+
 		if (payload.nodeId) {
 			this.currentNodeId = payload.nodeId;
 			this.selectedNodeId = payload.nodeId;
@@ -1120,6 +1242,57 @@ export class GameSession {
 	/** Clears the turn-in toast once the player has seen it. */
 	dismissQuestToast(): void {
 		this.questTurnInToast = null;
+	}
+
+	/** Clears the rank-up toast once the player has seen it. */
+	dismissSkillToast(): void {
+		this.skillRankUpToast = null;
+	}
+
+	/** Clears the level-gate banner once the player has acknowledged it. */
+	dismissLevelWarning(): void {
+		this.levelWarning = null;
+	}
+
+	/** Opens the crafting panel and asks the server what can be made right now. */
+	async openCrafting(): Promise<void> {
+		this.showCrafting = true;
+		await this.loadCraftableRecipes();
+	}
+
+	/** Re-reads the craftable recipe list from the server. */
+	async loadCraftableRecipes(): Promise<void> {
+		if (!this.hub) return;
+		await this.hub.invoke('GetCraftableRecipes');
+	}
+
+	/**
+	 * Crafts one recipe. Every check belongs to the server — level, skill rank and materials — and
+	 * the outcome arrives as an `ItemCrafted` broadcast, so nothing is optimistically applied here.
+	 */
+	async craft(recipeSlug: string): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('CraftItem', recipeSlug);
+	}
+
+	/**
+	 * Folds a skill XP award into the sheet.
+	 *
+	 * The award carries the server's own progress figures, so the bar is redrawn from them rather
+	 * than from arithmetic here. An award for a skill the snapshot never resolved is appended as an
+	 * unresolved entry: practising it is real even when the catalog row is missing.
+	 */
+	private applySkillXp(payload: SkillXpGainedPayload): void {
+		const index = this.skills.findIndex((skill) => skill.skillId === payload.skillId);
+		const updated = applySkillProgress(index >= 0 ? this.skills[index] : null, payload);
+
+		if (index >= 0) this.skills[index] = updated;
+		else this.skills = [...this.skills, updated];
+
+		if (payload.rankedUp) {
+			this.skillRankUpToast = { name: skillLabel(updated), rank: payload.currentRank };
+		}
 	}
 
 	/**

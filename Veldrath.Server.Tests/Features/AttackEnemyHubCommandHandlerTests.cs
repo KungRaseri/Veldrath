@@ -26,6 +26,12 @@ public class AttackEnemyHubCommandHandlerTests : IDisposable
             new CharacterRepository(db),
             _enemies,
             _sessions,
+            new Veldrath.Server.Features.Zones.EfCoreZoneInstanceService(
+                db,
+                new CharacterRepository(db),
+                new CharacterUnlockedLocationRepository(db),
+                new Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository>().Object,
+                NullLogger<Veldrath.Server.Features.Zones.EfCoreZoneInstanceService>.Instance),
             Options.Create(new DeathPenaltyOptions()),
             NullLogger<AttackEnemyHubCommandHandler>.Instance);
 

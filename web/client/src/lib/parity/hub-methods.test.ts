@@ -71,8 +71,8 @@ const NO_WEB_CALLER: Record<string, string> = {
 	AwardSkillXp: 'Awarded by combat and quest handlers, never by the browser.',
 
 	// Deferred features: the hub bridge exists, the UI does not. See the plan file.
-	TalkToNpc: 'Deferred: NPC dialogue UI does not exist yet.',
-	CraftItem: 'Deferred: crafting UI does not exist yet.',
+	TalkToNpc:
+		'Deferred: NPC placement and a dialogue node model do not exist yet; see plans/ui-depth.md §3.4a.',
 	EnterDungeon: 'Deferred: dungeon UI does not exist yet.',
 
 	// Navigation is fully covered by the map graph.

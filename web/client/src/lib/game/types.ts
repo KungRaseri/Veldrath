@@ -23,6 +23,119 @@ export interface ServerInfoPayload {
 	minCompatibleClientVersion: string;
 }
 
+/** One material a recipe needs, with how many the character already holds. */
+export interface CraftMaterial {
+	itemRef: string;
+	required: number;
+	owned: number;
+}
+
+/**
+ * A catalog recipe as the crafting panel needs it.
+ *
+ * `requiredStation` is informational: nothing in the world model places a station in a location, so
+ * the server cannot refuse a craft for it and neither does the panel.
+ */
+export interface CraftableRecipe {
+	slug: string;
+	name: string;
+	description: string;
+	category: string;
+	requiredLevel: number;
+	requiredSkill?: string | null;
+	requiredSkillLevel: number;
+	skillRank: number;
+	requiredStation?: string | null;
+	requiredStationTier: number;
+	materials: CraftMaterial[];
+	outputItemRef: string;
+	outputQuantity: number;
+	experienceGained: number;
+	available: boolean;
+	unavailableReason?: string | null;
+}
+
+/** The caller's craftable recipes, sent in answer to `GetCraftableRecipes`. */
+export interface CraftableRecipesPayload {
+	recipes: CraftableRecipe[];
+}
+
+/** One material a completed craft consumed. */
+export interface ConsumedMaterial {
+	itemRef: string;
+	quantity: number;
+}
+
+/** A craft that succeeded, broadcast to the zone. */
+export interface ItemCraftedPayload {
+	characterId?: string;
+	recipeSlug: string;
+	recipeName?: string | null;
+	itemRef?: string | null;
+	outputQuantity: number;
+	consumedMaterials?: ConsumedMaterial[] | null;
+	skillId?: string | null;
+	skillXp: number;
+}
+
+/**
+ * One learned power, resolved against the power catalog by the server.
+ *
+ * `resolved` is false when the character knows a slug the catalog has no entry for; the UI names
+ * that case explicitly instead of printing the identifier as if it were a name.
+ */
+export interface LearnedPower {
+	slug: string;
+	resolved: boolean;
+	displayName?: string | null;
+	description?: string | null;
+	school?: string | null;
+	powerType: string;
+	effectType: string;
+	manaCost: number;
+	cooldown: number;
+	baseDamage?: string | null;
+	baseEffectValue?: string | null;
+	damageType?: string | null;
+	range?: number | null;
+	duration?: number | null;
+	maxTargets?: number | null;
+	tier: number;
+	requiredLevel: number;
+}
+
+/**
+ * One practised skill, resolved against the skill catalog by the server.
+ *
+ * `resolved` is false when the character has practised a skill key the catalog has no entry for.
+ * Progress is expressed as `xpIntoRank` over `xpToNextRank` because the server owns that rule; the
+ * client never divides by a constant of its own.
+ */
+export interface SkillView {
+	skillId: string;
+	resolved: boolean;
+	name?: string | null;
+	description?: string | null;
+	category?: string | null;
+	governingAttribute?: string | null;
+	rank: number;
+	totalXp: number;
+	xpIntoRank: number;
+	xpToNextRank: number;
+	maxRank: number;
+}
+
+/** A skill XP award, broadcast after the server has persisted the new total. */
+export interface SkillXpGainedPayload {
+	characterId: string;
+	skillId: string;
+	totalXp: number;
+	currentRank: number;
+	rankedUp: boolean;
+	xpIntoRank: number;
+	xpToNextRank: number;
+}
+
 export interface CharacterSelectedPayload {
 	id: string;
 	name: string;
@@ -46,6 +159,10 @@ export interface CharacterSelectedPayload {
 	wisdom: number;
 	charisma: number;
 	learnedAbilities: string[];
+	/** Learned powers with their catalog details; empty when the server could not resolve them. */
+	learnedPowers?: LearnedPower[] | null;
+	/** Practised skills with their rank and progress; empty when nothing has been practised. */
+	skills?: SkillView[] | null;
 	selectedAt: string;
 	equipment?: Record<string, string> | null;
 }
@@ -131,6 +248,22 @@ export interface NodeTraveledPayload {
 	zoneId?: string | null;
 	regionId?: string | null;
 	locationSlug?: string | null;
+	/** The scope the character is now in: the shared zone, or a run's own group. */
+	zoneGroup?: string | null;
+	/** The instance run the character is inside, or `null` in the shared zone. */
+	zoneInstanceId?: string | null;
+	/** Rooms this run has already cleared, so the dungeon panel needs no second call. */
+	clearedLocations?: string[] | null;
+	locationTypeKey?: string | null;
+	isDungeonLocation?: boolean;
+	isInstanced?: boolean;
+	isSafeRespawn?: boolean;
+	/** Level this place expects, or `null` when it sets no expectation. */
+	recommendedLevel?: number | null;
+	/** The arriving character's level, so the warning can be read at a glance. */
+	yourLevel?: number;
+	/** Advisory wording for an under-levelled arrival. It never blocks entry. */
+	levelWarning?: string | null;
 	passiveDiscoveries?: unknown[] | null;
 	spawnedEnemies?: SpawnedEnemy[] | null;
 }
@@ -407,6 +540,16 @@ export interface AbilityUsedPayload {
 	healthRestored: number;
 }
 
+/** Broadcast when a room in an instance run has been cleared. */
+export interface LocationClearedPayload {
+	characterId: string;
+	instanceId?: string | null;
+	locationSlug: string;
+	firstClearOfRun: boolean;
+	firstClearForCharacter: boolean;
+	unlockedLocationSlugs?: string[] | null;
+}
+
 export interface CombatStartedPayload {
 	characterId: string;
 	enemyId: string;
@@ -539,6 +682,42 @@ export const ATTRIBUTE_ORDER: { key: keyof CharacterAttributes; label: string }[
 	{ key: 'charisma', label: 'Charisma' }
 ];
 
+/** One character in a shared fight, as everyone at the location hears about them. */
+export interface CombatParticipantView {
+	characterId: string;
+	name?: string | null;
+	currentHealth: number;
+	maxHealth: number;
+	damageDealt: number;
+	contributionPercent: number;
+}
+
+/**
+ * The shared state of a fight, broadcast to the whole location.
+ *
+ * It carries no rewards on purpose: XP and gold are per-character and stay on the caller-only
+ * `CombatTurn`.
+ */
+export interface CombatParticipantsPayload {
+	enemyId: string;
+	enemyName: string;
+	enemyLevel: number;
+	enemyCurrentHealth: number;
+	enemyMaxHealth: number;
+	enemyAbilityNames: string[];
+	participants: CombatParticipantView[];
+}
+
+/** How a fight ended, using the caller's own numbers. */
+export interface CombatOutcome {
+	kind: 'victory' | 'defeat' | 'fled';
+	xpEarned: number;
+	goldEarned: number;
+	xpLost: number;
+	goldLost: number;
+	hardcore: boolean;
+}
+
 export interface CombatState {
 	active: boolean;
 	enemy: {
@@ -550,6 +729,10 @@ export interface CombatState {
 		abilities: string[];
 	} | null;
 	log: string[];
+	/** Everyone fighting the same enemy, highest contributor first. */
+	participants?: CombatParticipantView[];
+	/** Set once the fight resolves, so the panel can summarise it. */
+	outcome?: CombatOutcome | null;
 }
 
 /** Canonical equipment slots, in the order the character sheet renders them. */

@@ -2,8 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
+using RealmEngine.Data.Validation;
 using RealmEngine.Data.Validation.Content;
 using Veldrath.Server.Data;
+using MapType = RealmEngine.Shared.Models.MapType;
+using SharedEdge = RealmEngine.Shared.Models.MapEdgeEntry;
+using SharedGraph = RealmEngine.Shared.Models.MapGraph;
+using SharedNode = RealmEngine.Shared.Models.MapNodeEntry;
 
 namespace Veldrath.Server.Tests.Features;
 
@@ -186,6 +191,53 @@ public class SeededContentValidationTests
     }
 
     [Fact]
+    public async Task The_seeded_world_has_no_stranded_rooms_or_missing_exits()
+    {
+        // The failure mode this guards is "the seeded world does not load". A dungeon with no way out, a room
+        // that nothing connects to, or a hidden room gated on a key that does not exist are all content bugs
+        // that only show up when a player is already inside — so they are checked before the seed is accepted.
+        await using var probe = new SeededContentProbe();
+        await using var content = await probe.CreateContextAsync();
+
+        var maps = await content.Maps
+            .Include(map => map.Nodes)
+            .Include(map => map.Edges)
+            .AsNoTracking()
+            .ToListAsync();
+        var locations = await content.ZoneLocations.AsNoTracking().ToListAsync();
+
+        // A dungeon is a zone that has both an interior room and a room a dead character resurrects in; that is
+        // the lobby the dungeon contract requires, and it is what separates a dungeon from the dev playground.
+        var dungeonZoneSlugs = locations
+            .Where(location => location.Traits.IsDungeon == true)
+            .Select(location => location.ZoneId)
+            .Where(zoneId => locations.Any(other => other.ZoneId == zoneId && other.Traits.SafeRespawn == true))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var result = MapGraphValidator.ValidateWorld(
+            maps.Select(ToGraph).ToList(),
+            knownRegionSlugs: maps
+                .Where(map => map.MapType == MapType.Region)
+                .Select(map => map.OwnerId)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase),
+            knownZoneSlugs: maps
+                .Where(map => map.MapType == MapType.Zone)
+                .Select(map => map.OwnerId)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase),
+            knownLocationSlugs: locations
+                .Select(location => location.Slug)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase),
+            dungeonZoneSlugs: dungeonZoneSlugs);
+
+        var errors = result.Issues
+            .Where(issue => issue.Severity == MapGraphValidationSeverity.Error)
+            .Select(issue => $"{issue.Code} [{issue.MapId}/{issue.NodeId}] {issue.Message}")
+            .ToList();
+
+        errors.Should().BeEmpty("the seeded world must load: every dungeon escapable and every room reachable");
+    }
+
+    [Fact]
     public async Task The_validators_run_over_seeded_content_without_throwing()
     {
         // The CI guard and the write path both call this library in a request path; a rule that throws would turn a
@@ -210,6 +262,50 @@ public class SeededContentValidationTests
 
         await act.Should().NotThrowAsync();
     }
+
+    private static SharedGraph ToGraph(Map map) =>
+        new(
+            map.Id,
+            map.MapType,
+            map.OwnerId,
+            map.Name,
+            map.Description,
+            map.EntryNodeId,
+            map.Nodes
+                .OrderBy(node => node.SortOrder)
+                .ThenBy(node => node.Id, StringComparer.OrdinalIgnoreCase)
+                .Select(node => new SharedNode(
+                    node.Id,
+                    node.MapId,
+                    node.NodeType,
+                    node.RefId,
+                    node.DisplayName,
+                    node.Description,
+                    node.IconKey,
+                    node.LayoutX,
+                    node.LayoutY,
+                    node.IsEntryPoint,
+                    node.IsExitPoint,
+                    node.TargetMapId,
+                    node.TargetNodeId,
+                    node.IsHidden,
+                    node.UnlockType,
+                    node.UnlockKey,
+                    node.DiscoverThreshold,
+                    node.SortOrder))
+                .ToList(),
+            map.Edges
+                .Select(edge => new SharedEdge(
+                    edge.Id,
+                    edge.MapId,
+                    edge.FromNodeId,
+                    edge.ToNodeId,
+                    edge.Direction,
+                    edge.EdgeType,
+                    edge.Label,
+                    edge.IsTraversable,
+                    edge.IsHidden))
+                .ToList());
 }
 
 /// <summary>

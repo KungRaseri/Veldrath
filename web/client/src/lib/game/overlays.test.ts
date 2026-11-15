@@ -2,7 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/svelte';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import GameOverlays from './GameOverlays.svelte';
 import { GameSession } from './session.svelte';
-import type { InventoryItem, QuestLogEntry, ZoneEnteredPayload } from './types';
+import type { InventoryItem, QuestLogEntry, SkillView, ZoneEnteredPayload } from './types';
 
 // `#lib/hub` imports `$app/env/public`, whose runtime needs a SvelteKit dev global that does not
 // exist under Vitest. Every session method guards on `this.hub`, so a null factory keeps the
@@ -201,6 +201,25 @@ describe('shop', () => {
 	});
 });
 
+/** A resolved power, as the server sends it once the catalog lookup succeeds. */
+function arcaneBolt() {
+	return {
+		slug: 'arcane_bolt',
+		resolved: true,
+		displayName: 'Arcane bolt',
+		description: 'Hurls a shard of force.',
+		school: 'arcane',
+		powerType: 'Spell',
+		effectType: 'Damage',
+		manaCost: 5,
+		cooldown: 2,
+		baseDamage: '2d6',
+		damageType: 'arcane',
+		tier: 1,
+		requiredLevel: 1
+	};
+}
+
 describe('abilities', () => {
 	it('shows the empty state before a character is selected', () => {
 		const game = session();
@@ -211,40 +230,74 @@ describe('abilities', () => {
 		expect(within(dialog).getByText('No abilities learned yet.')).toBeTruthy();
 	});
 
-	it('uses an ability outside combat', async () => {
+	it('names the ability, lists what it costs and uses it outside combat', async () => {
 		const game = session();
 		game.showAbilities = true;
-		game.character = { learnedAbilities: ['arcane_bolt'] } as never;
+		game.stats = { ...game.stats, currentMana: 20, maxMana: 20, level: 5 };
+		game.character = { learnedAbilities: ['arcane_bolt'], learnedPowers: [arcaneBolt()] } as never;
 		const use = vi.spyOn(game, 'useAbility');
 		render(GameOverlays, { session: game });
 
 		const dialog = screen.getByRole('dialog', { name: 'Abilities' });
-		expect(within(dialog).getByText('arcane bolt')).toBeTruthy();
-		const button = within(dialog).getByRole('button', { name: /Use/ }) as HTMLButtonElement;
+		expect(within(dialog).getByText('Arcane bolt')).toBeTruthy();
+		expect(within(dialog).getByText('Hurls a shard of force.')).toBeTruthy();
+		expect(within(dialog).getByText('5')).toBeTruthy();
+		expect(within(dialog).getByText('2 turns')).toBeTruthy();
+		expect(within(dialog).getByText('2d6 arcane')).toBeTruthy();
+
+		const button = within(dialog).getByRole('button', {
+			name: 'Use Arcane bolt'
+		}) as HTMLButtonElement;
 		expect(button.disabled).toBe(false);
 
 		await fireEvent.click(button);
 		expect(use).toHaveBeenCalledWith('arcane_bolt');
 	});
 
-	it('disables the action during combat and while dead', async () => {
+	it('explains why the ability cannot be used during combat or while dead', async () => {
 		const game = session();
 		game.showAbilities = true;
-		game.character = { learnedAbilities: ['arcane_bolt'] } as never;
+		game.stats = { ...game.stats, currentMana: 20, maxMana: 20 };
+		game.character = { learnedAbilities: ['arcane_bolt'], learnedPowers: [arcaneBolt()] } as never;
 		game.combat = { ...game.combat, active: true };
 		const { unmount } = render(GameOverlays, { session: game });
 
-		expect((screen.getByRole('button', { name: /Use/ }) as HTMLButtonElement).disabled).toBe(true);
+		expect(
+			(screen.getByRole('button', { name: 'Use Arcane bolt' }) as HTMLButtonElement).disabled
+		).toBe(true);
+		expect(screen.getByText('Finish the fight first — use it from the combat panel.')).toBeTruthy();
 		unmount();
 
 		document.body.innerHTML = '';
 		const dead = session();
 		dead.showAbilities = true;
-		dead.character = { learnedAbilities: ['arcane_bolt'] } as never;
+		dead.stats = { ...dead.stats, currentMana: 20, maxMana: 20 };
+		dead.character = { learnedAbilities: ['arcane_bolt'], learnedPowers: [arcaneBolt()] } as never;
 		dead.dead = true;
 		render(GameOverlays, { session: dead });
 
-		expect((screen.getByRole('button', { name: /Use/ }) as HTMLButtonElement).disabled).toBe(true);
+		expect(
+			(screen.getByRole('button', { name: 'Use Arcane bolt' }) as HTMLButtonElement).disabled
+		).toBe(true);
+		expect(screen.getByText('You cannot use abilities while dead.')).toBeTruthy();
+	});
+
+	it('names an ability the catalog could not resolve and refuses it', () => {
+		const game = session();
+		game.showAbilities = true;
+		game.character = { learnedAbilities: ['ghost_power'] } as never;
+		render(GameOverlays, { session: game });
+
+		const dialog = screen.getByRole('dialog', { name: 'Abilities' });
+		expect(within(dialog).getByText('Unknown ability (ghost_power)')).toBeTruthy();
+		expect(within(dialog).getByText('The catalog has no entry for this ability.')).toBeTruthy();
+		expect(
+			(
+				within(dialog).getByRole('button', {
+					name: 'Use Unknown ability (ghost_power)'
+				}) as HTMLButtonElement
+			).disabled
+		).toBe(true);
 	});
 });
 
@@ -595,5 +648,87 @@ describe('toasts', () => {
 
 		expect(accept).toHaveBeenCalledWith('p1');
 		expect(decline).toHaveBeenCalledWith('p1');
+	});
+});
+
+describe('skills', () => {
+	function skill(overrides: Partial<SkillView> = {}): SkillView {
+		return {
+			skillId: 'swordsmanship',
+			resolved: true,
+			name: 'Swordsmanship',
+			description: 'Skill with a blade.',
+			category: 'combat',
+			governingAttribute: 'strength',
+			rank: 2,
+			totalXp: 250,
+			xpIntoRank: 50,
+			xpToNextRank: 100,
+			maxRank: 50,
+			...overrides
+		};
+	}
+
+	it('shows the empty state before anything is practised', () => {
+		const game = session();
+		game.showSkills = true;
+		render(GameOverlays, { session: game });
+
+		const dialog = screen.getByRole('dialog', { name: 'Skills' });
+		expect(within(dialog).getByText('No skills practised yet.')).toBeTruthy();
+	});
+
+	it('groups the sheet by category and shows rank and progress', () => {
+		const game = session();
+		game.showSkills = true;
+		game.skills = [
+			skill(),
+			skill({
+				skillId: 'herbalism',
+				name: 'Herbalism',
+				category: 'profession',
+				governingAttribute: 'wisdom',
+				rank: 0,
+				totalXp: 40,
+				xpIntoRank: 40,
+				maxRank: 30
+			})
+		];
+		render(GameOverlays, { session: game });
+
+		const dialog = screen.getByRole('dialog', { name: 'Skills' });
+		expect(within(dialog).getByRole('heading', { name: 'Combat' })).toBeTruthy();
+		expect(within(dialog).getByRole('heading', { name: 'Profession' })).toBeTruthy();
+		expect(within(dialog).getByText('Swordsmanship')).toBeTruthy();
+		expect(within(dialog).getByText('Rank 2 / 50')).toBeTruthy();
+		expect(within(dialog).getByText('50 / 100 XP to the next rank · 250 total')).toBeTruthy();
+		expect(within(dialog).getByText('Rank 0 / 30')).toBeTruthy();
+		expect(within(dialog).getByText('40 / 100 XP to the next rank · 40 total')).toBeTruthy();
+		expect(within(dialog).getByText('Governed by strength')).toBeTruthy();
+		expect(within(dialog).getByText('Governed by wisdom')).toBeTruthy();
+	});
+
+	it('names a skill the catalog could not resolve and still shows its XP', () => {
+		const game = session();
+		game.showSkills = true;
+		game.skills = [skill({ resolved: false, name: null, category: null })];
+		render(GameOverlays, { session: game });
+
+		const dialog = screen.getByRole('dialog', { name: 'Skills' });
+		expect(within(dialog).getByText('Unknown skill (swordsmanship)')).toBeTruthy();
+		expect(within(dialog).getByText('The catalog has no entry for this skill.')).toBeTruthy();
+		expect(within(dialog).getByText('250 XP recorded')).toBeTruthy();
+	});
+
+	it('announces a rank-up and dismisses it', async () => {
+		const game = session();
+		game.skillRankUpToast = { name: 'Swordsmanship', rank: 3 };
+		render(GameOverlays, { session: game });
+
+		expect(screen.getByText('Now rank 3')).toBeTruthy();
+
+		await fireEvent.click(screen.getByRole('button', { name: /Dismiss/ }));
+
+		expect(game.skillRankUpToast).toBeNull();
 	});
 });

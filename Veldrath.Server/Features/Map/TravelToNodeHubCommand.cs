@@ -2,9 +2,11 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.Characters.Combat;
 using Veldrath.Server.Features.Zones;
+using ZoneEntity = Veldrath.Server.Data.Entities.Zone;
 
 namespace Veldrath.Server.Features.Map;
 
@@ -56,6 +58,48 @@ public record TravelToNodeHubResult
     /// <summary>Gets the location slug when the destination is a <c>Location</c> node.</summary>
     public string? LocationSlug { get; init; }
 
+    /// <summary>
+    /// Gets the SignalR group the character is now scoped to. It equals the shared zone scope for a public
+    /// location, and the run's own scope when the location is instanced, so the hub knows whether to move
+    /// the connection between groups.
+    /// </summary>
+    public string? ZoneGroup { get; init; }
+
+    /// <summary>
+    /// Gets the instance run the character is now inside, or <see langword="null"/> for the shared zone.
+    /// </summary>
+    public Guid? ZoneInstanceId { get; init; }
+
+    /// <summary>
+    /// Gets the rooms this run has already cleared. Empty for a public arrival, so the client can render
+    /// "what is left here" without a second call.
+    /// </summary>
+    public IReadOnlyList<string> ClearedLocations { get; init; } = [];
+
+    /// <summary>Gets the location's content type key, such as <c>locations</c> or <c>dungeons</c>.</summary>
+    public string? LocationTypeKey { get; init; }
+
+    /// <summary>Gets a value indicating whether the arrived location is a dungeon room.</summary>
+    public bool IsDungeonLocation { get; init; }
+
+    /// <summary>Gets a value indicating whether entering the location should create a private copy for the party.</summary>
+    public bool IsInstanced { get; init; }
+
+    /// <summary>Gets a value indicating whether a dead character in this zone resurrects at this location.</summary>
+    public bool IsSafeRespawn { get; init; }
+
+    /// <summary>Gets the level this place expects, or <see langword="null"/> when it sets no expectation.</summary>
+    public int? RecommendedLevel { get; init; }
+
+    /// <summary>Gets the arriving character's level, so the client can render the comparison.</summary>
+    public int YourLevel { get; init; }
+
+    /// <summary>
+    /// Gets the advisory wording for a character below <see cref="RecommendedLevel"/>, or <see langword="null"/>.
+    /// It is a warning, never a refusal: the character has already arrived.
+    /// </summary>
+    public string? LevelWarning { get; init; }
+
     /// <summary>Gets hidden locations newly discovered by the passive skill-check sweep.</summary>
     public IReadOnlyList<ZoneLocationEntry> PassiveDiscoveries { get; init; } = [];
 
@@ -87,6 +131,7 @@ public class TravelToNodeHubCommandHandler
     private readonly IZoneLocationRepository _locationRepo;
     private readonly ActorPoolResolver _actorPoolResolver;
     private readonly IEnemyInstanceStore _enemyStore;
+    private readonly IZoneInstanceService _instances;
     private readonly ILogger<TravelToNodeHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="TravelToNodeHubCommandHandler"/>.</summary>
@@ -98,6 +143,7 @@ public class TravelToNodeHubCommandHandler
     /// <param name="locationRepo">Zone-location repository used for discovery and rosters.</param>
     /// <param name="actorPoolResolver">Resolver that spawns the destination enemy roster.</param>
     /// <param name="enemyStore">Store for the live enemy instances at the destination.</param>
+    /// <param name="instances">Instance-run service, used when the destination location is instanced.</param>
     /// <param name="logger">Logger for diagnostic output.</param>
     public TravelToNodeHubCommandHandler(
         IMapGraphRepository mapRepo,
@@ -108,6 +154,7 @@ public class TravelToNodeHubCommandHandler
         IZoneLocationRepository locationRepo,
         ActorPoolResolver actorPoolResolver,
         IEnemyInstanceStore enemyStore,
+        IZoneInstanceService instances,
         ILogger<TravelToNodeHubCommandHandler> logger)
     {
         _mapRepo = mapRepo;
@@ -118,6 +165,7 @@ public class TravelToNodeHubCommandHandler
         _locationRepo = locationRepo;
         _actorPoolResolver = actorPoolResolver;
         _enemyStore = enemyStore;
+        _instances = instances;
         _logger = logger;
     }
 
@@ -172,6 +220,22 @@ public class TravelToNodeHubCommandHandler
         if (string.IsNullOrWhiteSpace(selectedNode.TargetMapId) &&
             string.Equals(selectedNode.Id, currentNode.Id, StringComparison.OrdinalIgnoreCase))
         {
+            // Re-entering where you already stand is a real case — the party action does it — so this
+            // branch reports the same facts as an arrival rather than a bare acknowledgement.
+            var hereZoneId = map.MapType == MapType.Zone ? map.OwnerId : null;
+            var hereZone = string.IsNullOrWhiteSpace(hereZoneId) ? null : await _zoneRepo.GetByIdAsync(hereZoneId);
+            var hereLocationSlug = selectedNode.NodeType == MapNodeType.Location ? selectedNode.RefId : null;
+            var hereLocation = string.IsNullOrWhiteSpace(hereLocationSlug)
+                ? null
+                : await _locationRepo.GetBySlugAsync(hereLocationSlug);
+            var (hereRecommended, hereWarning) = EvaluateGate(character.Level, hereLocation, hereZone);
+            var (hereInstanceId, hereGroup) = await ResolveScopeAsync(
+                hereZoneId,
+                hereLocation,
+                request.ZoneGroup,
+                request.CharacterId,
+                cancellationToken);
+
             return new TravelToNodeHubResult
             {
                 Success = true,
@@ -180,10 +244,17 @@ public class TravelToNodeHubCommandHandler
                 NodeType = selectedNode.NodeType.ToString(),
                 MapChanged = false,
                 Message = $"Already at {selectedNode.DisplayName}.",
-                ZoneId = map.MapType == MapType.Zone ? map.OwnerId : null,
-                LocationSlug = selectedNode.NodeType == MapNodeType.Location
-                    ? selectedNode.RefId
-                    : null,
+                ZoneId = hereZoneId,
+                LocationSlug = hereLocationSlug,
+                ZoneGroup = hereGroup,
+                ZoneInstanceId = hereInstanceId,
+                LocationTypeKey = hereLocation?.TypeKey,
+                IsDungeonLocation = string.Equals(hereLocation?.TypeKey, "dungeons", StringComparison.OrdinalIgnoreCase),
+                IsInstanced = hereLocation?.IsInstanced ?? false,
+                IsSafeRespawn = hereLocation?.IsSafeRespawn ?? false,
+                RecommendedLevel = hereRecommended,
+                YourLevel = character.Level,
+                LevelWarning = hereWarning,
             };
         }
 
@@ -235,13 +306,29 @@ public class TravelToNodeHubCommandHandler
             ? destinationMap.OwnerId
             : null;
 
+        var zone = string.IsNullOrWhiteSpace(zoneId) ? null : await _zoneRepo.GetByIdAsync(zoneId);
+
         var regionId = destinationMap.MapType == MapType.Region
             ? destinationMap.OwnerId
-            : (await _zoneRepo.GetByIdAsync(zoneId ?? string.Empty))?.RegionId;
+            : zone?.RegionId;
 
         var locationSlug = destinationNode.NodeType == MapNodeType.Location
             ? destinationNode.RefId
             : null;
+
+        // Read once here so the arrival payload and the roster share a single lookup, and so a dangling
+        // node reference is reported in one place instead of two.
+        var location = string.IsNullOrWhiteSpace(locationSlug)
+            ? null
+            : await _locationRepo.GetBySlugAsync(locationSlug);
+
+        var (recommendedLevel, levelWarning) = EvaluateGate(character.Level, location, zone);
+        var (instanceId, effectiveGroup) = await ResolveScopeAsync(
+            zoneId,
+            location,
+            request.ZoneGroup,
+            request.CharacterId,
+            cancellationToken);
 
         await _characterRepo.UpdateMapPositionAsync(
             request.CharacterId,
@@ -269,10 +356,16 @@ public class TravelToNodeHubCommandHandler
             : [];
 
         var (spawnedEnemies, contentWarnings) = await EnsureRosterAsync(
-            request.ZoneGroup,
+            effectiveGroup ?? string.Empty,
             destinationMap,
             destinationNode,
-            zoneId);
+            zoneId,
+            location,
+            instanceId);
+
+        var clearedLocations = instanceId is Guid run
+            ? await _instances.GetClearedLocationsAsync(run, cancellationToken)
+            : [];
 
         _logger.LogInformation(
             "Character {CharacterIdPrefix} travelled to {MapId}/{NodeId} (map changed: {MapChanged})",
@@ -296,6 +389,16 @@ public class TravelToNodeHubCommandHandler
             ZoneId = zoneId,
             RegionId = regionId,
             LocationSlug = locationSlug,
+            ZoneGroup = effectiveGroup,
+            ZoneInstanceId = instanceId,
+            ClearedLocations = clearedLocations,
+            LocationTypeKey = location?.TypeKey,
+            IsDungeonLocation = string.Equals(location?.TypeKey, "dungeons", StringComparison.OrdinalIgnoreCase),
+            IsInstanced = location?.IsInstanced ?? false,
+            IsSafeRespawn = location?.IsSafeRespawn ?? false,
+            RecommendedLevel = recommendedLevel,
+            YourLevel = character.Level,
+            LevelWarning = levelWarning,
             PassiveDiscoveries = discoveries,
             SpawnedEnemies = spawnedEnemies,
             ContentWarnings = contentWarnings,
@@ -306,7 +409,9 @@ public class TravelToNodeHubCommandHandler
         string zoneGroup,
         MapGraph destinationMap,
         MapNodeEntry destinationNode,
-        string? zoneId)
+        string? zoneId,
+        ZoneLocationEntry? location,
+        Guid? zoneInstanceId)
     {
         if (destinationMap.MapType != MapType.Zone ||
             destinationNode.NodeType != MapNodeType.Location ||
@@ -321,7 +426,6 @@ public class TravelToNodeHubCommandHandler
             : zoneGroup;
 
         // The node's RefId must resolve to a real location; a dangling one is content debt, not a normal state.
-        var location = await _locationRepo.GetBySlugAsync(destinationNode.RefId);
         if (location is null)
         {
             _logger.LogError(
@@ -340,6 +444,7 @@ public class TravelToNodeHubCommandHandler
             effectiveZoneGroup,
             destinationNode.RefId,
             _ => _actorPoolResolver.SpawnRosterAsync(pool),
+            zoneInstanceId,
             CancellationToken.None);
 
         _logger.LogInformation(
@@ -429,6 +534,51 @@ public class TravelToNodeHubCommandHandler
         }
 
         return node.RefId is not null && unlockedSlugs.Contains(node.RefId);
+    }
+
+    /// <summary>
+    /// Resolves which SignalR scope the arrival belongs to. A public location keeps the caller's shared
+    /// zone scope; an instanced one finds or opens the character's run and returns that run's scope, which
+    /// is how two parties end up in the same dungeon without sharing enemies or chat.
+    /// </summary>
+    private async Task<(Guid? InstanceId, string? Group)> ResolveScopeAsync(
+        string? zoneId,
+        ZoneLocationEntry? location,
+        string requestedGroup,
+        Guid characterId,
+        CancellationToken cancellationToken)
+    {
+        if (location?.IsInstanced == true && !string.IsNullOrWhiteSpace(zoneId))
+        {
+            var run = await _instances.FindOrCreateAsync(zoneId, characterId, cancellationToken: cancellationToken);
+            return (run.Id, run.ZoneGroup);
+        }
+
+        return (
+            null,
+            string.IsNullOrWhiteSpace(requestedGroup)
+                ? string.IsNullOrWhiteSpace(zoneId) ? null : ZoneGroupName.ForZone(zoneId).Value
+                : requestedGroup);
+    }
+
+    /// <summary>
+    /// D8: the level gates are advisory. The location's own minimum wins over the zone's, and nothing
+    /// downstream refuses entry — the wording here is all a client has to show.
+    /// </summary>
+    private static (int? Recommended, string? Warning) EvaluateGate(
+        int characterLevel,
+        ZoneLocationEntry? location,
+        ZoneEntity? zone)
+    {
+        int? recommended = location?.MinLevel;
+        if (recommended is null or 0)
+            recommended = zone?.MinLevel is > 0 ? zone.MinLevel : null;
+
+        var warning = recommended is int level && characterLevel < level
+            ? $"This place expects level {level}; you are {characterLevel}."
+            : null;
+
+        return (recommended, warning);
     }
 
     private static TravelToNodeHubResult Fail(string message) =>

@@ -37,6 +37,12 @@ public class PlayerSession
     /// <summary>Stable identifier of the map node the character currently occupies, or <see langword="null"/>.</summary>
     public string? CurrentNodeId { get; set; }
 
+    /// <summary>
+    /// The instance run the character is inside, or <see langword="null"/> when they are in the shared zone.
+    /// This is the membership pointer the run derives its occupants from, and what a reconnect resumes into.
+    /// </summary>
+    public Guid? ZoneInstanceId { get; set; }
+
     /// <summary>UTC timestamp of when this session was created.</summary>
     public DateTimeOffset EnteredAt { get; set; } = DateTimeOffset.UtcNow;
 

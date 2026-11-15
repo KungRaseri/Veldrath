@@ -1159,9 +1159,72 @@ describe('GameSession combat', () => {
 				maxHealth: 30,
 				abilities: ['bite']
 			},
-			log: ['Combat started: Grey Wolf (level 2).']
+			log: ['Combat started: Grey Wolf (level 2).'],
+			participants: [],
+			outcome: null
 		});
 		expect(session.enemies.map((entry) => entry.id)).toEqual(['boar']);
+	});
+
+	it('adopts the shared snapshot: enemy health, attendees and their shares', async () => {
+		const session = await connected();
+		hub.emit('CombatStarted', combatStarted());
+
+		hub.emit('CombatParticipants', {
+			enemyId: 'wolf',
+			enemyName: 'Grey Wolf',
+			enemyLevel: 2,
+			enemyCurrentHealth: 12,
+			enemyMaxHealth: 30,
+			enemyAbilityNames: ['bite'],
+			participants: [
+				{
+					characterId: 'char-1',
+					name: 'Thornwarden',
+					currentHealth: 18,
+					maxHealth: 30,
+					damageDealt: 12,
+					contributionPercent: 60
+				},
+				{
+					characterId: 'char-2',
+					name: null,
+					currentHealth: 9,
+					maxHealth: 20,
+					damageDealt: 8,
+					contributionPercent: 40
+				}
+			]
+		});
+
+		expect(session.combat.enemy?.currentHealth).toBe(12);
+		expect(session.combat.participants).toHaveLength(2);
+		expect(session.combat.participants?.[0].contributionPercent).toBe(60);
+		expect(session.combat.participants?.[1].name).toBeNull();
+	});
+
+	it('records the outcome of a won fight from the caller turn', async () => {
+		const session = await connected();
+		hub.emit('CombatStarted', combatStarted());
+
+		hub.emit('CombatTurn', {
+			action: 'attack',
+			playerDamage: 9,
+			enemyRemainingHealth: 0,
+			enemyDefeated: true,
+			xpEarned: 25,
+			goldEarned: 7
+		});
+
+		expect(session.combat.outcome).toEqual({
+			kind: 'victory',
+			xpEarned: 25,
+			goldEarned: 7,
+			xpLost: 0,
+			goldLost: 0,
+			hardcore: false
+		});
+		expect(session.combat.active).toBe(false);
 	});
 
 	it('applies combat turns to the enemy and the log', async () => {
@@ -1184,14 +1247,15 @@ describe('GameSession combat', () => {
 		expect(session.combat.enemy?.currentHealth).toBe(30);
 	});
 
-	it('keeps only the latest 25 combat log lines', async () => {
+	it('keeps the whole fight in the log, bounded so it cannot grow without limit', async () => {
 		const session = await connected();
 		hub.emit('CombatStarted', combatStarted());
 
 		for (let turn = 0; turn < 30; turn++) hub.emit('CombatTurn', { action: 'defend' });
 
-		expect(session.combat.log).toHaveLength(25);
-		expect(session.combat.log[0]).not.toContain('Combat started');
+		// E3: the panel shows every exchange, so the cap is a memory bound rather than a display rule.
+		expect(session.combat.log).toHaveLength(31);
+		expect(session.combat.log[0]).toContain('Combat started');
 	});
 
 	it('ends combat when the enemy is defeated', async () => {
@@ -1250,14 +1314,16 @@ describe('GameSession combat', () => {
 		expect(session.chat.at(-1)?.message).toContain('weakened');
 	});
 
-	it('closes combat with the reason', async () => {
+	it('closes combat with the reason, keeping the enemy for the summary', async () => {
 		const session = await connected();
 		hub.emit('CombatStarted', combatStarted());
 
 		hub.emit('CombatEnded', { characterId: 'char-1', reason: 'Fled' });
 
 		expect(session.combat.active).toBe(false);
-		expect(session.combat.enemy).toBeNull();
+		// The enemy stays so the summary can name what was fled from; only `active` closes the fight.
+		expect(session.combat.enemy?.name).toBe('Grey Wolf');
+		expect(session.combat.outcome?.kind).toBe('fled');
 		expect(session.combat.log.at(-1)).toBe('Combat ended: Fled.');
 		expect(session.chat.at(-1)?.message).toBe('Combat ended: Fled.');
 	});

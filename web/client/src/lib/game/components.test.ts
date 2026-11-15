@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/svelte';
+import DungeonPanel from './DungeonPanel.svelte';
 import { describe, expect, it, vi } from 'vitest';
 import CombatPanel from './CombatPanel.svelte';
 import GameHeader from './GameHeader.svelte';
@@ -96,6 +97,10 @@ function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
 		serverInfo: { connectionId: 'conn-1', serverVersion: '0.1', minCompatibleClientVersion: '0.1' },
 		phase: 'connected',
 		map: null,
+		instanceId: null,
+		clearedLocations: [] as string[],
+		travel: vi.fn(),
+		enterLocation: vi.fn(),
 		currentNode: null,
 		selectedNode: null,
 		currentNodeId: null,
@@ -124,6 +129,37 @@ function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
 		}[],
 		bagItems: [healthPotion, ironSword],
 		carriedItemCount: 1,
+		skills: [],
+		skillRankUpToast: null,
+		craftableRecipes: [],
+		showCrafting: false,
+		powers: [
+			{
+				slug: 'heal',
+				resolved: true,
+				displayName: 'Heal',
+				description: 'Restores a little health.',
+				powerType: 'Spell',
+				effectType: 'Heal',
+				manaCost: 5,
+				cooldown: 0,
+				tier: 1,
+				requiredLevel: 1
+			},
+			{
+				slug: 'cleave',
+				resolved: true,
+				displayName: 'Cleave',
+				description: 'Sweeps through two foes.',
+				powerType: 'Talent',
+				effectType: 'Damage',
+				manaCost: 0,
+				cooldown: 2,
+				tier: 2,
+				requiredLevel: 1
+			}
+		],
+		powerContext: { mana: 20, level: 3, inCombat: false, dead: false },
 		quests: [] as unknown[],
 		availableQuests: [] as unknown[],
 		shopCatalog: [],
@@ -141,6 +177,8 @@ function fakeSession(overrides: Record<string, unknown> = {}): GameSession {
 		trackedQuests: [] as unknown[],
 		questTurnInToast: null as unknown,
 		dismissQuestToast: vi.fn(),
+		levelWarning: null as unknown,
+		dismissLevelWarning: vi.fn(),
 		partyInvites: [] as unknown[],
 		isPartyLeader: false,
 		openParty: vi.fn(),
@@ -280,7 +318,7 @@ describe('CombatPanel', () => {
 		expect(await screen.findByRole('heading', { name: /Barrow Wolf/ })).toBeTruthy();
 		expect(screen.getByText('12 / 30')).toBeTruthy();
 		expect(screen.getByText('Combat started: Barrow Wolf (level 2).')).toBeTruthy();
-		for (const label of ['Attack', 'Defend', 'Flee', 'heal', 'cleave']) {
+		for (const label of ['Attack', 'Defend', 'Flee', 'Use Heal', 'Use Cleave']) {
 			expect(screen.getByRole('button', { name: label })).toBeTruthy();
 		}
 	});
@@ -453,6 +491,148 @@ describe('QuestTracker', () => {
 		const { container } = render(QuestTracker, { props: { session } });
 
 		expect(container.textContent?.trim()).toBe('');
+	});
+});
+
+function dungeonSession() {
+	return fakeSession({
+		zone: {
+			id: 'the-halrow',
+			name: 'The Halrow',
+			description: '',
+			zoneType: 'Dungeon',
+			occupants: [],
+			hasInn: false,
+			hasMerchant: false
+		},
+		map: {
+			id: 'zone:the-halrow',
+			mapType: 'Zone',
+			ownerId: 'the-halrow',
+			name: 'The Halrow',
+			description: '',
+			entryNodeId: 'entry',
+			nodes: [
+				{
+					id: 'entry',
+					mapId: 'zone:the-halrow',
+					nodeType: 'EntryPoint',
+					refId: null,
+					displayName: 'Arrival',
+					description: '',
+					isEntryPoint: true,
+					isExitPoint: false,
+					isHidden: false,
+					sortOrder: 0
+				},
+				{
+					id: 'threshold',
+					mapId: 'zone:the-halrow',
+					nodeType: 'Location',
+					refId: 'halrow-threshold',
+					displayName: 'The Halrow Threshold',
+					description: '',
+					isEntryPoint: false,
+					isExitPoint: false,
+					isHidden: false,
+					sortOrder: 10
+				},
+				{
+					id: 'vault',
+					mapId: 'zone:the-halrow',
+					nodeType: 'Location',
+					refId: 'collapsed-vault',
+					displayName: 'The Collapsed Vault',
+					description: '',
+					isEntryPoint: false,
+					isExitPoint: false,
+					isHidden: false,
+					sortOrder: 20
+				},
+				{
+					id: 'exit',
+					mapId: 'zone:the-halrow',
+					nodeType: 'RegionExit',
+					refId: 'varenmark',
+					displayName: 'Return to Varenmark',
+					description: '',
+					isEntryPoint: false,
+					isExitPoint: true,
+					isHidden: false,
+					sortOrder: 90
+				}
+			],
+			edges: []
+		},
+		currentNodeId: 'threshold',
+		adjacentNodeIds: ['vault'],
+		clearedLocations: ['halrow-threshold'],
+		instanceId: 'run-1'
+	});
+}
+
+describe('DungeonPanel', () => {
+	it('lists the rooms, marks the one you are in and the ones already cleared', async () => {
+		render(DungeonPanel, { props: { session: dungeonSession() } });
+
+		expect(await screen.findByTestId('dungeon-panel')).toBeTruthy();
+		expect(screen.getByText('The Halrow Threshold')).toBeTruthy();
+		expect(screen.getByText('The Collapsed Vault')).toBeTruthy();
+		expect(screen.getByText('you are here')).toBeTruthy();
+		expect(screen.getByText(/1\/2 rooms cleared/)).toBeTruthy();
+	});
+
+	it('leaves the dungeon from the exit control', async () => {
+		const session = dungeonSession();
+		render(DungeonPanel, { props: { session } });
+
+		(await screen.findByRole('button', { name: /Leave the dungeon/ })).click();
+
+		expect(session.travel).toHaveBeenCalledWith('exit');
+	});
+
+	it('walks to an adjacent room', async () => {
+		const session = dungeonSession();
+		render(DungeonPanel, { props: { session } });
+
+		(await screen.findByRole('button', { name: 'Walk here' })).click();
+
+		expect(session.travel).toHaveBeenCalledWith('vault');
+	});
+
+	it('enters the room it is standing in through the same entry path as the party action', async () => {
+		const session = dungeonSession();
+		render(DungeonPanel, { props: { session } });
+
+		(await screen.findByRole('button', { name: /Enter room/ })).click();
+
+		expect(session.enterLocation).toHaveBeenCalledWith('the-halrow', 'halrow-threshold');
+	});
+
+	it('renders nothing outside a dungeon', () => {
+		render(DungeonPanel, { props: { session: fakeSession() } });
+
+		expect(screen.queryByTestId('dungeon-panel')).toBeNull();
+	});
+});
+
+describe('GameOverlays (level warning)', () => {
+	it('shows the gate the server worded and lets the player dismiss it', async () => {
+		const session = fakeSession({ levelWarning: 'This place expects level 26; you are 3.' });
+		render(GameOverlays, { props: { session } });
+
+		expect(await screen.findByTestId('level-warning')).toBeTruthy();
+		expect(screen.getByText('This place expects level 26; you are 3.')).toBeTruthy();
+
+		screen.getByRole('button', { name: 'Dismiss' }).click();
+		expect(session.dismissLevelWarning).toHaveBeenCalled();
+	});
+
+	it('renders nothing when the arrival set no expectation', async () => {
+		const session = fakeSession();
+		render(GameOverlays, { props: { session } });
+
+		expect(screen.queryByTestId('level-warning')).toBeNull();
 	});
 });
 

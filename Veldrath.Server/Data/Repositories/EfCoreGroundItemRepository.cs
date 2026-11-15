@@ -13,9 +13,13 @@ public class EfCoreGroundItemRepository(ApplicationDbContext db) : IGroundItemRe
     public async Task<IReadOnlyList<GroundItem>> GetAtLocationAsync(
         string zoneId,
         string locationSlug,
+        Guid? zoneInstanceId,
         CancellationToken cancellationToken = default) =>
         await db.GroundItems
-            .Where(item => item.ZoneId == zoneId && item.LocationSlug == locationSlug)
+            .Where(item =>
+                item.ZoneId == zoneId &&
+                item.LocationSlug == locationSlug &&
+                item.ZoneInstanceId == zoneInstanceId)
             .OrderBy(item => item.DroppedAt)
             .ToListAsync(cancellationToken);
 

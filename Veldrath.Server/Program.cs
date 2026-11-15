@@ -142,6 +142,7 @@ try
     // Provisions the Identity row (roles/permissions) for a Better Auth account on first token use.
     builder.Services.AddScoped<AccountProvisioningService>();
     builder.Services.AddScoped<FoundryService>();
+    builder.Services.AddScoped<FoundryNotificationWriter>();
 
     // IEmailSender: use NullEmailSender when SmtpHost is not configured (dev / CI).
     // Switch to SmtpEmailSender by setting Email:SmtpHost in the environment or user-secrets.
@@ -161,6 +162,8 @@ try
     builder.Services.AddScoped<IZoneRepository, ZoneRepository>();
     builder.Services.AddScoped<IEnemyInstanceStore, EfCoreEnemyInstanceStore>();
     builder.Services.AddScoped<ICombatSessionStore, EfCoreCombatSessionStore>();
+    builder.Services.AddScoped<Veldrath.Server.Features.Zones.IZoneInstanceService,
+        Veldrath.Server.Features.Zones.EfCoreZoneInstanceService>();
 
     // AFK is ephemeral by design: in-memory for the process lifetime, cleared on any action or reconnect.
     builder.Services.AddSingleton<IAfkTracker, AfkTracker>();
@@ -203,6 +206,7 @@ try
     builder.Services.AddRealmEngineMediatR();
     builder.Services.AddRealmEngineCore(p => p.UseExternal());
     builder.Services.AddScoped<Veldrath.Server.Features.Characters.Combat.ActorPoolResolver>();
+    builder.Services.AddScoped<Veldrath.Server.Features.Content.MapEditorService>();
     // Register server-local MediatR handlers (hub commands such as GainExperienceHubCommand).
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
     builder.Services.AddHostedService<CatalogInitializationService>();
@@ -419,6 +423,7 @@ try
     app.MapCharacterCreationSessionEndpoints();
     app.MapZoneEndpoints();
     app.MapContentEndpoints();
+    app.MapMapEditorEndpoints();
     app.MapContentWriteEndpoints();
     app.MapAdminEndpoints();
     app.MapPlayerEndpoints();

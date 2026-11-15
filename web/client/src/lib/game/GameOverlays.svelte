@@ -10,9 +10,9 @@
 		RefreshCw,
 		ScrollText,
 		Settings,
-		Sparkles,
 		Store,
 		Swords,
+		TriangleAlert,
 		Undo2,
 		UserMinus,
 		UserPlus,
@@ -33,6 +33,9 @@
 		type CharacterAttributes,
 		type InventoryItem
 	} from './types';
+	import CraftingOverlay from './CraftingOverlay.svelte';
+	import PowersOverlay from './PowersOverlay.svelte';
+	import SkillsOverlay from './SkillsOverlay.svelte';
 	import type { GameSession } from './session.svelte';
 
 	let { session }: { session: GameSession } = $props();
@@ -258,51 +261,11 @@
 	</Dialog.Portal>
 </Dialog.Root>
 
-<Dialog.Root open={session.showAbilities} onOpenChange={(open) => (session.showAbilities = open)}>
-	<Dialog.Portal>
-		<Dialog.Overlay class="game-dialog-backdrop" />
-		<Dialog.Content class="game-dialog" aria-label="Abilities">
-			<header class="game-dialog-header">
-				<Dialog.Title class="game-panel-header">
-					<Sparkles size={18} aria-hidden="true" />
-					Abilities
-				</Dialog.Title>
-				<Dialog.Close
-					class="btn preset-tonal-surface px-2 py-1 text-xs"
-					aria-label="Close abilities"
-				>
-					<X size={14} aria-hidden="true" />
-				</Dialog.Close>
-			</header>
-			<Dialog.Description class="text-xs text-surface-600-400">
-				Learned abilities. Using one outside combat spends mana.
-			</Dialog.Description>
+<PowersOverlay {session} />
 
-			{#if (session.character?.learnedAbilities ?? []).length === 0}
-				<p class="mt-3 text-sm text-surface-600-400">No abilities learned yet.</p>
-			{:else}
-				<ul class="mt-3 space-y-1">
-					{#each session.character?.learnedAbilities ?? [] as ability (ability)}
-						<li
-							class="flex items-center justify-between gap-2 rounded border border-surface-800 p-2 text-sm"
-						>
-							<span class="capitalize">{ability.replaceAll('_', ' ')}</span>
-							<button
-								class="btn preset-tonal-surface px-2 py-1 text-xs"
-								type="button"
-								disabled={session.combat.active || session.dead}
-								onclick={() => session.useAbility(ability)}
-							>
-								<Sparkles size={12} aria-hidden="true" />
-								Use
-							</button>
-						</li>
-					{/each}
-				</ul>
-			{/if}
-		</Dialog.Content>
-	</Dialog.Portal>
-</Dialog.Root>
+<SkillsOverlay {session} />
+
+<CraftingOverlay {session} />
 
 <Dialog.Root open={session.showAttributes} onOpenChange={(open) => (session.showAttributes = open)}>
 	<Dialog.Portal>
@@ -675,6 +638,28 @@
 	</Dialog.Portal>
 </Dialog.Root>
 
+{#if session.levelWarning}
+	<div
+		class="pointer-events-none fixed top-4 left-1/2 z-50 w-96 max-w-[calc(100vw-2rem)] -translate-x-1/2"
+	>
+		<div
+			class="game-panel pointer-events-auto flex items-start gap-2 p-3 text-sm"
+			role="alert"
+			data-testid="level-warning"
+		>
+			<TriangleAlert class="mt-0.5 shrink-0 text-warning-500" size={16} aria-hidden="true" />
+			<p class="flex-1">{session.levelWarning}</p>
+			<button
+				class="btn preset-tonal-surface px-2 py-1 text-xs"
+				type="button"
+				onclick={() => session.dismissLevelWarning()}
+			>
+				Dismiss
+			</button>
+		</div>
+	</div>
+{/if}
+
 {#if session.questTurnInToast}
 	<div class="pointer-events-none fixed top-16 right-4 z-50 w-80 max-w-[calc(100vw-2rem)]">
 		<div class="game-panel pointer-events-auto space-y-2 p-3" role="status">
@@ -689,6 +674,29 @@
 					class="btn preset-tonal-surface px-2 py-1 text-xs"
 					type="button"
 					onclick={() => session.dismissQuestToast()}
+				>
+					<Check size={13} aria-hidden="true" />
+					Dismiss
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+{#if session.skillRankUpToast}
+	<div class="pointer-events-none fixed top-16 right-4 z-50 w-80 max-w-[calc(100vw-2rem)]">
+		<div class="game-panel pointer-events-auto space-y-2 p-3" role="status">
+			<p class="text-sm">
+				Rank up: <span class="font-semibold">{session.skillRankUpToast.name}</span>
+			</p>
+			<p class="text-xs text-surface-600-400">
+				Now rank {session.skillRankUpToast.rank}
+			</p>
+			<div class="flex justify-end">
+				<button
+					class="btn preset-tonal-surface px-2 py-1 text-xs"
+					type="button"
+					onclick={() => session.dismissSkillToast()}
 				>
 					<Check size={13} aria-hidden="true" />
 					Dismiss

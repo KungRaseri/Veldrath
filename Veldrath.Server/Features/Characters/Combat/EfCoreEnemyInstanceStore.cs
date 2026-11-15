@@ -57,6 +57,7 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
         string zoneGroup,
         string locationSlug,
         Func<CancellationToken, Task<List<SpawnedEnemy>>> spawnRoster,
+        Guid? zoneInstanceId = null,
         CancellationToken cancellationToken = default)
     {
         await SettleLocationAsync(zoneGroup, locationSlug, cancellationToken);
@@ -74,7 +75,7 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
 
             foreach (var enemy in spawned)
             {
-                _db.EnemyInstances.Add(ToEntity(enemy, zoneGroup, locationSlug));
+                _db.EnemyInstances.Add(ToEntity(enemy, zoneGroup, locationSlug, zoneInstanceId));
             }
 
             try
@@ -97,6 +98,48 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
 
         return await ToSpawnedAsync(rows.Where(row => row.IsAlive), cancellationToken);
     }
+
+    /// <inheritdoc />
+    public async Task<int> ExtendClearedRespawnsAsync(
+        string zoneGroup,
+        string locationSlug,
+        CancellationToken cancellationToken = default)
+    {
+        var dead = await _db.EnemyInstances
+            .Where(enemy =>
+                enemy.ZoneGroup == zoneGroup &&
+                enemy.LocationSlug == locationSlug &&
+                !enemy.IsAlive)
+            .ToListAsync(cancellationToken);
+
+        if (dead.Count == 0)
+            return 0;
+
+        var quietUntil = DateTimeOffset.UtcNow + _options.ClearedRoomRespawnDelay;
+
+        foreach (var enemy in dead)
+        {
+            // A floor, not an addition: never pull a later timer backwards, and never leave the room quieter
+            // for less than the cleared-room window.
+            if (enemy.RespawnAt is null || enemy.RespawnAt < quietUntil)
+                enemy.RespawnAt = quietUntil;
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+        return dead.Count;
+    }
+
+    /// <inheritdoc />
+    public Task<int> CountAliveAsync(
+        string zoneGroup,
+        string locationSlug,
+        CancellationToken cancellationToken = default) =>
+        _db.EnemyInstances.CountAsync(
+            enemy =>
+                enemy.ZoneGroup == zoneGroup &&
+                enemy.LocationSlug == locationSlug &&
+                enemy.IsAlive,
+            cancellationToken);
 
     /// <inheritdoc />
     public async Task<SpawnedEnemy?> TryGetAsync(Guid enemyId, CancellationToken cancellationToken = default)
@@ -455,6 +498,9 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
             var enemy = new SpawnedEnemy
             {
                 Id = row.Id,
+                ZoneGroup = row.ZoneGroup,
+                LocationSlug = row.LocationSlug,
+                ZoneInstanceId = row.ZoneInstanceId,
                 ArchetypeSlug = row.ArchetypeSlug,
                 Name = row.Name,
                 Level = row.Level,
@@ -480,11 +526,16 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
         return result;
     }
 
-    private static EnemyInstance ToEntity(SpawnedEnemy enemy, string zoneGroup, string locationSlug) =>
+    private static EnemyInstance ToEntity(
+        SpawnedEnemy enemy,
+        string zoneGroup,
+        string locationSlug,
+        Guid? zoneInstanceId) =>
         new()
         {
             Id = enemy.Id,
             ZoneGroup = zoneGroup,
+            ZoneInstanceId = zoneInstanceId,
             LocationSlug = locationSlug,
             ArchetypeSlug = enemy.ArchetypeSlug,
             Name = enemy.Name,

@@ -85,6 +85,13 @@ Web__BaseUrl=https://veldrath.com
 # ── Cross-service URLs ──
 Seq__ServerUrl=http://veldrath-seq:5341
 
+# ── World tuning (optional — omit to use the defaults shown) ──
+# Enemies__RespawnDelaySeconds=60
+# Enemies__SweepIntervalSeconds=5
+# Enemies__RespawnBatchSize=50
+# Enemies__SessionGraceSeconds=60
+# Enemies__ClearedRoomRespawnMultiplier=3
+
 # ── ASP.NET Core ──
 ASPNETCORE_URLS=http://+:8080
 ASPNETCORE_ENVIRONMENT=Production
@@ -105,6 +112,17 @@ ASPNETCORE_ENVIRONMENT=Production
 | `Email__User` | `Email:User` | [`appsettings.json:34`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/appsettings.json:34) | SMTP auth username. |
 | `Email__Password` | `Email:Password` | [`appsettings.json:35`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/appsettings.json:35) | SMTP auth password. |
 | `Seq__ServerUrl` | `Seq:ServerUrl` | [`Program.cs:50`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/Program.cs:50) | Seq server URL for structured log shipping. |
+| `Enemies__RespawnDelaySeconds` | `Enemies:RespawnDelaySeconds` | [`EnemyWorldOptions.cs`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/Veldrath.Server/Settings/EnemyWorldOptions.cs) | Optional; default 60. How long a defeated enemy stays gone. |
+| `Enemies__SweepIntervalSeconds` | `Enemies:SweepIntervalSeconds` | same | Optional; default 5. Respawn sweeper tick. |
+| `Enemies__RespawnBatchSize` | `Enemies:RespawnBatchSize` | same | Optional; default 50. Enemies revived per sweep. |
+| `Enemies__SessionGraceSeconds` | `Enemies:SessionGraceSeconds` | same | Optional; default 60. Combat reconnect grace, and the empty-instance grace. |
+| `Enemies__ClearedRoomRespawnMultiplier` | `Enemies:ClearedRoomRespawnMultiplier` | same | Optional; default 3. How many respawn windows a fully cleared room stays quiet. |
+
+All five are validated with `ValidateOnStart`, so a nonsensical value stops the container instead of
+silently defaulting. **These environment variables are host defaults, not the long-term home for these
+numbers** — the durable plan is for the world tunables to be authored in the content database and edited
+in Foundry, with appsettings as the fallback. See
+[`plans/dungeons.md` §9](../plans/dungeons.md) for the rules that pass has to follow.
 
 ### Persistent Volume
 

@@ -12,6 +12,8 @@ import {
 	actions as newLanguageActions,
 	load as newLanguagePage
 } from './(foundry)/languages/new/+page.server';
+import { actions as mapsActions, load as mapsPage } from './(foundry)/maps/+page.server';
+import { actions as mapActions, load as mapPage } from './(foundry)/maps/[mapId]/+page.server';
 import {
 	actions as notificationActions,
 	load as notificationsPage
@@ -51,10 +53,24 @@ const foundryApi = vi.hoisted(() => ({
 	reviewSubmission: vi.fn()
 }));
 
+const mapsApi = vi.hoisted(() => ({
+	listMaps: vi.fn(),
+	getMap: vi.fn(),
+	getMapTargets: vi.fn(),
+	saveMap: vi.fn(),
+	validateMap: vi.fn(),
+	createMap: vi.fn(),
+	submitMap: vi.fn(),
+	reviewMap: vi.fn(),
+	deactivateMap: vi.fn(),
+	deleteMap: vi.fn()
+}));
+
 const access = vi.hoisted(() => ({ loadAccountAccess: vi.fn() }));
 
 vi.mock('#lib/server/content-api', () => contentApi);
 vi.mock('#lib/server/foundry-api', () => foundryApi);
+vi.mock('#lib/server/maps-api', () => mapsApi);
 vi.mock('#lib/server/access', async (importOriginal) => ({
 	...(await importOriginal<typeof import('#lib/server/access')>()),
 	loadAccountAccess: access.loadAccountAccess
@@ -164,6 +180,254 @@ beforeEach(() => {
 	foundryApi.createSubmission.mockResolvedValue(ok({ id: 'sub-9' }));
 	foundryApi.voteSubmission.mockResolvedValue(ok(null));
 	foundryApi.reviewSubmission.mockResolvedValue(ok(null));
+	mapsApi.listMaps.mockResolvedValue(ok([{ id: 'zone:fenwick', name: 'Fenwick' }]));
+	mapsApi.getMap.mockResolvedValue(ok({ id: 'zone:fenwick', nodes: [], edges: [], version: 3 }));
+	mapsApi.validateMap.mockResolvedValue(ok({ isValid: true, issues: [] }));
+	mapsApi.createMap.mockResolvedValue(ok({ id: 'zone:draft-zone', name: 'Draft Zone' }));
+	mapsApi.submitMap.mockResolvedValue(
+		ok({ success: true, status: 'ok', message: 'Submitted for review.', issues: [] })
+	);
+	mapsApi.getMapTargets.mockResolvedValue(
+		ok({
+			maps: [{ id: 'region:varenmark', label: 'Varenmark' }],
+			zones: [{ id: 'the-halrow', label: 'The Halrow' }],
+			locations: [{ id: 'halrow-threshold', label: 'The Threshold' }],
+			regions: [{ id: 'varenmark', label: 'Varenmark' }],
+			nodes: [
+				{ id: 'zone:fenwick:entry', mapId: 'zone:fenwick', label: 'Arrival', isEntryPoint: true }
+			]
+		})
+	);
+});
+
+describe('map editor', () => {
+	const params = { mapId: 'zone:fenwick' };
+
+	it('lists the graphs for a reader without switching the write controls on', async () => {
+		const result = (await callLoad(
+			mapsPage,
+			signedIn({ parentData: { canViewContent: true, canManageContent: false } })
+		)) as { canEdit: boolean; maps: unknown[] };
+
+		expect(result.canEdit).toBe(false);
+		expect(result.maps).toEqual([{ id: 'zone:fenwick', name: 'Fenwick' }]);
+	});
+
+	it('refuses the list when the account cannot read content', async () => {
+		expect(
+			await thrownMessage(() =>
+				callLoad(mapsPage, signedIn({ parentData: { canViewContent: false } }))
+			)
+		).toBe('Reading the map graphs requires content read access.');
+	});
+
+	it('reports the API failure rather than an empty list', async () => {
+		mapsApi.listMaps.mockResolvedValue(failed('the graph store is down', 502));
+
+		expect(
+			await thrownMessage(() =>
+				callLoad(mapsPage, signedIn({ parentData: { canViewContent: true } }))
+			)
+		).toBe('the graph store is down');
+	});
+
+	it('loads one graph with its rows and the write flag', async () => {
+		const result = (await callLoad(
+			mapPage,
+			signedIn({ params, parentData: { canViewContent: true, canManageContent: true } })
+		)) as { canEdit: boolean; rows: unknown[] };
+
+		expect(result.canEdit).toBe(true);
+		expect(result.rows).toEqual([]);
+	});
+
+	it('maps a missing graph to a 404 message', async () => {
+		mapsApi.getMap.mockResolvedValue(failed('Map not found.', 404));
+
+		expect(
+			await thrownMessage(() =>
+				callLoad(mapPage, signedIn({ params, parentData: { canViewContent: true } }))
+			)
+		).toBe('Map not found.');
+	});
+
+	it('refuses one graph when the account cannot read content', async () => {
+		expect(
+			await thrownMessage(() =>
+				callLoad(mapPage, signedIn({ params, parentData: { canViewContent: false } }))
+			)
+		).toBe('Reading a map graph requires content read access.');
+	});
+
+	it('validates without saving and reports the issues the save would refuse on', async () => {
+		mapsApi.validateMap.mockResolvedValue(
+			ok({
+				isValid: false,
+				issues: [
+					{
+						code: 'target_node_unknown',
+						message: 'exit names a node that does not exist',
+						severity: 'Error',
+						mapId: 'zone:fenwick',
+						nodeId: 'exit'
+					}
+				]
+			})
+		);
+
+		const result = (await action(
+			mapActions.validate,
+			{},
+			{ params, parentData: { canViewContent: true, canManageContent: true } }
+		)) as { validated: boolean; isValid: boolean; issues: unknown[] };
+
+		expect(result.validated).toBe(true);
+		expect(result.isValid).toBe(false);
+		expect(result.issues).toHaveLength(1);
+		expect(mapsApi.saveMap).not.toHaveBeenCalled();
+	});
+
+	it('creates a draft and opens it', async () => {
+		expect(
+			await redirectTo(() =>
+				action(mapsActions.create, { mapType: 'Zone', ownerId: 'draft-zone', name: 'Draft Zone' })
+			)
+		).toBe('/maps/zone%3Adraft-zone');
+	});
+
+	it('reports why a draft could not be created', async () => {
+		mapsApi.createMap.mockResolvedValue(failed("'draft-zone' already owns a Zone map.", 400));
+
+		const result = (await action(mapsActions.create, {
+			mapType: 'Zone',
+			ownerId: 'draft-zone',
+			name: 'Draft Zone'
+		})) as { status: number; data: { message: string } };
+
+		expect(result.status).toBe(400);
+		expect(result.data.message).toContain('already owns');
+	});
+
+	it('submits a draft, and reports a conflict with the reason the server worded', async () => {
+		const submitted = (await action(mapActions.submit, {}, { params })) as {
+			done: boolean;
+			message: string;
+		};
+		expect(submitted.done).toBe(true);
+		expect(submitted.message).toBe('Submitted for review.');
+
+		mapsApi.submitMap.mockResolvedValue(
+			ok({ success: false, status: 'conflict', message: 'Map is already live.', issues: [] })
+		);
+
+		const refused = (await action(mapActions.submit, {}, { params })) as {
+			status: number;
+			data: { message: string };
+		};
+		expect(refused.status).toBe(409);
+		expect(refused.data.message).toBe('Map is already live.');
+	});
+
+	it('reviews a submitted map, and reports the refusal when it cannot be approved', async () => {
+		const editor = { params, parentData: { canViewContent: true, canManageContent: true } };
+		mapsApi.reviewMap.mockResolvedValue(
+			ok({ success: true, status: 'ok', message: 'Approved; the map is live.', issues: [] })
+		);
+
+		const approved = (await action(
+			mapActions.review,
+			{ approved: 'true', notes: 'Looks good' },
+			editor
+		)) as {
+			done: boolean;
+			message: string;
+		};
+
+		expect(approved.done).toBe(true);
+		expect(approved.message).toBe('Approved; the map is live.');
+		expect(mapsApi.reviewMap).toHaveBeenCalledWith(expect.anything(), 'zone:fenwick', {
+			approved: true,
+			notes: 'Looks good'
+		});
+
+		mapsApi.reviewMap.mockResolvedValue(
+			ok({ success: false, status: 'invalid', message: 'The graph has errors.', issues: [] })
+		);
+
+		const refused = (await action(mapActions.review, { approved: 'false' }, editor)) as {
+			status: number;
+			data: { message: string };
+		};
+
+		expect(refused.status).toBe(400);
+		expect(refused.data.message).toBe('The graph has errors.');
+	});
+
+	it('deactivates a live map and deletes a draft, refusing to delete a live one', async () => {
+		const editor = { params, parentData: { canViewContent: true, canManageContent: true } };
+
+		mapsApi.deactivateMap.mockResolvedValue(
+			ok({ success: true, status: 'ok', message: 'Deactivated.', issues: [] })
+		);
+		const deactivated = (await action(mapActions.deactivate, {}, editor)) as { done: boolean };
+		expect(deactivated.done).toBe(true);
+
+		mapsApi.deleteMap.mockResolvedValue(
+			ok({ success: true, status: 'ok', message: 'Draft deleted.', issues: [] })
+		);
+		expect(await redirectTo(() => action(mapActions.delete, {}, editor))).toBe('/maps');
+
+		mapsApi.deleteMap.mockResolvedValue(
+			ok({
+				success: false,
+				status: 'conflict',
+				message: 'A live map is retired by deactivating, never deleted.',
+				issues: []
+			})
+		);
+		const refused = (await action(mapActions.delete, {}, editor)) as {
+			status: number;
+			data: { message: string };
+		};
+
+		expect(refused.status).toBe(409);
+		expect(refused.data.message).toContain('never deleted');
+	});
+
+	it('reports a save conflict with the message the server worded', async () => {
+		mapsApi.saveMap.mockResolvedValue(
+			ok({
+				success: false,
+				status: 'conflict',
+				version: 4,
+				issues: [],
+				message: 'Map is at version 4; reload before saving.'
+			})
+		);
+
+		const result = (await action(
+			mapActions.save,
+			{ version: '3' },
+			{ params, parentData: { canViewContent: true, canManageContent: true } }
+		)) as { status: number; data: { message: string } };
+
+		expect(result.status).toBe(409);
+		expect(result.data.message).toContain('reload before saving');
+	});
+
+	it('reports a validate failure with the API message', async () => {
+		mapsApi.validateMap.mockResolvedValue(failed('the validator is unavailable', 502));
+
+		// `fail()` returns an ActionFailure rather than throwing, so the status and message are asserted.
+		const result = (await action(
+			mapActions.validate,
+			{},
+			{ params, parentData: { canViewContent: true, canManageContent: true } }
+		)) as { status: number; data: { message: string } };
+
+		expect(result.status).toBe(502);
+		expect(result.data.message).toBe('the validator is unavailable');
+	});
 });
 
 describe('content browser', () => {

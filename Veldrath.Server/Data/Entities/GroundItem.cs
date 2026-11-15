@@ -16,6 +16,12 @@ public class GroundItem
     /// <summary>Gets or sets the zone the item is lying in.</summary>
     public string ZoneId { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Gets or sets the instance run the item is lying in, or <see langword="null"/> when it is in the shared
+    /// zone. Two parties clearing the same dungeon must not see, or pick up, each other's drops.
+    /// </summary>
+    public Guid? ZoneInstanceId { get; set; }
+
     /// <summary>Gets or sets the zone-location slug the item is lying at.</summary>
     public string LocationSlug { get; set; } = string.Empty;
 

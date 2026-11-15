@@ -34,13 +34,21 @@ public sealed record MapGraphValidationResult(IReadOnlyList<MapGraphValidationIs
 }
 
 /// <summary>
-/// Validates region and zone map graphs before they are seeded or served.
+/// Validates region, zone and interior map graphs before they are seeded or served.
 /// The validator enforces explicit entry/exit nodes, intra-map cardinal edges,
-/// and optional cross-context slug references.
+/// optional cross-context slug references, and a way back out of every zone.
 /// </summary>
 public static class MapGraphValidator
 {
-    /// <summary>Validates a map graph.</summary>
+    /// <summary>Unlock types that gate a node on content the player must have earned.</summary>
+    private static readonly HashSet<string> KeyBasedUnlockTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "quest",
+        "item",
+        "achievement",
+    };
+
+    /// <summary>Validates a single map graph.</summary>
     /// <param name="map">The graph to validate.</param>
     /// <param name="knownRegionSlugs">Optional set of valid region slugs for cross-context checks.</param>
     /// <param name="knownZoneSlugs">Optional set of valid zone slugs for cross-context checks.</param>
@@ -60,6 +68,17 @@ public static class MapGraphValidator
             AddError(issues, "map_owner_missing", "Map owner id is required.", map.Id);
         if (string.IsNullOrWhiteSpace(map.Name))
             AddError(issues, "map_name_missing", "Map name is required.", map.Id);
+
+        if (map.MapType == MapType.Interior &&
+            knownLocationSlugs is not null &&
+            !knownLocationSlugs.Contains(map.OwnerId))
+        {
+            AddError(
+                issues,
+                "interior_owner_unknown",
+                $"Interior map '{map.Id}' is owned by unknown location '{map.OwnerId}'.",
+                map.Id);
+        }
 
         var nodes = new Dictionary<string, MapNodeEntry>(StringComparer.OrdinalIgnoreCase);
         foreach (var node in map.Nodes)
@@ -137,12 +156,112 @@ public static class MapGraphValidator
                     node.Id);
             }
 
+            // A skill-check unlock is a roll against the player's own skill and carries its gate in
+            // DiscoverThreshold; only the content-gated types need a key that names a quest/item/achievement.
+            if (!string.IsNullOrWhiteSpace(node.UnlockType) &&
+                KeyBasedUnlockTypes.Contains(node.UnlockType) &&
+                string.IsNullOrWhiteSpace(node.UnlockKey))
+            {
+                AddError(
+                    issues,
+                    "unlock_key_missing",
+                    $"Node '{node.Id}' is gated by '{node.UnlockType}' but names no UnlockKey.",
+                    map.Id,
+                    node.Id);
+            }
+
             ValidateCrossContextReference(node, map.Id, knownRegionSlugs, knownZoneSlugs, knownLocationSlugs, issues);
         }
 
         ValidateEntryNode(map, nodes, issues);
         ValidateEdges(map, nodes, issues);
         ValidateReachability(map, nodes, issues);
+        ValidateExitPresence(map, nodes, issues);
+
+        return new MapGraphValidationResult(issues);
+    }
+
+    /// <summary>
+    /// Validates a whole world: every map on its own, plus the rules that need more than one map —
+    /// destination maps and destination nodes must exist, and a dungeon zone must be escapable and
+    /// fully reachable.
+    /// </summary>
+    /// <param name="maps">Every map in the world.</param>
+    /// <param name="knownRegionSlugs">Optional set of valid region slugs for cross-context checks.</param>
+    /// <param name="knownZoneSlugs">Optional set of valid zone slugs for cross-context checks.</param>
+    /// <param name="knownLocationSlugs">Optional set of valid location slugs for cross-context checks.</param>
+    /// <param name="dungeonZoneSlugs">
+    /// Zone slugs that are dungeons. A dungeon's stranded room or missing exit is an error rather than a warning,
+    /// because a player inside one cannot walk out of it.
+    /// </param>
+    /// <returns>A validation result containing errors and warnings for the whole world.</returns>
+    public static MapGraphValidationResult ValidateWorld(
+        IReadOnlyList<MapGraph> maps,
+        IReadOnlySet<string>? knownRegionSlugs = null,
+        IReadOnlySet<string>? knownZoneSlugs = null,
+        IReadOnlySet<string>? knownLocationSlugs = null,
+        IReadOnlySet<string>? dungeonZoneSlugs = null)
+    {
+        var issues = new List<MapGraphValidationIssue>();
+        var knownMapIds = maps.Select(m => m.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // Built with TryAdd rather than ToDictionary: this is public API, and a caller that hands us the
+        // same map twice should get a reported issue, not an exception from the validator itself.
+        var nodeIdsByMap = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var map in maps)
+        {
+            nodeIdsByMap.TryAdd(
+                map.Id,
+                map.Nodes.Select(node => node.Id).ToHashSet(StringComparer.OrdinalIgnoreCase));
+        }
+
+        foreach (var map in maps)
+        {
+            var isDungeonZone = map.MapType == MapType.Zone &&
+                dungeonZoneSlugs is not null &&
+                dungeonZoneSlugs.Contains(map.OwnerId);
+
+            foreach (var issue in Validate(map, knownRegionSlugs, knownZoneSlugs, knownLocationSlugs).Issues)
+            {
+                var isDungeonBlocker = issue.Code is "node_unreachable" or "map_without_exit";
+                issues.Add(isDungeonZone && isDungeonBlocker && issue.Severity == MapGraphValidationSeverity.Warning
+                    ? issue with { Severity = MapGraphValidationSeverity.Error }
+                    : issue);
+            }
+
+            foreach (var node in map.Nodes)
+            {
+                if (string.IsNullOrWhiteSpace(node.TargetMapId))
+                    continue;
+
+                if (!knownMapIds.Contains(node.TargetMapId))
+                {
+                    AddError(
+                        issues,
+                        "target_map_unknown",
+                        $"Node '{node.Id}' exits to unknown map '{node.TargetMapId}'.",
+                        map.Id,
+                        node.Id);
+                    continue;
+                }
+
+                // A blank TargetNodeId is already an error from exit_target_missing; this rule is about a
+                // name that looks plausible and points at nothing, which is what a typo in the editor is.
+                if (string.IsNullOrWhiteSpace(node.TargetNodeId) ||
+                    !nodeIdsByMap.TryGetValue(node.TargetMapId, out var targetNodes) ||
+                    targetNodes.Contains(node.TargetNodeId))
+                {
+                    continue;
+                }
+
+                AddError(
+                    issues,
+                    "target_node_unknown",
+                    $"Node '{node.Id}' exits to node '{node.TargetNodeId}', which does not exist on map '{node.TargetMapId}'.",
+                    map.Id,
+                    node.Id);
+            }
+        }
 
         return new MapGraphValidationResult(issues);
     }
@@ -299,6 +418,27 @@ public static class MapGraphValidator
                     node.Id);
             }
         }
+    }
+
+    private static void ValidateExitPresence(
+        MapGraph map,
+        IReadOnlyDictionary<string, MapNodeEntry> nodes,
+        ICollection<MapGraphValidationIssue> issues)
+    {
+        // Regions are the top of the walkable tree in this world model and interior maps are reached
+        // from their owning location, so only a zone is required to offer its own way out.
+        if (map.MapType != MapType.Zone)
+            return;
+
+        var hasExit = nodes.Values.Any(n => n.NodeType is MapNodeType.ZoneExit or MapNodeType.RegionExit);
+        if (hasExit)
+            return;
+
+        AddWarning(
+            issues,
+            "map_without_exit",
+            $"Zone map '{map.Id}' has no ZoneExit or RegionExit node, so a character can only leave it by dying.",
+            map.Id);
     }
 
     private static void ValidateCrossContextReference(

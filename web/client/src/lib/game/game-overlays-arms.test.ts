@@ -265,19 +265,40 @@ describe('shop and abilities arms', () => {
 		expect(within(dialog).getByText('No wares available.')).toBeTruthy();
 	});
 
-	it('disables the ability action while fighting and while dead', async () => {
+	it('disables the ability action while fighting and says why', async () => {
 		const game = new GameSession();
 		game.showAbilities = true;
-		game.character = { learnedAbilities: ['arcane_bolt'] } as never;
+		game.stats = { ...game.stats, currentMana: 20, maxMana: 20 };
+		game.character = {
+			learnedAbilities: ['arcane_bolt'],
+			learnedPowers: [
+				{
+					slug: 'arcane_bolt',
+					resolved: true,
+					displayName: 'Arcane bolt',
+					powerType: 'Spell',
+					effectType: 'Damage',
+					manaCost: 5,
+					cooldown: 2,
+					tier: 1,
+					requiredLevel: 1
+				}
+			]
+		} as never;
 		game.combat = { active: true, enemy: null, log: [] };
-		const use = vi.spyOn(game, 'useAbility');
 		render(GameOverlays, { session: game });
 
 		const dialog = screen.getByRole('dialog', { name: 'Abilities' });
-		await fireEvent.click(within(dialog).getByRole('button', { name: /Use/ }));
+		const button = within(dialog).getByRole('button', {
+			name: 'Use Arcane bolt'
+		}) as HTMLButtonElement;
 
-		expect(use).toHaveBeenCalledWith('arcane_bolt');
-		expect(within(dialog).getByText('arcane bolt')).toBeTruthy();
+		// `fireEvent.click` dispatches past the disabled attribute, so the assertion is on the
+		// button state and the visible reason, not on the absence of a callback.
+		expect(button.disabled).toBe(true);
+		expect(
+			within(dialog).getByText('Finish the fight first — use it from the combat panel.')
+		).toBeTruthy();
 	});
 });
 

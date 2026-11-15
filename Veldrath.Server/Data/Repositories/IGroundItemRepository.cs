@@ -7,14 +7,19 @@ namespace Veldrath.Server.Data.Repositories;
 /// </summary>
 public interface IGroundItemRepository
 {
-    /// <summary>Lists the ground items at a zone location, oldest first.</summary>
+    /// <summary>Lists the ground items at a zone location within one scope, oldest first.</summary>
     /// <param name="zoneId">Zone identifier.</param>
     /// <param name="locationSlug">Zone-location slug.</param>
+    /// <param name="zoneInstanceId">
+    /// The instance run to read, or <see langword="null"/> to read the shared zone. The scope is required
+    /// rather than defaulted so a caller cannot accidentally show one run's loot to another.
+    /// </param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The ground items at that location.</returns>
+    /// <returns>The ground items at that location in that scope.</returns>
     Task<IReadOnlyList<GroundItem>> GetAtLocationAsync(
         string zoneId,
         string locationSlug,
+        Guid? zoneInstanceId,
         CancellationToken cancellationToken = default);
 
     /// <summary>Finds a ground item by id.</summary>

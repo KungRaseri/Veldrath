@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { InventoryItem, PartyMemberView, PartySnapshot, QuestLogEntry } from './types';
+import type {
+	InventoryItem,
+	PartyMemberView,
+	PartySnapshot,
+	QuestLogEntry,
+	SkillView,
+	SkillXpGainedPayload
+} from './types';
 
 /**
  * Second-generation session suite. `session.test.ts` covers the documented happy paths;
@@ -334,6 +341,74 @@ describe('GameSession map and location events', () => {
 		expect(session.groundItems).toEqual([]);
 	});
 
+	it('keeps the level gate the server worded and clears it on the next arrival', async () => {
+		const session = await connected();
+
+		hub.emit('NodeTraveled', {
+			success: true,
+			mapChanged: false,
+			locationSlug: 'maw-descent',
+			recommendedLevel: 26,
+			yourLevel: 3,
+			levelWarning: 'This place expects level 26; you are 3.'
+		});
+
+		expect(session.levelWarning).toBe('This place expects level 26; you are 3.');
+
+		hub.emit('NodeTraveled', {
+			success: true,
+			mapChanged: false,
+			locationSlug: 'crestfall-square'
+		});
+
+		expect(session.levelWarning).toBeNull();
+	});
+
+	it('remembers the run and the rooms it had already cleared', async () => {
+		const session = await connected();
+
+		hub.emit('NodeTraveled', {
+			success: true,
+			mapChanged: false,
+			locationSlug: 'rootbound-cellars',
+			zoneInstanceId: 'run-1',
+			clearedLocations: ['halrow-threshold']
+		});
+
+		expect(session.instanceId).toBe('run-1');
+		expect(session.clearedLocations).toEqual(['halrow-threshold']);
+	});
+
+	it('appends a room to the cleared list when the server announces one', async () => {
+		const session = await connected();
+		session.clearedLocations = ['halrow-threshold'];
+
+		hub.emit('LocationCleared', {
+			characterId: 'char-1',
+			instanceId: 'run-1',
+			locationSlug: 'collapsed-vault',
+			firstClearOfRun: true,
+			firstClearForCharacter: true
+		});
+
+		expect(session.clearedLocations).toEqual(['halrow-threshold', 'collapsed-vault']);
+		expect(session.chat.some((message) => message.message.includes('collapsed-vault'))).toBe(true);
+	});
+
+	it('drops the level gate only on a successful arrival', async () => {
+		const session = await connected();
+		session.levelWarning = 'This place expects level 26; you are 3.';
+
+		hub.emit('NodeTraveled', {
+			success: false,
+			mapChanged: false,
+			errorMessage: 'No direct path.'
+		});
+
+		expect(session.levelWarning).toBe('This place expects level 26; you are 3.');
+		expect(session.error).toBe('No direct path.');
+	});
+
 	it('starts a fight even when the enemy has no ability list', async () => {
 		const session = await connected();
 
@@ -588,5 +663,153 @@ describe('GameSession moderation and social events', () => {
 
 		expect(session.ignoredCharacterIds).toEqual(['char-2']);
 		expect(session.chat.at(-1)?.message).toBe('That player is now ignored.');
+	});
+});
+
+describe('skill progression', () => {
+	function skill(overrides: Partial<SkillView> = {}): SkillView {
+		return {
+			skillId: 'swordsmanship',
+			resolved: true,
+			name: 'Swordsmanship',
+			description: 'Skill with a blade.',
+			category: 'combat',
+			governingAttribute: 'strength',
+			rank: 2,
+			totalXp: 250,
+			xpIntoRank: 50,
+			xpToNextRank: 100,
+			maxRank: 50,
+			...overrides
+		};
+	}
+
+	function award(overrides: Partial<SkillXpGainedPayload> = {}): SkillXpGainedPayload {
+		return {
+			characterId: 'char-1',
+			skillId: 'swordsmanship',
+			totalXp: 260,
+			currentRank: 2,
+			rankedUp: false,
+			xpIntoRank: 60,
+			xpToNextRank: 100,
+			...overrides
+		};
+	}
+
+	it('seeds the sheet from the character snapshot', async () => {
+		const session = await connected();
+
+		hub.emit('CharacterSelected', { id: 'char-1', skills: [skill(), { slug: 'ignored' }] });
+		await flush();
+
+		expect(session.skills).toHaveLength(1);
+		expect(session.skills[0].name).toBe('Swordsmanship');
+	});
+
+	it('updates a known skill in place from an award', async () => {
+		const session = await connected();
+		session.skills = [skill()];
+
+		hub.emit('SkillXpGained', award());
+
+		expect(session.skills).toHaveLength(1);
+		expect(session.skills[0]).toMatchObject({
+			skillId: 'swordsmanship',
+			name: 'Swordsmanship',
+			totalXp: 260,
+			xpIntoRank: 60
+		});
+		expect(session.skillRankUpToast).toBeNull();
+	});
+
+	it('announces a rank-up and keeps the catalog copy', async () => {
+		const session = await connected();
+		session.skills = [skill()];
+
+		hub.emit(
+			'SkillXpGained',
+			award({ totalXp: 310, currentRank: 3, rankedUp: true, xpIntoRank: 10 })
+		);
+
+		expect(session.skillRankUpToast).toEqual({ name: 'Swordsmanship', rank: 3 });
+		expect(session.skills[0].category).toBe('combat');
+
+		session.dismissSkillToast();
+		expect(session.skillRankUpToast).toBeNull();
+	});
+
+	it('appends an award for a skill the sheet has never seen', async () => {
+		const session = await connected();
+		session.skills = [];
+
+		hub.emit('SkillXpGained', award({ skillId: 'herbalism', totalXp: 40, currentRank: 0 }));
+
+		expect(session.skills).toHaveLength(1);
+		expect(session.skills[0].resolved).toBe(false);
+		expect(session.skills[0].skillId).toBe('herbalism');
+		expect(session.skillRankUpToast).toBeNull();
+	});
+});
+
+describe('crafting', () => {
+	it('stores the recipe list the server sends, dropping entries without a slug', async () => {
+		const session = await connected();
+
+		hub.emit('CraftableRecipes', {
+			recipes: [
+				{
+					slug: 'iron-longsword',
+					name: 'Iron longsword',
+					available: true,
+					materials: [],
+					outputItemRef: '@items/weapons/swords:iron-longsword',
+					outputQuantity: 1
+				},
+				{ slug: '' }
+			]
+		});
+
+		expect(session.craftableRecipes).toHaveLength(1);
+		expect(session.craftableRecipes[0].slug).toBe('iron-longsword');
+	});
+
+	it('asks the server for the list when the panel opens', async () => {
+		const session = await connected();
+
+		await session.openCrafting();
+
+		expect(session.showCrafting).toBe(true);
+		expect(hub.methods()).toContain('GetCraftableRecipes');
+	});
+
+	it('announces a completed craft and refreshes the bag', async () => {
+		const session = await connected();
+
+		hub.emit('ItemCrafted', {
+			characterId: 'char-1',
+			recipeSlug: 'iron-longsword',
+			recipeName: 'Iron longsword',
+			itemRef: '@items/weapons/swords:iron-longsword',
+			outputQuantity: 1,
+			consumedMaterials: [{ itemRef: '@items/materials/ingots:iron-ingot', quantity: 2 }],
+			skillId: 'blacksmithing',
+			skillXp: 15
+		});
+		await flush();
+
+		expect(session.chat.at(-1)?.message).toContain(
+			'Crafted 1 × @items/weapons/swords:iron-longsword'
+		);
+		expect(hub.methods()).toContain('GetInventory');
+	});
+
+	it('does nothing for a craft before a connection exists', async () => {
+		const session = new GameSession();
+
+		await session.craft('iron-longsword');
+		await session.loadCraftableRecipes();
+
+		expect(hub.invocations).toEqual([]);
 	});
 });
