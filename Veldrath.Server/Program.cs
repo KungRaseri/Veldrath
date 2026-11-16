@@ -179,7 +179,9 @@ try
         .ValidateDataAnnotations()
         .ValidateOnStart();
     builder.Services.AddHostedService<EnemyRespawnService>();
-    builder.Services.AddHostedService<ContentAuditService>();
+    // Registered as both: the host runs it once at startup, and the world-health endpoint runs it on demand.
+    builder.Services.AddSingleton<ContentAuditService>();
+    builder.Services.AddHostedService(sp => sp.GetRequiredService<ContentAuditService>());
 
     builder.Services.AddOptions<PartyOptions>()
         .Bind(builder.Configuration.GetSection(PartyOptions.SectionName))
@@ -427,6 +429,7 @@ try
     app.MapContentEndpoints();
     app.MapMapEditorEndpoints();
     app.MapContentWriteEndpoints();
+    app.MapContentAuditEndpoints();
     app.MapAdminEndpoints();
     app.MapPlayerEndpoints();
     app.MapEditorialEndpoints();

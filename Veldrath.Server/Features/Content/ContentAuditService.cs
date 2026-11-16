@@ -74,29 +74,24 @@ public sealed class ContentAuditService : BackgroundService
             .Select(item => item.Slug)
             .ToListAsync(cancellationToken));
 
-        var locations = await db.ZoneLocations.AsNoTracking()
-            .Select(location => new
-            {
-                location.Slug,
-                ArchetypeSlugs = location.ActorPool.Select(entry => entry.ArchetypeSlug).ToList(),
-            })
+        // The entities are materialised and flattened here rather than projected with a nested collection.
+        // A nested collection in a projection needs SQL APPLY, which SQLite cannot translate — so the audit
+        // used to throw on any SQLite host and be silently skipped, because the startup run catches everything.
+        var locationEntities = await db.ZoneLocations.AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        var locationSlugs = Slugs(locations.Select(location => location.Slug));
-        var pools = locations
-            .Select(location => new SpawnPoolReference(location.Slug, location.ArchetypeSlugs))
+        var locationSlugs = Slugs(locationEntities.Select(location => location.Slug));
+        var pools = locationEntities
+            .Select(location => new SpawnPoolReference(
+                location.Slug,
+                location.ActorPool.Select(entry => entry.ArchetypeSlug).ToList()))
             .ToList();
 
-        var questObjectives = (await db.Quests.AsNoTracking()
-                .Select(quest => new
-                {
-                    quest.Slug,
-                    Objectives = quest.Objectives.Items
-                        .Select(objective => new { objective.Type, objective.Target })
-                        .ToList(),
-                })
-                .ToListAsync(cancellationToken))
-            .SelectMany(quest => quest.Objectives.Select(objective =>
+        var questEntities = await db.Quests.AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var questObjectives = questEntities
+            .SelectMany(quest => quest.Objectives.Items.Select(objective =>
                 new QuestObjectiveReference(quest.Slug, objective.Type, objective.Target)))
             .ToList();
 
@@ -104,16 +99,15 @@ public sealed class ContentAuditService : BackgroundService
             .Select(edge => new MapEdgeReference(edge.MapId, edge.FromNodeId, edge.ToNodeId))
             .ToListAsync(cancellationToken);
 
-        var nodeIdsByMap = (await db.Maps.AsNoTracking()
-                .Select(map => new
-                {
-                    map.Id,
-                    NodeIds = map.Nodes.Select(node => node.Id).ToList(),
-                })
-                .ToListAsync(cancellationToken))
+        var mapEntities = await db.Maps.AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var nodeIdsByMap = mapEntities
             .ToDictionary(
                 map => map.Id,
-                map => (IReadOnlySet<string>)map.NodeIds.ToHashSet(StringComparer.OrdinalIgnoreCase),
+                map => (IReadOnlySet<string>)map.Nodes
+                    .Select(node => node.Id)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase),
                 StringComparer.OrdinalIgnoreCase);
 
         var issues = new List<ContentIssue>();
