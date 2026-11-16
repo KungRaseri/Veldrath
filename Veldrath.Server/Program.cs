@@ -143,6 +143,8 @@ try
     builder.Services.AddScoped<AccountProvisioningService>();
     builder.Services.AddScoped<FoundryService>();
     builder.Services.AddScoped<FoundryNotificationWriter>();
+    // The content write path, shared by the editor's endpoints and Foundry's review gate.
+    builder.Services.AddScoped<Veldrath.Server.Features.Content.ContentWriteService>();
 
     // IEmailSender: use NullEmailSender when SmtpHost is not configured (dev / CI).
     // Switch to SmtpEmailSender by setting Email:SmtpHost in the environment or user-secrets.

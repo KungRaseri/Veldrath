@@ -28,6 +28,16 @@ public class FoundryEndpointTests(WebAppFactory factory)
         return token;
     }
 
+    /// <summary>
+    /// A payload that passes the content rules, so an approval can actually promote it.
+    /// </summary>
+    /// <remarks>
+    /// Approval writes the payload through the content write path, so a submission carrying <c>{}</c> can no
+    /// longer be approved — that is the gate working, not a broken fixture.
+    /// </remarks>
+    private static string PromotableItem(string slug) =>
+        $"{{\"slug\":\"{slug}\",\"displayName\":\"{slug}\",\"typeKey\":\"material\",\"itemType\":\"material\",\"rarityWeight\":50,\"isActive\":true}}";
+
     private async Task<FoundrySubmissionDto> CreateSubmissionAsync(
         HttpClient client, string contentType, string title, string payload = "{}")
     {
@@ -331,18 +341,89 @@ public class FoundryEndpointTests(WebAppFactory factory)
         curatorClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", await GetCuratorTokenAsync("FndRevAppr_Curator"));
 
-        var submission = await CreateSubmissionAsync(submitterClient, "Item", "FndRevAppr_Item");
+        var submission = await CreateSubmissionAsync(
+            submitterClient, "Item", "FndRevAppr_Item", PromotableItem("fnd-rev-appr-item"));
 
         var response = await curatorClient.PostAsJsonAsync(
             $"/api/foundry/submissions/{submission.Id}/review",
             new { Approved = true, Notes = "Looks great!" });
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var reason = await response.Content.ReadAsStringAsync();
+        response.StatusCode.Should().Be(HttpStatusCode.OK, reason);
         var dto = await response.Content.ReadFromJsonAsync<FoundrySubmissionDto>();
         dto!.Status.Should().Be("Approved");
         dto.ReviewNotes.Should().Be("Looks great!");
         dto.ReviewedAt.Should().NotBeNull();
         dto.ReviewerName.Should().Be("FndRevAppr_Curator");
+        // Approval is the gate: the payload landed in the catalog and the submission records where.
+        dto.PromotedSlug.Should().Be("fnd-rev-appr-item");
+
+        var promoted = await curatorClient.GetAsync("/api/content/browse/item/fnd-rev-appr-item");
+        promoted.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task Review_Should_Refuse_An_Unpromotable_Payload_And_Leave_The_Submission_Pending()
+    {
+        using var submitterClient = factory.CreateClient();
+        submitterClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndRevBad_Sub"));
+
+        using var curatorClient = factory.CreateClient();
+        curatorClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetCuratorTokenAsync("FndRevBad_Curator"));
+
+        // An empty payload has no slug, so it cannot be written; the decision must be refused, not recorded.
+        var submission = await CreateSubmissionAsync(submitterClient, "Item", "FndRevBad_Item");
+
+        var response = await curatorClient.PostAsJsonAsync(
+            $"/api/foundry/submissions/{submission.Id}/review",
+            new { Approved = true });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var after = await curatorClient.GetFromJsonAsync<FoundrySubmissionDto>(
+            $"/api/foundry/submissions/{submission.Id}");
+
+        after!.Status.Should().Be("Pending");
+        after.PromotedSlug.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Review_Should_Refuse_A_Promotion_Whose_Slug_Already_Exists()
+    {
+        using var firstSubmitter = factory.CreateClient();
+        firstSubmitter.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndRevDup_Sub1"));
+
+        using var secondSubmitter = factory.CreateClient();
+        secondSubmitter.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndRevDup_Sub2"));
+
+        using var curatorClient = factory.CreateClient();
+        curatorClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetCuratorTokenAsync("FndRevDup_Curator"));
+
+        var first = await CreateSubmissionAsync(
+            firstSubmitter, "Item", "FndRevDup_First", PromotableItem("fnd-rev-dup-item"));
+
+        var approved = await curatorClient.PostAsJsonAsync(
+            $"/api/foundry/submissions/{first.Id}/review",
+            new { Approved = true });
+
+        approved.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // The same slug from a second submission cannot overwrite the first; the reviewer is told why.
+        var second = await CreateSubmissionAsync(
+            secondSubmitter, "Item", "FndRevDup_Second", PromotableItem("fnd-rev-dup-item"));
+
+        var refused = await curatorClient.PostAsJsonAsync(
+            $"/api/foundry/submissions/{second.Id}/review",
+            new { Approved = true });
+
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await refused.Content.ReadAsStringAsync();
+        body.Should().Contain("already exists");
     }
 
     [Fact]
@@ -425,7 +506,8 @@ public class FoundryEndpointTests(WebAppFactory factory)
         curatorClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", await GetCuratorTokenAsync("FndNotifA_Curator"));
 
-        var submission = await CreateSubmissionAsync(submitterClient, "Item", "FndNotifA_Item");
+        var submission = await CreateSubmissionAsync(
+            submitterClient, "Item", "FndNotifA_Item", PromotableItem("fnd-notif-a-item"));
 
         await curatorClient.PostAsJsonAsync(
             $"/api/foundry/submissions/{submission.Id}/review",
@@ -610,7 +692,8 @@ public class FoundryEndpointTests(WebAppFactory factory)
         otherClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndMarkOwn_Other"));
 
-        var submission = await CreateSubmissionAsync(submitterClient, "Ability", "FndMarkOwn_Ability");
+        var submission = await CreateSubmissionAsync(
+            submitterClient, "Item", "FndMarkOwn_Item", PromotableItem("fnd-mark-own-item"));
 
         await curatorClient.PostAsJsonAsync(
             $"/api/foundry/submissions/{submission.Id}/review",

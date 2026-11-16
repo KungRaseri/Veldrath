@@ -59,5 +59,14 @@ public class FoundrySubmission
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? ReviewedAt { get; set; }
 
+    /// <summary>
+    /// Slug of the catalog entity an approval wrote, when it did.
+    /// </summary>
+    /// <remarks>
+    /// Set only on approval, and only after the write succeeded — it is the record that an approved submission
+    /// actually landed. A rejected or pending submission has no slug.
+    /// </remarks>
+    public string? PromotedSlug { get; set; }
+
     public ICollection<FoundryVote> Votes { get; set; } = [];
 }

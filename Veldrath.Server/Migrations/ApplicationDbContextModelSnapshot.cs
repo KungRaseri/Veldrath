@@ -548,6 +548,9 @@ namespace Veldrath.Server.Migrations
                         .IsRequired()
                         .HasColumnType("jsonb");
 
+                    b.Property<string>("PromotedSlug")
+                        .HasColumnType("text");
+
                     b.Property<string>("ReviewNotes")
                         .HasColumnType("text");
 
