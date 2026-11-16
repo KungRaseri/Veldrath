@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
 	allFields,
+	anchorId,
 	buildPayload,
 	coerceFieldValue,
 	hasBlockingIssues,
 	initialValues,
+	isDirty,
 	issuesByField,
+	missingRequired,
+	parseMarkdown,
 	readPath,
+	slugify,
 	toInputValue,
 	writePath,
 	type ContentField,
@@ -192,5 +197,148 @@ describe('toInputValue', () => {
 		expect(toInputValue(null)).toBe('');
 		expect(toInputValue(true)).toBe('true');
 		expect(toInputValue(7)).toBe('7');
+	});
+});
+
+describe('slugify', () => {
+	it('folds accents and hyphenates', () => {
+		expect(slugify('Ember Blade')).toBe('ember-blade');
+		expect(slugify('  Café  Noir!! ')).toBe('cafe-noir');
+		expect(slugify('Aelthir_Prime')).toBe('aelthir-prime');
+	});
+
+	it('returns an empty string when nothing alphanumeric survives', () => {
+		expect(slugify('***')).toBe('');
+	});
+});
+
+describe('anchorId', () => {
+	it('derives a usable anchor from a group label', () => {
+		expect(anchorId('Identity')).toBe('identity');
+		expect(anchorId('Stats & Traits')).toBe('stats-traits');
+	});
+
+	it('never returns an empty anchor', () => {
+		expect(anchorId('!!!')).toBe('section');
+	});
+});
+
+describe('isDirty', () => {
+	it('compares both directions and notices a key the seed did not have', () => {
+		expect(isDirty({ a: '1' }, { a: '1' })).toBe(false);
+		expect(isDirty({ a: '1' }, { a: '2' })).toBe(true);
+		expect(isDirty({ a: '1' }, { a: '1', b: '' })).toBe(true);
+	});
+});
+
+const requiredField = (name: string, fieldType: string, required = true) => ({
+	name,
+	label: name,
+	fieldType,
+	required,
+	default: null,
+	min: null,
+	max: null,
+	enumValues: null,
+	hint: null
+});
+
+const formSchema = {
+	contentType: 'item',
+	displayLabel: 'Item',
+	description: '',
+	groups: [
+		{
+			label: 'Identity',
+			fields: [
+				requiredField('displayName', 'Text'),
+				requiredField('slug', 'Slug'),
+				requiredField('isActive', 'Boolean')
+			]
+		},
+		{
+			label: 'Stats',
+			fields: [requiredField('weight', 'Decimal')]
+		}
+	]
+} as never;
+
+describe('missingRequired', () => {
+	it('names the blank required fields and ignores a boolean', () => {
+		expect(
+			missingRequired(formSchema, {
+				displayName: 'Ember blade',
+				slug: '  ',
+				isActive: false,
+				weight: '1.5'
+			})
+		).toEqual(['slug']);
+	});
+
+	it('treats an empty number as blank rather than zero', () => {
+		expect(missingRequired(formSchema, { displayName: 'x', slug: 'x', weight: '' })).toEqual([
+			'weight'
+		]);
+		expect(missingRequired(formSchema, { displayName: 'x', slug: 'x', weight: '0' })).toEqual([]);
+	});
+
+	it('accepts a null schema', () => {
+		expect(missingRequired(null, {})).toEqual([]);
+	});
+});
+
+describe('parseMarkdown', () => {
+	it('parses headings, lists and paragraphs', () => {
+		expect(parseMarkdown('# Title')).toEqual([
+			{ kind: 'heading', level: 3, spans: [{ text: 'Title' }] }
+		]);
+		expect(parseMarkdown('- one\n- two')).toEqual([
+			{ kind: 'list', items: [[{ text: 'one' }], [{ text: 'two' }]] }
+		]);
+		expect(parseMarkdown('first\nsecond')).toEqual([
+			{ kind: 'paragraph', lines: [[{ text: 'first' }], [{ text: 'second' }]] }
+		]);
+	});
+
+	it('marks bold, italic and code runs', () => {
+		expect(parseMarkdown('**bold** and `code`')).toEqual([
+			{
+				kind: 'paragraph',
+				lines: [[{ text: 'bold', strong: true }, { text: ' and ' }, { text: 'code', code: true }]]
+			}
+		]);
+		expect(parseMarkdown('A _quiet_ word.')).toEqual([
+			{
+				kind: 'paragraph',
+				lines: [[{ text: 'A ' }, { text: 'quiet', em: true }, { text: ' word.' }]]
+			}
+		]);
+	});
+
+	it('leaves author input as text, so nothing can become markup', () => {
+		expect(parseMarkdown('<script>alert(1)</script>')).toEqual([
+			{ kind: 'paragraph', lines: [[{ text: '<script>alert(1)</script>' }]] }
+		]);
+	});
+
+	it('links a safe href and leaves an unsafe one as text', () => {
+		expect(parseMarkdown('[docs](/lore)')).toEqual([
+			{ kind: 'paragraph', lines: [[{ text: 'docs', href: '/lore' }]] }
+		]);
+
+		const spans = parseMarkdown('[x](javascript:alert(1))').flatMap((block) =>
+			block.kind === 'paragraph'
+				? block.lines.flat()
+				: block.kind === 'list'
+					? block.items.flat()
+					: block.spans
+		);
+
+		expect(spans.some((span) => span.href !== undefined)).toBe(false);
+		expect(spans.map((span) => span.text).join('')).toBe('[x](javascript:alert(1))');
+	});
+
+	it('returns no blocks for blank input', () => {
+		expect(parseMarkdown('   ')).toEqual([]);
 	});
 });

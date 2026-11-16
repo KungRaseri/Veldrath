@@ -1,12 +1,14 @@
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import { createRawSnippet } from 'svelte';
 import { describe, expect, it } from 'vitest';
+import { setPage } from '#lib/testing/app-state';
 import FoundryBreadcrumbs from '#lib/components/foundry/FoundryBreadcrumbs.svelte';
 import FoundryEmptyState from '#lib/components/foundry/FoundryEmptyState.svelte';
 import FoundryPageHeader from '#lib/components/foundry/FoundryPageHeader.svelte';
 import FoundrySection from '#lib/components/foundry/FoundrySection.svelte';
 import FoundrySidebar from '#lib/components/foundry/FoundrySidebar.svelte';
 import { foundryNav } from '#lib/foundry/nav';
+import FoundryError from './(foundry)/+error.svelte';
 import ContentIndex from './(foundry)/content/+page.svelte';
 import ContentBrowse from './(foundry)/content/[type]/+page.svelte';
 import ContentDetail from './(foundry)/content/[type]/[slug]/+page.svelte';
@@ -550,6 +552,86 @@ describe('content editor', () => {
 /** A snippet that renders one line of markup, for the components whose body is the caller's. */
 const body = createRawSnippet(() => ({ render: () => '<span>section body</span>' }));
 
+describe('content editor form behaviour', () => {
+	it('leaves the slug alone while it is still locked', async () => {
+		render(ContentEditor, page(editorData));
+
+		// A required field's label carries the asterisk, so match on the prefix.
+		const slug = screen.getByLabelText(/^Slug/) as HTMLInputElement;
+		await fireEvent.input(screen.getByLabelText(/Display name/), {
+			target: { value: 'Something Else' }
+		});
+
+		expect(slug.value).toBe('ember-blade');
+	});
+
+	it('derives the slug from the display name once the lock is released', async () => {
+		render(ContentEditor, page(editorData));
+
+		await fireEvent.click(screen.getByLabelText('Derive from display name'));
+		await fireEvent.input(screen.getByLabelText(/Display name/), {
+			target: { value: 'Café Noir' }
+		});
+
+		expect((screen.getByLabelText(/^Slug/) as HTMLInputElement).value).toBe('cafe-noir');
+	});
+
+	it('renders the markdown preview of a long-text field on request', async () => {
+		render(ContentEditor, page(editorData));
+
+		expect(screen.queryByText('A blade of banked fire.')).toBeNull();
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+
+		expect(screen.getByText('A blade of banked fire.')).toBeTruthy();
+	});
+
+	it('renders every preview block and run it parses', async () => {
+		render(ContentEditor, page(editorData));
+
+		await fireEvent.input(screen.getByLabelText('Description'), {
+			target: {
+				value: `# Heading\n\n- one\n- two\n\nplain **bold** _em_ \`code\` [link](/lore)`
+			}
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+
+		expect(screen.getByText('Heading')).toBeTruthy();
+		expect(screen.getByText('one')).toBeTruthy();
+		expect(screen.getByText('bold')).toBeTruthy();
+		expect(screen.getByText('em')).toBeTruthy();
+		expect(screen.getByText('code')).toBeTruthy();
+		expect(screen.getByRole('link', { name: 'link' }).getAttribute('href')).toBe('/lore');
+	});
+
+	it('marks a blank required field and blocks the save before it reaches the server', async () => {
+		render(ContentEditor, page(editorData));
+
+		await fireEvent.input(screen.getByLabelText(/Display name/), { target: { value: '' } });
+
+		expect(screen.getByText('This field is required.')).toBeTruthy();
+		expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(true);
+	});
+
+	it('reports unsaved changes and discards them', async () => {
+		render(ContentEditor, page(editorData));
+
+		const displayName = screen.getByLabelText(/Display name/) as HTMLInputElement;
+		expect(screen.queryByText('Unsaved changes')).toBeNull();
+		expect((screen.getByRole('button', { name: 'Discard' }) as HTMLButtonElement).disabled).toBe(
+			true
+		);
+
+		await fireEvent.input(displayName, { target: { value: 'Ember blade II' } });
+		expect(screen.getByText('Unsaved changes')).toBeTruthy();
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+
+		expect(displayName.value).toBe('Ember blade');
+		expect(screen.queryByText('Unsaved changes')).toBeNull();
+	});
+});
+
 describe('foundry home', () => {
 	it('counts every section and links each destination', () => {
 		render(
@@ -614,6 +696,42 @@ describe('foundry home', () => {
 		);
 
 		expect(screen.getByRole('alert').textContent).toContain('Map list unavailable');
+	});
+});
+
+describe('foundry error boundary', () => {
+	it('names the missing capability on a 403 and offers the way back', () => {
+		setPage({ status: 403, error: { message: 'The review queue needs the Curator role.' } });
+		render(FoundryError);
+
+		expect(screen.getByRole('heading', { level: 1, name: 'Not yours to open' })).toBeTruthy();
+		expect(screen.getByText('The review queue needs the Curator role.')).toBeTruthy();
+		expect(screen.getByRole('link', { name: 'Back to Foundry' }).getAttribute('href')).toBe(
+			'/foundry'
+		);
+	});
+
+	it('offers a retry for a server error, and not for a 404', () => {
+		setPage({ status: 500 });
+		const { unmount } = render(FoundryError);
+		expect(
+			screen.getByRole('heading', { level: 1, name: 'The portal could not finish that' })
+		).toBeTruthy();
+		expect(screen.getByRole('link', { name: 'Try again' })).toBeTruthy();
+		unmount();
+
+		setPage({ status: 404 });
+		render(FoundryError);
+		expect(screen.getByRole('heading', { level: 1, name: 'No such page' })).toBeTruthy();
+		expect(screen.getByText('That page is not part of Foundry.')).toBeTruthy();
+		expect(screen.queryByRole('link', { name: 'Try again' })).toBeNull();
+	});
+
+	it('falls back to copy when the error carries no message', () => {
+		setPage({ status: 403 });
+		render(FoundryError);
+
+		expect(screen.getByText('This account lacks the capability the page needs.')).toBeTruthy();
 	});
 });
 
@@ -693,6 +811,13 @@ describe('foundry shell components', () => {
 		expect(screen.getByRole('heading', { level: 2 }).textContent).toContain('Content');
 		expect(screen.getByText('7')).toBeTruthy();
 		expect(screen.getByText('section body')).toBeTruthy();
+	});
+
+	it('renders a header without a description or actions', () => {
+		render(FoundryPageHeader, { title: 'Bare' } as never);
+
+		const heading = screen.getByRole('heading', { level: 1, name: 'Bare' });
+		expect(heading.parentElement?.querySelector('p')).toBeNull();
 	});
 
 	it('renders the sidebar groups, the home entry and the queue badges', () => {

@@ -16,7 +16,8 @@
 
 <nav aria-label="Breadcrumb">
 	<ol class="flex flex-wrap items-center gap-1 text-xs text-surface-600-400">
-		{#each items as crumb, index (crumb.label)}
+		<!-- Keyed by position: a trail is a fixed list, and labels may legitimately repeat or be empty. -->
+		{#each items as crumb, index (index)}
 			<li class="flex items-center gap-1">
 				{#if crumb.href && index < items.length - 1}
 					<a class="link" href={crumb.href}>{crumb.label}</a>

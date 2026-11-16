@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { callLoad, fakeUser, makeServerEvent, type FakeServerEvent } from '#lib/testing/event';
 import { load as contentIndex } from './(foundry)/content/+page.server';
+import { load as homePage } from './(foundry)/foundry/+page.server';
+import { load as reviewPage } from './(foundry)/review/+page.server';
 import { load as contentTypePage } from './(foundry)/content/[type]/+page.server';
 import { load as contentDetail } from './(foundry)/content/[type]/[slug]/+page.server';
 import {
@@ -437,6 +439,127 @@ describe('map editor', () => {
 
 		expect(result.status).toBe(502);
 		expect(result.data.message).toBe('the validator is unavailable');
+	});
+});
+
+const curatorAccess = {
+	...editorAccess,
+	permissions: ['content.view', 'content.manage', 'content.review']
+};
+
+describe('portal home', () => {
+	it('counts every section and does not ask for the queue without the role', async () => {
+		mapsApi.listMaps.mockResolvedValue(
+			ok([
+				{ id: 'zone:fenwick', submittedAt: '2026-01-01T00:00:00Z', isActive: false },
+				{ id: 'zone:halrow', submittedAt: null, isActive: true }
+			])
+		);
+
+		const result = (await callLoad(
+			homePage,
+			signedIn({ parentData: { access: editorAccess, canReview: false } })
+		)) as Record<string, unknown>;
+
+		expect(result).toMatchObject({
+			canReview: false,
+			contentTypes: 1,
+			maps: 2,
+			mapsInReview: 1,
+			pendingSubmissions: 0,
+			error: null
+		});
+		expect(foundryApi.listSubmissions).not.toHaveBeenCalled();
+	});
+
+	it('counts the pending submissions for a Curator', async () => {
+		foundryApi.listSubmissions.mockResolvedValue(
+			ok({ items: [], totalCount: 7, page: 1, pageSize: 1 })
+		);
+
+		const result = (await callLoad(
+			homePage,
+			signedIn({
+				parentData: { access: curatorAccess, canReview: true, unreadNotifications: 2 }
+			})
+		)) as Record<string, unknown>;
+
+		expect(result).toMatchObject({
+			canReview: true,
+			pendingSubmissions: 7,
+			unreadNotifications: 2
+		});
+	});
+
+	it('reports the first failure rather than claiming a section is empty', async () => {
+		contentApi.listContentTypes.mockResolvedValue(failed('catalog is down'));
+		mapsApi.listMaps.mockResolvedValue(failed('maps are down'));
+
+		const result = (await callLoad(
+			homePage,
+			signedIn({ parentData: { access: editorAccess, canReview: false } })
+		)) as { error: string };
+
+		expect(result.error).toBe('catalog is down');
+	});
+
+	it('refuses an account without content.view', async () => {
+		expect(
+			await thrownMessage(() =>
+				callLoad(
+					homePage,
+					signedIn({ parentData: { access: { ...readerAccess, permissions: [] } } })
+				)
+			)
+		).toBe('Foundry needs the content permission. Ask a Curator for access.');
+	});
+});
+
+describe('review queue', () => {
+	it('refuses an account without the Curator role', async () => {
+		expect(
+			await thrownMessage(() =>
+				callLoad(reviewPage, signedIn({ parentData: { access: editorAccess, canReview: false } }))
+			)
+		).toBe('The review queue needs the Curator role.');
+		expect(foundryApi.listSubmissions).not.toHaveBeenCalled();
+	});
+
+	it('lists pending submissions and the maps in review', async () => {
+		foundryApi.listSubmissions.mockResolvedValue(
+			ok({ items: [{ id: 'sub-1' }], totalCount: 1, page: 1, pageSize: 50 })
+		);
+		mapsApi.listMaps.mockResolvedValue(
+			ok([
+				{ id: 'zone:a', submittedAt: '2026-01-01T00:00:00Z', isActive: false },
+				// Live, so not waiting for a decision.
+				{ id: 'zone:b', submittedAt: null, isActive: true }
+			])
+		);
+
+		const result = (await callLoad(
+			reviewPage,
+			signedIn({ parentData: { access: curatorAccess, canReview: true } })
+		)) as { submissions: unknown[]; maps: { id: string }[]; error: unknown };
+
+		expect(result.submissions).toEqual([{ id: 'sub-1' }]);
+		expect(result.maps.map((map) => map.id)).toEqual(['zone:a']);
+		expect(result.error).toBeNull();
+		expect(foundryApi.listSubmissions).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ status: 'Pending' })
+		);
+	});
+
+	it('reports the first failed call', async () => {
+		mapsApi.listMaps.mockResolvedValue(failed('maps are down'));
+
+		const result = (await callLoad(
+			reviewPage,
+			signedIn({ parentData: { access: curatorAccess, canReview: true } })
+		)) as { error: string };
+
+		expect(result.error).toBe('maps are down');
 	});
 });
 

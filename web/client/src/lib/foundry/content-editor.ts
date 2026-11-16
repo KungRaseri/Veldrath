@@ -169,3 +169,179 @@ export function initialValues(
 
 	return values;
 }
+
+/**
+ * Lowercase, hyphenated slug derived from a display name.
+ *
+ * Accents are folded rather than dropped, so `Café Noir` becomes `cafe-noir` instead of `caf-noir`. The
+ * server validates the slug with the same shape, which is why the editor derives it instead of letting the
+ * author discover the rule from a rejection.
+ *
+ * @param text The display name.
+ * @returns The slug, or `''` when nothing alphanumeric survives.
+ */
+export function slugify(text: string): string {
+	return text
+		.normalize('NFKD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/^-+|-+$/g, '');
+}
+
+/**
+ * A URL-safe anchor id for a group heading, so the form can link to its own sections.
+ *
+ * @param label The group label.
+ * @returns The anchor, never empty.
+ */
+export function anchorId(label: string): string {
+	return slugify(label) || 'section';
+}
+
+/**
+ * Whether the form holds edits that would be lost.
+ *
+ * @param seed The values the form was seeded with.
+ * @param values The values it holds now.
+ * @returns `true` when any field differs, including one the seed did not have.
+ */
+export function isDirty(
+	seed: Record<string, string | boolean>,
+	values: Record<string, string | boolean>
+): boolean {
+	const keys = new Set([...Object.keys(seed), ...Object.keys(values)]);
+
+	for (const key of keys) {
+		if (seed[key] !== values[key]) return true;
+	}
+
+	return false;
+}
+
+/**
+ * The required fields the form left blank.
+ *
+ * A boolean is never blank — unchecked means `false`, which is a value — and a number field left empty is
+ * blank rather than `0`, because `coerceFieldValue` turns it into `null`.
+ *
+ * @param schema The content type schema.
+ * @param values The form values.
+ * @returns The field names, in schema order.
+ */
+export function missingRequired(
+	schema: ContentTypeSchema | null,
+	values: Record<string, string | boolean>
+): string[] {
+	return allFields(schema)
+		.filter((field) => field.required && field.fieldType !== 'Boolean')
+		.filter((field) => {
+			const value = values[field.name];
+			return value === undefined || String(value).trim() === '';
+		})
+		.map((field) => field.name);
+}
+
+/** Hrefs a preview link may use. Anything else stays literal text. */
+const SAFE_HREF = /^(https?:\/\/|\/|#)/i;
+
+/** One run of text, with at most one emphasis and an optional link target. */
+export interface MarkdownSpan {
+	/** The literal text, already the thing to render — never markup. */
+	text: string;
+	/** Set when the run came from `` `code` ``. */
+	code?: boolean;
+	/** Set when the run came from `**strong**`. */
+	strong?: boolean;
+	/** Set when the run came from `_emphasis_`. */
+	em?: boolean;
+	/** Set when the run came from `[label](href)` and the href is safe. */
+	href?: string;
+}
+
+/** One blank-line-separated block. */
+export type MarkdownBlock =
+	| { kind: 'heading'; level: number; spans: MarkdownSpan[] }
+	| { kind: 'list'; items: MarkdownSpan[][] }
+	| { kind: 'paragraph'; lines: MarkdownSpan[][] };
+
+/** The inline subset, scanned left to right so each construct becomes one span. */
+const INLINE = /`([^`]+)`|\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)\s]+)\)|_([^_]+)_/g;
+
+/** Splits one line into spans. Nested emphasis is not supported and simply reads as text. */
+function parseInline(text: string): MarkdownSpan[] {
+	const spans: MarkdownSpan[] = [];
+	let cursor = 0;
+
+	INLINE.lastIndex = 0;
+
+	for (let match = INLINE.exec(text); match !== null; match = INLINE.exec(text)) {
+		if (match.index > cursor) {
+			spans.push({ text: text.slice(cursor, match.index) });
+		}
+
+		if (match[1] !== undefined) {
+			spans.push({ text: match[1], code: true });
+		} else if (match[2] !== undefined) {
+			spans.push({ text: match[2], strong: true });
+		} else if (match[3] !== undefined) {
+			// An unsafe href keeps the whole construct as text rather than rendering a link nobody should click.
+			spans.push(
+				SAFE_HREF.test(match[4]) ? { text: match[3], href: match[4] } : { text: match[0] }
+			);
+		} else if (match[5] !== undefined) {
+			spans.push({ text: match[5], em: true });
+		}
+
+		cursor = match.index + match[0].length;
+	}
+
+	if (cursor < text.length) {
+		spans.push({ text: text.slice(cursor) });
+	}
+
+	return spans;
+}
+
+/**
+ * Parses the `LongText` preview.
+ *
+ * Deliberately a small subset — headings, lists, paragraphs, bold, italic, inline code and links — rather
+ * than a markdown library, and deliberately a *structure* rather than an HTML string: the caller renders
+ * spans with Svelte markup, so author input is escaped by the template compiler and there is no `{@html}`
+ * on a path an author controls. Links carry an `href` only when it is `http(s)`, a path or an anchor.
+ *
+ * @param markdown The field's value.
+ * @returns The blocks to render, or an empty list for blank input.
+ */
+export function parseMarkdown(markdown: string): MarkdownBlock[] {
+	const source = markdown.trim();
+	if (source === '') return [];
+
+	return source.split(/\n{2,}/).flatMap((chunk): MarkdownBlock[] => {
+		const lines = chunk
+			.split('\n')
+			.map((line) => line.trim())
+			.filter(Boolean);
+
+		if (lines.length === 0) return [];
+
+		const heading = /^(#{1,6})\s+(.*)$/.exec(lines[0]);
+		if (heading && lines.length === 1) {
+			// The preview sits inside an `<h2>` section heading, so the source's `#` maps to `h3` at the smallest.
+			return [
+				{
+					kind: 'heading',
+					level: Math.min(heading[1].length + 2, 6),
+					spans: parseInline(heading[2])
+				}
+			];
+		}
+
+		if (lines.every((line) => line.startsWith('- ') || line.startsWith('* '))) {
+			return [{ kind: 'list', items: lines.map((line) => parseInline(line.slice(2))) }];
+		}
+
+		return [{ kind: 'paragraph', lines: lines.map(parseInline) }];
+	});
+}

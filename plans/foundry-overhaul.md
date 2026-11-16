@@ -259,6 +259,22 @@ Order matters: H0 first because everything else moves inside the shell; H1 befor
 are shared; H3 after H2 so the renderer knows the new field kinds; H5 last because promotion depends on
 the form/renderer vocabulary being settled.
 
+### 4.1 Status
+
+| Phase | Shipped |
+|---|---|
+| H0 | shell, home at `/foundry`, grouped nav, group error page, `/languages` 308 |
+| H1 | content editor: derived slug with a lock, markdown preview, required blocking, sticky Save/Validate/Discard bar with a dirty guard, section anchors, `FoundryPageHeader`/`FoundryBreadcrumbs` |
+| H2–H6 | not started |
+
+Two H1 notes worth keeping:
+
+- **The markdown preview renders a structure, not HTML.** `parseMarkdown` returns blocks and spans and the
+  page renders them with Svelte markup, so author input is escaped by the compiler and there is no
+  `{@html}` on a path an author controls — which the `svelte/no-at-html-tags` rule rejects anyway.
+- **"Enum select showing descriptions" moved to H2.** `enumValues` is a `string[]`; there is nothing to
+  show beside each option until the descriptor carries per-value metadata.
+
 ---
 
 ## 5. Decisions (settled 2026-11-16)

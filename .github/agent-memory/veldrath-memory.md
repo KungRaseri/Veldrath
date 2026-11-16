@@ -3724,3 +3724,28 @@ may reintroduce its own `mx-auto max-w-*`.
   suite fails: `/foundry` and `/review` were added there, and the old `/languages` exemption is gone.
 
 **Counts after H0:** 1,319 web unit tests, 26 Playwright tests (2 skipped), coverage gate green.
+
+### H1 — the content editor became a form
+
+`web/client/src/lib/foundry/content-editor.ts` gained five pure helpers, all unit tested: `slugify`,
+`anchorId`, `isDirty`, `missingRequired`, `parseMarkdown`.
+
+- **Derived slug** behind a "Derive from display name" checkbox. Locked by default on an existing entity,
+  because the slug is what other content links to.
+- **`parseMarkdown` returns blocks and spans, never HTML.** The page renders them with a `{#snippet inline}`
+  and Svelte markup, so there is no `{@html}` and `svelte/no-at-html-tags` stays satisfied. Do not
+  "simplify" it back to an HTML string: the write tooling decodes HTML entities in file content, which is
+  how the first escaping renderer ended up with a no-op `.replace(/&/g, '&')`.
+- **Required blocking happens client-side too**: `missingRequired` disables Save and labels the field. A
+  boolean is never blank; an empty number is blank rather than `0`.
+- **Sticky bar** Save / Validate / Discard, with `isDirty` driving a `beforeunload` guard and an
+  "Unsaved changes" note. Discard reseeds from the loaded payload; it is not a form action.
+- The page uses `FoundryPageHeader` and `FoundryBreadcrumbs`, and the required asterisk is `aria-hidden`
+  so a field's accessible label stays exactly its name.
+- A sparse record with neither display name nor slug used to render `Edit null` — a template literal
+  stringifies `null`, unlike Svelte's `{x}` interpolation. The heading is now built conditionally.
+- `(foundry)/+error.svelte` had zero coverage until H1's coverage pass; it now has three render tests
+  (403 naming the capability, 500 with a retry, 404 without).
+
+**Counts after H1:** 1,350 web unit tests, coverage 90.04% branches against the 90 global gate,
+typecheck/lint/build clean.
