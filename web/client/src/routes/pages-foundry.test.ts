@@ -1,14 +1,22 @@
 import { fireEvent, render, screen } from '@testing-library/svelte';
+import { createRawSnippet } from 'svelte';
 import { describe, expect, it } from 'vitest';
+import FoundryBreadcrumbs from '#lib/components/foundry/FoundryBreadcrumbs.svelte';
+import FoundryEmptyState from '#lib/components/foundry/FoundryEmptyState.svelte';
+import FoundryPageHeader from '#lib/components/foundry/FoundryPageHeader.svelte';
+import FoundrySection from '#lib/components/foundry/FoundrySection.svelte';
+import FoundrySidebar from '#lib/components/foundry/FoundrySidebar.svelte';
+import { foundryNav } from '#lib/foundry/nav';
 import ContentIndex from './(foundry)/content/+page.svelte';
 import ContentBrowse from './(foundry)/content/[type]/+page.svelte';
 import ContentDetail from './(foundry)/content/[type]/[slug]/+page.svelte';
 import ContentEditor from './(foundry)/content/[type]/[slug]/edit/+page.svelte';
-import Languages from './(foundry)/languages/+page.svelte';
+import FoundryHome from './(foundry)/foundry/+page.svelte';
 import NewLanguage from './(foundry)/languages/new/+page.svelte';
 import MapDetail from './(foundry)/maps/[mapId]/+page.svelte';
 import Maps from './(foundry)/maps/+page.svelte';
 import Notifications from './(foundry)/notifications/+page.svelte';
+import ReviewQueue from './(foundry)/review/+page.svelte';
 import Submissions from './(foundry)/submissions/+page.svelte';
 import SubmissionDetail from './(foundry)/submissions/[id]/+page.svelte';
 
@@ -539,46 +547,169 @@ describe('content editor', () => {
 	});
 });
 
-describe('foundry languages', () => {
-	it('lists languages and links each to its content detail page', () => {
+/** A snippet that renders one line of markup, for the components whose body is the caller's. */
+const body = createRawSnippet(() => ({ render: () => '<span>section body</span>' }));
+
+describe('foundry home', () => {
+	it('counts every section and links each destination', () => {
 		render(
-			Languages,
+			FoundryHome,
 			page({
-				total: 1,
-				search: 'cale',
-				languages: [
-					{ id: 'lang-1', slug: 'calethic', displayName: 'Calethic', typeKey: 'imperial' },
-					{ id: 'lang-2', slug: 'old-tongue', displayName: null, typeKey: 'dead' }
-				],
-				page: 1,
-				pageSize: 20
+				canReview: true,
+				unreadNotifications: 2,
+				contentTypes: 20,
+				maps: 5,
+				mapsInReview: 2,
+				pendingSubmissions: 3,
+				error: null
 			})
 		);
 
-		expect(screen.getByRole('heading', { level: 2, name: 'Calethic' })).toBeTruthy();
-		// A language with no display name falls back to its slug in the heading.
-		expect(screen.getByRole('heading', { level: 2, name: 'old-tongue' })).toBeTruthy();
-		expect(screen.getByText('imperial')).toBeTruthy();
-		expect((screen.getByRole('searchbox') as HTMLInputElement).value).toBe('cale');
+		expect(screen.getByRole('heading', { level: 1, name: 'Foundry' })).toBeTruthy();
+		expect(screen.getByText('3 submissions and 2 maps are waiting for a decision.')).toBeTruthy();
+		expect(screen.getByRole('link', { name: /Browse content/ }).getAttribute('href')).toBe(
+			'/content'
+		);
+		expect(screen.getByRole('link', { name: /Open the map editor/ }).getAttribute('href')).toBe(
+			'/maps'
+		);
+		expect(screen.getByRole('link', { name: /Open the queue/ }).getAttribute('href')).toBe(
+			'/review'
+		);
+		expect(screen.getByRole('link', { name: /Open the inbox/ }).getAttribute('href')).toBe(
+			'/notifications'
+		);
 	});
 
-	it('renders the empty state and an error', () => {
+	it('explains itself instead of offering a queue the account cannot use', () => {
 		render(
-			Languages,
+			FoundryHome,
 			page({
-				total: 0,
-				error: 'Language catalogue unavailable',
-				search: '',
-				languages: [],
-				page: 1,
-				pageSize: 20
+				canReview: false,
+				unreadNotifications: 0,
+				contentTypes: 1,
+				maps: 0,
+				mapsInReview: 0,
+				pendingSubmissions: 0,
+				error: null
 			})
 		);
 
-		expect(screen.getByText('Language catalogue unavailable')).toBeTruthy();
-		expect(
-			screen.getByText('No languages have been submitted yet. Be the first to build one.')
-		).toBeTruthy();
+		expect(screen.getByText(/can author content but not review it/)).toBeTruthy();
+		expect(screen.queryByRole('link', { name: /Open the queue/ })).toBeNull();
+	});
+
+	it('reports the first failed call rather than claiming the section is empty', () => {
+		render(
+			FoundryHome,
+			page({
+				canReview: true,
+				unreadNotifications: 0,
+				contentTypes: 0,
+				maps: 0,
+				mapsInReview: 0,
+				pendingSubmissions: 0,
+				error: 'Map list unavailable'
+			})
+		);
+
+		expect(screen.getByRole('alert').textContent).toContain('Map list unavailable');
+	});
+});
+
+describe('review queue', () => {
+	it('lists both kinds and links each to its own decision surface', () => {
+		render(
+			ReviewQueue,
+			page({
+				submissions: [
+					{
+						id: 'sub-1',
+						contentType: 'Quest',
+						title: 'The Ashen Road',
+						status: 'Pending',
+						submitterName: 'malfeasor',
+						voteScore: 2,
+						createdAt: '2026-01-01T00:00:00.000Z'
+					}
+				],
+				// A map id carries a colon, so the link has to be encoded.
+				maps: [
+					{ id: 'zone:fenwick', name: 'Fenwick', mapType: 'Zone', ownerId: 'fenwick', version: 3 }
+				],
+				error: null
+			})
+		);
+
+		expect(screen.getByRole('link', { name: 'The Ashen Road' }).getAttribute('href')).toBe(
+			'/submissions/sub-1'
+		);
+		expect(screen.getByRole('link', { name: 'Fenwick' }).getAttribute('href')).toBe(
+			'/maps/zone%3Afenwick'
+		);
+	});
+
+	it('renders an empty state for each kind', () => {
+		render(ReviewQueue, page({ submissions: [], maps: [], error: null }));
+
+		expect(screen.getByText(/Nothing is waiting/)).toBeTruthy();
+		expect(screen.getByText(/No map is waiting for approval/)).toBeTruthy();
+	});
+
+	it('reports a failed load', () => {
+		render(ReviewQueue, page({ submissions: [], maps: [], error: 'Submission queue unavailable' }));
+
+		expect(screen.getByRole('alert').textContent).toContain('Submission queue unavailable');
+	});
+});
+
+describe('foundry shell components', () => {
+	it('renders the page header and its description', () => {
+		render(FoundryPageHeader, { title: 'Maps', description: 'The world graph.' } as never);
+
+		expect(screen.getByRole('heading', { level: 1, name: 'Maps' })).toBeTruthy();
+		expect(screen.getByText('The world graph.')).toBeTruthy();
+	});
+
+	it('links every breadcrumb but the current page', () => {
+		render(FoundryBreadcrumbs, {
+			items: [{ label: 'Foundry', href: '/foundry' }, { label: 'Maps' }]
+		} as never);
+
+		expect(screen.getByRole('link', { name: 'Foundry' }).getAttribute('href')).toBe('/foundry');
+		expect(screen.queryByRole('link', { name: 'Maps' })).toBeNull();
+		expect(screen.getByText('Maps').getAttribute('aria-current')).toBe('page');
+	});
+
+	it('renders an empty-state sentence', () => {
+		render(FoundryEmptyState, { message: 'Nothing is waiting.' } as never);
+
+		expect(screen.getByText('Nothing is waiting.')).toBeTruthy();
+	});
+
+	it('badges a section only when it is given a count', () => {
+		render(FoundrySection, { title: 'Content', count: 7, children: body } as never);
+
+		expect(screen.getByRole('heading', { level: 2 }).textContent).toContain('Content');
+		expect(screen.getByText('7')).toBeTruthy();
+		expect(screen.getByText('section body')).toBeTruthy();
+	});
+
+	it('renders the sidebar groups, the home entry and the queue badges', () => {
+		render(FoundrySidebar, {
+			nav: foundryNav({
+				canViewContent: true,
+				canManageContent: false,
+				canReview: true,
+				unreadNotifications: 2,
+				pendingReview: 5
+			})
+		} as never);
+
+		expect(screen.getByRole('link', { name: /Home/ }).getAttribute('href')).toBe('/foundry');
+		expect(screen.getByText('Curate')).toBeTruthy();
+		expect(screen.getByRole('link', { name: /Review/ }).textContent).toContain('5');
+		expect(screen.getByRole('link', { name: /Notifications/ }).textContent).toContain('2');
 	});
 });
 

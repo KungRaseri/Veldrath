@@ -110,9 +110,27 @@ export function reviewSubmission(
 	});
 }
 
+/** Unread notification total for the signed-in account. */
+export interface FoundryUnreadNotificationCount {
+	count: number;
+}
+
 /** Returns the signed-in user's notifications. */
 export function listNotifications(identity: GameIdentity) {
 	return gameApiFetch<FoundryNotification[]>(identity, '/api/foundry/notifications');
+}
+
+/**
+ * Counts the signed-in user's unread notifications.
+ *
+ * The portal shell renders the total as a badge on every page, so it asks for the count rather than
+ * materialising the inbox.
+ */
+export function getUnreadNotificationCount(identity: GameIdentity) {
+	return gameApiFetch<FoundryUnreadNotificationCount>(
+		identity,
+		'/api/foundry/notifications/unread-count'
+	);
 }
 
 /** Marks one notification as read. */

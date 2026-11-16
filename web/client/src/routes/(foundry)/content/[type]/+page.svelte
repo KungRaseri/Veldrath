@@ -10,7 +10,7 @@
 	<title>{data.contentType} content — Foundry</title>
 </svelte:head>
 
-<div class="mx-auto max-w-5xl space-y-4 p-6">
+<div class="space-y-4">
 	<a class="text-sm text-primary-500" href={resolve('/(foundry)/content')}>← All content types</a>
 
 	<header class="space-y-1">

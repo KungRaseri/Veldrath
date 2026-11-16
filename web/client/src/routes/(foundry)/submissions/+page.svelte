@@ -9,7 +9,7 @@
 	<title>Community submissions — Foundry</title>
 </svelte:head>
 
-<div class="mx-auto max-w-5xl space-y-4 p-6">
+<div class="space-y-4">
 	<header class="flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<h1 class="h1">Community submissions</h1>

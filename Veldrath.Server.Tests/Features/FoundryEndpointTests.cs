@@ -486,6 +486,60 @@ public class FoundryEndpointTests(WebAppFactory factory)
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
+    [Fact]
+    public async Task GetUnreadCount_Should_Track_Only_The_Callers_Unread_Notifications()
+    {
+        using var submitterClient = factory.CreateClient();
+        submitterClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndUnread_Sub"));
+
+        using var curatorClient = factory.CreateClient();
+        curatorClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetCuratorTokenAsync("FndUnread_Curator"));
+
+        using var otherClient = factory.CreateClient();
+        otherClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndUnread_Other"));
+
+        var before = await submitterClient.GetFromJsonAsync<FoundryUnreadNotificationCountDto>(
+            "/api/foundry/notifications/unread-count");
+        before!.Count.Should().Be(0);
+
+        var submission = await CreateSubmissionAsync(submitterClient, "Quest", "FndUnread_Quest");
+
+        await curatorClient.PostAsJsonAsync(
+            $"/api/foundry/submissions/{submission.Id}/review",
+            new { Approved = false, Notes = "Needs work." });
+
+        var afterReview = await submitterClient.GetFromJsonAsync<FoundryUnreadNotificationCountDto>(
+            "/api/foundry/notifications/unread-count");
+        afterReview!.Count.Should().Be(1);
+
+        // The count is per recipient: an unrelated account reads zero while the author still has one.
+        var other = await otherClient.GetFromJsonAsync<FoundryUnreadNotificationCountDto>(
+            "/api/foundry/notifications/unread-count");
+        other!.Count.Should().Be(0);
+
+        var inbox = await submitterClient.GetFromJsonAsync<FoundryNotificationDto[]>(
+            "/api/foundry/notifications");
+        var notification = inbox!.First(n => n.SubmissionId == submission.Id);
+        await submitterClient.PostAsJsonAsync(
+            $"/api/foundry/notifications/{notification.Id}/read", new { });
+
+        var afterRead = await submitterClient.GetFromJsonAsync<FoundryUnreadNotificationCountDto>(
+            "/api/foundry/notifications/unread-count");
+        afterRead!.Count.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GetUnreadCount_Should_Require_Authentication()
+    {
+        using var unauthClient = factory.CreateClient();
+        var response = await unauthClient.GetAsync("/api/foundry/notifications/unread-count");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
     // Mark Read
     [Fact]
     public async Task MarkNotificationRead_Should_Return_NoContent_And_Mark_IsRead()

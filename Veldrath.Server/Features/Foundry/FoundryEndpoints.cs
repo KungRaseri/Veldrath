@@ -12,6 +12,7 @@ namespace Veldrath.Server.Features.Foundry;
 /// POST   /api/foundry/submissions/{id}/vote    — upvote/downvote [Authorize]
 /// POST   /api/foundry/submissions/{id}/review  — approve/reject [Authorize(Curator)]
 /// GET    /api/foundry/notifications            — get own notifications [Authorize]
+/// GET    /api/foundry/notifications/unread-count — count own unread notifications [Authorize]
 /// POST   /api/foundry/notifications/{id}/read  — mark notification read [Authorize]
 /// </summary>
 public static class FoundryEndpoints
@@ -26,6 +27,8 @@ public static class FoundryEndpoints
         group.MapPost("/submissions/{id:guid}/vote", VoteAsync).RequireAuthorization().RequireRateLimiting("foundry-writes");
         group.MapPost("/submissions/{id:guid}/review", ReviewAsync).RequireAuthorization("Curator").RequireRateLimiting("foundry-writes");
         group.MapGet("/notifications", GetNotificationsAsync).RequireAuthorization();
+        // Literal segment before the {id}-shaped route, so the badge can never be parsed as an id.
+        group.MapGet("/notifications/unread-count", GetUnreadNotificationCountAsync).RequireAuthorization();
         group.MapPost("/notifications/{id:guid}/read", MarkNotificationReadAsync).RequireAuthorization();
 
         return app;
@@ -118,6 +121,19 @@ public static class FoundryEndpoints
 
         var notifications = await service.GetNotificationsAsync(accountId.Value, ct);
         return Results.Ok(notifications);
+    }
+
+    // GET /api/foundry/notifications/unread-count
+    private static async Task<IResult> GetUnreadNotificationCountAsync(
+        FoundryService service,
+        ClaimsPrincipal user,
+        CancellationToken ct)
+    {
+        var accountId = GetAccountId(user);
+        if (accountId is null) return Results.Unauthorized();
+
+        var count = await service.CountUnreadAsync(accountId.Value, ct);
+        return Results.Ok(new FoundryUnreadNotificationCountDto(count));
     }
 
     // POST /api/foundry/notifications/{id}/read

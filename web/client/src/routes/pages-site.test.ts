@@ -86,16 +86,38 @@ describe('site header', () => {
 		expect(screen.getByRole('link', { name: 'Player One' })).toBeTruthy();
 	});
 
-	it('adds one link per staff permission held', () => {
+	it('adds one link per staff capability held', () => {
 		render(SiteHeader, {
 			user: fakeUser({ username: 'kaleth' }),
 			staff: { foundry: true, editorial: true, mod: true, admin: true }
 		});
 
-		expect(screen.getByRole('link', { name: 'Foundry' }).getAttribute('href')).toBe('/submissions');
+		expect(screen.getByRole('link', { name: 'Foundry' }).getAttribute('href')).toBe('/foundry');
 		expect(screen.getByRole('link', { name: 'Editorial' }).getAttribute('href')).toBe('/editorial');
 		expect(screen.getByRole('link', { name: 'Mod' }).getAttribute('href')).toBe('/mod');
 		expect(screen.getByRole('link', { name: 'Admin' }).getAttribute('href')).toBe('/admin');
+	});
+
+	it('sends a signed-in player to the contribution form, never to the portal', () => {
+		render(SiteHeader, {
+			user: fakeUser({ username: 'malfeasor' }),
+			staff: { foundry: false, submit: true }
+		});
+
+		expect(screen.getByRole('link', { name: 'Submit content' }).getAttribute('href')).toBe(
+			'/submissions/new'
+		);
+		// The portal home answers 403 to an account without `content.view`, so it must not be offered.
+		expect(screen.queryByRole('link', { name: 'Foundry' })).toBeNull();
+	});
+
+	it('shows an editor the portal instead of the contribution shortcut', () => {
+		render(SiteHeader, {
+			user: fakeUser({ username: 'kaleth' }),
+			staff: { foundry: true, submit: true }
+		});
+
+		expect(screen.queryByRole('link', { name: 'Submit content' })).toBeNull();
 	});
 
 	it('marks the current section as the active page, including nested routes', () => {

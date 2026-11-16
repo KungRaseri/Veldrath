@@ -1,9 +1,9 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import {
-	loadAccountAccess,
 	hasPermission,
 	Permissions,
+	requirePermission,
 	requireUser,
 	toGameIdentity
 } from '#lib/server/access';
@@ -17,9 +17,13 @@ import {
 import { buildPayload, type ContentIssue } from '#lib/foundry/content-editor';
 
 /** Loads the entity, its schema, and whether this account may write. */
-export const load: PageServerLoad = async ({ locals, params }) => {
-	const user = requireUser(locals);
-	const access = await loadAccountAccess(user);
+export const load: PageServerLoad = async ({ parent, params }) => {
+	const { access } = await parent();
+	requirePermission(
+		access,
+		Permissions.ViewContent,
+		'Foundry needs the content permission. Ask a Curator for access.'
+	);
 	const canEdit = hasPermission(access, Permissions.ManageContent);
 
 	const [detail, schema] = await Promise.all([

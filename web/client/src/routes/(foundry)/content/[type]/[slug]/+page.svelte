@@ -11,7 +11,7 @@
 	<title>{data.summary.displayName ?? data.slug} — Foundry content</title>
 </svelte:head>
 
-<div class="mx-auto max-w-4xl space-y-4 p-6">
+<div class="space-y-4">
 	<a class="text-sm text-primary-500" href={`/content/${data.contentType}`}>
 		← All {data.contentType} entries
 	</a>

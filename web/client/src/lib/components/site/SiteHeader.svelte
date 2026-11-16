@@ -9,6 +9,7 @@
 		LogIn,
 		PenLine,
 		ScrollText,
+		Send,
 		Shield,
 		User,
 		UserPlus,
@@ -21,7 +22,10 @@
 	}: {
 		user?: AuthUser | null;
 		staff?: {
+			/** Holds `content.view`: the portal home and the catalog are theirs to read. */
 			foundry?: boolean;
+			/** Signed in: may contribute content through the submission queue. */
+			submit?: boolean;
 			editorial?: boolean;
 			mod?: boolean;
 			admin?: boolean;
@@ -61,11 +65,20 @@
 			{#if staff?.foundry}
 				<a
 					class="site-nav-link"
-					aria-current={active('/submissions')}
-					href={resolve('/(foundry)/submissions')}
+					aria-current={active('/foundry')}
+					href={resolve('/(foundry)/foundry')}
 				>
 					<Hammer size={16} aria-hidden="true" />
 					<span>Foundry</span>
+				</a>
+			{:else if staff?.submit}
+				<!--
+					A player has no catalog to read, so "Foundry" and the portal home would only answer 403.
+					Their entry point is the one thing they can do: contribute content.
+				-->
+				<a class="site-nav-link" aria-current={active('/submissions')} href="/submissions/new">
+					<Send size={16} aria-hidden="true" />
+					<span>Submit content</span>
 				</a>
 			{/if}
 			{#if staff?.editorial}

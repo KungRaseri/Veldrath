@@ -26,7 +26,7 @@ import {
  */
 export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	const user = requireUser(locals);
-	const { canViewContent, canManageContent, canReviewSubmissions } = await parent();
+	const { canViewContent, canManageContent, canReview } = await parent();
 
 	if (!canViewContent) {
 		error(403, 'Reading a map graph requires content read access.');
@@ -48,7 +48,7 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 
 	return {
 		canEdit: canManageContent,
-		canReview: canReviewSubmissions,
+		canReview,
 		graph: result.data,
 		rows: nodeRows(result.data),
 		targets: targets.data

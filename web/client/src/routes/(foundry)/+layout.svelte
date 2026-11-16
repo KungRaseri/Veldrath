@@ -1,44 +1,31 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { page } from '$app/state';
-	import {
-		BookOpenText,
-		Inbox,
-		Languages as LanguagesIcon,
-		Map as MapIcon,
-		Send
-	} from '@lucide/svelte';
-	import { foundryNavItems, isCurrentNavItem } from '#lib/foundry/nav';
+	import FoundrySidebar from '#lib/components/foundry/FoundrySidebar.svelte';
+	import { foundryNav } from '#lib/foundry/nav';
 	import type { LayoutData } from './$types';
 
+	/**
+	 * The portal shell.
+	 *
+	 * This file owns the frame: one content width (`max-w-6xl`), one padding scale, and the navigation. It
+	 * used to be a bare horizontal nav across the top while each page chose its own width — `3xl`, `4xl`,
+	 * `5xl` and `6xl` all appeared somewhere, so the portal jittered as you moved between pages.
+	 */
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 
-	const items = $derived(foundryNavItems(data));
-
-	/** Icons live here rather than in the pure module, so `nav.ts` stays component-free and testable. */
-	const icons: Record<string, typeof MapIcon> = {
-		'/content': BookOpenText,
-		'/maps': MapIcon,
-		'/submissions': Send,
-		'/languages': LanguagesIcon,
-		'/notifications': Inbox
-	};
+	const nav = $derived(
+		foundryNav({
+			canViewContent: data.canViewContent,
+			canManageContent: data.canManageContent,
+			canReview: data.canReview,
+			unreadNotifications: data.unreadNotifications
+		})
+	);
 </script>
 
-<div class="mx-auto max-w-5xl px-6 pt-6">
-	<nav aria-label="Foundry sections" class="flex flex-wrap items-center gap-2">
-		{#each items as item (item.href)}
-			{@const Icon = icons[item.href] ?? BookOpenText}
-			<a
-				class="btn preset-tonal-surface btn-sm"
-				href={item.href}
-				aria-current={isCurrentNavItem(item.href, page.url.pathname) ? 'page' : undefined}
-			>
-				<Icon size={15} aria-hidden="true" />
-				{item.label}
-			</a>
-		{/each}
-	</nav>
+<div class="mx-auto grid max-w-6xl gap-6 px-6 py-6 lg:grid-cols-[13rem_minmax(0,1fr)]">
+	<FoundrySidebar {nav} />
+	<main class="min-w-0 space-y-6">
+		{@render children()}
+	</main>
 </div>
-
-{@render children()}

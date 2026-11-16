@@ -50,7 +50,7 @@
 	<title>Edit {data.summary.displayName ?? data.slug} — Foundry</title>
 </svelte:head>
 
-<div class="mx-auto max-w-4xl space-y-4 p-6">
+<div class="space-y-4">
 	<a class="text-sm text-primary-500" href={`/content/${data.contentType}/${data.slug}`}>
 		← {data.summary.displayName ?? data.slug}
 	</a>

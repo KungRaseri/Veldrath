@@ -8,7 +8,7 @@
 	<title>Base content — Foundry</title>
 </svelte:head>
 
-<div class="mx-auto max-w-5xl space-y-4 p-6">
+<div class="space-y-4">
 	<header class="space-y-1">
 		<h1 class="h1">Base content</h1>
 		<p class="text-surface-600-400">Browse the canonical game content stored in the database.</p>

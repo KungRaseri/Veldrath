@@ -20,7 +20,7 @@
 	>
 </svelte:head>
 
-<div class="mx-auto max-w-4xl space-y-4 p-6">
+<div class="space-y-4">
 	<a class="text-sm text-primary-500" href={resolve('/(foundry)/submissions')}>← All submissions</a>
 
 	{#if form?.error || data.error}

@@ -119,8 +119,18 @@ const issue = (severity: 'Warning' | 'Error', message: string) => ({
 	identifier: null
 });
 
+/** The RBAC snapshot the Foundry layout hands down; the content loaders gate on `content.view`. */
+const editorAccess = {
+	accountId: 'acct-1',
+	username: 'kaleth',
+	roles: [],
+	permissions: ['content.view', 'content.manage']
+};
+
+const readerAccess = { ...editorAccess, permissions: ['content.view'] };
+
 const signedIn = (init: Parameters<typeof makeServerEvent>[0] = {}) =>
-	makeServerEvent({ user: fakeUser(), ...init });
+	makeServerEvent({ parentData: { access: editorAccess }, user: fakeUser(), ...init });
 
 /** Invokes a form action with the given fields. */
 function action(
@@ -432,22 +442,34 @@ describe('map editor', () => {
 
 describe('content browser', () => {
 	it('lists the content types, with an empty list on failure', async () => {
-		expect(await callLoad(contentIndex, makeServerEvent())).toEqual({
+		expect(await callLoad(contentIndex, signedIn())).toEqual({
 			types: [{ key: 'power', label: 'Powers' }],
 			error: null
 		});
 
 		contentApi.listContentTypes.mockResolvedValue(failed('catalog is down'));
-		expect(await callLoad(contentIndex, makeServerEvent())).toEqual({
+		expect(await callLoad(contentIndex, signedIn())).toEqual({
 			types: [],
 			error: 'catalog is down'
 		});
 	});
 
+	it('refuses the catalog to an account without content.view', async () => {
+		expect(
+			await thrownMessage(() =>
+				callLoad(
+					contentIndex,
+					signedIn({ parentData: { access: { ...readerAccess, permissions: [] } } })
+				)
+			)
+		).toBe('Foundry needs the content permission. Ask a Curator for access.');
+		expect(contentApi.listContentTypes).not.toHaveBeenCalled();
+	});
+
 	it('browses one type with the search term and a clamped page', async () => {
 		const result = (await callLoad(
 			contentTypePage,
-			makeServerEvent({ params: { type: 'power' }, url: '/content/power?search=fire&page=0' })
+			signedIn({ params: { type: 'power' }, url: '/content/power?search=fire&page=0' })
 		)) as { contentType: string; page: number; search: string; total: number };
 
 		expect(contentApi.browseContent).toHaveBeenCalledWith('power', 'fire', 1, 24);
@@ -459,7 +481,7 @@ describe('content browser', () => {
 
 		const result = (await callLoad(
 			contentTypePage,
-			makeServerEvent({ params: { type: 'power' } })
+			signedIn({ params: { type: 'power' } })
 		)) as Record<string, unknown>;
 
 		expect(result).toMatchObject({
@@ -479,14 +501,11 @@ describe('content detail', () => {
 		const editor = (await callLoad(contentDetail, signedIn({ params }))) as { canEdit: boolean };
 		expect(editor.canEdit).toBe(true);
 
-		access.loadAccountAccess.mockResolvedValue({
-			accountId: 'acct-1',
-			username: 'kaleth',
-			roles: [],
-			permissions: []
-		});
+		const reader = (await callLoad(
+			contentDetail,
+			signedIn({ params, parentData: { access: readerAccess } })
+		)) as { canEdit: boolean };
 
-		const reader = (await callLoad(contentDetail, signedIn({ params }))) as { canEdit: boolean };
 		expect(reader.canEdit).toBe(false);
 	});
 
@@ -613,14 +632,17 @@ describe('content editor', () => {
 });
 
 describe('language fork', () => {
-	it('browses the language content type', async () => {
-		const result = (await callLoad(
-			languagesPage,
-			makeServerEvent({ url: '/languages?search=cal&page=2' })
-		)) as { page: number; search: string };
+	it('redirects the old language browser to the content type, keeping the query', async () => {
+		expect(
+			await redirectTo(() =>
+				callLoad(languagesPage, makeServerEvent({ url: '/languages?search=cal&page=2' }))
+			)
+		).toBe('/content/language?search=cal&page=2');
 
-		expect(contentApi.browseContent).toHaveBeenCalledWith('language', 'cal', 2, 24);
-		expect(result).toMatchObject({ page: 2, search: 'cal' });
+		// A bare visit carries no query and must not gain a stray `?`.
+		expect(
+			await redirectTo(() => callLoad(languagesPage, makeServerEvent({ url: '/languages' })))
+		).toBe('/content/language');
 	});
 
 	it('renders an empty form', async () => {

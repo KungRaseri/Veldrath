@@ -50,6 +50,14 @@ public record FoundryNotificationDto(
     bool IsRead,
     DateTimeOffset CreatedAt);
 
+/// <summary>Unread notification total for the calling account.</summary>
+/// <param name="Count">How many notifications the caller has not read yet.</param>
+/// <remarks>
+/// The portal shell renders a badge on every Foundry page. A dedicated count keeps that from materialising
+/// the whole inbox, and the shared predicate keeps the badge honest against the list it summarises.
+/// </remarks>
+public record FoundryUnreadNotificationCountDto(int Count);
+
 public record FoundrySubmissionDto(
     Guid Id,
     string ContentType,

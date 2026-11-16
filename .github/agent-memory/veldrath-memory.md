@@ -3678,3 +3678,49 @@ existed — do not "add" them again.
   a test cannot grant itself `content.manage` or `Curator`.
 
 **Counts at the end of G:** 6,058 .NET tests, 1,303 web unit tests, coverage green globally (90 branches).
+
+## Milestone H — Foundry portal overhaul
+
+Plan: [`plans/foundry-overhaul.md`](../../plans/foundry-overhaul.md). **H0 is shipped** (shell, home,
+grouped sidebar, group error page, `/languages` redirect); H1–H6 follow.
+
+**The portal home is `/foundry`, not `/`.** `web/client/src/routes/+page.svelte` is the public site's landing
+page, and a `(foundry)/+page.svelte` would resolve to the same URL — a SvelteKit route conflict, not
+something to work around. `FOUNDRY_HOME_HREF` in `web/client/src/lib/foundry/nav.ts` is the single place the
+home route is spelled.
+
+**Access split.** Root `+layout.server.ts`: `staff.foundry = hasPermission(content.view)` and
+`staff.submit = Boolean(user)`. `SiteHeader` renders "Foundry" → `/foundry` for the former and
+"Submit content" → `/submissions/new` for the latter, never both. The Foundry home and every content loader
+call `requirePermission(access, Permissions.ViewContent)`; `/submissions*` and `/notifications` stay
+session-only.
+
+**`canReview` is the Curator role, not the `content.review` permission.** The decision endpoints are
+`.RequireAuthorization("Curator")`, so a hand-granted permission would render a Review entry that answers
+403. Note `hasPermission` returns `true` for `Admin`, which does **not** hold the Curator role — the role
+check is deliberate, and reconciling the two models is H5 work.
+
+**Unread badge.** `GET /api/foundry/notifications/unread-count` → `FoundryUnreadNotificationCountDto(int
+Count)`, served by `FoundryService.CountUnreadAsync` with the same predicate as `GetNotificationsAsync`. The
+group layout fetches it once and degrades a failure to `0` rather than taking the whole group down.
+
+**Shell components** live in `web/client/src/lib/components/foundry/`: `FoundrySidebar`,
+`FoundryPageHeader`, `FoundryBreadcrumbs`, `FoundryEmptyState`, `FoundrySection`. `(foundry)/+layout.svelte`
+owns the frame (`max-w-6xl`, one padding scale, sticky sidebar that becomes a chip row below `lg`); no page
+may reintroduce its own `mx-auto max-w-*`.
+
+**Gotchas:**
+- `resolve()` cannot target a dynamic route with a literal — `resolve('/(foundry)/submissions/new')` is a
+  typecheck error. Use the plain path string for `/submissions/new`.
+- `/languages/+page.server.ts` is a `redirect(308, '/content/language')` that preserves the query; its
+  `+page.svelte` is deleted. `/languages/new` stays until H4.
+- `(foundry)/+error.svelte` renders inside the shell, so a 403 names the missing capability without dropping
+  the reader out of the portal. It does not cover a failure in the group layout's own `load` — that still
+  falls through to the root boundary, which is why the unread count degrades instead of throwing.
+- The legacy pages (`content/*`, `submissions/*`, `notifications`, `languages/new`) lost their frames in H0
+  but keep their own `<header>` blocks; they adopt `FoundryPageHeader`/`FoundryBreadcrumbs` as each is
+  rewritten in H1+.
+- Adding a route means adding it to the Playwright guard list (`tests/staff-guards.e2e.ts`) or the parity
+  suite fails: `/foundry` and `/review` were added there, and the old `/languages` exemption is gone.
+
+**Counts after H0:** 1,319 web unit tests, 26 Playwright tests (2 skipped), coverage gate green.

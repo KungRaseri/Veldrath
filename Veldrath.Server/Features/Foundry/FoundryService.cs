@@ -161,6 +161,19 @@ public class FoundryService(ApplicationDbContext db, FoundryNotificationWriter n
                 n.CreatedAt))
             .ToListAsync(ct);
 
+    /// <summary>
+    /// Counts the caller's unread notifications.
+    /// </summary>
+    /// <param name="accountId">The account whose inbox is counted.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <remarks>
+    /// The predicate is the same one <see cref="GetNotificationsAsync"/> filters on, so the badge cannot
+    /// disagree with the list it summarises. Counting in the database also keeps this cheap enough to call
+    /// from the portal layout on every page.
+    /// </remarks>
+    public Task<int> CountUnreadAsync(Guid accountId, CancellationToken ct) =>
+        db.FoundryNotifications.CountAsync(n => n.RecipientId == accountId && !n.IsRead, ct);
+
     public async Task<bool> MarkNotificationReadAsync(Guid notificationId, Guid accountId, CancellationToken ct)
     {
         var notification = await db.FoundryNotifications
