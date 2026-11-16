@@ -7,22 +7,62 @@ import {
 	reviewSubmission,
 	voteSubmission
 } from '#lib/server/foundry-api';
+import { getContentTypeSchema, listContentTypes } from '#lib/server/content-api';
 import { stringField } from '#lib/server/form';
+import { allFields, buildPayload, missingRequired } from '#lib/foundry/content-editor';
 
-export const load: PageServerLoad = async ({ locals, params, parent }) => {
+/** Field kinds the submission form cannot author; a submission for a type that needs one says so. */
+const COLLECTION_KINDS = new Set(['StringList', 'KeyValue', 'ObjectList']);
+
+/** Reads the stored payload as an object, keeping the raw text when it is not valid JSON. */
+function parsePayload(raw: string | undefined): Record<string, unknown> {
+	if (!raw) return {};
+
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)
+			? (parsed as Record<string, unknown>)
+			: {};
+	} catch {
+		return {};
+	}
+}
+
+export const load: PageServerLoad = async ({ locals, params, parent, url }) => {
 	const { access } = await parent();
 	const canReview = access?.roles.includes(Roles.Curator) ?? false;
 
 	if (params.id === 'new') {
-		return { mode: 'create' as const, submission: null, error: null, canReview };
+		// The form renders the chosen type's schema, so the type picker is a GET: changing it reloads the
+		// page with different fields instead of juggling every schema in one document.
+		const types = await listContentTypes();
+		const available = types?.data ?? [];
+		const chosen = url.searchParams.get('type') ?? available[0]?.contentType ?? '';
+		const schema = chosen ? await getContentTypeSchema(chosen) : null;
+
+		return {
+			mode: 'create' as const,
+			submission: null,
+			error: types.error ?? schema?.error ?? null,
+			canReview,
+			types: available,
+			typeKey: chosen,
+			schema: schema?.data ?? null,
+			payload: {}
+		};
 	}
 
 	const result = await getSubmission(toGameIdentity(locals.user!), params.id);
+	const schema = result.data ? await getContentTypeSchema(result.data.contentType) : null;
+
 	return {
 		mode: 'view' as const,
 		submission: result.data,
 		error: result.error,
-		canReview
+		canReview,
+		schema: schema?.data ?? null,
+		payload: parsePayload(result.data?.payload),
+		rawPayload: result.data?.payload ?? ''
 	};
 };
 
@@ -31,16 +71,34 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const contentType = stringField(form, 'contentType');
 		const title = stringField(form, 'title');
-		const payload = stringField(form, 'payload');
 
-		if (!contentType || !title || !payload) {
-			return fail(400, { error: 'Content type, title, and payload are required.' });
+		if (!contentType || !title) {
+			return fail(400, { error: 'Content type and title are required.' });
+		}
+
+		const schema = await getContentTypeSchema(contentType);
+		if (!schema.data) {
+			return fail(400, { error: `No schema is registered for '${contentType}'.` });
+		}
+
+		// The payload is built from the same schema the form was rendered from, so a submission and a saved
+		// entity are the same shape — which is what lets a curator promote one without a per-type mapper.
+		const values: Record<string, string> = {};
+		for (const field of allFields(schema.data)) {
+			if (COLLECTION_KINDS.has(field.fieldType)) continue;
+			const raw = form.get(field.name);
+			if (raw !== null) values[field.name] = String(raw);
+		}
+
+		const missing = missingRequired(schema.data, values);
+		if (missing.length > 0) {
+			return fail(400, { error: `Fill in: ${missing.join(', ')}.` });
 		}
 
 		const result = await createSubmission(toGameIdentity(locals.user!), {
 			contentType,
 			title,
-			payload,
+			payload: JSON.stringify(buildPayload({}, schema.data, values)),
 			description: stringField(form, 'description') || null
 		});
 

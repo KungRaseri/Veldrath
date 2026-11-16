@@ -22,7 +22,12 @@ import { load as patchNoteLoad } from './patch-notes/[slug]/+page.server';
  */
 
 const access = vi.hoisted(() => ({ loadAccountAccess: vi.fn() }));
-const contentApi = vi.hoisted(() => ({ browseContent: vi.fn() }));
+const contentApi = vi.hoisted(() => ({
+	browseContent: vi.fn(),
+	// Create mode lists the types it can offer and loads the chosen type's schema.
+	listContentTypes: vi.fn(),
+	getContentTypeSchema: vi.fn()
+}));
 const foundryApi = vi.hoisted(() => ({
 	createSubmission: vi.fn(),
 	voteSubmission: vi.fn(),
@@ -188,6 +193,9 @@ describe('foundry submission detail', () => {
 	}
 
 	it('treats a missing access snapshot as no review rights', async () => {
+		// Create mode asks which content types exist; an empty list is enough for this assertion.
+		contentApi.listContentTypes.mockResolvedValue(ok([]));
+
 		const result = (await callLoad(submissionLoad, withAccess(null))) as { canReview: boolean };
 
 		expect(result.canReview).toBe(false);

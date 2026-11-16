@@ -257,7 +257,7 @@ describe('content detail, sparse summary', () => {
 		expect(screen.getByText(/inactive/)).toBeTruthy();
 	});
 
-	it('renders the breadcrumb when the content type is missing', () => {
+	it('renders the edit link when the content type is missing from the page data', () => {
 		render(
 			ContentDetail,
 			page({
@@ -277,7 +277,7 @@ describe('content detail, sparse summary', () => {
 		);
 
 		expect(screen.getByRole('heading', { level: 1, name: 'Iron helm' })).toBeTruthy();
-		expect(screen.getByText(/All entries/)).toBeTruthy();
+		expect(screen.getByText('Edit this entity')).toBeTruthy();
 	});
 });
 
@@ -376,7 +376,7 @@ describe('submission detail, sparse submission', () => {
 		render(SubmissionDetail, page({ mode: 'view', submission: null, canReview: false }));
 
 		expect(screen.queryByRole('heading', { level: 1 })).toBeNull();
-		expect(screen.getByRole('link', { name: /All submissions/ })).toBeTruthy();
+		expect(screen.getByRole('link', { name: 'Submissions' })).toBeTruthy();
 	});
 
 	it('renders the title ternary for a view-mode submission', () => {

@@ -815,6 +815,103 @@ describe('content editor references', () => {
 	});
 });
 
+describe('submission create mode', () => {
+	beforeEach(() => {
+		contentApi.listContentTypes.mockResolvedValue(
+			ok([
+				{ contentType: 'item', displayLabel: 'Items', description: '' },
+				{ contentType: 'quest', displayLabel: 'Quests', description: '' }
+			])
+		);
+		contentApi.getContentTypeSchema.mockResolvedValue(ok(schema));
+	});
+
+	it('defaults to the first type and loads its schema', async () => {
+		const result = (await callLoad(submissionPage, signedIn({ params: { id: 'new' } }))) as {
+			typeKey: string;
+			schema: unknown;
+			payload: unknown;
+		};
+
+		expect(result.typeKey).toBe('item');
+		expect(result.schema).toEqual(schema);
+		expect(result.payload).toEqual({});
+		expect(contentApi.getContentTypeSchema).toHaveBeenCalledWith('item');
+	});
+
+	it('honours the type the query string asks for', async () => {
+		const result = (await callLoad(
+			submissionPage,
+			signedIn({ params: { id: 'new' }, url: '/submissions/new?type=quest' })
+		)) as { typeKey: string };
+
+		expect(result.typeKey).toBe('quest');
+		expect(contentApi.getContentTypeSchema).toHaveBeenCalledWith('quest');
+	});
+
+	it('offers no schema when no type is registered', async () => {
+		contentApi.listContentTypes.mockResolvedValue(ok([]));
+
+		const result = (await callLoad(submissionPage, signedIn({ params: { id: 'new' } }))) as {
+			typeKey: string;
+			schema: unknown;
+		};
+
+		expect(result.typeKey).toBe('');
+		expect(result.schema).toBeNull();
+		expect(contentApi.getContentTypeSchema).not.toHaveBeenCalled();
+	});
+});
+
+describe('submission payload parsing', () => {
+	const submissionWith = (payload: unknown) =>
+		ok({ id: 'sub-1', contentType: 'language', payload });
+
+	it('parses a JSON object and keeps the raw text beside it', async () => {
+		foundryApi.getSubmission.mockResolvedValue(submissionWith('{"slug":"calethic"}'));
+
+		const result = (await callLoad(submissionPage, signedIn({ params: { id: 'sub-1' } }))) as {
+			payload: unknown;
+			rawPayload: string;
+		};
+
+		expect(result.payload).toEqual({ slug: 'calethic' });
+		expect(result.rawPayload).toBe('{"slug":"calethic"}');
+	});
+
+	it('falls back to an empty object for text that is not JSON', async () => {
+		foundryApi.getSubmission.mockResolvedValue(submissionWith('not json'));
+
+		const result = (await callLoad(submissionPage, signedIn({ params: { id: 'sub-1' } }))) as {
+			payload: unknown;
+			rawPayload: string;
+		};
+
+		expect(result.payload).toEqual({});
+		expect(result.rawPayload).toBe('not json');
+	});
+
+	it('falls back for a JSON array and for a missing payload', async () => {
+		foundryApi.getSubmission.mockResolvedValue(submissionWith('[1,2]'));
+		expect(
+			(
+				(await callLoad(submissionPage, signedIn({ params: { id: 'sub-1' } }))) as {
+					payload: unknown;
+				}
+			).payload
+		).toEqual({});
+
+		foundryApi.getSubmission.mockResolvedValue(submissionWith(undefined));
+		expect(
+			(
+				(await callLoad(submissionPage, signedIn({ params: { id: 'sub-1' } }))) as {
+					payload: unknown;
+				}
+			).payload
+		).toEqual({});
+	});
+});
+
 describe('language fork', () => {
 	it('redirects the old language browser to the content type, keeping the query', async () => {
 		expect(
@@ -999,27 +1096,58 @@ describe('submission queue', () => {
 		});
 	});
 
-	it('creates a submission, refusing a missing field', async () => {
+	it('creates a submission from the schema, refusing a missing field', async () => {
+		// A required field, so the action's own completeness check has something to refuse.
+		contentApi.getContentTypeSchema.mockResolvedValue(
+			ok({
+				...schema,
+				groups: [
+					{
+						label: 'Identity',
+						fields: [{ ...field('displayName', 'Text'), required: true }]
+					}
+				]
+			})
+		);
+
 		const missing = (await action(submissionActions.create, { contentType: 'language' })) as {
 			status: number;
 			data: { error: string };
 		};
 		expect(missing.status).toBe(400);
-		expect(missing.data.error).toBe('Content type, title, and payload are required.');
+		expect(missing.data.error).toBe('Content type and title are required.');
+
+		// The schema's required field is what the server checks now, not a JSON blob from the form.
+		const unfilled = (await action(submissionActions.create, {
+			contentType: 'language',
+			title: 'Calethic'
+		})) as { status: number; data: { error: string } };
+		expect(unfilled.status).toBe(400);
+		expect(unfilled.data.error).toBe('Fill in: displayName.');
 
 		expect(
 			await redirectTo(() =>
 				action(submissionActions.create, {
 					contentType: 'language',
 					title: 'Calethic',
-					payload: '{}'
+					displayName: 'Calethic'
 				})
 			)
 		).toBe('/submissions/sub-9');
-		expect(foundryApi.createSubmission).toHaveBeenCalledWith(
-			expect.anything(),
-			expect.objectContaining({ contentType: 'language', title: 'Calethic', description: null })
-		);
+
+		const submitted = foundryApi.createSubmission.mock.calls[0][1] as {
+			contentType: string;
+			title: string;
+			payload: string;
+			description: string | null;
+		};
+
+		expect(submitted).toMatchObject({
+			contentType: 'language',
+			title: 'Calethic',
+			description: null
+		});
+		expect(JSON.parse(submitted.payload)).toEqual({ displayName: 'Calethic' });
 	});
 
 	it('accepts only a +1 or -1 vote', async () => {

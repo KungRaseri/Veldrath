@@ -1,17 +1,35 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import ContentRenderer from '#lib/components/foundry/ContentRenderer.svelte';
+	import FoundryBreadcrumbs from '#lib/components/foundry/FoundryBreadcrumbs.svelte';
+	import FoundryPageHeader from '#lib/components/foundry/FoundryPageHeader.svelte';
+	import { allFields, toInputValue } from '#lib/foundry/content-editor';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	const prettyPayload = $derived.by(() => {
-		if (data.mode !== 'view' || !data.submission) return '';
-		try {
-			return JSON.stringify(JSON.parse(data.submission.payload), null, 2);
-		} catch {
-			return data.submission.payload;
-		}
-	});
+	/** Fields the create form can author; a collection needs the full editor, so it says so instead. */
+	const authorable = $derived(
+		allFields(data.schema).filter(
+			(field) =>
+				field.fieldType !== 'StringList' &&
+				field.fieldType !== 'KeyValue' &&
+				field.fieldType !== 'ObjectList'
+		)
+	);
+	const unauthorable = $derived(
+		allFields(data.schema).filter(
+			(field) =>
+				field.fieldType === 'StringList' ||
+				field.fieldType === 'KeyValue' ||
+				field.fieldType === 'ObjectList'
+		)
+	);
+
+	/** The stored payload when it could not be parsed, so a reviewer still sees what was submitted. */
+	const unreadable = $derived(
+		data.mode === 'view' && Object.keys(data.payload ?? {}).length === 0 && Boolean(data.rawPayload)
+	);
 </script>
 
 <svelte:head>
@@ -21,85 +39,144 @@
 </svelte:head>
 
 <div class="space-y-4">
-	<a class="text-sm text-primary-500" href={resolve('/(foundry)/submissions')}>← All submissions</a>
+	<FoundryBreadcrumbs
+		items={[
+			{ label: 'Foundry', href: '/foundry' },
+			{ label: 'Submissions', href: resolve('/(foundry)/submissions') },
+			{ label: data.mode === 'create' ? 'New' : (data.submission?.title ?? 'Submission') }
+		]}
+	/>
 
 	{#if form?.error || data.error}
-		<p class="text-sm text-error-500">{form?.error ?? data.error}</p>
+		<p class="card p-3 text-sm text-error-500" role="alert">{form?.error ?? data.error}</p>
 	{/if}
 
 	{#if data.mode === 'create'}
-		<header class="space-y-1">
-			<h1 class="h1">New submission</h1>
-			<p class="text-surface-600-400">
-				Submit content for curator review. The payload must be valid JSON matching the chosen type.
-			</p>
-		</header>
+		<FoundryPageHeader
+			title="New submission"
+			description="Submit content for curator review. The fields come from the chosen type's schema, the same one the editor uses."
+		/>
 
-		<form class="space-y-4 card p-6" method="POST" action="?/create">
-			<div class="grid gap-3 sm:grid-cols-2">
-				<label class="label">
-					<span>Content type</span>
-					<select class="select" name="contentType" required>
-						<option value="Item">Item</option>
-						<option value="Spell">Spell</option>
-						<option value="Ability">Ability</option>
-						<option value="Npc">Npc</option>
-						<option value="Quest">Quest</option>
-						<option value="Recipe">Recipe</option>
-						<option value="LootTable">LootTable</option>
-						<option value="language">Language</option>
-					</select>
-				</label>
-				<label class="label">
-					<span>Title</span>
-					<input class="input" type="text" name="title" required />
-				</label>
-			</div>
+		<!--
+			The type picker is a GET: changing the type reloads the page with that type's fields rather than
+			carrying every schema in one document.
+		-->
+		<form class="flex flex-wrap items-end gap-2 card p-3" method="GET" aria-label="Choose a type">
+			<label class="space-y-1 text-sm">
+				<span class="text-surface-600-400">Content type</span>
+				<select class="select" name="type">
+					{#each data.types as type (type.contentType)}
+						<option value={type.contentType} selected={type.contentType === data.typeKey}>
+							{type.displayLabel}
+						</option>
+					{/each}
+				</select>
+			</label>
+			<button class="btn preset-tonal-surface btn-sm" type="submit">Show fields</button>
+		</form>
+
+		<form class="space-y-3 card p-4" method="POST" action="?/create">
+			<input type="hidden" name="contentType" value={data.typeKey} />
+
+			<label class="label">
+				<span>Title</span>
+				<input class="input" type="text" name="title" required />
+			</label>
 
 			<label class="label">
 				<span>Description</span>
 				<textarea class="textarea" name="description" rows="3"></textarea>
 			</label>
 
-			<label class="label">
-				<span>Payload (JSON)</span>
-				<textarea class="textarea font-mono text-xs" name="payload" rows="12" required
-					>{'{\n  "slug": "",\n  "displayName": "",\n  "description": ""\n}'}</textarea
-				>
-			</label>
+			{#each authorable as field (field.name)}
+				<div class="space-y-1">
+					<label class="label" for={`submit-${field.name}`}>
+						{field.label}{#if field.required}<span class="text-error-500" aria-hidden="true">
+								*</span
+							>{/if}
+					</label>
+
+					{#if field.fieldType === 'Boolean'}
+						<input
+							id={`submit-${field.name}`}
+							name={field.name}
+							type="checkbox"
+							class="checkbox"
+							value="true"
+						/>
+					{:else if field.enumValues && field.enumValues.length > 0}
+						<select id={`submit-${field.name}`} name={field.name} class="select">
+							<option value="">—</option>
+							{#each field.enumValues as option (option)}
+								<option value={option}>{option || '(empty)'}</option>
+							{/each}
+						</select>
+					{:else if field.fieldType === 'LongText'}
+						<textarea
+							id={`submit-${field.name}`}
+							name={field.name}
+							class="textarea"
+							rows="4"
+							value={toInputValue(field.default)}></textarea>
+					{:else}
+						<input
+							id={`submit-${field.name}`}
+							name={field.name}
+							class="input"
+							type={field.fieldType === 'Integer' || field.fieldType === 'Decimal'
+								? 'number'
+								: 'text'}
+							min={field.min ?? undefined}
+							max={field.max ?? undefined}
+							value={toInputValue(field.default)}
+						/>
+					{/if}
+
+					{#if field.hint}
+						<p class="text-xs text-surface-600-400">{field.hint}</p>
+					{/if}
+				</div>
+			{/each}
+
+			{#if unauthorable.length > 0}
+				<p class="text-xs text-warning-500">
+					This type also has {unauthorable.map((field) => field.label).join(', ')}, which is
+					authored through the content editor rather than this form.
+				</p>
+			{/if}
 
 			<button class="btn preset-filled-primary-500" type="submit">Submit for review</button>
 		</form>
 	{:else if data.submission}
-		<header class="flex flex-wrap items-start justify-between gap-3">
-			<div class="space-y-1">
-				<p class="text-xs tracking-wide text-surface-600-400 uppercase">
-					{data.submission.contentType}
-				</p>
-				<h1 class="h1">{data.submission.title}</h1>
-				<p class="text-surface-600-400">
-					By {data.submission.submitterName} · {data.submission.status} · score
-					{data.submission.voteScore}
-				</p>
-			</div>
-			<form class="flex gap-2" method="POST" action="?/vote">
-				<button class="btn preset-tonal-surface btn-sm" name="value" value="1" type="submit">
-					▲ Upvote
-				</button>
-				<button class="btn preset-tonal-surface btn-sm" name="value" value="-1" type="submit">
-					▼ Downvote
-				</button>
-			</form>
-		</header>
+		<FoundryPageHeader
+			title={data.submission.title}
+			description={`${data.submission.contentType} · By ${data.submission.submitterName} · ${data.submission.status} · score ${data.submission.voteScore}`}
+		/>
+
+		<form class="flex gap-2" method="POST" action="?/vote">
+			<button class="btn preset-tonal-surface btn-sm" name="value" value="1" type="submit">
+				▲ Upvote
+			</button>
+			<button class="btn preset-tonal-surface btn-sm" name="value" value="-1" type="submit">
+				▼ Downvote
+			</button>
+		</form>
 
 		{#if data.submission.description}
 			<p class="card p-4">{data.submission.description}</p>
 		{/if}
 
-		<section class="space-y-2 card p-4">
-			<h2 class="h3">Payload</h2>
-			<pre class="overflow-auto text-xs">{prettyPayload}</pre>
-		</section>
+		{#if unreadable}
+			<section class="space-y-2 card p-4">
+				<h2 class="h3">Payload</h2>
+				<p class="text-sm text-warning-500">
+					This submission's payload is not valid JSON, so it is shown as submitted.
+				</p>
+				<div class="overflow-auto font-mono text-xs">{data.rawPayload}</div>
+			</section>
+		{:else}
+			<ContentRenderer schema={data.schema} payload={data.payload} />
+		{/if}
 
 		{#if data.submission.reviewerName}
 			<section class="space-y-1 card p-4">

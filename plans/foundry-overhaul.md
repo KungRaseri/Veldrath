@@ -266,7 +266,21 @@ the form/renderer vocabulary being settled.
 | H0 | shell, home at `/foundry`, grouped nav, group error page, `/languages` 308 |
 | H1 | content editor: derived slug with a lock, markdown preview, required blocking, sticky Save/Validate/Discard bar with a dirty guard, section anchors, `FoundryPageHeader`/`FoundryBreadcrumbs` |
 | H2 | `StringList`, `KeyValue`, `ObjectList` and `Reference` field kinds on the descriptor, `ListEditor`/`RowEditor`, reference pickers, the field-kind parity suite, and the three raw-JSON fields replaced |
-| H3–H6 | not started |
+| H3 | `ContentRenderer` for the read paths, content detail and submission view render fields, submission create is schema-driven, and the raw JSON survives only behind a disclosure |
+| H4–H6 | not started |
+
+H3 notes:
+
+- **`<pre>` now exists in exactly one place** — the renderer's "Advanced — raw JSON" disclosure. Both read
+  paths (content detail, submission view) render the schema instead, and keys the schema does not describe
+  are listed as "Other fields" rather than dropped.
+- **The create form's type picker is a `GET`.** The server renders the chosen type's schema, so changing the
+  type reloads the page with different fields instead of bundling every schema into one document.
+- **Create cannot author collections yet.** A type with a `StringList`/`KeyValue`/`ObjectList` field says so
+  by name and the author uses the content editor; H4 renders the same `ListEditor`/`RowEditor` pair in the
+  create form, which is what makes "create for every type" true.
+- **A submission and a saved entity are now the same shape.** Both build their payload with `buildPayload`
+  from the same schema, which is what H5's promotion needs — no per-type mapper.
 
 Notes worth keeping:
 

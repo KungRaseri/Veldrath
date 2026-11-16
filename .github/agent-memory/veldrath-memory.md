@@ -3779,3 +3779,27 @@ gained `Items` (the row shape), `RefType` and `Multiple`. `quest.objectives`, `q
 
 **Counts after H2:** 1,382 web unit tests, 6,060 .NET tests, coverage 90.02% branches, typecheck/lint/build
 clean.
+
+### H3 — the read paths render fields, not JSON
+
+`web/client/src/lib/components/foundry/ContentRenderer.svelte` renders a payload through the schema: groups
+as cards, a `<dl>` of label → value, booleans as Yes/No, empties as a dash, `StringList` as chips, `KeyValue`
+as a small table, `ObjectList` as a table whose columns are the row descriptors, and a `Reference` as a link
+to `/content/{refType}/{slug}`. Keys the schema does not describe are listed under "Other fields"; the raw
+JSON lives behind an "Advanced — raw JSON" disclosure. **That disclosure is now the only `<pre>` under
+`(foundry)`** — the H3 done-when.
+
+- The content detail loader now loads the schema too (`getContentTypeSchema`), best-effort: a missing schema
+  is not fatal, the renderer just lists every key.
+- Submission create is schema-driven. The type picker is a **GET** (`/submissions/new?type=quest`) because
+  the server renders the chosen schema; the POST action rebuilds the payload with `buildPayload` and refuses
+  with `Fill in: <fields>` when a required field is blank. **Collections are not authorable there yet** — the
+  form names them and points at the content editor; H4 renders the editors in the create form.
+- The submission view parses the stored payload and renders it with the same component. A payload that is
+  not valid JSON is shown verbatim with a warning rather than swallowed.
+- `ContentTypeInfo` is `{ contentType, displayLabel, description }` — **not** `{ key, label }`. Several older
+  Foundry test mocks used `key`/`label`; the real fields are the longer ones.
+- Watch for duplicate accessible labels: the submission form has its own "Description" textarea, so a schema
+  field also labelled "Description" makes `getByLabelText` ambiguous.
+
+**Counts after H3:** 1,397 web unit tests, coverage 90.01% branches, typecheck/lint/build clean.

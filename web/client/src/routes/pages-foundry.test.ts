@@ -413,10 +413,12 @@ describe('content detail', () => {
 
 		expect(screen.getByRole('heading', { level: 1, name: 'Ember blade' })).toBeTruthy();
 		expect(screen.getByText(/item · Weapon/)).toBeTruthy();
-		expect(screen.getByText(/rarity\s+12 · active/)).toBeTruthy();
+		expect(screen.getByText(/active/)).toBeTruthy();
 		expect(screen.getByRole('link', { name: 'Edit this entity' }).getAttribute('href')).toBe(
 			'/content/item/ember-blade/edit'
 		);
+		// The payload is no longer the main view: it sits behind a disclosure.
+		expect(screen.getByText(/Advanced — raw JSON/)).toBeTruthy();
 		expect(screen.getByText(/"displayName": "Ember blade"/)).toBeTruthy();
 	});
 
@@ -1079,22 +1081,136 @@ describe('submission detail', () => {
 		reviewNotes: null
 	};
 
-	it('renders the create form with a JSON skeleton', () => {
-		render(SubmissionDetail, page({ mode: 'create' }));
+	it('renders the type picker and the chosen schema instead of a JSON box', () => {
+		render(
+			SubmissionDetail,
+			page({
+				mode: 'create',
+				submission: null,
+				error: null,
+				canReview: false,
+				types: [{ contentType: 'item', displayLabel: 'Items', description: '' }],
+				typeKey: 'item',
+				payload: {},
+				schema: {
+					contentType: 'item',
+					displayLabel: 'Items',
+					description: '',
+					groups: [
+						{
+							label: 'Identity',
+							fields: [
+								field({
+									name: 'displayName',
+									label: 'Display name',
+									fieldType: 'Text',
+									required: true
+								})
+							]
+						}
+					]
+				}
+			})
+		);
 
 		expect(screen.getByRole('heading', { level: 1, name: 'New submission' })).toBeTruthy();
-		expect(screen.getByDisplayValue(/"slug": ""/)).toBeTruthy();
+		expect(screen.getByRole('combobox', { name: /Content type/ })).toBeTruthy();
+		expect(screen.getByLabelText(/^Display name/)).toBeTruthy();
+		// The JSON skeleton is gone: the payload is built from the schema.
+		expect(screen.queryByDisplayValue(/"slug": ""/)).toBeNull();
 		expect(screen.getByRole('button', { name: 'Submit for review' })).toBeTruthy();
 	});
 
-	it('renders the payload pretty-printed and the vote controls', () => {
-		render(SubmissionDetail, page({ mode: 'view', submission, canReview: false }));
+	it('says which fields this form cannot author', () => {
+		render(
+			SubmissionDetail,
+			page({
+				mode: 'create',
+				submission: null,
+				error: null,
+				canReview: false,
+				types: [],
+				typeKey: 'quest',
+				payload: {},
+				schema: {
+					contentType: 'quest',
+					displayLabel: 'Quests',
+					description: '',
+					groups: [
+						{
+							label: 'Objectives',
+							fields: [field({ name: 'objectives', label: 'Objectives', fieldType: 'ObjectList' })]
+						}
+					]
+				}
+			})
+		);
+
+		expect(screen.getByText(/This type also has Objectives/)).toBeTruthy();
+	});
+
+	it('renders the payload through the schema and the vote controls', () => {
+		render(
+			SubmissionDetail,
+			page({
+				mode: 'view',
+				submission,
+				canReview: false,
+				schema: null,
+				payload: { slug: 'ember-blade', damage: 12 },
+				rawPayload: submission.payload
+			})
+		);
 
 		expect(screen.getByRole('heading', { level: 1, name: 'Ember blade' })).toBeTruthy();
 		expect(screen.getByText('A blade of banked fire.')).toBeTruthy();
+		// No schema is known here, so every key is listed rather than dropped.
+		expect(screen.getByRole('heading', { level: 2, name: 'Other fields' })).toBeTruthy();
+		expect(screen.getByText('damage')).toBeTruthy();
 		expect(screen.getByText(/"damage": 12/)).toBeTruthy();
 		expect(screen.getByRole('button', { name: /Upvote/ })).toBeTruthy();
 		expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
+	});
+
+	it('renders a boolean, an enum, a long text and a bounded number in the create form', () => {
+		render(
+			SubmissionDetail,
+			page({
+				mode: 'create',
+				submission: null,
+				error: null,
+				canReview: false,
+				types: [{ contentType: 'item', displayLabel: 'Items', description: '' }],
+				typeKey: 'item',
+				payload: {},
+				schema: {
+					contentType: 'item',
+					displayLabel: 'Items',
+					description: '',
+					groups: [
+						{
+							label: 'All',
+							fields: [
+								field({ name: 'isActive', label: 'Active', fieldType: 'Boolean' }),
+								field({
+									name: 'rarity',
+									label: 'Rarity',
+									fieldType: 'EnumString',
+									enumValues: ['', 'Rare']
+								}),
+								field({ name: 'body', label: 'Body', fieldType: 'LongText' }),
+								field({ name: 'weight', label: 'Weight', fieldType: 'Decimal', min: 0, max: 9 })
+							]
+						}
+					]
+				}
+			})
+		);
+
+		expect((screen.getByLabelText('Active') as HTMLInputElement).type).toBe('checkbox');
+		expect(screen.getByRole('option', { name: '(empty)' })).toBeTruthy();
+		expect((screen.getByLabelText('Body') as HTMLTextAreaElement).tagName).toBe('TEXTAREA');
+		expect((screen.getByLabelText('Weight') as HTMLInputElement).getAttribute('max')).toBe('9');
 	});
 
 	it('shows a curator decision only for a pending submission the viewer can review', () => {
@@ -1111,6 +1227,9 @@ describe('submission detail', () => {
 			page({
 				mode: 'view',
 				canReview: true,
+				schema: null,
+				payload: {},
+				rawPayload: 'not json',
 				submission: {
 					...submission,
 					status: 'Approved',
