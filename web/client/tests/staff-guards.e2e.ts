@@ -11,6 +11,8 @@ const staffRoutes = [
 	// The review queue additionally needs the Curator role, but authentication is what this suite asserts:
 	// an anonymous visitor is turned away by the group layout before any role check runs.
 	'/review',
+	'/schemas',
+	'/world-health',
 	'/editorial',
 	'/admin',
 	'/mod'

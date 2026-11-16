@@ -7,6 +7,8 @@ import {
 } from './(foundry)/content/[type]/new/+page.server';
 import { load as homePage } from './(foundry)/foundry/+page.server';
 import { load as reviewPage } from './(foundry)/review/+page.server';
+import { load as schemasPage } from './(foundry)/schemas/+page.server';
+import { load as worldHealthPage } from './(foundry)/world-health/+page.server';
 import { load as contentTypePage } from './(foundry)/content/[type]/+page.server';
 import { load as contentDetail } from './(foundry)/content/[type]/[slug]/+page.server';
 import {
@@ -46,6 +48,7 @@ const contentApi = vi.hoisted(() => ({
 	getContentTypeSchema: vi.fn(),
 	updateContent: vi.fn(),
 	createContent: vi.fn(),
+	runContentAudit: vi.fn(),
 	validateContentPayload: vi.fn(),
 	deactivateContent: vi.fn()
 }));
@@ -1091,6 +1094,79 @@ describe('content create', () => {
 
 		expect(result.status).toBe(502);
 		expect(result.data.message).toBe('Could not create the entry.');
+	});
+});
+
+describe('catalog reference pages', () => {
+	it('runs the audit and counts errors and warnings separately', async () => {
+		contentApi.runContentAudit.mockResolvedValue(
+			ok([
+				{ rule: 'a', message: 'first', severity: 'Error', field: null, identifier: 'x' },
+				{ rule: 'b', message: 'second', severity: 'Warning', field: 'f', identifier: null }
+			])
+		);
+
+		const result = (await callLoad(worldHealthPage, signedIn())) as {
+			issues: unknown[];
+			errors: number;
+			warnings: number;
+			error: unknown;
+		};
+
+		expect(result).toMatchObject({ errors: 1, warnings: 1, error: null });
+		expect(result.issues).toHaveLength(2);
+	});
+
+	it('reports a failed audit with an empty list rather than pretending the catalog is clean', async () => {
+		contentApi.runContentAudit.mockResolvedValue(failed('audit is down'));
+
+		const result = (await callLoad(worldHealthPage, signedIn())) as {
+			issues: unknown[];
+			error: string;
+		};
+
+		expect(result.issues).toEqual([]);
+		expect(result.error).toBe('audit is down');
+	});
+
+	it('refuses the audit without content.view', async () => {
+		expect(
+			await thrownMessage(() =>
+				callLoad(
+					worldHealthPage,
+					signedIn({ parentData: { access: { ...readerAccess, permissions: [] } } })
+				)
+			)
+		).toBe('Foundry needs the content permission. Ask a Curator for access.');
+	});
+
+	it('loads every registered schema and drops the ones that fail', async () => {
+		contentApi.listContentTypes.mockResolvedValue(
+			ok([
+				{ contentType: 'power', displayLabel: 'Powers', description: '' },
+				{ contentType: 'spell', displayLabel: 'Spells', description: '' }
+			])
+		);
+		contentApi.getContentTypeSchema
+			.mockResolvedValueOnce(ok(schema))
+			.mockResolvedValueOnce(failed('no schema', 404));
+
+		const result = (await callLoad(schemasPage, signedIn())) as {
+			schemas: { contentType: string }[];
+		};
+
+		expect(result.schemas.map((entry) => entry.contentType)).toEqual(['power']);
+	});
+
+	it('refuses the schema browser without content.view', async () => {
+		expect(
+			await thrownMessage(() =>
+				callLoad(
+					schemasPage,
+					signedIn({ parentData: { access: { ...readerAccess, permissions: [] } } })
+				)
+			)
+		).toBe('Foundry needs the content permission. Ask a Curator for access.');
 	});
 });
 

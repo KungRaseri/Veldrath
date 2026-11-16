@@ -1,6 +1,15 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { BookOpenText, ClipboardCheck, House, Inbox, Map as MapIcon, Send } from '@lucide/svelte';
+	import {
+		Activity,
+		BookOpenText,
+		ClipboardCheck,
+		FileText,
+		House,
+		Inbox,
+		Map as MapIcon,
+		Send
+	} from '@lucide/svelte';
 	import { isCurrentNavItem, type FoundryNav, type FoundryNavItem } from '#lib/foundry/nav';
 
 	/**
@@ -23,6 +32,8 @@
 		'/maps': MapIcon,
 		'/review': ClipboardCheck,
 		'/submissions': Send,
+		'/schemas': FileText,
+		'/world-health': Activity,
 		'/notifications': Inbox
 	};
 

@@ -85,15 +85,23 @@ export function foundryNav(flags: FoundryNavFlags): FoundryNav {
 		curate.push({ href: '/submissions', label: 'Submissions' });
 	}
 
+	const reference: FoundryNavItem[] = [];
+
+	if (flags.canViewContent) {
+		// Both read the catalog: the registry of what can be authored, and the audit of what is inconsistent.
+		reference.push(
+			{ href: '/schemas', label: 'Schemas' },
+			{ href: '/world-health', label: 'World health' }
+		);
+	}
+
+	reference.push(
+		withCount({ href: '/notifications', label: 'Notifications' }, flags.unreadNotifications)
+	);
+
 	const groups: FoundryNavGroup[] = [
 		{ group: 'Author', items: author },
-		// Schemas and world health join this group in H6, once those routes exist.
-		{
-			group: 'Reference',
-			items: [
-				withCount({ href: '/notifications', label: 'Notifications' }, flags.unreadNotifications)
-			]
-		}
+		{ group: 'Reference', items: reference }
 	];
 
 	if (curate.length > 0) {

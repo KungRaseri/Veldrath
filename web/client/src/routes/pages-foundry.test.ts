@@ -20,6 +20,8 @@ import MapDetail from './(foundry)/maps/[mapId]/+page.svelte';
 import Maps from './(foundry)/maps/+page.svelte';
 import Notifications from './(foundry)/notifications/+page.svelte';
 import ReviewQueue from './(foundry)/review/+page.svelte';
+import Schemas from './(foundry)/schemas/+page.svelte';
+import WorldHealth from './(foundry)/world-health/+page.svelte';
 import Submissions from './(foundry)/submissions/+page.svelte';
 import SubmissionDetail from './(foundry)/submissions/[id]/+page.svelte';
 
@@ -941,6 +943,129 @@ describe('foundry home', () => {
 		);
 
 		expect(screen.getByRole('alert').textContent).toContain('Map list unavailable');
+	});
+});
+
+describe('catalog reference pages', () => {
+	it('lists audit findings with their severity and entity', () => {
+		render(
+			WorldHealth,
+			page({
+				issues: [
+					{
+						rule: 'missing-quest-target',
+						message: 'Quest x names wolf, which does not exist.',
+						severity: 'Error',
+						field: 'objectives',
+						identifier: 'the-ashen-road'
+					}
+				],
+				errors: 1,
+				warnings: 0,
+				error: null
+			})
+		);
+
+		expect(screen.getByRole('heading', { level: 1, name: 'World health' })).toBeTruthy();
+		expect(screen.getByText('missing-quest-target')).toBeTruthy();
+		expect(screen.getByText('the-ashen-road')).toBeTruthy();
+		expect(screen.getByText(/does not exist/)).toBeTruthy();
+		expect(screen.getByText(/1 error\(s\) and 0 warning\(s\)/)).toBeTruthy();
+	});
+
+	it('shows an audit failure, and dashes for an issue with no entity or field', () => {
+		render(
+			WorldHealth,
+			page({
+				issues: [{ rule: 'r', message: 'm', severity: 'Warning', field: null, identifier: null }],
+				errors: 0,
+				warnings: 1,
+				error: 'audit is down'
+			})
+		);
+
+		expect(screen.getByRole('alert').textContent).toContain('audit is down');
+		expect(screen.getAllByText('—')).toHaveLength(2);
+	});
+
+	it('celebrates a consistent catalog', () => {
+		render(WorldHealth, page({ issues: [], errors: 0, warnings: 0, error: null }));
+
+		expect(screen.getByText(/The catalog is consistent/)).toBeTruthy();
+	});
+
+	it('renders each schema with its groups, kinds and rules', () => {
+		render(
+			Schemas,
+			page({
+				error: 'schemas are down',
+				schemas: [
+					{
+						contentType: 'quest',
+						displayLabel: 'Quests',
+						description: 'A quest.',
+						groups: [
+							{
+								label: 'Objectives',
+								fields: [
+									{
+										...field({
+											name: 'minLevel',
+											label: 'Min level',
+											fieldType: 'Integer',
+											required: true,
+											min: 1,
+											max: 100
+										}),
+										enumValues: null,
+										items: null,
+										refType: null
+									},
+									{
+										...field({ name: 'objectives', label: 'Objectives', fieldType: 'ObjectList' }),
+										items: [field({ name: 'type', label: 'Type', fieldType: 'Text' })]
+									},
+									{
+										...field({ name: 'rarity', label: 'Rarity', fieldType: 'EnumString' }),
+										enumValues: ['Common', 'Rare']
+									},
+									{
+										...field({ name: 'itemSlug', label: 'Item', fieldType: 'Reference' }),
+										refType: 'item',
+										hint: 'Pick an item slug.'
+									},
+									{
+										...field({ name: 'level', label: 'Level', fieldType: 'Integer' }),
+										max: 50
+									}
+								]
+							}
+						]
+					}
+				]
+			})
+		);
+
+		expect(screen.getByRole('heading', { level: 2, name: /Quests/ })).toBeTruthy();
+		expect(screen.getByRole('heading', { level: 3, name: 'Objectives' })).toBeTruthy();
+		expect(screen.getByText('Min level')).toBeTruthy();
+		expect(screen.getAllByText('Integer').length).toBeGreaterThan(0);
+		expect(screen.getByText(/required · 1–100/)).toBeTruthy();
+		// A collection says what its rows contain, an enum lists its options, a reference names its target.
+		expect(screen.getByText(/rows of Type/)).toBeTruthy();
+		expect(screen.getByText(/one of Common, Rare/)).toBeTruthy();
+		expect(screen.getByText(/references item/)).toBeTruthy();
+		expect(screen.getByText('Pick an item slug.')).toBeTruthy();
+		// A field with only an upper bound still reads sensibly.
+		expect(screen.getByText(/optional · −∞–50/)).toBeTruthy();
+		// The schema list still renders when the type list failed.
+		expect(screen.getByRole('alert').textContent).toContain('schemas are down');
+	});
+
+	it('renders the empty state when no schema is registered', () => {
+		render(Schemas, page({ schemas: [], error: null }));
+
+		expect(screen.getByText(/No content schemas are registered/)).toBeTruthy();
 	});
 });
 

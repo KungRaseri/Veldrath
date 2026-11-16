@@ -3844,3 +3844,24 @@ landed (migration `AddSubmissionPromotion`), the DTO carries it, and the approva
 
 **Counts after H5:** 6,062 .NET tests, 1,421 web unit tests, coverage 90.06% branches, lint/typecheck/build and
 dotnet format clean.
+
+### H6 — world health, schemas, and the defect the audit endpoint exposed
+
+- `GET /api/content/audit` runs `ContentAuditService.RunAsync` and returns `ContentAuditIssueDto` rows; it
+  requires `content.view`. The service is registered as **both** a singleton and a hosted service
+  (`AddHostedService(sp => sp.GetRequiredService<ContentAuditService>())`) so startup and the endpoint share
+  one instance — `AddHostedService<T>` alone registers only `IHostedService`, so injecting the concrete type
+  would fail.
+- **The audit never ran on SQLite.** It projected nested collections (zone actor pools, quest objectives, map
+  nodes), which needs SQL `APPLY`; SQLite cannot translate it, the startup run swallows exceptions, and
+  `ContentAuditServiceTests` asserted that translation failure as expected behaviour. It now materialises and
+  flattens in memory. If you add a rule that projects a collection, keep it out of the query.
+- `/world-health` and `/schemas` require `content.view`, are in the sidebar's Reference group, and are in
+  `tests/staff-guards.e2e.ts` (that is what satisfies the route-parity suite — no exemption needed).
+- **`ContentIssue` has no content type**, only `Identifier` (a slug), so `/world-health` cannot deep-link a
+  finding. Adding `ContentType` to the record is the follow-up.
+- Cross-type Foundry search is **not** built: `browseContent` searches one type, and a global search needs an
+  endpoint over every resolver.
+
+**Counts after H6:** 6,062 .NET tests, 1,431 web unit tests, coverage 90.01% branches, 28 Playwright tests,
+lint/typecheck/build and dotnet format clean.

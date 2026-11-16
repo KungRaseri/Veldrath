@@ -54,10 +54,16 @@ describe('Foundry navigation', () => {
 
 		expect(nav.home).toEqual({ href: '/foundry', label: 'Home' });
 		expect(groupNames(reader)).toEqual(['Author', 'Reference']);
-		expect(hrefs(reader)).toEqual(['/content', '/maps', '/notifications']);
+		expect(hrefs(reader)).toEqual([
+			'/content',
+			'/maps',
+			'/schemas',
+			'/world-health',
+			'/notifications'
+		]);
 	});
 
-	it('hides maps from an account that cannot read content', () => {
+	it('hides maps and the catalog references from an account that cannot read content', () => {
 		expect(hrefs(guest)).toEqual(['/content', '/notifications']);
 	});
 
@@ -65,7 +71,14 @@ describe('Foundry navigation', () => {
 		const nav = foundryNav(author);
 
 		expect(groupNames(author)).toEqual(['Author', 'Curate', 'Reference']);
-		expect(hrefs(author)).toEqual(['/content', '/maps', '/submissions', '/notifications']);
+		expect(hrefs(author)).toEqual([
+			'/content',
+			'/maps',
+			'/submissions',
+			'/schemas',
+			'/world-health',
+			'/notifications'
+		]);
 		expect(nav.groups[1].items.map((item) => item.href)).not.toContain('/review');
 	});
 
@@ -76,7 +89,10 @@ describe('Foundry navigation', () => {
 
 		expect(curate?.items.map((item) => item.href)).toEqual(['/review', '/submissions']);
 		expect(curate?.items[0].count).toBe(4);
-		expect(reference?.items[0]).toMatchObject({ href: '/notifications', count: 3 });
+		// Reference now leads with the two catalog pages, so find the inbox rather than assume a position.
+		expect(reference?.items.find((item) => item.href === '/notifications')).toMatchObject({
+			count: 3
+		});
 	});
 
 	it('renders no badge for a count of zero, so an empty inbox is quiet', () => {

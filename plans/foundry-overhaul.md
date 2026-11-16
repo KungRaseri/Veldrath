@@ -269,7 +269,25 @@ the form/renderer vocabulary being settled.
 | H3 | `ContentRenderer` for the read paths, content detail and submission view render fields, submission create is schema-driven, and the raw JSON survives only behind a disclosure |
 | H4 | `/content/[type]/new` for every registered schema, a New action on each browse page, and the reference-option loader shared by both write paths |
 | H5 | approvals promote the payload into the catalog (`ContentWriteService`, `PromotedSlug`, migration), and the reviewer sees a field-level diff before deciding |
-| H6 | not started |
+| H6 | `GET /api/content/audit` and `/world-health`, `/schemas`, both linked from the sidebar — **shipped**; cross-type Foundry search is not built (see below) |
+
+H6 notes:
+
+- **The audit finally has a home.** `ContentAuditService.RunAsync` is exposed through
+  `GET /api/content/audit` (requires `content.view`, because the findings name hidden entities) and rendered by
+  `/world-health` with error/warning counts and one row per finding.
+- **The endpoint found a real defect.** The audit projected nested collections (zone actor pools, quest
+  objectives, map nodes), which needs SQL `APPLY` — untranslatable on SQLite. Every SQLite host logged
+  "Content reference audit failed to run" and audited *nothing*, and a test asserted that failure as intended
+  behaviour. It now materialises and flattens in memory, so it runs on every provider.
+- **Deep links are still missing.** `ContentIssue` carries the entity's slug but not its content type, so
+  `/world-health` prints the slug and points at the content browser. Adding `ContentType` to `ContentIssue`
+  (and to the audit DTO) is the follow-up that makes each row a link.
+- **`/schemas` is the registry, rendered.** It is also the reference the field-kind parity suite compares
+  against, so a kind that exists on one side and not the other is visible as well as tested.
+- **Foundry search is not delivered.** The content browser already searches within a type; a cross-type
+  search needs its own server endpoint over every resolver, which is a feature rather than a page. It stays
+  on this list rather than pretending to be done.
 
 H5 notes:
 
