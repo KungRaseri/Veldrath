@@ -9,12 +9,12 @@
 		LogIn,
 		PenLine,
 		ScrollText,
-		Send,
 		Shield,
 		User,
 		UserPlus,
 		Users
 	} from '@lucide/svelte';
+	import { isFoundryPath } from '#lib/foundry/nav';
 
 	let {
 		user = null,
@@ -22,10 +22,8 @@
 	}: {
 		user?: AuthUser | null;
 		staff?: {
-			/** Holds `content.view`: the portal home and the catalog are theirs to read. */
-			foundry?: boolean;
-			/** Signed in: may contribute content through the submission queue. */
-			submit?: boolean;
+			/** Signed in: the portal is readable and can be contributed to. */
+			portal?: boolean;
 			editorial?: boolean;
 			mod?: boolean;
 			admin?: boolean;
@@ -62,23 +60,19 @@
 				<Users size={16} aria-hidden="true" />
 				<span>Community</span>
 			</a>
-			{#if staff?.foundry}
+			{#if staff?.portal}
+				<!--
+					One entry, at the portal home: the Foundry is where an account reads the catalog and starts
+					something new, and the home routes both jobs. A second "Submit content" link here competed
+					with it for the same intention.
+				-->
 				<a
 					class="site-nav-link"
-					aria-current={active('/foundry')}
+					aria-current={isFoundryPath(page.url.pathname) ? 'page' : undefined}
 					href={resolve('/(foundry)/foundry')}
 				>
 					<Hammer size={16} aria-hidden="true" />
 					<span>Foundry</span>
-				</a>
-			{:else if staff?.submit}
-				<!--
-					A player has no catalog to read, so "Foundry" and the portal home would only answer 403.
-					Their entry point is the one thing they can do: contribute content.
-				-->
-				<a class="site-nav-link" aria-current={active('/submissions')} href="/submissions/new">
-					<Send size={16} aria-hidden="true" />
-					<span>Submit content</span>
 				</a>
 			{/if}
 			{#if staff?.editorial}

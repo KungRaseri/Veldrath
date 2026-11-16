@@ -44,13 +44,40 @@ public class FoundryService(
         return (MapToDto(submission), null);
     }
 
+    /// <summary>
+    /// Lists submissions the caller is allowed to see.
+    /// </summary>
+    /// <param name="status">Optional status filter, matched by name.</param>
+    /// <param name="contentType">Optional content-type filter, matched by name.</param>
+    /// <param name="search">Optional title search.</param>
+    /// <param name="page">One-based page number.</param>
+    /// <param name="pageSize">Rows per page.</param>
+    /// <param name="callerId">The account asking, so a narrowed feed can still include their own rows.</param>
+    /// <param name="scope">Which rows that account may see, decided by the endpoint from its permissions.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The page of rows, its total count, and the page it answered.</returns>
     public async Task<PagedResult<FoundrySubmissionSummaryDto>> ListSubmissionsAsync(
-        string? status, string? contentType, string? search, int page, int pageSize, CancellationToken ct)
+        string? status,
+        string? contentType,
+        string? search,
+        int page,
+        int pageSize,
+        Guid callerId,
+        FoundrySubmissionScope scope,
+        CancellationToken ct)
     {
         var query = db.FoundrySubmissions
             .Include(s => s.Submitter)
             .Include(s => s.Votes)
             .AsNoTracking();
+
+        query = scope switch
+        {
+            FoundrySubmissionScope.Own => query.Where(s => s.SubmitterId == callerId),
+            FoundrySubmissionScope.OwnPlusApproved =>
+                query.Where(s => s.SubmitterId == callerId || s.Status == FoundrySubmissionStatus.Approved),
+            _ => query,
+        };
 
         if (status is not null && Enum.TryParse<FoundrySubmissionStatus>(status, ignoreCase: true, out var st))
             query = query.Where(s => s.Status == st);

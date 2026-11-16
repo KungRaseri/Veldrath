@@ -119,9 +119,23 @@ public class FoundryEndpointTests(WebAppFactory factory)
 
     // List
     [Fact]
+    public async Task ListSubmissions_Should_Require_Authentication()
+    {
+        using var anonymous = factory.CreateClient();
+
+        var response = await anonymous.GetAsync("/api/foundry/submissions");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
     public async Task ListSubmissions_Should_Return_Paged_Result()
     {
-        var response = await _client.GetAsync("/api/foundry/submissions");
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndList_Paged"));
+
+        var response = await client.GetAsync("/api/foundry/submissions");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<PagedResult<FoundrySubmissionSummaryDto>>();
@@ -140,7 +154,7 @@ public class FoundryEndpointTests(WebAppFactory factory)
 
         await CreateSubmissionAsync(client, "Spell", "FndList_Fireball");
 
-        var result = await _client.GetFromJsonAsync<PagedResult<FoundrySubmissionSummaryDto>>(
+        var result = await client.GetFromJsonAsync<PagedResult<FoundrySubmissionSummaryDto>>(
             "/api/foundry/submissions");
 
         result!.Items.Should().Contain(s => s.Title == "FndList_Fireball");
@@ -157,7 +171,7 @@ public class FoundryEndpointTests(WebAppFactory factory)
         await CreateSubmissionAsync(client, "Item", "FndFilterCT_Item");
 
         // Filter by Spell — the Item submission should not appear
-        var result = await _client.GetFromJsonAsync<PagedResult<FoundrySubmissionSummaryDto>>(
+        var result = await client.GetFromJsonAsync<PagedResult<FoundrySubmissionSummaryDto>>(
             "/api/foundry/submissions?contentType=Spell");
 
         result!.Items.Should().NotContain(s => s.Title == "FndFilterCT_Item");
@@ -173,7 +187,7 @@ public class FoundryEndpointTests(WebAppFactory factory)
         await CreateSubmissionAsync(client, "Quest", "FndFilterSt_Quest");
 
         // New submissions are Pending; querying Approved should exclude them
-        var result = await _client.GetFromJsonAsync<PagedResult<FoundrySubmissionSummaryDto>>(
+        var result = await client.GetFromJsonAsync<PagedResult<FoundrySubmissionSummaryDto>>(
             "/api/foundry/submissions?status=Approved");
 
         result!.Items.Should().NotContain(s => s.Title == "FndFilterSt_Quest");
@@ -188,16 +202,113 @@ public class FoundryEndpointTests(WebAppFactory factory)
 
         await CreateSubmissionAsync(client, "Ability", "FndSearch_FireStrike");
 
-        var found = await _client.GetFromJsonAsync<PagedResult<FoundrySubmissionSummaryDto>>(
+        var found = await client.GetFromJsonAsync<PagedResult<FoundrySubmissionSummaryDto>>(
             "/api/foundry/submissions?search=FndSearch_Fire");
-        var notFound = await _client.GetFromJsonAsync<PagedResult<FoundrySubmissionSummaryDto>>(
+        var notFound = await client.GetFromJsonAsync<PagedResult<FoundrySubmissionSummaryDto>>(
             "/api/foundry/submissions?search=FndSearch_Ice");
 
         found!.Items.Should().Contain(s => s.Title == "FndSearch_FireStrike");
         notFound!.Items.Should().NotContain(s => s.Title == "FndSearch_FireStrike");
     }
 
+    [Fact]
+    public async Task ListSubmissions_Should_Narrow_To_The_Caller_With_Mine()
+    {
+        using var author = factory.CreateClient();
+        author.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndMine_Author"));
+
+        using var stranger = factory.CreateClient();
+        stranger.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndMine_Stranger"));
+
+        await CreateSubmissionAsync(author, "Item", "FndMine_AuthorItem");
+        await CreateSubmissionAsync(stranger, "Item", "FndMine_StrangerItem");
+
+        var mine = await author.GetFromJsonAsync<PagedResult<FoundrySubmissionSummaryDto>>(
+            "/api/foundry/submissions?mine=true");
+
+        mine!.Items.Should().Contain(s => s.Title == "FndMine_AuthorItem");
+        mine.Items.Should().NotContain(s => s.Title == "FndMine_StrangerItem");
+    }
+
+    [Fact]
+    public async Task ListSubmissions_Should_Hide_Pending_Work_From_Other_Accounts()
+    {
+        using var author = factory.CreateClient();
+        author.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndHide_Author"));
+
+        using var stranger = factory.CreateClient();
+        stranger.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndHide_Stranger"));
+
+        await CreateSubmissionAsync(author, "Item", "FndHide_PendingItem");
+
+        // A player sees their own work at any status and other people's only once it is in the catalog.
+        var feed = await stranger.GetFromJsonAsync<PagedResult<FoundrySubmissionSummaryDto>>(
+            "/api/foundry/submissions");
+
+        feed!.Items.Should().NotContain(s => s.Title == "FndHide_PendingItem");
+    }
+
+    [Fact]
+    public async Task ListSubmissions_Should_Show_Every_Submission_To_A_Reviewer()
+    {
+        using var author = factory.CreateClient();
+        author.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndReviewerFeed_Author"));
+
+        using var curator = factory.CreateClient();
+        curator.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetCuratorTokenAsync("FndReviewerFeed_Curator"));
+
+        await CreateSubmissionAsync(author, "Item", "FndReviewerFeed_PendingItem");
+
+        var feed = await curator.GetFromJsonAsync<PagedResult<FoundrySubmissionSummaryDto>>(
+            "/api/foundry/submissions?status=Pending");
+
+        feed!.Items.Should().Contain(s => s.Title == "FndReviewerFeed_PendingItem");
+    }
+
+    [Fact]
+    public async Task ListSubmissions_Should_Show_Approved_Work_To_Other_Accounts()
+    {
+        using var author = factory.CreateClient();
+        author.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndApprovedFeed_Author"));
+
+        using var curator = factory.CreateClient();
+        curator.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetCuratorTokenAsync("FndApprovedFeed_Curator"));
+
+        using var stranger = factory.CreateClient();
+        stranger.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndApprovedFeed_Stranger"));
+
+        var submission = await CreateSubmissionAsync(
+            author, "Item", "FndApprovedFeed_Item", PromotableItem("fnd-approved-feed-item"));
+        var approved = await curator.PostAsJsonAsync(
+            $"/api/foundry/submissions/{submission.Id}/review", new { Approved = true });
+        approved.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var feed = await stranger.GetFromJsonAsync<PagedResult<FoundrySubmissionSummaryDto>>(
+            "/api/foundry/submissions?search=FndApprovedFeed_Item");
+
+        feed!.Items.Should().Contain(s => s.Title == "FndApprovedFeed_Item");
+    }
+
     // Get
+    [Fact]
+    public async Task GetSubmission_Should_Require_Authentication()
+    {
+        using var anonymous = factory.CreateClient();
+
+        var response = await anonymous.GetAsync($"/api/foundry/submissions/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
     [Fact]
     public async Task GetSubmission_Should_Return_Full_Detail()
     {
@@ -207,7 +318,7 @@ public class FoundryEndpointTests(WebAppFactory factory)
 
         var created = await CreateSubmissionAsync(client, "Item", "FndGet_Sword", "{\"name\":\"Sword\"}");
 
-        var dto = await _client.GetFromJsonAsync<FoundrySubmissionDto>(
+        var dto = await client.GetFromJsonAsync<FoundrySubmissionDto>(
             $"/api/foundry/submissions/{created.Id}");
 
         dto!.Id.Should().Be(created.Id);
@@ -220,9 +331,52 @@ public class FoundryEndpointTests(WebAppFactory factory)
     [Fact]
     public async Task GetSubmission_Should_Return_404_For_Unknown_Id()
     {
-        var response = await _client.GetAsync($"/api/foundry/submissions/{Guid.NewGuid()}");
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndGet_Unknown"));
+
+        var response = await client.GetAsync($"/api/foundry/submissions/{Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetSubmission_Should_Hide_A_Pending_Submission_From_A_Stranger()
+    {
+        using var author = factory.CreateClient();
+        author.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndGetHide_Author"));
+
+        using var stranger = factory.CreateClient();
+        stranger.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndGetHide_Stranger"));
+
+        var created = await CreateSubmissionAsync(author, "Item", "FndGetHide_Item");
+
+        // 404 rather than 403: a stranger does not get to confirm that the row exists.
+        var response = await stranger.GetAsync($"/api/foundry/submissions/{created.Id}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetSubmission_Should_Let_A_Reviewer_Read_Any_Submission()
+    {
+        using var author = factory.CreateClient();
+        author.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndGetReview_Author"));
+
+        using var curator = factory.CreateClient();
+        curator.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetCuratorTokenAsync("FndGetReview_Curator"));
+
+        var created = await CreateSubmissionAsync(author, "Item", "FndGetReview_Item");
+
+        var dto = await curator.GetFromJsonAsync<FoundrySubmissionDto>(
+            $"/api/foundry/submissions/{created.Id}");
+
+        dto!.Id.Should().Be(created.Id);
+        dto.Status.Should().Be("Pending");
     }
 
     // Vote
@@ -450,7 +604,7 @@ public class FoundryEndpointTests(WebAppFactory factory)
     }
 
     [Fact]
-    public async Task Review_Should_Require_Curator_Role()
+    public async Task Review_Should_Require_The_Review_Permission()
     {
         using var submitterClient = factory.CreateClient();
         submitterClient.DefaultRequestHeaders.Authorization =
@@ -467,6 +621,33 @@ public class FoundryEndpointTests(WebAppFactory factory)
             new { Approved = true });
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Review_Should_Accept_An_Admin_Who_Holds_No_Curator_Role()
+    {
+        using var submitterClient = factory.CreateClient();
+        submitterClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndRevAdmin_Sub"));
+
+        // Admin holds every permission but is not in the Curator role. The decision used to be a role policy,
+        // so this account could not approve anything it could otherwise manage.
+        using var adminClient = factory.CreateClient();
+        var (adminToken, _) = await factory.CreateAccountTokenAsync("FndRevAdmin_Admin", "Admin");
+        adminClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var submission = await CreateSubmissionAsync(
+            submitterClient, "Item", "FndRevAdmin_Item", PromotableItem("fnd-rev-admin-item"));
+
+        var response = await adminClient.PostAsJsonAsync(
+            $"/api/foundry/submissions/{submission.Id}/review",
+            new { Approved = true, Notes = "Admin decision." });
+
+        var reason = await response.Content.ReadAsStringAsync();
+        response.StatusCode.Should().Be(HttpStatusCode.OK, reason);
+        var dto = await response.Content.ReadFromJsonAsync<FoundrySubmissionDto>();
+        dto!.Status.Should().Be("Approved");
+        dto.ReviewerName.Should().Be("FndRevAdmin_Admin");
     }
 
     [Fact]

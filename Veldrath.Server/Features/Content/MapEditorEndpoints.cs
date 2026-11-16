@@ -12,14 +12,15 @@ namespace Veldrath.Server.Features.Content;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Reads require <c>content.view</c> — the graph carries hidden nodes and unlock keys, so it is never
-/// anonymous — and authoring requires <c>content.manage</c>. A save is validated by the same world validator
-/// the seed has to pass and is refused rather than half-applied when the graph is wrong or the author is
-/// working from a stale copy.
+/// Reads require a signed-in account — the graph is part of the community wiki, so a player may read it — and
+/// authoring requires <c>content.manage</c>. It is never anonymous: the graph carries hidden nodes and unlock
+/// keys. A save is validated by the same world validator the seed has to pass and is refused rather than
+/// half-applied when the graph is wrong or the author is working from a stale copy.
 /// </para>
 /// <para>
-/// Nothing here can make a map live. Approval is the gate, and it sits behind the <c>Curator</c> policy: an
-/// author drafts and submits, a reviewer decides. Every lifecycle change is audited.
+/// Nothing here can make a map live. Approval is the gate, and it sits behind <c>content.review</c> — the
+/// permission, not the <c>Curator</c> role, so an Admin or a hand-granted reviewer can decide as well as a
+/// Curator: an author drafts and submits, a reviewer decides. Every lifecycle change is audited.
 /// </para>
 /// </remarks>
 public static class MapEditorEndpoints
@@ -32,10 +33,11 @@ public static class MapEditorEndpoints
         var group = app.MapGroup("/api/content/maps").WithTags("Content");
 
         // Per endpoint rather than group-wide: the group used to require ManageContent for everything,
-        // which made the read-only Foundry view unreachable for a Reviewer.
-        group.MapGet("", ListMapsAsync).RequireAuthorization(Auth.Permissions.ViewContent);
-        group.MapGet("/targets", GetTargetsAsync).RequireAuthorization(Auth.Permissions.ViewContent);
-        group.MapGet("/{mapId}", GetMapAsync).RequireAuthorization(Auth.Permissions.ViewContent);
+        // which made the read-only Foundry view unreachable for a Reviewer. Reads are open to every
+        // signed-in account, which is what makes the portal public without exposing the graph anonymously.
+        group.MapGet("", ListMapsAsync).RequireAuthorization();
+        group.MapGet("/targets", GetTargetsAsync).RequireAuthorization();
+        group.MapGet("/{mapId}", GetMapAsync).RequireAuthorization();
         group.MapPost("/{mapId}/validate", ValidateMapAsync)
             .RequireAuthorization(Auth.Permissions.ManageContent);
         group.MapPut("/{mapId}", SaveMapAsync).RequireAuthorization(Auth.Permissions.ManageContent);
@@ -43,8 +45,12 @@ public static class MapEditorEndpoints
         group.MapPost("", CreateMapAsync).RequireAuthorization(Auth.Permissions.ManageContent);
         group.MapPost("/{mapId}/submit", SubmitMapAsync)
             .RequireAuthorization(Auth.Permissions.ManageContent);
-        group.MapPost("/{mapId}/review", ReviewMapAsync).RequireAuthorization("Curator");
-        group.MapPost("/{mapId}/deactivate", DeactivateMapAsync).RequireAuthorization("Curator");
+        // The permission, not the role: `RequireAuthorization("Curator")` kept an Admin — who holds every
+        // permission but not the role — out of the decision.
+        group.MapPost("/{mapId}/review", ReviewMapAsync)
+            .RequireAuthorization(Auth.Permissions.ReviewSubmissions);
+        group.MapPost("/{mapId}/deactivate", DeactivateMapAsync)
+            .RequireAuthorization(Auth.Permissions.ReviewSubmissions);
         group.MapDelete("/{mapId}", DeleteMapAsync).RequireAuthorization(Auth.Permissions.ManageContent);
 
         return app;

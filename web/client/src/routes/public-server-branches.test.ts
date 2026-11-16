@@ -89,8 +89,7 @@ describe('root layout', () => {
 		expect(result.user).toBeNull();
 		expect(result.access).toBeNull();
 		expect(result.staff).toEqual({
-			foundry: false,
-			submit: false,
+			portal: false,
 			admin: false,
 			mod: false,
 			editorial: false
@@ -116,8 +115,7 @@ describe('root layout', () => {
 		expect(result.user).toEqual(user);
 		expect(result.access).toMatchObject({ accountId: 'acct-1' });
 		expect(result.staff).toEqual({
-			foundry: true,
-			submit: true,
+			portal: true,
 			admin: true,
 			mod: true,
 			editorial: true

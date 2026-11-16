@@ -2,6 +2,9 @@ import { expect, test } from '@playwright/test';
 
 const staffRoutes = [
 	'/foundry',
+	// The type picker: the portal is public to signed-in accounts, so this suite proves only that an
+	// anonymous visitor is turned away before any page renders.
+	'/new',
 	'/submissions',
 	'/content',
 	'/maps',

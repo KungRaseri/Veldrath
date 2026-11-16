@@ -62,6 +62,8 @@ export interface SubmissionFilters {
 	status?: string | null;
 	contentType?: string | null;
 	search?: string | null;
+	/** Restricts the feed to the caller's own rows, keyed to the account on the token rather than a name. */
+	mine?: boolean;
 	page?: number;
 	pageSize?: number;
 }
@@ -76,6 +78,7 @@ export function listSubmissions(identity: GameIdentity | null, filters: Submissi
 				status: filters.status,
 				contentType: filters.contentType,
 				search: filters.search,
+				mine: filters.mine ? true : undefined,
 				page: filters.page ?? 1,
 				pageSize: filters.pageSize ?? 20
 			}

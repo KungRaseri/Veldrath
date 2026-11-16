@@ -3865,3 +3865,44 @@ dotnet format clean.
 
 **Counts after H6:** 6,062 .NET tests, 1,431 web unit tests, coverage 90.01% branches, 28 Playwright tests,
 lint/typecheck/build and dotnet format clean.
+
+### I — the access model, and navigation v2 (2026-11-16)
+
+The H0 decision (§5.4 of `plans/foundry-overhaul.md`) made the portal staff-only, and the first real account to
+use it got 403s on the home and every sidebar item. The replacement model is §8 of that plan; this is the list
+of traps.
+
+- **`AddPolicy("Curator", …)` is a role policy and it was on three decision endpoints.** `Permissions.All` is
+  granted to Admin as permission *claims*, so an Admin passed `RequireAuthorization(permission)` but failed
+  `RequireAuthorization("Curator")`. It now uses `Permissions.ReviewSubmissions` on submission review, map
+  review and map deactivate. Any new "who may decide" check goes through the permission.
+- **The submission feed had no authorization.** `GET /api/foundry/submissions` and `/{id}` were anonymous,
+  payloads included. They now require a token, and `FoundrySubmissionScope` (`Everything`, `Own`,
+  `OwnPlusApproved`) decides what is visible; `mine=true` narrows for everyone including a reviewer, and a
+  non-reviewer's default feed is `OwnPlusApproved`, not `Approved` — the first version dropped the caller's own
+  rows and a test caught it.
+- **`GET /api/content/maps*` now requires a session, not `content.view`.** The graph carries hidden nodes and
+  unlock keys; that spoiler cost is accepted and the mitigation, if needed, is rendering hidden nodes
+  distinctly rather than closing the editor.
+- **The `(foundry)` group still requires a user** (`requireUser`), so "public" means "signed in". The redirect
+  carries `?redirectTo=` and [`web/client/src/lib/navigation.ts`](../../web/client/src/lib/navigation.ts)
+  rejects anything but a local path — do not inline that check, it is the open-redirect guard.
+- **Layout flags are `canManageContent`, `canReview` (permission), `canAudit` (`content.view`).** There is no
+  "can read" flag any more; if you find yourself adding one, the page probably should not be gated.
+- **Nav v2:** one primary action (`/new`, the type picker) then Explore / Contribute / Curate / Maintain, with
+  Notifications in a separate `account` list below a rule. `FOUNDRY_PATH_ROOTS` + `isFoundryPath` exist because
+  the group has no URL prefix — the site header marks "Foundry" from any portal page through them.
+- **`FoundrySidebar`'s icon map is exhaustive by construction and has no fallback icon.** A nav entry without an
+  icon fails the sidebar tests rather than rendering a wrong glyph. That also removes an uncoverable branch.
+- **Test gotchas:** `parentData` fixtures for the home loader must include `canReview` (a missing key is
+  `undefined`, not false, and `toMatchObject({ canReview: false })` fails); the submissions page needs
+  `scope` (`'mine' | 'all'`) and `canReview` in its fixtures, because the empty-state copy changed with the
+  scope.
+- **Coverage lands exactly on the gate.** Removing two branches from the sidebar left 4,249/4,721 = 90.00%. Any
+  new branch in a Foundry file needs a test with it.
+
+Deferred, recorded in the plan: `/submissions/new` is still `params.id === 'new'` inside `/[id]` (works, links
+resolve, refactor is separate), and the type picker has no search.
+
+**Counts after I:** 1,666 server tests, 1,442 web unit tests, coverage 90.00% branches, lint/typecheck/build
+clean. Playwright was not run locally this pass; `tests/staff-guards.e2e.ts` gained `/new`.

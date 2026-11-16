@@ -316,6 +316,8 @@ describe('submission queue, sparse filters', () => {
 			Submissions,
 			page({
 				total: 0,
+				scope: 'all',
+				canReview: false,
 				filters: { search: null, status: null, contentType: null },
 				submissions: [],
 				page: 1,

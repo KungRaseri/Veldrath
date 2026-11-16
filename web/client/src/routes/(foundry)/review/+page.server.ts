@@ -14,10 +14,10 @@ import { listMaps } from '#lib/server/maps-api';
 export const load: PageServerLoad = async ({ locals, parent }) => {
 	const { canReview } = await parent();
 
-	// The decision endpoints are role-gated, so an account without the Curator role would be shown rows it
-	// cannot act on. Refusing here is what makes the sidebar filter honest.
+	// The decision endpoints require `content.review`, so an account without the permission would be shown
+	// rows it cannot act on. Refusing here is what makes the sidebar filter honest.
 	if (!canReview) {
-		error(403, 'The review queue needs the Curator role.');
+		error(403, 'The review queue needs the content review permission.');
 	}
 
 	const identity = toGameIdentity(locals.user!);

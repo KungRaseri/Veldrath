@@ -9,10 +9,9 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		user,
 		access,
 		staff: {
-			// The portal home and the content pages require `content.view`, so the header entry that leads
-			// there does too. Everyone else who is signed in gets the contribution route instead.
-			foundry: hasPermission(access, Permissions.ViewContent),
-			submit: Boolean(user),
+			// The Foundry is readable by every signed-in account, so the header entry is about being signed
+			// in rather than about holding a content permission.
+			portal: Boolean(user),
 			admin: hasPermission(access, Permissions.ManageUsers),
 			mod: hasPermission(access, Permissions.ViewPlayers),
 			editorial: hasPermission(access, Permissions.ManageContent)

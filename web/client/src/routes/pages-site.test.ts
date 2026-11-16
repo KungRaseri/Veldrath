@@ -89,7 +89,7 @@ describe('site header', () => {
 	it('adds one link per staff capability held', () => {
 		render(SiteHeader, {
 			user: fakeUser({ username: 'kaleth' }),
-			staff: { foundry: true, editorial: true, mod: true, admin: true }
+			staff: { portal: true, editorial: true, mod: true, admin: true }
 		});
 
 		expect(screen.getByRole('link', { name: 'Foundry' }).getAttribute('href')).toBe('/foundry');
@@ -98,26 +98,23 @@ describe('site header', () => {
 		expect(screen.getByRole('link', { name: 'Admin' }).getAttribute('href')).toBe('/admin');
 	});
 
-	it('sends a signed-in player to the contribution form, never to the portal', () => {
+	it('offers the portal home to every signed-in account, and one entry only', () => {
+		// The portal is public to signed-in accounts now, so there is no second "Submit content" link: the
+		// home routes both jobs, and two links competed for the same intention.
 		render(SiteHeader, {
 			user: fakeUser({ username: 'malfeasor' }),
-			staff: { foundry: false, submit: true }
+			staff: { portal: true }
 		});
 
-		expect(screen.getByRole('link', { name: 'Submit content' }).getAttribute('href')).toBe(
-			'/submissions/new'
-		);
-		// The portal home answers 403 to an account without `content.view`, so it must not be offered.
-		expect(screen.queryByRole('link', { name: 'Foundry' })).toBeNull();
+		expect(screen.getByRole('link', { name: 'Foundry' }).getAttribute('href')).toBe('/foundry');
+		expect(screen.queryByRole('link', { name: 'Submit content' })).toBeNull();
 	});
 
-	it('shows an editor the portal instead of the contribution shortcut', () => {
-		render(SiteHeader, {
-			user: fakeUser({ username: 'kaleth' }),
-			staff: { foundry: true, submit: true }
-		});
+	it('marks the portal entry from any portal page, not only the home', () => {
+		setPage({ url: new URL('http://localhost/content/item') });
+		render(SiteHeader, { user: fakeUser({ username: 'kaleth' }), staff: { portal: true } });
 
-		expect(screen.queryByRole('link', { name: 'Submit content' })).toBeNull();
+		expect(screen.getByRole('link', { name: 'Foundry' }).getAttribute('aria-current')).toBe('page');
 	});
 
 	it('marks the current section as the active page, including nested routes', () => {

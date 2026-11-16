@@ -6,16 +6,12 @@ import { createMap, listMaps } from '#lib/server/maps-api';
 /**
  * Lists the authored map graphs.
  *
- * Reads need `content.view` (the graph carries hidden nodes and unlock keys), so a Reviewer can browse
- * and a player cannot; `canEdit` decides whether the write controls render, not whether the page loads.
+ * Reads need a signed-in account and nothing more — the map editor is part of the public portal — while
+ * `canEdit` decides whether the write controls render, not whether the page loads.
  */
 export const load: PageServerLoad = async ({ locals, parent }) => {
 	const user = requireUser(locals);
-	const { canViewContent, canManageContent } = await parent();
-
-	if (!canViewContent) {
-		error(403, 'Reading the map graphs requires content read access.');
-	}
+	const { canManageContent } = await parent();
 
 	const result = await listMaps(toGameIdentity(user));
 	if (!result.data) {

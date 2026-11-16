@@ -16,6 +16,7 @@ import ContentEditor from './(foundry)/content/[type]/[slug]/edit/+page.svelte';
 import NewContentEntry from './(foundry)/content/[type]/new/+page.svelte';
 import FoundryHome from './(foundry)/foundry/+page.svelte';
 import NewLanguage from './(foundry)/languages/new/+page.svelte';
+import NewContentPicker from './(foundry)/new/+page.svelte';
 import MapDetail from './(foundry)/maps/[mapId]/+page.svelte';
 import Maps from './(foundry)/maps/+page.svelte';
 import Notifications from './(foundry)/notifications/+page.svelte';
@@ -895,7 +896,9 @@ describe('foundry home', () => {
 		);
 
 		expect(screen.getByRole('heading', { level: 1, name: 'Foundry' })).toBeTruthy();
-		expect(screen.getByText('3 submissions and 2 maps are waiting for a decision.')).toBeTruthy();
+		// Creating comes first: the portal's job is to get something written.
+		expect(screen.getByRole('link', { name: /Start something/ }).getAttribute('href')).toBe('/new');
+		expect(screen.getByText('2 awaiting a decision.')).toBeTruthy();
 		expect(screen.getByRole('link', { name: /Browse content/ }).getAttribute('href')).toBe(
 			'/content'
 		);
@@ -910,7 +913,7 @@ describe('foundry home', () => {
 		);
 	});
 
-	it('explains itself instead of offering a queue the account cannot use', () => {
+	it('hides the review card entirely instead of offering a queue the account cannot use', () => {
 		render(
 			FoundryHome,
 			page({
@@ -924,8 +927,8 @@ describe('foundry home', () => {
 			})
 		);
 
-		expect(screen.getByText(/can author content but not review it/)).toBeTruthy();
 		expect(screen.queryByRole('link', { name: /Open the queue/ })).toBeNull();
+		expect(screen.getByRole('link', { name: /Start something/ })).toBeTruthy();
 	});
 
 	it('reports the first failed call rather than claiming the section is empty', () => {
@@ -1190,35 +1193,108 @@ describe('foundry shell components', () => {
 		expect(heading.parentElement?.querySelector('p')).toBeNull();
 	});
 
-	it('renders the sidebar groups, the home entry and the queue badges', () => {
+	it('renders the sidebar groups, the home entry, the primary action and the badges', () => {
 		render(FoundrySidebar, {
 			nav: foundryNav({
-				canViewContent: true,
 				canManageContent: false,
 				canReview: true,
+				canAudit: true,
 				unreadNotifications: 2,
 				pendingReview: 5
 			})
 		} as never);
 
 		expect(screen.getByRole('link', { name: /Home/ }).getAttribute('href')).toBe('/foundry');
+		expect(screen.getByRole('link', { name: /New content/ }).getAttribute('href')).toBe('/new');
 		expect(screen.getByText('Curate')).toBeTruthy();
-		expect(screen.getByRole('link', { name: /Review/ }).textContent).toContain('5');
+		expect(screen.getByRole('link', { name: /Review queue/ }).textContent).toContain('5');
 		expect(screen.getByRole('link', { name: /Notifications/ }).textContent).toContain('2');
 	});
 
-	it('omits the Curate group for a reader and still marks the inbox', () => {
+	it('omits the capability groups a reader cannot use and still marks the inbox', () => {
 		render(FoundrySidebar, {
 			nav: foundryNav({
-				canViewContent: false,
 				canManageContent: false,
 				canReview: false,
+				canAudit: false,
 				unreadNotifications: 1
 			})
 		} as never);
 
 		expect(screen.queryByText('Curate')).toBeNull();
+		expect(screen.queryByText('Maintain')).toBeNull();
+		expect(screen.getByText('Explore')).toBeTruthy();
 		expect(screen.getByRole('link', { name: /Notifications/ }).textContent).toContain('1');
+	});
+
+	it('marks the primary action as the current page on the picker', () => {
+		setPage({ url: new URL('http://localhost/new') });
+		render(FoundrySidebar, {
+			nav: foundryNav({
+				canManageContent: true,
+				canReview: false,
+				canAudit: false,
+				unreadNotifications: 0
+			})
+		} as never);
+
+		expect(screen.getByRole('link', { name: /New content/ }).getAttribute('aria-current')).toBe(
+			'page'
+		);
+	});
+
+	it('marks the section a nested page belongs to', () => {
+		setPage({ url: new URL('http://localhost/content/item/ember-blade') });
+		render(FoundrySidebar, {
+			nav: foundryNav({
+				canManageContent: false,
+				canReview: false,
+				canAudit: false,
+				unreadNotifications: 0
+			})
+		} as never);
+
+		expect(screen.getByRole('link', { name: 'Content' }).getAttribute('aria-current')).toBe('page');
+		expect(screen.getByRole('link', { name: 'Home' }).getAttribute('aria-current')).toBeNull();
+	});
+});
+
+describe('new content picker', () => {
+	const types = [
+		{ contentType: 'item', displayLabel: 'Items', description: 'Things you can hold.' },
+		{ contentType: 'quest', displayLabel: 'Quests', description: '' }
+	];
+
+	it('offers an editor both a direct create and a review submission for every type', () => {
+		render(NewContentPicker, page({ canManageContent: true, types, error: null }));
+
+		expect(screen.getByRole('heading', { level: 1, name: 'New content' })).toBeTruthy();
+		expect(screen.getByText('Things you can hold.')).toBeTruthy();
+		expect(screen.getAllByRole('link', { name: /^Create/ })).toHaveLength(2);
+		expect(screen.getAllByRole('link', { name: /^Create/ })[0].getAttribute('href')).toBe(
+			'/content/item/new'
+		);
+		expect(screen.getAllByRole('link', { name: /Submit for review/ })).toHaveLength(2);
+		expect(screen.getAllByRole('link', { name: /Submit for review/ })[0].getAttribute('href')).toBe(
+			'/submissions/new?type=item'
+		);
+	});
+
+	it('offers a player the submission form only', () => {
+		render(NewContentPicker, page({ canManageContent: false, types, error: null }));
+
+		expect(screen.queryByRole('link', { name: /^Create/ })).toBeNull();
+		expect(screen.getAllByRole('link', { name: /Submit for review/ })).toHaveLength(2);
+	});
+
+	it('renders the empty state and an error', () => {
+		render(
+			NewContentPicker,
+			page({ canManageContent: false, types: [], error: 'catalog is down' })
+		);
+
+		expect(screen.getByRole('alert').textContent).toContain('catalog is down');
+		expect(screen.getByText(/No content types are registered/)).toBeTruthy();
 	});
 });
 
@@ -1336,6 +1412,8 @@ describe('submission queue', () => {
 			Submissions,
 			page({
 				total: 2,
+				scope: 'all',
+				canReview: true,
 				filters: { search: 'ember', status: 'Pending', contentType: 'Item' },
 				submissions,
 				page: 1,
@@ -1357,6 +1435,8 @@ describe('submission queue', () => {
 			Submissions,
 			page({
 				total: 0,
+				scope: 'all',
+				canReview: true,
 				error: 'Submission queue unavailable',
 				filters: {},
 				submissions: [],

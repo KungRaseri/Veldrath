@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { ArrowRight } from '@lucide/svelte';
-	import FoundryEmptyState from '#lib/components/foundry/FoundryEmptyState.svelte';
+	import { ArrowRight, Plus } from '@lucide/svelte';
 	import FoundryPageHeader from '#lib/components/foundry/FoundryPageHeader.svelte';
 	import FoundrySection from '#lib/components/foundry/FoundrySection.svelte';
 	import type { PageData } from './$types';
@@ -22,6 +21,16 @@
 {/if}
 
 <div class="grid gap-4 md:grid-cols-2">
+	<FoundrySection
+		title="New content"
+		description="Pick what you are making. Editors write straight into the catalog; everyone else submits it for a Curator to review."
+	>
+		<a class="btn preset-filled-primary-500 btn-sm" href="/new">
+			<Plus size={15} aria-hidden="true" />
+			Start something
+		</a>
+	</FoundrySection>
+
 	<FoundrySection
 		title="Content"
 		count={data.contentTypes}
@@ -45,24 +54,18 @@
 		</a>
 	</FoundrySection>
 
-	<FoundrySection
-		title="Review"
-		count={data.canReview ? data.pendingSubmissions + data.mapsInReview : undefined}
-	>
-		{#if data.canReview}
-			<p class="text-sm text-surface-600-400">
-				{data.pendingSubmissions} submissions and {data.mapsInReview} maps are waiting for a decision.
-			</p>
+	{#if data.canReview}
+		<FoundrySection
+			title="Review"
+			count={data.pendingSubmissions + data.mapsInReview}
+			description="Everything waiting for a decision, submissions and maps in one queue."
+		>
 			<a class="btn preset-tonal-surface btn-sm" href="/review">
 				Open the queue
 				<ArrowRight size={15} aria-hidden="true" />
 			</a>
-		{:else}
-			<FoundryEmptyState
-				message="This account can author content but not review it — a Curator makes the decision."
-			/>
-		{/if}
-	</FoundrySection>
+		</FoundrySection>
+	{/if}
 
 	<FoundrySection
 		title="Notifications"

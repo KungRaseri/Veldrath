@@ -270,6 +270,7 @@ the form/renderer vocabulary being settled.
 | H4 | `/content/[type]/new` for every registered schema, a New action on each browse page, and the reference-option loader shared by both write paths |
 | H5 | approvals promote the payload into the catalog (`ContentWriteService`, `PromotedSlug`, migration), and the reviewer sees a field-level diff before deciding |
 | H6 | `GET /api/content/audit` and `/world-health`, `/schemas`, both linked from the sidebar — **shipped**; cross-type Foundry search is not built (see below) |
+| I (access) | signed-in portal, `content.review` in place of the Curator role, map reads open to a session, scoped submission feeds, one New-content picker, My submissions — see §8 |
 
 H6 notes:
 
@@ -356,10 +357,12 @@ Notes worth keeping:
 2. **One payload shape for submissions and content.** A submission stores the content payload verbatim and
    is validated with the content rules at submit time, so H5's promotion needs no per-type mapper.
 3. **`LongText` is markdown**, rendered on the public site too.
-4. **Portal access.** Foundry Home and the content pages require `content.view`; `/maps` already does.
-   A signed-in player's entry point is **"Submit content" → `/submissions/new`**, and `/submissions` and
-   `/notifications` stay open to any session. The site header reflects the split rather than showing
-   everyone a link called "Foundry".
+4. **Portal access — SUPERSEDED on 2026-11-16, the same day it was written.** It said Foundry Home and the
+   content pages require `content.view`, that `/maps` already did, and that a player's entry point was
+   **"Submit content" → `/submissions/new`** with the site header reflecting the split. Shipping H0 made the
+   cost obvious: a normal account pressed "Foundry" or any sidebar item and got a 403, and the portal was
+   therefore unusable to the community it exists for. **See §8 for the model that replaced it** (signed-in
+   portal, `content.review` instead of the Curator role, one New-content entry instead of two doors).
 5. **`/languages` redirects** with a `308` to `/content/language`. `/languages/new` stays until H4 gives it
    a replacement — removing the only create form before the general one exists would be a regression.
 
@@ -440,6 +443,9 @@ a signed-in player sees "Submit content", never "Foundry".
 
 ## 7. Acceptance for the overhaul
 
+> The first and last portal-access expectations below were replaced by §8: the portal is public to signed-in
+> accounts, and the header shows "Foundry" rather than a separate contribution link.
+
 - One shell, one content width, breadcrumbs and page headers everywhere; no page builds its own frame.
 - Every route reachable from Home in one click, with unread counts where they matter.
 - No user-facing raw JSON: it exists only behind an "Advanced" disclosure.
@@ -447,7 +453,69 @@ a signed-in player sees "Submit content", never "Foundry".
 - Maps and submissions share one review queue, and approving a submission lands content in the catalog.
 - A 403 or 500 inside the portal renders inside the portal and names the missing capability.
 
-## 8. See also
+## 8. Access model (shipped 2026-11-16, supersedes §5.4)
+
+The portal is **public to any signed-in account**. Anonymous visitors are redirected to `/login` with the page
+they asked for (`?redirectTo=`), so a shared link still works after signing in. Only authoring and decisions
+are gated, and the gate is the **permission**, never the role.
+
+| Capability | Level | Route / endpoint |
+|---|---|---|
+| Portal home | signed in | `/foundry` |
+| Catalog index, one type, one entry | signed in | `/content`, `/content/[type]`, `/content/[type]/[slug]` |
+| Create / edit an entity | `content.manage` | `/content/[type]/new`, `.../[slug]/edit`, `POST/PUT/DELETE /api/content/{type}` |
+| Map list, graph, targets | signed in | `/maps`, `/maps/[mapId]`, `GET /api/content/maps*` |
+| Map save, validate, submit, delete | `content.manage` | `POST/PUT /api/content/maps…` |
+| Map approve, reject, deactivate | `content.review` | `POST /api/content/maps/{id}/review`, `/deactivate` |
+| New-content type picker | signed in | `/new` |
+| Submit content | signed in | `/submissions/new` |
+| Own submissions | signed in (own rows) | `/submissions` (default), `GET /api/foundry/submissions?mine=true` |
+| Everyone's submissions | `content.review` | `/submissions?scope=all` |
+| One submission | submitter, reviewer, or approved | `GET /api/foundry/submissions/{id}` |
+| Review queue + decisions | `content.review` | `/review`, `POST /api/foundry/submissions/{id}/review` |
+| Schemas | signed in | `/schemas`, `GET /api/content/schema*` |
+| World health + audit | `content.view` (nav-hidden otherwise) | `/world-health`, `GET /api/content/audit` |
+| Notifications / unread count | signed in (own rows) | `/notifications`, `/api/foundry/notifications*` |
+
+Three things this fixed beyond the 403s:
+
+- **The decision endpoints checked a role, not the permission.** `AddPolicy("Curator", …)` meant an Admin —
+  who holds every permission but not the `Curator` role — could not approve anything, and a per-user
+  `content.review` grant did nothing. Map review/deactivate and submission review now require
+  `Permissions.ReviewSubmissions`, and `canReview` in the web layout is `hasPermission(…, ReviewSubmissions)`.
+- **The submission feed had no authorization at all.** `GET /api/foundry/submissions` and `/{id}` were
+  anonymous, including full payloads of rejected work. They now require a token, and
+  `FoundrySubmissionScope` decides what the caller may read: `Everything` (reviewers), `Own`, or
+  `OwnPlusApproved` (everyone else, which is what makes an approved community entry readable).
+- **Map reads were staff-only for a reason that no longer holds.** They now require a session rather than
+  `content.view`. The spoiler cost is real — the graph carries hidden nodes and unlock keys — and the
+  mitigation, if it is ever needed, is to render hidden nodes distinctly rather than close the editor.
+
+Deliberately unchanged: [`ContentEndpoints`](../Veldrath.Server/Features/Content/ContentEndpoints.cs) stays
+`.AllowAnonymous()` because it is the documented public content API, and `/world-health` stays behind
+`content.view` because it prints internal consistency errors.
+
+Navigation v2. The "two doors" problem (a New action inside every type, plus a submission form whose URL you
+had to know) is solved by one primary action that opens a type picker, and by naming the feed after what it
+contains:
+
+- **Primary:** New content → `/new`.
+- **Explore:** Content, Maps, Schemas.
+- **Contribute:** My submissions (the caller's rows, with an Everyone toggle for reviewers on the page).
+- **Curate** (`content.review` only): Review queue, with a count.
+- **Maintain** (`content.view` only): World health.
+- **Account:** Notifications, with an unread count, kept out of the capability groups.
+
+Deferred, with reasons:
+
+- **Create mode is still `params.id === 'new'`** inside `/submissions/[id]`. The picker links
+  `/submissions/new`, which resolves correctly; splitting it into a real route is a refactor of the largest
+  form in the portal and was not worth coupling to an access change.
+- **The type picker has no search** and no per-type "recently used" ordering.
+
+---
+
+## 9. See also
 
 - [`foundry-map-editor.md`](foundry-map-editor.md) — the editor itself, and the deferred items it names.
 - [`content-pipeline.md`](content-pipeline.md) — the schema registry, write path and validators.

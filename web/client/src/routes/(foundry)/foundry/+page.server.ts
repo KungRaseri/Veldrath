@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { Permissions, requirePermission, toGameIdentity } from '#lib/server/access';
+import { toGameIdentity } from '#lib/server/access';
 import { listContentTypes } from '#lib/server/content-api';
 import { listSubmissions } from '#lib/server/foundry-api';
 import { listMaps } from '#lib/server/maps-api';
@@ -12,17 +12,12 @@ import { listMaps } from '#lib/server/maps-api';
  * URL. Every count here comes from the list call the destination page already makes, so the home cannot
  * report a number the page it links to disagrees with.
  *
- * The portal home requires `content.view`. A player's entry point is `/submissions/new` — the header renders
- * that instead, so nobody lands here by accident.
+ * The home is open to every signed-in account, because every count it shows is something any account may
+ * read: the catalog, the map graphs, and its own inbox. The review counts are loaded only for an account that
+ * can act on them.
  */
 export const load: PageServerLoad = async ({ locals, parent }) => {
-	const { access, canReview, unreadNotifications } = await parent();
-
-	requirePermission(
-		access,
-		Permissions.ViewContent,
-		'Foundry needs the content permission. Ask a Curator for access.'
-	);
+	const { canReview, unreadNotifications } = await parent();
 
 	const identity = toGameIdentity(locals.user!);
 

@@ -1,12 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import {
-	hasPermission,
-	Permissions,
-	requirePermission,
-	requireUser,
-	toGameIdentity
-} from '#lib/server/access';
+import { hasPermission, Permissions, requireUser, toGameIdentity } from '#lib/server/access';
 import {
 	deactivateContent,
 	getContentDetail,
@@ -17,14 +11,14 @@ import {
 import { referenceOptions } from '#lib/server/content-refs';
 import { buildPayload, allFields, type ContentIssue } from '#lib/foundry/content-editor';
 
-/** Loads the entity, its schema, and whether this account may write. */
+/**
+ * Loads the entity, its schema, and whether this account may write.
+ *
+ * Any signed-in account may open it — the page explains that editing needs the editor permission rather than
+ * answering 403 — and the write actions are refused by the API if the permission is missing.
+ */
 export const load: PageServerLoad = async ({ parent, params }) => {
 	const { access } = await parent();
-	requirePermission(
-		access,
-		Permissions.ViewContent,
-		'Foundry needs the content permission. Ask a Curator for access.'
-	);
 	const canEdit = hasPermission(access, Permissions.ManageContent);
 
 	const [detail, schema] = await Promise.all([

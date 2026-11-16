@@ -1,17 +1,13 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { hasPermission, Permissions, requirePermission } from '#lib/server/access';
+import { hasPermission, Permissions } from '#lib/server/access';
 import { getContentDetail, getContentTypeSchema } from '#lib/server/content-api';
 
+/** Renders one entry. Reading is public to signed-in accounts; `canEdit` decides on the edit link. */
 export const load: PageServerLoad = async ({ parent, params }) => {
 	// The capability snapshot is already loaded by the root layout — reading it again per page was a second
 	// round trip to the same endpoint for the same answer.
 	const { access } = await parent();
-	requirePermission(
-		access,
-		Permissions.ViewContent,
-		'Foundry needs the content permission. Ask a Curator for access.'
-	);
 
 	const [result, schema] = await Promise.all([
 		getContentDetail(params.type, params.slug),

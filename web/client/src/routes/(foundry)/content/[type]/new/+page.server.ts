@@ -1,12 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import {
-	hasPermission,
-	Permissions,
-	requirePermission,
-	requireUser,
-	toGameIdentity
-} from '#lib/server/access';
+import { hasPermission, Permissions, requireUser, toGameIdentity } from '#lib/server/access';
 import { createContent, getContentTypeSchema } from '#lib/server/content-api';
 import { referenceOptions } from '#lib/server/content-refs';
 import {
@@ -23,15 +17,12 @@ import {
  * here: an entity is created with its scalars and the author continues in the full editor, which is one link
  * away and remembers the entity. That keeps this route a plain form — no client-side state, no hidden
  * payload — while still being a create path for every registered type.
+ *
+ * The page loads for any signed-in account and tells a reader that authoring needs the editor permission;
+ * the write itself is refused by the API, which is where the decision belongs.
  */
 export const load: PageServerLoad = async ({ parent, params }) => {
 	const { access } = await parent();
-
-	requirePermission(
-		access,
-		Permissions.ViewContent,
-		'Foundry needs the content permission. Ask a Curator for access.'
-	);
 
 	const schema = await getContentTypeSchema(params.type);
 	if (!schema.data) {

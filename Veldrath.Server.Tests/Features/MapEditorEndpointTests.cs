@@ -60,13 +60,15 @@ public class MapEditorEndpointTests(WebAppFactory factory)
             Json);
 
     [Fact]
-    public async Task Reads_RequireContentReadAccess()
+    public async Task Reads_RequireAnAccountButNotAContentPermission()
     {
+        using var anonymous = factory.CreateClient();
+        (await anonymous.GetAsync("/api/content/maps")).StatusCode.Should()
+            .Be(HttpStatusCode.Unauthorized, "the graph carries hidden nodes and unlock keys");
+
+        // The portal is public to signed-in accounts: reading the world graph is not a staff capability.
         using var client = await AuthedClientAsync("MapPlainReader");
-
-        var response = await client.GetAsync("/api/content/maps");
-
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await client.GetAsync("/api/content/maps")).StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
@@ -81,15 +83,15 @@ public class MapEditorEndpointTests(WebAppFactory factory)
     }
 
     [Fact]
-    public async Task Targets_RequireReadAccessAndListTheSeededReferences()
+    public async Task Targets_ListTheSeededReferencesForAnySignedInAccount()
     {
         await EnsureAMapAsync();
 
-        using var plain = await AuthedClientAsync("MapPlainTargets");
-        (await plain.GetAsync("/api/content/maps/targets")).StatusCode.Should()
-            .Be(HttpStatusCode.Forbidden);
+        using var anonymous = factory.CreateClient();
+        (await anonymous.GetAsync("/api/content/maps/targets")).StatusCode.Should()
+            .Be(HttpStatusCode.Unauthorized);
 
-        using var client = await AuthedClientAsync("MapTargetReader", "Curator");
+        using var client = await AuthedClientAsync("MapPlainTargets");
         var targets = await client.GetFromJsonAsync<MapTargetsDto>("/api/content/maps/targets", Json);
 
         targets!.Maps.Should().NotBeEmpty();
@@ -197,7 +199,7 @@ public class MapEditorEndpointTests(WebAppFactory factory)
     }
 
     [Fact]
-    public async Task Review_RequiresTheCuratorRole()
+    public async Task Review_RequiresTheReviewPermission()
     {
         var mapId = await EnsureAMapAsync();
         using var editor = await AuthedClientAsync("MapEditorReviewer", "ContentEditor");
@@ -208,6 +210,40 @@ public class MapEditorEndpointTests(WebAppFactory factory)
             Json);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Review_AcceptsAnAdminWithoutTheCuratorRole()
+    {
+        var (authorToken, _) = await factory.CreateAccountTokenAsync("MapAdminGate_Author", "ContentEditor");
+        using var author = factory.CreateClient();
+        author.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authorToken);
+
+        var created = await author.PostAsJsonAsync(
+            "/api/content/maps",
+            new MapCreateRequest("Zone", "admin-gate-zone", "Admin Gate Zone"),
+            Json);
+        created.StatusCode.Should().Be(HttpStatusCode.Created);
+        var draft = await created.Content.ReadFromJsonAsync<MapGraphDto>(Json);
+
+        var submitted = await author.PostAsJsonAsync(
+            $"/api/content/maps/{Uri.EscapeDataString(draft!.Id)}/submit",
+            new { },
+            Json);
+        submitted.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Admin holds content.review but is not in the Curator role; the old role policy locked it out of a
+        // decision it is otherwise trusted to make.
+        var (adminToken, _) = await factory.CreateAccountTokenAsync("MapAdminGate_Admin", "Admin");
+        using var admin = factory.CreateClient();
+        admin.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var approved = await admin.PostAsJsonAsync(
+            $"/api/content/maps/{Uri.EscapeDataString(draft.Id)}/review",
+            new MapReviewRequest(true),
+            Json);
+
+        approved.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]

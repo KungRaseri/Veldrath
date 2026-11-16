@@ -15,9 +15,9 @@
 
 	const nav = $derived(
 		foundryNav({
-			canViewContent: data.canViewContent,
 			canManageContent: data.canManageContent,
 			canReview: data.canReview,
+			canAudit: data.canAudit,
 			unreadNotifications: data.unreadNotifications
 		})
 	);

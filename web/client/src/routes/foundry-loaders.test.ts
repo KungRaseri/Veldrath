@@ -233,12 +233,15 @@ describe('map editor', () => {
 		expect(result.maps).toEqual([{ id: 'zone:fenwick', name: 'Fenwick' }]);
 	});
 
-	it('refuses the list when the account cannot read content', async () => {
-		expect(
-			await thrownMessage(() =>
-				callLoad(mapsPage, signedIn({ parentData: { canViewContent: false } }))
-			)
-		).toBe('Reading the map graphs requires content read access.');
+	it('lists the graphs for an account with no permissions at all', async () => {
+		// Reading the portal is not a capability any more: any signed-in account may open the graph.
+		const result = (await callLoad(
+			mapsPage,
+			signedIn({ parentData: { canManageContent: false } })
+		)) as { canEdit: boolean; maps: unknown[] };
+
+		expect(result.canEdit).toBe(false);
+		expect(result.maps).toHaveLength(1);
 	});
 
 	it('reports the API failure rather than an empty list', async () => {
@@ -271,12 +274,13 @@ describe('map editor', () => {
 		).toBe('Map not found.');
 	});
 
-	it('refuses one graph when the account cannot read content', async () => {
-		expect(
-			await thrownMessage(() =>
-				callLoad(mapPage, signedIn({ params, parentData: { canViewContent: false } }))
-			)
-		).toBe('Reading a map graph requires content read access.');
+	it('opens one graph for an account that can only read', async () => {
+		const result = (await callLoad(
+			mapPage,
+			signedIn({ params, parentData: { canManageContent: false, canReview: false } })
+		)) as { canEdit: boolean };
+
+		expect(result.canEdit).toBe(false);
 	});
 
 	it('validates without saving and reports the issues the save would refuse on', async () => {
@@ -511,25 +515,26 @@ describe('portal home', () => {
 		expect(result.error).toBe('catalog is down');
 	});
 
-	it('refuses an account without content.view', async () => {
-		expect(
-			await thrownMessage(() =>
-				callLoad(
-					homePage,
-					signedIn({ parentData: { access: { ...readerAccess, permissions: [] } } })
-				)
-			)
-		).toBe('Foundry needs the content permission. Ask a Curator for access.');
+	it('counts the sections for an account with no permissions at all', async () => {
+		const result = (await callLoad(
+			homePage,
+			signedIn({
+				parentData: { access: { ...readerAccess, permissions: [] }, canReview: false }
+			})
+		)) as Record<string, unknown>;
+
+		expect(result).toMatchObject({ canReview: false, contentTypes: 1, pendingSubmissions: 0 });
+		expect(foundryApi.listSubmissions).not.toHaveBeenCalled();
 	});
 });
 
 describe('review queue', () => {
-	it('refuses an account without the Curator role', async () => {
+	it('refuses an account without the review permission', async () => {
 		expect(
 			await thrownMessage(() =>
 				callLoad(reviewPage, signedIn({ parentData: { access: editorAccess, canReview: false } }))
 			)
-		).toBe('The review queue needs the Curator role.');
+		).toBe('The review queue needs the content review permission.');
 		expect(foundryApi.listSubmissions).not.toHaveBeenCalled();
 	});
 
@@ -583,18 +588,6 @@ describe('content browser', () => {
 			types: [],
 			error: 'catalog is down'
 		});
-	});
-
-	it('refuses the catalog to an account without content.view', async () => {
-		expect(
-			await thrownMessage(() =>
-				callLoad(
-					contentIndex,
-					signedIn({ parentData: { access: { ...readerAccess, permissions: [] } } })
-				)
-			)
-		).toBe('Foundry needs the content permission. Ask a Curator for access.');
-		expect(contentApi.listContentTypes).not.toHaveBeenCalled();
 	});
 
 	it('browses one type with the search term and a clamped page', async () => {
@@ -981,15 +974,13 @@ describe('content create', () => {
 		expect(result.refOptions).toEqual({});
 	});
 
-	it('refuses to render for an account without content.view', async () => {
-		expect(
-			await thrownMessage(() =>
-				callLoad(
-					createEntryPage,
-					signedIn({ params, parentData: { access: { ...readerAccess, permissions: [] } } })
-				)
-			)
-		).toBe('Foundry needs the content permission. Ask a Curator for access.');
+	it('renders for a reader and marks the form read-only', async () => {
+		const result = (await callLoad(
+			createEntryPage,
+			signedIn({ params, parentData: { access: { ...readerAccess, permissions: [] } } })
+		)) as { canEdit: boolean };
+
+		expect(result.canEdit).toBe(false);
 	});
 
 	it('404s a type with no registered schema', async () => {
@@ -1157,17 +1148,6 @@ describe('catalog reference pages', () => {
 
 		expect(result.schemas.map((entry) => entry.contentType)).toEqual(['power']);
 	});
-
-	it('refuses the schema browser without content.view', async () => {
-		expect(
-			await thrownMessage(() =>
-				callLoad(
-					schemasPage,
-					signedIn({ parentData: { access: { ...readerAccess, permissions: [] } } })
-				)
-			)
-		).toBe('Foundry needs the content permission. Ask a Curator for access.');
-	});
 });
 
 describe('language fork', () => {
@@ -1293,7 +1273,7 @@ describe('notifications', () => {
 });
 
 describe('submission queue', () => {
-	it('passes the filters through with a clamped page', async () => {
+	it('passes the filters through with a clamped page, scoped to the caller', async () => {
 		await callLoad(
 			submissionsPage,
 			signedIn({ url: '/submissions?status=Pending&contentType=language&search=cal&page=0' })
@@ -1304,8 +1284,31 @@ describe('submission queue', () => {
 			contentType: 'language',
 			search: 'cal',
 			page: 1,
+			mine: true,
 			pageSize: 20
 		});
+	});
+
+	it('widens to everyone only for a reviewer who asks for it', async () => {
+		await callLoad(
+			submissionsPage,
+			signedIn({ url: '/submissions?scope=all', parentData: { canReview: true } })
+		);
+		expect(foundryApi.listSubmissions).toHaveBeenLastCalledWith(
+			expect.anything(),
+			expect.objectContaining({ mine: false })
+		);
+
+		// A player asking for everything still gets their own rows: the server narrows the feed anyway, and
+		// the page must not claim otherwise.
+		await callLoad(
+			submissionsPage,
+			signedIn({ url: '/submissions?scope=all', parentData: { canReview: false } })
+		);
+		expect(foundryApi.listSubmissions).toHaveBeenLastCalledWith(
+			expect.anything(),
+			expect.objectContaining({ mine: true })
+		);
 	});
 
 	it('returns the fallbacks on failure', async () => {

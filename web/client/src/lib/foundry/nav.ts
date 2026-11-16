@@ -2,30 +2,35 @@
  * The Foundry navigation, as data.
  *
  * The `(foundry)` route group is a layout grouping, not a URL segment: the pages live at `/content`,
- * `/maps`, `/submissions`, `/languages` and `/notifications`. Linking `/foundry/...` is a 404, which is
- * the bug this module exists to make impossible to repeat — the href is asserted by a unit test rather
- * than typed into five components.
+ * `/maps`, `/submissions`, `/new` and `/notifications`. Linking `/foundry/...` is a 404, which is the bug
+ * this module exists to make impossible to repeat — the href is asserted by a unit test rather than typed
+ * into five components.
  *
  * The one exception is the portal home: `/` belongs to the public site, so the portal's landing page is
  * `/foundry`, and `FOUNDRY_HOME_HREF` is the only place that string is written.
  */
 
-/** Which Foundry capabilities the signed-in account holds, derived once by the group layout. */
+/**
+ * Which Foundry capabilities the signed-in account holds, derived once by the group layout.
+ *
+ * The portal is readable by any signed-in account, so there is no "can read" flag: what is left is what an
+ * account may *do*, and the one maintainer surface that stays closed.
+ */
 export interface FoundryNavFlags {
-	/** `content.view` — reads the catalog and the map graphs, including hidden nodes and unlock keys. */
-	canViewContent: boolean;
-	/** `content.manage` — authoring. */
+	/** `content.manage` — authoring directly in the catalog. */
 	canManageContent: boolean;
-	/** The `Curator` role, which is what the decision endpoints actually require. */
+	/** `content.review` — decides submissions and map approvals, the same permission the API checks. */
 	canReview: boolean;
+	/** `content.view` — the content audit, the only maintainer surface left behind a permission. */
+	canAudit: boolean;
 	/** Unread notifications, as a badge count. */
 	unreadNotifications: number;
-	/** Maps and submissions awaiting a decision; omitted when the caller did not count them. */
+	/** Submissions awaiting a decision; omitted when the caller did not count them. */
 	pendingReview?: number;
 }
 
-/** The three jobs the portal is organised around. */
-export type FoundryNavGroupName = 'Author' | 'Curate' | 'Reference';
+/** The jobs the portal is organised around. */
+export type FoundryNavGroupName = 'Explore' | 'Contribute' | 'Curate' | 'Maintain';
 
 /** One entry in the Foundry navigation. */
 export interface FoundryNavItem {
@@ -45,70 +50,104 @@ export interface FoundryNavGroup {
 	items: FoundryNavItem[];
 }
 
-/** The whole navigation: the home entry stands alone above the groups. */
+/** The whole navigation: one primary action, the home entry, the groups, and the personal entries. */
 export interface FoundryNav {
 	/** The portal landing page. */
 	home: FoundryNavItem;
+	/** The single way into creating something. */
+	primary: FoundryNavItem;
 	/** Populated groups in display order; a group with nothing to show is omitted. */
 	groups: FoundryNavGroup[];
+	/** Personal entries, rendered at the bottom rather than inside a capability group. */
+	account: FoundryNavItem[];
 }
 
 /** The portal home. `/` is the public site, so this is the only place the route is spelled. */
 export const FOUNDRY_HOME_HREF = '/foundry';
 
+/** The type picker that every create action goes through. */
+export const FOUNDRY_NEW_HREF = '/new';
+
+/**
+ * Every top-level path the `(foundry)` group answers on.
+ *
+ * The site header needs this to mark its own "Foundry" entry while the visitor is anywhere in the portal —
+ * the group is a layout grouping, so those pages do not share a URL prefix.
+ */
+export const FOUNDRY_PATH_ROOTS: readonly string[] = [
+	FOUNDRY_HOME_HREF,
+	FOUNDRY_NEW_HREF,
+	'/content',
+	'/maps',
+	'/submissions',
+	'/review',
+	'/schemas',
+	'/world-health',
+	'/notifications'
+];
+
+/**
+ * Whether a path belongs to the portal.
+ *
+ * @param pathname Current `page.url.pathname`.
+ * @returns `true` for the portal home, the type picker, or any section inside the group.
+ */
+export function isFoundryPath(pathname: string): boolean {
+	return FOUNDRY_PATH_ROOTS.some((root) => isCurrentNavItem(root, pathname));
+}
+
 /**
  * Builds the navigation for an account.
  *
- * Content is always reachable. Maps need `content.view` because the graphs carry hidden nodes and unlock
- * keys. The review queue needs the Curator role, which is what the decision endpoints check. The
- * submission queue needs either authoring or review, and notifications are open to any signed-in account.
+ * Reading the catalog, the maps and the schema registry is open to every signed-in account, so those entries
+ * are unconditional. Creating collapses into one primary action: a picker decides between writing straight
+ * into the catalog (an editor) and submitting for review (everybody), which is what keeps the portal from
+ * having two doors that do almost the same thing under contradictory names.
  *
- * Empty groups are dropped rather than rendered with a heading and no links.
+ * The review queue needs `content.review`, and World health needs `content.view`; both are omitted rather
+ * than shown disabled, because a nav entry that answers 403 is worse than an entry that is not there.
  *
  * @param flags Capabilities derived by `(foundry)/+layout.server.ts`.
- * @returns The home entry and the ordered groups.
+ * @returns The home entry, the primary action, the ordered groups and the personal entries.
  */
 export function foundryNav(flags: FoundryNavFlags): FoundryNav {
-	const author: FoundryNavItem[] = [{ href: '/content', label: 'Content' }];
-
-	if (flags.canViewContent) {
-		author.push({ href: '/maps', label: 'Maps' });
-	}
-
-	const curate: FoundryNavItem[] = [];
-
-	if (flags.canReview) {
-		curate.push(withCount({ href: '/review', label: 'Review' }, flags.pendingReview));
-	}
-
-	if (flags.canManageContent || flags.canReview) {
-		curate.push({ href: '/submissions', label: 'Submissions' });
-	}
-
-	const reference: FoundryNavItem[] = [];
-
-	if (flags.canViewContent) {
-		// Both read the catalog: the registry of what can be authored, and the audit of what is inconsistent.
-		reference.push(
-			{ href: '/schemas', label: 'Schemas' },
-			{ href: '/world-health', label: 'World health' }
-		);
-	}
-
-	reference.push(
-		withCount({ href: '/notifications', label: 'Notifications' }, flags.unreadNotifications)
-	);
-
 	const groups: FoundryNavGroup[] = [
-		{ group: 'Author', items: author },
-		{ group: 'Reference', items: reference }
+		{
+			group: 'Explore',
+			items: [
+				{ href: '/content', label: 'Content' },
+				{ href: '/maps', label: 'Maps' },
+				{ href: '/schemas', label: 'Schemas' }
+			]
+		},
+		{
+			group: 'Contribute',
+			items: [{ href: '/submissions', label: 'My submissions' }]
+		}
 	];
 
-	if (curate.length > 0) {
-		groups.splice(1, 0, { group: 'Curate', items: curate });
+	if (flags.canReview) {
+		groups.push({
+			group: 'Curate',
+			items: [withCount({ href: '/review', label: 'Review queue' }, flags.pendingReview)]
+		});
 	}
 
-	return { home: { href: FOUNDRY_HOME_HREF, label: 'Home' }, groups };
+	if (flags.canAudit) {
+		groups.push({
+			group: 'Maintain',
+			items: [{ href: '/world-health', label: 'World health' }]
+		});
+	}
+
+	return {
+		home: { href: FOUNDRY_HOME_HREF, label: 'Home' },
+		primary: { href: FOUNDRY_NEW_HREF, label: 'New content' },
+		groups,
+		account: [
+			withCount({ href: '/notifications', label: 'Notifications' }, flags.unreadNotifications)
+		]
+	};
 }
 
 /**

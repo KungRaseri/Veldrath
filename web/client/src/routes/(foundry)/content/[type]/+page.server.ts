@@ -1,14 +1,10 @@
 import type { PageServerLoad } from './$types';
-import { hasPermission, Permissions, requirePermission } from '#lib/server/access';
+import { hasPermission, Permissions } from '#lib/server/access';
 import { browseContent } from '#lib/server/content-api';
 
+/** Browses one content type. Every signed-in account may read it; `canEdit` decides on the New action. */
 export const load: PageServerLoad = async ({ parent, params, url }) => {
 	const { access } = await parent();
-	requirePermission(
-		access,
-		Permissions.ViewContent,
-		'Foundry needs the content permission. Ask a Curator for access.'
-	);
 
 	const search = url.searchParams.get('search');
 	const page = Math.max(1, Number(url.searchParams.get('page') ?? 1));

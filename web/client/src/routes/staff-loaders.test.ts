@@ -150,15 +150,16 @@ describe('group layouts', () => {
 
 		const result = (await callLoad(foundryLayout, makeServerEvent({ user: fakeUser() }))) as {
 			user: unknown;
-			canViewContent: boolean;
+			canAudit: boolean;
 			canManageContent: boolean;
 			canReview: boolean;
 			unreadNotifications: number;
 		};
 
 		expect(result.user).toEqual(fakeUser());
-		// No RBAC snapshot in this event, so every capability is denied rather than assumed.
-		expect(result.canViewContent).toBe(false);
+		// No RBAC snapshot in this event, so every capability is denied rather than assumed. Reading is not a
+		// capability any more: the portal is open to every signed-in account.
+		expect(result.canAudit).toBe(false);
 		expect(result.canManageContent).toBe(false);
 		expect(result.canReview).toBe(false);
 		expect(result.unreadNotifications).toBe(4);
@@ -166,7 +167,7 @@ describe('group layouts', () => {
 		expect(result).not.toHaveProperty('access');
 	});
 
-	it('gates the review entry on the Curator role, because the decision endpoints do', async () => {
+	it('gates the review entry on the review permission, which is what the decisions require', async () => {
 		const curator: Access = {
 			accountId: 'acct-3',
 			username: 'sereth',
@@ -175,20 +176,20 @@ describe('group layouts', () => {
 		};
 
 		const asCurator = (await callLoad(foundryLayout, staffEvent(curator))) as {
-			canViewContent: boolean;
+			canAudit: boolean;
 			canReview: boolean;
 		};
 
 		expect(asCurator.canReview).toBe(true);
-		expect(asCurator.canViewContent).toBe(true);
+		expect(asCurator.canAudit).toBe(true);
 
-		// An Admin holds every permission but not the role, and the decision endpoints answer 403 to it —
-		// so the sidebar must not offer the queue either.
+		// An Admin holds every permission but not the Curator role. The decision endpoints check the
+		// permission, so the queue is offered rather than hidden behind a role the account never needed.
 		const asAdmin = (await callLoad(foundryLayout, staffEvent(adminAccess))) as {
 			canReview: boolean;
 		};
 
-		expect(asAdmin.canReview).toBe(false);
+		expect(asAdmin.canReview).toBe(true);
 	});
 
 	it('degrades a failed unread count to zero instead of failing the whole group', async () => {
