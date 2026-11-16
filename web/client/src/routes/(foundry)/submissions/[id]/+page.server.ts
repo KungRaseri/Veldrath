@@ -7,7 +7,7 @@ import {
 	reviewSubmission,
 	voteSubmission
 } from '#lib/server/foundry-api';
-import { getContentTypeSchema, listContentTypes } from '#lib/server/content-api';
+import { getContentDetail, getContentTypeSchema, listContentTypes } from '#lib/server/content-api';
 import { stringField } from '#lib/server/form';
 import {
 	allFields,
@@ -55,7 +55,17 @@ export const load: PageServerLoad = async ({ locals, params, parent, url }) => {
 	}
 
 	const result = await getSubmission(toGameIdentity(locals.user!), params.id);
+	const payload = parsePayload(result.data?.payload);
 	const schema = result.data ? await getContentTypeSchema(result.data.contentType) : null;
+
+	// What the catalog holds at the slug this submission claims, so a reviewer sees the change rather than
+	// just the proposal. Only fetched while the decision is still open: after a decision the diff is history.
+	const proposedSlug =
+		typeof payload.slug === 'string' && payload.slug.trim() !== '' ? payload.slug : null;
+	const existing =
+		result.data?.status === 'Pending' && proposedSlug
+			? await getContentDetail(result.data.contentType.toLowerCase(), proposedSlug)
+			: null;
 
 	return {
 		mode: 'view' as const,
@@ -63,8 +73,10 @@ export const load: PageServerLoad = async ({ locals, params, parent, url }) => {
 		error: result.error,
 		canReview,
 		schema: schema?.data ?? null,
-		payload: parsePayload(result.data?.payload),
-		rawPayload: result.data?.payload ?? ''
+		payload,
+		rawPayload: result.data?.payload ?? '',
+		proposedSlug,
+		existing: existing?.data?.payload ?? null
 	};
 };
 

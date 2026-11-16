@@ -268,7 +268,25 @@ the form/renderer vocabulary being settled.
 | H2 | `StringList`, `KeyValue`, `ObjectList` and `Reference` field kinds on the descriptor, `ListEditor`/`RowEditor`, reference pickers, the field-kind parity suite, and the three raw-JSON fields replaced |
 | H3 | `ContentRenderer` for the read paths, content detail and submission view render fields, submission create is schema-driven, and the raw JSON survives only behind a disclosure |
 | H4 | `/content/[type]/new` for every registered schema, a New action on each browse page, and the reference-option loader shared by both write paths |
-| H5–H6 | not started |
+| H5 | approvals promote the payload into the catalog (`ContentWriteService`, `PromotedSlug`, migration), and the reviewer sees a field-level diff before deciding |
+| H6 | not started |
+
+H5 notes:
+
+- **Approval is the gate, so promotion runs first.** `FoundryService.ReviewAsync` calls the write path before
+  it flips the status: a refused write leaves the submission `Pending` and returns the reason to the reviewer,
+  rather than leaving an "approved" row with no content behind it.
+- **`ContentWriteService` repeats the orchestration, not the rules.** It calls the same `ContentEntityTypes`,
+  `ContentReferenceCatalog` and validator registry as the editor's endpoint, so the two cannot disagree about
+  what is valid. It deliberately does not call the endpoint: a service that posts to its own HTTP surface is
+  worse than four shared lines.
+- **The diff is the decision.** `diffFields` compares the payload against whatever the catalog holds at the
+  claimed slug, fetching that entry only while the decision is open. Fields the schema does not describe are
+  not part of the comparison — a reviewer is deciding about content, not about JSON keys.
+- **Existing approve tests needed promotable payloads**, because `{}` cannot be written. That is the gate
+  working; a submission that cannot land should not be approvable.
+- **Not in H5:** queue filters and a separate decisions log. The submission's own review section already
+  carries the decision, the reviewer and the notes.
 
 H3 notes:
 

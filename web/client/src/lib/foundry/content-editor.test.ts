@@ -4,6 +4,7 @@ import {
 	anchorId,
 	buildPayload,
 	coerceFieldValue,
+	diffFields,
 	hasBlockingIssues,
 	initialValues,
 	isDirty,
@@ -476,6 +477,56 @@ describe('collections in the form lifecycle', () => {
 			'tags'
 		]);
 		expect(missingRequired(collectionSchema, { tags: ['a'] })).toEqual([]);
+	});
+
+	it('diffs a proposed payload against the stored one, field by field', () => {
+		const diffSchema = {
+			contentType: 'item',
+			displayLabel: 'Items',
+			description: '',
+			groups: [
+				{
+					label: 'Identity',
+					fields: [
+						requiredField('displayName', 'Text'),
+						requiredField('weight', 'Decimal'),
+						requiredField('tags', 'StringList'),
+						requiredField('isActive', 'Boolean')
+					]
+				}
+			]
+		} as never;
+
+		expect(
+			diffFields(
+				diffSchema,
+				{ displayName: 'Blade', weight: 1, tags: ['a'] },
+				{ displayName: 'Blade', weight: 1, tags: ['a'] }
+			)
+		).toEqual([]);
+
+		expect(
+			diffFields(
+				diffSchema,
+				{ displayName: 'Blade', weight: 1, tags: ['a'], isActive: true },
+				{ displayName: 'Ember blade', weight: 1, tags: ['a', 'b'], isActive: false }
+			)
+		).toEqual([
+			{
+				field: 'displayName',
+				label: 'displayName',
+				before: 'Blade',
+				after: 'Ember blade',
+				kind: 'changed'
+			},
+			{ field: 'tags', label: 'tags', before: '["a"]', after: '["a","b"]', kind: 'changed' },
+			{ field: 'isActive', label: 'isActive', before: 'Yes', after: 'No', kind: 'changed' }
+		]);
+
+		// No stored entity: every value the proposal carries is new.
+		expect(diffFields(diffSchema, null, { displayName: 'Blade' })).toEqual([
+			{ field: 'displayName', label: 'displayName', before: '—', after: 'Blade', kind: 'added' }
+		]);
 	});
 
 	it('treats a key/value field holding a scalar as empty rather than crashing', () => {

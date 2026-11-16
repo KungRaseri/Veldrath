@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import ContentDiff from '#lib/components/foundry/ContentDiff.svelte';
 	import ContentRenderer from '#lib/components/foundry/ContentRenderer.svelte';
 	import FoundryBreadcrumbs from '#lib/components/foundry/FoundryBreadcrumbs.svelte';
 	import FoundryPageHeader from '#lib/components/foundry/FoundryPageHeader.svelte';
-	import { allFields, toInputValue } from '#lib/foundry/content-editor';
+	import { allFields, diffFields, toInputValue } from '#lib/foundry/content-editor';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -29,6 +30,11 @@
 	/** The stored payload when it could not be parsed, so a reviewer still sees what was submitted. */
 	const unreadable = $derived(
 		data.mode === 'view' && Object.keys(data.payload ?? {}).length === 0 && Boolean(data.rawPayload)
+	);
+
+	/** What approving this submission would change, when the decision is still open. */
+	const changes = $derived(
+		data.mode === 'view' ? diffFields(data.schema, data.existing, data.payload) : []
 	);
 </script>
 
@@ -153,6 +159,18 @@
 			description={`${data.submission.contentType} · By ${data.submission.submitterName} · ${data.submission.status} · score ${data.submission.voteScore}`}
 		/>
 
+		{#if data.submission.promotedSlug}
+			<p class="card p-3 text-sm">
+				Published as
+				<a
+					class="link"
+					href={`/content/${data.submission.contentType.toLowerCase()}/${data.submission.promotedSlug}`}
+				>
+					{data.submission.contentType}/{data.submission.promotedSlug}
+				</a>
+			</p>
+		{/if}
+
 		<form class="flex gap-2" method="POST" action="?/vote">
 			<button class="btn preset-tonal-surface btn-sm" name="value" value="1" type="submit">
 				▲ Upvote
@@ -193,9 +211,17 @@
 			</section>
 		{/if}
 
+		{#if data.submission.status === 'Pending'}
+			<ContentDiff {changes} slug={data.proposedSlug ?? null} />
+		{/if}
+
 		{#if data.canReview && data.submission.status === 'Pending'}
 			<form class="space-y-3 card p-4" method="POST" action="?/review">
 				<h2 class="h3">Curator decision</h2>
+				<p class="text-sm text-surface-600-400">
+					Approving writes this payload to the catalog; rejecting keeps it out and sends the notes
+					back.
+				</p>
 				<label class="label">
 					<span>Notes</span>
 					<textarea class="textarea" name="notes" rows="3"></textarea>

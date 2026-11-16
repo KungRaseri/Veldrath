@@ -29,6 +29,8 @@ export interface FoundrySubmission extends FoundrySubmissionSummary {
 	reviewNotes: string | null;
 	updatedAt: string;
 	reviewedAt: string | null;
+	/** Slug the catalog was written under on approval, or `null` while it has not been promoted. */
+	promotedSlug: string | null;
 }
 
 /** An in-app notification about a review outcome: a submission decision, or a map decision. */

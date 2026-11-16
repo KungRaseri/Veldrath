@@ -896,6 +896,52 @@ describe('submission payload parsing', () => {
 		expect(result.rawPayload).toBe('not json');
 	});
 
+	it('loads what the catalog holds at the claimed slug while the decision is open', async () => {
+		foundryApi.getSubmission.mockResolvedValue(
+			ok({
+				id: 'sub-1',
+				contentType: 'Item',
+				status: 'Pending',
+				payload: '{"slug":"ember-blade"}'
+			})
+		);
+		contentApi.getContentDetail.mockResolvedValue(
+			ok({ summary: {}, payload: { slug: 'ember-blade', displayName: 'Old blade' } })
+		);
+
+		const result = (await callLoad(submissionPage, signedIn({ params: { id: 'sub-1' } }))) as {
+			proposedSlug: string;
+			existing: unknown;
+		};
+
+		expect(contentApi.getContentDetail).toHaveBeenCalledWith('item', 'ember-blade');
+		expect(result.proposedSlug).toBe('ember-blade');
+		expect(result.existing).toEqual({ slug: 'ember-blade', displayName: 'Old blade' });
+	});
+
+	it('skips the catalog lookup once decided, and when the payload names no slug', async () => {
+		foundryApi.getSubmission.mockResolvedValue(
+			ok({ id: 'sub-1', contentType: 'Item', status: 'Approved', payload: '{"slug":"x"}' })
+		);
+		const decided = (await callLoad(submissionPage, signedIn({ params: { id: 'sub-1' } }))) as {
+			existing: unknown;
+		};
+
+		expect(decided.existing).toBeNull();
+		expect(contentApi.getContentDetail).not.toHaveBeenCalled();
+
+		foundryApi.getSubmission.mockResolvedValue(
+			ok({ id: 'sub-2', contentType: 'Item', status: 'Pending', payload: '{}' })
+		);
+		const noSlug = (await callLoad(submissionPage, signedIn({ params: { id: 'sub-2' } }))) as {
+			proposedSlug: string | null;
+			existing: unknown;
+		};
+
+		expect(noSlug.proposedSlug).toBeNull();
+		expect(noSlug.existing).toBeNull();
+	});
+
 	it('falls back for a JSON array and for a missing payload', async () => {
 		foundryApi.getSubmission.mockResolvedValue(submissionWith('[1,2]'));
 		expect(

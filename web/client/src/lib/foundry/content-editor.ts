@@ -436,6 +436,63 @@ function isBlank(value: FieldValue | undefined): boolean {
 	return String(value).trim() === '';
 }
 
+/** How one field differs between a stored entity and a proposed payload. */
+export interface FieldChange {
+	/** The field's dot-path name. */
+	field: string;
+	/** The schema's label for it. */
+	label: string;
+	/** The stored value, rendered for reading. */
+	before: string;
+	/** The proposed value, rendered for reading. */
+	after: string;
+	/** `added` when there is no stored entity, `changed` when both exist and differ. */
+	kind: 'added' | 'changed';
+}
+
+/** Renders a payload value for a diff: collections compactly, empties as a dash. */
+function diffValue(value: unknown): string {
+	if (value === null || value === undefined || value === '') return '—';
+	if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+	if (typeof value === 'object') return JSON.stringify(value);
+	return String(value);
+}
+
+/**
+ * The fields where a proposed payload differs from what the catalog holds.
+ *
+ * A reviewer should see what approving actually changes, field by field, instead of comparing two JSON
+ * blobs. Fields the schema does not describe are ignored: they are not what a reviewer is deciding about.
+ *
+ * @param schema The content type's schema, or `null` when the type has none.
+ * @param previous The stored payload, or `null` when the catalog has no entry with this slug yet.
+ * @param next The proposed payload.
+ * @returns One entry per differing field, in schema order.
+ */
+export function diffFields(
+	schema: ContentTypeSchema | null,
+	previous: Record<string, unknown> | null,
+	next: Record<string, unknown>
+): FieldChange[] {
+	const changes: FieldChange[] = [];
+
+	for (const field of allFields(schema)) {
+		const before = diffValue(readPath(previous ?? {}, field.name));
+		const after = diffValue(readPath(next, field.name));
+		if (before === after) continue;
+
+		changes.push({
+			field: field.name,
+			label: field.label,
+			before,
+			after,
+			kind: previous === null ? 'added' : 'changed'
+		});
+	}
+
+	return changes;
+}
+
 /** Hrefs a preview link may use. Anything else stays literal text. */
 const SAFE_HREF = /^(https?:\/\/|\/|#)/i;
 

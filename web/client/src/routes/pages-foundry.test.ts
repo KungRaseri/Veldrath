@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/svelte';
+import { fireEvent, render, screen, within } from '@testing-library/svelte';
 import { createRawSnippet } from 'svelte';
 import { describe, expect, it } from 'vitest';
 import { setPage } from '#lib/testing/app-state';
@@ -1390,6 +1390,57 @@ describe('submission detail', () => {
 		expect(screen.getByRole('option', { name: '(empty)' })).toBeTruthy();
 		expect((screen.getByLabelText('Body') as HTMLTextAreaElement).tagName).toBe('TEXTAREA');
 		expect((screen.getByLabelText('Weight') as HTMLInputElement).getAttribute('max')).toBe('9');
+	});
+
+	it('shows what approval would write, side by side with the catalog', () => {
+		render(
+			SubmissionDetail,
+			page({
+				mode: 'view',
+				canReview: true,
+				submission,
+				schema: {
+					contentType: 'item',
+					displayLabel: 'Items',
+					description: '',
+					groups: [
+						{
+							label: 'Identity',
+							fields: [field({ name: 'displayName', label: 'Display name', fieldType: 'Text' })]
+						}
+					]
+				},
+				payload: { displayName: 'Ember blade v2' },
+				rawPayload: '{}',
+				proposedSlug: 'ember-blade',
+				existing: { displayName: 'Old blade' }
+			})
+		);
+
+		expect(screen.getByRole('heading', { level: 2, name: 'What approval writes' })).toBeTruthy();
+
+		// The same value also appears in the payload view, so scope the comparison to the diff table.
+		const diff = within(screen.getByRole('table'));
+		expect(diff.getByText('Old blade')).toBeTruthy();
+		expect(diff.getByText('Ember blade v2')).toBeTruthy();
+	});
+
+	it('links the published entity on an approved submission', () => {
+		render(
+			SubmissionDetail,
+			page({
+				mode: 'view',
+				canReview: false,
+				schema: null,
+				payload: {},
+				rawPayload: '{}',
+				submission: { ...submission, status: 'Approved', promotedSlug: 'ember-blade' }
+			})
+		);
+
+		expect(screen.getByRole('link', { name: 'Item/ember-blade' }).getAttribute('href')).toBe(
+			'/content/item/ember-blade'
+		);
 	});
 
 	it('shows a curator decision only for a pending submission the viewer can review', () => {

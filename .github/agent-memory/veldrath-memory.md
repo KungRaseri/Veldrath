@@ -3820,3 +3820,27 @@ every collection-bearing type uncreatable, because a stateless form has no list/
   block removed a plan bullet during H4; it was caught by reading the region afterwards, not by the tool.
 
 **Counts after H4:** 1,412 web unit tests, coverage 90.01% branches, typecheck/lint/build clean.
+
+### H5 — an approval lands content, and the reviewer sees the diff
+
+`ContentWriteService` (server) is the one write path onto the catalog, used by Foundry's review gate. It runs
+the same primitives as `ContentWriteEndpoints.CreateAsync` — `ContentEntityTypes.Deserialize`,
+`ContentReferenceCatalog`, `ValidatorRegistry` — so a payload the editor refuses is refused here for the same
+reason; only the orchestration is repeated. `ReviewAsync` promotes **before** flipping the status, so a failed
+write leaves the submission `Pending` with the reason. `FoundrySubmission.PromotedSlug` records where it
+landed (migration `AddSubmissionPromotion`), the DTO carries it, and the approval notification names it.
+
+- **A content payload needs `typeKey`.** "Item has no type key, so content may not load it" is the error a
+  payload gets without it; a minimal valid item is
+  `{"slug","displayName","typeKey":"material","itemType":"material","rarityWeight":50,"isActive":true}`.
+  `FoundryEndpointTests.PromotableItem` is the fixture.
+- **Approval is stricter on purpose**: every existing approve test had to gain a promotable payload, because
+  `{}` cannot be written. Do not "fix" that by skipping promotion when the payload is empty.
+- The web diff is `diffFields(schema, previous, next)` in `content-editor.ts` plus `ContentDiff.svelte`. The
+  submission loader fetches `getContentDetail(type.toLowerCase(), slug)` **only while the decision is open**;
+  after that the diff is history.
+- The same value appears in both the payload renderer and the diff table, so page tests must scope with
+  `within(screen.getByRole('table'))` instead of `screen.getByText`.
+
+**Counts after H5:** 6,062 .NET tests, 1,421 web unit tests, coverage 90.06% branches, lint/typecheck/build and
+dotnet format clean.
