@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Move } from '@lucide/svelte';
 	import {
+		CARD,
 		CELL,
 		layoutCanvas,
 		type CanvasCell,
@@ -30,9 +31,6 @@
 		onMove?: (nodeId: string, cell: CanvasCell) => void;
 		onTidy?: () => void;
 	} = $props();
-
-	/** Card size in pixels; the grid step is wider so cards never touch. */
-	const CARD = 80;
 
 	const layout = $derived(layoutCanvas(graph));
 	const placedById = $derived(new Map(layout.placed.map((placement) => [placement.id, placement])));

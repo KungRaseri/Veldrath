@@ -388,8 +388,25 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
         }
     }
 
-    private static MapGraphDto ToDto(MapEntity map) =>
-        new(
+    /// <summary>
+    /// Projects a stored map onto the DTO the editor and the game read.
+    /// </summary>
+    /// <remarks>
+    /// Authored coordinates are an ordering, not a distance: what matters is which cell a node occupies relative
+    /// to its neighbours, and nothing in the game reads the absolute numbers. Hand-seeded graphs use coordinates
+    /// like <c>x=34</c> beside <c>x=2</c>, which the editor rendered on a canvas thousands of pixels wide, so
+    /// every read re-ranks each axis onto consecutive cells. A node with no authored position keeps
+    /// <c>null</c> and stays in the unplaced lane. Saving the compacted graph persists the compact numbers, so
+    /// the rule is self-healing and needs no data migration.
+    /// </remarks>
+    /// <param name="map">The stored map.</param>
+    /// <returns>The graph as the API serves it.</returns>
+    private static MapGraphDto ToDto(MapEntity map)
+    {
+        var columns = DenseRanks(map.Nodes.Select(node => node.LayoutX));
+        var rows = DenseRanks(map.Nodes.Select(node => node.LayoutY));
+
+        return new(
             map.Id,
             map.MapType.ToString(),
             map.OwnerId,
@@ -407,8 +424,8 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
                     node.DisplayName,
                     node.Description,
                     node.IconKey,
-                    node.LayoutX,
-                    node.LayoutY,
+                    node.LayoutX is { } x ? columns[x] : null,
+                    node.LayoutY is { } y ? rows[y] : null,
                     node.IsEntryPoint,
                     node.IsExitPoint,
                     node.TargetMapId,
@@ -440,6 +457,19 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
             map.ApprovedAt,
             map.LastReviewNotes,
             map.LastReviewedAt);
+    }
+
+    /// <summary>Maps each distinct authored coordinate onto a consecutive index, smallest first.</summary>
+    /// <param name="coordinates">The authored coordinates of one axis, `null` for an unplaced node.</param>
+    /// <returns>The coordinate each value is displayed at.</returns>
+    private static Dictionary<int, int> DenseRanks(IEnumerable<int?> coordinates) =>
+        coordinates
+            .Where(coordinate => coordinate is not null)
+            .Select(coordinate => coordinate!.Value)
+            .Distinct()
+            .Order()
+            .Select((coordinate, index) => (coordinate, index))
+            .ToDictionary(entry => entry.coordinate, entry => entry.index);
 
     /// <summary>
     /// Creates an inactive draft with a single entry node.
