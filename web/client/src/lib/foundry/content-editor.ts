@@ -7,7 +7,46 @@
 
 /** Field types the server's `ContentFieldType` enum can carry. */
 export type ContentFieldKind =
-	'Text' | 'Slug' | 'LongText' | 'Integer' | 'Decimal' | 'Boolean' | 'EnumString';
+	| 'Text'
+	| 'Slug'
+	| 'LongText'
+	| 'Integer'
+	| 'Decimal'
+	| 'Boolean'
+	| 'EnumString'
+	| 'StringList'
+	| 'KeyValue'
+	| 'ObjectList'
+	| 'Reference';
+
+/**
+ * The same list as data, in the server enum's declaration order.
+ *
+ * A parity test reads `Veldrath.Contracts/Content/ContentSchema.cs` and compares the two, so adding a kind
+ * on one side and forgetting the other fails a test instead of silently rendering a text input.
+ */
+export const CONTENT_FIELD_KINDS: readonly ContentFieldKind[] = [
+	'Text',
+	'Slug',
+	'LongText',
+	'Integer',
+	'Decimal',
+	'Boolean',
+	'EnumString',
+	'StringList',
+	'KeyValue',
+	'ObjectList',
+	'Reference'
+];
+
+/** One row of an `ObjectList`: the property names the row descriptors declare. */
+export type ContentRow = Record<string, unknown>;
+
+/** Whatever a single field holds in form state. */
+export type FieldValue = string | boolean | string[] | ContentRow[];
+
+/** The whole form's state, keyed by field name. */
+export type FieldValues = Record<string, FieldValue>;
 
 /** One editable field from the content schema. */
 export interface ContentField {
@@ -20,6 +59,12 @@ export interface ContentField {
 	max: number | null;
 	enumValues: string[] | null;
 	hint: string | null;
+	/** The row shape of an `ObjectList`, relative to the row rather than a dot-path. */
+	items?: ContentField[] | null;
+	/** The content type a `Reference` points at, e.g. `item`. */
+	refType?: string | null;
+	/** Whether a `Reference` holds several slugs. */
+	multiple?: boolean;
 }
 
 /** A named group of fields (`Identity`, `Stats`, `Traits`, …). */
@@ -80,10 +125,20 @@ export function writePath(
 	return clone;
 }
 
-/** Converts a form input's string value to the shape the payload expects. */
-export function coerceFieldValue(field: ContentField, raw: string | boolean): unknown {
+/** Converts a form value to the shape the payload expects. */
+export function coerceFieldValue(field: ContentField, raw: FieldValue): unknown {
 	if (field.fieldType === 'Boolean') {
 		return typeof raw === 'boolean' ? raw : raw === 'true';
+	}
+
+	// A key/value field is edited as rows so they can be reordered, and stored as an object.
+	if (field.fieldType === 'KeyValue') {
+		return pairsToObject(Array.isArray(raw) ? (raw as ContentRow[]) : []);
+	}
+
+	// The other collections are already in payload shape: the editors build arrays, not strings.
+	if (field.fieldType === 'StringList' || field.fieldType === 'ObjectList') {
+		return raw;
 	}
 
 	const text = String(raw).trim();
@@ -98,10 +153,12 @@ export function coerceFieldValue(field: ContentField, raw: string | boolean): un
 	return text;
 }
 
-/** Renders a payload value as the string a form input binds to. */
+/** Renders a scalar payload value as the string a form input binds to. */
 export function toInputValue(value: unknown): string {
 	if (value === null || value === undefined) return '';
 	if (typeof value === 'boolean') return value ? 'true' : 'false';
+	// Collections are rendered by their own editors, never by a text input.
+	if (typeof value !== 'string' && typeof value !== 'number') return '';
 	return String(value);
 }
 
@@ -138,7 +195,7 @@ export function hasBlockingIssues(issues: ContentIssue[]): boolean {
 export function buildPayload(
 	original: Record<string, unknown>,
 	schema: ContentTypeSchema | null,
-	values: Record<string, string | boolean>
+	values: FieldValues
 ): Record<string, unknown> {
 	let payload = { ...original };
 
@@ -154,11 +211,28 @@ export function buildPayload(
 export function initialValues(
 	payload: Record<string, unknown>,
 	schema: ContentTypeSchema | null
-): Record<string, string | boolean> {
-	const values: Record<string, string | boolean> = {};
+): FieldValues {
+	const values: FieldValues = {};
 
 	for (const field of allFields(schema)) {
 		const current = readPath(payload, field.name);
+
+		if (field.fieldType === 'StringList') {
+			values[field.name] = readList(payload, field.name);
+			continue;
+		}
+
+		if (field.fieldType === 'ObjectList') {
+			values[field.name] = readRows(payload, field.name);
+			continue;
+		}
+
+		if (field.fieldType === 'KeyValue') {
+			// Seeded as rows so the two-column editor can reorder them; `pairsToObject` turns it back.
+			values[field.name] = readPairs(payload, field.name);
+			continue;
+		}
+
 		if (current === undefined || current === null) {
 			values[field.name] = field.default ?? '';
 			continue;
@@ -168,6 +242,98 @@ export function initialValues(
 	}
 
 	return values;
+}
+
+/** Reads a string list out of a payload, ignoring anything that is not an array of strings. */
+export function readList(payload: Record<string, unknown>, path: string): string[] {
+	const current = readPath(payload, path);
+	if (!Array.isArray(current)) return [];
+	return current.filter((entry): entry is string => typeof entry === 'string');
+}
+
+/** Reads an array of objects (an `ObjectList` value) out of a payload, copying each row. */
+export function readRows(payload: Record<string, unknown>, path: string): ContentRow[] {
+	const current = readPath(payload, path);
+	if (!Array.isArray(current)) return [];
+
+	return current
+		.filter(
+			(entry): entry is ContentRow =>
+				entry !== null && typeof entry === 'object' && !Array.isArray(entry)
+		)
+		.map((entry) => ({ ...entry }));
+}
+
+/**
+ * Reads a `KeyValue` object as ordered rows.
+ *
+ * A JSON object has no order the editor can preserve, so the field is edited as rows and converted back by
+ * `pairsToObject` — which is what lets an author reorder trait flags without retyping them.
+ */
+export function readPairs(payload: Record<string, unknown>, path: string): ContentRow[] {
+	const current = readPath(payload, path);
+	if (current === null || typeof current !== 'object' || Array.isArray(current)) return [];
+
+	return Object.entries(current as Record<string, unknown>).map(([key, value]) => ({
+		key,
+		value: value === null || value === undefined ? '' : String(value)
+	}));
+}
+
+/** Turns `KeyValue` rows back into the object the payload expects; a blank key is dropped. */
+export function pairsToObject(pairs: readonly ContentRow[]): Record<string, string> {
+	const result: Record<string, string> = {};
+
+	for (const pair of pairs) {
+		const key = String(pair.key ?? '').trim();
+		if (key === '') continue;
+		result[key] = String(pair.value ?? '');
+	}
+
+	return result;
+}
+
+/** A new row for an `ObjectList`, seeded from each row descriptor's default. */
+export function rowFromItems(items: readonly ContentField[] | null | undefined): ContentRow {
+	const row: ContentRow = {};
+
+	for (const item of items ?? []) {
+		row[item.name] = item.fieldType === 'Boolean' ? item.default === 'true' : (item.default ?? '');
+	}
+
+	return row;
+}
+
+/** Appends one entry to a list. */
+export function appendTo<T>(list: readonly T[], entry: T): T[] {
+	return [...list, entry];
+}
+
+/** Removes the entry at `index`, returning the list unchanged in order when the index is out of range. */
+export function removeAt<T>(list: readonly T[], index: number): T[] {
+	if (index < 0 || index >= list.length) return [...list];
+	return list.filter((_, position) => position !== index);
+}
+
+/** Moves the entry at `index` by `delta`, ignoring a move that would fall off either end. */
+export function moveAt<T>(list: readonly T[], index: number, delta: number): T[] {
+	const target = index + delta;
+	if (index < 0 || index >= list.length || target < 0 || target >= list.length) return [...list];
+
+	const next = [...list];
+	const [entry] = next.splice(index, 1);
+	next.splice(target, 0, entry);
+	return next;
+}
+
+/** Replaces one property of one row, returning a new list so the change is visible to `$state`. */
+export function setRowValue(
+	rows: readonly ContentRow[],
+	index: number,
+	name: string,
+	value: unknown
+): ContentRow[] {
+	return rows.map((row, position) => (position === index ? { ...row, [name]: value } : row));
 }
 
 /**
@@ -206,17 +372,26 @@ export function anchorId(label: string): string {
  * @param values The values it holds now.
  * @returns `true` when any field differs, including one the seed did not have.
  */
-export function isDirty(
-	seed: Record<string, string | boolean>,
-	values: Record<string, string | boolean>
-): boolean {
+export function isDirty(seed: FieldValues, values: FieldValues): boolean {
 	const keys = new Set([...Object.keys(seed), ...Object.keys(values)]);
 
 	for (const key of keys) {
-		if (seed[key] !== values[key]) return true;
+		if (!sameValue(seed[key], values[key])) return true;
 	}
 
 	return false;
+}
+
+/**
+ * Whether two field values are equal.
+ *
+ * Collections have to be compared by content: the editors rebuild arrays and objects on every edit, so a
+ * reference comparison would report a form dirty the moment it re-rendered.
+ */
+function sameValue(a: FieldValue | undefined, b: FieldValue | undefined): boolean {
+	if (a === b) return true;
+	if (a === undefined || b === undefined) return false;
+	return JSON.stringify(a) === JSON.stringify(b);
 }
 
 /**
@@ -229,17 +404,19 @@ export function isDirty(
  * @param values The form values.
  * @returns The field names, in schema order.
  */
-export function missingRequired(
-	schema: ContentTypeSchema | null,
-	values: Record<string, string | boolean>
-): string[] {
+export function missingRequired(schema: ContentTypeSchema | null, values: FieldValues): string[] {
 	return allFields(schema)
 		.filter((field) => field.required && field.fieldType !== 'Boolean')
-		.filter((field) => {
-			const value = values[field.name];
-			return value === undefined || String(value).trim() === '';
-		})
+		.filter((field) => isBlank(values[field.name]))
 		.map((field) => field.name);
+}
+
+/** A blank scalar is `''`; a blank collection is an empty list. */
+function isBlank(value: FieldValue | undefined): boolean {
+	if (value === undefined) return true;
+	if (Array.isArray(value)) return value.length === 0;
+	if (typeof value === 'boolean') return false;
+	return String(value).trim() === '';
 }
 
 /** Hrefs a preview link may use. Anything else stays literal text. */

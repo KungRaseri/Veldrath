@@ -265,15 +265,24 @@ the form/renderer vocabulary being settled.
 |---|---|
 | H0 | shell, home at `/foundry`, grouped nav, group error page, `/languages` 308 |
 | H1 | content editor: derived slug with a lock, markdown preview, required blocking, sticky Save/Validate/Discard bar with a dirty guard, section anchors, `FoundryPageHeader`/`FoundryBreadcrumbs` |
-| H2–H6 | not started |
+| H2 | `StringList`, `KeyValue`, `ObjectList` and `Reference` field kinds on the descriptor, `ListEditor`/`RowEditor`, reference pickers, the field-kind parity suite, and the three raw-JSON fields replaced |
+| H3–H6 | not started |
 
-Two H1 notes worth keeping:
+Notes worth keeping:
 
 - **The markdown preview renders a structure, not HTML.** `parseMarkdown` returns blocks and spans and the
   page renders them with Svelte markup, so author input is escaped by the compiler and there is no
   `{@html}` on a path an author controls — which the `svelte/no-at-html-tags` rule rejects anyway.
-- **"Enum select showing descriptions" moved to H2.** `enumValues` is a `string[]`; there is nothing to
-  show beside each option until the descriptor carries per-value metadata.
+- **"Enum select showing descriptions" is still open.** `enumValues` is a `string[]`; there is nothing to
+  show beside each option until the descriptor carries per-value metadata. H2 changed the array's *type*
+  questions but not this one.
+- **H2 retired the last three JSON textareas on the write path.** `quest.objectives`, `quest.rewards`,
+  `recipe.ingredients` and `loottable.entries` are `ObjectList`s described row by row, `recipe`'s
+  `outputItemSlug`/`craftingSkill` are `Reference`s with the first fifty slugs preloaded, and
+  `ContentFieldDescriptor` gained `Items`, `RefType` and `Multiple`. The stored JSON is unchanged, so no
+  migration was needed — only the way it is authored.
+- **`KeyValue` has no schema user yet.** It is declared and rendered (as two-column rows, converted back to
+  an object on save) so a trait map can adopt it without new client work.
 
 ---
 

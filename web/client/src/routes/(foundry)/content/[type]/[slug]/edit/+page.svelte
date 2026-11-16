@@ -3,6 +3,8 @@
 	import type { PageData, ActionData } from './$types';
 	import FoundryBreadcrumbs from '#lib/components/foundry/FoundryBreadcrumbs.svelte';
 	import FoundryPageHeader from '#lib/components/foundry/FoundryPageHeader.svelte';
+	import ListEditor from '#lib/components/foundry/ListEditor.svelte';
+	import RowEditor from '#lib/components/foundry/RowEditor.svelte';
 	import {
 		allFields,
 		anchorId,
@@ -14,7 +16,10 @@
 		parseMarkdown,
 		slugify,
 		toInputValue,
+		type ContentField,
 		type ContentIssue,
+		type ContentRow,
+		type FieldValues,
 		type MarkdownSpan
 	} from '#lib/foundry/content-editor';
 
@@ -26,7 +31,7 @@
 	 * a failed save or a validate round-trip.
 	 */
 	const seed = untrack(() => initialValues(data.payload, data.schema));
-	let values = $state<Record<string, string | boolean>>({ ...seed });
+	let values = $state<FieldValues>({ ...seed });
 
 	const issues: ContentIssue[] = $derived(
 		(form && 'issues' in form && form.issues ? form.issues : []) as ContentIssue[]
@@ -47,6 +52,44 @@
 	const displayNameField = $derived(
 		allFields(data.schema).find((field) => field.name === 'displayName') ?? null
 	);
+
+	/** The string entries of a `StringList` field, defaulting to an empty list. */
+	function listValue(name: string): string[] {
+		const value = values[name];
+		return Array.isArray(value) ? (value as string[]) : [];
+	}
+
+	/** The rows of an `ObjectList` or `KeyValue` field, defaulting to an empty list. */
+	function rowValue(name: string): ContentRow[] {
+		const value = values[name];
+		return Array.isArray(value) ? (value as ContentRow[]) : [];
+	}
+
+	/** `KeyValue` is edited as two-column rows even though the payload stores an object. */
+	const keyValueItems: ContentField[] = [
+		{
+			name: 'key',
+			label: 'Key',
+			fieldType: 'Text',
+			required: true,
+			default: null,
+			min: null,
+			max: null,
+			enumValues: null,
+			hint: null
+		},
+		{
+			name: 'value',
+			label: 'Value',
+			fieldType: 'Text',
+			required: false,
+			default: null,
+			min: null,
+			max: null,
+			enumValues: null,
+			hint: null
+		}
+	];
 
 	/**
 	 * Whether the slug follows the display name.
@@ -225,7 +268,28 @@
 								{/if}
 							</div>
 
-							{#if field.fieldType === 'Boolean'}
+							{#if field.fieldType === 'StringList'}
+								<ListEditor
+									name={field.name}
+									values={listValue(field.name)}
+									onchange={(next) => (values[field.name] = next)}
+								/>
+							{:else if field.fieldType === 'KeyValue'}
+								<RowEditor
+									name={field.name}
+									items={keyValueItems}
+									rows={rowValue(field.name)}
+									onchange={(next) => (values[field.name] = next)}
+								/>
+							{:else if field.fieldType === 'ObjectList'}
+								<RowEditor
+									name={field.name}
+									items={field.items ?? []}
+									rows={rowValue(field.name)}
+									onchange={(next) => (values[field.name] = next)}
+									refOptions={data.refOptions}
+								/>
+							{:else if field.fieldType === 'Boolean'}
 								<input
 									id={field.name}
 									name={field.name}
@@ -318,10 +382,20 @@
 										: 'text'}
 									min={field.min ?? undefined}
 									max={field.max ?? undefined}
+									list={field.fieldType === 'Reference' && field.refType
+										? `${field.name}-options`
+										: undefined}
 									aria-invalid={missing || undefined}
 									value={toInputValue(values[field.name])}
 									oninput={(event) => (values[field.name] = event.currentTarget.value)}
 								/>
+								{#if field.fieldType === 'Reference' && field.refType}
+									<datalist id={`${field.name}-options`}>
+										{#each data.refOptions?.[field.refType] ?? [] as option (option.value)}
+											<option value={option.value}>{option.label}</option>
+										{/each}
+									</datalist>
+								{/if}
 							{/if}
 
 							{#if field.hint}

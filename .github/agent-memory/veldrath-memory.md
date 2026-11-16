@@ -3749,3 +3749,33 @@ may reintroduce its own `mx-auto max-w-*`.
 
 **Counts after H1:** 1,350 web unit tests, coverage 90.04% branches against the 90 global gate,
 typecheck/lint/build clean.
+
+### H2 — collections are first-class in the schema
+
+`ContentFieldType` gained `StringList`, `KeyValue`, `ObjectList` and `Reference`; `ContentFieldDescriptor`
+gained `Items` (the row shape), `RefType` and `Multiple`. `quest.objectives`, `quest.rewards`,
+`recipe.ingredients` and `loottable.entries` are now `ObjectList`s, and recipe's `outputItemSlug` and
+`craftingSkill` are `Reference`s. **The stored JSON did not change** — only how it is authored.
+
+- **Form state is a union now**: `FieldValue = string | boolean | string[] | ContentRow[]` and
+  `FieldValues = Record<string, FieldValue>`. `isDirty` compares collections with `JSON.stringify`
+  because the editors rebuild arrays on every edit; a reference comparison would mark the form dirty on
+  first render.
+- `coerceFieldValue` passes collections through, except `KeyValue`, which is edited as rows and stored as
+  an object via `pairsToObject`.
+- `Recipe`/`LootTable`/`Quest` row fields stay `Text` for slugs *inside* rows: `writePath` addresses
+  dot-paths, not array indices, so a `Reference` inside a row only gets a datalist, not a dot-path value.
+  Top-level Reference fields are the ones the loader preloads options for.
+- The edit loader now calls `browseContent(refType, null, 1, 50)` per distinct reference type, including
+  ones nested in `Items`; a failure yields an empty option list rather than a broken form.
+- `src/lib/parity/field-kinds.test.ts` reads `ContentFieldType` out of `Veldrath.Contracts` and compares
+  it with `CONTENT_FIELD_KINDS`, so a kind added on one side fails a test.
+- **`write_to_file`/`apply_diff` decode HTML entities in file content.** That silently turned an
+  `&` escape into a no-op in H1 and it is why the markdown preview now returns spans, not HTML. Do not
+  write entity text into source through these tools.
+- The global branch gate sits right on 90, so every new branch counts: H2 needed explicit tests for an
+  enum option labelled `(empty)`, a Reference with no `refType`, a `KeyValue` holding a scalar, and a
+  schema with a slug but no display name before it went green again (90.02%).
+
+**Counts after H2:** 1,382 web unit tests, 6,060 .NET tests, coverage 90.02% branches, typecheck/lint/build
+clean.

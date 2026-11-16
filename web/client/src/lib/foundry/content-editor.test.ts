@@ -9,8 +9,17 @@ import {
 	isDirty,
 	issuesByField,
 	missingRequired,
+	appendTo,
+	moveAt,
+	pairsToObject,
 	parseMarkdown,
+	readList,
+	readPairs,
+	readRows,
 	readPath,
+	removeAt,
+	rowFromItems,
+	setRowValue,
 	slugify,
 	toInputValue,
 	writePath,
@@ -340,5 +349,137 @@ describe('parseMarkdown', () => {
 
 	it('returns no blocks for blank input', () => {
 		expect(parseMarkdown('   ')).toEqual([]);
+	});
+});
+
+describe('collection helpers', () => {
+	const payload = {
+		tags: ['fire', 'ice'],
+		stats: { fire: '10' },
+		objectives: [{ type: 'kill', quantity: 5 }, 'nonsense', null]
+	};
+
+	it('reads lists and rows defensively', () => {
+		expect(readList(payload, 'tags')).toEqual(['fire', 'ice']);
+		expect(readList(payload, 'missing')).toEqual([]);
+		expect(readList({ tags: 'nope' }, 'tags')).toEqual([]);
+		expect(readRows(payload, 'objectives')).toEqual([{ type: 'kill', quantity: 5 }]);
+		expect(readRows(payload, 'tags')).toEqual([]);
+	});
+
+	it('reads an object as ordered rows and writes it back', () => {
+		expect(readPairs(payload, 'stats')).toEqual([{ key: 'fire', value: '10' }]);
+		expect(readPairs({ stats: ['no'] }, 'stats')).toEqual([]);
+		expect(
+			pairsToObject([
+				{ key: 'fire', value: 10 },
+				{ key: ' ', value: 'dropped' }
+			])
+		).toEqual({ fire: '10' });
+	});
+
+	it('seeds a new row from the descriptors', () => {
+		expect(
+			rowFromItems([
+				requiredField('a', 'Text'),
+				{ ...requiredField('b', 'Boolean'), default: 'true' }
+			] as never)
+		).toEqual({ a: '', b: true });
+		expect(rowFromItems(null)).toEqual({});
+	});
+
+	it('keeps list edits immutable and ignores out-of-range moves', () => {
+		const list = ['a'];
+		expect(appendTo(list, 'b')).toEqual(['a', 'b']);
+		expect(list).toEqual(['a']);
+		expect(removeAt(list, 5)).toEqual(['a']);
+		expect(moveAt(list, 0, -1)).toEqual(['a']);
+		expect(moveAt(['a', 'b'], 1, -1)).toEqual(['b', 'a']);
+	});
+
+	it('replaces one property of one row only', () => {
+		const rows = [{ a: 1 }, { a: 2 }];
+		expect(setRowValue(rows, 1, 'a', 3)).toEqual([{ a: 1 }, { a: 3 }]);
+		expect(rows[1]).toEqual({ a: 2 });
+	});
+});
+
+describe('collections in the form lifecycle', () => {
+	const collectionSchema = {
+		contentType: 'quest',
+		displayLabel: 'Quests',
+		description: '',
+		groups: [
+			{
+				label: 'Identity',
+				fields: [
+					{ ...requiredField('tags', 'StringList') },
+					{
+						name: 'objectives',
+						label: 'objectives',
+						fieldType: 'ObjectList',
+						required: false,
+						default: null,
+						min: null,
+						max: null,
+						enumValues: null,
+						hint: null,
+						items: [requiredField('type', 'Text')]
+					},
+					{
+						...requiredField('stats', 'KeyValue'),
+						required: false
+					}
+				]
+			}
+		]
+	} as never;
+
+	const collectionPayload = {
+		tags: ['a'],
+		objectives: [{ type: 'kill' }],
+		stats: { fire: '10' }
+	};
+
+	it('seeds collections as editable values', () => {
+		expect(initialValues(collectionPayload, collectionSchema)).toEqual({
+			tags: ['a'],
+			objectives: [{ type: 'kill' }],
+			stats: [{ key: 'fire', value: '10' }]
+		});
+	});
+
+	it('writes them back in payload shape', () => {
+		expect(
+			buildPayload({}, collectionSchema, {
+				tags: ['a', 'b'],
+				objectives: [{ type: 'visit' }],
+				stats: [
+					{ key: 'fire', value: '10' },
+					{ key: ' ', value: 'dropped' }
+				]
+			})
+		).toEqual({ tags: ['a', 'b'], objectives: [{ type: 'visit' }], stats: { fire: '10' } });
+	});
+
+	it('compares collections by content when deciding the form is dirty', () => {
+		expect(isDirty({ tags: ['a'] }, { tags: ['a'] })).toBe(false);
+		expect(isDirty({ tags: ['a'] }, { tags: [] })).toBe(true);
+	});
+
+	it('counts an empty required collection as missing', () => {
+		expect(missingRequired(collectionSchema, { tags: [], objectives: [], stats: [] })).toEqual([
+			'tags'
+		]);
+		expect(missingRequired(collectionSchema, { tags: ['a'] })).toEqual([]);
+	});
+
+	it('treats a key/value field holding a scalar as empty rather than crashing', () => {
+		const keyValue = {
+			...requiredField('stats', 'KeyValue'),
+			required: false
+		} as never;
+
+		expect(coerceFieldValue(keyValue, 'not rows')).toEqual({});
 	});
 });

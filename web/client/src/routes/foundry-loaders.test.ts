@@ -754,6 +754,67 @@ describe('content editor', () => {
 	});
 });
 
+describe('content editor references', () => {
+	const params = { type: 'recipe', slug: 'iron-sword' };
+
+	const referenceSchema = {
+		contentType: 'recipe',
+		displayLabel: 'Recipes',
+		description: '',
+		groups: [
+			{
+				label: 'Recipe',
+				fields: [
+					{ ...field('outputItemSlug', 'Reference'), refType: 'item' },
+					{
+						...field('ingredients', 'ObjectList'),
+						items: [{ ...field('itemSlug', 'Reference'), refType: 'material' }]
+					}
+				]
+			}
+		]
+	};
+
+	it('loads the slug list behind every Reference field, including one inside a row', async () => {
+		contentApi.getContentTypeSchema.mockResolvedValue(ok(referenceSchema));
+		contentApi.browseContent.mockResolvedValue(
+			ok({ items: [{ slug: 'iron-sword', displayName: 'Iron Sword' }], totalCount: 1 })
+		);
+
+		const result = (await callLoad(editPage, signedIn({ params }))) as {
+			refOptions: Record<string, { value: string; label: string }[]>;
+		};
+
+		expect(contentApi.browseContent).toHaveBeenCalledWith('item', null, 1, 50);
+		expect(contentApi.browseContent).toHaveBeenCalledWith('material', null, 1, 50);
+		expect(result.refOptions.item).toEqual([{ value: 'iron-sword', label: 'Iron Sword' }]);
+	});
+
+	it('falls back to the slug when a referenced entry has no display name', async () => {
+		contentApi.getContentTypeSchema.mockResolvedValue(ok(referenceSchema));
+		contentApi.browseContent.mockResolvedValue(
+			ok({ items: [{ slug: 'iron-ingot', displayName: null }], totalCount: 1 })
+		);
+
+		const result = (await callLoad(editPage, signedIn({ params }))) as {
+			refOptions: Record<string, { value: string; label: string }[]>;
+		};
+
+		expect(result.refOptions.material[0]).toEqual({ value: 'iron-ingot', label: 'iron-ingot' });
+	});
+
+	it('offers no options when the browse call fails, rather than failing the form', async () => {
+		contentApi.getContentTypeSchema.mockResolvedValue(ok(referenceSchema));
+		contentApi.browseContent.mockResolvedValue(failed('browse is down'));
+
+		const result = (await callLoad(editPage, signedIn({ params }))) as {
+			refOptions: Record<string, unknown[]>;
+		};
+
+		expect(result.refOptions.item).toEqual([]);
+	});
+});
+
 describe('language fork', () => {
 	it('redirects the old language browser to the content type, keeping the query', async () => {
 		expect(

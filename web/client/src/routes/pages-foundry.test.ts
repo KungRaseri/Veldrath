@@ -604,6 +604,70 @@ describe('content editor form behaviour', () => {
 		expect(screen.getByRole('link', { name: 'link' }).getAttribute('href')).toBe('/lore');
 	});
 
+	it('leaves the slug alone when the schema names no display name field', async () => {
+		render(
+			ContentEditor,
+			page({
+				...editorData,
+				schema: {
+					...schema,
+					groups: [
+						{
+							label: 'Identity',
+							fields: [field({ name: 'slug', label: 'Slug', fieldType: 'Slug', required: true })]
+						}
+					]
+				},
+				payload: { slug: 'ember-blade' }
+			})
+		);
+
+		await fireEvent.click(screen.getByLabelText('Derive from display name'));
+
+		expect((screen.getByLabelText(/^Slug/) as HTMLInputElement).value).toBe('ember-blade');
+	});
+
+	it('renders the collection editors a schema declares', () => {
+		render(
+			ContentEditor,
+			page({
+				...editorData,
+				schema: {
+					...schema,
+					groups: [
+						{
+							label: 'Collections',
+							fields: [
+								field({ name: 'tags', label: 'Tags', fieldType: 'StringList' }),
+								field({ name: 'stats', label: 'Stats', fieldType: 'KeyValue' }),
+								{
+									...field({ name: 'objectives', label: 'Objectives', fieldType: 'ObjectList' }),
+									items: [field({ name: 'type', label: 'Type', fieldType: 'Text' })]
+								},
+								{
+									...field({ name: 'skill', label: 'Skill', fieldType: 'Reference' }),
+									refType: 'skill'
+								}
+							]
+						}
+					]
+				},
+				payload: {
+					tags: ['fire'],
+					stats: { fire: '10' },
+					objectives: [{ type: 'kill' }],
+					skill: 'smithing'
+				},
+				refOptions: { skill: [{ value: 'smithing', label: 'Smithing' }] }
+			})
+		);
+
+		expect((screen.getByLabelText('tags 1') as HTMLInputElement).value).toBe('fire');
+		expect((screen.getByLabelText(/^Key/) as HTMLInputElement).value).toBe('fire');
+		expect((screen.getByLabelText(/^Type/) as HTMLInputElement).value).toBe('kill');
+		expect(screen.getByText('Smithing')).toBeTruthy();
+	});
+
 	it('marks a blank required field and blocks the save before it reaches the server', async () => {
 		render(ContentEditor, page(editorData));
 
@@ -835,6 +899,20 @@ describe('foundry shell components', () => {
 		expect(screen.getByText('Curate')).toBeTruthy();
 		expect(screen.getByRole('link', { name: /Review/ }).textContent).toContain('5');
 		expect(screen.getByRole('link', { name: /Notifications/ }).textContent).toContain('2');
+	});
+
+	it('omits the Curate group for a reader and still marks the inbox', () => {
+		render(FoundrySidebar, {
+			nav: foundryNav({
+				canViewContent: false,
+				canManageContent: false,
+				canReview: false,
+				unreadNotifications: 1
+			})
+		} as never);
+
+		expect(screen.queryByText('Curate')).toBeNull();
+		expect(screen.getByRole('link', { name: /Notifications/ }).textContent).toContain('1');
 	});
 });
 
