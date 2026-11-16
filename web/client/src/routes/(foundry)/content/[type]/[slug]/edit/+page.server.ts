@@ -8,54 +8,14 @@ import {
 	toGameIdentity
 } from '#lib/server/access';
 import {
-	browseContent,
 	deactivateContent,
 	getContentDetail,
 	getContentTypeSchema,
 	updateContent,
 	validateContentPayload
 } from '#lib/server/content-api';
-import {
-	buildPayload,
-	allFields,
-	type ContentField,
-	type ContentIssue
-} from '#lib/foundry/content-editor';
-
-/** The content types a `Reference` field names, including ones inside an `ObjectList` row. */
-function referenceTypes(fields: readonly ContentField[]): string[] {
-	const found = new Set<string>();
-
-	for (const field of fields) {
-		if (field.fieldType === 'Reference' && field.refType) found.add(field.refType);
-		for (const type of referenceTypes(field.items ?? [])) found.add(type);
-	}
-
-	return [...found];
-}
-
-/**
- * Loads the slug list behind every `Reference` field.
- *
- * A picker that names content has to show what exists, or it is a text box with extra steps. Fifty is the
- * page size the browse endpoint caps at for a comfortable type-ahead; the field stays free text so an author
- * can still point at a slug that has not been created yet.
- */
-async function referenceOptions(fields: readonly ContentField[]) {
-	const entries = await Promise.all(
-		referenceTypes(fields).map(async (refType) => {
-			const result = await browseContent(refType, null, 1, 50);
-			const options = (result.data?.items ?? []).map((entry) => ({
-				value: entry.slug,
-				label: entry.displayName ?? entry.slug
-			}));
-
-			return [refType, options] as const;
-		})
-	);
-
-	return Object.fromEntries(entries) as Record<string, { value: string; label: string }[]>;
-}
+import { referenceOptions } from '#lib/server/content-refs';
+import { buildPayload, allFields, type ContentIssue } from '#lib/foundry/content-editor';
 
 /** Loads the entity, its schema, and whether this account may write. */
 export const load: PageServerLoad = async ({ parent, params }) => {

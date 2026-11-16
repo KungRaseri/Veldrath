@@ -13,6 +13,7 @@ import ContentIndex from './(foundry)/content/+page.svelte';
 import ContentBrowse from './(foundry)/content/[type]/+page.svelte';
 import ContentDetail from './(foundry)/content/[type]/[slug]/+page.svelte';
 import ContentEditor from './(foundry)/content/[type]/[slug]/edit/+page.svelte';
+import NewContentEntry from './(foundry)/content/[type]/new/+page.svelte';
 import FoundryHome from './(foundry)/foundry/+page.svelte';
 import NewLanguage from './(foundry)/languages/new/+page.svelte';
 import MapDetail from './(foundry)/maps/[mapId]/+page.svelte';
@@ -395,6 +396,184 @@ describe('content browse', () => {
 
 		expect(screen.getByText('Content API unavailable')).toBeTruthy();
 		expect(screen.getByText('No entries found.')).toBeTruthy();
+	});
+});
+
+describe('content create page', () => {
+	const createSchema = {
+		contentType: 'quest',
+		displayLabel: 'Quests',
+		description: 'A quest with objectives.',
+		groups: [
+			{
+				label: 'Identity',
+				fields: [
+					field({
+						name: 'displayName',
+						label: 'Display name',
+						fieldType: 'Text',
+						required: true
+					}),
+					field({ name: 'minLevel', label: 'Min level', fieldType: 'Integer', min: 1, max: 100 })
+				]
+			},
+			{
+				label: 'Objectives',
+				fields: [field({ name: 'objectives', label: 'Objectives', fieldType: 'ObjectList' })]
+			}
+		]
+	};
+
+	it('renders the schema fields and names the collections it cannot author', () => {
+		render(
+			NewContentEntry,
+			page({ contentType: 'quest', canEdit: true, refOptions: {}, schema: createSchema })
+		);
+
+		expect(screen.getByRole('heading', { level: 1, name: 'New Quests' })).toBeTruthy();
+		expect(screen.getByLabelText(/^Display name/)).toBeTruthy();
+		expect((screen.getByLabelText('Min level') as HTMLInputElement).getAttribute('max')).toBe(
+			'100'
+		);
+		expect(screen.getByText(/Objectives is filled in the editor/)).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Create draft' })).toBeTruthy();
+	});
+
+	it('renders every control kind, a Reference datalist, and a plural collection note', () => {
+		render(
+			NewContentEntry,
+			page({
+				contentType: 'recipe',
+				canEdit: true,
+				refOptions: { item: [{ value: 'iron-sword', label: 'Iron Sword' }] },
+				schema: {
+					contentType: 'recipe',
+					displayLabel: 'Recipes',
+					description: '',
+					groups: [
+						{
+							label: 'All',
+							fields: [
+								field({ name: 'isActive', label: 'Active', fieldType: 'Boolean' }),
+								field({
+									name: 'rarity',
+									label: 'Rarity',
+									fieldType: 'EnumString',
+									enumValues: ['', 'Rare']
+								}),
+								field({
+									name: 'notes',
+									label: 'Notes',
+									fieldType: 'LongText',
+									hint: 'Markdown is fine.'
+								}),
+								{
+									...field({
+										name: 'outputItemSlug',
+										label: 'Output item',
+										fieldType: 'Reference'
+									}),
+									refType: 'item'
+								},
+								field({ name: 'tags', label: 'Tags', fieldType: 'StringList' }),
+								field({ name: 'stats', label: 'Stats', fieldType: 'KeyValue' })
+							]
+						}
+					]
+				}
+			})
+		);
+
+		expect((screen.getByLabelText('Active') as HTMLInputElement).type).toBe('checkbox');
+		expect(screen.getByRole('option', { name: '(empty)' })).toBeTruthy();
+		expect((screen.getByLabelText('Notes') as HTMLTextAreaElement).tagName).toBe('TEXTAREA');
+		expect(screen.getByText('Markdown is fine.')).toBeTruthy();
+		expect(screen.getByText('Iron Sword')).toBeTruthy();
+		expect(screen.getByText(/Tags, Stats are filled in the editor/)).toBeTruthy();
+	});
+
+	it('falls back to a plain input for an empty enum and an unloaded reference list', () => {
+		render(
+			NewContentEntry,
+			page({
+				contentType: 'item',
+				canEdit: true,
+				refOptions: {},
+				schema: {
+					contentType: 'item',
+					displayLabel: 'Items',
+					description: '',
+					groups: [
+						{
+							label: 'All',
+							fields: [
+								field({
+									name: 'rarity',
+									label: 'Rarity',
+									fieldType: 'EnumString',
+									enumValues: [],
+									required: true
+								}),
+								{
+									...field({
+										name: 'questSlug',
+										label: 'Quest',
+										fieldType: 'Reference'
+									}),
+									refType: 'quest'
+								}
+							]
+						}
+					]
+				}
+			})
+		);
+
+		// An empty enum is a text field, not an empty select, and a reference with nothing loaded has no list.
+		expect((screen.getByLabelText(/^Rarity/) as HTMLInputElement).type).toBe('text');
+		expect(screen.queryAllByRole('option')).toEqual([]);
+	});
+
+	it('explains that creating needs the editor permission', () => {
+		render(
+			NewContentEntry,
+			page({ contentType: 'quest', canEdit: false, refOptions: {}, schema: createSchema })
+		);
+
+		expect(screen.getByText(/requires the content-editor permission/)).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Create draft' })).toBeNull();
+	});
+
+	it('shows a rejected create', () => {
+		render(
+			NewContentEntry,
+			page(
+				{ contentType: 'quest', canEdit: true, refOptions: {}, schema: createSchema },
+				{ message: 'Slug already exists.' }
+			)
+		);
+
+		expect(screen.getByRole('alert').textContent).toContain('Slug already exists.');
+	});
+
+	it('offers an author a New action on the browse page', () => {
+		render(
+			ContentBrowse,
+			page({
+				contentType: 'item',
+				canEdit: true,
+				total: 0,
+				search: '',
+				entries: [],
+				page: 1,
+				pageSize: 24,
+				error: null
+			})
+		);
+
+		expect(screen.getByRole('link', { name: 'New entry' }).getAttribute('href')).toBe(
+			'/content/item/new'
+		);
 	});
 });
 

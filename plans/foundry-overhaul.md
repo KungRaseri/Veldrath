@@ -267,7 +267,8 @@ the form/renderer vocabulary being settled.
 | H1 | content editor: derived slug with a lock, markdown preview, required blocking, sticky Save/Validate/Discard bar with a dirty guard, section anchors, `FoundryPageHeader`/`FoundryBreadcrumbs` |
 | H2 | `StringList`, `KeyValue`, `ObjectList` and `Reference` field kinds on the descriptor, `ListEditor`/`RowEditor`, reference pickers, the field-kind parity suite, and the three raw-JSON fields replaced |
 | H3 | `ContentRenderer` for the read paths, content detail and submission view render fields, submission create is schema-driven, and the raw JSON survives only behind a disclosure |
-| H4–H6 | not started |
+| H4 | `/content/[type]/new` for every registered schema, a New action on each browse page, and the reference-option loader shared by both write paths |
+| H5–H6 | not started |
 
 H3 notes:
 
@@ -277,10 +278,22 @@ H3 notes:
 - **The create form's type picker is a `GET`.** The server renders the chosen type's schema, so changing the
   type reloads the page with different fields instead of bundling every schema into one document.
 - **Create cannot author collections yet.** A type with a `StringList`/`KeyValue`/`ObjectList` field says so
-  by name and the author uses the content editor; H4 renders the same `ListEditor`/`RowEditor` pair in the
-  create form, which is what makes "create for every type" true.
+  by name and the author uses the content editor. H4 gives every type a dedicated create route; authoring a
+  collection inside the *submission* form is deferred, because the content editor already owns that and the
+  promotion work in H5 will show whether two collection authors are needed at all.
 - **A submission and a saved entity are now the same shape.** Both build their payload with `buildPayload`
   from the same schema, which is what H5's promotion needs — no per-type mapper.
+
+H4 notes:
+
+- **`/content/[type]/new` is a plain form on purpose.** It creates an entity from its scalar fields and then
+  hands the author to the editor, which is where collections are edited. Requiring the collections up front
+  would have made every collection-bearing type uncreatable, since this form has no client-side state and
+  therefore no list or row editors.
+- **`referenceOptions`/`referenceTypes` live in [`content-refs.ts`](../web/client/src/lib/server/content-refs.ts)**
+  now, shared by the edit and create loaders; `isScalarKind` in `content-editor.ts` is the single definition
+  of "a field a plain control can author".
+- **A New entry action appears on a browse page only for an account holding `content.manage`.**
 
 Notes worth keeping:
 

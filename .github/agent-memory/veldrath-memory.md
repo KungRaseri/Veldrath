@@ -3803,3 +3803,20 @@ JSON lives behind an "Advanced — raw JSON" disclosure. **That disclosure is no
   field also labelled "Description" makes `getByLabelText` ambiguous.
 
 **Counts after H3:** 1,397 web unit tests, coverage 90.01% branches, typecheck/lint/build clean.
+
+### H4 — create for every content type
+
+`/content/[type]/new` renders the type's own schema, so a new content type needs no new page. It is
+deliberately a **plain form with no client-side state**: it creates an entity from its scalar fields and then
+sends the author to the editor, which owns collections. Demanding collections at create time would have made
+every collection-bearing type uncreatable, because a stateless form has no list/row editors.
+
+- `referenceOptions`/`referenceTypes` moved to `#lib/server/content-refs.ts` (the edit and create loaders
+  both need them). `isScalarKind(field)` in `content-editor.ts` is the one definition of "a field a plain
+  control can author" — do not re-derive `fieldType !== 'StringList' && …` locally.
+- The browse page's loader gained `canEdit`, and the page shows a "New entry" link only for an author.
+- Submission create still cannot author collections; that is a deliberate deferral, not an oversight.
+- **A malformed `apply_diff` with a SEARCH but no `=======` silently deletes the matched text.** One such
+  block removed a plan bullet during H4; it was caught by reading the region afterwards, not by the tool.
+
+**Counts after H4:** 1,412 web unit tests, coverage 90.01% branches, typecheck/lint/build clean.

@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { callLoad, fakeUser, makeServerEvent, type FakeServerEvent } from '#lib/testing/event';
 import { load as contentIndex } from './(foundry)/content/+page.server';
+import {
+	actions as createEntryActions,
+	load as createEntryPage
+} from './(foundry)/content/[type]/new/+page.server';
 import { load as homePage } from './(foundry)/foundry/+page.server';
 import { load as reviewPage } from './(foundry)/review/+page.server';
 import { load as contentTypePage } from './(foundry)/content/[type]/+page.server';
@@ -41,6 +45,7 @@ const contentApi = vi.hoisted(() => ({
 	getContentDetail: vi.fn(),
 	getContentTypeSchema: vi.fn(),
 	updateContent: vi.fn(),
+	createContent: vi.fn(),
 	validateContentPayload: vi.fn(),
 	deactivateContent: vi.fn()
 }));
@@ -909,6 +914,137 @@ describe('submission payload parsing', () => {
 				}
 			).payload
 		).toEqual({});
+	});
+});
+
+describe('content create', () => {
+	const params = { type: 'power' };
+
+	it('loads the schema, the reference options and the write flag', async () => {
+		const result = (await callLoad(createEntryPage, signedIn({ params }))) as {
+			schema: unknown;
+			canEdit: boolean;
+			refOptions: Record<string, unknown>;
+		};
+
+		expect(result.schema).toEqual(schema);
+		expect(result.canEdit).toBe(true);
+		expect(result.refOptions).toEqual({});
+	});
+
+	it('refuses to render for an account without content.view', async () => {
+		expect(
+			await thrownMessage(() =>
+				callLoad(
+					createEntryPage,
+					signedIn({ params, parentData: { access: { ...readerAccess, permissions: [] } } })
+				)
+			)
+		).toBe('Foundry needs the content permission. Ask a Curator for access.');
+	});
+
+	it('404s a type with no registered schema', async () => {
+		contentApi.getContentTypeSchema.mockResolvedValue(
+			failed('No schema is registered for power.', 404)
+		);
+
+		expect(await thrownMessage(() => callLoad(createEntryPage, signedIn({ params })))).toBe(
+			'No schema is registered for power.'
+		);
+	});
+
+	it('creates the entity from the schema and returns to the list', async () => {
+		contentApi.createContent.mockResolvedValue(ok({ isValid: true, errors: [], warnings: [] }));
+
+		const location = await redirectTo(() =>
+			action(
+				createEntryActions.default,
+				{ displayName: 'Fireball', 'stats.cooldown': '3' },
+				{ params }
+			)
+		);
+
+		expect(location).toBe('/content/power');
+
+		const called = contentApi.createContent.mock.calls[0] as [
+			unknown,
+			string,
+			Record<string, unknown>
+		];
+
+		expect(called[1]).toBe('power');
+		expect(called[2]).toEqual({ displayName: 'Fireball', stats: { cooldown: 3 } });
+	});
+
+	it('refuses to create without the required fields', async () => {
+		contentApi.getContentTypeSchema.mockResolvedValue(
+			ok({
+				...schema,
+				groups: [
+					{ label: 'Identity', fields: [{ ...field('displayName', 'Text'), required: true }] }
+				]
+			})
+		);
+
+		const result = (await action(createEntryActions.default, {}, { params })) as {
+			status: number;
+			data: { message: string };
+		};
+
+		expect(result.status).toBe(400);
+		expect(result.data.message).toBe('Fill in: displayName.');
+		expect(contentApi.createContent).not.toHaveBeenCalled();
+	});
+
+	it('creates a type whose collections are required, because only the rendered fields are demanded', async () => {
+		contentApi.getContentTypeSchema.mockResolvedValue(
+			ok({
+				...schema,
+				groups: [
+					{
+						label: 'Mixed',
+						fields: [
+							{ ...field('displayName', 'Text'), required: true },
+							{ ...field('objectives', 'ObjectList'), required: true, items: [] }
+						]
+					}
+				]
+			})
+		);
+		contentApi.createContent.mockResolvedValue(ok({ isValid: true, errors: [], warnings: [] }));
+
+		const location = await redirectTo(() =>
+			action(createEntryActions.default, { displayName: 'Fireball' }, { params })
+		);
+
+		expect(location).toBe('/content/power');
+	});
+
+	it('reports a failed create with the status the API used', async () => {
+		contentApi.createContent.mockResolvedValue(failed('Slug already exists.', 409));
+
+		const result = (await action(
+			createEntryActions.default,
+			{ displayName: 'Fireball' },
+			{ params }
+		)) as { status: number; data: { message: string } };
+
+		expect(result.status).toBe(409);
+		expect(result.data.message).toBe('Slug already exists.');
+	});
+
+	it('reports a create that returned no data and no message', async () => {
+		// No status at all, so the action's own 502 fallback is what the author sees.
+		contentApi.createContent.mockResolvedValue({ status: 0, data: null, error: null });
+
+		const result = (await action(
+			createEntryActions.default,
+			{ displayName: 'Fireball' },
+			{ params }
+		)) as { status: number; data: { message: string } };
+
+		expect(result.status).toBe(502);
+		expect(result.data.message).toBe('Could not create the entry.');
 	});
 });
 

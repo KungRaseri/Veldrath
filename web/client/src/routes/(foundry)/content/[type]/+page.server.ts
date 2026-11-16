@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { Permissions, requirePermission } from '#lib/server/access';
+import { hasPermission, Permissions, requirePermission } from '#lib/server/access';
 import { browseContent } from '#lib/server/content-api';
 
 export const load: PageServerLoad = async ({ parent, params, url }) => {
@@ -16,6 +16,8 @@ export const load: PageServerLoad = async ({ parent, params, url }) => {
 
 	return {
 		contentType: params.type,
+		// Only an author sees the New action; a reader has nothing to create with.
+		canEdit: hasPermission(access, Permissions.ManageContent),
 		entries: result.data?.items ?? [],
 		total: result.data?.totalCount ?? 0,
 		page: result.data?.page ?? page,

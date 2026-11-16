@@ -207,6 +207,10 @@ describe('toInputValue', () => {
 		expect(toInputValue(true)).toBe('true');
 		expect(toInputValue(7)).toBe('7');
 	});
+
+	it('renders nothing when a collection reaches a scalar input', () => {
+		expect(toInputValue(['a', 'b'])).toBe('');
+	});
 });
 
 describe('slugify', () => {

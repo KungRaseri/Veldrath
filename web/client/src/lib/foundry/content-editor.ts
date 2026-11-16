@@ -96,6 +96,23 @@ export function allFields(schema: ContentTypeSchema | null): ContentField[] {
 	return schema.groups.flatMap((group) => group.fields);
 }
 
+/**
+ * Whether a field holds one scalar value, which a plain form control can author.
+ *
+ * The collections need a list or row editor and are built client-side; everything else can be posted as a
+ * string and coerced, which is what the create routes rely on.
+ *
+ * @param field A field descriptor.
+ * @returns `true` for scalar kinds, `false` for `StringList`, `KeyValue` and `ObjectList`.
+ */
+export function isScalarKind(field: ContentField): boolean {
+	return (
+		field.fieldType !== 'StringList' &&
+		field.fieldType !== 'KeyValue' &&
+		field.fieldType !== 'ObjectList'
+	);
+}
+
 /** Reads a dot-path out of a payload, returning `undefined` when any segment is missing. */
 export function readPath(payload: Record<string, unknown>, path: string): unknown {
 	return path.split('.').reduce<unknown>((current, segment) => {

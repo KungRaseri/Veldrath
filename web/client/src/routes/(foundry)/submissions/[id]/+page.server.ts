@@ -9,10 +9,12 @@ import {
 } from '#lib/server/foundry-api';
 import { getContentTypeSchema, listContentTypes } from '#lib/server/content-api';
 import { stringField } from '#lib/server/form';
-import { allFields, buildPayload, missingRequired } from '#lib/foundry/content-editor';
-
-/** Field kinds the submission form cannot author; a submission for a type that needs one says so. */
-const COLLECTION_KINDS = new Set(['StringList', 'KeyValue', 'ObjectList']);
+import {
+	allFields,
+	buildPayload,
+	isScalarKind,
+	missingRequired
+} from '#lib/foundry/content-editor';
 
 /** Reads the stored payload as an object, keeping the raw text when it is not valid JSON. */
 function parsePayload(raw: string | undefined): Record<string, unknown> {
@@ -85,7 +87,7 @@ export const actions: Actions = {
 		// entity are the same shape — which is what lets a curator promote one without a per-type mapper.
 		const values: Record<string, string> = {};
 		for (const field of allFields(schema.data)) {
-			if (COLLECTION_KINDS.has(field.fieldType)) continue;
+			if (!isScalarKind(field)) continue;
 			const raw = form.get(field.name);
 			if (raw !== null) values[field.name] = String(raw);
 		}
