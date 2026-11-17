@@ -147,6 +147,11 @@ export interface MapSummaryDto {
 	submittedAt?: string | null;
 	/** Whether this account may write the map; see {@link MapGraphDto.canEdit}. */
 	canEdit?: boolean;
+	/**
+	 * Whether approving the map would succeed, filled by the server for maps awaiting a decision.
+	 * Absent on every other map, which is why the queue has to word a missing verdict rather than assume `ready`.
+	 */
+	review?: MapReviewVerdict | null;
 }
 
 /** One validation issue reported by a save, mirroring `Veldrath.Contracts.Map.MapGraphIssueDto`. */

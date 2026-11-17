@@ -152,8 +152,15 @@ test.describe('moderation actions journey', () => {
 		await kickForm.locator('input[name="reason"]').fill(reason);
 		await moderator.getByRole('button', { name: 'Kick sessions' }).click();
 
-		// The kicked client shows the reason the moderator typed — the hub's `OnKicked` path.
-		await expect(player.getByText(reason)).toBeVisible({ timeout: 30_000 });
+		// The kicked client leaves the world: a Disconnected panel with the moderator's reason, and a way
+		// back to the roster. The hub's `OnKicked` path sets `phase = 'disconnected'`, which the shell renders.
+		const disconnected = player.getByRole('region', { name: 'Disconnected' });
+		await expect(disconnected).toBeVisible({ timeout: 30_000 });
+		await expect(disconnected.getByText(reason)).toBeVisible();
+		await expect(player.locator('.map-node-cell button')).toHaveCount(0);
+
+		await disconnected.getByRole('button', { name: 'Back to characters' }).click();
+		await expect(player).toHaveURL(/\/characters$/, { timeout: 20_000 });
 
 		await playerContext.close();
 		await modContext.close();

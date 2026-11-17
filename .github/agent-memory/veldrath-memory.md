@@ -4051,8 +4051,8 @@ unresolved and resolves it), and `editorial-publishing` publishes a lore article
 Fifth pass closed E9: **kick is covered end to end.** `staff-actions` puts a player in the world (character via
 `POST /api/characters` with a minted token, then `/play/{id}` waiting for `.map-node-cell button` — the hub's first
 snapshot), the moderator kicks with a reason from `/mod/users/{id}`, and the player's own screen shows that reason
-in the `session.error` banner (`GameScreen.svelte`). Note `phase` becomes `disconnected` and **nothing renders
-it** — the banner is all a kicked player gets; giving that phase its own screen is an open UI task.
+in the `session.error` banner (`GameScreen.svelte`). The seventh pass below gave `phase === 'disconnected'` its own
+screen; the spec now asserts that instead of the banner.
 
 Sixth pass (E11–E16) made the suite trustworthy rather than merely broad. **Twelve stack specs, fourteen tests,
 ~4.5 minutes**, plus thirty stack-free specs in ~18s.
@@ -4075,6 +4075,25 @@ Sixth pass (E11–E16) made the suite trustworthy rather than merely broad. **Tw
 - **`playwright.config.ts`** now sets `retries: 1` on CI with `trace: 'on-first-retry'` and
   `video: 'retain-on-failure'`, and a 10s expect budget. A retry without a trace is a flake nobody can diagnose.
 
+Seventh pass closed the two §6 leftovers.
+
+- **`phase === 'disconnected'` has its own screen.** A kick used to leave the map, the travel buttons and the bag on
+  screen, each firing a command into a closed connection. `GameScreen.svelte` now renders a `Disconnected` region
+  (the moderator's reason plus "Back to characters") and drops the game shell and `<GameOverlays>` while that phase
+  holds. Component tests are in `shell.test.ts` (`playing({ phase: 'disconnected' })`); the e2e kick test asserts the
+  region, the reason, zero `.map-node-cell button`, and the landing on `/characters`. **Watch the coverage gate when
+  adding `.svelte` branches**: this screen put branches at 89.95% until its component tests landed.
+- **The review queue's N+1 is gone.** "Would approval accept this map?" is now answered server-side in
+  `MapEditorService.ListAsync` from **one** world snapshot and returned on `MapSummaryDto.Review`
+  (`MapReviewVerdictDto`), using the same `BlocksPublication`/error rule the decision applies, so a row cannot
+  promise an approval the decision would refuse. `ValidateWorldAsync` became `LoadWorldAsync` plus a static
+  `ValidateWorld(world, …)`. The web loader reads `map.review` and words a missing verdict as `unknown`, never
+  `ready`. Do not reintroduce a `getMap`/`validateMap` pair per row on `/review`.
+
+- **Running the stack specs locally needs the preview origin too.** `E2E_STACK=1` alone is not enough: Better Auth
+  rejects the sign-up with `Invalid origin: http://localhost:4173`, because `web/client/.env` sets
+  `ORIGIN=http://localhost:5173` (the dev server). Use
+  `ORIGIN=http://localhost:4173 BETTER_AUTH_URL=http://localhost:4173 CI=true E2E_STACK=1 npx playwright test <spec>`.
+
 **Still open:** combat and death (E13c/d) need a known encounter — `CombatPanel` mounts only during a fight, so the
-honest next step is a fixture (a GM spawn or a seeded encounter at a named node), not a node sweep; and
-`phase === 'disconnected'` still has no screen (a kicked player sees the reason in the error banner and keeps the map).
+honest next step is a fixture (a GM spawn or a seeded encounter at a named node), not a node sweep.

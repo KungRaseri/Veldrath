@@ -162,16 +162,12 @@ real web app meets the real API:
 ## 6. Still open
 
 Every page route is driven by a spec; `parity/routes.test.ts` is down to two exemptions — `/api/**` (route
-handlers, covered by unit tests) and `/languages/**` (a redirect onto the content type). What is left is depth:
+handlers, covered by unit tests) and `/languages/**` (a redirect onto the content type). The two depth items this
+section used to carry — the disconnected screen and the review queue's N+1 — are closed in §9. What is left:
 
 - **Combat and death are not driven** (E13c/E13d). `CombatPanel` mounts only once a fight is active, and starting
   one needs a known enemy at a known node; the honest next step is a fixture (a GM spawn, or a seeded encounter at
   a named node) rather than a spec that loops over nodes hoping one has a monster.
-- **A kicked player sees the reason in the error banner but the game screen keeps rendering** — `phase` becomes
-  `disconnected` and nothing consumes it. Giving that phase its own screen is a UI task; the spec asserts the
-  banner, which is what a player actually sees today.
-- **The review queue validates every submitted map on load** (two API calls per row). Fine for a page of maps;
-  worth moving onto `MapSummaryDto` if the queue ever pages.
 
 ## 7. Phases
 
@@ -248,3 +244,26 @@ job stays serial: these specs share one database and one API.
 **Result:** twelve stack specs, fourteen tests, ~4.5 minutes together; thirty stack-free specs in ~18 seconds. The
 suite now fails for one of two reasons only: the code broke, or the environment was not the one the spec needs —
 and both say which.
+
+## 9. The two §6 leftovers (2026-11-17)
+
+**A kick has its own screen.** `session.phase` became `disconnected` when a moderator kicked a player and nothing
+consumed it: the map, the travel buttons and the bag stayed on screen, each of them firing a command into a closed
+connection. [`GameScreen.svelte`](../web/client/src/lib/game/GameScreen.svelte:58) now renders a `Disconnected`
+region carrying the moderator's reason and one action, "Back to characters", and the game shell and the dialog
+overlays are dropped while that phase holds — a dead session is not a banner you dismiss. `staff-actions.e2e.ts`
+asserts the region, the reason, that no map button survives, and that the button lands on `/characters`; two
+component tests in [`shell.test.ts`](../web/client/src/lib/game/shell.test.ts:204) cover the reason and the wording
+when the server gives none. The new `.svelte` branches took the coverage gate to 89.95%, which is what the component
+tests are for.
+
+**The review queue no longer reads every map itself.** Each row cost two API calls (the graph, then a validate pass)
+and, on the server, two full world loads — so the queue got slower with every draft awaiting a decision. The list
+endpoint now answers the question once: `MapEditorService.ListAsync` computes the verdict for the maps actually in
+the queue from a single world snapshot and ships it on `MapSummaryDto.Review`, using the same error rule and the
+same `map_without_exit` refusal the decision applies (`BlocksPublication`), so a row cannot promise an approval the
+decision would then refuse. `ValidateWorldAsync` was split into `LoadWorldAsync` plus a static
+`ValidateWorld(world, …)` so one snapshot can answer many maps. The web loader just reads `map.review`, and a map
+the server could not judge still reads `unknown` rather than `ready`. A server test asserts that a submitted draft
+is `blocked` with **zero** errors (the missing exit is a warning) and that a draft nobody submitted carries no
+verdict at all.

@@ -305,6 +305,42 @@ public class MapEditorEndpointTests(WebAppFactory factory)
     }
 
     [Fact]
+    public async Task List_ReportsTheVerdictForAMapAwaitingADecision()
+    {
+        using var author = await AuthedClientAsync("MapQueueVerdict_Author", "ContentEditor");
+
+        var created = await author.PostAsJsonAsync(
+            "/api/content/maps",
+            new MapCreateRequest("Zone", "queue-verdict-zone", "Queue Verdict Zone"),
+            Json);
+        var submitted = (await created.Content.ReadFromJsonAsync<MapGraphDto>(Json))!;
+        (await author.PostAsJsonAsync(
+            $"/api/content/maps/{Uri.EscapeDataString(submitted.Id)}/submit",
+            new { },
+            Json)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // A second draft nobody submitted, to prove the verdict is scoped to the queue.
+        var otherCreated = await author.PostAsJsonAsync(
+            "/api/content/maps",
+            new MapCreateRequest("Zone", "queue-verdict-other", "Queue Verdict Other"),
+            Json);
+        var draftOnly = (await otherCreated.Content.ReadFromJsonAsync<MapGraphDto>(Json))!;
+
+        var list = (await author.GetFromJsonAsync<List<MapSummaryDto>>("/api/content/maps", Json))!;
+
+        // The queue answers "would approval accept this?" with the rules the decision re-runs, so the review
+        // page no longer has to read and validate every row itself.
+        var awaiting = list.Single(map => map.Id == submitted.Id);
+        awaiting.Review.Should().NotBeNull();
+        awaiting.Review!.Status.Should().Be("blocked");
+        awaiting.Review.Errors.Should().Be(0, "the missing exit is a warning, and approval still refuses it");
+        awaiting.Review.Warnings.Should().BeGreaterThan(0);
+
+        // A draft nobody submitted is not in the queue, so it carries no verdict.
+        list.Single(map => map.Id == draftOnly.Id).Review.Should().BeNull();
+    }
+
+    [Fact]
     public async Task Review_RequiresTheReviewPermission()
     {
         var mapId = await EnsureAMapAsync();

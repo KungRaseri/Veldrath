@@ -678,7 +678,12 @@ describe('review queue', () => {
 		);
 		mapsApi.listMaps.mockResolvedValue(
 			ok([
-				{ id: 'zone:a', submittedAt: '2026-01-01T00:00:00Z', isActive: false },
+				{
+					id: 'zone:a',
+					submittedAt: '2026-01-01T00:00:00Z',
+					isActive: false,
+					review: { status: 'ready', errors: 0, warnings: 1 }
+				},
 				// Live, so not waiting for a decision.
 				{ id: 'zone:b', submittedAt: null, isActive: true }
 			])
@@ -695,8 +700,8 @@ describe('review queue', () => {
 
 		expect(result.submissions).toEqual([{ id: 'sub-1' }]);
 		expect(result.maps.map((map) => map.id)).toEqual(['zone:a']);
-		// Approval is the gate the queue announces, so each row already carries the verdict.
-		expect(result.maps[0].verdict.status).toBe('ready');
+		// Approval is the gate the queue announces, so each row already carries the verdict the list reported.
+		expect(result.maps[0].verdict).toEqual({ status: 'ready', errors: 0, warnings: 1 });
 		expect(result.error).toBeNull();
 		expect(foundryApi.listSubmissions).toHaveBeenCalledWith(
 			expect.anything(),
@@ -704,33 +709,19 @@ describe('review queue', () => {
 		);
 	});
 
-	it('checks the verdict on the submitted maps only, and survives a failed check', async () => {
+	it('words a map the list gave no verdict for as unknown rather than ready', async () => {
 		mapsApi.listMaps.mockResolvedValue(
 			ok([
-				{ id: 'zone:blocked', submittedAt: '2026-01-01T00:00:00Z', isActive: false },
+				{
+					id: 'zone:blocked',
+					submittedAt: '2026-01-01T00:00:00Z',
+					isActive: false,
+					review: { status: 'blocked', errors: 0, warnings: 1 }
+				},
 				{ id: 'zone:unknown', submittedAt: '2026-01-01T00:00:00Z', isActive: false },
 				// Live, so there is no approval left to announce.
 				{ id: 'zone:live', submittedAt: '2026-01-01T00:00:00Z', isActive: true }
 			])
-		);
-		mapsApi.getMap.mockImplementation(async (_identity: unknown, mapId: string) =>
-			mapId === 'zone:blocked'
-				? ok({ id: mapId, nodes: [], edges: [], version: 1 })
-				: failed('the graph is unavailable')
-		);
-		mapsApi.validateMap.mockResolvedValue(
-			ok({
-				isValid: false,
-				issues: [
-					{
-						code: 'map_without_exit',
-						message: 'No exit.',
-						severity: 'Warning',
-						mapId: 'zone:blocked',
-						nodeId: null
-					}
-				]
-			})
 		);
 
 		const result = (await callLoad(
@@ -743,13 +734,16 @@ describe('review queue', () => {
 				id: 'zone:blocked',
 				verdict: expect.objectContaining({ status: 'blocked' })
 			}),
-			// A validator that could not run must not read as a refusal.
+			// A verdict the server could not work out must not read as an approval.
 			expect.objectContaining({
 				id: 'zone:unknown',
 				verdict: expect.objectContaining({ status: 'unknown' })
 			})
 		]);
-		expect(mapsApi.validateMap).toHaveBeenCalledTimes(1);
+
+		// The queue must not go back to the API per row: that is the N+1 this loader used to make.
+		expect(mapsApi.getMap).not.toHaveBeenCalled();
+		expect(mapsApi.validateMap).not.toHaveBeenCalled();
 	});
 
 	it('reports the first failed call', async () => {

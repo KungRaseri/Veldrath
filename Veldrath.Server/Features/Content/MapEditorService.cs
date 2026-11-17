@@ -55,7 +55,7 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
         var seesEveryDraft = caller.SeesEveryDraft;
         var canManageAny = caller.CanManageAny;
 
-        return await db.Maps
+        var summaries = await db.Maps
             .AsNoTracking()
             .Where(map => seesEveryDraft || map.IsActive || map.CreatedByAccountId == accountId)
             .OrderBy(map => map.Id)
@@ -76,6 +76,23 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
                 map.LastReviewedAt,
                 canManageAny || map.CreatedByAccountId == accountId))
             .ToListAsync(cancellationToken);
+
+        // The review queue asks one question per row — "would approval accept this?" — and a decision re-runs
+        // the world rules, so answering it here is the same pass a reviewer would trigger. One world load
+        // answers every row: asking per row cost two round trips and a full catalog load each, so the queue
+        // got slower with every draft waiting for a decision.
+        var awaiting = summaries
+            .Where(map => map.SubmittedAt is not null && !map.IsActive)
+            .Select(map => map.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        if (awaiting.Count == 0) return summaries;
+
+        var world = await LoadWorldAsync(cancellationToken);
+
+        return summaries
+            .Select(map => awaiting.Contains(map.Id) ? map with { Review = VerdictFor(world, map) } : map)
+            .ToList();
     }
 
     /// <summary>
@@ -273,16 +290,50 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
     /// Validates the candidate as part of the whole world, so a save cannot strand a room or point an exit at a
     /// map that does not exist.
     /// </summary>
+    /// <param name="mapId">Map identifier the candidate claims to be.</param>
+    /// <param name="candidate">The graph to validate.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The issues that belong to this map, plus an exit pointing at a map that does not exist.</returns>
     internal async Task<IReadOnlyList<MapGraphIssueDto>> ValidateWorldAsync(
         string mapId,
         MapGraphDto candidate,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        ValidateWorld(await LoadWorldAsync(cancellationToken), mapId, candidate);
+
+    /// <summary>The catalog the world rules read, loaded once so a pass over many maps loads it once.</summary>
+    /// <param name="Maps">Every authored map, with its nodes and edges.</param>
+    /// <param name="Locations">Every zone location, which is how a node's reference is resolved.</param>
+    private sealed record MapWorld(
+        IReadOnlyList<MapEntity> Maps,
+        IReadOnlyList<RealmEngine.Data.Entities.ZoneLocation> Locations);
+
+    /// <summary>Loads the whole catalog the world rules need.</summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The maps, each with its nodes and edges, and every zone location.</returns>
+    private async Task<MapWorld> LoadWorldAsync(CancellationToken cancellationToken)
     {
         var maps = await db.Maps
             .AsNoTracking()
             .Include(map => map.Nodes)
             .Include(map => map.Edges)
             .ToListAsync(cancellationToken);
+
+        var locations = await db.ZoneLocations.AsNoTracking().ToListAsync(cancellationToken);
+
+        return new MapWorld(maps, locations);
+    }
+
+    /// <summary>Validates the candidate as part of the world snapshot it is given.</summary>
+    /// <param name="world">The catalog snapshot to validate against.</param>
+    /// <param name="mapId">Map identifier the candidate claims to be.</param>
+    /// <param name="candidate">The graph to validate.</param>
+    /// <returns>The issues that belong to this map, plus an exit pointing at a map that does not exist.</returns>
+    private static IReadOnlyList<MapGraphIssueDto> ValidateWorld(
+        MapWorld world,
+        string mapId,
+        MapGraphDto candidate)
+    {
+        var maps = world.Maps;
 
         var graphs = maps
             .Select(map => string.Equals(map.Id, mapId, StringComparison.OrdinalIgnoreCase)
@@ -295,10 +346,10 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
         if (!maps.Any(map => string.Equals(map.Id, mapId, StringComparison.OrdinalIgnoreCase)))
             graphs.Add(ToSharedGraph(candidate));
 
-        // Content is small enough to load whole, and doing so keeps the JSON-owned traits out of the SQL
-        // translation: the dungeon set is a pure function of the catalog, derived exactly like the seeded-world
-        // guard in SeededContentValidationTests (a dungeon room plus a lobby).
-        var locations = await db.ZoneLocations.AsNoTracking().ToListAsync(cancellationToken);
+        // The snapshot holds every location, which keeps the JSON-owned traits out of the SQL translation: the
+        // dungeon set is a pure function of the catalog, derived exactly like the seeded-world guard in
+        // SeededContentValidationTests (a dungeon room plus a lobby).
+        var locations = world.Locations;
         var locationSlugs = locations.Select(location => location.Slug).ToList();
 
         var dungeonZoneSlugs = locations
@@ -843,6 +894,32 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
     /// </summary>
     private static bool BlocksPublication(IEnumerable<MapGraphIssueDto> issues) =>
         issues.Any(issue => issue.Code == "map_without_exit");
+
+    /// <summary>
+    /// The verdict the review queue shows for a map awaiting a decision.
+    /// </summary>
+    /// <remarks>
+    /// Computed with <see cref="BlocksPublication"/> and the same error rule the decision applies, so the queue
+    /// cannot promise an approval the decision would then refuse.
+    /// </remarks>
+    /// <param name="world">The catalog snapshot loaded for this list.</param>
+    /// <param name="summary">The submitted map, as the list already reported it.</param>
+    /// <returns>The verdict, or <see langword="null"/> when the map is no longer in the snapshot.</returns>
+    private MapReviewVerdictDto? VerdictFor(MapWorld world, MapSummaryDto summary)
+    {
+        var stored = world.Maps
+            .FirstOrDefault(map => string.Equals(map.Id, summary.Id, StringComparison.OrdinalIgnoreCase));
+
+        if (stored is null) return null;
+
+        var issues = ValidateWorld(world, summary.Id, ToDto(stored));
+        var errors = issues.Count(issue =>
+            string.Equals(issue.Severity, "Error", StringComparison.OrdinalIgnoreCase));
+
+        var blocked = errors > 0 || BlocksPublication(issues);
+
+        return new MapReviewVerdictDto(blocked ? "blocked" : "ready", errors, issues.Count - errors);
+    }
 
     /// <summary>
     /// The account to tell about a lifecycle change, and the name to title the notification with.
