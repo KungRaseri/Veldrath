@@ -4095,5 +4095,11 @@ Seventh pass closed the two §6 leftovers.
   `ORIGIN=http://localhost:5173` (the dev server). Use
   `ORIGIN=http://localhost:4173 BETTER_AUTH_URL=http://localhost:4173 CI=true E2E_STACK=1 npx playwright test <spec>`.
 
-**Still open:** combat and death (E13c/d) need a known encounter — `CombatPanel` mounts only during a fight, so the
-honest next step is a fixture (a GM spawn or a seeded encounter at a named node), not a node sweep.
+**Still open — and it is a game defect, not only a test gap:** combat and death (E13c/d) need a known encounter,
+and there is none. **No seeded zone location has an `ActorPool`** (verified with
+`jsonb_array_length("ActorPool")` over `ZoneLocations`: every row is 0), and `ActorPoolResolver.SpawnRosterAsync`
+returns an empty roster for an empty pool *by design* — the old `"common"` fallback was removed so a missing pool
+could not be silently faked. So nothing spawns anywhere, the HUD's "Local" panel can never list a hostile, and
+`CombatPanel` never mounts for a real player. The content audit only **warns** on an empty pool ("safe locations
+are legitimate"), so a wholly empty world passes. Unblock by authoring pools on the hostile locations (ruins,
+cairns, vault) and keeping towns/inns safe, or with a dev-only GM spawn; then E13c/E13d can be written.

@@ -165,9 +165,15 @@ Every page route is driven by a spec; `parity/routes.test.ts` is down to two exe
 handlers, covered by unit tests) and `/languages/**` (a redirect onto the content type). The two depth items this
 section used to carry — the disconnected screen and the review queue's N+1 — are closed in §9. What is left:
 
-- **Combat and death are not driven** (E13c/E13d). `CombatPanel` mounts only once a fight is active, and starting
-  one needs a known enemy at a known node; the honest next step is a fixture (a GM spawn, or a seeded encounter at
-  a named node) rather than a spec that loops over nodes hoping one has a monster.
+- **Combat and death are not driven** (E13c/E13d), and writing them found why: **no seeded location has a spawn
+  pool.** `ZoneLocations.ActorPool` is empty on every row in the seeded catalog (`select … jsonb_array_length`) and
+  `ActorPoolResolver.SpawnRosterAsync` returns an empty roster for an empty pool by design — the old "common"
+  fallback was removed so a missing pool could not be silently papered over. The consequence is not a test gap but
+  a game one: no enemy spawns anywhere, so the HUD's "Local" panel can never list anything hostile and
+  `CombatPanel` never mounts for a player either. The content audit words this as a **warning** ("safe locations
+  are legitimate"), so a world where everything is empty reports clean. The next step is a decision — author a
+  spawn pool on the hostile locations (ruins, cairns, vault) and keep the towns and inns safe, or add a GM spawn
+  for dev/test only — and only then can E13c/E13d be written against a known encounter.
 
 ## 7. Phases
 
