@@ -164,7 +164,9 @@ public class FoundryService(
         {
             // Approval is the gate, so the payload has to land in the catalog first. Flipping the status and
             // promoting afterwards would leave an "approved" row with no content behind it when the write fails.
-            var promotion = await content.CreateAsync(
+            // Promoting upserts: a submission whose slug already exists is a proposed correction, which is what
+            // the diff on the review page promises to write.
+            var promotion = await content.PromoteAsync(
                 submission.ContentType.ToString().ToLowerInvariant(),
                 submission.Payload,
                 ct

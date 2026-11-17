@@ -161,17 +161,17 @@ real web app meets the real API:
 
 ## 6. Still open
 
-Every page route is now driven by a spec; `parity/routes.test.ts` is down to two exemptions — `/api/**` (route
-handlers, covered by unit tests) and `/languages/**` (a redirect onto the content type). What is left is depth,
-not breadth:
+Every page route is driven by a spec; `parity/routes.test.ts` is down to two exemptions — `/api/**` (route
+handlers, covered by unit tests) and `/languages/**` (a redirect onto the content type). What is left is depth:
 
+- **Combat and death are not driven** (E13c/E13d). `CombatPanel` mounts only once a fight is active, and starting
+  one needs a known enemy at a known node; the honest next step is a fixture (a GM spawn, or a seeded encounter at
+  a named node) rather than a spec that loops over nodes hoping one has a monster.
+- **A kicked player sees the reason in the error banner but the game screen keeps rendering** — `phase` becomes
+  `disconnected` and nothing consumes it. Giving that phase its own screen is a UI task; the spec asserts the
+  banner, which is what a player actually sees today.
 - **The review queue validates every submitted map on load** (two API calls per row). Fine for a page of maps;
   worth moving onto `MapSummaryDto` if the queue ever pages.
-- **A kicked player sees the reason in the error banner but the game screen keeps rendering** — `phase` becomes
-  `disconnected` and nothing consumes it. The spec asserts the banner (which is what a player actually sees);
-  giving a disconnected session its own screen is a UI task, not a test one.
-- **The E2E seed is shared**: specs create unique accounts and slugs, but a long-lived local database accumulates
-  them. A `--fresh` flag on `scripts/e2e-stack.sh` (drop and re-migrate) would keep repeated runs honest.
 
 ## 7. Phases
 
@@ -187,8 +187,64 @@ not breadth:
 | E7 | Role grant → live for the player → revoke, the admin sub-pages, `editorial/lore/[id]`, and resolving a report end to end; the admin/mod/editorial/players/leaderboard exemptions retired | **shipped 2026-11-17** |
 | E8 | Guarding each gated page load on `parent()` so a refused page makes no API call (11 admin/mod loaders; the run now logs zero refused `/api/mod…`/`/api/admin…` calls) | **shipped 2026-11-17** |
 | E9 | Kick, with the player in the world: the moderator's reason reaches the client's own screen | **shipped 2026-11-17** |
-| E10 | Depth, not breadth (§6): a diff before promotion on the review queue, the disconnected-session screen, a `--fresh` stack | next |
+| E10 | Depth, not breadth (§6): a diff before promotion on the review queue, the disconnected-session screen, a `--fresh` stack | superseded by E11–E16 |
+| E11 | `start --fresh`: drop the compose volume so a run starts from the seed (`api-stop`/`api-start` came with it) | **shipped 2026-11-17** |
+| E12 | The session state in between: cleared cookies → `/login?redirectTo=<nested path with query>` → back to it; a play URL that is not a character id → roster | **shipped 2026-11-17** |
+| E13a/b | The seven-step creation wizard → straight into the world; the sheet is usable (bag rows, an action on every row); a neighbour is walkable; the roster remembers the character | **shipped 2026-11-17** |
+| E13c/d | Combat and death | blocked on a known encounter (see §6) |
+| E14 | A rename diffed before approval, approved, and read back from the catalog — which also fixed promotion's create-only refusal (`PromoteAsync`) | **shipped 2026-11-17** |
+| E15 | The API taken away: both a Foundry page and a public page say "Could not reach the game server." and recover after `api-start` | **shipped 2026-11-17** |
+| E16 | CI instrumentation: `retries: 1`, `trace: on-first-retry`, `video: retain-on-failure`, `expect.timeout: 10s` | **shipped 2026-11-17** |
 
 E3–E5 are recorded here rather than half-built: the harness is what makes them cheap, and each one retires an
 exemption in [`parity/routes.test.ts`](../web/client/src/lib/parity/routes.test.ts) rather than adding a new
 allow-list entry.
+
+## 8. Trust, the states people hit, and the game (E11–E16, shipped 2026-11-17)
+
+Breadth is done — every page route is driven. What follows is what makes the suite *trustworthy*, then what covers
+the largest untested surface.
+
+**E11 — a resettable stack (`start --fresh`).** The stack reused whatever was in the `veldrath` database, so a green
+run only proved "still works on this machine's history" and stale rows from earlier runs were a debugging tax.
+`--fresh` drops the compose volume, recreates Postgres (the init script recreates the `auth` role/schema/grants), then
+runs the existing migrate-and-start steps; the server seeds on boot, so the catalog is reproducible. CI's service
+container is fresh by construction, so the flag is for local runs — and for debugging one that smells like data.
+The same pass added `api-stop`/`api-start`, which only manage the API process.
+
+**E12 — the states a real session reaches.** Everything was tested signed-in or anonymous; the interesting state is
+in between. `session-states.e2e.ts` clears the cookies mid-flow, asserts the guard sends the visitor to
+`/login?redirectTo=` carrying the **whole** nested target (`/content/ability?page=1`, query included), signs in, and
+lands back there — the open-redirect guard in [`navigation.ts`](../web/client/src/lib/navigation.ts:1) is what makes
+the round trip safe. It also asserts `/play/not-a-character-id` sends a player to their roster.
+
+**E13 — the game, not just its first paint.** `game-loop` proved register → travel → inventory heading.
+`game-journeys.e2e.ts` now drives the seven-step creation wizard (`/characters/new`: name availability, the
+`aria-pressed` class/species/background options, the Review step, "Create character"), which drops the player
+straight into `/play/{id}`; it then asserts the sheet is *usable* — every bag row offers an action, which is the
+invariant that catches a dead bag without pinning a class kit — and that a neighbouring node is walkable. Creating a
+character goes to the world, not the roster, so the roster is asserted at the end. Combat and death stay open
+(§6): `CombatPanel` mounts only during a fight and starting one needs a known encounter.
+
+**E14 — the diff approval writes.** The submission page already renders `ContentDiff`; what is untested is the
+reviewer's real decision. A player submits a *change* to a seeded entry (same slug, different display name), and the
+Curator sees the field-level diff, approves, and reads the new value in the catalog. That is the promotion path,
+end to end. **Writing it found that approval could not do what the diff promised:** promotion called a create-only
+path and refused every submission whose slug already existed, so a community could propose a correction nobody
+could accept. `ContentWriteService.PromoteAsync` now upserts (id survives, version bumps), with a server test that
+asserts the replace.
+
+**E15 — upstream failure rendering.** We fixed a 429 that read as "not found"; without a spec it regresses.
+`upstream-failure.e2e.ts` stops the API through the stack script, asserts a **Foundry** page and a **public** page
+each say "Could not reach the game server." while keeping their own chrome, brings the API back in a `finally`, and
+asserts a reload recovers. It self-skips when the API was not started by the script (CI runs `dotnet run` against a
+service container), so it only runs where it can actually stop something.
+
+**E16 — CI instrumentation.** `retries: 1` on CI and `trace: 'on-first-retry'`, `video: 'retain-on-failure'` in
+[`playwright.config.ts`](../web/client/playwright.config.ts:3), plus a 10s expect budget for server-rendered pages.
+A retry without a trace is a flake nobody can diagnose — the trace is the point, not the retry. The authenticated
+job stays serial: these specs share one database and one API.
+
+**Result:** twelve stack specs, fourteen tests, ~4.5 minutes together; thirty stack-free specs in ~18 seconds. The
+suite now fails for one of two reasons only: the code broke, or the environment was not the one the spec needs —
+and both say which.

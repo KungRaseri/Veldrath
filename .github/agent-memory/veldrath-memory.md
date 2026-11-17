@@ -4054,7 +4054,27 @@ snapshot), the moderator kicks with a reason from `/mod/users/{id}`, and the pla
 in the `session.error` banner (`GameScreen.svelte`). Note `phase` becomes `disconnected` and **nothing renders
 it** — the banner is all a kicked player gets; giving that phase its own screen is an open UI task.
 
-**The e2e suite is breadth-complete:** every page route is driven by a spec, and `parity/routes.test.ts` is down
-to `/api/**` and the `/languages` redirect. Nine stack specs, ~3.5 minutes together. What is left is depth (E10 in
-the plan): a diff before promotion on the review queue, the disconnected-session screen, and a `--fresh` flag on
-`scripts/e2e-stack.sh` so a reused local database does not accumulate accounts.
+Sixth pass (E11–E16) made the suite trustworthy rather than merely broad. **Twelve stack specs, fourteen tests,
+~4.5 minutes**, plus thirty stack-free specs in ~18s.
+
+- **`scripts/e2e-stack.sh start --fresh`** drops the compose volume so a run starts from the seed (the server
+  migrates and seeds on boot). Use it when a failure smells like stale data. The same pass added
+  `api-stop` / `api-start`, which manage **only** the API process — `upstream-failure.e2e.ts` needs them, and it
+  self-skips when `.e2e-server.pid` is absent (CI runs `dotnet run` itself, so there is nothing to stop).
+- **`session-states.e2e.ts`** is the session truth: clearing cookies mid-flow sends the visitor to
+  `/login?redirectTo=` with the **whole** nested target (`/content/ability?page=1`), and signing in lands back there.
+  If you touch the guard, `navigation.ts#localPathFrom` or the login action, that spec is the one to watch.
+- **`game-journeys.e2e.ts`** drives the seven-step wizard (`Continue` until the last step, where the button reads
+  `Create character`). Two traps: the wizard accepts **letters and spaces only** in a name, so a digit stamp is
+  rejected before the availability check; and creating a character navigates to `/play/{id}`, **not** the roster.
+- **`review-diff.e2e.ts` found a real defect:** the review page's diff says "this would replace the stored entry",
+  but promotion called a create-only path and refused any submission whose slug existed — so no reviewer could
+  accept a correction. `ContentWriteService.PromoteAsync` now upserts (row id survives, version bumps), with a
+  server test that asserts the replace. Keep that in mind when reading `FoundryService.ReviewAsync`: approval is an
+  upsert, not a create.
+- **`playwright.config.ts`** now sets `retries: 1` on CI with `trace: 'on-first-retry'` and
+  `video: 'retain-on-failure'`, and a 10s expect budget. A retry without a trace is a flake nobody can diagnose.
+
+**Still open:** combat and death (E13c/d) need a known encounter — `CombatPanel` mounts only during a fight, so the
+honest next step is a fixture (a GM spawn or a seeded encounter at a named node), not a node sweep; and
+`phase === 'disconnected'` still has no screen (a kicked player sees the reason in the error banner and keeps the map).

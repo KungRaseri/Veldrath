@@ -308,7 +308,11 @@ jobs:
             tests/staff-actions.e2e.ts \
             tests/admin-console.e2e.ts \
             tests/editorial-publishing.e2e.ts \
-            tests/public-details.e2e.ts
+            tests/public-details.e2e.ts \
+            tests/session-states.e2e.ts \
+            tests/review-diff.e2e.ts \
+            tests/game-journeys.e2e.ts \
+            tests/upstream-failure.e2e.ts
 
       - name: Server log
         if: failure()

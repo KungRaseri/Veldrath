@@ -1,6 +1,7 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Veldrath.Server.Data.Entities;
@@ -544,7 +545,7 @@ public class FoundryEndpointTests(WebAppFactory factory)
     }
 
     [Fact]
-    public async Task Review_Should_Refuse_A_Promotion_Whose_Slug_Already_Exists()
+    public async Task Review_Should_Replace_The_Entry_When_The_Slug_Already_Exists()
     {
         using var firstSubmitter = factory.CreateClient();
         firstSubmitter.DefaultRequestHeaders.Authorization =
@@ -567,17 +568,30 @@ public class FoundryEndpointTests(WebAppFactory factory)
 
         approved.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // The same slug from a second submission cannot overwrite the first; the reviewer is told why.
-        var second = await CreateSubmissionAsync(
-            secondSubmitter, "Item", "FndRevDup_Second", PromotableItem("fnd-rev-dup-item"));
+        var before = await curatorClient.GetFromJsonAsync<JsonElement>(
+            "/api/content/browse/item/fnd-rev-dup-item");
 
-        var refused = await curatorClient.PostAsJsonAsync(
+        // A second submission for the same slug is a proposed correction, which is exactly what the review
+        // page's diff promises: approving it replaces the stored row instead of refusing the write.
+        var revision = PromotableItem("fnd-rev-dup-item")
+            .Replace("\"displayName\":\"fnd-rev-dup-item\"", "\"displayName\":\"Fnd Rev Dup (revised)\"");
+        var second = await CreateSubmissionAsync(
+            secondSubmitter, "Item", "FndRevDup_Second", revision);
+
+        var replaced = await curatorClient.PostAsJsonAsync(
             $"/api/foundry/submissions/{second.Id}/review",
             new { Approved = true });
 
-        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var body = await refused.Content.ReadAsStringAsync();
-        body.Should().Contain("already exists");
+        replaced.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var after = await curatorClient.GetFromJsonAsync<JsonElement>(
+            "/api/content/browse/item/fnd-rev-dup-item");
+
+        after.GetProperty("summary").GetProperty("displayName").GetString()
+            .Should().Be("Fnd Rev Dup (revised)");
+        // The row survives: live game data holds its id.
+        after.GetProperty("summary").GetProperty("id").GetString()
+            .Should().Be(before.GetProperty("summary").GetProperty("id").GetString());
     }
 
     [Fact]
