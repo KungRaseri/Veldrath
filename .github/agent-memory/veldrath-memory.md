@@ -4101,5 +4101,12 @@ and there is none. **No seeded zone location has an `ActorPool`** (verified with
 returns an empty roster for an empty pool *by design* — the old `"common"` fallback was removed so a missing pool
 could not be silently faked. So nothing spawns anywhere, the HUD's "Local" panel can never list a hostile, and
 `CombatPanel` never mounts for a real player. The content audit only **warns** on an empty pool ("safe locations
-are legitimate"), so a wholly empty world passes. Unblock by authoring pools on the hostile locations (ruins,
-cairns, vault) and keeping towns/inns safe, or with a dev-only GM spawn; then E13c/E13d can be written.
+are legitimate"), so a wholly empty world passes. Two more findings in the same measurement: **no location has
+`Traits.SafeRespawn = true`** (67/67 false), so `RespawnHubCommand` logs
+`Zone {ZoneId} has no location flagged SafeRespawn; falling back to …` at error level on **every** death and
+respawns at `locations[0]`, and no dungeon has a lobby; and only **4 actor archetypes** exist (two of them NPCs —
+`tavern-keeper`, `village-blacksmith`), so even with pools there is little to populate them with.
+
+Everything is written up in [`plans/content-seeding-pass.md`](../../plans/content-seeding-pass.md): measured
+counts, P0/P1/P2 priorities, the guardrail test to add to `SeededContentValidationTests`, and what each item
+unblocks. **Return here after the content pass**, then write E13c (engage → victory) and E13d (die → respawn).

@@ -171,9 +171,10 @@ section used to carry — the disconnected screen and the review queue's N+1 —
   fallback was removed so a missing pool could not be silently papered over. The consequence is not a test gap but
   a game one: no enemy spawns anywhere, so the HUD's "Local" panel can never list anything hostile and
   `CombatPanel` never mounts for a player either. The content audit words this as a **warning** ("safe locations
-  are legitimate"), so a world where everything is empty reports clean. The next step is a decision — author a
-  spawn pool on the hostile locations (ruins, cairns, vault) and keep the towns and inns safe, or add a GM spawn
-  for dev/test only — and only then can E13c/E13d be written against a known encounter.
+  are legitimate"), so a world where everything is empty reports clean. Both specs are therefore **parked until a
+  content pass seeds encounters** — see [`content-seeding-pass.md`](content-seeding-pass.md), which carries the
+  measured counts, the remaining gaps (two hostile archetypes, no `SafeRespawn` location, 3 quests for 67
+  locations) and the guardrail test that keeps the world from regressing to "nothing spawns".
 
 ## 7. Phases
 
