@@ -546,6 +546,16 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
         if (string.IsNullOrWhiteSpace(request.Name))
             return (null, "A name is required.");
 
+        // An interior hangs off a location that already exists; a region or a zone map is what *defines* its
+        // owner, so a new slug is exactly right there.
+        if (mapType is MapType.Interior &&
+            !await db.ZoneLocations.AnyAsync(location => location.Slug == ownerId, cancellationToken))
+        {
+            return (
+                null,
+                $"No location with slug '{ownerId}' exists. Create the location first, then its interior.");
+        }
+
         var mapId = mapType switch
         {
             MapType.Region => $"region:{ownerId}",

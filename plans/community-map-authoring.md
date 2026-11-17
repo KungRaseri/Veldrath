@@ -110,7 +110,8 @@ flowchart TD
 | Phase | Shipped |
 |---|---|
 | J0 | map writes are author-or-`content.manage` through `MapCaller`; the list and the single read are scoped (live maps plus your own drafts, everything for an editor or reviewer, another account's draft reads as 404); `canEdit` rides on both DTOs; validate is a session-only read — **shipped 2026-11-17** |
-| J1–J4 | not started |
+| J1 | `/maps/new` is the one create door: kind, owner and name, with the locations that already exist offered for an interior; the inline form left `/maps`; a fresh draft carries a checklist (first node, the way back, submit); the server refuses an interior whose location does not exist — **shipped 2026-11-17** |
+| J2–J4 | not started |
 
 ## 4. Out of scope
 

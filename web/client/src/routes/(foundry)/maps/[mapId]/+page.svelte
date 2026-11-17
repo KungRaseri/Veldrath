@@ -65,6 +65,12 @@
 	const selectedNode = $derived(draft.nodes.find((node) => node.id === selectedId) ?? null);
 	const blockedReason = $derived(selectedNode ? deleteBlockedReason(draft, selectedNode.id) : null);
 
+	// The two things a reviewer will look for in a fresh draft, so the checklist can tick them off.
+	const hasContentNode = $derived(draft.nodes.some((node) => node.nodeType !== 'EntryPoint'));
+	const hasExit = $derived(
+		draft.nodes.some((node) => node.isExitPoint || node.targetMapId !== null)
+	);
+
 	/** Records a structural change so it can be undone. Text edits deliberately do not push history. */
 	function remember(next: MapGraphDto): void {
 		past = [...past, draft];
@@ -332,6 +338,23 @@
 			</form>
 		{/if}
 	</div>
+
+	{#if data.canEdit && mapStatus === 'Draft'}
+		<div class="game-panel space-y-1 p-3 text-sm" aria-label="Draft checklist">
+			<p class="font-medium">Before a reviewer can approve this draft</p>
+			<ul class="list-inside list-disc space-y-1 text-surface-600-400">
+				<li class={hasContentNode ? 'line-through' : ''}>
+					Add the first node: a location for a zone, or the zone itself for a region.
+				</li>
+				<li class={hasExit ? 'line-through' : ''}>
+					Add the exit that leads back, so nobody is stranded.
+				</li>
+				<li class={draft.submittedAt ? 'line-through' : ''}>
+					Submit for review — a Curator makes it live.
+				</li>
+			</ul>
+		</div>
+	{/if}
 
 	<MapHeader graph={draft} canEdit={data.canEdit} status={mapStatus} onPatch={patchGraph} />
 

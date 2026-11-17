@@ -20,7 +20,8 @@ import {
 	actions as newLanguageActions,
 	load as newLanguagePage
 } from './(foundry)/languages/new/+page.server';
-import { actions as mapsActions, load as mapsPage } from './(foundry)/maps/+page.server';
+import { load as mapsPage } from './(foundry)/maps/+page.server';
+import { actions as newMapActions, load as newMapPage } from './(foundry)/maps/new/+page.server';
 import { actions as mapActions, load as mapPage } from './(foundry)/maps/[mapId]/+page.server';
 import {
 	actions as notificationActions,
@@ -225,25 +226,12 @@ beforeEach(() => {
 describe('map editor', () => {
 	const params = { mapId: 'zone:fenwick' };
 
-	it('lists the graphs for a reader without switching the write controls on', async () => {
-		const result = (await callLoad(
-			mapsPage,
-			signedIn({ parentData: { canViewContent: true, canManageContent: false } })
-		)) as { canEdit: boolean; maps: unknown[] };
+	it('lists the maps the server allows, which is where the scoping lives', async () => {
+		// The page does not decide visibility: the API already narrowed the list to live maps plus this
+		// account's drafts, and it marks each row with canEdit.
+		const result = (await callLoad(mapsPage, signedIn())) as { maps: unknown[] };
 
-		expect(result.canEdit).toBe(false);
 		expect(result.maps).toEqual([{ id: 'zone:fenwick', name: 'Fenwick' }]);
-	});
-
-	it('lists the graphs for an account with no permissions at all', async () => {
-		// Reading the portal is not a capability any more: any signed-in account may open the graph.
-		const result = (await callLoad(
-			mapsPage,
-			signedIn({ parentData: { canManageContent: false } })
-		)) as { canEdit: boolean; maps: unknown[] };
-
-		expect(result.canEdit).toBe(false);
-		expect(result.maps).toHaveLength(1);
 	});
 
 	it('reports the API failure rather than an empty list', async () => {
@@ -318,25 +306,112 @@ describe('map editor', () => {
 		expect(mapsApi.saveMap).not.toHaveBeenCalled();
 	});
 
-	it('creates a draft and opens it', async () => {
+	it('loads the locations the interior step offers', async () => {
+		const result = (await callLoad(newMapPage, signedIn())) as {
+			locations: { id: string }[];
+			error: unknown;
+		};
+
+		expect(result.locations[0]?.id).toBe('halrow-threshold');
+		expect(result.error).toBeNull();
+	});
+
+	it('still opens the wizard when the location list is unavailable', async () => {
+		mapsApi.getMapTargets.mockResolvedValue(failed('targets are down'));
+
+		const result = (await callLoad(newMapPage, signedIn())) as {
+			locations: unknown[];
+			error: string;
+		};
+
+		// A region or a zone map defines its own owner, so only the interior suggestions are lost.
+		expect(result.locations).toEqual([]);
+		expect(result.error).toBe('targets are down');
+	});
+
+	it('creates the draft from the wizard and opens the editor', async () => {
 		expect(
 			await redirectTo(() =>
-				action(mapsActions.create, { mapType: 'Zone', ownerId: 'draft-zone', name: 'Draft Zone' })
+				action(newMapActions.default, {
+					mapType: 'Zone',
+					ownerId: 'draft-zone',
+					name: 'Draft Zone'
+				})
 			)
 		).toBe('/maps/zone%3Adraft-zone');
 	});
 
-	it('reports why a draft could not be created', async () => {
+	it('refuses a slug with capitals or spaces, and a nameless map, before calling the API', async () => {
+		const badSlug = (await action(newMapActions.default, {
+			mapType: 'Zone',
+			ownerId: 'The Halrow',
+			name: 'The Halrow'
+		})) as { status: number; data: { message: string } };
+
+		expect(badSlug.status).toBe(400);
+		expect(badSlug.data.message).toContain('lowercase');
+		expect(mapsApi.createMap).not.toHaveBeenCalled();
+
+		const noName = (await action(newMapActions.default, {
+			mapType: 'Zone',
+			ownerId: 'the-halrow-new',
+			name: '   '
+		})) as { status: number; data: { message: string } };
+
+		expect(noName.status).toBe(400);
+		expect(noName.data.message).toContain('name');
+		expect(mapsApi.createMap).not.toHaveBeenCalled();
+	});
+
+	it('refuses a kind the portal does not offer, and defaults fields the browser omits', async () => {
+		const world = (await action(newMapActions.default, {
+			mapType: 'World',
+			ownerId: 'the-world',
+			name: 'The World'
+		})) as { status: number; data: { message: string } };
+
+		expect(world.status).toBe(400);
+		expect(world.data.message).toContain('kind of map');
+		expect(mapsApi.createMap).not.toHaveBeenCalled();
+
+		// A post with no kind or owner falls back to Zone and an empty slug, which the slug rule then
+		// refuses — still before the API is called.
+		const sparse = (await action(newMapActions.default, {})) as {
+			status: number;
+			data: { message: string; mapType: string };
+		};
+
+		expect(sparse.status).toBe(400);
+		expect(sparse.data.mapType).toBe('Zone');
+		expect(sparse.data.message).toContain('lowercase');
+		expect(mapsApi.createMap).not.toHaveBeenCalled();
+	});
+
+	it('falls back to 502 and its own copy when the API answers with nothing', async () => {
+		mapsApi.createMap.mockResolvedValue({ status: 0, data: null, error: null });
+
+		const result = (await action(newMapActions.default, {
+			mapType: 'Zone',
+			ownerId: 'the-halrow-new',
+			name: 'The Halrow New'
+		})) as { status: number; data: { message: string } };
+
+		expect(result.status).toBe(502);
+		expect(result.data.message).toBe('The map could not be created.');
+	});
+
+	it('reports why a draft could not be created, and keeps what was typed', async () => {
 		mapsApi.createMap.mockResolvedValue(failed("'draft-zone' already owns a Zone map.", 400));
 
-		const result = (await action(mapsActions.create, {
+		const result = (await action(newMapActions.default, {
 			mapType: 'Zone',
 			ownerId: 'draft-zone',
 			name: 'Draft Zone'
-		})) as { status: number; data: { message: string } };
+		})) as { status: number; data: { message: string; ownerId: string } };
 
 		expect(result.status).toBe(400);
 		expect(result.data.message).toContain('already owns');
+		expect(result.data.ownerId).toBe('draft-zone');
 	});
 
 	it('submits a draft, and reports a conflict with the reason the server worded', async () => {

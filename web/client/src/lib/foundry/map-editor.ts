@@ -33,6 +33,38 @@ export interface MapEdgeDto {
 	isHidden: boolean;
 }
 
+/**
+ * The map kinds an author may create, with the one-line explanation the wizard shows.
+ *
+ * `World` is reserved: the server refuses it, so it is not offered. `Region` and `Zone` maps *define* the
+ * thing they are owned by, while an `Interior` belongs to a `ZoneLocation` that must already exist.
+ */
+export const MAP_KINDS = [
+	{
+		value: 'Region',
+		label: 'Region',
+		hint: 'A region: its nodes are the zones inside it and the exits to other regions.'
+	},
+	{
+		value: 'Zone',
+		label: 'Zone',
+		hint: 'A zone: its nodes are the locations inside it and the exits back to its region.'
+	},
+	{
+		value: 'Interior',
+		label: 'Interior',
+		hint: 'A dungeon or building interior. It belongs to a location that already exists.'
+	}
+] as const;
+
+/** One creatable map kind. */
+export type MapKind = (typeof MAP_KINDS)[number];
+
+/** The hint per kind, so a component can look one up without a search or a fallback branch. */
+export const MAP_KIND_HINTS: Record<string, string> = Object.fromEntries(
+	MAP_KINDS.map((entry) => [entry.value, entry.hint])
+);
+
 /** A complete map graph, mirroring `Veldrath.Contracts.Map.MapGraphDto`. */
 export interface MapGraphDto {
 	id: string;
@@ -113,6 +145,8 @@ export interface MapSummaryDto {
 	approvedVersion?: number;
 	/** When the map was put forward for review. */
 	submittedAt?: string | null;
+	/** Whether this account may write the map; see {@link MapGraphDto.canEdit}. */
+	canEdit?: boolean;
 }
 
 /** One validation issue reported by a save, mirroring `Veldrath.Contracts.Map.MapGraphIssueDto`. */

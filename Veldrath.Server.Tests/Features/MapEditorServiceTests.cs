@@ -60,6 +60,29 @@ public class MapEditorServiceTests
     }
 
     [Fact]
+    public async Task CreateDraftAsync_RequiresAnExistingLocationForAnInterior()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var (missing, error) = await editor.CreateDraftAsync(
+            new MapCreateRequest("Interior", "no-such-location", "Nowhere"),
+            Guid.NewGuid());
+
+        missing.Should().BeNull();
+        error.Should().Contain("No location with slug");
+
+        // A region or a zone map defines its owner; an interior hangs off a location that already exists.
+        var locationSlug = await db.ZoneLocations.Select(location => location.Slug).FirstAsync();
+        var (map, createdError) = await editor.CreateDraftAsync(
+            new MapCreateRequest("Interior", locationSlug, "The Cellar"),
+            Guid.NewGuid());
+
+        createdError.Should().BeNull();
+        map!.Id.Should().Be($"interior:{locationSlug}");
+    }
+
+    [Fact]
     public async Task CreateDraftAsync_RefusesAnOwnerThatAlreadyHasAMap()
     {
         var (db, editor) = await SeededAsync();
