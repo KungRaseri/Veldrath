@@ -36,6 +36,11 @@ test.describe('public reading surfaces', () => {
 		await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 		await expect(page.getByRole('alert')).toHaveCount(0);
 
+		// The hardcore board is its own page: fallen characters, paged.
+		await page.goto('/leaderboard/hardcore');
+		await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+		await expect(page.getByRole('alert')).toHaveCount(0);
+
 		// An unknown article is a 404, not a blank page or a 500.
 		const missingLore = await page.goto('/lore/e2e-does-not-exist');
 		expect(missingLore?.status()).toBe(404);

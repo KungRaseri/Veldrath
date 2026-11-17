@@ -306,6 +306,7 @@ jobs:
             tests/foundry-submissions.e2e.ts \
             tests/staff-areas.e2e.ts \
             tests/staff-actions.e2e.ts \
+            tests/admin-console.e2e.ts \
             tests/editorial-publishing.e2e.ts \
             tests/public-details.e2e.ts
 

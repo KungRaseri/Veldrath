@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 import {
+	apiBase,
+	gameToken,
 	makeAccount,
 	register,
 	signUpWithRoles,
@@ -8,25 +10,40 @@ import {
 } from './support/stack';
 
 /**
- * Moderation actions against a real account: warn, mute and unmute a player, and see the state the
- * moderator changed on the page. Kick is deliberately not asserted — it acts on live sessions, and this
- * suite never opens the hub, so a kick could only prove that "nobody online" is refused.
+ * Moderation against real accounts: warn, mute and unmute a player, and take a player's report from
+ * submitted to resolved.
  *
- * The target is a real registered player rather than seeded data, so the chips ("1 warnings", "Muted")
- * are the server's answer about that account and not a fixture.
+ * The report is created through `POST /api/reports` with the reporter's own minted game token, because a
+ * player has no page that files one — the game client does. That is setup, not a shortcut around the
+ * journey: the assertion is that the moderator's queue shows the report and resolving it removes it.
+ *
+ * Kick is deliberately not asserted: it acts on live sessions and this suite never opens the hub, so a
+ * kick could only prove "nobody online".
  */
 test.describe('moderation actions journey', () => {
 	test.skip(!stackEnabled, stackSkipReason);
 	test.describe.configure({ timeout: 180_000 });
 
-	test('a moderator warns and mutes a player, and the player page reflects it', async ({
-		browser
+	test('a moderator warns and mutes a player, then resolves that player’s report', async ({
+		browser,
+		request
 	}) => {
 		// The target: a normal player who never enters the game.
 		const playerContext = await browser.newContext();
 		const player = await playerContext.newPage();
 		const target = makeAccount('e2etarget');
 		await register(player, target);
+
+		// A second player files a report against the target, the way the game client would.
+		const reporterContext = await browser.newContext();
+		const reporter = await reporterContext.newPage();
+		await register(reporter, makeAccount('e2ereporter'));
+		const reason = `E2E report ${Date.now().toString(36)}`;
+		const submitted = await request.post(`${apiBase}/api/reports`, {
+			headers: { authorization: `Bearer ${await gameToken(reporter)}` },
+			data: { targetUsername: target.username, reason }
+		});
+		expect(submitted.status(), await submitted.text()).toBe(201);
 
 		const modContext = await browser.newContext();
 		const moderator = await modContext.newPage();
@@ -40,6 +57,12 @@ test.describe('moderation actions journey', () => {
 		await expect(moderator.getByRole('heading', { level: 1, name: target.username })).toBeVisible({
 			timeout: 20_000
 		});
+
+		// The detail page is deep-linkable, not only reachable by clicking the row:
+		// route /mod/users/[id] — the row above resolves that id, and this re-opens it by URL.
+		const userPath = new URL(moderator.url()).pathname;
+		await moderator.goto(userPath);
+		await expect(moderator.getByRole('heading', { level: 1, name: target.username })).toBeVisible();
 		await expect(moderator.getByText('0 warnings')).toBeVisible();
 
 		// ── Warn ────────────────────────────────────────────────────────────────────────────────
@@ -63,12 +86,27 @@ test.describe('moderation actions journey', () => {
 		await moderator.getByRole('button', { name: 'Unmute' }).click();
 		await expect(moderator.getByText('Muted', { exact: true })).toHaveCount(0, { timeout: 20_000 });
 
-		// ── Reports: the queue renders for a moderator, resolved or empty ───────────────────────
-		await moderator.goto('/mod/reports');
-		await expect(moderator.getByRole('heading', { level: 1 })).toBeVisible();
-		await expect(moderator.getByRole('alert')).toHaveCount(0);
+		// ── The report: in the unresolved queue, then resolved out of it ────────────────────────
+		await moderator.goto('/mod/reports?resolved=false');
+		const report = moderator.getByRole('row').filter({ hasText: reason });
+		await expect(report).toBeVisible({ timeout: 20_000 });
+		await report.getByRole('button', { name: 'Resolve' }).click();
+
+		// Resolving redirects to the unfiltered queue, so the row stays — with its status changed. That is
+		// the assertion: the report is resolved, not that it vanished from a view it was never in.
+		await expect(moderator).toHaveURL(/\/mod\/reports$/, { timeout: 20_000 });
+		await expect(
+			moderator.getByRole('row').filter({ hasText: reason }).getByText('Resolved')
+		).toBeVisible({ timeout: 20_000 });
+		await expect(
+			moderator
+				.getByRole('row')
+				.filter({ hasText: reason })
+				.getByRole('button', { name: 'Resolve' })
+		).toHaveCount(0);
 
 		await playerContext.close();
+		await reporterContext.close();
 		await modContext.close();
 	});
 });

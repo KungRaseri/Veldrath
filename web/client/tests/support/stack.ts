@@ -34,6 +34,26 @@ const databaseUrl =
 
 const PASSWORD = 'E2e-password-123';
 
+/** The .NET API the SvelteKit server calls. Specs use it only for setup the UI has no path for. */
+export const apiBase = (process.env.E2E_API_URL ?? 'http://127.0.0.1:9000').replace(/\/+$/, '');
+
+/**
+ * Reads the short-lived game token the page's session can mint, so a spec can act as that account
+ * against the API directly (the hub and some player actions have no `+server.ts` proxy).
+ *
+ * @param page A signed-in page.
+ * @returns The bearer token `Veldrath.Server` accepts for this session.
+ */
+export async function gameToken(page: Page): Promise<string> {
+	const token = await page.evaluate(async () => {
+		const response = await fetch('/api/game-token', { cache: 'no-store' });
+		if (!response.ok) throw new Error(`game-token request failed (${response.status}).`);
+		return ((await response.json()) as { token: string }).token;
+	});
+
+	return token;
+}
+
 /** A throwaway account, unique per run so parallel workers never collide. */
 export interface TestAccount {
 	username: string;

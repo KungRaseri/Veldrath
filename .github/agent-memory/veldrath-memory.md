@@ -4029,6 +4029,21 @@ Publish → its public article and index link; empty body refused) and `public-d
   exists. They now propagate the upstream status (`result.status === 0 ? 502 : result.status`). The same pattern
   is worth checking in any new admin loader.
 
-Still open, recorded in the plan (E7): resolving a report end to end (needs a report-creating fixture), kick (no
-live session in Playwright), and the admin sub-pages plus `editorial/lore/[id]`, which are still exempted in
-`parity/routes.test.ts` — each should retire its exemption when its spec lands.
+Fourth pass closed E7. **Eight stack specs**; the newest is `admin-console` — an Admin grants Curator through
+`/admin/users/[id]`, the *player's own context* (no re-login) sees the review queue and gets 200 on `/review`,
+revoking returns 403 — the regression test for the snapshot-invalidation fix. `staff-actions` now also closes the
+report loop (a second player files one via `POST /api/reports` with its own minted token, the moderator sees it
+unresolved and resolves it), and `editorial-publishing` publishes a lore article too.
+
+- **`parity/routes.test.ts` is down to two exemptions**: `/api/**` and `/languages/**`. The admin, mod, editorial,
+  foundry, players and leaderboard exemptions are gone because a spec now drives each page.
+- **The parity suite reads spec *source*, so a dynamic route needs its literal in the spec.** For
+  `/admin/users/[id]` and `/mod/users/[id]` the specs record the real URL and re-`goto` it (a genuine
+  deep-linkable assertion) with the route pattern named in a comment; do that rather than re-adding an exemption.
+- **`/mod/reports`'s resolve action redirects to the *unfiltered* queue**, so a resolved row does not disappear
+  from the page — assert its status chip flips to "Resolved", not that the row vanishes.
+- **SvelteKit runs `+page.server.ts` and `+layout.server.ts` concurrently**, so a player opening `/mod/users`
+  makes one API call that the API refuses (403) before the layout's redirect wins. Nothing leaks, but it is a
+  wasted round trip per blocked page; guarding each page load on `parent()` is the fix, recorded as E8.
+
+Still open (E8): kick (needs a live session), and those per-page guards.

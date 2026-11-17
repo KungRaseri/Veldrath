@@ -63,6 +63,26 @@ test.describe('editorial publishing journey', () => {
 			timeout: 20_000
 		});
 
+		// ── A lore article: create → publish → readable at its public URL ───────────────────────
+		const loreTitle = `E2E Chronicle ${stamp}`;
+		const loreSlug = `e2e-chronicle-${stamp}`;
+		await page.goto('/editorial/lore/new');
+		await page.locator('input[name="slug"]').fill(loreSlug);
+		await page.locator('input[name="category"]').fill('History');
+		await page.locator('input[name="title"]').fill(loreTitle);
+		await page.locator('textarea[name="summary"]').fill('A footnote for the archive.');
+		await page.locator('textarea[name="content"]').fill('## The quiet years\n\nNothing happened.');
+		await page.getByRole('button', { name: 'Create article' }).click();
+
+		await expect(page.getByRole('button', { name: 'Publish' })).toBeVisible({ timeout: 20_000 });
+		await page.getByRole('button', { name: 'Publish' }).click();
+		await expect(page.getByRole('button', { name: 'Unpublish' })).toBeVisible({ timeout: 20_000 });
+
+		await page.goto(`/lore/${loreSlug}`);
+		await expect(page.getByRole('heading', { level: 1, name: loreTitle })).toBeVisible({
+			timeout: 20_000
+		});
+
 		// ── A failure path: a required field left empty is refused on the page ──────────────────
 		await page.goto('/editorial/announcements/new');
 		await page.locator('input[name="title"]').fill('Missing body');

@@ -102,8 +102,19 @@ suite never opens the hub, so a kick could only prove "nobody online".
 
 [`editorial-publishing.e2e.ts`](../web/client/tests/editorial-publishing.e2e.ts) — writing for the public site:
 create an announcement → Publish → it appears on `/community`; create a patch note → Publish → its public article
-renders and the public index links it; and a missing body is refused on the page. Note the create form lives in
-`[id]` with `id === 'new'`, which is why `/editorial/.../new` works with no `new/` directory.
+renders and the public index links it; create a lore article → Publish → its public page renders; and a missing
+body is refused on the page. Note the create form lives in `[id]` with `id === 'new'`, which is why
+`/editorial/.../new` works with no `new/` directory.
+
+[`admin-console.e2e.ts`](../web/client/tests/admin-console.e2e.ts) — the thing the console exists to do: an Admin
+grants Curator through `/admin/users/[id]`, the **player's own session** (a different context, no re-login) sees
+the review queue and gets 200 on `/review`, revoking takes it back to 403. Then `/admin`, `/admin/roles`,
+`/admin/sessions`, `/admin/server`, `/admin/status` and `/admin/reports` all render. This is the spec that would
+catch a regression in the access-snapshot invalidation.
+
+`staff-actions.e2e.ts` also closes the report loop: a second player files a report through
+`POST /api/reports` with their own minted game token (the game client's path; no page files one), the moderator's
+unresolved queue shows it, and resolving it leaves the row with the **Resolved** status.
 
 [`public-details.e2e.ts`](../web/client/tests/public-details.e2e.ts) — the reading surfaces against seeded data:
 `/lore`, `/patch-notes`, `/leaderboard`, `/community`, plus the failure paths (an unknown lore slug, patch note or
@@ -144,15 +155,17 @@ real web app meets the real API:
 
 ## 6. Still open
 
-- **Resolving a report from `/mod/reports`** is not driven end to end: creating a report needs a player action
-  that this suite does not take, so the spec asserts the queue renders for a moderator rather than resolving a
-  row. A report-creating fixture is the missing piece.
-- **Kick** is unasserted for the reason above (no live session in Playwright).
-- **The admin sub-pages** (`/admin/roles`, `/admin/sessions`, `/admin/server`, `/admin/status`, `/admin/users/[id]`)
-  and **`/editorial/lore/[id]`** are still only exempted in `parity/routes.test.ts`; each becomes a short spec and
-  retires its exemption.
+- **Kick** is the one moderation verb not driven: it acts on live sessions and this suite never opens the hub, so
+  a kick could only prove "nobody online".
+- **A gated page's own load runs before its layout guard throws.** SvelteKit runs `+page.server.ts` and
+  `+layout.server.ts` loads concurrently, so a player who opens `/mod/users` makes one API call that the API
+  refuses with 403 before the redirect. Nothing leaks — the API is the authority — but it is a wasted round trip
+  per blocked page, and it makes the server log look like an incident. Guarding each page load on `parent()`
+  would remove it.
 - **The review queue validates every submitted map on load** (two API calls per row). Fine for a page of maps;
   worth moving onto `MapSummaryDto` if the queue ever pages.
+- **`parity/routes.test.ts` is down to two exemptions**: `/api/**` (route handlers, covered by unit tests) and
+  `/languages/**` (a redirect onto the content type). Every page route is now referenced by a spec that drives it.
 
 ## 7. Phases
 
@@ -165,7 +178,8 @@ real web app meets the real API:
 | E4 | Editorial, admin and moderation: the areas, their lists, a real user filter, and a player refused all three | **shipped 2026-11-17** (publishing and kick/warn/mute pending, see §6) |
 | E5 | Public reading surfaces (`/lore`, `/patch-notes`, `/leaderboard`, `/community`) and their 404 paths | **shipped 2026-11-17** |
 | E6 | Moderation verbs (warn, mute, unmute) on a real player, and publishing an announcement and a patch note through to the public site | **shipped 2026-11-17** |
-| E7 | The admin sub-pages, `editorial/lore/[id]`, and resolving a report — each retiring its `routes.test.ts` exemption as it lands | next |
+| E7 | Role grant → live for the player → revoke, the admin sub-pages, `editorial/lore/[id]`, and resolving a report end to end; the admin/mod/editorial/players/leaderboard exemptions retired | **shipped 2026-11-17** |
+| E8 | Kick (needs a live session), and guarding each gated page load so a blocked page makes no API call | next |
 
 E3–E5 are recorded here rather than half-built: the harness is what makes them cheap, and each one retires an
 exemption in [`parity/routes.test.ts`](../web/client/src/lib/parity/routes.test.ts) rather than adding a new

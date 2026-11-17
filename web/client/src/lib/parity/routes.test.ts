@@ -67,29 +67,10 @@ const EXEMPTIONS: { pattern: RegExp; reason: string }[] = [
 			'SvelteKit route handlers are covered by unit tests (game-token, creation proxies, Better Auth catch-all), not Playwright.'
 	},
 	{
-		pattern: /^\/admin(\/|$)/,
-		reason:
-			'Admin pages: the (admin) layout guard is e2e-tested; per-page e2e happy paths are the route-tests item in the coverage plan.'
-	},
-	{
-		pattern: /^\/mod(\/|$)/,
-		reason:
-			'Moderation pages: the (mod) layout guard is e2e-tested; per-page e2e happy paths are the route-tests item in the coverage plan.'
-	},
-	{
-		pattern: /^\/editorial(\/|$)/,
-		reason:
-			'Editorial pages: guarded by the (editorial) layout; happy-path e2e lands with the route-tests item.'
-	},
-	{
-		pattern: /^\/(content|languages|notifications|submissions)(\/|$)/,
-		reason:
-			'Foundry pages: guarded by the (foundry) layout and the schema-driven editor is unit-tested; e2e happy paths land with the route-tests item.'
-	},
-	{
-		pattern: /^\/(players|leaderboard)(\/|$)/,
-		reason:
-			'Player profile and leaderboard render seeded server content; loader tests plus an e2e mention land with the public route-tests item.'
+		// The retired language browser is a redirect fork onto the content type, covered by a loader test;
+		// driving it in Playwright would only re-assert the redirect.
+		pattern: /^\/languages(\/|$)/,
+		reason: 'Legacy language URL: a redirect onto `/content/language`, covered by its loader test.'
 	}
 ];
 
