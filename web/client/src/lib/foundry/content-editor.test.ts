@@ -109,6 +109,10 @@ describe('coerceFieldValue', () => {
 	it('keeps booleans boolean', () => {
 		expect(coerceFieldValue(field({ fieldType: 'Boolean' }), true)).toBe(true);
 		expect(coerceFieldValue(field({ fieldType: 'Boolean' }), 'false')).toBe(false);
+		// A checkbox with no `value` submits `on`, which means checked. Reading it as false is how a saved
+		// entry became inactive and disappeared from the catalog.
+		expect(coerceFieldValue(field({ fieldType: 'Boolean' }), 'on')).toBe(true);
+		expect(coerceFieldValue(field({ fieldType: 'Boolean' }), 'true')).toBe(true);
 	});
 
 	it('trims text and keeps empty text as an empty string', () => {

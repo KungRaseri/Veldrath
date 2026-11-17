@@ -87,11 +87,6 @@ const EXEMPTIONS: { pattern: RegExp; reason: string }[] = [
 			'Foundry pages: guarded by the (foundry) layout and the schema-driven editor is unit-tested; e2e happy paths land with the route-tests item.'
 	},
 	{
-		pattern: /^\/(lore|patch-notes)\/.+$/,
-		reason:
-			'Public detail pages render seeded server content; they get loader tests and an e2e mention with the public route-tests item.'
-	},
-	{
 		pattern: /^\/(players|leaderboard)(\/|$)/,
 		reason:
 			'Player profile and leaderboard render seeded server content; loader tests plus an e2e mention land with the public route-tests item.'

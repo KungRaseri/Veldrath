@@ -48,12 +48,18 @@
 					</label>
 
 					{#if field.fieldType === 'Boolean'}
+						<!--
+							The schema's default is what the field means when the author expresses no preference
+							(`isActive` defaults to "true"). A checkbox that ignores it created every entry inactive,
+							so the brand-new entity was missing from the catalog the form redirects to.
+						-->
 						<input
 							id={field.name}
 							name={field.name}
 							type="checkbox"
 							class="checkbox"
 							value="true"
+							checked={field.default === 'true'}
 						/>
 					{:else if field.enumValues && field.enumValues.length > 0}
 						<select id={field.name} name={field.name} class="select">

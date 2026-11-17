@@ -1,6 +1,14 @@
-﻿namespace Veldrath.Contracts.Content;
+using System.Text.Json.Serialization;
+
+namespace Veldrath.Contracts.Content;
 
 /// <summary>Describes the type of UI control to render for a content field.</summary>
+/// <remarks>
+/// Serialized by name. The web client switches on <c>'Integer'</c>, <c>'Boolean'</c>, <c>'EnumString'</c> and the
+/// rest to choose a control and to coerce a submitted value; as a number every comparison missed, so a form sent
+/// <c>"50"</c> where an integer belonged and the write refused the payload as unreadable.
+/// </remarks>
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum ContentFieldType
 {
     Text,

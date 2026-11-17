@@ -20,7 +20,7 @@
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright install && playwright test",
 		"test:e2e:game": "playwright test tests/game-loop.e2e.ts",
-		"test:e2e:stack": "playwright test tests/foundry-content.e2e.ts tests/foundry-maps.e2e.ts",
+		"test:e2e:stack": "playwright test tests/foundry-content.e2e.ts tests/foundry-maps.e2e.ts tests/foundry-submissions.e2e.ts tests/staff-areas.e2e.ts tests/public-details.e2e.ts",
 		"auth:schema": "auth generate --config src/lib/server/auth.ts --output ../shared/src/db/auth.schema.ts --yes",
 		"db:migrate-identity": "node ../scripts/migrate-identity-accounts.mjs"
 	},

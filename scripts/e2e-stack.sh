@@ -77,6 +77,9 @@ start() {
   if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
     log "Veldrath.Server already running (pid $(cat "$PID_FILE"))"
   else
+    # `dotnet run` spawns the app as a child whose name is the apphost, not the .dll, so a stop that only
+    # killed the wrapper can leave an OLD build holding the port — and every later run silently tests it.
+    stop_stray_servers
     log "starting Veldrath.Server on :$API_PORT (log: $LOG_FILE)"
     (
       cd "$ROOT/Veldrath.Server"
@@ -101,13 +104,23 @@ start() {
   }
 }
 
+# Kills whatever is running a Veldrath.Server build, whoever started it. The pattern is the built
+# apphost path, so it cannot match this script or the shell that invoked it.
+stop_stray_servers() {
+  pkill -f "bin/.*/Veldrath\.Server" 2>/dev/null || true
+  for _ in $(seq 1 20); do
+    ss -ltn 2>/dev/null | grep -q ":$API_PORT " || return 0
+    sleep 1
+  done
+  log "port $API_PORT is still held after stopping the stray server"
+}
+
 stop() {
   if [ -f "$PID_FILE" ]; then
     kill "$(cat "$PID_FILE")" 2>/dev/null || true
     rm -f "$PID_FILE"
   fi
-  # `dotnet run` spawns the app as a child; stop anything still holding the port.
-  pkill -f "Veldrath.Server.dll" 2>/dev/null || true
+  stop_stray_servers
   docker compose -f "$ROOT/docker-compose.dev.yml" stop postgres >/dev/null 2>&1 || true
   log "stopped"
 }

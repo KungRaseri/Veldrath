@@ -3989,8 +3989,30 @@ Four defects these specs found (each only visible when the real app meets the re
    validator read `powerType`. `ContentSchema.cs` now authors `typeKey` in the shared Identity group and
    `powerType` (including `innate`) for abilities and spells.
 
-Still open, recorded in the plan: content **writes** through the form fail with "The request body is not a valid
-content payload" — `ContentEntityTypes.Deserialize` returns null for the nested payload `buildPayload` produces
-(a flat payload with the same values creates the entity, 201). That is the next fix, and the content spec is
-ready to grow its write half. E3–E5 (submissions round trip, editorial/admin/mod, public detail pages) are
-planned; each retires an exemption in `parity/routes.test.ts` rather than adding one.
+Second pass (same day) closed the write half and added three more journeys. Five stack specs now:
+`foundry-content` (create → edit → save → duplicate refused → deactivate → 404), `foundry-maps` (the map
+lifecycle), `foundry-submissions` (a role-less player submits, a Curator approves, the catalog gains the entry,
+the inbox reports it, Mark read clears it), `staff-areas` (editorial/admin/mod lists, a real user filter, and a
+player refused all three) and `public-details` (`/lore`, `/patch-notes`, `/leaderboard`, `/community`, plus the
+404 paths). Three more defects they found:
+
+5. `ContentFieldType` and `ContentIssueSeverity` were serialized as **numbers** while the web switches on
+   `'Integer'`/`'Boolean'`/`'Error'`. Every coercion missed, so the form posted `"50"` where an integer belonged and
+   the write refused the body; the audit's severity badges were wrong too. Both enums now carry
+   `[JsonConverter(typeof(JsonStringEnumConverter))]` — keep it if either enum moves.
+6. A checkbox with no `value` submits `on`, and `coerceFieldValue` only accepted `'true'`: every save wrote
+   `isActive: false`, the catalog hid the entry and the redirect target 404'd. Fixed in `coerceFieldValue`
+   (`'on'` is true) and the edit form now sets `value="true"`.
+7. The create form ignored the schema's boolean default, so new entries were born inactive. Fixed with
+   `checked={field.default === 'true'}` on the create page.
+
+**Trap worth remembering:** Playwright's `webServer` has `reuseExistingServer: !process.env.CI`, so a local rerun
+silently reuses the previous `vite preview` build and your Svelte changes never reach the browser — the symptom
+is a fixed bug that keeps failing. Run stack specs with `CI=true`. Likewise `scripts/e2e-stack.sh` kills a stray
+`bin/**/Veldrath.Server` process before starting; without that, an old build keeps the port and every later run
+tests it.
+
+Still open, recorded in the plan: the editorial "New announcement / patch note / article" links point at
+`/editorial/.../new` routes that do not exist (the journey dead-ends in a 404), and the deeper staff actions
+(kick/warn/mute, resolving a report, publishing a note) are named but not yet driven. Each new page spec should
+retire an exemption in `parity/routes.test.ts` rather than add one.

@@ -60,11 +60,12 @@ Postgres  →  Veldrath.Server (:9000)  →  SvelteKit preview (:4173)  →  Pla
 
 ## 4. What the new specs cover (shipped 2026-11-17)
 
-[`foundry-content.e2e.ts`](../web/client/tests/foundry-content.e2e.ts) — one editor and one player:
+[`foundry-content.e2e.ts`](../web/client/tests/foundry-content.e2e.ts) — an editor and a player, one catalog:
 
-- Editor: `/foundry` home with its capability groups, `/content` index, one type's browse list, one entry, the
-  edit form (preloaded `displayName` and `typeKey`), the `/new` picker, the schema-driven create form, `/schemas`,
-  `/world-health` (200).
+- Editor: `/foundry` home with its capability groups, `/content` index, one type's browse list, the `/new`
+  picker, the schema-driven create form, **create → detail → edit → Save → read the new value back**,
+  `/schemas`, `/world-health` (200), then **Deactivate** and the entry is gone from the catalog (404).
+- A failure path a person will hit: reusing a slug is refused and the form says so.
 - Player: the same catalog with **no** New entry action, **no** edit link, the create form explaining the
   permission instead of 403ing, and `/world-health` refused with 403.
 
@@ -77,6 +78,26 @@ Postgres  →  Veldrath.Server (:9000)  →  SvelteKit preview (:4173)  →  Pla
 5. The reviewer's `/review` row already says **"Approval would be refused · the map has no exit"**.
 6. Approving is refused and the page says why ("…only leave it by dying"); the state stays *In review*.
 7. Rejecting with a note is accepted, and the **author's inbox** carries the note and links to the map.
+
+[`foundry-submissions.e2e.ts`](../web/client/tests/foundry-submissions.e2e.ts) — the community loop, which is
+the reason the portal exists:
+
+1. A player with **no roles** submits a power through `/new` → the schema form → `/submissions/{id}` (Pending).
+2. `/submissions` defaults to the caller's own rows and offers no Everyone view.
+3. `/review` is refused to that player (403).
+4. A Curator finds the submission in the queue, approves it with notes; the decision is recorded on it.
+5. Approving writes the payload: the entry is readable in the catalog, and the curator gets **no** edit link
+   (decides, does not author).
+6. The submitter's inbox carries the approval, Mark read clears it, and their view of the submission shows the
+   decision and the notes.
+
+[`staff-areas.e2e.ts`](../web/client/tests/staff-areas.e2e.ts) — editorial, admin and moderation with one Admin
+account: `/editorial` and its three lists, `/admin` and its user list, `/admin/audit`, `/mod`, `/mod/users` with a
+real filter round trip, and `/mod/reports?resolved=false`. Then a plain player is refused all three areas (403).
+
+[`public-details.e2e.ts`](../web/client/tests/public-details.e2e.ts) — the reading surfaces against seeded data:
+`/lore`, `/patch-notes`, `/leaderboard`, `/community`, plus the failure paths (an unknown lore slug, patch note or
+player id is a 404 rather than a blank page).
 
 ## 5. What writing these found
 
@@ -99,14 +120,27 @@ real web app meets the real API:
    `type_key_missing`; and the ability form wrote `abilityType` while the model and the validator read
    `powerType`, so edits never satisfied it either. [`ContentSchema.cs`](../Veldrath.Contracts/Content/ContentSchema.cs)
    now authors `typeKey` in the shared Identity group and `powerType` (including `innate`) for abilities and spells.
+5. **The field-type enum crossed the wire as a number.** The web switches on `'Integer'`, `'Boolean'`,
+   `'EnumString'`; the API serialized `ContentFieldType` as `3`, `5`, `6`, so every comparison missed and the form
+   posted `"50"` where an integer belonged — which the write path then refused as "not a valid content payload".
+   The same bug made `ContentIssueSeverity` arrive as `1`/`0`, so the world-health counts and every issue badge
+   read the wrong severity. Both enums now carry `[JsonConverter(typeof(JsonStringEnumConverter))]`.
+6. **A checked checkbox was read as false.** An `<input type="checkbox">` with no `value` submits `on`, and
+   `coerceFieldValue` only accepted `'true'` — so every save wrote `isActive: false`, the catalog hid the entry,
+   and the page the save redirected to answered 404. Fixed in [`coerceFieldValue`](../web/client/src/lib/foundry/content-editor.ts:146)
+   (and the edit form now sets `value="true"`), with a unit test for `on`.
+7. **The create form ignored the boolean default**, so a new entry was born inactive even before (6) — the
+   checkbox did not honour `isActive: "true"` from the schema. Fixed in the create page, with a component test.
 
 ## 6. Still open
 
-- **Content writes through Foundry return "The request body is not a valid content payload."**
-  `ContentEntityTypes.Deserialize` returns null for the nested payload the schema-driven form builds (a flat
-  payload with the same values creates the entity fine — verified with `typeKey` + `powerType` → 201). Until that
-  is fixed the content spec asserts the read-only split and the form rendering rather than the write. This is the
-  next thing to fix, and the spec is ready to grow a create/edit/save half when it is.
+- **The editorial create links point at routes that do not exist.** `/editorial/announcements` (and lore, patch
+  notes) render a "New announcement" / "New patch note" / "New article" link to `/editorial/.../new`, and no such
+  route is registered — the journey dead-ends in a 404. `staff-areas.e2e.ts` asserts the lists and the links, not
+  the destination; publishing a note is blocked on that route existing.
+- **The deeper staff workflows are named, not covered:** kicking, warning or muting a player from
+  `/mod/users/[id]`, resolving a report from `/mod/reports`, and editing a patch note or lore article. The harness
+  and the sign-in path exist; each is a short spec once the editorial routes above are fixed.
 - **The review queue validates every submitted map on load** (two API calls per row). Fine for a page of maps;
   worth moving onto `MapSummaryDto` if the queue ever pages.
 
@@ -116,10 +150,11 @@ real web app meets the real API:
 |---|---|---|
 | E0 | The stack script, the account/role harness, CI wiring for the authenticated specs | **shipped 2026-11-17** |
 | E1 | Public + auth smoke, Foundry content reads, the full map lifecycle | **shipped 2026-11-17** |
-| E2 | Content writes (create → edit → save → deactivate) once the payload binding is fixed | blocked on §6 |
-| E3 | Submissions end to end: a player submits through the schema form, a Curator approves, the published entity appears in the catalog; `?scope=all` vs mine; `/notifications` mark-read | next |
-| E4 | Editorial, admin and moderation happy paths (announcements, patch notes, user list → kick/warn/mute, reports) | pending |
-| E5 | Public detail pages with seeded content (`/lore/[slug]`, `/patch-notes/[slug]`, `/players/[id]`, `/leaderboard`), and retiring the `routes.test.ts` exemptions one by one as their spec lands | pending |
+| E2 | Content writes: create → edit → save → deactivate, plus a refused duplicate slug | **shipped 2026-11-17** |
+| E3 | Submissions end to end: a player submits, a Curator approves, the catalog gains the entry, the inbox reports it and Mark read clears it; own rows vs Everyone | **shipped 2026-11-17** |
+| E4 | Editorial, admin and moderation: the areas, their lists, a real user filter, and a player refused all three | **shipped 2026-11-17** (publishing and kick/warn/mute pending, see §6) |
+| E5 | Public reading surfaces (`/lore`, `/patch-notes`, `/leaderboard`, `/community`) and their 404 paths | **shipped 2026-11-17** |
+| E6 | The remaining staff actions (§6), then retiring the `routes.test.ts` exemptions one by one as their page is actually driven | next |
 
 E3–E5 are recorded here rather than half-built: the harness is what makes them cheap, and each one retires an
 exemption in [`parity/routes.test.ts`](../web/client/src/lib/parity/routes.test.ts) rather than adding a new

@@ -524,6 +524,45 @@ describe('content create page', () => {
 		expect(screen.getByRole('button', { name: 'Create draft' })).toBeTruthy();
 	});
 
+	it('checks a boolean whose schema default is true, so a new entry is active', () => {
+		// The schema says `isActive` defaults to "true"; a checkbox that ignored it created every entry
+		// inactive, and the catalog the form redirects to then had no such entry.
+		const { container } = render(
+			NewContentEntry,
+			page({
+				contentType: 'recipe',
+				canEdit: true,
+				refOptions: {},
+				schema: {
+					contentType: 'recipe',
+					displayLabel: 'Recipes',
+					description: '',
+					groups: [
+						{
+							label: 'Identity',
+							fields: [
+								field({
+									name: 'displayName',
+									label: 'Display name',
+									fieldType: 'Text',
+									required: true
+								}),
+								field({
+									name: 'isActive',
+									label: 'Active',
+									fieldType: 'Boolean',
+									default: 'true'
+								})
+							]
+						}
+					]
+				}
+			})
+		);
+
+		expect(container.querySelector<HTMLInputElement>('#isActive')?.checked).toBe(true);
+	});
+
 	it('renders every control kind, a Reference datalist, and a plural collection note', () => {
 		render(
 			NewContentEntry,

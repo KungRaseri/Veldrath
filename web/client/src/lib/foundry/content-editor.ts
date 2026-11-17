@@ -145,7 +145,11 @@ export function writePath(
 /** Converts a form value to the shape the payload expects. */
 export function coerceFieldValue(field: ContentField, raw: FieldValue): unknown {
 	if (field.fieldType === 'Boolean') {
-		return typeof raw === 'boolean' ? raw : raw === 'true';
+		// `on` is what a checkbox submits when the markup gives it no `value`. It means "checked" — reading it
+		// as anything else silently saved every boolean false, which is how a saved entry became inactive and
+		// vanished from the catalog it was just created in.
+		if (typeof raw === 'boolean') return raw;
+		return raw === 'true' || raw === 'on';
 	}
 
 	// A key/value field is edited as rows so they can be reordered, and stored as an object.

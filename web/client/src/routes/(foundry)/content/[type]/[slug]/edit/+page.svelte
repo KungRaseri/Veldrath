@@ -295,6 +295,7 @@
 									name={field.name}
 									type="checkbox"
 									class="checkbox"
+									value="true"
 									checked={values[field.name] === true}
 									onchange={(event) => (values[field.name] = event.currentTarget.checked)}
 								/>
