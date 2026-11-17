@@ -33,6 +33,35 @@ public class MapEditorServiceTests
         return (db, new MapEditorService(db, NullLogger<MapEditorService>.Instance));
     }
 
+    /// <summary>Gives a graph a way out, pointing at a seeded region entry, so it can be approved.</summary>
+    private static MapGraphDto WithAWayOut(MapGraphDto graph) =>
+        graph with
+        {
+            Nodes =
+            [
+                .. graph.Nodes,
+                new MapNodeDto(
+                    $"{graph.Id}:exit",
+                    graph.Id,
+                    "RegionExit",
+                    "cinderplain",
+                    "Exit to Cinderplain",
+                    string.Empty,
+                    null,
+                    graph.Nodes.Count,
+                    0,
+                    false,
+                    true,
+                    "region:cinderplain",
+                    "region:cinderplain:entry",
+                    false,
+                    null,
+                    null,
+                    null,
+                    (graph.Nodes.Count * 10) + 10),
+            ],
+        };
+
     private static MapGraphDto WithNode(
         MapGraphDto graph,
         string nodeId,
@@ -122,6 +151,12 @@ public class MapEditorServiceTests
 
         var reviewer = Guid.NewGuid();
         await editor.CreateDraftAsync(new MapCreateRequest("Zone", "draft-zone", "Draft Zone"), Guid.NewGuid());
+
+        // A draft saves with no way out — that is how a zone gets built — but approval refuses it, so give it
+        // the exit an author would add before submitting.
+        var draft = (await editor.GetAsync("zone:draft-zone", Editor))!;
+        (await editor.SaveAsync(draft.Id, WithAWayOut(draft), draft.Version, Editor)).Success.Should().BeTrue();
+
         (await editor.SubmitAsync("zone:draft-zone", Editor)).Success.Should().BeTrue();
 
         var result = await editor.ReviewAsync("zone:draft-zone", reviewer, new MapReviewRequest(true));

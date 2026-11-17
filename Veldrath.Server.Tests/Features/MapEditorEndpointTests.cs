@@ -59,6 +59,35 @@ public class MapEditorEndpointTests(WebAppFactory factory)
             $"/api/content/maps/{Uri.EscapeDataString(mapId)}",
             Json);
 
+    /// <summary>Gives a graph a way out, pointing at a seeded region entry, so approval will accept it.</summary>
+    private static MapGraphDto WithAWayOut(MapGraphDto graph) =>
+        graph with
+        {
+            Nodes =
+            [
+                .. graph.Nodes,
+                new MapNodeDto(
+                    $"{graph.Id}:exit",
+                    graph.Id,
+                    "RegionExit",
+                    "cinderplain",
+                    "Exit to Cinderplain",
+                    string.Empty,
+                    null,
+                    graph.Nodes.Count,
+                    0,
+                    false,
+                    true,
+                    "region:cinderplain",
+                    "region:cinderplain:entry",
+                    false,
+                    null,
+                    null,
+                    null,
+                    (graph.Nodes.Count * 10) + 10),
+            ],
+        };
+
     [Fact]
     public async Task Reads_RequireAnAccountButNotAContentPermission()
     {
@@ -303,8 +332,15 @@ public class MapEditorEndpointTests(WebAppFactory factory)
         created.StatusCode.Should().Be(HttpStatusCode.Created);
         var draft = await created.Content.ReadFromJsonAsync<MapGraphDto>(Json);
 
+        // A draft saves with no way out; approval refuses it. Add the exit first, as an author would.
+        var saved = await author.PutAsJsonAsync(
+            $"/api/content/maps/{Uri.EscapeDataString(draft!.Id)}",
+            new MapGraphWriteRequest(WithAWayOut(draft!), draft!.Version),
+            Json);
+        saved.StatusCode.Should().Be(HttpStatusCode.OK);
+
         var submitted = await author.PostAsJsonAsync(
-            $"/api/content/maps/{Uri.EscapeDataString(draft!.Id)}/submit",
+            $"/api/content/maps/{Uri.EscapeDataString(draft.Id)}/submit",
             new { },
             Json);
         submitted.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -344,6 +380,13 @@ public class MapEditorEndpointTests(WebAppFactory factory)
             new MapReviewRequest(true),
             Json);
         early.StatusCode.Should().Be(HttpStatusCode.Conflict, "nothing was submitted");
+
+        // A draft saves with no way out; approval refuses it. Add the exit first, as an author would.
+        var saved = await client.PutAsJsonAsync(
+            $"/api/content/maps/{Uri.EscapeDataString(draft.Id)}",
+            new MapGraphWriteRequest(WithAWayOut(draft), draft.Version),
+            Json);
+        saved.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var submitted = await client.PostAsJsonAsync(
             $"/api/content/maps/{Uri.EscapeDataString(draft.Id)}/submit",

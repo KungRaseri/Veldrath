@@ -308,6 +308,18 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
                 other.ZoneId == zoneId && other.Traits.SafeRespawn == true))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
+        // Which zone each location belongs to, so a zone map is checked against its own locations rather than
+        // the whole catalog. TryAdd rather than ToDictionary: a duplicated slug is a catalog problem the audit
+        // reports, not a reason for a save to throw.
+        var locationZones = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var location in locations)
+            locationZones.TryAdd(location.Slug, location.ZoneId);
+
+        var liveMapIds = maps
+            .Where(map => map.IsActive)
+            .Select(map => map.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         var result = MapGraphValidator.ValidateWorld(
             graphs,
             knownRegionSlugs: graphs
@@ -319,7 +331,9 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
                 .Select(graph => graph.OwnerId)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase),
             knownLocationSlugs: locationSlugs.ToHashSet(StringComparer.OrdinalIgnoreCase),
-            dungeonZoneSlugs: dungeonZoneSlugs);
+            dungeonZoneSlugs: dungeonZoneSlugs,
+            locationZones: locationZones,
+            liveMapIds: liveMapIds);
 
         return result.Issues
             .Where(issue =>
@@ -715,6 +729,21 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
                 map.Name);
         }
 
+        // A warning is what lets an author save a half-made map — that is how a zone gets built at all — so it
+        // is not a reason to refuse a save. Approving is the claim that the map is ready, and a map with no
+        // exit strands every character that arrives on it.
+        if (BlocksPublication(issues))
+        {
+            return new MapReviewOutcome(
+                new MapLifecycleResponse(
+                    false,
+                    StatusInvalid,
+                    "The map has no exit, so a character could only leave it by dying.",
+                    issues),
+                author,
+                map.Name);
+        }
+
         map.IsActive = true;
         map.ApprovedVersion = map.Version;
         map.ApprovedAt = DateTimeOffset.UtcNow;
@@ -807,6 +836,13 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
 
     private static bool HasErrors(IEnumerable<MapGraphIssueDto> issues) =>
         issues.Any(issue => string.Equals(issue.Severity, "Error", StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Whether the issues block putting a map live even though they do not block a save. Approval is the gate:
+    /// a draft may be half-made, a live map may not.
+    /// </summary>
+    private static bool BlocksPublication(IEnumerable<MapGraphIssueDto> issues) =>
+        issues.Any(issue => issue.Code == "map_without_exit");
 
     private static MapLifecycleResponse Forbidden(string mapId) =>
         new(

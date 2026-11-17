@@ -111,9 +111,15 @@ flowchart TD
 |---|---|
 | J0 | map writes are author-or-`content.manage` through `MapCaller`; the list and the single read are scoped (live maps plus your own drafts, everything for an editor or reviewer, another account's draft reads as 404); `canEdit` rides on both DTOs; validate is a session-only read — **shipped 2026-11-17** |
 | J1 | `/maps/new` is the one create door: kind, owner and name, with the locations that already exist offered for an interior; the inline form left `/maps`; a fresh draft carries a checklist (first node, the way back, submit); the server refuses an interior whose location does not exist — **shipped 2026-11-17** |
-| J2–J4 | not started |
+| J2 | a zone map shows the locations of its own zone: the loader pairs them by `zoneId`, a panel adds one as a node with its slug prefilled, a Create a location link goes to the `zonelocation` form, and the inspector's reference picker offers this zone's locations only — **shipped 2026-11-17** |
+| J3 | `node_reference_zone_mismatch` (error), `location_missing_node` and `map_unreachable` (warnings), and approval now refuses `map_without_exit` — **shipped 2026-11-17**; map findings are not on `/world-health` (see out of scope) |
+| J4 | not started |
 
 ## 4. Out of scope
+
+- **Map findings on `/world-health`.** The audit is content-only — `ContentIssue` carries a content entity and a
+  field — so the map rules surface in the editor's Validate and at approval instead. Teaching the audit about
+  maps is its own phase.
 
 - `MapType.World` authoring and the world root map.
 - A map *submission* type in the Foundry queue (decision 2).
