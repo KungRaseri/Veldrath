@@ -93,6 +93,8 @@ start() {
         Web__BaseUrl="http://localhost:4173" \
         InternalBridge__Token="$BRIDGE_TOKEN" \
         Auth__AccessCacheSeconds=0 \
+        RateLimit__AdminActionsPerMinute=600 \
+        RateLimit__FoundryWritesPerMinute=600 \
         nohup dotnet run --no-launch-profile >"$LOG_FILE" 2>&1 &
       echo $! >"$PID_FILE"
     )

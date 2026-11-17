@@ -95,6 +95,16 @@ the reason the portal exists:
 account: `/editorial` and its three lists, `/admin` and its user list, `/admin/audit`, `/mod`, `/mod/users` with a
 real filter round trip, and `/mod/reports?resolved=false`. Then a plain player is refused all three areas (403).
 
+[`staff-actions.e2e.ts`](../web/client/tests/staff-actions.e2e.ts) — the moderation verbs on a **real registered
+player** found through the user search: Issue warning → the page shows "1 warnings"; Mute for 30 minutes → the
+"Muted" chip appears; Unmute → it clears. Kick is deliberately not asserted: it acts on live sessions and this
+suite never opens the hub, so a kick could only prove "nobody online".
+
+[`editorial-publishing.e2e.ts`](../web/client/tests/editorial-publishing.e2e.ts) — writing for the public site:
+create an announcement → Publish → it appears on `/community`; create a patch note → Publish → its public article
+renders and the public index links it; and a missing body is refused on the page. Note the create form lives in
+`[id]` with `id === 'new'`, which is why `/editorial/.../new` works with no `new/` directory.
+
 [`public-details.e2e.ts`](../web/client/tests/public-details.e2e.ts) — the reading surfaces against seeded data:
 `/lore`, `/patch-notes`, `/leaderboard`, `/community`, plus the failure paths (an unknown lore slug, patch note or
 player id is a 404 rather than a blank page).
@@ -134,13 +144,13 @@ real web app meets the real API:
 
 ## 6. Still open
 
-- **The editorial create links point at routes that do not exist.** `/editorial/announcements` (and lore, patch
-  notes) render a "New announcement" / "New patch note" / "New article" link to `/editorial/.../new`, and no such
-  route is registered — the journey dead-ends in a 404. `staff-areas.e2e.ts` asserts the lists and the links, not
-  the destination; publishing a note is blocked on that route existing.
-- **The deeper staff workflows are named, not covered:** kicking, warning or muting a player from
-  `/mod/users/[id]`, resolving a report from `/mod/reports`, and editing a patch note or lore article. The harness
-  and the sign-in path exist; each is a short spec once the editorial routes above are fixed.
+- **Resolving a report from `/mod/reports`** is not driven end to end: creating a report needs a player action
+  that this suite does not take, so the spec asserts the queue renders for a moderator rather than resolving a
+  row. A report-creating fixture is the missing piece.
+- **Kick** is unasserted for the reason above (no live session in Playwright).
+- **The admin sub-pages** (`/admin/roles`, `/admin/sessions`, `/admin/server`, `/admin/status`, `/admin/users/[id]`)
+  and **`/editorial/lore/[id]`** are still only exempted in `parity/routes.test.ts`; each becomes a short spec and
+  retires its exemption.
 - **The review queue validates every submitted map on load** (two API calls per row). Fine for a page of maps;
   worth moving onto `MapSummaryDto` if the queue ever pages.
 
@@ -154,7 +164,8 @@ real web app meets the real API:
 | E3 | Submissions end to end: a player submits, a Curator approves, the catalog gains the entry, the inbox reports it and Mark read clears it; own rows vs Everyone | **shipped 2026-11-17** |
 | E4 | Editorial, admin and moderation: the areas, their lists, a real user filter, and a player refused all three | **shipped 2026-11-17** (publishing and kick/warn/mute pending, see §6) |
 | E5 | Public reading surfaces (`/lore`, `/patch-notes`, `/leaderboard`, `/community`) and their 404 paths | **shipped 2026-11-17** |
-| E6 | The remaining staff actions (§6), then retiring the `routes.test.ts` exemptions one by one as their page is actually driven | next |
+| E6 | Moderation verbs (warn, mute, unmute) on a real player, and publishing an announcement and a patch note through to the public site | **shipped 2026-11-17** |
+| E7 | The admin sub-pages, `editorial/lore/[id]`, and resolving a report — each retiring its `routes.test.ts` exemption as it lands | next |
 
 E3–E5 are recorded here rather than half-built: the harness is what makes them cheap, and each one retires an
 exemption in [`parity/routes.test.ts`](../web/client/src/lib/parity/routes.test.ts) rather than adding a new

@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { installFetch, jsonResponse, textResponse, unauthorizedResponse } from '#lib/testing/fetch';
 import { withEnv } from '#lib/testing/env';
-import { describeAuthFailure, gameApiBaseUrl, gameApiFetch } from '#lib/server/game-request';
+import {
+	describeAuthFailure,
+	gameApiBaseUrl,
+	gameApiFetch,
+	upstreamStatus
+} from '#lib/server/game-request';
 
 /**
  * `gameApiFetch` is the single transport between SvelteKit and Veldrath.Server, so every server
@@ -180,6 +185,16 @@ describe('gameApiFetch', () => {
 		const result = await gameApiFetch(null, '/api/content/schema');
 
 		expect(result.error).toBe('The game server returned invalid JSON.');
+	});
+
+	it('maps an upstream status to one a loader can fail with', () => {
+		expect(upstreamStatus({ status: 404 })).toBe(404);
+		// A throttled or forbidden admin call must not read as "not found".
+		expect(upstreamStatus({ status: 429 })).toBe(429);
+		expect(upstreamStatus({ status: 403 })).toBe(403);
+		// `0` means the API URL is unconfigured, and a 2xx with no body is still a server-side failure.
+		expect(upstreamStatus({ status: 0 })).toBe(502);
+		expect(upstreamStatus({ status: 204 })).toBe(502);
 	});
 
 	it.each([

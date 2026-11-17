@@ -4012,7 +4012,23 @@ is a fixed bug that keeps failing. Run stack specs with `CI=true`. Likewise `scr
 `bin/**/Veldrath.Server` process before starting; without that, an old build keeps the port and every later run
 tests it.
 
-Still open, recorded in the plan: the editorial "New announcement / patch note / article" links point at
-`/editorial/.../new` routes that do not exist (the journey dead-ends in a 404), and the deeper staff actions
-(kick/warn/mute, resolving a report, publishing a note) are named but not yet driven. Each new page spec should
-retire an exemption in `parity/routes.test.ts` rather than add one.
+Third pass added the staff verbs and publishing. **Seven stack specs** now: `foundry-content`, `foundry-maps`,
+`foundry-submissions`, `staff-areas`, `staff-actions` (warn → "1 warnings", mute 30 min → "Muted" chip, unmute →
+cleared, on a real registered player), `editorial-publishing` (announcement → Publish → `/community`; patch note →
+Publish → its public article and index link; empty body refused) and `public-details`.
+
+- **The editorial create routes DO exist** — as `[id]` with `id === 'new'`, the same deferral as
+  `/submissions/new`. `/editorial/announcements/new` is served by `[id]/+page.server.ts`, which switches on that
+  id. Do not add a `new/` directory; you would shadow it.
+- **The admin-action rate limit throttled the suite** (20/min, `RateLimit:AdminActionsPerMinute`). Loading an
+  editorial page costs several admin calls, so `scripts/e2e-stack.sh` now sets
+  `RateLimit__AdminActionsPerMinute=600` and `RateLimit__FoundryWritesPerMinute=600`. If a spec starts seeing
+  429s, that is the knob.
+- **A 429 used to read as "not found".** The three editorial `[id]` loaders did `error(404, result.error)`
+  whenever data was missing, so a throttled or forbidden admin call sent the editor hunting for a record that
+  exists. They now propagate the upstream status (`result.status === 0 ? 502 : result.status`). The same pattern
+  is worth checking in any new admin loader.
+
+Still open, recorded in the plan (E7): resolving a report end to end (needs a report-creating fixture), kick (no
+live session in Playwright), and the admin sub-pages plus `editorial/lore/[id]`, which are still exempted in
+`parity/routes.test.ts` — each should retire its exemption when its spec lands.

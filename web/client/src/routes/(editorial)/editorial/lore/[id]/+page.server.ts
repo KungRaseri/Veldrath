@@ -1,6 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { toGameIdentity } from '#lib/server/access';
+import { upstreamStatus } from '#lib/server/game-request';
 import {
 	adminCreateLoreArticle,
 	adminDeleteLoreArticle,
@@ -17,7 +18,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
 	const result = await adminGetLoreArticle(toGameIdentity(locals.user!), params.id);
 	if (!result.data) {
-		error(404, result.error ?? 'Lore article not found.');
+		error(upstreamStatus(result), result.error ?? 'Lore article not found.');
 	}
 
 	return { mode: 'edit' as const, article: result.data };
