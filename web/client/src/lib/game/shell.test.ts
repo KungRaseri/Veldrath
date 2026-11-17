@@ -201,6 +201,36 @@ describe('GameScreen', () => {
 		expect(await screen.findByText(/Connection lost\. Reconnecting/)).toBeTruthy();
 	});
 
+	it('replaces the world with a disconnected screen after a kick', async () => {
+		const onLeave = vi.fn();
+		const session = playing({
+			phase: 'disconnected',
+			error: 'You were disconnected by a moderator.'
+		});
+
+		render(GameScreen, { props: { session, onLeave } });
+
+		const panel = await screen.findByRole('region', { name: 'Disconnected' });
+		expect(panel.textContent).toContain('You were disconnected by a moderator.');
+		// A kick ends the session: the map and the controls that drive it must leave the screen,
+		// because every command they send would go into a closed connection.
+		expect(screen.queryByText('Aldenmere Roads')).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Refresh' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Leave zone' })).toBeNull();
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Back to characters' }));
+		expect(onLeave).toHaveBeenCalled();
+	});
+
+	it('words a disconnect the server gave no reason for', async () => {
+		render(GameScreen, {
+			props: { session: playing({ phase: 'disconnected' }), onLeave: vi.fn() }
+		});
+
+		expect(await screen.findByText(/Your session ended\. Enter the world again/)).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Back to characters' })).toBeTruthy();
+	});
+
 	it('offers a respawn button when the character is dead', async () => {
 		const session = playing({ dead: true });
 		const respawn = vi.spyOn(session, 'respawn');

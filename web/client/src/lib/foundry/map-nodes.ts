@@ -83,6 +83,11 @@ export interface NewNode {
 	displayName: string;
 	/** Where to place it; when omitted the first free cell is used. */
 	cell?: CanvasCell;
+	/**
+	 * Catalog slug the node points at. Omitted for nodes that reference nothing, such as an entry point;
+	 * a location added from the zone panel arrives with its slug already filled in.
+	 */
+	refId?: string | null;
 }
 
 /**
@@ -102,7 +107,7 @@ export function addNode(graph: MapGraphDto, input: NewNode): MapGraphDto {
 		id: suggestNodeId(graph, input.nodeType),
 		mapId: graph.id,
 		nodeType: input.nodeType,
-		refId: null,
+		refId: input.refId ?? null,
 		displayName: input.displayName.trim() === '' ? 'New node' : input.displayName.trim(),
 		description: '',
 		iconKey: null,

@@ -6,6 +6,8 @@ import {
 	nodeRows,
 	normalizeDraft,
 	parseDraftGraph,
+	reviewVerdict,
+	reviewVerdictLabel,
 	type MapGraphDto,
 	type MapGraphIssue,
 	type MapNodeDto
@@ -172,6 +174,62 @@ describe('foundry map editor rules', () => {
 		);
 		// A payload from before the review gate carries no state, and the contract's default is live.
 		expect(mapState({ version: 1 })).toBe('Changed since approval');
+	});
+
+	describe('reviewVerdict', () => {
+		const problem = (severity: string, code: string): MapGraphIssue => ({
+			code,
+			message: code,
+			severity,
+			mapId: 'zone:fenwick',
+			nodeId: null
+		});
+
+		it('accepts a map whose only issues are warnings', () => {
+			expect(reviewVerdict([problem('Warning', 'location_missing_node')])).toEqual({
+				status: 'ready',
+				errors: 0,
+				warnings: 1
+			});
+		});
+
+		it('refuses a map with an error, or one with no exit', () => {
+			expect(
+				reviewVerdict([
+					problem('Error', 'node_reference_unknown'),
+					problem('Warning', 'map_unreachable')
+				])
+			).toEqual({ status: 'blocked', errors: 1, warnings: 1 });
+
+			// map_without_exit is the one warning approval refuses: it strands every character that arrives.
+			expect(reviewVerdict([problem('Warning', 'map_without_exit')])).toEqual({
+				status: 'blocked',
+				errors: 0,
+				warnings: 1
+			});
+		});
+
+		it('reports an unchecked verdict instead of pretending the map is clean', () => {
+			expect(reviewVerdict(null)).toEqual({ status: 'unknown', errors: 0, warnings: 0 });
+		});
+
+		it('words a refusal that carries no error as the missing exit', () => {
+			expect(reviewVerdictLabel({ status: 'blocked', errors: 0, warnings: 1 })).toBe(
+				'Approval would be refused · the map has no exit'
+			);
+			expect(reviewVerdictLabel({ status: 'blocked', errors: 2, warnings: 0 })).toBe(
+				'Approval would be refused · 2 errors'
+			);
+			expect(reviewVerdictLabel({ status: 'ready', errors: 0, warnings: 0 })).toBe(
+				'Approval would accept it'
+			);
+			expect(reviewVerdictLabel({ status: 'ready', errors: 0, warnings: 1 })).toBe(
+				'Approval would accept it · 1 warning'
+			);
+			expect(reviewVerdictLabel({ status: 'unknown', errors: 0, warnings: 0 })).toBe(
+				'The verdict could not be checked'
+			);
+		});
 	});
 
 	it('labels an issue with the node it belongs to', () => {

@@ -19,6 +19,7 @@ import NewLanguage from './(foundry)/languages/new/+page.svelte';
 import NewContentPicker from './(foundry)/new/+page.svelte';
 import MapDetail from './(foundry)/maps/[mapId]/+page.svelte';
 import Maps from './(foundry)/maps/+page.svelte';
+import NewMap from './(foundry)/maps/new/+page.svelte';
 import Notifications from './(foundry)/notifications/+page.svelte';
 import ReviewQueue from './(foundry)/review/+page.svelte';
 import Schemas from './(foundry)/schemas/+page.svelte';
@@ -170,20 +171,25 @@ const mapTargets = {
 };
 
 describe('map editor pages', () => {
-	it('links a graph at the route group path, not /foundry', () => {
-		render(Maps, page({ canEdit: true, maps: [mapSummary] }));
+	it('links a graph at the route group path, and offers the one create action', () => {
+		render(Maps, page({ maps: [mapSummary] }));
 
 		expect(screen.getByRole('heading', { level: 1, name: 'Maps' })).toBeTruthy();
+		expect(screen.getByRole('link', { name: /New map/ }).getAttribute('href')).toBe('/maps/new');
 		expect(screen.getByRole('link', { name: 'The Halrow' }).getAttribute('href')).toBe(
 			'/maps/zone%3Athe-halrow'
 		);
-		expect(screen.queryByText(/lacks the content permission/)).toBeNull();
+		// The list used to carry its own create form; that was the second door into the same job.
+		expect(screen.queryByRole('form', { name: 'Create a map' })).toBeNull();
 	});
 
-	it('tells a reader that the write controls are off', () => {
-		render(Maps, page({ canEdit: false, maps: [mapSummary] }));
+	it('marks a row this account cannot write, and explains an empty list', () => {
+		const first = render(Maps, page({ maps: [{ ...mapSummary, canEdit: false }] }));
+		expect(screen.getByText(/read-only/)).toBeTruthy();
+		first.unmount();
 
-		expect(screen.getByText(/lacks the content permission/)).toBeTruthy();
+		render(Maps, page({ maps: [] }));
+		expect(screen.getByText(/No maps yet/)).toBeTruthy();
 	});
 
 	it('shows the validate result with a badge on the node it names', () => {
@@ -227,6 +233,82 @@ describe('map editor pages', () => {
 		expect(screen.getByRole('button', { name: 'Delete draft' })).toBeTruthy();
 		expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
 		expect(screen.queryByRole('button', { name: 'Deactivate' })).toBeNull();
+	});
+
+	it('pairs a zone map with the catalog locations in that zone', async () => {
+		render(
+			MapDetail,
+			page({
+				canEdit: true,
+				graph: { ...mapGraph, mapType: 'Zone', ownerId: 'the-halrow' },
+				targets: mapTargets,
+				zoneLocations: [
+					{ id: 'the-halrow:entry', label: 'Arrival' },
+					{ id: 'halrow-market', label: 'The Market' }
+				]
+			})
+		);
+
+		const panel = screen.getByLabelText('Locations in this zone');
+		expect(
+			within(panel)
+				.getByRole('link', { name: /Create a location/ })
+				.getAttribute('href')
+		).toBe('/content/zonelocation/new');
+
+		const addButtons = within(panel).getAllByRole('button', { name: 'Add as node' });
+		expect(addButtons).toHaveLength(2);
+
+		await fireEvent.click(addButtons[1]);
+
+		// That location is now placed, so the panel stops offering it and says so.
+		expect(within(panel).getAllByRole('button', { name: 'Add as node' })).toHaveLength(1);
+		expect(within(panel).getByText('on the map')).toBeTruthy();
+
+		// Adding selects the node, and the inspector's reference picker offers this zone's locations only —
+		// not the wider catalog the loader still carries in `targets`.
+		const reference = screen.getByRole('combobox', { name: /Reference/ });
+		expect(
+			within(reference)
+				.getAllByRole('option')
+				.map((option) => option.getAttribute('value'))
+		).toEqual(['', 'the-halrow:entry', 'halrow-market']);
+	});
+
+	it('says when a zone has no locations yet', () => {
+		render(
+			MapDetail,
+			page({
+				canEdit: true,
+				graph: { ...mapGraph, mapType: 'Zone', ownerId: 'the-halrow' },
+				targets: mapTargets,
+				zoneLocations: []
+			})
+		);
+
+		expect(screen.getByText(/No locations exist in this zone yet/)).toBeTruthy();
+	});
+
+	it('walks an author through a fresh draft with a checklist', () => {
+		render(
+			MapDetail,
+			page({
+				canEdit: true,
+				graph: {
+					...mapGraph,
+					isActive: false,
+					approvedVersion: 0,
+					submittedAt: null,
+					nodes: mapGraph.nodes.filter((node) => node.nodeType === 'EntryPoint')
+				},
+				targets: mapTargets
+			})
+		);
+
+		const checklist = screen.getByLabelText('Draft checklist');
+		expect(within(checklist).getByText(/Add the first node/)).toBeTruthy();
+		expect(within(checklist).getByText(/Add the exit that leads back/)).toBeTruthy();
+		expect(within(checklist).getByText(/Submit for review/)).toBeTruthy();
 	});
 
 	it('offers approve and reject while a map is in review', () => {
@@ -440,6 +522,45 @@ describe('content create page', () => {
 		);
 		expect(screen.getByText(/Objectives is filled in the editor/)).toBeTruthy();
 		expect(screen.getByRole('button', { name: 'Create draft' })).toBeTruthy();
+	});
+
+	it('checks a boolean whose schema default is true, so a new entry is active', () => {
+		// The schema says `isActive` defaults to "true"; a checkbox that ignored it created every entry
+		// inactive, and the catalog the form redirects to then had no such entry.
+		const { container } = render(
+			NewContentEntry,
+			page({
+				contentType: 'recipe',
+				canEdit: true,
+				refOptions: {},
+				schema: {
+					contentType: 'recipe',
+					displayLabel: 'Recipes',
+					description: '',
+					groups: [
+						{
+							label: 'Identity',
+							fields: [
+								field({
+									name: 'displayName',
+									label: 'Display name',
+									fieldType: 'Text',
+									required: true
+								}),
+								field({
+									name: 'isActive',
+									label: 'Active',
+									fieldType: 'Boolean',
+									default: 'true'
+								})
+							]
+						}
+					]
+				}
+			})
+		);
+
+		expect(container.querySelector<HTMLInputElement>('#isActive')?.checked).toBe(true);
 	});
 
 	it('renders every control kind, a Reference datalist, and a plural collection note', () => {
@@ -1126,7 +1247,14 @@ describe('review queue', () => {
 				],
 				// A map id carries a colon, so the link has to be encoded.
 				maps: [
-					{ id: 'zone:fenwick', name: 'Fenwick', mapType: 'Zone', ownerId: 'fenwick', version: 3 }
+					{
+						id: 'zone:fenwick',
+						name: 'Fenwick',
+						mapType: 'Zone',
+						ownerId: 'fenwick',
+						version: 3,
+						verdict: { status: 'ready', errors: 0, warnings: 1 }
+					}
 				],
 				error: null
 			})
@@ -1138,6 +1266,38 @@ describe('review queue', () => {
 		expect(screen.getByRole('link', { name: 'Fenwick' }).getAttribute('href')).toBe(
 			'/maps/zone%3Afenwick'
 		);
+		expect(screen.getByText('Approval would accept it · 1 warning')).toBeTruthy();
+	});
+
+	it('says why approval would refuse a map, and when the verdict is unavailable', () => {
+		render(
+			ReviewQueue,
+			page({
+				submissions: [],
+				maps: [
+					{
+						id: 'zone:blocked',
+						name: 'Blocked',
+						mapType: 'Zone',
+						ownerId: 'blocked',
+						version: 2,
+						verdict: { status: 'blocked', errors: 0, warnings: 1 }
+					},
+					{
+						id: 'zone:unknown',
+						name: 'Unknown',
+						mapType: 'Zone',
+						ownerId: 'unknown',
+						version: 1,
+						verdict: { status: 'unknown', errors: 0, warnings: 0 }
+					}
+				],
+				error: null
+			})
+		);
+
+		expect(screen.getByText('Approval would be refused · the map has no exit')).toBeTruthy();
+		expect(screen.getByText('The verdict could not be checked')).toBeTruthy();
 	});
 
 	it('renders an empty state for each kind', () => {
@@ -1155,6 +1315,66 @@ describe('review queue', () => {
 });
 
 describe('foundry shell components', () => {
+	it('renders the new map wizard: three kinds, a location datalist and the owner rule', async () => {
+		const { container } = render(
+			NewMap,
+			page({
+				locations: [{ id: 'halrow-threshold', label: 'The Threshold' }],
+				error: null
+			})
+		);
+
+		expect(screen.getByRole('heading', { level: 1, name: 'New map' })).toBeTruthy();
+		expect(screen.getByLabelText(/What are you making/)).toBeTruthy();
+		expect(screen.getByLabelText(/New slug for this zone/)).toBeTruthy();
+		expect(screen.getByLabelText(/Map name/)).toBeTruthy();
+
+		const options = container.querySelectorAll('datalist#map-locations option');
+		expect(options).toHaveLength(1);
+		expect(options[0].getAttribute('value')).toBe('halrow-threshold');
+
+		await fireEvent.change(screen.getByLabelText(/What are you making/), {
+			target: { value: 'Interior' }
+		});
+
+		// An interior is owned by a location that already exists, so the label and the hint say so.
+		expect(screen.getByLabelText(/Location slug/)).toBeTruthy();
+		expect(screen.getByText(/pick one below or type its slug/)).toBeTruthy();
+	});
+
+	it('relabels the owner field for a region, and survives a bare rejection', async () => {
+		const first = render(NewMap, page({ locations: [], error: null }));
+
+		await fireEvent.change(screen.getByLabelText(/What are you making/), {
+			target: { value: 'Region' }
+		});
+
+		expect(screen.getByLabelText(/New slug for this region/)).toBeTruthy();
+		expect(screen.getByText(/its nodes are the zones inside it/)).toBeTruthy();
+		first.unmount();
+
+		// A form object carrying only a message still renders: every field falls back to its default.
+		render(NewMap, page({ locations: [], error: null }, { message: 'Nope.' }));
+		expect(screen.getByRole('alert').textContent).toContain('Nope.');
+	});
+
+	it('reports a rejected create and a missing location list', () => {
+		const first = render(
+			NewMap,
+			page(
+				{ locations: [], error: null },
+				{ message: "No location with slug 'x' exists.", mapType: 'Interior', ownerId: 'x' }
+			)
+		);
+
+		expect(screen.getByRole('alert').textContent).toContain("No location with slug 'x' exists.");
+		expect((screen.getByLabelText(/Location slug/) as HTMLInputElement).value).toBe('x');
+		first.unmount();
+
+		render(NewMap, page({ locations: [], error: 'targets are down' }));
+		expect(screen.getByText(/location list could not be loaded/)).toBeTruthy();
+	});
+
 	it('renders the page header and its description', () => {
 		render(FoundryPageHeader, { title: 'Maps', description: 'The world graph.' } as never);
 

@@ -10,7 +10,11 @@ import {
 } from '#lib/server/admin-api';
 import { numberField, stringField } from '#lib/server/form';
 
-export const load: PageServerLoad = async ({ locals, params }) => {
+export const load: PageServerLoad = async ({ parent, locals, params }) => {
+	// Await the group layout first: it owns the permission check, and without this the page load
+	// races it and calls the API for a request that is already being refused.
+	await parent();
+
 	const result = await getModUser(toGameIdentity(locals.user!), params.id);
 	if (!result.data) {
 		error(404, result.error ?? 'Account not found.');

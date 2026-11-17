@@ -1,5 +1,13 @@
 namespace Veldrath.Contracts.Map;
 
+/// <summary>Whether approving a submitted map would succeed, as the review queue reports it.</summary>
+/// <param name="Status">
+/// <c>ready</c> when the decision would accept the map, <c>blocked</c> when it would refuse it.
+/// </param>
+/// <param name="Errors">Validation errors, which refuse an approval exactly as they refuse a save.</param>
+/// <param name="Warnings">Warnings, which a submitted draft may carry and which a reviewer still has to see.</param>
+public record MapReviewVerdictDto(string Status, int Errors, int Warnings);
+
 /// <summary>Lightweight map summary used by list views and authoring tools.</summary>
 /// <param name="Id">Stable map identifier.</param>
 /// <param name="MapType">Map kind: <c>World</c>, <c>Region</c>, or <c>Zone</c>.</param>
@@ -9,6 +17,11 @@ namespace Veldrath.Contracts.Map;
 /// <param name="EntryNodeId">Default arrival node, when configured.</param>
 /// <param name="NodeCount">Number of nodes in the map.</param>
 /// <param name="EdgeCount">Number of edges in the map.</param>
+/// <param name="Review">
+/// Whether approving the map would succeed. Filled for maps awaiting a decision, which is what the review
+/// queue asks about each row; <see langword="null"/> on every other map, and when the verdict could not be
+/// worked out.
+/// </param>
 public record MapSummaryDto(
     string Id,
     string MapType,
@@ -23,7 +36,9 @@ public record MapSummaryDto(
     int ApprovedVersion = 0,
     DateTimeOffset? SubmittedAt = null,
     string? LastReviewNotes = null,
-    DateTimeOffset? LastReviewedAt = null)
+    DateTimeOffset? LastReviewedAt = null,
+    bool CanEdit = false,
+    MapReviewVerdictDto? Review = null)
 {
     /// <summary>Whether the map is live but has been edited since a reviewer approved it.</summary>
     public bool ChangedSinceApproval => IsActive && ApprovedVersion < Version;
@@ -75,7 +90,8 @@ public record MapGraphDto(
     DateTimeOffset? SubmittedAt = null,
     DateTimeOffset? ApprovedAt = null,
     string? LastReviewNotes = null,
-    DateTimeOffset? LastReviewedAt = null)
+    DateTimeOffset? LastReviewedAt = null,
+    bool CanEdit = false)
 {
     /// <summary>
     /// Whether the map has been edited since a reviewer approved it. Derived rather than stored, so it cannot

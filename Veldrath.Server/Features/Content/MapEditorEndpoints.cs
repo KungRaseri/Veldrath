@@ -12,9 +12,10 @@ namespace Veldrath.Server.Features.Content;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Reads require a signed-in account — the graph is part of the community wiki, so a player may read it — and
-/// authoring requires <c>content.manage</c>. It is never anonymous: the graph carries hidden nodes and unlock
-/// keys. A save is validated by the same world validator the seed has to pass and is refused rather than
+/// Everything requires a signed-in account and nothing is anonymous: the graph carries hidden nodes and unlock
+/// keys. Reading is open — the map is part of the community wiki — and writing is decided per map by
+/// <see cref="MapCaller"/>: the account that created a map may write it, and <c>content.manage</c> may write
+/// any. A save is validated by the same world validator the seed has to pass and is refused rather than
 /// half-applied when the graph is wrong or the author is working from a stale copy.
 /// </para>
 /// <para>
@@ -38,28 +39,31 @@ public static class MapEditorEndpoints
         group.MapGet("", ListMapsAsync).RequireAuthorization();
         group.MapGet("/targets", GetTargetsAsync).RequireAuthorization();
         group.MapGet("/{mapId}", GetMapAsync).RequireAuthorization();
-        group.MapPost("/{mapId}/validate", ValidateMapAsync)
-            .RequireAuthorization(Auth.Permissions.ManageContent);
-        group.MapPut("/{mapId}", SaveMapAsync).RequireAuthorization(Auth.Permissions.ManageContent);
 
-        group.MapPost("", CreateMapAsync).RequireAuthorization(Auth.Permissions.ManageContent);
-        group.MapPost("/{mapId}/submit", SubmitMapAsync)
-            .RequireAuthorization(Auth.Permissions.ManageContent);
+        // Authoring is decided per map by `MapCaller`, so these endpoints only require a session: the account
+        // that created a map may write it, and `content.manage` may write any. A permission on the endpoint
+        // made every map an editor's map, which is the opposite of community authorship.
+        group.MapPost("/{mapId}/validate", ValidateMapAsync).RequireAuthorization();
+        group.MapPut("/{mapId}", SaveMapAsync).RequireAuthorization();
+        group.MapPost("", CreateMapAsync).RequireAuthorization();
+        group.MapPost("/{mapId}/submit", SubmitMapAsync).RequireAuthorization();
+        group.MapDelete("/{mapId}", DeleteMapAsync).RequireAuthorization();
+
         // The permission, not the role: `RequireAuthorization("Curator")` kept an Admin — who holds every
         // permission but not the role — out of the decision.
         group.MapPost("/{mapId}/review", ReviewMapAsync)
             .RequireAuthorization(Auth.Permissions.ReviewSubmissions);
         group.MapPost("/{mapId}/deactivate", DeactivateMapAsync)
             .RequireAuthorization(Auth.Permissions.ReviewSubmissions);
-        group.MapDelete("/{mapId}", DeleteMapAsync).RequireAuthorization(Auth.Permissions.ManageContent);
 
         return app;
     }
 
     private static async Task<IResult> ListMapsAsync(
         [FromServices] MapEditorService editor,
+        ClaimsPrincipal user,
         CancellationToken cancellationToken) =>
-        Results.Ok(await editor.ListAsync(cancellationToken));
+        Results.Ok(await editor.ListAsync(Caller(user), cancellationToken));
 
     private static async Task<IResult> GetTargetsAsync(
         [FromServices] MapEditorService editor,
@@ -69,9 +73,10 @@ public static class MapEditorEndpoints
     private static async Task<IResult> GetMapAsync(
         string mapId,
         [FromServices] MapEditorService editor,
+        ClaimsPrincipal user,
         CancellationToken cancellationToken)
     {
-        var map = await editor.GetAsync(mapId, cancellationToken);
+        var map = await editor.GetAsync(mapId, Caller(user), cancellationToken);
         return map is null ? Results.NotFound() : Results.Ok(map);
     }
 
@@ -89,13 +94,20 @@ public static class MapEditorEndpoints
         string mapId,
         [FromBody] MapGraphWriteRequest request,
         [FromServices] MapEditorService editor,
+        ClaimsPrincipal user,
         CancellationToken cancellationToken)
     {
-        var result = await editor.SaveAsync(mapId, request.Map, request.ExpectedVersion, cancellationToken);
+        var result = await editor.SaveAsync(
+            mapId,
+            request.Map,
+            request.ExpectedVersion,
+            Caller(user),
+            cancellationToken);
 
         return result.Status switch
         {
             "ok" => Results.Ok(result),
+            "forbidden" => Results.Json(result, statusCode: StatusCodes.Status403Forbidden),
             "not_found" => Results.NotFound(result),
             "conflict" => Results.Conflict(result),
             _ => Results.BadRequest(result),
@@ -126,11 +138,10 @@ public static class MapEditorEndpoints
         ClaimsPrincipal user,
         CancellationToken cancellationToken)
     {
-        var accountId = GetAccountId(user);
-        if (accountId is null)
-            return Results.Unauthorized();
+        var caller = Caller(user);
+        if (caller.AccountId == Guid.Empty) return Results.Unauthorized();
 
-        var result = await editor.SubmitAsync(mapId, accountId.Value, cancellationToken);
+        var result = await editor.SubmitAsync(mapId, caller, cancellationToken);
         return await LifecycleAsync(db, user, result, "submit_map", mapId, null);
     }
 
@@ -177,10 +188,28 @@ public static class MapEditorEndpoints
         string mapId,
         [FromServices] MapEditorService editor,
         [FromServices] ApplicationDbContext db,
+        [FromServices] FoundryNotificationWriter notifications,
         ClaimsPrincipal user,
         CancellationToken cancellationToken)
     {
         var result = await editor.DeactivateAsync(mapId, cancellationToken);
+
+        // Retiring a live map is as consequential as rejecting it, so its author hears about it the same way.
+        // An extra read after a successful write is the cheapest way to say that: the author and the name are
+        // the two facts the lifecycle response does not carry.
+        if (result.Success
+            && await editor.AuthorOfAsync(mapId, cancellationToken) is { } map
+            && map.AccountId is { } author)
+        {
+            await notifications.NotifyAsync(
+                author,
+                FoundryNotificationKind.MapReview,
+                map.Name,
+                $"Your map \"{map.Name}\" was retired by a reviewer and is no longer in the game.",
+                mapId: mapId,
+                cancellationToken: cancellationToken);
+        }
+
         return await LifecycleAsync(db, user, result, "deactivate_map", mapId, null);
     }
 
@@ -191,7 +220,7 @@ public static class MapEditorEndpoints
         ClaimsPrincipal user,
         CancellationToken cancellationToken)
     {
-        var result = await editor.DeleteDraftAsync(mapId, cancellationToken);
+        var result = await editor.DeleteDraftAsync(mapId, Caller(user), cancellationToken);
         return await LifecycleAsync(db, user, result, "delete_map", mapId, null);
     }
 
@@ -221,10 +250,25 @@ public static class MapEditorEndpoints
         return result.Status switch
         {
             "ok" => Results.Ok(result),
+            "forbidden" => Results.Json(result, statusCode: StatusCodes.Status403Forbidden),
             "not_found" => Results.NotFound(result),
             "conflict" => Results.Conflict(result),
             _ => Results.BadRequest(result),
         };
+    }
+
+    /// <summary>
+    /// Reads the caller's authority off the enriched token. The Admin role is treated as holding everything,
+    /// mirroring the web's `hasPermission`, so a token whose permission claims were not enriched still works.
+    /// </summary>
+    private static MapCaller Caller(ClaimsPrincipal user)
+    {
+        var isAdmin = user.IsInRole(Auth.Roles.Admin);
+
+        return new MapCaller(
+            GetAccountId(user) ?? Guid.Empty,
+            isAdmin || user.HasClaim("permission", Auth.Permissions.ManageContent),
+            isAdmin || user.HasClaim("permission", Auth.Permissions.ReviewSubmissions));
     }
 
     private static Guid? GetAccountId(ClaimsPrincipal user)

@@ -3906,3 +3906,225 @@ resolve, refactor is separate), and the type picker has no search.
 
 **Counts after I:** 1,666 server tests, 1,442 web unit tests, coverage 90.00% branches, lint/typecheck/build
 clean. Playwright was not run locally this pass; `tests/staff-guards.e2e.ts` gained `/new`.
+
+### J — community map authoring (2026-11-17)
+
+Plan: [`plans/community-map-authoring.md`](../../plans/community-map-authoring.md). Branch
+`feat/milestone-j-community-map-authoring`, cut from `development` at `836198b5` (PR #73, which is where
+milestone I actually shipped — there is no `feat/milestone-i-*` branch).
+
+- **Map writes are decided per map, not per endpoint.** `MapCaller(AccountId, CanManageAny, CanReview)` — with
+  `SeesEveryDraft` and `MayEdit(createdByAccountId)` — is passed into `ListAsync`, `GetAsync`, `SaveAsync`,
+  `SubmitAsync`, `DeleteDraftAsync`. An endpoint-level `content.manage` made every map an editor's map and left
+  an author unable to write their own draft; do not put a permission back on those routes. `validate` is a
+  session-only read.
+- **A stranger's draft reads as 404, not 403.** `GetAsync(mapId, caller)` returns null for a draft the caller
+  cannot see, so the endpoint's existing 404 covers it. A 403 would confirm the map exists.
+- **`canEdit` rides on `MapSummaryDto` and `MapGraphDto`** and the editor disables its controls from it. Do not
+  re-derive it from `content.manage` in the page — that is the bug the flag exists to prevent.
+- **`map_without_exit` is a warning on save and a refusal at approval.** `ReviewAsync` calls
+  `BlocksPublication(issues)` (the one rule that refuses publication). A test that expects a *save* to return 400
+  for a map with no exit is wrong — it returns 200 and persists. This cost a test rewrite during J0.
+- **`ValidateWorld` grew two inputs:** `locationZones` (slug → zone) and `liveMapIds`. New codes:
+  `node_reference_zone_mismatch` (error), `location_missing_node` and `map_unreachable` (warnings). A `Location`
+  node's `refId` is a **zone-location** slug, so a test helper wanting "a way out" must use `RegionExit` with a
+  **region** slug (`cinderplain`) — a `ZoneExit` with a location slug fails `node_reference_unknown`.
+- **Authored coordinates are ranks, not distances.** `MapEditorService.ToDto` densifies each axis
+  (`DenseRanks`) so `x=2` beside `x=34` renders adjacent, and the canvas fixed the cell at
+  `CARD = 80` + `GAP = 24`. The spread-out-map complaint was authored slack, not a CSS bug; do not "fix" it in
+  `map-canvas.ts`.
+- **The review queue validates each submitted map before a reviewer opens it** (`getMap` + `validateMap`), and a
+  failed check reports `unknown`, not `blocked` — an unreachable validator must never read as "this map is
+  broken". `reviewVerdict` / `reviewVerdictLabel` in `map-editor.ts` own that wording, including "refused · the
+  map has no exit" for a blocked verdict with zero errors.
+- **A deactivation notification needs a second read.** `MapLifecycleResponse` carries neither the author nor the
+  name, so `MapEditorService.AuthorOfAsync` returns `MapAuthor(AccountId, Name)` (submitter, else creator) and
+  `DeactivateMapAsync` titles the inbox row with the map's name. A rejection already notifies through
+  `MapReviewOutcome`.
+- **Test gotchas:** `getByRole('link' | 'button', { name: /^Create/ })` matches more than one control on the
+  maps pages — index into `getAllByRole(...)`; `parentData` fixtures must carry every flag the layout returns
+  (a missing key is `undefined`, not `false`); the `src/lib/server/**` function floor (92) fails when a loader
+  test mocks `content-api`, so a new API function needs a case in `content-api.test.ts` as well.
+
+**Counts after J:** 6,089 .NET tests (1,677 server, 2,744 core, 510 data, 1,158 shared), 1,463 web unit tests,
+30 Playwright tests (2 skipped), coverage 90.03% branches, lint/typecheck/build and
+`dotnet format --verify-no-changes` clean.
+
+### K — web e2e: user workflows (2026-11-17)
+
+Plan: [`plans/web-e2e-workflows.md`](../../plans/web-e2e-workflows.md). The ask was blunt: "I can't always spend
+time manually testing the UI." Before this, e2e proved *routes* (a spec mentioned every `+page.svelte`) and one
+gated map smoke test — not one Foundry journey.
+
+- **A browser mock cannot test these pages.** Every Foundry loader calls `gameApiFetch` on the SvelteKit server,
+  so `page.route()` never sees the request. The specs need Postgres + `Veldrath.Server` + the preview: see
+  [`scripts/e2e-stack.sh`](../../scripts/e2e-stack.sh) (`start|stop|status`) and
+  [`web/client/tests/support/stack.ts`](../../web/client/tests/support/stack.ts).
+- **Accounts are real, roles are written directly.** There is no bootstrap admin, so `grantRoles` inserts the
+  `AspNetUserRoles` row (`AspNetUsers`/`AspNetRoles`, PascalCase quoted identifiers, no snake_case) after the
+  first `/foundry` visit provisions the Identity row. Roles already carry their permission claims from startup
+  seeding. Accounts are created through `/register`, so Better Auth owns the session.
+- **JWT key mismatch is the #1 first-run failure** (`401 The signature key was not found`): the stack script
+  reads `JWT_KEY`/`JWT_ISSUER`/`JWT_AUDIENCE`/`INTERNAL_BRIDGE_TOKEN` from `web/client/.env`. Do not hardcode them.
+- **The API port is not 9000 by default** in Development: `appsettings.Development.json` says `:5000`, so the
+  script pins `ASPNETCORE_URLS=http://127.0.0.1:9000` to match `PUBLIC_API_URL`.
+- **Gating:** `E2E_STACK=1` enables the specs; `Auth__AccessCacheSeconds=0` is required (see below).
+  `npm run test:e2e:stack` runs them; plain `npm run test` stays stack-free.
+- **What CI does now:** the `e2e-game` job of `ci-web.yml` sets `E2E_STACK=1` and runs
+  `game-loop` + `foundry-content` + `foundry-maps`.
+
+Four defects these specs found (each only visible when the real app meets the real API):
+
+1. `GET /api/account/profile` reported **no permissions** for a role holder — it read only per-user claims, while
+   a role carries its permissions as *role* claims. Every ContentEditor and Curator looked permissionless, so the
+   web app hid the authoring surface and the review queue from them. Fixed via `RolePermissionResolver` in
+   `AccountService`, with two `AccountEndpointTests`.
+2. A granted role did not apply for up to 60s: `AccountProvisioningService` caches the access snapshot. The four
+   admin role/permission endpoints now call `AccountProvisioningService.Invalidate(accountId)`, and the TTL is
+   `Auth:AccessCacheSeconds` (0 disables the cache).
+3. A refused map approval surfaced as **"Request failed (400)."** — `game-request.ts#extractError` only read
+   `error|detail|title`. It now reads `message` too, which is the shape every Veldrath operation result uses.
+4. **Foundry could not create any content**: `ContentShapeRules.ValidateShared` requires `ContentBase.TypeKey` and
+   no schema exposed it (`type_key_missing`); abilities also had the field named `abilityType` while the model and
+   validator read `powerType`. `ContentSchema.cs` now authors `typeKey` in the shared Identity group and
+   `powerType` (including `innate`) for abilities and spells.
+
+Second pass (same day) closed the write half and added three more journeys. Five stack specs now:
+`foundry-content` (create → edit → save → duplicate refused → deactivate → 404), `foundry-maps` (the map
+lifecycle), `foundry-submissions` (a role-less player submits, a Curator approves, the catalog gains the entry,
+the inbox reports it, Mark read clears it), `staff-areas` (editorial/admin/mod lists, a real user filter, and a
+player refused all three) and `public-details` (`/lore`, `/patch-notes`, `/leaderboard`, `/community`, plus the
+404 paths). Three more defects they found:
+
+5. `ContentFieldType` and `ContentIssueSeverity` were serialized as **numbers** while the web switches on
+   `'Integer'`/`'Boolean'`/`'Error'`. Every coercion missed, so the form posted `"50"` where an integer belonged and
+   the write refused the body; the audit's severity badges were wrong too. Both enums now carry
+   `[JsonConverter(typeof(JsonStringEnumConverter))]` — keep it if either enum moves.
+6. A checkbox with no `value` submits `on`, and `coerceFieldValue` only accepted `'true'`: every save wrote
+   `isActive: false`, the catalog hid the entry and the redirect target 404'd. Fixed in `coerceFieldValue`
+   (`'on'` is true) and the edit form now sets `value="true"`.
+7. The create form ignored the schema's boolean default, so new entries were born inactive. Fixed with
+   `checked={field.default === 'true'}` on the create page.
+
+**Trap worth remembering:** Playwright's `webServer` has `reuseExistingServer: !process.env.CI`, so a local rerun
+silently reuses the previous `vite preview` build and your Svelte changes never reach the browser — the symptom
+is a fixed bug that keeps failing. Run stack specs with `CI=true`. Likewise `scripts/e2e-stack.sh` kills a stray
+`bin/**/Veldrath.Server` process before starting; without that, an old build keeps the port and every later run
+tests it.
+
+Third pass added the staff verbs and publishing. **Seven stack specs** now: `foundry-content`, `foundry-maps`,
+`foundry-submissions`, `staff-areas`, `staff-actions` (warn → "1 warnings", mute 30 min → "Muted" chip, unmute →
+cleared, on a real registered player), `editorial-publishing` (announcement → Publish → `/community`; patch note →
+Publish → its public article and index link; empty body refused) and `public-details`.
+
+- **The editorial create routes DO exist** — as `[id]` with `id === 'new'`, the same deferral as
+  `/submissions/new`. `/editorial/announcements/new` is served by `[id]/+page.server.ts`, which switches on that
+  id. Do not add a `new/` directory; you would shadow it.
+- **The admin-action rate limit throttled the suite** (20/min, `RateLimit:AdminActionsPerMinute`). Loading an
+  editorial page costs several admin calls, so `scripts/e2e-stack.sh` now sets
+  `RateLimit__AdminActionsPerMinute=600` and `RateLimit__FoundryWritesPerMinute=600`. If a spec starts seeing
+  429s, that is the knob.
+- **A 429 used to read as "not found".** The three editorial `[id]` loaders did `error(404, result.error)`
+  whenever data was missing, so a throttled or forbidden admin call sent the editor hunting for a record that
+  exists. They now propagate the upstream status (`result.status === 0 ? 502 : result.status`). The same pattern
+  is worth checking in any new admin loader.
+
+Fourth pass closed E7. **Eight stack specs**; the newest is `admin-console` — an Admin grants Curator through
+`/admin/users/[id]`, the *player's own context* (no re-login) sees the review queue and gets 200 on `/review`,
+revoking returns 403 — the regression test for the snapshot-invalidation fix. `staff-actions` now also closes the
+report loop (a second player files one via `POST /api/reports` with its own minted token, the moderator sees it
+unresolved and resolves it), and `editorial-publishing` publishes a lore article too.
+
+- **`parity/routes.test.ts` is down to two exemptions**: `/api/**` and `/languages/**`. The admin, mod, editorial,
+  foundry, players and leaderboard exemptions are gone because a spec now drives each page.
+- **The parity suite reads spec *source*, so a dynamic route needs its literal in the spec.** For
+  `/admin/users/[id]` and `/mod/users/[id]` the specs record the real URL and re-`goto` it (a genuine
+  deep-linkable assertion) with the route pattern named in a comment; do that rather than re-adding an exemption.
+- **`/mod/reports`'s resolve action redirects to the *unfiltered* queue**, so a resolved row does not disappear
+  from the page — assert its status chip flips to "Resolved", not that the row vanishes.
+- **SvelteKit runs `+page.server.ts` and `+layout.server.ts` concurrently**, so a page load used to call the API
+  before its layout's guard refused the request — a 403 line in the log and a wasted round trip per blocked
+  page. Fixed: the 11 admin/mod page loaders `await parent()` first, and a full authenticated run now logs zero
+  refused `/api/mod…`/`/api/admin…` calls. **Do this in any new gated page load**; the layout remains the only
+  place the permission is decided.
+
+Fifth pass closed E9: **kick is covered end to end.** `staff-actions` puts a player in the world (character via
+`POST /api/characters` with a minted token, then `/play/{id}` waiting for `.map-node-cell button` — the hub's first
+snapshot), the moderator kicks with a reason from `/mod/users/{id}`, and the player's own screen shows that reason
+in the `session.error` banner (`GameScreen.svelte`). The seventh pass below gave `phase === 'disconnected'` its own
+screen; the spec now asserts that instead of the banner.
+
+Sixth pass (E11–E16) made the suite trustworthy rather than merely broad. **Twelve stack specs, fourteen tests,
+~4.5 minutes**, plus thirty stack-free specs in ~18s.
+
+- **`scripts/e2e-stack.sh start --fresh`** drops the compose volume so a run starts from the seed (the server
+  migrates and seeds on boot). Use it when a failure smells like stale data. The same pass added
+  `api-stop` / `api-start`, which manage **only** the API process — `upstream-failure.e2e.ts` needs them, and it
+  self-skips when `.e2e-server.pid` is absent (CI runs `dotnet run` itself, so there is nothing to stop).
+- **`session-states.e2e.ts`** is the session truth: clearing cookies mid-flow sends the visitor to
+  `/login?redirectTo=` with the **whole** nested target (`/content/ability?page=1`), and signing in lands back there.
+  If you touch the guard, `navigation.ts#localPathFrom` or the login action, that spec is the one to watch.
+- **`game-journeys.e2e.ts`** drives the seven-step wizard (`Continue` until the last step, where the button reads
+  `Create character`). Two traps: the wizard accepts **letters and spaces only** in a name, so a digit stamp is
+  rejected before the availability check; and creating a character navigates to `/play/{id}`, **not** the roster.
+- **`review-diff.e2e.ts` found a real defect:** the review page's diff says "this would replace the stored entry",
+  but promotion called a create-only path and refused any submission whose slug existed — so no reviewer could
+  accept a correction. `ContentWriteService.PromoteAsync` now upserts (row id survives, version bumps), with a
+  server test that asserts the replace. Keep that in mind when reading `FoundryService.ReviewAsync`: approval is an
+  upsert, not a create.
+- **`playwright.config.ts`** now sets `retries: 1` on CI with `trace: 'on-first-retry'` and
+  `video: 'retain-on-failure'`, and a 10s expect budget. A retry without a trace is a flake nobody can diagnose.
+
+Seventh pass closed the two §6 leftovers.
+
+- **`phase === 'disconnected'` has its own screen.** A kick used to leave the map, the travel buttons and the bag on
+  screen, each firing a command into a closed connection. `GameScreen.svelte` now renders a `Disconnected` region
+  (the moderator's reason plus "Back to characters") and drops the game shell and `<GameOverlays>` while that phase
+  holds. Component tests are in `shell.test.ts` (`playing({ phase: 'disconnected' })`); the e2e kick test asserts the
+  region, the reason, zero `.map-node-cell button`, and the landing on `/characters`. **Watch the coverage gate when
+  adding `.svelte` branches**: this screen put branches at 89.95% until its component tests landed.
+- **The review queue's N+1 is gone.** "Would approval accept this map?" is now answered server-side in
+  `MapEditorService.ListAsync` from **one** world snapshot and returned on `MapSummaryDto.Review`
+  (`MapReviewVerdictDto`), using the same `BlocksPublication`/error rule the decision applies, so a row cannot
+  promise an approval the decision would refuse. `ValidateWorldAsync` became `LoadWorldAsync` plus a static
+  `ValidateWorld(world, …)`. The web loader reads `map.review` and words a missing verdict as `unknown`, never
+  `ready`. Do not reintroduce a `getMap`/`validateMap` pair per row on `/review`.
+
+- **Running the stack specs locally needs the preview origin too.** `E2E_STACK=1` alone is not enough: Better Auth
+  rejects the sign-up with `Invalid origin: http://localhost:4173`, because `web/client/.env` sets
+  `ORIGIN=http://localhost:5173` (the dev server). Use
+  `ORIGIN=http://localhost:4173 BETTER_AUTH_URL=http://localhost:4173 CI=true E2E_STACK=1 npx playwright test <spec>`.
+
+Eighth pass — **the .NET coverage gate was red, and it was `Veldrath.Server` branches**: 80.6% against a floor of 82
+(measured 2026-11-17 with the pinned SDK 10.0.402, `dotnet test Realm.Full.slnx -c Release --collect "XPlat Code
+Coverage"` → `scripts/coverage-report.sh` → `scripts/check-dotnet-coverage.mjs`). Driver: whole features landed with
+no tests, and the gate only sees a regression once the branch count grows. Closed to **82.5% branch / 95.2% line**
+(total 82.7% / 95.1%) with two suites:
+
+- [`GetCraftableRecipesQueryTests`](../../Veldrath.Server.Tests/Features/GetCraftableRecipesQueryTests.cs) — the
+  craft panel's entire data source had **zero** tests, so `GetCraftableRecipesQuery.cs` sat at 0%. Eleven tests now
+  cover the three gates in order (level → skill rank → materials), the joined shortfall sentence, ranked attribute
+  parsing (`Skill_{id}_Rank`, unreadable JSON, missing rank = 0), the informational normalisation and the panel's
+  ordering.
+- [`DotEnvConfigurationTests`](../../Veldrath.Server.Tests/Infrastructure/DotEnvConfigurationTests.cs) — the
+  `.env` loader was at 5.9%. It is `internal`, so `Veldrath.Server.csproj` now has
+  `<InternalsVisibleTo Include="Veldrath.Server.Tests" />`. **The class is in a `DisableParallelization`
+  collection** because it writes process environment variables; do the same for any future env-mutating test.
+
+The remaining large gaps are `CharacterCreationSessionEndpoints.cs` (65%), `GetInventoryHubCommand` (67%) and the
+`GameHub` partials — worth ~2 more points if the floor ever needs margin. The floors themselves were not touched.
+**Still open — and it is a game defect, not only a test gap:** combat and death (E13c/d) need a known encounter,
+and there is none. **No seeded zone location has an `ActorPool`** (verified with
+`jsonb_array_length("ActorPool")` over `ZoneLocations`: every row is 0), and `ActorPoolResolver.SpawnRosterAsync`
+returns an empty roster for an empty pool *by design* — the old `"common"` fallback was removed so a missing pool
+could not be silently faked. So nothing spawns anywhere, the HUD's "Local" panel can never list a hostile, and
+`CombatPanel` never mounts for a real player. The content audit only **warns** on an empty pool ("safe locations
+are legitimate"), so a wholly empty world passes. Two more findings in the same measurement: **no location has
+`Traits.SafeRespawn = true`** (67/67 false), so `RespawnHubCommand` logs
+`Zone {ZoneId} has no location flagged SafeRespawn; falling back to …` at error level on **every** death and
+respawns at `locations[0]`, and no dungeon has a lobby; and only **4 actor archetypes** exist (two of them NPCs —
+`tavern-keeper`, `village-blacksmith`), so even with pools there is little to populate them with.
+
+Everything is written up in [`plans/content-seeding-pass.md`](../../plans/content-seeding-pass.md): measured
+counts, P0/P1/P2 priorities, the guardrail test to add to `SeededContentValidationTests`, and what each item
+unblocks. **Return here after the content pass**, then write E13c (engage → victory) and E13d (die → respawn).

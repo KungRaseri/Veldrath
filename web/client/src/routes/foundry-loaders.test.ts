@@ -20,7 +20,8 @@ import {
 	actions as newLanguageActions,
 	load as newLanguagePage
 } from './(foundry)/languages/new/+page.server';
-import { actions as mapsActions, load as mapsPage } from './(foundry)/maps/+page.server';
+import { load as mapsPage } from './(foundry)/maps/+page.server';
+import { actions as newMapActions, load as newMapPage } from './(foundry)/maps/new/+page.server';
 import { actions as mapActions, load as mapPage } from './(foundry)/maps/[mapId]/+page.server';
 import {
 	actions as notificationActions,
@@ -49,6 +50,7 @@ const contentApi = vi.hoisted(() => ({
 	updateContent: vi.fn(),
 	createContent: vi.fn(),
 	runContentAudit: vi.fn(),
+	listZoneLocations: vi.fn(),
 	validateContentPayload: vi.fn(),
 	deactivateContent: vi.fn()
 }));
@@ -201,7 +203,16 @@ beforeEach(() => {
 	foundryApi.voteSubmission.mockResolvedValue(ok(null));
 	foundryApi.reviewSubmission.mockResolvedValue(ok(null));
 	mapsApi.listMaps.mockResolvedValue(ok([{ id: 'zone:fenwick', name: 'Fenwick' }]));
-	mapsApi.getMap.mockResolvedValue(ok({ id: 'zone:fenwick', nodes: [], edges: [], version: 3 }));
+	mapsApi.getMap.mockResolvedValue(
+		ok({ id: 'zone:fenwick', nodes: [], edges: [], version: 3, canEdit: true })
+	);
+	contentApi.listZoneLocations.mockResolvedValue(
+		ok([
+			{ slug: 'halrow-threshold', displayName: 'The Threshold', zoneId: 'the-halrow' },
+			{ slug: 'fenwick-well', displayName: 'The Well', zoneId: 'fenwick' },
+			{ slug: 'fenwick-market', displayName: 'The Market', zoneId: 'Fenwick' }
+		])
+	);
 	mapsApi.validateMap.mockResolvedValue(ok({ isValid: true, issues: [] }));
 	mapsApi.createMap.mockResolvedValue(ok({ id: 'zone:draft-zone', name: 'Draft Zone' }));
 	mapsApi.submitMap.mockResolvedValue(
@@ -223,25 +234,12 @@ beforeEach(() => {
 describe('map editor', () => {
 	const params = { mapId: 'zone:fenwick' };
 
-	it('lists the graphs for a reader without switching the write controls on', async () => {
-		const result = (await callLoad(
-			mapsPage,
-			signedIn({ parentData: { canViewContent: true, canManageContent: false } })
-		)) as { canEdit: boolean; maps: unknown[] };
+	it('lists the maps the server allows, which is where the scoping lives', async () => {
+		// The page does not decide visibility: the API already narrowed the list to live maps plus this
+		// account's drafts, and it marks each row with canEdit.
+		const result = (await callLoad(mapsPage, signedIn())) as { maps: unknown[] };
 
-		expect(result.canEdit).toBe(false);
 		expect(result.maps).toEqual([{ id: 'zone:fenwick', name: 'Fenwick' }]);
-	});
-
-	it('lists the graphs for an account with no permissions at all', async () => {
-		// Reading the portal is not a capability any more: any signed-in account may open the graph.
-		const result = (await callLoad(
-			mapsPage,
-			signedIn({ parentData: { canManageContent: false } })
-		)) as { canEdit: boolean; maps: unknown[] };
-
-		expect(result.canEdit).toBe(false);
-		expect(result.maps).toHaveLength(1);
 	});
 
 	it('reports the API failure rather than an empty list', async () => {
@@ -264,6 +262,50 @@ describe('map editor', () => {
 		expect(result.rows).toEqual([]);
 	});
 
+	it('loads the locations of the zone a zone map defines, and only those', async () => {
+		mapsApi.getMap.mockResolvedValueOnce(
+			ok({
+				id: 'zone:fenwick',
+				mapType: 'Zone',
+				ownerId: 'fenwick',
+				nodes: [],
+				edges: [],
+				version: 3,
+				canEdit: true
+			})
+		);
+
+		const result = (await callLoad(mapPage, signedIn({ params }))) as {
+			zoneLocations: { id: string; label: string }[];
+		};
+
+		expect(result.zoneLocations.map((location) => location.id)).toEqual([
+			'fenwick-well',
+			'fenwick-market'
+		]);
+		expect(result.zoneLocations[0].label).toBe('The Well');
+	});
+
+	it('asks the catalog for no zone locations on a region map', async () => {
+		mapsApi.getMap.mockResolvedValueOnce(
+			ok({
+				id: 'region:varenmark',
+				mapType: 'Region',
+				ownerId: 'varenmark',
+				nodes: [],
+				edges: [],
+				version: 1
+			})
+		);
+
+		const result = (await callLoad(mapPage, signedIn({ params }))) as {
+			zoneLocations: unknown[];
+		};
+
+		expect(result.zoneLocations).toEqual([]);
+		expect(contentApi.listZoneLocations).not.toHaveBeenCalled();
+	});
+
 	it('maps a missing graph to a 404 message', async () => {
 		mapsApi.getMap.mockResolvedValue(failed('Map not found.', 404));
 
@@ -274,12 +316,17 @@ describe('map editor', () => {
 		).toBe('Map not found.');
 	});
 
-	it('opens one graph for an account that can only read', async () => {
+	it("takes the write flag from the graph, so another account's map has no controls", async () => {
+		mapsApi.getMap.mockResolvedValueOnce(
+			ok({ id: 'zone:fenwick', nodes: [], edges: [], version: 3, canEdit: false })
+		);
+
 		const result = (await callLoad(
 			mapPage,
-			signedIn({ params, parentData: { canManageContent: false, canReview: false } })
+			signedIn({ params, parentData: { canManageContent: true, canReview: false } })
 		)) as { canEdit: boolean };
 
+		// A content editor may read every map; the server still decides which ones they may write.
 		expect(result.canEdit).toBe(false);
 	});
 
@@ -311,25 +358,112 @@ describe('map editor', () => {
 		expect(mapsApi.saveMap).not.toHaveBeenCalled();
 	});
 
-	it('creates a draft and opens it', async () => {
+	it('loads the locations the interior step offers', async () => {
+		const result = (await callLoad(newMapPage, signedIn())) as {
+			locations: { id: string }[];
+			error: unknown;
+		};
+
+		expect(result.locations[0]?.id).toBe('halrow-threshold');
+		expect(result.error).toBeNull();
+	});
+
+	it('still opens the wizard when the location list is unavailable', async () => {
+		mapsApi.getMapTargets.mockResolvedValue(failed('targets are down'));
+
+		const result = (await callLoad(newMapPage, signedIn())) as {
+			locations: unknown[];
+			error: string;
+		};
+
+		// A region or a zone map defines its own owner, so only the interior suggestions are lost.
+		expect(result.locations).toEqual([]);
+		expect(result.error).toBe('targets are down');
+	});
+
+	it('creates the draft from the wizard and opens the editor', async () => {
 		expect(
 			await redirectTo(() =>
-				action(mapsActions.create, { mapType: 'Zone', ownerId: 'draft-zone', name: 'Draft Zone' })
+				action(newMapActions.default, {
+					mapType: 'Zone',
+					ownerId: 'draft-zone',
+					name: 'Draft Zone'
+				})
 			)
 		).toBe('/maps/zone%3Adraft-zone');
 	});
 
-	it('reports why a draft could not be created', async () => {
+	it('refuses a slug with capitals or spaces, and a nameless map, before calling the API', async () => {
+		const badSlug = (await action(newMapActions.default, {
+			mapType: 'Zone',
+			ownerId: 'The Halrow',
+			name: 'The Halrow'
+		})) as { status: number; data: { message: string } };
+
+		expect(badSlug.status).toBe(400);
+		expect(badSlug.data.message).toContain('lowercase');
+		expect(mapsApi.createMap).not.toHaveBeenCalled();
+
+		const noName = (await action(newMapActions.default, {
+			mapType: 'Zone',
+			ownerId: 'the-halrow-new',
+			name: '   '
+		})) as { status: number; data: { message: string } };
+
+		expect(noName.status).toBe(400);
+		expect(noName.data.message).toContain('name');
+		expect(mapsApi.createMap).not.toHaveBeenCalled();
+	});
+
+	it('refuses a kind the portal does not offer, and defaults fields the browser omits', async () => {
+		const world = (await action(newMapActions.default, {
+			mapType: 'World',
+			ownerId: 'the-world',
+			name: 'The World'
+		})) as { status: number; data: { message: string } };
+
+		expect(world.status).toBe(400);
+		expect(world.data.message).toContain('kind of map');
+		expect(mapsApi.createMap).not.toHaveBeenCalled();
+
+		// A post with no kind or owner falls back to Zone and an empty slug, which the slug rule then
+		// refuses — still before the API is called.
+		const sparse = (await action(newMapActions.default, {})) as {
+			status: number;
+			data: { message: string; mapType: string };
+		};
+
+		expect(sparse.status).toBe(400);
+		expect(sparse.data.mapType).toBe('Zone');
+		expect(sparse.data.message).toContain('lowercase');
+		expect(mapsApi.createMap).not.toHaveBeenCalled();
+	});
+
+	it('falls back to 502 and its own copy when the API answers with nothing', async () => {
+		mapsApi.createMap.mockResolvedValue({ status: 0, data: null, error: null });
+
+		const result = (await action(newMapActions.default, {
+			mapType: 'Zone',
+			ownerId: 'the-halrow-new',
+			name: 'The Halrow New'
+		})) as { status: number; data: { message: string } };
+
+		expect(result.status).toBe(502);
+		expect(result.data.message).toBe('The map could not be created.');
+	});
+
+	it('reports why a draft could not be created, and keeps what was typed', async () => {
 		mapsApi.createMap.mockResolvedValue(failed("'draft-zone' already owns a Zone map.", 400));
 
-		const result = (await action(mapsActions.create, {
+		const result = (await action(newMapActions.default, {
 			mapType: 'Zone',
 			ownerId: 'draft-zone',
 			name: 'Draft Zone'
-		})) as { status: number; data: { message: string } };
+		})) as { status: number; data: { message: string; ownerId: string } };
 
 		expect(result.status).toBe(400);
 		expect(result.data.message).toContain('already owns');
+		expect(result.data.ownerId).toBe('draft-zone');
 	});
 
 	it('submits a draft, and reports a conflict with the reason the server worded', async () => {
@@ -544,7 +678,12 @@ describe('review queue', () => {
 		);
 		mapsApi.listMaps.mockResolvedValue(
 			ok([
-				{ id: 'zone:a', submittedAt: '2026-01-01T00:00:00Z', isActive: false },
+				{
+					id: 'zone:a',
+					submittedAt: '2026-01-01T00:00:00Z',
+					isActive: false,
+					review: { status: 'ready', errors: 0, warnings: 1 }
+				},
 				// Live, so not waiting for a decision.
 				{ id: 'zone:b', submittedAt: null, isActive: true }
 			])
@@ -553,15 +692,58 @@ describe('review queue', () => {
 		const result = (await callLoad(
 			reviewPage,
 			signedIn({ parentData: { access: curatorAccess, canReview: true } })
-		)) as { submissions: unknown[]; maps: { id: string }[]; error: unknown };
+		)) as {
+			submissions: unknown[];
+			maps: { id: string; verdict: { status: string } }[];
+			error: unknown;
+		};
 
 		expect(result.submissions).toEqual([{ id: 'sub-1' }]);
 		expect(result.maps.map((map) => map.id)).toEqual(['zone:a']);
+		// Approval is the gate the queue announces, so each row already carries the verdict the list reported.
+		expect(result.maps[0].verdict).toEqual({ status: 'ready', errors: 0, warnings: 1 });
 		expect(result.error).toBeNull();
 		expect(foundryApi.listSubmissions).toHaveBeenCalledWith(
 			expect.anything(),
 			expect.objectContaining({ status: 'Pending' })
 		);
+	});
+
+	it('words a map the list gave no verdict for as unknown rather than ready', async () => {
+		mapsApi.listMaps.mockResolvedValue(
+			ok([
+				{
+					id: 'zone:blocked',
+					submittedAt: '2026-01-01T00:00:00Z',
+					isActive: false,
+					review: { status: 'blocked', errors: 0, warnings: 1 }
+				},
+				{ id: 'zone:unknown', submittedAt: '2026-01-01T00:00:00Z', isActive: false },
+				// Live, so there is no approval left to announce.
+				{ id: 'zone:live', submittedAt: '2026-01-01T00:00:00Z', isActive: true }
+			])
+		);
+
+		const result = (await callLoad(
+			reviewPage,
+			signedIn({ parentData: { access: curatorAccess, canReview: true } })
+		)) as { maps: { id: string; verdict: { status: string } }[] };
+
+		expect(result.maps).toEqual([
+			expect.objectContaining({
+				id: 'zone:blocked',
+				verdict: expect.objectContaining({ status: 'blocked' })
+			}),
+			// A verdict the server could not work out must not read as an approval.
+			expect.objectContaining({
+				id: 'zone:unknown',
+				verdict: expect.objectContaining({ status: 'unknown' })
+			})
+		]);
+
+		// The queue must not go back to the API per row: that is the N+1 this loader used to make.
+		expect(mapsApi.getMap).not.toHaveBeenCalled();
+		expect(mapsApi.validateMap).not.toHaveBeenCalled();
 	});
 
 	it('reports the first failed call', async () => {

@@ -1,49 +1,22 @@
-import { error, fail, redirect } from '@sveltejs/kit';
-import type { Actions, PageServerLoad } from './$types';
+import { error } from '@sveltejs/kit';
+import type { PageServerLoad } from './$types';
 import { requireUser, toGameIdentity } from '#lib/server/access';
-import { createMap, listMaps } from '#lib/server/maps-api';
+import { listMaps } from '#lib/server/maps-api';
 
 /**
- * Lists the authored map graphs.
+ * Lists the maps the caller may see.
  *
- * Reads need a signed-in account and nothing more — the map editor is part of the public portal — while
- * `canEdit` decides whether the write controls render, not whether the page loads.
+ * Reading needs a signed-in account and nothing more. The list is already scoped by the server: live maps plus
+ * the drafts this account created, or everything for an editor or a reviewer. Creating a map is its own page
+ * (`/maps/new`) — the list used to carry the form, which made it the second door into the same job.
  */
-export const load: PageServerLoad = async ({ locals, parent }) => {
+export const load: PageServerLoad = async ({ locals }) => {
 	const user = requireUser(locals);
-	const { canManageContent } = await parent();
 
 	const result = await listMaps(toGameIdentity(user));
 	if (!result.data) {
 		error(result.status || 502, result.error ?? 'Could not load the map list.');
 	}
 
-	return { canEdit: canManageContent, maps: result.data };
-};
-
-export const actions: Actions = {
-	/**
-	 * Creates an inactive draft and opens it.
-	 *
-	 * The draft is invisible to the game until a reviewer approves it, so creating one cannot put content in
-	 * front of a player.
-	 */
-	create: async ({ locals, request }) => {
-		const user = requireUser(locals);
-		const form = await request.formData();
-
-		const result = await createMap(toGameIdentity(user), {
-			mapType: String(form.get('mapType') ?? 'Zone'),
-			ownerId: String(form.get('ownerId') ?? '').trim(),
-			name: String(form.get('name') ?? '').trim()
-		});
-
-		if (!result.data) {
-			return fail(result.status || 502, {
-				message: result.error ?? 'The map could not be created.'
-			});
-		}
-
-		redirect(303, `/maps/${encodeURIComponent(result.data.id)}`);
-	}
+	return { maps: result.data };
 };

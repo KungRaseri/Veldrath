@@ -8,6 +8,9 @@ const staffRoutes = [
 	'/submissions',
 	'/content',
 	'/maps',
+	// The create wizard: any signed-in account may author a map, so this suite proves only that an
+	// anonymous visitor is turned away before the form renders.
+	'/maps/new',
 	// The detail route as the route-coverage suite sees it: Playwright cannot know a real map id, and
 	// the group layout guard runs before any lookup, so any id proves the route is protected.
 	'/maps/zone:fenwick',

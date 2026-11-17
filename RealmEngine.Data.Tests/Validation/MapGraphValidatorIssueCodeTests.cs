@@ -745,4 +745,83 @@ public class MapGraphValidatorIssueCodeTests
             issue.Code == "map_without_exit" && issue.Severity == MapGraphValidationSeverity.Error);
         result.IsValid.Should().BeFalse();
     }
+
+    // ── Zone coverage and reachability ──────────────────────────────────────
+
+    [Fact]
+    public void ValidateWorld_RejectsALocationNodeFromAnotherZone()
+    {
+        // Arrange
+        var map = Graph(
+            [
+                Node("entry", MapNodeType.EntryPoint, isEntry: true),
+                Node("place", MapNodeType.Location, refId: "market"),
+                Node("exit", MapNodeType.ZoneExit, isExit: true, targetMapId: "zone:other", targetNodeId: "entry"),
+            ],
+            MinimalEdges(),
+            ownerId: "the-halrow");
+
+        // Act
+        var result = MapGraphValidator.ValidateWorld(
+            [map],
+            locationZones: new Dictionary<string, string> { ["market"] = "fenwick" });
+
+        // Assert
+        result.Issues.Should().Contain(issue =>
+            issue.Code == "node_reference_zone_mismatch" &&
+            issue.Severity == MapGraphValidationSeverity.Error);
+    }
+
+    [Fact]
+    public void ValidateWorld_WarnsWhenAZoneLocationHasNoNode()
+    {
+        // Arrange
+        var map = Graph(MinimalGraph(), MinimalEdges(), ownerId: "the-halrow");
+
+        // Act
+        var result = MapGraphValidator.ValidateWorld(
+            [map],
+            locationZones: new Dictionary<string, string>
+            {
+                ["market"] = "the-halrow",
+                ["well"] = "the-halrow",
+            });
+
+        // Assert
+        result.Issues.Should().Contain(issue =>
+            issue.Code == "location_missing_node" &&
+            issue.Severity == MapGraphValidationSeverity.Warning &&
+            issue.Message.Contains("'market'"));
+    }
+
+    [Fact]
+    public void ValidateWorld_WarnsWhenALiveMapIsNotReachable()
+    {
+        // Arrange
+        var map = Graph(MinimalGraph(), MinimalEdges(), id: "zone:lonely", ownerId: "lonely");
+
+        // Act
+        var result = MapGraphValidator.ValidateWorld(
+            [map],
+            liveMapIds: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "zone:lonely" });
+
+        // Assert
+        result.Issues.Should().Contain(issue =>
+            issue.Code == "map_unreachable" && issue.Severity == MapGraphValidationSeverity.Warning);
+    }
+
+    [Fact]
+    public void ValidateWorld_DoesNotWarnAboutADraftNobodyLinksTo()
+    {
+        // Arrange
+        var map = Graph(MinimalGraph(), MinimalEdges(), id: "zone:lonely", ownerId: "lonely");
+
+        // Act
+        var result = MapGraphValidator.ValidateWorld(
+            [map],
+            liveMapIds: new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+
+        // Assert
+        Codes(result).Should().NotContain("map_unreachable");
+    }
 }

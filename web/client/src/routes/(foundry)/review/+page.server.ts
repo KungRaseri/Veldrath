@@ -3,6 +3,7 @@ import type { PageServerLoad } from './$types';
 import { toGameIdentity } from '#lib/server/access';
 import { listSubmissions } from '#lib/server/foundry-api';
 import { listMaps } from '#lib/server/maps-api';
+import { reviewVerdict } from '#lib/foundry/map-editor';
 
 /**
  * One queue for everything awaiting a decision.
@@ -27,9 +28,16 @@ export const load: PageServerLoad = async ({ locals, parent }) => {
 		listMaps(identity)
 	]);
 
+	const submitted = (maps.data ?? []).filter(
+		(map) => map.submittedAt != null && map.isActive !== true
+	);
+
 	return {
 		submissions: pending.data?.items ?? [],
-		maps: (maps.data ?? []).filter((map) => map.submittedAt != null && map.isActive !== true),
+		// The verdict arrives with the list, computed in the same pass: asking per row used to cost a graph read
+		// and a validate call each, so the queue got slower with every draft awaiting a decision. A map the
+		// server could not judge still reads as `unknown` — an absent verdict must never promise an approval.
+		maps: submitted.map((map) => ({ ...map, verdict: map.review ?? reviewVerdict(null) })),
 		error: pending.error ?? maps.error ?? null
 	};
 };

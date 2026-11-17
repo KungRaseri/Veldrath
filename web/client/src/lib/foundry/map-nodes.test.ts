@@ -127,6 +127,20 @@ describe('addNode', () => {
 		expect(added.mapId).toBe('zone:the-halrow');
 		expect(added.layoutX).not.toBeNull();
 		expect(added.layoutY).not.toBeNull();
+		expect(added.refId).toBeNull();
+	});
+
+	it('carries the catalog slug when the caller already knows it', () => {
+		// The zone panel adds a location node whose reference is already correct, so a slug cannot be mistyped.
+		const next = addNode(graph(), {
+			nodeType: 'Location',
+			displayName: 'The Market',
+			refId: 'halrow-market'
+		});
+		const added = next.nodes[next.nodes.length - 1];
+
+		expect(added.refId).toBe('halrow-market');
+		expect(added.displayName).toBe('The Market');
 	});
 
 	it('marks an exit kind as an exit and an entry kind as the entry', () => {

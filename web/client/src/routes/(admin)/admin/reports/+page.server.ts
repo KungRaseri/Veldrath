@@ -10,7 +10,11 @@ function parseResolved(value: string | null): boolean | null {
 	return null;
 }
 
-export const load: PageServerLoad = async ({ locals, url }) => {
+export const load: PageServerLoad = async ({ parent, locals, url }) => {
+	// Await the group layout first: it owns the permission check, and without this the page load
+	// races it and calls the API for a request that is already being refused.
+	await parent();
+
 	const resolved = parseResolved(url.searchParams.get('resolved'));
 	const page = Math.max(1, Number(url.searchParams.get('page') ?? 1));
 	const result = await listReports(toGameIdentity(locals.user!), resolved, page, 50);

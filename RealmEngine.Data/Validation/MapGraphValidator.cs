@@ -183,8 +183,8 @@ public static class MapGraphValidator
 
     /// <summary>
     /// Validates a whole world: every map on its own, plus the rules that need more than one map —
-    /// destination maps and destination nodes must exist, and a dungeon zone must be escapable and
-    /// fully reachable.
+    /// destination maps and destination nodes must exist, a zone map must actually place the locations that
+    /// belong to its zone, and a live map must be reachable from somewhere.
     /// </summary>
     /// <param name="maps">Every map in the world.</param>
     /// <param name="knownRegionSlugs">Optional set of valid region slugs for cross-context checks.</param>
@@ -194,13 +194,23 @@ public static class MapGraphValidator
     /// Zone slugs that are dungeons. A dungeon's stranded room or missing exit is an error rather than a warning,
     /// because a player inside one cannot walk out of it.
     /// </param>
+    /// <param name="locationZones">
+    /// Optional map from location slug to the zone it belongs to. Supplying it enables the two zone-coverage
+    /// rules below; without it the validator cannot know which locations belong to which zone.
+    /// </param>
+    /// <param name="liveMapIds">
+    /// Optional set of maps that are in the game. Only those are reported as unreachable: a draft nobody links
+    /// to yet is the normal state of a map being written.
+    /// </param>
     /// <returns>A validation result containing errors and warnings for the whole world.</returns>
     public static MapGraphValidationResult ValidateWorld(
         IReadOnlyList<MapGraph> maps,
         IReadOnlySet<string>? knownRegionSlugs = null,
         IReadOnlySet<string>? knownZoneSlugs = null,
         IReadOnlySet<string>? knownLocationSlugs = null,
-        IReadOnlySet<string>? dungeonZoneSlugs = null)
+        IReadOnlySet<string>? dungeonZoneSlugs = null,
+        IReadOnlyDictionary<string, string>? locationZones = null,
+        IReadOnlySet<string>? liveMapIds = null)
     {
         var issues = new List<MapGraphValidationIssue>();
         var knownMapIds = maps.Select(m => m.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -227,6 +237,53 @@ public static class MapGraphValidator
                 issues.Add(isDungeonZone && isDungeonBlocker && issue.Severity == MapGraphValidationSeverity.Warning
                     ? issue with { Severity = MapGraphValidationSeverity.Error }
                     : issue);
+            }
+
+            // A zone map is the picture of its zone: a location node must reference a location of *this* zone,
+            // and every location of the zone should be on the map. The first is an error because the node
+            // would place a location where it does not exist; the second is a warning because a map can
+            // legitimately be authored before every location is drawn.
+            if (map.MapType == MapType.Zone && locationZones is not null)
+            {
+                var referenced = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var node in map.Nodes)
+                {
+                    if (node.NodeType != MapNodeType.Location || string.IsNullOrWhiteSpace(node.RefId))
+                        continue;
+
+                    if (locationZones.TryGetValue(node.RefId, out var locationZone))
+                    {
+                        referenced.Add(node.RefId);
+
+                        if (!string.Equals(locationZone, map.OwnerId, StringComparison.OrdinalIgnoreCase))
+                        {
+                            AddError(
+                                issues,
+                                "node_reference_zone_mismatch",
+                                $"Node '{node.Id}' references location '{node.RefId}', which belongs to zone " +
+                                $"'{locationZone}' rather than '{map.OwnerId}'.",
+                                map.Id,
+                                node.Id);
+                        }
+                    }
+                }
+
+                foreach (var location in locationZones
+                    .Where(pair => string.Equals(pair.Value, map.OwnerId, StringComparison.OrdinalIgnoreCase))
+                    .Select(pair => pair.Key)
+                    .OrderBy(slug => slug, StringComparer.OrdinalIgnoreCase))
+                {
+                    if (referenced.Contains(location))
+                        continue;
+
+                    AddWarning(
+                        issues,
+                        "location_missing_node",
+                        $"Location '{location}' belongs to this zone but has no node on the map.",
+                        map.Id,
+                        null);
+                }
             }
 
             foreach (var node in map.Nodes)
@@ -260,6 +317,32 @@ public static class MapGraphValidator
                     $"Node '{node.Id}' exits to node '{node.TargetNodeId}', which does not exist on map '{node.TargetMapId}'.",
                     map.Id,
                     node.Id);
+            }
+        }
+
+        // Reachability across maps: a live zone or interior that nothing exits to cannot be entered by a
+        // character, however complete its own graph is. Regions are exempt until there is a world map to
+        // hold them, and drafts are exempt because they are still being written.
+        if (liveMapIds is not null)
+        {
+            var targetedMapIds = maps
+                .SelectMany(map => map.Nodes)
+                .Where(node => !string.IsNullOrWhiteSpace(node.TargetMapId))
+                .Select(node => node.TargetMapId!)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var map in maps)
+            {
+                if (map.MapType is not (MapType.Zone or MapType.Interior))
+                    continue;
+                if (!liveMapIds.Contains(map.Id) || targetedMapIds.Contains(map.Id))
+                    continue;
+
+                AddWarning(
+                    issues,
+                    "map_unreachable",
+                    $"Map '{map.Id}' is live but no other map exits to it, so nobody can reach it.",
+                    map.Id);
             }
         }
 

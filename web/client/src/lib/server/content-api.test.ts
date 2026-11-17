@@ -6,6 +6,7 @@ import {
 	getContentDetail,
 	getContentTypeSchema,
 	listContentTypes,
+	listZoneLocations,
 	updateContent,
 	validateContent,
 	validateContentPayload
@@ -66,6 +67,12 @@ describe('content reads', () => {
 		getContentDetail('item', 'iron sword');
 
 		expect(lastCall()[1]).toBe('/api/content/browse/item/iron%20sword');
+	});
+
+	it('lists the zone locations anonymously, for the map editor to narrow by zone', () => {
+		listZoneLocations();
+
+		expect(lastCall()).toEqual([null, '/api/content/zone-locations', undefined]);
 	});
 
 	it('loads the editable schema for a type', () => {

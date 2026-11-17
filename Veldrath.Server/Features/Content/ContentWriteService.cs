@@ -32,12 +32,22 @@ public sealed record ContentPromotion(string? Slug, string? Error)
 /// </remarks>
 public class ContentWriteService(ContentDbContext db)
 {
-    /// <summary>Creates the entity described by <paramref name="payloadJson"/>.</summary>
+    /// <summary>
+    /// Writes the entity described by <paramref name="payloadJson"/>: creates it, or replaces the stored row
+    /// that carries the same slug.
+    /// </summary>
+    /// <remarks>
+    /// The review queue's diff tells a reviewer that approving "would replace the stored entry", so approval has
+    /// to be able to do exactly that. It used to call a create-only path, which refused every submission whose
+    /// slug already existed — a community could propose a correction and no reviewer could ever accept it.
+    /// Replacing keeps the row's id (live game data points at it) and bumps its version, the same way the editor's
+    /// update endpoint does.
+    /// </remarks>
     /// <param name="type">Content type key, e.g. <c>item</c>.</param>
     /// <param name="payloadJson">The stored payload.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The slug written, or the reason it was not.</returns>
-    public async Task<ContentPromotion> CreateAsync(
+    public async Task<ContentPromotion> PromoteAsync(
         string type,
         string payloadJson,
         CancellationToken ct = default)
@@ -69,10 +79,7 @@ public class ContentWriteService(ContentDbContext db)
             return ContentPromotion.Refused("The payload has no slug, so there is nothing to address it by.");
         }
 
-        if (await ContentEntityTypes.FindBySlugAsync(db, resolver, incoming.Slug, ct) is not null)
-        {
-            return ContentPromotion.Refused($"A {type} with slug '{incoming.Slug}' already exists.");
-        }
+        var existing = await ContentEntityTypes.FindBySlugAsync(db, resolver, incoming.Slug, ct);
 
         var catalog = await ContentReferenceCatalog.LoadAsync(db, ct);
         var result = ContentEntityTypes.Registry.Validate(resolver.ContentType, incoming, catalog);
@@ -85,9 +92,21 @@ public class ContentWriteService(ContentDbContext db)
             );
         }
 
-        incoming.Id = incoming.Id == Guid.Empty ? Guid.NewGuid() : incoming.Id;
-        incoming.UpdatedAt = DateTimeOffset.UtcNow;
-        db.Add(incoming);
+        if (existing is null)
+        {
+            incoming.Id = incoming.Id == Guid.Empty ? Guid.NewGuid() : incoming.Id;
+            incoming.UpdatedAt = DateTimeOffset.UtcNow;
+            db.Add(incoming);
+        }
+        else
+        {
+            // Id survives (foreign keys point at it); the server owns Version and UpdatedAt.
+            incoming.Id = existing.Id;
+            incoming.Version = existing.Version + 1;
+            incoming.UpdatedAt = DateTimeOffset.UtcNow;
+            db.Entry(existing).CurrentValues.SetValues(incoming);
+        }
+
         await db.SaveChangesAsync(ct);
 
         return ContentPromotion.Succeeded(incoming.Slug);

@@ -39,6 +39,7 @@ public sealed class AccountProvisioningService(
     UserManager<PlayerAccount> userManager,
     RoleManager<IdentityRole<Guid>> roleManager,
     ApplicationDbContext db,
+    IConfiguration configuration,
     ILogger<AccountProvisioningService> logger)
 {
     // Identity is configured with RequireUniqueEmail, so every account needs an address.
@@ -48,9 +49,13 @@ public sealed class AccountProvisioningService(
 
     // Enrichment runs on every authenticated request. Tokens that carry no RBAC claims
     // (Better Auth tokens) would otherwise cause a role/claim lookup per request, so
-    // snapshots are cached briefly per account.
-    private static readonly TimeSpan CacheDuration = TimeSpan.FromSeconds(60);
+    // snapshots are cached briefly per account. `Auth:AccessCacheSeconds` exists because a role change
+    // has to be observable in an end-to-end run straight away, and because a deployment may prefer to
+    // trade the round-trip for freshness.
     private static readonly ConcurrentDictionary<Guid, (AccountAccessSnapshot Snapshot, DateTimeOffset ExpiresAt)> Cache = new();
+
+    private readonly TimeSpan _cacheDuration =
+        TimeSpan.FromSeconds(configuration.GetValue("Auth:AccessCacheSeconds", 60));
 
     // A fresh login triggers several concurrent SSR calls (profile, characters, slots,
     // last-session), all carrying the same brand-new subject. Without serialization they all
@@ -63,6 +68,12 @@ public sealed class AccountProvisioningService(
     /// permissions when the change must take effect immediately (tests, admin tooling).
     /// </summary>
     public static void ClearCache() => Cache.Clear();
+
+    /// <summary>
+    /// Drops one account's cached access snapshot, so the next request re-reads its roles.
+    /// </summary>
+    /// <param name="accountId">Account whose roles or permissions just changed.</param>
+    public static void Invalidate(Guid accountId) => Cache.TryRemove(accountId, out _);
 
     /// <summary>
     /// Ensures an account exists for <paramref name="accountId"/> and resolves its access.
@@ -83,16 +94,24 @@ public sealed class AccountProvisioningService(
         bool emailVerified,
         CancellationToken ct = default)
     {
-        if (Cache.TryGetValue(accountId, out var cached) && cached.ExpiresAt > DateTimeOffset.UtcNow)
+        if (_cacheDuration > TimeSpan.Zero &&
+            Cache.TryGetValue(accountId, out var cached) &&
+            cached.ExpiresAt > DateTimeOffset.UtcNow)
+        {
             return cached.Snapshot;
+        }
 
         var gate = ProvisionLocks.GetOrAdd(accountId, _ => new SemaphoreSlim(1, 1));
         await gate.WaitAsync(ct);
         try
         {
             // Another request may have provisioned the account while this one waited.
-            if (Cache.TryGetValue(accountId, out cached) && cached.ExpiresAt > DateTimeOffset.UtcNow)
+            if (_cacheDuration > TimeSpan.Zero &&
+                Cache.TryGetValue(accountId, out cached) &&
+                cached.ExpiresAt > DateTimeOffset.UtcNow)
+            {
                 return cached.Snapshot;
+            }
 
             var user = await userManager.FindByIdAsync(accountId.ToString());
             if (user is null)
@@ -111,7 +130,9 @@ public sealed class AccountProvisioningService(
                 roles,
                 permissions);
 
-            Cache[accountId] = (snapshot, DateTimeOffset.UtcNow.Add(CacheDuration));
+            if (_cacheDuration > TimeSpan.Zero)
+                Cache[accountId] = (snapshot, DateTimeOffset.UtcNow.Add(_cacheDuration));
+
             return snapshot;
         }
         finally

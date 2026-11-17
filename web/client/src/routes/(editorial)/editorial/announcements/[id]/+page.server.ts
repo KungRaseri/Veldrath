@@ -1,6 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { toGameIdentity } from '#lib/server/access';
+import { upstreamStatus } from '#lib/server/game-request';
 import {
 	adminCreateAnnouncement,
 	adminDeleteAnnouncement,
@@ -17,7 +18,9 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
 	const result = await adminGetAnnouncement(toGameIdentity(locals.user!), params.id);
 	if (!result.data) {
-		error(404, result.error ?? 'Announcement not found.');
+		// Propagate the upstream status: a throttled or forbidden admin call is not a missing announcement,
+		// and "not found" sends the editor looking for a record that exists.
+		error(upstreamStatus(result), result.error ?? 'Announcement not found.');
 	}
 
 	return { mode: 'edit' as const, announcement: result.data };

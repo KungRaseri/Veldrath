@@ -49,6 +49,34 @@ public class AccountEndpointTests(WebAppFactory factory)
     }
 
     [Fact]
+    public async Task GetProfile_Reports_ThePermissions_A_Role_Carries()
+    {
+        // The web app gates on the profile's permission list, and a role carries its permissions as role
+        // claims. Reporting only the user's own grants made a ContentEditor and a Curator look powerless,
+        // which hid the whole authoring surface and the review queue from the accounts trusted with them.
+        var (token, _) = await factory.CreateAccountTokenAsync("AcctProfile_RolePerms", "ContentEditor");
+        SetBearer(token);
+
+        var profile = await _client.GetFromJsonAsync<AccountProfileDto>("/api/account/profile");
+
+        profile!.Roles.Should().Contain("ContentEditor");
+        profile.Permissions.Should().Contain("content.manage");
+        profile.Permissions.Should().Contain("content.view");
+    }
+
+    [Fact]
+    public async Task GetProfile_Reports_The_ReviewPermission_For_A_Curator()
+    {
+        var (token, _) = await factory.CreateAccountTokenAsync("AcctProfile_CuratorPerms", "Curator");
+        SetBearer(token);
+
+        var profile = await _client.GetFromJsonAsync<AccountProfileDto>("/api/account/profile");
+
+        profile!.Permissions.Should().Contain("content.review");
+        profile.Permissions.Should().NotContain("content.manage", "a curator decides, it does not author");
+    }
+
+    [Fact]
     public async Task GetProfile_Unauthenticated_Returns_401()
     {
         _client.DefaultRequestHeaders.Authorization = null;
