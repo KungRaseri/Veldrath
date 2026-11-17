@@ -1,0 +1,95 @@
+using System.Text.Json;
+using RealmEngine.Data.Persistence;
+using RealmEngine.Data.Validation.Content;
+
+namespace Veldrath.Server.Features.Content;
+
+/// <summary>The outcome of writing one content entity: its slug, or the reason it was refused.</summary>
+/// <param name="Slug">Slug of the entity that was written, or <c>null</c> when nothing was.</param>
+/// <param name="Error">Why the write was refused, or <c>null</c> on success.</param>
+public sealed record ContentPromotion(string? Slug, string? Error)
+{
+    /// <summary>An entity was written.</summary>
+    /// <param name="slug">Its slug.</param>
+    /// <returns>The outcome.</returns>
+    public static ContentPromotion Succeeded(string slug) => new(slug, null);
+
+    /// <summary>Nothing was written.</summary>
+    /// <param name="error">The reason, worded for a reviewer.</param>
+    /// <returns>The outcome.</returns>
+    public static ContentPromotion Refused(string error) => new(null, error);
+}
+
+/// <summary>
+/// Writes one entity onto the content catalog from its JSON payload.
+/// </summary>
+/// <remarks>
+/// This exists so Foundry's review gate can land an approved submission without going through HTTP. It uses the
+/// same three primitives the editor's write endpoint uses — <see cref="ContentEntityTypes"/> for the shape,
+/// <see cref="ContentReferenceCatalog"/> for cross-references and <see cref="ContentEntityTypes.Registry"/> for
+/// the rules — so a payload that the editor would refuse is refused here for the same reason. Only the
+/// orchestration is repeated; the rules are not.
+/// </remarks>
+public class ContentWriteService(ContentDbContext db)
+{
+    /// <summary>Creates the entity described by <paramref name="payloadJson"/>.</summary>
+    /// <param name="type">Content type key, e.g. <c>item</c>.</param>
+    /// <param name="payloadJson">The stored payload.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The slug written, or the reason it was not.</returns>
+    public async Task<ContentPromotion> CreateAsync(
+        string type,
+        string payloadJson,
+        CancellationToken ct = default)
+    {
+        if (!ContentEntityTypes.TryResolve(type, out var resolver))
+        {
+            return ContentPromotion.Refused($"Unknown content type '{type}'.");
+        }
+
+        JsonElement payload;
+        try
+        {
+            using var document = JsonDocument.Parse(payloadJson);
+            payload = document.RootElement.Clone();
+        }
+        catch (JsonException)
+        {
+            return ContentPromotion.Refused("The submission payload is not valid JSON.");
+        }
+
+        var incoming = ContentEntityTypes.Deserialize(resolver, payload);
+        if (incoming is null)
+        {
+            return ContentPromotion.Refused($"The payload does not describe a {type}.");
+        }
+
+        if (string.IsNullOrWhiteSpace(incoming.Slug))
+        {
+            return ContentPromotion.Refused("The payload has no slug, so there is nothing to address it by.");
+        }
+
+        if (await ContentEntityTypes.FindBySlugAsync(db, resolver, incoming.Slug, ct) is not null)
+        {
+            return ContentPromotion.Refused($"A {type} with slug '{incoming.Slug}' already exists.");
+        }
+
+        var catalog = await ContentReferenceCatalog.LoadAsync(db, ct);
+        var result = ContentEntityTypes.Registry.Validate(resolver.ContentType, incoming, catalog);
+        if (!result.IsValid)
+        {
+            var reasons = result.Errors.Select(issue => issue.Message).Take(3);
+
+            return ContentPromotion.Refused(
+                $"The payload does not pass the content rules: {string.Join(" ", reasons)}"
+            );
+        }
+
+        incoming.Id = incoming.Id == Guid.Empty ? Guid.NewGuid() : incoming.Id;
+        incoming.UpdatedAt = DateTimeOffset.UtcNow;
+        db.Add(incoming);
+        await db.SaveChangesAsync(ct);
+
+        return ContentPromotion.Succeeded(incoming.Slug);
+    }
+}

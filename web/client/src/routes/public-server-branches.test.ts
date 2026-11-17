@@ -22,7 +22,12 @@ import { load as patchNoteLoad } from './patch-notes/[slug]/+page.server';
  */
 
 const access = vi.hoisted(() => ({ loadAccountAccess: vi.fn() }));
-const contentApi = vi.hoisted(() => ({ browseContent: vi.fn() }));
+const contentApi = vi.hoisted(() => ({
+	browseContent: vi.fn(),
+	// Create mode lists the types it can offer and loads the chosen type's schema.
+	listContentTypes: vi.fn(),
+	getContentTypeSchema: vi.fn()
+}));
 const foundryApi = vi.hoisted(() => ({
 	createSubmission: vi.fn(),
 	voteSubmission: vi.fn(),
@@ -83,7 +88,12 @@ describe('root layout', () => {
 
 		expect(result.user).toBeNull();
 		expect(result.access).toBeNull();
-		expect(result.staff).toEqual({ foundry: false, admin: false, mod: false, editorial: false });
+		expect(result.staff).toEqual({
+			portal: false,
+			admin: false,
+			mod: false,
+			editorial: false
+		});
 		expect(access.loadAccountAccess).not.toHaveBeenCalled();
 	});
 
@@ -104,7 +114,12 @@ describe('root layout', () => {
 
 		expect(result.user).toEqual(user);
 		expect(result.access).toMatchObject({ accountId: 'acct-1' });
-		expect(result.staff).toEqual({ foundry: true, admin: true, mod: true, editorial: true });
+		expect(result.staff).toEqual({
+			portal: true,
+			admin: true,
+			mod: true,
+			editorial: true
+		});
 		expect(access.loadAccountAccess).toHaveBeenCalledWith(user);
 	});
 });
@@ -142,23 +157,16 @@ describe('account sessions', () => {
 });
 
 describe('foundry language pages', () => {
-	it('defaults the language browser search, page, and data', async () => {
-		contentApi.browseContent.mockResolvedValue(failed('content is down'));
+	it('redirects the old language browser to the content type', async () => {
+		let location: string | undefined;
 
-		const result = (await callLoad(
-			languagesLoad,
-			makeServerEvent({ url: '/languages' })
-		)) as Record<string, unknown>;
+		try {
+			await callLoad(languagesLoad, makeServerEvent({ url: '/languages' }));
+		} catch (thrown) {
+			location = (thrown as { location?: string }).location;
+		}
 
-		expect(result).toEqual({
-			languages: [],
-			total: 0,
-			page: 1,
-			pageSize: 24,
-			search: '',
-			error: 'content is down'
-		});
-		expect(contentApi.browseContent).toHaveBeenCalledWith('language', null, 1, 24);
+		expect(location).toBe('/content/language');
 	});
 
 	it('defaults the rejected language submission message', async () => {
@@ -183,6 +191,9 @@ describe('foundry submission detail', () => {
 	}
 
 	it('treats a missing access snapshot as no review rights', async () => {
+		// Create mode asks which content types exist; an empty list is enough for this assertion.
+		contentApi.listContentTypes.mockResolvedValue(ok([]));
+
 		const result = (await callLoad(submissionLoad, withAccess(null))) as { canReview: boolean };
 
 		expect(result.canReview).toBe(false);

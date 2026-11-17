@@ -86,16 +86,35 @@ describe('site header', () => {
 		expect(screen.getByRole('link', { name: 'Player One' })).toBeTruthy();
 	});
 
-	it('adds one link per staff permission held', () => {
+	it('adds one link per staff capability held', () => {
 		render(SiteHeader, {
 			user: fakeUser({ username: 'kaleth' }),
-			staff: { foundry: true, editorial: true, mod: true, admin: true }
+			staff: { portal: true, editorial: true, mod: true, admin: true }
 		});
 
-		expect(screen.getByRole('link', { name: 'Foundry' }).getAttribute('href')).toBe('/submissions');
+		expect(screen.getByRole('link', { name: 'Foundry' }).getAttribute('href')).toBe('/foundry');
 		expect(screen.getByRole('link', { name: 'Editorial' }).getAttribute('href')).toBe('/editorial');
 		expect(screen.getByRole('link', { name: 'Mod' }).getAttribute('href')).toBe('/mod');
 		expect(screen.getByRole('link', { name: 'Admin' }).getAttribute('href')).toBe('/admin');
+	});
+
+	it('offers the portal home to every signed-in account, and one entry only', () => {
+		// The portal is public to signed-in accounts now, so there is no second "Submit content" link: the
+		// home routes both jobs, and two links competed for the same intention.
+		render(SiteHeader, {
+			user: fakeUser({ username: 'malfeasor' }),
+			staff: { portal: true }
+		});
+
+		expect(screen.getByRole('link', { name: 'Foundry' }).getAttribute('href')).toBe('/foundry');
+		expect(screen.queryByRole('link', { name: 'Submit content' })).toBeNull();
+	});
+
+	it('marks the portal entry from any portal page, not only the home', () => {
+		setPage({ url: new URL('http://localhost/content/item') });
+		render(SiteHeader, { user: fakeUser({ username: 'kaleth' }), staff: { portal: true } });
+
+		expect(screen.getByRole('link', { name: 'Foundry' }).getAttribute('aria-current')).toBe('page');
 	});
 
 	it('marks the current section as the active page, including nested routes', () => {

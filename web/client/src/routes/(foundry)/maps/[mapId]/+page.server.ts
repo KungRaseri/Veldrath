@@ -21,16 +21,13 @@ import {
 /**
  * Loads one graph, its node rows, and whether this account may save it.
  *
- * Reading requires `content.view`; saving requires `content.manage`. The page is not the guard for the
- * write — the API enforces it — but `canEdit` decides whether the controls render at all.
+ * Reading needs a signed-in account; saving requires `content.manage` and a decision requires
+ * `content.review`. The page is not the guard for the write — the API enforces it — but `canEdit` decides
+ * whether the controls render at all.
  */
 export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	const user = requireUser(locals);
-	const { canViewContent, canManageContent, canReviewSubmissions } = await parent();
-
-	if (!canViewContent) {
-		error(403, 'Reading a map graph requires content read access.');
-	}
+	const { canManageContent, canReview } = await parent();
 
 	const identity = toGameIdentity(user);
 	const [result, targets] = await Promise.all([
@@ -48,7 +45,7 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 
 	return {
 		canEdit: canManageContent,
-		canReview: canReviewSubmissions,
+		canReview,
 		graph: result.data,
 		rows: nodeRows(result.data),
 		targets: targets.data

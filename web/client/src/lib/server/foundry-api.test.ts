@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	createSubmission,
 	getSubmission,
+	getUnreadNotificationCount,
 	listNotifications,
 	listSubmissions,
 	markNotificationRead,
@@ -125,5 +126,11 @@ describe('notifications', () => {
 			'/api/foundry/notifications/note-1/read',
 			{ method: 'POST' }
 		]);
+	});
+
+	it('asks for the unread count rather than the whole inbox', () => {
+		getUnreadNotificationCount(identity);
+
+		expect(lastCall()).toEqual([identity, '/api/foundry/notifications/unread-count', undefined]);
 	});
 });

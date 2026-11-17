@@ -3678,3 +3678,231 @@ existed — do not "add" them again.
   a test cannot grant itself `content.manage` or `Curator`.
 
 **Counts at the end of G:** 6,058 .NET tests, 1,303 web unit tests, coverage green globally (90 branches).
+
+## Milestone H — Foundry portal overhaul
+
+Plan: [`plans/foundry-overhaul.md`](../../plans/foundry-overhaul.md). **H0 is shipped** (shell, home,
+grouped sidebar, group error page, `/languages` redirect); H1–H6 follow.
+
+**The portal home is `/foundry`, not `/`.** `web/client/src/routes/+page.svelte` is the public site's landing
+page, and a `(foundry)/+page.svelte` would resolve to the same URL — a SvelteKit route conflict, not
+something to work around. `FOUNDRY_HOME_HREF` in `web/client/src/lib/foundry/nav.ts` is the single place the
+home route is spelled.
+
+**Access split.** Root `+layout.server.ts`: `staff.foundry = hasPermission(content.view)` and
+`staff.submit = Boolean(user)`. `SiteHeader` renders "Foundry" → `/foundry` for the former and
+"Submit content" → `/submissions/new` for the latter, never both. The Foundry home and every content loader
+call `requirePermission(access, Permissions.ViewContent)`; `/submissions*` and `/notifications` stay
+session-only.
+
+**`canReview` is the Curator role, not the `content.review` permission.** The decision endpoints are
+`.RequireAuthorization("Curator")`, so a hand-granted permission would render a Review entry that answers
+403. Note `hasPermission` returns `true` for `Admin`, which does **not** hold the Curator role — the role
+check is deliberate, and reconciling the two models is H5 work.
+
+**Unread badge.** `GET /api/foundry/notifications/unread-count` → `FoundryUnreadNotificationCountDto(int
+Count)`, served by `FoundryService.CountUnreadAsync` with the same predicate as `GetNotificationsAsync`. The
+group layout fetches it once and degrades a failure to `0` rather than taking the whole group down.
+
+**Shell components** live in `web/client/src/lib/components/foundry/`: `FoundrySidebar`,
+`FoundryPageHeader`, `FoundryBreadcrumbs`, `FoundryEmptyState`, `FoundrySection`. `(foundry)/+layout.svelte`
+owns the frame (`max-w-6xl`, one padding scale, sticky sidebar that becomes a chip row below `lg`); no page
+may reintroduce its own `mx-auto max-w-*`.
+
+**Gotchas:**
+- `resolve()` cannot target a dynamic route with a literal — `resolve('/(foundry)/submissions/new')` is a
+  typecheck error. Use the plain path string for `/submissions/new`.
+- `/languages/+page.server.ts` is a `redirect(308, '/content/language')` that preserves the query; its
+  `+page.svelte` is deleted. `/languages/new` stays until H4.
+- `(foundry)/+error.svelte` renders inside the shell, so a 403 names the missing capability without dropping
+  the reader out of the portal. It does not cover a failure in the group layout's own `load` — that still
+  falls through to the root boundary, which is why the unread count degrades instead of throwing.
+- The legacy pages (`content/*`, `submissions/*`, `notifications`, `languages/new`) lost their frames in H0
+  but keep their own `<header>` blocks; they adopt `FoundryPageHeader`/`FoundryBreadcrumbs` as each is
+  rewritten in H1+.
+- Adding a route means adding it to the Playwright guard list (`tests/staff-guards.e2e.ts`) or the parity
+  suite fails: `/foundry` and `/review` were added there, and the old `/languages` exemption is gone.
+
+**Counts after H0:** 1,319 web unit tests, 26 Playwright tests (2 skipped), coverage gate green.
+
+### H1 — the content editor became a form
+
+`web/client/src/lib/foundry/content-editor.ts` gained five pure helpers, all unit tested: `slugify`,
+`anchorId`, `isDirty`, `missingRequired`, `parseMarkdown`.
+
+- **Derived slug** behind a "Derive from display name" checkbox. Locked by default on an existing entity,
+  because the slug is what other content links to.
+- **`parseMarkdown` returns blocks and spans, never HTML.** The page renders them with a `{#snippet inline}`
+  and Svelte markup, so there is no `{@html}` and `svelte/no-at-html-tags` stays satisfied. Do not
+  "simplify" it back to an HTML string: the write tooling decodes HTML entities in file content, which is
+  how the first escaping renderer ended up with a no-op `.replace(/&/g, '&')`.
+- **Required blocking happens client-side too**: `missingRequired` disables Save and labels the field. A
+  boolean is never blank; an empty number is blank rather than `0`.
+- **Sticky bar** Save / Validate / Discard, with `isDirty` driving a `beforeunload` guard and an
+  "Unsaved changes" note. Discard reseeds from the loaded payload; it is not a form action.
+- The page uses `FoundryPageHeader` and `FoundryBreadcrumbs`, and the required asterisk is `aria-hidden`
+  so a field's accessible label stays exactly its name.
+- A sparse record with neither display name nor slug used to render `Edit null` — a template literal
+  stringifies `null`, unlike Svelte's `{x}` interpolation. The heading is now built conditionally.
+- `(foundry)/+error.svelte` had zero coverage until H1's coverage pass; it now has three render tests
+  (403 naming the capability, 500 with a retry, 404 without).
+
+**Counts after H1:** 1,350 web unit tests, coverage 90.04% branches against the 90 global gate,
+typecheck/lint/build clean.
+
+### H2 — collections are first-class in the schema
+
+`ContentFieldType` gained `StringList`, `KeyValue`, `ObjectList` and `Reference`; `ContentFieldDescriptor`
+gained `Items` (the row shape), `RefType` and `Multiple`. `quest.objectives`, `quest.rewards`,
+`recipe.ingredients` and `loottable.entries` are now `ObjectList`s, and recipe's `outputItemSlug` and
+`craftingSkill` are `Reference`s. **The stored JSON did not change** — only how it is authored.
+
+- **Form state is a union now**: `FieldValue = string | boolean | string[] | ContentRow[]` and
+  `FieldValues = Record<string, FieldValue>`. `isDirty` compares collections with `JSON.stringify`
+  because the editors rebuild arrays on every edit; a reference comparison would mark the form dirty on
+  first render.
+- `coerceFieldValue` passes collections through, except `KeyValue`, which is edited as rows and stored as
+  an object via `pairsToObject`.
+- `Recipe`/`LootTable`/`Quest` row fields stay `Text` for slugs *inside* rows: `writePath` addresses
+  dot-paths, not array indices, so a `Reference` inside a row only gets a datalist, not a dot-path value.
+  Top-level Reference fields are the ones the loader preloads options for.
+- The edit loader now calls `browseContent(refType, null, 1, 50)` per distinct reference type, including
+  ones nested in `Items`; a failure yields an empty option list rather than a broken form.
+- `src/lib/parity/field-kinds.test.ts` reads `ContentFieldType` out of `Veldrath.Contracts` and compares
+  it with `CONTENT_FIELD_KINDS`, so a kind added on one side fails a test.
+- **`write_to_file`/`apply_diff` decode HTML entities in file content.** That silently turned an
+  `&` escape into a no-op in H1 and it is why the markdown preview now returns spans, not HTML. Do not
+  write entity text into source through these tools.
+- The global branch gate sits right on 90, so every new branch counts: H2 needed explicit tests for an
+  enum option labelled `(empty)`, a Reference with no `refType`, a `KeyValue` holding a scalar, and a
+  schema with a slug but no display name before it went green again (90.02%).
+
+**Counts after H2:** 1,382 web unit tests, 6,060 .NET tests, coverage 90.02% branches, typecheck/lint/build
+clean.
+
+### H3 — the read paths render fields, not JSON
+
+`web/client/src/lib/components/foundry/ContentRenderer.svelte` renders a payload through the schema: groups
+as cards, a `<dl>` of label → value, booleans as Yes/No, empties as a dash, `StringList` as chips, `KeyValue`
+as a small table, `ObjectList` as a table whose columns are the row descriptors, and a `Reference` as a link
+to `/content/{refType}/{slug}`. Keys the schema does not describe are listed under "Other fields"; the raw
+JSON lives behind an "Advanced — raw JSON" disclosure. **That disclosure is now the only `<pre>` under
+`(foundry)`** — the H3 done-when.
+
+- The content detail loader now loads the schema too (`getContentTypeSchema`), best-effort: a missing schema
+  is not fatal, the renderer just lists every key.
+- Submission create is schema-driven. The type picker is a **GET** (`/submissions/new?type=quest`) because
+  the server renders the chosen schema; the POST action rebuilds the payload with `buildPayload` and refuses
+  with `Fill in: <fields>` when a required field is blank. **Collections are not authorable there yet** — the
+  form names them and points at the content editor; H4 renders the editors in the create form.
+- The submission view parses the stored payload and renders it with the same component. A payload that is
+  not valid JSON is shown verbatim with a warning rather than swallowed.
+- `ContentTypeInfo` is `{ contentType, displayLabel, description }` — **not** `{ key, label }`. Several older
+  Foundry test mocks used `key`/`label`; the real fields are the longer ones.
+- Watch for duplicate accessible labels: the submission form has its own "Description" textarea, so a schema
+  field also labelled "Description" makes `getByLabelText` ambiguous.
+
+**Counts after H3:** 1,397 web unit tests, coverage 90.01% branches, typecheck/lint/build clean.
+
+### H4 — create for every content type
+
+`/content/[type]/new` renders the type's own schema, so a new content type needs no new page. It is
+deliberately a **plain form with no client-side state**: it creates an entity from its scalar fields and then
+sends the author to the editor, which owns collections. Demanding collections at create time would have made
+every collection-bearing type uncreatable, because a stateless form has no list/row editors.
+
+- `referenceOptions`/`referenceTypes` moved to `#lib/server/content-refs.ts` (the edit and create loaders
+  both need them). `isScalarKind(field)` in `content-editor.ts` is the one definition of "a field a plain
+  control can author" — do not re-derive `fieldType !== 'StringList' && …` locally.
+- The browse page's loader gained `canEdit`, and the page shows a "New entry" link only for an author.
+- Submission create still cannot author collections; that is a deliberate deferral, not an oversight.
+- **A malformed `apply_diff` with a SEARCH but no `=======` silently deletes the matched text.** One such
+  block removed a plan bullet during H4; it was caught by reading the region afterwards, not by the tool.
+
+**Counts after H4:** 1,412 web unit tests, coverage 90.01% branches, typecheck/lint/build clean.
+
+### H5 — an approval lands content, and the reviewer sees the diff
+
+`ContentWriteService` (server) is the one write path onto the catalog, used by Foundry's review gate. It runs
+the same primitives as `ContentWriteEndpoints.CreateAsync` — `ContentEntityTypes.Deserialize`,
+`ContentReferenceCatalog`, `ValidatorRegistry` — so a payload the editor refuses is refused here for the same
+reason; only the orchestration is repeated. `ReviewAsync` promotes **before** flipping the status, so a failed
+write leaves the submission `Pending` with the reason. `FoundrySubmission.PromotedSlug` records where it
+landed (migration `AddSubmissionPromotion`), the DTO carries it, and the approval notification names it.
+
+- **A content payload needs `typeKey`.** "Item has no type key, so content may not load it" is the error a
+  payload gets without it; a minimal valid item is
+  `{"slug","displayName","typeKey":"material","itemType":"material","rarityWeight":50,"isActive":true}`.
+  `FoundryEndpointTests.PromotableItem` is the fixture.
+- **Approval is stricter on purpose**: every existing approve test had to gain a promotable payload, because
+  `{}` cannot be written. Do not "fix" that by skipping promotion when the payload is empty.
+- The web diff is `diffFields(schema, previous, next)` in `content-editor.ts` plus `ContentDiff.svelte`. The
+  submission loader fetches `getContentDetail(type.toLowerCase(), slug)` **only while the decision is open**;
+  after that the diff is history.
+- The same value appears in both the payload renderer and the diff table, so page tests must scope with
+  `within(screen.getByRole('table'))` instead of `screen.getByText`.
+
+**Counts after H5:** 6,062 .NET tests, 1,421 web unit tests, coverage 90.06% branches, lint/typecheck/build and
+dotnet format clean.
+
+### H6 — world health, schemas, and the defect the audit endpoint exposed
+
+- `GET /api/content/audit` runs `ContentAuditService.RunAsync` and returns `ContentAuditIssueDto` rows; it
+  requires `content.view`. The service is registered as **both** a singleton and a hosted service
+  (`AddHostedService(sp => sp.GetRequiredService<ContentAuditService>())`) so startup and the endpoint share
+  one instance — `AddHostedService<T>` alone registers only `IHostedService`, so injecting the concrete type
+  would fail.
+- **The audit never ran on SQLite.** It projected nested collections (zone actor pools, quest objectives, map
+  nodes), which needs SQL `APPLY`; SQLite cannot translate it, the startup run swallows exceptions, and
+  `ContentAuditServiceTests` asserted that translation failure as expected behaviour. It now materialises and
+  flattens in memory. If you add a rule that projects a collection, keep it out of the query.
+- `/world-health` and `/schemas` require `content.view`, are in the sidebar's Reference group, and are in
+  `tests/staff-guards.e2e.ts` (that is what satisfies the route-parity suite — no exemption needed).
+- **`ContentIssue` has no content type**, only `Identifier` (a slug), so `/world-health` cannot deep-link a
+  finding. Adding `ContentType` to the record is the follow-up.
+- Cross-type Foundry search is **not** built: `browseContent` searches one type, and a global search needs an
+  endpoint over every resolver.
+
+**Counts after H6:** 6,062 .NET tests, 1,431 web unit tests, coverage 90.01% branches, 28 Playwright tests,
+lint/typecheck/build and dotnet format clean.
+
+### I — the access model, and navigation v2 (2026-11-16)
+
+The H0 decision (§5.4 of `plans/foundry-overhaul.md`) made the portal staff-only, and the first real account to
+use it got 403s on the home and every sidebar item. The replacement model is §8 of that plan; this is the list
+of traps.
+
+- **`AddPolicy("Curator", …)` is a role policy and it was on three decision endpoints.** `Permissions.All` is
+  granted to Admin as permission *claims*, so an Admin passed `RequireAuthorization(permission)` but failed
+  `RequireAuthorization("Curator")`. It now uses `Permissions.ReviewSubmissions` on submission review, map
+  review and map deactivate. Any new "who may decide" check goes through the permission.
+- **The submission feed had no authorization.** `GET /api/foundry/submissions` and `/{id}` were anonymous,
+  payloads included. They now require a token, and `FoundrySubmissionScope` (`Everything`, `Own`,
+  `OwnPlusApproved`) decides what is visible; `mine=true` narrows for everyone including a reviewer, and a
+  non-reviewer's default feed is `OwnPlusApproved`, not `Approved` — the first version dropped the caller's own
+  rows and a test caught it.
+- **`GET /api/content/maps*` now requires a session, not `content.view`.** The graph carries hidden nodes and
+  unlock keys; that spoiler cost is accepted and the mitigation, if needed, is rendering hidden nodes
+  distinctly rather than closing the editor.
+- **The `(foundry)` group still requires a user** (`requireUser`), so "public" means "signed in". The redirect
+  carries `?redirectTo=` and [`web/client/src/lib/navigation.ts`](../../web/client/src/lib/navigation.ts)
+  rejects anything but a local path — do not inline that check, it is the open-redirect guard.
+- **Layout flags are `canManageContent`, `canReview` (permission), `canAudit` (`content.view`).** There is no
+  "can read" flag any more; if you find yourself adding one, the page probably should not be gated.
+- **Nav v2:** one primary action (`/new`, the type picker) then Explore / Contribute / Curate / Maintain, with
+  Notifications in a separate `account` list below a rule. `FOUNDRY_PATH_ROOTS` + `isFoundryPath` exist because
+  the group has no URL prefix — the site header marks "Foundry" from any portal page through them.
+- **`FoundrySidebar`'s icon map is exhaustive by construction and has no fallback icon.** A nav entry without an
+  icon fails the sidebar tests rather than rendering a wrong glyph. That also removes an uncoverable branch.
+- **Test gotchas:** `parentData` fixtures for the home loader must include `canReview` (a missing key is
+  `undefined`, not false, and `toMatchObject({ canReview: false })` fails); the submissions page needs
+  `scope` (`'mine' | 'all'`) and `canReview` in its fixtures, because the empty-state copy changed with the
+  scope.
+- **Coverage lands exactly on the gate.** Removing two branches from the sidebar left 4,249/4,721 = 90.00%. Any
+  new branch in a Foundry file needs a test with it.
+
+Deferred, recorded in the plan: `/submissions/new` is still `params.id === 'new'` inside `/[id]` (works, links
+resolve, refactor is separate), and the type picker has no search.
+
+**Counts after I:** 1,666 server tests, 1,442 web unit tests, coverage 90.00% branches, lint/typecheck/build
+clean. Playwright was not run locally this pass; `tests/staff-guards.e2e.ts` gained `/new`.

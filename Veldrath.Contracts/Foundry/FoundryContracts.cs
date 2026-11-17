@@ -50,6 +50,18 @@ public record FoundryNotificationDto(
     bool IsRead,
     DateTimeOffset CreatedAt);
 
+/// <summary>Unread notification total for the calling account.</summary>
+/// <param name="Count">How many notifications the caller has not read yet.</param>
+/// <remarks>
+/// The portal shell renders a badge on every Foundry page. A dedicated count keeps that from materialising
+/// the whole inbox, and the shared predicate keeps the badge honest against the list it summarises.
+/// </remarks>
+public record FoundryUnreadNotificationCountDto(int Count);
+
+/// <summary>One community submission, as the portal reads it.</summary>
+/// <param name="PromotedSlug">
+/// Slug of the catalog entity an approval wrote, or <c>null</c> when the submission has not been promoted.
+/// </param>
 public record FoundrySubmissionDto(
     Guid Id,
     string ContentType,
@@ -64,4 +76,5 @@ public record FoundrySubmissionDto(
     int VoteScore,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
-    DateTimeOffset? ReviewedAt);
+    DateTimeOffset? ReviewedAt,
+    string? PromotedSlug = null);

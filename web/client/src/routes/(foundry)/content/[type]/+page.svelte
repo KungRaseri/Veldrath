@@ -10,12 +10,19 @@
 	<title>{data.contentType} content — Foundry</title>
 </svelte:head>
 
-<div class="mx-auto max-w-5xl space-y-4 p-6">
+<div class="space-y-4">
 	<a class="text-sm text-primary-500" href={resolve('/(foundry)/content')}>← All content types</a>
 
-	<header class="space-y-1">
-		<h1 class="h1">{data.contentType}</h1>
-		<p class="text-surface-600-400">{data.total} published entries.</p>
+	<header class="flex flex-wrap items-end justify-between gap-3">
+		<div class="space-y-1">
+			<h1 class="h1">{data.contentType}</h1>
+			<p class="text-surface-600-400">{data.total} published entries.</p>
+		</div>
+		{#if data.canEdit}
+			<a class="btn preset-filled-primary-500 btn-sm" href={`/content/${data.contentType}/new`}>
+				New entry
+			</a>
+		{/if}
 	</header>
 
 	{#if data.error}

@@ -84,7 +84,7 @@ public class ContentAuditServiceTests
     }
 
     [Fact]
-    public async Task Start_WhenTheQueriesCannotTranslate_LogsInsteadOfCrashingTheHost()
+    public async Task Start_OnSqlite_RunsTheAuditInsteadOfLoggingATranslationFailure()
     {
         using var factory = new SqliteContentDbContextFactory();
         var logger = new CapturingLogger();
@@ -92,9 +92,18 @@ public class ContentAuditServiceTests
 
         await service.StartAsync(CancellationToken.None);
 
-        var logged = await logger.Failed.Task.WaitAsync(TimeSpan.FromSeconds(10));
-        logged.Should().Contain("Content reference audit failed to run");
-        logger.Entries.Should().NotContain(e => e.Message.Contains("dangling reference", StringComparison.Ordinal));
+        // The audit used to project nested collections, which needs SQL APPLY — untranslatable on SQLite. It
+        // failed on every SQLite host and, because the startup run catches everything, did so silently. It now
+        // materialises and flattens in memory, so the run completes and says what it found.
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        while (logger.Entries.Count == 0 && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(50);
+        }
+
+        logger.Entries.Should().Contain(entry =>
+            entry.Message.Contains("found no dangling references", StringComparison.Ordinal));
+        logger.Entries.Should().NotContain(entry => entry.Level == LogLevel.Error);
         await service.StopAsync(CancellationToken.None);
     }
 

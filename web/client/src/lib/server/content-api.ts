@@ -34,6 +34,25 @@ export interface ContentPagedResult {
 	pageSize: number;
 }
 
+/** One finding from the content audit. */
+export interface ContentAuditIssue {
+	/** Stable rule id, e.g. `missing-quest-target`. */
+	rule: string;
+	/** Human-readable description naming both sides of the problem. */
+	message: string;
+	/** `Warning` or `Error`. */
+	severity: string;
+	/** Dotted field path, when the issue points at one. */
+	field: string | null;
+	/** Slug of the entity that owns the issue. */
+	identifier: string | null;
+}
+
+/** Runs the content audit over the whole catalog. Requires `content.view`. */
+export function runContentAudit(identity: GameIdentity | null) {
+	return gameApiFetch<ContentAuditIssue[]>(identity, '/api/content/audit');
+}
+
 /** Lists all registered content type schemas (public). */
 export function listContentTypes() {
 	return gameApiFetch<ContentTypeInfo[]>(null, '/api/content/schema');

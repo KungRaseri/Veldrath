@@ -356,6 +356,28 @@ public class MapEditorServiceTests
     }
 
     [Fact]
+    public async Task GetAsync_CompactsSparseAuthoredCoordinates()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        // The seeded region graph is authored on a scattered grid — x=2 beside x=34, y=14 beside y=36. Those
+        // numbers are an ordering, not a distance, and rendering them literally made the canvas thousands of
+        // pixels wide for six nodes.
+        var graph = (await editor.GetAsync("region:cinderplain"))!;
+
+        var columns = graph.Nodes.Select(node => node.LayoutX).OfType<int>().Distinct().Order().ToList();
+        var rows = graph.Nodes.Select(node => node.LayoutY).OfType<int>().Distinct().Order().ToList();
+
+        columns.Should().Equal(Enumerable.Range(0, columns.Count), "every used column collapses onto the next");
+        rows.Should().Equal(Enumerable.Range(0, rows.Count), "every used row collapses onto the next");
+        // The shape survives: the entry sits left of the zone it leads to, which is what the author drew.
+        var entry = graph.Nodes.Single(node => node.IsEntryPoint);
+        var firstZone = graph.Nodes.First(node => node.NodeType == "Zone");
+        entry.LayoutX.Should().BeLessThan(firstZone.LayoutX!.Value);
+    }
+
+    [Fact]
     public async Task SaveAsync_ReturnsNotFoundForAnUnknownMap()
     {
         var (db, editor) = await SeededAsync();

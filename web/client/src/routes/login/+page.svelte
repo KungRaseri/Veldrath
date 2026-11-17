@@ -5,6 +5,7 @@
 	import { Lock, LogIn, Mail } from '@lucide/svelte';
 	import SocialLoginButtons from '#lib/components/auth/SocialLoginButtons.svelte';
 	import { authClient } from '#lib/auth-client';
+	import { localPathFrom } from '#lib/navigation';
 
 	let identifier = $state('');
 	let password = $state('');
@@ -42,7 +43,8 @@
 				return;
 			}
 
-			await goto(resolve('/characters'));
+			// A guarded page sends the visitor here with the page it wanted, so signing in returns them to it.
+			await goto(localPathFrom(page.url.searchParams.get('redirectTo')) ?? resolve('/characters'));
 		} finally {
 			submitting = false;
 		}

@@ -1,30 +1,55 @@
 <script lang="ts">
 	import Pager from '#lib/components/Pager.svelte';
+	import FoundryPageHeader from '#lib/components/foundry/FoundryPageHeader.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
+
+	const showingAll = $derived(data.scope === 'all');
 </script>
 
 <svelte:head>
-	<title>Community submissions — Foundry</title>
+	<title>{showingAll ? 'Community submissions' : 'My submissions'} — Foundry</title>
 </svelte:head>
 
-<div class="mx-auto max-w-5xl space-y-4 p-6">
-	<header class="flex flex-wrap items-end justify-between gap-3">
-		<div>
-			<h1 class="h1">Community submissions</h1>
-			<p class="text-surface-600-400">
-				Review, vote on, and curate community-created items, powers, quests, and languages.
-			</p>
-		</div>
-		<a class="btn preset-filled-primary-500" href="/submissions/new">New submission</a>
-	</header>
+<div class="space-y-4">
+	<div class="flex flex-wrap items-end justify-between gap-3">
+		<FoundryPageHeader
+			title={showingAll ? 'Community submissions' : 'My submissions'}
+			description={showingAll
+				? 'Every submission in the portal, at every status.'
+				: 'What you have written, its status, and what a Curator said about it.'}
+		/>
+		<a class="btn preset-filled-primary-500" href="/new">New content</a>
+	</div>
+
+	{#if data.canReview}
+		<nav class="flex gap-2" aria-label="Submission scope">
+			<a
+				class="btn btn-sm"
+				class:preset-filled-primary-500={!showingAll}
+				class:preset-tonal-surface={showingAll}
+				aria-current={!showingAll ? 'page' : undefined}
+				href="/submissions">Mine</a
+			>
+			<a
+				class="btn btn-sm"
+				class:preset-filled-primary-500={showingAll}
+				class:preset-tonal-surface={!showingAll}
+				aria-current={showingAll ? 'page' : undefined}
+				href="/submissions?scope=all">Everyone</a
+			>
+		</nav>
+	{/if}
 
 	{#if data.error}
 		<p class="text-sm text-error-500">{data.error}</p>
 	{/if}
 
 	<form class="grid gap-3 card p-4 sm:grid-cols-4" method="GET">
+		{#if showingAll}
+			<input type="hidden" name="scope" value="all" />
+		{/if}
 		<label class="label">
 			<span>Search</span>
 			<input class="input" type="search" name="search" value={data.filters.search ?? ''} />
@@ -83,7 +108,11 @@
 					</tr>
 				{:else}
 					<tr>
-						<td class="text-surface-600-400" colspan="6">No submissions match these filters.</td>
+						<td class="text-surface-600-400" colspan="6">
+							{showingAll
+								? 'No submissions match these filters.'
+								: 'You have not submitted anything yet. Start one from New content.'}
+						</td>
 					</tr>
 				{/each}
 			</tbody>
@@ -98,7 +127,8 @@
 		query={{
 			search: data.filters.search,
 			status: data.filters.status,
-			contentType: data.filters.contentType
+			contentType: data.filters.contentType,
+			scope: showingAll ? 'all' : undefined
 		}}
 	/>
 </div>

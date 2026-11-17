@@ -9,7 +9,7 @@
 	<title>Build a language — Foundry</title>
 </svelte:head>
 
-<div class="mx-auto max-w-3xl space-y-4 p-6">
+<div class="space-y-4">
 	<a class="text-sm text-primary-500" href={resolve('/(foundry)/languages')}>← All languages</a>
 
 	<header class="space-y-1">

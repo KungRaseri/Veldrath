@@ -1,12 +1,23 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Veldrath.Contracts.Foundry;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
+using Veldrath.Server.Features.Content;
 
 namespace Veldrath.Server.Features.Foundry;
 
-public class FoundryService(ApplicationDbContext db, FoundryNotificationWriter notifications)
+/// <summary>The community submission queue, and the review decision that lands approved work in the catalog.</summary>
+/// <param name="db">Application context: submissions, votes, notifications.</param>
+/// <param name="notifications">The one place a notification row is written.</param>
+/// <param name="content">
+/// The content write path. An approval promotes the payload through it, so an approved submission is content,
+/// not a row with a status.
+/// </param>
+public class FoundryService(
+    ApplicationDbContext db,
+    FoundryNotificationWriter notifications,
+    ContentWriteService content)
 {
     // Submissions
     public async Task<(FoundrySubmissionDto? Dto, string? Error)> CreateSubmissionAsync(
@@ -33,13 +44,40 @@ public class FoundryService(ApplicationDbContext db, FoundryNotificationWriter n
         return (MapToDto(submission), null);
     }
 
+    /// <summary>
+    /// Lists submissions the caller is allowed to see.
+    /// </summary>
+    /// <param name="status">Optional status filter, matched by name.</param>
+    /// <param name="contentType">Optional content-type filter, matched by name.</param>
+    /// <param name="search">Optional title search.</param>
+    /// <param name="page">One-based page number.</param>
+    /// <param name="pageSize">Rows per page.</param>
+    /// <param name="callerId">The account asking, so a narrowed feed can still include their own rows.</param>
+    /// <param name="scope">Which rows that account may see, decided by the endpoint from its permissions.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The page of rows, its total count, and the page it answered.</returns>
     public async Task<PagedResult<FoundrySubmissionSummaryDto>> ListSubmissionsAsync(
-        string? status, string? contentType, string? search, int page, int pageSize, CancellationToken ct)
+        string? status,
+        string? contentType,
+        string? search,
+        int page,
+        int pageSize,
+        Guid callerId,
+        FoundrySubmissionScope scope,
+        CancellationToken ct)
     {
         var query = db.FoundrySubmissions
             .Include(s => s.Submitter)
             .Include(s => s.Votes)
             .AsNoTracking();
+
+        query = scope switch
+        {
+            FoundrySubmissionScope.Own => query.Where(s => s.SubmitterId == callerId),
+            FoundrySubmissionScope.OwnPlusApproved =>
+                query.Where(s => s.SubmitterId == callerId || s.Status == FoundrySubmissionStatus.Approved),
+            _ => query,
+        };
 
         if (status is not null && Enum.TryParse<FoundrySubmissionStatus>(status, ignoreCase: true, out var st))
             query = query.Where(s => s.Status == st);
@@ -120,6 +158,25 @@ public class FoundryService(ApplicationDbContext db, FoundryNotificationWriter n
         if (submission is null)
             return (null, "Submission not found.");
 
+        string? promotedSlug = null;
+
+        if (request.Approved)
+        {
+            // Approval is the gate, so the payload has to land in the catalog first. Flipping the status and
+            // promoting afterwards would leave an "approved" row with no content behind it when the write fails.
+            var promotion = await content.CreateAsync(
+                submission.ContentType.ToString().ToLowerInvariant(),
+                submission.Payload,
+                ct
+            );
+
+            if (promotion.Error is not null)
+                return (null, promotion.Error);
+
+            promotedSlug = promotion.Slug;
+            submission.PromotedSlug = promotedSlug;
+        }
+
         submission.Status = request.Approved
             ? FoundrySubmissionStatus.Approved
             : FoundrySubmissionStatus.Rejected;
@@ -135,7 +192,7 @@ public class FoundryService(ApplicationDbContext db, FoundryNotificationWriter n
             FoundryNotificationKind.Submission,
             submission.Title,
             request.Approved
-                ? $"Your submission \"{submission.Title}\" was approved!"
+                ? $"Your submission \"{submission.Title}\" was approved and published as {promotedSlug}."
                 : $"Your submission \"{submission.Title}\" was rejected. {request.Notes}",
             submissionId: submissionId,
             cancellationToken: ct);
@@ -160,6 +217,19 @@ public class FoundryService(ApplicationDbContext db, FoundryNotificationWriter n
                 n.IsRead,
                 n.CreatedAt))
             .ToListAsync(ct);
+
+    /// <summary>
+    /// Counts the caller's unread notifications.
+    /// </summary>
+    /// <param name="accountId">The account whose inbox is counted.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <remarks>
+    /// The predicate is the same one <see cref="GetNotificationsAsync"/> filters on, so the badge cannot
+    /// disagree with the list it summarises. Counting in the database also keeps this cheap enough to call
+    /// from the portal layout on every page.
+    /// </remarks>
+    public Task<int> CountUnreadAsync(Guid accountId, CancellationToken ct) =>
+        db.FoundryNotifications.CountAsync(n => n.RecipientId == accountId && !n.IsRead, ct);
 
     public async Task<bool> MarkNotificationReadAsync(Guid notificationId, Guid accountId, CancellationToken ct)
     {
@@ -198,5 +268,6 @@ public class FoundryService(ApplicationDbContext db, FoundryNotificationWriter n
         s.Votes.Sum(v => v.Value),
         s.CreatedAt,
         s.UpdatedAt,
-        s.ReviewedAt);
+        s.ReviewedAt,
+        s.PromotedSlug);
 }

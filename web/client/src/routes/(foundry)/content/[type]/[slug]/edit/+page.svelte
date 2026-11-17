@@ -1,16 +1,37 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import type { PageData, ActionData } from './$types';
+	import FoundryBreadcrumbs from '#lib/components/foundry/FoundryBreadcrumbs.svelte';
+	import FoundryPageHeader from '#lib/components/foundry/FoundryPageHeader.svelte';
+	import ListEditor from '#lib/components/foundry/ListEditor.svelte';
+	import RowEditor from '#lib/components/foundry/RowEditor.svelte';
 	import {
 		allFields,
-		initialValues,
-		issuesByField,
-		toInputValue,
+		anchorId,
 		hasBlockingIssues,
-		type ContentIssue
+		initialValues,
+		isDirty,
+		issuesByField,
+		missingRequired,
+		parseMarkdown,
+		slugify,
+		toInputValue,
+		type ContentField,
+		type ContentIssue,
+		type ContentRow,
+		type FieldValues,
+		type MarkdownSpan
 	} from '#lib/foundry/content-editor';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	/**
+	 * Seeds the editable form state from the loaded entity once. `untrack` is the documented way to read a prop as an
+	 * initial value without re-running on every `data` change — action responses reuse the component, so edits survive
+	 * a failed save or a validate round-trip.
+	 */
+	const seed = untrack(() => initialValues(data.payload, data.schema));
+	let values = $state<FieldValues>({ ...seed });
 
 	const issues: ContentIssue[] = $derived(
 		(form && 'issues' in form && form.issues ? form.issues : []) as ContentIssue[]
@@ -19,14 +40,104 @@
 	const blocking = $derived(hasBlockingIssues(issues));
 	const fieldCount = $derived(allFields(data.schema).length);
 
-	/**
-	 * Seeds the editable form state from the loaded entity once. `untrack` is the documented way to read a prop as an
-	 * initial value without re-running on every `data` change — action responses reuse the component, so edits survive
-	 * a failed save or a validate round-trip.
-	 */
-	let values = $state<Record<string, string | boolean>>(
-		untrack(() => initialValues(data.payload, data.schema))
+	/** Required fields the form has left blank — these block the save before it reaches the server. */
+	const requiredMissing = $derived(missingRequired(data.schema, values));
+	/** Whether the form holds edits that a navigation would discard. */
+	const dirty = $derived(isDirty(seed, values));
+	const canSave = $derived(!blocking && requiredMissing.length === 0);
+
+	const slugField = $derived(
+		allFields(data.schema).find((field) => field.fieldType === 'Slug') ?? null
 	);
+	const displayNameField = $derived(
+		allFields(data.schema).find((field) => field.name === 'displayName') ?? null
+	);
+
+	/** The string entries of a `StringList` field, defaulting to an empty list. */
+	function listValue(name: string): string[] {
+		const value = values[name];
+		return Array.isArray(value) ? (value as string[]) : [];
+	}
+
+	/** The rows of an `ObjectList` or `KeyValue` field, defaulting to an empty list. */
+	function rowValue(name: string): ContentRow[] {
+		const value = values[name];
+		return Array.isArray(value) ? (value as ContentRow[]) : [];
+	}
+
+	/** `KeyValue` is edited as two-column rows even though the payload stores an object. */
+	const keyValueItems: ContentField[] = [
+		{
+			name: 'key',
+			label: 'Key',
+			fieldType: 'Text',
+			required: true,
+			default: null,
+			min: null,
+			max: null,
+			enumValues: null,
+			hint: null
+		},
+		{
+			name: 'value',
+			label: 'Value',
+			fieldType: 'Text',
+			required: false,
+			default: null,
+			min: null,
+			max: null,
+			enumValues: null,
+			hint: null
+		}
+	];
+
+	/**
+	 * Whether the slug follows the display name.
+	 *
+	 * Locked by default on an existing entity: the slug is part of the URL other content points at, so an
+	 * incidental rename must not silently rewrite it. The author unlocks it deliberately.
+	 */
+	let slugLocked = $state(true);
+	/** Which `LongText` fields are showing their rendered preview. */
+	let previews = $state<Record<string, boolean>>({});
+
+	/** Keeps the slug in step with the display name while it is unlocked. */
+	function onDisplayName(value: string) {
+		if (!displayNameField) return;
+		values[displayNameField.name] = value;
+
+		if (!slugLocked && slugField) {
+			values[slugField.name] = slugify(value);
+		}
+	}
+
+	function discard() {
+		values = { ...seed };
+		slugLocked = true;
+		previews = {};
+	}
+
+	// A dirty form that would be lost on navigation asks first. This is the only guard the browser offers
+	// for a route change; the Discard button covers the deliberate case.
+	$effect(() => {
+		if (!dirty) return;
+
+		const warn = (event: BeforeUnloadEvent) => {
+			event.preventDefault();
+			event.returnValue = '';
+		};
+
+		window.addEventListener('beforeunload', warn);
+		return () => window.removeEventListener('beforeunload', warn);
+	});
+
+	/**
+	 * The entity's name. Both the display name and the slug can be absent on a sparse record, and a template
+	 * literal would then read "Edit null" — so the heading is built from a value that is only used when there
+	 * is one.
+	 */
+	const label = $derived(data.summary.displayName ?? data.slug ?? '');
+	const headingTitle = $derived(label ? `Edit ${label}` : 'Edit');
 
 	const status = $derived.by(() => {
 		if (!form) return null;
@@ -46,22 +157,37 @@
 	});
 </script>
 
+{#snippet inline(run: MarkdownSpan)}
+	{#if run.href}
+		<a class="link" href={run.href} target="_blank" rel="noreferrer noopener">{run.text}</a>
+	{:else if run.code}
+		<code class="rounded bg-surface-200-800 px-1">{run.text}</code>
+	{:else if run.strong}
+		<strong>{run.text}</strong>
+	{:else if run.em}
+		<em>{run.text}</em>
+	{:else}
+		{run.text}
+	{/if}
+{/snippet}
+
 <svelte:head>
-	<title>Edit {data.summary.displayName ?? data.slug} — Foundry</title>
+	<title>{headingTitle} — Foundry</title>
 </svelte:head>
 
-<div class="mx-auto max-w-4xl space-y-4 p-6">
-	<a class="text-sm text-primary-500" href={`/content/${data.contentType}/${data.slug}`}>
-		← {data.summary.displayName ?? data.slug}
-	</a>
+<div class="space-y-4">
+	<FoundryBreadcrumbs
+		items={[
+			{ label: 'Foundry', href: '/foundry' },
+			{
+				label: data.schema.displayLabel ?? data.contentType ?? 'Content',
+				href: `/content/${data.contentType}`
+			},
+			{ label: label || 'Untitled' }
+		]}
+	/>
 
-	<header class="space-y-1">
-		<p class="text-xs tracking-wide text-surface-600-400 uppercase">
-			{data.schema.displayLabel} · {data.contentType}
-		</p>
-		<h1 class="h1">Edit {data.summary.displayName ?? data.slug}</h1>
-		<p class="text-surface-600-400">{data.schema.description}</p>
-	</header>
+	<FoundryPageHeader title={headingTitle} description={data.schema.description} />
 
 	{#if !data.canEdit}
 		<p class="card p-4 text-sm text-surface-600-400">
@@ -94,19 +220,76 @@
 			</ul>
 		{/if}
 
+		{#if data.schema.groups.length > 1}
+			<nav aria-label="Form sections" class="flex flex-wrap gap-2">
+				{#each data.schema.groups as group (group.label)}
+					<a class="btn preset-tonal-surface btn-sm" href={`#group-${anchorId(group.label)}`}>
+						{group.label}
+					</a>
+				{/each}
+			</nav>
+		{/if}
+
 		<form method="POST" action="?/save" class="space-y-4">
 			{#each data.schema.groups as group (group.label)}
-				<section class="space-y-3 card p-4">
+				<section id={`group-${anchorId(group.label)}`} class="scroll-mt-6 space-y-3 card p-4">
 					<h2 class="h3">{group.label}</h2>
 
 					{#each group.fields as field (field.name)}
 						{@const fieldIssues = grouped.get(field.name) ?? []}
+						{@const missing = requiredMissing.includes(field.name)}
 						<div class="space-y-1">
-							<label class="label" for={field.name}>
-								{field.label}{#if field.required}<span class="text-error-500"> *</span>{/if}
-							</label>
+							<div class="flex flex-wrap items-center justify-between gap-2">
+								<label class="label" for={field.name}>
+									{field.label}{#if field.required}<span class="text-error-500" aria-hidden="true">
+											*</span
+										>{/if}
+								</label>
 
-							{#if field.fieldType === 'Boolean'}
+								{#if slugField && field.name === slugField.name}
+									<label class="flex items-center gap-1 text-xs text-surface-600-400">
+										<input
+											type="checkbox"
+											class="checkbox"
+											checked={!slugLocked}
+											onchange={(event) => {
+												slugLocked = !event.currentTarget.checked;
+												// Unlocking adopts the current display name immediately, so the
+												// derived value is visible rather than appearing on the next keystroke.
+												if (!slugLocked && displayNameField && slugField) {
+													values[slugField.name] = slugify(
+														String(values[displayNameField.name] ?? '')
+													);
+												}
+											}}
+										/>
+										Derive from display name
+									</label>
+								{/if}
+							</div>
+
+							{#if field.fieldType === 'StringList'}
+								<ListEditor
+									name={field.name}
+									values={listValue(field.name)}
+									onchange={(next) => (values[field.name] = next)}
+								/>
+							{:else if field.fieldType === 'KeyValue'}
+								<RowEditor
+									name={field.name}
+									items={keyValueItems}
+									rows={rowValue(field.name)}
+									onchange={(next) => (values[field.name] = next)}
+								/>
+							{:else if field.fieldType === 'ObjectList'}
+								<RowEditor
+									name={field.name}
+									items={field.items ?? []}
+									rows={rowValue(field.name)}
+									onchange={(next) => (values[field.name] = next)}
+									refOptions={data.refOptions}
+								/>
+							{:else if field.fieldType === 'Boolean'}
 								<input
 									id={field.name}
 									name={field.name}
@@ -120,6 +303,7 @@
 									id={field.name}
 									name={field.name}
 									class="select"
+									aria-invalid={missing || undefined}
 									bind:value={values[field.name]}
 								>
 									<option value="">—</option>
@@ -132,8 +316,62 @@
 									id={field.name}
 									name={field.name}
 									class="textarea"
-									rows="3"
+									rows="4"
+									aria-invalid={missing || undefined}
 									bind:value={values[field.name]}></textarea>
+								<div class="flex flex-wrap items-center gap-2 text-xs">
+									<button
+										class="btn preset-tonal-surface btn-sm"
+										type="button"
+										onclick={() => (previews[field.name] = !previews[field.name])}
+									>
+										{previews[field.name] ? 'Hide preview' : 'Preview'}
+									</button>
+									<span class="text-surface-600-400">
+										Markdown: **bold**, _italic_, `code`, - list, [link](url)
+									</span>
+								</div>
+								{#if previews[field.name]}
+									<!--
+										The parser returns spans rather than HTML, so every author character here is
+										escaped by the template compiler and `{@html}` is never involved.
+									-->
+									<div class="space-y-2 card p-3 text-sm">
+										{#each parseMarkdown(String(values[field.name] ?? '')) as block, blockIndex (blockIndex)}
+											{#if block.kind === 'heading'}
+												<p class="font-semibold">
+													{#each block.spans as run, runIndex (runIndex)}{@render inline(
+															run
+														)}{/each}
+												</p>
+											{:else if block.kind === 'list'}
+												<ul class="list-disc pl-5">
+													{#each block.items as item, itemIndex (itemIndex)}
+														<li>
+															{#each item as run, runIndex (runIndex)}{@render inline(run)}{/each}
+														</li>
+													{/each}
+												</ul>
+											{:else}
+												<p>
+													{#each block.lines as line, lineIndex (lineIndex)}
+														{#each line as run, runIndex (runIndex)}{@render inline(run)}{/each}
+														{#if lineIndex < block.lines.length - 1}<br />{/if}
+													{/each}
+												</p>
+											{/if}
+										{/each}
+									</div>
+								{/if}
+							{:else if field.name === displayNameField?.name}
+								<input
+									id={field.name}
+									name={field.name}
+									class="input"
+									value={toInputValue(values[field.name])}
+									aria-invalid={missing || undefined}
+									oninput={(event) => onDisplayName(event.currentTarget.value)}
+								/>
 							{:else}
 								<input
 									id={field.name}
@@ -144,13 +382,28 @@
 										: 'text'}
 									min={field.min ?? undefined}
 									max={field.max ?? undefined}
+									list={field.fieldType === 'Reference' && field.refType
+										? `${field.name}-options`
+										: undefined}
+									aria-invalid={missing || undefined}
 									value={toInputValue(values[field.name])}
 									oninput={(event) => (values[field.name] = event.currentTarget.value)}
 								/>
+								{#if field.fieldType === 'Reference' && field.refType}
+									<datalist id={`${field.name}-options`}>
+										{#each data.refOptions?.[field.refType] ?? [] as option (option.value)}
+											<option value={option.value}>{option.label}</option>
+										{/each}
+									</datalist>
+								{/if}
 							{/if}
 
 							{#if field.hint}
 								<p class="text-xs text-surface-600-400">{field.hint}</p>
+							{/if}
+
+							{#if missing}
+								<p class="text-xs text-error-500">This field is required.</p>
 							{/if}
 
 							{#each fieldIssues as issue (issue.rule + issue.message)}
@@ -173,16 +426,24 @@
 				</p>
 			{/if}
 
-			<div class="flex items-center gap-2">
-				<button class="btn preset-filled-primary-500" type="submit" disabled={blocking}>
+			<div
+				class="sticky bottom-0 z-10 flex flex-wrap items-center gap-2 border-t border-surface-200-800 bg-surface-50-950/95 px-1 py-3 backdrop-blur"
+			>
+				<button class="btn preset-filled-primary-500" type="submit" disabled={!canSave}>
 					Save
 				</button>
 				<button class="btn preset-tonal-surface" type="submit" formaction="?/validate">
 					Validate
 				</button>
+				<button class="btn preset-tonal-surface" type="button" disabled={!dirty} onclick={discard}>
+					Discard
+				</button>
 				<button class="btn preset-tonal-error" type="submit" formaction="?/deactivate">
 					Deactivate
 				</button>
+				{#if dirty}
+					<span class="text-xs text-warning-500">Unsaved changes</span>
+				{/if}
 			</div>
 		</form>
 	{/if}

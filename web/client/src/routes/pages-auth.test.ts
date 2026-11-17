@@ -141,6 +141,18 @@ describe('login page', () => {
 		expect(navigatedTo()).toContain('/characters');
 	});
 
+	it('returns to the guarded page that sent the visitor here', async () => {
+		setPage({ url: new URL('http://localhost/login?redirectTo=%2Ffoundry%3Ftab%3Dmine') });
+		const { container } = render(LoginPage);
+
+		await fill(container, 'input[type="text"]', 'kaleth');
+		await fill(container, 'input[type="password"]', 'swordfish');
+		await fireEvent.submit(form(container));
+
+		await waitFor(() => expect(goto).toHaveBeenCalled());
+		expect(navigatedTo()).toContain('/foundry?tab=mine');
+	});
+
 	it('shows the failure and stays on the page when the credentials are rejected', async () => {
 		auth.signInUsername.mockResolvedValue({ data: null, error: { message: 'Invalid password' } });
 		const { container } = render(LoginPage);
