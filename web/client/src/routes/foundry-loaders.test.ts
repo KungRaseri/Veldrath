@@ -50,6 +50,7 @@ const contentApi = vi.hoisted(() => ({
 	updateContent: vi.fn(),
 	createContent: vi.fn(),
 	runContentAudit: vi.fn(),
+	listZoneLocations: vi.fn(),
 	validateContentPayload: vi.fn(),
 	deactivateContent: vi.fn()
 }));
@@ -205,6 +206,13 @@ beforeEach(() => {
 	mapsApi.getMap.mockResolvedValue(
 		ok({ id: 'zone:fenwick', nodes: [], edges: [], version: 3, canEdit: true })
 	);
+	contentApi.listZoneLocations.mockResolvedValue(
+		ok([
+			{ slug: 'halrow-threshold', displayName: 'The Threshold', zoneId: 'the-halrow' },
+			{ slug: 'fenwick-well', displayName: 'The Well', zoneId: 'fenwick' },
+			{ slug: 'fenwick-market', displayName: 'The Market', zoneId: 'Fenwick' }
+		])
+	);
 	mapsApi.validateMap.mockResolvedValue(ok({ isValid: true, issues: [] }));
 	mapsApi.createMap.mockResolvedValue(ok({ id: 'zone:draft-zone', name: 'Draft Zone' }));
 	mapsApi.submitMap.mockResolvedValue(
@@ -252,6 +260,50 @@ describe('map editor', () => {
 
 		expect(result.canEdit).toBe(true);
 		expect(result.rows).toEqual([]);
+	});
+
+	it('loads the locations of the zone a zone map defines, and only those', async () => {
+		mapsApi.getMap.mockResolvedValueOnce(
+			ok({
+				id: 'zone:fenwick',
+				mapType: 'Zone',
+				ownerId: 'fenwick',
+				nodes: [],
+				edges: [],
+				version: 3,
+				canEdit: true
+			})
+		);
+
+		const result = (await callLoad(mapPage, signedIn({ params }))) as {
+			zoneLocations: { id: string; label: string }[];
+		};
+
+		expect(result.zoneLocations.map((location) => location.id)).toEqual([
+			'fenwick-well',
+			'fenwick-market'
+		]);
+		expect(result.zoneLocations[0].label).toBe('The Well');
+	});
+
+	it('asks the catalog for no zone locations on a region map', async () => {
+		mapsApi.getMap.mockResolvedValueOnce(
+			ok({
+				id: 'region:varenmark',
+				mapType: 'Region',
+				ownerId: 'varenmark',
+				nodes: [],
+				edges: [],
+				version: 1
+			})
+		);
+
+		const result = (await callLoad(mapPage, signedIn({ params }))) as {
+			zoneLocations: unknown[];
+		};
+
+		expect(result.zoneLocations).toEqual([]);
+		expect(contentApi.listZoneLocations).not.toHaveBeenCalled();
 	});
 
 	it('maps a missing graph to a 404 message', async () => {

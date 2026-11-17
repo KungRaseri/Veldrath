@@ -78,6 +78,24 @@ export function getContentDetail(contentType: string, slug: string) {
 	);
 }
 
+/** A zone location as the catalog serves it, mirroring `Veldrath.Contracts.Content.ZoneLocationDto`. */
+export interface ZoneLocation {
+	slug: string;
+	displayName: string;
+	/** The zone this location belongs to — what pairs it with a zone map's owner. */
+	zoneId: string;
+}
+
+/**
+ * Lists the active zone locations (public).
+ *
+ * The endpoint filters by type, not by zone, so the caller narrows to one zone: the map editor wants the
+ * locations that belong to the graph's owner and nothing else.
+ */
+export function listZoneLocations() {
+	return gameApiFetch<ZoneLocation[]>(null, '/api/content/zone-locations');
+}
+
 /** One validation issue returned by the write path. */
 export interface ContentWriteIssue {
 	rule: string;

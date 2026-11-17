@@ -235,6 +235,60 @@ describe('map editor pages', () => {
 		expect(screen.queryByRole('button', { name: 'Deactivate' })).toBeNull();
 	});
 
+	it('pairs a zone map with the catalog locations in that zone', async () => {
+		render(
+			MapDetail,
+			page({
+				canEdit: true,
+				graph: { ...mapGraph, mapType: 'Zone', ownerId: 'the-halrow' },
+				targets: mapTargets,
+				zoneLocations: [
+					{ id: 'the-halrow:entry', label: 'Arrival' },
+					{ id: 'halrow-market', label: 'The Market' }
+				]
+			})
+		);
+
+		const panel = screen.getByLabelText('Locations in this zone');
+		expect(
+			within(panel)
+				.getByRole('link', { name: /Create a location/ })
+				.getAttribute('href')
+		).toBe('/content/zonelocation/new');
+
+		const addButtons = within(panel).getAllByRole('button', { name: 'Add as node' });
+		expect(addButtons).toHaveLength(2);
+
+		await fireEvent.click(addButtons[1]);
+
+		// That location is now placed, so the panel stops offering it and says so.
+		expect(within(panel).getAllByRole('button', { name: 'Add as node' })).toHaveLength(1);
+		expect(within(panel).getByText('on the map')).toBeTruthy();
+
+		// Adding selects the node, and the inspector's reference picker offers this zone's locations only —
+		// not the wider catalog the loader still carries in `targets`.
+		const reference = screen.getByRole('combobox', { name: /Reference/ });
+		expect(
+			within(reference)
+				.getAllByRole('option')
+				.map((option) => option.getAttribute('value'))
+		).toEqual(['', 'the-halrow:entry', 'halrow-market']);
+	});
+
+	it('says when a zone has no locations yet', () => {
+		render(
+			MapDetail,
+			page({
+				canEdit: true,
+				graph: { ...mapGraph, mapType: 'Zone', ownerId: 'the-halrow' },
+				targets: mapTargets,
+				zoneLocations: []
+			})
+		);
+
+		expect(screen.getByText(/No locations exist in this zone yet/)).toBeTruthy();
+	});
+
 	it('walks an author through a fresh draft with a checklist', () => {
 		render(
 			MapDetail,

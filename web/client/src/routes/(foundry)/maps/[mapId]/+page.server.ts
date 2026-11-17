@@ -11,6 +11,7 @@ import {
 	submitMap,
 	validateMap
 } from '#lib/server/maps-api';
+import { listZoneLocations } from '#lib/server/content-api';
 import {
 	nodeRows,
 	parseDraftGraph,
@@ -19,11 +20,12 @@ import {
 } from '#lib/foundry/map-editor';
 
 /**
- * Loads one graph, its node rows, and whether this account may save it.
+ * Loads one graph, its node rows, the references a node may point at, and — for a zone map — the locations
+ * that belong to the zone.
  *
- * Reading needs a signed-in account; saving requires `content.manage` and a decision requires
- * `content.review`. The page is not the guard for the write — the API enforces it — but `canEdit` decides
- * whether the controls render at all.
+ * Reading needs a signed-in account; writing a map needs its author or `content.manage`, and a decision
+ * needs `content.review`. The page is not the guard for the write — the API enforces it — but `canEdit`
+ * decides whether the controls render at all.
  */
 export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	const user = requireUser(locals);
@@ -43,15 +45,32 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 		error(targets.status || 502, targets.error ?? 'Could not load the reference catalog.');
 	}
 
+	const graph = result.data;
+
+	// A zone map's locations live in the content catalog, not in the graph: the panel that pairs them needs
+	// the rows whose zone is this map's owner. A region or interior map has no such list.
+	const zoneLocations = graph.mapType === 'Zone' ? await locationsInZone(graph.ownerId) : [];
+
 	return {
 		// Per map, not per permission: a player may write the map they created and read the rest.
-		canEdit: result.data.canEdit ?? false,
+		canEdit: graph.canEdit ?? false,
 		canReview,
-		graph: result.data,
-		rows: nodeRows(result.data),
-		targets: targets.data
+		graph,
+		rows: nodeRows(graph),
+		targets: targets.data,
+		zoneLocations
 	};
 };
+
+/** The catalog's locations for one zone, as `{ id, label }` options. */
+async function locationsInZone(zoneId: string) {
+	const result = await listZoneLocations();
+	const inZone = (result.data ?? []).filter(
+		(location) => location.zoneId.toLowerCase() === zoneId.toLowerCase()
+	);
+
+	return inZone.map((location) => ({ id: location.slug, label: location.displayName }));
+}
 
 /**
  * Turns a lifecycle outcome into the banner the page shows.
