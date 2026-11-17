@@ -4042,8 +4042,10 @@ unresolved and resolves it), and `editorial-publishing` publishes a lore article
   deep-linkable assertion) with the route pattern named in a comment; do that rather than re-adding an exemption.
 - **`/mod/reports`'s resolve action redirects to the *unfiltered* queue**, so a resolved row does not disappear
   from the page — assert its status chip flips to "Resolved", not that the row vanishes.
-- **SvelteKit runs `+page.server.ts` and `+layout.server.ts` concurrently**, so a player opening `/mod/users`
-  makes one API call that the API refuses (403) before the layout's redirect wins. Nothing leaks, but it is a
-  wasted round trip per blocked page; guarding each page load on `parent()` is the fix, recorded as E8.
+- **SvelteKit runs `+page.server.ts` and `+layout.server.ts` concurrently**, so a page load used to call the API
+  before its layout's guard refused the request — a 403 line in the log and a wasted round trip per blocked
+  page. Fixed: the 11 admin/mod page loaders `await parent()` first, and a full authenticated run now logs zero
+  refused `/api/mod…`/`/api/admin…` calls. **Do this in any new gated page load**; the layout remains the only
+  place the permission is decided.
 
-Still open (E8): kick (needs a live session), and those per-page guards.
+Still open (E9): kick, which needs a live hub session in the spec.

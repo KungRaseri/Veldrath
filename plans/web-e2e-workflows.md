@@ -152,16 +152,16 @@ real web app meets the real API:
    (and the edit form now sets `value="true"`), with a unit test for `on`.
 7. **The create form ignored the boolean default**, so a new entry was born inactive even before (6) — the
    checkbox did not honour `isActive: "true"` from the schema. Fixed in the create page, with a component test.
+8. **A refused page still called the API.** SvelteKit runs `+page.server.ts` and `+layout.server.ts` loads
+   concurrently, so a player opening `/mod/users` made one API call that the API refused with 403 before the
+   layout's redirect won — a wasted round trip per blocked page, and an alarming line in the server log. The 11
+   admin/mod page loaders now `await parent()` first, and a full authenticated run logs zero refused
+   `/api/mod…`/`/api/admin…` calls.
 
 ## 6. Still open
 
 - **Kick** is the one moderation verb not driven: it acts on live sessions and this suite never opens the hub, so
   a kick could only prove "nobody online".
-- **A gated page's own load runs before its layout guard throws.** SvelteKit runs `+page.server.ts` and
-  `+layout.server.ts` loads concurrently, so a player who opens `/mod/users` makes one API call that the API
-  refuses with 403 before the redirect. Nothing leaks — the API is the authority — but it is a wasted round trip
-  per blocked page, and it makes the server log look like an incident. Guarding each page load on `parent()`
-  would remove it.
 - **The review queue validates every submitted map on load** (two API calls per row). Fine for a page of maps;
   worth moving onto `MapSummaryDto` if the queue ever pages.
 - **`parity/routes.test.ts` is down to two exemptions**: `/api/**` (route handlers, covered by unit tests) and
@@ -179,7 +179,8 @@ real web app meets the real API:
 | E5 | Public reading surfaces (`/lore`, `/patch-notes`, `/leaderboard`, `/community`) and their 404 paths | **shipped 2026-11-17** |
 | E6 | Moderation verbs (warn, mute, unmute) on a real player, and publishing an announcement and a patch note through to the public site | **shipped 2026-11-17** |
 | E7 | Role grant → live for the player → revoke, the admin sub-pages, `editorial/lore/[id]`, and resolving a report end to end; the admin/mod/editorial/players/leaderboard exemptions retired | **shipped 2026-11-17** |
-| E8 | Kick (needs a live session), and guarding each gated page load so a blocked page makes no API call | next |
+| E8 | Guarding each gated page load on `parent()` so a refused page makes no API call (11 admin/mod loaders; the run now logs zero refused `/api/mod…`/`/api/admin…` calls) | **shipped 2026-11-17** |
+| E9 | Kick, which needs a live hub session in the spec | next |
 
 E3–E5 are recorded here rather than half-built: the harness is what makes them cheap, and each one retires an
 exemption in [`parity/routes.test.ts`](../web/client/src/lib/parity/routes.test.ts) rather than adding a new
