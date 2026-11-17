@@ -4119,11 +4119,16 @@ and there is none. **No seeded zone location has an `ActorPool`** (verified with
 returns an empty roster for an empty pool *by design* — the old `"common"` fallback was removed so a missing pool
 could not be silently faked. So nothing spawns anywhere, the HUD's "Local" panel can never list a hostile, and
 `CombatPanel` never mounts for a real player. The content audit only **warns** on an empty pool ("safe locations
-are legitimate"), so a wholly empty world passes. Two more findings in the same measurement: **no location has
-`Traits.SafeRespawn = true`** (67/67 false), so `RespawnHubCommand` logs
-`Zone {ZoneId} has no location flagged SafeRespawn; falling back to …` at error level on **every** death and
-respawns at `locations[0]`, and no dungeon has a lobby; and only **4 actor archetypes** exist (two of them NPCs —
-`tavern-keeper`, `village-blacksmith`), so even with pools there is little to populate them with.
+are legitimate"), so a wholly empty world passes. Also: only **4 actor archetypes** exist (two of them NPCs —
+`tavern-keeper`, `village-blacksmith`), the 4 loot tables are referenced by **no** archetype, and two of them name
+content that does not exist (`wolf-common-drops` has no wolf, `bandit-boss-drops` has no boss).
+
+**Measurement trap, and a correction.** I first reported that no location had `Traits.SafeRespawn = true` and that
+every death logged `Zone {ZoneId} has no location flagged SafeRespawn`. That was **my query, not the code**:
+`ContentModelConfiguration` stores traits with `ToJson()`, so the JSON keys are the property names —
+`"Traits"->>'SafeRespawn'`, `IsDungeon`, `IsTown` — and I had used camelCase (`'safeRespawn'`), which matches
+nothing. The seeders do set it (8 towns/waypoints plus one `SafeRespawn`/`IsDungeon = false` lobby in every dungeon
+zone), so respawn and the lobby lookup work. **Always query these columns in PascalCase.**
 
 Everything is written up in [`plans/content-seeding-pass.md`](../../plans/content-seeding-pass.md): measured
 counts, P0/P1/P2 priorities, the guardrail test to add to `SeededContentValidationTests`, and what each item

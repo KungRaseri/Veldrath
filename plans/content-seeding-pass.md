@@ -1,143 +1,182 @@
-# Content seeding pass
+# Content pass — a baseline a player (and a test) can actually run
 
-> Opened 2026-11-17 from the web e2e work, which could not write a combat spec — [§6 of the e2e plan](web-e2e-workflows.md)
-> records the finding. This file is the checklist for the pass that fixes it, and the evidence it starts from.
+> Opened 2026-11-17 from the web e2e work, which could not write a combat spec. Rewritten the same day after
+> reading the seeders: **the world has safe respawn points** (my first measurement queried the JSON with the wrong
+> keys — see §3.1). What it does not have is a single encounter.
 
-## 1. Why this exists
+## 1. Why this pass exists
 
 The e2e suite drives every page route and most workflows. The one item it could not write is **combat and death**
-(E13c/E13d), and the reason turned out not to be the test tooling: **nothing spawns anywhere in the seeded world**,
-so a player can never meet an enemy and `CombatPanel` can never mount for anyone — real user or spec.
+(E13c/E13d), and the blocker is content, not tooling: nothing spawns anywhere, so a player can never meet an enemy
+and `CombatPanel` never mounts — for a real user or for a spec. The same pass is the cheapest way to give every
+other gameplay surface (quests, loot, dialogue, harvesting, shops) more than one seeded example.
 
-That makes this a game defect. The e2e gap closes on its own once the content exists.
+## 2. Where content lives (read this before authoring anything)
 
-## 2. The measured state (2026-11-17, from the seeded catalog)
+| Thing | Where | Behaviour that matters |
+|---|---|---|
+| The seeded catalog | [`RealmEngine.Data/Seeders/`](../RealmEngine.Data/Seeders) — one seeder per content family, all C# | **Source of truth.** No JSON content files exist. |
+| Idempotency | every seeder: `existing = db.X.Select(x => x.Slug).ToHashSet()` then `missing.Where(x => !existing.Contains(x.Slug))` | **It inserts missing slugs and never updates an existing row.** Editing a seeder record changes nothing on a database that already has that slug. |
+| Consequence | — | A content change is only visible after `scripts/e2e-stack.sh start --fresh` locally, or in a database where the row is absent. **This is the first decision in §5.** |
+| CI guard | [`SeededContentValidationTests`](../Veldrath.Server.Tests/Features/SeededContentValidationTests.cs) | Validates the seed through the same rule set Foundry uses, so a broken pool entry fails the build. |
+| Foundry | the SvelteKit app, `/content` and `/maps` | Writes the same tables through the write path. Authoring in Foundry does **not** update the seeders. |
+| Live-game data | `ApplicationDbContext` (characters, sessions, spawned enemies, unlocked locations) | Seeded content is `ContentDbContext`; keep the two apart. |
 
-Taken from the stack database (`scripts/e2e-stack.sh start`), which seeds on boot.
+## 3. The measured state (2026-11-17, from the seeded stack database)
 
 | What | Count | Note |
 |---|---|---|
-| Zones | 19 | |
-| Maps | 25 | 21 `Zone`, 4 `Region` |
-| Map nodes | 135 | every location has at least one node (0 orphans) |
+| Zones | 19 | across 4 regions: Varenmark, Greymoor, Saltcliff, Cinderplain |
+| Maps | 25 | 21 `Zone`, 4 `Region`; 135 nodes; 0 locations without a node |
 | Zone locations | 67 | 37 `locations`, 17 `environments`, 13 `dungeons` |
-| **Locations with an actor pool** | **0** | `jsonb_array_length("ActorPool") = 0` on every row |
-| **Locations with `Traits.SafeRespawn = true`** | **0** | no safe respawn point and no dungeon lobby |
-| Actor archetypes | 4 | `bandit-ruffian`, `goblin-scout` (hostile); `tavern-keeper`, `village-blacksmith` (NPCs) |
-| Quests | 3 | for 67 locations |
+| Locations with an actor pool | **0** | `jsonb_array_length("ActorPool") = 0` on all 67 |
+| Actor archetypes | **4** | `goblin-scout` (lvl 1–3), `bandit-ruffian` (lvl 3–6), `tavern-keeper`, `village-blacksmith` |
+| Loot tables | 4 | `goblin-common-drops`, `wolf-common-drops`, `forest-chest-loot`, `bandit-boss-drops` |
+| Quests | 3 | for 19 zones |
 | Dialogue | 4 | |
-| Loot tables | 4 | |
-| Items | 25 | |
-| Recipes | 6 | |
-| Organizations | 2 | |
+| Items / recipes / materials | 25 / 6 / few | every merchant sells the whole item catalog |
+| Zone locations with `Traits.SafeRespawn = true` | **13, one per dungeon zone plus town squares** | see §3.1 |
 
-## 3. The gaps, in priority order
+### 3.1 Correction to the earlier finding
 
-### P0 — no encounter exists anywhere
+The first version of this file said no location was flagged `SafeRespawn`, and claimed every death logs
+`Zone {ZoneId} has no location flagged SafeRespawn`. **That was a measurement error, not a bug.**
+`ContentModelConfiguration` stores `Traits` with `ToJson()`, so the JSON keys are the property names —
+`SafeRespawn`, `IsDungeon`, `IsTown` — and my query used camelCase (`->>'safeRespawn'`), which matched nothing.
 
-`ZoneLocations.ActorPool` is empty on all 67 rows, and
-[`ActorPoolResolver.SpawnRosterAsync`](../Veldrath.Server/Features/Characters/Combat/ActorPoolResolver.cs:35) returns
-an **empty roster** for an empty pool *by design*: the old "one random `common` enemy" fallback was removed so a
-missing pool could not be silently faked. The design is right; the content never followed. Consequences:
+The seeders do set it: `crestfall-square`, `weathered-waypost`, `strangled-oak`, `sunken-estate`, `ironhollow-keep`,
+`moorstone-cairns`, `tolvaren-harbour`, `clifftop-ruins` are safe, and each dungeon zone has a `locations` room
+with `SafeRespawn = true` / `IsDungeon = false` that acts as its lobby (`halrow-threshold`, `pit-descent`,
+`deeps-entrance`, `drowned-threshold`). `RespawnHubCommand` and the dungeon lobby lookup therefore work.
 
-- `TravelToNodeHubCommand` and `EnterZoneLocationHubCommand` spawn nothing, so the HUD's "Local" panel always says
+**Trap for anyone querying the catalog:** use `"Traits"->>'SafeRespawn'` (PascalCase), never `'safeRespawn'`.
+
+## 4. The gaps, in priority order
+
+### P0 — nothing spawns anywhere (verified)
+
+`ZoneLocations.ActorPool` is empty on all 67 rows and
+[`ActorPoolResolver.SpawnRosterAsync`](../Veldrath.Server/Features/Characters/Combat/ActorPoolResolver.cs:39) returns
+an empty roster for an empty pool **by design** — the old "one random `common` enemy" fallback was removed so a
+missing pool could not be silently faked. Consequences:
+
+- `TravelToNodeHubCommand` and `EnterZoneLocationHubCommand` spawn nothing, so the HUD's "Local" panel can only say
   "Nothing hostile is lurking here right now."
-- `CombatPanel`, the combat log, engage/attack/defend/flee, ability use in combat, and kill rewards are all
-  unreachable for a real player. The only coverage they have is unit tests.
-- The content audit words an empty pool as a **warning** (`SpawnPoolEmpty`: "Safe locations are legitimate, so this
-  is only a warning"), so a world where *everything* is empty audits clean apart from 67 warnings nobody reads.
+- `CombatPanel`, the combat log, engage/attack/defend/flee, abilities in combat, kill rewards and death itself are
+  unreachable for a real player. Only unit tests exercise them.
+- The audit words an empty pool as a **warning** (`SpawnPoolEmpty`: "Safe locations are legitimate"), so a world
+  where *everything* is empty passes the audit with 67 warnings nobody reads.
 
-**The fix:** author pools on the hostile locations and leave the settlements safe. The 30 `dungeons`/`environments`
-rows are the natural candidates (e.g. `bone-hollow`, `submerged-ruins`, `tidelocked-vault`, `kaldreks-heart`,
-`pyreling-den`, `wreck-shore`), and the `locations` rows that are inns/markets/squares stay empty on purpose.
+**Fix:** author pools on the hostile locations and leave settlements safe. Candidates by band, from the seeder:
+`drove-road`, `wood-road`, `old-clearing` (1–5); `mire-crossing`, `bone-hollow`, `sunken-estate` (3–6);
+`ashveil-highlands`, `moorstone-cairns`, `shifting-waymark` (7–14); `fenland-crossing`, `submerged-ruins` (9–14);
+`wrack-shore`, `bone-strand`, `tidal-grotto` (12–18); `clifftop-ruins`, `gull-rider-camp` (14–20); the 13 dungeon
+rooms (4–17). Towns, inns, markets and the `SafeRespawn` lobbies stay empty.
 
-### P1 — two hostile archetypes cannot carry 67 locations
+### P1 — two hostile archetypes cannot carry a level 1–20 world
 
-`bandit-ruffian` and `goblin-scout` are the only hostile actors in the catalog. Two archetypes cannot express level
-bands, zone identity or a dungeon's difficulty curve, and `EnemyGenerator` resolves a pool entry to one of them at
-every tier. A pool per location would only reshuffle the same two enemies.
+`goblin-scout` tops out at level 3 and `bandit-ruffian` at 6. The zone ladder runs to level 20, so every zone from
+`pale-moor` (7+) upward has no plausible enemy at all, and a pool there would be a lie.
 
-**The fix:** seed archetypes with level bands and zone flavour before or alongside the pools, so a pool entry means
-something. `WorldAndActorValidators` already audits pool weights and unknown archetype slugs, so a wrong entry is
-caught at audit time rather than at runtime.
+**Fix:** seed archetypes per band — something like `giant-rat`/`forest-wolf` (1–3), `goblin-scout`/`bandit-ruffian`
+(3–6, existing), `moor-wight`/`cairn-haunt` (6–10), `fen-lurker`/`drowned-revenant` (10–14),
+`gull-rider-brute`/`ash-wraith` (14–20), plus one boss per dungeon (the loot tables already expect one). Each needs
+`Stats` (health, damage, XP, gold) and `Traits` (`Hostile`, `Aggressive`, `PackHunter`, `Caster`, …).
 
-### P1 — there is no safe respawn point, and every death logs an error
+### P1 — the loot tables are orphans
 
-`Traits.SafeRespawn` is false on all 67 locations. Three call sites depend on it, and each one fails quietly:
+Four tables exist and **no archetype references any of them** (`ArchetypeSeeder` sets no `LootTableRef`), and two of
+the four name content that does not exist: `wolf-common-drops` (there is no wolf archetype) and `bandit-boss-drops`
+(there is no boss). `forest-chest-loot` has no chest to open.
 
-- [`RespawnHubCommand`](../Veldrath.Server/Features/Characters/Combat/RespawnHubCommand.cs:178) looks for a
-  `SafeRespawn` location in the character's zone; finding none it logs
-  **`Zone {ZoneId} has no location flagged SafeRespawn; falling back to …`** at error level and respawns at
-  `locations[0]` — whichever location the repository happens to return first. So every respawn in the shipped world
-  is both an error line and an arbitrary destination, and the safe-respawn half of Milestone A2 has no authored
-  target to be safe at.
-- [`EnterZoneLocationHubCommand`](../Veldrath.Server/Features/Zones/EnterZoneLocationHubCommand.cs:146) skips the
-  lobby redirect when the zone has no `SafeRespawn` location, so a dungeon entry never starts in a lobby.
-- [`EnterDungeonHubCommand`](../Veldrath.Server/Features/Characters/EnterDungeonHubCommand.cs:130) and the map
-  validator's dungeon-set derivation
-  ([`MapEditorService`](../Veldrath.Server/Features/Content/MapEditorService.cs:358)) use the same flag, so the
-  "a dungeon room plus a lobby" set `SeededContentValidationTests` guards is currently empty of lobbies.
+**Fix:** wire each hostile archetype to a drop table, and either author the missing archetypes/boss/chest or retire
+those tables. Keeping a table nothing can drop is the same class of bug as an empty spawn pool.
 
-**The fix:** mark one location per zone as `SafeRespawn` — the inns and squares are the obvious candidates — and give
-each dungeon zone a lobby before its rooms carry pools. That turns the error-level fallback back into an unused
-branch and restores the meaning of the CI dungeon guard.
+### P2 — quests do not survive contact with the world
 
-> The dungeon-side design lives in [`dungeons.md`](dungeons.md) ("a lobby per dungeon", and the four content defects
-> that make three dungeons inescapable); the death-side design is in
-> [`death-and-first-hour.md`](death-and-first-hour.md) (A2). Both shipped the code and assumed the content.
+`clear-the-forest` targets 5 `goblin-scout` kills "in the Darkwood Forest" — **no such zone or location exists in
+the seed**, and with no pools the kills cannot happen. `gather-mushrooms` targets `glowcap-mushroom`, which is a real
+item but has no source: no harvestable node is seeded and `NodeSpawnerService` is engine-only.
+`the-lost-shipment` (min level 3) targets `lost-cargo`, which nothing drops.
 
-### P2 — most locations have nothing to do
+**Fix:** either reword/retarget the three to places and actors that exist, or seed the missing source: a harvestable
+`glowcap-mushroom` node in the woods locations, and a drop (`lost-cargo`) on a bandit. Three quests for 19 zones is
+also thin: one per starter zone is the minimum for a passable baseline.
 
-3 quests and 4 dialogues across 67 locations and 19 zones. `WorldAndActorValidators` audits spawn pools and loot
-references, not coverage, so nothing tells us which zones are empty. The quest HUD, the quest turn-in toast, shops
-and loot drops are all web pages and hub commands with a single seeded example each.
+### P2 — dialogue and NPCs
 
-**The fix:** at minimum one quest per starter zone and one merchant whose stock comes from a real loot table, so the
-existing surfaces (`/quests` HUD, `VisitShop`, `PickUpGroundItem`) have more than one example to behave against.
+4 dialogue rows for 67 locations, and no NPC is marked `QuestGiver` or `HasDialogue`. The `tavern-keeper` and
+`village-blacksmith` NPCs exist as archetypes but are not placed in any location pool (see P0: pools are the only
+placement mechanism) — so no NPC is ever visible either.
 
-## 4. Guardrail: the world must not regress to "nothing spawns"
+**Fix:** once pools exist, place the NPC archetypes in the town/inn pools; give at least the starter-zone quest giver
+a dialogue with a quest offer, so the dialogue surface has a real path instead of one seeded example.
 
-The audit cannot catch this today, because a legitimately safe town and a forgotten pool look identical to it. After
-the content lands, add to [`SeededContentValidationTests`](../Veldrath.Server.Tests/Features/SeededContentValidationTests.cs)
-an assertion in the spirit of the existing dungeon guard:
+### P3 — every merchant sells the same 25 items
 
-- at least one non-`SafeRespawn` location per starter zone has a non-empty pool;
-- every pool entry resolves to an archetype that exists (already covered by `AuditSpawnPools`);
-- every dungeon room's zone has exactly one `SafeRespawn` lobby.
+[`GetShopCatalogHubCommand`](../Veldrath.Server/Features/Shops/GetShopCatalogHubCommand.cs:36) dispatches
+`GetItemCatalogQuery`, i.e. the whole priced catalog, gated only by the *zone's* `HasMerchant`. Not a blocker for a
+test baseline (the shop panel works), but it is why every shop feels identical.
 
-That turns "combat exists in the shipped world" into a test, which is what E13c/E13d need anyway.
+**Fix (later):** per-merchant stock — a loot-table-style table keyed by zone, or a `ShopStock` junction. Out of scope
+for this pass unless the pass wants a shop test that can tell two merchants apart.
 
-## 5. What this unblocks
+## 5. Decisions to take before authoring (see the question list)
 
-| Content lands | Then |
-|---|---|
-| Pools on hostile locations + safe locations | E13c: travel into a known encounter → engage → victory; the "Local" panel lists a hostile; `CombatPanel` mounts |
-| A safe respawn point + a death | E13d: die, see "You have been defeated", respawn at the safe location, death sickness |
-| More archetypes | A pool's level band means something; combat can be tuned per zone |
-| Quests and dialogue | Quest tracker, turn-in toast and the `/quests` surfaces exercised with real breadth |
+1. **Authoring channel and the update problem.** Seeders are the source of truth and the seeder only *inserts*.
+   Options: (a) seeders only, accept `start --fresh` locally and a seed bump in real environments; (b) seeders only
+   plus an opt-in upsert mode (`SeedMode.Refresh`) that updates seeded rows by slug; (c) author in Foundry and
+   back-port the resulting payloads into seeders. (b) is the most useful, (a) is the smallest change.
+2. **Reach.** Encounters in roughly 10–12 locations (the dungeon zones and the wilderness around them) for a
+   testable baseline, or the full 1–20 ladder across all 19 zones.
+3. **Archetype breadth.** New archetypes per level band (10–14 new rows), or scale the two existing ones per zone.
+4. **Scope of this pass.** Encounters only (unblocks E13c/E13d immediately) versus encounters + loot wiring +
+   quest fixes + harvest node + NPC placement.
 
-## 6. How to re-measure
+## 6. Phases
+
+| Phase | Work | Done when |
+|---|---|---|
+| C0 | Branch off `development`; correct the two documents that carry the bad `SafeRespawn` finding; record the PascalCase JSON trap | `plans/` and the memory agree with the code |
+| C1 | Archetypes per level band, with stats, traits and a `LootTableRef` each | `SeededContentValidationTests` passes; every archetype's loot table resolves |
+| C2 | Spawn pools: hostile locations only, weighted, matching each location's `MinLevel`/`MaxLevel` | the HUD's "Local" panel lists hostiles in every band; a `--fresh` run spawns 2–4 per visit |
+| C3 | NPC placement: innkeepers and smiths in town/inn pools; one quest giver with dialogue | a player can see and talk to an NPC without a GM |
+| C4 | Loot and quests: wire drops, retire or author the orphan tables, fix the three quests' targets and text, add one quest per starter zone | every quest's objective target exists and can be produced |
+| C5 | Harvesting: seed at least one harvestable node per woods location so `gather-mushrooms` is completable | a collect objective can be finished in game |
+| C6 | Guardrail tests + e2e: the seed assertions in §7, then E13c (engage → victory) and E13d (die → respawn at the safe location) | the gate is green and both specs pass against a fresh stack |
+
+## 7. Guardrail: the world must not regress to "nothing spawns"
+
+The audit cannot catch this, because a legitimately safe town and a forgotten pool look identical to it. Add to
+[`SeededContentValidationTests`](../Veldrath.Server.Tests/Features/SeededContentValidationTests.cs), in the spirit of
+the existing dungeon guard (which derives the dungeon set from a room plus a lobby):
+
+- at least one non-`SafeRespawn` location per zone has a non-empty pool;
+- every pooled archetype exists and is `Hostile` for a non-safe location (and not for a town);
+- every `SafeRespawn` location has an empty pool, so a town cannot start murdering people;
+- every archetype's `LootTableRef`, when set, resolves to a seeded loot table;
+- every quest objective's target is either a seeded item or a seeded archetype that some pool can spawn.
+
+## 8. How to measure
 
 ```sh
-./scripts/e2e-stack.sh start            # or `start --fresh` for a clean seed
-docker compose exec -T postgres psql -U veldrath -d veldrath -c \
-  'select count(*) filter (where jsonb_array_length(coalesce("ActorPool", '\''[]'\''::jsonb)) > 0) as with_pool,
-          count(*) filter (where "Traits"->>'\''safeRespawn'\'' = '\''true'\'') as safe,
-          count(*) as locations
-   from "ZoneLocations";'
+./scripts/e2e-stack.sh start --fresh        # reseed, or editing a seeder changes nothing (see §2)
+docker compose exec -T postgres psql -U veldrath -d veldrath -c '
+select count(*) filter (where jsonb_array_length(coalesce("ActorPool", $q$[]$q$::jsonb)) > 0) as with_pool,
+       count(*) filter (where "Traits"->>$q$SafeRespawn$q$ = $q$true$q$) as safe,
+       count(*) as locations
+from "ZoneLocations";'
 ```
 
-The Foundry audit page (`/world-health`) and `GET /api/content/audit` report the same gaps as issues; a pool that
-names an unknown archetype is an error there, an empty pool is a warning.
+The Foundry audit page (`/world-health`) and `GET /api/content/audit` report the same data as issues: an unknown
+archetype or loot slug is an error there, an empty pool is a warning.
 
-## 7. See also
+## 9. See also
 
-- [Web e2e workflows](web-e2e-workflows.md) — §6 records the finding; E13c/E13d are the specs waiting on this.
-- [`dungeons.md`](dungeons.md) — the lobby-per-dungeon model and the four inescapable-dungeon defects.
-- [`death-and-first-hour.md`](death-and-first-hour.md) — A2, safe respawn and death sickness, shipped against a
-  catalog with no safe location in it.
-- [`content-pipeline.md`](content-pipeline.md) — the validators and the Foundry write path this pass will author
-  through (or seed, if it lands as seed data).
-- [Client UI architecture](../docs/client-ui-architecture.md) — the panel the encounters appear in.
-- [`.github/agent-memory/veldrath-memory.md`](../.github/agent-memory/veldrath-memory.md) — the same finding in the
-  session notes, with the code references.
+- [Web e2e workflows](web-e2e-workflows.md) — §6 records why E13c/E13d are parked here.
+- [`dungeons.md`](dungeons.md) — the lobby-per-dungeon model these seeders already follow.
+- [`death-and-first-hour.md`](death-and-first-hour.md) — A2 safe respawn, which the seed satisfies.
+- [`content-pipeline.md`](content-pipeline.md) — the validators and the Foundry write path this pass authors through.
+- [Client UI architecture](../docs/client-ui-architecture.md) — the "Local" panel the encounters appear in.
+- [`.github/agent-memory/veldrath-memory.md`](../.github/agent-memory/veldrath-memory.md) — session notes, including
+  the JSON-key trap.
