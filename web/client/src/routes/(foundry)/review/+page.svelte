@@ -2,6 +2,7 @@
 	import FoundryEmptyState from '#lib/components/foundry/FoundryEmptyState.svelte';
 	import FoundryPageHeader from '#lib/components/foundry/FoundryPageHeader.svelte';
 	import FoundrySection from '#lib/components/foundry/FoundrySection.svelte';
+	import { reviewVerdictLabel } from '#lib/foundry/map-editor';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -63,6 +64,13 @@
 						<a class="link" href={`/maps/${encodeURIComponent(map.id)}`}>{map.name}</a>
 						<p class="text-xs text-surface-600-400">
 							{map.mapType} · {map.ownerId} · v{map.version}
+						</p>
+						<p
+							class="text-xs"
+							class:text-error-500={map.verdict.status === 'blocked'}
+							class:text-surface-600-400={map.verdict.status !== 'blocked'}
+						>
+							{reviewVerdictLabel(map.verdict)}
 						</p>
 					</div>
 					<a class="btn preset-tonal-surface btn-sm" href={`/maps/${encodeURIComponent(map.id)}`}>

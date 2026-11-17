@@ -3906,3 +3906,46 @@ resolve, refactor is separate), and the type picker has no search.
 
 **Counts after I:** 1,666 server tests, 1,442 web unit tests, coverage 90.00% branches, lint/typecheck/build
 clean. Playwright was not run locally this pass; `tests/staff-guards.e2e.ts` gained `/new`.
+
+### J — community map authoring (2026-11-17)
+
+Plan: [`plans/community-map-authoring.md`](../../plans/community-map-authoring.md). Branch
+`feat/milestone-j-community-map-authoring`, cut from `development` at `836198b5` (PR #73, which is where
+milestone I actually shipped — there is no `feat/milestone-i-*` branch).
+
+- **Map writes are decided per map, not per endpoint.** `MapCaller(AccountId, CanManageAny, CanReview)` — with
+  `SeesEveryDraft` and `MayEdit(createdByAccountId)` — is passed into `ListAsync`, `GetAsync`, `SaveAsync`,
+  `SubmitAsync`, `DeleteDraftAsync`. An endpoint-level `content.manage` made every map an editor's map and left
+  an author unable to write their own draft; do not put a permission back on those routes. `validate` is a
+  session-only read.
+- **A stranger's draft reads as 404, not 403.** `GetAsync(mapId, caller)` returns null for a draft the caller
+  cannot see, so the endpoint's existing 404 covers it. A 403 would confirm the map exists.
+- **`canEdit` rides on `MapSummaryDto` and `MapGraphDto`** and the editor disables its controls from it. Do not
+  re-derive it from `content.manage` in the page — that is the bug the flag exists to prevent.
+- **`map_without_exit` is a warning on save and a refusal at approval.** `ReviewAsync` calls
+  `BlocksPublication(issues)` (the one rule that refuses publication). A test that expects a *save* to return 400
+  for a map with no exit is wrong — it returns 200 and persists. This cost a test rewrite during J0.
+- **`ValidateWorld` grew two inputs:** `locationZones` (slug → zone) and `liveMapIds`. New codes:
+  `node_reference_zone_mismatch` (error), `location_missing_node` and `map_unreachable` (warnings). A `Location`
+  node's `refId` is a **zone-location** slug, so a test helper wanting "a way out" must use `RegionExit` with a
+  **region** slug (`cinderplain`) — a `ZoneExit` with a location slug fails `node_reference_unknown`.
+- **Authored coordinates are ranks, not distances.** `MapEditorService.ToDto` densifies each axis
+  (`DenseRanks`) so `x=2` beside `x=34` renders adjacent, and the canvas fixed the cell at
+  `CARD = 80` + `GAP = 24`. The spread-out-map complaint was authored slack, not a CSS bug; do not "fix" it in
+  `map-canvas.ts`.
+- **The review queue validates each submitted map before a reviewer opens it** (`getMap` + `validateMap`), and a
+  failed check reports `unknown`, not `blocked` — an unreachable validator must never read as "this map is
+  broken". `reviewVerdict` / `reviewVerdictLabel` in `map-editor.ts` own that wording, including "refused · the
+  map has no exit" for a blocked verdict with zero errors.
+- **A deactivation notification needs a second read.** `MapLifecycleResponse` carries neither the author nor the
+  name, so `MapEditorService.AuthorOfAsync` returns `MapAuthor(AccountId, Name)` (submitter, else creator) and
+  `DeactivateMapAsync` titles the inbox row with the map's name. A rejection already notifies through
+  `MapReviewOutcome`.
+- **Test gotchas:** `getByRole('link' | 'button', { name: /^Create/ })` matches more than one control on the
+  maps pages — index into `getAllByRole(...)`; `parentData` fixtures must carry every flag the layout returns
+  (a missing key is `undefined`, not `false`); the `src/lib/server/**` function floor (92) fails when a loader
+  test mocks `content-api`, so a new API function needs a case in `content-api.test.ts` as well.
+
+**Counts after J:** 6,089 .NET tests (1,677 server, 2,744 core, 510 data, 1,158 shared), 1,463 web unit tests,
+30 Playwright tests (2 skipped), coverage 90.03% branches, lint/typecheck/build and
+`dotnet format --verify-no-changes` clean.

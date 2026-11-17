@@ -687,15 +687,69 @@ describe('review queue', () => {
 		const result = (await callLoad(
 			reviewPage,
 			signedIn({ parentData: { access: curatorAccess, canReview: true } })
-		)) as { submissions: unknown[]; maps: { id: string }[]; error: unknown };
+		)) as {
+			submissions: unknown[];
+			maps: { id: string; verdict: { status: string } }[];
+			error: unknown;
+		};
 
 		expect(result.submissions).toEqual([{ id: 'sub-1' }]);
 		expect(result.maps.map((map) => map.id)).toEqual(['zone:a']);
+		// Approval is the gate the queue announces, so each row already carries the verdict.
+		expect(result.maps[0].verdict.status).toBe('ready');
 		expect(result.error).toBeNull();
 		expect(foundryApi.listSubmissions).toHaveBeenCalledWith(
 			expect.anything(),
 			expect.objectContaining({ status: 'Pending' })
 		);
+	});
+
+	it('checks the verdict on the submitted maps only, and survives a failed check', async () => {
+		mapsApi.listMaps.mockResolvedValue(
+			ok([
+				{ id: 'zone:blocked', submittedAt: '2026-01-01T00:00:00Z', isActive: false },
+				{ id: 'zone:unknown', submittedAt: '2026-01-01T00:00:00Z', isActive: false },
+				// Live, so there is no approval left to announce.
+				{ id: 'zone:live', submittedAt: '2026-01-01T00:00:00Z', isActive: true }
+			])
+		);
+		mapsApi.getMap.mockImplementation(async (_identity: unknown, mapId: string) =>
+			mapId === 'zone:blocked'
+				? ok({ id: mapId, nodes: [], edges: [], version: 1 })
+				: failed('the graph is unavailable')
+		);
+		mapsApi.validateMap.mockResolvedValue(
+			ok({
+				isValid: false,
+				issues: [
+					{
+						code: 'map_without_exit',
+						message: 'No exit.',
+						severity: 'Warning',
+						mapId: 'zone:blocked',
+						nodeId: null
+					}
+				]
+			})
+		);
+
+		const result = (await callLoad(
+			reviewPage,
+			signedIn({ parentData: { access: curatorAccess, canReview: true } })
+		)) as { maps: { id: string; verdict: { status: string } }[] };
+
+		expect(result.maps).toEqual([
+			expect.objectContaining({
+				id: 'zone:blocked',
+				verdict: expect.objectContaining({ status: 'blocked' })
+			}),
+			// A validator that could not run must not read as a refusal.
+			expect.objectContaining({
+				id: 'zone:unknown',
+				verdict: expect.objectContaining({ status: 'unknown' })
+			})
+		]);
+		expect(mapsApi.validateMap).toHaveBeenCalledTimes(1);
 	});
 
 	it('reports the first failed call', async () => {

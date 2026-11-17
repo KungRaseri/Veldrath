@@ -465,7 +465,8 @@ are gated, and the gate is the **permission**, never the role.
 | Catalog index, one type, one entry | signed in | `/content`, `/content/[type]`, `/content/[type]/[slug]` |
 | Create / edit an entity | `content.manage` | `/content/[type]/new`, `.../[slug]/edit`, `POST/PUT/DELETE /api/content/{type}` |
 | Map list, graph, targets | signed in | `/maps`, `/maps/[mapId]`, `GET /api/content/maps*` |
-| Map save, validate, submit, delete | `content.manage` | `POST/PUT /api/content/maps…` |
+| Map save, validate, submit, delete | author, or `content.manage` | `POST/PUT /api/content/maps…` |
+| Map create, `/maps/new` wizard | `content.manage` | `POST /api/content/maps`, `/maps/new` |
 | Map approve, reject, deactivate | `content.review` | `POST /api/content/maps/{id}/review`, `/deactivate` |
 | New-content type picker | signed in | `/new` |
 | Submit content | signed in | `/submissions/new` |
@@ -494,6 +495,13 @@ Three things this fixed beyond the 403s:
 Deliberately unchanged: [`ContentEndpoints`](../Veldrath.Server/Features/Content/ContentEndpoints.cs) stays
 `.AllowAnonymous()` because it is the documented public content API, and `/world-health` stays behind
 `content.view` because it prints internal consistency errors.
+
+Milestone J ([`community-map-authoring.md`](community-map-authoring.md)) narrowed two of those rows further.
+Map writes are **author-or-`content.manage`**: `MapCaller` decides per map, because an endpoint permission made
+every map an editor's map and left an author unable to touch their own draft. The list and the single read are
+scoped the same way — live maps plus your own drafts, everything for an editor or reviewer, and another
+account's draft reads as 404 rather than as a forbidden map that exists. Creating a map still needs
+`content.manage`, through the `/maps/new` wizard that is now the only create door.
 
 Navigation v2. The "two doors" problem (a New action inside every type, plus a submission form whose URL you
 had to know) is solved by one primary action that opens a type picker, and by naming the feed after what it

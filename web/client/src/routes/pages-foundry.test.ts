@@ -1208,7 +1208,14 @@ describe('review queue', () => {
 				],
 				// A map id carries a colon, so the link has to be encoded.
 				maps: [
-					{ id: 'zone:fenwick', name: 'Fenwick', mapType: 'Zone', ownerId: 'fenwick', version: 3 }
+					{
+						id: 'zone:fenwick',
+						name: 'Fenwick',
+						mapType: 'Zone',
+						ownerId: 'fenwick',
+						version: 3,
+						verdict: { status: 'ready', errors: 0, warnings: 1 }
+					}
 				],
 				error: null
 			})
@@ -1220,6 +1227,38 @@ describe('review queue', () => {
 		expect(screen.getByRole('link', { name: 'Fenwick' }).getAttribute('href')).toBe(
 			'/maps/zone%3Afenwick'
 		);
+		expect(screen.getByText('Approval would accept it · 1 warning')).toBeTruthy();
+	});
+
+	it('says why approval would refuse a map, and when the verdict is unavailable', () => {
+		render(
+			ReviewQueue,
+			page({
+				submissions: [],
+				maps: [
+					{
+						id: 'zone:blocked',
+						name: 'Blocked',
+						mapType: 'Zone',
+						ownerId: 'blocked',
+						version: 2,
+						verdict: { status: 'blocked', errors: 0, warnings: 1 }
+					},
+					{
+						id: 'zone:unknown',
+						name: 'Unknown',
+						mapType: 'Zone',
+						ownerId: 'unknown',
+						version: 1,
+						verdict: { status: 'unknown', errors: 0, warnings: 0 }
+					}
+				],
+				error: null
+			})
+		);
+
+		expect(screen.getByText('Approval would be refused · the map has no exit')).toBeTruthy();
+		expect(screen.getByText('The verdict could not be checked')).toBeTruthy();
 	});
 
 	it('renders an empty state for each kind', () => {

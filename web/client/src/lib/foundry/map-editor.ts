@@ -285,6 +285,64 @@ export function mapState(map: {
 	return (map.approvedVersion ?? 0) < map.version ? 'Changed since approval' : 'Live';
 }
 
+/** What the review queue can say about a submitted map before a reviewer opens it. */
+export interface MapReviewVerdict {
+	/** `ready` when approval would succeed, `blocked` when it would be refused, `unknown` when it could not be checked. */
+	status: 'ready' | 'blocked' | 'unknown';
+	/** Errors, which refuse an approval exactly as they refuse a save. */
+	errors: number;
+	/** Warnings, which a submitted draft may carry and which a reviewer still has to see. */
+	warnings: number;
+}
+
+/**
+ * Whether approving a submitted map would succeed.
+ *
+ * The decision re-runs the world rules, so a reviewer can see the answer before opening the graph instead of
+ * discovering a refusal at the end of it. A warning alone is not a refusal — a half-made map is how a zone gets
+ * built — except `map_without_exit`, which is what strands every character that arrives on the map.
+ *
+ * @param issues Issues from a validate pass, or `null` when the pass could not run.
+ * @returns The verdict, with the two counts a queue row shows.
+ */
+export function reviewVerdict(issues: readonly MapGraphIssue[] | null): MapReviewVerdict {
+	if (issues === null) return { status: 'unknown', errors: 0, warnings: 0 };
+
+	const errors = issues.filter((issue) => issue.severity === 'Error').length;
+	const blocking = issues.some((issue) => issue.code === 'map_without_exit');
+
+	return {
+		status: errors > 0 || blocking ? 'blocked' : 'ready',
+		errors,
+		warnings: issues.length - errors
+	};
+}
+
+/**
+ * One line a reviewer can act on, naming the count that decides the verdict.
+ *
+ * Kept beside `reviewVerdict` rather than in the page so the wording of a refusal has a test: zero errors with a
+ * blocked verdict is not a contradiction, it is the missing exit, and the row has to say so.
+ *
+ * @param verdict The verdict to describe.
+ * @returns The sentence the queue shows on that map's row.
+ */
+export function reviewVerdictLabel(verdict: MapReviewVerdict): string {
+	const errors = `${verdict.errors} error${verdict.errors === 1 ? '' : 's'}`;
+
+	if (verdict.status === 'unknown') return 'The verdict could not be checked';
+
+	if (verdict.status === 'blocked') {
+		return verdict.errors > 0
+			? `Approval would be refused · ${errors}`
+			: 'Approval would be refused · the map has no exit';
+	}
+
+	return verdict.warnings === 0
+		? 'Approval would accept it'
+		: `Approval would accept it · ${verdict.warnings} warning${verdict.warnings === 1 ? '' : 's'}`;
+}
+
 /**
  * Trims the two nullable text fields so a blank input means "no value" rather than an empty string.
  *

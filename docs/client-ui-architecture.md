@@ -167,10 +167,15 @@ clears the submission and leaves the draft editable, keeping the notes on the ma
 the reason is readable where the work is. Live maps are retired by deactivating — refused while another
 map's node still exits there — and only drafts can be deleted.
 
-**Access follows the author/reviewer split.** Reads need `content.view` (the graph carries hidden nodes and
-unlock keys, so it is never anonymous), authoring needs `content.manage`, and review and deactivation need
-the `Curator` role. Both decisions are audited, and the author is told in the inbox they already use for
-submission decisions.
+**Access follows the author/reviewer split.** Reads need a session and nothing more (the graph carries hidden
+nodes and unlock keys, so it is never anonymous); authoring a map is the author's own work, with
+`content.manage` able to write any; review and deactivation need the `content.review` **permission**, never a
+role. Drafts are scoped per caller, and `canEdit` on the DTOs is what the editor disables its controls with.
+
+A reviewer deciding on a map is deciding to publish it, so the review queue runs the world validator over each
+submitted graph first and says whether approval would accept or refuse it — including the one warning approval
+refuses, `map_without_exit`. Decisions are audited, and the author is told in the inbox they already use for
+submission decisions: rejections carry the reviewer's notes, and a retirement says the map left the game.
 
 ---
 

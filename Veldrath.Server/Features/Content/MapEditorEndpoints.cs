@@ -188,10 +188,28 @@ public static class MapEditorEndpoints
         string mapId,
         [FromServices] MapEditorService editor,
         [FromServices] ApplicationDbContext db,
+        [FromServices] FoundryNotificationWriter notifications,
         ClaimsPrincipal user,
         CancellationToken cancellationToken)
     {
         var result = await editor.DeactivateAsync(mapId, cancellationToken);
+
+        // Retiring a live map is as consequential as rejecting it, so its author hears about it the same way.
+        // An extra read after a successful write is the cheapest way to say that: the author and the name are
+        // the two facts the lifecycle response does not carry.
+        if (result.Success
+            && await editor.AuthorOfAsync(mapId, cancellationToken) is { } map
+            && map.AccountId is { } author)
+        {
+            await notifications.NotifyAsync(
+                author,
+                FoundryNotificationKind.MapReview,
+                map.Name,
+                $"Your map \"{map.Name}\" was retired by a reviewer and is no longer in the game.",
+                mapId: mapId,
+                cancellationToken: cancellationToken);
+        }
+
         return await LifecycleAsync(db, user, result, "deactivate_map", mapId, null);
     }
 

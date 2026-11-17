@@ -34,7 +34,9 @@ of `content.manage` can rewrite or delete anyone's map. That has to change befor
 4. **A new zone does not need a `ZoneLocation` before the map exists**, but it should not be *approved* until
    it has one location node and an exit back to its region. That is a validator rule, not a wizard step —
    and note that `map_without_exit` is a **warning** today, so an approval is not currently blocked by it.
-   J3 decides whether the rule belongs on the save, on the approval, or both.
+   J3 decided: `map_without_exit` stays a warning for the *save* (a half-made map is how a zone gets built) and
+   blocks *publication* (`BlocksPublication` in `ReviewAsync`), so approval refuses it. `location_missing_node`
+   is a warning, `node_reference_zone_mismatch` is an error.
 5. **The wizard is a plain form** (kind → owner → name → create), consistent with the content create pages: no
    client state, one POST, then land in the editor.
 
@@ -113,7 +115,7 @@ flowchart TD
 | J1 | `/maps/new` is the one create door: kind, owner and name, with the locations that already exist offered for an interior; the inline form left `/maps`; a fresh draft carries a checklist (first node, the way back, submit); the server refuses an interior whose location does not exist — **shipped 2026-11-17** |
 | J2 | a zone map shows the locations of its own zone: the loader pairs them by `zoneId`, a panel adds one as a node with its slug prefilled, a Create a location link goes to the `zonelocation` form, and the inspector's reference picker offers this zone's locations only — **shipped 2026-11-17** |
 | J3 | `node_reference_zone_mismatch` (error), `location_missing_node` and `map_unreachable` (warnings), and approval now refuses `map_without_exit` — **shipped 2026-11-17**; map findings are not on `/world-health` (see out of scope) |
-| J4 | not started |
+| J4 | the review queue checks every submitted map (`getMap` + `validateMap`) and says whether approval would accept it or refuse it, naming a refusal with no error as the missing exit; a rejection and a deactivation both notify the author, titled with the map's name — **shipped 2026-11-17** |
 
 ## 4. Out of scope
 

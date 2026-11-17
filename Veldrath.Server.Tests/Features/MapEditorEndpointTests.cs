@@ -413,4 +413,111 @@ public class MapEditorEndpointTests(WebAppFactory factory)
             .Should()
             .BeTrue("the author is told in the inbox they already use for submission decisions");
     }
+
+    [Fact]
+    public async Task Deactivating_A_LiveMap_TellsItsAuthor()
+    {
+        var (authorToken, authorAccountId) = await factory.CreateAccountTokenAsync(
+            "MapRetireAuthor",
+            "ContentEditor");
+        using var author = factory.CreateClient();
+        author.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authorToken);
+
+        var created = await author.PostAsJsonAsync(
+            "/api/content/maps",
+            new MapCreateRequest("Zone", "retire-zone", "Retire Zone"),
+            Json);
+        created.StatusCode.Should().Be(HttpStatusCode.Created);
+        var draft = await created.Content.ReadFromJsonAsync<MapGraphDto>(Json);
+
+        var saved = await author.PutAsJsonAsync(
+            $"/api/content/maps/{Uri.EscapeDataString(draft!.Id)}",
+            new MapGraphWriteRequest(WithAWayOut(draft!), draft!.Version),
+            Json);
+        saved.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var submitted = await author.PostAsJsonAsync(
+            $"/api/content/maps/{Uri.EscapeDataString(draft.Id)}/submit",
+            new { },
+            Json);
+        submitted.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var (reviewerToken, _) = await factory.CreateAccountTokenAsync("MapRetireReviewer", "Curator");
+        using var reviewer = factory.CreateClient();
+        reviewer.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", reviewerToken);
+
+        var approved = await reviewer.PostAsJsonAsync(
+            $"/api/content/maps/{Uri.EscapeDataString(draft.Id)}/review",
+            new MapReviewRequest(true),
+            Json);
+        approved.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var retired = await reviewer.PostAsJsonAsync(
+            $"/api/content/maps/{Uri.EscapeDataString(draft.Id)}/deactivate",
+            new { },
+            Json);
+        retired.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var notification = await db.FoundryNotifications.SingleAsync(candidate =>
+            candidate.Kind == FoundryNotificationKind.MapReview &&
+            candidate.MapId == draft.Id &&
+            candidate.RecipientId == authorAccountId &&
+            candidate.Message.Contains("retired"));
+
+        // The title is the map's name, not its id: the inbox is read by a person, and the author is the only
+        // account that learns a live map left the game.
+        notification.Title.Should().Be("Retire Zone");
+    }
+
+    [Fact]
+    public async Task Rejecting_A_SubmittedMap_TellsItsAuthorWhy()
+    {
+        var (authorToken, authorAccountId) = await factory.CreateAccountTokenAsync(
+            "MapRejectAuthor",
+            "ContentEditor");
+        using var author = factory.CreateClient();
+        author.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authorToken);
+
+        var created = await author.PostAsJsonAsync(
+            "/api/content/maps",
+            new MapCreateRequest("Zone", "reject-zone", "Reject Zone"),
+            Json);
+        created.StatusCode.Should().Be(HttpStatusCode.Created);
+        var draft = await created.Content.ReadFromJsonAsync<MapGraphDto>(Json);
+
+        var saved = await author.PutAsJsonAsync(
+            $"/api/content/maps/{Uri.EscapeDataString(draft!.Id)}",
+            new MapGraphWriteRequest(WithAWayOut(draft!), draft!.Version),
+            Json);
+        saved.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var submitted = await author.PostAsJsonAsync(
+            $"/api/content/maps/{Uri.EscapeDataString(draft.Id)}/submit",
+            new { },
+            Json);
+        submitted.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var (reviewerToken, _) = await factory.CreateAccountTokenAsync("MapRejectReviewer", "Curator");
+        using var reviewer = factory.CreateClient();
+        reviewer.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", reviewerToken);
+
+        var rejected = await reviewer.PostAsJsonAsync(
+            $"/api/content/maps/{Uri.EscapeDataString(draft.Id)}/review",
+            new MapReviewRequest(false, "Add a landmark before the exit."),
+            Json);
+        rejected.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var notification = await db.FoundryNotifications.SingleAsync(candidate =>
+            candidate.Kind == FoundryNotificationKind.MapReview &&
+            candidate.MapId == draft.Id &&
+            candidate.RecipientId == authorAccountId);
+
+        // A rejection that does not carry the reviewer's note is a dead end: the author cannot guess the fix.
+        notification.Title.Should().Be("Reject Zone");
+        notification.Message.Should().Contain("Add a landmark before the exit.");
+    }
 }

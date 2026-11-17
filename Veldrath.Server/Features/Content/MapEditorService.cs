@@ -844,6 +844,33 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
     private static bool BlocksPublication(IEnumerable<MapGraphIssueDto> issues) =>
         issues.Any(issue => issue.Code == "map_without_exit");
 
+    /// <summary>
+    /// The account to tell about a lifecycle change, and the name to title the notification with.
+    /// </summary>
+    /// <param name="mapId">Map identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>
+    /// The submitter or creator and the map's name, or <see langword="null"/> when no such map exists. Seeded
+    /// content has neither author, which the returned <see cref="MapAuthor.AccountId"/> reports as null.
+    /// </returns>
+    public async Task<MapAuthor?> AuthorOfAsync(string mapId, CancellationToken cancellationToken = default)
+    {
+        var map = await db.Maps
+            .AsNoTracking()
+            .Where(candidate => candidate.Id == mapId)
+            .Select(candidate => new
+            {
+                candidate.SubmittedByAccountId,
+                candidate.CreatedByAccountId,
+                candidate.Name,
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return map is null
+            ? null
+            : new MapAuthor(map.SubmittedByAccountId ?? map.CreatedByAccountId, map.Name);
+    }
+
     private static MapLifecycleResponse Forbidden(string mapId) =>
         new(
             false,
