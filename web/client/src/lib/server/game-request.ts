@@ -48,8 +48,16 @@ export function describeAuthFailure(response: Response): string | null {
 function extractError(body: string, status: number): string {
 	if (body) {
 		try {
-			const parsed = JSON.parse(body) as { error?: string; title?: string; detail?: string };
-			const message = parsed.error ?? parsed.detail ?? parsed.title;
+			// `message` is the shape every Veldrath operation result uses (`MapLifecycleResponse`,
+			// `ContentWriteResult`), so a refused approval or save reads as its reason rather than
+			// "Request failed (400)". The RFC 7807 fields stay for framework-generated bodies.
+			const parsed = JSON.parse(body) as {
+				error?: string;
+				title?: string;
+				detail?: string;
+				message?: string;
+			};
+			const message = parsed.error ?? parsed.detail ?? parsed.title ?? parsed.message;
 			if (message) return message;
 		} catch {
 			// Fall through to the raw body.

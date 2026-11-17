@@ -191,11 +191,11 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  # The authenticated game loop needs the real .NET API (SSR calls /api/characters
-  # server-side) and a live SignalR hub, so this job boots Veldrath.Server against
-  # the Postgres service instead of mocking anything.
+  # The authenticated workflows — the game loop and the Foundry journeys — need the real .NET API
+  # (every SvelteKit loader calls it server-side) and a live SignalR hub, so this job boots
+  # Veldrath.Server against the Postgres service instead of mocking anything.
   e2e-game:
-    name: Game loop e2e (real server)
+    name: Authenticated e2e (real server)
     needs: build-test
     runs-on: ubuntu-latest
 
@@ -219,9 +219,13 @@ jobs:
       PUBLIC_HUB_URL: http://127.0.0.1:9000/hubs/game
       INTERNAL_BRIDGE_URL: http://127.0.0.1:9000
       INTERNAL_BRIDGE_TOKEN: test-internal-bridge-token-change-me
-      # Playwright spec gate
+      # Playwright spec gates: the game loop and the Foundry journeys.
       E2E_GAME: '1'
+      E2E_STACK: '1'
       E2E_API_URL: http://127.0.0.1:9000
+      # A role granted by the harness has to be usable on the next request; the snapshot cache is
+      # what stands in the way, and these specs are the only place it is not wanted.
+      Auth__AccessCacheSeconds: '0'
 
     services:
       postgres:
@@ -292,9 +296,13 @@ jobs:
         working-directory: web
         run: npx playwright install --with-deps chromium
 
-      - name: Run the game loop spec
+      - name: Run the authenticated specs
         working-directory: web/client
-        run: npx playwright test tests/game-loop.e2e.ts
+        run: |
+          npx playwright test \
+            tests/game-loop.e2e.ts \
+            tests/foundry-content.e2e.ts \
+            tests/foundry-maps.e2e.ts
 
       - name: Server log
         if: failure()

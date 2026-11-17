@@ -186,6 +186,9 @@ describe('gameApiFetch', () => {
 		['{"error":"slug is taken"}', 400, 'slug is taken'],
 		['{"detail":"conflict"}', 409, 'conflict'],
 		['{"title":"Validation failed"}', 422, 'Validation failed'],
+		// Veldrath's own operation results (`MapLifecycleResponse`, `ContentWriteResult`) carry `message`,
+		// and a refused approval has to reach the reviewer as its reason rather than as "Request failed".
+		['{"message":"The map has no exit."}', 400, 'The map has no exit.'],
 		['short failure', 500, 'short failure']
 	])('surfaces a %s body as the error message', async (body, status, expected) => {
 		restores.push(withEnv({ INTERNAL_BRIDGE_URL: 'http://bridge' }));

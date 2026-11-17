@@ -3949,3 +3949,48 @@ milestone I actually shipped — there is no `feat/milestone-i-*` branch).
 **Counts after J:** 6,089 .NET tests (1,677 server, 2,744 core, 510 data, 1,158 shared), 1,463 web unit tests,
 30 Playwright tests (2 skipped), coverage 90.03% branches, lint/typecheck/build and
 `dotnet format --verify-no-changes` clean.
+
+### K — web e2e: user workflows (2026-11-17)
+
+Plan: [`plans/web-e2e-workflows.md`](../../plans/web-e2e-workflows.md). The ask was blunt: "I can't always spend
+time manually testing the UI." Before this, e2e proved *routes* (a spec mentioned every `+page.svelte`) and one
+gated map smoke test — not one Foundry journey.
+
+- **A browser mock cannot test these pages.** Every Foundry loader calls `gameApiFetch` on the SvelteKit server,
+  so `page.route()` never sees the request. The specs need Postgres + `Veldrath.Server` + the preview: see
+  [`scripts/e2e-stack.sh`](../../scripts/e2e-stack.sh) (`start|stop|status`) and
+  [`web/client/tests/support/stack.ts`](../../web/client/tests/support/stack.ts).
+- **Accounts are real, roles are written directly.** There is no bootstrap admin, so `grantRoles` inserts the
+  `AspNetUserRoles` row (`AspNetUsers`/`AspNetRoles`, PascalCase quoted identifiers, no snake_case) after the
+  first `/foundry` visit provisions the Identity row. Roles already carry their permission claims from startup
+  seeding. Accounts are created through `/register`, so Better Auth owns the session.
+- **JWT key mismatch is the #1 first-run failure** (`401 The signature key was not found`): the stack script
+  reads `JWT_KEY`/`JWT_ISSUER`/`JWT_AUDIENCE`/`INTERNAL_BRIDGE_TOKEN` from `web/client/.env`. Do not hardcode them.
+- **The API port is not 9000 by default** in Development: `appsettings.Development.json` says `:5000`, so the
+  script pins `ASPNETCORE_URLS=http://127.0.0.1:9000` to match `PUBLIC_API_URL`.
+- **Gating:** `E2E_STACK=1` enables the specs; `Auth__AccessCacheSeconds=0` is required (see below).
+  `npm run test:e2e:stack` runs them; plain `npm run test` stays stack-free.
+- **What CI does now:** the `e2e-game` job of `ci-web.yml` sets `E2E_STACK=1` and runs
+  `game-loop` + `foundry-content` + `foundry-maps`.
+
+Four defects these specs found (each only visible when the real app meets the real API):
+
+1. `GET /api/account/profile` reported **no permissions** for a role holder — it read only per-user claims, while
+   a role carries its permissions as *role* claims. Every ContentEditor and Curator looked permissionless, so the
+   web app hid the authoring surface and the review queue from them. Fixed via `RolePermissionResolver` in
+   `AccountService`, with two `AccountEndpointTests`.
+2. A granted role did not apply for up to 60s: `AccountProvisioningService` caches the access snapshot. The four
+   admin role/permission endpoints now call `AccountProvisioningService.Invalidate(accountId)`, and the TTL is
+   `Auth:AccessCacheSeconds` (0 disables the cache).
+3. A refused map approval surfaced as **"Request failed (400)."** — `game-request.ts#extractError` only read
+   `error|detail|title`. It now reads `message` too, which is the shape every Veldrath operation result uses.
+4. **Foundry could not create any content**: `ContentShapeRules.ValidateShared` requires `ContentBase.TypeKey` and
+   no schema exposed it (`type_key_missing`); abilities also had the field named `abilityType` while the model and
+   validator read `powerType`. `ContentSchema.cs` now authors `typeKey` in the shared Identity group and
+   `powerType` (including `innate`) for abilities and spells.
+
+Still open, recorded in the plan: content **writes** through the form fail with "The request body is not a valid
+content payload" — `ContentEntityTypes.Deserialize` returns null for the nested payload `buildPayload` produces
+(a flat payload with the same values creates the entity, 201). That is the next fix, and the content spec is
+ready to grow its write half. E3–E5 (submissions round trip, editorial/admin/mod, public detail pages) are
+planned; each retires an exemption in `parity/routes.test.ts` rather than adding one.

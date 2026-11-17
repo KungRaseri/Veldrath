@@ -229,6 +229,9 @@ public static class AdminEndpoints
             return Results.BadRequest(new AdminActionResponse(false, string.Join("; ", result.Errors.Select(e => e.Description))));
 
         await WriteAuditAsync(db, actor, user.Id, user.UserName, "assign_role", request.Role);
+        // A granted role has to be usable on the account's next request, not after the access cache
+        // expires: the admin who grants it is usually the one asking the account to try again.
+        Auth.AccountProvisioningService.Invalidate(user.Id);
         return Results.Ok(new AdminActionResponse(true, $"Role '{request.Role}' assigned."));
     }
 
@@ -250,6 +253,7 @@ public static class AdminEndpoints
             return Results.BadRequest(new AdminActionResponse(false, string.Join("; ", result.Errors.Select(e => e.Description))));
 
         await WriteAuditAsync(db, actor, user.Id, user.UserName, "revoke_role", role);
+        Auth.AccountProvisioningService.Invalidate(user.Id);
         return Results.Ok(new AdminActionResponse(true, $"Role '{role}' revoked."));
     }
 
@@ -275,6 +279,7 @@ public static class AdminEndpoints
             return Results.BadRequest(new AdminActionResponse(false, string.Join("; ", result.Errors.Select(e => e.Description))));
 
         await WriteAuditAsync(db, actor, user.Id, user.UserName, "grant_permission", request.Permission);
+        Auth.AccountProvisioningService.Invalidate(user.Id);
         return Results.Ok(new AdminActionResponse(true, $"Permission '{request.Permission}' granted."));
     }
 
@@ -298,6 +303,7 @@ public static class AdminEndpoints
             return Results.BadRequest(new AdminActionResponse(false, string.Join("; ", result.Errors.Select(e => e.Description))));
 
         await WriteAuditAsync(db, actor, user.Id, user.UserName, "revoke_permission", permission);
+        Auth.AccountProvisioningService.Invalidate(user.Id);
         return Results.Ok(new AdminActionResponse(true, $"Permission '{permission}' revoked."));
     }
 

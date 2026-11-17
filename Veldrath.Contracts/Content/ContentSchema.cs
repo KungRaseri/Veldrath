@@ -121,6 +121,12 @@ public static class ContentSchemaRegistry
         new("displayName", "Display Name", ContentFieldType.Text,    Required: true),
         new("slug",        "Slug",         ContentFieldType.Slug,    Required: true,
             Hint: "Lowercase letters, numbers, and hyphens only (e.g. fire-bolt)"),
+        // `ContentBase.TypeKey` is what the loader uses to decide which rows of a table are this kind of
+        // content, and `ContentShapeRules.ValidateShared` refuses an entry without one. It was the one
+        // required field the schemas did not ask for, so every entry created here failed validation with
+        // `type_key_missing`.
+        new("typeKey",     "Type Key",      ContentFieldType.Text,    Required: true,
+            Hint: "Discriminator the loader groups this entry by (e.g. active/offensive)"),
         new("rarityWeight","Rarity Weight", ContentFieldType.Integer, Default: "50", Min: 1, Max: 100,
             Hint: "1 = extremely rare, 100 = very common"),
         new("isActive",    "Active",        ContentFieldType.Boolean, Default: "true"),
@@ -133,8 +139,10 @@ public static class ContentSchemaRegistry
         [
             Identity(),
             new("Ability", [
-                new("abilityType", "Ability Type", ContentFieldType.EnumString, Required: true,
-                    EnumValues: ["active", "passive", "reactive", "ultimate"],
+                // The payload key is `powerType` (Power.PowerType); the schema said `abilityType`, so the
+                // select wrote a key nothing read and the validator kept reporting a missing power type.
+                new("powerType", "Power Type", ContentFieldType.EnumString, Required: true,
+                    EnumValues: ["innate", "active", "passive", "reactive", "ultimate"],
                     Hint: "Base classification of when and how the ability is triggered"),
             ]),
             new("Stats", [
@@ -555,6 +563,10 @@ public static class ContentSchemaRegistry
             new("Spell", [
                 new("school","School",ContentFieldType.EnumString, Required: true,
                     EnumValues: ["fire", "frost", "arcane", "holy", "shadow", "nature", "lightning", "earth"]),
+                // Spells share the Power table and the PowerValidator, which requires a power type.
+                new("powerType", "Power Type", ContentFieldType.EnumString, Required: true,
+                    EnumValues: ["innate", "active", "passive", "reactive", "ultimate"],
+                    Hint: "Base classification of when and how the spell is triggered"),
             ]),
             new("Stats", [
                 new("stats.manaCost",  "Mana Cost",     ContentFieldType.Integer, Min: 0, Max: 1000),
