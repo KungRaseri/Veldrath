@@ -4095,6 +4095,24 @@ Seventh pass closed the two §6 leftovers.
   `ORIGIN=http://localhost:5173` (the dev server). Use
   `ORIGIN=http://localhost:4173 BETTER_AUTH_URL=http://localhost:4173 CI=true E2E_STACK=1 npx playwright test <spec>`.
 
+Eighth pass — **the .NET coverage gate was red, and it was `Veldrath.Server` branches**: 80.6% against a floor of 82
+(measured 2026-11-17 with the pinned SDK 10.0.402, `dotnet test Realm.Full.slnx -c Release --collect "XPlat Code
+Coverage"` → `scripts/coverage-report.sh` → `scripts/check-dotnet-coverage.mjs`). Driver: whole features landed with
+no tests, and the gate only sees a regression once the branch count grows. Closed to **82.5% branch / 95.2% line**
+(total 82.7% / 95.1%) with two suites:
+
+- [`GetCraftableRecipesQueryTests`](../../Veldrath.Server.Tests/Features/GetCraftableRecipesQueryTests.cs) — the
+  craft panel's entire data source had **zero** tests, so `GetCraftableRecipesQuery.cs` sat at 0%. Eleven tests now
+  cover the three gates in order (level → skill rank → materials), the joined shortfall sentence, ranked attribute
+  parsing (`Skill_{id}_Rank`, unreadable JSON, missing rank = 0), the informational normalisation and the panel's
+  ordering.
+- [`DotEnvConfigurationTests`](../../Veldrath.Server.Tests/Infrastructure/DotEnvConfigurationTests.cs) — the
+  `.env` loader was at 5.9%. It is `internal`, so `Veldrath.Server.csproj` now has
+  `<InternalsVisibleTo Include="Veldrath.Server.Tests" />`. **The class is in a `DisableParallelization`
+  collection** because it writes process environment variables; do the same for any future env-mutating test.
+
+The remaining large gaps are `CharacterCreationSessionEndpoints.cs` (65%), `GetInventoryHubCommand` (67%) and the
+`GameHub` partials — worth ~2 more points if the floor ever needs margin. The floors themselves were not touched.
 **Still open — and it is a game defect, not only a test gap:** combat and death (E13c/d) need a known encounter,
 and there is none. **No seeded zone location has an `ActorPool`** (verified with
 `jsonb_array_length("ActorPool")` over `ZoneLocations`: every row is 0), and `ActorPoolResolver.SpawnRosterAsync`
