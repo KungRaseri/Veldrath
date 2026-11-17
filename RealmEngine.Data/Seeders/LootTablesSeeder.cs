@@ -194,6 +194,58 @@ public static class LootTablesSeeder
                         IsGuaranteed = false,
                     },
                 ],
+            },
+
+            // The Cinderplain's final boss. A boss with no drop table is a fight with no reason to have it, which is
+            // why the seed guard asserts that every hostile boss names one.
+            new LootTable
+            {
+                Slug         = "fire-ancient-drops",
+                TypeKey      = "enemies",
+                DisplayName  = "Fire-Ancient Drops",
+                RarityWeight = 15,
+                IsActive     = true,
+                Version      = 1,
+                UpdatedAt    = now,
+                Traits = new LootTableTraits
+                {
+                    Common = false,
+                    Boss   = true,
+                    Elite  = false,
+                    Rare   = true,
+                    IsChest      = false,
+                    IsHarvesting = false,
+                },
+                Entries =
+                [
+                    new LootTableEntry
+                    {
+                        ItemDomain   = "items/general",
+                        ItemSlug     = "fire-ruby",
+                        DropWeight   = 100,
+                        QuantityMin  = 1,
+                        QuantityMax  = 2,
+                        IsGuaranteed = true,
+                    },
+                    new LootTableEntry
+                    {
+                        ItemDomain  = "items/general",
+                        ItemSlug    = "essence-of-fire",
+                        DropWeight  = 60,
+                        QuantityMin = 2,
+                        QuantityMax = 4,
+                        IsGuaranteed = false,
+                    },
+                    new LootTableEntry
+                    {
+                        ItemDomain  = "items/general",
+                        ItemSlug    = "orb-of-force",
+                        DropWeight  = 25,
+                        QuantityMin = 1,
+                        QuantityMax = 1,
+                        IsGuaranteed = false,
+                    },
+                ],
             }
     ];
 }
