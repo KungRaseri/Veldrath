@@ -109,4 +109,53 @@ test.describe('moderation actions journey', () => {
 		await reporterContext.close();
 		await modContext.close();
 	});
+
+	test('a kick reaches the player inside the game, with the moderator’s reason', async ({
+		browser,
+		request
+	}) => {
+		// A player who is actually in the world: the kick acts on a live hub session.
+		const playerContext = await browser.newContext();
+		const player = await playerContext.newPage();
+		const target = makeAccount('e2ekick');
+		await register(player, target);
+
+		const token = await gameToken(player);
+		const created = await request.post(`${apiBase}/api/characters`, {
+			headers: { authorization: `Bearer ${token}` },
+			data: {
+				name: `Kick${Date.now().toString(36)}`.slice(0, 20),
+				className: 'Warrior',
+				difficultyMode: 'normal'
+			}
+		});
+		expect(created.status(), await created.text()).toBe(201);
+		const character = (await created.json()) as { id: string };
+
+		await player.goto(`/play/${character.id}`);
+		// The map renders only once the hub has connected and pushed a snapshot.
+		await expect(player.locator('.map-node-cell button').first()).toBeVisible({ timeout: 30_000 });
+
+		const modContext = await browser.newContext();
+		const moderator = await modContext.newPage();
+		await signUpWithRoles(moderator, ['Moderator'], 'e2ekicker');
+
+		const reason = `E2E kick ${Date.now().toString(36)}`;
+		await moderator.goto(`/mod/users?search=${encodeURIComponent(target.username)}`);
+		await moderator.getByRole('link', { name: target.username }).click();
+		await expect(moderator.getByRole('heading', { level: 1, name: target.username })).toBeVisible({
+			timeout: 20_000
+		});
+		const kickForm = moderator
+			.locator('form')
+			.filter({ has: moderator.getByRole('button', { name: 'Kick sessions' }) });
+		await kickForm.locator('input[name="reason"]').fill(reason);
+		await moderator.getByRole('button', { name: 'Kick sessions' }).click();
+
+		// The kicked client shows the reason the moderator typed — the hub's `OnKicked` path.
+		await expect(player.getByText(reason)).toBeVisible({ timeout: 30_000 });
+
+		await playerContext.close();
+		await modContext.close();
+	});
 });

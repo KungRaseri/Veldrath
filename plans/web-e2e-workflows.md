@@ -95,10 +95,11 @@ the reason the portal exists:
 account: `/editorial` and its three lists, `/admin` and its user list, `/admin/audit`, `/mod`, `/mod/users` with a
 real filter round trip, and `/mod/reports?resolved=false`. Then a plain player is refused all three areas (403).
 
-[`staff-actions.e2e.ts`](../web/client/tests/staff-actions.e2e.ts) — the moderation verbs on a **real registered
+[`staff-actions.e2e.ts`](../web/client/tests/staff-actions.e2e.ts) — every moderation verb on a **real registered
 player** found through the user search: Issue warning → the page shows "1 warnings"; Mute for 30 minutes → the
-"Muted" chip appears; Unmute → it clears. Kick is deliberately not asserted: it acts on live sessions and this
-suite never opens the hub, so a kick could only prove "nobody online".
+"Muted" chip appears; Unmute → it clears. And a second test puts a player *in the world* (character created
+through the API, `/play/{id}` waiting for the hub's snapshot), then kicks them from the user page and asserts the
+player's own screen shows the reason the moderator typed — the hub's `OnKicked` path, end to end.
 
 [`editorial-publishing.e2e.ts`](../web/client/tests/editorial-publishing.e2e.ts) — writing for the public site:
 create an announcement → Publish → it appears on `/community`; create a patch note → Publish → its public article
@@ -160,12 +161,17 @@ real web app meets the real API:
 
 ## 6. Still open
 
-- **Kick** is the one moderation verb not driven: it acts on live sessions and this suite never opens the hub, so
-  a kick could only prove "nobody online".
+Every page route is now driven by a spec; `parity/routes.test.ts` is down to two exemptions — `/api/**` (route
+handlers, covered by unit tests) and `/languages/**` (a redirect onto the content type). What is left is depth,
+not breadth:
+
 - **The review queue validates every submitted map on load** (two API calls per row). Fine for a page of maps;
   worth moving onto `MapSummaryDto` if the queue ever pages.
-- **`parity/routes.test.ts` is down to two exemptions**: `/api/**` (route handlers, covered by unit tests) and
-  `/languages/**` (a redirect onto the content type). Every page route is now referenced by a spec that drives it.
+- **A kicked player sees the reason in the error banner but the game screen keeps rendering** — `phase` becomes
+  `disconnected` and nothing consumes it. The spec asserts the banner (which is what a player actually sees);
+  giving a disconnected session its own screen is a UI task, not a test one.
+- **The E2E seed is shared**: specs create unique accounts and slugs, but a long-lived local database accumulates
+  them. A `--fresh` flag on `scripts/e2e-stack.sh` (drop and re-migrate) would keep repeated runs honest.
 
 ## 7. Phases
 
@@ -180,7 +186,8 @@ real web app meets the real API:
 | E6 | Moderation verbs (warn, mute, unmute) on a real player, and publishing an announcement and a patch note through to the public site | **shipped 2026-11-17** |
 | E7 | Role grant → live for the player → revoke, the admin sub-pages, `editorial/lore/[id]`, and resolving a report end to end; the admin/mod/editorial/players/leaderboard exemptions retired | **shipped 2026-11-17** |
 | E8 | Guarding each gated page load on `parent()` so a refused page makes no API call (11 admin/mod loaders; the run now logs zero refused `/api/mod…`/`/api/admin…` calls) | **shipped 2026-11-17** |
-| E9 | Kick, which needs a live hub session in the spec | next |
+| E9 | Kick, with the player in the world: the moderator's reason reaches the client's own screen | **shipped 2026-11-17** |
+| E10 | Depth, not breadth (§6): a diff before promotion on the review queue, the disconnected-session screen, a `--fresh` stack | next |
 
 E3–E5 are recorded here rather than half-built: the harness is what makes them cheap, and each one retires an
 exemption in [`parity/routes.test.ts`](../web/client/src/lib/parity/routes.test.ts) rather than adding a new

@@ -4048,4 +4048,13 @@ unresolved and resolves it), and `editorial-publishing` publishes a lore article
   refused `/api/mod…`/`/api/admin…` calls. **Do this in any new gated page load**; the layout remains the only
   place the permission is decided.
 
-Still open (E9): kick, which needs a live hub session in the spec.
+Fifth pass closed E9: **kick is covered end to end.** `staff-actions` puts a player in the world (character via
+`POST /api/characters` with a minted token, then `/play/{id}` waiting for `.map-node-cell button` — the hub's first
+snapshot), the moderator kicks with a reason from `/mod/users/{id}`, and the player's own screen shows that reason
+in the `session.error` banner (`GameScreen.svelte`). Note `phase` becomes `disconnected` and **nothing renders
+it** — the banner is all a kicked player gets; giving that phase its own screen is an open UI task.
+
+**The e2e suite is breadth-complete:** every page route is driven by a spec, and `parity/routes.test.ts` is down
+to `/api/**` and the `/languages` redirect. Nine stack specs, ~3.5 minutes together. What is left is depth (E10 in
+the plan): a diff before promotion on the review queue, the disconnected-session screen, and a `--fresh` flag on
+`scripts/e2e-stack.sh` so a reused local database does not accumulate accounts.
