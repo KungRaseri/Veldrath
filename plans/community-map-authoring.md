@@ -31,8 +31,10 @@ of `content.manage` can rewrite or delete anyone's map. That has to change befor
    second review path would duplicate H5's promotion model for no gain.
 3. **Draft visibility is scoped**: a player sees live maps plus their own drafts; `content.manage` and
    `content.review` see everything. Same shape as `FoundrySubmissionScope`.
-4. **A new zone does not need a `ZoneLocation` before the map exists**, but it cannot be *approved* until it
-   has one location node and an exit back to its region. That is a validator rule, not a wizard step.
+4. **A new zone does not need a `ZoneLocation` before the map exists**, but it should not be *approved* until
+   it has one location node and an exit back to its region. That is a validator rule, not a wizard step —
+   and note that `map_without_exit` is a **warning** today, so an approval is not currently blocked by it.
+   J3 decides whether the rule belongs on the save, on the approval, or both.
 5. **The wizard is a plain form** (kind → owner → name → create), consistent with the content create pages: no
    client state, one POST, then land in the editor.
 
