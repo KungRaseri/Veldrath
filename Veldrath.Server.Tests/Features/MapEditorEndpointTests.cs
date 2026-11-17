@@ -112,18 +112,20 @@ public class MapEditorEndpointTests(WebAppFactory factory)
     }
 
     [Fact]
-    public async Task Validate_RequiresTheWritePermission()
+    public async Task Validate_IsOpenToAnySignedInAccount()
     {
         var mapId = await EnsureAMapAsync();
-        using var client = await AuthedClientAsync("MapCuratorValidator", "Curator");
-        var graph = await ReadMapAsync(client, mapId);
+        using var plain = await AuthedClientAsync("MapPlainValidator");
+        var graph = await ReadMapAsync(plain, mapId);
 
-        var response = await client.PostAsJsonAsync(
+        var response = await plain.PostAsJsonAsync(
             $"/api/content/maps/{Uri.EscapeDataString(mapId)}/validate",
             new MapGraphValidationRequest(graph!),
             Json);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        // Validating answers what a save would say and writes nothing, and the graph it reads is already
+        // readable by the same account, so it is not a write permission.
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
@@ -173,29 +175,104 @@ public class MapEditorEndpointTests(WebAppFactory factory)
     }
 
     [Fact]
-    public async Task Create_RequiresTheWritePermission()
+    public async Task Create_OpensADraftForAnySignedInAccount()
     {
+        using var anonymous = factory.CreateClient();
+        (await anonymous.PostAsJsonAsync(
+                "/api/content/maps",
+                new MapCreateRequest("Zone", "anon-zone", "Nope"),
+                Json))
+            .StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+
         using var plain = await AuthedClientAsync("MapPlainCreator");
-        (await plain.PostAsJsonAsync(
-                "/api/content/maps",
-                new MapCreateRequest("Zone", "plain-zone", "Nope"),
-                Json))
+        var created = await plain.PostAsJsonAsync(
+            "/api/content/maps",
+            new MapCreateRequest("Zone", "plain-zone", "Plain Zone"),
+            Json);
+
+        created.StatusCode.Should().Be(HttpStatusCode.Created);
+        var draft = await created.Content.ReadFromJsonAsync<MapGraphDto>(Json);
+        draft!.IsActive.Should().BeFalse("a new map is a draft");
+        draft.CanEdit.Should().BeTrue("the account that created a map is its author");
+    }
+
+    [Fact]
+    public async Task Save_RefusesAMapCreatedByAnotherAccount()
+    {
+        var (authorToken, _) = await factory.CreateAccountTokenAsync("MapOwn_Author");
+        using var author = factory.CreateClient();
+        author.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authorToken);
+        var created = await author.PostAsJsonAsync(
+            "/api/content/maps",
+            new MapCreateRequest("Zone", "own-zone", "Own Zone"),
+            Json);
+        var draft = await created.Content.ReadFromJsonAsync<MapGraphDto>(Json);
+
+        using var stranger = await AuthedClientAsync("MapOwn_Stranger");
+        var refused = await stranger.PutAsJsonAsync(
+            $"/api/content/maps/{Uri.EscapeDataString(draft!.Id)}",
+            new MapGraphWriteRequest(draft with { Name = "Hijacked" }, draft.Version),
+            Json);
+        refused.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        // The same write succeeds for the author, which is what shows the refusal above was ownership and not
+        // the graph.
+        var saved = await author.PutAsJsonAsync(
+            $"/api/content/maps/{Uri.EscapeDataString(draft.Id)}",
+            new MapGraphWriteRequest(draft with { Name = "Own Zone Renamed" }, draft.Version),
+            Json);
+        saved.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ReadMapAsync(author, draft.Id))!.Name.Should().Be("Own Zone Renamed");
+    }
+
+    [Fact]
+    public async Task Delete_RefusesADraftCreatedByAnotherAccount()
+    {
+        var (authorToken, _) = await factory.CreateAccountTokenAsync("MapDel_Author");
+        using var author = factory.CreateClient();
+        author.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authorToken);
+        var created = await author.PostAsJsonAsync(
+            "/api/content/maps",
+            new MapCreateRequest("Zone", "del-zone", "Del Zone"),
+            Json);
+        var draft = await created.Content.ReadFromJsonAsync<MapGraphDto>(Json);
+
+        using var stranger = await AuthedClientAsync("MapDel_Stranger");
+        (await stranger.DeleteAsync($"/api/content/maps/{Uri.EscapeDataString(draft!.Id)}"))
             .StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
-        // A Curator reviews; it does not author.
-        using var curator = await AuthedClientAsync("MapCuratorCreator", "Curator");
-        (await curator.PostAsJsonAsync(
-                "/api/content/maps",
-                new MapCreateRequest("Zone", "curator-zone", "Nope"),
-                Json))
-            .StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await author.DeleteAsync($"/api/content/maps/{Uri.EscapeDataString(draft.Id)}"))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+    }
 
-        using var editor = await AuthedClientAsync("MapEditorCreator", "ContentEditor");
-        (await editor.PostAsJsonAsync(
-                "/api/content/maps",
-                new MapCreateRequest("Zone", "editor-zone", "Yes"),
-                Json))
-            .StatusCode.Should().Be(HttpStatusCode.Created);
+    [Fact]
+    public async Task GetAndList_HideAnotherAccountsDraft_AndMarkTheAuthorsOwnAsEditable()
+    {
+        var (authorToken, _) = await factory.CreateAccountTokenAsync("MapList_Author");
+        using var author = factory.CreateClient();
+        author.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authorToken);
+        var created = await author.PostAsJsonAsync(
+            "/api/content/maps",
+            new MapCreateRequest("Zone", "list-zone", "List Zone"),
+            Json);
+        var draft = await created.Content.ReadFromJsonAsync<MapGraphDto>(Json);
+
+        using var stranger = await AuthedClientAsync("MapList_Stranger");
+        var strangerList = await stranger.GetFromJsonAsync<List<MapSummaryDto>>("/api/content/maps", Json);
+        strangerList!.Should().NotContain(map => map.Id == draft!.Id, "a draft belongs to its author");
+
+        (await stranger.GetAsync($"/api/content/maps/{Uri.EscapeDataString(draft!.Id)}"))
+            .StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        var authorList = await author.GetFromJsonAsync<List<MapSummaryDto>>("/api/content/maps", Json);
+        authorList!.Single(map => map.Id == draft!.Id).CanEdit.Should().BeTrue();
+
+        // An editor sees every draft, and may write it.
+        using var editor = await AuthedClientAsync("MapList_Editor", "ContentEditor");
+        var editorList = await editor.GetFromJsonAsync<List<MapSummaryDto>>("/api/content/maps", Json);
+        editorList!.Single(map => map.Id == draft!.Id).CanEdit.Should().BeTrue();
+        (await editor.GetAsync($"/api/content/maps/{Uri.EscapeDataString(draft.Id)}"))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]

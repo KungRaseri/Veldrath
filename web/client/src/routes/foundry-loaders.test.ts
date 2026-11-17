@@ -201,7 +201,9 @@ beforeEach(() => {
 	foundryApi.voteSubmission.mockResolvedValue(ok(null));
 	foundryApi.reviewSubmission.mockResolvedValue(ok(null));
 	mapsApi.listMaps.mockResolvedValue(ok([{ id: 'zone:fenwick', name: 'Fenwick' }]));
-	mapsApi.getMap.mockResolvedValue(ok({ id: 'zone:fenwick', nodes: [], edges: [], version: 3 }));
+	mapsApi.getMap.mockResolvedValue(
+		ok({ id: 'zone:fenwick', nodes: [], edges: [], version: 3, canEdit: true })
+	);
 	mapsApi.validateMap.mockResolvedValue(ok({ isValid: true, issues: [] }));
 	mapsApi.createMap.mockResolvedValue(ok({ id: 'zone:draft-zone', name: 'Draft Zone' }));
 	mapsApi.submitMap.mockResolvedValue(
@@ -274,12 +276,17 @@ describe('map editor', () => {
 		).toBe('Map not found.');
 	});
 
-	it('opens one graph for an account that can only read', async () => {
+	it("takes the write flag from the graph, so another account's map has no controls", async () => {
+		mapsApi.getMap.mockResolvedValueOnce(
+			ok({ id: 'zone:fenwick', nodes: [], edges: [], version: 3, canEdit: false })
+		);
+
 		const result = (await callLoad(
 			mapPage,
-			signedIn({ params, parentData: { canManageContent: false, canReview: false } })
+			signedIn({ params, parentData: { canManageContent: true, canReview: false } })
 		)) as { canEdit: boolean };
 
+		// A content editor may read every map; the server still decides which ones they may write.
 		expect(result.canEdit).toBe(false);
 	});
 

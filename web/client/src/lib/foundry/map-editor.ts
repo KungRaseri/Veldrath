@@ -59,6 +59,11 @@ export interface MapGraphDto {
 	lastReviewNotes?: string | null;
 	/** When the last review decision was made. */
 	lastReviewedAt?: string | null;
+	/**
+	 * Whether this account may write the map: the account that created it, or anyone holding
+	 * `content.manage`. Decided per map by the server, so a reader of someone else's draft gets no controls.
+	 */
+	canEdit?: boolean;
 }
 
 /** One option in a reference picker, mirroring `Veldrath.Contracts.Map.MapTargetOptionDto`. */

@@ -23,7 +23,8 @@ public record MapSummaryDto(
     int ApprovedVersion = 0,
     DateTimeOffset? SubmittedAt = null,
     string? LastReviewNotes = null,
-    DateTimeOffset? LastReviewedAt = null)
+    DateTimeOffset? LastReviewedAt = null,
+    bool CanEdit = false)
 {
     /// <summary>Whether the map is live but has been edited since a reviewer approved it.</summary>
     public bool ChangedSinceApproval => IsActive && ApprovedVersion < Version;
@@ -75,7 +76,8 @@ public record MapGraphDto(
     DateTimeOffset? SubmittedAt = null,
     DateTimeOffset? ApprovedAt = null,
     string? LastReviewNotes = null,
-    DateTimeOffset? LastReviewedAt = null)
+    DateTimeOffset? LastReviewedAt = null,
+    bool CanEdit = false)
 {
     /// <summary>
     /// Whether the map has been edited since a reviewer approved it. Derived rather than stored, so it cannot

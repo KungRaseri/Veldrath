@@ -27,7 +27,7 @@ import {
  */
 export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	const user = requireUser(locals);
-	const { canManageContent, canReview } = await parent();
+	const { canReview } = await parent();
 
 	const identity = toGameIdentity(user);
 	const [result, targets] = await Promise.all([
@@ -44,7 +44,8 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	}
 
 	return {
-		canEdit: canManageContent,
+		// Per map, not per permission: a player may write the map they created and read the rest.
+		canEdit: result.data.canEdit ?? false,
 		canReview,
 		graph: result.data,
 		rows: nodeRows(result.data),

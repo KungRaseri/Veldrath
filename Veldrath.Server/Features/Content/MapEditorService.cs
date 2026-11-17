@@ -33,12 +33,31 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
     private const string StatusInvalid = "invalid";
     private const string StatusNotFound = "not_found";
 
-    /// <summary>Lists every authored map with its version and size.</summary>
+    /// <summary>The caller may not write this map: it belongs to another account.</summary>
+    private const string StatusForbidden = "forbidden";
+
+    /// <summary>
+    /// Lists the maps the caller may see, with its version, size and whether they may write it.
+    /// </summary>
+    /// <remarks>
+    /// The portal is public to signed-in accounts, so the list is scoped rather than gated: everyone sees the
+    /// maps that are live, and a player also sees the drafts they created. An editor or a reviewer sees every
+    /// draft, because curating and deciding is their job.
+    /// </remarks>
+    /// <param name="caller">Who is asking, and how far their authority reaches.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The map summaries, ordered by id.</returns>
-    public async Task<IReadOnlyList<MapSummaryDto>> ListAsync(CancellationToken cancellationToken = default) =>
-        await db.Maps
+    /// <returns>The visible map summaries, ordered by id.</returns>
+    public async Task<IReadOnlyList<MapSummaryDto>> ListAsync(
+        MapCaller caller,
+        CancellationToken cancellationToken = default)
+    {
+        var accountId = caller.AccountId;
+        var seesEveryDraft = caller.SeesEveryDraft;
+        var canManageAny = caller.CanManageAny;
+
+        return await db.Maps
             .AsNoTracking()
+            .Where(map => seesEveryDraft || map.IsActive || map.CreatedByAccountId == accountId)
             .OrderBy(map => map.Id)
             .Select(map => new MapSummaryDto(
                 map.Id,
@@ -54,8 +73,10 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
                 map.ApprovedVersion,
                 map.SubmittedAt,
                 map.LastReviewNotes,
-                map.LastReviewedAt))
+                map.LastReviewedAt,
+                canManageAny || map.CreatedByAccountId == accountId))
             .ToListAsync(cancellationToken);
+    }
 
     /// <summary>
     /// Lists the references a node may point at, so the editor can offer pickers instead of free text.
@@ -108,14 +129,27 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
             nodes);
     }
 
-    /// <summary>Reads one map graph in full.</summary>
+    /// <summary>Reads one map graph in full, if the caller may see it.</summary>
     /// <param name="mapId">Map identifier.</param>
+    /// <param name="caller">Who is asking, so a stranger's draft reads as missing rather than visible.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The graph including its version, or <see langword="null"/> when it does not exist.</returns>
-    public async Task<MapGraphDto?> GetAsync(string mapId, CancellationToken cancellationToken = default)
+    /// <returns>
+    /// The graph including its version, or <see langword="null"/> when it does not exist — or is a draft the
+    /// caller did not write.
+    /// </returns>
+    public async Task<MapGraphDto?> GetAsync(
+        string mapId,
+        MapCaller caller,
+        CancellationToken cancellationToken = default)
     {
         var map = await LoadAsync(mapId, tracking: false, cancellationToken);
-        return map is null ? null : ToDto(map);
+        if (map is null) return null;
+
+        // A draft belongs to its author until a reviewer approves it. Reading someone else's unfinished map
+        // is not part of the public portal, and a 404 says less than a 403.
+        if (!map.IsActive && !caller.SeesEveryDraft && !caller.MayEdit(map.CreatedByAccountId)) return null;
+
+        return ToDto(map) with { CanEdit = caller.MayEdit(map.CreatedByAccountId) };
     }
 
     /// <summary>
@@ -124,12 +158,14 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
     /// <param name="mapId">Map identifier from the route.</param>
     /// <param name="candidate">The graph to store.</param>
     /// <param name="expectedVersion">The version the caller started from.</param>
+    /// <param name="caller">Who is asking, so a map belonging to someone else is refused.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The outcome, with validation issues when the graph was refused.</returns>
     public async Task<MapGraphSaveResponse> SaveAsync(
         string mapId,
         MapGraphDto candidate,
         int expectedVersion,
+        MapCaller caller,
         CancellationToken cancellationToken = default)
     {
         if (!string.Equals(candidate.Id, mapId, StringComparison.OrdinalIgnoreCase))
@@ -143,6 +179,16 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
         var map = await LoadAsync(mapId, tracking: true, cancellationToken);
         if (map is null)
             return new MapGraphSaveResponse(false, StatusNotFound, 0, [], $"Map '{mapId}' was not found.");
+
+        if (!caller.MayEdit(map.CreatedByAccountId))
+        {
+            logger.LogInformation(
+                "Refused a save of {MapId}: account {AccountId} is not its author and cannot manage content",
+                mapId,
+                caller.AccountId);
+
+            return ForbiddenSave();
+        }
 
         if (map.Version != expectedVersion)
         {
@@ -552,22 +598,25 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
         await db.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Created draft map {MapId}", mapId);
-        return (ToDto(map), null);
+        // The creator is the author, so the editor can open it with the write controls already on.
+        return (ToDto(map) with { CanEdit = true }, null);
     }
 
     /// <summary>Puts a draft forward for review, refusing a graph the world validator rejects.</summary>
     /// <param name="mapId">Map identifier.</param>
-    /// <param name="accountId">Account submitting the map.</param>
+    /// <param name="caller">The author submitting, or an editor submitting on their behalf.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Whether the map is now queued, and the issues that blocked it when not.</returns>
     public async Task<MapLifecycleResponse> SubmitAsync(
         string mapId,
-        Guid accountId,
+        MapCaller caller,
         CancellationToken cancellationToken = default)
     {
         var map = await LoadAsync(mapId, tracking: true, cancellationToken);
         if (map is null)
             return Missing(mapId);
+
+        if (!caller.MayEdit(map.CreatedByAccountId)) return Forbidden(mapId);
 
         if (map.IsActive)
             return new MapLifecycleResponse(false, StatusConflict, $"Map '{mapId}' is already live.", []);
@@ -584,7 +633,7 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
 
         var now = DateTimeOffset.UtcNow;
         map.SubmittedAt = now;
-        map.SubmittedByAccountId = accountId;
+        map.SubmittedByAccountId = caller.AccountId;
         map.UpdatedAt = now;
         await db.SaveChangesAsync(cancellationToken);
 
@@ -706,15 +755,19 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
 
     /// <summary>Deletes a draft. A live map is retired by deactivating instead.</summary>
     /// <param name="mapId">Map identifier.</param>
+    /// <param name="caller">Who is asking, so only the author or an editor may delete it.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Whether the draft was removed, and why not when it was refused.</returns>
     public async Task<MapLifecycleResponse> DeleteDraftAsync(
         string mapId,
+        MapCaller caller,
         CancellationToken cancellationToken = default)
     {
         var map = await LoadAsync(mapId, tracking: true, cancellationToken);
         if (map is null)
             return Missing(mapId);
+
+        if (!caller.MayEdit(map.CreatedByAccountId)) return Forbidden(mapId);
 
         if (map.IsActive)
         {
@@ -744,6 +797,21 @@ public class MapEditorService(ContentDbContext db, ILogger<MapEditorService> log
 
     private static bool HasErrors(IEnumerable<MapGraphIssueDto> issues) =>
         issues.Any(issue => string.Equals(issue.Severity, "Error", StringComparison.OrdinalIgnoreCase));
+
+    private static MapLifecycleResponse Forbidden(string mapId) =>
+        new(
+            false,
+            StatusForbidden,
+            $"Map '{mapId}' belongs to another account, and this account cannot manage content.",
+            []);
+
+    private static MapGraphSaveResponse ForbiddenSave() =>
+        new(
+            false,
+            StatusForbidden,
+            0,
+            [],
+            "This map belongs to another account, and this account cannot manage content.");
 
     private async Task<IReadOnlyList<string>> ReferringNodesAsync(
         string mapId,
