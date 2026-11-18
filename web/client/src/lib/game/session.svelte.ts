@@ -736,9 +736,10 @@ export class GameSession {
 			const engagedEnemyId = this.combat.enemy?.id;
 			this.enemies = (payload.spawnedEnemies ?? []).filter((enemy) => enemy.id !== engagedEnemyId);
 			// Ground items and nodes belong to the location. The node list is cleared first so a stale
-			// forest cannot follow the player into a town; the server pushes the new one right after.
+			// forest cannot follow the player into a town, and it is pulled the same way ground items are.
 			this.nodes = [];
 			void this.requestGroundItems();
+			void this.requestLocationNodes();
 		});
 
 		hub.on('LocationNodes', (payload: LocationNodesPayload) => {
@@ -1281,6 +1282,11 @@ export class GameSession {
 				}
 			: null;
 		this.enemies = payload.spawnedEnemies ?? [];
+
+		// Nodes belong to the location, and travelling to a Location node is how most locations are entered —
+		// that path emits `NodeTraveled`, not `LocationEntered`, so the list has to be refreshed here too.
+		this.nodes = [];
+		void this.requestLocationNodes();
 
 		if (payload.mapChanged) await this.requestMapGraph(payload.mapId ?? null);
 	}

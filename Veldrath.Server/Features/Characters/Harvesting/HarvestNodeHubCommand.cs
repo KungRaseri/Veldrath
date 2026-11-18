@@ -1,3 +1,4 @@
+using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -139,7 +140,6 @@ public class HarvestNodeHubCommandHandler(
     ApplicationDbContext db,
     INodeRepository nodes,
     LootTableService lootTables,
-    IInventoryService inventory,
     HarvestCalculatorService calculator,
     CriticalHarvestService critical,
     ILogger<HarvestNodeHubCommandHandler> logger)
@@ -195,12 +195,20 @@ public class HarvestNodeHubCommandHandler(
         node.LastHarvestedAt = DateTime.UtcNow;
         await nodes.SaveNodeAsync(node);
 
+        // The bag is the character's own `InventoryBlob`, which is the store the client reads. The engine's
+        // `IInventoryService` writes save-game records instead, so a harvest through it produced the right
+        // message and an empty bag.
+        var bag = ReadBag(character.InventoryBlob);
         var materials = new List<HarvestedMaterial>(drops.Count);
         foreach (var drop in drops)
         {
-            await inventory.AddItemAsync(character.Name, drop.ItemRef, drop.Quantity);
+            var slug = drop.ItemRef[(drop.ItemRef.LastIndexOf(':') + 1)..];
+            AddToBag(bag, slug, drop.Quantity);
             materials.Add(new HarvestedMaterial(drop.ItemRef, drop.ItemName, drop.Quantity));
         }
+
+        character.InventoryBlob = JsonSerializer.Serialize(bag);
+        await db.SaveChangesAsync(cancellationToken);
 
         if (materials.Count == 0)
         {
@@ -210,9 +218,10 @@ public class HarvestNodeHubCommandHandler(
         }
 
         var total = materials.Sum(m => m.Quantity);
+        var unit = total == 1 ? "material" : "materials";
         var message = isCritical
-            ? $"Critical harvest! {total} materials from the {node.DisplayName}."
-            : $"Gathered {total} materials from the {node.DisplayName}.";
+            ? $"Critical harvest! {total} {unit} from the {node.DisplayName}."
+            : $"Gathered {total} {unit} from the {node.DisplayName}.";
 
         logger.LogInformation(
             "Character {CharacterId} harvested node {NodeId}: {Count} materials, critical={Critical}, health {Health}/{MaxHealth}",
@@ -238,4 +247,46 @@ public class HarvestNodeHubCommandHandler(
         Success = false,
         ErrorMessage = message,
     };
+
+    /// <summary>Reads the character's bag blob, treating unreadable content as an empty bag.</summary>
+    /// <param name="blob">The stored <c>InventoryBlob</c>.</param>
+    /// <returns>The bag as mutable JSON objects, so unknown fields survive a round trip.</returns>
+    private static List<Dictionary<string, JsonElement>> ReadBag(string? blob)
+    {
+        if (string.IsNullOrWhiteSpace(blob)) return [];
+
+        try
+        {
+            return JsonSerializer.Deserialize<List<Dictionary<string, JsonElement>>>(blob) ?? [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
+    }
+
+    /// <summary>Adds a stack to the bag, stacking onto the same item when it is already there.</summary>
+    /// <param name="bag">The bag to mutate.</param>
+    /// <param name="itemRef">The item slug the bag is keyed by.</param>
+    /// <param name="quantity">How many to add.</param>
+    private static void AddToBag(List<Dictionary<string, JsonElement>> bag, string itemRef, int quantity)
+    {
+        var existing = bag.FirstOrDefault(entry =>
+            entry.TryGetValue("ItemRef", out var reference) &&
+            reference.ValueKind == JsonValueKind.String &&
+            string.Equals(reference.GetString(), itemRef, StringComparison.OrdinalIgnoreCase));
+
+        if (existing is null)
+        {
+            bag.Add(new Dictionary<string, JsonElement>
+            {
+                ["ItemRef"] = JsonSerializer.SerializeToElement(itemRef),
+                ["Quantity"] = JsonSerializer.SerializeToElement(quantity),
+            });
+            return;
+        }
+
+        var current = existing.TryGetValue("Quantity", out var stored) && stored.TryGetInt32(out var value) ? value : 0;
+        existing["Quantity"] = JsonSerializer.SerializeToElement(current + quantity);
+    }
 }

@@ -4224,3 +4224,15 @@ Eleventh pass — **the forest can now be foraged from, and the engine's harvest
   authored nodes, `node.LocationId == character.CurrentZoneLocationSlug` as the guard, MinToolTier 0 only,
   skill rank 0 and no skill XP yet, `collect` advanced with both slug and ref, `LocationNodes` pushed on
   `EnterLocation` and refreshed after failures, and the web consumer in the same commit (parity suites).
+- **The hub slice is shipped and the loop is green** (`GetLocationNodes`/`HarvestNode`, `LocationNodes`,
+  `Harvested`, a Gatherable panel section). Getting the spec green exposed four things worth remembering:
+  - **`IInventoryService` (`EfCoreInventoryService`) writes save-game records, not `Characters.InventoryBlob`** —
+    the bag the client reads. Harvest writes the blob itself (`ReadBag`/`AddToBag` in the handler). **Combat loot
+    still goes through `_inventory.AddItemAsync`**, so a kill probably announces a drop that never lands; verify
+    and fix with the combat slice.
+  - **Region → zone travel was broken**: region `Zone` nodes had no `TargetMapId`, and
+    `TravelToNodeHubCommand` only switches maps when a node names one. `MapGraphSeeder.LinkRegionZonesToZoneMaps`
+    now sets it, guarded by a seeder test. Needs `--fresh` because the seeder skips an existing graph.
+  - **Zone maps chain `entry → first location → second …`**, so the second location is two hops from arrival.
+  - **Nodes never regenerate** (`NodeSpawnerService.RespawnNode` has no caller), and `session.zone` goes stale on
+    a map travel that changes zone (banner shows the old zone with the new location).

@@ -260,7 +260,28 @@ makes.
 **Both halves are now in (2026-11-18).** `GetLocationNodes`/`HarvestNode` on the hub, `LocationNodes` pushed on
 arrival, `Harvested` after each attempt, a **Gatherable** section in the Local panel, and `collect` objectives
 advanced per drop. `harvest.e2e.ts` walks the wizard, crosses into the forest, gathers, and asserts the mushroom
-is in the bag and the node remembers being picked.
+is in the bag — the whole loop is green against the isolated stack, and the database shows `glowcap-mushroom` in
+the character's `InventoryBlob`.
+
+**What making that spec pass uncovered (all measured, not inferred):**
+
+- **Region → zone travel was broken**, and it was not a level gate: the region's `Zone` nodes carried no
+  `TargetMapId`, and `TravelToNodeHubCommand` only loads another map when a node names one. A player could leave
+  their town, walk the region map, travel "to" another zone and stay standing on the region map. Fixed by
+  `LinkRegionZonesToZoneMaps` in the map seeder, with a guard test that every region zone node targets its zone
+  map. Because the seeder skips an existing graph, this needs a `--fresh` database.
+- **The engine's `IInventoryService` does not write the player's bag.** The registered `EfCoreInventoryService`
+  writes save-game records; the bag the client reads is `Characters.InventoryBlob`. The harvest now writes the
+  blob itself. **Combat loot still calls `_inventory.AddItemAsync`** (`AttackEnemyHubCommand.RollLootAsync`), so a
+  kill very likely announces a drop that never lands — the same defect, invisible because no spec checked the
+  bag after a fight. That is the next fix and it belongs with the combat slice.
+- **Zone maps chain `entry → first location → second …`**, so the second location of a zone is two hops from the
+  arrival point. Not a defect, but a spec that expects "arrive → stand at any location" is wrong.
+- **Nodes never regenerate.** `NodeSpawnerService.RespawnNode` exists and nothing calls it, so a node harvested
+  to empty stays empty forever. CI is unaffected (fresh database per run); a local stack accumulates dead nodes.
+- **`session.zone` goes stale on a map travel that changes zones**: the banner read "Crestfall · The Old
+  Clearing" after arriving in the Ashlen Wood, because only `EnterZone` updates the zone while travel updates the
+  location.
 
 **The one thing that blocks that spec, and it is not harvesting.** A new character starts at `crestfall-square`
 and **cannot cross into the Ashlen Wood**: the zone exit is visible on the map but not adjacent, because the

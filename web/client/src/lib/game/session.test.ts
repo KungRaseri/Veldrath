@@ -1068,7 +1068,8 @@ describe('GameSession map', () => {
 			spawnedEnemies: [enemy('wolf')]
 		});
 		expect(session.enemies).toEqual([enemy('wolf')]);
-		expect(hub.invocations).toEqual([]);
+		// The nodes belong to the location, and travelling to a location node is how most of them are entered.
+		expect(hub.invocations).toEqual([{ method: 'GetLocationNodes', args: [] }]);
 	});
 
 	it('names the location by its slug when the result has no message', async () => {
@@ -1104,7 +1105,10 @@ describe('GameSession map', () => {
 		await flush();
 
 		expect(session.loadingMap).toBe(true);
-		expect(hub.invocations).toEqual([{ method: 'GetMapGraph', args: ['map-2'] }]);
+		expect(hub.invocations).toEqual([
+			{ method: 'GetLocationNodes', args: [] },
+			{ method: 'GetMapGraph', args: ['map-2'] }
+		]);
 	});
 
 	it('reports failed travel without moving', async () => {

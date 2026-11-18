@@ -316,6 +316,7 @@ jobs:
             tests/session-states.e2e.ts \
             tests/review-diff.e2e.ts \
             tests/game-journeys.e2e.ts \
+            tests/harvest.e2e.ts \
             tests/layout.e2e.ts
 
       # Runs alone on purpose: the spec stops the API to prove the pages say so. Sharing a run with

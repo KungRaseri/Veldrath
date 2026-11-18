@@ -20,6 +20,7 @@ using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.Auth;
 using Veldrath.Server.Features.Characters;
 using Veldrath.Server.Features.Characters.Combat;
+using Veldrath.Server.Features.Characters.Harvesting;
 using Veldrath.Server.Features.Characters.Queries;
 using Veldrath.Server.Features.LevelUp;
 using Veldrath.Server.Features.Map;
@@ -29,8 +30,6 @@ using Veldrath.Server.Features.Shop;
 using Veldrath.Server.Features.Zones;
 using Veldrath.Server.Services;
 using Veldrath.Server.Settings;
-
-using Veldrath.Server.Features.Characters.Harvesting;
 
 namespace Veldrath.Server.Hubs;
 

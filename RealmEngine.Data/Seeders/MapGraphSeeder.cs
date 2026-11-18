@@ -24,8 +24,44 @@ public static class MapGraphSeeder
         var now = DateTimeOffset.UtcNow;
         var maps = GetMaps(now);
         ConnectZoneEntriesToLocations(maps);
+        LinkRegionZonesToZoneMaps(maps);
         db.Maps.AddRange(maps);
         await db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Points every zone node on a region map at that zone's own map, so travelling to it enters the zone.
+    /// </summary>
+    /// <remarks>
+    /// Without this the region map is a dead end. <c>TravelToNodeHubCommand</c> only loads another map when the
+    /// selected node carries a <c>TargetMapId</c>, and the web client has no separate "enter this zone" call — so a
+    /// zone node with no target moved the character's cursor and left them standing on the region map. Measured
+    /// consequence: a player could walk out of their starting town onto the region map and never enter any other
+    /// zone, which made every zone but the starting one unreachable on foot.
+    ///
+    /// Only <c>TargetMapId</c> is set: travel resolves a blank <c>TargetNodeId</c> to the destination map's entry
+    /// node, which is exactly where a player arriving in a zone should stand.
+    /// </remarks>
+    /// <param name="maps">The authored maps, before they are added to the context.</param>
+    private static void LinkRegionZonesToZoneMaps(IEnumerable<Map> maps)
+    {
+        var zoneMapIds = maps
+            .Where(candidate => candidate.MapType == MapType.Zone)
+            .Select(candidate => candidate.Id)
+            .ToHashSet(StringComparer.Ordinal);
+
+        foreach (var region in maps.Where(candidate => candidate.MapType == MapType.Region))
+        {
+            foreach (var node in region.Nodes.Where(candidate =>
+                         candidate.NodeType == MapNodeType.Zone && candidate.RefId is { Length: > 0 }))
+            {
+                var zoneMapId = $"zone:{node.RefId}";
+                if (!zoneMapIds.Contains(zoneMapId)) continue;
+
+                node.TargetMapId = zoneMapId;
+                node.TargetNodeId = null;
+            }
+        }
     }
 
     /// <summary>
