@@ -55,10 +55,7 @@ public static class ZoneLocationsSeeder
         ["wood-road"] = [Rat(40), Goblin(40), Wolf(20)],
         ["old-clearing"] = [Wolf(70), Goblin(30)],
         ["mire-crossing"] = [Bandit(60), Wolf(40)],
-        ["sunken-estate"] = [Bandit(70), Wolf(30)],
         ["bone-hollow"] = [Wight(60), Bandit(40)],
-        ["strangled-oak"] = [Wolf(60), Goblin(40)],
-        ["weathered-waypost"] = [Rat(70), Goblin(30)],
         ["sunken-fields"] = [Rat(50), Wolf(50)],
         ["rootbound-cellars"] = [Bandit(70), Wight(30)],
         ["flooded-workings"] = [Bandit(50), Wight(50)],
@@ -67,7 +64,6 @@ public static class ZoneLocationsSeeder
 
         // Greymoor — levels 7–14
         ["ashveil-highlands"] = [Wight(70), Haunt(30)],
-        ["moorstone-cairns"] = [Haunt(60), Wight(40)],
         ["shifting-waymark"] = [Haunt(70), Wight(30)],
         ["fenland-crossing"] = [Lurker(70), Haunt(30)],
         ["submerged-ruins"] = [Lurker(60), Revenant(40)],
@@ -78,7 +74,6 @@ public static class ZoneLocationsSeeder
         ["wrack-shore"] = [Brute(70), Revenant(30)],
         ["bone-strand"] = [Brute(55), Harrower(45)],
         ["tidal-grotto"] = [Harrower(60), Brute(40)],
-        ["clifftop-ruins"] = [Brute(60), Harrower(40)],
         ["gull-rider-camp"] = [Brute(80), Harrower(20)],
         ["storm-watch-peak"] = [Harrower(100)],
         ["flooded-throne-room"] = [Revenant(60), Harrower(40)],
@@ -86,11 +81,9 @@ public static class ZoneLocationsSeeder
 
         // Cinderplain — levels 20–30
         ["obsidian-grove"] = [Cinderling(70), Pyreling(30)],
-        ["scorched-battlefield"] = [Cinderling(60), Pyreling(40)],
         ["ash-shrine"] = [Pyreling(60), Cinderling(40)],
         ["vent-fields"] = [Pyreling(70), Cinderling(30)],
         ["pyreling-den"] = [Pyreling(100)],
-        ["lava-bridge"] = [Pyreling(60), Ancient(40)],
         ["fire-ancients-chamber"] = [Cinderling(70), Ancient(30)],
         ["kaldreks-heart"] = [Ancient(100)],
 

@@ -32,19 +32,23 @@ public class SeededEncounterCoverageTests
 
         var locations = await content.ZoneLocations.AsNoTracking().ToListAsync();
 
-        // IsTown is a settlement; IsDungeon == false is the explicit lobby marker each dungeon zone carries.
+        // A settlement (IsTown), a respawn point (SafeRespawn) or a dungeon lobby (IsDungeon == false) must be quiet:
+        // respawning into a location that spawns hostiles is a death loop, which is exactly what the e2e found.
         var shouldBeQuiet = locations
-            .Where(location => location.Traits.IsTown == true || location.Traits.IsDungeon == false)
+            .Where(location =>
+                location.Traits.IsTown == true ||
+                location.Traits.SafeRespawn == true ||
+                location.Traits.IsDungeon == false)
             .ToList();
 
-        shouldBeQuiet.Should().NotBeEmpty("the seed has towns and one lobby per dungeon zone");
+        shouldBeQuiet.Should().NotBeEmpty("the seed has towns, waypoints and one lobby per dungeon zone");
 
         var noisy = shouldBeQuiet
             .Where(location => location.ActorPool.Count > 0)
             .Select(location => location.Slug)
             .ToList();
 
-        noisy.Should().BeEmpty("a town or a lobby that spawns hostiles is a content bug");
+        noisy.Should().BeEmpty("a town, respawn point or lobby that spawns hostiles is a content bug");
     }
 
     [Fact]
@@ -55,7 +59,10 @@ public class SeededEncounterCoverageTests
 
         var locations = await content.ZoneLocations.AsNoTracking().ToListAsync();
         var quiet = locations
-            .Where(location => location.Traits.IsTown != true && location.Traits.IsDungeon != false)
+            .Where(location =>
+                location.Traits.IsTown != true &&
+                location.Traits.SafeRespawn != true &&
+                location.Traits.IsDungeon != false)
             .Where(location => location.ActorPool.Count == 0)
             .Select(location => $"{location.ZoneId}/{location.Slug}")
             .ToList();

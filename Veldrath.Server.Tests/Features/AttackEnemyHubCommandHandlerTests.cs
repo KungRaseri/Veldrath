@@ -210,6 +210,9 @@ public class AttackEnemyHubCommandHandlerTests : IDisposable
         var stored = await read.Characters.SingleAsync(c => c.Id == character.Id);
         stored.Attributes.Should().Contain("\"Gold\":45", "the penalty must be persisted, not just reported");
         stored.Experience.Should().Be(0);
+        // Death has to leave the character at 0 HP: RespawnHubCommand refuses anything else, so a restored HP floor
+        // is a locked-out player (they can neither act nor respawn).
+        stored.Attributes.Should().Contain("\"CurrentHealth\":0", "the character stays dead until it respawns");
     }
 
     [Fact]
@@ -231,5 +234,6 @@ public class AttackEnemyHubCommandHandlerTests : IDisposable
         await using var read = _dbFactory.CreateContext();
         var stored = await read.Characters.SingleAsync(c => c.Id == character.Id);
         stored.Experience.Should().Be(190);
+        stored.Attributes.Should().Contain("\"CurrentHealth\":0");
     }
 }

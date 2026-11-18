@@ -91,6 +91,10 @@ test.describe('combat and death', () => {
 		browser,
 		request
 	}) => {
+		// Registering, creating a character, loading the world and two map hops already take most of the default
+		// budget before any combat starts.
+		test.setTimeout(120_000);
+
 		const { context, page } = await characterOnTheRoad(browser, request);
 
 		// The HUD's "Local" panel lists what spawned; the button is the engage action.
@@ -114,16 +118,12 @@ test.describe('combat and death', () => {
 		await context.close();
 	});
 
-	/**
-	 * `test.fixme` — death is reachable, but **respawn is refused**: the client and the combat session agree the
-	 * character is dead ("You cannot act while dead."), while the persisted character blob still holds
-	 * `CurrentHealth > 0`, so `RespawnHubCommand` answers "Character is not dead" and the player is locked out —
-	 * unable to act and unable to respawn. Recorded as a P0 in plans/content-seeding-pass.md.
-	 */
-	test.fixme('dying on the road respawns the character at the zone’s safe location', async ({
+	test('dying on the road respawns the character at the zone’s safe location', async ({
 		browser,
 		request
 	}) => {
+		test.setTimeout(150_000);
+
 		const { context, page } = await characterOnTheRoad(browser, request);
 
 		await page.getByRole('button', { name: 'Engage' }).first().click();
@@ -143,7 +143,10 @@ test.describe('combat and death', () => {
 		await expect(defeat).toBeVisible({ timeout: 30_000 });
 
 		await page.getByRole('button', { name: 'Respawn' }).click();
-		await expect(defeat).toBeHidden({ timeout: 20_000 });
+
+		// The Respawn button is the honest signal: the combat log keeps its "You have been defeated." line for the
+		// rest of the session, so asserting on that text would only ever be satisfied by the banner being replaced.
+		await expect(page.getByRole('button', { name: 'Respawn' })).toBeHidden({ timeout: 20_000 });
 
 		// The droveway's SafeRespawn location is the weathered waypost, so a death anywhere in the zone comes back here.
 		await expect(page.getByText('The Weathered Waypost').first()).toBeVisible({ timeout: 20_000 });

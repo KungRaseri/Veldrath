@@ -92,16 +92,21 @@ the four name content that does not exist: `wolf-common-drops` (there is no wolf
 **Fix:** wire each hostile archetype to a drop table, and either author the missing archetypes/boss/chest or retire
 those tables. Keeping a table nothing can drop is the same class of bug as an empty spawn pool.
 
-### P0 — a dead player is locked out: "Character is not dead" (found by the C6 spec)
+### P0 — a dead player was locked out: "Character is not dead" (found by the C6 spec, **fixed 2026-11-18**)
 
-The fight now works: walking onto `drove-road` spawns a roster, `Engage` starts a turn-based combat, and both sides
-trade damage. What does not work is dying. The client shows "You have been defeated." and the log says
-**"You cannot act while dead."**, while the persisted character blob still holds `CurrentHealth > 0`, so
-`RespawnHubCommand` refuses the respawn with **"Character is not dead"** — the player can neither act nor respawn.
+The fight works: walking onto `drove-road` spawns a roster, `Engage` starts a turn-based combat, and both sides trade
+damage. Dying did not. The client showed "You have been defeated." and the log said "You cannot act while dead.",
+while the persisted blob still held `CurrentHealth > 0` — so `RespawnHubCommand` refused with
+**"Character is not dead"** and the player could neither act nor respawn.
 
-**Fix:** the combat/death path must persist `CurrentHealth = 0` on the character (the same write
-`TakeDamageHubCommand` already does), or `RespawnHubCommand` must trust the combat session's dead state. Until then
-`tests/encounters.e2e.ts`'s death spec stays `test.fixme`.
+**Cause and fix:** `CombatHelpers.HandleDeathIfNeededAsync` "restored 1 HP so the character isn't permanently dead",
+which made the character look alive to the very command that respawns it. Death now leaves `CurrentHealth = 0`
+(respawn is the recovery path, and it restores 25% of max health), the client sets its dead state from the
+`CharacterSelected` snapshot so a relogged corpse still sees the button, and both are covered by the death tests in
+`AttackEnemyHubCommandHandlerTests`. The e2e death spec passes.
+
+**Related content rule this exposed:** a respawn point that spawns hostiles is a death loop. Locations flagged
+`SafeRespawn` (and towns and lobbies) now carry no pool, and `SeededEncounterCoverageTests` asserts it.
 
 ### P1 — a level-1 character cannot win any fight
 

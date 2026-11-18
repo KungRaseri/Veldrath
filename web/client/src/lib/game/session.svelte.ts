@@ -1183,6 +1183,10 @@ export class GameSession {
 			experience: payload.experience,
 			unspentAttributePoints: payload.unspentAttributePoints
 		};
+		// A character that died before the last disconnect is still dead: the server keeps CurrentHealth at 0 until
+		// a respawn, so the shell has to offer the Respawn button from the snapshot as well as from a combat event.
+		this.dead = payload.currentHealth <= 0;
+
 		this.currentNodeId = payload.currentNodeId ?? null;
 		this.attributes = {
 			strength: payload.strength,
