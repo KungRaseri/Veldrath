@@ -508,6 +508,34 @@ export interface LocationEnteredPayload {
 	spawnedEnemies?: SpawnedEnemy[] | null;
 }
 
+/** A resource node standing in the current location. */
+export interface LocationNode {
+	nodeId: string;
+	displayName: string;
+	materialTier: string;
+	healthPercent: number;
+	state: string;
+	canHarvest: boolean;
+}
+
+/** The nodes here, sent on entering a location and refreshed after every attempt. */
+export interface LocationNodesPayload {
+	nodes: LocationNode[];
+}
+
+/** What a harvest produced. The materials are already in the bag when this arrives. */
+export interface HarvestedPayload {
+	success: boolean;
+	nodeId: string;
+	displayName: string;
+	materials: { itemRef: string; itemName: string; quantity: number }[];
+	nodeHealthRemaining: number;
+	nodeHealthPercent: number;
+	nodeState: string;
+	wasCritical: boolean;
+	message: string;
+}
+
 /** A location revealed by a successful area search. */
 export interface SearchFinding {
 	slug: string;

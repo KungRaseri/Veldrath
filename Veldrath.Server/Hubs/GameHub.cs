@@ -30,6 +30,8 @@ using Veldrath.Server.Features.Zones;
 using Veldrath.Server.Services;
 using Veldrath.Server.Settings;
 
+using Veldrath.Server.Features.Characters.Harvesting;
+
 namespace Veldrath.Server.Hubs;
 
 /// <summary>
@@ -1035,6 +1037,9 @@ public class GameHub : Hub
 
             await Clients.Caller.SendAsync("NodeTraveled", result.Arrival);
 
+            // What grows here. A safe location answers with an empty list, which the client renders as nothing.
+            await SendLocationNodesAsync(characterId);
+
             foreach (var warning in result.Arrival.ContentWarnings)
             {
                 await Clients.Caller.SendAsync("SystemMessage", warning);
@@ -1644,6 +1649,91 @@ public class GameHub : Hub
         }
 
         await Clients.Caller.SendAsync("CraftableRecipes", new { Recipes = recipes });
+    }
+
+    /// <summary>
+    /// Sends the resource nodes standing in the caller's current location as <c>LocationNodes</c>.
+    /// </summary>
+    public async Task GetLocationNodes()
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetLocationNodes");
+            return;
+        }
+
+        await SendLocationNodesAsync(characterId);
+    }
+
+    /// <summary>
+    /// Harvests one resource node: the yield lands in the bag, <c>collect</c> objectives advance by what
+    /// arrived, and the node's remaining health comes back with the refreshed list.
+    /// </summary>
+    /// <param name="request">The node to harvest; the character comes from the connection.</param>
+    public async Task HarvestNode(HarvestNodeRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before HarvestNode");
+            return;
+        }
+
+        if (request is null || string.IsNullOrWhiteSpace(request.NodeId))
+        {
+            await Clients.Caller.SendAsync("Error", "A node id is required.");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new HarvestNodeHubCommand(characterId, request.NodeId.Trim()));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Nothing came away this time.");
+            }
+            else
+            {
+                // Both the slug and the full reference are advanced: content objectives are authored with
+                // slugs, while the loot table hands back "@items/general:glowcap-mushroom". The kill path
+                // makes the same allowance for archetype slugs versus display names.
+                foreach (var material in result.Materials)
+                {
+                    var slug = material.ItemRef[(material.ItemRef.LastIndexOf(':') + 1)..];
+                    await AdvanceQuestObjectivesAsync(characterId, "collect", slug);
+                    await AdvanceQuestObjectivesAsync(characterId, "collect", material.ItemRef);
+                }
+
+                await TrySendInventorySnapshotAsync(characterId);
+                await Clients.Caller.SendAsync("Harvested", result);
+            }
+
+            // A failed attempt can still have moved the node (depletion), so the list is refreshed either way.
+            await SendLocationNodesAsync(characterId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error harvesting node {NodeId} for character {CharacterId}", request.NodeId, characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to harvest that resource.");
+        }
+    }
+
+    /// <summary>Sends <c>LocationNodes</c> to the caller, or an empty list when the read fails.</summary>
+    /// <param name="characterId">The character whose location to read.</param>
+    private async Task SendLocationNodesAsync(Guid characterId)
+    {
+        IReadOnlyList<LocationNodeDto> nodes;
+        try
+        {
+            nodes = await _mediator.Send(new GetLocationNodesHubCommand(characterId));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to list the resource nodes at the location of {CharacterId}.", characterId);
+            nodes = [];
+        }
+
+        await Clients.Caller.SendAsync("LocationNodes", new { Nodes = nodes });
     }
 
     /// <summary>

@@ -256,3 +256,21 @@ makes.
 - Events: `LocationNodes` on `EnterLocation`, `Harvested` after a successful harvest, and the list re-sent after
   failures too (depletion moves it). The web half (`types.ts`, `session.svelte.ts`, a Gather section) has to land
   in the same commit, because the parity suites fail when a hub method has no consumer.
+
+**Both halves are now in (2026-11-18).** `GetLocationNodes`/`HarvestNode` on the hub, `LocationNodes` pushed on
+arrival, `Harvested` after each attempt, a **Gatherable** section in the Local panel, and `collect` objectives
+advanced per drop. `harvest.e2e.ts` walks the wizard, crosses into the forest, gathers, and asserts the mushroom
+is in the bag and the node remembers being picked.
+
+**The one thing that blocks that spec, and it is not harvesting.** A new character starts at `crestfall-square`
+and **cannot cross into the Ashlen Wood**: the zone exit is visible on the map but not adjacent, because the
+exit is behind the zone-progress gate (the same gate `UnlockZoneLocation`/`NavigateToLocation` exist for). So the
+spec self-skips with that reason and runs separately via `npm run test:e2e:harvest`; it is kept out of the
+parallel suite so it cannot hang a run. Two ways to close it, and the choice is content design rather than code:
+
+1. seed every new character with the adjacent zones unlocked (Crestfall's neighbours — the Droveway and the
+   Ashlen Wood), which matches "the last comfortable beds for many miles" and lets a player walk out of town; or
+2. give the specs a development-only teleport and leave progression to quests.
+
+Whichever we choose, the harvesting loop itself is complete and the guard tests prove the content halves are
+attached.

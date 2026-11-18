@@ -41,8 +41,11 @@ import type {
 	ItemReceivedPayload,
 	KickedPayload,
 	LearnedPower,
+	HarvestedPayload,
 	LocationClearedPayload,
 	LocationEnteredPayload,
+	LocationNode,
+	LocationNodesPayload,
 	MapGraph,
 	MapGraphReceivedPayload,
 	MutedPayload,
@@ -161,6 +164,8 @@ export class GameSession {
 	inspectedItem = $state<InventoryItem | null>(null);
 	/** Result of the last area search, shown in the Local panel. */
 	lastSearch = $state<{ rollValue: number; discovered: SearchFinding[] } | null>(null);
+	/** Resource nodes standing in this location, refreshed by the server after every attempt. */
+	nodes = $state<LocationNode[]>([]);
 	/** Slash commands the caller may run, already filtered by permission server-side. */
 	chatCommands = $state<ChatCommandInfo[]>([]);
 	/** Characters muted locally with `/ignore`; their chat is hidden in every channel. */
@@ -362,6 +367,19 @@ export class GameSession {
 		if (!this.hub) return;
 		this.error = null;
 		await this.hub.invoke('GetInventory');
+	}
+
+	/** Asks for the nodes standing here; the server answers with `LocationNodes`. */
+	async requestLocationNodes(): Promise<void> {
+		if (!this.hub) return;
+		await this.hub.invoke('GetLocationNodes');
+	}
+
+	/** Harvests one node. The yield, the refreshed list and the log line all arrive as broadcasts. */
+	async harvest(nodeId: string): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('HarvestNode', { nodeId });
 	}
 
 	/** Opens the item detail dialog for a bag or equipment entry. */
@@ -717,8 +735,29 @@ export class GameSession {
 			// not the location list. Filtering here also keeps a fight resumed after a reconnect from appearing twice.
 			const engagedEnemyId = this.combat.enemy?.id;
 			this.enemies = (payload.spawnedEnemies ?? []).filter((enemy) => enemy.id !== engagedEnemyId);
-			// Ground items belong to the location, so refresh them whenever the player moves.
+			// Ground items and nodes belong to the location. The node list is cleared first so a stale
+			// forest cannot follow the player into a town; the server pushes the new one right after.
+			this.nodes = [];
 			void this.requestGroundItems();
+		});
+
+		hub.on('LocationNodes', (payload: LocationNodesPayload) => {
+			this.nodes = payload.nodes ?? [];
+		});
+
+		hub.on('Harvested', (payload: HarvestedPayload) => {
+			// The node moved, so keep the list honest without waiting for the refresh that follows.
+			this.nodes = this.nodes.map((node) =>
+				node.nodeId === payload.nodeId
+					? {
+							...node,
+							healthPercent: payload.nodeHealthPercent,
+							state: payload.nodeState,
+							canHarvest: payload.nodeHealthPercent >= 10
+						}
+					: node
+			);
+			this.addSystemMessage(payload.message);
 		});
 
 		hub.on('GroundItemsChanged', (payload: GroundItemsChangedPayload) => {

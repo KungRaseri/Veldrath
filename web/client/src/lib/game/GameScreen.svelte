@@ -10,6 +10,7 @@
 		MapPin,
 		RefreshCw,
 		Search,
+		Sprout,
 		Store,
 		Swords
 	} from '@lucide/svelte';
@@ -243,6 +244,31 @@
 									</li>
 								{/each}
 							</ul>
+						{/if}
+
+						{#if session.nodes.length > 0}
+							<div class="space-y-1 border-t border-surface-800 pt-3">
+								<p class="text-xs tracking-wide text-surface-600-400 uppercase">Gatherable</p>
+								<ul class="space-y-1">
+									{#each session.nodes as node (node.nodeId)}
+										<li class="flex items-center justify-between gap-2 text-sm">
+											<span>
+												{node.displayName}
+												<span class="text-surface-600-400">· {node.healthPercent}% left</span>
+											</span>
+											<button
+												class="btn preset-tonal-surface px-2 py-1 text-xs"
+												type="button"
+												onclick={() => session.harvest(node.nodeId)}
+												disabled={session.dead || !node.canHarvest}
+											>
+												<Sprout size={12} aria-hidden="true" />
+												{node.canHarvest ? 'Gather' : 'Depleted'}
+											</button>
+										</li>
+									{/each}
+								</ul>
+							</div>
 						{/if}
 
 						{#if session.groundItems.length > 0}
