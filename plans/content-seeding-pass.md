@@ -92,6 +92,22 @@ the four name content that does not exist: `wolf-common-drops` (there is no wolf
 **Fix:** wire each hostile archetype to a drop table, and either author the missing archetypes/boss/chest or retire
 those tables. Keeping a table nothing can drop is the same class of bug as an empty spawn pool.
 
+### P1 — a location is not adjacent to where a character arrives (found writing C6)
+
+Each zone map links `entry ↔ exit:zone:x ↔ location:y`: the entry node's neighbours are the zone's **exits**, and
+each exit touches the locations on that side. So walking from the arrival point to a location takes two or more hops,
+and travelling to a `ZoneExit` node *leaves the zone* rather than staying on the map, which is why the e2e walk helper
+in `tests/encounters.e2e.ts` never reaches its target. A player can get there — they click an exit, arrive elsewhere,
+walk back — but it is not the one-click path the HUD implies.
+
+**Also found:** resuming a session does **not** spawn a roster; only an arrival (`TravelToNode`, `EnterLocation`)
+does. Teleporting onto a location and reloading therefore shows an empty "Local" panel.
+
+**Fix (decision):** either author entry→location edges so a settlement/waypoint is one hop from its own map's
+locations, or add a dev-only GM spawn (`POST /api/dev/spawn` → `IEnemyInstanceStore.GetAliveOrSpawnAsync` for the
+character's current location) so a roster can be created deterministically for tests. The GM spawn is the cheaper of
+the two and does not change the world.
+
 ### P2 — quests do not survive contact with the world
 
 `clear-the-forest` targets 5 `goblin-scout` kills "in the Darkwood Forest" — **no such zone or location exists in
@@ -143,7 +159,7 @@ for this pass unless the pass wants a shop test that can tell two merchants apar
 | C3 | NPC placement: innkeepers and smiths in town/inn pools; one quest giver with dialogue | a player can see and talk to an NPC without a GM |
 | C4 | Loot and quests: wire drops, retire or author the orphan tables, fix the three quests' targets and text, add one quest per starter zone | every quest's objective target exists and can be produced |
 | C5 | Harvesting: seed at least one harvestable node per woods location so `gather-mushrooms` is completable | a collect objective can be finished in game |
-| C6 | Guardrail tests + e2e: the seed assertions in §7, then E13c (engage → victory) and E13d (die → respawn at the safe location) | the gate is green and both specs pass against a fresh stack |
+| C6 | Guardrail tests + e2e: the seed assertions in §7 (shipped), then E13c (engage → victory) and E13d (die → respawn at the safe location) | the gate is green and both specs pass against a fresh stack — **parked** on the P1 adjacency/spawn finding above; the specs exist as `test.fixme` with the reason |
 
 ## 7. Guardrail: the world must not regress to "nothing spawns"
 

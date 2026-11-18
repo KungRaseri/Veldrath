@@ -613,7 +613,9 @@ public static class ZoneLocationsSeeder
                 ZoneId = "playground",         TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 0, Population = 10, MinLevel = 0 },
-                Traits = new() { IsTown = true },
+                // The playground's respawn point: without one, a death there falls back to whatever location the
+                // repository returns first and logs an error. It is also where the death e2e expects to land.
+                Traits = new() { IsTown = true, SafeRespawn = true },
             },
             // Town — inn (rest / health+mana restore)
             new ZoneLocation
