@@ -92,6 +92,26 @@ the four name content that does not exist: `wolf-common-drops` (there is no wolf
 **Fix:** wire each hostile archetype to a drop table, and either author the missing archetypes/boss/chest or retire
 those tables. Keeping a table nothing can drop is the same class of bug as an empty spawn pool.
 
+### P0 — a dead player is locked out: "Character is not dead" (found by the C6 spec)
+
+The fight now works: walking onto `drove-road` spawns a roster, `Engage` starts a turn-based combat, and both sides
+trade damage. What does not work is dying. The client shows "You have been defeated." and the log says
+**"You cannot act while dead."**, while the persisted character blob still holds `CurrentHealth > 0`, so
+`RespawnHubCommand` refuses the respawn with **"Character is not dead"** — the player can neither act nor respawn.
+
+**Fix:** the combat/death path must persist `CurrentHealth = 0` on the character (the same write
+`TakeDamageHubCommand` already does), or `RespawnHubCommand` must trust the combat session's dead state. Until then
+`tests/encounters.e2e.ts`'s death spec stays `test.fixme`.
+
+### P1 — a level-1 character cannot win any fight
+
+A new character has **10 HP** (the attribute blob's `MaxHealth`), and a location spawns **2–4** actors whose weakest
+swing is 3–5. One exchange killed the level-1 warrior outright, so *victory* is arithmetically impossible for a new
+character anywhere in the world. The engagement spec therefore asserts the exchange rather than a kill.
+
+**Fix (needs a balance decision):** either raise the level-1 baseline (HP from constitution, not a flat 10), or make
+the level 1–3 band genuinely weak (damage 1, one or two actors), or scale the roster by the character's level.
+
 ### P1 — a location is not adjacent to where a character arrives (found writing C6)
 
 Each zone map links `entry ↔ exit:zone:x ↔ location:y`: the entry node's neighbours are the zone's **exits**, and

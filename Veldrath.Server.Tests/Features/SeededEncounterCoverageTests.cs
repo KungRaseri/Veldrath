@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using RealmEngine.Data.Entities;
+using MapNodeType = RealmEngine.Shared.Models.MapNodeType;
+using MapType = RealmEngine.Shared.Models.MapType;
 
 namespace Veldrath.Server.Tests.Features;
 
@@ -158,6 +160,59 @@ public class SeededEncounterCoverageTests
         bosses.Should().NotBeEmpty("the ladder has bosses at its top");
         bosses.Should().OnlyContain(archetype => archetype.LootTableId != null,
             "a boss with no loot table is a fight with no reason to have it");
+    }
+
+    [Fact]
+    public async Task Every_zone_entry_can_walk_straight_to_its_locations()
+    {
+        await using var probe = new SeededContentProbe();
+        await using var content = await probe.CreateContextAsync();
+
+        var maps = await content.Maps.AsNoTracking()
+            .Include(map => map.Nodes)
+            .Include(map => map.Edges)
+            .ToListAsync();
+
+        var unreachable = new List<string>();
+
+        foreach (var map in maps.Where(map => map.MapType == MapType.Zone))
+        {
+            if (string.IsNullOrWhiteSpace(map.EntryNodeId))
+            {
+                unreachable.Add($"{map.Id} has no entry node");
+                continue;
+            }
+
+            // Walk only: travelling to an exit node leaves the zone, so a path through one is not a path a player has.
+            var exits = map.Nodes
+                .Where(node => node.NodeType == MapNodeType.ZoneExit || node.NodeType == MapNodeType.RegionExit)
+                .Select(node => node.Id)
+                .ToHashSet(StringComparer.Ordinal);
+
+            var reachable = new HashSet<string>(StringComparer.Ordinal) { map.EntryNodeId };
+            var queue = new Queue<string>();
+            queue.Enqueue(map.EntryNodeId);
+
+            while (queue.Count > 0)
+            {
+                var nodeId = queue.Dequeue();
+                foreach (var edge in map.Edges.Where(edge =>
+                             edge.IsTraversable && (edge.FromNodeId == nodeId || edge.ToNodeId == nodeId)))
+                {
+                    var next = edge.FromNodeId == nodeId ? edge.ToNodeId : edge.FromNodeId;
+                    if (exits.Contains(next)) continue;
+                    if (reachable.Add(next)) queue.Enqueue(next);
+                }
+            }
+
+            foreach (var location in map.Nodes.Where(node => node.NodeType == MapNodeType.Location))
+            {
+                if (!reachable.Contains(location.Id)) unreachable.Add($"{map.Id}/{location.Id}");
+            }
+        }
+
+        unreachable.Should().BeEmpty(
+            "the authored graphs linked the entry only to the zone's exits, so a character could arrive but never walk to a location");
     }
 
     [Fact]

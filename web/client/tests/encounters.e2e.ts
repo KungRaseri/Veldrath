@@ -26,22 +26,6 @@ test.describe('combat and death', () => {
 	test.skip(!stackEnabled, stackSkipReason);
 
 	/**
-	 * `test.fixme` — these are written but cannot pass yet, and the reason is a real finding rather than a flake:
-	 *
-	 * 1. A zone's map graph links the entry node to its **exits**, and each exit to the locations it meets
-	 *    (`entry ↔ exit:zone:x ↔ location:y`), so a location is not adjacent to where a character arrives. The
-	 *    walk helper tries to hop towards it, but travelling to a `ZoneExit` node leaves the zone rather than
-	 *    staying on the map, so the loop never reaches the road.
-	 * 2. Resuming a session does **not** spawn: the roster comes from an arrival (`TravelToNode` /
-	 *    `EnterLocation`), so teleporting onto a location and reloading shows an empty "Local" panel.
-	 *
-	 * The cheapest honest fix for both is a dev-only GM spawn (`POST /api/dev/spawn` → `IEnemyInstanceStore
-	 * .GetAliveOrSpawnAsync` for the character's current location), like `/api/dev/teleport`. Then this spec keeps
-	 * the production path for everything after the roster exists. Until that lands, the seeded encounters are
-	 * proven by `SeededEncounterCoverageTests` on the .NET side.
-	 */
-
-	/**
 	 * Walks to a map node, one hop at a time.
 	 *
 	 * A zone's entry node is linked to its exits, and the exits are linked to the locations — so a location is
@@ -103,7 +87,7 @@ test.describe('combat and death', () => {
 		return { context, page };
 	}
 
-	test.fixme('walking into a seeded location spawns its roster and the fight can be won', async ({
+	test('walking into a seeded location spawns a roster and engaging starts a turn-based fight', async ({
 		browser,
 		request
 	}) => {
@@ -112,39 +96,30 @@ test.describe('combat and death', () => {
 		// The HUD's "Local" panel lists what spawned; the button is the engage action.
 		const engageButtons = page.getByRole('button', { name: 'Engage' });
 		await expect(engageButtons.first()).toBeVisible({ timeout: 30_000 });
-		const hostilesBefore = await engageButtons.count();
-		expect(
-			hostilesBefore,
-			'the clearing pools two archetypes, so a roster of 2–4 actors'
-		).toBeGreaterThan(0);
 
 		await engageButtons.first().click();
 
 		const combat = page.getByRole('heading', { name: /Combat/ });
 		await expect(combat).toBeVisible({ timeout: 20_000 });
+		await expect(page.getByText(/Combat started: /)).toBeVisible({ timeout: 20_000 });
 
-		// Attack until the fight ends. The roster is level 1–6 and the panel is turn-based, so this is bounded.
-		const attack = page.getByRole('button', { name: /^Attack$/ });
-		for (let round = 0; round < 40; round++) {
-			if (!(await combat.isVisible())) break;
-			await attack.click();
-			await page.waitForTimeout(400);
-		}
-
-		await expect(combat).toBeHidden({ timeout: 20_000 });
-
-		// Either that enemy is gone from the roster or the location is cleared — both mean the kill landed.
-		const hostilesAfter = await page.getByRole('button', { name: 'Engage' }).count();
-		const cleared = await page
-			.getByText('Nothing hostile is lurking here right now.')
-			.isVisible()
-			.catch(() => false);
-
-		expect(cleared || hostilesAfter < hostilesBefore).toBe(true);
+		// One exchange proves the loop: the character hits, the enemy hits back, and the log records both.
+		//
+		// It stops at one exchange on purpose. A level-1 character has 10 HP and a location spawns 2–4 actors whose
+		// weakest swing is 3–5, so *victory* is arithmetically out of reach at level 1 — a balance finding recorded
+		// in plans/content-seeding-pass.md, not something a spec should paper over with a made-up weak enemy.
+		await page.getByRole('button', { name: /^Attack$/ }).click();
+		await expect(page.getByText(/You hit for \d+ damage/)).toBeVisible({ timeout: 20_000 });
 
 		await context.close();
 	});
 
+	/**
+	 * `test.fixme` — death is reachable, but **respawn is refused**: the client and the combat session agree the
+	 * character is dead ("You cannot act while dead."), while the persisted character blob still holds
+	 * `CurrentHealth > 0`, so `RespawnHubCommand` answers "Character is not dead" and the player is locked out —
+	 * unable to act and unable to respawn. Recorded as a P0 in plans/content-seeding-pass.md.
+	 */
 	test.fixme('dying on the road respawns the character at the zone’s safe location', async ({
 		browser,
 		request
@@ -156,10 +131,11 @@ test.describe('combat and death', () => {
 
 		// Defend rather than attack: the point is to lose, and a level-1 warrior cannot outlast a clearing full of
 		// level 1–6 actors by trading blows.
-		const defeat = page.getByText('You have been defeated.');
+		// Two places say it — the shell's banner and the combat log — so match the first.
+		const defeat = page.getByText('You have been defeated.').first();
 		const defend = page.getByRole('button', { name: /^Defend$/ });
 		for (let round = 0; round < 80; round++) {
-			if (await defeat.isVisible()) break;
+			if (await defeat.isVisible().catch(() => false)) break;
 			await defend.click();
 			await page.waitForTimeout(300);
 		}
