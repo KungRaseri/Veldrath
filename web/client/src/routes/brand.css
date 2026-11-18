@@ -410,6 +410,31 @@
 	border-radius: var(--vds-radius-lg) var(--vds-radius-lg) 0 0;
 }
 
+/*
+ * A choice row inside a card: a `.btn` that carries a sentence, not a label.
+ *
+ * Skeleton's `.btn` is a single-line control (`white-space: nowrap`), and a grid item defaults to
+ * `min-width: auto`, so a description makes the row as wide as the *unwrapped* sentence and it paints
+ * straight past the card — measured on the creation wizard: a 1290px row in a 574px track, with the
+ * page scrolling sideways at every viewport. Both properties have to be undone and only together:
+ * wrapping the text without `min-width: 0` still cannot shrink below the longest word, and
+ * `min-width: 0` alone still refuses to wrap.
+ *
+ * The column direction matters too: `.btn` is a flex row, so a title and its description would sit
+ * side by side — and once `overflow-wrap: anywhere` lowers the title's min-content to one character,
+ * the description wins the row and the title collapses into a one-letter column.
+ */
+.choice-option {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	justify-content: flex-start;
+	min-width: 0;
+	white-space: normal;
+	overflow-wrap: anywhere;
+	text-align: left;
+}
+
 /* ── Game shell ─────────────────────────────────────────────────────────── */
 
 .game-shell {

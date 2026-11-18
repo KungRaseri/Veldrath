@@ -4172,3 +4172,31 @@ reaches it too.
 Proof: `scripts/e2e-stack.sh start --fresh` then `npm run test:e2e:stack --workspace client` → **17 passed in
 about a minute** (16 in parallel, then the outage spec), with 1,470 web unit tests and a clean typecheck/prettier.
 Documented for humans in [`web/client/README.md`](../../web/client/README.md).
+
+Tenth pass — **two defects found by a person using the wizard, and the layout harness that now catches the class.**
+
+- **`.btn` is a single-line control.** Skeleton sets `white-space: nowrap` on it, and a grid item defaults to
+  `min-width: auto`. Put a sentence in a `.btn` inside a grid and the row becomes as wide as the *unwrapped*
+  sentence: measured on the creation wizard, a **1290px row in a 574px track**, document 1643px in a 1280px
+  viewport, so every page gained a horizontal scrollbar. Fixing it needs **both** `white-space: normal` and
+  `min-width: 0` (wrapping alone still cannot shrink below the longest word). The primitive is
+  `.choice-option` in [`brand.css`](../../web/client/src/routes/brand.css) — imported after Skeleton, so it wins
+  on order, no `!important`, no layer fighting. **Do not put a description inside a `.btn`.**
+- **The point-buy budget is 27, stats 8–15, cost `{8:0, 9:1, 10:2, 11:3, 12:4, 13:5, 14:7, 15:9}`** — so
+  15/15/15 is exactly 27 and 15/14/12/11/10/10 is exactly 27. `AllocateCreationAttributesHandler` used to accept
+  any allocation *under* budget and store it, and `FinalizeCreationSessionCommand` passed it to
+  `CreateCharacterCommand`, so the API could create a minimum-stats character with 27 points unused. Both refuse
+  now (missing / partial / out-of-range), and the wizard disables Continue with a hint while points remain.
+  **Tests that walk the wizard must spend the budget**: `spendAttributePoints` in
+  [`tests/support/creation.ts`](../../web/client/tests/support/creation.ts).
+- **Layout is asserted, not photographed.** [`tests/support/layout.ts`](../../web/client/tests/support/layout.ts)
+  `expectNoHorizontalOverflow` checks `document.scrollingElement.scrollWidth` and every descendant rect against its
+  container, skipping descendants inside an `overflow-x` clipper (the map cells truncate deliberately).
+  [`tests/layout.e2e.ts`](../../web/client/tests/layout.e2e.ts) drives the seven steps at 1280/768/390 plus
+  `/`, `/lore`, `/patch-notes`, `/community`, `/register`, and signed in `/characters` and `/account`. **Negative
+  control run before keeping it**: removing `choice-option` from the species row fails it with "the page scrolls
+  sideways by 949px". jsdom has no layout, so a Vitest test can never catch this class.
+- **Sweep of the other 196 `.btn` sites**: the wizard was the only sentence-in-a-button, and the only one in a
+  single-column grid track. Account/mod/admin labels are two words in `flex flex-wrap` rows (they wrap instead of
+  overflowing); the game panels keep dynamic text in a `<span>` beside short verbs. `/account` is the riskiest
+  variable-content surface and is in the harness.

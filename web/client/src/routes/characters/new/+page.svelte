@@ -242,6 +242,15 @@
 					break;
 				}
 				case 4: {
+					// Every point has to be spent: the engine stores whatever it is given and the
+					// preview computes stats from it, so a skipped step silently creates a
+					// minimum-stats character. The button is already disabled in that state; this
+					// catches the keyboard/submit paths and says why nothing happened.
+					if (remainingPoints > 0) {
+						stepError = `Spend every attribute point before continuing — ${remainingPoints} left.`;
+						return;
+					}
+
 					const result = await patchStep('attributes', { allocations: stats });
 					if (!result.ok) {
 						stepError = result.error ?? 'Could not save the attributes.';
@@ -414,10 +423,10 @@
 					{/if}
 				</div>
 			{:else if step === 1}
-				<div class="grid gap-2 sm:grid-cols-2">
+				<div class="grid min-w-0 gap-2 sm:grid-cols-2">
 					{#each data.catalog.classes as option (option.slug)}
 						<button
-							class="btn justify-start text-left {selectedClass === option.slug
+							class="choice-option btn {selectedClass === option.slug
 								? 'preset-filled-primary-500'
 								: 'preset-tonal-surface'}"
 							type="button"
@@ -429,10 +438,10 @@
 					{/each}
 				</div>
 			{:else if step === 2}
-				<div class="grid gap-2">
+				<div class="grid min-w-0 gap-2">
 					{#each data.catalog.species as option (option.slug)}
 						<button
-							class="btn justify-start text-left {selectedSpecies === option.slug
+							class="choice-option btn {selectedSpecies === option.slug
 								? 'preset-filled-primary-500'
 								: 'preset-tonal-surface'}"
 							type="button"
@@ -447,10 +456,10 @@
 					{/each}
 				</div>
 			{:else if step === 3}
-				<div class="grid gap-2">
+				<div class="grid min-w-0 gap-2">
 					{#each data.catalog.backgrounds as option (option.slug)}
 						<button
-							class="btn justify-start text-left {selectedBackground === option.slug
+							class="choice-option btn {selectedBackground === option.slug
 								? 'preset-filled-primary-500'
 								: 'preset-tonal-surface'}"
 							type="button"
@@ -473,6 +482,11 @@
 							? `of ${pointBuy.totalPoints} (${pointBuy.minStatValue}–${pointBuy.maxStatValue} per stat)`
 							: ''}
 					</p>
+					{#if remainingPoints > 0}
+						<p class="text-xs text-surface-600-400">
+							Spend every point to continue — {remainingPoints} still unspent.
+						</p>
+					{/if}
 
 					{#each statNames as stat (stat)}
 						<div class="flex items-center justify-between gap-3">
@@ -535,28 +549,30 @@
 			{:else if step === 6}
 				<div class="space-y-4">
 					{#if preview}
-						<dl class="grid gap-2 text-sm sm:grid-cols-2">
-							<div>
+						<!-- min-w-0 keeps a long name inside its track: a grid item defaults to
+						     min-width auto, so without it the row is as wide as the longest word. -->
+						<dl class="grid min-w-0 gap-2 text-sm sm:grid-cols-2">
+							<div class="min-w-0">
 								<dt class="text-surface-600-400">Name</dt>
-								<dd>{name.trim()}</dd>
+								<dd class="break-words">{name.trim()}</dd>
 							</div>
-							<div>
+							<div class="min-w-0">
 								<dt class="text-surface-600-400">Class</dt>
-								<dd>{preview.className ?? '—'}</dd>
+								<dd class="break-words">{preview.className ?? '—'}</dd>
 							</div>
-							<div>
+							<div class="min-w-0">
 								<dt class="text-surface-600-400">Species</dt>
-								<dd>{preview.speciesName ?? '—'}</dd>
+								<dd class="break-words">{preview.speciesName ?? '—'}</dd>
 							</div>
-							<div>
+							<div class="min-w-0">
 								<dt class="text-surface-600-400">Background</dt>
-								<dd>{preview.backgroundName ?? '—'}</dd>
+								<dd class="break-words">{preview.backgroundName ?? '—'}</dd>
 							</div>
-							<div>
+							<div class="min-w-0">
 								<dt class="text-surface-600-400">Health / Mana</dt>
 								<dd>{preview.health} / {preview.mana}</dd>
 							</div>
-							<div class="sm:col-span-2">
+							<div class="min-w-0 sm:col-span-2">
 								<dt class="text-surface-600-400">Attributes</dt>
 								<dd class="font-mono text-xs">
 									STR {preview.strength} · DEX {preview.dexterity} · CON {preview.constitution} · INT
@@ -618,7 +634,10 @@
 					class="btn preset-filled-primary-500"
 					type="button"
 					onclick={next}
-					disabled={busy || finalizing || (step === 0 && nameStatus !== 'available')}
+					disabled={busy ||
+						finalizing ||
+						(step === 0 && nameStatus !== 'available') ||
+						(step === 4 && remainingPoints > 0)}
 				>
 					{#if step === 6}
 						<Check size={16} aria-hidden="true" />

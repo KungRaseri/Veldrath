@@ -247,7 +247,7 @@ service container), so it only runs where it can actually stop something.
 [`playwright.config.ts`](../web/client/playwright.config.ts:3), plus a 10s expect budget for server-rendered pages.
 A retry without a trace is a flake nobody can diagnose — the trace is the point, not the retry. The outage spec
 runs afterwards with `--workers=1`: it takes the API away, so sharing a run with the others would fail whichever
-of them were in flight (see §10).
+of them were in flight (see §10 for the run split, and `web/client/README.md` for the isolated stack).
 
 **§9 correction (2026-11-18).** This paragraph used to say "the authenticated job stays serial: these specs share
 one database and one API". They do share both, and that is fine — what they must not share is a run with the spec
@@ -279,3 +279,41 @@ decision would then refuse. `ValidateWorldAsync` was split into `LoadWorldAsync`
 the server could not judge still reads `unknown` rather than `ready`. A server test asserts that a submitted draft
 is `blocked` with **zero** errors (the missing exit is a warning) and that a draft nobody submitted carries no
 verdict at all.
+
+## 10. Layout as an assertion, and the attribute gate (2026-11-18)
+
+**A person using the wizard found both of these, not a test.** Two reports: the species/background rows spilled
+out of their card, and the attributes step let you continue without spending a point.
+
+**The overflow.** The options are `<button class="btn">` carrying a whole sentence. Skeleton's `.btn` is a
+single-line control (`white-space: nowrap`), and a grid item defaults to `min-width: auto`, so the row was as wide
+as the unwrapped sentence and the card had nothing to clip it: measured, a **1290px row inside a 574px track**,
+with the document at 1643px against a 1280px viewport. Both properties have to be undone together — wrapping the
+text without `min-width: 0` still cannot shrink below the longest word, and `min-width: 0` alone still refuses to
+wrap. [`brand.css`](../web/client/src/routes/brand.css) gained a `.choice-option` primitive (it is imported after
+Skeleton, so it wins without fighting layers), and the three choice steps use it.
+
+**The gate.** `next()` only guarded the name step; the engine's `AllocateCreationAttributesHandler` accepted any
+allocation under budget and stored it, and `FinalizeCreationSessionCommand` handed that straight to
+`CreateCharacterCommand` — so the API could create a character at the minimum stat line with 27 points unused.
+Both sides refuse now, the wizard disables Continue and says how many points are left, and the handler still
+answers a click that gets past the button. `game-journeys.e2e.ts` and both `pages-creation*.test.ts` files used to
+rely on the skip; they spend the budget through `spendAttributePoints` in
+[`tests/support/creation.ts`](../web/client/tests/support/creation.ts).
+
+**The harness.** jsdom has no layout and a screenshot is nobody's regression gate, so
+[`tests/layout.e2e.ts`](../web/client/tests/layout.e2e.ts) walks the seven steps at 1280, 768 and 390px and asserts
+two things per container ([`tests/support/layout.ts`](../web/client/tests/support/layout.ts)):
+`document.scrollingElement.scrollWidth` does not exceed its client width, and no descendant's rect leaves its
+container's rect. It also covers `/`, `/lore`, `/patch-notes`, `/community`, `/register` and — signed in — the
+roster and `/account` at phone width.
+
+**It is not vacuous.** Removing `choice-option` from the species row makes it fail with
+"the page scrolls sideways by 949px" — the negative control was run before the fix was kept.
+
+**The sweep, for the same pattern elsewhere.** Every `.btn` site was read (196 of them). The wizard was unique:
+it is the only place a *sentence* sits inside a `.btn`, and the only one inside a single-column grid track that
+cannot wrap. The other long labels are two words in a `flex flex-wrap` row (account actions, mod/admin forms),
+where the row wraps instead of overflowing; the game panels put dynamic text in a `<span>` beside short verb
+buttons. `/account` is the riskiest variable-content surface and is covered by the harness, so a regression there
+fails a spec rather than waiting for a report.

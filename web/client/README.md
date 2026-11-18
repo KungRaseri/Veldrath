@@ -85,5 +85,22 @@ that spec stops the API to prove the pages say so, so it must not share a run wi
 script also sets `Email__SmtpHost=""` (no SMTP container here) and `AUTH_RATE_LIMIT_DISABLED=true` (the
 specs register dozens of accounts a minute and would otherwise meet a shared 429 bucket).
 
+### Layout: content must stay inside its container
+
+[`tests/layout.e2e.ts`](tests/layout.e2e.ts) fails on pixels, not screenshots: it walks the creation
+wizard at 1280, 768 and 390 px and checks every known container (`tests/support/layout.ts` →
+`expectNoHorizontalOverflow`) for two things — the document does not scroll sideways, and no descendant
+paints past its container's right or left edge. It also covers the public pages, the roster and the
+account page at phone width.
+
+The rule the wizard broke: **a `.btn` is a single-line control.** Skeleton's `.btn` sets
+`white-space: nowrap`, and a grid item defaults to `min-width: auto`, so putting a sentence in one makes
+the row as wide as the unwrapped sentence and it overflows the card. Use the `.choice-option` primitive
+(`web/client/src/routes/brand.css`) for a button that carries text and needs to wrap.
+
+The attributes step also refuses to advance until the point-buy budget is spent, on the client and in the
+engine (`AllocateCreationAttributesHandler` + `FinalizeCreationSessionCommand`). Specs that walk the
+wizard use `spendAttributePoints` from [`tests/support/creation.ts`](tests/support/creation.ts).
+
 Individual specs: `E2E_STACK=1 E2E_WEB_PORT=4273 E2E_API_PORT=9100 E2E_DB_PORT=55432 npx playwright test tests/<spec>`.
 CI runs the same split in the authenticated jobs of [`ci-web.yml`](../../.github/workflows/ci-web.yml).

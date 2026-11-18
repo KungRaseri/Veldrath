@@ -137,6 +137,30 @@ async function advanceTo(label: string): Promise<void> {
 	await screen.findByText(new RegExp(`· ${label}$`));
 }
 
+/**
+ * Spends the whole point-buy budget, which the attributes step now insists on.
+ *
+ * Greedy on purpose: it fills one stat to the cap and moves on, so it works for any cost table and
+ * leaves Continue enabled exactly when nothing is left to spend.
+ */
+async function spendAllPoints(): Promise<void> {
+	for (const stat of [
+		'Strength',
+		'Dexterity',
+		'Constitution',
+		'Intelligence',
+		'Wisdom',
+		'Charisma'
+	]) {
+		const increase = screen.getByRole('button', {
+			name: `Increase ${stat}`
+		}) as HTMLButtonElement;
+		for (let clicks = 0; !increase.disabled && clicks < 20; clicks += 1) {
+			await fireEvent.click(increase);
+		}
+	}
+}
+
 /** Walks the default choices from the name step to the equipment step. */
 async function toEquipment(container: HTMLElement): Promise<void> {
 	await nameAccepted(container);
@@ -144,6 +168,7 @@ async function toEquipment(container: HTMLElement): Promise<void> {
 	await advanceTo('Species');
 	await advanceTo('Background');
 	await advanceTo('Attributes');
+	await spendAllPoints();
 	await advanceTo('Equipment');
 }
 
@@ -395,6 +420,8 @@ describe('rejected steps', () => {
 		await advanceTo('Species');
 		await advanceTo('Background');
 		await advanceTo('Attributes');
+		// The budget has to be spent before the save is even attempted, or the local gate answers first.
+		await spendAllPoints();
 		await fireEvent.click(continueButton());
 
 		expect(await screen.findByText('The server rejected that choice.')).toBeTruthy();
