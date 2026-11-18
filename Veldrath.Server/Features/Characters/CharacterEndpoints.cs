@@ -184,6 +184,21 @@ public static class CharacterEndpoints
             .Where(s => !string.IsNullOrWhiteSpace(s))
             .ToList() ?? [];
 
+        // The attribute blob is the game's source of truth for health, mana and the six attributes. A character
+        // created without it fell back to Level * 10 = 10 HP and no constitution, while the creation wizard writes
+        // the full blob — so an API-created character died to the first swing of anything, which the encounter e2e
+        // found immediately. Compose the same keys here, from the same engine formulas the wizard uses.
+        var engineCharacter = new RealmEngine.Shared.Models.Character
+        {
+            Name = request.Name,
+            ClassName = request.ClassName,
+            Level = 1,
+        };
+        engineCharacter.MaxHealth = engineCharacter.GetMaxHealth();
+        engineCharacter.Health = engineCharacter.MaxHealth;
+        engineCharacter.MaxMana = engineCharacter.GetMaxMana();
+        engineCharacter.Mana = engineCharacter.MaxMana;
+
         var character = new Character
         {
             AccountId = accountId,
@@ -192,6 +207,20 @@ public static class CharacterEndpoints
             ClassName = request.ClassName,
             DifficultyMode = normalizedMode,
             AbilitiesBlob = JsonSerializer.Serialize(starterSlugs),
+            Attributes = JsonSerializer.Serialize(new Dictionary<string, int>
+            {
+                ["Strength"] = engineCharacter.Strength,
+                ["Dexterity"] = engineCharacter.Dexterity,
+                ["Constitution"] = engineCharacter.Constitution,
+                ["Intelligence"] = engineCharacter.Intelligence,
+                ["Wisdom"] = engineCharacter.Wisdom,
+                ["Charisma"] = engineCharacter.Charisma,
+                ["CurrentHealth"] = engineCharacter.Health,
+                ["MaxHealth"] = engineCharacter.MaxHealth,
+                ["CurrentMana"] = engineCharacter.Mana,
+                ["MaxMana"] = engineCharacter.MaxMana,
+                ["Gold"] = engineCharacter.Gold,
+            }),
         };
 
         var created = await repo.CreateAsync(character, ct);

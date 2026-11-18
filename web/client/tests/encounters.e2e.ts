@@ -87,7 +87,7 @@ test.describe('combat and death', () => {
 		return { context, page };
 	}
 
-	test('walking into a seeded location spawns a roster and engaging starts a turn-based fight', async ({
+	test('walking into a seeded location spawns a roster and the fight can be won', async ({
 		browser,
 		request
 	}) => {
@@ -100,6 +100,7 @@ test.describe('combat and death', () => {
 		// The HUD's "Local" panel lists what spawned; the button is the engage action.
 		const engageButtons = page.getByRole('button', { name: 'Engage' });
 		await expect(engageButtons.first()).toBeVisible({ timeout: 30_000 });
+		const hostilesBefore = await engageButtons.count();
 
 		await engageButtons.first().click();
 
@@ -107,13 +108,25 @@ test.describe('combat and death', () => {
 		await expect(combat).toBeVisible({ timeout: 20_000 });
 		await expect(page.getByText(/Combat started: /)).toBeVisible({ timeout: 20_000 });
 
-		// One exchange proves the loop: the character hits, the enemy hits back, and the log records both.
-		//
-		// It stops at one exchange on purpose. A level-1 character has 10 HP and a location spawns 2–4 actors whose
-		// weakest swing is 3–5, so *victory* is arithmetically out of reach at level 1 — a balance finding recorded
-		// in plans/content-seeding-pass.md, not something a spec should paper over with a made-up weak enemy.
-		await page.getByRole('button', { name: /^Attack$/ }).click();
-		await expect(page.getByText(/You hit for \d+ damage/)).toBeVisible({ timeout: 20_000 });
+		// Attack until the fight ends. A level-1 character carries the engine's attribute blob (Con*10 + level*5 HP),
+		// so the starter band is winnable — before the endpoint wrote that blob it had 10 HP and lost on turn one.
+		const attack = page.getByRole('button', { name: /^Attack$/ });
+		for (let round = 0; round < 40; round++) {
+			if (!(await combat.isVisible())) break;
+			await attack.click();
+			await page.waitForTimeout(400);
+		}
+
+		await expect(combat).toBeHidden({ timeout: 20_000 });
+
+		// Either that enemy left the roster or the location is cleared — both mean the kill landed.
+		const hostilesAfter = await page.getByRole('button', { name: 'Engage' }).count();
+		const cleared = await page
+			.getByText('Nothing hostile is lurking here right now.')
+			.isVisible()
+			.catch(() => false);
+
+		expect(cleared || hostilesAfter < hostilesBefore).toBe(true);
 
 		await context.close();
 	});
