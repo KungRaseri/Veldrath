@@ -271,27 +271,25 @@ the character's `InventoryBlob`.
   `LinkRegionZonesToZoneMaps` in the map seeder, with a guard test that every region zone node targets its zone
   map. Because the seeder skips an existing graph, this needs a `--fresh` database.
 - **The engine's `IInventoryService` does not write the player's bag.** The registered `EfCoreInventoryService`
-  writes save-game records; the bag the client reads is `Characters.InventoryBlob`. The harvest now writes the
-  blob itself. **Combat loot still calls `_inventory.AddItemAsync`** (`AttackEnemyHubCommand.RollLootAsync`), so a
-  kill very likely announces a drop that never lands — the same defect, invisible because no spec checked the
-  bag after a fight. That is the next fix and it belongs with the combat slice.
+  writes save-game records; the bag the client reads is `Characters.InventoryBlob`. Both the harvest and — the
+  same defect, invisible because no spec checked the bag after a fight — **combat loot** now write the blob
+  through [`CharacterBag`](../../Veldrath.Server/Features/Characters/CharacterBag.cs) and save the character row,
+  so a broadcast drop is a stored drop.
 - **Zone maps chain `entry → first location → second …`**, so the second location of a zone is two hops from the
   arrival point. Not a defect, but a spec that expects "arrive → stand at any location" is wrong.
-- **Nodes never regenerate.** `NodeSpawnerService.RespawnNode` exists and nothing calls it, so a node harvested
-  to empty stays empty forever. CI is unaffected (fresh database per run); a local stack accumulates dead nodes.
-- **`session.zone` goes stale on a map travel that changes zones**: the banner read "Crestfall · The Old
-  Clearing" after arriving in the Ashlen Wood, because only `EnterZone` updates the zone while travel updates the
-  location.
+- **Nodes never regenerate on their own.** `NodeSpawnerService.RespawnNode` exists and nothing calls it. Rather
+  than a background job, `GetLocationNodesHubCommand` applies a lazy rule on read: a node that cannot be
+  harvested and whose `LastHarvestedAt` is older than `HarvestingOptions.RegrowMinutes` (default 30) comes back
+  full. It is clock-driven and needs no scheduler, and a depleted node now recovers while the player is away.
+- **`session.zone` went stale on a map travel that changes zones**: the banner read "Crestfall · The Old
+  Clearing" after arriving in the Ashlen Wood, because only `EnterZone` sent the zone snapshot while travel sent
+  only the location. `NodeTraveled` carries the zone id and nothing else (no name, no inn/merchant flags, no
+  occupants), so the hub now follows a cross-zone arrival with the same `ZoneEntered` snapshot `EnterZone` sends
+  (`GameHub.SyncArrivedZoneAsync`), and the client clears its zone when an arrival reports none.
 
-**The one thing that blocks that spec, and it is not harvesting.** A new character starts at `crestfall-square`
-and **cannot cross into the Ashlen Wood**: the zone exit is visible on the map but not adjacent, because the
-exit is behind the zone-progress gate (the same gate `UnlockZoneLocation`/`NavigateToLocation` exist for). So the
-spec self-skips with that reason and runs separately via `npm run test:e2e:harvest`; it is kept out of the
-parallel suite so it cannot hang a run. Two ways to close it, and the choice is content design rather than code:
-
-1. seed every new character with the adjacent zones unlocked (Crestfall's neighbours — the Droveway and the
-   Ashlen Wood), which matches "the last comfortable beds for many miles" and lets a player walk out of town; or
-2. give the specs a development-only teleport and leave progression to quests.
-
-Whichever we choose, the harvesting loop itself is complete and the guard tests prove the content halves are
-attached.
+**The suspected blocker was not a level gate.** A probe with a real character showed zone → region travel working
+and region → zone travel silently not happening — the region's `Zone` nodes carried no `TargetMapId`, so
+`TravelToNodeHubCommand` never loaded the target map. The zone-progress gate only governs *hidden location
+discovery*; it never gated walking. With the seeder fix in place, `harvest.e2e.ts` runs inside the parallel stack
+suite and walks the whole route (`The Crestfall Square` → `Road to The Ashlen Wood` → `The Old Clearing`) with no
+bypass, no teleport and no bypass endpoint.

@@ -4227,12 +4227,34 @@ Eleventh pass — **the forest can now be foraged from, and the engine's harvest
 - **The hub slice is shipped and the loop is green** (`GetLocationNodes`/`HarvestNode`, `LocationNodes`,
   `Harvested`, a Gatherable panel section). Getting the spec green exposed four things worth remembering:
   - **`IInventoryService` (`EfCoreInventoryService`) writes save-game records, not `Characters.InventoryBlob`** —
-    the bag the client reads. Harvest writes the blob itself (`ReadBag`/`AddToBag` in the handler). **Combat loot
-    still goes through `_inventory.AddItemAsync`**, so a kill probably announces a drop that never lands; verify
-    and fix with the combat slice.
+    the bag the client reads. Both harvest and combat loot now write the blob through `CharacterBag`
+    (twelfth pass below).
   - **Region → zone travel was broken**: region `Zone` nodes had no `TargetMapId`, and
     `TravelToNodeHubCommand` only switches maps when a node names one. `MapGraphSeeder.LinkRegionZonesToZoneMaps`
     now sets it, guarded by a seeder test. Needs `--fresh` because the seeder skips an existing graph.
   - **Zone maps chain `entry → first location → second …`**, so the second location is two hops from arrival.
   - **Nodes never regenerate** (`NodeSpawnerService.RespawnNode` has no caller), and `session.zone` goes stale on
-    a map travel that changes zone (banner shows the old zone with the new location).
+    a map travel that changes zone (banner shows the old zone with the new location). Both closed in the twelfth
+    pass below.
+
+Twelfth pass — **the three follow-ups the harvest loop left behind are closed.**
+
+- **One home for the bag.** [`CharacterBag`](../../Veldrath.Server/Features/Characters/CharacterBag.cs) owns
+  `Read`/`Add`/`Serialize` over the `[{ "ItemRef", "Quantity" }]` JSON. `AttackEnemyHubCommand.RollLootAsync` now
+  takes the `Character` entity, writes the blob and saves the row — `IInventoryService` is gone from the handler,
+  and the test asserts the stored blob rather than a fake inventory. The harvest handler dropped its private
+  `ReadBag`/`AddToBag` for the same helper.
+- **Lazy node regrowth, no scheduler.** [`HarvestingOptions`](../../Veldrath.Server/Settings/HarvestingOptions.cs)
+  (`Harvesting:RegrowMinutes`, default 30, `[Range(1, 1440)]`, `ValidateOnStart`) is read by
+  `GetLocationNodesHubCommandHandler`: a node that cannot be harvested and whose `LastHarvestedAt` is older than
+  the cutoff is reset to full health with `TimesHarvested = 0` and saved on read. Guarded by
+  `LocationNodesRegrowthTests` (comes back after the window, stays empty inside it).
+- **A walk is an arrival.** `NodeTraveled` carries `ZoneId` and nothing else — no name, inn/merchant flags or
+  occupants — so a cross-zone walk left the banner reading the old zone. `GameHub.TravelToNode` now calls
+  `SyncArrivedZoneAsync`, which updates `Context.Items` (`CurrentZoneId`/`CurrentMapId`/`CurrentNodeId`) and sends
+  the same `ZoneEntered` snapshot `EnterZone` sends; the client clears its zone when an arrival reports none
+  (`handleNodeTraveled`). Three hub tests (`GameHubZoneTests`) cover crossing, staying and leaving for the region
+  map; two session tests cover the client half.
+- **Known gap this leaves:** a walk out of a zone changes the session row's zone but never sends `PlayerLeft` to
+  the zone it left, so peers in the old zone can keep showing the walker until they refresh. Travel also never
+  sets `Context.Items["CurrentZoneId"]` before this pass, which is now fixed for the arrival's zone.

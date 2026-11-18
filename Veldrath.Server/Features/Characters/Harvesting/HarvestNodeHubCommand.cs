@@ -1,12 +1,13 @@
-using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Services.Harvesting;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models.Harvesting;
 using Veldrath.Server.Data;
+using Veldrath.Server.Settings;
 
 namespace Veldrath.Server.Features.Characters.Harvesting;
 
@@ -86,6 +87,7 @@ public record HarvestNodeHubResult
 public class GetLocationNodesHubCommandHandler(
     ApplicationDbContext db,
     INodeRepository nodes,
+    IOptions<HarvestingOptions> options,
     ILogger<GetLocationNodesHubCommandHandler> logger)
     : IRequestHandler<GetLocationNodesHubCommand, IReadOnlyList<LocationNodeDto>>
 {
@@ -107,7 +109,31 @@ public class GetLocationNodesHubCommandHandler(
         }
 
         var here = await nodes.GetNodesByLocationAsync(location);
-        return here.Select(ToDto).ToList();
+
+        // Lazy regrowth: the next look at this location is what brings a long-empty node back, so no sweep has
+        // to walk the world's nodes and a depleted node cannot stay dead forever (nothing else calls the
+        // engine's RespawnNode).
+        var cutoff = DateTime.UtcNow.AddMinutes(-options.Value.RegrowMinutes);
+        var dtos = new List<LocationNodeDto>(here.Count);
+
+        foreach (var node in here)
+        {
+            if (!node.CanHarvest() && node.LastHarvestedAt <= cutoff)
+            {
+                node.CurrentHealth = node.MaxHealth;
+                node.TimesHarvested = 0;
+                node.LastHarvestedAt = DateTime.UtcNow;
+                await nodes.SaveNodeAsync(node);
+
+                logger.LogInformation(
+                    "Resource node {NodeId} regrew at {LocationId} after {Minutes} minutes",
+                    node.NodeId, node.LocationId, options.Value.RegrowMinutes);
+            }
+
+            dtos.Add(ToDto(node));
+        }
+
+        return dtos;
     }
 
     /// <summary>Projects a node onto what the client draws and enables.</summary>
@@ -198,16 +224,16 @@ public class HarvestNodeHubCommandHandler(
         // The bag is the character's own `InventoryBlob`, which is the store the client reads. The engine's
         // `IInventoryService` writes save-game records instead, so a harvest through it produced the right
         // message and an empty bag.
-        var bag = ReadBag(character.InventoryBlob);
+        var bag = CharacterBag.Read(character.InventoryBlob);
         var materials = new List<HarvestedMaterial>(drops.Count);
         foreach (var drop in drops)
         {
             var slug = drop.ItemRef[(drop.ItemRef.LastIndexOf(':') + 1)..];
-            AddToBag(bag, slug, drop.Quantity);
+            CharacterBag.Add(bag, slug, drop.Quantity);
             materials.Add(new HarvestedMaterial(drop.ItemRef, drop.ItemName, drop.Quantity));
         }
 
-        character.InventoryBlob = JsonSerializer.Serialize(bag);
+        character.InventoryBlob = CharacterBag.Serialize(bag);
         await db.SaveChangesAsync(cancellationToken);
 
         if (materials.Count == 0)
@@ -248,45 +274,4 @@ public class HarvestNodeHubCommandHandler(
         ErrorMessage = message,
     };
 
-    /// <summary>Reads the character's bag blob, treating unreadable content as an empty bag.</summary>
-    /// <param name="blob">The stored <c>InventoryBlob</c>.</param>
-    /// <returns>The bag as mutable JSON objects, so unknown fields survive a round trip.</returns>
-    private static List<Dictionary<string, JsonElement>> ReadBag(string? blob)
-    {
-        if (string.IsNullOrWhiteSpace(blob)) return [];
-
-        try
-        {
-            return JsonSerializer.Deserialize<List<Dictionary<string, JsonElement>>>(blob) ?? [];
-        }
-        catch (JsonException)
-        {
-            return [];
-        }
-    }
-
-    /// <summary>Adds a stack to the bag, stacking onto the same item when it is already there.</summary>
-    /// <param name="bag">The bag to mutate.</param>
-    /// <param name="itemRef">The item slug the bag is keyed by.</param>
-    /// <param name="quantity">How many to add.</param>
-    private static void AddToBag(List<Dictionary<string, JsonElement>> bag, string itemRef, int quantity)
-    {
-        var existing = bag.FirstOrDefault(entry =>
-            entry.TryGetValue("ItemRef", out var reference) &&
-            reference.ValueKind == JsonValueKind.String &&
-            string.Equals(reference.GetString(), itemRef, StringComparison.OrdinalIgnoreCase));
-
-        if (existing is null)
-        {
-            bag.Add(new Dictionary<string, JsonElement>
-            {
-                ["ItemRef"] = JsonSerializer.SerializeToElement(itemRef),
-                ["Quantity"] = JsonSerializer.SerializeToElement(quantity),
-            });
-            return;
-        }
-
-        var current = existing.TryGetValue("Quantity", out var stored) && stored.TryGetInt32(out var value) ? value : 0;
-        existing["Quantity"] = JsonSerializer.SerializeToElement(current + quantity);
-    }
 }

@@ -987,6 +987,10 @@ public class GameHub : Hub
 
             await Clients.Caller.SendAsync("NodeTraveled", result);
 
+            // A walk can cross a zone boundary, and NodeTraveled carries only the zone id: without the zone
+            // snapshot that follows, the client keeps showing the zone it just left.
+            await SyncArrivedZoneAsync(result);
+
             // Failsafe reporting: content debt the player just walked into is said out loud, not silently swallowed.
             foreach (var warning in result.ContentWarnings)
             {
@@ -3169,6 +3173,51 @@ public class GameHub : Hub
         await Clients.Caller.SendAsync(
             "SystemMessage",
             "The instance you were in has closed. You wake in the shared zone.");
+    }
+
+    /// <summary>
+    /// Brings the caller's zone state in line with an arrival that crossed a zone boundary, or walked out
+    /// onto the region map. The name, the inn and merchant flags and the occupant list all belong to the
+    /// zone; a walk is as much an arrival as <see cref="EnterZone"/>, so it sends the same snapshot.
+    /// </summary>
+    /// <param name="result">Successful arrival, whose zone is authoritative after the move.</param>
+    private async Task SyncArrivedZoneAsync(TravelToNodeHubResult result)
+    {
+        var currentZoneId = Context.Items.TryGetValue("CurrentZoneId", out var current) && current is string id
+            ? id
+            : null;
+
+        if (string.Equals(currentZoneId, result.ZoneId, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        Context.Items["CurrentZoneId"] = result.ZoneId;
+        Context.Items["CurrentMapId"] = result.MapId;
+        Context.Items["CurrentNodeId"] = result.NodeId;
+
+        // Stepping onto the region map leaves every zone behind; the client clears its banner from the
+        // arrival instead, because a zone snapshot would have nothing to say.
+        if (string.IsNullOrWhiteSpace(result.ZoneId))
+            return;
+
+        var zone = await _zoneRepo.GetByIdAsync(result.ZoneId!);
+        if (zone is null)
+            return;
+
+        var occupants = (await _playerSessionRepo.GetByZoneIdAsync(result.ZoneId!))
+            .Select(s => new { s.CharacterId, s.CharacterName, s.EnteredAt });
+
+        await Clients.Caller.SendAsync("ZoneEntered", new
+        {
+            zone.Id,
+            zone.Name,
+            zone.Description,
+            ZoneType = zone.Type.ToString(),
+            CurrentMapId = result.MapId,
+            CurrentNodeId = result.NodeId,
+            Occupants = occupants,
+            HasInn = zone.HasInn,
+            HasMerchant = zone.HasMerchant,
+        });
     }
 
     /// <summary>

@@ -120,7 +120,6 @@ public class AttackEnemyHubCommandHandler
     private readonly IOptions<DeathPenaltyOptions> _penalty;
     private readonly ILogger<AttackEnemyHubCommandHandler> _logger;
     private readonly ILootTableRepository _lootTables;
-    private readonly IInventoryService _inventory;
     private readonly IRandomSource _random;
 
     /// <summary>Initializes a new instance of <see cref="AttackEnemyHubCommandHandler"/>.</summary>
@@ -130,7 +129,6 @@ public class AttackEnemyHubCommandHandler
     /// <param name="instances">Instance-run service, used to record a cleared room.</param>
     /// <param name="penalty">Configured death-penalty values.</param>
     /// <param name="lootTables">Loot-table catalog, rolled when the enemy dies.</param>
-    /// <param name="inventory">The killer's bag, where the drops land.</param>
     /// <param name="logger">Logger instance.</param>
     /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
     public AttackEnemyHubCommandHandler(
@@ -140,7 +138,6 @@ public class AttackEnemyHubCommandHandler
         Veldrath.Server.Features.Zones.IZoneInstanceService instances,
         IOptions<DeathPenaltyOptions> penalty,
         ILootTableRepository lootTables,
-        IInventoryService inventory,
         ILogger<AttackEnemyHubCommandHandler> logger,
         IRandomSource? randomSource = null)
     {
@@ -150,7 +147,6 @@ public class AttackEnemyHubCommandHandler
         _instances = instances;
         _penalty = penalty;
         _lootTables = lootTables;
-        _inventory = inventory;
         _logger = logger;
         _random = randomSource ?? SystemRandomSource.Shared;
     }
@@ -241,7 +237,7 @@ public class AttackEnemyHubCommandHandler
 
             // The kill is the only moment the archetype's loot table means anything: it is wired in the seed, but
             // until this ran nothing ever rolled it.
-            var droppedItems = await RollLootAsync(enemy, entity.Name, cancellationToken);
+            var droppedItems = await RollLootAsync(enemy, entity, cancellationToken);
 
             // Clearing the floor is a location fact, not a combat fact: ask the store how many are still
             // standing rather than trusting this one death.
@@ -337,13 +333,15 @@ public class AttackEnemyHubCommandHandler
     /// </remarks>
     private async Task<IReadOnlyList<CombatLootDrop>> RollLootAsync(
         SpawnedEnemy enemy,
-        string characterName,
+        Veldrath.Server.Data.Entities.Character entity,
         CancellationToken ct)
     {
-        _ = ct;
         var tableSlugs = enemy.Template?.LootTableIds ?? [];
         if (tableSlugs.Count == 0) return [];
 
+        // The bag is the character's own `InventoryBlob` — the store the client reads. `IInventoryService`
+        // writes save-game records, so drops "added" through it were announced and never carried.
+        var bag = CharacterBag.Read(entity.InventoryBlob);
         var drops = new List<CombatLootDrop>();
 
         foreach (var tableSlug in tableSlugs)
@@ -371,16 +369,19 @@ public class AttackEnemyHubCommandHandler
                     ? _random.Next(entry.QuantityMin, entry.QuantityMax + 1)
                     : Math.Max(1, entry.QuantityMin);
 
-                await _inventory.AddItemAsync(characterName, entry.ItemSlug, quantity);
+                CharacterBag.Add(bag, entry.ItemSlug, quantity);
                 drops.Add(new CombatLootDrop(entry.ItemSlug, quantity));
             }
         }
 
         if (drops.Count > 0)
         {
+            entity.InventoryBlob = CharacterBag.Serialize(bag);
+            await _characterRepo.UpdateAsync(entity, ct);
+
             _logger.LogInformation(
-                "Enemy {EnemyName} dropped {DropCount} stack(s) for {CharacterName}",
-                enemy.Name, drops.Count, characterName);
+                "Enemy {EnemyName} dropped {DropCount} stack(s) into {CharacterName}'s bag",
+                enemy.Name, drops.Count, entity.Name);
         }
 
         return drops;

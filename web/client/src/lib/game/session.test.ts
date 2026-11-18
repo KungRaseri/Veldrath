@@ -1098,6 +1098,46 @@ describe('GameSession map', () => {
 		expect(session.enemies).toEqual([]);
 	});
 
+	it('drops the previous zone when a walk leads onto the region map', async () => {
+		const session = await connected();
+		session.zone = zone({ id: 'crestfall', name: 'Crestfall' });
+		session.occupants = [
+			{ characterId: 'char-2', characterName: 'Bran', enteredAt: '2026-01-01T00:00:00Z' }
+		];
+
+		hub.emit('NodeTraveled', {
+			success: true,
+			mapChanged: true,
+			mapId: 'region:varenmark',
+			nodeId: 'road',
+			zoneId: null
+		});
+		await flush();
+
+		expect(session.zone).toBeNull();
+		expect(session.occupants).toEqual([]);
+		expect(session.zoneLabel).toBe('Region map');
+	});
+
+	it('adopts the zone the server reports after a walk that crosses a border', async () => {
+		const session = await connected();
+		session.zone = zone({ id: 'crestfall', name: 'Crestfall' });
+
+		hub.emit('NodeTraveled', {
+			success: true,
+			mapChanged: true,
+			mapId: 'zone:ashlen-wood',
+			nodeId: 'wood-road',
+			zoneId: 'ashlen-wood'
+		});
+		await flush();
+		// The arrival carries only the zone id, so the server follows it with the zone snapshot.
+		hub.emit('ZoneEntered', zone({ id: 'ashlen-wood', name: 'The Ashlen Wood' }));
+
+		expect(session.zone?.id).toBe('ashlen-wood');
+		expect(session.zoneLabel).toBe('The Ashlen Wood');
+	});
+
 	it('requests the new map when travel changes maps', async () => {
 		const session = await connected();
 

@@ -1283,6 +1283,14 @@ export class GameSession {
 			: null;
 		this.enemies = payload.spawnedEnemies ?? [];
 
+		// Arriving inside a zone, the server sends the `ZoneEntered` snapshot a walk needs — name, inn and
+		// merchant flags, occupants. Arriving on a region map there is no zone at all, so the previous zone's
+		// banner and occupants are dropped rather than left standing over the new map.
+		if (!payload.zoneId && this.zone) {
+			this.zone = null;
+			this.occupants = [];
+		}
+
 		// Nodes belong to the location, and travelling to a Location node is how most locations are entered —
 		// that path emits `NodeTraveled`, not `LocationEntered`, so the list has to be refreshed here too.
 		this.nodes = [];

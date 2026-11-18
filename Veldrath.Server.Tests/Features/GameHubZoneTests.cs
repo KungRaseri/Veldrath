@@ -332,6 +332,92 @@ public class GameHubZoneTests : IDisposable
             m.Method == "SystemMessage" && (string)m.Args[0]! == "Pool 'goblins' references no known actors");
     }
 
+    [Fact]
+    public async Task TravelToNode_Sends_The_New_Zone_Snapshot_When_The_Walk_Crosses_A_Border()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+        // One character per account in slot 1, so the neighbour who is already there needs their own account.
+        var residentAccount = await HubHarness.SeedAccountAsync(db);
+        var resident = await HubHarness.SeedCharacterAsync(db, residentAccount.Id);
+        await HubHarness.SeedSessionAsync(db, resident, "conn-resident", "the-droveway");
+
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id, connectionId: "conn-crossing");
+        ctx.EnterZoneState(character.Id, character.Name);
+        mediator.Returns(new TravelToNodeHubResult
+        {
+            Success = true,
+            MapId = "zone:the-droveway",
+            NodeId = "zone:the-droveway:entry",
+            ZoneId = "the-droveway",
+        });
+
+        await hub.TravelToNode(new TravelToNodeHubRequest("region:varenmark", "the-droveway"));
+
+        // NodeTraveled carries only the zone id, so the walk has to bring the name, the inn and merchant flags
+        // and the occupant list with it — otherwise the banner still reads "Crestfall" inside the Droveway.
+        var entered = clients.Caller.SentMessages.Single(m => m.Method == "ZoneEntered").Args[0];
+        entered.Should().BeEquivalentTo(new
+        {
+            Id = "the-droveway",
+            Name = "The Droveway",
+            CurrentMapId = "zone:the-droveway",
+            CurrentNodeId = "zone:the-droveway:entry",
+            Occupants = new[] { new { CharacterId = resident.Id, CharacterName = resident.Name } },
+        });
+        ctx.Items["CurrentZoneId"].Should().Be("the-droveway");
+    }
+
+    [Fact]
+    public async Task TravelToNode_Keeps_The_Zone_Snapshot_When_The_Walk_Stays_Inside_It()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        ctx.EnterZoneState(character.Id, character.Name);
+        mediator.Returns(new TravelToNodeHubResult
+        {
+            Success = true,
+            MapId = "zone:crestfall",
+            NodeId = "crestfall-market",
+            ZoneId = "crestfall",
+        });
+
+        await hub.TravelToNode(new TravelToNodeHubRequest("zone:crestfall", "crestfall-market"));
+
+        clients.Caller.SentMessages.Should().NotContain(
+            m => m.Method == "ZoneEntered",
+            "walking inside one zone leaves the banner untouched");
+    }
+
+    [Fact]
+    public async Task TravelToNode_Clears_The_Zone_When_The_Walk_Leads_Onto_The_Region_Map()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        ctx.EnterZoneState(character.Id, character.Name);
+        mediator.Returns(new TravelToNodeHubResult
+        {
+            Success = true,
+            MapId = "region:varenmark",
+            NodeId = "varenmark:crestfall",
+            ZoneId = null,
+        });
+
+        await hub.TravelToNode(new TravelToNodeHubRequest("zone:crestfall", "crestfall-exit"));
+
+        clients.Caller.SentMessages.Should().NotContain(
+            m => m.Method == "ZoneEntered",
+            "there is no zone on the region map to describe");
+        ctx.Items["CurrentZoneId"].Should().BeNull();
+        ctx.Items["CurrentMapId"].Should().Be("region:varenmark");
+        ctx.Items["CurrentNodeId"].Should().Be("varenmark:crestfall");
+    }
+
     // ── NavigateToLocation ───────────────────────────────────────────────────
 
     [Fact]

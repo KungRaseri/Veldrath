@@ -178,6 +178,12 @@ try
         .Bind(builder.Configuration.GetSection(EnemyWorldOptions.SectionName))
         .ValidateDataAnnotations()
         .ValidateOnStart();
+
+    // How long an emptied resource node stays empty; read lazily when a location's nodes are listed.
+    builder.Services.AddOptions<HarvestingOptions>()
+        .Bind(builder.Configuration.GetSection(HarvestingOptions.SectionName))
+        .ValidateDataAnnotations()
+        .ValidateOnStart();
     builder.Services.AddHostedService<EnemyRespawnService>();
     // Registered as both: the host runs it once at startup, and the world-health endpoint runs it on demand.
     builder.Services.AddSingleton<ContentAuditService>();

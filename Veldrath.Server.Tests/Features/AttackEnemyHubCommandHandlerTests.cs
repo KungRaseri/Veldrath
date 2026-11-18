@@ -21,7 +21,6 @@ public class AttackEnemyHubCommandHandlerTests : IDisposable
     private readonly FakeEnemyInstanceStore _enemies = new();
     private readonly FakeCombatSessionStore _sessions = new();
     private readonly Mock<RealmEngine.Shared.Abstractions.ILootTableRepository> _lootTables = new();
-    private readonly Mock<RealmEngine.Shared.Abstractions.IInventoryService> _inventory = new();
 
     private AttackEnemyHubCommandHandler MakeHandler(ApplicationDbContext db) =>
         new(
@@ -36,7 +35,6 @@ public class AttackEnemyHubCommandHandlerTests : IDisposable
                 NullLogger<Veldrath.Server.Features.Zones.EfCoreZoneInstanceService>.Instance),
             Options.Create(new DeathPenaltyOptions()),
             _lootTables.Object,
-            _inventory.Object,
             NullLogger<AttackEnemyHubCommandHandler>.Instance);
 
     public void Dispose() => _dbFactory.Dispose();
@@ -280,9 +278,10 @@ public class AttackEnemyHubCommandHandlerTests : IDisposable
 
         result.EnemyDefeated.Should().BeTrue();
         result.ItemsDropped.Should().ContainSingle().Which.Should().Be(new CombatLootDrop("health-potion", 1));
-        _inventory.Verify(
-            inventory => inventory.AddItemAsync(character.Name, "health-potion", 1),
-            Times.Once,
-            "a drop the player never receives is not a drop");
+
+        // A drop the player never receives is not a drop: it has to be in the character's own bag blob, which
+        // is the store the client reads. Announcing it while writing somewhere else was the defect this pins.
+        var stored = await db.Characters.AsNoTracking().SingleAsync(c => c.Id == character.Id);
+        stored.InventoryBlob.Should().Contain("health-potion");
     }
 }
