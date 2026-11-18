@@ -25,6 +25,7 @@ public class EfCoreEnemyRepository(ContentDbContext db, ILogger<EfCoreEnemyRepos
     public async Task<Enemy?> GetBySlugAsync(string slug)
     {
         var entity = await db.ActorArchetypes.AsNoTracking()
+            .Include(e => e.LootTable)
             .Where(e => e.IsActive && e.Slug == slug)
             .FirstOrDefaultAsync();
 
@@ -50,6 +51,9 @@ public class EfCoreEnemyRepository(ContentDbContext db, ILogger<EfCoreEnemyRepos
         Health = e.Stats.Health ?? 50,
         Level = e.MinLevel,
         RarityWeight = e.RarityWeight,
+        // The kill path rolls this table. Carried on the model because the spawned enemy is a copy of it, and the
+        // archetype row's loot id is otherwise unreachable from combat.
+        LootTableIds = e.LootTable is null ? [] : [e.LootTable.Slug],
         Attributes =
         {
             ["strength"]     = e.Stats.Strength     ?? 10,

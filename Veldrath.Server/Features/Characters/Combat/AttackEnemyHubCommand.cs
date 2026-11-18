@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Models;
 using RealmEngine.Shared.Services;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Hubs;
@@ -91,7 +92,18 @@ public record AttackEnemyHubResult
 
     /// <summary>Gets the hidden locations this clear unlocked for the character.</summary>
     public IReadOnlyList<string> UnlockedLocationSlugs { get; init; } = [];
+
+    /// <summary>
+    /// Gets what the defeated enemy dropped into the killer's bag. Empty when the archetype names no loot table or
+    /// nothing rolled, which is the normal case for most kills.
+    /// </summary>
+    public IReadOnlyList<CombatLootDrop> ItemsDropped { get; init; } = [];
 }
+
+/// <summary>One item a defeated enemy dropped.</summary>
+/// <param name="ItemSlug">Slug of the item, as it was added to the bag.</param>
+/// <param name="Quantity">How many were added.</param>
+public record CombatLootDrop(string ItemSlug, int Quantity);
 
 /// <summary>
 /// Handles <see cref="AttackEnemyHubCommand"/> by loading the player and enemy state,
@@ -107,6 +119,8 @@ public class AttackEnemyHubCommandHandler
     private readonly Veldrath.Server.Features.Zones.IZoneInstanceService _instances;
     private readonly IOptions<DeathPenaltyOptions> _penalty;
     private readonly ILogger<AttackEnemyHubCommandHandler> _logger;
+    private readonly ILootTableRepository _lootTables;
+    private readonly IInventoryService _inventory;
     private readonly IRandomSource _random;
 
     /// <summary>Initializes a new instance of <see cref="AttackEnemyHubCommandHandler"/>.</summary>
@@ -115,6 +129,8 @@ public class AttackEnemyHubCommandHandler
     /// <param name="sessions">Store for per-character combat sessions.</param>
     /// <param name="instances">Instance-run service, used to record a cleared room.</param>
     /// <param name="penalty">Configured death-penalty values.</param>
+    /// <param name="lootTables">Loot-table catalog, rolled when the enemy dies.</param>
+    /// <param name="inventory">The killer's bag, where the drops land.</param>
     /// <param name="logger">Logger instance.</param>
     /// <param name="randomSource">Optional random source; defaults to <see cref="SystemRandomSource.Shared"/>.</param>
     public AttackEnemyHubCommandHandler(
@@ -123,6 +139,8 @@ public class AttackEnemyHubCommandHandler
         ICombatSessionStore sessions,
         Veldrath.Server.Features.Zones.IZoneInstanceService instances,
         IOptions<DeathPenaltyOptions> penalty,
+        ILootTableRepository lootTables,
+        IInventoryService inventory,
         ILogger<AttackEnemyHubCommandHandler> logger,
         IRandomSource? randomSource = null)
     {
@@ -131,6 +149,8 @@ public class AttackEnemyHubCommandHandler
         _sessions = sessions;
         _instances = instances;
         _penalty = penalty;
+        _lootTables = lootTables;
+        _inventory = inventory;
         _logger = logger;
         _random = randomSource ?? SystemRandomSource.Shared;
     }
@@ -219,6 +239,10 @@ public class AttackEnemyHubCommandHandler
                 await _characterRepo.UpdateAsync(rewarded, cancellationToken);
             }
 
+            // The kill is the only moment the archetype's loot table means anything: it is wired in the seed, but
+            // until this ran nothing ever rolled it.
+            var droppedItems = await RollLootAsync(enemy, entity.Name, cancellationToken);
+
             // Clearing the floor is a location fact, not a combat fact: ask the store how many are still
             // standing rather than trusting this one death.
             Veldrath.Server.Features.Zones.LocationClearOutcome? cleared = null;
@@ -258,6 +282,7 @@ public class AttackEnemyHubCommandHandler
                 FirstClearOfRun = cleared?.FirstClearOfRun ?? false,
                 FirstClearForCharacter = cleared?.FirstClearForCharacter ?? false,
                 UnlockedLocationSlugs = cleared?.UnlockedLocationSlugs ?? [],
+                ItemsDropped = droppedItems,
             };
         }
 
@@ -296,5 +321,68 @@ public class AttackEnemyHubCommandHandler
             GoldLost = death.GoldLost,
             XpLost = death.XpLost,
         };
+    }
+
+    /// <summary>
+    /// Rolls the defeated archetype's loot table and puts the result in the killer's bag.
+    /// </summary>
+    /// <param name="enemy">The enemy that just died; its template carries the loot-table slugs.</param>
+    /// <param name="characterName">The bag owner, keyed the way the inventory service expects.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>What dropped, in table order.</returns>
+    /// <remarks>
+    /// Each entry rolls independently against its own weight, which is what the seed authored ("drop weight", not
+    /// "pick one"), and a guaranteed entry always lands. A catalog read that fails is logged and skipped: a kill must
+    /// not fail because loot could not be read.
+    /// </remarks>
+    private async Task<IReadOnlyList<CombatLootDrop>> RollLootAsync(
+        SpawnedEnemy enemy,
+        string characterName,
+        CancellationToken ct)
+    {
+        _ = ct;
+        var tableSlugs = enemy.Template?.LootTableIds ?? [];
+        if (tableSlugs.Count == 0) return [];
+
+        var drops = new List<CombatLootDrop>();
+
+        foreach (var tableSlug in tableSlugs)
+        {
+            LootTableData? table;
+            try
+            {
+                table = await _lootTables.GetBySlugAsync(tableSlug);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogError(ex, "Loot table {TableSlug} could not be read; the kill drops nothing", tableSlug);
+                continue;
+            }
+
+            if (table is null || table.Entries.Count == 0) continue;
+
+            var totalWeight = table.Entries.Sum(entry => Math.Max(1, entry.DropWeight));
+
+            foreach (var entry in table.Entries)
+            {
+                if (!entry.IsGuaranteed && _random.Next(totalWeight) >= Math.Max(1, entry.DropWeight)) continue;
+
+                var quantity = entry.QuantityMax > entry.QuantityMin
+                    ? _random.Next(entry.QuantityMin, entry.QuantityMax + 1)
+                    : Math.Max(1, entry.QuantityMin);
+
+                await _inventory.AddItemAsync(characterName, entry.ItemSlug, quantity);
+                drops.Add(new CombatLootDrop(entry.ItemSlug, quantity));
+            }
+        }
+
+        if (drops.Count > 0)
+        {
+            _logger.LogInformation(
+                "Enemy {EnemyName} dropped {DropCount} stack(s) for {CharacterName}",
+                enemy.Name, drops.Count, characterName);
+        }
+
+        return drops;
     }
 }

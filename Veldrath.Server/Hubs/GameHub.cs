@@ -2582,6 +2582,8 @@ public class GameHub : Hub
                 result.XpLost,
                 result.XpEarned,
                 result.GoldEarned,
+                // Loot is a consequence of the kill, so it travels with the same turn the client narrates.
+                result.ItemsDropped,
             });
 
             await BroadcastCombatSnapshotAsync(characterId);

@@ -193,6 +193,17 @@ public static class LootTablesSeeder
                         QuantityMax = 1,
                         IsGuaranteed = false,
                     },
+                    new LootTableEntry
+                    {
+                        // The story quest's objective. It rides on the captain because that is the only actor the seed
+                        // calls a bandit leader — without a source the quest could never be finished.
+                        ItemDomain  = "items/general",
+                        ItemSlug    = "lost-cargo",
+                        DropWeight  = 100,
+                        QuantityMin = 1,
+                        QuantityMax = 1,
+                        IsGuaranteed = true,
+                    },
                 ],
             },
 

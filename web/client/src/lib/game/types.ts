@@ -576,6 +576,8 @@ export interface CombatTurnPayload {
 	xpLost?: number;
 	xpEarned?: number;
 	goldEarned?: number;
+	/** What the defeated enemy dropped into the bag, so the log can name it. */
+	itemsDropped?: { itemSlug: string; quantity: number }[] | null;
 	abilityId?: string | null;
 	abilityDamage?: number;
 	healthRestored?: number;

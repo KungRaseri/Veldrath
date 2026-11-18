@@ -83,14 +83,18 @@ rooms (4–17). Towns, inns, markets and the `SafeRespawn` lobbies stay empty.
 `gull-rider-brute`/`ash-wraith` (14–20), plus one boss per dungeon (the loot tables already expect one). Each needs
 `Stats` (health, damage, XP, gold) and `Traits` (`Hostile`, `Aggressive`, `PackHunter`, `Caster`, …).
 
-### P1 — the loot tables are orphans
+### P1 — the loot tables were orphans (**fixed 2026-11-18**)
 
 Four tables exist and **no archetype references any of them** (`ArchetypeSeeder` sets no `LootTableRef`), and two of
 the four name content that does not exist: `wolf-common-drops` (there is no wolf archetype) and `bandit-boss-drops`
 (there is no boss). `forest-chest-loot` has no chest to open.
 
-**Fix:** wire each hostile archetype to a drop table, and either author the missing archetypes/boss/chest or retire
-those tables. Keeping a table nothing can drop is the same class of bug as an empty spawn pool.
+**Fix (shipped):** each hostile that should drop now names a table, and the kill path rolls it:
+[`EfCoreEnemyRepository`](../RealmEngine.Data/Repositories/EfCoreEnemyRepository.cs) carries the table slug on the
+`Enemy` model, `AttackEnemyHubCommandHandler` rolls each entry against its own weight (a guaranteed entry always
+lands), adds the result to the killer's bag and returns it as `ItemsDropped`, and the client names it in the combat
+log ("Found: 2× iron-ingot"). `lost-cargo` now rides on `bandit-boss-drops`, so `the-lost-shipment` has a source.
+Still open: `forest-chest-loot` has no chest to open, and `gather-mushrooms` needs harvesting (below).
 
 ### P0 — a dead player was locked out: "Character is not dead" (found by the C6 spec, **fixed 2026-11-18**)
 

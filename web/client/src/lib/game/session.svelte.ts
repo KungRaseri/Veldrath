@@ -783,6 +783,9 @@ export class GameSession {
 			}
 			if (payload.enemyDefeated) {
 				this.combat = { ...this.combat, active: false };
+
+				// Loot landed in the bag server-side, so the sheet has to re-read it or the drop is invisible.
+				if ((payload.itemsDropped?.length ?? 0) > 0) void this.openInventory();
 			}
 		});
 
