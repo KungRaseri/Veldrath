@@ -4258,3 +4258,40 @@ Twelfth pass — **the three follow-ups the harvest loop left behind are closed.
 - **Known gap this leaves:** a walk out of a zone changes the session row's zone but never sends `PlayerLeft` to
   the zone it left, so peers in the old zone can keep showing the walker until they refresh. Travel also never
   sets `Context.Items["CurrentZoneId"]` before this pass, which is now fixed for the arrival's zone.
+
+Thirteenth pass — **chests exist, and they do not stand still.**
+
+- **Where the row lives.** [`LootChest`](../../Veldrath.Server/Data/Entities/LootChest.cs) is in
+  `ApplicationDbContext` (not `GameDbContext` like `HarvestableNodes`) because nothing in the engine consumes it —
+  only `LootTableService.RollChestDrops` — so it needs no `INodeRepository`-style abstraction, and it belongs
+  beside `GroundItems`/`ZoneInstances`, which are the other per-location live rows. It has a nullable
+  `ZoneInstanceId` with cascade delete, so a delve's chests die with the run. Migration:
+  `Veldrath.Server/Migrations/*_AddLootChests.cs` (deploy needs it; tests use `EnsureCreated`).
+- **Authored vs roaming, one table.** `Kind` discriminates them. `LootChestsSeeder.Authors()` seeds two authored
+  chests in the Ashlen Wood (`old-clearing-strongbox`, `wood-road-cache`), idempotent by `ChestId` and preserving
+  opened state. Roaming rows are inserted by `ChestService` from the zone's `ZoneLocation` rows: not hidden, not
+  safe respawn, not instanced, `MinLevel >= Chests:MinSiteDangerLevel`, location not already occupied, zone is
+  not a town. Site and loot table are both drawn by `RarityWeight`.
+- **Swept, not timed.** `ChestService : BackgroundService` mirrors `EnemyRespawnService`. `ReopenAt` drives the
+  reopen window (`Chests:ReopenAfterMinutes`, 180); a zone gains a roaming chest when its newest roaming
+  `SpawnedAt`/`OpenedAt` is older than `Chests:SpawnEveryMinutes` (90) and it holds fewer than
+  `Chests:MaxRoamingPerZone` (1). Opened roaming rows are tombstones on purpose: they are the clock. Every write
+  is conditional (`ExecuteUpdateAsync`), so two sweeper instances cannot double-reopen a row.
+- **Node regrowth moved onto the same sweep.** The lazy rule I shipped hours earlier is gone;
+  `GetLocationNodesHubCommand` is a pure read again, and `ChestService.RegrowNodesAsync` resets depleted nodes
+  whose `LastHarvestedAt` is older than `HarvestingOptions.RegrowMinutes`. `LocationNodesRegrowthTests` was
+  replaced by `ChestSweeperTests` (reopen window, roaming site/town/cap/cadence filters, node regrowth).
+- **First open wins.** `OpenChestHubCommandHandler` guards position, instance and `IsOpened`, rolls, then claims
+  with `WHERE IsOpened = false`; a rows-affected of zero answers "someone else got there first" instead of paying
+  twice. Items go into `Characters.InventoryBlob` through `CharacterBag`; `roll.Gold` is routed through
+  `AddGoldHubCommand` so the attributes gold key keeps one writer.
+- **Transport + web.** `GetLocationChests`/`OpenChest` on the hub, `LocationChests` on pull and on `EnterLocation`,
+  `ChestOpened` to the current zone group (a shared chest disappears for the party, not just the opener). Web:
+  `LocationChest`/`LocationChestsPayload`/`ChestOpenedPayload`, `session.chests`, a **Chests** section in the Local
+  panel, pulls on `LocationEntered` and on `NodeTraveled`. `harvest.e2e.ts` now opens the strongbox and asserts the
+  guaranteed potion lands in the bag.
+- **Gaps worth remembering:** the sweeper does not broadcast (a chest appearing under a player's feet only shows
+  on their next arrival — the difficulty-scoped group name lives per connection, not on the row); the seeded
+  `forest-chest-loot` has no `gold` entry, so chests pay items only; the e2e stack exports
+  `Chests__ReopenAfterMinutes=1` + `Chests__SweepIntervalSeconds=5` so an isolated re-run recovers the authored
+  chests, and the spec walks on to the road's cache and then skips with that reason if both were emptied.

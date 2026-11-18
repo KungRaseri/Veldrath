@@ -677,6 +677,80 @@ namespace Veldrath.Server.Migrations
                     b.ToTable("GroundItems");
                 });
 
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.LootChest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ChestId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("IsOpened")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("LocationSlug")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("LootTableRefs")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("MergeStrategy")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTimeOffset?>("OpenedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OpenedByCharacterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ReopenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("SpawnedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ZoneId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid?>("ZoneInstanceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChestId")
+                        .IsUnique();
+
+                    b.HasIndex("ReopenAt");
+
+                    b.HasIndex("ZoneInstanceId");
+
+                    b.HasIndex("ZoneId", "LocationSlug");
+
+                    b.HasIndex("ZoneId", "Kind", "IsOpened");
+
+                    b.ToTable("LootChests");
+                });
+
             modelBuilder.Entity("Veldrath.Server.Data.Entities.Party", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1387,6 +1461,14 @@ namespace Veldrath.Server.Migrations
                 });
 
             modelBuilder.Entity("Veldrath.Server.Data.Entities.GroundItem", b =>
+                {
+                    b.HasOne("Veldrath.Server.Data.Entities.ZoneInstance", null)
+                        .WithMany()
+                        .HasForeignKey("ZoneInstanceId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.LootChest", b =>
                 {
                     b.HasOne("Veldrath.Server.Data.Entities.ZoneInstance", null)
                         .WithMany()

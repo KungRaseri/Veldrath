@@ -536,6 +536,31 @@ export interface HarvestedPayload {
 	message: string;
 }
 
+/** A chest standing in the current location, unopened. */
+export interface LocationChest {
+	id: string;
+	displayName: string;
+	locationSlug: string;
+	/** `Authored` for a chest content placed, `Roaming` for one the server placed by draw. */
+	kind: string;
+}
+
+/** The unopened chests here, sent on entering a location and refreshed after every open. */
+export interface LocationChestsPayload {
+	chests: LocationChest[];
+}
+
+/** What a chest held. The items and gold are already with the character when this arrives. */
+export interface ChestOpenedPayload {
+	success: boolean;
+	chestId: string;
+	displayName: string;
+	items: { itemRef: string; name: string; quantity: number }[];
+	gold: number;
+	message?: string | null;
+	remainingChests: LocationChest[];
+}
+
 /** A location revealed by a successful area search. */
 export interface SearchFinding {
 	slug: string;

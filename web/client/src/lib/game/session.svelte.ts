@@ -33,6 +33,7 @@ import type {
 	CombatTurnPayload,
 	CraftableRecipe,
 	CraftableRecipesPayload,
+	ChestOpenedPayload,
 	EmotePayload,
 	GroundItem,
 	InventoryItem,
@@ -43,6 +44,8 @@ import type {
 	LearnedPower,
 	HarvestedPayload,
 	LocationClearedPayload,
+	LocationChest,
+	LocationChestsPayload,
 	LocationEnteredPayload,
 	LocationNode,
 	LocationNodesPayload,
@@ -166,6 +169,8 @@ export class GameSession {
 	lastSearch = $state<{ rollValue: number; discovered: SearchFinding[] } | null>(null);
 	/** Resource nodes standing in this location, refreshed by the server after every attempt. */
 	nodes = $state<LocationNode[]>([]);
+	/** Unopened chests standing in this location, refreshed by the server after every open. */
+	chests = $state<LocationChest[]>([]);
 	/** Slash commands the caller may run, already filtered by permission server-side. */
 	chatCommands = $state<ChatCommandInfo[]>([]);
 	/** Characters muted locally with `/ignore`; their chat is hidden in every channel. */
@@ -380,6 +385,19 @@ export class GameSession {
 		if (!this.hub) return;
 		this.error = null;
 		await this.hub.invoke('HarvestNode', { nodeId });
+	}
+
+	/** Asks for the chests standing here; the server answers with `LocationChests`. */
+	async requestLocationChests(): Promise<void> {
+		if (!this.hub) return;
+		await this.hub.invoke('GetLocationChests');
+	}
+
+	/** Opens one chest. The loot, the refreshed list and the log line all arrive as broadcasts. */
+	async openChest(chestId: string): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('OpenChest', { chestId });
 	}
 
 	/** Opens the item detail dialog for a bag or equipment entry. */
@@ -735,15 +753,29 @@ export class GameSession {
 			// not the location list. Filtering here also keeps a fight resumed after a reconnect from appearing twice.
 			const engagedEnemyId = this.combat.enemy?.id;
 			this.enemies = (payload.spawnedEnemies ?? []).filter((enemy) => enemy.id !== engagedEnemyId);
-			// Ground items and nodes belong to the location. The node list is cleared first so a stale
-			// forest cannot follow the player into a town, and it is pulled the same way ground items are.
+			// Ground items, nodes and chests belong to the location. Their lists are cleared first so a stale
+			// forest or a chest from the last room cannot follow the player, and they are pulled the same way
+			// ground items are.
 			this.nodes = [];
+			this.chests = [];
 			void this.requestGroundItems();
 			void this.requestLocationNodes();
+			void this.requestLocationChests();
 		});
 
 		hub.on('LocationNodes', (payload: LocationNodesPayload) => {
 			this.nodes = payload.nodes ?? [];
+		});
+
+		hub.on('LocationChests', (payload: LocationChestsPayload) => {
+			this.chests = payload.chests ?? [];
+		});
+
+		hub.on('ChestOpened', (payload: ChestOpenedPayload) => {
+			// One player opening a shared chest empties it for everyone standing there, so the broadcast is
+			// what keeps a party's list honest — not just the opener's own reply.
+			this.chests = payload.remainingChests ?? [];
+			if (payload.message) this.addSystemMessage(payload.message);
 		});
 
 		hub.on('Harvested', (payload: HarvestedPayload) => {
@@ -1291,10 +1323,12 @@ export class GameSession {
 			this.occupants = [];
 		}
 
-		// Nodes belong to the location, and travelling to a Location node is how most locations are entered —
-		// that path emits `NodeTraveled`, not `LocationEntered`, so the list has to be refreshed here too.
+		// Nodes and chests belong to the location, and travelling to a Location node is how most locations are
+		// entered — that path emits `NodeTraveled`, not `LocationEntered`, so the lists are refreshed here too.
 		this.nodes = [];
+		this.chests = [];
 		void this.requestLocationNodes();
+		void this.requestLocationChests();
 
 		if (payload.mapChanged) await this.requestMapGraph(payload.mapId ?? null);
 	}

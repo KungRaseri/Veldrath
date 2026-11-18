@@ -19,6 +19,7 @@ using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.Auth;
 using Veldrath.Server.Features.Characters;
+using Veldrath.Server.Features.Characters.Chests;
 using Veldrath.Server.Features.Characters.Combat;
 using Veldrath.Server.Features.Characters.Harvesting;
 using Veldrath.Server.Features.Characters.Queries;
@@ -1040,8 +1041,10 @@ public class GameHub : Hub
 
             await Clients.Caller.SendAsync("NodeTraveled", result.Arrival);
 
-            // What grows here. A safe location answers with an empty list, which the client renders as nothing.
+            // What grows here, and what is waiting to be opened. A safe location answers with empty lists,
+            // which the client renders as nothing.
             await SendLocationNodesAsync(characterId);
+            await SendLocationChestsAsync(characterId);
 
             foreach (var warning in result.Arrival.ContentWarnings)
             {
@@ -1737,6 +1740,88 @@ public class GameHub : Hub
         }
 
         await Clients.Caller.SendAsync("LocationNodes", new { Nodes = nodes });
+    }
+
+    /// <summary>
+    /// Sends the unopened chests standing in the caller's current location as <c>LocationChests</c>.
+    /// </summary>
+    public async Task GetLocationChests()
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetLocationChests");
+            return;
+        }
+
+        await SendLocationChestsAsync(characterId);
+    }
+
+    /// <summary>
+    /// Opens one chest: the loot lands in the bag and the emptied chest is announced to everyone standing there.
+    /// </summary>
+    /// <remarks>
+    /// The chest is shared, so the broadcast is what keeps a party's panel honest — one player opening it makes it
+    /// disappear for the others. Only the opener receives the loot, which is rolled per open by design.
+    /// </remarks>
+    /// <param name="request">The chest to open; the character comes from the connection.</param>
+    public async Task OpenChest(OpenChestRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before OpenChest");
+            return;
+        }
+
+        if (request is null || request.ChestId == Guid.Empty)
+        {
+            await Clients.Caller.SendAsync("Error", "A chest id is required.");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new OpenChestHubCommand(characterId, request.ChestId));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "The chest would not open.");
+            }
+            else
+            {
+                await TrySendInventorySnapshotAsync(characterId);
+
+                if (TryGetCurrentZoneGroup(out var zoneGroup))
+                    await Clients.Group(zoneGroup).SendAsync("ChestOpened", result);
+                else
+                    await Clients.Caller.SendAsync("ChestOpened", result);
+            }
+
+            // A failed open can still have moved the list (someone else won), so it is re-sent either way.
+            await SendLocationChestsAsync(characterId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error opening chest {ChestId} for character {CharacterId}", request.ChestId, characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to open that chest.");
+        }
+    }
+
+    /// <summary>Sends <c>LocationChests</c> to the caller, or an empty list when the read fails.</summary>
+    /// <param name="characterId">The character whose location to read.</param>
+    private async Task SendLocationChestsAsync(Guid characterId)
+    {
+        IReadOnlyList<LocationChestDto> chests;
+        try
+        {
+            chests = await _mediator.Send(new GetLocationChestsHubCommand(characterId));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to list the chests at the location of {CharacterId}.", characterId);
+            chests = [];
+        }
+
+        await Clients.Caller.SendAsync("LocationChests", new { Chests = chests });
     }
 
     /// <summary>

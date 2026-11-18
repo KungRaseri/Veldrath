@@ -19,6 +19,29 @@ const heroName = () =>
 		.slice(0, 6)}`.slice(0, 20);
 
 /**
+ * Opens the first chest the Local panel offers, and reports whether one was there at all.
+ *
+ * Authored chests are world state, not per-character state: a second run against the same database finds
+ * the one an earlier run emptied still inside its reopen window, so the caller walks on rather than
+ * pretending the chest loop was exercised.
+ *
+ * @param page The game page.
+ * @returns Whether a chest was opened.
+ */
+async function openAnyChest(page: Page): Promise<boolean> {
+	const open = page.getByRole('button', { name: 'Open', exact: true }).first();
+
+	try {
+		await expect(open).toBeVisible({ timeout: 20_000 });
+	} catch {
+		return false;
+	}
+
+	await open.click();
+	return true;
+}
+
+/**
  * Walks to a node on the current map through the UI: select it, then take the travel action.
  *
  * The panel only offers a travel action for a node that is adjacent, and none at all for the node the
@@ -131,5 +154,26 @@ test.describe('gathering', () => {
 		// The item is in the character's bag, which is the server's blob — the whole point of the slice.
 		const sheet = page.getByRole('complementary', { name: 'Character sheet' });
 		await expect(sheet.getByText('Glowcap Mushroom').first()).toBeVisible({ timeout: 30_000 });
+
+		// ── The strongbox the seed places in this very clearing ────────────────────────────────────
+		// The chest half of the same walk: it is seeded content (always here, unlike the roaming caches),
+		// it is listed with the nodes on arrival, and opening it puts its guaranteed potion in the bag.
+		let opened = await openAnyChest(page);
+
+		if (!opened) {
+			// A previous run on this database opened it and the reopen window has not elapsed: the cache on
+			// the road is the other authored chest, one hop away inside the same zone.
+			expect(await walkTo(page, 'The Wood Road')).toBe(true);
+			opened = await openAnyChest(page);
+		}
+
+		if (!opened) {
+			test.skip(true, 'An earlier run emptied both authored chests; start the stack with --fresh.');
+		}
+
+		await expect(sheet.getByText('Health Potion').first()).toBeVisible({ timeout: 30_000 });
+		// An opened chest leaves the list, so the panel cannot offer it twice. Asserted on the verb rather
+		// than on the chest's name, which the chat log still carries in its "Opened the …" line.
+		await expect(page.getByRole('button', { name: 'Open', exact: true })).toHaveCount(0);
 	});
 });

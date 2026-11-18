@@ -1,13 +1,11 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using RealmEngine.Core.Services;
 using RealmEngine.Core.Services.Harvesting;
 using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models.Harvesting;
 using Veldrath.Server.Data;
-using Veldrath.Server.Settings;
 
 namespace Veldrath.Server.Features.Characters.Harvesting;
 
@@ -84,10 +82,13 @@ public record HarvestNodeHubResult
 /// <summary>
 /// Handles <see cref="GetLocationNodesHubCommand"/> by listing the nodes in the character's location.
 /// </summary>
+/// <remarks>
+/// A pure read: regrowth belongs to <c>ChestService</c> so an emptied node comes back on time whether or not
+/// anyone is looking at it, instead of only when the location is next listed.
+/// </remarks>
 public class GetLocationNodesHubCommandHandler(
     ApplicationDbContext db,
     INodeRepository nodes,
-    IOptions<HarvestingOptions> options,
     ILogger<GetLocationNodesHubCommandHandler> logger)
     : IRequestHandler<GetLocationNodesHubCommand, IReadOnlyList<LocationNodeDto>>
 {
@@ -109,31 +110,7 @@ public class GetLocationNodesHubCommandHandler(
         }
 
         var here = await nodes.GetNodesByLocationAsync(location);
-
-        // Lazy regrowth: the next look at this location is what brings a long-empty node back, so no sweep has
-        // to walk the world's nodes and a depleted node cannot stay dead forever (nothing else calls the
-        // engine's RespawnNode).
-        var cutoff = DateTime.UtcNow.AddMinutes(-options.Value.RegrowMinutes);
-        var dtos = new List<LocationNodeDto>(here.Count);
-
-        foreach (var node in here)
-        {
-            if (!node.CanHarvest() && node.LastHarvestedAt <= cutoff)
-            {
-                node.CurrentHealth = node.MaxHealth;
-                node.TimesHarvested = 0;
-                node.LastHarvestedAt = DateTime.UtcNow;
-                await nodes.SaveNodeAsync(node);
-
-                logger.LogInformation(
-                    "Resource node {NodeId} regrew at {LocationId} after {Minutes} minutes",
-                    node.NodeId, node.LocationId, options.Value.RegrowMinutes);
-            }
-
-            dtos.Add(ToDto(node));
-        }
-
-        return dtos;
+        return here.Select(ToDto).ToList();
     }
 
     /// <summary>Projects a node onto what the client draws and enables.</summary>

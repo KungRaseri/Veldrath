@@ -293,3 +293,51 @@ and region → zone travel silently not happening — the region's `Zone` nodes 
 discovery*; it never gated walking. With the seeder fix in place, `harvest.e2e.ts` runs inside the parallel stack
 suite and walks the whole route (`The Crestfall Square` → `Road to The Ashlen Wood` → `The Old Clearing`) with no
 bypass, no teleport and no bypass endpoint.
+
+## Chests — authored and roaming, swept rather than timed (2026-11-18)
+
+The table existed (`forest-chest-loot`, `TypeKey = "chests"`, `IsChest`) and `RollChestDrops` could already
+merge several lookups, but nothing anywhere was a chest: no entity, no endpoint, no way to reach the loot. The
+design that landed answers two questions at once — where a chest lives, and why it should not live there
+forever.
+
+**Where it lives.** [`LootChest`](../../Veldrath.Server/Data/Entities/LootChest.cs) sits in
+`ApplicationDbContext` beside `GroundItems` and `ZoneInstances`, because it is live world state, not content.
+Two kinds share the table:
+
+- **Authored** — seeded by [`LootChestsSeeder`](../../Veldrath.Server/Data/Seeders/LootChestsSeeder.cs), idempotent
+  by chest id, live state preserved. These are the chests a quest or a room names, so the mossy strongbox is in
+  the Old Clearing and the traveller's cache is on the Wood Road, always.
+- **Roaming** — placed by [`ChestService`](../../Veldrath.Server/Features/Characters/Chests/ChestService.cs) from
+  the zone's own `ZoneLocation` rows: not hidden, not a safe respawn, not instanced, level floor met, not
+  already occupied, and the zone itself is not a town. The site is drawn by `RarityWeight` and the loot table is
+  drawn from every `chests` table by its `RarityWeight`, so "which chest" and "where" vary together with no new
+  content types.
+
+**Why it is swept.** The sweeper mirrors `EnemyRespawnService`: a `PeriodicTimer` reads durable columns and
+writes conditionally. `ReopenAt` decides when an emptied chest comes back (`Chests:ReopenAfterMinutes`, default
+180); a zone gains a roaming chest when `max(SpawnedAt, OpenedAt)` across its roaming rows is older than
+`Chests:SpawnEveryMinutes` (default 90) and it holds fewer than `Chests:MaxRoamingPerZone` (default 1). Opened
+roaming rows are kept as tombstones on purpose — they *are* the clock, they record what was looted where, and a
+reopen only has to clear `IsOpened` on the row still standing. Node regrowth moved onto the same sweep in this
+pass, so a depleted node now recovers on time whether or not anyone is looking at the location.
+
+**First open wins.** `OpenChestHubCommandHandler` rolls the loot after checking who is standing where, then
+claims the row with `ExecuteUpdateAsync ... WHERE IsOpened = false`; the loser is told "someone else got there
+first" instead of being paid twice. Loot lands in `Characters.InventoryBlob` through `CharacterBag` (the same
+store as harvest and combat loot); a `gold`-domain entry would go through `AddGoldHubCommand`, which is the one
+writer of the attributes gold key.
+
+**Instance scope.** A chest may carry `ZoneInstanceId` and cascades with its run, the way floor loot does, so a
+delve's chests are per attempt while a world chest is shared. Reads are scoped by the session's run as well as
+by zone and location.
+
+**Known gaps, recorded rather than hidden:**
+
+- `forest-chest-loot` has no `gold` domain entry, so chests pay items only today.
+- The sweeper does not broadcast: a chest that appears or reopens while a player stands there shows up on their
+  next arrival or pull. Broadcasting would need the zone's difficulty suffix, which lives per connection
+  (`zone:{id}_{mode}`), not on the chest row.
+- The e2e stack runs with `Chests__ReopenAfterMinutes=1` so a re-run recovers the authored chests without a
+  `--fresh`; the spec walks to the road's cache when the clearing's strongbox is still inside its window, and
+  skips with that reason if both are.

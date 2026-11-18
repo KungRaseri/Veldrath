@@ -141,6 +141,8 @@ launch_api() {
       Auth__AccessCacheSeconds=0 \
       RateLimit__AdminActionsPerMinute=600 \
       RateLimit__FoundryWritesPerMinute=600 \
+      Chests__SweepIntervalSeconds=5 \
+      Chests__ReopenAfterMinutes=1 \
       nohup dotnet run --no-launch-profile >"$LOG_FILE" 2>&1 &
     echo $! >"$PID_FILE"
   )

@@ -503,6 +503,18 @@ describe('GameSession commands', () => {
 		]);
 	});
 
+	it('asks for the chests here and opens one', async () => {
+		const session = await playing();
+
+		await session.requestLocationChests();
+		await session.openChest('chest-1');
+
+		expect(hub.invocations).toEqual([
+			{ method: 'GetLocationChests', args: [] },
+			{ method: 'OpenChest', args: [{ chestId: 'chest-1' }] }
+		]);
+	});
+
 	it('maps ground-item, item-use, ability and quest commands to hub methods', async () => {
 		const session = await connected();
 
@@ -938,6 +950,46 @@ describe('GameSession character and world events', () => {
 		expect(session.enemies.map((visible) => visible.id)).toEqual([other.id]);
 	});
 
+	it('stores the chests here and adopts the open one', async () => {
+		const session = await connected();
+		session.chests = [
+			{ id: 'stale', displayName: 'Last Room Chest', locationSlug: 'cellar', kind: 'Authored' }
+		];
+
+		hub.emit('LocationEntered', {
+			locationSlug: 'old-clearing',
+			locationDisplayName: 'The Old Clearing',
+			typeKey: 'locations'
+		});
+		// Entering a location drops the previous room's chests before the server answers.
+		expect(session.chests).toEqual([]);
+
+		hub.emit('LocationChests', {
+			chests: [
+				{
+					id: 'chest-1',
+					displayName: 'Mossy Strongbox',
+					locationSlug: 'old-clearing',
+					kind: 'Authored'
+				}
+			]
+		});
+		expect(session.chests.map((chest) => chest.id)).toEqual(['chest-1']);
+
+		hub.emit('ChestOpened', {
+			success: true,
+			chestId: 'chest-1',
+			displayName: 'Mossy Strongbox',
+			items: [{ itemRef: '@items/general:health-potion', name: 'Health Potion', quantity: 2 }],
+			gold: 0,
+			message: 'Opened the Mossy Strongbox: Health Potion x2.',
+			remainingChests: []
+		});
+
+		expect(session.chests).toEqual([]);
+		expect(session.chat.at(-1)?.message).toBe('Opened the Mossy Strongbox: Health Potion x2.');
+	});
+
 	it('derives rest and shop availability from the zone', async () => {
 		const session = await connected();
 		expect(session.canRest).toBe(false);
@@ -1068,8 +1120,12 @@ describe('GameSession map', () => {
 			spawnedEnemies: [enemy('wolf')]
 		});
 		expect(session.enemies).toEqual([enemy('wolf')]);
-		// The nodes belong to the location, and travelling to a location node is how most of them are entered.
-		expect(hub.invocations).toEqual([{ method: 'GetLocationNodes', args: [] }]);
+		// The nodes and chests belong to the location, and travelling to a location node is how most of them
+		// are entered.
+		expect(hub.invocations).toEqual([
+			{ method: 'GetLocationNodes', args: [] },
+			{ method: 'GetLocationChests', args: [] }
+		]);
 	});
 
 	it('names the location by its slug when the result has no message', async () => {
@@ -1147,6 +1203,7 @@ describe('GameSession map', () => {
 		expect(session.loadingMap).toBe(true);
 		expect(hub.invocations).toEqual([
 			{ method: 'GetLocationNodes', args: [] },
+			{ method: 'GetLocationChests', args: [] },
 			{ method: 'GetMapGraph', args: ['map-2'] }
 		]);
 	});

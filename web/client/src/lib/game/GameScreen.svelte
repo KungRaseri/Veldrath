@@ -8,6 +8,7 @@
 		LogOut,
 		Map as MapIcon,
 		MapPin,
+		Package,
 		RefreshCw,
 		Search,
 		Sprout,
@@ -264,6 +265,33 @@
 											>
 												<Sprout size={12} aria-hidden="true" />
 												{node.canHarvest ? 'Gather' : 'Depleted'}
+											</button>
+										</li>
+									{/each}
+								</ul>
+							</div>
+						{/if}
+
+						{#if session.chests.length > 0}
+							<div class="space-y-1 border-t border-surface-800 pt-3">
+								<p class="text-xs tracking-wide text-surface-600-400 uppercase">Chests</p>
+								<ul class="space-y-1">
+									{#each session.chests as chest (chest.id)}
+										<li class="flex items-center justify-between gap-2 text-sm">
+											<span>
+												{chest.displayName}
+												{#if chest.kind === 'Roaming'}
+													<span class="text-surface-600-400">· cache</span>
+												{/if}
+											</span>
+											<button
+												class="btn preset-tonal-surface px-2 py-1 text-xs"
+												type="button"
+												onclick={() => session.openChest(chest.id)}
+												disabled={session.dead}
+											>
+												<Package size={12} aria-hidden="true" />
+												Open
 											</button>
 										</li>
 									{/each}
