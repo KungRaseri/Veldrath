@@ -4200,3 +4200,27 @@ Tenth pass — **two defects found by a person using the wizard, and the layout 
   single-column grid track. Account/mod/admin labels are two words in `flex flex-wrap` rows (they wrap instead of
   overflowing); the game panels keep dynamic text in a `<span>` beside short verbs. `/account` is the riskiest
   variable-content surface and is in the harness.
+
+Eleventh pass — **the forest can now be foraged from, and the engine's harvesting command cannot be reused.**
+
+- `LootTablesSeeder` gained `forest-forage` (`TypeKey = "harvesting"`, `IsHarvesting = true`, guaranteed
+  `glowcap-mushroom` 1–2). Until this there was **no harvesting loot table at all**, so a node could be
+  harvested for nothing — and `gather-mushrooms` had no possible source.
+- [`HarvestableNodesSeeder`](../../Veldrath.Server/Data/Seeders/HarvestableNodesSeeder.cs) authors five nodes in
+  `wood-road` and `old-clearing` (the Ashlen Wood), seeded from `Program.cs` against `GameDbContext`, idempotent
+  by `NodeId` so **a restart never restores a depleted node**. `LootTableRef` is the engine's reference form:
+  `@loot-tables/harvesting/forest:forest-forage` (the roll uses the part after the last colon).
+- **`HarvestNodeCommand` is single-player and must not be wired to the hub.** It reads
+  `ISaveGameService.GetCurrentSave()` (one global "current save") and writes the bag through the save-game
+  store, not the character blob the client reads. The multiplayer path composes the *stateless* pieces —
+  `HarvestCalculatorService`, `CriticalHarvestService`, `ToolValidationService`,
+  `LootTableService.RollHarvestingDrops(node.LootTableRef, yield, isCritical)` (returns `ItemDrop` with an
+  `@items/general:<slug>` ref) — plus `IInventoryService.AddItemAsync(name, itemRef, qty)`, exactly as combat
+  loot does. All four services are registered by `AddRealmEngineCore`.
+- `HarvestableNodes` lives in **`GameDbContext`** (live state), while `DatabaseSeeder.SeedAsync` is content-only
+  and is reused by `SeededContentProbe` with just a `ContentDbContext` — so node seeding belongs in `Program.cs`,
+  never inside `SeedAsync`.
+- Design decisions for the hub slice (recorded in [`plans/content-seeding-pass.md`](../../plans/content-seeding-pass.md)):
+  authored nodes, `node.LocationId == character.CurrentZoneLocationSlug` as the guard, MinToolTier 0 only,
+  skill rank 0 and no skill XP yet, `collect` advanced with both slug and ref, `LocationNodes` pushed on
+  `EnterLocation` and refreshed after failures, and the web consumer in the same commit (parity suites).

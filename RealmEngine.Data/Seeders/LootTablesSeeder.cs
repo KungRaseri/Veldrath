@@ -103,6 +103,41 @@ public static class LootTablesSeeder
                 ],
             },
 
+            // Harvesting loot — what a foraged resource node yields. The gathering quest
+            // (`gather-mushrooms`) needs `glowcap-mushroom` to come from somewhere, and until now no
+            // harvesting table existed at all, so a node could be harvested for nothing.
+            new LootTable
+            {
+                Slug         = "forest-forage",
+                TypeKey      = "harvesting",
+                DisplayName  = "Forest Forage",
+                RarityWeight = 60,
+                IsActive     = true,
+                Version      = 1,
+                UpdatedAt    = now,
+                Traits = new LootTableTraits
+                {
+                    Common       = true,
+                    Boss         = false,
+                    Elite        = false,
+                    Rare         = false,
+                    IsChest      = false,
+                    IsHarvesting = true,
+                },
+                Entries =
+                [
+                    new LootTableEntry
+                    {
+                        ItemDomain   = "items/general",
+                        ItemSlug     = "glowcap-mushroom",
+                        DropWeight   = 100,
+                        QuantityMin  = 1,
+                        QuantityMax  = 2,
+                        IsGuaranteed = true,
+                    },
+                ],
+            },
+
             // Chest loot
             new LootTable
             {

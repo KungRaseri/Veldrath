@@ -394,6 +394,10 @@ try
             // Seed baseline content (idempotent — skips each table that already has rows).
             await DatabaseSeeder.SeedAsync(services);
 
+            // Authored resource nodes. Separate from the content seeders because node state lives in
+            // GameDbContext, and it is idempotent by node id so a restart never restores a depleted node.
+            await Veldrath.Server.Data.Seeders.HarvestableNodesSeeder.SeedAsync(gameDb);
+
         }
 
         // Seed all identity roles and their default permission claims.

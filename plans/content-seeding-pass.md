@@ -225,3 +225,34 @@ archetype or loot slug is an error there, an empty pool is a warning.
 - [Client UI architecture](../docs/client-ui-architecture.md) — the "Local" panel the encounters appear in.
 - [`.github/agent-memory/veldrath-memory.md`](../.github/agent-memory/veldrath-memory.md) — session notes, including
   the JSON-key trap.
+
+## Harvesting — the content half is landed; the hub slice is next (2026-11-18)
+
+**Landed.** A `harvesting` loot table (`forest-forage`, guaranteed `glowcap-mushroom` 1–2) and five authored nodes
+in the Ashlen Wood ([`HarvestableNodesSeeder`](../Veldrath.Server/Data/Seeders/HarvestableNodesSeeder.cs), seeded
+from `Program.cs`, idempotent by node id so a restart never restores a depleted node). Four guard tests keep the
+two halves attached: the nodes are unique and live in the wood, and every node names a seeded harvesting table
+that yields the quest item.
+
+**Not landed, and why it is not a copy-paste.** The engine's `HarvestNodeCommand` cannot be reused: it reads a
+single global "current save" (`ISaveGameService.GetCurrentSave`) and writes the bag through the save-game store,
+which is not the store the game client reads — in a server holding several characters that is wrong by
+construction. The server needs its own command composing the *stateless* pieces (`HarvestCalculatorService`,
+`CriticalHarvestService`, `ToolValidationService`, `LootTableService.RollHarvestingDrops`, `INodeRepository`) with
+the server's `IInventoryService.AddItemAsync(characterName, itemRef, quantity)` — the call combat loot already
+makes.
+
+**Decisions already made for that slice, so it is mechanical:**
+
+- Node source is authored rows, not `NodeSpawnerService`: procedural spawning by biome cannot promise that the
+  item a specific quest names exists.
+- The location guard is `node.LocationId == character.CurrentZoneLocationSlug`; otherwise a client could harvest
+  the world from one spot.
+- Tools: every authored node is `MinToolTier = 0`, and a tool-gated node answers "needs a proper tool" until
+  tools exist. Skill rank is 0 (common-tier nodes); skill XP is deliberately **not** awarded — that is a separate
+  path (`AwardSkillXpHubCommand`), not a silent default.
+- `collect` objectives advance with **both** the slug and the full item reference, the same allowance the kill
+  path makes for archetype slugs versus display names.
+- Events: `LocationNodes` on `EnterLocation`, `Harvested` after a successful harvest, and the list re-sent after
+  failures too (depletion moves it). The web half (`types.ts`, `session.svelte.ts`, a Gather section) has to land
+  in the same commit, because the parity suites fail when a hub method has no consumer.
