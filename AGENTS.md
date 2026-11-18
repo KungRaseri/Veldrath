@@ -222,6 +222,24 @@ dotnet run --project Veldrath.Server
 cd web && npm run dev            # SvelteKit web app → http://localhost:5173
 ```
 
+### Workflow e2e — isolated stack, never the dev ports
+
+The journey specs need a real server and database, so they get their own compose project instead of
+borrowing the development ones. **Postgres 55432, API 9100, preview 4273**; the script refuses a port
+it did not take and never kills a server it did not start.
+
+```powershell
+./scripts/e2e-stack.sh start --fresh            # empty volume → a green run means "works against the seed"
+cd web && npm run test:e2e:stack --workspace client
+./scripts/e2e-stack.sh stop
+```
+
+`npm run test:e2e:stack` runs the parallel specs and then `upstream-failure.e2e.ts` alone on one worker:
+that spec stops the API, so it can never share a run. Playwright starts the preview with `ORIGIN`,
+`BETTER_AUTH_URL`, `PUBLIC_API_URL`, `PUBLIC_HUB_URL`, `DATABASE_URL` (the auth role) and
+`AUTH_RATE_LIMIT_DISABLED` — do not export those by hand; the `PUBLIC_*` pair is inlined at build time and
+a hand-set value is ignored.
+
 ---
 
 ## CI / Releases (Forgejo)

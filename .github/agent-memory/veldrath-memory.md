@@ -4090,10 +4090,13 @@ Seventh pass closed the two §6 leftovers.
   `ValidateWorld(world, …)`. The web loader reads `map.review` and words a missing verdict as `unknown`, never
   `ready`. Do not reintroduce a `getMap`/`validateMap` pair per row on `/review`.
 
-- **Running the stack specs locally needs the preview origin too.** `E2E_STACK=1` alone is not enough: Better Auth
-  rejects the sign-up with `Invalid origin: http://localhost:4173`, because `web/client/.env` sets
-  `ORIGIN=http://localhost:5173` (the dev server). Use
-  `ORIGIN=http://localhost:4173 BETTER_AUTH_URL=http://localhost:4173 CI=true E2E_STACK=1 npx playwright test <spec>`.
+- **Running the stack specs locally needs the preview origin too.** `E2E_STACK=1` alone was not enough: Better Auth
+  rejected the sign-up with `Invalid origin: http://localhost:4173`, because `web/client/.env` sets
+  `ORIGIN=http://localhost:5173` (the dev server). That is now handled for you — `playwright.config.ts` starts the
+  preview with `ORIGIN`/`BETTER_AUTH_URL`/`PUBLIC_*`/`DATABASE_URL` set, so
+  `./scripts/e2e-stack.sh start --fresh` + `npm run test:e2e:stack --workspace client` is the whole recipe.
+  **Never export those by hand**: a hand-set `PUBLIC_*` on the command line is ignored (they are inlined at build
+  time), which is how the dev hub URL leaked into a "stack" run.
 
 Eighth pass — **the .NET coverage gate was red, and it was `Veldrath.Server` branches**: 80.6% against a floor of 82
 (measured 2026-11-17 with the pinned SDK 10.0.402, `dotnet test Realm.Full.slnx -c Release --collect "XPlat Code
@@ -4133,3 +4136,39 @@ zone), so respawn and the lobby lookup work. **Always query these columns in Pas
 Everything is written up in [`plans/content-seeding-pass.md`](../../plans/content-seeding-pass.md): measured
 counts, P0/P1/P2 priorities, the guardrail test to add to `SeededContentValidationTests`, and what each item
 unblocks. **Return here after the content pass**, then write E13c (engage → victory) and E13d (die → respawn).
+
+Ninth pass — **the workflow specs run against their own isolated stack, and getting that green exposed four
+cross-wirings**. `scripts/e2e-stack.sh` is a standalone compose project
+([`docker-compose.e2e.yml`](../../docker-compose.e2e.yml), `veldrath-e2e`, own volume, own container name) on
+**Postgres 55432 / API 9100 / preview 4273**. Nothing is shared with a development environment, `start --fresh`
+drops the volume first (a green run then means "works against the seed"), a port it did not take is reported
+instead of stolen, and it never `pkill`s — an earlier version killed a developer's own `dotnet run` on :9000.
+
+Each failure below was a **configuration** defect that a single-spec run hid:
+
+1. **`PUBLIC_HUB_URL` was never injected.** `PUBLIC_*` are inlined at `vite build`; setting only
+   `PUBLIC_API_URL` left the browser's SignalR connection pointed at `.env`'s dev hub on :9000, so
+   `.map-node-cell` never rendered and encounters/game-journeys/staff-actions all failed looking like client
+   bugs. `playwright.config.ts`'s `webServer.env` now sets `PUBLIC_API_URL` **and** `PUBLIC_HUB_URL`, `ORIGIN`,
+   `BETTER_AUTH_URL`, `DATABASE_URL` (the auth role — `.env` points at the dev DB on 5433) and
+   `AUTH_RATE_LIMIT_DISABLED`.
+2. **Better Auth rate-limited the run.** ~40 sign-ups a minute from loopback answered
+   `Too many requests. Please try again later.` on `/register`: the client address cannot be resolved, so one
+   bucket is shared per path. [`auth.ts`](../../web/client/src/lib/server/auth.ts) reads
+   `AUTH_RATE_LIMIT_DISABLED` (test stacks only, never the image) **and** now sets
+   `advanced.ipAddress.ipAddressHeaders = ['x-forwarded-for']` — that second part is the production fix behind
+   Coolify/Traefik, where without it every player shares a single bucket per path.
+3. **`upstream-failure.e2e.ts` stops the API**, so it cannot share a run with anything. `test:e2e:stack` is now
+   `:specs` (parallel) then `:outage` (`--workers=1`), and CI mirrors the split in two steps. The spec's own doc
+   comment already said "run with one worker"; the script was what ignored it.
+4. **Every sign-up paid a 10s SMTP timeout.** Development settings point `Email:SmtpHost` at a mail container
+   this stack does not run, so the bridge call hung until the web app's `AbortSignal.timeout(10_000)` fired.
+   The e2e API now starts with `Email__SmtpHost=""` → `NullEmailSender` → immediate answer.
+
+Also: `tests/game-loop.e2e.ts` stopped hard-coding `http://localhost:9000` and imports `apiBase`/`gameToken`
+from [`tests/support/stack.ts`](../../web/client/tests/support/stack.ts) like every other spec, so `E2E_API_PORT`
+reaches it too.
+
+Proof: `scripts/e2e-stack.sh start --fresh` then `npm run test:e2e:stack --workspace client` → **17 passed in
+about a minute** (16 in parallel, then the outage spec), with 1,470 web unit tests and a clean typecheck/prettier.
+Documented for humans in [`web/client/README.md`](../../web/client/README.md).

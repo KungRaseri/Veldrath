@@ -245,8 +245,13 @@ service container), so it only runs where it can actually stop something.
 
 **E16 — CI instrumentation.** `retries: 1` on CI and `trace: 'on-first-retry'`, `video: 'retain-on-failure'` in
 [`playwright.config.ts`](../web/client/playwright.config.ts:3), plus a 10s expect budget for server-rendered pages.
-A retry without a trace is a flake nobody can diagnose — the trace is the point, not the retry. The authenticated
-job stays serial: these specs share one database and one API.
+A retry without a trace is a flake nobody can diagnose — the trace is the point, not the retry. The outage spec
+runs afterwards with `--workers=1`: it takes the API away, so sharing a run with the others would fail whichever
+of them were in flight (see §10).
+
+**§9 correction (2026-11-18).** This paragraph used to say "the authenticated job stays serial: these specs share
+one database and one API". They do share both, and that is fine — what they must not share is a run with the spec
+that stops the API. Everything else runs in parallel against the isolated stack.
 
 **Result:** twelve stack specs, fourteen tests, ~4.5 minutes together; thirty stack-free specs in ~18 seconds. The
 suite now fails for one of two reasons only: the code broke, or the environment was not the one the spec needs —

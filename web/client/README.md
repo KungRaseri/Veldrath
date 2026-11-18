@@ -61,22 +61,29 @@ npm run lint
 npm run test        # Vitest + Playwright
 ```
 
-### Game-loop e2e (needs a running server)
+### Workflow e2e (needs the isolated stack)
 
-`tests/game-loop.e2e.ts` covers the authenticated path — register → roster → play → travel →
-inventory — and skips itself unless `E2E_GAME=1`. It cannot be mocked: the roster is rendered by
-SSR through `/api/characters` and the game shell needs a live SignalR hub.
+The journey specs (game loop, encounters, Foundry, staff portals, editorial, public pages) talk to a
+real `Veldrath.Server` and a real Postgres, because every page is rendered by a `+page.server.ts` load
+that calls the API — a browser mock would never see the request. They cannot share a port or a database
+with a development environment, so the stack is its own compose project on its own ports:
+
+| Piece    | Port    | Notes                                                                                         |
+| -------- | ------- | --------------------------------------------------------------------------------------------- |
+| Postgres | `55432` | project `veldrath-e2e`, own volume (`docker-compose.e2e.yml`)                                 |
+| API      | `9100`  | started by the script only; it never kills a server it did not start                          |
+| Preview  | `4273`  | built and served by Playwright, with `ORIGIN`/`BETTER_AUTH_URL` and both public URLs injected |
 
 ```sh
-# 1. start the API with the preview origin allowed
-cd Veldrath.Server && ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:9000 \
-  Cors__AllowedOrigins__0=http://localhost:4173 dotnet run --no-launch-profile
-
-# 2. run the spec
-cd web/client && E2E_GAME=1 E2E_API_URL=http://127.0.0.1:9000 \
-  ORIGIN=http://localhost:4173 BETTER_AUTH_URL=http://localhost:4173 \
-  PUBLIC_API_URL=http://127.0.0.1:9000 PUBLIC_HUB_URL=http://127.0.0.1:9000/hubs/game \
-  INTERNAL_BRIDGE_URL=http://127.0.0.1:9000 npm run test:e2e:game
+./scripts/e2e-stack.sh start --fresh   # empty volume, so a green run means "works against the seed"
+cd web && npm run test:e2e:stack --workspace client
+./scripts/e2e-stack.sh stop
 ```
 
-CI runs the same thing in the `e2e-game` job of [`ci-web.yml`](../../.github/workflows/ci-web.yml).
+`npm run test:e2e:stack` runs the parallel specs, then `upstream-failure.e2e.ts` alone on one worker —
+that spec stops the API to prove the pages say so, so it must not share a run with anything else. The
+script also sets `Email__SmtpHost=""` (no SMTP container here) and `AUTH_RATE_LIMIT_DISABLED=true` (the
+specs register dozens of accounts a minute and would otherwise meet a shared 429 bucket).
+
+Individual specs: `E2E_STACK=1 E2E_WEB_PORT=4273 E2E_API_PORT=9100 E2E_DB_PORT=55432 npx playwright test tests/<spec>`.
+CI runs the same split in the authenticated jobs of [`ci-web.yml`](../../.github/workflows/ci-web.yml).

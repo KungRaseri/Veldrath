@@ -1,35 +1,49 @@
 #!/usr/bin/env bash
-# Start, stop or inspect the local stack the full-flow Playwright specs need.
+# Start, stop or inspect the isolated stack the full-flow Playwright specs need.
 #
-# The SvelteKit server loaders call Veldrath.Server directly (`gameApiFetch` runs on the server, not
-# in the browser), so a browser-level mock cannot stand in for the API: the workflow specs need
-# Postgres, the real API and the real Better Auth tables. This script is the local equivalent of the
+# The SvelteKit server loaders call Veldrath.Server directly (`gameApiFetch` runs on the server, not in
+# the browser), so a browser-level mock cannot stand in for the API: the workflow specs need Postgres,
+# the real API and the real Better Auth tables. This script is the local equivalent of the
 # "Playwright — authenticated" job in `.github/workflows/ci-web.yml`.
 #
+# Isolation, because a test run must never be why a developer loses their world:
+#
+#   compose project   veldrath-e2e   (own network, own volume, own container name)
+#   postgres          55432          (PostgreSQL default is 5432, the dev compose is 5433)
+#   API               9100           (dev `dotnet run` uses 5000, the dev container 9000)
+#   web preview       4273           (Vite preview default is 4173)
+#
+# The script refuses to start when one of its ports is already taken, and it never kills a server it
+# did not start: an earlier version pkill'd any Veldrath.Server build, which meant starting the e2e
+# stack silently killed a developer's own `dotnet run`. Now the occupying process is reported instead.
+#
 # Usage:
-#   scripts/e2e-stack.sh start              # postgres (docker) + auth migrations + Veldrath.Server on :9000
-#   scripts/e2e-stack.sh start --fresh      # drop the database first, so a run starts from the seed
-#   scripts/e2e-stack.sh stop               # stop the API and the postgres container
+#   scripts/e2e-stack.sh start              # postgres + auth migrations + Veldrath.Server on :9100
+#   scripts/e2e-stack.sh start --fresh      # drop the e2e database first, so a run starts from the seed
+#   scripts/e2e-stack.sh stop               # stop the API and the e2e postgres container
 #   scripts/e2e-stack.sh status             # exit 0 when both are reachable
 #   scripts/e2e-stack.sh api-stop           # stop only the API (the Postgres data survives)
 #   scripts/e2e-stack.sh api-start          # bring only the API back
 #
-# `--fresh` deletes the compose volume, so anything authored in the local dev database is gone. That is
-# the point: a green run should mean "works against the seed", not "works against whatever this machine
-# accumulated". `api-stop`/`api-start` exist for the upstream-failure spec, which takes the API away and
-# checks that the app says so instead of rendering a blank page.
+# `--fresh` deletes the e2e compose volume, so a green run means "works against the seed", not "works
+# against whatever this machine accumulated". `api-stop`/`api-start` exist for the upstream-failure
+# spec, which takes the API away and checks that the app says so instead of rendering a blank page.
 #
-# Then, from web/:
-#   npm run test:e2e:stack
+# The specs themselves expect the matching environment, which `npm run test:e2e:stack` sets:
+#   E2E_STACK=1 E2E_API_PORT=9100 E2E_DB_PORT=55432 E2E_WEB_PORT=4273
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-COMPOSE_FILE="$ROOT/docker-compose.dev.yml"
+COMPOSE_PROJECT="veldrath-e2e"
+# The e2e file is standalone, not an override: compose merges `ports`, so an override would publish the
+# dev port too and the two databases would collide.
+COMPOSE=(docker compose -p "$COMPOSE_PROJECT" -f "$ROOT/docker-compose.e2e.yml")
 PID_FILE="$ROOT/.e2e-server.pid"
 LOG_FILE="${E2E_SERVER_LOG:-/tmp/veldrath-e2e-server.log}"
 
-API_PORT="${E2E_API_PORT:-9000}"
-DB_PORT="${E2E_DB_PORT:-5433}"
+API_PORT="${E2E_API_PORT:-9100}"
+DB_PORT="${E2E_DB_PORT:-55432}"
+WEB_PORT="${E2E_WEB_PORT:-4273}"
 DB_NAME="${E2E_DB_NAME:-veldrath}"
 DB_USER="${E2E_DB_USER:-veldrath}"
 DB_PASSWORD="${E2E_DB_PASSWORD:-veldrath_dev}"
@@ -68,15 +82,34 @@ wait_for() {
   return 1
 }
 
-# Kills whatever is running a Veldrath.Server build, whoever started it. The pattern is the built
-# apphost path, so it cannot match this script or the shell that invoked it.
-stop_stray_servers() {
-  pkill -f "bin/.*/Veldrath\.Server" 2>/dev/null || true
-  for _ in $(seq 1 20); do
-    ss -ltn 2>/dev/null | grep -q ":$API_PORT " || return 0
-    sleep 1
-  done
-  log "port $API_PORT is still held after stopping the stray server"
+# Refuses to take a port somebody else is already using, and names the owner so the fix is obvious.
+require_free_port() {
+  local port="$1" purpose="$2"
+  if ! ss -ltn 2>/dev/null | grep -q ":$port "; then
+    return 0
+  fi
+
+  local owner
+  owner="$(ss -ltnp 2>/dev/null | grep ":$port " | sed -n 's/.*users:((\"\([^\"]*\)\",pid=\([0-9]*\).*/\1 (pid \2)/p' | head -n 1)"
+  log "cannot start $purpose: port $port is already in use${owner:+ by $owner}"
+  log "the e2e stack is isolated on :$DB_PORT (postgres), :$API_PORT (api) and :$WEB_PORT (preview);"
+  log "stop whatever holds $port — it is not part of this stack, and this script will not kill it."
+  exit 1
+}
+
+# Only ever stops the server this script started.
+stop_own_api() {
+  if [ -f "$PID_FILE" ]; then
+    local pid
+    pid="$(cat "$PID_FILE")"
+    kill "$pid" 2>/dev/null || true
+    # `dotnet run` spawns the app as a child, so the wrapper exiting is not the port being free.
+    for _ in $(seq 1 20); do
+      kill -0 "$pid" 2>/dev/null || break
+      sleep 1
+    done
+    rm -f "$PID_FILE"
+  fi
 }
 
 # Starts only the API, against whatever database Postgres currently holds.
@@ -86,10 +119,12 @@ launch_api() {
     return 0
   fi
 
-  # `dotnet run` spawns the app as a child whose name is the apphost, not the .dll, so a stop that only
-  # killed the wrapper can leave an OLD build holding the port — and every later run silently tests it.
-  stop_stray_servers
+  require_free_port "$API_PORT" "the API"
   log "starting Veldrath.Server on :$API_PORT (log: $LOG_FILE)"
+  # Email__SmtpHost is deliberately empty: every registration asks the bridge to send a verification
+  # mail, the development settings point SMTP at a dev mail container this stack does not run, and the
+  # connect hangs until the web app's 10s timeout expires — paid on every single sign-up. No host
+  # selects NullEmailSender, which answers immediately.
   (
     cd "$ROOT/Veldrath.Server"
     env \
@@ -99,8 +134,10 @@ launch_api() {
       Jwt__Key="$JWT_KEY" \
       Jwt__Issuer="$JWT_ISSUER" \
       Jwt__Audience="$JWT_AUDIENCE" \
-      Web__BaseUrl="http://localhost:4173" \
+      Web__BaseUrl="http://localhost:$WEB_PORT" \
+      Cors__AllowedOrigins__0="http://localhost:$WEB_PORT" \
       InternalBridge__Token="$BRIDGE_TOKEN" \
+      Email__SmtpHost="" \
       Auth__AccessCacheSeconds=0 \
       RateLimit__AdminActionsPerMinute=600 \
       RateLimit__FoundryWritesPerMinute=600 \
@@ -115,12 +152,11 @@ launch_api() {
 }
 
 start_postgres() {
-  log "starting postgres on :$DB_PORT"
-  docker compose -f "$COMPOSE_FILE" up -d postgres >/dev/null
+  log "starting the e2e postgres on :$DB_PORT (project $COMPOSE_PROJECT)"
+  "${COMPOSE[@]}" up -d postgres >/dev/null
 
   for _ in $(seq 1 30); do
-    if docker compose -f "$COMPOSE_FILE" exec -T postgres \
-      pg_isready -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; then
+    if "${COMPOSE[@]}" exec -T postgres pg_isready -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; then
       return 0
     fi
     sleep 2
@@ -130,40 +166,40 @@ start_postgres() {
   return 1
 }
 
-# Deletes the database and lets the container's init script recreate the auth role, schema and grants.
+# Deletes the e2e database and lets the container's init script recreate the auth role, schema and grants.
 fresh_database() {
-  log "--fresh: stopping the API and dropping the compose volume"
+  log "--fresh: stopping the API and dropping the e2e volume"
   api_stop
-  docker compose -f "$COMPOSE_FILE" down -v postgres >/dev/null 2>&1 || true
+  "${COMPOSE[@]}" down -v postgres >/dev/null 2>&1 || true
 }
 
 start() {
   local fresh="${1:-}"
+  require_free_port "$WEB_PORT" "the preview server"
   if [ "$fresh" = "--fresh" ]; then
     fresh_database
   fi
 
   start_postgres
 
-  log "applying Better Auth migrations"
+  log "applying Better Auth migrations against :$DB_PORT"
   (cd "$ROOT/web" && DATABASE_URL="$AUTH_URL" npm run db:migrate >/dev/null)
 
   # The server migrates and seeds its own databases at startup, so a fresh volume needs nothing else.
   launch_api
+
+  log "ready: api http://127.0.0.1:$API_PORT, preview http://localhost:$WEB_PORT, database :$DB_PORT"
+  log "run the specs with: cd web && npm run test:e2e:stack"
 }
 
 stop() {
   api_stop
-  docker compose -f "$COMPOSE_FILE" stop postgres >/dev/null 2>&1 || true
+  "${COMPOSE[@]}" stop postgres >/dev/null 2>&1 || true
   log "stopped"
 }
 
 api_stop() {
-  if [ -f "$PID_FILE" ]; then
-    kill "$(cat "$PID_FILE")" 2>/dev/null || true
-    rm -f "$PID_FILE"
-  fi
-  stop_stray_servers
+  stop_own_api
   log "api stopped"
 }
 
@@ -173,9 +209,9 @@ api_start() {
 
 status() {
   local ok=1
-  curl -fsS "http://127.0.0.1:$API_PORT/health" >/dev/null 2>&1 && log "api up" || { log "api down"; ok=0; }
-  docker compose -f "$COMPOSE_FILE" ps --status running postgres 2>/dev/null | grep -q postgres &&
-    log "postgres up" || { log "postgres down"; ok=0; }
+  curl -fsS "http://127.0.0.1:$API_PORT/health" >/dev/null 2>&1 && log "api up (:$API_PORT)" || { log "api down"; ok=0; }
+  "${COMPOSE[@]}" ps --status running postgres 2>/dev/null | grep -q postgres &&
+    log "postgres up (:$DB_PORT)" || { log "postgres down"; ok=0; }
   return $((1 - ok))
 }
 

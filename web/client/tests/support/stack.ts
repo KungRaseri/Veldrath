@@ -10,32 +10,36 @@ import postgres from 'postgres';
  * browser entirely — `page.route()` would never see it. The only honest way to test a user workflow
  * is to run the app against Veldrath.Server.
  *
- * Start the stack with `scripts/e2e-stack.sh start` (Postgres, Better Auth migrations, the API on
- * :9000), then `E2E_STACK=1 npm run test:e2e:stack` from `web/`. CI does the same in the
- * "Playwright — authenticated" job of `ci-web.yml`.
+ * Start the stack with `scripts/e2e-stack.sh start` — it is an isolated compose project (Postgres on
+ * 55432, the API on 9100, the preview on 4273), so it never shares a port or a volume with the dev
+ * environment. Then `npm run test:e2e:stack` from `web/`, which sets the matching E2E_* environment.
+ * CI does the same in the "Playwright — authenticated" job of `ci-web.yml`.
  */
 export const stackEnabled = process.env.E2E_STACK === '1';
 
 /** Why a stack spec skipped, worded so the fix is obvious in the report. */
 export const stackSkipReason =
-	'needs a real Veldrath.Server and Postgres — run `scripts/e2e-stack.sh start` then `E2E_STACK=1 npm run test:e2e:stack`';
+	'needs a real Veldrath.Server and Postgres — run `scripts/e2e-stack.sh start` then `npm run test:e2e:stack`';
 
 /**
  * Where the Identity tables live.
  *
- * `DATABASE_URL` in CI is the database owner, which is also what the API uses; locally the dev
- * compose file maps the same role to :5433. The Better Auth role cannot write `public`, so this must
- * not default to the auth connection string.
+ * Defaults to the isolated e2e database on :55432. `DATABASE_URL` in CI is the database owner, which is
+ * also what the API uses; the Better Auth role cannot write `public`, so this must not default to the
+ * auth connection string.
  */
+const dbPort = process.env.E2E_DB_PORT ?? '55432';
 const databaseUrl =
 	process.env.E2E_DB_URL ??
 	process.env.DATABASE_URL ??
-	'postgres://veldrath:veldrath_dev@localhost:5433/veldrath';
+	`postgres://veldrath:veldrath_dev@localhost:${dbPort}/veldrath`;
 
 const PASSWORD = 'E2e-password-123';
 
 /** The .NET API the SvelteKit server calls. Specs use it only for setup the UI has no path for. */
-export const apiBase = (process.env.E2E_API_URL ?? 'http://127.0.0.1:9000').replace(/\/+$/, '');
+export const apiBase = (
+	process.env.E2E_API_URL ?? `http://127.0.0.1:${process.env.E2E_API_PORT ?? '9100'}`
+).replace(/\/+$/, '');
 
 /**
  * Reads the short-lived game token the page's session can mint, so a spec can act as that account
