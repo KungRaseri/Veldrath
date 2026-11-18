@@ -413,6 +413,10 @@ try
             // idempotent by chest id so a restart never refills a chest a player emptied a moment ago.
             await Veldrath.Server.Data.Seeders.LootChestsSeeder.SeedAsync(appDb);
 
+            // The people the world's own content names. Without placement, a `talk:` objective has nobody to
+            // talk to — which is how the main-story quest became unfinishable.
+            await Veldrath.Server.Data.Seeders.LocationNpcsSeeder.SeedAsync(appDb);
+
             // Authored resource nodes. Separate from the content seeders because node state lives in
             // GameDbContext, and it is idempotent by node id so a restart never restores a depleted node.
             await Veldrath.Server.Data.Seeders.HarvestableNodesSeeder.SeedAsync(gameDb);

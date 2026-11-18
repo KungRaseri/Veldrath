@@ -142,6 +142,14 @@ test.describe('gathering', () => {
 		// arrival point chains to the clearing (the first location) and on to the road. The forage nodes are
 		// authored at both, so the clearing is where this journey stops.
 		expect(await walkTo(page, 'The Crestfall Square')).toBe(true);
+
+		// ── The elder the square is seeded with ────────────────────────────────────────────────────
+		// Placement is what makes a `talk:` objective possible at all: the wayfarer elder stands here, the panel
+		// lists him, and speaking to him answers with one of his own lines rather than nothing.
+		await expect(page.getByText('Wayfarer Elder')).toBeVisible({ timeout: 30_000 });
+		await page.getByRole('button', { name: 'Talk', exact: true }).first().click();
+		await expect(page.getByText(/Wayfarer Elder:/)).toBeVisible({ timeout: 30_000 });
+
 		expect(await walkTo(page, 'Road to The Ashlen Wood')).toBe(true);
 		expect(await walkTo(page, 'The Old Clearing')).toBe(true);
 

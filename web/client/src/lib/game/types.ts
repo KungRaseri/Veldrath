@@ -561,6 +561,33 @@ export interface ChestOpenedPayload {
 	remainingChests: LocationChest[];
 }
 
+/** A person standing in the current location. */
+export interface LocationNpc {
+	npcId: string;
+	/** The archetype slug: what `TalkToNpc` is called with, and what quest objectives name. */
+	archetypeSlug: string;
+	displayName: string;
+	occupation?: string | null;
+	isShopkeeper: boolean;
+	isQuestGiver: boolean;
+	hasDialogue: boolean;
+}
+
+/** The people here, sent on entering a location. */
+export interface LocationNpcsPayload {
+	npcs: LocationNpc[];
+}
+
+/** What a person said when spoken to. */
+export interface NpcTalkedPayload {
+	success: boolean;
+	npcSlug: string;
+	displayName: string;
+	line: string;
+	isShopkeeper: boolean;
+	isQuestGiver: boolean;
+}
+
 /** A location revealed by a successful area search. */
 export interface SearchFinding {
 	slug: string;

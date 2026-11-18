@@ -54,6 +54,13 @@ public class EfCoreEnemyRepository(ContentDbContext db, ILogger<EfCoreEnemyRepos
         // The kill path rolls this table. Carried on the model because the spawned enemy is a copy of it, and the
         // archetype row's loot id is otherwise unreachable from combat.
         LootTableIds = e.LootTable is null ? [] : [e.LootTable.Slug],
+        // Hostility has to survive the projection: a spawn pool is allowed to name any archetype, and a pool that
+        // names a shopkeeper must not put them in the roster as something to hit. Unset means hostile, which keeps
+        // every monster archetype behaving as it always has.
+        Traits =
+        {
+            ["hostile"] = new TraitValue(e.Traits.Hostile ?? true, TraitType.Boolean),
+        },
         Attributes =
         {
             ["strength"]     = e.Stats.Strength     ?? 10,

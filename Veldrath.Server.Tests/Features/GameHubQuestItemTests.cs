@@ -1,5 +1,6 @@
 using Veldrath.Server.Features.Characters;
 using Veldrath.Server.Features.Characters.Combat;
+using Veldrath.Server.Features.Characters.Npcs;
 using Veldrath.Server.Features.LevelUp;
 using Veldrath.Server.Features.Quest;
 using Veldrath.Server.Hubs;
@@ -496,14 +497,23 @@ public class GameHubQuestItemTests : IDisposable
         ShouldBeError(clients.Caller, "An NPC slug is required.");
     }
 
+    private static TalkToNpcHubResult Answered(string slug) => new()
+    {
+        Success = true,
+        NpcSlug = slug,
+        DisplayName = slug,
+        Line = "Welcome, traveller!",
+    };
+
     [Fact]
-    public async Task TalkToNpc_Advances_The_Talk_Objective_And_Pushes_A_Changed_Journal()
+    public async Task TalkToNpc_Sends_The_Line_And_Advances_The_Talk_Objective()
     {
         await using var db = _factory.CreateContext();
         var account = await HubHarness.SeedAccountAsync(db);
         var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id, connectionId: "conn-talk");
         var characterId = Guid.NewGuid();
         ctx.Items["CharacterId"] = characterId;
+        mediator.Returns(Answered("innkeeper"));
         mediator.Returns(new AdvanceQuestObjectivesHubResult
         {
             Success = true,
@@ -513,26 +523,53 @@ public class GameHubQuestItemTests : IDisposable
 
         await hub.TalkToNpc("  innkeeper  ");
 
+        var talk = mediator.Invocations.Select(i => i.Arguments[0]).OfType<TalkToNpcHubCommand>().Single();
+        talk.NpcSlug.Should().Be("innkeeper", "the slug is trimmed before dispatch");
+
         var advance = mediator.Invocations.Select(i => i.Arguments[0])
             .OfType<AdvanceQuestObjectivesHubCommand>().Single();
         advance.Kind.Should().Be("talk");
-        advance.Key.Should().Be("innkeeper", "the slug is trimmed before dispatch");
+        advance.Key.Should().Be("innkeeper");
+        clients.Caller.SentMessages.Should().Contain(m => m.Method == "NpcTalked");
         clients.Connection("conn-talk").SentMessages.Should()
             .ContainSingle(m => m.Method == "QuestLogReceived");
     }
 
     [Fact]
-    public async Task TalkToNpc_Stays_Silent_When_No_Quest_Changed()
+    public async Task TalkToNpc_Sends_No_Journal_When_No_Quest_Changed()
     {
         await using var db = _factory.CreateContext();
         var account = await HubHarness.SeedAccountAsync(db);
         var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
         ctx.Items["CharacterId"] = Guid.NewGuid();
+        mediator.Returns(Answered("innkeeper"));
         mediator.Returns(new AdvanceQuestObjectivesHubResult { Success = true, QuestsChanged = 0 });
 
         await hub.TalkToNpc("innkeeper");
 
-        clients.EveryMessage.Should().BeEmpty();
+        clients.EveryMessage.Should().NotContain(m => m.Method == "QuestLogReceived");
+        clients.EveryMessage.Should().ContainSingle(m => m.Method == "NpcTalked");
+    }
+
+    [Fact]
+    public async Task TalkToNpc_Relays_An_Unanswered_Attempt_Without_Advancing_Anything()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
+        ctx.Items["CharacterId"] = Guid.NewGuid();
+        mediator.Returns(new TalkToNpcHubResult
+        {
+            Success = false,
+            ErrorMessage = "There is nobody called innkeeper here.",
+        });
+
+        await hub.TalkToNpc("innkeeper");
+
+        ShouldBeError(clients.Caller, "There is nobody called innkeeper here.");
+        clients.EveryMessage.Should().NotContain(m => m.Method == "NpcTalked");
+        mediator.Invocations.Select(i => i.Arguments[0])
+            .OfType<AdvanceQuestObjectivesHubCommand>().Should().BeEmpty();
     }
 
     [Fact]
@@ -542,12 +579,13 @@ public class GameHubQuestItemTests : IDisposable
         var account = await HubHarness.SeedAccountAsync(db);
         var (hub, clients, _, ctx, mediator, _) = HubHarness.Create(db, account.Id);
         ctx.Items["CharacterId"] = Guid.NewGuid();
+        mediator.Returns(Answered("innkeeper"));
         mediator.Throws<AdvanceQuestObjectivesHubResult>(new InvalidOperationException("journal broken"));
 
         var act = () => hub.TalkToNpc("innkeeper");
 
         await act.Should().NotThrowAsync("a best-effort objective advance must never break the player action");
-        clients.EveryMessage.Should().BeEmpty();
+        clients.EveryMessage.Should().NotContain(m => m.Method == "QuestLogReceived");
     }
 
     // ── CraftItem ────────────────────────────────────────────────────────────

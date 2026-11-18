@@ -46,6 +46,9 @@ import type {
 	LocationClearedPayload,
 	LocationChest,
 	LocationChestsPayload,
+	LocationNpc,
+	LocationNpcsPayload,
+	NpcTalkedPayload,
 	LocationEnteredPayload,
 	LocationNode,
 	LocationNodesPayload,
@@ -171,6 +174,8 @@ export class GameSession {
 	nodes = $state<LocationNode[]>([]);
 	/** Unopened chests standing in this location, refreshed by the server after every open. */
 	chests = $state<LocationChest[]>([]);
+	/** People standing in this location, refreshed whenever the location changes. */
+	npcs = $state<LocationNpc[]>([]);
 	/** Slash commands the caller may run, already filtered by permission server-side. */
 	chatCommands = $state<ChatCommandInfo[]>([]);
 	/** Characters muted locally with `/ignore`; their chat is hidden in every channel. */
@@ -398,6 +403,19 @@ export class GameSession {
 		if (!this.hub) return;
 		this.error = null;
 		await this.hub.invoke('OpenChest', { chestId });
+	}
+
+	/** Asks who is standing here; the server answers with `LocationNpcs`. */
+	async requestLocationNpcs(): Promise<void> {
+		if (!this.hub) return;
+		await this.hub.invoke('GetLocationNpcs');
+	}
+
+	/** Speaks to one of them. Their line arrives as `NpcTalked`. */
+	async talkToNpc(npcSlug: string): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('TalkToNpc', npcSlug);
 	}
 
 	/** Opens the item detail dialog for a bag or equipment entry. */
@@ -758,9 +776,11 @@ export class GameSession {
 			// ground items are.
 			this.nodes = [];
 			this.chests = [];
+			this.npcs = [];
 			void this.requestGroundItems();
 			void this.requestLocationNodes();
 			void this.requestLocationChests();
+			void this.requestLocationNpcs();
 		});
 
 		hub.on('LocationNodes', (payload: LocationNodesPayload) => {
@@ -769,6 +789,15 @@ export class GameSession {
 
 		hub.on('LocationChests', (payload: LocationChestsPayload) => {
 			this.chests = payload.chests ?? [];
+		});
+
+		hub.on('LocationNpcs', (payload: LocationNpcsPayload) => {
+			this.npcs = payload.npcs ?? [];
+		});
+
+		hub.on('NpcTalked', (payload: NpcTalkedPayload) => {
+			// The server words the line; the client only shows it, so the same line reads the same everywhere.
+			if (payload.line) this.addSystemMessage(`${payload.displayName}: “${payload.line}”`);
 		});
 
 		hub.on('ChestOpened', (payload: ChestOpenedPayload) => {
@@ -1282,6 +1311,13 @@ export class GameSession {
 
 		if (payload.currentZoneId) await this.enterZone(payload.currentZoneId);
 		await this.requestMapGraph(null);
+
+		// A resumed character already stands somewhere, and the location lists are only pushed on a *move*: ask
+		// for them once here so the panel is right on arrival instead of after the player walks to a neighbour.
+		void this.requestGroundItems();
+		void this.requestLocationNodes();
+		void this.requestLocationChests();
+		void this.requestLocationNpcs();
 	}
 
 	private async handleNodeTraveled(payload: NodeTraveledPayload): Promise<void> {
@@ -1323,12 +1359,15 @@ export class GameSession {
 			this.occupants = [];
 		}
 
-		// Nodes and chests belong to the location, and travelling to a Location node is how most locations are
-		// entered — that path emits `NodeTraveled`, not `LocationEntered`, so the lists are refreshed here too.
+		// Nodes, chests and people belong to the location, and travelling to a Location node is how most
+		// locations are entered — that path emits `NodeTraveled`, not `LocationEntered`, so the lists are
+		// refreshed here too.
 		this.nodes = [];
 		this.chests = [];
+		this.npcs = [];
 		void this.requestLocationNodes();
 		void this.requestLocationChests();
+		void this.requestLocationNpcs();
 
 		if (payload.mapChanged) await this.requestMapGraph(payload.mapId ?? null);
 	}

@@ -341,3 +341,41 @@ by zone and location.
 - The e2e stack runs with `Chests__ReopenAfterMinutes=1` so a re-run recovers the authored chests without a
   `--fresh`; the spec walks to the road's cache when the clearing's strongbox is still inside its window, and
   skips with that reason if both are.
+
+## People — placement, dialogue, and a guard against hittable shopkeepers (2026-11-18)
+
+The content side of NPCs was already there and unreachable. `ActorArchetype` replaced the old separate enemy and
+NPC tables, so hostility is a trait (`Hostile`, `Shopkeeper`, `QuestGiver`, `HasDialogue`, `Immortal`), and three
+townspeople are seeded: `village-blacksmith`, `tavern-keeper`, `wayfarer-elder`. `DialogueSeeder` writes their
+greeting and farewell lines keyed by the speaker slug, and `IDialogueRepository.GetBySpeakerAsync(slug)` reads
+them. What did not exist was any statement that *this* person stands *here* — so the main-story quest's third
+objective, `talk:village-blacksmith` ("Return the cargo to the Village Blacksmith"), had nobody to talk to. That is
+the same shape as `gather-mushrooms` before the nodes existed: content that names a thing the world cannot offer.
+
+**Placement is its own row, not a spawn-pool entry.** [`LocationNpc`](../../Veldrath.Server/Data/Entities/LocationNpc.cs)
+holds `ZoneId` + `LocationSlug` + `ArchetypeSlug` (+ optional display-name override and sort order), in
+`ApplicationDbContext` beside chests. A pool entry means "what may spawn here, weighted", and a shopkeeper present
+a quarter of the time is not a shopkeeper — worse, every pool entry becomes an attackable enemy in the roster.
+[`LocationNpcsSeeder`](../../Veldrath.Server/Data/Seeders/LocationNpcsSeeder.cs) places the smith at the Aurelian
+Market, the keeper at the Hearthbound Inn and the elder on the Crestfall Square, idempotent by placement id.
+
+**Read and talk.** `GetLocationNpcs` → `LocationNpcs` on location entry; each entry carries the archetype slug,
+name, occupation and the role flags read from the content archetype (the shared `NPC` projection has no roles, so
+the handler reads `ContentDbContext` rather than widening a contract the engine does not use). `TalkToNpc(slug)`
+now checks the person is placed where the character stands, answers with one of their own greeting lines (falling
+back to a neutral line so an unauthored speaker still answers), sends `NpcTalked`, and only then advances
+`talk:<slug>` objectives — the slug is the archetype, the speaker key and the objective key at once.
+
+**One guard, so this cannot happen again.** `EfCoreEnemyRepository` now carries hostility into the `Enemy`
+projection (`traits["hostile"]`, defaulting to hostile when the archetype says nothing), and
+[`ActorPoolResolver`](Veldrath.Server/Features/Characters/Combat/ActorPoolResolver.cs:63) leaves a non-hostile
+archetype out of the combat roster and says so in the log. A future content edit that drops a blacksmith into a
+spawn pool therefore produces a warning, not a punching bag.
+
+**Also fixed on the way:** the client only ever pulled location-scoped lists on a *move*, so a resumed character
+saw no nodes, chests or people until they walked somewhere. `handleCharacterSelected` now asks for ground items,
+nodes, chests and people once, after entering the zone.
+
+**Covered by:** `NpcPlacementTests` (seed guards, the read path with role flags, the talk line, refusals for a
+person elsewhere and for a blank slug, and both the hostile and non-hostile roster cases) and the talk step in
+`harvest.e2e.ts`, which speaks to the elder on the square before walking into the wood.

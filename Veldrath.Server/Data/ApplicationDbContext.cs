@@ -64,6 +64,8 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<PartyInvite> PartyInvites => Set<PartyInvite>();
     /// <summary>Chests standing at zone locations, authored by content or placed by the chest sweeper.</summary>
     public DbSet<LootChest> LootChests => Set<LootChest>();
+    /// <summary>People standing at zone locations, the placement an authored actor archetype needs to be met.</summary>
+    public DbSet<LocationNpc> LocationNpcs => Set<LocationNpc>();
     /// <summary>Live runs of instanced zones, the aggregate root a delve's state points at.</summary>
     public DbSet<ZoneInstance> ZoneInstances => Set<ZoneInstance>();
     /// <summary>Characters who have taken part in an instance run.</summary>
@@ -319,6 +321,21 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
              .WithMany()
              .HasForeignKey(c => c.ZoneInstanceId)
              .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<LocationNpc>(e =>
+        {
+            e.HasKey(n => n.Id);
+            // A placement keeps its row across restarts, so the seeded key is the identity content owns.
+            e.HasIndex(n => n.NpcId).IsUnique();
+            // A location read asks who stands here; a talk asks whether this archetype is here.
+            e.HasIndex(n => new { n.ZoneId, n.LocationSlug });
+            e.HasIndex(n => new { n.ZoneId, n.LocationSlug, n.ArchetypeSlug });
+            e.Property(n => n.NpcId).HasMaxLength(128).IsRequired();
+            e.Property(n => n.ZoneId).HasMaxLength(64).IsRequired();
+            e.Property(n => n.LocationSlug).HasMaxLength(128).IsRequired();
+            e.Property(n => n.ArchetypeSlug).HasMaxLength(128).IsRequired();
+            e.Property(n => n.DisplayName).HasMaxLength(200);
         });
 
         builder.Entity<EnemyInstance>(e =>

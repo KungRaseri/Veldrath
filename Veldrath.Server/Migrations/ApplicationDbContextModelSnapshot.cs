@@ -677,6 +677,51 @@ namespace Veldrath.Server.Migrations
                     b.ToTable("GroundItems");
                 });
 
+            modelBuilder.Entity("Veldrath.Server.Data.Entities.LocationNpc", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ArchetypeSlug")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("LocationSlug")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("NpcId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ZoneId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NpcId")
+                        .IsUnique();
+
+                    b.HasIndex("ZoneId", "LocationSlug");
+
+                    b.HasIndex("ZoneId", "LocationSlug", "ArchetypeSlug");
+
+                    b.ToTable("LocationNpcs");
+                });
+
             modelBuilder.Entity("Veldrath.Server.Data.Entities.LootChest", b =>
                 {
                     b.Property<Guid>("Id")

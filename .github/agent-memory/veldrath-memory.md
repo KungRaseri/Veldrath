@@ -4295,3 +4295,33 @@ Thirteenth pass — **chests exist, and they do not stand still.**
   `forest-chest-loot` has no `gold` entry, so chests pay items only; the e2e stack exports
   `Chests__ReopenAfterMinutes=1` + `Chests__SweepIntervalSeconds=5` so an isolated re-run recovers the authored
   chests, and the spec walks on to the road's cache and then skips with that reason if both were emptied.
+
+Fourteenth pass — **people exist, and the world cannot be fooled into handing them a knife.**
+
+- **Placement is a row, not a pool entry.** [`LocationNpc`](../../Veldrath.Server/Data/Entities/LocationNpc.cs) in
+  `ApplicationDbContext` (`NpcId`, `ZoneId`, `LocationSlug`, `ArchetypeSlug`, optional `DisplayName`, `SortOrder`),
+  seeded by [`LocationNpcsSeeder`](../../Veldrath.Server/Data/Seeders/LocationNpcsSeeder.cs): blacksmith at
+  `aurelian-market`, tavern keeper at `hearthbound-inn`, elder at `crestfall-square`. Migration
+  `*_AddLocationNpcs.cs`. A pool entry means "may spawn here, weighted" and every pool entry becomes an attackable
+  `SpawnedEnemy`, which is exactly why the seeder comment had kept NPCs out of pools — and why placement needed to
+  be explicit.
+- **The bug that made this urgent:** the main-story quest in `QuestsSeeder` has `talk:village-blacksmith` and no
+  blacksmith existed anywhere, so the quest was unfinishable — the same shape as `gather-mushrooms` without nodes.
+- **Read + talk.** `GetLocationNpcs` → `LocationNpcs` on location entry (pushed next to nodes and chests). The DTO
+  carries the archetype slug, name, occupation and role flags read from `ContentDbContext.ActorArchetypes`, because
+  the shared `NPC` projection has no roles. `TalkToNpc(slug)` verifies the placement is at the character's location,
+  answers with a line from `IDialogueRepository.GetBySpeakerAsync(slug)` filtered to greetings (neutral fallback),
+  sends `NpcTalked`, then advances `talk:<slug>` — the archetype slug is the speaker key and the objective key.
+- **Hostile filter.** `EfCoreEnemyRepository.MapToModel` now projects `traits["hostile"] =
+  e.Traits.Hostile ?? true`, and `ActorPoolResolver.SpawnRosterAsync` skips a non-hostile entry with a warning, so
+  content that puts a shopkeeper in a pool cannot turn them into a target. `ResolveArchetypeAsync` is untouched, so
+  rebuilding existing enemy rows still works.
+- **Client-side gap this exposed:** location lists were only pulled on a *move*, so a resumed character saw no
+  nodes, chests or people until they walked. `handleCharacterSelected` now pulls ground items, nodes, chests and
+  people once after `EnterZone`. Session tests assert those four invocations.
+- **Web:** `LocationNpc`/`LocationNpcsPayload`/`NpcTalkedPayload`, `session.npcs`, a **People** section with a Talk
+  button (shows `· quests` / `· trades` from the flags), the line logged as `Name: “line”`. The `TalkToNpc` entry was
+  removed from the hub-methods parity allow-list because it now has a real caller.
+- **Tests:** `NpcPlacementTests` (seed guards, listing with roles, talk line, refusals, hostile/non-hostile roster),
+  four reworked `TalkToNpc` hub tests (`NpcTalked` goes to `Clients.Caller`; the journal push goes to the connection
+  id, so assertions must use the right proxy), two session tests, and the elder-then-wood walk in `harvest.e2e.ts`.

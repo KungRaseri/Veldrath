@@ -22,6 +22,7 @@ using Veldrath.Server.Features.Characters;
 using Veldrath.Server.Features.Characters.Chests;
 using Veldrath.Server.Features.Characters.Combat;
 using Veldrath.Server.Features.Characters.Harvesting;
+using Veldrath.Server.Features.Characters.Npcs;
 using Veldrath.Server.Features.Characters.Queries;
 using Veldrath.Server.Features.LevelUp;
 using Veldrath.Server.Features.Map;
@@ -1041,10 +1042,11 @@ public class GameHub : Hub
 
             await Clients.Caller.SendAsync("NodeTraveled", result.Arrival);
 
-            // What grows here, and what is waiting to be opened. A safe location answers with empty lists,
-            // which the client renders as nothing.
+            // What grows here, what is waiting to be opened, and who is here to talk to. A safe location answers
+            // with empty lists, which the client renders as nothing.
             await SendLocationNodesAsync(characterId);
             await SendLocationChestsAsync(characterId);
+            await SendLocationNpcsAsync(characterId);
 
             foreach (var warning in result.Arrival.ContentWarnings)
             {
@@ -1546,9 +1548,14 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Records that the active character spoke to an NPC, which advances <c>talk:<npcSlug></c> objectives.
+    /// Speaks to a person standing with the active character: answers with one of their own lines and advances
+    /// <c>talk:<slug></c> objectives.
     /// </summary>
-    /// <param name="npcSlug">Slug of the NPC that was spoken to.</param>
+    /// <remarks>
+    /// The slug is the archetype slug the placement row names, which is also the speaker key the dialogue catalog
+    /// uses — so the same string identifies who is here, what they say, and what the quest is waiting for.
+    /// </remarks>
+    /// <param name="npcSlug">Archetype slug of the person being spoken to.</param>
     public async Task TalkToNpc(string npcSlug)
     {
         if (!TryGetCharacterId(out var characterId))
@@ -1563,7 +1570,56 @@ public class GameHub : Hub
             return;
         }
 
-        await AdvanceQuestObjectivesAsync(characterId, QuestObjectiveKinds.Talk, npcSlug.Trim());
+        try
+        {
+            var result = await _mediator.Send(new TalkToNpcHubCommand(characterId, npcSlug.Trim()));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "They do not answer.");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("NpcTalked", result);
+            await AdvanceQuestObjectivesAsync(characterId, QuestObjectiveKinds.Talk, result.NpcSlug);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error talking to '{NpcSlug}' for character {CharacterId}", npcSlug, characterId);
+            await Clients.Caller.SendAsync("Error", "They do not answer.");
+        }
+    }
+
+    /// <summary>
+    /// Sends the people standing in the caller's current location as <c>LocationNpcs</c>.
+    /// </summary>
+    public async Task GetLocationNpcs()
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetLocationNpcs");
+            return;
+        }
+
+        await SendLocationNpcsAsync(characterId);
+    }
+
+    /// <summary>Sends <c>LocationNpcs</c> to the caller, or an empty list when the read fails.</summary>
+    /// <param name="characterId">The character whose location to read.</param>
+    private async Task SendLocationNpcsAsync(Guid characterId)
+    {
+        IReadOnlyList<LocationNpcDto> npcs;
+        try
+        {
+            npcs = await _mediator.Send(new GetLocationNpcsHubCommand(characterId));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to list the people at the location of {CharacterId}.", characterId);
+            npcs = [];
+        }
+
+        await Clients.Caller.SendAsync("LocationNpcs", new { Npcs = npcs });
     }
 
     /// <summary>

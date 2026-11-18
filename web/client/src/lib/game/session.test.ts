@@ -515,6 +515,18 @@ describe('GameSession commands', () => {
 		]);
 	});
 
+	it('asks who is here and speaks to them', async () => {
+		const session = await playing();
+
+		await session.requestLocationNpcs();
+		await session.talkToNpc('village-blacksmith');
+
+		expect(hub.invocations).toEqual([
+			{ method: 'GetLocationNpcs', args: [] },
+			{ method: 'TalkToNpc', args: ['village-blacksmith'] }
+		]);
+	});
+
 	it('maps ground-item, item-use, ability and quest commands to hub methods', async () => {
 		const session = await connected();
 
@@ -860,7 +872,12 @@ describe('GameSession character and world events', () => {
 			{ method: 'GetParty', args: [] },
 			{ method: 'GetInventory', args: [] },
 			{ method: 'EnterZone', args: ['zone-1'] },
-			{ method: 'GetMapGraph', args: [null] }
+			{ method: 'GetMapGraph', args: [null] },
+			// A resumed character stands somewhere already, and the lists are only pushed on a move.
+			{ method: 'GetGroundItems', args: [] },
+			{ method: 'GetLocationNodes', args: [] },
+			{ method: 'GetLocationChests', args: [] },
+			{ method: 'GetLocationNpcs', args: [] }
 		]);
 	});
 
@@ -871,7 +888,15 @@ describe('GameSession character and world events', () => {
 		await flush();
 
 		expect(session.currentNodeId).toBeNull();
-		expect(hub.methods()).toEqual(['GetParty', 'GetInventory', 'GetMapGraph']);
+		expect(hub.methods()).toEqual([
+			'GetParty',
+			'GetInventory',
+			'GetMapGraph',
+			'GetGroundItems',
+			'GetLocationNodes',
+			'GetLocationChests',
+			'GetLocationNpcs'
+		]);
 	});
 
 	it('reports a character that is active elsewhere', async () => {
@@ -988,6 +1013,44 @@ describe('GameSession character and world events', () => {
 
 		expect(session.chests).toEqual([]);
 		expect(session.chat.at(-1)?.message).toBe('Opened the Mossy Strongbox: Health Potion x2.');
+	});
+
+	it('stores the people here, quotes what they say, and forgets them on the next location', async () => {
+		const session = await connected();
+
+		hub.emit('LocationNpcs', {
+			npcs: [
+				{
+					npcId: 'npc-1',
+					archetypeSlug: 'village-blacksmith',
+					displayName: 'Village Blacksmith',
+					occupation: 'townspeople',
+					isShopkeeper: true,
+					isQuestGiver: false,
+					hasDialogue: true
+				}
+			]
+		});
+		expect(session.npcs.map((npc) => npc.archetypeSlug)).toEqual(['village-blacksmith']);
+
+		hub.emit('NpcTalked', {
+			success: true,
+			npcSlug: 'village-blacksmith',
+			displayName: 'Village Blacksmith',
+			line: 'The forge is hot and my hammer is ready.',
+			isShopkeeper: true,
+			isQuestGiver: false
+		});
+		expect(session.chat.at(-1)?.message).toBe(
+			'Village Blacksmith: \u201cThe forge is hot and my hammer is ready.\u201d'
+		);
+
+		hub.emit('LocationEntered', {
+			locationSlug: 'low-quarter',
+			locationDisplayName: 'The Low Quarter',
+			typeKey: 'locations'
+		});
+		expect(session.npcs).toEqual([]);
 	});
 
 	it('derives rest and shop availability from the zone', async () => {
@@ -1120,11 +1183,12 @@ describe('GameSession map', () => {
 			spawnedEnemies: [enemy('wolf')]
 		});
 		expect(session.enemies).toEqual([enemy('wolf')]);
-		// The nodes and chests belong to the location, and travelling to a location node is how most of them
-		// are entered.
+		// The nodes, chests and people belong to the location, and travelling to a location node is how most
+		// of them are entered.
 		expect(hub.invocations).toEqual([
 			{ method: 'GetLocationNodes', args: [] },
-			{ method: 'GetLocationChests', args: [] }
+			{ method: 'GetLocationChests', args: [] },
+			{ method: 'GetLocationNpcs', args: [] }
 		]);
 	});
 
@@ -1204,6 +1268,7 @@ describe('GameSession map', () => {
 		expect(hub.invocations).toEqual([
 			{ method: 'GetLocationNodes', args: [] },
 			{ method: 'GetLocationChests', args: [] },
+			{ method: 'GetLocationNpcs', args: [] },
 			{ method: 'GetMapGraph', args: ['map-2'] }
 		]);
 	});
