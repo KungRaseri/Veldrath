@@ -84,6 +84,12 @@ export function describeCombatTurn(turn: CombatTurnPayload): string {
 	}
 	if (turn.xpEarned) parts.push(`+${turn.xpEarned} XP.`);
 	if (turn.goldEarned) parts.push(`+${turn.goldEarned} gold.`);
+
+	// Loot is the one reward the player cannot infer from the numbers, so it is named.
+	const dropped = turn.itemsDropped ?? [];
+	if (dropped.length > 0) {
+		parts.push(`Found: ${dropped.map((drop) => `${drop.quantity}× ${drop.itemSlug}`).join(', ')}.`);
+	}
 	if (turn.playerDefeated) parts.push('You have been defeated.');
 
 	return parts.join(' ');

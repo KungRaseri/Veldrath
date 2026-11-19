@@ -23,9 +23,99 @@ public static class ZoneLocationsSeeder
         var existing = await db.ZoneLocations.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
         var missing = GetAllLocations(now).Where(x => !existing.Contains(x.Slug)).ToList();
         if (missing.Count == 0) return;
+
+        // The pools are declared apart from the locations so the whole encounter map reads as one table. A location
+        // that is not listed here spawns nothing on purpose: towns, inns, markets and the SafeRespawn lobbies.
+        foreach (var location in missing)
+            if (SpawnPools.TryGetValue(location.Slug, out var pool))
+                location.ActorPool = [.. pool];
+
         db.ZoneLocations.AddRange(missing);
         await db.SaveChangesAsync();
     }
+
+    /// <summary>
+    /// What spawns where, keyed by location slug.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Every location that is not a settlement or a dungeon lobby appears here, weighted towards the archetype
+    /// band its own <c>Stats.MinLevel</c>/<c>MaxLevel</c> covers: the geography runs from level 0 to 30, so a pool
+    /// that names a level 3 goblin on a level 26 map is worse than no pool at all.
+    /// </para>
+    /// <para>
+    /// A pool is the only placement mechanism in the game — every entry becomes an attackable enemy — so NPCs are
+    /// never listed. <c>playground-clearing</c> is the dev-only fixture the end-to-end specs fight in.
+    /// </para>
+    /// </remarks>
+    private static readonly Dictionary<string, ActorPoolEntry[]> SpawnPools = new(StringComparer.Ordinal)
+    {
+        // Varenmark — levels 1–6
+        ["drove-road"] = [Rat(60), Goblin(40)],
+        ["wood-road"] = [Rat(40), Goblin(40), Wolf(20)],
+        ["old-clearing"] = [Wolf(70), Goblin(30)],
+        ["mire-crossing"] = [Bandit(60), Wolf(40)],
+        ["bone-hollow"] = [Wight(60), Bandit(40)],
+        ["sunken-fields"] = [Rat(50), Wolf(50)],
+        ["rootbound-cellars"] = [Bandit(70), Wight(30)],
+        ["flooded-workings"] = [Bandit(50), Wight(50)],
+        ["collapsed-vault"] = [Bandit(70), Wight(30)],
+        ["deepest-chamber"] = [Wight(60), Bandit(40)],
+
+        // Greymoor — levels 7–14
+        ["ashveil-highlands"] = [Wight(70), Haunt(30)],
+        ["shifting-waymark"] = [Haunt(70), Wight(30)],
+        ["fenland-crossing"] = [Lurker(70), Haunt(30)],
+        ["submerged-ruins"] = [Lurker(60), Revenant(40)],
+        ["ancestor-vault"] = [Revenant(60), Haunt(25), Captain(15)],
+        ["relic-chamber"] = [Revenant(55), Captain(45)],
+
+        // Saltcliff — levels 13–20
+        ["wrack-shore"] = [Brute(70), Revenant(30)],
+        ["bone-strand"] = [Brute(55), Harrower(45)],
+        ["tidal-grotto"] = [Harrower(60), Brute(40)],
+        ["gull-rider-camp"] = [Brute(80), Harrower(20)],
+        ["storm-watch-peak"] = [Harrower(100)],
+        ["flooded-throne-room"] = [Revenant(60), Harrower(40)],
+        ["tidelocked-vault"] = [Harrower(70), Revenant(30)],
+
+        // Cinderplain — levels 20–30
+        ["obsidian-grove"] = [Cinderling(70), Pyreling(30)],
+        ["ash-shrine"] = [Pyreling(60), Cinderling(40)],
+        ["vent-fields"] = [Pyreling(70), Cinderling(30)],
+        ["pyreling-den"] = [Pyreling(100)],
+        ["fire-ancients-chamber"] = [Cinderling(70), Ancient(30)],
+        ["kaldreks-heart"] = [Ancient(100)],
+
+        // Dev playground (IsDevOnly zone): the deterministic encounter the e2e specs use. The other fixtures get a
+        // token pool so the "every non-settlement location can spawn something" rule holds there too.
+        ["playground-clearing"] = [Rat(50), Bandit(50)],
+        ["playground-grove"] = [Rat(100)],
+        ["playground-dungeon-gate"] = [Bandit(100)],
+        ["playground-hidden-skill"] = [Rat(100)],
+        ["playground-hidden-active"] = [Rat(100)],
+        ["playground-hidden-quest"] = [Rat(100)],
+        ["playground-hidden-item"] = [Rat(100)],
+        ["playground-hidden-achievement"] = [Rat(100)],
+    };
+
+    private static ActorPoolEntry Rat(int weight) => Entry("giant-rat", weight);
+    private static ActorPoolEntry Goblin(int weight) => Entry("goblin-scout", weight);
+    private static ActorPoolEntry Wolf(int weight) => Entry("forest-wolf", weight);
+    private static ActorPoolEntry Bandit(int weight) => Entry("bandit-ruffian", weight);
+    private static ActorPoolEntry Captain(int weight) => Entry("bandit-captain", weight);
+    private static ActorPoolEntry Wight(int weight) => Entry("moor-wight", weight);
+    private static ActorPoolEntry Haunt(int weight) => Entry("cairn-haunt", weight);
+    private static ActorPoolEntry Lurker(int weight) => Entry("fen-lurker", weight);
+    private static ActorPoolEntry Revenant(int weight) => Entry("drowned-revenant", weight);
+    private static ActorPoolEntry Brute(int weight) => Entry("gull-rider-brute", weight);
+    private static ActorPoolEntry Harrower(int weight) => Entry("storm-harrower", weight);
+    private static ActorPoolEntry Cinderling(int weight) => Entry("cinderling", weight);
+    private static ActorPoolEntry Pyreling(int weight) => Entry("pyreling", weight);
+    private static ActorPoolEntry Ancient(int weight) => Entry("fire-ancient", weight);
+
+    private static ActorPoolEntry Entry(string archetypeSlug, int weight) =>
+        new() { ArchetypeSlug = archetypeSlug, Weight = weight };
 
     private static ZoneLocation[] GetAllLocations(DateTimeOffset now) =>
     [
@@ -516,7 +606,9 @@ public static class ZoneLocationsSeeder
                 ZoneId = "playground",         TypeKey = "locations",
                 RarityWeight = 100, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 3, DangerLevel = 0, Population = 10, MinLevel = 0 },
-                Traits = new() { IsTown = true },
+                // The playground's respawn point: without one, a death there falls back to whatever location the
+                // repository returns first and logs an error. It is also where the death e2e expects to land.
+                Traits = new() { IsTown = true, SafeRespawn = true },
             },
             // Town — inn (rest / health+mana restore)
             new ZoneLocation

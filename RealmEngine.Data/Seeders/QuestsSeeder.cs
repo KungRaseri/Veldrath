@@ -54,7 +54,9 @@ public static class QuestsSeeder
                             Type        = "kill",
                             Target      = "goblin-scout",
                             Quantity    = 5,
-                            Description = "Defeat 5 Goblin Scouts in the Darkwood Forest.",
+                            // Named the Ashlen Wood because that is where the goblins actually spawn (wood-road and
+                            // old-clearing); the old text sent players to a "Darkwood Forest" that does not exist.
+                            Description = "Defeat 5 Goblin Scouts on the Ashlen Wood roads.",
                         },
                     ],
                 },

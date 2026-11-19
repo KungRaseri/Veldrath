@@ -12,8 +12,11 @@
 **Before writing ANY CSS**, read [`docs/design-system.md`](../../docs/design-system.md) and load the
 `web-ui` skill. The web app is SvelteKit + Tailwind + Skeleton v5 and must use the Veldrath design
 tokens in `web/client/src/routes/theme.css` and `brand.css` — no raw hex values, no ad-hoc component
-stylesheets. There is no desktop surface any more: `RealmForge` and the Avalonia client are deleted,
-so the `RealmUI.Fonts` resources and the Avalonia token keys in §8 are history only.
+stylesheets. The live token definitions are `theme.css` `:root` plus the `[data-theme='veldrath']`
+Skeleton ramp block; the design document explains them and no longer carries any desktop-toolkit
+material (Session-102 deleted it). `web/client/src/lib/parity/design-tokens.test.ts` fails when the
+CSS, [`docs/design/tokens.json`](../../docs/design/tokens.json) and the document disagree — add a
+token in all three places.
 
 **Applies to**: [`web/client`](../../web/client) — the only client and the only UI surface (the
 Avalonia `RealmForge` editor was deleted in Milestone B, so the rules that referred to it no longer
@@ -4090,10 +4093,13 @@ Seventh pass closed the two §6 leftovers.
   `ValidateWorld(world, …)`. The web loader reads `map.review` and words a missing verdict as `unknown`, never
   `ready`. Do not reintroduce a `getMap`/`validateMap` pair per row on `/review`.
 
-- **Running the stack specs locally needs the preview origin too.** `E2E_STACK=1` alone is not enough: Better Auth
-  rejects the sign-up with `Invalid origin: http://localhost:4173`, because `web/client/.env` sets
-  `ORIGIN=http://localhost:5173` (the dev server). Use
-  `ORIGIN=http://localhost:4173 BETTER_AUTH_URL=http://localhost:4173 CI=true E2E_STACK=1 npx playwright test <spec>`.
+- **Running the stack specs locally needs the preview origin too.** `E2E_STACK=1` alone was not enough: Better Auth
+  rejected the sign-up with `Invalid origin: http://localhost:4173`, because `web/client/.env` sets
+  `ORIGIN=http://localhost:5173` (the dev server). That is now handled for you — `playwright.config.ts` starts the
+  preview with `ORIGIN`/`BETTER_AUTH_URL`/`PUBLIC_*`/`DATABASE_URL` set, so
+  `./scripts/e2e-stack.sh start --fresh` + `npm run test:e2e:stack --workspace client` is the whole recipe.
+  **Never export those by hand**: a hand-set `PUBLIC_*` on the command line is ignored (they are inlined at build
+  time), which is how the dev hub URL leaked into a "stack" run.
 
 Eighth pass — **the .NET coverage gate was red, and it was `Veldrath.Server` branches**: 80.6% against a floor of 82
 (measured 2026-11-17 with the pinned SDK 10.0.402, `dotnet test Realm.Full.slnx -c Release --collect "XPlat Code
@@ -4119,12 +4125,255 @@ and there is none. **No seeded zone location has an `ActorPool`** (verified with
 returns an empty roster for an empty pool *by design* — the old `"common"` fallback was removed so a missing pool
 could not be silently faked. So nothing spawns anywhere, the HUD's "Local" panel can never list a hostile, and
 `CombatPanel` never mounts for a real player. The content audit only **warns** on an empty pool ("safe locations
-are legitimate"), so a wholly empty world passes. Two more findings in the same measurement: **no location has
-`Traits.SafeRespawn = true`** (67/67 false), so `RespawnHubCommand` logs
-`Zone {ZoneId} has no location flagged SafeRespawn; falling back to …` at error level on **every** death and
-respawns at `locations[0]`, and no dungeon has a lobby; and only **4 actor archetypes** exist (two of them NPCs —
-`tavern-keeper`, `village-blacksmith`), so even with pools there is little to populate them with.
+are legitimate"), so a wholly empty world passes. Also: only **4 actor archetypes** exist (two of them NPCs —
+`tavern-keeper`, `village-blacksmith`), the 4 loot tables are referenced by **no** archetype, and two of them name
+content that does not exist (`wolf-common-drops` has no wolf, `bandit-boss-drops` has no boss).
+
+**Measurement trap, and a correction.** I first reported that no location had `Traits.SafeRespawn = true` and that
+every death logged `Zone {ZoneId} has no location flagged SafeRespawn`. That was **my query, not the code**:
+`ContentModelConfiguration` stores traits with `ToJson()`, so the JSON keys are the property names —
+`"Traits"->>'SafeRespawn'`, `IsDungeon`, `IsTown` — and I had used camelCase (`'safeRespawn'`), which matches
+nothing. The seeders do set it (8 towns/waypoints plus one `SafeRespawn`/`IsDungeon = false` lobby in every dungeon
+zone), so respawn and the lobby lookup work. **Always query these columns in PascalCase.**
 
 Everything is written up in [`plans/content-seeding-pass.md`](../../plans/content-seeding-pass.md): measured
 counts, P0/P1/P2 priorities, the guardrail test to add to `SeededContentValidationTests`, and what each item
 unblocks. **Return here after the content pass**, then write E13c (engage → victory) and E13d (die → respawn).
+
+Ninth pass — **the workflow specs run against their own isolated stack, and getting that green exposed four
+cross-wirings**. `scripts/e2e-stack.sh` is a standalone compose project
+([`docker-compose.e2e.yml`](../../docker-compose.e2e.yml), `veldrath-e2e`, own volume, own container name) on
+**Postgres 55432 / API 9100 / preview 4273**. Nothing is shared with a development environment, `start --fresh`
+drops the volume first (a green run then means "works against the seed"), a port it did not take is reported
+instead of stolen, and it never `pkill`s — an earlier version killed a developer's own `dotnet run` on :9000.
+
+Each failure below was a **configuration** defect that a single-spec run hid:
+
+1. **`PUBLIC_HUB_URL` was never injected.** `PUBLIC_*` are inlined at `vite build`; setting only
+   `PUBLIC_API_URL` left the browser's SignalR connection pointed at `.env`'s dev hub on :9000, so
+   `.map-node-cell` never rendered and encounters/game-journeys/staff-actions all failed looking like client
+   bugs. `playwright.config.ts`'s `webServer.env` now sets `PUBLIC_API_URL` **and** `PUBLIC_HUB_URL`, `ORIGIN`,
+   `BETTER_AUTH_URL`, `DATABASE_URL` (the auth role — `.env` points at the dev DB on 5433) and
+   `AUTH_RATE_LIMIT_DISABLED`.
+2. **Better Auth rate-limited the run.** ~40 sign-ups a minute from loopback answered
+   `Too many requests. Please try again later.` on `/register`: the client address cannot be resolved, so one
+   bucket is shared per path. [`auth.ts`](../../web/client/src/lib/server/auth.ts) reads
+   `AUTH_RATE_LIMIT_DISABLED` (test stacks only, never the image) **and** now sets
+   `advanced.ipAddress.ipAddressHeaders = ['x-forwarded-for']` — that second part is the production fix behind
+   Coolify/Traefik, where without it every player shares a single bucket per path.
+3. **`upstream-failure.e2e.ts` stops the API**, so it cannot share a run with anything. `test:e2e:stack` is now
+   `:specs` (parallel) then `:outage` (`--workers=1`), and CI mirrors the split in two steps. The spec's own doc
+   comment already said "run with one worker"; the script was what ignored it.
+4. **Every sign-up paid a 10s SMTP timeout.** Development settings point `Email:SmtpHost` at a mail container
+   this stack does not run, so the bridge call hung until the web app's `AbortSignal.timeout(10_000)` fired.
+   The e2e API now starts with `Email__SmtpHost=""` → `NullEmailSender` → immediate answer.
+
+Also: `tests/game-loop.e2e.ts` stopped hard-coding `http://localhost:9000` and imports `apiBase`/`gameToken`
+from [`tests/support/stack.ts`](../../web/client/tests/support/stack.ts) like every other spec, so `E2E_API_PORT`
+reaches it too.
+
+Proof: `scripts/e2e-stack.sh start --fresh` then `npm run test:e2e:stack --workspace client` → **17 passed in
+about a minute** (16 in parallel, then the outage spec), with 1,470 web unit tests and a clean typecheck/prettier.
+Documented for humans in [`web/client/README.md`](../../web/client/README.md).
+
+Tenth pass — **two defects found by a person using the wizard, and the layout harness that now catches the class.**
+
+- **`.btn` is a single-line control.** Skeleton sets `white-space: nowrap` on it, and a grid item defaults to
+  `min-width: auto`. Put a sentence in a `.btn` inside a grid and the row becomes as wide as the *unwrapped*
+  sentence: measured on the creation wizard, a **1290px row in a 574px track**, document 1643px in a 1280px
+  viewport, so every page gained a horizontal scrollbar. Fixing it needs **both** `white-space: normal` and
+  `min-width: 0` (wrapping alone still cannot shrink below the longest word). The primitive is
+  `.choice-option` in [`brand.css`](../../web/client/src/routes/brand.css) — imported after Skeleton, so it wins
+  on order, no `!important`, no layer fighting. **Do not put a description inside a `.btn`.**
+- **The point-buy budget is 27, stats 8–15, cost `{8:0, 9:1, 10:2, 11:3, 12:4, 13:5, 14:7, 15:9}`** — so
+  15/15/15 is exactly 27 and 15/14/12/11/10/10 is exactly 27. `AllocateCreationAttributesHandler` used to accept
+  any allocation *under* budget and store it, and `FinalizeCreationSessionCommand` passed it to
+  `CreateCharacterCommand`, so the API could create a minimum-stats character with 27 points unused. Both refuse
+  now (missing / partial / out-of-range), and the wizard disables Continue with a hint while points remain.
+  **Tests that walk the wizard must spend the budget**: `spendAttributePoints` in
+  [`tests/support/creation.ts`](../../web/client/tests/support/creation.ts).
+- **Layout is asserted, not photographed.** [`tests/support/layout.ts`](../../web/client/tests/support/layout.ts)
+  `expectNoHorizontalOverflow` checks `document.scrollingElement.scrollWidth` and every descendant rect against its
+  container, skipping descendants inside an `overflow-x` clipper (the map cells truncate deliberately).
+  [`tests/layout.e2e.ts`](../../web/client/tests/layout.e2e.ts) drives the seven steps at 1280/768/390 plus
+  `/`, `/lore`, `/patch-notes`, `/community`, `/register`, and signed in `/characters` and `/account`. **Negative
+  control run before keeping it**: removing `choice-option` from the species row fails it with "the page scrolls
+  sideways by 949px". jsdom has no layout, so a Vitest test can never catch this class.
+- **Sweep of the other 196 `.btn` sites**: the wizard was the only sentence-in-a-button, and the only one in a
+  single-column grid track. Account/mod/admin labels are two words in `flex flex-wrap` rows (they wrap instead of
+  overflowing); the game panels keep dynamic text in a `<span>` beside short verbs. `/account` is the riskiest
+  variable-content surface and is in the harness.
+
+Eleventh pass — **the forest can now be foraged from, and the engine's harvesting command cannot be reused.**
+
+- `LootTablesSeeder` gained `forest-forage` (`TypeKey = "harvesting"`, `IsHarvesting = true`, guaranteed
+  `glowcap-mushroom` 1–2). Until this there was **no harvesting loot table at all**, so a node could be
+  harvested for nothing — and `gather-mushrooms` had no possible source.
+- [`HarvestableNodesSeeder`](../../Veldrath.Server/Data/Seeders/HarvestableNodesSeeder.cs) authors five nodes in
+  `wood-road` and `old-clearing` (the Ashlen Wood), seeded from `Program.cs` against `GameDbContext`, idempotent
+  by `NodeId` so **a restart never restores a depleted node**. `LootTableRef` is the engine's reference form:
+  `@loot-tables/harvesting/forest:forest-forage` (the roll uses the part after the last colon).
+- **`HarvestNodeCommand` is single-player and must not be wired to the hub.** It reads
+  `ISaveGameService.GetCurrentSave()` (one global "current save") and writes the bag through the save-game
+  store, not the character blob the client reads. The multiplayer path composes the *stateless* pieces —
+  `HarvestCalculatorService`, `CriticalHarvestService`, `ToolValidationService`,
+  `LootTableService.RollHarvestingDrops(node.LootTableRef, yield, isCritical)` (returns `ItemDrop` with an
+  `@items/general:<slug>` ref) — plus `IInventoryService.AddItemAsync(name, itemRef, qty)`, exactly as combat
+  loot does. All four services are registered by `AddRealmEngineCore`.
+- `HarvestableNodes` lives in **`GameDbContext`** (live state), while `DatabaseSeeder.SeedAsync` is content-only
+  and is reused by `SeededContentProbe` with just a `ContentDbContext` — so node seeding belongs in `Program.cs`,
+  never inside `SeedAsync`.
+- Design decisions for the hub slice (recorded in [`plans/content-seeding-pass.md`](../../plans/content-seeding-pass.md)):
+  authored nodes, `node.LocationId == character.CurrentZoneLocationSlug` as the guard, MinToolTier 0 only,
+  skill rank 0 and no skill XP yet, `collect` advanced with both slug and ref, `LocationNodes` pushed on
+  `EnterLocation` and refreshed after failures, and the web consumer in the same commit (parity suites).
+- **The hub slice is shipped and the loop is green** (`GetLocationNodes`/`HarvestNode`, `LocationNodes`,
+  `Harvested`, a Gatherable panel section). Getting the spec green exposed four things worth remembering:
+  - **`IInventoryService` (`EfCoreInventoryService`) writes save-game records, not `Characters.InventoryBlob`** —
+    the bag the client reads. Both harvest and combat loot now write the blob through `CharacterBag`
+    (twelfth pass below).
+  - **Region → zone travel was broken**: region `Zone` nodes had no `TargetMapId`, and
+    `TravelToNodeHubCommand` only switches maps when a node names one. `MapGraphSeeder.LinkRegionZonesToZoneMaps`
+    now sets it, guarded by a seeder test. Needs `--fresh` because the seeder skips an existing graph.
+  - **Zone maps chain `entry → first location → second …`**, so the second location is two hops from arrival.
+  - **Nodes never regenerate** (`NodeSpawnerService.RespawnNode` has no caller), and `session.zone` goes stale on
+    a map travel that changes zone (banner shows the old zone with the new location). Both closed in the twelfth
+    pass below.
+
+Twelfth pass — **the three follow-ups the harvest loop left behind are closed.**
+
+- **One home for the bag.** [`CharacterBag`](../../Veldrath.Server/Features/Characters/CharacterBag.cs) owns
+  `Read`/`Add`/`Serialize` over the `[{ "ItemRef", "Quantity" }]` JSON. `AttackEnemyHubCommand.RollLootAsync` now
+  takes the `Character` entity, writes the blob and saves the row — `IInventoryService` is gone from the handler,
+  and the test asserts the stored blob rather than a fake inventory. The harvest handler dropped its private
+  `ReadBag`/`AddToBag` for the same helper.
+- **Lazy node regrowth, no scheduler.** [`HarvestingOptions`](../../Veldrath.Server/Settings/HarvestingOptions.cs)
+  (`Harvesting:RegrowMinutes`, default 30, `[Range(1, 1440)]`, `ValidateOnStart`) is read by
+  `GetLocationNodesHubCommandHandler`: a node that cannot be harvested and whose `LastHarvestedAt` is older than
+  the cutoff is reset to full health with `TimesHarvested = 0` and saved on read. Guarded by
+  `LocationNodesRegrowthTests` (comes back after the window, stays empty inside it).
+- **A walk is an arrival.** `NodeTraveled` carries `ZoneId` and nothing else — no name, inn/merchant flags or
+  occupants — so a cross-zone walk left the banner reading the old zone. `GameHub.TravelToNode` now calls
+  `SyncArrivedZoneAsync`, which updates `Context.Items` (`CurrentZoneId`/`CurrentMapId`/`CurrentNodeId`) and sends
+  the same `ZoneEntered` snapshot `EnterZone` sends; the client clears its zone when an arrival reports none
+  (`handleNodeTraveled`). Three hub tests (`GameHubZoneTests`) cover crossing, staying and leaving for the region
+  map; two session tests cover the client half.
+- **Known gap this leaves:** a walk out of a zone changes the session row's zone but never sends `PlayerLeft` to
+  the zone it left, so peers in the old zone can keep showing the walker until they refresh. Travel also never
+  sets `Context.Items["CurrentZoneId"]` before this pass, which is now fixed for the arrival's zone.
+
+Thirteenth pass — **chests exist, and they do not stand still.**
+
+- **Where the row lives.** [`LootChest`](../../Veldrath.Server/Data/Entities/LootChest.cs) is in
+  `ApplicationDbContext` (not `GameDbContext` like `HarvestableNodes`) because nothing in the engine consumes it —
+  only `LootTableService.RollChestDrops` — so it needs no `INodeRepository`-style abstraction, and it belongs
+  beside `GroundItems`/`ZoneInstances`, which are the other per-location live rows. It has a nullable
+  `ZoneInstanceId` with cascade delete, so a delve's chests die with the run. Migration:
+  `Veldrath.Server/Migrations/*_AddLootChests.cs` (deploy needs it; tests use `EnsureCreated`).
+- **Authored vs roaming, one table.** `Kind` discriminates them. `LootChestsSeeder.Authors()` seeds two authored
+  chests in the Ashlen Wood (`old-clearing-strongbox`, `wood-road-cache`), idempotent by `ChestId` and preserving
+  opened state. Roaming rows are inserted by `ChestService` from the zone's `ZoneLocation` rows: not hidden, not
+  safe respawn, not instanced, `MinLevel >= Chests:MinSiteDangerLevel`, location not already occupied, zone is
+  not a town. Site and loot table are both drawn by `RarityWeight`.
+- **Swept, not timed.** `ChestService : BackgroundService` mirrors `EnemyRespawnService`. `ReopenAt` drives the
+  reopen window (`Chests:ReopenAfterMinutes`, 180); a zone gains a roaming chest when its newest roaming
+  `SpawnedAt`/`OpenedAt` is older than `Chests:SpawnEveryMinutes` (90) and it holds fewer than
+  `Chests:MaxRoamingPerZone` (1). Opened roaming rows are tombstones on purpose: they are the clock. Every write
+  is conditional (`ExecuteUpdateAsync`), so two sweeper instances cannot double-reopen a row.
+- **Node regrowth moved onto the same sweep.** The lazy rule I shipped hours earlier is gone;
+  `GetLocationNodesHubCommand` is a pure read again, and `ChestService.RegrowNodesAsync` resets depleted nodes
+  whose `LastHarvestedAt` is older than `HarvestingOptions.RegrowMinutes`. `LocationNodesRegrowthTests` was
+  replaced by `ChestSweeperTests` (reopen window, roaming site/town/cap/cadence filters, node regrowth).
+- **First open wins.** `OpenChestHubCommandHandler` guards position, instance and `IsOpened`, rolls, then claims
+  with `WHERE IsOpened = false`; a rows-affected of zero answers "someone else got there first" instead of paying
+  twice. Items go into `Characters.InventoryBlob` through `CharacterBag`; `roll.Gold` is routed through
+  `AddGoldHubCommand` so the attributes gold key keeps one writer.
+- **Transport + web.** `GetLocationChests`/`OpenChest` on the hub, `LocationChests` on pull and on `EnterLocation`,
+  `ChestOpened` to the current zone group (a shared chest disappears for the party, not just the opener). Web:
+  `LocationChest`/`LocationChestsPayload`/`ChestOpenedPayload`, `session.chests`, a **Chests** section in the Local
+  panel, pulls on `LocationEntered` and on `NodeTraveled`. `harvest.e2e.ts` now opens the strongbox and asserts the
+  guaranteed potion lands in the bag.
+- **Gaps worth remembering:** the sweeper does not broadcast (a chest appearing under a player's feet only shows
+  on their next arrival — the difficulty-scoped group name lives per connection, not on the row); the seeded
+  `forest-chest-loot` has no `gold` entry, so chests pay items only; the e2e stack exports
+  `Chests__ReopenAfterMinutes=1` + `Chests__SweepIntervalSeconds=5` so an isolated re-run recovers the authored
+  chests, and the spec walks on to the road's cache and then skips with that reason if both were emptied.
+
+Fourteenth pass — **people exist, and the world cannot be fooled into handing them a knife.**
+
+- **Placement is a row, not a pool entry.** [`LocationNpc`](../../Veldrath.Server/Data/Entities/LocationNpc.cs) in
+  `ApplicationDbContext` (`NpcId`, `ZoneId`, `LocationSlug`, `ArchetypeSlug`, optional `DisplayName`, `SortOrder`),
+  seeded by [`LocationNpcsSeeder`](../../Veldrath.Server/Data/Seeders/LocationNpcsSeeder.cs): blacksmith at
+  `aurelian-market`, tavern keeper at `hearthbound-inn`, elder at `crestfall-square`. Migration
+  `*_AddLocationNpcs.cs`. A pool entry means "may spawn here, weighted" and every pool entry becomes an attackable
+  `SpawnedEnemy`, which is exactly why the seeder comment had kept NPCs out of pools — and why placement needed to
+  be explicit.
+- **The bug that made this urgent:** the main-story quest in `QuestsSeeder` has `talk:village-blacksmith` and no
+  blacksmith existed anywhere, so the quest was unfinishable — the same shape as `gather-mushrooms` without nodes.
+- **Read + talk.** `GetLocationNpcs` → `LocationNpcs` on location entry (pushed next to nodes and chests). The DTO
+  carries the archetype slug, name, occupation and role flags read from `ContentDbContext.ActorArchetypes`, because
+  the shared `NPC` projection has no roles. `TalkToNpc(slug)` verifies the placement is at the character's location,
+  answers with a line from `IDialogueRepository.GetBySpeakerAsync(slug)` filtered to greetings (neutral fallback),
+  sends `NpcTalked`, then advances `talk:<slug>` — the archetype slug is the speaker key and the objective key.
+- **Hostile filter.** `EfCoreEnemyRepository.MapToModel` now projects `traits["hostile"] =
+  e.Traits.Hostile ?? true`, and `ActorPoolResolver.SpawnRosterAsync` skips a non-hostile entry with a warning, so
+  content that puts a shopkeeper in a pool cannot turn them into a target. `ResolveArchetypeAsync` is untouched, so
+  rebuilding existing enemy rows still works.
+- **Client-side gap this exposed:** location lists were only pulled on a *move*, so a resumed character saw no
+  nodes, chests or people until they walked. `handleCharacterSelected` now pulls ground items, nodes, chests and
+  people once after `EnterZone`. Session tests assert those four invocations.
+- **Web:** `LocationNpc`/`LocationNpcsPayload`/`NpcTalkedPayload`, `session.npcs`, a **People** section with a Talk
+  button (shows `· quests` / `· trades` from the flags), the line logged as `Name: “line”`. The `TalkToNpc` entry was
+  removed from the hub-methods parity allow-list because it now has a real caller.
+- **Tests:** `NpcPlacementTests` (seed guards, listing with roles, talk line, refusals, hostile/non-hostile roster),
+  four reworked `TalkToNpc` hub tests (`NpcTalked` goes to `Clients.Caller`; the journal push goes to the connection
+  id, so assertions must use the right proxy), two session tests, and the elder-then-wood walk in `harvest.e2e.ts`.
+
+### Session-102 (2026-11-19) — Design documentation restructured for a creative team
+
+Started as "clean up the stale Avalonia references", ended as a rebuild of the design set plus a guard
+against the drift that caused them.
+
+- **The document was not merely stale, it was wrong.** `docs/design-system.md` documented a component class
+  vocabulary (`.btn-primary`, `.btn-ghost`, `.badge-accent`, `.health`, `.mana`) that has never existed in the
+  codebase — buttons are Skeleton `btn preset-filled-primary-500` / `preset-tonal-surface` / `preset-tonal-error`
+  and badges are `badge preset-tonal-*`. It also claimed `.card` was Layer 2 with 24px padding (it is
+  `--vds-bg-1` with no padding), claimed the app does not use `--vds-space-*` (it does, throughout `brand.css`),
+  and documented the heading scale as `--vds-text-*` when headings are `.h1`/`.h2`/`.h3` in `rem`.
+- **`--vds-gold*` was undocumented.** The metal the whole identity is built from — logo, panel-header icons,
+  nav glyphs, hero kicker, equipped marks, prose emphasis — appeared in `theme.css` and 18 call sites in
+  `brand.css`/`layout.css` but in no token table. Documented now, as a first-class accent with its own role:
+  gold is the metal, Seal is the action.
+- **Contrast table was numerically wrong**, not just dated. Recomputed with the WCAG formula: text primary
+  18→16.6, seal-light 5.8→5.1, success 5.4→7.0, warning 4.6→7.6, info 5.2→6.7, danger 4.9→5.1. The old numbers
+  were inflated for accents and deflated for greys, which is why seal-light looked safe for body text when it is
+  not.
+- **New set:** `docs/design/brand-guide.md` (the mark described for the first time, file-to-surface map, clear
+  space, minimum sizes, raster-logo-vs-Cinzel rule, art direction), `docs/design/asset-specs.md` (canvas sizes,
+  SVG-first, weight budgets, naming, icon grid, item-art contract), `docs/design/asset-inventory.md` (every file
+  with its consumer and a proposed verdict), `docs/design/tokens.json` (machine-readable export).
+- **`docs/client-ui-architecture.md`** rewritten around the surface inventory: every panel, block, dialog and
+  HUD widget, what opens it, and the four states each must define. The two structural decisions and the Foundry
+  review gate survive; the retired-surface framing is one line.
+- **Guard:** `web/client/src/lib/parity/design-tokens.test.ts` — `theme.css` `:root` ↔ `tokens.json` ↔
+  `docs/design-system.md`, four assertions (missing, extra, value mismatch, undocumented). It passes; it would
+  have caught the gold omission.
+- **Published.** `docfx.json` now includes the design set in `content` and maps `docs/design/images` (optimised
+  2× previews only — the live 1–2 MB originals must never be copied) plus `docs/design/tokens.json` as a
+  resource. `docs/toc.yml` gains a **Design** section. AGENTS.md's allowlist paragraph, the `web-ui` skill and
+  `web/README.md` point at the new set.
+- **`web-ui` skill had drifted too:** it named `--vds-crimson` and `--vds-emberfall` (both nonexistent; the real
+  tokens are `--vds-seal` and `--vds-ember`), listed background layers as `#14151D/#1B1D28/#232533`, body text as
+  `#E8E6E3`, muted as `#9A96A0`, border as `#2E2F42`, and called Lora the body face. Corrected against `theme.css`.
+- **Dead tokens found:** `--vds-bg-deeper`, `--vds-accent`, `--vds-indicator-player|occupant|enemy` and
+  `--vds-game-footer-h` are declared and never consumed. Listed in design-system §8.3 — give each a job or delete
+  it, but do not document it as live.
+- **Asset reality, measured:** 17 PNGs, ≈31.8 MB, of which only 3 are referenced anywhere. The crest is 1.61 MB
+  rendered at 76px (and 44–48px elsewhere), the header wordmark 1.01 MB rendered at 30px tall, the footer lockup
+  1.81 MB at 64px, the 512 install icon 583 KB. Fourteen files (≈27.2 MB) are referenced by nothing: ten alternate
+  lockups and V studies, plus four herald emblems at 1254–1669px with no consumer. **No vector or layered master
+  is committed** — that, not the file sizes, is the blocking gap. Verdicts awaiting a decision in
+  `asset-inventory.md` §4 (Option A: brand-kit folder + promote one emblem; B: delete; C: leave).
+- **Docs link gate was already red** on `plans/content-seeding-pass.md` (8 links: `../../Veldrath.Server/…` from
+  `plans/`, and `Features/Shops/` where the directory is `Features/Shop/`). Fixed, because it is the same CI job
+  that builds the new pages. `node scripts/check-markdown-links.mjs` now reports 57 files clean.

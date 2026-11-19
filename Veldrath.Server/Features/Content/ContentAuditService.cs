@@ -132,6 +132,18 @@ public sealed class ContentAuditService : BackgroundService
             "Content reference audit found {Count} dangling reference(s); fix the content before players hit them",
             issues.Count);
 
+        // The seeders are insert-only by slug and the map graph seeder skips a database that already has maps, so a
+        // database seeded by an older build keeps its old shape forever. A dangling map edge is the signature of
+        // that: the remedy is a reseed, not a content edit, and saying so here saves the next operator the hunt.
+        if (issues.Any(issue => issue.Rule == ContentRules.MissingMapNode))
+        {
+            _logger.LogWarning(
+                "The map graph in this database is inconsistent (edges reference nodes its maps do not have). " +
+                "The seeded catalog does not contain a dangling edge, so this database was seeded by an older build: " +
+                "reseed it — `scripts/e2e-stack.sh start --fresh` in this repo, or `down -v` on the compose volume " +
+                "and let the server seed on boot.");
+        }
+
         foreach (var issue in issues)
         {
             _logger.LogError("Content reference audit [{Rule}] {Message}", issue.Rule, issue.Message);

@@ -20,6 +20,7 @@ public class AttackEnemyHubCommandHandlerTests : IDisposable
     private readonly TestDbContextFactory _dbFactory = new();
     private readonly FakeEnemyInstanceStore _enemies = new();
     private readonly FakeCombatSessionStore _sessions = new();
+    private readonly Mock<RealmEngine.Shared.Abstractions.ILootTableRepository> _lootTables = new();
 
     private AttackEnemyHubCommandHandler MakeHandler(ApplicationDbContext db) =>
         new(
@@ -33,6 +34,7 @@ public class AttackEnemyHubCommandHandlerTests : IDisposable
                 new Mock<RealmEngine.Shared.Abstractions.IZoneLocationRepository>().Object,
                 NullLogger<Veldrath.Server.Features.Zones.EfCoreZoneInstanceService>.Instance),
             Options.Create(new DeathPenaltyOptions()),
+            _lootTables.Object,
             NullLogger<AttackEnemyHubCommandHandler>.Instance);
 
     public void Dispose() => _dbFactory.Dispose();
@@ -57,7 +59,10 @@ public class AttackEnemyHubCommandHandlerTests : IDisposable
         return character;
     }
 
-    private (string ZoneGroup, string LocationSlug, SpawnedEnemy Enemy) AddEnemy(int hp, Guid charId)
+    private (string ZoneGroup, string LocationSlug, SpawnedEnemy Enemy) AddEnemy(
+        int hp,
+        Guid charId,
+        RealmEngine.Shared.Models.Enemy? template = null)
     {
         var zoneGroup = $"test/{Guid.NewGuid():N}";
         const string loc = "forest";
@@ -70,6 +75,8 @@ public class AttackEnemyHubCommandHandlerTests : IDisposable
             BaseXp = 10,
             GoldReward = 5,
             ArchetypeSlug = "goblin",
+            // The model's own default is a materialised template, not null: combat reads its abilities.
+            Template = template ?? new RealmEngine.Shared.Models.Enemy(),
         };
         enemy.Participants.Add(charId);
         enemy.DamageContributions[charId] = 0;
@@ -210,6 +217,9 @@ public class AttackEnemyHubCommandHandlerTests : IDisposable
         var stored = await read.Characters.SingleAsync(c => c.Id == character.Id);
         stored.Attributes.Should().Contain("\"Gold\":45", "the penalty must be persisted, not just reported");
         stored.Experience.Should().Be(0);
+        // Death has to leave the character at 0 HP: RespawnHubCommand refuses anything else, so a restored HP floor
+        // is a locked-out player (they can neither act nor respawn).
+        stored.Attributes.Should().Contain("\"CurrentHealth\":0", "the character stays dead until it respawns");
     }
 
     [Fact]
@@ -231,5 +241,47 @@ public class AttackEnemyHubCommandHandlerTests : IDisposable
         await using var read = _dbFactory.CreateContext();
         var stored = await read.Characters.SingleAsync(c => c.Id == character.Id);
         stored.Experience.Should().Be(190);
+        stored.Attributes.Should().Contain("\"CurrentHealth\":0");
+    }
+
+    [Fact]
+    public async Task Handle_Drops_The_Archetypes_Loot_Table_Into_The_Killers_Bag()
+    {
+        await using var db = _dbFactory.CreateContext();
+        var character = await SeedCharacterAsync(db, """{"CurrentHealth":50,"MaxHealth":100}""");
+        var (zoneGroup, location, enemy) = AddEnemy(1, character.Id, new RealmEngine.Shared.Models.Enemy
+        {
+            Slug = "goblin",
+            LootTableIds = ["goblin-common-drops"],
+        });
+        SetSession(character.Id, zoneGroup, location, enemy.Id);
+
+        _lootTables
+            .Setup(tables => tables.GetBySlugAsync("goblin-common-drops"))
+            .ReturnsAsync(new RealmEngine.Shared.Models.LootTableData
+            {
+                Slug = "goblin-common-drops",
+                Entries =
+                [
+                    new RealmEngine.Shared.Models.LootTableEntryData
+                    {
+                        ItemSlug = "health-potion",
+                        DropWeight = 100,
+                        QuantityMin = 1,
+                        QuantityMax = 1,
+                        IsGuaranteed = true,
+                    },
+                ],
+            });
+
+        var result = await MakeHandler(db).Handle(new AttackEnemyHubCommand(character.Id), CancellationToken.None);
+
+        result.EnemyDefeated.Should().BeTrue();
+        result.ItemsDropped.Should().ContainSingle().Which.Should().Be(new CombatLootDrop("health-potion", 1));
+
+        // A drop the player never receives is not a drop: it has to be in the character's own bag blob, which
+        // is the store the client reads. Announcing it while writing somewhere else was the defect this pins.
+        var stored = await db.Characters.AsNoTracking().SingleAsync(c => c.Id == character.Id);
+        stored.InventoryBlob.Should().Contain("health-potion");
     }
 }

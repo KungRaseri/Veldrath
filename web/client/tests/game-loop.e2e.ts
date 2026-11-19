@@ -1,15 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
+import { apiBase, gameToken } from './support/stack';
 
 /**
  * Authenticated game loop against a real Veldrath.Server.
  *
  * The roster is rendered by SvelteKit's SSR (the server calls `/api/characters`), and the game
  * UI needs a live SignalR hub, so neither can be stubbed from the browser. This spec therefore
- * only runs when a real server is reachable: set `E2E_GAME=1` and point
- * `PUBLIC_API_URL`/`PUBLIC_HUB_URL`/`INTERNAL_BRIDGE_URL` at it, and set
- * `ORIGIN`/`BETTER_AUTH_URL` to the preview origin (`http://localhost:4173`) so Better Auth
- * trusts it. See W7 in `plans/blazor-decommission-and-cleanup.md`.
+ * only runs when a real server is reachable: `npm run test:e2e:stack` starts the isolated stack
+ * (`scripts/e2e-stack.sh`) and sets `E2E_GAME`, the preview origin and both public API URLs, so
+ * nothing here has to be exported by hand.
  *
  * Plain `npm run test` skips it, so local and CI runs stay server-free unless the job opts in.
  */
@@ -24,7 +24,6 @@ const account = {
 	password: 'E2e-password-123'
 };
 const characterName = `E2e${stamp}`.slice(0, 20);
-const apiBase = (process.env.E2E_API_URL ?? 'http://localhost:9000').replace(/\/+$/, '');
 
 test.describe('authenticated game loop', () => {
 	test.skip(
@@ -46,14 +45,7 @@ test.describe('authenticated game loop', () => {
 		//    character exercises the same account provisioning path as the wizard without
 		//    depending on seven wizard screens' markup. The token is fetched from inside the
 		//    page so the Better Auth session cookie is guaranteed to be sent.
-		const token = await page.evaluate(async () => {
-			const response = await fetch('/api/game-token', { cache: 'no-store' });
-			if (!response.ok) {
-				throw new Error(`game-token request failed (${response.status}).`);
-			}
-			const payload = (await response.json()) as { token: string };
-			return payload.token;
-		});
+		const token = await gameToken(page);
 
 		const created = await request.post(`${apiBase}/api/characters`, {
 			headers: { authorization: `Bearer ${token}` },

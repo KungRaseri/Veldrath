@@ -20,12 +20,15 @@ test.describe('public reading surfaces', () => {
 		await page.goto('/lore');
 		await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 		await expect(page.getByRole('alert')).toHaveCount(0);
+		// Scoped to the page body on purpose: an unscoped link locator also matches the site brand in
+		// the header, and on a fresh database (no editorial content yet) that made this resolve to two
+		// elements and fail as a strict-mode violation rather than testing the page.
 		await expect(
 			page
+				.getByRole('main')
 				.getByRole('link', { name: /./ })
-				.filter({ hasNotText: 'Lore' })
 				.first()
-				.or(page.getByText(/no .*(entries|articles|lore)/i))
+				.or(page.getByRole('main').getByText(/no .*(entries|articles|lore)/i))
 		).toBeVisible({ timeout: 20_000 });
 
 		await page.goto('/patch-notes');

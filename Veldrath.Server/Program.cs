@@ -24,6 +24,7 @@ using Veldrath.Server.Features.Admin;
 using Veldrath.Server.Features.Announcements;
 using Veldrath.Server.Features.Auth;
 using Veldrath.Server.Features.Characters;
+using Veldrath.Server.Features.Characters.Chests;
 using Veldrath.Server.Features.Characters.Combat;
 using Veldrath.Server.Features.Content;
 using Veldrath.Server.Features.Dev;
@@ -178,6 +179,20 @@ try
         .Bind(builder.Configuration.GetSection(EnemyWorldOptions.SectionName))
         .ValidateDataAnnotations()
         .ValidateOnStart();
+
+    // How long an emptied resource node stays empty; applied by the chest sweeper below.
+    builder.Services.AddOptions<HarvestingOptions>()
+        .Bind(builder.Configuration.GetSection(HarvestingOptions.SectionName))
+        .ValidateDataAnnotations()
+        .ValidateOnStart();
+
+    // Chest reopen window, roaming cadence and per-zone cap. The sweeper rides its own timer because chests
+    // have to appear on schedule whether or not anyone is standing there.
+    builder.Services.AddOptions<ChestOptions>()
+        .Bind(builder.Configuration.GetSection(ChestOptions.SectionName))
+        .ValidateDataAnnotations()
+        .ValidateOnStart();
+    builder.Services.AddHostedService<ChestService>();
     builder.Services.AddHostedService<EnemyRespawnService>();
     // Registered as both: the host runs it once at startup, and the world-health endpoint runs it on demand.
     builder.Services.AddSingleton<ContentAuditService>();
@@ -393,6 +408,18 @@ try
 
             // Seed baseline content (idempotent — skips each table that already has rows).
             await DatabaseSeeder.SeedAsync(services);
+
+            // Authored chests live in the application database, beside the ground items they resemble, and are
+            // idempotent by chest id so a restart never refills a chest a player emptied a moment ago.
+            await Veldrath.Server.Data.Seeders.LootChestsSeeder.SeedAsync(appDb);
+
+            // The people the world's own content names. Without placement, a `talk:` objective has nobody to
+            // talk to — which is how the main-story quest became unfinishable.
+            await Veldrath.Server.Data.Seeders.LocationNpcsSeeder.SeedAsync(appDb);
+
+            // Authored resource nodes. Separate from the content seeders because node state lives in
+            // GameDbContext, and it is idempotent by node id so a restart never restores a depleted node.
+            await Veldrath.Server.Data.Seeders.HarvestableNodesSeeder.SeedAsync(gameDb);
 
         }
 

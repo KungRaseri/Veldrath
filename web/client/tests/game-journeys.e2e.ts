@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
+import { spendAttributePoints } from './support/creation';
 import { makeAccount, register, stackEnabled, stackSkipReason } from './support/stack';
 
 /**
@@ -46,8 +47,9 @@ test.describe('game journeys', () => {
 			await page.getByRole('button', { name: 'Continue' }).click();
 		}
 
-		// Attributes keep their defaults; equipment keeps the class kit; then the review.
-		await expect(page.getByText(/Step 5 of 7/)).toBeVisible({ timeout: 20_000 });
+		// Attributes must be spent in full — the step and the engine both refuse a partial budget now —
+		// then equipment keeps the class kit, and the last hop is the review.
+		await spendAttributePoints(page);
 		await page.getByRole('button', { name: 'Continue' }).click();
 		await expect(page.getByText(/Step 6 of 7/)).toBeVisible({ timeout: 20_000 });
 		await page.getByRole('button', { name: 'Continue' }).click();

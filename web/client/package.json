@@ -20,7 +20,10 @@
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright install && playwright test",
 		"test:e2e:game": "playwright test tests/game-loop.e2e.ts",
-		"test:e2e:stack": "playwright test tests/admin-console.e2e.ts tests/editorial-publishing.e2e.ts tests/foundry-content.e2e.ts tests/foundry-maps.e2e.ts tests/foundry-submissions.e2e.ts tests/game-journeys.e2e.ts tests/game-loop.e2e.ts tests/public-details.e2e.ts tests/review-diff.e2e.ts tests/session-states.e2e.ts tests/staff-actions.e2e.ts tests/staff-areas.e2e.ts tests/upstream-failure.e2e.ts",
+		"test:e2e:stack": "npm run test:e2e:stack:specs && npm run test:e2e:stack:outage",
+		"test:e2e:stack:specs": "E2E_STACK=1 E2E_GAME=1 E2E_WEB_PORT=4273 E2E_API_PORT=9100 E2E_DB_PORT=55432 playwright test tests/admin-console.e2e.ts tests/editorial-publishing.e2e.ts tests/encounters.e2e.ts tests/foundry-content.e2e.ts tests/foundry-maps.e2e.ts tests/foundry-submissions.e2e.ts tests/game-journeys.e2e.ts tests/game-loop.e2e.ts tests/harvest.e2e.ts tests/layout.e2e.ts tests/public-details.e2e.ts tests/review-diff.e2e.ts tests/session-states.e2e.ts tests/staff-actions.e2e.ts tests/staff-areas.e2e.ts",
+		"test:e2e:harvest": "E2E_STACK=1 E2E_HARVEST=1 E2E_WEB_PORT=4273 E2E_API_PORT=9100 E2E_DB_PORT=55432 playwright test tests/harvest.e2e.ts",
+		"test:e2e:stack:outage": "E2E_STACK=1 E2E_WEB_PORT=4273 E2E_API_PORT=9100 E2E_DB_PORT=55432 playwright test tests/upstream-failure.e2e.ts --workers=1",
 		"auth:schema": "auth generate --config src/lib/server/auth.ts --output ../shared/src/db/auth.schema.ts --yes",
 		"db:migrate-identity": "node ../scripts/migrate-identity-accounts.mjs"
 	},

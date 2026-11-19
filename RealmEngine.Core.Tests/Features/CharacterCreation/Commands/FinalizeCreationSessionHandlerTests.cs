@@ -31,6 +31,17 @@ public class FinalizeCreationSessionHandlerTests
     private static SpeciesModel HumanSpecies => new() { Slug = "human", DisplayName = "Human" };
     private static Background SoldierBackground => new() { Slug = "soldier", Name = "Soldier" };
 
+    /// <summary>Spends the whole 27-point budget: 15(9) + 14(7) + 12(4) + 11(3) + 10(2) + 10(2).</summary>
+    private static Dictionary<string, int> FullAlloc() => new()
+    {
+        ["Strength"] = 15,
+        ["Dexterity"] = 14,
+        ["Constitution"] = 12,
+        ["Intelligence"] = 11,
+        ["Wisdom"] = 10,
+        ["Charisma"] = 10,
+    };
+
     [Fact]
     public async Task Handle_SessionNotFound_ReturnsFailed()
     {
@@ -90,6 +101,7 @@ public class FinalizeCreationSessionHandlerTests
             SelectedClass = WarriorClass,
             SelectedSpecies = HumanSpecies,
             SelectedBackground = SoldierBackground,
+            AttributeAllocations = FullAlloc(),
         };
         _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
 
@@ -108,6 +120,7 @@ public class FinalizeCreationSessionHandlerTests
             SelectedClass = WarriorClass,
             SelectedSpecies = HumanSpecies,
             SelectedBackground = SoldierBackground,
+            AttributeAllocations = FullAlloc(),
         };
         _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
         _sessionStoreMock.Setup(s => s.UpdateSessionAsync(session)).Returns(Task.CompletedTask);
@@ -138,6 +151,7 @@ public class FinalizeCreationSessionHandlerTests
             SelectedSpecies = HumanSpecies,
             SelectedBackground = SoldierBackground,
             CharacterName = "SessionHero",
+            AttributeAllocations = FullAlloc(),
         };
         _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
         _sessionStoreMock.Setup(s => s.UpdateSessionAsync(session)).Returns(Task.CompletedTask);
@@ -166,6 +180,7 @@ public class FinalizeCreationSessionHandlerTests
             SelectedClass = WarriorClass,
             SelectedSpecies = HumanSpecies,
             SelectedBackground = SoldierBackground,
+            AttributeAllocations = FullAlloc(),
         };
         _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
         _sessionStoreMock.Setup(s => s.UpdateSessionAsync(session)).Returns(Task.CompletedTask);
@@ -191,6 +206,7 @@ public class FinalizeCreationSessionHandlerTests
             SelectedClass = WarriorClass,
             SelectedSpecies = HumanSpecies,
             SelectedBackground = SoldierBackground,
+            AttributeAllocations = FullAlloc(),
         };
         _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
         _mediatorMock
@@ -201,5 +217,86 @@ public class FinalizeCreationSessionHandlerTests
             new FinalizeCreationSessionCommand { SessionId = session.SessionId, CharacterName = "Hero" }, default);
 
         result.Success.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Handle_NoAttributesAllocated_ReturnsFailed()
+    {
+        var session = new CharacterCreationSession
+        {
+            SelectedClass = WarriorClass,
+            SelectedSpecies = HumanSpecies,
+            SelectedBackground = SoldierBackground,
+        };
+        _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
+
+        var result = await CreateHandler().Handle(
+            new FinalizeCreationSessionCommand { SessionId = session.SessionId, CharacterName = "Hero" }, default);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("allocated");
+        _mediatorMock.Verify(
+            m => m.Send(It.IsAny<CreateCharacterCommand>(), It.IsAny<CancellationToken>()),
+            Times.Never,
+            "a session without attributes must not create a character");
+    }
+
+    [Fact]
+    public async Task Handle_UnspentAttributePoints_ReturnsFailed()
+    {
+        // All tens costs 12 of the 27 points, so 15 are still unspent — the character would be
+        // created at the minimum stat line with its budget unused.
+        var session = new CharacterCreationSession
+        {
+            SelectedClass = WarriorClass,
+            SelectedSpecies = HumanSpecies,
+            SelectedBackground = SoldierBackground,
+            AttributeAllocations = new Dictionary<string, int>
+            {
+                ["Strength"] = 10,
+                ["Dexterity"] = 10,
+                ["Constitution"] = 10,
+                ["Intelligence"] = 10,
+                ["Wisdom"] = 10,
+                ["Charisma"] = 10,
+            },
+        };
+        _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
+
+        var result = await CreateHandler().Handle(
+            new FinalizeCreationSessionCommand { SessionId = session.SessionId, CharacterName = "Hero" }, default);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("15 of 27");
+        _mediatorMock.Verify(
+            m => m.Send(It.IsAny<CreateCharacterCommand>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_AllocationOutsideTheRules_ReturnsFailed()
+    {
+        var session = new CharacterCreationSession
+        {
+            SelectedClass = WarriorClass,
+            SelectedSpecies = HumanSpecies,
+            SelectedBackground = SoldierBackground,
+            AttributeAllocations = new Dictionary<string, int>
+            {
+                ["Strength"] = 18,
+                ["Dexterity"] = 14,
+                ["Constitution"] = 12,
+                ["Intelligence"] = 11,
+                ["Wisdom"] = 10,
+                ["Charisma"] = 10,
+            },
+        };
+        _sessionStoreMock.Setup(s => s.GetSessionAsync(session.SessionId)).ReturnsAsync(session);
+
+        var result = await CreateHandler().Handle(
+            new FinalizeCreationSessionCommand { SessionId = session.SessionId, CharacterName = "Hero" }, default);
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("point-buy");
     }
 }

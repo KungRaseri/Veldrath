@@ -208,6 +208,7 @@ XFF_DEPTH=1
 | `ORIGIN` | adapter-node | Public origin used for redirects and URL construction. |
 | `BETTER_AUTH_URL` | Better Auth | Public base URL for auth callbacks and cookies. |
 | `BETTER_AUTH_SECRET` | Better Auth | Session signing secret. **Required.** |
+| `AUTH_RATE_LIMIT_DISABLED` | Better Auth | **Test stacks only — never set this in production.** Set to `true` by the Playwright stack and CI, where dozens of accounts are registered a minute from one address and the shared per-path bucket answers `429`. Better Auth buckets by client address from `x-forwarded-for` in production. |
 | `DATABASE_URL` | Drizzle / Better Auth | Postgres connection for the `auth` schema. The user must be able to create the schema on first boot. |
 | `JWT_KEY` / `JWT_ISSUER` / `JWT_AUDIENCE` | game token minting | Must match `Veldrath.Server` JWT validation. |
 | `PUBLIC_API_URL` | browser SSR/client | Public .NET API origin. |

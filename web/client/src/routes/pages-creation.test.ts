@@ -115,6 +115,30 @@ async function nameStep(container: HTMLElement, value = 'Kaleth'): Promise<void>
 	await pageSays('That name is available.');
 }
 
+/**
+ * Spends the whole point-buy budget, which the attributes step now insists on.
+ *
+ * Greedy on purpose: it fills one stat to the cap and moves on, so it works for any cost table and
+ * leaves the Continue button enabled exactly when nothing is left to spend.
+ */
+async function spendAllPoints(): Promise<void> {
+	for (const stat of [
+		'Strength',
+		'Dexterity',
+		'Constitution',
+		'Intelligence',
+		'Wisdom',
+		'Charisma'
+	]) {
+		const increase = screen.getByRole('button', {
+			name: `Increase ${stat}`
+		}) as HTMLButtonElement;
+		for (let clicks = 0; !increase.disabled && clicks < 20; clicks += 1) {
+			await fireEvent.click(increase);
+		}
+	}
+}
+
 const stubs: Array<{ restore(): void }> = [];
 
 function useStub(overrides: Record<string, Route> = {}) {
@@ -375,9 +399,15 @@ describe('attributes and equipment', () => {
 		await fireEvent.click(continueButton());
 		await screen.findByText('Step 5 of 7 · Attributes');
 
-		// The allocation itself is asserted from the PATCH body below; '9' is ambiguous in the DOM
-		// because the remaining-points counter drops to 9 at the same time.
-		await fireEvent.click(screen.getByRole('button', { name: 'Increase Strength' }));
+		// Every point has to be spent before the step will advance. In this fixture 15 costs 7 and 11
+		// costs 3, which is exactly the budget of 10 — so this also pins the swap from one stat to the
+		// next at the right place.
+		for (let clicks = 0; clicks < 7; clicks += 1) {
+			await fireEvent.click(screen.getByRole('button', { name: 'Increase Strength' }));
+		}
+		for (let clicks = 0; clicks < 3; clicks += 1) {
+			await fireEvent.click(screen.getByRole('button', { name: 'Increase Dexterity' }));
+		}
 		await fireEvent.click(continueButton());
 		await screen.findByText('Step 6 of 7 · Equipment');
 
@@ -391,8 +421,8 @@ describe('attributes and equipment', () => {
 		const patches = stub.calls.filter((call) => call.method === 'PATCH');
 		expect(JSON.parse(patches.at(-2)?.body ?? '{}')).toEqual({
 			allocations: {
-				Strength: 9,
-				Dexterity: 8,
+				Strength: 15,
+				Dexterity: 11,
 				Constitution: 8,
 				Intelligence: 8,
 				Wisdom: 8,
@@ -405,6 +435,36 @@ describe('attributes and equipment', () => {
 			includeShield: true
 		});
 	});
+
+	it('refuses to leave the attributes step with points unspent, and says how many are left', async () => {
+		const stub = useStub();
+		const { container } = renderWizard();
+
+		await nameStep(container);
+		for (const label of ['Class', 'Species', 'Background', 'Attributes']) {
+			await fireEvent.click(continueButton());
+			await screen.findByText(new RegExp(`· ${label}$`));
+		}
+
+		// Nothing has been spent, so the step cannot be left and the button says so.
+		expect(continueButton()).toHaveProperty('disabled', true);
+		expect(screen.getByText(/Spend every point to continue — 10 still unspent/)).toBeTruthy();
+
+		// A click that gets past the button (keyboard, a form submit) is refused by the handler, which
+		// is what keeps the rule true for every path into the step.
+		await fireEvent.click(continueButton());
+		expect(
+			screen.getByText(/Spend every attribute point before continuing — 10 left/)
+		).toBeTruthy();
+		expect(screen.getByText('Step 5 of 7 · Attributes')).toBeTruthy();
+		expect(stub.calls.filter((call) => call.method === 'PATCH')).toHaveLength(4);
+
+		await spendAllPoints();
+		expect(continueButton()).toHaveProperty('disabled', false);
+
+		await fireEvent.click(continueButton());
+		await screen.findByText('Step 6 of 7 · Equipment');
+	});
 });
 
 describe('review and finalize', () => {
@@ -413,10 +473,15 @@ describe('review and finalize', () => {
 		await nameStep(container);
 		await fireEvent.click(continueButton());
 		await screen.findByText('Step 2 of 7 · Class');
-		for (const label of ['Species', 'Background', 'Attributes', 'Equipment']) {
+		for (const label of ['Species', 'Background']) {
 			await fireEvent.click(continueButton());
 			await screen.findByText(new RegExp(`· ${label}$`));
 		}
+		await fireEvent.click(continueButton());
+		await screen.findByText('Step 5 of 7 · Attributes');
+		await spendAllPoints();
+		await fireEvent.click(continueButton());
+		await screen.findByText('Step 6 of 7 · Equipment');
 		await fireEvent.click(continueButton());
 		await screen.findByText('Step 7 of 7 · Review');
 	}

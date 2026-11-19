@@ -33,6 +33,7 @@ import type {
 	CombatTurnPayload,
 	CraftableRecipe,
 	CraftableRecipesPayload,
+	ChestOpenedPayload,
 	EmotePayload,
 	GroundItem,
 	InventoryItem,
@@ -41,8 +42,16 @@ import type {
 	ItemReceivedPayload,
 	KickedPayload,
 	LearnedPower,
+	HarvestedPayload,
 	LocationClearedPayload,
+	LocationChest,
+	LocationChestsPayload,
+	LocationNpc,
+	LocationNpcsPayload,
+	NpcTalkedPayload,
 	LocationEnteredPayload,
+	LocationNode,
+	LocationNodesPayload,
 	MapGraph,
 	MapGraphReceivedPayload,
 	MutedPayload,
@@ -161,6 +170,12 @@ export class GameSession {
 	inspectedItem = $state<InventoryItem | null>(null);
 	/** Result of the last area search, shown in the Local panel. */
 	lastSearch = $state<{ rollValue: number; discovered: SearchFinding[] } | null>(null);
+	/** Resource nodes standing in this location, refreshed by the server after every attempt. */
+	nodes = $state<LocationNode[]>([]);
+	/** Unopened chests standing in this location, refreshed by the server after every open. */
+	chests = $state<LocationChest[]>([]);
+	/** People standing in this location, refreshed whenever the location changes. */
+	npcs = $state<LocationNpc[]>([]);
 	/** Slash commands the caller may run, already filtered by permission server-side. */
 	chatCommands = $state<ChatCommandInfo[]>([]);
 	/** Characters muted locally with `/ignore`; their chat is hidden in every channel. */
@@ -362,6 +377,45 @@ export class GameSession {
 		if (!this.hub) return;
 		this.error = null;
 		await this.hub.invoke('GetInventory');
+	}
+
+	/** Asks for the nodes standing here; the server answers with `LocationNodes`. */
+	async requestLocationNodes(): Promise<void> {
+		if (!this.hub) return;
+		await this.hub.invoke('GetLocationNodes');
+	}
+
+	/** Harvests one node. The yield, the refreshed list and the log line all arrive as broadcasts. */
+	async harvest(nodeId: string): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('HarvestNode', { nodeId });
+	}
+
+	/** Asks for the chests standing here; the server answers with `LocationChests`. */
+	async requestLocationChests(): Promise<void> {
+		if (!this.hub) return;
+		await this.hub.invoke('GetLocationChests');
+	}
+
+	/** Opens one chest. The loot, the refreshed list and the log line all arrive as broadcasts. */
+	async openChest(chestId: string): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('OpenChest', { chestId });
+	}
+
+	/** Asks who is standing here; the server answers with `LocationNpcs`. */
+	async requestLocationNpcs(): Promise<void> {
+		if (!this.hub) return;
+		await this.hub.invoke('GetLocationNpcs');
+	}
+
+	/** Speaks to one of them. Their line arrives as `NpcTalked`. */
+	async talkToNpc(npcSlug: string): Promise<void> {
+		if (!this.hub) return;
+		this.error = null;
+		await this.hub.invoke('TalkToNpc', npcSlug);
 	}
 
 	/** Opens the item detail dialog for a bag or equipment entry. */
@@ -717,8 +771,55 @@ export class GameSession {
 			// not the location list. Filtering here also keeps a fight resumed after a reconnect from appearing twice.
 			const engagedEnemyId = this.combat.enemy?.id;
 			this.enemies = (payload.spawnedEnemies ?? []).filter((enemy) => enemy.id !== engagedEnemyId);
-			// Ground items belong to the location, so refresh them whenever the player moves.
+			// Ground items, nodes and chests belong to the location. Their lists are cleared first so a stale
+			// forest or a chest from the last room cannot follow the player, and they are pulled the same way
+			// ground items are.
+			this.nodes = [];
+			this.chests = [];
+			this.npcs = [];
 			void this.requestGroundItems();
+			void this.requestLocationNodes();
+			void this.requestLocationChests();
+			void this.requestLocationNpcs();
+		});
+
+		hub.on('LocationNodes', (payload: LocationNodesPayload) => {
+			this.nodes = payload.nodes ?? [];
+		});
+
+		hub.on('LocationChests', (payload: LocationChestsPayload) => {
+			this.chests = payload.chests ?? [];
+		});
+
+		hub.on('LocationNpcs', (payload: LocationNpcsPayload) => {
+			this.npcs = payload.npcs ?? [];
+		});
+
+		hub.on('NpcTalked', (payload: NpcTalkedPayload) => {
+			// The server words the line; the client only shows it, so the same line reads the same everywhere.
+			if (payload.line) this.addSystemMessage(`${payload.displayName}: “${payload.line}”`);
+		});
+
+		hub.on('ChestOpened', (payload: ChestOpenedPayload) => {
+			// One player opening a shared chest empties it for everyone standing there, so the broadcast is
+			// what keeps a party's list honest — not just the opener's own reply.
+			this.chests = payload.remainingChests ?? [];
+			if (payload.message) this.addSystemMessage(payload.message);
+		});
+
+		hub.on('Harvested', (payload: HarvestedPayload) => {
+			// The node moved, so keep the list honest without waiting for the refresh that follows.
+			this.nodes = this.nodes.map((node) =>
+				node.nodeId === payload.nodeId
+					? {
+							...node,
+							healthPercent: payload.nodeHealthPercent,
+							state: payload.nodeState,
+							canHarvest: payload.nodeHealthPercent >= 10
+						}
+					: node
+			);
+			this.addSystemMessage(payload.message);
 		});
 
 		hub.on('GroundItemsChanged', (payload: GroundItemsChangedPayload) => {
@@ -783,6 +884,9 @@ export class GameSession {
 			}
 			if (payload.enemyDefeated) {
 				this.combat = { ...this.combat, active: false };
+
+				// Loot landed in the bag server-side, so the sheet has to re-read it or the drop is invisible.
+				if ((payload.itemsDropped?.length ?? 0) > 0) void this.openInventory();
 			}
 		});
 
@@ -1183,6 +1287,10 @@ export class GameSession {
 			experience: payload.experience,
 			unspentAttributePoints: payload.unspentAttributePoints
 		};
+		// A character that died before the last disconnect is still dead: the server keeps CurrentHealth at 0 until
+		// a respawn, so the shell has to offer the Respawn button from the snapshot as well as from a combat event.
+		this.dead = payload.currentHealth <= 0;
+
 		this.currentNodeId = payload.currentNodeId ?? null;
 		this.attributes = {
 			strength: payload.strength,
@@ -1203,6 +1311,13 @@ export class GameSession {
 
 		if (payload.currentZoneId) await this.enterZone(payload.currentZoneId);
 		await this.requestMapGraph(null);
+
+		// A resumed character already stands somewhere, and the location lists are only pushed on a *move*: ask
+		// for them once here so the panel is right on arrival instead of after the player walks to a neighbour.
+		void this.requestGroundItems();
+		void this.requestLocationNodes();
+		void this.requestLocationChests();
+		void this.requestLocationNpcs();
 	}
 
 	private async handleNodeTraveled(payload: NodeTraveledPayload): Promise<void> {
@@ -1235,6 +1350,24 @@ export class GameSession {
 				}
 			: null;
 		this.enemies = payload.spawnedEnemies ?? [];
+
+		// Arriving inside a zone, the server sends the `ZoneEntered` snapshot a walk needs — name, inn and
+		// merchant flags, occupants. Arriving on a region map there is no zone at all, so the previous zone's
+		// banner and occupants are dropped rather than left standing over the new map.
+		if (!payload.zoneId && this.zone) {
+			this.zone = null;
+			this.occupants = [];
+		}
+
+		// Nodes, chests and people belong to the location, and travelling to a Location node is how most
+		// locations are entered — that path emits `NodeTraveled`, not `LocationEntered`, so the lists are
+		// refreshed here too.
+		this.nodes = [];
+		this.chests = [];
+		this.npcs = [];
+		void this.requestLocationNodes();
+		void this.requestLocationChests();
+		void this.requestLocationNpcs();
 
 		if (payload.mapChanged) await this.requestMapGraph(payload.mapId ?? null);
 	}

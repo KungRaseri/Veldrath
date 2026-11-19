@@ -503,6 +503,30 @@ describe('GameSession commands', () => {
 		]);
 	});
 
+	it('asks for the chests here and opens one', async () => {
+		const session = await playing();
+
+		await session.requestLocationChests();
+		await session.openChest('chest-1');
+
+		expect(hub.invocations).toEqual([
+			{ method: 'GetLocationChests', args: [] },
+			{ method: 'OpenChest', args: [{ chestId: 'chest-1' }] }
+		]);
+	});
+
+	it('asks who is here and speaks to them', async () => {
+		const session = await playing();
+
+		await session.requestLocationNpcs();
+		await session.talkToNpc('village-blacksmith');
+
+		expect(hub.invocations).toEqual([
+			{ method: 'GetLocationNpcs', args: [] },
+			{ method: 'TalkToNpc', args: ['village-blacksmith'] }
+		]);
+	});
+
 	it('maps ground-item, item-use, ability and quest commands to hub methods', async () => {
 		const session = await connected();
 
@@ -848,7 +872,12 @@ describe('GameSession character and world events', () => {
 			{ method: 'GetParty', args: [] },
 			{ method: 'GetInventory', args: [] },
 			{ method: 'EnterZone', args: ['zone-1'] },
-			{ method: 'GetMapGraph', args: [null] }
+			{ method: 'GetMapGraph', args: [null] },
+			// A resumed character stands somewhere already, and the lists are only pushed on a move.
+			{ method: 'GetGroundItems', args: [] },
+			{ method: 'GetLocationNodes', args: [] },
+			{ method: 'GetLocationChests', args: [] },
+			{ method: 'GetLocationNpcs', args: [] }
 		]);
 	});
 
@@ -859,7 +888,15 @@ describe('GameSession character and world events', () => {
 		await flush();
 
 		expect(session.currentNodeId).toBeNull();
-		expect(hub.methods()).toEqual(['GetParty', 'GetInventory', 'GetMapGraph']);
+		expect(hub.methods()).toEqual([
+			'GetParty',
+			'GetInventory',
+			'GetMapGraph',
+			'GetGroundItems',
+			'GetLocationNodes',
+			'GetLocationChests',
+			'GetLocationNpcs'
+		]);
 	});
 
 	it('reports a character that is active elsewhere', async () => {
@@ -936,6 +973,84 @@ describe('GameSession character and world events', () => {
 
 		expect(session.combat.enemy?.id).toBe(foe.id);
 		expect(session.enemies.map((visible) => visible.id)).toEqual([other.id]);
+	});
+
+	it('stores the chests here and adopts the open one', async () => {
+		const session = await connected();
+		session.chests = [
+			{ id: 'stale', displayName: 'Last Room Chest', locationSlug: 'cellar', kind: 'Authored' }
+		];
+
+		hub.emit('LocationEntered', {
+			locationSlug: 'old-clearing',
+			locationDisplayName: 'The Old Clearing',
+			typeKey: 'locations'
+		});
+		// Entering a location drops the previous room's chests before the server answers.
+		expect(session.chests).toEqual([]);
+
+		hub.emit('LocationChests', {
+			chests: [
+				{
+					id: 'chest-1',
+					displayName: 'Mossy Strongbox',
+					locationSlug: 'old-clearing',
+					kind: 'Authored'
+				}
+			]
+		});
+		expect(session.chests.map((chest) => chest.id)).toEqual(['chest-1']);
+
+		hub.emit('ChestOpened', {
+			success: true,
+			chestId: 'chest-1',
+			displayName: 'Mossy Strongbox',
+			items: [{ itemRef: '@items/general:health-potion', name: 'Health Potion', quantity: 2 }],
+			gold: 0,
+			message: 'Opened the Mossy Strongbox: Health Potion x2.',
+			remainingChests: []
+		});
+
+		expect(session.chests).toEqual([]);
+		expect(session.chat.at(-1)?.message).toBe('Opened the Mossy Strongbox: Health Potion x2.');
+	});
+
+	it('stores the people here, quotes what they say, and forgets them on the next location', async () => {
+		const session = await connected();
+
+		hub.emit('LocationNpcs', {
+			npcs: [
+				{
+					npcId: 'npc-1',
+					archetypeSlug: 'village-blacksmith',
+					displayName: 'Village Blacksmith',
+					occupation: 'townspeople',
+					isShopkeeper: true,
+					isQuestGiver: false,
+					hasDialogue: true
+				}
+			]
+		});
+		expect(session.npcs.map((npc) => npc.archetypeSlug)).toEqual(['village-blacksmith']);
+
+		hub.emit('NpcTalked', {
+			success: true,
+			npcSlug: 'village-blacksmith',
+			displayName: 'Village Blacksmith',
+			line: 'The forge is hot and my hammer is ready.',
+			isShopkeeper: true,
+			isQuestGiver: false
+		});
+		expect(session.chat.at(-1)?.message).toBe(
+			'Village Blacksmith: \u201cThe forge is hot and my hammer is ready.\u201d'
+		);
+
+		hub.emit('LocationEntered', {
+			locationSlug: 'low-quarter',
+			locationDisplayName: 'The Low Quarter',
+			typeKey: 'locations'
+		});
+		expect(session.npcs).toEqual([]);
 	});
 
 	it('derives rest and shop availability from the zone', async () => {
@@ -1068,7 +1183,13 @@ describe('GameSession map', () => {
 			spawnedEnemies: [enemy('wolf')]
 		});
 		expect(session.enemies).toEqual([enemy('wolf')]);
-		expect(hub.invocations).toEqual([]);
+		// The nodes, chests and people belong to the location, and travelling to a location node is how most
+		// of them are entered.
+		expect(hub.invocations).toEqual([
+			{ method: 'GetLocationNodes', args: [] },
+			{ method: 'GetLocationChests', args: [] },
+			{ method: 'GetLocationNpcs', args: [] }
+		]);
 	});
 
 	it('names the location by its slug when the result has no message', async () => {
@@ -1097,6 +1218,46 @@ describe('GameSession map', () => {
 		expect(session.enemies).toEqual([]);
 	});
 
+	it('drops the previous zone when a walk leads onto the region map', async () => {
+		const session = await connected();
+		session.zone = zone({ id: 'crestfall', name: 'Crestfall' });
+		session.occupants = [
+			{ characterId: 'char-2', characterName: 'Bran', enteredAt: '2026-01-01T00:00:00Z' }
+		];
+
+		hub.emit('NodeTraveled', {
+			success: true,
+			mapChanged: true,
+			mapId: 'region:varenmark',
+			nodeId: 'road',
+			zoneId: null
+		});
+		await flush();
+
+		expect(session.zone).toBeNull();
+		expect(session.occupants).toEqual([]);
+		expect(session.zoneLabel).toBe('Region map');
+	});
+
+	it('adopts the zone the server reports after a walk that crosses a border', async () => {
+		const session = await connected();
+		session.zone = zone({ id: 'crestfall', name: 'Crestfall' });
+
+		hub.emit('NodeTraveled', {
+			success: true,
+			mapChanged: true,
+			mapId: 'zone:ashlen-wood',
+			nodeId: 'wood-road',
+			zoneId: 'ashlen-wood'
+		});
+		await flush();
+		// The arrival carries only the zone id, so the server follows it with the zone snapshot.
+		hub.emit('ZoneEntered', zone({ id: 'ashlen-wood', name: 'The Ashlen Wood' }));
+
+		expect(session.zone?.id).toBe('ashlen-wood');
+		expect(session.zoneLabel).toBe('The Ashlen Wood');
+	});
+
 	it('requests the new map when travel changes maps', async () => {
 		const session = await connected();
 
@@ -1104,7 +1265,12 @@ describe('GameSession map', () => {
 		await flush();
 
 		expect(session.loadingMap).toBe(true);
-		expect(hub.invocations).toEqual([{ method: 'GetMapGraph', args: ['map-2'] }]);
+		expect(hub.invocations).toEqual([
+			{ method: 'GetLocationNodes', args: [] },
+			{ method: 'GetLocationChests', args: [] },
+			{ method: 'GetLocationNpcs', args: [] },
+			{ method: 'GetMapGraph', args: ['map-2'] }
+		]);
 	});
 
 	it('reports failed travel without moving', async () => {

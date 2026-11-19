@@ -223,6 +223,10 @@ jobs:
       E2E_GAME: '1'
       E2E_STACK: '1'
       E2E_API_URL: http://127.0.0.1:9000
+      # The specs register dozens of accounts a minute from one address, so Better Auth's shared
+      # per-path bucket answers 429 and the run fails during sign-up. The API is given the same
+      # treatment (RateLimit__* below); the limits stay on everywhere else.
+      AUTH_RATE_LIMIT_DISABLED: 'true'
       # A role granted by the harness has to be usable on the next request; the snapshot cache is
       # what stands in the way, and these specs are the only place it is not wanted.
       Auth__AccessCacheSeconds: '0'
@@ -312,7 +316,14 @@ jobs:
             tests/session-states.e2e.ts \
             tests/review-diff.e2e.ts \
             tests/game-journeys.e2e.ts \
-            tests/upstream-failure.e2e.ts
+            tests/harvest.e2e.ts \
+            tests/layout.e2e.ts
+
+      # Runs alone on purpose: the spec stops the API to prove the pages say so. Sharing a run with
+      # the specs above would take the API away from whichever of them were in flight.
+      - name: Run the upstream-failure spec
+        working-directory: web/client
+        run: npx playwright test tests/upstream-failure.e2e.ts --workers=1
 
       - name: Server log
         if: failure()

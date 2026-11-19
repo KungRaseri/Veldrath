@@ -3,6 +3,19 @@
     - name: Lore and the Calethic language
       href: lore/calethic-language.md
 
+- name: Design
+  items:
+    - name: Brand guide
+      href: design/brand-guide.md
+    - name: Asset specs
+      href: design/asset-specs.md
+    - name: Asset inventory
+      href: design/asset-inventory.md
+    - name: Design system
+      href: design-system.md
+    - name: Client UI architecture
+      href: client-ui-architecture.md
+
 - name: Developers
   items:
     - name: Web client

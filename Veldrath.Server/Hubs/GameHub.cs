@@ -19,7 +19,10 @@ using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Features.Auth;
 using Veldrath.Server.Features.Characters;
+using Veldrath.Server.Features.Characters.Chests;
 using Veldrath.Server.Features.Characters.Combat;
+using Veldrath.Server.Features.Characters.Harvesting;
+using Veldrath.Server.Features.Characters.Npcs;
 using Veldrath.Server.Features.Characters.Queries;
 using Veldrath.Server.Features.LevelUp;
 using Veldrath.Server.Features.Map;
@@ -986,6 +989,10 @@ public class GameHub : Hub
 
             await Clients.Caller.SendAsync("NodeTraveled", result);
 
+            // A walk can cross a zone boundary, and NodeTraveled carries only the zone id: without the zone
+            // snapshot that follows, the client keeps showing the zone it just left.
+            await SyncArrivedZoneAsync(result);
+
             // Failsafe reporting: content debt the player just walked into is said out loud, not silently swallowed.
             foreach (var warning in result.ContentWarnings)
             {
@@ -1034,6 +1041,12 @@ public class GameHub : Hub
             await ApplyArrivalGroupAsync(result.Arrival.ZoneGroup, result.Arrival.ZoneInstanceId);
 
             await Clients.Caller.SendAsync("NodeTraveled", result.Arrival);
+
+            // What grows here, what is waiting to be opened, and who is here to talk to. A safe location answers
+            // with empty lists, which the client renders as nothing.
+            await SendLocationNodesAsync(characterId);
+            await SendLocationChestsAsync(characterId);
+            await SendLocationNpcsAsync(characterId);
 
             foreach (var warning in result.Arrival.ContentWarnings)
             {
@@ -1535,9 +1548,14 @@ public class GameHub : Hub
     }
 
     /// <summary>
-    /// Records that the active character spoke to an NPC, which advances <c>talk:<npcSlug></c> objectives.
+    /// Speaks to a person standing with the active character: answers with one of their own lines and advances
+    /// <c>talk:<slug></c> objectives.
     /// </summary>
-    /// <param name="npcSlug">Slug of the NPC that was spoken to.</param>
+    /// <remarks>
+    /// The slug is the archetype slug the placement row names, which is also the speaker key the dialogue catalog
+    /// uses — so the same string identifies who is here, what they say, and what the quest is waiting for.
+    /// </remarks>
+    /// <param name="npcSlug">Archetype slug of the person being spoken to.</param>
     public async Task TalkToNpc(string npcSlug)
     {
         if (!TryGetCharacterId(out var characterId))
@@ -1552,7 +1570,56 @@ public class GameHub : Hub
             return;
         }
 
-        await AdvanceQuestObjectivesAsync(characterId, QuestObjectiveKinds.Talk, npcSlug.Trim());
+        try
+        {
+            var result = await _mediator.Send(new TalkToNpcHubCommand(characterId, npcSlug.Trim()));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "They do not answer.");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("NpcTalked", result);
+            await AdvanceQuestObjectivesAsync(characterId, QuestObjectiveKinds.Talk, result.NpcSlug);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error talking to '{NpcSlug}' for character {CharacterId}", npcSlug, characterId);
+            await Clients.Caller.SendAsync("Error", "They do not answer.");
+        }
+    }
+
+    /// <summary>
+    /// Sends the people standing in the caller's current location as <c>LocationNpcs</c>.
+    /// </summary>
+    public async Task GetLocationNpcs()
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetLocationNpcs");
+            return;
+        }
+
+        await SendLocationNpcsAsync(characterId);
+    }
+
+    /// <summary>Sends <c>LocationNpcs</c> to the caller, or an empty list when the read fails.</summary>
+    /// <param name="characterId">The character whose location to read.</param>
+    private async Task SendLocationNpcsAsync(Guid characterId)
+    {
+        IReadOnlyList<LocationNpcDto> npcs;
+        try
+        {
+            npcs = await _mediator.Send(new GetLocationNpcsHubCommand(characterId));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to list the people at the location of {CharacterId}.", characterId);
+            npcs = [];
+        }
+
+        await Clients.Caller.SendAsync("LocationNpcs", new { Npcs = npcs });
     }
 
     /// <summary>
@@ -1644,6 +1711,173 @@ public class GameHub : Hub
         }
 
         await Clients.Caller.SendAsync("CraftableRecipes", new { Recipes = recipes });
+    }
+
+    /// <summary>
+    /// Sends the resource nodes standing in the caller's current location as <c>LocationNodes</c>.
+    /// </summary>
+    public async Task GetLocationNodes()
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetLocationNodes");
+            return;
+        }
+
+        await SendLocationNodesAsync(characterId);
+    }
+
+    /// <summary>
+    /// Harvests one resource node: the yield lands in the bag, <c>collect</c> objectives advance by what
+    /// arrived, and the node's remaining health comes back with the refreshed list.
+    /// </summary>
+    /// <param name="request">The node to harvest; the character comes from the connection.</param>
+    public async Task HarvestNode(HarvestNodeRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before HarvestNode");
+            return;
+        }
+
+        if (request is null || string.IsNullOrWhiteSpace(request.NodeId))
+        {
+            await Clients.Caller.SendAsync("Error", "A node id is required.");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new HarvestNodeHubCommand(characterId, request.NodeId.Trim()));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "Nothing came away this time.");
+            }
+            else
+            {
+                // Both the slug and the full reference are advanced: content objectives are authored with
+                // slugs, while the loot table hands back "@items/general:glowcap-mushroom". The kill path
+                // makes the same allowance for archetype slugs versus display names.
+                foreach (var material in result.Materials)
+                {
+                    var slug = material.ItemRef[(material.ItemRef.LastIndexOf(':') + 1)..];
+                    await AdvanceQuestObjectivesAsync(characterId, "collect", slug);
+                    await AdvanceQuestObjectivesAsync(characterId, "collect", material.ItemRef);
+                }
+
+                await TrySendInventorySnapshotAsync(characterId);
+                await Clients.Caller.SendAsync("Harvested", result);
+            }
+
+            // A failed attempt can still have moved the node (depletion), so the list is refreshed either way.
+            await SendLocationNodesAsync(characterId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error harvesting node {NodeId} for character {CharacterId}", request.NodeId, characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to harvest that resource.");
+        }
+    }
+
+    /// <summary>Sends <c>LocationNodes</c> to the caller, or an empty list when the read fails.</summary>
+    /// <param name="characterId">The character whose location to read.</param>
+    private async Task SendLocationNodesAsync(Guid characterId)
+    {
+        IReadOnlyList<LocationNodeDto> nodes;
+        try
+        {
+            nodes = await _mediator.Send(new GetLocationNodesHubCommand(characterId));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to list the resource nodes at the location of {CharacterId}.", characterId);
+            nodes = [];
+        }
+
+        await Clients.Caller.SendAsync("LocationNodes", new { Nodes = nodes });
+    }
+
+    /// <summary>
+    /// Sends the unopened chests standing in the caller's current location as <c>LocationChests</c>.
+    /// </summary>
+    public async Task GetLocationChests()
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetLocationChests");
+            return;
+        }
+
+        await SendLocationChestsAsync(characterId);
+    }
+
+    /// <summary>
+    /// Opens one chest: the loot lands in the bag and the emptied chest is announced to everyone standing there.
+    /// </summary>
+    /// <remarks>
+    /// The chest is shared, so the broadcast is what keeps a party's panel honest — one player opening it makes it
+    /// disappear for the others. Only the opener receives the loot, which is rolled per open by design.
+    /// </remarks>
+    /// <param name="request">The chest to open; the character comes from the connection.</param>
+    public async Task OpenChest(OpenChestRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before OpenChest");
+            return;
+        }
+
+        if (request is null || request.ChestId == Guid.Empty)
+        {
+            await Clients.Caller.SendAsync("Error", "A chest id is required.");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(new OpenChestHubCommand(characterId, request.ChestId));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "The chest would not open.");
+            }
+            else
+            {
+                await TrySendInventorySnapshotAsync(characterId);
+
+                if (TryGetCurrentZoneGroup(out var zoneGroup))
+                    await Clients.Group(zoneGroup).SendAsync("ChestOpened", result);
+                else
+                    await Clients.Caller.SendAsync("ChestOpened", result);
+            }
+
+            // A failed open can still have moved the list (someone else won), so it is re-sent either way.
+            await SendLocationChestsAsync(characterId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error opening chest {ChestId} for character {CharacterId}", request.ChestId, characterId);
+            await Clients.Caller.SendAsync("Error", "Failed to open that chest.");
+        }
+    }
+
+    /// <summary>Sends <c>LocationChests</c> to the caller, or an empty list when the read fails.</summary>
+    /// <param name="characterId">The character whose location to read.</param>
+    private async Task SendLocationChestsAsync(Guid characterId)
+    {
+        IReadOnlyList<LocationChestDto> chests;
+        try
+        {
+            chests = await _mediator.Send(new GetLocationChestsHubCommand(characterId));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to list the chests at the location of {CharacterId}.", characterId);
+            chests = [];
+        }
+
+        await Clients.Caller.SendAsync("LocationChests", new { Chests = chests });
     }
 
     /// <summary>
@@ -2582,6 +2816,8 @@ public class GameHub : Hub
                 result.XpLost,
                 result.XpEarned,
                 result.GoldEarned,
+                // Loot is a consequence of the kill, so it travels with the same turn the client narrates.
+                result.ItemsDropped,
             });
 
             await BroadcastCombatSnapshotAsync(characterId);
@@ -3078,6 +3314,51 @@ public class GameHub : Hub
         await Clients.Caller.SendAsync(
             "SystemMessage",
             "The instance you were in has closed. You wake in the shared zone.");
+    }
+
+    /// <summary>
+    /// Brings the caller's zone state in line with an arrival that crossed a zone boundary, or walked out
+    /// onto the region map. The name, the inn and merchant flags and the occupant list all belong to the
+    /// zone; a walk is as much an arrival as <see cref="EnterZone"/>, so it sends the same snapshot.
+    /// </summary>
+    /// <param name="result">Successful arrival, whose zone is authoritative after the move.</param>
+    private async Task SyncArrivedZoneAsync(TravelToNodeHubResult result)
+    {
+        var currentZoneId = Context.Items.TryGetValue("CurrentZoneId", out var current) && current is string id
+            ? id
+            : null;
+
+        if (string.Equals(currentZoneId, result.ZoneId, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        Context.Items["CurrentZoneId"] = result.ZoneId;
+        Context.Items["CurrentMapId"] = result.MapId;
+        Context.Items["CurrentNodeId"] = result.NodeId;
+
+        // Stepping onto the region map leaves every zone behind; the client clears its banner from the
+        // arrival instead, because a zone snapshot would have nothing to say.
+        if (string.IsNullOrWhiteSpace(result.ZoneId))
+            return;
+
+        var zone = await _zoneRepo.GetByIdAsync(result.ZoneId!);
+        if (zone is null)
+            return;
+
+        var occupants = (await _playerSessionRepo.GetByZoneIdAsync(result.ZoneId!))
+            .Select(s => new { s.CharacterId, s.CharacterName, s.EnteredAt });
+
+        await Clients.Caller.SendAsync("ZoneEntered", new
+        {
+            zone.Id,
+            zone.Name,
+            zone.Description,
+            ZoneType = zone.Type.ToString(),
+            CurrentMapId = result.MapId,
+            CurrentNodeId = result.NodeId,
+            Occupants = occupants,
+            HasInn = zone.HasInn,
+            HasMerchant = zone.HasMerchant,
+        });
     }
 
     /// <summary>
