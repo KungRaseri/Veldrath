@@ -20,7 +20,10 @@ Apply the Veldrath Design System (VDS) to the SvelteKit web app — the single g
 
 ## References
 
-- [`docs/design-system.md`](../../../docs/design-system.md) — authoritative palette, type scale, spacing, component guidance, decision log.
+- [`docs/design-system.md`](../../../docs/design-system.md) — tokens, type scale, spacing, component guidance, decision log. Live definitions are in `theme.css`; this document explains them.
+- [`docs/design/tokens.json`](../../../docs/design/tokens.json) — machine-readable export of the same tokens; `src/lib/parity/design-tokens.test.ts` fails when it, `theme.css` and the design system disagree.
+- [`docs/design/brand-guide.md`](../../../docs/design/brand-guide.md) — the mark, lockups, clear space, and which file to use where.
+- [`docs/design/asset-specs.md`](../../../docs/design/asset-specs.md) — canvas sizes, formats, weight budgets and naming for anything added to `static/`.
 - [`web/client/src/routes/theme.css`](../../../web/client/src/routes/theme.css) — VDS → Skeleton token mapping for `[data-theme='veldrath']`.
 - [`web/client/src/routes/brand.css`](../../../web/client/src/routes/brand.css) — `@font-face`, base typography, site header/footer, `.hero`, `.feature-card`, `.game-shell`, `.game-panel`, `.auth-card`, `.map-node-cell`, rarity/status classes.
 - [`web/client/src/routes/layout.css`](../../../web/client/src/routes/layout.css) — Tailwind/Skeleton entry point plus the `.markdown` prose styles.
@@ -34,18 +37,19 @@ Apply the Veldrath Design System (VDS) to the SvelteKit web app — the single g
 
 | Role | Token | Value |
 | --- | --- | --- |
-| Primary — Crimson Seal | `--vds-crimson` / `primary-500` | `#C0392B` |
-| Primary hover/active | `primary-400` / `primary-700` | `#E05545` / `#8C2018` |
-| Secondary — Gold | `--vds-gold` / `secondary-500` | `#C9A84C` |
-| Tertiary — Emberfall | `--vds-emberfall` / `tertiary-500` | `#CC4125` |
-| Background base | `surface-950` | `#0C0D13` |
-| Background layers | `surface-900…800` | `#14151D`, `#1B1D28`, `#232533`, `#2E2F42` |
-| Body text | `--vds-text` | `#E8E6E3` |
-| Muted text | `--vds-text-muted` | `#9A96A0` |
-| Borders | `--vds-border` | `#2E2F42` |
+| Primary — Crimson Seal | `--vds-seal` / `primary-500` | `#C0392B` |
+| Primary light / dark | `--vds-seal-light` / `--vds-seal-dark` (`primary-400` / `primary-700`) | `#E05545` / `#8C2018` |
+| Secondary — Veldrath Gold | `--vds-gold` / `secondary-500` | `#C9A84C` |
+| Tertiary — Emberfall | `--vds-ember` / `tertiary-500` | `#CC4125` |
+| Background base | `--vds-bg-0` (`surface-950`) | `#0C0D13` |
+| Background layers | `--vds-bg-1` … `--vds-bg-4` | `#14151F`, `#1C1D2B`, `#262736`, `#2E2F42` |
+| Body text | `--vds-text` | `#F0EDE8` |
+| Muted text | `--vds-text-muted` | `#A8A09A` |
+| Borders | `--vds-border` | `#2A2B3D` |
+| Rarity | `--vds-rarity-*` | common → legendary, text colour only |
 | Radii | `--vds-radius-*` | 4px / 6px / 8px |
 
-Typography: headings **Cinzel** (display: Cinzel Decorative), body **Lora**, UI **Inter** (Google Fonts + `system-ui` fallback), code **JetBrains Mono**. All but Inter are self-hosted in `web/client/static/fonts/`.
+Typography: headings **Cinzel** (display: Cinzel Decorative), long-form **Lora**, UI body **Inter** (Google Fonts + `system-ui` fallback), data **JetBrains Mono**. All but Inter are self-hosted in `web/client/static/fonts/`.
 
 ## Key facts
 

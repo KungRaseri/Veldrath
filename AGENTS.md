@@ -284,12 +284,16 @@ Coverage exclusions are configured in [`coverage.runsettings`](coverage.runsetti
   fonts, so palette and type cannot drift from the game. `layout/_master.tmpl` is a copy of docfx
   2.81.0's modern master with exactly two changes: an extra `<link>` and a dark default theme —
   bump the pinned `DOCFX_VERSION` in `docs.yml` and `docs/Dockerfile` together, and re-sync it.
-- **The published site is an allowlist, not `docs/`.** `docfx.json` publishes only
-  [`docs/client-overview.md`](docs/client-overview.md) and [`docs/lore/`](docs/lore/) — material for
-  players and for people consuming the engine/API. Everything else in `docs/`
-  (`design-system.md`, `client-ui-architecture.md`, `deployment.md`, `coolify-deployment.md`,
-  `ci-forgejo.md`) is repo-only: operational runbooks, design decisions and migration history are
-  read in the repo and do not belong on a site read by players and API consumers.
+- **The published site is an allowlist, not `docs/`.** `docfx.json` publishes
+  [`docs/client-overview.md`](docs/client-overview.md), [`docs/lore/`](docs/lore/), the design set
+  ([`docs/design-system.md`](docs/design-system.md),
+  [`docs/client-ui-architecture.md`](docs/client-ui-architecture.md),
+  [`docs/design/`](docs/design/)) and [`docs/design/tokens.json`](docs/design/tokens.json) as a
+  downloadable resource. The design set is published on purpose: the creative team works outside the
+  repository, and a brand specification nobody can read is a specification nobody follows. Everything
+  else in `docs/` (`deployment.md`, `coolify-deployment.md`, `ci-forgejo.md`) stays repo-only —
+  operational runbooks and migration history are read in the repo and do not belong on a site read by
+  players and API consumers.
 - **Adding a published page:** write it, add it to [`docs/toc.yml`](docs/toc.yml) (sidebar) and, if
   it deserves a top-level tab, [`toc.yml`](toc.yml), then add its path to the `content` allowlist in
   `docfx.json` — a file outside the allowlist builds in the repo but never appears on the site.
@@ -300,9 +304,15 @@ Coverage exclusions are configured in [`coverage.runsettings`](coverage.runsetti
   - [`docs/ci-forgejo.md`](docs/ci-forgejo.md) — Forgejo Actions allow-list, runner setup, registry and releases
   - [`docs/deployment.md`](docs/deployment.md) — deployment overview
   - [`docs/coolify-deployment.md`](docs/coolify-deployment.md) — the authoritative Coolify/env reference
-  - [`docs/design-system.md`](docs/design-system.md) — UI design system reference
-  - [`docs/client-ui-architecture.md`](docs/client-ui-architecture.md) — panel-driven UI and the DB map graph
+  - [`docs/design-system.md`](docs/design-system.md) — tokens, typography, component primitives, decision log
+  - [`docs/client-ui-architecture.md`](docs/client-ui-architecture.md) — the shell, every surface, the dialog set, the DB map graph
+  - [`docs/design/brand-guide.md`](docs/design/brand-guide.md) — the mark, lockups, clear space, art direction
+  - [`docs/design/asset-specs.md`](docs/design/asset-specs.md) — canvas sizes, formats, weight budgets, naming
+  - [`docs/design/asset-inventory.md`](docs/design/asset-inventory.md) — every image file, its consumer and its verdict
   - [`docs/lore/calethic-language.md`](docs/lore/calethic-language.md) — Calethic language reference
+- **Design docs are generated-adjacent.** [`docs/design/tokens.json`](docs/design/tokens.json) mirrors
+  `theme.css` `:root`, and `web/client/src/lib/parity/design-tokens.test.ts` fails when the CSS, the
+  export and `docs/design-system.md` disagree. Add a token in all three places.
 
 ---
 

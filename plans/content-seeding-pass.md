@@ -159,7 +159,7 @@ a dialogue with a quest offer, so the dialogue surface has a real path instead o
 
 ### P3 — every merchant sells the same 25 items
 
-[`GetShopCatalogHubCommand`](../Veldrath.Server/Features/Shops/GetShopCatalogHubCommand.cs:36) dispatches
+[`GetShopCatalogHubCommand`](../Veldrath.Server/Features/Shop/GetShopCatalogHubCommand.cs:36) dispatches
 `GetItemCatalogQuery`, i.e. the whole priced catalog, gated only by the *zone's* `HasMerchant`. Not a blocker for a
 test baseline (the shop panel works), but it is why every shop feels identical.
 
@@ -273,7 +273,7 @@ the character's `InventoryBlob`.
 - **The engine's `IInventoryService` does not write the player's bag.** The registered `EfCoreInventoryService`
   writes save-game records; the bag the client reads is `Characters.InventoryBlob`. Both the harvest and — the
   same defect, invisible because no spec checked the bag after a fight — **combat loot** now write the blob
-  through [`CharacterBag`](../../Veldrath.Server/Features/Characters/CharacterBag.cs) and save the character row,
+  through [`CharacterBag`](../Veldrath.Server/Features/Characters/CharacterBag.cs) and save the character row,
   so a broadcast drop is a stored drop.
 - **Zone maps chain `entry → first location → second …`**, so the second location of a zone is two hops from the
   arrival point. Not a defect, but a spec that expects "arrive → stand at any location" is wrong.
@@ -301,14 +301,14 @@ merge several lookups, but nothing anywhere was a chest: no entity, no endpoint,
 design that landed answers two questions at once — where a chest lives, and why it should not live there
 forever.
 
-**Where it lives.** [`LootChest`](../../Veldrath.Server/Data/Entities/LootChest.cs) sits in
+**Where it lives.** [`LootChest`](../Veldrath.Server/Data/Entities/LootChest.cs) sits in
 `ApplicationDbContext` beside `GroundItems` and `ZoneInstances`, because it is live world state, not content.
 Two kinds share the table:
 
-- **Authored** — seeded by [`LootChestsSeeder`](../../Veldrath.Server/Data/Seeders/LootChestsSeeder.cs), idempotent
+- **Authored** — seeded by [`LootChestsSeeder`](../Veldrath.Server/Data/Seeders/LootChestsSeeder.cs), idempotent
   by chest id, live state preserved. These are the chests a quest or a room names, so the mossy strongbox is in
   the Old Clearing and the traveller's cache is on the Wood Road, always.
-- **Roaming** — placed by [`ChestService`](../../Veldrath.Server/Features/Characters/Chests/ChestService.cs) from
+- **Roaming** — placed by [`ChestService`](../Veldrath.Server/Features/Characters/Chests/ChestService.cs) from
   the zone's own `ZoneLocation` rows: not hidden, not a safe respawn, not instanced, level floor met, not
   already occupied, and the zone itself is not a town. The site is drawn by `RarityWeight` and the loot table is
   drawn from every `chests` table by its `RarityWeight`, so "which chest" and "where" vary together with no new
@@ -352,11 +352,11 @@ them. What did not exist was any statement that *this* person stands *here* — 
 objective, `talk:village-blacksmith` ("Return the cargo to the Village Blacksmith"), had nobody to talk to. That is
 the same shape as `gather-mushrooms` before the nodes existed: content that names a thing the world cannot offer.
 
-**Placement is its own row, not a spawn-pool entry.** [`LocationNpc`](../../Veldrath.Server/Data/Entities/LocationNpc.cs)
+**Placement is its own row, not a spawn-pool entry.** [`LocationNpc`](../Veldrath.Server/Data/Entities/LocationNpc.cs)
 holds `ZoneId` + `LocationSlug` + `ArchetypeSlug` (+ optional display-name override and sort order), in
 `ApplicationDbContext` beside chests. A pool entry means "what may spawn here, weighted", and a shopkeeper present
 a quarter of the time is not a shopkeeper — worse, every pool entry becomes an attackable enemy in the roster.
-[`LocationNpcsSeeder`](../../Veldrath.Server/Data/Seeders/LocationNpcsSeeder.cs) places the smith at the Aurelian
+[`LocationNpcsSeeder`](../Veldrath.Server/Data/Seeders/LocationNpcsSeeder.cs) places the smith at the Aurelian
 Market, the keeper at the Hearthbound Inn and the elder on the Crestfall Square, idempotent by placement id.
 
 **Read and talk.** `GetLocationNpcs` → `LocationNpcs` on location entry; each entry carries the archetype slug,
@@ -368,7 +368,7 @@ back to a neutral line so an unauthored speaker still answers), sends `NpcTalked
 
 **One guard, so this cannot happen again.** `EfCoreEnemyRepository` now carries hostility into the `Enemy`
 projection (`traits["hostile"]`, defaulting to hostile when the archetype says nothing), and
-[`ActorPoolResolver`](Veldrath.Server/Features/Characters/Combat/ActorPoolResolver.cs:63) leaves a non-hostile
+[`ActorPoolResolver`](../Veldrath.Server/Features/Characters/Combat/ActorPoolResolver.cs:63) leaves a non-hostile
 archetype out of the combat roster and says so in the log. A future content edit that drops a blacksmith into a
 spawn pool therefore produces a warning, not a punching bag.
 

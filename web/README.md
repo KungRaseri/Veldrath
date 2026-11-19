@@ -43,3 +43,11 @@ schema and database role setup.
   ([`client/src/lib/server/email.ts`](client/src/lib/server/email.ts)).
 - Design decisions and history: [`docs/client-ui-architecture.md`](../docs/client-ui-architecture.md)
   and [`plans/sveltekit-migration.md`](../plans/sveltekit-migration.md).
+- Tokens, typography and component rules: [`docs/design-system.md`](../docs/design-system.md). The
+  live definitions are [`client/src/routes/theme.css`](client/src/routes/theme.css); the export is
+  [`docs/design/tokens.json`](../docs/design/tokens.json), and `src/lib/parity/design-tokens.test.ts`
+  fails when the three disagree.
+- Art and imagery: [`docs/design/brand-guide.md`](../docs/design/brand-guide.md) for the mark and
+  lockups, [`docs/design/asset-specs.md`](../docs/design/asset-specs.md) for canvas sizes and weight
+  budgets, [`docs/design/asset-inventory.md`](../docs/design/asset-inventory.md) for what every file
+  in `client/static/images/` is and whether it is used.
