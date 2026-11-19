@@ -4372,8 +4372,14 @@ against the drift that caused them.
   rendered at 76px (and 44–48px elsewhere), the header wordmark 1.01 MB rendered at 30px tall, the footer lockup
   1.81 MB at 64px, the 512 install icon 583 KB. Fourteen files (≈27.2 MB) are referenced by nothing: ten alternate
   lockups and V studies, plus four herald emblems at 1254–1669px with no consumer. **No vector or layered master
-  is committed** — that, not the file sizes, is the blocking gap. Verdicts awaiting a decision in
-  `asset-inventory.md` §4 (Option A: brand-kit folder + promote one emblem; B: delete; C: leave).
+  is committed** — that, not the file sizes, is the blocking gap.
+- **Decision on the 14: left in place (2026-11-19).** No move, no deletion. They were reviewed visually
+  and are not duplicates of the live marks — they are an unassigned lockup family, and two of them fill
+  roles the docs already assume exist: `veldrath-v-clean-…` is the V-only monogram the brand guide names
+  for anything under 48px, and `veldrath-icon-big-…` is the rounded-square install tile that the
+  180/192/512 icons have no master for. Both stay unassigned and unwired. The four `herald/*` emblems
+  point at nothing: no seeded organisation, no faction record in content, no emblem slot in the UI.
+  Recorded in `asset-inventory.md` §4 with a role-by-role table; the re-export work is unaffected.
 - **Docs link gate was already red** on `plans/content-seeding-pass.md` (8 links: `../../Veldrath.Server/…` from
   `plans/`, and `Features/Shops/` where the directory is `Features/Shop/`). Fixed, because it is the same CI job
   that builds the new pages. `node scripts/check-markdown-links.mjs` now reports 57 files clean.

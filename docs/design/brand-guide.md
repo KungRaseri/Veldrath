@@ -62,14 +62,18 @@ today; the "size" column is the rendered size, not the file's pixel size.
 | `veldrath-full-logo-transparent.png` | 1254 × 1254 | — | nothing | Unassigned |
 | `veldrath-icon-big-transparent.png` | 1254 × 1254 | — | nothing | Unassigned |
 | `veldrath-text-energy-true-transparent.png` | 1907 × 579 | — | nothing | Ember variant of the wordmark, unassigned |
-| `veldrath-v-clean-true-transparent.png` | 1115 × 1389 | — | nothing | Letter V study |
+| `veldrath-v-clean-true-transparent.png` | 1115 × 1389 | — | nothing | V-only monogram — the small-size mark; unassigned |
 | `veldrath-v-molten-true-transparent.png` | 1066 × 1356 | — | nothing | Letter V study |
 | `molten_metallic_v_logo_design_true_transparent.png` | 828 × 1102 | — | nothing | Earlier V study |
 | `molten_v_with_fiery_aura_true_transparent.png` | 1025 × 1176 | — | nothing | Earlier V study |
 
-The unassigned files are a brand kit, not a set of approved lockups. Before any of them ships, this
-table gains the surface that uses it. The [asset inventory](asset-inventory.md) carries the decision
-on whether they stay in the served image directory or move to a brand-kit folder.
+The unassigned files are a brand kit, not a set of approved lockups. They stay in place — the
+[asset inventory](asset-inventory.md) records that decision — but nothing about that makes one of them
+approved. Before any of them ships, this table gains the surface that uses it.
+
+Two of them fill roles this guide already assumes exist: the **V-only monogram** (the small-size mark
+below 48px) and the **install tile** (a rounded-square crest for the home-screen icons). Both are
+present and unassigned, and neither is wired.
 
 ### 2.1 Selection rule
 
@@ -94,7 +98,7 @@ not the wordmark's.
 | Crest | **48px** | At 48px the runic band is lost but the silhouette still reads. 76px is the design size. Below 48px use the V-only mark or the favicon, never the full crest. |
 | Horizontal lockup | **160px wide** | The wordmark needs ~24px of cap height to stay legible |
 | Header wordmark | **24px tall** | 30px is the design size |
-| V-only mark | **24px** | Permitted at small sizes; the full crest is not |
+| V-only mark | **24px** | Permitted at small sizes; the full crest is not. Present but unassigned: `veldrath-v-clean-true-transparent.png` |
 | Favicon | 16px | Hand-checked, not auto-scaled |
 
 **The crest is not an icon.** It has more detail than a 24px glyph can carry. If a design needs a
