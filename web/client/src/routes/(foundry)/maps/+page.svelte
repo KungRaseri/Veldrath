@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { Map as MapIcon, TriangleAlert } from '@lucide/svelte';
+	import { Map as MapIcon, Plus } from '@lucide/svelte';
 	import { mapState } from '#lib/foundry/map-editor';
 	import type { PageData } from './$types';
 
-	let { data, form }: { data: PageData; form: { message?: string } | null } = $props();
+	let { data }: { data: PageData } = $props();
 </script>
 
 <svelte:head>
@@ -22,48 +22,14 @@
 				and a map enters the game only when a reviewer approves it.
 			</p>
 		</div>
-		<a class="btn preset-tonal-surface" href="/content">Back to content</a>
+		<div class="flex flex-wrap items-center gap-2">
+			<a class="btn preset-filled-primary-500" href="/maps/new">
+				<Plus size={15} aria-hidden="true" />
+				New map
+			</a>
+			<a class="btn preset-tonal-surface" href="/content">Back to content</a>
+		</div>
 	</header>
-
-	{#if !data.canEdit}
-		<p class="game-panel p-3 text-sm text-warning-500">
-			You can read the graphs but not save them: this account lacks the content permission.
-		</p>
-	{/if}
-
-	{#if form?.message}
-		<p class="game-panel flex items-center gap-2 p-3 text-sm text-error-500" role="alert">
-			<TriangleAlert size={15} aria-hidden="true" />
-			{form.message}
-		</p>
-	{/if}
-
-	{#if data.canEdit}
-		<form
-			method="POST"
-			action="?/create"
-			class="game-panel flex flex-wrap items-end gap-2 p-3"
-			aria-label="Create a map"
-		>
-			<label class="space-y-1 text-sm">
-				<span class="text-surface-600-400">Kind</span>
-				<select class="select" name="mapType">
-					<option value="Zone">Zone</option>
-					<option value="Region">Region</option>
-					<option value="Interior">Interior</option>
-				</select>
-			</label>
-			<label class="space-y-1 text-sm">
-				<span class="text-surface-600-400">Owner slug</span>
-				<input class="input" name="ownerId" placeholder="the-halrow" required />
-			</label>
-			<label class="space-y-1 text-sm">
-				<span class="text-surface-600-400">Name</span>
-				<input class="input" name="name" placeholder="The Halrow" required />
-			</label>
-			<button class="btn preset-filled-primary-500 btn-sm" type="submit">Create draft</button>
-		</form>
-	{/if}
 
 	<div class="game-panel overflow-x-auto p-0">
 		<table class="table w-full text-sm">
@@ -86,7 +52,12 @@
 							<a class="link" href={`/maps/${encodeURIComponent(map.id)}`}>
 								{map.name}
 							</a>
-							<p class="text-xs text-surface-600-400">{map.id}</p>
+							<p class="text-xs text-surface-600-400">
+								{map.id}
+								{#if map.canEdit === false}
+									· read-only
+								{/if}
+							</p>
 						</td>
 						<td>{map.mapType}</td>
 						<td>{map.ownerId}</td>
@@ -103,6 +74,10 @@
 								{state}
 							</span>
 						</td>
+					</tr>
+				{:else}
+					<tr>
+						<td class="text-surface-600-400" colspan="7"> No maps yet. Start one from New map. </td>
 					</tr>
 				{/each}
 			</tbody>

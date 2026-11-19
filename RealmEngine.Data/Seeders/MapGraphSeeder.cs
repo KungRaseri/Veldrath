@@ -22,8 +22,127 @@ public static class MapGraphSeeder
             return;
 
         var now = DateTimeOffset.UtcNow;
-        db.Maps.AddRange(GetMaps(now));
+        var maps = GetMaps(now);
+        ConnectZoneEntriesToLocations(maps);
+        LinkRegionZonesToZoneMaps(maps);
+        db.Maps.AddRange(maps);
         await db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Points every zone node on a region map at that zone's own map, so travelling to it enters the zone.
+    /// </summary>
+    /// <remarks>
+    /// Without this the region map is a dead end. <c>TravelToNodeHubCommand</c> only loads another map when the
+    /// selected node carries a <c>TargetMapId</c>, and the web client has no separate "enter this zone" call — so a
+    /// zone node with no target moved the character's cursor and left them standing on the region map. Measured
+    /// consequence: a player could walk out of their starting town onto the region map and never enter any other
+    /// zone, which made every zone but the starting one unreachable on foot.
+    ///
+    /// Only <c>TargetMapId</c> is set: travel resolves a blank <c>TargetNodeId</c> to the destination map's entry
+    /// node, which is exactly where a player arriving in a zone should stand.
+    /// </remarks>
+    /// <param name="maps">The authored maps, before they are added to the context.</param>
+    private static void LinkRegionZonesToZoneMaps(IEnumerable<Map> maps)
+    {
+        var zoneMapIds = maps
+            .Where(candidate => candidate.MapType == MapType.Zone)
+            .Select(candidate => candidate.Id)
+            .ToHashSet(StringComparer.Ordinal);
+
+        foreach (var region in maps.Where(candidate => candidate.MapType == MapType.Region))
+        {
+            foreach (var node in region.Nodes.Where(candidate =>
+                         candidate.NodeType == MapNodeType.Zone && candidate.RefId is { Length: > 0 }))
+            {
+                var zoneMapId = $"zone:{node.RefId}";
+                if (!zoneMapIds.Contains(zoneMapId)) continue;
+
+                node.TargetMapId = zoneMapId;
+                node.TargetNodeId = null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Walks each zone map's entry node through its location nodes in sort order.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The authored graphs chain <c>entry ↔ exit:zone:x ↔ location:y</c>, so the entry is adjacent only to the zone's
+    /// <em>exits</em> — and travelling to an exit node leaves the zone. Measured consequence: a character could never
+    /// walk from where they arrive into the zone's own locations, so no encounter, shop or dungeon inside a zone was
+    /// reachable on foot.
+    /// </para>
+    /// <para>
+    /// A chain rather than a star: the map validator forbids two edges leaving the same node in the same direction,
+    /// and a zone can hold more locations than there are directions. `<c>entry → first → second → …</c>` gives every
+    /// location exactly one outgoing edge, so the direction is always free, and the first location of every zone is
+    /// one hop from the arrival point.
+    /// </para>
+    /// </remarks>
+    /// <param name="maps">The authored maps, before they are added to the context.</param>
+    private static void ConnectZoneEntriesToLocations(IEnumerable<Map> maps)
+    {
+        foreach (var map in maps.Where(candidate => candidate.MapType == MapType.Zone))
+        {
+            var entry = map.Nodes.FirstOrDefault(node => node.Id == map.EntryNodeId);
+            if (entry is null) continue;
+
+            var chain = new List<string> { entry.Id };
+            chain.AddRange(map.Nodes
+                .Where(node => node.NodeType == MapNodeType.Location)
+                .OrderBy(node => node.SortOrder)
+                .ThenBy(node => node.Id, StringComparer.Ordinal)
+                .Select(node => node.Id));
+
+            for (var index = 0; index < chain.Count - 1; index++)
+            {
+                AddWalkEdge(map, chain[index], chain[index + 1], MapDirection.East);
+                AddWalkEdge(map, chain[index + 1], chain[index], MapDirection.West);
+            }
+        }
+    }
+
+    private static void AddWalkEdge(Map map, string fromNodeId, string toNodeId, MapDirection preferred)
+    {
+        if (map.Edges.Any(edge => edge.FromNodeId == fromNodeId && edge.ToNodeId == toNodeId)) return;
+
+        // The validator refuses two edges leaving one node in one direction, so an authored edge may already own the
+        // direction this hop wanted. Any unused direction still connects the two nodes; the layout is a hint.
+        var direction = FirstFreeDirection(map, fromNodeId, preferred);
+        if (direction is null) return;
+
+        map.Edges.Add(new MapEdge
+        {
+            Id = Guid.NewGuid(),
+            MapId = map.Id,
+            FromNodeId = fromNodeId,
+            ToNodeId = toNodeId,
+            Direction = direction.Value,
+            EdgeType = MapEdgeType.Walk,
+            Label = null,
+            IsTraversable = true,
+            IsHidden = false,
+        });
+    }
+
+    private static MapDirection? FirstFreeDirection(Map map, string fromNodeId, MapDirection preferred)
+    {
+        var used = map.Edges
+            .Where(edge => edge.FromNodeId == fromNodeId)
+            .Select(edge => edge.Direction)
+            .ToHashSet();
+
+        foreach (var direction in new[]
+                 {
+                     preferred, MapDirection.East, MapDirection.West, MapDirection.North, MapDirection.South,
+                 })
+        {
+            if (!used.Contains(direction)) return direction;
+        }
+
+        return null;
     }
 
     private static Map[] GetMaps(DateTimeOffset now) =>
@@ -491,11 +610,16 @@ public static class MapGraphSeeder
                 new MapNode { Id = "zone:playground:location:playground-shop", MapId = "zone:playground", NodeType = MapNodeType.Location, RefId = "playground-shop", DisplayName = "Dev Shop", Description = "Dev Shop in Dev Playground.", IconKey = "place", LayoutX = 1, LayoutY = 1, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 120 },
                 new MapNode { Id = "zone:playground:location:playground-square", MapId = "zone:playground", NodeType = MapNodeType.Location, RefId = "playground-square", DisplayName = "Dev Square", Description = "Dev Square in Dev Playground.", IconKey = "place", LayoutX = 1, LayoutY = -1, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 130 },
                 new MapNode { Id = "zone:playground:location:playground-tavern", MapId = "zone:playground", NodeType = MapNodeType.Location, RefId = "playground-tavern", DisplayName = "Dev Tavern", Description = "Dev Tavern in Dev Playground.", IconKey = "place", LayoutX = 2, LayoutY = 0, IsEntryPoint = false, IsExitPoint = false, TargetMapId = null, TargetNodeId = null, IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 140 },
+                // The dev zone needs a way out: a zone map with no exit strands whoever arrives in it, which the
+                // seeded-world validator refuses (and which mattered once the playground became a test fixture).
+                new MapNode { Id = "zone:playground:exit:region:varenmark", MapId = "zone:playground", NodeType = MapNodeType.RegionExit, RefId = "varenmark", DisplayName = "Return to Varenmark", Description = "Back out to the Varenmark region map.", IconKey = "public", LayoutX = 3, LayoutY = -2, IsEntryPoint = false, IsExitPoint = true, TargetMapId = "region:varenmark", TargetNodeId = "region:varenmark:entry", IsHidden = false, UnlockType = null, UnlockKey = null, DiscoverThreshold = null, SortOrder = 150 },
             ],
             Edges =
             [
                 new MapEdge { Id = new Guid("64648507-2d9b-2ee2-4a32-ef3381d65d5a"), MapId = "zone:playground", FromNodeId = "zone:playground:entry", ToNodeId = "zone:playground:location:playground-square", Direction = MapDirection.South, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("2740df1c-66de-248a-b47f-0fde1d0fa6b8"), MapId = "zone:playground", FromNodeId = "zone:playground:entry", ToNodeId = "zone:playground:location:playground-npc-hall", Direction = MapDirection.West, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("0d0e9a4e-4c2f-4a51-9d59-6b0f1d3e7a01"), MapId = "zone:playground", FromNodeId = "zone:playground:entry", ToNodeId = "zone:playground:exit:region:varenmark", Direction = MapDirection.North, EdgeType = MapEdgeType.ExitToRegion, Label = null, IsTraversable = true, IsHidden = false },
+                new MapEdge { Id = new Guid("0d0e9a4e-4c2f-4a51-9d59-6b0f1d3e7a02"), MapId = "zone:playground", FromNodeId = "zone:playground:exit:region:varenmark", ToNodeId = "zone:playground:entry", Direction = MapDirection.South, EdgeType = MapEdgeType.ExitToRegion, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("570be3e8-3d3c-0bb7-fd31-4c42392ef28a"), MapId = "zone:playground", FromNodeId = "zone:playground:location:playground-clearing", ToNodeId = "zone:playground:location:playground-grove", Direction = MapDirection.North, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("751a782e-7817-e7b0-38ca-dbdd61bb9f89"), MapId = "zone:playground", FromNodeId = "zone:playground:location:playground-clearing", ToNodeId = "zone:playground:location:playground-forge", Direction = MapDirection.South, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },
                 new MapEdge { Id = new Guid("f878797e-d611-59cd-4a8b-740cfa230d28"), MapId = "zone:playground", FromNodeId = "zone:playground:location:playground-clearing", ToNodeId = "zone:playground:location:playground-hidden-achievement", Direction = MapDirection.East, EdgeType = MapEdgeType.Walk, Label = null, IsTraversable = true, IsHidden = false },

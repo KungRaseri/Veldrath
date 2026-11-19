@@ -29,6 +29,8 @@ public class FinalizeCreationSessionHandler(
     ILogger<FinalizeCreationSessionHandler> logger)
     : IRequestHandler<FinalizeCreationSessionCommand, CreateCharacterResult>
 {
+    private static readonly PointBuyConfig Config = new();
+
     /// <inheritdoc />
     public async Task<CreateCharacterResult> Handle(FinalizeCreationSessionCommand request, CancellationToken cancellationToken)
     {
@@ -46,6 +48,18 @@ public class FinalizeCreationSessionHandler(
             return Fail("A species must be selected before finalizing.");
         if (session.SelectedBackground is null)
             return Fail("A background must be selected before finalizing.");
+
+        // A session that never allocated its points finalizes into a minimum-stats character, and the
+        // allocation step itself refuses partial budgets — but a client can still reach finalize directly,
+        // so the invariant is checked here as well rather than trusted to the caller.
+        if (session.AttributeAllocations is null || session.AttributeAllocations.Count == 0)
+            return Fail("Attribute points must be allocated before finalizing.");
+        if (!Config.IsValid(session.AttributeAllocations))
+            return Fail("The attribute allocation is outside the point-buy rules.");
+
+        int unspent = Config.TotalPoints - Config.CalculateTotalCost(session.AttributeAllocations);
+        if (unspent > 0)
+            return Fail($"All attribute points must be spent before finalizing; {unspent} of {Config.TotalPoints} remain unspent.");
 
         var resolvedName = request.CharacterName ?? session.CharacterName;
         if (string.IsNullOrWhiteSpace(resolvedName))

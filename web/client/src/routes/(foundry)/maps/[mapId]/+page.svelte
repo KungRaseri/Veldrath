@@ -65,6 +65,31 @@
 	const selectedNode = $derived(draft.nodes.find((node) => node.id === selectedId) ?? null);
 	const blockedReason = $derived(selectedNode ? deleteBlockedReason(draft, selectedNode.id) : null);
 
+	/** The catalog slugs already placed on this map, so the zone panel can say which ones are outstanding. */
+	const usedLocationIds = $derived(
+		new Set(
+			draft.nodes
+				.filter((node) => node.nodeType === 'Location')
+				.map((node) => node.refId)
+				.filter((refId): refId is string => refId !== null)
+		)
+	);
+
+	/** The zone's catalog locations; empty for a map kind that has none. */
+	const zoneLocations = $derived(data.zoneLocations ?? []);
+
+	// On a zone map the only locations worth offering are the ones in this zone; on a region map the picker
+	// still points at zones and on an interior at its own rooms.
+	const inspectorTargets = $derived(
+		draft.mapType === 'Zone' ? { ...data.targets, locations: zoneLocations } : data.targets
+	);
+
+	// The two things a reviewer will look for in a fresh draft, so the checklist can tick them off.
+	const hasContentNode = $derived(draft.nodes.some((node) => node.nodeType !== 'EntryPoint'));
+	const hasExit = $derived(
+		draft.nodes.some((node) => node.isExitPoint || node.targetMapId !== null)
+	);
+
 	/** Records a structural change so it can be undone. Text edits deliberately do not push history. */
 	function remember(next: MapGraphDto): void {
 		past = [...past, draft];
@@ -99,6 +124,20 @@
 			...draft,
 			nodes: draft.nodes.map((node) => (node.id === id ? { ...node, ...patch } : node))
 		};
+	}
+
+	/** Adds a location node that already points at its catalog row, so the slug cannot be mistyped. */
+	function addZoneLocation(location: { id: string; label: string }): void {
+		const next = addNode(draft, {
+			nodeType: 'Location',
+			displayName: location.label,
+			refId: location.id
+		});
+		const added = next.nodes[next.nodes.length - 1];
+
+		notice = null;
+		remember(next);
+		selectedId = added.id;
 	}
 
 	/** Adds a node of the chosen kind and selects it, so the inspector is where the author lands. */
@@ -333,6 +372,23 @@
 		{/if}
 	</div>
 
+	{#if data.canEdit && mapStatus === 'Draft'}
+		<div class="game-panel space-y-1 p-3 text-sm" aria-label="Draft checklist">
+			<p class="font-medium">Before a reviewer can approve this draft</p>
+			<ul class="list-inside list-disc space-y-1 text-surface-600-400">
+				<li class={hasContentNode ? 'line-through' : ''}>
+					Add the first node: a location for a zone, or the zone itself for a region.
+				</li>
+				<li class={hasExit ? 'line-through' : ''}>
+					Add the exit that leads back, so nobody is stranded.
+				</li>
+				<li class={draft.submittedAt ? 'line-through' : ''}>
+					Submit for review — a Curator makes it live.
+				</li>
+			</ul>
+		</div>
+	{/if}
+
 	<MapHeader graph={draft} canEdit={data.canEdit} status={mapStatus} onPatch={patchGraph} />
 
 	<MapCanvas
@@ -343,6 +399,45 @@
 		onMove={move}
 		onTidy={tidy}
 	/>
+
+	{#if draft.mapType === 'Zone'}
+		<div class="game-panel space-y-2 p-3 text-sm" aria-label="Locations in this zone">
+			<div class="flex flex-wrap items-center justify-between gap-2">
+				<p class="font-medium">Locations in {draft.ownerId}</p>
+				<a class="btn preset-tonal-surface btn-sm" href="/content/zonelocation/new">
+					Create a location
+				</a>
+			</div>
+
+			{#if zoneLocations.length === 0}
+				<p class="text-surface-600-400">
+					No locations exist in this zone yet. Create one, then add it to the map here.
+				</p>
+			{:else}
+				<ul class="divide-y divide-surface-200-800">
+					{#each zoneLocations as location (location.id)}
+						<li class="flex flex-wrap items-center justify-between gap-2 py-1">
+							<span>
+								{location.label}
+								<span class="ml-2 font-mono text-xs text-surface-600-400">{location.id}</span>
+							</span>
+							{#if usedLocationIds.has(location.id)}
+								<span class="badge preset-tonal-primary text-xs">on the map</span>
+							{:else if data.canEdit}
+								<button
+									class="btn preset-tonal-surface btn-sm"
+									type="button"
+									onclick={() => addZoneLocation(location)}
+								>
+									Add as node
+								</button>
+							{/if}
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</div>
+	{/if}
 
 	{#if data.canEdit}
 		<div class="game-panel flex flex-wrap items-end gap-2 p-3">
@@ -375,7 +470,7 @@
 	{#if selectedNode}
 		<NodeInspector
 			node={selectedNode}
-			targets={data.targets}
+			targets={inspectorTargets}
 			canEdit={data.canEdit}
 			{blockedReason}
 			connections={draft.edges.filter(

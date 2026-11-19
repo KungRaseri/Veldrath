@@ -1,12 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import {
 	allFields,
+	anchorId,
 	buildPayload,
 	coerceFieldValue,
+	diffFields,
 	hasBlockingIssues,
 	initialValues,
+	isDirty,
 	issuesByField,
+	missingRequired,
+	appendTo,
+	moveAt,
+	pairsToObject,
+	parseMarkdown,
+	readList,
+	readPairs,
+	readRows,
 	readPath,
+	removeAt,
+	rowFromItems,
+	setRowValue,
+	slugify,
 	toInputValue,
 	writePath,
 	type ContentField,
@@ -94,6 +109,10 @@ describe('coerceFieldValue', () => {
 	it('keeps booleans boolean', () => {
 		expect(coerceFieldValue(field({ fieldType: 'Boolean' }), true)).toBe(true);
 		expect(coerceFieldValue(field({ fieldType: 'Boolean' }), 'false')).toBe(false);
+		// A checkbox with no `value` submits `on`, which means checked. Reading it as false is how a saved
+		// entry became inactive and disappeared from the catalog.
+		expect(coerceFieldValue(field({ fieldType: 'Boolean' }), 'on')).toBe(true);
+		expect(coerceFieldValue(field({ fieldType: 'Boolean' }), 'true')).toBe(true);
 	});
 
 	it('trims text and keeps empty text as an empty string', () => {
@@ -192,5 +211,334 @@ describe('toInputValue', () => {
 		expect(toInputValue(null)).toBe('');
 		expect(toInputValue(true)).toBe('true');
 		expect(toInputValue(7)).toBe('7');
+	});
+
+	it('renders nothing when a collection reaches a scalar input', () => {
+		expect(toInputValue(['a', 'b'])).toBe('');
+	});
+});
+
+describe('slugify', () => {
+	it('folds accents and hyphenates', () => {
+		expect(slugify('Ember Blade')).toBe('ember-blade');
+		expect(slugify('  Café  Noir!! ')).toBe('cafe-noir');
+		expect(slugify('Aelthir_Prime')).toBe('aelthir-prime');
+	});
+
+	it('returns an empty string when nothing alphanumeric survives', () => {
+		expect(slugify('***')).toBe('');
+	});
+});
+
+describe('anchorId', () => {
+	it('derives a usable anchor from a group label', () => {
+		expect(anchorId('Identity')).toBe('identity');
+		expect(anchorId('Stats & Traits')).toBe('stats-traits');
+	});
+
+	it('never returns an empty anchor', () => {
+		expect(anchorId('!!!')).toBe('section');
+	});
+});
+
+describe('isDirty', () => {
+	it('compares both directions and notices a key the seed did not have', () => {
+		expect(isDirty({ a: '1' }, { a: '1' })).toBe(false);
+		expect(isDirty({ a: '1' }, { a: '2' })).toBe(true);
+		expect(isDirty({ a: '1' }, { a: '1', b: '' })).toBe(true);
+	});
+});
+
+const requiredField = (name: string, fieldType: string, required = true) => ({
+	name,
+	label: name,
+	fieldType,
+	required,
+	default: null,
+	min: null,
+	max: null,
+	enumValues: null,
+	hint: null
+});
+
+const formSchema = {
+	contentType: 'item',
+	displayLabel: 'Item',
+	description: '',
+	groups: [
+		{
+			label: 'Identity',
+			fields: [
+				requiredField('displayName', 'Text'),
+				requiredField('slug', 'Slug'),
+				requiredField('isActive', 'Boolean')
+			]
+		},
+		{
+			label: 'Stats',
+			fields: [requiredField('weight', 'Decimal')]
+		}
+	]
+} as never;
+
+describe('missingRequired', () => {
+	it('names the blank required fields and ignores a boolean', () => {
+		expect(
+			missingRequired(formSchema, {
+				displayName: 'Ember blade',
+				slug: '  ',
+				isActive: false,
+				weight: '1.5'
+			})
+		).toEqual(['slug']);
+	});
+
+	it('treats an empty number as blank rather than zero', () => {
+		expect(missingRequired(formSchema, { displayName: 'x', slug: 'x', weight: '' })).toEqual([
+			'weight'
+		]);
+		expect(missingRequired(formSchema, { displayName: 'x', slug: 'x', weight: '0' })).toEqual([]);
+	});
+
+	it('accepts a null schema', () => {
+		expect(missingRequired(null, {})).toEqual([]);
+	});
+});
+
+describe('parseMarkdown', () => {
+	it('parses headings, lists and paragraphs', () => {
+		expect(parseMarkdown('# Title')).toEqual([
+			{ kind: 'heading', level: 3, spans: [{ text: 'Title' }] }
+		]);
+		expect(parseMarkdown('- one\n- two')).toEqual([
+			{ kind: 'list', items: [[{ text: 'one' }], [{ text: 'two' }]] }
+		]);
+		expect(parseMarkdown('first\nsecond')).toEqual([
+			{ kind: 'paragraph', lines: [[{ text: 'first' }], [{ text: 'second' }]] }
+		]);
+	});
+
+	it('marks bold, italic and code runs', () => {
+		expect(parseMarkdown('**bold** and `code`')).toEqual([
+			{
+				kind: 'paragraph',
+				lines: [[{ text: 'bold', strong: true }, { text: ' and ' }, { text: 'code', code: true }]]
+			}
+		]);
+		expect(parseMarkdown('A _quiet_ word.')).toEqual([
+			{
+				kind: 'paragraph',
+				lines: [[{ text: 'A ' }, { text: 'quiet', em: true }, { text: ' word.' }]]
+			}
+		]);
+	});
+
+	it('leaves author input as text, so nothing can become markup', () => {
+		expect(parseMarkdown('<script>alert(1)</script>')).toEqual([
+			{ kind: 'paragraph', lines: [[{ text: '<script>alert(1)</script>' }]] }
+		]);
+	});
+
+	it('links a safe href and leaves an unsafe one as text', () => {
+		expect(parseMarkdown('[docs](/lore)')).toEqual([
+			{ kind: 'paragraph', lines: [[{ text: 'docs', href: '/lore' }]] }
+		]);
+
+		const spans = parseMarkdown('[x](javascript:alert(1))').flatMap((block) =>
+			block.kind === 'paragraph'
+				? block.lines.flat()
+				: block.kind === 'list'
+					? block.items.flat()
+					: block.spans
+		);
+
+		expect(spans.some((span) => span.href !== undefined)).toBe(false);
+		expect(spans.map((span) => span.text).join('')).toBe('[x](javascript:alert(1))');
+	});
+
+	it('returns no blocks for blank input', () => {
+		expect(parseMarkdown('   ')).toEqual([]);
+	});
+});
+
+describe('collection helpers', () => {
+	const payload = {
+		tags: ['fire', 'ice'],
+		stats: { fire: '10' },
+		objectives: [{ type: 'kill', quantity: 5 }, 'nonsense', null]
+	};
+
+	it('reads lists and rows defensively', () => {
+		expect(readList(payload, 'tags')).toEqual(['fire', 'ice']);
+		expect(readList(payload, 'missing')).toEqual([]);
+		expect(readList({ tags: 'nope' }, 'tags')).toEqual([]);
+		expect(readRows(payload, 'objectives')).toEqual([{ type: 'kill', quantity: 5 }]);
+		expect(readRows(payload, 'tags')).toEqual([]);
+	});
+
+	it('reads an object as ordered rows and writes it back', () => {
+		expect(readPairs(payload, 'stats')).toEqual([{ key: 'fire', value: '10' }]);
+		expect(readPairs({ stats: ['no'] }, 'stats')).toEqual([]);
+		expect(
+			pairsToObject([
+				{ key: 'fire', value: 10 },
+				{ key: ' ', value: 'dropped' }
+			])
+		).toEqual({ fire: '10' });
+	});
+
+	it('seeds a new row from the descriptors', () => {
+		expect(
+			rowFromItems([
+				requiredField('a', 'Text'),
+				{ ...requiredField('b', 'Boolean'), default: 'true' }
+			] as never)
+		).toEqual({ a: '', b: true });
+		expect(rowFromItems(null)).toEqual({});
+	});
+
+	it('keeps list edits immutable and ignores out-of-range moves', () => {
+		const list = ['a'];
+		expect(appendTo(list, 'b')).toEqual(['a', 'b']);
+		expect(list).toEqual(['a']);
+		expect(removeAt(list, 5)).toEqual(['a']);
+		expect(moveAt(list, 0, -1)).toEqual(['a']);
+		expect(moveAt(['a', 'b'], 1, -1)).toEqual(['b', 'a']);
+	});
+
+	it('replaces one property of one row only', () => {
+		const rows = [{ a: 1 }, { a: 2 }];
+		expect(setRowValue(rows, 1, 'a', 3)).toEqual([{ a: 1 }, { a: 3 }]);
+		expect(rows[1]).toEqual({ a: 2 });
+	});
+});
+
+describe('collections in the form lifecycle', () => {
+	const collectionSchema = {
+		contentType: 'quest',
+		displayLabel: 'Quests',
+		description: '',
+		groups: [
+			{
+				label: 'Identity',
+				fields: [
+					{ ...requiredField('tags', 'StringList') },
+					{
+						name: 'objectives',
+						label: 'objectives',
+						fieldType: 'ObjectList',
+						required: false,
+						default: null,
+						min: null,
+						max: null,
+						enumValues: null,
+						hint: null,
+						items: [requiredField('type', 'Text')]
+					},
+					{
+						...requiredField('stats', 'KeyValue'),
+						required: false
+					}
+				]
+			}
+		]
+	} as never;
+
+	const collectionPayload = {
+		tags: ['a'],
+		objectives: [{ type: 'kill' }],
+		stats: { fire: '10' }
+	};
+
+	it('seeds collections as editable values', () => {
+		expect(initialValues(collectionPayload, collectionSchema)).toEqual({
+			tags: ['a'],
+			objectives: [{ type: 'kill' }],
+			stats: [{ key: 'fire', value: '10' }]
+		});
+	});
+
+	it('writes them back in payload shape', () => {
+		expect(
+			buildPayload({}, collectionSchema, {
+				tags: ['a', 'b'],
+				objectives: [{ type: 'visit' }],
+				stats: [
+					{ key: 'fire', value: '10' },
+					{ key: ' ', value: 'dropped' }
+				]
+			})
+		).toEqual({ tags: ['a', 'b'], objectives: [{ type: 'visit' }], stats: { fire: '10' } });
+	});
+
+	it('compares collections by content when deciding the form is dirty', () => {
+		expect(isDirty({ tags: ['a'] }, { tags: ['a'] })).toBe(false);
+		expect(isDirty({ tags: ['a'] }, { tags: [] })).toBe(true);
+	});
+
+	it('counts an empty required collection as missing', () => {
+		expect(missingRequired(collectionSchema, { tags: [], objectives: [], stats: [] })).toEqual([
+			'tags'
+		]);
+		expect(missingRequired(collectionSchema, { tags: ['a'] })).toEqual([]);
+	});
+
+	it('diffs a proposed payload against the stored one, field by field', () => {
+		const diffSchema = {
+			contentType: 'item',
+			displayLabel: 'Items',
+			description: '',
+			groups: [
+				{
+					label: 'Identity',
+					fields: [
+						requiredField('displayName', 'Text'),
+						requiredField('weight', 'Decimal'),
+						requiredField('tags', 'StringList'),
+						requiredField('isActive', 'Boolean')
+					]
+				}
+			]
+		} as never;
+
+		expect(
+			diffFields(
+				diffSchema,
+				{ displayName: 'Blade', weight: 1, tags: ['a'] },
+				{ displayName: 'Blade', weight: 1, tags: ['a'] }
+			)
+		).toEqual([]);
+
+		expect(
+			diffFields(
+				diffSchema,
+				{ displayName: 'Blade', weight: 1, tags: ['a'], isActive: true },
+				{ displayName: 'Ember blade', weight: 1, tags: ['a', 'b'], isActive: false }
+			)
+		).toEqual([
+			{
+				field: 'displayName',
+				label: 'displayName',
+				before: 'Blade',
+				after: 'Ember blade',
+				kind: 'changed'
+			},
+			{ field: 'tags', label: 'tags', before: '["a"]', after: '["a","b"]', kind: 'changed' },
+			{ field: 'isActive', label: 'isActive', before: 'Yes', after: 'No', kind: 'changed' }
+		]);
+
+		// No stored entity: every value the proposal carries is new.
+		expect(diffFields(diffSchema, null, { displayName: 'Blade' })).toEqual([
+			{ field: 'displayName', label: 'displayName', before: '—', after: 'Blade', kind: 'added' }
+		]);
+	});
+
+	it('treats a key/value field holding a scalar as empty rather than crashing', () => {
+		const keyValue = {
+			...requiredField('stats', 'KeyValue'),
+			required: false
+		} as never;
+
+		expect(coerceFieldValue(keyValue, 'not rows')).toEqual({});
 	});
 });

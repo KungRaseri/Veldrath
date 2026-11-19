@@ -1,0 +1,39 @@
+# The isolated stack the full-flow Playwright specs run against.
+#
+# Standalone on purpose, not an override of docker-compose.dev.yml: compose merges `ports` lists, so an
+# override would publish the dev port *as well* and the e2e database would collide with the dev one.
+# This file declares only what the specs need, and `scripts/e2e-stack.sh` runs it as its own compose
+# project (`-p veldrath-e2e`), which gives it its own volume, network and container name — `start
+# --fresh` can only ever delete e2e data.
+#
+# Ports are deliberately none of the ones anything else local uses:
+#
+#   postgres  55432   (PostgreSQL default 5432, dev compose 5433)
+#   API       9100    (dev `dotnet run` uses 5000, the dev container 9000)
+#   preview   4273    (Vite preview default 4173)
+#
+# The API and preview ports are set by the script; they are listed here so one place answers "which
+# ports does this take?".
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: veldrath-e2e-postgres
+    environment:
+      POSTGRES_DB: veldrath
+      POSTGRES_USER: veldrath
+      POSTGRES_PASSWORD: veldrath_dev
+      AUTH_DB_USER: ${AUTH_DB_USER:-veldrath_auth}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD:-veldrath_auth_dev}
+    ports:
+      - "55432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./config/postgres/init-auth-schema.sh:/docker-entrypoint-initdb.d/01-auth-schema.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U veldrath -d veldrath"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

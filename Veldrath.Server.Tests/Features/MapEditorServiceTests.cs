@@ -17,6 +17,9 @@ public class MapEditorServiceTests
 {
     private const string HalrowMapId = "zone:the-halrow";
 
+    /// <summary>An editor: may write any map, which is what `content.manage` grants.</summary>
+    private static readonly MapCaller Editor = new(Guid.NewGuid(), CanManageAny: true, CanReview: true);
+
     private static async Task<(ContentDbContext Db, MapEditorService Editor)> SeededAsync()
     {
         var db = new ContentDbContext(
@@ -29,6 +32,35 @@ public class MapEditorServiceTests
 
         return (db, new MapEditorService(db, NullLogger<MapEditorService>.Instance));
     }
+
+    /// <summary>Gives a graph a way out, pointing at a seeded region entry, so it can be approved.</summary>
+    private static MapGraphDto WithAWayOut(MapGraphDto graph) =>
+        graph with
+        {
+            Nodes =
+            [
+                .. graph.Nodes,
+                new MapNodeDto(
+                    $"{graph.Id}:exit",
+                    graph.Id,
+                    "RegionExit",
+                    "cinderplain",
+                    "Exit to Cinderplain",
+                    string.Empty,
+                    null,
+                    graph.Nodes.Count,
+                    0,
+                    false,
+                    true,
+                    "region:cinderplain",
+                    "region:cinderplain:entry",
+                    false,
+                    null,
+                    null,
+                    null,
+                    (graph.Nodes.Count * 10) + 10),
+            ],
+        };
 
     private static MapGraphDto WithNode(
         MapGraphDto graph,
@@ -57,6 +89,29 @@ public class MapEditorServiceTests
     }
 
     [Fact]
+    public async Task CreateDraftAsync_RequiresAnExistingLocationForAnInterior()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var (missing, error) = await editor.CreateDraftAsync(
+            new MapCreateRequest("Interior", "no-such-location", "Nowhere"),
+            Guid.NewGuid());
+
+        missing.Should().BeNull();
+        error.Should().Contain("No location with slug");
+
+        // A region or a zone map defines its owner; an interior hangs off a location that already exists.
+        var locationSlug = await db.ZoneLocations.Select(location => location.Slug).FirstAsync();
+        var (map, createdError) = await editor.CreateDraftAsync(
+            new MapCreateRequest("Interior", locationSlug, "The Cellar"),
+            Guid.NewGuid());
+
+        createdError.Should().BeNull();
+        map!.Id.Should().Be($"interior:{locationSlug}");
+    }
+
+    [Fact]
     public async Task CreateDraftAsync_RefusesAnOwnerThatAlreadyHasAMap()
     {
         var (db, editor) = await SeededAsync();
@@ -81,7 +136,7 @@ public class MapEditorServiceTests
         map.EntryNodeId = "zone:draft-zone:ghost";
         await db.SaveChangesAsync();
 
-        var result = await editor.SubmitAsync("zone:draft-zone", Guid.NewGuid());
+        var result = await editor.SubmitAsync("zone:draft-zone", Editor);
 
         result.Success.Should().BeFalse();
         result.Status.Should().Be("invalid");
@@ -96,7 +151,13 @@ public class MapEditorServiceTests
 
         var reviewer = Guid.NewGuid();
         await editor.CreateDraftAsync(new MapCreateRequest("Zone", "draft-zone", "Draft Zone"), Guid.NewGuid());
-        (await editor.SubmitAsync("zone:draft-zone", Guid.NewGuid())).Success.Should().BeTrue();
+
+        // A draft saves with no way out — that is how a zone gets built — but approval refuses it, so give it
+        // the exit an author would add before submitting.
+        var draft = (await editor.GetAsync("zone:draft-zone", Editor))!;
+        (await editor.SaveAsync(draft.Id, WithAWayOut(draft), draft.Version, Editor)).Success.Should().BeTrue();
+
+        (await editor.SubmitAsync("zone:draft-zone", Editor)).Success.Should().BeTrue();
 
         var result = await editor.ReviewAsync("zone:draft-zone", reviewer, new MapReviewRequest(true));
 
@@ -130,7 +191,7 @@ public class MapEditorServiceTests
         await using var _ = db;
 
         await editor.CreateDraftAsync(new MapCreateRequest("Zone", "draft-zone", "Draft Zone"), Guid.NewGuid());
-        await editor.SubmitAsync("zone:draft-zone", Guid.NewGuid());
+        await editor.SubmitAsync("zone:draft-zone", Editor);
 
         var outcome = await editor.ReviewAsync(
             "zone:draft-zone",
@@ -165,7 +226,7 @@ public class MapEditorServiceTests
         var (db, editor) = await SeededAsync();
         await using var _ = db;
 
-        var result = await editor.DeleteDraftAsync(HalrowMapId);
+        var result = await editor.DeleteDraftAsync(HalrowMapId, Editor);
 
         result.Success.Should().BeFalse();
         result.Status.Should().Be("conflict");
@@ -192,7 +253,7 @@ public class MapEditorServiceTests
         var (db, editor) = await SeededAsync();
         await using var _ = db;
 
-        var maps = await editor.ListAsync();
+        var maps = await editor.ListAsync(Editor);
 
         maps.Should().HaveCount(23);
         maps.Should().OnlyContain(map => map.Version >= 1);
@@ -205,7 +266,7 @@ public class MapEditorServiceTests
         var (db, editor) = await SeededAsync();
         await using var _ = db;
 
-        var graph = await editor.GetAsync(HalrowMapId);
+        var graph = await editor.GetAsync(HalrowMapId, Editor);
 
         graph.Should().NotBeNull();
         graph!.Nodes.Should().Contain(node => node.Id == "zone:the-halrow:entry");
@@ -219,17 +280,17 @@ public class MapEditorServiceTests
         var (db, editor) = await SeededAsync();
         await using var _ = db;
 
-        var graph = (await editor.GetAsync(HalrowMapId))!;
+        var graph = (await editor.GetAsync(HalrowMapId, Editor))!;
         var renamed = WithNode(graph, "zone:the-halrow:location:halrow-threshold", node =>
             node with { DisplayName = "The Threshold of Roots" });
 
-        var result = await editor.SaveAsync(HalrowMapId, renamed, graph.Version);
+        var result = await editor.SaveAsync(HalrowMapId, renamed, graph.Version, Editor);
 
         result.Success.Should().BeTrue();
         result.Status.Should().Be("ok");
         result.Version.Should().Be(graph.Version + 1);
 
-        var reloaded = (await editor.GetAsync(HalrowMapId))!;
+        var reloaded = (await editor.GetAsync(HalrowMapId, Editor))!;
         reloaded.Version.Should().Be(result.Version);
         reloaded.Nodes.Should().Contain(node => node.DisplayName == "The Threshold of Roots");
     }
@@ -240,9 +301,9 @@ public class MapEditorServiceTests
         var (db, editor) = await SeededAsync();
         await using var _ = db;
 
-        var graph = (await editor.GetAsync(HalrowMapId))!;
+        var graph = (await editor.GetAsync(HalrowMapId, Editor))!;
 
-        var result = await editor.SaveAsync(HalrowMapId, graph, expectedVersion: 99);
+        var result = await editor.SaveAsync(HalrowMapId, graph, expectedVersion: 99, Editor);
 
         result.Success.Should().BeFalse();
         result.Status.Should().Be("conflict");
@@ -255,7 +316,7 @@ public class MapEditorServiceTests
         var (db, editor) = await SeededAsync();
         await using var _ = db;
 
-        var graph = (await editor.GetAsync(HalrowMapId))!;
+        var graph = (await editor.GetAsync(HalrowMapId, Editor))!;
         var exitNode = graph.Nodes.Single(node => node.Id.EndsWith("exit:region:varenmark", StringComparison.Ordinal));
         var stranded = graph with
         {
@@ -265,7 +326,7 @@ public class MapEditorServiceTests
                 .ToList(),
         };
 
-        var result = await editor.SaveAsync(HalrowMapId, stranded, graph.Version);
+        var result = await editor.SaveAsync(HalrowMapId, stranded, graph.Version, Editor);
 
         result.Success.Should().BeFalse();
         result.Status.Should().Be("invalid");
@@ -278,11 +339,11 @@ public class MapEditorServiceTests
         var (db, editor) = await SeededAsync();
         await using var _ = db;
 
-        var graph = (await editor.GetAsync(HalrowMapId))!;
+        var graph = (await editor.GetAsync(HalrowMapId, Editor))!;
         var exitNode = graph.Nodes.Single(node => node.Id.EndsWith("exit:region:varenmark", StringComparison.Ordinal));
         var broken = WithNode(graph, exitNode.Id, node => node with { TargetMapId = "region:nowhere" });
 
-        var result = await editor.SaveAsync(HalrowMapId, broken, graph.Version);
+        var result = await editor.SaveAsync(HalrowMapId, broken, graph.Version, Editor);
 
         result.Success.Should().BeFalse();
         result.Status.Should().Be("invalid");
@@ -295,10 +356,10 @@ public class MapEditorServiceTests
         var (db, editor) = await SeededAsync();
         await using var _ = db;
 
-        var graph = (await editor.GetAsync(HalrowMapId))!;
+        var graph = (await editor.GetAsync(HalrowMapId, Editor))!;
         var mismatched = graph with { Id = "zone:crestfall" };
 
-        var result = await editor.SaveAsync(HalrowMapId, mismatched, graph.Version);
+        var result = await editor.SaveAsync(HalrowMapId, mismatched, graph.Version, Editor);
 
         result.Success.Should().BeFalse();
         result.Status.Should().Be("invalid");
@@ -311,7 +372,7 @@ public class MapEditorServiceTests
         var (db, editor) = await SeededAsync();
         await using var _ = db;
 
-        var graph = (await editor.GetAsync(HalrowMapId))!;
+        var graph = (await editor.GetAsync(HalrowMapId, Editor))!;
         var exitNode = graph.Nodes.Single(node => node.Id.EndsWith("exit:region:varenmark", StringComparison.Ordinal));
         var broken = WithNode(graph, exitNode.Id, node => node with { TargetNodeId = "ghost" });
 
@@ -320,7 +381,7 @@ public class MapEditorServiceTests
         result.IsValid.Should().BeFalse();
         result.Issues.Should().Contain(issue => issue.Code == "target_node_unknown");
 
-        var stored = await editor.GetAsync(HalrowMapId);
+        var stored = await editor.GetAsync(HalrowMapId, Editor);
         stored!.Version.Should().Be(graph.Version);
     }
 
@@ -330,14 +391,14 @@ public class MapEditorServiceTests
         var (db, editor) = await SeededAsync();
         await using var _ = db;
 
-        var graph = (await editor.GetAsync(HalrowMapId))!;
+        var graph = (await editor.GetAsync(HalrowMapId, Editor))!;
 
         var result = await editor.ValidateAsync(HalrowMapId, graph);
 
         result.IsValid.Should().BeTrue();
         result.Issues.Should().NotContain(issue => issue.Severity == "Error");
 
-        var stored = await editor.GetAsync(HalrowMapId);
+        var stored = await editor.GetAsync(HalrowMapId, Editor);
         stored!.Version.Should().Be(graph.Version);
     }
 
@@ -347,7 +408,7 @@ public class MapEditorServiceTests
         var (db, editor) = await SeededAsync();
         await using var _ = db;
 
-        var graph = (await editor.GetAsync(HalrowMapId))!;
+        var graph = (await editor.GetAsync(HalrowMapId, Editor))!;
 
         var result = await editor.ValidateAsync(HalrowMapId, graph with { Id = "zone:crestfall" });
 
@@ -356,14 +417,128 @@ public class MapEditorServiceTests
     }
 
     [Fact]
+    public async Task GetAsync_CompactsSparseAuthoredCoordinates()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        // The seeded region graph is authored on a scattered grid — x=2 beside x=34, y=14 beside y=36. Those
+        // numbers are an ordering, not a distance, and rendering them literally made the canvas thousands of
+        // pixels wide for six nodes.
+        var graph = (await editor.GetAsync("region:cinderplain", Editor))!;
+
+        var columns = graph.Nodes.Select(node => node.LayoutX).OfType<int>().Distinct().Order().ToList();
+        var rows = graph.Nodes.Select(node => node.LayoutY).OfType<int>().Distinct().Order().ToList();
+
+        columns.Should().Equal(Enumerable.Range(0, columns.Count), "every used column collapses onto the next");
+        rows.Should().Equal(Enumerable.Range(0, rows.Count), "every used row collapses onto the next");
+        // The shape survives: the entry sits left of the zone it leads to, which is what the author drew.
+        var entry = graph.Nodes.Single(node => node.IsEntryPoint);
+        var firstZone = graph.Nodes.First(node => node.NodeType == "Zone");
+        entry.LayoutX.Should().BeLessThan(firstZone.LayoutX!.Value);
+    }
+
+    [Fact]
+    public async Task ListAsync_ShowsLiveMapsToEveryoneAndDraftsOnlyToTheirAuthor()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var author = Guid.NewGuid();
+        var (draft, _) = await editor.CreateDraftAsync(
+            new MapCreateRequest("Zone", "draft-zone", "Draft Zone"),
+            author);
+        var stranger = new MapCaller(Guid.NewGuid(), CanManageAny: false, CanReview: false);
+
+        (await editor.ListAsync(stranger)).Should().NotContain(
+            map => map.Id == draft!.Id,
+            "a draft is not part of the public portal");
+
+        var own = (await editor.ListAsync(new MapCaller(author, false, false)))
+            .Single(map => map.Id == draft!.Id);
+        own.CanEdit.Should().BeTrue("the author may write their own map");
+
+        // A live map is public whatever its author, and a stranger still cannot write it.
+        var live = await db.Maps.SingleAsync(map => map.Id == HalrowMapId);
+        live.IsActive = true;
+        await db.SaveChangesAsync();
+
+        var strangerView = await editor.ListAsync(stranger);
+        strangerView.Should().Contain(map => map.Id == HalrowMapId);
+        strangerView.Single(map => map.Id == HalrowMapId).CanEdit.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task GetAsync_HidesADraftFromAStrangerAndMarksTheAuthorsOwnEditable()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var author = Guid.NewGuid();
+        var (draft, _) = await editor.CreateDraftAsync(
+            new MapCreateRequest("Zone", "hidden-zone", "Hidden Zone"),
+            author);
+
+        (await editor.GetAsync(draft!.Id, new MapCaller(Guid.NewGuid(), false, false))).Should().BeNull();
+        (await editor.GetAsync(draft.Id, Editor)).Should().NotBeNull();
+
+        var own = await editor.GetAsync(draft.Id, new MapCaller(author, false, false));
+        own!.CanEdit.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SaveAndDelete_RefuseAMapCreatedByAnotherAccount()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var author = Guid.NewGuid();
+        var (draft, _) = await editor.CreateDraftAsync(
+            new MapCreateRequest("Zone", "guarded-zone", "Guarded Zone"),
+            author);
+        var stranger = new MapCaller(Guid.NewGuid(), CanManageAny: false, CanReview: false);
+
+        var save = await editor.SaveAsync(draft!.Id, draft, draft.Version, stranger);
+        save.Success.Should().BeFalse();
+        save.Status.Should().Be("forbidden");
+
+        var delete = await editor.DeleteDraftAsync(draft.Id, stranger);
+        delete.Success.Should().BeFalse();
+        delete.Status.Should().Be("forbidden");
+
+        // The author gets past ownership; the graph then has to satisfy the world validator on its own.
+        (await editor.SaveAsync(draft.Id, draft, draft.Version, new MapCaller(author, false, false)))
+            .Status.Should().NotBe("forbidden");
+        (await editor.DeleteDraftAsync(draft.Id, new MapCaller(author, false, false)))
+            .Success.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SubmitAsync_RefusesAMapSubmittedByAStranger()
+    {
+        var (db, editor) = await SeededAsync();
+        await using var _ = db;
+
+        var (draft, _) = await editor.CreateDraftAsync(
+            new MapCreateRequest("Zone", "submit-zone", "Submit Zone"),
+            Guid.NewGuid());
+
+        var refused = await editor.SubmitAsync(
+            draft!.Id,
+            new MapCaller(Guid.NewGuid(), CanManageAny: false, CanReview: false));
+
+        refused.Status.Should().Be("forbidden");
+    }
+
+    [Fact]
     public async Task SaveAsync_ReturnsNotFoundForAnUnknownMap()
     {
         var (db, editor) = await SeededAsync();
         await using var _ = db;
 
-        var graph = (await editor.GetAsync(HalrowMapId))!;
+        var graph = (await editor.GetAsync(HalrowMapId, Editor))!;
 
-        var result = await editor.SaveAsync("zone:nowhere", graph with { Id = "zone:nowhere" }, 1);
+        var result = await editor.SaveAsync("zone:nowhere", graph with { Id = "zone:nowhere" }, 1, Editor);
 
         result.Success.Should().BeFalse();
         result.Status.Should().Be("not_found");

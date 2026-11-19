@@ -80,3 +80,6 @@ coverage/
 
 # Local smoke scripts and runtime artifacts (never committed)
 /scripts/dev/
+
+# Local e2e stack pid file (scripts/e2e-stack.sh)
+.e2e-server.pid

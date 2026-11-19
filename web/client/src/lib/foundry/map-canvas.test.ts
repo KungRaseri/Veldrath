@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+	CARD,
+	CELL,
+	GAP,
 	MAX_CELL,
 	clampCell,
 	directionBetween,
@@ -10,6 +13,17 @@ import {
 	tidyLayout
 } from './map-canvas';
 import type { MapGraphDto, MapNodeDto } from './map-editor';
+
+describe('grid metrics', () => {
+	it('leaves a 20–30px gutter between two adjacent cards', () => {
+		// The canvas used to step 96px for an 80px card, and the authored grid is scattered, so a six-node map
+		// filled a canvas metres wide. One step is one card plus its gutter now, and the gutter is the thing to
+		// keep in range: wider and the graph starts scrolling again.
+		expect(CELL - CARD).toBe(GAP);
+		expect(GAP).toBeGreaterThanOrEqual(20);
+		expect(GAP).toBeLessThanOrEqual(30);
+	});
+});
 
 function node(overrides: Partial<MapNodeDto> & Pick<MapNodeDto, 'id'>): MapNodeDto {
 	return {

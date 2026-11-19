@@ -29,6 +29,8 @@ export interface FoundrySubmission extends FoundrySubmissionSummary {
 	reviewNotes: string | null;
 	updatedAt: string;
 	reviewedAt: string | null;
+	/** Slug the catalog was written under on approval, or `null` while it has not been promoted. */
+	promotedSlug: string | null;
 }
 
 /** An in-app notification about a review outcome: a submission decision, or a map decision. */
@@ -60,6 +62,8 @@ export interface SubmissionFilters {
 	status?: string | null;
 	contentType?: string | null;
 	search?: string | null;
+	/** Restricts the feed to the caller's own rows, keyed to the account on the token rather than a name. */
+	mine?: boolean;
 	page?: number;
 	pageSize?: number;
 }
@@ -74,6 +78,7 @@ export function listSubmissions(identity: GameIdentity | null, filters: Submissi
 				status: filters.status,
 				contentType: filters.contentType,
 				search: filters.search,
+				mine: filters.mine ? true : undefined,
 				page: filters.page ?? 1,
 				pageSize: filters.pageSize ?? 20
 			}
@@ -110,9 +115,27 @@ export function reviewSubmission(
 	});
 }
 
+/** Unread notification total for the signed-in account. */
+export interface FoundryUnreadNotificationCount {
+	count: number;
+}
+
 /** Returns the signed-in user's notifications. */
 export function listNotifications(identity: GameIdentity) {
 	return gameApiFetch<FoundryNotification[]>(identity, '/api/foundry/notifications');
+}
+
+/**
+ * Counts the signed-in user's unread notifications.
+ *
+ * The portal shell renders the total as a badge on every page, so it asks for the count rather than
+ * materialising the inbox.
+ */
+export function getUnreadNotificationCount(identity: GameIdentity) {
+	return gameApiFetch<FoundryUnreadNotificationCount>(
+		identity,
+		'/api/foundry/notifications/unread-count'
+	);
 }
 
 /** Marks one notification as read. */

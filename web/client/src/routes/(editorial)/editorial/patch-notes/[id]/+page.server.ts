@@ -1,6 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { toGameIdentity } from '#lib/server/access';
+import { upstreamStatus } from '#lib/server/game-request';
 import {
 	adminCreatePatchNote,
 	adminDeletePatchNote,
@@ -17,7 +18,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
 	const result = await adminGetPatchNote(toGameIdentity(locals.user!), params.id);
 	if (!result.data) {
-		error(404, result.error ?? 'Patch note not found.');
+		error(upstreamStatus(result), result.error ?? 'Patch note not found.');
 	}
 
 	return { mode: 'edit' as const, note: result.data };

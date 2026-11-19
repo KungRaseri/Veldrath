@@ -28,8 +28,8 @@ public class MapGraphSeederTests
             .ToListAsync();
 
         maps.Should().HaveCount(23);
-        maps.SelectMany(m => m.Nodes).Should().HaveCount(133);
-        maps.SelectMany(m => m.Edges).Should().HaveCount(206);
+        maps.SelectMany(m => m.Nodes).Should().HaveCount(134);
+        maps.SelectMany(m => m.Edges).Should().HaveCount(298);
 
         foreach (var map in maps)
         {
@@ -54,8 +54,51 @@ public class MapGraphSeederTests
         await MapGraphSeeder.SeedAsync(db);
 
         (await db.Maps.CountAsync()).Should().Be(23);
-        (await db.MapNodes.CountAsync()).Should().Be(133);
-        (await db.MapEdges.CountAsync()).Should().Be(206);
+        (await db.MapNodes.CountAsync()).Should().Be(134);
+        (await db.MapEdges.CountAsync()).Should().Be(298);
+    }
+
+    [Fact]
+    public async Task SeedAsync_LinksEveryRegionZoneNodeToItsZoneMap()
+    {
+        await using var db = CreateDbContext();
+
+        await MapGraphSeeder.SeedAsync(db);
+
+        var maps = await db.Maps
+            .Include(m => m.Nodes)
+            .Include(m => m.Edges)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var zoneMapIds = maps
+            .Where(m => m.MapType == MapType.Zone)
+            .Select(m => m.Id)
+            .ToHashSet(StringComparer.Ordinal);
+
+        var regionZoneNodes = maps
+            .Where(m => m.MapType == MapType.Region)
+            .SelectMany(m => m.Nodes)
+            .Where(n => n.NodeType == MapNodeType.Zone && n.RefId is { Length: > 0 })
+            .Where(n => zoneMapIds.Contains($"zone:{n.RefId}"))
+            .ToList();
+
+        regionZoneNodes.Should().NotBeEmpty();
+        regionZoneNodes.Should().OnlyContain(
+            n => n.TargetMapId == $"zone:{n.RefId}",
+            "a zone node with no target map is a dead end: travel only loads another map when the node names one, so the player would stand on the region map forever");
+
+        // The route a player actually walks, and the one harvesting depends on: the region entry only reaches
+        // Crestfall, and Crestfall reaches the wood — where the forage nodes are.
+        var varenmark = maps.Single(m => m.Id == "region:varenmark");
+        varenmark.Nodes
+            .Single(n => n.Id == "region:varenmark:zone:ashlen-wood")
+            .TargetMapId.Should().Be("zone:ashlen-wood");
+
+        varenmark.Edges.Should().Contain(
+            e => (e.FromNodeId == "region:varenmark:zone:crestfall" && e.ToNodeId == "region:varenmark:zone:ashlen-wood")
+                 || (e.FromNodeId == "region:varenmark:zone:ashlen-wood" && e.ToNodeId == "region:varenmark:zone:crestfall"),
+            "the wood has to be adjacent to something the region entry reaches");
     }
 
     [Fact]

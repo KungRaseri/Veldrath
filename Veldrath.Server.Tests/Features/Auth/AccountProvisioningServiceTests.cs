@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -52,6 +53,8 @@ public class AccountProvisioningServiceTests : IDisposable
             sp.GetRequiredService<UserManager<PlayerAccount>>(),
             sp.GetRequiredService<RoleManager<IdentityRole<Guid>>>(),
             _db,
+            // The default 60s snapshot cache, which these tests clear between cases.
+            new ConfigurationBuilder().Build(),
             Mock.Of<ILogger<AccountProvisioningService>>()));
 
         _provider = services.BuildServiceProvider();

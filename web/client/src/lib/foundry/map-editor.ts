@@ -33,6 +33,38 @@ export interface MapEdgeDto {
 	isHidden: boolean;
 }
 
+/**
+ * The map kinds an author may create, with the one-line explanation the wizard shows.
+ *
+ * `World` is reserved: the server refuses it, so it is not offered. `Region` and `Zone` maps *define* the
+ * thing they are owned by, while an `Interior` belongs to a `ZoneLocation` that must already exist.
+ */
+export const MAP_KINDS = [
+	{
+		value: 'Region',
+		label: 'Region',
+		hint: 'A region: its nodes are the zones inside it and the exits to other regions.'
+	},
+	{
+		value: 'Zone',
+		label: 'Zone',
+		hint: 'A zone: its nodes are the locations inside it and the exits back to its region.'
+	},
+	{
+		value: 'Interior',
+		label: 'Interior',
+		hint: 'A dungeon or building interior. It belongs to a location that already exists.'
+	}
+] as const;
+
+/** One creatable map kind. */
+export type MapKind = (typeof MAP_KINDS)[number];
+
+/** The hint per kind, so a component can look one up without a search or a fallback branch. */
+export const MAP_KIND_HINTS: Record<string, string> = Object.fromEntries(
+	MAP_KINDS.map((entry) => [entry.value, entry.hint])
+);
+
 /** A complete map graph, mirroring `Veldrath.Contracts.Map.MapGraphDto`. */
 export interface MapGraphDto {
 	id: string;
@@ -59,6 +91,11 @@ export interface MapGraphDto {
 	lastReviewNotes?: string | null;
 	/** When the last review decision was made. */
 	lastReviewedAt?: string | null;
+	/**
+	 * Whether this account may write the map: the account that created it, or anyone holding
+	 * `content.manage`. Decided per map by the server, so a reader of someone else's draft gets no controls.
+	 */
+	canEdit?: boolean;
 }
 
 /** One option in a reference picker, mirroring `Veldrath.Contracts.Map.MapTargetOptionDto`. */
@@ -108,6 +145,13 @@ export interface MapSummaryDto {
 	approvedVersion?: number;
 	/** When the map was put forward for review. */
 	submittedAt?: string | null;
+	/** Whether this account may write the map; see {@link MapGraphDto.canEdit}. */
+	canEdit?: boolean;
+	/**
+	 * Whether approving the map would succeed, filled by the server for maps awaiting a decision.
+	 * Absent on every other map, which is why the queue has to word a missing verdict rather than assume `ready`.
+	 */
+	review?: MapReviewVerdict | null;
 }
 
 /** One validation issue reported by a save, mirroring `Veldrath.Contracts.Map.MapGraphIssueDto`. */
@@ -244,6 +288,64 @@ export function mapState(map: {
 	}
 
 	return (map.approvedVersion ?? 0) < map.version ? 'Changed since approval' : 'Live';
+}
+
+/** What the review queue can say about a submitted map before a reviewer opens it. */
+export interface MapReviewVerdict {
+	/** `ready` when approval would succeed, `blocked` when it would be refused, `unknown` when it could not be checked. */
+	status: 'ready' | 'blocked' | 'unknown';
+	/** Errors, which refuse an approval exactly as they refuse a save. */
+	errors: number;
+	/** Warnings, which a submitted draft may carry and which a reviewer still has to see. */
+	warnings: number;
+}
+
+/**
+ * Whether approving a submitted map would succeed.
+ *
+ * The decision re-runs the world rules, so a reviewer can see the answer before opening the graph instead of
+ * discovering a refusal at the end of it. A warning alone is not a refusal — a half-made map is how a zone gets
+ * built — except `map_without_exit`, which is what strands every character that arrives on the map.
+ *
+ * @param issues Issues from a validate pass, or `null` when the pass could not run.
+ * @returns The verdict, with the two counts a queue row shows.
+ */
+export function reviewVerdict(issues: readonly MapGraphIssue[] | null): MapReviewVerdict {
+	if (issues === null) return { status: 'unknown', errors: 0, warnings: 0 };
+
+	const errors = issues.filter((issue) => issue.severity === 'Error').length;
+	const blocking = issues.some((issue) => issue.code === 'map_without_exit');
+
+	return {
+		status: errors > 0 || blocking ? 'blocked' : 'ready',
+		errors,
+		warnings: issues.length - errors
+	};
+}
+
+/**
+ * One line a reviewer can act on, naming the count that decides the verdict.
+ *
+ * Kept beside `reviewVerdict` rather than in the page so the wording of a refusal has a test: zero errors with a
+ * blocked verdict is not a contradiction, it is the missing exit, and the row has to say so.
+ *
+ * @param verdict The verdict to describe.
+ * @returns The sentence the queue shows on that map's row.
+ */
+export function reviewVerdictLabel(verdict: MapReviewVerdict): string {
+	const errors = `${verdict.errors} error${verdict.errors === 1 ? '' : 's'}`;
+
+	if (verdict.status === 'unknown') return 'The verdict could not be checked';
+
+	if (verdict.status === 'blocked') {
+		return verdict.errors > 0
+			? `Approval would be refused · ${errors}`
+			: 'Approval would be refused · the map has no exit';
+	}
+
+	return verdict.warnings === 0
+		? 'Approval would accept it'
+		: `Approval would accept it · ${verdict.warnings} warning${verdict.warnings === 1 ? '' : 's'}`;
 }
 
 /**

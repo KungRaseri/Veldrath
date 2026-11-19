@@ -1,6 +1,14 @@
-﻿namespace Veldrath.Contracts.Content;
+using System.Text.Json.Serialization;
+
+namespace Veldrath.Contracts.Content;
 
 /// <summary>Describes the type of UI control to render for a content field.</summary>
+/// <remarks>
+/// Serialized by name. The web client switches on <c>'Integer'</c>, <c>'Boolean'</c>, <c>'EnumString'</c> and the
+/// rest to choose a control and to coerce a submitted value; as a number every comparison missed, so a form sent
+/// <c>"50"</c> where an integer belonged and the write refused the payload as unreadable.
+/// </remarks>
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum ContentFieldType
 {
     Text,
@@ -10,6 +18,14 @@ public enum ContentFieldType
     Decimal,
     Boolean,
     EnumString,
+    /// <summary>A list of short strings — tags, aliases, effect names. Rendered as an add/remove list.</summary>
+    StringList,
+    /// <summary>A map of string to string — trait flags, stat modifiers. Rendered as two-column rows.</summary>
+    KeyValue,
+    /// <summary>A list of objects, each shaped by <see cref="ContentFieldDescriptor.Items"/>.</summary>
+    ObjectList,
+    /// <summary>A slug pointing at another content type, named by <see cref="ContentFieldDescriptor.RefType"/>.</summary>
+    Reference,
 }
 
 /// <summary>
@@ -27,6 +43,16 @@ public enum ContentFieldType
 /// <param name="Max">Maximum allowable numeric value.</param>
 /// <param name="EnumValues">Allowed string values when <see cref="FieldType"/> is <see cref="ContentFieldType.EnumString"/>.</param>
 /// <param name="Hint">Optional informational hint shown beneath the input.</param>
+/// <param name="Items">
+/// The row shape when <see cref="FieldType"/> is <see cref="ContentFieldType.ObjectList"/>. Each item describes one
+/// property of a row, addressed relative to the row rather than by dot-path.
+/// </param>
+/// <param name="RefType">
+/// The content type key a <see cref="ContentFieldType.Reference"/> points at (e.g. <c>item</c>). Ignored otherwise.
+/// </param>
+/// <param name="Multiple">
+/// Whether a <see cref="ContentFieldType.Reference"/> accepts more than one slug. Ignored otherwise.
+/// </param>
 public record ContentFieldDescriptor(
     string Name,
     string Label,
@@ -36,7 +62,10 @@ public record ContentFieldDescriptor(
     double? Min = null,
     double? Max = null,
     string[]? EnumValues = null,
-    string? Hint = null);
+    string? Hint = null,
+    IReadOnlyList<ContentFieldDescriptor>? Items = null,
+    string? RefType = null,
+    bool Multiple = false);
 
 /// <summary>A named group of fields mapping to a Stats, Traits, or Effects section.</summary>
 public record ContentFieldGroup(string Label, IReadOnlyList<ContentFieldDescriptor> Fields);
@@ -100,6 +129,12 @@ public static class ContentSchemaRegistry
         new("displayName", "Display Name", ContentFieldType.Text,    Required: true),
         new("slug",        "Slug",         ContentFieldType.Slug,    Required: true,
             Hint: "Lowercase letters, numbers, and hyphens only (e.g. fire-bolt)"),
+        // `ContentBase.TypeKey` is what the loader uses to decide which rows of a table are this kind of
+        // content, and `ContentShapeRules.ValidateShared` refuses an entry without one. It was the one
+        // required field the schemas did not ask for, so every entry created here failed validation with
+        // `type_key_missing`.
+        new("typeKey",     "Type Key",      ContentFieldType.Text,    Required: true,
+            Hint: "Discriminator the loader groups this entry by (e.g. active/offensive)"),
         new("rarityWeight","Rarity Weight", ContentFieldType.Integer, Default: "50", Min: 1, Max: 100,
             Hint: "1 = extremely rare, 100 = very common"),
         new("isActive",    "Active",        ContentFieldType.Boolean, Default: "true"),
@@ -112,8 +147,10 @@ public static class ContentSchemaRegistry
         [
             Identity(),
             new("Ability", [
-                new("abilityType", "Ability Type", ContentFieldType.EnumString, Required: true,
-                    EnumValues: ["active", "passive", "reactive", "ultimate"],
+                // The payload key is `powerType` (Power.PowerType); the schema said `abilityType`, so the
+                // select wrote a key nothing read and the validator kept reporting a missing power type.
+                new("powerType", "Power Type", ContentFieldType.EnumString, Required: true,
+                    EnumValues: ["innate", "active", "passive", "reactive", "ultimate"],
                     Hint: "Base classification of when and how the ability is triggered"),
             ]),
             new("Stats", [
@@ -534,6 +571,10 @@ public static class ContentSchemaRegistry
             new("Spell", [
                 new("school","School",ContentFieldType.EnumString, Required: true,
                     EnumValues: ["fire", "frost", "arcane", "holy", "shadow", "nature", "lightning", "earth"]),
+                // Spells share the Power table and the PowerValidator, which requires a power type.
+                new("powerType", "Power Type", ContentFieldType.EnumString, Required: true,
+                    EnumValues: ["innate", "active", "passive", "reactive", "ultimate"],
+                    Hint: "Base classification of when and how the spell is triggered"),
             ]),
             new("Stats", [
                 new("stats.manaCost",  "Mana Cost",     ContentFieldType.Integer, Min: 0, Max: 1000),
@@ -578,10 +619,28 @@ public static class ContentSchemaRegistry
                 new("traits.hiddenUntilDiscovered", "Hidden Until Discovered", ContentFieldType.Boolean),
             ]),
             new("Objectives & Rewards", [
-                new("objectives", "Objectives (JSON)", ContentFieldType.LongText,
-                    Hint: "JSON array: [{\"type\":\"kill\",\"target\":\"wolf\",\"quantity\":5,\"description\":\"Kill wolves\"}]"),
-                new("rewards", "Rewards (JSON)", ContentFieldType.LongText,
-                    Hint: "JSON array: [{\"type\":\"item\",\"itemDomain\":\"items/weapons\",\"itemSlug\":\"iron-sword\",\"quantity\":1}]"),
+                // Was a raw-JSON textarea. The shape is the same JSON array the runtime reads; it is now
+                // described per row instead of by a hint that told the author to type it by hand.
+                new("objectives", "Objectives", ContentFieldType.ObjectList,
+                    Hint: "What the player must do to complete the quest.",
+                    Items: [
+                        new("type",        "Type",        ContentFieldType.Text, Required: true,
+                            Hint: "kill, collect, visit or talk"),
+                        new("target",      "Target",      ContentFieldType.Text, Required: true,
+                            Hint: "Slug of the thing the objective names"),
+                        new("quantity",    "Quantity",    ContentFieldType.Integer, Min: 1, Default: "1"),
+                        new("description", "Description", ContentFieldType.Text),
+                    ]),
+                new("rewards", "Rewards", ContentFieldType.ObjectList,
+                    Hint: "What the player receives on completion.",
+                    Items: [
+                        new("type",       "Type",        ContentFieldType.Text, Required: true,
+                            Hint: "item or currency"),
+                        new("itemDomain", "Item Domain", ContentFieldType.Text,
+                            Hint: "e.g. items/weapons"),
+                        new("itemSlug",   "Item Slug",   ContentFieldType.Text),
+                        new("quantity",   "Quantity",    ContentFieldType.Integer, Min: 1, Default: "1"),
+                    ]),
             ]),
         ]);
 
@@ -594,10 +653,11 @@ public static class ContentSchemaRegistry
             new("Recipe", [
                 new("outputItemDomain","Output Item Domain",ContentFieldType.Text, Required: true,
                     Hint: "Content domain of the output item (e.g. items/weapons)"),
-                new("outputItemSlug",  "Output Item Slug",  ContentFieldType.Text, Required: true),
+                new("outputItemSlug",  "Output Item Slug",  ContentFieldType.Reference, Required: true,
+                    RefType: "item"),
                 new("outputQuantity",  "Output Quantity",   ContentFieldType.Integer, Required: true, Min: 1, Max: 100),
-                new("craftingSkill",   "Crafting Skill",    ContentFieldType.Text, Required: true,
-                    Hint: "Slug of the required skill (e.g. blacksmithing)"),
+                new("craftingSkill",   "Crafting Skill",    ContentFieldType.Reference, Required: true,
+                    RefType: "skill"),
                 new("craftingLevel",   "Crafting Level",    ContentFieldType.Integer, Required: true, Min: 1, Max: 100),
             ]),
             new("Traits", [
@@ -609,8 +669,15 @@ public static class ContentSchemaRegistry
                 new("traits.isLeatherworking","Leatherworking",  ContentFieldType.Boolean),
             ]),
             new("Ingredients", [
-                new("ingredients", "Ingredients (JSON)", ContentFieldType.LongText,
-                    Hint: "JSON array: [{\"itemDomain\":\"items/materials\",\"itemSlug\":\"iron-ingot\",\"quantity\":3}]"),
+                new("ingredients", "Ingredients", ContentFieldType.ObjectList,
+                    Hint: "Each ingredient the recipe consumes.",
+                    Items: [
+                        new("itemDomain", "Item Domain", ContentFieldType.Text, Required: true,
+                            Hint: "e.g. items/materials"),
+                        new("itemSlug",   "Item Slug",   ContentFieldType.Text, Required: true),
+                        new("quantity",   "Quantity",    ContentFieldType.Integer, Required: true, Min: 1,
+                            Default: "1"),
+                    ]),
             ]),
         ]);
 
@@ -629,8 +696,17 @@ public static class ContentSchemaRegistry
                 new("traits.isHarvesting","Is Harvesting",ContentFieldType.Boolean),
             ]),
             new("Entries", [
-                new("entries", "Entries (JSON)", ContentFieldType.LongText,
-                    Hint: "JSON array: [{\"itemDomain\":\"items/weapons\",\"itemSlug\":\"iron-sword\",\"dropWeight\":10,\"quantityMin\":1,\"quantityMax\":1,\"isGuaranteed\":false}]"),
+                new("entries", "Entries", ContentFieldType.ObjectList,
+                    Hint: "Each item the table can drop.",
+                    Items: [
+                        new("itemDomain",   "Item Domain",   ContentFieldType.Text, Required: true,
+                            Hint: "e.g. items/weapons"),
+                        new("itemSlug",     "Item Slug",     ContentFieldType.Text, Required: true),
+                        new("dropWeight",   "Drop Weight",   ContentFieldType.Integer, Min: 1, Default: "10"),
+                        new("quantityMin",  "Quantity Min",  ContentFieldType.Integer, Min: 1, Default: "1"),
+                        new("quantityMax",  "Quantity Max",  ContentFieldType.Integer, Min: 1, Default: "1"),
+                        new("isGuaranteed", "Is Guaranteed", ContentFieldType.Boolean),
+                    ]),
             ]),
         ]);
 

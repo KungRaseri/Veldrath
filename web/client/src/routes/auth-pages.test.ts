@@ -59,6 +59,46 @@ describe('signed-in-only pages', () => {
 	});
 });
 
+describe('login destination', () => {
+	/** The location of the redirect a loader threw, or `null` when it did not throw one. */
+	function redirectLocation(load: () => unknown): string | null {
+		try {
+			load();
+			return null;
+		} catch (error) {
+			return (error as { location?: string }).location ?? null;
+		}
+	}
+
+	it('returns a signed-in visitor to the page the guard sent them away from', () => {
+		expect(
+			redirectLocation(() =>
+				callLoad(
+					loginLoad,
+					makeServerEvent({ user: fakeUser(), url: '/login?redirectTo=%2Ffoundry' })
+				)
+			)
+		).toBe('/foundry');
+	});
+
+	it('falls back to the game for a missing or foreign destination', () => {
+		expect(redirectLocation(() => callLoad(loginLoad, makeServerEvent({ user: fakeUser() })))).toBe(
+			'/game'
+		);
+		expect(
+			redirectLocation(() =>
+				callLoad(
+					loginLoad,
+					makeServerEvent({
+						user: fakeUser(),
+						url: '/login?redirectTo=https%3A%2F%2Felsewhere.example'
+					})
+				)
+			)
+		).toBe('/game');
+	});
+});
+
 describe('verify email', () => {
 	it('reports a missing token without calling Better Auth', async () => {
 		await expect(

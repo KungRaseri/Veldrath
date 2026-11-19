@@ -8,7 +8,7 @@
 	<title>Notifications — Foundry</title>
 </svelte:head>
 
-<div class="mx-auto max-w-3xl space-y-4 p-6">
+<div class="space-y-4">
 	<header class="space-y-1">
 		<h1 class="h1">Notifications</h1>
 		<p class="text-surface-600-400">Review outcomes for your submissions and your maps.</p>

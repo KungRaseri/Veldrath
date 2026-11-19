@@ -22,6 +22,25 @@ describe('describeCombatTurn action switch', () => {
 	it('renders a missing action as undefined in the fallback', () => {
 		expect(describeCombatTurn(turn({ action: undefined }))).toContain('Action: undefined.');
 	});
+
+	it('names what a kill dropped, because loot cannot be inferred from the numbers', () => {
+		const line = describeCombatTurn(
+			turn({
+				enemyDefeated: true,
+				itemsDropped: [
+					{ itemSlug: 'health-potion', quantity: 1 },
+					{ itemSlug: 'iron-ingot', quantity: 2 }
+				]
+			})
+		);
+
+		expect(line).toContain('Found: 1× health-potion, 2× iron-ingot.');
+	});
+
+	it('says nothing about loot when nothing dropped', () => {
+		expect(describeCombatTurn(turn({ enemyDefeated: true }))).not.toContain('Found:');
+		expect(describeCombatTurn(turn({ itemsDropped: null }))).not.toContain('Found:');
+	});
 });
 
 describe('describeCombatTurn ability detail', () => {

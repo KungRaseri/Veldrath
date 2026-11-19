@@ -22,9 +22,14 @@
       {
         "files": [
           "docs/client-overview.md",
+          "docs/design-system.md",
+          "docs/client-ui-architecture.md",
           "docs/lore/**/*.md",
           "docs/toc.yml"
         ]
+      },
+      {
+        "files": ["docs/design/**/*.md"]
       }
     ],
     "resource": [
@@ -42,6 +47,16 @@
         "src": "web/client/static/images/favicon",
         "files": ["favicon-32x32.png", "android-chrome-192x192.png"],
         "dest": "images"
+      },
+      {
+        "src": "docs/design/images",
+        "files": ["*.png", "*.webp", "*.svg"],
+        "dest": "design/images"
+      },
+      {
+        "src": "docs/design",
+        "files": ["tokens.json"],
+        "dest": "design"
       }
     ],
     "output": "_site",

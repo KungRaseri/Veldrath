@@ -62,6 +62,10 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
     public DbSet<PartyMemberEntity> PartyMembers => Set<PartyMemberEntity>();
     /// <summary>Outstanding party invitations.</summary>
     public DbSet<PartyInvite> PartyInvites => Set<PartyInvite>();
+    /// <summary>Chests standing at zone locations, authored by content or placed by the chest sweeper.</summary>
+    public DbSet<LootChest> LootChests => Set<LootChest>();
+    /// <summary>People standing at zone locations, the placement an authored actor archetype needs to be met.</summary>
+    public DbSet<LocationNpc> LocationNpcs => Set<LocationNpc>();
     /// <summary>Live runs of instanced zones, the aggregate root a delve's state points at.</summary>
     public DbSet<ZoneInstance> ZoneInstances => Set<ZoneInstance>();
     /// <summary>Characters who have taken part in an instance run.</summary>
@@ -292,6 +296,46 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
              .WithMany()
              .HasForeignKey(g => g.ZoneInstanceId)
              .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<LootChest>(e =>
+        {
+            e.HasKey(c => c.Id);
+            // A seeded chest keeps its row across restarts, so the slug is the identity content owns.
+            e.HasIndex(c => c.ChestId).IsUnique();
+            // A location read asks for the chests standing here; the roam draw asks what a zone already holds.
+            e.HasIndex(c => new { c.ZoneId, c.LocationSlug });
+            e.HasIndex(c => new { c.ZoneId, c.Kind, c.IsOpened });
+            // The sweeper scans opened rows whose reopen timer has elapsed.
+            e.HasIndex(c => c.ReopenAt);
+            // Instance-scoped reads query the run; a purged run takes its chests with it.
+            e.HasIndex(c => c.ZoneInstanceId);
+            e.Property(c => c.ChestId).HasMaxLength(128).IsRequired();
+            e.Property(c => c.ZoneId).HasMaxLength(64).IsRequired();
+            e.Property(c => c.LocationSlug).HasMaxLength(128).IsRequired();
+            e.Property(c => c.DisplayName).HasMaxLength(200).IsRequired();
+            e.Property(c => c.LootTableRefs).HasColumnType("text");
+            e.Property(c => c.MergeStrategy).HasMaxLength(32).IsRequired();
+            e.Property(c => c.Kind).HasConversion<string>().HasMaxLength(16);
+            e.HasOne<ZoneInstance>()
+             .WithMany()
+             .HasForeignKey(c => c.ZoneInstanceId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<LocationNpc>(e =>
+        {
+            e.HasKey(n => n.Id);
+            // A placement keeps its row across restarts, so the seeded key is the identity content owns.
+            e.HasIndex(n => n.NpcId).IsUnique();
+            // A location read asks who stands here; a talk asks whether this archetype is here.
+            e.HasIndex(n => new { n.ZoneId, n.LocationSlug });
+            e.HasIndex(n => new { n.ZoneId, n.LocationSlug, n.ArchetypeSlug });
+            e.Property(n => n.NpcId).HasMaxLength(128).IsRequired();
+            e.Property(n => n.ZoneId).HasMaxLength(64).IsRequired();
+            e.Property(n => n.LocationSlug).HasMaxLength(128).IsRequired();
+            e.Property(n => n.ArchetypeSlug).HasMaxLength(128).IsRequired();
+            e.Property(n => n.DisplayName).HasMaxLength(200);
         });
 
         builder.Entity<EnemyInstance>(e =>

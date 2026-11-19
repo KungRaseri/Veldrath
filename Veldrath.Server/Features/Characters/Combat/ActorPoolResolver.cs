@@ -59,6 +59,17 @@ public class ActorPoolResolver
                 continue;
             }
 
+            // A pool is "what may stand here", not "what may be attacked": a shopkeeper or a quest giver named in
+            // a pool is content debt, and turning them into a target would be the silent punishment for it. They are
+            // placed by `LocationNpcs`, which is what makes them meetable instead of hittable.
+            if (enemy.Traits.TryGetValue("hostile", out var hostile) && !hostile.AsBool())
+            {
+                _logger.LogWarning(
+                    "Spawn pool entry '{ArchetypeSlug}' is not hostile; leaving them out of the combat roster",
+                    entry.ArchetypeSlug);
+                continue;
+            }
+
             spawned.Add(ToSpawnedEnemy(enemy));
         }
 

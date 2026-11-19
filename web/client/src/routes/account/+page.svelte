@@ -322,19 +322,22 @@
 			<User class="text-secondary-500" size={18} aria-hidden="true" />
 			Profile
 		</h2>
-		<dl class="grid gap-2 text-sm sm:grid-cols-2">
-			<div>
+		<!-- min-w-0 on every cell and break-words on every value: a generated username or email is one
+		     unbroken token, and a grid item defaults to min-width auto, so the track grew to the token
+		     and the row painted past the card at phone width. -->
+		<dl class="grid min-w-0 gap-2 text-sm sm:grid-cols-2">
+			<div class="min-w-0">
 				<dt class="text-surface-600-400">Username</dt>
-				<dd>{data.user.username ?? data.user.name}</dd>
+				<dd class="break-words">{data.user.username ?? data.user.name}</dd>
 			</div>
-			<div>
+			<div class="min-w-0">
 				<dt class="text-surface-600-400">Display name</dt>
-				<dd>{data.user.name}</dd>
+				<dd class="break-words">{data.user.name}</dd>
 			</div>
-			<div>
+			<div class="min-w-0">
 				<dt class="text-surface-600-400">Email</dt>
-				<dd class="flex flex-wrap items-center gap-2">
-					<span>{data.user.email}</span>
+				<dd class="flex min-w-0 flex-wrap items-center gap-2">
+					<span class="min-w-0 break-words">{data.user.email}</span>
 					{#if data.user.emailVerified}
 						<span class="chip preset-filled-success-500 text-xs">Verified</span>
 					{:else}
@@ -342,11 +345,11 @@
 					{/if}
 				</dd>
 			</div>
-			<div>
+			<div class="min-w-0">
 				<dt class="text-surface-600-400">Created</dt>
 				<dd>{new Date(data.user.createdAt).toLocaleDateString()}</dd>
 			</div>
-			<div class="sm:col-span-2">
+			<div class="min-w-0 sm:col-span-2">
 				<dt class="text-surface-600-400">Account ID</dt>
 				<dd class="font-mono text-xs break-all">{data.user.id}</dd>
 			</div>

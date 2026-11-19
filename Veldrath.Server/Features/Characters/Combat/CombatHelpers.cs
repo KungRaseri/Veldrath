@@ -200,8 +200,14 @@ internal static class CombatHelpers
         attrs["Gold"] = Math.Max(0, gold - applied.GoldLost);
         entity.Experience = Math.Max(0, entity.Experience - applied.XpLost);
 
-        // Restore 1 HP so the character isn't permanently dead
-        attrs["CurrentHealth"] = 1;
+        // Death is a state, not a health floor: CurrentHealth stays 0 so the character really is dead.
+        //
+        // This used to restore 1 HP "so the character isn't permanently dead", which made the character look alive
+        // to everything downstream — and made RespawnHubCommand refuse, because it only respawns a character at 0 HP.
+        // The measured result was a locked-out player: the client and the combat session agreed they were dead
+        // ("You cannot act while dead."), the server answered respawn with "Character is not dead", and nothing
+        // could move them. Respawn is the recovery path, and it restores 25% of max health.
+        attrs["CurrentHealth"] = 0;
 
         entity.Attributes = SerializeAttrs(attrs);
         await repo.UpdateAsync(entity, ct);

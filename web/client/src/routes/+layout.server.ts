@@ -9,7 +9,9 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		user,
 		access,
 		staff: {
-			foundry: Boolean(user),
+			// The Foundry is readable by every signed-in account, so the header entry is about being signed
+			// in rather than about holding a content permission.
+			portal: Boolean(user),
 			admin: hasPermission(access, Permissions.ManageUsers),
 			mod: hasPermission(access, Permissions.ViewPlayers),
 			editorial: hasPermission(access, Permissions.ManageContent)

@@ -14,6 +14,7 @@
 		UserPlus,
 		Users
 	} from '@lucide/svelte';
+	import { isFoundryPath } from '#lib/foundry/nav';
 
 	let {
 		user = null,
@@ -21,7 +22,8 @@
 	}: {
 		user?: AuthUser | null;
 		staff?: {
-			foundry?: boolean;
+			/** Signed in: the portal is readable and can be contributed to. */
+			portal?: boolean;
 			editorial?: boolean;
 			mod?: boolean;
 			admin?: boolean;
@@ -58,11 +60,16 @@
 				<Users size={16} aria-hidden="true" />
 				<span>Community</span>
 			</a>
-			{#if staff?.foundry}
+			{#if staff?.portal}
+				<!--
+					One entry, at the portal home: the Foundry is where an account reads the catalog and starts
+					something new, and the home routes both jobs. A second "Submit content" link here competed
+					with it for the same intention.
+				-->
 				<a
 					class="site-nav-link"
-					aria-current={active('/submissions')}
-					href={resolve('/(foundry)/submissions')}
+					aria-current={isFoundryPath(page.url.pathname) ? 'page' : undefined}
+					href={resolve('/(foundry)/foundry')}
 				>
 					<Hammer size={16} aria-hidden="true" />
 					<span>Foundry</span>

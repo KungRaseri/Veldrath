@@ -367,17 +367,17 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
             new AuthenticationHeaderValue("Bearer", await GetTokenAsync("CcPatchAttr_User"));
         var begin = await BeginSessionAsync();
 
-        // Standard point-buy that sums correctly
+        // The whole 27-point budget: 15(9) + 14(7) + 13(5) + 8(0) + 10(2) + 12(4).
         var allocations = new
         {
             Allocations = new Dictionary<string, int>
             {
-                ["Strength"] = 14,
-                ["Dexterity"] = 12,
+                ["Strength"] = 15,
+                ["Dexterity"] = 14,
                 ["Constitution"] = 13,
                 ["Intelligence"] = 8,
                 ["Wisdom"] = 10,
-                ["Charisma"] = 8,
+                ["Charisma"] = 12,
             }
         };
         var response = await _client.PatchAsJsonAsync(
@@ -385,6 +385,33 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
             allocations);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task PatchAttributes_PointsUnspent_Returns400()
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("CcPatchAttrPartial_User"));
+        var begin = await BeginSessionAsync();
+
+        // All tens costs 12 of 27, so 15 are unspent and the step must not be accepted.
+        var response = await _client.PatchAsJsonAsync(
+            $"/api/character-creation/sessions/{begin.SessionId}/attributes",
+            new
+            {
+                Allocations = new Dictionary<string, int>
+                {
+                    ["Strength"] = 10,
+                    ["Dexterity"] = 10,
+                    ["Constitution"] = 10,
+                    ["Intelligence"] = 10,
+                    ["Wisdom"] = 10,
+                    ["Charisma"] = 10,
+                }
+            });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync()).Should().Contain("must be spent");
     }
 
     [Fact]
@@ -584,6 +611,8 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
             new { SpeciesSlug = "human" });
         await client.PatchAsJsonAsync($"/api/character-creation/sessions/{begin.SessionId}/background",
             new { BackgroundId = "soldier" });
+        // Finalize refuses a session with unspent points, so the budget is spent first.
+        await AllocateAttributesAsync(client, begin.SessionId);
 
         var response = await client.PostAsJsonAsync(
             $"/api/character-creation/sessions/{begin.SessionId}/finalize",
@@ -611,6 +640,7 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
             new { SpeciesSlug = "human" });
         await client.PatchAsJsonAsync($"/api/character-creation/sessions/{begin.SessionId}/background",
             new { BackgroundId = "soldier" });
+        await AllocateAttributesAsync(client, begin.SessionId);
 
         var response = await client.PostAsJsonAsync(
             $"/api/character-creation/sessions/{begin.SessionId}/finalize",
@@ -639,6 +669,7 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
         await clientA.PatchAsJsonAsync($"/api/character-creation/sessions/{beginA.SessionId}/class", new { ClassName = "warrior" });
         await clientA.PatchAsJsonAsync($"/api/character-creation/sessions/{beginA.SessionId}/species", new { SpeciesSlug = "human" });
         await clientA.PatchAsJsonAsync($"/api/character-creation/sessions/{beginA.SessionId}/background", new { BackgroundId = "soldier" });
+        await AllocateAttributesAsync(clientA, beginA.SessionId);
         var firstResp = await clientA.PostAsJsonAsync(
             $"/api/character-creation/sessions/{beginA.SessionId}/finalize",
             new { CharacterName = (string?)null, DifficultyMode = "normal" });
@@ -649,6 +680,8 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
         await clientB.PatchAsJsonAsync($"/api/character-creation/sessions/{beginB.SessionId}/class", new { ClassName = "warrior" });
         await clientB.PatchAsJsonAsync($"/api/character-creation/sessions/{beginB.SessionId}/species", new { SpeciesSlug = "human" });
         await clientB.PatchAsJsonAsync($"/api/character-creation/sessions/{beginB.SessionId}/background", new { BackgroundId = "soldier" });
+        // The name conflict has to be the reason this fails, so the rest of the session is complete.
+        await AllocateAttributesAsync(clientB, beginB.SessionId);
         // Pass the duplicate name directly in the finalize body (PatchName would return 400 since name is taken)
         var conflictResp = await clientB.PostAsJsonAsync(
             $"/api/character-creation/sessions/{beginB.SessionId}/finalize",
@@ -717,6 +750,7 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
         await client.PatchAsJsonAsync($"/api/character-creation/sessions/{begin.SessionId}/class", new { ClassName = "warrior" });
         await client.PatchAsJsonAsync($"/api/character-creation/sessions/{begin.SessionId}/species", new { SpeciesSlug = "human" });
         await client.PatchAsJsonAsync($"/api/character-creation/sessions/{begin.SessionId}/background", new { BackgroundId = "soldier" });
+        await AllocateAttributesAsync(client, begin.SessionId);
 
         // First finalize — should succeed
         var first = await client.PostAsJsonAsync(
@@ -771,6 +805,10 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
             new { BackgroundId = "soldier" });
         backgroundResp.StatusCode.Should().Be(HttpStatusCode.OK);
 
+        // Allocate the whole budget, which finalize now requires.
+        var attributesResp = await AllocateAttributesAsync(client, sid);
+        attributesResp.StatusCode.Should().Be(HttpStatusCode.OK);
+
         // Finalize
         var finalResp = await client.PostAsJsonAsync(
             $"/api/character-creation/sessions/{sid}/finalize",
@@ -785,6 +823,24 @@ public class CharacterCreationSessionEndpointTests(CharacterCreationFixture fixt
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Spends the whole 27-point budget, which the attributes step and finalize both require now:
+    /// 15(9) + 14(7) + 13(5) + 8(0) + 10(2) + 12(4).
+    /// </summary>
+    private static Task<HttpResponseMessage> AllocateAttributesAsync(HttpClient client, Guid sessionId) =>
+        client.PatchAsJsonAsync($"/api/character-creation/sessions/{sessionId}/attributes", new
+        {
+            Allocations = new Dictionary<string, int>
+            {
+                ["Strength"] = 15,
+                ["Dexterity"] = 14,
+                ["Constitution"] = 13,
+                ["Intelligence"] = 8,
+                ["Wisdom"] = 10,
+                ["Charisma"] = 12,
+            }
+        });
 
     private async Task<BeginSessionResponse> BeginSessionAsync()
     {

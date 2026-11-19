@@ -24,6 +24,20 @@ export interface GameRequestOptions {
 	timeoutMs?: number;
 }
 
+/**
+ * The HTTP status a loader should fail with when an upstream call produced no data.
+ *
+ * A loader that hard-codes `error(404, …)` tells an editor their record is missing when the API actually
+ * throttled (−429) or refused (−403) the call. The upstream status is the honest one; anything that is not a
+ * client/server error (0 for "not configured", or a 2xx that carried no body) becomes a 502.
+ *
+ * @param result The `gameApiFetch` result, for its `status`.
+ * @returns A status SvelteKit's `error()` accepts.
+ */
+export function upstreamStatus(result: { status: number }): number {
+	return result.status >= 400 && result.status < 600 ? result.status : 502;
+}
+
 /** Resolves the server-to-server Veldrath API base URL, or `null` when unconfigured. */
 export function gameApiBaseUrl(): string | null {
 	const base = env.INTERNAL_BRIDGE_URL ?? env.PUBLIC_API_URL;
@@ -48,8 +62,16 @@ export function describeAuthFailure(response: Response): string | null {
 function extractError(body: string, status: number): string {
 	if (body) {
 		try {
-			const parsed = JSON.parse(body) as { error?: string; title?: string; detail?: string };
-			const message = parsed.error ?? parsed.detail ?? parsed.title;
+			// `message` is the shape every Veldrath operation result uses (`MapLifecycleResponse`,
+			// `ContentWriteResult`), so a refused approval or save reads as its reason rather than
+			// "Request failed (400)". The RFC 7807 fields stay for framework-generated bodies.
+			const parsed = JSON.parse(body) as {
+				error?: string;
+				title?: string;
+				detail?: string;
+				message?: string;
+			};
+			const message = parsed.error ?? parsed.detail ?? parsed.title ?? parsed.message;
 			if (message) return message;
 		} catch {
 			// Fall through to the raw body.

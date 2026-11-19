@@ -37,6 +37,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!--
+      DotEnvConfiguration is internal on purpose (it is startup glue, not part of the server's API), but
+      its .env parsing has real branches and the coverage gate counts them. Exposing it to the test
+      project keeps the type internal and the gate honest.
+    -->
+    <InternalsVisibleTo Include="Veldrath.Server.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Game engine: core logic, data access, shared models -->
     <ProjectReference Include="..\Veldrath.Contracts\Veldrath.Contracts.csproj" />
     <ProjectReference Include="..\RealmEngine.Data\RealmEngine.Data.csproj" />

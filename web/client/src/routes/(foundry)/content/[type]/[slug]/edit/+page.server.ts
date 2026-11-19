@@ -1,12 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import {
-	loadAccountAccess,
-	hasPermission,
-	Permissions,
-	requireUser,
-	toGameIdentity
-} from '#lib/server/access';
+import { hasPermission, Permissions, requireUser, toGameIdentity } from '#lib/server/access';
 import {
 	deactivateContent,
 	getContentDetail,
@@ -14,12 +8,17 @@ import {
 	updateContent,
 	validateContentPayload
 } from '#lib/server/content-api';
-import { buildPayload, type ContentIssue } from '#lib/foundry/content-editor';
+import { referenceOptions } from '#lib/server/content-refs';
+import { buildPayload, allFields, type ContentIssue } from '#lib/foundry/content-editor';
 
-/** Loads the entity, its schema, and whether this account may write. */
-export const load: PageServerLoad = async ({ locals, params }) => {
-	const user = requireUser(locals);
-	const access = await loadAccountAccess(user);
+/**
+ * Loads the entity, its schema, and whether this account may write.
+ *
+ * Any signed-in account may open it — the page explains that editing needs the editor permission rather than
+ * answering 403 — and the write actions are refused by the API if the permission is missing.
+ */
+export const load: PageServerLoad = async ({ parent, params }) => {
+	const { access } = await parent();
 	const canEdit = hasPermission(access, Permissions.ManageContent);
 
 	const [detail, schema] = await Promise.all([
@@ -41,7 +40,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		canEdit,
 		schema: schema.data,
 		summary: detail.data.summary,
-		payload: detail.data.payload
+		payload: detail.data.payload,
+		refOptions: await referenceOptions(allFields(schema.data))
 	};
 };
 

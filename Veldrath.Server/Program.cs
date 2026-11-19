@@ -24,6 +24,7 @@ using Veldrath.Server.Features.Admin;
 using Veldrath.Server.Features.Announcements;
 using Veldrath.Server.Features.Auth;
 using Veldrath.Server.Features.Characters;
+using Veldrath.Server.Features.Characters.Chests;
 using Veldrath.Server.Features.Characters.Combat;
 using Veldrath.Server.Features.Content;
 using Veldrath.Server.Features.Dev;
@@ -143,6 +144,8 @@ try
     builder.Services.AddScoped<AccountProvisioningService>();
     builder.Services.AddScoped<FoundryService>();
     builder.Services.AddScoped<FoundryNotificationWriter>();
+    // The content write path, shared by the editor's endpoints and Foundry's review gate.
+    builder.Services.AddScoped<Veldrath.Server.Features.Content.ContentWriteService>();
 
     // IEmailSender: use NullEmailSender when SmtpHost is not configured (dev / CI).
     // Switch to SmtpEmailSender by setting Email:SmtpHost in the environment or user-secrets.
@@ -176,8 +179,24 @@ try
         .Bind(builder.Configuration.GetSection(EnemyWorldOptions.SectionName))
         .ValidateDataAnnotations()
         .ValidateOnStart();
+
+    // How long an emptied resource node stays empty; applied by the chest sweeper below.
+    builder.Services.AddOptions<HarvestingOptions>()
+        .Bind(builder.Configuration.GetSection(HarvestingOptions.SectionName))
+        .ValidateDataAnnotations()
+        .ValidateOnStart();
+
+    // Chest reopen window, roaming cadence and per-zone cap. The sweeper rides its own timer because chests
+    // have to appear on schedule whether or not anyone is standing there.
+    builder.Services.AddOptions<ChestOptions>()
+        .Bind(builder.Configuration.GetSection(ChestOptions.SectionName))
+        .ValidateDataAnnotations()
+        .ValidateOnStart();
+    builder.Services.AddHostedService<ChestService>();
     builder.Services.AddHostedService<EnemyRespawnService>();
-    builder.Services.AddHostedService<ContentAuditService>();
+    // Registered as both: the host runs it once at startup, and the world-health endpoint runs it on demand.
+    builder.Services.AddSingleton<ContentAuditService>();
+    builder.Services.AddHostedService(sp => sp.GetRequiredService<ContentAuditService>());
 
     builder.Services.AddOptions<PartyOptions>()
         .Bind(builder.Configuration.GetSection(PartyOptions.SectionName))
@@ -390,6 +409,18 @@ try
             // Seed baseline content (idempotent — skips each table that already has rows).
             await DatabaseSeeder.SeedAsync(services);
 
+            // Authored chests live in the application database, beside the ground items they resemble, and are
+            // idempotent by chest id so a restart never refills a chest a player emptied a moment ago.
+            await Veldrath.Server.Data.Seeders.LootChestsSeeder.SeedAsync(appDb);
+
+            // The people the world's own content names. Without placement, a `talk:` objective has nobody to
+            // talk to — which is how the main-story quest became unfinishable.
+            await Veldrath.Server.Data.Seeders.LocationNpcsSeeder.SeedAsync(appDb);
+
+            // Authored resource nodes. Separate from the content seeders because node state lives in
+            // GameDbContext, and it is idempotent by node id so a restart never restores a depleted node.
+            await Veldrath.Server.Data.Seeders.HarvestableNodesSeeder.SeedAsync(gameDb);
+
         }
 
         // Seed all identity roles and their default permission claims.
@@ -425,6 +456,7 @@ try
     app.MapContentEndpoints();
     app.MapMapEditorEndpoints();
     app.MapContentWriteEndpoints();
+    app.MapContentAuditEndpoints();
     app.MapAdminEndpoints();
     app.MapPlayerEndpoints();
     app.MapEditorialEndpoints();

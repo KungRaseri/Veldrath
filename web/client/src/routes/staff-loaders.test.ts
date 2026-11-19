@@ -31,7 +31,13 @@ const adminApi = vi.hoisted(() => ({
 	resolveModReport: vi.fn()
 }));
 
+/** The Foundry layout asks the inbox for a badge count on every page. */
+const foundryApi = vi.hoisted(() => ({
+	getUnreadNotificationCount: vi.fn()
+}));
+
 vi.mock('#lib/server/admin-api', () => adminApi);
+vi.mock('#lib/server/foundry-api', () => foundryApi);
 
 /** The RBAC snapshot the group layouts read from `parent()`. */
 interface Access {
@@ -104,6 +110,7 @@ const player = {
 };
 
 beforeEach(() => {
+	foundryApi.getUnreadNotificationCount.mockResolvedValue(ok({ count: 4 }));
 	adminApi.listModUsers.mockResolvedValue(ok(page([player])));
 	adminApi.listModReports.mockResolvedValue(ok(page([])));
 	adminApi.getModUser.mockResolvedValue(ok(player));
@@ -138,23 +145,61 @@ describe('group layouts', () => {
 		});
 	});
 
-	it('only requires a session for the Foundry group and derives its nav capabilities', async () => {
+	it('only requires a session for the Foundry group and derives its nav flags', async () => {
 		await expect(callLoad(foundryLayout, makeServerEvent())).rejects.toThrow();
 
 		const result = (await callLoad(foundryLayout, makeServerEvent({ user: fakeUser() }))) as {
 			user: unknown;
-			canViewContent: boolean;
+			canAudit: boolean;
 			canManageContent: boolean;
-			canReviewSubmissions: boolean;
+			canReview: boolean;
+			unreadNotifications: number;
 		};
 
 		expect(result.user).toEqual(fakeUser());
-		// No RBAC snapshot in this event, so every capability is denied rather than assumed.
-		expect(result.canViewContent).toBe(false);
+		// No RBAC snapshot in this event, so every capability is denied rather than assumed. Reading is not a
+		// capability any more: the portal is open to every signed-in account.
+		expect(result.canAudit).toBe(false);
 		expect(result.canManageContent).toBe(false);
-		expect(result.canReviewSubmissions).toBe(false);
+		expect(result.canReview).toBe(false);
+		expect(result.unreadNotifications).toBe(4);
 		// The layout hands out flags, not the whole access object.
 		expect(result).not.toHaveProperty('access');
+	});
+
+	it('gates the review entry on the review permission, which is what the decisions require', async () => {
+		const curator: Access = {
+			accountId: 'acct-3',
+			username: 'sereth',
+			roles: ['Curator'],
+			permissions: ['content.review', 'content.view']
+		};
+
+		const asCurator = (await callLoad(foundryLayout, staffEvent(curator))) as {
+			canAudit: boolean;
+			canReview: boolean;
+		};
+
+		expect(asCurator.canReview).toBe(true);
+		expect(asCurator.canAudit).toBe(true);
+
+		// An Admin holds every permission but not the Curator role. The decision endpoints check the
+		// permission, so the queue is offered rather than hidden behind a role the account never needed.
+		const asAdmin = (await callLoad(foundryLayout, staffEvent(adminAccess))) as {
+			canReview: boolean;
+		};
+
+		expect(asAdmin.canReview).toBe(true);
+	});
+
+	it('degrades a failed unread count to zero instead of failing the whole group', async () => {
+		foundryApi.getUnreadNotificationCount.mockResolvedValueOnce(failed('the inbox is down', 502));
+
+		const result = (await callLoad(foundryLayout, staffEvent(playerAccess))) as {
+			unreadNotifications: number;
+		};
+
+		expect(result.unreadNotifications).toBe(0);
 	});
 });
 

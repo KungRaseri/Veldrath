@@ -7,7 +7,46 @@
 
 /** Field types the server's `ContentFieldType` enum can carry. */
 export type ContentFieldKind =
-	'Text' | 'Slug' | 'LongText' | 'Integer' | 'Decimal' | 'Boolean' | 'EnumString';
+	| 'Text'
+	| 'Slug'
+	| 'LongText'
+	| 'Integer'
+	| 'Decimal'
+	| 'Boolean'
+	| 'EnumString'
+	| 'StringList'
+	| 'KeyValue'
+	| 'ObjectList'
+	| 'Reference';
+
+/**
+ * The same list as data, in the server enum's declaration order.
+ *
+ * A parity test reads `Veldrath.Contracts/Content/ContentSchema.cs` and compares the two, so adding a kind
+ * on one side and forgetting the other fails a test instead of silently rendering a text input.
+ */
+export const CONTENT_FIELD_KINDS: readonly ContentFieldKind[] = [
+	'Text',
+	'Slug',
+	'LongText',
+	'Integer',
+	'Decimal',
+	'Boolean',
+	'EnumString',
+	'StringList',
+	'KeyValue',
+	'ObjectList',
+	'Reference'
+];
+
+/** One row of an `ObjectList`: the property names the row descriptors declare. */
+export type ContentRow = Record<string, unknown>;
+
+/** Whatever a single field holds in form state. */
+export type FieldValue = string | boolean | string[] | ContentRow[];
+
+/** The whole form's state, keyed by field name. */
+export type FieldValues = Record<string, FieldValue>;
 
 /** One editable field from the content schema. */
 export interface ContentField {
@@ -20,6 +59,12 @@ export interface ContentField {
 	max: number | null;
 	enumValues: string[] | null;
 	hint: string | null;
+	/** The row shape of an `ObjectList`, relative to the row rather than a dot-path. */
+	items?: ContentField[] | null;
+	/** The content type a `Reference` points at, e.g. `item`. */
+	refType?: string | null;
+	/** Whether a `Reference` holds several slugs. */
+	multiple?: boolean;
 }
 
 /** A named group of fields (`Identity`, `Stats`, `Traits`, …). */
@@ -51,6 +96,23 @@ export function allFields(schema: ContentTypeSchema | null): ContentField[] {
 	return schema.groups.flatMap((group) => group.fields);
 }
 
+/**
+ * Whether a field holds one scalar value, which a plain form control can author.
+ *
+ * The collections need a list or row editor and are built client-side; everything else can be posted as a
+ * string and coerced, which is what the create routes rely on.
+ *
+ * @param field A field descriptor.
+ * @returns `true` for scalar kinds, `false` for `StringList`, `KeyValue` and `ObjectList`.
+ */
+export function isScalarKind(field: ContentField): boolean {
+	return (
+		field.fieldType !== 'StringList' &&
+		field.fieldType !== 'KeyValue' &&
+		field.fieldType !== 'ObjectList'
+	);
+}
+
 /** Reads a dot-path out of a payload, returning `undefined` when any segment is missing. */
 export function readPath(payload: Record<string, unknown>, path: string): unknown {
 	return path.split('.').reduce<unknown>((current, segment) => {
@@ -80,10 +142,24 @@ export function writePath(
 	return clone;
 }
 
-/** Converts a form input's string value to the shape the payload expects. */
-export function coerceFieldValue(field: ContentField, raw: string | boolean): unknown {
+/** Converts a form value to the shape the payload expects. */
+export function coerceFieldValue(field: ContentField, raw: FieldValue): unknown {
 	if (field.fieldType === 'Boolean') {
-		return typeof raw === 'boolean' ? raw : raw === 'true';
+		// `on` is what a checkbox submits when the markup gives it no `value`. It means "checked" — reading it
+		// as anything else silently saved every boolean false, which is how a saved entry became inactive and
+		// vanished from the catalog it was just created in.
+		if (typeof raw === 'boolean') return raw;
+		return raw === 'true' || raw === 'on';
+	}
+
+	// A key/value field is edited as rows so they can be reordered, and stored as an object.
+	if (field.fieldType === 'KeyValue') {
+		return pairsToObject(Array.isArray(raw) ? (raw as ContentRow[]) : []);
+	}
+
+	// The other collections are already in payload shape: the editors build arrays, not strings.
+	if (field.fieldType === 'StringList' || field.fieldType === 'ObjectList') {
+		return raw;
 	}
 
 	const text = String(raw).trim();
@@ -98,10 +174,12 @@ export function coerceFieldValue(field: ContentField, raw: string | boolean): un
 	return text;
 }
 
-/** Renders a payload value as the string a form input binds to. */
+/** Renders a scalar payload value as the string a form input binds to. */
 export function toInputValue(value: unknown): string {
 	if (value === null || value === undefined) return '';
 	if (typeof value === 'boolean') return value ? 'true' : 'false';
+	// Collections are rendered by their own editors, never by a text input.
+	if (typeof value !== 'string' && typeof value !== 'number') return '';
 	return String(value);
 }
 
@@ -138,7 +216,7 @@ export function hasBlockingIssues(issues: ContentIssue[]): boolean {
 export function buildPayload(
 	original: Record<string, unknown>,
 	schema: ContentTypeSchema | null,
-	values: Record<string, string | boolean>
+	values: FieldValues
 ): Record<string, unknown> {
 	let payload = { ...original };
 
@@ -154,11 +232,28 @@ export function buildPayload(
 export function initialValues(
 	payload: Record<string, unknown>,
 	schema: ContentTypeSchema | null
-): Record<string, string | boolean> {
-	const values: Record<string, string | boolean> = {};
+): FieldValues {
+	const values: FieldValues = {};
 
 	for (const field of allFields(schema)) {
 		const current = readPath(payload, field.name);
+
+		if (field.fieldType === 'StringList') {
+			values[field.name] = readList(payload, field.name);
+			continue;
+		}
+
+		if (field.fieldType === 'ObjectList') {
+			values[field.name] = readRows(payload, field.name);
+			continue;
+		}
+
+		if (field.fieldType === 'KeyValue') {
+			// Seeded as rows so the two-column editor can reorder them; `pairsToObject` turns it back.
+			values[field.name] = readPairs(payload, field.name);
+			continue;
+		}
+
 		if (current === undefined || current === null) {
 			values[field.name] = field.default ?? '';
 			continue;
@@ -168,4 +263,340 @@ export function initialValues(
 	}
 
 	return values;
+}
+
+/** Reads a string list out of a payload, ignoring anything that is not an array of strings. */
+export function readList(payload: Record<string, unknown>, path: string): string[] {
+	const current = readPath(payload, path);
+	if (!Array.isArray(current)) return [];
+	return current.filter((entry): entry is string => typeof entry === 'string');
+}
+
+/** Reads an array of objects (an `ObjectList` value) out of a payload, copying each row. */
+export function readRows(payload: Record<string, unknown>, path: string): ContentRow[] {
+	const current = readPath(payload, path);
+	if (!Array.isArray(current)) return [];
+
+	return current
+		.filter(
+			(entry): entry is ContentRow =>
+				entry !== null && typeof entry === 'object' && !Array.isArray(entry)
+		)
+		.map((entry) => ({ ...entry }));
+}
+
+/**
+ * Reads a `KeyValue` object as ordered rows.
+ *
+ * A JSON object has no order the editor can preserve, so the field is edited as rows and converted back by
+ * `pairsToObject` — which is what lets an author reorder trait flags without retyping them.
+ */
+export function readPairs(payload: Record<string, unknown>, path: string): ContentRow[] {
+	const current = readPath(payload, path);
+	if (current === null || typeof current !== 'object' || Array.isArray(current)) return [];
+
+	return Object.entries(current as Record<string, unknown>).map(([key, value]) => ({
+		key,
+		value: value === null || value === undefined ? '' : String(value)
+	}));
+}
+
+/** Turns `KeyValue` rows back into the object the payload expects; a blank key is dropped. */
+export function pairsToObject(pairs: readonly ContentRow[]): Record<string, string> {
+	const result: Record<string, string> = {};
+
+	for (const pair of pairs) {
+		const key = String(pair.key ?? '').trim();
+		if (key === '') continue;
+		result[key] = String(pair.value ?? '');
+	}
+
+	return result;
+}
+
+/** A new row for an `ObjectList`, seeded from each row descriptor's default. */
+export function rowFromItems(items: readonly ContentField[] | null | undefined): ContentRow {
+	const row: ContentRow = {};
+
+	for (const item of items ?? []) {
+		row[item.name] = item.fieldType === 'Boolean' ? item.default === 'true' : (item.default ?? '');
+	}
+
+	return row;
+}
+
+/** Appends one entry to a list. */
+export function appendTo<T>(list: readonly T[], entry: T): T[] {
+	return [...list, entry];
+}
+
+/** Removes the entry at `index`, returning the list unchanged in order when the index is out of range. */
+export function removeAt<T>(list: readonly T[], index: number): T[] {
+	if (index < 0 || index >= list.length) return [...list];
+	return list.filter((_, position) => position !== index);
+}
+
+/** Moves the entry at `index` by `delta`, ignoring a move that would fall off either end. */
+export function moveAt<T>(list: readonly T[], index: number, delta: number): T[] {
+	const target = index + delta;
+	if (index < 0 || index >= list.length || target < 0 || target >= list.length) return [...list];
+
+	const next = [...list];
+	const [entry] = next.splice(index, 1);
+	next.splice(target, 0, entry);
+	return next;
+}
+
+/** Replaces one property of one row, returning a new list so the change is visible to `$state`. */
+export function setRowValue(
+	rows: readonly ContentRow[],
+	index: number,
+	name: string,
+	value: unknown
+): ContentRow[] {
+	return rows.map((row, position) => (position === index ? { ...row, [name]: value } : row));
+}
+
+/**
+ * Lowercase, hyphenated slug derived from a display name.
+ *
+ * Accents are folded rather than dropped, so `Café Noir` becomes `cafe-noir` instead of `caf-noir`. The
+ * server validates the slug with the same shape, which is why the editor derives it instead of letting the
+ * author discover the rule from a rejection.
+ *
+ * @param text The display name.
+ * @returns The slug, or `''` when nothing alphanumeric survives.
+ */
+export function slugify(text: string): string {
+	return text
+		.normalize('NFKD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/^-+|-+$/g, '');
+}
+
+/**
+ * A URL-safe anchor id for a group heading, so the form can link to its own sections.
+ *
+ * @param label The group label.
+ * @returns The anchor, never empty.
+ */
+export function anchorId(label: string): string {
+	return slugify(label) || 'section';
+}
+
+/**
+ * Whether the form holds edits that would be lost.
+ *
+ * @param seed The values the form was seeded with.
+ * @param values The values it holds now.
+ * @returns `true` when any field differs, including one the seed did not have.
+ */
+export function isDirty(seed: FieldValues, values: FieldValues): boolean {
+	const keys = new Set([...Object.keys(seed), ...Object.keys(values)]);
+
+	for (const key of keys) {
+		if (!sameValue(seed[key], values[key])) return true;
+	}
+
+	return false;
+}
+
+/**
+ * Whether two field values are equal.
+ *
+ * Collections have to be compared by content: the editors rebuild arrays and objects on every edit, so a
+ * reference comparison would report a form dirty the moment it re-rendered.
+ */
+function sameValue(a: FieldValue | undefined, b: FieldValue | undefined): boolean {
+	if (a === b) return true;
+	if (a === undefined || b === undefined) return false;
+	return JSON.stringify(a) === JSON.stringify(b);
+}
+
+/**
+ * The required fields the form left blank.
+ *
+ * A boolean is never blank — unchecked means `false`, which is a value — and a number field left empty is
+ * blank rather than `0`, because `coerceFieldValue` turns it into `null`.
+ *
+ * @param schema The content type schema.
+ * @param values The form values.
+ * @returns The field names, in schema order.
+ */
+export function missingRequired(schema: ContentTypeSchema | null, values: FieldValues): string[] {
+	return allFields(schema)
+		.filter((field) => field.required && field.fieldType !== 'Boolean')
+		.filter((field) => isBlank(values[field.name]))
+		.map((field) => field.name);
+}
+
+/** A blank scalar is `''`; a blank collection is an empty list. */
+function isBlank(value: FieldValue | undefined): boolean {
+	if (value === undefined) return true;
+	if (Array.isArray(value)) return value.length === 0;
+	if (typeof value === 'boolean') return false;
+	return String(value).trim() === '';
+}
+
+/** How one field differs between a stored entity and a proposed payload. */
+export interface FieldChange {
+	/** The field's dot-path name. */
+	field: string;
+	/** The schema's label for it. */
+	label: string;
+	/** The stored value, rendered for reading. */
+	before: string;
+	/** The proposed value, rendered for reading. */
+	after: string;
+	/** `added` when there is no stored entity, `changed` when both exist and differ. */
+	kind: 'added' | 'changed';
+}
+
+/** Renders a payload value for a diff: collections compactly, empties as a dash. */
+function diffValue(value: unknown): string {
+	if (value === null || value === undefined || value === '') return '—';
+	if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+	if (typeof value === 'object') return JSON.stringify(value);
+	return String(value);
+}
+
+/**
+ * The fields where a proposed payload differs from what the catalog holds.
+ *
+ * A reviewer should see what approving actually changes, field by field, instead of comparing two JSON
+ * blobs. Fields the schema does not describe are ignored: they are not what a reviewer is deciding about.
+ *
+ * @param schema The content type's schema, or `null` when the type has none.
+ * @param previous The stored payload, or `null` when the catalog has no entry with this slug yet.
+ * @param next The proposed payload.
+ * @returns One entry per differing field, in schema order.
+ */
+export function diffFields(
+	schema: ContentTypeSchema | null,
+	previous: Record<string, unknown> | null,
+	next: Record<string, unknown>
+): FieldChange[] {
+	const changes: FieldChange[] = [];
+
+	for (const field of allFields(schema)) {
+		const before = diffValue(readPath(previous ?? {}, field.name));
+		const after = diffValue(readPath(next, field.name));
+		if (before === after) continue;
+
+		changes.push({
+			field: field.name,
+			label: field.label,
+			before,
+			after,
+			kind: previous === null ? 'added' : 'changed'
+		});
+	}
+
+	return changes;
+}
+
+/** Hrefs a preview link may use. Anything else stays literal text. */
+const SAFE_HREF = /^(https?:\/\/|\/|#)/i;
+
+/** One run of text, with at most one emphasis and an optional link target. */
+export interface MarkdownSpan {
+	/** The literal text, already the thing to render — never markup. */
+	text: string;
+	/** Set when the run came from `` `code` ``. */
+	code?: boolean;
+	/** Set when the run came from `**strong**`. */
+	strong?: boolean;
+	/** Set when the run came from `_emphasis_`. */
+	em?: boolean;
+	/** Set when the run came from `[label](href)` and the href is safe. */
+	href?: string;
+}
+
+/** One blank-line-separated block. */
+export type MarkdownBlock =
+	| { kind: 'heading'; level: number; spans: MarkdownSpan[] }
+	| { kind: 'list'; items: MarkdownSpan[][] }
+	| { kind: 'paragraph'; lines: MarkdownSpan[][] };
+
+/** The inline subset, scanned left to right so each construct becomes one span. */
+const INLINE = /`([^`]+)`|\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)\s]+)\)|_([^_]+)_/g;
+
+/** Splits one line into spans. Nested emphasis is not supported and simply reads as text. */
+function parseInline(text: string): MarkdownSpan[] {
+	const spans: MarkdownSpan[] = [];
+	let cursor = 0;
+
+	INLINE.lastIndex = 0;
+
+	for (let match = INLINE.exec(text); match !== null; match = INLINE.exec(text)) {
+		if (match.index > cursor) {
+			spans.push({ text: text.slice(cursor, match.index) });
+		}
+
+		if (match[1] !== undefined) {
+			spans.push({ text: match[1], code: true });
+		} else if (match[2] !== undefined) {
+			spans.push({ text: match[2], strong: true });
+		} else if (match[3] !== undefined) {
+			// An unsafe href keeps the whole construct as text rather than rendering a link nobody should click.
+			spans.push(
+				SAFE_HREF.test(match[4]) ? { text: match[3], href: match[4] } : { text: match[0] }
+			);
+		} else if (match[5] !== undefined) {
+			spans.push({ text: match[5], em: true });
+		}
+
+		cursor = match.index + match[0].length;
+	}
+
+	if (cursor < text.length) {
+		spans.push({ text: text.slice(cursor) });
+	}
+
+	return spans;
+}
+
+/**
+ * Parses the `LongText` preview.
+ *
+ * Deliberately a small subset — headings, lists, paragraphs, bold, italic, inline code and links — rather
+ * than a markdown library, and deliberately a *structure* rather than an HTML string: the caller renders
+ * spans with Svelte markup, so author input is escaped by the template compiler and there is no `{@html}`
+ * on a path an author controls. Links carry an `href` only when it is `http(s)`, a path or an anchor.
+ *
+ * @param markdown The field's value.
+ * @returns The blocks to render, or an empty list for blank input.
+ */
+export function parseMarkdown(markdown: string): MarkdownBlock[] {
+	const source = markdown.trim();
+	if (source === '') return [];
+
+	return source.split(/\n{2,}/).flatMap((chunk): MarkdownBlock[] => {
+		const lines = chunk
+			.split('\n')
+			.map((line) => line.trim())
+			.filter(Boolean);
+
+		if (lines.length === 0) return [];
+
+		const heading = /^(#{1,6})\s+(.*)$/.exec(lines[0]);
+		if (heading && lines.length === 1) {
+			// The preview sits inside an `<h2>` section heading, so the source's `#` maps to `h3` at the smallest.
+			return [
+				{
+					kind: 'heading',
+					level: Math.min(heading[1].length + 2, 6),
+					spans: parseInline(heading[2])
+				}
+			];
+		}
+
+		if (lines.every((line) => line.startsWith('- ') || line.startsWith('* '))) {
+			return [{ kind: 'list', items: lines.map((line) => parseInline(line.slice(2))) }];
+		}
+
+		return [{ kind: 'paragraph', lines: lines.map(parseInline) }];
+	});
 }

@@ -34,6 +34,25 @@ export interface ContentPagedResult {
 	pageSize: number;
 }
 
+/** One finding from the content audit. */
+export interface ContentAuditIssue {
+	/** Stable rule id, e.g. `missing-quest-target`. */
+	rule: string;
+	/** Human-readable description naming both sides of the problem. */
+	message: string;
+	/** `Warning` or `Error`. */
+	severity: string;
+	/** Dotted field path, when the issue points at one. */
+	field: string | null;
+	/** Slug of the entity that owns the issue. */
+	identifier: string | null;
+}
+
+/** Runs the content audit over the whole catalog. Requires `content.view`. */
+export function runContentAudit(identity: GameIdentity | null) {
+	return gameApiFetch<ContentAuditIssue[]>(identity, '/api/content/audit');
+}
+
 /** Lists all registered content type schemas (public). */
 export function listContentTypes() {
 	return gameApiFetch<ContentTypeInfo[]>(null, '/api/content/schema');
@@ -57,6 +76,24 @@ export function getContentDetail(contentType: string, slug: string) {
 		null,
 		`/api/content/browse/${encodeURIComponent(contentType)}/${encodeURIComponent(slug)}`
 	);
+}
+
+/** A zone location as the catalog serves it, mirroring `Veldrath.Contracts.Content.ZoneLocationDto`. */
+export interface ZoneLocation {
+	slug: string;
+	displayName: string;
+	/** The zone this location belongs to — what pairs it with a zone map's owner. */
+	zoneId: string;
+}
+
+/**
+ * Lists the active zone locations (public).
+ *
+ * The endpoint filters by type, not by zone, so the caller narrows to one zone: the map editor wants the
+ * locations that belong to the graph's owner and nothing else.
+ */
+export function listZoneLocations() {
+	return gameApiFetch<ZoneLocation[]>(null, '/api/content/zone-locations');
 }
 
 /** One validation issue returned by the write path. */

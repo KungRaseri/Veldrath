@@ -14,8 +14,19 @@ import type { MapGraphDto, MapNodeDto } from './map-editor';
  *    stacked, so the drawing always shows what the game will do.
  */
 
-/** Pixel size of one grid step. */
-export const CELL = 96;
+/** Card size in pixels — the node tile the canvas draws. */
+export const CARD = 80;
+
+/** Space left between two adjacent cards, in pixels. */
+export const GAP = 24;
+
+/**
+ * Pixel size of one grid step.
+ *
+ * One step is one card plus its gutter, so two neighbours are exactly {@link GAP} pixels apart. This used to
+ * be a larger constant, which read as "the nodes are miles apart" next to an 80px card.
+ */
+export const CELL = CARD + GAP;
 
 /** Largest grid coordinate the editor will author. Beyond this the map stops being readable. */
 export const MAX_CELL = 200;

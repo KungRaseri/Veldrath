@@ -1,6 +1,10 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Veldrath.Server.Data;
 using Veldrath.Server.Tests.Infrastructure;
 
 namespace Veldrath.Server.Tests.Features;
@@ -61,6 +65,31 @@ public class CharacterEndpointTests(WebAppFactory factory)
         after.Should().NotBeNull();
         after!.Used.Should().Be(before!.Used + 1);
         after.Remaining.Should().Be(Math.Max(0, before.Remaining - 1));
+    }
+
+    [Fact]
+    public async Task CreateCharacter_Should_Seed_A_Playable_AttributeBlob()
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("Char_Stats_User"));
+
+        var response = await _client.PostAsJsonAsync("/api/characters",
+            new { Name = "Statcheck", ClassName = "Warrior" });
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var created = await response.Content.ReadFromJsonAsync<CharacterDto>();
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var stored = await db.Characters.AsNoTracking().SingleAsync(c => c.Id == created!.Id);
+        var attrs = JsonSerializer.Deserialize<Dictionary<string, int>>(stored.Attributes)!;
+
+        // The blob is what the hub, combat, resting and crafting read. Without it a character fell back to
+        // Level * 10 = 10 HP, which no enemy in the seeded world can fail to kill.
+        attrs["MaxHealth"].Should().Be(attrs["Constitution"] * 10 + 5, "the engine formula, not the Level * 10 fallback");
+        attrs["MaxHealth"].Should().BeGreaterThan(50);
+        attrs["CurrentHealth"].Should().Be(attrs["MaxHealth"]);
+        attrs["MaxMana"].Should().Be(attrs["Wisdom"] * 5 + 3);
+        attrs["CurrentMana"].Should().Be(attrs["MaxMana"]);
     }
 
     [Fact]

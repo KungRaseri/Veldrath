@@ -1,31 +1,35 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
+	import ContentRenderer from '#lib/components/foundry/ContentRenderer.svelte';
+	import FoundryBreadcrumbs from '#lib/components/foundry/FoundryBreadcrumbs.svelte';
+	import FoundryPageHeader from '#lib/components/foundry/FoundryPageHeader.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
-	const prettyPayload = $derived(JSON.stringify(data.payload, null, 2));
+	/** The entity's name; both parts can be absent on a sparse record, and a template literal would say "null". */
+	const label = $derived(data.summary.displayName ?? data.slug ?? 'Untitled');
+	const description = $derived(
+		`${data.summary.contentType} · ${data.summary.typeKey ?? 'untyped'} · ${data.summary.isActive ? 'active' : 'inactive'}`
+	);
 </script>
 
 <svelte:head>
-	<title>{data.summary.displayName ?? data.slug} — Foundry content</title>
+	<title>{label} — Foundry content</title>
 </svelte:head>
 
-<div class="mx-auto max-w-4xl space-y-4 p-6">
-	<a class="text-sm text-primary-500" href={`/content/${data.contentType}`}>
-		← All {data.contentType} entries
-	</a>
+<div class="space-y-4">
+	<FoundryBreadcrumbs
+		items={[
+			{ label: 'Foundry', href: '/foundry' },
+			{
+				label: data.schema?.displayLabel ?? data.contentType,
+				href: `/content/${data.contentType}`
+			},
+			{ label }
+		]}
+	/>
 
-	<header class="space-y-1">
-		<p class="text-xs tracking-wide text-surface-600-400 uppercase">
-			{data.summary.contentType} · {data.summary.typeKey}
-		</p>
-		<h1 class="h1">{data.summary.displayName ?? data.slug}</h1>
-		<p class="text-surface-600-400">
-			<span class="font-mono text-xs">{data.summary.slug}</span> · rarity
-			{data.summary.rarityWeight} · {data.summary.isActive ? 'active' : 'inactive'}
-		</p>
-	</header>
+	<FoundryPageHeader title={label} {description} />
 
 	{#if data.canEdit}
 		<a
@@ -36,12 +40,5 @@
 		</a>
 	{/if}
 
-	<section class="space-y-2 card p-4">
-		<h2 class="h3">Entity payload</h2>
-		<pre class="overflow-auto text-xs">{prettyPayload}</pre>
-	</section>
-
-	<a class="text-sm text-primary-500" href={resolve('/(foundry)/content')}
-		>← Back to content types</a
-	>
+	<ContentRenderer schema={data.schema} payload={data.payload} />
 </div>

@@ -62,11 +62,22 @@ public class AllocateCreationAttributesHandler(
             return new AllocateCreationAttributesResult { Success = false, Message = reason };
         }
 
+        // The budget is a constraint, not a suggestion: a partial allocation was accepted here, stored,
+        // and then handed to CreateCharacterCommand unchanged, so a client that skipped the step created a
+        // character at the minimum stat line with its points unused. "All stat points must be allocated"
+        // is the rule, and it has to hold for the API and not only for the wizard.
+        int spent = Config.CalculateTotalCost(request.Allocations);
+        int remaining = Config.TotalPoints - spent;
+        if (remaining > 0)
+        {
+            string reason = $"All attribute points must be spent before continuing; {remaining} of {Config.TotalPoints} remain unspent.";
+            logger.LogDebug("Session {SessionId}: partial attribute allocation refused — {Reason}", request.SessionId, reason);
+            return new AllocateCreationAttributesResult { Success = false, Message = reason, RemainingPoints = remaining };
+        }
+
         session.AttributeAllocations = new Dictionary<string, int>(request.Allocations);
         await sessionStore.UpdateSessionAsync(session);
 
-        int spent = Config.CalculateTotalCost(request.Allocations);
-        int remaining = Config.TotalPoints - spent;
         logger.LogDebug("Session {SessionId}: attributes allocated, {Remaining} points remaining", request.SessionId, remaining);
         return new AllocateCreationAttributesResult { Success = true, Message = "Attributes allocated.", RemainingPoints = remaining };
     }

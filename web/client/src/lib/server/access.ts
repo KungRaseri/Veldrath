@@ -42,10 +42,16 @@ interface AccountProfileResponse {
 	permissions: string[];
 }
 
-/** Redirects anonymous visitors to the login page and returns the signed-in user. */
-export function requireUser(locals: App.Locals): AuthUser {
+/**
+ * Redirects anonymous visitors to the login page and returns the signed-in user.
+ *
+ * @param locals Request locals, which carry the Better Auth session.
+ * @param redirectTo Optional local path to return to after signing in, so a deep link into a guarded area
+ * lands where the visitor asked for instead of on the default destination.
+ */
+export function requireUser(locals: App.Locals, redirectTo?: string): AuthUser {
 	if (!locals.user) {
-		redirect(303, '/login');
+		redirect(303, redirectTo ? `/login?redirectTo=${encodeURIComponent(redirectTo)}` : '/login');
 	}
 
 	return locals.user;

@@ -508,6 +508,86 @@ export interface LocationEnteredPayload {
 	spawnedEnemies?: SpawnedEnemy[] | null;
 }
 
+/** A resource node standing in the current location. */
+export interface LocationNode {
+	nodeId: string;
+	displayName: string;
+	materialTier: string;
+	healthPercent: number;
+	state: string;
+	canHarvest: boolean;
+}
+
+/** The nodes here, sent on entering a location and refreshed after every attempt. */
+export interface LocationNodesPayload {
+	nodes: LocationNode[];
+}
+
+/** What a harvest produced. The materials are already in the bag when this arrives. */
+export interface HarvestedPayload {
+	success: boolean;
+	nodeId: string;
+	displayName: string;
+	materials: { itemRef: string; itemName: string; quantity: number }[];
+	nodeHealthRemaining: number;
+	nodeHealthPercent: number;
+	nodeState: string;
+	wasCritical: boolean;
+	message: string;
+}
+
+/** A chest standing in the current location, unopened. */
+export interface LocationChest {
+	id: string;
+	displayName: string;
+	locationSlug: string;
+	/** `Authored` for a chest content placed, `Roaming` for one the server placed by draw. */
+	kind: string;
+}
+
+/** The unopened chests here, sent on entering a location and refreshed after every open. */
+export interface LocationChestsPayload {
+	chests: LocationChest[];
+}
+
+/** What a chest held. The items and gold are already with the character when this arrives. */
+export interface ChestOpenedPayload {
+	success: boolean;
+	chestId: string;
+	displayName: string;
+	items: { itemRef: string; name: string; quantity: number }[];
+	gold: number;
+	message?: string | null;
+	remainingChests: LocationChest[];
+}
+
+/** A person standing in the current location. */
+export interface LocationNpc {
+	npcId: string;
+	/** The archetype slug: what `TalkToNpc` is called with, and what quest objectives name. */
+	archetypeSlug: string;
+	displayName: string;
+	occupation?: string | null;
+	isShopkeeper: boolean;
+	isQuestGiver: boolean;
+	hasDialogue: boolean;
+}
+
+/** The people here, sent on entering a location. */
+export interface LocationNpcsPayload {
+	npcs: LocationNpc[];
+}
+
+/** What a person said when spoken to. */
+export interface NpcTalkedPayload {
+	success: boolean;
+	npcSlug: string;
+	displayName: string;
+	line: string;
+	isShopkeeper: boolean;
+	isQuestGiver: boolean;
+}
+
 /** A location revealed by a successful area search. */
 export interface SearchFinding {
 	slug: string;
@@ -576,6 +656,8 @@ export interface CombatTurnPayload {
 	xpLost?: number;
 	xpEarned?: number;
 	goldEarned?: number;
+	/** What the defeated enemy dropped into the bag, so the log can name it. */
+	itemsDropped?: { itemSlug: string; quantity: number }[] | null;
 	abilityId?: string | null;
 	abilityDamage?: number;
 	healthRestored?: number;

@@ -1,6 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { callLoad, fakeUser, makeServerEvent, type FakeServerEvent } from '#lib/testing/event';
 import { load as contentIndex } from './(foundry)/content/+page.server';
+import {
+	actions as createEntryActions,
+	load as createEntryPage
+} from './(foundry)/content/[type]/new/+page.server';
+import { load as homePage } from './(foundry)/foundry/+page.server';
+import { load as reviewPage } from './(foundry)/review/+page.server';
+import { load as schemasPage } from './(foundry)/schemas/+page.server';
+import { load as worldHealthPage } from './(foundry)/world-health/+page.server';
 import { load as contentTypePage } from './(foundry)/content/[type]/+page.server';
 import { load as contentDetail } from './(foundry)/content/[type]/[slug]/+page.server';
 import {
@@ -12,7 +20,8 @@ import {
 	actions as newLanguageActions,
 	load as newLanguagePage
 } from './(foundry)/languages/new/+page.server';
-import { actions as mapsActions, load as mapsPage } from './(foundry)/maps/+page.server';
+import { load as mapsPage } from './(foundry)/maps/+page.server';
+import { actions as newMapActions, load as newMapPage } from './(foundry)/maps/new/+page.server';
 import { actions as mapActions, load as mapPage } from './(foundry)/maps/[mapId]/+page.server';
 import {
 	actions as notificationActions,
@@ -39,6 +48,9 @@ const contentApi = vi.hoisted(() => ({
 	getContentDetail: vi.fn(),
 	getContentTypeSchema: vi.fn(),
 	updateContent: vi.fn(),
+	createContent: vi.fn(),
+	runContentAudit: vi.fn(),
+	listZoneLocations: vi.fn(),
 	validateContentPayload: vi.fn(),
 	deactivateContent: vi.fn()
 }));
@@ -119,8 +131,18 @@ const issue = (severity: 'Warning' | 'Error', message: string) => ({
 	identifier: null
 });
 
+/** The RBAC snapshot the Foundry layout hands down; the content loaders gate on `content.view`. */
+const editorAccess = {
+	accountId: 'acct-1',
+	username: 'kaleth',
+	roles: [],
+	permissions: ['content.view', 'content.manage']
+};
+
+const readerAccess = { ...editorAccess, permissions: ['content.view'] };
+
 const signedIn = (init: Parameters<typeof makeServerEvent>[0] = {}) =>
-	makeServerEvent({ user: fakeUser(), ...init });
+	makeServerEvent({ parentData: { access: editorAccess }, user: fakeUser(), ...init });
 
 /** Invokes a form action with the given fields. */
 function action(
@@ -181,7 +203,16 @@ beforeEach(() => {
 	foundryApi.voteSubmission.mockResolvedValue(ok(null));
 	foundryApi.reviewSubmission.mockResolvedValue(ok(null));
 	mapsApi.listMaps.mockResolvedValue(ok([{ id: 'zone:fenwick', name: 'Fenwick' }]));
-	mapsApi.getMap.mockResolvedValue(ok({ id: 'zone:fenwick', nodes: [], edges: [], version: 3 }));
+	mapsApi.getMap.mockResolvedValue(
+		ok({ id: 'zone:fenwick', nodes: [], edges: [], version: 3, canEdit: true })
+	);
+	contentApi.listZoneLocations.mockResolvedValue(
+		ok([
+			{ slug: 'halrow-threshold', displayName: 'The Threshold', zoneId: 'the-halrow' },
+			{ slug: 'fenwick-well', displayName: 'The Well', zoneId: 'fenwick' },
+			{ slug: 'fenwick-market', displayName: 'The Market', zoneId: 'Fenwick' }
+		])
+	);
 	mapsApi.validateMap.mockResolvedValue(ok({ isValid: true, issues: [] }));
 	mapsApi.createMap.mockResolvedValue(ok({ id: 'zone:draft-zone', name: 'Draft Zone' }));
 	mapsApi.submitMap.mockResolvedValue(
@@ -203,22 +234,12 @@ beforeEach(() => {
 describe('map editor', () => {
 	const params = { mapId: 'zone:fenwick' };
 
-	it('lists the graphs for a reader without switching the write controls on', async () => {
-		const result = (await callLoad(
-			mapsPage,
-			signedIn({ parentData: { canViewContent: true, canManageContent: false } })
-		)) as { canEdit: boolean; maps: unknown[] };
+	it('lists the maps the server allows, which is where the scoping lives', async () => {
+		// The page does not decide visibility: the API already narrowed the list to live maps plus this
+		// account's drafts, and it marks each row with canEdit.
+		const result = (await callLoad(mapsPage, signedIn())) as { maps: unknown[] };
 
-		expect(result.canEdit).toBe(false);
 		expect(result.maps).toEqual([{ id: 'zone:fenwick', name: 'Fenwick' }]);
-	});
-
-	it('refuses the list when the account cannot read content', async () => {
-		expect(
-			await thrownMessage(() =>
-				callLoad(mapsPage, signedIn({ parentData: { canViewContent: false } }))
-			)
-		).toBe('Reading the map graphs requires content read access.');
 	});
 
 	it('reports the API failure rather than an empty list', async () => {
@@ -241,6 +262,50 @@ describe('map editor', () => {
 		expect(result.rows).toEqual([]);
 	});
 
+	it('loads the locations of the zone a zone map defines, and only those', async () => {
+		mapsApi.getMap.mockResolvedValueOnce(
+			ok({
+				id: 'zone:fenwick',
+				mapType: 'Zone',
+				ownerId: 'fenwick',
+				nodes: [],
+				edges: [],
+				version: 3,
+				canEdit: true
+			})
+		);
+
+		const result = (await callLoad(mapPage, signedIn({ params }))) as {
+			zoneLocations: { id: string; label: string }[];
+		};
+
+		expect(result.zoneLocations.map((location) => location.id)).toEqual([
+			'fenwick-well',
+			'fenwick-market'
+		]);
+		expect(result.zoneLocations[0].label).toBe('The Well');
+	});
+
+	it('asks the catalog for no zone locations on a region map', async () => {
+		mapsApi.getMap.mockResolvedValueOnce(
+			ok({
+				id: 'region:varenmark',
+				mapType: 'Region',
+				ownerId: 'varenmark',
+				nodes: [],
+				edges: [],
+				version: 1
+			})
+		);
+
+		const result = (await callLoad(mapPage, signedIn({ params }))) as {
+			zoneLocations: unknown[];
+		};
+
+		expect(result.zoneLocations).toEqual([]);
+		expect(contentApi.listZoneLocations).not.toHaveBeenCalled();
+	});
+
 	it('maps a missing graph to a 404 message', async () => {
 		mapsApi.getMap.mockResolvedValue(failed('Map not found.', 404));
 
@@ -251,12 +316,18 @@ describe('map editor', () => {
 		).toBe('Map not found.');
 	});
 
-	it('refuses one graph when the account cannot read content', async () => {
-		expect(
-			await thrownMessage(() =>
-				callLoad(mapPage, signedIn({ params, parentData: { canViewContent: false } }))
-			)
-		).toBe('Reading a map graph requires content read access.');
+	it("takes the write flag from the graph, so another account's map has no controls", async () => {
+		mapsApi.getMap.mockResolvedValueOnce(
+			ok({ id: 'zone:fenwick', nodes: [], edges: [], version: 3, canEdit: false })
+		);
+
+		const result = (await callLoad(
+			mapPage,
+			signedIn({ params, parentData: { canManageContent: true, canReview: false } })
+		)) as { canEdit: boolean };
+
+		// A content editor may read every map; the server still decides which ones they may write.
+		expect(result.canEdit).toBe(false);
 	});
 
 	it('validates without saving and reports the issues the save would refuse on', async () => {
@@ -287,25 +358,112 @@ describe('map editor', () => {
 		expect(mapsApi.saveMap).not.toHaveBeenCalled();
 	});
 
-	it('creates a draft and opens it', async () => {
+	it('loads the locations the interior step offers', async () => {
+		const result = (await callLoad(newMapPage, signedIn())) as {
+			locations: { id: string }[];
+			error: unknown;
+		};
+
+		expect(result.locations[0]?.id).toBe('halrow-threshold');
+		expect(result.error).toBeNull();
+	});
+
+	it('still opens the wizard when the location list is unavailable', async () => {
+		mapsApi.getMapTargets.mockResolvedValue(failed('targets are down'));
+
+		const result = (await callLoad(newMapPage, signedIn())) as {
+			locations: unknown[];
+			error: string;
+		};
+
+		// A region or a zone map defines its own owner, so only the interior suggestions are lost.
+		expect(result.locations).toEqual([]);
+		expect(result.error).toBe('targets are down');
+	});
+
+	it('creates the draft from the wizard and opens the editor', async () => {
 		expect(
 			await redirectTo(() =>
-				action(mapsActions.create, { mapType: 'Zone', ownerId: 'draft-zone', name: 'Draft Zone' })
+				action(newMapActions.default, {
+					mapType: 'Zone',
+					ownerId: 'draft-zone',
+					name: 'Draft Zone'
+				})
 			)
 		).toBe('/maps/zone%3Adraft-zone');
 	});
 
-	it('reports why a draft could not be created', async () => {
+	it('refuses a slug with capitals or spaces, and a nameless map, before calling the API', async () => {
+		const badSlug = (await action(newMapActions.default, {
+			mapType: 'Zone',
+			ownerId: 'The Halrow',
+			name: 'The Halrow'
+		})) as { status: number; data: { message: string } };
+
+		expect(badSlug.status).toBe(400);
+		expect(badSlug.data.message).toContain('lowercase');
+		expect(mapsApi.createMap).not.toHaveBeenCalled();
+
+		const noName = (await action(newMapActions.default, {
+			mapType: 'Zone',
+			ownerId: 'the-halrow-new',
+			name: '   '
+		})) as { status: number; data: { message: string } };
+
+		expect(noName.status).toBe(400);
+		expect(noName.data.message).toContain('name');
+		expect(mapsApi.createMap).not.toHaveBeenCalled();
+	});
+
+	it('refuses a kind the portal does not offer, and defaults fields the browser omits', async () => {
+		const world = (await action(newMapActions.default, {
+			mapType: 'World',
+			ownerId: 'the-world',
+			name: 'The World'
+		})) as { status: number; data: { message: string } };
+
+		expect(world.status).toBe(400);
+		expect(world.data.message).toContain('kind of map');
+		expect(mapsApi.createMap).not.toHaveBeenCalled();
+
+		// A post with no kind or owner falls back to Zone and an empty slug, which the slug rule then
+		// refuses — still before the API is called.
+		const sparse = (await action(newMapActions.default, {})) as {
+			status: number;
+			data: { message: string; mapType: string };
+		};
+
+		expect(sparse.status).toBe(400);
+		expect(sparse.data.mapType).toBe('Zone');
+		expect(sparse.data.message).toContain('lowercase');
+		expect(mapsApi.createMap).not.toHaveBeenCalled();
+	});
+
+	it('falls back to 502 and its own copy when the API answers with nothing', async () => {
+		mapsApi.createMap.mockResolvedValue({ status: 0, data: null, error: null });
+
+		const result = (await action(newMapActions.default, {
+			mapType: 'Zone',
+			ownerId: 'the-halrow-new',
+			name: 'The Halrow New'
+		})) as { status: number; data: { message: string } };
+
+		expect(result.status).toBe(502);
+		expect(result.data.message).toBe('The map could not be created.');
+	});
+
+	it('reports why a draft could not be created, and keeps what was typed', async () => {
 		mapsApi.createMap.mockResolvedValue(failed("'draft-zone' already owns a Zone map.", 400));
 
-		const result = (await action(mapsActions.create, {
+		const result = (await action(newMapActions.default, {
 			mapType: 'Zone',
 			ownerId: 'draft-zone',
 			name: 'Draft Zone'
-		})) as { status: number; data: { message: string } };
+		})) as { status: number; data: { message: string; ownerId: string } };
 
 		expect(result.status).toBe(400);
 		expect(result.data.message).toContain('already owns');
+		expect(result.data.ownerId).toBe('draft-zone');
 	});
 
 	it('submits a draft, and reports a conflict with the reason the server worded', async () => {
@@ -430,15 +588,185 @@ describe('map editor', () => {
 	});
 });
 
+const curatorAccess = {
+	...editorAccess,
+	permissions: ['content.view', 'content.manage', 'content.review']
+};
+
+describe('portal home', () => {
+	it('counts every section and does not ask for the queue without the role', async () => {
+		mapsApi.listMaps.mockResolvedValue(
+			ok([
+				{ id: 'zone:fenwick', submittedAt: '2026-01-01T00:00:00Z', isActive: false },
+				{ id: 'zone:halrow', submittedAt: null, isActive: true }
+			])
+		);
+
+		const result = (await callLoad(
+			homePage,
+			signedIn({ parentData: { access: editorAccess, canReview: false } })
+		)) as Record<string, unknown>;
+
+		expect(result).toMatchObject({
+			canReview: false,
+			contentTypes: 1,
+			maps: 2,
+			mapsInReview: 1,
+			pendingSubmissions: 0,
+			error: null
+		});
+		expect(foundryApi.listSubmissions).not.toHaveBeenCalled();
+	});
+
+	it('counts the pending submissions for a Curator', async () => {
+		foundryApi.listSubmissions.mockResolvedValue(
+			ok({ items: [], totalCount: 7, page: 1, pageSize: 1 })
+		);
+
+		const result = (await callLoad(
+			homePage,
+			signedIn({
+				parentData: { access: curatorAccess, canReview: true, unreadNotifications: 2 }
+			})
+		)) as Record<string, unknown>;
+
+		expect(result).toMatchObject({
+			canReview: true,
+			pendingSubmissions: 7,
+			unreadNotifications: 2
+		});
+	});
+
+	it('reports the first failure rather than claiming a section is empty', async () => {
+		contentApi.listContentTypes.mockResolvedValue(failed('catalog is down'));
+		mapsApi.listMaps.mockResolvedValue(failed('maps are down'));
+
+		const result = (await callLoad(
+			homePage,
+			signedIn({ parentData: { access: editorAccess, canReview: false } })
+		)) as { error: string };
+
+		expect(result.error).toBe('catalog is down');
+	});
+
+	it('counts the sections for an account with no permissions at all', async () => {
+		const result = (await callLoad(
+			homePage,
+			signedIn({
+				parentData: { access: { ...readerAccess, permissions: [] }, canReview: false }
+			})
+		)) as Record<string, unknown>;
+
+		expect(result).toMatchObject({ canReview: false, contentTypes: 1, pendingSubmissions: 0 });
+		expect(foundryApi.listSubmissions).not.toHaveBeenCalled();
+	});
+});
+
+describe('review queue', () => {
+	it('refuses an account without the review permission', async () => {
+		expect(
+			await thrownMessage(() =>
+				callLoad(reviewPage, signedIn({ parentData: { access: editorAccess, canReview: false } }))
+			)
+		).toBe('The review queue needs the content review permission.');
+		expect(foundryApi.listSubmissions).not.toHaveBeenCalled();
+	});
+
+	it('lists pending submissions and the maps in review', async () => {
+		foundryApi.listSubmissions.mockResolvedValue(
+			ok({ items: [{ id: 'sub-1' }], totalCount: 1, page: 1, pageSize: 50 })
+		);
+		mapsApi.listMaps.mockResolvedValue(
+			ok([
+				{
+					id: 'zone:a',
+					submittedAt: '2026-01-01T00:00:00Z',
+					isActive: false,
+					review: { status: 'ready', errors: 0, warnings: 1 }
+				},
+				// Live, so not waiting for a decision.
+				{ id: 'zone:b', submittedAt: null, isActive: true }
+			])
+		);
+
+		const result = (await callLoad(
+			reviewPage,
+			signedIn({ parentData: { access: curatorAccess, canReview: true } })
+		)) as {
+			submissions: unknown[];
+			maps: { id: string; verdict: { status: string } }[];
+			error: unknown;
+		};
+
+		expect(result.submissions).toEqual([{ id: 'sub-1' }]);
+		expect(result.maps.map((map) => map.id)).toEqual(['zone:a']);
+		// Approval is the gate the queue announces, so each row already carries the verdict the list reported.
+		expect(result.maps[0].verdict).toEqual({ status: 'ready', errors: 0, warnings: 1 });
+		expect(result.error).toBeNull();
+		expect(foundryApi.listSubmissions).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ status: 'Pending' })
+		);
+	});
+
+	it('words a map the list gave no verdict for as unknown rather than ready', async () => {
+		mapsApi.listMaps.mockResolvedValue(
+			ok([
+				{
+					id: 'zone:blocked',
+					submittedAt: '2026-01-01T00:00:00Z',
+					isActive: false,
+					review: { status: 'blocked', errors: 0, warnings: 1 }
+				},
+				{ id: 'zone:unknown', submittedAt: '2026-01-01T00:00:00Z', isActive: false },
+				// Live, so there is no approval left to announce.
+				{ id: 'zone:live', submittedAt: '2026-01-01T00:00:00Z', isActive: true }
+			])
+		);
+
+		const result = (await callLoad(
+			reviewPage,
+			signedIn({ parentData: { access: curatorAccess, canReview: true } })
+		)) as { maps: { id: string; verdict: { status: string } }[] };
+
+		expect(result.maps).toEqual([
+			expect.objectContaining({
+				id: 'zone:blocked',
+				verdict: expect.objectContaining({ status: 'blocked' })
+			}),
+			// A verdict the server could not work out must not read as an approval.
+			expect.objectContaining({
+				id: 'zone:unknown',
+				verdict: expect.objectContaining({ status: 'unknown' })
+			})
+		]);
+
+		// The queue must not go back to the API per row: that is the N+1 this loader used to make.
+		expect(mapsApi.getMap).not.toHaveBeenCalled();
+		expect(mapsApi.validateMap).not.toHaveBeenCalled();
+	});
+
+	it('reports the first failed call', async () => {
+		mapsApi.listMaps.mockResolvedValue(failed('maps are down'));
+
+		const result = (await callLoad(
+			reviewPage,
+			signedIn({ parentData: { access: curatorAccess, canReview: true } })
+		)) as { error: string };
+
+		expect(result.error).toBe('maps are down');
+	});
+});
+
 describe('content browser', () => {
 	it('lists the content types, with an empty list on failure', async () => {
-		expect(await callLoad(contentIndex, makeServerEvent())).toEqual({
+		expect(await callLoad(contentIndex, signedIn())).toEqual({
 			types: [{ key: 'power', label: 'Powers' }],
 			error: null
 		});
 
 		contentApi.listContentTypes.mockResolvedValue(failed('catalog is down'));
-		expect(await callLoad(contentIndex, makeServerEvent())).toEqual({
+		expect(await callLoad(contentIndex, signedIn())).toEqual({
 			types: [],
 			error: 'catalog is down'
 		});
@@ -447,7 +775,7 @@ describe('content browser', () => {
 	it('browses one type with the search term and a clamped page', async () => {
 		const result = (await callLoad(
 			contentTypePage,
-			makeServerEvent({ params: { type: 'power' }, url: '/content/power?search=fire&page=0' })
+			signedIn({ params: { type: 'power' }, url: '/content/power?search=fire&page=0' })
 		)) as { contentType: string; page: number; search: string; total: number };
 
 		expect(contentApi.browseContent).toHaveBeenCalledWith('power', 'fire', 1, 24);
@@ -459,7 +787,7 @@ describe('content browser', () => {
 
 		const result = (await callLoad(
 			contentTypePage,
-			makeServerEvent({ params: { type: 'power' } })
+			signedIn({ params: { type: 'power' } })
 		)) as Record<string, unknown>;
 
 		expect(result).toMatchObject({
@@ -479,14 +807,11 @@ describe('content detail', () => {
 		const editor = (await callLoad(contentDetail, signedIn({ params }))) as { canEdit: boolean };
 		expect(editor.canEdit).toBe(true);
 
-		access.loadAccountAccess.mockResolvedValue({
-			accountId: 'acct-1',
-			username: 'kaleth',
-			roles: [],
-			permissions: []
-		});
+		const reader = (await callLoad(
+			contentDetail,
+			signedIn({ params, parentData: { access: readerAccess } })
+		)) as { canEdit: boolean };
 
-		const reader = (await callLoad(contentDetail, signedIn({ params }))) as { canEdit: boolean };
 		expect(reader.canEdit).toBe(false);
 	});
 
@@ -612,15 +937,413 @@ describe('content editor', () => {
 	});
 });
 
-describe('language fork', () => {
-	it('browses the language content type', async () => {
-		const result = (await callLoad(
-			languagesPage,
-			makeServerEvent({ url: '/languages?search=cal&page=2' })
-		)) as { page: number; search: string };
+describe('content editor references', () => {
+	const params = { type: 'recipe', slug: 'iron-sword' };
 
-		expect(contentApi.browseContent).toHaveBeenCalledWith('language', 'cal', 2, 24);
-		expect(result).toMatchObject({ page: 2, search: 'cal' });
+	const referenceSchema = {
+		contentType: 'recipe',
+		displayLabel: 'Recipes',
+		description: '',
+		groups: [
+			{
+				label: 'Recipe',
+				fields: [
+					{ ...field('outputItemSlug', 'Reference'), refType: 'item' },
+					{
+						...field('ingredients', 'ObjectList'),
+						items: [{ ...field('itemSlug', 'Reference'), refType: 'material' }]
+					}
+				]
+			}
+		]
+	};
+
+	it('loads the slug list behind every Reference field, including one inside a row', async () => {
+		contentApi.getContentTypeSchema.mockResolvedValue(ok(referenceSchema));
+		contentApi.browseContent.mockResolvedValue(
+			ok({ items: [{ slug: 'iron-sword', displayName: 'Iron Sword' }], totalCount: 1 })
+		);
+
+		const result = (await callLoad(editPage, signedIn({ params }))) as {
+			refOptions: Record<string, { value: string; label: string }[]>;
+		};
+
+		expect(contentApi.browseContent).toHaveBeenCalledWith('item', null, 1, 50);
+		expect(contentApi.browseContent).toHaveBeenCalledWith('material', null, 1, 50);
+		expect(result.refOptions.item).toEqual([{ value: 'iron-sword', label: 'Iron Sword' }]);
+	});
+
+	it('falls back to the slug when a referenced entry has no display name', async () => {
+		contentApi.getContentTypeSchema.mockResolvedValue(ok(referenceSchema));
+		contentApi.browseContent.mockResolvedValue(
+			ok({ items: [{ slug: 'iron-ingot', displayName: null }], totalCount: 1 })
+		);
+
+		const result = (await callLoad(editPage, signedIn({ params }))) as {
+			refOptions: Record<string, { value: string; label: string }[]>;
+		};
+
+		expect(result.refOptions.material[0]).toEqual({ value: 'iron-ingot', label: 'iron-ingot' });
+	});
+
+	it('offers no options when the browse call fails, rather than failing the form', async () => {
+		contentApi.getContentTypeSchema.mockResolvedValue(ok(referenceSchema));
+		contentApi.browseContent.mockResolvedValue(failed('browse is down'));
+
+		const result = (await callLoad(editPage, signedIn({ params }))) as {
+			refOptions: Record<string, unknown[]>;
+		};
+
+		expect(result.refOptions.item).toEqual([]);
+	});
+});
+
+describe('submission create mode', () => {
+	beforeEach(() => {
+		contentApi.listContentTypes.mockResolvedValue(
+			ok([
+				{ contentType: 'item', displayLabel: 'Items', description: '' },
+				{ contentType: 'quest', displayLabel: 'Quests', description: '' }
+			])
+		);
+		contentApi.getContentTypeSchema.mockResolvedValue(ok(schema));
+	});
+
+	it('defaults to the first type and loads its schema', async () => {
+		const result = (await callLoad(submissionPage, signedIn({ params: { id: 'new' } }))) as {
+			typeKey: string;
+			schema: unknown;
+			payload: unknown;
+		};
+
+		expect(result.typeKey).toBe('item');
+		expect(result.schema).toEqual(schema);
+		expect(result.payload).toEqual({});
+		expect(contentApi.getContentTypeSchema).toHaveBeenCalledWith('item');
+	});
+
+	it('honours the type the query string asks for', async () => {
+		const result = (await callLoad(
+			submissionPage,
+			signedIn({ params: { id: 'new' }, url: '/submissions/new?type=quest' })
+		)) as { typeKey: string };
+
+		expect(result.typeKey).toBe('quest');
+		expect(contentApi.getContentTypeSchema).toHaveBeenCalledWith('quest');
+	});
+
+	it('offers no schema when no type is registered', async () => {
+		contentApi.listContentTypes.mockResolvedValue(ok([]));
+
+		const result = (await callLoad(submissionPage, signedIn({ params: { id: 'new' } }))) as {
+			typeKey: string;
+			schema: unknown;
+		};
+
+		expect(result.typeKey).toBe('');
+		expect(result.schema).toBeNull();
+		expect(contentApi.getContentTypeSchema).not.toHaveBeenCalled();
+	});
+});
+
+describe('submission payload parsing', () => {
+	const submissionWith = (payload: unknown) =>
+		ok({ id: 'sub-1', contentType: 'language', payload });
+
+	it('parses a JSON object and keeps the raw text beside it', async () => {
+		foundryApi.getSubmission.mockResolvedValue(submissionWith('{"slug":"calethic"}'));
+
+		const result = (await callLoad(submissionPage, signedIn({ params: { id: 'sub-1' } }))) as {
+			payload: unknown;
+			rawPayload: string;
+		};
+
+		expect(result.payload).toEqual({ slug: 'calethic' });
+		expect(result.rawPayload).toBe('{"slug":"calethic"}');
+	});
+
+	it('falls back to an empty object for text that is not JSON', async () => {
+		foundryApi.getSubmission.mockResolvedValue(submissionWith('not json'));
+
+		const result = (await callLoad(submissionPage, signedIn({ params: { id: 'sub-1' } }))) as {
+			payload: unknown;
+			rawPayload: string;
+		};
+
+		expect(result.payload).toEqual({});
+		expect(result.rawPayload).toBe('not json');
+	});
+
+	it('loads what the catalog holds at the claimed slug while the decision is open', async () => {
+		foundryApi.getSubmission.mockResolvedValue(
+			ok({
+				id: 'sub-1',
+				contentType: 'Item',
+				status: 'Pending',
+				payload: '{"slug":"ember-blade"}'
+			})
+		);
+		contentApi.getContentDetail.mockResolvedValue(
+			ok({ summary: {}, payload: { slug: 'ember-blade', displayName: 'Old blade' } })
+		);
+
+		const result = (await callLoad(submissionPage, signedIn({ params: { id: 'sub-1' } }))) as {
+			proposedSlug: string;
+			existing: unknown;
+		};
+
+		expect(contentApi.getContentDetail).toHaveBeenCalledWith('item', 'ember-blade');
+		expect(result.proposedSlug).toBe('ember-blade');
+		expect(result.existing).toEqual({ slug: 'ember-blade', displayName: 'Old blade' });
+	});
+
+	it('skips the catalog lookup once decided, and when the payload names no slug', async () => {
+		foundryApi.getSubmission.mockResolvedValue(
+			ok({ id: 'sub-1', contentType: 'Item', status: 'Approved', payload: '{"slug":"x"}' })
+		);
+		const decided = (await callLoad(submissionPage, signedIn({ params: { id: 'sub-1' } }))) as {
+			existing: unknown;
+		};
+
+		expect(decided.existing).toBeNull();
+		expect(contentApi.getContentDetail).not.toHaveBeenCalled();
+
+		foundryApi.getSubmission.mockResolvedValue(
+			ok({ id: 'sub-2', contentType: 'Item', status: 'Pending', payload: '{}' })
+		);
+		const noSlug = (await callLoad(submissionPage, signedIn({ params: { id: 'sub-2' } }))) as {
+			proposedSlug: string | null;
+			existing: unknown;
+		};
+
+		expect(noSlug.proposedSlug).toBeNull();
+		expect(noSlug.existing).toBeNull();
+	});
+
+	it('falls back for a JSON array and for a missing payload', async () => {
+		foundryApi.getSubmission.mockResolvedValue(submissionWith('[1,2]'));
+		expect(
+			(
+				(await callLoad(submissionPage, signedIn({ params: { id: 'sub-1' } }))) as {
+					payload: unknown;
+				}
+			).payload
+		).toEqual({});
+
+		foundryApi.getSubmission.mockResolvedValue(submissionWith(undefined));
+		expect(
+			(
+				(await callLoad(submissionPage, signedIn({ params: { id: 'sub-1' } }))) as {
+					payload: unknown;
+				}
+			).payload
+		).toEqual({});
+	});
+});
+
+describe('content create', () => {
+	const params = { type: 'power' };
+
+	it('loads the schema, the reference options and the write flag', async () => {
+		const result = (await callLoad(createEntryPage, signedIn({ params }))) as {
+			schema: unknown;
+			canEdit: boolean;
+			refOptions: Record<string, unknown>;
+		};
+
+		expect(result.schema).toEqual(schema);
+		expect(result.canEdit).toBe(true);
+		expect(result.refOptions).toEqual({});
+	});
+
+	it('renders for a reader and marks the form read-only', async () => {
+		const result = (await callLoad(
+			createEntryPage,
+			signedIn({ params, parentData: { access: { ...readerAccess, permissions: [] } } })
+		)) as { canEdit: boolean };
+
+		expect(result.canEdit).toBe(false);
+	});
+
+	it('404s a type with no registered schema', async () => {
+		contentApi.getContentTypeSchema.mockResolvedValue(
+			failed('No schema is registered for power.', 404)
+		);
+
+		expect(await thrownMessage(() => callLoad(createEntryPage, signedIn({ params })))).toBe(
+			'No schema is registered for power.'
+		);
+	});
+
+	it('creates the entity from the schema and returns to the list', async () => {
+		contentApi.createContent.mockResolvedValue(ok({ isValid: true, errors: [], warnings: [] }));
+
+		const location = await redirectTo(() =>
+			action(
+				createEntryActions.default,
+				{ displayName: 'Fireball', 'stats.cooldown': '3' },
+				{ params }
+			)
+		);
+
+		expect(location).toBe('/content/power');
+
+		const called = contentApi.createContent.mock.calls[0] as [
+			unknown,
+			string,
+			Record<string, unknown>
+		];
+
+		expect(called[1]).toBe('power');
+		expect(called[2]).toEqual({ displayName: 'Fireball', stats: { cooldown: 3 } });
+	});
+
+	it('refuses to create without the required fields', async () => {
+		contentApi.getContentTypeSchema.mockResolvedValue(
+			ok({
+				...schema,
+				groups: [
+					{ label: 'Identity', fields: [{ ...field('displayName', 'Text'), required: true }] }
+				]
+			})
+		);
+
+		const result = (await action(createEntryActions.default, {}, { params })) as {
+			status: number;
+			data: { message: string };
+		};
+
+		expect(result.status).toBe(400);
+		expect(result.data.message).toBe('Fill in: displayName.');
+		expect(contentApi.createContent).not.toHaveBeenCalled();
+	});
+
+	it('creates a type whose collections are required, because only the rendered fields are demanded', async () => {
+		contentApi.getContentTypeSchema.mockResolvedValue(
+			ok({
+				...schema,
+				groups: [
+					{
+						label: 'Mixed',
+						fields: [
+							{ ...field('displayName', 'Text'), required: true },
+							{ ...field('objectives', 'ObjectList'), required: true, items: [] }
+						]
+					}
+				]
+			})
+		);
+		contentApi.createContent.mockResolvedValue(ok({ isValid: true, errors: [], warnings: [] }));
+
+		const location = await redirectTo(() =>
+			action(createEntryActions.default, { displayName: 'Fireball' }, { params })
+		);
+
+		expect(location).toBe('/content/power');
+	});
+
+	it('reports a failed create with the status the API used', async () => {
+		contentApi.createContent.mockResolvedValue(failed('Slug already exists.', 409));
+
+		const result = (await action(
+			createEntryActions.default,
+			{ displayName: 'Fireball' },
+			{ params }
+		)) as { status: number; data: { message: string } };
+
+		expect(result.status).toBe(409);
+		expect(result.data.message).toBe('Slug already exists.');
+	});
+
+	it('reports a create that returned no data and no message', async () => {
+		// No status at all, so the action's own 502 fallback is what the author sees.
+		contentApi.createContent.mockResolvedValue({ status: 0, data: null, error: null });
+
+		const result = (await action(
+			createEntryActions.default,
+			{ displayName: 'Fireball' },
+			{ params }
+		)) as { status: number; data: { message: string } };
+
+		expect(result.status).toBe(502);
+		expect(result.data.message).toBe('Could not create the entry.');
+	});
+});
+
+describe('catalog reference pages', () => {
+	it('runs the audit and counts errors and warnings separately', async () => {
+		contentApi.runContentAudit.mockResolvedValue(
+			ok([
+				{ rule: 'a', message: 'first', severity: 'Error', field: null, identifier: 'x' },
+				{ rule: 'b', message: 'second', severity: 'Warning', field: 'f', identifier: null }
+			])
+		);
+
+		const result = (await callLoad(worldHealthPage, signedIn())) as {
+			issues: unknown[];
+			errors: number;
+			warnings: number;
+			error: unknown;
+		};
+
+		expect(result).toMatchObject({ errors: 1, warnings: 1, error: null });
+		expect(result.issues).toHaveLength(2);
+	});
+
+	it('reports a failed audit with an empty list rather than pretending the catalog is clean', async () => {
+		contentApi.runContentAudit.mockResolvedValue(failed('audit is down'));
+
+		const result = (await callLoad(worldHealthPage, signedIn())) as {
+			issues: unknown[];
+			error: string;
+		};
+
+		expect(result.issues).toEqual([]);
+		expect(result.error).toBe('audit is down');
+	});
+
+	it('refuses the audit without content.view', async () => {
+		expect(
+			await thrownMessage(() =>
+				callLoad(
+					worldHealthPage,
+					signedIn({ parentData: { access: { ...readerAccess, permissions: [] } } })
+				)
+			)
+		).toBe('Foundry needs the content permission. Ask a Curator for access.');
+	});
+
+	it('loads every registered schema and drops the ones that fail', async () => {
+		contentApi.listContentTypes.mockResolvedValue(
+			ok([
+				{ contentType: 'power', displayLabel: 'Powers', description: '' },
+				{ contentType: 'spell', displayLabel: 'Spells', description: '' }
+			])
+		);
+		contentApi.getContentTypeSchema
+			.mockResolvedValueOnce(ok(schema))
+			.mockResolvedValueOnce(failed('no schema', 404));
+
+		const result = (await callLoad(schemasPage, signedIn())) as {
+			schemas: { contentType: string }[];
+		};
+
+		expect(result.schemas.map((entry) => entry.contentType)).toEqual(['power']);
+	});
+});
+
+describe('language fork', () => {
+	it('redirects the old language browser to the content type, keeping the query', async () => {
+		expect(
+			await redirectTo(() =>
+				callLoad(languagesPage, makeServerEvent({ url: '/languages?search=cal&page=2' }))
+			)
+		).toBe('/content/language?search=cal&page=2');
+
+		// A bare visit carries no query and must not gain a stray `?`.
+		expect(
+			await redirectTo(() => callLoad(languagesPage, makeServerEvent({ url: '/languages' })))
+		).toBe('/content/language');
 	});
 
 	it('renders an empty form', async () => {
@@ -732,7 +1455,7 @@ describe('notifications', () => {
 });
 
 describe('submission queue', () => {
-	it('passes the filters through with a clamped page', async () => {
+	it('passes the filters through with a clamped page, scoped to the caller', async () => {
 		await callLoad(
 			submissionsPage,
 			signedIn({ url: '/submissions?status=Pending&contentType=language&search=cal&page=0' })
@@ -743,8 +1466,31 @@ describe('submission queue', () => {
 			contentType: 'language',
 			search: 'cal',
 			page: 1,
+			mine: true,
 			pageSize: 20
 		});
+	});
+
+	it('widens to everyone only for a reviewer who asks for it', async () => {
+		await callLoad(
+			submissionsPage,
+			signedIn({ url: '/submissions?scope=all', parentData: { canReview: true } })
+		);
+		expect(foundryApi.listSubmissions).toHaveBeenLastCalledWith(
+			expect.anything(),
+			expect.objectContaining({ mine: false })
+		);
+
+		// A player asking for everything still gets their own rows: the server narrows the feed anyway, and
+		// the page must not claim otherwise.
+		await callLoad(
+			submissionsPage,
+			signedIn({ url: '/submissions?scope=all', parentData: { canReview: false } })
+		);
+		expect(foundryApi.listSubmissions).toHaveBeenLastCalledWith(
+			expect.anything(),
+			expect.objectContaining({ mine: true })
+		);
 	});
 
 	it('returns the fallbacks on failure', async () => {
@@ -793,27 +1539,58 @@ describe('submission queue', () => {
 		});
 	});
 
-	it('creates a submission, refusing a missing field', async () => {
+	it('creates a submission from the schema, refusing a missing field', async () => {
+		// A required field, so the action's own completeness check has something to refuse.
+		contentApi.getContentTypeSchema.mockResolvedValue(
+			ok({
+				...schema,
+				groups: [
+					{
+						label: 'Identity',
+						fields: [{ ...field('displayName', 'Text'), required: true }]
+					}
+				]
+			})
+		);
+
 		const missing = (await action(submissionActions.create, { contentType: 'language' })) as {
 			status: number;
 			data: { error: string };
 		};
 		expect(missing.status).toBe(400);
-		expect(missing.data.error).toBe('Content type, title, and payload are required.');
+		expect(missing.data.error).toBe('Content type and title are required.');
+
+		// The schema's required field is what the server checks now, not a JSON blob from the form.
+		const unfilled = (await action(submissionActions.create, {
+			contentType: 'language',
+			title: 'Calethic'
+		})) as { status: number; data: { error: string } };
+		expect(unfilled.status).toBe(400);
+		expect(unfilled.data.error).toBe('Fill in: displayName.');
 
 		expect(
 			await redirectTo(() =>
 				action(submissionActions.create, {
 					contentType: 'language',
 					title: 'Calethic',
-					payload: '{}'
+					displayName: 'Calethic'
 				})
 			)
 		).toBe('/submissions/sub-9');
-		expect(foundryApi.createSubmission).toHaveBeenCalledWith(
-			expect.anything(),
-			expect.objectContaining({ contentType: 'language', title: 'Calethic', description: null })
-		);
+
+		const submitted = foundryApi.createSubmission.mock.calls[0][1] as {
+			contentType: string;
+			title: string;
+			payload: string;
+			description: string | null;
+		};
+
+		expect(submitted).toMatchObject({
+			contentType: 'language',
+			title: 'Calethic',
+			description: null
+		});
+		expect(JSON.parse(submitted.payload)).toEqual({ displayName: 'Calethic' });
 	});
 
 	it('accepts only a +1 or -1 vote', async () => {

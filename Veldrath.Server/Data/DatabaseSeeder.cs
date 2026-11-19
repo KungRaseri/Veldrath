@@ -33,9 +33,10 @@ public static class DatabaseSeeder
         await ActorSeeder.SeedAsync(db);
         await PowersSeeder.SeedAsync(db);
         await ItemsSeeder.SeedAsync(db);
+        // Loot tables before archetypes: an archetype's LootTableId is resolved by slug from the seeded tables.
+        await LootTablesSeeder.SeedAsync(db);
         await ArchetypeSeeder.SeedAsync(db);
         await RecipesSeeder.SeedAsync(db);
-        await LootTablesSeeder.SeedAsync(db);
         await QuestsSeeder.SeedAsync(db);
         await ZoneLocationsSeeder.SeedAsync(db);
         await ZoneLocationsConnectionSeeder.SeedAsync(db);

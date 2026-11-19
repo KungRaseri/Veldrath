@@ -124,6 +124,15 @@ public static class ContentWriteEndpoints
         var incoming = ContentEntityTypes.Deserialize(resolver, payload);
         if (incoming is null)
         {
+            // The client only sees a generic message (the body may be anything), but an unreadable payload is
+            // undebuggable without the shape that failed to bind, so it is logged, bounded.
+            var raw = payload.GetRawText();
+            Serilog.Log.Warning(
+                "Content payload for {Type} could not be read; first {Length} chars: {Body}",
+                type,
+                Math.Min(raw.Length, 600),
+                raw.Length > 600 ? raw[..600] : raw);
+
             return Results.BadRequest(new { error = "The request body is not a valid content payload." });
         }
 

@@ -5,28 +5,119 @@ using RealmEngine.Data.Persistence;
 namespace RealmEngine.Data.Seeders;
 
 /// <summary>Seeds baseline <see cref="ActorArchetype"/> rows (enemies and NPCs) into <see cref="ContentDbContext"/>.</summary>
+/// <remarks>
+/// <para>
+/// The roster is banded by level so that every zone in the world has an enemy that belongs there: the geography
+/// runs from level 1 to 30, and a single level 1–3 goblin would leave everything above level 6 empty. A location's
+/// spawn pool (<see cref="ZoneLocationsSeeder"/>) names these slugs, and the pool is only as good as the band it
+/// points at.
+/// </para>
+/// <para>
+/// Two of these archetypes are NPCs (<see cref="ActorArchetype.Traits"/>.<c>Hostile</c> is false). They are not
+/// placed in spawn pools — a pool turns every entry into an enemy — and exist so trade, quest and dialogue content
+/// has an actor to hang off.
+/// </para>
+/// </remarks>
 public static class ArchetypeSeeder
 {
     /// <summary>Seeds all archetype rows (idempotent, enemies first then NPCs).</summary>
+    /// <param name="db">Content database context.</param>
     public static async Task SeedAsync(ContentDbContext db)
     {
         await SeedEnemiesAsync(db);
         await SeedNpcsAsync(db);
     }
 
-    // Enemies
+    /// <summary>
+    /// The loot table each archetype drops, by loot slug. Kept apart from the archetypes because the table ids are
+    /// database-generated: the seeder resolves them once the loot tables exist.
+    /// </summary>
+    private static readonly Dictionary<string, string> LootTableByArchetype = new(StringComparer.Ordinal)
+    {
+        ["goblin-scout"] = "goblin-common-drops",
+        ["forest-wolf"] = "wolf-common-drops",
+        ["bandit-captain"] = "bandit-boss-drops",
+        ["fire-ancient"] = "fire-ancient-drops",
+    };
+
     private static async Task SeedEnemiesAsync(ContentDbContext db)
     {
         var now = DateTimeOffset.UtcNow;
         var existing = await db.ActorArchetypes.AsNoTracking().Select(x => x.Slug).ToHashSetAsync();
         var missing = GetAllEnemyArchetypes(now).Where(x => !existing.Contains(x.Slug)).ToList();
         if (missing.Count == 0) return;
+
+        await AttachLootTablesAsync(db, missing);
         db.ActorArchetypes.AddRange(missing);
         await db.SaveChangesAsync();
     }
 
+    private static async Task AttachLootTablesAsync(ContentDbContext db, IEnumerable<ActorArchetype> archetypes)
+    {
+        var wanted = archetypes.Select(archetype => archetype.Slug).Where(LootTableByArchetype.ContainsKey).ToList();
+        if (wanted.Count == 0) return;
+
+        var idsBySlug = await db.LootTables
+            .AsNoTracking()
+            .Select(table => new { table.Slug, table.Id })
+            .ToDictionaryAsync(table => table.Slug, table => table.Id);
+
+        foreach (var archetype in archetypes)
+        {
+            if (!LootTableByArchetype.TryGetValue(archetype.Slug, out var lootSlug)) continue;
+            if (idsBySlug.TryGetValue(lootSlug, out var lootTableId)) archetype.LootTableId = lootTableId;
+        }
+    }
+
+    // Enemies, in level bands. The band each archetype covers is the MinLevel/MaxLevel pair; a location's own
+    // MinLevel/MaxLevel decides which of these can appear there.
     private static ActorArchetype[] GetAllEnemyArchetypes(DateTimeOffset now) =>
     [
+            new ActorArchetype
+            {
+                Slug         = "giant-rat",
+                TypeKey      = "beasts",
+                DisplayName  = "Giant Rat",
+                RarityWeight = 90,
+                MinLevel     = 1,
+                MaxLevel     = 3,
+                IsActive     = true,
+                Version      = 1,
+                UpdatedAt    = now,
+                Stats = new ArchetypeStats
+                {
+                    Health           = 20,
+                    Mana             = null,
+                    Strength         = 4,
+                    Agility          = 10,
+                    Intelligence     = 2,
+                    Constitution     = 6,
+                    ArmorClass       = 1,
+                    AttackBonus      = 0,
+                    Damage           = 3,
+                    ExperienceReward = 8,
+                    GoldRewardMin    = 1,
+                    GoldRewardMax    = 3,
+                },
+                Traits = new ArchetypeTraits
+                {
+                    Hostile      = true,
+                    Aggressive   = true,
+                    PackHunter   = true,
+                    Shopkeeper   = false,
+                    QuestGiver   = false,
+                    HasDialogue  = false,
+                    Immortal     = false,
+                    Wanderer     = true,
+                    Boss         = false,
+                    Elite        = false,
+                    Ranged       = false,
+                    Caster       = false,
+                    FireImmune   = false,
+                    ColdImmune   = false,
+                    PoisonImmune = false,
+                },
+            },
             new ActorArchetype
             {
                 Slug         = "goblin-scout",
@@ -40,18 +131,62 @@ public static class ArchetypeSeeder
                 UpdatedAt    = now,
                 Stats = new ArchetypeStats
                 {
-                    Health          = 30,
-                    Mana            = null,
-                    Strength        = 6,
-                    Agility         = 12,
-                    Intelligence    = 4,
-                    Constitution    = 8,
-                    ArmorClass      = 2,
-                    AttackBonus     = 1,
-                    Damage          = 4,
+                    Health           = 30,
+                    Mana             = null,
+                    Strength         = 6,
+                    Agility          = 12,
+                    Intelligence     = 4,
+                    Constitution     = 8,
+                    ArmorClass       = 2,
+                    AttackBonus      = 1,
+                    Damage           = 4,
                     ExperienceReward = 15,
-                    GoldRewardMin   = 1,
-                    GoldRewardMax   = 5,
+                    GoldRewardMin    = 1,
+                    GoldRewardMax    = 5,
+                },
+                Traits = new ArchetypeTraits
+                {
+                    Hostile      = true,
+                    Aggressive   = true,
+                    PackHunter   = true,
+                    Shopkeeper   = false,
+                    QuestGiver   = false,
+                    HasDialogue  = false,
+                    Immortal     = false,
+                    Wanderer     = true,
+                    Boss         = false,
+                    Elite        = false,
+                    Ranged       = false,
+                    Caster       = false,
+                    FireImmune   = false,
+                    ColdImmune   = false,
+                    PoisonImmune = false,
+                },
+            },
+            new ActorArchetype
+            {
+                Slug         = "forest-wolf",
+                TypeKey      = "beasts",
+                DisplayName  = "Forest Wolf",
+                RarityWeight = 75,
+                MinLevel     = 3,
+                MaxLevel     = 6,
+                IsActive     = true,
+                Version      = 1,
+                UpdatedAt    = now,
+                Stats = new ArchetypeStats
+                {
+                    Health           = 45,
+                    Strength         = 8,
+                    Agility          = 14,
+                    Intelligence     = 3,
+                    Constitution     = 9,
+                    ArmorClass       = 3,
+                    AttackBonus      = 2,
+                    Damage           = 6,
+                    ExperienceReward = 28,
+                    GoldRewardMin    = 2,
+                    GoldRewardMax    = 8,
                 },
                 Traits = new ArchetypeTraits
                 {
@@ -116,10 +251,457 @@ public static class ArchetypeSeeder
                     ColdImmune   = false,
                     PoisonImmune = false,
                 },
+            },
+            new ActorArchetype
+            {
+                Slug         = "bandit-captain",
+                TypeKey      = "humanoids",
+                DisplayName  = "Bandit Captain",
+                RarityWeight = 25,
+                MinLevel     = 6,
+                MaxLevel     = 12,
+                IsActive     = true,
+                Version      = 1,
+                UpdatedAt    = now,
+                Stats = new ArchetypeStats
+                {
+                    Health           = 220,
+                    Strength         = 15,
+                    Agility          = 12,
+                    Intelligence     = 10,
+                    Constitution     = 14,
+                    ArmorClass       = 8,
+                    AttackBonus      = 6,
+                    Damage           = 14,
+                    ExperienceReward = 180,
+                    GoldRewardMin    = 40,
+                    GoldRewardMax    = 80,
+                },
+                Traits = new ArchetypeTraits
+                {
+                    Hostile      = true,
+                    Aggressive   = false,
+                    PackHunter   = false,
+                    Shopkeeper   = false,
+                    QuestGiver   = false,
+                    HasDialogue  = false,
+                    Immortal     = false,
+                    Wanderer     = false,
+                    Boss         = true,
+                    Elite        = true,
+                    Ranged       = false,
+                    Caster       = false,
+                    FireImmune   = false,
+                    ColdImmune   = false,
+                    PoisonImmune = false,
+                },
+            },
+            new ActorArchetype
+            {
+                Slug         = "moor-wight",
+                TypeKey      = "undead",
+                DisplayName  = "Moor Wight",
+                RarityWeight = 60,
+                MinLevel     = 6,
+                MaxLevel     = 10,
+                IsActive     = true,
+                Version      = 1,
+                UpdatedAt    = now,
+                Stats = new ArchetypeStats
+                {
+                    Health           = 90,
+                    Mana             = 30,
+                    Strength         = 12,
+                    Agility          = 8,
+                    Intelligence     = 12,
+                    Constitution     = 12,
+                    ArmorClass       = 5,
+                    AttackBonus      = 4,
+                    Damage           = 10,
+                    ExperienceReward = 70,
+                    GoldRewardMin    = 8,
+                    GoldRewardMax    = 20,
+                },
+                Traits = new ArchetypeTraits
+                {
+                    Hostile      = true,
+                    Aggressive   = false,
+                    PackHunter   = false,
+                    Shopkeeper   = false,
+                    QuestGiver   = false,
+                    HasDialogue  = false,
+                    Immortal     = false,
+                    Wanderer     = true,
+                    Boss         = false,
+                    Elite        = false,
+                    Ranged       = false,
+                    Caster       = true,
+                    FireImmune   = false,
+                    ColdImmune   = true,
+                    PoisonImmune = true,
+                },
+            },
+            new ActorArchetype
+            {
+                Slug         = "cairn-haunt",
+                TypeKey      = "undead",
+                DisplayName  = "Cairn Haunt",
+                RarityWeight = 45,
+                MinLevel     = 8,
+                MaxLevel     = 14,
+                IsActive     = true,
+                Version      = 1,
+                UpdatedAt    = now,
+                Stats = new ArchetypeStats
+                {
+                    Health           = 110,
+                    Mana             = 45,
+                    Strength         = 14,
+                    Agility          = 10,
+                    Intelligence     = 14,
+                    Constitution     = 12,
+                    ArmorClass       = 6,
+                    AttackBonus      = 5,
+                    Damage           = 12,
+                    ExperienceReward = 95,
+                    GoldRewardMin    = 10,
+                    GoldRewardMax    = 24,
+                },
+                Traits = new ArchetypeTraits
+                {
+                    Hostile      = true,
+                    Aggressive   = false,
+                    PackHunter   = false,
+                    Shopkeeper   = false,
+                    QuestGiver   = false,
+                    HasDialogue  = false,
+                    Immortal     = false,
+                    Wanderer     = false,
+                    Boss         = false,
+                    Elite        = false,
+                    Ranged       = false,
+                    Caster       = true,
+                    FireImmune   = false,
+                    ColdImmune   = true,
+                    PoisonImmune = true,
+                },
+            },
+            new ActorArchetype
+            {
+                Slug         = "fen-lurker",
+                TypeKey      = "beasts",
+                DisplayName  = "Fen Lurker",
+                RarityWeight = 55,
+                MinLevel     = 9,
+                MaxLevel     = 14,
+                IsActive     = true,
+                Version      = 1,
+                UpdatedAt    = now,
+                Stats = new ArchetypeStats
+                {
+                    Health           = 140,
+                    Strength         = 18,
+                    Agility          = 12,
+                    Intelligence     = 4,
+                    Constitution     = 16,
+                    ArmorClass       = 7,
+                    AttackBonus      = 6,
+                    Damage           = 15,
+                    ExperienceReward = 120,
+                    GoldRewardMin    = 12,
+                    GoldRewardMax    = 30,
+                },
+                Traits = new ArchetypeTraits
+                {
+                    Hostile      = true,
+                    Aggressive   = true,
+                    PackHunter   = false,
+                    Shopkeeper   = false,
+                    QuestGiver   = false,
+                    HasDialogue  = false,
+                    Immortal     = false,
+                    Wanderer     = true,
+                    Boss         = false,
+                    Elite        = false,
+                    Ranged       = false,
+                    Caster       = false,
+                    FireImmune   = false,
+                    ColdImmune   = false,
+                    PoisonImmune = true,
+                },
+            },
+            new ActorArchetype
+            {
+                Slug         = "drowned-revenant",
+                TypeKey      = "undead",
+                DisplayName  = "Drowned Revenant",
+                RarityWeight = 40,
+                MinLevel     = 11,
+                MaxLevel     = 18,
+                IsActive     = true,
+                Version      = 1,
+                UpdatedAt    = now,
+                Stats = new ArchetypeStats
+                {
+                    Health           = 170,
+                    Mana             = 20,
+                    Strength         = 20,
+                    Agility          = 10,
+                    Intelligence     = 10,
+                    Constitution     = 18,
+                    ArmorClass       = 9,
+                    AttackBonus      = 8,
+                    Damage           = 18,
+                    ExperienceReward = 150,
+                    GoldRewardMin    = 15,
+                    GoldRewardMax    = 35,
+                },
+                Traits = new ArchetypeTraits
+                {
+                    Hostile      = true,
+                    Aggressive   = true,
+                    PackHunter   = false,
+                    Shopkeeper   = false,
+                    QuestGiver   = false,
+                    HasDialogue  = false,
+                    Immortal     = false,
+                    Wanderer     = false,
+                    Boss         = false,
+                    Elite        = false,
+                    Ranged       = false,
+                    Caster       = false,
+                    FireImmune   = false,
+                    ColdImmune   = true,
+                    PoisonImmune = true,
+                },
+            },
+            new ActorArchetype
+            {
+                Slug         = "gull-rider-brute",
+                TypeKey      = "humanoids",
+                DisplayName  = "Gull-Rider Brute",
+                RarityWeight = 40,
+                MinLevel     = 13,
+                MaxLevel     = 18,
+                IsActive     = true,
+                Version      = 1,
+                UpdatedAt    = now,
+                Stats = new ArchetypeStats
+                {
+                    Health           = 210,
+                    Strength         = 22,
+                    Agility          = 16,
+                    Intelligence     = 8,
+                    Constitution     = 18,
+                    ArmorClass       = 10,
+                    AttackBonus      = 9,
+                    Damage           = 22,
+                    ExperienceReward = 200,
+                    GoldRewardMin    = 20,
+                    GoldRewardMax    = 45,
+                },
+                Traits = new ArchetypeTraits
+                {
+                    Hostile      = true,
+                    Aggressive   = false,
+                    PackHunter   = true,
+                    Shopkeeper   = false,
+                    QuestGiver   = false,
+                    HasDialogue  = false,
+                    Immortal     = false,
+                    Wanderer     = false,
+                    Boss         = false,
+                    Elite        = false,
+                    Ranged       = true,
+                    Caster       = false,
+                    FireImmune   = false,
+                    ColdImmune   = false,
+                    PoisonImmune = false,
+                },
+            },
+            new ActorArchetype
+            {
+                Slug         = "storm-harrower",
+                TypeKey      = "spirits",
+                DisplayName  = "Storm Harrower",
+                RarityWeight = 30,
+                MinLevel     = 15,
+                MaxLevel     = 20,
+                IsActive     = true,
+                Version      = 1,
+                UpdatedAt    = now,
+                Stats = new ArchetypeStats
+                {
+                    Health           = 240,
+                    Mana             = 80,
+                    Strength         = 18,
+                    Agility          = 18,
+                    Intelligence     = 20,
+                    Constitution     = 16,
+                    ArmorClass       = 11,
+                    AttackBonus      = 10,
+                    Damage           = 25,
+                    ExperienceReward = 240,
+                    GoldRewardMin    = 25,
+                    GoldRewardMax    = 55,
+                },
+                Traits = new ArchetypeTraits
+                {
+                    Hostile      = true,
+                    Aggressive   = false,
+                    PackHunter   = false,
+                    Shopkeeper   = false,
+                    QuestGiver   = false,
+                    HasDialogue  = false,
+                    Immortal     = false,
+                    Wanderer     = true,
+                    Boss         = false,
+                    Elite        = true,
+                    Ranged       = true,
+                    Caster       = true,
+                    FireImmune   = false,
+                    ColdImmune   = false,
+                    PoisonImmune = false,
+                },
+            },
+            new ActorArchetype
+            {
+                Slug         = "cinderling",
+                TypeKey      = "elementals",
+                DisplayName  = "Cinderling",
+                RarityWeight = 35,
+                MinLevel     = 20,
+                MaxLevel     = 26,
+                IsActive     = true,
+                Version      = 1,
+                UpdatedAt    = now,
+                Stats = new ArchetypeStats
+                {
+                    Health           = 280,
+                    Strength         = 24,
+                    Agility          = 14,
+                    Intelligence     = 12,
+                    Constitution     = 20,
+                    ArmorClass       = 12,
+                    AttackBonus      = 11,
+                    Damage           = 28,
+                    ExperienceReward = 300,
+                    GoldRewardMin    = 30,
+                    GoldRewardMax    = 60,
+                },
+                Traits = new ArchetypeTraits
+                {
+                    Hostile      = true,
+                    Aggressive   = true,
+                    PackHunter   = false,
+                    Shopkeeper   = false,
+                    QuestGiver   = false,
+                    HasDialogue  = false,
+                    Immortal     = false,
+                    Wanderer     = true,
+                    Boss         = false,
+                    Elite        = false,
+                    Ranged       = false,
+                    Caster       = false,
+                    FireImmune   = true,
+                    ColdImmune   = false,
+                    PoisonImmune = false,
+                },
+            },
+            new ActorArchetype
+            {
+                Slug         = "pyreling",
+                TypeKey      = "elementals",
+                DisplayName  = "Pyreling",
+                RarityWeight = 30,
+                MinLevel     = 23,
+                MaxLevel     = 28,
+                IsActive     = true,
+                Version      = 1,
+                UpdatedAt    = now,
+                Stats = new ArchetypeStats
+                {
+                    Health           = 320,
+                    Mana             = 60,
+                    Strength         = 26,
+                    Agility          = 16,
+                    Intelligence     = 14,
+                    Constitution     = 22,
+                    ArmorClass       = 13,
+                    AttackBonus      = 12,
+                    Damage           = 32,
+                    ExperienceReward = 360,
+                    GoldRewardMin    = 35,
+                    GoldRewardMax    = 70,
+                },
+                Traits = new ArchetypeTraits
+                {
+                    Hostile      = true,
+                    Aggressive   = true,
+                    PackHunter   = false,
+                    Shopkeeper   = false,
+                    QuestGiver   = false,
+                    HasDialogue  = false,
+                    Immortal     = false,
+                    Wanderer     = false,
+                    Boss         = false,
+                    Elite        = false,
+                    Ranged       = false,
+                    Caster       = true,
+                    FireImmune   = true,
+                    ColdImmune   = false,
+                    PoisonImmune = false,
+                },
+            },
+            new ActorArchetype
+            {
+                Slug         = "fire-ancient",
+                TypeKey      = "elementals",
+                DisplayName  = "Fire-Ancient",
+                RarityWeight = 12,
+                MinLevel     = 26,
+                MaxLevel     = 30,
+                IsActive     = true,
+                Version      = 1,
+                UpdatedAt    = now,
+                Stats = new ArchetypeStats
+                {
+                    Health           = 900,
+                    Mana             = 200,
+                    Strength         = 30,
+                    Agility          = 12,
+                    Intelligence     = 22,
+                    Constitution     = 26,
+                    ArmorClass       = 16,
+                    AttackBonus      = 16,
+                    Damage           = 42,
+                    ExperienceReward = 1200,
+                    GoldRewardMin    = 150,
+                    GoldRewardMax    = 300,
+                },
+                Traits = new ArchetypeTraits
+                {
+                    Hostile      = true,
+                    Aggressive   = false,
+                    PackHunter   = false,
+                    Shopkeeper   = false,
+                    QuestGiver   = false,
+                    HasDialogue  = false,
+                    Immortal     = false,
+                    Wanderer     = false,
+                    Boss         = true,
+                    Elite        = true,
+                    Ranged       = false,
+                    Caster       = true,
+                    FireImmune   = true,
+                    ColdImmune   = false,
+                    PoisonImmune = false,
+                },
             }
     ];
 
-    // NPCs
+    // NPCs. Not placed in any spawn pool: a pool entry becomes an enemy, so an NPC in a pool is an NPC you can
+    // attack. They exist for trade, quest and dialogue content.
     private static async Task SeedNpcsAsync(ContentDbContext db)
     {
         var now = DateTimeOffset.UtcNow;
@@ -197,6 +779,39 @@ public static class ArchetypeSeeder
                     Ranged      = false,
                     Caster      = false,
                 },
-        }
+            },
+            new ActorArchetype
+            {
+                Slug         = "wayfarer-elder",
+                TypeKey      = "townspeople",
+                DisplayName  = "Wayfarer Elder",
+                RarityWeight = 55,
+                MinLevel     = 1,
+                MaxLevel     = 1,
+                IsActive     = true,
+                Version      = 1,
+                UpdatedAt    = now,
+                Stats = new ArchetypeStats
+                {
+                    Health     = 50,
+                    TradeSkill = 0,
+                    TradeGold  = 0,
+                },
+                Traits = new ArchetypeTraits
+                {
+                    Hostile     = false,
+                    Aggressive  = false,
+                    PackHunter  = false,
+                    Shopkeeper  = false,
+                    QuestGiver  = true,
+                    HasDialogue = true,
+                    Immortal    = true,
+                    Wanderer    = false,
+                    Boss        = false,
+                    Elite       = false,
+                    Ranged      = false,
+                    Caster      = false,
+                },
+            }
     ];
 }

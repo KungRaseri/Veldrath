@@ -1,754 +1,746 @@
 # Veldrath Design System
 
-> **Status:** Living document — decisions recorded in [§ Decision Log](#9-decision-log).
-> **Surfaces covered:** the SvelteKit web app only ([`web/`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/)) — the game client, the Foundry content editor, and every staff portal.
-> **Last updated:** 2026-10-25
->
-> **Migration note:** Every non-web surface has been retired — the Blazor `Veldrath.Web` / `RealmFoundry` apps, the `Veldrath.Client` Avalonia desktop client, and the `RealmForge` Avalonia content editor. MudBlazor **and** Avalonia guidance in this document is historical: the `Avalonia key` columns, AXAML snippets, `GameColors.axaml`, `ForgeTheme.axaml`, and `RealmUI.Fonts` references are kept only as a record of how the tokens were mapped. Live tokens are [`theme.css`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/src/routes/theme.css) and [`brand.css`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/src/routes/brand.css).
+> **Status:** Living document — decisions are recorded in [§9 Decision log](#9-decision-log).
+> **Surfaces covered:** the SvelteKit app only (`web/`) — public site, accounts, characters, the game
+> client, Foundry, editorial, admin and moderation.
+> **Source of truth:** the tokens themselves live in CSS, not here. `theme.css` holds every raw token
+> and the Skeleton v5 ramp block; `brand.css` holds the brand layer and the component primitives.
+> This document explains them and states the rules — when the two disagree, the CSS wins and this
+> document is wrong.
+> **Last verified against code:** 2026-11-19.
+> **Related:** [Brand guide](design/brand-guide.md) · [Asset specs](design/asset-specs.md) ·
+> [Asset inventory](design/asset-inventory.md) · [Client UI architecture](client-ui-architecture.md).
 
 ---
 
-## Table of Contents
+## Table of contents
 
-1. [Overview & Design Principles](#1-overview--design-principles)
-2. [Brand Identity](#2-brand-identity)
-3. [Color System](#3-color-system)
+1. [Overview and design principles](#1-overview-and-design-principles)
+2. [Brand identity](#2-brand-identity)
+3. [Colour](#3-colour)
 4. [Typography](#4-typography)
-5. [Spacing & Grid](#5-spacing--grid)
+5. [Spacing, layout and radius](#5-spacing-layout-and-radius)
 6. [Iconography](#6-iconography)
-7. [Component Guidelines](#7-component-guidelines)
-8. [Implementation Notes](#8-implementation-notes)
-9. [Decision Log](#9-decision-log)
+7. [Components](#7-components)
+8. [Implementation notes](#8-implementation-notes)
+9. [Decision log](#9-decision-log)
+10. [History — retired surfaces](#10-history--retired-surfaces)
 
 ---
 
-## 1. Overview & Design Principles
+## 1. Overview and design principles
 
-The Veldrath Design System (VDS) defines the shared visual language across every player-facing surface of Veldrath. It ensures that a player moving from the game client to the community portal to the website encounters a coherent identity — the same sense of place, weight, and atmosphere regardless of platform.
+The Veldrath Design System (VDS) is the visual language of a single surface: the SvelteKit app.
+There is no second platform to keep in sync, so a token is defined once, mapped once into the
+Skeleton ramp block, and consumed either through a Skeleton preset class or through a component
+primitive in `brand.css`.
 
-### Design Principles
-
-| Principle | Description |
+| Principle | What it means in practice |
 |---|---|
-| **Dark-first** | All surfaces are built on a near-black background. Depth is created by layering lighter surfaces, not by introducing light-mode alternatives. |
-| **Restrained drama** | The palette uses controlled doses of strong colour (Crimson Seal, Emberfall) against a muted dark canvas. Every accent earns its presence. |
-| **Legibility before atmosphere** | Typography is always readable. Decorative fonts appear at display sizes only; Inter carries the functional UI load at every size. |
-| **One surface, one implementation** | Every player-facing and staff-facing surface is the SvelteKit app. Tokens are defined once in CSS custom properties and consumed through Skeleton classes, so there is no second platform to keep in sync. |
-| **Semantic colour** | Colour communicates meaning. Red = danger/combat. Orange-red = heat/energy. Green = health/success. Blue = information. These meanings must not be violated by decorative use. |
+| **Dark-first** | Every surface sits on a near-black canvas. Depth comes from layering lighter surfaces, never from a light-mode variant. |
+| **Restrained drama** | Strong colour appears in controlled doses — Crimson Seal for action, Gold for metal and structure, Emberfall for heat. Every accent earns its presence. |
+| **Legibility before atmosphere** | Inter carries all functional text at 11–16px. Display faces appear at heading sizes only. No decorative face is ever used for a label, a value or a button. |
+| **Semantic colour** | Red means danger, gold means metal and standing, green means health, blue means information. Decorative use must not violate those meanings. |
+| **One implementation** | A colour, radius or spacing value exists once. A component that needs a raw hex is a bug, not a style. |
 
 ---
 
-## 2. Brand Identity
+## 2. Brand identity
 
-**Name:** Veldrath  
-**Tagline register:** Epic, grounded, slightly archaic — never ironic.  
-**Tone:** Prestige dark fantasy. The world is old, dangerous, and beautiful. The interface should feel like it was carved from stone and lit by firelight.
+**Name:** Veldrath
+**Register:** epic, grounded, slightly archaic — never ironic.
+**Tone:** prestige dark fantasy. The world is old, dangerous and beautiful; the interface should feel
+carved from stone and lit by firelight.
 
-### Voice guidelines
+**Material story.** The identity is built from three materials, and every visual decision can be
+traced to one of them:
 
-- Headings use title case with display fonts; they feel inscribed, not typed.
-- Body copy is plain, direct, and slightly formal. No "Hey!" energy.
-- Error messages name the problem without panic. "Unable to connect to server." not "Uh oh! Something went wrong!"
-- Lore text (in-game books, Foundry articles) can use Lora for a manuscript warmth that Inter can't provide.
+| Material | Meaning | Token | Where it appears |
+|---|---|---|---|
+| **Blackened steel** | the world's age and weight | background layers, `--vds-border-*` | canvases, panels, dividers, the crest's frame |
+| **Aged gold** | standing, craft, the mark itself | `--vds-gold*` | the logo, panel-header icons, nav glyphs, hero kickers, equipped markers, prose emphasis |
+| **Ember and blood** | danger, heat, life | `--vds-seal*`, `--vds-ember*` | primary actions, active state, combat and energy, the crest's fissures |
 
----
+> **Gold and Seal are different jobs.** Gold is the *metal* — it is allowed to be permanent,
+> decorative and quiet. Crimson Seal is the *action* — it is only allowed where a player can press,
+> select or be alerted. A page with gold icons and one seal button reads correctly; a page with seal
+> icons and a seal button reads as an error state. See §3.4 below and the
+> [brand guide](design/brand-guide.md).
 
-## 3. Color System
-
-### 3.1 Current-state audit
-
-Before the unified system, each surface grew its own colours. This table is the historical as-is audit kept for reference — the `RealmFoundry` and `Veldrath.Web` columns belong to retired Blazor surfaces, and the `Veldrath.Client` and `RealmForge` columns belong to retired Avalonia surfaces (see [§10](#10-retired-surfaces-blazor--mudblazor)). The SvelteKit app is the only live surface.
-
-| Token | Veldrath.Client | RealmForge | RealmFoundry | Veldrath.Web |
-|---|---|---|---|---|
-| Window/page background | `#0C0D13` ✅ | `#1e1e1e` ⚠️ hardcoded | `#0d1117` ⚠️ | `#0d0d0d` ⚠️ |
-| Primary surface | `#14151F` ✅ | `#252526` ⚠️ | `#161b22` ⚠️ | `#111` ⚠️ |
-| Secondary surface | `#1C1D2B` ✅ | `#252526` ⚠️ | `#161b22` ⚠️ | `#1a1a1a` ⚠️ |
-| Primary text | `#F0EDE8` ✅ | `#e0e0e0` ⚠️ | `#c9d1d9` ⚠️ | `#e0e0e0` ⚠️ |
-| Muted text | `#A8A09A` ✅ | `#888` ⚠️ | `#8b949e` ⚠️ | `#aaa` ⚠️ |
-| Border | `#2A2B3D` ✅ | none | `#30363d` ⚠️ | `#2a2a2a` ⚠️ |
-| Brand accent | `#C9A84C` gold 🔄 | `#6a4a20` gold-ish 🔄 | `#7c5cbf` purple 🔄 | `#7c3aed` purple 🔄 |
-| Link color | — | — | `#58a6ff` ⚠️ | `#a78bfa` ⚠️ |
-
-**Legend:** ✅ Keep as-is → promote to token · ⚠️ Replace with VDS token · 🔄 Replace with Crimson Seal
+**Voice.** Headings use title case and read as inscribed rather than typed. Body copy is plain,
+direct and slightly formal — no "Hey!" energy. Errors name the problem without panic: "Unable to
+connect to server." Lore and editorial prose may use Lora for manuscript warmth.
 
 ---
 
-### 3.2 Background layer model
+## 3. Colour
 
-Five layers of depth. Layer 0 is the canvas — everything sits on top of it. Each layer is approximately 8–10 lightness points above the previous.
+### 3.1 How the colour system is built
 
-| Token | Hex | Avalonia key | CSS variable | Used for |
-|---|---|---|---|---|
-| **Layer 0** | `#0C0D13` | `GameBackground0Color` | `--vds-bg-0` | Window background, page canvas |
-| **Layer 1** | `#14151F` | `GameBackground1Color` | `--vds-bg-1` | Sidebars, navigation panels |
-| **Layer 2** | `#1C1D2B` | `GameBackground2Color` | `--vds-bg-2` | Cards, dialogs, secondary panels |
-| **Layer 3** | `#262736` | `GameBackground3Color` | `--vds-bg-3` | Input fields, hover fills, pressed surfaces |
-| **Layer 4** | `#2E2F42` | `GameBackground4Color` | `--vds-bg-4` | Tooltips, flyouts, top-level overlays |
+Three layers, in this order:
 
----
+1. **Raw VDS tokens** — the `:root` block in `theme.css`. These are the palette. Nothing else may
+   introduce a colour.
+2. **The Skeleton ramp block** — `[data-theme='veldrath']` in the same file. It maps brand values
+   onto Skeleton v5's `primary` / `secondary` / `tertiary` / `success` / `warning` / `error` /
+   `surface` scales (stops 50–950 plus contrast pairs) so Skeleton components, `text-*` utilities and
+   `preset-*` classes render in Veldrath colours with no per-component overrides.
+3. **Component primitives** — `brand.css`. Layout, chrome and the game HUD, all built from layer 1.
 
-### 3.3 Primary accent — Crimson Seal
+**Rule:** new UI consumes layer 2 or a layer 3 primitive. A component never declares a hex.
 
-The primary interactive accent. Used for: CTA buttons, active navigation states, selection highlights, focus rings, XP bars, links on dark surfaces, interactive element borders on hover/focus.
+### 3.2 Background layers
 
-| Token | Hex | Avalonia key | CSS variable | Use |
-|---|---|---|---|---|
-| **Seal Light** | `#E05545` | `GameAccentLightColor` | `--vds-seal-light` | Hover state on Seal-filled elements |
-| **Seal** | `#C0392B` | `GameAccentColor` | `--vds-seal` | Default primary accent |
-| **Seal Dark** | `#8C2018` | `GameAccentDarkColor` | `--vds-seal-dark` | Pressed state, deep accent shadow |
-| **Seal Muted** | `#3D1A16` | `GameAccentMutedColor` | `--vds-seal-muted` | Tinted surface bg (active card, badge fill) |
+The canvas is a five-step ladder. Each step is roughly 8–10 lightness points above the previous one,
+so a stack of panels stays readable without borders doing all the work.
 
-> **Contrast note:** Seal (`#C0392B`) on Layer 0 (`#0C0D13`) yields ~3.6:1 — sufficient for large text (≥18pt/14pt bold) but not for body-size labels. Always prefer Seal Light (`#E05545`, ~5.8:1) for any accent text rendered at 14px or smaller.
+| Layer | Token | Hex | Used for |
+|---|---|---|---|
+| **Layer 0** | `--vds-bg-0` | `#0C0D13` | Page canvas, game shell background |
+| **Layer 1** | `--vds-bg-1` | `#14151F` | Panels, cards, dialogs, sidebars, top bar |
+| **Layer 2** | `--vds-bg-2` | `#1C1D2B` | Equipment slots, nested blocks inside a panel |
+| **Layer 3** | `--vds-bg-3` | `#262736` | Hover fills on rows and slots, input wells |
+| **Layer 4** | `--vds-bg-4` | `#2E2F42` | Overlays and flyouts above a dialog |
 
----
+`--vds-bg-deeper` (`#080910`) is declared but no component consumes it — see [§8.3](#83-declared-but-unconsumed-tokens).
 
-### 3.4 Secondary accent — Emberfall
+### 3.3 Crimson Seal — primary accent
 
-The heat/energy accent. Used for: combat critical states, enchantment glows, warning-adjacent highlights, secondary CTA buttons, stamina bars, fire-aspected visual effects.
+The action colour. Used for primary buttons, active navigation, focus rings, selection, XP, link
+colour on dark surfaces, and the equipped-item border.
 
-| Token | Hex | Avalonia key | CSS variable | Use |
-|---|---|---|---|---|
-| **Ember Light** | `#E05E35` | `GameSecondaryAccentLightColor` | `--vds-ember-light` | Hover on Emberfall elements |
-| **Ember** | `#CC4125` | `GameSecondaryAccentColor` | `--vds-ember` | Default secondary accent |
-| **Ember Dark** | `#943018` | `GameSecondaryAccentDarkColor` | `--vds-ember-dark` | Pressed Emberfall, depth |
-| **Ember Muted** | `#361A10` | `GameSecondaryAccentMutedColor` | `--vds-ember-muted` | Heat-tinted surface (dungeon bg, loot glow) |
-
----
-
-### 3.5 Text scale
-
-Slightly warm white — easier on the eyes against the near-black background than a pure `#FFFFFF`.
-
-| Token | Hex | Avalonia key | CSS variable | Use |
-|---|---|---|---|---|
-| **Primary** | `#F0EDE8` | `GameTextPrimaryColor` | `--vds-text` | All default body text |
-| **Secondary** | `#A8A09A` | `GameTextSecondaryColor` | `--vds-text-muted` | Supporting copy, subtitles, metadata |
-| **Tertiary** | `#6E6860` | `GameTextTertiaryColor` | `--vds-text-subtle` | Timestamps, captions, placeholders |
-| **Disabled** | `#4A4540` | `GameTextDisabledColor` | `--vds-text-disabled` | Disabled controls, inactive labels |
-
----
-
-### 3.6 Border scale
-
-| Token | Hex | Avalonia key | CSS variable | Use |
-|---|---|---|---|---|
-| **Subtle** | `#1E1F2D` | `GameBorderSubtleColor` | `--vds-border-subtle` | Dividers that should barely register |
-| **Default** | `#2A2B3D` | `GameBorderColor` | `--vds-border` | Standard card, input, panel borders |
-| **Strong** | `#3D3F58` | `GameBorderStrongColor` | `--vds-border-strong` | Hover/focus state borders, active separators |
-
----
-
-### 3.7 Semantic colors
-
-These colors carry fixed meaning throughout the system. Do not repurpose them decoratively.
-
-| Token | Hex | Muted bg | Avalonia key | CSS variable | Meaning |
-|---|---|---|---|---|---|
-| **Success** | `#5CAB7D` | `#1F3D2E` | `GameSuccessColor` | `--vds-success` | Health restored, buffs, positive outcomes |
-| **Danger** | `#E05252` | `#4A1A1A` | `GameDangerColor` | `--vds-danger` | Errors, death, hostile UI, destructive actions |
-| **Warning** | `#D4964A` | `#4A3018` | `GameWarningColor` | `--vds-warning` | Low resources, time limits, caution states |
-| **Info** | `#5A9ED6` | `#1A3250` | `GameInfoColor` | `--vds-info` | Tooltips, lore text, neutral notifications |
-
-> **Danger vs Seal:** `GameDangerColor` (`#E05252`) is the error/hostile semantic — it remains distinct from Crimson Seal (`#C0392B`). Seal is the brand accent; Danger is a functional signal. Do not conflate them.
-
----
-
-### 3.8 Interactive state overlays
-
-Applied as background fills over interactive items (list rows, nav items, table rows). These are not new colors — they are Layer 3/4 values used in context.
-
-| Token | Hex | Avalonia key | CSS variable | Use |
-|---|---|---|---|---|
-| **Hover** | `#1E2030` | `GameInteractiveHoverColor` | `--vds-hover` | Pointer-over fill |
-| **Pressed** | `#252639` | `GameInteractivePressedColor` | `--vds-pressed` | Active press fill |
-| **Selected** | `#252639` | `GameInteractiveSelectedColor` | `--vds-selected` | Selected item fill |
-
-For nav items and list items with a Seal accent, combine the hover fill with a Seal-left-border (2px) to indicate the active state.
-
----
-
-### 3.9 OAuth provider colors
-
-Fixed brand colors — do not substitute VDS tokens here.
-
-| Provider | Hex | CSS variable |
+| Token | Hex | Use |
 |---|---|---|
-| Discord | `#5865F2` | `--vds-oauth-discord` |
-| Google | `#4285F4` | `--vds-oauth-google` |
-| Microsoft | `#0078D4` | `--vds-oauth-microsoft` |
+| `--vds-seal-light` | `#E05545` | Seal-coloured **text** at any size; hover on seal-filled elements |
+| `--vds-seal` | `#C0392B` | Default fill for a primary button, active border, glow |
+| `--vds-seal-dark` | `#8C2018` | Pressed fill, deep accent shadow |
+| `--vds-seal-muted` | `#3D1A16` | Tinted surface behind active or selected state |
 
----
+**Rules**
+- Seal at `#C0392B` is 3.6:1 on Layer 0 — large text only. Any seal-coloured **text** below 18pt
+  uses `--vds-seal-light` (5.1:1).
+- One seal-filled button per screen region. Everything else is tonal or ghost.
+- Seal is the brand accent, not an error signal — see [§3.8](#38-semantic-colours).
 
-### 3.10 WCAG contrast reference
+### 3.4 Veldrath Gold — metal accent
 
-All pairings measured against WCAG 2.1. **AA** requires 4.5:1 at normal text (< 18pt), 3:1 at large text (≥ 18pt or 14pt bold). **AAA** requires 7:1.
+The identity's permanent metal: the logo, the crest frame, and every glyph that describes a
+*structure* rather than an action. Gold is quiet and always present; it is not interactive.
 
-| Foreground | Background | Ratio | Level | Notes |
+| Token | Hex | Use |
+|---|---|---|
+| `--vds-gold-light` | `#D4B96A` | Prose emphasis, link hover, footer headings |
+| `--vds-gold` | `#C9A84C` | Panel-header icons, nav glyphs, hero kicker, item-slot glyphs, equipped marker |
+| `--vds-gold-dark` | `#A68A2E` | Shadow and pressed tone for gold elements |
+| `--vds-gold-muted` | `#3D3216` | Gold-tinted fill: blockquote rule, scrollbar hover |
+
+Gold is `secondary` in the Skeleton ramp, so `text-secondary-*` and `preset-tonal-secondary` resolve
+to this scale. Gold at 500 measures 8.5:1 on Layer 0 (AAA) — but do not use it for body copy; it is
+a metal, not a text colour.
+
+### 3.5 Emberfall — heat accent
+
+The heat and energy register: critical combat states, stamina, enchantment glow, fire-aspected
+effects, and warning-adjacent highlights that are not warnings.
+
+| Token | Hex | Use |
+|---|---|---|
+| `--vds-ember-light` | `#E05E35` | Ember text at small sizes; hover on ember elements |
+| `--vds-ember` | `#CC4125` | Default ember fill |
+| `--vds-ember-dark` | `#943018` | Pressed ember, depth |
+| `--vds-ember-muted` | `#361A10` | Heat-tinted surface |
+
+Ember is `tertiary` in the Skeleton ramp.
+
+### 3.6 Text scale
+
+Slightly warm white, easier on the eye than pure `#FFFFFF` against near-black.
+
+| Token | Hex | Use | On Layer 0 |
+|---|---|---|---|
+| `--vds-text` | `#F0EDE8` | All default text | 16.6:1 |
+| `--vds-text-muted` | `#A8A09A` | Supporting copy, subtitles, metadata, labels | 7.5:1 |
+| `--vds-text-subtle` | `#6E6860` | Timestamps, captions, placeholders | 3.5:1 — large text only |
+| `--vds-text-disabled` | `#4A4540` | Disabled controls | not a reading colour |
+
+### 3.7 Border scale
+
+| Token | Hex | Use |
+|---|---|---|
+| `--vds-border-subtle` | `#1E1F2D` | Dividers that should barely register |
+| `--vds-border` | `#2A2B3D` | Standard panel, card, input borders |
+| `--vds-border-strong` | `#3D3F58` | Hover and focus borders, dialog edge, active separators |
+
+### 3.8 Semantic colours
+
+Fixed meanings. Do not repurpose them, and do not use Seal where a semantic is meant.
+
+| Meaning | Token | Hex | Muted fill | Used for |
 |---|---|---|---|---|
-| Text Primary `#F0EDE8` | Layer 0 `#0C0D13` | ~18:1 | AAA | Main text — excellent |
-| Text Primary `#F0EDE8` | Layer 2 `#1C1D2B` | ~14.9:1 | AAA | Card text — excellent |
-| Text Secondary `#A8A09A` | Layer 0 `#0C0D13` | ~8:1 | AAA | Muted text on canvas |
-| Text Secondary `#A8A09A` | Layer 2 `#1C1D2B` | ~6.4:1 | AA | Muted text on cards |
-| Seal `#C0392B` | Layer 0 `#0C0D13` | ~3.6:1 | AA large | Use Seal Light for small text |
-| Seal Light `#E05545` | Layer 0 `#0C0D13` | ~5.8:1 | AA | Safe for accent labels |
-| Seal Light `#E05545` | Layer 2 `#1C1D2B` | ~4.7:1 | AA | Safe for accent labels on cards |
-| Success `#5CAB7D` | Layer 0 `#0C0D13` | ~5.4:1 | AA | Health/success labels |
-| Danger `#E05252` | Layer 0 `#0C0D13` | ~4.9:1 | AA | Error labels |
-| Warning `#D4964A` | Layer 0 `#0C0D13` | ~4.6:1 | AA | Caution labels |
-| Info `#5A9ED6` | Layer 0 `#0C0D13` | ~5.2:1 | AA | Info labels |
+| Success | `--vds-success` | `#5CAB7D` | `--vds-success-muted` `#1F3D2E` | Health restored, buffs, positive outcomes, online state |
+| Danger | `--vds-danger` | `#E05252` | `--vds-danger-muted` `#4A1A1A` | Errors, death, destructive actions, offline state |
+| Warning | `--vds-warning` | `#D4964A` | `--vds-warning-muted` `#4A3018` | Low resources, caution, system chat, reconnecting |
+| Info | `--vds-info` | `#5A9ED6` | `--vds-info-muted` `#1A3250` | Neutral notifications, lore links, global chat |
+
+> **Danger is not Seal.** `#E05252` is the functional error signal; `#C0392B` is the brand action
+> colour. They are deliberately different and never interchangeable.
+
+### 3.9 Rarity scale
+
+Item rarity is a five-stop scale, applied as a **text colour only** today (`.rarity-common` …
+`.rarity-legendary` in `brand.css`). There is no rarity frame, border or glow treatment yet.
+
+| Rarity | Token | Hex | On Layer 1 |
+|---|---|---|---|
+| Common | `--vds-rarity-common` | `#C0C0C0` | 10.0:1 |
+| Uncommon | `--vds-rarity-uncommon` | `#4ADE80` | 10.4:1 |
+| Rare | `--vds-rarity-rare` | `#60A5FA` | 7.1:1 |
+| Epic | `--vds-rarity-epic` | `#C084FC` | 6.9:1 |
+| Legendary | `--vds-rarity-legendary` | `#FBBF24` | 10.9:1 |
+
+Rarity hues are independent of the semantic palette: epic purple is not "info" and uncommon green is
+not "success". Keep them that way.
+
+### 3.10 Chat and map accents
+
+| Token | Hex | Use |
+|---|---|---|
+| `--vds-pink` | `#F472B6` | Whisper chat text only |
+| `--vds-indicator-player` | `#C9A84C` | Player marker on the map graph (gold — "you are the mark") |
+| `--vds-indicator-occupant` | `#5A9ED6` | Occupant marker |
+| `--vds-indicator-enemy` | `#E53935` | Hostile marker; distinct from `--vds-danger` |
+
+`--vds-indicator-*` and `--vds-accent` (`#60A5FA`) are declared but not yet consumed by a component.
+
+### 3.11 Interactive overlays
+
+Fills applied over interactive rows, never standalone colours.
+
+| Token | Hex | Use |
+|---|---|---|
+| `--vds-hover` | `#1E2030` | Pointer-over fill |
+| `--vds-pressed` | `#252639` | Active press |
+| `--vds-selected` | `#252639` | Selected row |
+
+In practice the game primitives use the Layer 3 fill (`--vds-bg-3`) for row and slot hover, and a
+`--vds-seal` left or full border for the selected/equipped state. Prefer those.
+
+### 3.12 OAuth provider colours
+
+Brand colours of third parties. Never substitute VDS tokens here.
+
+| Provider | Token | Hex |
+|---|---|---|
+| Discord | `--vds-oauth-discord` | `#5865F2` |
+| Google | `--vds-oauth-google` | `#4285F4` |
+| Microsoft | `--vds-oauth-microsoft` | `#0078D4` |
+
+### 3.13 Skeleton v5 ramps
+
+Every family below is defined at `theme.css` in `[data-theme='veldrath']`, with stops 50–950 and a
+matching `*-contrast-*` pair. The 500 stop is the brand value.
+
+| Skeleton family | 500 stop | Source token |
+|---|---|---|
+| `primary` | `#C0392B` | Crimson Seal |
+| `secondary` | `#C9A84C` | Veldrath Gold |
+| `tertiary` | `#CC4125` | Emberfall |
+| `success` | `#5CAB7D` | Success |
+| `warning` | `#D4964A` | Warning |
+| `error` | `#E05252` | Danger |
+| `surface` | — | neutral ladder, below |
+
+`surface` is the neutral ramp, and it only partly mirrors the background layers:
+
+| Stop | Hex | Equals |
+|---|---|---|
+| `surface-950` | `#0C0D13` | Layer 0 |
+| `surface-900` | `#1C1D2B` | Layer 2 |
+| `surface-800` | `#2E2F42` | Layer 4 |
+| `surface-700` | `#4A4540` | text-disabled |
+| `surface-600` | `#6E6860` | text-subtle |
+| `surface-400` | `#A8A09A` | text-muted |
+
+There is **no surface stop equal to Layer 1 or Layer 3**. A panel surface is `--vds-bg-1`; a hover
+fill is `--vds-bg-3`. Use `text-surface-600-400` for muted copy, but do not try to express a panel
+background through the surface ramp.
+
+### 3.14 Contrast reference
+
+Measured with the WCAG 2.1 relative-luminance formula against the layer named. **AA** is 4.5:1 at
+normal text and 3:1 at large text (≥18pt, or 14pt bold); **AAA** is 7:1. Re-measure when a token
+changes — this table was recomputed on 2026-11-19 and the previous edition of this document carried
+several inflated accent values.
+
+| Foreground | Background | Ratio | Level |
+|---|---|---|---|
+| Text primary `#F0EDE8` | Layer 0 `#0C0D13` | 16.6:1 | AAA |
+| Text primary `#F0EDE8` | Layer 2 `#1C1D2B` | 14.3:1 | AAA |
+| Text secondary `#A8A09A` | Layer 0 `#0C0D13` | 7.5:1 | AAA |
+| Text secondary `#A8A09A` | Layer 2 `#1C1D2B` | 6.5:1 | AA |
+| Text subtle `#6E6860` | Layer 0 `#0C0D13` | 3.5:1 | AA large |
+| Gold `#C9A84C` | Layer 0 `#0C0D13` | 8.5:1 | AAA |
+| Gold `#C9A84C` | Layer 1 `#14151F` | 7.9:1 | AAA |
+| Gold light `#D4B96A` | Layer 0 `#0C0D13` | 10.1:1 | AAA |
+| Seal `#C0392B` | Layer 0 `#0C0D13` | 3.6:1 | AA large |
+| Seal `#C0392B` | Layer 1 `#14151F` | 3.3:1 | AA large |
+| Seal light `#E05545` | Layer 0 `#0C0D13` | 5.1:1 | AA |
+| Seal light `#E05545` | Layer 2 `#1C1D2B` | 4.4:1 | AA large |
+| Ember `#CC4125` | Layer 0 `#0C0D13` | 4.0:1 | AA large |
+| Ember light `#E05E35` | Layer 0 `#0C0D13` | 5.4:1 | AA |
+| Success `#5CAB7D` | Layer 0 `#0C0D13` | 7.0:1 | AA |
+| Danger `#E05252` | Layer 0 `#0C0D13` | 5.1:1 | AA |
+| Warning `#D4964A` | Layer 0 `#0C0D13` | 7.6:1 | AAA |
+| Info `#5A9ED6` | Layer 0 `#0C0D13` | 6.7:1 | AA |
 
 ---
 
 ## 4. Typography
 
-### 4.1 The five-tier font system
+### 4.1 The five tiers
 
-| Tier | Font | Weight range | Where loaded | Used for |
+| Tier | Font | Weight | Loaded from | Used for |
 |---|---|---|---|---|
-| **T1 — Marquee** | Cinzel Decorative | Regular (400) | Google Fonts CDN / embedded | Logo, splash screens, chapter title cards — **never** for repeated UI elements |
-| **T2 — Display** | Cinzel | Regular (400), SemiBold (600) | Google Fonts CDN / embedded | Section headings, UI panel titles, nav brand text, quest names |
-| **T3 — Reading** | Lora | Regular (400), Italic (400i) | Google Fonts CDN | Lore text, long descriptions, Foundry/Web article body, in-game book excerpts |
-| **T4 — UI Body** | Inter | Regular (400), Medium (500), SemiBold (600) | Avalonia.Fonts.Inter (NuGet) / Google Fonts CDN | All UI labels, stats, buttons, form fields, data tables, metadata |
-| **T5 — Data** | JetBrains Mono | Regular (400), Medium (500) | Google Fonts CDN / embedded | RealmForge stat columns, schema/key displays, code snippets |
+| **T1 — Marquee** | Cinzel Decorative | 400 | self-hosted `CinzelDecorative-Regular.ttf` | Logo and splash moments only. Never a repeated element, never a button. |
+| **T2 — Display** | Cinzel | 400–900 variable | self-hosted `Cinzel-VariableFont_wght.ttf` | Section and panel headings, nav brand text, quest names, dialog titles |
+| **T3 — Reading** | Lora | 400–700, roman + italic | self-hosted variable + italic | Lore, long descriptions, article body, in-game book text |
+| **T4 — UI body** | Inter | 400 / 500 / 600 | Google Fonts (network) | Every label, value, button, form field, table cell, metadata string |
+| **T5 — Data** | JetBrains Mono | 100–800 variable | self-hosted variable | Keys, schema values, code, numeric stat columns |
 
-**Avalonia font resource keys:**
-
-| Key | Font | Used by |
-|---|---|---|
-| `GameFontBody` | Inter | All standard controls |
-| `GameFontTitle` | Cinzel | `.title`, `.title-large` classes, panel headers |
-| `GameFontDisplay` | Cinzel Decorative | Splash/logo elements only |
-| `GameFontReading` | Lora | Lore `TextBlock` wrappers (`.lore` class) |
-| `GameFontMono` | JetBrains Mono | RealmForge data cells, schema fields |
-
-**CSS font stack (web surfaces):**
-
-```css
---vds-font-display:  'Cinzel Decorative', 'Cinzel', serif;
---vds-font-heading:  'Cinzel', serif;
---vds-font-reading:  'Lora', Georgia, serif;
---vds-font-body:     'Inter', system-ui, sans-serif;
---vds-font-mono:     'JetBrains Mono', 'Cascadia Code', monospace;
-```
-
----
+Cinzel, Cinzel Decorative, Lora and JetBrains Mono are OFL-licensed and shipped in
+`web/client/static/fonts/`. Inter is the single network font; there is no offline desktop surface to
+fall back for, only the `system-ui` fallback in the stack.
 
 ### 4.2 Type scale
 
-| Token | Size | Line height | Weight | Avalonia key | CSS variable | Used for |
-|---|---|---|---|---|---|---|
-| **XSmall** | 11px | 1.4 | 400 | `GameFontSizeXSmall` | `--vds-text-xs` | Stat names, timestamps, tiny captions |
-| **Small** | 12px | 1.4 | 400 | `GameFontSizeSmall` | `--vds-text-sm` | Labels, secondary metadata |
-| **Body** | 14px | 1.5 | 400 | `GameFontSizeBody` | `--vds-text-base` | Default UI text, form fields |
-| **Subtitle** | 16px | 1.5 | 500 | `GameFontSizeSubtitle` | `--vds-text-md` | Sub-headings, panel section labels |
-| **Title** | 20px | 1.3 | 600 | `GameFontSizeTitle` | `--vds-text-lg` | Panel titles, section headings (Cinzel) |
-| **Title Large** | 28px | 1.2 | 600 | `GameFontSizeTitleLarge` | `--vds-text-xl` | Screen titles, major headings (Cinzel) |
-| **Hero** | 40px | 1.1 | 400 | `GameFontSizeHero` | `--vds-text-hero` | Splash screens, web hero — Cinzel Decorative only |
-
----
-
-### 4.3 Named text classes (Avalonia)
-
-| Class | Font | Size | Weight | Color | Use |
-|---|---|---|---|---|---|
-| _(default)_ | Inter | Body 14 | 400 | Text Primary | All unlabelled `TextBlock` |
-| `.title` | Cinzel | Title 20 | SemiBold | Text Primary | Section headings |
-| `.title-large` | Cinzel | Title Large 28 | Bold | Seal Light | Major screen titles |
-| `.subtitle` | Inter | Subtitle 16 | Medium | Text Secondary | Sub-headings |
-| `.muted` | Inter | Small 12 | 400 | Text Tertiary | Supporting copy |
-| `.caption` | Inter | XSmall 11 | 400 | Text Tertiary | Stat labels, timestamps |
-| `.accent` | Inter | Body 14 | SemiBold | Seal Light | Currency, key values |
-| `.lore` | Lora | Body 14 | 400 | Text Primary | Lore/flavour text |
-| `.mono` | JetBrains Mono | Small 12 | 400 | Text Secondary | RealmForge data, keys |
-| `.success` | Inter | Body 14 | 400 | Success | Positive outcomes |
-| `.danger` | Inter | Body 14 | 400 | Danger | Errors, threats |
-| `.warning` | Inter | Body 14 | 400 | Warning | Caution states |
-| `.info` | Inter | Body 14 | 400 | Info | Neutral notifications |
-
----
-
-### 4.4 Named text classes (CSS — web surfaces)
-
-```css
-.text-title        { font-family: var(--vds-font-heading); font-size: var(--vds-text-lg);   font-weight: 600; color: var(--vds-text); }
-.text-title-large  { font-family: var(--vds-font-heading); font-size: var(--vds-text-xl);   font-weight: 600; color: var(--vds-text); }
-.text-hero         { font-family: var(--vds-font-display); font-size: var(--vds-text-hero); font-weight: 400; color: var(--vds-text); }
-.text-subtitle     { font-size: var(--vds-text-md); font-weight: 500; color: var(--vds-text-muted); }
-.text-muted        { font-size: var(--vds-text-sm); color: var(--vds-text-subtle); }
-.text-caption      { font-size: var(--vds-text-xs); color: var(--vds-text-subtle); }
-.text-accent       { font-weight: 600; color: var(--vds-seal-light); }
-.text-lore         { font-family: var(--vds-font-reading); line-height: 1.7; color: var(--vds-text); }
-.text-mono         { font-family: var(--vds-font-mono); font-size: var(--vds-text-sm); color: var(--vds-text-muted); }
-.text-success      { color: var(--vds-success); }
-.text-danger       { color: var(--vds-danger); }
-.text-warning      { color: var(--vds-warning); }
-.text-info         { color: var(--vds-info); }
-```
-
----
-
-### 4.5 Font loading — web surfaces
-
-**SvelteKit implementation (current):** Cinzel, Cinzel Decorative, Lora, and JetBrains Mono are
-self-hosted from `web/client/static/fonts/` (originally copied from the now-deleted `RealmUI.Fonts`) and declared with
-`@font-face` in [`web/client/src/routes/brand.css`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/src/routes/brand.css).
-Inter loads from Google Fonts in [`web/client/src/app.html`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/src/app.html) with a
-`system-ui` fallback for offline/desktop use. The legacy Blazor `<head>` block is retained below
-for reference:
-
-```html
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400&family=Cinzel:wght@400;600&family=Lora:ital,wght@0,400;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-```
-
-### 4.6 Font loading — web only
-
-The SvelteKit app is the only surface, so fonts load exactly one way: the `@font-face` rules in
-[`brand.css`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/src/routes/brand.css) pointing at the self-hosted files in
-`web/client/static/fonts/`. The former `RealmUI.Fonts` project and its `avares://` family keys were
-deleted with `RealmForge`; do not reintroduce an `AvaloniaResource` font pipeline.
-
-> Cinzel and Cinzel Decorative are variable/static OFL-licensed fonts — no attribution required in binary distributions.
-
----
-
-### 4.7 Alternatives log (not chosen — retained for reference)
-
-| Font | Category | Why considered | Why not chosen |
+| Token | Size | Line height | Used for |
 |---|---|---|---|
-| Almendra | Display | Medieval calligraphic warmth; illuminated manuscript feel | Distinctive but narrow legibility range; would conflict with Cinzel at shared heading sizes |
-| DM Serif Display | Display | Crisp editorial serif, designed for screen | Less character than Cinzel for the RPG tone; Lora covers the "screen-readable serif" role |
-| Philosopher | Display | Broad classical serif; ancient/authoritative | Good but eclipsed by Cinzel once it was on the table |
-| Cormorant Garamond | Display | Extreme contrast, high fashion + fantasy overlap | Too fragile at body sizes; high risk of rendering inconsistency across platforms |
-| Crimson Pro | Display | Robust old-style serif | Less distinctive than Cinzel; less warm than Lora |
-| Spectral | Display | Modern editorial feel | Too neutral for the Veldrath tone |
-| Playfair Display | Display | Dramatic at large sizes, popular in prestige games | Cinzel better fits the inscribed-stone direction |
+| `--vds-text-xs` | 11px | 1.4 | Captions, stat labels, timestamps, badges |
+| `--vds-text-sm` | 12px | 1.4 | Metadata, secondary labels, mono values |
+| `--vds-text-base` | 14px | 1.5 | Default UI text and body |
+| `--vds-text-md` | 16px | 1.5 | Sub-headings, panel header titles |
+| `--vds-text-lg` | 20px | 1.3 | Section headings, `.text-title` |
+| `--vds-text-xl` | 28px | 1.2 | Screen titles, `.text-title-large` |
+| `--vds-text-hero` | 40px | 1.1 | Hero and splash, Cinzel Decorative only |
 
----
+Two conventions coexist, and both are sanctioned:
 
-## 5. Spacing & Grid
+- **Utility scale** — the `--vds-text-*` tokens, used for small and mid sizes through the `.text-*`
+  classes and by component primitives.
+- **Semantic headings** — `.h1` / `.h2` / `.h3` are defined in `rem` (2rem / 1.5rem / 1.25rem,
+  line-height 1.3, weight 600, Cinzel). They are what page templates actually use for headings, so a
+  heading is **not** `--vds-text-xl`; it is `.h2` or `.h1`.
 
-### 5.1 Base unit
+### 4.3 Heading classes
 
-All spacing values are multiples of **4px**. Never use values that are not on this scale except for precise pixel corrections in component templates.
-
-| Token | Value | CSS variable | Avalonia usage |
+| Class | Font | Size | Colour |
 |---|---|---|---|
-| `space-1` | 4px | `--vds-space-1` | `Margin="4"` |
-| `space-2` | 8px | `--vds-space-2` | `Margin="8"` |
-| `space-3` | 12px | `--vds-space-3` | `Padding="12"` |
-| `space-4` | 16px | `--vds-space-4` | `Padding="16"` (default button padding) |
-| `space-5` | 20px | `--vds-space-5` | `Padding="20"` |
-| `space-6` | 24px | `--vds-space-6` | `Padding="24"` (card padding) |
-| `space-8` | 32px | `--vds-space-8` | `Padding="32"` |
-| `space-10` | 40px | `--vds-space-10` | Section gaps |
-| `space-12` | 48px | `--vds-space-12` | Page section padding |
-| `space-16` | 64px | `--vds-space-16` | Hero padding |
+| `.h1` | Cinzel | 2rem | `--vds-text` |
+| `.h2` | Cinzel | 1.5rem | `--vds-text` |
+| `.h3` | Cinzel | 1.25rem | `--vds-text` |
+| `.h4` – `.h6` | Inter | inherited from the element | `--vds-text` |
 
-### 5.2 Web layout grid
+`h1`–`h3` and the matching classes carry Cinzel with `letter-spacing: 0.01em`; `h4`–`h6` deliberately
+switch to Inter, because small headings set in a display face become illegible.
 
-| Token | Value | CSS variable | Purpose |
-|---|---|---|---|
-| Content max-width | 1200px | `--vds-content-max` | `max-width` of `.site-content` |
-| Sidebar width | 220px | `--vds-sidebar-w` | Fixed sidebar on Foundry/Web |
-| Top bar height | 48px | `--vds-topbar-h` | Fixed top navigation bar |
-| Page body padding | 24px / 40px | — | 24px on mobile, 40px on ≥ md |
+### 4.4 Text utilities
 
-### 5.3 Web breakpoints
+The `.text-*` classes in `brand.css` are the sanctioned way to set type without reaching for a token.
 
-| Name | Min-width | Purpose |
+| Class | Effect |
+|---|---|
+| `.text-hero` | Cinzel Decorative, `--vds-text-hero`, 400 |
+| `.text-title` | Cinzel, `--vds-text-lg`, 600 |
+| `.text-title-large` | Cinzel, `--vds-text-xl`, 600 |
+| `.text-subtitle` | 16px, 500, muted |
+| `.text-muted` | 12px, subtle |
+| `.text-caption` | 11px, subtle |
+| `.text-accent` | 600, seal-light |
+| `.text-gold` | gold |
+| `.text-lore` | Lora, line-height 1.7 |
+| `.text-mono` | JetBrains Mono, 12px, muted |
+| `.text-info` / `.text-success` / `.text-danger` / `.text-warning` | semantic colour |
+
+### 4.5 Font loading
+
+Exactly one mechanism:
+
+- `@font-face` rules at the top of `brand.css` point at `/fonts/*.ttf` in
+  `web/client/static/fonts/`, with `font-display: swap`.
+- `app.html` preloads the Cinzel and Lora variable files and links the Google Fonts CSS for Inter.
+- The docs site reuses the same `/fonts` directory and `theme.css` through `docfx.json`, so the
+  published documentation and the game cannot drift in typography.
+
+**Font tokens** — the stacks themselves, defined in `theme.css`:
+
+| Token | Stack |
+|---|---|
+| `--vds-font-display` | Cinzel Decorative, Cinzel, serif |
+| `--vds-font-heading` | Cinzel, serif |
+| `--vds-font-reading` | Lora, Georgia, serif |
+| `--vds-font-body` | Inter, system-ui, sans-serif |
+| `--vds-font-mono` | JetBrains Mono, Cascadia Code, monospace |
+
+### 4.6 Alternatives log
+
+These were considered and rejected when the pairing was chosen. Kept so the decision is not
+re-litigated.
+
+| Font | Category | Why rejected |
 |---|---|---|
-| `sm` | 640px | Single-column → two-column transitions |
-| `md` | 768px | Sidebar becomes visible |
-| `lg` | 1024px | Full layout locked in |
-| `xl` | 1280px | Optional wider content columns |
+| Almendra | Display | Narrow legibility range; conflicts with Cinzel at shared heading sizes |
+| DM Serif Display | Display | Less character than Cinzel for the tone |
+| Philosopher | Display | Good, but eclipsed by Cinzel |
+| Cormorant Garamond | Display | Too fragile at body sizes; rendering risk |
+| Crimson Pro | Display | Less distinctive than Cinzel, less warm than Lora |
+| Spectral | Display | Too neutral |
+| Playfair Display | Display | Cinzel better fits the inscribed-stone direction |
 
-### 5.4 Corner radius
+---
 
-| Token | Value | CSS variable | Avalonia | Use |
-|---|---|---|---|---|
-| `radius-sm` | 4px | `--vds-radius-sm` | `CornerRadius="4"` | Buttons, inputs, list items |
-| `radius-md` | 6px | `--vds-radius-md` | `CornerRadius="6"` | Cards, panels |
-| `radius-lg` | 8px | `--vds-radius-lg` | `CornerRadius="8"` | Dialogs, modals, feature cards |
-| `radius-full` | 9999px | `--vds-radius-full` | `CornerRadius="9999"` | Pills, badge corners |
+## 5. Spacing, layout and radius
 
-### 5.5 Spacing
+### 5.1 Spacing scale
 
-Spacing follows the scale in [§5.1](#51-base-unit) on every surface that is still live:
+A 4px base. Tokens exist, and Tailwind utilities (`p-4`, `gap-2`, `space-y-3`) are used alongside
+them — both are on the same 4px grid, so they compose without drift. Component primitives use the
+tokens; page templates mostly use utilities.
 
-- **Avalonia (`RealmForge`):** numeric `Margin` / `Padding` / `Spacing` values derived from the scale.
-- **SvelteKit ([`web/`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/)):** Tailwind spacing utilities (`p-4`, `gap-2`, …). The web app does not use VDS custom properties for spacing.
+| Token | Value | Typical use |
+|---|---|---|
+| `--vds-space-1` | 4px | Icon-to-label gap |
+| `--vds-space-2` | 8px | Row gaps, tooltip padding |
+| `--vds-space-3` | 12px | Panel inner gaps, game shell gutters |
+| `--vds-space-4` | 16px | Default padding, dialog padding |
+| `--vds-space-5` | 20px | Section padding |
+| `--vds-space-6` | 24px | Page body padding |
+| `--vds-space-8` | 32px | Card padding, large gaps |
+| `--vds-space-10` | 40px | Section gaps, desktop page padding |
+| `--vds-space-12` | 48px | Block separation |
+| `--vds-space-16` | 64px | Hero and footer separation |
 
-The previous rule — "delegate spacing to MudBlazor utilities in Razor markup" — was retired with the Blazor apps; see [§10](#10-retired-surfaces-blazor--mudblazor).
+### 5.2 Layout constants
+
+| Token | Value | Purpose |
+|---|---|---|
+| `--vds-content-max` | 1200px | Content column max-width |
+| `--vds-sidebar-w` | 220px | Fixed staff-tool sidebar |
+| `--vds-topbar-h` | 48px | Site top bar |
+
+### 5.3 Game shell grid
+
+`.game-shell` is a three-column CSS grid with fixed jobs per column. It is defined once in
+`brand.css` and never re-declared per screen:
+
+| Breakpoint | Columns |
+|---|---|
+| > 1200px | `minmax(220px, 260px)` · `1fr` · `minmax(280px, 340px)` |
+| 900–1200px | left + centre only; the social column is hidden |
+| < 900px | single column, all three stack |
+
+The layout contract — which panel owns what — is in
+[Client UI architecture](client-ui-architecture.md).
+
+### 5.4 Breakpoints
+
+| Name | Min-width | Meaning |
+|---|---|---|
+| `sm` | 640px | Single column becomes two |
+| `md` | 768px | Sidebar and multi-column layouts appear |
+| `lg` | 1024px | Full desktop layout |
+| `xl` | 1280px | Wider content columns |
+
+Tailwind defaults are unchanged, so `sm:` / `md:` / `lg:` mean what they usually mean.
+
+### 5.5 Radius
+
+| Token | Value | Use |
+|---|---|---|
+| `--vds-radius-sm` | 4px | Buttons, inputs, equipment slots, nav items |
+| `--vds-radius-md` | 6px | Panels, cards, tooltips |
+| `--vds-radius-lg` | 8px | Dialogs, auth card, feature cards |
+| `--vds-radius-full` | 9999px | Pills, badges, status dots |
 
 ---
 
 ## 6. Iconography
 
-### 6.1 Asset inventory
+### 6.1 Library
 
-The Avalonia editor's icons (`RealmForge/Resources/Icons/`) left with `RealmForge` in Milestone B; the game-icons attribution that used to live in `THIRD-PARTY-NOTICES.md` is no longer needed because none of those files remain in the repository.
+Lucide is the icon library, consumed as `@lucide/svelte` outline glyphs. There is no mixed icon set,
+no sprite sheet and no icon font.
 
-**SvelteKit web surfaces:** brand imagery lives in `web/client/static/images/` — logos,
-herald emblems, and the favicon/manifest set restored from the former Blazor web app. UI icons
-use `@lucide/svelte` outline glyphs; OAuth/GitHub/Discord brand paths are vendored in
-[`web/client/src/lib/brand-icons.ts`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/src/lib/brand-icons.ts) so the SSR bundle does
-not pull the entire icon set.
+| Concern | Implementation |
+|---|---|
+| UI glyphs | `@lucide/svelte`, imported per component |
+| Item glyphs | `item-icons.ts` maps equipment slot and item type to a Lucide component, plus a slot label; an empty slot renders a dashed cell with the slot glyph |
+| Brand glyphs | `brand-icons.ts` vendors the Discord and GitHub paths (24×24 viewBox, Simple Icons) so the SSR bundle does not pull a whole icon set |
+| OAuth buttons | Provider brand colour background with a vendored white glyph |
 
-### 6.2 Style guidance
+Illustration is not iconography. The four herald emblems in `web/client/static/images/herald/` are
+1200–2500px illustration-grade artwork: they are not usable at panel sizes and are not part of the
+icon system. See the [asset specs](design/asset-specs.md).
 
-- **Grid:** 24×24px base grid with 2px safe margin (20px optic area).
-- **Stroke:** Line-based (outline) style at 1.5px stroke weight, rounded end caps, rounded joins.
-- **Filled vs outline:** Do not mix filled icons with outline icons on the same surface or toolbar. Pick one style per surface and be consistent.
-- **Color:** Icons inherit the current `Foreground` color by default. Do not embed fill colors in SVG/AXAML icon paths — let the theme drive color.
-- **Sizes in use:** 16px (inline text icons), 20px (toolbar/nav), 24px (primary actions), 32px (feature icons on web cards).
+### 6.2 Sizes and stroke
 
-### 6.3 Prohibited
+| Size | Use |
+|---|---|
+| 14–15px | Inline actions inside dense rows |
+| 16px | Inline text icons, form submit glyphs |
+| 18–20px | Panel headers, primary navigation |
+| 24px+ | Empty-state and feature illustrations |
 
-- Emoji used in place of icons anywhere outside lore/chat text.
-- Multi-color icons outside the OAuth provider buttons (which use brand colors intentionally).
-- Raster icons at sizes below 32px (always use vector).
+Lucide's 24×24 grid with 2px nominal stroke is the reference. Keep the stroke optical weight at 1.5px
+of a 24px canvas when drawing custom glyphs; rounded caps and joins; no fills mixed into an outline
+set.
+
+### 6.3 Rules
+
+- Icons inherit `currentColor`. Never embed a fill in an icon path.
+- Gold is the default glyph colour for panel headers, nav items and sheet menus
+  (`.game-panel-header svg`, `.sheet-menu-item svg`, `.site-nav-link svg`). A glyph that means
+  *action* inherits the button's foreground instead.
+- Every icon-only control carries an accessible name (`aria-label` or `title`).
+
+### 6.4 Prohibited
+
+- Emoji as an icon outside lore and chat text.
+- Multi-colour icons outside OAuth provider buttons.
+- Raster icons below 32px — use vector.
+- Mixing filled and outline glyphs in the same toolbar.
 
 ---
 
-## 7. Component Guidelines
+## 7. Components
 
-Each component entry provides: **variants**, **states**, **Avalonia class** → **CSS class** cross-reference, and **usage rules**.
+Two layers exist, and they must not be confused:
 
----
+- **Skeleton presets** — buttons, inputs, badges and surfaces come from Skeleton v5. The class
+  vocabulary is `btn` plus a `preset-*` modifier, and `badge` plus a `preset-*` modifier. There are no
+  `.btn-primary`, `.btn-ghost` or `.badge-accent` classes in this codebase.
+- **Brand primitives** — the site chrome and the game HUD in `brand.css`. These are the classes a
+  designer can rely on existing.
 
 ### 7.1 Buttons
 
-**Variants:**
+Composed from Skeleton. The vocabulary actually in use:
 
-| Variant | Avalonia class | CSS class | Fill | Text | When to use |
-|---|---|---|---|---|---|
-| Default | _(none)_ | `.btn` | Layer 2 | Text Primary | Secondary / tertiary actions |
-| Primary (Seal) | `.accent` | `.btn-primary` | Seal | Layer 0 | The single primary action on a screen |
-| Secondary (Ember) | `.secondary` | `.btn-secondary` | Ember | Layer 0 | Alternate CTA; combat/energy actions |
-| Ghost | `.ghost` | `.btn-ghost` | Transparent | Text Primary | Toolbar actions, low-priority options |
-| Danger | `.danger` | `.btn-danger` | Danger Muted | Danger | Destructive actions (delete, leave) |
-| Icon-only | `.icon` | `.btn-icon` | Transparent | Text Secondary | Compact toolbars, inline actions |
-
-**States:** Default → Hover (lighter bg + Seal border) → Pressed (Layer 4 bg) → Disabled (Layer 1 bg + Disabled text).
-
-**Rules:**
-- Maximum one `.accent` button visible at a time on any given screen/panel.
-- Danger buttons must always be separated from Seal buttons — never adjacent.
-- Icon buttons must have an accessible `ToolTip` (Avalonia) or `title` attribute (HTML).
-
----
-
-### 7.2 Text inputs
-
-| State | Border | Background | Caret/selection |
-|---|---|---|---|
-| Default | Border Default | Layer 2 | Seal |
-| Hover | Border Strong | Layer 2 | Seal |
-| Focus | Seal | Layer 2 | Seal (caret), Seal Dark (selection) |
-| Error | Danger | Danger Muted | Danger |
-| Disabled | Border Subtle | Layer 1 | — |
-
-**CSS custom properties for inputs:**
-
-```css
-input, select, textarea {
-  background: var(--vds-bg-2);
-  border: 1px solid var(--vds-border);
-  color: var(--vds-text);
-  border-radius: var(--vds-radius-sm);
-  padding: 6px 10px;
-  font-family: var(--vds-font-body);
-  font-size: var(--vds-text-base);
-}
-input:hover  { border-color: var(--vds-border-strong); }
-input:focus  { border-color: var(--vds-seal); outline: none; }
-input.error  { border-color: var(--vds-danger); background: var(--vds-danger-muted); }
-```
-
----
-
-### 7.3 Cards
-
-| Variant | Avalonia class | CSS class | Description |
-|---|---|---|---|
-| Default | `.card` | `.card` | Layer 2 bg, Default border, 6px radius, 24px padding |
-| Elevated | `.card-elevated` | `.card-elevated` | Layer 2 bg, Strong border — visually above surrounding cards |
-| Accent | `.card-accent` | `.card-accent` | Default card + 2px Seal left border — signals an active or featured item |
-
-**CSS:**
-
-```css
-.card          { background: var(--vds-bg-2); border: 1px solid var(--vds-border); border-radius: var(--vds-radius-md); padding: var(--vds-space-6); }
-.card-elevated { background: var(--vds-bg-2); border: 1px solid var(--vds-border-strong); border-radius: var(--vds-radius-md); padding: var(--vds-space-6); }
-.card-accent   { border-left: 2px solid var(--vds-seal); }
-.card h3       { font-family: var(--vds-font-heading); color: var(--vds-text); margin-top: 0; }
-```
-
----
-
-### 7.4 Navigation
-
-**Sidebar nav item:**
-
-| State | Background | Left border | Text color |
-|---|---|---|---|
-| Default | Transparent | None | Text Primary |
-| Hover | Hover overlay | None | Text Primary |
-| Active | Seal Muted | 2px Seal | Text Primary (white) |
-
-**CSS:**
-
-```css
-.nav-item         { display: block; padding: 7px 12px; border-radius: var(--vds-radius-sm); color: var(--vds-text); border-left: 2px solid transparent; transition: background 0.15s; }
-.nav-item:hover   { background: var(--vds-hover); text-decoration: none; }
-.nav-item.active  { background: var(--vds-seal-muted); border-left-color: var(--vds-seal); color: #fff; }
-```
-
-**Brand text in sidebar/header:** Cinzel, `--vds-text-lg`, `--vds-seal-light` color.
-
----
-
-### 7.5 Badges
-
-| Variant | Avalonia class | CSS class | Background | Text |
-|---|---|---|---|---|
-| Success | `.badge-success` | `.badge-success` | Success Muted | Success |
-| Danger | `.badge-danger` | `.badge-danger` | Danger Muted | Danger |
-| Warning | `.badge-warning` | `.badge-warning` | Warning Muted | Warning |
-| Info | `.badge-info` | `.badge-info` | Info Muted | Info |
-| Seal (primary) | `.badge-accent` | `.badge-accent` | Seal Muted | Seal Light |
-| Muted (neutral) | `.badge` | `.badge` | Layer 3 | Text Secondary |
-
-**CSS base:**
-
-```css
-.badge         { display: inline-block; padding: 2px 8px; border-radius: var(--vds-radius-full); font-size: var(--vds-text-xs); font-weight: 500; }
-.badge-success { background: var(--vds-success-muted); color: var(--vds-success); }
-.badge-danger  { background: var(--vds-danger-muted);  color: var(--vds-danger); }
-.badge-warning { background: var(--vds-warning-muted); color: var(--vds-warning); }
-.badge-info    { background: var(--vds-info-muted);    color: var(--vds-info); }
-.badge-accent  { background: var(--vds-seal-muted);    color: var(--vds-seal-light); }
-.badge         { background: var(--vds-bg-3);          color: var(--vds-text-muted); }
-```
-
----
-
-### 7.6 Progress bars
-
-| Variant | Avalonia class | Fill color | Used for |
-|---|---|---|---|
-| Health | `.health` | `#5CAB7D` (Success) | HP bar |
-| Mana | `.mana` | `#5A9ED6` (Info) | MP bar |
-| XP | `.xp` | Seal Light `#E05545` | Experience bar |
-| Stamina | `.stamina` | Ember `#CC4125` | Stamina/energy bar |
-| Danger | `.danger` | Danger `#E05252` | Low-health state override |
-
-**Note:** XP bars previously used gold (`#C9A84C`). They now use Seal Light — a deliberate mapping of "reward/progress" onto the new brand accent.
-
----
-
-### 7.7 Dialogs & Modals
-
-- **Overlay:** `rgba(0,0,0,0.65)` behind the dialog.
-- **Surface:** Layer 4 background, Strong border, 8px radius.
-- **Top accent:** 1px Seal (`#C0392B`) top border on the dialog container — anchors the brand without overwhelming the content.
-- **Header:** Cinzel, Title size (20px), Text Primary.
-- **Action row:** Right-aligned. Primary action uses `.accent` button. Destructive action uses `.danger` button. Cancel uses `.ghost`.
-- **Max-width:** 480px for confirmation dialogs; 720px for content dialogs.
-
----
-
-### 7.8 Data tables (RealmForge)
-
-- Header row: Layer 3 background, Small 12px, Text Secondary, Cinzel or Inter SemiBold.
-- Body rows: Layer 1 background, Body 14px, Text Primary.
-- Alternating rows: Layer 1 / Layer 2 (subtle stripe).
-- Hover row: Hover overlay (`#1E2030`).
-- Selected row: Selected overlay + Seal left border.
-- Cell padding: `space-2` (8px) vertical, `space-3` (12px) horizontal.
-- Numeric/key cells: JetBrains Mono, Text Secondary.
-
----
-
-## 8. Implementation Notes
-
-### 8.1 CSS custom property reference
-
-Place the following `:root` block in `app.css` for both **RealmFoundry** and **Veldrath.Web**, replacing their current hardcoded values and `--color-*` variables.
-
-```css
-:root {
-  /* Background layers */
-  --vds-bg-0: #0C0D13;
-  --vds-bg-1: #14151F;
-  --vds-bg-2: #1C1D2B;
-  --vds-bg-3: #262736;
-  --vds-bg-4: #2E2F42;
-
-  /* Primary accent — Crimson Seal */
-  --vds-seal-light: #E05545;
-  --vds-seal:       #C0392B;
-  --vds-seal-dark:  #8C2018;
-  --vds-seal-muted: #3D1A16;
-
-  /* Secondary accent — Emberfall */
-  --vds-ember-light: #E05E35;
-  --vds-ember:       #CC4125;
-  --vds-ember-dark:  #943018;
-  --vds-ember-muted: #361A10;
-
-  /* Text */
-  --vds-text:          #F0EDE8;
-  --vds-text-muted:    #A8A09A;
-  --vds-text-subtle:   #6E6860;
-  --vds-text-disabled: #4A4540;
-
-  /* Borders */
-  --vds-border-subtle: #1E1F2D;
-  --vds-border:        #2A2B3D;
-  --vds-border-strong: #3D3F58;
-
-  /* Semantic */
-  --vds-success:       #5CAB7D;
-  --vds-success-muted: #1F3D2E;
-  --vds-danger:        #E05252;
-  --vds-danger-muted:  #4A1A1A;
-  --vds-warning:       #D4964A;
-  --vds-warning-muted: #4A3018;
-  --vds-info:          #5A9ED6;
-  --vds-info-muted:    #1A3250;
-
-  /* Interactive overlays */
-  --vds-hover:    #1E2030;
-  --vds-pressed:  #252639;
-  --vds-selected: #252639;
-
-  /* OAuth providers */
-  --vds-oauth-discord:   #5865F2;
-  --vds-oauth-google:    #4285F4;
-  --vds-oauth-microsoft: #0078D4;
-
-  /* Typography */
-  --vds-font-display: 'Cinzel Decorative', 'Cinzel', serif;
-  --vds-font-heading: 'Cinzel', serif;
-  --vds-font-reading: 'Lora', Georgia, serif;
-  --vds-font-body:    'Inter', system-ui, sans-serif;
-  --vds-font-mono:    'JetBrains Mono', 'Cascadia Code', monospace;
-
-  /* Type scale */
-  --vds-text-xs:   11px;
-  --vds-text-sm:   12px;
-  --vds-text-base: 14px;
-  --vds-text-md:   16px;
-  --vds-text-lg:   20px;
-  --vds-text-xl:   28px;
-  --vds-text-hero: 40px;
-
-  /* Spacing */
-  --vds-space-1:  4px;
-  --vds-space-2:  8px;
-  --vds-space-3:  12px;
-  --vds-space-4:  16px;
-  --vds-space-5:  20px;
-  --vds-space-6:  24px;
-  --vds-space-8:  32px;
-  --vds-space-10: 40px;
-  --vds-space-12: 48px;
-  --vds-space-16: 64px;
-
-  /* Border radius */
-  --vds-radius-sm:   4px;
-  --vds-radius-md:   6px;
-  --vds-radius-lg:   8px;
-  --vds-radius-full: 9999px;
-
-  /* Layout */
-  --vds-content-max: 1200px;
-  --vds-sidebar-w:   220px;
-  --vds-topbar-h:    48px;
-}
-```
-
----
-
-### 8.2 Avalonia ResourceDictionary token map
-
-The Avalonia token keys in `GameColors.axaml` map directly to VDS tokens:
-
-| VDS Token | Current Avalonia key | Action needed |
+| Intent | Classes | Notes |
 |---|---|---|
-| `--vds-seal` | `GameAccentColor` | Rename value `#C9A84C` → `#C0392B` |
-| `--vds-seal-light` | `GameAccentLightColor` | Rename value → `#E05545` |
-| `--vds-seal-dark` | `GameAccentDarkColor` | Rename value → `#8C2018` |
-| `--vds-seal-muted` | `GameAccentMutedColor` | **Add** — new resource key |
-| `--vds-ember` | `GameSecondaryAccentColor` | **Add** — new resource key |
-| `--vds-ember-light` | `GameSecondaryAccentLightColor` | **Add** |
-| `--vds-ember-dark` | `GameSecondaryAccentDarkColor` | **Add** |
-| `--vds-ember-muted` | `GameSecondaryAccentMutedColor` | **Add** |
-| `--vds-bg-0` through `--vds-bg-4` | `GameBackground0Color` – `GameBackground4Color` | Keep as-is — values already match |
-| `--vds-text` through `--vds-text-disabled` | `GameTextPrimaryColor` – `GameTextDisabledColor` | Keep as-is |
-| `--vds-border` / `--vds-border-subtle` / `--vds-border-strong` | `GameBorderColor` etc. | Keep as-is |
-| All semantic tokens | `GameSuccessColor` etc. | Keep as-is |
+| Primary action | `btn preset-filled-primary-500` | One per screen region |
+| Secondary / neutral | `btn preset-tonal-surface` | The default for most controls |
+| Destructive | `btn preset-filled-error-500` or `btn preset-tonal-error` | Never adjacent to a primary button |
+| Dense variant | add `btn-sm` | In lists, toolbars, panel headers |
+| Icon-only | `btn` + fixed box utilities, e.g. `h-8 w-8 p-0` | Requires `aria-label` |
 
-> The `SystemAccentColor` family (keys `SystemAccentColor`, `SystemAccentColorLight1`...) in `GameColors.axaml` must also be updated from gold values to the Seal scale so FluentAvalonia's built-in controls (NavigationView, etc.) pick up the new accent.
+**States** come from Skeleton: hover lightens the fill, focus draws the ring from
+`--default-ring-width`, disabled lowers opacity and blocks pointer events. Do not hand-roll states.
+
+### 7.2 Inputs
+
+Skeleton inputs inside a `.card` or `.game-panel`, sized by utilities. On focus the field uses the
+primary border; `color-scheme: dark` is set globally so native controls, date pickers and scrollbars
+render dark. An input that needs an inline glyph uses `.input-icon`, which absolutely positions the
+SVG and pads the field to 38px.
+
+### 7.3 Panels and cards
+
+| Class | Surface | Border | Radius | Padding |
+|---|---|---|---|---|
+| `.card` | `--vds-bg-1` | `--vds-border` | md | **none** — callers add `p-5`, `p-6` |
+| `.game-panel` | `--vds-bg-1` | `--vds-border` | md | inner blocks supply their own |
+| `.game-header` | `--vds-bg-1` | `--vds-border` | md | top bar for the game shell |
+| `.game-panel-header` | — | — | — | Cinzel 16px/600 with a gold glyph |
+
+A card is Layer 1 on a Layer 0 canvas. Layer 2 is for nested blocks *inside* a panel — equipment
+slots, sub-sections — not for cards sitting on the page.
+
+### 7.4 Site chrome
+
+| Class | Behaviour |
+|---|---|
+| `.site-header` | Sticky, 92%-opaque Layer 0 with `backdrop-filter: blur(12px)`, 1px bottom border |
+| `.site-brand img` | The wordmark image, 30px tall |
+| `.site-nav-link` | Tonal hover and `aria-current` fill; glyphs in gold |
+| `.site-footer` | Layer 0 with a top border 64px below content; headings in Cinzel gold-light |
+| `.hero` | Relative container with a decorative crest positioned absolutely behind `.hero-content` |
+| `.hero-kicker` | Cinzel, uppercase, gold — the small line above a hero heading |
+| `.feature-card` | Card with a decorative top accent (`::before`) and a gold glyph |
+
+### 7.5 Equipment slots
+
+`.equip-grid` is a two-column grid. Each `.equip-slot` is Layer 2 with a 1px border, 4px radius and
+5px/6px padding; hover and focus move it to Layer 3 with a strong border. An empty slot is
+`.equip-slot-empty`: transparent with a **dashed** border, so "nothing here" reads as a placeholder
+rather than a disabled control. Inside, `.equip-slot-head` pairs the type glyph with the item name,
+and `.equip-slot-slot` is the muted slot line below.
+
+### 7.6 Bag rows
+
+`.bag-row` is the inventory of record, three lines deep: name, status, actions.
+
+| Element | Rule |
+|---|---|
+| `.bag-row-name` | Leads the row, coloured by rarity |
+| `.bag-icon` | Small supporting glyph at 85% gold — supports the name, does not lead it |
+| `.bag-row-qty` | Right-aligned count |
+| `.bag-row-status` | Equipped badge, rarity, type, slot, durability |
+| `.bag-row-actions` | Icon-only, on their own line |
+| `.bag-row-equipped` | `--vds-seal` border, plus an equipped mark in gold |
+
+Hover and focus use Layer 3. Discard is a two-step inline confirm — never a single click.
+
+### 7.7 Item tooltip
+
+`.item-tooltip` is `position: fixed`, flipped and viewport-clamped so it stays readable out of the
+narrow left column. Layer 4 surface, strong border, radius md. Contents: Cinzel item name in the
+rarity colour, a caption line of rarity/type/slot, description, a two-column stat block, and a footer
+of requirements. Bonus lines are info-blue; met requirements are muted, unmet are danger; equipped
+items are marked in gold.
+
+### 7.8 Dialogs
+
+Secondary surfaces are centred dialogs, not drawers. Built on Bits UI `Dialog` with two primitives:
+
+| Class | Spec |
+|---|---|
+| `.game-dialog-backdrop` | Fixed inset 0, `rgb(4 5 10 / 72%)`, `backdrop-filter: blur(2px)` |
+| `.game-dialog` | Centred, `min(40rem, 100vw - 2rem)` wide, `min(80vh, 44rem)` tall, padding 16px, Layer 1, strong border, 8px radius, `0 24px 64px rgb(0 0 0 / 55%)` shadow |
+| `.game-dialog-header` | Title left, close control right |
+
+One scroll container per dialog; the shell behind it never scrolls. Confirmation dialogs (destructive
+actions) use the same primitive with a primary and a tonal button.
+
+### 7.9 Badges
+
+`badge` plus a Skeleton preset, almost always with `text-xs`:
+
+| Intent | Classes |
+|---|---|
+| Neutral count or tag | `badge preset-tonal-surface` |
+| Positive state, e.g. `Live` | `badge preset-tonal-primary` |
+| Attention, e.g. `unsaved changes` | `badge preset-tonal-warning` |
+| Error severity | `badge preset-tonal-error` |
+
+Badges are full-radius pills at 11–12px. They carry a word or a number, never an icon alone.
+
+### 7.10 Status dots
+
+`.status-dot` is an 8px full-radius dot. `-online` is success with a 20%-opacity success ring,
+`-reconnecting` is warning, `-offline` is danger. The default fill is text-disabled. Always pair the
+dot with a text label — colour alone is not an accessible state.
+
+### 7.11 Rarity labels
+
+Five classes, text colour only: `.rarity-common`, `.rarity-uncommon`, `.rarity-rare`,
+`.rarity-epic`, `.rarity-legendary`. They are applied to names in rows, tooltips and dialogs.
+Do not invent a sixth rarity and do not add borders, frames or glows without a token change.
+
+### 7.12 Map graph rendering
+
+The world is a cardinal graph, drawn from HTML and CSS rather than a canvas:
+
+| Class | Spec |
+|---|---|
+| `.map-node-cell` | Positioned container for one node |
+| `.map-connector-line` | 2px line at `--vds-border-strong` |
+| `.map-connector-east` / `-west` | 13px horizontal stub |
+| `.map-connector-north` / `-south` | 13px vertical stub |
+| `.map-connector-blocked` | `--vds-danger-muted` |
+| `.map-connector-hidden` | 30% opacity |
+
+Layout rules live in `cardinal-layout.ts` and are unit tested; the classes render what it produces. Do
+not add a diagonal connector style — diagonals have no inferable direction in the data model.
+
+### 7.13 Long-form and lore typography
+
+Prose is `.markdown` (see `layout.css`): links hover to gold-light, `strong` is gold-light, list
+markers are gold, and blockquotes carry a 3px gold-muted rule. Lore blocks may use `.text-lore` for
+Lora at 1.7 line-height. Article body never uses Cinzel below a heading.
+
+### 7.14 Auth surfaces
+
+`.auth-card` is the branded account surface: Layer 1 with a seal-tinted radial gradient at the top
+(`rgba(192, 57, 43, .25)` fading out by 55%), 1px border, 8px radius, and the crest above the form
+(`.auth-crest` — 76px, `object-fit: contain`, with a 35% seal drop-shadow). The same treatment carries
+login, register, forgot-password, reset-password, verify-email, the account header and the character
+roster.
 
 ---
 
-### 8.3 RealmForge (retired)
+## 8. Implementation notes
 
-The `RealmForge` Avalonia editor was removed in Milestone B; the planned AXAML token migration
-never happened and is no longer relevant. Foundry — the portal in the `(foundry)` route group under
-[`web/client/src/routes`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/src/routes) — is the content editing surface and consumes
-the same VDS web tokens as the rest of the app.
+### 8.1 Where to change what
+
+| To change | Edit | Then |
+|---|---|---|
+| A palette value | `:root` in `theme.css` | Re-measure [§3.14](#314-contrast-reference); the parity suite will flag the doc |
+| A Skeleton component's colour | the ramp block in `theme.css` | Never override a preset in a component |
+| A component's surface, border or spacing | `brand.css` | Prefer a token over a literal |
+| A heading size | `.h1`/`.h2`/`.h3` in `brand.css` | Keep the rem convention |
+| A colour inside a `.svelte` file | don't | Add or use a token instead |
+
+### 8.2 Machine-readable tokens
+
+[`tokens.json`](design/tokens.json) is the same token set in a form a design tool can import. It is a
+hand-maintained mirror of `theme.css`, and the parity suite
+[`design-tokens.test.ts`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/src/lib/parity/design-tokens.test.ts)
+fails when `theme.css`, `tokens.json` and this document disagree. Add a token in all three places, or
+the build tells you which one is behind.
+
+### 8.3 Declared-but-unconsumed tokens
+
+Present in `theme.css`, referenced by no component. They are reserved or leftovers; either give them
+a job or delete them, but do not document them as live guidance:
+
+| Token | Value | Status |
+|---|---|---|
+| `--vds-bg-deeper` | `#080910` | unused — candidate for full-bleed overlay use |
+| `--vds-accent` | `#60A5FA` | unused — duplicates info/rare blue |
+| `--vds-indicator-player` | `#C9A84C` | unused — map markers are drawn by the layout without it today |
+| `--vds-indicator-occupant` | `#5A9ED6` | unused |
+| `--vds-indicator-enemy` | `#E53935` | unused |
+| `--vds-game-footer-h` | `44px` | unused — the game footer was deleted |
+
+### 8.4 Do not
+
+- Do not hardcode a hex, a radius or a spacing value in a component.
+- Do not add a second icon library, icon font or sprite sheet.
+- Do not introduce a light theme.
+- Do not repurpose rarity hues as semantics or semantics as rarity.
+- Do not reintroduce a desktop UI toolkit or its guidance — see [§10](#10-history--retired-surfaces).
 
 ---
 
-### 8.4 Retired web surfaces
-
-`RealmFoundry` and `Veldrath.Web` were Blazor + MudBlazor applications and have been deleted,
-so their token-migration steps are history rather than instructions. The current web surface is
-the SvelteKit app; its tokens live in
-[`web/client/src/routes/theme.css`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/src/routes/theme.css) and
-[`web/client/src/routes/brand.css`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/src/routes/brand.css). See
-[§10](#10-retired-surfaces-blazor--mudblazor).
-
----
-
-## 9. Decision Log
+## 9. Decision log
 
 | Date | Decision | Alternatives considered | Rationale |
 |---|---|---|---|
-| 2026-04-16 | **Primary accent: Crimson Seal `#C0392B`** | Runic Scarlet, Bloodmoon, Cardinal, Dragon's Blood, Ironblood, Sanguine, Voidfire, Emberfall, Ash Rose, original gold `#C9A84C`, purple `#7c5cbf` | Unifies the brand across all surfaces; cooler red reads as prestige rather than pure danger; distinct from the Danger semantic color. |
-| 2026-04-16 | **Secondary accent: Emberfall `#CC4125`** | Single accent only | Warmer orange-red provides a natural heat/energy/combat register without conflicting with Crimson Seal; the two share a color family but read as clearly separate. |
-| 2026-04-16 | **Display font: Cinzel** | Philosopher, Almendra, Playfair Display, Cormorant Garamond, Crimson Pro, Spectral, Rufina, IM Fell English, Eagle Lake, Metamorphous, Alegreya, EB Garamond | Carved-stone Roman capitals align with Veldrath's tone; excellent legibility at all heading sizes; strong typographic personality without sacrificing readability. |
-| 2026-04-16 | **Marquee font: Cinzel Decorative** | Almendra (for marquee use) | Cinzel Decorative is Cinzel's natural companion for once-only hero moments; restricted to splash/logo use to prevent overuse. |
-| 2026-04-16 | **Reading font: Lora** | Almendra, DM Serif Display | Screen-optimized serif; comfortable at body sizes for long-form lore text and Foundry/Web article copy; pairs cleanly with Cinzel and Inter. |
-| 2026-04-16 | **Font pairing strategy: Option B** | A (Cinzel + Almendra + Lora — triple display), C (Cinzel + Inter only) | Option B (Cinzel headings + Lora reading) balances richness and maintainability; adds a meaningful typographic distinction between UI and content without the complexity of three competing display fonts. |
-| 2026-04-16 | **Background layer model: kept from the original desktop client** | Flatten to 3 layers, redesign from scratch | The 5-layer model is well-calibrated against the dark canvas and already implemented in the web app; standardising on it eliminates drift rather than introducing it. |
-| 2026-10-24 | **SvelteKit theme: Skeleton tokens mapped to VDS** | Keep Skeleton defaults; rebuild the theme ad hoc per page | A single `[data-theme='veldrath']` token block plus a brand layer restores the Crimson Seal / Emberfall / Gold palette, VDS type scale, and self-hosted fonts across public, auth, account, and game surfaces. |
-| 2026-10-24 | **Retire the Blazor/MudBlazor sections of this document** | Keep them as live rules next to Avalonia and SvelteKit guidance | `Veldrath.Web`, `RealmFoundry`, `Veldrath.Auth.Blazor`, and `Veldrath.GameClient.Components` are deleted; keeping MudBlazor rules as live guidance makes agents write Razor for a surface that no longer exists. |
-| 2026-10-25 | **Retire the Avalonia/RealmForge guidance in this document** | Keep Avalonia token tables as live rules | `RealmForge`, `RealmUI.Fonts`, and the Avalonia desktop client are deleted; Foundry in the SvelteKit app is the only content editor. The Avalonia columns and AXAML snippets stay as history and must not be treated as instructions. |
+| 2026-04-16 | **Primary accent: Crimson Seal `#C0392B`** | Runic Scarlet, Bloodmoon, Cardinal, Dragon's Blood, Ironblood, Sanguine, Voidfire, Emberfall, Ash Rose, original gold `#C9A84C`, purple `#7c5cbf` | Unifies the brand across surfaces; a cooler red reads as prestige rather than pure danger; distinct from the danger semantic. |
+| 2026-04-16 | **Secondary accent: Emberfall `#CC4125`** | Single accent only | A warmer orange-red gives a heat register without competing with Seal. |
+| 2026-04-16 | **Display font: Cinzel** | Philosopher, Almendra, Playfair Display, Cormorant Garamond, Crimson Pro, Spectral, Rufina, IM Fell English, Eagle Lake, Metamorphous, Alegreya, EB Garamond | Carved-stone Roman capitals fit the tone and stay legible at every heading size. |
+| 2026-04-16 | **Marquee font: Cinzel Decorative** | Almendra in the marquee role | Cinzel Decorative is Cinzel's natural companion for once-only hero moments; restricted to logo and splash to prevent overuse. |
+| 2026-04-16 | **Reading font: Lora** | Almendra, DM Serif Display | Screen-optimised serif for long-form lore; pairs cleanly with Cinzel and Inter. |
+| 2026-04-16 | **Font pairing: Cinzel + Lora + Inter** | Cinzel + Almendra + Lora; Cinzel + Inter only | Balances richness with maintainability; separates UI from long-form content without three competing display faces. |
+| 2026-04-16 | **Five-layer background model** | Flatten to three layers | The ladder is calibrated against the dark canvas and eliminates drift rather than introducing it. |
+| 2026-10-24 | **SvelteKit theme: Skeleton ramps mapped to VDS** | Keep Skeleton defaults; theme per page | One `[data-theme='veldrath']` block plus a brand layer restores the palette, the VDS scale and the self-hosted fonts everywhere. |
+| 2026-10-24 | **Retire the Blazor/MudBlazor guidance** | Keep it as live rules beside SvelteKit guidance | Those apps are deleted; keeping MudBlazor rules makes agents write Razor for a surface that does not exist. |
+| 2026-10-25 | **Retire the desktop-toolkit guidance** | Keep the old token tables as live rules | The desktop client and its content editor are deleted; Foundry in the SvelteKit app is the only editor. The historical tables were later removed entirely — see 2026-11-19. |
+| 2026-11-19 | **Gold documented as a first-class token** | Leave it as an undocumented value | `--vds-gold*` is the dominant metal in the chrome — logo, panel icons, nav glyphs, kickers, equipped marks, prose emphasis — and was absent from the token reference, which is how components came to be written against a palette the doc did not describe. |
+| 2026-11-19 | **Retired-surface tables deleted, not merely labelled historical** | Keep them behind a "historical" banner | A labelled table is still read as guidance. Git history and the migration plan hold the record; the document now states the rule and nothing else. |
+| 2026-11-19 | **Component guidance re-expressed as Skeleton presets** | Document the hypothetical `.btn-*` / `.badge-*` vocabulary | The documented class vocabulary never existed in the codebase. Guidance now names the classes a reader can grep for. |
+| 2026-11-19 | **Design docs published as a Design tab** | Keep them repo-only | The creative team works outside the repository; an unpublished brand and asset specification is a specification nobody follows. |
 
 ---
 
-## 10. Retired surfaces (Blazor / MudBlazor)
+## 10. History — retired surfaces
 
-`Veldrath.Web`, `RealmFoundry`, `Veldrath.Auth.Blazor`, and `Veldrath.GameClient.Components`
-were retired when the web moved to the SvelteKit app in [`web/`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/).
+Veldrath is web-first. Four surfaces existed before the SvelteKit app and are deleted: the
+`Veldrath.Web` portal, `RealmFoundry` and `Veldrath.Auth.Blazor` (Blazor + MudBlazor), and the
+Avalonia desktop client with its `RealmForge` content editor.
 
-- **Live surface:** the SvelteKit app ([`theme.css`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/src/routes/theme.css) +
-  [`brand.css`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/web/client/src/routes/brand.css)).
-- **Historical only:** every MudBlazor rule (component mapping, `--mud-palette-*` usage,
-  `.mud-button-filled` overrides, `#blazor-error-ui`, reconnect-modal CSS, MudBlazor spacing
-  utilities), the RealmFoundry / Veldrath.Web columns in the §3.1 audit table, and every Avalonia
-  artifact — the `Avalonia key` / `Avalonia class` / `Avalonia usage` columns, `GameColors.axaml`,
-  `GameTheme.axaml`, `ForgeTheme.axaml`, `UseInterFont()`, and `RealmUI.Fonts` `avares://` paths
-  (`RealmForge` was deleted in Milestone B; Foundry is the editor).
-- **Detailed history:** [`plans/sveltekit-migration.md`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/plans/sveltekit-migration.md) and the
-  session notes in [`.github/agent-memory/`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/.github/agent-memory/). The Blazor-era design
-  documents were deleted once their durable decisions moved into this repository's docs.
-- **Do not reintroduce:** Razor/MudBlazor or Avalonia/AXAML guidance for UI. New UI work uses
-  Svelte 5 runes, Skeleton, and VDS tokens — see the [`web-ui`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/.roo/skills/web-ui/SKILL.md) skill.
+- **The live surface** is the SvelteKit app: `theme.css` and `brand.css`.
+- **The record** is git history plus `plans/sveltekit-migration.md`, with session notes in
+  `.github/agent-memory/`.
+- **The rule:** do not reintroduce Razor/MudBlazor or AXAML guidance for UI, and do not add a second
+  UI toolkit "for now". New UI work is Svelte 5 runes, Skeleton presets and VDS tokens.

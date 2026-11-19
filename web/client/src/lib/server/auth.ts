@@ -117,12 +117,26 @@ function createAuth() {
 				enabled: true
 			}
 		},
+		// Better Auth buckets its limits per client address, and falls back to one bucket shared by
+		// every caller of a path when it cannot resolve one. That fallback is the safe behaviour, but
+		// it also means a test run of the workflow specs — dozens of accounts registered in a minute
+		// from a single machine — starts answering "Too many requests" and the whole suite fails on
+		// sign-up. Only the e2e stack sets this flag; the container image never does.
+		rateLimit: {
+			enabled: env.AUTH_RATE_LIMIT_DISABLED !== 'true'
+		},
 		socialProviders: buildSocialProviders(),
 		advanced: {
 			database: {
 				// Account IDs are GUIDs so they can be used directly as the
 				// Veldrath.Server account identifier.
 				generateId: () => crypto.randomUUID()
+			},
+			ipAddress: {
+				// adapter-node sits behind Coolify/Traefik, so the client address only arrives in the
+				// forwarded header. Without this, Better Auth cannot bucket per player and a single
+				// noisy client would share a bucket with everyone else on the same path.
+				ipAddressHeaders: ['x-forwarded-for']
 			}
 		},
 		plugins: [

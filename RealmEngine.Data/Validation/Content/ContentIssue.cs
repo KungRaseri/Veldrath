@@ -1,6 +1,13 @@
+using System.Text.Json.Serialization;
+
 namespace RealmEngine.Data.Validation.Content;
 
 /// <summary>Whether a content issue blocks the write or merely asks for review.</summary>
+/// <remarks>
+/// Serialized by name: the web client compares against <c>'Error'</c> / <c>'Warning'</c>, and as a number the
+/// audit's counts and every issue badge read the wrong severity.
+/// </remarks>
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum ContentIssueSeverity
 {
     /// <summary>The content is usable, but the issue should be reviewed.</summary>
