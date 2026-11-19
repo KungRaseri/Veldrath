@@ -78,33 +78,35 @@ They fall into three groups with different answers:
 
 ---
 
-## 4. Decisions proposed
+## 4. Decision: left in place (2026-11-19)
 
-The unassigned files are the reason the [brand guide](brand-guide.md) has a table instead of a rule.
-Three options, in order of preference:
+The 14 unreferenced files stay where they are. Nothing is moved, nothing is deleted this cycle.
 
-### Option A — brand kit folder, one asset promoted (recommended)
+They were reviewed one by one rather than by filename, and the finding is that they are **not duplicates
+of the three live marks — they are an unassigned lockup family**, and two of them close gaps the rest
+of this documentation already assumes are filled:
 
-- Move all 14 unreferenced files from `static/images/*` into `static/images/brand/` with a short
-  `brand/README.md` listing what each one is for.
-- Promote **one** herald emblem to a real surface: a `factions/` set at 512px and 128px, used as lore
-  article art and — later — as faction identity in the UI. Ship 512px WebP, keep the original elsewhere.
-- Re-export the three live marks and the install icons per [Asset specs](asset-specs.md).
+| File | Role it fills | Status |
+|---|---|---|
+| `veldrath-v-clean-true-transparent.png` | V-only monogram — the small-size mark the [brand guide](brand-guide.md) points at for anything under 48px, and the right source for a favicon | Unassigned; the role has no assigned file today |
+| `veldrath-icon-big-transparent.png` | Rounded-square install tile with the crest in a gold frame — the natural master for the 180/192/512 icons | Unassigned; the icons are separate files with no relationship to it |
+| `veldrath-text-energy-true-transparent.png` | Wordmark with no crest — the only asset that survives a 1200×630 OG crop without the crest being cut | Unassigned; no OG card exists |
+| `veldrath-final-vertical-transparent.png` | Portrait lockup | Unassigned; nothing in the web app is portrait |
+| `veldrath-full-logo-transparent.png` | Square lockup, wordmark across the crest | Competes with the horizontal lockup and reads worse at square proportions |
+| `veldrath-final-circular-transparent.png`, `veldrath-final-square-v-transparent.png` | Medallion with a large V across the lower half | One concept in two formats; busy below ~200px |
+| `veldrath-v-molten-…`, `molten_metallic_v_…`, `molten_v_with_fiery_aura_…` | Three further V treatments | Four files for one role; `v-clean` wins on legibility |
+| `herald/*` (four files) | Hooded-herald emblems | No seeded organisation, no faction record in content, no emblem slot in the UI — concept art, not lore assets |
 
-Rationale: nothing is lost, nothing unapproved is served from the default image path, and the four
-herald pieces stop being dead weight by acquiring one genuine use.
+**Why leave them.** The only cost of keeping is bytes in a git repository; the only cost of deleting is
+a `git log` recovery. Nothing here reaches a player, because nothing references it. What was actually
+broken — three files oversampled by up to 16× and no vector master anywhere — is untouched by this
+decision and remains the work queue in [§5](#5-work-queue).
 
-### Option B — delete the unreferenced files
-
-- Delete all 14. Git history retains them; the only cost is that recovering one is a `git log` away.
-- Smallest repository, fewest decisions, but it discards the only faction-capable art in the project.
-
-### Option C — leave as is
-
-- Nothing moves. The brand guide's "unassigned" column stays permanently unassigned, and the next
-  designer cannot tell a master from a leftover.
-
-All three options include the same re-export work, because the three live files are the actual defect.
+**What "left in place" does not mean.** It does not make any of them approved. The
+[brand guide](brand-guide.md) still lists them as unassigned, and any page that starts using one adds a
+row to that table first. It also does not retire the two gaps above: the V monogram and the install tile
+are still the missing small-size mark and install-icon source, and the 180/192/512 icons still have no
+master.
 
 ---
 
@@ -120,9 +122,8 @@ Ordered by user-visible impact.
 | 4 | Export horizontal lockup at 128/192 | Footer weight |
 | 5 | Regenerate the install icons from the vector master, 512 under 60 KB | 583 KB for a rarely-requested file |
 | 6 | Produce the OG card (1200 × 630) | No social preview exists today |
-| 7 | Decide Option A, B or C for the unassigned 14 | Clears the brand guide's ambiguity |
-| 8 | Re-cut one herald emblem at 512 and 128 if Option A | Turns dead art into lore illustration |
-| 9 | Empty-state and 404 illustration briefs | Both surfaces render text alone today |
+| 7 | Assign or drop the two roles the kit already fills — the V monogram and the install tile | The brand guide names a small-size mark and the icons have no master; both files exist unassigned |
+| 8 | Empty-state and 404 illustration briefs | Both surfaces render text alone today |
 
 ---
 
