@@ -4575,3 +4575,9 @@ kept lying about it.
 Verified: the full `npm run test:e2e:stack` green twice in a row (22 specs + the outage leg), 23 tooling tests, web
 lint clean. In CI the outage leg still self-skips — it needs an API the stack script started, and the job starts its
 own — so the mode bug could never have shown up there.
+- **`node --test` passing says nothing about `svelte-check`.** `web/client/tests/run-e2e.mjs` is type-checked (`checkJs`
+  is on for the client tsconfig), so `env[gate]` on an object literal is a TS7053 implicit-any index error and the
+  `Build and Test SvelteKit Web` job died in `typecheck` — while the 23 tooling tests that *execute* the same file were
+  green. The env object is annotated `@type {Record<string, string | undefined>}` now. Two habits follow: run
+  `npm run typecheck` after touching anything under `web/client/tests/`, and treat the tooling tests as a runtime
+  check, never a compile check.

@@ -135,6 +135,11 @@ const label = runName;
 // The manifest's env is a set of *defaults* for a local isolated stack; anything already set in the
 // environment wins, because CI runs the same specs against its own ports (a Postgres service
 // container and the API on 9000) and must not be dragged onto 4273/9100/55432 by the manifest.
+//
+// Typed as a string map on purpose: svelte-check type-checks this file (the tsconfig has `checkJs`), and
+// without the annotation `env[gate]` is an implicit-any index error — which is how this file broke the
+// `Build and Test` job while `node --test` was perfectly happy with it.
+/** @type {Record<string, string | undefined>} */
 const env = {
 	...(run.env ?? {}),
 	...process.env,
