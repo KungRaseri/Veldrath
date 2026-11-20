@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using RealmEngine.Shared.Models;
 using Veldrath.Server.Features.Characters.Combat;
 using Veldrath.Server.Tests.Infrastructure;
 
@@ -125,5 +126,38 @@ public class EngageEnemyHubCommandHandlerTests : IDisposable
 
         // The ally is a participant — they share the kill and the quest progress — but they act only if they engage.
         _sessions.IsInCombat(allyId).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Handle_Carries_The_Archetype_Slug_And_Tier_For_The_Portrait()
+    {
+        var zoneGroup = $"test/{Guid.NewGuid():N}";
+        const string loc = "test-path";
+        var enemy = new SpawnedEnemy
+        {
+            ArchetypeSlug = "bandit-captain",
+            Name = "Bandit Captain",
+            Level = 5,
+            CurrentHealth = 80,
+            MaxHealth = 80,
+            Template = new Enemy
+            {
+                Traits =
+                {
+                    ["boss"] = new TraitValue(true, TraitType.Boolean),
+                    ["elite"] = new TraitValue(true, TraitType.Boolean),
+                },
+            },
+        };
+        _enemies.Add(zoneGroup, loc, enemy);
+        var charId = Guid.NewGuid();
+
+        var result = await _handler.Handle(
+            new EngageEnemyHubCommand(charId, zoneGroup, loc, enemy.Id),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        result.EnemyArchetypeSlug.Should().Be("bandit-captain", "the client addresses the portrait by slug");
+        result.EnemyTier.Should().Be("boss", "a boss frame outranks elite and neither changes the fight");
     }
 }

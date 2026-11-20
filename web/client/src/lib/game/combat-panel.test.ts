@@ -181,3 +181,43 @@ describe('combat panel log', () => {
 		expect(attack).not.toHaveBeenCalled();
 	});
 });
+
+describe('combat panel enemy portrait', () => {
+	it('addresses the enemy portrait by the archetype slug the server sent', () => {
+		const game = fighting();
+		game.combat = {
+			...game.combat,
+			enemy: { ...game.combat.enemy!, archetypeSlug: 'giant-rat', tier: 'regular' }
+		};
+
+		render(CombatPanel, { session: game });
+
+		const image = screen.getByTestId('archetype-portrait').querySelector('img');
+		expect(image?.getAttribute('src')).toBe('/images/archetypes/giant-rat-128.webp');
+	});
+
+	it('frames a boss enemy in CSS, not in the art', () => {
+		const game = fighting();
+		game.combat = {
+			...game.combat,
+			enemy: { ...game.combat.enemy!, archetypeSlug: 'bandit-captain', tier: 'boss' }
+		};
+
+		render(CombatPanel, { session: game });
+
+		expect(
+			screen.getByTestId('archetype-portrait').classList.contains('archetype-portrait--boss')
+		).toBe(true);
+	});
+
+	it('still draws the class glyph and the enemy name when no portrait exists', () => {
+		const game = fighting();
+		game.combat = { ...game.combat, enemy: { ...game.combat.enemy!, archetypeSlug: null } };
+
+		render(CombatPanel, { session: game });
+
+		const tile = screen.getByTestId('archetype-portrait');
+		expect(tile.querySelector('.archetype-portrait__fallback')).not.toBeNull();
+		expect(screen.getAllByText(/Grey Wolf/).length).toBeGreaterThan(0);
+	});
+});

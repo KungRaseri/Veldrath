@@ -97,6 +97,8 @@ public class GetCombatSnapshotQueryTests : IDisposable
 
         snapshot.Should().NotBeNull();
         snapshot!.EnemyName.Should().Be("Stone golem");
+        snapshot.EnemyArchetypeSlug.Should().Be("golem", "the portrait is addressed by the archetype slug");
+        snapshot.EnemyTier.Should().Be("regular", "no boss or elite flag is set on this template");
         snapshot.EnemyCurrentHealth.Should().Be(40);
         snapshot.EnemyMaxHealth.Should().Be(90);
         snapshot.EnemyAbilityNames.Should().Equal("Bite");

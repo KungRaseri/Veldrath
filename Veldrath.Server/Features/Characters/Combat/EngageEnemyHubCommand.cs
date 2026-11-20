@@ -29,6 +29,12 @@ public record EngageEnemyHubResult
     /// <summary>Gets the display name of the engaged enemy.</summary>
     public string EnemyName { get; init; } = string.Empty;
 
+    /// <summary>Gets the archetype slug the enemy was spawned from, which is how the client addresses its portrait.</summary>
+    public string EnemyArchetypeSlug { get; init; } = string.Empty;
+
+    /// <summary>Gets the portrait frame tier (<c>boss</c>, <c>elite</c> or <c>regular</c>); display metadata only.</summary>
+    public string EnemyTier { get; init; } = "regular";
+
     /// <summary>Gets the combat level of the engaged enemy.</summary>
     public int EnemyLevel { get; init; }
 
@@ -137,6 +143,8 @@ public class EngageEnemyHubCommandHandler
             Success = true,
             EnemyId = enemy.Id,
             EnemyName = enemy.Name,
+            EnemyArchetypeSlug = enemy.ArchetypeSlug,
+            EnemyTier = CombatHelpers.ResolveTier(enemy.Template),
             EnemyLevel = enemy.Level,
             EnemyCurrentHealth = enemy.CurrentHealth,
             EnemyMaxHealth = enemy.MaxHealth,

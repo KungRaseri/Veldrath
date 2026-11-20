@@ -121,6 +121,10 @@ public class EfCoreEnemyRepository(
             Traits =
             {
                 ["hostile"] = new TraitValue(e.Traits.Hostile ?? true, TraitType.Boolean),
+                // The portrait frame is drawn by the client from these two inert labels. They are carried
+                // so a re-band never has to redraw art: only the UI reads them.
+                ["boss"] = new TraitValue(e.Traits.Boss ?? false, TraitType.Boolean),
+                ["elite"] = new TraitValue(e.Traits.Elite ?? false, TraitType.Boolean),
             },
             Strength = e.Stats.Strength ?? defaults.Strength,
             Dexterity = e.Stats.Agility ?? defaults.Dexterity,

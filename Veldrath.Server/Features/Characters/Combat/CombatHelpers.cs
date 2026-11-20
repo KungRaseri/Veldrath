@@ -65,6 +65,16 @@ internal static class CombatHelpers
         return DeathPenalties.ApplySicknessToDamage(damage, attrs, DateTimeOffset.UtcNow);
     }
 
+    // The tier the client draws around an enemy portrait: boss beats elite; both are inert content labels,
+    // so this is display metadata and never affects a fight.
+    internal static string ResolveTier(Enemy? template)
+    {
+        if (template is null) return "regular";
+        if (template.Traits.TryGetValue("boss", out var boss) && boss.AsBool()) return "boss";
+        if (template.Traits.TryGetValue("elite", out var elite) && elite.AsBool()) return "elite";
+        return "regular";
+    }
+
     // Calculates enemy attack damage against the player. Halved when defending.
     internal static int CalculateEnemyDamage(SpawnedEnemy enemy, Dictionary<string, int> attrs, bool isDefending)
     {

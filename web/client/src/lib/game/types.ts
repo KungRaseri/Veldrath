@@ -1,5 +1,7 @@
 /** Minimal client-side contracts for the Phase 1 game slice. */
 
+import type { ArchetypeTier } from './archetype-portraits';
+
 export interface CharacterSummary {
 	id: string;
 	slotIndex: number;
@@ -675,6 +677,10 @@ export interface CombatStartedPayload {
 	enemyCurrentHealth: number;
 	enemyMaxHealth: number;
 	enemyAbilityNames: string[];
+	/** The archetype slug the enemy was spawned from; the portrait is addressed by it. */
+	enemyArchetypeSlug?: string | null;
+	/** The frame the portrait wears (`boss`, `elite`, `regular`). */
+	enemyTier?: string | null;
 }
 
 export interface CombatTurnPayload {
@@ -824,6 +830,10 @@ export interface CombatParticipantsPayload {
 	enemyCurrentHealth: number;
 	enemyMaxHealth: number;
 	enemyAbilityNames: string[];
+	/** The archetype slug the enemy was spawned from; the portrait is addressed by it. */
+	enemyArchetypeSlug?: string | null;
+	/** The frame the portrait wears (`boss`, `elite`, `regular`). */
+	enemyTier?: string | null;
 	participants: CombatParticipantView[];
 }
 
@@ -846,6 +856,10 @@ export interface CombatState {
 		currentHealth: number;
 		maxHealth: number;
 		abilities: string[];
+		/** The archetype slug the enemy was spawned from — the portrait key. */
+		archetypeSlug?: string | null;
+		/** The frame the portrait wears; tier is UI, never painted into the art. */
+		tier?: ArchetypeTier;
 	} | null;
 	log: string[];
 	/** Everyone fighting the same enemy, highest contributor first. */
