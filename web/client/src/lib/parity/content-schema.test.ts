@@ -23,7 +23,7 @@ const endpointsSource = stripComments(
 	readRepoFile('Veldrath.Server/Features/Content/ContentEndpoints.cs')
 );
 const entityTypesSource = stripComments(
-	readRepoFile('Veldrath.Server/Features/Content/ContentEntityTypes.cs')
+	readRepoFile('RealmEngine.Data/Content/ContentEntityTypes.cs')
 );
 const contentApiSource = readRepoFile('web/client/src/lib/server/content-api.ts');
 

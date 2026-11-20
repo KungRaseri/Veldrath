@@ -13,7 +13,7 @@
 | The content row | [`Dialogue.cs`](../RealmEngine.Data/Entities/Content/Dialogue.cs:7) | `Speaker` + `Stats` (`Tone`, `Formality`, `Lines[]`) + six boolean traits. **A line pool.** No options, requirements, consequences or state. |
 | The engine projection | [`EfCoreDialogueRepository`](../RealmEngine.Data/Repositories/EfCoreDialogueRepository.cs:35) | `GetBySpeakerAsync` returns `DialogueEntry(slug, name, typeKey, speaker, weight, lines)`. There is nowhere else for an option to live. |
 | The talk path | [`NpcHubCommands.cs`](../Veldrath.Server/Features/Characters/Npcs/NpcHubCommands.cs:133) | Verifies the person is standing with the character, picks one greeting line, sends `NpcTalked`, then advances `talk:<slug>`. |
-| Authoring | [`ContentSchema.cs`](../Veldrath.Contracts/Content/ContentSchema.cs:764), [`ContentEntityTypes.cs`](../RealmEngine.Data/Content/ContentEntityTypes.cs:53) | `dialogue` already has a schema, a validator key, a resolver and the generic write path — so extending the entity costs no new plumbing. |
+| Authoring | [`ContentSchema.cs`](../Veldrath.Contracts/Content/ContentSchema.cs:764), [`ContentEntityTypes.cs`](../RealmEngine.Data/Content/ContentEntityTypes.cs:59) | `dialogue` already has a schema, a validator key, a resolver and the generic write path — so extending the entity costs no new plumbing. |
 | Seeded content | [`DialogueSeeder`](../RealmEngine.Data/Seeders/DialogueSeeder.cs) | Greeting and farewell lines for three townspeople. |
 
 So E4 is no longer "a content-schema phase with a panel at the end" in the expensive sense: the
