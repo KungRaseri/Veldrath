@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BrandMark from '#lib/components/site/BrandMark.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
@@ -50,12 +51,7 @@
 
 <div class="mx-auto max-w-md px-5 py-12">
 	<div class="auth-card p-8">
-		<img
-			class="auth-crest"
-			src="/images/veldrath-final-crest-transparent.png"
-			alt=""
-			aria-hidden="true"
-		/>
+		<BrandMark variant="auth" class="auth-crest" />
 		<p class="hero-kicker text-center">A new seal</p>
 		<h1 class="mt-2 text-center h2">Choose a new password</h1>
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BrandMark from '#lib/components/site/BrandMark.svelte';
 	import { resolve } from '$app/paths';
 	import { brandDiscordPath, brandGithubPath } from '#lib/brand-icons';
 
@@ -9,11 +10,7 @@
 	<div class="site-footer-inner">
 		<div class="grid gap-8 md:grid-cols-4">
 			<div class="space-y-3 md:col-span-1">
-				<img
-					class="h-16 w-auto"
-					src="/images/veldrath-final-horizontal-transparent.png"
-					alt="Veldrath"
-				/>
+				<BrandMark variant="lockup" class="h-16 w-auto" />
 				<p class="max-w-xs text-sm leading-relaxed text-surface-600-400">
 					A multiplayer RPG built on the RealmEngine framework. Explore, craft, fight, and build
 					your legend in the world of Veldrath.
