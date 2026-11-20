@@ -1,0 +1,241 @@
+{
+  "$comment": "Export matrix used to derive the shipped brand assets from the masters, plus the measured result. Reproduce with: assetkit derive docs/design/specs/asset-derivation-2026-11-19.json",
+  "date": "2026-11-19",
+  "generations_used": 0,
+  "plan": {
+    "root": "/home/kung/creative-assets/veldrath",
+    "out_dir": "2d/derive-test",
+    "sources": {
+      "crest": "2d/originals/veldrath-final-crest-transparent.png",
+      "word": "2d/originals/veldrath-text-flat-true-transparent.png",
+      "lockup": "2d/originals/veldrath-final-horizontal-transparent.png",
+      "tile": "2d/originals/veldrath-final-square-v-transparent.png",
+      "vmono": "2d/originals/veldrath-v-clean-true-transparent.png"
+    },
+    "exports": [
+      {
+        "source": "crest",
+        "out": "crest-primary-80.webp",
+        "width": 80,
+        "height": 80,
+        "format": "webp",
+        "quality": 88,
+        "budget_kb": 60
+      },
+      {
+        "source": "crest",
+        "out": "crest-primary-152.webp",
+        "width": 152,
+        "height": 152,
+        "format": "webp",
+        "quality": 88,
+        "budget_kb": 60
+      },
+      {
+        "source": "crest",
+        "out": "crest-primary-228.webp",
+        "width": 228,
+        "height": 228,
+        "format": "webp",
+        "quality": 88,
+        "budget_kb": 60
+      },
+      {
+        "source": "crest",
+        "out": "crest-hero-1040.webp",
+        "width": 1040,
+        "height": 1040,
+        "format": "webp",
+        "quality": 80,
+        "budget_kb": 180
+      },
+      {
+        "source": "word",
+        "out": "wordmark-header-60.webp",
+        "width": 240,
+        "height": 60,
+        "format": "webp",
+        "quality": 88,
+        "budget_kb": 40
+      },
+      {
+        "source": "word",
+        "out": "wordmark-header-90.webp",
+        "width": 360,
+        "height": 90,
+        "format": "webp",
+        "quality": 88,
+        "budget_kb": 40
+      },
+      {
+        "source": "lockup",
+        "out": "lockup-horizontal-192.webp",
+        "width": 576,
+        "height": 192,
+        "format": "webp",
+        "quality": 88,
+        "budget_kb": 60
+      },
+      {
+        "source": "tile",
+        "out": "apple-touch-icon.png",
+        "width": 180,
+        "height": 180,
+        "format": "png-palette",
+        "colors": 128,
+        "budget_kb": 60
+      },
+      {
+        "source": "tile",
+        "out": "android-chrome-512x512.webp",
+        "width": 512,
+        "height": 512,
+        "format": "webp",
+        "quality": 70,
+        "budget_kb": 60
+      },
+      {
+        "source": "vmono",
+        "out": "favicon-32x32.png",
+        "width": 32,
+        "height": 32,
+        "format": "png",
+        "budget_kb": 5
+      }
+    ]
+  },
+  "measured": [
+    {
+      "out": "crest-primary-80.webp",
+      "size": [
+        80,
+        80
+      ],
+      "kb": 3.8,
+      "budget": 60,
+      "format": "webp",
+      "source": "/home/kung/creative-assets/veldrath/2d/originals/veldrath-final-crest-transparent.png",
+      "pass": true,
+      "problems": []
+    },
+    {
+      "out": "crest-primary-152.webp",
+      "size": [
+        152,
+        152
+      ],
+      "kb": 9.3,
+      "budget": 60,
+      "format": "webp",
+      "source": "/home/kung/creative-assets/veldrath/2d/originals/veldrath-final-crest-transparent.png",
+      "pass": true,
+      "problems": []
+    },
+    {
+      "out": "crest-primary-228.webp",
+      "size": [
+        228,
+        228
+      ],
+      "kb": 17.6,
+      "budget": 60,
+      "format": "webp",
+      "source": "/home/kung/creative-assets/veldrath/2d/originals/veldrath-final-crest-transparent.png",
+      "pass": true,
+      "problems": []
+    },
+    {
+      "out": "crest-hero-1040.webp",
+      "size": [
+        1040,
+        1040
+      ],
+      "kb": 166.5,
+      "budget": 180,
+      "format": "webp",
+      "source": "/home/kung/creative-assets/veldrath/2d/originals/veldrath-final-crest-transparent.png",
+      "pass": true,
+      "problems": []
+    },
+    {
+      "out": "wordmark-header-60.webp",
+      "size": [
+        240,
+        60
+      ],
+      "kb": 13.1,
+      "budget": 40,
+      "format": "webp",
+      "source": "/home/kung/creative-assets/veldrath/2d/originals/veldrath-text-flat-true-transparent.png",
+      "pass": true,
+      "problems": []
+    },
+    {
+      "out": "wordmark-header-90.webp",
+      "size": [
+        360,
+        90
+      ],
+      "kb": 23.8,
+      "budget": 40,
+      "format": "webp",
+      "source": "/home/kung/creative-assets/veldrath/2d/originals/veldrath-text-flat-true-transparent.png",
+      "pass": true,
+      "problems": []
+    },
+    {
+      "out": "lockup-horizontal-192.webp",
+      "size": [
+        576,
+        192
+      ],
+      "kb": 42.8,
+      "budget": 60,
+      "format": "webp",
+      "source": "/home/kung/creative-assets/veldrath/2d/originals/veldrath-final-horizontal-transparent.png",
+      "pass": true,
+      "problems": []
+    },
+    {
+      "out": "apple-touch-icon.png",
+      "size": [
+        180,
+        180
+      ],
+      "kb": 32.9,
+      "budget": 60,
+      "format": "png-palette",
+      "source": "/home/kung/creative-assets/veldrath/2d/originals/veldrath-final-square-v-transparent.png",
+      "pass": true,
+      "problems": []
+    },
+    {
+      "out": "android-chrome-512x512.webp",
+      "size": [
+        512,
+        512
+      ],
+      "kb": 53.7,
+      "budget": 60,
+      "format": "webp",
+      "source": "/home/kung/creative-assets/veldrath/2d/originals/veldrath-final-square-v-transparent.png",
+      "pass": true,
+      "problems": []
+    },
+    {
+      "out": "favicon-32x32.png",
+      "size": [
+        32,
+        32
+      ],
+      "kb": 2.1,
+      "budget": 5,
+      "format": "png",
+      "source": "/home/kung/creative-assets/veldrath/2d/originals/veldrath-v-clean-true-transparent.png",
+      "pass": true,
+      "problems": []
+    }
+  ],
+  "total_kb": 365.6,
+  "failures": 0
+}
