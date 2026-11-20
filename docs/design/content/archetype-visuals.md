@@ -425,8 +425,14 @@ no colour suffix, no pose number.** The size slot follows asset-specs §5's own 
 (`crest-primary-152.png`) rather than the `@2x` form in the brief, because §5 is the contract.
 
 Directory: `web/client/static/images/archetypes/` — a purpose directory, added to asset-specs §5
-alongside marks, herald, items and favicons by decision 4. Masters live at
-`/home/kung/creative-assets/veldrath/2d/archetypes/` and are never served.
+alongside marks, herald, items and favicons by decision 4. **All three files per slug are committed
+there, the 256 PNG-24 master included**: asset-specs §2 makes PNG the raster master format, asset-specs
+§6's pre-commit sweep (`file *.png */*.png`) expects committed PNG masters, and §7 criterion 1 counts
+all 27 files in this directory. What the master is *not* is served — no `<img>`, `<picture>` or CSS
+references it, and an unreferenced file under `static/` is not a delivery surface; it exists as the
+export source, which is what the `Served: no` column above records. Only the
+layered working file stays out of the repository, at
+`/home/kung/creative-assets/veldrath/2d/archetypes/`.
 
 **Why 32 px is dropped:** asset-specs §4.7 exports 128/64/32 because items render at 32 px in the
 bag. No archetype surface renders below 64 px, and §4's preamble says to export at 2× the largest
@@ -458,7 +464,11 @@ The parts that decide the art:
 
 `specs/archetype-portraits-derive.json` is generated from the request by
 `tools/build_derive_plan.py`, so the two cannot drift: 14 sources × 2 exports = 28 files, each with
-its dimension, format, quality, alpha requirement and byte budget.
+its dimension, format, quality, alpha requirement and byte budget. Those numbers are what the **draft**
+request yields — it still carries all fourteen Varenmark rows (§8, "Left open on purpose") — so the 28
+below is a probe of the machinery, not this document's P0 scope. The production card regenerates the
+plan from the nine-row request and *that* plan is the gate: 18 exports, one 256 PNG master per slug
+accompanying them.
 
 ```bash
 # dry-run against throwaway masters — verified on 2026-11-20
@@ -524,8 +534,9 @@ the same creature.
 ## 7. Acceptance criteria (for the production card)
 
 1. The nine P0 slugs exist under `web/client/static/images/archetypes/` — one 256 PNG master plus a
-   128 and a 64 WebP each: 27 files, of which the 18 WebP exports are what `assetkit derive` writes
-   and enforces.
+   128 and a 64 WebP each: 27 files, all committed in that one directory (§5.2 — the masters are
+   committed and referenced by no markup), of which the 18 WebP exports are what `assetkit derive`
+   writes and enforces.
 2. `assetkit derive specs/archetype-portraits-derive.json` exits 0 — dimensions, alpha and budgets.
 3. `portrait_check.py` exits 0 for all nine at 64 px, with the class named in the request.
 4. No pixel with 0 < alpha < 255 in the outer 1 px of any 64 px export (no baked glow).
@@ -578,6 +589,7 @@ changed.
 | §5.1 | first set is the nine hostiles; which five hostiles form the pilot is left to the production card | decision 3 — the draft's pilot named two townsfolk, now P1 |
 | §5.2, §5.3 | the 128 px budget and the directory cite `asset-specs` §3 and §5 instead of `PROPOSED` | decision 4 |
 | §7 | criterion 1 restated as nine slugs, 27 files | decision 3; and the draft's "28 files = 14 × {256, 128, 64}" did not add up (3 × 14 is 42, while the plan's 28 counts exports only) |
+| §5.2, §5.4, §7.1, `asset-specs` §3 | one master convention stated once and cited three times: the 256 PNG-24 is **committed** and never served, only the layered working file stays in `~/creative-assets`; §5.4's "28" now names itself a probe of the still-draft fourteen-row request | review of this landing: `asset-specs` said the master was "kept out of the repository" while §7 criterion 1 counted 27 committed files |
 
 ### Left open on purpose
 
