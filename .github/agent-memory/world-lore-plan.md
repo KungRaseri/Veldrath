@@ -53,11 +53,11 @@ Option: keep those as working names for the Phase 2 deep-dive rather than design
 **Assigned Calethic names:**
 - The Collapse → *Kaelorneth* (great unmaking) | Aethori short form: *Orneth*
 - The Unbound (working) → *Orveld* (the unconstrained) → derives Common "the Unbound"
-- The Unbound (Aethori ceremonial) → *Thaelornvael* (the enduring illuminating presence that unmakes)
+- The Unbound (Aethori ceremonial) → *Thaelornvael* (the illuminate-unmaking-enduring; thael + orn + vael, the vaeld-register terminal form of *vel* — docs §5.1)
 - Aethori full title → *Thornkaelaethori* (the great-compact-witnessing keepers)
 - Aetheld (Ashlen Wood) | Greveld (Grevenmire) | Korrveld (Droveway) | Kaeldor (Halrow) | Dornkeld (Drowning Pits) | Korreldh (Crestfall waypoint)
 - Vaelren (Varenmark Calethic form: vael+vren, V-drop junction) | Kaeltheld (The Wound) | Veldrath confirmed as vel+vrath
-- Vraen confirmed as intact Calethic: vren+–ael (frontier-sworn military order)
+- Vraen: reads as intact Calethic *vren*+*–ael* ("frontier-sworn"); what the name attaches to is **undecided** — see "The Vraen" below
 
 ---
 
@@ -96,13 +96,14 @@ Option: keep those as working names for the Phase 2 deep-dive rather than design
 - Reserved for later reveal
 - Could be: Calethic military order, conquered people, or the heartland region name
 - Do not design until Regions 2–4 are sketched (Q2)
+- Wiki status (2026-11-20, card t_40f12136): `wiki/Calethic-Language.md` now presents the frontier-sworn reading as a disputed reconstruction, not settled fact. Keep the wiki aligned with this item until a reading is decided and recorded here — note that `docs/lore/calethic-language.md` §5.2 already carries the military-order reading in its entity pass, so the two documents still disagree until that is reconciled.
 
 ### The Being
 - **Concept name:** the Unbound Ruin
 - **Scholars call it:** the Unbound
 - **Common people call it:** the Ruin
 - **Calethic working name:** *Orveld* (the unconstrained; *or–* negation + *veld* void-beyond) — source of Common "the Unbound"
-- **Aethori ceremonial name:** *Thaelornvael* (thael illuminate + orn unmake + vael enduring presence) — "the enduring illuminating presence that unmakes"
+- **Aethori ceremonial name:** *Thaelornvael* (thael illuminate + orn unmake + vael the enduring — the vaeld-register terminal form of *vel*) — "the illuminate-unmaking-enduring"
 - **Nature:** exists outside all constraint; its presence is what it means for anything it touches
 - **Current state:** still here, diminished, partially contained — not gone
 - The Collapse did not destroy it; it changed the world as retaliation and retreated into reduced presence
