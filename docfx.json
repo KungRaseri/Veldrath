@@ -29,7 +29,8 @@
         ]
       },
       {
-        "files": ["docs/design/**/*.md"]
+        "files": ["docs/design/**/*.md"],
+        "exclude": ["docs/design/content/**"]
       }
     ],
     "resource": [
