@@ -93,6 +93,7 @@ Every surface a player can see, what puts it on screen, and the states it must d
 | Abilities dialog | Dialog | Character menu | Powers usable out of combat | none unlocked, on cooldown |
 | Skills dialog | Dialog | Character menu | Skill sheet and ranks | none trained |
 | Crafting dialog | Dialog | Character menu | Recipes, ingredients, craft | missing materials, no station |
+| Conversation dialog | Dialog | Talk in the People block | Speaker prose, choices, and what each choice changes | nothing authored, every choice blocked |
 | Settings dialog | Dialog | Character menu | Preferences | — |
 
 **Every surface above needs four states designed, not one:** *empty* (nothing to show, and what the
@@ -118,6 +119,7 @@ Secondary surfaces are centred dialogs built on Bits UI `Dialog` with two primit
 | Abilities | Character menu | `PowersOverlay.svelte` |
 | Skills | Character menu | `SkillsOverlay.svelte` |
 | Crafting | Character menu | `CraftingOverlay.svelte` |
+| Conversation | The Talk button in the People block | `DialogueOverlay.svelte` |
 
 **Rules**
 

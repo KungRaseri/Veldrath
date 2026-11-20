@@ -48,6 +48,8 @@ import type {
 	LocationChestsPayload,
 	LocationNpc,
 	LocationNpcsPayload,
+	NpcDialoguePayload,
+	NpcOptionChosenPayload,
 	NpcTalkedPayload,
 	LocationEnteredPayload,
 	LocationNode,
@@ -176,6 +178,10 @@ export class GameSession {
 	chests = $state<LocationChest[]>([]);
 	/** People standing in this location, refreshed whenever the location changes. */
 	npcs = $state<LocationNpc[]>([]);
+	/** The conversation currently open, or null when the panel is closed. */
+	dialogue = $state<NpcDialoguePayload | null>(null);
+	/** The option key in flight, so one choice cannot be submitted twice. */
+	dialogueBusy = $state<string | null>(null);
 	/** Slash commands the caller may run, already filtered by permission server-side. */
 	chatCommands = $state<ChatCommandInfo[]>([]);
 	/** Characters muted locally with `/ignore`; their chat is hidden in every channel. */
@@ -416,6 +422,41 @@ export class GameSession {
 		if (!this.hub) return;
 		this.error = null;
 		await this.hub.invoke('TalkToNpc', npcSlug);
+	}
+
+	/**
+	 * Opens a conversation: the greeting (which still advances `talk:` objectives) and then the choices.
+	 *
+	 * Both calls on purpose. `TalkToNpc` is what quests count as "having spoken to them", and the conversation is
+	 * what the player actually answers; dropping either would break something that works today.
+	 */
+	async startConversation(npcSlug: string): Promise<void> {
+		if (!this.hub) return;
+		await this.talkToNpc(npcSlug);
+		await this.hub.invoke('GetNpcDialogue', { npcSlug, entrySlug: null });
+	}
+
+	/** Takes one choice. The server re-validates it and answers with `NpcOptionChosen`. */
+	async chooseNpcOption(optionKey: string): Promise<void> {
+		if (!this.hub || !this.dialogue) return;
+		// One choice at a time: a second click while the first is in flight would be a second claim.
+		if (this.dialogueBusy) return;
+
+		this.dialogueBusy = optionKey;
+		try {
+			await this.hub.invoke('ChooseNpcOption', {
+				npcSlug: this.dialogue.speakerSlug,
+				optionKey,
+				entrySlug: this.dialogue.entrySlug || null
+			});
+		} finally {
+			this.dialogueBusy = null;
+		}
+	}
+
+	/** Closes the panel without choosing anything. */
+	closeDialogue(): void {
+		this.dialogue = null;
 	}
 
 	/** Opens the item detail dialog for a bag or equipment entry. */
@@ -798,6 +839,19 @@ export class GameSession {
 		hub.on('NpcTalked', (payload: NpcTalkedPayload) => {
 			// The server words the line; the client only shows it, so the same line reads the same everywhere.
 			if (payload.line) this.addSystemMessage(`${payload.displayName}: “${payload.line}”`);
+		});
+
+		hub.on('NpcDialogue', (payload: NpcDialoguePayload) => {
+			this.dialogue = payload;
+		});
+
+		hub.on('NpcOptionChosen', (payload: NpcOptionChosenPayload) => {
+			// The reply goes in the log as well as the panel: the panel closes, and what was said should survive it.
+			if (payload.response) this.addSystemMessage(`${payload.displayName}: “${payload.response}”`);
+			if (payload.applied.length > 0) this.addSystemMessage(payload.applied.join(', '));
+
+			// A chained entry replaces the panel's contents; an ending closes it, which is how the conversation ends.
+			this.dialogue = payload.next ?? null;
 		});
 
 		hub.on('ChestOpened', (payload: ChestOpenedPayload) => {

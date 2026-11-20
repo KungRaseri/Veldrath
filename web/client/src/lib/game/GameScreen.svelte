@@ -290,7 +290,7 @@
 											<button
 												class="btn preset-tonal-surface px-2 py-1 text-xs"
 												type="button"
-												onclick={() => session.talkToNpc(npc.archetypeSlug)}
+												onclick={() => session.startConversation(npc.archetypeSlug)}
 												disabled={session.dead}
 											>
 												<Users size={12} aria-hidden="true" />

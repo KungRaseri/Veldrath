@@ -1931,3 +1931,103 @@ describe('GameSession moderation and staff broadcasts', () => {
 		expect(session.chat.at(-1)?.message).toBe('You left the zone.');
 	});
 });
+
+describe('conversations', () => {
+	const dialogue = {
+		speakerSlug: 'wayfarer-elder',
+		displayName: 'Wayfarer Elder',
+		occupation: 'townspeople',
+		entrySlug: 'elder-greeting',
+		prompt: 'The wood remembers.',
+		hasConversation: true,
+		options: [
+			{
+				key: 'ask-about-woods',
+				label: 'What happened in the wood?',
+				enabled: true,
+				blockedReason: null,
+				consequences: ['25 gold']
+			}
+		]
+	};
+
+	it('greets and then reads the conversation behind it', async () => {
+		const session = await connected();
+
+		await session.startConversation('wayfarer-elder');
+
+		expect(hub.invocations.slice(-2)).toEqual([
+			{ method: 'TalkToNpc', args: ['wayfarer-elder'] },
+			{ method: 'GetNpcDialogue', args: [{ npcSlug: 'wayfarer-elder', entrySlug: null }] }
+		]);
+	});
+
+	it('opens the panel when the conversation arrives and closes it on request', async () => {
+		const session = await connected();
+
+		hub.emit('NpcDialogue', dialogue);
+		expect(session.dialogue?.speakerSlug).toBe('wayfarer-elder');
+
+		session.closeDialogue();
+		expect(session.dialogue).toBeNull();
+	});
+
+	it('takes a choice in the open conversation', async () => {
+		const session = await connected();
+		hub.emit('NpcDialogue', dialogue);
+
+		await session.chooseNpcOption('ask-about-woods');
+
+		expect(hub.invocations.at(-1)).toEqual({
+			method: 'ChooseNpcOption',
+			args: [
+				{ npcSlug: 'wayfarer-elder', optionKey: 'ask-about-woods', entrySlug: 'elder-greeting' }
+			]
+		});
+		expect(session.dialogueBusy).toBeNull();
+	});
+
+	it('does nothing when no conversation is open', async () => {
+		const session = await connected();
+
+		await session.chooseNpcOption('ask-about-woods');
+
+		expect(hub.invocations.some((call) => call.method === 'ChooseNpcOption')).toBe(false);
+	});
+
+	it('logs the reply and what it changed, then closes when the option ends the conversation', async () => {
+		const session = await connected();
+		hub.emit('NpcDialogue', dialogue);
+
+		hub.emit('NpcOptionChosen', {
+			success: true,
+			speakerSlug: 'wayfarer-elder',
+			displayName: 'Wayfarer Elder',
+			response: 'Mind the mist.',
+			applied: ['25 gold'],
+			next: null,
+			ended: true
+		});
+
+		expect(session.dialogue).toBeNull();
+		expect(session.chat.at(-2)?.message).toBe('Wayfarer Elder: “Mind the mist.”');
+		expect(session.chat.at(-1)?.message).toBe('25 gold');
+	});
+
+	it('continues into the next entry instead of closing', async () => {
+		const session = await connected();
+		hub.emit('NpcDialogue', dialogue);
+
+		hub.emit('NpcOptionChosen', {
+			success: true,
+			speakerSlug: 'wayfarer-elder',
+			displayName: 'Wayfarer Elder',
+			response: 'Ask away.',
+			applied: [],
+			next: { ...dialogue, entrySlug: 'elder-follow-up', prompt: 'Ask away.' },
+			ended: false
+		});
+
+		expect(session.dialogue?.entrySlug).toBe('elder-follow-up');
+	});
+});
