@@ -209,7 +209,7 @@ sealed from the far side — the refusal is the act, and the act is theirs.
 
 - **A final confrontation** requires something to fight, and the canon's central figure is not
   fightable: the being is "still here, diminished, partially contained — not gone"
-  (`world-lore-plan.md:107`), and GAME.md §7.2 forbids "ancient evil awakening" as an event. Give
+  (`world-lore-plan.md:108`), and GAME.md §7.2 forbids "ancient evil awakening" as an event. Give
   it a health bar and the empire's mistake becomes a monster problem — and, worse, the player becomes
   the reason the world is safe again, which is exactly pillar 3's fails-when: *"A card makes the player
   the subject of a prophecy or the reason the world exists."*
@@ -270,13 +270,13 @@ the dependency is listed in §7 instead.
 |---|---|---|---|
 | O2 | Who the Vraen were, and whether they held anything beyond the frontier | open item **2** (`world-lore-plan.md:14`) | Name the wardens of the thresholds as the Vraen, or imply an order garrisoned the heartland. The Vraen are *frontier*-sworn (`calethic-language.md:476-484`); the heartland is not the frontier. |
 | O4 | What came back up from the Pits (*Dornkeld*) | open item **4** (`world-lore-plan.md:16`) | Make the Pits a second route into the Wound, or state that they are not one. Whether the deep access point connects to the heartland is item 4 and stays open. |
-| O3 | Whether any Aethori remain in the heartland | adjacent to open item **3** (`:15`), which is about *Varenmark* — this is a new question, not that one | Place a living, speaking Aethori in the region. The bound tier "carries old directives with no surviving context" (`world-lore-plan.md:88-93`) — that is a hook, not a character. |
+| O3 | Whether any Aethori remain in the heartland | adjacent to open item **3** (`:15`), which is about *Varenmark* — this is a new question, not that one | Place a living, speaking Aethori in the region. The *Scattered / purposeless* tier "carrying old directives with no surviving context" (`world-lore-plan.md:88-93`, the tier itself at `:91`) — that is a hook, not a character. |
 | O5 | What was tested in Grevenmire's Bone Hollow | open item **5** (`:17`) | Claim the heartland supplied, ordered, or received those subjects. Grevenmire's function is its own open item. |
 | O6 | How Calethic recognition is threaded through the arc | open item **6** (`:18`) | Decide whether recognising a root is the whole mechanism or whether a trigger object (a record, a stone) delivers it. The spine assumes only the vocabulary layer, which the language pass already provides. |
 | W1 | What is behind the door — the being's reduced presence, or something the Caleth put there | new | Answer it, in any zone, including zone 5 — the player closes the door without learning what is behind it. |
 | W2 | Why the Caleth left the last threshold unclosed, and who argued for which side | new; adjacent to the locked fact at `world-lore-plan.md:79` | Attribute it to a named faction, a named person, or "the being itself" — the empire's fracture is enough. The player closes the door; they do not learn why it was left to them. |
 | W3 | What was being processed in `rektheld` — arrivals, tribute, or people | new | Fill in the unlabelled field on the forms. It is the zone's one refusal and it borders open item 5. |
-| W4 | Why the change settled where it did, and whether the region has an edge that moves | new | Answer it in zone 3. The locked magic fact says only *"In wound-adjacent areas: actively wrong"* (`world-lore-plan.md:113`) — adjacent, not bounded. |
+| W4 | Why the change settled where it did, and whether the region has an edge that moves | new | Answer it in zone 3. The locked magic fact says only *"In wound-adjacent areas: actively wrong"* (`world-lore-plan.md:114`) — adjacent, not bounded. |
 | W5 | Whether the record the player leaves at the channel, or the closing they perform at the door, is legible to anything else | new | Confirm receipt. A confirmation turns an act of faith into a transaction and empties zones 4 and 5. |
 | W6 | What the player's account of the door is worth to the outside world | new | Make it a quest reward, a title, or a reputation change. Its worth is that nobody believes it. |
 
