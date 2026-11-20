@@ -164,11 +164,13 @@ floors currently hold the measured baseline and climb towards that target as tes
 ## `web-coverage-gate.mjs`
 
 Renders the block that heads the `web` section of the sticky coverage comment. The comment is
-built from the Cobertura report, and Cobertura accounts for branches differently from the gate:
-`codecov/codecov-report` sums the per-line `condition-coverage` attributes, while vitest/v8 counts
-branch sites, and istanbul writes a line-level condition only for a site it can place on a source
-line. On PR #88 the gate printed `Branches : 90.33% ( 4428/4902 )` while the comment said
-`89.8% (3,752 of 4,180)` for the same run — a reader concluded the opposite of the check.
+built from the Cobertura report. Since `codecov/codecov-report` is pinned to v1.0.4, the reporter's
+Total row comes from the file's root `branches-valid`/`branches-covered` counters — istanbul's
+branch-map totals, the numbers the gate enforces — while its per-directory rows are still built on
+the per-line `condition-coverage` attributes, which istanbul writes only for a site it can place on
+a source line. On PR #88, before that fix, the gate printed `Branches : 90.33% ( 4428/4902 )` while
+the comment said `89.8% (3,752 of 4,180)` for the same run — a reader concluded the opposite of the
+check, which is why this block exists.
 
 This script quotes the gate instead. It reads the last `Statements/Branches/Functions/Lines` block
 from the coverage step's log (the workflow tees it to `$RUNNER_TEMP/web-coverage.log`), keeps every

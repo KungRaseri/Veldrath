@@ -248,4 +248,21 @@ describe('the other accounting', () => {
     assert.match(markdown, /divided by a smaller denominator/);
     assert.match(markdown, /Compare branch coverage against the table above/);
   });
+
+  test('restores the agreement sentence when the per-line sum already equals the gate', () => {
+    // No root counters, and the per-line sum lands on the gate's own pair: the pre-v1.0.4 script
+    // closed the paragraph with the agreement sentence rather than a bare full stop.
+    const { status, markdown } = runCase({
+      log: gateLog,
+      summary,
+      cobertura: cobertura({ root: false, condition: '89.41% (4383/4902)' })
+    });
+    assert.equal(status, 0);
+    assert.match(markdown, /It counts \*\*4,383 of 4,902\*\* branch conditions/);
+    assert.match(
+      markdown,
+      /against the gate's \*\*4,383 of 4,902\*\* branch sites\. The two accountings agree on this run\./
+    );
+    assert.doesNotMatch(markdown, /carry no line-level condition/);
+  });
 });

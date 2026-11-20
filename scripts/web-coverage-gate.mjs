@@ -261,7 +261,7 @@ if (
           ? `: ${count(gate.Branches.total - cobertura.conditionTotal)} sites carry no line-level ` +
             `condition, so the Cobertura percentage is divided by a smaller denominator and reads ` +
             `lower. Compare branch coverage against the table above, never against the one below.`
-          : '.');
+          : '. The two accountings agree on this run.');
   lines.push(paragraph);
   lines.push('');
 }

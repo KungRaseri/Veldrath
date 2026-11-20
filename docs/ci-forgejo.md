@@ -112,16 +112,20 @@ Cobertura export (`web/client/coverage/cobertura-coverage.xml`) goes through the
 so the client gets a comment and artifact with line, branch, function and full-function numbers;
 its 90% gate stays vitest's own thresholds.
 
-**That report's branch percentage is not the number the gate enforces, and the comment says so.**
-The reporter sums the per-line `condition-coverage` attributes, while vitest/v8 counts branch
-sites — istanbul writes a line-level condition only for a site it can place on a source line, so
-the same run reads 4,180 conditions against 4,902 sites (PR #88: `89.8%` in the comment beside
-`90.33%` in the gate). `scripts/web-coverage-gate.mjs` therefore heads the `web` section with the
-totals the coverage step printed, parsed from that step's log so vitest's `ERROR: Coverage for …`
-threshold lines — global and per-glob — travel with it, and labels the per-directory table beneath
-as Cobertura accounting. `coverage.reportOnFailure` is on, so a red gate still writes the report and
-posts the comment rather than leaving the previous head's numbers in place. The decision and the
-measurements are in
+**That report's Total row is the gate's number; only its per-directory rows carry the other
+accounting.** The reporter is pinned to `v1.0.4`, which reads the Cobertura root
+`branches-valid`/`branches-covered` counters instead of summing the per-line `condition-coverage`
+attributes, so on the web report its branch Total is the pair the gate enforces. The per-directory
+rows under it are still built from the per-line conditions, and istanbul writes those only for a
+site it can place on a source line: on PR #88 they summed to 4,180 conditions against 4,902 sites
+(`89.8%` in the comment beside `90.33%` in the gate) — the discrepancy that release fixed, for the
+Total row only.
+`scripts/web-coverage-gate.mjs` therefore heads the `web` section with the totals the coverage step
+printed, parsed from that step's log so vitest's `ERROR: Coverage for …` threshold lines — global
+and per-glob — travel with it, and states both numbers for the run beside the per-directory table,
+which it labels as the Cobertura accounting. `coverage.reportOnFailure` is on, so a red gate still
+writes the report and posts the comment rather than leaving the previous head's numbers in place.
+The decision and the measurements are in
 [`plans/web-feature-parity-and-coverage.md`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/development/plans/web-feature-parity-and-coverage.md)
 (that plan is not on the published docs site, hence the absolute link).
 
