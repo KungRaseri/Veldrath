@@ -1,10 +1,11 @@
 # game-context/budget.yaml — Veldrath level bands and spawn/loot semantics.
 # Produced by card t_f1609eed (D0). STATUS: approved 2026-11-20.
+# merchants section appended by card t_2f9c409a (C2), approved 2026-11-20; landed by card t_190ecb14 (L2).
 # dev-content may choose values INSIDE a band; it may not invent a curve.
 # wiring says whether the engine reads each keyed stat TODAY, with file:line.
 
-schema_version: 1
-status: approved 2026-11-20
+schema_version: 2
+status: approved 2026-11-20 (bands, spawn, loot); merchants approved 2026-11-20
 covers_levels: [1, 26]
 level_range_justification: >-
   Card asked for 1-20; the seeded world already has zones at L20, L23 and L26
@@ -233,3 +234,93 @@ omitted:
     (ActorPoolResolver.cs:103-112), and RarityWeight only feeds the category-based
     GenerateEnemiesAsync (EnemyGenerator.cs:52-64), which the spawn path never calls.
   guaranteed_gold: "enemy gold is not a loot row at all; see loot.gold"
+
+# ---------------------------------------------------------------------------------------------
+# merchants — approved 2026-11-20 by card t_2f9c409a (C2); landed by card t_190ecb14 (L2).
+# An insertion: not one hostile band, spawn rule or loot semantic above is altered by this section.
+# ---------------------------------------------------------------------------------------------
+merchants:
+  status: approved 2026-11-20
+  town_level_basis: >-
+    Banded by the TOWN's own level, not the player's: Zone.MinLevel
+    (Veldrath.Server/Data/Entities/Zone.cs:17-18). The seeded merchant towns and their MinLevel are crestfall 0,
+    aldenmere 5, tolvaren 10 and skarhold 18 (Veldrath.Server/Data/Seeders/ApplicationDataSeeder.cs:77, :84, :89,
+    :94). The fifth HasMerchant zone is the dev playground (:99) and is excluded as IsDevOnly. A town authored
+    above L18 uses the L18 band; no band is invented for it, the same way b23-26 is the top of the hostile ladder.
+  gold_by_town_level:
+    L0:  [100, 250]    # crestfall — 8 x 0.40 x 30 = 96 .. 16 x 0.50 x 30 = 240; ceiling 30 = rune-of-fire (ItemsSeeder.cs:59)
+    L5:  [250, 650]    # aldenmere — 8 x 0.40 x 80 = 256 .. 16 x 0.50 x 80 = 640; ceiling 80 = rune-of-power (ItemsSeeder.cs:61)
+    L10: [650, 1600]   # tolvaren  — 8 x 0.40 x 200 = 640 .. 16 x 0.50 x 200 = 1600; ceiling 200 = fire-ruby (ItemsSeeder.cs:54)
+    L18: [1300, 3200]  # skarhold  — 8 x 0.40 x 400 = 1280 .. 16 x 0.50 x 400 = 3200; ceiling 400 = orb-of-decay (ItemsSeeder.cs:70)
+  gold_basis: >-
+    A purse is one shelf of the town's own wares bought back at the published buyback rate: min =
+    stock_size min x buyback_rate min x shelf ceiling, max = stock_size max x buyback_rate max x shelf ceiling,
+    rounded to the nearest 50. The shelf CEILING is the anchor because it is the single payout that can drain a
+    purse, and because it is the one figure that moves with town level. A median over the catalog is the wrong
+    anchor and the numbers prove why: the median purchasable item is 32.5 gold everywhere, so a median-anchored
+    purse would come out the same at crestfall and at skarhold.
+  gold_max_item_price: >-
+    The dearest single buyback a purse can pay is 2 x gold_max, i.e. 500 / 1300 / 3200 / 6400 at L0 / L5 / L10 /
+    L18 (buyback pays half of the item's printed value, SellItemHubCommand.cs:97). That is the whole "a starting
+    merchant cannot buy your end-game loot" rule — it falls out of the band, it is not authored beside it.
+  stock_size: [8, 16]        # distinct items a merchant offers
+  stock_size_basis: >-
+    The catalog holds 24 purchasable items: GetShopCatalogHubCommand.cs:64-71 keeps every active item with
+    Price > 0, which drops exactly one of the 25 seeded rows (lost-cargo, value 0, ItemsSeeder.cs:80). 8-16 is a
+    merchant carrying a third to two thirds of it. The low end brackets the legacy per-type defaults of 10
+    (weaponsmith, armorer) and 15 (apothecary, general store) at ShopEconomyService.cs:422-429; the high end stops
+    short of the 20 the default general store hands out, because "the whole catalog" is the present bug rather
+    than a shop.
+  price_markup: [1.0, 1.5]   # multiplier over base item value
+  price_markup_basis: >-
+    Both endpoints already exist in the code. 1.0 is the live buy price: the player pays item.Price unchanged
+    (GetShopCatalogHubCommand.cs:69, BuyItemHubCommand.cs:165-169). 1.5 is the modifier the engine's own
+    merchant-info query declares — "Player buys at 1.5x base price" (GetMerchantInfoQueryHandler.cs:74). Nothing
+    between the two is invented, and 1.0 is a floor rather than an average.
+  markup_floor: >-
+    price_markup min >= buyback_rate max, always. Below that a merchant sells an item for less than the same
+    merchant pays for it, so buy -> sell repeats for free gold (BuyItemHubCommand.cs:169 deducts item.Price while
+    SellItemHubCommand.cs:97 credits half of it). A band that crosses 0.50 markup is a gold pump, not a shop.
+  buyback_rate: [0.40, 0.50] # fraction of value paid when the player sells
+  buyback_basis: >-
+    The two rates the code already implements: 0.50 live (SellItemHubCommand.cs:97, Math.Max(1, Price / 2)) and
+    0.40 in the engine's economy service (ShopEconomyService.cs:106), which resells a bought-back item at 0.80 of
+    its price (:133). The player is never paid more than half of printed value; that is the invariant, not a knob.
+  wiring:
+    gold: >-
+      Authored but inert. ActorArchetype.Stats.TradeGold is defined (RealmEngine.Data/Entities/Content/ActorArchetype.cs:80),
+      seeded — 500 on village-blacksmith, 200 on tavern-keeper, 0 on wayfarer-elder
+      (RealmEngine.Data/Seeders/ArchetypeSeeder.cs:732, :765, :798) — and offered to the Foundry editor as an
+      integer field (Veldrath.Contracts/Content/ContentSchema.cs:279), but no code path projects, displays or
+      spends it. The live shop has no purse to read instead: SellItemHubCommand credits the player
+      (SellItemHubCommand.cs:94-102) without ever asking whether a merchant can afford the item, so liquidity is
+      infinite in every zone; the only purse it checks is the player's (BuyItemHubCommand.cs:165-166).
+    prices: >-
+      Live, but hardcoded rather than parameterised. Buy price IS the catalog value: GetShopCatalogHubCommand.cs:66-70
+      maps BuyPrice = i.Price and the purchase deducts exactly that (BuyItemHubCommand.cs:169), so markup is 1.0 in
+      code and read from no config. Buyback is a hardcoded 50% (SellItemHubCommand.cs:97), likewise unread. The
+      client never even receives the sell price: the ShopCatalog payload carries only Price = BuyPrice
+      (Veldrath.Server/Hubs/GameHub.cs:2106-2108), so the buyback rate is invisible in the UI and surfaces only in
+      the SellItem result. Neither key can be wired without an engine change.
+    stock: >-
+      "Per-zone shared" has no home in the code yet, so it is the first structure rather than a simplification of
+      one. GetShopCatalogHubCommand.cs:62-71 returns the whole active catalog for every zone — no zone filter, no
+      cap, no per-merchant list — and a purchase appends to the character's inventory blob without decrementing
+      anything (BuyItemHubCommand.cs:172-186): stock is infinite and identical everywhere. The only merchant facts
+      on record are two booleans, Zone.HasMerchant (Zone.cs:30, read at Veldrath.Server/Features/Characters/VisitShopHubCommand.cs:67)
+      and ZoneLocation.Traits.HasMerchant (RealmEngine.Data/Entities/Content/ZoneLocation.cs:60). A zone holds up to
+      two merchant locations — aldenmere ironhollow-keep and aldenmere-marketplace (ZoneLocationsSeeder.cs:294-306),
+      skarhold forge-quarter and caldera-market (:498-510) — and "per-zone shared" means both draw one list. For it
+      to survive a restart a purchase must decrement a stored row, not an in-memory collection.
+    other_gaps: >-
+      Three, listed so they are not discovered twice. (1) Buy and sell ignore the zone: both handlers declare ZoneId
+      (Veldrath.Server/Features/Shop/BuyItemHubCommand.cs:14, SellItemHubCommand.cs:14) and neither reads
+      request.ZoneId anywhere in its body, so a player can trade in the wilderness at any level with no merchant
+      present — until this closes, every number above is cosmetic. (2) The shop is not the shopkeeper:
+      VisitShopHubCommand.cs:63-68 validates the zone flag only and never looks for a placed person, and only
+      crestfall has shopkeeper placements (Veldrath.Server/Data/Seeders/LocationNpcsSeeder.cs:43-66); the NPC
+      projection does read Traits.Shopkeeper (NpcHubCommands.cs:74-82) but the shop path never joins to it.
+      (3) The engine's purse-bearing shop is registered (RealmEngine.Core/ServiceCollectionExtensions.cs:94) and
+      resolved by no server handler, so it is a reference implementation: npc.Gold at ShopEconomyService.cs:161,
+      shopCoreCount / shopDynamicCount at :414-444. Revive it knowingly — BrowseShopHandler labels its two prices
+      backwards (BuyPrice = CalculateSellPrice, SellPrice = CalculateBuyPrice, BrowseShopHandler.cs:82-83 and :90-91).
