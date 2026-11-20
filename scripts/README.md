@@ -49,7 +49,8 @@ Runs the coverage reporter without keeping a copy in this repository. It clones 
 the .NET SDK; `COVERAGE_REPORT_REPO`, `COVERAGE_REPORT_REF` and `COVERAGE_REPORT_DIR`
 override the defaults. Arguments are ReportGenerator's, plus `-minimumcoverage:` for a gate.
 It reads coverlet and vitest/istanbul Cobertura alike; the web job points it at
-`web/client/coverage/cobertura-coverage.xml`.
+`web/client/coverage/cobertura-coverage.xml`. The pin reads the Cobertura root branch counters, so
+the report's Total row carries the same counts as the web gate.
 
 ```bash
 bash scripts/coverage-report.sh \

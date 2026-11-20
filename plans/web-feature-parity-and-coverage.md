@@ -773,14 +773,24 @@ with the contrast paragraph reading *"It counts 3,752 of 4,180 branch conditions
 4,428 of 4,902 branch sites: 722 sites carry no line-level condition"*. The gate line and the
 comment's branch row are the same number, which is the property the old comment lacked.
 
-### Residual, deliberately not fixed here
+### Fixed upstream, adopted here
 
-The reporter still prints its own 88.8% headline. Fixing that belongs in
-[`codecov/codecov-report`](https://git.kungraseri.cloud/codecov/codecov-report) — read the root
-`branches-valid`/`branches-covered` attributes when a file provides them (falling back to the
-per-line sum for coverlet, whose per-line conditions are complete), or report both accountings — and
-then a `COVERAGE_REPORT_REF` bump in [`scripts/coverage-report.sh`](../scripts/coverage-report.sh).
-Until that lands, the label in the comment is what keeps the two numbers from being confused.
+The residual was the reporter's own headline, and it belongs to
+[`codecov/codecov-report`](https://git.kungraseri.cloud/codecov/codecov-report), not to this
+repository. It was fixed there (PR #1, merged as `f6a5681`) and tagged **`v1.0.4`**: the reader now
+takes the root `branches-valid`/`branches-covered` attributes when a file provides them and falls
+back to the per-line sum for coverlet, whose per-line conditions are complete. Both on-demand paths
+pin that tag — [`scripts/coverage-report.sh`](../scripts/coverage-report.sh) and
+[`generate-coverage-report.ps1`](../scripts/generate-coverage-report.ps1) — so on the PR #88 file
+the reporter's Total row reads `4,428 of 4,902`: the gate's pair, rendered with one decimal
+(`90.3%`) instead of two (`90.33%`). The counts are the contract; the precision difference is not a
+defect.
+
+What remains is only the **per-directory table**: its rows are still built on istanbul's per-line
+conditions (`3,752 of 4,180` on that run), so they do not sum to the Total.
+[`scripts/web-coverage-gate.mjs`](../scripts/web-coverage-gate.mjs) says exactly that in the
+comment, and switches to a "this file is not from this run" paragraph when the root counters
+disagree with the gate — the gate block itself is unchanged.
 
 ## Traps
 
