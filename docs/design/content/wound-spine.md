@@ -60,7 +60,7 @@ Read from code, with the line that says so. Every row shaped a decision below.
 |---|---|
 | **Seeder id** | `wound` — region ids are the Common working names (`varenmark`, `greymoor`, `saltcliff`, `cinderplain`; `ApplicationDataSeeder.cs:42-45`), and "the Wound" is the name the world uses. |
 | **Display name** | The Wound |
-| **Calethic form** | **Kaeltheld** — *kael* (great, first/paramount) + *theld* (controlled entry point, administered threshold) = "the paramount administered threshold"; the Caleth's name for the heartland from which every threshold was commanded (`calethic-language.md:584-592`) |
+| **Calethic form** | **Kaeltheld** — *kael* (great, first/paramount) + *theld* (controlled entry point, administered threshold) = "the paramount administered threshold"; the Caleth's name for the heartland from which every threshold was commanded (`calethic-language.md:588-596`) |
 | **Type** | a new `RegionType` member — `Volcanic` is region 4's and is wrong; `Forest`/`Highland`/`Coastal`/`Countryside` are all wrong (§9, decision 4) |
 | **Band** | `b23-26`, the top band (`game-context/budget.yaml`) |
 | **`MinLevel` / `MaxLevel`** | 23 / 30. The geography runs 0–30 (`ZoneLocationsSeeder.cs:42-47`); the archetype ladder stops at 26 today. |
@@ -88,9 +88,11 @@ before it stops rewarding them.
 2. **The clear must be recorded.** The act is *clearing the room* — every enemy alive at the location
    dead (`AttackEnemyHubCommand.cs:245`), not killing a named boss; the room's own pool is a 70/30
    split (`ZoneLocationsSeeder.cs:87`), so a run can clear it without the boss appearing and the gate
-   must not depend on that. Recording the clear requires `IsInstanced = true` on the Maw's dungeon
-   locations. No seeded location sets it (§1), so today the unlock loop never fires. One content flag
-   per dungeon room — no engine change — closes this.
+   must not depend on that. Recording the clear requires `IsInstanced = true` on the cleared room,
+   `fire-ancients-chamber`: the kill's `ZoneInstanceId` is what fires the unlock loop, so the flag goes
+   on the room that is cleared and **not** on the hidden gate node, which carries no instance of its
+   own. No seeded location sets the flag (§1), so today the loop never fires. One content flag — no
+   engine change — closes this.
 3. **The backstop is a level wall.** The same location carries `UnlockType = "skill_check_passive"` and
    `DiscoverThreshold = 23`, which is the only server-side, non-spoofable gate that exists
    (`TravelToNodeHubCommand.cs:489-503`). A level-1 character is refused by the server, not discouraged
@@ -170,17 +172,17 @@ The repetition is deliberate and is itself pillar-1 content: the archive is legi
 
 | slug | Calethic | roots | junction / rule | derivation | status | Canon/source |
 |---|---|---|---|---|---|---|
-| `vaelraeth` | **Vaelraeth** | *vaeld* (proximity, the approach, border-of-the-sacred) + *raeth* (threshold, boundary marker) | `–d + r–` → D-drop: *vaeld + raeth* → **Vaelraeth** (`:72`) | "the approach-threshold" — the marked point where the ordinary ends | **attested** — the root dictionary's worked example for *vaeld*, one form only (note below) | `calethic-language.md:279`, `:283`, junction table `:72`, note `:76-78`, §2.6 |
-| `rektheld` | **Rektheld** | *rek* (administer, keep in place) + *theld* (controlled entry point, administered threshold) | `–k + TH–` = two phonemes, legal onset; syllabifies *rek.theld*; no reduction | "the administered threshold" — where arrivals were admitted, recorded and passed on | **coinage** — no attested word exists for the processing threshold; coined by §2.5 + §6 | `calethic-language.md:292` (*rek*), `:326` (*theld*), `:200-206`, `:642-648` |
-| `orneld` | **Orneld** | *orn* (unmake, dissolve a structure) + *–eld* (ground, site) | `–n + e–`; syllabifies *or.neld*; vowel-initial place names attested by *Orveld* | "the unmaking-ground" — where a structure was undone and the ground kept the result | **coinage** | `calethic-language.md:272` (*orn*), `:132` (*–eld*), root form *Orneth* `:414` |
-| `draekeld` | **Draekeld** | *draek* (channel, medium, the interface) + *–eld* (ground, site) | `–k + e–`; syllabifies *drae.keld*; DR– is a legal onset (`:62`) | "the channel-ground" — the priestly interface, as a place | **coinage** — the dictionary's *draek* example is a role (*Draekori*), not a site | `calethic-language.md:278`, `:132` |
-| `naelditheld` | **Naelditheld** | *naeld* (seal permanently, close without exit) + *theld* (controlled entry point) | `–ld + TH–`: D preserved, epenthetic `–i–` liaison inserted → *naeldi.th–* (`:74`); syllabifies *nael.di.theld* | "the sealed threshold" — a controlled entry point whose designed end-state is sealed, with no key | **coinage**, governed by an attested rule | `calethic-language.md:276` (*naeld*), `:326` (*theld*), junction row `:74`, worked example *Naeldithorn* |
+| `vaelraeth` | **Vaelraeth** | *vaeld* (proximity, the approach, border-of-the-sacred) + *raeth* (threshold, boundary marker) | `–d + r–` → D-drop: *vaeld + raeth* → **Vaelraeth** (`:72`) | "the approach-threshold" — the marked point where the ordinary ends | **attested** — the root dictionary's worked example for *vaeld*, one form only (note below) | `calethic-language.md:283` (*vaeld*), junction table `:72`, note `:76-78`, §2.6 |
+| `rektheld` | **Rektheld** | *rek* (administer, keep in place) + *theld* (controlled entry point, administered threshold) | `–k + TH–` = two phonemes, legal onset; syllabifies *rek.theld*; no reduction | "the administered threshold" — where arrivals were admitted, recorded and passed on | **coinage** — no attested word exists for the processing threshold; coined by §2.5 + §6 | `calethic-language.md:296` (*rek*), `:330` (*theld*), `:204-210` (§2.5), `:646-652` |
+| `orneld` | **Orneld** | *orn* (unmake, dissolve a structure) + *–eld* (ground, site) | `–n + e–`; syllabifies *or.neld*; vowel-initial place names attested by *Orveld* | "the unmaking-ground" — where a structure was undone and the ground kept the result | **coinage** | `calethic-language.md:276` (*orn*), `:136` (*–eld*), root form *Orneth* `:418` |
+| `draekeld` | **Draekeld** | *draek* (channel, medium, the interface) + *–eld* (ground, site) | `–k + e–`; syllabifies *drae.keld*; DR– is a legal onset (`:62`) | "the channel-ground" — the priestly interface, as a place | **coinage** — the dictionary's *draek* example is a role (*Draekori*), not a site | `calethic-language.md:282`, `:136` |
+| `naelditheld` | **Naelditheld** | *naeld* (seal permanently, close without exit) + *theld* (controlled entry point) | `–ld + TH–`: D preserved, epenthetic `–i–` liaison inserted → *naeldi.th–* (`:74`); syllabifies *nael.di.theld* | "the sealed threshold" — a controlled entry point whose designed end-state is sealed, with no key | **coinage**, governed by an attested rule | `calethic-language.md:280` (*naeld*), `:330` (*theld*), junction row `:74`, worked example *Naeldithorn* |
 
 **Spelling, settled in the authority.** *vaeld + raeth* is one word — **Vaelraeth**, the merged
 proper name (`calethic-language.md:283`, §2.6), with D-drop at the junction (`:72`). The naming
-authority now writes that form in the junction table too and records beneath the table that the row
-had been rendering a proper name in lower case, not offering a second spelling; there is no register
-variant (the administrative cell reads "same"). This spine cites the canonical form.
+authority now writes that form in the junction table too and records beneath the table that the
+lower-case string was a rendering convention, not a second spelling; there is no register variant
+(the administrative cell reads "same"). This spine cites the canonical form.
 
 **The two literacies, at region scale (pillar 4).** The scholarly telling is five exact names and a
 survey. The common telling is one noun — *the Wound* — and a refusal to name anything inside it. The
@@ -266,7 +268,7 @@ the dependency is listed in §7 instead.
 
 | id | The question | Cross-ref | A writer must not |
 |---|---|---|---|
-| O2 | Who the Vraen were, and whether they held anything beyond the frontier | open item **2** (`world-lore-plan.md:14`) | Name the wardens of the thresholds as the Vraen, or imply an order garrisoned the heartland. The Vraen are *frontier*-sworn (`calethic-language.md:472-480`); the heartland is not the frontier. |
+| O2 | Who the Vraen were, and whether they held anything beyond the frontier | open item **2** (`world-lore-plan.md:14`) | Name the wardens of the thresholds as the Vraen, or imply an order garrisoned the heartland. The Vraen are *frontier*-sworn (`calethic-language.md:476-484`); the heartland is not the frontier. |
 | O4 | What came back up from the Pits (*Dornkeld*) | open item **4** (`world-lore-plan.md:16`) | Make the Pits a second route into the Wound, or state that they are not one. Whether the deep access point connects to the heartland is item 4 and stays open. |
 | O3 | Whether any Aethori remain in the heartland | adjacent to open item **3** (`:15`), which is about *Varenmark* — this is a new question, not that one | Place a living, speaking Aethori in the region. The bound tier "carries old directives with no surviving context" (`world-lore-plan.md:88-93`) — that is a hook, not a character. |
 | O5 | What was tested in Grevenmire's Bone Hollow | open item **5** (`:17`) | Claim the heartland supplied, ordered, or received those subjects. Grevenmire's function is its own open item. |
@@ -285,7 +287,7 @@ the dependency is listed in §7 instead.
 | # | Dependency | Why the spine cannot answer it | Consequence if it lands differently |
 |---|---|---|---|
 | 1 | **A 21–30 archetype roster** (the approved roster stops at 20 and says so) | This card may not author archetypes | The five zones are authorable with empty pools (`ActorPoolResolver.cs:39-44`) and unplayable as combat content. Zones 2–4 want levels 24–25, where **nothing** spawns today (§1). |
-| 2 | **`IsInstanced = true` on the Maw's dungeon rooms** | No seeder sets it, so the clear→unlock path never fires | Without it the entry condition degrades to the level wall alone: a number, not an act. |
+| 2 | **`IsInstanced = true` on the cleared `fire-ancients-chamber` room** | No seeder sets it, so the clear→unlock path never fires; the flag does nothing on the hidden gate node, which has no `ZoneInstanceId` to report | Without it the entry condition degrades to the level wall alone: a number, not an act. |
 | 3 | **A server-side unlock source check** | `UnlockZoneLocation` trusts the client (`GameHub.cs:2695-2705`) | "Not reachable at level 1" holds only against an honest client (§2.2). |
 | 4 | **`RegionType` gains a member** | Named entity decision, not a zone decision; free of migrations (`ApplicationDbContext.cs:130`) | The region row cannot be seeded correctly. |
 | 5 | **The map graph for region 5** (a later card) | Out of scope by this card's rules | Nothing is reachable; the spine stays a spine. |
@@ -314,7 +316,7 @@ outcomes, and downstream content may now depend on them.
 |---|---|---|
 | 1 | Endgame shape | **A refusal the player performs.** The last act is the player deciding to seal it — not being turned away at a door sealed from the far side. |
 | 2 | Band | **Held inside `b23–26`**, difficulty carried by subtraction (each zone removes something the player trusts), not by stats. No ladder extension for the Wound. |
-| 3 | Entry | **Approved** — a hidden location in `kaldrek-maw`, gated on clearing `fire-ancients-chamber`, backstopped by `DiscoverThreshold 23`. `IsInstanced` goes on the gate location, because the clear→unlock path is dead without it. |
+| 3 | Entry | **Approved** — a hidden location in `kaldrek-maw`, gated on clearing `fire-ancients-chamber`, backstopped by `DiscoverThreshold 23`. `IsInstanced` goes on the cleared `fire-ancients-chamber` room, whose `ZoneInstanceId` fires the clear→unlock loop — **not** on the hidden gate location, which carries no instance and flags nothing. |
 | 4 | Region type | **A sixth `RegionType` member.** `Volcanic` belongs to Cinderplain; the name is the region wave's to pick. |
 | 5 | Naming | **Five Calethic names approved**, four of them coinages. The `Vaelraeth` spelling is settled in the naming authority, and this spine cites it (§4). |
 
@@ -324,7 +326,8 @@ This card lands the spine and the naming correction and nothing else. The follow
 region's implementation wave, and no card may treat them as done:
 
 - the sixth `RegionType` member (§2, §7 #4);
-- `IsInstanced = true` on the Maw's dungeon rooms, so the clear→unlock path fires (§2.1, §7 #2);
+- `IsInstanced = true` on the cleared `fire-ancients-chamber` room, so the clear→unlock path fires
+  (§2.1, §7 #2);
 - the `kaldreks-heart` `UnlockKey` fix — self-referential, decided a bug rather than content (§7 #7);
 - every zone row, location row and map-graph node for the five zones (§7 #5).
 

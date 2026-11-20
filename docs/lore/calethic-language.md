@@ -73,9 +73,9 @@
 | –l + vr– | V-drop; formal register adds euphonic –d– bridge at l+r juncture | *vel + vrath* → *veldrath* | *vael + vren* → *vaelren* (no bridge) |
 | –ld + TH– | D is preserved; epenthetic *–i–* inserted as a liaison vowel between the terminal cluster and the incoming TH–, yielding *–ldi.TH–* | *naeld + thorn* → *Naeldithorn* | (no administrative variant attested) |
 
-> **–d + r– note:** the junction row's *vaelraeth* was a lower-case rendering of an established
-> proper name, not a second spelling — the row now writes **Vaelraeth** (§2.6) — and because the
-> administrative cell reads "same", there is no register split to appeal to.
+> **–d + r– note:** *vaelraeth* and **Vaelraeth** are the same word, not two spellings. These cells
+> render derivations without fixing case (*veldrath* stands lower-case in the row above); the row now
+> carries the §2.6 proper-name form, and the register cell reads "same", so no variant exists to keep.
 
 > **Canonical example:** *Veldrath* itself derives from *vel* (endure) + *vrath* (force). The junction –l + vr– drops the v, then the world-name form inserts a euphonic –d– bridge at the lateral-rhotic juncture: vel + vrath → vel+rath → *veldrath*. This is preserved in formal register. The administrative register would yield *velrath*, but the world name locked in the formal form.
 
