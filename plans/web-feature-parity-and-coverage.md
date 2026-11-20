@@ -748,6 +748,31 @@ PR cannot read a percentage that contradicts the check next to it.
 - Recorded in [`scripts/README.md`](../scripts/README.md) and [`docs/ci-forgejo.md`](../docs/ci-forgejo.md)
   ("Coverage reports").
 
+### Verified on a run, not just locally
+
+The reporting path was exercised end to end by CI on a throwaway branch that stacked this change on
+PR #88's head (whose branch fixes the five `web/client/tests/run-e2e.mjs` typecheck errors that stop
+`build-test` before the coverage step on `development@44422ac2`): run 2176, `Build and Test SvelteKit
+Web`, **successful in 11m51s**. From that one run:
+
+```text
+Statements   : 96.77% ( 10901/11264 )
+Branches     : 90.33% ( 4428/4902 )        <- the gate
+...
+Line 96.7% · branch 89.8% · function 95.1% · full function 95.1%   <- the reporter, unchanged
+```
+
+and the comment it posted (PR #90, comment 1084):
+
+```markdown
+| Statements | 96.77% | 10,901 / 11,264 |
+| Branches | 90.33% | 4,428 / 4,902 |
+```
+
+with the contrast paragraph reading *"It counts 3,752 of 4,180 branch conditions against the gate's
+4,428 of 4,902 branch sites: 722 sites carry no line-level condition"*. The gate line and the
+comment's branch row are the same number, which is the property the old comment lacked.
+
 ### Residual, deliberately not fixed here
 
 The reporter still prints its own 88.8% headline. Fixing that belongs in
