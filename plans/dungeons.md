@@ -707,5 +707,6 @@ restart is acceptable while the world is small. A **rebuild** is not: that is th
 - [`party-play.md`](party-play.md) — the party aggregate an instance is built for.
 - [`docs/client-ui-architecture.md`](../docs/client-ui-architecture.md) — the panel-driven client and
   the DB map graph.
-- [`wiki/Veldrath-World.md`](../wiki/Veldrath-World.md), [`wiki/Region-Varenmark.md`](../wiki/Region-Varenmark.md)
+- [`wiki/Veldrath-World.md`](https://git.kungraseri.cloud/Veldrath/Veldrath/wiki/Veldrath-World),
+  [`wiki/Region-Varenmark.md`](https://git.kungraseri.cloud/Veldrath/Veldrath/wiki/Region-Varenmark)
   — the authored world and its dungeon zones.

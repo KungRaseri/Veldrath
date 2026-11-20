@@ -12,6 +12,9 @@
  *   - `wiki/**`     — a git submodule with its own repository and CI.
  *   - build output, dependency, and coverage directories.
  *
+ * Links *into* `wiki/**` are still resolved: the submodule is not checked out in CI, so a relative
+ * path there can never resolve. Those links must be absolute `https://git.kungraseri.cloud/...` URLs.
+ *
  * A line containing `link-ignore` is skipped, for intentional references to files that never
  * live in the repository (for example a path a reader is expected to create).
  *
