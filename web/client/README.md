@@ -85,6 +85,29 @@ that spec stops the API to prove the pages say so, so it must not share a run wi
 script also sets `Email__SmtpHost=""` (no SMTP container here) and `AUTH_RATE_LIMIT_DISABLED=true` (the
 specs register dozens of accounts a minute and would otherwise meet a shared 429 bucket).
 
+### Which specs run, and the report
+
+[`tests/e2e-manifest.json`](tests/e2e-manifest.json) is the only list of specs and runs. The npm scripts
+and `ci-web.yml` both go through [`tests/run-e2e.mjs`](tests/run-e2e.mjs), which reads it, applies the
+run's environment and writes the reports — one JSON, JUnit and HTML report per run, so two runs in one
+job cannot overwrite each other. **A new spec has to be added to one run there**; a `*.e2e.ts` file that
+no run claims fails the CI gate, which is how `tests/encounters.e2e.ts` stopped running unnoticed.
+
+```sh
+npm run test:e2e:stack --workspace client      # the stack run, then the outage run
+npm run test:e2e:report --workspace client     # E2EReport/Summary.md from what the runs wrote
+npx playwright show-report playwright-report/stack   # the HTML report, with traces attached
+```
+
+`E2EReport/Summary.md` is exactly what the pull request's `E2E summary` comment shows: totals, a
+per-spec table slowest-first, every failure with its error headline and trace path, and every skip with
+its reason. A skipped test needs an entry in the manifest's `allowedSkips` (with a reason) or the gate
+fails — that is what stops "it stopped running" from looking the same as "it passed".
+
+Two things to know before reading a report: `--list` and `--dry-run` on the runner print what would run
+without needing `npm ci`, and the summary header carries the commit, so a report left over from an
+earlier run is identifiable — Playwright reuses an existing preview outside CI and `E2E_STACK`.
+
 ### Layout: content must stay inside its container
 
 [`tests/layout.e2e.ts`](tests/layout.e2e.ts) fails on pixels, not screenshots: it walks the creation
@@ -102,5 +125,6 @@ The attributes step also refuses to advance until the point-buy budget is spent,
 engine (`AllocateCreationAttributesHandler` + `FinalizeCreationSessionCommand`). Specs that walk the
 wizard use `spendAttributePoints` from [`tests/support/creation.ts`](tests/support/creation.ts).
 
-Individual specs: `E2E_STACK=1 E2E_WEB_PORT=4273 E2E_API_PORT=9100 E2E_DB_PORT=55432 npx playwright test tests/<spec>`.
-CI runs the same split in the authenticated jobs of [`ci-web.yml`](../../.github/workflows/ci-web.yml).
+A single spec, with the stack already running: `node tests/run-e2e.mjs stack --only tests/<spec>.e2e.ts`
+(the runner carries the ports and gates, and refuses a spec that is not part of that run). CI runs the
+same two runs in the authenticated job of [`ci-web.yml`](../../.github/workflows/ci-web.yml).

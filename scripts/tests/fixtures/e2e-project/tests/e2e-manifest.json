@@ -1,0 +1,21 @@
+{
+	"$comment": "Fixture manifest for scripts/tests/e2e-reporting.test.mjs — not read by CI.",
+	"specRoot": "tests",
+	"gates": {
+		"E2E_STACK": "needs the isolated compose stack"
+	},
+	"runs": {
+		"main": {
+			"why": "Fixture run: two specs, no gates.",
+			"requires": [],
+			"specs": ["tests/one.e2e.ts", "tests/two.e2e.ts"]
+		}
+	},
+	"allowedSkips": [
+		{
+			"spec": "tests/one.e2e.ts",
+			"contains": "An earlier run emptied both authored chests",
+			"reason": "Fixture entry: the only skip this fixture allows."
+		}
+	]
+}

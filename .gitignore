@@ -69,6 +69,9 @@ coverage/
 /CoverageReport/
 /.coverage-report/
 
+# Generated e2e summary (scripts/e2e-summary.mjs) — the comment on the PR is the copy that matters.
+E2EReport/
+
 # DocFX static site output
 /_site/
 

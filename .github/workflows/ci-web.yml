@@ -122,12 +122,44 @@ jobs:
         working-directory: web
         run: npm run test
 
+      # The e2e reporting scripts are tooling, not app code, so their tests run here — the one job
+      # that has Node without needing the .NET SDK. Fixtures only: no browser, no server.
+      - name: Test the e2e reporting tooling
+        run: node --test scripts/tests/e2e-reporting.test.mjs
+
       # The unit run also executes the five parity suites in src/lib/parity, which fail when a
       # hub method, broadcast event, REST route, content type, or page route is added without a
       # web consumer or a documented exemption.
       - name: Coverage gate (90% global, per-glob floors)
         working-directory: web
         run: npm run coverage --workspace client
+
+      # The Playwright half of the reporting. `npm run test` above ran the stack-free specs
+      # through web/client/tests/run-e2e.mjs, which wrote test-results/e2e-stack-free.json.
+      # Everything here runs on a red job too: a summary that only exists when the tests passed
+      # is missing exactly when a reviewer needs it. See plans/e2e-reporting.md.
+      - name: E2E integrity gate (stack-free)
+        if: always()
+        run: |
+          if [ ! -f web/client/test-results/e2e-stack-free.json ]; then
+            echo "no stack-free results were written; skipping the integrity gate"
+            exit 0
+          fi
+          node scripts/check-e2e-manifest.mjs \
+            --run stack-free \
+            --results web/client/test-results/e2e-stack-free.json \
+            --suggest
+
+      - name: Render the E2E summary
+        if: always()
+        run: |
+          if [ ! -f web/client/test-results/e2e-stack-free.json ]; then
+            echo "no stack-free results were written; skipping the summary"
+            exit 0
+          fi
+          node scripts/e2e-summary.mjs \
+            --results web/client/test-results/e2e-stack-free.json \
+            --out E2EReport/Summary.md
 
       # vitest writes web/client/coverage/cobertura-coverage.xml (vite.config.ts); the same
       # reporter the .NET jobs use renders it, so the PR comment and the HTML artifact cover
@@ -171,6 +203,23 @@ jobs:
             --section web --title 'Web (SvelteKit)' \
             --body-file CoverageReport/SummaryGithub.md
 
+      # Its own comment, not a section of the coverage one: test counts under a "Coverage
+      # summary" heading would be the wrong document. The script skips cleanly when the summary
+      # was never rendered, so a red job cannot fail here over a comment.
+      - name: Comment the E2E summary on the pull request
+        if: always() && github.event_name == 'pull_request'
+        env:
+          FORGEJO_TOKEN: ${{ secrets.GITEA_TOKEN }}
+          FORGEJO_REPOSITORY: ${{ github.repository }}
+          FORGEJO_SERVER_URL: ${{ github.server_url }}
+        run: |
+          bash scripts/forgejo-pr-comment.sh \
+            --pr "${{ github.event.pull_request.number }}" \
+            --marker '<!-- ci-e2e -->' \
+            --heading '## E2E summary' \
+            --section e2e --title 'E2E (stack-free)' \
+            --body-file E2EReport/Summary.md
+
       - name: Upload web build
         if: always()
         uses: actions/upload-artifact@v3
@@ -180,6 +229,8 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+      # `playwright-report/<run>/index.html` is openable and carries the traces; before the
+      # reporters were configured this path never existed and the step was green and empty.
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v3
@@ -188,6 +239,7 @@ jobs:
           path: |
             web/client/playwright-report
             web/client/test-results
+            E2EReport
           if-no-files-found: ignore
           retention-days: 14
 
@@ -223,6 +275,10 @@ jobs:
       E2E_GAME: '1'
       E2E_STACK: '1'
       E2E_API_URL: http://127.0.0.1:9000
+      # The manifest's ports are the local isolated stack (4273/9100/55432). This job brings its
+      # own Postgres service and starts the API itself, so the preview stays on 4173 — the value
+      # ORIGIN and BETTER_AUTH_URL above already name.
+      E2E_WEB_PORT: '4173'
       # The specs register dozens of accounts a minute from one address, so Better Auth's shared
       # per-path bucket answers 429 and the run fails during sign-up. The API is given the same
       # treatment (RateLimit__* below); the limits stay on everywhere else.
@@ -300,34 +356,63 @@ jobs:
         working-directory: web
         run: npx playwright install --with-deps chromium
 
+      # The spec list comes from web/client/tests/e2e-manifest.json, the same file the local
+      # `npm run test:e2e:stack` reads. It used to be copied here by hand, and the copy had
+      # dropped tests/encounters.e2e.ts — the combat and death journey never ran in CI.
       - name: Run the authenticated specs
         working-directory: web/client
-        run: |
-          npx playwright test \
-            tests/game-loop.e2e.ts \
-            tests/foundry-content.e2e.ts \
-            tests/foundry-maps.e2e.ts \
-            tests/foundry-submissions.e2e.ts \
-            tests/staff-areas.e2e.ts \
-            tests/staff-actions.e2e.ts \
-            tests/admin-console.e2e.ts \
-            tests/editorial-publishing.e2e.ts \
-            tests/public-details.e2e.ts \
-            tests/session-states.e2e.ts \
-            tests/review-diff.e2e.ts \
-            tests/game-journeys.e2e.ts \
-            tests/harvest.e2e.ts \
-            tests/layout.e2e.ts
+        run: node tests/run-e2e.mjs stack
 
       # Runs alone on purpose: the spec stops the API to prove the pages say so. Sharing a run with
-      # the specs above would take the API away from whichever of them were in flight.
+      # the specs above would take the API away from whichever of them were in flight. In this job
+      # the API is started by `dotnet run`, so the spec self-skips and the report says why.
       - name: Run the upstream-failure spec
         working-directory: web/client
-        run: npx playwright test tests/upstream-failure.e2e.ts --workers=1
+        run: node tests/run-e2e.mjs outage
+
+      - name: E2E integrity gate
+        if: always()
+        run: |
+          for run in stack outage; do
+            results="web/client/test-results/e2e-${run}.json"
+            if [ ! -f "${results}" ]; then
+              echo "no results for the ${run} run; skipping its integrity check"
+              continue
+            fi
+            node scripts/check-e2e-manifest.mjs --run "${run}" --results "${results}" --suggest
+          done
+
+      - name: Render the E2E summary
+        if: always()
+        run: |
+          args=""
+          for run in stack outage; do
+            results="web/client/test-results/e2e-${run}.json"
+            [ -f "${results}" ] && args="${args} --results ${results}"
+          done
+          if [ -z "${args}" ]; then
+            echo "no results were written; skipping the summary"
+            exit 0
+          fi
+          node scripts/e2e-summary.mjs ${args} --out E2EReport/Summary.md
 
       - name: Server log
         if: failure()
         run: tail -n 200 "$RUNNER_TEMP/server.log"
+
+      - name: Comment the E2E summary on the pull request
+        if: always() && github.event_name == 'pull_request'
+        env:
+          FORGEJO_TOKEN: ${{ secrets.GITEA_TOKEN }}
+          FORGEJO_REPOSITORY: ${{ github.repository }}
+          FORGEJO_SERVER_URL: ${{ github.server_url }}
+        run: |
+          bash scripts/forgejo-pr-comment.sh \
+            --pr "${{ github.event.pull_request.number }}" \
+            --marker '<!-- ci-e2e -->' \
+            --heading '## E2E summary' \
+            --section e2e-stack --title 'E2E (isolated stack, real server)' \
+            --body-file E2EReport/Summary.md
 
       - name: Upload Playwright report
         if: always()
@@ -337,6 +422,7 @@ jobs:
           path: |
             web/client/playwright-report
             web/client/test-results
+            E2EReport
           if-no-files-found: ignore
           retention-days: 14
 

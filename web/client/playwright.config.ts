@@ -24,7 +24,33 @@ const authDatabaseUrl =
 	process.env.E2E_DB_URL ??
 	`postgres://veldrath_auth:veldrath_auth_dev@localhost:${dbPort}/veldrath`;
 
+/**
+ * Where this invocation writes its reports.
+ *
+ * `tests/run-e2e.mjs` sets these per run name, because one CI job runs Playwright more than once
+ * (the stack-free run and then the isolated stack run), and a fixed output file would be
+ * truncated by the second invocation — the first run's failures would vanish from the JSON that
+ * the summary and the integrity check read. Before this config existed there was no `reporter`
+ * at all, so every workflow uploaded an empty `playwright-report/` and the pull request saw
+ * nothing but console output.
+ */
+const runName = process.env.PW_RUN_NAME ?? 'local';
+const jsonReport = process.env.PW_JSON_REPORT ?? `test-results/e2e-${runName}.json`;
+const junitReport = process.env.PW_JUNIT_REPORT ?? `test-results/e2e-${runName}.xml`;
+const htmlReport = process.env.PW_HTML_REPORT ?? `playwright-report/${runName}`;
+
 export default defineConfig({
+	// `json` is what scripts/e2e-summary.mjs and scripts/check-e2e-manifest.mjs read, `junit` is
+	// the format the .NET jobs already upload, and `html` is the openable report with traces
+	// attached. `open: 'never'` matters: without it a CI runner tries to start a browser.
+	reporter: [
+		['list'],
+		['html', { outputFolder: htmlReport, open: 'never' }],
+		['json', { outputFile: jsonReport }],
+		['junit', { outputFile: junitReport }]
+	],
+	// Traces and video land here; per-run so the second invocation keeps the first one's evidence.
+	outputDir: process.env.PW_OUTPUT_DIR ?? `test-results/${runName}`,
 	webServer: {
 		// `--port` and `--strictPort`: the preview must land on the isolated port, or fail rather than
 		// drift to the next one and leave a stale server answering where the specs look.

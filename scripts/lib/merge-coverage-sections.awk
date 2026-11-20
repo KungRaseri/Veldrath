@@ -1,4 +1,4 @@
-# Merge one named section into the shared coverage comment.
+# Merge one named section into a sticky summary comment.
 #
 # Input:  an existing comment body on stdin (may be empty).
 # Output: the body with section `section` replaced (or appended), every other section
@@ -8,8 +8,15 @@
 # retry after a lost race cannot accumulate blank lines or duplicate headings.
 #
 # Requires -v section=NAME -v title=TEXT -v bodyfile=PATH.
+# Optional -v marker=HTML_COMMENT and -v heading=MARKDOWN. The defaults are the coverage
+# comment, so every existing caller keeps its exact bytes; the e2e reporter passes its own
+# marker (`<!-- ci-e2e -->`) and heading (`## E2E summary`) to reuse this merge instead of
+# growing a second implementation of it.
 BEGIN {
-    header = "<!-- ci-coverage -->"
+    header = marker
+    if (header == "") header = "<!-- ci-coverage -->"
+    heading_line = heading
+    if (heading_line == "") heading_line = "## Coverage summary"
     count = 0
     in_section = 0
     current = ""
@@ -53,7 +60,7 @@ END {
     }
 
     print header
-    print "## Coverage summary"
+    print heading_line
 
     canonical[1] = "dotnet"
     canonical[2] = "web"
@@ -83,7 +90,9 @@ function emit_section(name,    line, body) {
         print ""
         body = ""
         while ((getline line < bodyfile) > 0) {
-            if (line == "## Coverage summary" || line == header) { continue }
+            # The reporter's own copy of the heading and marker is dropped: the heading above is
+            # generated here, from -v heading, so keeping the body's would print it twice.
+            if (line == heading_line || line == header) { continue }
             body = body line "\n"
         }
         close(bodyfile)
