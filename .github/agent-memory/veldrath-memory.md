@@ -4409,6 +4409,13 @@ What landed (detail and decisions in [`plans/e2e-reporting.md`](../../plans/e2e-
 - **`scripts/e2e-summary.mjs`** renders `E2EReport/Summary.md` from one or more JSON reports: totals, per-spec
   table slowest-first, failures with their first error line and trace path, skips with their reason, plus the
   commit in the header (a reused preview is `reuseExistingServer` outside CI, so provenance matters).
+- **Flaky means a *failed* attempt, not merely a second attempt.** A test is flaky only when at least one
+  attempt is `failed`/`timedOut` and the last one passed. A `skipped` attempt is not a failure: in a serial group
+  a timed-out test marks the rest of the group `skipped` on attempt 1, and the group retry passes them all — so
+  `[skipped, passed]` is **passed**, which is what Playwright's own tally says. Counting it flaky is why comment
+  1086 reported 2 flaky / 19 passed for run 2194 while Playwright's console said 1 flaky / 20 passed
+  (`encounters.e2e.ts:134`). `Duration` stays the sum of attempts across workers, not wall clock, and the
+  summary says so under the totals table.
 - **`scripts/check-e2e-manifest.mjs`** is the gate, and it is deliberately **not** a pass/fail gate: it fails
   when a spec on disk is claimed by no run, when a claimed spec produced no result (a suite with zero specs is
   collected from `suite.file` for exactly this), when a spec ran that the run does not claim, when a skip has no
@@ -4421,8 +4428,9 @@ What landed (detail and decisions in [`plans/e2e-reporting.md`](../../plans/e2e-
 - **Two skips are allow-listed with reasons**: `harvest.e2e.ts` (chests already emptied on a non-fresh stack) and
   `upstream-failure.e2e.ts` (it needs an API started by `scripts/e2e-stack.sh`; CI starts `dotnet run` itself, so
   the spec self-skips there and runs locally).
-- **Tests**: `node --test scripts/tests/e2e-reporting.test.mjs` (18 tests: summary rendering, flaky, merged runs,
-  missing report, and five negative controls for the gate) and the extended
+- **Tests**: `node --test scripts/tests/e2e-reporting.test.mjs` (22 tests: summary rendering, flaky (including
+  `[skipped, passed]` → passed and `[failed, passed]` → flaky), merged runs, missing report, and five negative
+  controls for the gate) and the extended
   [`scripts/tests/forgejo-pr-comment.test.sh`](../../scripts/tests/forgejo-pr-comment.test.sh) (case I covers the
   e2e marker, its heading, the kept sibling section, and that the coverage comment is neither patched nor
   deleted).

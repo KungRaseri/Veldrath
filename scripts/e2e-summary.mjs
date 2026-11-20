@@ -95,6 +95,15 @@ function collectSpecs(suites, trail, file, out) {
 	return out;
 }
 
+/**
+ * Result statuses that make an attempt a genuine failure. Playwright does not treat `skipped` or
+ * `interrupted` as one: when a serial group's test fails, the rest of that group is marked
+ * `skipped` and the whole group is retried, so `[skipped, passed]` is a test that passed — not a
+ * flake. Classifying it as flaky is how the `<!-- ci-e2e -->` comment said 2 flaky where
+ * Playwright's own tally said 1 (run 2194, `encounters.e2e.ts:134`).
+ */
+const FAILED_RESULT_STATUSES = new Set(['failed', 'timedOut']);
+
 function outcome(test) {
 	if (test.status === 'flaky') return 'flaky';
 	if (test.status === 'unexpected') return 'failed';
@@ -104,11 +113,14 @@ function outcome(test) {
 	const attempts = test.results ?? [];
 	const last = attempts[attempts.length - 1];
 	if (!last) return 'skipped';
-	if (last.status === 'passed') return attempts.length > 1 ? 'flaky' : 'passed';
-	return 'failed';
+	const failedAttempt = attempts.some((attempt) => FAILED_RESULT_STATUSES.has(attempt.status));
+	if (last.status === 'passed') return failedAttempt ? 'flaky' : 'passed';
+	return failedAttempt ? 'failed' : 'skipped';
 }
 
 function durationOf(test) {
+	// Sum of every attempt, retries included — not wall clock. With several workers the per-spec
+	// numbers still answer "which file is slow", but they add up to more than the run took.
 	return (test.results ?? []).reduce((total, result) => total + (result.duration ?? 0), 0);
 }
 
@@ -232,6 +244,10 @@ lines.push(`| Failed | ${totals.failed} |`);
 lines.push(`| Flaky | ${totals.flaky} |`);
 lines.push(`| Skipped | ${totals.skipped} |`);
 lines.push(`| Duration | ${formatDuration(totals.duration)} |`);
+lines.push('');
+lines.push(
+	'_Duration is the sum of test attempts (retries included) across every worker, not the wall clock of the run — that is why it can exceed the time the job took._'
+);
 
 if (perRun.length > 1) {
 	lines.push('');
