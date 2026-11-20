@@ -1,0 +1,378 @@
+using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
+using RealmEngine.Data.Content;
+using RealmEngine.Data.Entities;
+using RealmEngine.Data.Persistence;
+
+namespace RealmEngine.Data.Authoring.ContentPacks;
+
+/// <summary>
+/// What one import run did to one family.
+/// </summary>
+/// <param name="Family">Content-type key, e.g. <c>item</c>.</param>
+/// <param name="Created">Rows inserted.</param>
+/// <param name="Updated">Rows whose stored values changed.</param>
+/// <param name="Unchanged">Rows that already matched the pack, and were not touched.</param>
+public sealed record ContentPackFamilySummary(string Family, int Created, int Updated, int Unchanged)
+{
+    /// <summary>Gets the number of entities the pack declared for this family.</summary>
+    public int Total => Created + Updated + Unchanged;
+}
+
+/// <summary>
+/// The outcome of an import run.
+/// </summary>
+/// <param name="Validation">Every issue the pack produced, including the ones that blocked the write.</param>
+/// <param name="Families">Per-family counts. Empty when validation failed.</param>
+/// <param name="Written">False when validation failed or the run was a dry run.</param>
+public sealed record ContentPackImportResult(
+    ContentPackValidationResult Validation,
+    IReadOnlyList<ContentPackFamilySummary> Families,
+    bool Written)
+{
+    /// <summary>Gets a value indicating whether the pack passed validation (whether or not it was written).</summary>
+    public bool Succeeded => Validation.IsValid;
+
+    /// <summary>Gets the number of rows created.</summary>
+    public int Created => Families.Sum(family => family.Created);
+
+    /// <summary>Gets the number of rows updated.</summary>
+    public int Updated => Families.Sum(family => family.Updated);
+
+    /// <summary>Gets the number of rows left untouched.</summary>
+    public int Unchanged => Families.Sum(family => family.Unchanged);
+}
+
+/// <summary>
+/// Upserts a content pack into <see cref="ContentDbContext"/>, keyed by slug.
+/// </summary>
+/// <remarks>
+/// The importer exists because the C# seeders are insert-only: they build a set of existing slugs and insert what is
+/// missing, so editing a seeded record changes nothing on a database that already has it. An import creates the rows
+/// a pack adds, updates the rows whose authored values changed, and leaves everything else alone — which is also what
+/// makes a second import of the same pack report zero changes.
+/// <para>
+/// "Changed" is decided by comparing the entity as the database would return it with the entity as the pack describes
+/// it, after stripping the three fields the server owns (<c>Id</c>, <c>Version</c>, <c>UpdatedAt</c>) and the ids of
+/// nested rows. Comparing payloads rather than tracking EF state is what lets an unchanged entity cost one SELECT and
+/// no UPDATE at all.
+/// </para>
+/// <para>
+/// Validation runs first and nothing is written when it reports an <c>Error</c>: a pack is one unit, so half of it
+/// landing in the catalog would be worse than none of it.
+/// </para>
+/// </remarks>
+/// <param name="db">Content catalog to write. Never <c>ApplicationDbContext</c>.</param>
+public sealed class ContentPackImporter(ContentDbContext db)
+{
+    /// <summary>
+    /// Validates the pack and, when it is valid, upserts every entity in it by slug.
+    /// </summary>
+    /// <param name="read">The pack contents, as returned by <see cref="ContentPackReader.Read"/>.</param>
+    /// <param name="dryRun">When true, work out the counts but do not save.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Per-family counts and every issue found.</returns>
+    public async Task<ContentPackImportResult> ImportAsync(
+        ContentPackReadResult read,
+        bool dryRun = false,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(read);
+
+        var validation = await new ContentPackValidator(db).ValidateAsync(read, ct);
+        if (!validation.IsValid)
+        {
+            return new ContentPackImportResult(validation, [], Written: false);
+        }
+
+        var counts = new Dictionary<string, (int Created, int Updated, int Unchanged)>(StringComparer.OrdinalIgnoreCase);
+        var now = DateTimeOffset.UtcNow;
+
+        void Bump(string family, int created = 0, int updated = 0, int unchanged = 0)
+        {
+            var current = counts.GetValueOrDefault(family);
+            counts[family] = (current.Created + created, current.Updated + updated, current.Unchanged + unchanged);
+        }
+
+        foreach (var file in read.Files)
+        {
+            if (!ContentEntityTypes.TryResolve(file.Family, out var resolver))
+            {
+                continue;
+            }
+
+            foreach (var entry in file.Entries)
+            {
+                var incoming = ContentEntityTypes.Deserialize(
+                    resolver,
+                    JsonSerializer.SerializeToElement(entry.Payload));
+
+                if (incoming is null)
+                {
+                    // Validation already reported it; reaching here would mean the two passes disagree.
+                    continue;
+                }
+
+                var existing = await ContentEntityTypes.FindBySlugAsync(db, resolver, incoming.Slug, ct);
+
+                if (existing is null)
+                {
+                    if (!dryRun)
+                    {
+                        incoming.Id = incoming.Id == Guid.Empty ? Guid.NewGuid() : incoming.Id;
+                        incoming.UpdatedAt = now;
+                        db.Add(incoming);
+                    }
+
+                    Bump(file.Family, created: 1);
+
+                    continue;
+                }
+
+                await LoadChildrenAsync(existing, ct);
+
+                var stored = Canonical(existing).ToJsonString();
+                var authored = Canonical(incoming).ToJsonString();
+
+                if (stored == authored)
+                {
+                    Bump(file.Family, unchanged: 1);
+
+                    continue;
+                }
+
+
+                if (!dryRun)
+                {
+                    CopyAuthoredValues(incoming, existing);
+                    existing.Version += 1;
+                    existing.UpdatedAt = now;
+                }
+
+                Bump(file.Family, updated: 1);
+            }
+        }
+
+        if (!dryRun && counts.Values.Any(count => count.Created + count.Updated > 0))
+        {
+            await db.SaveChangesAsync(ct);
+        }
+
+        var families = counts
+            .OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(pair => new ContentPackFamilySummary(pair.Key, pair.Value.Created, pair.Value.Updated, pair.Value.Unchanged))
+            .ToList();
+
+        return new ContentPackImportResult(validation, families, Written: !dryRun);
+    }
+
+    /// <summary>
+    /// Loads the child rows of a tracked entity, so the comparison sees them too.
+    /// </summary>
+    /// <remarks>
+    /// A recipe's ingredients and a loot table's entries are real rows, not owned JSON. Without loading them the
+    /// comparison would see "no children" for every stored entity and rewrite it on every import. Inverse navigations
+    /// (<c>Archetype.Instances</c>) are not loaded: they are the other side of a child that points at this row, so
+    /// they are not part of what the pack authored.
+    /// </remarks>
+    private async Task LoadChildrenAsync(ContentBase existing, CancellationToken ct)
+    {
+        var entry = db.Entry(existing);
+
+        foreach (var navigation in entry.Navigations)
+        {
+            if (IsAuthoredCollection(navigation.Metadata))
+            {
+                await entry.Collection(navigation.Metadata.Name).LoadAsync(ct);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Copies every authored property of <paramref name="incoming"/> onto the tracked row.
+    /// </summary>
+    /// <remarks>
+    /// Owned JSON types (<c>Stats</c>, <c>Traits</c>, quest objectives) are separate entries in EF's change tracker,
+    /// so <c>CurrentValues.SetValues</c> — which only walks the owner's scalar columns — would leave them stale while
+    /// reporting success. Assigning the CLR properties covers scalars, owned values and child collections in one pass;
+    /// the caller has already stamped the fields the server owns.
+    /// </remarks>
+    private void CopyAuthoredValues(ContentBase incoming, ContentBase existing)
+    {
+        var entityType = db.Model.FindEntityType(existing.GetType());
+        var navigations = entityType is null
+            ? []
+            : entityType.GetNavigations()
+                .Where(navigation => !IsAuthoredCollection(navigation) && !navigation.TargetEntityType.IsOwned())
+                .Select(navigation => navigation.PropertyInfo?.Name)
+                .OfType<string>()
+                .ToHashSet(StringComparer.Ordinal);
+
+        var ownedReferences = entityType is null
+            ? []
+            : entityType.GetNavigations()
+                .Where(navigation => navigation is { IsCollection: false } && navigation.TargetEntityType.IsOwned())
+                .Select(navigation => navigation.PropertyInfo?.Name)
+                .OfType<string>()
+                .ToHashSet(StringComparer.Ordinal);
+
+        foreach (var property in existing.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        {
+            // A navigation to another content entity is fixed up by EF from the foreign keys copied below. Copying it
+            // would hand the tracked row an untracked instance, and nulling it would clear the foreign key with it.
+            if (!property.CanWrite
+                || navigations.Contains(property.Name)
+                || property.Name is nameof(ContentBase.Id) or nameof(ContentBase.Version) or nameof(ContentBase.UpdatedAt))
+            {
+                continue;
+            }
+
+            var value = property.GetValue(incoming);
+
+            if (ownedReferences.Contains(property.Name)
+                && property.GetValue(existing) is { } current
+                && value is not null)
+            {
+                // An owned JSON value has to be updated in place: replacing the instance leaves EF comparing the old,
+                // still-tracked one, and the column keeps its stored values.
+                CopyInPlace(value, current);
+                continue;
+            }
+
+            property.SetValue(existing, value);
+        }
+    }
+
+    /// <summary>Copies the writable properties of one owned value onto another, recursing into nested owned values.</summary>
+    /// <param name="source">Value authored by the pack.</param>
+    /// <param name="target">Value EF is tracking.</param>
+    private static void CopyInPlace(object source, object target)
+    {
+        foreach (var property in target.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        {
+            if (!property.CanWrite)
+            {
+                continue;
+            }
+
+            var value = property.GetValue(source);
+            var current = property.GetValue(target);
+
+            var isNestedOwned = property.PropertyType.IsClass
+                && property.PropertyType != typeof(string)
+                && !typeof(System.Collections.IEnumerable).IsAssignableFrom(property.PropertyType);
+
+            if (isNestedOwned && value is not null && current is not null)
+            {
+                CopyInPlace(value, current);
+                continue;
+            }
+
+            property.SetValue(target, value);
+        }
+    }
+
+    /// <summary>
+    /// Projects an entity onto the fields a pack authors, and returns it as canonical JSON.
+    /// </summary>
+    /// <remarks>
+    /// Serialising the tracked entity directly is not usable: EF has loaded the row's <c>Species</c> or
+    /// <c>LootTable</c> navigation, so the JSON would contain a whole second entity that the pack never wrote. This
+    /// projection walks the EF model instead — scalars, owned JSON values and authored child rows — which is also why
+    /// the three server-owned columns and a child's foreign key to its parent never count as a difference.
+    /// </remarks>
+    /// <param name="entity">The entity to project.</param>
+    /// <returns>Canonical JSON.</returns>
+    private JsonObject Canonical(ContentBase entity)
+    {
+        var entityType = db.Model.FindEntityType(entity.GetType())
+            ?? throw new InvalidOperationException($"'{entity.GetType().Name}' is not part of the content model.");
+
+        var projected = Project(entityType, entity, parentType: null);
+        var json = projected.ToJsonString();
+
+        // Parsing again keeps the comparison stable regardless of how a value serialised the first time.
+        return JsonNode.Parse(json) as JsonObject ?? projected;
+    }
+
+    private static JsonObject Project(IEntityType type, object instance, IEntityType? parentType)
+    {
+        var projected = new JsonObject();
+
+        foreach (var property in type.GetProperties())
+        {
+            if (property.IsPrimaryKey() || property.PropertyInfo is null)
+            {
+                continue;
+            }
+
+            // Server-owned columns. A pack never writes them, so they must not count as a difference.
+            if (parentType is null && property.Name is nameof(ContentBase.Version) or nameof(ContentBase.UpdatedAt))
+            {
+                continue;
+            }
+
+            if (parentType is not null
+                && property.IsForeignKey()
+                && property.GetContainingForeignKeys().Any(key => key.PrincipalEntityType == parentType))
+            {
+                // The child's link to its parent is assigned by EF, not authored by the pack.
+                continue;
+            }
+
+            projected[property.Name] = JsonSerializer.SerializeToNode(
+                property.PropertyInfo.GetValue(instance),
+                property.ClrType);
+        }
+
+        foreach (var navigation in type.GetNavigations())
+        {
+            if (navigation.PropertyInfo?.GetValue(instance) is not { } value)
+            {
+                continue;
+            }
+
+            if (navigation.TargetEntityType.IsOwned())
+            {
+                projected[navigation.Name] = navigation.IsCollection
+                    ? ProjectMany(navigation, value, type)
+                    : Project(navigation.TargetEntityType, value, type);
+
+                continue;
+            }
+
+            if (IsAuthoredCollection(navigation))
+            {
+                projected[navigation.Name] = ProjectMany(navigation, value, type);
+            }
+        }
+
+        return projected;
+    }
+
+    private static JsonArray ProjectMany(INavigation navigation, object value, IEntityType parentType)
+    {
+        var array = new JsonArray();
+
+        foreach (var child in (System.Collections.IEnumerable)value)
+        {
+            if (child is not null)
+            {
+                array.Add(Project(navigation.TargetEntityType, child, parentType));
+            }
+        }
+
+        return array;
+    }
+
+    /// <summary>
+    /// A collection the pack authors: child rows owned by this row, as opposed to navigations that point at another
+    /// content entity (<c>Archetype.Instances</c> is the inverse of <c>ActorInstance.ArchetypeId</c>).
+    /// </summary>
+    private static bool IsAuthoredCollection(INavigationBase navigation) =>
+        navigation.IsCollection
+        && !typeof(ContentBase).IsAssignableFrom(navigation.TargetEntityType.ClrType);
+}

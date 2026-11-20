@@ -1,0 +1,43 @@
+# Content pack: the worked example, and the fixture the CI content guard runs over.
+#
+# A pack file holds ONE family (the directory name: items -> item). Each entity is written in the same field names and
+# value types the content schema advertises — see docs/content-packs.md. Slugs are the identity: importing this file
+# twice creates these two rows once, and a later edit updates them in place.
+#
+# These slugs are prefixed `example-` on purpose: they are a template for authored content, not part of the world.
+family: item
+entities:
+  - slug: example-shortblade
+    typeKey: heavy-blades
+    displayName: Example Shortblade
+    itemType: weapon
+    weaponType: sword
+    damageType: physical
+    handsRequired: 1
+    rarityWeight: 55
+    stats:
+      weight: 3.0
+      value: 45
+      damageMin: 6
+      damageMax: 11
+      attackSpeed: 1.0
+      critChance: 0.05
+      durability: 90
+    traits:
+      stackable: false
+      questItem: false
+
+  - slug: example-travel-cloak
+    typeKey: light
+    displayName: Example Travel Cloak
+    itemType: armor
+    armorType: light
+    equipSlot: chest
+    rarityWeight: 60
+    stats:
+      weight: 2.0
+      value: 30
+      armorRating: 4
+      magicResist: 2
+    traits:
+      stackable: false

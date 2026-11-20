@@ -22,5 +22,7 @@
 
 - name: Developers
   items:
+    - name: Content packs
+      href: content-packs.md
     - name: Web client
       href: client-overview.md
