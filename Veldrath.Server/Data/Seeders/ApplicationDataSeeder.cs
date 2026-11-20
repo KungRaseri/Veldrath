@@ -4,6 +4,12 @@ using Veldrath.Server.Data.Entities;
 namespace Veldrath.Server.Data.Seeders;
 
 /// <summary>Seeds world-geography rows (World, Regions, Zones, and their connections) into <see cref="ApplicationDbContext"/>.</summary>
+/// <remarks>
+/// Names and descriptions come from <see cref="WorldCanonText"/>, which <see cref="WorldCanonSweep"/> reads as
+/// well, so the text a fresh database gets and the text an existing one is corrected to cannot drift apart.
+/// Each section is skipped once its table has rows, which is why a text change on its own never reaches a
+/// database that is already seeded — that is the sweep's job.
+/// </remarks>
 public static class ApplicationDataSeeder
 {
     /// <summary>Seeds all world-geography rows (idempotent, ordered by dependency).</summary>
@@ -23,10 +29,10 @@ public static class ApplicationDataSeeder
 
         db.Worlds.Add(new World
         {
-            Id = "veldrath",
-            Name = "Veldrath",
-            Description = "A world in the aftermath of the Collapse: the empire that broke it is gone, its ruins remain, and the magic it left behind no longer obeys.",
-            Era = "The Ashen Age (the Age of Reclaiming)",
+            Id = WorldCanonText.WorldId,
+            Name = WorldCanonText.World.Name,
+            Description = WorldCanonText.World.Description,
+            Era = WorldCanonText.World.Era,
         });
 
         await db.SaveChangesAsync();
@@ -39,10 +45,10 @@ public static class ApplicationDataSeeder
             return;
 
         db.Regions.AddRange(
-            new Region { Id = "varenmark", Name = "Varenmark", Description = "The oldest settled march in the lowlands. Farmsteads, drove roads and market crossings gave way to wilder land. Whatever was here before the settlers is still here.", Type = RegionType.Countryside, MinLevel = 0, MaxLevel = 6, IsStarter = true, IsDiscoverable = true, WorldId = "veldrath" },
-            new Region { Id = "greymoor", Name = "Greymoor", Description = "Fog-wreathed highlands where ancient burial mounds dot the heather and wandering spirits trouble the living.", Type = RegionType.Highland, MinLevel = 5, MaxLevel = 14, IsStarter = false, IsDiscoverable = true, WorldId = "veldrath" },
-            new Region { Id = "saltcliff", Name = "Saltcliff", Description = "Sea cliffs battered by storm winds, home to sailors, smugglers, and the drowned remains of whatever stood here before them.", Type = RegionType.Coastal, MinLevel = 10, MaxLevel = 20, IsStarter = false, IsDiscoverable = true, WorldId = "veldrath" },
-            new Region { Id = "cinderplain", Name = "Cinderplain", Description = "A scorched expanse of ash and cooled lava, where fire-touched creatures and those who work the heat stake their claim.", Type = RegionType.Volcanic, MinLevel = 18, MaxLevel = 30, IsStarter = false, IsDiscoverable = true, WorldId = "veldrath" }
+            new Region { Id = "varenmark", Name = WorldCanonText.Regions["varenmark"].Name, Description = WorldCanonText.Regions["varenmark"].Description, Type = RegionType.Countryside, MinLevel = 0, MaxLevel = 6, IsStarter = true, IsDiscoverable = true, WorldId = "veldrath" },
+            new Region { Id = "greymoor", Name = WorldCanonText.Regions["greymoor"].Name, Description = WorldCanonText.Regions["greymoor"].Description, Type = RegionType.Highland, MinLevel = 5, MaxLevel = 14, IsStarter = false, IsDiscoverable = true, WorldId = "veldrath" },
+            new Region { Id = "saltcliff", Name = WorldCanonText.Regions["saltcliff"].Name, Description = WorldCanonText.Regions["saltcliff"].Description, Type = RegionType.Coastal, MinLevel = 10, MaxLevel = 20, IsStarter = false, IsDiscoverable = true, WorldId = "veldrath" },
+            new Region { Id = "cinderplain", Name = WorldCanonText.Regions["cinderplain"].Name, Description = WorldCanonText.Regions["cinderplain"].Description, Type = RegionType.Volcanic, MinLevel = 18, MaxLevel = 30, IsStarter = false, IsDiscoverable = true, WorldId = "veldrath" }
         );
 
         await db.SaveChangesAsync();
@@ -74,29 +80,29 @@ public static class ApplicationDataSeeder
 
         db.Zones.AddRange(
             // Varenmark
-            new Zone { Id = "crestfall", Name = "Crestfall", Description = "A prosperous crossroads market town where three old drove roads meet. Warm lanterns, merchant stalls, and the last comfortable beds for many miles.", Type = ZoneType.Town, MinLevel = 0, MaxPlayers = 0, IsStarter = true, HasInn = true, HasMerchant = true, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "varenmark" },
-            new Zone { Id = "the-droveway", Name = "The Droveway", Description = "An old cattle track heading north from Crestfall. Dry-stone walls, pastures gone to seed, and a quiet that feels like it is waiting for something.", Type = ZoneType.Wilderness, MinLevel = 1, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "varenmark" },
-            new Zone { Id = "ashlen-wood", Name = "The Ashlen Wood", Description = "Old-growth forest south of Crestfall. The light is wrong here. Animals behave strangely and old clearings refuse to grow back.", Type = ZoneType.Wilderness, MinLevel = 1, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "varenmark" },
-            new Zone { Id = "grevenmire", Name = "Grevenmire", Description = "Deep boggy country beyond the Ashlen Wood. Half-sunken ruins, fog that does not lift, and a hostility that feels personal.", Type = ZoneType.Wilderness, MinLevel = 3, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "varenmark" },
-            new Zone { Id = "the-halrow", Name = "The Halrow", Description = "A buried estate at the end of the Droveway, walls still standing but roof long collapsed. Something has lived in the cellars for a very long time.", Type = ZoneType.Dungeon, MinLevel = 4, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "varenmark" },
-            new Zone { Id = "drowning-pits", Name = "The Drowning Pits", Description = "Subterranean chambers beneath Grevenmire, half-flooded and ancient. Whatever built this was not building for humans.", Type = ZoneType.Dungeon, MinLevel = 4, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "varenmark" },
+            new Zone { Id = "crestfall", Name = WorldCanonText.Zones["crestfall"].Name, Description = WorldCanonText.Zones["crestfall"].Description, Type = ZoneType.Town, MinLevel = 0, MaxPlayers = 0, IsStarter = true, HasInn = true, HasMerchant = true, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "varenmark" },
+            new Zone { Id = "the-droveway", Name = WorldCanonText.Zones["the-droveway"].Name, Description = WorldCanonText.Zones["the-droveway"].Description, Type = ZoneType.Wilderness, MinLevel = 1, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "varenmark" },
+            new Zone { Id = "ashlen-wood", Name = WorldCanonText.Zones["ashlen-wood"].Name, Description = WorldCanonText.Zones["ashlen-wood"].Description, Type = ZoneType.Wilderness, MinLevel = 1, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "varenmark" },
+            new Zone { Id = "grevenmire", Name = WorldCanonText.Zones["grevenmire"].Name, Description = WorldCanonText.Zones["grevenmire"].Description, Type = ZoneType.Wilderness, MinLevel = 3, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "varenmark" },
+            new Zone { Id = "the-halrow", Name = WorldCanonText.Zones["the-halrow"].Name, Description = WorldCanonText.Zones["the-halrow"].Description, Type = ZoneType.Dungeon, MinLevel = 4, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "varenmark" },
+            new Zone { Id = "drowning-pits", Name = WorldCanonText.Zones["drowning-pits"].Name, Description = WorldCanonText.Zones["drowning-pits"].Description, Type = ZoneType.Dungeon, MinLevel = 4, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "varenmark" },
             // Greymoor
-            new Zone { Id = "aldenmere", Name = "Aldenmere", Description = "A grey-stoned waytown built atop old foundations, known for its mead, its mercenaries, and its many secrets.", Type = ZoneType.Town, MinLevel = 5, MaxPlayers = 0, IsStarter = false, HasInn = true, HasMerchant = true, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "greymoor" },
-            new Zone { Id = "pale-moor", Name = "The Pale Moor", Description = "Endless fog-blanketed moors where waymarks shift overnight and travellers learn quickly to trust local guides.", Type = ZoneType.Wilderness, MinLevel = 7, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "greymoor" },
-            new Zone { Id = "soddenfen", Name = "Soddenfen", Description = "A waterlogged fenland buzzing with plague insects and half-submerged ruins, avoided by all with good sense.", Type = ZoneType.Wilderness, MinLevel = 9, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "greymoor" },
-            new Zone { Id = "barrow-deeps", Name = "The Barrow Deeps", Description = "A sprawling underground burial network carved through the moorland, where ancestor-beasts guard relics older than the moor above them.", Type = ZoneType.Dungeon, MinLevel = 11, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "greymoor" },
+            new Zone { Id = "aldenmere", Name = WorldCanonText.Zones["aldenmere"].Name, Description = WorldCanonText.Zones["aldenmere"].Description, Type = ZoneType.Town, MinLevel = 5, MaxPlayers = 0, IsStarter = false, HasInn = true, HasMerchant = true, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "greymoor" },
+            new Zone { Id = "pale-moor", Name = WorldCanonText.Zones["pale-moor"].Name, Description = WorldCanonText.Zones["pale-moor"].Description, Type = ZoneType.Wilderness, MinLevel = 7, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "greymoor" },
+            new Zone { Id = "soddenfen", Name = WorldCanonText.Zones["soddenfen"].Name, Description = WorldCanonText.Zones["soddenfen"].Description, Type = ZoneType.Wilderness, MinLevel = 9, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "greymoor" },
+            new Zone { Id = "barrow-deeps", Name = WorldCanonText.Zones["barrow-deeps"].Name, Description = WorldCanonText.Zones["barrow-deeps"].Description, Type = ZoneType.Dungeon, MinLevel = 11, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "greymoor" },
             // Saltcliff
-            new Zone { Id = "tolvaren", Name = "Tolvaren", Description = "A salt-caked port city clinging to the cliff face, its harbour full of storm-worn ships and bold-faced traders.", Type = ZoneType.Town, MinLevel = 10, MaxPlayers = 0, IsStarter = false, HasInn = true, HasMerchant = true, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "saltcliff" },
-            new Zone { Id = "tidewrack-flats", Name = "The Tidewrack Flats", Description = "Tide-scoured mudflats littered with shipwreck timber and kelp-draped bones, hunted by scavengers and wading predators.", Type = ZoneType.Wilderness, MinLevel = 12, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "saltcliff" },
-            new Zone { Id = "saltcliff-heights", Name = "The Saltcliff Heights", Description = "Wind-blasted clifftops above a sea that never settles, dotted with lighthouse ruins and contested by rival gull-rider clans.", Type = ZoneType.Wilderness, MinLevel = 14, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "saltcliff" },
-            new Zone { Id = "sunken-name", Name = "The Sunken Name", Description = "The drowned heart of a city no surviving record names, now a flooded ruin accessible only to the brave and the waterproofed.", Type = ZoneType.Dungeon, MinLevel = 16, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "saltcliff" },
+            new Zone { Id = "tolvaren", Name = WorldCanonText.Zones["tolvaren"].Name, Description = WorldCanonText.Zones["tolvaren"].Description, Type = ZoneType.Town, MinLevel = 10, MaxPlayers = 0, IsStarter = false, HasInn = true, HasMerchant = true, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "saltcliff" },
+            new Zone { Id = "tidewrack-flats", Name = WorldCanonText.Zones["tidewrack-flats"].Name, Description = WorldCanonText.Zones["tidewrack-flats"].Description, Type = ZoneType.Wilderness, MinLevel = 12, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "saltcliff" },
+            new Zone { Id = "saltcliff-heights", Name = WorldCanonText.Zones["saltcliff-heights"].Name, Description = WorldCanonText.Zones["saltcliff-heights"].Description, Type = ZoneType.Wilderness, MinLevel = 14, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "saltcliff" },
+            new Zone { Id = "sunken-name", Name = WorldCanonText.Zones["sunken-name"].Name, Description = WorldCanonText.Zones["sunken-name"].Description, Type = ZoneType.Dungeon, MinLevel = 16, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "saltcliff" },
             // Cinderplain
-            new Zone { Id = "skarhold", Name = "Skarhold", Description = "A forge-city built inside a dormant caldera, where the best smiths in Veldrath ply their trade under sulphur skies.", Type = ZoneType.Town, MinLevel = 18, MaxPlayers = 0, IsStarter = false, HasInn = true, HasMerchant = true, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "cinderplain" },
-            new Zone { Id = "ashfields", Name = "The Ashfields", Description = "Grey ash plains stretching to the horizon, dotted with fused obsidian trees and the scorched skulls of fallen armies.", Type = ZoneType.Wilderness, MinLevel = 20, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "cinderplain" },
-            new Zone { Id = "smoldering-reach", Name = "The Smoldering Reach", Description = "A cracked lava field where vents of superheated gas erupt without warning and heat-adapted predators hunt at dusk.", Type = ZoneType.Wilderness, MinLevel = 23, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "cinderplain" },
-            new Zone { Id = "kaldrek-maw", Name = "The Maw", Description = "A vast volcanic vent complex, lair of a fire-bound ancient and the final test of the worthy.", Type = ZoneType.Dungeon, MinLevel = 26, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "cinderplain" },
+            new Zone { Id = "skarhold", Name = WorldCanonText.Zones["skarhold"].Name, Description = WorldCanonText.Zones["skarhold"].Description, Type = ZoneType.Town, MinLevel = 18, MaxPlayers = 0, IsStarter = false, HasInn = true, HasMerchant = true, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "cinderplain" },
+            new Zone { Id = "ashfields", Name = WorldCanonText.Zones["ashfields"].Name, Description = WorldCanonText.Zones["ashfields"].Description, Type = ZoneType.Wilderness, MinLevel = 20, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "cinderplain" },
+            new Zone { Id = "smoldering-reach", Name = WorldCanonText.Zones["smoldering-reach"].Name, Description = WorldCanonText.Zones["smoldering-reach"].Description, Type = ZoneType.Wilderness, MinLevel = 23, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "cinderplain" },
+            new Zone { Id = "kaldrek-maw", Name = WorldCanonText.Zones["kaldrek-maw"].Name, Description = WorldCanonText.Zones["kaldrek-maw"].Description, Type = ZoneType.Dungeon, MinLevel = 26, MaxPlayers = 0, IsStarter = false, HasInn = false, HasMerchant = false, IsPvpEnabled = false, IsDiscoverable = true, RegionId = "cinderplain" },
             // Dev playground — not visible in public APIs (IsDevOnly = true, IsDiscoverable = false)
-            new Zone { Id = "playground", Name = "Dev Playground", Description = "An unreleased sandbox zone seeded with one representative location for every game mechanic. Not accessible to players.", Type = ZoneType.Town, MinLevel = 0, MaxPlayers = 0, IsStarter = false, HasInn = true, HasMerchant = true, IsPvpEnabled = false, IsDiscoverable = false, IsDevOnly = true, RegionId = "varenmark" }
+            new Zone { Id = "playground", Name = WorldCanonText.Zones["playground"].Name, Description = WorldCanonText.Zones["playground"].Description, Type = ZoneType.Town, MinLevel = 0, MaxPlayers = 0, IsStarter = false, HasInn = true, HasMerchant = true, IsPvpEnabled = false, IsDiscoverable = false, IsDevOnly = true, RegionId = "varenmark" }
         );
 
         await db.SaveChangesAsync();

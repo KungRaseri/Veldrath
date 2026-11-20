@@ -19,6 +19,7 @@ using Serilog.Events;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Data.Repositories;
+using Veldrath.Server.Data.Seeders;
 using Veldrath.Server.Features.Account;
 using Veldrath.Server.Features.Admin;
 using Veldrath.Server.Features.Announcements;
@@ -408,6 +409,29 @@ try
 
             // Seed baseline content (idempotent — skips each table that already has rows).
             await DatabaseSeeder.SeedAsync(services);
+
+            // The seeders above stop as soon as a table has a row, so a database migrated before a prose change
+            // keeps the old text forever. The sweep rewrites only fields that still carry a retired canon token,
+            // which makes it a no-op on a fresh database (just seeded with the current text) and never touches
+            // text an author edited later.
+            var canonSweep = await WorldCanonSweep.SweepAsync(appDb, contentDb);
+
+            if (canonSweep.FieldsChanged > 0)
+            {
+                app.Logger.LogWarning(
+                    "World canon sweep rewrote {FieldCount} field(s) across {RowCount} row(s): {Fields}",
+                    canonSweep.FieldsChanged,
+                    canonSweep.RowsChanged,
+                    string.Join(", ", canonSweep.ChangedFields));
+            }
+
+            if (canonSweep.UnresolvedFields.Count > 0)
+            {
+                app.Logger.LogWarning(
+                    "World canon sweep found {FieldCount} field(s) still carrying retired lore with no canon entry: {Fields}",
+                    canonSweep.UnresolvedFields.Count,
+                    string.Join(", ", canonSweep.UnresolvedFields));
+            }
 
             // Authored chests live in the application database, beside the ground items they resemble, and are
             // idempotent by chest id so a restart never refills a chest a player emptied a moment ago.

@@ -217,10 +217,19 @@ Update sub-location descriptions within zone pages. **✅ COMPLETE (2026-04-14)*
 - `wiki/_Sidebar.md` has Regions & Zones section and `World Lore` link
 - **Canon surfaces.** Three places carry shipped world text and all three must use
   post-Collapse names (no Sundering / Age of Embers / Dravan / Thysmara / Kaldrek):
-  `Veldrath.Server/Data/Seeders/ApplicationDataSeeder.cs` (world, regions, zones),
+  `Veldrath.Server/Data/Seeders/WorldCanonText.cs` (the single server-side authority — world,
+  regions, zones and the map-graph copy the sweep reads),
   `RealmEngine.Data/Seeders/MapGraphSeeder.cs` (the same prose, mirrored onto map nodes —
-  the copy players actually read in the map tooltip), and the Wiki. A guard test
+  the copy players actually read in the map tooltip), and the Wiki. `ApplicationDataSeeder`
+  now reads `WorldCanonText` instead of holding its own literals. A guard test
   (`SeededWorldTextTests`) fails the build on a retired token and on the two copies drifting.
+- **A text change needs the sweep, not just the seeder.** Both world seeders stop as soon as
+  their tables have rows, so a rewritten string only reaches an *empty* database.
+  `WorldCanonSweep` (called on the Postgres startup path right after `DatabaseSeeder.SeedAsync`)
+  rewrites a field only when its current value still contains a retired token,
+  case-sensitively, and reports the ids it touched. Do not "improve" it into an upsert: the
+  Foundry map editor writes the same `Map`/`MapNode` rows, so an upsert would overwrite
+  authored content on every deploy.
 - **Era value.** `World.Era = "The Ashen Age (the Age of Reclaiming)"` — both names are in
   simultaneous use (see "The Catastrophe"), so a single-name value is a canon error.
 - **Ids are not canon; display names are.** Zone and location slugs (`kaldrek-maw`,
@@ -236,8 +245,10 @@ Update sub-location descriptions within zone pages. **✅ COMPLETE (2026-04-14)*
 - `wiki/Veldrath-World.md` is a **derived snapshot** of the seeders (ids, MinLevel, types,
   connections), not an independent source. Regenerate it when the seeder changes; do not
   extend it with data the engine does not have (there is no `ZoneConnection` entity).
-- Seeder authority: `Veldrath.Server/Data/Seeders/ApplicationDataSeeder.cs` and
-  `RealmEngine.Data/Seeders/MapGraphSeeder.cs`
+- Seeder authority: `Veldrath.Server/Data/Seeders/WorldCanonText.cs` (text), applied by
+  `ApplicationDataSeeder.cs` on an empty database and by `WorldCanonSweep.cs` on a seeded one;
+  `RealmEngine.Data/Seeders/MapGraphSeeder.cs` is the map-graph copy (kept honest by
+  `WorldCanonSweepTests.Canon_matches_the_rows_both_seeders_write`)
 
 ---
 
@@ -254,6 +265,7 @@ Update sub-location descriptions within zone pages. **✅ COMPLETE (2026-04-14)*
 | 2026-04-15 | Full Varenmark review done — all writing confirmed good. 7 open design items identified (see resume point). Decision made to do Q3 Calethic language pass first, before locking names or moving to Greymoor. Language pass started: tonal character question posed, awaiting answer. |
 | 2026-04-15 | Q3 COMPLETE: Full Calethic language designed — phonology (hard+formal tonal character, sibilants ceremonial-only), morphology (7 suffixes, 11 prefixes, title construction rules, place-name compounding), basic syntax (3 registers: administrative/formal/vaeld), root dictionary (~75 roots), full named-entity pass for all Varenmark entities + TBD terms. New files: `docs/lore/calethic-language.md` (design ref) + `wiki/Calethic-Language.md` (player-facing). All `[TBD — language pass Q3]` placeholders filled in `World-Veldrath.md`. Calethic names added to all 6 zone spoiler sections. Open item #1 resolved (Varenmark keeps its name; etymology established). 6 open items remain. |
 | 2026-11-20 | Canon/text reconciliation decided (card t_7a2beb7d): seeded world text rewritten to post-Collapse names in both seeders; `World.Era` = "The Ashen Age (the Age of Reclaiming)"; The Halrow confirmed `Dungeon` (the wiki said Wilderness and was wrong); `Kaldrek's Maw` display renamed `The Maw` with the id kept; `Veldrath-World.md` to be rewritten as a derived snapshot. |
+| 2026-11-20 | A text rewrite has to reach already-migrated databases (card t_111aacaa). `WorldCanonText` now holds the server-side canon (world/regions/zones + the map-graph copy the sweep needs) and `ApplicationDataSeeder` reads it; `WorldCanonSweep` runs after seeding on the Postgres startup path and rewrites only fields still holding `Dravan` / `Thysmara` / `Kaldrek` / `Age of Embers` (case-sensitive, so `kaldrek-maw` and `kaldreks-heart` ids are safe). It also rewrites `ZoneLocation.DisplayName`, because the seeders' idempotent "add only missing rows" path leaves the Maw's old label behind too. `WorldCanonSweepTests` covers rewrite, idempotency, authored text, untouched ids, canon-vs-seeder drift, and the unresolved case. |
 
 ### Session-39 Note (2026-06-27)
 

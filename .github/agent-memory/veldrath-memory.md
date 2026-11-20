@@ -359,7 +359,7 @@ Full World → Region → Zone hierarchy implemented.
 
 **Zone entity** (`Zone.cs`): `Id` (slug), `Name`, `Description`, `ZoneType Type`, `MinLevel`, `MaxPlayers`, `IsStarter`, `HasInn`, `HasMerchant`, `IsPvpEnabled`, `IsDiscoverable`, `IsDevOnly`, `RescueFundTotal`, `RegionId` FK + `Region` nav, `ICollection<PlayerSession> Sessions`
 
-**Seed data (Veldrath world)**, re-derived from `ApplicationDataSeeder.cs`:
+**Seed data (Veldrath world)**, re-derived from `ApplicationDataSeeder.cs` (text lives in `WorldCanonText.cs`, which the seeder and `WorldCanonSweep` both read):
 - 1 World: `veldrath` / "Veldrath" / era "The Ashen Age (the Age of Reclaiming)"
 - 4 Regions: `varenmark` (Countryside, 0–6, starter), `greymoor` (Highland, 5–14), `saltcliff` (Coastal, 10–20), `cinderplain` (Volcanic, 18–30)
 - 6 RegionConnections: varenmark↔greymoor, greymoor↔saltcliff, greymoor↔cinderplain (bidirectional)
