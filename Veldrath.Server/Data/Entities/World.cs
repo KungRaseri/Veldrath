@@ -12,7 +12,7 @@ public class World
     /// <summary>Flavour description shown in lore screens and loading text.</summary>
     public string Description { get; set; } = string.Empty;
 
-    /// <summary>Current in-world era (e.g. "The Age of Embers").</summary>
+    /// <summary>Current in-world era (e.g. "The Ashen Age (the Age of Reclaiming)").</summary>
     public string Era { get; set; } = string.Empty;
 
     // Navigation

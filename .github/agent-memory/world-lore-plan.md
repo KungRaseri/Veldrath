@@ -215,9 +215,29 @@ Update sub-location descriptions within zone pages. **✅ COMPLETE (2026-04-14)*
 - Zone TMX files were resized last session: all `infinite="0"`, per-zone dimensions, empty `<data encoding="csv"/>`
 - Exit objects with no `toZoneId` property return to the region map — all zone exits currently use this pattern
 - `wiki/_Sidebar.md` has Regions & Zones section and `World Lore` link
-- `wiki/Veldrath-World.md` = technical reference (region/zone IDs, level ranges from seeder) — left stale intentionally; update after region names are locked
-- `wiki/World-Veldrath.md` = lore document — ✅ Phase 1 rewrite complete
-- Seeder authority: `Veldrath.Server/Data/Seeders/ApplicationDataSeeder.cs`
+- **Canon surfaces.** Three places carry shipped world text and all three must use
+  post-Collapse names (no Sundering / Age of Embers / Dravan / Thysmara / Kaldrek):
+  `Veldrath.Server/Data/Seeders/ApplicationDataSeeder.cs` (world, regions, zones),
+  `RealmEngine.Data/Seeders/MapGraphSeeder.cs` (the same prose, mirrored onto map nodes —
+  the copy players actually read in the map tooltip), and the Wiki. A guard test
+  (`SeededWorldTextTests`) fails the build on a retired token and on the two copies drifting.
+- **Era value.** `World.Era = "The Ashen Age (the Age of Reclaiming)"` — both names are in
+  simultaneous use (see "The Catastrophe"), so a single-name value is a canon error.
+- **Ids are not canon; display names are.** Zone and location slugs (`kaldrek-maw`,
+  `kaldreks-heart`, `the-halrow`) are opaque keys referenced by map node ids, quest unlock
+  keys and character position rows. Rename display names freely; renaming a slug is a
+  cross-database migration and needs its own card.
+- **The Halrow is typed `Dungeon`.** The outdoor Threshold and Grounds are `locations`,
+  the Rootbound Cellars and the Collapsed Vault are `dungeons` — the estate is the approach,
+  the dungeon is what it buried. Zone type drives the client's dungeon panel
+  (`DungeonPanel.svelte`), the `EnterDungeon` command and the SignalR presence group, so it
+  is not a label. `drowning-pits`, `barrow-deeps`, `sunken-name` and `kaldrek-maw` are the
+  other Dungeon-typed zones.
+- `wiki/Veldrath-World.md` is a **derived snapshot** of the seeders (ids, MinLevel, types,
+  connections), not an independent source. Regenerate it when the seeder changes; do not
+  extend it with data the engine does not have (there is no `ZoneConnection` entity).
+- Seeder authority: `Veldrath.Server/Data/Seeders/ApplicationDataSeeder.cs` and
+  `RealmEngine.Data/Seeders/MapGraphSeeder.cs`
 
 ---
 
@@ -233,6 +253,7 @@ Update sub-location descriptions within zone pages. **✅ COMPLETE (2026-04-14)*
 | 2026-04-14 | Phase 4 complete: 5 new sub-locations added across 5 zone pages (crestfall-garrison, foresters-camp, old-waystation, mire-marker, halrow-grounds). Drowning Pits complete as-is. |
 | 2026-04-15 | Full Varenmark review done — all writing confirmed good. 7 open design items identified (see resume point). Decision made to do Q3 Calethic language pass first, before locking names or moving to Greymoor. Language pass started: tonal character question posed, awaiting answer. |
 | 2026-04-15 | Q3 COMPLETE: Full Calethic language designed — phonology (hard+formal tonal character, sibilants ceremonial-only), morphology (7 suffixes, 11 prefixes, title construction rules, place-name compounding), basic syntax (3 registers: administrative/formal/vaeld), root dictionary (~75 roots), full named-entity pass for all Varenmark entities + TBD terms. New files: `docs/lore/calethic-language.md` (design ref) + `wiki/Calethic-Language.md` (player-facing). All `[TBD — language pass Q3]` placeholders filled in `World-Veldrath.md`. Calethic names added to all 6 zone spoiler sections. Open item #1 resolved (Varenmark keeps its name; etymology established). 6 open items remain. |
+| 2026-11-20 | Canon/text reconciliation decided (card t_7a2beb7d): seeded world text rewritten to post-Collapse names in both seeders; `World.Era` = "The Ashen Age (the Age of Reclaiming)"; The Halrow confirmed `Dungeon` (the wiki said Wilderness and was wrong); `Kaldrek's Maw` display renamed `The Maw` with the id kept; `Veldrath-World.md` to be rewritten as a derived snapshot. |
 
 ### Session-39 Note (2026-06-27)
 

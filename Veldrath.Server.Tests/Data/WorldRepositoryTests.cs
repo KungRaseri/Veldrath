@@ -29,7 +29,7 @@ public class WorldRepositoryTests : IDisposable
 
         var veldrath = result.Single();
         veldrath.Name.Should().Be("Veldrath");
-        veldrath.Era.Should().Be("The Age of Embers");
+        veldrath.Era.Should().Be("The Ashen Age (the Age of Reclaiming)");
         veldrath.Description.Should().NotBeNullOrWhiteSpace();
     }
 
