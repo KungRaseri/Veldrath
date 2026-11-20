@@ -64,6 +64,23 @@ public class EnemyInstance
     /// <summary>Gets or sets the base gold awarded on death, captured at spawn time.</summary>
     public int GoldReward { get; set; }
 
+    /// <summary>
+    /// The <see cref="StatsVersion"/> a row is stamped with when it is built from the current spawn projection.
+    /// </summary>
+    /// <remarks>
+    /// A row below this value was written before the archetype stats were projected onto spawned enemies, so its
+    /// stored stats are the old template defaults rather than the archetype's. The store reconciles those rows on
+    /// the next read of their location (and before a respawn revives them) and stamps them with this value, which
+    /// is what makes the reconciliation one-off instead of a re-projection on every read.
+    /// </remarks>
+    public const int CurrentStatsVersion = 1;
+
+    /// <summary>
+    /// Gets or sets the spawn-projection version this row's stats were built from. Zero means the row predates
+    /// <see cref="CurrentStatsVersion"/> and still has to be reconciled from its archetype.
+    /// </summary>
+    public int StatsVersion { get; set; }
+
     /// <summary>Gets or sets a value indicating whether the enemy still has health.</summary>
     public bool IsAlive { get; set; } = true;
 
