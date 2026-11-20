@@ -60,6 +60,34 @@ public class SpawnedEnemyStatProjectionTests
     }
 
     [Fact]
+    public async Task The_authored_attributes_reach_the_spawned_template()
+    {
+        await using var lowProbe = new SeededContentProbe();
+        await using var highProbe = new SeededContentProbe();
+
+        var rat = await SpawnAsync(lowProbe, "giant-rat");
+        var ancient = await SpawnAsync(highProbe, "fire-ancient");
+
+        rat.Should().NotBeEmpty();
+        rat.Should().OnlyContain(enemy => enemy.Template.Strength == 4, "the archetype authors 4 strength, not the template's 10");
+        rat.Should().OnlyContain(enemy => enemy.Template.Dexterity == 10);
+        rat.Should().OnlyContain(enemy => enemy.Template.Intelligence == 2);
+        rat.Should().OnlyContain(enemy => enemy.Template.Constitution == 6);
+
+        ancient.Should().NotBeEmpty();
+        ancient.Should().OnlyContain(enemy => enemy.Template.Strength == 30, "the archetype authors 30 strength, not the template's 10");
+        ancient.Should().OnlyContain(enemy => enemy.Template.Dexterity == 12);
+        ancient.Should().OnlyContain(enemy => enemy.Template.Intelligence == 22);
+        ancient.Should().OnlyContain(enemy => enemy.Template.Constitution == 26);
+
+        // The dictionary is the mirror, so it has to carry the same numbers under the same lowercase keys.
+        ancient.Should().OnlyContain(enemy => enemy.Template.Attributes["strength"] == 30);
+        ancient.Should().OnlyContain(enemy => enemy.Template.Attributes["dexterity"] == 12);
+        ancient.Should().OnlyContain(enemy => enemy.Template.Attributes["intelligence"] == 22);
+        ancient.Should().OnlyContain(enemy => enemy.Template.Attributes["constitution"] == 26);
+    }
+
+    [Fact]
     public async Task Rewards_and_health_differ_between_two_archetypes_in_different_bands()
     {
         await using var lowProbe = new SeededContentProbe();

@@ -104,6 +104,78 @@ public class EfCoreEnemyRepositoryStatProjectionTests
     }
 
     [Fact]
+    public async Task GetBySlugAsync_CarriesTheAuthoredAttributesOntoTheTypedProperties()
+    {
+        await using var db = CreateDbContext();
+        db.ActorArchetypes.Add(MakeArchetype("fire-ancient", new ArchetypeStats
+        {
+            Health = 900,
+            Strength = 30,
+            Agility = 12,
+            Intelligence = 22,
+            Constitution = 26,
+        }));
+        await db.SaveChangesAsync();
+
+        var enemy = await CreateRepository(db).GetBySlugAsync("fire-ancient");
+
+        // 10 is the template default for all four; the authored numbers have to replace it on the typed members.
+        enemy!.Strength.Should().Be(30, "combat reads Enemy.Strength, not the archetype row");
+        enemy.Dexterity.Should().Be(12, "the archetype's Agility is the template's Dexterity");
+        enemy.Intelligence.Should().Be(22);
+        enemy.Constitution.Should().Be(26);
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_MirrorsTheTypedAttributesIntoTheDictionary()
+    {
+        await using var db = CreateDbContext();
+        db.ActorArchetypes.Add(MakeArchetype("giant-rat", new ArchetypeStats
+        {
+            Health = 20,
+            Strength = 4,
+            Agility = 10,
+            Intelligence = 2,
+            Constitution = 6,
+        }, minLevel: 1));
+        await db.SaveChangesAsync();
+
+        var enemy = await CreateRepository(db).GetBySlugAsync("giant-rat");
+
+        // The dictionary is a mirror of the typed properties, so it has to equal them key by key — not merely be
+        // populated — and keep the lowercase key names consumers already read.
+        enemy!.Attributes["strength"].Should().Be(enemy.Strength).And.Be(4);
+        enemy.Attributes["dexterity"].Should().Be(enemy.Dexterity).And.Be(10);
+        enemy.Attributes["intelligence"].Should().Be(enemy.Intelligence).And.Be(2);
+        enemy.Attributes["constitution"].Should().Be(enemy.Constitution).And.Be(6);
+        enemy.Attributes.Should().HaveCount(4, "the four authored attributes are the whole attribute surface of a spawn");
+    }
+
+    [Fact]
+    public async Task GetBySlugAsync_KeepsTheModelDefaultForAttributesTheArchetypeDoesNotAuthor()
+    {
+        await using var db = CreateDbContext();
+        // village-blacksmith authors health and trade stats only — no attributes at all.
+        db.ActorArchetypes.Add(MakeArchetype(
+            "village-blacksmith",
+            new ArchetypeStats { Health = 80, TradeSkill = 70, TradeGold = 500 },
+            minLevel: 1));
+        await db.SaveChangesAsync();
+
+        var enemy = await CreateRepository(db).GetBySlugAsync("village-blacksmith");
+
+        // 10 is the Enemy model's own default; the projection reads it from the model rather than restating it.
+        enemy!.Strength.Should().Be(10);
+        enemy.Dexterity.Should().Be(10);
+        enemy.Intelligence.Should().Be(10);
+        enemy.Constitution.Should().Be(10);
+        enemy.Attributes["strength"].Should().Be(10);
+        enemy.Attributes["dexterity"].Should().Be(10);
+        enemy.Attributes["intelligence"].Should().Be(10);
+        enemy.Attributes["constitution"].Should().Be(10);
+    }
+
+    [Fact]
     public async Task GetBySlugAsync_RollsGoldInclusivelyFromTheAuthoredRange()
     {
         await using var db = CreateDbContext();
