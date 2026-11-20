@@ -340,6 +340,8 @@ jobs:
           Web__BaseUrl="$ORIGIN" \
           Cors__AllowedOrigins__0="$ORIGIN" \
           InternalBridge__Token="$INTERNAL_BRIDGE_TOKEN" \
+          RateLimit__AdminActionsPerMinute=600 \
+          RateLimit__FoundryWritesPerMinute=600 \
           nohup dotnet run --no-launch-profile > "$RUNNER_TEMP/server.log" 2>&1 &
           for attempt in $(seq 1 60); do
             sleep 3
@@ -359,8 +361,16 @@ jobs:
       # The spec list comes from web/client/tests/e2e-manifest.json, the same file the local
       # `npm run test:e2e:stack` reads. It used to be copied here by hand, and the copy had
       # dropped tests/encounters.e2e.ts — the combat and death journey never ran in CI.
+      #
+      # `playwright.config.ts` points the preview it starts at `E2E_API_PORT` / `E2E_DB_URL`, and
+      # its defaults are the *local* isolated stack (API on 9100, Postgres on 55432). This job runs
+      # its own API on 9000 against the postgres service, so both have to name that instead —
+      # otherwise every spec dies at sign-up with ECONNREFUSED 127.0.0.1:9100.
       - name: Run the authenticated specs
         working-directory: web/client
+        env:
+          E2E_API_PORT: '9000'
+          E2E_DB_URL: ${{ env.DATABASE_URL }}
         run: node tests/run-e2e.mjs stack
 
       # Runs alone on purpose: the spec stops the API to prove the pages say so. Sharing a run with
@@ -368,6 +378,9 @@ jobs:
       # the API is started by `dotnet run`, so the spec self-skips and the report says why.
       - name: Run the upstream-failure spec
         working-directory: web/client
+        env:
+          E2E_API_PORT: '9000'
+          E2E_DB_URL: ${{ env.DATABASE_URL }}
         run: node tests/run-e2e.mjs outage
 
       - name: E2E integrity gate

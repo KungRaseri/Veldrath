@@ -28,6 +28,22 @@ import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+/**
+ * One run in `tests/e2e-manifest.json`.
+ * @typedef {object} E2ERun
+ * @property {string[]} specs    spec paths, relative to `web/client`
+ * @property {Record<string, string>} [env]   defaults only; the environment wins
+ * @property {number} [workers]  Playwright worker count for this run
+ * @property {string[]} [requires] env vars that must be '1' or the run is refused
+ */
+
+/**
+ * The whole manifest.
+ * @typedef {object} E2EManifest
+ * @property {Record<string, E2ERun>} runs
+ * @property {Record<string, string>} [gates] why each gate is required
+ */
+
 const here = dirname(fileURLToPath(import.meta.url));
 const clientRoot = resolve(here, '..');
 const require = createRequire(import.meta.url);
@@ -35,18 +51,26 @@ const require = createRequire(import.meta.url);
 const reportRoot = resolve(clientRoot, process.env.E2E_REPORT_DIR ?? 'test-results');
 const htmlRoot = resolve(clientRoot, process.env.E2E_HTML_DIR ?? 'playwright-report');
 
+/**
+ * Print a usage/manifest error and exit 2.
+ * @param {string} message what went wrong
+ * @returns {never} never returns — it exits, which is what lets callers treat it as terminal
+ */
 function fail(message) {
 	console.error(`error: ${message}`);
 	process.exit(2);
 }
 
+/**
+ * @returns {E2EManifest} the parsed manifest
+ */
 function readManifest() {
 	const path = join(here, 'e2e-manifest.json');
 	if (!existsSync(path)) fail(`no manifest at ${path}`);
 	try {
 		return JSON.parse(readFileSync(path, 'utf8'));
 	} catch (error) {
-		fail(`${path} is not valid JSON: ${error.message}`);
+		fail(`${path} is not valid JSON: ${error instanceof Error ? error.message : String(error)}`);
 	}
 }
 
