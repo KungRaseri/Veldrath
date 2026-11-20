@@ -340,6 +340,8 @@ jobs:
           Web__BaseUrl="$ORIGIN" \
           Cors__AllowedOrigins__0="$ORIGIN" \
           InternalBridge__Token="$INTERNAL_BRIDGE_TOKEN" \
+          RateLimit__AdminActionsPerMinute=600 \
+          RateLimit__FoundryWritesPerMinute=600 \
           nohup dotnet run --no-launch-profile > "$RUNNER_TEMP/server.log" 2>&1 &
           for attempt in $(seq 1 60); do
             sleep 3
