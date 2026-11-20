@@ -346,31 +346,28 @@ Server.Tests: 468 passing (unchanged — schema picked up automatically via `Ens
 - Client callback: `GameViewModel.OnDungeonEntered(string dungeonId, string dungeonSlug)` → `AppendLog`
 - Seeded dungeon available in `TestDbContextFactory` (SQLite + `EnsureCreated`): **REPLACED in session-14 — use `"verdant-barrow"` (Verdant Barrow, ZoneType.Dungeon)**
 
-## World / Region / Zone Schema (session-14 — 2026-03-21)
+## World / Region / Zone Schema (session-14 — 2026-03-21; seed facts re-derived 2026-11-20)
 
 Full World → Region → Zone hierarchy implemented.
 
 **Entities** (all in `Veldrath.Server/Data/Entities/`):
 - `World.cs`: `Id` (slug), `Name`, `Description`, `Era`, `ICollection<Region> Regions`
 - `Region.cs`: `Id` (slug), `Name`, `Description`, `RegionType Type`, `MinLevel`, `MaxLevel`, `IsStarter`, `IsDiscoverable`, `WorldId` FK, navigation `World`, `ICollection<Zone> Zones`, `ICollection<RegionConnection> Connections`
-- `RegionType` enum (in `Region.cs`): `Forest`, `Highland`, `Coastal`, `Volcanic`
+- `RegionType` enum (in `Region.cs`): `Forest`, `Highland`, `Coastal`, `Volcanic`, `Countryside`
 - `RegionConnection.cs`: composite PK (`FromRegionId` + `ToRegionId`), navigate `FromRegion`, `ToRegion`; `Restrict` delete-behavior on both FK sides
-- `ZoneConnection.cs`: composite PK (`FromZoneId` + `ToZoneId`), navigate `FromZone`, `ToZone`; `Restrict` delete-behavior on both FK sides; bidirectional travel = 2 rows
+- **`ZoneConnection` and `Zone.Exits` do not exist.** Travel is `RegionConnection` (region ↔ region), the map graph (platform edges), and `ZoneLocationConnection` (inside a zone).
 
-**Zone entity changes** (`Zone.cs`):
-- Added: `string RegionId` (FK), `Region Region` nav, `bool HasInn`, `bool HasMerchant`, `bool IsPvpEnabled`, `bool IsDiscoverable`, `ICollection<ZoneConnection> Exits`
-- Removed: old Tutorial type seed data (5 zones removed)
+**Zone entity** (`Zone.cs`): `Id` (slug), `Name`, `Description`, `ZoneType Type`, `MinLevel`, `MaxPlayers`, `IsStarter`, `HasInn`, `HasMerchant`, `IsPvpEnabled`, `IsDiscoverable`, `IsDevOnly`, `RescueFundTotal`, `RegionId` FK + `Region` nav, `ICollection<PlayerSession> Sessions`
 
-**Seed data (Veldrath world)**:
-- 1 World: `veldrath` / "Veldrath" / "The Age of Embers"
-- 4 Regions: `thornveil` (Forest, starter), `greymoor` (Highland), `saltcliff` (Coastal), `cinderplain` (Volcanic)
-- 6 RegionConnections: thornveil↔greymoor, greymoor↔saltcliff, greymoor↔cinderplain (bidirectional)
-- 16 Zones: 4 per region (1 Town, 2 Wilderness, 1 Dungeon)
-- **Starter zone**: `fenwick-crossing` (Fenwick's Crossing, Thornveil)
-- **Dungeon IDs**: `verdant-barrow`, `barrow-deeps`, `sunken-name`, `kaldrek-maw`
-- 30 ZoneConnections (bidirectional = 2 rows per pair; cross-region borders included)
+**Seed data (Veldrath world)**, re-derived from `ApplicationDataSeeder.cs`:
+- 1 World: `veldrath` / "Veldrath" / era "The Ashen Age (the Age of Reclaiming)"
+- 4 Regions: `varenmark` (Countryside, 0–6, starter), `greymoor` (Highland, 5–14), `saltcliff` (Coastal, 10–20), `cinderplain` (Volcanic, 18–30)
+- 6 RegionConnections: varenmark↔greymoor, greymoor↔saltcliff, greymoor↔cinderplain (bidirectional)
+- 19 Zones, of which `playground` is `IsDevOnly = true` and never returned by the public APIs (`ZoneRepository` filters on it)
+- 5 `ZoneType.Dungeon` zones: `the-halrow`, `drowning-pits`, `barrow-deeps`, `sunken-name`, `kaldrek-maw` (display name "The Maw" — slugs are opaque keys and do not carry canon)
+- **Starter zone**: `crestfall` (Crestfall, Varenmark)
 
-**Character default zone**: `"fenwick-crossing"` (was `"starting-zone"`)
+**Character default zone**: `Character.StartingZoneId = "crestfall"` (`Character.cs:55`); first location is `crestfall-square` (`CharacterCreationSessionEndpoints.cs:37`)
 
 **Repositories**: `IRegionRepository` + `RegionRepository`, `IWorldRepository` + `WorldRepository` added; `IZoneRepository.GetByRegionIdAsync` added  
 **DI**: `IRegionRepository` + `IWorldRepository` registered in `Program.cs`  
@@ -378,8 +375,7 @@ Full World → Region → Zone hierarchy implemented.
 **Endpoints**: `GET /api/regions`, `GET /api/regions/{id}`, `GET /api/regions/{id}/connections`, `GET /api/worlds`, `GET /api/worlds/{id}`, `GET /api/zones/by-region/{regionId}`  
 **Migration**: `AddWorldRegionZoneConnections` in `Migrations/Application/`
 
-**SQLite FK tests**: FK constraints ARE enforced in `TestDbContextFactory`. Tests that add custom zones without RegionId will fail. Use seeded zone IDs (`"fenwick-crossing"`, `"aldenmere"`, etc.) in ZoneSession tests instead of `MakeZone`.  
-When deleting all zones in tests: delete `ZoneConnections` first (FK Restrict on Zone), then Zones.
+**SQLite FK tests**: FK constraints ARE enforced in `TestDbContextFactory`. Tests that add custom zones without a RegionId will fail. Use seeded zone IDs (`"crestfall"`, `"aldenmere"`, etc.) in ZoneSession tests instead of `MakeZone`.
 
 ## IContentService Extension (session-13)
 

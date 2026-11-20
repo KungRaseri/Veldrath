@@ -3,7 +3,7 @@
 /// <summary>A named geographic region within the world, containing several adjacent zones.</summary>
 public class Region
 {
-    /// <summary>Slug identifier (e.g. "thornveil").</summary>
+    /// <summary>Slug identifier (e.g. "varenmark").</summary>
     public string Id { get; set; } = string.Empty;
 
     /// <summary>Display name of the region.</summary>

@@ -743,7 +743,7 @@ public static class ContentSchemaRegistry
             Identity(),
             new("Location", [
                 new("zoneId",      "Zone ID",      ContentFieldType.Text, Required: true,
-                    Hint: "Slug of the owning Zone (e.g. \"fenwick-crossing\")"),
+                    Hint: "Slug of the owning Zone (e.g. \"crestfall\")"),
             ]),
             new("Stats", [
                 new("stats.size",       "Size (1–10)",       ContentFieldType.Integer, Min: 1, Max: 10),

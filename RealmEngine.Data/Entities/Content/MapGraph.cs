@@ -8,7 +8,7 @@ namespace RealmEngine.Data.Entities;
 /// </summary>
 public class Map
 {
-    /// <summary>Stable map identifier, for example <c>region:thornveil</c> or <c>zone:crestfall</c>.</summary>
+    /// <summary>Stable map identifier, for example <c>region:varenmark</c> or <c>zone:crestfall</c>.</summary>
     public string Id { get; set; } = string.Empty;
 
     /// <summary>Whether this map represents a region, a zone, or a future world map.</summary>

@@ -589,7 +589,7 @@ public static class ZoneLocationsSeeder
             },
             new ZoneLocation
             {
-                Slug = "kaldreks-heart",       DisplayName = "Kaldrek's Heart",
+                Slug = "kaldreks-heart",       DisplayName = "The Maw's Heart",
                 ZoneId = "kaldrek-maw",        TypeKey = "dungeons",
                 RarityWeight = 20, IsActive = true, Version = 1, UpdatedAt = now,
                 Stats  = new() { Size = 4, DangerLevel = 10, Population = 10, MinLevel = 28, MaxLevel = 30 },

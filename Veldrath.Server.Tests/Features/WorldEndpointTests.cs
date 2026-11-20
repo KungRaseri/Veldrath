@@ -29,7 +29,7 @@ public class WorldEndpointTests(WebAppFactory factory)
 
         worlds!.Should().ContainSingle(w => w.Id == "veldrath");
         worlds![0].Name.Should().Be("Veldrath");
-        worlds![0].Era.Should().Be("The Age of Embers");
+        worlds![0].Era.Should().Be("The Ashen Age (the Age of Reclaiming)");
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public class WorldEndpointTests(WebAppFactory factory)
         var world = await response.Content.ReadFromJsonAsync<WorldDto>();
         world!.Id.Should().Be("veldrath");
         world.Name.Should().Be("Veldrath");
-        world.Era.Should().Be("The Age of Embers");
+        world.Era.Should().Be("The Ashen Age (the Age of Reclaiming)");
         world.Description.Should().NotBeNullOrWhiteSpace();
     }
 
