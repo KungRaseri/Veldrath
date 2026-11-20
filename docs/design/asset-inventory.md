@@ -1,11 +1,9 @@
 # Asset inventory
 
 > **Audience:** whoever maintains the brand files and whoever is commissioning new art.
-> **Purpose:** every image in `web/client/static/images/`, what renders it, what it weighs, and what
-> should happen to it.
-> **Method:** dimensions from `file`, weights from `stat`, consumers from a repository-wide grep. Re-run
-> the commands in [§6](#6-how-this-was-measured) after any change.
-> **Status:** proposed verdicts — nothing has been moved or deleted yet. See [§4](#4-decisions-proposed).
+> **Purpose:** every image in `web/client/static/images/`, what renders it, what it weighs, and what should happen to it.
+> **Method:** dimensions decoded with PIL, exact byte counts measured with `stat`, consumers identified via repository-wide grep across `web/client/src/`, `web/client/static/images/favicon/site.webmanifest`, and `docfx.json`.
+> **Status:** updated after PR 79 (`feat/derived-brand-assets` derived export switch) and PR 80 (`docs/design-specs` locked tokens).
 
 ---
 
@@ -13,131 +11,133 @@
 
 | Metric | Value |
 |---|---|
-| PNG files in `static/images/` | **17** (plus 6 favicon/install files) |
-| Total weight of those PNGs | **≈ 31.8 MB** |
-| Referenced by a component | **3** |
-| Referenced by nothing | **14**, **≈ 27.2 MB** |
-| Weight served on every page (header wordmark) | 1.01 MB |
-| Weight served on the auth and roster pages (crest) | 1.61 MB |
-| Editable vector / layered sources committed | **none** |
+| Shipped derived mark family payload (all WebP exports) | **283,760 bytes** (0.27 MB / 283.8 KB) |
+| Served mark family weight before derived-asset switch | **4,643,672 bytes** (4.64 MB) |
+| Payload reduction for mark family | **93.9% reduction** |
+| Favicons & web manifest install assets total weight | **115,042 bytes** (112.3 KB) |
+| Social OG preview card (`social-og.png`) | **91,364 bytes** (89.2 KB) |
+| Total files in `web/client/static/images/` | **39** (17 shipped derived/favicons, 4 master PNGs, 4 commissioned-unwired, 14 unassigned masters/emblems) |
+| Shipped / referenced in web client code | **21** (17 derived/favicons + 4 master source-of-truth PNGs kept in static) |
+| Unreferenced by UI code | **18** (4 commissioned-but-unwired, 1 unwired export, 9 unassigned masters, 4 herald emblems) |
+| Vector master status | **DEFERRED** (painterly logotype requires illustrator, not auto-trace) |
 
-The three files in service are 4.6 MB between them and render at 30–76px. Nothing here is a failure of
-art direction; it is a failure of export.
+PR 79 replaced direct web serving of the raw 1.6–1.8 MB master PNGs with optimized, size-matched WebP exports routed through `BrandMark.svelte`. The master PNGs remain in `web/client/static/images/` as the canonical source of truth for derivations.
 
 ---
 
-## 2. In service
+## 2. In service (Shipped derived assets & favicons)
 
-| File | Pixels | Weight | Rendered at | Consumed by |
+Every shipped mark variant is served via `BrandMark.svelte` or standard favicon tags in `app.html` / `site.webmanifest`.
+
+| Path | Pixels | Bytes | Consumer (file:line) | Verdict |
 |---|---|---|---|---|
-| `veldrath-text-flat-true-transparent.png` | 1916 × 464 | 1.01 MB | 30px tall | `SiteHeader.svelte:47` — every page, sticky |
-| `veldrath-final-crest-transparent.png` | 1208 × 1226 | 1.61 MB | 76 / 44 / 48 / 40px; 520px at 18% | `+page.svelte:20`, `login/+page.svelte:62`, `register/+page.svelte:54`, `forgot-password/+page.svelte:44`, `reset-password/+page.svelte:55`, `verify-email/+page.svelte:47`, `account/+page.svelte:311`, `characters/+page.svelte:47`, `characters/new/+page.svelte:351` |
-| `veldrath-final-horizontal-transparent.png` | 1672 × 939 | 1.81 MB | 64px tall | `SiteFooter.svelte:14` — every page with a footer |
-| `favicon/favicon-16x16.png` | 16 × 16 | 0.9 KB | native | `app.html:10` |
-| `favicon/favicon-32x32.png` | 32 × 32 | 3 KB | native | `app.html:9` |
-| `favicon/apple-touch-icon.png` | 180 × 180 | 75 KB | native | `app.html:11` |
-| `favicon/android-chrome-192x192.png` | 192 × 192 | 84 KB | native | `manifest` |
-| `favicon/android-chrome-512x512.png` | 512 × 512 | **583 KB** | native | `manifest` |
-| `favicon/favicon.ico` | multi | — | native | legacy |
-
-**Verdict: keep, re-export.** None of these should be deleted; every one of them should be replaced by
-an export sized to its rendered box, plus an SVG. Requirements in
-[Asset specs §4.1](asset-specs.md). The 583 KB 512px install icon is the single worst offender for a
-file the browser may not even request.
+| `web/client/static/images/crest-hero-1040.webp` | 1040 × 1040 | 167,230 B | `BrandMark.svelte:17` (hero 1040w srcset) | Keep (derived export) |
+| `web/client/static/images/crest-primary-228.webp` | 228 × 228 | 17,852 B | `BrandMark.svelte:16,17` (hero 228w src/srcset) | Keep (derived export) |
+| `web/client/static/images/crest-primary-152.webp` | 152 × 152 | 9,620 B | `BrandMark.svelte:23,24` (auth 152w src/srcset) | Keep (derived export) |
+| `web/client/static/images/crest-primary-96.webp` | 96 × 96 | 5,042 B | `BrandMark.svelte:29,30` (account 44px, roster 48px) | Keep (derived export) |
+| `web/client/static/images/crest-primary-88.webp` | 88 × 88 | 4,448 B | `BrandMark.svelte:31` (creation 40px) | Keep (derived export) |
+| `web/client/static/images/wordmark-header-60.webp` | 240 × 60 | 12,944 B | `BrandMark.svelte:33,34` (wordmark 240w src/srcset) | Keep (derived export) |
+| `web/client/static/images/wordmark-header-90.webp` | 360 × 90 | 23,930 B | `BrandMark.svelte:34` (wordmark 360w srcset) | Keep (derived export) |
+| `web/client/static/images/lockup-horizontal-128.webp` | 384 × 128 | 14,636 B | `BrandMark.svelte:40,41` (lockup 384w src/srcset) | Keep (derived export) |
+| `web/client/static/images/lockup-horizontal-192.webp` | 576 × 192 | 28,058 B | `BrandMark.svelte:41` (lockup 576w srcset) | Keep (derived export) |
+| `web/client/static/images/social-og.png` | 1200 × 630 | 91,364 B | `+layout.svelte:25` (og:image meta tag) | Keep (derived export) |
+| `web/client/static/images/favicon/favicon-16x16.png` | 16 × 16 | 651 B | `app.html:11` | Keep (favicon) |
+| `web/client/static/images/favicon/favicon-32x32.png` | 32 × 32 | 1,874 B | `app.html:10`, `docfx.json:48,71` | Keep (favicon) |
+| `web/client/static/images/favicon/favicon.ico` | 32 × 32 | 2,563 B | `app.html:9` | Keep (legacy icon) |
+| `web/client/static/images/favicon/apple-touch-icon.png` | 180 × 180 | 25,588 B | `app.html:12` | Keep (iOS touch icon) |
+| `web/client/static/images/favicon/android-chrome-192x192.png` | 192 × 192 | 29,033 B | `site.webmanifest:6`, `docfx.json:48,70` | Keep (Android install icon) |
+| `web/client/static/images/favicon/android-chrome-512x512.webp` | 512 × 512 | 54,958 B | `site.webmanifest:11` | Keep (Android install icon) |
+| `web/client/static/images/favicon/site.webmanifest` | manifest | 375 B | `app.html:13` | Keep (web manifest) |
 
 ---
 
-## 3. Referenced by nothing
+## 3. Master sources of truth (Raster masters)
 
-| File | Pixels | Weight | Notes |
+These 4 master PNGs remain stored in `web/client/static/images/` as the canonical source of truth for all derived exports, brand specifications, and derivation pipeline scripts.
+
+| Path | Pixels | Bytes | Role | Verdict |
+|---|---|---|---|---|
+| `web/client/static/images/veldrath-final-crest-transparent.png` | 1208 × 1226 | 1,688,826 B | Master source of truth for crest derivations; spec reference | Keep (raster master) |
+| `web/client/static/images/veldrath-text-flat-true-transparent.png` | 1916 × 464 | 1,060,744 B | Master source of truth for wordmark derivations; spec reference | Keep (raster master) |
+| `web/client/static/images/veldrath-final-horizontal-transparent.png` | 1672 × 939 | 1,894,102 B | Master source of truth for horizontal lockup derivations; spec reference | Keep (raster master) |
+| `web/client/static/images/veldrath-final-square-v-transparent.png` | 1254 × 1254 | 2,943,396 B | Master source of truth for tile / V monogram derivations; spec reference | Keep (raster master) |
+
+---
+
+## 4. Vector masters status: DEFERRED
+
+Both vector masters (`crest.svg` and `wordmark.svg`) are explicitly **DEFERRED**.
+
+**Reason for decision:**
+Veldrath's brand mark and wordmark are bespoke painterly artwork featuring chipped basalt relief, aged gold veins, and ember fractures. Mechanical auto-tracing (e.g. `potrace` / `vtracer`) destroys ink weight, distorts character terminals, and scores poorly on shape fidelity (IoU 65.9% vs anchor). Authoring true vector masters for this art direction requires a skilled human illustrator using vector artwork tools, not an automated raster-to-vector conversion.
+
+This is recorded as an intentional architectural decision, not an omission.
+
+---
+
+## 5. Commissioned-but-unwired deliverables
+
+These 4 deliverables were commissioned and delivered under PR 79/80 specifications. They exist on the branch as complete artwork but are not yet wired to active UI components or page routes.
+
+| Path | Pixels | Bytes | Intended surface | Verdict |
+|---|---|---|---|---|
+| `web/client/static/images/illustration-error.webp` | 320 × 240 | 18,066 B | unwired (404 / error pages: `/404`, `/error`) | Keep (commissioned-unwired) |
+| `web/client/static/images/illustration-empty.webp` | 240 × 180 | 6,126 B | unwired (empty states: roster, bag, quest log) | Keep (commissioned-unwired) |
+| `web/client/static/images/illustration-lore.webp` | 1600 × 600 | 88,448 B | unwired (lore article masthead header) | Keep (commissioned-unwired) |
+| `web/client/static/images/header-email.png` | 600 × 200 | 20,272 B | unwired (transactional email header masthead) | Keep (commissioned-unwired) |
+
+---
+
+## 6. Unassigned masters, studies and herald emblems
+
+These 14 unassigned master files and herald emblems remain in `web/client/static/images/` for historical continuity and potential future surface assignments (e.g., faction art, lore articles, or press kits).
+
+| Path | Pixels | Bytes | Notes / Role | Verdict |
+|---|---|---|---|---|
+| `web/client/static/images/crest-primary-80.webp` | 80 × 80 | 3,934 B | unwired (40px @2x export; BrandMark uses 88px for creation) | Keep (unwired export) |
+| `web/client/static/images/veldrath-v-clean-true-transparent.png` | 1115 × 1389 | 2,000,649 B | unreferenced (V-monogram candidate master) | Keep (unassigned master) |
+| `web/client/static/images/veldrath-icon-big-transparent.png` | 1254 × 1254 | 2,321,620 B | unreferenced (app icon candidate master) | Keep (unassigned master) |
+| `web/client/static/images/veldrath-text-energy-true-transparent.png` | 1907 × 579 | 1,746,728 B | unreferenced (ember wordmark variant) | Keep (unassigned master) |
+| `web/client/static/images/veldrath-final-vertical-transparent.png` | 882 × 1254 | 1,553,044 B | unreferenced (portrait crest+wordmark lockup) | Keep (unassigned master) |
+| `web/client/static/images/veldrath-full-logo-transparent.png` | 1254 × 1254 | 1,493,574 B | unreferenced (square composite lockup) | Keep (unassigned master) |
+| `web/client/static/images/veldrath-final-circular-transparent.png` | 1254 × 1254 | 1,902,327 B | unreferenced (circular medallion lockup) | Keep (unassigned master) |
+| `web/client/static/images/veldrath-v-molten-true-transparent.png` | 1066 × 1356 | 1,923,907 B | unreferenced (molten V study) | Keep (unassigned master) |
+| `web/client/static/images/molten_v_with_fiery_aura_true_transparent.png` | 1025 × 1176 | 1,469,818 B | unreferenced (fiery aura V study) | Keep (unassigned master) |
+| `web/client/static/images/molten_metallic_v_logo_design_true_transparent.png` | 828 × 1102 | 904,614 B | unreferenced (metallic V study) | Keep (unassigned master) |
+| `web/client/static/images/herald/dark_arcane_herald_emblem_transparent.png` | 1254 × 1254 | 2,547,435 B | unreferenced (faction emblem artwork) | Keep (unassigned emblem) |
+| `web/client/static/images/herald/dark_sigil_of_the_forgotten_order_transparent.png` | 1240 × 1247 | 2,559,134 B | unreferenced (faction emblem artwork) | Keep (unassigned emblem) |
+| `web/client/static/images/herald/the_herald_dark_fantasy_emblem_transparent.png` | 817 × 1448 | 2,128,579 B | unreferenced (faction emblem artwork) | Keep (unassigned emblem) |
+| `web/client/static/images/herald/the_herald_emblem_of_darkness_transparent.png` | 1669 × 938 | 1,710,859 B | unwired (style ref in spec for illustration-lore) | Keep (unassigned emblem) |
+
+---
+
+## 7. Work queue
+
+Ordered by priority:
+
+| # | Work | Why | Status |
 |---|---|---|---|
-| `veldrath-final-square-v-transparent.png` | 1254 × 1254 | 2.81 MB | V in a square field |
-| `herald/dark_sigil_of_the_forgotten_order_transparent.png` | 1240 × 1247 | 2.44 MB | Heraldic emblem |
-| `herald/dark_arcane_herald_emblem_transparent.png` | 1254 × 1254 | 2.43 MB | Heraldic emblem |
-| `veldrath-icon-big-transparent.png` | 1254 × 1254 | 2.21 MB | Oversized app-icon candidate |
-| `herald/the_herald_dark_fantasy_emblem_transparent.png` | 817 × 1448 | 2.03 MB | Portrait-format emblem |
-| `veldrath-v-clean-true-transparent.png` | 1115 × 1389 | 1.91 MB | V study |
-| `veldrath-v-molten-true-transparent.png` | 1066 × 1356 | 1.83 MB | V study |
-| `veldrath-final-circular-transparent.png` | 1254 × 1254 | 1.81 MB | Circular crest variant |
-| `veldrath-text-energy-true-transparent.png` | 1907 × 579 | 1.67 MB | Ember wordmark variant |
-| `herald/the_herald_emblem_of_darkness_transparent.png` | 1669 × 938 | 1.63 MB | Wide emblem |
-| `veldrath-final-vertical-transparent.png` | 882 × 1254 | 1.48 MB | Crest over wordmark |
-| `veldrath-full-logo-transparent.png` | 1254 × 1254 | 1.42 MB | Composite lockup |
-| `molten_v_with_fiery_aura_true_transparent.png` | 1025 × 1176 | 1.40 MB | Earlier V study |
-| `molten_metallic_v_logo_design_true_transparent.png` | 828 × 1102 | 0.88 MB | Earlier V study |
-
-They fall into three groups with different answers:
-
-1. **Letter-V studies** — `v-clean`, `v-molten`, both `molten_*`, `square-v`. Development history for
-   the crest's V motif. No surface is waiting for them.
-2. **Alternate lockups** — `vertical`, `circular`, `full-logo`, `text-energy`, `icon-big`. Plausible
-   future uses: install icon, press kit, email header, social card. None is in use.
-3. **Herald emblems** — four pieces of illustration-grade artwork, 1250–2500px, 8–15 MB. These are the
-   only art in the repository that could carry a faction, a region or a lore article, and none of them
-   ever has. At 24px they are noise; at 512px they are unusable at their current weight.
+| 1 | Wire `illustration-error.webp` | 404 / error pages (`/404`, `/error`) currently display plain text | Commissioned, awaiting UI wiring |
+| 2 | Wire `illustration-empty.webp` | Roster, bag, and quest log empty states currently show empty containers | Commissioned, awaiting UI wiring |
+| 3 | Wire `illustration-lore.webp` | Lore articles currently lack header hero imagery | Commissioned, awaiting UI wiring |
+| 4 | Wire `header-email.png` | Transactional email templates have no branded header image | Commissioned, awaiting email template wiring |
+| 5 | Update `brand-guide.md` & `asset-specs.md` | Doc tables still claim raw 1.6 MB master PNGs are served directly | Follow-up card needed |
+| 6 | Commission vector masters | High-resolution print & SVG favicon requirements | DEFERRED until illustrator pass |
 
 ---
 
-## 4. Decision: left in place (2026-11-19)
-
-The 14 unreferenced files stay where they are. Nothing is moved, nothing is deleted this cycle.
-
-They were reviewed one by one rather than by filename, and the finding is that they are **not duplicates
-of the three live marks — they are an unassigned lockup family**, and two of them close gaps the rest
-of this documentation already assumes are filled:
-
-| File | Role it fills | Status |
-|---|---|---|
-| `veldrath-v-clean-true-transparent.png` | V-only monogram — the small-size mark the [brand guide](brand-guide.md) points at for anything under 48px, and the right source for a favicon | Unassigned; the role has no assigned file today |
-| `veldrath-icon-big-transparent.png` | Rounded-square install tile with the crest in a gold frame — the natural master for the 180/192/512 icons | Unassigned; the icons are separate files with no relationship to it |
-| `veldrath-text-energy-true-transparent.png` | Wordmark with no crest — the only asset that survives a 1200×630 OG crop without the crest being cut | Unassigned; no OG card exists |
-| `veldrath-final-vertical-transparent.png` | Portrait lockup | Unassigned; nothing in the web app is portrait |
-| `veldrath-full-logo-transparent.png` | Square lockup, wordmark across the crest | Competes with the horizontal lockup and reads worse at square proportions |
-| `veldrath-final-circular-transparent.png`, `veldrath-final-square-v-transparent.png` | Medallion with a large V across the lower half | One concept in two formats; busy below ~200px |
-| `veldrath-v-molten-…`, `molten_metallic_v_…`, `molten_v_with_fiery_aura_…` | Three further V treatments | Four files for one role; `v-clean` wins on legibility |
-| `herald/*` (four files) | Hooded-herald emblems | No seeded organisation, no faction record in content, no emblem slot in the UI — concept art, not lore assets |
-
-**Why leave them.** The only cost of keeping is bytes in a git repository; the only cost of deleting is
-a `git log` recovery. Nothing here reaches a player, because nothing references it. What was actually
-broken — three files oversampled by up to 16× and no vector master anywhere — is untouched by this
-decision and remains the work queue in [§5](#5-work-queue).
-
-**What "left in place" does not mean.** It does not make any of them approved. The
-[brand guide](brand-guide.md) still lists them as unassigned, and any page that starts using one adds a
-row to that table first. It also does not retire the two gaps above: the V monogram and the install tile
-are still the missing small-size mark and install-icon source, and the 180/192/512 icons still have no
-master.
-
----
-
-## 5. Work queue
-
-Ordered by user-visible impact.
-
-| # | Work | Why |
-|---|---|---|
-| 1 | Vector master of the crest and the wordmark | Every favicon, print and future-size problem is downstream of this |
-| 2 | Export crest at 152/228 and hero at 1040 | Removes a 1.61 MB download from auth and roster pages |
-| 3 | Export wordmark at 60/90 | Removes a 1.01 MB download from **every** page |
-| 4 | Export horizontal lockup at 128/192 | Footer weight |
-| 5 | Regenerate the install icons from the vector master, 512 under 60 KB | 583 KB for a rarely-requested file |
-| 6 | Produce the OG card (1200 × 630) | No social preview exists today |
-| 7 | Assign or drop the two roles the kit already fills — the V monogram and the install tile | The brand guide names a small-size mark and the icons have no master; both files exist unassigned |
-| 8 | Empty-state and 404 illustration briefs | Both surfaces render text alone today |
-
----
-
-## 6. How this was measured
+## 8. How this was measured
 
 ```sh
-cd web/client/static/images
-file *.png herald/*.png favicon/*.png     # dimensions
-stat -c '%s %n' *.png herald/*.png favicon/*.png | sort -n   # weight, ascending
+cd /home/kung/repos/Veldrath
+# Measure dimensions and exact byte counts
+python3 -c "from PIL import Image; import os; ..."
 
-# consumers: any reference from source
-grep -rn --include=*.svelte --include=*.ts --include=*.css '/images/' ../../..
+# Grep consumers across web client and doc configs
+git grep -n "crest-primary" web/client/
+git grep -n "wordmark-header" web/client/
+git grep -n "lockup-horizontal" web/client/
+git grep -n "favicon" web/client/ app.html docfx.json
 ```
 
-A file with no hit outside `static/` is unreferenced. Note that `docfx.json` copies a subset into the
-published docs site, so an image can also be "used" by the documentation — the two favicon sizes are.
-Re-run these commands before acting on [§4](#4-decisions-proposed); weights and consumers both drift.
+Re-run these checks after any asset migration or component refactoring.
