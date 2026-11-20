@@ -593,3 +593,24 @@ sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewMod
   ThrowingInformationLogger.cs` instead of an interface extraction.
 - **Prefer seeded `IRandomSource` over retries** — assertions on unseeded `Random.Shared` draws
   are what produced the old 0.41-point coverage oscillation and the `EnemyPowerAIService` flake.
+
+### Content packs — the editable catalogue (2026-11-20)
+
+- **The seeders are insert-only; packs are the writable half.** `RealmEngine.Data/Seeders/*` stays the initial
+  catalogue and never updates a row it already sees. `content/<family>/<batch>.yaml` is upserted by
+  `Veldrath.ContentPack` (`dotnet run --project Veldrath.ContentPack -- validate|import content/`), keyed by slug:
+  create missing, update changed, leave unchanged untouched. Do not "fix" a seeder's insert-only behaviour to make an
+  edit land — author a pack or change the seeded value deliberately.
+- **One rule set, three callers.** `RealmEngine.Data/Content/ContentEntityTypes.cs` (moved out of
+  `Veldrath.Server/Features/Content/`, now public) is the only type-key → entity-type/validator map, shared by the
+  HTTP write path, the pack validator and the startup audit. Adding a content family means adding it there, in
+  `ContentValidatorRegistry` and in `ContentSchemaRegistry` — nothing else holds a switch.
+- **`ContentPackImporter` compares EF projections, not CLR objects.** JSON-mapped owned values (`Stats`, `Traits`,
+  quest objectives) only persist when the tracked owned instance is mutated *in place*: replacing the instance leaves
+  EF comparing the old one and the column keeps its stored value. Reload navigations before comparing, and never
+  assign an owned navigation on a tracked row.
+- **Pack GUID foreign keys are authored as slugs** (`speciesId: human`, `lootTableId: wolf-loot`); the validator
+  resolves them through `ContentEntityTypes.FindBySlugAsync`. A pack cannot resolve one for a row it creates in the
+  same run.
+- **`ci-content.yml` is the guard; `SeededContentValidationTests` is not a substitute** — one reads `content/`
+  YAML, the other reads the C# seeders, and `content/**` never triggered `ci-server.yml`.

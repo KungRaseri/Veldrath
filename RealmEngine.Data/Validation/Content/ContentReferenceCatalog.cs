@@ -12,7 +12,7 @@ namespace RealmEngine.Data.Validation.Content;
 /// <see cref="ContentDbContext"/>. Every set is case-insensitive and every lookup ignores blank entries, matching how
 /// gameplay resolves content at runtime.
 /// </remarks>
-public sealed class ContentReferenceCatalog
+public sealed partial class ContentReferenceCatalog
 {
     /// <summary>A catalog with no known content: every reference therefore reports as dangling.</summary>
     public static ContentReferenceCatalog Empty { get; } = new();
@@ -90,6 +90,9 @@ public sealed class ContentReferenceCatalog
             Organizations = Slugs(await db.Organizations.AsNoTracking().Select(o => o.Slug).ToListAsync(cancellationToken)),
             Dialogues = Slugs(await db.Dialogues.AsNoTracking().Select(d => d.Slug).ToListAsync(cancellationToken)),
             Quests = Slugs(await db.Quests.AsNoTracking().Select(q => q.Slug).ToListAsync(cancellationToken)),
+            Species = Slugs(await db.Species.AsNoTracking().Select(s => s.Slug).ToListAsync(cancellationToken)),
+            ActorClasses = Slugs(await db.ActorClasses.AsNoTracking().Select(c => c.Slug).ToListAsync(cancellationToken)),
+            Backgrounds = Slugs(await db.Backgrounds.AsNoTracking().Select(b => b.Slug).ToListAsync(cancellationToken)),
             NodeIdsByMap = maps.ToDictionary(
                 map => map.Id,
                 map => (IReadOnlySet<string>)map.NodeIds.ToHashSet(StringComparer.OrdinalIgnoreCase),

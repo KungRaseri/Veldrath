@@ -70,6 +70,13 @@
     <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageVersion Include="Serilog.Sinks.Seq" Version="9.1.0" />
   </ItemGroup>
+  <!-- ── Authoring serialization ──────────────────────────────────────────── -->
+  <ItemGroup>
+    <!-- Content packs are authored as YAML (content/<family>/<batch>.yaml). The representation-model API is what
+         the pack reader uses: it converts YAML nodes into JSON so an entity payload keeps the exact field names and
+         types the ContentSchemaRegistry advertises, instead of a second hand-written mapping. -->
+    <PackageVersion Include="YamlDotNet" Version="18.1.0" />
+  </ItemGroup>
   <!-- ── Testing ──────────────────────────────────────────────────────────── -->
   <ItemGroup>
     <PackageVersion Include="coverlet.collector" Version="10.1.0" />

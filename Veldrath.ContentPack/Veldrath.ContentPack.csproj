@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Veldrath.ContentPack</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <!-- The tool is a dev and CI surface, not a game-facing one: it talks to the content catalog only. -->
+    <AssemblyName>Veldrath.ContentPack</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RealmEngine.Data\RealmEngine.Data.csproj" />
+  </ItemGroup>
+
+</Project>
