@@ -26,6 +26,7 @@ Two outcomes, one gate:
 | Game loop e2e | Stays live against `Veldrath.Server`. Staff surfaces may be mocked; the wire contract check does not |
 | Deferred features | Crafting, NPC dialogue, dungeons, skills UI, and every engine-only system |
 | PR 1 boundary | Phase 0 + matrix + plumbing fixes only. No new game features |
+| Coverage comment accounting | **The comment quotes the gate.** [`scripts/web-coverage-gate.mjs`](../scripts/web-coverage-gate.mjs) heads the sticky comment with the totals the `Coverage gate` step printed; the reporter's per-directory table is labelled as the other accounting. Decided 2026-11-20, see "Coverage comment accounting" below |
 
 ## Deferred explicitly (do not build in this pass)
 
@@ -684,6 +685,77 @@ There is a small residual on lines too, so 99.19% should not be read as full cov
 without a live server, hub and character: the e2e suite (`tests/game-auth.e2e.ts`) only asserts their
 unauthenticated redirects, so today they are covered by nothing. That is 13 lines of wiring rather
 than a gate, but it is why the line number is 99.19% and not 100%.
+
+## Coverage comment accounting (decided 2026-11-20)
+
+The web coverage **gate** and the web coverage **comment** disagreed on branch coverage for the same
+run, and the comment read as a gate failure: `Branches : 90.33% ( 4428/4902 )` in the
+`Build and Test SvelteKit Web` log beside `Branch coverage | 89.8% (3,752 of 4,180)` in the sticky
+comment (PR #88, head `3a128de0`, run 2171). Neither number was wrong; only one of them was the
+number being enforced, and the comment did not say which.
+
+### Why the two differ
+
+- The gate is vitest/v8: `coverage.thresholds` in [`web/client/vite.config.ts`](../web/client/vite.config.ts:78)
+  counts branch **sites** — 4,902 of them on that run, 4,428 covered.
+- The comment's table is `scripts/coverage-report.sh` → `codecov/codecov-report` (pinned
+  `v1.0.3`) fed `web/client/coverage/cobertura-coverage.xml`. `CoberturaReader.ReadLines`
+  (`src/CoverageReport/CoberturaReader.cs:119-160` in that repository) sums the per-line
+  `condition-coverage="x% (c/t)"` attributes and never reads the root
+  `<coverage branches-valid=… branches-covered=…>` attributes.
+- istanbul writes a line-level condition only for a branch site it can attach to a source line, so
+  that sum is a **subset** of v8's branch map: 4,180 of 4,902 sites on the same run. The gap is not
+  a coverage regression and not a broken report — it is two different branch models.
+- The Cobertura root attributes are istanbul's branch-map totals and therefore agree with v8
+  exactly. Reproduced on `development@44422ac2` with `reportOnFailure` on:
+  gate `Branches : 89.41% ( 4383/4902 )`, reporter `88.8% (3,713 of 4,180)`, XML root
+  `branches-valid="4902" branches-covered="4383"`. So the lossy step is the per-line conversion,
+  not the file as a whole.
+
+### The decision, and the two options not taken
+
+**Option 1 — the comment quotes the gate.** The sticky comment's `web` section now opens with the
+totals the `Coverage gate` step printed, and the reporter's per-directory table follows, explicitly
+labelled as Cobertura accounting with both numbers for the run spelled out. A reviewer scanning the
+PR cannot read a percentage that contradicts the check next to it.
+
+- *Option 2 alone* (keep the reporter's number, label it "not the enforced gate") was rejected as
+  insufficient: the number a reviewer reads first would still be the one nothing enforces, and the
+  difference would have to be re-derived by hand on every run. The labelling survives, but beneath
+  the gate block rather than instead of it.
+- *Option 3* (declare the Cobertura branch count authoritative and move the gate onto it) was
+  rejected as the most expensive and the least defensible: it would loosen the gate by 722 branch
+  sites, need the per-glob floors rebuilt on a branch model that silently drops sites, and pin the
+  gate to a third-party tool's line-level conversion.
+
+### What implements it
+
+- [`scripts/web-coverage-gate.mjs`](../scripts/web-coverage-gate.mjs) parses the last
+  `Statements/Branches/Functions/Lines` block from the coverage step's log (ANSI-stripped) and every
+  `ERROR: Coverage for …` threshold line, so **per-glob floor breaches appear in the comment too** —
+  no machine-readable artifact carries them. It cross-checks the log against
+  `coverage-summary.json` (v8's own totals) and against the Cobertura root attributes, and prints a
+  warning instead of silently preferring one when they drift. Fixture tests:
+  [`scripts/tests/web-coverage-gate.test.mjs`](../scripts/tests/web-coverage-gate.test.mjs).
+- [`ci-web.yml`](../.github/workflows/ci-web.yml:148) tees the coverage step to
+  `$RUNNER_TEMP/web-coverage.log`, keeps npm's exit status via `pipefail`, renders the block and
+  concatenates it ahead of `SummaryGithub.md` into `CoverageReport/WebSection.md`, which is what the
+  commenter posts.
+- `coverage.reportOnFailure: true` ([`vite.config.ts`](../web/client/vite.config.ts:67)) so a failed
+  gate still writes the report — previously a red run produced no Cobertura at all, so the comment
+  kept the *previous* head's numbers beside a red check. The comment step now also runs with
+  `if: always()`.
+- Recorded in [`scripts/README.md`](../scripts/README.md) and [`docs/ci-forgejo.md`](../docs/ci-forgejo.md)
+  ("Coverage reports").
+
+### Residual, deliberately not fixed here
+
+The reporter still prints its own 88.8% headline. Fixing that belongs in
+[`codecov/codecov-report`](https://git.kungraseri.cloud/codecov/codecov-report) — read the root
+`branches-valid`/`branches-covered` attributes when a file provides them (falling back to the
+per-line sum for coverlet, whose per-line conditions are complete), or report both accountings — and
+then a `COVERAGE_REPORT_REF` bump in [`scripts/coverage-report.sh`](../scripts/coverage-report.sh).
+Until that lands, the label in the comment is what keeps the two numbers from being confused.
 
 ## Traps
 

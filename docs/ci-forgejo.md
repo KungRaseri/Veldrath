@@ -112,6 +112,19 @@ Cobertura export (`web/client/coverage/cobertura-coverage.xml`) goes through the
 so the client gets a comment and artifact with line, branch, function and full-function numbers;
 its 90% gate stays vitest's own thresholds.
 
+**That report's branch percentage is not the number the gate enforces, and the comment says so.**
+The reporter sums the per-line `condition-coverage` attributes, while vitest/v8 counts branch
+sites — istanbul writes a line-level condition only for a site it can place on a source line, so
+the same run reads 4,180 conditions against 4,902 sites (PR #88: `89.8%` in the comment beside
+`90.33%` in the gate). `scripts/web-coverage-gate.mjs` therefore heads the `web` section with the
+totals the coverage step printed, parsed from that step's log so vitest's `ERROR: Coverage for …`
+threshold lines — global and per-glob — travel with it, and labels the per-directory table beneath
+as Cobertura accounting. `coverage.reportOnFailure` is on, so a red gate still writes the report and
+posts the comment rather than leaving the previous head's numbers in place. The decision and the
+measurements are in
+[`plans/web-feature-parity-and-coverage.md`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/development/plans/web-feature-parity-and-coverage.md)
+(that plan is not on the published docs site, hence the absolute link).
+
 Both write into **one shared coverage comment** (`scripts/forgejo-pr-comment.sh --section …`): the
 .NET job owns the `dotnet` section, the web job the `web` section, so a PR shows a single summary
 with both. The script replaces only its own section, deletes the superseded one-comment-per-job
