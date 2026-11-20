@@ -1,0 +1,49 @@
+# docs/design/content/pools/the-droveway.yaml
+# Veldrath spawn pools — zone: the-droveway (region: varenmark)
+# Values and the reasoning behind them: docs/design/content/pool-matrix.md (card t_af051fc2, D4).
+# DESIGN DATA, not an importable pack yet. The pack importer reads content/<family>/*.yaml and
+# rejects an unknown spawn archetype (missing-spawn-archetype, Error), and 15 of the pooled
+# archetypes are not seeded. These files move to content/zonelocations/ once they are — the
+# translation is written out in pool-matrix.md §8.
+# Roster size is engine-fixed at 2-4 per location (ActorPoolResolver.cs:13-14). There is no
+# per-location roster field, so none is authored here — do not invent one.
+# Weights are RELATIVE integers (ActorPoolResolver.cs:101-112), never percentages, and must be
+# >= 1. The importer must not normalise them; only the ratio is meaningful.
+# "excluded: true" with an empty pool is authored content, not an omission: a town, a respawn
+# point or a dungeon lobby deliberately spawns nothing (ActorPoolResolver.cs:39-45).
+schema_version: 1
+zone: the-droveway
+region: varenmark
+locations:
+  - slug: drove-road
+    # band: b1-3 (D0 budget) | location L1-4
+    level_range: [1, 4]
+    pool:
+      - archetype: giant-rat
+        weight: 5   # band: 1-3 | seeded 1-3
+      - archetype: goblin-scout
+        weight: 3   # band: 1-3 | seeded 1-3
+      - archetype: drove-cur
+        weight: 3   # band: 1-3 | to be seeded 1-3
+      - archetype: peat-adder
+        weight: 2   # band: 1-3 | to be seeded 1-3
+  - slug: sunken-fields
+    # band: b1-3 (D0 budget) | location L2-4
+    level_range: [2, 4]
+    pool:
+      - archetype: peat-adder
+        weight: 5   # band: 1-3 | to be seeded 1-3
+      - archetype: giant-rat
+        weight: 4   # band: 1-3 | seeded 1-3
+      - archetype: drove-cur
+        weight: 2   # band: 1-3 | to be seeded 1-3
+  - slug: weathered-waypost
+    # band: b1-3 (D0 budget) | location L1-4
+    level_range: [1, 4]
+    excluded: true
+    exclusion_class: safe_respawn
+    exclusion_reason: 'SafeRespawn. The Droveway respawn point; the wayfarer-elder is placed here as an NPC.'
+    pool: []   # empty by design
+
+# Coverage for this zone (design check, not a field the importer reads):
+#   locations 3 | pooled 2 | excluded 1

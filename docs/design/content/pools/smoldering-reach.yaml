@@ -1,0 +1,46 @@
+# docs/design/content/pools/smoldering-reach.yaml
+# Veldrath spawn pools — zone: smoldering-reach (region: cinderplain)
+# Values and the reasoning behind them: docs/design/content/pool-matrix.md (card t_af051fc2, D4).
+# DESIGN DATA, not an importable pack yet. The pack importer reads content/<family>/*.yaml and
+# rejects an unknown spawn archetype (missing-spawn-archetype, Error), and 15 of the pooled
+# archetypes are not seeded. These files move to content/zonelocations/ once they are — the
+# translation is written out in pool-matrix.md §8.
+# Roster size is engine-fixed at 2-4 per location (ActorPoolResolver.cs:13-14). There is no
+# per-location roster field, so none is authored here — do not invent one.
+# Weights are RELATIVE integers (ActorPoolResolver.cs:101-112), never percentages, and must be
+# >= 1. The importer must not normalise them; only the ratio is meaningful.
+# "excluded: true" with an empty pool is authored content, not an omission: a town, a respawn
+# point or a dungeon lobby deliberately spawns nothing (ActorPoolResolver.cs:39-45).
+#
+# PROVISIONAL: levels 21-30 have no roster (D1 gap). These pools are the least-wrong
+# placement available today — read pool-matrix.md §7 before importing them.
+schema_version: 1
+zone: smoldering-reach
+region: cinderplain
+locations:
+  - slug: vent-fields
+    # band: b23-26 (D0 budget) | location L23-26
+    level_range: [23, 26]
+    pool:
+      - archetype: pyreling
+        weight: 5   # band: 21-30 | seeded 23-28
+      - archetype: cinderling
+        weight: 3   # band: 19-20 | seeded 20-26
+  - slug: pyreling-den
+    # band: b23-26 (D0 budget) | location L24-26
+    level_range: [24, 26]
+    pool:
+      - archetype: pyreling
+        weight: 6   # band: 21-30 | seeded 23-28
+      - archetype: cinderling
+        weight: 2   # band: 19-20 | seeded 20-26
+  - slug: lava-bridge
+    # band: b23-26 (D0 budget) | location L24-26
+    level_range: [24, 26]
+    excluded: true
+    exclusion_class: safe_respawn
+    exclusion_reason: 'SafeRespawn + hidden (active DC 18). The only crossing to the Maw is also its respawn point.'
+    pool: []   # empty by design
+
+# Coverage for this zone (design check, not a field the importer reads):
+#   locations 3 | pooled 2 | excluded 1

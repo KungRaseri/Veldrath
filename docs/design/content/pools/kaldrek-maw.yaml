@@ -1,0 +1,46 @@
+# docs/design/content/pools/kaldrek-maw.yaml
+# Veldrath spawn pools — zone: kaldrek-maw (region: cinderplain)
+# Values and the reasoning behind them: docs/design/content/pool-matrix.md (card t_af051fc2, D4).
+# DESIGN DATA, not an importable pack yet. The pack importer reads content/<family>/*.yaml and
+# rejects an unknown spawn archetype (missing-spawn-archetype, Error), and 15 of the pooled
+# archetypes are not seeded. These files move to content/zonelocations/ once they are — the
+# translation is written out in pool-matrix.md §8.
+# Roster size is engine-fixed at 2-4 per location (ActorPoolResolver.cs:13-14). There is no
+# per-location roster field, so none is authored here — do not invent one.
+# Weights are RELATIVE integers (ActorPoolResolver.cs:101-112), never percentages, and must be
+# >= 1. The importer must not normalise them; only the ratio is meaningful.
+# "excluded: true" with an empty pool is authored content, not an omission: a town, a respawn
+# point or a dungeon lobby deliberately spawns nothing (ActorPoolResolver.cs:39-45).
+#
+# PROVISIONAL: levels 21-30 have no roster (D1 gap). These pools are the least-wrong
+# placement available today — read pool-matrix.md §7 before importing them.
+schema_version: 1
+zone: kaldrek-maw
+region: cinderplain
+locations:
+  - slug: fire-ancients-chamber
+    # band: b23-26 (D0 budget) | location L26-30
+    level_range: [26, 30]
+    pool:
+      - archetype: pyreling
+        weight: 5   # band: 21-30 | seeded 23-28
+      - archetype: cinderling
+        weight: 3   # band: 19-20 | seeded 20-26
+  - slug: kaldreks-heart
+    # band: beyond b23-26 (D0 budget) | location L28-30
+    level_range: [28, 30]
+    # WARNING: single-entry pool — the only archetype whose range reaches this room.
+    # See pool-matrix.md §7; it is a documented gap, not an oversight.
+    pool:
+      - archetype: pyreling
+        weight: 6   # band: 21-30 | seeded 23-28
+  - slug: maw-descent
+    # band: b23-26 (D0 budget) | location L26-30
+    level_range: [26, 30]
+    excluded: true
+    exclusion_class: dungeon_lobby
+    exclusion_reason: 'Dungeon lobby (IsDungeon=false + SafeRespawn). Kaldrek''s Maw instance boundary.'
+    pool: []   # empty by design
+
+# Coverage for this zone (design check, not a field the importer reads):
+#   locations 3 | pooled 2 | excluded 1

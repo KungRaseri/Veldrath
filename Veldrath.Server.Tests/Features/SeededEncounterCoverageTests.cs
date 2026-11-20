@@ -52,6 +52,37 @@ public class SeededEncounterCoverageTests
     }
 
     [Fact]
+    public async Task Ashfields_resolves_exactly_one_respawn_anchor()
+    {
+        await using var probe = new SeededContentProbe();
+        await using var content = await probe.CreateContextAsync();
+
+        var ashfields = await content.ZoneLocations.AsNoTracking()
+            .Where(location => location.ZoneId == "ashfields")
+            .ToListAsync();
+
+        // L3 (t_6c70dc04) moved the respawn flag off the battlefield and onto the grove, and made the
+        // keeper-only shrine a rest point too. Two flags are correct; the point of this test is that only
+        // one of them can ever be the anchor, because RespawnHubCommand resolves through
+        // IZoneLocationRepository.GetByZoneIdAsync, which drops IsHidden locations.
+        ashfields
+            .Where(location => location.Traits.SafeRespawn == true)
+            .Select(location => location.Slug)
+            .Should().BeEquivalentTo(new[] { "obsidian-grove", "ash-shrine" },
+                "the grove is the respawn point; the shrine is a keeper-only rest point");
+
+        ashfields
+            .Where(location => location.Traits.SafeRespawn == true && location.Traits.IsHidden != true)
+            .Select(location => location.Slug)
+            .Should().ContainSingle("a hidden location is never offered to the respawn resolver")
+            .Which.Should().Be("obsidian-grove", "the anchor is deterministic, not whichever row loads first");
+
+        var battlefield = ashfields.Single(location => location.Slug == "scorched-battlefield");
+        battlefield.Traits.SafeRespawn.Should().NotBe(true, "a respawn point on a battlefield reads wrong");
+        battlefield.ActorPool.Should().NotBeEmpty("the battlefield keeps a pool (amendment 4)");
+    }
+
+    [Fact]
     public async Task Every_other_location_can_spawn_something()
     {
         await using var probe = new SeededContentProbe();
