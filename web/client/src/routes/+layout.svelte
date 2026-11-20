@@ -14,6 +14,20 @@
 	);
 </script>
 
+<svelte:head>
+	<meta property="og:type" content="website" />
+	<meta property="og:site_name" content="Veldrath" />
+	<meta property="og:title" content="Veldrath" />
+	<meta
+		property="og:description"
+		content="A multiplayer RPG built on the RealmEngine framework. Explore, craft, fight, and build your legend."
+	/>
+	<meta property="og:image" content={`${page.url.origin}/images/social-og.png`} />
+	<meta property="og:image:width" content="1200" />
+	<meta property="og:image:height" content="630" />
+	<meta name="twitter:card" content="summary_large_image" />
+</svelte:head>
+
 {#if !isFullScreen}
 	<div class="flex min-h-screen flex-col">
 		<SiteHeader user={data?.user ?? null} staff={data?.staff ?? null} />

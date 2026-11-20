@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BrandMark from '#lib/components/site/BrandMark.svelte';
 	import { resolve } from '$app/paths';
 	import { CircleAlert, CircleCheck, Mail, Send } from '@lucide/svelte';
 	import { authClient } from '#lib/auth-client';
@@ -42,12 +43,7 @@
 
 <div class="mx-auto max-w-md px-5 py-12">
 	<div class="auth-card p-8">
-		<img
-			class="auth-crest"
-			src="/images/veldrath-final-crest-transparent.png"
-			alt=""
-			aria-hidden="true"
-		/>
+		<BrandMark variant="auth" class="auth-crest" />
 
 		{#if data.status === 'verified'}
 			<CircleCheck class="mx-auto text-success-500" size={38} aria-hidden="true" />

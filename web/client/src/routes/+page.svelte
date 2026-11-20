@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BrandMark from '#lib/components/site/BrandMark.svelte';
 	import { resolve } from '$app/paths';
 	import { BookOpen, Gamepad2, Globe2, Swords, UserPlus, Users } from '@lucide/svelte';
 	import type { PageData } from './$types';
@@ -15,12 +16,7 @@
 </svelte:head>
 
 <section class="hero">
-	<img
-		class="hero-crest"
-		src="/images/veldrath-final-crest-transparent.png"
-		alt=""
-		aria-hidden="true"
-	/>
+	<BrandMark variant="hero" class="hero-crest" />
 	<div class="hero-content">
 		<p class="hero-kicker">An online RPG of myth and conflict</p>
 		<h1 class="text-hero mt-3">Veldrath</h1>

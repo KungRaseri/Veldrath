@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BrandMark from '#lib/components/site/BrandMark.svelte';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import {
@@ -44,7 +45,7 @@
 <header class="site-header">
 	<div class="site-header-inner">
 		<a class="site-brand" href={resolve('/')} aria-label="Veldrath home">
-			<img src="/images/veldrath-text-flat-true-transparent.png" alt="Veldrath" />
+			<BrandMark variant="wordmark" eager />
 		</a>
 
 		<nav class="site-nav" aria-label="Primary">
