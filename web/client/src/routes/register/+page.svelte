@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { Lock, Mail, ShieldCheck, User, UserPlus } from '@lucide/svelte';
+	import BrandMark from '#lib/components/site/BrandMark.svelte';
 	import SocialLoginButtons from '#lib/components/auth/SocialLoginButtons.svelte';
 	import { authClient } from '#lib/auth-client';
 
@@ -49,12 +50,7 @@
 
 <div class="mx-auto max-w-md px-5 py-12">
 	<div class="auth-card p-8">
-		<img
-			class="auth-crest"
-			src="/images/veldrath-final-crest-transparent.png"
-			alt=""
-			aria-hidden="true"
-		/>
+		<BrandMark variant="auth" class="auth-crest" />
 		<p class="hero-kicker text-center">Begin your legend</p>
 		<h1 class="mt-2 text-center h2">Create account</h1>
 		<p class="mt-2 text-center text-sm text-surface-600-400">

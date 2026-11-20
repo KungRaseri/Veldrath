@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BrandMark from '#lib/components/site/BrandMark.svelte';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import {
@@ -306,12 +307,7 @@
 <div class="mx-auto max-w-3xl space-y-4 p-6">
 	<header class="space-y-1">
 		<h1 class="text-title-large flex items-center gap-3">
-			<img
-				class="h-11 w-11 object-contain"
-				src="/images/veldrath-final-crest-transparent.png"
-				alt=""
-				aria-hidden="true"
-			/>
+			<BrandMark variant="account" class="h-11 w-11 object-contain" />
 			Account
 		</h1>
 		<p class="text-surface-600-400">Manage your Veldrath account.</p>

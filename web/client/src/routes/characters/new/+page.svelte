@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BrandMark from '#lib/components/site/BrandMark.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { Check, ChevronLeft, ChevronRight, Sparkles, X } from '@lucide/svelte';
@@ -346,12 +347,7 @@
 	<header class="space-y-1">
 		<div class="flex flex-wrap items-center justify-between gap-2">
 			<div class="flex items-center gap-3">
-				<img
-					class="h-10 w-10 object-contain"
-					src="/images/veldrath-final-crest-transparent.png"
-					alt=""
-					aria-hidden="true"
-				/>
+				<BrandMark variant="creation" class="h-10 w-10 object-contain" />
 				<h1 class="h2">Create your character</h1>
 			</div>
 			{#if data.slots}
