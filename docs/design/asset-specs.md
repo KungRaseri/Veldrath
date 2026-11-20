@@ -61,8 +61,16 @@ colour depth, reduce the pixel size to the largest size actually rendered, or sw
 | Favicon 512 | ≤ 60 KB | 597 KB |
 | OG card 1200 × 630 | ≤ 200 KB | none exists |
 | Illustration, large | ≤ 250 KB WebP | — |
+| Archetype portrait, 128px WebP | ≤ 16 KB | none exists |
 | Item icon, 64px | ≤ 8 KB | — |
 | Email header, 600 × 200 | ≤ 60 KB | none exists |
+
+An archetype portrait exports at 256px (PNG master, kept out of the repository), 128px and 64px WebP.
+The 128px export owns the row above; the 64px export takes the **item icon** budget (≤ 8 KB), because
+it renders in the same 64px tile and the same budget already governs that size. Canvas, format and
+naming for the family are in
+[the archetype visual system](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/development/docs/design/content/archetype-visuals.md)
+§5.2 (a working document — it is in the repository, not on this site).
 
 ---
 
@@ -171,8 +179,9 @@ Keep `-transparent` only where the name would otherwise be ambiguous about alpha
 and does not need a suffix.
 
 **Directories:** marks → `static/images/` · heraldic and faction art → `static/images/herald/` (or
-`factions/` once there is more than a handful) · items → `static/images/items/` · favicons →
-`static/images/favicon/`. Never nest by date or by designer.
+`factions/` once there is more than a handful) · archetype portraits → `static/images/archetypes/` ·
+items → `static/images/items/` · favicons → `static/images/favicon/`. Never nest by date or by
+designer.
 
 ---
 
