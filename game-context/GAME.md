@@ -1,6 +1,6 @@
 # Veldrath — project context for content work
 
-**Status: approved 2026-11-20.** §3–§4 remain TBD pending proposal 9.
+**Status: approved 2026-11-20.** §3 and §4 were decided the same day (proposal 9).
 
 Read this before authoring anything. Every line below is sourced; anything the sources do
 not contain is in **§8 TBD — needs approval** and is not written as fact.
@@ -22,26 +22,61 @@ not contain is in **§8 TBD — needs approval** and is not written as fact.
 - **Language register is fixed.** Calethic is Hard + Formal: architectural consonants (K, R, TH, V, D); sibilants S and SH restricted to Aethori ceremonial speech only; no /u/ in the inventory; no S–/SH– word-initial (`calethic-language.md` §1.1–1.3, §3.1).
 - **Place names decay.** Calethic names survive in three states only: intact where keepers remained (*Aethori*), corrupted by oral transmission (*Aetheld* → *Ashlen*; *Kaeldor* → *Halrow*), or replaced entirely by Common description (*Korrveld* → *the Droveway*) (`calethic-language.md` §1.5, §5.2).
 - **Existing content speaks plainly.** Seeded archetypes, quests and locations are named in Common and describe behaviour, not mood: "Giant Rat", "Fen Lurker", "Gull-Rider Brute", "Defeat 5 Goblin Scouts on the Ashlen Wood roads" (`RealmEngine.Data/Seeders/ArchetypeSeeder.cs`, `QuestsSeeder.cs`).
+- **The standard and the pillars are editorial.** §3's content standard and §4's pillars bind what content may say and how it is designed. They do not describe or constrain engine behaviour; the four engineering commitments in §4 are a separate list and are not pillars.
 
 ## 3. Content rating and what it forbids
 
-**TBD — needs approval.** No rating exists anywhere in the repository: a search of every tracked
-`.md` file for rating vocabulary returns no match. The only lore file in `docs/lore/` is
-`calethic-language.md`, and the wiki pages were not readable here (the submodule is not checked out),
-so no rating claim could be checked against them either.
+**Teen-equivalent, self-imposed.** Veldrath is web-first with no store release, so this is an
+editorial standard for writers, not a platform gate. The permitted and forbidden lists below are the
+operative artefact; the rating letter is shorthand.
 
-Until one is published, content work must not assume a ceiling. Two things are already true of the
-canon and do not depend on the rating: the Collapse is described by consequence rather than by
-violence, and nothing in `docs/lore/calethic-language.md` — the one lore file this worktree can read —
-lingers on an act of violence. Proposal 9 on card **t_5cd22693** asks for the rating.
+*Decided by Josh, 2026-11-20 — "Proposal 9 — decided by Josh" on card `t_5cd22693`.*
+
+**Permitted.** Blood, corpses, dread, coercion, drowning, implied atrocity, and body horror
+described by consequence.
+
+**Written as testimony and aftermath, never as scene.** Two subjects in this world stay facts that
+people live under and speak around:
+
+- the **Aethori bloodline compulsion** — slavery by design;
+- **whatever was tested in the Bone Hollow**.
+
+Neither is a set piece.
+
+**Not permitted.** Lingering gore · torture as spectacle · sexual content · on-screen harm to
+children · addiction mechanics · real-world slurs.
+
+**Language stays period-plain: no modern profanity.**
+
+The standard fits the canon rather than cutting against it: the Collapse is already described by
+consequence rather than by violence, and nothing in `docs/lore/calethic-language.md` — the only lore
+file this worktree can read — lingers on an act of violence.
 
 ## 4. Design pillars
 
-**TBD — needs approval.** No pillar list exists in the repository. Checked with
-`git grep -l -i "pillar" -- '*.md'`: no match at all. Proposal 9 asks for four.
+Four content pillars, each written as a test — a pillar that forbids nothing is decoration.
 
-The four *engineering* commitments below are sourced and constrain content, but they are not
-design pillars:
+*Decided by Josh, 2026-11-20 — "Proposal 9 — decided by Josh" on card `t_5cd22693`.*
+
+| # | Pillar | Fails when |
+|---|---|---|
+| 1 | **The world remembers; nobody explains it.** History shows in objects, names, habits and what a town steps over. | A card explains the Caleth in a paragraph instead of showing a slab people avoid. |
+| 2 | **Consequence is legible before it lands.** Danger and cost are readable in advance — pool composition, level bands (`game-context/budget.yaml`), the death penalty surfaced to the client as `goldLost` / `xpLost`. | A card kills the player by surprise with no signal. |
+| 3 | **Small people, large aftermath.** Grandeur is landscape and history; the player is a person, not a fulfilment. | A card makes the player the subject of a prophecy or the reason the world exists. |
+| 4 | **Two literacies.** Every important fact has a scholarly telling and a common one, and they disagree about what it means. | A card states a fact once, in one register, as settled. |
+
+Pillars 1–3 are evidenced by shipped behaviour rather than asserted: the failsafe rule ("degraded
+behaviour is allowed only when it is loud"), the client being told `goldLost`/`xpLost`, rosters that
+persist per location, and the doubled naming already locked in `world-lore-plan.md`. Pillar 4 is the
+doubled-naming convention promoted from a style note to a rule — §2 states the same convention as
+register.
+
+Consequence for canon: no named deities (§7.3 already forbids them, so the shrine stays "the Ash
+Shrine"), no prophecy device (§7.1), and no power fantasy of discovery — the player works out a
+history, they are not handed it.
+
+**The four *engineering* commitments below are sourced and constrain content, but they are not the
+design pillars above, and they are not renumbered by them:**
 
 1. Engine agnosticism — `RealmEngine.Core`, `.Shared`, `.Data` never depend on a UI framework (`AGENTS.md`, Hard Rule 2).
 2. Web-first, one client — the SvelteKit app is the only client and the only editing surface; the Avalonia client and RealmForge editor were retired (`AGENTS.md`).
@@ -91,11 +126,12 @@ public APIs and never gets content.
 
 | # | Gap | Why it blocks content | Where it would be recorded |
 |---|---|---|---|
-| 1 | **Content rating** (and what it forbids or permits) | No content worker can decide whether a description is too much | this file, §3 |
-| 2 | **The four design pillars** | Every later card argues for a design choice against them | this file, §4 |
-| 3 | **Greymoor / Saltcliff / Cinderplain character** (Q2) | Only zones and biomes exist; region prose cannot be written | `wiki/Region-*.md`, Phase 5+ |
-| 4 | **The Wound's zone map** | Region 5 has no zones or locations at all; nothing can be placed there | `MapGraphSeeder.cs` (a later card) |
-| 5 | **Whether the wiki pages listed in §5 exist as recorded** | The submodule is not checked out in this worktree, so the paths are attested, not verified | — |
+| 1 | **Greymoor / Saltcliff / Cinderplain character** (Q2) | Only zones and biomes exist; region prose cannot be written | `wiki/Region-*.md`, Phase 5+ |
+| 2 | **The Wound's zone map** | Region 5 has no zones or locations at all; nothing can be placed there | `MapGraphSeeder.cs` (a later card) |
+| 3 | **Whether the wiki pages listed in §5 exist as recorded** | The submodule is not checked out in this worktree, so the paths are attested, not verified | — |
+
+Two gaps this section used to carry — the content rating and the four design pillars — were decided
+2026-11-20 and are published in §3 and §4.
 
 Three of the six open lore items (the Vraen, Aethori presence, what came back up from the Pits)
 are untouched by this file; the archetype roster on card **t_5cd22693** raises them as numbered
