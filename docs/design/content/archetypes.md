@@ -20,6 +20,23 @@ bands and its slugs are unchanged from what was approved.
   of rival clans, not on canon — do not treat it as an established organisation.
 - **Proposal 9 — open.** Content rating and the four design pillars are undecided, so `GAME.md` §3–§4
   stay TBD.
+- **The townspeople are absorbed from the towns card (`towns.md`).** The ten `§` rows at the end of the
+  table are D3's, adopted here because this document is the slug authority; D3 does not keep a parallel
+  list. Non-hostile total goes from seven to seventeen.
+- **P1–P4 approved 2026-11-20.** The four town canon proposals (`towns.md` §5) are locked: Crestfall
+  stands at the *Korreldh* crossing; Aldenmere was reoccupied on Calethic *Aldeld*; Tolvaren's name has
+  no surviving derivation and *Gaelvren* is its survey form; Skarhold was founded after the Collapse by
+  smiths. Recorded in `world-lore-plan.md` under each region's settlements. P1 deliberately leaves open
+  item 7 unanswered, and it stays open.
+- **`aurelian-market` — the slug stays, the DisplayName changes.** A slug is permanent identity, so the
+  zone keeps `aurelian-market`; its display name becomes The Korreld Exchange. The slug remains recorded
+  as debt.
+- **The retired-lore pass (`C2` in `towns.md`) is a separate architect card.** Until it lands, the town
+  registers stay clear of Dravan, Thysmara, Kaldrek and the Age of Embers.
+- **A merchant band is pending.** `budget.yaml` bands hostile archetypes only, so shopkeeper trade and
+  prices stay unauthored until a merchant band is published.
+- **Per-zone shared shop stock is accepted for this wave.** Two merchants in one town sell from one
+  catalogue; per-NPC stock is an engine change and is not in this wave.
 
 ## How to read this table
 
@@ -50,6 +67,10 @@ gull-rider clans are the one faction a row can tie to, because the map seeder al
 The faction picture fills in with the regional design, not with more archetypes.
 
 ## The roster
+
+Two populations share one table. The **ladder** is the hostile cast, banded by level. The **townspeople**
+are the `§` rows that hold the settlements at the foot of it: they carry no band, no pool entry and no
+faction, and they exist so trade, dialogue and quest content has a person to attach to.
 
 | slug | name | one-line identity | level band | faction tie | zones it belongs to | hostile? | combat role |
 |---|---|---|---|---|---|---|---|
@@ -87,6 +108,16 @@ The faction picture fills in with the regional design, not with more archetypes.
 | `gate-watch` | Gate Watch § | Stands the north road at Crestfall and checks every cart for a toll mark. | — | none recorded (town watch) | `crestfall`, `aldenmere` | no | guard |
 | `shrine-keeper` | Shrine Keeper § | Tends the Ash Shrine and will not say who is owed the ash. | — | none recorded (dedication undecided — see the proposals) | `ashfields` | no | quest hook |
 | `dock-hand` | Dock Hand § | Loads and unloads at Tolvaren Harbour and knows which crates never get weighed. | — | none recorded | `tolvaren` | no | labourer, rumour |
+| `road-carter` | Road Carter § | Hauls for hire out of the low quarter and will not carry a sealed load. | — | none recorded | `crestfall` | no | labourer, transport |
+| `keep-castellan` | Keep Castellan § | Hired captain of Ironhollow Keep; sells the safe crossings of the moor, never the keep's lower floors. | — | none recorded | `aldenmere` | no | guard, teaches |
+| `mead-seller` | Mead Seller § | Sells Aldenmere mead by the jug and wants the barrels gone before they turn. | — | none recorded | `aldenmere` | no | shop, trade |
+| `cellar-keeper` | Cellar Keeper § | Keeps the Grey Cup's front room full and its deep cellar shut. | — | none recorded | `aldenmere` | no | shop, trade |
+| `harbour-master` | Harbour Master § | Counts every hull at the turn of the tide and berths none whose papers carry no name. | — | none recorded | `tolvaren` | no | guard, teaches |
+| `ship-chandler` | Ship Chandler § | Rope, pitch and lamp oil on the cliff road, and no line to a crew that will not say where it is bound. | — | none recorded | `tolvaren` | no | shop, trade |
+| `port-innkeeper` | Port Innkeeper § | Keeps the Saltcrow and does not answer the harbour bell. | — | none recorded | `tolvaren` | no | shop, trade |
+| `forge-master` | Forge Master § | Wants one order worth firing the big furnace for, and refuses work that must be hurried. | — | none recorded | `skarhold` | no | shop, trade, teaches |
+| `ash-glass-seller` | Ash Glass Seller § | Trades ash-glass, crucibles and flux, and sells to nobody who calls the caldera dormant. | — | none recorded | `skarhold` | no | shop, trade |
+| `lodge-keeper` | Lodge Keeper § | Runs the Ashbrand Lodge: bunk, board, and every brand entered in the book. | — | none recorded | `skarhold` | no | shop, trade |
 
 *`—` in the level-band column marks a non-hostile archetype: it has no combat band, and the level
 tier of the zone it stands in governs where it appears. Zone slugs are the only zone-level reference
@@ -107,7 +138,7 @@ card has a choice.
 | 16–18 | gull-rider-brute, storm-harrower, cliff-breaker, undertow | 4 |
 | 19–20 | cinderling, drowned-cantor, ash-jack, forge-deserter | 4 |
 | **total hostile** | | **27** |
-| **total non-hostile** | | **7** |
+| **total non-hostile** | | **17** |
 
 **Levels 1–20 are covered with no gap.** Level 19 sits on Saltcliff's top ground only: six locations
 run to level 20 — `clifftop-ruins`, `gull-rider-camp`, `storm-watch-peak` (saltcliff-heights) and
@@ -187,6 +218,27 @@ Precedent for Common coinage of creatures: `giant-rat`, `forest-wolf`, `bandit-r
 | Gate Watch | Common: *gate* + *watch*, the ordinary word for a town guard. Calethic has administrative keepers (*rekern*, §4.2) but a Common watch-post would not use it, and inventing a Calethic office for a level-1 town would over-grade it. |
 | Shrine Keeper | Common: *shrine* + *keeper*. Deliberately not *–ori* (§2.2, the priestly agentive, Aethori-tier only) — a shrine keeper is not Aethori and must not carry their suffix. |
 | Dock Hand | Common, a working noun. Tolvaren is a Saltcliff working-name region (Q2) with no Calethic form; the harbour is named in Common. |
+
+### Townspeople (absorbed from `towns.md` §3)
+
+These ten are people, not beasts, so their names are Calethic where the creature names above are Common:
+`calethic-language.md` §2.5 forms a personal name from a function root plus an affiliation root, or one
+root plus an agentive suffix, and §1.1 forbids **S**/**SH** and /u/ outside Aethori ritual speech. Every
+derivation is reproduced from `towns.md` §3, and each name is a byname the town gave its bearer rather
+than a birth name.
+
+| name | derivation |
+|---|---|
+| Korrern | *korr* (passage) + *–ern* (agent, non-priestly) — "the passage-keeper" |
+| Kaenvren | *kaen* (duty) + *vren* (frontier); *kaen.vren* splits an N coda against a VR onset — "duty at the frontier" |
+| Raekmeld | *raek* (light-in-material) + *meld* (still water) — "glowing still-water", a byname for mead |
+| Dornrek | *dorn* (below) + *rek* (administer) — "keeper of what is below" |
+| Gaelraeth | *gael* (water, flow) + *raeth* (threshold, marker) — "the water's threshold" |
+| Laeldern | *laeld* (root, the thing that holds ground) + *–ern* (agent) — "the anchor-keeper" |
+| Thaeldren | *thael* (illuminate) + *vren* (frontier); the formal –l + vr– junction takes the V-drop and the euphonic –d– bridge of *veldrath* — "the light at the frontier" |
+| Daeldvaen | *daeld* (ash) + *vaen* (iron); –ld + v– is two consonants, legal — "ash-iron" |
+| Raekdaeld | *raek* (light-in-material) + *daeld* (ash) — "glowing ash", the byname for ash-glass |
+| Kaendaeld | *kaen* (duty) + *daeld* (ash) — "duty to the ash" |
 
 ## Numbered canon proposals
 

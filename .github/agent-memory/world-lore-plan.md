@@ -127,6 +127,35 @@ Option: keep those as working names for the Phase 2 deep-dive rather than design
 - The strangeness is real but unrecognised by locals
 - Arc payoff: players discover Varenmark's true history by arc end — they started at the edge of something ancient
 
+### Varenmark settlements
+
+- **Crestfall** — settled by drovers at the *Korreldh* crossing during the Reclaiming, not at the stone.
+  The slab in the square is that crossing's threshold marker (*raeth*), worn blank by three generations
+  of feet; the town has no record of who laid it and does not want one. The founding claim is the
+  crossing. *(Approved 2026-11-20 — P1. Fixes only what is above the ground: open item 7 is not
+  answered and stays open.)*
+
+### Greymoor settlements
+
+- **Aldenmere** — reoccupied, not founded. It stands on a Calethic administered waypoint named *Aldeld*
+  (*ald*, open ground + *–eld*, site: "the cleared site"); the name corrupted to *Alden* by the same
+  step as *Greveld* → *Greven*, and Common *mere* was appended later for the wet ground under it. What
+  lies underneath stays open. *(Approved 2026-11-20 — P2.)*
+
+### Saltcliff settlements
+
+- **Tolvaren** — a Common name of no surviving derivation, coined by the fisher families who resettled
+  the anchorage during the Reclaiming. Its Calethic survey name was *Gaelvren* (*gael*, water + *vren*,
+  frontier: "the water's edge"), which survives in coastal records and is never spoken in the town.
+  *(Approved 2026-11-20 — P3.)*
+
+### Cinderplain settlements
+
+- **Skarhold** — founded after the Collapse by smiths drawn to the caldera's heat, with no Calethic
+  antecedent. The Caleth surveyed the ash-plain (*Daeld-Ald*) but did not settle it, and the town's own
+  name is a Common coinage, which is why it carries a sibilant no Calethic word may. The Kaldrek
+  question is untouched. *(Approved 2026-11-20 — P4.)*
+
 ---
 
 ## Rewrite Phases
