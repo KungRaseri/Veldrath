@@ -34,6 +34,7 @@
 		type InventoryItem
 	} from './types';
 	import CraftingOverlay from './CraftingOverlay.svelte';
+	import DialogueOverlay from './DialogueOverlay.svelte';
 	import PowersOverlay from './PowersOverlay.svelte';
 	import SkillsOverlay from './SkillsOverlay.svelte';
 	import type { GameSession } from './session.svelte';
@@ -266,6 +267,8 @@
 <SkillsOverlay {session} />
 
 <CraftingOverlay {session} />
+
+<DialogueOverlay {session} />
 
 <Dialog.Root open={session.showAttributes} onOpenChange={(open) => (session.showAttributes = open)}>
 	<Dialog.Portal>

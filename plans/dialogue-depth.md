@@ -53,9 +53,9 @@ flowchart LR
 | Phase | Work | Done when |
 |---|---|---|
 | **P1** ✅ | `DialogueOption` owned type + `DialogueStats.Options`; `DialogueSchema()` fields; `DialogueOptionGrammar`; `DialogueValidator` rules for L3/L4 (kinds, references resolve, unique option keys, caps) | An invalid option fails the write path and the audit names it; valid content round-trips through Foundry's form |
-| **P2** | `GetNpcDialogue` handler + `NpcDialogue` payload (speaker, prose, options with enabled/reason/preview, `NextSlug` when present) | A character with the wrong level sees the option disabled with the requirement named; the payload-contract test and the parity suite pass |
-| **P3** | `ChooseNpcOption` handler; `CharacterDialogueChoices` entity + repository + migration; grants applied through `CharacterBag` / `AddGoldHubCommand` / quest enrolment; refusal of a stale, unknown, unmet or already-taken option | Choosing twice grants once; a refusal mutates nothing; every rejection path has a test |
-| **P4** | `DialogueOverlay.svelte`, `session.dialogue` state, People-section wiring, docs (`client-ui-architecture.md` surface inventory, `ui-depth.md` status), and `dialogue.e2e.ts` added to the `stack` run in [`e2e-manifest.json`](../web/client/tests/e2e-manifest.json) | Talking to the elder, accepting the offer and seeing the consequence passes against a fresh stack; the overlay is out of `GameOverlays.svelte` |
+| **P2** ✅ | `GetNpcDialogue` handler + `NpcDialogue` payload (speaker, prose, options with enabled/reason/preview, `NextSlug` when present) | A character with the wrong level sees the option disabled with the requirement named; the payload-contract test and the parity suite pass |
+| **P3** ✅ | `ChooseNpcOption` handler; `CharacterDialogueChoices` entity + migration; grants applied through `CharacterBag` / `AddGoldHubCommand` / `AcceptQuestHubCommand`; refusal of a stale, unknown, unmet or already-taken option | Choosing twice grants once; a refusal mutates nothing; every rejection path has a test |
+| **P4** ✅ | `DialogueOverlay.svelte` + `dialogue.ts` display rules, `session.dialogue` state, People-section wiring, docs, and `dialogue.e2e.ts` in the `stack` run | The panel opens with the speaker's prose and closes on an ending choice; the e2e spec walks to the elder and asserts it against a fresh stack |
 
 ## 4. Content: authored in Foundry, not seeded
 

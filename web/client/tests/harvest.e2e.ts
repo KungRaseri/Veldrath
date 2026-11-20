@@ -150,6 +150,11 @@ test.describe('gathering', () => {
 		await page.getByRole('button', { name: 'Talk', exact: true }).first().click();
 		await expect(page.getByText(/Wayfarer Elder:/)).toBeVisible({ timeout: 30_000 });
 
+		// Talking now opens the conversation panel, which is modal — walking on with it open would click through it.
+		// The conversation itself is asserted in dialogue.e2e.ts; here it only has to get out of the way.
+		await page.getByRole('button', { name: 'Close conversation' }).click();
+		await expect(page.getByRole('dialog')).toBeHidden({ timeout: 10_000 });
+
 		expect(await walkTo(page, 'Road to The Ashlen Wood')).toBe(true);
 		expect(await walkTo(page, 'The Old Clearing')).toBe(true);
 

@@ -588,6 +588,43 @@ export interface NpcTalkedPayload {
 	isQuestGiver: boolean;
 }
 
+/**
+ * One choice in a conversation, already evaluated by the server.
+ *
+ * `enabled` and `blockedReason` are computed against the character's live state — the panel renders them and never
+ * decides them, so a disabled button and a server refusal cannot disagree.
+ */
+export interface NpcDialogueOption {
+	key: string;
+	label: string;
+	enabled: boolean;
+	blockedReason?: string | null;
+	/** What taking it changes, in the server's own words. */
+	consequences: string[];
+}
+
+/** The conversation a person offers. */
+export interface NpcDialoguePayload {
+	speakerSlug: string;
+	displayName: string;
+	occupation?: string | null;
+	entrySlug: string;
+	prompt: string;
+	hasConversation: boolean;
+	options: NpcDialogueOption[];
+}
+
+/** The outcome of taking one choice. */
+export interface NpcOptionChosenPayload {
+	success: boolean;
+	speakerSlug: string;
+	displayName: string;
+	response: string;
+	applied: string[];
+	next?: NpcDialoguePayload | null;
+	ended: boolean;
+}
+
 /** A location revealed by a successful area search. */
 export interface SearchFinding {
 	slug: string;

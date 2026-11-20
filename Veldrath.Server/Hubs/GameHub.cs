@@ -1623,6 +1623,110 @@ public class GameHub : Hub
     }
 
     /// <summary>
+    /// Reads the conversation a placed person offers, with every option already evaluated against the caller's
+    /// character. Sends <c>NpcDialogue</c> to the caller.
+    /// </summary>
+    /// <remarks>
+    /// Availability is decided here rather than in the browser: the payload carries each option with <c>Enabled</c>
+    /// and a <c>BlockedReason</c>, so a disabled button and a server refusal are the same computation and the panel
+    /// never guesses what the character is allowed to do.
+    /// </remarks>
+    /// <param name="request">Speaker slug and, optionally, the entry to show.</param>
+    public async Task GetNpcDialogue(NpcDialogueHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetNpcDialogue");
+            return;
+        }
+
+        if (request is null || string.IsNullOrWhiteSpace(request.NpcSlug))
+        {
+            await Clients.Caller.SendAsync("Error", "An NPC slug is required.");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(
+                new GetNpcDialogueHubCommand(characterId, request.NpcSlug.Trim(), Blank(request.EntrySlug)));
+
+            if (!result.Success || result.Dialogue is null)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "They have nothing to say.");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("NpcDialogue", result.Dialogue);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error reading dialogue from '{NpcSlug}' for character {CharacterId}",
+                request.NpcSlug, characterId);
+            await Clients.Caller.SendAsync("Error", "They have nothing to say.");
+        }
+    }
+
+    /// <summary>
+    /// Takes one choice in a conversation, applies what it grants and sends <c>NpcOptionChosen</c> to the caller.
+    /// </summary>
+    /// <remarks>
+    /// The bag, the journal and the gold total are refreshed from the server after a choice that changed anything,
+    /// because a snapshot pushed only when the panel asks would leave the HUD showing the state from before the
+    /// conversation.
+    /// </remarks>
+    /// <param name="request">Speaker slug, option key and, optionally, the entry the option belongs to.</param>
+    public async Task ChooseNpcOption(NpcOptionHubRequest request)
+    {
+        if (!TryGetCharacterId(out var characterId))
+        {
+            await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before ChooseNpcOption");
+            return;
+        }
+
+        if (request is null || string.IsNullOrWhiteSpace(request.NpcSlug) || string.IsNullOrWhiteSpace(request.OptionKey))
+        {
+            await Clients.Caller.SendAsync("Error", "An NPC slug and an option key are required.");
+            return;
+        }
+
+        try
+        {
+            var result = await _mediator.Send(
+                new ChooseNpcOptionHubCommand(
+                    characterId,
+                    request.NpcSlug.Trim(),
+                    request.OptionKey.Trim(),
+                    Blank(request.EntrySlug)));
+
+            if (!result.Success)
+            {
+                await Clients.Caller.SendAsync("Error", result.ErrorMessage ?? "They do not answer.");
+                return;
+            }
+
+            await Clients.Caller.SendAsync("NpcOptionChosen", result);
+
+            if (result.Applied.Count > 0)
+            {
+                await TrySendInventorySnapshotAsync(characterId);
+                await GetQuestLog();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error choosing '{OptionKey}' from '{NpcSlug}' for character {CharacterId}",
+                request.OptionKey, request.NpcSlug, characterId);
+            await Clients.Caller.SendAsync("Error", "They do not answer.");
+        }
+    }
+
+    /// <summary>Treats a blank string from a client the same as an absent one.</summary>
+    /// <param name="value">Value sent by the client.</param>
+    /// <returns>The trimmed value, or null when it carries nothing.</returns>
+    private static string? Blank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    /// <summary>
     /// Crafts an item from a catalog recipe: the materials are consumed, the output is added to the
     /// bag and the recipe's skill experience is awarded. Broadcasts <c>ItemCrafted</c> to the zone
     /// group (or back to the caller when not in a zone).

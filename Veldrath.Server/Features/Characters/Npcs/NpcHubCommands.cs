@@ -83,6 +83,57 @@ internal static class NpcPlacements
 }
 
 /// <summary>
+/// Picks a line a placed person can actually say when someone walks up to them.
+/// </summary>
+/// <remarks>
+/// Shared by <c>TalkToNpc</c> and the dialogue panel, so the line a player hears on approach is the line the panel
+/// opens with. Two pickers would drift the moment one of them was edited, and the drift would look like a bug in the
+/// conversation rather than in the greeting.
+/// </remarks>
+internal static class NpcGreetings
+{
+    private static readonly Random Picker = new();
+
+    /// <summary>
+    /// Chooses one greeting line, falling back to a neutral one so a speaker whose dialogue has not been authored yet
+    /// still answers.
+    /// </summary>
+    /// <param name="dialogues">Dialogue catalog.</param>
+    /// <param name="slug">Speaker key.</param>
+    /// <param name="displayName">Name to use in the fallback line.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>One line of dialogue.</returns>
+    internal static async Task<string> PickAsync(
+        IDialogueRepository dialogues,
+        string slug,
+        string displayName,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var entries = await dialogues.GetBySpeakerAsync(slug);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var lines = entries
+                .Where(entry => entry.TypeKey == "greetings"
+                                || entry.DisplayName.Contains("Greeting", StringComparison.OrdinalIgnoreCase))
+                .SelectMany(entry => entry.Lines)
+                .Where(line => !string.IsNullOrWhiteSpace(line))
+                .ToList();
+
+            if (lines.Count > 0)
+                return lines[Picker.Next(lines.Count)];
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // A missing dialogue catalog must not stop the conversation; the neutral line is still true.
+        }
+
+        return $"{displayName} looks up as you approach.";
+    }
+}
+
+/// <summary>
 /// Handles <see cref="GetLocationNpcsHubCommand"/> by listing the people placed at the character's location.
 /// </summary>
 public class GetLocationNpcsHubCommandHandler(
@@ -142,8 +193,6 @@ public class TalkToNpcHubCommandHandler(
     ILogger<TalkToNpcHubCommandHandler> logger)
     : IRequestHandler<TalkToNpcHubCommand, TalkToNpcHubResult>
 {
-    private static readonly Random Picker = new();
-
     /// <inheritdoc />
     public async Task<TalkToNpcHubResult> Handle(
         TalkToNpcHubCommand request,
@@ -178,7 +227,7 @@ public class TalkToNpcHubCommandHandler(
             .FirstOrDefaultAsync(actor => actor.Slug == slug, cancellationToken);
 
         var view = NpcPlacements.ToDto(placement, archetype);
-        var line = await GreetingAsync(slug, view.DisplayName, cancellationToken);
+        var line = await NpcGreetings.PickAsync(dialogues, slug, view.DisplayName, cancellationToken);
 
         logger.LogInformation(
             "Character {CharacterId} spoke with {NpcId} at {Zone}/{Location}",
@@ -193,35 +242,6 @@ public class TalkToNpcHubCommandHandler(
             IsShopkeeper = view.IsShopkeeper,
             IsQuestGiver = view.IsQuestGiver,
         };
-    }
-
-    /// <summary>
-    /// Picks a greeting line the person can actually say, falling back to a neutral one so a speaker whose
-    /// dialogue has not been authored yet still answers.
-    /// </summary>
-    /// <param name="slug">Speaker key.</param>
-    /// <param name="displayName">Name to use in the fallback line.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>One line of dialogue.</returns>
-    private async Task<string> GreetingAsync(string slug, string displayName, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var lines = (await dialogues.GetBySpeakerAsync(slug))
-                .Where(entry => entry.TypeKey == "greetings" || entry.DisplayName.Contains("Greeting", StringComparison.OrdinalIgnoreCase))
-                .SelectMany(entry => entry.Lines)
-                .Where(line => !string.IsNullOrWhiteSpace(line))
-                .ToList();
-
-            if (lines.Count > 0)
-                return lines[Picker.Next(lines.Count)];
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            // A missing dialogue catalog must not stop the conversation; the neutral line is still true.
-        }
-
-        return $"{displayName} looks up as you approach.";
     }
 
     private static TalkToNpcHubResult Fail(string message) => new() { Success = false, ErrorMessage = message };

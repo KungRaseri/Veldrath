@@ -38,6 +38,7 @@
 			},
 			"specs": [
 				"tests/admin-console.e2e.ts",
+				"tests/dialogue.e2e.ts",
 				"tests/editorial-publishing.e2e.ts",
 				"tests/encounters.e2e.ts",
 				"tests/foundry-content.e2e.ts",

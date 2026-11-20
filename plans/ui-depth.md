@@ -13,7 +13,7 @@
 | E1 powers and abilities | **shipped** — PR #65 |
 | E2 skill sheet, `SkillXpGained` subscriber | **shipped** — PR #66 |
 | E3 combat depth, shared fight snapshot | **shipped** — PR #67 |
-| E4 NPC dialogue | **moved to [`dialogue-depth.md`](dialogue-depth.md)** — placement and talking shipped 2026-11-18; options, requirements and consequences remain |
+| E4 NPC dialogue | **shipped** — schema, validator, both hub bridges and the panel; the conversations themselves are authored in Foundry ([`dialogue-depth.md`](dialogue-depth.md)) |
 | E5 crafting on the real engine | **shipped** — [`CraftingOverlay.svelte`](../web/client/src/lib/game/CraftingOverlay.svelte) over the real recipe handler; `DefaultCraftingCost` is gone |
 | E6 dungeons | **moved to [`dungeons.md`](dungeons.md)** — the model decided there; E6 is its client slice (F4) |
 
