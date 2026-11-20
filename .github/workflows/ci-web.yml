@@ -21,6 +21,8 @@ on:
       - 'scripts/lib/**'
       - 'scripts/coverage-report.sh'
       - 'scripts/web-coverage-gate.mjs'
+      - 'scripts/check-e2e-manifest.mjs'
+      - 'scripts/e2e-summary.mjs'
       - 'scripts/tests/**'
       - '.github/workflows/ci-web.yml'
   pull_request:
@@ -32,6 +34,8 @@ on:
       - 'scripts/lib/**'
       - 'scripts/coverage-report.sh'
       - 'scripts/web-coverage-gate.mjs'
+      - 'scripts/check-e2e-manifest.mjs'
+      - 'scripts/e2e-summary.mjs'
       - 'scripts/tests/**'
       - '.github/workflows/ci-web.yml'
   workflow_dispatch:
