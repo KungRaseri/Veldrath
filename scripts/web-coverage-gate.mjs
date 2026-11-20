@@ -4,18 +4,21 @@
  *
  * The web coverage check is `npm run coverage --workspace client` (vitest + v8, thresholds in
  * `web/client/vite.config.ts`). The comment beside it is rendered by
- * `scripts/coverage-report.sh` (codecov/codecov-report) from the Cobertura XML vitest writes,
- * and that tool counts branches differently: it sums the per-line `condition-coverage="x% (c/t)"`
- * attributes, while v8 counts branch sites. istanbul writes a line-level branch count only for a
- * site it can attach to a source line, so the tool's denominator is smaller and its percentage
- * reads lower than the gate's for the very same run. On PR #88 the gate printed
- * `Branches : 90.33% ( 4428/4902 )` and the comment said `89.8% (3,752 of 4,180)`.
+ * `scripts/coverage-report.sh` (codecov/codecov-report) from the Cobertura XML vitest writes.
+ *
+ * Since the reporter is pinned to v1.0.4, its Total row is read from the file's root
+ * `<coverage branches-valid/branches-covered>` counters — istanbul's branch-map totals, the same
+ * sites and the same numbers the gate enforces (on PR #88: `4,428 of 4,902`, against a gate that
+ * printed `Branches : 90.33% ( 4428/4902 )`). The per-directory rows under it are still built on
+ * the per-line `condition-coverage="x% (c/t)"` attributes, which istanbul writes only for a site it
+ * can attach to a source line; on that run they summed to `3,752 of 4,180`, so the rows do not sum
+ * to the Total.
  *
  * This script prints the gate's own totals, taken from the coverage step's log (verbatim lines,
  * including vitest's `ERROR: Coverage for …` threshold messages, so per-glob floors surface too),
- * and cross-checks them against the json-summary v8 writes. It also states, in the comment, what
- * the Cobertura table underneath is counting, with both numbers for this run — so a reader can
- * never mistake one accounting for the other.
+ * and cross-checks them against the json-summary v8 writes. It also states, in the comment, which
+ * accounting each part of the Cobertura table uses — with both numbers for this run — so a reader
+ * can never mistake one for the other.
  *
  * Usage:
  *   node scripts/web-coverage-gate.mjs [--log <file>] [--summary <file>] [--cobertura <file>]
@@ -226,19 +229,40 @@ if (notes.length) {
   lines.push('');
 }
 
-if (cobertura && cobertura.conditionTotal > 0 && gate.Branches) {
-  const missing = gate.Branches.total - cobertura.conditionTotal;
-  lines.push(
-    `> The per-directory table below is the same run read back through **Cobertura** (istanbul ` +
-      `line conditions), not the gate. It counts **${count(cobertura.conditionCovered)} of ` +
-      `${count(cobertura.conditionTotal)}** branch conditions against the gate's ` +
-      `**${count(gate.Branches.covered)} of ${count(gate.Branches.total)}** branch sites` +
-      (missing > 0
-        ? `: ${count(missing)} sites carry no line-level condition, so the Cobertura percentage is ` +
-          `divided by a smaller denominator and reads lower. Compare branch coverage against the ` +
-          `table above, never against the one below.`
-        : '. The two accountings agree on this run.')
-  );
+if (
+  cobertura &&
+  gate.Branches &&
+  ((cobertura.branchesValid ?? 0) > 0 || cobertura.conditionTotal > 0)
+) {
+  const { branchesValid: rootValid, branchesCovered: rootCovered } = cobertura;
+  const hasRoot = rootValid != null && rootCovered != null;
+  const rootAgrees =
+    hasRoot && rootValid === gate.Branches.total && rootCovered === gate.Branches.covered;
+  const perLine = `**${count(cobertura.conditionCovered)} of ${count(cobertura.conditionTotal)}**`;
+  const gateSites = `**${count(gate.Branches.covered)} of ${count(gate.Branches.total)}**`;
+  // The report's Total row is the file's root counters (codecov-report v1.0.4+), so it carries the
+  // gate's numbers; only the per-directory rows are still built on istanbul's line-level conditions.
+  const paragraph = rootAgrees
+    ? `> The per-directory table below is the same run read back through **Cobertura**, not the gate. ` +
+      `Its Total row is the report's root counters — **${count(rootCovered)} of ${count(rootValid)}** ` +
+      `branch sites, the numbers the gate enforces — so the two accountings agree on this run. The ` +
+      `per-directory rows are built on istanbul's line-level conditions (${perLine}): ` +
+      `${count(rootValid - cobertura.conditionTotal)} sites have no row of their own, so the rows do ` +
+      `not sum to that Total.`
+    : hasRoot
+      ? `> The per-directory table below is the same run read back through **Cobertura**, not the ` +
+        `gate. The file's root counters report **${count(rootCovered)} of ${count(rootValid)}** branch ` +
+        `sites against the gate's ${gateSites} — a Cobertura file that does not describe this run. ` +
+        `Compare branch coverage against the table above, never against the one below.`
+      : `> The per-directory table below is the same run read back through **Cobertura** (istanbul ` +
+        `line conditions), not the gate. It counts ${perLine} branch conditions against the gate's ` +
+        `${gateSites} branch sites` +
+        (cobertura.conditionTotal < gate.Branches.total
+          ? `: ${count(gate.Branches.total - cobertura.conditionTotal)} sites carry no line-level ` +
+            `condition, so the Cobertura percentage is divided by a smaller denominator and reads ` +
+            `lower. Compare branch coverage against the table above, never against the one below.`
+          : '.');
+  lines.push(paragraph);
   lines.push('');
 }
 

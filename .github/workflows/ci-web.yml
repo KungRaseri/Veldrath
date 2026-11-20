@@ -199,11 +199,12 @@ jobs:
             "-reporttypes:Html;Cobertura;MarkdownSummaryGithub;TextSummary" \
             "-title:Veldrath web coverage"
 
-      # The comment used to lead with the reporter's branch percentage, which is counted over the
-      # per-line Cobertura conditions and reads lower than the number the gate enforces for the
+      # The comment used to lead with the reporter's branch percentage, which was counted over the
+      # per-line Cobertura conditions and read lower than the number the gate enforces for the
       # same run (PR #88: 89.8% in the comment against 90.33% in the gate). The gate's own totals
-      # now head the section, quoted from the coverage step's log; the reporter's table follows,
-      # labelled as the other accounting. See scripts/web-coverage-gate.mjs.
+      # now head the section, quoted from the coverage step's log, and the reporter (pinned v1.0.4)
+      # reads its Total row from the root branch counters, so both carry the same two counts; only
+      # its per-directory rows are still line-condition accounting. See scripts/web-coverage-gate.mjs.
       - name: Render the enforced gate summary
         if: always()
         run: |

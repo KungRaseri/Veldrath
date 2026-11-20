@@ -76,14 +76,21 @@ const summary = {
 
 /**
  * Cobertura as vitest/istanbul writes it: the root attributes carry istanbul's branch-map totals
- * (equal to v8's), while the per-line conditions drop the sites that cannot be attached to a
- * source line. The line appears twice, once under <method> and once at class level — the script
- * must count it once, at the higher of the two counts.
+ * (equal to v8's — 4,383 of 4,902 in `gateLog`), while the per-line conditions drop the sites that
+ * cannot be attached to a source line. The line appears twice, once under <method> and once at
+ * class level — the script must count it once, at the higher of the two counts. `root: false`
+ * writes a file with no root branch counters at all, the shape a non-istanbul producer gives.
  */
-function cobertura({ rootValid = 4902, rootCovered = 4428, condition = '89.76% (3752/4180)' } = {}) {
+function cobertura({
+  rootValid = 4902,
+  rootCovered = 4383,
+  root = true,
+  condition = '89.76% (3752/4180)'
+} = {}) {
+  const rootBranches = root ? ` branches-valid="${rootValid}" branches-covered="${rootCovered}"` : '';
   return `<?xml version="1.0" ?>
 <!DOCTYPE coverage SYSTEM "http://cobertura.sourceforge.net/xml/coverage-04.dtd">
-<coverage lines-valid="6853" lines-covered="6618" line-rate="0.9657" branches-valid="${rootValid}" branches-covered="${rootCovered}" branch-rate="0.9033" timestamp="1795145238000" complexity="0" version="0.1">
+<coverage lines-valid="6853" lines-covered="6618" line-rate="0.9657"${rootBranches} branch-rate="0.9033" timestamp="1795145238000" complexity="0" version="0.1">
   <sources><source>web/client</source></sources>
   <packages>
     <package name="src" line-rate="0.96" branch-rate="0.89">
@@ -181,12 +188,18 @@ describe('the other accounting', () => {
   test('labels the Cobertura table with both numbers from the same run', () => {
     const { markdown } = runCase({ log: gateLog, summary, cobertura: cobertura() });
 
-    // The gate's 4,902 sites against the 4,180 line conditions istanbul could place.
-    assert.match(markdown, /\*\*3,752 of 4,180\*\* branch conditions/);
+    // The report's Total row is the file's root counters, i.e. the gate's own 4,383 of 4,902;
+    // the per-directory rows below it are still the 4,180 line conditions istanbul could place.
+    assert.match(markdown, /Its Total row is the report's root counters/);
     assert.match(markdown, /\*\*4,383 of 4,902\*\* branch sites/);
-    assert.match(markdown, /722 sites carry no line-level condition/);
-    assert.match(markdown, /Compare branch coverage against the table above, never against the one below\./);
+    assert.match(markdown, /the two accountings agree on this run/);
+    assert.match(markdown, /\*\*3,752 of 4,180\*\*/);
+    assert.match(markdown, /722 sites have no row of their own/);
+    assert.match(markdown, /do not sum to that Total/);
     assert.match(markdown, /not the gate/);
+
+    // The old paragraph explained a gap the report's Total row no longer shows; it must be gone.
+    assert.doesNotMatch(markdown, /carry no line-level condition/);
   });
 
   test('drops the contrast paragraph when no Cobertura file was written', () => {
@@ -210,5 +223,29 @@ describe('the other accounting', () => {
     const stale = cobertura({ rootValid: 4180, rootCovered: 3752 });
     const { markdown } = runCase({ log: gateLog, summary, cobertura: stale });
     assert.match(markdown, /the Cobertura root attributes report 3752 \/ 4180 branches/);
+    // The paragraph must say the file is not this run's, and never present its numbers as the gate's.
+    assert.match(
+      markdown,
+      /report \*\*3,752 of 4,180\*\* branch sites against the gate's \*\*4,383 of 4,902\*\*/
+    );
+    assert.match(markdown, /a Cobertura file that does not describe this run/);
+    assert.match(markdown, /Compare branch coverage against the table above/);
+  });
+
+  test('keeps the per-line explanation when the file has no root counters', () => {
+    // A producer that writes no root branches-valid/branches-covered attributes: the script cannot
+    // tell whether the Total row is this run's, so it explains the per-line accounting instead.
+    const { status, markdown } = runCase({
+      log: gateLog,
+      summary,
+      cobertura: cobertura({ root: false })
+    });
+    assert.equal(status, 0);
+    assert.doesNotMatch(markdown, /the Cobertura root attributes report/);
+    assert.match(markdown, /It counts \*\*3,752 of 4,180\*\* branch conditions/);
+    assert.match(markdown, /against the gate's \*\*4,383 of 4,902\*\* branch sites/);
+    assert.match(markdown, /722 sites carry no line-level condition/);
+    assert.match(markdown, /divided by a smaller denominator/);
+    assert.match(markdown, /Compare branch coverage against the table above/);
   });
 });
