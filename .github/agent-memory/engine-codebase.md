@@ -197,6 +197,13 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 ### Enemy / NPC Dual-Archetype Behavior
 - `EfCoreEnemyRepository` and `EfCoreNpcRepository` **both** query `db.ActorArchetypes` without any hostility/role filter. A single seeded `ActorArchetype` row therefore appears in both `/api/content/enemies` and `/api/content/npcs` responses. This is by design — hostility is a trait flag, not a filter applied by the repos.
 
+### Archetype → Enemy Stat Projection (E1, 2026-11-20)
+- `EfCoreEnemyRepository.MapToModel` now assigns every stat the archetype authors: `Stats.Health` → `Health` **and** `MaxHealth` (a spawn arrives at full health), `Stats.Damage` → `BasePhysicalDamage`, `Stats.ExperienceReward` → `XP`, `Stats.Mana` → `Mana` + `MaxMana`. A stat the archetype does not author keeps the `Enemy` model default — the projection never hardcodes a second copy of it.
+- Gold is the one authored value that is a range: `MapToModel` rolls `[GoldRewardMin, GoldRewardMax]` **inclusive** (`Next(low, high + 1)`) once per materialised template, from an `IRandomSource? randomSource = null` ctor parameter (defaults to `SystemRandomSource.Shared`). A half-authored range collapses to the authored bound; both unset means no draw and the template default survives (the three NPC archetypes author no gold).
+- The roll is not repeated on later reads: `EfCoreEnemyInstanceStore` stores `SpawnedEnemy.GoldReward` on the `EnemyInstances` row and every read takes it from there. `Enemy.Template.GoldReward` on a re-read is a fresh roll and is *not* what the player is awarded.
+- `ActorPoolResolver` no longer owns a bare `new Random()`: its third ctor parameter is `IRandomSource? randomSource = null`, so roster size, selection and the repository's gold roll all come from the one DI-registered binding and a seed makes a whole spawn reproducible.
+- Tests: `EfCoreEnemyRepositoryStatProjectionTests` (`RealmEngine.Data.Tests`, 11 facts, mapping + inclusive/seeded gold) and `SpawnedEnemyStatProjectionTests` (`Veldrath.Server.Tests`, 4 facts, real seeded catalog through `ActorPoolResolver`). The latter pins 20 HP / 3 damage / 8 XP / 1–3 gold for `giant-rat`, 55 / 7 / 40 / 5–15 for `bandit-ruffian` and 900 / 42 / 1200 / 150–300 for `fire-ancient`.
+
 ### PowerDto.School Is the Raw Entity School (no tradition mapping)
 - `EfCorePowerRepository` returns `Power.School` directly (e.g. `"fire"`, `"arcane"`). No tradition mapping is applied.
 - The old `EfCoreSpellRepository.ParseTradition` logic (mapping `"fire"` → `MagicalTradition.Primal` → `"Primal"`) was NOT carried over to `EfCorePowerRepository`. `SpellDto` is gone; `PowerDto.School` is raw.

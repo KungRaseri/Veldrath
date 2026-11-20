@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using RealmEngine.Core.Generators.Modern;
+using RealmEngine.Shared.Abstractions;
 using RealmEngine.Shared.Models;
+using RealmEngine.Shared.Services;
 
 namespace Veldrath.Server.Features.Characters.Combat;
 
@@ -8,6 +10,11 @@ namespace Veldrath.Server.Features.Characters.Combat;
 /// Generates a <see cref="SpawnedEnemy"/> roster for a zone location from its actor pool.
 /// Weighted random selection ensures variety while respecting archetype rarity.
 /// </summary>
+/// <remarks>
+/// The resolver's draws (roster size and the weighted pick) and the gold roll the archetype projection makes both
+/// come from <see cref="IRandomSource"/>, which the composition root registers once — so seeding that one binding
+/// makes an entire spawn, rewards included, reproducible.
+/// </remarks>
 public class ActorPoolResolver
 {
     private const int MinCount = 2;
@@ -15,15 +22,23 @@ public class ActorPoolResolver
 
     private readonly EnemyGenerator _enemyGenerator;
     private readonly ILogger<ActorPoolResolver> _logger;
-    private readonly Random _random = new();
+    private readonly IRandomSource _random;
 
     /// <summary>Initializes a new instance of <see cref="ActorPoolResolver"/>.</summary>
     /// <param name="enemyGenerator">Generator used to look up enemy archetypes by slug.</param>
     /// <param name="logger">Logger for missing-content reports; defaults to a null logger in tests.</param>
-    public ActorPoolResolver(EnemyGenerator enemyGenerator, ILogger<ActorPoolResolver>? logger = null)
+    /// <param name="randomSource">
+    /// Source for roster size and selection; defaults to <see cref="SystemRandomSource.Shared"/>, the binding the
+    /// composition root registers for every other consumer, the archetype projection included.
+    /// </param>
+    public ActorPoolResolver(
+        EnemyGenerator enemyGenerator,
+        ILogger<ActorPoolResolver>? logger = null,
+        IRandomSource? randomSource = null)
     {
         _enemyGenerator = enemyGenerator;
         _logger = logger ?? NullLogger<ActorPoolResolver>.Instance;
+        _random = randomSource ?? SystemRandomSource.Shared;
     }
 
     /// <summary>
