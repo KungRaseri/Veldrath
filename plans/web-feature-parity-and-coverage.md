@@ -26,6 +26,7 @@ Two outcomes, one gate:
 | Game loop e2e | Stays live against `Veldrath.Server`. Staff surfaces may be mocked; the wire contract check does not |
 | Deferred features | Crafting, NPC dialogue, dungeons, skills UI, and every engine-only system |
 | PR 1 boundary | Phase 0 + matrix + plumbing fixes only. No new game features |
+| Coverage comment accounting | **The comment quotes the gate.** [`scripts/web-coverage-gate.mjs`](../scripts/web-coverage-gate.mjs) heads the sticky comment with the totals the `Coverage gate` step printed; the reporter's per-directory table is labelled as the other accounting. Decided 2026-11-20, see "Coverage comment accounting" below |
 
 ## Deferred explicitly (do not build in this pass)
 
@@ -684,6 +685,112 @@ There is a small residual on lines too, so 99.19% should not be read as full cov
 without a live server, hub and character: the e2e suite (`tests/game-auth.e2e.ts`) only asserts their
 unauthenticated redirects, so today they are covered by nothing. That is 13 lines of wiring rather
 than a gate, but it is why the line number is 99.19% and not 100%.
+
+## Coverage comment accounting (decided 2026-11-20)
+
+The web coverage **gate** and the web coverage **comment** disagreed on branch coverage for the same
+run, and the comment read as a gate failure: `Branches : 90.33% ( 4428/4902 )` in the
+`Build and Test SvelteKit Web` log beside `Branch coverage | 89.8% (3,752 of 4,180)` in the sticky
+comment (PR #88, head `3a128de0`, run 2171). Neither number was wrong; only one of them was the
+number being enforced, and the comment did not say which.
+
+### Why the two differ
+
+- The gate is vitest/v8: `coverage.thresholds` in [`web/client/vite.config.ts`](../web/client/vite.config.ts:78)
+  counts branch **sites** — 4,902 of them on that run, 4,428 covered.
+- The comment's table is `scripts/coverage-report.sh` → `codecov/codecov-report` (pinned
+  `v1.0.3`) fed `web/client/coverage/cobertura-coverage.xml`. `CoberturaReader.ReadLines`
+  (`src/CoverageReport/CoberturaReader.cs:119-160` in that repository) sums the per-line
+  `condition-coverage="x% (c/t)"` attributes and never reads the root
+  `<coverage branches-valid=… branches-covered=…>` attributes.
+- istanbul writes a line-level condition only for a branch site it can attach to a source line, so
+  that sum is a **subset** of v8's branch map: 4,180 of 4,902 sites on the same run. The gap is not
+  a coverage regression and not a broken report — it is two different branch models.
+- The Cobertura root attributes are istanbul's branch-map totals and therefore agree with v8
+  exactly. Reproduced on `development@44422ac2` with `reportOnFailure` on:
+  gate `Branches : 89.41% ( 4383/4902 )`, reporter `88.8% (3,713 of 4,180)`, XML root
+  `branches-valid="4902" branches-covered="4383"`. So the lossy step is the per-line conversion,
+  not the file as a whole.
+
+### The decision, and the two options not taken
+
+**Option 1 — the comment quotes the gate.** The sticky comment's `web` section now opens with the
+totals the `Coverage gate` step printed, and the reporter's per-directory table follows, explicitly
+labelled as Cobertura accounting with both numbers for the run spelled out. A reviewer scanning the
+PR cannot read a percentage that contradicts the check next to it.
+
+- *Option 2 alone* (keep the reporter's number, label it "not the enforced gate") was rejected as
+  insufficient: the number a reviewer reads first would still be the one nothing enforces, and the
+  difference would have to be re-derived by hand on every run. The labelling survives, but beneath
+  the gate block rather than instead of it.
+- *Option 3* (declare the Cobertura branch count authoritative and move the gate onto it) was
+  rejected as the most expensive and the least defensible: it would loosen the gate by 722 branch
+  sites, need the per-glob floors rebuilt on a branch model that silently drops sites, and pin the
+  gate to a third-party tool's line-level conversion.
+
+### What implements it
+
+- [`scripts/web-coverage-gate.mjs`](../scripts/web-coverage-gate.mjs) parses the last
+  `Statements/Branches/Functions/Lines` block from the coverage step's log (ANSI-stripped) and every
+  `ERROR: Coverage for …` threshold line, so **per-glob floor breaches appear in the comment too** —
+  no machine-readable artifact carries them. It cross-checks the log against
+  `coverage-summary.json` (v8's own totals) and against the Cobertura root attributes, and prints a
+  warning instead of silently preferring one when they drift. Fixture tests:
+  [`scripts/tests/web-coverage-gate.test.mjs`](../scripts/tests/web-coverage-gate.test.mjs).
+- [`ci-web.yml`](../.github/workflows/ci-web.yml:148) tees the coverage step to
+  `$RUNNER_TEMP/web-coverage.log`, keeps npm's exit status via `pipefail`, renders the block and
+  concatenates it ahead of `SummaryGithub.md` into `CoverageReport/WebSection.md`, which is what the
+  commenter posts.
+- `coverage.reportOnFailure: true` ([`vite.config.ts`](../web/client/vite.config.ts:67)) so a failed
+  gate still writes the report — previously a red run produced no Cobertura at all, so the comment
+  kept the *previous* head's numbers beside a red check. The comment step now also runs with
+  `if: always()`.
+- Recorded in [`scripts/README.md`](../scripts/README.md) and [`docs/ci-forgejo.md`](../docs/ci-forgejo.md)
+  ("Coverage reports").
+
+### Verified on a run, not just locally
+
+The reporting path was exercised end to end by CI on a throwaway branch that stacked this change on
+PR #88's head (whose branch fixes the five `web/client/tests/run-e2e.mjs` typecheck errors that stop
+`build-test` before the coverage step on `development@44422ac2`): run 2176, `Build and Test SvelteKit
+Web`, **successful in 11m51s**. From that one run:
+
+```text
+Statements   : 96.77% ( 10901/11264 )
+Branches     : 90.33% ( 4428/4902 )        <- the gate
+...
+Line 96.7% · branch 89.8% · function 95.1% · full function 95.1%   <- the reporter, unchanged
+```
+
+and the comment it posted (PR #90, comment 1084):
+
+```markdown
+| Statements | 96.77% | 10,901 / 11,264 |
+| Branches | 90.33% | 4,428 / 4,902 |
+```
+
+with the contrast paragraph reading *"It counts 3,752 of 4,180 branch conditions against the gate's
+4,428 of 4,902 branch sites: 722 sites carry no line-level condition"*. The gate line and the
+comment's branch row are the same number, which is the property the old comment lacked.
+
+### Fixed upstream, adopted here
+
+The residual was the reporter's own headline, and it belongs to
+[`codecov/codecov-report`](https://git.kungraseri.cloud/codecov/codecov-report), not to this
+repository. It was fixed there (PR #1, merged as `f6a5681`) and tagged **`v1.0.4`**: the reader now
+takes the root `branches-valid`/`branches-covered` attributes when a file provides them and falls
+back to the per-line sum for coverlet, whose per-line conditions are complete. Both on-demand paths
+pin that tag — [`scripts/coverage-report.sh`](../scripts/coverage-report.sh) and
+[`generate-coverage-report.ps1`](../scripts/generate-coverage-report.ps1) — so on the PR #88 file
+the reporter's Total row reads `4,428 of 4,902`: the gate's pair, rendered with one decimal
+(`90.3%`) instead of two (`90.33%`). The counts are the contract; the precision difference is not a
+defect.
+
+What remains is only the **per-directory table**: its rows are still built on istanbul's per-line
+conditions (`3,752 of 4,180` on that run), so they do not sum to the Total.
+[`scripts/web-coverage-gate.mjs`](../scripts/web-coverage-gate.mjs) says exactly that in the
+comment, and switches to a "this file is not from this run" paragraph when the root counters
+disagree with the gate — the gate block itself is unchanged.
 
 ## Traps
 

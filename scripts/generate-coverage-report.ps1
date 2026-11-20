@@ -14,7 +14,7 @@ $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $reportDir = Join-Path $resultsRoot "report\$timestamp"
 
 $toolRepo = if ($env:COVERAGE_REPORT_REPO) { $env:COVERAGE_REPORT_REPO } else { "https://git.kungraseri.cloud/codecov/codecov-report.git" }
-$toolRef = if ($env:COVERAGE_REPORT_REF) { $env:COVERAGE_REPORT_REF } else { "v1.0.3" }
+$toolRef = if ($env:COVERAGE_REPORT_REF) { $env:COVERAGE_REPORT_REF } else { "v1.0.4" }
 $toolDir = if ($env:COVERAGE_REPORT_DIR) { $env:COVERAGE_REPORT_DIR } else { Join-Path $repoRoot ".coverage-report\$toolRef" }
 $project = Join-Path $toolDir "src\CoverageReport\CoverageReport.csproj"
 

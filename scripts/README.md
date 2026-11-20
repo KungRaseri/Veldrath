@@ -49,7 +49,8 @@ Runs the coverage reporter without keeping a copy in this repository. It clones 
 the .NET SDK; `COVERAGE_REPORT_REPO`, `COVERAGE_REPORT_REF` and `COVERAGE_REPORT_DIR`
 override the defaults. Arguments are ReportGenerator's, plus `-minimumcoverage:` for a gate.
 It reads coverlet and vitest/istanbul Cobertura alike; the web job points it at
-`web/client/coverage/cobertura-coverage.xml`.
+`web/client/coverage/cobertura-coverage.xml`. The pin reads the Cobertura root branch counters, so
+the report's Total row carries the same counts as the web gate.
 
 ```bash
 bash scripts/coverage-report.sh \
@@ -157,6 +158,41 @@ needs a reviewed note alongside the new number. `--suggest` names every floor th
 (the measured value is 3+ points above the floor) with the value to raise it to, so the nudge
 appears in the log of the PR that caused it. The recorded target is 90% line per assembly; the
 floors currently hold the measured baseline and climb towards that target as tests land.
+
+---
+
+## `web-coverage-gate.mjs`
+
+Renders the block that heads the `web` section of the sticky coverage comment. The comment is
+built from the Cobertura report. Since `codecov/codecov-report` is pinned to v1.0.4, the reporter's
+Total row comes from the file's root `branches-valid`/`branches-covered` counters — istanbul's
+branch-map totals, the numbers the gate enforces — while its per-directory rows are still built on
+the per-line `condition-coverage` attributes, which istanbul writes only for a site it can place on
+a source line. On PR #88, before that fix, the gate printed `Branches : 90.33% ( 4428/4902 )` while
+the comment said `89.8% (3,752 of 4,180)` for the same run — a reader concluded the opposite of the
+check, which is why this block exists.
+
+This script quotes the gate instead. It reads the last `Statements/Branches/Functions/Lines` block
+from the coverage step's log (the workflow tees it to `$RUNNER_TEMP/web-coverage.log`), keeps every
+`ERROR: Coverage for …` threshold line with it — per-glob floor breaches exist in no
+machine-readable artifact — and cross-checks the result against `coverage/coverage-summary.json`
+and the Cobertura root attributes, warning in the comment rather than silently preferring one when
+they drift. It then states, with both numbers for the run, what the reporter's per-directory table
+is counting. The decision behind it is in
+[`plans/web-feature-parity-and-coverage.md`](../plans/web-feature-parity-and-coverage.md#coverage-comment-accounting-decided-2026-11-20).
+
+```bash
+node scripts/web-coverage-gate.mjs \
+  --log "$RUNNER_TEMP/web-coverage.log" \
+  --summary web/client/coverage/coverage-summary.json \
+  --cobertura web/client/coverage/cobertura-coverage.xml \
+  --out CoverageReport/GateSummary.md
+node --test scripts/tests/web-coverage-gate.test.mjs   # offline: fixtures only
+```
+
+`--log`, `--summary` and `--cobertura` are each optional; a missing source is skipped, and the
+script exits non-zero only when nothing at all can be read, since a silent empty block is how the
+old comment ended up quoting the wrong accounting.
 
 ---
 

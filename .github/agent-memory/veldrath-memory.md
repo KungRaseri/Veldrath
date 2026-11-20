@@ -4411,6 +4411,13 @@ What landed (detail and decisions in [`plans/e2e-reporting.md`](../../plans/e2e-
 - **`scripts/e2e-summary.mjs`** renders `E2EReport/Summary.md` from one or more JSON reports: totals, per-spec
   table slowest-first, failures with their first error line and trace path, skips with their reason, plus the
   commit in the header (a reused preview is `reuseExistingServer` outside CI, so provenance matters).
+- **Flaky means a *failed* attempt, not merely a second attempt.** A test is flaky only when at least one
+  attempt is `failed`/`timedOut` and the last one passed. A `skipped` attempt is not a failure: in a serial group
+  a timed-out test marks the rest of the group `skipped` on attempt 1, and the group retry passes them all — so
+  `[skipped, passed]` is **passed**, which is what Playwright's own tally says. Counting it flaky is why comment
+  1086 reported 2 flaky / 19 passed for run 2194 while Playwright's console said 1 flaky / 20 passed
+  (`encounters.e2e.ts:134`). `Duration` stays the sum of attempts across workers, not wall clock, and the
+  summary says so under the totals table.
 - **`scripts/check-e2e-manifest.mjs`** is the gate, and it is deliberately **not** a pass/fail gate: it fails
   when a spec on disk is claimed by no run, when a claimed spec produced no result (a suite with zero specs is
   collected from `suite.file` for exactly this), when a spec ran that the run does not claim, when a skip has no
@@ -4423,8 +4430,9 @@ What landed (detail and decisions in [`plans/e2e-reporting.md`](../../plans/e2e-
 - **Two skips are allow-listed with reasons**: `harvest.e2e.ts` (chests already emptied on a non-fresh stack) and
   `upstream-failure.e2e.ts` (it needs an API started by `scripts/e2e-stack.sh`; CI starts `dotnet run` itself, so
   the spec self-skips there and runs locally).
-- **Tests**: `node --test scripts/tests/e2e-reporting.test.mjs` (18 tests: summary rendering, flaky, merged runs,
-  missing report, and five negative controls for the gate) and the extended
+- **Tests**: `node --test scripts/tests/e2e-reporting.test.mjs` (22 tests: summary rendering, flaky (including
+  `[skipped, passed]` → passed and `[failed, passed]` → flaky), merged runs, missing report, and five negative
+  controls for the gate) and the extended
   [`scripts/tests/forgejo-pr-comment.test.sh`](../../scripts/tests/forgejo-pr-comment.test.sh) (case I covers the
   e2e marker, its heading, the kept sibling section, and that the coverage comment is neither patched nor
   deleted).
@@ -4437,7 +4445,80 @@ Still open after this pass: the baseline floors are empty until a green CI run r
 only executes locally (CI has no API for it to stop); and the e2e comment has no artifact deep-link, because the
 artifact URL shape is instance-specific.
 
-### Session-104 (2026-11-20) — Dialogue depth: E4 is shipped
+### Session-104 (2026-11-20) — The coverage comment now quotes the gate, not the reporter
+
+The web coverage **check** and the web coverage **comment** have never been the same measurement, and
+on PR #88 the difference surfaced as a contradiction: the gate logged `Branches : 90.33% ( 4428/4902 )`
+while comment 1063 carried `Branch coverage | 89.8% (3,752 of 4,180)`, which reads as a gate failure
+beside a green check.
+
+- **Mechanism, nailed down at the source.** `codecov/codecov-report`'s `CoberturaReader.ReadLines`
+  (`src/CoverageReport/CoberturaReader.cs:119-160`) sums the per-line `condition-coverage="x% (c/t)"`
+  attributes and never reads the root `<coverage branches-valid=… branches-covered=…>`. istanbul
+  writes a line-level condition only for a branch site it can attach to a source line, so that sum is
+  a *subset* of v8's branch map — 4,180 of 4,902 sites on that run. The root attributes **do** agree
+  with v8 exactly (`branches-valid="4902" branches-covered="4383"` on `development@44422ac2`), so the
+  lossy step is the per-line conversion, not the file.
+- **Decision: the comment quotes the gate** (option 1 of three; the plan records why 2 and 3 lost).
+  `scripts/web-coverage-gate.mjs` heads the `web` section with the totals parsed from the coverage
+  step's log — that is also the only place vitest's `ERROR: Coverage for …` threshold lines exist, so
+  per-glob floor breaches now reach the comment — and labels the reporter's per-directory table as
+  Cobertura accounting with both numbers for the run. Tests:
+  `node --test scripts/tests/web-coverage-gate.test.mjs` (8 cases).
+- **Two reporting defects fixed alongside it.** `coverage.reportOnFailure` was off, so a red gate wrote
+  no Cobertura at all (vitest's `text` lines went to the log, nothing else) and the comment kept the
+  previous head's numbers; and the comment step had no `if: always()`, so a red job never posted. Both
+  are on now. Verified locally: a failing gate at 89.41% still writes `coverage-summary.json` and
+  `cobertura-coverage.xml`.
+- **Do not "fix" this by reconciliation.** The gate is v8's branch *sites*; the table is istanbul's
+  line conditions. Lowering the gate to 4,180 or subtracting the 722 conditionless sites from the
+  numerator would each be a real weakening. The remaining fix belongs upstream (read the root
+  attributes when present, fall back to the per-line sum for coverlet) plus a `COVERAGE_REPORT_REF`
+  bump — recorded as residual in the plan.
+- **Gotcha for local reproduction.** `npm run coverage --workspace client` needs `PUBLIC_API_URL` and
+  `PUBLIC_HUB_URL` set or SvelteKit aborts with `env_invalid`; `src/lib/testing/harness.test.ts:84`
+  asserts the checkout path contains `Veldrath`, so a worktree named otherwise fails one test (and,
+  with `reportOnFailure` now on, still writes the report). The pinned reporter needs
+  `PATH="$HOME/.dotnet:$PATH"` if the SDK is not installed system-wide.
+
+### Session-105 (2026-11-20) — A script the web job runs now triggers the web job
+
+`scripts/check-e2e-manifest.mjs` and `scripts/e2e-summary.mjs` were executed by `ci-web.yml` but named
+by neither `paths` list, so a PR that edited one without its test ran no web CI (PR #92, head
+`968f0cf6`: merge gate and Build Docs only). Both are now named in the `push` and `pull_request` lists,
+next to `scripts/web-coverage-gate.mjs` and `scripts/tests/**` — the rule is "a script the job executes
+is in the job's paths". `scripts/e2e-stack.sh` stays unnamed on purpose: it is the local equivalent of
+the authenticated e2e job, and CI starts its own stack. `bash scripts/ci-merge-gate.sh --uncovered` now
+reports 37 paths, 8 in the scripts class.
+
+### Session-106 (2026-11-20) — The coverage reporter now reads the root counters (v1.0.4)
+
+The residual Session-104 recorded is closed upstream, not in this repository.
+
+- **Upstream.** `codecov/codecov-report` PR #1 merged as `f6a5681` and tagged **`v1.0.4`**: the reader
+  takes the root `<coverage branches-valid=… branches-covered=…>` attributes when a file carries them
+  and falls back to the per-line `condition-coverage` sum for coverlet (whose per-line conditions are
+  complete). The Total row therefore reports the gate's branch pair; only the formatting differs —
+  one decimal (`90.3%`) against the gate's two (`90.33%`).
+- **Pinned in both on-demand paths.** `scripts/coverage-report.sh` (`COVERAGE_REPORT_REF` default) and
+  `scripts/generate-coverage-report.ps1` both default to `v1.0.4`. The tool clones into
+  `.coverage-report/v1.0.4/` (gitignored) on first use.
+- **The contrast paragraph reads the root counters.** `scripts/web-coverage-gate.mjs` has three
+  mutually exclusive states: root counters equal to the gate → "the two accountings agree on this run"
+  plus the per-directory caveat (those rows are still istanbul's line conditions and do not sum to the
+  Total); root counters present but different → "a Cobertura file that does not describe this run";
+  no root counters → the previous per-line paragraph verbatim. The `Warning — accounting mismatch`
+  note still fires in the stale-file case. Tests:
+  `node --test scripts/tests/web-coverage-gate.test.mjs` (9 cases).
+- **Verified against real artifacts, not only fixtures.** Replaying the PR #88 Cobertura file through
+  the bumped pin printed `Fetching coverage reporter v1.0.4` and `Branch coverage: 90.3% (4,428 of
+  4,902)`; the gate paragraph on the same file says the two accountings agree.
+- **Not a defect to "fix".** The `90.33` vs `90.3` precision difference is deliberate (the tool
+  formats percentages with one decimal); the contract is that the gate row and the reporter's Total
+  row carry the same two counts. `scripts/coverage-floors.json`, `coverage.runsettings` and
+  `web/client/vite.config.ts` thresholds did not move.
+
+### Session-107 (2026-11-20) — Dialogue depth: E4 is shipped
 
 Milestone E's last phase. The content schema is in [`foundry-content-schema.md`](foundry-content-schema.md); this is
 the runtime and the panel.

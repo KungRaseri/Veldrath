@@ -112,6 +112,23 @@ Cobertura export (`web/client/coverage/cobertura-coverage.xml`) goes through the
 so the client gets a comment and artifact with line, branch, function and full-function numbers;
 its 90% gate stays vitest's own thresholds.
 
+**That report's Total row is the gate's number; only its per-directory rows carry the other
+accounting.** The reporter is pinned to `v1.0.4`, which reads the Cobertura root
+`branches-valid`/`branches-covered` counters instead of summing the per-line `condition-coverage`
+attributes, so on the web report its branch Total is the pair the gate enforces. The per-directory
+rows under it are still built from the per-line conditions, and istanbul writes those only for a
+site it can place on a source line: on PR #88 they summed to 4,180 conditions against 4,902 sites
+(`89.8%` in the comment beside `90.33%` in the gate) — the discrepancy that release fixed, for the
+Total row only.
+`scripts/web-coverage-gate.mjs` therefore heads the `web` section with the totals the coverage step
+printed, parsed from that step's log so vitest's `ERROR: Coverage for …` threshold lines — global
+and per-glob — travel with it, and states both numbers for the run beside the per-directory table,
+which it labels as the Cobertura accounting. `coverage.reportOnFailure` is on, so a red gate still
+writes the report and posts the comment rather than leaving the previous head's numbers in place.
+The decision and the measurements are in
+[`plans/web-feature-parity-and-coverage.md`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/development/plans/web-feature-parity-and-coverage.md)
+(that plan is not on the published docs site, hence the absolute link).
+
 Both write into **one shared coverage comment** (`scripts/forgejo-pr-comment.sh --section …`): the
 .NET job owns the `dotnet` section, the web job the `web` section, so a PR shows a single summary
 with both. The script replaces only its own section, deletes the superseded one-comment-per-job
@@ -445,7 +462,7 @@ The alternatives were measured against the tree instead of argued:
 
 | Alternative | Why not |
 |---|---|
-| Add root-config paths to an existing list | The set is not three files: 39 tracked paths in seven classes match no list today (table below), and every new root file reopens the deadlock silently. It is also conceptually false — no component's output depends on `.gitignore` |
+| Add root-config paths to an existing list | The set is not three files: 37 tracked paths in seven classes match no list today (table below), and every new root file reopens the deadlock silently. It is also conceptually false — no component's output depends on `.gitignore` |
 | Keep `["*"]` and document `force_merge` for this class | It works, and that is the objection: the token every worker here authenticates with belongs to the instance administrator (`GET /user` → `kungraseri`, `is_admin: true`), and `CheckPullMergeable` clears the protection error for an admin. Documenting it would make "any worker certifies its own merge" the routine path — the same reason posting a status by hand is forbidden. It stays break-glass |
 | Switch to named contexts | Already rejected above, and this does not change it: a path-filtered workflow still never reports |
 
@@ -515,21 +532,27 @@ posting a status by hand stays forbidden: a status any agent can mint certifies 
 
 #### Files that no component workflow builds
 
-Measured against the tree on 2026-11-04 (`git ls-files`, 1618 paths, the merge gate and its script
-included): **36 paths match no `on.pull_request.paths` pattern.** Before the merge gate they produced
-zero statuses and deadlocked the gate; now they produce exactly one — the merge gate — and merge with
-**no build and no test**. Regenerate the list with `bash scripts/ci-merge-gate.sh --uncovered`.
+Measured against the tree on 2026-11-20 (`git ls-files`, 1945 paths, 93 `pull_request` path
+patterns, the merge gate and its script included): **37 paths match no `on.pull_request.paths`
+pattern.** Before the merge gate they produced zero statuses and deadlocked the gate; now they
+produce exactly one — the merge gate — and merge with **no build and no test**. Regenerate the list
+with `bash scripts/ci-merge-gate.sh --uncovered`; its last two lines carry the counts, so quote them
+instead of hand-counting.
 
 The path count halved when `Veldrath.Assets` and its 1,837 art files were deleted (2026-11-04); the
 uncovered *set* barely moved, which is the point — the art never matched a workflow's `paths` either.
+It shrank by two on 2026-11-20 for the opposite reason: `scripts/check-e2e-manifest.mjs` and
+`scripts/e2e-summary.mjs` are executed by `ci-web.yml`, so that workflow now names them in both of its
+path lists. The rule is the one `scripts/web-coverage-gate.mjs` and `scripts/tests/**` already follow:
+**a script the job executes is in the job's paths.**
 
 | Class | Count | Paths |
 |---|---|---|
 | Root dotfiles and editor config | 10 | `.dockerignore`, `.editorconfig`, `.env.example`, `.gitignore`, `.gitmodules`, `.hermes/skills`, `.roomodes`, `.vscode/launch.json`, `.vscode/tasks.json`, `LICENSE` |
-| Root build metadata | 3 | `NuGet.config`, `dotnet-tools.json`, `toc.yml` |
+| Root build metadata | 2 | `NuGet.config`, `dotnet-tools.json` |
 | Solution files | 4 | `RealmEngine.slnx`, `Veldrath.Discord.slnx`, `Veldrath.Libraries.slnx`, `Veldrath.Server.slnx` |
-| Observability and deploy config | 10 | `config/grafana/dashboards/{10915,19194,23178,23179}.json`, `config/grafana/provisioning/dashboards/dashboards.yml`, `config/grafana/provisioning/datasources/prometheus.yml`, `config/prometheus/prometheus.yml`, `docker-compose.coolify.yml`, `docker-compose.dev.yml`, `docker-compose.prod.yml` |
-| Scripts no workflow names | 7 | `scripts/ci-merge-gate.sh`, `scripts/format-json-files.py`, `scripts/create-release-tag.ps1`, `scripts/generate-coverage-report.ps1`, `scripts/generate-version.ps1`, `scripts/onebit_labeled.png`, `scripts/roguelike_base_labeled.png` |
+| Observability and deploy config | 11 | `config/grafana/dashboards/{10915,19194,23178,23179}.json`, `config/grafana/provisioning/dashboards/dashboards.yml`, `config/grafana/provisioning/datasources/prometheus.yml`, `config/prometheus/prometheus.yml`, `docker-compose.coolify.yml`, `docker-compose.dev.yml`, `docker-compose.e2e.yml`, `docker-compose.prod.yml` |
+| Scripts no workflow names | 8 | `scripts/ci-merge-gate.sh`, `scripts/create-release-tag.ps1`, `scripts/e2e-stack.sh`, `scripts/format-json-files.py`, `scripts/generate-coverage-report.ps1`, `scripts/generate-version.ps1`, `scripts/onebit_labeled.png`, `scripts/roguelike_base_labeled.png` |
 | Submodule pin | 1 | `wiki` |
 | The always-on check itself | 1 | `.github/workflows/merge-gate.yml` (it declares no `paths` at all, so no list can name it) |
 
@@ -542,6 +565,23 @@ as "cannot break the build":
 - **The four component `.slnx` files** decide which projects each solution builds. `Realm.Full.slnx`
   is covered by `ci-coverage.yml`; `RealmEngine.slnx` and the three `Veldrath.*.slnx` are not, so
   adding a project to `Veldrath.Server.slnx` alone reports the merge gate and no build.
+
+Seven of the eight entries in the scripts class are developer-only, which is why no list names them
+and none should:
+
+- **`scripts/e2e-stack.sh`** starts the isolated local stack the full-flow Playwright specs need. CI
+  never calls it — the `e2e-game` job starts its own Postgres and `Veldrath.Server` — and the script's
+  own header calls it "the local equivalent" of that job. It stays unnamed on purpose, not by oversight.
+- **`scripts/create-release-tag.ps1`**, **`scripts/generate-version.ps1`** and
+  **`scripts/generate-coverage-report.ps1`** are the PowerShell twins kept for local and Windows use;
+  the workflows run `scripts/forgejo-release.sh`, `scripts/generate-version.sh` and
+  `scripts/coverage-report.sh` instead.
+- **`scripts/format-json-files.py`** is a formatting helper, and the two `*_labeled.png` files are
+  annotation assets for issue screenshots. No job executes either.
+
+The eighth, **`scripts/ci-merge-gate.sh`**, is the exception in that class: it runs on **every** pull
+request, but `merge-gate.yml` declares no `paths` at all, so no list can name it — and that is what
+makes the rest of this table safe to have.
 
 #### When to switch back to named contexts
 
