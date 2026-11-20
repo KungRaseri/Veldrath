@@ -84,4 +84,22 @@ public static class ContentRules
 
     /// <summary>A dialogue has no lines, so it can never be spoken.</summary>
     public const string DialogueWithoutLines = "dialogue_without_lines";
+
+    /// <summary>A dialogue option is structurally unusable: no key, no label, no response, a duplicate key, or too many.</summary>
+    public const string DialogueOptionInvalid = "dialogue_option_invalid";
+
+    /// <summary>
+    /// A requirement or grant entry is unreadable: an unknown kind, the wrong number of parts, or a kind on the wrong
+    /// side (a grant in <c>requires</c>, a requirement in <c>grants</c>).
+    /// </summary>
+    public const string DialogueEffectInvalid = "dialogue_effect_invalid";
+
+    /// <summary>An option names an item, quest or dialogue that does not exist.</summary>
+    public const string MissingDialogueReference = "missing-dialogue-reference";
+
+    /// <summary>
+    /// An option grants an item, gold or a quest but is marked repeatable. Warning only: repeatable grants are a
+    /// design decision, but they are how a conversation becomes a money printer, so the audit says so out loud.
+    /// </summary>
+    public const string DialogueRepeatableGrant = "dialogue_repeatable_grant";
 }

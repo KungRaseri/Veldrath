@@ -13,8 +13,8 @@
 | E1 powers and abilities | **shipped** — PR #65 |
 | E2 skill sheet, `SkillXpGained` subscriber | **shipped** — PR #66 |
 | E3 combat depth, shared fight snapshot | **shipped** — PR #67 |
-| E4 NPC dialogue | **blocked by the content schema** — see §3.4a |
-| E5 crafting on the real engine | sized in §3.5a; not started |
+| E4 NPC dialogue | **moved to [`dialogue-depth.md`](dialogue-depth.md)** — placement and talking shipped 2026-11-18; options, requirements and consequences remain |
+| E5 crafting on the real engine | **shipped** — [`CraftingOverlay.svelte`](../web/client/src/lib/game/CraftingOverlay.svelte) over the real recipe handler; `DefaultCraftingCost` is gone |
 | E6 dungeons | **moved to [`dungeons.md`](dungeons.md)** — the model decided there; E6 is its client slice (F4) |
 
 E1–E3 each turned out to need a server bridge as well as a panel: abilities shipped slugs instead of
@@ -231,6 +231,15 @@ the panel reads (a payload test, not a UI test, for the wire shape).
 
 Deferred to the content milestone that follows E. Shipping a dialogue panel against a line pool would
 produce a surface with no decisions in it — the exact failure mode this milestone exists to prevent.
+
+> **Update 2026-11-19 — two of the three prerequisites shipped, so E4 moved.** NPC placement exists as
+> its own row (`LocationNpc` + `LocationNpcsSeeder`, public/non-pool placement), and talking works:
+> `TalkToNpc` verifies the person is standing with the character, answers with an authored greeting line
+> and advances `talk:<slug>`. The stale facts above (an `ActorInstance` with no zone field, a client with
+> no NPC to click) are history. What remains is the dialogue structure itself — prose, options, a
+> requirement per option and a consequence per option — and then the panel, which is cheap. That work is
+> specified in [`dialogue-depth.md`](dialogue-depth.md), including the one-shot rule that stops a
+> gold-bearing option being farmed.
 
 **Work (when the two prerequisites land).**
 
