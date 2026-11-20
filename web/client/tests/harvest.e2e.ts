@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
 import { spendAttributePoints } from './support/creation';
+import { walkTo } from './support/map';
 import { makeAccount, register, stackEnabled, stackSkipReason } from './support/stack';
 
 /**
@@ -19,17 +20,22 @@ const heroName = () =>
 		.slice(0, 6)}`.slice(0, 20);
 
 /**
- * Opens the first chest the Local panel offers, and reports whether one was there at all.
+ * Opens the first chest the Local panel offers, and proves the opened chest left the list.
  *
  * Authored chests are world state, not per-character state: a second run against the same database finds
  * the one an earlier run emptied still inside its reopen window, so the caller walks on rather than
  * pretending the chest loop was exercised.
  *
+ * The assertion is "the list shrank", not "no chest is listed". A location can legitimately hold more than
+ * one — a reopened authored chest beside a roaming cache the sweeper placed — and an earlier version of this
+ * helper asserted the stronger, false thing, which made the spec fail on any database that had been used once.
+ *
  * @param page The game page.
  * @returns Whether a chest was opened.
  */
 async function openAnyChest(page: Page): Promise<boolean> {
-	const open = page.getByRole('button', { name: 'Open', exact: true }).first();
+	const openButtons = page.getByRole('button', { name: 'Open', exact: true });
+	const open = openButtons.first();
 
 	try {
 		await expect(open).toBeVisible({ timeout: 20_000 });
@@ -37,75 +43,11 @@ async function openAnyChest(page: Page): Promise<boolean> {
 		return false;
 	}
 
+	const before = await openButtons.count();
 	await open.click();
-	return true;
-}
 
-/**
- * Walks to a node on the current map through the UI: select it, then take the travel action.
- *
- * The panel only offers a travel action for a node that is adjacent, and none at all for the node the
- * character is already standing on — so "already there" is a no-op. A node that is visible but not adjacent
- * answers `false` so the caller can skip with a reason instead of waiting out the test timeout.
- *
- * @param page The game page.
- * @param nodeName The node label as the map draws it.
- * @returns Whether the character ends up on that node.
- */
-async function walkTo(page: Page, nodeName: string): Promise<boolean> {
-	const node = page.locator('.map-node-cell button', { hasText: nodeName }).first();
-
-	// A zone change paints a new map, so the node is awaited rather than sampled.
-	try {
-		await expect(node).toBeVisible({ timeout: 30_000 });
-	} catch {
-		return false;
-	}
-
-	const before = await page
-		.locator('.map-node-cell button')
-		.allInnerTexts()
-		.catch(() => []);
-
-	await node.click();
-
-	// The action is named after the selected node, so waiting for that exact name is what proves the
-	// selection landed — a stale panel offers the previous node's action instead.
-	const escaped = nodeName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-	const travel = page.getByRole('button', { name: new RegExp(`^Travel to ${escaped}$`) });
-
-	try {
-		await expect(travel).toBeEnabled({ timeout: 10_000 });
-	} catch {
-		// Nothing offered: either the character already stands there, or the node is not adjacent.
-		return page
-			.getByText('Current location')
-			.isVisible()
-			.catch(() => false);
-	}
-
-	await travel.click();
-
-	// Arrival, without a sleep: either the current-location chip names the destination, or the map was
-	// replaced (exit nodes leave the zone, so the whole node list changes).
-	await expect
-		.poll(
-			async () => {
-				const moved = await page
-					.locator('button[aria-current="location"]')
-					.innerText()
-					.then((text) => text.includes(nodeName))
-					.catch(() => false);
-				const after = await page
-					.locator('.map-node-cell button')
-					.allInnerTexts()
-					.catch(() => []);
-				return moved || JSON.stringify(after) !== JSON.stringify(before);
-			},
-			{ timeout: 30_000 }
-		)
-		.toBe(true);
-
+	// Pushed by the server after the claim, so it is awaited rather than sampled.
+	await expect.poll(() => openButtons.count(), { timeout: 20_000 }).toBeLessThan(before);
 	return true;
 }
 
@@ -184,9 +126,9 @@ test.describe('gathering', () => {
 			test.skip(true, 'An earlier run emptied both authored chests; start the stack with --fresh.');
 		}
 
+		// The opened chest leaving the list is asserted inside `openAnyChest`, on the shrinking count: the chat log
+		// keeps the "Opened the …" line for the rest of the session, so a name-based check here would only ever be
+		// satisfied by the log losing it.
 		await expect(sheet.getByText('Health Potion').first()).toBeVisible({ timeout: 30_000 });
-		// An opened chest leaves the list, so the panel cannot offer it twice. Asserted on the verb rather
-		// than on the chest's name, which the chat log still carries in its "Opened the …" line.
-		await expect(page.getByRole('button', { name: 'Open', exact: true })).toHaveCount(0);
 	});
 });

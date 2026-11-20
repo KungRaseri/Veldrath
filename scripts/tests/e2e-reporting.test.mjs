@@ -411,12 +411,29 @@ describe('run-e2e', () => {
 	});
 
 	test('a run whose gates are unmet refuses to produce an all-skipped report', () => {
-		const env = { ...process.env };
-		delete env.E2E_STACK;
-		delete env.E2E_GAME;
+		// The manifest supplies these as defaults, so the opt-out is an explicitly empty value rather than an
+		// absent one — which is also the only way to reach this branch on purpose.
+		const env = { ...process.env, E2E_STACK: '', E2E_GAME: '' };
 		const result = spawnSync(process.execPath, [runner, 'stack'], { cwd: repoRoot, encoding: 'utf8', env });
 		assert.equal(result.status, 2);
 		assert.match(`${result.stdout}${result.stderr}`, /refusing to produce an all-skipped report/i);
+	});
+
+	test('the manifest defaults satisfy the gates, so the documented local command starts', () => {
+		// `npm run test:e2e:stack` exports nothing itself. Before this was fixed the gate read process.env, so the
+		// documented local command refused to start and only CI (which exports both at job level) ever ran a spec.
+		const env = { ...process.env };
+		delete env.E2E_STACK;
+		delete env.E2E_GAME;
+
+		const result = spawnSync(process.execPath, [runner, 'stack', '--dry-run'], {
+			cwd: repoRoot,
+			encoding: 'utf8',
+			env
+		});
+
+		assert.equal(result.status, 0, `${result.stdout}${result.stderr}`);
+		assert.match(result.stdout, /E2E_STACK/);
 	});
 
 	test('--only restricts the run to one of its own specs', () => {

@@ -155,8 +155,13 @@ if (listOnly) {
 	process.exit(0);
 }
 
+// The gate is evaluated against the *effective* env, not process.env: the manifest supplies the defaults, so a
+// plain `npm run test:e2e:stack` has them even though nothing exported them — reading process.env made the
+// documented local command refuse to start while CI (which does export them) was the only place it worked.
+// An explicitly empty value (`E2E_STACK=`) is still the way to ask for the refusal, which is what the tooling
+// test uses to prove the message.
 if (run.requires?.length) {
-	const unmet = run.requires.filter((gate) => process.env[gate] !== '1');
+	const unmet = run.requires.filter((gate) => (env[gate] ?? '') !== '1');
 	if (unmet.length > 0) {
 		const why = unmet.map((gate) => `${gate}: ${manifest.gates?.[gate] ?? 'required'}`).join('; ');
 		console.error(`error: run "${runName}" needs ${why}`);

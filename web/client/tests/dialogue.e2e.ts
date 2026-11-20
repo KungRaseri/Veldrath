@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import { spendAttributePoints } from './support/creation';
+import { walkTo } from './support/map';
 import { makeAccount, register, stackEnabled, stackSkipReason } from './support/stack';
 
 /**
@@ -48,6 +49,10 @@ test.describe('conversations', () => {
 		await expect(page.locator('.map-node-cell button').first()).toBeVisible({ timeout: 30_000 });
 
 		// ── The square, and the elder the seed places on it ───────────────────────────────────────
+		// A character arrives at the zone's **entry node**, not at a location: the square is a hop away, and the
+		// People block only lists whoever stands where the character does. The first version of this spec skipped
+		// the walk and waited thirty seconds for an elder who was never on screen.
+		expect(await walkTo(page, 'The Crestfall Square')).toBe(true);
 		await expect(page.getByText('Wayfarer Elder')).toBeVisible({ timeout: 30_000 });
 		await page.getByRole('button', { name: 'Talk', exact: true }).first().click();
 
