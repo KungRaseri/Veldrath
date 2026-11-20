@@ -1,16 +1,16 @@
 {
-  "$comment": "Export matrix used to derive the shipped brand assets from the masters, plus the measured result. Reproduce with: assetkit derive docs/design/specs/asset-derivation-2026-11-19.json",
+  "$comment": "Reproducible record of how the shipped brand exports are derived from the master PNGs in web/client/static/images/. Run from the repository root: assetkit derive docs/design/specs/asset-derivation-2026-11-19.json \u2014 it writes into ./_derived (gitignored scratch) and exits 1 if any file misses its byte budget, decodes at the wrong size, or loses alpha. The 'measured' column is this recipe's own output; a shipped file may differ by a few percent where the producing run used a tighter quantisation. favicon.ico is not produced here: it is assembled from the 16 and 32 px frames.",
   "date": "2026-11-19",
   "generations_used": 0,
   "plan": {
-    "root": "/home/kung/creative-assets/veldrath",
-    "out_dir": "2d/derive-test",
+    "root": ".",
+    "out_dir": "_derived",
     "sources": {
-      "crest": "2d/originals/veldrath-final-crest-transparent.png",
-      "word": "2d/originals/veldrath-text-flat-true-transparent.png",
-      "lockup": "2d/originals/veldrath-final-horizontal-transparent.png",
-      "tile": "2d/originals/veldrath-final-square-v-transparent.png",
-      "vmono": "2d/originals/veldrath-v-clean-true-transparent.png"
+      "crest": "web/client/static/images/veldrath-final-crest-transparent.png",
+      "word": "web/client/static/images/veldrath-text-flat-true-transparent.png",
+      "lockup": "web/client/static/images/veldrath-final-horizontal-transparent.png",
+      "tile": "web/client/static/images/veldrath-final-square-v-transparent.png",
+      "vmono": "web/client/static/images/veldrath-v-clean-true-transparent.png"
     },
     "exports": [
       {
@@ -18,6 +18,24 @@
         "out": "crest-primary-80.webp",
         "width": 80,
         "height": 80,
+        "format": "webp",
+        "quality": 88,
+        "budget_kb": 60
+      },
+      {
+        "source": "crest",
+        "out": "crest-primary-88.webp",
+        "width": 88,
+        "height": 88,
+        "format": "webp",
+        "quality": 88,
+        "budget_kb": 60
+      },
+      {
+        "source": "crest",
+        "out": "crest-primary-96.webp",
+        "width": 96,
+        "height": 96,
         "format": "webp",
         "quality": 88,
         "budget_kb": 60
@@ -69,6 +87,15 @@
       },
       {
         "source": "lockup",
+        "out": "lockup-horizontal-128.webp",
+        "width": 384,
+        "height": 128,
+        "format": "webp",
+        "quality": 88,
+        "budget_kb": 60
+      },
+      {
+        "source": "lockup",
         "out": "lockup-horizontal-192.webp",
         "width": 576,
         "height": 192,
@@ -78,7 +105,7 @@
       },
       {
         "source": "tile",
-        "out": "apple-touch-icon.png",
+        "out": "favicon/apple-touch-icon.png",
         "width": 180,
         "height": 180,
         "format": "png-palette",
@@ -87,7 +114,16 @@
       },
       {
         "source": "tile",
-        "out": "android-chrome-512x512.webp",
+        "out": "favicon/android-chrome-192x192.png",
+        "width": 192,
+        "height": 192,
+        "format": "png-palette",
+        "colors": 128,
+        "budget_kb": 60
+      },
+      {
+        "source": "tile",
+        "out": "favicon/android-chrome-512x512.webp",
         "width": 512,
         "height": 512,
         "format": "webp",
@@ -96,7 +132,15 @@
       },
       {
         "source": "vmono",
-        "out": "favicon-32x32.png",
+        "out": "favicon/favicon-16x16.png",
+        "width": 16,
+        "height": 16,
+        "format": "png",
+        "budget_kb": 5
+      },
+      {
+        "source": "vmono",
+        "out": "favicon/favicon-32x32.png",
         "width": 32,
         "height": 32,
         "format": "png",
@@ -114,7 +158,33 @@
       "kb": 3.8,
       "budget": 60,
       "format": "webp",
-      "source": "/home/kung/creative-assets/veldrath/2d/originals/veldrath-final-crest-transparent.png",
+      "source": "web/client/static/images/veldrath-final-crest-transparent.png",
+      "pass": true,
+      "problems": []
+    },
+    {
+      "out": "crest-primary-88.webp",
+      "size": [
+        88,
+        88
+      ],
+      "kb": 4.4,
+      "budget": 60,
+      "format": "webp",
+      "source": "web/client/static/images/veldrath-final-crest-transparent.png",
+      "pass": true,
+      "problems": []
+    },
+    {
+      "out": "crest-primary-96.webp",
+      "size": [
+        96,
+        96
+      ],
+      "kb": 4.9,
+      "budget": 60,
+      "format": "webp",
+      "source": "web/client/static/images/veldrath-final-crest-transparent.png",
       "pass": true,
       "problems": []
     },
@@ -127,7 +197,7 @@
       "kb": 9.3,
       "budget": 60,
       "format": "webp",
-      "source": "/home/kung/creative-assets/veldrath/2d/originals/veldrath-final-crest-transparent.png",
+      "source": "web/client/static/images/veldrath-final-crest-transparent.png",
       "pass": true,
       "problems": []
     },
@@ -140,7 +210,7 @@
       "kb": 17.6,
       "budget": 60,
       "format": "webp",
-      "source": "/home/kung/creative-assets/veldrath/2d/originals/veldrath-final-crest-transparent.png",
+      "source": "web/client/static/images/veldrath-final-crest-transparent.png",
       "pass": true,
       "problems": []
     },
@@ -153,7 +223,7 @@
       "kb": 166.5,
       "budget": 180,
       "format": "webp",
-      "source": "/home/kung/creative-assets/veldrath/2d/originals/veldrath-final-crest-transparent.png",
+      "source": "web/client/static/images/veldrath-final-crest-transparent.png",
       "pass": true,
       "problems": []
     },
@@ -166,7 +236,7 @@
       "kb": 13.1,
       "budget": 40,
       "format": "webp",
-      "source": "/home/kung/creative-assets/veldrath/2d/originals/veldrath-text-flat-true-transparent.png",
+      "source": "web/client/static/images/veldrath-text-flat-true-transparent.png",
       "pass": true,
       "problems": []
     },
@@ -179,7 +249,20 @@
       "kb": 23.8,
       "budget": 40,
       "format": "webp",
-      "source": "/home/kung/creative-assets/veldrath/2d/originals/veldrath-text-flat-true-transparent.png",
+      "source": "web/client/static/images/veldrath-text-flat-true-transparent.png",
+      "pass": true,
+      "problems": []
+    },
+    {
+      "out": "lockup-horizontal-128.webp",
+      "size": [
+        384,
+        128
+      ],
+      "kb": 22.4,
+      "budget": 60,
+      "format": "webp",
+      "source": "web/client/static/images/veldrath-final-horizontal-transparent.png",
       "pass": true,
       "problems": []
     },
@@ -192,12 +275,12 @@
       "kb": 42.8,
       "budget": 60,
       "format": "webp",
-      "source": "/home/kung/creative-assets/veldrath/2d/originals/veldrath-final-horizontal-transparent.png",
+      "source": "web/client/static/images/veldrath-final-horizontal-transparent.png",
       "pass": true,
       "problems": []
     },
     {
-      "out": "apple-touch-icon.png",
+      "out": "favicon/apple-touch-icon.png",
       "size": [
         180,
         180
@@ -205,12 +288,25 @@
       "kb": 32.9,
       "budget": 60,
       "format": "png-palette",
-      "source": "/home/kung/creative-assets/veldrath/2d/originals/veldrath-final-square-v-transparent.png",
+      "source": "web/client/static/images/veldrath-final-square-v-transparent.png",
       "pass": true,
       "problems": []
     },
     {
-      "out": "android-chrome-512x512.webp",
+      "out": "favicon/android-chrome-192x192.png",
+      "size": [
+        192,
+        192
+      ],
+      "kb": 37.6,
+      "budget": 60,
+      "format": "png-palette",
+      "source": "web/client/static/images/veldrath-final-square-v-transparent.png",
+      "pass": true,
+      "problems": []
+    },
+    {
+      "out": "favicon/android-chrome-512x512.webp",
       "size": [
         512,
         512
@@ -218,12 +314,25 @@
       "kb": 53.7,
       "budget": 60,
       "format": "webp",
-      "source": "/home/kung/creative-assets/veldrath/2d/originals/veldrath-final-square-v-transparent.png",
+      "source": "web/client/static/images/veldrath-final-square-v-transparent.png",
       "pass": true,
       "problems": []
     },
     {
-      "out": "favicon-32x32.png",
+      "out": "favicon/favicon-16x16.png",
+      "size": [
+        16,
+        16
+      ],
+      "kb": 0.7,
+      "budget": 5,
+      "format": "png",
+      "source": "web/client/static/images/veldrath-v-clean-true-transparent.png",
+      "pass": true,
+      "problems": []
+    },
+    {
+      "out": "favicon/favicon-32x32.png",
       "size": [
         32,
         32
@@ -231,11 +340,11 @@
       "kb": 2.1,
       "budget": 5,
       "format": "png",
-      "source": "/home/kung/creative-assets/veldrath/2d/originals/veldrath-v-clean-true-transparent.png",
+      "source": "web/client/static/images/veldrath-v-clean-true-transparent.png",
       "pass": true,
       "problems": []
     }
   ],
-  "total_kb": 365.6,
+  "total_kb": 435.6,
   "failures": 0
 }
