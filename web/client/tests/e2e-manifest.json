@@ -1,0 +1,83 @@
+{
+	"$comment": [
+		"The single source of truth for which Playwright spec runs where.",
+		"Read by web/client/tests/run-e2e.mjs (the runner), scripts/check-e2e-manifest.mjs",
+		"(the integrity gate) and the e2e jobs in .github/workflows/ci-web.yml.",
+		"Adding a spec file requires adding it to exactly one run here; a spec on disk that no",
+		"run claims fails the gate, and so does a spec named here that no longer exists.",
+		"A run's `env` holds the defaults for a local isolated stack; a variable already set in the",
+		"environment wins, which is how CI runs the same specs against its own ports.",
+		"See plans/e2e-reporting.md."
+	],
+	"specRoot": "tests",
+	"gates": {
+		"E2E_STACK": "needs the isolated compose stack (scripts/e2e-stack.sh start --fresh)",
+		"E2E_GAME": "needs a running Veldrath.Server reachable at E2E_API_URL"
+	},
+	"runs": {
+		"stack-free": {
+			"why": "Pages and guards that need neither the API nor the database, so they run in the build job before any server exists.",
+			"requires": [],
+			"specs": [
+				"tests/account-character.e2e.ts",
+				"tests/game-auth.e2e.ts",
+				"tests/home.e2e.ts",
+				"tests/public-site.e2e.ts",
+				"tests/staff-guards.e2e.ts"
+			]
+		},
+		"stack": {
+			"why": "Journeys that drive a real server and a real Postgres: registration, the game loop, Foundry, staff surfaces, combat and layout.",
+			"requires": ["E2E_STACK", "E2E_GAME"],
+			"env": {
+				"E2E_STACK": "1",
+				"E2E_GAME": "1",
+				"E2E_WEB_PORT": "4273",
+				"E2E_API_PORT": "9100",
+				"E2E_DB_PORT": "55432"
+			},
+			"specs": [
+				"tests/admin-console.e2e.ts",
+				"tests/editorial-publishing.e2e.ts",
+				"tests/encounters.e2e.ts",
+				"tests/foundry-content.e2e.ts",
+				"tests/foundry-maps.e2e.ts",
+				"tests/foundry-submissions.e2e.ts",
+				"tests/game-journeys.e2e.ts",
+				"tests/game-loop.e2e.ts",
+				"tests/harvest.e2e.ts",
+				"tests/layout.e2e.ts",
+				"tests/public-details.e2e.ts",
+				"tests/review-diff.e2e.ts",
+				"tests/session-states.e2e.ts",
+				"tests/staff-actions.e2e.ts",
+				"tests/staff-areas.e2e.ts"
+			]
+		},
+		"outage": {
+			"why": "The spec stops the API to prove the pages say so, which takes the API away from anything sharing its run. One worker, on its own.",
+			"requires": ["E2E_STACK"],
+			"env": {
+				"E2E_STACK": "1",
+				"E2E_WEB_PORT": "4273",
+				"E2E_API_PORT": "9100",
+				"E2E_DB_PORT": "55432"
+			},
+			"workers": 1,
+			"runsAlone": true,
+			"specs": ["tests/upstream-failure.e2e.ts"]
+		}
+	},
+	"allowedSkips": [
+		{
+			"spec": "tests/harvest.e2e.ts",
+			"contains": "An earlier run emptied both authored chests",
+			"reason": "A stack that was not started with --fresh has already opened the two authored chests; the reopen window is minutes, not seconds, so the chest step cannot run again. The rest of the spec still runs."
+		},
+		{
+			"spec": "tests/upstream-failure.e2e.ts",
+			"contains": "needs an API started by",
+			"reason": "The spec stops and restarts the API through scripts/e2e-stack.sh, which leaves a pid file this spec looks for. CI starts `dotnet run` itself against a service container, so there is no API for it to stop and it skips by design — the local stack run is where it executes."
+		}
+	]
+}

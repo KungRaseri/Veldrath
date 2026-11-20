@@ -27,6 +27,7 @@ SCRIPT="${TEST_DIR}/../forgejo-pr-comment.sh"
 PR=42
 REPO='Veldrath/Veldrath'
 SHARED_MARKER='<!-- ci-coverage -->'
+E2E_MARKER='<!-- ci-e2e -->'
 LEGACY_MARKER='<!-- ci-marker-demo -->'
 
 WORK="$(mktemp -d)"
@@ -72,11 +73,12 @@ case "${url}" in
     *) printf 'stub: request outside the stub host: %s\n' "${url}" >&2; printf '000'; exit 22 ;;
 esac
 
-# live ID -> one comment carrying the marker and the summary line the read-back greps
-# for. Written after a successful write, served by every later GET.
+# live ID -> one comment carrying the marker, the heading and the summary line the read-back
+# greps for. Written after a successful write, served by every later GET. The heading is a
+# variable because it is now an option: the e2e comment says "## E2E summary".
 live() {
-    printf '[{"id":%s,"body":"%s\\n## Coverage summary\\n\\n%s","user":{"id":1,"login":"ci"}}]\n' \
-        "$1" "${STUB_MARKER}" "${STUB_TOKEN}" > "${STUB_DIR}/live.json"
+    printf '[{"id":%s,"body":"%s\\n%s\\n\\n%s","user":{"id":1,"login":"ci"}}]\n' \
+        "$1" "${STUB_MARKER}" "${STUB_HEADING:-## Coverage summary}" "${STUB_TOKEN}" > "${STUB_DIR}/live.json"
 }
 
 case "${method}" in
@@ -183,8 +185,25 @@ cat > "${WORK}/web.md" <<'BODY'
 Web lines 8123
 BODY
 
-# The read-back check greps for the first non-blank line after "## Coverage summary".
+# The e2e comment: its own marker, its own heading, and a section merge of its own. The
+# fixture also carries the coverage comment and a legacy per-job coverage comment, because
+# the case has to prove that writing the e2e comment touches neither of them.
+cat > "${FIX}/e2e-comment.json" <<'JSON'
+[{"id":101,"body":"a review comment","user":{"id":5,"login":"rev"}},{"id":746,"body":"<!-- ci-coverage -->\n## Coverage summary\n\n<!-- coverage-section:dotnet -->\n\n### .NET (all test projects)\n\nTotal lines 31995\n\n<!-- /coverage-section:dotnet -->","user":{"id":5,"login":"ci"}},{"id":800,"body":"<!-- ci-e2e -->\n## E2E summary\n\n<!-- coverage-section:e2e-stack -->\n\n### E2E (isolated stack)\n\n12 specs\n\n<!-- /coverage-section:e2e-stack -->","user":{"id":5,"login":"ci"}},{"id":901,"body":"stale per-job coverage comment\n<!-- ci-coverage-web -->","user":{"id":5,"login":"ci"}}]
+JSON
+
+cat > "${WORK}/e2e.md" <<'BODY'
+# E2E summary
+## E2E summary
+
+Total tests 3
+BODY
+
+E2E_TOKEN='Total tests 3'
+
+# The read-back check greps for the first non-blank line after the comment's heading.
 DOTNET_TOKEN='Total lines 32003'
+STUB_HEADING='## Coverage summary'
 
 # ---------------------------------------------------------------------------
 # Runners and assertions.
@@ -220,6 +239,7 @@ run_script() {
     FORGEJO_TOKEN='offline-test-token' \
     STUB_DIR="${STUB}" \
     STUB_MARKER="${STUB_MARKER}" \
+    STUB_HEADING="${STUB_HEADING}" \
     STUB_TOKEN="${STUB_TOKEN}" \
         bash "${SCRIPT}" --pr "${PR}" "$@" > "${WORK}/run.out" 2>&1
     RUN_RC=$?
@@ -345,7 +365,7 @@ assert_methods 'A' PATCH 1
 assert_methods 'A' POST 0
 assert_methods 'A' DELETE 0
 assert_url 'A' PATCH 'http://stub.invalid/api/v1/repos/Veldrath/Veldrath/issues/comments/746'
-assert_line 'A: one-line update message' 'Updating the shared coverage comment 746 (section: dotnet) ...'
+assert_line 'A: one-line update message' 'Updating the shared comment 746 (section: dotnet) ...'
 assert_contains 'A: read-back accepted' 'Comment posted.'
 assert_scalar_urls 'A'
 assert_payload_occurrences 'A: shared marker once' PATCH '<!-- ci-coverage -->' 1
@@ -367,7 +387,7 @@ assert_rc 0 'B: exit'
 assert_methods 'B' PATCH 1
 assert_methods 'B' POST 0
 assert_url 'B' PATCH 'http://stub.invalid/api/v1/repos/Veldrath/Veldrath/issues/comments/746'
-assert_line 'B: one-line update message' 'Updating the shared coverage comment 746 (section: dotnet) ...'
+assert_line 'B: one-line update message' 'Updating the shared comment 746 (section: dotnet) ...'
 assert_scalar_urls 'B'
 assert_payload_occurrences 'B: dotnet section opened once' PATCH '<!-- coverage-section:dotnet -->' 1
 assert_payload_occurrences 'B: web body kept once' PATCH 'Web lines 31000' 1
@@ -382,7 +402,7 @@ assert_rc 0 'C: exit'
 assert_methods 'C' PATCH 0
 assert_methods 'C' POST 1
 assert_url 'C' POST 'http://stub.invalid/api/v1/repos/Veldrath/Veldrath/issues/42/comments'
-assert_line 'C: create message' 'Creating the shared coverage comment on pull request 42 (section: dotnet) ...'
+assert_line 'C: create message' 'Creating the shared comment on pull request 42 (section: dotnet) ...'
 assert_scalar_urls 'C'
 assert_payload_occurrences 'C: new numbers written once' POST 'Total lines 32003' 1
 assert_payload_occurrences 'C: dotnet section opened once' POST '<!-- coverage-section:dotnet -->' 1
@@ -461,6 +481,36 @@ assert_methods 'H' PATCH 0
 assert_methods 'H' POST 0
 assert_methods 'H' DELETE 0
 assert_contains 'H: names the malformed id' 'malformed id: 746x'
+
+# ---------------------------------------------------------------------------
+# Case I — the e2e comment: its own marker and heading, merged as a section of its own
+# document. Writing it must not patch the coverage comment, must not delete the legacy
+# per-job coverage comment (that cleanup is coverage-only), and must keep the sibling
+# e2e-stack section that another job wrote.
+# ---------------------------------------------------------------------------
+STUB_HEADING='## E2E summary'
+run_script "${E2E_MARKER}" "${E2E_TOKEN}" "${FIX}/e2e-comment.json" \
+    --marker "${E2E_MARKER}" --heading '## E2E summary' \
+    --section e2e --title 'E2E (Playwright)' --body-file "${WORK}/e2e.md"
+
+assert_rc 0 'I: exit'
+assert_methods 'I' PATCH 1
+assert_methods 'I' POST 0
+assert_methods 'I' DELETE 0
+assert_url 'I' PATCH 'http://stub.invalid/api/v1/repos/Veldrath/Veldrath/issues/comments/800'
+assert_line 'I: one-line update message' 'Updating the shared comment 800 (section: e2e) ...'
+assert_contains 'I: read-back accepted' 'Comment posted.'
+assert_scalar_urls 'I'
+assert_payload_occurrences 'I: e2e marker once' PATCH "${E2E_MARKER}" 1
+assert_payload_occurrences 'I: e2e heading once' PATCH '## E2E summary' 1
+assert_payload_occurrences 'I: coverage marker never' PATCH "${SHARED_MARKER}" 0
+assert_payload_occurrences 'I: new section written once' PATCH '<!-- coverage-section:e2e -->' 1
+assert_payload_occurrences 'I: new section title once' PATCH '### E2E (Playwright)' 1
+assert_payload_occurrences 'I: new body written once' PATCH 'Total tests 3' 1
+assert_payload_occurrences 'I: sibling section kept' PATCH '<!-- coverage-section:e2e-stack -->' 1
+assert_payload_occurrences 'I: sibling body kept' PATCH '12 specs' 1
+assert_payload_occurrences 'I: coverage body never merged in' PATCH 'Total lines 31995' 0
+STUB_HEADING='## Coverage summary'
 
 printf '\n%d checks, %d failed\n' "${checks}" "${failures}"
 [ "${failures}" -eq 0 ]

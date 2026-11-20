@@ -1,0 +1,14 @@
+{
+	"$comment": [
+		"Floors for the e2e ratchet, read by scripts/check-e2e-manifest.mjs.",
+		"One entry per manifest run: the number of tests that run must not fall below `tests`.",
+		"Raising a floor is deliberate; lowering one is a decision somebody has to justify in review.",
+		"An empty `runs` object is intentional for now: no run has been measured on the CI stack",
+		"yet. Run scripts/check-e2e-manifest.mjs --run <name> --results <json> --suggest after the",
+		"first green CI run and commit the counts it prints. Until then the integrity checks still",
+		"apply and a missing floor is a note, not a failure — inventing a number here would make the",
+		"gate lie from its first day.",
+		"See plans/e2e-reporting.md."
+	],
+	"runs": {}
+}

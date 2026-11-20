@@ -6,11 +6,19 @@
 #
 # Two modes:
 #   --marker '<html comment>'            one comment per marker, replaced in place.
-#   --section <name> --title <heading>   one shared coverage comment holding several
-#                                        named sections (".NET", "Web", ...). Each job
+#   --marker '<html comment>' --section <name> --title <heading>
+#                                        one comment per marker holding several named
+#                                        sections (".NET", "Web", "E2E", ...). Each job
 #                                        replaces only its own section, so concurrent
-#                                        workflows never clobber each other's numbers;
-#                                        old per-job coverage comments are deleted.
+#                                        workflows never clobber each other's numbers.
+#                                        --marker defaults to the coverage comment, and the
+#                                        legacy one-comment-per-job coverage comments are
+#                                        deleted for that marker only.
+#
+# Options:
+#   --heading <markdown>   heading printed above the sections. Default '## Coverage
+#                          summary'; the e2e reporter passes '## E2E summary' and its own
+#                          marker, so coverage and test results stay separate documents.
 #
 # Required environment:
 #   FORGEJO_TOKEN       In CI this is the per-job token (secrets.GITEA_TOKEN).
@@ -19,9 +27,11 @@
 # Usage:
 #   scripts/forgejo-pr-comment.sh --pr 42 --section dotnet --title '.NET (all test projects)' \
 #       --body-file CoverageReport/SummaryGithub.md
+#   scripts/forgejo-pr-comment.sh --pr 42 --marker '<!-- ci-e2e -->' --heading '## E2E summary' \
+#       --section e2e --title 'E2E (Playwright)' --body-file E2EReport/Summary.md
 #
 # Exits 0 without doing anything when there is no PR number or no body file, so a
-# missing coverage report never fails a build over a comment.
+# missing report never fails a build over a comment.
 #
 set -euo pipefail
 
@@ -43,9 +53,12 @@ BODY_FILE=""
 MARKER=""
 SECTION=""
 TITLE=""
+HEADING=""
 
+# Print the header comment above `set -euo pipefail` as the help text. Derived from the file
+# rather than a line range: the range silently stopped matching every time the header grew.
 usage() {
-    sed -n '3,26p' "$0" | sed 's/^# \{0,1\}//'
+    awk 'NR == 1 { next } /^set -euo pipefail$/ { exit } { sub(/^# ?/, ""); print }' "$0"
     exit "${1:-1}"
 }
 
@@ -56,14 +69,19 @@ while [ $# -gt 0 ]; do
         --marker)    [ $# -ge 2 ] || { echo "error: --marker needs a value" >&2; exit 2; }; MARKER="$2"; shift 2 ;;
         --section)   [ $# -ge 2 ] || { echo "error: --section needs a value" >&2; exit 2; }; SECTION="$2"; shift 2 ;;
         --title)     [ $# -ge 2 ] || { echo "error: --title needs a value" >&2; exit 2; }; TITLE="$2"; shift 2 ;;
+        --heading)   [ $# -ge 2 ] || { echo "error: --heading needs a value" >&2; exit 2; }; HEADING="$2"; shift 2 ;;
         --help|-h)   usage 0 ;;
         *)           echo "error: unknown argument: $1" >&2; usage 2 ;;
     esac
 done
 
+HEADING="${HEADING:-## Coverage summary}"
+
 if [ -n "${SECTION}" ]; then
     [ -n "${TITLE}" ] || { echo "error: --section needs --title" >&2; exit 2; }
-    MARKER="${SHARED_MARKER}"
+    # Default keeps every existing coverage caller byte-identical; the e2e reporter passes its
+    # own marker so its sections live in their own comment.
+    MARKER="${MARKER:-${SHARED_MARKER}}"
 else
     [ -n "${MARKER}" ] || { echo "error: --marker (or --section) is required" >&2; exit 2; }
 fi
@@ -135,10 +153,12 @@ ids_of_comments_containing() {
     ' "$1"
 }
 
-# The line that proves our section landed, used for the read-back check.
-TOKEN="$(awk 'BEGIN{seen=0} /^## Coverage summary$/{seen=1; next} seen && /^[[:space:]]*$/{next} seen{print; exit}' "${BODY_FILE}")"
+# The line that proves our section landed, used for the read-back check. It is the first
+# non-blank line after the comment's heading, and the heading is now an option: the e2e comment
+# says "## E2E summary", so a hard-coded "## Coverage summary" would silently disable the check.
+TOKEN="$(awk -v heading="${HEADING}" 'BEGIN{seen=0} $0 == heading {seen=1; next} seen && /^[[:space:]]*$/{next} seen{print; exit}' "${BODY_FILE}")"
 
-if [ "${MARKER}" = "${SHARED_MARKER}" ]; then
+if [ -n "${SECTION}" ]; then
     COMMENT_ID=""
     for attempt in 1 2 3 4; do
         fetch_comments "${WORK}/comments.txt"
@@ -146,15 +166,18 @@ if [ "${MARKER}" = "${SHARED_MARKER}" ]; then
         COMMENT_ID="$(find_comment "${WORK}/comments.txt" "${WORK}/existing.md")"
         validate_comment_id "${COMMENT_ID}" || exit 1
 
-        # Drop the old one-comment-per-job coverage comments (and duplicate copies of
-        # the shared comment) so the PR ends up with a single coverage comment.
+        # Drop the old one-comment-per-job coverage comments (and duplicate copies of the
+        # comment we are about to write) so the PR ends up with one comment per marker. The
+        # legacy markers belong to the coverage comment, so they are only cleaned up there.
         LEGACY_IDS=""
-        for legacy in "${LEGACY_MARKERS[@]}"; do
-            ids="$(ids_of_comments_containing "${WORK}/comments.txt" "${legacy}")"
-            [ -n "${ids}" ] && LEGACY_IDS="${LEGACY_IDS}${ids}"$'\n'
-        done
+        if [ "${MARKER}" = "${SHARED_MARKER}" ]; then
+            for legacy in "${LEGACY_MARKERS[@]}"; do
+                ids="$(ids_of_comments_containing "${WORK}/comments.txt" "${legacy}")"
+                [ -n "${ids}" ] && LEGACY_IDS="${LEGACY_IDS}${ids}"$'\n'
+            done
+        fi
         if [ -n "${COMMENT_ID}" ]; then
-            duplicates="$(ids_of_comments_containing "${WORK}/comments.txt" "${SHARED_MARKER}" | grep -v -x "${COMMENT_ID}" || true)"
+            duplicates="$(ids_of_comments_containing "${WORK}/comments.txt" "${MARKER}" | grep -v -x "${COMMENT_ID}" || true)"
             [ -n "${duplicates}" ] && LEGACY_IDS="${LEGACY_IDS}${duplicates}"$'\n'
         fi
 
@@ -162,7 +185,7 @@ if [ "${MARKER}" = "${SHARED_MARKER}" ]; then
             LEGACY_IDS="$(printf '%s' "${LEGACY_IDS}" | sort -u)"
             while IFS= read -r stale; do
                 [ -n "${stale}" ] || continue
-                echo "Removing superseded coverage comment ${stale} ..."
+                echo "Removing superseded comment ${stale} ..."
                 CODE="$(forgejo_send DELETE "/repos/${FORGEJO_REPOSITORY}/issues/comments/${stale}" "" "${RESPONSE_FILE}")"
                 case "${CODE}" in
                     200|204) ;;
@@ -177,12 +200,13 @@ if [ "${MARKER}" = "${SHARED_MARKER}" ]; then
             cp "${WORK}/existing.md" "${WORK}/existing-body.md"
         fi
         awk -v section="${SECTION}" -v title="${TITLE}" -v bodyfile="${BODY_FILE}" \
+            -v marker="${MARKER}" -v heading="${HEADING}" \
             -f "${SCRIPT_DIR}/lib/merge-coverage-sections.awk" \
             "${WORK}/existing-body.md" > "${BODY_NEW}"
 
         BODY_JSON="$(json_escape < "${BODY_NEW}")"
         if [ -n "${COMMENT_ID}" ]; then
-            echo "Updating the shared coverage comment ${COMMENT_ID} (section: ${SECTION}) ..."
+            echo "Updating the shared comment ${COMMENT_ID} (section: ${SECTION}) ..."
             CODE="$(forgejo_send PATCH "/repos/${FORGEJO_REPOSITORY}/issues/comments/${COMMENT_ID}" \
                 "{\"body\":\"${BODY_JSON}\"}" "${RESPONSE_FILE}")"
             [ "${CODE}" = "200" ] || [ "${CODE}" = "201" ] || {
@@ -191,7 +215,7 @@ if [ "${MARKER}" = "${SHARED_MARKER}" ]; then
                 exit 1
             }
         else
-            echo "Creating the shared coverage comment on pull request ${PR_NUMBER} (section: ${SECTION}) ..."
+            echo "Creating the shared comment on pull request ${PR_NUMBER} (section: ${SECTION}) ..."
             CODE="$(forgejo_send POST "/repos/${FORGEJO_REPOSITORY}/issues/${PR_NUMBER}/comments" \
                 "{\"body\":\"${BODY_JSON}\"}" "${RESPONSE_FILE}")"
             [ "${CODE}" = "201" ] || [ "${CODE}" = "200" ] || {

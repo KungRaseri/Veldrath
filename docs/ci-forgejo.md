@@ -128,7 +128,32 @@ review comment, must still yield a single `746`, not `746` twice. That was a rea
 `scripts/tests/forgejo-pr-comment.test.sh`, which runs the real script against a fake `curl` on
 PATH (no token, no network, no pull request) and asserts the method, URL and payload of every
 request for the shared path, the legacy `--marker` path, the match-at-end-of-list case, the
-no-match create case and the duplicate-comment cleanup.
+no-match create case, the duplicate-comment cleanup and the e2e comment's own marker.
+
+### E2E reports
+
+Playwright gets its own sticky comment (`<!-- ci-e2e -->`), deliberately **not** a section of the
+coverage comment: a table of test counts under `## Coverage summary` is the wrong document, and
+one broken report must not take the other down with it. The same
+`scripts/forgejo-pr-comment.sh` writes both — `--marker` may now be combined with
+`--section`/`--title`, and `--heading` replaces the hard-coded coverage heading, so the e2e
+comment reads `## E2E summary`.
+
+| Piece | Where | Fact |
+|---|---|---|
+| Spec sets | `web/client/tests/e2e-manifest.json` | The single list of which spec runs in which run. The list used to be copied by hand into `web/client/package.json` **and** this workflow, and the copy had dropped `tests/encounters.e2e.ts`, so the combat and death journey never ran in CI. |
+| Runner | `web/client/tests/run-e2e.mjs` | Expands a run name into the Playwright invocation and points the reporters at per-run files, because one job runs Playwright twice. `--list` and `--dry-run` work without `npm ci`. |
+| Reporters | `web/client/playwright.config.ts` | `list`, `html` (never opens), `json` and `junit`, written to the `PW_*` paths the runner sets. Without them there is nothing to summarise — and the `playwright-report/` artifact both web jobs uploaded was empty for exactly that reason. |
+| Summary | `scripts/e2e-summary.mjs` | `E2EReport/Summary.md`: totals, a per-spec table slowest-first, each failure with its error headline and trace path, and each skip with its reason. |
+| Integrity gate | `scripts/check-e2e-manifest.mjs` | Fails when a manifest spec produced no result, when an unexpected spec ran, or when a skip has no allow-listed reason. It never fails on a red test — pass/fail is the job's own exit code. |
+
+The gate is what replaces "the spec list lives somewhere in the workflow". Flaky tests are counted
+and named but never gate a build: `retries: 1` already hides one flake, and a flaky budget would go
+red on its first day. Per-run floors live in `web/client/tests/e2e-baseline.json`, where an empty
+`runs` object means "not measured yet" — `--suggest` prints the number to commit after a green run.
+Both are covered by `scripts/tests/e2e-reporting.test.mjs` (`node --test scripts/tests/e2e-reporting.test.mjs`),
+which runs the real scripts against fixtures, including the negative control for a spec that no run
+claims.
 
 ### What runs where
 
@@ -712,6 +737,10 @@ All four of these have actually happened in this repository.
 | Release created but no asset | The zip glob did not match; check the `Upload artifacts` step output. |
 | Publish job skipped on a dispatch | The dispatch left `publish` at `false`, which is the default: a dispatch is build-only by design. Re-dispatch with `publish: true` if you meant to publish. |
 | PR comment duplicated | A different `--marker` was used; markers must be stable per component. |
+| No `E2E summary` comment on a pull request | The summary was never rendered — `E2EReport/Summary.md` is missing, and the comment step exits 0 by design rather than failing a red job over a comment. Check the `Render the E2E summary` step. |
+| The e2e gate fails with `produced no result` for a spec that passes locally | The spec is not part of the run that job executes. Add it (once) to `web/client/tests/e2e-manifest.json`; a new spec file that no run claims fails the static check in the same step. |
+| `playwright-report/` is empty although the job ran Playwright | A bare `npx playwright test` bypassed `tests/run-e2e.mjs`, so no `PW_*` output path was set, or the reporters block was removed from `playwright.config.ts`. |
+| A skip makes the e2e gate fail | Intentional skips need an entry in the manifest's `allowedSkips` with a reason; the failure message quotes the skip text so it can be matched exactly. |
 | Last step of the coverage job fails with `curl: (3) bad/illegal URL`, and the log shows the id twice — `Updating the shared coverage comment 746` then `746 (section: dotnet)` | `find_comment` printed the id twice when another comment followed the match, so `COMMENT_ID` held `746\n746` and the PATCH URL carried a newline. Fixed by the `found` guard in `scripts/forgejo-pr-comment.sh`; pinned by `scripts/tests/forgejo-pr-comment.test.sh`. |
 
 ### Reading a job log
