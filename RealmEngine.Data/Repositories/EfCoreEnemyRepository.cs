@@ -62,16 +62,48 @@ public class EfCoreEnemyRepository(
     /// Projects one archetype row onto the template a spawn is copied from.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// A stat the archetype authors is always assigned; a stat it does not author keeps the model's own documented
-    /// default instead of a second hardcoded copy of it here. Gold is the one authored value that is not already a
-    /// single number — the row authors a range and a spawn needs one reward — so it is rolled once, per template,
-    /// from the repository's random source. The roll is not repeated later: <c>EfCoreEnemyInstanceStore</c> stores
-    /// the spawned enemy's gold on the instance row, and every later read takes it from there.
+    /// default instead of a second hardcoded copy of it here.
+    /// </para>
+    /// <para>
+    /// The four authored attributes are projected onto the typed properties —
+    /// <see cref="Enemy.Strength"/>, <see cref="Enemy.Dexterity"/> (from
+    /// <see cref="RealmEngine.Data.Entities.ArchetypeStats.Agility"/>, the same attribute under the archetype's
+    /// name), <see cref="Enemy.Intelligence"/> and <see cref="Enemy.Constitution"/> — because those are the members
+    /// combat and the AI read. <see cref="Enemy.Attributes"/> is then filled <em>from</em> those typed values, never
+    /// the other way round: the dictionary is a compatibility mirror of the attribute surface for consumers that read
+    /// it by key, and a mirror cannot disagree with what combat reads.
+    /// </para>
+    /// <para>
+    /// <see cref="Enemy.Wisdom"/> and <see cref="Enemy.Charisma"/> are unauthored. No archetype authors them, no
+    /// consumer needs them and no band publishes them, so they keep the model default.
+    /// </para>
+    /// <para>
+    /// Four authored stats are deliberately reserved and never projected:
+    /// <see cref="RealmEngine.Data.Entities.ArchetypeStats.ArmorClass"/> and
+    /// <see cref="RealmEngine.Data.Entities.ArchetypeStats.AttackBonus"/> (the template has no such member — physical
+    /// mitigation is already Constitution, and neither combat path rolls an attack for a bonus to modify), and
+    /// <see cref="RealmEngine.Data.Entities.ArchetypeStats.TradeSkill"/> /
+    /// <see cref="RealmEngine.Data.Entities.ArchetypeStats.TradeGold"/> (shopkeeper fields with no consumer on this
+    /// path). <c>ArchetypeStatsProjectionClassificationTests</c> pins that split: a new stat that is neither
+    /// projected nor reserved fails the build.
+    /// </para>
+    /// <para>
+    /// Gold is the one authored value that is not already a single number — the row authors a range and a spawn needs
+    /// one reward — so it is rolled once, per template, from the repository's random source. The roll is not repeated
+    /// later: <c>EfCoreEnemyInstanceStore</c> stores the spawned enemy's gold on the instance row, and every later read
+    /// takes it from there.
+    /// </para>
     /// </remarks>
     /// <param name="e">The archetype row.</param>
     /// <returns>The spawned-out enemy template.</returns>
     private Enemy MapToModel(Entities.ActorArchetype e)
     {
+        // The Enemy model owns its attribute defaults; reading them from a fresh template keeps this projection from
+        // carrying a second copy of the number that could drift away from the model.
+        var defaults = new Enemy();
+
         var enemy = new Enemy
         {
             Id = e.Slug,
@@ -90,14 +122,19 @@ public class EfCoreEnemyRepository(
             {
                 ["hostile"] = new TraitValue(e.Traits.Hostile ?? true, TraitType.Boolean),
             },
-            Attributes =
-            {
-                ["strength"]     = e.Stats.Strength     ?? 10,
-                ["dexterity"]    = e.Stats.Agility       ?? 10,
-                ["intelligence"] = e.Stats.Intelligence  ?? 10,
-                ["constitution"] = e.Stats.Constitution  ?? 10,
-            },
+            Strength = e.Stats.Strength ?? defaults.Strength,
+            Dexterity = e.Stats.Agility ?? defaults.Dexterity,
+            Intelligence = e.Stats.Intelligence ?? defaults.Intelligence,
+            Constitution = e.Stats.Constitution ?? defaults.Constitution,
         };
+
+        // `Attributes` mirrors the typed properties assigned above rather than re-reading the row: one source, so the
+        // dictionary cannot disagree with the value combat actually reads. The lowercase keys are the existing
+        // consumer-facing contract and do not change.
+        enemy.Attributes["strength"] = enemy.Strength;
+        enemy.Attributes["dexterity"] = enemy.Dexterity;
+        enemy.Attributes["intelligence"] = enemy.Intelligence;
+        enemy.Attributes["constitution"] = enemy.Constitution;
 
         // One authored health value, and a spawn arrives at full health — so it drives both current and maximum.
         if (e.Stats.Health is { } health)

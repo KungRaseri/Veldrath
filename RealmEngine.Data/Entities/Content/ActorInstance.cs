@@ -48,8 +48,16 @@ public class InstanceStatOverrides
     /// <summary>Constitution override.</summary>
     public int? Constitution { get; set; }
     /// <summary>Armor class override.</summary>
+    /// <remarks>
+    /// Reserved, like <see cref="ArchetypeStats.ArmorClass"/>: no projection reads it, because the spawned template has
+    /// no armor-class member to carry it and mitigation there is Constitution.
+    /// </remarks>
     public int? ArmorClass { get; set; }
     /// <summary>Attack bonus override.</summary>
+    /// <remarks>
+    /// Reserved, like <see cref="ArchetypeStats.AttackBonus"/>: no projection reads it, because no combat path rolls
+    /// an attack for a bonus to modify.
+    /// </remarks>
     public int? AttackBonus { get; set; }
     /// <summary>Damage override.</summary>
     public int? Damage { get; set; }

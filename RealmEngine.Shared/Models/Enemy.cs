@@ -47,6 +47,12 @@ public class Enemy : ITraitable
     /// Gets or sets the base attribute bonuses from JSON catalog.
     /// Maps to attributes field in JSON (strength, dexterity, constitution, intelligence, wisdom, charisma).
     /// </summary>
+    /// <remarks>
+    /// On a template projected from content this dictionary is derived: it mirrors the typed
+    /// <see cref="Strength"/>, <see cref="Dexterity"/>, <see cref="Intelligence"/> and <see cref="Constitution"/>
+    /// properties, which are the single source and what combat reads. The lowercase keys are what consumers read by
+    /// name, and <c>wisdom</c>/<c>charisma</c> are not projected because no archetype authors them.
+    /// </remarks>
     public Dictionary<string, int> Attributes { get; set; } = new();
 
     /// <summary>
