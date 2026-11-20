@@ -50,6 +50,9 @@ public sealed class ContentReferenceCatalog
     /// <summary>Gets the dialogue slugs present in content.</summary>
     public IReadOnlySet<string> Dialogues { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Gets the quest slugs present in content, used by dialogue requirements and grants.</summary>
+    public IReadOnlySet<string> Quests { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Gets the node ids present per map id, for map-edge checks.</summary>
     public IReadOnlyDictionary<string, IReadOnlySet<string>> NodeIdsByMap { get; init; } =
         new Dictionary<string, IReadOnlySet<string>>(StringComparer.OrdinalIgnoreCase);
@@ -86,6 +89,7 @@ public sealed class ContentReferenceCatalog
             Skills = Slugs(await db.Skills.AsNoTracking().Select(s => s.Slug).ToListAsync(cancellationToken)),
             Organizations = Slugs(await db.Organizations.AsNoTracking().Select(o => o.Slug).ToListAsync(cancellationToken)),
             Dialogues = Slugs(await db.Dialogues.AsNoTracking().Select(d => d.Slug).ToListAsync(cancellationToken)),
+            Quests = Slugs(await db.Quests.AsNoTracking().Select(q => q.Slug).ToListAsync(cancellationToken)),
             NodeIdsByMap = maps.ToDictionary(
                 map => map.Id,
                 map => (IReadOnlySet<string>)map.NodeIds.ToHashSet(StringComparer.OrdinalIgnoreCase),

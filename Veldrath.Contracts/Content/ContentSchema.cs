@@ -781,6 +781,30 @@ public static class ContentSchemaRegistry
                 new("stats.lines","Dialogue Lines (JSON)",ContentFieldType.LongText,
                     Hint: "JSON array of strings: [\"Hello, traveller.\",\"What brings you here?\"]"),
             ]),
+            new("Options", [
+                // A conversation is lines plus choices. Empty options means the entry is spoken, not answered —
+                // which is what every dialogue authored before this field existed remains.
+                new("stats.options", "Choices", ContentFieldType.ObjectList,
+                    Hint: "What the player can say. Empty means the speaker simply talks.",
+                    Items: [
+                        new("key",      "Key",       ContentFieldType.Text, Required: true,
+                            Hint: "Stable id the client sends back, e.g. ask-about-woods"),
+                        new("label",    "Label",     ContentFieldType.Text, Required: true,
+                            Hint: "The choice text the player reads; at most 80 characters"),
+                        new("response", "Response",  ContentFieldType.LongText,
+                            Hint: "What the speaker says once this choice is made"),
+                        new("nextSlug", "Continue Into", ContentFieldType.Text,
+                            Hint: "Slug of another dialogue entry, or blank to end the conversation"),
+                        new("oneShot",  "Once Only", ContentFieldType.Boolean,
+                            Hint: "Blank means 'once, if it grants anything'"),
+                        new("requires", "Requires",  ContentFieldType.LongText,
+                            Hint: "One per line: level:3, item:glowcap-mushroom:2, quest:active:slug, " +
+                                  "quest:complete:slug, objective:talk:slug:1"),
+                        new("grants",   "Grants",    ContentFieldType.LongText,
+                            Hint: "One per line: item:healing-draught:1, gold:25, quest-start:slug, " +
+                                  "objective:talk:slug:1"),
+                    ]),
+            ]),
             new("Traits", [
                 new("traits.hostile",    "Hostile",     ContentFieldType.Boolean),
                 new("traits.friendly",   "Friendly",    ContentFieldType.Boolean),

@@ -53,3 +53,30 @@
 
 ## FoundryEndpointTests Coverage (March 2026)
 29 integration tests covering all 7 Foundry endpoints: Create (201/401/400/Location header), List (paged/filter by type/status/search), Get (full detail/404), Vote (up/down/401/invalid/change), Review (approve/reject/403/401/400/notifications), Notifications (empty/401/mark-read/404 unknown/404 other user).
+
+## Dialogue options (2026-11-20)
+`Dialogue` stops being only a line pool: `DialogueStats.Options` (owned, `List<DialogueOption>`) carries the choices a
+conversation offers. Authored in the Foundry **Dialogues** form under a new **Options** group. Empty options means the
+entry is *spoken*, not answered — every dialogue authored before this keeps working unchanged.
+
+Each option: `key` (stable id the client sends back), `label` (≤ 80 chars), `response` (what the speaker says),
+`nextSlug` (another dialogue entry, or blank to end), `oneShot` (blank = "once, if it grants anything"), and two text
+blocks parsed by [`DialogueOptionGrammar`](../../RealmEngine.Data/Content/DialogueOptionGrammar.cs):
+
+```text
+requires:  level:3 | item:slug:2 | quest:active:slug | quest:complete:slug | objective:talk:slug:1
+grants:    item:slug:1 | gold:25 | quest-start:slug | objective:talk:slug:1
+```
+
+- **One string per list, not nested objects.** A nested list of lists is neither editable in the Foundry form nor worth
+  fighting the owned-JSON mapping for; the grammar is the contract, and the validator and the runtime parse it with the
+  same code.
+- **No migration was needed.** Options ride inside the existing `Stats` JSON column (`OwnsMany` inside `ToJson()`), so
+  `dotnet ef migrations has-pending-model-changes` still reports nothing. The persistence test
+  [`DialogueOptionPersistenceTests`](../../RealmEngine.Data.Tests/Persistence/DialogueOptionPersistenceTests.cs) uses
+  **SQLite** because InMemory keeps object references and cannot prove a value reached the database.
+- **Rules** (`ContentRules`): `dialogue_option_invalid` (key/label/response, duplicate key, > 8 options, self-chaining),
+  `dialogue_effect_invalid` (unreadable or misplaced entry), `missing-dialogue-reference` (item/quest/dialogue the option
+  names does not exist), `dialogue_repeatable_grant` (warning: grants but marked repeatable — a money printer).
+- **The content is not seeded.** The three townspeople keep their greeting lines; their conversations are authored in
+  Foundry on the existing entries. Seeders only insert by slug, so a seeded conversation would never update.

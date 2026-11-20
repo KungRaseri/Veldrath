@@ -357,6 +357,9 @@ public static class ContentModelConfiguration
             {
                 o.ToJson();
                 o.PrimitiveCollection(d => d.Lines);
+                // Options live inside the same JSON column: an option's Requires/Grants are authored text, so the
+                // owned graph stays one level deep and needs no table of its own. Same shape as a quest's objectives.
+                o.OwnsMany(d => d.Options);
             });
             e.OwnsOne(x => x.Traits, o => o.ToJson());
         });
