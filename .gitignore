@@ -83,3 +83,6 @@ coverage/
 
 # Local e2e stack pid file (scripts/e2e-stack.sh)
 .e2e-server.pid
+
+# output of `assetkit derive docs/design/specs/asset-derivation-2026-11-19.json`
+_derived/

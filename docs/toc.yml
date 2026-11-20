@@ -11,6 +11,10 @@
       href: design/asset-specs.md
     - name: Asset inventory
       href: design/asset-inventory.md
+    - name: Specs
+      href: design/specs/README.md
+    - name: Brand assets spec (2026-11-19)
+      href: design/specs/veldrath-brand-assets-2026-11-19.md
     - name: Design system
       href: design-system.md
     - name: Client UI architecture
