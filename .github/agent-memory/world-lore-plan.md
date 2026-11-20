@@ -96,7 +96,7 @@ Option: keep those as working names for the Phase 2 deep-dive rather than design
 - Reserved for later reveal
 - Could be: Calethic military order, conquered people, or the heartland region name
 - Do not design until Regions 2–4 are sketched (Q2)
-- Wiki status (2026-11-20, card t_40f12136): `wiki/Calethic-Language.md` now presents the frontier-sworn reading as a disputed reconstruction, not settled fact. Keep the wiki aligned with this item until a reading is decided and recorded here — note that `docs/lore/calethic-language.md` §5.2 already carries the military-order reading in its entity pass, so the two documents still disagree until that is reconciled.
+- Wiki status (2026-11-20, card t_40f12136): `wiki/Calethic-Language.md` now presents what the name attaches to as disputed, not settled fact, while the `vren`+`–ael` derivation stays intact Calethic. Keep the wiki aligned with this item until a reading is decided and recorded here — note that `docs/lore/calethic-language.md` §5.2 already carries the military-order reading in its entity pass, so the two documents still disagree until that is reconciled.
 
 ### The Being
 - **Concept name:** the Unbound Ruin
