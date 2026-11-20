@@ -67,6 +67,27 @@ function summaryArgs(results, out) {
 	return ['--results', results, '--out', out];
 }
 
+/** Read the totals table back so a test asserts the numbers a reviewer actually reads. */
+function totalsFrom(body) {
+	const value = (label) => Number(body.match(new RegExp(`\\| ${label} \\| (\\d+) \\|`))?.[1]);
+	return {
+		specs: value('Specs'),
+		tests: value('Tests'),
+		passed: value('Passed'),
+		failed: value('Failed'),
+		flaky: value('Flaky'),
+		skipped: value('Skipped')
+	};
+}
+
+/** `passed + failed + flaky + skipped === tests` — the invariant that must never regress. */
+function consistent(counts) {
+	return (
+		counts.specs >= 0 &&
+		counts.passed + counts.failed + counts.flaky + counts.skipped === counts.tests
+	);
+}
+
 describe('e2e-summary', () => {
 	test('renders totals, the failing test and its trace path', () => {
 		const out = join(work, 'Summary.md');
@@ -101,6 +122,90 @@ describe('e2e-summary', () => {
 		assert.match(body, /\| Flaky \| 1 \|/);
 		assert.match(body, /\| Failed \| 0 \|/);
 		assert.match(body, /marker: flaky|— flaky:/);
+	});
+
+	test('a skipped attempt that passed on retry is passed, not flaky', () => {
+		// Run 2194: encounters.e2e.ts:90 timed out inside a serial group, so the group's next test
+		// (:134) was marked `skipped` on attempt 1; the group retry then passed both. Playwright
+		// counts that as 1 flaky / 20 passed, and the summary must agree instead of saying 2 flaky.
+		const results = mutateResults('skipped-then-passed.json', (report) => {
+			const test = report.suites[0].specs[0].tests[0];
+			test.results = [
+				{
+					workerIndex: 0,
+					status: 'skipped',
+					duration: 0,
+					errors: [],
+					stdout: [],
+					stderr: [],
+					retry: 0,
+					startTime: '2026-11-20T00:00:00.000Z',
+					attachments: []
+				},
+				{ ...test.results[0], retry: 1, duration: 2100 }
+			];
+			// Playwright's own status for this shape is 'expected': a skipped attempt is not a failure.
+			test.status = 'expected';
+		});
+		const out = join(work, 'skipped-then-passed.md');
+		const { code, out: log } = run(summaryScript, summaryArgs(results, out));
+		assert.equal(code, 0, log);
+
+		const counts = totalsFrom(readFileSync(out, 'utf8'));
+		assert.equal(counts.tests, 3);
+		assert.equal(counts.passed, 2);
+		assert.equal(counts.failed, 1);
+		assert.equal(counts.flaky, 0);
+		assert.equal(counts.skipped, 0);
+		assert.deepEqual(consistent(counts), true);
+		assert.match(log, /e2e summary: FAILED — 2\/3 passed, 1 failed, 0 flaky, 0 skipped/);
+	});
+
+	test('a failed attempt followed by a pass is still flaky', () => {
+		const results = mutateResults('failed-then-passed.json', (report) => {
+			const test = report.suites[0].specs[1].tests[0];
+			test.results = [{ ...test.results[0], retry: 0 }, { ...test.results[0], status: 'passed', retry: 1 }];
+			test.status = 'flaky';
+			report.stats.unexpected = 0;
+			report.stats.flaky = 1;
+		});
+		const out = join(work, 'failed-then-passed.md');
+		const { code } = run(summaryScript, summaryArgs(results, out));
+		assert.equal(code, 0);
+
+		const counts = totalsFrom(readFileSync(out, 'utf8'));
+		assert.equal(counts.flaky, 1);
+		assert.equal(counts.failed, 0);
+		assert.equal(counts.passed, 2);
+		assert.deepEqual(consistent(counts), true);
+
+		// The same attempts with no Playwright `status` field still read as flaky: the fallback
+		// classifies from the attempts, and only a real failure is a flake.
+		const noStatus = mutateResults('failed-then-passed-no-status.json', (report) => {
+			const test = report.suites[0].specs[1].tests[0];
+			test.results = [{ ...test.results[0], retry: 0 }, { ...test.results[0], status: 'passed', retry: 1 }];
+			delete test.status;
+		});
+		const fallback = join(work, 'failed-then-passed-no-status.md');
+		assert.equal(run(summaryScript, summaryArgs(noStatus, fallback)).code, 0);
+		assert.equal(totalsFrom(readFileSync(fallback, 'utf8')).flaky, 1);
+	});
+
+	test('a timed-out attempt followed by a pass is flaky', () => {
+		// The attempt status `timedOut` is a genuine failure too — the very failure that started
+		// run 2194's serial skip in the first place.
+		const results = mutateResults('timed-out-then-passed.json', (report) => {
+			const test = report.suites[0].specs[1].tests[0];
+			test.results = [
+				{ ...test.results[0], status: 'timedOut', retry: 0 },
+				{ ...test.results[0], status: 'passed', retry: 1 }
+			];
+			// No `status` field, so the classification comes from the attempts alone.
+			delete test.status;
+		});
+		const out = join(work, 'timed-out-then-passed.md');
+		assert.equal(run(summaryScript, summaryArgs(results, out)).code, 0);
+		assert.equal(totalsFrom(readFileSync(out, 'utf8')).flaky, 1);
 	});
 
 	test('two result files merge into one section with a run breakdown', () => {
