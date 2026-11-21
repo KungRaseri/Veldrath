@@ -152,6 +152,36 @@ New artwork must look like it was lit in the same room as the existing crest.
   words belong to Cinzel.
 - Don't use the crest as a texture, watermark or repeating pattern at large scale.
 
+### Regional light — the approved Greymoor exception
+
+The light above is the default: gold rim, crimson core, lit from within and from the upper edge.
+Regions re-grade that light to their own ramp — warm and low at chest height in Varenmark, keyed from
+below the waterline in Saltcliff, internal and hot in Cinderplain.
+
+**Greymoor does not use it, and that is a recorded decision** (2026-11-20), not an artist's drift:
+cold bone core, no gold rim, no crimson.
+
+| | Default (§4 and the Do list) | Greymoor |
+|---|---|---|
+| Rim | aged gold, `#A68A2E` → `#D4B96A` | **none** — the fog is the light |
+| Core | crimson emissive, up to `#E05545` | **cold bone**, `text-muted` `#A8A09A`, at the sternum |
+| Crimson | light only — cracks, cores, smoke | **absent** from the region's art |
+| Gold | structure and rim light | oxidised `gold-dark` on buckles and grave-goods, never a rim |
+
+Why: in Greymoor the fog *is* the light source, so a figure lit the Veldrath way reads as Varenmark
+with the colour turned down. The moor's dead are lit from inside with bone, and the metal there has
+outlived its gilding. A region lit like every other region is a region nobody remembers.
+
+What the exception does **not** cover: the crest, the wordmark, the lockups, any interface surface,
+and every region other than Greymoor. Those keep §4's ratio and the light above. It is a rule about
+one region's art — a second region wanting its own light needs its own decision, and nobody may reach
+for it as permission to drop the rim because gold is hard to paint. The Wound's ramp is still
+provisional and drops gold entirely; it will be re-decided when the region gets zones.
+
+Stops, ramps and the reasoning are in
+[the archetype visual system](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/development/docs/design/content/archetype-visuals.md)
+§3.2 (a working document — it is in the repository, not on this site).
+
 **Composition constraints from the interface**
 
 | Surface | Constraint |
