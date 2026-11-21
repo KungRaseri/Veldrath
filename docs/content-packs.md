@@ -128,3 +128,60 @@ Warnings fail nothing: they are printed and counted.
   pack cannot express; that is a follow-up, not a silent default.
 - **The content registry is not maintained by the importer.** `ContentRegistry` rows still come from the seeder that
   owns them; the write endpoints do not maintain it either.
+
+## Changing what a town sells (the one family with no pack)
+
+`ZoneStockItems` — the rows that say which items a town's merchants offer — is the one authored family with no pack.
+A row is a zone↔item join with no slug and no display name, so it is absent from `ContentEntityTypes`, the Foundry
+schema and the importer on purpose, and `RealmEngine.Data/Seeders/ZoneStockSeeder` is the only thing that writes it.
+
+**The decided procedure is a data migration — not a pack, and not a reconciling seeder.** Adding a row needs no
+migration at all: the seeder inserts every authored row the database is missing, on the next start
+(`Program.cs:415` → `DatabaseSeeder.SeedAsync` → `ZoneStockSeeder.SeedAsync`). Removing a row, or changing a row's
+`SortOrder`, needs a migration, because an insert-only seeder can never take a row away.
+
+1. Edit `Authors()` in `RealmEngine.Data/Seeders/ZoneStockSeeder.cs`. That array is the truth for a database that has
+   never been seeded, and it is what the next fresh database gets.
+2. Add a migration after the last one in `RealmEngine.Data/Migrations/`:
+
+   ```bash
+   dotnet tool restore
+   dotnet ef migrations add ReconcileZoneStockShelves --context ContentDbContext \
+     --project RealmEngine.Data --output-dir Migrations
+   ```
+
+   A shelf edit changes no model, so the generated `.Designer.cs` and `ContentDbContextModelSnapshot.cs` must come
+   back byte-identical. If the snapshot changes, your edit touched more than the shelf.
+3. Replace the generated `Up` with one statement per removed pair. The `(ZoneId, ItemSlug)` pair is a row's only
+   authored identity — `Id` is a generated `Guid`, so a migration cannot name the row it means to remove:
+
+   ```csharp
+   /// <inheritdoc />
+   protected override void Up(MigrationBuilder migrationBuilder)
+   {
+       // One statement per pair the shelf no longer lists. Postgres and SQLite both accept this quoted form.
+       migrationBuilder.Sql(
+           "DELETE FROM \"ZoneStockItems\" WHERE \"ZoneId\" = 'crestfall' AND \"ItemSlug\" = 'hunters-bow';");
+   }
+
+   /// <inheritdoc />
+   protected override void Down(MigrationBuilder migrationBuilder)
+   {
+       // Nothing to restore: the row's Id was generated on insert, so this migration cannot re-create it.
+       // Revert the seeder edit and let the next start insert the missing rows.
+   }
+   ```
+4. Verify against a real Postgres, not on faith. Boot the server once (it migrates the content database at
+   `Program.cs:405-408` and then seeds), then:
+
+   ```sql
+   SELECT "ZoneId", "ItemSlug", "SortOrder" FROM "ZoneStockItems" ORDER BY "ZoneId", "SortOrder";
+   ```
+
+   That result must equal `Authors()`. No test covers a migration — `RealmEngine.Data.Tests` builds its schema with
+   `EnsureCreated()`, and `MigrateAsync` only runs on a Postgres content database — so this query is the evidence and
+   the before/after counts belong in the pull request body.
+
+**Who owns a shelf.** `Authors()` owns it. A database that has never been seeded gets it from the seeder; a database
+that already has one gets the difference from a migration; nothing else writes these rows. A stored row `Authors()`
+no longer lists is drift, and the remedy is always a migration — never a seeder edit on its own.
