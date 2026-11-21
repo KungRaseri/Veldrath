@@ -9,7 +9,8 @@ silently applied, in [§8](#8-decisions).
 > **Purpose:** make 34 roster rows look like one world rather than 34 commissions — a silhouette
 > language, a per-region palette, and one asset class per row, expressed inside the budgets
 > [`asset-specs.md`](../asset-specs.md) already sets.
-> **Related:** [archetype roster](archetypes.md) (the 34 rows) · [brand guide](../brand-guide.md)
+> **Related:** [archetype roster](archetypes.md) (44 rows: the 34-row roster plus the ten `§`
+> townspeople) · [brand guide](../brand-guide.md)
 > (materials and light) · [asset specs](../asset-specs.md) (canvas, format, budget, naming) ·
 > [tokens.json](../tokens.json) (the palette, `locked: true`).
 
@@ -22,7 +23,7 @@ silently applied, in [§8](#8-decisions).
 | [`asset-specs.md`](../asset-specs.md) | canvas sizes, formats, weight budgets, naming | quotes them, never re-decides them |
 | [`brand-guide.md`](../brand-guide.md) | three materials, light from within and above, **no off-palette hue** | applies them per region |
 | [`tokens.json`](../tokens.json) | `locked: true` — 49 tokens, no new colour without a human decision | uses 16 existing tokens, adds **none** |
-| [`archetypes.md`](archetypes.md) | 34 rows, slugs, zones, classes, faction ties | classifies every row, invents no slug |
+| [`archetypes.md`](archetypes.md) | 44 rows — the approved 34-row roster plus the ten `§` townspeople — slugs, zones, classes, faction ties | classifies every row, invents no slug |
 | [`GAME.md`](../../../game-context/GAME.md) §6, §8 | five regions; region *character* beyond biome is **TBD (Q2)** | ramps from seeded biome words only |
 
 `designctx Veldrath/Veldrath` reports convention `docs/design`, 49 palette tokens, palette matching
@@ -372,13 +373,13 @@ decision 3 ([§8](#8-decisions)) — the draft had them P0; nothing else in this
 `dock-hand` ← `market-factor` (P1) · `shrine-keeper` ← `wayfarer-elder` (P1).
 
 **Ten adopted townspeople, classified in §4.1b.** D3's card approved ten townspeople for `towns.md`,
-and `archetypes.md` rows 118–127 (`road-carter` … `lodge-keeper`, marked `§`) adopt them — they are
-roster rows, not proposals awaiting a follow-up card. They are also seeded rows, not paper: one
-`ActorArchetype` each in the `Townsperson(...)` block of `RealmEngine.Data/Seeders/ArchetypeSeeder.cs`
-and one `LocationNpc` placement each in `Veldrath.Server/Data/Seeders/LocationNpcsSeeder.cs` (PR
-#161, card `t_d65b853d`). They are not rows of the table above — that table is the approved 34-row
-roster and is left exactly as approved — so the ten are classified in the companion table below
-rather than re-counted into its totals.
+and `archetypes.md` adopts them as the ten `§` rows at the end of its table (`road-carter` …
+`lodge-keeper`) — they are roster rows, not proposals awaiting a follow-up card. PR #161 (card
+`t_d65b853d`) seeds them as rows rather than paper: one `ActorArchetype` each in the `Townsperson(...)`
+block of `RealmEngine.Data/Seeders/ArchetypeSeeder.cs` and one `LocationNpc` placement each in
+`Veldrath.Server/Data/Seeders/LocationNpcsSeeder.cs`. They are not rows of the table
+above — that table is the approved 34-row roster and is left exactly as approved — so the ten are
+classified in the companion table below rather than re-counted into its totals.
 
 ### 4.1b The ten adopted townspeople, classified
 
@@ -387,14 +388,15 @@ an existing base's and only what the figure holds and the region light it is gra
 **P1** when it needs a different body plan. Band is `—` for all ten and the class is `townsfolk`:
 they are non-hostile, so the level tier of the zone they stand in governs where they appear, exactly
 as `archetypes.md` records. Facing is front-on (§2 R1, townsfolk) and each is graded to its home
-region's ramp — Varenmark's lantern, Saltcliff's underlight, Cinderplain's ember (§3).
+region's ramp — Varenmark's lantern, Greymoor's fog and bone-core light, Saltcliff's underlight,
+Cinderplain's ember (§3.1–§3.4).
 
 | slug | home region | class | tier flag | asset class | base | what differs from the base |
 |---|---|---|---|---|---|---|
 | `road-carter` | varenmark | townsfolk | npc | **P2** | `market-factor` | a cart-hook and a hauling strap across the chest where the factor carries a tally-board; the good coat worn to work |
-| `keep-castellan` | varenmark | townsfolk | npc | **P2** | `gate-watch` | the padded jack kept and the kettle helm and boar spear gone; a captain's baton and the keep's keys |
-| `mead-seller` | varenmark | townsfolk | npc | **P2** | `market-factor` | a jug in the near hand and a barrel tap at the belt; no ledger |
-| `cellar-keeper` | varenmark | townsfolk | npc | **P2** | `tavern-keeper` | a lamp and a keyring held up between the body and the door, where the keeper folds his arms |
+| `keep-castellan` | greymoor | townsfolk | npc | **P2** | `gate-watch` | the padded jack kept and the kettle helm and boar spear gone; a captain's baton and the keep's keys |
+| `mead-seller` | greymoor | townsfolk | npc | **P2** | `market-factor` | a jug in the near hand and a barrel tap at the belt; no ledger |
+| `cellar-keeper` | greymoor | townsfolk | npc | **P2** | `tavern-keeper` | a lamp and a keyring held up between the body and the door, where the keeper folds his arms |
 | `harbour-master` | saltcliff | townsfolk | npc | **P2** | `gate-watch` | a hull-board on a cord and a speaking trumpet; the gate-watch's jack, salt-stiff |
 | `ship-chandler` | saltcliff | townsfolk | npc | **P2** | `market-factor` | a coil of rope over one shoulder and a pitch pot; the factor's coat, tar at the cuffs |
 | `port-innkeeper` | saltcliff | townsfolk | npc | **P2** | `tavern-keeper` | the keeper's keyring and a lamp, the apron worn over an oilskin |
@@ -408,6 +410,12 @@ only in what they carry and what they sell — a jug, a keyring, rope and pitch,
 book, tongs, a hull-board, a cart. None of them changes leg count, stature or mass distribution, and
 nothing else makes a row P1 (§4.1).
 
+**By home region: Varenmark 1, Greymoor 3, Saltcliff 3, Cinderplain 3.** The three Greymoor rows are
+Aldenmere's — `keep-castellan`, `mead-seller`, `cellar-keeper` — and Aldenmere is a Greymoor town:
+`ApplicationDataSeeder.cs` gives the zone `RegionId = "greymoor"` and `towns.md` files Aldenmere under
+the Greymoor settlements, so §4.1's first-zone rule lands all three in Greymoor — a walled town is
+not a region. Only `road-carter` (Crestfall) is Varenmark's.
+
 Two consequences are stated rather than left implied:
 
 - **The `base` column names a pose, not a family.** §6.8 still holds — each town NPC is its own
@@ -415,9 +423,11 @@ Two consequences are stated rather than left implied:
   people, not one civilian in four hats. P2 is *one generation anchored on the base's pose and
   scaffold* (§4.1), which is exactly the separate generation §6.8 demands; the apron, keys, staff,
   spear and ledger that refusal lists are held objects, which is the P2 axis.
-- **All ten wait on their base.** A P2 row cannot be requested before the row it is graded from
-  exists (§4.1, P2 dependencies), so none of the ten is commissioned until the five P1 townsfolk are
-  drawn, or until a later card re-prioritises one of them to P1.
+- **Each waits on its own base, not on the whole townsfolk set.** A P2 row cannot be requested before
+  the row it is graded from exists (§4.1, P2 dependencies), so none of the ten is commissioned until
+  its base is drawn, or until a later card re-prioritises it to P1. The bases are four of the five P1
+  townsfolk — `market-factor`, `gate-watch`, `tavern-keeper`, `village-blacksmith`;
+  `wayfarer-elder` is no row's base and is not a gate on these ten.
 
 This table is a companion to §4.1, not a re-count of it: the approved roster, its totals, its region
 split and the request in §5.3 are unchanged, and the ten take the same canvas and export sizes as
@@ -438,9 +448,10 @@ seeder; this document does not rename anything.
 
 Four requests cover the roster: Varenmark (14 — 9 P0 hostiles, 5 P1 townsfolk), then Greymoor (8),
 Saltcliff (8), Cinderplain (4). The ten adopted townspeople (§4.1b) open no fifth region and no fifth
-request — four sit in Varenmark, three in Saltcliff and three in Cinderplain, and each follows its
-base as a P2 row. A region shares one light, one ramp and one style scaffold, so one
-generation brief per region is coherent — 24 separate commissions is what that avoids.
+request — one sits in Varenmark (Crestfall), three in Greymoor (Aldenmere), three in Saltcliff
+(Tolvaren) and three in Cinderplain (Skarhold), and each follows its base as a P2 row. A region
+shares one light, one ramp and one style scaffold, so one generation brief per region is coherent —
+24 separate commissions is what that avoids.
 
 The first P0 set is **the nine Varenmark hostiles** (decision 3, [§8](#8-decisions)): they are the
 only archetypes reachable in wave A1 and they share one palette. The five townsfolk rows are P1 —
@@ -627,7 +638,8 @@ Two findings were accepted as debt. Neither is fixed here, and neither withholds
 
 ### Corrections applied on landing
 
-The mechanical consequences of decisions 1–4, each visible in this diff. No rule, ramp or class
+The mechanical consequences of decisions 1–4 as applied on landing, plus corrections found on later
+review, each recorded here with its reason rather than edited in silently. No rule, ramp or class
 changed.
 
 | Where | Change | Why |
@@ -641,7 +653,8 @@ changed.
 | §7 | criterion 1 restated as nine slugs, 27 files | decision 3; and the draft's "28 files = 14 × {256, 128, 64}" did not add up (3 × 14 is 42, while the plan's 28 counts exports only) |
 | §5.2, §5.4, §7.1, `asset-specs` §3 | one master convention stated once and cited three times: the 256 PNG-24 is **committed** and never served, only the layered working file stays in `~/creative-assets`; §5.4's "28" now names itself a probe of the still-draft fourteen-row request | review of this landing: `asset-specs` said the master was "kept out of the repository" while §7 criterion 1 counted 27 committed files |
 | §5.3–§5.6, the request | the request reads `approved 2026-11-20`; `assets[]` holds the nine P0 hostiles, the five townsfolk sit in `deferred[]` at P1, the two `PROPOSED` comments cite `asset-specs` §3 and §5, and the acceptance block asks for 27 files — the same count as §7 | D5 defect 2 (`t_d805cdf4`), applied by F2 (`t_4e58e1ec`): the request still read `DRAFT`, listed fourteen P0 including the five townsfolk decision 3 had moved to P1, and asked for 28 files where §7 asks for 27 |
-| §4.1, §4.1b, §5.1, §8 | "not roster rows yet, so unclassified" replaced by a measurement: the ten are roster rows, seeded and placed, and all **P2** on named P1 bases (§4.1b) | both halves of that note were stale — `archetypes.md` rows 118–127 adopt the ten (marked `§`), and the townspeople seed and its placements land them as `ActorArchetype` and `LocationNpc` rows (PR #161, card `t_d65b853d`). The note's own estimate of the split is replaced by the count taken off the ten rows |
+| §4.1, §4.1b, §5.1, §8 | "not roster rows yet, so unclassified" replaced by a measurement: the ten are roster rows, seeded by PR #161, and all **P2** on named P1 bases (§4.1b) | both halves of that note were stale — `archetypes.md` already adopts the ten as the `§` rows at the end of its table, and PR #161's seed and placements land them as `ActorArchetype` and `LocationNpc` rows (card `t_d65b853d`). The note's own estimate of the split is replaced by the count taken off the ten rows |
+| §4.1b, §5.1 | three home regions corrected — Aldenmere's `keep-castellan`, `mead-seller` and `cellar-keeper` are **greymoor**, not varenmark — so the ten split Varenmark 1 · Greymoor 3 · Saltcliff 3 · Cinderplain 3; §4.1b's light sentence now names Greymoor's ramp | review of this landing: `aldenmere` is seeded `RegionId = "greymoor"` (`ApplicationDataSeeder.cs`) and `towns.md` files it under the Greymoor settlements, so §4.1's first-zone rule puts all three there |
 
 ### Left open on purpose
 
@@ -650,8 +663,8 @@ changed.
 - **The Wound's ramp stays provisional** — no zones, no consumer; re-decide it when the region gets
   zones (§3.5).
 - **The ten adopted townspeople have no request yet.** They are classified — ten P2 rows in §4.1b —
-  but a P2 row cannot be requested before its base exists, so none is commissioned until the five P1
-  townsfolk are drawn, or until a later card re-prioritises one to P1.
+  but a P2 row cannot be requested before its base exists, so none is commissioned until its base is
+  drawn, or until a later card re-prioritises one to P1.
 
 ---
 
