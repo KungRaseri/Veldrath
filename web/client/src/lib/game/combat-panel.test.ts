@@ -187,13 +187,20 @@ describe('combat panel enemy portrait', () => {
 		const game = fighting();
 		game.combat = {
 			...game.combat,
-			enemy: { ...game.combat.enemy!, archetypeSlug: 'giant-rat', tier: 'regular' }
+			enemy: {
+				...game.combat.enemy!,
+				archetypeSlug: 'giant-rat',
+				typeKey: 'beasts',
+				tier: 'regular'
+			}
 		};
 
 		render(CombatPanel, { session: game });
 
 		const image = screen.getByTestId('archetype-portrait').querySelector('img');
-		expect(image?.getAttribute('src')).toBe('/images/archetypes/giant-rat-128.webp');
+		expect(image?.getAttribute('src')).toBe(
+			'/images/archetypes/archetype-giant-rat-portrait-64.webp'
+		);
 	});
 
 	it('frames a boss enemy in CSS, not in the art', () => {
@@ -210,14 +217,40 @@ describe('combat panel enemy portrait', () => {
 		).toBe(true);
 	});
 
-	it('still draws the class glyph and the enemy name when no portrait exists', () => {
+	it('draws the paw glyph for a beast that has no portrait', async () => {
 		const game = fighting();
-		game.combat = { ...game.combat, enemy: { ...game.combat.enemy!, archetypeSlug: null } };
+		game.combat = {
+			...game.combat,
+			enemy: {
+				...game.combat.enemy!,
+				name: 'Giant Rat',
+				archetypeSlug: 'giant-rat',
+				typeKey: 'beasts',
+				tier: 'regular'
+			}
+		};
+
+		render(CombatPanel, { session: game });
+
+		const tile = screen.getByTestId('archetype-portrait');
+		await fireEvent.error(tile.querySelector('img')!);
+
+		expect(tile.querySelector('svg.lucide-paw-print')).not.toBeNull();
+		expect(tile.querySelector('svg.lucide-swords')).toBeNull();
+	});
+
+	it('still draws the class glyph and the enemy name when no portrait exists', async () => {
+		const game = fighting();
+		game.combat = {
+			...game.combat,
+			enemy: { ...game.combat.enemy!, archetypeSlug: null, typeKey: null }
+		};
 
 		render(CombatPanel, { session: game });
 
 		const tile = screen.getByTestId('archetype-portrait');
 		expect(tile.querySelector('.archetype-portrait__fallback')).not.toBeNull();
+		expect(tile.querySelector('svg.lucide-swords')).not.toBeNull();
 		expect(screen.getAllByText(/Grey Wolf/).length).toBeGreaterThan(0);
 	});
 });

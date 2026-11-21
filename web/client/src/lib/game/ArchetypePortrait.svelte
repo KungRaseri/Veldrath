@@ -10,22 +10,27 @@
 	/**
 	 * One archetype portrait, framed by its tier.
 	 *
-	 * The image is addressed by slug convention so content and art land independently. When the file
-	 * does not exist the browser reports a load error, this component swaps in the class's Lucide glyph
-	 * and the surrounding name stays readable — a missing portrait is not an error and is not logged.
+	 * The file is addressed by slug convention — `archetype-<slug>-portrait-<size>.webp` — so content and
+	 * art land independently: when the file does not exist the browser reports a load error, this
+	 * component swaps in the class's Lucide glyph, and the surrounding name stays readable. A missing
+	 * portrait is not an error and is not logged.
+	 *
+	 * The box is 64 px, the largest size the visual system renders. Both served exports are offered
+	 * through `srcset` (64 px at 1×, 128 px at 2×) and `size` only picks the primary source: the tile
+	 * names the 1× file, the detail surface names the 2× one.
 	 *
 	 * The frame is CSS (R3): a re-banded archetype changes its tier prop and never its art.
 	 */
 	let {
 		slug = null,
-		size = 128,
+		size = 64,
 		tier = 'regular',
 		silhouette = 'humanoid',
 		alt = ''
 	}: {
 		/** The archetype slug the portrait is addressed by; absent means "fall back". */
 		slug?: string | null;
-		/** The served file width. 128 renders a 64 px tile and 256 a 128 px detail. */
+		/** The primary source width: 64 for a tile, 128 for the detail surface. */
 		size?: ArchetypePortraitSize;
 		/** The frame to draw — never baked into the image. */
 		tier?: ArchetypeTier;
@@ -47,13 +52,15 @@
 	let brokenSrc = $state<string | null>(null);
 
 	const src = $derived(archetypePortraitPath(slug, size));
+	const oneToOne = $derived(archetypePortraitPath(slug, 64));
+	const twoToOne = $derived(archetypePortraitPath(slug, 128));
+	const srcset = $derived(oneToOne && twoToOne ? `${oneToOne} 64w, ${twoToOne} 128w` : undefined);
 	const showImage = $derived(src !== null && src !== brokenSrc);
 	const Glyph = $derived(SILHOUETTE_GLYPHS[silhouette]);
 </script>
 
 <span
 	class="archetype-portrait archetype-portrait--{tier}"
-	class:archetype-portrait--detail={size === 256}
 	data-testid="archetype-portrait"
 	data-tier={tier}
 >
@@ -61,16 +68,18 @@
 		<img
 			class="archetype-portrait__image"
 			{src}
+			{srcset}
+			sizes="64px"
 			{alt}
-			width={size}
-			height={size}
+			width={64}
+			height={64}
 			loading="lazy"
 			decoding="async"
 			onerror={() => (brokenSrc = src)}
 		/>
 	{:else}
 		<span class="archetype-portrait__fallback" aria-hidden="true">
-			<Glyph size={size === 256 ? 32 : 24} />
+			<Glyph size={size === 128 ? 32 : 24} />
 		</span>
 	{/if}
 </span>

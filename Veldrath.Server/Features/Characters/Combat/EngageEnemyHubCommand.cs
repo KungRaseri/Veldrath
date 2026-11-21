@@ -35,6 +35,9 @@ public record EngageEnemyHubResult
     /// <summary>Gets the portrait frame tier (<c>boss</c>, <c>elite</c> or <c>regular</c>); display metadata only.</summary>
     public string EnemyTier { get; init; } = "regular";
 
+    /// <summary>Gets the archetype's content type key, which the client maps to the fallback glyph's silhouette class.</summary>
+    public string EnemyArchetypeTypeKey { get; init; } = string.Empty;
+
     /// <summary>Gets the combat level of the engaged enemy.</summary>
     public int EnemyLevel { get; init; }
 
@@ -145,6 +148,7 @@ public class EngageEnemyHubCommandHandler
             EnemyName = enemy.Name,
             EnemyArchetypeSlug = enemy.ArchetypeSlug,
             EnemyTier = CombatHelpers.ResolveTier(enemy.Template),
+            EnemyArchetypeTypeKey = CombatHelpers.ResolveTypeKey(enemy.Template),
             EnemyLevel = enemy.Level,
             EnemyCurrentHealth = enemy.CurrentHealth,
             EnemyMaxHealth = enemy.MaxHealth,

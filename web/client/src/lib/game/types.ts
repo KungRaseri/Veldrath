@@ -679,6 +679,11 @@ export interface CombatStartedPayload {
 	enemyAbilityNames: string[];
 	/** The archetype slug the enemy was spawned from; the portrait is addressed by it. */
 	enemyArchetypeSlug?: string | null;
+	/**
+	 * The archetype's content `typeKey` (`beasts`, `undead`, …). The client picks the fallback glyph
+	 * and the townsfolk plate from it; the tier frame still comes from `enemyTier`.
+	 */
+	enemyArchetypeTypeKey?: string | null;
 	/** The frame the portrait wears (`boss`, `elite`, `regular`). */
 	enemyTier?: string | null;
 }
@@ -832,6 +837,11 @@ export interface CombatParticipantsPayload {
 	enemyAbilityNames: string[];
 	/** The archetype slug the enemy was spawned from; the portrait is addressed by it. */
 	enemyArchetypeSlug?: string | null;
+	/**
+	 * The archetype's content `typeKey` (`beasts`, `undead`, …). The client picks the fallback glyph
+	 * and the townsfolk plate from it; the tier frame still comes from `enemyTier`.
+	 */
+	enemyArchetypeTypeKey?: string | null;
 	/** The frame the portrait wears (`boss`, `elite`, `regular`). */
 	enemyTier?: string | null;
 	participants: CombatParticipantView[];
@@ -858,6 +868,8 @@ export interface CombatState {
 		abilities: string[];
 		/** The archetype slug the enemy was spawned from — the portrait key. */
 		archetypeSlug?: string | null;
+		/** The archetype's content `typeKey`, which picks the fallback glyph by silhouette class. */
+		typeKey?: string | null;
 		/** The frame the portrait wears; tier is UI, never painted into the art. */
 		tier?: ArchetypeTier;
 	} | null;

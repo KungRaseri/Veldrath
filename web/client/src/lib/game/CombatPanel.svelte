@@ -12,6 +12,7 @@
 	import { barPercent } from './reducers';
 	import { combatUsageReason, powerLabel, powerSummary } from './powers';
 	import ArchetypePortrait from './ArchetypePortrait.svelte';
+	import { archetypeSilhouette } from './archetype-portraits';
 	import type { GameSession } from './session.svelte';
 
 	let { session }: { session: GameSession } = $props();
@@ -54,7 +55,12 @@
 	<header class="flex flex-wrap items-center justify-between gap-3">
 		<div class="flex items-center gap-3">
 			{#if enemy}
-				<ArchetypePortrait slug={enemy.archetypeSlug} tier={enemy.tier ?? 'regular'} size={128} />
+				<ArchetypePortrait
+					slug={enemy.archetypeSlug}
+					size={64}
+					tier={enemy.tier ?? 'regular'}
+					silhouette={archetypeSilhouette(enemy.archetypeSlug, enemy.typeKey)}
+				/>
 			{/if}
 			<div>
 				<h2 class="game-panel-header">

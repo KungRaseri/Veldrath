@@ -941,7 +941,8 @@
 /*
  * The tile contract from docs/design/content/archetype-visuals.md §1: a 64 px
  * square on the bg-2 cell, `object-fit: contain`, the frame drawn by CSS and
- * never baked into the art (R3). A 256 px file is the detail view at 128 px.
+ * never baked into the art (R3). 64 px is the largest rendered portrait in the
+ * system — §5.2 exports the 128 px WebP as its 2× source, not as a bigger box.
  */
 .archetype-portrait {
 	position: relative;
@@ -954,11 +955,6 @@
 	overflow: hidden;
 	background: var(--vds-bg-2);
 	border-radius: var(--vds-radius-sm);
-}
-
-.archetype-portrait--detail {
-	width: 128px;
-	height: 128px;
 }
 
 .archetype-portrait__image {

@@ -61,7 +61,11 @@ public class GetCombatSnapshotQueryTests : IDisposable
             GoldReward = 10,
             Template = new Enemy
             {
-                Abilities = abilityNames.Select(name => new Power { Name = name, DisplayName = name }).ToList()
+                Abilities = abilityNames.Select(name => new Power { Name = name, DisplayName = name }).ToList(),
+                Traits =
+                {
+                    ["typeKey"] = new TraitValue("elementals", TraitType.String),
+                },
             },
         };
 
@@ -99,6 +103,9 @@ public class GetCombatSnapshotQueryTests : IDisposable
         snapshot!.EnemyName.Should().Be("Stone golem");
         snapshot.EnemyArchetypeSlug.Should().Be("golem", "the portrait is addressed by the archetype slug");
         snapshot.EnemyTier.Should().Be("regular", "no boss or elite flag is set on this template");
+        snapshot.EnemyArchetypeTypeKey.Should().Be(
+            "elementals",
+            "the client maps the content type onto the fallback glyph's silhouette class");
         snapshot.EnemyCurrentHealth.Should().Be(40);
         snapshot.EnemyMaxHealth.Should().Be(90);
         snapshot.EnemyAbilityNames.Should().Equal("Bite");

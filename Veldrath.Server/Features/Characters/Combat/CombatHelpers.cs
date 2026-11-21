@@ -75,6 +75,15 @@ internal static class CombatHelpers
         return "regular";
     }
 
+    // The archetype's content type key, which the client maps onto a silhouette class to pick the fallback
+    // glyph (and the townsfolk plate). Display metadata like ResolveTier; no combat rule reads it.
+    internal static string ResolveTypeKey(Enemy? template)
+    {
+        return template is not null && template.Traits.TryGetValue("typeKey", out var typeKey)
+            ? typeKey.AsString()
+            : string.Empty;
+    }
+
     // Calculates enemy attack damage against the player. Halved when defending.
     internal static int CalculateEnemyDamage(SpawnedEnemy enemy, Dictionary<string, int> attrs, bool isDefending)
     {

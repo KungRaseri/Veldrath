@@ -893,7 +893,8 @@ export class GameSession {
 					maxHealth: payload.enemyMaxHealth,
 					abilities: payload.enemyAbilityNames ?? [],
 					archetypeSlug: payload.enemyArchetypeSlug ?? null,
-					tier: toArchetypeTier(payload.enemyTier)
+					typeKey: payload.enemyArchetypeTypeKey ?? null,
+					tier: toArchetypeTier(payload.enemyTier, payload.enemyArchetypeTypeKey)
 				},
 				log: [`Combat started: ${payload.enemyName} (level ${payload.enemyLevel}).`],
 				participants: [],
@@ -915,7 +916,8 @@ export class GameSession {
 					maxHealth: payload.enemyMaxHealth,
 					abilities: payload.enemyAbilityNames ?? [],
 					archetypeSlug: payload.enemyArchetypeSlug ?? null,
-					tier: toArchetypeTier(payload.enemyTier)
+					typeKey: payload.enemyArchetypeTypeKey ?? null,
+					tier: toArchetypeTier(payload.enemyTier, payload.enemyArchetypeTypeKey)
 				},
 				participants: payload.participants ?? []
 			};

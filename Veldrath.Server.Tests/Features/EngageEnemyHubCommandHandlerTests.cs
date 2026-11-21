@@ -146,6 +146,7 @@ public class EngageEnemyHubCommandHandlerTests : IDisposable
                 {
                     ["boss"] = new TraitValue(true, TraitType.Boolean),
                     ["elite"] = new TraitValue(true, TraitType.Boolean),
+                    ["typeKey"] = new TraitValue("humanoids", TraitType.String),
                 },
             },
         };
@@ -159,5 +160,8 @@ public class EngageEnemyHubCommandHandlerTests : IDisposable
         result.Success.Should().BeTrue();
         result.EnemyArchetypeSlug.Should().Be("bandit-captain", "the client addresses the portrait by slug");
         result.EnemyTier.Should().Be("boss", "a boss frame outranks elite and neither changes the fight");
+        result.EnemyArchetypeTypeKey.Should().Be(
+            "humanoids",
+            "the client picks the fallback glyph from the content type, so it has to travel with the frame");
     }
 }

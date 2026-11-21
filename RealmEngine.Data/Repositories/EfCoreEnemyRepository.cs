@@ -125,6 +125,9 @@ public class EfCoreEnemyRepository(
                 // so a re-band never has to redraw art: only the UI reads them.
                 ["boss"] = new TraitValue(e.Traits.Boss ?? false, TraitType.Boolean),
                 ["elite"] = new TraitValue(e.Traits.Elite ?? false, TraitType.Boolean),
+                // The content taxonomy field behind the fallback glyph and the townsfolk plate. A string, not a
+                // drawing instruction: the client maps it (and one recorded slug exception) onto a silhouette class.
+                ["typeKey"] = new TraitValue(e.TypeKey, TraitType.String),
             },
             Strength = e.Stats.Strength ?? defaults.Strength,
             Dexterity = e.Stats.Agility ?? defaults.Dexterity,
