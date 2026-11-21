@@ -81,6 +81,7 @@ public class NavigateToLocationHubCommandHandler
     private readonly ICharacterUnlockedLocationRepository _unlockedRepo;
     private readonly ActorPoolResolver _actorPoolResolver;
     private readonly IEnemyInstanceStore _enemyStore;
+    private readonly IActorInstanceRepository _actorInstances;
     private readonly ILogger<NavigateToLocationHubCommandHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="NavigateToLocationHubCommandHandler"/>.</summary>
@@ -89,6 +90,7 @@ public class NavigateToLocationHubCommandHandler
     /// <param name="unlockedRepo">Repository used to persist passive discovery unlock records.</param>
     /// <param name="actorPoolResolver">Resolver used to spawn the initial enemy roster for a location.</param>
     /// <param name="enemyStore">Store for the live enemy instances at the location.</param>
+    /// <param name="actorInstances">Repository for the named actors placed at the location.</param>
     /// <param name="logger">Logger instance.</param>
     public NavigateToLocationHubCommandHandler(
         IZoneLocationRepository locationRepo,
@@ -96,6 +98,7 @@ public class NavigateToLocationHubCommandHandler
         ICharacterUnlockedLocationRepository unlockedRepo,
         ActorPoolResolver actorPoolResolver,
         IEnemyInstanceStore enemyStore,
+        IActorInstanceRepository actorInstances,
         ILogger<NavigateToLocationHubCommandHandler> logger)
     {
         _locationRepo = locationRepo;
@@ -103,6 +106,7 @@ public class NavigateToLocationHubCommandHandler
         _unlockedRepo = unlockedRepo;
         _actorPoolResolver = actorPoolResolver;
         _enemyStore = enemyStore;
+        _actorInstances = actorInstances;
         _logger = logger;
     }
 
@@ -152,13 +156,14 @@ public class NavigateToLocationHubCommandHandler
         if (!string.IsNullOrEmpty(request.ZoneGroup))
         {
             var pool = location.ActorPool ?? [];
+            var placements = await _actorInstances.GetPlacedAsync(location.Slug, cancellationToken);
 
             // Legacy path: this command is superseded by EnterZoneLocationHubCommand, which is where a run is
             // resolved. It never opens an instance, so the roster it spawns belongs to the shared zone.
             var alive = await _enemyStore.GetAliveOrSpawnAsync(
                 request.ZoneGroup,
                 location.Slug,
-                _ => _actorPoolResolver.SpawnRosterAsync(pool),
+                _ => _actorPoolResolver.SpawnRosterAsync(pool, placements),
                 null,
                 cancellationToken);
 
@@ -166,9 +171,10 @@ public class NavigateToLocationHubCommandHandler
                 .Select(e => new SpawnedEnemySummary(e.Id, e.Name, e.Level, e.CurrentHealth, e.MaxHealth))
                 .ToList();
 
-            // Failsafe, not fallback: an authored spawn pool that produced nothing means the content is broken.
-            // The player gets a message and the operator gets the resolver's Error log naming the bad slug.
-            if (spawnedEnemies.Count == 0 && pool.Count > 0)
+            // Failsafe, not fallback: an authored spawn pool that produced nothing, with nothing placed here either,
+            // means the content is broken. The player gets a message and the operator gets the resolver's Error log
+            // naming the bad slug.
+            if (spawnedEnemies.Count == 0 && pool.Count > 0 && placements.Count == 0)
             {
                 contentWarnings.Add(
                     $"Content error: the spawn pool for '{location.Slug}' references no known actors. Please report this to a staff member.");

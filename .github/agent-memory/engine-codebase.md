@@ -239,7 +239,7 @@ Methods: `AddItemsAsync`, `AddItemAsync`, `HasInventorySpaceAsync`, `GetItemCoun
 - `OrganizationEntry(Slug, DisplayName, TypeKey, OrgType, RarityWeight)`
 - `WorldLocationEntry(Slug, DisplayName, TypeKey, LocationType, RarityWeight, int? MinLevel, int? MaxLevel)`
 - `DialogueEntry(Slug, DisplayName, TypeKey, string? Speaker, RarityWeight, List<string> Lines)`
-- `ActorInstanceEntry(Slug, DisplayName, TypeKey, Guid ArchetypeId, int? LevelOverride, string? FactionOverride, RarityWeight)`
+- `ActorInstanceEntry(Slug, DisplayName, TypeKey, Guid ArchetypeId, int? LevelOverride, string? FactionOverride, RarityWeight, string? LocationSlug = null)` (A2 added `LocationSlug`, trailing)
 - `MaterialPropertyEntry(Slug, DisplayName, TypeKey, string MaterialFamily, float CostScale, RarityWeight)`
 - `TraitDefinitionEntry(string Key, string ValueType, string? Description, string? AppliesTo)` — NOT a ContentBase model, no `IsActive`, no `Slug`
 
@@ -631,3 +631,12 @@ sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewMod
   `pack-family-unknown`, a file-level rule). Anything walking `read.Files` must skip a family
   `ContentEntityTypes.TryResolve` rejects: `ContentReferenceCatalog.WithContent` throws on a blank content type,
   which is how `validate <family-dir>` used to die with a bare parameter exception instead of naming the file.
+
+### Placed actor instances (A2, 2026-11-20)
+
+- **Instances are placed by `ActorInstance.LocationSlug`** (null = catalogue-only). The spawn path emits every placed
+  instance once, then fills from the location's pool to the rolled 2–4; overrides compose onto the archetype's projected
+  template at spawn (null = inherit, an absolute number replaces), one gold roll after the pair is composed.
+  `ArmorClass`/`AttackBonus`/`PowerPool` are reserved and applied nowhere. `EnemyInstance.InstanceSlug` is why a reloaded
+  boss keeps its authored damage: `ToSpawnedAsync` resolves the composed template from the instance, not the archetype,
+  while `ArchetypeSlug` stays the identity the unique index and reconciliation use.
