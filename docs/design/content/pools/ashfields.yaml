@@ -29,7 +29,7 @@ locations:
     pool:
       # ash-jack and forge-deserter are seeded 19-22 rather than their 19-20 roster band: this location
       # starts at level 21 and the engine's overlap guard needs their MaxLevel to reach it
-      # (SeededEncounterCoverageTests.cs:132-143; pool-matrix.md §6).
+      # (SeededEncounterCoverageTests.cs:207-239; pool-matrix.md §6).
       - archetype: cinderling
         weight: 5   # band: 19-20 | seeded 20-26
       - archetype: ash-jack
