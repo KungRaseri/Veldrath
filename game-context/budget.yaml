@@ -104,7 +104,7 @@ bands:
     xp: [180, 380]
     gold: [30, 75]
     drop_chance: [0.08, 0.30]
-    intended_for: "smoldering-reach L23, kaldrek-maw L26 dungeon — highest seeded band; b27-30 tops the ladder"
+    intended_for: "smoldering-reach L23, kaldrek-maw L26 dungeon — b27-30 is the ladder's top band"
     seeded_archetypes: [pyreling]
     note: "fire-ancient is boss-tier here — see bosses"
 
