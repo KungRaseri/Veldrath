@@ -402,8 +402,17 @@ reads:
 
 What follows from that, all of it deliberate:
 
-- `pending` blocks — a queued or running job, and a job cancelled by the `concurrency`
-  group, keep the merge waiting.
+- `pending` blocks — a queued or running job keeps the merge waiting.
+- A job **cancelled** by its `concurrency` group is not `pending`, and this is the one place the
+  wording of the rule above matters: it reports `failure` with the description "Has been
+  cancelled", so it does not hold the merge, it **refuses** it. Measured:
+  `GET /api/v1/repos/Veldrath/Veldrath/commits/753b0210/status` on 2026-11-21 returned 17 of its
+  22 statuses as `failure / "Has been cancelled"` — that is a merged `development` commit that
+  no run ever judged, marked red by the run that superseded it. A cancelled *pull-request* run
+  is harmless, because a pull request only ever shows its latest head, so the rule for every
+  workflow that triggers on `push` is to cancel PR runs only —
+  `cancel-in-progress: ${{ github.event_name == 'pull_request' }}`. A `push` run on `main` or
+  `development` is then never superseded, so it finishes and records the verdict it actually reached.
 - A workflow filtered out by `paths` neither helps nor blocks: it is simply not part of the
   set. The `paths` lists stay the single source of truth for *which* components a change
   touches, and no second copy of them has to be maintained here. That holds only while

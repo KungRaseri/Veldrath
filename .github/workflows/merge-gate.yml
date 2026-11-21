@@ -11,6 +11,10 @@ name: CI - Merge gate
 
 concurrency:
   group: ci-merge-gate-${{ github.ref }}
+  # This workflow has no `push` trigger, so cancelling in progress is unconditional and only ever
+  # supersedes another pull-request run. If a `push` trigger is ever added here, take the sibling
+  # workflows' form instead — `${{ github.event_name == 'pull_request' }}` — because a cancelled
+  # base-branch run is recorded as a failing status.
   cancel-in-progress: true
 
 on:
