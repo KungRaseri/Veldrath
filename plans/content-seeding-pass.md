@@ -56,7 +56,7 @@ with `SafeRespawn = true` / `IsDungeon = false` that acts as its lobby (`halrow-
 ### P0 — nothing spawns anywhere (verified)
 
 `ZoneLocations.ActorPool` is empty on all 67 rows and
-[`ActorPoolResolver.SpawnRosterAsync`](../Veldrath.Server/Features/Characters/Combat/ActorPoolResolver.cs:56-61) returns
+[`ActorPoolResolver.SpawnRosterAsync`](../Veldrath.Server/Features/Characters/Combat/ActorPoolResolver.cs:80-86) returns
 an empty roster for an empty pool **by design** — the old "one random `common` enemy" fallback was removed so a
 missing pool could not be silently faked. Consequences:
 
@@ -368,7 +368,7 @@ back to a neutral line so an unauthored speaker still answers), sends `NpcTalked
 
 **One guard, so this cannot happen again.** `EfCoreEnemyRepository` now carries hostility into the `Enemy`
 projection (`traits["hostile"]`, defaulting to hostile when the archetype says nothing), and
-[`ActorPoolResolver`](../Veldrath.Server/Features/Characters/Combat/ActorPoolResolver.cs:82-87) leaves a non-hostile
+[`ActorPoolResolver`](../Veldrath.Server/Features/Characters/Combat/ActorPoolResolver.cs:127-133) leaves a non-hostile
 archetype out of the combat roster and says so in the log. A future content edit that drops a blacksmith into a
 spawn pool therefore produces a warning, not a punching bag.
 

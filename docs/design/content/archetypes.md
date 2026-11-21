@@ -469,7 +469,7 @@ Band distance is D4's rule, measured on the D1 ladder where every location above
 | Bosses | `fire-ancient` (26–30) is a boss and stays out of every pool. Its placement row belongs to the boss-placement card gated on `t_14fa5465`, not here. D4's conclusion that the Heart needed "the boss or a new archetype" is now answered with an archetype. |
 | The Wound (Region 5) | Still no zones, locations or map graph. Nothing can be placed there. |
 | Loot | Each archetype needs exactly one loot table (`budget.yaml`, *loot.tables_per_archetype*). None is authored here. |
-| Seeding | These five slugs do not exist in `ArchetypeSeeder.cs`. They must be seeded **before** any pool names them, or `SeededEncounterCoverageTests` fails and the entry logs an Error at runtime (`ActorPoolResolver.cs:52-60`). |
+| Seeding | These five slugs do not exist in `ArchetypeSeeder.cs`. They must be seeded **before** any pool names them, or `SeededEncounterCoverageTests` fails and the entry logs an Error at runtime (`ActorPoolResolver.cs:115-122`). |
 | Statlines for `ash-eater` and `maw-serpent` | The band is published, not deferred: `b27-30` carries hp 340–450, damage 34–48, xp 210–460, gold 35–90 and drop 0.06–0.25 (`budget.yaml`, *bands*, C4). What the tail still lacks is the assignment — neither row has values authored inside those ranges. |
 
 ### Naming — tail derivation notes
