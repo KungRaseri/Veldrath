@@ -41,7 +41,7 @@ retypeset the logo in Cinzel, and never set body text in the logotype treatment.
 All current masters are **raster PNG with alpha, 8-bit RGBA**, produced at roughly 1200–1900px on the
 long edge. **No editable vector or layered source is committed to this repository.** If the mark is to
 survive at favicon scale, on print or on merchandise, the first deliverable is a vector master — see
-[Asset specs § 3](asset-specs.md).
+[Asset specs § 2](asset-specs.md).
 
 ---
 
