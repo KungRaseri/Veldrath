@@ -589,7 +589,7 @@ Two things the translation has to respect, both from the importer's own document
 | `weight <= 0` is an Error — the runtime would treat it as 1 | `loot_weight_invalid`, `ZoneLocationValidator`; `ActorPoolResolver.cs:103`, `:108` |
 | An empty pool is only a **Warning**, because a safe location is legitimate — and a location with hostile placements and no pool still spawns those | `spawn_pool_empty`, `ZoneLocationValidator`; `ActorPoolResolver.cs:80-86`, `:105-109` |
 | `displayName` and `typeKey` are required on every entity | `display_name_missing`, `type_key_missing`, `ContentShapeRules.ValidateShared` |
-| A town, `SafeRespawn` location or lobby must not spawn anything — which now means an empty pool **and** no placements at all, hostile or not (the test's placement assertion, `:53-65`, rejects any active placement in a quiet location) | `SeededEncounterCoverageTests.cs:28-52`; at runtime the resolver spawns whichever of the two it is handed (`ActorPoolResolver.cs:80-86`, `:105-109`) |
+| A town, `SafeRespawn` location or lobby must not spawn anything — which now means an empty pool **and** no placements at all, hostile or not (the test's placement assertion, `:53-65`, rejects any active placement in a quiet location) | `SeededEncounterCoverageTests.cs:28-52`; at runtime the resolver spawns whatever hostile content it is handed — a hostile placement or a pool (`ActorPoolResolver.cs:80-86`, `:94-100`, `:105-109`) |
 | The level-overlap check still runs | `SeededEncounterCoverageTests.cs:112-144` |
 
 **Landing order — this is the part that will bite.** The pools name 16 archetypes that do not exist yet,
