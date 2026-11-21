@@ -213,9 +213,10 @@ map edges) so they are unit-testable and Milestone B can reuse them;
 `ActorPoolResolver` no longer falls back to a `"common"` archetype — a location with neither a pool nor a placement
 spawns nothing (that is authored content), while a pool naming an unknown slug logs `Error` and spawns nothing for
 it. Both location-entry paths now return `ContentWarnings`, which the hub forwards as `SystemMessage`, so the player
-is told rather than left with a silently empty map. #136 later added the placement path: a named `ActorInstance`
-spawns once ahead of any pool draw, so a location with a placement and no pool spawns exactly that actor. The rule
-above still holds for a location with neither — nothing spawns, and nothing is substituted.
+is told rather than left with a silently empty map. PR #136 later added the placement path: a named `ActorInstance`
+is emitted once ahead of any pool draw, so a location with hostile placements and no pool spawns exactly those,
+never topped up, and a non-hostile placement is dropped with a warning, never turned into a target. The rule above
+still holds for a location with neither — nothing spawns, and nothing is substituted.
 
 ## 5. Phases
 
