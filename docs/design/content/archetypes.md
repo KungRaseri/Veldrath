@@ -268,8 +268,9 @@ would write against dead lore — I nearly did. `c213f409` rewrote both seeded c
 "fog-wreathed highlands where ancient burial mounds dot the heather", Saltcliff "the drowned remains
 of whatever stood here before them", Cinderplain "a scorched expanse of ash and cooled lava", and
 `World.Era` is "The Ashen Age (the Age of Reclaiming)".
-`SeededWorldTextTests` now fails the build on a retired token or on the two copies drifting apart,
-so none of it can come back.
+`SeededWorldTextTests` now fails the build on a retired token or on the two copies drifting apart.
+Its token list is Sundering, Age of Embers, Dravan, Thysmara and Kaldrek — "sunken empire" is not on
+it, so that phrase alone could return unnoticed.
 **No decision from this proposal is outstanding.** The seeded display names carry no retired token —
 "The Maw", "The Maw's Heart", "The Fire-Ancient's Chamber", "Fire-Ancient" (`ApplicationDataSeeder.cs`,
 `MapGraphSeeder.cs`, `ZoneLocationsSeeder.cs`, `ArchetypeSeeder.cs`) — and the Cinderplain display work
@@ -288,8 +289,9 @@ Common naming pattern. `ZoneLocationsSeeder.cs` still seeds `Slug = "aurelian-ma
 display name is wrong; the slug is a legacy alias that must not be changed in place. **Reason:** two
 locked sources disagree and the roster references this zone for `market-factor`. **Touches:**
 `crestfall`, the `aurelian-market` location, `MapGraphSeeder` node `zone:crestfall:location:aurelian-market`.
-**Recorded in:** the `aurelian-market` bullet under *Status* and `towns.md` §6 C3. **Decision
-needed:** revert the rename, or change the display name and keep the slug.
+**Recorded in:** the `aurelian-market` bullet under *Status* and `towns.md` §6 C3. **Decided:** the
+slug stays and the display name becomes The Korreld Exchange; the seeded zone still reads "The
+Aurelian Market" until that rename lands.
 
 ### Proposals to the open questions in `world-lore-plan.md`
 
