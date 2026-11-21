@@ -20,7 +20,7 @@ locations:
     level_range: [0, null]   # no MaxLevel authored at this location
     excluded: true
     exclusion_class: safe_respawn
-    exclusion_reason: 'SafeRespawn + IsTown. The Varenmark respawn point; respawning into hostiles is a death loop (plan §P0, SeededEncounterCoverageTests.cs:28-52).'
+    exclusion_reason: 'SafeRespawn + IsTown. The Varenmark respawn point; respawning into hostiles is a death loop (plan §P0, SeededEncounterCoverageTests.cs:27-66).'
     pool: []   # empty by design
   - slug: aurelian-market
     # band: b1-3 (D0 budget) | location L1+
