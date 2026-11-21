@@ -227,6 +227,15 @@ authority rather than to a design card. An authored name that is **not** atteste
 is still compared against everything. The authority's own §7 Session Log table is skipped, because
 its rename notes bold the retired form as a past state, not an attestation.
 
+A **rename note** in the design set gets the same treatment: a bold name inside a paragraph that
+opens with a bold `Renamed …`, `Retired …`, `Re-coined …`, `Replaced …` or `Formerly …` lede records
+what the name *was* and is not compared. The check reports those citations (the summary line counts
+them, `--verbose` lists them with their `file:line`) rather than dropping them silently. **Do not
+add an allowlist entry for a retired name**: a permit silences the pair everywhere, so the name F2
+retired could be coined again in a zone table and still pass, while a note-scoped rule exempts the
+one sentence that cites history. A table row is always a declaration, even one that abuts the note,
+and a bold name in ordinary prose is still a coinage.
+
 A missing authored document, missing seeder directory or empty extraction fails the check: passing
 on a partial input is a false green.
 
@@ -247,7 +256,10 @@ Delete a stale entry: a permit left behind would silently cover a name that come
 `scripts/tests/fixtures/content-names-f2-landed/` is the second fixture tree: the documents after
 PR #133, where the renames are recorded in prose and the retired names are bold. It is the tree the
 gate lives on once the rename lands, and the one that caught the first version of this check
-reporting the attested `Orveld` one letter from the attested `Gorveld`.
+reporting the attested `Orveld` one letter from the attested `Gorveld`. It also pins the rename-note
+rule from the other side: its allowlist holds only `Draekeld`/`Drakeld`, and three negative controls
+assert that a re-coined `Orneld` fails whether it arrives as a zone-table row, a table row abutting
+the note, or a bold name in ordinary prose.
 
 ---
 

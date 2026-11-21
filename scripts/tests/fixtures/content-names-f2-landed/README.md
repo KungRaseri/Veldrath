@@ -13,6 +13,16 @@ byname and placement tables of `towns.md`, the root dictionary and §7 Session L
 `calethic-language.md`. The prose is abridged, not copied, so the fixture does not freeze the
 documents it stands in for.
 
-The allowlist records the two permits still live after F2 (`Orneld`/`Orveld` and
-`Draekeld`/`Drakeld`); the repository's two F2 permits go stale on the merged tree and are deleted
-by a follow-up, so they are not repeated here.
+## The rename-note rule
+
+A bold name inside a rename note — a paragraph that opens with a bold `Renamed …`/`Retired …` lede —
+is a citation of a past state, so it is reported (`--verbose`) and never compared. That is why the
+allowlist holds only `Draekeld`/`Drakeld` here: the retired forms need no permit, and a permit left
+in this tree would cover a re-introduced `Orneld`, which is the defect this rule exists to close.
+
+Three negative controls keep the rule from widening:
+
+- a zone-table row coining `Orneld` again fails, and is reported at the table row;
+- a bold `**Orneld**` in ordinary prose, outside any rename note, fails;
+- a zone-table row placed directly under the rename note (no blank line) fails — the note's range
+  stops at a table row, so abutting it is not a way to smuggle a name back in.

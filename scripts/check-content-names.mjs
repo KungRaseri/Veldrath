@@ -35,6 +35,14 @@
  * attestation would make a retired name canon and silently exempt it from this check if it were
  * ever re-introduced.
  *
+ * The design set gets the same rule from the other side. A rename note there — a paragraph that
+ * opens with a bold `Renamed …` / `Retired …` lede — bolds the retired form to record what the
+ * name *was* (`**Orneld**`, `wound-spine.md` §5). That is a citation, not a declaration, so it is
+ * reported and not compared. Doing this by rule rather than by an allowlist permit matters: a
+ * permit silences the pair *everywhere*, so the retired name could be re-coined in a zone table
+ * and still pass; a note-scoped rule exempts the one sentence that cites history and nothing
+ * else, and a table row is a declaration even when it abuts the note.
+ *
  * Where an authored name is defined (the extraction rules — a name is only checked if a document
  * declares it as a name):
  *   - a Markdown table column headed `name`, `display name…`, `byname` or `Calethic`;
@@ -290,11 +298,13 @@ function splitRow(line) {
  * Extracts the names a content document declares.
  * @param {string} text The document.
  * @param {string} file Repository-relative path, for the report.
- * @returns {{ name: string, slug: string | null, file: string, line: number, where: string }[]} Names.
+ * @returns {{ name: string, slug: string | null, file: string, line: number, where: string, citation?: true }[]} Names.
  */
 export function extractAuthoredNames(text, file) {
 	const starts = lineIndex(text);
 	const found = [];
+	const renameNotes = provenanceNoteRanges(text);
+	const inRenameNote = (line) => renameNotes.some(([first, last]) => line >= first && line <= last);
 
 	for (const table of parseTables(text)) {
 		const nameColumns = table.header
@@ -357,12 +367,19 @@ export function extractAuthoredNames(text, file) {
 		const after = text.slice(match.index + match[0].length).split('\n')[0];
 		if (/^\s+\p{Ll}/u.test(after)) continue;
 
+		// A bold token inside a rename note records what the name was. It is a citation of a past
+		// state — the design set's counterpart to the authority's §7 Session Log — so it is kept
+		// for the report but never compared. Dropping it here instead would hide the retirement
+		// record from `--verbose`, and a silent exemption is what this check exists to prevent.
+		const citation = inRenameNote(line);
+
 		found.push({
 			name: match[1],
 			slug: null,
 			file,
 			line,
-			where: 'bold prose assertion'
+			where: citation ? 'citation in a rename note' : 'bold prose assertion',
+			...(citation ? { citation: true } : {})
 		});
 	}
 
@@ -390,6 +407,38 @@ export function historicalTableRanges(text) {
 
 		let end = index + 2;
 		while (end < lines.length && lines[end].trim().startsWith('|')) end += 1;
+		ranges.push([index + 1, end]);
+		index = end - 1;
+	}
+
+	return ranges;
+}
+
+/**
+ * Line ranges (1-based, inclusive) of paragraphs in an authored document that record a rename — a
+ * note whose first line opens with a bold `Renamed …`, `Retired …`, `Re-coined …`, `Replaced …` or
+ * `Formerly …` lede. The retired form is bolded inside such a note to say what the name *was*, so
+ * it is a citation of a past state, not a declaration of a current one.
+ *
+ * The range stops at a blank line, at a table row, or at the end of the document. The table guard
+ * is the one that matters: a zone-table row that bolds the retired name is a declaration even when
+ * it sits directly under the note, and the negative control depends on it still failing.
+ * @param {string} text The document.
+ * @returns {[number, number][]} Inclusive line ranges.
+ */
+export function provenanceNoteRanges(text) {
+	const lines = text.split('\n');
+	const ranges = [];
+	const lede = /^\s*(?:[-*+]\s+)?\*\*(?:renamed|retired|re-coined|recoined|replaced|formerly)\b/i;
+
+	for (let index = 0; index < lines.length; index += 1) {
+		if (!lede.test(lines[index])) continue;
+
+		let end = index + 1;
+		while (end < lines.length && lines[end].trim() !== '' && !lines[end].trim().startsWith('|')) {
+			end += 1;
+		}
+
 		ranges.push([index + 1, end]);
 		index = end - 1;
 	}
@@ -540,8 +589,10 @@ function pairKey(left, right) {
 }
 
 /**
- * Compares authored names against the authority, the catalogue and each other.
- * @param {{ name: string, slug: string | null, file: string, line: number, where: string }[]} authored Authored names.
+ * Compares authored names against the authority, the catalogue and each other. Names extracted
+ * from a rename note carry `citation: true` and are left out: they record what a form *was*, not
+ * the name a document currently declares.
+ * @param {{ name: string, slug: string | null, file: string, line: number, where: string, citation?: true }[]} authored Authored names.
  * @param {{ name: string, file: string, line: number, where: string }[]} authority Authority forms.
  * @param {{ slugs: any[], displayNames: any[] }} seeded Seeded values.
  * @returns {{ distance: number, kind: string, left: any, right: any }[]} Collisions.
@@ -551,16 +602,21 @@ export function findCollisions(authored, authority, seeded) {
 
 	const report = (distance, kind, left, right) => collisions.push({ distance, kind, left, right });
 
+	// A bold name inside a rename note records a past state. It is kept in the extraction so it can
+	// be reported, but it is not a declaration and is not compared — the same treatment the naming
+	// authority's §7 Session Log gets by line range.
+	const declared = authored.filter((name) => name.citation !== true);
+
 	// A name that is an exact attested form is a citation of canon. Two citations are not an
 	// authored naming decision, and an author cannot rename canon to clear a warning.
 	const attestedKeys = new Set(dedupeByKey(authority, normalizeName).map((entry) => entry.key));
 	const isCitation = (side) => attestedKeys.has(normalizeName(side.name));
 
 	// Authored against each other.
-	for (let i = 0; i < authored.length; i += 1) {
-		for (let j = i + 1; j < authored.length; j += 1) {
-			const left = authored[i];
-			const right = authored[j];
+	for (let i = 0; i < declared.length; i += 1) {
+		for (let j = i + 1; j < declared.length; j += 1) {
+			const left = declared[i];
+			const right = declared[j];
 			if (left.file === right.file && left.line === right.line) continue;
 
 			const distance = withinDistance(normalizeName(left.name), normalizeName(right.name), 1);
@@ -577,7 +633,7 @@ export function findCollisions(authored, authority, seeded) {
 	// Authored against the naming authority. An exact match is the document citing the authority,
 	// and so is a near match where the authored side is itself an attested form. Only coinages
 	// can be one letter from canon and still be an authored defect.
-	const coinages = authored.filter((name) => !isCitation(name));
+	const coinages = declared.filter((name) => !isCitation(name));
 	for (const entry of dedupeByKey(authority, normalizeName)) {
 		for (const name of coinages) {
 			const distance = withinDistance(normalizeName(name.name), entry.key, 1);
@@ -745,6 +801,12 @@ function main() {
 	const { seeders, missingDirectories } = readSeeders(root);
 	const seeded = extractSeededNames(seeders);
 
+	// A bold name inside a rename note records what a form *was*: it is reported on every run and
+	// never compared. Keeping the two counts apart means the exemption is visible in the gate's own
+	// output instead of being an invisible subtraction from the names it says it read.
+	const renameCitations = authored.filter((entry) => entry.citation === true);
+	const declaredNames = authored.filter((entry) => entry.citation !== true);
+
 	// Fail closed. A check that silently passes because an input moved is a false green: every
 	// authored document, the authority and both seed directories must be readable, and each
 	// extraction must have produced names.
@@ -754,7 +816,7 @@ function main() {
 	if (missingDirectories.length === 0 && seeders.length === 0) {
 		inputErrors.push(`no seeder files were found under ${SEEDERS_DIRECTORIES.join(' or ')}`);
 	}
-	if (authored.length === 0) {
+	if (declaredNames.length === 0) {
 		inputErrors.push('no authored names were extracted — the documents no longer match the extraction rules');
 	}
 	if (authority.length === 0) {
@@ -810,7 +872,10 @@ function main() {
 	const lines = [];
 	lines.push('Content name collision check');
 	lines.push(
-		`  authored names:  ${authored.length} from ${AUTHORED_DOCUMENTS.length - missingDocuments.length} document(s)`
+		`  authored names:  ${declaredNames.length} from ${AUTHORED_DOCUMENTS.length - missingDocuments.length} document(s)` +
+			(renameCitations.length > 0
+				? `, plus ${renameCitations.length} citation(s) in a rename note (not compared)`
+				: '')
 	);
 	lines.push(`  authority forms: ${authority.length} from ${NAMING_AUTHORITY}`);
 	lines.push(
@@ -843,10 +908,18 @@ function main() {
 		lines.push('');
 		lines.push('Authored names by document:');
 		for (const document of AUTHORED_DOCUMENTS) {
-			const names = authored.filter((entry) => entry.file === document);
+			const names = declaredNames.filter((entry) => entry.file === document);
 			if (names.length === 0) continue;
 			lines.push(`  ${document} (${names.length})`);
 			for (const name of names) lines.push(`    ${name.name}  :${name.line}  ${name.where}`);
+		}
+
+		// Named apart from the declarations: these are the occurrences the rule exempts, so a reader
+		// can see what the rename note cites without running the check a second way.
+		if (renameCitations.length > 0) {
+			lines.push('');
+			lines.push('Citations in a rename note (a past state, not a declaration):');
+			for (const name of renameCitations) lines.push(`    ${name.name}  — ${name.file}:${name.line}`);
 		}
 	}
 

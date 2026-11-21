@@ -1,11 +1,6 @@
 {
-	"$comment": "Fixture allowlist for the F2-landed tree: the two permits still live after the renames. The repository's two F2 permits go stale on that tree and are deleted by a follow-up, so they are not repeated here.",
+	"$comment": "Fixture allowlist for the F2-landed tree. Only the pair D5 declined to block remains: a bold name inside a rename note is a citation, so the retired forms need no permit, and a permit left here would cover a re-introduced one (see the negative controls).",
 	"allow": [
-		{
-			"names": ["Orneld", "Orveld"],
-			"reason": "F2 retired the zone name; the rename note still cites both forms, which are one letter apart.",
-			"ticket": "t_4e58e1ec"
-		},
 		{
 			"names": ["Draekeld", "Drakeld"],
 			"reason": "Drakeld is the root dictionary's example compound for drak (stone), not an attested name or place, and D5 declined to block.",
