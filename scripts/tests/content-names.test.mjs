@@ -116,7 +116,7 @@ describe('a clean tree', () => {
 		assert.match(result.stdout, /authored names: {2}\d+ from 4 document\(s\)/);
 		assert.match(result.stdout, new RegExp(`authority forms: \\d+ from ${AUTHORITY}`));
 		assert.match(result.stdout, /seeded names: {4}\d+ slugs, \d+ display names from 1 seeder\(s\)/);
-		assert.match(result.stdout, /allowlist: {7}1 entr/);
+		assert.match(result.stdout, /allowlist: {7}1 entry/);
 	});
 
 	test('skips a document that is not there, and says so', () => {

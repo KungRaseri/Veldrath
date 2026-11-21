@@ -721,8 +721,10 @@ function main() {
 	lines.push(
 		`  seeded names:    ${seeded.slugs.length} slugs, ${seeded.displayNames.length} display names from ${seeders.length} seeder(s)`
 	);
-	if (options.allowlist) lines.push(`  allowlist:       ${allowlist.entries.length} entr(y/ies) from ${ALLOWLIST_PATH}`);
-	else lines.push('  allowlist:       ignored (--no-allowlist)');
+	const allowlistSummary = options.allowlist
+		? `${allowlist.entries.length} ${allowlist.entries.length === 1 ? 'entry' : 'entries'} from ${ALLOWLIST_PATH}`
+		: 'ignored (--no-allowlist)';
+	lines.push(`  allowlist:       ${allowlistSummary}`);
 	for (const document of missingDocuments) lines.push(`  not present:     ${document} (skipped)`);
 	lines.push('');
 
