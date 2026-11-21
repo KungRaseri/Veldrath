@@ -23,14 +23,16 @@ status: >-
 covers_levels: [1, 30]
 level_range_justification: >-
   Card asked for 1-20; the seeded world already has zones at L20, L23 and L26
-  (ZoneLocationsSeeder.cs:521, :547, :573) and hostile archetypes to MinLevel 26
-  (ArchetypeSeeder.cs:662). 1-26 covers 1-20 with no gap, so it is the 1-20 table plus
-  the three zones that would otherwise be stranded. See decision 1. Extended to 1-30 on
-  2026-11-20 by C4, because the seeded content already reaches level 30 on its own:
-  fire-ancient is seeded 26-30 (:662-663) and all three kaldrek-maw rooms run to L30
-  (ZoneLocationsSeeder.cs:590, :598, :606 — 26-30, 26-30 and 28-30), so with 1-26 the top
-  band stops four levels short of the rooms it has to describe. Levels 27-30 are the four
-  the ladder was missing, not new content.
+  (ZoneLocationsSeeder.cs: the ashfields, smoldering-reach and kaldrek-maw zone
+  headers) and hostile archetypes to MinLevel 26 (ArchetypeSeeder.cs:662). 1-26
+  covers 1-20 with no gap, so it is the 1-20 table plus the three zones that would
+  otherwise be stranded. See decision 1. Extended to 1-30 on 2026-11-20 by C4,
+  because the seeded content already reaches level 30 on its own: fire-ancient is
+  seeded 26-30 (:662-663) and all three kaldrek-maw rooms run to L30
+  (ZoneLocationsSeeder.cs: the maw-descent, fire-ancients-chamber and kaldreks-heart
+  room blocks — 26-30, 26-30 and 28-30), so with 1-26 the top band stops four levels
+  short of the rooms it has to describe. Levels 27-30 are the four the ladder was
+  missing, not new content.
 
 units:
   hp: "absolute HP, authored as ArchetypeStats.Health"
