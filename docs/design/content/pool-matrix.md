@@ -66,9 +66,9 @@ than their band.
 |---|---|---|
 | 67 zone locations, 19 zones, their `MinLevel`/`MaxLevel`, `DangerLevel` and traits | `RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs` | parsed the seeder's 67 `new ZoneLocation` blocks; every count below is a count over that parse |
 | A pool is `IList<ActorPoolEntry>` on the location; entry weight is a relative integer; weight `<= 0` counts as 1 | `RealmEngine.Data/Entities/Content/ZoneLocation.cs:36`, `:94-101`, `Veldrath.Server/Features/Characters/Combat/ActorPoolResolver.cs:101-112` | read |
-| An empty pool spawns nothing, by design — no fallback archetype — but it does not suppress a location's placements: those spawn on their own | `ActorPoolResolver.cs:80-86`, `:105-109` | read |
+| An empty pool spawns nothing, by design — no fallback archetype — but it does not suppress a location's **hostile** placements: those spawn on their own, exactly as placed, never topped up (a non-hostile placement is dropped with a warning) | `ActorPoolResolver.cs:80-86`, `:94-100`, `:105-109` | read |
 | A non-hostile pool entry is dropped from the roster with a warning | `ActorPoolResolver.cs:62-71` | read |
-| Roster size is **2–4, globally** — `MinCount`/`MaxCount` are private consts, rolled once per location as a fill target: placed instances go in first and the pool fills up to the roll, so five or more placements at one location would exceed it | `ActorPoolResolver.cs:27-28`, `:88`, `:111` | read |
+| The roster roll is **2–4, globally** — `MinCount`/`MaxCount` are private consts, rolled once per location as a fill target: the location's placed **hostile** instances go in first (a non-hostile placement is dropped), and the pool fills from their count up to the roll, so five or more hostile placements at one location would exceed it | `ActorPoolResolver.cs:27-28`, `:88`, `:94-100`, `:111` | read |
 | The roster is rolled **once** into `EnemyInstances` and never re-rolled; respawn revives the same row | `Veldrath.Server/Features/Characters/Combat/EfCoreEnemyInstanceStore.cs:56-98` | D0 measured it; I re-read the method |
 | Seeded archetypes and their real `MinLevel`/`MaxLevel` | `RealmEngine.Data/Seeders/ArchetypeSeeder.cs` | parsed all 17 archetypes (14 hostile, 3 non-hostile) |
 | The archetype roster, its bands, and each archetype's zones | `docs/design/content/archetypes.md` (D1) | read, proposed 2026-11-20 |
@@ -200,9 +200,9 @@ three `cinderling` zone-list deviations reported as warnings, not failures (§7)
 engine has one global constant pair and no per-location field — the column exists so nobody adds one
 without noticing (`ActorPoolResolver.cs:27-28`, `:88`). Read it as the **fill target, not a cap**: the
 location's placed hostile instances are added first and the pool fills from their count up to the roll
-(`:111`), so a location with five or more placements would spawn more than four, and a location with no
-pool spawns exactly its placements (`:105-109`). Both seeded instances sit one to a location, each at a
-pooled location, so no row in this matrix has either shape.
+(`:111`), so a location with five or more hostile placements would spawn more than four, and a location
+with no pool spawns exactly those placements (`:105-109`). Both seeded instances sit one to a location,
+each at a pooled location, so no row in this matrix has either shape.
 
 | zone | location | level range | band | pool entries (slug + weight) | roster | why this location is dangerous |
 |---|---|---|---|---|---|---|
@@ -587,9 +587,9 @@ Two things the translation has to respect, both from the importer's own document
 |---|---|
 | An entry whose archetype slug does not resolve is an Error | `missing-spawn-archetype`, `ContentReferenceRules.AuditSpawnPools`; `ActorPoolResolver.cs:52-71` |
 | `weight <= 0` is an Error — the runtime would treat it as 1 | `loot_weight_invalid`, `ZoneLocationValidator`; `ActorPoolResolver.cs:103`, `:108` |
-| An empty pool is only a **Warning**, because a safe location is legitimate and a location whose only actors are placed spawns those | `spawn_pool_empty`, `ZoneLocationValidator`; `ActorPoolResolver.cs:80-86`, `:105-109` |
+| An empty pool is only a **Warning**, because a safe location is legitimate — and a location with hostile placements and no pool still spawns those | `spawn_pool_empty`, `ZoneLocationValidator`; `ActorPoolResolver.cs:80-86`, `:105-109` |
 | `displayName` and `typeKey` are required on every entity | `display_name_missing`, `type_key_missing`, `ContentShapeRules.ValidateShared` |
-| A town, `SafeRespawn` location or lobby must not spawn anything — which now means an empty pool **and** no hostile placements | `SeededEncounterCoverageTests.cs:28-52`; the resolver spawns whichever of the two it is handed (`ActorPoolResolver.cs:80-86`, `:105-109`) |
+| A town, `SafeRespawn` location or lobby must not spawn anything — which now means an empty pool **and** no placements at all, hostile or not (the test's placement assertion, `:53-65`, rejects any active placement in a quiet location) | `SeededEncounterCoverageTests.cs:28-52`; at runtime the resolver spawns whichever of the two it is handed (`ActorPoolResolver.cs:80-86`, `:105-109`) |
 | The level-overlap check still runs | `SeededEncounterCoverageTests.cs:112-144` |
 
 **Landing order — this is the part that will bite.** The pools name 16 archetypes that do not exist yet,
