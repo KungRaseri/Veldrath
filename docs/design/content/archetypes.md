@@ -18,8 +18,12 @@ bands and its slugs are unchanged from what was approved.
   no Ash Shrine dedication.
 - **The `gull-rider clans` faction tie is descriptive only.** It rests on the map seeder's assertion
   of rival clans, not on canon — do not treat it as an established organisation.
-- **Proposal 9 — open.** Content rating and the four design pillars are undecided, so `GAME.md` §3–§4
-  stay TBD.
+- **Proposal 9 — decided 2026-11-20.** The content standard is published in `game-context/GAME.md`
+  §3 (Teen-equivalent and self-imposed, with the permitted, testimony-only and not-permitted lists)
+  and the four design pillars with their fails-when clauses in §4. A borderline description is
+  resolved against §3 and a design argument against §4; before this they were questions with no
+  answer anywhere in the repository. The roster above was approved without them and nothing in it
+  changed when they landed.
 - **The townspeople are absorbed from the towns card (`towns.md`).** The ten `§` rows at the end of the
   table are D3's, adopted here because this document is the slug authority; D3 does not keep a parallel
   list. Non-hostile total goes from seven to seventeen.
@@ -339,12 +343,15 @@ priest without inventing a religion. **Touches:** `ashfields` (`ash-shrine`, `sc
 the `shrine-keeper` row. **Recorded in:** `docs/lore/` (a Cinderplain note) and the region page at
 Phase 5+.
 
-**Proposal 9 — publish a content rating and four design pillars.**
-**Claim:** Veldrath should state a content rating and four design pillars. **Reason:**
-`game-context/GAME.md` §3 and §4 are both TBD because neither exists anywhere in the repository; no
-content worker can resolve a borderline description or argue a design choice without them.
-**Touches:** every content card. **Recorded in:** `game-context/GAME.md` §3–4, once a human approves
-the text.
+**Proposal 9 — publish a content rating and four design pillars. (Decided 2026-11-20, `09288312`.)**
+**Claim:** Veldrath should state a content rating and four design pillars. **Reason:** when this was
+written, `game-context/GAME.md` §3 and §4 were both TBD — neither existed anywhere in the
+repository, so no content worker could resolve a borderline description or argue a design choice.
+Josh decided both on 2026-11-20 (card `t_5cd22693`) and C3 (`t_3790a7c7`) transcribed them in
+`09288312`: §3 carries the Teen-equivalent, self-imposed standard with its permitted,
+testimony-only and not-permitted lists, and §4 the four pillars, each written as a test with a
+fails-when clause. **No decision from this proposal is outstanding.** **Touches:** every content
+card. **Recorded in:** `game-context/GAME.md` §3 (content rating) and §4 (design pillars).
 
 ---
 

@@ -71,9 +71,9 @@ persist per location, and the doubled naming already locked in `world-lore-plan.
 doubled-naming convention promoted from a style note to a rule — §2 states the same convention as
 register.
 
-Consequence for canon: no named deities (§7.3 already forbids them, so the shrine stays "the Ash
-Shrine"), no prophecy device (§7.1), and no power fantasy of discovery — the player works out a
-history, they are not handed it.
+Consequence for canon: no named deities (§7 item 3 already forbids them, so the shrine stays "the
+Ash Shrine"), no prophecy device (§7 item 1), and no power fantasy of discovery — the player works
+out a history, they are not handed it.
 
 **The four *engineering* commitments below are sourced and constrain content, but they are not the
 design pillars above, and they are not renumbered by them:**

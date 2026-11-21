@@ -221,7 +221,7 @@ sealed from the far side — the refusal is the act, and the act is theirs.
 
 - **A final confrontation** requires something to fight, and the canon's central figure is not
   fightable: the being is "still here, diminished, partially contained — not gone"
-  (`world-lore-plan.md:108`), and GAME.md §7.2 forbids "ancient evil awakening" as an event. Give
+  (`world-lore-plan.md:108`), and GAME.md §7 item 2 forbids "ancient evil awakening" as an event. Give
   it a health bar and the empire's mistake becomes a monster problem — and, worse, the player becomes
   the reason the world is safe again, which is exactly pillar 3's fails-when: *"A card makes the player
   the subject of a prophecy or the reason the world exists."*

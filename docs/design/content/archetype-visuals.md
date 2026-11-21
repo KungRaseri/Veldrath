@@ -512,7 +512,7 @@ the same creature.
 2. **Faction marks for factionless rows.** 25 of 27 hostile rows are `none recorded`. A badge would
    assert canon that proposals 6–7 explicitly withheld. Only the gull-rider harpoon exists.
 3. **Region character beyond biome.** Greymoor, Saltcliff and Cinderplain are working names and
-   their character is Q2 TBD (`GAME.md` §8.3). The ramps are built from the zones' *seeded biome
+   their character is Q2 TBD (`GAME.md` §8 item 1). The ramps are built from the zones' *seeded biome
    words*; they will be re-decided when region prose exists. I will not smuggle "a proud seafaring
    culture" into a palette.
 4. **Any hue the palette does not hold.** No green moorland, no purple heather, no blue sea, no cyan
