@@ -405,7 +405,7 @@ amendments 3 and 4 the only hostile location left in their zone (`scorched-battl
 
 The ranges are D1's bands, not new numbers: D1 says a row's band is its level band, and the seeder needs
 `MinLevel`/`MaxLevel` to run the overlap check. A pool entry whose archetype is missing logs an Error and
-spawns nothing (`ActorPoolResolver.cs:52-60`) and fails `SeededEncounterCoverageTests.cs:77-110`, so the
+spawns nothing (`ActorPoolResolver.cs:52-60`) and fails `SeededEncounterCoverageTests.cs:171-205`, so the
 order of landing is fixed: **archetypes first, then pools.**
 
 ## 7. The tail — levels 21–30, where this matrix cannot fully meet its own rules
@@ -586,7 +586,7 @@ Two things the translation has to respect, both from the importer's own document
 | An empty pool is only a **Warning**, because a safe location is legitimate | `spawn_pool_empty`, `ZoneLocationValidator`; `ActorPoolResolver.cs:39-45` |
 | `displayName` and `typeKey` are required on every entity | `display_name_missing`, `type_key_missing`, `ContentShapeRules.ValidateShared` |
 | A town, `SafeRespawn` location or lobby must not spawn anything | `SeededEncounterCoverageTests.cs:28-52`, and the same rule at runtime |
-| The level-overlap check still runs | `SeededEncounterCoverageTests.cs:112-144` |
+| The level-overlap check still runs | `SeededEncounterCoverageTests.cs:207-239` |
 
 **Landing order — this is the part that will bite.** The pools name 16 archetypes that do not exist yet,
 and the seeder only *inserts* (`plans/content-seeding-pass.md` §2: an existing slug is never updated). So:
