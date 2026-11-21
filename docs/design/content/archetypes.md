@@ -527,11 +527,11 @@ Phase 5+.
 shared ground, not service, command or cult. **Reason:** D4's `fire-ancients-chamber` row originally
 described the room as guarded by pyrelings that served it — a faction-shaped claim inside the
 endgame zone, the one thing this card forbids inventing, and a later quest or dialogue will build on
-it. The row now reads "the room is guarded by the pyrelings that den in it"
-(`docs/design/content/pool-matrix.md:231`), corrected in `a857dcf0` (C4); no faction-shaped claim
-may be built on the old wording. **Touches:** the `fire-ancients-chamber` prose in
-`docs/design/content/pool-matrix.md` (corrected there to "the pyrelings that den in it"), the
-`fire-ancient` placement card. **Recorded in:** `docs/design/content/pool-matrix.md:231`, which
+it. The row now reads "the room is guarded by the pyrelings that den in it" (`pool-matrix.md` §3,
+the `kaldrek-maw` / `fire-ancients-chamber` row), corrected in `a857dcf0` (C4); no faction-shaped
+claim may be built on the old wording. **Touches:** the `fire-ancients-chamber` prose in
+`pool-matrix.md` (corrected there to "the pyrelings that den in it"), the `fire-ancient` placement
+card. **Recorded in:** `pool-matrix.md` §3, the `kaldrek-maw` / `fire-ancients-chamber` row, which
 carries the correction — see the decisions block below.
 
 ### How this section was checked
@@ -582,5 +582,6 @@ section above; where the two disagree, this block governs.
    `kaldreks-heart` is permanent identity and does not change.
 5. **Proposal 12's correction to `pool-matrix.md` is binding, and it has landed.** D4's
    `fire-ancients-chamber` row described the room as guarded by pyrelings that served it; it now
-   reads "the room is guarded by the pyrelings that den in it" (`pool-matrix.md:231`), corrected in
-   `a857dcf0` (C4). The obligation this decision carried is discharged.
+   reads "the room is guarded by the pyrelings that den in it" (`pool-matrix.md` §3, the
+   `kaldrek-maw` / `fire-ancients-chamber` row), corrected in `a857dcf0` (C4). The obligation this
+   decision carried is discharged.
