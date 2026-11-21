@@ -329,8 +329,8 @@ merchants:
   stock_size_basis: >-
     The catalogue holds 24 purchasable items, and the shop narrows it twice at GetShopCatalogHubCommand.cs:121.
     Price > 0 drops exactly one of the 25 seeded rows (lost-cargo, value 0, ItemsSeeder.cs:80), leaving 24; the
-    zone-stock half of the same filter narrows those 24 to the town's own shelf — ten at crestfall, twelve at
-    aldenmere, eleven at tolvaren, twelve at skarhold (ZoneStockSeeder.cs:68-139). 8-16 is a merchant carrying a
+    zone-stock half of the same filter narrows those 24 to the town's own shelf — nine at crestfall, twelve at
+    aldenmere, eleven at tolvaren, twelve at skarhold (ZoneStockSeeder.cs:70-143). 8-16 is a merchant carrying a
     third to two thirds of the CATALOGUE, not of a shelf. The low end brackets the legacy per-type defaults of 10
     (weaponsmith, armorer) and 15 (apothecary, and the fallback for any other type) at ShopEconomyService.cs:422-429;
     the high end stops short of the 20 a general store hands out, because "the whole catalog" is the vending-machine
@@ -381,7 +381,7 @@ merchants:
     stock: >-
       Authored per zone and live. ZoneStockItems (RealmEngine.Data/Entities/Content/ZoneStockItem.cs) holds one row
       per item per town, unique on (ZoneId, ItemSlug); migration 20261121004324_AddZoneStockItems creates the table,
-      and RealmEngine.Data/Seeders/ZoneStockSeeder.cs authors the four reaching settlements at 10 / 12 / 11 / 12
+      and RealmEngine.Data/Seeders/ZoneStockSeeder.cs authors the four reaching settlements at 9 / 12 / 11 / 12
       rows — inside stock_size [8, 16], and no two towns offering the same shelf. GetShopCatalogHubCommand.cs:115-127
       reads that list instead of the whole catalogue, so a zone offers only what it stocks. What the table is not
       is a stock level: ZoneStockItem.cs:13-16 states the model — availability, not inventory depth — and no
