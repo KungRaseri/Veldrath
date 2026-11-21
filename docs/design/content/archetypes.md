@@ -367,9 +367,9 @@ two.
 - **Seeded prose, not invention.** `smoldering-reach` is already described in the seeder as "a cracked
   lava field where vents of superheated gas erupt without warning and **heat-adapted predators hunt at
   dusk**" (`ApplicationDataSeeder.cs:96`); `ashfields` as "grey ash plains … dotted with fused obsidian
-  trees and the scorched skulls of fallen armies" (`:95`); the region as ash and cooled lava "where
-  forge-tempered warbands and fire-touched creatures stake their claim" (`:45`, retained by K1 row
-  R10). Three of the five rows below are those sentences turned into an enemy.
+  trees and the scorched skulls of fallen armies" (`:95`); `cinderplain` as "a scorched expanse of
+  ash and cooled lava, where fire-touched creatures and those who work the heat stake their claim"
+  (`:45`). Three of the five rows below are those sentences turned into an enemy.
 - **Nothing in the tail is Calethic-built.** The Caleth surveyed the ash-plain (*Daeld-Ald*) and did
   not settle it (P4, locked), so no row is a construct, a guardian or a marker left by them. Proposal
   11 asks for that to be recorded as a rule rather than left to inference.
@@ -475,17 +475,18 @@ is that every creature name in the shipped catalogue is Common. The Calethic res
 | Crust Crawler | Common: *crust* (the cooled surface of a flow) + *crawler*, the same morphology as the seeded `sump-crawler`. No Calethic form: a species is not a place, and *daeld-* would claim the Caleth named it (see proposal 11). |
 | Ash Picker | Common: *ash* + *picker*, the working noun for someone who breaks a face for what is in it — the register of `ship-chandler` and `market-factor`. Deliberately not *daeld-* or a Calethic trade form; §5.2 records that no Calethic root for trade or commerce exists. |
 | Ash Eater | Common, from behaviour, not from a light- or fire-root. Calethic distinguishes *raek* (light in material) from *thael* (revelation); this thing is neither, and a Calethic name would over-grade a scavenger. |
-| Maw Serpent | Common: *Maw* is the zone's own name, already in the seeded description ("a vast volcanic vent complex known as the Maw") and the display name both Cinderplain reconciliation sources agree on; *serpent* is the plain animal word. No Kaldrek token, no Calethic coinage. |
+| Maw Serpent | Common: *Maw* is the zone's own name — `kaldrek-maw` is seeded with the display name **The Maw** (`ApplicationDataSeeder.cs:97`) — and the display name both Cinderplain reconciliation sources agree on; *serpent* is the plain animal word. No Kaldrek token, no Calethic coinage. |
 
 ### The Cinderplain naming question, as it stands
 
 - **The four Cinderplain slugs keep their identifiers:** `kaldrek-maw`, `kaldreks-heart`,
   `fire-ancients-chamber`, `fire-ancient`. A slug is permanent identity; **ids are not canon, display
   names are** (recorded by `t_7a2beb7d`, decision 1).
-- **The display prose is K1's table** (`t_fbc6e04b`, `docs/design/content/prose-corrections.md`,
-  pending): R12 `Kaldrek's Maw` → **The Maw**; R13 drops "Kaldrek's" and "final test of the worthy";
-  R15 `The Fire-Ancient's Chamber in Kaldrek's Maw` → `The Fire-Ancient's Chamber, the first hall
-  inside the Maw`; R22 keeps `Fire-Ancient` and "Fire-Ancient Drops" unchanged.
+- **The display prose is K1's table** (`t_fbc6e04b`, approved 2026-11-20; the table is that card's
+  comment, never a file in this tree): R12 `Kaldrek's Maw` → **The Maw**, shipped in `c213f409`;
+  R13 drops "Kaldrek's" and "final test of the worthy" from the Maw's description; R15 rewords the
+  chamber's map description to `The Fire-Ancient's Chamber, the first hall inside the Maw`; R22 keeps
+  `Fire-Ancient` and "Fire-Ancient Drops" unchanged.
 - **The Heart's display name is decided: `kaldreks-heart` is "The Heart of the Maw".** K1's row **R16
   governs**, and the earlier architect wording (`t_7a2beb7d` decision 1, "The Maw's Heart") does not —
   R16 supersedes it. The slug stays `kaldreks-heart` everywhere in this document; only the display
