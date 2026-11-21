@@ -360,6 +360,196 @@ public class ContentWriteEndpointTests(WebAppFactory factory)
         stored.Phonology.JunctionRules.Select(rule => rule.Rule).Should().Equal("First rule");
     }
 
+    /// <summary>Reads a recipe and its ingredients back through a fresh context, so the assertion sees the stored rows.</summary>
+    private async Task<Recipe> StoredRecipeAsync(string slug)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ContentDbContext>();
+        return await db.Recipes.AsNoTracking()
+            .Include(recipe => recipe.Ingredients)
+            .SingleAsync(recipe => recipe.Slug == slug);
+    }
+
+    /// <summary>Reads a loot table and its entries back through a fresh context.</summary>
+    private async Task<LootTable> StoredLootTableAsync(string slug)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ContentDbContext>();
+        return await db.LootTables.AsNoTracking()
+            .Include(table => table.Entries)
+            .SingleAsync(table => table.Slug == slug);
+    }
+
+    /// <summary>
+    /// A recipe whose ingredients are child rows, not owned JSON. The seeder's own materials are used so the references
+    /// resolve; the slug is unique per test because the integration database is shared.
+    /// </summary>
+    private static object RecipePayload(string slug, params (string Slug, int Quantity)[] ingredients) => new
+    {
+        slug,
+        typeKey = "blacksmithing",
+        displayName = "Child Row Recipe",
+        rarityWeight = 70,
+        isActive = true,
+        outputItemDomain = "items/general",
+        outputItemSlug = "iron-sword",
+        outputQuantity = 1,
+        craftingSkill = "blacksmithing",
+        craftingLevel = 1,
+        traits = new { requiresStation = true },
+        ingredients = ingredients
+            .Select(ingredient => new
+            {
+                itemDomain = "items/materials",
+                itemSlug = ingredient.Slug,
+                quantity = ingredient.Quantity,
+            })
+            .ToArray(),
+    };
+
+    /// <summary>The same recipe without an <c>ingredients</c> property at all — what a schema-shaped form sends.</summary>
+    private static object RecipePayloadWithoutIngredients(string slug) => new
+    {
+        slug,
+        typeKey = "blacksmithing",
+        displayName = "Child Row Recipe",
+        rarityWeight = 70,
+        isActive = true,
+        outputItemDomain = "items/general",
+        outputItemSlug = "iron-sword",
+        outputQuantity = 1,
+        craftingSkill = "blacksmithing",
+        craftingLevel = 1,
+        traits = new { requiresStation = true },
+    };
+
+    private static object LootTablePayload(string slug, params (string Slug, int Weight)[] entries) => new
+    {
+        slug,
+        typeKey = "enemies",
+        displayName = "Child Row Loot",
+        rarityWeight = 60,
+        isActive = true,
+        traits = new { common = true },
+        entries = entries
+            .Select(entry => new
+            {
+                itemDomain = "items/general",
+                itemSlug = entry.Slug,
+                dropWeight = entry.Weight,
+                quantityMin = 1,
+                quantityMax = 1,
+                isGuaranteed = false,
+            })
+            .ToArray(),
+    };
+
+    [Fact]
+    public async Task An_ingredient_quantity_edit_through_put_is_persisted()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-child-recipe-{Guid.NewGuid():N}";
+
+        var created = await client.PostAsync("/api/content/recipe", Json(RecipePayload(slug, ("iron", 3), ("pine", 1))));
+        created.StatusCode.Should().Be(HttpStatusCode.Created, await created.Content.ReadAsStringAsync());
+
+        var updated = await client.PutAsync(
+            $"/api/content/recipe/{slug}",
+            Json(RecipePayload(slug, ("iron", 9), ("pine", 1))));
+        updated.StatusCode.Should().Be(HttpStatusCode.OK, await updated.Content.ReadAsStringAsync());
+
+        // Ingredients are rows in their own table; only the stored rows can prove the edit landed.
+        var stored = await StoredRecipeAsync(slug);
+        stored.Version.Should().Be(2);
+        stored.Ingredients.Should().HaveCount(2);
+        stored.Ingredients.Single(ingredient => ingredient.ItemSlug == "iron").Quantity.Should().Be(9);
+        stored.Ingredients.Single(ingredient => ingredient.ItemSlug == "pine").Quantity.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Adding_and_removing_ingredients_through_put_stores_exactly_the_authored_set()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-child-recipe-set-{Guid.NewGuid():N}";
+
+        (await client.PostAsync("/api/content/recipe", Json(RecipePayload(slug, ("iron", 3), ("pine", 1)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        // iron stays, pine is dropped and oak is added — one reconcile has to do all three.
+        var updated = await client.PutAsync(
+            $"/api/content/recipe/{slug}",
+            Json(RecipePayload(slug, ("iron", 3), ("oak", 2))));
+        updated.StatusCode.Should().Be(HttpStatusCode.OK, await updated.Content.ReadAsStringAsync());
+
+        var stored = await StoredRecipeAsync(slug);
+        stored.Ingredients.Select(ingredient => ingredient.ItemSlug).Should().BeEquivalentTo("iron", "oak");
+        stored.Ingredients.Single(ingredient => ingredient.ItemSlug == "oak").Quantity.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task A_put_that_omits_ingredients_leaves_the_stored_children_alone()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-child-recipe-omitted-{Guid.NewGuid():N}";
+
+        (await client.PostAsync("/api/content/recipe", Json(RecipePayload(slug, ("iron", 3), ("pine", 1)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        // A payload that never names `ingredients` is not a request to delete them; the editor always sends the full
+        // entity, so an omitted collection means the caller never saw it.
+        var updated = await client.PutAsync(
+            $"/api/content/recipe/{slug}",
+            Json(RecipePayloadWithoutIngredients(slug)));
+        updated.StatusCode.Should().Be(HttpStatusCode.OK, await updated.Content.ReadAsStringAsync());
+
+        var stored = await StoredRecipeAsync(slug);
+        stored.Ingredients.Should().HaveCount(2);
+        stored.Ingredients.Single(ingredient => ingredient.ItemSlug == "iron").Quantity.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task A_loot_entry_edit_through_put_is_persisted()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-child-loot-{Guid.NewGuid():N}";
+
+        var created = await client.PostAsync(
+            "/api/content/loottable",
+            Json(LootTablePayload(slug, ("health-potion", 60), ("iron-ingot", 40))));
+        created.StatusCode.Should().Be(HttpStatusCode.Created, await created.Content.ReadAsStringAsync());
+
+        var updated = await client.PutAsync(
+            $"/api/content/loottable/{slug}",
+            Json(LootTablePayload(slug, ("health-potion", 15), ("iron-ingot", 40))));
+        updated.StatusCode.Should().Be(HttpStatusCode.OK, await updated.Content.ReadAsStringAsync());
+
+        var stored = await StoredLootTableAsync(slug);
+        stored.Version.Should().Be(2);
+        stored.Entries.Should().HaveCount(2);
+        stored.Entries.Single(entry => entry.ItemSlug == "health-potion").DropWeight.Should().Be(15);
+        stored.Entries.Single(entry => entry.ItemSlug == "iron-ingot").DropWeight.Should().Be(40);
+    }
+
+    [Fact]
+    public async Task Adding_and_removing_loot_entries_through_put_stores_exactly_the_authored_set()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-child-loot-set-{Guid.NewGuid():N}";
+
+        (await client.PostAsync(
+            "/api/content/loottable",
+            Json(LootTablePayload(slug, ("health-potion", 60), ("iron-ingot", 40)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var updated = await client.PutAsync(
+            $"/api/content/loottable/{slug}",
+            Json(LootTablePayload(slug, ("iron-ingot", 40), ("iron-sword", 20))));
+        updated.StatusCode.Should().Be(HttpStatusCode.OK, await updated.Content.ReadAsStringAsync());
+
+        var stored = await StoredLootTableAsync(slug);
+        stored.Entries.Select(entry => entry.ItemSlug).Should().BeEquivalentTo("iron-ingot", "iron-sword");
+    }
+
     [Fact]
     public async Task Deleting_deactivates_instead_of_removing_the_row()
     {

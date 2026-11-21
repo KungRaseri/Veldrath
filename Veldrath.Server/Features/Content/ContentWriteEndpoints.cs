@@ -229,6 +229,12 @@ public static class ContentWriteEndpoints
         existing.Version += 1;
         existing.UpdatedAt = DateTimeOffset.UtcNow;
         ContentValueCopy.ApplyAuthoredValues(incoming, existing, db.Model);
+
+        // Child rows (recipe ingredients, loot-table entries) are rows in their own table, so they are reconciled by
+        // authored identity rather than copied. Only the collections the payload names are touched: a payload that omits
+        // `ingredients` leaves the stored ingredients alone instead of deleting them.
+        await ContentChildRows.ApplyNamedAsync(db, incoming, existing, payload, ct);
+
         await db.SaveChangesAsync(ct);
 
         return Results.Ok(ValidationResponse.For(existing, result));

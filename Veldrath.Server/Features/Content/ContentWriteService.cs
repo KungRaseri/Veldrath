@@ -119,6 +119,10 @@ public class ContentWriteService(ContentDbContext db)
             existing.Version += 1;
             existing.UpdatedAt = DateTimeOffset.UtcNow;
             ContentValueCopy.ApplyAuthoredValues(incoming, existing, db.Model);
+
+            // Child rows are reconciled by authored identity, not copied; a submission that never names a collection
+            // leaves the stored rows alone rather than deleting what the form could not show.
+            await ContentChildRows.ApplyNamedAsync(db, incoming, existing, payload, ct);
         }
 
         await db.SaveChangesAsync(ct);

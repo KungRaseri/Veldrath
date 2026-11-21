@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Tests.Infrastructure;
@@ -640,6 +641,71 @@ public class FoundryEndpointTests(WebAppFactory factory)
         var detail = await curatorClient.GetFromJsonAsync<JsonElement>($"/api/content/browse/item/{slug}");
         detail.GetProperty("payload").GetProperty("stats").GetProperty("damageMin").GetInt32().Should().Be(9);
         detail.GetProperty("payload").GetProperty("version").GetInt32().Should().Be(2);
+    }
+
+    /// <summary>
+    /// Reads a recipe and its ingredient rows back through a fresh context — the approval under test writes through a
+    /// different context than the one this assertion opens.
+    /// </summary>
+    private async Task<RealmEngine.Data.Entities.Recipe> StoredRecipeAsync(string slug)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<RealmEngine.Data.Persistence.ContentDbContext>();
+        return await db.Recipes.AsNoTracking()
+            .Include(recipe => recipe.Ingredients)
+            .SingleAsync(recipe => recipe.Slug == slug);
+    }
+
+    /// <summary>
+    /// A recipe submission whose ingredients are child rows rather than owned JSON. Approval is the second write path,
+    /// so an ingredient correction has to land there too — the HTTP endpoint's tests cannot cover it.
+    /// </summary>
+    [Fact]
+    public async Task Review_Should_Persist_An_Authored_Ingredient_Edit_On_Approval()
+    {
+        const string slug = "fnd-rev-child-recipe";
+
+        static string RecipePayload(int ironQuantity) => JsonSerializer.Serialize(new
+        {
+            slug,
+            displayName = "Foundry Ingredient Revision",
+            typeKey = "blacksmithing",
+            rarityWeight = 70,
+            isActive = true,
+            outputItemDomain = "items/general",
+            outputItemSlug = "iron-sword",
+            outputQuantity = 1,
+            craftingSkill = "blacksmithing",
+            craftingLevel = 1,
+            ingredients = new[]
+            {
+                new { itemDomain = "items/materials", itemSlug = "iron", quantity = ironQuantity },
+                new { itemDomain = "items/materials", itemSlug = "pine", quantity = 1 },
+            },
+        });
+
+        using var submitterClient = factory.CreateClient();
+        submitterClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndRevIngredient_Sub"));
+
+        using var curatorClient = factory.CreateClient();
+        curatorClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetCuratorTokenAsync("FndRevIngredient_Curator"));
+
+        var first = await CreateSubmissionAsync(submitterClient, "Recipe", "FndRevIngredient_First", RecipePayload(3));
+        (await curatorClient.PostAsJsonAsync($"/api/foundry/submissions/{first.Id}/review", new { Approved = true }))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var revision = await CreateSubmissionAsync(submitterClient, "Recipe", "FndRevIngredient_Second", RecipePayload(9));
+        var reviewed = await curatorClient.PostAsJsonAsync($"/api/foundry/submissions/{revision.Id}/review", new { Approved = true });
+        reviewed.StatusCode.Should().Be(HttpStatusCode.OK, await reviewed.Content.ReadAsStringAsync());
+
+        // Ingredient rows live in their own table, so the browse payload is not the proof — the stored rows are.
+        var stored = await StoredRecipeAsync(slug);
+        stored.Version.Should().Be(2);
+        stored.Ingredients.Should().HaveCount(2);
+        stored.Ingredients.Single(ingredient => ingredient.ItemSlug == "iron").Quantity.Should().Be(9);
+        stored.Ingredients.Single(ingredient => ingredient.ItemSlug == "pine").Quantity.Should().Be(1);
     }
 
     /// <summary>

@@ -83,10 +83,27 @@ empty defaults. Two guards now hold:
   (`buildPayload(detail.data.payload, …)`).
 Regression test: `FoundryEndpointTests.Review_Should_Preserve_Owned_Json_A_Schema_Shaped_Submission_Does_Not_Name`.
 
-**Still dropped by the HTTP path:** child *rows* (recipe ingredients, loot-table entries, actor pools that are tables
-rather than JSON) are not copied by `ApplyAuthoredValues` — `ContentPackImporter.ReconcileChildren` is the only code that
-writes them, and it matches by authored identity. The PUT endpoint does not load or reconcile children, so editing those
-collections through Foundry still round-trips 200 without a write. File a card before promising Foundry edits there.
+**Child rows are reconciled, not copied (fixed 2026-11-20, card t_3e4f919a):** child *rows* (recipe ingredients,
+loot-table entries) cannot be assigned to the tracked parent — a deserialised child arrives with its key set, so EF
+issues an UPDATE against a row that was never inserted. They are now written by `ContentChildRows`
+([`RealmEngine.Data/Content/ContentChildRows.cs`](../../RealmEngine.Data/Content/ContentChildRows.cs)), which the
+importer, the PUT endpoint and the approval path all share: matches are mutated in place, dropped rows deleted and
+additions inserted, matching on authored identity (an ingredient's `ItemDomain`+`ItemSlug`) or, for a surrogate-keyed
+child such as `LootTableEntry`, on its authored values.
+
+**Presence, not emptiness, decides deletion.** Each write path passes the collection names the payload actually
+names (`ContentChildRows.ApplyNamedAsync` → `NamedIn`), so a PUT or submission that omits `ingredients` leaves the
+stored ingredients alone instead of zeroing them — Foundry's forms render the schema, and a form that never shows a
+collection must not delete it. A collection the payload *does* name is replaced wholesale, so an empty list still
+clears it. `ZoneLocation.ActorPool` is owned JSON (`OwnsMany(...).ToJson("ActorPool")`), not a child table, so it was
+never affected. `LootTable` with no entries is an `Error` in the validator, so an approval that omits `entries` is
+refused before the reconcile rather than silently deleting them; a recipe with no ingredients is only a warning.
+
+Regression tests: `ContentWriteEndpointTests.An_ingredient_quantity_edit_through_put_is_persisted`,
+`Adding_and_removing_ingredients_through_put_stores_exactly_the_authored_set`,
+`A_put_that_omits_ingredients_leaves_the_stored_children_alone`, `A_loot_entry_edit_through_put_is_persisted`,
+`Adding_and_removing_loot_entries_through_put_stores_exactly_the_authored_set`, and
+`FoundryEndpointTests.Review_Should_Persist_An_Authored_Ingredient_Edit_On_Approval`.
 
 ## Dialogue options (2026-11-20)
 `Dialogue` stops being only a line pool: `DialogueStats.Options` (owned, `List<DialogueOption>`) carries the choices a
