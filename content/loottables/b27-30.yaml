@@ -1,0 +1,68 @@
+# Content pack — enemy drop tables for budget band b27-30 (levels 27-30).
+#
+# family: loottable. One table per hostile archetype; slug `<archetype>-drops`.
+#
+# Band b27-30: drop_chance [0.06, 0.25], gold [35, 90].
+# READ THIS BEFORE MERGING. b27-30 is **approved but not yet published** in
+# game-context/budget.yaml: the file on development stops at b23-26 (covers_levels [1, 26]). The
+# band values above are the ones card t_259ac697 (C4) authors, approved by D6 on 2026-11-20.
+#
+# The table below is written to be legal under both: every row's landing probability is 0.15 or
+# 0.20, which sits inside b23-26's [0.08, 0.30] and inside b27-30's [0.06, 0.25]. So this file can
+# land before or after C4 without a re-weight, and if C4 publishes a different ceiling this file
+# needs re-checking rather than reauthoring.
+#
+# Every table sums to 100, so DropWeight reads as that row's landing probability
+# (loot.weight_semantics). No guaranteed row: nothing in the design says a kill always yields.
+# Item ceiling: 270 gold = 3 x the band's gold max. Nothing in the 25-item catalogue sits between
+# the 200-gold gems and the 300-gold orbs, so this band's palette is the same as b23-26's; the orbs
+# stay out of enemy drops at every band.
+
+family: loottable
+entities:
+  - slug: maw-serpent-drops
+    # band: b27-30 — maw-serpent, roster band 28-30; spawns at kaldreks-heart (L28-30)
+    # Why: it lies in the seam under the Maw's last floor where the heat comes up. The Heart is the only
+    # room below level 30 with a non-boss population, so this is the one table the end of the ladder
+    # drops from: the gem the seam makes, essence in quantity, iron the Maw is lined with.
+    typeKey: enemies
+    displayName: Maw Serpent Drops
+    rarityWeight: 40
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: iron-ingot
+        dropWeight: 25
+        quantityMin: 1
+        quantityMax: 3
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-fire
+        dropWeight: 20
+        quantityMin: 3
+        quantityMax: 4
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: soul-crystal
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: rune-of-power
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: fire-ruby
+        dropWeight: 15
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false

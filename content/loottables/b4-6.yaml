@@ -1,0 +1,147 @@
+# Content pack — enemy drop tables for budget band b4-6 (levels 4-6).
+#
+# family: loottable. One table per hostile archetype; slug `<archetype>-drops`, except the seeded
+# wolf-common-drops, which keeps its slug and is re-authored here.
+#
+# Band b4-6 (game-context/budget.yaml): gold [5, 20], drop_chance [0.25, 0.55].
+# Every table sums to 100, so DropWeight reads as that row's landing probability
+# (loot.weight_semantics). Every row lands with 0.25 <= p <= 0.55: inside the band.
+# No guaranteed row: nothing in the design says a b4-6 kill always yields something.
+# Item ceiling: 60 gold = 3 x the band's gold max. rune-of-power, elixir-of-strength and
+# iron-chestplate (80 each) are above that ceiling and are held to b7-10.
+
+family: loottable
+entities:
+  - slug: wolf-common-drops
+    # band: b4-6 — forest-wolf, roster band 4-6; spawns at wood-road (L1-5), old-clearing (L2-5),
+    # mire-crossing (L3-6). Seeded slug, kept: a slug is permanent identity.
+    # Seeded weights were 70/30 — 0.70 exceeds the b4-6 ceiling of 0.55, so the seeded table breaks
+    # its own band. Reweighted to 55/45: same two items, nothing added, nothing removed.
+    typeKey: enemies
+    displayName: Wolf Common Drops
+    rarityWeight: 80
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: health-potion
+        dropWeight: 55
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-nature
+        dropWeight: 45
+        quantityMin: 1
+        quantityMax: 2
+        isGuaranteed: false
+
+  - slug: bandit-ruffian-drops
+    # band: b4-6 — bandit-ruffian, roster band 4-6; spawns at mire-crossing (L3-6), bone-hollow
+    # (L4-6), rootbound-cellars (L4-6), collapsed-vault (L5-6), flooded-workings (L4-6),
+    # deepest-chamber (L5-6)
+    # Why: it holds the crossings and takes a cut. The cut is what it is carrying — a blade, a cap,
+    # and the potion it bought with someone else's toll.
+    typeKey: enemies
+    displayName: Bandit Ruffian Drops
+    rarityWeight: 80
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: health-potion
+        dropWeight: 40
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: leather-cap
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: iron-sword
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+
+  - slug: sump-crawler-drops
+    # band: b4-6 — sump-crawler, roster band 4-6; spawns at rootbound-cellars (L4-6),
+    # collapsed-vault (L5-6), flooded-workings (L4-6), deepest-chamber (L5-6)
+    # Why: it grew up in the flooded workings and cannot leave them. It drags up what the water has
+    # been holding since the works drowned — worked iron, and the root that grows in the dark.
+    typeKey: enemies
+    displayName: Sump Crawler Drops
+    rarityWeight: 80
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: antidote
+        dropWeight: 40
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: iron-ingot
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 2
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-nature
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+
+  - slug: mire-boar-drops
+    # band: b4-6 — mire-boar, roster band 4-6; spawns at mire-crossing (L3-6), bone-hollow (L4-6)
+    # Why: it sows in the bog grass and charges the smell of smoke and metal. A big animal yields a
+    # fuller harvest than a rat does — that is the whole difference between the two tables.
+    typeKey: enemies
+    displayName: Mire Boar Drops
+    rarityWeight: 80
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: health-potion
+        dropWeight: 40
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: iron-ingot
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-nature
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 3
+        isGuaranteed: false
