@@ -18,7 +18,7 @@ status: >-
 covers_levels: [1, 30]
 level_range_justification: >-
   Card asked for 1-20; the seeded world already has zones at L20, L23 and L26
-  (ZoneLocationsSeeder.cs:521, :547, :573) and hostile archetypes to MinLevel 26
+  (ZoneLocationsSeeder.cs:525, :558, :584) and hostile archetypes to MinLevel 26
   (ArchetypeSeeder.cs:662). 1-26 covers 1-20 with no gap, so it is the 1-20 table plus
   the three zones that would otherwise be stranded. See decision 1. Extended to 1-30 on
   2026-11-20 by C4, because the seeded content already reaches level 30 on its own:
