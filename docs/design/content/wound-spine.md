@@ -44,13 +44,13 @@ Read from code, with the line that says so. Every row shaped a decision below.
 | **No seeded location is instanced.** `IsInstanced` is nullable, read at two places, and set by no seeder — every dungeon room is public world state | `RealmEngine.Data/Entities/Content/ZoneLocation.cs:90`; `EfCoreZoneLocationRepository.cs:96`; `TravelToNodeHubCommand.cs:551`; (no `IsInstanced` assignment in `ZoneLocationsSeeder.cs`) | The clear→unlock path is **dead in shipped content**. Setting the flag on the Maw's dungeon rooms is a content change, not an engine change — and it is what makes the entry condition an *act* rather than a number. |
 | **The unlock hub method trusts the client**: `UnlockZoneLocation(LocationSlug, UnlockSource)` writes an unlock with no verification that the character holds the item or finished the quest | `GameHub.cs:2695-2705`; `UnlockZoneLocationHubCommand.cs:69-113` | Any content gate is spoofable until a server-side source check exists. §2 says so plainly instead of promising a wall it cannot build. |
 | The one **non-spoofable** unlock is the passive discovery check: it compares the character's real level against `DiscoverThreshold` server-side and writes the unlock itself | `TravelToNodeHubCommand.cs:474-516` | A level wall is the only enforceable gate today. Use it as the backstop under the act-gate. |
-| Spawn level is the archetype's `MinLevel` and nothing else | `EfCoreEnemyRepository.cs:52` | Within band `b23-26` only levels **23** (`ArchetypeSeeder.cs:613`, pyreling) and **26** (`:658`, fire-ancient) can spawn. Zones recommended at 24–25 have nothing to populate them today. |
+| Spawn level is the archetype's `MinLevel` and nothing else | `EfCoreEnemyRepository.cs` — *MapToModel*, `Level = e.MinLevel` | Within band `b23-26` only levels **23** (`ArchetypeSeeder.cs:613`, pyreling) and **26** (`:658`, fire-ancient) can spawn. Zones recommended at 24–25 have nothing to populate them today. |
 | The approved roster covers **1–20** and says so; levels 21–30 and the Wound are named as out of scope | `docs/design/content/archetypes.md`, §"What this roster does not cover" | The Wound's cast does not exist. That is a dependency (§7), not something this card may invent. |
 | Band `b23-26`: HP 300–380, damage 30–44 per hit, XP 180–380, gold 30–75, drop chance 0.08–0.30 | `game-context/budget.yaml`, band `b23-26` | The endgame shares the top band with region 4's last zones. Escalation cannot come from numbers (§5). |
-| `RegionType` has five members — Forest, Highland, Coastal, Volcanic, Countryside — and none of them is the Wound | `Veldrath.Server/Data/Entities/Region.cs:46-70` | A sixth member is needed. It is **free**: `Region.Type` is stored via `HasConversion<string>()`, so no migration is required (`ApplicationDbContext.cs:130`). |
-| `Region.IsDiscoverable` and `Zone.IsDiscoverable` are never read | `Region.cs:34-35`; `Zone.cs:28`; no reader in `Features/` or the repositories | Set them honestly, but do not claim they gate anything. |
+| `RegionType` has five members — Forest, Highland, Coastal, Volcanic, Countryside — and none of them is the Wound | `Veldrath.Server/Data/Entities/Region.cs:46-62` | A sixth member is needed. It is **free**: `Region.Type` is stored via `HasConversion<string>()`, so no migration is required (`ApplicationDbContext.cs:130`). |
+| `Region.IsDiscoverable` and `Zone.IsDiscoverable` are never read | `Region.cs:28`; `Zone.cs:36`; no reader in `Features/` or the repositories | Set them honestly, but do not claim they gate anything. |
 | Every zone must flag exactly one `SafeRespawn` location, or the respawn path logs an `Error` and falls back to the zone's first location | `ZoneLocation.cs` (*SafeRespawn*); `RespawnHubCommand.cs:178-183` | Each of the five zones owes exactly one safe-respawn location to the content pass. Not zero ("lawless endgame") — zero is a logged error. |
-| An empty spawn pool spawns nothing and substitutes nothing | `ActorPoolResolver.cs:39-44` | A zone with no cast yet is authorable and does not throw. The spine can land before the roster does. |
+| An empty spawn pool spawns nothing and substitutes nothing | `ActorPoolResolver.cs:54-60` | A zone with no cast yet is authorable and does not throw. The spine can land before the roster does. |
 
 ---
 
@@ -101,7 +101,7 @@ before it stops rewarding them.
 **What does not work, and why it is not proposed.** A hidden `RegionExit` on Cinderplain's region map
 was the obvious shape and it is impossible: the validator requires a `RegionExit`'s `RefId` to be a
 region slug (`MapGraphValidator.cs:543`), and visibility is decided by matching `RefId` against
-*unlocked location slugs* (`:522-537`), so a region exit cannot be gated by content at all.
+*unlocked location slugs* (`TravelToNodeHubCommand.cs:522-537`), so a region exit cannot be gated by content at all.
 
 ### 2.2 "Nothing here may be reachable at level 1"
 
@@ -154,7 +154,7 @@ precedes it, not sprung.
 
 **Authoring constraint inherited from §1:** each zone needs exactly one `SafeRespawn` location
 (`RespawnHubCommand.cs:178-183`), and each zone may ship with **empty** pools without throwing
-(`ActorPoolResolver.cs:39-44`). Zone types: 1–3 `Wilderness`, 4–5 `Dungeon` (built interiors whose
+(`ActorPoolResolver.cs:54-60`). Zone types: 1–3 `Wilderness`, 4–5 `Dungeon` (built interiors whose
 cast is not a guardian, §5).
 
 ---
@@ -286,7 +286,7 @@ the dependency is listed in §7 instead.
 
 | # | Dependency | Why the spine cannot answer it | Consequence if it lands differently |
 |---|---|---|---|
-| 1 | **A 21–30 archetype roster** (the approved roster stops at 20 and says so) | This card may not author archetypes | The five zones are authorable with empty pools (`ActorPoolResolver.cs:39-44`) and unplayable as combat content. Zones 2–4 want levels 24–25, where **nothing** spawns today (§1). |
+| 1 | **A 21–30 archetype roster** (the approved roster stops at 20 and says so) | This card may not author archetypes | The five zones are authorable with empty pools (`ActorPoolResolver.cs:54-60`) and unplayable as combat content. Zones 2–4 want levels 24–25, where **nothing** spawns today (§1). |
 | 2 | **`IsInstanced = true` on the cleared `fire-ancients-chamber` room** | No seeder sets it, so the clear→unlock path never fires; the flag does nothing on the hidden gate node, which has no `ZoneInstanceId` to report | Without it the entry condition degrades to the level wall alone: a number, not an act. |
 | 3 | **A server-side unlock source check** | `UnlockZoneLocation` trusts the client (`GameHub.cs:2695-2705`) | "Not reachable at level 1" holds only against an honest client (§2.2). |
 | 4 | **`RegionType` gains a member** | Named entity decision, not a zone decision; free of migrations (`ApplicationDbContext.cs:130`) | The region row cannot be seeded correctly. |
