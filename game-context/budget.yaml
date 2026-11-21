@@ -3,13 +3,15 @@
 # merchants section appended by card t_2f9c409a (C2), approved 2026-11-20; landed by card t_190ecb14 (L2).
 # bands extended to level 30 (b27-30) by card t_259ac697 (C4), approved 2026-11-20; the tail roster
 #   it anchors on is D6/L6 (archetypes.md). No other band moved.
+# merchants.town_level_basis reworded by card t_afa56434, approved 2026-11-20: its hostile-ladder
+#   analogy now points at b27-30, which C4 made the top of the ladder.
 # dev-content may choose values INSIDE a band; it may not invent a curve.
 # wiring says whether the engine reads each keyed stat TODAY, with file:line.
 
-schema_version: 3
+schema_version: 4
 status: >-
   approved 2026-11-20 (bands, spawn, loot); merchants approved 2026-11-20;
-  b27-30 approved 2026-11-20
+  b27-30 approved 2026-11-20; merchants.town_level_basis reworded 2026-11-20
 covers_levels: [1, 30]
 level_range_justification: >-
   Card asked for 1-20; the seeded world already has zones at L20, L23 and L26
@@ -282,7 +284,7 @@ merchants:
     (Veldrath.Server/Data/Entities/Zone.cs:17-18). The seeded merchant towns and their MinLevel are crestfall 0,
     aldenmere 5, tolvaren 10 and skarhold 18 (Veldrath.Server/Data/Seeders/ApplicationDataSeeder.cs:77, :84, :89,
     :94). The fifth HasMerchant zone is the dev playground (:99) and is excluded as IsDevOnly. A town authored
-    above L18 uses the L18 band; no band is invented for it, the same way b23-26 is the top of the hostile ladder.
+    above L18 uses the L18 band; no band is invented for it, the same way b27-30 is the top of the hostile ladder.
   gold_by_town_level:
     L0:  [100, 250]    # crestfall — 8 x 0.40 x 30 = 96 .. 16 x 0.50 x 30 = 240; ceiling 30 = rune-of-fire (ItemsSeeder.cs:59)
     L5:  [250, 650]    # aldenmere — 8 x 0.40 x 80 = 256 .. 16 x 0.50 x 80 = 640; ceiling 80 = rune-of-power (ItemsSeeder.cs:61)
