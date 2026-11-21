@@ -8,24 +8,31 @@
 # merchants.wiring rewritten 2026-11-20 by card t_a304ad79 (docs truth pass): T1 (t_444d0159) made the
 #   band enforced, so the status text below describes the live shop. No band value moved. The numbers
 #   in merchants are parsed by MerchantBandTests.
+# wiring.hp/xp/gold flipped to live:true 2026-11-20 by card t_d7f1fee8 (docs truth pass): the archetype
+#   projection has assigned MaxHealth, XP and GoldReward since PR #103 (d119b9f1), so the "never assigned /
+#   stays 25 / stays 10" sentences had been false since that PR, not since #136 (which placed instances on
+#   top of them). Flags, details and sibling anchors re-derived at d0050f96. No band value moved.
 # dev-content may choose values INSIDE a band; it may not invent a curve.
 # wiring says whether the engine reads each keyed stat TODAY, with file:line.
 
-schema_version: 4
+schema_version: 5
 status: >-
   approved 2026-11-20 (bands, spawn, loot); merchants approved 2026-11-20;
-  b27-30 approved 2026-11-20; merchants.town_level_basis reworded 2026-11-20
+  b27-30 approved 2026-11-20; merchants.town_level_basis reworded 2026-11-20;
+  wiring.hp/xp/gold corrected to live 2026-11-20
 covers_levels: [1, 30]
 level_range_justification: >-
   Card asked for 1-20; the seeded world already has zones at L20, L23 and L26
-  (ZoneLocationsSeeder.cs:521, :547, :573) and hostile archetypes to MinLevel 26
-  (ArchetypeSeeder.cs:662). 1-26 covers 1-20 with no gap, so it is the 1-20 table plus
-  the three zones that would otherwise be stranded. See decision 1. Extended to 1-30 on
-  2026-11-20 by C4, because the seeded content already reaches level 30 on its own:
-  fire-ancient is seeded 26-30 (:662-663) and all three kaldrek-maw rooms run to L30
-  (ZoneLocationsSeeder.cs:590, :598, :606 — 26-30, 26-30 and 28-30), so with 1-26 the top
-  band stops four levels short of the rooms it has to describe. Levels 27-30 are the four
-  the ladder was missing, not new content.
+  (ZoneLocationsSeeder.cs: the ashfields, smoldering-reach and kaldrek-maw zone
+  headers) and hostile archetypes to MinLevel 26 (ArchetypeSeeder.cs:662). 1-26
+  covers 1-20 with no gap, so it is the 1-20 table plus the three zones that would
+  otherwise be stranded. See decision 1. Extended to 1-30 on 2026-11-20 by C4,
+  because the seeded content already reaches level 30 on its own: fire-ancient is
+  seeded 26-30 (:662-663) and all three kaldrek-maw rooms run to L30
+  (ZoneLocationsSeeder.cs: the maw-descent, fire-ancients-chamber and kaldreks-heart
+  room blocks — 26-30, 26-30 and 28-30), so with 1-26 the top band stops four levels
+  short of the rooms it has to describe. Levels 27-30 are the four the ladder was
+  missing, not new content.
 
 units:
   hp: "absolute HP, authored as ArchetypeStats.Health"
@@ -140,17 +147,19 @@ wiring:
     detail: >-
       spawn level is the archetype's MinLevel and nothing else, no level roll
       (EfCoreEnemyRepository.cs:52); MaxLevel only feeds the seeded-encounter overlap rule
-      (SeededEncounterCoverageTests.cs:132-143). One archetype per band, not per level.
+      (SeededEncounterCoverageTests.cs:207-239). One archetype per band, not per level.
       Because nothing rolls, an archetype banded 26-30 spawns at 26 in every room it is pooled
       in — including a room whose floor is 28. That is the whole reason b27-30 has two authored
       rows instead of one 26-30 row: ash-eater (26-30) spawns at 26 for fire-ancients-chamber,
       and maw-serpent (28-30) is the only row that can stand on kaldreks-heart's floor of 28.
   hp:
-    live: false
+    live: true
     detail: >-
-      Stats.Health lands on Enemy.Health (EfCoreEnemyRepository.cs:51) but the spawn reads
-      Enemy.MaxHealth (ActorPoolResolver.cs:94-95), which is never assigned, so every spawn
-      has 50 HP (Enemy.cs:85).
+      Stats.Health lands on Enemy.Health AND Enemy.MaxHealth (ActorTemplateProjection.cs:122-126 — the
+      archetype value, or a named instance's override composed over it, ActorInstancesSeeder.cs:111, :137),
+      and the spawn copies MaxHealth into CurrentHealth and MaxHealth (ActorPoolResolver.cs:180-181).
+      Every spawn therefore carries its authored HP; 50 (Enemy.cs:86, :91) survives only for a row that
+      authors no health.
   damage_per_hit:
     live: false
     detail: >-
@@ -158,11 +167,22 @@ wiring:
       5 (Enemy.cs:130), so enemy damage is 5 + (level - 1) minus the player's CON modifier
       (CombatHelpers.cs:69-77) for every archetype.
   xp:
-    live: false
-    detail: "not projected; Enemy.XP stays 25 (Enemy.cs:141), so every kill is 25 XP (ActorPoolResolver.cs:96)"
+    live: true
+    detail: >-
+      Stats.ExperienceReward lands on Enemy.XP (ActorTemplateProjection.cs:133-136 — the archetype value,
+      or a named instance's override composed over it, ActorInstancesSeeder.cs:115, :142), and the spawn
+      copies it into BaseXp (ActorPoolResolver.cs:182). The seeded archetypes author it
+      (ArchetypeSeeder.cs:98, 143, 187, 232 …), so a kill is worth the authored reward; 25 (Enemy.cs:147)
+      is only the unauthored default.
   gold:
-    live: false
-    detail: "not projected; Enemy.GoldReward stays 10 (Enemy.cs:146), so every kill pays 10 (ActorPoolResolver.cs:97)"
+    live: true
+    detail: >-
+      The archetype authors a range, and the projection rolls one value per spawn from the composed pair
+      (ActorTemplateProjection.cs:147-153; RollGold at :176-187; an instance override composes pair-first,
+      ActorInstancesSeeder.cs:116-117, :143-144). The spawn copies the roll (ActorPoolResolver.cs:183)
+      and EfCoreEnemyInstanceStore writes it on the instance row (EfCoreEnemyInstanceStore.cs:556-558),
+      which every later read takes back (:520-521) — so the stored number is what a kill pays, and 10
+      (Enemy.cs:152) is only the unauthored default.
   drop_chance:
     live: true
     detail: "rolled per entry on every kill (AttackEnemyHubCommand.cs:362-366)"
@@ -178,7 +198,7 @@ wiring:
       nowhere for stats: the spawn copies it onto the enemy as an inert portrait label
       (ActorTemplateProjection.cs:101) and the client draws the frame from it
       (web/client/src/lib/game/archetype-portraits.ts:126). The only test that reads the archetype
-      flag is the loot-table guard (SeededEncounterCoverageTests.cs:163-169).
+      flag is the loot-table guard (SeededEncounterCoverageTests.cs:241-265).
 
 spawn:
   roster_size: [2, 4]
@@ -254,12 +274,12 @@ bosses:
     boundary and a reset notion (ZoneLocation.cs:85-90). NOT ENFORCEABLE TODAY: nothing marks a
     pool entry unique, so a pooled boss can fill every slot of a 2-4 roster
     (ActorPoolResolver.cs:47-51). See the gap list.
-  flag: "Traits.Boss = true; no stat effect (ActorArchetype.cs:107-108)"
+  flag: "Traits.Boss = true; no stat effect (ActorArchetype.cs:118-119)"
 
 elites:
   hp_multiplier: [1.5, 2.5]
   xp_multiplier: [1.5, 2.5]
-  flag: "Traits.Elite = true; also a label with no stat effect (ActorArchetype.cs:109-110)"
+  flag: "Traits.Elite = true; also a label with no stat effect (ActorArchetype.cs:120-121)"
 
 omitted:
   ac: >-
