@@ -24,11 +24,6 @@
 			"ticket": "t_4e58e1ec"
 		},
 		{
-			"names": ["Kael-Raeth", "Vaelraeth"],
-			"reason": "Both are attested forms in calethic-language.md (raeth root and the vaeld+raeth junction row); the one-letter gap is in canon, not an authored coinage, so a design card must not rename either.",
-			"ticket": "t_d805cdf4"
-		},
-		{
 			"names": ["Draekeld", "Drakeld"],
 			"reason": "D5 recorded Drakeld as the root dictionary's example compound for drak (stone), not an attested name or place, and declined to block; revisit if it is ever attested as a name.",
 			"ticket": "t_d805cdf4"

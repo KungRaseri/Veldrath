@@ -12,6 +12,11 @@
  * one letter from `Kael-Raeth` and `Vaelraeth`. Both had passed every earlier check because those
  * compared authored slugs against seeded slugs and never read the naming authority at all.
  *
+ * `fixtures/content-names-f2-landed/` is the second tree that matters: the documents after PR #133
+ * record the renames in prose and bold the retired names, and the authority's §7 Session Log bolds
+ * them too. On that tree `Orveld` is both an attested form and an authored citation one letter from
+ * the attested `Gorveld`, so the check must treat a citation as canon rather than a coinage.
+ *
  * Run with: node --test scripts/tests/content-names.test.mjs
  */
 import assert from 'node:assert/strict';
@@ -22,12 +27,13 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { after, describe, test } from 'node:test';
 
-import { normalizeName, withinDistance } from '../check-content-names.mjs';
+import { extractAuthorityNames, historicalTableRanges, normalizeName, withinDistance } from '../check-content-names.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..');
 const script = join(repoRoot, 'scripts', 'check-content-names.mjs');
 const fixture = join(here, 'fixtures', 'content-names');
+const f2Fixture = join(here, 'fixtures', 'content-names-f2-landed');
 
 const AUTHORED = 'docs/design/content';
 const AUTHORITY = 'docs/lore/calethic-language.md';
@@ -35,12 +41,22 @@ const ALLOWLIST = 'scripts/content-name-collisions.allow.json';
 
 const workDirectories = [];
 
-/** Copies the fixture tree into a fresh temporary root and returns it. */
-function copyFixture() {
+/** Copies a fixture tree into a fresh temporary root and returns it. */
+function copyTree(source) {
 	const root = mkdtempSync(join(tmpdir(), 'content-names-'));
-	cpSync(fixture, root, { recursive: true });
+	cpSync(source, root, { recursive: true });
 	workDirectories.push(root);
 	return root;
+}
+
+/** Copies the D5 fixture tree. */
+function copyFixture() {
+	return copyTree(fixture);
+}
+
+/** Copies the F2-landed fixture tree. */
+function copyF2Fixture() {
+	return copyTree(f2Fixture);
 }
 
 after(() => {
@@ -79,15 +95,8 @@ function addTableRow(root, relative, row) {
 	write(root, relative, lines.join('\n'));
 }
 
-/** The fixture's own allowlist entry: `Kael-Raeth` and `Vaelraeth` are both attested and one letter
- * apart in the real naming authority, so the fixture has to record that decision too. */
-const CANON_PAIR = {
-	names: ['Kael-Raeth', 'Vaelraeth'],
-	reason: 'Both are attested forms in the naming authority; the one-letter gap is canon, not a coinage.'
-};
-
-/** Writes an allowlist file, keeping the fixture's canon pair unless a test drops it. */
-function writeAllowlist(root, allow = [CANON_PAIR]) {
+/** Writes an allowlist file. */
+function writeAllowlist(root, allow = []) {
 	write(root, ALLOWLIST, `${JSON.stringify({ allow }, null, '	')}\n`);
 }
 
@@ -115,18 +124,40 @@ describe('a clean tree', () => {
 		assert.match(result.stdout, /No collisions/);
 		assert.match(result.stdout, /authored names: {2}\d+ from 4 document\(s\)/);
 		assert.match(result.stdout, new RegExp(`authority forms: \\d+ from ${AUTHORITY}`));
-		assert.match(result.stdout, /seeded names: {4}\d+ slugs, \d+ display names from 1 seeder\(s\)/);
-		assert.match(result.stdout, /allowlist: {7}1 entry/);
+		assert.match(result.stdout, /seeded names: {4}\d+ slugs, \d+ display names from 2 seeder\(s\)/);
+		assert.match(result.stdout, /allowlist: {7}0 entries/);
 	});
 
-	test('skips a document that is not there, and says so', () => {
+	test('treats an authored citation of an attested form as canon, not a coinage', () => {
+		const root = copyFixture();
+
+		// The fixture authors `Vaelraeth` (a zone name) and attests both `Vaelraeth` and
+		// `Kael-Raeth`, one letter apart in canon. It is a property of the lexicon, so it is not
+		// reported as an authored collision and needs no allowlist permit.
+		const result = check(root, '--no-allowlist');
+
+		assert.equal(result.status, 0, result.stdout);
+		assert.doesNotMatch(result.stdout, /"Kael-Raeth" ↔ "Vaelraeth"/);
+	});
+
+	test('fails when an authored document is missing instead of passing on a partial input', () => {
 		const root = copyFixture();
 		unlinkSync(join(root, `${AUTHORED}/pool-matrix.md`));
 
 		const result = check(root);
 
-		assert.equal(result.status, 0, result.stdout);
-		assert.match(result.stdout, /not present: {5}docs\/design\/content\/pool-matrix\.md \(skipped\)/);
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /FAIL {2}the authored document is missing: docs\/design\/content\/pool-matrix\.md/);
+	});
+
+	test('fails when a seeder directory is missing instead of passing on a partial input', () => {
+		const root = copyFixture();
+		rmSync(join(root, 'Veldrath.Server/Data/Seeders'), { recursive: true, force: true });
+
+		const result = check(root);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /FAIL {2}the seeder directory is missing: Veldrath\.Server\/Data\/Seeders/);
 	});
 });
 
@@ -159,20 +190,17 @@ describe('the D5 collisions', () => {
 		assert.match(result.stdout, /Gaelraeth {3}— docs\/design\/content\/towns\.md:\d+ {2}\[table column "Name"\]/);
 	});
 
-	test('reports the one-letter gap inside the authority itself', () => {
+	test('does not report two authored citations of attested canon against each other', () => {
 		const root = copyFixture();
-		addTableRow(root, `${AUTHORED}/wound-spine.md`, '| 1 | `vaelraeth` | **Vaelraeth** | 23–24 |');
-
-		// Kael-Raeth and Vaelraeth are both attested and one letter apart. The fixture allowlist
-		// says so; without it the pair is a failure no authored rename could clear.
-		const allowlisted = check(root);
-		assert.equal(allowlisted.status, 0, allowlisted.stdout);
-		assert.match(allowlisted.stdout, /ALLOWED {2}distance 1 \(authored\/authority\): "Kael-Raeth" ↔ "Vaelraeth"/);
-		assert.match(allowlisted.stdout, /reason: Both are attested forms/);
+		// `Kael-Raeth` is attested; authoring it (as a rename note does) makes both sides of the
+		// canon pair authored. Two citations are not an authored naming decision, so the pair is
+		// not reported — no permit needed, and the decision stays with the naming authority.
+		addTableRow(root, `${AUTHORED}/wound-spine.md`, '| 2 | `kaelraeth` | **Kael-Raeth** | 24–25 |');
 
 		const raw = check(root, '--no-allowlist');
-		assert.equal(raw.status, 1, raw.stdout);
-		assert.match(raw.stdout, /FAIL {2}distance 1 .*"Kael-Raeth" ↔ "Vaelraeth"/);
+
+		assert.equal(raw.status, 0, raw.stdout);
+		assert.doesNotMatch(raw.stdout, /"Kael-Raeth" ↔ "Vaelraeth"/);
 	});
 });
 
@@ -181,7 +209,6 @@ describe('the allowlist', () => {
 		const root = copyFixture();
 		addTableRow(root, `${AUTHORED}/wound-spine.md`, '| 3 | `orneld` | **Orneld** | 24–26 |');
 		writeAllowlist(root, [
-			CANON_PAIR,
 			{ names: ['Orneld', 'Orveld'], reason: 'The zone is renamed on its own card; the pair stays visible until it lands.' }
 		]);
 
@@ -228,7 +255,6 @@ describe('the allowlist', () => {
 	test('reports an entry that no longer matches anything as stale, without failing the build', () => {
 		const root = copyFixture();
 		writeAllowlist(root, [
-			CANON_PAIR,
 			{ names: ['Orneld', 'Orveld'], reason: 'The rename already landed, so this permit is spent.' }
 		]);
 
@@ -262,5 +288,52 @@ describe('the seeded catalogue', () => {
 		assert.equal(result.status, 1, result.stdout + result.stderr);
 		assert.match(result.stdout, /"Giant Rat" ↔ "Giant Rats"/);
 		assert.match(result.stdout, /RealmEngine\.Data\/Seeders\/ArchetypeSeeder\.cs:\d+ {2}\[seeded display name\]/);
+	});
+});
+
+describe('the tree where F2 has landed', () => {
+	test('passes: the rename notes cite canon instead of coining it', () => {
+		const root = copyF2Fixture();
+
+		const result = check(root);
+
+		assert.equal(result.status, 0, result.stdout + result.stderr);
+		assert.doesNotMatch(result.stdout, /FAIL/);
+		// `Orveld` is attested and the rename note also bolds it; `Gorveld` is attested and one
+		// letter away. Both are canon, so no author can rename their way out — it must not fail.
+		assert.doesNotMatch(result.stdout, /Gorveld/);
+		assert.match(result.stdout, /No collisions\. 2 allowlisted pair\(s\)/);
+	});
+
+	test('keeps reporting the real coinage collisions on that tree', () => {
+		const root = copyF2Fixture();
+
+		const result = check(root, '--no-allowlist');
+
+		assert.equal(result.status, 1, result.stdout);
+		assert.match(result.stdout, /FAIL {2}distance 1 \(authored\/authored \+ authored\/authority\): "Orneld" ↔ "Orveld"/);
+		assert.match(result.stdout, /"Draekeld" ↔ "Drakeld"/);
+		assert.doesNotMatch(result.stdout, /Gorveld/);
+	});
+
+	test('still fails on a new coinage of the renamed zone', () => {
+		const root = copyF2Fixture();
+		addTableRow(root, `${AUTHORED}/wound-spine.md`, '| 5 | `orndaelm` | **Orndaelm** | 24–26 |');
+
+		const result = check(root);
+
+		assert.equal(result.status, 1, result.stdout);
+		assert.match(result.stdout, /"Orndaeld" ↔ "Orndaelm"/);
+		assert.match(result.stdout, /Orndaeld {2}— docs\/design\/content\/wound-spine\.md:\d+/);
+	});
+
+	test('does not read the session log as an attestation', () => {
+		const text = readFileSync(join(f2Fixture, AUTHORITY), 'utf8');
+		const attested = extractAuthorityNames(text, AUTHORITY).map((entry) => entry.name);
+
+		assert.ok(historicalTableRanges(text).length > 0, 'the fixture must have a dated table');
+		assert.ok(attested.includes('Orveld'), 'the body attests Orveld');
+		assert.ok(!attested.includes('Orneld'), 'the session log only cites Orneld as retired');
+		assert.ok(!attested.includes('Gaelraeth'), 'the session log only cites Gaelraeth as retired');
 	});
 });

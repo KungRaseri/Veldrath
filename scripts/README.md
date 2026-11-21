@@ -207,8 +207,11 @@ slugs, and the naming authority — [`docs/lore/calethic-language.md`](../docs/l
 It compares every authored name in `docs/design/content/{archetypes,towns,wound-spine,pool-matrix}.md`
 against three sets, and fails on edit distance 1 after folding case, hyphens and diacritics:
 
-- every attested form and named entity in the naming authority;
-- every seeded slug and display name in `RealmEngine.Data/Seeders/*.cs`;
+- every emphasised Calethic token and named entity in the naming authority — the rule is "one
+  letter from any emphasised token", so the root-dictionary examples and bound suffixes count, not
+  only the forms used as proper names;
+- every seeded slug and display name in `RealmEngine.Data/Seeders/*.cs` and
+  `Veldrath.Server/Data/Seeders/*.cs`;
 - every other authored name (distance 0 with two different slugs is one name for two entities).
 
 A name counts only where a document declares it: a table column headed `name`/`display name…`/
@@ -216,11 +219,22 @@ A name counts only where a document declares it: a table column headed `name`/`d
 Distance 0 against the authority or a seeded name is a citation, not a collision — the roster
 restates seeded display names on purpose.
 
+Two names that are both exact attested forms are canon, not coinage, and are not compared against
+each other: a rename note that bolds `Orveld`, or a design row that reuses `Vaelraeth`, is quoting
+the naming authority, and no author can rename canon to clear a warning. That also keeps the
+canon-internal gap `Kael-Raeth` ↔ `Vaelraeth` out of the report, where it belongs to the naming
+authority rather than to a design card. An authored name that is **not** attested is a coinage and
+is still compared against everything. The authority's own §7 Session Log table is skipped, because
+its rename notes bold the retired form as a past state, not an attestation.
+
+A missing authored document, missing seeder directory or empty extraction fails the check: passing
+on a partial input is a false green.
+
 ```bash
 node scripts/check-content-names.mjs                 # the gate (run by docs.yml)
 node scripts/check-content-names.mjs --no-allowlist  # every collision, decisions ignored
 node scripts/check-content-names.mjs --verbose       # list the names each document contributed
-node --test scripts/tests/content-names.test.mjs     # offline: fixture tree, real collisions
+node --test scripts/tests/content-names.test.mjs     # offline: two fixture trees, real collisions
 ```
 
 A failure names both sides, the distance and the line where each is defined. **Renaming is the fix**;
@@ -229,6 +243,11 @@ a placeholder is rejected. An allowlisted pair is printed with its reason on eve
 that no longer matches anything is reported `STALE` rather than failing the build, because two
 cards (a rename and this check) land in whatever order they land and neither should red the other.
 Delete a stale entry: a permit left behind would silently cover a name that comes back later.
+
+`scripts/tests/fixtures/content-names-f2-landed/` is the second fixture tree: the documents after
+PR #133, where the renames are recorded in prose and the retired names are bold. It is the tree the
+gate lives on once the rename lands, and the one that caught the first version of this check
+reporting the attested `Orveld` one letter from the attested `Gorveld`.
 
 ---
 

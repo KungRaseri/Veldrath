@@ -116,8 +116,10 @@ jobs:
       # D5 found `Orneld` one letter from `Orveld` and `Gaelraeth` one letter from `Kael-Raeth` after
       # every prior validator had passed, because those compared authored slugs to seeded slugs and
       # `docs/lore/calethic-language.md` holds no slugs at all. Offline, like the link check: it
-      # reads the four content documents, the authority and the C# seeders, and fails on edit
-      # distance 1 with both names, the distance and both line numbers named.
+      # reads the four content documents, the authority and both seeder directories, and fails on
+      # edit distance 1 with both names, the distance and both line numbers named. A citation of an
+      # attested form is canon, not a coinage, so a rename note cannot red the gate; a missing input
+      # fails it rather than passing on a partial read.
       - name: Check authored names for collisions
         run: node scripts/check-content-names.mjs
 

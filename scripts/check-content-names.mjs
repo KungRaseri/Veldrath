@@ -9,8 +9,11 @@
  * slugs at all, and was therefore never in scope. This check puts it in scope.
  *
  * What it compares, in three directions:
- *   1. every authored name against every attested form and named entity in the naming authority,
- *   2. every authored name against every seeded slug and seeded display name (`RealmEngine.Data/Seeders/*.cs`),
+ *   1. every authored name against every emphasised Calethic token and named entity in the naming
+ *      authority — the rule is "one letter from any emphasised token", which includes the
+ *      root-dictionary examples and bound suffixes, not only the forms used as proper names,
+ *   2. every authored name against every seeded slug and seeded display name
+ *      (`RealmEngine.Data/Seeders/*.cs` and `Veldrath.Server/Data/Seeders/*.cs`),
  *   3. every authored name against every other authored name.
  *
  * A pair fails at edit distance **1**, after normalisation: case-insensitive, hyphens and
@@ -18,6 +21,19 @@
  * when both sides are the same name being cited — the roster restates seeded display names, and a
  * zone may legitimately use an attested form (`Vaelraeth`). It *is* a failure when two entries
  * carry different slugs and still spell the same name: that is one name for two entities.
+ *
+ * Two names that are both exact attested forms are canon, not coinage, and are not compared:
+ * a renaming note that cites `Orveld` (or a design row that reuses `Vaelraeth`) is quoting the
+ * naming authority, and no author can rename canon to clear a warning. The same rule keeps the
+ * canon-internal gap `Kael-Raeth` ↔ `Vaelraeth` out of the report — it is a property of the
+ * lexicon, and the decision belongs to the naming authority, not to a design card. An authored
+ * name that is *not* attested is a coinage and is still compared against everything, so the
+ * `Orneld` / `Gaelraeth` class of defect keeps failing.
+ *
+ * The authority's own §7 Session Log table is excluded: it records history, so a rename note
+ * bolds the retired form (`**Orneld**`) as a citation of a past state. Reading that as an
+ * attestation would make a retired name canon and silently exempt it from this check if it were
+ * ever re-introduced.
  *
  * Where an authored name is defined (the extraction rules — a name is only checked if a document
  * declares it as a name):
@@ -45,7 +61,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-/** Documents that author names. Missing ones are reported and skipped, never silently ignored. */
+/** Documents that author names. A missing one fails the check — a moved document is not a pass. */
 export const AUTHORED_DOCUMENTS = [
 	'docs/design/content/archetypes.md',
 	'docs/design/content/towns.md',
@@ -56,8 +72,9 @@ export const AUTHORED_DOCUMENTS = [
 /** The naming authority: attested forms, roots and the named-entity pass. */
 export const NAMING_AUTHORITY = 'docs/lore/calethic-language.md';
 
-/** Seeded slugs and display names live here, one file per content family. */
-export const SEEDERS_DIRECTORY = 'RealmEngine.Data/Seeders';
+/** Seeded slugs and display names live here, one file per content family. Both are read: the engine's
+ * catalogue seeds and the server's world text seeds. */
+export const SEEDERS_DIRECTORIES = ['RealmEngine.Data/Seeders', 'Veldrath.Server/Data/Seeders'];
 
 /** Pairs that are deliberately similar. Every entry must carry a reason. */
 export const ALLOWLIST_PATH = 'scripts/content-name-collisions.allow.json';
@@ -353,6 +370,34 @@ export function extractAuthoredNames(text, file) {
 }
 
 /**
+ * Line ranges (1-based, inclusive) of tables that record history — a table whose first column is
+ * headed `Date`. The naming authority's §7 Session Log is one: its rows cite renamed forms in bold,
+ * which are past states, not attestations.
+ * @param {string} text The document.
+ * @returns {[number, number][]} Inclusive line ranges.
+ */
+export function historicalTableRanges(text) {
+	const lines = text.split('\n');
+	const ranges = [];
+
+	for (let index = 0; index < lines.length - 1; index += 1) {
+		if (!lines[index].trim().startsWith('|')) continue;
+		const separator = lines[index + 1];
+		if (!/^\s*\|[\s:|-]+\|\s*$/.test(separator) || !separator.includes('---')) continue;
+
+		const header = splitRow(lines[index]).map((cell) => cell.replace(/[`*]/g, '').trim().toLowerCase());
+		if (header[0] !== 'date') continue;
+
+		let end = index + 2;
+		while (end < lines.length && lines[end].trim().startsWith('|')) end += 1;
+		ranges.push([index + 1, end]);
+		index = end - 1;
+	}
+
+	return ranges;
+}
+
+/**
  * Extracts every attested form and named entity from the naming authority.
  *
  * The authority marks Calethic forms with emphasis — `*Orveld*`, `**Vaelraeth**` — and names its
@@ -365,11 +410,17 @@ export function extractAuthoredNames(text, file) {
 export function extractAuthorityNames(text, file) {
 	const starts = lineIndex(text);
 	const found = [];
+	const historical = historicalTableRanges(text);
+
+	const inHistory = (line) => historical.some(([first, last]) => line >= first && line <= last);
 
 	const emphasis = /\*\*([^*\n]+?)\*\*|\*([^*\n]+?)\*/g;
 	for (const match of text.matchAll(emphasis)) {
 		const value = (match[1] ?? match[2]).trim();
 		const bold = Boolean(match[1]);
+		const line = lineAt(starts, match.index);
+		// A history row cites a past state (`**Orneld**` in the session log), it does not attest a form.
+		if (inHistory(line)) continue;
 		// A bold multi-word span is a table label ("Calethic (working name)") or an English
 		// phrase; a bold single token or hyphenated compound is a Calethic form.
 		if (bold && /[()]/.test(value)) continue;
@@ -377,7 +428,7 @@ export function extractAuthorityNames(text, file) {
 			found.push({
 				name,
 				file,
-				line: lineAt(starts, match.index),
+				line,
 				where: bold ? 'attested form (bold)' : 'attested form (italic)'
 			});
 		}
@@ -500,6 +551,11 @@ export function findCollisions(authored, authority, seeded) {
 
 	const report = (distance, kind, left, right) => collisions.push({ distance, kind, left, right });
 
+	// A name that is an exact attested form is a citation of canon. Two citations are not an
+	// authored naming decision, and an author cannot rename canon to clear a warning.
+	const attestedKeys = new Set(dedupeByKey(authority, normalizeName).map((entry) => entry.key));
+	const isCitation = (side) => attestedKeys.has(normalizeName(side.name));
+
 	// Authored against each other.
 	for (let i = 0; i < authored.length; i += 1) {
 		for (let j = i + 1; j < authored.length; j += 1) {
@@ -509,6 +565,7 @@ export function findCollisions(authored, authority, seeded) {
 
 			const distance = withinDistance(normalizeName(left.name), normalizeName(right.name), 1);
 			if (distance === 1) {
+				if (isCitation(left) && isCitation(right)) continue;
 				report(1, 'authored/authored', left, right);
 			} else if (distance === 0 && left.slug && right.slug && left.slug !== right.slug) {
 				// One spelling, two identities.
@@ -517,9 +574,12 @@ export function findCollisions(authored, authority, seeded) {
 		}
 	}
 
-	// Authored against the naming authority. An exact match is the document citing the authority.
+	// Authored against the naming authority. An exact match is the document citing the authority,
+	// and so is a near match where the authored side is itself an attested form. Only coinages
+	// can be one letter from canon and still be an authored defect.
+	const coinages = authored.filter((name) => !isCitation(name));
 	for (const entry of dedupeByKey(authority, normalizeName)) {
-		for (const name of authored) {
+		for (const name of coinages) {
 			const distance = withinDistance(normalizeName(name.name), entry.key, 1);
 			if (distance === 1) report(1, 'authored/authority', name, entry.source);
 		}
@@ -609,21 +669,33 @@ export function mergeCollisions(collisions) {
 		.sort((left, right) => left.key.localeCompare(right.key));
 }
 
-/** Reads the repository-relative seeders. */
+/**
+ * Reads the repository-relative seeders from both seed directories.
+ * @param {string} root Repository root.
+ * @returns {{ seeders: { file: string, text: string }[], missingDirectories: string[] }} Files and any absent directory.
+ */
 function readSeeders(root) {
-	const directory = join(root, SEEDERS_DIRECTORY);
-	if (!existsSync(directory)) return [];
+	const seeders = [];
+	const missingDirectories = [];
 
-	return readdirSync(directory)
-		.filter((name) => name.endsWith('.cs'))
-		.sort()
-		.map((name) => {
-			const path = join(directory, name);
-			return {
-				file: `${SEEDERS_DIRECTORY}/${name}`.split(sep).join('/'),
-				text: readFileSync(path, 'utf8')
-			};
-		});
+	for (const directory of SEEDERS_DIRECTORIES) {
+		const absolute = join(root, directory);
+		if (!existsSync(absolute)) {
+			missingDirectories.push(directory);
+			continue;
+		}
+
+		for (const name of readdirSync(absolute)
+			.filter((entry) => entry.endsWith('.cs'))
+			.sort()) {
+			seeders.push({
+				file: `${directory}/${name}`.split(sep).join('/'),
+				text: readFileSync(join(absolute, name), 'utf8')
+			});
+		}
+	}
+
+	return { seeders, missingDirectories };
 }
 
 /** Parses the command line. */
@@ -666,14 +738,37 @@ function main() {
 	}
 
 	const authorityPath = join(root, NAMING_AUTHORITY);
-	if (!existsSync(authorityPath)) {
-		process.stderr.write(`FAIL  the naming authority is missing: ${NAMING_AUTHORITY}\n`);
+	const authority = existsSync(authorityPath)
+		? extractAuthorityNames(readFileSync(authorityPath, 'utf8'), NAMING_AUTHORITY)
+		: [];
+
+	const { seeders, missingDirectories } = readSeeders(root);
+	const seeded = extractSeededNames(seeders);
+
+	// Fail closed. A check that silently passes because an input moved is a false green: every
+	// authored document, the authority and both seed directories must be readable, and each
+	// extraction must have produced names.
+	const inputErrors = missingDocuments.map((document) => `the authored document is missing: ${document}`);
+	if (!existsSync(authorityPath)) inputErrors.push(`the naming authority is missing: ${NAMING_AUTHORITY}`);
+	for (const directory of missingDirectories) inputErrors.push(`the seeder directory is missing: ${directory}`);
+	if (missingDirectories.length === 0 && seeders.length === 0) {
+		inputErrors.push(`no seeder files were found under ${SEEDERS_DIRECTORIES.join(' or ')}`);
+	}
+	if (authored.length === 0) {
+		inputErrors.push('no authored names were extracted — the documents no longer match the extraction rules');
+	}
+	if (authority.length === 0) {
+		inputErrors.push(`no attested forms were extracted from ${NAMING_AUTHORITY} — the emphasis and heading rules no longer match`);
+	}
+	if (seeded.slugs.length === 0) inputErrors.push('no seeded slugs were extracted — the C# property names no longer match');
+	if (seeded.displayNames.length === 0) {
+		inputErrors.push('no seeded display names were extracted — the C# property names no longer match');
+	}
+
+	if (inputErrors.length > 0) {
+		for (const error of inputErrors) process.stderr.write(`FAIL  ${error}\n`);
 		process.exit(1);
 	}
-	const authority = extractAuthorityNames(readFileSync(authorityPath, 'utf8'), NAMING_AUTHORITY);
-
-	const seeders = readSeeders(root);
-	const seeded = extractSeededNames(seeders);
 
 	const allowlist = options.allowlist
 		? loadAllowlist(join(root, ALLOWLIST_PATH))
@@ -725,7 +820,6 @@ function main() {
 		? `${allowlist.entries.length} ${allowlist.entries.length === 1 ? 'entry' : 'entries'} from ${ALLOWLIST_PATH}`
 		: 'ignored (--no-allowlist)';
 	lines.push(`  allowlist:       ${allowlistSummary}`);
-	for (const document of missingDocuments) lines.push(`  not present:     ${document} (skipped)`);
 	lines.push('');
 
 	for (const error of allowlist.errors) lines.push(`FAIL  ${error}`);
