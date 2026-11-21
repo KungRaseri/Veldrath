@@ -56,7 +56,7 @@ One consequence follows from amendments 3 and 4 rather than being an amendment i
 for D5 rather than decided here: `ashfields` no longer has a hostile location below level 21, so
 `ash-jack` and `forge-deserter` (roster band 19–20) must be **seeded with `MaxLevel = 22`** or they can
 appear nowhere — the engine's overlap guard requires the archetype's range to reach the battlefield's
-`MinLevel` (`SeededEncounterCoverageTests.cs:132-143`). §6 carries the range; the roster band is
+`MinLevel` (`SeededEncounterCoverageTests.cs:207-239`). §6 carries the range; the roster band is
 unchanged, which is the same pattern as the seven carried-over archetypes whose seeded range is wider
 than their band.
 
@@ -65,10 +65,10 @@ than their band.
 | Claim | Source | Verified how |
 |---|---|---|
 | 67 zone locations, 19 zones, their `MinLevel`/`MaxLevel`, `DangerLevel` and traits | `RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs` | parsed the seeder's 67 `new ZoneLocation` blocks; every count below is a count over that parse |
-| A pool is `IList<ActorPoolEntry>` on the location; entry weight is a relative integer; weight `<= 0` counts as 1 | `RealmEngine.Data/Entities/Content/ZoneLocation.cs:36`, `:94-101`, `Veldrath.Server/Features/Characters/Combat/ActorPoolResolver.cs:101-112` | read |
-| An empty pool spawns nothing, by design — no fallback archetype | `ActorPoolResolver.cs:39-45` | read |
-| A non-hostile pool entry is dropped from the roster with a warning | `ActorPoolResolver.cs:62-71` | read |
-| Roster size is **2–4, globally** — `MinCount`/`MaxCount` are private consts, rolled once per location | `ActorPoolResolver.cs:13-14`, `:47` | read |
+| A pool is `IList<ActorPoolEntry>` on the location; entry weight is a relative integer; weight `<= 0` counts as 1 | `RealmEngine.Data/Entities/Content/ZoneLocation.cs:36`, `:94-101`, `Veldrath.Server/Features/Characters/Combat/ActorPoolResolver.cs:193-204` | read |
+| An empty pool spawns nothing, by design — no fallback archetype — but it does not suppress a location's **hostile** placements: those spawn on their own, exactly as placed, never topped up (a non-hostile placement is dropped with a warning) | `ActorPoolResolver.cs:86-92`, `:100-106`, `:111-115` | read |
+| A non-hostile pool entry is dropped from the roster with a warning | `ActorPoolResolver.cs:133-139` | read |
+| The roster roll is **2–4, globally** — `MinCount`/`MaxCount` are private consts, rolled once per location as a fill target: the location's placed **hostile** instances go in first (a non-hostile placement is dropped), and the pool fills from their count up to the roll, so five or more hostile placements at one location would exceed it | `ActorPoolResolver.cs:32-33`, `:94`, `:100-106`, `:117` | read |
 | The roster is rolled **once** into `EnemyInstances` and never re-rolled; respawn revives the same row | `Veldrath.Server/Features/Characters/Combat/EfCoreEnemyInstanceStore.cs:56-98` | D0 measured it; I re-read the method |
 | Seeded archetypes and their real `MinLevel`/`MaxLevel` | `RealmEngine.Data/Seeders/ArchetypeSeeder.cs` | parsed all 17 archetypes (14 hostile, 3 non-hostile) |
 | The archetype roster, its bands, and each archetype's zones | `docs/design/content/archetypes.md` (D1) | read, proposed 2026-11-20 |
@@ -140,7 +140,7 @@ this section, run over these files and the two seeders.
 | Rule | Result |
 |---|---|
 | Every hostile location has **≥ 1 pool entry**; the card asks for ≥ 2 | **28 of 28** have 2–4 entries. `kaldreks-heart` was the one entry short until amendment 5 |
-| Every roster archetype appears in at least one pool | **26 of 27** hostile D1 roster archetypes are pooled. `bandit-captain` is **withheld on purpose** — D0 approved "bosses ×2–4, pools held until a uniqueness mechanism exists", and nothing today stops a pooled boss from filling all 2–4 slots (`ActorPoolResolver.cs:47-51`). D6's five tail rows are outside that count; §6 and §7 carry them |
+| Every roster archetype appears in at least one pool | **26 of 27** hostile D1 roster archetypes are pooled. `bandit-captain` is **withheld on purpose** — D0 approved "bosses ×2–4, pools held until a uniqueness mechanism exists", and nothing today stops a pooled boss from filling all 2–4 slots (`ActorPoolResolver.cs:117-142`). D6's five tail rows are outside that count; §6 and §7 carry them |
 | No archetype appears more than one band from its location's entry band | **all 74 entries pass** on the D1 ladder + tail band. **3 entries** additionally break D1's per-archetype *zone* list (`cinderling` outside `ashfields`, §7) — a documented deviation, not an oversight |
 | **Tolerance cap (2026-11-20):** at most **one** entry above its location's top band, that entry `weight ≤ 2` | **1 of 74 entries is above its location's top band** — `moor-wight` in `bone-hollow`, now weight 1 (amendment 2). **0 pools breach the cap.** The 30 adjacent entries are listed below with their bands, so the difference between "adjacent" and "above" is measured, not asserted. One entry is out of band without being above it: `pyreling` at `kaldreks-heart` is the same D1 tail band as its location and one band **below** it on the published `b27-30` table — amendment 5, weight 2 |
 | Weights are relative integers, no zero, no percentages | **all 74 entries** are integers in `1..6`; no pool sums to 100 and none is normalised. The seeder's pre-amendment `60/40` pairs are the same ratios written as percentages-looking numbers, which is why these are not |
@@ -201,7 +201,11 @@ three `cinderling` zone-list deviations reported as warnings, not failures (§7)
 
 `band` is the D0 budget band of the location's `MinLevel`. `roster` is 2–4 for every row because the
 engine has one global constant pair and no per-location field — the column exists so nobody adds one
-without noticing (`ActorPoolResolver.cs:13-14`).
+without noticing (`ActorPoolResolver.cs:32-33`, `:94`). Read it as the **fill target, not a cap**: the
+location's placed hostile instances are added first and the pool fills from their count up to the roll
+(`:117`), so a location with five or more hostile placements would spawn more than four, and a location
+with no pool spawns exactly those placements (`:111-115`). Both seeded instances sit one to a location,
+each at a pooled location, so no row in this matrix has either shape.
 
 | zone | location | level range | band | pool entries (slug + weight) | roster | why this location is dangerous |
 |---|---|---|---|---|---|---|
@@ -257,7 +261,7 @@ of §3: 28 pooled + 26 quiet = the seeder's 54 world locations.
 
 | zone | location | level range | band | why it must stay empty |
 |---|---|---|---|---|
-| `crestfall` | `crestfall-square` | 0+ | below b1-3 | SafeRespawn + IsTown. The Varenmark respawn point; respawning into hostiles is a death loop (plan §P0, SeededEncounterCoverageTests.cs:28-52). |
+| `crestfall` | `crestfall-square` | 0+ | below b1-3 | SafeRespawn + IsTown. The Varenmark respawn point; respawning into hostiles is a death loop (plan §P0, SeededEncounterCoverageTests.cs:27-66). |
 | `the-droveway` | `weathered-waypost` | 1–4 | b1-3 | SafeRespawn. The Droveway respawn point; the wayfarer-elder is placed here as an NPC. |
 | `ashlen-wood` | `strangled-oak` | 2–5 | b1-3 | SafeRespawn + hidden (passive DC 5). A safe island inside a hostile wood — exactly where a player who fled needs it not to bite. |
 | `grevenmire` | `sunken-estate` | 3–6 | b1-3 | SafeRespawn. Respawn point inside Grevenmire; note the seed lists it as a candidate hostile location in plans/content-seeding-pass.md:71 — that line is stale. |
@@ -404,11 +408,11 @@ two guards that already exist:
 The two `19–22` rows are the amendment consequence (§Amendments): the roster bands them 19–20, but after
 amendments 3 and 4 the only hostile location left in their zone (`scorched-battlefield`) starts at level
 21, and the overlap guard needs `MaxLevel >= 21`. Seed them at 19–22 and both pools work; seed them at
-19–20 and the import fails `SeededEncounterCoverageTests.cs:132-143` for two of the three entries.
+19–20 and the import fails `SeededEncounterCoverageTests.cs:207-239` for two of the three entries.
 
 The ranges are D1's bands, not new numbers: D1 says a row's band is its level band, and the seeder needs
 `MinLevel`/`MaxLevel` to run the overlap check. A pool entry whose archetype is missing logs an Error and
-spawns nothing (`ActorPoolResolver.cs:52-60`) and fails `SeededEncounterCoverageTests.cs:171-205`, so the
+spawns nothing (`ActorPoolResolver.cs:121-128`) and fails `SeededEncounterCoverageTests.cs:171-205`, so the
 order of landing is fixed: **archetypes first, then pools.**
 
 ## 7. The tail — levels 21–30, where this matrix cannot fully meet its own rules
@@ -584,11 +588,11 @@ Two things the translation has to respect, both from the importer's own document
 
 | Requirement | Rule / because |
 |---|---|
-| An entry whose archetype slug does not resolve is an Error | `missing-spawn-archetype`, `ContentReferenceRules.AuditSpawnPools`; `ActorPoolResolver.cs:52-71` |
-| `weight <= 0` is an Error — the runtime would treat it as 1 | `loot_weight_invalid`, `ZoneLocationValidator`; `ActorPoolResolver.cs:103`, `:108` |
-| An empty pool is only a **Warning**, because a safe location is legitimate | `spawn_pool_empty`, `ZoneLocationValidator`; `ActorPoolResolver.cs:39-45` |
+| An entry whose archetype slug does not resolve is an Error | `missing-spawn-archetype`, `ContentReferenceRules.AuditSpawnPools`; `ActorPoolResolver.cs:121-128` |
+| `weight <= 0` is an Error — the runtime would treat it as 1 | `loot_weight_invalid`, `ZoneLocationValidator`; `ActorPoolResolver.cs:195`, `:200` |
+| An empty pool is only a **Warning**, because a safe location is legitimate — and a location with hostile placements and no pool still spawns those | `spawn_pool_empty`, `ZoneLocationValidator`; `ActorPoolResolver.cs:86-92`, `:111-115` |
 | `displayName` and `typeKey` are required on every entity | `display_name_missing`, `type_key_missing`, `ContentShapeRules.ValidateShared` |
-| A town, `SafeRespawn` location or lobby must not spawn anything | `SeededEncounterCoverageTests.cs:28-52`, and the same rule at runtime |
+| A town, `SafeRespawn` location or lobby must not spawn anything — which now means an empty pool **and** no active placements, hostile or not (the test's placement assertion, `:53-65`, rejects any active placement in a quiet location) | `SeededEncounterCoverageTests.cs:27-66`; at runtime the resolver spawns whatever hostile content it is handed — a hostile placement or a pool (`ActorPoolResolver.cs:86-92`, `:100-106`, `:111-115`) |
 | The level-overlap check still runs | `SeededEncounterCoverageTests.cs:207-239` |
 
 **Landing order — this is the part that will bite.** The pools name 16 archetypes that do not exist yet,

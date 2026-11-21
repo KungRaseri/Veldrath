@@ -166,7 +166,7 @@ wiring:
     detail: >-
       Stats.Health lands on Enemy.Health AND Enemy.MaxHealth (ActorTemplateProjection.cs:122-126 — the
       archetype value, or a named instance's override composed over it, ActorInstancesSeeder.cs:111, :137),
-      and the spawn copies MaxHealth into CurrentHealth and MaxHealth (ActorPoolResolver.cs:180-181).
+      and the spawn copies MaxHealth into CurrentHealth and MaxHealth (ActorPoolResolver.cs:186-187).
       Every spawn therefore carries its authored HP; 50 (Enemy.cs:86, :91) survives only for a row that
       authors no health.
   damage_per_hit:
@@ -185,7 +185,7 @@ wiring:
     detail: >-
       Stats.ExperienceReward lands on Enemy.XP (ActorTemplateProjection.cs:133-136 — the archetype value,
       or a named instance's override composed over it, ActorInstancesSeeder.cs:115, :142), and the spawn
-      copies it into BaseXp (ActorPoolResolver.cs:182). The seeded archetypes author it
+      copies it into BaseXp (ActorPoolResolver.cs:188). The seeded archetypes author it
       (ArchetypeSeeder.cs:98, 143, 187, 232 …), so a kill is worth the authored reward; 25 (Enemy.cs:147)
       is only the unauthored default.
   gold:
@@ -193,7 +193,7 @@ wiring:
     detail: >-
       The archetype authors a range, and the projection rolls one value per spawn from the composed pair
       (ActorTemplateProjection.cs:147-153; RollGold at :176-187; an instance override composes pair-first,
-      ActorInstancesSeeder.cs:116-117, :143-144). The spawn copies the roll (ActorPoolResolver.cs:183)
+      ActorInstancesSeeder.cs:116-117, :143-144). The spawn copies the roll (ActorPoolResolver.cs:189)
       and EfCoreEnemyInstanceStore writes it on the instance row (EfCoreEnemyInstanceStore.cs:556-558),
       which every later read takes back (:520-521) — so the stored number is what a kill pays, and 10
       (Enemy.cs:152) is only the unauthored default.
@@ -213,10 +213,17 @@ wiring:
 
 spawn:
   roster_size: [2, 4]
-  roster_size_source: "ActorPoolResolver.cs:13-14 (MinCount 2, MaxCount 4), rolled at :47"
+  roster_size_source: "ActorPoolResolver.cs:32-33 (MinCount 2, MaxCount 4), rolled at :94"
+  roster_size_semantics: >-
+    a fill target, not a cap. The location's placed hostile instances go in first (a non-hostile
+    placement is dropped with a warning, :100-106), then pool draws fill from spawned.Count up to the
+    roll (ActorPoolResolver.cs:117) — so with a pool the roster is at most max(placements, the roll),
+    and short of the roll whenever a draw is dropped for an unknown archetype (:121-128) or a
+    non-hostile entry (:133-139). With placements and NO pool it is exactly those placements
+    (:111-115); with neither it is nothing (:86-92).
   weight_semantics: >-
     relative integer per pool entry; each roster slot draws independently, weighted by
-    ActorPoolEntry.Weight, and weight <= 0 counts as 1 (ActorPoolResolver.cs:101-112). The same
+    ActorPoolEntry.Weight, and weight <= 0 counts as 1 (ActorPoolResolver.cs:193-204). The same
     archetype can fill every slot, so a pool never guarantees variety.
   roster_lifetime: >-
     rolled ONCE per location, then stored as EnemyInstances rows; later visits read the stored
@@ -233,13 +240,16 @@ spawn:
     when the last enemy at a location dies, every dead row's RespawnAt moves to
     now + delay x ClearedRoomRespawnMultiplier (AttackEnemyHubCommand.cs:245-249 ->
     EfCoreEnemyInstanceStore.cs:103-130; multiplier 3 at EnemyWorldOptions.cs:40), i.e. 60-180 s.
-  empty_pool: "nothing spawns, nothing substituted (ActorPoolResolver.cs:39-45)"
+  empty_pool: >-
+    spawns nothing and substitutes nothing (ActorPoolResolver.cs:86-92). Placed hostile instances
+    are the exception: they spawn on their own, exactly as placed, never topped up (:111-115); a
+    non-hostile placement is dropped with a warning and never counts (:100-106).
   non_hostile: >-
-    excluded from the roster with a warning (ActorPoolResolver.cs:62-71). Hostility defaults to
+    excluded from the roster with a warning (ActorPoolResolver.cs:133-139). Hostility defaults to
     TRUE when unset (ActorTemplateProjection.cs:97), so an NPC must state hostile: false. Meetable
     townspeople are LocationNpc rows keyed by zone+location (NpcHubCommands.cs:155-158), never
     pool entries.
-  unknown_archetype: "logged as Error and skipped, no substitute (ActorPoolResolver.cs:52-60)"
+  unknown_archetype: "logged as Error and skipped, no substitute (ActorPoolResolver.cs:121-128)"
   level_roll: none
 
 loot:
@@ -259,7 +269,7 @@ loot:
   gold: >-
     NOT a loot row for enemies. The kill path only adds ItemSlug to the bag
     (AttackEnemyHubCommand.cs:372), and the "gold" domain is honoured only by the chest path
-    (LootTableService.cs:274-277). Enemy gold is SpawnedEnemy.GoldReward (ActorPoolResolver.cs:97).
+    (LootTableService.cs:274-277). Enemy gold is SpawnedEnemy.GoldReward (ActorPoolResolver.cs:189).
   tables_per_archetype: >-
     exactly one (ActorArchetype.LootTableId, ActorArchetype.cs:31-32), expanded to a one-element
     list on the model (ActorTemplateProjection.cs:91; the LootIds helper is :161).
@@ -284,7 +294,7 @@ bosses:
     one per dungeon zone, on its deepest location — only a dungeon has a lobby, an instance
     boundary and a reset notion (ZoneLocation.cs:85-90). NOT ENFORCEABLE TODAY: nothing marks a
     pool entry unique, so a pooled boss can fill every slot of a 2-4 roster
-    (ActorPoolResolver.cs:47-51). See the gap list.
+    (ActorPoolResolver.cs:117-142). See the gap list.
   flag: "Traits.Boss = true; no stat effect (ActorArchetype.cs:118-119)"
 
 elites:
@@ -311,7 +321,7 @@ omitted:
   respawn_time: "no per-archetype field; one global config pair (EnemyWorldOptions.cs:21-25) plus the cleared-room multiplier (:40)"
   rarity_weight: >-
     ActorArchetype.RarityWeight is inert for spawning: pools use ActorPoolEntry.Weight
-    (ActorPoolResolver.cs:103-112), and RarityWeight only feeds the category-based
+    (ActorPoolResolver.cs:193-204), and RarityWeight only feeds the category-based
     GenerateEnemiesAsync (EnemyGenerator.cs:52-64), which the spawn path never calls.
   guaranteed_gold: "enemy gold is not a loot row at all; see loot.gold"
 
