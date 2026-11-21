@@ -20,7 +20,7 @@
 #
 # Run it locally with: bash scripts/ci-merge-gate.sh --lint
 #
-# `--lint` enforces the four rules the documentation states (docs/ci-forgejo.md,
+# `--lint` enforces the five rules the documentation states (docs/ci-forgejo.md,
 # "The always-on check that keeps * satisfiable"):
 #   L1  every workflow file declares a top-level `name:` — that string is the status
 #       context prefix.
@@ -391,7 +391,7 @@ run_lint() {
       found="$(scan_values "${SCANS[$idx]}" BR | awk -F'\t' '{ printf "%s%s", sep, $2; sep = ", " }')"
       printf '✗ L3 %s:%s: pull_request.branches does not list development (found: %s)\n' \
         "$rel" "$brln" "${found:-none}"
-      printf '  fix: use `branches: [ development ]` — a pull request into development otherwise runs nothing (the bug fixed in #24)\n'
+      printf '  fix: use `branches: [ development ]` — a pull request into development otherwise runs nothing (the bug fixed in #24); `merge-gate.yml` stays `[ main, development ]`, because L5 requires `main` there\n'
       fail=1
     fi
     # L5 — the always-on workflow must still cover main: it is the only status a release PR
