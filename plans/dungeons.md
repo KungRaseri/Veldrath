@@ -14,7 +14,7 @@
 ## 1. What the world already is
 
 The hierarchy is `World → Region → Zone → ZoneLocation`, and "where a character is" already has four
-coordinates: [`PlayerSession`](../Veldrath.Server/Data/Entities/Zone.cs:56) holds `RegionId`, `ZoneId`,
+coordinates: [`PlayerSession`](../Veldrath.Server/Data/Entities/PlayerSession.cs) holds `RegionId`, `ZoneId`,
 `CurrentMapId` and `CurrentNodeId`.
 
 Maps are explicit graph data, not tilemaps:
@@ -22,14 +22,14 @@ Maps are explicit graph data, not tilemaps:
 | Piece | Where | Fact |
 |---|---|---|
 | [`MapType`](../RealmEngine.Shared/Models/MapGraphModels.cs:7) | shared models | `World \| Region \| Zone \| Interior` (Interior added in F1) |
-| [`MapNodeType`](../RealmEngine.Shared/Models/MapGraphModels.cs:21) | shared models | `EntryPoint, Zone, Location, ZoneExit, RegionExit, Portal, Stair, Landmark` |
-| [`MapDirection`](../RealmEngine.Shared/Models/MapGraphModels.cs:50) | shared models | includes `Up`, `Down`, `In`, `Out` |
-| [`MapEdgeType`](../RealmEngine.Shared/Models/MapGraphModels.cs:79) | shared models | `Walk, ExitToZone, ExitToRegion, Portal, Door` |
+| [`MapNodeType`](../RealmEngine.Shared/Models/MapGraphModels.cs) | shared models | `EntryPoint, Zone, Location, ZoneExit, RegionExit, Portal, Stair, Landmark` |
+| [`MapDirection`](../RealmEngine.Shared/Models/MapGraphModels.cs) | shared models | includes `Up`, `Down`, `In`, `Out` |
+| [`MapEdgeType`](../RealmEngine.Shared/Models/MapGraphModels.cs) | shared models | `Walk, ExitToZone, ExitToRegion, Portal, Door` |
 | `MapNode.TargetMapId/TargetNodeId` | shared models | **already** expresses "this node leads into another map" |
 | [`Zone.Type`](../Veldrath.Server/Data/Entities/Zone.cs:59) | server | `Town \| Wilderness \| Dungeon` |
 | [`ZoneLocation`](../RealmEngine.Data/Entities/Content/ZoneLocation.cs:7) | content | `TypeKey`, plus `Stats` (size, danger, min/max level, population) and `Traits` (`IsDungeon`, `IsIndoor`, `IsHidden`, `UnlockType/Key`, `IsDiscoverable`), plus an `ActorPool` of what spawns there |
 
-**All five dungeons are already authored as zones with interior maps.** [`MapGraphSeeder`](../RealmEngine.Data/Seeders/MapGraphSeeder.cs:275)
+**All five dungeons are already authored as zones with interior maps.** [`MapGraphSeeder`](../RealmEngine.Data/Seeders/MapGraphSeeder.cs)
 gives each one a `MapType.Zone` map with an entry node, three named locations, one hidden
 quest-locked deep room and edges; [`ZoneLocationsSeeder`](../RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs:146)
 seeds the matching locations; [`ApplicationDataSeeder`](../Veldrath.Server/Data/Seeders/ApplicationDataSeeder.cs:81)
@@ -233,7 +233,7 @@ issue codes — so this phase **extends** both rather than inventing them.
 | `Traits.IsSafeRespawn` | [`ZoneLocation.cs`](../RealmEngine.Data/Entities/Content/ZoneLocation.cs:55) `ZoneLocationTraits` | already existed; the seeder simply never set it. Owned JSON, so no schema migration |
 | `Traits.IsInstanced` | same | consumed by F2, authored in F1. Also owned JSON: no schema migration (`SafeRespawn` set the precedent) |
 | Map both traits onto `ZoneLocationEntry` | `EfCoreZoneLocationRepository` (entity → entry projection) | `IsSafeRespawn` was projected but unset; `IsInstanced` is new on the entry record |
-| Accept `Interior` in the validator's scope rules | [`MapGraphValidator.cs`](../RealmEngine.Data/Validation/MapGraphValidator.cs:49) | an `Interior` map's owner must be a known **location** slug |
+| Accept `Interior` in the validator's scope rules | [`MapGraphValidator.cs`](../RealmEngine.Data/Validation/MapGraphValidator.cs:72-81) | an `Interior` map's owner must be a known **location** slug |
 
 **1.2 — seed the world** (the §4 defect list, plus the data the model now needs)
 
@@ -451,7 +451,7 @@ create index ix_ground_item_run on "GroundItems" ("ZoneInstanceId", "LocationSlu
 
 Two members entering the same room at the same instant: one insert wins the partial index, the loser
 catches `DbUpdateException`, re-reads and joins. This is the same shape as the existing spawn race in
-[`GetAliveOrSpawnAsync`](../Veldrath.Server/Features/Characters/Combat/EfCoreEnemyInstanceStore.cs:84),
+[`GetAliveOrSpawnAsync`](../Veldrath.Server/Features/Characters/Combat/EfCoreEnemyInstanceStore.cs),
 which already logs and adopts the winner.
 
 #### F2.4 The lifecycle, in rules
@@ -649,7 +649,7 @@ Today the tunables live in three places, and none of them is a `const`:
 | `Enemies:SessionGraceSeconds` (60) | same | same | combat reconnect grace **and** instance empty grace |
 | `Enemies:ClearedRoomRespawnMultiplier` (3) | same | same | how many respawn windows a cleared room stays quiet |
 
-The values are bound once in [`Program.cs:174`](../Veldrath.Server/Program.cs:174) with
+The values are bound once in [`Program.cs:178-181`](../Veldrath.Server/Program.cs:178-181) with
 `ValidateDataAnnotations().ValidateOnStart()`, so a nonsensical value fails the host instead of silently
 defaulting. Both [`EfCoreEnemyInstanceStore`](../Veldrath.Server/Features/Characters/Combat/EfCoreEnemyInstanceStore.cs:46)
 and [`EnemyRespawnService`](../Veldrath.Server/Features/Characters/Combat/EnemyRespawnService.cs:38) take
