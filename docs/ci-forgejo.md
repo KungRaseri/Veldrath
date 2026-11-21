@@ -532,13 +532,14 @@ posting a status by hand stays forbidden: a status any agent can mint certifies 
 
 #### Files that no component workflow builds
 
-Measured against the tree at the content guard's merge (2026-11-20, `git ls-files`: 2007 paths,
-102 `pull_request` path patterns, the merge gate and its script included): **37 paths match no
+Measured against `development` at `3d3320ac` (2026-11-20, `git ls-files`: 2007 paths, 102
+`pull_request` path patterns, the merge gate and its script included): **37 paths match no
 `on.pull_request.paths` pattern.** Before the merge gate they produced zero statuses and deadlocked
 the gate; now they produce exactly one — the merge gate — and merge with **no build and no test**.
 Regenerate the list with `bash scripts/ci-merge-gate.sh --uncovered`; its last two lines carry the
-counts, so quote them instead of hand-counting — the figure above is a snapshot taken at that merge,
-not a standing number.
+live counts for whatever tree you run it on, so quote them instead of hand-counting — the figures
+above are a snapshot of that commit, not a standing number. The content guard,
+`.github/workflows/ci-content.yml` (merged in #108), contributes nine of those patterns.
 
 The path count halved when `Veldrath.Assets` and its 1,837 art files were deleted (2026-11-04); the
 uncovered *set* barely moved, which is the point — the art never matched a workflow's `paths` either.
