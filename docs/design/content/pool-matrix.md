@@ -127,9 +127,9 @@ comes from the audit script described at the end of this section, run over these
 
 An *adjacent* entry is one band away from the band its location's `MinLevel` falls in — the D4 bound.
 An entry is only *above* its location when its band is above the top band the location's own range
-occupies. Every adjacent entry is listed here: 21 are above the entry band, 8 are below it, and of the
-29 that fall inside the location's own range, none is a tolerance problem — they are the location's
-native content. The 30th is `bone-hollow`'s wight, which is what the cap exists for.
+occupies. Every adjacent entry is listed here: **22 sit above the entry band and 8 below it; of the 22,
+21 are still inside the location's own range** and are its native content, not tolerance. The 22nd is
+`bone-hollow`'s wight, above the range entirely — which is the case the cap exists for.
 
 | location | location levels | entry | entry band | weight | from entry band | inside the location's range? |
 |---|---|---|---|---|---|---|
