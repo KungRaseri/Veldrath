@@ -27,13 +27,17 @@ locations:
       - archetype: cinderling
         weight: 3   # band: 19-20 | seeded 20-26
   - slug: kaldreks-heart
-    # band: beyond b23-26 (D0 budget) | location L28-30
+    # band: b27-30 (D0 budget) | location L28-30
     level_range: [28, 30]
-    # WARNING: single-entry pool — the only archetype whose range reaches this room.
-    # See pool-matrix.md §7; it is a documented gap, not an oversight.
+    # Two entries since 2026-11-20 (pool-matrix.md amendment 5, card t_259ac697). maw-serpent is in
+    # the room's own band (28-30) and carries the pool. pyreling stays as the one band-tolerant
+    # entry at weight <= 2: it spawns at its MinLevel of 23 — there is no level roll, so its weight
+    # is the cap's, not the room's. Read pool-matrix.md §7 before importing this pool.
     pool:
+      - archetype: maw-serpent
+        weight: 6   # band: 28-30 | to be seeded 28-30 (D6/L6)
       - archetype: pyreling
-        weight: 6   # band: 21-30 | seeded 23-28
+        weight: 2   # band: b23-26 (D0) / 21-30 (D1) | seeded 23-28; one band below, weight <= 2
   - slug: maw-descent
     # band: b23-26 (D0 budget) | location L26-30
     level_range: [26, 30]

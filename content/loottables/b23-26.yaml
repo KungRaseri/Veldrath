@@ -10,9 +10,11 @@
 # 200-gold gems, fire-ruby and frost-sapphire. The orbs (300 and 400) are above every band's
 # ceiling and stay out of enemy drops entirely; they remain a boss and chest drop.
 #
-# ash-eater is banded 26-30 and belongs to this file: its floor of 26 falls in b23-26, and it spawns
-# at fire-ancients-chamber (L26-30). Its table is also authored to respect the tighter b27-30 ceiling
-# (0.06-0.25) for the two levels above 26 — every row below is 0.15 or 0.20, inside both bands.
+# ash-eater is roster-banded 26-30 and belongs to this file for one reason: spawn level is the
+# archetype's MinLevel (EfCoreEnemyRepository.cs:113), so it always spawns at level 26 and b23-26 is
+# the only band its drops have to satisfy. It spawns at fire-ancients-chamber (L26-30). Its top row
+# lands at 0.30, inside this band's [0.08, 0.30] and above b27-30's ceiling — which cannot apply to
+# it, because it never spawns at a b27-30 level.
 
 family: loottable
 entities:
@@ -126,16 +128,16 @@ entities:
       isHarvesting: false
     entries:
       - itemDomain: items/general
-        itemSlug: iron-ingot
+        itemSlug: antidote
         dropWeight: 30
         quantityMin: 1
-        quantityMax: 3
+        quantityMax: 1
         isGuaranteed: false
       - itemDomain: items/general
-        itemSlug: antidote
+        itemSlug: iron-ingot
         dropWeight: 20
         quantityMin: 1
-        quantityMax: 1
+        quantityMax: 3
         isGuaranteed: false
       - itemDomain: items/general
         itemSlug: essence-of-fire
@@ -180,13 +182,13 @@ entities:
         quantityMax: 3
         isGuaranteed: false
       - itemDomain: items/general
-        itemSlug: soul-crystal
+        itemSlug: iron-chestplate
         dropWeight: 20
         quantityMin: 1
         quantityMax: 1
         isGuaranteed: false
       - itemDomain: items/general
-        itemSlug: iron-chestplate
+        itemSlug: soul-crystal
         dropWeight: 20
         quantityMin: 1
         quantityMax: 1
@@ -205,8 +207,9 @@ entities:
         isGuaranteed: false
 
   - slug: ash-eater-drops
-    # band: b23-26 — ash-eater, roster band 26-30 (spans b23-26 and b27-30); spawns at
-    # fire-ancients-chamber (L26-30)
+    # band: b23-26 — ash-eater, roster band 26-30; spawns at fire-ancients-chamber (L26-30).
+    # Spawn level is the archetype's MinLevel (EfCoreEnemyRepository.cs:113), so it is always level 26
+    # and this is the only band it drops in.
     # Why: it works the chamber for what the fire leaves and has grown too heavy to leave with it. A
     # bruiser's table: quantity on the essence, and nothing rare enough to be worth the detour.
     typeKey: enemies

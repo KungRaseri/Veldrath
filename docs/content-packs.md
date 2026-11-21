@@ -98,6 +98,11 @@ For each entity, by slug:
 The summary prints `created / updated / unchanged` per family and in total. Importing the same pack twice therefore
 reports zero created and zero updated the second time.
 
+An update reconciles the entity's child rows as well as its columns: a child the pack still declares is matched to the
+stored row (by the key the author writes where there is one, by its authored values otherwise), a child the pack adds
+is inserted, and one it drops is deleted. A child nobody touched is left alone, so editing a loot table's display name
+does not churn its entries, and re-importing after an edit does not duplicate them.
+
 Validation runs first, over the whole pack. **Any Error-severity issue means nothing is written** — a pack is one
 unit, and half of it landing in the catalogue would be worse than none of it. Warnings are printed and do not block.
 

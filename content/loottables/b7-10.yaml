@@ -137,13 +137,13 @@ entities:
       isHarvesting: false
     entries:
       - itemDomain: items/general
-        itemSlug: soul-crystal
+        itemSlug: rune-of-frost
         dropWeight: 40
         quantityMin: 1
         quantityMax: 1
         isGuaranteed: false
       - itemDomain: items/general
-        itemSlug: rune-of-frost
+        itemSlug: soul-crystal
         dropWeight: 30
         quantityMin: 1
         quantityMax: 1

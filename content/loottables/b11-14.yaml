@@ -39,13 +39,13 @@ entities:
         quantityMax: 1
         isGuaranteed: false
       - itemDomain: items/general
-        itemSlug: essence-of-shadow
+        itemSlug: soul-crystal
         dropWeight: 25
         quantityMin: 1
         quantityMax: 1
         isGuaranteed: false
       - itemDomain: items/general
-        itemSlug: soul-crystal
+        itemSlug: essence-of-shadow
         dropWeight: 25
         quantityMin: 1
         quantityMax: 1
@@ -86,16 +86,16 @@ entities:
         quantityMax: 2
         isGuaranteed: false
       - itemDomain: items/general
-        itemSlug: essence-of-nature
+        itemSlug: hunters-bow
         dropWeight: 25
         quantityMin: 1
-        quantityMax: 2
+        quantityMax: 1
         isGuaranteed: false
       - itemDomain: items/general
-        itemSlug: hunters-bow
+        itemSlug: essence-of-nature
         dropWeight: 20
         quantityMin: 1
-        quantityMax: 1
+        quantityMax: 2
         isGuaranteed: false
 
   - slug: gull-rider-skirmisher-drops
@@ -127,13 +127,13 @@ entities:
         quantityMax: 1
         isGuaranteed: false
       - itemDomain: items/general
-        itemSlug: soul-crystal
+        itemSlug: hunters-bow
         dropWeight: 25
         quantityMin: 1
         quantityMax: 1
         isGuaranteed: false
       - itemDomain: items/general
-        itemSlug: hunters-bow
+        itemSlug: soul-crystal
         dropWeight: 20
         quantityMin: 1
         quantityMax: 1

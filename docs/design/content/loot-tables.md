@@ -1,9 +1,9 @@
 # Enemy drop tables — waves A1–A4 (levels 1–30)
 
-**Status: authored 2026-11-20, awaiting review.** Produced by card `t_744220e4` (F4), after D0
-(`game-context/budget.yaml`, approved 2026-11-20), D1 (`archetypes.md`), D6 (the 21–30 tail) and D4
-(`pool-matrix.md`). It answers one question — **what does a kill pay out** — for every hostile
-archetype that can spawn between levels 1 and 30.
+**Status: authored 2026-11-20; review round 1 corrections applied the same day.** Produced by card
+`t_744220e4` (F4), after D0 (`game-context/budget.yaml`, approved 2026-11-20), D1 (`archetypes.md`),
+D6 (the 21–30 tail) and D4 (`pool-matrix.md`). It answers one question — **what does a kill pay
+out** — for every hostile archetype that can spawn between levels 1 and 30.
 
 Before this file the answer was "the four archetypes the seeder happens to wire, and nothing else":
 `ArchetypeSeeder.LootTableByArchetype` names a table for `goblin-scout`, `forest-wolf`,
@@ -18,14 +18,14 @@ archetype→table binding the seeding card needs.
 
 | File | Band | Tables | Rows | P(at least one row) | Item EV per kill | Band gold |
 |---|---|---|---|---|---|---|
-| `content/loottables/b1-3.yaml` | b1-3 | 4 | 11 | 0.71–0.75 | 7–15 | [1, 15] |
-| `content/loottables/b4-6.yaml` | b4-6 | 4 | 11 | 0.71–0.75 | 14–25 | [5, 20] |
-| `content/loottables/b7-10.yaml` | b7-10 | 7 | 21 | 0.71–0.72 | 16–34 | [8, 30] |
-| `content/loottables/b11-14.yaml` | b11-14 | 3 | 12 | 0.69 | 19–59 | [12, 45] |
-| `content/loottables/b15-18.yaml` | b15-18 | 4 | 16 | 0.69 | 48–98 | [20, 55] |
-| `content/loottables/b19-22.yaml` | b19-22 | 4 | 17 | 0.68–0.69 | 19–46 | [25, 60] |
-| `content/loottables/b23-26.yaml` | b23-26 | 5 | 25 | 0.68 | 45–66 | [30, 75] |
-| `content/loottables/b27-30.yaml` | b27-30 | 1 | 5 | 0.67 | 68 | [35, 90] |
+| `content/loottables/b1-3.yaml` | b1-3 | 4 | 11 | 0.71–0.75 | 7.2–15.0 | [1, 15] |
+| `content/loottables/b4-6.yaml` | b4-6 | 4 | 11 | 0.71–0.75 | 13.8–25.1 | [5, 20] |
+| `content/loottables/b7-10.yaml` | b7-10 | 7 | 21 | 0.71–0.72 | 16.2–34.5 | [8, 30] |
+| `content/loottables/b11-14.yaml` | b11-14 | 3 | 12 | 0.69 | 19.5–58.8 | [12, 45] |
+| `content/loottables/b15-18.yaml` | b15-18 | 4 | 16 | 0.69 | 47.8–97.5 | [20, 55] |
+| `content/loottables/b19-22.yaml` | b19-22 | 4 | 17 | 0.68–0.69 | 19.0–45.5 | [25, 60] |
+| `content/loottables/b23-26.yaml` | b23-26 | 5 | 25 | 0.68 | 44.8–66.0 | [30, 75] |
+| `content/loottables/b27-30.yaml` | b27-30 | 1 | 5 | 0.67 | 67.5 | [35, 90] |
 | **total** | | **32** | **118** | | | |
 
 Three clarifications the table invites:
@@ -35,11 +35,11 @@ Three clarifications the table invites:
   the probability **one** row lands (`budget.yaml` `units.drop_chance`), rows roll independently,
   and the seeded `goblin-common-drops` (60/40 → 0.76 on one kill) has always behaved this way. A win
   that pays out roughly seven times in ten is the answer to the hole this card exists to close.
-- **Item EV** is the expected *printed* value of the items a kill drops, summed over the table. It
-  is not income: buyback pays 40–50 % of printed value (`budget.yaml` `merchants.buyback_rate`). The
-  two richest tables in the set are `drowned-revenant-drops` (59) and `storm-harrower-drops` (98) —
-  both carry a 150–200 gold item at the top of their band's window. Nothing exceeds the item ceiling
-  in §2.4.
+- **Item EV** is the expected *printed* value of the items a kill drops, summed over the table
+  (quantity averaged over `[min, max]`). It is not income: buyback pays 40–50 % of printed value
+  (`budget.yaml` `merchants.buyback_rate`). The two richest tables in the set are
+  `drowned-revenant-drops` (58.8) and `storm-harrower-drops` (97.5) — both carry a 150–200 gold item
+  at the top of their band's window. Nothing exceeds the item ceiling in §2.4.
 - **`content/loottables/`, not `content/loot/`.** The card names `content/loot/<band>.yaml`; the
   importer takes the directory name as the family and `loot` resolves to no content type. Run
   against a scratch root holding `loot/b1-3.yaml`, A0's CLI says:
@@ -59,6 +59,12 @@ rather than a file of their own.
 It is the archetype's band, not the location's, because stat lines and drop chance are per
 archetype: `drowned-cantor` is banded 19–20 and drops at `tidelocked-vault` (L17–20), and its 19
 floor puts it in b19-22.
+
+A roster band that crosses a budget band is placed by its floor, and the floor is the level it
+actually spawns at: `EfCoreEnemyRepository.cs:113` sets `Level = e.MinLevel`, so `ash-eater` (26–30)
+is always level 26 and only b23-26's `drop_chance` window applies to it, and `pyreling` (23–28) is
+always level 23 and sits in b23-26 for the same reason. The bands above their floor are never
+reached by these two, so their tables are not shaped around a ceiling they cannot spawn under.
 
 ### 2.2 Every table sums to 100, so a weight is a percentage
 
@@ -95,12 +101,20 @@ widens band by band and does so predictably:
 | b23-26 | 225 | fire-ruby, frost-sapphire (200 each) |
 | b27-30 | 270 | nothing new — orbs are 300 and 400 and stay out |
 
-### 2.5 Within a table, weights descend with the item's seeded `RarityWeight`
+### 2.5 Within a table, rows are ordered by `RarityWeight` and weights never rise against it
 
 This is the literal answer to "common drops common and rare drops rare": `ItemsSeeder` already
-declares how common each item is (health-potion 90, iron-ingot 80, runes 60, gems 25, orbs 15), and
-every table orders its rows against it, so the commonest catalogue item gets the largest weight and
-the rarest gets the smallest. Rows are written in that order.
+declares how common each item is — health-potion, mana-potion and glowcap-mushroom 90, antidote and
+leather-cap 85, iron-ingot and iron-sword 80, hunter's bow 75, iron-chestplate and essence-of-fire
+70, rune-of-fire, rune-of-frost and essence-of-nature 60, soul-crystal 50, essence-of-shadow 45,
+elixir-of-strength and scroll-of-fireball 40, rune-of-power 35, storm-topaz 30, fire-ruby and
+frost-sapphire 25, void-shard and orb-of-force 20, orb-of-decay 15, lost-cargo 1.
+
+Every table writes its rows in descending `RarityWeight`, and `DropWeight` never rises along that
+order — ties are allowed, and there are several — so the commonest item in a table's palette always
+carries the largest weight and no rarer item out-weighs a commoner one. The narrative decides which
+items are in a palette; this rule decides their order and their relative weight. It is checked
+mechanically over all 32 tables by the same audit that produced §1, not asserted by eye.
 
 ### 2.6 No guaranteed row
 
@@ -179,11 +193,27 @@ Both keep exactly the two items the seeder gave them:
 The wolf is a real defect the seeding never noticed, and it is worth naming: a b4-6 enemy dropped
 its item on seven kills in ten against a published ceiling of 0.55.
 
+Three things change on first import. They are written down here because the import is an upsert on
+slug while the seeder is insert-only, so nothing else records them:
+
+- **`goblin-common-drops` 60/40 → 55/45.** The same two items stay in the same order: health-potion
+  is still the common drop.
+- **`wolf-common-drops` 70/30 → 55/45, and the common drop flips.** The seeder carries
+  essence-of-nature 70 / health-potion 30; the pack carries health-potion 55 / essence-of-nature 45,
+  because health-potion is the commoner item in the catalogue (`RarityWeight` 90 against 60).
+- **`wolf-common-drops` `RarityWeight` 60 → 80.** The pack also writes the table's own rarity, and it
+  takes the value `goblin-common-drops` already carried.
+
+`LootTableByArchetype` already binds `goblin-scout` and `forest-wolf`, and those are the only two
+archetypes bound to a table today — so **these two payouts change in live play the moment the pack is
+imported**, before any of the rest of the binding exists. Every other table in this set pays out
+nothing until the archetype-seeding card lands (§3).
+
 ## 5. Open items
 
 | # | Item | Owner |
 |---|---|---|
-| 1 | **`b27-30` is approved but not published.** `budget.yaml` on development stops at b23-26 (`covers_levels: [1, 26]`). `maw-serpent-drops` is authored to be legal under both bands — every row is 0.15 or 0.20, inside b23-26's [0.08, 0.30] and b27-30's [0.06, 0.25] — so it needs no re-weight when C4 (`t_259ac697`) lands. If C4 publishes a different ceiling, re-check rather than rewrite. | C4 / review |
+| 1 | **`b27-30` is published** — C4 (`a857dcf0`) merged to development after this set was authored and carries exactly the band the pack assumed: levels [27, 30], gold [35, 90], `drop_chance` [0.06, 0.25]. `maw-serpent-drops`' rows land at 0.15–0.25, inside that window, so no re-weight is needed. Closed. | closed |
 | 2 | **The catalogue has nothing between 200 and 300 gold,** so b27-30's palette is identical to b23-26's and the two orbs never drop from an enemy at any band. The tail of the ladder is not visibly richer than its middle. Wave C owns the item catalogue. | Wave C |
 | 3 | **The catalogue has no cheap themed material** — no bone, hide, feather, salt, ash or scrap below 5 gold. Low-band tables therefore converge on iron-ingot, glowcap-mushroom and essence-of-nature: **6 of the 15 tables at b1-10 carry two or more of those three**. Flavour at the bottom of the ladder is limited by the catalogue, not by the weights. | Wave C |
 | 4 | **Nothing binds an archetype to a table yet** (§3). The packs validate and import, but no archetype points at them. | Archetype-seeding card |

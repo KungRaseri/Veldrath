@@ -2,15 +2,13 @@
 #
 # family: loottable. One table per hostile archetype; slug `<archetype>-drops`.
 #
-# Band b27-30: drop_chance [0.06, 0.25], gold [35, 90].
-# READ THIS BEFORE MERGING. b27-30 is **approved but not yet published** in
-# game-context/budget.yaml: the file on development stops at b23-26 (covers_levels [1, 26]). The
-# band values above are the ones card t_259ac697 (C4) authors, approved by D6 on 2026-11-20.
+# Band b27-30 (game-context/budget.yaml, published by C4 a857dcf0): levels [27, 30],
+# drop_chance [0.06, 0.25], gold [35, 90] — the values this file was authored against.
 #
-# The table below is written to be legal under both: every row's landing probability is 0.15 or
-# 0.20, which sits inside b23-26's [0.08, 0.30] and inside b27-30's [0.06, 0.25]. So this file can
-# land before or after C4 without a re-weight, and if C4 publishes a different ceiling this file
-# needs re-checking rather than reauthoring.
+# The table is also legal under b23-26, because it was authored before C4 published the band:
+# every row's landing probability is 0.15-0.25, inside b23-26's [0.08, 0.30] and inside b27-30's
+# [0.06, 0.25]. It needs no re-weight now that the band is published; if a later change moves the
+# ceiling, re-check rather than reauthor.
 #
 # Every table sums to 100, so DropWeight reads as that row's landing probability
 # (loot.weight_semantics). No guaranteed row: nothing in the design says a kill always yields.
