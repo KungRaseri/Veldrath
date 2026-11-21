@@ -179,7 +179,12 @@ wiring:
 
 spawn:
   roster_size: [2, 4]
-  roster_size_source: "ActorPoolResolver.cs:13-14 (MinCount 2, MaxCount 4), rolled at :47"
+  roster_size_source: "ActorPoolResolver.cs:27-28 (MinCount 2, MaxCount 4), rolled at :88"
+  roster_size_semantics: >-
+    a fill target, not a cap. Placed hostile instances are added first, then pool draws fill from
+    spawned.Count up to the roll (ActorPoolResolver.cs:111), so a location with placements AND a pool
+    spawns max(placements, 2-4); with placements and NO pool it spawns exactly the placements
+    (:105-109); with neither it spawns nothing (:80-86).
   weight_semantics: >-
     relative integer per pool entry; each roster slot draws independently, weighted by
     ActorPoolEntry.Weight, and weight <= 0 counts as 1 (ActorPoolResolver.cs:101-112). The same
@@ -199,7 +204,9 @@ spawn:
     when the last enemy at a location dies, every dead row's RespawnAt moves to
     now + delay x ClearedRoomRespawnMultiplier (AttackEnemyHubCommand.cs:245-249 ->
     EfCoreEnemyInstanceStore.cs:103-130; multiplier 3 at EnemyWorldOptions.cs:40), i.e. 60-180 s.
-  empty_pool: "nothing spawns, nothing substituted (ActorPoolResolver.cs:39-45)"
+  empty_pool: >-
+    spawns nothing and substitutes nothing (ActorPoolResolver.cs:80-86). Placed instances are the
+    exception: they spawn on their own, exactly as placed, never topped up (:105-109).
   non_hostile: >-
     excluded from the roster with a warning (ActorPoolResolver.cs:62-71). Hostility defaults to
     TRUE when unset (EfCoreEnemyRepository.cs:62), so an NPC must state hostile: false. Meetable
