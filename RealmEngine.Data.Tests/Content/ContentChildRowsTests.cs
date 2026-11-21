@@ -117,7 +117,67 @@ public class ContentChildRowsTests
         stored.Ingredients.Should().BeEmpty();
     }
 
-    /// <summary>Creates an in-memory SQLite catalog holding one recipe with two ingredient rows.</summary>
+    /// <summary>
+    /// A replaced child that still carries the surrogate id it was read with must be inserted under a fresh id: the
+    /// stored row it came from is deleted in the same save, so reusing the id would collide.
+    /// </summary>
+    [Fact]
+    public async Task A_replaced_surrogate_keyed_child_is_inserted_under_a_new_id()
+    {
+        var (connection, options) = await CreateDatabaseAsync();
+
+        using var keepAlive = connection;
+        await using var db = new ContentDbContext(options);
+
+        var existing = await db.LootTables
+            .Include(table => table.Entries)
+            .SingleAsync(table => table.Slug == "wolf-loot");
+
+        var replaced = existing.Entries.Single(entry => entry.ItemSlug == "health-potion");
+        var replacedId = replaced.Id;
+
+        // The row exactly as the detail read hands it back to an editor, with only the weight changed.
+        var authored = new LootTable
+        {
+            Slug = existing.Slug,
+            Entries =
+            [
+                new LootTableEntry
+                {
+                    Id = replacedId,
+                    ItemDomain = replaced.ItemDomain,
+                    ItemSlug = replaced.ItemSlug,
+                    DropWeight = 15,
+                    QuantityMin = 1,
+                    QuantityMax = 1,
+                },
+                new LootTableEntry
+                {
+                    Id = existing.Entries.Single(entry => entry.ItemSlug == "iron-ingot").Id,
+                    ItemDomain = "items/general",
+                    ItemSlug = "iron-ingot",
+                    DropWeight = 40,
+                    QuantityMin = 1,
+                    QuantityMax = 1,
+                },
+            ],
+        };
+
+        ContentChildRows.Reconcile(db, authored, existing);
+        await db.SaveChangesAsync();
+
+        await using var read = new ContentDbContext(options);
+        var stored = await read.LootTables
+            .Include(table => table.Entries)
+            .SingleAsync(table => table.Slug == "wolf-loot");
+
+        stored.Entries.Should().HaveCount(2);
+        var potion = stored.Entries.Single(entry => entry.ItemSlug == "health-potion");
+        potion.DropWeight.Should().Be(15);
+        potion.Id.Should().NotBe(replacedId);
+    }
+
+    /// <summary>Creates an in-memory SQLite catalog holding one recipe and one loot table, each with two child rows.</summary>
     /// <returns>The open connection (keep it alive for the database to survive) and the context options.</returns>
     private static async Task<(SqliteConnection Connection, DbContextOptions<ContentDbContext> Options)> CreateDatabaseAsync()
     {
@@ -141,6 +201,36 @@ public class ContentChildRowsTests
             CraftingSkill = "blacksmithing",
             CraftingLevel = 1,
             Ingredients = [Ingredient("iron", 3), Ingredient("pine", 1)],
+        });
+
+        await db.SaveChangesAsync();
+
+        db.LootTables.Add(new LootTable
+        {
+            Slug = "wolf-loot",
+            TypeKey = "enemies",
+            DisplayName = "Wolf Loot",
+            RarityWeight = 60,
+            IsActive = true,
+            Entries =
+            [
+                new LootTableEntry
+                {
+                    ItemDomain = "items/general",
+                    ItemSlug = "health-potion",
+                    DropWeight = 60,
+                    QuantityMin = 1,
+                    QuantityMax = 1,
+                },
+                new LootTableEntry
+                {
+                    ItemDomain = "items/general",
+                    ItemSlug = "iron-ingot",
+                    DropWeight = 40,
+                    QuantityMin = 1,
+                    QuantityMax = 1,
+                },
+            ],
         });
 
         await db.SaveChangesAsync();

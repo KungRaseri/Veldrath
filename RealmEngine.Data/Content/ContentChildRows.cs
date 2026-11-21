@@ -33,9 +33,11 @@ namespace RealmEngine.Data.Content;
 /// <para>
 /// <b>Deletion is driven by presence, not by emptiness.</b> A caller passes the names of the collections the submitted
 /// payload actually names (see <see cref="ApplyNamedAsync"/>). A collection the payload never mentions is left exactly
-/// as stored: a schema-shaped form that does not render recipe ingredients would otherwise delete every stored
+/// as stored: a schema-shaped submission that does not render recipe ingredients would otherwise delete every stored
 /// ingredient for an entity it never showed. A collection the payload names is replaced wholesale, so an empty list in
-/// the payload still clears it — that is the full-replace contract for anything the caller actually wrote.
+/// the payload still clears it — that is the full-replace contract for anything the caller actually wrote. The generic
+/// detail read names every collection by loading it (<see cref="IncludeAuthoredChildren"/>) precisely so an editor that
+/// starts from that payload is never in the position of naming a collection it was not shown.
 /// </para>
 /// </remarks>
 public static class ContentChildRows
@@ -79,6 +81,50 @@ public static class ContentChildRows
                 await entry.Collection(navigation.Metadata.Name).LoadAsync(ct);
             }
         }
+    }
+
+    /// <summary>
+    /// Includes every authored child-row collection, so a read path returns the rows a write path reconciles.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The generic detail read feeds both editors: Foundry's form starts from it, and the review queue seeds a
+    /// submission from it. A detail that hides the child rows is not merely incomplete — it is destructive. The editor
+    /// sends back the payload it loaded, so a collection serialised as <c>[]</c> is named as an empty list, and a named
+    /// collection is replaced wholesale (<see cref="ApplyNamedAsync"/>). Hiding the ingredients once meant the first
+    /// save deleted them.
+    /// </para>
+    /// <para>
+    /// The navigations are enumerated from the EF model rather than listed by hand, so a new child table is covered by
+    /// both the read path and <see cref="Reconcile"/> or by neither.
+    /// </para>
+    /// </remarks>
+    /// <typeparam name="T">The content entity being read.</typeparam>
+    /// <param name="query">Query to extend.</param>
+    /// <param name="model">Model that maps <typeparamref name="T"/>.</param>
+    /// <returns>The query with every authored child-row collection included.</returns>
+    public static IQueryable<T> IncludeAuthoredChildren<T>(this IQueryable<T> query, IModel model)
+        where T : ContentBase
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        ArgumentNullException.ThrowIfNull(model);
+
+        if (model.FindEntityType(typeof(T)) is not { } entityType)
+        {
+            return query;
+        }
+
+        foreach (var navigation in entityType.GetNavigations())
+        {
+            if (IsAuthoredCollection(navigation)
+                && !navigation.TargetEntityType.IsOwned()
+                && navigation.PropertyInfo is { CanWrite: true })
+            {
+                query = query.Include(navigation.Name);
+            }
+        }
+
+        return query;
     }
 
     /// <summary>
@@ -443,11 +489,29 @@ public static class ContentChildRows
     /// <param name="child">The child as the caller describes it.</param>
     /// <param name="parent">The tracked parent row.</param>
     /// <remarks>
+    /// <para>
     /// <c>db.Add</c> rather than a graph discovered through the navigation: an added entity is an INSERT regardless of
     /// the key value the authored child arrived with, which is exactly what the assignment path got wrong.
+    /// </para>
+    /// <para>
+    /// A generated key is cleared first. The payload a caller sends back may carry the surrogate id of the row it was
+    /// read from, and a replaced row is deleted and re-inserted in the same save: reusing that id would insert a row
+    /// whose key the same transaction is deleting, which the database rejects. The id is not authored, so the insert
+    /// takes a fresh one.
+    /// </para>
     /// </remarks>
     private static void AddChild(DbContext db, IEntityType childType, IEntityType parentType, object child, ContentBase parent)
     {
+        foreach (var key in childType.FindPrimaryKey()?.Properties ?? [])
+        {
+            if (key.ValueGenerated != ValueGenerated.Never
+                && key.PropertyInfo is { CanWrite: true } keyInfo
+                && !key.GetContainingForeignKeys().Any(foreignKey => foreignKey.PrincipalEntityType == parentType))
+            {
+                keyInfo.SetValue(child, key.ClrType.IsValueType ? Activator.CreateInstance(key.ClrType) : null);
+            }
+        }
+
         foreach (var foreignKey in childType.GetForeignKeys().Where(
             foreignKey => foreignKey.PrincipalEntityType == parentType))
         {

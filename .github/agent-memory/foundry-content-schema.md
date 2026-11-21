@@ -93,16 +93,31 @@ child such as `LootTableEntry`, on its authored values.
 
 **Presence, not emptiness, decides deletion.** Each write path passes the collection names the payload actually
 names (`ContentChildRows.ApplyNamedAsync` → `NamedIn`), so a PUT or submission that omits `ingredients` leaves the
-stored ingredients alone instead of zeroing them — Foundry's forms render the schema, and a form that never shows a
-collection must not delete it. A collection the payload *does* name is replaced wholesale, so an empty list still
-clears it. `ZoneLocation.ActorPool` is owned JSON (`OwnsMany(...).ToJson("ActorPool")`), not a child table, so it was
-never affected. `LootTable` with no entries is an `Error` in the validator, so an approval that omits `entries` is
-refused before the reconcile rather than silently deleting them; a recipe with no ingredients is only a warning.
+stored ingredients alone instead of zeroing them. A collection the payload *does* name is replaced wholesale, so an
+empty list still clears it. `ZoneLocation.ActorPool` is owned JSON (`OwnsMany(...).ToJson("ActorPool")`), not a child
+table, so it was never affected. `LootTable` with no entries is an `Error` in the validator, so an approval that omits
+`entries` is refused before the reconcile rather than silently deleting them; a recipe with no ingredients is only a
+warning.
+
+**The read path has to return the child rows, or the presence rule deletes them.** Foundry's editor and the submission
+forms build their payload from `GET /api/content/browse/{type}/{slug}`, and that read used `AsNoTracking()` with no
+`Include`, so every child collection serialised as `[]` — the payload then *named* `ingredients: []`, and presence
+turned one Save into a silent delete of every stored ingredient (the first cut of this fix shipped that defect;
+reviewer probe 2026-11-20 caught it). `BrowseDetailAsync` now goes through
+`ContentChildRows.IncludeAuthoredChildren(...)`, which enumerates the model's authored child navigations, so the detail
+payload is exactly what the write path reconciles. `_detailJsonOpts` uses `ReferenceHandler.IgnoreCycles` because a
+loaded child's navigation back to its parent is a cycle. A payload that carries a child's surrogate `id` gets a fresh
+one on insert (`ContentChildRows.AddChild` clears generated keys): the replaced row is deleted in the same save, and
+reusing its key would collide.
 
 Regression tests: `ContentWriteEndpointTests.An_ingredient_quantity_edit_through_put_is_persisted`,
 `Adding_and_removing_ingredients_through_put_stores_exactly_the_authored_set`,
 `A_put_that_omits_ingredients_leaves_the_stored_children_alone`, `A_loot_entry_edit_through_put_is_persisted`,
-`Adding_and_removing_loot_entries_through_put_stores_exactly_the_authored_set`, and
+`Adding_and_removing_loot_entries_through_put_stores_exactly_the_authored_set`, the detail round trips
+`The_recipe_detail_payload_carries_the_stored_ingredients`,
+`A_recipe_saved_from_its_detail_payload_keeps_its_ingredients`,
+`A_loot_table_saved_from_its_detail_payload_keeps_its_entries`,
+`A_loot_entry_edited_through_the_detail_payload_is_persisted`, and
 `FoundryEndpointTests.Review_Should_Persist_An_Authored_Ingredient_Edit_On_Approval`.
 
 ## Dialogue options (2026-11-20)

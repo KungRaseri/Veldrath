@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using RealmEngine.Data.Entities;
@@ -548,6 +549,126 @@ public class ContentWriteEndpointTests(WebAppFactory factory)
 
         var stored = await StoredLootTableAsync(slug);
         stored.Entries.Select(entry => entry.ItemSlug).Should().BeEquivalentTo("iron-ingot", "iron-sword");
+    }
+
+    /// <summary>Reads the exact payload the Foundry detail endpoint hands the editor.</summary>
+    private async Task<JsonObject> DetailPayloadAsync(HttpClient client, string type, string slug)
+    {
+        var response = await client.GetAsync($"/api/content/browse/{type}/{slug}");
+        response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return document.RootElement.GetProperty("payload").Deserialize<JsonObject>()!;
+    }
+
+    /// <summary>Sends a JSON object as an <c>application/json</c> body.</summary>
+    private static StringContent JsonObjectContent(JsonObject payload) =>
+        new(payload.ToJsonString(), System.Text.Encoding.UTF8, "application/json");
+
+    /// <summary>
+    /// The detail payload is what the editor starts from, so it has to carry the stored child rows. It did not: the read
+    /// used <c>AsNoTracking</c> without an include, every child collection serialised as <c>[]</c>, and the next save
+    /// named that empty list — which the presence rule reads as "replace wholesale".
+    /// </summary>
+    [Fact]
+    public async Task The_recipe_detail_payload_carries_the_stored_ingredients()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-child-recipe-detail-{Guid.NewGuid():N}";
+
+        (await client.PostAsync("/api/content/recipe", Json(RecipePayload(slug, ("iron", 3), ("pine", 1)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var payload = await DetailPayloadAsync(client, "recipe", slug);
+
+        var ingredients = payload["ingredients"]!.AsArray();
+        ingredients.Should().HaveCount(2);
+        ingredients.Select(ingredient => ingredient!["itemSlug"]!.GetValue<string>())
+            .Should().BeEquivalentTo("iron", "pine");
+        ingredients.Single(ingredient => ingredient!["itemSlug"]!.GetValue<string>() == "iron")!["quantity"]!
+            .GetValue<int>().Should().Be(3);
+    }
+
+    /// <summary>
+    /// A find → change one scalar → save round trip through the detail payload, which is the sequence the Foundry editor
+    /// performs. Renaming a stored collection in the payload is incidental; the stored rows have to survive.
+    /// </summary>
+    [Fact]
+    public async Task A_recipe_saved_from_its_detail_payload_keeps_its_ingredients()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-child-recipe-roundtrip-{Guid.NewGuid():N}";
+
+        (await client.PostAsync("/api/content/recipe", Json(RecipePayload(slug, ("iron", 3), ("pine", 1)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var payload = await DetailPayloadAsync(client, "recipe", slug);
+        payload["craftingLevel"] = 4;
+
+        var updated = await client.PutAsync($"/api/content/recipe/{slug}", JsonObjectContent(payload));
+        updated.StatusCode.Should().Be(HttpStatusCode.OK, await updated.Content.ReadAsStringAsync());
+
+        var stored = await StoredRecipeAsync(slug);
+        stored.Version.Should().Be(2);
+        stored.CraftingLevel.Should().Be(4);
+        stored.Ingredients.Should().HaveCount(2);
+        stored.Ingredients.Single(ingredient => ingredient.ItemSlug == "iron").Quantity.Should().Be(3);
+        stored.Ingredients.Single(ingredient => ingredient.ItemSlug == "pine").Quantity.Should().Be(1);
+    }
+
+    /// <summary>The loot-table half of the detail round trip: an unrelated scalar edit must not clear the entries.</summary>
+    [Fact]
+    public async Task A_loot_table_saved_from_its_detail_payload_keeps_its_entries()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-child-loot-roundtrip-{Guid.NewGuid():N}";
+
+        (await client.PostAsync(
+            "/api/content/loottable",
+            Json(LootTablePayload(slug, ("health-potion", 60), ("iron-ingot", 40)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var payload = await DetailPayloadAsync(client, "loottable", slug);
+        payload["rarityWeight"] = 65;
+
+        var updated = await client.PutAsync($"/api/content/loottable/{slug}", JsonObjectContent(payload));
+        updated.StatusCode.Should().Be(HttpStatusCode.OK, await updated.Content.ReadAsStringAsync());
+
+        var stored = await StoredLootTableAsync(slug);
+        stored.Version.Should().Be(2);
+        stored.RarityWeight.Should().Be(65);
+        stored.Entries.Should().HaveCount(2);
+        stored.Entries.Single(entry => entry.ItemSlug == "health-potion").DropWeight.Should().Be(60);
+        stored.Entries.Single(entry => entry.ItemSlug == "iron-ingot").DropWeight.Should().Be(40);
+    }
+
+    /// <summary>
+    /// A loot entry edited through the detail payload — the only shape the editor can send, because the row it renders
+    /// carries the stored surrogate id. An entry has no authorable key, so the row is replaced rather than mutated;
+    /// what matters is that exactly the authored entry survives with the authored weight.
+    /// </summary>
+    [Fact]
+    public async Task A_loot_entry_edited_through_the_detail_payload_is_persisted()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-child-loot-entry-{Guid.NewGuid():N}";
+
+        (await client.PostAsync(
+            "/api/content/loottable",
+            Json(LootTablePayload(slug, ("health-potion", 60), ("iron-ingot", 40)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var payload = await DetailPayloadAsync(client, "loottable", slug);
+        var entries = payload["entries"]!.AsArray();
+        entries.Single(entry => entry!["itemSlug"]!.GetValue<string>() == "health-potion")!["dropWeight"] = 15;
+
+        var updated = await client.PutAsync($"/api/content/loottable/{slug}", JsonObjectContent(payload));
+        updated.StatusCode.Should().Be(HttpStatusCode.OK, await updated.Content.ReadAsStringAsync());
+
+        var stored = await StoredLootTableAsync(slug);
+        stored.Entries.Should().HaveCount(2);
+        stored.Entries.Single(entry => entry.ItemSlug == "health-potion").DropWeight.Should().Be(15);
+        stored.Entries.Single(entry => entry.ItemSlug == "iron-ingot").DropWeight.Should().Be(40);
     }
 
     [Fact]
