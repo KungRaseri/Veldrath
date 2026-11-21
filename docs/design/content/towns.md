@@ -342,7 +342,7 @@ band's published prices.
 
 **C6 — One shop catalog per zone.** The shop keys on `ZoneId`, not on the person: `VisitShopHubCommand` and
 `GetShopCatalogHubCommand` resolve the zone's merchant and read the zone's authored shelf (`ZoneStockItems`, one
-row per item per town, seeded ten / twelve / eleven / twelve), so Aldenmere's keep and its marketplace sell from
+row per item per town, seeded nine / twelve / eleven / twelve), so Aldenmere's keep and its marketplace sell from
 the same stock, and so do Skarhold's. "What they sell" here distinguishes the people, not the inventory; per-NPC
 stock needs an engine change.
 
