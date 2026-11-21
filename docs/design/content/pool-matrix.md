@@ -447,7 +447,7 @@ things that exist at that height:
   placement is still held for the uniqueness mechanism D0 named.
 
 This is also why the tail needed **two** authored rows above 26 instead of one 26–30 row. Spawn level is
-the archetype's `MinLevel` with no roll (`budget.yaml`, *wiring.level*; `EfCoreEnemyRepository.cs:52`), so
+the archetype's `MinLevel` with no roll (`budget.yaml`, *wiring.level*; `ActorTemplateProjection.cs:87`), so
 a 26–30 archetype spawns at 26 in every room it is pooled in: `ash-eater` covers
 `fire-ancients-chamber`'s floor of 26, and only `maw-serpent` (28–30) can stand on `kaldreks-heart`'s
 floor of 28.
