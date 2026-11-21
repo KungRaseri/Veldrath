@@ -1,17 +1,28 @@
 # game-context/budget.yaml — Veldrath level bands and spawn/loot semantics.
 # Produced by card t_f1609eed (D0). STATUS: approved 2026-11-20.
 # merchants section appended by card t_2f9c409a (C2), approved 2026-11-20; landed by card t_190ecb14 (L2).
+# bands extended to level 30 (b27-30) by card t_259ac697 (C4), approved 2026-11-20; the tail roster
+#   it anchors on is D6/L6 (archetypes.md). No other band moved.
+# merchants.town_level_basis reworded by card t_afa56434, approved 2026-11-20: its hostile-ladder
+#   analogy now points at b27-30, which C4 made the top of the ladder.
 # dev-content may choose values INSIDE a band; it may not invent a curve.
 # wiring says whether the engine reads each keyed stat TODAY, with file:line.
 
-schema_version: 2
-status: approved 2026-11-20 (bands, spawn, loot); merchants approved 2026-11-20
-covers_levels: [1, 26]
+schema_version: 4
+status: >-
+  approved 2026-11-20 (bands, spawn, loot); merchants approved 2026-11-20;
+  b27-30 approved 2026-11-20; merchants.town_level_basis reworded 2026-11-20
+covers_levels: [1, 30]
 level_range_justification: >-
   Card asked for 1-20; the seeded world already has zones at L20, L23 and L26
   (ZoneLocationsSeeder.cs:521, :547, :573) and hostile archetypes to MinLevel 26
   (ArchetypeSeeder.cs:662). 1-26 covers 1-20 with no gap, so it is the 1-20 table plus
-  the three zones that would otherwise be stranded. See decision 1.
+  the three zones that would otherwise be stranded. See decision 1. Extended to 1-30 on
+  2026-11-20 by C4, because the seeded content already reaches level 30 on its own:
+  fire-ancient is seeded 26-30 (:662-663) and all three kaldrek-maw rooms run to L30
+  (ZoneLocationsSeeder.cs:590, :598, :606 — 26-30, 26-30 and 28-30), so with 1-26 the top
+  band stops four levels short of the rooms it has to describe. Levels 27-30 are the four
+  the ladder was missing, not new content.
 
 units:
   hp: "absolute HP, authored as ArchetypeStats.Health"
@@ -97,6 +108,29 @@ bands:
     seeded_archetypes: [pyreling]
     note: "fire-ancient is boss-tier here — see bosses"
 
+  - id: b27-30
+    levels: [27, 30]
+    hp: [340, 450]
+    damage_per_hit: [34, 48]
+    xp: [210, 460]
+    gold: [35, 90]
+    drop_chance: [0.06, 0.25]
+    intended_for: "kaldrek-maw only — fire-ancients-chamber L26-30 and kaldreks-heart L28-30; no other zone reaches level 27"
+    seeded_archetypes: [fire-ancient]
+    basis:
+      - "hp min 340 = b23-26 min 300 + 40, the step b19-22's 260 -> b23-26's 300 took."
+      - "hp max 450 = fire-ancient 900 / 2, so the only seeded archetype at 27-30 sits exactly on the floor of bosses.hp_multiplier."
+      - "damage min 34 = 30 + 4, the step b19-22's 26 -> b23-26's 30 took; max 48 = 44 + the same 4, not the +14 that stretched b23-26's max to reach fire-ancient's 42."
+      - "damage max stays above fire-ancient's authored 42 because bosses multiply HP, XP and gold — never damage (see bosses)."
+      - "xp: both ends take the +30/+80 step b19-22's [150, 300] -> b23-26's [180, 380] took; fire-ancient's 1200 is 2.6x the ceiling, inside bosses.xp_multiplier."
+      - "gold: both ends take the +5/+15 step b19-22's [25, 60] -> b23-26's [30, 75] took; fire-ancient's 150-300 is inside band x bosses.gold_multiplier [2, 4] = [70, 360]."
+      - "drop_chance continues the -0.02/-0.05 step (b23-26's 0.08-0.30 from b19-22's 0.10-0.35); the floor is a range, not a trend to zero."
+    note: >-
+      One seeded archetype and it is a boss: fire-ancient (26-30, 900 HP, ArchetypeSeeder.cs:669),
+      which D0 holds out of every pool (bosses.placement). The band's non-boss rows are authored,
+      not seeded — ash-eater (26-30) and maw-serpent (28-30), D6/L6, archetypes.md. No boss is
+      authored for this band: boss placement stays held for a uniqueness mechanism.
+
 wiring:
   level:
     live: true
@@ -104,6 +138,10 @@ wiring:
       spawn level is the archetype's MinLevel and nothing else, no level roll
       (EfCoreEnemyRepository.cs:52); MaxLevel only feeds the seeded-encounter overlap rule
       (SeededEncounterCoverageTests.cs:132-143). One archetype per band, not per level.
+      Because nothing rolls, an archetype banded 26-30 spawns at 26 in every room it is pooled
+      in — including a room whose floor is 28. That is the whole reason b27-30 has two authored
+      rows instead of one 26-30 row: ash-eater (26-30) spawns at 26 for fire-ancients-chamber,
+      and maw-serpent (28-30) is the only row that can stand on kaldreks-heart's floor of 28.
   hp:
     live: false
     detail: >-
@@ -246,7 +284,7 @@ merchants:
     (Veldrath.Server/Data/Entities/Zone.cs:17-18). The seeded merchant towns and their MinLevel are crestfall 0,
     aldenmere 5, tolvaren 10 and skarhold 18 (Veldrath.Server/Data/Seeders/ApplicationDataSeeder.cs:77, :84, :89,
     :94). The fifth HasMerchant zone is the dev playground (:99) and is excluded as IsDevOnly. A town authored
-    above L18 uses the L18 band; no band is invented for it, the same way b23-26 is the top of the hostile ladder.
+    above L18 uses the L18 band; no band is invented for it, the same way b27-30 is the top of the hostile ladder.
   gold_by_town_level:
     L0:  [100, 250]    # crestfall — 8 x 0.40 x 30 = 96 .. 16 x 0.50 x 30 = 240; ceiling 30 = rune-of-fire (ItemsSeeder.cs:59)
     L5:  [250, 650]    # aldenmere — 8 x 0.40 x 80 = 256 .. 16 x 0.50 x 80 = 640; ceiling 80 = rune-of-power (ItemsSeeder.cs:61)

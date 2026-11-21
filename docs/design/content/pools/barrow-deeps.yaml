@@ -1,0 +1,43 @@
+# docs/design/content/pools/barrow-deeps.yaml
+# Veldrath spawn pools — zone: barrow-deeps (region: greymoor)
+# Values and the reasoning behind them: docs/design/content/pool-matrix.md (card t_af051fc2, D4).
+# DESIGN DATA, not an importable pack yet. The pack importer reads content/<family>/*.yaml and
+# rejects an unknown spawn archetype (missing-spawn-archetype, Error), and 15 of the pooled
+# archetypes are not seeded. These files move to content/zonelocations/ once they are — the
+# translation is written out in pool-matrix.md §8.
+# Roster size is engine-fixed at 2-4 per location (ActorPoolResolver.cs:13-14). There is no
+# per-location roster field, so none is authored here — do not invent one.
+# Weights are RELATIVE integers (ActorPoolResolver.cs:101-112), never percentages, and must be
+# >= 1. The importer must not normalise them; only the ratio is meaningful.
+# "excluded: true" with an empty pool is authored content, not an omission: a town, a respawn
+# point or a dungeon lobby deliberately spawns nothing (ActorPoolResolver.cs:39-45).
+schema_version: 1
+zone: barrow-deeps
+region: greymoor
+locations:
+  - slug: ancestor-vault
+    # band: b11-14 (D0 budget) | location L11-14
+    level_range: [11, 14]
+    pool:
+      - archetype: drowned-revenant
+        weight: 5   # band: 13-15 | seeded 11-18
+      - archetype: burrow-worm
+        weight: 5   # band: 10-12 | to be seeded 10-12
+  - slug: relic-chamber
+    # band: b11-14 (D0 budget) | location L12-14
+    level_range: [12, 14]
+    pool:
+      - archetype: burrow-worm
+        weight: 6   # band: 10-12 | to be seeded 10-12
+      - archetype: drowned-revenant
+        weight: 4   # band: 13-15 | seeded 11-18
+  - slug: deeps-entrance
+    # band: b11-14 (D0 budget) | location L11-14
+    level_range: [11, 14]
+    excluded: true
+    exclusion_class: dungeon_lobby
+    exclusion_reason: 'Dungeon lobby (IsDungeon=false + SafeRespawn).'
+    pool: []   # empty by design
+
+# Coverage for this zone (design check, not a field the importer reads):
+#   locations 3 | pooled 2 | excluded 1

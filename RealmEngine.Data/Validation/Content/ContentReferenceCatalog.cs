@@ -60,6 +60,10 @@ public sealed partial class ContentReferenceCatalog
     /// <summary>
     /// Loads the catalog from the content catalog database.
     /// </summary>
+    /// <remarks>
+    /// One set per family a reference rule resolves against. Families no rule points at are deliberately absent: loading
+    /// one would add a query to every validation — the write path's included — for a set nothing reads.
+    /// </remarks>
     /// <param name="db">Content context to read.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A catalog describing every slug currently stored.</returns>
@@ -90,9 +94,6 @@ public sealed partial class ContentReferenceCatalog
             Organizations = Slugs(await db.Organizations.AsNoTracking().Select(o => o.Slug).ToListAsync(cancellationToken)),
             Dialogues = Slugs(await db.Dialogues.AsNoTracking().Select(d => d.Slug).ToListAsync(cancellationToken)),
             Quests = Slugs(await db.Quests.AsNoTracking().Select(q => q.Slug).ToListAsync(cancellationToken)),
-            Species = Slugs(await db.Species.AsNoTracking().Select(s => s.Slug).ToListAsync(cancellationToken)),
-            ActorClasses = Slugs(await db.ActorClasses.AsNoTracking().Select(c => c.Slug).ToListAsync(cancellationToken)),
-            Backgrounds = Slugs(await db.Backgrounds.AsNoTracking().Select(b => b.Slug).ToListAsync(cancellationToken)),
             NodeIdsByMap = maps.ToDictionary(
                 map => map.Id,
                 map => (IReadOnlySet<string>)map.NodeIds.ToHashSet(StringComparer.OrdinalIgnoreCase),
