@@ -4681,6 +4681,21 @@ table exists. Four facts for the next session:
   `content/archetypes/village-blacksmith.yaml` is the delivery path: import an old (500) copy, then the real pack,
   reported `created 1` → `updated 1` → `unchanged 1` against Postgres 17, row `Version 2`, `TradeGold 250`. Change both
   in future (the seeder for fresh installs, the pack for existing rows) or a new database and an upgraded one disagree.
+- **A shelf edit is a data migration — decided in `t_3231a2ea`, not deferred.** `ZoneStockItems` has no pack family and
+  is not getting one. The reason is its shape, not its size: a row is a `(ZoneId, ItemSlug)` pair of soft string
+  references with no slug (`ZoneStockItem.cs:22-31`), while the importer's whole update path is
+  `FindBySlugAsync` on a `ContentBase` (`ContentPackImporter.cs:119`) and its child reconciliation hangs off a parent
+  navigation (`ContentPackImporter.cs:275-306`); the `Zone` being named lives in `ApplicationDbContext`
+  (`Veldrath.Server/Data/Entities/Zone.cs:7`, `ApplicationDbContext.cs:34`), a context an import never opens — one
+  Postgres database, four contexts (`Program.cs:97-108`, `:240`) — so a pack family would need a phantom zone row in
+  `ContentDbContext` purely to give the importer something to hang the list off, and it would still buy no validation,
+  because the pack validator cannot resolve a gameplay zone id or read the live `Zone` table. Option 3 (a
+  reconciling seeder) stays rejected: two writers to one table disagreeing in silence is the exact failure this
+  decision prevents. **Ownership:** `Authors()` is the truth — the seeder materialises it on a database that has never
+  been seeded, a migration carries the delta on one that has, nothing else writes these rows. Adding a row still needs
+  no migration (the seeder inserts what is missing); removing one, or changing a `SortOrder`, does. Shape, verification
+  query and the "who owns a shelf" statement: [`docs/content-packs.md`](../../docs/content-packs.md); the standing rule
+  for future sessions: [`engine-codebase.md`](engine-codebase.md), "Content packs — the editable catalogue".
 
 Test gotchas found on the way: a `ContentDbContext` sharing a SQLite connection after another context created tables
 needs `Database.GetService<IRelationalDatabaseCreator>().CreateTables()` (EnsureCreated is a no-op); and a fixture that
