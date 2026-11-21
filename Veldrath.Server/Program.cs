@@ -226,6 +226,11 @@ try
     builder.Services.AddRealmEngineCore(p => p.UseExternal());
     builder.Services.AddScoped<Veldrath.Server.Features.Characters.Combat.ActorPoolResolver>();
     builder.Services.AddScoped<Veldrath.Server.Features.Content.MapEditorService>();
+    // Shop gate: the merchant standing with a character, and the stock their town offers.
+    builder.Services.AddScoped<Veldrath.Server.Features.Shop.IShopMerchantResolver,
+        Veldrath.Server.Features.Shop.ShopMerchantResolver>();
+    builder.Services.AddScoped<Veldrath.Server.Features.Shop.IZoneStockReader,
+        Veldrath.Server.Features.Shop.ZoneStockReader>();
     // Register server-local MediatR handlers (hub commands such as GainExperienceHubCommand).
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
     builder.Services.AddHostedService<CatalogInitializationService>();

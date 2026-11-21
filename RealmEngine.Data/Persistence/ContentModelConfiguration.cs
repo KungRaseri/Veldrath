@@ -289,6 +289,17 @@ public static class ContentModelConfiguration
             e.Property(x => x.ConnectionType).HasMaxLength(32).IsRequired();
         });
 
+        // Per-zone merchant stock
+        builder.Entity<ZoneStockItem>(e =>
+        {
+            e.HasKey(x => x.Id);
+            // One row per item per zone: two merchants in one town share this list, so a duplicate would stock
+            // the same sword twice on the shelf.
+            e.HasIndex(x => new { x.ZoneId, x.ItemSlug }).IsUnique();
+            e.Property(x => x.ZoneId).HasMaxLength(128).IsRequired();
+            e.Property(x => x.ItemSlug).HasMaxLength(128).IsRequired();
+        });
+
         // Region and zone map graphs
         builder.Entity<Map>(e =>
         {

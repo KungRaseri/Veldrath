@@ -2082,7 +2082,7 @@ public class GameHub : Hub
     /// </summary>
     public async Task GetShopCatalog()
     {
-        if (!TryGetCharacterId(out _))
+        if (!TryGetCharacterId(out var characterId))
         {
             await Clients.Caller.SendAsync("Error", "SelectCharacter must be called before GetShopCatalog");
             return;
@@ -2092,7 +2092,7 @@ public class GameHub : Hub
 
         try
         {
-            var result = await _mediator.Send(new GetShopCatalogHubCommand(zoneId));
+            var result = await _mediator.Send(new GetShopCatalogHubCommand(characterId, zoneId));
 
             if (!result.Success)
             {

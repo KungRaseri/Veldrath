@@ -20,6 +20,7 @@ using Veldrath.Server.Features.Characters;
 using Veldrath.Server.Features.Characters.Combat;
 using Veldrath.Server.Features.Party;
 using Veldrath.Server.Features.Quest;
+using Veldrath.Server.Features.Shop;
 using Veldrath.Server.Features.Zones;
 using Veldrath.Server.Hubs;
 using Veldrath.Server.Services;
@@ -3981,13 +3982,19 @@ public class GameHubTests : IDisposable
     {
         await using var db = _factory.CreateContext();
         var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
+        character.CurrentZoneId = "crestfall";
+        character.CurrentZoneLocationSlug = "aurelian-market";
+        await db.SaveChangesAsync();
 
         var handler = new VisitShopHubCommandHandler(
+            new CharacterRepository(db),
             new ZoneRepository(db),
+            new FakeShopMerchantResolver(),
             NullLogger<VisitShopHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
-            new VisitShopHubCommand(accountId, "crestfall"),
+            new VisitShopHubCommand(character.Id, "crestfall"),
             CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -4000,16 +4007,20 @@ public class GameHubTests : IDisposable
     {
         await using var db = _factory.CreateContext();
         var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var handler = new VisitShopHubCommandHandler(
+            new CharacterRepository(db),
             new ZoneRepository(db),
+            new FakeShopMerchantResolver(),
             NullLogger<VisitShopHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
-            new VisitShopHubCommand(accountId, "nonexistent-zone"),
+            new VisitShopHubCommand(character.Id, "nonexistent-zone"),
             CancellationToken.None);
 
         result.Success.Should().BeFalse();
+        result.Refusal.Should().Be(ShopRefusal.ZoneNotFound);
         result.ErrorMessage.Should().Contain("not found");
     }
 
@@ -4018,17 +4029,22 @@ public class GameHubTests : IDisposable
     {
         await using var db = _factory.CreateContext();
         var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var handler = new VisitShopHubCommandHandler(
+            new CharacterRepository(db),
             new ZoneRepository(db),
+            // The-droveway is wilderness: no merchant is placed there, so the resolver finds nobody.
+            FakeShopMerchantResolver.Nobody(),
             NullLogger<VisitShopHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
-            new VisitShopHubCommand(accountId, "the-droveway"),
+            new VisitShopHubCommand(character.Id, "the-droveway"),
             CancellationToken.None);
 
         result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("no merchant");
+        result.Refusal.Should().Be(ShopRefusal.NoMerchant);
+        result.ErrorMessage.Should().Be("There is no one to trade with here.");
     }
 
     [Fact]
@@ -4036,13 +4052,16 @@ public class GameHubTests : IDisposable
     {
         await using var db = _factory.CreateContext();
         var accountId = await SeedAccountAsync(db);
+        var character = await SeedCharacterAsync(db, accountId);
 
         var handler = new VisitShopHubCommandHandler(
+            new CharacterRepository(db),
             new ZoneRepository(db),
+            new FakeShopMerchantResolver(),
             NullLogger<VisitShopHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
-            new VisitShopHubCommand(accountId, ""),
+            new VisitShopHubCommand(character.Id, ""),
             CancellationToken.None);
 
         result.Success.Should().BeFalse();
