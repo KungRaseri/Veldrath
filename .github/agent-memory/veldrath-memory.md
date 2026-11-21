@@ -355,7 +355,7 @@ Full World → Region → Zone hierarchy implemented.
 - `Region.cs`: `Id` (slug), `Name`, `Description`, `RegionType Type`, `MinLevel`, `MaxLevel`, `IsStarter`, `IsDiscoverable`, `WorldId` FK, navigation `World`, `ICollection<Zone> Zones`, `ICollection<RegionConnection> Connections`
 - `RegionType` enum (in `Region.cs`): `Forest`, `Highland`, `Coastal`, `Volcanic`, `Countryside`
 - `RegionConnection.cs`: composite PK (`FromRegionId` + `ToRegionId`), navigate `FromRegion`, `ToRegion`; `Restrict` delete-behavior on both FK sides
-- **`ZoneConnection` and `Zone.Exits` do not exist.** Travel is `RegionConnection` (region ↔ region), the map graph (platform edges), and `ZoneLocationConnection` (inside a zone).
+- **`ZoneConnection` and `Zone.Exits` do not exist.** Travel is `RegionConnection` (region ↔ region), the **region** map graph, and the **zone** map graph — each zone's `Map` of type `Zone` carries an `EntryPoint` node, one `Location` node per location (`RefId` = slug) and a `RegionExit` node, joined by `Walk`/`ExitToRegion` edges, executed by `TravelToNodeHubCommand`; `EnterZoneLocationHubCommand` resolves a slug to its `Location` node and delegates to it. A `ZoneLocationConnection` table exists but is seeded for Crestfall only (11 rows, four slugs) and read by no handler or repository — do not cite it as the in-zone mover.
 
 **Zone entity** (`Zone.cs`): `Id` (slug), `Name`, `Description`, `ZoneType Type`, `MinLevel`, `MaxPlayers`, `IsStarter`, `HasInn`, `HasMerchant`, `IsPvpEnabled`, `IsDiscoverable`, `IsDevOnly`, `RescueFundTotal`, `RegionId` FK + `Region` nav, `ICollection<PlayerSession> Sessions`
 
