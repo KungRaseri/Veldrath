@@ -31,7 +31,7 @@ Maps are explicit graph data, not tilemaps:
 
 **All five dungeons are already authored as zones with interior maps.** [`MapGraphSeeder`](../RealmEngine.Data/Seeders/MapGraphSeeder.cs:275)
 gives each one a `MapType.Zone` map with an entry node, three named locations, one hidden
-quest-locked deep room and edges; [`ZoneLocationsSeeder`](../RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs:146)
+quest-locked deep room and edges; [`ZoneLocationsSeeder`](../RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs)
 seeds the matching locations; [`ApplicationDataSeeder`](../Veldrath.Server/Data/Seeders/ApplicationDataSeeder.cs:81)
 seeds the zones themselves with a level floor and a parent region.
 
