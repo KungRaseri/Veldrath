@@ -39,7 +39,11 @@ public class NpcPlacementTests : IAsyncDisposable
         var authored = LocationNpcsSeeder.Authors();
 
         authored.Select(npc => npc.NpcId).Should().OnlyHaveUniqueItems();
-        authored.Should().OnlyContain(npc => npc.ZoneId == "crestfall");
+        // D3's roster is one person per settlement location, so every reachable town is populated and the dev sandbox
+        // — which is not a settlement — stays empty on purpose.
+        authored.Select(npc => npc.ZoneId).Distinct().Should().BeEquivalentTo(
+            ["crestfall", "aldenmere", "tolvaren", "skarhold"],
+            "every reachable settlement has townspeople; the dev playground does not");
         authored.Should().OnlyContain(npc => !string.IsNullOrWhiteSpace(npc.ArchetypeSlug));
         authored.Should().OnlyContain(npc => !string.IsNullOrWhiteSpace(npc.LocationSlug));
         // The main-story quest asks the player to return cargo to the blacksmith, so he has to be findable.
@@ -84,7 +88,8 @@ public class NpcPlacementTests : IAsyncDisposable
         await using var db = _factory.CreateContext();
         var content = await _content.CreateContextAsync();
         await LocationNpcsSeeder.SeedAsync(db);
-        var character = await SeedCharacterAsync(db, "crestfall", "low-quarter");
+        // A wilderness location: the roster places people in the four settlements only, never on the roads.
+        var character = await SeedCharacterAsync(db, "the-droveway", "droveway-crossing");
 
         var listed = await Reader(db, content).Handle(
             new GetLocationNpcsHubCommand(character.Id),
