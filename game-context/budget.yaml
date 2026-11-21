@@ -17,6 +17,9 @@
 #   blocks: Stats.Damage and Stats.Mana have been projected since PR #103 (d119b9f1), and those
 #   sentences still named the pre-projection repository lines and the display-only CombatHelpers
 #   helpers. Re-derived at 1bcf4cdd, the post-#173 tree. No band value moved.
+# merchants.wiring.gold's merchant-purse contrast reworded 2026-11-20 by the same card (review
+#   round 2): it said the hostile `gold:` in the wiring block "is still not projected", which
+#   #173 made false; it is the per-kill reward and it is live. No band value moved.
 # dev-content may choose values INSIDE a band; it may not invent a curve.
 # wiring says whether the engine reads each keyed stat TODAY, with file:line.
 
@@ -25,7 +28,7 @@ status: >-
   approved 2026-11-20 (bands, spawn, loot); merchants approved 2026-11-20;
   b27-30 approved 2026-11-20; merchants.town_level_basis reworded 2026-11-20;
   wiring.hp/xp/gold corrected to live 2026-11-20; wiring.damage_per_hit corrected to live and
-  omitted.mana reworded 2026-11-20
+  omitted.mana reworded 2026-11-20; merchants.wiring.gold's hostile-gold contrast corrected 2026-11-20
 covers_levels: [1, 30]
 level_range_justification: >-
   Card asked for 1-20; the seeded world already has zones at L20, L23 and L26
@@ -298,7 +301,7 @@ omitted:
   mana: >-
     Stats.Mana IS projected (ActorArchetype.cs:56 -> Enemy.Mana and Enemy.MaxMana,
     ActorTemplateProjection.cs:139-143; 200 on fire-ancient, SpawnedEnemyStatProjectionTests.cs:43),
-    but it is inert once it is there: the server's fight reads BasePhysicalDamage and nothing else
+    but it is inert once it is there: the server's fight reads BasePhysicalDamage for its damage
     (CombatHelpers.cs:88-95), and the engine's spell AI has no production caller here — its only
     entry point, CombatService.ExecuteEnemySpell (CombatService.cs:538-561), returns early at
     EnemySpellCastingService.cs:35-41 unless Enemy.SpellIds is populated, which the projection never
@@ -378,8 +381,8 @@ merchants:
       the build when a seeded shopkeeper's purse leaves its town's band. What is NOT live is a depleting balance:
       TradeGold is content, nothing writes it back after a sale (SellItemHubCommand.cs:127-133 credits the player
       and saves the character, and no purse row is touched), so the authored figure caps every transaction instead
-      of draining. The hostile `gold:` in the wiring block at the top of this file is a different key and is still
-      not projected.
+      of draining. The hostile `gold:` in the wiring block at the top of this file is a different key —
+      the per-kill reward, which *is* projected (`wiring.gold`) — not this purse.
     prices: >-
       Live and fixed at the band's two ends. ShopPricing is the shop's pricing rule, in two methods: BuyPrice is the
       item's printed value at MerchantBands.PriceMarkupPercent (100, i.e. 1.0), SellPrice is that value at
