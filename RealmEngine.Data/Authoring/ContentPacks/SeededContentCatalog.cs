@@ -55,6 +55,7 @@ public sealed class SeededContentCatalog : IAsyncDisposable
         await QuestsSeeder.SeedAsync(context);
         await ZoneLocationsSeeder.SeedAsync(context);
         await ZoneLocationsConnectionSeeder.SeedAsync(context);
+        await ZoneStockSeeder.SeedAsync(context);
         await MapGraphSeeder.SeedAsync(context);
         await ActorInstancesSeeder.SeedAsync(context);
         await OrganizationsSeeder.SeedAsync(context);

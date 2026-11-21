@@ -55,6 +55,8 @@ public class ContentDbContext : DbContext
     public DbSet<ZoneLocation> ZoneLocations => Set<ZoneLocation>();
     /// <summary>Directed connections between zone locations (intra-zone and cross-zone).</summary>
     public DbSet<ZoneLocationConnection> ZoneLocationConnections => Set<ZoneLocationConnection>();
+    /// <summary>Items a zone's merchants offer, one row per item, shared by every merchant in that zone.</summary>
+    public DbSet<ZoneStockItem> ZoneStockItems => Set<ZoneStockItem>();
     /// <summary>Region and zone map definitions.</summary>
     public DbSet<Map> Maps => Set<Map>();
     /// <summary>Nodes within region and zone maps.</summary>
