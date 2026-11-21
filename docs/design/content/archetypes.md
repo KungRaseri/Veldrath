@@ -18,8 +18,12 @@ bands and its slugs are unchanged from what was approved.
   no Ash Shrine dedication.
 - **The `gull-rider clans` faction tie is descriptive only.** It rests on the map seeder's assertion
   of rival clans, not on canon — do not treat it as an established organisation.
-- **Proposal 9 — open.** Content rating and the four design pillars are undecided, so `GAME.md` §3–§4
-  stay TBD.
+- **Proposal 9 — decided 2026-11-20.** The content standard is published in `game-context/GAME.md`
+  §3 (Teen-equivalent and self-imposed, with the permitted, testimony-only and not-permitted lists)
+  and the four design pillars with their fails-when clauses in §4. A borderline description is
+  resolved against §3 and a design argument against §4; before this they were questions with no
+  answer anywhere in the repository. The roster above was approved without them and nothing in it
+  changed when they landed.
 - **The townspeople are absorbed from the towns card (`towns.md`).** The ten `§` rows at the end of the
   table are D3's, adopted here because this document is the slug authority; D3 does not keep a parallel
   list. Non-hostile total goes from seven to seventeen.
@@ -254,22 +258,32 @@ are listed because the roster surfaced them, not because content was written aga
 archetype that would have depended on an unapproved proposal was held out and named in "what this
 roster does not cover".
 
-### Conflicts first — two locked facts disagree with the code
+### Conflicts first — locked facts against the code
 
-**Proposal 1 — the retired names are still live in seeded prose. (Correction, not new lore.)**
-`MapGraphSeeder.cs` and `ZoneLocationsSeeder.cs` describe Greymoor as "Dravan highlands" (three
-times), the barrow-deeps as holding "ancient Dravan relics", Saltcliff as "the drowned remnants of a
-sunken empire" (twice) and Cinderplain as "Kaldrek's scorched expanse" (three times), and seed
-`kaldrek-maw`, `kaldreks-heart`, `fire-ancients-chamber` and the archetype `fire-ancient`.
-`world-lore-plan.md` records that the "old Sundering/Age of Embers/Dravan/Thysmara/Kaldrek lore" was
-*replaced* by the Collapse / Ashen Age / Calethic Empire / Aethori / Unbound material (session log,
-2026-04-14). **Claim:** prose that still says Dravan, Thysmara, Kaldrek or "sunken empire" is stale
-and should be rewritten to the Collapse vocabulary. **Reason:** a content worker reading the seeders
-will treat these as canon and write against dead lore — I nearly did. **Touches:** the four region
-descriptions, `barrow-deeps`, `sunken-name`, `saltcliff`, and four Cinderplain slugs whose *display
-names* use Kaldrek. **Slugs cannot be renamed** (permanent identity), so this needs a decision about
-display names, not slugs. **Recorded in:** a follow-up card against `MapGraphSeeder.cs`; evidence in
-this document.
+**Proposal 1 — the retired names were still live in seeded prose. (Resolved 2026-11-20, `c213f409`;
+correction, not new lore.)**
+When this document was written, `ApplicationDataSeeder.cs` and the map nodes that mirror it in
+`MapGraphSeeder.cs` described Greymoor as "Dravan highlands", the barrow-deeps as holding "ancient
+Dravan relics", Saltcliff as "the drowned remnants of a sunken empire" and Cinderplain as "Kaldrek's
+scorched expanse". `world-lore-plan.md` records that the "old Sundering/Age of Embers/Dravan/Thysmara/
+Kaldrek lore" was *replaced* by the Collapse / Ashen Age / Calethic Empire / Aethori / Unbound
+material (session log, 2026-04-14), so the prose was stale and a content worker reading the seeders
+would write against dead lore — I nearly did. `c213f409` rewrote both seeded copies: Greymoor is
+"fog-wreathed highlands where ancient burial mounds dot the heather", Saltcliff "the drowned remains
+of whatever stood here before them", Cinderplain "a scorched expanse of ash and cooled lava", and
+`World.Era` is "The Ashen Age (the Age of Reclaiming)".
+`SeededWorldTextTests` now fails the build on a retired token or on the two copies drifting apart.
+Its token list is Sundering, Age of Embers, Dravan, Thysmara and Kaldrek — "sunken empire" is not on
+it, so that phrase alone could return unnoticed.
+**No decision from this proposal is outstanding.** The seeded display names carry no retired token —
+"The Maw", "The Maw's Heart", "The Fire-Ancient's Chamber", "Fire-Ancient" (`ApplicationDataSeeder.cs`,
+`MapGraphSeeder.cs`, `ZoneLocationsSeeder.cs`, `ArchetypeSeeder.cs`) — and the Cinderplain display work
+that remains is K1's table under "The Cinderplain naming question" below. **The slugs stay:**
+`kaldrek-maw`, `kaldreks-heart`, `fire-ancients-chamber` and the archetype `fire-ancient` are opaque
+permanent keys — ids are not canon, display names are, and renaming a slug is a cross-database
+migration with its own card (`world-lore-plan.md`).
+**Recorded in:** `towns.md` §6 C2 and the seeded text; the guard in `SeededWorldTextTests` is the
+evidence.
 
 **Proposal 2 — `aurelian-market` versus The Korreld Exchange.**
 `calethic-language.md` §5.2 records "Aurelian Market" as **resolved and renamed to The Korreld
@@ -279,8 +293,9 @@ Common naming pattern. `ZoneLocationsSeeder.cs` still seeds `Slug = "aurelian-ma
 display name is wrong; the slug is a legacy alias that must not be changed in place. **Reason:** two
 locked sources disagree and the roster references this zone for `market-factor`. **Touches:**
 `crestfall`, the `aurelian-market` location, `MapGraphSeeder` node `zone:crestfall:location:aurelian-market`.
-**Recorded in:** the same follow-up card as proposal 1. **Decision needed:** revert the rename, or
-change the display name and keep the slug.
+**Recorded in:** the `aurelian-market` bullet under *Status* and `towns.md` §6 C3. **Decided:** the
+slug stays and the display name becomes The Korreld Exchange; the seeded zone still reads "The
+Aurelian Market" until that rename lands.
 
 ### Proposals to the open questions in `world-lore-plan.md`
 
@@ -339,12 +354,15 @@ priest without inventing a religion. **Touches:** `ashfields` (`ash-shrine`, `sc
 the `shrine-keeper` row. **Recorded in:** `docs/lore/` (a Cinderplain note) and the region page at
 Phase 5+.
 
-**Proposal 9 — publish a content rating and four design pillars.**
-**Claim:** Veldrath should state a content rating and four design pillars. **Reason:**
-`game-context/GAME.md` §3 and §4 are both TBD because neither exists anywhere in the repository; no
-content worker can resolve a borderline description or argue a design choice without them.
-**Touches:** every content card. **Recorded in:** `game-context/GAME.md` §3–4, once a human approves
-the text.
+**Proposal 9 — publish a content rating and four design pillars. (Decided 2026-11-20, `09288312`.)**
+**Claim:** Veldrath should state a content rating and four design pillars. **Reason:** when this was
+written, `game-context/GAME.md` §3 and §4 were both TBD — neither existed anywhere in the
+repository, so no content worker could resolve a borderline description or argue a design choice.
+Josh decided both on 2026-11-20 (card `t_5cd22693`) and C3 (`t_3790a7c7`) transcribed them in
+`09288312`: §3 carries the Teen-equivalent, self-imposed standard with its permitted,
+testimony-only and not-permitted lists, and §4 the four pillars, each written as a test with a
+fails-when clause. **No decision from this proposal is outstanding.** **Touches:** every content
+card. **Recorded in:** `game-context/GAME.md` §3 (content rating) and §4 (design pillars).
 
 ---
 
@@ -367,9 +385,9 @@ two.
 - **Seeded prose, not invention.** `smoldering-reach` is already described in the seeder as "a cracked
   lava field where vents of superheated gas erupt without warning and **heat-adapted predators hunt at
   dusk**" (`ApplicationDataSeeder.cs:96`); `ashfields` as "grey ash plains … dotted with fused obsidian
-  trees and the scorched skulls of fallen armies" (`:95`); the region as ash and cooled lava "where
-  forge-tempered warbands and fire-touched creatures stake their claim" (`:45`, retained by K1 row
-  R10). Three of the five rows below are those sentences turned into an enemy.
+  trees and the scorched skulls of fallen armies" (`:95`); `cinderplain` as "a scorched expanse of
+  ash and cooled lava, where fire-touched creatures and those who work the heat stake their claim"
+  (`:45`). Three of the five rows below are those sentences turned into an enemy.
 - **Nothing in the tail is Calethic-built.** The Caleth surveyed the ash-plain (*Daeld-Ald*) and did
   not settle it (P4, locked), so no row is a construct, a guardian or a marker left by them. Proposal
   11 asks for that to be recorded as a rule rather than left to inference.
@@ -458,7 +476,7 @@ Band distance is D4's rule, measured on the D1 ladder where every location above
 | Bosses | `fire-ancient` (26–30) is a boss and stays out of every pool. Its placement row belongs to the boss-placement card gated on `t_14fa5465`, not here. D4's conclusion that the Heart needed "the boss or a new archetype" is now answered with an archetype. |
 | The Wound (Region 5) | Still no zones, locations or map graph. Nothing can be placed there. |
 | Loot | Each archetype needs exactly one loot table (`budget.yaml`, *loot.tables_per_archetype*). None is authored here. |
-| Seeding | These five slugs do not exist in `ArchetypeSeeder.cs`. They must be seeded **before** any pool names them, or `SeededEncounterCoverageTests` fails and the entry logs an Error at runtime (`ActorPoolResolver.cs:52-60`). |
+| Seeding | These five slugs do not exist in `ArchetypeSeeder.cs`. They must be seeded **before** any pool names them, or `SeededEncounterCoverageTests` fails and the entry logs an Error at runtime (`ActorPoolResolver.cs:115-122`). |
 | Statlines for `ash-eater` and `maw-serpent` | The band is published, not deferred: `b27-30` carries hp 340–450, damage 34–48, xp 210–460, gold 35–90 and drop 0.06–0.25 (`budget.yaml`, *bands*, C4). What the tail still lacks is the assignment — neither row has values authored inside those ranges. |
 
 ### Naming — tail derivation notes
@@ -475,17 +493,18 @@ is that every creature name in the shipped catalogue is Common. The Calethic res
 | Crust Crawler | Common: *crust* (the cooled surface of a flow) + *crawler*, the same morphology as the seeded `sump-crawler`. No Calethic form: a species is not a place, and *daeld-* would claim the Caleth named it (see proposal 11). |
 | Ash Picker | Common: *ash* + *picker*, the working noun for someone who breaks a face for what is in it — the register of `ship-chandler` and `market-factor`. Deliberately not *daeld-* or a Calethic trade form; §5.2 records that no Calethic root for trade or commerce exists. |
 | Ash Eater | Common, from behaviour, not from a light- or fire-root. Calethic distinguishes *raek* (light in material) from *thael* (revelation); this thing is neither, and a Calethic name would over-grade a scavenger. |
-| Maw Serpent | Common: *Maw* is the zone's own name, already in the seeded description ("a vast volcanic vent complex known as the Maw") and the display name both Cinderplain reconciliation sources agree on; *serpent* is the plain animal word. No Kaldrek token, no Calethic coinage. |
+| Maw Serpent | Common: *Maw* is the zone's own name — `kaldrek-maw` is seeded with the display name **The Maw** (`ApplicationDataSeeder.cs:97`) — and the display name both Cinderplain reconciliation sources agree on; *serpent* is the plain animal word. No Kaldrek token, no Calethic coinage. |
 
 ### The Cinderplain naming question, as it stands
 
 - **The four Cinderplain slugs keep their identifiers:** `kaldrek-maw`, `kaldreks-heart`,
   `fire-ancients-chamber`, `fire-ancient`. A slug is permanent identity; **ids are not canon, display
   names are** (recorded by `t_7a2beb7d`, decision 1).
-- **The display prose is K1's table** (`t_fbc6e04b`, `docs/design/content/prose-corrections.md`,
-  pending): R12 `Kaldrek's Maw` → **The Maw**; R13 drops "Kaldrek's" and "final test of the worthy";
-  R15 `The Fire-Ancient's Chamber in Kaldrek's Maw` → `The Fire-Ancient's Chamber, the first hall
-  inside the Maw`; R22 keeps `Fire-Ancient` and "Fire-Ancient Drops" unchanged.
+- **The display prose is K1's table** (`t_fbc6e04b`, approved 2026-11-20; the table is that card's
+  comment, never a file in this tree): R12 `Kaldrek's Maw` → **The Maw**, shipped in `c213f409`;
+  R13 drops "Kaldrek's" and "final test of the worthy" from the Maw's description; R15 rewords the
+  chamber's map description to `The Fire-Ancient's Chamber, the first hall inside the Maw`; R22 keeps
+  `Fire-Ancient` and "Fire-Ancient Drops" unchanged.
 - **The Heart's display name is decided: `kaldreks-heart` is "The Heart of the Maw".** K1's row **R16
   governs**, and the earlier architect wording (`t_7a2beb7d` decision 1, "The Maw's Heart") does not —
   R16 supersedes it. The slug stays `kaldreks-heart` everywhere in this document; only the display
@@ -524,12 +543,15 @@ Phase 5+.
 
 **Proposal 12 — the pyrelings do not serve the Fire-Ancient. (Accepted.)**
 **Claim:** `pyreling` clusters where the vents are hottest; its relation to the `fire-ancient` is
-shared ground, not service, command or cult. **Reason:** D4's `fire-ancients-chamber` row says the room
-is "guarded by the pyrelings that **serve** it", which is a faction-shaped claim inside the endgame
-zone — the one thing this card forbids inventing — and a later quest or dialogue will build on it.
-**Touches:** the `fire-ancients-chamber` prose in `docs/design/content/pool-matrix.md` (revise to "the
-pyrelings that den in it"), the `fire-ancient` placement card. **Recorded in:** the D4 matrix when L3
-(`t_6c70dc04`) lands it — **the correction is binding at that point; see the decisions block below.**
+shared ground, not service, command or cult. **Reason:** D4's `fire-ancients-chamber` row originally
+described the room as guarded by pyrelings that served it — a faction-shaped claim inside the
+endgame zone, the one thing this card forbids inventing, and a later quest or dialogue will build on
+it. The row now reads "the room is guarded by the pyrelings that den in it" (`pool-matrix.md` §3,
+the `kaldrek-maw` / `fire-ancients-chamber` row), corrected in `a857dcf0` (C4); no faction-shaped
+claim may be built on the old wording. **Touches:** the `fire-ancients-chamber` prose in
+`pool-matrix.md` (corrected there to "the pyrelings that den in it"), the `fire-ancient` placement
+card. **Recorded in:** `pool-matrix.md` §3, the `kaldrek-maw` / `fire-ancients-chamber` row, which
+carries the correction — see the decisions block below.
 
 ### How this section was checked
 
@@ -577,8 +599,8 @@ section above; where the two disagree, this block governs.
 4. **`kaldreks-heart`'s display name is "The Heart of the Maw".** **K1's row R16 governs**; the earlier
    architect wording (`t_7a2beb7d` decision 1, "The Maw's Heart") does not, and is superseded. The slug
    `kaldreks-heart` is permanent identity and does not change.
-5. **Proposal 12 corrects prose in `pool-matrix.md`, and that correction is binding.** D4's
-   `fire-ancients-chamber` row reads "guarded by the pyrelings that **serve** it"; the phrase "guarded
-   by the pyrelings that serve it" must go, revised to "the pyrelings that den in it". The matrix is
-   not in the repository yet — L3 (`t_6c70dc04`) lands it, and C4 (`b27-30`) may touch the same line —
-   so **whichever card touches that line applies the correction**; it may not be landed as written.
+5. **Proposal 12's correction to `pool-matrix.md` is binding, and it has landed.** D4's
+   `fire-ancients-chamber` row described the room as guarded by pyrelings that served it; it now
+   reads "the room is guarded by the pyrelings that den in it" (`pool-matrix.md` §3, the
+   `kaldrek-maw` / `fire-ancients-chamber` row), corrected in `a857dcf0` (C4). The obligation this
+   decision carried is discharged.

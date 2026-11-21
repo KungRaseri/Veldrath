@@ -2,7 +2,10 @@ using System.Collections.Concurrent;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
+using RealmEngine.Data.Seeders;
+using RealmEngine.Data.Validation.Content;
 using Veldrath.Server.Features.Content;
 
 namespace Veldrath.Server.Tests.Features;
@@ -12,10 +15,10 @@ namespace Veldrath.Server.Tests.Features;
 /// the host from booting, and a shutdown must not surface as a failure.
 /// </summary>
 /// <remarks>
-/// The audit's own queries (owned-JSON collection projections and <c>ILike</c> search) only translate on Npgsql, so
-/// on the SQLite test host <see cref="ContentAuditService.RunAsync"/> always faults. That is exactly the situation the
-/// service exists to survive, so the tests drive the real handler and assert the logged outcome instead of bypassing
-/// it. Full findings coverage needs a Postgres-backed host.
+/// The audit used to project owned-JSON collections, which needs SQL APPLY and so only translated on Npgsql; it now
+/// materialises and flattens them in memory, so <see cref="ContentAuditService.RunAsync"/> runs against the SQLite
+/// test host too. The tests drive the real service there, and one uses a faulting factory to prove a broken audit
+/// cannot stop the host.
 /// </remarks>
 public class ContentAuditServiceTests
 {
@@ -57,6 +60,13 @@ public class ContentAuditServiceTests
             var context = new ContentDbContext(options);
             context.Database.EnsureCreated();
             return context;
+        }
+
+        public void Seed(IEnumerable<ZoneStockItem> rows)
+        {
+            using var context = CreateDbContext();
+            context.ZoneStockItems.AddRange(rows);
+            context.SaveChanges();
         }
 
         public void Dispose() => _connection.Dispose();
@@ -105,6 +115,30 @@ public class ContentAuditServiceTests
             entry.Message.Contains("found no dangling references", StringComparison.Ordinal));
         logger.Entries.Should().NotContain(entry => entry.Level == LogLevel.Error);
         await service.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task RunAsync_Reports_A_StoredStockRow_ThatNoAuthoredShelfLists()
+    {
+        using var factory = new SqliteContentDbContextFactory();
+
+        // The shelves the seeder authors, as a seeded database holds them — plus the row a forgotten data migration
+        // would leave behind. `playground` is the dev sandbox, which the seeder deliberately does not stock.
+        factory.Seed(
+        [
+            .. ZoneStockSeeder.Authors(),
+            new ZoneStockItem { ZoneId = "playground", ItemSlug = "health-potion", SortOrder = 10 },
+        ]);
+
+        var service = new ContentAuditService(factory, new CapturingLogger());
+
+        var issues = await service.RunAsync(CancellationToken.None);
+
+        issues.Should().ContainSingle();
+        issues[0].Rule.Should().Be(ContentRules.UnclaimedZoneStock);
+        issues[0].Severity.Should().Be(ContentIssueSeverity.Warning);
+        issues[0].Identifier.Should().Be("playground/health-potion");
+        issues[0].Message.Should().Contain("playground").And.Contain("health-potion");
     }
 
     [Fact]

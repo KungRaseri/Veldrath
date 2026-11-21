@@ -462,7 +462,7 @@ The alternatives were measured against the tree instead of argued:
 
 | Alternative | Why not |
 |---|---|
-| Add root-config paths to an existing list | The set is not three files: 37 tracked paths in seven classes match no list today (table below), and every new root file reopens the deadlock silently. It is also conceptually false — no component's output depends on `.gitignore` |
+| Add root-config paths to an existing list | The set is not three files: 37 tracked paths in eight classes match no list today (table below), and every new root file reopens the deadlock silently. It is also conceptually false — no component's output depends on `.gitignore` |
 | Keep `["*"]` and document `force_merge` for this class | It works, and that is the objection: the token every worker here authenticates with belongs to the instance administrator (`GET /user` → `kungraseri`, `is_admin: true`), and `CheckPullMergeable` clears the protection error for an admin. Documenting it would make "any worker certifies its own merge" the routine path — the same reason posting a status by hand is forbidden. It stays break-glass |
 | Switch to named contexts | Already rejected above, and this does not change it: a path-filtered workflow still never reports |
 
@@ -532,14 +532,18 @@ posting a status by hand stays forbidden: a status any agent can mint certifies 
 
 #### Files that no component workflow builds
 
-Measured against `development` at `3d3320ac` (2026-11-20, `git ls-files`: 2007 paths, 102
+Measured against `development` at `d0050f96` (2026-11-20, `git ls-files`: 2069 paths, 104
 `pull_request` path patterns, the merge gate and its script included): **37 paths match no
 `on.pull_request.paths` pattern.** Before the merge gate they produced zero statuses and deadlocked
 the gate; now they produce exactly one — the merge gate — and merge with **no build and no test**.
 Regenerate the list with `bash scripts/ci-merge-gate.sh --uncovered`; its last two lines carry the
 live counts for whatever tree you run it on, so quote them instead of hand-counting — the figures
 above are a snapshot of that commit, not a standing number. The content guard,
-`.github/workflows/ci-content.yml` (merged in #108), contributes nine of those patterns.
+`.github/workflows/ci-content.yml` (merged in #108), contributes nine of those patterns. The same 37
+paths were uncovered at `3d3320ac` (2007 tracked files, 102 patterns): every file added between the
+two measurements is covered by some `paths` entry, and the only pattern change since is the pair
+`scripts/check-content-names.mjs` and `scripts/content-name-collisions.allow.json` (#134), which name
+a script `docs.yml` runs.
 
 The path count halved when `Veldrath.Assets` and its 1,837 art files were deleted (2026-11-04); the
 uncovered *set* barely moved, which is the point — the art never matched a workflow's `paths` either.
@@ -551,22 +555,36 @@ path lists. The rule is the one `scripts/web-coverage-gate.mjs` and `scripts/tes
 | Class | Count | Paths |
 |---|---|---|
 | Root dotfiles and editor config | 10 | `.dockerignore`, `.editorconfig`, `.env.example`, `.gitignore`, `.gitmodules`, `.hermes/skills`, `.roomodes`, `.vscode/launch.json`, `.vscode/tasks.json`, `LICENSE` |
-| Root build metadata | 2 | `NuGet.config`, `dotnet-tools.json` |
+| Root build metadata | 1 | `dotnet-tools.json` |
 | Solution files | 4 | `RealmEngine.slnx`, `Veldrath.Discord.slnx`, `Veldrath.Libraries.slnx`, `Veldrath.Server.slnx` |
 | Observability and deploy config | 11 | `config/grafana/dashboards/{10915,19194,23178,23179}.json`, `config/grafana/provisioning/dashboards/dashboards.yml`, `config/grafana/provisioning/datasources/prometheus.yml`, `config/prometheus/prometheus.yml`, `docker-compose.coolify.yml`, `docker-compose.dev.yml`, `docker-compose.e2e.yml`, `docker-compose.prod.yml` |
+| Content budget data | 1 | `game-context/budget.yaml` (YAML, so `docs.yml`'s `**/*.md` does not match it) |
 | Scripts no workflow names | 8 | `scripts/ci-merge-gate.sh`, `scripts/create-release-tag.ps1`, `scripts/e2e-stack.sh`, `scripts/format-json-files.py`, `scripts/generate-coverage-report.ps1`, `scripts/generate-version.ps1`, `scripts/onebit_labeled.png`, `scripts/roguelike_base_labeled.png` |
 | Submodule pin | 1 | `wiki` |
 | The always-on check itself | 1 | `.github/workflows/merge-gate.yml` (it declares no `paths` at all, so no list can name it) |
 
-Two of those classes deserve an explicit warning, because "merges without a build" is not the same
+Three of those classes deserve an explicit warning, because "merges without a build" is not the same
 as "cannot break the build":
 
-- **`NuGet.config` and `dotnet-tools.json`** decide how every .NET job restores and which tools it
-  runs. Add them to `ci-coverage.yml`'s `paths` when that matters; until then a change to package
-  sources merges on the merge gate alone.
+- **`dotnet-tools.json`** pins the local tool set every `dotnet` invocation resolves, and no `paths`
+  list names it, so a tool-version change merges on the merge gate alone — name it in the `paths` of
+  whichever job installs those tools when a tool pin starts to matter. `NuGet.config` has left
+  this class: `ci-content.yml` names it in both of its `paths` lists (`push` and `pull_request`), so
+  a package-source change now gets a content-guard status. Read that status for what it is — not a
+  build. The guard runs `dotnet run --project Veldrath.ContentPack`, so the sources that project
+  resolves are restored through the changed file; a source only another project needs stays unseen
+  until an unrelated change runs that project's job, which then fails on a pull request that did not
+  touch it.
 - **The four component `.slnx` files** decide which projects each solution builds. `Realm.Full.slnx`
   is covered by `ci-coverage.yml`; `RealmEngine.slnx` and the three `Veldrath.*.slnx` are not, so
   adding a project to `Veldrath.Server.slnx` alone reports the merge gate and no build.
+- **`game-context/budget.yaml`** is the approved merchant band, and `MerchantBandTests` reads it from
+  the repository root (`Veldrath.Server.Tests/Features/MerchantBandTests.cs`), comparing it against
+  the code's copy in `MerchantBands` — so an edit here can fail `Veldrath.Server.Tests` without
+  touching a C# file. By the same rule as an executed script, a file a test reads belongs in that
+  job's `paths`, and no list names `game-context/**`: `docs.yml`'s `**/*.md` covers only the sibling
+  `GAME.md`, which is why the directory looks covered. Until it is named, a band edit merges with
+  `ci-server.yml` unrun and reds the next pull request that touches `Veldrath.Server/**`.
 
 Seven of the eight entries in the scripts class are developer-only, which is why no list names them
 and none should:

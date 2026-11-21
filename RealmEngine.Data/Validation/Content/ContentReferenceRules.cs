@@ -19,9 +19,14 @@ public sealed record QuestObjectiveReference(string QuestSlug, string Type, stri
 /// <param name="ToNodeId">Destination node id.</param>
 public sealed record MapEdgeReference(string MapId, string FromNodeId, string ToNodeId);
 
+/// <summary>One zone shop-stock row: the zone whose merchants offer it, and the item slug they offer.</summary>
+/// <param name="ZoneId">Zone whose merchants draw on the row.</param>
+/// <param name="ItemSlug">Slug of the item on that zone's shelf.</param>
+public sealed record ZoneStockReference(string ZoneId, string ItemSlug);
+
 /// <summary>
-/// Pure reference rules: the single implementation shared by the startup audit (#36), the <c>/api/content</c> write
-/// path and the CI content guard.
+/// Pure reference rules: the implementation behind the startup audit (#36), the <c>/api/content</c> write path and
+/// the CI content guard.
 /// </summary>
 /// <remarks>
 /// These are deliberately separate from the database query so they can be unit-tested with plain data. Every rule
@@ -41,6 +46,9 @@ public static class ContentReferenceRules
 
     /// <summary>Rule id for a map edge pointing at a node that is not on its map.</summary>
     public const string MissingMapNode = ContentRules.MissingMapNode;
+
+    /// <summary>Rule id for a stored stock row that no authored shelf lists.</summary>
+    public const string UnclaimedZoneStock = ContentRules.UnclaimedZoneStock;
 
     /// <summary>
     /// Checks every spawn pool against the set of actor archetype slugs that actually exist.
@@ -214,5 +222,72 @@ public static class ContentReferenceRules
         }
 
         return issues;
+    }
+
+    /// <summary>
+    /// Reports stored stock rows that no authored shelf claims. Warning severity: the catalog still serves.
+    /// </summary>
+    /// <remarks>
+    /// <c>ZoneStockSeeder.Authors()</c> owns this row set. The seeder materialises it on a fresh database and is
+    /// insert-only, so a shelf edit reaches an existing database as a data migration
+    /// (<c>docs/content-packs.md</c>, "Changing what a town sells"). A stored pair the authored shelves do not list
+    /// therefore always means that migration was forgotten: the shop keeps selling an item the design removed. The
+    /// reverse is not a finding — the next start inserts an authored row the database is missing. Audit-only: stock
+    /// rows have no write path, so this rule is not part of authoring validation.
+    /// </remarks>
+    /// <param name="stored">Stock rows present in the database.</param>
+    /// <param name="authored">Stock rows <c>ZoneStockSeeder.Authors()</c> lists.</param>
+    /// <returns>One issue per stored pair that no authored shelf lists.</returns>
+    public static IReadOnlyList<ContentIssue> AuditZoneStock(
+        IReadOnlyCollection<ZoneStockReference> stored,
+        IReadOnlyCollection<ZoneStockReference> authored)
+    {
+        ArgumentNullException.ThrowIfNull(stored);
+        ArgumentNullException.ThrowIfNull(authored);
+
+        // A row's authored identity is the (ZoneId, ItemSlug) pair — the table's unique index — so that pair is what
+        // is compared, with slugs matched the way every other rule matches them: ordinal, ignoring case.
+        var claimed = authored
+            .Select(row => (row.ZoneId, row.ItemSlug))
+            .ToHashSet(ZoneStockPairComparer.Instance);
+
+        var issues = new List<ContentIssue>();
+
+        foreach (var row in stored)
+        {
+            if (claimed.Contains((row.ZoneId, row.ItemSlug)))
+            {
+                continue;
+            }
+
+            issues.Add(new ContentIssue(
+                UnclaimedZoneStock,
+                $"Zone '{row.ZoneId}' still stocks '{row.ItemSlug}', but no authored shelf lists it: " +
+                "ZoneStockSeeder.Authors() no longer carries this pair and the seeder is insert-only, so removing " +
+                "the row needs a data migration — see docs/content-packs.md, \"Changing what a town sells\".",
+                ContentIssueSeverity.Warning,
+                "zoneStock",
+                $"{row.ZoneId}/{row.ItemSlug}"));
+        }
+
+        return issues;
+    }
+
+    /// <summary>Compares stock rows on <c>(ZoneId, ItemSlug)</c>, ordinal and case-insensitive.</summary>
+    private sealed class ZoneStockPairComparer : IEqualityComparer<(string ZoneId, string ItemSlug)>
+    {
+        /// <summary>Gets the shared instance.</summary>
+        public static ZoneStockPairComparer Instance { get; } = new();
+
+        /// <inheritdoc />
+        public bool Equals((string ZoneId, string ItemSlug) x, (string ZoneId, string ItemSlug) y) =>
+            StringComparer.OrdinalIgnoreCase.Equals(x.ZoneId, y.ZoneId) &&
+            StringComparer.OrdinalIgnoreCase.Equals(x.ItemSlug, y.ItemSlug);
+
+        /// <inheritdoc />
+        public int GetHashCode((string ZoneId, string ItemSlug) pair) =>
+            HashCode.Combine(
+                pair.ZoneId is null ? 0 : StringComparer.OrdinalIgnoreCase.GetHashCode(pair.ZoneId),
+                pair.ItemSlug is null ? 0 : StringComparer.OrdinalIgnoreCase.GetHashCode(pair.ItemSlug));
     }
 }

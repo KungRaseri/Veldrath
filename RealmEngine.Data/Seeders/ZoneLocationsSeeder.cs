@@ -25,7 +25,7 @@ public static class ZoneLocationsSeeder
         if (missing.Count == 0) return;
 
         // The pools are declared apart from the locations so the whole encounter map reads as one table. A location
-        // that is not listed here spawns nothing on purpose: towns, inns, markets and the SafeRespawn lobbies.
+        // absent here gets no pool on purpose: towns, inns, markets, SafeRespawn lobbies. A placed `ActorInstance` still spawns.
         foreach (var location in missing)
             if (SpawnPools.TryGetValue(location.Slug, out var pool))
                 location.ActorPool = [.. pool];
@@ -44,8 +44,11 @@ public static class ZoneLocationsSeeder
     /// that names a level 3 goblin on a level 26 map is worse than no pool at all.
     /// </para>
     /// <para>
-    /// A pool is the only placement mechanism in the game — every entry becomes an attackable enemy — so NPCs are
-    /// never listed. <c>playground-clearing</c> is the dev-only fixture the end-to-end specs fight in.
+    /// Pools are one of the ways an actor is placed at a location, not the only one: a named <c>ActorInstance</c>
+    /// placed here is spawned once before any pool draw, so an actor can stand here without being in the pool;
+    /// someone who is meant to be met rather than fought is placed by <c>LocationNpcs</c>, never by a pool entry or
+    /// an instance. A pool entry still means an attackable enemy, so NPCs are never listed.
+    /// <c>playground-clearing</c> is the dev-only fixture the end-to-end specs fight in.
     /// </para>
     /// </remarks>
     private static readonly Dictionary<string, ActorPoolEntry[]> SpawnPools = new(StringComparer.Ordinal)
