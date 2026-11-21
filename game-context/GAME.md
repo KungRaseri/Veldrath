@@ -81,7 +81,7 @@ design pillars above, and they are not renumbered by them:**
 1. Engine agnosticism — `RealmEngine.Core`, `.Shared`, `.Data` never depend on a UI framework (`AGENTS.md`, Hard Rule 2).
 2. Web-first, one client — the SvelteKit app is the only client and the only editing surface; the Avalonia client and RealmForge editor were retired (`AGENTS.md`).
 3. Content is data, edited in Foundry — Foundry inside the SvelteKit app is the only content editor; seeders are insert-only (`plans/content-pipeline.md` §1).
-4. Turn-based combat and a single spawn-pool placement mechanism — a pool entry is always an attackable enemy; NPCs are never in a pool (`ZoneLocationsSeeder.cs`, *SpawnPools* remarks).
+4. Turn-based combat and two ways to place a combat actor — a weighted pool entry or a named `ActorInstance`; a pool entry is always an attackable enemy, and NPCs are never in a pool (`ZoneLocationsSeeder.cs`, *SpawnPools* remarks).
 
 ## 5. Canon entry points
 
