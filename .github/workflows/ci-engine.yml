@@ -10,7 +10,9 @@ concurrency:
   # Cancel only a superseded pull-request head: a run cancelled by this group is recorded as a
   # *failing* status — `failure`, description "Has been cancelled" (measured on Forgejo
   # 15.0.11) — so cancelling a base-branch run leaves the merged commit red with a verdict that
-  # never happened. A cancelled PR run is harmless, because a pull request only shows its head.
+  # never happened. Losing a run is safe only on a PR whose head is its own branch; the release
+  # PR (`development` → `main`) has `development` as its head, so its pull-request runs cancel
+  # against `development` commits too. See docs/ci-forgejo.md, "Branch protection".
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 on:

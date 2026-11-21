@@ -407,12 +407,27 @@ What follows from that, all of it deliberate:
   wording of the rule above matters: it reports `failure` with the description "Has been
   cancelled", so it does not hold the merge, it **refuses** it. Measured:
   `GET /api/v1/repos/Veldrath/Veldrath/commits/753b0210/status` on 2026-11-21 returned 17 of its
-  22 statuses as `failure / "Has been cancelled"` — that is a merged `development` commit that
-  no run ever judged, marked red by the run that superseded it. A cancelled *pull-request* run
-  is harmless, because a pull request only ever shows its latest head, so the rule for every
-  workflow that triggers on `push` is to cancel PR runs only —
+  22 statuses as `failure / "Has been cancelled"` — a merged `development` commit that no run
+  judged as a whole (three `push` contexts did reach a verdict and pass — engine, discord and
+  content — and two `push` contexts were skipped), marked red by the runs that superseded the
+  rest. Whether a lost run is safe depends on whose commit it would have reported on, not on the
+  event name:
+  - Harmless when the run belongs to a **pull request whose head is a branch of its own**: the
+    pull request only ever shows its latest head, and the cancelled status lands there rather
+    than on a base-branch commit.
+  - Not harmless when the run reports on a **base-branch commit**. That is every `push` run on
+    `main` or `development`, and it is also the release PR (`development` → `main`, #78), whose
+    head *is* `development`: its `pull_request` runs report on `development` commits. Measured on
+    2026-11-21 on tip `8df3e780`: 14 statuses, 13 of them `failure / "Has been cancelled"`, all
+    13 `(pull_request)`. The paired runs show both behaviours side by side — 2900/2909/2918/2927
+    (`pull_request` #78) are `cancelled`, while 2893/2902/2911/2920 (`push` … `development`) sit
+    `waiting` at the same commits.
+
+  So the rule for every workflow that triggers on `push` is to cancel PR runs only —
   `cancel-in-progress: ${{ github.event_name == 'pull_request' }}`. A `push` run on `main` or
-  `development` is then never superseded, so it finishes and records the verdict it actually reached.
+  `development` is then never superseded, so it finishes and records the verdict it actually
+  reached. That expression does not reach the release PR lane, whose `pull_request` runs cancel
+  against `development` commits whatever the push runs do.
 - A workflow filtered out by `paths` neither helps nor blocks: it is simply not part of the
   set. The `paths` lists stay the single source of truth for *which* components a change
   touches, and no second copy of them has to be maintained here. That holds only while
