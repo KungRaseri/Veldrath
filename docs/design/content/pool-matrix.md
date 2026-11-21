@@ -189,9 +189,9 @@ occupies. Every adjacent entry is listed here: **22 sit above the entry band and
 
 Verification was a script over the two seeder files and this matrix's own data, not by eye: it parses all
 67 location blocks, all 17 seeded archetypes, the D1 roster and the 18 packs, then checks the rules above
-plus the three seeder guard tests in `SeededEncounterCoverageTests`
-(`Settlements_and_dungeon_lobbies_never_spawn_anything`, `Every_other_location_can_spawn_something` and
-`Every_pooled_archetype_exists_and_is_hostile`) entry by entry, and
+plus `SeededEncounterCoverageTests.Settlements_and_dungeon_lobbies_never_spawn_anything`,
+`….Every_other_location_can_spawn_something` and
+`….Every_pooled_archetype_exists_and_is_hostile` entry by entry, and
 proves the exclusion set equals town ∪ `SafeRespawn` ∪ lobby exactly. Result: `PROBLEMS: none`, with the
 three `cinderling` zone-list deviations reported as warnings, not failures (§7).
 
