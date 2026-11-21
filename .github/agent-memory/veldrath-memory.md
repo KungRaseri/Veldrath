@@ -24,6 +24,53 @@ apply anywhere).
 
 ---
 
+## Web gates in a worktree (standing recipe, 2026-11-20)
+
+Cards run in `<repo>/.worktrees/<task-id>`, and a fresh worktree has **no** `web/node_modules`. Three
+facts make the web gates runnable there; each one has cost a session to rediscover.
+
+- **Symlink the main checkout's installs instead of installing.** `npx vitest` in a bare worktree
+  either fails (`vitest: not found`) or npx installs a stray partial tree:
+
+  ```bash
+  ln -s <repo>/web/node_modules        <worktree>/web/node_modules
+  ln -s <repo>/web/client/node_modules <worktree>/web/client/node_modules
+  ```
+
+  Both links show up as **untracked** in `git status` (`.gitignore`'s `node_modules/` matches real
+  directories, not symlinks), so never `git add -A` on a web card.
+
+- **Invoke vitest through the workspace script from `web/`** — the cwd is load-bearing, and both CI
+  and this command leave it at `web/client`:
+
+  ```bash
+  cd web && npm run test:unit --workspace client -- --run [path under client/]
+  ```
+
+  `web/client/src/lib/parity/field-kinds.test.ts` reads `Veldrath.Contracts/Content/ContentSchema.cs`
+  through an inline `resolve(process.cwd(), '..', '..')`. From `web/`, `../..` leaves the repo
+  (`<repo>/.worktrees/Veldrath.Contracts/…` in a worktree) and that file's **2** tests die with
+  `ENOENT` — so `npx vitest run client/src/lib/parity` run from `web/` reporting 2 red tests is a cwd
+  artefact, not a regression. The other parity suites read through `repoRoot()` in
+  [`web/client/src/lib/testing/source.ts`](../../web/client/src/lib/testing/source.ts), which walks up
+  until it finds `Veldrath.Server` + `web/client` and tolerates either cwd.
+
+- **Export the `ci-web.yml` env** ([`.github/workflows/ci-web.yml`](../../.github/workflows/ci-web.yml))
+  or SvelteKit aborts with `env_invalid`: at minimum `PUBLIC_API_URL` and `PUBLIC_HUB_URL`; `ORIGIN`,
+  `BETTER_AUTH_SECRET`, `JWT_KEY`, `JWT_ISSUER`, `JWT_AUDIENCE`, `DATABASE_URL` complete the set.
+
+Under that invocation the parity suite is **green — 7 files / 33 tests, verified at `532adf26`**. A
+missing repo file surfaces there as a failed *suite* (`ENOENT` at module scope) and not as a failed
+assertion, so read the path in the error before suspecting a parity mismatch: a repo file move turns
+it red until the path is updated, and so does a wrong cwd.
+
+**Reproduce a bug claim against current `origin/development` first.** A worktree branch can lag it by
+several merges: the `check-markdown-links.mjs` failure carded as t_3407c30b passed at the stale base
+(61 files checked) and only reproduced after rebasing, because the file move that broke the link had
+not landed yet. `git merge --ff-only origin/development` before concluding a defect is fixed or absent.
+
+---
+
 ## OAuth Provider-Link Confirmation Flow (session-30, 2026-04-10) — DELETED in W12
 
 > ⚠️ **This whole flow is gone (2026-10-25).** `PendingLinkToken`, `PendingLinkEndpoints`,
