@@ -1323,13 +1323,73 @@ describe('GameSession combat', () => {
 				level: 2,
 				currentHealth: 30,
 				maxHealth: 30,
-				abilities: ['bite']
+				abilities: ['bite'],
+				archetypeSlug: null,
+				typeKey: null,
+				tier: 'regular'
 			},
 			log: ['Combat started: Grey Wolf (level 2).'],
 			participants: [],
 			outcome: null
 		});
 		expect(session.enemies.map((entry) => entry.id)).toEqual(['boar']);
+	});
+
+	it('keeps the archetype slug, type key and the tier frame the server sent', async () => {
+		const session = await connected();
+
+		hub.emit(
+			'CombatStarted',
+			combatStarted({
+				enemyName: 'Barrow Wolf',
+				enemyArchetypeSlug: 'barrow-wolf',
+				enemyArchetypeTypeKey: 'beasts',
+				enemyTier: 'boss'
+			})
+		);
+
+		expect(session.combat.enemy?.archetypeSlug).toBe('barrow-wolf');
+		expect(session.combat.enemy?.typeKey).toBe('beasts');
+		expect(session.combat.enemy?.tier).toBe('boss');
+	});
+
+	it('upgrades a townspeople enemy to the plate tier from its content type', async () => {
+		const session = await connected();
+
+		hub.emit(
+			'CombatStarted',
+			combatStarted({
+				enemyName: 'Village Blacksmith',
+				enemyArchetypeSlug: 'village-blacksmith',
+				enemyArchetypeTypeKey: 'townspeople',
+				enemyTier: 'regular'
+			})
+		);
+
+		expect(session.combat.enemy?.typeKey).toBe('townspeople');
+		expect(session.combat.enemy?.tier).toBe('townsfolk');
+	});
+
+	it('adopts the slug, type key and tier again from the shared snapshot', async () => {
+		const session = await connected();
+		hub.emit('CombatStarted', combatStarted());
+
+		hub.emit('CombatParticipants', {
+			enemyId: 'wolf',
+			enemyName: 'Grey Wolf',
+			enemyArchetypeSlug: 'barrow-wolf',
+			enemyArchetypeTypeKey: 'undead',
+			enemyTier: 'elite',
+			enemyLevel: 2,
+			enemyCurrentHealth: 12,
+			enemyMaxHealth: 30,
+			enemyAbilityNames: ['bite'],
+			participants: []
+		});
+
+		expect(session.combat.enemy?.archetypeSlug).toBe('barrow-wolf');
+		expect(session.combat.enemy?.typeKey).toBe('undead');
+		expect(session.combat.enemy?.tier).toBe('elite');
 	});
 
 	it('adopts the shared snapshot: enemy health, attendees and their shares', async () => {
