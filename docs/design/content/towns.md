@@ -4,10 +4,18 @@
 were changed, no pack was imported, no seeder was edited. Every row below is a placement (`LocationNpc`) or
 a copy line, not a number.
 
-- **Merchant band — pending.** `game-context/budget.yaml` bands hostile archetypes only, so shopkeeper
-  trade and prices stay unauthored until a merchant band is published (C5).
-- **Per-zone shared shop stock — accepted for this wave.** Two merchants in one town sell from one
-  catalogue; per-NPC stock is an engine change and is not in this wave (C6).
+- **Merchant band — landed 2026-11-20.** `game-context/budget.yaml` → `merchants:` bands each town's merchants by
+  the **town's** own level, not the player's: `gold_by_town_level` (L0 [100, 250] through L18 [1300, 3200]) is
+  what a merchant of that tier may hold, and the two pricing endpoints — `price_markup` [1.0, 1.5] and
+  `buyback_rate` [0.40, 0.50] — are the same in every town, quoted at 1.0 and 0.50. `stock_size` [8, 16] is how
+  many of the 24 purchasable items a town stocks. `MerchantBands` holds the band and `ShopPricing` quotes its
+  endpoints; a merchant's `TradeGold` is the purse a single buyback may draw on; and `MerchantBandTests` parses
+  `budget.yaml` and fails the build on drift. The shopkeeper rows below still carry no numbers of their own: a
+  person sells the town's stock at the band's published prices (C5).
+- **Per-zone shared shop stock — landed 2026-11-20.** Two merchants in one town sell from one authored shelf
+  (`ZoneStockItems`, migration `20261121004324_AddZoneStockItems`) rather than the whole catalogue: ten rows at
+  Crestfall, twelve at Aldenmere, eleven at Tolvaren, twelve at Skarhold. Per-NPC stock is still an engine
+  change and is not in this wave (C6).
 - **`playground` — excluded.** The fifth `IsTown` zone is `IsDevOnly` and is never returned by public
   APIs, so it carries no roster (§2).
 
@@ -32,12 +40,12 @@ Read from code, with the line that says so. Every rule below shaped the roster.
 | Fact | Where | Consequence for this document |
 |---|---|---|
 | A person is placed by a `LocationNpc` row: `NpcId`, `ZoneId`, `LocationSlug`, `ArchetypeSlug`, optional `DisplayName`, `SortOrder` | `Veldrath.Server/Data/Entities/LocationNpc.cs`; seeded in `LocationNpcsSeeder.cs` | Every roster row here is a `LocationNpcs` entry, keyed by zone **and** location. An NPC is only meetable where the character's current zone *and* location match (`NpcHubCommands.cs:157-158`). |
-| A spawn pool entry becomes an attackable enemy, and a non-hostile one is dropped with a warning | `ActorPoolResolver.cs:62-71` | No townsperson appears in any pool. Section 7 proves the four settlements have zero pool entries. |
-| An empty pool means nothing spawns and nothing is substituted | `ActorPoolResolver.cs:39-44` | `SafeRespawn` towns keep an empty pool. That is authored content, not a gap. |
+| A spawn pool entry becomes an attackable enemy, and a non-hostile one is dropped with a warning | `ActorPoolResolver.cs:82-87` | No townsperson appears in any pool. Section 7 proves the four settlements have zero pool entries. |
+| An empty pool means nothing spawns and nothing is substituted | `ActorPoolResolver.cs:56-61` | `SafeRespawn` towns keep an empty pool. That is authored content, not a gap. |
 | Dialogue is keyed by **archetype slug**, not by placement | `DialogueHubCommands.cs` `PickEntryAsync` (`Speaker == slug`), `NpcGreetings.PickAsync` | Two people sharing one archetype share one voice. Distinct registers per town therefore require distinct archetype slugs — the main cost in this card. |
 | `TalkToNpc` greets from entries with `TypeKey == "greetings"`; with none it falls back to "*{name} looks up as you approach*" | `NpcHubCommands.cs` `NpcGreetings` | A placed person with no greeting row is a person with nothing to say. One already exists today (C4). |
 | The dialogue panel only opens on an entry that has `Stats.Options` | `DialogueHubCommands.cs` `PickEntryAsync` | Greetings-only NPCs are barked at, not conversed with. Conversations are wave B/C content; this card does not pretend to ship them. |
-| Shops are **per zone**, not per NPC: `VisitShopHubCommand(CharacterId, ZoneId)` requires `Zone.HasMerchant`; `GetShopCatalogHubCommand(ZoneId)` | `VisitShopHubCommand.cs:13-16`, `GetShopCatalogHubCommand.cs:16` | "What they sell" below is characterisation. An NPC cannot hold its own price list, and two merchants in one town share one stock (C6). |
+| Shops are **per zone and per placed person**: `VisitShopHubCommand(CharacterId, ZoneId)` and `GetShopCatalogHubCommand(Guid CharacterId, string ZoneId)` resolve the merchant from the character's own zone *and* location — the zone must carry `HasMerchant`, a `LocationNpc` whose archetype has `Traits.Shopkeeper` must stand at the character's location, and a `ZoneId` that is not the character's own is refused as `ZoneMismatch` | `ShopMerchantResolver.cs:36-122` (zone flag `:56-67`, placements `:69-84`, the `Shopkeeper` test `:96-113`, refusal `:122`); `VisitShopHubCommand.cs:13`; `GetShopCatalogHubCommand.cs:18` | A zone flag alone is not a shop, so the §4.2–4.4 rosters are load-bearing: a town whose shopkeeper is not placed refuses trade. The shelf is the zone's (`ZoneStockItems`), never the person's, so two merchants in one town share one stock (C6). |
 | Role flags (`Shopkeeper`, `QuestGiver`, `HasDialogue`) come from the archetype's `Traits`; `Occupation` is the archetype's `TypeKey` | `NpcHubCommands.cs` `NpcPlacements.ToDto` | New townspeople need `TypeKey = "townspeople"` to read like the existing three. |
 | `DisplayName` on the placement overrides the archetype's name | `LocationNpc.cs:40-41` | Used to give the three existing generic archetypes a person's name without minting new archetypes. |
 
@@ -83,7 +91,7 @@ Every name was machine-checked against those rules and against all 213 seeded sl
 | **Kaenvren** | *kaen* (duty) + *vren* (frontier); *kaen.vren* splits N coda + VR onset | "duty at the frontier" |
 | **Raekmeld** | *raek* (light-in-material) + *meld* (still water) | "glowing still-water" — a byname for mead |
 | **Dornrek** | *dorn* (below) + *rek* (administer) | "keeper of what is below" |
-| **Gaelraeth** | *gael* (water, flow) + *raeth* (threshold, marker) | "the water's threshold" |
+| **Gaelrek** | *gael* (water, flow) + *rek* (administer, keep in place) | "keeper of the water" |
 | **Laeldern** | *laeld* (root, the thing that holds ground) + *–ern* (agent) | "the anchor-keeper" |
 | **Thaeldren** | *thael* (illuminate) + *vren* (frontier); formal –l + vr– junction: V-drop plus the euphonic –d– bridge of *veldrath* | "the light at the frontier" |
 | **Daeldvaen** | *daeld* (ash) + *vaen* (iron); –ld + v– is two consonants, legal | "ash-iron" |
@@ -92,6 +100,15 @@ Every name was machine-checked against those rules and against all 213 seeded sl
 
 Regression names are bynames the town gave them, not birth names — a smith called Vaenern is called that
 because he works iron, which is how Common names survive in a place with no scribes.
+
+**Renamed 2026-11-20 — `Gaelraeth` → `Gaelrek`.** The harbour-master's byname stood as *gael* + *raeth*,
+which put it one letter from **Kael-Raeth** ("compact's threshold", `calethic-language.md` *kael* entry)
+and from **Vaelraeth**, the Wound's first zone. D3's check tested the 213 seeded slugs, so the lexicon was
+never in scope and the collision escaped. The replacement keeps the water root and takes *rek*
+(administer, keep in place) — the root *Dornrek* and *Velrek* already use — so the byname says what the
+officer does instead of sitting one letter off a threshold. Edit distance: **4 from *Kael-Raeth***, 4 from
+*Vaelraeth*; the nearest attested form is *Gaeldrak*/*Vaelren* at 2 and the nearest name in this table is
+*Velrek* at 2, so no listed form is within one edit. *(F2, card `t_4e58e1ec`.)*
 
 ---
 
@@ -171,7 +188,7 @@ its pool stays empty.
 
 | `slug` (archetype) | placement id | name | role | wants | sells / teaches / refuses | dialogue id |
 |---|---|---|---|---|---|---|
-| `harbour-master` **(new)** | `tolvaren-harbour-master` **(new)** | Gaelraeth | harbour-master | every hull accounted for at the turn of the tide | teaches the tide line and the safe moorings; refuses berth to a ship with no name on its papers | `harbour-master-greeting` **(new)** |
+| `harbour-master` **(new)** | `tolvaren-harbour-master` **(new)** | Gaelrek | harbour-master | every hull accounted for at the turn of the tide | teaches the tide line and the safe moorings; refuses berth to a ship with no name on its papers | `harbour-master-greeting` **(new)** |
 | `ship-chandler` **(new)** | `tolvaren-cliffroad-chandler` **(new)** | Laeldern | chandler, cliff road market | nothing on her shelves the sea has already ruined | sells rope, pitch and lamp oil; refuses line to a crew that will not say where it is bound | `ship-chandler-greeting` **(new)** |
 | `port-innkeeper` **(new)** | `tolvaren-saltcrow-keeper` **(new)** | Thaeldren | keeper, the Saltcrow | the cliff-road lamp burning from dusk to dawn | sells a bed and a hot meal; refuses to answer the harbour bell, or to say why | `port-innkeeper-greeting` **(new)** |
 
@@ -283,7 +300,9 @@ subsection (mirror: `wiki/World-Veldrath.md`).
 ## 6. Canon conflicts found while writing this
 
 These are not proposals — they are places where two things already written disagree, or where player-facing
-text refers to something that no longer exists. None of them were edited here.
+text refers to something that no longer exists. None of them were edited here, except C5 and C6: both were
+resolved on 2026-11-20 and are kept as resolved records so the letters the rest of the document cites still
+point at something.
 
 **C1 — Player-facing text names a deleted region.** `blacksmith-greeting` line 3 reads "Finest ironwork in
 Thornveil, guaranteed." `thornveil` was the pre-Crestfall starter region and was replaced by `varenmark` /
@@ -307,13 +326,22 @@ slug is not a text fix: it breaks that placement row and any stored `CurrentZone
 "*Tharrek looks up as you approach.*" every time. Also note the existing speaker slugs are inconsistent:
 `blacksmith-greeting` is hyphenated, `tavernkeeper-greeting` is not.
 
-**C5 — No merchant band exists.** `budget.yaml` (D0) bands hostile archetypes only, and states in `omitted`
-that AC, attack bonus and mana are deliberately unbilled. There is no band for `TradeGold`, `TradeSkill` or
-shop prices, so the shopkeeper rows below carry **no numbers** — only what a person deals in.
+**C5 — No merchant band exists. (Resolved 2026-11-20.)** `budget.yaml` published a `merchants:` section, and the
+shop applies its two price endpoints. `MerchantBands` carries the purse tiers, the stock size and those
+endpoints; `ShopPricing` prices every catalogue row with them; a merchant's `TradeGold` is the purse a single
+buyback may draw on, refused as `ShopRefusal.MerchantCannotAfford` when it will not cover the payout. The purse
+tiers and `stock_size` are not consulted when a trade happens — no handler looks a town up in the band — so
+`MerchantBandTests` is what keeps them true: it parses the YAML, compares it with `MerchantBands`, and fails the
+build when a seeded shopkeeper's purse leaves its town's tier. What is still unwired is a *depleting* purse — the
+authored figure caps each transaction and is never written back — and a per-town markup above the band's floor.
+The shopkeeper rows in §4 still carry no numbers of their own, by design: a person sells the town's stock at the
+band's published prices.
 
-**C6 — One shop catalog per zone.** `VisitShopHubCommand` and `GetShopCatalogHubCommand` key on `ZoneId`, so
-Aldenmere's keep and its marketplace sell from the same stock, and so do Skarhold's. "What they sell" here
-distinguishes the people, not the inventory; per-NPC stock needs an engine change.
+**C6 — One shop catalog per zone.** The shop keys on `ZoneId`, not on the person: `VisitShopHubCommand` and
+`GetShopCatalogHubCommand` resolve the zone's merchant and read the zone's authored shelf (`ZoneStockItems`, one
+row per item per town, seeded ten / twelve / eleven / twelve), so Aldenmere's keep and its marketplace sell from
+the same stock, and so do Skarhold's. "What they sell" here distinguishes the people, not the inventory; per-NPC
+stock needs an engine change.
 
 ---
 

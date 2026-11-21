@@ -156,6 +156,13 @@ Option: keep those as working names for the Phase 2 deep-dive rather than design
   antecedent. The Caleth surveyed the ash-plain (*Daeld-Ald*) but did not settle it, and the town's own
   name is a Common coinage, which is why it carries a sibilant no Calethic word may. The Kaldrek
   question is untouched. *(Approved 2026-11-20 — P4.)*
+- **The heat-workers** — outside Skarhold, the people who work the heat break ash-glass and iron off the
+  cooled flow and the battlefield, and mark a claim with a pick-cut in the rock. They keep no guild, no
+  written title and no officer: a claim is a debt owed to whoever cut it, and nothing above a claim
+  binds them. *(Approved 2026-11-20 — P10.)*
+- **Nothing standing in Cinderplain was built by the Caleth** — they surveyed the ash-plain (*Daeld-Ald*)
+  and did not settle it (P4), so no structure, guardian, construct, inscription or road in the region is
+  theirs. What stands there is volcanic, animal, or post-Collapse human. *(Approved 2026-11-20 — P11.)*
 
 ---
 

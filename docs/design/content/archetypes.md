@@ -31,10 +31,15 @@ bands and its slugs are unchanged from what was approved.
 - **`aurelian-market` — the slug stays, the DisplayName changes.** A slug is permanent identity, so the
   zone keeps `aurelian-market`; its display name becomes The Korreld Exchange. The slug remains recorded
   as debt.
-- **The retired-lore pass (`C2` in `towns.md`) is a separate architect card.** Until it lands, the town
-  registers stay clear of Dravan, Thysmara, Kaldrek and the Age of Embers.
-- **A merchant band is pending.** `budget.yaml` bands hostile archetypes only, so shopkeeper trade and
-  prices stay unauthored until a merchant band is published.
+- **The retired-lore pass (`C2` in `towns.md`) landed 2026-11-20.** The seeded world text no longer
+  carries Dravan, Thysmara, Kaldrek or the Age of Embers — `World.Era` is "The Ashen Age (the Age of
+  Reclaiming)" — and `SeededWorldTextTests` fails the test suite if one comes back. The town registers
+  below stay clear of them.
+- **The merchant band landed 2026-11-20.** `budget.yaml`, *merchants* bands shop trade by the town's
+  own level, not the player's — `gold_by_town_level` at L0/L5/L10/L18, `stock_size`, `price_markup`
+  and `buyback_rate`. Shopkeeper prices and purses are authored there; *merchants.wiring* records
+  which of them the live shop reads. A depleting purse — as opposed to a per-transaction cap — is
+  still engine work.
 - **Per-zone shared shop stock is accepted for this wave.** Two merchants in one town sell from one
   catalogue; per-NPC stock is an engine change and is not in this wave.
 
@@ -47,7 +52,7 @@ bands and its slugs are unchanged from what was approved.
   (`ZoneLocationsSeeder.cs`, *SpawnPools* remarks).
 - **Level band** — a band of at most three levels, and the only number a row carries. HP, damage, AC,
   XP, gold and drop weights come from `game-context/budget.yaml`, which now publishes the ladder as
-  `b1-3` through `b23-26`, with `b27-30` landing in the same wave as the tail (C4). **The 1–20 table
+  `b1-3` through `b27-30` — eight bands covering 1–30, the last added by C4 with the tail. **The 1–20 table
   below cites no band id**, because nothing was published when it was written; the tail section does
   cite band ids from `budget.yaml`. For the 1–20 rows the level range remains the only placement
   claim made here.
@@ -235,7 +240,7 @@ than a birth name.
 | Kaenvren | *kaen* (duty) + *vren* (frontier); *kaen.vren* splits an N coda against a VR onset — "duty at the frontier" |
 | Raekmeld | *raek* (light-in-material) + *meld* (still water) — "glowing still-water", a byname for mead |
 | Dornrek | *dorn* (below) + *rek* (administer) — "keeper of what is below" |
-| Gaelraeth | *gael* (water, flow) + *raeth* (threshold, marker) — "the water's threshold" |
+| Gaelrek | *gael* (water, flow) + *rek* (administer, keep in place) — "keeper of the water" |
 | Laeldern | *laeld* (root, the thing that holds ground) + *–ern* (agent) — "the anchor-keeper" |
 | Thaeldren | *thael* (illuminate) + *vren* (frontier); the formal –l + vr– junction takes the V-drop and the euphonic –d– bridge of *veldrath* — "the light at the frontier" |
 | Daeldvaen | *daeld* (ash) + *vaen* (iron); –ld + v– is two consonants, legal — "ash-iron" |
@@ -371,7 +376,7 @@ two.
 - **No faction.** The two seeded organisations still have no geography (proposal 7 was declined), and
   this card forbids inventing a faction in the endgame region. Every row is `none recorded`, and each
   says explicitly what the tie is *not*.
-- **Bands.** `budget.yaml` publishes seven bands to 26, so `b23-26` was the top of the ladder when this
+- **Bands.** `budget.yaml` published seven bands to 26, so `b23-26` was the top of the ladder when this
   section was first written. **The band table now extends to 1–30 with `b27-30` in the same wave as this
   approval (C4)**, which is why two rows sit above 26. No tail row is banded `19–22`: the ash plain's
   19–20 tier already has three D1 archetypes and a row there would have no location gap to close.
@@ -401,8 +406,8 @@ non-hostile** — the totals table above is left as approved for 1–20 and is n
 | 27–30 (`b27-30`) | ash-eater (banded 26–30, spanning `b23-26`/`b27-30`), maw-serpent (28–30) | 2 |
 | **total tail hostile** | | **5** |
 
-`b27-30` is the approved band id; **C4 publishes it in `budget.yaml` in the same wave as this section**,
-and until it does the file stops at `b23-26`.
+`b27-30` is the approved band id, and **C4 published it in `budget.yaml` in the same wave as this
+section**: the file now runs to `b27-30`, eight bands covering 1–30.
 
 ### Which pool each row unblocks
 
@@ -424,8 +429,9 @@ Two weight consequences for L3, neither decided here:
   per pool at **weight ≤ 2**, so `cinderling` must carry that pool's weight.
 - **`b27-30` is approved (C4), so `pyreling` at `kaldreks-heart` is now a one-band-tolerant entry** and
   the same cap drops it to **weight ≤ 2**; `maw-serpent` carries the Heart, where D4 currently draws
-  `pyreling` at 6. Under the bands as published today (`b23-26` top) that pool is legal as drawn; once
-  C4 lands `b27-30` it is not, and both the band and the weight change belong to C4.
+  `pyreling` at 6. Under the bands as published today (`b27-30` top) that pool is **not** legal as
+  drawn: when D4 drew it `b23-26` was the ladder's top, so both the band and the weight change are
+  C4's.
 
 ### Placement checks actually run
 
@@ -453,7 +459,7 @@ Band distance is D4's rule, measured on the D1 ladder where every location above
 | The Wound (Region 5) | Still no zones, locations or map graph. Nothing can be placed there. |
 | Loot | Each archetype needs exactly one loot table (`budget.yaml`, *loot.tables_per_archetype*). None is authored here. |
 | Seeding | These five slugs do not exist in `ArchetypeSeeder.cs`. They must be seeded **before** any pool names them, or `SeededEncounterCoverageTests` fails and the entry logs an Error at runtime (`ActorPoolResolver.cs:52-60`). |
-| `b27-30` stat values | The band id is approved, not yet published: `budget.yaml` still stops at `b23-26`, so `ash-eater` and `maw-serpent` cannot be statted until C4 extends the table and authors the band's values. |
+| Statlines for `ash-eater` and `maw-serpent` | The band is published, not deferred: `b27-30` carries hp 340–450, damage 34–48, xp 210–460, gold 35–90 and drop 0.06–0.25 (`budget.yaml`, *bands*, C4). What the tail still lacks is the assignment — neither row has values authored inside those ranges. |
 
 ### Naming — tail derivation notes
 
