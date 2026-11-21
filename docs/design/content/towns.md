@@ -13,7 +13,7 @@ a copy line, not a number.
   `budget.yaml` and fails the build on drift. The shopkeeper rows below still carry no numbers of their own: a
   person sells the town's stock at the band's published prices (C5).
 - **Per-zone shared shop stock — landed 2026-11-20.** Two merchants in one town sell from one authored shelf
-  (`ZoneStockItems`, migration `20261121004324_AddZoneStockItems`) rather than the whole catalogue: ten rows at
+  (`ZoneStockItems`, migration `20261121004324_AddZoneStockItems`) rather than the whole catalogue: nine rows at
   Crestfall, twelve at Aldenmere, eleven at Tolvaren, twelve at Skarhold. Per-NPC stock is still an engine
   change and is not in this wave (C6).
 - **`playground` — excluded.** The fifth `IsTown` zone is `IsDevOnly` and is never returned by public
@@ -342,7 +342,7 @@ band's published prices.
 
 **C6 — One shop catalog per zone.** The shop keys on `ZoneId`, not on the person: `VisitShopHubCommand` and
 `GetShopCatalogHubCommand` resolve the zone's merchant and read the zone's authored shelf (`ZoneStockItems`, one
-row per item per town, seeded ten / twelve / eleven / twelve), so Aldenmere's keep and its marketplace sell from
+row per item per town, seeded nine / twelve / eleven / twelve), so Aldenmere's keep and its marketplace sell from
 the same stock, and so do Skarhold's. "What they sell" here distinguishes the people, not the inventory; per-NPC
 stock needs an engine change.
 
