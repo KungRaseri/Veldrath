@@ -1,4 +1,4 @@
-# Veldrath — archetype roster, levels 1–20
+# Veldrath — archetype roster, levels 1–30
 
 The cast of the world, not their stat blocks. Every row names a zone it belongs to and a faction
 tie, because an archetype with no place is a defect.
@@ -46,9 +46,11 @@ bands and its slugs are unchanged from what was approved.
   to hang off. **They never appear in a spawn pool**: a pool entry becomes an attackable enemy
   (`ZoneLocationsSeeder.cs`, *SpawnPools* remarks).
 - **Level band** — a band of at most three levels, and the only number a row carries. HP, damage, AC,
-  XP, gold and drop weights come from `game-context/budget.yaml`, which does not exist in this
-  worktree (D0 is publishing it separately). **No band id is cited, because there is nothing to
-  cite**; the level range is the only placement claim made here.
+  XP, gold and drop weights come from `game-context/budget.yaml`, which now publishes the ladder as
+  `b1-3` through `b23-26`, with `b27-30` landing in the same wave as the tail (C4). **The 1–20 table
+  below cites no band id**, because nothing was published when it was written; the tail section does
+  cite band ids from `budget.yaml`. For the 1–20 rows the level range remains the only placement
+  claim made here.
 - **Placement check** — every band was checked against each location's seeded `MinLevel`/`MaxLevel`
   and every zone/archetype pair was checked against the seeded spawn pool for that location. Those
   seeded values are deliberately not reproduced in this document.
@@ -178,7 +180,7 @@ Two consequences worth stating rather than discovering later:
 
 | Gap | Reason |
 |---|---|
-| Levels 21–30 | Out of scope for this card. Cinderplain already has `pyreling` (23–28) and `fire-ancient` (26–30) seeded, so the tail is not empty — but it is one region's worth of ladder and needs its own card. |
+| Levels 21–30 | Answered by the tail section below (five hostile rows, approved 2026-11-20). The band table reaches 30 with `b27-30` (C4); what remains outside this document is statting the two rows above 26, their loot tables and their seeding. |
 | The Wound (Region 5) | No zones, no locations, no map graph exist. Nothing can be placed. See `game-context/GAME.md` §8. |
 | `deepest-chamber`, `collapsed-vault` | Both are quest-gated Varenmark dungeons whose pools are existing bandit/wight content. What lives at the bottom is open lore item 4 — see proposal 3. |
 | A Shadowhand Syndicate archetype | Reserved. The organisation is seeded (`OrganizationsSeeder.cs`) but has no geography in any lore file, so placing its members anywhere is a new claim. Held for proposal 7. |
@@ -338,3 +340,239 @@ Phase 5+.
 content worker can resolve a borderline description or argue a design choice without them.
 **Touches:** every content card. **Recorded in:** `game-context/GAME.md` §3–4, once a human approves
 the text.
+
+---
+
+## Tail (21–30)
+
+**Status: approved 2026-11-20.** Appended by card `t_98def8d8` (D6) after D4 authorised a tail roster
+(its decision 5), and approved into this document by card `t_3ea8256b` (L6). **The 1–20 roster rows, the
+band-coverage table and proposals 1–9 are untouched.** Landing the tail did amend three things above
+this line, and only these: the document title (1–20 → 1–30), the band-id note in *How to read this
+table* (which said no band id could be cited because `budget.yaml` did not exist), and the gap row that
+read "Levels 21–30 | Out of scope for this card", which now points here. The decisions this section was
+approved under are recorded in [`## Tail decisions`](#tail-decisions) at the foot of this document.
+
+Five hostile archetypes, no bosses, bands only. They exist to close five location-level gaps that D4
+measured and could not fill, the worst of which is `kaldreks-heart`, which has one pool entry and needs
+two.
+
+### What the tail was built from
+
+- **Seeded prose, not invention.** `smoldering-reach` is already described in the seeder as "a cracked
+  lava field where vents of superheated gas erupt without warning and **heat-adapted predators hunt at
+  dusk**" (`ApplicationDataSeeder.cs:96`); `ashfields` as "grey ash plains … dotted with fused obsidian
+  trees and the scorched skulls of fallen armies" (`:95`); the region as ash and cooled lava "where
+  forge-tempered warbands and fire-touched creatures stake their claim" (`:45`, retained by K1 row
+  R10). Three of the five rows below are those sentences turned into an enemy.
+- **Nothing in the tail is Calethic-built.** The Caleth surveyed the ash-plain (*Daeld-Ald*) and did
+  not settle it (P4, locked), so no row is a construct, a guardian or a marker left by them. Proposal
+  11 asks for that to be recorded as a rule rather than left to inference.
+- **No faction.** The two seeded organisations still have no geography (proposal 7 was declined), and
+  this card forbids inventing a faction in the endgame region. Every row is `none recorded`, and each
+  says explicitly what the tie is *not*.
+- **Bands.** `budget.yaml` publishes seven bands to 26, so `b23-26` was the top of the ladder when this
+  section was first written. **The band table now extends to 1–30 with `b27-30` in the same wave as this
+  approval (C4)**, which is why two rows sit above 26. No tail row is banded `19–22`: the ash plain's
+  19–20 tier already has three D1 archetypes and a row there would have no location gap to close.
+- **Spawn level is `MinLevel` and nothing else** (`EfCoreEnemyRepository.cs:81`; `budget.yaml`,
+  *wiring.level* — there is no level roll). That is why there are two rows above 26 instead of one
+  26–30 row: an archetype banded 26–30 spawns at 26 in every room it is pooled in, including
+  `kaldreks-heart`, whose floor is 28, and only the 28–30 row can actually stand on that floor.
+
+### The tail roster
+
+| slug | name | one-line identity | level band | faction tie | zones it belongs to | hostile? | combat role |
+|---|---|---|---|---|---|---|---|
+| `vent-stalker` | Vent Stalker | Long-legged and the colour of cooled crust; it crosses the vent field under the noise of a blow and is gone before the air clears. | 23–26 (`b23-26`) | none recorded (Cinderplain fauna) | `smoldering-reach` — `vent-fields` | yes | ambusher, melee |
+| `crust-crawler` | Crust Crawler | Dens under the floor of the pyreling den and surfaces where the heat has thinned the crust. | 23–26 (`b23-26`) | none recorded (Cinderplain fauna) | `smoldering-reach` — `vent-fields`, `pyreling-den` | yes | burrowing ambusher |
+| `ash-picker` | Ash Picker | Breaks the cooled flow and the battlefield ash for glass and iron, and treats a claim on either as a debt owed. | 23–26 (`b23-26`) | none recorded (independent vent-claimants — no organisation) | `ashfields` — `scorched-battlefield`; `smoldering-reach` — `vent-fields` | yes | melee, disengages |
+| `ash-eater` | Ash Eater | Works the chamber for what the fire leaves and has grown too heavy to leave with it. | 26–30 (spans `b23-26` and `b27-30`) | none recorded (Cinderplain fauna) | `kaldrek-maw` — `fire-ancients-chamber` | yes | bruiser |
+| `maw-serpent` | Maw Serpent | Lies in the seam under the Maw's last floor, where the heat comes up, and does not need to move until something else does. | 28–30 (`b27-30`) | none recorded (Cinderplain fauna) | `kaldrek-maw` — `kaldreks-heart` (The Heart of the Maw) | yes | melee, reach |
+
+No row is a boss. No row carries a stat number. Roster totals including the tail: **32 hostile, 27
+non-hostile** — the totals table above is left as approved for 1–20 and is not rewritten.
+
+### Band coverage — tail only
+
+| band | archetypes | count |
+|---|---|---|
+| 23–26 (`b23-26`) | vent-stalker, crust-crawler, ash-picker | 3 |
+| 27–30 (`b27-30`) | ash-eater (banded 26–30, spanning `b23-26`/`b27-30`), maw-serpent (28–30) | 2 |
+| **total tail hostile** | | **5** |
+
+`b27-30` is the approved band id; **C4 publishes it in `budget.yaml` in the same wave as this section**,
+and until it does the file stops at `b23-26`.
+
+### Which pool each row unblocks
+
+D4's matrix (`t_af051fc2`, `docs/design/content/pool-matrix.md` at L3) is the source for "as drawn".
+"Pool after" is the entry set only; **weights stay L3's**, with the two consequences listed below it.
+
+| zone | location | levels | gap as drawn by D4 | row that closes it | pool after (entries, no weights) |
+|---|---|---|---|---|---|
+| `ashfields` | `scorched-battlefield` | 21–25 | **No entries at all.** D4 left it `SafeRespawn` and empty; its decision 4 moves the respawn to `obsidian-grove`, which makes this the zone's only pooled location and empties `obsidian-grove`. Of the 1–20 roster only `cinderling` (20–26) reaches level 21 — `ash-jack` and `forge-deserter` stop at 20. | `ash-picker` | `cinderling` + `ash-picker` = 2 |
+| `smoldering-reach` | `vent-fields` | 23–26 | `pyreling` + `cinderling` — and `cinderling` is a D1 zone-list deviation here (D1 gives it `ashfields` only). Losing it leaves one entry. | `vent-stalker`, `crust-crawler`, `ash-picker` | `pyreling`, `vent-stalker`, `crust-crawler`, `ash-picker` = 4; `cinderling` returns to `ashfields` |
+| `smoldering-reach` | `pyreling-den` | 24–26 | The same `pyreling` + deviant `cinderling` pair. | `crust-crawler` | `pyreling` + `crust-crawler` = 2 |
+| `kaldrek-maw` | `fire-ancients-chamber` | 26–30 | `pyreling` + `cinderling`, the second a one-band deviation sitting at its seeded ceiling (26). | `ash-eater` | `pyreling` + `ash-eater` = 2; `cinderling` returns |
+| `kaldrek-maw` | `kaldreks-heart` (The Heart of the Maw) | 28–30 | **`pyreling` alone** — the gap this card exists to close. | `maw-serpent` | `pyreling` + `maw-serpent` = 2, both non-boss |
+
+Two weight consequences for L3, neither decided here:
+
+- **`ash-picker` at `scorched-battlefield` is one band above the location** (`b23-26` against a
+  location whose `MinLevel` 21 falls in `b19-22`). D4's approved cap allows one band-tolerant entry
+  per pool at **weight ≤ 2**, so `cinderling` must carry that pool's weight.
+- **`b27-30` is approved (C4), so `pyreling` at `kaldreks-heart` is now a one-band-tolerant entry** and
+  the same cap drops it to **weight ≤ 2**; `maw-serpent` carries the Heart, where D4 currently draws
+  `pyreling` at 6. Under the bands as published today (`b23-26` top) that pool is legal as drawn; once
+  C4 lands `b27-30` it is not, and both the band and the weight change belong to C4.
+
+### Placement checks actually run
+
+Every row's seeded range against every location it names, using the seeder's own overlap rule
+(`archetype.MinLevel <= location.MaxLevel && archetype.MaxLevel >= location.MinLevel`):
+
+| archetype | seeded range it must carry | location levels | overlap | band distance |
+|---|---|---|---|---|
+| `vent-stalker` | 23–26 | 23–26 | yes | same band |
+| `crust-crawler` | 23–26 | 23–26; 24–26 | yes, both | same band |
+| `ash-picker` | 23–26 | 21–25; 23–26 | yes, both (23–25 and 23–26) | one step above at `scorched-battlefield`, same band at `vent-fields` |
+| `ash-eater` | 26–30 | 26–30 | yes | same band |
+| `maw-serpent` | 28–30 | 28–30 | yes | same band |
+
+Band distance is D4's rule, measured on the D1 ladder where every location above level 21 is band
+`21–30`; on that ladder every row here is in-band and the tail needs no tolerance at all. The
+`scorched-battlefield` line is the one place two published D0 bands meet (`b19-22` at the location,
+`b23-26` at the archetype), and it is flagged above as a weight consequence rather than hidden.
+
+### What the tail still does not cover
+
+| Gap | Reason |
+|---|---|
+| Bosses | `fire-ancient` (26–30) is a boss and stays out of every pool. Its placement row belongs to the boss-placement card gated on `t_14fa5465`, not here. D4's conclusion that the Heart needed "the boss or a new archetype" is now answered with an archetype. |
+| The Wound (Region 5) | Still no zones, locations or map graph. Nothing can be placed there. |
+| Loot | Each archetype needs exactly one loot table (`budget.yaml`, *loot.tables_per_archetype*). None is authored here. |
+| Seeding | These five slugs do not exist in `ArchetypeSeeder.cs`. They must be seeded **before** any pool names them, or `SeededEncounterCoverageTests` fails and the entry logs an Error at runtime (`ActorPoolResolver.cs:52-60`). |
+| `b27-30` stat values | The band id is approved, not yet published: `budget.yaml` still stops at `b23-26`, so `ash-eater` and `maw-serpent` cannot be statted until C4 extends the table and authors the band's values. |
+
+### Naming — tail derivation notes
+
+**No Calethic coinage was made for the tail either, and none was needed.** The Caleth named places,
+offices and institutions; `calethic-language.md` §6 says to coin only when needed, and D1's precedent
+is that every creature name in the shipped catalogue is Common. The Calethic restriction that is real
+(S/SH and /u/ outside Aethori ceremonial register, §1.1) governs **Calethic** vocabulary; the S in
+*Stalker* and *Serpent* is Common and unrestricted, exactly as it is in the seeded *Sump Crawler*.
+
+| name | derivation |
+|---|---|
+| Vent Stalker | Common: *vent*, the seeder's own word for the gas fissures ("vents of superheated gas erupt without warning"), + *stalker*. The zone description already supplies the fact — "heat-adapted predators hunt at dusk" — so the name describes a seeded animal rather than adding one. Ground is Cinderplain, Calethic *Daeld-Ald* (§5.2), which names the region and not the animal. |
+| Crust Crawler | Common: *crust* (the cooled surface of a flow) + *crawler*, the same morphology as the seeded `sump-crawler`. No Calethic form: a species is not a place, and *daeld-* would claim the Caleth named it (see proposal 11). |
+| Ash Picker | Common: *ash* + *picker*, the working noun for someone who breaks a face for what is in it — the register of `ship-chandler` and `market-factor`. Deliberately not *daeld-* or a Calethic trade form; §5.2 records that no Calethic root for trade or commerce exists. |
+| Ash Eater | Common, from behaviour, not from a light- or fire-root. Calethic distinguishes *raek* (light in material) from *thael* (revelation); this thing is neither, and a Calethic name would over-grade a scavenger. |
+| Maw Serpent | Common: *Maw* is the zone's own name, already in the seeded description ("a vast volcanic vent complex known as the Maw") and the display name both Cinderplain reconciliation sources agree on; *serpent* is the plain animal word. No Kaldrek token, no Calethic coinage. |
+
+### The Cinderplain naming question, as it stands
+
+- **The four Cinderplain slugs keep their identifiers:** `kaldrek-maw`, `kaldreks-heart`,
+  `fire-ancients-chamber`, `fire-ancient`. A slug is permanent identity; **ids are not canon, display
+  names are** (recorded by `t_7a2beb7d`, decision 1).
+- **The display prose is K1's table** (`t_fbc6e04b`, `docs/design/content/prose-corrections.md`,
+  pending): R12 `Kaldrek's Maw` → **The Maw**; R13 drops "Kaldrek's" and "final test of the worthy";
+  R15 `The Fire-Ancient's Chamber in Kaldrek's Maw` → `The Fire-Ancient's Chamber, the first hall
+  inside the Maw`; R22 keeps `Fire-Ancient` and "Fire-Ancient Drops" unchanged.
+- **The Heart's display name is decided: `kaldreks-heart` is "The Heart of the Maw".** K1's row **R16
+  governs**, and the earlier architect wording (`t_7a2beb7d` decision 1, "The Maw's Heart") does not —
+  R16 supersedes it. The slug stays `kaldreks-heart` everywhere in this document; only the display
+  string is set, and L3 must import that string with the matrix.
+- **The tail extends no retired framing.** None of the five names carries Dravan, Thysmara, Kaldrek,
+  Sundering or "Age of Embers"; none calls anything a servant, heir or remnant of the ancient; none
+  implies an empire or a settlement in Cinderplain that canon does not have.
+
+### Numbered canon proposals — the tail
+
+Numbering continues from proposal 9. These are the world facts the five rows stand on; the rows
+themselves are proposed by this section's table and are approved or rejected with it.
+
+**Proposals 10–12 are accepted (2026-11-20).** Each is recorded in full below with its claim, its
+reason and where it is recorded.
+
+**Proposal 10 — Cinderplain's heat-workers are independent claimants, not an organisation. (Accepted.)**
+**Claim:** outside `skarhold`, the people who work the heat break ash-glass and iron off the cooled
+flow and the battlefield, mark a claim with a pick-cut in the rock, and have no guild, no written
+title and no organisation behind them. **Reason:** `ash-picker` needs a social fact to stand on, and
+proposal 7 (geography for the two seeded organisations) was declined — so the row may not be
+guild-tied, and the seeded region prose already has "those who work the heat" staking a claim.
+**Touches:** `ashfields` (`scorched-battlefield`), `smoldering-reach` (`vent-fields`), `skarhold`'s
+ash-glass trade (`ash-glass-seller`), the Cinderplain region page. **Recorded in:**
+`world-lore-plan.md` under *Cinderplain settlements*, and `wiki/Region-Cinderplain.md` at Phase 5+.
+
+**Proposal 11 — nothing standing in Cinderplain was built by the Caleth. (Accepted.)**
+**Claim:** the Caleth surveyed the ash-plain and did not settle it (P4, locked), so no structure,
+guardian, construct, inscription or road in the region is theirs; what stands there is volcanic,
+animal, or post-Collapse human. **Reason:** the tail has no gap a Calethic ruin would fill, and
+without the rule a later author will fill one with a Calethic guardian and read the `fire-ancient` as
+their work — which is exactly the framing the Collapse rewrite removed. **Touches:** `ashfields`,
+`smoldering-reach`, `kaldrek-maw`, the `fire-ancient`'s identity, every future Cinderplain card.
+**Recorded in:** `world-lore-plan.md` (the same Cinderplain note as proposal 10); region page at
+Phase 5+.
+
+**Proposal 12 — the pyrelings do not serve the Fire-Ancient. (Accepted.)**
+**Claim:** `pyreling` clusters where the vents are hottest; its relation to the `fire-ancient` is
+shared ground, not service, command or cult. **Reason:** D4's `fire-ancients-chamber` row says the room
+is "guarded by the pyrelings that **serve** it", which is a faction-shaped claim inside the endgame
+zone — the one thing this card forbids inventing — and a later quest or dialogue will build on it.
+**Touches:** the `fire-ancients-chamber` prose in `docs/design/content/pool-matrix.md` (revise to "the
+pyrelings that den in it"), the `fire-ancient` placement card. **Recorded in:** the D4 matrix when L3
+(`t_6c70dc04`) lands it — **the correction is binding at that point; see the decisions block below.**
+
+### How this section was checked
+
+Run against the seeder and this document, not by eye: every new slug against
+`^[a-z0-9]+(-[a-z0-9]+)*$` and against `ArchetypeSeeder.cs` for collision (five fresh, zero
+collisions); every zone and location slug named here against `ZoneLocationsSeeder.cs` with its
+seeded level range; every row's range against every location's range using the seeder's own overlap
+rule; the tail table against a no-stat-digits and eight-column check; `kaldreks-heart` resolved to two
+non-boss entries; and `git diff` confirming the change is an append with zero lines removed above it.
+The markdown link check runs over the whole file. Results are quoted on card `t_98def8d8`.
+
+**Landing check (L6, `t_3ea8256b`).** The append was re-applied against `development` after the
+rebase: the base blob of `archetypes.md` matched the one D6 wrote the section against byte for byte
+(`f31911d0`), so no 1–20 roster row moved; the markdown link check ran clean over this file; and the
+tables were re-checked for column count, band consistency against `budget.yaml` and the absence of
+stat digits. Inside the section the only prose changed is the band state (`b27-30` approved), the
+Heart's display name and the proposals' acceptance marks; above it, only the three edits named at the
+top of the section.
+
+## Tail decisions
+
+**Approved 2026-11-20** by card `t_3ea8256b` (L6), on D6's proposal (`t_98def8d8`, commit `28e27487`)
+and D4's authorisation of a tail roster (its decision 5). This block is the authority for the tail
+section above; where the two disagree, this block governs.
+
+1. **The five tail rows are approved as written.** `vent-stalker`, `crust-crawler` and `ash-picker` at
+   23–26 (`b23-26`); `ash-eater` at 26–30; `maw-serpent` at 28–30. Slugs, names, one-line identities,
+   faction ties, zones, the hostile flag and combat roles are unchanged from the proposal — **no row is
+   a boss and no row carries a stat number.**
+2. **The band table is extended to 1–30, with `b27-30` in the same wave (C4).** `b23-26` is no longer the
+   top of the ladder. Because spawn level is the archetype's `MinLevel` and nothing else, that is also
+   why two rows sit above 26 instead of one 26–30 row: `ash-eater` (26–30) spawns at 26 for
+   `fire-ancients-chamber`, and only `maw-serpent` (28–30) can stand on `kaldreks-heart`'s floor of 28.
+   Under `b27-30`, `pyreling` at `kaldreks-heart` becomes a one-band-tolerant entry and **drops to
+   weight ≤ 2**; `maw-serpent` carries that pool. **C4 owns both the band and the weight change.**
+3. **Proposals 10, 11 and 12 are accepted.**
+   - **10 — Cinderplain's heat-workers are independent claimants with no organisation.** They break
+     ash-glass and iron off the cooled flow and the battlefield, mark a claim with a pick-cut in the
+     rock, and have no guild and no written title. `ash-picker` ties to no faction, and that is a tie.
+   - **11 — nothing standing in Cinderplain was built by the Caleth.** They surveyed the ash-plain and
+     did not settle it, so no structure, guardian, construct, inscription or road in the region is
+     theirs; what stands there is volcanic, animal or post-Collapse human.
+   - **12 — the pyrelings do not serve the Fire-Ancient.** Their relation to it is shared ground, not
+     service, command or cult, and no faction-shaped claim may be built on the old wording.
+4. **`kaldreks-heart`'s display name is "The Heart of the Maw".** **K1's row R16 governs**; the earlier
+   architect wording (`t_7a2beb7d` decision 1, "The Maw's Heart") does not, and is superseded. The slug
+   `kaldreks-heart` is permanent identity and does not change.
+5. **Proposal 12 corrects prose in `pool-matrix.md`, and that correction is binding.** D4's
+   `fire-ancients-chamber` row reads "guarded by the pyrelings that **serve** it"; the phrase "guarded
+   by the pyrelings that serve it" must go, revised to "the pyrelings that den in it". The matrix is
+   not in the repository yet — L3 (`t_6c70dc04`) lands it, and C4 (`b27-30`) may touch the same line —
+   so **whichever card touches that line applies the correction**; it may not be landed as written.

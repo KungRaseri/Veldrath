@@ -532,7 +532,7 @@ posting a status by hand stays forbidden: a status any agent can mint certifies 
 
 #### Files that no component workflow builds
 
-Measured against the tree on 2026-11-20 (`git ls-files`, 1945 paths, 93 `pull_request` path
+Measured against the tree on 2026-11-20 (`git ls-files`, 1984 paths, 102 `pull_request` path
 patterns, the merge gate and its script included): **37 paths match no `on.pull_request.paths`
 pattern.** Before the merge gate they produced zero statuses and deadlocked the gate; now they
 produce exactly one — the merge gate — and merge with **no build and no test**. Regenerate the list
