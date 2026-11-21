@@ -307,12 +307,14 @@ merchants:
     not authored beside it.
   stock_size: [8, 16]        # distinct items a merchant offers
   stock_size_basis: >-
-    The catalog holds 24 purchasable items: GetShopCatalogHubCommand.cs:121 keeps only the items a zone stocks
-    with Price > 0, which drops exactly one of the 25 seeded rows (lost-cargo, value 0, ItemsSeeder.cs:80). 8-16 is
-    a merchant carrying a third to two thirds of it. The low end brackets the legacy per-type defaults of 10
-    (weaponsmith, armorer) and 15 (apothecary, general store) at ShopEconomyService.cs:422-429; the high end stops
-    short of the 20 the default general store hands out, because "the whole catalog" is the vending-machine bug
-    stock_size closes, not a shop.
+    The catalogue holds 24 purchasable items, and the shop narrows it twice at GetShopCatalogHubCommand.cs:121.
+    Price > 0 drops exactly one of the 25 seeded rows (lost-cargo, value 0, ItemsSeeder.cs:80), leaving 24; the
+    zone-stock half of the same filter narrows those 24 to the town's own shelf — ten at crestfall, twelve at
+    aldenmere, eleven at tolvaren, twelve at skarhold (ZoneStockSeeder.cs:68-139). 8-16 is a merchant carrying a
+    third to two thirds of the CATALOGUE, not of a shelf. The low end brackets the legacy per-type defaults of 10
+    (weaponsmith, armorer) and 15 (apothecary, and the fallback for any other type) at ShopEconomyService.cs:422-429;
+    the high end stops short of the 20 a general store hands out, because "the whole catalog" is the vending-machine
+    bug stock_size closes, not a shop.
   price_markup: [1.0, 1.5]   # multiplier over base item value
   price_markup_basis: >-
     Both endpoints already exist in the code. 1.0 is the live buy price: the player pays item.Price unchanged
@@ -326,8 +328,8 @@ merchants:
     while SellItemHubCommand.cs:103 credits the buyback). A band that crosses 0.50 markup is a gold pump, not a shop.
   buyback_rate: [0.40, 0.50] # fraction of value paid when the player sells
   buyback_basis: >-
-    The two rates the code already implements: 0.50 live (ShopPricing.SellPrice, ShopPricing.cs:39-48 —
-    Math.Max(1, value x 50 / 100)) and 0.40 in the engine's economy service (ShopEconomyService.cs:106), which
+    The two rates the code already implements: 0.50 live (ShopPricing.SellPrice, ShopPricing.cs:36-43 — the
+    Math.Max(1, value x 50 / 100) at :38) and 0.40 in the engine's economy service (ShopEconomyService.cs:106), which
     resells a bought-back item at 0.80 of its price (:133). The player is never paid more than half of printed
     value; that is the invariant, not a knob.
   wiring:
@@ -340,18 +342,21 @@ merchants:
       larger than it is refused as ShopRefusal.MerchantCannotAfford, with the purse in the message
       (SellItemHubCommand.cs:105-113). 250 sits inside crestfall's L0 band [100, 250], and MerchantBandTests fails
       the build when a seeded shopkeeper's purse leaves its town's band. What is NOT live is a depleting balance:
-      TradeGold is content, nothing writes it back after a sale (SellItemHubCommand.cs:45-46), so the authored
-      figure caps every transaction instead of draining. The hostile `gold:` in the wiring block at the top of this
-      file is a different key and is still not projected.
+      TradeGold is content, nothing writes it back after a sale (SellItemHubCommand.cs:127-133 credits the player
+      and saves the character, and no purse row is touched), so the authored figure caps every transaction instead
+      of draining. The hostile `gold:` in the wiring block at the top of this file is a different key and is still
+      not projected.
     prices: >-
-      Live and fixed at the band's two ends. ShopPricing is the only pricing rule in the shop: BuyPrice is the
+      Live and fixed at the band's two ends. ShopPricing is the shop's pricing rule, in two methods: BuyPrice is the
       item's printed value at MerchantBands.PriceMarkupPercent (100, i.e. 1.0), SellPrice is that value at
       MerchantBands.BuybackRatePercent (50, i.e. 0.50), and SellPrice is clamped below BuyPrice so a buy -> sell
-      loop cannot print gold (ShopPricing.cs:26-48). The catalogue carries both
-      (GetShopCatalogHubCommand.cs:126-127), though the hub still forwards only Price = BuyPrice to the client
-      (Veldrath.Server/Hubs/GameHub.cs:2100-2108), so the buyback surfaces only in the sell result. The constants
-      are not read from this file at run time; they are mirrored, and MerchantBandTests parses merchants.price_markup
-      and merchants.buyback_rate here and fails the build when the two disagree. Pricing a town off the band's floor
+      loop cannot print gold (BuyPrice at ShopPricing.cs:24-31, SellPrice at :36-44, the clamp at :43). The catalogue
+      carries both (GetShopCatalogHubCommand.cs:126-127), though the hub still forwards only Price = BuyPrice to the
+      client (Veldrath.Server/Hubs/GameHub.cs:2100-2108), so the buyback surfaces only in the sell result. The one
+      price ShopPricing does not set is the sell handler's flat 1 gold for an item the catalogue no longer holds
+      (SellItemHubCommand.cs:103). The constants are not read from this file at run time; they are mirrored, and
+      MerchantBandTests parses merchants.price_markup and merchants.buyback_rate here and fails the build when the
+      two disagree. Pricing a town above the band's floor — the 1.5 the engine's own merchant-info query declares —
       is still engine work.
     stock: >-
       Authored per zone and live. ZoneStockItems (RealmEngine.Data/Entities/Content/ZoneStockItem.cs) holds one row
@@ -359,7 +364,8 @@ merchants:
       and RealmEngine.Data/Seeders/ZoneStockSeeder.cs authors the four reaching settlements at 10 / 12 / 11 / 12
       rows — inside stock_size [8, 16], and no two towns offering the same shelf. GetShopCatalogHubCommand.cs:115-127
       reads that list instead of the whole catalogue, so a zone offers only what it stocks. What the table is not
-      is a stock level: nothing decrements a row on purchase (ZoneStockItem.cs:14-16), so within its shelf a
+      is a stock level: ZoneStockItem.cs:13-16 states the model — availability, not inventory depth — and no
+      handler writes a row, the seeder being its only author (ZoneStockSeeder.cs:58), so within its shelf a
       merchant's depth is infinite and a restart restocks nothing. playground is IsDevOnly and authors no rows.
     other_gaps: >-
       Three, listed so they are not discovered twice. (1) Closed by the merchant gate: buy, sell and the catalogue

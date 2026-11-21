@@ -4,12 +4,14 @@
 were changed, no pack was imported, no seeder was edited. Every row below is a placement (`LocationNpc`) or
 a copy line, not a number.
 
-- **Merchant band — landed 2026-11-20.** `game-context/budget.yaml` → `merchants:` bands shop trade by the
-  **town's** level, not the player's: `gold_by_town_level` (L0 [100, 250] through L18 [1300, 3200]),
-  `stock_size` [8, 16], `price_markup` [1.0, 1.5] and `buyback_rate` [0.40, 0.50]. `MerchantBands` holds the
-  band and `ShopPricing` quotes it; a merchant's `TradeGold` is the purse a single buyback may draw on; and
-  `MerchantBandTests` parses `budget.yaml` and fails the build on drift. The shopkeeper rows below still carry
-  no numbers of their own: a person sells the town's stock at the town's band (C5).
+- **Merchant band — landed 2026-11-20.** `game-context/budget.yaml` → `merchants:` bands each town's merchants by
+  the **town's** own level, not the player's: `gold_by_town_level` (L0 [100, 250] through L18 [1300, 3200]) is
+  what a merchant of that tier may hold, and the two pricing endpoints — `price_markup` [1.0, 1.5] and
+  `buyback_rate` [0.40, 0.50] — are the same in every town, quoted at 1.0 and 0.50. `stock_size` [8, 16] is how
+  many of the 24 purchasable items a town stocks. `MerchantBands` holds the band and `ShopPricing` quotes its
+  endpoints; a merchant's `TradeGold` is the purse a single buyback may draw on; and `MerchantBandTests` parses
+  `budget.yaml` and fails the build on drift. The shopkeeper rows below still carry no numbers of their own: a
+  person sells the town's stock at the band's published prices (C5).
 - **Per-zone shared shop stock — landed 2026-11-20.** Two merchants in one town sell from one authored shelf
   (`ZoneStockItems`, migration `20261121004324_AddZoneStockItems`) rather than the whole catalogue: ten rows at
   Crestfall, twelve at Aldenmere, eleven at Tolvaren, twelve at Skarhold. Per-NPC stock is still an engine
@@ -316,13 +318,15 @@ slug is not a text fix: it breaks that placement row and any stored `CurrentZone
 `blacksmith-greeting` is hyphenated, `tavernkeeper-greeting` is not.
 
 **C5 — No merchant band exists. (Resolved 2026-11-20.)** `budget.yaml` published a `merchants:` section, and the
-shop now applies it. `MerchantBands` carries the purse tiers, the stock size and the two pricing endpoints;
-`ShopPricing` quotes every catalogue row at them; a merchant's `TradeGold` is the purse a single buyback may draw
-on, refused as `ShopRefusal.MerchantCannotAfford` when it will not cover the payout; and `MerchantBandTests`
-parses the YAML and fails the build when the two disagree. What is still unwired is a *depleting* purse — the
-authored figure caps each transaction and is never written back — and a per-town markup away from the band's
-floor. The shopkeeper rows in §4 still carry no numbers of their own, by design: a person sells the town's stock
-at the town's band.
+shop applies its two price endpoints. `MerchantBands` carries the purse tiers, the stock size and those
+endpoints; `ShopPricing` prices every catalogue row with them; a merchant's `TradeGold` is the purse a single
+buyback may draw on, refused as `ShopRefusal.MerchantCannotAfford` when it will not cover the payout. The purse
+tiers and `stock_size` are not consulted when a trade happens — no handler looks a town up in the band — so
+`MerchantBandTests` is what keeps them true: it parses the YAML, compares it with `MerchantBands`, and fails the
+build when a seeded shopkeeper's purse leaves its town's tier. What is still unwired is a *depleting* purse — the
+authored figure caps each transaction and is never written back — and a per-town markup above the band's floor.
+The shopkeeper rows in §4 still carry no numbers of their own, by design: a person sells the town's stock at the
+band's published prices.
 
 **C6 — One shop catalog per zone.** The shop keys on `ZoneId`, not on the person: `VisitShopHubCommand` and
 `GetShopCatalogHubCommand` resolve the zone's merchant and read the zone's authored shelf (`ZoneStockItems`, one
