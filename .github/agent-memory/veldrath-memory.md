@@ -4674,16 +4674,16 @@ first test runs.
 ### Session-110 (2026-11-20) — The shelves were re-based onto the approved band, and a guard now pins the arithmetic
 
 T1's two-row shelf defect, settled by `t_056aa527` and fixed by `t_a49d7693`. The band is the authority: it landed at
-15:22 (`e691eba2`), the shelves 92 minutes later (`3b7ac2dc`), and the newer artifact failed to obey the table twice.
+15:22 (`e691eba2`), the shelves 94 minutes later (`3b7ac2dc`, 16:56), and the newer artifact failed to obey the table
+twice.
 
 - **crestfall lost `hunters-bow` (35 gold) — 10 rows → 9.** The town's prose calls it "a starter blade", and
   `iron-sword` is that blade; the bow was a second weapon dearer than the 30-gold `rune-of-fire` ceiling the L0 band is
   sized from, which had pushed the shelf to [100, 300] against the approved [100, 250]. Nine rows still clears
   `MinimumStockSize` (8) — do not invent a tenth row to restore the old count, that is how the ceiling drifted.
 - **tolvaren swapped `orb-of-force` (300) for `fire-ruby` (200)**, 11 rows unchanged. 16 x 0.50 x 300 = 2400 blew the
-  approved 1600 ceiling and even its own shelf (11 x 0.50 x 300 = 1650 > 1600); `fire-ruby` is the ceiling the L10
-  comment already named and was the one item it named that the shelf lacked. Skarhold's prose ("the two orbs no lower
-  town will handle") now matches the data.
+  approved 1600 ceiling; `fire-ruby` is the ceiling the L10 comment already named and was the one item it named that
+  the shelf lacked. Skarhold's prose ("the two orbs no lower town will handle") now matches the data.
 - **The gap that let it through is closed.** Nothing tied `gold_basis`'s arithmetic to the authored shelves, so
   `MerchantBandTests.Gold_Basis_Reproduces_Each_Towns_Band_From_Its_Authored_Shelf` now recomputes every merchant
   town's band from `ZoneStockSeeder.Authors()` ∩ the priced catalogue ∩ `budget.yaml`. It fails on the pre-fix shelves
