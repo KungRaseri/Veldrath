@@ -254,22 +254,32 @@ are listed because the roster surfaced them, not because content was written aga
 archetype that would have depended on an unapproved proposal was held out and named in "what this
 roster does not cover".
 
-### Conflicts first — two locked facts disagree with the code
+### Conflicts first — locked facts against the code
 
-**Proposal 1 — the retired names are still live in seeded prose. (Correction, not new lore.)**
-`MapGraphSeeder.cs` and `ZoneLocationsSeeder.cs` describe Greymoor as "Dravan highlands" (three
-times), the barrow-deeps as holding "ancient Dravan relics", Saltcliff as "the drowned remnants of a
-sunken empire" (twice) and Cinderplain as "Kaldrek's scorched expanse" (three times), and seed
-`kaldrek-maw`, `kaldreks-heart`, `fire-ancients-chamber` and the archetype `fire-ancient`.
-`world-lore-plan.md` records that the "old Sundering/Age of Embers/Dravan/Thysmara/Kaldrek lore" was
-*replaced* by the Collapse / Ashen Age / Calethic Empire / Aethori / Unbound material (session log,
-2026-04-14). **Claim:** prose that still says Dravan, Thysmara, Kaldrek or "sunken empire" is stale
-and should be rewritten to the Collapse vocabulary. **Reason:** a content worker reading the seeders
-will treat these as canon and write against dead lore — I nearly did. **Touches:** the four region
-descriptions, `barrow-deeps`, `sunken-name`, `saltcliff`, and four Cinderplain slugs whose *display
-names* use Kaldrek. **Slugs cannot be renamed** (permanent identity), so this needs a decision about
-display names, not slugs. **Recorded in:** a follow-up card against `MapGraphSeeder.cs`; evidence in
-this document.
+**Proposal 1 — the retired names were still live in seeded prose. (Resolved 2026-11-20, `c213f409`;
+correction, not new lore.)**
+When this document was written, `ApplicationDataSeeder.cs` and the map nodes that mirror it in
+`MapGraphSeeder.cs` described Greymoor as "Dravan highlands", the barrow-deeps as holding "ancient
+Dravan relics", Saltcliff as "the drowned remnants of a sunken empire" and Cinderplain as "Kaldrek's
+scorched expanse". `world-lore-plan.md` records that the "old Sundering/Age of Embers/Dravan/Thysmara/
+Kaldrek lore" was *replaced* by the Collapse / Ashen Age / Calethic Empire / Aethori / Unbound
+material (session log, 2026-04-14), so the prose was stale and a content worker reading the seeders
+would write against dead lore — I nearly did. `c213f409` rewrote both seeded copies: Greymoor is
+"fog-wreathed highlands where ancient burial mounds dot the heather", Saltcliff "the drowned remains
+of whatever stood here before them", Cinderplain "a scorched expanse of ash and cooled lava", and
+`World.Era` is "The Ashen Age (the Age of Reclaiming)".
+`SeededWorldTextTests` now fails the build on a retired token or on the two copies drifting apart.
+Its token list is Sundering, Age of Embers, Dravan, Thysmara and Kaldrek — "sunken empire" is not on
+it, so that phrase alone could return unnoticed.
+**No decision from this proposal is outstanding.** The seeded display names carry no retired token —
+"The Maw", "The Maw's Heart", "The Fire-Ancient's Chamber", "Fire-Ancient" (`ApplicationDataSeeder.cs`,
+`MapGraphSeeder.cs`, `ZoneLocationsSeeder.cs`, `ArchetypeSeeder.cs`) — and the Cinderplain display work
+that remains is K1's table under "The Cinderplain naming question" below. **The slugs stay:**
+`kaldrek-maw`, `kaldreks-heart`, `fire-ancients-chamber` and the archetype `fire-ancient` are opaque
+permanent keys — ids are not canon, display names are, and renaming a slug is a cross-database
+migration with its own card (`world-lore-plan.md`).
+**Recorded in:** `towns.md` §6 C2 and the seeded text; the guard in `SeededWorldTextTests` is the
+evidence.
 
 **Proposal 2 — `aurelian-market` versus The Korreld Exchange.**
 `calethic-language.md` §5.2 records "Aurelian Market" as **resolved and renamed to The Korreld
@@ -279,8 +289,9 @@ Common naming pattern. `ZoneLocationsSeeder.cs` still seeds `Slug = "aurelian-ma
 display name is wrong; the slug is a legacy alias that must not be changed in place. **Reason:** two
 locked sources disagree and the roster references this zone for `market-factor`. **Touches:**
 `crestfall`, the `aurelian-market` location, `MapGraphSeeder` node `zone:crestfall:location:aurelian-market`.
-**Recorded in:** the same follow-up card as proposal 1. **Decision needed:** revert the rename, or
-change the display name and keep the slug.
+**Recorded in:** the `aurelian-market` bullet under *Status* and `towns.md` §6 C3. **Decided:** the
+slug stays and the display name becomes The Korreld Exchange; the seeded zone still reads "The
+Aurelian Market" until that rename lands.
 
 ### Proposals to the open questions in `world-lore-plan.md`
 
