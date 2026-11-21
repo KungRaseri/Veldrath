@@ -63,7 +63,7 @@ Read from code, with the line that says so. Every row shaped a decision below.
 | **Calethic form** | **Kaeltheld** — *kael* (great, first/paramount) + *theld* (controlled entry point, administered threshold) = "the paramount administered threshold"; the Caleth's name for the heartland from which every threshold was commanded (`calethic-language.md:588-596`) |
 | **Type** | a new `RegionType` member — `Volcanic` is region 4's and is wrong; `Forest`/`Highland`/`Coastal`/`Countryside` are all wrong (§9, decision 4) |
 | **Band** | `b23-26`; `b27-30` is the ladder's top band (`game-context/budget.yaml`) |
-| **`MinLevel` / `MaxLevel`** | 23 / 30. The geography runs 0–30 (`ZoneLocationsSeeder.cs:42-47`); the archetype ladder stops at 26 today. |
+| **`MinLevel` / `MaxLevel`** | 23 / 30. The geography runs 0–30 (`ZoneLocationsSeeder.cs`, the `SpawnPools` remarks); the archetype ladder stops at 26 today. |
 | **`IsStarter` / `IsDiscoverable`** | `false` / `false`. The second is inert (§1) but it is the honest value. |
 | **Connections** | `cinderplain → wound` and `wound → cinderplain` (`RegionConnection`, `ApplicationDataSeeder.cs:58-63`). |
 | **Shape** | Five zones, three of them named as thresholds and two as grounds — the Caleth's own land-survey taxonomy, not a poetic choice (§4). |
@@ -87,12 +87,12 @@ before it stops rewarding them.
    a target; only its `RefId` is cross-checked).
 2. **The clear must be recorded.** The act is *clearing the room* — every enemy alive at the location
    dead (`AttackEnemyHubCommand.cs:245`), not killing a named boss; the room's own pool is a 70/30
-   split (`ZoneLocationsSeeder.cs:87`), so a run can clear it without the boss appearing and the gate
-   must not depend on that. Recording the clear requires `IsInstanced = true` on the cleared room,
-   `fire-ancients-chamber`: the kill's `ZoneInstanceId` is what fires the unlock loop, so the flag goes
-   on the room that is cleared and **not** on the hidden gate node, which carries no instance of its
-   own. No seeded location sets the flag (§1), so today the loop never fires. One content flag — no
-   engine change — closes this.
+   split (`ZoneLocationsSeeder.cs`, the `fire-ancients-chamber` pool entry), so a run can clear it
+   without the boss appearing and the gate must not depend on that. Recording the clear requires
+   `IsInstanced = true` on the cleared room, `fire-ancients-chamber`: the kill's `ZoneInstanceId` is
+   what fires the unlock loop, so the flag goes on the room that is cleared and **not** on the hidden
+   gate node, which carries no instance of its own. No seeded location sets the flag (§1), so today
+   the loop never fires. One content flag — no engine change — closes this.
 3. **The backstop is a level wall.** The same location carries `UnlockType = "skill_check_passive"` and
    `DiscoverThreshold = 23`, which is the only server-side, non-spoofable gate that exists
    (`TravelToNodeHubCommand.cs:489-503`). A level-1 character is refused by the server, not discouraged
@@ -109,8 +109,8 @@ Stated honestly, because the code does not make it true by itself:
 
 - **True against an honest client**, on two independent counts: the chain runs through a room whose own
   locations are L26 and whose pool carries the top of the band at a 30% weight
-  (`ZoneLocationsSeeder.cs:87`), and the threshold location is invisible to any character below level
-  23 by a server-side comparison.
+  (`ZoneLocationsSeeder.cs`, the `fire-ancients-chamber` pool entry), and the threshold location is
+  invisible to any character below level 23 by a server-side comparison.
 - **Not true against a modified client**: `UnlockZoneLocation` accepts a location slug and an unlock
   source from the caller (`GameHub.cs:2695-2705`) and writes the unlock with no proof. Nothing in this
   spine can fix that. It is listed as a dependency in §7 and it is the same class of hole as the
@@ -134,7 +134,7 @@ is open lore item 4 and this spine neither uses nor denies it (§6, §7).
 
 All five sit inside band `b23-26`. The "band" column is the sub-band the zone's own locations should
 carry; "zone L" is the single number the `Zone` row takes, matching the seeded convention
-(`ZoneLocationsSeeder.cs:125-573`: every zone is commented `(Type, L<number>)`).
+(`ZoneLocationsSeeder.cs`: every zone is commented `(Type, L<number>)`).
 
 | # | slug | display name (Calethic) | one-line character | band | zone L | what the player does there | what it refuses to explain |
 |---|---|---|---|---|---|---|---|
@@ -304,7 +304,7 @@ the dependency is listed in §7 instead.
 | 4 | **`RegionType` gains a member** | Named entity decision, not a zone decision; free of migrations (`ApplicationDbContext.cs:130`) | The region row cannot be seeded correctly. |
 | 5 | **The map graph for region 5** (a later card) | Out of scope by this card's rules | Nothing is reachable; the spine stays a spine. |
 | 6 | **Open lore item 4** (what came back from the Pits) | Must not be resolved (§6 O4) | If it resolves toward a connection, §2.3 is superseded and the Wound acquires a second door — which would break the "one way in" shape §5 depends on. |
-| 7 | **The `kaldreks-heart` `UnlockKey` fix** | Its `UnlockKey` equals its own slug (`MapGraphSeeder.cs:542`; `ZoneLocationsSeeder.cs:592-596`), so the room can never unlock | K3 decided it is a bug, not content. The entrance is not built on it (§2.1), but the room stays unreachable until it is fixed. |
+| 7 | **The `kaldreks-heart` `UnlockKey` fix** | Its `UnlockKey` equals its own slug (`MapGraphSeeder.cs:542`; `ZoneLocationsSeeder.cs`, the `kaldreks-heart` block), so the room can never unlock | K3 decided it is a bug, not content. The entrance is not built on it (§2.1), but the room stays unreachable until it is fixed. |
 
 ---
 
