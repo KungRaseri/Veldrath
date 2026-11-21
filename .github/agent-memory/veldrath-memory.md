@@ -4651,8 +4651,11 @@ table exists. Four facts for the next session:
   D3 rosters are seeded, and `playground` refuses because it has no authored stock. That is the intended consequence,
   not a regression — the per-zone stock was authored anyway so the towns are ready when their people arrive.
 - **Stock is `ZoneStockItems` in `ContentDbContext`** (migration `20261121004324_AddZoneStockItems`, unique on
-  `(ZoneId, ItemSlug)`), authored by `RealmEngine.Data/Seeders/ZoneStockSeeder` — crestfall 10, aldenmere 12,
-  tolvaren 11, skarhold 12 of the 24 purchasable items. It is deliberately *not* a `ContentBase` family: a row is a
+  `(ZoneId, ItemSlug)`), authored by `RealmEngine.Data/Seeders/ZoneStockSeeder` — crestfall 9, aldenmere 12,
+  tolvaren 11, skarhold 12 of the 24 purchasable items. The counts are load-bearing, not cosmetic: a shelf's
+  dearest row is the ceiling that sizes its town's purse (`merchants.gold_basis` in `game-context/budget.yaml`), so
+  `MerchantBandTests.Gold_Basis_Reproduces_Each_Towns_Band_From_Its_Authored_Shelf` now fails the moment a shelf
+  edit re-bases a band. It is deliberately *not* a `ContentBase` family: a row is a
   zone↔item join with no slug or display name, so it is absent from `ContentEntityTypes`, the Foundry schema and the
   pack importer. Sell does not consult stock — a merchant buys back anything it is offered.
 - **Pricing is one place:** `ShopPricing` applies `MerchantBands.PriceMarkupPercent` (100 = the band floor) to buy and
@@ -4667,4 +4670,28 @@ Test gotchas found on the way: a `ContentDbContext` sharing a SQLite connection 
 needs `Database.GetService<IRelationalDatabaseCreator>().CreateTables()` (EnsureCreated is a no-op); and a fixture that
 seeds a context from its constructor must keep that context in a field — `using var db` there disposes it before the
 first test runs.
+
+### Session-110 (2026-11-20) — The shelves were re-based onto the approved band, and a guard now pins the arithmetic
+
+T1's two-row shelf defect, settled by `t_056aa527` and fixed by `t_a49d7693`. The band is the authority: it landed at
+15:22 (`e691eba2`), the shelves 94 minutes later (`3b7ac2dc`, 16:56), and the newer artifact failed to obey the table
+twice.
+
+- **crestfall lost `hunters-bow` (35 gold) — 10 rows → 9.** The town's prose calls it "a starter blade", and
+  `iron-sword` is that blade; the bow was a second weapon dearer than the 30-gold `rune-of-fire` ceiling the L0 band is
+  sized from, which had pushed the shelf to [100, 300] against the approved [100, 250]. Nine rows still clears
+  `MinimumStockSize` (8) — do not invent a tenth row to restore the old count, that is how the ceiling drifted.
+- **tolvaren swapped `orb-of-force` (300) for `fire-ruby` (200)**, 11 rows unchanged. 16 x 0.50 x 300 = 2400 blew the
+  approved 1600 ceiling; `fire-ruby` is the ceiling the L10 comment already named and was the one item it named that
+  the shelf lacked. Skarhold's prose ("the two orbs no lower town will handle") now matches the data.
+- **The gap that let it through is closed.** Nothing tied `gold_basis`'s arithmetic to the authored shelves, so
+  `MerchantBandTests.Gold_Basis_Reproduces_Each_Towns_Band_From_Its_Authored_Shelf` now recomputes every merchant
+  town's band from `ZoneStockSeeder.Authors()` ∩ the priced catalogue ∩ `budget.yaml`. It fails on the pre-fix shelves
+  with "…crestfall's L0 ceiling from its shelf ceiling (35 gold)… but found 300 (difference of 50)". Its fixture seeds
+  `ItemsSeeder` too — the values come from the catalogue, not from a copy of the prices.
+- **A shelf edit is inert on an existing database until a migration deletes the old row.** `ZoneStockSeeder` is
+  insert-only (`:40-60`) and `ZoneStockItems` has no importer or pack path, so `20261121025507_ReconcileZoneStockShelves`
+  deletes `crestfall/hunters-bow` and `tolvaren/orb-of-force`; the next start inserts `tolvaren/fire-ruby` in the freed
+  slot. Verified against Postgres 17 (Up removes exactly two rows, Down restores them at SortOrder 100, Down repeatable).
+  The authoring gap itself is still open — see the parked card on `ZoneStockItems` having no authoring path.
 
