@@ -1,0 +1,140 @@
+# Content pack — enemy drop tables for budget band b11-14 (levels 11-14).
+#
+# family: loottable. One table per hostile archetype; slug `<archetype>-drops`.
+#
+# Band b11-14 (game-context/budget.yaml): gold [12, 45], drop_chance [0.15, 0.45].
+# Every table sums to 100, so DropWeight reads as that row's landing probability
+# (loot.weight_semantics). Every row lands with 0.15 <= p <= 0.45: inside the band.
+# No guaranteed row: nothing in the design says a b11-14 kill always yields something.
+# Item ceiling: 135 gold = 3 x the band's gold max. Gems (150) and void shards are above it and
+# start at b15-18, where the gold ceiling rises to 165.
+#
+# The roster's 13-15 rows belong here, not to b15-18: their band floor is 13 and the band that
+# contains a floor is the band its stat line and drop chance come from.
+
+family: loottable
+entities:
+  - slug: drowned-revenant-drops
+    # band: b11-14 — drowned-revenant, roster band 13-15; spawns at submerged-ruins (L10-14),
+    # ancestor-vault (L11-14), relic-chamber (L12-14), wrack-shore (L12-18), tidal-grotto (L14-18),
+    # flooded-throne-room (L16-20), tidelocked-vault (L17-20)
+    # Why: it came back up from the flooded rooms still carrying what drowned it. The plate it wore
+    # down there is the heaviest thing in this file, and it is the only table at this band that can
+    # drop one at all.
+    typeKey: enemies
+    displayName: Drowned Revenant Drops
+    rarityWeight: 70
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: iron-chestplate
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: soul-crystal
+        dropWeight: 25
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-shadow
+        dropWeight: 25
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: rune-of-power
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+
+  - slug: tide-strider-drops
+    # band: b11-14 — tide-strider, roster band 13-15; spawns at wrack-shore (L12-18),
+    # bone-strand (L13-18), tidal-grotto (L14-18)
+    # Why: it wades the flats on long legs and spears what the ebb uncovers. Its haul is the flat's,
+    # not its own — worked iron, weed-root, and the bow a drowned fisherman let go of.
+    typeKey: enemies
+    displayName: Tide Strider Drops
+    rarityWeight: 70
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: health-potion
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: iron-ingot
+        dropWeight: 25
+        quantityMin: 1
+        quantityMax: 2
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: hunters-bow
+        dropWeight: 25
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-nature
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 2
+        isGuaranteed: false
+
+  - slug: gull-rider-skirmisher-drops
+    # band: b11-14 — gull-rider-skirmisher, roster band 13-15; spawns at wrack-shore (L12-18),
+    # bone-strand (L13-18), gull-rider-camp (L15-20)
+    # Why: it rides the updraught and throws a harpoon on the way past. The harpoon is nearest the
+    # hunter's bow the catalogue has; a raider that light does not carry plate.
+    typeKey: enemies
+    displayName: Gull-Rider Skirmisher Drops
+    rarityWeight: 70
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: health-potion
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: iron-ingot
+        dropWeight: 25
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: hunters-bow
+        dropWeight: 25
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: soul-crystal
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false

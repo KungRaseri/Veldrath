@@ -1,0 +1,177 @@
+# Content pack — enemy drop tables for budget band b15-18 (levels 15-18).
+#
+# family: loottable. One table per hostile archetype; slug `<archetype>-drops`.
+#
+# Band b15-18 (game-context/budget.yaml): gold [20, 55], drop_chance [0.12, 0.40].
+# Every table sums to 100, so DropWeight reads as that row's landing probability
+# (loot.weight_semantics). Every row lands with 0.12 <= p <= 0.40: inside the band.
+# No guaranteed row: nothing in the design says a b15-18 kill always yields something.
+# Item ceiling: 165 gold = 3 x the band's gold max. This is the first band whose ceiling admits a
+# gem: storm-topaz and void-shard are 150 and enter here, at the rarest weight in the table.
+# The 200-gold gems (fire-ruby, frost-sapphire) stay out until b23-26 (ceiling 225).
+
+family: loottable
+entities:
+  - slug: gull-rider-brute-drops
+    # band: b15-18 — gull-rider-brute, roster band 16-18; spawns at bone-strand (L13-18),
+    # gull-rider-camp (L15-20)
+    # Why: the heavy member of the clan, brought out when harpoons are not enough. The clan's whole
+    # point is what it salvages off the cliffs, so the brute is the one that carries the plate.
+    typeKey: enemies
+    displayName: Gull-Rider Brute Drops
+    rarityWeight: 70
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: health-potion
+        dropWeight: 35
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: hunters-bow
+        dropWeight: 25
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: iron-chestplate
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: storm-topaz
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+
+  - slug: storm-harrower-drops
+    # band: b15-18 — storm-harrower, roster band 16-18; spawns at tidal-grotto (L14-18),
+    # storm-watch-peak (L16-20), flooded-throne-room (L16-20)
+    # Why: a shape in the rain at Storm-Watch; the wind turns with it. A storm-bound spirit is the one
+    # archetype at this band whose drop should read as weather rather than loot: shard, topaz, power.
+    typeKey: enemies
+    displayName: Storm Harrower Drops
+    rarityWeight: 70
+    traits:
+      common: true
+      boss: false
+      elite: true
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: essence-of-shadow
+        dropWeight: 35
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: rune-of-power
+        dropWeight: 25
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: storm-topaz
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: void-shard
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+
+  - slug: cliff-breaker-drops
+    # band: b15-18 — cliff-breaker, roster band 16-18; spawns at gull-rider-camp (L15-20),
+    # storm-watch-peak (L16-20)
+    # Why: it nests high on the clifftop and drops stone on anything walking the path beneath. It
+    # carries nothing but what it has pulled out of the cliff face and off the path below.
+    typeKey: enemies
+    displayName: Cliff Breaker Drops
+    rarityWeight: 70
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: iron-ingot
+        dropWeight: 35
+        quantityMin: 1
+        quantityMax: 2
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: hunters-bow
+        dropWeight: 25
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: iron-chestplate
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: storm-topaz
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+
+  - slug: undertow-drops
+    # band: b15-18 — undertow, roster band 16-18; spawns at flooded-throne-room (L16-20),
+    # tidelocked-vault (L17-20)
+    # Why: a current in a drowned room that pulls the wrong way. It has no body to loot, so its drops
+    # are what the water has been pulling out of the drowned rooms for centuries.
+    typeKey: enemies
+    displayName: Undertow Drops
+    rarityWeight: 70
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: mana-potion
+        dropWeight: 35
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: rune-of-frost
+        dropWeight: 25
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: soul-crystal
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: void-shard
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false

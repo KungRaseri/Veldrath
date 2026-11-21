@@ -1,0 +1,255 @@
+# Content pack — enemy drop tables for budget band b23-26 (levels 23-26).
+#
+# family: loottable. One table per hostile archetype; slug `<archetype>-drops`.
+#
+# Band b23-26 (game-context/budget.yaml): gold [30, 75], drop_chance [0.08, 0.30].
+# Every table sums to 100, so DropWeight reads as that row's landing probability
+# (loot.weight_semantics). Every row lands with 0.08 <= p <= 0.30: inside the band.
+# No guaranteed row: nothing in the design says a b23-26 kill always yields something.
+# Item ceiling: 225 gold = 3 x the band's gold max. This is the first band whose ceiling admits the
+# 200-gold gems, fire-ruby and frost-sapphire. The orbs (300 and 400) are above every band's
+# ceiling and stay out of enemy drops entirely; they remain a boss and chest drop.
+#
+# ash-eater is roster-banded 26-30 and belongs to this file for one reason: spawn level is the
+# archetype's MinLevel (EfCoreEnemyRepository.cs:113), so it always spawns at level 26 and b23-26 is
+# the only band its drops have to satisfy. It spawns at fire-ancients-chamber (L26-30). Its top row
+# lands at 0.30, inside this band's [0.08, 0.30] and above b27-30's ceiling — which cannot apply to
+# it, because it never spawns at a b27-30 level.
+
+family: loottable
+entities:
+  - slug: pyreling-drops
+    # band: b23-26 — pyreling, seeded 23-28; spawns at vent-fields (L23-26), pyreling-den (L24-26),
+    # fire-ancients-chamber (L26-30), kaldreks-heart (L28-30)
+    # Why: the heat-adapted hunter of the vent fields. Fire essence in quantity is what a kill is
+    # worth here; the ruby is the one gem that belongs to a thing that lives in a lava field.
+    typeKey: enemies
+    displayName: Pyreling Drops
+    rarityWeight: 50
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: iron-ingot
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 2
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-fire
+        dropWeight: 20
+        quantityMin: 2
+        quantityMax: 3
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: rune-of-fire
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: soul-crystal
+        dropWeight: 15
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: fire-ruby
+        dropWeight: 15
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+
+  - slug: vent-stalker-drops
+    # band: b23-26 — vent-stalker, roster band 23-26; spawns at vent-fields (L23-26)
+    # Why: long-legged and the colour of cooled crust; it crosses the vent field under the noise of a
+    # blow. It is a hunter, so the potion it carries is its own, not a scavenged one.
+    typeKey: enemies
+    displayName: Vent Stalker Drops
+    rarityWeight: 50
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: health-potion
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: iron-ingot
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 2
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-fire
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 2
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: rune-of-power
+        dropWeight: 15
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: fire-ruby
+        dropWeight: 15
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+
+  - slug: crust-crawler-drops
+    # band: b23-26 — crust-crawler, roster band 23-26; spawns at vent-fields (L23-26),
+    # pyreling-den (L24-26)
+    # Why: it dens under the floor of the pyreling den and surfaces where the heat has thinned the
+    # crust. It comes up through rock and takes the rock with it.
+    typeKey: enemies
+    displayName: Crust Crawler Drops
+    rarityWeight: 50
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: antidote
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: iron-ingot
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 3
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-fire
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 2
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: soul-crystal
+        dropWeight: 15
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: fire-ruby
+        dropWeight: 15
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+
+  - slug: ash-picker-drops
+    # band: b23-26 — ash-picker, roster band 23-26; spawns at scorched-battlefield (L21-25),
+    # vent-fields (L23-26)
+    # Why: it breaks the cooled flow and the battlefield ash for glass and iron and treats a claim on
+    # either as a debt owed. Its drop is its trade: the glass it broke out, and the stock it was
+    # carrying to a buyer.
+    typeKey: enemies
+    displayName: Ash Picker Drops
+    rarityWeight: 50
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: iron-ingot
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 3
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: iron-chestplate
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: soul-crystal
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: rune-of-power
+        dropWeight: 15
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: fire-ruby
+        dropWeight: 15
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+
+  - slug: ash-eater-drops
+    # band: b23-26 — ash-eater, roster band 26-30; spawns at fire-ancients-chamber (L26-30).
+    # Spawn level is the archetype's MinLevel (EfCoreEnemyRepository.cs:113), so it is always level 26
+    # and this is the only band it drops in.
+    # Why: it works the chamber for what the fire leaves and has grown too heavy to leave with it. A
+    # bruiser's table: quantity on the essence, and nothing rare enough to be worth the detour.
+    typeKey: enemies
+    displayName: Ash Eater Drops
+    rarityWeight: 50
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: iron-ingot
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 2
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-fire
+        dropWeight: 20
+        quantityMin: 2
+        quantityMax: 3
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: soul-crystal
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: rune-of-power
+        dropWeight: 15
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: fire-ruby
+        dropWeight: 15
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
