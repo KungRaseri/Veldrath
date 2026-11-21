@@ -4,10 +4,16 @@
 were changed, no pack was imported, no seeder was edited. Every row below is a placement (`LocationNpc`) or
 a copy line, not a number.
 
-- **Merchant band — pending.** `game-context/budget.yaml` bands hostile archetypes only, so shopkeeper
-  trade and prices stay unauthored until a merchant band is published (C5).
-- **Per-zone shared shop stock — accepted for this wave.** Two merchants in one town sell from one
-  catalogue; per-NPC stock is an engine change and is not in this wave (C6).
+- **Merchant band — landed 2026-11-20.** `game-context/budget.yaml` → `merchants:` bands shop trade by the
+  **town's** level, not the player's: `gold_by_town_level` (L0 [100, 250] through L18 [1300, 3200]),
+  `stock_size` [8, 16], `price_markup` [1.0, 1.5] and `buyback_rate` [0.40, 0.50]. `MerchantBands` holds the
+  band and `ShopPricing` quotes it; a merchant's `TradeGold` is the purse a single buyback may draw on; and
+  `MerchantBandTests` parses `budget.yaml` and fails the build on drift. The shopkeeper rows below still carry
+  no numbers of their own: a person sells the town's stock at the town's band (C5).
+- **Per-zone shared shop stock — landed 2026-11-20.** Two merchants in one town sell from one authored shelf
+  (`ZoneStockItems`, migration `20261121004324_AddZoneStockItems`) rather than the whole catalogue: ten rows at
+  Crestfall, twelve at Aldenmere, eleven at Tolvaren, twelve at Skarhold. Per-NPC stock is still an engine
+  change and is not in this wave (C6).
 - **`playground` — excluded.** The fifth `IsTown` zone is `IsDevOnly` and is never returned by public
   APIs, so it carries no roster (§2).
 
@@ -37,7 +43,7 @@ Read from code, with the line that says so. Every rule below shaped the roster.
 | Dialogue is keyed by **archetype slug**, not by placement | `DialogueHubCommands.cs` `PickEntryAsync` (`Speaker == slug`), `NpcGreetings.PickAsync` | Two people sharing one archetype share one voice. Distinct registers per town therefore require distinct archetype slugs — the main cost in this card. |
 | `TalkToNpc` greets from entries with `TypeKey == "greetings"`; with none it falls back to "*{name} looks up as you approach*" | `NpcHubCommands.cs` `NpcGreetings` | A placed person with no greeting row is a person with nothing to say. One already exists today (C4). |
 | The dialogue panel only opens on an entry that has `Stats.Options` | `DialogueHubCommands.cs` `PickEntryAsync` | Greetings-only NPCs are barked at, not conversed with. Conversations are wave B/C content; this card does not pretend to ship them. |
-| Shops are **per zone**, not per NPC: `VisitShopHubCommand(CharacterId, ZoneId)` requires `Zone.HasMerchant`; `GetShopCatalogHubCommand(ZoneId)` | `VisitShopHubCommand.cs:13-16`, `GetShopCatalogHubCommand.cs:16` | "What they sell" below is characterisation. An NPC cannot hold its own price list, and two merchants in one town share one stock (C6). |
+| Shops are **per zone and per placed person**: `VisitShopHubCommand(CharacterId, ZoneId)` and `GetShopCatalogHubCommand(Guid CharacterId, string ZoneId)` resolve the merchant from the character's own zone *and* location — the zone must carry `HasMerchant`, a `LocationNpc` whose archetype has `Traits.Shopkeeper` must stand at the character's location, and a `ZoneId` that is not the character's own is refused as `ZoneMismatch` | `ShopMerchantResolver.cs:36-122` (zone flag `:56-67`, placements `:69-84`, the `Shopkeeper` test `:96-113`, refusal `:122`); `VisitShopHubCommand.cs:13`; `GetShopCatalogHubCommand.cs:18` | A zone flag alone is not a shop, so the §4.2–4.4 rosters are load-bearing: a town whose shopkeeper is not placed refuses trade. The shelf is the zone's (`ZoneStockItems`), never the person's, so two merchants in one town share one stock (C6). |
 | Role flags (`Shopkeeper`, `QuestGiver`, `HasDialogue`) come from the archetype's `Traits`; `Occupation` is the archetype's `TypeKey` | `NpcHubCommands.cs` `NpcPlacements.ToDto` | New townspeople need `TypeKey = "townspeople"` to read like the existing three. |
 | `DisplayName` on the placement overrides the archetype's name | `LocationNpc.cs:40-41` | Used to give the three existing generic archetypes a person's name without minting new archetypes. |
 
@@ -283,7 +289,9 @@ subsection (mirror: `wiki/World-Veldrath.md`).
 ## 6. Canon conflicts found while writing this
 
 These are not proposals — they are places where two things already written disagree, or where player-facing
-text refers to something that no longer exists. None of them were edited here.
+text refers to something that no longer exists. None of them were edited here, except C5 and C6: both were
+resolved on 2026-11-20 and are kept as resolved records so the letters the rest of the document cites still
+point at something.
 
 **C1 — Player-facing text names a deleted region.** `blacksmith-greeting` line 3 reads "Finest ironwork in
 Thornveil, guaranteed." `thornveil` was the pre-Crestfall starter region and was replaced by `varenmark` /
@@ -307,13 +315,20 @@ slug is not a text fix: it breaks that placement row and any stored `CurrentZone
 "*Tharrek looks up as you approach.*" every time. Also note the existing speaker slugs are inconsistent:
 `blacksmith-greeting` is hyphenated, `tavernkeeper-greeting` is not.
 
-**C5 — No merchant band exists.** `budget.yaml` (D0) bands hostile archetypes only, and states in `omitted`
-that AC, attack bonus and mana are deliberately unbilled. There is no band for `TradeGold`, `TradeSkill` or
-shop prices, so the shopkeeper rows below carry **no numbers** — only what a person deals in.
+**C5 — No merchant band exists. (Resolved 2026-11-20.)** `budget.yaml` published a `merchants:` section, and the
+shop now applies it. `MerchantBands` carries the purse tiers, the stock size and the two pricing endpoints;
+`ShopPricing` quotes every catalogue row at them; a merchant's `TradeGold` is the purse a single buyback may draw
+on, refused as `ShopRefusal.MerchantCannotAfford` when it will not cover the payout; and `MerchantBandTests`
+parses the YAML and fails the build when the two disagree. What is still unwired is a *depleting* purse — the
+authored figure caps each transaction and is never written back — and a per-town markup away from the band's
+floor. The shopkeeper rows in §4 still carry no numbers of their own, by design: a person sells the town's stock
+at the town's band.
 
-**C6 — One shop catalog per zone.** `VisitShopHubCommand` and `GetShopCatalogHubCommand` key on `ZoneId`, so
-Aldenmere's keep and its marketplace sell from the same stock, and so do Skarhold's. "What they sell" here
-distinguishes the people, not the inventory; per-NPC stock needs an engine change.
+**C6 — One shop catalog per zone.** The shop keys on `ZoneId`, not on the person: `VisitShopHubCommand` and
+`GetShopCatalogHubCommand` resolve the zone's merchant and read the zone's authored shelf (`ZoneStockItems`, one
+row per item per town, seeded ten / twelve / eleven / twelve), so Aldenmere's keep and its marketplace sell from
+the same stock, and so do Skarhold's. "What they sell" here distinguishes the people, not the inventory; per-NPC
+stock needs an engine change.
 
 ---
 
