@@ -9,8 +9,8 @@ silently applied, in [§8](#8-decisions).
 > **Purpose:** make 34 roster rows look like one world rather than 34 commissions — a silhouette
 > language, a per-region palette, and one asset class per row, expressed inside the budgets
 > [`asset-specs.md`](../asset-specs.md) already sets.
-> **Related:** [archetype roster](archetypes.md) (44 rows: the 34-row roster plus the ten `§`
-> townspeople) · [brand guide](../brand-guide.md)
+> **Related:** [archetype roster](archetypes.md) (44 rows: the 34-row roster plus the ten adopted
+> townspeople, the `§` rows at the end of its table) · [brand guide](../brand-guide.md)
 > (materials and light) · [asset specs](../asset-specs.md) (canvas, format, budget, naming) ·
 > [tokens.json](../tokens.json) (the palette, `locked: true`).
 
@@ -23,7 +23,7 @@ silently applied, in [§8](#8-decisions).
 | [`asset-specs.md`](../asset-specs.md) | canvas sizes, formats, weight budgets, naming | quotes them, never re-decides them |
 | [`brand-guide.md`](../brand-guide.md) | three materials, light from within and above, **no off-palette hue** | applies them per region |
 | [`tokens.json`](../tokens.json) | `locked: true` — 49 tokens, no new colour without a human decision | uses 16 existing tokens, adds **none** |
-| [`archetypes.md`](archetypes.md) | 44 rows — the approved 34-row roster plus the ten `§` townspeople — slugs, zones, classes, faction ties | classifies every row, invents no slug |
+| [`archetypes.md`](archetypes.md) | 44 rows — the approved 34-row roster plus the ten adopted townspeople (the `§` rows at the end of the table) — slugs, zones, classes, faction ties | classifies every row, invents no slug |
 | [`GAME.md`](../../../game-context/GAME.md) §6, §8 | five regions; region *character* beyond biome is **TBD (Q2)** | ramps from seeded biome words only |
 
 `designctx Veldrath/Veldrath` reports convention `docs/design`, 49 palette tokens, palette matching
@@ -412,17 +412,17 @@ nothing else makes a row P1 (§4.1).
 
 **By home region: Varenmark 1, Greymoor 3, Saltcliff 3, Cinderplain 3.** The three Greymoor rows are
 Aldenmere's — `keep-castellan`, `mead-seller`, `cellar-keeper` — and Aldenmere is a Greymoor town:
-`ApplicationDataSeeder.cs` gives the zone `RegionId = "greymoor"` and `towns.md` files Aldenmere under
-the Greymoor settlements, so §4.1's first-zone rule lands all three in Greymoor — a walled town is
-not a region. Only `road-carter` (Crestfall) is Varenmark's.
+`ApplicationDataSeeder.cs` gives the zone `RegionId = "greymoor"` and `world-lore-plan.md` records
+Aldenmere under *Greymoor settlements*, so §4.1's first-zone rule lands all three in Greymoor — a
+walled town is not a region. Only `road-carter` (Crestfall) is Varenmark's.
 
 Two consequences are stated rather than left implied:
 
-- **The `base` column names a pose, not a family.** §6.8 still holds — each town NPC is its own
+- **The `base` column names a pose, not a family.** §6 item 8 still holds — each town NPC is its own
   generation with its own subject line, so the four `market-factor` descendants are four different
   people, not one civilian in four hats. P2 is *one generation anchored on the base's pose and
-  scaffold* (§4.1), which is exactly the separate generation §6.8 demands; the apron, keys, staff,
-  spear and ledger that refusal lists are held objects, which is the P2 axis.
+  scaffold* (§4.1), which is exactly the separate generation §6 item 8 demands; the apron, keys,
+  staff, spear and ledger that refusal lists are held objects, which is the P2 axis.
 - **Each waits on its own base, not on the whole townsfolk set.** A P2 row cannot be requested before
   the row it is graded from exists (§4.1, P2 dependencies), so none of the ten is commissioned until
   its base is drawn, or until a later card re-prioritises it to P1. The bases are four of the five P1
@@ -654,7 +654,9 @@ changed.
 | §5.2, §5.4, §7.1, `asset-specs` §3 | one master convention stated once and cited three times: the 256 PNG-24 is **committed** and never served, only the layered working file stays in `~/creative-assets`; §5.4's "28" now names itself a probe of the still-draft fourteen-row request | review of this landing: `asset-specs` said the master was "kept out of the repository" while §7 criterion 1 counted 27 committed files |
 | §5.3–§5.6, the request | the request reads `approved 2026-11-20`; `assets[]` holds the nine P0 hostiles, the five townsfolk sit in `deferred[]` at P1, the two `PROPOSED` comments cite `asset-specs` §3 and §5, and the acceptance block asks for 27 files — the same count as §7 | D5 defect 2 (`t_d805cdf4`), applied by F2 (`t_4e58e1ec`): the request still read `DRAFT`, listed fourteen P0 including the five townsfolk decision 3 had moved to P1, and asked for 28 files where §7 asks for 27 |
 | §4.1, §4.1b, §5.1, §8 | "not roster rows yet, so unclassified" replaced by a measurement: the ten are roster rows, seeded by PR #161, and all **P2** on named P1 bases (§4.1b) | both halves of that note were stale — `archetypes.md` already adopts the ten as the `§` rows at the end of its table, and PR #161's seed and placements land them as `ActorArchetype` and `LocationNpc` rows (card `t_d65b853d`). The note's own estimate of the split is replaced by the count taken off the ten rows |
-| §4.1b, §5.1 | three home regions corrected — Aldenmere's `keep-castellan`, `mead-seller` and `cellar-keeper` are **greymoor**, not varenmark — so the ten split Varenmark 1 · Greymoor 3 · Saltcliff 3 · Cinderplain 3; §4.1b's light sentence now names Greymoor's ramp | review of this landing: `aldenmere` is seeded `RegionId = "greymoor"` (`ApplicationDataSeeder.cs`) and `towns.md` files it under the Greymoor settlements, so §4.1's first-zone rule puts all three there |
+| §4.1b, §5.1 | three home regions corrected — Aldenmere's `keep-castellan`, `mead-seller` and `cellar-keeper` are **greymoor**, not varenmark — so the ten split Varenmark 1 · Greymoor 3 · Saltcliff 3 · Cinderplain 3; §4.1b's light sentence now names Greymoor's ramp | review of this landing: `aldenmere` is seeded `RegionId = "greymoor"` (`ApplicationDataSeeder.cs`) and `world-lore-plan.md` records Aldenmere under *Greymoor settlements* (`towns.md` §5 P2 is where that entry was proposed), so §4.1's first-zone rule puts all three there |
+| §4.1b ×2, corrections table | `§6.8` → `§6 item 8`: §6 is a numbered list of eight refusals with no `6.x` sub-headings | review of this landing: the citation named no heading; the item number was right and only the form changed |
+| header, §0 | "44 rows: the 34-row roster plus the ten `§` townspeople" → "plus the ten adopted townspeople (the `§` rows at the end of the table)" | review of this landing: 17 rows carry `§` — the seven earlier townsfolk and the ten — so the old phrasing read as if only the ten were marked |
 
 ### Left open on purpose
 
