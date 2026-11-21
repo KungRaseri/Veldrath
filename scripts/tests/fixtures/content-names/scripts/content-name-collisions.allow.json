@@ -1,0 +1,9 @@
+{
+	"$comment": "Fixture allowlist. The naming authority's `Kael-Raeth` and `Vaelraeth` are one letter apart in canon, so the fixture records that decision exactly as the repository does.",
+	"allow": [
+		{
+			"names": ["Kael-Raeth", "Vaelraeth"],
+			"reason": "Both are attested forms in the naming authority; the one-letter gap is canon, not a coinage."
+		}
+	]
+}

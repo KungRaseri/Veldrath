@@ -1,0 +1,37 @@
+{
+	"$comment": [
+		"Pairs that are deliberately similar, read by scripts/check-content-names.mjs.",
+		"Each entry is a decision someone wrote down: the reason is mandatory and the check refuses a",
+		"placeholder. An entry only silences the pair it names — everything else still fails, and the",
+		"check prints every allowlisted pair with its reason on each run. An entry that no longer",
+		"matches a live collision is reported as STALE; delete it then, because a leftover permit would",
+		"silently cover a name that comes back later."
+	],
+	"allow": [
+		{
+			"names": ["Gaelraeth", "Kael-Raeth"],
+			"reason": "D5 defect 6: the Tolvaren harbour-master's byname is being renamed by F2; the pair is recorded so the class of defect stays visible until that lands.",
+			"ticket": "t_4e58e1ec"
+		},
+		{
+			"names": ["Gaelraeth", "Vaelraeth"],
+			"reason": "D5 defect 6: same byname as above, one letter from the Wound zone's attested form; F2 renames it.",
+			"ticket": "t_4e58e1ec"
+		},
+		{
+			"names": ["Orneld", "Orveld"],
+			"reason": "D5 defect 7: the Wound zone is one letter from the being's Calethic name; F2 renames the zone, not the being.",
+			"ticket": "t_4e58e1ec"
+		},
+		{
+			"names": ["Kael-Raeth", "Vaelraeth"],
+			"reason": "Both are attested forms in calethic-language.md (raeth root and the vaeld+raeth junction row); the one-letter gap is in canon, not an authored coinage, so a design card must not rename either.",
+			"ticket": "t_d805cdf4"
+		},
+		{
+			"names": ["Draekeld", "Drakeld"],
+			"reason": "D5 recorded Drakeld as the root dictionary's example compound for drak (stone), not an attested name or place, and declined to block; revisit if it is ever attested as a name.",
+			"ticket": "t_d805cdf4"
+		}
+	]
+}

@@ -41,6 +41,8 @@ on:
       - 'web/client/static/fonts/**'
       - 'web/client/static/images/favicon/**'
       - 'scripts/check-markdown-links.mjs'
+      - 'scripts/check-content-names.mjs'
+      - 'scripts/content-name-collisions.allow.json'
       - 'scripts/docfx-namespace-toc.pl'
       - 'scripts/apply-branch-protection.sh'
       - 'scripts/forgejo-pr-comment.sh'
@@ -109,6 +111,18 @@ jobs:
 
       - name: Check documentation links
         run: node scripts/check-markdown-links.mjs
+
+      # Calethic name collisions. Nothing else compared authored names against the naming authority:
+      # D5 found `Orneld` one letter from `Orveld` and `Gaelraeth` one letter from `Kael-Raeth` after
+      # every prior validator had passed, because those compared authored slugs to seeded slugs and
+      # `docs/lore/calethic-language.md` holds no slugs at all. Offline, like the link check: it
+      # reads the four content documents, the authority and the C# seeders, and fails on edit
+      # distance 1 with both names, the distance and both line numbers named.
+      - name: Check authored names for collisions
+        run: node scripts/check-content-names.mjs
+
+      - name: Test the name-collision checker
+        run: node --test scripts/tests/content-names.test.mjs
 
       # Offline regression tests for the branch-protection policy that makes a merge
       # here wait for CI. No token and no network: the API response is stubbed, so the

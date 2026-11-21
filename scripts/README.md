@@ -196,6 +196,42 @@ old comment ended up quoting the wrong accounting.
 
 ---
 
+## `check-content-names.mjs` + `content-name-collisions.allow.json`
+
+Fails when two names are one letter apart. It exists because of a specific miss: D5 found `Orneld`
+one letter from `Orveld` (the being's Calethic name) and `Gaelraeth` one letter from both
+`Kael-Raeth` and `Vaelraeth`. Every earlier check compared authored **slugs** against **seeded**
+slugs, and the naming authority — [`docs/lore/calethic-language.md`](../docs/lore/calethic-language.md)
+— holds no slugs, so the collision was never in scope.
+
+It compares every authored name in `docs/design/content/{archetypes,towns,wound-spine,pool-matrix}.md`
+against three sets, and fails on edit distance 1 after folding case, hyphens and diacritics:
+
+- every attested form and named entity in the naming authority;
+- every seeded slug and display name in `RealmEngine.Data/Seeders/*.cs`;
+- every other authored name (distance 0 with two different slugs is one name for two entities).
+
+A name counts only where a document declares it: a table column headed `name`/`display name…`/
+`Calethic`, a `displayName:` in a fenced YAML example, or a bold single token asserted in prose.
+Distance 0 against the authority or a seeded name is a citation, not a collision — the roster
+restates seeded display names on purpose.
+
+```bash
+node scripts/check-content-names.mjs                 # the gate (run by docs.yml)
+node scripts/check-content-names.mjs --no-allowlist  # every collision, decisions ignored
+node scripts/check-content-names.mjs --verbose       # list the names each document contributed
+node --test scripts/tests/content-names.test.mjs     # offline: fixture tree, real collisions
+```
+
+A failure names both sides, the distance and the line where each is defined. **Renaming is the fix**;
+the allowlist is for pairs that are deliberately similar, and each entry needs a one-line reason —
+a placeholder is rejected. An allowlisted pair is printed with its reason on every run, and an entry
+that no longer matches anything is reported `STALE` rather than failing the build, because two
+cards (a rename and this check) land in whatever order they land and neither should red the other.
+Delete a stale entry: a permit left behind would silently cover a name that comes back later.
+
+---
+
 ## `ci-merge-gate.sh`
 
 The whole body of [`merge-gate.yml`](../.github/workflows/merge-gate.yml), the one `pull_request`
