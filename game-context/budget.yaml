@@ -145,7 +145,7 @@ wiring:
     detail: >-
       spawn level is the archetype's MinLevel and nothing else, no level roll
       (EfCoreEnemyRepository.cs:52); MaxLevel only feeds the seeded-encounter overlap rule
-      (SeededEncounterCoverageTests.cs:132-143). One archetype per band, not per level.
+      (SeededEncounterCoverageTests.cs:207-239). One archetype per band, not per level.
       Because nothing rolls, an archetype banded 26-30 spawns at 26 in every room it is pooled
       in — including a room whose floor is 28. That is the whole reason b27-30 has two authored
       rows instead of one 26-30 row: ash-eater (26-30) spawns at 26 for fire-ancients-chamber,
@@ -193,7 +193,7 @@ wiring:
     live: false
     detail: >-
       Traits.Boss/Elite are labels with no stat effect (ActorArchetype.cs:107-110); Boss is read
-      only by the seed guard (SeededEncounterCoverageTests.cs:163-169).
+      only by the seed guard (SeededEncounterCoverageTests.cs:241-265).
 
 spawn:
   roster_size: [2, 4]
