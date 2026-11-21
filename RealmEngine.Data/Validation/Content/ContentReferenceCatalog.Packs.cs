@@ -3,19 +3,11 @@ using RealmEngine.Data.Content;
 namespace RealmEngine.Data.Validation.Content;
 
 /// <summary>
-/// The catalog additions the content-pack pipeline needs: the reference sets for families that only GUID foreign keys
-/// point at, and the ability to fold a pack's own slugs into the catalog before its entities are validated.
+/// The catalog additions the content-pack pipeline needs: folding a pack's own slugs into the catalog before its
+/// entities are validated.
 /// </summary>
 public sealed partial class ContentReferenceCatalog
 {
-    /// <summary>Gets the species slugs present in content.</summary>
-    public IReadOnlySet<string> Species { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>Gets the actor-class slugs present in content.</summary>
-    public IReadOnlySet<string> ActorClasses { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>Gets the background slugs present in content.</summary>
-    public IReadOnlySet<string> Backgrounds { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Returns a catalog that also knows the slugs a content pack declares.
@@ -75,9 +67,6 @@ public sealed partial class ContentReferenceCatalog
             "skill" => Skills,
             "organization" => Organizations,
             "material" => Materials,
-            "species" => Species,
-            "class" => ActorClasses,
-            "background" => Backgrounds,
             _ => null,
         };
     }
@@ -101,9 +90,6 @@ public sealed partial class ContentReferenceCatalog
         Organizations = canonicalFamily == "organization" ? value : Organizations,
         Dialogues = canonicalFamily == "dialogue" ? value : Dialogues,
         Quests = canonicalFamily == "quest" ? value : Quests,
-        Species = canonicalFamily == "species" ? value : Species,
-        ActorClasses = canonicalFamily == "class" ? value : ActorClasses,
-        Backgrounds = canonicalFamily == "background" ? value : Backgrounds,
         NodeIdsByMap = NodeIdsByMap,
     };
 }

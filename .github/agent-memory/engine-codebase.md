@@ -64,6 +64,15 @@ The SvelteKit app adds Vitest + Playwright suites under `web/`.
 - `Character.GainExperience()` auto-levels at `Level * 100` XP
 - `InventoryRecord` now has nullable `Durability` column (added migration `AddInventoryRecordDurability`)
 
+### Assigning a child collection is an UPDATE, not an insert (A0, 2026-11-20)
+
+EF's change detection treats a deserialised child whose generated key is already set
+(`LootTableEntry.Id = Guid.NewGuid()`) as an existing row, so assigning the authored list onto a tracked parent
+issues an UPDATE for a row that was never inserted — `DbUpdateConcurrencyException`, nothing written. Any update
+path that owns child rows (the content-pack importer does, `RealmEngine.Data/Authoring/ContentPacks/
+ContentPackImporter.ReconcileChildren`) has to reconcile them: match on authored identity, mutate the match,
+`db.RemoveRange` what the pack dropped, and `db.Add` what it added with the parent FK set explicitly.
+
 ## Positional Records (must use positional ctor, not object initializer)
 - `RestAtInnCommand(string LocationId, string CharacterName, int Cost = 10)`
 - `VisitShopCommand(string LocationId, string CharacterName)`

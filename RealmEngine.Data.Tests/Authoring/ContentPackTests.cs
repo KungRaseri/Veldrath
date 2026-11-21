@@ -360,6 +360,243 @@ public sealed class ContentPackTests
         output.ToString().Should().Contain("pack-broken-potion");
     }
 
+    // The packs the child-collection tests rewrite between imports. Kept as constants so an edit is one visible
+    // difference rather than a second hand-written document.
+    private const string LootTablePack = """
+        entities:
+          - slug: pack-wolf-drops
+            typeKey: enemies
+            displayName: Pack Wolf Drops
+            entries:
+              - itemDomain: items/general
+                itemSlug: health-potion
+                dropWeight: 60
+                quantityMin: 1
+                quantityMax: 2
+        """;
+
+    private const string LootTablePackWithAddedEntry = """
+        entities:
+          - slug: pack-wolf-drops
+            typeKey: enemies
+            displayName: Pack Wolf Drops (Revised)
+            entries:
+              - itemDomain: items/general
+                itemSlug: health-potion
+                dropWeight: 60
+                quantityMin: 1
+                quantityMax: 2
+              - itemDomain: items/general
+                itemSlug: glowcap-mushroom
+                dropWeight: 25
+                quantityMin: 1
+                quantityMax: 1
+        """;
+
+    private const string RecipePack = """
+        entities:
+          - slug: pack-iron-tonic
+            typeKey: alchemy
+            displayName: Pack Iron Tonic
+            outputItemDomain: items/general
+            outputItemSlug: health-potion
+            outputQuantity: 1
+            craftingSkill: alchemy
+            craftingLevel: 1
+            ingredients:
+              - itemDomain: items/materials
+                itemSlug: iron
+                quantity: 2
+              - itemDomain: items/general
+                itemSlug: glowcap-mushroom
+                quantity: 1
+        """;
+
+    private const string RecipePackWithOneIngredient = """
+        entities:
+          - slug: pack-iron-tonic
+            typeKey: alchemy
+            displayName: Pack Iron Tonic
+            outputItemDomain: items/general
+            outputItemSlug: health-potion
+            outputQuantity: 1
+            craftingSkill: alchemy
+            craftingLevel: 1
+            ingredients:
+              - itemDomain: items/materials
+                itemSlug: iron
+                quantity: 2
+        """;
+
+    [Fact]
+    public async Task Reimporting_a_loot_table_that_gained_an_entry_updates_it_once_and_never_duplicates_the_entries()
+    {
+        await using var database = await PackDatabase.CreateAsync();
+        await using (var seed = database.NewContext())
+        {
+            await ItemsSeeder.SeedAsync(seed);
+        }
+
+        using var pack = new PackDirectory(("loottables/wolves.yaml", LootTablePack));
+
+        await using (var created = database.NewContext())
+        {
+            var result = await new ContentPackImporter(created).ImportAsync(ContentPackReader.Read(pack.Root));
+            result.Succeeded.Should().BeTrue(result.Validation.Issues.FirstOrDefault()?.Message);
+            result.Created.Should().Be(1);
+        }
+
+        pack.Write("loottables/wolves.yaml", LootTablePackWithAddedEntry);
+
+        await using var context = database.NewContext();
+        var updated = await new ContentPackImporter(context).ImportAsync(ContentPackReader.Read(pack.Root));
+
+        updated.Updated.Should().Be(1, "the parent changed, and it is the only entity in the pack");
+        updated.Created.Should().Be(0);
+
+        var table = await context.LootTables.AsNoTracking().Include(entity => entity.Entries)
+            .SingleAsync(entity => entity.Slug == "pack-wolf-drops");
+
+        table.Version.Should().Be(2);
+        table.DisplayName.Should().Be("Pack Wolf Drops (Revised)");
+        table.Entries.Select(entry => entry.ItemSlug).Should().BeEquivalentTo("health-potion", "glowcap-mushroom");
+
+        await using var third = database.NewContext();
+        var again = await new ContentPackImporter(third).ImportAsync(ContentPackReader.Read(pack.Root));
+
+        again.Updated.Should().Be(0, "the second import wrote what the pack says, so a third has nothing to do");
+        again.Unchanged.Should().Be(1);
+        (await third.LootTableEntries.CountAsync()).Should().Be(2, "an added child is inserted once, not once per import");
+    }
+
+    [Fact]
+    public async Task A_scalar_only_edit_on_a_parent_with_children_keeps_the_child_rows_it_did_not_change()
+    {
+        await using var database = await PackDatabase.CreateAsync();
+        await using (var seed = database.NewContext())
+        {
+            await ItemsSeeder.SeedAsync(seed);
+        }
+
+        using var pack = new PackDirectory(("loottables/wolves.yaml", LootTablePack));
+
+        await using (var created = database.NewContext())
+        {
+            await new ContentPackImporter(created).ImportAsync(ContentPackReader.Read(pack.Root));
+        }
+
+        Guid entryId;
+        await using (var before = database.NewContext())
+        {
+            entryId = (await before.LootTableEntries.AsNoTracking().SingleAsync()).Id;
+        }
+
+        pack.Write(
+            "loottables/wolves.yaml",
+            LootTablePack.Replace("displayName: Pack Wolf Drops", "displayName: Pack Wolf Drops (Renamed)", StringComparison.Ordinal));
+
+        await using var context = database.NewContext();
+        var updated = await new ContentPackImporter(context).ImportAsync(ContentPackReader.Read(pack.Root));
+
+        updated.Updated.Should().Be(1);
+        updated.Created.Should().Be(0);
+
+        var table = await context.LootTables.AsNoTracking().Include(entity => entity.Entries)
+            .SingleAsync(entity => entity.Slug == "pack-wolf-drops");
+
+        table.Version.Should().Be(2);
+        table.Entries.Should().ContainSingle("a scalar edit must not rewrite the child collection")
+            .Which.Id.Should().Be(entryId, "an unchanged child row is left alone, not deleted and re-inserted");
+
+        await using var third = database.NewContext();
+        var again = await new ContentPackImporter(third).ImportAsync(ContentPackReader.Read(pack.Root));
+
+        again.Updated.Should().Be(0);
+        again.Unchanged.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Removing_a_recipe_ingredient_deletes_only_that_child_row()
+    {
+        await using var database = await PackDatabase.CreateAsync();
+        await using (var seed = database.NewContext())
+        {
+            await ItemsSeeder.SeedAsync(seed);
+            await MaterialsSeeder.SeedAsync(seed);
+        }
+
+        using var pack = new PackDirectory(("recipes/alchemy.yaml", RecipePack));
+
+        await using (var created = database.NewContext())
+        {
+            var result = await new ContentPackImporter(created).ImportAsync(ContentPackReader.Read(pack.Root));
+            result.Succeeded.Should().BeTrue(result.Validation.Issues.FirstOrDefault()?.Message);
+            result.Created.Should().Be(1);
+        }
+
+        pack.Write("recipes/alchemy.yaml", RecipePackWithOneIngredient);
+
+        await using var context = database.NewContext();
+        var updated = await new ContentPackImporter(context).ImportAsync(ContentPackReader.Read(pack.Root));
+
+        updated.Updated.Should().Be(1);
+        updated.Created.Should().Be(0);
+
+        var recipe = await context.Recipes.AsNoTracking().Include(entity => entity.Ingredients)
+            .SingleAsync(entity => entity.Slug == "pack-iron-tonic");
+
+        recipe.Version.Should().Be(2);
+        recipe.Ingredients.Should().ContainSingle().Which.ItemSlug.Should().Be("iron");
+
+        await using var third = database.NewContext();
+        var again = await new ContentPackImporter(third).ImportAsync(ContentPackReader.Read(pack.Root));
+
+        again.Updated.Should().Be(0);
+        again.Unchanged.Should().Be(1);
+        (await third.RecipeIngredients.CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task An_owned_json_collection_edit_is_written_back_to_the_parent_row()
+    {
+        await using var database = await PackDatabase.CreateAsync();
+        await using (var seed = database.NewContext())
+        {
+            await ItemsSeeder.SeedAsync(seed);
+        }
+
+        static string QuestPack(string quantity) => $$"""
+            entities:
+              - slug: pack-quest-log
+                typeKey: side
+                displayName: Pack Quest Log
+                minLevel: 1
+                objectives:
+                  items:
+                    - type: collect
+                      target: health-potion
+                      quantity: {{quantity}}
+            """;
+
+        using var pack = new PackDirectory(("quests/log.yaml", QuestPack("2")));
+
+        await using (var created = database.NewContext())
+        {
+            var result = await new ContentPackImporter(created).ImportAsync(ContentPackReader.Read(pack.Root));
+            result.Succeeded.Should().BeTrue(result.Validation.Issues.FirstOrDefault()?.Message);
+        }
+
+        pack.Write("quests/log.yaml", QuestPack("3"));
+
+        await using var context = database.NewContext();
+        var updated = await new ContentPackImporter(context).ImportAsync(ContentPackReader.Read(pack.Root));
+
+        updated.Updated.Should().Be(1, "an owned JSON collection is part of the entity, so editing it is an update");
+
+        var quest = await context.Quests.AsNoTracking().SingleAsync(entity => entity.Slug == "pack-quest-log");
+        quest.Objectives.Items.Should().ContainSingle().Which.Quantity.Should().Be(3);
+    }
+
     /// <summary>A throwaway SQLite content catalog; each context sees the same in-memory database.</summary>
     private sealed class PackDatabase : IAsyncDisposable
     {
