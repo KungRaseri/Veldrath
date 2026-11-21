@@ -4667,9 +4667,10 @@ table exists. Four facts for the next session:
   references with no slug (`ZoneStockItem.cs:22-31`), while the importer's whole update path is
   `FindBySlugAsync` on a `ContentBase` (`ContentPackImporter.cs:119`) and its child reconciliation hangs off a parent
   navigation (`ContentPackImporter.cs:275-306`); the `Zone` being named lives in `ApplicationDbContext`
-  (`Veldrath.Server/Data/Entities/Zone.cs:7`, `ApplicationDbContext.cs:34`), a different database, so a pack family
-  would need a phantom zone row in the content database purely to give the importer something to hang the list off —
-  and it would still buy no validation, because the pack validator cannot resolve a gameplay zone id. Option 3 (a
+  (`Veldrath.Server/Data/Entities/Zone.cs:7`, `ApplicationDbContext.cs:34`), a context an import never opens — one
+  Postgres database, four contexts (`Program.cs:97-108`, `:240`) — so a pack family would need a phantom zone row in
+  `ContentDbContext` purely to give the importer something to hang the list off, and it would still buy no validation,
+  because the pack validator cannot resolve a gameplay zone id or read the live `Zone` table. Option 3 (a
   reconciling seeder) stays rejected: two writers to one table disagreeing in silence is the exact failure this
   decision prevents. **Ownership:** `Authors()` is the truth — the seeder materialises it on a database that has never
   been seeded, a migration carries the delta on one that has, nothing else writes these rows. Adding a row still needs

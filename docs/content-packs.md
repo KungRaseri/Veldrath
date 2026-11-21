@@ -129,11 +129,13 @@ Warnings fail nothing: they are printed and counted.
 - **The content registry is not maintained by the importer.** `ContentRegistry` rows still come from the seeder that
   owns them; the write endpoints do not maintain it either.
 
-## Changing what a town sells (the one family with no pack)
+## Changing what a town sells (the one catalogue family with no pack)
 
-`ZoneStockItems` — the rows that say which items a town's merchants offer — is the one authored family with no pack.
-A row is a zone↔item join with no slug and no display name, so it is absent from `ContentEntityTypes`, the Foundry
-schema and the importer on purpose, and `RealmEngine.Data/Seeders/ZoneStockSeeder` is the only thing that writes it.
+`ZoneStockItems` — the rows that say which items a town's merchants offer — is the one authored catalogue family with
+no pack. A row is a zone↔item join with no slug and no display name, so it is absent from `ContentEntityTypes`, the
+Foundry schema and the importer on purpose, and `RealmEngine.Data/Seeders/ZoneStockSeeder` is the only thing that
+writes it. (The support tables — `ContentRegistry`, `TraitDefinitions`, `NamePatternSets` — carry no pack either, but
+they are vocabulary and configuration, not per-entity content.)
 
 **The decided procedure is a data migration — not a pack, and not a reconciling seeder.** Adding a row needs no
 migration at all: the seeder inserts every authored row the database is missing, on the next start
@@ -146,12 +148,15 @@ migration at all: the seeder inserts every authored row the database is missing,
 
    ```bash
    dotnet tool restore
+   dotnet restore RealmEngine.Data   # dotnet ef aborts with NETSDK1004 without restored assets
    dotnet ef migrations add ReconcileZoneStockShelves --context ContentDbContext \
      --project RealmEngine.Data --output-dir Migrations
    ```
 
-   A shelf edit changes no model, so the generated `.Designer.cs` and `ContentDbContextModelSnapshot.cs` must come
-   back byte-identical. If the snapshot changes, your edit touched more than the shelf.
+   A shelf edit changes no model, so `git status` must show exactly the two new files and
+   `ContentDbContextModelSnapshot.cs` must come back unchanged. If the snapshot changed, your edit touched more than
+   the shelf. (The generated `.Designer.cs` is a copy of the snapshot with a different class name and `[Migration]`
+   id — that is expected, and it is not the thing to compare.)
 3. Replace the generated `Up` with one statement per removed pair. The `(ZoneId, ItemSlug)` pair is a row's only
    authored identity — `Id` is a generated `Guid`, so a migration cannot name the row it means to remove:
 
@@ -171,6 +176,11 @@ migration at all: the seeder inserts every authored row the database is missing,
        // Revert the seeder edit and let the next start insert the missing rows.
    }
    ```
+
+   A reorder is a removal of the same kind: `Rows()` sets `SortOrder = (index + 1) * 10`
+   (`ZoneStockSeeder.cs:148`), so deleting the `(ZoneId, ItemSlug)` row makes the seeder re-insert it at its new index
+   on the next start. A plain `SortOrder` update in the migration would work too, but the `DELETE` is the one shape
+   you need anyway.
 4. Verify against a real Postgres, not on faith. Boot the server once (it migrates the content database at
    `Program.cs:405-408` and then seeds), then:
 

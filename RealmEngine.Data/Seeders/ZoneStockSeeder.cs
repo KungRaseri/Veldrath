@@ -23,7 +23,8 @@ namespace RealmEngine.Data.Seeders;
 /// <para>
 /// An item is only listed if the item catalog can sell it — a row with a price of zero is not purchasable, and the
 /// list is checked against the seeded catalog by <c>ZoneStockSeederTests</c>. Like every other content seeder this
-/// one inserts only what is missing: an edited row belongs to the importer, not to a restart.
+/// one inserts only what is missing: an edited row belongs to a data migration (<c>docs/content-packs.md</c>), not to
+/// a restart.
 /// </para>
 /// </remarks>
 public static class ZoneStockSeeder
