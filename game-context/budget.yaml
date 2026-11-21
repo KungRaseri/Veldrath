@@ -46,8 +46,8 @@ level_range_justification: >-
 units:
   hp: "absolute HP, authored as ArchetypeStats.Health"
   damage_per_hit: >-
-    authored base, ArchetypeStats.Damage; the engine adds (enemyLevel - 1) per hit
-    (CombatHelpers.cs:90), so effective hit = band value + level - 1
+    authored base, ArchetypeStats.Damage. The level-scaled base physical damage is
+    max(1, projected damage + enemy level - 1), before defense (CombatHelpers.cs:88-95).
   xp: "total XP the enemy is worth before the damage-share split (CombatRewards.cs:69-86)"
   gold: "total gold the enemy is worth before the split; per-kill roll between min and max"
   drop_chance: >-
@@ -174,9 +174,10 @@ wiring:
     detail: >-
       Stats.Damage lands on Enemy.BasePhysicalDamage (ActorTemplateProjection.cs:128-131 — the
       archetype value, or a named instance's override composed over it: 12 for elder-goblin-chief
-      and 18 for captain-blackthorn, ActorInstancesSeeder.cs:114, :141), and a fight reads it as
-      BasePhysicalDamage + (enemy level - 1) minus the player's CON modifier
-      (CombatHelpers.cs:88-95 — the addition at :90, the CON term at :93). Every hostile seeded
+      and 18 for captain-blackthorn, ActorInstancesSeeder.cs:114, :141). CombatHelpers.cs:88-95
+      adds enemy level minus one and floors the level-scaled base at one. Constitution reduces
+      that base by a nonnegative amount, defending blocks half the scaled base (rounded down),
+      and the final damage cannot drop below one. Every hostile seeded
       archetype authors it (3 giant-rat, 7 bandit-ruffian, 42 fire-ancient —
       SpawnedEnemyStatProjectionTests.cs:57, :117, :41), so 5 (Enemy.cs:136) is only the unauthored
       default.
@@ -271,8 +272,9 @@ loot:
     (AttackEnemyHubCommand.cs:372), and the "gold" domain is honoured only by the chest path
     (LootTableService.cs:274-277). Enemy gold is SpawnedEnemy.GoldReward (ActorPoolResolver.cs:189).
   tables_per_archetype: >-
-    exactly one (ActorArchetype.LootTableId, ActorArchetype.cs:31-32), expanded to a one-element
-    list on the model (ActorTemplateProjection.cs:91; the LootIds helper is :161).
+    zero or one (nullable ActorArchetype.LootTableId, ActorArchetype.cs:31-32). The projection
+    emits a one-element list when it resolves a slug, otherwise an empty list
+    (ActorTemplateProjection.cs:91, :161; AttackEnemyHubCommand.cs:339-340).
   recipient: >-
     the character landing the killing blow takes every drop (AttackEnemyHubCommand.cs:335-344),
     while XP and gold split across damage contributors (CombatRewards.cs:69-86). Loot is not
