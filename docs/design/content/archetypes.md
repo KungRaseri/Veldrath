@@ -543,12 +543,15 @@ Phase 5+.
 
 **Proposal 12 — the pyrelings do not serve the Fire-Ancient. (Accepted.)**
 **Claim:** `pyreling` clusters where the vents are hottest; its relation to the `fire-ancient` is
-shared ground, not service, command or cult. **Reason:** D4's `fire-ancients-chamber` row says the room
-is "guarded by the pyrelings that **serve** it", which is a faction-shaped claim inside the endgame
-zone — the one thing this card forbids inventing — and a later quest or dialogue will build on it.
-**Touches:** the `fire-ancients-chamber` prose in `docs/design/content/pool-matrix.md` (revise to "the
-pyrelings that den in it"), the `fire-ancient` placement card. **Recorded in:** the D4 matrix when L3
-(`t_6c70dc04`) lands it — **the correction is binding at that point; see the decisions block below.**
+shared ground, not service, command or cult. **Reason:** D4's `fire-ancients-chamber` row originally
+described the room as guarded by pyrelings that served it — a faction-shaped claim inside the
+endgame zone, the one thing this card forbids inventing, and a later quest or dialogue will build on
+it. The row now reads "the room is guarded by the pyrelings that den in it" (`pool-matrix.md` §3,
+the `kaldrek-maw` / `fire-ancients-chamber` row), corrected in `a857dcf0` (C4); no faction-shaped
+claim may be built on the old wording. **Touches:** the `fire-ancients-chamber` prose in
+`pool-matrix.md` (corrected there to "the pyrelings that den in it"), the `fire-ancient` placement
+card. **Recorded in:** `pool-matrix.md` §3, the `kaldrek-maw` / `fire-ancients-chamber` row, which
+carries the correction — see the decisions block below.
 
 ### How this section was checked
 
@@ -596,8 +599,8 @@ section above; where the two disagree, this block governs.
 4. **`kaldreks-heart`'s display name is "The Heart of the Maw".** **K1's row R16 governs**; the earlier
    architect wording (`t_7a2beb7d` decision 1, "The Maw's Heart") does not, and is superseded. The slug
    `kaldreks-heart` is permanent identity and does not change.
-5. **Proposal 12 corrects prose in `pool-matrix.md`, and that correction is binding.** D4's
-   `fire-ancients-chamber` row reads "guarded by the pyrelings that **serve** it"; the phrase "guarded
-   by the pyrelings that serve it" must go, revised to "the pyrelings that den in it". The matrix is
-   not in the repository yet — L3 (`t_6c70dc04`) lands it, and C4 (`b27-30`) may touch the same line —
-   so **whichever card touches that line applies the correction**; it may not be landed as written.
+5. **Proposal 12's correction to `pool-matrix.md` is binding, and it has landed.** D4's
+   `fire-ancients-chamber` row described the room as guarded by pyrelings that served it; it now
+   reads "the room is guarded by the pyrelings that den in it" (`pool-matrix.md` §3, the
+   `kaldrek-maw` / `fire-ancients-chamber` row), corrected in `a857dcf0` (C4). The obligation this
+   decision carried is discharged.
