@@ -64,7 +64,9 @@ public static class ZoneStockSeeder
     public static ZoneStockItem[] Authors()
     {
         // Crestfall (L0) is the crossroads market: staples, a starter blade and the two reagents a new character
-        // can use. Ten rows — a third of the catalog, the low end of the approved band.
+        // can use. Nine rows — a third of the catalog, the low end of the approved band. Nothing here is dearer
+        // than 30 gold, so rune-of-fire is the shelf ceiling that sizes the L0 purse
+        // (merchants.gold_basis in game-context/budget.yaml): adding a dearer row silently re-bases that band.
         string[] crestfall =
         [
             "health-potion",
@@ -76,7 +78,6 @@ public static class ZoneStockSeeder
             "essence-of-fire",
             "iron-sword",
             "leather-cap",
-            "hunters-bow",
         ];
 
         // Aldenmere (L5) sells mead-town practicality plus the first real elixir: contracts, cures and the two
@@ -98,6 +99,8 @@ public static class ZoneStockSeeder
         ];
 
         // Tolvaren (L10) is a port: rope, pitch and magic bought by the crate, so the reagents and gems dominate.
+        // Its ceiling is fire-ruby at 200 — the dearest row on the shelf and the figure that sizes the L10 purse
+        // (merchants.gold_basis in game-context/budget.yaml). The orbs belong to Skarhold, which handles both.
         string[] tolvaren =
         [
             "mana-potion",
@@ -109,7 +112,7 @@ public static class ZoneStockSeeder
             "rune-of-power",
             "essence-of-shadow",
             "scroll-of-fireball",
-            "orb-of-force",
+            "fire-ruby",
             "iron-chestplate",
         ];
 

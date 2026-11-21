@@ -32,14 +32,16 @@ status: >-
 covers_levels: [1, 30]
 level_range_justification: >-
   Card asked for 1-20; the seeded world already has zones at L20, L23 and L26
-  (ZoneLocationsSeeder.cs:521, :547, :573) and hostile archetypes to MinLevel 26
-  (ArchetypeSeeder.cs:662). 1-26 covers 1-20 with no gap, so it is the 1-20 table plus
-  the three zones that would otherwise be stranded. See decision 1. Extended to 1-30 on
-  2026-11-20 by C4, because the seeded content already reaches level 30 on its own:
-  fire-ancient is seeded 26-30 (:662-663) and all three kaldrek-maw rooms run to L30
-  (ZoneLocationsSeeder.cs:590, :598, :606 — 26-30, 26-30 and 28-30), so with 1-26 the top
-  band stops four levels short of the rooms it has to describe. Levels 27-30 are the four
-  the ladder was missing, not new content.
+  (ZoneLocationsSeeder.cs: the ashfields, smoldering-reach and kaldrek-maw zone
+  headers) and hostile archetypes to MinLevel 26 (ArchetypeSeeder.cs:662). 1-26
+  covers 1-20 with no gap, so it is the 1-20 table plus the three zones that would
+  otherwise be stranded. See decision 1. Extended to 1-30 on 2026-11-20 by C4,
+  because the seeded content already reaches level 30 on its own: fire-ancient is
+  seeded 26-30 (:662-663) and all three kaldrek-maw rooms run to L30
+  (ZoneLocationsSeeder.cs: the maw-descent, fire-ancients-chamber and kaldreks-heart
+  room blocks — 26-30, 26-30 and 28-30), so with 1-26 the top band stops four levels
+  short of the rooms it has to describe. Levels 27-30 are the four the ladder was
+  missing, not new content.
 
 units:
   hp: "absolute HP, authored as ArchetypeStats.Health"
@@ -152,9 +154,9 @@ wiring:
   level:
     live: true
     detail: >-
-      spawn level is the archetype's MinLevel and nothing else, no level roll
-      (ActorTemplateProjection.cs:87); MaxLevel only feeds the seeded-encounter overlap rule
-      (SeededEncounterCoverageTests.cs:132-143). One archetype per band, not per level.
+      pooled spawn level is the archetype's MinLevel, with no level roll
+      (ActorTemplateProjection.cs:87); MaxLevel feeds the seeded-encounter overlap rule
+      (SeededEncounterCoverageTests.cs:207-239). One archetype per band, not per level.
       Because nothing rolls, an archetype banded 26-30 spawns at 26 in every room it is pooled
       in — including a room whose floor is 28. That is the whole reason b27-30 has two authored
       rows instead of one 26-30 row: ash-eater (26-30) spawns at 26 for fire-ancients-chamber,
@@ -207,7 +209,7 @@ wiring:
     live: false
     detail: >-
       Traits.Boss/Elite are labels with no stat effect (ActorArchetype.cs:107-110); Boss is read
-      only by the seed guard (SeededEncounterCoverageTests.cs:163-169).
+      only by the seed guard (SeededEncounterCoverageTests.cs:241-265).
 
 spawn:
   roster_size: [2, 4]
@@ -283,12 +285,12 @@ bosses:
     boundary and a reset notion (ZoneLocation.cs:85-90). NOT ENFORCEABLE TODAY: nothing marks a
     pool entry unique, so a pooled boss can fill every slot of a 2-4 roster
     (ActorPoolResolver.cs:47-51). See the gap list.
-  flag: "Traits.Boss = true; no stat effect (ActorArchetype.cs:107-108)"
+  flag: "Traits.Boss = true; no stat effect (ActorArchetype.cs:118-119)"
 
 elites:
   hp_multiplier: [1.5, 2.5]
   xp_multiplier: [1.5, 2.5]
-  flag: "Traits.Elite = true; also a label with no stat effect (ActorArchetype.cs:109-110)"
+  flag: "Traits.Elite = true; also a label with no stat effect (ActorArchetype.cs:120-121)"
 
 omitted:
   ac: >-
@@ -346,8 +348,8 @@ merchants:
   stock_size_basis: >-
     The catalogue holds 24 purchasable items, and the shop narrows it twice at GetShopCatalogHubCommand.cs:121.
     Price > 0 drops exactly one of the 25 seeded rows (lost-cargo, value 0, ItemsSeeder.cs:80), leaving 24; the
-    zone-stock half of the same filter narrows those 24 to the town's own shelf — ten at crestfall, twelve at
-    aldenmere, eleven at tolvaren, twelve at skarhold (ZoneStockSeeder.cs:68-139). 8-16 is a merchant carrying a
+    zone-stock half of the same filter narrows those 24 to the town's own shelf — nine at crestfall, twelve at
+    aldenmere, eleven at tolvaren, twelve at skarhold (ZoneStockSeeder.cs:70-143). 8-16 is a merchant carrying a
     third to two thirds of the CATALOGUE, not of a shelf. The low end brackets the legacy per-type defaults of 10
     (weaponsmith, armorer) and 15 (apothecary, and the fallback for any other type) at ShopEconomyService.cs:422-429;
     the high end stops short of the 20 a general store hands out, because "the whole catalog" is the vending-machine
@@ -398,7 +400,7 @@ merchants:
     stock: >-
       Authored per zone and live. ZoneStockItems (RealmEngine.Data/Entities/Content/ZoneStockItem.cs) holds one row
       per item per town, unique on (ZoneId, ItemSlug); migration 20261121004324_AddZoneStockItems creates the table,
-      and RealmEngine.Data/Seeders/ZoneStockSeeder.cs authors the four reaching settlements at 10 / 12 / 11 / 12
+      and RealmEngine.Data/Seeders/ZoneStockSeeder.cs authors the four reaching settlements at 9 / 12 / 11 / 12
       rows — inside stock_size [8, 16], and no two towns offering the same shelf. GetShopCatalogHubCommand.cs:115-127
       reads that list instead of the whole catalogue, so a zone offers only what it stocks. What the table is not
       is a stock level: ZoneStockItem.cs:13-16 states the model — availability, not inventory depth — and no

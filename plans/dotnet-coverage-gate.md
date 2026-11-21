@@ -14,11 +14,15 @@
 > all four workflows; it produces the same `CoverageReport/Cobertura.xml`, and the floors were
 > re-verified against it unchanged.
 
-**Decided 2026-11-03, measured on `kung-lab-hermes`, not yet implemented.** This file holds
-the decisions only; the implementing cards are listed at the end. It exists because the .NET
-half of the 90% coverage goal has **no gate at all**: [`coverage.runsettings`](../coverage.runsettings:1)
-configures a cobertura collector and each workflow uploads a `CoverageReport/` artifact, but
-nothing compares the number to a threshold — `dotnet test` is green at any coverage level.
+**Decided 2026-11-03, measured on `kung-lab-hermes`, implemented since (PR #21, `ab5dfe72`).** The
+shipped gate is [`coverage-floors.json`](../scripts/coverage-floors.json:1) plus
+[`check-dotnet-coverage.mjs`](../scripts/check-dotnet-coverage.mjs:1), run by
+[`ci-coverage.yml`](../.github/workflows/ci-coverage.yml:1) over the report
+[`coverage-report.sh`](../scripts/coverage-report.sh:1) merges. This file holds the decisions and
+the numbers they were made on. It was written because the .NET half of the 90% coverage goal had
+**no gate at all**: [`coverage.runsettings`](../coverage.runsettings:1) configures a cobertura
+collector and each workflow uploads a `CoverageReport/` artifact, but nothing compared the number to
+a threshold — `dotnet test` was green at any coverage level.
 
 The web half already enforces 90% globally with per-glob floors
 ([`web-feature-parity-and-coverage.md`](web-feature-parity-and-coverage.md)). This file decides
@@ -705,6 +709,20 @@ printed table agree with the report humans read.
 ---
 
 ## Implementation pieces
+
+> **Implementation state (2026-11-20).** P1 shipped in PR #21 (`ab5dfe72`): the four files it names
+> are on `development` and [`ci-coverage.yml`](../.github/workflows/ci-coverage.yml:1) runs them.
+> P2 shipped as the `IRandomSource` injection series the floors file's own comment cites for its
+> 0.02-point run-to-run spread. P3–P6 are the test-writing pieces that carried the floors up — they
+> sit at 90% line or above on every assembly but `Veldrath.Discord` (88 against 89.59% measured),
+> and at 94% globally: past the 74% baseline and the 90% target this file records. P7 shipped as
+> `f1b70eb3` (all five workflows on `[ main, development ]`), and PR #180, still open, narrows that
+> set again — see the Status note above. Of P8, the [`AGENTS.md`](../AGENTS.md:255) row landed and
+> the other two did not: [`testing.md`](../.github/instructions/testing.md:276) still says
+> `coverlet.collector` v10.0.1 (it is 10.1.0 in
+> [`Directory.Packages.props`](../Directory.Packages.props:82)) and has no floor table or ratchet
+> protocol, and [`.roo/skills/run-all-tests/SKILL.md`](../.roo/skills/run-all-tests/SKILL.md:8)
+> still says seven test projects and 3,870 tests. The pieces below are kept as the planning record.
 
 Branch-sized, in order. Each names its verification gate.
 

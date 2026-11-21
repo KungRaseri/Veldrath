@@ -35,7 +35,7 @@ ramps**, **P0/P1/P2 per row**, and **the shape of one bulk request**. Everything
 
 ## 1. The surface does not exist yet — read this before anything else
 
-An asset with no surface does not ship ([asset-specs §6.1](../asset-specs.md)). Checked in this
+An asset with no surface does not ship ([asset-specs §6 step 1](../asset-specs.md)). Checked in this
 worktree:
 
 | Question | Evidence | Answer |
@@ -354,7 +354,7 @@ and **re-lit, never redrawn**, in the others.
 | `gull-rider-brute` | 16–18 | saltcliff | humanoid | — | **P2** | skirmisher kit, heavier build |
 | `storm-harrower` | 16–18 | saltcliff | spirit | elite | **P1** | weather-form; no parent shape |
 | `cliff-breaker` | 16–18 | saltcliff | beast | — | **P1** | winged artillery; new mass |
-| `undertow` | 16–18 | saltcliff | spirit | — | **P1** | a current, not a body — see §6.7 |
+| `undertow` | 16–18 | saltcliff | spirit | — | **P1** | a current, not a body — see §6 item 7 |
 | `drowned-cantor` | 19–20 | saltcliff | unquiet | — | **P2** | revenant's corpse, robed and singing |
 | `dock-hand` | — | saltcliff | townsfolk | npc | **P2** | factor's civilian pose, dock kit |
 | `cinderling` | 19–20 | cinderplain | spirit | — | **P1** | Cinderplain anchor; new emissive mass |
@@ -512,7 +512,7 @@ the same creature.
 2. **Faction marks for factionless rows.** 25 of 27 hostile rows are `none recorded`. A badge would
    assert canon that proposals 6–7 explicitly withheld. Only the gull-rider harpoon exists.
 3. **Region character beyond biome.** Greymoor, Saltcliff and Cinderplain are working names and
-   their character is Q2 TBD (`GAME.md` §8.3). The ramps are built from the zones' *seeded biome
+   their character is Q2 TBD (`GAME.md` §8 item 1). The ramps are built from the zones' *seeded biome
    words*; they will be re-decided when region prose exists. I will not smuggle "a proud seafaring
    culture" into a palette.
 4. **Any hue the palette does not hold.** No green moorland, no purple heather, no blue sea, no cyan
@@ -591,7 +591,7 @@ changed.
 | §5.1 | first set is the nine hostiles; which five hostiles form the pilot is left to the production card | decision 3 — the draft's pilot named two townsfolk, now P1 |
 | §5.2, §5.3 | the 128 px budget and the directory cite `asset-specs` §3 and §5 instead of `PROPOSED` | decision 4 |
 | §7 | criterion 1 restated as nine slugs, 27 files | decision 3; and the draft's "28 files = 14 × {256, 128, 64}" did not add up (3 × 14 is 42, while the plan's 28 counts exports only) |
-| §5.2, §5.4, §7.1, `asset-specs` §3 | one master convention stated once and cited three times: the 256 PNG-24 is **committed** and never served, only the layered working file stays in `~/creative-assets`; §5.4's "28" now names itself a probe of the still-draft fourteen-row request | review of this landing: `asset-specs` said the master was "kept out of the repository" while §7 criterion 1 counted 27 committed files |
+| §5.2, §5.4, §7 criterion 1, `asset-specs` §3 | one master convention stated once and cited three times: the 256 PNG-24 is **committed** and never served, only the layered working file stays in `~/creative-assets`; §5.4's "28" now names itself a probe of the still-draft fourteen-row request | review of this landing: `asset-specs` said the master was "kept out of the repository" while §7 criterion 1 counted 27 committed files |
 | §5.3–§5.6, the request | the request reads `approved 2026-11-20`; `assets[]` holds the nine P0 hostiles, the five townsfolk sit in `deferred[]` at P1, the two `PROPOSED` comments cite `asset-specs` §3 and §5, and the acceptance block asks for 27 files — the same count as §7 | D5 defect 2 (`t_d805cdf4`), applied by F2 (`t_4e58e1ec`): the request still read `DRAFT`, listed fourteen P0 including the five townsfolk decision 3 had moved to P1, and asked for 28 files where §7 asks for 27 |
 
 ### Left open on purpose

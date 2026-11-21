@@ -83,7 +83,8 @@ Three seed facts disagree with older design text. This document follows the seed
   `forge-quarter`, `lava-bridge` and — until amendment 4 — `scorched-battlefield`. Trusting the plan's
   list is exactly how a "safe" location ends up pooled, so §4 is built from the parse, not the plan.
 - **`plans/content-seeding-pass.md:71` lists `sunken-estate` as a hostile candidate.** The seeder marks it
-  `SafeRespawn = true` (`ZoneLocationsSeeder.cs:220-227`). It is excluded here; that plan line is stale.
+  `SafeRespawn = true` (`ZoneLocationsSeeder.cs`, the `sunken-estate` block). It is excluded here; that plan
+  line is stale.
 - **`ashfields` has one respawn anchor, not two.** Since amendment 4 the flag sits on `obsidian-grove`
   (visible, the node nearest the zone's arrival point) and on `ash-shrine` (hidden, quest-locked, so never
   a candidate — the resolver reads `GetByZoneIdAsync`, which filters `IsHidden`). `scorched-battlefield`
@@ -189,7 +190,9 @@ occupies. Every adjacent entry is listed here: **22 sit above the entry band and
 
 Verification was a script over the two seeder files and this matrix's own data, not by eye: it parses all
 67 location blocks, all 17 seeded archetypes, the D1 roster and the 18 packs, then checks the rules above
-plus the two seeder guard tests (`SeededEncounterCoverageTests.cs:28-52`, `:77-144`) entry by entry, and
+plus `SeededEncounterCoverageTests.Settlements_and_dungeon_lobbies_never_spawn_anything`,
+`….Every_other_location_can_spawn_something` and
+`….Every_pooled_archetype_exists_and_is_hostile` entry by entry, and
 proves the exclusion set equals town ∪ `SafeRespawn` ∪ lobby exactly. Result: `PROBLEMS: none`, with the
 three `cinderling` zone-list deviations reported as warnings, not failures (§7).
 
@@ -405,7 +408,7 @@ amendments 3 and 4 the only hostile location left in their zone (`scorched-battl
 
 The ranges are D1's bands, not new numbers: D1 says a row's band is its level band, and the seeder needs
 `MinLevel`/`MaxLevel` to run the overlap check. A pool entry whose archetype is missing logs an Error and
-spawns nothing (`ActorPoolResolver.cs:52-60`) and fails `SeededEncounterCoverageTests.cs:77-110`, so the
+spawns nothing (`ActorPoolResolver.cs:52-60`) and fails `SeededEncounterCoverageTests.cs:171-205`, so the
 order of landing is fixed: **archetypes first, then pools.**
 
 ## 7. The tail — levels 21–30, where this matrix cannot fully meet its own rules
@@ -441,8 +444,8 @@ things that exist at that height:
   continued from `b23-26` by the step the ladder last took — one basis line per value, in `budget.yaml`
   itself, so the arithmetic can be re-run rather than re-argued.
 - **No hostile archetype was re-banded to fill it.** The band exists because the rooms run to level 30
-  (`ZoneLocationsSeeder.cs:590, :598, :606`), not because a slot needed a tenant. A band whose only seeded
-  occupant is a boss is the honest state of the ladder at 27–30.
+  (`ZoneLocationsSeeder.cs`, the three `kaldrek-maw` room blocks), not because a slot needed a tenant. A
+  band whose only seeded occupant is a boss is the honest state of the ladder at 27–30.
 - **No boss is authored for 27–30.** `fire-ancient` already occupies the tier and stays unpooled: boss
   placement is still held for the uniqueness mechanism D0 named.
 
@@ -586,7 +589,7 @@ Two things the translation has to respect, both from the importer's own document
 | An empty pool is only a **Warning**, because a safe location is legitimate | `spawn_pool_empty`, `ZoneLocationValidator`; `ActorPoolResolver.cs:39-45` |
 | `displayName` and `typeKey` are required on every entity | `display_name_missing`, `type_key_missing`, `ContentShapeRules.ValidateShared` |
 | A town, `SafeRespawn` location or lobby must not spawn anything | `SeededEncounterCoverageTests.cs:28-52`, and the same rule at runtime |
-| The level-overlap check still runs | `SeededEncounterCoverageTests.cs:112-144` |
+| The level-overlap check still runs | `SeededEncounterCoverageTests.cs:207-239` |
 
 **Landing order — this is the part that will bite.** The pools name 16 archetypes that do not exist yet,
 and the seeder only *inserts* (`plans/content-seeding-pass.md` §2: an existing slug is never updated). So:
@@ -601,9 +604,9 @@ and the seeder only *inserts* (`plans/content-seeding-pass.md` §2: an existing 
 2. then translate the 18 design files into `content/zonelocations/<zone>.yaml` (§8) and import them, which
    replaces that interim pair with the designed three;
 3. then run `dotnet test Veldrath.Server.slnx --filter Category=Validation` —
-   `SeededEncounterCoverageTests` is the gate that proves this document: every pooled archetype exists and
-   is hostile (`:77`), fits its location band (`:113`), settlements and lobbies stay quiet (`:28`), and
-   every other location spawns something (`:55`).
+   `SeededEncounterCoverageTests` is the gate that proves this document:
+   `Every_pooled_archetype_exists_and_is_hostile`, `Every_pooled_archetype_fits_its_location_level_band`,
+   `Settlements_and_dungeon_lobbies_never_spawn_anything` and `Every_other_location_can_spawn_something`.
 
 Step 3 was run for the trait changes already, and it is what proves amendment 3 and 4: 28 pools, 26 quiet
 locations, every hostile location pooled, and exactly one visible `SafeRespawn` node in `ashfields`.
