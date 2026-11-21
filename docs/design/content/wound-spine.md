@@ -140,7 +140,7 @@ carry; "zone L" is the single number the `Zone` row takes, matching the seeded c
 |---|---|---|---|---|---|---|---|
 | 1 | `vaelraeth` | **Vaelraeth** | The last ordinary ground, cut by a survey-marked threshold that still says the ordinary stops here. | 23–24 | 23 | Crosses a boundary whose line is not where the ground changes, and finds the first Calethic marks. Everything they fight drifted in from Cinderplain and none of it has drifted out. | Where the boundary actually is — the marks and the change in the ground do not agree, and the zone never says which came first. |
 | 2 | `rektheld` | **Rektheld** | The outer administrative ring: the ground that processed arrivals, still processing, with nothing arriving. | 23–25 | 24 | Walks a route built as a queue: doors that open on nothing, counters with no clerks, the only written record of the heartland's own names. | What was being processed. The forms carry a field with no label, and it stays unlabelled. |
-| 3 | `orneld` | **Orneld** | The unmaking-ground: where the rules of magic landed, and the wrongness is local — the same act gives a different answer in the same place. | 24–26 | 25 | Crosses the densest wrongness on foot and is asked, for the only time in the game, **not to use their kit**: steel, rope and nerve still behave, abilities are a hazard. | Why the change settled here — whether it was aimed, or dropped, or left where a resealing attempt failed. |
+| 3 | `orndaeld` | **Orndaeld** | The ground the unmaking left: where the rules of magic landed, and the wrongness is local — the same act gives a different answer in the same place. | 24–26 | 25 | Crosses the densest wrongness on foot and is asked, for the only time in the game, **not to use their kit**: steel, rope and nerve still behave, abilities are a hazard. | Why the change settled here — whether it was aimed, or dropped, or left where a resealing attempt failed. |
 | 4 | `draekeld` | **Draekeld** | The channel-ground: the one place in the heartland built to put a question across the compact. It was used. | 25–26 | 26 | Performs the region's single verb before the door: leaves something at the channel — a thing, a name, a record of their own. The game records the giving and returns nothing. | Whether anything received it, and whether the channel ever answered anyone. |
 | 5 | `naelditheld` | **Naelditheld** | The seal-threshold: a door the Caleth built to be closed, standing open, with an antechamber in front of it instead of a chamber. | 26 | 26 | Arrives, reads what the door was built for, and performs the region's last and only act: they close it. They cannot open, break, bargain, or be answered. Nothing stands in front of the door to test them. | What is behind the door, what the closing does to it, and whether anything on the far side notices. |
 
@@ -167,14 +167,15 @@ The names reach the player through the one channel that survived the Collapse: *
 They are therefore **intact Calethic**, and that is a fact about the region, not a stylistic choice.
 
 The naming pattern is the Caleth's own land-survey: `[function root] + [type root]`, function first
-(`calethic-language.md` §2.5). Three zones are **thresholds** (*theld*), two are **grounds** (*–eld*).
+(`calethic-language.md` §2.5). Three zones are **thresholds** (*raeth*, *theld*), two are **grounds** —
+*Draekeld* by its suffix (*–eld*), *Orndaeld* by what the ground kept (*daeld*).
 The repetition is deliberate and is itself pillar-1 content: the archive is legible in the names.
 
 | slug | Calethic | roots | junction / rule | derivation | status | Canon/source |
 |---|---|---|---|---|---|---|
 | `vaelraeth` | **Vaelraeth** | *vaeld* (proximity, the approach, border-of-the-sacred) + *raeth* (threshold, boundary marker) | `–d + r–` → D-drop: *vaeld + raeth* → **Vaelraeth** (`:72`) | "the approach-threshold" — the marked point where the ordinary ends | **attested** — the root dictionary's worked example for *vaeld*, one form only (note below) | `calethic-language.md:283` (*vaeld*), junction table `:72`, note `:76-78`, §2.6 |
 | `rektheld` | **Rektheld** | *rek* (administer, keep in place) + *theld* (controlled entry point, administered threshold) | `–k + TH–` = two phonemes, legal onset; syllabifies *rek.theld*; no reduction | "the administered threshold" — where arrivals were admitted, recorded and passed on | **coinage** — no attested word exists for the processing threshold; coined by §2.5 + §6 | `calethic-language.md:296` (*rek*), `:330` (*theld*), `:204-210` (§2.5), `:646-652` |
-| `orneld` | **Orneld** | *orn* (unmake, dissolve a structure) + *–eld* (ground, site) | `–n + e–`; syllabifies *or.neld*; vowel-initial place names attested by *Orveld* | "the unmaking-ground" — where a structure was undone and the ground kept the result | **coinage** | `calethic-language.md:276` (*orn*), `:136` (*–eld*), root form *Orneth* `:418` |
+| `orndaeld` | **Orndaeld** | *orn* (unmake, dissolve a structure) + *daeld* (ash, what-remains-after-fire — the trace left when a structured thing is undone) | `–n + d–` is two consonants at the junction, legal; syllabifies *orn.daeld*, D– being a legal onset | "the remains of the unmaking" — the trace the unmaking left, which is why the wrongness sits in the ground and not in the act | **coinage** — no attested word exists for what an unmaking leaves behind; coined by §2.5 + §6 | `calethic-language.md:276` (*orn*), `:339` (*daeld*), root form *Orneth* `:418` |
 | `draekeld` | **Draekeld** | *draek* (channel, medium, the interface) + *–eld* (ground, site) | `–k + e–`; syllabifies *drae.keld*; DR– is a legal onset (`:62`) | "the channel-ground" — the priestly interface, as a place | **coinage** — the dictionary's *draek* example is a role (*Draekori*), not a site | `calethic-language.md:282`, `:136` |
 | `naelditheld` | **Naelditheld** | *naeld* (seal permanently, close without exit) + *theld* (controlled entry point) | `–ld + TH–`: D preserved, epenthetic `–i–` liaison inserted → *naeldi.th–* (`:74`); syllabifies *nael.di.theld* | "the sealed threshold" — a controlled entry point whose designed end-state is sealed, with no key | **coinage**, governed by an attested rule | `calethic-language.md:280` (*naeld*), `:330` (*theld*), junction row `:74`, worked example *Naeldithorn* |
 
@@ -183,6 +184,17 @@ proper name (`calethic-language.md:283`, §2.6), with D-drop at the junction (`:
 authority now writes that form in the junction table too and records beneath the table that the
 lower-case string was a rendering convention, not a second spelling; there is no register variant
 (the administrative cell reads "same"). This spine cites the canonical form.
+
+**Renamed 2026-11-20, and why the coin is a coin.** Zone 3 stood as **Orneld**, *orn* + *–eld*, which
+is one letter from **Orveld**, the being's Calethic name (`calethic-language.md:277`, `:432`) — and a
+zone that reads as a typo of the antagonist deflates the reveal the region is built on. The fix is not
+a letter moved: the name is re-coined off a different second root, *daeld* (what a structured thing
+leaves when it is undone) instead of *–eld* (site), and the sense moves with it — the survey marked
+what the unmaking **left**, not the act of unmaking, which is also the only thing a surveyor could see
+without answering §3's "why here". Measured at edit distance: **3 from *Orveld*** (7 from *Vaelraeth*
+and from *Kael-Raeth*); no attested form in `calethic-language.md` is closer than 3 (*Dornkeld*,
+*Korn-Keld*, *Orveld*) and no other zone name in §3 is closer than 4 (*Draekeld*). *(F2, card
+`t_4e58e1ec`.)*
 
 **The two literacies, at region scale (pillar 4).** The scholarly telling is five exact names and a
 survey. The common telling is one noun — *the Wound* — and a refusal to name anything inside it. The
