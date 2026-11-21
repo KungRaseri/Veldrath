@@ -83,7 +83,8 @@ Three seed facts disagree with older design text. This document follows the seed
   `forge-quarter`, `lava-bridge` and — until amendment 4 — `scorched-battlefield`. Trusting the plan's
   list is exactly how a "safe" location ends up pooled, so §4 is built from the parse, not the plan.
 - **`plans/content-seeding-pass.md:71` lists `sunken-estate` as a hostile candidate.** The seeder marks it
-  `SafeRespawn = true` (`ZoneLocationsSeeder.cs:220-227`). It is excluded here; that plan line is stale.
+  `SafeRespawn = true` (`ZoneLocationsSeeder.cs`, the `sunken-estate` block). It is excluded here; that plan
+  line is stale.
 - **`ashfields` has one respawn anchor, not two.** Since amendment 4 the flag sits on `obsidian-grove`
   (visible, the node nearest the zone's arrival point) and on `ash-shrine` (hidden, quest-locked, so never
   a candidate — the resolver reads `GetByZoneIdAsync`, which filters `IsHidden`). `scorched-battlefield`
@@ -443,8 +444,8 @@ things that exist at that height:
   continued from `b23-26` by the step the ladder last took — one basis line per value, in `budget.yaml`
   itself, so the arithmetic can be re-run rather than re-argued.
 - **No hostile archetype was re-banded to fill it.** The band exists because the rooms run to level 30
-  (`ZoneLocationsSeeder.cs:590, :598, :606`), not because a slot needed a tenant. A band whose only seeded
-  occupant is a boss is the honest state of the ladder at 27–30.
+  (`ZoneLocationsSeeder.cs`, the three `kaldrek-maw` room blocks), not because a slot needed a tenant. A
+  band whose only seeded occupant is a boss is the honest state of the ladder at 27–30.
 - **No boss is authored for 27–30.** `fire-ancient` already occupies the tier and stays unpooled: boss
   placement is still held for the uniqueness mechanism D0 named.
 
