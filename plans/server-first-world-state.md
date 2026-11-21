@@ -210,10 +210,12 @@ Concretely:
 map edges) so they are unit-testable and Milestone B can reuse them;
 [`ContentAuditService`](../Veldrath.Server/Features/Content/ContentAuditService.cs) runs them once at startup against
 `ContentDbContext` and logs one summary plus one `Error` per finding, and can never block the host. On the play path,
-`ActorPoolResolver` no longer falls back to a `"common"` archetype — a location with no pool spawns nothing (that is
-authored content), while a pool naming an unknown slug logs `Error` and spawns nothing for it. Both location-entry
-paths now return `ContentWarnings`, which the hub forwards as `SystemMessage`, so the player is told rather than left
-with a silently empty map.
+`ActorPoolResolver` no longer falls back to a `"common"` archetype — a location with neither a pool nor a placement
+spawns nothing (that is authored content), while a pool naming an unknown slug logs `Error` and spawns nothing for
+it. Both location-entry paths now return `ContentWarnings`, which the hub forwards as `SystemMessage`, so the player
+is told rather than left with a silently empty map. #136 later added the placement path: a named `ActorInstance`
+spawns once ahead of any pool draw, so a location with a placement and no pool spawns exactly that actor. The rule
+above still holds for a location with neither — nothing spawns, and nothing is substituted.
 
 ## 5. Phases
 
