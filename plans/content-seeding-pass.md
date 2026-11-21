@@ -57,8 +57,8 @@ with `SafeRespawn = true` / `IsDungeon = false` that acts as its lobby (`halrow-
 
 `ZoneLocations.ActorPool` is empty on all 67 rows and
 [`ActorPoolResolver.SpawnRosterAsync`](../Veldrath.Server/Features/Characters/Combat/ActorPoolResolver.cs:80-86) returns
-an empty roster for an empty pool **by design** — the old "one random `common` enemy" fallback was removed so a
-missing pool could not be silently faked. Consequences:
+an empty roster when a location has no pool **and** nothing placed — **by design**, so the old "one random `common` enemy"
+fallback could not silently fake a missing pool. Hostile placements still spawn (`:105-109`). Consequences:
 
 - `TravelToNodeHubCommand` and `EnterZoneLocationHubCommand` spawn nothing, so the HUD's "Local" panel can only say
   "Nothing hostile is lurking here right now."
