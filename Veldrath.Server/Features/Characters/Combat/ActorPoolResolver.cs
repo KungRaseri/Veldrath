@@ -42,8 +42,10 @@ public class ActorPoolResolver
     }
 
     /// <summary>
-    /// Spawns a roster of 2–4 enemies from an actor pool. Falls back to one random
-    /// enemy from the <c>"common"</c> category when the pool is empty.
+    /// Spawns a roster of 2–4 enemies from an actor pool. An empty or <see langword="null"/> pool means "nothing
+    /// spawns here" — authored content, as in a safe town, not an error — so the method returns an empty roster and
+    /// spawns nothing instead of substituting a default archetype. Pool entries whose archetype is unknown or not
+    /// hostile are logged and skipped, never replaced.
     /// </summary>
     /// <param name="pool">Weighted archetype entries for this location, or <see langword="null"/>.</param>
     /// <returns>A list of ready-to-use <see cref="SpawnedEnemy"/> instances.</returns>
