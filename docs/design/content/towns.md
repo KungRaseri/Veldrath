@@ -83,7 +83,7 @@ Every name was machine-checked against those rules and against all 213 seeded sl
 | **Kaenvren** | *kaen* (duty) + *vren* (frontier); *kaen.vren* splits N coda + VR onset | "duty at the frontier" |
 | **Raekmeld** | *raek* (light-in-material) + *meld* (still water) | "glowing still-water" — a byname for mead |
 | **Dornrek** | *dorn* (below) + *rek* (administer) | "keeper of what is below" |
-| **Gaelraeth** | *gael* (water, flow) + *raeth* (threshold, marker) | "the water's threshold" |
+| **Gaelrek** | *gael* (water, flow) + *rek* (administer, keep in place) | "keeper of the water" |
 | **Laeldern** | *laeld* (root, the thing that holds ground) + *–ern* (agent) | "the anchor-keeper" |
 | **Thaeldren** | *thael* (illuminate) + *vren* (frontier); formal –l + vr– junction: V-drop plus the euphonic –d– bridge of *veldrath* | "the light at the frontier" |
 | **Daeldvaen** | *daeld* (ash) + *vaen* (iron); –ld + v– is two consonants, legal | "ash-iron" |
@@ -92,6 +92,15 @@ Every name was machine-checked against those rules and against all 213 seeded sl
 
 Regression names are bynames the town gave them, not birth names — a smith called Vaenern is called that
 because he works iron, which is how Common names survive in a place with no scribes.
+
+**Renamed 2026-11-20 — `Gaelraeth` → `Gaelrek`.** The harbour-master's byname stood as *gael* + *raeth*,
+which put it one letter from **Kael-Raeth** ("compact's threshold", `calethic-language.md` *kael* entry)
+and from **Vaelraeth**, the Wound's first zone. D3's check tested the 213 seeded slugs, so the lexicon was
+never in scope and the collision escaped. The replacement keeps the water root and takes *rek*
+(administer, keep in place) — the root *Dornrek* and *Velrek* already use — so the byname says what the
+officer does instead of sitting one letter off a threshold. Edit distance: **4 from *Kael-Raeth***, 4 from
+*Vaelraeth*; the nearest attested form is *Gaeldrak*/*Vaelren* at 2 and the nearest name in this table is
+*Velrek* at 2, so no listed form is within one edit. *(F2, card `t_4e58e1ec`.)*
 
 ---
 
@@ -171,7 +180,7 @@ its pool stays empty.
 
 | `slug` (archetype) | placement id | name | role | wants | sells / teaches / refuses | dialogue id |
 |---|---|---|---|---|---|---|
-| `harbour-master` **(new)** | `tolvaren-harbour-master` **(new)** | Gaelraeth | harbour-master | every hull accounted for at the turn of the tide | teaches the tide line and the safe moorings; refuses berth to a ship with no name on its papers | `harbour-master-greeting` **(new)** |
+| `harbour-master` **(new)** | `tolvaren-harbour-master` **(new)** | Gaelrek | harbour-master | every hull accounted for at the turn of the tide | teaches the tide line and the safe moorings; refuses berth to a ship with no name on its papers | `harbour-master-greeting` **(new)** |
 | `ship-chandler` **(new)** | `tolvaren-cliffroad-chandler` **(new)** | Laeldern | chandler, cliff road market | nothing on her shelves the sea has already ruined | sells rope, pitch and lamp oil; refuses line to a crew that will not say where it is bound | `ship-chandler-greeting` **(new)** |
 | `port-innkeeper` **(new)** | `tolvaren-saltcrow-keeper` **(new)** | Thaeldren | keeper, the Saltcrow | the cliff-road lamp burning from dusk to dawn | sells a bed and a hot meal; refuses to answer the harbour bell, or to say why | `port-innkeeper-greeting` **(new)** |
 

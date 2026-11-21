@@ -444,8 +444,9 @@ derive plan.
 `/home/kung/creative-assets/veldrath/specs/archetype-portraits-p0.yaml` — the first filled
 `asset-request.yaml` on this project, so it also fixes the schema for later requests (D5 checks
 against it). Its `canvas`, `format` and `budgets` blocks quote asset-specs; the 128 px budget and the
-directory are now asset-specs §3 and §5 rather than proposals. The file itself still carries its
-`DRAFT` status and two `PROPOSED` comments — [§8](#8-decisions) records why they were left alone here.
+directory are asset-specs §3 and §5 rather than proposals, and the two `PROPOSED` comments say so. The
+file reads `approved 2026-11-20`: F2 (`t_4e58e1ec`) reconciled its status, its scope and its acceptance
+counts with decisions 1–5 after D5 found it still described the draft it was approved from.
 
 The parts that decide the art:
 
@@ -454,8 +455,10 @@ The parts that decide the art:
   metal and worn surfaces, lit from the upper left with a warm gold rim on every edge and no ambient
   fill, high contrast, silhouette readable at 64 px, no text, no letters, no watermark, no border,
   no frame, no drop shadow, no baked glow.*
-- **Subject line:** one per slug, in the request's `assets[]` (all fourteen are written out — no
-  "and similar").
+- **Subject line:** one per slug, all fourteen written out — no "and similar". Nine sit in `assets[]`
+  (the P0 hostiles), five in `deferred[]` (the townsfolk, P1). `deferred[]` is not decoration:
+  `build_derive_plan.py` reads `assets` wholesale, so a P1 row left there regenerates a 28-export plan
+  against §7's 27 files.
 - **Post-process, in order:** `assetkit alpha --tol 24` → `assetkit trim --pad 4` →
   `assetkit resize … --width 256 --height 256` → `assetkit derive` → `portrait_check.py`.
 - **Anchor:** `veldrath-final-crest-transparent.png` for material and light only, never composition.
@@ -463,12 +466,11 @@ The parts that decide the art:
 ### 5.4 The export matrix, as a machine check
 
 `specs/archetype-portraits-derive.json` is generated from the request by
-`tools/build_derive_plan.py`, so the two cannot drift: 14 sources × 2 exports = 28 files, each with
-its dimension, format, quality, alpha requirement and byte budget. Those numbers are what the **draft**
-request yields — it still carries all fourteen Varenmark rows (§8, "Left open on purpose") — so the 28
-below is a probe of the machinery, not this document's P0 scope. The production card regenerates the
-plan from the nine-row request and *that* plan is the gate: 18 exports, one 256 PNG master per slug
-accompanying them.
+`tools/build_derive_plan.py`, so the two cannot drift. Regenerated after D5's defect 2 went in, it
+carries **9 sources × 2 exports = 18 files**, each with its dimension, format, quality, alpha
+requirement and byte budget — the nine P0 hostiles and no row from `deferred[]`. The 28-export run
+recorded below is the fourteen-row probe of 2026-11-20 that proved the machinery, not this document's
+scope. *That* regenerated plan is the gate: 18 exports, one 256 PNG master per slug accompanying them.
 
 ```bash
 # dry-run against throwaway masters — verified on 2026-11-20
@@ -590,15 +592,10 @@ changed.
 | §5.2, §5.3 | the 128 px budget and the directory cite `asset-specs` §3 and §5 instead of `PROPOSED` | decision 4 |
 | §7 | criterion 1 restated as nine slugs, 27 files | decision 3; and the draft's "28 files = 14 × {256, 128, 64}" did not add up (3 × 14 is 42, while the plan's 28 counts exports only) |
 | §5.2, §5.4, §7.1, `asset-specs` §3 | one master convention stated once and cited three times: the 256 PNG-24 is **committed** and never served, only the layered working file stays in `~/creative-assets`; §5.4's "28" now names itself a probe of the still-draft fourteen-row request | review of this landing: `asset-specs` said the master was "kept out of the repository" while §7 criterion 1 counted 27 committed files |
+| §5.3–§5.6, the request | the request reads `approved 2026-11-20`; `assets[]` holds the nine P0 hostiles, the five townsfolk sit in `deferred[]` at P1, the two `PROPOSED` comments cite `asset-specs` §3 and §5, and the acceptance block asks for 27 files — the same count as §7 | D5 defect 2 (`t_d805cdf4`), applied by F2 (`t_4e58e1ec`): the request still read `DRAFT`, listed fourteen P0 including the five townsfolk decision 3 had moved to P1, and asked for 28 files where §7 asks for 27 |
 
 ### Left open on purpose
 
-- **The request file** `/home/kung/creative-assets/veldrath/specs/archetype-portraits-p0.yaml` still
-  says `DRAFT`, still carries the two `PROPOSED` comments, and still lists all fourteen Varenmark rows
-  at `priority: P0` — the townsfolk included. The appendix below is a verbatim copy of that file, so
-  it was not edited either: this document records the decision, the request still holds the draft it
-  was approved from. Restating the request to nine P0 and flipping its status is a production-card
-  task, and the appendix is regenerated from it then.
 - **Which five hostiles form the pilot** is settled on the production card (§5.1), against the
   requirement stated there.
 - **The Wound's ramp stays provisional** — no zones, no consumer; re-decide it when the region gets
@@ -631,6 +628,7 @@ block is the read-only copy that travels with the document.
 #   palette{region,stops,material_ratio,light,forbidden}
 #   style_scaffold{suffix,negatives,tier,reference}
 #   assets[{slug,class,priority,pilot,base,subject,notes}]
+#   deferred[{slug,class,priority,base,subject,notes}]   # P1 rows, outside wave A1's derive plan
 #   post_process[...]
 #   acceptance[...]
 #   delivery{...}
@@ -638,7 +636,7 @@ block is the read-only copy that travels with the document.
 request:
   id: archetype-portraits-p0-varenmark-2026-11-20
   created: 2026-11-20
-  status: "DRAFT — awaiting human decisions 1-5 on card t_5a09d099"
+  status: "approved 2026-11-20 — decisions 1-5 on card t_5a09d099; nine P0 hostiles, five townsfolk P1"
   spec: docs/design/content/archetype-visuals.md
   owner: "dev-creative (production), dev-designer (acceptance)"
   unit: one region is one request
@@ -663,13 +661,13 @@ canvas:
   subject_fill: "80-92% of the canvas on the longer axis  # asset-specs §4.7 ~85%"
 
 budgets:
-  "128": "16 KB   # PROPOSED — asset-specs §3 has no row between 8 KB (64px) and 250 KB (illustration)"
+  "128": "16 KB   # asset-specs §3, 'Archetype portrait, 128px WebP'"
   "64": "8 KB     # asset-specs §3, 'Item icon, 64px'"
 
 naming:
   pattern: "archetype-<slug>-portrait-<size>.<ext>      # asset-specs §5 <purpose>-<subject>-<size>"
   files: "archetype-<slug>-portrait-256.png (master, not served), archetype-<slug>-portrait-128.webp, archetype-<slug>-portrait-64.webp"
-  directory: "web/client/static/images/archetypes/       # PROPOSED — new purpose dir under asset-specs §5"
+  directory: "web/client/static/images/archetypes/       # asset-specs §5, purpose directory"
   slugs: "verbatim from docs/design/content/archetypes.md; no aliases, no variants, one asset per slug"
 
 palette:
@@ -692,9 +690,12 @@ style_scaffold:
     readable at 64 px, no text, no letters, no watermark, no border, no frame, no drop shadow,
     no baked glow
   negatives: "no gradient background, no checkerboard, no vignette, no second figure, no UI chrome"
-  tier: "gpt-image-2-high for the five pilot assets; gpt-image-2-medium for the remaining nine"
+  tier: "gpt-image-2-high for the five pilot assets; gpt-image-2-medium for the remaining four"
   reference: "web/client/static/images/veldrath-final-crest-transparent.png — material and light only, never composition"
 
+# The draft's pilot named five, two of them townsfolk that decision 3 moved to P1. The three that
+# survive are flagged here; which five hostiles form the five-asset pilot is settled on the
+# production card (§5.1), not in this file.
 assets:
   - slug: giant-rat
     class: beast
@@ -723,24 +724,6 @@ assets:
       a road bandit in a hooded cloak of dyed sacking, one boiled-leather shoulder cap,
       a wrapped forearm, a short broad blade in the near hand held low and ready
     notes: "3/4; the blade breaks the upper right"
-  - slug: village-blacksmith
-    class: townsfolk
-    priority: P0
-    pilot: true
-    base: null
-    subject: >-
-      a broad-shouldered village blacksmith in a scorched leather apron over a wool shirt,
-      sleeves rolled to the elbow, a hammer resting head-down in one fist, soot to the forearms
-    notes: "front-on; the first townsfolk anchor, no outline break"
-  - slug: tavern-keeper
-    class: townsfolk
-    priority: P0
-    pilot: true
-    base: null
-    subject: >-
-      a shrewd innkeeper in a laced bodice and a work apron with a rag tucked at the waist,
-      a ring of keys on the hip, arms folded, lit by a low hearth
-    notes: "front-on; the hearth is the only warm source"
   - slug: drove-cur
     class: beast
     priority: P0
@@ -795,10 +778,31 @@ assets:
       a standing corpse in waterlogged grave-cloth, arms at its sides, head tilted, no face
       under the hood, one cold light burning inside the chest
     notes: "front-on but asymmetric; the shroud tatters downward and never reaches the frame"
+
+# P1 — the five Varenmark townsfolk: art before their towns ship, not wave A1 (decision 3). Their
+# subject lines are kept so the P1 pass is a re-prioritisation, not a rewrite. build_derive_plan.py
+# reads `assets` only, which is why these are not there: a P1 row left in `assets` regenerates a
+# 28-export plan against a 27-file acceptance (§7).
+deferred:
+  - slug: village-blacksmith
+    class: townsfolk
+    priority: P1
+    base: null
+    subject: >-
+      a broad-shouldered village blacksmith in a scorched leather apron over a wool shirt,
+      sleeves rolled to the elbow, a hammer resting head-down in one fist, soot to the forearms
+    notes: "front-on; the first townsfolk anchor, no outline break"
+  - slug: tavern-keeper
+    class: townsfolk
+    priority: P1
+    base: null
+    subject: >-
+      a shrewd innkeeper in a laced bodice and a work apron with a rag tucked at the waist,
+      a ring of keys on the hip, arms folded, lit by a low hearth
+    notes: "front-on; the hearth is the only warm source"
   - slug: wayfarer-elder
     class: townsfolk
-    priority: P0
-    pilot: false
+    priority: P1
     base: null
     subject: >-
       an old road-elder in a travel cloak with a patched hood, a walking staff in one hand,
@@ -806,8 +810,7 @@ assets:
     notes: "front-on; the staff is vertical, inside the frame"
   - slug: market-factor
     class: townsfolk
-    priority: P0
-    pilot: false
+    priority: P1
     base: null
     subject: >-
       a well-fed trade factor in a good coat worn plain, a board of tally-sticks under one arm,
@@ -815,8 +818,7 @@ assets:
     notes: "front-on"
   - slug: gate-watch
     class: townsfolk
-    priority: P0
-    pilot: false
+    priority: P1
     base: null
     subject: >-
       a town gate-watch in a padded jack and a kettle helm, a boar spear planted butt-down,
@@ -832,9 +834,9 @@ post_process:
   - "if an export is over budget, step WebP quality to 82 before touching size (asset-specs §3)"
 
 acceptance:
-  - "28 files exist under web/client/static/images/archetypes/ (14 slugs x 256.png + 128.webp + 64.webp)"
+  - "27 files exist under web/client/static/images/archetypes/ (9 slugs x 256.png + 128.webp + 64.webp)"
   - "assetkit derive specs/archetype-portraits-derive.json exits 0"
-  - "tools/portrait_check.py exits 0 for all 14 at 64px with the class named in this request"
+  - "tools/portrait_check.py exits 0 for all nine at 64px with the class named in this request"
   - "no pixel with 0 < alpha < 255 in the outer 1px of any 64px export"
   - "every 128px export is 16 KB or less; every 64px export is 8 KB or less"
   - "no hue outside the five varenmark stops; assetkit compare against a pilot anchor, gold and ember bands within 50% relative or 8 pp"
@@ -842,6 +844,6 @@ acceptance:
 delivery:
   to: "/home/kung/creative-assets/veldrath/2d/archetypes/ (masters) and web/client/static/images/archetypes/ (delivery)"
   report: "one manifest.json row per file {file, slug, class, size_px, model_or_script, prompt, created}"
-  review: "kanban_request_review(reviewer=dev-designer, artifacts=[all 28 files])"
+  review: "kanban_request_review(reviewer=dev-designer, artifacts=[all 27 files])"
 ```
 <!-- END asset-request -->

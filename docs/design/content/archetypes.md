@@ -235,7 +235,7 @@ than a birth name.
 | Kaenvren | *kaen* (duty) + *vren* (frontier); *kaen.vren* splits an N coda against a VR onset — "duty at the frontier" |
 | Raekmeld | *raek* (light-in-material) + *meld* (still water) — "glowing still-water", a byname for mead |
 | Dornrek | *dorn* (below) + *rek* (administer) — "keeper of what is below" |
-| Gaelraeth | *gael* (water, flow) + *raeth* (threshold, marker) — "the water's threshold" |
+| Gaelrek | *gael* (water, flow) + *rek* (administer, keep in place) — "keeper of the water" |
 | Laeldern | *laeld* (root, the thing that holds ground) + *–ern* (agent) — "the anchor-keeper" |
 | Thaeldren | *thael* (illuminate) + *vren* (frontier); the formal –l + vr– junction takes the V-drop and the euphonic –d– bridge of *veldrath* — "the light at the frontier" |
 | Daeldvaen | *daeld* (ash) + *vaen* (iron); –ld + v– is two consonants, legal — "ash-iron" |
