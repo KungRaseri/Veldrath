@@ -642,10 +642,14 @@ sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewMod
   `ApplicationDbContext` is live game data an import must never touch. Shape rules a family out too: the importer's
   create/update decision is `FindBySlugAsync` on a `ContentBase` (`ContentPackImporter.cs:119`,
   `ContentEntityTypes.cs:114-124`) and its child reconciliation hangs off a parent navigation
-  (`ContentPackImporter.cs:275-306`), so there is nothing to key a stock row by. (The other slugless join tables —
-  `ZoneLocationConnection`, the map graph's `Map`/`MapNode`/`MapEdge` — have no pack either, for the same reason; the
+  (`ContentPackImporter.cs:275-306`), so there is nothing to key a stock row by. (The other tables that carry no pack
+  family are ruled out by that same shape test, not by that reason: none of them is a `ContentBase`, so
+  `FindBySlugAsync` has nothing to match — `ZoneLocationConnection`, a join table keyed by `FromLocationSlug`/
+  `ToLocationSlug` (`ZoneLocationConnection.cs:14`, `:20`), and the map graph's `Map`/`MapNode`/`MapEdge`, a map
+  document, its nodes and its edges, keyed by authored string ids rather than slugs. The
   support tables — `ContentRegistry`, `TraitDefinitions`, `NamePatternSets` at `ContentDbContext.cs:19`, `:21`, `:89` —
-  and `GameConfig` are vocabulary and configuration rather than per-entity content, so no pack family addresses them.)
+  and `GameConfig` are not `ContentBase` rows either; they are vocabulary and configuration rather than per-entity
+  content, so no pack family addresses them.)
   Decided in `t_3231a2ea`:
   `ZoneStockSeeder.Authors()` is the truth, the seeder stays insert-only, and a row the shelf no longer lists is
   removed by a data migration (`DELETE … WHERE "ZoneId" = … AND "ItemSlug" = …`, empty `Down` because the `Id` is
