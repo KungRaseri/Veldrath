@@ -1000,18 +1000,32 @@ the session; the three `Dockerfile.dev` fixes remained uncommitted at audit end.
 - Migrations: `20261021172256_AddMapGraph` (Data), `20261021172306_AddCharacterMapPosition` (Server).
 - `IMapGraphRepository` / `EfCoreMapGraphRepository`; DI registration in `Veldrath.Server/Program.cs`.
 
-**Importer + seeder**
-- `RealmEngine.Data/Import/TmxToMapGraphImporter.cs` is pure (no DB/TMX repo dependency); input is
-  `MapGraphImportCatalog` + in-memory `TiledMap` dictionaries.
-- Region maps: TMX `zones`, `region_exits`, `spawns`, `paths`; zone maps: TMX `labels`, `exits`, `spawns`,
-  `paths`, supplemented by `ZoneLocation` and `ZoneLocationConnection` rows.
-- Generates deterministic edge GUIDs (SHA-256 of map/from/direction/to) and unique layout positions.
-- `MapGraphImportReport` separates warnings (auto-connected, synthesized exits, direction conflicts) from
-  errors (unknown refs, missing target maps/nodes).
-- `RealmEngine.Data/Seeders/MapGraphSeeder.cs` is the generated snapshot: **23 maps / 130 nodes / 196 edges**.
-  It does not read TMX. Wired into `DatabaseSeeder` after zone-location connections.
-- Fresh Postgres verification: counts matched; second server start left counts unchanged (idempotent).
-- `MapGraphSeederTests` assert exact counts, structural validity, and idempotency.
+**Importer + seeder** — the importer this session built has been deleted; the seeder is hand-authored and is the
+source of truth. Counts below re-derived from the three seeders at `development` `3d3320ac` (2026-11-20), not
+carried forward from the session-44 snapshot (that one said 23 / 130 / 196 and is superseded).
+- **`TmxToMapGraphImporter` is gone**: deleted in `dff88e83` (phase 7b, 2026-10-22) with its tests, fixtures and
+  the whole TMX asset tree. No map-graph importer ships. `RealmEngine.Data/Import/` holds only
+  `MapGraphImportModels.cs` (catalog/report records), and the only remaining reference to those types is
+  `RealmEngine.Data.Tests/DataLayerStubAndReportTests.cs` — nothing produces a `MapGraphImportCatalog` any more.
+  `RealmEngine.Data/Authoring/ContentPacks/ContentPackImporter.cs` is the content-pack importer and unrelated.
+- `RealmEngine.Data/Seeders/MapGraphSeeder.cs` authors the graph directly: **23 maps (4 region + 19 zone), 134
+  nodes, 208 edges**, plus a seed-time walk chain (`ConnectZoneEntriesToLocations`, `:85-105`) that adds **90 more
+  `Walk` edges — 298 edges once seeded**. `MapGraphSeederTests` asserts 23 / 134 / 298 and idempotency.
+- Nodes by type: `EntryPoint` 23, `Zone` 18, `RegionExit` 17, `Location` 67, `ZoneExit` 9. Eighteen `Zone` nodes
+  for nineteen zone maps because `playground` (`IsDevOnly`) sits on no region map.
+- Edges by type before the chain: `Walk` 152, `ExitToRegion` 35, `ExitToZone` 21; after it, `Walk` 242.
+- The chain is per zone map: entry → each `Location` node in `SortOrder`, one hop each way. 39 of those hop
+  directions already existed as authored edges, and 5 were dropped because the source node already used all four
+  cardinal directions (`zone:crestfall` 2, `zone:playground` 3). All 67 `Location` nodes still have a path from
+  their zone's entry node (BFS over the seeded edges).
+- `LinkRegionZonesToZoneMaps` (`:46-65`) sets `TargetMapId = zone:<RefId>` on every region `Zone` node, because
+  `TravelToNodeHubCommand` only loads another map when the node names one.
+- `ZoneLocationsSeeder.cs`: **67 `ZoneLocation` rows over 19 zones** — 37 `TypeKey = "locations"`, 17
+  `"environments"`, 13 `"dungeons"`. `playground` holds 13 and `soddenfen` 2; every other zone 3, except
+  `crestfall` with 4.
+- `ZoneLocationsConnectionSeeder.cs`: **11 `ZoneLocationConnection` rows, Crestfall only** (8 `walk`, 2 `exit`,
+  1 `region_exit`) over four location slugs. **No handler or repository reads that table** — in-zone movement is
+  the map graph's `Walk` edges, so these rows are inert seed data.
 
 **Server navigation**
 - `GetMapGraphHubCommand`: resolves current map (or explicit), filters hidden nodes/edges using
