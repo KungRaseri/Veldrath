@@ -4624,3 +4624,35 @@ own — so the mode bug could never have shown up there.
   green. The env object is annotated `@type {Record<string, string | undefined>}` now. Two habits follow: run
   `npm run typecheck` after touching anything under `web/client/tests/`, and treat the tooling tests as a runtime
   check, never a compile check.
+
+### Session-109 (2026-11-20) — The shop became a person: T1 lands the merchant band and the per-zone shelf
+
+The approved `merchants:` band in `game-context/budget.yaml` is now enforced by the shop path, and the per-zone stock
+table exists. Four facts for the next session:
+
+- **A merchant is a placed shopkeeper, not a zone flag.** `ShopMerchantResolver` requires the character's
+  `CurrentZoneLocationSlug`, a `LocationNpc` at that exact zone+location, and an `ActorArchetype` with
+  `Traits.Shopkeeper == true`; `Zone.HasMerchant` is still checked, and `RequestedZoneId != character.CurrentZoneId` is
+  refused as `ZoneMismatch`. `VisitShop`, `GetShopCatalog`, `BuyItem` and `SellItem` all go through it and return a
+  typed `ShopRefusal` next to the message ("There is no one to trade with here."). **Consequence to remember:** only
+  crestfall has placements today (`LocationNpcsSeeder`), so aldenmere / tolvaren / skarhold refuse to trade until the
+  D3 rosters are seeded, and `playground` refuses because it has no authored stock. That is the intended consequence,
+  not a regression — the per-zone stock was authored anyway so the towns are ready when their people arrive.
+- **Stock is `ZoneStockItems` in `ContentDbContext`** (migration `20261121004324_AddZoneStockItems`, unique on
+  `(ZoneId, ItemSlug)`), authored by `RealmEngine.Data/Seeders/ZoneStockSeeder` — crestfall 10, aldenmere 12,
+  tolvaren 11, skarhold 12 of the 24 purchasable items. It is deliberately *not* a `ContentBase` family: a row is a
+  zone↔item join with no slug or display name, so it is absent from `ContentEntityTypes`, the Foundry schema and the
+  pack importer. Sell does not consult stock — a merchant buys back anything it is offered.
+- **Pricing is one place:** `ShopPricing` applies `MerchantBands.PriceMarkupPercent` (100 = the band floor) to buy and
+  `BuybackRatePercent` (50 = the band ceiling) to sell, and clamps sell below buy so even a 1-gold item cannot be
+  bought and sold for the same coin. `MerchantBandTests` parses `budget.yaml` and fails when the C# copy drifts.
+- **The blacksmith's purse moved 500 → 250 through the importer, not the seeder.** `ArchetypeSeeder` is insert-only, so
+  `content/archetypes/village-blacksmith.yaml` is the delivery path: import an old (500) copy, then the real pack,
+  reported `created 1` → `updated 1` → `unchanged 1` against Postgres 17, row `Version 2`, `TradeGold 250`. Change both
+  in future (the seeder for fresh installs, the pack for existing rows) or a new database and an upgraded one disagree.
+
+Test gotchas found on the way: a `ContentDbContext` sharing a SQLite connection after another context created tables
+needs `Database.GetService<IRelationalDatabaseCreator>().CreateTables()` (EnsureCreated is a no-op); and a fixture that
+seeds a context from its constructor must keep that context in a field — `using var db` there disposes it before the
+first test runs.
+

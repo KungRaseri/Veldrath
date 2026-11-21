@@ -729,7 +729,9 @@ public static class ArchetypeSeeder
                 {
                     Health     = 80,
                     TradeSkill = 70,
-                    TradeGold  = 500,
+                    // The L0 band (game-context/budget.yaml merchants.gold_by_town_level: [100, 250]) tops out at 250,
+                    // and the shop reads this as the purse a single buyback may draw on.
+                    TradeGold  = 250,
                 },
                 Traits = new ArchetypeTraits
                 {

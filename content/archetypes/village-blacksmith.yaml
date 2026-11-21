@@ -1,0 +1,38 @@
+# Content pack: the Village Blacksmith's trade purse, brought into the approved merchant band.
+#
+# Why a pack and not just the seeder: the C# seeders are insert-only, so editing the constant in ArchetypeSeeder changes
+# nothing on a database that already holds the row. This file is the upsert path — importing it updates the existing
+# `village-blacksmith` in place (slug is the identity) and reports `updated 1`; importing it a second time reports
+# `unchanged 1`.
+#
+# The number: game-context/budget.yaml `merchants.gold_by_town_level.L0` is [100, 250], and crestfall is the L0 town
+# (MinLevel 0). The blacksmith is crestfall's market shopkeeper, so his purse belongs at the top of that band: 250.
+# The previous value was 500, which no L0 merchant may hold.
+#
+# Everything else here is the seeded archetype verbatim, so the import changes one field and reports one update.
+family: archetype
+entities:
+  - slug: village-blacksmith
+    typeKey: townspeople
+    displayName: Village Blacksmith
+    rarityWeight: 60
+    minLevel: 1
+    maxLevel: 1
+    isActive: true
+    stats:
+      health: 80
+      tradeSkill: 70
+      tradeGold: 250
+    traits:
+      hostile: false
+      aggressive: false
+      packHunter: false
+      shopkeeper: true
+      questGiver: false
+      hasDialogue: true
+      immortal: true
+      wanderer: false
+      boss: false
+      elite: false
+      ranged: false
+      caster: false
