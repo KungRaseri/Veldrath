@@ -46,11 +46,11 @@ Read from code, with the line that says so. Every row shaped a decision below.
 | The one **non-spoofable** unlock is the passive discovery check: it compares the character's real level against `DiscoverThreshold` server-side and writes the unlock itself | `TravelToNodeHubCommand.cs:474-516` | A level wall is the only enforceable gate today. Use it as the backstop under the act-gate. |
 | Spawn level is the archetype's `MinLevel` and nothing else | `EfCoreEnemyRepository.cs` — *MapToModel*, `Level = e.MinLevel` | Within band `b23-26` only levels **23** (`ArchetypeSeeder.cs:613`, pyreling) and **26** (`:658`, fire-ancient) can spawn. Zones recommended at 24–25 have nothing to populate them today. |
 | The approved roster covers **1–20** and says so; levels 21–30 and the Wound are named as out of scope | `docs/design/content/archetypes.md`, §"What this roster does not cover" | The Wound's cast does not exist. That is a dependency (§7), not something this card may invent. |
-| Band `b23-26`: HP 300–380, damage 30–44 per hit, XP 180–380, gold 30–75, drop chance 0.08–0.30 | `game-context/budget.yaml`, band `b23-26` | The endgame shares the top band with region 4's last zones. Escalation cannot come from numbers (§5). |
+| Band `b23-26`: HP 300–380, damage 30–44 per hit, XP 180–380, gold 30–75, drop chance 0.08–0.30 | `game-context/budget.yaml`, band `b23-26` | The endgame shares `b23-26` with region 4's last zones; `b27-30` is the ladder's top band. Escalation cannot come from numbers (§5). |
 | `RegionType` has five members — Forest, Highland, Coastal, Volcanic, Countryside — and none of them is the Wound | `Veldrath.Server/Data/Entities/Region.cs:46-62` | A sixth member is needed. It is **free**: `Region.Type` is stored via `HasConversion<string>()`, so no migration is required (`ApplicationDbContext.cs:130`). |
 | `Region.IsDiscoverable` and `Zone.IsDiscoverable` are never read | `Region.cs:28`; `Zone.cs:36`; no reader in `Features/` or the repositories | Set them honestly, but do not claim they gate anything. |
 | Every zone must flag exactly one `SafeRespawn` location, or the respawn path logs an `Error` and falls back to the zone's first location | `ZoneLocation.cs` (*SafeRespawn*); `RespawnHubCommand.cs:178-183` | Each of the five zones owes exactly one safe-respawn location to the content pass. Not zero ("lawless endgame") — zero is a logged error. |
-| An empty spawn pool spawns nothing and substitutes nothing | `ActorPoolResolver.cs:54-60` | A zone with no cast yet is authorable and does not throw. The spine can land before the roster does. |
+| An empty spawn pool spawns nothing and substitutes nothing | `ActorPoolResolver.cs:56-61` | A zone with no cast yet is authorable and does not throw. The spine can land before the roster does. |
 
 ---
 
@@ -62,7 +62,7 @@ Read from code, with the line that says so. Every row shaped a decision below.
 | **Display name** | The Wound |
 | **Calethic form** | **Kaeltheld** — *kael* (great, first/paramount) + *theld* (controlled entry point, administered threshold) = "the paramount administered threshold"; the Caleth's name for the heartland from which every threshold was commanded (`calethic-language.md:588-596`) |
 | **Type** | a new `RegionType` member — `Volcanic` is region 4's and is wrong; `Forest`/`Highland`/`Coastal`/`Countryside` are all wrong (§9, decision 4) |
-| **Band** | `b23-26`, the top band (`game-context/budget.yaml`) |
+| **Band** | `b23-26`; `b27-30` is the ladder's top band (`game-context/budget.yaml`) |
 | **`MinLevel` / `MaxLevel`** | 23 / 30. The geography runs 0–30 (`ZoneLocationsSeeder.cs:42-47`); the archetype ladder stops at 26 today. |
 | **`IsStarter` / `IsDiscoverable`** | `false` / `false`. The second is inert (§1) but it is the honest value. |
 | **Connections** | `cinderplain → wound` and `wound → cinderplain` (`RegionConnection`, `ApplicationDataSeeder.cs:58-63`). |
@@ -140,7 +140,7 @@ carry; "zone L" is the single number the `Zone` row takes, matching the seeded c
 |---|---|---|---|---|---|---|---|
 | 1 | `vaelraeth` | **Vaelraeth** | The last ordinary ground, cut by a survey-marked threshold that still says the ordinary stops here. | 23–24 | 23 | Crosses a boundary whose line is not where the ground changes, and finds the first Calethic marks. Everything they fight drifted in from Cinderplain and none of it has drifted out. | Where the boundary actually is — the marks and the change in the ground do not agree, and the zone never says which came first. |
 | 2 | `rektheld` | **Rektheld** | The outer administrative ring: the ground that processed arrivals, still processing, with nothing arriving. | 23–25 | 24 | Walks a route built as a queue: doors that open on nothing, counters with no clerks, the only written record of the heartland's own names. | What was being processed. The forms carry a field with no label, and it stays unlabelled. |
-| 3 | `orneld` | **Orneld** | The unmaking-ground: where the rules of magic landed, and the wrongness is local — the same act gives a different answer in the same place. | 24–26 | 25 | Crosses the densest wrongness on foot and is asked, for the only time in the game, **not to use their kit**: steel, rope and nerve still behave, abilities are a hazard. | Why the change settled here — whether it was aimed, or dropped, or left where a resealing attempt failed. |
+| 3 | `orndaeld` | **Orndaeld** | The ground the unmaking left: where the rules of magic landed, and the wrongness is local — the same act gives a different answer in the same place. | 24–26 | 25 | Crosses the densest wrongness on foot and is asked, for the only time in the game, **not to use their kit**: steel, rope and nerve still behave, abilities are a hazard. | Why the change settled here — whether it was aimed, or dropped, or left where a resealing attempt failed. |
 | 4 | `draekeld` | **Draekeld** | The channel-ground: the one place in the heartland built to put a question across the compact. It was used. | 25–26 | 26 | Performs the region's single verb before the door: leaves something at the channel — a thing, a name, a record of their own. The game records the giving and returns nothing. | Whether anything received it, and whether the channel ever answered anyone. |
 | 5 | `naelditheld` | **Naelditheld** | The seal-threshold: a door the Caleth built to be closed, standing open, with an antechamber in front of it instead of a chamber. | 26 | 26 | Arrives, reads what the door was built for, and performs the region's last and only act: they close it. They cannot open, break, bargain, or be answered. Nothing stands in front of the door to test them. | What is behind the door, what the closing does to it, and whether anything on the far side notices. |
 
@@ -154,7 +154,7 @@ precedes it, not sprung.
 
 **Authoring constraint inherited from §1:** each zone needs exactly one `SafeRespawn` location
 (`RespawnHubCommand.cs:178-183`), and each zone may ship with **empty** pools without throwing
-(`ActorPoolResolver.cs:54-60`). Zone types: 1–3 `Wilderness`, 4–5 `Dungeon` (built interiors whose
+(`ActorPoolResolver.cs:56-61`). Zone types: 1–3 `Wilderness`, 4–5 `Dungeon` (built interiors whose
 cast is not a guardian, §5).
 
 ---
@@ -167,14 +167,15 @@ The names reach the player through the one channel that survived the Collapse: *
 They are therefore **intact Calethic**, and that is a fact about the region, not a stylistic choice.
 
 The naming pattern is the Caleth's own land-survey: `[function root] + [type root]`, function first
-(`calethic-language.md` §2.5). Three zones are **thresholds** (*theld*), two are **grounds** (*–eld*).
+(`calethic-language.md` §2.5). Three zones are **thresholds** (*raeth*, *theld*), two are **grounds** —
+*Draekeld* by its suffix (*–eld*), *Orndaeld* by what the ground kept (*daeld*).
 The repetition is deliberate and is itself pillar-1 content: the archive is legible in the names.
 
 | slug | Calethic | roots | junction / rule | derivation | status | Canon/source |
 |---|---|---|---|---|---|---|
 | `vaelraeth` | **Vaelraeth** | *vaeld* (proximity, the approach, border-of-the-sacred) + *raeth* (threshold, boundary marker) | `–d + r–` → D-drop: *vaeld + raeth* → **Vaelraeth** (`:72`) | "the approach-threshold" — the marked point where the ordinary ends | **attested** — the root dictionary's worked example for *vaeld*, one form only (note below) | `calethic-language.md:283` (*vaeld*), junction table `:72`, note `:76-78`, §2.6 |
 | `rektheld` | **Rektheld** | *rek* (administer, keep in place) + *theld* (controlled entry point, administered threshold) | `–k + TH–` = two phonemes, legal onset; syllabifies *rek.theld*; no reduction | "the administered threshold" — where arrivals were admitted, recorded and passed on | **coinage** — no attested word exists for the processing threshold; coined by §2.5 + §6 | `calethic-language.md:296` (*rek*), `:330` (*theld*), `:204-210` (§2.5), `:646-652` |
-| `orneld` | **Orneld** | *orn* (unmake, dissolve a structure) + *–eld* (ground, site) | `–n + e–`; syllabifies *or.neld*; vowel-initial place names attested by *Orveld* | "the unmaking-ground" — where a structure was undone and the ground kept the result | **coinage** | `calethic-language.md:276` (*orn*), `:136` (*–eld*), root form *Orneth* `:418` |
+| `orndaeld` | **Orndaeld** | *orn* (unmake, dissolve a structure) + *daeld* (ash, what-remains-after-fire — the trace left when a structured thing is undone) | `–n + d–` is two consonants at the junction, legal; syllabifies *orn.daeld*, D– being a legal onset | "the remains of the unmaking" — the trace the unmaking left, which is why the wrongness sits in the ground and not in the act | **coinage** — no attested word exists for what an unmaking leaves behind; coined by §2.5 + §6 | `calethic-language.md:276` (*orn*), `:339` (*daeld*), root form *Orneth* `:418` |
 | `draekeld` | **Draekeld** | *draek* (channel, medium, the interface) + *–eld* (ground, site) | `–k + e–`; syllabifies *drae.keld*; DR– is a legal onset (`:62`) | "the channel-ground" — the priestly interface, as a place | **coinage** — the dictionary's *draek* example is a role (*Draekori*), not a site | `calethic-language.md:282`, `:136` |
 | `naelditheld` | **Naelditheld** | *naeld* (seal permanently, close without exit) + *theld* (controlled entry point) | `–ld + TH–`: D preserved, epenthetic `–i–` liaison inserted → *naeldi.th–* (`:74`); syllabifies *nael.di.theld* | "the sealed threshold" — a controlled entry point whose designed end-state is sealed, with no key | **coinage**, governed by an attested rule | `calethic-language.md:280` (*naeld*), `:330` (*theld*), junction row `:74`, worked example *Naeldithorn* |
 
@@ -183,6 +184,17 @@ proper name (`calethic-language.md:283`, §2.6), with D-drop at the junction (`:
 authority now writes that form in the junction table too and records beneath the table that the
 lower-case string was a rendering convention, not a second spelling; there is no register variant
 (the administrative cell reads "same"). This spine cites the canonical form.
+
+**Renamed 2026-11-20, and why the coin is a coin.** Zone 3 stood as **Orneld**, *orn* + *–eld*, which
+is one letter from **Orveld**, the being's Calethic name (`calethic-language.md:277`, `:432`) — and a
+zone that reads as a typo of the antagonist deflates the reveal the region is built on. The fix is not
+a letter moved: the name is re-coined off a different second root, *daeld* (what a structured thing
+leaves when it is undone) instead of *–eld* (site), and the sense moves with it — the survey marked
+what the unmaking **left**, not the act of unmaking, which is also the only thing a surveyor could see
+without answering §3's "why here". Measured at edit distance: **3 from *Orveld*** (7 from *Vaelraeth*
+and from *Kael-Raeth*); no attested form in `calethic-language.md` is closer than 3 (*Dornkeld*,
+*Korn-Keld*, *Orveld*) and no other zone name in §3 is closer than 4 (*Draekeld*). *(F2, card
+`t_4e58e1ec`.)*
 
 **The two literacies, at region scale (pillar 4).** The scholarly telling is five exact names and a
 survey. The common telling is one noun — *the Wound* — and a refusal to name anything inside it. The
@@ -286,7 +298,7 @@ the dependency is listed in §7 instead.
 
 | # | Dependency | Why the spine cannot answer it | Consequence if it lands differently |
 |---|---|---|---|
-| 1 | **A 21–30 archetype roster** (the approved roster stops at 20 and says so) | This card may not author archetypes | The five zones are authorable with empty pools (`ActorPoolResolver.cs:54-60`) and unplayable as combat content. Zones 2–4 want levels 24–25, where **nothing** spawns today (§1). |
+| 1 | **A 21–30 archetype roster** (the approved roster stops at 20 and says so) | This card may not author archetypes | The five zones are authorable with empty pools (`ActorPoolResolver.cs:56-61`) and unplayable as combat content. Zones 2–4 want levels 24–25, where **nothing** spawns today (§1). |
 | 2 | **`IsInstanced = true` on the cleared `fire-ancients-chamber` room** | No seeder sets it, so the clear→unlock path never fires; the flag does nothing on the hidden gate node, which has no `ZoneInstanceId` to report | Without it the entry condition degrades to the level wall alone: a number, not an act. |
 | 3 | **A server-side unlock source check** | `UnlockZoneLocation` trusts the client (`GameHub.cs:2695-2705`) | "Not reachable at level 1" holds only against an honest client (§2.2). |
 | 4 | **`RegionType` gains a member** | Named entity decision, not a zone decision; free of migrations (`ApplicationDbContext.cs:130`) | The region row cannot be seeded correctly. |

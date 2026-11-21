@@ -11,6 +11,7 @@ import {
 	outcomeFrom
 } from './reducers';
 import { craftedSummary } from './crafting';
+import { toArchetypeTier } from './archetype-portraits';
 import { resolvePowers, type PowerContext } from './powers';
 import { applySkillProgress, resolveSkills, skillLabel } from './skills';
 import type {
@@ -890,7 +891,10 @@ export class GameSession {
 					level: payload.enemyLevel,
 					currentHealth: payload.enemyCurrentHealth,
 					maxHealth: payload.enemyMaxHealth,
-					abilities: payload.enemyAbilityNames ?? []
+					abilities: payload.enemyAbilityNames ?? [],
+					archetypeSlug: payload.enemyArchetypeSlug ?? null,
+					typeKey: payload.enemyArchetypeTypeKey ?? null,
+					tier: toArchetypeTier(payload.enemyTier, payload.enemyArchetypeTypeKey)
 				},
 				log: [`Combat started: ${payload.enemyName} (level ${payload.enemyLevel}).`],
 				participants: [],
@@ -910,7 +914,10 @@ export class GameSession {
 					level: payload.enemyLevel,
 					currentHealth: payload.enemyCurrentHealth,
 					maxHealth: payload.enemyMaxHealth,
-					abilities: payload.enemyAbilityNames ?? []
+					abilities: payload.enemyAbilityNames ?? [],
+					archetypeSlug: payload.enemyArchetypeSlug ?? null,
+					typeKey: payload.enemyArchetypeTypeKey ?? null,
+					tier: toArchetypeTier(payload.enemyTier, payload.enemyArchetypeTypeKey)
 				},
 				participants: payload.participants ?? []
 			};

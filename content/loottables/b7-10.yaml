@@ -1,0 +1,260 @@
+# Content pack — enemy drop tables for budget band b7-10 (levels 7-10).
+#
+# family: loottable. One table per hostile archetype; slug `<archetype>-drops`.
+#
+# Band b7-10 (game-context/budget.yaml): gold [8, 30], drop_chance [0.20, 0.50].
+# Every table sums to 100, so DropWeight reads as that row's landing probability
+# (loot.weight_semantics). Every row lands with 0.20 <= p <= 0.50: inside the band.
+# No guaranteed row: nothing in the design says a b7-10 kill always yields something.
+# Item ceiling: 90 gold = 3 x the band's gold max. rune-of-power, elixir-of-strength and
+# iron-chestplate (80 each) come inside the ceiling here and enter the tables at this band.
+# Gems (150+) stay out until b15-18.
+#
+# The four roster rows banded 10-12 — cairn-haunt, fen-lurker, burrow-worm, bog-lantern — are in
+# this file, not the next one: their band floor is 10, and level 10 is the last level of b7-10.
+# The band that contains an archetype's floor is the band its stat line and drop chance come from.
+
+family: loottable
+entities:
+  - slug: moor-wight-drops
+    # band: b7-10 — moor-wight, roster band 7-9; spawns at bone-hollow (L4-6), ashveil-highlands
+    # (L7-12), shifting-waymark (L8-14)
+    # Why: a caster of the unquiet dead that walks with a cold that spoils a fire. Shadow is what is
+    # left of it, a soul crystal is what it will not give up, and frost is the cold it carries.
+    typeKey: enemies
+    displayName: Moor Wight Drops
+    rarityWeight: 80
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: rune-of-frost
+        dropWeight: 50
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: soul-crystal
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-shadow
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+
+  - slug: barrow-bear-drops
+    # band: b7-10 — barrow-bear, roster band 7-9; spawns at ashveil-highlands (L7-12)
+    # Why: it dens in the burial mounds and digs them open for the salt in the bones. It carries what
+    # it has been lying on.
+    typeKey: enemies
+    displayName: Barrow Bear Drops
+    rarityWeight: 80
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: iron-ingot
+        dropWeight: 50
+        quantityMin: 1
+        quantityMax: 2
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-nature
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: soul-crystal
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+
+  - slug: moor-tollman-drops
+    # band: b7-10 — moor-tollman, roster band 7-9; spawns at ashveil-highlands (L7-12),
+    # shifting-waymark (L8-14)
+    # Why: he collects a toll at a gate nobody built and shoots the people who ask who set it. The
+    # toll is on him, and so is the bow he shoots with.
+    typeKey: enemies
+    displayName: Moor Tollman Drops
+    rarityWeight: 80
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: health-potion
+        dropWeight: 40
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: iron-sword
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: hunters-bow
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+
+  - slug: cairn-haunt-drops
+    # band: b7-10 — cairn-haunt, roster band 10-12; spawns at ashveil-highlands (L7-12),
+    # shifting-waymark (L8-14), fenland-crossing (L9-13), submerged-ruins (L10-14)
+    # Why: it stands on a cairn at dusk and does not move while you are looking at it. It drops what
+    # a cairn holds, not what a body carried.
+    typeKey: enemies
+    displayName: Cairn Haunt Drops
+    rarityWeight: 80
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: rune-of-frost
+        dropWeight: 40
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: soul-crystal
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-shadow
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+
+  - slug: fen-lurker-drops
+    # band: b7-10 — fen-lurker, roster band 10-12; spawns at fenland-crossing (L9-13)
+    # Why: it sits under the duckweed and waits for a horse to drink. Venom, and the fen's own growth
+    # in its gut.
+    typeKey: enemies
+    displayName: Fen Lurker Drops
+    rarityWeight: 80
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: health-potion
+        dropWeight: 40
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: antidote
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-nature
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 2
+        isGuaranteed: false
+
+  - slug: burrow-worm-drops
+    # band: b7-10 — burrow-worm, roster band 10-12; spawns at ancestor-vault (L11-14),
+    # relic-chamber (L12-14)
+    # Why: it tunnels the old burial network and surfaces in the middle of a camp. Iron it has pushed
+    # through, and the grave-goods it came up with.
+    typeKey: enemies
+    displayName: Burrow Worm Drops
+    rarityWeight: 80
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: iron-ingot
+        dropWeight: 50
+        quantityMin: 1
+        quantityMax: 2
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: soul-crystal
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-shadow
+        dropWeight: 20
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+
+  - slug: bog-lantern-drops
+    # band: b7-10 — bog-lantern, roster band 10-12; spawns at fenland-crossing (L9-13),
+    # submerged-ruins (L10-14)
+    # Why: a column of cold light over a sinkhole that moves along the path with you. Cold light is
+    # the one thing it is; the rune is the only cold light in the catalogue.
+    typeKey: enemies
+    displayName: Bog Lantern Drops
+    rarityWeight: 80
+    traits:
+      common: true
+      boss: false
+      elite: false
+      rare: false
+      isChest: false
+      isHarvesting: false
+    entries:
+      - itemDomain: items/general
+        itemSlug: rune-of-frost
+        dropWeight: 40
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: soul-crystal
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false
+      - itemDomain: items/general
+        itemSlug: essence-of-shadow
+        dropWeight: 30
+        quantityMin: 1
+        quantityMax: 1
+        isGuaranteed: false

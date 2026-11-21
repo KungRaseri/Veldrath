@@ -65,6 +65,25 @@ internal static class CombatHelpers
         return DeathPenalties.ApplySicknessToDamage(damage, attrs, DateTimeOffset.UtcNow);
     }
 
+    // The tier the client draws around an enemy portrait: boss beats elite; both are inert content labels,
+    // so this is display metadata and never affects a fight.
+    internal static string ResolveTier(Enemy? template)
+    {
+        if (template is null) return "regular";
+        if (template.Traits.TryGetValue("boss", out var boss) && boss.AsBool()) return "boss";
+        if (template.Traits.TryGetValue("elite", out var elite) && elite.AsBool()) return "elite";
+        return "regular";
+    }
+
+    // The archetype's content type key, which the client maps onto a silhouette class to pick the fallback
+    // glyph (and the townsfolk plate). Display metadata like ResolveTier; no combat rule reads it.
+    internal static string ResolveTypeKey(Enemy? template)
+    {
+        return template is not null && template.Traits.TryGetValue("typeKey", out var typeKey)
+            ? typeKey.AsString()
+            : string.Empty;
+    }
+
     // Calculates enemy attack damage against the player. Halved when defending.
     internal static int CalculateEnemyDamage(SpawnedEnemy enemy, Dictionary<string, int> attrs, bool isDefending)
     {

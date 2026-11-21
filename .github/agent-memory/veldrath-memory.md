@@ -40,29 +40,41 @@ facts make the web gates runnable there; each one has cost a session to rediscov
   Both links show up as **untracked** in `git status` (`.gitignore`'s `node_modules/` matches real
   directories, not symlinks), so never `git add -A` on a web card.
 
-- **Invoke vitest through the workspace script from `web/`** — the cwd is load-bearing, and both CI
-  and this command leave it at `web/client`:
+- **Invoke vitest through the workspace script from `web/`** — that is what puts the cwd at
+  `web/client`, matching CI:
 
   ```bash
   cd web && npm run test:unit --workspace client -- --run [path under client/]
   ```
 
-  `web/client/src/lib/parity/field-kinds.test.ts` reads `Veldrath.Contracts/Content/ContentSchema.cs`
-  through an inline `resolve(process.cwd(), '..', '..')`. From `web/`, `../..` leaves the repo
-  (`<repo>/.worktrees/Veldrath.Contracts/…` in a worktree) and that file's **2** tests die with
-  `ENOENT` — so `npx vitest run client/src/lib/parity` run from `web/` reporting 2 red tests is a cwd
-  artefact, not a regression. The other parity suites read through `repoRoot()` in
-  [`web/client/src/lib/testing/source.ts`](../../web/client/src/lib/testing/source.ts), which walks up
-  until it finds `Veldrath.Server` + `web/client` and tolerates either cwd.
+- **Every parity suite resolves through `repoRoot()` — including `field-kinds.test.ts`** (fixed
+  2026-11-20, card `t_497bf232`). That file used to read
+  `Veldrath.Contracts/Content/ContentSchema.cs` through an inline `resolve(process.cwd(), '..', '..')`;
+  from `web/`, `../..` left the repo (`<repo>/.worktrees/Veldrath.Contracts/…`) and its **2** tests
+  died with `ENOENT`. It now calls `readRepoFile(...)`
+  ([`web/client/src/lib/testing/source.ts`](../../web/client/src/lib/testing/source.ts)), which walks
+  up until it finds `Veldrath.Server` + `web/client` and tolerates either cwd. A suite that still
+  calls `process.cwd()` is now itself a test failure — see the next bullet.
+
+- **A moved repo file is caught by `source-paths.test.ts`, not by an ENOENT.** The parity suites read
+  C#/TS sources off disk, so a path in a suite is a dependency on the repository layout; when it moves
+  the suite throws at module scope and vitest reports `Tests  no tests` — the guard has vanished, not
+  failed. `web/client/src/lib/parity/source-paths.test.ts` (added 2026-11-20, card `t_497bf232`) scans
+  its siblings for `readRepoFile('…')` / `walkFiles('…')` / `join(repoRoot(), '…')` (literal or
+  `UPPER_SNAKE` constant) and asserts every path exists, reporting **all** missing ones in one
+  assertion as `file "X" — readRepoFile() at <suite>:<line>`. It also fails on an argument it cannot
+  resolve statically and on any suite calling `process.cwd()`. When you move a server file, this is
+  the test that tells you which suites to repoint.
 
 - **Export the `ci-web.yml` env** ([`.github/workflows/ci-web.yml`](../../.github/workflows/ci-web.yml))
   or SvelteKit aborts with `env_invalid`: at minimum `PUBLIC_API_URL` and `PUBLIC_HUB_URL`; `ORIGIN`,
   `BETTER_AUTH_SECRET`, `JWT_KEY`, `JWT_ISSUER`, `JWT_AUDIENCE`, `DATABASE_URL` complete the set.
 
-Under that invocation the parity suite is **green — 7 files / 33 tests, verified at `532adf26`**. A
-missing repo file surfaces there as a failed *suite* (`ENOENT` at module scope) and not as a failed
-assertion, so read the path in the error before suspecting a parity mismatch: a repo file move turns
-it red until the path is updated, and so does a wrong cwd.
+Under that invocation the parity suite is **green — 8 files / 37 tests, verified at `753b0210` + this
+card** (was 7 files / 33 tests before the source-path guard). A missing repo file now fails an
+*assertion* in `source-paths.test.ts` naming the path and the suite; a suite that reads a path the
+guard cannot see still reds out as a failed suite (`ENOENT` at module scope), so read the path in the
+error before suspecting a parity mismatch.
 
 **Reproduce a bug claim against current `origin/development` first.** A worktree branch can lag it by
 several merges: the `check-markdown-links.mjs` failure carded as t_3407c30b passed at the stale base
@@ -402,7 +414,7 @@ Full World → Region → Zone hierarchy implemented.
 - `Region.cs`: `Id` (slug), `Name`, `Description`, `RegionType Type`, `MinLevel`, `MaxLevel`, `IsStarter`, `IsDiscoverable`, `WorldId` FK, navigation `World`, `ICollection<Zone> Zones`, `ICollection<RegionConnection> Connections`
 - `RegionType` enum (in `Region.cs`): `Forest`, `Highland`, `Coastal`, `Volcanic`, `Countryside`
 - `RegionConnection.cs`: composite PK (`FromRegionId` + `ToRegionId`), navigate `FromRegion`, `ToRegion`; `Restrict` delete-behavior on both FK sides
-- **`ZoneConnection` and `Zone.Exits` do not exist.** Travel is `RegionConnection` (region ↔ region), the map graph (platform edges), and `ZoneLocationConnection` (inside a zone).
+- **`ZoneConnection` and `Zone.Exits` do not exist.** Travel is `RegionConnection` (region ↔ region), the **region** map graph, and the **zone** map graph — each of the 19 zone `Map`s carries an `EntryPoint` node and one `Location` node per location (`RefId` = slug). Only **10 of the 19** also carry a `RegionExit` node; the other **nine** (aldenmere, ashfields, pale-moor, saltcliff-heights, skarhold, smoldering-reach, soddenfen, tidewrack-flats, tolvaren) have no exit node at all and are left through `LeaveZone` → `LeaveCurrentZoneAsync` (`GameHub.cs:915`, `:3178`), which ends the session's hold on the zone without moving the character to a node. Four Varenmark maps (crestfall, ashlen-wood, grevenmire, the-droveway) carry **9 `MapNodeType.ZoneExit` nodes** that jump straight to another zone's map — the only zone→zone adjacency authored at zone level. `Walk`/`ExitToRegion`/`ExitToZone` edges are executed by `TravelToNodeHubCommand` (any node with a `TargetMapId` is a transition, `:280-288`); `EnterZoneLocationHubCommand` resolves a slug to its `Location` node and delegates to it. A `ZoneLocationConnection` table exists but is seeded for Crestfall only (11 rows, four slugs) and read by no handler or repository — do not cite it as the in-zone mover.
 
 **Zone entity** (`Zone.cs`): `Id` (slug), `Name`, `Description`, `ZoneType Type`, `MinLevel`, `MaxPlayers`, `IsStarter`, `HasInn`, `HasMerchant`, `IsPvpEnabled`, `IsDiscoverable`, `IsDevOnly`, `RescueFundTotal`, `RegionId` FK + `Region` nav, `ICollection<PlayerSession> Sessions`
 

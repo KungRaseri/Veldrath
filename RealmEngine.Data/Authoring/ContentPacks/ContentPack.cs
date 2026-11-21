@@ -61,8 +61,13 @@ public sealed record ContentPackEntry(
 /// <summary>
 /// One pack file: a single family, read from one YAML document.
 /// </summary>
-/// <param name="Family">Content-type key, taken from the file's directory name.</param>
-/// <param name="CanonicalFamily">The family with aliases folded away, e.g. <c>weapon</c> → <c>item</c>.</param>
+/// <param name="Family">
+/// Content-type key, taken from the file's directory name. Empty when the file has no family at all — it sits in the
+/// pack root, its directory is not a content type, or the file failed before a family could be read — in which case
+/// the reader has already reported why and the file has no entries. Consumers must skip a file whose family does not
+/// resolve rather than pass the empty string on.
+/// </param>
+/// <param name="CanonicalFamily">The family with aliases folded away, e.g. <c>weapon</c> → <c>item</c>; empty when <paramref name="Family"/> is.</param>
 /// <param name="SourcePath">Repository-relative path of the file.</param>
 /// <param name="Entries">The entities declared in the file, in file order.</param>
 public sealed record ContentPackFile(

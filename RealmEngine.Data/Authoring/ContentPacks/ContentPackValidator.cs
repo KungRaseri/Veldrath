@@ -75,6 +75,15 @@ public sealed class ContentPackValidator(ContentDbContext db)
         var catalog = await ContentReferenceCatalog.LoadAsync(db, ct);
         foreach (var file in read.Files)
         {
+            // A file the reader could not attribute to a family carries no entities and already produced an issue
+            // (pack-family-directory-required, pack-family-unknown or a file-level failure). Merging its family into
+            // the catalog would hand it a blank or unknown content type, and the catalog rejects a blank one — which
+            // turned one misplaced file into "validation could not run" with no path in the message.
+            if (!ContentEntityTypes.TryResolve(file.Family, out _))
+            {
+                continue;
+            }
+
             catalog = catalog.WithContent(file.Family, file.Entries.Select(entry => entry.Slug));
         }
 
@@ -82,7 +91,7 @@ public sealed class ContentPackValidator(ContentDbContext db)
         {
             if (!ContentEntityTypes.TryResolve(file.Family, out var resolver))
             {
-                // The reader already reported the unknown family; there is no entity type to bind.
+                // The reader already reported why this file has no family; there is no entity type to bind.
                 continue;
             }
 

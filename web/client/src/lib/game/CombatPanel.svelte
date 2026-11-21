@@ -11,6 +11,8 @@
 	} from '@lucide/svelte';
 	import { barPercent } from './reducers';
 	import { combatUsageReason, powerLabel, powerSummary } from './powers';
+	import ArchetypePortrait from './ArchetypePortrait.svelte';
+	import { archetypeSilhouette } from './archetype-portraits';
 	import type { GameSession } from './session.svelte';
 
 	let { session }: { session: GameSession } = $props();
@@ -51,16 +53,26 @@
 
 <section class="game-panel space-y-4 p-4">
 	<header class="flex flex-wrap items-center justify-between gap-3">
-		<div>
-			<h2 class="game-panel-header">
-				<Swords size={19} aria-hidden="true" />
-				Combat{#if enemy}
-					· {enemy.name}
-				{/if}
-			</h2>
+		<div class="flex items-center gap-3">
 			{#if enemy}
-				<p class="text-sm text-surface-600-400">Level {enemy.level}</p>
+				<ArchetypePortrait
+					slug={enemy.archetypeSlug}
+					size={64}
+					tier={enemy.tier ?? 'regular'}
+					silhouette={archetypeSilhouette(enemy.archetypeSlug, enemy.typeKey)}
+				/>
 			{/if}
+			<div>
+				<h2 class="game-panel-header">
+					<Swords size={19} aria-hidden="true" />
+					Combat{#if enemy}
+						· {enemy.name}
+					{/if}
+				</h2>
+				{#if enemy}
+					<p class="text-sm text-surface-600-400">Level {enemy.level}</p>
+				{/if}
+			</div>
 		</div>
 		<div class="flex items-center gap-2">
 			<span class="text-xs text-surface-600-400">

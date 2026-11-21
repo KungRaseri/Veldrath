@@ -6,7 +6,15 @@ name: Deploy Documentation
 
 concurrency:
   group: docs-${{ github.ref }}
-  cancel-in-progress: true
+  # Cancel only a superseded pull-request head. A cancelled run is recorded as a *failing*
+  # commit status — `failure`, description "Has been cancelled", measured on Forgejo
+  # 15.0.11 — so cancelling a base-branch run leaves the merged commit, and every branch
+  # built on it, red with a verdict that never happened. `development` and `main` are merged
+  # in bursts and this instance's runner has capacity 1, so a docs run queues for minutes
+  # behind the component jobs of the next merge and used to be superseded nearly every time:
+  # 10 of the last 17 development push runs ended `Has been cancelled`. A cancelled PR run is
+  # harmless because a pull request only ever shows its latest head.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # docfx.json builds the API reference from Realm.Full.slnx, so any C# change can alter the
 # published docs. Watch the whole solution rather than a hand-maintained project list.
@@ -41,6 +49,8 @@ on:
       - 'web/client/static/fonts/**'
       - 'web/client/static/images/favicon/**'
       - 'scripts/check-markdown-links.mjs'
+      - 'scripts/check-content-names.mjs'
+      - 'scripts/content-name-collisions.allow.json'
       - 'scripts/docfx-namespace-toc.pl'
       - 'scripts/apply-branch-protection.sh'
       - 'scripts/forgejo-pr-comment.sh'
@@ -109,6 +119,20 @@ jobs:
 
       - name: Check documentation links
         run: node scripts/check-markdown-links.mjs
+
+      # Calethic name collisions. Nothing else compared authored names against the naming authority:
+      # D5 found `Orneld` one letter from `Orveld` and `Gaelraeth` one letter from `Kael-Raeth` after
+      # every prior validator had passed, because those compared authored slugs to seeded slugs and
+      # `docs/lore/calethic-language.md` holds no slugs at all. Offline, like the link check: it
+      # reads the four content documents, the authority and both seeder directories, and fails on
+      # edit distance 1 with both names, the distance and both line numbers named. A citation of an
+      # attested form is canon, not a coinage, so a rename note cannot red the gate; a missing input
+      # fails it rather than passing on a partial read.
+      - name: Check authored names for collisions
+        run: node scripts/check-content-names.mjs
+
+      - name: Test the name-collision checker
+        run: node --test scripts/tests/content-names.test.mjs
 
       # Offline regression tests for the branch-protection policy that makes a merge
       # here wait for CI. No token and no network: the API response is stubbed, so the
