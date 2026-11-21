@@ -31,10 +31,15 @@ bands and its slugs are unchanged from what was approved.
 - **`aurelian-market` — the slug stays, the DisplayName changes.** A slug is permanent identity, so the
   zone keeps `aurelian-market`; its display name becomes The Korreld Exchange. The slug remains recorded
   as debt.
-- **The retired-lore pass (`C2` in `towns.md`) is a separate architect card.** Until it lands, the town
-  registers stay clear of Dravan, Thysmara, Kaldrek and the Age of Embers.
-- **A merchant band is pending.** `budget.yaml` bands hostile archetypes only, so shopkeeper trade and
-  prices stay unauthored until a merchant band is published.
+- **The retired-lore pass (`C2` in `towns.md`) landed 2026-11-20.** The seeded world text no longer
+  carries Dravan, Thysmara, Kaldrek or the Age of Embers — `World.Era` is "The Ashen Age (the Age of
+  Reclaiming)" — and `SeededWorldTextTests` fails the test suite if one comes back. The town registers
+  below stay clear of them.
+- **The merchant band landed 2026-11-20.** `budget.yaml`, *merchants* bands shop trade by the town's
+  own level, not the player's — `gold_by_town_level` at L0/L5/L10/L18, `stock_size`, `price_markup`
+  and `buyback_rate`. Shopkeeper prices and purses are authored there; *merchants.wiring* records
+  which of them the live shop reads. A depleting purse — as opposed to a per-transaction cap — is
+  still engine work.
 - **Per-zone shared shop stock is accepted for this wave.** Two merchants in one town sell from one
   catalogue; per-NPC stock is an engine change and is not in this wave.
 
