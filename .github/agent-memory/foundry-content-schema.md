@@ -54,6 +54,25 @@
 ## FoundryEndpointTests Coverage (March 2026)
 29 integration tests covering all 7 Foundry endpoints: Create (201/401/400/Location header), List (paged/filter by type/status/search), Get (full detail/404), Vote (up/down/401/invalid/change), Review (approve/reject/403/401/400/notifications), Notifications (empty/401/mark-read/404 unknown/404 other user).
 
+## Replacing a content row: owned JSON has to be copied in place
+
+`ContentValueCopy.ApplyAuthoredValues` ([`RealmEngine.Data/Content/ContentValueCopy.cs`](../../RealmEngine.Data/Content/ContentValueCopy.cs))
+is the only supported way to write an authored entity over a stored one. `Entry(existing).CurrentValues.SetValues(incoming)`
+walks the owner's **scalar columns only**: owned JSON navigations (`Item.Stats`/`Traits`, quest `Objectives`, a language's
+`Phonology`/`Morphology`/`RegisterSystem`) are separate tracked entries, so `SetValues` left them at their stored values
+while the write returned 200 and bumped `Version` — a silent no-op for those fields (defect found 2026-11-20; the PUT
+endpoint and the Foundry review-approval path both had it). Owned values must be mutated in place (`CopyOwnedInPlace`),
+never replaced with a new owned instance on a tracked row. All three write paths — `ContentWriteEndpoints.UpdateAsync`,
+`ContentWriteService.PromoteAsync` and `ContentPackImporter` — call the shared helper so they cannot diverge again.
+Regression tests: `ContentWriteEndpointTests.An_owned_json_edit_on_a_language_is_persisted`,
+`..._on_an_item_is_persisted`, `Removing_an_entry_from_an_owned_json_collection_is_persisted`, and
+`FoundryEndpointTests.Review_Should_Persist_An_Owned_Json_Correction_On_Approval`.
+
+**Still dropped by the HTTP path:** child *rows* (recipe ingredients, loot-table entries, actor pools that are tables
+rather than JSON) are not copied by `ApplyAuthoredValues` — `ContentPackImporter.ReconcileChildren` is the only code that
+writes them, and it matches by authored identity. The PUT endpoint does not load or reconcile children, so editing those
+collections through Foundry still round-trips 200 without a write. File a card before promising Foundry edits there.
+
 ## Dialogue options (2026-11-20)
 `Dialogue` stops being only a line pool: `DialogueStats.Options` (owned, `List<DialogueOption>`) carries the choices a
 conversation offers. Authored in the Foundry **Dialogues** form under a new **Options** group. Empty options means the

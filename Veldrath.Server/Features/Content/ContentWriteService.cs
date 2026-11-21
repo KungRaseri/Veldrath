@@ -101,11 +101,11 @@ public class ContentWriteService(ContentDbContext db)
         }
         else
         {
-            // Id survives (foreign keys point at it); the server owns Version and UpdatedAt.
-            incoming.Id = existing.Id;
-            incoming.Version = existing.Version + 1;
-            incoming.UpdatedAt = DateTimeOffset.UtcNow;
-            db.Entry(existing).CurrentValues.SetValues(incoming);
+            // Id survives (foreign keys point at it); the server owns Version and UpdatedAt, so they are stamped on the
+            // tracked row rather than copied over with the rest of the authored values.
+            existing.Version += 1;
+            existing.UpdatedAt = DateTimeOffset.UtcNow;
+            ContentValueCopy.ApplyAuthoredValues(incoming, existing, db.Model);
         }
 
         await db.SaveChangesAsync(ct);

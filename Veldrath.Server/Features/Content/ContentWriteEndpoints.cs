@@ -225,11 +225,10 @@ public static class ContentWriteEndpoints
         }
 
         // Copy the writable surface onto the tracked row. Id must survive (FK rows point at it) and UpdatedAt/Version
-        // are owned by the server, so they are stamped on the incoming copy before the copy happens.
-        incoming.Id = existing.Id;
-        incoming.Version = existing.Version + 1;
-        incoming.UpdatedAt = DateTimeOffset.UtcNow;
-        db.Entry(existing).CurrentValues.SetValues(incoming);
+        // are owned by the server, so they are stamped on the tracked row itself; ContentValueCopy skips them.
+        existing.Version += 1;
+        existing.UpdatedAt = DateTimeOffset.UtcNow;
+        ContentValueCopy.ApplyAuthoredValues(incoming, existing, db.Model);
         await db.SaveChangesAsync(ct);
 
         return Results.Ok(ValidationResponse.For(existing, result));

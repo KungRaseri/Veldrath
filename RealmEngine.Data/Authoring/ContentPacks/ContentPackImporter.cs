@@ -196,69 +196,13 @@ public sealed class ContentPackImporter(ContentDbContext db)
     /// Copies every authored property of <paramref name="incoming"/> onto the tracked row.
     /// </summary>
     /// <remarks>
-    /// Owned JSON types (<c>Stats</c>, <c>Traits</c>, quest objectives) are separate entries in EF's change tracker,
-    /// so <c>CurrentValues.SetValues</c> — which only walks the owner's scalar columns — would leave them stale while
-    /// reporting success. Assigning the CLR properties covers scalars, owned values and owned collections in one pass;
-    /// the caller has already stamped the fields the server owns.
-    /// <para>
-    /// Child rows that are entities of their own are not assigned here: <see cref="ReconcileChildren"/> matches them by
-    /// identity, because assigning the authored list makes EF treat every child as an existing row it has to UPDATE.
-    /// </para>
+    /// The copying itself lives in <see cref="ContentValueCopy.ApplyAuthoredValues"/> because the HTTP write endpoint and
+    /// the review-queue approval path replace rows the same way and must not drift from the importer. Child rows that are
+    /// entities of their own are not assigned there either: <see cref="ReconcileChildren"/> matches them by identity,
+    /// because assigning the authored list makes EF treat every child as an existing row it has to UPDATE.
     /// </remarks>
-    private void CopyAuthoredValues(ContentBase incoming, ContentBase existing)
-    {
-        var entityType = db.Model.FindEntityType(existing.GetType());
-        var navigations = entityType is null
-            ? []
-            : entityType.GetNavigations()
-                .Where(navigation => !IsAuthoredCollection(navigation) && !navigation.TargetEntityType.IsOwned())
-                .Select(navigation => navigation.PropertyInfo?.Name)
-                .OfType<string>()
-                .ToHashSet(StringComparer.Ordinal);
-
-        var childRows = entityType is null
-            ? []
-            : entityType.GetNavigations()
-                .Where(navigation => IsAuthoredCollection(navigation) && !navigation.TargetEntityType.IsOwned())
-                .Select(navigation => navigation.PropertyInfo?.Name)
-                .OfType<string>()
-                .ToHashSet(StringComparer.Ordinal);
-
-        var ownedReferences = entityType is null
-            ? []
-            : entityType.GetNavigations()
-                .Where(navigation => navigation is { IsCollection: false } && navigation.TargetEntityType.IsOwned())
-                .Select(navigation => navigation.PropertyInfo?.Name)
-                .OfType<string>()
-                .ToHashSet(StringComparer.Ordinal);
-
-        foreach (var property in existing.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
-        {
-            // A navigation to another content entity is fixed up by EF from the foreign keys copied below. Copying it
-            // would hand the tracked row an untracked instance, and nulling it would clear the foreign key with it.
-            if (!property.CanWrite
-                || navigations.Contains(property.Name)
-                || childRows.Contains(property.Name)
-                || property.Name is nameof(ContentBase.Id) or nameof(ContentBase.Version) or nameof(ContentBase.UpdatedAt))
-            {
-                continue;
-            }
-
-            var value = property.GetValue(incoming);
-
-            if (ownedReferences.Contains(property.Name)
-                && property.GetValue(existing) is { } current
-                && value is not null)
-            {
-                // An owned JSON value has to be updated in place: replacing the instance leaves EF comparing the old,
-                // still-tracked one, and the column keeps its stored values.
-                CopyInPlace(value, current);
-                continue;
-            }
-
-            property.SetValue(existing, value);
-        }
-    }
+    private void CopyAuthoredValues(ContentBase incoming, ContentBase existing) =>
+        ContentValueCopy.ApplyAuthoredValues(incoming, existing, db.Model);
 
     /// <summary>
     /// Reconciles the child rows a pack authors with the rows already stored, instead of handing the tracked parent a
@@ -419,7 +363,7 @@ public sealed class ContentPackImporter(ContentDbContext db)
 
             if (owned.GetValue(stored) is { } current)
             {
-                CopyInPlace(value, current);
+                ContentValueCopy.CopyOwnedInPlace(value, current);
             }
         }
     }
@@ -470,35 +414,6 @@ public sealed class ContentPackImporter(ContentDbContext db)
         value is System.Collections.IEnumerable sequence and not string
             ? [.. sequence.Cast<object?>().Where(child => child is not null).Select(child => child!)]
             : [];
-
-    /// <summary>Copies the writable properties of one owned value onto another, recursing into nested owned values.</summary>
-    /// <param name="source">Value authored by the pack.</param>
-    /// <param name="target">Value EF is tracking.</param>
-    private static void CopyInPlace(object source, object target)
-    {
-        foreach (var property in target.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
-        {
-            if (!property.CanWrite)
-            {
-                continue;
-            }
-
-            var value = property.GetValue(source);
-            var current = property.GetValue(target);
-
-            var isNestedOwned = property.PropertyType.IsClass
-                && property.PropertyType != typeof(string)
-                && !typeof(System.Collections.IEnumerable).IsAssignableFrom(property.PropertyType);
-
-            if (isNestedOwned && value is not null && current is not null)
-            {
-                CopyInPlace(value, current);
-                continue;
-            }
-
-            property.SetValue(target, value);
-        }
-    }
 
     /// <summary>
     /// Projects an entity onto the fields a pack authors, and returns it as canonical JSON.

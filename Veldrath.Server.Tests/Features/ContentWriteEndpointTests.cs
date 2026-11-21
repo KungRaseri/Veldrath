@@ -2,6 +2,10 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using RealmEngine.Data.Entities;
+using RealmEngine.Data.Persistence;
 using Veldrath.Server.Features.Auth;
 using Veldrath.Server.Tests.Infrastructure;
 
@@ -23,6 +27,25 @@ public class ContentWriteEndpointTests(WebAppFactory factory)
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
+    }
+
+    /// <summary>
+    /// Reads a language back through a fresh context, so the assertion sees the stored row rather than the response
+    /// the write path built from the payload it was handed.
+    /// </summary>
+    private async Task<Language> StoredLanguageAsync(string slug)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ContentDbContext>();
+        return await db.Languages.AsNoTracking().SingleAsync(language => language.Slug == slug);
+    }
+
+    /// <summary>Reads an item back through a fresh context, so the assertion sees the stored row.</summary>
+    private async Task<Item> StoredItemAsync(string slug)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ContentDbContext>();
+        return await db.Items.AsNoTracking().SingleAsync(item => item.Slug == slug);
     }
 
     private static object ValidItem(string slug) => new
@@ -182,9 +205,21 @@ public class ContentWriteEndpointTests(WebAppFactory factory)
         await client.PostAsync("/api/content/item", Json(ValidItem(slug)));
 
         var stale = Uri.EscapeDataString(DateTimeOffset.UtcNow.AddDays(-2).ToString("O"));
-        var response = await client.PutAsync($"/api/content/item/{slug}?expectedUpdatedAt={stale}", Json(ValidItem(slug)));
+        var response = await client.PutAsync($"/api/content/item/{slug}?expectedUpdatedAt={stale}", Json(new
+        {
+            slug,
+            typeKey = "trinkets",
+            displayName = "Test Trinket",
+            itemType = "consumable",
+            rarityWeight = 50,
+            isActive = true,
+            stats = new { value = 999 },
+        }));
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+
+        // The refused write must not have landed, owned JSON included.
+        (await StoredItemAsync(slug)).Stats.Value.Should().BeNull();
     }
 
     [Fact]
@@ -210,6 +245,119 @@ public class ContentWriteEndpointTests(WebAppFactory factory)
         var updatedBody = await updated.Content.ReadFromJsonAsync<JsonElement>();
         updatedBody.GetProperty("entity").GetProperty("displayName").GetString().Should().Be("Renamed Trinket");
         updatedBody.GetProperty("entity").GetProperty("version").GetInt32().Should().Be(version + 1);
+    }
+
+    [Fact]
+    public async Task An_owned_json_edit_on_a_language_is_persisted()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-owned-language-{Guid.NewGuid():N}";
+
+        static object LanguagePayload(string slug, string formalExample) => new
+        {
+            slug,
+            typeKey = "imperial",
+            displayName = "Owned JSON Language",
+            rarityWeight = 60,
+            isActive = true,
+            phonology = new
+            {
+                junctionRules = new[]
+                {
+                    new { cluster = "–l + vr–", rule = "The l drops before vr", formalExample },
+                },
+            },
+        };
+
+        var created = await client.PostAsync(
+            "/api/content/language",
+            Json(LanguagePayload(slug, "vaeld + raeth → vaelraeth")));
+        created.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var updated = await client.PutAsync(
+            $"/api/content/language/{slug}",
+            Json(LanguagePayload(slug, "vaeld + raeth → Vaelraeth")));
+        updated.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // The response is built from the submitted payload, so only the stored row can prove the edit landed.
+        var stored = await StoredLanguageAsync(slug);
+        stored.Phonology.JunctionRules.Should().ContainSingle();
+        stored.Phonology.JunctionRules[0].FormalExample.Should().Be("vaeld + raeth → Vaelraeth");
+        stored.Version.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task An_owned_json_edit_on_an_item_is_persisted()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-owned-item-{Guid.NewGuid():N}";
+
+        static object WeaponPayload(string slug, int damageMin) => new
+        {
+            slug,
+            typeKey = "heavy-blades",
+            displayName = "Owned JSON Sword",
+            itemType = "weapon",
+            weaponType = "sword",
+            damageType = "physical",
+            handsRequired = 1,
+            rarityWeight = 80,
+            isActive = true,
+            stats = new
+            {
+                weight = 3.5f,
+                value = 25,
+                damageMin,
+                damageMax = 8,
+                attackSpeed = 1.0f,
+                durability = 100,
+            },
+            traits = new { versatile = true },
+        };
+
+        var created = await client.PostAsync("/api/content/item", Json(WeaponPayload(slug, damageMin: 4)));
+        created.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var updated = await client.PutAsync($"/api/content/item/{slug}", Json(WeaponPayload(slug, damageMin: 7)));
+        updated.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var stored = await StoredItemAsync(slug);
+        stored.Stats.DamageMin.Should().Be(7);
+        stored.Stats.DamageMax.Should().Be(8);
+        stored.Version.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task Removing_an_entry_from_an_owned_json_collection_is_persisted()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-owned-collection-{Guid.NewGuid():N}";
+
+        static object LanguagePayload(string slug, params string[] rules) => new
+        {
+            slug,
+            typeKey = "imperial",
+            displayName = "Owned JSON Collection",
+            rarityWeight = 60,
+            isActive = true,
+            phonology = new
+            {
+                junctionRules = rules.Select(rule => new { cluster = "–l + vr–", rule, formalExample = rule }).ToArray(),
+            },
+        };
+
+        var created = await client.PostAsync(
+            "/api/content/language",
+            Json(LanguagePayload(slug, "First rule", "Second rule")));
+        created.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var updated = await client.PutAsync(
+            $"/api/content/language/{slug}",
+            Json(LanguagePayload(slug, "First rule")));
+        updated.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var stored = await StoredLanguageAsync(slug);
+        stored.Phonology.JunctionRules.Select(rule => rule.Rule).Should().Equal("First rule");
     }
 
     [Fact]

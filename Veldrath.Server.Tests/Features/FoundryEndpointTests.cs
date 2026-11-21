@@ -594,6 +594,54 @@ public class FoundryEndpointTests(WebAppFactory factory)
             .Should().Be(before.GetProperty("summary").GetProperty("id").GetString());
     }
 
+    /// <summary>
+    /// An approval is a write, so a correction that only touches owned JSON has to land too.
+    /// </summary>
+    /// <remarks>
+    /// The approval path replaces the stored row the same way the editor's PUT does, and for a while both copied only
+    /// the owner's scalar columns — an approved <c>stats.damageMin</c> correction was reported as written and silently
+    /// dropped. This asserts the second write path directly, because it is not reachable through the PUT endpoint.
+    /// </remarks>
+    [Fact]
+    public async Task Review_Should_Persist_An_Owned_Json_Correction_On_Approval()
+    {
+        const string slug = "fnd-rev-owned-item";
+
+        static string WeaponPayload(int damageMin) => JsonSerializer.Serialize(new
+        {
+            slug,
+            displayName = "Foundry Owned Revision",
+            typeKey = "heavy-blades",
+            itemType = "weapon",
+            weaponType = "sword",
+            damageType = "physical",
+            handsRequired = 1,
+            rarityWeight = 80,
+            isActive = true,
+            stats = new { damageMin, damageMax = damageMin + 4, value = 25 },
+        });
+
+        using var submitterClient = factory.CreateClient();
+        submitterClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndRevOwned_Sub"));
+
+        using var curatorClient = factory.CreateClient();
+        curatorClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetCuratorTokenAsync("FndRevOwned_Curator"));
+
+        var first = await CreateSubmissionAsync(submitterClient, "Item", "FndRevOwned_First", WeaponPayload(4));
+        (await curatorClient.PostAsJsonAsync($"/api/foundry/submissions/{first.Id}/review", new { Approved = true }))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var revision = await CreateSubmissionAsync(submitterClient, "Item", "FndRevOwned_Second", WeaponPayload(9));
+        var reviewed = await curatorClient.PostAsJsonAsync($"/api/foundry/submissions/{revision.Id}/review", new { Approved = true });
+        reviewed.StatusCode.Should().Be(HttpStatusCode.OK, await reviewed.Content.ReadAsStringAsync());
+
+        var detail = await curatorClient.GetFromJsonAsync<JsonElement>($"/api/content/browse/item/{slug}");
+        detail.GetProperty("payload").GetProperty("stats").GetProperty("damageMin").GetInt32().Should().Be(9);
+        detail.GetProperty("payload").GetProperty("version").GetInt32().Should().Be(2);
+    }
+
     [Fact]
     public async Task Review_Should_Reject_Submission_With_Notes()
     {
