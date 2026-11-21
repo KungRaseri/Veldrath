@@ -82,6 +82,12 @@ public static class ContentRules
     /// <summary>An actor instance has no archetype.</summary>
     public const string InstanceWithoutArchetype = "instance_without_archetype";
 
+    /// <summary>An actor instance is placed at a zone location that does not exist.</summary>
+    public const string MissingPlacementLocation = "missing-placement-location";
+
+    /// <summary>An actor instance's loot-table override points at a loot table that does not exist.</summary>
+    public const string MissingLootTable = "missing-loot-table";
+
     /// <summary>A dialogue has no lines, so it can never be spoken.</summary>
     public const string DialogueWithoutLines = "dialogue_without_lines";
 

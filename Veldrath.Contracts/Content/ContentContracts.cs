@@ -284,8 +284,12 @@ public record DialogueDto(string Slug, string DisplayName, string TypeKey,
 /// <param name="LevelOverride">Level override, or <see langword="null"/> to use archetype default.</param>
 /// <param name="FactionOverride">Faction override, or <see langword="null"/> to use archetype default.</param>
 /// <param name="RarityWeight">Selection weight for random draws.</param>
+/// <param name="LocationSlug">
+/// The zone location this instance is placed at, or <see langword="null"/> when it is catalogue-only.
+/// </param>
 public record ActorInstanceDto(string Slug, string DisplayName, string TypeKey,
-    Guid ArchetypeId, int? LevelOverride, string? FactionOverride, int RarityWeight);
+    Guid ArchetypeId, int? LevelOverride, string? FactionOverride, int RarityWeight,
+    string? LocationSlug = null);
 
 // MaterialProperty
 /// <summary>A material property definition describing the physical characteristics of a material family.</summary>

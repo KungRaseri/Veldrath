@@ -4203,6 +4203,7 @@ public class GameHubTests : IDisposable
             new CharacterUnlockedLocationRepository(db),
             new ActorPoolResolver(new EnemyGenerator(Mock.Of<IEnemyRepository>(), NullLogger<EnemyGenerator>.Instance)),
             new Veldrath.Server.Tests.Infrastructure.FakeEnemyInstanceStore(),
+            new RealmEngine.Data.Repositories.InMemoryActorInstanceRepository(),
             NullLogger<NavigateToLocationHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
@@ -4234,6 +4235,7 @@ public class GameHubTests : IDisposable
             new CharacterUnlockedLocationRepository(db),
             new ActorPoolResolver(new EnemyGenerator(Mock.Of<IEnemyRepository>(), NullLogger<EnemyGenerator>.Instance)),
             new Veldrath.Server.Tests.Infrastructure.FakeEnemyInstanceStore(),
+            new RealmEngine.Data.Repositories.InMemoryActorInstanceRepository(),
             NullLogger<NavigateToLocationHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
@@ -4257,6 +4259,7 @@ public class GameHubTests : IDisposable
             new CharacterUnlockedLocationRepository(db),
             new ActorPoolResolver(new EnemyGenerator(Mock.Of<IEnemyRepository>(), NullLogger<EnemyGenerator>.Instance)),
             new Veldrath.Server.Tests.Infrastructure.FakeEnemyInstanceStore(),
+            new RealmEngine.Data.Repositories.InMemoryActorInstanceRepository(),
             NullLogger<NavigateToLocationHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
@@ -4280,6 +4283,7 @@ public class GameHubTests : IDisposable
             new CharacterUnlockedLocationRepository(db),
             new ActorPoolResolver(new EnemyGenerator(Mock.Of<IEnemyRepository>(), NullLogger<EnemyGenerator>.Instance)),
             new Veldrath.Server.Tests.Infrastructure.FakeEnemyInstanceStore(),
+            new RealmEngine.Data.Repositories.InMemoryActorInstanceRepository(),
             NullLogger<NavigateToLocationHubCommandHandler>.Instance);
 
         var result = await handler.Handle(
@@ -4332,6 +4336,7 @@ public class GameHubTests : IDisposable
             new CharacterUnlockedLocationRepository(db),
             new ActorPoolResolver(new EnemyGenerator(Mock.Of<IEnemyRepository>(), NullLogger<EnemyGenerator>.Instance)),
             new Veldrath.Server.Tests.Infrastructure.FakeEnemyInstanceStore(),
+            new RealmEngine.Data.Repositories.InMemoryActorInstanceRepository(),
             NullLogger<NavigateToLocationHubCommandHandler>.Instance);
 
         var result = await handler.Handle(

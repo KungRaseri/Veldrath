@@ -49,6 +49,70 @@ public class SeededEncounterCoverageTests
             .ToList();
 
         noisy.Should().BeEmpty("a town, respawn point or lobby that spawns hostiles is a content bug");
+
+        // A placed named actor counts as spawn content too: putting a boss in the square is the same bug as pooling one
+        // there, and the roster now emits placements as well.
+        var quietSlugs = shouldBeQuiet.Select(location => location.Slug).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var placedInQuiet = await content.ActorInstances.AsNoTracking()
+            .Where(instance => instance.IsActive && instance.LocationSlug != null)
+            .Select(instance => new { instance.Slug, instance.LocationSlug })
+            .ToListAsync();
+
+        placedInQuiet
+            .Where(instance => quietSlugs.Contains(instance.LocationSlug!))
+            .Select(instance => $"{instance.LocationSlug}/{instance.Slug}")
+            .Should()
+            .BeEmpty("a named actor placed in a town, respawn point or lobby would stand there to be fought");
+    }
+
+    [Fact]
+    public async Task Every_placed_instance_stands_somewhere_real_hostile_and_alone()
+    {
+        await using var probe = new SeededContentProbe();
+        await using var content = await probe.CreateContextAsync();
+
+        var placed = await content.ActorInstances.AsNoTracking()
+            .Where(instance => instance.IsActive && instance.LocationSlug != null)
+            .ToListAsync();
+
+        placed.Should().NotBeEmpty("the seed places the two named actors this card made real");
+
+        var locations = (await content.ZoneLocations.AsNoTracking().ToListAsync())
+            .ToDictionary(location => location.Slug, StringComparer.OrdinalIgnoreCase);
+        var archetypesById = (await content.ActorArchetypes.AsNoTracking().ToListAsync())
+            .ToDictionary(archetype => archetype.Id);
+
+        var problems = new List<string>();
+
+        foreach (var instance in placed)
+        {
+            if (!locations.ContainsKey(instance.LocationSlug!))
+            {
+                problems.Add($"'{instance.Slug}' is placed at unknown location '{instance.LocationSlug}'");
+                continue;
+            }
+
+            if (!archetypesById.TryGetValue(instance.ArchetypeId, out var archetype))
+            {
+                problems.Add($"'{instance.Slug}' overrides a missing archetype");
+                continue;
+            }
+
+            if (archetype.Traits.Hostile != true)
+            {
+                problems.Add($"'{instance.Slug}' is placed but its archetype '{archetype.Slug}' is not hostile");
+            }
+        }
+
+        problems.Should().BeEmpty();
+
+        placed
+            .Where(instance => string.Equals(instance.TypeKey, "boss", StringComparison.OrdinalIgnoreCase))
+            .GroupBy(instance => instance.LocationSlug!, StringComparer.OrdinalIgnoreCase)
+            .Where(group => group.Count() > 1)
+            .Select(group => $"{group.Key} holds {group.Count()} bosses")
+            .Should()
+            .BeEmpty("one location, one unique boss — a boss is made unique by being placed, not by being pooled");
     }
 
     [Fact]

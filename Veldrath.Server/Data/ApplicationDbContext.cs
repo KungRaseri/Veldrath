@@ -361,6 +361,8 @@ public class ApplicationDbContext : IdentityDbContext<PlayerAccount, IdentityRol
             e.Property(i => i.ZoneGroup).HasMaxLength(200).IsRequired();
             e.Property(i => i.LocationSlug).HasMaxLength(128).IsRequired();
             e.Property(i => i.ArchetypeSlug).HasMaxLength(200).IsRequired();
+            // Null for a pool spawn; the instance slug is what rebuilds the composed template on reload.
+            e.Property(i => i.InstanceSlug).HasMaxLength(200);
             e.Property(i => i.Name).HasMaxLength(200).IsRequired();
             // One living archetype instance per location per spawn instant.
             e.HasIndex(i => new { i.ZoneGroup, i.LocationSlug, i.ArchetypeSlug, i.SpawnedAt }).IsUnique();

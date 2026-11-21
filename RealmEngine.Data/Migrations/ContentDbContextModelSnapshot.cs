@@ -163,6 +163,10 @@ namespace RealmEngine.Data.Migrations
                     b.Property<int?>("LevelOverride")
                         .HasColumnType("integer");
 
+                    b.Property<string>("LocationSlug")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
                     b.Property<Guid?>("LootTableOverride")
                         .HasColumnType("uuid");
 

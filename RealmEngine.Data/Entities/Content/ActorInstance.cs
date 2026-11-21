@@ -5,10 +5,29 @@ namespace RealmEngine.Data.Entities;
 /// TypeKey = origin category (e.g. "boss", "story", "unique").
 /// Only fields with non-null values override the base archetype at runtime.
 /// </summary>
+/// <remarks>
+/// <para>
+/// A row with a <see cref="LocationSlug"/> is one named actor standing at one zone location: the spawn path emits it
+/// exactly once per roster there, and composes <see cref="StatOverrides"/> (plus <see cref="LevelOverride"/>,
+/// <see cref="DisplayName"/> and <see cref="LootTableOverride"/>) onto the archetype's projected template. A null
+/// field inherits, and an absolute value replaces — nothing is added to or scaled by the archetype's number.
+/// </para>
+/// <para>
+/// A row without a location is catalogue-only: Foundry and the editorial site can read it, but nothing in the world
+/// places it, so it never spawns.
+/// </para>
+/// </remarks>
 public class ActorInstance : ContentBase
 {
     /// <summary>FK to the base archetype this instance overrides.</summary>
     public Guid ArchetypeId { get; set; }
+
+    /// <summary>
+    /// The one zone location this instance stands at, or <see langword="null"/> for a catalogue-only instance.
+    /// Soft reference, not a FK — the same shape as <see cref="FactionOverride"/>, because a location lives in the
+    /// content rows and a renamed slug must be catchable as a content error rather than deleted in a cascade.
+    /// </summary>
+    public string? LocationSlug { get; set; }
 
     /// <summary>Override for the actor's level. Null = use archetype's MinLevel.</summary>
     public int? LevelOverride { get; set; }
@@ -26,6 +45,7 @@ public class ActorInstance : ContentBase
     public LootTable? LootTable { get; set; }
 
     /// <summary>Additional powers specific to this instance, on top of the archetype pool.</summary>
+    /// <remarks>Not projected onto the spawned template: no consumer on the spawn or combat path reads it yet.</remarks>
     public ICollection<InstancePowerPool> PowerPool { get; set; } = [];
 }
 

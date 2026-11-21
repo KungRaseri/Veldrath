@@ -101,6 +101,8 @@ public static class ContentModelConfiguration
             e.HasOne(x => x.LootTable).WithMany()
              .HasForeignKey(x => x.LootTableOverride).OnDelete(DeleteBehavior.SetNull);
             e.Property(x => x.FactionOverride).HasMaxLength(64);
+            // Soft reference to a zone location, so it is a bounded string rather than a foreign key.
+            e.Property(x => x.LocationSlug).HasMaxLength(128);
             e.OwnsOne(x => x.StatOverrides, o => o.ToJson());
         });
 

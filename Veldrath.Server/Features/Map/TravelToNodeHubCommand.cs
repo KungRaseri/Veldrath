@@ -131,6 +131,7 @@ public class TravelToNodeHubCommandHandler
     private readonly IZoneLocationRepository _locationRepo;
     private readonly ActorPoolResolver _actorPoolResolver;
     private readonly IEnemyInstanceStore _enemyStore;
+    private readonly IActorInstanceRepository _actorInstances;
     private readonly IZoneInstanceService _instances;
     private readonly ILogger<TravelToNodeHubCommandHandler> _logger;
 
@@ -143,6 +144,7 @@ public class TravelToNodeHubCommandHandler
     /// <param name="locationRepo">Zone-location repository used for discovery and rosters.</param>
     /// <param name="actorPoolResolver">Resolver that spawns the destination enemy roster.</param>
     /// <param name="enemyStore">Store for the live enemy instances at the destination.</param>
+    /// <param name="actorInstances">Repository for the named actors placed at the destination location.</param>
     /// <param name="instances">Instance-run service, used when the destination location is instanced.</param>
     /// <param name="logger">Logger for diagnostic output.</param>
     public TravelToNodeHubCommandHandler(
@@ -154,6 +156,7 @@ public class TravelToNodeHubCommandHandler
         IZoneLocationRepository locationRepo,
         ActorPoolResolver actorPoolResolver,
         IEnemyInstanceStore enemyStore,
+        IActorInstanceRepository actorInstances,
         IZoneInstanceService instances,
         ILogger<TravelToNodeHubCommandHandler> logger)
     {
@@ -165,6 +168,7 @@ public class TravelToNodeHubCommandHandler
         _locationRepo = locationRepo;
         _actorPoolResolver = actorPoolResolver;
         _enemyStore = enemyStore;
+        _actorInstances = actorInstances;
         _instances = instances;
         _logger = logger;
     }
@@ -438,12 +442,16 @@ public class TravelToNodeHubCommandHandler
 
         var pool = location.ActorPool ?? [];
 
+        // A named actor placed here is part of the roster, not part of the pool: it is emitted once, whatever the pool
+        // draws, because "the chief stands in the clearing" is content and not a probability.
+        var placements = await _actorInstances.GetPlacedAsync(destinationNode.RefId, CancellationToken.None);
+
         // Reads the stored roster, spawning it on first arrival. Dead rows with an elapsed respawn time are
         // revived by the store, so this is also where a wiped world comes back.
         var alive = await _enemyStore.GetAliveOrSpawnAsync(
             effectiveZoneGroup,
             destinationNode.RefId,
-            _ => _actorPoolResolver.SpawnRosterAsync(pool),
+            _ => _actorPoolResolver.SpawnRosterAsync(pool, placements),
             zoneInstanceId,
             CancellationToken.None);
 
@@ -453,9 +461,10 @@ public class TravelToNodeHubCommandHandler
             effectiveZoneGroup,
             destinationNode.RefId);
 
-        // Failsafe, not fallback: an authored pool that produced nothing means broken content.
+        // Failsafe, not fallback: an authored pool that produced nothing, with nothing placed here either, means
+        // broken content. A location that relies on its placements is not a broken pool.
         var warnings = new List<string>();
-        if (alive.Count == 0 && pool.Count > 0)
+        if (alive.Count == 0 && pool.Count > 0 && placements.Count == 0)
         {
             warnings.Add(
                 $"Content error: the spawn pool for '{location.Slug}' references no known actors. Please report this to a staff member.");

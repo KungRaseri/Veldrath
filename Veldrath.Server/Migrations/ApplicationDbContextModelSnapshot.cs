@@ -431,6 +431,10 @@ namespace Veldrath.Server.Migrations
                     b.Property<int>("GoldReward")
                         .HasColumnType("integer");
 
+                    b.Property<string>("InstanceSlug")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<bool>("IsAlive")
                         .HasColumnType("boolean");
 
