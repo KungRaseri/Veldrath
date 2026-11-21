@@ -6,7 +6,15 @@ name: Deploy Documentation
 
 concurrency:
   group: docs-${{ github.ref }}
-  cancel-in-progress: true
+  # Cancel only a superseded pull-request head. A cancelled run is recorded as a *failing*
+  # commit status — `failure`, description "Has been cancelled", measured on Forgejo
+  # 15.0.11 — so cancelling a base-branch run leaves the merged commit, and every branch
+  # built on it, red with a verdict that never happened. `development` and `main` are merged
+  # in bursts and this instance's runner has capacity 1, so a docs run queues for minutes
+  # behind the component jobs of the next merge and used to be superseded nearly every time:
+  # 10 of the last 17 development push runs ended `Has been cancelled`. A cancelled PR run is
+  # harmless because a pull request only ever shows its latest head.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # docfx.json builds the API reference from Realm.Full.slnx, so any C# change can alter the
 # published docs. Watch the whole solution rather than a hand-maintained project list.
