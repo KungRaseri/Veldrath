@@ -53,7 +53,7 @@ with `SafeRespawn = true` / `IsDungeon = false` that acts as its lobby (`halrow-
 
 ## 4. The gaps, in priority order
 
-### P0 — nothing spawns anywhere (verified)
+### P0 — nothing spawns anywhere (measured 2026-11-17; **fixed 2026-11-18** — pools on every hostile location)
 
 `ZoneLocations.ActorPool` is empty on all 67 rows and
 [`ActorPoolResolver.SpawnRosterAsync`](../Veldrath.Server/Features/Characters/Combat/ActorPoolResolver.cs:80-86) returns
@@ -73,7 +73,13 @@ fallback could not silently fake a missing pool. Hostile placements still spawn 
 `wrack-shore`, `bone-strand`, `tidal-grotto` (12–18); `clifftop-ruins`, `gull-rider-camp` (14–20); the 13 dungeon
 rooms (4–17). Towns, inns, markets and the `SafeRespawn` lobbies stay empty.
 
-### P1 — two hostile archetypes cannot carry a level 1–20 world
+**Status (2026-11-20):** the counts above are the 2026-11-17 record. The pools landed in `b9788d00` (merged as
+#76): 36 of 67 locations carry one, every key is a real location slug, and
+`Every_other_location_can_spawn_something` fails the build if a hostile location goes quiet. Both arrival
+commands spawn from the pool, and the empty-pool branch this section quotes now sits at
+`ActorPoolResolver.cs:80-86`.
+
+### P1 — two hostile archetypes cannot carry a level 1–20 world (**fixed 2026-11-18**)
 
 `goblin-scout` tops out at level 3 and `bandit-ruffian` at 6. The zone ladder runs to level 20, so every zone from
 `pale-moor` (7+) upward has no plausible enemy at all, and a pool there would be a lie.
@@ -82,6 +88,11 @@ rooms (4–17). Towns, inns, markets and the `SafeRespawn` lobbies stay empty.
 (3–6, existing), `moor-wight`/`cairn-haunt` (6–10), `fen-lurker`/`drowned-revenant` (10–14),
 `gull-rider-brute`/`ash-wraith` (14–20), plus one boss per dungeon (the loot tables already expect one). Each needs
 `Stats` (health, damage, XP, gold) and `Traits` (`Hostile`, `Aggressive`, `PackHunter`, `Caster`, …).
+
+**Status (2026-11-20):** fourteen hostile archetypes are seeded, banded `giant-rat` (1–3) through `fire-ancient`
+(26–30) — the ladder runs to 30 now, not 20 ([`ArchetypeSeeder.cs`](../RealmEngine.Data/Seeders/ArchetypeSeeder.cs)).
+`Every_hostile_band_has_an_archetype` and `Every_pooled_archetype_fits_its_location_level_band` keep a band from
+going empty and keep a pool inside its own location's levels.
 
 ### P1 — the loot tables were orphans (**fixed 2026-11-18**)
 
@@ -94,7 +105,8 @@ the four name content that does not exist: `wolf-common-drops` (there is no wolf
 `Enemy` model, `AttackEnemyHubCommandHandler` rolls each entry against its own weight (a guaranteed entry always
 lands), adds the result to the killer's bag and returns it as `ItemsDropped`, and the client names it in the combat
 log ("Found: 2× iron-ingot"). `lost-cargo` now rides on `bandit-boss-drops`, so `the-lost-shipment` has a source.
-Still open: `forest-chest-loot` has no chest to open, and `gather-mushrooms` needs harvesting (below).
+Both gaps this section left open were closed later: chests are authored and roaming (see **Chests** below) and
+`gather-mushrooms` has five authored nodes (see **Harvesting**).
 
 ### P0 — a dead player was locked out: "Character is not dead" (found by the C6 spec, **fixed 2026-11-18**)
 
@@ -112,7 +124,7 @@ which made the character look alive to the very command that respawns it. Death 
 **Related content rule this exposed:** a respawn point that spawns hostiles is a death loop. Locations flagged
 `SafeRespawn` (and towns and lobbies) now carry no pool, and `SeededEncounterCoverageTests` asserts it.
 
-### P1 — a level-1 character cannot win any fight
+### P1 — a level-1 character cannot win any fight (**fixed 2026-11-17**)
 
 A new character has **10 HP** (the attribute blob's `MaxHealth`), and a location spawns **2–4** actors whose weakest
 swing is 3–5. One exchange killed the level-1 warrior outright, so *victory* is arithmetically impossible for a new
@@ -121,7 +133,12 @@ character anywhere in the world. The engagement spec therefore asserts the excha
 **Fix (needs a balance decision):** either raise the level-1 baseline (HP from constitution, not a flat 10), or make
 the level 1–3 band genuinely weak (damage 1, one or two actors), or scale the roster by the character's level.
 
-### P1 — a location is not adjacent to where a character arrives (found writing C6)
+**Status (2026-11-20):** the cause was not the band. `POST /api/characters` wrote no attribute blob, so an API-made
+character carried the `Level * 10` = 10 HP fallback while a wizard-made one carried `Con*10 + level*5`. The endpoint
+writes the same keys now, `CharacterEndpointTests` asserts the stored blob, and `encounters.e2e.ts` engages a
+`drove-road` roster on a level-1 warrior and wins.
+
+### P1 — a location is not adjacent to where a character arrives (found writing C6; **partly fixed 2026-11-18**)
 
 Each zone map links `entry ↔ exit:zone:x ↔ location:y`: the entry node's neighbours are the zone's **exits**, and
 each exit touches the locations on that side. So walking from the arrival point to a location takes two or more hops,
@@ -137,7 +154,13 @@ locations, or add a dev-only GM spawn (`POST /api/dev/spawn` → `IEnemyInstance
 character's current location) so a roster can be created deterministically for tests. The GM spawn is the cheaper of
 the two and does not change the world.
 
-### P2 — quests do not survive contact with the world
+**Status (2026-11-20):** the adjacency half is fixed — `MapGraphSeeder.ConnectZoneEntriesToLocations` chains
+`entry → first → second → …`, so the first location of every zone is one hop from the arrival point and
+`encounters.e2e.ts` walks to `drove-road` on foot from the arrival node (its dev teleport only puts the character in
+the zone). The resume half is still open: `EnterZone` sends `ZoneEntered` and no roster, so a character who logs in
+already standing on a location sees an empty Local panel until they move.
+
+### P2 — quests do not survive contact with the world (**fixed 2026-11-18**; breadth still open)
 
 `clear-the-forest` targets 5 `goblin-scout` kills "in the Darkwood Forest" — **no such zone or location exists in
 the seed**, and with no pools the kills cannot happen. `gather-mushrooms` targets `glowcap-mushroom`, which is a real
@@ -148,7 +171,12 @@ item but has no source: no harvestable node is seeded and `NodeSpawnerService` i
 `glowcap-mushroom` node in the woods locations, and a drop (`lost-cargo`) on a bandit. Three quests for 19 zones is
 also thin: one per starter zone is the minimum for a passable baseline.
 
-### P2 — dialogue and NPCs
+**Status (2026-11-20):** all three targets are producible now. `clear-the-forest` names the Ashlen Wood, where
+`goblin-scout` pools on `wood-road` and `old-clearing`; `gather-mushrooms` has five harvestable `glowcap-cluster`
+nodes in those two locations and a `forest-forage` table; `lost-cargo` is a guaranteed entry on
+`bandit-boss-drops`, which `bandit-captain` drops. Still open: three quests for 19 zones.
+
+### P2 — dialogue and NPCs (**fixed 2026-11-18**)
 
 4 dialogue rows for 67 locations, and no NPC is marked `QuestGiver` or `HasDialogue`. The `tavern-keeper` and
 `village-blacksmith` NPCs exist as archetypes but are not placed in any location pool (see P0: pools are the only
@@ -157,7 +185,13 @@ placement mechanism) — so no NPC is ever visible either.
 **Fix:** once pools exist, place the NPC archetypes in the town/inn pools; give at least the starter-zone quest giver
 a dialogue with a quest offer, so the dialogue surface has a real path instead of one seeded example.
 
-### P3 — every merchant sells the same 25 items
+**Status (2026-11-20):** people are their own placement row now (`LocationNpc`), not a pool entry —
+`LocationNpcsSeeder` stands the smith at the Aurelian Market, the keeper at the Hearthbound Inn and the elder on the
+Crestfall Square, and `TalkToNpc` refuses a person who is not where the character stands. `tavern-keeper` is a
+`QuestGiver` with a quest-hook line and both shopkeepers carry `HasDialogue`. Still thin: four dialogue rows for 67
+locations.
+
+### P3 — every merchant sells the same 25 items (**fixed 2026-11-20**)
 
 [`GetShopCatalogHubCommand`](../Veldrath.Server/Features/Shop/GetShopCatalogHubCommand.cs:36) dispatches
 `GetItemCatalogQuery`, i.e. the whole priced catalog, gated only by the *zone's* `HasMerchant`. Not a blocker for a
@@ -165,6 +199,11 @@ test baseline (the shop panel works), but it is why every shop feels identical.
 
 **Fix (later):** per-merchant stock — a loot-table-style table keyed by zone, or a `ShopStock` junction. Out of scope
 for this pass unless the pass wants a shop test that can tell two merchants apart.
+
+**Status (2026-11-20):** the junction exists. `ZoneStockSeeder` authors each merchant town's own list — Crestfall,
+Aldenmere, Tolvaren, Skarhold, between eight and sixteen of the twenty-four purchasable items per the approved band —
+and `GetShopCatalogHubCommand` reads that stock instead of dispatching the whole catalog, behind a merchant who has
+to actually be standing with the character.
 
 ## 5. Decisions to take before authoring (see the question list)
 
