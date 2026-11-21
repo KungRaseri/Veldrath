@@ -13,7 +13,7 @@ a copy line, not a number.
   `budget.yaml` and fails the build on drift. The shopkeeper rows below still carry no numbers of their own: a
   person sells the town's stock at the band's published prices (C5).
 - **Per-zone shared shop stock — landed 2026-11-20.** Two merchants in one town sell from one authored shelf
-  (`ZoneStockItems`, migration `20261121004324_AddZoneStockItems`) rather than the whole catalogue: ten rows at
+  (`ZoneStockItems`, migration `20261121004324_AddZoneStockItems`) rather than the whole catalogue: nine rows at
   Crestfall, twelve at Aldenmere, eleven at Tolvaren, twelve at Skarhold. Per-NPC stock is still an engine
   change and is not in this wave (C6).
 - **`playground` — excluded.** The fifth `IsTown` zone is `IsDevOnly` and is never returned by public
@@ -40,8 +40,8 @@ Read from code, with the line that says so. Every rule below shaped the roster.
 | Fact | Where | Consequence for this document |
 |---|---|---|
 | A person is placed by a `LocationNpc` row: `NpcId`, `ZoneId`, `LocationSlug`, `ArchetypeSlug`, optional `DisplayName`, `SortOrder` | `Veldrath.Server/Data/Entities/LocationNpc.cs`; seeded in `LocationNpcsSeeder.cs` | Every roster row here is a `LocationNpcs` entry, keyed by zone **and** location. An NPC is only meetable where the character's current zone *and* location match (`NpcHubCommands.cs:157-158`). |
-| A spawn pool entry becomes an attackable enemy, and a non-hostile one is dropped with a warning | `ActorPoolResolver.cs:82-87` | No townsperson appears in any pool. Section 7 proves the four settlements have zero pool entries. |
-| An empty pool means nothing spawns and nothing is substituted | `ActorPoolResolver.cs:56-61` | `SafeRespawn` towns keep an empty pool. That is authored content, not a gap. |
+| A spawn pool entry becomes an attackable enemy, and a non-hostile one is dropped with a warning | `ActorPoolResolver.cs:127-133` | No townsperson appears in any pool. Section 7 proves the four settlements have zero pool entries. |
+| An empty pool spawns nothing and substitutes nothing **only where nothing is placed**; a location with hostile placements and no pool spawns exactly those, never topped up, and a non-hostile placement is dropped with a warning | `ActorPoolResolver.cs:80-86`, `:94-100`, `:105-109` | `SafeRespawn` towns keep an empty pool **and no hostile placements**. That is authored content, not a gap. |
 | Dialogue is keyed by **archetype slug**, not by placement | `DialogueHubCommands.cs` `PickEntryAsync` (`Speaker == slug`), `NpcGreetings.PickAsync` | Two people sharing one archetype share one voice. Distinct registers per town therefore require distinct archetype slugs — the main cost in this card. |
 | `TalkToNpc` greets from entries with `TypeKey == "greetings"`; with none it falls back to "*{name} looks up as you approach*" | `NpcHubCommands.cs` `NpcGreetings` | A placed person with no greeting row is a person with nothing to say. One already exists today (C4). |
 | The dialogue panel only opens on an entry that has `Stats.Options` | `DialogueHubCommands.cs` `PickEntryAsync` | Greetings-only NPCs are barked at, not conversed with. Conversations are wave B/C content; this card does not pretend to ship them. |
@@ -329,7 +329,7 @@ slug is not a text fix: it breaks that placement row and any stored `CurrentZone
 "*Tharrek looks up as you approach.*" every time. Also note the existing speaker slugs are inconsistent:
 `blacksmith-greeting` is hyphenated, `tavernkeeper-greeting` is not.
 
-**C5 — No merchant band exists. (Resolved 2026-11-20.)** `budget.yaml` published a `merchants:` section, and the
+**C5 — No merchant band exists. (Resolved 2026-11-20, `e691eba2`.)** `budget.yaml` published a `merchants:` section, and the
 shop applies its two price endpoints. `MerchantBands` carries the purse tiers, the stock size and those
 endpoints; `ShopPricing` prices every catalogue row with them; a merchant's `TradeGold` is the purse a single
 buyback may draw on, refused as `ShopRefusal.MerchantCannotAfford` when it will not cover the payout. The purse
@@ -342,7 +342,7 @@ band's published prices.
 
 **C6 — One shop catalog per zone.** The shop keys on `ZoneId`, not on the person: `VisitShopHubCommand` and
 `GetShopCatalogHubCommand` resolve the zone's merchant and read the zone's authored shelf (`ZoneStockItems`, one
-row per item per town, seeded ten / twelve / eleven / twelve), so Aldenmere's keep and its marketplace sell from
+row per item per town, seeded nine / twelve / eleven / twelve), so Aldenmere's keep and its marketplace sell from
 the same stock, and so do Skarhold's. "What they sell" here distinguishes the people, not the inventory; per-NPC
 stock needs an engine change.
 
@@ -457,7 +457,7 @@ miscounted dialogue total in §8.
 Every reference in this document closes: the 13 archetype slugs are either seeded today or named here as new;
 the 13 placement ids resolve to zone + location pairs proven in §7; the dialogue ids are either seeded today or
 carry `(new)` and a `-greeting` slug the dialogue pass creates. There are no arrows to files that do not exist
-and no numbers that do not trace to a band — because no numbers are used at all.
+and no numbers that do not trace to a band.
 
 ## 9. Acceptance
 

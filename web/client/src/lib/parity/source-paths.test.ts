@@ -1,6 +1,7 @@
 import { existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { scanSuite, withoutComments, type SourcePath } from '#lib/testing/source-paths';
 import { readRepoFile, repoRoot, walkFiles } from '#lib/testing/source';
 
 /**
@@ -21,15 +22,17 @@ import { readRepoFile, repoRoot, walkFiles } from '#lib/testing/source';
  * `content-schema.test.ts` spent a week in exactly that state, after `ContentEntityTypes.cs` moved to
  * `RealmEngine.Data/Content/`.
  *
- * So this suite reads the call sites instead of the server. It scans its siblings for
- * `readRepoFile('…')`, `walkFiles('…')` and `join(repoRoot(), '…')`, resolves the argument (a quoted
- * literal, or an `UPPER_SNAKE` constant holding one) and checks the path still exists. A move now
- * fails **here**, in one assertion that names the moved path and the suite that reads it, instead of
- * taking the guarding suite down with an ENOENT.
+ * So this suite reads the call sites instead of the server. It scans its siblings — and the suites
+ * listed in `EXTERNAL_SUITES` — for `readRepoFile('…')`, `walkFiles('…')` and
+ * `join(repoRoot(), '…')`, resolves the argument (a quoted literal, a template literal with no
+ * interpolation, or any `const`/`let`/`var` holding one, whatever the casing) and checks the path
+ * still exists. A move now fails **here**, in one assertion that names the moved path and the suite
+ * that reads it, instead of taking the guarding suite down with an ENOENT.
  *
  * The extraction is deliberately static. A `readRepoFile(file)` call fed by `walkFiles('…')` is not
- * followed — the directory literal on the `walkFiles` call is what gets checked — but an argument the
- * guard cannot resolve at all is itself a failure, so a future suite cannot quietly opt out.
+ * followed — the directory literal on the `walkFiles` call is what gets checked — but an argument
+ * the guard cannot resolve at all is itself a failure, so a future suite cannot quietly opt out.
+ * `#lib/testing/source-paths` holds the reader; its own test pins the resolution rules.
  */
 
 const PARITY_DIR = 'web/client/src/lib/parity';
@@ -40,118 +43,39 @@ const PARITY_DIR = 'web/client/src/lib/parity';
  */
 const SELF = `${PARITY_DIR}/source-paths.test.ts`;
 
-/** One path a suite depends on, together with the call site that depends on it. */
-interface SourcePath {
-	/** The repo-relative path. */
-	path: string;
-	/** What the helper needs it to be. */
-	kind: 'file' | 'directory';
-	/** `src/lib/parity/hub-methods.test.ts:15` — the suite that reads it, and where. */
-	caller: string;
-	/** The helper the suite called. */
-	helper: string;
-}
+/**
+ * Source-reading suites outside `PARITY_DIR`, each with the reason it is scanned.
+ *
+ * The folder above is walked, not listed, so a new parity suite is covered the moment it is added.
+ * A suite elsewhere that reads the server is not, and `payload-contract.test.ts` is exactly that:
+ * it parses the payloads `GameHub.cs` broadcasts, so a hub move breaks it the same way. Listing the
+ * whole of `src/lib/game/` would drag in suites that never touch repo source, so the list is
+ * per-suite and every entry carries the reason it is here. An entry is removed only when its suite
+ * is deleted or stops reading repo source — never to make the guard green.
+ *
+ * `web/client/src/lib/testing/harness.test.ts` is deliberately absent: it exercises the helpers in
+ * `source.ts`, not a server contract, so a repository move is not a parity failure there.
+ */
+const EXTERNAL_SUITES: ReadonlyArray<{ suite: string; reason: string }> = [
+	{
+		suite: 'web/client/src/lib/game/payload-contract.test.ts',
+		reason:
+			'compares the payloads Veldrath.Server/Hubs/GameHub.cs broadcasts with the interfaces in ' +
+			'web/client/src/lib/game/types.ts, so it depends on the same repository layout as a parity suite'
+	}
+];
 
-/** The argument of a call: a quoted literal, a bare identifier, or neither. */
-interface CallArgument {
-	literal: string | null;
-	identifier: string | null;
-	index: number;
-}
-
-/** Every argument of every `call(…)` in `source`, captured as a literal or a bare identifier. */
-function argumentsOf(source: string, call: string): CallArgument[] {
-	const pattern = new RegExp(`\\b${call}\\(\\s*(?:'([^']*)'|"([^"]*)"|([A-Za-z_$][\\w$]*))`, 'g');
-
-	return [...source.matchAll(pattern)].map((match) => {
-		const literal = match[1] ?? match[2];
-
-		return {
-			literal: literal ?? null,
-			identifier: literal === undefined ? (match[3] ?? null) : null,
-			index: match.index ?? 0
-		};
-	});
-}
-
-/** `const THEME_CSS = '…';` — the way a suite names the file it reads. */
-function stringConstants(source: string): Map<string, string> {
-	const pattern = /\bconst\s+([A-Z][A-Z0-9_]*)\s*=\s*'([^']*)'\s*;/g;
-
-	return new Map([...source.matchAll(pattern)].map((match) => [match[1], match[2]]));
-}
+const PARITY_SUITES = walkFiles(PARITY_DIR, ['.test.ts']).filter((suite) => suite !== SELF);
+const EXTERNAL_PATHS = EXTERNAL_SUITES.map(({ suite }) => suite);
 
 /**
- * Identifiers the suite binds itself: locals, loop variables and arrow parameters.
- *
- * `readRepoFile(file)` inside `for (const file of walkFiles('…'))` is not statically knowable, but it
- * is derived from a directory literal this guard does check — the only shape it accepts.
+ * Every suite to scan. An external suite whose file is gone is reported by its own assertion
+ * instead of being read here — a module-scope ENOENT would take this guard down with it.
  */
-function boundNames(source: string): Set<string> {
-	const names = new Set<string>();
-
-	for (const [, name] of source.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)/g))
-		names.add(name);
-	for (const [, name] of source.matchAll(/\(\s*([A-Za-z_$][\w$]*)\s*\)\s*=>/g)) names.add(name);
-
-	return names;
-}
-
-/** The paths one suite reads, and the calls whose argument cannot be resolved statically. */
-function scanSuite(suite: string, source: string): { paths: SourcePath[]; unresolved: string[] } {
-	const constants = stringConstants(source);
-	const bound = boundNames(source);
-	const paths: SourcePath[] = [];
-	const unresolved: string[] = [];
-
-	const at = (index: number) => `${suite}:${source.slice(0, index).split('\n').length}`;
-
-	for (const [call, kind] of [
-		['readRepoFile', 'file'],
-		['walkFiles', 'directory']
-	] as const) {
-		for (const argument of argumentsOf(source, call)) {
-			const path =
-				argument.literal ?? (argument.identifier ? constants.get(argument.identifier) : undefined);
-
-			if (path === undefined) {
-				if (!argument.identifier || !bound.has(argument.identifier)) {
-					unresolved.push(`${at(argument.index)} — ${call}(${argument.identifier ?? '…'})`);
-				}
-				continue;
-			}
-
-			paths.push({ path, kind, caller: at(argument.index), helper: call });
-		}
-	}
-
-	// `join(repoRoot(), '…')` is the escape hatch a suite uses to stat one path directly.
-	for (const match of source.matchAll(/\bjoin\(\s*repoRoot\(\s*\)\s*,\s*'([^']+)'/g)) {
-		paths.push({
-			path: match[1],
-			kind: 'file',
-			caller: at(match.index ?? 0),
-			helper: 'join(repoRoot())'
-		});
-	}
-
-	return { paths, unresolved };
-}
-
-/**
- * The suite source with comment text blanked out.
- *
- * Comments are prose *about* paths — the reason a suite reads a file lives in them, and a suite is
- * allowed to name the path it used to read there. Scanning code only keeps a comment from being
- * mistaken for a call site. Newlines are preserved so the line numbers in the messages stay true.
- */
-function withoutComments(source: string): string {
-	return source
-		.replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, ''))
-		.replace(/\/\/[^\n]*/g, '');
-}
-
-const SUITES = walkFiles(PARITY_DIR, ['.test.ts']).filter((suite) => suite !== SELF);
+const SUITES = [
+	...PARITY_SUITES,
+	...EXTERNAL_PATHS.filter((suite) => existsSync(join(repoRoot(), suite)))
+];
 const SCAN = SUITES.map((suite) => {
 	const source = withoutComments(readRepoFile(suite));
 
@@ -182,12 +106,32 @@ describe('parity source paths', () => {
 		expect(
 			unchecked,
 			'A source-reading suite whose paths this guard cannot see is a suite nobody is guarding. Give it a ' +
-				'literal path (or an UPPER_SNAKE constant holding one) passed to readRepoFile()/walkFiles().'
+				'literal path (or a constant holding one) passed to readRepoFile()/walkFiles().'
+		).toEqual([]);
+	});
+
+	it('scans every suite outside the parity folder that it lists', () => {
+		const missing = EXTERNAL_PATHS.filter((suite) => !existsSync(join(repoRoot(), suite)));
+		const unexplained = EXTERNAL_SUITES.filter(({ reason }) => reason.trim().length < 40).map(
+			({ suite }) => suite
+		);
+
+		expect(
+			missing,
+			'These suites are listed as source readers but do not exist. Point EXTERNAL_SUITES at the suite ' +
+				'that took over, or drop the entry — leaving a stale one silently stops guarding its paths:'
+		).toEqual([]);
+		expect(
+			unexplained,
+			'Every suite outside the parity folder carries the reason it is scanned, so the next reader can ' +
+				'tell a covered suite from an exemption:'
 		).toEqual([]);
 	});
 
 	it('reads only paths that still exist under the repository root', () => {
-		const missing = PATHS.filter(isMissing).map(describePath);
+		const missing = PATHS.filter(({ expected }) => expected === 'present')
+			.filter(isMissing)
+			.map(describePath);
 
 		expect(
 			missing,
@@ -198,12 +142,25 @@ describe('parity source paths', () => {
 		).toEqual([]);
 	});
 
+	it('keeps the paths a suite expects to stay gone gone', () => {
+		const resurrected = PATHS.filter(({ expected }) => expected === 'absent')
+			.filter(({ path }) => existsSync(join(repoRoot(), path)))
+			.map(describePath);
+
+		expect(
+			resurrected,
+			'These paths are asserted absent on purpose — a deleted duplicate that came back, for example. ' +
+				'Whatever recreated them either belongs somewhere else or makes the assertion in the suite named ' +
+				'below stale; decide which, and do not delete the assertion to silence this test:'
+		).toEqual([]);
+	});
+
 	it('fails on a path it cannot resolve statically', () => {
 		expect(
 			UNRESOLVED,
 			'These calls pass an argument this guard cannot read, so the path they depend on is unchecked. Pass a ' +
-				"quoted literal or an UPPER_SNAKE constant holding one, or derive the path from a walkFiles('…') " +
-				'directory so the directory literal is what gets checked:'
+				'quoted literal, a template literal with no ${…}, or a constant holding one, or derive the path ' +
+				"from a walkFiles('…') directory so the directory literal is what gets checked:"
 		).toEqual([]);
 	});
 
