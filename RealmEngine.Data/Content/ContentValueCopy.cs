@@ -1,4 +1,6 @@
 using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using RealmEngine.Data.Entities;
@@ -87,6 +89,128 @@ public static class ContentValueCopy
 
             property.SetValue(existing, value);
         }
+    }
+
+    /// <summary>
+    /// Fills the owned-JSON values a payload does not name from the row it is about to replace.
+    /// </summary>
+    /// <remarks>
+    /// A submission authored through a schema-shaped form names only the fields the schema exposes. The language
+    /// schema, for instance, exposes four of the seven <c>phonology</c> lists and neither <c>morphology</c> nor
+    /// <c>registerSystem</c>; deserialising that payload produces empty collections for everything it omitted, and
+    /// applying them in place would delete what the author never saw. This copies the unnamed values from the stored
+    /// row first, so the write only replaces what the payload names — an empty list in the payload still clears its
+    /// stored counterpart, which keeps the full-replace contract for anything the caller actually wrote.
+    /// </remarks>
+    /// <param name="existing">The tracked row the payload would replace.</param>
+    /// <param name="payload">The authored payload.</param>
+    /// <param name="model">The model of the context tracking <paramref name="existing"/>.</param>
+    /// <returns>The payload, with the owned-JSON values it did not name filled in.</returns>
+    public static JsonElement FillUnnamedOwnedValues(ContentBase existing, JsonElement payload, IModel model)
+    {
+        ArgumentNullException.ThrowIfNull(existing);
+        ArgumentNullException.ThrowIfNull(model);
+
+        if (payload.ValueKind != JsonValueKind.Object)
+        {
+            return payload;
+        }
+
+        var entityType = model.FindEntityType(existing.GetType());
+        if (entityType is null)
+        {
+            return payload;
+        }
+
+        if (JsonNode.Parse(payload.GetRawText()) is not JsonObject authored
+            || JsonSerializer.SerializeToNode(existing, existing.GetType(), ContentEntityTypes.JsonOptions)
+                is not JsonObject stored)
+        {
+            return payload;
+        }
+
+        foreach (var navigation in entityType.GetNavigations())
+        {
+            if (!navigation.TargetEntityType.IsOwned() || navigation.PropertyInfo?.Name is not { } propertyName)
+            {
+                continue;
+            }
+
+            var jsonName = JsonNamingPolicy.CamelCase.ConvertName(propertyName);
+
+            if (!TryGetProperty(authored, jsonName, out var authoredValue))
+            {
+                // The payload never mentions the owned value at all, so the whole stored subtree is kept.
+                if (TryGetProperty(stored, jsonName, out var storedValue))
+                {
+                    authored[jsonName] = storedValue?.DeepClone();
+                }
+
+                continue;
+            }
+
+            // The payload names the object but may leave some of its leaves out; only those are filled.
+            if (authoredValue is JsonObject authoredObject
+                && TryGetProperty(stored, jsonName, out var storedNode)
+                && storedNode is JsonObject storedObject)
+            {
+                FillUnnamed(authoredObject, storedObject);
+            }
+        }
+
+        return JsonSerializer.SerializeToElement(authored, ContentEntityTypes.JsonOptions);
+    }
+
+    /// <summary>Recursively fills the properties an authored owned-JSON object leaves out.</summary>
+    /// <param name="authored">The object as the payload names it.</param>
+    /// <param name="stored">The same object as the stored row carries it.</param>
+    private static void FillUnnamed(JsonObject authored, JsonObject stored)
+    {
+        foreach (var (name, storedValue) in stored)
+        {
+            if (!TryGetProperty(authored, name, out var authoredValue))
+            {
+                authored[name] = storedValue?.DeepClone();
+                continue;
+            }
+
+            if (authoredValue is JsonObject authoredObject && storedValue is JsonObject storedObject)
+            {
+                FillUnnamed(authoredObject, storedObject);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Reads a property by name, falling back to a case-insensitive match.
+    /// </summary>
+    /// <remarks>
+    /// The deserialiser accepts either casing (<see cref="JsonSerializerDefaults.Web"/> is case-insensitive), so the
+    /// fill has to as well — looking up only the camelCase spelling would add a second key for a PascalCase payload and
+    /// the stored value would then win over the authored one.
+    /// </remarks>
+    /// <param name="source">Object to read from.</param>
+    /// <param name="name">Property name to look for.</param>
+    /// <param name="value">The property value, or <c>null</c> when absent.</param>
+    /// <returns>True when the property is present in either casing.</returns>
+    private static bool TryGetProperty(JsonObject source, string name, out JsonNode? value)
+    {
+        if (source.TryGetPropertyValue(name, out value))
+        {
+            return true;
+        }
+
+        foreach (var (key, candidate) in source)
+        {
+            if (string.Equals(key, name, StringComparison.OrdinalIgnoreCase))
+            {
+                value = candidate;
+                return true;
+            }
+        }
+
+        value = null;
+        return false;
     }
 
     /// <summary>Copies the writable properties of one owned value onto another, recursing into nested owned values.</summary>

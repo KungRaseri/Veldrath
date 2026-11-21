@@ -642,6 +642,125 @@ public class FoundryEndpointTests(WebAppFactory factory)
         detail.GetProperty("payload").GetProperty("version").GetInt32().Should().Be(2);
     }
 
+    /// <summary>
+    /// A schema-shaped submission only names the fields Foundry's form renders. Approving one must not delete the
+    /// owned JSON it never mentions.
+    /// </summary>
+    /// <remarks>
+    /// The language schema exposes four <c>phonology.*</c> lists and nothing else, while the entity also carries
+    /// <c>phonology.consonants</c>/<c>vowels</c>/<c>junctionRules</c>, <c>morphology</c> and <c>registerSystem</c>.
+    /// Copying an owned value wholesale turned the omission into a deletion: the correction was reported as written and
+    /// every unnamed list was zeroed. This is the approval half of that regression; the form half is seeded from the
+    /// stored row in the web app.
+    /// </remarks>
+    [Fact]
+    public async Task Review_Should_Preserve_Owned_Json_A_Schema_Shaped_Submission_Does_Not_Name()
+    {
+        const string slug = "fnd-rev-partial-language";
+
+        static string RichLanguage(string displayName) => JsonSerializer.Serialize(new
+        {
+            slug,
+            displayName,
+            typeKey = "imperial",
+            rarityWeight = 50,
+            isActive = true,
+            description = "The old tongue.",
+            tonalCharacter = "Hard + Formal",
+            phonology = new
+            {
+                consonants = new[]
+                {
+                    new { symbol = "v", description = "Voiced labiodental fricative" },
+                    new { symbol = "r", description = "Alveolar trill" },
+                },
+                vowels = new[] { new { symbol = "ae", sound = "/eɪ/ as in 'day'" } },
+                allowedSyllablePatterns = new[] { "CVC" },
+                allowedInitialClusters = new[] { "VR-" },
+                forbiddenClusters = Array.Empty<string>(),
+                allowedFinalClusters = new[] { "-LD" },
+                junctionRules = new[]
+                {
+                    new
+                    {
+                        cluster = "–l + vr–",
+                        rule = "The v elides into the following r.",
+                        formalExample = "vaeld + raeth → vaeld",
+                    },
+                },
+            },
+            morphology = new
+            {
+                roots = new[] { new { token = "vael", coreMeaning = "stronghold" } },
+                prefixes = Array.Empty<object>(),
+                suffixes = Array.Empty<object>(),
+            },
+            registerSystem = new
+            {
+                registers = new[]
+                {
+                    new { name = "formal", usage = "titles and law", wordOrder = "SVO", vowelQuality = "long" },
+                },
+            },
+        });
+
+        // Exactly what the generic Foundry submission form can produce for a language: the schema's fields and nothing
+        // else. Only displayName differs from the stored row.
+        static string SchemaShapedCorrection(string displayName) => JsonSerializer.Serialize(new
+        {
+            slug,
+            displayName,
+            typeKey = "imperial",
+            rarityWeight = 50,
+            isActive = true,
+            description = "The old tongue.",
+            tonalCharacter = "Hard + Formal",
+            phonology = new
+            {
+                allowedSyllablePatterns = new[] { "CVC" },
+                allowedInitialClusters = new[] { "VR-" },
+                forbiddenClusters = Array.Empty<string>(),
+                allowedFinalClusters = new[] { "-LD" },
+            },
+        });
+
+        using var submitterClient = factory.CreateClient();
+        submitterClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndRevPartial_Sub"));
+
+        using var curatorClient = factory.CreateClient();
+        curatorClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetCuratorTokenAsync("FndRevPartial_Curator"));
+
+        var first = await CreateSubmissionAsync(
+            submitterClient, "Language", "FndRevPartial_First", RichLanguage("Calethic"));
+        (await curatorClient.PostAsJsonAsync($"/api/foundry/submissions/{first.Id}/review", new { Approved = true }))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var correction = await CreateSubmissionAsync(
+            submitterClient, "Language", "FndRevPartial_Second", SchemaShapedCorrection("Calethic (revised)"));
+        var approved = await curatorClient.PostAsJsonAsync(
+            $"/api/foundry/submissions/{correction.Id}/review", new { Approved = true });
+        approved.StatusCode.Should().Be(HttpStatusCode.OK, await approved.Content.ReadAsStringAsync());
+
+        var payload = (await curatorClient.GetFromJsonAsync<JsonElement>($"/api/content/browse/language/{slug}"))
+            .GetProperty("payload");
+
+        // The field the submission named changed …
+        payload.GetProperty("displayName").GetString().Should().Be("Calethic (revised)");
+        payload.GetProperty("version").GetInt32().Should().Be(2);
+
+        // … and everything the schema-shaped payload did not name is still there.
+        var phonology = payload.GetProperty("phonology");
+        phonology.GetProperty("junctionRules").GetArrayLength().Should().Be(1);
+        phonology.GetProperty("junctionRules")[0].GetProperty("formalExample").GetString()
+            .Should().Be("vaeld + raeth → vaeld");
+        phonology.GetProperty("consonants").GetArrayLength().Should().Be(2);
+        phonology.GetProperty("vowels").GetArrayLength().Should().Be(1);
+        payload.GetProperty("morphology").GetProperty("roots").GetArrayLength().Should().Be(1);
+        payload.GetProperty("registerSystem").GetProperty("registers").GetArrayLength().Should().Be(1);
+    }
+
     [Fact]
     public async Task Review_Should_Reject_Submission_With_Notes()
     {

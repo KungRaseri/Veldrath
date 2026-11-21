@@ -82,6 +82,19 @@ public class ContentWriteService(ContentDbContext db)
 
         var existing = await ContentEntityTypes.FindBySlugAsync(db, resolver, incoming.Slug, ct);
 
+        if (existing is not null)
+        {
+            // A submission payload is authored through a schema-shaped form, so it names only the fields the schema
+            // exposes. Fill the owned-JSON values it never mentions from the row being replaced before validation and
+            // application; otherwise approving a one-field correction would delete everything the form could not show.
+            payload = ContentValueCopy.FillUnnamedOwnedValues(existing, payload, db.Model);
+            incoming = ContentEntityTypes.Deserialize(resolver, payload);
+            if (incoming is null)
+            {
+                return ContentPromotion.Refused($"The payload does not describe a {type}.");
+            }
+        }
+
         var catalog = await ContentReferenceCatalog.LoadAsync(db, ct);
         var result = ContentEntityTypes.Registry.Validate(resolver.ContentType, incoming, catalog);
         if (!result.IsValid)

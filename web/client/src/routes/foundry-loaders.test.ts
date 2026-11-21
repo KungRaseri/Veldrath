@@ -1401,6 +1401,100 @@ describe('language fork', () => {
 		expect(payload.phonology.allowedInitialClusters).toEqual(['th', 'sh']);
 	});
 
+	it('seeds an existing language from the stored row so its owned JSON survives approval', async () => {
+		// The form renders displayName/slug and the four phonology lists; consonants, vowels, junctionRules,
+		// morphology and registerSystem have no field. A correction therefore has to start from what the catalog
+		// already holds, or approving it would delete everything the form could not show.
+		contentApi.getContentDetail.mockResolvedValue(
+			ok({
+				summary: {
+					id: 'lang-1',
+					slug: 'calethic',
+					displayName: 'Calethic',
+					typeKey: 'imperial',
+					contentType: 'language',
+					rarityWeight: 40,
+					isActive: true,
+					updatedAt: '2026-01-02T03:04:05.000Z'
+				},
+				payload: {
+					slug: 'calethic',
+					displayName: 'Calethic',
+					typeKey: 'imperial',
+					rarityWeight: 40,
+					isActive: true,
+					description: 'The old tongue.',
+					tonalCharacter: 'Hard + Formal',
+					phonology: {
+						consonants: [
+							{ symbol: 'v', description: 'Voiced labiodental fricative' },
+							{ symbol: 'r', description: 'Alveolar trill' }
+						],
+						vowels: [{ symbol: 'ae', sound: '/eɪ/' }],
+						allowedSyllablePatterns: ['CVC'],
+						allowedInitialClusters: ['VR-'],
+						forbiddenClusters: [],
+						allowedFinalClusters: ['-LD'],
+						junctionRules: [
+							{
+								cluster: '–l + vr–',
+								rule: 'The v elides into the following r.',
+								formalExample: 'vaeld + raeth → vaeld'
+							}
+						]
+					},
+					morphology: {
+						roots: [{ token: 'vael', coreMeaning: 'stronghold' }],
+						prefixes: [],
+						suffixes: []
+					},
+					registerSystem: {
+						registers: [
+							{ name: 'formal', usage: 'titles and law', wordOrder: 'SVO', vowelQuality: 'long' }
+						]
+					}
+				}
+			})
+		);
+
+		await redirectTo(() =>
+			action(newLanguageActions.default, {
+				displayName: 'Calethic (revised)',
+				slug: 'calethic',
+				description: 'The old tongue.',
+				syllablePatterns: 'CVC, CV',
+				initialClusters: 'VR-, THR-'
+			})
+		);
+
+		expect(contentApi.getContentDetail).toHaveBeenCalledWith('language', 'calethic');
+
+		const submitted = foundryApi.createSubmission.mock.calls[0][1] as { payload: string };
+		const payload = JSON.parse(submitted.payload) as {
+			displayName: string;
+			rarityWeight: number;
+			phonology: {
+				allowedSyllablePatterns: string[];
+				allowedInitialClusters: string[];
+				consonants: unknown[];
+				junctionRules: unknown[];
+			};
+			morphology: { roots: unknown[] };
+			registerSystem: { registers: unknown[] };
+		};
+
+		expect(payload.displayName).toBe('Calethic (revised)');
+		// The form's own fields still win.
+		expect(payload.phonology.allowedSyllablePatterns).toEqual(['CVC', 'CV']);
+		expect(payload.phonology.allowedInitialClusters).toEqual(['VR-', 'THR-']);
+		// The fields with no input keep their stored values.
+		expect(payload.phonology.consonants).toHaveLength(2);
+		expect(payload.phonology.junctionRules).toHaveLength(1);
+		expect(payload.morphology.roots).toHaveLength(1);
+		expect(payload.registerSystem.registers).toHaveLength(1);
+		expect(payload.rarityWeight).toBe(40);
+	});
+
 	it('turns a rejected submission into a 400', async () => {
 		foundryApi.createSubmission.mockResolvedValue(failed('You already submitted that.'));
 
@@ -1591,6 +1685,102 @@ describe('submission queue', () => {
 			description: null
 		});
 		expect(JSON.parse(submitted.payload)).toEqual({ displayName: 'Calethic' });
+	});
+
+	it('seeds a correction payload from the stored entity, keeping the owned JSON it cannot name', async () => {
+		// The generic form renders the schema's fields only. For a language that is displayName/slug/typeKey and
+		// four phonology lists — approving that shape as a replacement used to delete the rest of the entity.
+		contentApi.getContentTypeSchema.mockResolvedValue(
+			ok({
+				contentType: 'language',
+				displayLabel: 'Languages',
+				description: '',
+				groups: [
+					{
+						label: 'Identity',
+						fields: [field('displayName', 'Text'), field('slug', 'Slug'), field('typeKey', 'Text')]
+					},
+					{
+						label: 'Phonology',
+						fields: [field('phonology.allowedSyllablePatterns', 'LongText')]
+					}
+				]
+			})
+		);
+
+		contentApi.getContentDetail.mockResolvedValue(
+			ok({
+				summary: {
+					id: 'lang-1',
+					slug: 'calethic',
+					displayName: 'Calethic',
+					typeKey: 'imperial',
+					contentType: 'language',
+					rarityWeight: 40,
+					isActive: true,
+					updatedAt: '2026-01-02T03:04:05.000Z'
+				},
+				payload: {
+					slug: 'calethic',
+					displayName: 'Calethic',
+					typeKey: 'imperial',
+					rarityWeight: 40,
+					isActive: true,
+					description: 'The old tongue.',
+					phonology: {
+						consonants: [{ symbol: 'v', description: 'Voiced labiodental fricative' }],
+						vowels: [{ symbol: 'ae', sound: '/eɪ/' }],
+						allowedSyllablePatterns: ['CVC'],
+						allowedInitialClusters: ['VR-'],
+						forbiddenClusters: [],
+						allowedFinalClusters: ['-LD'],
+						junctionRules: [
+							{
+								cluster: '–l + vr–',
+								rule: 'The v elides into the following r.',
+								formalExample: 'vaeld + raeth → vaeld'
+							}
+						]
+					},
+					morphology: {
+						roots: [{ token: 'vael', coreMeaning: 'stronghold' }],
+						prefixes: [],
+						suffixes: []
+					},
+					registerSystem: {
+						registers: [
+							{ name: 'formal', usage: 'titles and law', wordOrder: 'SVO', vowelQuality: 'long' }
+						]
+					}
+				}
+			})
+		);
+
+		await redirectTo(() =>
+			action(submissionActions.create, {
+				contentType: 'language',
+				title: 'Calethic',
+				displayName: 'Calethic (revised)',
+				slug: 'calethic',
+				typeKey: 'imperial'
+			})
+		);
+
+		expect(contentApi.getContentDetail).toHaveBeenCalledWith('language', 'calethic');
+
+		const submitted = foundryApi.createSubmission.mock.calls[0][1] as { payload: string };
+		const payload = JSON.parse(submitted.payload) as {
+			displayName: string;
+			phonology: { consonants: unknown[]; junctionRules: unknown[] };
+			morphology: { roots: unknown[] };
+			registerSystem: { registers: unknown[] };
+		};
+
+		expect(payload.displayName).toBe('Calethic (revised)');
+		expect(payload.phonology.consonants).toHaveLength(1);
+		expect(payload.phonology.junctionRules).toHaveLength(1);
+		expect(payload.morphology.roots).toHaveLength(1);
+		expect(payload.registerSystem.registers).toHaveLength(1);
 	});
 
 	it('accepts only a +1 or -1 vote', async () => {

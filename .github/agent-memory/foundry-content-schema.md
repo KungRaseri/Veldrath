@@ -68,6 +68,21 @@ Regression tests: `ContentWriteEndpointTests.An_owned_json_edit_on_a_language_is
 `..._on_an_item_is_persisted`, `Removing_an_entry_from_an_owned_json_collection_is_persisted`, and
 `FoundryEndpointTests.Review_Should_Persist_An_Owned_Json_Correction_On_Approval`.
 
+**A partial payload must not be a delete.** Copying the owned value wholesale turned the old silent no-op into a
+silent deletion for the one client that sends partial payloads: Foundry's submission forms render the *schema*, and a
+schema exposes only part of an entity (the language schema has four of the seven `phonology` lists and no `morphology`
+or `registerSystem`), so a schema-shaped correction omitted everything else and approval wrote the deserialiser's
+empty defaults. Two guards now hold:
+
+- `ContentValueCopy.FillUnnamedOwnedValues` (approval path, `ContentWriteService.PromoteAsync`) fills owned-JSON
+  values the payload does not name from the stored row before validation and application. Anything the payload *does*
+  name still replaces — an empty list clears, so full-replace semantics survive for what the caller wrote.
+- The two Foundry submission actions (`(foundry)/submissions/[id]` create, `(foundry)/languages/new`) seed the
+  payload from `GET /api/content/browse/{type}/{slug}` when the slug already exists, so the stored submission is
+  honest and the review diff does not claim a deletion. The generic content editor already did this
+  (`buildPayload(detail.data.payload, …)`).
+Regression test: `FoundryEndpointTests.Review_Should_Preserve_Owned_Json_A_Schema_Shaped_Submission_Does_Not_Name`.
+
 **Still dropped by the HTTP path:** child *rows* (recipe ingredients, loot-table entries, actor pools that are tables
 rather than JSON) are not copied by `ApplyAuthoredValues` — `ContentPackImporter.ReconcileChildren` is the only code that
 writes them, and it matches by authored identity. The PUT endpoint does not load or reconcile children, so editing those
