@@ -603,9 +603,9 @@ and the seeder only *inserts* (`plans/content-seeding-pass.md` §2: an existing 
 2. then translate the 18 design files into `content/zonelocations/<zone>.yaml` (§8) and import them, which
    replaces that interim pair with the designed three;
 3. then run `dotnet test Veldrath.Server.slnx --filter Category=Validation` —
-   `SeededEncounterCoverageTests` is the gate that proves this document: every pooled archetype exists and
-   is hostile (`:77`), fits its location band (`:113`), settlements and lobbies stay quiet (`:28`), and
-   every other location spawns something (`:55`).
+   `SeededEncounterCoverageTests` is the gate that proves this document:
+   `Every_pooled_archetype_exists_and_is_hostile`, `Every_pooled_archetype_fits_its_location_level_band`,
+   `Settlements_and_dungeon_lobbies_never_spawn_anything` and `Every_other_location_can_spawn_something`.
 
 Step 3 was run for the trait changes already, and it is what proves amendment 3 and 4: 28 pools, 26 quiet
 locations, every hostile location pooled, and exactly one visible `SafeRespawn` node in `ashfields`.
