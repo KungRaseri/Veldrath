@@ -44,11 +44,11 @@ public static class ZoneLocationsSeeder
     /// that names a level 3 goblin on a level 26 map is worse than no pool at all.
     /// </para>
     /// <para>
-    /// Pools are one of the two placement mechanisms in the game, not the only one: a named <c>ActorInstance</c>
-    /// placed at this location is spawned once before any pool draw, so an actor can stand here without being in
-    /// the pool. A pool entry still means an attackable enemy, so NPCs are never listed — people are placed by
-    /// <c>LocationNpcs</c> or an <c>ActorInstance</c> instead. <c>playground-clearing</c> is the dev-only fixture the
-    /// end-to-end specs fight in.
+    /// Pools are one of the ways an actor is placed at a location, not the only one: a named <c>ActorInstance</c>
+    /// placed here is spawned once before any pool draw, so an actor can stand here without being in the pool;
+    /// someone who is meant to be met rather than fought is placed by <c>LocationNpcs</c>, never by a pool entry or
+    /// an instance. A pool entry still means an attackable enemy, so NPCs are never listed.
+    /// <c>playground-clearing</c> is the dev-only fixture the end-to-end specs fight in.
     /// </para>
     /// </remarks>
     private static readonly Dictionary<string, ActorPoolEntry[]> SpawnPools = new(StringComparer.Ordinal)
