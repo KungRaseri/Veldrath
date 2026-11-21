@@ -11,11 +11,13 @@ name: CI - Merge gate
 
 concurrency:
   group: ci-merge-gate-${{ github.ref }}
-  # This workflow has no `push` trigger, so cancelling in progress is unconditional and only ever
-  # supersedes another pull-request run. If a `push` trigger is ever added here, take the sibling
-  # workflows' form instead — `${{ github.event_name == 'pull_request' }}` — because a cancelled
-  # base-branch run is recorded as a failing status.
-  cancel-in-progress: true
+  # Never cancel. This is the only workflow that still runs on a pull request into `main` —
+  # the release PR (`development` → `main`) — and a cancelled run is recorded as a *failing*
+  # status on the commit it was started for (`failure`, description "Has been cancelled",
+  # measured on Forgejo 15.0.11), which for that pull request is a `development` commit.
+  # Queuing instead costs one ~6 s job per push, and a superseded run still reports on its
+  # own commit. See docs/ci-forgejo.md, "What runs where".
+  cancel-in-progress: false
 
 on:
   pull_request:

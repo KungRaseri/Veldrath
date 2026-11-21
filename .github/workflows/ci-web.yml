@@ -32,7 +32,13 @@ on:
       - 'scripts/tests/**'
       - '.github/workflows/ci-web.yml'
   pull_request:
-    branches: [main, development]
+    # `development` only, deliberately: the sole pull request into `main` is the release PR
+    # (`development` → `main`), whose head commit is a `development` commit that already
+    # carries this workflow's `push` run at that commit. Running the matrix again duplicates
+    # that verdict and, when the next push supersedes it, records `failure / "Has been
+    # cancelled"` on the `development` commit the superseded run was started for. The merge
+    # gate lints main separately. docs/ci-forgejo.md, "What runs where".
+    branches: [ development ]
     paths:
       - 'web/**'
       - 'config/postgres/**'

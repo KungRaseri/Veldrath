@@ -174,14 +174,15 @@ claims.
 
 ### What runs where
 
-Every workflow watches the same two integration branches, and none of them publishes from a
+Every workflow watches both integration branches on `push`, and none of them publishes from a
 pull request:
 
 | Trigger | What runs |
 |---|---|
 | push to `main` | build + test, **and** the publish/deploy jobs |
 | push to `development` | build + test; publish jobs are skipped |
-| pull request whose **base** is `main` or `development` | build + test only |
+| pull request whose **base** is `development` | build + test only |
+| pull request whose **base** is `main` | the merge gate only (see below) |
 | `workflow_dispatch` | build + test only |
 | `workflow_dispatch` with `publish: true` | build + test, **and** the publish/deploy jobs |
 
@@ -200,6 +201,42 @@ measured on this instance rather than assumed:
   ran the web build, the game-loop e2e and the image package. Rebase the PR branch while it is
   still open; merge into it only when rebasing would rewrite a branch someone else has already
   pulled.
+
+**The `main` row is deliberately asymmetric, and it is what keeps `development` commits from being
+marked red.** The only pull request this repository opens into `main` is the release PR from
+`development` — of the nine pull requests that ever targeted `main`, eight are `development` →
+`main` and the ninth was a closed probe — so its head commit *is* a `development` commit, and the
+`push` runs that judge that commit already report there. A `pull_request` run of the same workflow,
+at the same commit, is a second verdict on the same tree, and it is the one that does damage: the
+next push to `development` synchronises the release PR, Forgejo cancels the superseded run, and the
+cancellation is recorded as `failure / "Has been cancelled"` on the `development` commit that run
+was started for. Measured on 2026-11-21 at tip `8df3e780`: 14 statuses, 13 of them `failure / "Has
+been cancelled"`, all 13 `(pull_request)`; the `docs.yml pull_request` runs 2900/2909/2918/2927 at
+four consecutive tips are `cancelled` while the paired `docs.yml push` runs at the same commits
+(2893/2902/2911/2920) queued and then finished `success`. So the six component workflows and
+`docs.yml` declare `pull_request.branches: [ development ]`, and the merge gate — the one workflow a
+release PR still runs — never cancels.
+
+That relies on `pull_request.branches` filtering on the base branch, so it was measured before it
+was relied on. Two throwaway probe pull requests carried the same head branch: #174 against
+`development` and #177 against `main`. Both were built from a probe workflow with `branches:
+[ development ]` and a control that lists `main` as well. On #177 the control ran and the
+`development`-only workflow produced **no run at all**; the six component workflows ran their whole
+matrix again at a commit #174 had already judged — exactly the duplicate the contract removes.
+
+The alternative — keep the release-PR matrix and merely stop cancelling it — was measured on the
+same probes and rejected on cost. `cancel-in-progress: false` does stop the cancellation: the five
+probe commits produced five completed runs of that workflow (3305/3311/3314/3318/3320, all
+`success`), while its `cancel-in-progress: true` control wrote three `failure / "Has been cancelled"`
+rows (3310/3313/3316) on the commits it was superseded at. What it does not do is stop the work. At
+`d0050f96` the release PR's eight `(pull_request)` jobs took 20 s, 2 m 14 s, 5 m 47 s, 1 m 54 s, 6 s,
+2 m 31 s, 1 m 33 s and 8 m 19 s — about 22 minutes per synchronise, over a matrix the `(push)` runs
+at those same commits had already completed with the same verdicts. At the burst rate this instance
+ran at on 2026-11-20/21 (26 and 30 pushes to `development` per day; 58 release-PR synchronises in
+1.2 days) that is 7–11 runner-hours a day on a two-slot runner, spent reproducing verdicts that
+already exist. A `pull_request` into `main` from a branch of its own would keep its `main` entry
+and get the matrix back; the narrow `branches` list is specific to the release lane, and
+`scripts/ci-merge-gate.sh`'s L5 fails the lint if the merge gate loses `main`.
 
 Each workflow keeps its `push` and `pull_request` path lists **identical**, and lists
 `.github/agent-memory/**` by name even though `**/*.md` already matches it — the memory file is the
@@ -426,8 +463,12 @@ What follows from that, all of it deliberate:
   So the rule for every workflow that triggers on `push` is to cancel PR runs only —
   `cancel-in-progress: ${{ github.event_name == 'pull_request' }}`. A `push` run on `main` or
   `development` is then never superseded, so it finishes and records the verdict it actually
-  reached. That expression does not reach the release PR lane, whose `pull_request` runs cancel
-  against `development` commits whatever the push runs do.
+  reached. The release PR lane is removed instead of covered by that expression, because no
+  concurrency setting can move its verdicts somewhere harmless: its `pull_request.branches` list is
+  `development` only (see "What runs where"), so a push to `development` starts no run for it in the
+  six component workflows or `docs.yml`, and `merge-gate.yml` — the only workflow a release PR still
+  runs — does not cancel at all (`cancel-in-progress: false`: a superseded run queues and completes,
+  where a cancelled one is a `failure` on a `development` commit).
 - A workflow filtered out by `paths` neither helps nor blocks: it is simply not part of the
   set. The `paths` lists stay the single source of truth for *which* components a change
   touches, and no second copy of them has to be maintained here. That holds only while
@@ -498,12 +539,17 @@ repository has actually broken CI, plus the invariant that keeps this remedy ali
   failure mode is documented above as "fails in under a second, logs nothing"; the rule turns it into
   a message that names the file, the action and the fix (import it with `POST /repos/migrate`, then
   add it to the allow-list and to the table in section 1).
-- **L3** every `pull_request` workflow triggers on both `main` and `development`. Session-92 fixed
-  exactly this drift: every workflow said `branches: [ main ]` while pull requests targeted
-  `development`, so a change landing there ran no CI at all.
+- **L3** every `pull_request` workflow lists `development`. Session-92 fixed exactly this drift:
+  every workflow said `branches: [ main ]` while pull requests targeted `development`, so a change
+  landing there ran no CI at all. `main` is optional on purpose — a `pull_request` run there
+  duplicates the `push` run at the same commit and reddens the `development` commits it is
+  superseded at ("What runs where").
 - **L4** at least one `pull_request` workflow declares neither `paths` nor `paths-ignore`. That is
   the invariant behind the remedy: give `merge-gate.yml` a `paths` filter and the zero-status
   deadlock returns, so the lint fails the pull request that does it.
+- **L5** `merge-gate.yml` lists both `main` and `development`. It is the only workflow a release PR
+  still runs, so it is the one status a release PR is guaranteed to have; dropping `main` there
+  would restore the zero-status deadlock for a release whose head commit matched no `paths` list.
 
 Cost: one job — one `actions/checkout@v7` and one `bash scripts/ci-merge-gate.sh --lint`, with no
 SDK, npm, docker or service container. **Measured on 2026-11-03: 5 s** for the whole job (`duration`
