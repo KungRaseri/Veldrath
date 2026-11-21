@@ -127,6 +127,65 @@ public class ContentReferenceAuditTests
         issues.Should().HaveCount(2, "neither end can exist on a map that has no nodes at all");
     }
 
+    // ── Zone stock ─────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void AuditZoneStock_Reports_Nothing_When_Stored_Matches_Authored()
+    {
+        var rows = new[]
+        {
+            new ZoneStockReference("crestfall", "health-potion"),
+            new ZoneStockReference("crestfall", "iron-sword"),
+        };
+
+        ContentReferenceRules.AuditZoneStock(rows, rows).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AuditZoneStock_Reports_A_Stored_Pair_No_Authored_Shelf_Lists()
+    {
+        // A shelf edit lands as a data migration (docs/content-packs.md); a row left behind is that migration
+        // never having been written.
+        var authored = new[] { new ZoneStockReference("crestfall", "health-potion") };
+        var stored = new[]
+        {
+            new ZoneStockReference("crestfall", "health-potion"),
+            new ZoneStockReference("crestfall", "hunters-bow"),
+        };
+
+        var issues = ContentReferenceRules.AuditZoneStock(stored, authored);
+
+        issues.Should().ContainSingle();
+        issues[0].Rule.Should().Be(ContentRules.UnclaimedZoneStock);
+        issues[0].Severity.Should().Be(ContentIssueSeverity.Warning, "the shop still serves, so this must not fail a write");
+        issues[0].Identifier.Should().Be("crestfall/hunters-bow");
+        issues[0].Message.Should().Contain("crestfall").And.Contain("hunters-bow").And.Contain("data migration");
+    }
+
+    [Fact]
+    public void AuditZoneStock_Ignores_Case_When_Matching_The_Pair()
+    {
+        var stored = new[] { new ZoneStockReference("Crestfall", "Health-Potion") };
+        var authored = new[] { new ZoneStockReference("crestfall", "health-potion") };
+
+        ContentReferenceRules.AuditZoneStock(stored, authored).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AuditZoneStock_Does_Not_Report_An_Authored_Row_The_Database_Lacks()
+    {
+        // The seeder inserts what is missing on the next start, so an absent row is not drift — reporting it would
+        // make every dev database noisy.
+        var stored = new[] { new ZoneStockReference("crestfall", "health-potion") };
+        var authored = new[]
+        {
+            new ZoneStockReference("crestfall", "health-potion"),
+            new ZoneStockReference("tolvaren", "void-shard"),
+        };
+
+        ContentReferenceRules.AuditZoneStock(stored, authored).Should().BeEmpty();
+    }
+
     // ── Empty content ──────────────────────────────────────────────────────────
 
     [Fact]
@@ -137,5 +196,6 @@ public class ContentReferenceAuditTests
         ContentReferenceRules.AuditSpawnPools([], Set()).Should().BeEmpty();
         ContentReferenceRules.AuditQuestObjectives([], Set(), Set(), Set()).Should().BeEmpty();
         ContentReferenceRules.AuditMapEdges([], empty).Should().BeEmpty();
+        ContentReferenceRules.AuditZoneStock([], []).Should().BeEmpty();
     }
 }
