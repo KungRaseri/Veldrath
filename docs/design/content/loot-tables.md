@@ -1,14 +1,15 @@
 # Enemy drop tables — waves A1–A4 (levels 1–30)
 
-**Status: authored 2026-11-20; review round 1 corrections applied the same day.** Produced by card
+**Status: authored 2026-11-20; review rounds 1 and 2 corrections applied the same day.** Produced by card
 `t_744220e4` (F4), after D0 (`game-context/budget.yaml`, approved 2026-11-20), D1 (`archetypes.md`),
 D6 (the 21–30 tail) and D4 (`pool-matrix.md`). It answers one question — **what does a kill pay
 out** — for every hostile archetype that can spawn between levels 1 and 30.
 
 Before this file the answer was "the four archetypes the seeder happens to wire, and nothing else":
 `ArchetypeSeeder.LootTableByArchetype` names a table for `goblin-scout`, `forest-wolf`,
-`bandit-captain` and `fire-ancient`, and the other 29 hostile archetypes dropped nothing at all. A
-player could win a fight and receive no reward.
+`bandit-captain` and `fire-ancient`. The other 30 hostile archetypes in this set dropped nothing at
+all — the 10 the seeder already contains without binding them, and the 20 roster rows it has not
+seeded yet. A player could win a fight and receive no reward.
 
 The tables are importable packs under `content/loottables/`, one file per budget band. This
 document is the design record: the rules the tables were authored to, the per-band summary, and the
@@ -37,9 +38,12 @@ Three clarifications the table invites:
   that pays out roughly seven times in ten is the answer to the hole this card exists to close.
 - **Item EV** is the expected *printed* value of the items a kill drops, summed over the table
   (quantity averaged over `[min, max]`). It is not income: buyback pays 40–50 % of printed value
-  (`budget.yaml` `merchants.buyback_rate`). The two richest tables in the set are
-  `drowned-revenant-drops` (58.8) and `storm-harrower-drops` (97.5) — both carry a 150–200 gold item
-  at the top of their band's window. Nothing exceeds the item ceiling in §2.4.
+  (`budget.yaml` `merchants.buyback_rate`). The richest table by a wide margin is
+  `storm-harrower-drops` (97.5), the only one in the set carrying two 150-gold gems; behind it come
+  `maw-serpent-drops` (67.5), `ash-picker-drops` (66.0), `gull-rider-brute-drops` (60.0),
+  `ash-eater-drops` (59.2) and `drowned-revenant-drops` (58.8), whose top item is an 80-gold
+  iron-chestplate because b11-14's ceiling admits no 150-gold item (§2.4). Nothing exceeds the item
+  ceiling in §2.4.
 - **`content/loottables/`, not `content/loot/`.** The card names `content/loot/<band>.yaml`; the
   importer takes the directory name as the family and `loot` resolves to no content type. Run
   against a scratch root holding `loot/b1-3.yaml`, A0's CLI says:
@@ -119,9 +123,11 @@ mechanically over all 32 tables by the same audit that produced §1, not asserte
 ### 2.6 No guaranteed row
 
 `loot.guaranteed_rows`: a guaranteed row skips the roll but still counts in the denominator, so it
-dilutes every other row. Nothing in the design says a kill always yields something — the two
-guaranteed rows in the seed belong to a boss and to a resource node — so **no table in this set has
-one**. 118 of 118 rows roll.
+dilutes every other row. Nothing in the design says a kill always yields something. The seed's five
+guaranteed rows sit on the two boss tables (`bandit-boss-drops` — iron-sword and lost-cargo;
+`fire-ancient-drops` — fire-ruby), on a chest (`forest-chest-loot`) and on a resource node
+(`forest-forage`); neither common enemy table has one. So **no table in this set has one**: 118 of 118
+rows roll.
 
 ### 2.7 No boss table
 
@@ -205,9 +211,11 @@ slug while the seeder is insert-only, so nothing else records them:
   takes the value `goblin-common-drops` already carried.
 
 `LootTableByArchetype` already binds `goblin-scout` and `forest-wolf`, and those are the only two
-archetypes bound to a table today — so **these two payouts change in live play the moment the pack is
-imported**, before any of the rest of the binding exists. Every other table in this set pays out
-nothing until the archetype-seeding card lands (§3).
+non-boss archetypes bound to a table today — `bandit-captain` and `fire-ancient` keep their seeded
+boss tables (§2.7), so the map names four slugs in all, but only these two are re-authored here. So
+**these two payouts change in live play the moment the pack is imported**, before any of the rest of
+the binding exists. Every other table in this set pays out nothing until the archetype-seeding card
+lands (§3).
 
 ## 5. Open items
 
