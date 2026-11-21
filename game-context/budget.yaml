@@ -174,8 +174,11 @@ wiring:
   boss_and_elite_flags:
     live: false
     detail: >-
-      Traits.Boss/Elite are labels with no stat effect (ActorArchetype.cs:107-110); Boss is read
-      only by the seed guard (SeededEncounterCoverageTests.cs:163-169).
+      Traits.Boss/Elite are labels with no stat effect (ActorArchetype.cs:118-121). Boss is read
+      nowhere for stats: the spawn copies it onto the enemy as an inert portrait label
+      (ActorTemplateProjection.cs:101) and the client draws the frame from it
+      (web/client/src/lib/game/archetype-portraits.ts:126). The only test that reads the archetype
+      flag is the loot-table guard (SeededEncounterCoverageTests.cs:163-169).
 
 spawn:
   roster_size: [2, 4]
