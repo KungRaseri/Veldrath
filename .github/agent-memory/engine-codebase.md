@@ -625,3 +625,9 @@ sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewMod
   same run.
 - **`ci-content.yml` is the guard; `SeededContentValidationTests` is not a substitute** — one reads `content/`
   YAML, the other reads the C# seeders, and `content/**` never triggered `ci-server.yml`.
+- **A `ContentPackFile` may have an empty `Family`.** A file in the pack root (no family directory, no `family:`
+  header), an unknown family directory, or a file that failed before its family was read comes back with an empty
+  family and no entries — the reader has already reported which (`pack-family-directory-required`,
+  `pack-family-unknown`, a file-level rule). Anything walking `read.Files` must skip a family
+  `ContentEntityTypes.TryResolve` rejects: `ContentReferenceCatalog.WithContent` throws on a blank content type,
+  which is how `validate <family-dir>` used to die with a bare parameter exception instead of naming the file.

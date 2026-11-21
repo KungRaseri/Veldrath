@@ -92,6 +92,45 @@ public sealed class ContentPackEdgeCaseTests
     }
 
     [Fact]
+    public void Validate_reports_a_pack_file_in_the_pack_root_instead_of_crashing()
+    {
+        // ci-content.yml runs this command. A misplaced file must come back as an issue naming the file and the
+        // field — not as "validation could not run" with a bare parameter exception and no path in it. The family
+        // file next to it proves the fix skips only the file with no family, not the whole merge.
+        using var pack = new PackDirectory(
+            ("loose.yaml", """
+                entities:
+                  - slug: loose-potion
+                    typeKey: consumables
+                    displayName: Loose Potion
+                    itemType: consumable
+                """),
+            ("items/potions.yaml", """
+                entities:
+                  - slug: pack-root-probe
+                    typeKey: consumables
+                    displayName: Pack Root Probe
+                    itemType: consumable
+                    stats:
+                      effectPower: 5
+                """));
+
+        var output = new StringWriter();
+        var error = new StringWriter();
+        var exit = ContentPackConsole.Run(["validate", pack.Root, "--no-baseline"], output, error);
+
+        var printed = output.ToString();
+        var reported = error.ToString();
+
+        exit.Should().Be(ContentPackConsole.InvalidContent, "a misplaced file is invalid content, not a tooling failure");
+        reported.Should().BeEmpty("the command must not report an exception: {0}", reported);
+        printed.Should().Contain(ContentPackRules.FamilyDirectoryRequired);
+        printed.Should().Contain(Path.Combine(pack.Root, "loose.yaml").Replace(Path.DirectorySeparatorChar, '/'),
+            "the issue has to name the file an author has to move");
+        printed.Should().Contain("1 entities in 2 pack file(s)", "the healthy file is still read and validated");
+    }
+
+    [Fact]
     public async Task A_guid_foreign_key_naming_an_unknown_slug_is_reported_with_its_field()
     {
         await using var database = await PackDatabase.CreateAsync();
