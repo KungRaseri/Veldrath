@@ -1,8 +1,10 @@
 # Spawn pool placement matrix
 
-**Status: approved 2026-11-20, with four amendments applied. Revised and landed by card
-`t_6c70dc04` (L3).** Produced by card `t_af051fc2` (D4), after D0 (`game-context/budget.yaml`,
-approved 2026-11-20) and D1 (`docs/design/content/archetypes.md`, approved 2026-11-20). It answers one
+**Status: approved 2026-11-20, with five amendments applied. Revised and landed by card
+`t_6c70dc04` (L3); amendment 5 applied by card `t_259ac697` (C4), which extended
+`game-context/budget.yaml` to level 30 and re-weighted one pool.** Produced by card `t_af051fc2` (D4),
+after D0 (`game-context/budget.yaml`, approved 2026-11-20) and D1
+(`docs/design/content/archetypes.md`, approved 2026-11-20). It answers one
 question — **where is the world dangerous, and how dangerous** — as data a pack importer can take
 directly. The companion files are `docs/design/content/pools/<zone>.yaml`, one per world zone.
 
@@ -16,7 +18,8 @@ skeletons sit in the design set rather than under `content/` (§8).
 
 The decision on card `t_af051fc2` approved this matrix with four revisions. All four are applied here
 and in `docs/design/content/pools/*.yaml`, and the seeder changes that make them real land in the same
-commit.
+commit. A fifth amendment was added later the same day by C4 (`t_259ac697`), because publishing a band
+above `b23-26` re-measures one tail pool; it is listed with the rest so the file has one amendment list.
 
 1. **Band-tolerance cap.** No pool may hold more than one archetype from a band above its location,
    and that entry is `weight ≤ 2`. All 29 pools were audited entry by entry (§2, §3): **exactly one
@@ -40,6 +43,14 @@ commit.
    quest-locked and the resolver reads the hidden-filtered zone query
    (`EfCoreZoneLocationRepository.GetByZoneIdAsync`, `RespawnHubCommand.cs:169-188`), so the anchor is
    deterministically `obsidian-grove` — and `SeededEncounterCoverageTests` now asserts it.
+5. **The band table reaches level 30, so the tail is measured on it (C4, `t_259ac697`).**
+   `budget.yaml` publishes `b27-30` and covers 1–30; §3 relabels `kaldreks-heart` from "beyond `b23-26`"
+   to `b27-30`. Publishing it splits the tail into two published bands, so `pyreling` (`b23-26`) at
+   `kaldreks-heart` (`b27-30`) is one band apart and drops to **weight 2** — D4's cap number, applied by
+   L6's decision 2 — and `maw-serpent` (28–30) carries the pool at **weight 6**, the weight `pyreling`
+   held. It is the only pool this amendment touches: no hostile archetype was re-banded to fill
+   `b27-30`, no boss is authored for it, and the other 27 pools are unchanged. §7 states what the
+   extension changes and what it does not.
 
 One consequence follows from amendments 3 and 4 rather than being an amendment itself, and is flagged
 for D5 rather than decided here: `ashfields` no longer has a hostile location below level 21, so
@@ -82,12 +93,16 @@ Three seed facts disagree with older design text. This document follows the seed
 
 Two band sets exist and they are not the same set. Both are used, for different jobs:
 
-- **D0 budget bands** — `b1-3, b4-6, b7-10, b11-14, b15-18, b19-22, b23-26`, `covers_levels: [1, 26]`. These
-  carry the stat lines. Every location in §3 is labelled with the budget band its `MinLevel` falls in.
+- **D0 budget bands** — `b1-3, b4-6, b7-10, b11-14, b15-18, b19-22, b23-26, b27-30`, `covers_levels: [1, 30]`
+  since C4 (`t_259ac697`). These carry the stat lines. Every location in §3 is labelled with the budget
+  band its `MinLevel` falls in.
 - **D1 roster bands** — `1-3, 4-6, 7-9, 10-12, 13-15, 16-18, 19-20`, plus the **tail band `21-30`**. These
-  band the *archetypes*, and they are what the one-band tolerance rule is measured on.
-- Levels 21–30 are D1's declared gap ("needs its own card"), and only two archetypes exist there:
-  `pyreling` (seeded 23–28) and `fire-ancient` (seeded 26–30, a boss). That gap is the subject of §7.
+  band the *archetypes*, and they are what the one-band tolerance rule is measured on. D6/L6 added five
+  tail rows to that roster without splitting the band; the split is D0's, not D1's.
+- Levels 21–30 were D1's declared gap ("needs its own card"), and only two *seeded* archetypes sit there:
+  `pyreling` (seeded 23–28) and `fire-ancient` (seeded 26–30, a boss). D6/L6 authored five tail rows on
+  top of them, of which `ash-eater` (26–30) and `maw-serpent` (28–30) are above level 26. That gap — and
+  the one pool the published band re-measures — is §7.
 
 **The one-band rule, stated precisely** (the card asks for it; it needs a definition to be testable):
 for a pool entry at location `L`, `|band(archetype) − band(L.MinLevel)| ≤ 1` on the D1 ladder, where
@@ -107,21 +122,29 @@ fen, and `bandit-ruffian` at the crossing its own identity line says it holds �
 range is the only reading that leaves D1's placements intact. §2 lists every adjacent entry so the
 difference is measured rather than asserted.
 
+**One addition for the tail, from C4 (`t_259ac697`).** D1's ladder has a single band above level 20, so
+no two tail objects can be one band apart on it — which is why §3 could draw `kaldreks-heart` as legal.
+D0's table now splits the tail, so a tail entry is measured there instead: `pyreling`'s `MinLevel` 23 puts
+it in `b23-26` (`budget.yaml`, `b23-26.seeded_archetypes`) and `kaldreks-heart`'s floor of 28 puts the
+location in `b27-30` — one band apart. D4's cap number (one band-tolerant entry per pool, `weight ≤ 2`)
+is applied to that pair by L6's decision 2, and §7 records what it does and does not change.
+
 ## 2. The rules, and the check for each
 
-**28** is the number of pooled locations after the amendments (was 29) and **73** the number of entries
-(was 76) — two locations went quiet (amendments 3 and 4) and one came into the pools. Every number below
-comes from the audit script described at the end of this section, run over these files and the two seeders.
+**28** is the number of pooled locations after the amendments (was 29) and **74** the number of entries
+(was 76) — two locations went quiet (amendments 3 and 4), one came into the pools, and amendment 5 adds
+`maw-serpent` to `kaldreks-heart`. Every number below comes from the audit script described at the end of
+this section, run over these files and the two seeders.
 
 | Rule | Result |
 |---|---|
-| Every hostile location has **≥ 1 pool entry**; the card asks for ≥ 2 | **27 of 28** have 2–4 entries. The exception is `kaldreks-heart` (1 entry, §7) |
-| Every roster archetype appears in at least one pool | **26 of 27** hostile roster archetypes are pooled. `bandit-captain` is **withheld on purpose** — D0 approved "bosses ×2–4, pools held until a uniqueness mechanism exists", and nothing today stops a pooled boss from filling all 2–4 slots (`ActorPoolResolver.cs:47-51`) |
-| No archetype appears more than one band from its location's entry band | **all 73 entries pass** on the D1 ladder + tail band. **3 entries** additionally break D1's per-archetype *zone* list (`cinderling` outside `ashfields`, §7) — a documented deviation, not an oversight |
-| **Tolerance cap (2026-11-20):** at most **one** entry above its location's top band, that entry `weight ≤ 2` | **1 of 73 entries is above its location's top band** — `moor-wight` in `bone-hollow`, now weight 1 (amendment 2). **0 pools breach the cap.** The 30 adjacent entries are listed below with their bands, so the difference between "adjacent" and "above" is measured, not asserted |
-| Weights are relative integers, no zero, no percentages | **all 73 entries** are integers in `1..6`; no pool sums to 100 and none is normalised. The seeder's pre-amendment `60/40` pairs are the same ratios written as percentages-looking numbers, which is why these are not |
-| Every pool entry survives the seeder's own overlap rule (`archetype.MinLevel <= L.MaxLevel && archetype.MaxLevel >= L.MinLevel`) | **all 73 pass** against the seeded ranges, and against the level range each new archetype must be seeded with (§6) — including the two whose seeded range is widened to `19–22` by the amendments |
-| Every pooled archetype exists and is hostile | **not true yet, by construction**: 15 of the 27 pooled archetypes do not exist in `ArchetypeSeeder.cs`. The import gate refuses them until they are seeded (§8) |
+| Every hostile location has **≥ 1 pool entry**; the card asks for ≥ 2 | **28 of 28** have 2–4 entries. `kaldreks-heart` was the one entry short until amendment 5 |
+| Every roster archetype appears in at least one pool | **26 of 27** hostile D1 roster archetypes are pooled. `bandit-captain` is **withheld on purpose** — D0 approved "bosses ×2–4, pools held until a uniqueness mechanism exists", and nothing today stops a pooled boss from filling all 2–4 slots (`ActorPoolResolver.cs:47-51`). D6's five tail rows are outside that count; §6 and §7 carry them |
+| No archetype appears more than one band from its location's entry band | **all 74 entries pass** on the D1 ladder + tail band. **3 entries** additionally break D1's per-archetype *zone* list (`cinderling` outside `ashfields`, §7) — a documented deviation, not an oversight |
+| **Tolerance cap (2026-11-20):** at most **one** entry above its location's top band, that entry `weight ≤ 2` | **1 of 74 entries is above its location's top band** — `moor-wight` in `bone-hollow`, now weight 1 (amendment 2). **0 pools breach the cap.** The 30 adjacent entries are listed below with their bands, so the difference between "adjacent" and "above" is measured, not asserted. One entry is out of band without being above it: `pyreling` at `kaldreks-heart` is the same D1 tail band as its location and one band **below** it on the published `b27-30` table — amendment 5, weight 2 |
+| Weights are relative integers, no zero, no percentages | **all 74 entries** are integers in `1..6`; no pool sums to 100 and none is normalised. The seeder's pre-amendment `60/40` pairs are the same ratios written as percentages-looking numbers, which is why these are not |
+| Every pool entry survives the seeder's own overlap rule (`archetype.MinLevel <= L.MaxLevel && archetype.MaxLevel >= L.MinLevel`) | **all 74 pass** against the seeded ranges, and against the level range each new archetype must be seeded with (§6) — including the two whose seeded range is widened to `19–22` by the amendments |
+| Every pooled archetype exists and is hostile | **not true yet, by construction**: 16 of the 28 pooled archetypes do not exist in `ArchetypeSeeder.cs` — the 15 D1 rows plus D6's `maw-serpent`. The import gate refuses them until they are seeded (§8) |
 
 ### The 30 adjacent entries, and why 29 of them are not tolerance
 
@@ -205,11 +228,11 @@ without noticing (`ActorPoolResolver.cs:13-14`).
 | `ashfields` | `scorched-battlefield` | 21–25 | b19-22 | `cinderling` 5, `ash-jack` 3, `forge-deserter` 3 | 2–4 | The ash of the armies is still deep on the old battlefield (d9), and it is the zone's only hostile node since 2026-11-20. Cinder knots leave trails of fused ash across it, jackdaws gather where something is dying, and deserters work the field for gear that will still sell. |
 | `smoldering-reach` | `vent-fields` | 23–26 | b23-26 | `pyreling` 5, `cinderling` 3 | 2–4 | A cracked lava field (d9) where superheated vents erupt without warning. Heat-adapted predators hunt at dusk and there is nowhere on the field to stand still. |
 | `smoldering-reach` | `pyreling-den` | 24–26 | b23-26 | `pyreling` 6, `cinderling` 2 | 2–4 | The den itself (d10) — the densest pyreling ground in the world, and the reason the field around it is empty of anything else. |
-| `kaldrek-maw` | `fire-ancients-chamber` | 26–30 | b23-26 | `pyreling` 5, `cinderling` 3 | 2–4 | The chamber the fire-ancient is named after (d10). Its occupant is withheld from the pool until a uniqueness mechanism exists (D0 bosses / gap G7), so the room is guarded by the pyrelings that serve it. |
-| `kaldrek-maw` | `kaldreks-heart` | 28–30 | beyond b23-26 | `pyreling` 6 | 2–4 | The Maw's last room, quest-gated (d10). One pool entry: pyreling is the only archetype whose seeded range reaches level 28 (see §7). |
+| `kaldrek-maw` | `fire-ancients-chamber` | 26–30 | b23-26 | `pyreling` 5, `cinderling` 3 | 2–4 | The chamber the fire-ancient is named after (d10). Its occupant is withheld from the pool until a uniqueness mechanism exists (D0 bosses / gap G7), so the room is guarded by the pyrelings that den in it. |
+| `kaldrek-maw` | `kaldreks-heart` | 28–30 | b27-30 | `maw-serpent` 6, `pyreling` 2 | 2–4 | The Maw's last room, quest-gated (d10). Amendment 5: `maw-serpent` (28–30) is in the room's own band and carries it at the weight `pyreling` held; `pyreling` stays as the one band-tolerant entry at weight 2, because it spawns at its `MinLevel` of 23 with no roll — a 23rd-level pyreling in a 28 room is the tolerance, so it is the rarest draw in the pool (1 in 4). |
 
-73 entries across 28 locations. 3 locations carry four entries, the rest two or three;
-`kaldreks-heart` carries one (§7).
+74 entries across 28 locations. 3 locations carry four entries, the rest two or three — after amendment 5
+every pooled location carries at least two (§7).
 
 ## 4. Exclusions — 26 locations that are empty on purpose
 
@@ -349,12 +372,12 @@ world zones is fully accounted for: no hostile location is unpooled, no safe loc
 | `forge-deserter` | 19-20 | `scorched-battlefield` | 1 |
 | `fire-ancient` | 21-30 | **withheld** — boss; D0 holds boss pools until a uniqueness mechanism exists | 0 |
 | `pyreling` | 21-30 | `vent-fields`, `pyreling-den`, `fire-ancients-chamber`, `kaldreks-heart` | 4 |
+| `maw-serpent` | 28-30 | `kaldreks-heart` (amendment 5) | 1 |
 
-**What must exist before these pools can be imported.** 15 of the pooled archetypes are D1 roster rows
-that `ArchetypeSeeder.cs` does not contain yet — `drove-cur`, `peat-adder`, `sump-crawler`, `mire-boar`,
-`barrow-bear`, `moor-tollman`, `burrow-worm`, `bog-lantern`, `tide-strider`, `gull-rider-skirmisher`,
-`cliff-breaker`, `undertow`, `drowned-cantor`, `ash-jack`, `forge-deserter`. Each needs the level range in
-this table, or the pool entry fails the two guards that already exist:
+**What must exist before these pools can be imported.** 16 of the pooled archetypes are roster rows that
+`ArchetypeSeeder.cs` does not contain yet — the 15 D1 rows below plus D6's `maw-serpent` (28–30, §7),
+which C4 pooled under amendment 5. Each needs the level range in this table, or the pool entry fails the
+two guards that already exist:
 
 | new archetype | band to seed |
 |---|---|
@@ -373,6 +396,7 @@ this table, or the pool entry fails the two guards that already exist:
 | `drowned-cantor` | 19–20 |
 | `ash-jack` | 19–22 |
 | `forge-deserter` | 19–22 |
+| `maw-serpent` | 28–30 |
 
 The two `19–22` rows are the amendment consequence (§Amendments): the roster bands them 19–20, but after
 amendments 3 and 4 the only hostile location left in their zone (`scorched-battlefield`) starts at level
@@ -387,37 +411,74 @@ order of landing is fixed: **archetypes first, then pools.**
 ## 7. The tail — levels 21–30, where this matrix cannot fully meet its own rules
 
 D1 declared 21–30 out of scope and said so honestly ("the tail is not empty — but it needs its own card").
-Three consequences land on this card, and I am reporting them rather than papering over them:
+Three consequences landed on this card, and they are reported rather than papered over. D6/L6 answered the
+first two on 2026-11-20 and C4 published the band that re-measures the second (§7.1, §7.2); the third is
+still D6's to close or D5's to accept.
 
-1. **There are exactly two archetypes above level 22**: `pyreling` (seeded 23–28) and `fire-ancient`
-   (26–30). One of the two is a boss, which D0 holds out of every pool.
-2. **`kaldreks-heart` (L28–30) gets a single-entry pool.** `pyreling` is the only non-boss archetype whose
-   seeded range reaches 28. `cinderling` stops at 26 and would fail the overlap guard. This is the one
-   location that cannot meet "at least two entries" without either the boss or a new archetype.
+1. **There are exactly two *seeded* archetypes above level 22**: `pyreling` (seeded 23–28) and
+   `fire-ancient` (26–30). One of the two is a boss, which D0 holds out of every pool. D6/L6 authored five
+   non-boss tail rows on top of them (23–26, 26–30 and 28–30); none is seeded yet (§6).
+2. **`kaldreks-heart` (L28–30) had a single-entry pool.** `pyreling` was the only non-boss archetype whose
+   seeded range reached 28; `cinderling` stops at 26 and would fail the overlap guard. It reached two
+   entries with amendment 5 (§7.2), and without using the boss.
 3. **`cinderling` is used outside its D1 zone list in three tail locations** (`vent-fields`,
    `pyreling-den`, `fire-ancients-chamber`). D1 lists `ashfields` only. The in-band test passes (D1 band
    19–20 is one step from the tail band, and the seeded range 20–26 overlaps all three locations), and
    the region is right — it is a Cinderplain elemental — but the zone list is D1's, and this is a
    deviation. Without it, all four tail locations would be pyreling alone or would need the boss.
 
+### 7.1 What the band extension changed, and what it did not
+
+`budget.yaml` published `b27-30` and now covers 1–30 (C4, `t_259ac697`). The band is anchored on the only
+things that exist at that height:
+
+- **`fire-ancient` is the only seeded archetype there** — 900 HP, 42 damage, 1200 XP, 150–300 gold,
+  seeded 26–30 (`ArchetypeSeeder.cs:662-669`). It is a boss and stays out of every pool, so it sets the
+  band's *ceiling* rather than its population: `hp.max` is 450 exactly because 900 / 2 is the floor of
+  D0's approved `bosses.hp_multiplier`, and `xp` and `gold` check out against the same multipliers.
+- **`ash-eater` (26–30) and `maw-serpent` (28–30) are the only authored entries** (D6/L6,
+  `archetypes.md`), and neither carries a stat line yet. Every value in `b27-30` is therefore a range
+  continued from `b23-26` by the step the ladder last took — one basis line per value, in `budget.yaml`
+  itself, so the arithmetic can be re-run rather than re-argued.
+- **No hostile archetype was re-banded to fill it.** The band exists because the rooms run to level 30
+  (`ZoneLocationsSeeder.cs:590, :598, :606`), not because a slot needed a tenant. A band whose only seeded
+  occupant is a boss is the honest state of the ladder at 27–30.
+- **No boss is authored for 27–30.** `fire-ancient` already occupies the tier and stays unpooled: boss
+  placement is still held for the uniqueness mechanism D0 named.
+
+This is also why the tail needed **two** authored rows above 26 instead of one 26–30 row. Spawn level is
+the archetype's `MinLevel` with no roll (`budget.yaml`, *wiring.level*; `EfCoreEnemyRepository.cs:52`), so
+a 26–30 archetype spawns at 26 in every room it is pooled in: `ash-eater` covers
+`fire-ancients-chamber`'s floor of 26, and only `maw-serpent` (28–30) can stand on `kaldreks-heart`'s
+floor of 28.
+
+### 7.2 `kaldreks-heart` after `b27-30` — the one pool the extension re-measures
+
+On D1's single `21-30` tail band, `pyreling` and `kaldreks-heart` are the same band, which is why §3 drew
+the pool as legal. On the published D0 table they are not: `kaldreks-heart` (floor 28) is `b27-30` and
+`pyreling` is `b23-26` — one band apart. L6's decision 2 applies D4's cap number to that pair:
+
+| entry | band | weight before | weight now | why |
+|---|---|---|---|---|
+| `maw-serpent` | 28–30 | — | **6** | in the room's own band; it takes the weight D4 drew for `pyreling` |
+| `pyreling` | `b23-26` | 6 | **2** | one band below the room, and it spawns at 23 because nothing rolls; the cap's maximum is its ceiling |
+
+The ratio is 3:1, so a Heart roster draws a pyreling about one slot in four. The archetype is still in the
+room — it dens in it (§3) — but it is no longer what the room *is*. Nothing else moved: the other 27
+pools, the other six bands, `merchants:` and every seeder trait are untouched.
+
 **Reference closure, stated for the consolidation pass.** Every pool slug resolves at runtime against
-`ArchetypeSeeder.cs`, and 15 of them need to be added there first (§6). `pyreling` resolves there today
+`ArchetypeSeeder.cs`, and 16 of them need to be added there first (§6). `pyreling` resolves there today
 but is **not** in `archetypes.md`, because D1 put 21–30 out of scope — so a reference-closure check that
 reads only the roster will report it as missing. It is not missing; it is seeded and out of roster scope.
-Closing that properly is the tail card's job, not a pool edit.
+D6/L6 added their five new tail rows but did not add `pyreling`, so the tail landing does not close this:
+it is a roster edit, not a pool edit.
 
-Everything below level 21 satisfies every rule with no deviation. The fix is a 21–30 tail roster card
-(D1's gap, not this card's): two or three non-boss archetypes at 23–26 and 27–30 would let
-`kaldreks-heart` reach two entries and let `cinderling` go back to `ashfields` only. Until then the four
-tail locations should be imported as written and marked provisional.
-
-**Status of the tail after the 2026-11-20 amendments.** The four tail pools are unchanged: `vent-fields`,
-`pyreling-den` and `fire-ancients-chamber` as drawn, `kaldreks-heart` still single-entry. Two things did
-move: `scorched-battlefield` (L21–25) is now a pooled location and is therefore the **fifth** tail
-location — it takes the grove's band-19–20 scavenger pool, which is why `ash-jack` and `forge-deserter`
-must be seeded to 19–22 (§6) — and the 21–30 roster card is open as **D6, t_98def8d8**, authorised with
-the amendments. When D6 lands, `pyreling` stops being the one pool slug outside `archetypes.md` and
-`kaldreks-heart` gets its second entry; neither is a pool edit, so this file does not wait on D6.
+**Status of the tail after C4.** Five tail locations, five tail pools, all ≥ 2 entries. Three are unchanged
+since L3: `vent-fields`, `pyreling-den` and `fire-ancients-chamber` as drawn — the last still drawing the
+deviant `cinderling`, because `ash-eater` is pooled nowhere yet (§10). `scorched-battlefield` (L21–25)
+remains the fifth tail location, taking the grove's band-19–20 scavenger pool, which is why `ash-jack` and
+`forge-deserter` must be seeded to 19–22 (§6). `kaldreks-heart` is the one that moved (§7.2).
 
 ## 8. The pack shape — and why the 18 files live in the design set for now
 
@@ -435,8 +496,8 @@ Error-severity, which is why these files do not sit under `content/`:
 | `content/pools/<zone>.yaml` | the directory name is the family, and `pools` resolves to no content type | `pack-family-unknown` — **Error** (`ContentPackRules.FamilyUnknown`, `ContentPackReader.ResolveFamily`) |
 | `pool[].archetype` may name a roster archetype that is not seeded yet | every spawn entry must resolve in the catalogue | `missing-spawn-archetype` — **Error** (`ContentReferenceRules.AuditSpawnPools`) |
 
-The second is the real blocker, and it is the landing-order problem this document has always named: 15 of
-the 27 pooled archetypes do not exist yet (§6), so every one of the 18 files fails the guard as written.
+The second is the real blocker, and it is the landing-order problem this document has always named: 16 of
+the 28 pooled archetypes do not exist yet (§6), so every one of the 18 files fails the guard as written.
 
 **So the 18 files land at `docs/design/content/pools/<zone>.yaml`** — the design set, which `docfx.json`
 already excludes from the published site — as design data, not importable packs. They move to
@@ -527,7 +588,7 @@ Two things the translation has to respect, both from the importer's own document
 | A town, `SafeRespawn` location or lobby must not spawn anything | `SeededEncounterCoverageTests.cs:28-52`, and the same rule at runtime |
 | The level-overlap check still runs | `SeededEncounterCoverageTests.cs:112-144` |
 
-**Landing order — this is the part that will bite.** The pools name 15 archetypes that do not exist yet,
+**Landing order — this is the part that will bite.** The pools name 16 archetypes that do not exist yet,
 and the seeder only *inserts* (`plans/content-seeding-pass.md` §2: an existing slug is never updated). So:
 
 0. **landed 2026-11-20 (L3, t_6c70dc04):** the three trait changes and the three seeder pools they force.
@@ -535,7 +596,8 @@ and the seeder only *inserts* (`plans/content-seeding-pass.md` §2: an existing 
    and `ash-shrine` is `SafeRespawn` with no pool. The battlefield's *seeded* pool is the interim
    `cinderling 70 / pyreling 30` — the pool the grove used to carry, moved with the flag — because the
    designed entries (`ash-jack`, `forge-deserter`) do not exist yet. §9 records the difference;
-1. seed the 15 archetypes (with hostility and the level ranges in §6) and merge that PR;
+1. seed the 16 archetypes (with hostility and the level ranges in §6) and merge that PR — `maw-serpent` is
+   the sixteenth and it must land before `kaldreks-heart`'s pool imports;
 2. then translate the 18 design files into `content/zonelocations/<zone>.yaml` (§8) and import them, which
    replaces that interim pair with the designed three;
 3. then run `dotnet test Veldrath.Server.slnx --filter Category=Validation` —
@@ -586,7 +648,7 @@ marked:
 | `vent-fields` | `pyreling` 70, `cinderling` 30 | `pyreling` 5, `cinderling` 3 |
 | `pyreling-den` | `pyreling` 100 | `pyreling` 6, `cinderling` 2 |
 | `fire-ancients-chamber` | `cinderling` 70, `fire-ancient` 30 | `pyreling` 5, `cinderling` 3 |
-| `kaldreks-heart` | `fire-ancient` 100 | `pyreling` 6 |
+| `kaldreks-heart` | `fire-ancient` 100 | `maw-serpent` 6, `pyreling` 2 (amendment 5) |
 
 26 of the 28 proposed pools change composition — two of them by going quiet (`obsidian-grove`,
 `ash-shrine`) — and `scorched-battlefield` joins the matrix with the pool the grove used to carry, so the
@@ -616,10 +678,11 @@ fifth is a separate card. Nothing here is still an open question about *this* do
 | 4 | `scorched-battlefield` | **Respawn moves to `obsidian-grove`; the battlefield keeps a pool** | Amendment §4; §4 sanctuaries; the battlefield row in §3 |
 | 5 | The 21–30 tail | **Authorise a small tail roster** — 4–6 archetypes, levels 21–30, no bosses | Card `t_98def8d8` (D6); §7 status |
 
-Two things stay open, and neither is decided here: the four drawn tail pools are provisional until D6
-lands, and the `cinderling` zone-list deviation (§7 item 3) is D6's to close or D5's to accept. One
-consequence of amendments 3 and 4 needs a D5 ruling rather than a decision in this file: `ash-jack` and
-`forge-deserter` must be seeded to `19–22` (§6) or their zone has no place for them.
+Three things stay open, and none is decided here: the `cinderling` zone-list deviation (§7 item 3) is D6's
+to close or D5's to accept; `ash-eater` — the other D6 row above 26 — is pooled nowhere yet, so
+`fire-ancients-chamber` still draws `cinderling` (§7.1); and one consequence of amendments 3 and 4 needs a
+D5 ruling rather than a decision in this file: `ash-jack` and `forge-deserter` must be seeded to `19–22`
+(§6) or their zone has no place for them.
 
 ## 11. See also
 
