@@ -300,9 +300,8 @@ subsection (mirror: `wiki/World-Veldrath.md`).
 ## 6. Canon conflicts found while writing this
 
 These are not proposals — they are places where two things already written disagree, or where player-facing
-text refers to something that no longer exists. None of them were edited here, except C2, C5 and C6: all
-three were resolved on 2026-11-20 and are kept as resolved records so the letters the rest of the document
-cites still point at something.
+text refers to something that no longer exists. Entries marked *resolved* below keep the claim that was wrong
+when this document was written and name the change that landed the fix.
 
 **C1 — Player-facing text names a deleted region.** `blacksmith-greeting` line 3 reads "Finest ironwork in
 Thornveil, guaranteed." `thornveil` was the pre-Crestfall starter region and was replaced by `varenmark` /
