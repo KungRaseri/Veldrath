@@ -1,9 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
 using Veldrath.Server.Data;
 using Veldrath.Server.Data.Entities;
+using Veldrath.Server.Data.Seeders;
 using Veldrath.Server.Tests.Infrastructure;
 using MapNodeType = RealmEngine.Shared.Models.MapNodeType;
 using MapType = RealmEngine.Shared.Models.MapType;
@@ -17,14 +18,15 @@ namespace Veldrath.Server.Tests.Features;
 /// <remarks>
 /// The names this suite rejects were replaced in the canon rewrite (see
 /// <c>.github/agent-memory/world-lore-plan.md</c>): Sundering / Age of Embers / Dravan / Thysmara / Kaldrek became
-/// Collapse / Ashen Age / Calethic Empire / Aethori / Unbound Ruin. Matching is case-sensitive on purpose — the zone
+/// Collapse / Ashen Age / Calethic Empire / Aethori / Unbound Ruin. The list is <see cref="WorldCanonText"/>.RejectedLoreTokens
+/// — one authority shared with the sweep, so the two can never disagree about what counts as retired lore. It is
+/// deliberately wider than the sweep's rewrite triggers: a false positive here fails this test, while a false
+/// positive in the sweep would overwrite authored prose. Matching is case-sensitive on purpose — the zone
 /// id <c>kaldrek-maw</c> is an opaque key and is expected to stay.
 /// </remarks>
 [Trait("Category", "Validation")]
 public class SeededWorldTextTests
 {
-    private static readonly string[] RetiredTokens = ["Sundering", "Age of Embers", "Dravan", "Thysmara", "Kaldrek"];
-
     private const string ExpectedEra = "The Ashen Age (the Age of Reclaiming)";
 
     [Fact]
@@ -41,7 +43,7 @@ public class SeededWorldTextTests
             if (string.IsNullOrEmpty(value))
                 return;
 
-            foreach (var token in RetiredTokens)
+            foreach (var token in WorldCanonText.RejectedLoreTokens)
             {
                 if (value.Contains(token, StringComparison.Ordinal))
                     offenders.Add($"{entity}.{field} contains retired token \"{token}\": \"{value}\"");

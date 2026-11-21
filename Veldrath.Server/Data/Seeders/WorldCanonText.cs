@@ -40,6 +40,33 @@ public static class WorldCanonText
     /// </summary>
     public static IReadOnlyList<string> RetiredTokens { get; } = ["Dravan", "Thysmara", "Kaldrek", "Age of Embers"];
 
+    /// <summary>
+    /// Every name the canon rejects in shipped text: <see cref="RetiredTokens"/> plus <c>Sundering</c>, which the
+    /// canon replaced with <c>Collapse</c>.
+    /// </summary>
+    /// <remarks>
+    /// The guard test uses this wider list and the sweep only rewrites on <see cref="RetiredTokens"/>, deliberately:
+    /// a false positive in the guard is a failing test, while a false positive in the sweep would overwrite authored
+    /// prose. Both read the list from here so the two sets cannot drift.
+    /// </remarks>
+    public static IReadOnlyList<string> RejectedLoreTokens { get; } = [.. RetiredTokens, "Sundering"];
+
+    /// <summary>
+    /// The world description shipped before the canon rewrite. It carries none of <see cref="RetiredTokens"/>, so a
+    /// token match alone would leave it beside the new era on every migrated database.
+    /// </summary>
+    public const string PreCanonWorldDescription =
+        "A world of scattered kingdoms, ancient ruins, and contested wilds, shaped by centuries of war and forgotten magic.";
+
+    /// <summary>
+    /// Values a database seeded before the canon rewrite can still hold verbatim where the rewrite carries no retired
+    /// token. Membership is exact ordinal equality, never a pattern: that is what makes rewriting one safe, because no
+    /// authored text equals a shipped value character for character. A future reword with no token is swept by
+    /// recording its old text here — which the sweep's drift report names when it is missing.
+    /// </summary>
+    public static IReadOnlySet<string> KnownStaleValues { get; } =
+        new HashSet<string>(StringComparer.Ordinal) { PreCanonWorldDescription };
+
     /// <summary>Identifier of the single seeded world row.</summary>
     public const string WorldId = "veldrath";
 

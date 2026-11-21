@@ -14,11 +14,19 @@ namespace Veldrath.Server.Data.Seeders;
 /// Fields that still carry a retired token but whose id has no entry in <see cref="WorldCanonText"/>. They are
 /// left exactly as they are and reported so the gap is visible instead of silent.
 /// </param>
+/// <param name="DriftedFields">
+/// Canon-covered fields that differ from canon without a retired token or a recorded pre-rewrite value, quoting the
+/// value found. They are left exactly as they are: on <c>Worlds</c>/<c>Regions</c>/<c>Zones</c> — which only
+/// <see cref="ApplicationDataSeeder"/> writes — this means a shipped text change nobody recorded in
+/// <see cref="WorldCanonText.KnownStaleValues"/>; on the map graph it is content authored in Foundry and is not
+/// reported at all.
+/// </param>
 public sealed record WorldCanonSweepResult(
     int RowsChanged,
     int FieldsChanged,
     IReadOnlyList<string> ChangedFields,
-    IReadOnlyList<string> UnresolvedFields);
+    IReadOnlyList<string> UnresolvedFields,
+    IReadOnlyList<string> DriftedFields);
 
 /// <summary>
 /// Rewrites world-geography text that still carries retired lore, so a database seeded before the canon rewrite
@@ -29,9 +37,12 @@ public sealed record WorldCanonSweepResult(
 /// Both world seeders stop as soon as their tables have rows — <see cref="ApplicationDataSeeder"/> and
 /// <c>MapGraphSeeder</c> — so the seed text only ever reaches an empty database. This sweep is the path for an
 /// already-seeded one, and it is guarded rather than an upsert: a field is rewritten only when its current value
-/// still contains one of <see cref="WorldCanonText.RetiredTokens"/>, matched case-sensitively. Anything an author
-/// edited later — including map nodes saved through the Foundry map editor, which writes the same rows — carries
-/// none of those tokens and is never touched.
+/// still contains one of <see cref="WorldCanonText.RetiredTokens"/>, matched case-sensitively, or is exactly a
+/// recorded pre-rewrite value from <see cref="WorldCanonText.KnownStaleValues"/>. Anything an author
+/// edited later — including map nodes saved through the Foundry map editor, which writes the same rows — matches
+/// neither and is never touched. The token match cannot catch a reword that drops the old name without adding
+/// anything, so the exact-match set and the drift report exist for that case: a reword with no token is swept when
+/// its old text is recorded, and reported when it is not.
 /// </para>
 /// <para>
 /// Ids are never written. They are opaque keys, and the lowercase <c>kaldrek-maw</c> and <c>kaldreks-heart</c> slugs
@@ -63,9 +74,13 @@ public static class WorldCanonSweep
 
         var changes = new List<string>();
         var unresolved = new List<string>();
+        var drifted = new List<string>();
         var rows = new HashSet<string>(StringComparer.Ordinal);
 
-        var applicationChanged = await SweepApplicationDataAsync(applicationDb, changes, unresolved, rows, cancellationToken);
+        // Row-level prose in the application database has one writer — ApplicationDataSeeder — so a value that
+        // differs from canon is a text change this sweep was not told how to recognise, and it is reported. The map
+        // graph is written by the Foundry editor as well, so divergence there is authored content and stays quiet.
+        var applicationChanged = await SweepApplicationDataAsync(applicationDb, changes, unresolved, drifted, rows, cancellationToken);
         if (applicationChanged)
             await applicationDb.SaveChangesAsync(cancellationToken);
 
@@ -73,13 +88,19 @@ public static class WorldCanonSweep
         if (contentChanged)
             await contentDb.SaveChangesAsync(cancellationToken);
 
-        return new WorldCanonSweepResult(rows.Count, changes.Count, changes.AsReadOnly(), unresolved.AsReadOnly());
+        return new WorldCanonSweepResult(
+            rows.Count,
+            changes.Count,
+            changes.AsReadOnly(),
+            unresolved.AsReadOnly(),
+            drifted.AsReadOnly());
     }
 
     private static async Task<bool> SweepApplicationDataAsync(
         ApplicationDbContext db,
         List<string> changes,
         List<string> unresolved,
+        List<string> drifted,
         HashSet<string> rows,
         CancellationToken cancellationToken)
     {
@@ -95,9 +116,9 @@ public static class WorldCanonSweep
             var key = $"world:{world.Id}";
             var before = changes.Count;
 
-            Rewrite($"{key}.Name", world.Name, canon?.Name, value => world.Name = value, changes, unresolved);
-            Rewrite($"{key}.Description", world.Description, canon?.Description, value => world.Description = value, changes, unresolved);
-            Rewrite($"{key}.Era", world.Era, canon?.Era, value => world.Era = value, changes, unresolved);
+            Rewrite($"{key}.Name", world.Name, canon?.Name, value => world.Name = value, changes, unresolved, drifted);
+            Rewrite($"{key}.Description", world.Description, canon?.Description, value => world.Description = value, changes, unresolved, drifted);
+            Rewrite($"{key}.Era", world.Era, canon?.Era, value => world.Era = value, changes, unresolved, drifted);
 
             if (changes.Count > before)
             {
@@ -114,8 +135,8 @@ public static class WorldCanonSweep
             var key = $"region:{region.Id}";
             var before = changes.Count;
 
-            Rewrite($"{key}.Name", region.Name, canon?.Name, value => region.Name = value, changes, unresolved);
-            Rewrite($"{key}.Description", region.Description, canon?.Description, value => region.Description = value, changes, unresolved);
+            Rewrite($"{key}.Name", region.Name, canon?.Name, value => region.Name = value, changes, unresolved, drifted);
+            Rewrite($"{key}.Description", region.Description, canon?.Description, value => region.Description = value, changes, unresolved, drifted);
 
             if (changes.Count > before)
             {
@@ -132,8 +153,8 @@ public static class WorldCanonSweep
             var key = $"zone:{zone.Id}";
             var before = changes.Count;
 
-            Rewrite($"{key}.Name", zone.Name, canon?.Name, value => zone.Name = value, changes, unresolved);
-            Rewrite($"{key}.Description", zone.Description, canon?.Description, value => zone.Description = value, changes, unresolved);
+            Rewrite($"{key}.Name", zone.Name, canon?.Name, value => zone.Name = value, changes, unresolved, drifted);
+            Rewrite($"{key}.Description", zone.Description, canon?.Description, value => zone.Description = value, changes, unresolved, drifted);
 
             if (changes.Count > before)
             {
@@ -162,8 +183,8 @@ public static class WorldCanonSweep
             var key = $"map:{map.Id}";
             var before = changes.Count;
 
-            Rewrite($"{key}.Name", map.Name, canon?.Name, value => map.Name = value, changes, unresolved);
-            Rewrite($"{key}.Description", map.Description, canon?.Description, value => map.Description = value, changes, unresolved);
+            Rewrite($"{key}.Name", map.Name, canon?.Name, value => map.Name = value, changes, unresolved, null);
+            Rewrite($"{key}.Description", map.Description, canon?.Description, value => map.Description = value, changes, unresolved, null);
 
             if (changes.Count > before)
             {
@@ -180,8 +201,8 @@ public static class WorldCanonSweep
             var key = $"mapnode:{node.Id}";
             var before = changes.Count;
 
-            Rewrite($"{key}.DisplayName", node.DisplayName, canon?.Name, value => node.DisplayName = value, changes, unresolved);
-            Rewrite($"{key}.Description", node.Description, canon?.Description, value => node.Description = value, changes, unresolved);
+            Rewrite($"{key}.DisplayName", node.DisplayName, canon?.Name, value => node.DisplayName = value, changes, unresolved, null);
+            Rewrite($"{key}.Description", node.Description, canon?.Description, value => node.Description = value, changes, unresolved, null);
 
             if (changes.Count > before)
             {
@@ -200,7 +221,7 @@ public static class WorldCanonSweep
             var key = $"zonelocation:{location.Slug}";
             var before = changes.Count;
 
-            Rewrite($"{key}.DisplayName", location.DisplayName, canon, value => location.DisplayName = value, changes, unresolved);
+            Rewrite($"{key}.DisplayName", location.DisplayName, canon, value => location.DisplayName = value, changes, unresolved, null);
 
             if (changes.Count > before)
             {
@@ -217,28 +238,45 @@ public static class WorldCanonSweep
         => canon.TryGetValue(id, out var value) ? value : null;
 
     /// <summary>
-    /// Rewrites <paramref name="current"/> when it still carries a retired token, records the field in
-    /// <paramref name="changes"/>, and records it in <paramref name="unresolved"/> instead when there is no canon
-    /// value to write.
+    /// Brings <paramref name="current"/> back to <paramref name="canonical"/> when it is recognisably stale, records
+    /// the field in <paramref name="changes"/>, and reports the cases it will not touch.
     /// </summary>
+    /// <remarks>
+    /// A value is stale when it still carries a retired token or is exactly a recorded pre-rewrite value
+    /// (<see cref="WorldCanonText.KnownStaleValues"/>) — the latter is how a reword that carries no token, such as the
+    /// world description, still reaches a migrated database. Anything else is compared against canon only: when
+    /// <paramref name="drifted"/> is supplied the difference is recorded there and the text is left alone, never
+    /// overwritten; the map graph passes <see langword="null"/> because the Foundry editor writes those rows.
+    /// With no canon entry the field cannot be repaired, so it is reported in <paramref name="unresolved"/> instead.
+    /// </remarks>
     private static void Rewrite(
         string field,
         string? current,
         string? canonical,
         Action<string> assign,
         List<string> changes,
-        List<string> unresolved)
+        List<string> unresolved,
+        List<string>? drifted)
     {
-        if (!WorldCanonText.ContainsRetiredToken(current, out var token))
-            return;
-
         if (canonical is null)
         {
-            unresolved.Add($"{field} still carries \"{token}\" and has no canon entry");
+            if (WorldCanonText.ContainsRetiredToken(current, out var orphanToken))
+                unresolved.Add($"{field} still carries \"{orphanToken}\" and has no canon entry");
+
             return;
         }
 
-        assign(canonical);
-        changes.Add(field);
+        if (string.Equals(current, canonical, StringComparison.Ordinal))
+            return;
+
+        if (WorldCanonText.ContainsRetiredToken(current, out _)
+            || (current is not null && WorldCanonText.KnownStaleValues.Contains(current)))
+        {
+            assign(canonical);
+            changes.Add(field);
+            return;
+        }
+
+        drifted?.Add($"{field} differs from the shipped canon and holds no retired token: \"{current}\"");
     }
 }

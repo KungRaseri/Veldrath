@@ -433,6 +433,18 @@ try
                     string.Join(", ", canonSweep.UnresolvedFields));
             }
 
+            // A canon-covered field that differs from the shipped text without a retired token is either a reword
+            // whose old value nobody recorded in WorldCanonText.KnownStaleValues, or a manual edit of a row only the
+            // seeder writes. Either way it stays as it is and is named here, so a migrated database cannot silently
+            // keep text the fresh seed no longer produces.
+            if (canonSweep.DriftedFields.Count > 0)
+            {
+                app.Logger.LogWarning(
+                    "World canon sweep found {FieldCount} field(s) that differ from the shipped canon but hold no retired token; left unchanged: {Fields}",
+                    canonSweep.DriftedFields.Count,
+                    string.Join("; ", canonSweep.DriftedFields));
+            }
+
             // Authored chests live in the application database, beside the ground items they resemble, and are
             // idempotent by chest id so a restart never refills a chest a player emptied a moment ago.
             await Veldrath.Server.Data.Seeders.LootChestsSeeder.SeedAsync(appDb);

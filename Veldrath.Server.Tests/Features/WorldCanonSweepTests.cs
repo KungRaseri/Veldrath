@@ -55,6 +55,7 @@ public class WorldCanonSweepTests
             $"mapnode:{zoneMapNodeId}.Description",
         });
         result.UnresolvedFields.Should().BeEmpty();
+        result.DriftedFields.Should().BeEmpty();
 
         await using var reloadedApp = probe.CreateApplicationContext();
         await using var reloadedContent = probe.CreateContentContext();
@@ -70,6 +71,63 @@ public class WorldCanonSweepTests
 
         (await reloadedContent.MapNodes.SingleAsync(node => node.Id == zoneMapNodeId))
             .Description.Should().Be(WorldCanonText.MapNodes[zoneMapNodeId].Description);
+    }
+
+    [Fact]
+    public async Task Sweep_rewrites_the_pre_canon_world_description_that_carries_no_retired_token()
+    {
+        await using var probe = new CanonSweepProbe();
+        await using var app = probe.CreateApplicationContext();
+        await using var content = await probe.CreateContentContextAsync();
+
+        WorldCanonText.ContainsRetiredToken(WorldCanonText.PreCanonWorldDescription, out _)
+            .Should().BeFalse("the old sentence names nothing retired, which is why exact-match detection exists");
+
+        var world = await app.Worlds.SingleAsync(candidate => candidate.Id == WorldCanonText.WorldId);
+        world.Description = WorldCanonText.PreCanonWorldDescription;
+        await app.SaveChangesAsync();
+
+        var result = await WorldCanonSweep.SweepAsync(app, content);
+
+        result.RowsChanged.Should().Be(1);
+        result.FieldsChanged.Should().Be(1);
+        result.ChangedFields.Should().Equal($"world:{WorldCanonText.WorldId}.Description");
+        result.UnresolvedFields.Should().BeEmpty();
+        result.DriftedFields.Should().BeEmpty("a recorded pre-rewrite value is swept, not merely reported");
+
+        await using var reloadedApp = probe.CreateApplicationContext();
+
+        var swept = await reloadedApp.Worlds.SingleAsync(candidate => candidate.Id == WorldCanonText.WorldId);
+        swept.Description.Should().Be(WorldCanonText.World.Description, "the description must not contradict the era beside it");
+        swept.Era.Should().Be(WorldCanonText.World.Era);
+    }
+
+    [Fact]
+    public async Task Sweep_reports_an_unrecorded_token_free_world_description_and_leaves_it_alone()
+    {
+        const string unrecorded = "A world opening nobody recorded in KnownStaleValues.";
+
+        await using var probe = new CanonSweepProbe();
+        await using var app = probe.CreateApplicationContext();
+        await using var content = await probe.CreateContentContextAsync();
+
+        var world = await app.Worlds.SingleAsync(candidate => candidate.Id == WorldCanonText.WorldId);
+        world.Description = unrecorded;
+        await app.SaveChangesAsync();
+
+        var result = await WorldCanonSweep.SweepAsync(app, content);
+
+        result.RowsChanged.Should().Be(0, "a divergence the sweep cannot recognise is never overwritten");
+        result.FieldsChanged.Should().Be(0);
+        result.UnresolvedFields.Should().BeEmpty();
+        result.DriftedFields.Should().ContainSingle();
+        result.DriftedFields[0].Should().StartWith($"world:{WorldCanonText.WorldId}.Description");
+        result.DriftedFields[0].Should().Contain(unrecorded, "the report must quote what it found to be actionable");
+
+        await using var reloadedApp = probe.CreateApplicationContext();
+
+        (await reloadedApp.Worlds.SingleAsync(candidate => candidate.Id == WorldCanonText.WorldId))
+            .Description.Should().Be(unrecorded);
     }
 
     [Fact]
@@ -126,6 +184,7 @@ public class WorldCanonSweepTests
 
         var first = await WorldCanonSweep.SweepAsync(app, content);
         first.FieldsChanged.Should().BeGreaterThan(0, "the setup wrote the pre-rewrite text back");
+        first.DriftedFields.Should().BeEmpty();
 
         var second = await WorldCanonSweep.SweepAsync(app, content);
 
@@ -133,6 +192,7 @@ public class WorldCanonSweepTests
         second.FieldsChanged.Should().Be(0);
         second.ChangedFields.Should().BeEmpty();
         second.UnresolvedFields.Should().BeEmpty();
+        second.DriftedFields.Should().BeEmpty("after the first run every field equals canon, so nothing is left to report");
 
         await using var reloadedApp = probe.CreateApplicationContext();
         await using var reloadedContent = probe.CreateContentContext();
@@ -172,6 +232,11 @@ public class WorldCanonSweepTests
         result.FieldsChanged.Should().Be(0);
         result.ChangedFields.Should().BeEmpty();
         result.UnresolvedFields.Should().BeEmpty();
+
+        // A region row has no writer but the seeder, so its divergence is reported; a map or node is authored in
+        // Foundry, where divergence is the norm and reporting it would warn on every start.
+        result.DriftedFields.Should().ContainSingle();
+        result.DriftedFields[0].Should().StartWith("region:greymoor.Description");
 
         await using var reloadedApp = probe.CreateApplicationContext();
         await using var reloadedContent = probe.CreateContentContext();
@@ -336,6 +401,7 @@ public class WorldCanonSweepTests
 
         result.FieldsChanged.Should().Be(expectedFields);
         result.UnresolvedFields.Should().BeEmpty("every id the canon names has a replacement");
+        result.DriftedFields.Should().BeEmpty("every field was made stale with a recorded token, so every field is swept");
 
         await using var reloadedApp = probe.CreateApplicationContext();
         await using var reloadedContent = probe.CreateContentContext();
@@ -374,6 +440,7 @@ public class WorldCanonSweepTests
         result.FieldsChanged.Should().Be(0);
         result.UnresolvedFields.Should().HaveCount(2);
         result.UnresolvedFields.Should().OnlyContain(field => field.StartsWith("zone:kaldrek-fane.", StringComparison.Ordinal));
+        result.DriftedFields.Should().BeEmpty("a field with no canon entry is reported once, as unresolved");
 
         await using var reloadedApp = probe.CreateApplicationContext();
 
