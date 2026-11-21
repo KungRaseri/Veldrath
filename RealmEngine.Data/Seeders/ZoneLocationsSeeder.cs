@@ -25,7 +25,7 @@ public static class ZoneLocationsSeeder
         if (missing.Count == 0) return;
 
         // The pools are declared apart from the locations so the whole encounter map reads as one table. A location
-        // that is not listed here spawns nothing on purpose: towns, inns, markets and the SafeRespawn lobbies.
+        // absent here gets no pool on purpose: towns, inns, markets, SafeRespawn lobbies. A placed `ActorInstance` still spawns.
         foreach (var location in missing)
             if (SpawnPools.TryGetValue(location.Slug, out var pool))
                 location.ActorPool = [.. pool];
