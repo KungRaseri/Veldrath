@@ -12,9 +12,9 @@ namespace RealmEngine.Data.Migrations
     /// <para>
     /// <c>ZoneStockSeeder</c> is insert-only by contract, so it never rewrites a row it already wrote: a database
     /// seeded by <c>AddZoneStockItems</c>' release keeps <c>crestfall/hunters-bow</c> (35 gold, over the 30-gold
-    /// ceiling the L0 band is sized from) and <c>tolvaren/orb-of-force</c> (300 gold, which prices the L10 shelf at
-    /// 1650 against an approved 1600 purse). Deleting them here lets the next start insert <c>tolvaren/fire-ruby</c>
-    /// in the freed slot, which is what the approved table expects.
+    /// ceiling the L0 band is sized from) and <c>tolvaren/orb-of-force</c> (300 gold, whose 16 x 0.50 x 300 = 2400
+    /// max payout blew the approved 1600 purse). Deleting them here lets the next start insert
+    /// <c>tolvaren/fire-ruby</c> in the freed slot, which is what the approved table expects.
     /// </para>
     /// <para>
     /// Both statements are filtered deletes, so this is a no-op on a database that was created after the fix.
