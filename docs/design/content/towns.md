@@ -300,9 +300,8 @@ subsection (mirror: `wiki/World-Veldrath.md`).
 ## 6. Canon conflicts found while writing this
 
 These are not proposals — they are places where two things already written disagree, or where player-facing
-text refers to something that no longer exists. None of them were edited here, except C5 and C6: both were
-resolved on 2026-11-20 and are kept as resolved records so the letters the rest of the document cites still
-point at something.
+text refers to something that no longer exists. Entries marked *resolved* below keep the claim that was wrong
+when this document was written and name the change that landed the fix.
 
 **C1 — Player-facing text names a deleted region.** `blacksmith-greeting` line 3 reads "Finest ironwork in
 Thornveil, guaranteed." `thornveil` was the pre-Crestfall starter region and was replaced by `varenmark` /
@@ -310,11 +309,15 @@ Thornveil, guaranteed." `thornveil` was the pre-Crestfall starter region and was
 about a region that does not exist. Seeders are insert-only, so a fix must go through the importer/upsert, not
 by editing the row.
 
-**C2 — Retired lore is still in the Zone and Region prose.** `World.Era = "The Age of Embers"`; Aldenmere
-"a grey-stoned **Dravan** waytown"; Tolvaren "a salt-caked **Thysmara** port city"; Cinderplain "**Kaldrek's**
-scorched expanse"; Greymoor "fog-wreathed **Dravan** highlands". The world-lore plan (2026-04-14 entry) records
-this lore as *replaced* by the Collapse / Ashen Age / Calethic Empire. Two facts are locked in conflict. This
-document avoids every one of those words; the prose itself needs a separate pass.
+**C2 — Retired lore is still in the Zone and Region prose. (Resolved 2026-11-20, `c213f409`.)** When this
+document was written, `World.Era = "The Age of Embers"`; Aldenmere was "a grey-stoned **Dravan** waytown";
+Tolvaren "a salt-caked **Thysmara** port city"; Cinderplain "**Kaldrek's** scorched expanse"; Greymoor
+"fog-wreathed **Dravan** highlands". The world-lore plan (2026-04-14 entry) records that lore as *replaced* by
+the Collapse / Ashen Age / Calethic Empire. `c213f409` rewrote both seeded copies: `World.Era = "The Ashen Age
+(the Age of Reclaiming)"`, Aldenmere "a grey-stoned waytown", Tolvaren "a salt-caked port city", Cinderplain "a
+scorched expanse of ash and cooled lava", Greymoor "fog-wreathed highlands" — and `SeededWorldTextTests` fails
+the build on a retired token or on the two copies drifting apart. The slugs stay: `kaldrek-maw` is an opaque
+key whose display name is now "The Maw".
 
 **C3 — A resolved rename never landed.** `calethic-language.md` §5.2 marks "The Aurelian Market" as **Resolved**
 and replaced by "The Korreld Exchange" (*Korreldh* → *Korreld* + Common *Exchange*). The seeder still creates
