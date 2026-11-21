@@ -329,7 +329,7 @@ slug is not a text fix: it breaks that placement row and any stored `CurrentZone
 "*Tharrek looks up as you approach.*" every time. Also note the existing speaker slugs are inconsistent:
 `blacksmith-greeting` is hyphenated, `tavernkeeper-greeting` is not.
 
-**C5 — No merchant band exists. (Resolved 2026-11-20.)** `budget.yaml` published a `merchants:` section, and the
+**C5 — No merchant band exists. (Resolved 2026-11-20, `e691eba2`.)** `budget.yaml` published a `merchants:` section, and the
 shop applies its two price endpoints. `MerchantBands` carries the purse tiers, the stock size and those
 endpoints; `ShopPricing` prices every catalogue row with them; a merchant's `TradeGold` is the purse a single
 buyback may draw on, refused as `ShopRefusal.MerchantCannotAfford` when it will not cover the payout. The purse
@@ -457,7 +457,7 @@ miscounted dialogue total in §8.
 Every reference in this document closes: the 13 archetype slugs are either seeded today or named here as new;
 the 13 placement ids resolve to zone + location pairs proven in §7; the dialogue ids are either seeded today or
 carry `(new)` and a `-greeting` slug the dialogue pass creates. There are no arrows to files that do not exist
-and no numbers that do not trace to a band — because no numbers are used at all.
+and no numbers that do not trace to a band.
 
 ## 9. Acceptance
 
