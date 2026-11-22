@@ -12,14 +12,23 @@
 #   projection has assigned MaxHealth, XP and GoldReward since PR #103 (d119b9f1), so the "never assigned /
 #   stays 25 / stays 10" sentences had been false since that PR, not since #136 (which placed instances on
 #   top of them). Flags, details and sibling anchors re-derived at d0050f96. No band value moved.
+# wiring.damage_per_hit flipped to live:true and omitted.mana reworded 2026-11-20 by card t_9c04f053
+#   (docs truth pass), together with the stale file:line citations in the same wiring/spawn/omitted
+#   blocks: Stats.Damage and Stats.Mana have been projected since PR #103 (d119b9f1), and those
+#   sentences still named the pre-projection repository lines and the display-only CombatHelpers
+#   helpers. Re-derived at 1bcf4cdd, the post-#173 tree. No band value moved.
+# merchants.wiring.gold's merchant-purse contrast reworded 2026-11-20 by the same card (review
+#   round 2): it said the hostile `gold:` in the wiring block "is still not projected", which
+#   #173 made false; it is the per-kill reward and it is live. No band value moved.
 # dev-content may choose values INSIDE a band; it may not invent a curve.
 # wiring says whether the engine reads each keyed stat TODAY, with file:line.
 
-schema_version: 5
+schema_version: 6
 status: >-
   approved 2026-11-20 (bands, spawn, loot); merchants approved 2026-11-20;
   b27-30 approved 2026-11-20; merchants.town_level_basis reworded 2026-11-20;
-  wiring.hp/xp/gold corrected to live 2026-11-20
+  wiring.hp/xp/gold corrected to live 2026-11-20; wiring.damage_per_hit corrected to live and
+  omitted.mana reworded 2026-11-20; merchants.wiring.gold's hostile-gold contrast corrected 2026-11-20
 covers_levels: [1, 30]
 level_range_justification: >-
   Card asked for 1-20; the seeded world already has zones at L20, L23 and L26
@@ -37,8 +46,8 @@ level_range_justification: >-
 units:
   hp: "absolute HP, authored as ArchetypeStats.Health"
   damage_per_hit: >-
-    authored base, ArchetypeStats.Damage; the engine adds (enemyLevel - 1) per hit
-    (CombatHelpers.cs:71), so effective hit = band value + level - 1
+    authored base, ArchetypeStats.Damage. The level-scaled base physical damage is
+    max(1, projected damage + enemy level - 1), before defense (CombatHelpers.cs:88-95).
   xp: "total XP the enemy is worth before the damage-share split (CombatRewards.cs:69-86)"
   gold: "total gold the enemy is worth before the split; per-kill roll between min and max"
   drop_chance: >-
@@ -145,8 +154,8 @@ wiring:
   level:
     live: true
     detail: >-
-      spawn level is the archetype's MinLevel and nothing else, no level roll
-      (EfCoreEnemyRepository.cs:52); MaxLevel only feeds the seeded-encounter overlap rule
+      pooled spawn level is the archetype's MinLevel, with no level roll
+      (ActorTemplateProjection.cs:87); MaxLevel feeds the seeded-encounter overlap rule
       (SeededEncounterCoverageTests.cs:207-239). One archetype per band, not per level.
       Because nothing rolls, an archetype banded 26-30 spawns at 26 in every room it is pooled
       in — including a room whose floor is 28. That is the whole reason b27-30 has two authored
@@ -161,11 +170,17 @@ wiring:
       Every spawn therefore carries its authored HP; 50 (Enemy.cs:86, :91) survives only for a row that
       authors no health.
   damage_per_hit:
-    live: false
+    live: true
     detail: >-
-      Stats.Damage is not projected (EfCoreEnemyRepository.cs:45-71); BasePhysicalDamage stays
-      5 (Enemy.cs:130), so enemy damage is 5 + (level - 1) minus the player's CON modifier
-      (CombatHelpers.cs:69-77) for every archetype.
+      Stats.Damage lands on Enemy.BasePhysicalDamage (ActorTemplateProjection.cs:128-131 — the
+      archetype value, or a named instance's override composed over it: 12 for elder-goblin-chief
+      and 18 for captain-blackthorn, ActorInstancesSeeder.cs:114, :141). CombatHelpers.cs:88-95
+      adds enemy level minus one and floors the level-scaled base at one. Constitution reduces
+      that base by a nonnegative amount, defending blocks half the scaled base (rounded down),
+      and the final damage cannot drop below one. Every hostile seeded
+      archetype authors it (3 giant-rat, 7 bandit-ruffian, 42 fire-ancient —
+      SpawnedEnemyStatProjectionTests.cs:57, :117, :41), so 5 (Enemy.cs:136) is only the unauthored
+      default.
   xp:
     live: true
     detail: >-
@@ -189,8 +204,8 @@ wiring:
   armour_class:
     live: false
     detail: >-
-      omitted from bands on purpose: Stats.ArmorClass (ActorArchetype.cs:66) and Stats.AttackBonus
-      (:68) are read nowhere; mitigation is the PLAYER's Constitution (CombatHelpers.cs:72-76).
+      omitted from bands on purpose: Stats.ArmorClass (ActorArchetype.cs:72) and Stats.AttackBonus
+      (:79) are read nowhere; mitigation is the PLAYER's Constitution (CombatHelpers.cs:91-95).
   boss_and_elite_flags:
     live: false
     detail: >-
@@ -236,7 +251,7 @@ spawn:
     non-hostile placement is dropped with a warning and never counts (:100-106).
   non_hostile: >-
     excluded from the roster with a warning (ActorPoolResolver.cs:133-139). Hostility defaults to
-    TRUE when unset (EfCoreEnemyRepository.cs:62), so an NPC must state hostile: false. Meetable
+    TRUE when unset (ActorTemplateProjection.cs:97), so an NPC must state hostile: false. Meetable
     townspeople are LocationNpc rows keyed by zone+location (NpcHubCommands.cs:155-158), never
     pool entries.
   unknown_archetype: "logged as Error and skipped, no substitute (ActorPoolResolver.cs:121-128)"
@@ -261,8 +276,9 @@ loot:
     (AttackEnemyHubCommand.cs:372), and the "gold" domain is honoured only by the chest path
     (LootTableService.cs:274-277). Enemy gold is SpawnedEnemy.GoldReward (ActorPoolResolver.cs:189).
   tables_per_archetype: >-
-    exactly one (ActorArchetype.LootTableId, ActorArchetype.cs:31-32), expanded to a one-element
-    list on the model (EfCoreEnemyRepository.cs:56).
+    zero or one (nullable ActorArchetype.LootTableId, ActorArchetype.cs:31-32). The projection
+    emits a one-element list when it resolves a slug, otherwise an empty list
+    (ActorTemplateProjection.cs:91, :161; AttackEnemyHubCommand.cs:339-340).
   recipient: >-
     the character landing the killing blow takes every drop (AttackEnemyHubCommand.cs:335-344),
     while XP and gold split across damage contributors (CombatRewards.cs:69-86). Loot is not
@@ -294,15 +310,20 @@ elites:
 
 omitted:
   ac: >-
-    no combat behaviour. Stats.ArmorClass is read nowhere (ActorArchetype.cs:66); mitigation is the
-    player's Constitution (CombatHelpers.cs:72-76). An AC band would promise reduction that does
+    no combat behaviour. Stats.ArmorClass is read nowhere (ActorArchetype.cs:72); mitigation is the
+    player's Constitution (CombatHelpers.cs:91-95). An AC band would promise reduction that does
     not exist.
   attack_bonus: >-
-    Stats.AttackBonus (ActorArchetype.cs:68) is never read and there is no hit roll to modify —
+    Stats.AttackBonus (ActorArchetype.cs:79) is never read and there is no hit roll to modify —
     damage lands unconditionally (AttackEnemyHubCommand.cs:191-201).
   mana: >-
-    Stats.Mana exists (ActorArchetype.cs:56) but Enemy.Mana/MaxMana are not projected
-    (EfCoreEnemyRepository.cs:45-71), so an enemy never spends mana.
+    Stats.Mana IS projected (ActorArchetype.cs:56 -> Enemy.Mana and Enemy.MaxMana,
+    ActorTemplateProjection.cs:139-143; 200 on fire-ancient, SpawnedEnemyStatProjectionTests.cs:43),
+    but it is inert once it is there: the server's fight reads BasePhysicalDamage for its damage
+    (CombatHelpers.cs:88-95), and the engine's spell AI has no production caller here — its only
+    entry point, CombatService.ExecuteEnemySpell (CombatService.cs:538-561), returns early at
+    EnemySpellCastingService.cs:35-41 unless Enemy.SpellIds is populated, which the projection never
+    does. So an enemy never spends mana: it is never given a spell to cast, not one it cannot afford.
   respawn_time: "no per-archetype field; one global config pair (EnemyWorldOptions.cs:21-25) plus the cleared-room multiplier (:40)"
   rarity_weight: >-
     ActorArchetype.RarityWeight is inert for spawning: pools use ActorPoolEntry.Weight
@@ -378,8 +399,8 @@ merchants:
       the build when a seeded shopkeeper's purse leaves its town's band. What is NOT live is a depleting balance:
       TradeGold is content, nothing writes it back after a sale (SellItemHubCommand.cs:127-133 credits the player
       and saves the character, and no purse row is touched), so the authored figure caps every transaction instead
-      of draining. The hostile `gold:` in the wiring block at the top of this file is a different key and is still
-      not projected.
+      of draining. The hostile `gold:` in the wiring block at the top of this file is a different key —
+      the per-kill reward, which *is* projected (`wiring.gold`) — not this purse.
     prices: >-
       Live and fixed at the band's two ends. ShopPricing is the shop's pricing rule, in two methods: BuyPrice is the
       item's printed value at MerchantBands.PriceMarkupPercent (100, i.e. 1.0), SellPrice is that value at
