@@ -44,9 +44,12 @@ namespace RealmEngine.Data.Content;
 /// <b>An explicit <c>null</c> is neither of those.</b> Omission means "leave the stored rows alone" and an empty array
 /// means "clear them"; a property present as JSON <c>null</c> says nothing about the author's intent, so it is refused
 /// with a named issue (<see cref="NullCollectionIssues"/>, rule <c>child_collection_null</c>) instead of being read as an
-/// empty authored set. Two guards make that unambiguous: <see cref="NamedIn"/> only counts a property that carries a
-/// JSON array as naming a collection, and <see cref="Reconcile"/> skips a null collection even when the caller asked for
-/// every collection (the pack importer does). A null therefore can never delete rows, on any path.
+/// empty authored set. Three guards make that unambiguous: <see cref="NullCollectionIssues"/> refuses the payload before
+/// any write path uses it, <see cref="NamedIn"/> only counts a property that carries a JSON array as naming a
+/// collection, and <see cref="Reconcile"/> skips a null collection even when the caller asked for every collection (the
+/// pack importer does). The same rule covers an owned collection (<c>ZoneLocation.ActorPool</c>), which
+/// <see cref="ContentValueCopy.ApplyAuthoredValues"/> would otherwise assign wholesale; that copy also keeps the stored
+/// elements when the authored list is null, so no path — not even one that skips validation — deletes rows from a null.
 /// </para>
 /// </remarks>
 public static class ContentChildRows
@@ -180,7 +183,8 @@ public static class ContentChildRows
     }
 
     /// <summary>
-    /// Reports every authored child-row collection <paramref name="entity"/> carries as <c>null</c>.
+    /// Reports every collection <paramref name="entity"/> carries as <c>null</c>: every authored child-row collection,
+    /// plus the owned collections (<c>ZoneLocation.ActorPool</c>) a wholesale assignment would replace.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -195,10 +199,17 @@ public static class ContentChildRows
     /// several families (species, class, archetype, instance, power) have no rule of their own that reads those
     /// collections, so a per-validator check would leave their nulls reaching the reconcile.
     /// </para>
+    /// <para>
+    /// Owned collections are included for the same reason, one step further along the write path:
+    /// <see cref="ContentValueCopy.ApplyAuthoredValues"/> assigns an owned collection wholesale, so a null there would
+    /// clear every stored element even though no reconcile is involved. <c>ZoneLocation.ActorPool</c> is the only owned
+    /// collection a write-path entity carries today, and a stored one loads as <c>[]</c> rather than null — so the
+    /// validation of a stored entity stays clean and only a payload that names the field as null is refused.
+    /// </para>
     /// </remarks>
     /// <param name="entity">The entity the payload describes.</param>
     /// <param name="model">Model of the context that will store the entity.</param>
-    /// <returns>One error per null child-row collection; empty when every collection has a value.</returns>
+    /// <returns>One error per null collection; empty when every collection has a value.</returns>
     public static IReadOnlyList<ContentIssue> NullCollectionIssues(ContentBase entity, IModel model)
     {
         ArgumentNullException.ThrowIfNull(entity);
@@ -215,7 +226,6 @@ public static class ContentChildRows
         foreach (var navigation in entityType.GetNavigations())
         {
             if (!IsAuthoredCollection(navigation)
-                || navigation.TargetEntityType.IsOwned()
                 || navigation.PropertyInfo is not { CanRead: true } property
                 || property.GetValue(entity) is not null)
             {

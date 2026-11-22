@@ -382,6 +382,14 @@ public class ContentWriteEndpointTests(WebAppFactory factory)
             .SingleAsync(table => table.Slug == slug);
     }
 
+    /// <summary>Reads a zone location and its owned spawn pool back through a fresh context.</summary>
+    private async Task<ZoneLocation> StoredZoneLocationAsync(string slug)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ContentDbContext>();
+        return await db.ZoneLocations.AsNoTracking().SingleAsync(location => location.Slug == slug);
+    }
+
     /// <summary>
     /// A recipe whose ingredients are child rows, not owned JSON. The seeder's own materials are used so the references
     /// resolve; the slug is unique per test because the integration database is shared.
@@ -668,6 +676,47 @@ public class ContentWriteEndpointTests(WebAppFactory factory)
 
         var stored = await DetailPayloadAsync(client, "power", "bite");
         stored["speciesPool"]!.AsArray().Count.Should().Be(storedPool);
+    }
+
+    /// <summary>
+    /// The zone location's spawn pool is an owned collection, not a child table, so it is assigned wholesale by
+    /// <c>ApplyAuthoredValues</c> rather than reconciled. Before the shape rule covered owned collections a null
+    /// <c>actorPool</c> validated clean (the pool check only warned) and the write answered 200 with the pool deleted —
+    /// the same silent delete the child-row families had. It has to be refused by name, with the pool and version intact.
+    /// </summary>
+    [Fact]
+    public async Task A_put_naming_the_zone_location_spawn_pool_as_null_is_refused_and_keeps_it()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+
+        var before = await StoredZoneLocationAsync("drove-road");
+        before.ActorPool.Should().NotBeNull("a stored owned collection materialises, never as null");
+        before.ActorPool.Should().NotBeEmpty("the seeded drove-road has a spawn pool to lose");
+
+        // The stored row loads its pool, so validating it as stored is clean: the rule only fires on a payload that
+        // names the field as null.
+        var validate = await client.GetAsync("/api/content/zonelocation/drove-road/validate");
+        validate.StatusCode.Should().Be(HttpStatusCode.OK, await validate.Content.ReadAsStringAsync());
+        var validated = await validate.Content.ReadFromJsonAsync<JsonElement>();
+        validated.GetProperty("isValid").GetBoolean().Should().BeTrue(
+            "a stored zone location carries its pool as a list, not as null");
+
+        var payload = await DetailPayloadAsync(client, "zonelocation", "drove-road");
+        payload["actorPool"]!.AsArray().Count.Should().Be(before.ActorPool.Count);
+        payload["actorPool"] = null;
+
+        var refused = await client.PutAsync("/api/content/zonelocation/drove-road", JsonObjectContent(payload));
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest, await refused.Content.ReadAsStringAsync());
+
+        var body = await refused.Content.ReadFromJsonAsync<JsonElement>();
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.ChildCollectionNull
+            && issue.GetProperty("field").GetString() == "actorPool");
+
+        var after = await StoredZoneLocationAsync("drove-road");
+        after.Version.Should().Be(before.Version);
+        after.ActorPool.Select(entry => entry.ArchetypeSlug)
+            .Should().BeEquivalentTo(before.ActorPool.Select(entry => entry.ArchetypeSlug));
     }
 
     /// <summary>

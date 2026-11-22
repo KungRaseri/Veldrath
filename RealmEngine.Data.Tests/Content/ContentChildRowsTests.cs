@@ -225,6 +225,37 @@ public class ContentChildRowsTests
     }
 
     /// <summary>
+    /// The rule reaches an owned collection too (<c>ZoneLocation.ActorPool</c> is the only one a write-path entity
+    /// carries): it is not reconciled, it is assigned wholesale by <see cref="ContentValueCopy.ApplyAuthoredValues"/>,
+    /// so a null there would clear the stored pool exactly like a null child-row collection would.
+    /// </summary>
+    [Fact]
+    public async Task NullCollectionIssues_names_an_owned_collection_an_entity_carries_as_null()
+    {
+        var (connection, options) = await CreateDatabaseAsync();
+
+        using var keepAlive = connection;
+        await using var db = new ContentDbContext(options);
+
+        var issues = ContentChildRows.NullCollectionIssues(
+            new ZoneLocation
+            {
+                Slug = "drove-road",
+                TypeKey = "locations",
+                DisplayName = "Drove Road",
+                ZoneId = "varenmark",
+                ActorPool = null!,
+            },
+            db.Model);
+
+        issues.Should().ContainSingle();
+        issues[0].Rule.Should().Be(ContentRules.ChildCollectionNull);
+        issues[0].Severity.Should().Be(ContentIssueSeverity.Error);
+        issues[0].Field.Should().Be("actorPool");
+        issues[0].Identifier.Should().Be("drove-road");
+    }
+
+    /// <summary>
     /// A replaced child that still carries the surrogate id it was read with must be inserted under a fresh id: the
     /// stored row it came from is deleted in the same save, so reusing the id would collide.
     /// </summary>

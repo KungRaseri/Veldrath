@@ -38,6 +38,11 @@ public static class ContentValueCopy
     /// seen; a child-row collection (recipe ingredients, loot-table entries) has to be reconciled by identity instead,
     /// because the deserialised children arrive with generated keys EF would treat as existing rows.
     /// </para>
+    /// <para>
+    /// An owned collection is assigned wholesale, so an authored <c>null</c> would clear the stored elements. A null is
+    /// not an authored set (<see cref="ContentChildRows.NullCollectionIssues"/> refuses the payload before it gets here),
+    /// and skipping the assignment keeps the stored elements even for a caller that did not validate first.
+    /// </para>
     /// </remarks>
     /// <param name="incoming">The entity authored by the editor or the pack.</param>
     /// <param name="existing">The row EF is tracking, which is mutated in place.</param>
@@ -66,6 +71,14 @@ public static class ContentValueCopy
                 .OfType<string>()
                 .ToHashSet(StringComparer.Ordinal);
 
+        var ownedCollections = entityType is null
+            ? []
+            : entityType.GetNavigations()
+                .Where(navigation => navigation is { IsCollection: true } && navigation.TargetEntityType.IsOwned())
+                .Select(navigation => navigation.PropertyInfo?.Name)
+                .OfType<string>()
+                .ToHashSet(StringComparer.Ordinal);
+
         foreach (var property in existing.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
         {
             if (!property.CanWrite
@@ -76,6 +89,13 @@ public static class ContentValueCopy
             }
 
             var value = property.GetValue(incoming);
+
+            // A null owned collection is not an authored set: assigning it would clear every stored element. The write
+            // paths refuse such a payload before it gets here; this keeps the stored elements anyway.
+            if (value is null && ownedCollections.Contains(property.Name))
+            {
+                continue;
+            }
 
             if (ownedReferences.Contains(property.Name)
                 && property.GetValue(existing) is { } current

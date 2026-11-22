@@ -8,22 +8,24 @@ using RealmEngine.Data.Validation.Content;
 namespace RealmEngine.Data.Tests.Validation;
 
 /// <summary>
-/// Proves a payload that names a child-row collection as JSON <c>null</c> is refused with a named issue instead of
-/// crashing a validator with a null dereference.
+/// Proves a payload that names a collection as JSON <c>null</c> is refused with a named issue instead of crashing a
+/// validator with a null dereference, or reaching the write path as an empty authored set.
 /// </summary>
 /// <remarks>
 /// An omitted property deserialises to the property initializer (<c>[]</c>); an explicit <c>null</c> is the only way a
 /// content entity arrives carrying a null collection. The rule is one shared check in
 /// <see cref="ContentChildRows.NullCollectionIssues"/> so it covers the families whose own validator never reads the
 /// collection — species, class, archetype, instance and power only check their scalars and their inverse navigations are
-/// not authored at all.
+/// not authored at all — and the owned <c>ZoneLocation.ActorPool</c>, which <c>ContentValueCopy.ApplyAuthoredValues</c>
+/// assigns wholesale.
 /// </remarks>
 [Trait("Category", "Validation")]
 public class NullChildCollectionValidationTests
 {
     /// <summary>
-    /// Every collection-bearing family the content map resolves: the payload-shape rule reports the field, and the
-    /// family validator neither throws nor contradicts it.
+    /// Every collection-bearing family the content map resolves — seven child-row families plus the owned
+    /// <c>ZoneLocation.ActorPool</c>: the payload-shape rule reports the field, and the family validator neither throws
+    /// nor contradicts it.
     /// </summary>
     [Fact]
     public async Task A_null_child_collection_is_an_error_naming_the_field_for_every_family_that_has_one()
@@ -86,6 +88,16 @@ public class NullChildCollectionValidationTests
                 DisplayName = "Null Child Power",
                 PowerType = "innate",
                 SpeciesPool = null!,
+            }),
+            // Not a child table: `ActorPool` is owned JSON, assigned wholesale by ContentValueCopy.ApplyAuthoredValues,
+            // so a null there clears the stored spawn pool without any reconcile involved.
+            ("zonelocation", "actorPool", new ZoneLocation
+            {
+                Slug = "null-child-location",
+                TypeKey = "locations",
+                DisplayName = "Null Child Location",
+                ZoneId = "fenwick-crossing",
+                ActorPool = null!,
             }),
         ];
 
