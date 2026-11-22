@@ -1,6 +1,7 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readRepoFile, repoRoot } from '#lib/testing/source';
 
 /**
  * Hub payload contract check.
@@ -17,26 +18,14 @@ import { describe, expect, it } from 'vitest';
  * only mirrors what it consumes.
  */
 
-/** Vitest runs with cwd inside the workspace, so walk up until the repo root is recognisable. */
-function findRepoRoot(): string {
-	let current = process.cwd();
-
-	for (let depth = 0; depth < 6; depth += 1) {
-		if (
-			existsSync(join(current, 'Veldrath.Server')) &&
-			existsSync(join(current, 'web', 'client'))
-		) {
-			return current;
-		}
-		current = dirname(current);
-	}
-
-	throw new Error(`Could not locate the repository root from ${process.cwd()}.`);
-}
-
-const repoRoot = findRepoRoot();
-const hubFile = join(repoRoot, 'Veldrath.Server', 'Hubs', 'GameHub.cs');
-const typesFile = join(repoRoot, 'web', 'client', 'src', 'lib', 'game', 'types.ts');
+/**
+ * The two files this suite compares, named once so the source-path guard
+ * (`src/lib/parity/source-paths.test.ts`) can see them: it lists this suite as an external source
+ * reader and resolves these constants. Both reads go through `readRepoFile`, which walks up to the
+ * repository root, so the suite no longer carries its own copy of that search.
+ */
+const HUB_SOURCE = 'Veldrath.Server/Hubs/GameHub.cs';
+const TYPES_SOURCE = 'web/client/src/lib/game/types.ts';
 
 /** Removes line and block comments so brace/comma scanning is not confused by prose. */
 function stripComments(source: string): string {
@@ -93,7 +82,7 @@ function topLevelProperties(body: string): string[] {
 
 /** Every event the hub broadcasts with an anonymous-object payload, keyed by event name. */
 function readWirePayloads(): Map<string, string[]> {
-	const source = stripComments(readFileSync(hubFile, 'utf8'));
+	const source = stripComments(readRepoFile(HUB_SOURCE));
 	const shapes = new Map<string, string[]>();
 
 	for (const match of source.matchAll(/SendAsync\(\s*"(\w+)"\s*,\s*([\w.]+)/g)) {
@@ -140,7 +129,7 @@ function readWirePayloads(): Map<string, string[]> {
 }
 
 function readTypescriptInterfaces(): Map<string, string[]> {
-	const source = readFileSync(typesFile, 'utf8');
+	const source = readRepoFile(TYPES_SOURCE);
 	const interfaces = new Map<string, string[]>();
 
 	for (const match of source.matchAll(/export interface (\w+)\s*\{([\s\S]*?)\n\}/g)) {
@@ -156,8 +145,11 @@ const normalize = (name: string) => name.replace(/_/g, '').toLowerCase();
 
 describe('hub payload contract', () => {
 	it('finds the hub and the payload types', () => {
-		expect(existsSync(hubFile), `missing ${hubFile}`).toBe(true);
-		expect(existsSync(typesFile), `missing ${typesFile}`).toBe(true);
+		const missing = [HUB_SOURCE, TYPES_SOURCE].filter(
+			(sourcePath) => !existsSync(join(repoRoot(), sourcePath))
+		);
+
+		expect(missing, `missing ${missing.join(', ')}`).toEqual([]);
 		expect(readWirePayloads().size).toBeGreaterThan(0);
 	});
 

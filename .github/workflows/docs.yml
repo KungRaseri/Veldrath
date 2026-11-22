@@ -10,10 +10,12 @@ concurrency:
   # commit status — `failure`, description "Has been cancelled", measured on Forgejo
   # 15.0.11 — so cancelling a base-branch run leaves the merged commit, and every branch
   # built on it, red with a verdict that never happened. `development` and `main` are merged
-  # in bursts and this instance's runner has capacity 1, so a docs run queues for minutes
-  # behind the component jobs of the next merge and used to be superseded nearly every time:
-  # 10 of the last 17 development push runs ended `Has been cancelled`. A cancelled PR run is
-  # harmless because a pull request only ever shows its latest head.
+  # in bursts, so a docs run queues for minutes behind the component jobs of the next merge
+  # and used to be superseded nearly every time: 10 of the last 17 development push runs
+  # ended `Has been cancelled`. A cancelled pull-request run is harmless only where the head
+  # is the pull request's own branch, which is why the trigger below is `development` only:
+  # the release PR (`development` → `main`) has a base-branch head, so its pull-request runs
+  # would report on `development` commits.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # docfx.json builds the API reference from Realm.Full.slnx, so any C# change can alter the
@@ -59,7 +61,13 @@ on:
       - 'scripts/lib/merge-coverage-sections.awk'
       - 'scripts/tests/**'
   pull_request:
-    branches: [ main, development ]
+    # `development` only, deliberately: the sole pull request into `main` is the release PR
+    # (`development` → `main`), whose head commit is a `development` commit that already
+    # carries this workflow's `push` run at that commit. Running the docs build again
+    # duplicates that verdict and, when the next push supersedes it, records
+    # `failure / "Has been cancelled"` on the `development` commit the superseded run was
+    # started for. The merge gate lints main separately. docs/ci-forgejo.md, "What runs where".
+    branches: [ development ]
     paths: *docs-paths
   workflow_dispatch:
     inputs:

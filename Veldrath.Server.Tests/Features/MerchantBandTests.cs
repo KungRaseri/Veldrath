@@ -36,6 +36,7 @@ public class MerchantBandTests : IDisposable
             new DbContextOptionsBuilder<ContentDbContext>().UseSqlite(_contentConnection).Options);
         _content.Database.GetService<IRelationalDatabaseCreator>().CreateTables();
         ArchetypeSeeder.SeedAsync(_content).GetAwaiter().GetResult();
+        ItemsSeeder.SeedAsync(_content).GetAwaiter().GetResult();
         ZoneStockSeeder.SeedAsync(_content).GetAwaiter().GetResult();
     }
 
@@ -170,6 +171,49 @@ public class MerchantBandTests : IDisposable
                 + $"which must sit inside {MerchantBands.ForTownLevel(zone.MinLevel)}");
         }
     }
+
+    [Fact]
+    public async Task Gold_Basis_Reproduces_Each_Towns_Band_From_Its_Authored_Shelf()
+    {
+        await using var db = _appFactory.CreateContext();
+
+        var merchantTowns = await db.Zones.AsNoTracking()
+            .Where(zone => zone.HasMerchant && !zone.IsDevOnly)
+            .OrderBy(zone => zone.MinLevel)
+            .ToListAsync();
+
+        // The dearest purchasable item each town actually stocks is the shelf ceiling gold_basis is written from.
+        var valueBySlug = await _content.Items.AsNoTracking()
+            .Where(item => item.IsActive && item.Stats.Value > 0)
+            .ToDictionaryAsync(item => item.Slug, item => item.Stats.Value!.Value);
+
+        var shelves = ZoneStockSeeder.Authors()
+            .GroupBy(row => row.ZoneId)
+            .ToDictionary(group => group.Key, group => group.Select(row => row.ItemSlug).ToArray());
+
+        var stockSize = IntSequence("stock_size");
+        var buyback = DoubleSequence("buyback_rate");
+        var approved = (YamlMappingNode)MerchantValue("gold_by_town_level");
+
+        foreach (var town in merchantTowns)
+        {
+            var ceiling = shelves[town.Id].Max(slug => valueBySlug[slug]);
+            var band = ((YamlSequenceNode)approved.Children[new YamlScalarNode($"L{town.MinLevel}")]).Children
+                .Select(node => int.Parse(((YamlScalarNode)node).Value!, CultureInfo.InvariantCulture))
+                .ToArray();
+
+            RoundToNearestFifty(stockSize[0] * buyback[0] * ceiling).Should().Be(band[0],
+                $"merchants.gold_basis sizes {town.Id}'s L{town.MinLevel} floor from its shelf ceiling "
+                + $"({ceiling} gold), at stock_size {stockSize[0]} x buyback {buyback[0]}");
+
+            RoundToNearestFifty(stockSize[1] * buyback[1] * ceiling).Should().Be(band[1],
+                $"merchants.gold_basis sizes {town.Id}'s L{town.MinLevel} ceiling from its shelf ceiling "
+                + $"({ceiling} gold), at stock_size {stockSize[1]} x buyback {buyback[1]}");
+        }
+    }
+
+    private static int RoundToNearestFifty(double value) =>
+        (int)(Math.Round(value / 50.0, MidpointRounding.AwayFromZero) * 50);
 
     [Fact]
     public async Task Every_Reachable_Merchant_Town_Has_A_Band_And_Stock()
