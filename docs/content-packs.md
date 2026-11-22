@@ -17,11 +17,15 @@ From the repository root, with the .NET 10 SDK installed:
 dotnet run --project Veldrath.ContentPack -- validate content/
 
 # Import it. Needs the content database; the argument can also come from $CONTENT_DATABASE.
-dotnet run --project Veldrath.ContentPack -- import content/ \
-  --database "Host=localhost;Database=veldrath;Username=veldrath;Password=..."
+# Two runs, in dependency order: an archetype names the loot table it drops, and a pack cannot resolve
+# a GUID for a row it creates in the same run (see "Two runs, in dependency order" below).
+DATABASE="Host=localhost;Database=veldrath;Username=veldrath;Password=***"
+dotnet run --project Veldrath.ContentPack -- import content/loottables --database "$DATABASE"
+dotnet run --project Veldrath.ContentPack -- import content/archetypes --database "$DATABASE"
 
-# See what an import would do without writing anything.
-dotnet run --project Veldrath.ContentPack -- import content/ --database "..." --dry-run
+# See what an import would do without writing anything. Same split, same order.
+dotnet run --project Veldrath.ContentPack -- import content/loottables --database "$DATABASE" --dry-run
+dotnet run --project Veldrath.ContentPack -- import content/archetypes --database "$DATABASE" --dry-run
 ```
 
 `validate` never needs a database: it seeds the tracked seeders into an in-process provider, so references to seeded
@@ -84,6 +88,26 @@ slug and the importer resolves it:
 
 An unknown slug there is an error that names the field and the missing target. Such a reference must point at content
 that already exists — a pack cannot resolve a GUID for a row it is creating in the same run.
+
+### Two runs, in dependency order
+
+A directory can declare both sides of a reference: `content/archetypes/` names the loot table it drops, and
+`content/loottables/` authors that table. One import cannot bind them — the GUID does not exist until the table is
+written — so a directory that spans both is imported family by family, named families first:
+
+```bash
+dotnet run --project Veldrath.ContentPack -- import content/loottables --database "..."
+dotnet run --project Veldrath.ContentPack -- import content/archetypes --database "..."
+```
+
+`validate` does not need that split, and it does not need a database. Against its in-process seed it stages the
+directory **family by family, in the order a reference can point**: a family whose GUID foreign key names another
+family is checked after the family that authors it. That is why `validate content/` is clean on the shipped tree even
+though 30 of the 32 archetypes name a table no seeder creates. Staging is not leniency — a slug no family in the
+directory creates is still reported as `pack-reference-unresolved`.
+
+`validate --database` keeps the single read-only pass: the catalogue it is handed is the live one, so it is never
+written to, and a directory validated that way must already have had its prerequisite families imported.
 
 ## What an import does
 

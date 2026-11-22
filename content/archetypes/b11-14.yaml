@@ -1,0 +1,119 @@
+# content/archetypes/b11-14.yaml
+# The hostile roster rows of docs/design/content/archetypes.md whose spawn band is b11-14.
+# Mirrors RealmEngine.Data/Seeders/ArchetypeSeeder.cs value for value: an import reports these rows
+# unchanged, so the day the two disagree the importer says so instead of quietly rewriting a stat line.
+# lootTableId is a slug here; the importer resolves it against content/loottables/, which must be
+# imported first (docs/content-packs.md, 'Two runs, in dependency order').
+family: archetype
+entities:
+  - slug: drowned-revenant
+    typeKey: undead
+    displayName: Drowned Revenant
+    rarityWeight: 40
+    isActive: true
+    minLevel: 11
+    maxLevel: 18
+    stats:
+      health: 170
+      mana: 20
+      strength: 20
+      agility: 10
+      intelligence: 10
+      constitution: 18
+      armorClass: 9
+      attackBonus: 8
+      damage: 18
+      experienceReward: 150
+      goldRewardMin: 15
+      goldRewardMax: 35
+    traits:
+      hostile: true
+      aggressive: true
+      packHunter: false
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: false
+      boss: false
+      elite: false
+      ranged: false
+      caster: false
+      fireImmune: false
+      coldImmune: true
+      poisonImmune: true
+    lootTableId: drowned-revenant-drops
+
+  - slug: tide-strider
+    typeKey: beasts
+    displayName: Tide Strider
+    rarityWeight: 45
+    isActive: true
+    minLevel: 13
+    maxLevel: 15
+    stats:
+      health: 175
+      strength: 19
+      agility: 14
+      intelligence: 4
+      constitution: 16
+      armorClass: 8
+      attackBonus: 8
+      damage: 19
+      experienceReward: 165
+      goldRewardMin: 16
+      goldRewardMax: 38
+    traits:
+      hostile: true
+      aggressive: true
+      packHunter: false
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: false
+      boss: false
+      elite: false
+      ranged: false
+      caster: false
+      fireImmune: false
+      coldImmune: false
+      poisonImmune: false
+    lootTableId: tide-strider-drops
+
+  - slug: gull-rider-skirmisher
+    typeKey: humanoids
+    displayName: Gull-Rider Skirmisher
+    rarityWeight: 50
+    isActive: true
+    minLevel: 13
+    maxLevel: 15
+    stats:
+      health: 150
+      strength: 17
+      agility: 17
+      intelligence: 9
+      constitution: 14
+      armorClass: 8
+      attackBonus: 8
+      damage: 17
+      experienceReward: 140
+      goldRewardMin: 15
+      goldRewardMax: 35
+    traits:
+      hostile: true
+      aggressive: false
+      packHunter: true
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: false
+      boss: false
+      elite: false
+      ranged: true
+      caster: false
+      fireImmune: false
+      coldImmune: false
+      poisonImmune: false
+    lootTableId: gull-rider-skirmisher-drops

@@ -179,11 +179,13 @@ The pack names the table; the archetype names the pack. `ActorArchetype.LootTabl
 (boss, keeps `fire-ancient-drops`). They are the only two hostile archetypes without a table in
 this set, and both already had one.
 
-**The binding is not wired yet.** `LootTableByArchetype` in `RealmEngine.Data/Seeders/ArchetypeSeeder.cs`
-still names four tables. That seeder is insert-only and is not this card's file, so whoever seeds
-the 15 unseeded archetypes and the 5 tail rows must add this map in the same change, or the packs
-import and pay out nothing. The order is: tables (this card) → archetypes seeded with their
-`LootTableId` → pools.
+**The binding is wired, in two runs.** `LootTableByArchetype` in `RealmEngine.Data/Seeders/ArchetypeSeeder.cs` now
+names all 32 rows above plus the two boss tables they leave out (a boss with no table fails the seed guard), and the
+20 roster rows this set had not been seeded with exist. A seeder is insert-only and its own catalogue holds only the
+four seeded tables, so it binds what it can find and leaves the rest null: the binding that reaches every archetype —
+including the 10 that were seeded before these tables existed — is the archetype pack, `content/archetypes/`, which
+names the same slug in `lootTableId`. The order is: import `content/loottables/`, then `content/archetypes/`
+(`docs/content-packs.md`, *Two runs, in dependency order*). Pools remain the next card's job.
 
 ## 4. Two seeded tables are re-authored here
 
@@ -224,4 +226,4 @@ lands (§3).
 | 1 | **`b27-30` is published** — C4 (`a857dcf0`) merged to development after this set was authored and carries exactly the band the pack assumed: levels [27, 30], gold [35, 90], `drop_chance` [0.06, 0.25]. `maw-serpent-drops`' rows land at 0.15–0.25, inside that window, so no re-weight is needed. Closed. | closed |
 | 2 | **The catalogue has nothing between 200 and 300 gold,** so b27-30's palette is identical to b23-26's and the two orbs never drop from an enemy at any band. The tail of the ladder is not visibly richer than its middle. Wave C owns the item catalogue. | Wave C |
 | 3 | **The catalogue has no cheap themed material** — no bone, hide, feather, salt, ash or scrap below 5 gold. Low-band tables therefore converge on iron-ingot, glowcap-mushroom and essence-of-nature: **6 of the 15 tables at b1-10 carry two or more of those three**. Flavour at the bottom of the ladder is limited by the catalogue, not by the weights. | Wave C |
-| 4 | **Nothing binds an archetype to a table yet** (§3). The packs validate and import, but no archetype points at them. | Archetype-seeding card |
+| 4 | **The binding is wired** (§3). Closed by card `t_107630df`: the 20 unseeded roster rows exist, `LootTableByArchetype` names 34 archetypes, and `content/archetypes/` binds all 32 rows above on an already-seeded catalogue. | closed |

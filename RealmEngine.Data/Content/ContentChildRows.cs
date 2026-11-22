@@ -528,7 +528,7 @@ public static class ContentChildRows
 
             if (IsAuthoredCollection(navigation))
             {
-                projected[navigation.Name] = ProjectMany(navigation, value, type);
+                projected[navigation.Name] = ProjectMany(navigation, value, type, orderInsensitive: true);
             }
         }
 
@@ -785,16 +785,47 @@ public static class ContentChildRows
         return false;
     }
 
-    private static JsonArray ProjectMany(INavigation navigation, object value, IEntityType parentType)
+    /// <summary>Projects a collection navigation, optionally comparing it as a set rather than a sequence.</summary>
+    /// <param name="navigation">The collection navigation.</param>
+    /// <param name="value">The collection instance.</param>
+    /// <param name="parentType">The owning entity type.</param>
+    /// <param name="orderInsensitive">
+    /// When true, the children are emitted in canonical order. An authored child row has a surrogate key, so the order
+    /// it comes back in is the store's, not the author's: EF assigns its own INSERT order and a reload returns whatever
+    /// the database hands back. Comparing that sequence reports every multi-row child collection as changed on every
+    /// import — 29 of the 32 shipped loot tables, with <c>Version</c> climbing on every run. No entity child table
+    /// carries an order column today, so a reorder is not a meaningful edit and every one of them opts in; a child
+    /// table that ever gains an order column must opt out, or a reorder will be invisible to the comparison. Owned
+    /// JSON collections keep their authored order, which is why this is opt-in.
+    /// </param>
+    /// <returns>The projected children.</returns>
+    private static JsonArray ProjectMany(
+        INavigation navigation,
+        object value,
+        IEntityType parentType,
+        bool orderInsensitive = false)
     {
-        var array = new JsonArray();
+        var children = new List<JsonObject>();
 
         foreach (var child in (IEnumerable)value)
         {
             if (child is not null)
             {
-                array.Add(Project(navigation.TargetEntityType, child, parentType));
+                children.Add(Project(navigation.TargetEntityType, child, parentType));
             }
+        }
+
+        if (orderInsensitive)
+        {
+            children.Sort(static (left, right) =>
+                string.CompareOrdinal(left.ToJsonString(), right.ToJsonString()));
+        }
+
+        var array = new JsonArray();
+
+        foreach (var child in children)
+        {
+            array.Add(child);
         }
 
         return array;

@@ -35,7 +35,9 @@ public static class ContentPackConsole
 
         commands:
           validate <dir>   Run every content validator over a pack directory and print the issues.
-                           Exits 1 when any issue is an Error, 0 otherwise. Reads (never writes) the catalog.
+                           Exits 1 when any issue is an Error, 0 otherwise. Reads (never writes) the catalog;
+                           without --database it stages the directory into its in-process seed, family by family,
+                           so a reference to a row the same directory authors still resolves.
           import   <dir>   Validate, then create/update every entity by slug. Writes ContentDbContext only.
 
         options:
@@ -149,7 +151,86 @@ public static class ContentPackConsole
         }
 
         await using var baseline = await SeededContentCatalog.CreateAsync();
-        return await ValidateAsync(read, baseline.Context, "the seeded catalogue", output, error);
+        return await ValidateAgainstSeededCatalogueAsync(read, baseline.Context, output, error);
+    }
+
+    /// <summary>
+    /// Validates a directory against the in-process seeded catalogue, family by family, staging each family into that
+    /// throwaway catalogue before the next one is checked.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A directory can declare both sides of a reference: <c>content/archetypes/</c> names the loot table it drops and
+    /// <c>content/loottables/</c> authors that table. A GUID foreign key written as a slug has to resolve against
+    /// stored content, so a single read-only pass over the whole directory reports every one of those references as
+    /// unresolved — and the entity that carries it as unreadable.
+    /// </para>
+    /// <para>
+    /// Landing that directory is two imports in dependency order (<c>docs/content-packs.md</c>, *Two runs, in
+    /// dependency order*), so validate replays the order instead of refusing it: each family is validated and staged,
+    /// and a later family resolves the rows the earlier ones created. The only catalogue that is written is the
+    /// in-process baseline, which is discarded; <c>--database</c> keeps the single read-only pass, because that
+    /// catalogue is the live one.
+    /// </para>
+    /// </remarks>
+    private static async Task<int> ValidateAgainstSeededCatalogueAsync(
+        ContentPackReadResult read,
+        ContentDbContext context,
+        TextWriter output,
+        TextWriter error)
+    {
+        try
+        {
+            var issues = new List<ContentIssue>(read.Issues);
+            var importer = new ContentPackImporter(context);
+
+            foreach (var family in read.Files
+                         .GroupBy(file => file.CanonicalFamily, StringComparer.OrdinalIgnoreCase)
+                         .OrderBy(group => StagingRank(group.Key)))
+            {
+                // A family that has errors writes nothing, so the families after it see the truth: their own
+                // references to the missing rows are reported rather than papered over.
+                var staged = new ContentPackReadResult([.. family], []);
+                var result = await importer.ImportAsync(staged);
+                issues.AddRange(result.Validation.Issues);
+            }
+
+            PrintIssues(issues, output);
+            PrintTally(read, issues, "the seeded catalogue, staged family by family", output);
+
+            return issues.Any(issue => issue.Severity == ContentIssueSeverity.Error) ? InvalidContent : Success;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            error.WriteLine($"error: validation could not run: {ex.Message}");
+            return UsageError;
+        }
+    }
+
+    /// <summary>
+    /// The order families are staged in: a family appears after every family a GUID foreign key of it can point at.
+    /// </summary>
+    /// <remarks>
+    /// Only the six slug-valued GUID foreign keys documented in <c>docs/content-packs.md</c> create an ordering
+    /// constraint — a loot table before the archetype that names one, an archetype before the instance that overrides
+    /// one. Everything else resolves through the reference catalog, which already knows every slug the pack declares,
+    /// so the remaining families sit after those two in a fixed order that keeps the output readable.
+    /// </remarks>
+    private static readonly string[] _stagingOrder =
+    [
+        "materialproperty", "material", "item", "species", "class", "background", "skill", "enchantment",
+        "ability", "loottable", "archetype", "instance", "zonelocation", "organization", "recipe", "quest",
+        "dialogue", "language",
+    ];
+
+    /// <summary>Returns the staging position of a canonical family; unknown families stage last, in file order.</summary>
+    private static int StagingRank(string canonicalFamily)
+    {
+        var index = Array.FindIndex(
+            _stagingOrder,
+            known => string.Equals(known, canonicalFamily, StringComparison.OrdinalIgnoreCase));
+
+        return index < 0 ? _stagingOrder.Length : index;
     }
 
     private static async Task<int> ValidateAsync(

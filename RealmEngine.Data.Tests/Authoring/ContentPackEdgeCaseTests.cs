@@ -205,6 +205,84 @@ public sealed class ContentPackEdgeCaseTests
     }
 
     [Fact]
+    public async Task A_reordered_child_collection_is_not_a_change_and_a_second_import_touches_nothing()
+    {
+        // A loot table's rows carry a surrogate key, so the order they come back in belongs to the store, not the
+        // author: EF assigns INSERT order and a reload returns whatever the database hands back. Comparing the
+        // sequence reported every multi-row table as changed on every import — 29 of the 32 shipped tables, which is
+        // what broke the zero-changed second run a pack promises. The stored rows are reversed here to prove order
+        // is not read as an edit.
+        await using var database = await PackDatabase.CreateAsync();
+        using var pack = new PackDirectory(
+            ("items/order-probes.yaml", """
+                entities:
+                  - slug: pack-order-potion
+                    typeKey: consumables
+                    displayName: Pack Order Potion
+                    itemType: consumable
+                  - slug: pack-order-ingot
+                    typeKey: metals
+                    displayName: Pack Order Ingot
+                    itemType: material
+                  - slug: pack-order-crystal
+                    typeKey: gems
+                    displayName: Pack Order Crystal
+                    itemType: material
+                """),
+            ("loottables/order-probes.yaml", """
+                entities:
+                  - slug: pack-three-row-drops
+                    typeKey: enemies
+                    displayName: Pack Three Row Drops
+                    entries:
+                      - itemDomain: items/general
+                        itemSlug: pack-order-potion
+                        dropWeight: 50
+                      - itemDomain: items/general
+                        itemSlug: pack-order-ingot
+                        dropWeight: 30
+                      - itemDomain: items/general
+                        itemSlug: pack-order-crystal
+                        dropWeight: 20
+                """));
+
+        await using (var first = database.NewContext())
+        {
+            var created = await new ContentPackImporter(first).ImportAsync(ContentPackReader.Read(pack.Root));
+
+            created.Succeeded.Should().BeTrue(created.Validation.Issues.FirstOrDefault()?.Message);
+            created.Created.Should().Be(4);
+        }
+
+        // Same rows, same values, opposite physical order — what a reload after an INSERT batch can look like.
+        await using (var reorder = database.NewContext())
+        {
+            var rows = await reorder.LootTableEntries.ToListAsync();
+            reorder.LootTableEntries.RemoveRange(rows);
+            await reorder.SaveChangesAsync();
+
+            foreach (var row in rows.OrderByDescending(row => row.DropWeight))
+            {
+                row.Id = Guid.NewGuid();
+                reorder.LootTableEntries.Add(row);
+            }
+
+            await reorder.SaveChangesAsync();
+        }
+
+        await using var second = database.NewContext();
+        var again = await new ContentPackImporter(second).ImportAsync(ContentPackReader.Read(pack.Root));
+
+        again.Created.Should().Be(0);
+        again.Updated.Should().Be(0, "the rows are the same set; only their stored order differs");
+        again.Unchanged.Should().Be(4, "the item family is unchanged and the loot table was not rewritten");
+
+        var stored = await second.LootTables.AsNoTracking().Include(table => table.Entries)
+            .SingleAsync(table => table.Slug == "pack-three-row-drops");
+        stored.Entries.Should().HaveCount(3);
+    }
+
+    [Fact]
     public async Task Validate_resolves_references_against_the_seeded_catalogue_without_a_database()
     {
         // The quest points at a seeded item. No --database: the tool seeds the tracked seeders in-process, which is
@@ -232,6 +310,72 @@ public sealed class ContentPackEdgeCaseTests
         exit.Should().Be(ContentPackConsole.Success, output.ToString());
         output.ToString().Should().Contain("checked against the seeded catalogue");
         output.ToString().Should().Contain("0 error(s)");
+    }
+
+    [Fact]
+    public void Validate_stages_a_family_the_same_directory_authors_so_a_slug_foreign_key_resolves()
+    {
+        // content/archetypes names the loot table content/loottables authors, and the GUID does not exist until that
+        // table is written — so the directory can only land as two imports, tables first. validate replays that order
+        // against its in-process seed, which is what keeps the CI guard (validate content/, no database) green on a
+        // directory that declares both sides of the reference.
+        using var pack = new PackDirectory(
+            ("loottables/wolves.yaml", """
+                entities:
+                  - slug: pack-staged-wolf-drops
+                    typeKey: enemies
+                    displayName: Pack Staged Wolf Drops
+                    entries:
+                      - itemDomain: items/general
+                        itemSlug: health-potion
+                        dropWeight: 55
+                        quantityMin: 1
+                        quantityMax: 1
+                """),
+            ("archetypes/wolves.yaml", """
+                entities:
+                  - slug: pack-staged-wolf
+                    typeKey: beasts/wolves
+                    displayName: Pack Staged Wolf
+                    minLevel: 4
+                    maxLevel: 6
+                    stats:
+                      health: 70
+                      experienceReward: 30
+                    lootTableId: pack-staged-wolf-drops
+                """));
+
+        var output = new StringWriter();
+        var exit = ContentPackConsole.Run(["validate", pack.Root], output, output);
+
+        exit.Should().Be(ContentPackConsole.Success, output.ToString());
+        output.ToString().Should().Contain("0 error(s)");
+        output.ToString().Should().NotContain(ContentPackRules.ReferenceUnresolved);
+    }
+
+    [Fact]
+    public void Validate_still_reports_a_slug_foreign_key_no_family_authors()
+    {
+        // Staging is not leniency: a slug nothing in the directory creates is still an error, because the import the
+        // tool is predicting would fail on it.
+        using var pack = new PackDirectory(("archetypes/wolves.yaml", """
+            entities:
+              - slug: pack-orphan-wolf
+                typeKey: beasts/wolves
+                displayName: Pack Orphan Wolf
+                minLevel: 4
+                maxLevel: 6
+                stats:
+                  health: 70
+                lootTableId: never-authored-drops
+            """));
+
+        var output = new StringWriter();
+        var exit = ContentPackConsole.Run(["validate", pack.Root], output, output);
+
+        exit.Should().Be(ContentPackConsole.InvalidContent);
+        output.ToString().Should().Contain(ContentPackRules.ReferenceUnresolved);
+        output.ToString().Should().Contain("never-authored-drops");
     }
 
     [Fact]
