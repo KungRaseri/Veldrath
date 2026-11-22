@@ -643,6 +643,34 @@ public class ContentWriteEndpointTests(WebAppFactory factory)
     }
 
     /// <summary>
+    /// <c>power</c> is a read alias with no validator of its own, so the write path handed the registry a key it does not
+    /// know and answered 500. It has to resolve to <c>ability</c> — the family that stores the row — so the same payload
+    /// behaves like every other family: a null pool is named and refused, and the stored pool survives.
+    /// </summary>
+    [Fact]
+    public async Task A_put_through_the_power_read_alias_refuses_a_null_pool_instead_of_failing()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+
+        var payload = await DetailPayloadAsync(client, "power", "bite");
+        var storedPool = payload["speciesPool"]!.AsArray().Count;
+        storedPool.Should().BeGreaterThan(0, "the seeded wolf/bite pair gives 'bite' a species pool to lose");
+
+        payload["speciesPool"] = null;
+
+        var refused = await client.PutAsync("/api/content/power/bite", JsonObjectContent(payload));
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest, await refused.Content.ReadAsStringAsync());
+
+        var body = await refused.Content.ReadFromJsonAsync<JsonElement>();
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.ChildCollectionNull
+            && issue.GetProperty("field").GetString() == "speciesPool");
+
+        var stored = await DetailPayloadAsync(client, "power", "bite");
+        stored["speciesPool"]!.AsArray().Count.Should().Be(storedPool);
+    }
+
+    /// <summary>
     /// The dry run takes the same payload, so it has to report the issue rather than answer 500 with a null dereference
     /// from inside a validator.
     /// </summary>

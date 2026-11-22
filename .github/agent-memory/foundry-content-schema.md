@@ -125,7 +125,15 @@ collection, and `ContentChildRows.Reconcile` skips a null collection even when t
 ```text
 PUT /api/content/recipe/{slug}    {"…": "…", "ingredients": null}   -> 400, errors[].field = "ingredients"
 PUT /api/content/species/{slug}   {"…": "…", "powerPool": null}     -> 400, errors[].field = "powerPool"
+PUT /api/content/power/{slug}     {"…": "…", "speciesPool": null}   -> 400, errors[].field = "speciesPool"
 ```
+
+`power` is the read alias of the `ability` family and had **no alias entry and no validator of its own**, so every
+write through `/api/content/power/{slug}` threw `KeyNotFoundException` → 500 (pre-existing, not caused by the null
+rule; the null payload just made it visible). `Aliases["power"] = "ability"` plus `TryResolve` folding an
+unregistered key onto `CanonicalFamily` fix the route, and
+`ContentEntityTypesTests.Every_known_type_key_resolves_to_a_registered_validator` now forbids a map entry whose family
+has no validator.
 
 The rule has to be model-driven (`ContentChildRows.NullCollectionIssues`) rather than per-validator: `species`,
 `class`, `archetype`, `instance` and `ability` have no rule that reads their pools, so a null reached the reconcile
@@ -159,10 +167,12 @@ Regression tests: `ContentWriteEndpointTests.An_ingredient_quantity_edit_through
 pinned by `ContentWriteEndpointTests.A_put_naming_ingredients_as_null_is_refused_and_keeps_the_stored_rows`,
 `A_put_naming_entries_as_null_is_refused_and_keeps_the_stored_rows`,
 `A_put_naming_a_species_power_pool_as_null_is_refused_and_keeps_it`,
+`A_put_through_the_power_read_alias_refuses_a_null_pool_instead_of_failing`,
 `Validating_a_payload_with_a_null_collection_reports_the_issue_instead_of_failing`,
 `ContentChildRowsTests.ApplyNamedAsync_leaves_a_collection_the_payload_names_as_null_alone`,
-`Reconcile_leaves_a_collection_the_entity_carries_as_null_alone` and
-`NullChildCollectionValidationTests` (the rule for all seven collection-bearing families).
+`Reconcile_leaves_a_collection_the_entity_carries_as_null_alone`,
+`NullChildCollectionValidationTests` (the rule for all seven collection-bearing families) and
+`ContentEntityTypesTests` (every type key resolves to a validator; `power` folds onto `ability`).
 
 ## Dialogue options (2026-11-20)
 `Dialogue` stops being only a line pool: `DialogueStats.Options` (owned, `List<DialogueOption>`) carries the choices a

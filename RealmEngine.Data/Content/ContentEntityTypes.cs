@@ -67,20 +67,32 @@ public static class ContentEntityTypes
     /// </summary>
     public static IReadOnlyList<string> KnownTypes => [.. _byTypeKey.Keys.Order(StringComparer.OrdinalIgnoreCase)];
 
-    /// <summary>Gets the content-type keys that share one stored entity type, e.g. <c>weapon</c> → <c>item</c>.</summary>
+    /// <summary>
+    /// Gets the content-type keys that share one stored entity type, e.g. <c>weapon</c> → <c>item</c>.
+    /// </summary>
+    /// <remarks>
+    /// <c>power</c> is here for a different reason than the others: it is the key the read endpoints expose for the
+    /// <c>Powers</c> table, while the write path and the schema advertise <c>ability</c>. Without the alias the write
+    /// path handed the registry a key it has no validator for and answered 500 instead of validating — and a null child
+    /// collection on that route therefore 500'd rather than being refused by name.
+    /// </remarks>
     public static IReadOnlyDictionary<string, string> Aliases { get; } = new Dictionary<string, string>(
         StringComparer.OrdinalIgnoreCase)
     {
         ["weapon"] = "item",
         ["armor"] = "item",
         ["spell"] = "ability",
+        ["power"] = "ability",
     };
 
     /// <summary>
     /// Folds a type-key alias onto the family that stores it.
     /// </summary>
     /// <param name="typeKey">Content-type key, e.g. <c>weapon</c>.</param>
-    /// <returns><c>item</c> for <c>weapon</c> and <c>armor</c>, <c>ability</c> for <c>spell</c>, the key itself otherwise.</returns>
+    /// <returns>
+    /// <c>item</c> for <c>weapon</c> and <c>armor</c>, <c>ability</c> for <c>spell</c> and <c>power</c>, the key itself
+    /// otherwise.
+    /// </returns>
     public static string CanonicalFamily(string typeKey) =>
         typeKey is not null && Aliases.TryGetValue(typeKey, out var canonical) ? canonical : typeKey ?? string.Empty;
 
@@ -135,7 +147,13 @@ public static class ContentEntityTypes
     {
         if (typeKey is not null && _byTypeKey.TryGetValue(typeKey, out var entityType))
         {
-            var contentType = Registry.TryGetValidator(typeKey, out _) ? typeKey : entityType.Name.ToLowerInvariant();
+            // A key with a validator of its own keeps it (`weapon` stays `weapon`, not `item`). A key without one is a
+            // read alias of the family that stores the row and must fold onto it — handing the registry a key it does
+            // not know is a KeyNotFoundException, i.e. a 500 on a route that exists.
+            var contentType = Registry.TryGetValidator(typeKey, out _)
+                ? typeKey
+                : CanonicalFamily(typeKey);
+
             resolver = new ContentEntityResolver(contentType, entityType);
             return true;
         }
