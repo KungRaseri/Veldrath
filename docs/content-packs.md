@@ -129,13 +129,17 @@ Warnings fail nothing: they are printed and counted.
 - **The content registry is not maintained by the importer.** `ContentRegistry` rows still come from the seeder that
   owns them; the write endpoints do not maintain it either.
 
-## Changing what a town sells (the one catalogue family with no pack)
+## Changing what a town sells (a catalogue family with no pack)
 
-`ZoneStockItems` — the rows that say which items a town's merchants offer — is the one authored catalogue family with
-no pack. A row is a zone↔item join with no slug and no display name, so it is absent from `ContentEntityTypes`, the
-Foundry schema and the importer on purpose, and `RealmEngine.Data/Seeders/ZoneStockSeeder` is the only thing that
-writes it. (The support tables — `ContentRegistry`, `TraitDefinitions`, `NamePatternSets` — carry no pack either, but
-they are vocabulary and configuration, not per-entity content.)
+`ZoneStockItems` — the rows that say which items a town's merchants offer — is a catalogue family with no pack: a row
+is a zone↔item pair with no slug and no display name, so it is absent from `ContentEntityTypes`, the Foundry schema and
+the importer on purpose, and `RealmEngine.Data/Seeders/ZoneStockSeeder` is the only thing that writes it. The other
+tables with no pack family are skipped for the same structural reason — none of them is a `ContentBase`, so the
+importer's `FindBySlugAsync` has nothing to match. That covers `ZoneLocationConnection`, a join
+table keyed by `FromLocationSlug`/`ToLocationSlug` (`ZoneLocationConnection.cs:14`, `:20`), and the map graph's
+`Map`/`MapNode`/`MapEdge`, a map document with its nodes and edges keyed by authored string ids — and the vocabulary
+and configuration tables, `ContentRegistry`, `TraitDefinitions`, `NamePatternSets` and `GameConfig`, which are not
+per-entity content at all.
 
 **The decided procedure is a data migration — not a pack, and not a reconciling seeder.** Adding a row needs no
 migration at all: the seeder inserts every authored row the database is missing, on the next start
@@ -172,13 +176,13 @@ migration at all: the seeder inserts every authored row the database is missing,
    /// <inheritdoc />
    protected override void Down(MigrationBuilder migrationBuilder)
    {
-       // Nothing to restore: the row's Id was generated on insert, so this migration cannot re-create it.
-       // Revert the seeder edit and let the next start insert the missing rows.
+       // Nothing to restore: the row's Id was generated on insert, so a Down can re-insert the pair but cannot give
+       // it back the same Id. Revert the seeder edit and let the next start insert the missing rows.
    }
    ```
 
    A reorder is a removal of the same kind: `Rows()` sets `SortOrder = (index + 1) * 10`
-   (`ZoneStockSeeder.cs:148`), so deleting the `(ZoneId, ItemSlug)` row makes the seeder re-insert it at its new index
+   (`ZoneStockSeeder.cs:149`), so deleting the `(ZoneId, ItemSlug)` row makes the seeder re-insert it at its new index
    on the next start. A plain `SortOrder` update in the migration would work too, but the `DELETE` is the one shape
    you need anyway.
 4. Verify against a real Postgres, not on faith. Boot the server once (it migrates the content database at
