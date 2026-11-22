@@ -32,7 +32,7 @@ concurrency:
 # what the link check exists to catch.
 on:
   push:
-    branches: [ main, development ]
+    branches: [ main ]
     paths: &docs-paths
       - 'docfx.json'
       - '.github/workflows/docs.yml'

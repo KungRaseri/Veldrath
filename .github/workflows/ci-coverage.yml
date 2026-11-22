@@ -25,7 +25,7 @@ concurrency:
 
 on:
   push:
-    branches: [ main, development ]
+    branches: [ main ]
     paths:
       - 'RealmEngine.Core/**'
       - 'RealmEngine.Shared/**'
