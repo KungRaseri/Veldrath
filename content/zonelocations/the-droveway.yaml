@@ -1,0 +1,101 @@
+# content/zonelocations/the-droveway.yaml
+#
+# The import shape of docs/design/content/pools/the-droveway.yaml (D4, pool-matrix.md §8), translated
+# by card t_e7eba5a4 (A1). The design file stays the design set; this is the pack the importer reads.
+#
+# Every spawn entry below resolves: the design's two "to be seeded" archetypes are in
+# content/archetypes/b1-3.yaml now (drove-cur, peat-adder), and each of the four names a loot table the
+# landed content/loottables pack carries (giant-rat-drops, goblin-common-drops, drove-cur-drops,
+# peat-adder-drops). That is what the design file's header was waiting for.
+#
+# A pack entity owns the whole row (docs/content-packs.md, "Limits worth knowing"), so every authored
+# value below is the one RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs writes for that slug —
+# displayName, typeKey, zoneId, rarityWeight, stats and traits. The one authored value that is NOT the
+# seeder's is `actorPool`: the seeder's interim pools for drove-road and sunken-fields are pre-roster
+# pairs written as percentage-looking weights (drove-road: rat 60 / goblin 40, sunken-fields: rat 50 /
+# wolf 50), and the design replaced them with relative-integer pools. Importing this pack is what
+# replaces them; a second run reports zero changes because the importer compares the stored row with
+# this file value for value.
+#
+# Weights are relative integers (ActorPoolResolver.cs:193-204), never percentages, and must be >= 1.
+# The importer does not normalise them; only the ratio is meaningful. Slugs and weights are the
+# design's, preserved entry for entry.
+#
+# weathered-waypost is authored here with an empty pool on purpose: it is the zone's SafeRespawn point
+# (the wayfarer-elder is placed there as an NPC by LocationNpcsSeeder, not by a pool entry). An empty
+# pool is authored content, not an omission — it spawns nothing and the design keeps it that way
+# (pool-matrix.md §4).
+#
+# sunken-fields is hidden behind a passive DC 5 check. That is a map trait and does not change its
+# pool: the design pools it, so this pack pools it.
+#
+# Coverage for this zone (design check, not a field the importer reads):
+#   locations 3 | pooled 2 (drove-road, sunken-fields) | excluded 1 (weathered-waypost)
+family: zonelocation
+entities:
+  - slug: drove-road
+    displayName: The Drove Road
+    typeKey: environments
+    zoneId: the-droveway
+    rarityWeight: 80
+    isActive: true
+    stats:
+      size: 6
+      dangerLevel: 2
+      population: 30
+      minLevel: 1
+      maxLevel: 4
+    traits:
+      isIndoor: false
+    # band: b1-3 (D0 budget) | location L1-4 | design: giant-rat 5, goblin-scout 3, drove-cur 3, peat-adder 2
+    actorPool:
+      - archetypeSlug: giant-rat
+        weight: 5
+      - archetypeSlug: goblin-scout
+        weight: 3
+      - archetypeSlug: drove-cur
+        weight: 3
+      - archetypeSlug: peat-adder
+        weight: 2
+
+  - slug: sunken-fields
+    displayName: The Sunken Fields
+    typeKey: environments
+    zoneId: the-droveway
+    rarityWeight: 40
+    isActive: true
+    stats:
+      size: 3
+      dangerLevel: 3
+      minLevel: 2
+      maxLevel: 4
+    traits:
+      isHidden: true
+      unlockType: skill_check_passive
+      discoverThreshold: 5
+    # band: b1-3 (D0 budget) | location L2-4 | design: peat-adder 5, giant-rat 4, drove-cur 2
+    actorPool:
+      - archetypeSlug: peat-adder
+        weight: 5
+      - archetypeSlug: giant-rat
+        weight: 4
+      - archetypeSlug: drove-cur
+        weight: 2
+
+  - slug: weathered-waypost
+    displayName: The Weathered Waypost
+    typeKey: locations
+    zoneId: the-droveway
+    rarityWeight: 80
+    isActive: true
+    stats:
+      size: 1
+      dangerLevel: 2
+      population: 5
+      minLevel: 1
+      maxLevel: 4
+    traits:
+      safeRespawn: true
+      isIndoor: false
+    # Empty by design: the zone's SafeRespawn point. The wayfarer-elder here is an NPC placement, not a pool entry.
+    actorPool: []
