@@ -1,0 +1,155 @@
+# content/archetypes/b1-3.yaml
+# The hostile roster rows of docs/design/content/archetypes.md whose spawn band is b1-3.
+# Mirrors RealmEngine.Data/Seeders/ArchetypeSeeder.cs value for value: an import reports these rows
+# unchanged, so the day the two disagree the importer says so instead of quietly rewriting a stat line.
+# lootTableId is a slug here; the importer resolves it against content/loottables/, which must be
+# imported first (docs/content-packs.md, 'Two runs, in dependency order').
+family: archetype
+entities:
+  - slug: giant-rat
+    typeKey: beasts
+    displayName: Giant Rat
+    rarityWeight: 90
+    isActive: true
+    minLevel: 1
+    maxLevel: 3
+    stats:
+      health: 20
+      strength: 4
+      agility: 10
+      intelligence: 2
+      constitution: 6
+      armorClass: 1
+      attackBonus: 0
+      damage: 3
+      experienceReward: 8
+      goldRewardMin: 1
+      goldRewardMax: 3
+    traits:
+      hostile: true
+      aggressive: true
+      packHunter: true
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: true
+      boss: false
+      elite: false
+      ranged: false
+      caster: false
+      fireImmune: false
+      coldImmune: false
+      poisonImmune: false
+    lootTableId: giant-rat-drops
+
+  - slug: goblin-scout
+    typeKey: beasts
+    displayName: Goblin Scout
+    rarityWeight: 80
+    isActive: true
+    minLevel: 1
+    maxLevel: 3
+    stats:
+      health: 30
+      strength: 6
+      agility: 12
+      intelligence: 4
+      constitution: 8
+      armorClass: 2
+      attackBonus: 1
+      damage: 4
+      experienceReward: 15
+      goldRewardMin: 1
+      goldRewardMax: 5
+    traits:
+      hostile: true
+      aggressive: true
+      packHunter: true
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: true
+      boss: false
+      elite: false
+      ranged: false
+      caster: false
+      fireImmune: false
+      coldImmune: false
+      poisonImmune: false
+    lootTableId: goblin-common-drops
+
+  - slug: drove-cur
+    typeKey: beasts
+    displayName: Drove Cur
+    rarityWeight: 85
+    isActive: true
+    minLevel: 1
+    maxLevel: 3
+    stats:
+      health: 26
+      strength: 6
+      agility: 12
+      intelligence: 3
+      constitution: 7
+      armorClass: 1
+      attackBonus: 1
+      damage: 3
+      experienceReward: 12
+      goldRewardMin: 1
+      goldRewardMax: 4
+    traits:
+      hostile: true
+      aggressive: true
+      packHunter: true
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: true
+      boss: false
+      elite: false
+      ranged: false
+      caster: false
+      fireImmune: false
+      coldImmune: false
+      poisonImmune: false
+    lootTableId: drove-cur-drops
+
+  - slug: peat-adder
+    typeKey: beasts
+    displayName: Peat Adder
+    rarityWeight: 75
+    isActive: true
+    minLevel: 1
+    maxLevel: 3
+    stats:
+      health: 18
+      strength: 7
+      agility: 10
+      intelligence: 2
+      constitution: 5
+      armorClass: 2
+      attackBonus: 2
+      damage: 5
+      experienceReward: 14
+      goldRewardMin: 1
+      goldRewardMax: 4
+    traits:
+      hostile: true
+      aggressive: true
+      packHunter: false
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: false
+      boss: false
+      elite: false
+      ranged: false
+      caster: false
+      fireImmune: false
+      coldImmune: false
+      poisonImmune: true
+    lootTableId: peat-adder-drops

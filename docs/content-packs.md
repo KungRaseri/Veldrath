@@ -85,6 +85,26 @@ slug and the importer resolves it:
 An unknown slug there is an error that names the field and the missing target. Such a reference must point at content
 that already exists — a pack cannot resolve a GUID for a row it is creating in the same run.
 
+### Two runs, in dependency order
+
+A directory can declare both sides of a reference: `content/archetypes/` names the loot table it drops, and
+`content/loottables/` authors that table. One import cannot bind them — the GUID does not exist until the table is
+written — so a directory that spans both is imported family by family, named families first:
+
+```bash
+dotnet run --project Veldrath.ContentPack -- import content/loottables --database "..."
+dotnet run --project Veldrath.ContentPack -- import content/archetypes --database "..."
+```
+
+`validate` does not need that split, and it does not need a database. Against its in-process seed it stages the
+directory **family by family, in the order a reference can point**: a family whose GUID foreign key names another
+family is checked after the family that authors it. That is why `validate content/` is clean on the shipped tree even
+though 30 of the 32 archetypes name a table no seeder creates. Staging is not leniency — a slug no family in the
+directory creates is still reported as `pack-reference-unresolved`.
+
+`validate --database` keeps the single read-only pass: the catalogue it is handed is the live one, so it is never
+written to, and a directory validated that way must already have had its prerequisite families imported.
+
 ## What an import does
 
 For each entity, by slug:

@@ -1,0 +1,193 @@
+# content/archetypes/b23-26.yaml
+# The hostile roster rows of docs/design/content/archetypes.md whose spawn band is b23-26.
+# Mirrors RealmEngine.Data/Seeders/ArchetypeSeeder.cs value for value: an import reports these rows
+# unchanged, so the day the two disagree the importer says so instead of quietly rewriting a stat line.
+# lootTableId is a slug here; the importer resolves it against content/loottables/, which must be
+# imported first (docs/content-packs.md, 'Two runs, in dependency order').
+family: archetype
+entities:
+  - slug: pyreling
+    typeKey: elementals
+    displayName: Pyreling
+    rarityWeight: 30
+    isActive: true
+    minLevel: 23
+    maxLevel: 28
+    stats:
+      health: 320
+      mana: 60
+      strength: 26
+      agility: 16
+      intelligence: 14
+      constitution: 22
+      armorClass: 13
+      attackBonus: 12
+      damage: 32
+      experienceReward: 360
+      goldRewardMin: 35
+      goldRewardMax: 70
+    traits:
+      hostile: true
+      aggressive: true
+      packHunter: false
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: false
+      boss: false
+      elite: false
+      ranged: false
+      caster: true
+      fireImmune: true
+      coldImmune: false
+      poisonImmune: false
+    lootTableId: pyreling-drops
+
+  - slug: vent-stalker
+    typeKey: beasts
+    displayName: Vent Stalker
+    rarityWeight: 35
+    isActive: true
+    minLevel: 23
+    maxLevel: 26
+    stats:
+      health: 330
+      strength: 27
+      agility: 18
+      intelligence: 5
+      constitution: 22
+      armorClass: 12
+      attackBonus: 12
+      damage: 34
+      experienceReward: 300
+      goldRewardMin: 32
+      goldRewardMax: 66
+    traits:
+      hostile: true
+      aggressive: true
+      packHunter: false
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: true
+      boss: false
+      elite: false
+      ranged: false
+      caster: false
+      fireImmune: true
+      coldImmune: false
+      poisonImmune: false
+    lootTableId: vent-stalker-drops
+
+  - slug: crust-crawler
+    typeKey: beasts
+    displayName: Crust Crawler
+    rarityWeight: 30
+    isActive: true
+    minLevel: 23
+    maxLevel: 26
+    stats:
+      health: 350
+      strength: 28
+      agility: 12
+      intelligence: 3
+      constitution: 24
+      armorClass: 14
+      attackBonus: 11
+      damage: 36
+      experienceReward: 320
+      goldRewardMin: 34
+      goldRewardMax: 70
+    traits:
+      hostile: true
+      aggressive: true
+      packHunter: false
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: false
+      boss: false
+      elite: false
+      ranged: false
+      caster: false
+      fireImmune: true
+      coldImmune: false
+      poisonImmune: false
+    lootTableId: crust-crawler-drops
+
+  - slug: ash-picker
+    typeKey: humanoids
+    displayName: Ash Picker
+    rarityWeight: 40
+    isActive: true
+    minLevel: 23
+    maxLevel: 26
+    stats:
+      health: 310
+      strength: 26
+      agility: 15
+      intelligence: 9
+      constitution: 21
+      armorClass: 12
+      attackBonus: 11
+      damage: 32
+      experienceReward: 280
+      goldRewardMin: 30
+      goldRewardMax: 62
+    traits:
+      hostile: true
+      aggressive: true
+      packHunter: false
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: false
+      boss: false
+      elite: false
+      ranged: false
+      caster: false
+      fireImmune: false
+      coldImmune: false
+      poisonImmune: false
+    lootTableId: ash-picker-drops
+
+  - slug: ash-eater
+    typeKey: beasts
+    displayName: Ash Eater
+    rarityWeight: 20
+    isActive: true
+    minLevel: 26
+    maxLevel: 30
+    stats:
+      health: 380
+      strength: 30
+      agility: 10
+      intelligence: 4
+      constitution: 28
+      armorClass: 14
+      attackBonus: 13
+      damage: 42
+      experienceReward: 375
+      goldRewardMin: 40
+      goldRewardMax: 75
+    traits:
+      hostile: true
+      aggressive: true
+      packHunter: false
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: false
+      boss: false
+      elite: false
+      ranged: false
+      caster: false
+      fireImmune: true
+      coldImmune: false
+      poisonImmune: false
+    lootTableId: ash-eater-drops

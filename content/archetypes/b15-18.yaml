@@ -1,0 +1,157 @@
+# content/archetypes/b15-18.yaml
+# The hostile roster rows of docs/design/content/archetypes.md whose spawn band is b15-18.
+# Mirrors RealmEngine.Data/Seeders/ArchetypeSeeder.cs value for value: an import reports these rows
+# unchanged, so the day the two disagree the importer says so instead of quietly rewriting a stat line.
+# lootTableId is a slug here; the importer resolves it against content/loottables/, which must be
+# imported first (docs/content-packs.md, 'Two runs, in dependency order').
+family: archetype
+entities:
+  - slug: gull-rider-brute
+    typeKey: humanoids
+    displayName: Gull-Rider Brute
+    rarityWeight: 40
+    isActive: true
+    minLevel: 13
+    maxLevel: 18
+    stats:
+      health: 210
+      strength: 22
+      agility: 16
+      intelligence: 8
+      constitution: 18
+      armorClass: 10
+      attackBonus: 9
+      damage: 22
+      experienceReward: 200
+      goldRewardMin: 20
+      goldRewardMax: 45
+    traits:
+      hostile: true
+      aggressive: false
+      packHunter: true
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: false
+      boss: false
+      elite: false
+      ranged: true
+      caster: false
+      fireImmune: false
+      coldImmune: false
+      poisonImmune: false
+    lootTableId: gull-rider-brute-drops
+
+  - slug: storm-harrower
+    typeKey: spirits
+    displayName: Storm Harrower
+    rarityWeight: 30
+    isActive: true
+    minLevel: 15
+    maxLevel: 20
+    stats:
+      health: 240
+      mana: 80
+      strength: 18
+      agility: 18
+      intelligence: 20
+      constitution: 16
+      armorClass: 11
+      attackBonus: 10
+      damage: 25
+      experienceReward: 240
+      goldRewardMin: 25
+      goldRewardMax: 55
+    traits:
+      hostile: true
+      aggressive: false
+      packHunter: false
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: true
+      boss: false
+      elite: true
+      ranged: true
+      caster: true
+      fireImmune: false
+      coldImmune: false
+      poisonImmune: false
+    lootTableId: storm-harrower-drops
+
+  - slug: cliff-breaker
+    typeKey: beasts
+    displayName: Cliff Breaker
+    rarityWeight: 35
+    isActive: true
+    minLevel: 16
+    maxLevel: 18
+    stats:
+      health: 265
+      strength: 21
+      agility: 11
+      intelligence: 4
+      constitution: 19
+      armorClass: 9
+      attackBonus: 9
+      damage: 26
+      experienceReward: 210
+      goldRewardMin: 22
+      goldRewardMax: 48
+    traits:
+      hostile: true
+      aggressive: true
+      packHunter: false
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: false
+      boss: false
+      elite: false
+      ranged: true
+      caster: false
+      fireImmune: false
+      coldImmune: false
+      poisonImmune: false
+    lootTableId: cliff-breaker-drops
+
+  - slug: undertow
+    typeKey: spirits
+    displayName: Undertow
+    rarityWeight: 30
+    isActive: true
+    minLevel: 16
+    maxLevel: 18
+    stats:
+      health: 215
+      mana: 60
+      strength: 16
+      agility: 14
+      intelligence: 18
+      constitution: 16
+      armorClass: 9
+      attackBonus: 9
+      damage: 22
+      experienceReward: 175
+      goldRewardMin: 20
+      goldRewardMax: 44
+    traits:
+      hostile: true
+      aggressive: false
+      packHunter: false
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: false
+      boss: false
+      elite: false
+      ranged: false
+      caster: true
+      fireImmune: false
+      coldImmune: true
+      poisonImmune: false
+    lootTableId: undertow-drops

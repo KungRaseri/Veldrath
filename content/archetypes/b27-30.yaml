@@ -1,0 +1,44 @@
+# content/archetypes/b27-30.yaml
+# The hostile roster rows of docs/design/content/archetypes.md whose spawn band is b27-30.
+# Mirrors RealmEngine.Data/Seeders/ArchetypeSeeder.cs value for value: an import reports these rows
+# unchanged, so the day the two disagree the importer says so instead of quietly rewriting a stat line.
+# lootTableId is a slug here; the importer resolves it against content/loottables/, which must be
+# imported first (docs/content-packs.md, 'Two runs, in dependency order').
+family: archetype
+entities:
+  - slug: maw-serpent
+    typeKey: beasts
+    displayName: Maw Serpent
+    rarityWeight: 15
+    isActive: true
+    minLevel: 28
+    maxLevel: 30
+    stats:
+      health: 430
+      strength: 30
+      agility: 14
+      intelligence: 6
+      constitution: 26
+      armorClass: 15
+      attackBonus: 14
+      damage: 46
+      experienceReward: 450
+      goldRewardMin: 45
+      goldRewardMax: 88
+    traits:
+      hostile: true
+      aggressive: true
+      packHunter: false
+      shopkeeper: false
+      questGiver: false
+      hasDialogue: false
+      immortal: false
+      wanderer: false
+      boss: false
+      elite: false
+      ranged: false
+      caster: false
+      fireImmune: true
+      coldImmune: false
+      poisonImmune: false
+    lootTableId: maw-serpent-drops
