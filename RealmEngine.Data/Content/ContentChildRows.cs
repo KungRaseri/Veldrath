@@ -44,12 +44,20 @@ namespace RealmEngine.Data.Content;
 /// <b>An explicit <c>null</c> is neither of those.</b> Omission means "leave the stored rows alone" and an empty array
 /// means "clear them"; a property present as JSON <c>null</c> says nothing about the author's intent, so it is refused
 /// with a named issue (<see cref="NullCollectionIssues"/>, rule <c>child_collection_null</c>) instead of being read as an
-/// empty authored set. Three guards make that unambiguous: <see cref="NullCollectionIssues"/> refuses the payload before
+/// empty authored set. Four guards make that unambiguous: <see cref="NullCollectionIssues"/> refuses the payload before
 /// any write path uses it, <see cref="NamedIn"/> only counts a property that carries a JSON array as naming a
-/// collection, and <see cref="Reconcile"/> skips a null collection even when the caller asked for every collection (the
-/// pack importer does). The same rule covers an owned collection (<c>ZoneLocation.ActorPool</c>), which
-/// <see cref="ContentValueCopy.ApplyAuthoredValues"/> would otherwise assign wholesale; that copy also keeps the stored
-/// elements when the authored list is null, so no path — not even one that skips validation — deletes rows from a null.
+/// collection, <see cref="Reconcile"/> skips a null collection even when the caller asked for every collection (the
+/// pack importer does), and <see cref="ContentValueCopy.ApplyAuthoredValues"/> keeps the stored elements of a null owned
+/// collection instead of assigning it — so no path, not even one that skips validation, deletes rows from a null.
+/// </para>
+/// <para>
+/// The same rule covers an owned collection (<c>ZoneLocation.ActorPool</c>), which is owned JSON rather than a child
+/// table and so never reaches this class's reconcile. "Omitted means leave it alone" is honoured there by the write
+/// path itself: both HTTP routes and the review-queue approval fill the owned values a payload does not name from the
+/// row it replaces (<see cref="ContentValueCopy.FillUnnamedOwnedValues"/>) before deserialising, because an omitted
+/// owned collection deserialises to its initializer (<c>[]</c>) and an omitted owned object to a fresh instance. Without
+/// that fill the three shapes would read as four: omitted and <c>[]</c> would be the same wipe, and the 400 below would
+/// be telling the author to send the payload that deletes what they meant to keep.
 /// </para>
 /// </remarks>
 public static class ContentChildRows
@@ -237,8 +245,8 @@ public static class ContentChildRows
             issues.Add(new ContentIssue(
                 ContentRules.ChildCollectionNull,
                 $"'{entity.GetType().Name}' '{identifier ?? "(no slug)"}' names '{field}' as null. An explicit null is not "
-                + "an empty collection: omit the property to leave the stored children alone, or send an empty array to "
-                + "replace them with nothing.",
+                + "an empty collection: omit the property to leave the stored collection alone, or send an empty array to "
+                + "replace it with nothing.",
                 ContentIssueSeverity.Error,
                 field,
                 identifier));

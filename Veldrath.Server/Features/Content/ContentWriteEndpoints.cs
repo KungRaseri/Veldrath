@@ -20,7 +20,10 @@ namespace Veldrath.Server.Features.Content;
 /// </para>
 /// <para>
 /// The <c>validate</c> dry run and the real write call the same <see cref="ContentValidatorRegistry"/>, so they can
-/// never disagree: an entity that validates clean is exactly an entity that saves.
+/// never disagree: an entity that validates clean is exactly an entity that saves. Both also fill the owned-JSON values
+/// a payload does not name from the row it would replace (<see cref="ContentValueCopy.FillUnnamedOwnedValues"/>) before
+/// validating, so a payload the Foundry form shaped is judged as the row it becomes rather than as a fresh instance
+/// with every unnamed collection empty.
 /// </para>
 /// <para>
 /// There is no hard delete. Rows are deactivated (<c>IsActive = false</c>) because live game rows reference content
@@ -94,6 +97,15 @@ public static class ContentWriteEndpoints
         if (!ContentEntityTypes.TryResolve(type, out var resolver))
         {
             return UnknownType(type);
+        }
+
+        // The dry run has to model the write it predicts, so it applies the same fill the PUT does: a payload that does
+        // not name an owned value is validated as the row it would become, not as a fresh instance with an empty
+        // collection. Otherwise the editor is shown issues (a spurious empty spawn pool) the write would never have.
+        var existing = await ContentEntityTypes.FindBySlugAsync(db, resolver, slug, ct);
+        if (existing is not null)
+        {
+            payload = ContentValueCopy.FillUnnamedOwnedValues(existing, payload, db.Model);
         }
 
         var incoming = ContentEntityTypes.Deserialize(resolver, payload);
@@ -205,6 +217,15 @@ public static class ContentWriteEndpoints
                 actualUpdatedAt = existing.UpdatedAt.ToString("O", CultureInfo.InvariantCulture),
             });
         }
+
+        // Presence, not emptiness, decides what a payload replaces — for owned JSON as well as child rows. An omitted
+        // owned collection deserialises to its initializer ([]) and an omitted owned object to a fresh instance, and
+        // ApplyAuthoredValues assigns both wholesale, so a payload the Foundry form shaped (naming only the fields it
+        // renders) would delete the values it never mentioned. Fill them from the row being replaced before
+        // deserialising, exactly as the review-queue approval does (ContentWriteService.PromoteAsync), so the two write
+        // paths cannot disagree about an identical payload. A property the payload *does* name — including an explicit
+        // null, which is refused below — is left exactly as authored.
+        payload = ContentValueCopy.FillUnnamedOwnedValues(existing, payload, db.Model);
 
         var incoming = ContentEntityTypes.Deserialize(resolver, payload);
         if (incoming is null)

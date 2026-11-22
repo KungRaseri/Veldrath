@@ -111,9 +111,13 @@ names (`ContentChildRows.ApplyNamedAsync` → `NamedIn`), so a PUT or submission
 stored ingredients alone instead of zeroing them. A collection the payload *does* name is replaced wholesale, so an
 empty list still clears it. `ZoneLocation.ActorPool` is owned JSON (`OwnsMany(...).ToJson("ActorPool")`), not a child
 table, so the reconcile never touches it — it is assigned wholesale by `ContentValueCopy.ApplyAuthoredValues`, which is
-why the null rule below has to cover it too. `LootTable` with no entries is an `Error` in the validator, so an approval
-that omits `entries` is refused before the reconcile rather than silently deleting them; a recipe with no ingredients is
-only a warning.
+why both the null rule below and the owned-value fill have to cover it. That fill
+(`ContentValueCopy.FillUnnamedOwnedValues`) runs in **both** HTTP write routes *and* the dry run, not just in the
+review-queue approval: an omitted owned collection deserialises to `[]` and an omitted owned object to a fresh
+instance, so without it "omitted" and "`[]`" would both wipe an owned value and the `child_collection_null` message
+("omit the property to leave the stored collection alone") would be advising the delete it refuses. `LootTable` with no
+entries is an `Error` in the validator, so an approval that omits `entries` is refused before the reconcile rather than
+silently deleting them; a recipe with no ingredients is only a warning.
 
 **An explicit `null` child collection is refused, not read as empty (fixed 2026-11-20, card t_cb4c17ef).** Three
 shapes, three meanings, and only two of them are authoring: **omitted** = leave the stored rows alone, **`[]`** =
@@ -151,6 +155,15 @@ review measured exactly that — `200 isValid:true` with `spawn_pool_empty` as a
 collections are therefore in `NullCollectionIssues` too, and `ApplyAuthoredValues` skips a null owned collection as
 defence in depth. A stored location loads its pool as `[]`, never null, so `GET /api/content/zonelocation/{slug}/validate`
 stays clean — the rule only fires on a payload that names the field as null.
+
+The three shapes are only three shapes because both HTTP write routes and the dry run fill an unnamed owned value from
+the row being replaced (`ContentValueCopy.FillUnnamedOwnedValues`, the same call `ContentWriteService.PromoteAsync` has
+always made) before deserialising. `2026-11-22` review measured the gap that left: `PUT /zonelocation` **omitting**
+`actorPool` deserialised to `[]`, was assigned wholesale and answered `200` with the pool deleted, while the 400 above
+told the author to omit the field. The PUT now keeps the pool (`Version` bumped once), `"actorPool": []` still clears
+it, an omitted owned **object** keeps its stored leaves (`stats.dangerLevel` 7 survives), and the payload dry run reports
+no spurious `spawn_pool_empty` for a pool the write keeps. That also makes the "omitted = keep stored" premise of the
+explicit-null-owned-object card (t_819ada90) true on this route.
 
 **The read path has to return the child rows, or the presence rule deletes them.** Foundry's editor and the submission
 forms build their payload from `GET /api/content/browse/{type}/{slug}`, and that read used `AsNoTracking()` with no

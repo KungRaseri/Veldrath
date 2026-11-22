@@ -417,6 +417,29 @@ public class ContentWriteEndpointTests(WebAppFactory factory)
             .ToArray(),
     };
 
+    /// <summary>
+    /// A zone location whose spawn pool is owned JSON. The archetypes named in the pool are seeded, so the reference
+    /// audit passes; the slug is unique per test because the integration database is shared.
+    /// </summary>
+    private static object ZoneLocationPayload(string slug, params (string Archetype, int Weight)[] pool) => new
+    {
+        slug,
+        zoneId = "verdant-reach",
+        typeKey = "towns",
+        displayName = "Owned Collection Location",
+        rarityWeight = 50,
+        isActive = true,
+        stats = new { size = 3, dangerLevel = 7, population = 40, minLevel = 2, maxLevel = 6 },
+        traits = new { isTown = true },
+        actorPool = pool
+            .Select(entry => new
+            {
+                archetypeSlug = entry.Archetype,
+                weight = entry.Weight,
+            })
+            .ToArray(),
+    };
+
     /// <summary>The same recipe without an <c>ingredients</c> property at all — what a schema-shaped form sends.</summary>
     private static object RecipePayloadWithoutIngredients(string slug) => new
     {
@@ -742,6 +765,118 @@ public class ContentWriteEndpointTests(WebAppFactory factory)
         body.GetProperty("isValid").GetBoolean().Should().BeFalse();
         Errors(body).EnumerateArray().Should().Contain(issue =>
             issue.GetProperty("rule").GetString() == ContentRules.ChildCollectionNull);
+    }
+
+    /// <summary>
+    /// The contract the null rule publishes is three shapes, three meanings: omitted = leave the stored collection
+    /// alone, <c>[]</c> = replace it with nothing, <c>null</c> = refused. For an owned collection the middle shape is
+    /// what a payload that never mentions the field deserialises to, so the PUT has to fill an unnamed owned value from
+    /// the row it replaces (as the review-queue approval already does) — otherwise the author refused a 400 for a null
+    /// is told to "omit the property", does exactly that, and the pool is deleted.
+    /// </summary>
+    [Fact]
+    public async Task A_put_omitting_the_zone_location_spawn_pool_keeps_it()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-owned-pool-omitted-{Guid.NewGuid():N}";
+
+        (await client.PostAsync("/api/content/zonelocation", Json(ZoneLocationPayload(slug, ("giant-rat", 60), ("goblin-scout", 40)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var before = await StoredZoneLocationAsync(slug);
+        before.ActorPool.Should().HaveCount(2);
+
+        var payload = await DetailPayloadAsync(client, "zonelocation", slug);
+        payload.Remove("actorPool");
+        payload["displayName"] = "Renamed Without A Pool";
+
+        var updated = await client.PutAsync($"/api/content/zonelocation/{slug}", JsonObjectContent(payload));
+        updated.StatusCode.Should().Be(HttpStatusCode.OK, await updated.Content.ReadAsStringAsync());
+
+        var after = await StoredZoneLocationAsync(slug);
+        after.Version.Should().Be(before.Version + 1, "the write succeeded, so the version is bumped exactly once");
+        after.DisplayName.Should().Be("Renamed Without A Pool");
+        after.ActorPool.Select(entry => entry.ArchetypeSlug)
+            .Should().BeEquivalentTo(before.ActorPool.Select(entry => entry.ArchetypeSlug),
+                "an omitted owned collection is not an authored empty set");
+    }
+
+    /// <summary>
+    /// The other half of the same contract: a named empty array is an authored choice and clears the owned collection.
+    /// Without this the fill could be mistaken for "an owned collection is never cleared".
+    /// </summary>
+    [Fact]
+    public async Task A_put_naming_the_zone_location_spawn_pool_as_an_empty_array_clears_it()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-owned-pool-emptied-{Guid.NewGuid():N}";
+
+        (await client.PostAsync("/api/content/zonelocation", Json(ZoneLocationPayload(slug, ("giant-rat", 60), ("goblin-scout", 40)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var payload = await DetailPayloadAsync(client, "zonelocation", slug);
+        payload["actorPool"] = new JsonArray();
+
+        var updated = await client.PutAsync($"/api/content/zonelocation/{slug}", JsonObjectContent(payload));
+        updated.StatusCode.Should().Be(HttpStatusCode.OK, await updated.Content.ReadAsStringAsync());
+
+        var after = await StoredZoneLocationAsync(slug);
+        after.ActorPool.Should().BeEmpty("an empty array in the payload is the author saying 'no spawns here'");
+    }
+
+    /// <summary>
+    /// The same presence rule for an owned <em>object</em>: an omitted <c>stats</c> deserialises to a fresh instance and
+    /// replacing the stored one wholesale would null every value the payload never named. The follow-up card for an
+    /// explicit null owned object assumes "omitted = keep stored", and this is the write that has to make that true.
+    /// </summary>
+    [Fact]
+    public async Task A_put_omitting_an_owned_object_keeps_its_stored_values()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-owned-object-omitted-{Guid.NewGuid():N}";
+
+        (await client.PostAsync("/api/content/zonelocation", Json(ZoneLocationPayload(slug, ("giant-rat", 60)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var before = await StoredZoneLocationAsync(slug);
+        before.Stats.DangerLevel.Should().Be(7);
+
+        var payload = await DetailPayloadAsync(client, "zonelocation", slug);
+        payload.Remove("stats");
+        payload["displayName"] = "Renamed Without Stats";
+
+        var updated = await client.PutAsync($"/api/content/zonelocation/{slug}", JsonObjectContent(payload));
+        updated.StatusCode.Should().Be(HttpStatusCode.OK, await updated.Content.ReadAsStringAsync());
+
+        var after = await StoredZoneLocationAsync(slug);
+        after.Stats.DangerLevel.Should().Be(7, "an omitted owned object is not an authored empty one");
+        after.Stats.MinLevel.Should().Be(before.Stats.MinLevel);
+    }
+
+    /// <summary>
+    /// The dry run predicts the write, so it applies the same fill. Validating a payload that omits an owned collection
+    /// has to report what the write would produce — no spurious <c>spawn_pool_empty</c> warning for a pool the write
+    /// keeps.
+    /// </summary>
+    [Fact]
+    public async Task Validating_a_payload_that_omits_the_zone_location_spawn_pool_reports_no_spurious_warning()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-owned-pool-dryrun-{Guid.NewGuid():N}";
+
+        (await client.PostAsync("/api/content/zonelocation", Json(ZoneLocationPayload(slug, ("giant-rat", 60), ("goblin-scout", 40)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var payload = await DetailPayloadAsync(client, "zonelocation", slug);
+        payload.Remove("actorPool");
+
+        var validated = await client.PostAsync($"/api/content/zonelocation/{slug}/validate", JsonObjectContent(payload));
+        validated.StatusCode.Should().Be(HttpStatusCode.OK, await validated.Content.ReadAsStringAsync());
+
+        var body = await validated.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("isValid").GetBoolean().Should().BeTrue();
+        body.GetProperty("warnings").EnumerateArray()
+            .Should().NotContain(warning => warning.GetProperty("rule").GetString() == ContentRules.SpawnPoolEmpty);
     }
 
     /// <summary>Reads the exact payload the Foundry detail endpoint hands the editor.</summary>
