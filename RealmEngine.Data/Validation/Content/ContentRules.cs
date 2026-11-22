@@ -43,6 +43,13 @@ public static class ContentRules
     /// </summary>
     public const string ChildCollectionNull = "child_collection_null";
 
+    /// <summary>
+    /// An owned-object navigation (<c>stats</c>, <c>traits</c>, <c>phonology</c>, …) is present as JSON <c>null</c>.
+    /// An explicit null is not an authored object: the deserialiser yields a null owned reference that the write path's
+    /// validators and copy both dereference, so it must be refused rather than stored.
+    /// </summary>
+    public const string OwnedObjectNull = "owned_object_null";
+
     /// <summary>A numeric field is negative or zero where that makes no sense.</summary>
     public const string ValueOutOfRange = "value_out_of_range";
 

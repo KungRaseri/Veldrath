@@ -181,9 +181,34 @@ Measured before the walk existed: `PUT /api/content/language/calethic` with `"ph
 the row was repaired. `NullCollectionIssues` now reports each null collection inside an owned object with its dotted
 field (`phonology.consonants`, `objectives.items`, `rewards.items`, `stats.lines`, `stats.options`), for owned
 collections (`OwnsMany`) and primitive collections (`PrimitiveCollection`) alike, so the payload is refused with
-`child_collection_null` and the row and both reads survive. A null **owned object** (`"stats": null`) is still a
-different defect and belongs to card t_819ada90 — the walk reports collections, not the object itself, and
-`ApplyAuthoredValues` has no guard for a null owned object.
+`child_collection_null` and the row and both reads survive.
+
+**An explicit null owned *object* is its own rule (fixed 2026-11-22, card t_819ada90).** `"stats": null` is not a
+collection: it nulls the stored object itself, and no reconcile is involved. Before the rule the deserialiser produced a
+null owned reference, `ContentEntityTypes.Validate` handed it to the family validator, and the validator dereferenced it
+— measured on unmodified `development`, `PUT /api/content/zonelocation/{slug}` with `stats: null` answered **500**
+(`NullReferenceException` at `ZoneLocationValidator.ValidateEntity` line 20, `entity.Stats.MinLevel`) and
+`DialogueValidator` (`entity.Stats.Lines`) did the same. The sibling walk
+`ContentChildRows.NullOwnedObjectIssues` enumerates the EF model's owned references (`!IsCollection && IsOwned()`) for
+every family, recurses into an owned object for a nested reference (the model has none today), and reports each null
+with rule **`owned_object_null`** and its camelCase field (`stats`, `traits`, `objectives`, `phonology`, …). It is
+merged into `ContentEntityTypes.Validate` ahead of the family validator, and a null owned object is the one shape that
+**short-circuits** the family rules: they dereference the object by design, so running them is the 500 the rule replaces.
+All six call sites (create, update, both validate routes, the review-queue approval and the pack validator) go through
+that entry point. Defence in depth: `ContentValueCopy.ApplyAuthoredValues` skips a null owned reference and
+`CopyOwnedInPlace` skips a null nested one, so a caller that skipped validation cannot null a stored object either.
+
+The owned-object contract is the collection one carried to an object: **omitted** = keep the stored values (the update
+PUT and the dry run fill it from the row they replace; a create has none), a named object replaces the leaves it names
+(an unnamed leaf is filled from the stored object, so `{}` keeps the stored shape and `{"dangerLevel": null}` clears one
+leaf), and **`null`** = shape error, refused with 400. A stored row loads every owned object as an instance, so
+`GET /api/content/{type}/{slug}/validate` stays clean and the rule only fires on a payload. Regression tests:
+`ContentWriteEndpointTests.A_put_naming_an_owned_object_as_null_is_refused_and_keeps_the_stored_values`,
+`A_put_naming_a_dialogue_stats_object_as_null_is_refused_instead_of_failing`,
+`Validating_a_payload_with_a_null_owned_object_reports_the_issue_instead_of_failing`,
+`ContentChildRowsTests.NullOwnedObjectIssues_*` (single owned value, every owned value of a family, silent for a stored
+shape), `ContentValueCopyTests.ApplyAuthoredValues_leaves_an_owned_object_carried_as_null_alone`, and
+`NullOwnedObjectValidationTests` (the model-driven rule across every family plus the stored-row proof).
 
 The three shapes are only three shapes because the update PUT and the dry run fill an unnamed owned value from
 the row being replaced (`ContentValueCopy.FillUnnamedOwnedValues`, the same call `ContentWriteService.PromoteAsync` has
@@ -192,8 +217,8 @@ left: `PUT /zonelocation` **omitting**
 `actorPool` deserialised to `[]`, was assigned wholesale and answered `200` with the pool deleted, while the 400 above
 told the author to omit the field. The PUT now keeps the pool (`Version` bumped once), `"actorPool": []` still clears
 it, an omitted owned **object** keeps its stored leaves (`stats.dangerLevel` 7 survives), and the payload dry run reports
-no spurious `spawn_pool_empty` for a pool the write keeps. That also makes the "omitted = keep stored" premise of the
-explicit-null-owned-object card (t_819ada90) true on this route.
+no spurious `spawn_pool_empty` for a pool the write keeps. That is what makes "omitted = keep stored" true for an owned
+object on this route (the explicit-null half is the `owned_object_null` rule above).
 
 **The read path has to return the child rows, or the presence rule deletes them.** Foundry's editor and the submission
 forms build their payload from `GET /api/content/browse/{type}/{slug}`, and that read used `AsNoTracking()` with no

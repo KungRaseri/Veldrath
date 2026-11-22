@@ -209,6 +209,87 @@ public class ContentChildRowsTests
         issues[0].Identifier.Should().Be("wolf");
     }
 
+    /// <summary>
+    /// The sibling rule: a null owned <em>object</em> is not a collection at all, so it is refused by its own rule. The
+    /// deserialiser yields a null reference and every family validator dereferences it (<c>entity.Stats.MinLevel</c>),
+    /// which is the unhandled 500 this rule closes.
+    /// </summary>
+    [Fact]
+    public async Task NullOwnedObjectIssues_names_the_owned_object_an_entity_carries_as_null()
+    {
+        var (connection, options) = await CreateDatabaseAsync();
+
+        using var keepAlive = connection;
+        await using var db = new ContentDbContext(options);
+
+        var issues = ContentChildRows.NullOwnedObjectIssues(
+            new ZoneLocation
+            {
+                Slug = "drove-road",
+                TypeKey = "locations",
+                DisplayName = "Drove Road",
+                ZoneId = "varenmark",
+                Stats = null!,
+            },
+            db.Model);
+
+        issues.Should().ContainSingle();
+        issues[0].Rule.Should().Be(ContentRules.OwnedObjectNull);
+        issues[0].Severity.Should().Be(ContentIssueSeverity.Error);
+        issues[0].Field.Should().Be("stats");
+        issues[0].Identifier.Should().Be("drove-road");
+    }
+
+    /// <summary>Every owned reference a single family carries is reported, not just the first one found.</summary>
+    [Fact]
+    public async Task NullOwnedObjectIssues_names_every_owned_object_of_a_family()
+    {
+        var (connection, options) = await CreateDatabaseAsync();
+
+        using var keepAlive = connection;
+        await using var db = new ContentDbContext(options);
+
+        var issues = ContentChildRows.NullOwnedObjectIssues(
+            new Quest
+            {
+                Slug = "null-owned-quest",
+                TypeKey = "side",
+                DisplayName = "Null Owned Quest",
+                Stats = null!,
+                Traits = null!,
+                Objectives = null!,
+                Rewards = null!,
+            },
+            db.Model);
+
+        issues.Select(issue => issue.Field).Should().BeEquivalentTo("stats", "traits", "objectives", "rewards");
+        issues.Should().OnlyContain(issue =>
+            issue.Rule == ContentRules.OwnedObjectNull && issue.Severity == ContentIssueSeverity.Error);
+    }
+
+    /// <summary>
+    /// A stored row carries every owned object as an instance, so the rule is silent for it — which is what keeps
+    /// <c>GET /api/content/{type}/{slug}/validate</c> clean.
+    /// </summary>
+    [Fact]
+    public async Task NullOwnedObjectIssues_is_silent_for_an_entity_whose_owned_objects_are_initialized()
+    {
+        var (connection, options) = await CreateDatabaseAsync();
+
+        using var keepAlive = connection;
+        await using var db = new ContentDbContext(options);
+
+        ContentChildRows.NullOwnedObjectIssues(
+                new Language { Slug = "calethic", TypeKey = "imperial", DisplayName = "Calethic" },
+                db.Model)
+            .Should().BeEmpty();
+
+        ContentChildRows.NullOwnedObjectIssues(
+                new ZoneLocation { Slug = "drove-road", TypeKey = "locations", DisplayName = "Drove Road" },
+                db.Model)
+            .Should().BeEmpty();
+    }
+
     /// <summary>An initialized collection — what an omitted property deserialises to — is not a null one.</summary>
     [Fact]
     public async Task NullCollectionIssues_is_silent_when_every_collection_is_initialized()

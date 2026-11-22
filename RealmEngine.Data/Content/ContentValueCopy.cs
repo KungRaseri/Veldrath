@@ -39,12 +39,14 @@ public static class ContentValueCopy
     /// because the deserialised children arrive with generated keys EF would treat as existing rows.
     /// </para>
     /// <para>
-    /// An owned collection is assigned wholesale, so an authored <c>null</c> would clear the stored elements. A null is
-    /// not an authored set (<see cref="ContentChildRows.NullCollectionIssues"/> refuses the payload before it gets here),
-    /// and skipping the assignment keeps the stored elements even for a caller that did not validate first. The same
-    /// guard applies one level in, to a collection nested inside an owned object (<c>Phonology.Consonants</c>,
-    /// <c>Objectives.Items</c>, <c>Stats.Lines</c>), where <see cref="CopyOwnedInPlace"/> keeps the stored elements of a
-    /// null collection instead of assigning it.
+    /// An owned collection is assigned wholesale, so an authored <c>null</c> would clear the stored elements, and an owned
+    /// object is copied in place, so an authored <c>null</c> would null the stored object and take every leaf with it. A
+    /// null is not an authored set (<see cref="ContentChildRows.NullCollectionIssues"/> and
+    /// <see cref="ContentChildRows.NullOwnedObjectIssues"/> refuse the payload before it gets here), and skipping the
+    /// assignment keeps the stored value even for a caller that did not validate first. The same guard applies one level
+    /// in, to a collection or owned reference nested inside an owned object (<c>Phonology.Consonants</c>,
+    /// <c>Objectives.Items</c>, <c>Stats.Lines</c>), where <see cref="CopyOwnedInPlace"/> keeps the stored value of a
+    /// null instead of assigning it.
     /// </para>
     /// </remarks>
     /// <param name="incoming">The entity authored by the editor or the pack.</param>
@@ -93,9 +95,12 @@ public static class ContentValueCopy
 
             var value = property.GetValue(incoming);
 
-            // A null owned collection is not an authored set: assigning it would clear every stored element. The write
-            // paths refuse such a payload before it gets here; this keeps the stored elements anyway.
-            if (value is null && ownedCollections.Contains(property.Name))
+            // A null owned collection is not an authored set: assigning it would clear every stored element. A null
+            // owned object is not an authored one either: assigning it would null the stored object and take every
+            // leaf with it. The write paths refuse both shapes before they get here; this keeps the stored values
+            // anyway, for a caller that skipped validation.
+            if (value is null
+                && (ownedCollections.Contains(property.Name) || ownedReferences.Contains(property.Name)))
             {
                 continue;
             }
@@ -272,6 +277,13 @@ public static class ContentValueCopy
             var isNestedOwned = property.PropertyType.IsClass
                 && property.PropertyType != typeof(string)
                 && !isCollection;
+
+            // A null nested owned reference is not an authored one: assigning it would null the tracked nested
+            // instance, exactly the defect the entity-level rule refuses one level up.
+            if (value is null && isNestedOwned)
+            {
+                continue;
+            }
 
             if (isNestedOwned && value is not null && current is not null)
             {
