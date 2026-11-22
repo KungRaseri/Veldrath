@@ -83,6 +83,21 @@ empty defaults. Two guards now hold:
   (`buildPayload(detail.data.payload, …)`).
 Regression test: `FoundryEndpointTests.Review_Should_Preserve_Owned_Json_A_Schema_Shaped_Submission_Does_Not_Name`.
 
+**A seeded trait must not survive a blanked sibling (fixed 2026-11-20, card t_b9bc2752).** Seeding the payload base is
+not enough on its own: the submission form renders *every* scalar field of the schema and posts them all, so the fields
+the author did not fill arrive empty and `buildPayload` wrote those blanks over the stored row. A seeded
+`traits.hasCooldown: true` then stood beside a blanked `stats.cooldown`, and `ContentWriteService.PromoteAsync` refused
+the payload ("flagged as having a cooldown but declares none") — approval never landed and the review page kept showing
+the alert instead of "Approved". This had been masked before card t_3e4f919a because `original` was `{}`, so no trait
+came along; the seeding exposed it. `submissionPayload`
+([`web/client/src/lib/foundry/content-editor.ts`](../../web/client/src/lib/foundry/content-editor.ts)) now writes only
+the fields whose submitted value differs from the one the form rendered (the schema default, or `''` for a select);
+a submission with no stored row still writes every submitted field. What that costs, and what to remember: on a
+correction the create form cannot express "set it back to the schema default", cannot turn a Boolean *off* (an unchecked
+checkbox submits nothing), and has no input at all for `StringList`/`KeyValue`/`ObjectList` — all of those keep their
+stored values. Regression tests: `content-editor.test.ts` (`submissionPayload` cases) and `foundry-loaders.test.ts`
+`keeps a stored stat the form posted blank, so a seeded trait is never left without it`.
+
 **Child rows are reconciled, not copied (fixed 2026-11-20, card t_3e4f919a):** child *rows* (recipe ingredients,
 loot-table entries) cannot be assigned to the tracked parent — a deserialised child arrives with its key set, so EF
 issues an UPDATE against a row that was never inserted. They are now written by `ContentChildRows`
