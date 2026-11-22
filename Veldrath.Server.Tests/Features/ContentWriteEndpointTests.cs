@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
+using RealmEngine.Data.Validation.Content;
 using Veldrath.Server.Features.Auth;
 using Veldrath.Server.Tests.Infrastructure;
 
@@ -549,6 +550,121 @@ public class ContentWriteEndpointTests(WebAppFactory factory)
 
         var stored = await StoredLootTableAsync(slug);
         stored.Entries.Select(entry => entry.ItemSlug).Should().BeEquivalentTo("iron-ingot", "iron-sword");
+    }
+
+    /// <summary>The error entries of a validation response body.</summary>
+    private static JsonElement Errors(JsonElement body) => body.GetProperty("errors");
+
+    /// <summary>
+    /// An explicit JSON <c>null</c> is neither "the property was omitted" (leave the stored rows alone) nor "the author
+    /// wrote an empty list" (clear them). It used to reach the reconcile as an empty authored set; the reconcile would
+    /// have deleted every stored ingredient on a 200.
+    /// </summary>
+    [Fact]
+    public async Task A_put_naming_ingredients_as_null_is_refused_and_keeps_the_stored_rows()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-child-recipe-null-{Guid.NewGuid():N}";
+
+        (await client.PostAsync("/api/content/recipe", Json(RecipePayload(slug, ("iron", 3), ("pine", 1)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var payload = await DetailPayloadAsync(client, "recipe", slug);
+        payload["ingredients"] = null;
+
+        var refused = await client.PutAsync($"/api/content/recipe/{slug}", JsonObjectContent(payload));
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest, await refused.Content.ReadAsStringAsync());
+
+        var body = await refused.Content.ReadFromJsonAsync<JsonElement>();
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.ChildCollectionNull
+            && issue.GetProperty("field").GetString() == "ingredients");
+
+        // Refused means nothing was written: same version, same rows.
+        var stored = await StoredRecipeAsync(slug);
+        stored.Version.Should().Be(1);
+        stored.Ingredients.Select(ingredient => ingredient.ItemSlug).Should().BeEquivalentTo("iron", "pine");
+    }
+
+    /// <summary>The loot-table half: a null <c>entries</c> names the field instead of reaching the reconcile as empty.</summary>
+    [Fact]
+    public async Task A_put_naming_entries_as_null_is_refused_and_keeps_the_stored_rows()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-child-loot-null-{Guid.NewGuid():N}";
+
+        (await client.PostAsync(
+            "/api/content/loottable",
+            Json(LootTablePayload(slug, ("health-potion", 60), ("iron-ingot", 40)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var payload = await DetailPayloadAsync(client, "loottable", slug);
+        payload["entries"] = null;
+
+        var refused = await client.PutAsync($"/api/content/loottable/{slug}", JsonObjectContent(payload));
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest, await refused.Content.ReadAsStringAsync());
+
+        var body = await refused.Content.ReadFromJsonAsync<JsonElement>();
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.ChildCollectionNull
+            && issue.GetProperty("field").GetString() == "entries");
+
+        var stored = await StoredLootTableAsync(slug);
+        stored.Version.Should().Be(1);
+        stored.Entries.Select(entry => entry.ItemSlug).Should().BeEquivalentTo("health-potion", "iron-ingot");
+    }
+
+    /// <summary>
+    /// A family whose validator never reads its child collections (species only runs the shared structural rules) is the
+    /// dangerous case: before the payload-shape rule, a null <c>powerPool</c> validated clean and the reconcile cleared
+    /// the pool with a 200 — a silent delete, not the 500 the recipe path produced.
+    /// </summary>
+    [Fact]
+    public async Task A_put_naming_a_species_power_pool_as_null_is_refused_and_keeps_it()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+
+        var payload = await DetailPayloadAsync(client, "species", "wolf");
+        var storedPool = payload["powerPool"]!.AsArray().Count;
+        storedPool.Should().BeGreaterThan(0, "the seeded wolf has an innate power pool to lose");
+
+        payload["powerPool"] = null;
+
+        var refused = await client.PutAsync("/api/content/species/wolf", JsonObjectContent(payload));
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest, await refused.Content.ReadAsStringAsync());
+
+        var body = await refused.Content.ReadFromJsonAsync<JsonElement>();
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.ChildCollectionNull
+            && issue.GetProperty("field").GetString() == "powerPool");
+
+        var stored = await DetailPayloadAsync(client, "species", "wolf");
+        stored["powerPool"]!.AsArray().Count.Should().Be(storedPool);
+    }
+
+    /// <summary>
+    /// The dry run takes the same payload, so it has to report the issue rather than answer 500 with a null dereference
+    /// from inside a validator.
+    /// </summary>
+    [Fact]
+    public async Task Validating_a_payload_with_a_null_collection_reports_the_issue_instead_of_failing()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-child-recipe-validate-null-{Guid.NewGuid():N}";
+
+        (await client.PostAsync("/api/content/recipe", Json(RecipePayload(slug, ("iron", 3), ("pine", 1)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var payload = await DetailPayloadAsync(client, "recipe", slug);
+        payload["ingredients"] = null;
+
+        var validated = await client.PostAsync($"/api/content/recipe/{slug}/validate", JsonObjectContent(payload));
+        validated.StatusCode.Should().Be(HttpStatusCode.OK, await validated.Content.ReadAsStringAsync());
+
+        var body = await validated.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("isValid").GetBoolean().Should().BeFalse();
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.ChildCollectionNull);
     }
 
     /// <summary>Reads the exact payload the Foundry detail endpoint hands the editor.</summary>

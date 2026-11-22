@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using RealmEngine.Data.Entities;
+using RealmEngine.Data.Validation.Content;
 
 namespace RealmEngine.Data.Content;
 
@@ -38,6 +39,14 @@ namespace RealmEngine.Data.Content;
 /// the payload still clears it — that is the full-replace contract for anything the caller actually wrote. The generic
 /// detail read names every collection by loading it (<see cref="IncludeAuthoredChildren"/>) precisely so an editor that
 /// starts from that payload is never in the position of naming a collection it was not shown.
+/// </para>
+/// <para>
+/// <b>An explicit <c>null</c> is neither of those.</b> Omission means "leave the stored rows alone" and an empty array
+/// means "clear them"; a property present as JSON <c>null</c> says nothing about the author's intent, so it is refused
+/// with a named issue (<see cref="NullCollectionIssues"/>, rule <c>child_collection_null</c>) instead of being read as an
+/// empty authored set. Two guards make that unambiguous: <see cref="NamedIn"/> only counts a property that carries a
+/// JSON array as naming a collection, and <see cref="Reconcile"/> skips a null collection even when the caller asked for
+/// every collection (the pack importer does). A null therefore can never delete rows, on any path.
 /// </para>
 /// </remarks>
 public static class ContentChildRows
@@ -134,6 +143,11 @@ public static class ContentChildRows
     /// The deserialiser accepts either casing (<see cref="JsonSerializerDefaults.Web"/> is case-insensitive), so the
     /// lookup is case-insensitive too: a payload that names <c>ingredients</c> and one that names <c>Ingredients</c>
     /// both mean the author wrote the collection.
+    /// <para>
+    /// Only a property that carries a JSON array names a collection. A property present as <c>null</c> (or as a scalar)
+    /// is not an authored set, and treating it as one would reconcile the stored rows against nothing — a silent delete.
+    /// The write path refuses such a payload before it gets here (<see cref="NullCollectionIssues"/>).
+    /// </para>
     /// </remarks>
     /// <param name="entityType">CLR type of the entity the payload describes.</param>
     /// <param name="payload">The submitted payload.</param>
@@ -156,13 +170,71 @@ public static class ContentChildRows
             if (IsAuthoredCollection(navigation)
                 && !navigation.TargetEntityType.IsOwned()
                 && navigation.PropertyInfo is { CanWrite: true }
-                && NamesProperty(payload, navigation.Name))
+                && NamesCollection(payload, navigation.Name))
             {
                 names.Add(navigation.Name);
             }
         }
 
         return names;
+    }
+
+    /// <summary>
+    /// Reports every authored child-row collection <paramref name="entity"/> carries as <c>null</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// An omitted property deserialises to the collection's own initializer (<c>[]</c>), so a null here means the payload
+    /// named the collection and gave it no value. That is a shape error, not an authoring choice: it cannot be read as
+    /// "clear the rows" (the payload never said how many) and it must not be read as "leave them alone" silently either,
+    /// because an editor that sends it is broken and would otherwise believe it saved. The rule names the field so the
+    /// author can fix it — omit the property to keep the stored rows, send <c>[]</c> to clear them.
+    /// </para>
+    /// <para>
+    /// It lives here, driven by the EF model, because the authored collections are exactly what this class reconciles:
+    /// several families (species, class, archetype, instance, power) have no rule of their own that reads those
+    /// collections, so a per-validator check would leave their nulls reaching the reconcile.
+    /// </para>
+    /// </remarks>
+    /// <param name="entity">The entity the payload describes.</param>
+    /// <param name="model">Model of the context that will store the entity.</param>
+    /// <returns>One error per null child-row collection; empty when every collection has a value.</returns>
+    public static IReadOnlyList<ContentIssue> NullCollectionIssues(ContentBase entity, IModel model)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+        ArgumentNullException.ThrowIfNull(model);
+
+        if (model.FindEntityType(entity.GetType()) is not { } entityType)
+        {
+            return [];
+        }
+
+        var identifier = string.IsNullOrWhiteSpace(entity.Slug) ? null : entity.Slug;
+        var issues = new List<ContentIssue>();
+
+        foreach (var navigation in entityType.GetNavigations())
+        {
+            if (!IsAuthoredCollection(navigation)
+                || navigation.TargetEntityType.IsOwned()
+                || navigation.PropertyInfo is not { CanRead: true } property
+                || property.GetValue(entity) is not null)
+            {
+                continue;
+            }
+
+            var field = JsonNamingPolicy.CamelCase.ConvertName(navigation.Name);
+
+            issues.Add(new ContentIssue(
+                ContentRules.ChildCollectionNull,
+                $"'{entity.GetType().Name}' '{identifier ?? "(no slug)"}' names '{field}' as null. An explicit null is not "
+                + "an empty collection: omit the property to leave the stored children alone, or send an empty array to "
+                + "replace them with nothing.",
+                ContentIssueSeverity.Error,
+                field,
+                identifier));
+        }
+
+        return issues;
     }
 
     /// <summary>
@@ -256,7 +328,17 @@ public static class ContentChildRows
             }
 
             var childType = navigation.TargetEntityType;
-            var authored = ToObjects(property.GetValue(incoming));
+            var authoredValue = property.GetValue(incoming);
+
+            // A null collection is not an authored set. The caller may have asked for every collection (the pack
+            // importer does), and there is no payload to consult, so the safe reading is the one the API documents:
+            // omit means "leave the stored rows alone". The HTTP write path refuses this shape before it gets here.
+            if (authoredValue is null)
+            {
+                continue;
+            }
+
+            var authored = ToObjects(authoredValue);
             var stored = ToObjects(property.GetValue(existing));
             var identity = ChildIdentityParts(childType, entityType);
 
@@ -572,13 +654,20 @@ public static class ContentChildRows
             ? [.. sequence.Cast<object?>().Where(child => child is not null).Select(child => child!)]
             : [];
 
-    private static bool NamesProperty(JsonElement payload, string name)
+    /// <summary>
+    /// Gets whether the payload names <paramref name="name"/> with a JSON array, which is the only shape that describes an
+    /// authored collection.
+    /// </summary>
+    /// <param name="payload">Payload to read.</param>
+    /// <param name="name">Collection property name to look for, in any casing.</param>
+    /// <returns>True when the property is present and carries an array.</returns>
+    private static bool NamesCollection(JsonElement payload, string name)
     {
         foreach (var property in payload.EnumerateObject())
         {
             if (string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase))
             {
-                return true;
+                return property.Value.ValueKind == JsonValueKind.Array;
             }
         }
 

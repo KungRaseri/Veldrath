@@ -123,7 +123,12 @@ public sealed class LootTableValidator : ContentValidator<LootTable>
         var issues = new List<ContentIssue>();
         ContentShapeRules.ValidateShared(entity, issues);
 
-        if (entity.Entries.Count == 0)
+        // A null collection is refused by the payload-shape rule before the write path gets here
+        // (ContentEntityTypes.Validate); the validator itself must still never throw, because the offline pack
+        // validator and the CI guard call it directly. A null therefore reads as "nothing authored".
+        var entries = entity.Entries ?? [];
+
+        if (entries.Count == 0)
         {
             AddError(
                 issues,
@@ -135,7 +140,7 @@ public sealed class LootTableValidator : ContentValidator<LootTable>
         }
 
         var index = 0;
-        foreach (var entry in entity.Entries)
+        foreach (var entry in entries)
         {
             var field = $"entries[{index}]";
 
@@ -251,7 +256,10 @@ public sealed class RecipeValidator : ContentValidator<Recipe>
                 "craftingLevel");
         }
 
-        if (entity.Ingredients.Count == 0)
+        // See the loot-table note: null-tolerant here, refused by ContentChildRows.NullCollectionIssues on the write path.
+        var ingredients = entity.Ingredients ?? [];
+
+        if (ingredients.Count == 0)
         {
             AddWarning(
                 issues,
@@ -262,7 +270,7 @@ public sealed class RecipeValidator : ContentValidator<Recipe>
         }
 
         var index = 0;
-        foreach (var ingredient in entity.Ingredients)
+        foreach (var ingredient in ingredients)
         {
             var field = $"ingredients[{index}]";
 

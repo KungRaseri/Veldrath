@@ -37,7 +37,10 @@ public sealed class ZoneLocationValidator : ContentValidator<ZoneLocation>
                 "stats.dangerLevel");
         }
 
-        if (entity.ActorPool.Count == 0)
+        // Null-tolerant so a null spawn pool is an issue, not an unhandled exception (see the loot-table note).
+        var actorPool = entity.ActorPool ?? [];
+
+        if (actorPool.Count == 0)
         {
             AddWarning(
                 issues,
@@ -48,11 +51,11 @@ public sealed class ZoneLocationValidator : ContentValidator<ZoneLocation>
         }
 
         issues.AddRange(ContentReferenceRules.AuditSpawnPools(
-            [new SpawnPoolReference(entity.Slug, [.. entity.ActorPool.Select(entry => entry.ArchetypeSlug)])],
+            [new SpawnPoolReference(entity.Slug, [.. actorPool.Select(entry => entry.ArchetypeSlug)])],
             catalog.Archetypes));
 
         var index = 0;
-        foreach (var entry in entity.ActorPool)
+        foreach (var entry in actorPool)
         {
             if (entry.Weight <= 0)
             {
@@ -266,7 +269,10 @@ public sealed class DialogueValidator : ContentValidator<Dialogue>
         var issues = new List<ContentIssue>();
         ContentShapeRules.ValidateShared(entity, issues);
 
-        if (entity.Stats.Lines.Count == 0)
+        // Null-tolerant so a null line list is an issue, not an unhandled exception (see the loot-table note).
+        var lines = entity.Stats.Lines ?? [];
+
+        if (lines.Count == 0)
         {
             AddError(
                 issues,
@@ -276,7 +282,7 @@ public sealed class DialogueValidator : ContentValidator<Dialogue>
                 "stats.lines");
         }
 
-        if (entity.Stats.Lines.Any(string.IsNullOrWhiteSpace))
+        if (lines.Any(string.IsNullOrWhiteSpace))
         {
             AddWarning(
                 issues,

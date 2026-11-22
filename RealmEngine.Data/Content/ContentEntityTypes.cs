@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Data.Validation.Content;
@@ -82,6 +83,46 @@ public static class ContentEntityTypes
     /// <returns><c>item</c> for <c>weapon</c> and <c>armor</c>, <c>ability</c> for <c>spell</c>, the key itself otherwise.</returns>
     public static string CanonicalFamily(string typeKey) =>
         typeKey is not null && Aliases.TryGetValue(typeKey, out var canonical) ? canonical : typeKey ?? string.Empty;
+
+    /// <summary>
+    /// Validates an entity the way the write path must: the payload-shape rules first, then the family's own validator.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is the single entry point for "is this entity usable", so the HTTP endpoint, the <c>validate</c> dry run and
+    /// the review-queue approval cannot disagree about a problem — the same reason they share <see cref="Registry"/>.
+    /// It exists because one rule needs the EF model and the entity, not just one of them: a child-row collection present
+    /// as JSON <c>null</c> (<see cref="ContentChildRows.NullCollectionIssues"/>). A family validator cannot see that
+    /// — several families have no rule of their own that reads their collections — and leaving it to the reconcile would
+    /// delete the stored rows.
+    /// </para>
+    /// <para>
+    /// The shape issues are merged ahead of the family's so a caller reading the first error reads the real cause.
+    /// </para>
+    /// </remarks>
+    /// <param name="resolver">Resolved content type of <paramref name="entity"/>.</param>
+    /// <param name="entity">The entity the payload describes.</param>
+    /// <param name="model">Model of the context that will store the entity.</param>
+    /// <param name="catalog">The slugs that exist, for reference checks.</param>
+    /// <returns>Every issue, shape rules included.</returns>
+    public static ContentValidationResult Validate(
+        ContentEntityResolver resolver,
+        ContentBase entity,
+        IModel model,
+        ContentReferenceCatalog catalog)
+    {
+        ArgumentNullException.ThrowIfNull(resolver);
+        ArgumentNullException.ThrowIfNull(entity);
+        ArgumentNullException.ThrowIfNull(model);
+        ArgumentNullException.ThrowIfNull(catalog);
+
+        var shapeIssues = ContentChildRows.NullCollectionIssues(entity, model);
+        var result = Registry.Validate(resolver.ContentType, entity, catalog);
+
+        return shapeIssues.Count == 0
+            ? result
+            : new ContentValidationResult([.. shapeIssues, .. result.Issues]);
+    }
 
     /// <summary>Gets the validator registry the write path and the importer use.</summary>
     public static ContentValidatorRegistry Registry { get; } = ContentValidatorRegistry.CreateDefault();

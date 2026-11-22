@@ -114,6 +114,28 @@ table, so it was never affected. `LootTable` with no entries is an `Error` in th
 `entries` is refused before the reconcile rather than silently deleting them; a recipe with no ingredients is only a
 warning.
 
+**An explicit `null` child collection is refused, not read as empty (fixed 2026-11-20, card t_cb4c17ef).** Three
+shapes, three meanings, and only two of them are authoring: **omitted** = leave the stored rows alone, **`[]`** =
+replace them with nothing, **`null`** = neither — the payload names the property and gives it no value, so it is a
+shape error. `ContentChildRows.NamedIn` now counts only a property that carries a JSON **array** as naming a
+collection, and `ContentChildRows.Reconcile` skips a null collection even when the caller asks for every collection
+(the pack importer does) — so a null can never delete rows on any path. The write path refuses it first with rule
+`child_collection_null` naming the field:
+
+```text
+PUT /api/content/recipe/{slug}    {"…": "…", "ingredients": null}   -> 400, errors[].field = "ingredients"
+PUT /api/content/species/{slug}   {"…": "…", "powerPool": null}     -> 400, errors[].field = "powerPool"
+```
+
+The rule has to be model-driven (`ContentChildRows.NullCollectionIssues`) rather than per-validator: `species`,
+`class`, `archetype`, `instance` and `ability` have no rule that reads their pools, so a null reached the reconcile
+and **cleared the pool on a 200** — a silent delete, not the 500 the recipe path produced. All four validation call
+sites now go through `ContentEntityTypes.Validate(resolver, entity, model, catalog)`, which merges the shape issues
+ahead of the family validator's; `ContentWriteEndpoints` (create, update, both validate routes),
+`ContentWriteService.PromoteAsync` and `ContentPackValidator.ValidateAsync` are the four. The family validators are
+also null-tolerant (`?? []`) so the offline pack validator and the CI guard can never throw a
+`NullReferenceException` on the same payload.
+
 **The read path has to return the child rows, or the presence rule deletes them.** Foundry's editor and the submission
 forms build their payload from `GET /api/content/browse/{type}/{slug}`, and that read used `AsNoTracking()` with no
 `Include`, so every child collection serialised as `[]` — the payload then *named* `ingredients: []`, and presence
@@ -133,7 +155,14 @@ Regression tests: `ContentWriteEndpointTests.An_ingredient_quantity_edit_through
 `A_recipe_saved_from_its_detail_payload_keeps_its_ingredients`,
 `A_loot_table_saved_from_its_detail_payload_keeps_its_entries`,
 `A_loot_entry_edited_through_the_detail_payload_is_persisted`, and
-`FoundryEndpointTests.Review_Should_Persist_An_Authored_Ingredient_Edit_On_Approval`.
+`FoundryEndpointTests.Review_Should_Persist_An_Authored_Ingredient_Edit_On_Approval`. The null-collection contract is
+pinned by `ContentWriteEndpointTests.A_put_naming_ingredients_as_null_is_refused_and_keeps_the_stored_rows`,
+`A_put_naming_entries_as_null_is_refused_and_keeps_the_stored_rows`,
+`A_put_naming_a_species_power_pool_as_null_is_refused_and_keeps_it`,
+`Validating_a_payload_with_a_null_collection_reports_the_issue_instead_of_failing`,
+`ContentChildRowsTests.ApplyNamedAsync_leaves_a_collection_the_payload_names_as_null_alone`,
+`Reconcile_leaves_a_collection_the_entity_carries_as_null_alone` and
+`NullChildCollectionValidationTests` (the rule for all seven collection-bearing families).
 
 ## Dialogue options (2026-11-20)
 `Dialogue` stops being only a line pool: `DialogueStats.Options` (owned, `List<DialogueOption>`) carries the choices a

@@ -76,7 +76,7 @@ public static class ContentWriteEndpoints
         }
 
         var catalog = await ContentReferenceCatalog.LoadAsync(db, ct);
-        var result = ContentEntityTypes.Registry.Validate(resolver.ContentType, entity, catalog);
+        var result = ContentEntityTypes.Validate(resolver, entity, db.Model, catalog);
         return Results.Ok(ValidationResponse.For(entity, result));
     }
 
@@ -106,7 +106,7 @@ public static class ContentWriteEndpoints
         incoming.Slug = slug;
 
         var catalog = await ContentReferenceCatalog.LoadAsync(db, ct);
-        var result = ContentEntityTypes.Registry.Validate(resolver.ContentType, incoming, catalog);
+        var result = ContentEntityTypes.Validate(resolver, incoming, db.Model, catalog);
         return Results.Ok(ValidationResponse.For(incoming, result));
     }
 
@@ -149,7 +149,7 @@ public static class ContentWriteEndpoints
         }
 
         var catalog = await ContentReferenceCatalog.LoadAsync(db, ct);
-        var result = ContentEntityTypes.Registry.Validate(resolver.ContentType, incoming, catalog);
+        var result = ContentEntityTypes.Validate(resolver, incoming, db.Model, catalog);
         if (!result.IsValid)
         {
             return Results.BadRequest(ValidationResponse.For(incoming, result));
@@ -218,7 +218,7 @@ public static class ContentWriteEndpoints
         }
 
         var catalog = await ContentReferenceCatalog.LoadAsync(db, ct);
-        var result = ContentEntityTypes.Registry.Validate(resolver.ContentType, incoming, catalog);
+        var result = ContentEntityTypes.Validate(resolver, incoming, db.Model, catalog);
         if (!result.IsValid)
         {
             return Results.BadRequest(ValidationResponse.For(incoming, result));
