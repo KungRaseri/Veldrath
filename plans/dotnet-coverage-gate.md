@@ -13,6 +13,23 @@
 > ([`codecov/codecov-report`](https://git.kungraseri.cloud/codecov/codecov-report), pinned tag) in
 > all four workflows; it produces the same `CoverageReport/Cobertura.xml`, and the floors were
 > re-verified against it unchanged.
+>
+> **Trigger set narrowed by PR #180 (2026-11-21):** the `pull_request.branches: [ main, development ]`
+> list this plan decided on — quoted in correction 3 and in the proposed `ci-coverage.yml` body
+> below — is superseded. [PR #180](https://git.kungraseri.cloud/Veldrath/Veldrath/pulls/180)
+> narrows `pull_request.branches` in the six component workflows and `docs.yml` to `[ development ]`,
+> keeps `[ main, development ]` on `merge-gate.yml` with `cancel-in-progress: false`, and changes the
+> lint rule in [`scripts/ci-merge-gate.sh`](../scripts/ci-merge-gate.sh:1): L3 requires
+> `development` rather than both branches, and a new L5 requires the merge gate to keep `main`. A
+> pull request into `main` is then judged by the merge gate alone; the `development` → `main` release
+> PR is the recurring case, and a pull request into `main` from a branch of its own would get the
+> component matrix back only by listing `main` again. The reason is measured, not assumed, and
+> recorded in [`docs/ci-forgejo.md`](../docs/ci-forgejo.md), "What runs where": a component
+> `pull_request` run of the release PR judges a `development` commit that the `push` lane has already
+> judged, and Forgejo records each superseded run as `failure / "Has been cancelled"` on the commit
+> it was started for. The workflow files themselves are the authority: while `pull_request.branches`
+> there still lists both branches, this note describes a change that has not merged yet. The proposal
+> body and the sentence in correction 3 record the November shape, not the shipped contract.
 
 **Decided 2026-11-03, measured on `kung-lab-hermes`, implemented since (PR #21, `ab5dfe72`).** The
 shipped gate is [`coverage-floors.json`](../scripts/coverage-floors.json:1) plus
@@ -70,8 +87,9 @@ So the gates do not run on the PRs that merge. What does run: `push` to `main` a
 attributed to PR #3, `base: main, head: development`). **Every existing check, including the web
 coverage gate, is post-merge only.** A coverage gate with the same trigger shape would be dead on
 arrival: it would report a regression after the merge that caused it. The new workflow therefore
-triggers on `pull_request: branches: [ main, development ]`, and aligning the other four is carded
-separately (P7), because it changes behaviour for every PR and deserves its own review.
+triggers on `pull_request: branches: [ main, development ]` — since narrowed to `[ development ]`
+by PR #180, see Status — and aligning the other four is carded separately (P7), because it changes
+behaviour for every PR and deserves its own review.
 
 ---
 
@@ -355,6 +373,12 @@ they are human-facing, and this plan does not turn them into gates.
 ```
 
 ### `.github/workflows/ci-coverage.yml`
+
+> **Proposal record, not the shipped workflow.** Everything below is the workflow as decided on
+> 2026-11-03. Its `pull_request.branches: [ main, development ]` was narrowed to `[ development ]`
+> by PR #180 (see Status); `push.branches` is unchanged and still lists both. The file in
+> [`.github/workflows/ci-coverage.yml`](../.github/workflows/ci-coverage.yml:1) is the contract, and
+> it wins wherever this block disagrees with it.
 
 ```yaml
 name: CI - .NET Coverage Gate
