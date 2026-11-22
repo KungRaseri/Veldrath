@@ -168,6 +168,51 @@ public class ContentValueCopyTests
     }
 
     /// <summary>
+    /// A null owned <em>object</em> is not an authored one either. Assigning it over the tracked row would null the
+    /// stored object — the payload shape the write path now refuses with <c>owned_object_null</c> — so a caller that
+    /// skipped validation must not be able to wipe it here. The scalar half of the copy still applies.
+    /// </summary>
+    [Fact]
+    public async Task ApplyAuthoredValues_leaves_an_owned_object_carried_as_null_alone()
+    {
+        var (connection, options) = await CreateDatabaseAsync();
+
+        using var keepAlive = connection;
+        await using var db = new ContentDbContext(options);
+
+        var existing = await db.ZoneLocations.SingleAsync(location => location.Slug == "drove-road");
+        existing.Stats.DangerLevel = 7;
+        existing.Stats.MinLevel = 3;
+        await db.SaveChangesAsync();
+
+        var authored = new ZoneLocation
+        {
+            Slug = existing.Slug,
+            TypeKey = existing.TypeKey,
+            DisplayName = "Drove Road (renamed)",
+            ZoneId = existing.ZoneId,
+            Stats = null!,
+            Traits = null!,
+        };
+
+        ContentValueCopy.ApplyAuthoredValues(authored, existing, db.Model);
+
+        existing.Stats.Should().NotBeNull("a null owned object is not an authored one");
+        existing.Stats.DangerLevel.Should().Be(7);
+        existing.Stats.MinLevel.Should().Be(3);
+        existing.Traits.Should().NotBeNull();
+        existing.DisplayName.Should().Be("Drove Road (renamed)", "the scalar half of the copy still applies");
+
+        await db.SaveChangesAsync();
+
+        await using var read = new ContentDbContext(options);
+        var stored = await read.ZoneLocations.SingleAsync(location => location.Slug == "drove-road");
+        stored.Stats.DangerLevel.Should().Be(7);
+        stored.Stats.MinLevel.Should().Be(3);
+        stored.Traits.Should().NotBeNull();
+    }
+
+    /// <summary>
     /// Creates an in-memory SQLite catalog holding one zone location with a two-entry owned spawn pool, and one language
     /// whose consonant inventory is an owned collection inside the owned <c>Phonology</c> object.
     /// </summary>

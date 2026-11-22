@@ -59,11 +59,26 @@ namespace RealmEngine.Data.Content;
 /// same defect is invisible to every entity navigation — a language's eleven lists all live in
 /// <c>Phonology</c>/<c>Morphology</c>/<c>RegisterSystem</c>, a quest's objectives and rewards are <c>items</c> lists
 /// inside owned JSON, and a dialogue's <c>Stats.Lines</c>/<c>Stats.Options</c> too. Those are reported with their dotted
-/// field (<c>phonology.consonants</c>) rather than a bare navigation name. A null <b>owned object</b>
-/// (<c>"stats": null</c>) is not this rule's case and keeps its own card (t_819ada90): it nulls the stored object, not a
-/// collection of elements, and <see cref="ContentValueCopy.ApplyAuthoredValues"/> has no guard for it. "Omitted means
-/// leave it alone" is honoured for owned values by the write path itself: the update PUT, the payload dry run and the
-/// review-queue approval fill the owned values a payload does not name from the row it replaces
+/// field (<c>phonology.consonants</c>) rather than a bare navigation name.
+/// </para>
+/// <para>
+/// <b>A null owned <em>object</em> is its own rule.</b> (<c>"stats": null</c>, <see cref="NullOwnedObjectIssues"/>,
+/// rule <c>owned_object_null</c>.) It is not a collection at all, so the collection walk never saw it: the deserialiser
+/// yields a null owned reference and the family validators dereference it (<c>entity.Stats.MinLevel</c>, formerly an
+/// unhandled 500). The contract is the collection one carried over to an object: <b>omitted</b> keeps the stored object
+/// (the update PUT, the dry run and the review-queue approval fill it from the row they replace,
+/// <see cref="ContentValueCopy.FillUnnamedOwnedValues"/> — a create has no stored row to fill from); a named object
+/// replaces only the leaves it names (an unnamed leaf is filled from the stored object, so <c>{}</c> keeps the stored
+/// shape and an authored <c>{"dangerLevel": null}</c> clears one leaf); and an explicit <c>null</c> is a shape error,
+/// refused by name. A null owned object never reaches a validator: <see cref="ContentEntityTypes.Validate"/> returns the
+/// shape issue before the family rules run, because a family rule can only dereference it. Defence in depth sits in the
+/// copy too — <see cref="ContentValueCopy.ApplyAuthoredValues"/> skips a null owned reference, and
+/// <see cref="ContentValueCopy.CopyOwnedInPlace"/> skips a null nested one — so a caller that skipped validation cannot
+/// null a stored object either.
+/// </para>
+/// <para>
+/// "Omitted means leave it alone" is honoured for owned values by the write path itself: the update PUT, the payload dry
+/// run and the review-queue approval fill the owned values a payload does not name from the row it replaces
 /// (<see cref="ContentValueCopy.FillUnnamedOwnedValues"/>) before deserialising (a create has no stored row to fill
 /// from). An omitted owned collection deserialises to its initializer (<c>[]</c>) and an omitted owned object to a fresh
 /// instance; without that fill the three shapes would read as four: omitted and <c>[]</c> would be the same wipe, and
@@ -291,6 +306,104 @@ public static class ContentChildRows
         }
 
         return issues;
+    }
+
+    /// <summary>
+    /// Reports every owned reference <paramref name="entity"/> carries as <c>null</c>: the owned objects each family
+    /// maps (<c>ZoneLocation.Stats</c>, <c>Item.Traits</c>, a language's <c>Phonology</c>/<c>Morphology</c>/
+    /// <c>RegisterSystem</c>, a quest's <c>Objectives</c>/<c>Rewards</c>) and any owned reference nested inside one.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// An omitted property deserialises to the owned object's initializer (<c>new()</c>), so a null here means the
+    /// payload named the object and gave it no value. That is a shape error, not an authoring choice: the write path
+    /// cannot read it as "keep the stored object" (the payload named it) and must not read it as "replace it with an
+    /// empty one" (the payload said nothing about its leaves). Worse, the null is not inert — the family validators
+    /// dereference the object (<c>entity.Stats.MinLevel</c>, <c>entity.Stats.Lines</c>) and the copy would assign the
+    /// null over the tracked row, so leaving it to them is an unhandled 500. The rule names the field so the author can
+    /// fix it: omit the property to keep the stored values, or send an object naming the leaves to replace.
+    /// </para>
+    /// <para>
+    /// It lives here, driven by the EF model, for the same reason as <see cref="NullCollectionIssues"/>: the owned
+    /// references are exactly what <see cref="ContentValueCopy.ApplyAuthoredValues"/> replaces wholesale, and several
+    /// families (class, species, material, …) run the structural validator, which reads none of them — a per-validator
+    /// check would leave their nulls reaching the copy. Every family the model maps is covered by walking
+    /// <c>GetNavigations()</c>, and the walk recurses into an owned object so a reference nested inside it (which the
+    /// model has none of today) is refused the same way instead of being discovered at runtime.
+    /// </para>
+    /// <para>
+    /// A stored entity is silent: owned JSON materialises every owned object as an instance, so only a payload that
+    /// names the field as null is refused. That is what keeps <c>GET /api/content/{type}/{slug}/validate</c> clean.
+    /// </para>
+    /// </remarks>
+    /// <param name="entity">The entity the payload describes.</param>
+    /// <param name="model">Model of the context that will store the entity.</param>
+    /// <returns>One error per null owned reference; empty when every one has a value.</returns>
+    public static IReadOnlyList<ContentIssue> NullOwnedObjectIssues(ContentBase entity, IModel model)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+        ArgumentNullException.ThrowIfNull(model);
+
+        if (model.FindEntityType(entity.GetType()) is not { } entityType)
+        {
+            return [];
+        }
+
+        var identifier = string.IsNullOrWhiteSpace(entity.Slug) ? null : entity.Slug;
+        var issues = new List<ContentIssue>();
+
+        foreach (var field in NullOwnedObjectsIn(entityType, entity, string.Empty))
+        {
+            issues.Add(new ContentIssue(
+                ContentRules.OwnedObjectNull,
+                $"'{entity.GetType().Name}' '{identifier ?? "(no slug)"}' names '{field}' as null. An explicit null is "
+                + "not an empty object: omit the property to leave the stored values alone, or send an object naming "
+                + "the leaves to replace.",
+                ContentIssueSeverity.Error,
+                field,
+                identifier));
+        }
+
+        return issues;
+    }
+
+    /// <summary>
+    /// Names the owned references of <paramref name="instance"/> that are <c>null</c>, as camelCase field names relative
+    /// to the entity.
+    /// </summary>
+    /// <remarks>
+    /// The walk recurses through an owned reference so a nested object is reported with its dotted field
+    /// (<c>stats.movement</c>) instead of a leaf name that matches the owner of another family. Collections are skipped
+    /// here — <see cref="NullCollectionIssues"/> owns them, including the ones inside an owned object.
+    /// </remarks>
+    /// <param name="type">Entity type of <paramref name="instance"/>.</param>
+    /// <param name="instance">The entity or owned value to walk.</param>
+    /// <param name="prefix">Dotted prefix of the field names, empty for the entity itself.</param>
+    /// <returns>The null owned reference names, camelCase and dotted.</returns>
+    private static IEnumerable<string> NullOwnedObjectsIn(IEntityType type, object instance, string prefix)
+    {
+        foreach (var navigation in type.GetNavigations())
+        {
+            if (navigation.IsCollection
+                || !navigation.TargetEntityType.IsOwned()
+                || navigation.PropertyInfo is not { CanRead: true } property)
+            {
+                continue;
+            }
+
+            var field = $"{prefix}{CamelCase(navigation.Name)}";
+
+            if (property.GetValue(instance) is not { } value)
+            {
+                yield return field;
+                continue;
+            }
+
+            foreach (var nested in NullOwnedObjectsIn(navigation.TargetEntityType, value, $"{field}."))
+            {
+                yield return nested;
+            }
+        }
     }
 
     /// <summary>

@@ -398,6 +398,14 @@ public class ContentWriteEndpointTests(WebAppFactory factory)
         return await db.Quests.AsNoTracking().SingleAsync(quest => quest.Slug == slug);
     }
 
+    /// <summary>Reads a dialogue and its owned stats object back through a fresh context.</summary>
+    private async Task<Dialogue> StoredDialogueAsync(string slug)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ContentDbContext>();
+        return await db.Dialogues.AsNoTracking().SingleAsync(dialogue => dialogue.Slug == slug);
+    }
+
     /// <summary>
     /// A quest with one objective that resolves against the seeded catalog, so the only issue a write of it can raise is
     /// the one under test.
@@ -962,6 +970,116 @@ public class ContentWriteEndpointTests(WebAppFactory factory)
         var after = await StoredZoneLocationAsync(slug);
         after.Stats.DangerLevel.Should().Be(7, "an omitted owned object is not an authored empty one");
         after.Stats.MinLevel.Should().Be(before.Stats.MinLevel);
+    }
+
+    /// <summary>
+    /// The explicit-null half of the owned-object contract. An explicit <c>null</c> is neither "omit the property"
+    /// (keep the stored object) nor an authored empty one: the deserialiser yields a null owned reference and every
+    /// family validator dereferences it (<c>entity.Stats.MinLevel</c>), so the write used to answer 500. It has to be
+    /// refused by name, with the stored object and its version intact.
+    /// </summary>
+    [Fact]
+    public async Task A_put_naming_an_owned_object_as_null_is_refused_and_keeps_the_stored_values()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-owned-object-null-{Guid.NewGuid():N}";
+
+        (await client.PostAsync("/api/content/zonelocation", Json(ZoneLocationPayload(slug, ("giant-rat", 60)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var before = await StoredZoneLocationAsync(slug);
+        before.Stats.DangerLevel.Should().Be(7);
+        var minLevel = before.Stats.MinLevel;
+
+        var payload = await DetailPayloadAsync(client, "zonelocation", slug);
+        payload["stats"] = null;
+
+        var refused = await client.PutAsync($"/api/content/zonelocation/{slug}", JsonObjectContent(payload));
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest, await refused.Content.ReadAsStringAsync());
+
+        var body = await refused.Content.ReadFromJsonAsync<JsonElement>();
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.OwnedObjectNull
+            && issue.GetProperty("field").GetString() == "stats");
+
+        // Refused means nothing was written: same version, same stored object.
+        var after = await StoredZoneLocationAsync(slug);
+        after.Version.Should().Be(before.Version);
+        after.Stats.Should().NotBeNull();
+        after.Stats.DangerLevel.Should().Be(7);
+        after.Stats.MinLevel.Should().Be(minLevel);
+
+        // The stored row still validates clean, because owned JSON materialises as an instance.
+        var validate = await client.GetAsync($"/api/content/zonelocation/{slug}/validate");
+        validate.StatusCode.Should().Be(HttpStatusCode.OK, await validate.Content.ReadAsStringAsync());
+        var validated = await validate.Content.ReadFromJsonAsync<JsonElement>();
+        validated.GetProperty("isValid").GetBoolean().Should().BeTrue();
+    }
+
+    /// <summary>
+    /// The 500 the card cites is <c>DialogueValidator</c> dereferencing <c>entity.Stats.Lines</c>. A null <c>stats</c>
+    /// on a dialogue must be the named shape issue, not an unhandled exception.
+    /// </summary>
+    [Fact]
+    public async Task A_put_naming_a_dialogue_stats_object_as_null_is_refused_instead_of_failing()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-owned-object-dialogue-null-{Guid.NewGuid():N}";
+
+        var created = await client.PostAsync("/api/content/dialogue", Json(new
+        {
+            slug,
+            typeKey = "greetings",
+            displayName = "Owned Object Dialogue",
+            rarityWeight = 50,
+            isActive = true,
+            speaker = "townsfolk",
+            stats = new { lines = new[] { "Well met, traveller." } },
+        }));
+        created.StatusCode.Should().Be(HttpStatusCode.Created, await created.Content.ReadAsStringAsync());
+
+        var payload = await DetailPayloadAsync(client, "dialogue", slug);
+        payload["stats"] = null;
+
+        var refused = await client.PutAsync($"/api/content/dialogue/{slug}", JsonObjectContent(payload));
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest, await refused.Content.ReadAsStringAsync());
+
+        var body = await refused.Content.ReadFromJsonAsync<JsonElement>();
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.OwnedObjectNull
+            && issue.GetProperty("field").GetString() == "stats");
+
+        var after = await StoredDialogueAsync(slug);
+        after.Version.Should().Be(1);
+        after.Stats.Should().NotBeNull();
+        after.Stats.Lines.Should().BeEquivalentTo("Well met, traveller.");
+    }
+
+    /// <summary>
+    /// The dry run takes the same payload, so it has to report the shape issue rather than answer 500 from inside a
+    /// validator. It also proves the dry run's fill does not turn an explicit null into the stored object: the payload
+    /// names the property, so the null is preserved and refused.
+    /// </summary>
+    [Fact]
+    public async Task Validating_a_payload_with_a_null_owned_object_reports_the_issue_instead_of_failing()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-owned-object-validate-null-{Guid.NewGuid():N}";
+
+        (await client.PostAsync("/api/content/zonelocation", Json(ZoneLocationPayload(slug, ("giant-rat", 60)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var payload = await DetailPayloadAsync(client, "zonelocation", slug);
+        payload["stats"] = null;
+
+        var validated = await client.PostAsync($"/api/content/zonelocation/{slug}/validate", JsonObjectContent(payload));
+        validated.StatusCode.Should().Be(HttpStatusCode.OK, await validated.Content.ReadAsStringAsync());
+
+        var body = await validated.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("isValid").GetBoolean().Should().BeFalse();
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.OwnedObjectNull
+            && issue.GetProperty("field").GetString() == "stats");
     }
 
     /// <summary>

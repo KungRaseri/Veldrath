@@ -103,13 +103,17 @@ public static class ContentEntityTypes
     /// <para>
     /// This is the single entry point for "is this entity usable", so the HTTP endpoint, the <c>validate</c> dry run and
     /// the review-queue approval cannot disagree about a problem — the same reason they share <see cref="Registry"/>.
-    /// It exists because one rule needs the EF model and the entity, not just one of them: a child-row collection present
-    /// as JSON <c>null</c> (<see cref="ContentChildRows.NullCollectionIssues"/>). A family validator cannot see that
-    /// — several families have no rule of their own that reads their collections — and leaving it to the reconcile would
-    /// delete the stored rows.
+    /// Two rules need the EF model and the entity, not just one of them: a child-row or owned collection present as JSON
+    /// <c>null</c> (<see cref="ContentChildRows.NullCollectionIssues"/>) and an owned-object reference present as
+    /// <c>null</c> (<see cref="ContentChildRows.NullOwnedObjectIssues"/>). A family validator cannot see either — several
+    /// families have no rule of their own that reads their collections — and leaving the collection case to the
+    /// reconcile would delete the stored rows while leaving the object case to a validator is a null dereference.
     /// </para>
     /// <para>
-    /// The shape issues are merged ahead of the family's so a caller reading the first error reads the real cause.
+    /// The shape issues are merged ahead of the family's so a caller reading the first error reads the real cause. A
+    /// null owned object is the one shape that stops the family validator from running at all: the family rules that
+    /// read it dereference it by design (<c>entity.Stats.MinLevel</c>), which is exactly the unhandled 500 the shape
+    /// rule replaces, so the named issue is the whole answer.
     /// </para>
     /// </remarks>
     /// <param name="resolver">Resolved content type of <paramref name="entity"/>.</param>
@@ -128,7 +132,17 @@ public static class ContentEntityTypes
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(catalog);
 
-        var shapeIssues = ContentChildRows.NullCollectionIssues(entity, model);
+        var shapeIssues = new List<ContentIssue>(ContentChildRows.NullCollectionIssues(entity, model));
+        var nullOwnedObjects = ContentChildRows.NullOwnedObjectIssues(entity, model);
+        shapeIssues.AddRange(nullOwnedObjects);
+
+        // An owned object carried as null is not an entity a family validator can inspect; it dereferences it by
+        // design. Report the shape issue by name and stop, rather than crashing before the caller can read it.
+        if (nullOwnedObjects.Count > 0)
+        {
+            return new ContentValidationResult(shapeIssues);
+        }
+
         var result = Registry.Validate(resolver.ContentType, entity, catalog);
 
         return shapeIssues.Count == 0
