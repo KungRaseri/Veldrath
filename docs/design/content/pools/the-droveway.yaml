@@ -5,12 +5,18 @@
 # rejects an unknown spawn archetype (missing-spawn-archetype, Error), and 15 of the pooled
 # archetypes are not seeded. These files move to content/zonelocations/ once they are — the
 # translation is written out in pool-matrix.md §8.
-# Roster size is engine-fixed at 2-4 per location (ActorPoolResolver.cs:27-28). There is no
-# per-location roster field, so none is authored here — do not invent one.
-# Weights are RELATIVE integers (ActorPoolResolver.cs:187-198), never percentages, and must be
+# The roster roll is 2-4 per location, from one global const pair (ActorPoolResolver.cs:32-33,
+# rolled at :94), and it is a fill target, not a cap: the location's placed hostile instances
+# go in first and the pool fills from their count up to the roll (:117). Five or more hostile
+# placements at one location would exceed it.
+# There is no per-location roster field, so none is authored here — do not invent one.
+# Weights are RELATIVE integers (ActorPoolResolver.cs:193-204), never percentages, and must be
 # >= 1. The importer must not normalise them; only the ratio is meaningful.
 # "excluded: true" with an empty pool is authored content, not an omission: a town, a respawn
-# point or a dungeon lobby deliberately spawns nothing (ActorPoolResolver.cs:80-86).
+# point or a dungeon lobby that has no pool and no placements deliberately spawns nothing
+# (ActorPoolResolver.cs:86-92). An empty pool does not suppress the location's hostile
+# placements — those spawn on their own, exactly as placed, never topped up (:111-115) — and a
+# non-hostile placement is dropped with a warning (:100-106).
 schema_version: 1
 zone: the-droveway
 region: varenmark
