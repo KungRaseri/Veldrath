@@ -460,6 +460,9 @@ namespace Veldrath.Server.Migrations
                     b.Property<DateTimeOffset>("SpawnedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("StatsVersion")
+                        .HasColumnType("integer");
+
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
                         .HasColumnType("bigint");

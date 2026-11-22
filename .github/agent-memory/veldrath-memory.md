@@ -434,13 +434,14 @@ Full World → Region → Zone hierarchy implemented.
 
 **Zone entity** (`Zone.cs`): `Id` (slug), `Name`, `Description`, `ZoneType Type`, `MinLevel`, `MaxPlayers`, `IsStarter`, `HasInn`, `HasMerchant`, `IsPvpEnabled`, `IsDiscoverable`, `IsDevOnly`, `RescueFundTotal`, `RegionId` FK + `Region` nav, `ICollection<PlayerSession> Sessions`
 
-**Seed data (Veldrath world)**, re-derived from `ApplicationDataSeeder.cs`:
+**Seed data (Veldrath world)**, re-derived from `ApplicationDataSeeder.cs` (text lives in `WorldCanonText.cs`, which the seeder and `WorldCanonSweep` both read):
 - 1 World: `veldrath` / "Veldrath" / era "The Ashen Age (the Age of Reclaiming)"
 - 4 Regions: `varenmark` (Countryside, 0–6, starter), `greymoor` (Highland, 5–14), `saltcliff` (Coastal, 10–20), `cinderplain` (Volcanic, 18–30)
 - 6 RegionConnections: varenmark↔greymoor, greymoor↔saltcliff, greymoor↔cinderplain (bidirectional)
 - 19 Zones, of which `playground` is `IsDevOnly = true` and never returned by the public APIs (`ZoneRepository` filters on it)
 - 5 `ZoneType.Dungeon` zones: `the-halrow`, `drowning-pits`, `barrow-deeps`, `sunken-name`, `kaldrek-maw` (display name "The Maw" — slugs are opaque keys and do not carry canon)
 - **Starter zone**: `crestfall` (Crestfall, Varenmark)
+- **Canon sweep**: on the Postgres startup path `WorldCanonSweep` rewrites a seeded value only when it still carries a retired token or *exactly* equals an entry in `WorldCanonText.KnownStaleValues` (that set holds the pre-rewrite `World.Description`, which names nothing retired). A future reword with no retired token must have its old string recorded there; until then the sweep reports the field in `DriftedFields` and leaves it alone. Drift is reported for `Worlds`/`Regions`/`Zones` only — `Maps`/`MapNodes`/`ZoneLocations` are also written by the Foundry editor, so divergence there is authored content.
 
 **Character default zone**: `Character.StartingZoneId = "crestfall"` (`Character.cs:55`); first location is `crestfall-square` (`CharacterCreationSessionEndpoints.cs:37`)
 
@@ -1016,18 +1017,32 @@ the session; the three `Dockerfile.dev` fixes remained uncommitted at audit end.
 - Migrations: `20261021172256_AddMapGraph` (Data), `20261021172306_AddCharacterMapPosition` (Server).
 - `IMapGraphRepository` / `EfCoreMapGraphRepository`; DI registration in `Veldrath.Server/Program.cs`.
 
-**Importer + seeder**
-- `RealmEngine.Data/Import/TmxToMapGraphImporter.cs` is pure (no DB/TMX repo dependency); input is
-  `MapGraphImportCatalog` + in-memory `TiledMap` dictionaries.
-- Region maps: TMX `zones`, `region_exits`, `spawns`, `paths`; zone maps: TMX `labels`, `exits`, `spawns`,
-  `paths`, supplemented by `ZoneLocation` and `ZoneLocationConnection` rows.
-- Generates deterministic edge GUIDs (SHA-256 of map/from/direction/to) and unique layout positions.
-- `MapGraphImportReport` separates warnings (auto-connected, synthesized exits, direction conflicts) from
-  errors (unknown refs, missing target maps/nodes).
-- `RealmEngine.Data/Seeders/MapGraphSeeder.cs` is the generated snapshot: **23 maps / 130 nodes / 196 edges**.
-  It does not read TMX. Wired into `DatabaseSeeder` after zone-location connections.
-- Fresh Postgres verification: counts matched; second server start left counts unchanged (idempotent).
-- `MapGraphSeederTests` assert exact counts, structural validity, and idempotency.
+**Importer + seeder** — the importer this session built has been deleted; the seeder is hand-authored and is the
+source of truth. Counts below re-derived from the three seeders at `development` `3d3320ac` (2026-11-20), not
+carried forward from the session-44 snapshot (that one said 23 / 130 / 196 and is superseded).
+- **`TmxToMapGraphImporter` is gone**: deleted in `dff88e83` (phase 7b, 2026-10-22) with its tests, fixtures and
+  the whole TMX asset tree. No map-graph importer ships. `RealmEngine.Data/Import/` holds only
+  `MapGraphImportModels.cs` (catalog/report records), and the only remaining reference to those types is
+  `RealmEngine.Data.Tests/DataLayerStubAndReportTests.cs` — nothing produces a `MapGraphImportCatalog` any more.
+  `RealmEngine.Data/Authoring/ContentPacks/ContentPackImporter.cs` is the content-pack importer and unrelated.
+- `RealmEngine.Data/Seeders/MapGraphSeeder.cs` authors the graph directly: **23 maps (4 region + 19 zone), 134
+  nodes, 208 edges**, plus a seed-time walk chain (`ConnectZoneEntriesToLocations`, `:85-105`) that adds **90 more
+  `Walk` edges — 298 edges once seeded**. `MapGraphSeederTests` asserts 23 / 134 / 298 and idempotency.
+- Nodes by type: `EntryPoint` 23, `Zone` 18, `RegionExit` 17, `Location` 67, `ZoneExit` 9. Eighteen `Zone` nodes
+  for nineteen zone maps because `playground` (`IsDevOnly`) sits on no region map.
+- Edges by type before the chain: `Walk` 152, `ExitToRegion` 35, `ExitToZone` 21; after it, `Walk` 242.
+- The chain is per zone map: entry → each `Location` node in `SortOrder`, one hop each way. 39 of those hop
+  directions already existed as authored edges, and 5 were dropped because the source node already used all four
+  cardinal directions (`zone:crestfall` 2, `zone:playground` 3). All 67 `Location` nodes still have a path from
+  their zone's entry node (BFS over the seeded edges).
+- `LinkRegionZonesToZoneMaps` (`:46-65`) sets `TargetMapId = zone:<RefId>` on every region `Zone` node, because
+  `TravelToNodeHubCommand` only loads another map when the node names one.
+- `ZoneLocationsSeeder.cs`: **67 `ZoneLocation` rows over 19 zones** — 37 `TypeKey = "locations"`, 17
+  `"environments"`, 13 `"dungeons"`. `playground` holds 13 and `soddenfen` 2; every other zone 3, except
+  `crestfall` with 4.
+- `ZoneLocationsConnectionSeeder.cs`: **11 `ZoneLocationConnection` rows, Crestfall only** (8 `walk`, 2 `exit`,
+  1 `region_exit`) over four location slugs. **No handler or repository reads that table** — in-zone movement is
+  the map graph's `Walk` edges, so these rows are inert seed data.
 
 **Server navigation**
 - `GetMapGraphHubCommand`: resolves current map (or explicit), filters hidden nodes/edges using
@@ -4752,3 +4767,24 @@ thirteen rows of `docs/design/content/towns.md` §4, and `ArchetypeSeeder` carri
 - **Playground stays shopless on purpose.** `ZoneStockSeeder` has no `playground` rows and `LocationNpcsSeeder` places
   nobody there: the sandbox is `IsDevOnly`, its locations are fixtures, and inventing a roster would be inventing a
   settlement. Its shop refuses with `NoMerchant`, which is the documented decision.
+
+## Enemy Instance Rows Carry Their Spawn-Projection Version (2026-11-20)
+
+`EnemyInstances` rows snapshot `MaxHealth`, `BaseXp` and `GoldReward` at spawn (`EfCoreEnemyInstanceStore.ToEntity`),
+and every read, save and respawn takes those numbers from the row. That is deliberate — a mid-fight enemy must not
+change because content was retuned — but it is also why rows written before E1 (PR #103, the archetype→template stat
+projection) kept the flat 50 HP / 25 XP / 10 gold forever: nothing in production deletes an enemy row.
+
+- `EnemyInstance.StatsVersion` (`CurrentStatsVersion = 1`) is the marker. The migration
+  `AddEnemyInstanceStatsVersion` adds the column with `DEFAULT 0`, so every row that already existed reads 0
+  (pre-projection) while every spawn from now on stamps 1 in `ToEntity`. That is how "created before the deploy" is
+  known without guessing from timestamps or values.
+- `EfCoreEnemyInstanceStore.ReconcileStaleStatsAsync` runs from `SettleLocationAsync` (a location read, before any
+  respawn) and from `SweepExpiredRespawnsAsync` (before the batch is revived). It refreshes max health and base XP for
+  stale rows whether alive or dead, clamping `CurrentHealth` to the new maximum, but re-rolls `GoldReward` only for
+  **dead** rows — that column is what the kill path awards, so a living row keeps it and is left un-stamped so the
+  reward is refreshed at its first death. The deterministic update only matches rows whose values differ, so a
+  converged row costs no write. `TryMarkDeadAsync`'s single conditional UPDATE is untouched.
+- Tests: `Veldrath.Server.Tests/Features/EnemyInstanceStatsReconciliationTests.cs` (8 facts, one of them the real seeded
+  catalog through the real projection). Seven of them fail on the old store; the eighth pins that a missing archetype
+  leaves the row alone.

@@ -318,6 +318,10 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
 
             var ids = due.Select(e => e.Id).ToList();
 
+            // The sweeper can beat a player to a legacy row, so it reconciles the batch before reviving it: a row
+            // that came back on the flat template stats would live one more whole life on them.
+            var reconciled = await ReconcileStaleStatsAsync(due, cancellationToken);
+
             await _db.EnemyInstances
                 .Where(e => ids.Contains(e.Id))
                 .ExecuteUpdateAsync(
@@ -342,14 +346,23 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
             _logger.LogDebug("Respawn sweep revived {Count} enemy row(s)", due.Count);
 
             return due
-                .Select(e => new EnemyRespawnedEvent(
-                    e.Id,
-                    e.ZoneGroup,
-                    e.LocationSlug,
-                    e.Name,
-                    e.Level,
-                    e.MaxHealth,
-                    e.MaxHealth))
+                .Select(e =>
+                {
+                    // The row was revived from the column, so report what the column now holds rather than the
+                    // pre-reconciliation snapshot this batch was read with.
+                    var maxHealth = reconciled.TryGetValue(e.Id, out var template)
+                        ? Math.Max(1, template.MaxHealth)
+                        : e.MaxHealth;
+
+                    return new EnemyRespawnedEvent(
+                        e.Id,
+                        e.ZoneGroup,
+                        e.LocationSlug,
+                        e.Name,
+                        e.Level,
+                        maxHealth,
+                        maxHealth);
+                })
                 .ToList();
         }
         finally
@@ -363,7 +376,8 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
 
     /// <summary>
     /// Brings a location's rows back in line with the world: zero-health enemies that are still flagged alive are
-    /// killed (a crash between saving health and the death transition), and enemies whose respawn time has passed
+    /// killed (a crash between saving health and the death transition), enemy rows written before the archetype
+    /// stats were projected onto spawns are rebuilt from their archetype, and enemies whose respawn time has passed
     /// come back at full health with their participants cleared.
     /// </summary>
     /// <param name="zoneGroup">SignalR zone group.</param>
@@ -402,6 +416,20 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
             DetachTracked(brokenRows);
         }
 
+        // Rows written before the archetype stats were projected onto spawns would keep the flat template stats for
+        // the rest of their life — every read, save and respawn takes the stored numbers. Reconcile them before
+        // anything is revived, so a respawn comes back at the archetype's maximum rather than the stored one.
+        var staleRows = await _db.EnemyInstances
+            .AsNoTracking()
+            .Where(e => e.ZoneGroup == zoneGroup && e.LocationSlug == locationSlug &&
+                        e.StatsVersion < EnemyInstance.CurrentStatsVersion)
+            .ToListAsync(cancellationToken);
+
+        if (staleRows.Count > 0)
+        {
+            await ReconcileStaleStatsAsync(staleRows, cancellationToken);
+        }
+
         var expired = await _db.EnemyInstances
             .Where(e => e.ZoneGroup == zoneGroup && e.LocationSlug == locationSlug &&
                         !e.IsAlive && e.RespawnAt != null && e.RespawnAt <= now)
@@ -435,6 +463,107 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
             expired.Count,
             zoneGroup,
             locationSlug);
+    }
+
+    /// <summary>
+    /// Rebuilds the stored combat stats of rows written before the archetype stats were projected onto spawns.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A row is stale when its <see cref="EnemyInstance.StatsVersion"/> is below
+    /// <see cref="EnemyInstance.CurrentStatsVersion"/>. That is how "created before the deploy" is known without
+    /// guessing from timestamps or values: the column did not exist when those rows were written, so the migration
+    /// that adds it backfills zero, while every spawn from now on stamps the current version.
+    /// </para>
+    /// <para>
+    /// Max health and base XP are deterministic, so they are refreshed for stale rows whether the enemy is alive or
+    /// dead, with <see cref="EnemyInstance.CurrentHealth"/> clamped to the new maximum. Gold is not: the column is
+    /// the amount the kill path awards, so a living row keeps the value it was born with and only a dead row — which
+    /// is between fights, its previous award already paid — is re-rolled from the archetype's range. Dead rows are
+    /// also the only rows stamped, because only they are fully reconciled; a living row stays stale, so the reward
+    /// is refreshed at its first death, and the deterministic update matches nothing once the row has converged.
+    /// </para>
+    /// </remarks>
+    /// <param name="rows">Rows that may be stale; rows already at the current version are ignored.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The archetype each reconciled row was rebuilt from, keyed by enemy id.</returns>
+    private async Task<Dictionary<Guid, Enemy>> ReconcileStaleStatsAsync(
+        IReadOnlyCollection<EnemyInstance> rows,
+        CancellationToken cancellationToken)
+    {
+        var reconciled = new Dictionary<Guid, Enemy>();
+        var stale = rows.Where(row => row.StatsVersion < EnemyInstance.CurrentStatsVersion).ToList();
+
+        if (stale.Count == 0)
+        {
+            return reconciled;
+        }
+
+        foreach (var group in stale.GroupBy(row => row.ArchetypeSlug, StringComparer.OrdinalIgnoreCase))
+        {
+            var template = await _archetypes.ResolveArchetypeAsync(group.Key);
+            if (template is null)
+            {
+                // Same rule as a read: missing content is reported, never substituted, and the row keeps what it has.
+                _logger.LogError(
+                    "Cannot reconcile the stored stats of {Count} enemy row(s): archetype '{ArchetypeSlug}' is no longer in the catalogue",
+                    group.Count(),
+                    group.Key);
+                continue;
+            }
+
+            var maxHealth = Math.Max(1, template.MaxHealth);
+            var baseXp = Math.Max(1, template.XP);
+            var ids = group.Select(row => row.Id).ToList();
+
+            foreach (var row in group)
+            {
+                reconciled[row.Id] = template;
+            }
+
+            // Only the rows that actually differ: a living row that has already converged stays un-stamped, and
+            // rewriting it on every read of the location would be a write per read for no change.
+            await _db.EnemyInstances
+                .Where(e => ids.Contains(e.Id) &&
+                            e.StatsVersion < EnemyInstance.CurrentStatsVersion &&
+                            (e.MaxHealth != maxHealth || e.BaseXp != baseXp || e.CurrentHealth > maxHealth))
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(e => e.MaxHealth, maxHealth)
+                        .SetProperty(e => e.BaseXp, baseXp)
+                        .SetProperty(
+                            e => e.CurrentHealth,
+                            e => e.CurrentHealth > maxHealth ? maxHealth : e.CurrentHealth)
+                        .SetProperty(e => e.Version, e => e.Version + 1),
+                    cancellationToken);
+
+            var deadIds = group.Where(row => !row.IsAlive).Select(row => row.Id).ToList();
+            if (deadIds.Count == 0)
+            {
+                continue;
+            }
+
+            await _db.EnemyInstances
+                .Where(e => deadIds.Contains(e.Id) &&
+                            !e.IsAlive &&
+                            e.StatsVersion < EnemyInstance.CurrentStatsVersion)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(e => e.GoldReward, Math.Max(0, template.GoldReward))
+                        .SetProperty(e => e.StatsVersion, EnemyInstance.CurrentStatsVersion)
+                        .SetProperty(e => e.Version, e => e.Version + 1),
+                    cancellationToken);
+
+            _logger.LogInformation(
+                "Reconciled {Count} pre-projection enemy row(s) of archetype '{ArchetypeSlug}' to its newest stats",
+                deadIds.Count,
+                group.Key);
+        }
+
+        // ExecuteUpdate bypasses the change tracker, so drop any tracked copy and let the next read see the row.
+        DetachTracked(stale.Select(row => row.Id));
+
+        return reconciled;
     }
 
     /// <summary>
@@ -556,6 +685,9 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
             MaxHealth = enemy.MaxHealth,
             BaseXp = enemy.BaseXp,
             GoldReward = enemy.GoldReward,
+            // Built from the current spawn projection, so there is nothing to reconcile: the reconciliation exists
+            // only for rows written before the archetype stats reached the template.
+            StatsVersion = EnemyInstance.CurrentStatsVersion,
             IsAlive = enemy.IsAlive,
             SpawnedAt = DateTimeOffset.UtcNow,
             Version = 1,
