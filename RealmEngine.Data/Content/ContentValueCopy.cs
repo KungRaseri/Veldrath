@@ -41,7 +41,10 @@ public static class ContentValueCopy
     /// <para>
     /// An owned collection is assigned wholesale, so an authored <c>null</c> would clear the stored elements. A null is
     /// not an authored set (<see cref="ContentChildRows.NullCollectionIssues"/> refuses the payload before it gets here),
-    /// and skipping the assignment keeps the stored elements even for a caller that did not validate first.
+    /// and skipping the assignment keeps the stored elements even for a caller that did not validate first. The same
+    /// guard applies one level in, to a collection nested inside an owned object (<c>Phonology.Consonants</c>,
+    /// <c>Objectives.Items</c>, <c>Stats.Lines</c>), where <see cref="CopyOwnedInPlace"/> keeps the stored elements of a
+    /// null collection instead of assigning it.
     /// </para>
     /// </remarks>
     /// <param name="incoming">The entity authored by the editor or the pack.</param>
@@ -255,9 +258,20 @@ public static class ContentValueCopy
             var value = property.GetValue(source);
             var current = property.GetValue(target);
 
+            var isCollection = property.PropertyType != typeof(string)
+                && typeof(System.Collections.IEnumerable).IsAssignableFrom(property.PropertyType);
+
+            // A null collection is not an authored set: assigning it would clear the stored elements. A collection
+            // nested inside an owned object is the same case — no entity navigation carries it, so the payload-shape
+            // rule has to walk for it and this keeps the stored elements for a caller that skipped validation.
+            if (value is null && isCollection)
+            {
+                continue;
+            }
+
             var isNestedOwned = property.PropertyType.IsClass
                 && property.PropertyType != typeof(string)
-                && !typeof(System.Collections.IEnumerable).IsAssignableFrom(property.PropertyType);
+                && !isCollection;
 
             if (isNestedOwned && value is not null && current is not null)
             {

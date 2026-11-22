@@ -796,11 +796,61 @@ public class ContentWriteEndpointTests(WebAppFactory factory)
         Errors(body).EnumerateArray().Should().Contain(issue =>
             issue.GetProperty("rule").GetString() == ContentRules.QuestWithoutObjectives);
 
+        // The model-driven walk names it as a shape error too, which is what makes the class closed for every family
+        // whose validator never reads the list.
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.ChildCollectionNull
+            && issue.GetProperty("field").GetString() == "objectives.items");
+
         // Refused means nothing was written: same version, same objectives.
         var after = await StoredQuestAsync(slug);
         after.Version.Should().Be(before.Version);
         after.Objectives.Items.Select(objective => objective.Target)
             .Should().BeEquivalentTo(before.Objectives.Items.Select(objective => objective.Target));
+    }
+
+    /// <summary>
+    /// The same defect one level further in, on a family where it is not just a lost field: every one of a language's
+    /// eleven lists lives inside owned JSON, no entity navigation carries them, and <c>language</c> runs the structural
+    /// validator, which reads none of them — so a per-validator <c>?? []</c> cannot reach the class. Measured before the
+    /// walk existed: `"phonology": {"consonants": null}` answered 200, stored the null, and then 500'd both
+    /// <c>GET /api/content/languages</c> and <c>GET /api/content/languages/{slug}</c> (the repository dereferences
+    /// `Phonology.Consonants`), taking the whole catalog down until the row was repaired.
+    /// </summary>
+    [Fact]
+    public async Task A_put_naming_a_language_phonology_list_as_null_is_refused_and_keeps_the_catalog_readable()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+
+        var before = await StoredLanguageAsync("calethic");
+        before.Phonology.Consonants.Should().NotBeEmpty("the seeded calethic has a consonant inventory to lose");
+        var consonants = before.Phonology.Consonants.Count;
+        var junctionRules = before.Phonology.JunctionRules.Count;
+
+        var payload = await DetailPayloadAsync(client, "language", "calethic");
+        payload["phonology"]!["consonants"] = null;
+
+        var refused = await client.PutAsync("/api/content/language/calethic", JsonObjectContent(payload));
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest, await refused.Content.ReadAsStringAsync());
+
+        var body = await refused.Content.ReadFromJsonAsync<JsonElement>();
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.ChildCollectionNull
+            && issue.GetProperty("field").GetString() == "phonology.consonants");
+
+        // Refused means nothing was written: same version, same inventory, and the sibling lists in the same owned
+        // object are untouched.
+        var after = await StoredLanguageAsync("calethic");
+        after.Version.Should().Be(before.Version);
+        after.Phonology.Consonants.Should().HaveCount(consonants);
+        after.Phonology.JunctionRules.Should().HaveCount(junctionRules);
+
+        // The read family a stored null crashed still answers — for the row and for the whole catalog.
+        var catalog = await client.GetAsync("/api/content/languages");
+        catalog.StatusCode.Should().Be(HttpStatusCode.OK, await catalog.Content.ReadAsStringAsync());
+
+        var detail = await client.GetAsync("/api/content/languages/calethic");
+        detail.StatusCode.Should().Be(HttpStatusCode.OK, await detail.Content.ReadAsStringAsync());
     }
 
     /// <summary>

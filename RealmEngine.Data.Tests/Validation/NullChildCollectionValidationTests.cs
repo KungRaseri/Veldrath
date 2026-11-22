@@ -16,16 +16,18 @@ namespace RealmEngine.Data.Tests.Validation;
 /// content entity arrives carrying a null collection. The rule is one shared check in
 /// <see cref="ContentChildRows.NullCollectionIssues"/> so it covers the families whose own validator never reads the
 /// collection — species, class, archetype, instance and power only check their scalars and their inverse navigations are
-/// not authored at all — and the owned <c>ZoneLocation.ActorPool</c>, which <c>ContentValueCopy.ApplyAuthoredValues</c>
-/// assigns wholesale.
+/// not authored at all — the owned <c>ZoneLocation.ActorPool</c>, which <c>ContentValueCopy.ApplyAuthoredValues</c>
+/// assigns wholesale, and the collections nested one level inside an owned object (<c>phonology.consonants</c>,
+/// <c>stats.lines</c>, <c>objectives.items</c>), which no entity navigation carries and the structural validator never
+/// reads.
 /// </remarks>
 [Trait("Category", "Validation")]
 public class NullChildCollectionValidationTests
 {
     /// <summary>
-    /// Every collection-bearing family the content map resolves — seven child-row families plus the owned
-    /// <c>ZoneLocation.ActorPool</c>: the payload-shape rule reports the field, and the family validator neither throws
-    /// nor contradicts it.
+    /// Every collection-bearing family the content map resolves — the seven child-row families, the owned
+    /// <c>ZoneLocation.ActorPool</c>, and the lists nested inside owned objects: the payload-shape rule reports the
+    /// field, and the family validator neither throws nor contradicts it.
     /// </summary>
     [Fact]
     public async Task A_null_child_collection_is_an_error_naming_the_field_for_every_family_that_has_one()
@@ -99,6 +101,32 @@ public class NullChildCollectionValidationTests
                 ZoneId = "fenwick-crossing",
                 ActorPool = null!,
             }),
+            // One level in: `Phonology.Consonants` is an owned collection inside owned JSON. No entity navigation
+            // carries it, `language` runs the structural validator (which reads none of the eleven lists), and a stored
+            // null 500s every language read via EfCoreLanguageRepository.
+            ("language", "phonology.consonants", new Language
+            {
+                Slug = "null-child-language",
+                TypeKey = "imperial",
+                DisplayName = "Null Child Language",
+                Phonology = new LanguagePhonology { Consonants = null! },
+            }),
+            // One level in, primitive collection: `Stats.Lines` is a JSON array of strings on owned JSON.
+            ("dialogue", "stats.lines", new Dialogue
+            {
+                Slug = "null-child-dialogue",
+                TypeKey = "greetings",
+                DisplayName = "Null Child Dialogue",
+                Stats = new DialogueStats { Lines = null! },
+            }),
+            // One level in, with two lists that share a leaf name: the field has to name the owner.
+            ("quest", "objectives.items", new Quest
+            {
+                Slug = "null-child-quest",
+                TypeKey = "side",
+                DisplayName = "Null Child Quest",
+                Objectives = new QuestObjectives { Items = null! },
+            }),
         ];
 
         foreach (var (typeKey, field, entity) in cases)
@@ -130,8 +158,9 @@ public class NullChildCollectionValidationTests
             Slug = "null-quest",
             TypeKey = "side",
             DisplayName = "Null",
-            // Nested inside the owned object: no entity navigation carries it, so the payload-shape rule cannot see
-            // it and this validator has to tolerate it on its own.
+            // Nested inside the owned object: no entity navigation carries it. The payload-shape rule now walks one
+            // level into owned objects and refuses it by name, but this validator is also called directly (the offline
+            // pack validator and the CI guard do), so it has to tolerate the null on its own as well.
             Objectives = new QuestObjectives { Items = null! },
         };
         var dialogue = new Dialogue
@@ -141,11 +170,23 @@ public class NullChildCollectionValidationTests
             DisplayName = "Null",
             Stats = new DialogueStats { Lines = null! },
         };
+        var language = new Language
+        {
+            Slug = "null-language",
+            TypeKey = "imperial",
+            DisplayName = "Null",
+            Phonology = new LanguagePhonology { Consonants = null! },
+        };
 
         registry.Validate("recipe", recipe, ContentReferenceCatalog.Empty).Issues.Should().NotBeEmpty();
         registry.Validate("loottable", loot, ContentReferenceCatalog.Empty).Issues.Should().NotBeEmpty();
         registry.Validate("zonelocation", location, ContentReferenceCatalog.Empty).Issues.Should().NotBeEmpty();
         registry.Validate("dialogue", dialogue, ContentReferenceCatalog.Empty).Issues.Should().NotBeEmpty();
+
+        // A family whose validator never reads its owned lists (`language` runs the structural rules only) must not
+        // throw either: the shape rule refuses the payload, and the validator reads past it.
+        FluentActions.Invoking(() => registry.Validate("language", language, ContentReferenceCatalog.Empty))
+            .Should().NotThrow("the structural validator never reads the owned phonology lists");
 
         // A null nested collection is the same class of shape error as a null child-row collection: it must read as
         // "no objectives" (the rule this validator already reports), not as a NullReferenceException.

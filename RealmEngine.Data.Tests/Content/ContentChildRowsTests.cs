@@ -256,6 +256,117 @@ public class ContentChildRowsTests
     }
 
     /// <summary>
+    /// The rule reaches <b>one level into an owned object</b>, where no entity navigation carries the list: every one of
+    /// a language's lists lives inside <c>Phonology</c>/<c>Morphology</c>/<c>RegisterSystem</c>, and a null there is
+    /// stored, wipes the seeded inventory, and then 500s the language read family
+    /// (<c>EfCoreLanguageRepository</c> dereferences <c>Phonology.Consonants</c>).
+    /// </summary>
+    [Fact]
+    public async Task NullCollectionIssues_names_a_collection_nested_inside_an_owned_object()
+    {
+        var (connection, options) = await CreateDatabaseAsync();
+
+        using var keepAlive = connection;
+        await using var db = new ContentDbContext(options);
+
+        var issues = ContentChildRows.NullCollectionIssues(
+            new Language
+            {
+                Slug = "calethic",
+                TypeKey = "imperial",
+                DisplayName = "Calethic",
+                Phonology = new LanguagePhonology
+                {
+                    // An owned collection (OwnsMany) and a primitive collection (PrimitiveCollection) are different
+                    // metadata; a null in either one reaches the JSON column.
+                    Consonants = null!,
+                    AllowedSyllablePatterns = null!,
+                },
+                Morphology = new LanguageMorphology { Roots = null! },
+            },
+            db.Model);
+
+        issues.Select(issue => issue.Field).Should().BeEquivalentTo(
+            "phonology.consonants",
+            "phonology.allowedSyllablePatterns",
+            "morphology.roots");
+        issues.Should().OnlyContain(issue =>
+            issue.Rule == ContentRules.ChildCollectionNull && issue.Severity == ContentIssueSeverity.Error);
+        issues.Should().OnlyContain(issue => issue.Identifier == "calethic");
+    }
+
+    /// <summary>
+    /// The primitive-collection half on a second family: a dialogue's lines are a JSON array of strings, not owned rows,
+    /// and the reader that dereferences them is the dialogue validator.
+    /// </summary>
+    [Fact]
+    public async Task NullCollectionIssues_names_a_primitive_collection_nested_inside_an_owned_object()
+    {
+        var (connection, options) = await CreateDatabaseAsync();
+
+        using var keepAlive = connection;
+        await using var db = new ContentDbContext(options);
+
+        var issues = ContentChildRows.NullCollectionIssues(
+            new Dialogue
+            {
+                Slug = "greeting-woods",
+                TypeKey = "greetings",
+                DisplayName = "Greeting",
+                Stats = new DialogueStats { Lines = null! },
+            },
+            db.Model);
+
+        issues.Should().ContainSingle();
+        issues[0].Rule.Should().Be(ContentRules.ChildCollectionNull);
+        issues[0].Field.Should().Be("stats.lines");
+    }
+
+    /// <summary>
+    /// The quest shape, which is what the round-3 review found on the validator side: both lists are <c>items</c> inside
+    /// an owned object, so the two fields are distinguished by their owner rather than by the leaf name.
+    /// </summary>
+    [Fact]
+    public async Task NullCollectionIssues_distinguishes_two_nested_lists_with_the_same_leaf_name()
+    {
+        var (connection, options) = await CreateDatabaseAsync();
+
+        using var keepAlive = connection;
+        await using var db = new ContentDbContext(options);
+
+        var issues = ContentChildRows.NullCollectionIssues(
+            new Quest
+            {
+                Slug = "null-nested-quest",
+                TypeKey = "side",
+                DisplayName = "Null Nested Quest",
+                Objectives = new QuestObjectives { Items = null! },
+                Rewards = new QuestRewards { Items = null! },
+            },
+            db.Model);
+
+        issues.Select(issue => issue.Field).Should().BeEquivalentTo("objectives.items", "rewards.items");
+    }
+
+    /// <summary>
+    /// A stored entity is silent: owned JSON materialises every list as a list, so the rule only fires on a payload that
+    /// names one as null — which is what keeps <c>GET /api/content/{type}/{slug}/validate</c> clean.
+    /// </summary>
+    [Fact]
+    public async Task NullCollectionIssues_is_silent_for_a_stored_entity_whose_nested_lists_are_initialized()
+    {
+        var (connection, options) = await CreateDatabaseAsync();
+
+        using var keepAlive = connection;
+        await using var db = new ContentDbContext(options);
+
+        ContentChildRows.NullCollectionIssues(
+                new Language { Slug = "calethic", TypeKey = "imperial", DisplayName = "Calethic" },
+                db.Model)
+            .Should().BeEmpty();
+    }
+
+    /// <summary>
     /// A replaced child that still carries the surrogate id it was read with must be inserted under a fresh id: the
     /// stored row it came from is deleted in the same save, so reusing the id would collide.
     /// </summary>
