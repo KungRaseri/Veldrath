@@ -199,7 +199,7 @@ three `cinderling` zone-list deviations reported as warnings, not failures (§7)
 
 ## 3. The matrix
 
-`band` is the D0 budget band of the location's `MinLevel`. `roster` is 2–4 for every row because the
+`band` is the D0 budget band of the location's `MinLevel`. `roster` is **the rolled** 2–4 for every row because the
 engine has one global constant pair and no per-location field — the column exists so nobody adds one
 without noticing (`ActorPoolResolver.cs:32-33`, `:94`). Read it as the **fill target, not a cap**: the
 location's placed hostile instances are added first and the pool fills from their count up to the roll

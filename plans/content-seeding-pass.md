@@ -56,9 +56,9 @@ with `SafeRespawn = true` / `IsDungeon = false` that acts as its lobby (`halrow-
 ### P0 — nothing spawns anywhere (measured 2026-11-17; **fixed 2026-11-18** — pools on every hostile location)
 
 `ZoneLocations.ActorPool` is empty on all 67 rows and
-[`ActorPoolResolver.SpawnRosterAsync`](../Veldrath.Server/Features/Characters/Combat/ActorPoolResolver.cs:80-86) returns
+[`ActorPoolResolver.SpawnRosterAsync`](../Veldrath.Server/Features/Characters/Combat/ActorPoolResolver.cs:86-92) returns
 an empty roster when a location has no pool **and** nothing placed — **by design**, so the old "one random `common` enemy"
-fallback could not silently fake a missing pool. Hostile placements still spawn (`:105-109`). Consequences:
+fallback could not silently fake a missing pool. Hostile placements still spawn (`:111-115`). Consequences:
 
 - `TravelToNodeHubCommand` and `EnterZoneLocationHubCommand` spawn nothing, so the HUD's "Local" panel can only say
   "Nothing hostile is lurking here right now."
@@ -77,7 +77,7 @@ rooms (4–17). Towns, inns, markets and the `SafeRespawn` lobbies stay empty.
 #76): 36 of 67 locations carry one, every key is a real location slug, and
 `Every_other_location_can_spawn_something` fails the build if a hostile location goes quiet. Both arrival
 commands spawn from the pool, and the empty-pool branch this section quotes now sits at
-`ActorPoolResolver.cs:80-86`.
+`ActorPoolResolver.cs:86-92`.
 
 ### P1 — two hostile archetypes cannot carry a level 1–20 world (**fixed 2026-11-18**)
 
@@ -126,7 +126,7 @@ which made the character look alive to the very command that respawns it. Death 
 
 ### P1 — a level-1 character cannot win any fight (**fixed 2026-11-17**)
 
-A new character has **10 HP** (the attribute blob's `MaxHealth`), and a location spawns **2–4** actors whose weakest
+A new character has **10 HP** (the attribute blob's `MaxHealth`), and a location spawns **2–4** pool-drawn actors whose weakest
 swing is 3–5. One exchange killed the level-1 warrior outright, so *victory* is arithmetically impossible for a new
 character anywhere in the world. The engagement spec therefore asserts the exchange rather than a kill.
 
@@ -223,7 +223,7 @@ to actually be standing with the character.
 |---|---|---|
 | C0 | Branch off `development`; correct the two documents that carry the bad `SafeRespawn` finding; record the PascalCase JSON trap | `plans/` and the memory agree with the code |
 | C1 | Archetypes per level band, with stats, traits and a `LootTableRef` each | `SeededContentValidationTests` passes; every archetype's loot table resolves |
-| C2 | Spawn pools: hostile locations only, weighted, matching each location's `MinLevel`/`MaxLevel` | the HUD's "Local" panel lists hostiles in every band; a `--fresh` run spawns 2–4 per visit |
+| C2 | Spawn pools: hostile locations only, weighted, matching each location's `MinLevel`/`MaxLevel` | the HUD's "Local" panel lists hostiles in every band; a `--fresh` run spawns its rolled 2–4 per visit |
 | C3 | NPC placement: innkeepers and smiths in town/inn pools; one quest giver with dialogue | a player can see and talk to an NPC without a GM |
 | C4 | Loot and quests: wire drops, retire or author the orphan tables, fix the three quests' targets and text, add one quest per starter zone | every quest's objective target exists and can be produced |
 | C5 | Harvesting: seed at least one harvestable node per woods location so `gather-mushrooms` is completable | a collect objective can be finished in game |
@@ -407,7 +407,7 @@ back to a neutral line so an unauthored speaker still answers), sends `NpcTalked
 
 **One guard, so this cannot happen again.** `EfCoreEnemyRepository` now carries hostility into the `Enemy`
 projection (`traits["hostile"]`, defaulting to hostile when the archetype says nothing), and
-[`ActorPoolResolver`](../Veldrath.Server/Features/Characters/Combat/ActorPoolResolver.cs:127-133) leaves a non-hostile
+[`ActorPoolResolver`](../Veldrath.Server/Features/Characters/Combat/ActorPoolResolver.cs:133-139) leaves a non-hostile
 archetype out of the combat roster and says so in the log. A future content edit that drops a blacksmith into a
 spawn pool therefore produces a warning, not a punching bag.
 
