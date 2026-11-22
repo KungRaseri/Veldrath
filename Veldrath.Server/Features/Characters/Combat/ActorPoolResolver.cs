@@ -12,9 +12,14 @@ namespace Veldrath.Server.Features.Characters.Combat;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A roster is the placed instances of the location — each exactly once — plus pool draws filling it out to the rolled
-/// size of 2–4. A location with placements and no pool therefore spawns exactly its placements, and a location with
-/// neither spawns nothing: that is a safe town, authored content rather than an error.
+/// A roster is the hostile placed instances of the location — each exactly once — plus pool draws filling it out to the
+/// rolled size of 2–4. A location with hostile placements and no pool therefore spawns exactly those placements, never
+/// topped up; a location with neither spawns nothing — a safe town, authored content rather than an error.
+/// </para>
+/// <para>
+/// A placement whose archetype is explicitly non-hostile is treated like a non-hostile pool entry: logged and skipped,
+/// never turned into a target and never replaced. Only an explicit <c>hostile</c> trait of
+/// <see langword="false"/> drops one; a missing trait still counts as hostile.
 /// </para>
 /// <para>
 /// The resolver's draws (roster size and the weighted pick) and the gold roll the archetype projection makes both
@@ -57,15 +62,16 @@ public class ActorPoolResolver
     }
 
     /// <summary>
-    /// Spawns a roster for a location: every placed instance once, then pool draws up to the rolled 2–4. An empty or
-    /// <see langword="null"/> pool with nothing placed means "nothing spawns here" — authored content, as in a safe
-    /// town, not an error — so the method returns an empty roster and spawns nothing instead of substituting a default
-    /// archetype. Pool entries whose archetype is unknown or not hostile are logged and skipped, never replaced.
+    /// Spawns a roster for a location: every hostile placed instance once, then pool draws up to the rolled 2–4. An
+    /// empty or <see langword="null"/> pool with nothing placed means "nothing spawns here" — authored content, as in a
+    /// safe town, not an error — so the method returns an empty roster and spawns nothing instead of substituting a
+    /// default archetype. Pool entries whose archetype is unknown or not hostile are logged and skipped, never
+    /// replaced, and a non-hostile placement is skipped the same way.
     /// </summary>
     /// <param name="pool">Weighted archetype entries for this location, or <see langword="null"/>.</param>
     /// <param name="placements">
     /// Named instances placed at this location, or <see langword="null"/>/empty. Optional and last, so every existing
-    /// call site keeps its meaning.
+    /// call site keeps its meaning. One whose archetype is not hostile is logged and left out of the roster.
     /// </param>
     /// <returns>A list of ready-to-use <see cref="SpawnedEnemy"/> instances.</returns>
     public async Task<List<SpawnedEnemy>> SpawnRosterAsync(
