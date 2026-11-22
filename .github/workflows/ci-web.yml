@@ -411,6 +411,12 @@ jobs:
 
       # The server migrates and seeds its databases at startup, so only the connection string
       # and the shared secrets/jwt settings are needed here.
+      #
+      # Enemies__* shortens the world's respawn clocks for this job only, the same way the local
+      # stack does (`scripts/e2e-stack.sh`). The A1 journey keeps fighting a location's spawn pool
+      # until a kill drops loot, because which entries land is the production roll and is not
+      # pinned; meeting the same pool again needs the defeated row to come back inside the spec's
+      # patience. Drop chances are untouched — only the clock that revives a row.
       - name: Start Veldrath.Server
         working-directory: Veldrath.Server
         run: |
@@ -423,6 +429,9 @@ jobs:
           InternalBridge__Token="$INTERNAL_BRIDGE_TOKEN" \
           RateLimit__AdminActionsPerMinute=600 \
           RateLimit__FoundryWritesPerMinute=600 \
+          Enemies__RespawnDelaySeconds=2 \
+          Enemies__SweepIntervalSeconds=1 \
+          Enemies__ClearedRoomRespawnMultiplier=1 \
           nohup dotnet run --no-launch-profile > "$RUNNER_TEMP/server.log" 2>&1 &
           for attempt in $(seq 1 60); do
             sleep 3
@@ -434,6 +443,18 @@ jobs:
           echo "server did not become healthy" >&2
           tail -n 120 "$RUNNER_TEMP/server.log" >&2
           exit 1
+
+      # The spawned catalogue a spec walks into has to be the one the packs author. The server's
+      # seeders are insert-only, so a pack that *changes* a seeded row — the Ashlen Wood pools do —
+      # lands only when it is imported. Order is the documented one: a loot table before the
+      # archetype that names it, and both before the zone pack that names those archetypes.
+      # `import` is idempotent, so a re-run reports zero created and zero updated.
+      - name: Import the content packs
+        run: |
+          for family in loottables archetypes zonelocations; do
+            dotnet run --project Veldrath.ContentPack -- import "content/$family" \
+              --database "Host=postgres;Port=5432;Database=veldrath;Username=postgres;Password=postgres"
+          done
 
       - name: Install Playwright browser
         working-directory: web

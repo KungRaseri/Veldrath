@@ -24,10 +24,18 @@
 #   scripts/e2e-stack.sh status             # exit 0 when both are reachable
 #   scripts/e2e-stack.sh api-stop           # stop only the API (the Postgres data survives)
 #   scripts/e2e-stack.sh api-start          # bring only the API back
+#   scripts/e2e-stack.sh catalogue          # re-import the shipped content packs into the running stack
 #
 # `--fresh` deletes the e2e compose volume, so a green run means "works against the seed", not "works
 # against whatever this machine accumulated". `api-stop`/`api-start` exist for the upstream-failure
 # spec, which takes the API away and checks that the app says so instead of rendering a blank page.
+#
+# `catalogue` is the isolated-catalogue import the A1 journey needs, and `start` runs it too: the
+# server seeds the catalog at startup and the seeders are insert-only, so a pack that *changes* a
+# seeded row (ashlen-wood's pools are exactly that) only lands when it is imported. The packs go in
+# dependency order — a loot table before the archetype that names it, both before the zone pack that
+# names the archetypes — and a command that imports the same directory twice must report zero
+# created and zero updated the second time.
 #
 # The specs themselves expect the matching environment, which `npm run test:e2e:stack` sets:
 #   E2E_STACK=1 E2E_API_PORT=9100 E2E_DB_PORT=55432 E2E_WEB_PORT=4273
@@ -143,6 +151,9 @@ launch_api() {
       RateLimit__FoundryWritesPerMinute=600 \
       Chests__SweepIntervalSeconds=5 \
       Chests__ReopenAfterMinutes=1 \
+      Enemies__RespawnDelaySeconds=2 \
+      Enemies__SweepIntervalSeconds=1 \
+      Enemies__ClearedRoomRespawnMultiplier=1 \
       nohup dotnet run --no-launch-profile >"$LOG_FILE" 2>&1 &
     echo $! >"$PID_FILE"
   )
@@ -168,6 +179,30 @@ start_postgres() {
   return 1
 }
 
+# Imports the shipped content packs into the stack's own catalogue, in reference order.
+#
+# The catalog is *seeded* by the server at startup, and every seeder is insert-only: an existing slug
+# is never revisited (docs/content-packs.md). A pack that changes a seeded row therefore lands only
+# when it is imported, which is exactly what the ashlen-wood zone pack does to the two interim spawn
+# pools the seeder wrote before the roster existed. The order is the documented one — a loot table
+# before the archetype that names it, and both before a zone pack that names those archetypes by slug.
+#
+# Runs against the stack's own database only, and is idempotent: `catalogue` is how the second run is
+# checked by hand, and it must print "created 0 updated 0" for every family.
+CATALOGUE_FAMILIES=(loottables archetypes zonelocations)
+
+import_catalogue() {
+  local connection="Host=localhost;Port=$DB_PORT;Database=$DB_NAME;Username=$DB_USER;Password=$DB_PASSWORD"
+  local family
+
+  for family in "${CATALOGUE_FAMILIES[@]}"; do
+    [ -d "$ROOT/content/$family" ] || continue
+    log "importing content/$family"
+    ( cd "$ROOT" && dotnet run --project Veldrath.ContentPack -- import "content/$family" --database "$connection" ) ||
+      { log "import of content/$family failed: nothing else was imported"; return 1; }
+  done
+}
+
 # Deletes the e2e database and lets the container's init script recreate the auth role, schema and grants.
 fresh_database() {
   log "--fresh: stopping the API and dropping the e2e volume"
@@ -189,6 +224,11 @@ start() {
 
   # The server migrates and seeds its own databases at startup, so a fresh volume needs nothing else.
   launch_api
+
+  # Then the packs, in reference order: the seed is what the packs are checked against, and the zone
+  # pack replaces the two interim spawn pools the seed wrote. A failure here must stop the start — a
+  # half-imported catalogue would surface as a puzzling spec failure instead of a named one.
+  import_catalogue
 
   log "ready: api http://127.0.0.1:$API_PORT, preview http://localhost:$WEB_PORT, database :$DB_PORT"
   log "run the specs with: cd web && npm run test:e2e:stack"
@@ -217,11 +257,18 @@ status() {
   return $((1 - ok))
 }
 
+catalogue() {
+  "${COMPOSE[@]}" exec -T postgres pg_isready -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1 ||
+    { log "postgres is not running; start the stack first"; exit 1; }
+  import_catalogue
+}
+
 case "${1:-start}" in
   start) start "${2:-}" ;;
   stop) stop ;;
   status) status ;;
   api-stop) api_stop ;;
   api-start) api_start ;;
-  *) echo "usage: $0 {start [--fresh]|stop|status|api-stop|api-start}" >&2; exit 2 ;;
+  catalogue) catalogue ;;
+  *) echo "usage: $0 {start [--fresh]|stop|status|api-stop|api-start|catalogue}" >&2; exit 2 ;;
 esac

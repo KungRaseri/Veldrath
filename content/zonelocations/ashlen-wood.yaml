@@ -1,0 +1,85 @@
+# content/zonelocations/ashlen-wood.yaml
+#
+# The import shape of docs/design/content/pools/ashlen-wood.yaml (D4, pool-matrix.md §8), translated
+# by card t_7d498df7 (A1). The design file stays the design set; this is the pack the importer reads.
+#
+# A pack entity owns the whole row (docs/content-packs.md, "Limits worth knowing"), so every authored
+# value below is the one RealmEngine.Data/Seeders/ZoneLocationsSeeder.cs writes for that slug —
+# displayName, typeKey, zoneId, rarityWeight, stats and traits. The one authored value that is NOT the
+# seeder's is `actorPool`: the seeder's interim pools for wood-road and old-clearing are pre-roster
+# pairs (giant-rat/goblin-scout/wolf, written as percentages-looking weights), and the design replaced
+# them with relative-integer pools. Importing this pack is what replaces them; a second run reports
+# zero changes because the importer compares the stored row with this file value for value.
+#
+# Weights are relative integers (ActorPoolResolver.cs:193-204), never percentages, and must be >= 1.
+# The importer does not normalise them; only the ratio is meaningful. Slugs and weights are the
+# design's, preserved entry for entry.
+#
+# strangled-oak is authored here with an empty pool on purpose: it is the zone's SafeRespawn point
+# and it is hidden behind a passive DC 5 check. An empty pool is authored content, not an omission —
+# it spawns nothing and the design keeps it that way (pool-matrix.md §4).
+#
+# Coverage for this zone (design check, not a field the importer reads):
+#   locations 3 | pooled 2 (wood-road, old-clearing) | excluded 1 (strangled-oak)
+family: zonelocation
+entities:
+  - slug: wood-road
+    displayName: The Wood Road
+    typeKey: environments
+    zoneId: ashlen-wood
+    rarityWeight: 80
+    isActive: true
+    stats:
+      size: 5
+      dangerLevel: 2
+      population: 40
+      minLevel: 1
+      maxLevel: 5
+    traits:
+      isIndoor: false
+    # band: b1-3 (D0 budget) | location L1-5 | design: goblin-scout 6, forest-wolf 4
+    actorPool:
+      - archetypeSlug: goblin-scout
+        weight: 6
+      - archetypeSlug: forest-wolf
+        weight: 4
+
+  - slug: old-clearing
+    displayName: The Old Clearing
+    typeKey: environments
+    zoneId: ashlen-wood
+    rarityWeight: 70
+    isActive: true
+    stats:
+      size: 3
+      dangerLevel: 3
+      population: 15
+      minLevel: 2
+      maxLevel: 5
+    traits:
+      isIndoor: false
+    # band: b1-3 (D0 budget) | location L2-5 | design: forest-wolf 6, goblin-scout 4
+    actorPool:
+      - archetypeSlug: forest-wolf
+        weight: 6
+      - archetypeSlug: goblin-scout
+        weight: 4
+
+  - slug: strangled-oak
+    displayName: The Strangled Oak
+    typeKey: locations
+    zoneId: ashlen-wood
+    rarityWeight: 30
+    isActive: true
+    stats:
+      size: 1
+      dangerLevel: 4
+      minLevel: 2
+      maxLevel: 5
+    traits:
+      safeRespawn: true
+      isHidden: true
+      unlockType: skill_check_passive
+      discoverThreshold: 5
+    # Empty by design: SafeRespawn + hidden (passive DC 5). A safe island inside a hostile wood.
+    actorPool: []

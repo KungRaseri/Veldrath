@@ -37,6 +37,7 @@
 				"E2E_DB_PORT": "55432"
 			},
 			"specs": [
+				"tests/a1-ashlen-wood.e2e.ts",
 				"tests/admin-console.e2e.ts",
 				"tests/dialogue.e2e.ts",
 				"tests/editorial-publishing.e2e.ts",
