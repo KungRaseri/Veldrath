@@ -23,9 +23,14 @@ Every page of the app loads the 1.65 MB crest; the header loads the 1.04 MB word
 A page that renders a 124px-wide logo must not download a 1916px one. The rules below exist so that
 the next asset does not repeat this.
 
-The second problem: **no editable source is committed.** The PNGs are the only masters. Any
-correction — a favicon that reads at 16px, a print version, a colour variant — currently requires
-redrawing the mark from scratch.
+The second problem: **the marks have no editable vector master.** The three PNGs above are the only
+masters of the logo, so a correction — a favicon that reads at 16px, a print version, a colour
+variant — means redrawing the mark from scratch.
+
+Painted artwork is a different case, and this document does not ask for its working file. The plates,
+masks, layered sources, build recipe, reference names and generation records behind a painted export
+are production artefacts: they live outside the repository, and only the export commits
+([§2](#2-formats)).
 
 ---
 
@@ -42,7 +47,18 @@ redrawing the mark from scratch.
 **Alpha, always.** No file in `web/client/static/images/` carries a background. No baked glow, bloom,
 shadow or vignette around a mark — the interface applies its own shadows and a baked one doubles.
 
-**Sources.** Deliver the layered or vector master alongside the raster exports, named per [§5](#5-naming-convention).
+**Sources — the vector master ships.** Everything the table above makes an SVG — the marks, the
+lockups, custom icons, the favicon SVG — is committed beside its raster sizes, named per
+[§5](#5-naming-convention). Without it the next correction is a redraw, which is the problem
+[§1](#1-the-problem-this-document-fixes) names.
+
+**Sources — the working file does not ship.** The plates, masks, layered sources, build recipe,
+reference names and generation records behind a painted export are its working file, and a working file
+is a production artefact, not a delivery: it stays outside the repository under
+`~/creative-assets/veldrath/2d/` — the archetype family in `2d/archetypes/` — and is never committed.
+The PNG-24 in the table above is the raster master; the file it came from is not one. This is a
+recorded decision, not an omission: [the archetype visual system](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/development/docs/design/content/archetype-visuals.md)
+§5.2 states it for the family that forced the question, and it governs every painted family.
 
 ---
 
