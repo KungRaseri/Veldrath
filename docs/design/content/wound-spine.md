@@ -134,7 +134,7 @@ is open lore item 4 and this spine neither uses nor denies it (§6, §7).
 
 All five sit inside band `b23-26`. The "band" column is the sub-band the zone's own locations should
 carry; "zone L" is the single number the `Zone` row takes, matching the seeded convention
-(`ZoneLocationsSeeder.cs`: every zone is commented `(Type, L<number>)`).
+(`ZoneLocationsSeeder.cs`: every world zone is commented `(Type, L<number>)`).
 
 | # | slug | display name (Calethic) | one-line character | band | zone L | what the player does there | what it refuses to explain |
 |---|---|---|---|---|---|---|---|
