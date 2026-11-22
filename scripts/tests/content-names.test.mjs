@@ -17,6 +17,12 @@
  * them too. On that tree `Orveld` is both an attested form and an authored citation one letter from
  * the attested `Gorveld`, so the check must treat a citation as canon rather than a coinage.
  *
+ * It also pins the rule that replaced the `Orneld`/`Orveld` permit. A bold name inside a rename note
+ * is a citation of a past state, so it is reported and never compared; a permit would have silenced
+ * the pair everywhere, including a zone table that coined the retired name all over again. The
+ * negative controls below are the difference between the two: the note's citation passes, a table
+ * row — even one abutting the note — and an ordinary-prose bold assertion fail.
+ *
  * Run with: node --test scripts/tests/content-names.test.mjs
  */
 import assert from 'node:assert/strict';
@@ -27,7 +33,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { after, describe, test } from 'node:test';
 
-import { extractAuthorityNames, historicalTableRanges, normalizeName, withinDistance } from '../check-content-names.mjs';
+import { extractAuthorityNames, findCollisions, historicalTableRanges, normalizeName, provenanceNoteRanges, withinDistance } from '../check-content-names.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..');
@@ -302,18 +308,81 @@ describe('the tree where F2 has landed', () => {
 		// `Orveld` is attested and the rename note also bolds it; `Gorveld` is attested and one
 		// letter away. Both are canon, so no author can rename their way out — it must not fail.
 		assert.doesNotMatch(result.stdout, /Gorveld/);
-		assert.match(result.stdout, /No collisions\. 2 allowlisted pair\(s\)/);
+		assert.match(result.stdout, /No collisions\. 1 allowlisted pair\(s\)/);
+		// No permit covers the retirement note any more, and none is stale: the rule replaced it
+		// outright rather than scoping it to a line that the next edit would move.
+		assert.doesNotMatch(result.stdout, /Orneld/);
+		assert.doesNotMatch(result.stdout, /STALE/);
 	});
 
-	test('keeps reporting the real coinage collisions on that tree', () => {
+	test('treats the retired name in a rename note as a citation, not a declaration', () => {
 		const root = copyF2Fixture();
 
-		const result = check(root, '--no-allowlist');
+		const raw = check(root, '--no-allowlist');
+
+		assert.equal(raw.status, 1, raw.stdout);
+		assert.match(raw.stdout, /plus \d+ citation\(s\) in a rename note \(not compared\)/);
+		assert.doesNotMatch(raw.stdout, /"Orneld" ↔ "Orveld"/);
+		// The only coinage collision left is the one D5 declined to block: no permit is spent on the
+		// retirement note any more.
+		assert.match(raw.stdout, /FAIL {2}distance 1 \(authored\/authority\): "Draekeld" ↔ "Drakeld"/);
+		assert.match(raw.stdout, /1 collision\(s\)\./);
+	});
+
+	test('names the exempted citation and where it sits', () => {
+		const root = copyF2Fixture();
+
+		const result = check(root, '--verbose');
+
+		assert.equal(result.status, 0, result.stdout + result.stderr);
+		const citations = result.stdout.split('Citations in a rename note')[1] ?? '';
+		assert.match(citations, /Orneld {2}— docs\/design\/content\/wound-spine\.md:26/);
+	});
+
+	test('fails when a zone table coins the retired name again', () => {
+		const root = copyF2Fixture();
+		addTableRow(root, `${AUTHORED}/wound-spine.md`, '| 6 | `orneld` | **Orneld** | 26–27 |');
+
+		const result = check(root);
 
 		assert.equal(result.status, 1, result.stdout);
-		assert.match(result.stdout, /FAIL {2}distance 1 \(authored\/authored \+ authored\/authority\): "Orneld" ↔ "Orveld"/);
-		assert.match(result.stdout, /"Draekeld" ↔ "Drakeld"/);
-		assert.doesNotMatch(result.stdout, /Gorveld/);
+		assert.match(result.stdout, /FAIL {2}distance 1 .*"Orneld" ↔ "Orveld"/);
+		// Named at the table row, not at the note: the row is the declaration that fails.
+		assert.match(
+			result.stdout,
+			/Orneld\s+— docs\/design\/content\/wound-spine\.md:\d+ {2}\[table column "display name \(Calethic\)"\]/
+		);
+	});
+
+	test('fails when the retired name is bolded in ordinary prose', () => {
+		const root = copyF2Fixture();
+		const text = read(root, `${AUTHORED}/wound-spine.md`);
+		write(
+			root,
+			`${AUTHORED}/wound-spine.md`,
+			`${text}\n## 6. Elsewhere\n\nThe old survey still calls the third zone **Orneld**; the rename retired that name.\n`
+		);
+
+		const result = check(root);
+
+		assert.equal(result.status, 1, result.stdout);
+		assert.match(result.stdout, /"Orneld" ↔ "Orveld"/);
+		assert.match(result.stdout, /\[bold prose assertion\]/);
+	});
+
+	test('fails when a table row abuts the rename note', () => {
+		const root = copyF2Fixture();
+		const text = read(root, `${AUTHORED}/wound-spine.md`);
+		// No blank line between the note and the table. The note's range ends at the table, so the
+		// row is a declaration and the citation rule cannot be used to smuggle a name back in.
+		const table = '| # | slug | display name (Calethic) | band |\n|---|---|---|---|\n| 6 | `orneld` | **Orneld** | 26–27 |\n';
+		write(root, `${AUTHORED}/wound-spine.md`, `${text}${table}`);
+
+		const result = check(root);
+
+		assert.equal(result.status, 1, result.stdout);
+		assert.match(result.stdout, /"Orneld" ↔ "Orveld"/);
+		assert.match(result.stdout, /\[table column "display name \(Calethic\)"\]/);
 	});
 
 	test('still fails on a new coinage of the renamed zone', () => {
@@ -335,5 +404,63 @@ describe('the tree where F2 has landed', () => {
 		assert.ok(attested.includes('Orveld'), 'the body attests Orveld');
 		assert.ok(!attested.includes('Orneld'), 'the session log only cites Orneld as retired');
 		assert.ok(!attested.includes('Gaelraeth'), 'the session log only cites Gaelraeth as retired');
+	});
+});
+
+describe('rename notes', () => {
+	test('reads a bold Renamed/Retired lede as a note, including a bulleted one', () => {
+		const text = readFileSync(join(f2Fixture, AUTHORED, 'wound-spine.md'), 'utf8');
+
+		assert.deepEqual(provenanceNoteRanges(text), [[26, 29]]);
+		assert.deepEqual(provenanceNoteRanges('- **Retired:** it stood as **Orneld**.\n'), [[1, 1]]);
+	});
+
+	test('ends a note at a table row instead of swallowing the table below it', () => {
+		const text = '**Renamed 2026-11-20.** It stood as **Orneld**.\n| # | name |\n|---|---|\n| 1 | **Orneld** |\n';
+
+		assert.deepEqual(provenanceNoteRanges(text), [[1, 1]]);
+	});
+
+	test('does not treat an ordinary bold assertion as a rename note', () => {
+		assert.deepEqual(provenanceNoteRanges('Zone three is **Orneld** in the older draft.\n'), []);
+	});
+
+	test('reads a bulleted note’s later items as the same note', () => {
+		const text = '- **Renamed 2026-11-20.** It stood as **Orneld**.\n- The byname **Gaelraeth** was older still.\n\nProse resumes here.\n';
+
+		assert.deepEqual(provenanceNoteRanges(text), [[1, 2]]);
+	});
+});
+
+describe('citations are compared with nothing', () => {
+	const seeded = {
+		slugs: [{ name: 'ornelda', file: 'Seeder.cs', line: 20, where: 'seeded slug' }],
+		displayNames: [{ name: 'Ornelda', file: 'Seeder.cs', line: 21, where: 'seeded display name' }]
+	};
+
+	test('a rename-note citation is not reported against a seeded name or slug', () => {
+		const citation = {
+			name: 'Orneld',
+			slug: 'orneld',
+			file: 'docs/design/content/wound-spine.md',
+			line: 188,
+			where: 'bold prose assertion',
+			citation: true
+		};
+
+		assert.deepEqual(findCollisions([citation], [], seeded), []);
+	});
+
+	test('the same name as a declaration is reported against both seeded sets', () => {
+		const declaration = {
+			name: 'Orneld',
+			slug: 'orneld',
+			file: 'docs/design/content/wound-spine.md',
+			line: 146,
+			where: 'table column "display name (Calethic)"'
+		};
+
+		const kinds = findCollisions([declaration], [], seeded).map((collision) => collision.kind).sort();
+		assert.deepEqual(kinds, ['authored/seeded-name', 'authored/seeded-slug']);
 	});
 });
