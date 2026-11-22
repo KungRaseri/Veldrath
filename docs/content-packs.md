@@ -17,11 +17,15 @@ From the repository root, with the .NET 10 SDK installed:
 dotnet run --project Veldrath.ContentPack -- validate content/
 
 # Import it. Needs the content database; the argument can also come from $CONTENT_DATABASE.
-dotnet run --project Veldrath.ContentPack -- import content/ \
-  --database "Host=localhost;Database=veldrath;Username=veldrath;Password=..."
+# Two runs, in dependency order: an archetype names the loot table it drops, and a pack cannot resolve
+# a GUID for a row it creates in the same run (see "Two runs, in dependency order" below).
+DATABASE="Host=localhost;Database=veldrath;Username=veldrath;Password=***"
+dotnet run --project Veldrath.ContentPack -- import content/loottables --database "$DATABASE"
+dotnet run --project Veldrath.ContentPack -- import content/archetypes --database "$DATABASE"
 
-# See what an import would do without writing anything.
-dotnet run --project Veldrath.ContentPack -- import content/ --database "..." --dry-run
+# See what an import would do without writing anything. Same split, same order.
+dotnet run --project Veldrath.ContentPack -- import content/loottables --database "$DATABASE" --dry-run
+dotnet run --project Veldrath.ContentPack -- import content/archetypes --database "$DATABASE" --dry-run
 ```
 
 `validate` never needs a database: it seeds the tracked seeders into an in-process provider, so references to seeded

@@ -609,7 +609,9 @@ sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewMod
 
 - **The seeders are insert-only; packs are the writable half.** `RealmEngine.Data/Seeders/*` stays the initial
   catalogue and never updates a row it already sees. `content/<family>/<batch>.yaml` is upserted by
-  `Veldrath.ContentPack` (`dotnet run --project Veldrath.ContentPack -- validate|import content/`), keyed by slug:
+  `Veldrath.ContentPack` (`dotnet run --project Veldrath.ContentPack -- validate content/`, then `import` family by
+  family in dependency order — `content/loottables` before `content/archetypes`, because a pack cannot resolve a GUID
+  for a row it creates in the same run), keyed by slug:
   create missing, update changed, leave unchanged untouched. Do not "fix" a seeder's insert-only behaviour to make an
   edit land — author a pack or change the seeded value deliberately.
 - **One rule set, three callers.** `RealmEngine.Data/Content/ContentEntityTypes.cs` (moved out of

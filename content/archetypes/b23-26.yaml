@@ -1,5 +1,7 @@
 # content/archetypes/b23-26.yaml
-# The hostile roster rows of docs/design/content/archetypes.md whose spawn band is b23-26.
+# The hostile archetypes whose loot table belongs to the b23-26 band of docs/design/content/loot-tables.md
+# section 3: vent-stalker, crust-crawler and ash-picker (roster band 23-26), ash-eater (roster band
+# 26-30, spanning b23-26 and b27-30) and pyreling (seeded before the roster, so it has no roster row).
 # Mirrors RealmEngine.Data/Seeders/ArchetypeSeeder.cs value for value: an import reports these rows
 # unchanged, so the day the two disagree the importer says so instead of quietly rewriting a stat line.
 # lootTableId is a slug here; the importer resolves it against content/loottables/, which must be

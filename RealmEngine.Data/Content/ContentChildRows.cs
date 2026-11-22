@@ -593,8 +593,10 @@ public static class ContentChildRows
     /// When true, the children are emitted in canonical order. An authored child row has a surrogate key, so the order
     /// it comes back in is the store's, not the author's: EF assigns its own INSERT order and a reload returns whatever
     /// the database hands back. Comparing that sequence reports every multi-row child collection as changed on every
-    /// import — 29 of the 32 shipped loot tables, with <c>Version</c> climbing on every run. Owned JSON collections
-    /// keep their authored order, which is why this is opt-in.
+    /// import — 29 of the 32 shipped loot tables, with <c>Version</c> climbing on every run. No entity child table
+    /// carries an order column today, so a reorder is not a meaningful edit and every one of them opts in; a child
+    /// table that ever gains an order column must opt out, or a reorder will be invisible to the comparison. Owned
+    /// JSON collections keep their authored order, which is why this is opt-in.
     /// </param>
     /// <returns>The projected children.</returns>
     private static JsonArray ProjectMany(
