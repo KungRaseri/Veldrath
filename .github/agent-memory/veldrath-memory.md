@@ -434,13 +434,14 @@ Full World → Region → Zone hierarchy implemented.
 
 **Zone entity** (`Zone.cs`): `Id` (slug), `Name`, `Description`, `ZoneType Type`, `MinLevel`, `MaxPlayers`, `IsStarter`, `HasInn`, `HasMerchant`, `IsPvpEnabled`, `IsDiscoverable`, `IsDevOnly`, `RescueFundTotal`, `RegionId` FK + `Region` nav, `ICollection<PlayerSession> Sessions`
 
-**Seed data (Veldrath world)**, re-derived from `ApplicationDataSeeder.cs`:
+**Seed data (Veldrath world)**, re-derived from `ApplicationDataSeeder.cs` (text lives in `WorldCanonText.cs`, which the seeder and `WorldCanonSweep` both read):
 - 1 World: `veldrath` / "Veldrath" / era "The Ashen Age (the Age of Reclaiming)"
 - 4 Regions: `varenmark` (Countryside, 0–6, starter), `greymoor` (Highland, 5–14), `saltcliff` (Coastal, 10–20), `cinderplain` (Volcanic, 18–30)
 - 6 RegionConnections: varenmark↔greymoor, greymoor↔saltcliff, greymoor↔cinderplain (bidirectional)
 - 19 Zones, of which `playground` is `IsDevOnly = true` and never returned by the public APIs (`ZoneRepository` filters on it)
 - 5 `ZoneType.Dungeon` zones: `the-halrow`, `drowning-pits`, `barrow-deeps`, `sunken-name`, `kaldrek-maw` (display name "The Maw" — slugs are opaque keys and do not carry canon)
 - **Starter zone**: `crestfall` (Crestfall, Varenmark)
+- **Canon sweep**: on the Postgres startup path `WorldCanonSweep` rewrites a seeded value only when it still carries a retired token or *exactly* equals an entry in `WorldCanonText.KnownStaleValues` (that set holds the pre-rewrite `World.Description`, which names nothing retired). A future reword with no retired token must have its old string recorded there; until then the sweep reports the field in `DriftedFields` and leaves it alone. Drift is reported for `Worlds`/`Regions`/`Zones` only — `Maps`/`MapNodes`/`ZoneLocations` are also written by the Foundry editor, so divergence there is authored content.
 
 **Character default zone**: `Character.StartingZoneId = "crestfall"` (`Character.cs:55`); first location is `crestfall-square` (`CharacterCreationSessionEndpoints.cs:37`)
 
