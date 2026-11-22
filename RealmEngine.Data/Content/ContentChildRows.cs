@@ -56,10 +56,10 @@ namespace RealmEngine.Data.Content;
 /// table and so never reaches this class's reconcile. "Omitted means leave it alone" is honoured there by the write
 /// path itself: the update PUT, the payload dry run and the review-queue approval fill the owned values a payload does
 /// not name from the row it replaces (<see cref="ContentValueCopy.FillUnnamedOwnedValues"/>) before deserialising (a
-/// create has no stored row to fill from), because an omitted owned collection deserialises to
-/// its initializer (<c>[]</c>) and an omitted owned object to a fresh instance. Without
-/// that fill the three shapes would read as four: omitted and <c>[]</c> would be the same wipe, and the 400 below would
-/// be telling the author to send the payload that deletes what they meant to keep.
+/// create has no stored row to fill from). An omitted owned collection deserialises to its initializer (<c>[]</c>) and
+/// an omitted owned object to a fresh instance; without that fill the three shapes would read as four: omitted and
+/// <c>[]</c> would be the same wipe, and the 400 below would be telling the author to send the payload that deletes
+/// what they meant to keep.
 /// </para>
 /// </remarks>
 public static class ContentChildRows
