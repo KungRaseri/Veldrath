@@ -33,7 +33,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { after, describe, test } from 'node:test';
 
-import { extractAuthorityNames, historicalTableRanges, normalizeName, provenanceNoteRanges, withinDistance } from '../check-content-names.mjs';
+import { extractAuthorityNames, findCollisions, historicalTableRanges, normalizeName, provenanceNoteRanges, withinDistance } from '../check-content-names.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..');
@@ -423,5 +423,44 @@ describe('rename notes', () => {
 
 	test('does not treat an ordinary bold assertion as a rename note', () => {
 		assert.deepEqual(provenanceNoteRanges('Zone three is **Orneld** in the older draft.\n'), []);
+	});
+
+	test('reads a bulleted note’s later items as the same note', () => {
+		const text = '- **Renamed 2026-11-20.** It stood as **Orneld**.\n- The byname **Gaelraeth** was older still.\n\nProse resumes here.\n';
+
+		assert.deepEqual(provenanceNoteRanges(text), [[1, 2]]);
+	});
+});
+
+describe('citations are compared with nothing', () => {
+	const seeded = {
+		slugs: [{ name: 'ornelda', file: 'Seeder.cs', line: 20, where: 'seeded slug' }],
+		displayNames: [{ name: 'Ornelda', file: 'Seeder.cs', line: 21, where: 'seeded display name' }]
+	};
+
+	test('a rename-note citation is not reported against a seeded name or slug', () => {
+		const citation = {
+			name: 'Orneld',
+			slug: 'orneld',
+			file: 'docs/design/content/wound-spine.md',
+			line: 188,
+			where: 'bold prose assertion',
+			citation: true
+		};
+
+		assert.deepEqual(findCollisions([citation], [], seeded), []);
+	});
+
+	test('the same name as a declaration is reported against both seeded sets', () => {
+		const declaration = {
+			name: 'Orneld',
+			slug: 'orneld',
+			file: 'docs/design/content/wound-spine.md',
+			line: 146,
+			where: 'table column "display name (Calethic)"'
+		};
+
+		const kinds = findCollisions([declaration], [], seeded).map((collision) => collision.kind).sort();
+		assert.deepEqual(kinds, ['authored/seeded-name', 'authored/seeded-slug']);
 	});
 });

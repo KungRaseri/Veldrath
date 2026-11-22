@@ -229,8 +229,9 @@ its rename notes bold the retired form as a past state, not an attestation.
 
 A **rename note** in the design set gets the same treatment: a bold name inside a paragraph that
 opens with a bold `Renamed …`, `Retired …`, `Re-coined …`, `Replaced …` or `Formerly …` lede records
-what the name *was* and is not compared. The check reports those citations (the summary line counts
-them, `--verbose` lists them with their `file:line`) rather than dropping them silently. **Do not
+what the name *was* and is compared with nothing — not the naming authority, not the seeded slugs or
+display names, not the other authored names. The check reports those citations (the summary line
+counts them, `--verbose` lists them with their `file:line`) rather than dropping them silently. **Do not
 add an allowlist entry for a retired name**: a permit silences the pair everywhere, so the name F2
 retired could be coined again in a zone table and still pass, while a note-scoped rule exempts the
 one sentence that cites history. A table row is always a declaration, even one that abuts the note,

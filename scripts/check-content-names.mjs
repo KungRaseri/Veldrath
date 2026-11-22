@@ -422,7 +422,8 @@ export function historicalTableRanges(text) {
  *
  * The range stops at a blank line, at a table row, or at the end of the document. The table guard
  * is the one that matters: a zone-table row that bolds the retired name is a declaration even when
- * it sits directly under the note, and the negative control depends on it still failing.
+ * it sits directly under the note, and the negative control depends on it still failing. A bulleted
+ * list that starts with the lede is one note, so its later items continue the same history.
  * @param {string} text The document.
  * @returns {[number, number][]} Inclusive line ranges.
  */
@@ -641,16 +642,18 @@ export function findCollisions(authored, authority, seeded) {
 		}
 	}
 
-	// Authored against the seeded display names, and against the seeded slugs.
+	// Authored against the seeded display names, and against the seeded slugs. Both read `declared`:
+	// the rule that a rename note is history must hold against every comparison, or a citation one
+	// edit from a seeded name would red the gate while the report says it was not compared.
 	for (const entry of dedupeByKey(seeded.displayNames, normalizeName)) {
-		for (const name of authored) {
+		for (const name of declared) {
 			const distance = withinDistance(normalizeName(name.name), entry.key, 1);
 			if (distance === 1) report(1, 'authored/seeded-name', name, entry.source);
 		}
 	}
 
 	for (const entry of dedupeByKey(seeded.slugs, slugForm)) {
-		for (const name of authored) {
+		for (const name of declared) {
 			const distance = withinDistance(slugForm(name.name), entry.key, 1);
 			if (distance === 1) report(1, 'authored/seeded-slug', name, entry.source);
 		}
