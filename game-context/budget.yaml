@@ -194,8 +194,12 @@ wiring:
   boss_and_elite_flags:
     live: false
     detail: >-
-      Traits.Boss/Elite are labels with no stat effect (ActorArchetype.cs:107-110); Boss is read
-      only by the seed guard (SeededEncounterCoverageTests.cs:241-265).
+      Traits.Boss/Elite are labels with no stat effect (ActorArchetype.cs:118-121). The projection
+      copies both into the enemy template (ActorTemplateProjection.cs:101-102); CombatHelpers.ResolveTier
+      selects the display tier (CombatHelpers.cs:68-76). The encounter response sends it as EnemyTier
+      (EngageEnemyHubCommand.cs:150), and the combat client maps it into the enemy display
+      (session.svelte.ts:897, :920). The loot-table guard checks the archetype flag
+      (SeededEncounterCoverageTests.cs:241-265).
 
 spawn:
   roster_size: [2, 4]
