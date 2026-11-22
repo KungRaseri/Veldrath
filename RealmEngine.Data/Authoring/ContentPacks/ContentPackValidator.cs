@@ -115,7 +115,7 @@ public sealed class ContentPackValidator(ContentDbContext db)
                     continue;
                 }
 
-                issues.AddRange(ContentEntityTypes.Registry.Validate(file.Family, entity, catalog).Issues);
+                issues.AddRange(ContentEntityTypes.Validate(resolver, entity, db.Model, catalog).Issues);
             }
         }
 

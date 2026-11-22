@@ -37,6 +37,12 @@ public static class ContentRules
     /// <summary>A field that only makes sense together with another is set without it.</summary>
     public const string FieldInconsistent = "field_inconsistent";
 
+    /// <summary>
+    /// A child-row collection is present as JSON <c>null</c>. An explicit null is not an authored set: it must be
+    /// refused rather than read as "the author wrote an empty list" and delete the stored rows.
+    /// </summary>
+    public const string ChildCollectionNull = "child_collection_null";
+
     /// <summary>A numeric field is negative or zero where that makes no sense.</summary>
     public const string ValueOutOfRange = "value_out_of_range";
 

@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
+using RealmEngine.Data.Validation.Content;
 using Veldrath.Server.Features.Auth;
 using Veldrath.Server.Tests.Infrastructure;
 
@@ -381,6 +382,40 @@ public class ContentWriteEndpointTests(WebAppFactory factory)
             .SingleAsync(table => table.Slug == slug);
     }
 
+    /// <summary>Reads a zone location and its owned spawn pool back through a fresh context.</summary>
+    private async Task<ZoneLocation> StoredZoneLocationAsync(string slug)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ContentDbContext>();
+        return await db.ZoneLocations.AsNoTracking().SingleAsync(location => location.Slug == slug);
+    }
+
+    /// <summary>Reads a quest and its owned objectives back through a fresh context.</summary>
+    private async Task<Quest> StoredQuestAsync(string slug)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ContentDbContext>();
+        return await db.Quests.AsNoTracking().SingleAsync(quest => quest.Slug == slug);
+    }
+
+    /// <summary>
+    /// A quest with one objective that resolves against the seeded catalog, so the only issue a write of it can raise is
+    /// the one under test.
+    /// </summary>
+    private static object QuestPayload(string slug) => new
+    {
+        slug,
+        typeKey = "side",
+        displayName = "Null Objective Quest",
+        rarityWeight = 60,
+        isActive = true,
+        minLevel = 1,
+        objectives = new
+        {
+            items = new[] { new { type = "collect", target = "health-potion", quantity = 1 } },
+        },
+    };
+
     /// <summary>
     /// A recipe whose ingredients are child rows, not owned JSON. The seeder's own materials are used so the references
     /// resolve; the slug is unique per test because the integration database is shared.
@@ -404,6 +439,29 @@ public class ContentWriteEndpointTests(WebAppFactory factory)
                 itemDomain = "items/materials",
                 itemSlug = ingredient.Slug,
                 quantity = ingredient.Quantity,
+            })
+            .ToArray(),
+    };
+
+    /// <summary>
+    /// A zone location whose spawn pool is owned JSON. The archetypes named in the pool are seeded, so the reference
+    /// audit passes; the slug is unique per test because the integration database is shared.
+    /// </summary>
+    private static object ZoneLocationPayload(string slug, params (string Archetype, int Weight)[] pool) => new
+    {
+        slug,
+        zoneId = "verdant-reach",
+        typeKey = "towns",
+        displayName = "Owned Collection Location",
+        rarityWeight = 50,
+        isActive = true,
+        stats = new { size = 3, dangerLevel = 7, population = 40, minLevel = 2, maxLevel = 6 },
+        traits = new { isTown = true },
+        actorPool = pool
+            .Select(entry => new
+            {
+                archetypeSlug = entry.Archetype,
+                weight = entry.Weight,
             })
             .ToArray(),
     };
@@ -549,6 +607,387 @@ public class ContentWriteEndpointTests(WebAppFactory factory)
 
         var stored = await StoredLootTableAsync(slug);
         stored.Entries.Select(entry => entry.ItemSlug).Should().BeEquivalentTo("iron-ingot", "iron-sword");
+    }
+
+    /// <summary>The error entries of a validation response body.</summary>
+    private static JsonElement Errors(JsonElement body) => body.GetProperty("errors");
+
+    /// <summary>
+    /// An explicit JSON <c>null</c> is neither "the property was omitted" (leave the stored rows alone) nor "the author
+    /// wrote an empty list" (clear them). It used to reach the reconcile as an empty authored set; the reconcile would
+    /// have deleted every stored ingredient on a 200.
+    /// </summary>
+    [Fact]
+    public async Task A_put_naming_ingredients_as_null_is_refused_and_keeps_the_stored_rows()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-child-recipe-null-{Guid.NewGuid():N}";
+
+        (await client.PostAsync("/api/content/recipe", Json(RecipePayload(slug, ("iron", 3), ("pine", 1)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var payload = await DetailPayloadAsync(client, "recipe", slug);
+        payload["ingredients"] = null;
+
+        var refused = await client.PutAsync($"/api/content/recipe/{slug}", JsonObjectContent(payload));
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest, await refused.Content.ReadAsStringAsync());
+
+        var body = await refused.Content.ReadFromJsonAsync<JsonElement>();
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.ChildCollectionNull
+            && issue.GetProperty("field").GetString() == "ingredients");
+
+        // Refused means nothing was written: same version, same rows.
+        var stored = await StoredRecipeAsync(slug);
+        stored.Version.Should().Be(1);
+        stored.Ingredients.Select(ingredient => ingredient.ItemSlug).Should().BeEquivalentTo("iron", "pine");
+    }
+
+    /// <summary>The loot-table half: a null <c>entries</c> names the field instead of reaching the reconcile as empty.</summary>
+    [Fact]
+    public async Task A_put_naming_entries_as_null_is_refused_and_keeps_the_stored_rows()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-child-loot-null-{Guid.NewGuid():N}";
+
+        (await client.PostAsync(
+            "/api/content/loottable",
+            Json(LootTablePayload(slug, ("health-potion", 60), ("iron-ingot", 40)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var payload = await DetailPayloadAsync(client, "loottable", slug);
+        payload["entries"] = null;
+
+        var refused = await client.PutAsync($"/api/content/loottable/{slug}", JsonObjectContent(payload));
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest, await refused.Content.ReadAsStringAsync());
+
+        var body = await refused.Content.ReadFromJsonAsync<JsonElement>();
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.ChildCollectionNull
+            && issue.GetProperty("field").GetString() == "entries");
+
+        var stored = await StoredLootTableAsync(slug);
+        stored.Version.Should().Be(1);
+        stored.Entries.Select(entry => entry.ItemSlug).Should().BeEquivalentTo("health-potion", "iron-ingot");
+    }
+
+    /// <summary>
+    /// A family whose validator never reads its child collections (species only runs the shared structural rules) is the
+    /// dangerous case: before the payload-shape rule, a null <c>powerPool</c> validated clean and the reconcile cleared
+    /// the pool with a 200 — a silent delete, not the 500 the recipe path produced.
+    /// </summary>
+    [Fact]
+    public async Task A_put_naming_a_species_power_pool_as_null_is_refused_and_keeps_it()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+
+        var payload = await DetailPayloadAsync(client, "species", "wolf");
+        var storedPool = payload["powerPool"]!.AsArray().Count;
+        storedPool.Should().BeGreaterThan(0, "the seeded wolf has an innate power pool to lose");
+
+        payload["powerPool"] = null;
+
+        var refused = await client.PutAsync("/api/content/species/wolf", JsonObjectContent(payload));
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest, await refused.Content.ReadAsStringAsync());
+
+        var body = await refused.Content.ReadFromJsonAsync<JsonElement>();
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.ChildCollectionNull
+            && issue.GetProperty("field").GetString() == "powerPool");
+
+        var stored = await DetailPayloadAsync(client, "species", "wolf");
+        stored["powerPool"]!.AsArray().Count.Should().Be(storedPool);
+    }
+
+    /// <summary>
+    /// <c>power</c> is a read alias with no validator of its own, so the write path handed the registry a key it does not
+    /// know and answered 500. It has to resolve to <c>ability</c> — the family that stores the row — so the same payload
+    /// behaves like every other family: a null pool is named and refused, and the stored pool survives.
+    /// </summary>
+    [Fact]
+    public async Task A_put_through_the_power_read_alias_refuses_a_null_pool_instead_of_failing()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+
+        var payload = await DetailPayloadAsync(client, "power", "bite");
+        var storedPool = payload["speciesPool"]!.AsArray().Count;
+        storedPool.Should().BeGreaterThan(0, "the seeded wolf/bite pair gives 'bite' a species pool to lose");
+
+        payload["speciesPool"] = null;
+
+        var refused = await client.PutAsync("/api/content/power/bite", JsonObjectContent(payload));
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest, await refused.Content.ReadAsStringAsync());
+
+        var body = await refused.Content.ReadFromJsonAsync<JsonElement>();
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.ChildCollectionNull
+            && issue.GetProperty("field").GetString() == "speciesPool");
+
+        var stored = await DetailPayloadAsync(client, "power", "bite");
+        stored["speciesPool"]!.AsArray().Count.Should().Be(storedPool);
+    }
+
+    /// <summary>
+    /// The zone location's spawn pool is an owned collection, not a child table, so it is assigned wholesale by
+    /// <c>ApplyAuthoredValues</c> rather than reconciled. Before the shape rule covered owned collections a null
+    /// <c>actorPool</c> validated clean (the pool check only warned) and the write answered 200 with the pool deleted —
+    /// the same silent delete the child-row families had. It has to be refused by name, with the pool and version intact.
+    /// </summary>
+    [Fact]
+    public async Task A_put_naming_the_zone_location_spawn_pool_as_null_is_refused_and_keeps_it()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+
+        var before = await StoredZoneLocationAsync("drove-road");
+        before.ActorPool.Should().NotBeNull("a stored owned collection materialises, never as null");
+        before.ActorPool.Should().NotBeEmpty("the seeded drove-road has a spawn pool to lose");
+
+        // The stored row loads its pool, so validating it as stored is clean: the rule only fires on a payload that
+        // names the field as null.
+        var validate = await client.GetAsync("/api/content/zonelocation/drove-road/validate");
+        validate.StatusCode.Should().Be(HttpStatusCode.OK, await validate.Content.ReadAsStringAsync());
+        var validated = await validate.Content.ReadFromJsonAsync<JsonElement>();
+        validated.GetProperty("isValid").GetBoolean().Should().BeTrue(
+            "a stored zone location carries its pool as a list, not as null");
+
+        var payload = await DetailPayloadAsync(client, "zonelocation", "drove-road");
+        payload["actorPool"]!.AsArray().Count.Should().Be(before.ActorPool.Count);
+        payload["actorPool"] = null;
+
+        var refused = await client.PutAsync("/api/content/zonelocation/drove-road", JsonObjectContent(payload));
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest, await refused.Content.ReadAsStringAsync());
+
+        var body = await refused.Content.ReadFromJsonAsync<JsonElement>();
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.ChildCollectionNull
+            && issue.GetProperty("field").GetString() == "actorPool");
+
+        var after = await StoredZoneLocationAsync("drove-road");
+        after.Version.Should().Be(before.Version);
+        after.ActorPool.Select(entry => entry.ArchetypeSlug)
+            .Should().BeEquivalentTo(before.ActorPool.Select(entry => entry.ArchetypeSlug));
+    }
+
+    /// <summary>
+    /// A null collection nested inside an owned object is the card's defect one shape further in: `Objectives.Items` is
+    /// owned JSON, not an entity navigation, so the payload-shape rule cannot see it and <see cref="QuestValidator"/> used
+    /// to dereference it — every quest write (create, update, the dry run and the pack validator) answered 500 instead of
+    /// a validation issue. A null item list reads as "no objectives", which the validator already refuses by name.
+    /// </summary>
+    [Fact]
+    public async Task A_put_naming_a_nested_quest_objective_list_as_null_is_refused_and_keeps_the_stored_objectives()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-quest-nested-null-{Guid.NewGuid():N}";
+
+        (await client.PostAsync("/api/content/quest", Json(QuestPayload(slug))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var before = await StoredQuestAsync(slug);
+        before.Objectives.Items.Should().HaveCount(1);
+
+        var payload = await DetailPayloadAsync(client, "quest", slug);
+        payload["objectives"]!["items"] = null;
+
+        var refused = await client.PutAsync($"/api/content/quest/{slug}", JsonObjectContent(payload));
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest, await refused.Content.ReadAsStringAsync());
+
+        var body = await refused.Content.ReadFromJsonAsync<JsonElement>();
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.QuestWithoutObjectives);
+
+        // The model-driven walk names it as a shape error too, which is what makes the class closed for every family
+        // whose validator never reads the list.
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.ChildCollectionNull
+            && issue.GetProperty("field").GetString() == "objectives.items");
+
+        // Refused means nothing was written: same version, same objectives.
+        var after = await StoredQuestAsync(slug);
+        after.Version.Should().Be(before.Version);
+        after.Objectives.Items.Select(objective => objective.Target)
+            .Should().BeEquivalentTo(before.Objectives.Items.Select(objective => objective.Target));
+    }
+
+    /// <summary>
+    /// The same defect one level further in, on a family where it is not just a lost field: every one of a language's
+    /// eleven lists lives inside owned JSON, no entity navigation carries them, and <c>language</c> runs the structural
+    /// validator, which reads none of them — so a per-validator <c>?? []</c> cannot reach the class. Measured before the
+    /// walk existed: `"phonology": {"consonants": null}` answered 200, stored the null, and then 500'd both
+    /// <c>GET /api/content/languages</c> and <c>GET /api/content/languages/{slug}</c> (the repository dereferences
+    /// `Phonology.Consonants`), taking the whole catalog down until the row was repaired.
+    /// </summary>
+    [Fact]
+    public async Task A_put_naming_a_language_phonology_list_as_null_is_refused_and_keeps_the_catalog_readable()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+
+        var before = await StoredLanguageAsync("calethic");
+        before.Phonology.Consonants.Should().NotBeEmpty("the seeded calethic has a consonant inventory to lose");
+        var consonants = before.Phonology.Consonants.Count;
+        var junctionRules = before.Phonology.JunctionRules.Count;
+
+        var payload = await DetailPayloadAsync(client, "language", "calethic");
+        payload["phonology"]!["consonants"] = null;
+
+        var refused = await client.PutAsync("/api/content/language/calethic", JsonObjectContent(payload));
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest, await refused.Content.ReadAsStringAsync());
+
+        var body = await refused.Content.ReadFromJsonAsync<JsonElement>();
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.ChildCollectionNull
+            && issue.GetProperty("field").GetString() == "phonology.consonants");
+
+        // Refused means nothing was written: same version, same inventory, and the sibling lists in the same owned
+        // object are untouched.
+        var after = await StoredLanguageAsync("calethic");
+        after.Version.Should().Be(before.Version);
+        after.Phonology.Consonants.Should().HaveCount(consonants);
+        after.Phonology.JunctionRules.Should().HaveCount(junctionRules);
+
+        // The read family a stored null crashed still answers — for the row and for the whole catalog.
+        var catalog = await client.GetAsync("/api/content/languages");
+        catalog.StatusCode.Should().Be(HttpStatusCode.OK, await catalog.Content.ReadAsStringAsync());
+
+        var detail = await client.GetAsync("/api/content/languages/calethic");
+        detail.StatusCode.Should().Be(HttpStatusCode.OK, await detail.Content.ReadAsStringAsync());
+    }
+
+    /// <summary>
+    /// The dry run takes the same payload, so it has to report the issue rather than answer 500 with a null dereference
+    /// from inside a validator.
+    /// </summary>
+    [Fact]
+    public async Task Validating_a_payload_with_a_null_collection_reports_the_issue_instead_of_failing()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-child-recipe-validate-null-{Guid.NewGuid():N}";
+
+        (await client.PostAsync("/api/content/recipe", Json(RecipePayload(slug, ("iron", 3), ("pine", 1)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var payload = await DetailPayloadAsync(client, "recipe", slug);
+        payload["ingredients"] = null;
+
+        var validated = await client.PostAsync($"/api/content/recipe/{slug}/validate", JsonObjectContent(payload));
+        validated.StatusCode.Should().Be(HttpStatusCode.OK, await validated.Content.ReadAsStringAsync());
+
+        var body = await validated.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("isValid").GetBoolean().Should().BeFalse();
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.ChildCollectionNull);
+    }
+
+    /// <summary>
+    /// The contract the null rule publishes is three shapes, three meanings: omitted = leave the stored collection
+    /// alone, <c>[]</c> = replace it with nothing, <c>null</c> = refused. For an owned collection the middle shape is
+    /// what a payload that never mentions the field deserialises to, so the PUT has to fill an unnamed owned value from
+    /// the row it replaces (as the review-queue approval already does) — otherwise the author refused a 400 for a null
+    /// is told to "omit the property", does exactly that, and the pool is deleted.
+    /// </summary>
+    [Fact]
+    public async Task A_put_omitting_the_zone_location_spawn_pool_keeps_it()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-owned-pool-omitted-{Guid.NewGuid():N}";
+
+        (await client.PostAsync("/api/content/zonelocation", Json(ZoneLocationPayload(slug, ("giant-rat", 60), ("goblin-scout", 40)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var before = await StoredZoneLocationAsync(slug);
+        before.ActorPool.Should().HaveCount(2);
+
+        var payload = await DetailPayloadAsync(client, "zonelocation", slug);
+        payload.Remove("actorPool");
+        payload["displayName"] = "Renamed Without A Pool";
+
+        var updated = await client.PutAsync($"/api/content/zonelocation/{slug}", JsonObjectContent(payload));
+        updated.StatusCode.Should().Be(HttpStatusCode.OK, await updated.Content.ReadAsStringAsync());
+
+        var after = await StoredZoneLocationAsync(slug);
+        after.Version.Should().Be(before.Version + 1, "the write succeeded, so the version is bumped exactly once");
+        after.DisplayName.Should().Be("Renamed Without A Pool");
+        after.ActorPool.Select(entry => entry.ArchetypeSlug)
+            .Should().BeEquivalentTo(before.ActorPool.Select(entry => entry.ArchetypeSlug),
+                "an omitted owned collection is not an authored empty set");
+    }
+
+    /// <summary>
+    /// The other half of the same contract: a named empty array is an authored choice and clears the owned collection.
+    /// Without this the fill could be mistaken for "an owned collection is never cleared".
+    /// </summary>
+    [Fact]
+    public async Task A_put_naming_the_zone_location_spawn_pool_as_an_empty_array_clears_it()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-owned-pool-emptied-{Guid.NewGuid():N}";
+
+        (await client.PostAsync("/api/content/zonelocation", Json(ZoneLocationPayload(slug, ("giant-rat", 60), ("goblin-scout", 40)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var payload = await DetailPayloadAsync(client, "zonelocation", slug);
+        payload["actorPool"] = new JsonArray();
+
+        var updated = await client.PutAsync($"/api/content/zonelocation/{slug}", JsonObjectContent(payload));
+        updated.StatusCode.Should().Be(HttpStatusCode.OK, await updated.Content.ReadAsStringAsync());
+
+        var after = await StoredZoneLocationAsync(slug);
+        after.ActorPool.Should().BeEmpty("an empty array in the payload is the author saying 'no spawns here'");
+    }
+
+    /// <summary>
+    /// The same presence rule for an owned <em>object</em>: an omitted <c>stats</c> deserialises to a fresh instance and
+    /// replacing the stored one wholesale would null every value the payload never named. The follow-up card for an
+    /// explicit null owned object assumes "omitted = keep stored", and this is the write that has to make that true.
+    /// </summary>
+    [Fact]
+    public async Task A_put_omitting_an_owned_object_keeps_its_stored_values()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-owned-object-omitted-{Guid.NewGuid():N}";
+
+        (await client.PostAsync("/api/content/zonelocation", Json(ZoneLocationPayload(slug, ("giant-rat", 60)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var before = await StoredZoneLocationAsync(slug);
+        before.Stats.DangerLevel.Should().Be(7);
+
+        var payload = await DetailPayloadAsync(client, "zonelocation", slug);
+        payload.Remove("stats");
+        payload["displayName"] = "Renamed Without Stats";
+
+        var updated = await client.PutAsync($"/api/content/zonelocation/{slug}", JsonObjectContent(payload));
+        updated.StatusCode.Should().Be(HttpStatusCode.OK, await updated.Content.ReadAsStringAsync());
+
+        var after = await StoredZoneLocationAsync(slug);
+        after.Stats.DangerLevel.Should().Be(7, "an omitted owned object is not an authored empty one");
+        after.Stats.MinLevel.Should().Be(before.Stats.MinLevel);
+    }
+
+    /// <summary>
+    /// The dry run predicts the write, so it applies the same fill. Validating a payload that omits an owned collection
+    /// has to report what the write would produce — no spurious <c>spawn_pool_empty</c> warning for a pool the write
+    /// keeps.
+    /// </summary>
+    [Fact]
+    public async Task Validating_a_payload_that_omits_the_zone_location_spawn_pool_reports_no_spurious_warning()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-owned-pool-dryrun-{Guid.NewGuid():N}";
+
+        (await client.PostAsync("/api/content/zonelocation", Json(ZoneLocationPayload(slug, ("giant-rat", 60), ("goblin-scout", 40)))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var payload = await DetailPayloadAsync(client, "zonelocation", slug);
+        payload.Remove("actorPool");
+
+        var validated = await client.PostAsync($"/api/content/zonelocation/{slug}/validate", JsonObjectContent(payload));
+        validated.StatusCode.Should().Be(HttpStatusCode.OK, await validated.Content.ReadAsStringAsync());
+
+        var body = await validated.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("isValid").GetBoolean().Should().BeTrue();
+        body.GetProperty("warnings").EnumerateArray()
+            .Should().NotContain(warning => warning.GetProperty("rule").GetString() == ContentRules.SpawnPoolEmpty);
     }
 
     /// <summary>Reads the exact payload the Foundry detail endpoint hands the editor.</summary>

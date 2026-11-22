@@ -110,9 +110,90 @@ child such as `LootTableEntry`, on its authored values.
 names (`ContentChildRows.ApplyNamedAsync` → `NamedIn`), so a PUT or submission that omits `ingredients` leaves the
 stored ingredients alone instead of zeroing them. A collection the payload *does* name is replaced wholesale, so an
 empty list still clears it. `ZoneLocation.ActorPool` is owned JSON (`OwnsMany(...).ToJson("ActorPool")`), not a child
-table, so it was never affected. `LootTable` with no entries is an `Error` in the validator, so an approval that omits
-`entries` is refused before the reconcile rather than silently deleting them; a recipe with no ingredients is only a
-warning.
+table, so the reconcile never touches it — it is assigned wholesale by `ContentValueCopy.ApplyAuthoredValues`, which is
+why both the null rule below and the owned-value fill have to cover it. That fill
+(`ContentValueCopy.FillUnnamedOwnedValues`) runs in the **update** PUT and the dry run, not just in the
+review-queue approval (a create has no stored row to fill from): an omitted owned collection deserialises to `[]`
+and an omitted owned object to a fresh instance, so without it "omitted" and "`[]`" would both wipe an owned value and
+the `child_collection_null` message
+("omit the property to leave the stored collection alone") would be advising the delete it refuses. `LootTable` with no
+entries is an `Error` in the validator, so an approval that omits `entries` is refused before the reconcile rather than
+silently deleting them; a recipe with no ingredients is only a warning.
+
+**An explicit `null` child collection is refused, not read as empty (fixed 2026-11-20, card t_cb4c17ef).** Three
+shapes, three meanings, and only two of them are authoring: **omitted** = leave the stored rows alone, **`[]`** =
+replace them with nothing, **`null`** = neither — the payload names the property and gives it no value, so it is a
+shape error. `ContentChildRows.NamedIn` now counts only a property that carries a JSON **array** as naming a
+collection, and `ContentChildRows.Reconcile` skips a null collection even when the caller asks for every collection
+(the pack importer does). The write path refuses it first with rule `child_collection_null` naming the field:
+
+```text
+PUT /api/content/recipe/{slug}         {"…": "…", "ingredients": null}   -> 400, errors[].field = "ingredients"
+PUT /api/content/loottable/{slug}      {"…": "…", "entries": null}       -> 400, errors[].field = "entries"
+PUT /api/content/species/{slug}        {"…": "…", "powerPool": null}     -> 400, errors[].field = "powerPool"
+PUT /api/content/power/{slug}          {"…": "…", "speciesPool": null}   -> 400, errors[].field = "speciesPool"
+PUT /api/content/zonelocation/{slug}   {"…": "…", "actorPool": null}     -> 400, errors[].field = "actorPool"
+PUT /api/content/language/{slug}       {"…": "…", "phonology": {"consonants": null}}
+                                                                        -> 400, errors[].field = "phonology.consonants"
+```
+
+`power` is the read alias of the `ability` family and had **no alias entry and no validator of its own**, so every
+write through `/api/content/power/{slug}` threw `KeyNotFoundException` → 500 (pre-existing, not caused by the null
+rule; the null payload just made it visible). `Aliases["power"] = "ability"` plus `TryResolve` folding an
+unregistered key onto `CanonicalFamily` fix the route, and
+`ContentEntityTypesTests.Every_known_type_key_resolves_to_a_registered_validator` now forbids a map entry whose family
+has no validator.
+
+The rule has to be model-driven (`ContentChildRows.NullCollectionIssues`) rather than per-validator: `species`,
+`class`, `archetype`, `instance` and `ability` have no rule that reads their pools, so a null reached the reconcile
+and **cleared the pool on a 200** — a silent delete, not the 500 the recipe path produced. All six validation call
+sites in three files go through `ContentEntityTypes.Validate(resolver, entity, model, catalog)`, which merges the shape
+issues ahead of the family validator's: `ContentWriteEndpoints` (create, update and both validate routes),
+`ContentWriteService.PromoteAsync` and `ContentPackValidator.ValidateAsync`. The family validators are also null-tolerant
+(`?? []`) so the offline pack validator and the CI guard can never throw a `NullReferenceException` on a null
+child-row or owned collection the shape rule already refused. That tolerance does **not** close the class on its own:
+a per-validator `?? []` only helps the families whose validator happens to read the list, and it is why the shape rule
+now walks **one level into an owned object** (below).
+
+`"objectives": {"items": null}` on a quest deserialised `Quest.Objectives.Items` null, and `QuestValidator` read it
+unguarded: every quest write and the pack validator answered 500 (first frame `QuestValidator.ValidateEntity`). It now
+reads `entity.Objectives?.Items ?? []`, so the same payload is the ordinary `quest_without_objectives` error (400 on
+the write routes) *and* `child_collection_null` on `objectives.items` with the stored row and version intact
+(2026-11-22, card t_cb4c17ef).
+
+The same rule covers an **owned** collection. `ZoneLocation.ActorPool` is owned JSON, so no reconcile sees it:
+`ContentValueCopy.ApplyAuthoredValues` assigns it wholesale and a null would delete the pool on a 200 (the 2026-11-21
+review measured exactly that — `200 isValid:true` with `spawn_pool_empty` as a warning and the reload empty). Owned
+collections are therefore in `NullCollectionIssues` too, and `ApplyAuthoredValues` skips a null owned collection as
+defence in depth (as `CopyOwnedInPlace` now skips a null collection nested inside an owned object — `Phonology.Consonants`,
+`Objectives.Items`, `Stats.Lines`). A stored location loads its pool as `[]`, never null, so
+`GET /api/content/zonelocation/{slug}/validate` stays clean — the rule only fires on a payload that names the field as
+null.
+
+**The walk goes one level into an owned object (fixed 2026-11-22, card t_cb4c17ef).** All eleven of a language's lists
+live inside owned JSON (`Phonology.Consonants`/`Vowels`/`AllowedSyllablePatterns`/…, `Morphology.Roots`/`Prefixes`/
+`Suffixes`, `RegisterSystem.Registers`), so **no entity navigation carries them** and `NullCollectionIssues` returned 0
+for them; `language` runs the structural validator, which reads none of them, so no per-validator `?? []` could either.
+Measured before the walk existed: `PUT /api/content/language/calethic` with `"phonology": {"consonants": null}` answered
+**200 `isValid:true` version 2**, stored the null, and then **both `GET /api/content/languages` and
+`GET /api/content/languages/{slug}` answered 500** (`EfCoreLanguageRepository.MapToModel` dereferences
+`e.Phonology.Consonants`, so the 500 is the proof the null reached the column) — the whole language catalog down until
+the row was repaired. `NullCollectionIssues` now reports each null collection inside an owned object with its dotted
+field (`phonology.consonants`, `objectives.items`, `rewards.items`, `stats.lines`, `stats.options`), for owned
+collections (`OwnsMany`) and primitive collections (`PrimitiveCollection`) alike, so the payload is refused with
+`child_collection_null` and the row and both reads survive. A null **owned object** (`"stats": null`) is still a
+different defect and belongs to card t_819ada90 — the walk reports collections, not the object itself, and
+`ApplyAuthoredValues` has no guard for a null owned object.
+
+The three shapes are only three shapes because the update PUT and the dry run fill an unnamed owned value from
+the row being replaced (`ContentValueCopy.FillUnnamedOwnedValues`, the same call `ContentWriteService.PromoteAsync` has
+always made) before deserialising; a create has no stored row to fill from. `2026-11-22` review measured the gap that
+left: `PUT /zonelocation` **omitting**
+`actorPool` deserialised to `[]`, was assigned wholesale and answered `200` with the pool deleted, while the 400 above
+told the author to omit the field. The PUT now keeps the pool (`Version` bumped once), `"actorPool": []` still clears
+it, an omitted owned **object** keeps its stored leaves (`stats.dangerLevel` 7 survives), and the payload dry run reports
+no spurious `spawn_pool_empty` for a pool the write keeps. That also makes the "omitted = keep stored" premise of the
+explicit-null-owned-object card (t_819ada90) true on this route.
 
 **The read path has to return the child rows, or the presence rule deletes them.** Foundry's editor and the submission
 forms build their payload from `GET /api/content/browse/{type}/{slug}`, and that read used `AsNoTracking()` with no
@@ -133,7 +214,25 @@ Regression tests: `ContentWriteEndpointTests.An_ingredient_quantity_edit_through
 `A_recipe_saved_from_its_detail_payload_keeps_its_ingredients`,
 `A_loot_table_saved_from_its_detail_payload_keeps_its_entries`,
 `A_loot_entry_edited_through_the_detail_payload_is_persisted`, and
-`FoundryEndpointTests.Review_Should_Persist_An_Authored_Ingredient_Edit_On_Approval`.
+`FoundryEndpointTests.Review_Should_Persist_An_Authored_Ingredient_Edit_On_Approval`. The null-collection contract is
+pinned by `ContentWriteEndpointTests.A_put_naming_ingredients_as_null_is_refused_and_keeps_the_stored_rows`,
+`A_put_naming_entries_as_null_is_refused_and_keeps_the_stored_rows`,
+`A_put_naming_a_species_power_pool_as_null_is_refused_and_keeps_it`,
+`A_put_through_the_power_read_alias_refuses_a_null_pool_instead_of_failing`,
+`A_put_naming_the_zone_location_spawn_pool_as_null_is_refused_and_keeps_it`,
+`A_put_naming_a_nested_quest_objective_list_as_null_is_refused_and_keeps_the_stored_objectives`,
+`A_put_naming_a_language_phonology_list_as_null_is_refused_and_keeps_the_catalog_readable`,
+`Validating_a_payload_with_a_null_collection_reports_the_issue_instead_of_failing`,
+`ContentChildRowsTests.ApplyNamedAsync_leaves_a_collection_the_payload_names_as_null_alone`,
+`Reconcile_leaves_a_collection_the_entity_carries_as_null_alone`,
+`NullCollectionIssues_names_an_owned_collection_an_entity_carries_as_null`,
+`NullCollectionIssues_names_a_collection_nested_inside_an_owned_object` (with its primitive-collection and
+same-leaf-name quest cases),
+`ContentValueCopyTests.ApplyAuthoredValues_leaves_an_owned_collection_carried_as_null_alone` (and its replace-when-authored
+counterpart, plus the nested-collection null/empty pair), `NullChildCollectionValidationTests` (the rule for the seven
+child-row families, the owned `ZoneLocation.ActorPool`, and the lists nested inside owned objects) and
+`ContentEntityTypesTests` (every type key resolves to a validator; `power` folds onto
+`ability`).
 
 ## Dialogue options (2026-11-20)
 `Dialogue` stops being only a line pool: `DialogueStats.Options` (owned, `List<DialogueOption>`) carries the choices a

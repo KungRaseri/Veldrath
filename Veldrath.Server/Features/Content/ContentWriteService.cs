@@ -96,7 +96,7 @@ public class ContentWriteService(ContentDbContext db)
         }
 
         var catalog = await ContentReferenceCatalog.LoadAsync(db, ct);
-        var result = ContentEntityTypes.Registry.Validate(resolver.ContentType, incoming, catalog);
+        var result = ContentEntityTypes.Validate(resolver, incoming, db.Model, catalog);
         if (!result.IsValid)
         {
             var reasons = result.Errors.Select(issue => issue.Message).Take(3);
