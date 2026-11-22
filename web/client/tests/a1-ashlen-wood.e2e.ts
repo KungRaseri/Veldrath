@@ -84,25 +84,32 @@ test.describe('A1 — the Ashlen Wood pools', () => {
 			expect(Object.keys(crestfall).sort()).toEqual([...CRESTFALL_LOCATIONS].sort());
 
 			for (const slug of CRESTFALL_LOCATIONS) {
-				expect(crestfall[slug], `${slug} is a town or the respawn square and must pool nothing`).toEqual(
-					[]
-				);
+				expect(
+					crestfall[slug],
+					`${slug} is a town or the respawn square and must pool nothing`
+				).toEqual([]);
 			}
 
 			const pools = await readZonePools(sql, ZONE_ID);
 			for (const [slug, expected] of Object.entries(ASHLEN_WOOD_POOLS)) {
-				expect(pools[slug], `${slug} must carry the pack's pool, weights included`).toEqual(expected);
+				expect(pools[slug], `${slug} must carry the pack's pool, weights included`).toEqual(
+					expected
+				);
 			}
 
 			// ── The walk ────────────────────────────────────────────────────────────────────────────────
 			// The wizard already placed the character on the square; walking there is the "already here" no-op
 			// that proves the map knows where it is before a zone change paints a different map.
 			expect(await walkTo(page, MAP_NODES.townSquare)).toBe(true);
-			await expect(page.locator('button[aria-current="location"]')).toContainText('Crestfall Square');
+			await expect(page.locator('button[aria-current="location"]')).toContainText(
+				'Crestfall Square'
+			);
 
 			expect(await walkTo(page, MAP_NODES.woodGate)).toBe(true);
 			expect(await walkTo(page, MAP_NODES.encounter)).toBe(true);
-			await expect(page.locator('button[aria-current="location"]')).toContainText('The Old Clearing');
+			await expect(page.locator('button[aria-current="location"]')).toContainText(
+				'The Old Clearing'
+			);
 
 			// ── The roster the pool produced ────────────────────────────────────────────────────────────
 			// A browser shows the enemy's name; the stored row carries the archetype slug the pool drew. The placed
@@ -111,7 +118,10 @@ test.describe('A1 — the Ashlen Wood pools', () => {
 			expect(roster.length, 'walking onto the clearing must spawn its roster').toBeGreaterThan(0);
 
 			const poolDrawn = roster.filter((enemy) => enemy.instanceSlug === null);
-			expect(poolDrawn.length, 'the pool must have filled the roster, not only the placement').toBeGreaterThan(0);
+			expect(
+				poolDrawn.length,
+				'the pool must have filled the roster, not only the placement'
+			).toBeGreaterThan(0);
 
 			for (const enemy of poolDrawn) {
 				expect(
@@ -135,7 +145,10 @@ test.describe('A1 — the Ashlen Wood pools', () => {
 
 			for (let attempt = 0; attempt < 8 && payment === null; attempt += 1) {
 				const target = await waitForPoolEnemy(page);
-				expect(target, `no pool enemy was standing at the clearing (attempt ${attempt + 1})`).not.toBeNull();
+				expect(
+					target,
+					`no pool enemy was standing at the clearing (attempt ${attempt + 1})`
+				).not.toBeNull();
 
 				// Health is the only budget the journey has: nothing in the wood heals it. A quarter is the floor
 				// that keeps a bad roll of draws from ending the run before the reward is exercised.
@@ -167,9 +180,10 @@ test.describe('A1 — the Ashlen Wood pools', () => {
 
 				// The reward path, checked against the content the import wrote: exact experience, gold inside the
 				// archetype's own band.
-				expect(after!.experience - before.experience, `${archetype} pays its experience reward`).toBe(
-					reward!.experience
-				);
+				expect(
+					after!.experience - before.experience,
+					`${archetype} pays its experience reward`
+				).toBe(reward!.experience);
 
 				const gold = after!.gold - before.gold;
 				expect(gold, `${archetype} pays gold inside its authored range`).toBeGreaterThanOrEqual(
@@ -227,7 +241,9 @@ test.describe('A1 — the Ashlen Wood pools', () => {
 			expect(await walkTo(page, MAP_NODES.arrival)).toBe(true);
 			expect(await walkTo(page, MAP_NODES.outOfZone)).toBe(true);
 			expect(await walkTo(page, MAP_NODES.townSquare)).toBe(true);
-			await expect(page.locator('button[aria-current="location"]')).toContainText('Crestfall Square');
+			await expect(page.locator('button[aria-current="location"]')).toContainText(
+				'Crestfall Square'
+			);
 
 			// The walk home changes nothing about what the kill paid.
 			for (const row of dropped) {

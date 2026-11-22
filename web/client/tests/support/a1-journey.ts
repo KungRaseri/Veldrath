@@ -141,7 +141,10 @@ type Sql = ReturnType<typeof openA1Database>;
  * @param zoneId Zone to read.
  * @returns Pool entries by location slug; an empty array means the location pools nothing.
  */
-export async function readZonePools(sql: Sql, zoneId: string): Promise<Record<string, PoolEntry[]>> {
+export async function readZonePools(
+	sql: Sql,
+	zoneId: string
+): Promise<Record<string, PoolEntry[]>> {
 	const rows = await sql<{ slug: string; pool: unknown }[]>`
 		SELECT "Slug" AS slug, coalesce("ActorPool", '[]'::jsonb) AS pool
 		FROM "ZoneLocations"
@@ -199,9 +202,7 @@ export async function readArchetypeReward(sql: Sql, slug: string): Promise<Arche
  * @returns The table's rows; empty when the table has none.
  */
 export async function readLootTable(sql: Sql, tableSlug: string): Promise<LootRow[]> {
-	const rows = await sql<
-		{ item: string; min: number; max: number }[]
-	>`
+	const rows = await sql<{ item: string; min: number; max: number }[]>`
 		SELECT e."ItemSlug" AS item, e."QuantityMin" AS min, e."QuantityMax" AS max
 		FROM "LootTableEntries" e
 		JOIN "LootTables" t ON t."Id" = e."LootTableId"
@@ -230,9 +231,7 @@ export async function readCharacterState(
 	sql: Sql,
 	characterId: string
 ): Promise<{ experience: number; gold: number; bag: BagRow[] } | null> {
-	const rows = await sql<
-		{ experience: string | number; attributes: string; bag: string }[]
-	>`
+	const rows = await sql<{ experience: string | number; attributes: string; bag: string }[]>`
 		SELECT "Experience" AS experience, "Attributes" AS attributes, "InventoryBlob" AS bag
 		FROM "Characters"
 		WHERE "Id" = ${characterId}
@@ -249,7 +248,10 @@ export async function readCharacterState(
 	return {
 		experience: Number(row.experience),
 		gold: Number(attributes.Gold ?? 0),
-		bag: bag.map((entry) => ({ itemSlug: entry.ItemRef ?? '', quantity: Number(entry.Quantity ?? 0) }))
+		bag: bag.map((entry) => ({
+			itemSlug: entry.ItemRef ?? '',
+			quantity: Number(entry.Quantity ?? 0)
+		}))
 	};
 }
 
@@ -281,9 +283,7 @@ function parseJson<T>(blob: string | null, fallback: T): T {
  * @returns The living enemies there.
  */
 export async function readLiveRoster(sql: Sql, locationSlug: string): Promise<LiveEnemy[]> {
-	const rows = await sql<
-		{ archetype: string; instance: string | null; name: string }[]
-	>`
+	const rows = await sql<{ archetype: string; instance: string | null; name: string }[]>`
 		SELECT "ArchetypeSlug" AS archetype, "InstanceSlug" AS instance, "Name" AS name
 		FROM "EnemyInstances"
 		WHERE "LocationSlug" = ${locationSlug} AND "IsAlive" = true
@@ -380,7 +380,14 @@ export async function createDwarfWarrior(page: Page, name: string): Promise<void
 	// Attributes: spend the whole budget, Strength and Constitution first, then anywhere that still accepts a point.
 	await expect(page.getByText(/Step 5 of 7/)).toBeVisible({ timeout: 20_000 });
 	for (let pass = 0; pass < 4; pass += 1) {
-		for (const stat of ['Strength', 'Constitution', 'Dexterity', 'Intelligence', 'Wisdom', 'Charisma']) {
+		for (const stat of [
+			'Strength',
+			'Constitution',
+			'Dexterity',
+			'Intelligence',
+			'Wisdom',
+			'Charisma'
+		]) {
 			const increase = page.getByRole('button', { name: `Increase ${stat}` });
 			for (let click = 0; click < 20 && (await increase.isEnabled()); click += 1) {
 				await increase.click();
@@ -521,5 +528,3 @@ export async function waitForPoolEnemy(
 
 	return findPoolEnemy(page);
 }
-
-
