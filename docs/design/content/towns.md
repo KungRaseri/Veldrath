@@ -13,9 +13,18 @@ a copy line, not a number.
   `budget.yaml` and fails the build on drift. The shopkeeper rows below still carry no numbers of their own: a
   person sells the town's stock at the band's published prices (C5).
 - **Per-zone shared shop stock — landed 2026-11-20.** Two merchants in one town sell from one authored shelf
-  (`ZoneStockItems`, migration `20261121004324_AddZoneStockItems`) rather than the whole catalogue: ten rows at
+  (`ZoneStockItems`, migration `20261121004324_AddZoneStockItems`) rather than the whole catalogue: nine rows at
   Crestfall, twelve at Aldenmere, eleven at Tolvaren, twelve at Skarhold. Per-NPC stock is still an engine
   change and is not in this wave (C6).
+- **Townspeople placed — landed 2026-11-21.** All thirteen rows below are seeded: one `LocationNpc` per
+  settlement location in `LocationNpcsSeeder`, and one archetype apiece in `ArchetypeSeeder` (`TypeKey =
+  "townspeople"`, non-hostile, immortal, `HasDialogue` on every row, `Traits.Shopkeeper` on the eleven who take
+  coin). This is what made the shop work again: the shop is a person (`ShopMerchantResolver`), so the three towns
+  that had a `HasMerchant` flag and stock but no placements refused every trade while the client offered the
+  button. Every merchant location a reachable town advertises now resolves a shopkeeper, and
+  `ShopMerchantResolverTests` fails if one stops. `playground` still has no one, deliberately (§2). Greetings are
+  still the wave B dialogue pass (§8): until it lands these people answer with the neutral fallback line, exactly
+  as `wayfarer-elder` always has (C4).
 - **`playground` — excluded.** The fifth `IsTown` zone is `IsDevOnly` and is never returned by public
   APIs, so it carries no roster (§2).
 
@@ -40,8 +49,8 @@ Read from code, with the line that says so. Every rule below shaped the roster.
 | Fact | Where | Consequence for this document |
 |---|---|---|
 | A person is placed by a `LocationNpc` row: `NpcId`, `ZoneId`, `LocationSlug`, `ArchetypeSlug`, optional `DisplayName`, `SortOrder` | `Veldrath.Server/Data/Entities/LocationNpc.cs`; seeded in `LocationNpcsSeeder.cs` | Every roster row here is a `LocationNpcs` entry, keyed by zone **and** location. An NPC is only meetable where the character's current zone *and* location match (`NpcHubCommands.cs:157-158`). |
-| A spawn pool entry becomes an attackable enemy, and a non-hostile one is dropped with a warning | `ActorPoolResolver.cs:82-87` | No townsperson appears in any pool. Section 7 proves the four settlements have zero pool entries. |
-| An empty pool means nothing spawns and nothing is substituted | `ActorPoolResolver.cs:56-61` | `SafeRespawn` towns keep an empty pool. That is authored content, not a gap. |
+| A spawn pool entry becomes an attackable enemy, and a non-hostile one is dropped with a warning | `ActorPoolResolver.cs:127-133` | No townsperson appears in any pool. Section 7 proves the four settlements have zero pool entries. |
+| An empty pool spawns nothing and substitutes nothing **only where nothing is placed**; a location with hostile placements and no pool spawns exactly those, never topped up, and a non-hostile placement is dropped with a warning | `ActorPoolResolver.cs:80-86`, `:94-100`, `:105-109` | `SafeRespawn` towns keep an empty pool **and no hostile placements**. That is authored content, not a gap. |
 | Dialogue is keyed by **archetype slug**, not by placement | `DialogueHubCommands.cs` `PickEntryAsync` (`Speaker == slug`), `NpcGreetings.PickAsync` | Two people sharing one archetype share one voice. Distinct registers per town therefore require distinct archetype slugs — the main cost in this card. |
 | `TalkToNpc` greets from entries with `TypeKey == "greetings"`; with none it falls back to "*{name} looks up as you approach*" | `NpcHubCommands.cs` `NpcGreetings` | A placed person with no greeting row is a person with nothing to say. One already exists today (C4). |
 | The dialogue panel only opens on an entry that has `Stats.Options` | `DialogueHubCommands.cs` `PickEntryAsync` | Greetings-only NPCs are barked at, not conversed with. Conversations are wave B/C content; this card does not pretend to ship them. |
@@ -58,10 +67,10 @@ is the dev playground.
 
 | Zone | Level | Locations (`S` = SafeRespawn, `M` = HasMerchant) | NPCs here today |
 |---|---|---|---|
-| `crestfall` | 0 | `crestfall-square` [S], `aurelian-market` [M], `hearthbound-inn`, `low-quarter` | 3 |
-| `aldenmere` | 5 | `ironhollow-keep` [SM], `aldenmere-marketplace` [M], `grey-cup` | 0 |
-| `tolvaren` | 10 | `tolvaren-harbour` [S], `cliff-road-market` [M], `saltcrow-inn` | 0 |
-| `skarhold` | 18 | `forge-quarter` [SM], `caldera-market` [M], `ashbrand-lodge` | 0 |
+| `crestfall` | 0 | `crestfall-square` [S], `aurelian-market` [M], `hearthbound-inn`, `low-quarter` | 4 |
+| `aldenmere` | 5 | `ironhollow-keep` [SM], `aldenmere-marketplace` [M], `grey-cup` | 3 |
+| `tolvaren` | 10 | `tolvaren-harbour` [S], `cliff-road-market` [M], `saltcrow-inn` | 3 |
+| `skarhold` | 18 | `forge-quarter` [SM], `caldera-market` [M], `ashbrand-lodge` | 3 |
 | `playground` | 0 | 5 dev locations (`IsDevOnly = true`, `IsDiscoverable = false`) | 0 |
 
 **Deliberately not populated: `playground`.** It is the dev sandbox, is never returned by public APIs
@@ -329,7 +338,7 @@ slug is not a text fix: it breaks that placement row and any stored `CurrentZone
 "*Tharrek looks up as you approach.*" every time. Also note the existing speaker slugs are inconsistent:
 `blacksmith-greeting` is hyphenated, `tavernkeeper-greeting` is not.
 
-**C5 — No merchant band exists. (Resolved 2026-11-20.)** `budget.yaml` published a `merchants:` section, and the
+**C5 — No merchant band exists. (Resolved 2026-11-20, `e691eba2`.)** `budget.yaml` published a `merchants:` section, and the
 shop applies its two price endpoints. `MerchantBands` carries the purse tiers, the stock size and those
 endpoints; `ShopPricing` prices every catalogue row with them; a merchant's `TradeGold` is the purse a single
 buyback may draw on, refused as `ShopRefusal.MerchantCannotAfford` when it will not cover the payout. The purse
@@ -342,7 +351,7 @@ band's published prices.
 
 **C6 — One shop catalog per zone.** The shop keys on `ZoneId`, not on the person: `VisitShopHubCommand` and
 `GetShopCatalogHubCommand` resolve the zone's merchant and read the zone's authored shelf (`ZoneStockItems`, one
-row per item per town, seeded ten / twelve / eleven / twelve), so Aldenmere's keep and its marketplace sell from
+row per item per town, seeded nine / twelve / eleven / twelve), so Aldenmere's keep and its marketplace sell from
 the same stock, and so do Skarhold's. "What they sell" here distinguishes the people, not the inventory; per-NPC
 stock needs an engine change.
 
@@ -351,6 +360,9 @@ stock needs an engine change.
 ## 7. Validation
 
 Both scripts are in `~/.hermes/profiles/dev-content/cache/scratch/`; their inputs are the seeders themselves.
+The output below is the record of the design pass, and one figure in it has moved since: `seeded placements: 3`
+was true at approval time, and thirteen are seeded now (§8). Everything else — the location list, the empty
+pools, the names, the barks — is still the claim being checked.
 
 ```
 == slug pattern + collision ==
@@ -449,15 +461,18 @@ miscounted dialogue total in §8.
 
 | Thing | Count | Owner | State |
 |---|---|---|---|
-| `LocationNpc` placements | 13 (3 exist, 10 new) | `LocationNpcsSeeder` / importer | placements 3 live, 10 designed here |
-| Townspeople archetypes (`ActorArchetype`, `TypeKey = "townspeople"`, non-hostile, immortal, `HasDialogue = true`) | 13 (3 exist, 10 new) | **D1 roster card** — it owns the 1–20 archetype roster, so it must adopt these slugs or this card and D1 disagree | 3 live, 10 proposed |
+| `LocationNpc` placements | 13 (3 exist, 10 new) | `LocationNpcsSeeder` / importer | **13 live** — every settlement location has its person (`LocationNpcsSeeder`) |
+| Townspeople archetypes (`ActorArchetype`, `TypeKey = "townspeople"`, non-hostile, immortal, `HasDialogue = true`) | 13 (3 exist, 10 new) | **D1 roster card** — it owns the 1–20 archetype roster, so it must adopt these slugs or this card and D1 disagree | **13 live** in `ArchetypeSeeder`; the eleven who take coin carry `Traits.Shopkeeper` and a purse inside their town's band |
 | Dialogue greeting rows (`TypeKey = "greetings"`, `Speaker` = archetype slug) | 13 needed, one per NPC: 2 live (`blacksmith-greeting`, `tavernkeeper-greeting`), 11 new — of which `wayfarer-elder-greeting` closes C4 | wave B dialogue pass | 2 live, 11 proposed |
-| Display-name overrides | 3 (one per existing generic archetype) | placement rows | designed here |
+| Display-name overrides | 3 (one per existing generic archetype) | placement rows | proposed — the three existing placements still answer by role name (`Village Blacksmith`, `Tavern Keeper`, `Wayfarer Elder`); the ten new archetypes carry their own names |
+
+The placements and archetypes are seeded (2026-11-21). What is still owed is voice, not people: eleven greeting
+rows, the three display-name overrides, and the conversations wave B/C was always going to write.
 
 Every reference in this document closes: the 13 archetype slugs are either seeded today or named here as new;
 the 13 placement ids resolve to zone + location pairs proven in §7; the dialogue ids are either seeded today or
 carry `(new)` and a `-greeting` slug the dialogue pass creates. There are no arrows to files that do not exist
-and no numbers that do not trace to a band — because no numbers are used at all.
+and no numbers that do not trace to a band.
 
 ## 9. Acceptance
 

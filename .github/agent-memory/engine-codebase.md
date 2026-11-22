@@ -631,6 +631,32 @@ sidebar, hotbar inside the game shell) and in the Avalonia client's `GameViewMod
   `pack-family-unknown`, a file-level rule). Anything walking `read.Files` must skip a family
   `ContentEntityTypes.TryResolve` rejects: `ContentReferenceCatalog.WithContent` throws on a blank content type,
   which is how `validate <family-dir>` used to die with a bare parameter exception instead of naming the file.
+- **A shelf edit is a data migration; stock has no pack family.** `ZoneStockItems` is
+  deliberately absent from `ContentEntityTypes` (the 22 keys at `ContentEntityTypes.cs:37-60`), from Foundry and from
+  the importer: a row is a `(ZoneId, ItemSlug)` pair of soft string references with no slug and no foreign key
+  (`ZoneStockItem.cs:22-31`), and the `Zone` it names lives in `ApplicationDbContext`
+  (`Veldrath.Server/Data/Entities/Zone.cs:7`, `ApplicationDbContext.cs:34`) — a context the importer never opens.
+  **The constraint is the context, not the database**: there is one Postgres database, and `Program.cs:95` hands the one
+  `DefaultConnection` to `ApplicationDbContext` (`:97-98`), `GameDbContext` (`:103-104`), `EditorialDbContext`
+  (`:107-108`) and the `ContentDbContext` factory (`:240`) — but an import writes `ContentDbContext` only, and
+  `ApplicationDbContext` is live game data an import must never touch. Shape rules a family out too: the importer's
+  create/update decision is `FindBySlugAsync` on a `ContentBase` (`ContentPackImporter.cs:119`,
+  `ContentEntityTypes.cs:114-124`) and its child reconciliation hangs off a parent navigation
+  (`ContentPackImporter.cs:275-306`), so there is nothing to key a stock row by. (The other tables that carry no pack
+  family are ruled out by that same shape test, not by that reason: none of them is a `ContentBase`, so
+  `FindBySlugAsync` has nothing to match — `ZoneLocationConnection`, a join table keyed by `FromLocationSlug`/
+  `ToLocationSlug` (`ZoneLocationConnection.cs:14`, `:20`), and the map graph's `Map`/`MapNode`/`MapEdge`, a map
+  document, its nodes and its edges, keyed by authored string ids rather than slugs. The
+  support tables — `ContentRegistry`, `TraitDefinitions`, `NamePatternSets` at `ContentDbContext.cs:19`, `:21`, `:89` —
+  and `GameConfig` are not `ContentBase` rows either; they are vocabulary and configuration rather than per-entity
+  content, so no pack family addresses them.)
+  Decided in `t_3231a2ea`:
+  `ZoneStockSeeder.Authors()` is the truth, the seeder stays insert-only, and a row the shelf no longer lists is
+  removed by a data migration (`DELETE … WHERE "ZoneId" = … AND "ItemSlug" = …`, empty `Down` because the `Id` is
+  generated on insert) in `RealmEngine.Data/Migrations/`. Adding a row needs no migration — the seeder inserts what is
+  missing on the next start. The procedure and the verification query live in
+  [`docs/content-packs.md`](../../docs/content-packs.md). **Do not make the seeder reconcile**: it would silently
+  delete a row another authoring surface owns, which is the failure this decision exists to prevent.
 
 ### Placed actor instances (A2, 2026-11-20)
 

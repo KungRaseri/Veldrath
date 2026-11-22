@@ -174,14 +174,15 @@ claims.
 
 ### What runs where
 
-Every workflow watches the same two integration branches, and none of them publishes from a
-pull request:
+Every workflow that triggers on `push` watches both integration branches, and none of them publishes
+from a pull request:
 
 | Trigger | What runs |
 |---|---|
 | push to `main` | build + test, **and** the publish/deploy jobs |
 | push to `development` | build + test; publish jobs are skipped |
-| pull request whose **base** is `main` or `development` | build + test only |
+| pull request whose **base** is `development` | build + test only |
+| pull request whose **base** is `main` | the merge gate only (see below) |
 | `workflow_dispatch` | build + test only |
 | `workflow_dispatch` with `publish: true` | build + test, **and** the publish/deploy jobs |
 
@@ -200,6 +201,45 @@ measured on this instance rather than assumed:
   ran the web build, the game-loop e2e and the image package. Rebase the PR branch while it is
   still open; merge into it only when rebasing would rewrite a branch someone else has already
   pulled.
+
+**The `main` row is deliberately asymmetric, and it is what keeps `development` commits from being
+marked red.** Ten pull requests have ever targeted `main`: eight came from `development` — seven
+merged, and #78 still open — and two were closed unmerged from branches of their own, #177 (a
+throwaway probe for this contract) and #31 (a wiki-submodule pin). The release PR is #78, so its
+head commit *is* a `development` commit, and the `push` runs that judge that commit already report
+there. A `pull_request` run of the same workflow, at the same commit, is a second verdict on the
+same tree, and it is the one that does damage: the next push to `development` synchronises the
+release PR, Forgejo cancels the superseded run, and the cancellation is recorded as `failure / "Has
+been cancelled"` on the `development` commit that run was started for. Measured on 2026-11-21 at tip
+`8df3e780`: 14 statuses, 13 of them `failure / "Has been cancelled"`, all 13 `(pull_request)`; the
+`docs.yml pull_request` runs 2900/2909/2918/2927 at four consecutive tips are `cancelled` while the
+paired `docs.yml push` runs at the same commits (2893/2902/2911/2920) queued and then finished
+`success`. So the six component workflows and
+`docs.yml` declare `pull_request.branches: [ development ]`, and the merge gate — the one workflow a
+release PR still runs — never cancels.
+
+That relies on `pull_request.branches` filtering on the base branch, so it was measured before it
+was relied on. Two throwaway probe pull requests carried the same head branch: #174 against
+`development` and #177 against `main`. Both were built from a probe workflow with `branches:
+[ development ]` and a control that lists `main` as well. On #177 the control ran (run #3212) and
+the `development`-only workflow produced **no run at all**; the six component workflows, `docs.yml`
+and the merge gate ran their whole matrix again at a commit #174 had already judged (runs
+#3204–#3211) — exactly the duplicate the contract removes.
+
+The alternative — keep the release-PR matrix and merely stop cancelling it — was measured on the
+same probes and rejected on cost. `cancel-in-progress: false` does stop the cancellation: the five
+probe commits produced five completed runs of that workflow (runs #3181, #3187, #3190, #3194 and
+#3196, all `success`), while its `cancel-in-progress: true` control wrote three `failure / "Has been
+cancelled"` rows (runs #3186, #3189 and #3192) on the commits it was superseded at. What it does not
+do is stop the work. At `d0050f96` the release PR's eight `(pull_request)` jobs took 20 s, 2 m 14 s,
+5 m 47 s, 1 m 54 s, 6 s, 2 m 31 s, 1 m 33 s and 8 m 19 s — about 22 minutes of runner time per
+synchronise on a two-slot runner. That buys a second copy of a verdict the `push` lane mostly
+already has: six of those eight jobs have a `push` twin at that commit and reached the same verdict
+it did. The two that do not are `ci-web`, whose `paths` list that push did not match, and the merge
+gate, which has no `push` trigger at all. A pull request into `main` from a branch of its own would
+get the matrix back only by adding `main` to `pull_request.branches` again — the last such PR was
+#31, a wiki-submodule pin closed unmerged — while the narrow list stays specific to the release
+lane, and `scripts/ci-merge-gate.sh`'s L5 fails the lint if the merge gate loses `main`.
 
 Each workflow keeps its `push` and `pull_request` path lists **identical**, and lists
 `.github/agent-memory/**` by name even though `**/*.md` already matches it — the memory file is the
@@ -372,7 +412,7 @@ The obvious list is the build gates that report on a pull request today:
 - `CI - .NET Coverage Gate / Enforce .NET Coverage Floors (pull_request)`
 - `Deploy Documentation / Build Docs (pull_request)`
 
-It cannot be that list. Every workflow is filtered by `on.pull_request.paths`
+It cannot be that list. Each of those workflows is filtered by `on.pull_request.paths`
 ([`ci-engine.yml:28`](https://git.kungraseri.cloud/Veldrath/Veldrath/src/branch/main/.github/workflows/ci-engine.yml)), and a required pattern that
 matches no status is `pending`, not skipped: in `MergeRequiredContextsCommitStatus`
 (`services/pull/commit_status.go` at v15.0.11) the loop breaks with
@@ -402,8 +442,37 @@ reads:
 
 What follows from that, all of it deliberate:
 
-- `pending` blocks — a queued or running job, and a job cancelled by the `concurrency`
-  group, keep the merge waiting.
+- `pending` blocks — a queued or running job keeps the merge waiting.
+- A job **cancelled** by its `concurrency` group is not `pending`, and this is the one place the
+  wording of the rule above matters: it reports `failure` with the description "Has been
+  cancelled", so it does not hold the merge, it **refuses** it. Measured:
+  `GET /api/v1/repos/Veldrath/Veldrath/commits/753b0210/status` on 2026-11-21 returned 17 of its
+  22 statuses as `failure / "Has been cancelled"` — a merged `development` commit that no run
+  judged as a whole (three `push` contexts did reach a verdict and pass — engine, discord and
+  content — and two `push` contexts were skipped), marked red by the runs that superseded the
+  rest. Whether a lost run is safe depends on whose commit it would have reported on, not on the
+  event name:
+  - Harmless when the run belongs to a **pull request whose head is a branch of its own**: the
+    pull request only ever shows its latest head, and the cancelled status lands there rather
+    than on a base-branch commit.
+  - Not harmless when the run reports on a **base-branch commit**. That is every `push` run on
+    `main` or `development`, and it is also the release PR (`development` → `main`, #78), whose
+    head *is* `development`: its `pull_request` runs report on `development` commits. Measured on
+    2026-11-21 on tip `8df3e780`: 14 statuses, 13 of them `failure / "Has been cancelled"`, all
+    13 `(pull_request)`. The paired runs show both behaviours side by side — 2900/2909/2918/2927
+    (`pull_request` #78) are `cancelled`, while 2893/2902/2911/2920 (`push` … `development`) were
+    queued `waiting` in one group at the same commits and have all since finished `success`
+    (3 m 1 s, 2 m 32 s, 2 m 55 s and 2 m 51 s).
+
+  So the rule for every workflow that triggers on `push` is to cancel PR runs only —
+  `cancel-in-progress: ${{ github.event_name == 'pull_request' }}`. A `push` run on `main` or
+  `development` is then never superseded, so it finishes and records the verdict it actually
+  reached. The release PR lane is removed instead of covered by that expression, because no
+  concurrency setting can move its verdicts somewhere harmless: its `pull_request.branches` list is
+  `development` only (see "What runs where"), so a push to `development` starts no run for it in the
+  six component workflows or `docs.yml`, and `merge-gate.yml` — the only workflow a release PR still
+  runs — does not cancel at all (`cancel-in-progress: false`: a superseded run queues and completes,
+  where a cancelled one is a `failure` on a `development` commit).
 - A workflow filtered out by `paths` neither helps nor blocks: it is simply not part of the
   set. The `paths` lists stay the single source of truth for *which* components a change
   touches, and no second copy of them has to be maintained here. That holds only while
@@ -462,24 +531,29 @@ The alternatives were measured against the tree instead of argued:
 
 | Alternative | Why not |
 |---|---|
-| Add root-config paths to an existing list | The set is not three files: 37 tracked paths in seven classes match no list today (table below), and every new root file reopens the deadlock silently. It is also conceptually false — no component's output depends on `.gitignore` |
+| Add root-config paths to an existing list | The set is not three files: 37 tracked paths in eight classes match no list today (table below), and every new root file reopens the deadlock silently. It is also conceptually false — no component's output depends on `.gitignore` |
 | Keep `["*"]` and document `force_merge` for this class | It works, and that is the objection: the token every worker here authenticates with belongs to the instance administrator (`GET /user` → `kungraseri`, `is_admin: true`), and `CheckPullMergeable` clears the protection error for an admin. Documenting it would make "any worker certifies its own merge" the routine path — the same reason posting a status by hand is forbidden. It stays break-glass |
 | Switch to named contexts | Already rejected above, and this does not change it: a path-filtered workflow still never reports |
 
-The job lints the workflow definitions; it builds nothing. Its rules are the two ways this
-repository has actually broken CI, plus the invariant that keeps this remedy alive:
+The job lints the workflow definitions; it builds nothing. Its rules are the failure modes this
+repository has actually hit, plus the invariants that keep this remedy alive:
 
 - **L1** every workflow file declares a top-level `name:` — that string is the status context.
 - **L2** every `uses:` names one of the six actions mirrored on this instance (section 1). That
   failure mode is documented above as "fails in under a second, logs nothing"; the rule turns it into
   a message that names the file, the action and the fix (import it with `POST /repos/migrate`, then
   add it to the allow-list and to the table in section 1).
-- **L3** every `pull_request` workflow triggers on both `main` and `development`. Session-92 fixed
-  exactly this drift: every workflow said `branches: [ main ]` while pull requests targeted
-  `development`, so a change landing there ran no CI at all.
+- **L3** every `pull_request` workflow lists `development`. Session-92 fixed exactly this drift:
+  every workflow said `branches: [ main ]` while pull requests targeted `development`, so a change
+  landing there ran no CI at all. `main` is optional on purpose — a `pull_request` run there
+  duplicates the `push` run at the same commit and reddens the `development` commits it is
+  superseded at ("What runs where").
 - **L4** at least one `pull_request` workflow declares neither `paths` nor `paths-ignore`. That is
   the invariant behind the remedy: give `merge-gate.yml` a `paths` filter and the zero-status
   deadlock returns, so the lint fails the pull request that does it.
+- **L5** `merge-gate.yml` lists both `main` and `development`. It is the only workflow a release PR
+  still runs, so it is the one status a release PR is guaranteed to have; dropping `main` there
+  would restore the zero-status deadlock for a release whose head commit matched no `paths` list.
 
 Cost: one job — one `actions/checkout@v7` and one `bash scripts/ci-merge-gate.sh --lint`, with no
 SDK, npm, docker or service container. **Measured on 2026-11-03: 5 s** for the whole job (`duration`
@@ -532,14 +606,18 @@ posting a status by hand stays forbidden: a status any agent can mint certifies 
 
 #### Files that no component workflow builds
 
-Measured against `development` at `3d3320ac` (2026-11-20, `git ls-files`: 2007 paths, 102
+Measured against `development` at `d0050f96` (2026-11-20, `git ls-files`: 2069 paths, 104
 `pull_request` path patterns, the merge gate and its script included): **37 paths match no
 `on.pull_request.paths` pattern.** Before the merge gate they produced zero statuses and deadlocked
 the gate; now they produce exactly one — the merge gate — and merge with **no build and no test**.
 Regenerate the list with `bash scripts/ci-merge-gate.sh --uncovered`; its last two lines carry the
 live counts for whatever tree you run it on, so quote them instead of hand-counting — the figures
 above are a snapshot of that commit, not a standing number. The content guard,
-`.github/workflows/ci-content.yml` (merged in #108), contributes nine of those patterns.
+`.github/workflows/ci-content.yml` (merged in #108), contributes nine of those patterns. The same 37
+paths were uncovered at `3d3320ac` (2007 tracked files, 102 patterns): every file added between the
+two measurements is covered by some `paths` entry, and the only pattern change since is the pair
+`scripts/check-content-names.mjs` and `scripts/content-name-collisions.allow.json` (#134), which name
+a script `docs.yml` runs.
 
 The path count halved when `Veldrath.Assets` and its 1,837 art files were deleted (2026-11-04); the
 uncovered *set* barely moved, which is the point — the art never matched a workflow's `paths` either.
@@ -551,22 +629,36 @@ path lists. The rule is the one `scripts/web-coverage-gate.mjs` and `scripts/tes
 | Class | Count | Paths |
 |---|---|---|
 | Root dotfiles and editor config | 10 | `.dockerignore`, `.editorconfig`, `.env.example`, `.gitignore`, `.gitmodules`, `.hermes/skills`, `.roomodes`, `.vscode/launch.json`, `.vscode/tasks.json`, `LICENSE` |
-| Root build metadata | 2 | `NuGet.config`, `dotnet-tools.json` |
+| Root build metadata | 1 | `dotnet-tools.json` |
 | Solution files | 4 | `RealmEngine.slnx`, `Veldrath.Discord.slnx`, `Veldrath.Libraries.slnx`, `Veldrath.Server.slnx` |
 | Observability and deploy config | 11 | `config/grafana/dashboards/{10915,19194,23178,23179}.json`, `config/grafana/provisioning/dashboards/dashboards.yml`, `config/grafana/provisioning/datasources/prometheus.yml`, `config/prometheus/prometheus.yml`, `docker-compose.coolify.yml`, `docker-compose.dev.yml`, `docker-compose.e2e.yml`, `docker-compose.prod.yml` |
+| Content budget data | 1 | `game-context/budget.yaml` (YAML, so `docs.yml`'s `**/*.md` does not match it) |
 | Scripts no workflow names | 8 | `scripts/ci-merge-gate.sh`, `scripts/create-release-tag.ps1`, `scripts/e2e-stack.sh`, `scripts/format-json-files.py`, `scripts/generate-coverage-report.ps1`, `scripts/generate-version.ps1`, `scripts/onebit_labeled.png`, `scripts/roguelike_base_labeled.png` |
 | Submodule pin | 1 | `wiki` |
 | The always-on check itself | 1 | `.github/workflows/merge-gate.yml` (it declares no `paths` at all, so no list can name it) |
 
-Two of those classes deserve an explicit warning, because "merges without a build" is not the same
+Three of those classes deserve an explicit warning, because "merges without a build" is not the same
 as "cannot break the build":
 
-- **`NuGet.config` and `dotnet-tools.json`** decide how every .NET job restores and which tools it
-  runs. Add them to `ci-coverage.yml`'s `paths` when that matters; until then a change to package
-  sources merges on the merge gate alone.
+- **`dotnet-tools.json`** pins the local tool set every `dotnet` invocation resolves, and no `paths`
+  list names it, so a tool-version change merges on the merge gate alone — name it in the `paths` of
+  whichever job installs those tools when a tool pin starts to matter. `NuGet.config` has left
+  this class: `ci-content.yml` names it in both of its `paths` lists (`push` and `pull_request`), so
+  a package-source change now gets a content-guard status. Read that status for what it is — not a
+  build. The guard runs `dotnet run --project Veldrath.ContentPack`, so the sources that project
+  resolves are restored through the changed file; a source only another project needs stays unseen
+  until an unrelated change runs that project's job, which then fails on a pull request that did not
+  touch it.
 - **The four component `.slnx` files** decide which projects each solution builds. `Realm.Full.slnx`
   is covered by `ci-coverage.yml`; `RealmEngine.slnx` and the three `Veldrath.*.slnx` are not, so
   adding a project to `Veldrath.Server.slnx` alone reports the merge gate and no build.
+- **`game-context/budget.yaml`** is the approved merchant band, and `MerchantBandTests` reads it from
+  the repository root (`Veldrath.Server.Tests/Features/MerchantBandTests.cs`), comparing it against
+  the code's copy in `MerchantBands` — so an edit here can fail `Veldrath.Server.Tests` without
+  touching a C# file. By the same rule as an executed script, a file a test reads belongs in that
+  job's `paths`, and no list names `game-context/**`: `docs.yml`'s `**/*.md` covers only the sibling
+  `GAME.md`, which is why the directory looks covered. Until it is named, a band edit merges with
+  `ci-server.yml` unrun and reds the next pull request that touches `Veldrath.Server/**`.
 
 Seven of the eight entries in the scripts class are developer-only, which is why no list names them
 and none should:
