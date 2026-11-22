@@ -561,7 +561,7 @@ family: zonelocation
 entities:
   - slug: drove-road
     displayName: The Drove Road      # required: display_name_missing
-    typeKey: locations               # required: type_key_missing
+    typeKey: environments            # required: type_key_missing — the seeder's value, not `locations`
     zoneId: the-droveway
     actorPool:
       - archetypeSlug: giant-rat
@@ -583,6 +583,10 @@ Two things the translation has to respect, both from the importer's own document
   carrying only `actorPool` would blank the seeder's `displayName`, `stats` and `traits`. Generate the
   pack from `ZoneLocationsSeeder` rather than hand-writing the pool alone — which the seeder's insert-only
   behaviour makes necessary anyway.
+- **`typeKey` is the seeder's value, not this example's.** The abridged block above is illustrative: it
+  once wrote `locations` for `drove-road`, and the seeder (`ZoneLocationsSeeder.cs`, `drove-road`) and the
+  landed pack both write `environments`. At `the-droveway`, `environments` is the wilderness room and
+  `locations` is `weathered-waypost`. Generating the pack from the seeder is what keeps this right.
 
 **What the pack must satisfy, and the rule that enforces it** (existing rules, cited — not a wish list):
 
