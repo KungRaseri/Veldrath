@@ -41,6 +41,12 @@ public sealed partial class ContentReferenceCatalog
     /// <summary>Gets the loot-table slugs present in content.</summary>
     public IReadOnlySet<string> LootTables { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Gets the ids of the loot tables present in content. Ids as well as slugs, because an override that is a foreign
+    /// key (<c>ActorInstance.LootTableOverride</c>) can only be proved to resolve against the id set.
+    /// </summary>
+    public IReadOnlySet<Guid> LootTableIds { get; init; } = new HashSet<Guid>();
+
     /// <summary>Gets the skill slugs present in content.</summary>
     public IReadOnlySet<string> Skills { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -90,6 +96,7 @@ public sealed partial class ContentReferenceCatalog
             Powers = Slugs(await db.Powers.AsNoTracking().Select(p => p.Slug).ToListAsync(cancellationToken)),
             Recipes = Slugs(await db.Recipes.AsNoTracking().Select(r => r.Slug).ToListAsync(cancellationToken)),
             LootTables = Slugs(await db.LootTables.AsNoTracking().Select(t => t.Slug).ToListAsync(cancellationToken)),
+            LootTableIds = (await db.LootTables.AsNoTracking().Select(t => t.Id).ToListAsync(cancellationToken)).ToHashSet(),
             Skills = Slugs(await db.Skills.AsNoTracking().Select(s => s.Slug).ToListAsync(cancellationToken)),
             Organizations = Slugs(await db.Organizations.AsNoTracking().Select(o => o.Slug).ToListAsync(cancellationToken)),
             Dialogues = Slugs(await db.Dialogues.AsNoTracking().Select(d => d.Slug).ToListAsync(cancellationToken)),

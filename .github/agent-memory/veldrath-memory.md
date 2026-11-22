@@ -59,22 +59,38 @@ facts make the web gates runnable there; each one has cost a session to rediscov
 - **A moved repo file is caught by `source-paths.test.ts`, not by an ENOENT.** The parity suites read
   C#/TS sources off disk, so a path in a suite is a dependency on the repository layout; when it moves
   the suite throws at module scope and vitest reports `Tests  no tests` — the guard has vanished, not
-  failed. `web/client/src/lib/parity/source-paths.test.ts` (added 2026-11-20, card `t_497bf232`) scans
-  its siblings for `readRepoFile('…')` / `walkFiles('…')` / `join(repoRoot(), '…')` (literal or
-  `UPPER_SNAKE` constant) and asserts every path exists, reporting **all** missing ones in one
-  assertion as `file "X" — readRepoFile() at <suite>:<line>`. It also fails on an argument it cannot
-  resolve statically and on any suite calling `process.cwd()`. When you move a server file, this is
-  the test that tells you which suites to repoint.
+  failed. `web/client/src/lib/parity/source-paths.test.ts` (added 2026-11-20, card `t_497bf232`;
+  extended by `t_fa258afd`) scans its siblings **and the suites named in `EXTERNAL_SUITES`** for
+  `readRepoFile(…)` / `walkFiles(…)` / `join(repoRoot(), '…')` and asserts every path exists,
+  reporting **all** missing ones in one assertion as `file "X" — readRepoFile at <suite>:<line>`.
+  The reader itself is `web/client/src/lib/testing/source-paths.ts`: it resolves a quoted literal, a
+  template literal with no `${…}`, or a `const|let|var` holding one **whatever the casing**, and
+  accepts a `walkFiles('…')` entry (`for (const file of …)`, `.map((file) => …)`) because the
+  directory literal is what gets checked. Any other argument is unresolved — a failure — so a suite
+  cannot hide a path in an expression the reader does not follow. It also reads the polarity of
+  `join(repoRoot())`: `expect(existsSync(…)).toBe(false)` is checked as *must stay gone*
+  (`content-schema.test.ts` uses that to keep the deleted duplicate type-key map from coming back).
+  `src/lib/testing/source-paths.test.ts` pins those rules on fixtures, so a future edit that
+  re-breaks one fails a test instead of leaving the guard quietly green.
+  From #147 until `t_fa258afd`, `development` was red on exactly that: the guard read
+  content-schema's `.toBe(false)` as a missing path. The fix is the polarity, never deleting the
+  assertion, and never allow-listing the path.
+
+- **A second source reader lives outside the parity folder.** `web/client/src/lib/game/payload-contract.test.ts`
+  parses `Veldrath.Server/Hubs/GameHub.cs` against `game/types.ts`; it now reads through
+  `readRepoFile()` and is listed in `EXTERNAL_SUITES` with its reason, so a hub move fails the guard
+  naming that suite. Adding another such suite means adding an entry with a reason — not widening a
+  directory glob, which would drag in suites that never read repo source.
 
 - **Export the `ci-web.yml` env** ([`.github/workflows/ci-web.yml`](../../.github/workflows/ci-web.yml))
   or SvelteKit aborts with `env_invalid`: at minimum `PUBLIC_API_URL` and `PUBLIC_HUB_URL`; `ORIGIN`,
   `BETTER_AUTH_SECRET`, `JWT_KEY`, `JWT_ISSUER`, `JWT_AUDIENCE`, `DATABASE_URL` complete the set.
 
-Under that invocation the parity suite is **green — 8 files / 37 tests, verified at `753b0210` + this
-card** (was 7 files / 33 tests before the source-path guard). A missing repo file now fails an
-*assertion* in `source-paths.test.ts` naming the path and the suite; a suite that reads a path the
-guard cannot see still reds out as a failed suite (`ENOENT` at module scope), so read the path in the
-error before suspecting a parity mismatch.
+Under that invocation the parity guard and its reader are **green — `src/lib/parity` +
+`src/lib/testing` = 10 files / 56 tests** (9 files / 45 tests before card `t_fa258afd`; the 11 new
+ones pin the reader's rules on fixtures). A missing repo file now fails an *assertion* in
+`source-paths.test.ts` naming the path and the suite, so read that message before suspecting a parity
+mismatch. Measured at `d0050f96`; the whole client unit suite was 106 files / 1556 tests there.
 
 **Reproduce a bug claim against current `origin/development` first.** A worktree branch can lag it by
 several merges: the `check-markdown-links.mjs` failure carded as t_3407c30b passed at the stale base
@@ -4636,3 +4652,103 @@ own — so the mode bug could never have shown up there.
   green. The env object is annotated `@type {Record<string, string | undefined>}` now. Two habits follow: run
   `npm run typecheck` after touching anything under `web/client/tests/`, and treat the tooling tests as a runtime
   check, never a compile check.
+
+### Session-109 (2026-11-20) — The shop became a person: T1 lands the merchant band and the per-zone shelf
+
+The approved `merchants:` band in `game-context/budget.yaml` is now enforced by the shop path, and the per-zone stock
+table exists. Four facts for the next session:
+
+- **A merchant is a placed shopkeeper, not a zone flag.** `ShopMerchantResolver` requires the character's
+  `CurrentZoneLocationSlug`, a `LocationNpc` at that exact zone+location, and an `ActorArchetype` with
+  `Traits.Shopkeeper == true`; `Zone.HasMerchant` is still checked, and `RequestedZoneId != character.CurrentZoneId` is
+  refused as `ZoneMismatch`. `VisitShop`, `GetShopCatalog`, `BuyItem` and `SellItem` all go through it and return a
+  typed `ShopRefusal` next to the message ("There is no one to trade with here."). **Consequence to remember:** only
+  crestfall has placements today (`LocationNpcsSeeder`), so aldenmere / tolvaren / skarhold refuse to trade until the
+  D3 rosters are seeded, and `playground` refuses because it has no authored stock. That is the intended consequence,
+  not a regression — the per-zone stock was authored anyway so the towns are ready when their people arrive.
+- **Stock is `ZoneStockItems` in `ContentDbContext`** (migration `20261121004324_AddZoneStockItems`, unique on
+  `(ZoneId, ItemSlug)`), authored by `RealmEngine.Data/Seeders/ZoneStockSeeder` — crestfall 9, aldenmere 12,
+  tolvaren 11, skarhold 12 of the 24 purchasable items. The counts are load-bearing, not cosmetic: a shelf's
+  dearest row is the ceiling that sizes its town's purse (`merchants.gold_basis` in `game-context/budget.yaml`), so
+  `MerchantBandTests.Gold_Basis_Reproduces_Each_Towns_Band_From_Its_Authored_Shelf` now fails the moment a shelf
+  edit re-bases a band. It is deliberately *not* a `ContentBase` family: a row is a
+  zone↔item join with no slug or display name, so it is absent from `ContentEntityTypes`, the Foundry schema and the
+  pack importer. Sell does not consult stock — a merchant buys back anything it is offered.
+- **Pricing is one place:** `ShopPricing` applies `MerchantBands.PriceMarkupPercent` (100 = the band floor) to buy and
+  `BuybackRatePercent` (50 = the band ceiling) to sell, and clamps sell below buy so even a 1-gold item cannot be
+  bought and sold for the same coin. `MerchantBandTests` parses `budget.yaml` and fails when the C# copy drifts.
+- **The blacksmith's purse moved 500 → 250 through the importer, not the seeder.** `ArchetypeSeeder` is insert-only, so
+  `content/archetypes/village-blacksmith.yaml` is the delivery path: import an old (500) copy, then the real pack,
+  reported `created 1` → `updated 1` → `unchanged 1` against Postgres 17, row `Version 2`, `TradeGold 250`. Change both
+  in future (the seeder for fresh installs, the pack for existing rows) or a new database and an upgraded one disagree.
+- **A shelf edit is a data migration — decided in `t_3231a2ea`, not deferred.** `ZoneStockItems` has no pack family and
+  is not getting one. The reason is its shape, not its size: a row is a `(ZoneId, ItemSlug)` pair of soft string
+  references with no slug (`ZoneStockItem.cs:22-31`), while the importer's whole update path is
+  `FindBySlugAsync` on a `ContentBase` (`ContentPackImporter.cs:119`) and its child reconciliation hangs off a parent
+  navigation (`ContentPackImporter.cs:275-306`); the `Zone` being named lives in `ApplicationDbContext`
+  (`Veldrath.Server/Data/Entities/Zone.cs:7`, `ApplicationDbContext.cs:34`), a context an import never opens — one
+  Postgres database, four contexts (`Program.cs:97-108`, `:240`) — so a pack family would need a `ContentBase` parent
+  row (a shelf keyed by the zone id, not a phantom zone: `ZoneLocation` is the existing precedent of a content family
+  carrying a loose `ZoneId`) purely to give the importer something to hang the list off, and it would still buy no
+  validation, because the pack validator cannot resolve a gameplay zone id or read the live `Zone` table. Option 3 (a
+  reconciling seeder) stays rejected: two writers to one table disagreeing in silence is the exact failure this
+  decision prevents. **Ownership:** `Authors()` is the truth — the seeder materialises it on a database that has never
+  been seeded, a migration carries the delta on one that has, nothing else writes these rows. Adding a row still needs
+  no migration (the seeder inserts what is missing); removing one, or changing a `SortOrder`, does. Shape, verification
+  query and the "who owns a shelf" statement: [`docs/content-packs.md`](../../docs/content-packs.md); the standing rule
+  for future sessions: [`engine-codebase.md`](engine-codebase.md), "Content packs — the editable catalogue".
+
+Test gotchas found on the way: a `ContentDbContext` sharing a SQLite connection after another context created tables
+needs `Database.GetService<IRelationalDatabaseCreator>().CreateTables()` (EnsureCreated is a no-op); and a fixture that
+seeds a context from its constructor must keep that context in a field — `using var db` there disposes it before the
+first test runs.
+
+### Session-110 (2026-11-20) — The shelves were re-based onto the approved band, and a guard now pins the arithmetic
+
+T1's two-row shelf defect, settled by `t_056aa527` and fixed by `t_a49d7693`. The band is the authority: it landed at
+15:22 (`e691eba2`), the shelves 94 minutes later (`3b7ac2dc`, 16:56), and the newer artifact failed to obey the table
+twice.
+
+- **crestfall lost `hunters-bow` (35 gold) — 10 rows → 9.** The town's prose calls it "a starter blade", and
+  `iron-sword` is that blade; the bow was a second weapon dearer than the 30-gold `rune-of-fire` ceiling the L0 band is
+  sized from, which had pushed the shelf to [100, 300] against the approved [100, 250]. Nine rows still clears
+  `MinimumStockSize` (8) — do not invent a tenth row to restore the old count, that is how the ceiling drifted.
+- **tolvaren swapped `orb-of-force` (300) for `fire-ruby` (200)**, 11 rows unchanged. 16 x 0.50 x 300 = 2400 blew the
+  approved 1600 ceiling; `fire-ruby` is the ceiling the L10 comment already named and was the one item it named that
+  the shelf lacked. Skarhold's prose ("the two orbs no lower town will handle") now matches the data.
+- **The gap that let it through is closed.** Nothing tied `gold_basis`'s arithmetic to the authored shelves, so
+  `MerchantBandTests.Gold_Basis_Reproduces_Each_Towns_Band_From_Its_Authored_Shelf` now recomputes every merchant
+  town's band from `ZoneStockSeeder.Authors()` ∩ the priced catalogue ∩ `budget.yaml`. It fails on the pre-fix shelves
+  with "…crestfall's L0 ceiling from its shelf ceiling (35 gold)… but found 300 (difference of 50)". Its fixture seeds
+  `ItemsSeeder` too — the values come from the catalogue, not from a copy of the prices.
+- **A shelf edit is inert on an existing database until a migration deletes the old row.** `ZoneStockSeeder` is
+  insert-only (`:40-60`) and `ZoneStockItems` has no importer or pack path, so `20261121025507_ReconcileZoneStockShelves`
+  deletes `crestfall/hunters-bow` and `tolvaren/orb-of-force`; the next start inserts `tolvaren/fire-ruby` in the freed
+  slot. Verified against Postgres 17 (Up removes exactly two rows, Down restores them at SortOrder 100, Down repeatable).
+  The authoring gap itself is still open — see the parked card on `ZoneStockItems` having no authoring path.
+
+### Session-D3-t_d65b853d (2026-11-21) — The people arrive: D3's roster is seeded, and the three towns can trade again
+
+T1 left the shop honest and three towns unshoppable. The fix was content, not code: `LocationNpcsSeeder` now places all
+thirteen rows of `docs/design/content/towns.md` §4, and `ArchetypeSeeder` carries an archetype for each.
+
+- **Placement ids come from towns.md, not from the follow-up card.** The card listed `aldenmere-marketplace-cellar`
+  for the cellar keeper; the approved table places `aldenmere-greycup-keeper` at `grey-cup`. The doc wins — it is the
+  approved source and the card says so. Follow the roster table, not the prose summary of it.
+- **Who trades is the "sells / teaches / refuses" column.** Eleven of the thirteen carry `Traits.Shopkeeper`; the two
+  who do not are `wayfarer-elder` (teaches, no coin) and `harbour-master` (teaches the tide line, refuses berth).
+  A shopkeeper archetype at a location the town does not flag is harmless: the resolver gates on the *zone's*
+  `HasMerchant`, so crestfall's tavern keeper and the new carter trade from the town shelf wherever they stand (C6).
+- **Every purse is inside its town's band, chosen there rather than caught by the test.** L0 150, L5 300/400/500,
+  L10 900/800, L18 1600/2400/1800; `MerchantBandTests.Every_Seeded_Shopkeeper_Purse_Is_Inside_Its_Towns_Band` runs over
+  the real `LocationNpcs` rows, so a new placement with a purse outside its town's tier reds the build.
+- **New archetypes are named people.** `DisplayName` on a new archetype is the person (`Raekmeld`), because each is
+  exactly one person; the three pre-existing generic archetypes keep role names and their three `DisplayName`
+  overrides are still unseeded — towns.md §8 records that as owed with the wave B greetings.
+- **The regression guard is the invariant, not a list.** `ShopMerchantResolverTests` resolves every `ZoneLocation`
+  flagged `HasMerchant` in a non-dev merchant zone (six today) and fails when one has no shopkeeper or the zone has no
+  shelf. The client offers its shop button from that same flag, so this is the test that keeps the button and the
+  server agreeing.
+- **Playground stays shopless on purpose.** `ZoneStockSeeder` has no `playground` rows and `LocationNpcsSeeder` places
+  nobody there: the sandbox is `IsDevOnly`, its locations are fixtures, and inventing a roster would be inventing a
+  settlement. Its shop refuses with `NoMerchant`, which is the documented decision.

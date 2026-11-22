@@ -685,7 +685,8 @@ public static class ContentEndpoints
     }
 
     private static ActorInstanceDto ToActorInstanceDto(ActorInstanceEntry a) =>
-        new(a.Slug, a.DisplayName, a.TypeKey, a.ArchetypeId, a.LevelOverride, a.FactionOverride, a.RarityWeight);
+        new(a.Slug, a.DisplayName, a.TypeKey, a.ArchetypeId, a.LevelOverride, a.FactionOverride, a.RarityWeight,
+            a.LocationSlug);
 
     // Material Properties
     private static async Task<IResult> GetMaterialPropertiesAsync(IMaterialPropertyRepository repo, string? family = null)

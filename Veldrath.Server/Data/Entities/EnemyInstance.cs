@@ -36,6 +36,14 @@ public class EnemyInstance
     public string ArchetypeSlug { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the actor instance slug this enemy was spawned from, or <see langword="null"/> when it came from a
+    /// bare pool entry. <see cref="ArchetypeSlug"/> stays the archetype on purpose — the spawn instant's unique index
+    /// and the reconciliation pass both key on it — but a reload has to resolve the <em>instance</em> to rebuild the
+    /// composed template, because the overrides are not on the archetype.
+    /// </summary>
+    public string? InstanceSlug { get; set; }
+
+    /// <summary>
     /// Gets or sets the display name captured at spawn time. Snapshotted on purpose: renaming or deleting the
     /// archetype must not rename an enemy that is already mid-fight.
     /// </summary>

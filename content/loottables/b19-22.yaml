@@ -10,7 +10,7 @@
 # are above it and are held to b23-26; storm-topaz and void-shard (150) are inside it.
 #
 # All four roster rows banded 19-20 belong to this band: the band that contains a floor of 19 is
-# b19-22. ash-jack and forge-deserter are seeded 19-22 so that scorched-battlefield (L21-25) can
+# b19-22. ash-jack and forge-deserter must be seeded 19-22 so that scorched-battlefield (L21-25) can
 # carry them at all (pool-matrix §6); their drop band follows the floor, not the widened ceiling.
 
 family: loottable
@@ -103,7 +103,7 @@ entities:
         isGuaranteed: false
 
   - slug: ash-jack-drops
-    # band: b19-22 — ash-jack, roster band 19-20, seeded 19-22; spawns at scorched-battlefield
+    # band: b19-22 — ash-jack, roster band 19-20, must be seeded 19-22; spawns at scorched-battlefield
     # (L21-25)
     # Why: a crow of the ash plains that knows the sound of a dying animal and calls the rest. It has
     # no pockets — everything on it came off the field and off what the field killed.
@@ -144,7 +144,7 @@ entities:
         isGuaranteed: false
 
   - slug: forge-deserter-drops
-    # band: b19-22 — forge-deserter, roster band 19-20, seeded 19-22; spawns at scorched-battlefield
+    # band: b19-22 — forge-deserter, roster band 19-20, must be seeded 19-22; spawns at scorched-battlefield
     # (L21-25)
     # Why: he took a master's tools out of the Forge Quarter and makes for whoever pays. The plate and
     # the blade are the master's; the ingots are the stock he carried out.

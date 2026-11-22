@@ -5,8 +5,8 @@ namespace RealmEngine.Data.Validation.Content;
 /// </summary>
 /// <remarks>
 /// The ids are the contract between the startup audit, the write path and the CI guard — changing a value breaks
-/// "same defect, same rule" and must be treated as a breaking change. The four reference ids keep the values the
-/// audit used before the rules moved into this library, so existing logs stay comparable.
+/// "same defect, same rule" and must be treated as a breaking change. The reference ids that predate the move into
+/// this library keep the values the audit used, so existing logs stay comparable.
 /// </remarks>
 public static class ContentRules
 {
@@ -58,6 +58,9 @@ public static class ContentRules
     /// <summary>A map edge points at a node that is not on its map.</summary>
     public const string MissingMapNode = "missing-map-node";
 
+    /// <summary>A zone shop-stock row is stored for a shelf that no longer lists it, so a data migration is missing.</summary>
+    public const string UnclaimedZoneStock = "unclaimed-zone-stock";
+
     /// <summary>A loot table has no entries, so it can never drop anything.</summary>
     public const string LootTableWithoutEntries = "loot_table_without_entries";
 
@@ -81,6 +84,12 @@ public static class ContentRules
 
     /// <summary>An actor instance has no archetype.</summary>
     public const string InstanceWithoutArchetype = "instance_without_archetype";
+
+    /// <summary>An actor instance is placed at a zone location that does not exist.</summary>
+    public const string MissingPlacementLocation = "missing-placement-location";
+
+    /// <summary>An actor instance's loot-table override points at a loot table that does not exist.</summary>
+    public const string MissingLootTable = "missing-loot-table";
 
     /// <summary>A dialogue has no lines, so it can never be spoken.</summary>
     public const string DialogueWithoutLines = "dialogue_without_lines";

@@ -63,4 +63,113 @@ public class ActorPoolResolverTests
 
         template.Should().BeNull();
     }
+
+    // ── Placed instances ─────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task SpawnRosterAsync_Spawns_Every_Placement_Exactly_Once_With_An_Empty_Pool()
+    {
+        var repo = new Mock<IEnemyRepository>(MockBehavior.Strict);
+        var resolver = CreateResolver(repo);
+
+        var roster = await resolver.SpawnRosterAsync(null, [Chief()]);
+
+        roster.Should().ContainSingle("the placement is content, not a probability");
+        var chief = roster[0];
+        chief.InstanceSlug.Should().Be("elder-goblin-chief");
+        chief.ArchetypeSlug.Should().Be("goblin-scout");
+        chief.Name.Should().Be("Elder Goblin Chief");
+        chief.Level.Should().Be(5);
+        chief.MaxHealth.Should().Be(120);
+        chief.BaseXp.Should().Be(80);
+        chief.GoldReward.Should().Be(20);
+        chief.Template.BasePhysicalDamage.Should().Be(12);
+        repo.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task SpawnRosterAsync_Keeps_The_Roster_Between_Two_And_Four_With_Placements_And_A_Pool()
+    {
+        var repo = new Mock<IEnemyRepository>();
+        repo.Setup(r => r.GetBySlugAsync("goblin-scout"))
+            .ReturnsAsync(new Enemy { Slug = "goblin-scout", Name = "Goblin Scout", Level = 1, MaxHealth = 30 });
+        var resolver = CreateResolver(repo);
+
+        var roster = await resolver.SpawnRosterAsync([new ActorPoolEntry("goblin-scout", 1)], [Chief()]);
+
+        roster.Count.Should().BeInRange(2, 4, "the roster keeps its authored 2–4 size");
+        roster.Count(enemy => enemy.InstanceSlug == "elder-goblin-chief").Should().Be(1);
+        roster.Should().OnlyContain(enemy => enemy.InstanceSlug == null || enemy.Name == "Elder Goblin Chief");
+    }
+
+    [Fact]
+    public async Task SpawnRosterAsync_Leaves_A_Non_Hostile_Placement_Out_Of_The_Roster()
+    {
+        var repo = new Mock<IEnemyRepository>(MockBehavior.Strict);
+        var chief = Chief() with
+        {
+            Template = new Enemy
+            {
+                Slug = "goblin-scout",
+                Name = "Elder Goblin Chief",
+                Traits = { ["hostile"] = new TraitValue(false, TraitType.Boolean) },
+            },
+        };
+
+        var roster = await CreateResolver(repo).SpawnRosterAsync(null, [chief]);
+
+        roster.Should().BeEmpty("a named actor placed by mistake is content debt, not something to attack");
+    }
+
+    [Fact]
+    public async Task SpawnRosterAsync_Spawns_Nothing_When_There_Is_Neither_Pool_Nor_Placement()
+    {
+        var repo = new Mock<IEnemyRepository>(MockBehavior.Strict);
+
+        var roster = await CreateResolver(repo).SpawnRosterAsync(null, []);
+
+        roster.Should().BeEmpty("a safe location is authored content, not an error");
+        repo.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task ResolveInstanceTemplateAsync_Returns_The_Composed_Template_From_The_Repository()
+    {
+        var instances = new Mock<IActorInstanceRepository>();
+        instances.Setup(r => r.GetTemplateBySlugAsync("elder-goblin-chief", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PlacedActorInstance(
+                "elder-goblin-chief", "goblin-scout", "Elder Goblin Chief", "boss", "old-clearing",
+                new Enemy { Slug = "goblin-scout", BasePhysicalDamage = 12 }));
+        var resolver = new ActorPoolResolver(
+            new EnemyGenerator(Mock.Of<IEnemyRepository>(), NullLogger<EnemyGenerator>.Instance),
+            NullLogger<ActorPoolResolver>.Instance,
+            randomSource: null,
+            instances.Object);
+
+        var template = await resolver.ResolveInstanceTemplateAsync("elder-goblin-chief");
+
+        template.Should().NotBeNull();
+        template!.BasePhysicalDamage.Should().Be(12);
+    }
+
+    /// <summary>The authored boss, as the instance repository projects it.</summary>
+    private static PlacedActorInstance Chief() => new(
+        "elder-goblin-chief",
+        "goblin-scout",
+        "Elder Goblin Chief",
+        "boss",
+        "old-clearing",
+        new Enemy
+        {
+            Slug = "goblin-scout",
+            Name = "Elder Goblin Chief",
+            Level = 5,
+            Health = 120,
+            MaxHealth = 120,
+            Strength = 14,
+            BasePhysicalDamage = 12,
+            XP = 80,
+            GoldReward = 20,
+            Traits = { ["hostile"] = new TraitValue(true, TraitType.Boolean) },
+        });
 }

@@ -445,6 +445,7 @@ public class TravelToNodeHubCommandHandlerTests
             locationRepo.Object,
             actorPoolResolver,
             new Veldrath.Server.Tests.Infrastructure.FakeEnemyInstanceStore(),
+            new RealmEngine.Data.Repositories.InMemoryActorInstanceRepository(),
             instanceService.Object,
             NullLogger<TravelToNodeHubCommandHandler>.Instance);
 

@@ -127,8 +127,13 @@ public sealed class ActorArchetypeValidator : ContentValidator<ActorArchetype>
 }
 
 /// <summary>
-/// Validates actor instances: an instance must be an override of an existing archetype, not a replacement for one.
+/// Validates actor instances: an instance must be an override of an existing archetype, not a replacement for one,
+/// and every field its overrides actually apply must be usable where it lands.
 /// </summary>
+/// <remarks>
+/// <c>ArmorClass</c> and <c>AttackBonus</c> are deliberately absent from this list: both are reserved and have no
+/// target on the spawned template, so a value there changes nothing and is not a rule to enforce.
+/// </remarks>
 public sealed class ActorInstanceValidator : ContentValidator<ActorInstance>
 {
     /// <inheritdoc />
@@ -160,14 +165,85 @@ public sealed class ActorInstanceValidator : ContentValidator<ActorInstance>
                 "levelOverride");
         }
 
+        var overrides = entity.StatOverrides;
+
+        RequirePositive(issues, entity, "statOverrides.health", overrides.Health, "health");
+        RequirePositive(issues, entity, "statOverrides.mana", overrides.Mana, "mana");
+        RequirePositive(issues, entity, "statOverrides.damage", overrides.Damage, "damage");
+        RequirePositive(issues, entity, "statOverrides.strength", overrides.Strength, "strength");
+        RequirePositive(issues, entity, "statOverrides.agility", overrides.Agility, "agility");
+        RequirePositive(issues, entity, "statOverrides.intelligence", overrides.Intelligence, "intelligence");
+        RequirePositive(issues, entity, "statOverrides.constitution", overrides.Constitution, "constitution");
+
+        // Zero experience is legitimate; a negative reward would pay the player back for a kill.
+        if (overrides.ExperienceReward is < 0)
+        {
+            AddError(
+                issues,
+                ContentRules.ValueOutOfRange,
+                $"Actor instance '{entity.Slug}' grants negative experience ({overrides.ExperienceReward}).",
+                entity.Slug,
+                "statOverrides.experienceReward");
+        }
+
+        // The pair is composed and rolled as one range, so an inverted or negative pair has to fail here rather than
+        // surface as a nonsense reward at spawn time.
         ContentShapeRules.ValidateRange(
             issues,
             entity.Slug,
-            "statOverrides.health",
-            entity.StatOverrides.Health,
-            null);
+            "statOverrides.goldRewardMin",
+            overrides.GoldRewardMin,
+            overrides.GoldRewardMax);
+
+        if (entity.LocationSlug is { } location && !catalog.Locations.Contains(location))
+        {
+            ContentShapeRules.AddMissingReference(
+                issues,
+                entity.Slug,
+                "locationSlug",
+                ContentRules.MissingPlacementLocation,
+                location,
+                "zone location");
+        }
+
+        if (entity.LootTableOverride is { } lootTableId && !catalog.LootTableIds.Contains(lootTableId))
+        {
+            ContentShapeRules.AddMissingReference(
+                issues,
+                entity.Slug,
+                "lootTableOverride",
+                ContentRules.MissingLootTable,
+                lootTableId.ToString(),
+                "loot table");
+        }
 
         return issues;
+    }
+
+    /// <summary>Reports an applied override that is zero or negative.</summary>
+    /// <param name="issues">Issue list to append to.</param>
+    /// <param name="entity">The instance being validated.</param>
+    /// <param name="field">Dotted field path of the override.</param>
+    /// <param name="value">The override value, when present.</param>
+    /// <param name="meaning">Human-readable name of the stat.</param>
+    private void RequirePositive(
+        List<ContentIssue> issues,
+        ActorInstance entity,
+        string field,
+        int? value,
+        string meaning)
+    {
+        if (value is null or >= 1)
+        {
+            return;
+        }
+
+        AddError(
+            issues,
+            ContentRules.ValueOutOfRange,
+            $"Actor instance '{entity.Slug}' overrides {meaning} to {value}; an override is an absolute value, so it must be at least 1.",
+            entity.Slug,
+            field);
     }
 }
 

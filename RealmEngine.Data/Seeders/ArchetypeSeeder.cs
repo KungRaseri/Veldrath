@@ -729,7 +729,9 @@ public static class ArchetypeSeeder
                 {
                     Health     = 80,
                     TradeSkill = 70,
-                    TradeGold  = 500,
+                    // The L0 band (game-context/budget.yaml merchants.gold_by_town_level: [100, 250]) tops out at 250,
+                    // and the shop reads this as the purse a single buyback may draw on.
+                    TradeGold  = 250,
                 },
                 Traits = new ArchetypeTraits
                 {
@@ -812,6 +814,93 @@ public static class ArchetypeSeeder
                     Ranged      = false,
                     Caster      = false,
                 },
-            }
+            },
+
+            // D3's town rosters (docs/design/content/towns.md §4.2–4.4). Every placement in LocationNpcsSeeder needs
+            // its archetype here, because the shop is a person: ShopMerchantResolver only trades when the archetype
+            // standing at the character's location carries Traits.Shopkeeper. Each purse is the band of the town that
+            // person stands in — game-context/budget.yaml merchants.gold_by_town_level — and
+            // MerchantBandTests.Every_Seeded_Shopkeeper_Purse_Is_Inside_Its_Towns_Band fails the build when one leaves
+            // it, so these numbers are chosen inside their town's range, never beside it.
+
+            // crestfall (L0) — purse band [100, 250].
+            Townsperson(now, "road-carter", "Korrern", health: 50, tradeSkill: 30, tradeGold: 150),
+
+            // aldenmere (L5) — purse band [250, 650].
+            Townsperson(now, "keep-castellan", "Kaenvren", health: 95, tradeSkill: 55, tradeGold: 300),
+            Townsperson(now, "mead-seller", "Raekmeld", health: 55, tradeSkill: 45, tradeGold: 400, rarityWeight: 70),
+            Townsperson(now, "cellar-keeper", "Dornrek", health: 60, tradeSkill: 40, tradeGold: 500),
+
+            // tolvaren (L10) — purse band [650, 1600]. The harbour-master takes no coin at the roster's own telling
+            // ("teaches the tide line ... refuses berth"), so he is the one townsperson here who is not a shopkeeper.
+            Townsperson(now, "harbour-master", "Gaelrek", health: 70, tradeSkill: 0, tradeGold: 0, trades: false),
+            Townsperson(now, "ship-chandler", "Laeldern", health: 55, tradeSkill: 65, tradeGold: 900, rarityWeight: 70),
+            Townsperson(now, "port-innkeeper", "Thaeldren", health: 60, tradeSkill: 50, tradeGold: 800),
+
+            // skarhold (L18) — purse band [1300, 3200].
+            Townsperson(now, "forge-master", "Daeldvaen", health: 100, tradeSkill: 90, tradeGold: 1600),
+            Townsperson(now, "ash-glass-seller", "Raekdaeld", health: 60, tradeSkill: 75, tradeGold: 2400, rarityWeight: 70),
+            Townsperson(now, "lodge-keeper", "Kaendaeld", health: 55, tradeSkill: 45, tradeGold: 1800),
     ];
+
+    /// <summary>
+    /// Builds one placed townsperson: the shared shape of every D3 roster row.
+    /// </summary>
+    /// <remarks>
+    /// The traits are what make a person meetable rather than fightable, so they are stated once here instead of ten
+    /// times in the list: non-hostile, immortal, no pack behaviour, no boss/elite tier, and <c>HasDialogue</c> so the
+    /// towns.md dialogue register resolves the slug. <c>trades</c> is the row's own <c>Traits.Shopkeeper</c> — false
+    /// only for someone the roster says takes no coin, and only such a person may carry a zero purse.
+    /// </remarks>
+    /// <param name="now">Timestamp stamped on the row, so a seed run is one consistent moment.</param>
+    /// <param name="slug">Archetype slug — also the dialogue speaker key and the placement's target.</param>
+    /// <param name="displayName">The person's name; each new archetype is exactly one person.</param>
+    /// <param name="health">Authored health, flavour only: the person is immortal.</param>
+    /// <param name="tradeSkill">Authored trade skill, read when the archetype is a shopkeeper.</param>
+    /// <param name="tradeGold">Purse a single buyback may draw on; must sit inside the town's band.</param>
+    /// <param name="trades">True when the roster has this person sell or teach for coin.</param>
+    /// <param name="rarityWeight">Spawn weight, kept inside the documented 1–100 range; townspeople are never pooled.</param>
+    /// <returns>The archetype row to seed.</returns>
+    private static ActorArchetype Townsperson(
+        DateTimeOffset now,
+        string slug,
+        string displayName,
+        int health,
+        int tradeSkill,
+        int tradeGold,
+        bool trades = true,
+        int rarityWeight = 60) =>
+        new()
+        {
+            Slug = slug,
+            TypeKey = "townspeople",
+            DisplayName = displayName,
+            RarityWeight = rarityWeight,
+            MinLevel = 1,
+            MaxLevel = 1,
+            IsActive = true,
+            Version = 1,
+            UpdatedAt = now,
+            Stats = new ArchetypeStats
+            {
+                Health = health,
+                TradeSkill = tradeSkill,
+                TradeGold = tradeGold,
+            },
+            Traits = new ArchetypeTraits
+            {
+                Hostile = false,
+                Aggressive = false,
+                PackHunter = false,
+                Shopkeeper = trades,
+                QuestGiver = false,
+                HasDialogue = true,
+                Immortal = true,
+                Wanderer = false,
+                Boss = false,
+                Elite = false,
+                Ranged = false,
+                Caster = false,
+            },
+        };
 }

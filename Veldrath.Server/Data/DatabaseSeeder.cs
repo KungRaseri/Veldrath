@@ -40,6 +40,8 @@ public static class DatabaseSeeder
         await QuestsSeeder.SeedAsync(db);
         await ZoneLocationsSeeder.SeedAsync(db);
         await ZoneLocationsConnectionSeeder.SeedAsync(db);
+        // After the items: a stock row names an item slug, and the list is only meaningful for purchasable items.
+        await ZoneStockSeeder.SeedAsync(db);
         await MapGraphSeeder.SeedAsync(db);
         await ActorInstancesSeeder.SeedAsync(db);
         await OrganizationsSeeder.SeedAsync(db);

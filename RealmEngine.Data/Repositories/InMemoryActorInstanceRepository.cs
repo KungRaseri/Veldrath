@@ -20,4 +20,16 @@ public class InMemoryActorInstanceRepository : IActorInstanceRepository
     /// <inheritdoc />
     public Task<List<ActorInstanceEntry>> GetByTypeKeyAsync(string typeKey) =>
         Task.FromResult(new List<ActorInstanceEntry>());
+
+    /// <inheritdoc />
+    public Task<List<PlacedActorInstance>> GetPlacedAsync(
+        string locationSlug,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(new List<PlacedActorInstance>());
+
+    /// <inheritdoc />
+    public Task<PlacedActorInstance?> GetTemplateBySlugAsync(
+        string instanceSlug,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult((PlacedActorInstance?)null);
 }

@@ -481,18 +481,28 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (!templates.TryGetValue(row.ArchetypeSlug, out var template))
+            // A placed actor resolves through its instance, which is what carries the overrides; a pool spawn resolves
+            // through its archetype. Keying the cache by the instance slug keeps the two from colliding when the same
+            // archetype stands at one location as both.
+            var templateKey = row.InstanceSlug ?? row.ArchetypeSlug;
+
+            if (!templates.TryGetValue(templateKey, out var template))
             {
-                template = await _archetypes.ResolveArchetypeAsync(row.ArchetypeSlug);
+                template = row.InstanceSlug is { } instanceSlug
+                    ? await _archetypes.ResolveInstanceTemplateAsync(instanceSlug)
+                    : await _archetypes.ResolveArchetypeAsync(row.ArchetypeSlug);
+
                 if (template is null)
                 {
                     _logger.LogError(
-                        "Enemy {EnemyId} references missing actor archetype '{ArchetypeSlug}'; it stays fightable but has no abilities",
+                        row.InstanceSlug is null
+                            ? "Enemy {EnemyId} references missing actor archetype '{ArchetypeSlug}'; it stays fightable but has no abilities"
+                            : "Enemy {EnemyId} references missing actor instance '{ArchetypeSlug}'; it stays fightable but has no abilities",
                         row.Id,
-                        row.ArchetypeSlug);
+                        row.InstanceSlug ?? row.ArchetypeSlug);
                 }
 
-                templates[row.ArchetypeSlug] = template;
+                templates[templateKey] = template;
             }
 
             var enemy = new SpawnedEnemy
@@ -502,6 +512,7 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
                 LocationSlug = row.LocationSlug,
                 ZoneInstanceId = row.ZoneInstanceId,
                 ArchetypeSlug = row.ArchetypeSlug,
+                InstanceSlug = row.InstanceSlug,
                 Name = row.Name,
                 Level = row.Level,
                 CurrentHealth = row.CurrentHealth,
@@ -538,6 +549,7 @@ public class EfCoreEnemyInstanceStore : IEnemyInstanceStore
             ZoneInstanceId = zoneInstanceId,
             LocationSlug = locationSlug,
             ArchetypeSlug = enemy.ArchetypeSlug,
+            InstanceSlug = enemy.InstanceSlug,
             Name = enemy.Name,
             Level = enemy.Level,
             CurrentHealth = enemy.CurrentHealth,
