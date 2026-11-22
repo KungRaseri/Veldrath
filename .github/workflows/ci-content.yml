@@ -23,7 +23,7 @@ concurrency:
 
 on:
   push:
-    branches: [ main, development ]
+    branches: [ main ]
     paths:
       - 'content/**'
       - 'RealmEngine.Data/**'
