@@ -32,13 +32,13 @@ on:
       - 'scripts/tests/**'
       - '.github/workflows/ci-web.yml'
   pull_request:
-    # `development` only, deliberately: the sole pull request into `main` is the release PR
-    # (`development` → `main`), whose head commit is a `development` commit that already
-    # carries this workflow's `push` run at that commit. Running the matrix again duplicates
-    # that verdict and, when the next push supersedes it, records `failure / "Has been
-    # cancelled"` on the `development` commit the superseded run was started for. The merge
-    # gate lints main separately. docs/ci-forgejo.md, "What runs where".
-    branches: [ development ]
+    # Both branches, with the work split by target rather than skipped for one of them. A pull
+    # request into `development` gets the fast half: typecheck, lint, the unit and parity suites
+    # and the coverage gate. The build, the browser download and the authenticated e2e run only
+    # for a pull request into `main` (the release PR) and on a push to `main`, because those are
+    # the runs that publish. The per-step `if:` conditions below carry that split, so a
+    # `development` PR does not pay several minutes for a build it will never ship.
+    branches: [ main, development ]
     paths:
       - 'web/**'
       - 'config/postgres/**'
@@ -130,17 +130,31 @@ jobs:
         working-directory: web
         run: npm run lint
 
+      # The `shared` workspace's own suite. It has a `test` script but no `coverage` one, so the
+      # coverage gate below — which runs `--workspace client` — never covered it. Its only runner
+      # was the root `npm run test`, which also re-ran the client suite a second time; this keeps
+      # the tests and drops the duplicate.
+      - name: Unit tests (shared)
+        working-directory: web
+        run: npm run test --workspace shared
+
       - name: Build
+        if: github.event_name == 'push' || github.event.pull_request.base.ref == 'main'
         working-directory: web
         run: npm run build
 
       - name: Install Playwright browsers
+        if: github.event_name == 'push' || github.event.pull_request.base.ref == 'main'
         working-directory: web
         run: npx playwright install --with-deps chromium
 
-      - name: Test
-        working-directory: web
-        run: npm run test
+      # The e2e half of what `npm run test` used to do in this job. That step ran the vitest suite
+      # and then this, and the coverage gate below ran the vitest suite again under instrumentation
+      # — the same specs twice per run. The suite now runs once, in the coverage step.
+      - name: Stack-free e2e
+        if: github.event_name == 'push' || github.event.pull_request.base.ref == 'main'
+        working-directory: web/client
+        run: node tests/run-e2e.mjs stack-free
 
       # The e2e reporting scripts are tooling, not app code, so their tests run here — the one job
       # that has Node without needing the .NET SDK. Fixtures only: no browser, no server.
@@ -167,12 +181,12 @@ jobs:
           set -o pipefail
           npm run coverage --workspace client 2>&1 | tee "${RUNNER_TEMP:-/tmp}/web-coverage.log"
 
-      # The Playwright half of the reporting. `npm run test` above ran the stack-free specs
-      # through web/client/tests/run-e2e.mjs, which wrote test-results/e2e-stack-free.json.
+      # The Playwright half of the reporting. `Stack-free e2e` above ran the specs through
+      # web/client/tests/run-e2e.mjs, which wrote test-results/e2e-stack-free.json.
       # Everything here runs on a red job too: a summary that only exists when the tests passed
       # is missing exactly when a reviewer needs it. See plans/e2e-reporting.md.
       - name: E2E integrity gate (stack-free)
-        if: always()
+        if: always() && (github.event_name == 'push' || github.event.pull_request.base.ref == 'main')
         run: |
           if [ ! -f web/client/test-results/e2e-stack-free.json ]; then
             echo "no stack-free results were written; skipping the integrity gate"
@@ -184,7 +198,7 @@ jobs:
             --suggest
 
       - name: Render the E2E summary
-        if: always()
+        if: always() && (github.event_name == 'push' || github.event.pull_request.base.ref == 'main')
         run: |
           if [ ! -f web/client/test-results/e2e-stack-free.json ]; then
             echo "no stack-free results were written; skipping the summary"
@@ -273,7 +287,7 @@ jobs:
       # summary" heading would be the wrong document. The script skips cleanly when the summary
       # was never rendered, so a red job cannot fail here over a comment.
       - name: Comment the E2E summary on the pull request
-        if: always() && github.event_name == 'pull_request'
+        if: always() && github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main'
         env:
           FORGEJO_TOKEN: ${{ secrets.GITEA_TOKEN }}
           FORGEJO_REPOSITORY: ${{ github.repository }}
@@ -287,7 +301,7 @@ jobs:
             --body-file E2EReport/Summary.md
 
       - name: Upload web build
-        if: always()
+        if: always() && (github.event_name == 'push' || github.event.pull_request.base.ref == 'main')
         uses: actions/upload-artifact@v3
         with:
           name: web-build
@@ -298,7 +312,7 @@ jobs:
       # `playwright-report/<run>/index.html` is openable and carries the traces; before the
       # reporters were configured this path never existed and the step was green and empty.
       - name: Upload Playwright report
-        if: always()
+        if: always() && (github.event_name == 'push' || github.event.pull_request.base.ref == 'main')
         uses: actions/upload-artifact@v3
         with:
           name: web-playwright-report
@@ -315,6 +329,7 @@ jobs:
   e2e-game:
     name: Authenticated e2e (real server)
     needs: build-test
+    if: github.event_name == 'push' || github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
 
     env:
