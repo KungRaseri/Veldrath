@@ -11,9 +11,9 @@ import { getContentDetail, getContentTypeSchema, listContentTypes } from '#lib/s
 import { stringField } from '#lib/server/form';
 import {
 	allFields,
-	buildPayload,
 	isScalarKind,
-	missingRequired
+	missingRequired,
+	submissionPayload
 } from '#lib/foundry/content-editor';
 
 /** Reads the stored payload as an object, keeping the raw text when it is not valid JSON. */
@@ -133,7 +133,7 @@ export const actions: Actions = {
 		const result = await createSubmission(toGameIdentity(locals.user!), {
 			contentType,
 			title,
-			payload: JSON.stringify(buildPayload(base, schema.data, values)),
+			payload: JSON.stringify(submissionPayload(base, schema.data, values)),
 			description: stringField(form, 'description') || null
 		});
 

@@ -1783,6 +1783,71 @@ describe('submission queue', () => {
 		expect(payload.registerSystem.registers).toHaveLength(1);
 	});
 
+	it('keeps a stored stat the form posted blank, so a seeded trait is never left without it', async () => {
+		// The form renders every scalar field and posts them all, so `stats.cooldown` arrives empty while the
+		// stored `traits.hasCooldown` comes along from the seeded row. Writing the blank left a power flagged as
+		// having a cooldown but declaring none, which the content rules refuse — approval never landed.
+		contentApi.getContentTypeSchema.mockResolvedValue(
+			ok({
+				contentType: 'power',
+				displayLabel: 'Powers',
+				description: '',
+				groups: [
+					{
+						label: 'Identity',
+						fields: [field('displayName', 'Text'), field('slug', 'Slug')]
+					},
+					{
+						label: 'Stats',
+						fields: [
+							{
+								...field('stats.cooldown', 'Decimal'),
+								required: false
+							},
+							{ ...field('rarityWeight', 'Integer'), required: false, default: '50' }
+						]
+					}
+				]
+			})
+		);
+		contentApi.getContentDetail.mockResolvedValue(
+			ok({
+				summary: { ...detail.summary },
+				payload: {
+					slug: 'fireball',
+					displayName: 'Fireball',
+					rarityWeight: 60,
+					stats: { cooldown: 4, manaCost: 0 },
+					traits: { hasCooldown: true }
+				}
+			})
+		);
+
+		await redirectTo(() =>
+			action(submissionActions.create, {
+				contentType: 'power',
+				title: 'Fireball rename',
+				displayName: 'Fireball II',
+				slug: 'fireball',
+				'stats.cooldown': '',
+				rarityWeight: '50'
+			})
+		);
+
+		const submitted = foundryApi.createSubmission.mock.calls[0][1] as { payload: string };
+		const payload = JSON.parse(submitted.payload) as {
+			displayName: string;
+			rarityWeight: number;
+			stats: { cooldown: number };
+			traits: { hasCooldown: boolean };
+		};
+
+		expect(payload.displayName).toBe('Fireball II');
+		expect(payload.stats.cooldown).toBe(4);
+		expect(payload.traits.hasCooldown).toBe(true);
+		expect(payload.rarityWeight).toBe(60);
+	});
+
 	it('accepts only a +1 or -1 vote', async () => {
 		const bad = (await action(
 			submissionActions.vote,
