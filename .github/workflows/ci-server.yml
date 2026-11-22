@@ -30,6 +30,8 @@ on:
       - 'versions/engine.props'
       - 'Directory.Build.props'
       - 'docker-compose.yml'
+      # Opened from the repository root by MerchantBandTests, so a band edit can fail the suite.
+      - 'game-context/budget.yaml'
       - 'scripts/generate-version.sh'
       - 'scripts/forgejo-pr-comment.sh'
       - 'scripts/forgejo-release.sh'
@@ -52,6 +54,8 @@ on:
       - 'versions/engine.props'
       - 'Directory.Build.props'
       - 'docker-compose.yml'
+      # Opened from the repository root by MerchantBandTests, so a band edit can fail the suite.
+      - 'game-context/budget.yaml'
       - 'scripts/generate-version.sh'
       - 'scripts/forgejo-pr-comment.sh'
       - 'scripts/forgejo-release.sh'
