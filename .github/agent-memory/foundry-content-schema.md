@@ -112,9 +112,10 @@ stored ingredients alone instead of zeroing them. A collection the payload *does
 empty list still clears it. `ZoneLocation.ActorPool` is owned JSON (`OwnsMany(...).ToJson("ActorPool")`), not a child
 table, so the reconcile never touches it — it is assigned wholesale by `ContentValueCopy.ApplyAuthoredValues`, which is
 why both the null rule below and the owned-value fill have to cover it. That fill
-(`ContentValueCopy.FillUnnamedOwnedValues`) runs in **both** HTTP write routes *and* the dry run, not just in the
-review-queue approval: an omitted owned collection deserialises to `[]` and an omitted owned object to a fresh
-instance, so without it "omitted" and "`[]`" would both wipe an owned value and the `child_collection_null` message
+(`ContentValueCopy.FillUnnamedOwnedValues`) runs in the **update** PUT and the dry run, not just in the
+review-queue approval (a create has no stored row to fill from): an omitted owned collection deserialises to `[]`
+and an omitted owned object to a fresh instance, so without it "omitted" and "`[]`" would both wipe an owned value and
+the `child_collection_null` message
 ("omit the property to leave the stored collection alone") would be advising the delete it refuses. `LootTable` with no
 entries is an `Error` in the validator, so an approval that omits `entries` is refused before the reconcile rather than
 silently deleting them; a recipe with no ingredients is only a warning.
@@ -147,7 +148,12 @@ and **cleared the pool on a 200** — a silent delete, not the 500 the recipe pa
 sites in three files go through `ContentEntityTypes.Validate(resolver, entity, model, catalog)`, which merges the shape
 issues ahead of the family validator's: `ContentWriteEndpoints` (create, update and both validate routes),
 `ContentWriteService.PromoteAsync` and `ContentPackValidator.ValidateAsync`. The family validators are also null-tolerant
-(`?? []`) so the offline pack validator and the CI guard can never throw a `NullReferenceException` on the same payload.
+(`?? []`) so the offline pack validator and the CI guard can never throw a `NullReferenceException` on the same payload —
+including a collection nested *inside* an owned object, which the shape rule cannot see because it is not an entity
+navigation. `"objectives": {"items": null}` on a quest deserialises `Quest.Objectives.Items` null, and `QuestValidator`
+read it unguarded: every quest write and the pack validator answered 500 (first frame `QuestValidator.ValidateEntity`).
+It now reads `entity.Objectives?.Items ?? []`, so the same payload is the ordinary `quest_without_objectives` error
+(400 on the write routes) with the stored row and version intact (2026-11-22, card t_cb4c17ef).
 
 The same rule covers an **owned** collection. `ZoneLocation.ActorPool` is owned JSON, so no reconcile sees it:
 `ContentValueCopy.ApplyAuthoredValues` assigns it wholesale and a null would delete the pool on a 200 (the 2026-11-21
@@ -156,9 +162,10 @@ collections are therefore in `NullCollectionIssues` too, and `ApplyAuthoredValue
 defence in depth. A stored location loads its pool as `[]`, never null, so `GET /api/content/zonelocation/{slug}/validate`
 stays clean — the rule only fires on a payload that names the field as null.
 
-The three shapes are only three shapes because both HTTP write routes and the dry run fill an unnamed owned value from
+The three shapes are only three shapes because the update PUT and the dry run fill an unnamed owned value from
 the row being replaced (`ContentValueCopy.FillUnnamedOwnedValues`, the same call `ContentWriteService.PromoteAsync` has
-always made) before deserialising. `2026-11-22` review measured the gap that left: `PUT /zonelocation` **omitting**
+always made) before deserialising; a create has no stored row to fill from. `2026-11-22` review measured the gap that
+left: `PUT /zonelocation` **omitting**
 `actorPool` deserialised to `[]`, was assigned wholesale and answered `200` with the pool deleted, while the 400 above
 told the author to omit the field. The PUT now keeps the pool (`Version` bumped once), `"actorPool": []` still clears
 it, an omitted owned **object** keeps its stored leaves (`stats.dangerLevel` 7 survives), and the payload dry run reports
@@ -190,6 +197,7 @@ pinned by `ContentWriteEndpointTests.A_put_naming_ingredients_as_null_is_refused
 `A_put_naming_a_species_power_pool_as_null_is_refused_and_keeps_it`,
 `A_put_through_the_power_read_alias_refuses_a_null_pool_instead_of_failing`,
 `A_put_naming_the_zone_location_spawn_pool_as_null_is_refused_and_keeps_it`,
+`A_put_naming_a_nested_quest_objective_list_as_null_is_refused_and_keeps_the_stored_objectives`,
 `Validating_a_payload_with_a_null_collection_reports_the_issue_instead_of_failing`,
 `ContentChildRowsTests.ApplyNamedAsync_leaves_a_collection_the_payload_names_as_null_alone`,
 `Reconcile_leaves_a_collection_the_entity_carries_as_null_alone`,

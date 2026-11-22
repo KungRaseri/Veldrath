@@ -48,7 +48,13 @@ public sealed class QuestValidator : ContentValidator<Quest>
             }
         }
 
-        var objectives = entity.Objectives.Items;
+        // The objectives are an owned JSON collection nested inside an owned object, so the payload-shape rule
+        // (ContentChildRows.NullCollectionIssues) cannot see them: it walks entity navigations, and `Objectives.Items`
+        // is neither a navigation nor a child table. A payload that says `"objectives": {"items": null}` therefore has
+        // to be tolerated here, or the validator throws a NullReferenceException on every write route and the pack
+        // validator. A null nested collection reads as "nothing authored", which is the issue this validator already
+        // raises — never an unhandled exception.
+        var objectives = entity.Objectives?.Items ?? [];
 
         if (objectives.Count == 0)
         {

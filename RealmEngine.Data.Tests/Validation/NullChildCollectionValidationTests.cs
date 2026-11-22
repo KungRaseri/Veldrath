@@ -125,6 +125,15 @@ public class NullChildCollectionValidationTests
         var recipe = new Recipe { Slug = "null-recipe", TypeKey = "blacksmithing", DisplayName = "Null", Ingredients = null! };
         var loot = new LootTable { Slug = "null-loot", TypeKey = "enemies", DisplayName = "Null", Entries = null! };
         var location = new ZoneLocation { Slug = "null-location", TypeKey = "towns", DisplayName = "Null", ActorPool = null! };
+        var quest = new Quest
+        {
+            Slug = "null-quest",
+            TypeKey = "side",
+            DisplayName = "Null",
+            // Nested inside the owned object: no entity navigation carries it, so the payload-shape rule cannot see
+            // it and this validator has to tolerate it on its own.
+            Objectives = new QuestObjectives { Items = null! },
+        };
         var dialogue = new Dialogue
         {
             Slug = "null-dialogue",
@@ -137,5 +146,10 @@ public class NullChildCollectionValidationTests
         registry.Validate("loottable", loot, ContentReferenceCatalog.Empty).Issues.Should().NotBeEmpty();
         registry.Validate("zonelocation", location, ContentReferenceCatalog.Empty).Issues.Should().NotBeEmpty();
         registry.Validate("dialogue", dialogue, ContentReferenceCatalog.Empty).Issues.Should().NotBeEmpty();
+
+        // A null nested collection is the same class of shape error as a null child-row collection: it must read as
+        // "no objectives" (the rule this validator already reports), not as a NullReferenceException.
+        registry.Validate("quest", quest, ContentReferenceCatalog.Empty).Issues
+            .Should().Contain(issue => issue.Rule == ContentRules.QuestWithoutObjectives);
     }
 }

@@ -20,9 +20,10 @@ namespace Veldrath.Server.Features.Content;
 /// </para>
 /// <para>
 /// The <c>validate</c> dry run and the real write call the same <see cref="ContentValidatorRegistry"/>, so they can
-/// never disagree: an entity that validates clean is exactly an entity that saves. Both also fill the owned-JSON values
-/// a payload does not name from the row it would replace (<see cref="ContentValueCopy.FillUnnamedOwnedValues"/>) before
-/// validating, so a payload the Foundry form shaped is judged as the row it becomes rather than as a fresh instance
+/// never disagree: an entity that validates clean is exactly an entity that saves. The update write and the dry run
+/// also fill the owned-JSON values a payload does not name from the row it would replace
+/// (<see cref="ContentValueCopy.FillUnnamedOwnedValues"/>) before validating — a create has no stored row to fill from —
+/// so a payload the Foundry form shaped is judged as the row it becomes rather than as a fresh instance
 /// with every unnamed collection empty.
 /// </para>
 /// <para>

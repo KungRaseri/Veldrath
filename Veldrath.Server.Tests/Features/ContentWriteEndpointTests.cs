@@ -390,6 +390,32 @@ public class ContentWriteEndpointTests(WebAppFactory factory)
         return await db.ZoneLocations.AsNoTracking().SingleAsync(location => location.Slug == slug);
     }
 
+    /// <summary>Reads a quest and its owned objectives back through a fresh context.</summary>
+    private async Task<Quest> StoredQuestAsync(string slug)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ContentDbContext>();
+        return await db.Quests.AsNoTracking().SingleAsync(quest => quest.Slug == slug);
+    }
+
+    /// <summary>
+    /// A quest with one objective that resolves against the seeded catalog, so the only issue a write of it can raise is
+    /// the one under test.
+    /// </summary>
+    private static object QuestPayload(string slug) => new
+    {
+        slug,
+        typeKey = "side",
+        displayName = "Null Objective Quest",
+        rarityWeight = 60,
+        isActive = true,
+        minLevel = 1,
+        objectives = new
+        {
+            items = new[] { new { type = "collect", target = "health-potion", quantity = 1 } },
+        },
+    };
+
     /// <summary>
     /// A recipe whose ingredients are child rows, not owned JSON. The seeder's own materials are used so the references
     /// resolve; the slug is unique per test because the integration database is shared.
@@ -740,6 +766,41 @@ public class ContentWriteEndpointTests(WebAppFactory factory)
         after.Version.Should().Be(before.Version);
         after.ActorPool.Select(entry => entry.ArchetypeSlug)
             .Should().BeEquivalentTo(before.ActorPool.Select(entry => entry.ArchetypeSlug));
+    }
+
+    /// <summary>
+    /// A null collection nested inside an owned object is the card's defect one shape further in: `Objectives.Items` is
+    /// owned JSON, not an entity navigation, so the payload-shape rule cannot see it and <see cref="QuestValidator"/> used
+    /// to dereference it — every quest write (create, update, the dry run and the pack validator) answered 500 instead of
+    /// a validation issue. A null item list reads as "no objectives", which the validator already refuses by name.
+    /// </summary>
+    [Fact]
+    public async Task A_put_naming_a_nested_quest_objective_list_as_null_is_refused_and_keeps_the_stored_objectives()
+    {
+        using var client = await ClientAsAsync(Roles.ContentEditor);
+        var slug = $"b2-quest-nested-null-{Guid.NewGuid():N}";
+
+        (await client.PostAsync("/api/content/quest", Json(QuestPayload(slug))))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var before = await StoredQuestAsync(slug);
+        before.Objectives.Items.Should().HaveCount(1);
+
+        var payload = await DetailPayloadAsync(client, "quest", slug);
+        payload["objectives"]!["items"] = null;
+
+        var refused = await client.PutAsync($"/api/content/quest/{slug}", JsonObjectContent(payload));
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest, await refused.Content.ReadAsStringAsync());
+
+        var body = await refused.Content.ReadFromJsonAsync<JsonElement>();
+        Errors(body).EnumerateArray().Should().Contain(issue =>
+            issue.GetProperty("rule").GetString() == ContentRules.QuestWithoutObjectives);
+
+        // Refused means nothing was written: same version, same objectives.
+        var after = await StoredQuestAsync(slug);
+        after.Version.Should().Be(before.Version);
+        after.Objectives.Items.Select(objective => objective.Target)
+            .Should().BeEquivalentTo(before.Objectives.Items.Select(objective => objective.Target));
     }
 
     /// <summary>

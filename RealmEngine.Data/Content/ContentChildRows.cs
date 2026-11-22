@@ -41,8 +41,9 @@ namespace RealmEngine.Data.Content;
 /// starts from that payload is never in the position of naming a collection it was not shown.
 /// </para>
 /// <para>
-/// <b>An explicit <c>null</c> is neither of those.</b> Omission means "leave the stored rows alone" and an empty array
-/// means "clear them"; a property present as JSON <c>null</c> says nothing about the author's intent, so it is refused
+/// <b>An explicit <c>null</c> is neither of those.</b> On an update, omission means "leave the stored rows alone" and an
+/// empty array means "clear them" (on a create there is nothing stored to leave, so both store what the payload names);
+/// a property present as JSON <c>null</c> says nothing about the author's intent, so it is refused
 /// with a named issue (<see cref="NullCollectionIssues"/>, rule <c>child_collection_null</c>) instead of being read as an
 /// empty authored set. Four guards make that unambiguous: <see cref="NullCollectionIssues"/> refuses the payload before
 /// any write path uses it, <see cref="NamedIn"/> only counts a property that carries a JSON array as naming a
@@ -53,9 +54,10 @@ namespace RealmEngine.Data.Content;
 /// <para>
 /// The same rule covers an owned collection (<c>ZoneLocation.ActorPool</c>), which is owned JSON rather than a child
 /// table and so never reaches this class's reconcile. "Omitted means leave it alone" is honoured there by the write
-/// path itself: both HTTP routes and the review-queue approval fill the owned values a payload does not name from the
-/// row it replaces (<see cref="ContentValueCopy.FillUnnamedOwnedValues"/>) before deserialising, because an omitted
-/// owned collection deserialises to its initializer (<c>[]</c>) and an omitted owned object to a fresh instance. Without
+/// path itself: the update PUT, the payload dry run and the review-queue approval fill the owned values a payload does
+/// not name from the row it replaces (<see cref="ContentValueCopy.FillUnnamedOwnedValues"/>) before deserialising (a
+/// create has no stored row to fill from), because an omitted owned collection deserialises to
+/// its initializer (<c>[]</c>) and an omitted owned object to a fresh instance. Without
 /// that fill the three shapes would read as four: omitted and <c>[]</c> would be the same wipe, and the 400 below would
 /// be telling the author to send the payload that deletes what they meant to keep.
 /// </para>
