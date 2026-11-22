@@ -22,6 +22,7 @@ import {
 	rowFromItems,
 	setRowValue,
 	slugify,
+	submissionPayload,
 	toInputValue,
 	writePath,
 	type ContentField,
@@ -170,6 +171,82 @@ describe('buildPayload', () => {
 		});
 
 		expect(payload.typeKey).toBe('heavy-blades');
+	});
+});
+
+describe('submissionPayload', () => {
+	// The form renders every scalar field and posts them all, so an untouched one arrives as the value the form
+	// displayed — blank for a field with no default. Writing those over the stored row is what blanked
+	// `stats.cooldown` while the seeded `traits.hasCooldown` stayed behind.
+	const stored = {
+		displayName: 'Bite',
+		slug: 'bite',
+		rarityWeight: 60,
+		stats: { cooldown: 4, manaCost: 0 },
+		traits: { hasCooldown: true }
+	};
+	const correctionSchema = schema({
+		groups: [
+			{
+				label: 'Identity',
+				fields: [field(), field({ name: 'slug', label: 'Slug', fieldType: 'Slug' })]
+			},
+			{
+				label: 'Stats',
+				fields: [
+					field({
+						name: 'stats.cooldown',
+						label: 'Cooldown (s)',
+						fieldType: 'Decimal',
+						required: false
+					}),
+					field({
+						name: 'rarityWeight',
+						label: 'Rarity Weight',
+						fieldType: 'Integer',
+						required: false,
+						default: '50'
+					})
+				]
+			}
+		]
+	});
+
+	it('keeps the stored values the form posted unchanged, so no sibling is blanked', () => {
+		const payload = submissionPayload(stored, correctionSchema, {
+			displayName: 'Bite Revised',
+			slug: 'bite',
+			'stats.cooldown': '',
+			rarityWeight: '60'
+		});
+
+		expect(payload.displayName).toBe('Bite Revised');
+		expect(readPath(payload, 'stats.cooldown')).toBe(4);
+		// The trait the cooldown depends on keeps a declared cooldown beside it.
+		expect(readPath(payload, 'traits.hasCooldown')).toBe(true);
+		expect(payload.rarityWeight).toBe(60);
+	});
+
+	it('writes the fields the author actually edited', () => {
+		const payload = submissionPayload(stored, correctionSchema, {
+			displayName: 'Bite Revised',
+			'stats.cooldown': '6',
+			rarityWeight: '70'
+		});
+
+		expect(payload.displayName).toBe('Bite Revised');
+		expect(readPath(payload, 'stats.cooldown')).toBe(6);
+		expect(payload.rarityWeight).toBe(70);
+	});
+
+	it('writes every submitted field when the catalog holds no row yet', () => {
+		const payload = submissionPayload({}, correctionSchema, {
+			displayName: 'New Bite',
+			'stats.cooldown': '3',
+			rarityWeight: '50'
+		});
+
+		expect(payload).toEqual({ displayName: 'New Bite', stats: { cooldown: 3 }, rarityWeight: 50 });
 	});
 });
 

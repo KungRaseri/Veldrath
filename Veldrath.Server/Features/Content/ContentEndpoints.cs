@@ -1,5 +1,8 @@
-﻿using System.Text.Json;
+﻿using System.Linq.Expressions;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using RealmEngine.Data.Content;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
 using RealmEngine.Shared.Abstractions;
@@ -52,8 +55,13 @@ namespace Veldrath.Server.Features.Content;
 /// </summary>
 public static class ContentEndpoints
 {
-    private static readonly JsonSerializerOptions _detailJsonOpts =
-        new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    // The detail payload is the authored surface, child rows included: a child's navigation back to its parent is a
+    // cycle once the children are loaded, so the back-reference is written as null instead of recursing.
+    private static readonly JsonSerializerOptions _detailJsonOpts = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        ReferenceHandler = ReferenceHandler.IgnoreCycles,
+    };
     public static IEndpointRouteBuilder MapContentEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/content")
@@ -250,30 +258,37 @@ public static class ContentEndpoints
         static ContentSummaryDto Summary(ContentBase e, string t) =>
             new(e.Id, e.Slug, e.DisplayName, e.TypeKey, t, e.RarityWeight, e.IsActive, e.UpdatedAt);
 
+        // Child rows are rows in their own table, so they only appear when the query loads them — and they must, because
+        // the editor and the review queue build their payloads from this detail and a payload that names a collection
+        // replaces it wholesale. Hiding a collection here would delete it on the next save.
+        async Task<ContentBase?> DetailOf<T>(IQueryable<T> set, Expression<Func<T, bool>> predicate)
+            where T : ContentBase =>
+            await set.IncludeAuthoredChildren(db.Model).AsNoTracking().FirstOrDefaultAsync(predicate, ct);
+
         ContentBase? entity = type.ToLowerInvariant() switch
         {
-            "power" => await db.Powers.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "ability" => await db.Powers.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "species" => await db.Species.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "class" => await db.ActorClasses.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "archetype" => await db.ActorArchetypes.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "instance" => await db.ActorInstances.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "background" => await db.Backgrounds.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "skill" => await db.Skills.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "item" => await db.Items.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "weapon" => await db.Items.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.ItemType == "weapon" && x.Slug == slug, ct),
-            "armor" => await db.Items.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.ItemType == "armor" && x.Slug == slug, ct),
-            "material" => await db.Materials.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "materialproperty" => await db.MaterialProperties.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "enchantment" => await db.Enchantments.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "spell" => await db.Powers.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "quest" => await db.Quests.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "recipe" => await db.Recipes.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "loottable" => await db.LootTables.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "organization" => await db.Organizations.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "zonelocation" => await db.ZoneLocations.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "dialogue" => await db.Dialogues.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
-            "language" => await db.Languages.AsNoTracking().FirstOrDefaultAsync(x => x.IsActive && x.Slug == slug, ct),
+            "power" => await DetailOf(db.Powers, x => x.IsActive && x.Slug == slug),
+            "ability" => await DetailOf(db.Powers, x => x.IsActive && x.Slug == slug),
+            "species" => await DetailOf(db.Species, x => x.IsActive && x.Slug == slug),
+            "class" => await DetailOf(db.ActorClasses, x => x.IsActive && x.Slug == slug),
+            "archetype" => await DetailOf(db.ActorArchetypes, x => x.IsActive && x.Slug == slug),
+            "instance" => await DetailOf(db.ActorInstances, x => x.IsActive && x.Slug == slug),
+            "background" => await DetailOf(db.Backgrounds, x => x.IsActive && x.Slug == slug),
+            "skill" => await DetailOf(db.Skills, x => x.IsActive && x.Slug == slug),
+            "item" => await DetailOf(db.Items, x => x.IsActive && x.Slug == slug),
+            "weapon" => await DetailOf(db.Items, x => x.IsActive && x.ItemType == "weapon" && x.Slug == slug),
+            "armor" => await DetailOf(db.Items, x => x.IsActive && x.ItemType == "armor" && x.Slug == slug),
+            "material" => await DetailOf(db.Materials, x => x.IsActive && x.Slug == slug),
+            "materialproperty" => await DetailOf(db.MaterialProperties, x => x.IsActive && x.Slug == slug),
+            "enchantment" => await DetailOf(db.Enchantments, x => x.IsActive && x.Slug == slug),
+            "spell" => await DetailOf(db.Powers, x => x.IsActive && x.Slug == slug),
+            "quest" => await DetailOf(db.Quests, x => x.IsActive && x.Slug == slug),
+            "recipe" => await DetailOf(db.Recipes, x => x.IsActive && x.Slug == slug),
+            "loottable" => await DetailOf(db.LootTables, x => x.IsActive && x.Slug == slug),
+            "organization" => await DetailOf(db.Organizations, x => x.IsActive && x.Slug == slug),
+            "zonelocation" => await DetailOf(db.ZoneLocations, x => x.IsActive && x.Slug == slug),
+            "dialogue" => await DetailOf(db.Dialogues, x => x.IsActive && x.Slug == slug),
+            "language" => await DetailOf(db.Languages, x => x.IsActive && x.Slug == slug),
             _ => null,
         };
 

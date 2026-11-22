@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Veldrath.Server.Data.Entities;
 using Veldrath.Server.Tests.Infrastructure;
@@ -592,6 +593,238 @@ public class FoundryEndpointTests(WebAppFactory factory)
         // The row survives: live game data holds its id.
         after.GetProperty("summary").GetProperty("id").GetString()
             .Should().Be(before.GetProperty("summary").GetProperty("id").GetString());
+    }
+
+    /// <summary>
+    /// An approval is a write, so a correction that only touches owned JSON has to land too.
+    /// </summary>
+    /// <remarks>
+    /// The approval path replaces the stored row the same way the editor's PUT does, and for a while both copied only
+    /// the owner's scalar columns — an approved <c>stats.damageMin</c> correction was reported as written and silently
+    /// dropped. This asserts the second write path directly, because it is not reachable through the PUT endpoint.
+    /// </remarks>
+    [Fact]
+    public async Task Review_Should_Persist_An_Owned_Json_Correction_On_Approval()
+    {
+        const string slug = "fnd-rev-owned-item";
+
+        static string WeaponPayload(int damageMin) => JsonSerializer.Serialize(new
+        {
+            slug,
+            displayName = "Foundry Owned Revision",
+            typeKey = "heavy-blades",
+            itemType = "weapon",
+            weaponType = "sword",
+            damageType = "physical",
+            handsRequired = 1,
+            rarityWeight = 80,
+            isActive = true,
+            stats = new { damageMin, damageMax = damageMin + 4, value = 25 },
+        });
+
+        using var submitterClient = factory.CreateClient();
+        submitterClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndRevOwned_Sub"));
+
+        using var curatorClient = factory.CreateClient();
+        curatorClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetCuratorTokenAsync("FndRevOwned_Curator"));
+
+        var first = await CreateSubmissionAsync(submitterClient, "Item", "FndRevOwned_First", WeaponPayload(4));
+        (await curatorClient.PostAsJsonAsync($"/api/foundry/submissions/{first.Id}/review", new { Approved = true }))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var revision = await CreateSubmissionAsync(submitterClient, "Item", "FndRevOwned_Second", WeaponPayload(9));
+        var reviewed = await curatorClient.PostAsJsonAsync($"/api/foundry/submissions/{revision.Id}/review", new { Approved = true });
+        reviewed.StatusCode.Should().Be(HttpStatusCode.OK, await reviewed.Content.ReadAsStringAsync());
+
+        var detail = await curatorClient.GetFromJsonAsync<JsonElement>($"/api/content/browse/item/{slug}");
+        detail.GetProperty("payload").GetProperty("stats").GetProperty("damageMin").GetInt32().Should().Be(9);
+        detail.GetProperty("payload").GetProperty("version").GetInt32().Should().Be(2);
+    }
+
+    /// <summary>
+    /// Reads a recipe and its ingredient rows back through a fresh context — the approval under test writes through a
+    /// different context than the one this assertion opens.
+    /// </summary>
+    private async Task<RealmEngine.Data.Entities.Recipe> StoredRecipeAsync(string slug)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<RealmEngine.Data.Persistence.ContentDbContext>();
+        return await db.Recipes.AsNoTracking()
+            .Include(recipe => recipe.Ingredients)
+            .SingleAsync(recipe => recipe.Slug == slug);
+    }
+
+    /// <summary>
+    /// A recipe submission whose ingredients are child rows rather than owned JSON. Approval is the second write path,
+    /// so an ingredient correction has to land there too — the HTTP endpoint's tests cannot cover it.
+    /// </summary>
+    [Fact]
+    public async Task Review_Should_Persist_An_Authored_Ingredient_Edit_On_Approval()
+    {
+        const string slug = "fnd-rev-child-recipe";
+
+        static string RecipePayload(int ironQuantity) => JsonSerializer.Serialize(new
+        {
+            slug,
+            displayName = "Foundry Ingredient Revision",
+            typeKey = "blacksmithing",
+            rarityWeight = 70,
+            isActive = true,
+            outputItemDomain = "items/general",
+            outputItemSlug = "iron-sword",
+            outputQuantity = 1,
+            craftingSkill = "blacksmithing",
+            craftingLevel = 1,
+            ingredients = new[]
+            {
+                new { itemDomain = "items/materials", itemSlug = "iron", quantity = ironQuantity },
+                new { itemDomain = "items/materials", itemSlug = "pine", quantity = 1 },
+            },
+        });
+
+        using var submitterClient = factory.CreateClient();
+        submitterClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndRevIngredient_Sub"));
+
+        using var curatorClient = factory.CreateClient();
+        curatorClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetCuratorTokenAsync("FndRevIngredient_Curator"));
+
+        var first = await CreateSubmissionAsync(submitterClient, "Recipe", "FndRevIngredient_First", RecipePayload(3));
+        (await curatorClient.PostAsJsonAsync($"/api/foundry/submissions/{first.Id}/review", new { Approved = true }))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var revision = await CreateSubmissionAsync(submitterClient, "Recipe", "FndRevIngredient_Second", RecipePayload(9));
+        var reviewed = await curatorClient.PostAsJsonAsync($"/api/foundry/submissions/{revision.Id}/review", new { Approved = true });
+        reviewed.StatusCode.Should().Be(HttpStatusCode.OK, await reviewed.Content.ReadAsStringAsync());
+
+        // Ingredient rows live in their own table, so the browse payload is not the proof — the stored rows are.
+        var stored = await StoredRecipeAsync(slug);
+        stored.Version.Should().Be(2);
+        stored.Ingredients.Should().HaveCount(2);
+        stored.Ingredients.Single(ingredient => ingredient.ItemSlug == "iron").Quantity.Should().Be(9);
+        stored.Ingredients.Single(ingredient => ingredient.ItemSlug == "pine").Quantity.Should().Be(1);
+    }
+
+    /// <summary>
+    /// A schema-shaped submission only names the fields Foundry's form renders. Approving one must not delete the
+    /// owned JSON it never mentions.
+    /// </summary>
+    /// <remarks>
+    /// The language schema exposes four <c>phonology.*</c> lists and nothing else, while the entity also carries
+    /// <c>phonology.consonants</c>/<c>vowels</c>/<c>junctionRules</c>, <c>morphology</c> and <c>registerSystem</c>.
+    /// Copying an owned value wholesale turned the omission into a deletion: the correction was reported as written and
+    /// every unnamed list was zeroed. This is the approval half of that regression; the form half is seeded from the
+    /// stored row in the web app.
+    /// </remarks>
+    [Fact]
+    public async Task Review_Should_Preserve_Owned_Json_A_Schema_Shaped_Submission_Does_Not_Name()
+    {
+        const string slug = "fnd-rev-partial-language";
+
+        static string RichLanguage(string displayName) => JsonSerializer.Serialize(new
+        {
+            slug,
+            displayName,
+            typeKey = "imperial",
+            rarityWeight = 50,
+            isActive = true,
+            description = "The old tongue.",
+            tonalCharacter = "Hard + Formal",
+            phonology = new
+            {
+                consonants = new[]
+                {
+                    new { symbol = "v", description = "Voiced labiodental fricative" },
+                    new { symbol = "r", description = "Alveolar trill" },
+                },
+                vowels = new[] { new { symbol = "ae", sound = "/eɪ/ as in 'day'" } },
+                allowedSyllablePatterns = new[] { "CVC" },
+                allowedInitialClusters = new[] { "VR-" },
+                forbiddenClusters = Array.Empty<string>(),
+                allowedFinalClusters = new[] { "-LD" },
+                junctionRules = new[]
+                {
+                    new
+                    {
+                        cluster = "–l + vr–",
+                        rule = "The v elides into the following r.",
+                        formalExample = "vaeld + raeth → vaeld",
+                    },
+                },
+            },
+            morphology = new
+            {
+                roots = new[] { new { token = "vael", coreMeaning = "stronghold" } },
+                prefixes = Array.Empty<object>(),
+                suffixes = Array.Empty<object>(),
+            },
+            registerSystem = new
+            {
+                registers = new[]
+                {
+                    new { name = "formal", usage = "titles and law", wordOrder = "SVO", vowelQuality = "long" },
+                },
+            },
+        });
+
+        // Exactly what the generic Foundry submission form can produce for a language: the schema's fields and nothing
+        // else. Only displayName differs from the stored row.
+        static string SchemaShapedCorrection(string displayName) => JsonSerializer.Serialize(new
+        {
+            slug,
+            displayName,
+            typeKey = "imperial",
+            rarityWeight = 50,
+            isActive = true,
+            description = "The old tongue.",
+            tonalCharacter = "Hard + Formal",
+            phonology = new
+            {
+                allowedSyllablePatterns = new[] { "CVC" },
+                allowedInitialClusters = new[] { "VR-" },
+                forbiddenClusters = Array.Empty<string>(),
+                allowedFinalClusters = new[] { "-LD" },
+            },
+        });
+
+        using var submitterClient = factory.CreateClient();
+        submitterClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetTokenAsync("FndRevPartial_Sub"));
+
+        using var curatorClient = factory.CreateClient();
+        curatorClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", await GetCuratorTokenAsync("FndRevPartial_Curator"));
+
+        var first = await CreateSubmissionAsync(
+            submitterClient, "Language", "FndRevPartial_First", RichLanguage("Calethic"));
+        (await curatorClient.PostAsJsonAsync($"/api/foundry/submissions/{first.Id}/review", new { Approved = true }))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var correction = await CreateSubmissionAsync(
+            submitterClient, "Language", "FndRevPartial_Second", SchemaShapedCorrection("Calethic (revised)"));
+        var approved = await curatorClient.PostAsJsonAsync(
+            $"/api/foundry/submissions/{correction.Id}/review", new { Approved = true });
+        approved.StatusCode.Should().Be(HttpStatusCode.OK, await approved.Content.ReadAsStringAsync());
+
+        var payload = (await curatorClient.GetFromJsonAsync<JsonElement>($"/api/content/browse/language/{slug}"))
+            .GetProperty("payload");
+
+        // The field the submission named changed …
+        payload.GetProperty("displayName").GetString().Should().Be("Calethic (revised)");
+        payload.GetProperty("version").GetInt32().Should().Be(2);
+
+        // … and everything the schema-shaped payload did not name is still there.
+        var phonology = payload.GetProperty("phonology");
+        phonology.GetProperty("junctionRules").GetArrayLength().Should().Be(1);
+        phonology.GetProperty("junctionRules")[0].GetProperty("formalExample").GetString()
+            .Should().Be("vaeld + raeth → vaeld");
+        phonology.GetProperty("consonants").GetArrayLength().Should().Be(2);
+        phonology.GetProperty("vowels").GetArrayLength().Should().Be(1);
+        payload.GetProperty("morphology").GetProperty("roots").GetArrayLength().Should().Be(1);
+        payload.GetProperty("registerSystem").GetProperty("registers").GetArrayLength().Should().Be(1);
     }
 
     [Fact]

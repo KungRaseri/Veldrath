@@ -54,6 +54,87 @@
 ## FoundryEndpointTests Coverage (March 2026)
 29 integration tests covering all 7 Foundry endpoints: Create (201/401/400/Location header), List (paged/filter by type/status/search), Get (full detail/404), Vote (up/down/401/invalid/change), Review (approve/reject/403/401/400/notifications), Notifications (empty/401/mark-read/404 unknown/404 other user).
 
+## Replacing a content row: owned JSON has to be copied in place
+
+`ContentValueCopy.ApplyAuthoredValues` ([`RealmEngine.Data/Content/ContentValueCopy.cs`](../../RealmEngine.Data/Content/ContentValueCopy.cs))
+is the only supported way to write an authored entity over a stored one. `Entry(existing).CurrentValues.SetValues(incoming)`
+walks the owner's **scalar columns only**: owned JSON navigations (`Item.Stats`/`Traits`, quest `Objectives`, a language's
+`Phonology`/`Morphology`/`RegisterSystem`) are separate tracked entries, so `SetValues` left them at their stored values
+while the write returned 200 and bumped `Version` — a silent no-op for those fields (defect found 2026-11-20; the PUT
+endpoint and the Foundry review-approval path both had it). Owned values must be mutated in place (`CopyOwnedInPlace`),
+never replaced with a new owned instance on a tracked row. All three write paths — `ContentWriteEndpoints.UpdateAsync`,
+`ContentWriteService.PromoteAsync` and `ContentPackImporter` — call the shared helper so they cannot diverge again.
+Regression tests: `ContentWriteEndpointTests.An_owned_json_edit_on_a_language_is_persisted`,
+`..._on_an_item_is_persisted`, `Removing_an_entry_from_an_owned_json_collection_is_persisted`, and
+`FoundryEndpointTests.Review_Should_Persist_An_Owned_Json_Correction_On_Approval`.
+
+**A partial payload must not be a delete.** Copying the owned value wholesale turned the old silent no-op into a
+silent deletion for the one client that sends partial payloads: Foundry's submission forms render the *schema*, and a
+schema exposes only part of an entity (the language schema has four of the seven `phonology` lists and no `morphology`
+or `registerSystem`), so a schema-shaped correction omitted everything else and approval wrote the deserialiser's
+empty defaults. Two guards now hold:
+
+- `ContentValueCopy.FillUnnamedOwnedValues` (approval path, `ContentWriteService.PromoteAsync`) fills owned-JSON
+  values the payload does not name from the stored row before validation and application. Anything the payload *does*
+  name still replaces — an empty list clears, so full-replace semantics survive for what the caller wrote.
+- The two Foundry submission actions (`(foundry)/submissions/[id]` create, `(foundry)/languages/new`) seed the
+  payload from `GET /api/content/browse/{type}/{slug}` when the slug already exists, so the stored submission is
+  honest and the review diff does not claim a deletion. The generic content editor already did this
+  (`buildPayload(detail.data.payload, …)`).
+Regression test: `FoundryEndpointTests.Review_Should_Preserve_Owned_Json_A_Schema_Shaped_Submission_Does_Not_Name`.
+
+**A seeded trait must not survive a blanked sibling (fixed 2026-11-20, card t_b9bc2752).** Seeding the payload base is
+not enough on its own: the submission form renders *every* scalar field of the schema and posts them all, so the fields
+the author did not fill arrive empty and `buildPayload` wrote those blanks over the stored row. A seeded
+`traits.hasCooldown: true` then stood beside a blanked `stats.cooldown`, and `ContentWriteService.PromoteAsync` refused
+the payload ("flagged as having a cooldown but declares none") — approval never landed and the review page kept showing
+the alert instead of "Approved". This had been masked before card t_3e4f919a because `original` was `{}`, so no trait
+came along; the seeding exposed it. `submissionPayload`
+([`web/client/src/lib/foundry/content-editor.ts`](../../web/client/src/lib/foundry/content-editor.ts)) now writes only
+the fields whose submitted value differs from the one the form rendered (the schema default, or `''` for a select);
+a submission with no stored row still writes every submitted field. What that costs, and what to remember: on a
+correction the create form cannot express "set it back to the schema default", cannot turn a Boolean *off* (an unchecked
+checkbox submits nothing), and has no input at all for `StringList`/`KeyValue`/`ObjectList` — all of those keep their
+stored values. Regression tests: `content-editor.test.ts` (`submissionPayload` cases) and `foundry-loaders.test.ts`
+`keeps a stored stat the form posted blank, so a seeded trait is never left without it`.
+
+**Child rows are reconciled, not copied (fixed 2026-11-20, card t_3e4f919a):** child *rows* (recipe ingredients,
+loot-table entries) cannot be assigned to the tracked parent — a deserialised child arrives with its key set, so EF
+issues an UPDATE against a row that was never inserted. They are now written by `ContentChildRows`
+([`RealmEngine.Data/Content/ContentChildRows.cs`](../../RealmEngine.Data/Content/ContentChildRows.cs)), which the
+importer, the PUT endpoint and the approval path all share: matches are mutated in place, dropped rows deleted and
+additions inserted, matching on authored identity (an ingredient's `ItemDomain`+`ItemSlug`) or, for a surrogate-keyed
+child such as `LootTableEntry`, on its authored values.
+
+**Presence, not emptiness, decides deletion.** Each write path passes the collection names the payload actually
+names (`ContentChildRows.ApplyNamedAsync` → `NamedIn`), so a PUT or submission that omits `ingredients` leaves the
+stored ingredients alone instead of zeroing them. A collection the payload *does* name is replaced wholesale, so an
+empty list still clears it. `ZoneLocation.ActorPool` is owned JSON (`OwnsMany(...).ToJson("ActorPool")`), not a child
+table, so it was never affected. `LootTable` with no entries is an `Error` in the validator, so an approval that omits
+`entries` is refused before the reconcile rather than silently deleting them; a recipe with no ingredients is only a
+warning.
+
+**The read path has to return the child rows, or the presence rule deletes them.** Foundry's editor and the submission
+forms build their payload from `GET /api/content/browse/{type}/{slug}`, and that read used `AsNoTracking()` with no
+`Include`, so every child collection serialised as `[]` — the payload then *named* `ingredients: []`, and presence
+turned one Save into a silent delete of every stored ingredient (the first cut of this fix shipped that defect;
+reviewer probe 2026-11-20 caught it). `BrowseDetailAsync` now goes through
+`ContentChildRows.IncludeAuthoredChildren(...)`, which enumerates the model's authored child navigations, so the detail
+payload is exactly what the write path reconciles. `_detailJsonOpts` uses `ReferenceHandler.IgnoreCycles` because a
+loaded child's navigation back to its parent is a cycle. A payload that carries a child's surrogate `id` gets a fresh
+one on insert (`ContentChildRows.AddChild` clears generated keys): the replaced row is deleted in the same save, and
+reusing its key would collide.
+
+Regression tests: `ContentWriteEndpointTests.An_ingredient_quantity_edit_through_put_is_persisted`,
+`Adding_and_removing_ingredients_through_put_stores_exactly_the_authored_set`,
+`A_put_that_omits_ingredients_leaves_the_stored_children_alone`, `A_loot_entry_edit_through_put_is_persisted`,
+`Adding_and_removing_loot_entries_through_put_stores_exactly_the_authored_set`, the detail round trips
+`The_recipe_detail_payload_carries_the_stored_ingredients`,
+`A_recipe_saved_from_its_detail_payload_keeps_its_ingredients`,
+`A_loot_table_saved_from_its_detail_payload_keeps_its_entries`,
+`A_loot_entry_edited_through_the_detail_payload_is_persisted`, and
+`FoundryEndpointTests.Review_Should_Persist_An_Authored_Ingredient_Edit_On_Approval`.
+
 ## Dialogue options (2026-11-20)
 `Dialogue` stops being only a line pool: `DialogueStats.Options` (owned, `List<DialogueOption>`) carries the choices a
 conversation offers. Authored in the Foundry **Dialogues** form under a new **Options** group. Empty options means the

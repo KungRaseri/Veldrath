@@ -26,7 +26,9 @@ const contentApi = vi.hoisted(() => ({
 	browseContent: vi.fn(),
 	// Create mode lists the types it can offer and loads the chosen type's schema.
 	listContentTypes: vi.fn(),
-	getContentTypeSchema: vi.fn()
+	getContentTypeSchema: vi.fn(),
+	// A language submission for an existing slug seeds itself from the stored row.
+	getContentDetail: vi.fn()
 }));
 const foundryApi = vi.hoisted(() => ({
 	createSubmission: vi.fn(),
@@ -69,6 +71,7 @@ beforeEach(() => {
 	vi.resetAllMocks();
 	access.loadAccountAccess.mockResolvedValue(null);
 	contentApi.browseContent.mockResolvedValue(ok(null));
+	contentApi.getContentDetail.mockResolvedValue(ok(null));
 	foundryApi.createSubmission.mockResolvedValue(ok(null));
 	foundryApi.voteSubmission.mockResolvedValue(ok(null));
 	foundryApi.getSubmission.mockResolvedValue(ok(null));

@@ -11,9 +11,9 @@ import { getContentDetail, getContentTypeSchema, listContentTypes } from '#lib/s
 import { stringField } from '#lib/server/form';
 import {
 	allFields,
-	buildPayload,
 	isScalarKind,
-	missingRequired
+	missingRequired,
+	submissionPayload
 } from '#lib/foundry/content-editor';
 
 /** Reads the stored payload as an object, keeping the raw text when it is not valid JSON. */
@@ -28,6 +28,25 @@ function parsePayload(raw: string | undefined): Record<string, unknown> {
 	} catch {
 		return {};
 	}
+}
+
+/**
+ * The stored payload a correction is based on, or `{}` when the catalog has no entry at that slug.
+ *
+ * The submission form renders the type's schema, and a schema exposes only part of an entity — the language
+ * schema, for instance, has no field for `phonology.junctionRules`, `morphology` or `registerSystem`. Building
+ * the payload from `{}` therefore omits those values, and approval replaces the whole entity, so the omission
+ * would delete them. Starting from the stored row keeps the replace honest while leaving full-replace
+ * semantics intact: every field the form did submit still overwrites what is stored.
+ */
+async function storedPayload(contentType: string, slug: string): Promise<Record<string, unknown>> {
+	if (!slug) return {};
+
+	const existing = await getContentDetail(contentType.toLowerCase(), slug);
+	const payload = existing.data?.payload;
+
+	// Only seed from the row the form named: a different slug answering is not a correction of this entry.
+	return payload && payload.slug === slug ? payload : {};
 }
 
 export const load: PageServerLoad = async ({ locals, params, parent, url }) => {
@@ -109,10 +128,12 @@ export const actions: Actions = {
 			return fail(400, { error: `Fill in: ${missing.join(', ')}.` });
 		}
 
+		const base = await storedPayload(contentType, values.slug?.trim() ?? '');
+
 		const result = await createSubmission(toGameIdentity(locals.user!), {
 			contentType,
 			title,
-			payload: JSON.stringify(buildPayload({}, schema.data, values)),
+			payload: JSON.stringify(submissionPayload(base, schema.data, values)),
 			description: stringField(form, 'description') || null
 		});
 

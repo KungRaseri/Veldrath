@@ -1,8 +1,5 @@
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 using RealmEngine.Data.Content;
 using RealmEngine.Data.Entities;
 using RealmEngine.Data.Persistence;
@@ -132,7 +129,7 @@ public sealed class ContentPackImporter(ContentDbContext db)
                     continue;
                 }
 
-                await LoadChildrenAsync(existing, ct);
+                await ContentChildRows.LoadAsync(db, existing, ct);
 
                 var stored = Canonical(existing).ToJsonString();
                 var authored = Canonical(incoming).ToJsonString();
@@ -148,7 +145,7 @@ public sealed class ContentPackImporter(ContentDbContext db)
                 if (!dryRun)
                 {
                     CopyAuthoredValues(incoming, existing);
-                    ReconcileChildren(incoming, existing);
+                    ContentChildRows.Reconcile(db, incoming, existing);
                     existing.Version += 1;
                     existing.UpdatedAt = now;
                 }
@@ -171,334 +168,16 @@ public sealed class ContentPackImporter(ContentDbContext db)
     }
 
     /// <summary>
-    /// Loads the child rows of a tracked entity, so the comparison sees them too.
-    /// </summary>
-    /// <remarks>
-    /// A recipe's ingredients and a loot table's entries are real rows, not owned JSON. Without loading them the
-    /// comparison would see "no children" for every stored entity and rewrite it on every import. Inverse navigations
-    /// (<c>Archetype.Instances</c>) are not loaded: they are the other side of a child that points at this row, so
-    /// they are not part of what the pack authored.
-    /// </remarks>
-    private async Task LoadChildrenAsync(ContentBase existing, CancellationToken ct)
-    {
-        var entry = db.Entry(existing);
-
-        foreach (var navigation in entry.Navigations)
-        {
-            if (IsAuthoredCollection(navigation.Metadata))
-            {
-                await entry.Collection(navigation.Metadata.Name).LoadAsync(ct);
-            }
-        }
-    }
-
-    /// <summary>
     /// Copies every authored property of <paramref name="incoming"/> onto the tracked row.
     /// </summary>
     /// <remarks>
-    /// Owned JSON types (<c>Stats</c>, <c>Traits</c>, quest objectives) are separate entries in EF's change tracker,
-    /// so <c>CurrentValues.SetValues</c> — which only walks the owner's scalar columns — would leave them stale while
-    /// reporting success. Assigning the CLR properties covers scalars, owned values and owned collections in one pass;
-    /// the caller has already stamped the fields the server owns.
-    /// <para>
-    /// Child rows that are entities of their own are not assigned here: <see cref="ReconcileChildren"/> matches them by
+    /// The copying itself lives in <see cref="ContentValueCopy.ApplyAuthoredValues"/> because the HTTP write endpoint and
+    /// the review-queue approval path replace rows the same way and must not drift from the importer. Child rows that are
+    /// entities of their own are not assigned there either: <see cref="ContentChildRows.Reconcile"/> matches them by
     /// identity, because assigning the authored list makes EF treat every child as an existing row it has to UPDATE.
-    /// </para>
     /// </remarks>
-    private void CopyAuthoredValues(ContentBase incoming, ContentBase existing)
-    {
-        var entityType = db.Model.FindEntityType(existing.GetType());
-        var navigations = entityType is null
-            ? []
-            : entityType.GetNavigations()
-                .Where(navigation => !IsAuthoredCollection(navigation) && !navigation.TargetEntityType.IsOwned())
-                .Select(navigation => navigation.PropertyInfo?.Name)
-                .OfType<string>()
-                .ToHashSet(StringComparer.Ordinal);
-
-        var childRows = entityType is null
-            ? []
-            : entityType.GetNavigations()
-                .Where(navigation => IsAuthoredCollection(navigation) && !navigation.TargetEntityType.IsOwned())
-                .Select(navigation => navigation.PropertyInfo?.Name)
-                .OfType<string>()
-                .ToHashSet(StringComparer.Ordinal);
-
-        var ownedReferences = entityType is null
-            ? []
-            : entityType.GetNavigations()
-                .Where(navigation => navigation is { IsCollection: false } && navigation.TargetEntityType.IsOwned())
-                .Select(navigation => navigation.PropertyInfo?.Name)
-                .OfType<string>()
-                .ToHashSet(StringComparer.Ordinal);
-
-        foreach (var property in existing.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
-        {
-            // A navigation to another content entity is fixed up by EF from the foreign keys copied below. Copying it
-            // would hand the tracked row an untracked instance, and nulling it would clear the foreign key with it.
-            if (!property.CanWrite
-                || navigations.Contains(property.Name)
-                || childRows.Contains(property.Name)
-                || property.Name is nameof(ContentBase.Id) or nameof(ContentBase.Version) or nameof(ContentBase.UpdatedAt))
-            {
-                continue;
-            }
-
-            var value = property.GetValue(incoming);
-
-            if (ownedReferences.Contains(property.Name)
-                && property.GetValue(existing) is { } current
-                && value is not null)
-            {
-                // An owned JSON value has to be updated in place: replacing the instance leaves EF comparing the old,
-                // still-tracked one, and the column keeps its stored values.
-                CopyInPlace(value, current);
-                continue;
-            }
-
-            property.SetValue(existing, value);
-        }
-    }
-
-    /// <summary>
-    /// Reconciles the child rows a pack authors with the rows already stored, instead of handing the tracked parent a
-    /// collection of instances EF has never seen.
-    /// </summary>
-    /// <remarks>
-    /// Assigning the authored collection is the one thing this cannot do. A child deserialised from JSON arrives with
-    /// its generated key already set (<c>LootTableEntry.Id = Guid.NewGuid()</c>), so EF classifies it as an existing
-    /// row and issues an UPDATE for a row that was never inserted — a <c>DbUpdateConcurrencyException</c> that aborts
-    /// the whole import. Reconciling instead matches the pack against the stored children, mutates the matches in
-    /// place, deletes the rows the pack dropped and inserts the ones it added, so an unchanged child costs nothing and
-    /// an edit is one row.
-    /// </remarks>
-    private void ReconcileChildren(ContentBase incoming, ContentBase existing)
-    {
-        var entityType = db.Model.FindEntityType(existing.GetType());
-        if (entityType is null)
-        {
-            return;
-        }
-
-        foreach (var navigation in entityType.GetNavigations())
-        {
-            if (!IsAuthoredCollection(navigation)
-                || navigation.TargetEntityType.IsOwned()
-                || navigation.PropertyInfo is not { CanWrite: true } property)
-            {
-                continue;
-            }
-
-            var childType = navigation.TargetEntityType;
-            var authored = ToObjects(property.GetValue(incoming));
-            var stored = ToObjects(property.GetValue(existing));
-            var identity = ChildIdentityParts(childType, entityType);
-
-            if (identity.Count > 0)
-            {
-                ReconcileByKey(childType, entityType, identity, authored, stored, existing);
-            }
-            else
-            {
-                ReconcileByValues(childType, entityType, authored, stored, existing);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Gets the child-key properties the pack itself authors, or an empty list when the child has no authorable identity.
-    /// </summary>
-    /// <remarks>
-    /// A key part that is a foreign key to the parent is assigned by the importer, and a generated part is a surrogate
-    /// the pack cannot know, so neither can identify a child. What remains is identity the author wrote: an ingredient's
-    /// item, a map node's id.
-    /// </remarks>
-    private static IReadOnlyList<IProperty> ChildIdentityParts(IEntityType childType, IEntityType parentType) =>
-        childType.FindPrimaryKey() is { } key
-            ? [.. key.Properties.Where(property =>
-                property.ValueGenerated == ValueGenerated.Never
-                && !property.GetContainingForeignKeys().Any(
-                    foreignKey => foreignKey.PrincipalEntityType == parentType))]
-            : [];
-
-    /// <summary>Matches stored child rows on the identity the pack authored, mutating matches and replacing the rest.</summary>
-    private void ReconcileByKey(
-        IEntityType childType,
-        IEntityType parentType,
-        IReadOnlyList<IProperty> identity,
-        IReadOnlyList<object> authored,
-        IReadOnlyList<object> stored,
-        ContentBase parent)
-    {
-        var unmatched = new List<object>(stored);
-
-        foreach (var child in authored)
-        {
-            var match = unmatched.FirstOrDefault(candidate => identity.All(part =>
-                Equals(part.PropertyInfo?.GetValue(candidate), part.PropertyInfo?.GetValue(child))));
-
-            if (match is null)
-            {
-                AddChild(childType, parentType, child, parent);
-                continue;
-            }
-
-            unmatched.Remove(match);
-            ApplyChildValues(childType, parentType, child, match);
-        }
-
-        db.RemoveRange(unmatched);
-    }
-
-    /// <summary>Matches stored child rows on their authored values, for a child whose key is a generated surrogate.</summary>
-    private void ReconcileByValues(
-        IEntityType childType,
-        IEntityType parentType,
-        IReadOnlyList<object> authored,
-        IReadOnlyList<object> stored,
-        ContentBase parent)
-    {
-        var unmatched = new List<object>(stored);
-
-        foreach (var child in authored)
-        {
-            // The projection is the same one the change comparison uses: authored columns only, so a surrogate key or
-            // the parent's foreign key can never make two rows look different (or the same) by accident.
-            var values = Project(childType, child, parentType).ToJsonString();
-            var match = unmatched.FirstOrDefault(candidate =>
-                Project(childType, candidate, parentType).ToJsonString() == values);
-
-            if (match is null)
-            {
-                AddChild(childType, parentType, child, parent);
-                continue;
-            }
-
-            unmatched.Remove(match);
-            ApplyChildValues(childType, parentType, child, match);
-        }
-
-        db.RemoveRange(unmatched);
-    }
-
-    /// <summary>Copies a matched child's authored values onto the tracked child row.</summary>
-    /// <param name="childType">Child entity type.</param>
-    /// <param name="parentType">The owning entity type, so the child's FK to it is left alone.</param>
-    /// <param name="authored">The child as the pack describes it.</param>
-    /// <param name="stored">The tracked child row.</param>
-    private static void ApplyChildValues(IEntityType childType, IEntityType parentType, object authored, object stored)
-    {
-        var references = childType.GetNavigations()
-            .Select(navigation => navigation.PropertyInfo)
-            .OfType<PropertyInfo>()
-            .ToHashSet();
-
-        foreach (var property in childType.GetProperties())
-        {
-            if (property.IsPrimaryKey()
-                || property.PropertyInfo is not { CanWrite: true } info
-                || references.Contains(info)
-                || (property.IsForeignKey() && property.GetContainingForeignKeys().Any(
-                    foreignKey => foreignKey.PrincipalEntityType == parentType)))
-            {
-                continue;
-            }
-
-            info.SetValue(stored, info.GetValue(authored));
-        }
-
-        foreach (var navigation in childType.GetNavigations())
-        {
-            if (navigation.IsCollection
-                || !navigation.TargetEntityType.IsOwned()
-                || navigation.PropertyInfo is not { CanWrite: true } owned
-                || owned.GetValue(authored) is not { } value)
-            {
-                continue;
-            }
-
-            if (owned.GetValue(stored) is { } current)
-            {
-                CopyInPlace(value, current);
-            }
-        }
-    }
-
-    /// <summary>Inserts an authored child row, with its foreign keys and parent navigation set explicitly.</summary>
-    /// <param name="childType">Child entity type.</param>
-    /// <param name="parentType">The owning entity type.</param>
-    /// <param name="child">The child as the pack describes it.</param>
-    /// <param name="parent">The tracked parent row.</param>
-    /// <remarks>
-    /// <c>db.Add</c> rather than a graph discovered through the navigation: an added entity is an INSERT regardless of
-    /// the key value the authored child arrived with, which is exactly what the assignment path got wrong.
-    /// </remarks>
-    private void AddChild(IEntityType childType, IEntityType parentType, object child, ContentBase parent)
-    {
-        foreach (var foreignKey in childType.GetForeignKeys().Where(
-            foreignKey => foreignKey.PrincipalEntityType == parentType))
-        {
-            for (var index = 0; index < foreignKey.Properties.Count; index++)
-            {
-                var target = foreignKey.Properties[index].PropertyInfo;
-                var source = foreignKey.PrincipalKey.Properties[index].PropertyInfo;
-
-                if (target is { CanWrite: true } && source is not null)
-                {
-                    target.SetValue(child, source.GetValue(parent));
-                }
-            }
-        }
-
-        foreach (var navigation in childType.GetNavigations())
-        {
-            if (!navigation.IsCollection
-                && navigation.ForeignKey.PrincipalEntityType == parentType
-                && navigation.PropertyInfo is { CanWrite: true } reference)
-            {
-                reference.SetValue(child, parent);
-            }
-        }
-
-        db.Add(child);
-    }
-
-    /// <summary>Materialises a navigation value as a list of non-null children.</summary>
-    /// <param name="value">The navigation value, or null.</param>
-    /// <returns>The children, or an empty list.</returns>
-    private static List<object> ToObjects(object? value) =>
-        value is System.Collections.IEnumerable sequence and not string
-            ? [.. sequence.Cast<object?>().Where(child => child is not null).Select(child => child!)]
-            : [];
-
-    /// <summary>Copies the writable properties of one owned value onto another, recursing into nested owned values.</summary>
-    /// <param name="source">Value authored by the pack.</param>
-    /// <param name="target">Value EF is tracking.</param>
-    private static void CopyInPlace(object source, object target)
-    {
-        foreach (var property in target.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
-        {
-            if (!property.CanWrite)
-            {
-                continue;
-            }
-
-            var value = property.GetValue(source);
-            var current = property.GetValue(target);
-
-            var isNestedOwned = property.PropertyType.IsClass
-                && property.PropertyType != typeof(string)
-                && !typeof(System.Collections.IEnumerable).IsAssignableFrom(property.PropertyType);
-
-            if (isNestedOwned && value is not null && current is not null)
-            {
-                CopyInPlace(value, current);
-                continue;
-            }
-
-            property.SetValue(target, value);
-        }
-    }
+    private void CopyAuthoredValues(ContentBase incoming, ContentBase existing) =>
+        ContentValueCopy.ApplyAuthoredValues(incoming, existing, db.Model);
 
     /// <summary>
     /// Projects an entity onto the fields a pack authors, and returns it as canonical JSON.
@@ -516,88 +195,10 @@ public sealed class ContentPackImporter(ContentDbContext db)
         var entityType = db.Model.FindEntityType(entity.GetType())
             ?? throw new InvalidOperationException($"'{entity.GetType().Name}' is not part of the content model.");
 
-        var projected = Project(entityType, entity, parentType: null);
+        var projected = ContentChildRows.Project(entityType, entity, parentType: null);
         var json = projected.ToJsonString();
 
         // Parsing again keeps the comparison stable regardless of how a value serialised the first time.
         return JsonNode.Parse(json) as JsonObject ?? projected;
     }
-
-    private static JsonObject Project(IEntityType type, object instance, IEntityType? parentType)
-    {
-        var projected = new JsonObject();
-
-        foreach (var property in type.GetProperties())
-        {
-            if (property.IsPrimaryKey() || property.PropertyInfo is null)
-            {
-                continue;
-            }
-
-            // Server-owned columns. A pack never writes them, so they must not count as a difference.
-            if (parentType is null && property.Name is nameof(ContentBase.Version) or nameof(ContentBase.UpdatedAt))
-            {
-                continue;
-            }
-
-            if (parentType is not null
-                && property.IsForeignKey()
-                && property.GetContainingForeignKeys().Any(key => key.PrincipalEntityType == parentType))
-            {
-                // The child's link to its parent is assigned by EF, not authored by the pack.
-                continue;
-            }
-
-            projected[property.Name] = JsonSerializer.SerializeToNode(
-                property.PropertyInfo.GetValue(instance),
-                property.ClrType);
-        }
-
-        foreach (var navigation in type.GetNavigations())
-        {
-            if (navigation.PropertyInfo?.GetValue(instance) is not { } value)
-            {
-                continue;
-            }
-
-            if (navigation.TargetEntityType.IsOwned())
-            {
-                projected[navigation.Name] = navigation.IsCollection
-                    ? ProjectMany(navigation, value, type)
-                    : Project(navigation.TargetEntityType, value, type);
-
-                continue;
-            }
-
-            if (IsAuthoredCollection(navigation))
-            {
-                projected[navigation.Name] = ProjectMany(navigation, value, type);
-            }
-        }
-
-        return projected;
-    }
-
-    private static JsonArray ProjectMany(INavigation navigation, object value, IEntityType parentType)
-    {
-        var array = new JsonArray();
-
-        foreach (var child in (System.Collections.IEnumerable)value)
-        {
-            if (child is not null)
-            {
-                array.Add(Project(navigation.TargetEntityType, child, parentType));
-            }
-        }
-
-        return array;
-    }
-
-    /// <summary>
-    /// A collection the pack authors: child rows owned by this row, as opposed to navigations that point at another
-    /// content entity (<c>Archetype.Instances</c> is the inverse of <c>ActorInstance.ArchetypeId</c>).
-    /// </summary>
-    private static bool IsAuthoredCollection(INavigationBase navigation) =>
-        navigation.IsCollection
-        && !typeof(ContentBase).IsAssignableFrom(navigation.TargetEntityType.ClrType);
 }
