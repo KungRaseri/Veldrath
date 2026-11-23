@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using RealmEngine.Shared.Models;
 using Veldrath.Contracts.Map;
 using Veldrath.Server.Data.Entities;
@@ -130,6 +131,86 @@ public class GameHubZoneTests : IDisposable
 
         var entered = clients.Caller.SentMessages.Single(m => m.Method == "ZoneEntered").Args[0];
         entered.Should().BeEquivalentTo(new { CurrentMapId = "map-droveway", CurrentNodeId = "arrival-node" });
+    }
+
+    [Fact]
+    public async Task EnterZone_Resumes_The_Location_Node_A_Login_Projected_Onto_The_Region_Map()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+        // What SelectCharacter leaves behind after a login or a respawn at the safe location: the row points at the
+        // region entry, and the location slug is the only record of where inside the zone the character stood.
+        character.CurrentZoneId = "the-droveway";
+        character.CurrentMapId = "region:varenmark";
+        character.CurrentNodeId = "region:varenmark:entry";
+        character.CurrentZoneLocationSlug = "drove-road";
+        await db.SaveChangesAsync();
+
+        var mapRepo = new Mock<RealmEngine.Shared.Abstractions.IMapGraphRepository>();
+        mapRepo.Setup(m => m.GetMapForZoneAsync("the-droveway", It.IsAny<CancellationToken>()))
+               .ReturnsAsync(new MapGraph(
+                   "zone:the-droveway", MapType.Zone, "the-droveway", "The Droveway", string.Empty,
+                   "zone:the-droveway:entry",
+                   [
+                       new MapNodeEntry(
+                           "zone:the-droveway:entry", "zone:the-droveway", MapNodeType.EntryPoint, null, "Arrival",
+                           string.Empty, null, null, null, true, false, null, null, false, null, null, null, 0),
+                       new MapNodeEntry(
+                           "zone:the-droveway:location:drove-road", "zone:the-droveway", MapNodeType.Location,
+                           "drove-road", "The Drove Road", string.Empty, null, null, null, false, false, null, null,
+                           false, null, null, null, 20),
+                   ],
+                   []));
+
+        var (hub, clients, _, ctx, _, _) = HubHarness.Create(db, account.Id, mapRepo: mapRepo);
+        ctx.Items["CharacterId"] = character.Id;
+        ctx.Items["CharacterName"] = character.Name;
+
+        await hub.EnterZone("the-droveway");
+
+        var stored = await db.Characters.FindAsync(character.Id);
+        stored!.CurrentNodeId.Should().Be(
+            "zone:the-droveway:location:drove-road",
+            "the location slug names where the character stood, so a reload must not fall back to the arrival node");
+        stored.CurrentZoneLocationSlug.Should().Be("drove-road");
+
+        var entered = clients.Caller.SentMessages.Single(m => m.Method == "ZoneEntered").Args[0];
+        entered.Should().BeEquivalentTo(new
+        {
+            CurrentMapId = "zone:the-droveway",
+            CurrentNodeId = "zone:the-droveway:location:drove-road",
+        });
+    }
+
+    [Fact]
+    public async Task SelectCharacter_Keeps_The_Zone_Location_Across_The_Region_Projection()
+    {
+        await using var db = _factory.CreateContext();
+        var account = await HubHarness.SeedAccountAsync(db);
+        var character = await HubHarness.SeedCharacterAsync(db, account.Id);
+        character.CurrentZoneId = "the-droveway";
+        character.CurrentMapId = "zone:the-droveway";
+        character.CurrentNodeId = "zone:the-droveway:location:drove-road";
+        character.CurrentZoneLocationSlug = "drove-road";
+        await db.SaveChangesAsync();
+
+        var mapRepo = new Mock<RealmEngine.Shared.Abstractions.IMapGraphRepository>();
+        mapRepo.Setup(m => m.GetMapForRegionAsync("varenmark", It.IsAny<CancellationToken>()))
+               .ReturnsAsync(new MapGraph(
+                   "region:varenmark", MapType.Region, "varenmark", "Varenmark", string.Empty,
+                   "region:varenmark:entry", [], []));
+
+        var (hub, _, _, _, _, _) = HubHarness.Create(db, account.Id, mapRepo: mapRepo);
+
+        await hub.SelectCharacter(character.Id);
+
+        var stored = await db.Characters.AsNoTracking().SingleAsync(c => c.Id == character.Id);
+        stored.CurrentMapId.Should().Be("region:varenmark", "a login still projects the character onto the region map");
+        stored.CurrentNodeId.Should().Be("region:varenmark:entry");
+        stored.CurrentZoneLocationSlug.Should().Be(
+            "drove-road",
+            "the location is all that survives the projection, so EnterZone can put the character back where they stood");
     }
 
     [Fact]

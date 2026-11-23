@@ -517,16 +517,15 @@ async function fight(page: Page, mode: 'attack' | 'defend'): Promise<'victory' |
 }
 
 /**
- * Leaves a defeated character back in the fight.
+ * Leaves a defeated character where the server put them, then walks back into the fight.
  *
- * `Respawn` is the zone's own path: it restores a quarter of the bar, puts the character at the SafeRespawn
- * location (the Sunken Estate) and clears the combat session server-side. The browser follows on its own now: the
- * death ends the fight with `CombatEnded`, so the panel closes and the map comes back, and `CharacterRespawned`
- * re-reads the restored bar. Nothing here reloads.
+ * `Respawn` is the zone's own path: it restores a quarter of the bar, clears the combat session server-side, and
+ * moves the character to the SafeRespawn location (the Sunken Estate) — both the column that names the location and
+ * the map node a reloaded client resumes from. The browser follows on its own: the death ends the fight with
+ * `CombatEnded`, `CharacterRespawned` re-reads the restored bar, and the shell re-reads the map so the node the
+ * server moved to is the one drawn as current. Nothing here reloads.
  *
- * The map node is still the one the character fell on — the respawn writes the zone *location*, not the node
- * (t_990e7186) — so the walk back out first steps to the safe location and then to the encounter, exactly as a
- * player standing there would.
+ * The walk leaves the safe node for the encounter, exactly as a player who woke up there would.
  *
  * @param page The game page.
  * @param sql The open reader.
@@ -536,48 +535,96 @@ async function respawnAndReturn(page: Page, sql: Sql, characterId: string): Prom
 	await page.getByRole('button', { name: 'Respawn' }).click();
 	await expect(page.getByRole('button', { name: 'Respawn' })).toBeHidden({ timeout: 20_000 });
 
-	// What the server promised, read before the browser re-enters the zone: health restored and inside the bar, and
-	// the character moved to the location the pack marks `safeRespawn`. This is the trait proving itself in the store
-	// that owns it, not a projection of it.
+	// What the server promised, read before the browser walks away: health restored and inside the bar, and the
+	// character moved to the location the pack marks `safeRespawn` — on every record a resume reads.
 	const restored = await readStoredHealth(sql, characterId);
 	expect(restored.current, 'the respawn must restore health').toBeGreaterThan(0);
 	expect(restored.current, 'the respawn must stay inside the bar').toBeLessThanOrEqual(
 		restored.max
 	);
-	expect(
-		await readStoredLocation(sql, characterId),
-		'the respawn must move the character to the zone’s safe location'
-	).toBe(SAFE_LOCATION);
 
-	// The shell closed the panel from the server's `CombatEnded` and re-read the restored bar from the respawn
-	// payload, so the map exists again without a page load and the sheet names the health the server wrote.
+	const position = await readStoredPosition(sql, characterId);
+	expect(position.location, 'the respawn must move the character to the zone’s safe location').toBe(
+		SAFE_LOCATION
+	);
+	expect(position.mapId, 'the safe location’s node lives on the zone map').toBe(`zone:${ZONE_ID}`);
+
+	// The node is the map's, not a name this spec invents, so it is read back from the graph the client resumes
+	// through. A respawn that moved only the slug left this at the node the character fell on, and the next reload
+	// entered the zone at its arrival node instead of the location the server said they woke up at.
+	const safeNodeId = await readMapNodeForLocation(sql, ZONE_ID, SAFE_LOCATION);
+	expect(safeNodeId, 'the zone map must have a node for its safe location').not.toBeNull();
+	expect(
+		position.nodeId,
+		'the respawn must move the map node too, or a reload re-enters at the zone’s arrival node'
+	).toBe(safeNodeId);
+
+	// The shell closed the panel from the server's `CombatEnded`, re-read the restored bar from the respawn payload
+	// and re-read the map, so the node the server moved to is the one the map draws as current without a page load.
 	await expect(page.getByRole('heading', { name: /Combat/ })).toBeHidden({ timeout: 20_000 });
 	expect(
 		(await readHealth(page)).current,
 		'the sheet must show the health the respawn restored'
 	).toBe(restored.current);
 	await expect(page.locator('.map-node-cell button').first()).toBeVisible({ timeout: 30_000 });
+	await expect(page.locator('button[aria-current="location"]')).toContainText(MAP_NODES.safe, {
+		timeout: 20_000
+	});
 
-	expect(await walkTo(page, MAP_NODES.safe)).toBe(true);
 	expect(await walkTo(page, MAP_NODES.encounter)).toBe(true);
 }
 
 /**
- * Reads the location slug the server stored for a character.
+ * Reads the map position the server stored for a character.
  *
- * The respawn handler writes `CurrentZoneLocationSlug` directly (`UpdateCurrentZoneLocationAsync`), so this is the
- * row the SafeRespawn trait is measured on — before any re-entry through the client overwrites it.
+ * A resumed client wakes from these columns rather than from the display name the respawn payload carries:
+ * `CurrentMapId`/`CurrentNodeId` are what `SelectCharacter` and `EnterZone` resolve, and `CurrentZoneLocationSlug`
+ * is the location that survives the region-map projection those two make.
  *
  * @param sql The open reader.
  * @param characterId Character to read.
- * @returns The stored location slug, or `null` when the column is empty.
+ * @returns The stored map, node and location; each is `null` when its column is empty.
  */
-async function readStoredLocation(sql: Sql, characterId: string): Promise<string | null> {
-	const rows = await sql<{ location: string | null }[]>`
-		SELECT "CurrentZoneLocationSlug" AS location FROM "Characters" WHERE "Id" = ${characterId}
+async function readStoredPosition(
+	sql: Sql,
+	characterId: string
+): Promise<{ mapId: string | null; nodeId: string | null; location: string | null }> {
+	const rows = await sql<
+		{ mapId: string | null; nodeId: string | null; location: string | null }[]
+	>`
+		SELECT "CurrentMapId" AS "mapId", "CurrentNodeId" AS "nodeId", "CurrentZoneLocationSlug" AS location
+		FROM "Characters"
+		WHERE "Id" = ${characterId}
 	`;
 
-	return rows[0]?.location ?? null;
+	return rows[0] ?? { mapId: null, nodeId: null, location: null };
+}
+
+/**
+ * Reads the map node that names a zone location.
+ *
+ * The node id belongs to the map, not to a convention this spec could assume: the seeder and the Foundry editor
+ * both write `MapNodes` rows, and only the row says which node a resuming client lands on.
+ *
+ * @param sql The open reader.
+ * @param zoneId Zone whose map owns the node.
+ * @param locationSlug Location the node represents.
+ * @returns The node id, or `null` when the zone's map has no node for that location.
+ */
+async function readMapNodeForLocation(
+	sql: Sql,
+	zoneId: string,
+	locationSlug: string
+): Promise<string | null> {
+	const rows = await sql<{ id: string }[]>`
+		SELECT "Id" AS id
+		FROM "MapNodes"
+		WHERE "MapId" = ${`zone:${zoneId}`} AND "RefId" = ${locationSlug}
+		ORDER BY "SortOrder"
+		LIMIT 1
+	`;
+
+	return rows[0]?.id ?? null;
 }
 
 /**

@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RealmEngine.Shared.Abstractions;
+using RealmEngine.Shared.Models;
 using Veldrath.Server.Data.Repositories;
 using Veldrath.Server.Settings;
 
@@ -56,6 +57,7 @@ public class RespawnHubCommandHandler
     private readonly ICharacterRepository _characterRepo;
     private readonly ICombatSessionStore _sessions;
     private readonly IZoneLocationRepository _zoneLocations;
+    private readonly IMapGraphRepository _maps;
     private readonly IOptions<DeathPenaltyOptions> _penalty;
     private readonly ILogger<RespawnHubCommandHandler> _logger;
 
@@ -63,18 +65,21 @@ public class RespawnHubCommandHandler
     /// <param name="characterRepo">Repository for loading and persisting character state.</param>
     /// <param name="sessions">Store for per-character combat sessions.</param>
     /// <param name="zoneLocations">Zone location catalog, used to find the zone's safe respawn point.</param>
+    /// <param name="maps">Map graphs, used to name the node that represents the safe location.</param>
     /// <param name="penalty">Configured death values, including the sickness window.</param>
     /// <param name="logger">Logger instance.</param>
     public RespawnHubCommandHandler(
         ICharacterRepository characterRepo,
         ICombatSessionStore sessions,
         IZoneLocationRepository zoneLocations,
+        IMapGraphRepository maps,
         IOptions<DeathPenaltyOptions> penalty,
         ILogger<RespawnHubCommandHandler> logger)
     {
         _characterRepo = characterRepo;
         _sessions = sessions;
         _zoneLocations = zoneLocations;
+        _maps = maps;
         _penalty = penalty;
         _logger = logger;
     }
@@ -130,8 +135,8 @@ public class RespawnHubCommandHandler
         entity.Attributes = CombatHelpers.SerializeAttrs(attrs);
         await _characterRepo.UpdateAsync(entity, cancellationToken);
 
-        if (locationSlug is not null)
-            await _characterRepo.UpdateCurrentZoneLocationAsync(request.CharacterId, locationSlug, cancellationToken);
+        if (locationSlug is not null && !string.IsNullOrWhiteSpace(entity.CurrentZoneId))
+            await MoveToLocationAsync(entity, entity.CurrentZoneId, locationSlug, cancellationToken);
 
         await _sessions.RemoveAsync(request.CharacterId, cancellationToken);
 
@@ -150,6 +155,46 @@ public class RespawnHubCommandHandler
             Warning = warning,
             SicknessExpiresAt = sicknessExpiresAt,
         };
+    }
+
+    /// <summary>
+    /// Moves the character onto the node that represents <paramref name="locationSlug"/> inside their zone.
+    /// Writing the location slug alone is not enough: a client that logs in again resumes from the map node, so a
+    /// respawn that moved only the slug put the player back at the zone's arrival node on the next reload.
+    /// </summary>
+    /// <param name="entity">The character that died.</param>
+    /// <param name="zoneId">The zone the character died in; the map that names the location's node.</param>
+    /// <param name="locationSlug">The zone location the character wakes up at.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    private async Task MoveToLocationAsync(
+        Data.Entities.Character entity,
+        string zoneId,
+        string locationSlug,
+        CancellationToken cancellationToken)
+    {
+        var zoneMap = await _maps.GetMapForZoneAsync(zoneId, cancellationToken);
+        var locationNode = zoneMap?.Nodes.FirstOrDefault(node =>
+            node.NodeType == MapNodeType.Location &&
+            string.Equals(node.RefId, locationSlug, StringComparison.OrdinalIgnoreCase));
+
+        if (zoneMap is null || locationNode is null)
+        {
+            // No map to name the node — a zone without a graph, or a location it never placed. The player still has
+            // to move, so the slug is written on its own; the missing node is content debt and is reported as such.
+            _logger.LogError(
+                "Zone {ZoneId} has no map node for respawn location {LocationSlug}; character {CharacterIdPrefix} keeps their old node",
+                zoneId, locationSlug, entity.Id.ToString()[..8]);
+            await _characterRepo.UpdateCurrentZoneLocationAsync(entity.Id, locationSlug, cancellationToken);
+            return;
+        }
+
+        await _characterRepo.UpdateMapPositionAsync(
+            entity.Id,
+            zoneMap.Id,
+            locationNode.Id,
+            zoneId,
+            locationSlug,
+            cancellationToken);
     }
 
     /// <summary>
