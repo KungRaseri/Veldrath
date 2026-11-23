@@ -500,6 +500,21 @@ public class GameHub : Hub
     }
 
     /// <summary>
+    /// Tells the caller that the fight is over because they died.
+    /// </summary>
+    /// <remarks>
+    /// Fleeing already ends a fight with <c>CombatEnded</c>; a death ends it just as surely, but the shell
+    /// only closes the combat panel when it hears this event. Without it the defeated player keeps a panel
+    /// for a fight the server has already dropped, and the map never renders again.
+    /// </remarks>
+    /// <param name="characterId">The character whose fight ended.</param>
+    /// <param name="reason">Client-facing reason, the same vocabulary the flee path uses.</param>
+    private async Task SendCombatEndedAsync(Guid characterId, string reason)
+    {
+        await Clients.Caller.SendAsync("CombatEnded", new { CharacterId = characterId, Reason = reason });
+    }
+
+    /// <summary>
     /// Broadcasts the shared state of the caller's fight — the enemy and everyone who has hit it —
     /// to the zone group, or back to the caller when they are not in a zone.
     /// </summary>
@@ -2891,7 +2906,8 @@ public class GameHub : Hub
 
     /// <summary>
     /// Performs a basic melee attack against the active character's engaged enemy.
-    /// Broadcasts <c>CombatTurn</c> to the caller and, on enemy death, <c>EnemyDefeated</c> to the zone group.
+    /// Broadcasts <c>CombatTurn</c> to the caller — followed by <c>CombatEnded</c> when the player is
+    /// defeated — and, on enemy death, <c>EnemyDefeated</c> to the zone group.
     /// </summary>
     public async Task AttackEnemy()
     {
@@ -2931,6 +2947,9 @@ public class GameHub : Hub
             });
 
             await BroadcastCombatSnapshotAsync(characterId);
+
+            if (result.PlayerDefeated)
+                await SendCombatEndedAsync(characterId, "defeated");
 
             if (result.EnemyDefeated)
             {
@@ -2975,7 +2994,7 @@ public class GameHub : Hub
 
     /// <summary>
     /// Puts the active character in a defending stance for the current combat turn, reducing incoming damage.
-    /// Broadcasts <c>CombatTurn</c> to the caller.
+    /// Broadcasts <c>CombatTurn</c> to the caller, then <c>CombatEnded</c> when the stance does not save them.
     /// </summary>
     public async Task DefendAction()
     {
@@ -3008,6 +3027,9 @@ public class GameHub : Hub
             });
 
             await BroadcastCombatSnapshotAsync(characterId);
+
+            if (result.PlayerDefeated)
+                await SendCombatEndedAsync(characterId, "defeated");
         }
         catch (Exception ex)
         {
@@ -3019,7 +3041,8 @@ public class GameHub : Hub
     /// <summary>
     /// Attempts to flee from active combat (50% success chance).
     /// On success, broadcasts <c>CombatEnded</c> to the caller.
-    /// On failure, broadcasts <c>CombatTurn</c> with the enemy counter-attack result.
+    /// On failure, broadcasts <c>CombatTurn</c> with the enemy counter-attack result, followed by
+    /// <c>CombatEnded</c> when that counter-attack kills the player.
     /// </summary>
     public async Task FleeFromCombat()
     {
@@ -3058,6 +3081,10 @@ public class GameHub : Hub
                 });
 
                 await BroadcastCombatSnapshotAsync(characterId);
+
+                // A failed escape can be the blow that kills: the fight ends here too, not only on a clean flee.
+                if (result.PlayerDefeated)
+                    await SendCombatEndedAsync(characterId, "defeated");
             }
         }
         catch (Exception ex)
@@ -3069,7 +3096,8 @@ public class GameHub : Hub
 
     /// <summary>
     /// Activates a named ability in combat, dealing damage or restoring health before the enemy counter-attacks.
-    /// Broadcasts <c>CombatTurn</c> to the caller and <c>EnemyDefeated</c> to the zone group on kill.
+    /// Broadcasts <c>CombatTurn</c> to the caller, <c>CombatEnded</c> when the counter-attack kills, and
+    /// <c>EnemyDefeated</c> to the zone group on kill.
     /// </summary>
     /// <param name="request">Request containing the ability ID to use.</param>
     public async Task UseAbilityInCombat(UseAbilityInCombatHubRequest request)
@@ -3112,6 +3140,9 @@ public class GameHub : Hub
             });
 
             await BroadcastCombatSnapshotAsync(characterId);
+
+            if (result.PlayerDefeated)
+                await SendCombatEndedAsync(characterId, "defeated");
 
             if (result.EnemyDefeated)
             {

@@ -1503,6 +1503,25 @@ describe('GameSession combat', () => {
 		expect(session.dead).toBe(true);
 	});
 
+	it('closes the fight when the server says the death ended it', async () => {
+		const session = await connected();
+		hub.emit('CombatStarted', combatStarted());
+
+		hub.emit('CombatTurn', {
+			action: 'attack',
+			playerRemainingHealth: 0,
+			playerDefeated: true,
+			goldLost: 3
+		});
+		hub.emit('CombatEnded', { characterId: 'char-1', reason: 'defeated' });
+
+		// The death is what ends the fight, so the panel must go away — otherwise the map never renders again.
+		expect(session.combat.active).toBe(false);
+		expect(session.combat.outcome?.kind).toBe('defeat');
+		// The turn's own loss figures survive the confirmation: `CombatEnded` must not rewrite them as a flee.
+		expect(session.combat.outcome?.goldLost).toBe(3);
+	});
+
 	it('mirrors the death penalty the server reports', async () => {
 		const session = await playing();
 		session.stats = { ...session.stats, gold: 50, experience: 200 };
@@ -1524,6 +1543,14 @@ describe('GameSession combat', () => {
 	it('moves the character to the respawn location the server reports', async () => {
 		const session = await playing();
 		session.dead = true;
+		session.stats = {
+			...session.stats,
+			currentHealth: 0,
+			maxHealth: 120,
+			currentMana: 0,
+			maxMana: 40
+		};
+		hub.emit('CombatStarted', combatStarted());
 
 		hub.emit('CharacterRespawned', {
 			characterId: 'char-1',
@@ -1536,6 +1563,11 @@ describe('GameSession combat', () => {
 
 		expect(session.dead).toBe(false);
 		expect(session.location?.locationSlug).toBe('inn');
+		// The respawn restored the bar server-side, so the sheet has to show that rather than the death's 0 HP.
+		expect(session.stats.currentHealth).toBe(25);
+		expect(session.stats.currentMana).toBe(40);
+		// The server has already removed the combat session; a panel for the lost fight would cover the map.
+		expect(session.combat.active).toBe(false);
 		expect(session.chat.at(-1)?.message).toContain('respawned at The Grey Cup');
 		expect(session.chat.at(-1)?.message).toContain('weakened');
 	});

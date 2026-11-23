@@ -975,6 +975,19 @@ export class GameSession {
 		hub.on('CharacterRespawned', (payload?: CharacterRespawnedPayload) => {
 			this.dead = false;
 
+			// The server restores the bar and removes the combat session before it answers, so the shell
+			// takes both facts from this payload. Without them the sheet keeps the 0 HP the death left and
+			// a fight the server no longer owns stays on screen (the death itself already sends
+			// `CombatEnded`; this is the belt for a respawn that arrives first).
+			if (payload) {
+				this.stats = {
+					...this.stats,
+					currentHealth: payload.currentHealth,
+					currentMana: payload.currentMana
+				};
+			}
+			this.combat = { ...this.combat, active: false };
+
 			// A2: death moves the character to the zone's safe location, so the view has to follow them.
 			if (payload?.locationSlug) {
 				this.location = {
