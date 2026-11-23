@@ -897,7 +897,8 @@ post_process:
   - "assetkit resize trimmed.png archetype-<slug>-portrait-256.png --width 256 --height 256"
   - "assetkit derive specs/archetype-portraits-derive.json   # dimensions, alpha, budgets"
   - "python3 tools/portrait_check.py archetype-<slug>-portrait-64.webp --class <class>"
-  - "if an export is over budget, step WebP quality to 82 before touching size (asset-specs §3)"
+  - "if the 128 px export exceeds 16 KB, step down to the largest size actually rendered (64 px) before changing quality (asset-specs §6 step 2)"
+  - "check the 64 px export against its 8 KB budget; if either required export still exceeds its budget, stop and get human approval before lowering WebP quality"
 
 acceptance:
   - "27 files exist under web/client/static/images/archetypes/ (9 slugs x 256.png + 128.webp + 64.webp)"
