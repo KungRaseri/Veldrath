@@ -261,13 +261,14 @@ CI runs on **Forgejo Actions** at `https://git.kungraseri.cloud/Veldrath/Veldrat
 
 Releases are created inside the package job by [`scripts/forgejo-release.sh`](scripts/forgejo-release.sh); there is no separate release workflow, because fetching an artifact cross-run is a GitHub-API dependency. Images go to `git.kungraseri.cloud/veldrath/*`, which is what [`docker-compose.coolify.yml`](docker-compose.coolify.yml) pulls.
 
-That is the whole list, deliberately. Three checks live inside those workflows instead of having a file each:
+That is the whole list, deliberately. Four checks live inside those workflows instead of having a file each:
 
 | Check | Lives in | Was |
 |---|---|---|
 | `dotnet format --verify-no-changes` | the `Verify formatting` step of each .NET component workflow | `format.yml` (deleted) |
 | Markdown relative-link check | a step in `docs.yml` | `repo-hygiene.yml` (deleted) |
 | Content validation over the seeded catalog | `SeededContentValidationTests`, already run by `ci-server.yml` | a planned `content-guard.yml` (never kept) |
+| Calethic name-collision check | a step in `docs.yml` ([`scripts/check-content-names.mjs`](scripts/check-content-names.mjs)) | never existed — D5 found `Orneld`/`Orveld` and `Gaelraeth`/`Kael-Raeth` by hand |
 
 Coverage exclusions are configured in [`coverage.runsettings`](coverage.runsettings). Each .NET job uploads a `CoverageReport/` artifact and posts the summary as a sticky PR comment via [`scripts/forgejo-pr-comment.sh`](scripts/forgejo-pr-comment.sh).
 
