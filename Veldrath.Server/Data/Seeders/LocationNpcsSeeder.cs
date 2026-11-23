@@ -78,6 +78,20 @@ public static class LocationNpcsSeeder
             SortOrder = 10,
         },
 
+        // The Droveway's weathered waypost — the zone's `SafeRespawn` point, which the design keeps out of the spawn
+        // pool because a person stands there instead (docs/design/content/pool-matrix.md, archetypes.md). This is a
+        // second placement of `wayfarer-elder`, not a new person: rows are idempotent by NpcId, not by archetype, and
+        // `tavern-keeper` already stands at three inns the same way. `DisplayName` is omitted exactly as the square's
+        // row omits it, so both stands render the archetype's name instead of one of them carrying a personal one.
+        new LocationNpc
+        {
+            NpcId = "droveway-waypost-elder",
+            ZoneId = "the-droveway",
+            LocationSlug = "weathered-waypost",
+            ArchetypeSlug = "wayfarer-elder",
+            SortOrder = 10,
+        },
+
         // Aldenmere (L5). `ironhollow-keep` and `aldenmere-marketplace` are both merchant locations, so each gets the
         // person who serves it: the castellan trades coin for the moor crossings he knows, the mead-seller holds the
         // market. `grey-cup` carries no merchant flag, but the resolver gates on the zone's, so its keeper still

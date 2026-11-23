@@ -40,10 +40,13 @@ public class NpcPlacementTests : IAsyncDisposable
 
         authored.Select(npc => npc.NpcId).Should().OnlyHaveUniqueItems();
         // D3's roster is one person per settlement location, so every reachable town is populated and the dev sandbox
-        // — which is not a settlement — stays empty on purpose.
+        // — which is not a settlement — stays empty on purpose. The droveway is not a town roster: it carries the one
+        // person its own design places there, the wayfarer-elder at the weathered waypost (SafeRespawn, so the same
+        // person owns the spawn point the pool is kept empty for).
         authored.Select(npc => npc.ZoneId).Distinct().Should().BeEquivalentTo(
-            ["crestfall", "aldenmere", "tolvaren", "skarhold"],
-            "every reachable settlement has townspeople; the dev playground does not");
+            ["crestfall", "aldenmere", "tolvaren", "skarhold", "the-droveway"],
+            "every reachable settlement has townspeople, plus the waypost elder the droveway's design places; "
+            + "the dev playground does not");
         authored.Should().OnlyContain(npc => !string.IsNullOrWhiteSpace(npc.ArchetypeSlug));
         authored.Should().OnlyContain(npc => !string.IsNullOrWhiteSpace(npc.LocationSlug));
         // The main-story quest asks the player to return cargo to the blacksmith, so he has to be findable.
@@ -88,7 +91,8 @@ public class NpcPlacementTests : IAsyncDisposable
         await using var db = _factory.CreateContext();
         var content = await _content.CreateContextAsync();
         await LocationNpcsSeeder.SeedAsync(db);
-        // A wilderness location: the roster places people in the four settlements only, never on the roads.
+        // A wilderness location on the same zone: people stand at settlement locations and at the waypost, never on
+        // the road itself.
         var character = await SeedCharacterAsync(db, "the-droveway", "droveway-crossing");
 
         var listed = await Reader(db, content).Handle(
@@ -120,6 +124,50 @@ public class NpcPlacementTests : IAsyncDisposable
             "Welcome, traveler!",
             "The forge is hot and my hammer is ready.",
             "Finest ironwork in Thornveil, guaranteed.");
+    }
+
+    [Fact]
+    public async Task The_Waypost_Elder_Is_Listed_At_The_Droveways_Safe_Respawn_Point()
+    {
+        await using var db = _factory.CreateContext();
+        var content = await _content.CreateContextAsync();
+        await LocationNpcsSeeder.SeedAsync(db);
+        // The weathered waypost pools nobody because this person stands there instead, so the zone's SafeRespawn point
+        // is also the one place in the droveway where somebody can be met.
+        var character = await SeedCharacterAsync(db, "the-droveway", "weathered-waypost");
+
+        var listed = await Reader(db, content).Handle(
+            new GetLocationNpcsHubCommand(character.Id),
+            CancellationToken.None);
+
+        var elder = listed.Should().ContainSingle().Subject;
+        elder.ArchetypeSlug.Should().Be("wayfarer-elder");
+        // No placement-level name: both stands show the archetype's, so neither reads as a different person.
+        elder.DisplayName.Should().Be("Wayfarer Elder");
+        elder.HasDialogue.Should().BeTrue();
+        elder.IsShopkeeper.Should().BeFalse("the elder teaches and takes no coin");
+    }
+
+    [Fact]
+    public async Task Talking_To_The_Waypost_Elder_Answers_With_One_Of_The_Shared_Lines()
+    {
+        await using var db = _factory.CreateContext();
+        var content = await _content.CreateContextAsync();
+        await LocationNpcsSeeder.SeedAsync(db);
+        var character = await SeedCharacterAsync(db, "the-droveway", "weathered-waypost");
+
+        var result = await Speaker(db, content).Handle(
+            new TalkToNpcHubCommand(character.Id, "wayfarer-elder"),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue(result.ErrorMessage);
+        result.DisplayName.Should().Be("Wayfarer Elder");
+        // The greeting is keyed to the archetype, so the square and the waypost share it; the fallback line would mean
+        // the entry never reached this speaker.
+        result.Line.Should().ContainAny(
+            "The stone lists seven towns. Some of them are gone. The names are not.",
+            "At the square I keep the tally. Out here I keep the stone.",
+            "Ask me where a road goes. Do not ask me who set the stone.");
     }
 
     [Fact]
