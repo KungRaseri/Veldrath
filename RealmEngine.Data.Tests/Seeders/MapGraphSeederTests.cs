@@ -29,7 +29,7 @@ public class MapGraphSeederTests
 
         maps.Should().HaveCount(23);
         maps.SelectMany(m => m.Nodes).Should().HaveCount(134);
-        maps.SelectMany(m => m.Edges).Should().HaveCount(298);
+        maps.SelectMany(m => m.Edges).Should().HaveCount(302);
 
         foreach (var map in maps)
         {
@@ -55,7 +55,70 @@ public class MapGraphSeederTests
 
         (await db.Maps.CountAsync()).Should().Be(23);
         (await db.MapNodes.CountAsync()).Should().Be(134);
-        (await db.MapEdges.CountAsync()).Should().Be(298);
+        (await db.MapEdges.CountAsync()).Should().Be(302);
+    }
+
+    [Fact]
+    public async Task SeedAsync_EveryVisibleZoneLocationIsWalkableFromArrival()
+    {
+        await using var db = CreateDbContext();
+
+        await MapGraphSeeder.SeedAsync(db);
+
+        var maps = await db.Maps
+            .Include(m => m.Nodes)
+            .Include(m => m.Edges)
+            .AsNoTracking()
+            .Where(m => m.MapType == MapType.Zone)
+            .ToListAsync();
+
+        maps.Should().HaveCount(19, "the seeder authors 19 zone maps and every one of them has to be walkable");
+
+        var unreachable = new List<string>();
+
+        foreach (var map in maps)
+        {
+            var reachable = WalkVisibleGraphFromArrival(map);
+
+            unreachable.AddRange(map.Nodes
+                .Where(n => n.NodeType == MapNodeType.Location && !n.IsHidden)
+                .Where(n => !reachable.Contains(n.Id))
+                .OrderBy(n => n.Id, StringComparer.Ordinal)
+                .Select(n => $"{map.Id} → {n.Id}"));
+        }
+
+        unreachable.Should().BeEmpty(
+            "a visible location that Arrival cannot walk to is content no player can enter, and hiding a " +
+            $"location must never cut the map in two; unreachable: {string.Join(", ", unreachable)}");
+    }
+
+    [Fact]
+    public async Task SeedAsync_AddsBidirectionalBypassWalksAroundHiddenLocations()
+    {
+        await using var db = CreateDbContext();
+
+        await MapGraphSeeder.SeedAsync(db);
+
+        var edges = await db.MapEdges.AsNoTracking().ToListAsync();
+
+        // Measured on the seeded graph: the generated chain already owns every direction the authored edges left
+        // free, so each bypass takes the next one. Both hops are asserted because a bypass that exists in one
+        // direction only would walk the player past the hidden span and strand them there.
+        AssertWalkBypass(
+            edges, "zone:grevenmire",
+            "zone:grevenmire:entry", "zone:grevenmire:location:mire-crossing",
+            MapDirection.South, MapDirection.North);
+        AssertWalkBypass(
+            edges, "zone:ashlen-wood",
+            "zone:ashlen-wood:location:old-clearing", "zone:ashlen-wood:location:wood-road",
+            MapDirection.North, MapDirection.West);
+
+        // Additive, not a replacement: the authored walk through the hidden node survives, so the bypass is an
+        // extra route for the player who has not found it rather than a route moved off it.
+        edges.Should().Contain(e => e.FromNodeId == "zone:ashlen-wood:location:strangled-oak"
+                                    && e.ToNodeId == "zone:ashlen-wood:location:wood-road");
+        edges.Should().Contain(e => e.FromNodeId == "zone:grevenmire:location:bone-hollow"
+                                    && e.ToNodeId == "zone:grevenmire:location:mire-crossing");
     }
 
     [Fact]
@@ -137,6 +200,88 @@ public class MapGraphSeederTests
             n.NodeType == MapNodeType.RegionExit &&
             n.TargetMapId == "region:varenmark" &&
             n.TargetNodeId == "region:varenmark:entry");
+    }
+
+    /// <summary>
+    /// Asserts that one bypass walk exists in both directions and is an ordinary visible walk.
+    /// </summary>
+    /// <param name="edges">Every persisted edge.</param>
+    /// <param name="mapId">Map that owns the bypass.</param>
+    /// <param name="first">Node on one side of the hidden span.</param>
+    /// <param name="second">Node on the other side of the hidden span.</param>
+    /// <param name="firstToSecond">Expected direction of <paramref name="first"/> → <paramref name="second"/>.</param>
+    /// <param name="secondToFirst">Expected direction of <paramref name="second"/> → <paramref name="first"/>.</param>
+    private static void AssertWalkBypass(
+        IEnumerable<RealmEngine.Data.Entities.MapEdge> edges,
+        string mapId,
+        string first,
+        string second,
+        MapDirection firstToSecond,
+        MapDirection secondToFirst)
+    {
+        edges.Single(e => e.MapId == mapId && e.FromNodeId == first && e.ToNodeId == second)
+            .Should().BeEquivalentTo(new
+            {
+                MapId = mapId,
+                Direction = firstToSecond,
+                EdgeType = MapEdgeType.Walk,
+                IsTraversable = true,
+                IsHidden = false,
+            });
+
+        edges.Single(e => e.MapId == mapId && e.FromNodeId == second && e.ToNodeId == first)
+            .Should().BeEquivalentTo(new
+            {
+                MapId = mapId,
+                Direction = secondToFirst,
+                EdgeType = MapEdgeType.Walk,
+                IsTraversable = true,
+                IsHidden = false,
+            });
+    }
+
+    /// <summary>
+    /// Walks one zone the way a character does: from Arrival, along traversable and visible edges, never
+    /// entering a hidden node and never stepping onto a node that changes maps.
+    /// </summary>
+    /// <remarks>
+    /// <c>TravelToNodeHubCommand</c> only loads another map when the selected node carries a
+    /// <c>TargetMapId</c>, so an exit, portal or zone node is a fresh walk on the destination map rather
+    /// than a corridor inside this one; expanding it here would report a location as reachable when the
+    /// only path to it leaves the zone.
+    /// </remarks>
+    /// <param name="map">Persisted zone map with its nodes and edges.</param>
+    /// <returns>Every visible node id Arrival can walk to, including Arrival itself.</returns>
+    private static HashSet<string> WalkVisibleGraphFromArrival(RealmEngine.Data.Entities.Map map)
+    {
+        var nodes = map.Nodes.ToDictionary(n => n.Id, StringComparer.Ordinal);
+        var outgoing = map.Edges
+            .Where(e => e.IsTraversable && !e.IsHidden)
+            .ToLookup(e => e.FromNodeId, StringComparer.Ordinal);
+
+        var reachable = new HashSet<string>(StringComparer.Ordinal);
+        if (map.EntryNodeId is not { Length: > 0 } entryId || !nodes.TryGetValue(entryId, out var entry))
+            return reachable;
+
+        reachable.Add(entry.Id);
+        var queue = new Queue<RealmEngine.Data.Entities.MapNode>();
+        queue.Enqueue(entry);
+
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            if (!string.IsNullOrWhiteSpace(current.TargetMapId))
+                continue;
+
+            foreach (var edge in outgoing[current.Id])
+            {
+                if (!nodes.TryGetValue(edge.ToNodeId, out var next)) continue;
+                if (next.IsHidden) continue;
+                if (reachable.Add(next.Id)) queue.Enqueue(next);
+            }
+        }
+
+        return reachable;
     }
 
     private static MapGraph ToGraph(RealmEngine.Data.Entities.Map map) =>

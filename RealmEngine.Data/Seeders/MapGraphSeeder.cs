@@ -24,6 +24,7 @@ public static class MapGraphSeeder
         var now = DateTimeOffset.UtcNow;
         var maps = GetMaps(now);
         ConnectZoneEntriesToLocations(maps);
+        ConnectVisibleLocationsAcrossHiddenNodes(maps);
         LinkRegionZonesToZoneMaps(maps);
         db.Maps.AddRange(maps);
         await db.SaveChangesAsync();
@@ -102,6 +103,117 @@ public static class MapGraphSeeder
                 AddWalkEdge(map, chain[index + 1], chain[index], MapDirection.West);
             }
         }
+    }
+
+    /// <summary>
+    /// Reconnects the visible locations that a hidden location in the middle of the chain cuts off.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <see cref="ConnectZoneEntriesToLocations"/> chains every location in sort order, hidden ones included,
+    /// because that chain is also the path a discovery unlock opens. That is correct until a hidden location
+    /// sits between two visible ones: the visible walk stops at the node before it, so every location authored
+    /// after it is unreachable until the player happens to unlock the hidden one. Measured consequence:
+    /// Grevenmire's Bone Hollow cut the Mire Crossing and the Sunken Estate off from Arrival, and Ashlen Wood's
+    /// Strangled Oak cut off the Wood Road.
+    /// </para>
+    /// <para>
+    /// Additive, not a reshuffle: the authored chain stays exactly as it is — including the hidden node's own
+    /// links, which still work once it is unlocked — and one bypass walk is added in both directions between
+    /// the last visible node before the hidden span and the first visible location after it. Nothing is
+    /// removed, no sort order or unlock metadata changes, and a zone that is already walkable is untouched.
+    /// </para>
+    /// <para>
+    /// Only a real gap is bridged: the preceding node must already be walkable from Arrival and the location
+    /// must not be. Reachability is recomputed after each successful bypass so a span of several hidden nodes
+    /// costs one edge pair instead of one per node, and the next slot is never spent on a redundant edge.
+    /// </para>
+    /// <para>
+    /// A pair is only added when both directions have a free slot — <see cref="FirstFreeDirection"/> is derived
+    /// from the edges already on the node, so the two hops are checked before either is written. A one-way
+    /// bypass would walk the player past a hidden span and strand them there. When no direction is free nothing
+    /// is invented to route around the validator: the unreachable location is left for
+    /// <c>SeedAsync_EveryVisibleZoneLocationIsWalkableFromArrival</c> to report.
+    /// </para>
+    /// </remarks>
+    /// <param name="maps">The authored maps, before they are added to the context.</param>
+    private static void ConnectVisibleLocationsAcrossHiddenNodes(IEnumerable<Map> maps)
+    {
+        foreach (var map in maps.Where(candidate => candidate.MapType == MapType.Zone))
+        {
+            var entry = map.Nodes.FirstOrDefault(node => node.Id == map.EntryNodeId);
+            if (entry is null) continue;
+
+            var visibleLocations = map.Nodes
+                .Where(node => node.NodeType == MapNodeType.Location && !node.IsHidden)
+                .OrderBy(node => node.SortOrder)
+                .ThenBy(node => node.Id, StringComparer.Ordinal)
+                .ToList();
+            if (visibleLocations.Count == 0) continue;
+
+            var reachable = ReachableNodeIds(map, entry.Id);
+            var predecessorId = entry.Id;
+
+            foreach (var location in visibleLocations)
+            {
+                if (!reachable.Contains(location.Id) && reachable.Contains(predecessorId))
+                {
+                    var forward = FirstFreeDirection(map, predecessorId, MapDirection.East);
+                    var backward = FirstFreeDirection(map, location.Id, MapDirection.West);
+
+                    if (forward is not null && backward is not null)
+                    {
+                        AddWalkEdge(map, predecessorId, location.Id, MapDirection.East);
+                        AddWalkEdge(map, location.Id, predecessorId, MapDirection.West);
+                        reachable = ReachableNodeIds(map, entry.Id);
+                    }
+                }
+
+                predecessorId = location.Id;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Collects every node a character can walk to inside one map, starting from its arrival node.
+    /// </summary>
+    /// <remarks>
+    /// This is deliberately narrower than the validator's own reachability check, which follows every edge it
+    /// can find: here hidden nodes are skipped (the player cannot see them, so they cannot be walked through)
+    /// and an edge is only usable when it is traversable and visible. A node that names another map is not
+    /// expanded either — <c>TravelToNodeHubCommand</c> loads that map instead of walking on this one.
+    /// </remarks>
+    /// <param name="map">The map being built, before it is added to the context.</param>
+    /// <param name="entryNodeId">Node the walk starts from.</param>
+    /// <returns>The identifiers of every reachable visible node, including the entry node.</returns>
+    private static HashSet<string> ReachableNodeIds(Map map, string entryNodeId)
+    {
+        var nodes = map.Nodes.ToDictionary(node => node.Id, StringComparer.Ordinal);
+        var outgoing = map.Edges
+            .Where(edge => edge.IsTraversable && !edge.IsHidden && nodes.ContainsKey(edge.ToNodeId))
+            .ToLookup(edge => edge.FromNodeId, StringComparer.Ordinal);
+
+        var reachable = new HashSet<string>(StringComparer.Ordinal);
+        if (!nodes.TryGetValue(entryNodeId, out var entry)) return reachable;
+
+        reachable.Add(entry.Id);
+        var queue = new Queue<MapNode>();
+        queue.Enqueue(entry);
+
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            if (!string.IsNullOrWhiteSpace(current.TargetMapId)) continue;
+
+            foreach (var edge in outgoing[current.Id])
+            {
+                var next = nodes[edge.ToNodeId];
+                if (next.IsHidden) continue;
+                if (reachable.Add(next.Id)) queue.Enqueue(next);
+            }
+        }
+
+        return reachable;
     }
 
     private static void AddWalkEdge(Map map, string fromNodeId, string toNodeId, MapDirection preferred)
