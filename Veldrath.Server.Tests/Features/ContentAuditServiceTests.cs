@@ -76,6 +76,45 @@ public class ContentAuditServiceTests
             context.SaveChanges();
         }
 
+        public async Task SeedMapGraphAsync()
+        {
+            await using var context = CreateDbContext();
+            await MapGraphSeeder.SeedAsync(context);
+        }
+
+        /// <summary>
+        /// Repoints one edge's destination at a node that belongs to a different map — the shape of the dangling
+        /// reference the map-edge rule exists to catch. The node exists in the catalog, so the foreign key holds;
+        /// it is simply not on the edge's own map.
+        /// </summary>
+        public async Task RepointOneEdgeEndAtAnotherMapsNodeAsync()
+        {
+            await using var context = CreateDbContext();
+
+            var edge = await context.MapEdges.AsNoTracking()
+                .OrderBy(candidate => candidate.MapId)
+                .ThenBy(candidate => candidate.FromNodeId)
+                .Select(candidate => new { candidate.Id, candidate.MapId })
+                .FirstAsync();
+
+            var foreignNodeId = await context.MapNodes.AsNoTracking()
+                .Where(node => node.MapId != edge.MapId)
+                .OrderBy(node => node.MapId)
+                .ThenBy(node => node.Id)
+                .Select(node => node.Id)
+                .FirstAsync();
+
+            await context.MapEdges
+                .Where(candidate => candidate.Id == edge.Id)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(candidate => candidate.ToNodeId, foreignNodeId));
+        }
+
+        public async Task<int> CountMapEdgesAsync()
+        {
+            await using var context = CreateDbContext();
+            return await context.MapEdges.CountAsync();
+        }
+
         public void Dispose() => _connection.Dispose();
     }
 
@@ -234,6 +273,54 @@ public class ContentAuditServiceTests
         issues[0].Severity.Should().Be(ContentIssueSeverity.Warning);
         issues[0].Identifier.Should().Be("playground/health-potion");
         issues[0].Message.Should().Contain("playground").And.Contain("health-potion");
+    }
+
+    [Fact]
+    public async Task RunAsync_OnTheSeededMapGraph_ReportsNoMissingMapNode()
+    {
+        using var factory = new SqliteContentDbContextFactory();
+        await factory.SeedMapGraphAsync();
+
+        // A shape guard, not an expected count: the exact 23 maps / 134 nodes / N edges shape is asserted by
+        // RealmEngine.Data.Tests' MapGraphSeederTests, which owns it. Pinning N here made this test fail whenever a
+        // seeder change added an edge to the graph this test only borrows.
+        (await factory.CountMapEdgesAsync()).Should().BeGreaterThan(0,
+            "the regression only means something if the seeded graph really carries edges");
+
+        var service = new ContentAuditService(factory, new CapturingLogger());
+
+        var issues = await service.RunAsync(CancellationToken.None);
+
+        // The audit used to load Maps without their Nodes navigation. Nothing populated it (the context does not
+        // lazy-load), so every map claimed to have no nodes and both ends of every seeded edge were reported
+        // missing — plus a warning telling operators to reseed a database that was in fact correct.
+        issues.Should().NotContain(
+            issue => issue.Rule == ContentReferenceRules.MissingMapNode,
+            "the map graph seeder writes every edge against nodes on the same map, so a freshly seeded catalogue " +
+            "holds no dangling edge end");
+    }
+
+    [Fact]
+    public async Task RunAsync_Reports_AnEdgeEnd_ThatIsNotANodeOnTheEdgesMap()
+    {
+        using var factory = new SqliteContentDbContextFactory();
+        await factory.SeedMapGraphAsync();
+        await factory.RepointOneEdgeEndAtAnotherMapsNodeAsync();
+
+        var service = new ContentAuditService(factory, new CapturingLogger());
+
+        var issues = await service.RunAsync(CancellationToken.None);
+
+        // The negative control: fixing the navigation must not become deleting the rule. Exactly one edge end is
+        // now off its map, so exactly one missing-map-node issue is reported — one, not both ends of every seeded
+        // edge. Filtered on the rule so an unrelated rule's finding on this graph cannot decide the outcome.
+        var edgeIssues = issues
+            .Where(issue => issue.Rule == ContentReferenceRules.MissingMapNode)
+            .ToList();
+
+        edgeIssues.Should().ContainSingle();
+        edgeIssues[0].Severity.Should().Be(ContentIssueSeverity.Error);
+        edgeIssues[0].Message.Should().Contain("edge to node");
     }
 
     [Fact]
