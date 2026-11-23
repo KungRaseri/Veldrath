@@ -202,14 +202,17 @@ Concretely:
 - Entering a location whose spawn pool references deleted content → the location loads empty **and**
   logs one error per dangling reference, so the player is not stuck but the operator sees it.
 - A startup validator walks content references (zone → location → actor pool, item → power, quest →
-  item/kill target) and logs every dangling reference at `Error` as one consolidated report.
+  item/kill target) and logs one consolidated report: a summary plus one entry per finding at that finding's
+  own severity, the summary escalating to `Error` only when an error-level finding exists.
 - No new `??` content defaults in the server. The existing "no content" paths get a test that asserts the
   error is logged.
 
 **D5 shipped this as three pieces.** `ContentReferenceRules` holds the pure checks (spawn pools, quest objectives,
 map edges) so they are unit-testable and Milestone B can reuse them;
 [`ContentAuditService`](../Veldrath.Server/Features/Content/ContentAuditService.cs) runs them once at startup against
-`ContentDbContext` and logs one summary plus one `Error` per finding, and can never block the host. On the play path,
+`ContentDbContext` and logs one consolidated summary plus one entry per finding at the finding's own severity —
+the summary escalates to `Error` only when an error-level finding exists, so a warning-only run logs it at
+`Warning` and the catalog still serves — and can never block the host. On the play path,
 `ActorPoolResolver` no longer falls back to a `"common"` archetype — a location with neither a pool nor a placement
 spawns nothing (that is authored content), while a pool naming an unknown slug logs `Error` and spawns nothing for
 it. Both location-entry paths now return `ContentWarnings`, which the hub forwards as `SystemMessage`, so the player
