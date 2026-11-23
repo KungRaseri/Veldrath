@@ -14,7 +14,8 @@ import {
  *
  * The world's spawn pools are real content now, but which location has which enemy is a content decision that will
  * keep changing — so these specs use `the-droveway`, the level 1–4 wilderness next to the starter town: its
- * `drove-road` pools `giant-rat` and `goblin-scout`, and its `weathered-waypost` is the zone's `SafeRespawn` point.
+ * `drove-road` draws its roster from the zone's spawn pool, and its `weathered-waypost` is the zone's `SafeRespawn`
+ * point.
  *
  * The dev teleport only moves the character into the zone (the `playground` zone is hidden from the public API, so a
  * client cannot open it). Everything after that is the production path: the roster is spawned by walking onto the
